@@ -1,0 +1,36 @@
+[package]
+name = "scirs2-io"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+license.workspace = true
+description = "Input/Output utilities module for SciRS2"
+repository.workspace = true
+keywords = ["io", "serialization", "data", "scientific", "scipy"]
+categories = ["science", "io", "encoding"]
+
+[dependencies]
+ndarray.workspace = true
+scirs2-core.workspace = true
+byteorder.workspace = true
+image.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+bincode.workspace = true
+rmp-serde.workspace = true
+flate2.workspace = true
+lz4.workspace = true
+zstd.workspace = true
+bzip2.workspace = true
+rand.workspace = true
+sha2.workspace = true
+crc32fast.workspace = true
+blake3.workspace = true
+hex.workspace = true
+digest.workspace = true
+data-encoding.workspace = true
+chrono.workspace = true
+tempfile.workspace = true
+num-complex.workspace = true
+regex.workspace = true
+glob.workspace = true

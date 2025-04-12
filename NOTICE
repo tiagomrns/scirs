@@ -1,0 +1,20 @@
+SciRS2 - Scientific Computing in Rust
+Copyright 2025 cool-japan/SciRS2 Team
+
+This software is licensed under Apache License 2.0. Please see the LICENSE file for details.
+
+Portions of this software are inspired by or based on SciPy:
+SciPy (https://scipy.org/)
+Copyright © 2001-2024 SciPy developers. All rights reserved.
+
+This implementation uses several Rust crates from third parties, including:
+- ndarray
+- num-traits
+- num-complex
+- rayon
+- thiserror
+- criterion
+- approx
+
+Each of these third-party components may have their own licenses. 
+Please see their respective license files for details.

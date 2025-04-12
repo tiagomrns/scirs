@@ -1,0 +1,39 @@
+[package]
+name = "scirs2-text"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+license.workspace = true
+description = "Text processing module for SciRS2"
+repository.workspace = true
+keywords = ["text", "nlp", "scientific", "ai", "machine-learning"]
+categories = ["science", "mathematics", "algorithms", "ai"]
+
+[dependencies]
+# Core dependencies
+scirs2-core = { workspace = true, features = ["parallel"] }
+scirs2-linalg.workspace = true
+ndarray.workspace = true
+num-traits.workspace = true
+num-complex.workspace = true
+thiserror.workspace = true
+# Using scirs2-core's parallel feature instead of direct rayon
+# rayon.workspace = true
+rand.workspace = true
+
+# Text processing specific dependencies
+regex.workspace = true
+unicode-normalization.workspace = true
+unicode-segmentation.workspace = true
+lazy_static.workspace = true
+tempfile.workspace = true
+
+# Feature-gated dependencies
+tokenizers = { workspace = true, optional = true }
+serde = { workspace = true, features = ["derive"], optional = true }
+serde_json = { workspace = true, optional = true }
+
+[features]
+default = []
+serde-support = ["dep:serde", "dep:serde_json"]
+tokenization = ["dep:tokenizers"]

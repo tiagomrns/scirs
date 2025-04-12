@@ -1,0 +1,33 @@
+name: SciRS2 CI
+
+on:
+  push:
+    branches: [ "main", "master", "feature/*" ]
+  pull_request:
+    branches: [ "main", "master" ]
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  test:
+    name: Test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt, clippy
+      
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y build-essential libopenblas-dev pkg-config
+
+      - name: Rust Cache
+        uses: Swatinem/rust-cache@v2
+      
+      - name: Run tests
+        run: cargo test --verbose

@@ -1,0 +1,22 @@
+[package]
+name = "scirs2-cluster"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+license.workspace = true
+description = "Clustering algorithms module for SciRS2"
+repository.workspace = true
+keywords = ["clustering", "scientific", "scipy", "numerical", "kmeans"]
+categories = ["science", "mathematics", "algorithms"]
+
+[dependencies]
+# Core dependencies
+scirs2-core.workspace = true
+scirs2-linalg.workspace = true
+scirs2-stats.workspace = true
+scirs2-spatial.workspace = true
+ndarray.workspace = true
+num-traits.workspace = true
+thiserror.workspace = true
+rand.workspace = true
+approx.workspace = true

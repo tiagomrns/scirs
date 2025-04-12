@@ -1,0 +1,94 @@
+[package]
+name = "scirs2"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+description.workspace = true
+license.workspace = true
+repository.workspace = true
+keywords.workspace = true
+categories.workspace = true
+
+[dependencies]
+# Core dependencies
+scirs2-core = { workspace = true }
+ndarray.workspace = true
+num-traits.workspace = true
+num-complex.workspace = true
+thiserror.workspace = true
+rand.workspace = true
+
+# Core module dependencies (will be enabled as they are implemented)
+scirs2-linalg = { workspace = true, optional = true }
+scirs2-integrate = { workspace = true, optional = true }
+scirs2-interpolate = { workspace = true, optional = true }
+scirs2-optimize = { workspace = true, optional = true }
+scirs2-fft = { workspace = true, optional = true }
+scirs2-stats = { workspace = true, optional = true }
+scirs2-special = { workspace = true, optional = true }
+scirs2-signal = { workspace = true, optional = true }
+scirs2-sparse = { workspace = true, optional = true }
+scirs2-spatial = { workspace = true, optional = true }
+
+# Advanced module dependencies
+scirs2-cluster = { workspace = true, optional = true }
+scirs2-ndimage = { workspace = true, optional = true }
+scirs2-io = { workspace = true, optional = true }
+scirs2-datasets = { workspace = true, optional = true }
+
+# AI/ML module dependencies
+scirs2-neural = { workspace = true, optional = true }
+scirs2-optim = { workspace = true, optional = true }
+scirs2-graph = { workspace = true, optional = true }
+scirs2-transform = { workspace = true, optional = true }
+scirs2-metrics = { workspace = true, optional = true }
+scirs2-text = { workspace = true, optional = true }
+scirs2-vision = { workspace = true, optional = true }
+scirs2-series = { workspace = true, optional = true }
+
+[dev-dependencies]
+approx.workspace = true
+criterion.workspace = true
+
+[features]
+default = []
+all = [
+    "linalg", "integrate", "interpolate", "optimize", "fft",
+    "stats", "special", "signal", "sparse", "spatial",
+    "cluster", "ndimage", "io", "datasets",
+    "neural", "optim", "graph", "transform", "metrics", "text", "vision", "series"
+]
+core = [
+    "linalg", "integrate", "interpolate", "optimize", "fft",
+    "stats", "special", "signal", "sparse", "spatial"
+]
+advanced = ["cluster", "ndimage", "io", "datasets"]
+ai-ml = ["neural", "optim", "graph", "transform", "metrics", "text", "vision", "series"]
+
+# Core module features
+linalg = ["dep:scirs2-linalg"]
+integrate = ["dep:scirs2-integrate"]
+interpolate = ["dep:scirs2-interpolate"]
+optimize = ["dep:scirs2-optimize"]
+fft = ["dep:scirs2-fft"]
+stats = ["dep:scirs2-stats"]
+special = ["dep:scirs2-special"]
+signal = ["dep:scirs2-signal"]
+sparse = ["dep:scirs2-sparse"]
+spatial = ["dep:scirs2-spatial"]
+
+# Advanced module features
+cluster = ["dep:scirs2-cluster"]
+ndimage = ["dep:scirs2-ndimage"]
+io = ["dep:scirs2-io"]
+datasets = ["dep:scirs2-datasets"]
+
+# AI/ML module features
+neural = ["dep:scirs2-neural"]
+optim = ["dep:scirs2-optim"]
+graph = ["dep:scirs2-graph"]
+transform = ["dep:scirs2-transform"]
+metrics = ["dep:scirs2-metrics"]
+text = ["dep:scirs2-text"]
+vision = ["dep:scirs2-vision"]
+series = ["dep:scirs2-series"]

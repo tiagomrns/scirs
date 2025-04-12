@@ -1,0 +1,30 @@
+[package]
+name = "scirs2-metrics"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+license.workspace = true
+description = "Machine Learning evaluation metrics module for SciRS2"
+repository.workspace = true
+keywords = ["metrics", "evaluation", "scientific", "ai", "machine-learning"]
+categories = ["science", "mathematics", "algorithms", "ai"]
+
+[dependencies]
+# Core dependencies
+scirs2-core.workspace = true
+scirs2-stats.workspace = true
+scirs2-linalg.workspace = true
+ndarray.workspace = true
+num-traits.workspace = true
+num-complex.workspace = true
+thiserror.workspace = true
+approx.workspace = true
+rand.workspace = true
+
+# Future dependency for PandRS with appropriate abstractions
+# pandrs_wrapper = { path = "../wrappers/pandrs_wrapper", optional = true }
+
+[features]
+default = []
+# Enable external ML library wrappers
+# pandrs = ["dep:pandrs_wrapper"]

@@ -1,0 +1,21 @@
+[package]
+name = "scirs2-optim"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+license.workspace = true
+description = "Machine Learning optimization module for SciRS2"
+repository.workspace = true
+keywords = ["optimization", "machine-learning", "scientific", "sgd", "adam"]
+categories = ["science", "mathematics", "algorithms", "ai"]
+
+[dependencies]
+# Core dependencies
+scirs2-core.workspace = true
+scirs2-linalg.workspace = true
+scirs2-optimize.workspace = true
+ndarray.workspace = true
+num-traits.workspace = true
+num-complex.workspace = true
+thiserror.workspace = true
+rand.workspace = true

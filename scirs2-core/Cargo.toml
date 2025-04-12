@@ -1,0 +1,154 @@
+[package]
+name = "scirs2-core"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+description = "Core utilities and common functionality for SciRS2"
+license.workspace = true
+repository.workspace = true
+keywords = ["scientific", "mathematics", "science", "scipy", "numerical"]
+categories = ["science", "mathematics", "algorithms"]
+
+[dependencies]
+# Core dependencies
+ndarray.workspace = true
+num-traits.workspace = true
+num-complex.workspace = true
+thiserror.workspace = true
+once_cell.workspace = true
+cached = { workspace = true, optional = true }  # Memoization and caching
+chrono.workspace = true
+rand.workspace = true
+rand_distr.workspace = true
+serde.workspace = true  # Serialization for memory snapshots
+serde_json.workspace = true  # JSON serialization for memory metrics
+
+# Feature-gated dependencies
+wide = { workspace = true, optional = true }  # SIMD acceleration
+rayon = { workspace = true, optional = true }  # Parallel processing
+
+# BLAS/LAPACK dependencies for linear algebra operations
+ndarray-linalg = { workspace = true, optional = true }  # LAPACK bindings for ndarray
+
+[dev-dependencies]
+approx.workspace = true
+criterion.workspace = true
+tempfile.workspace = true
+
+[features]
+default = []  # No performance features enabled by default for now
+simd = ["wide"]  # SIMD operations
+parallel = ["rayon", "ndarray/rayon"]  # Parallel processing with rayon
+cache = ["cached"]  # Caching and memoization functionality
+validation = []  # Validation utilities
+logging = []  # Structured logging and diagnostics
+gpu = []  # GPU acceleration abstractions
+cuda = ["gpu"]  # CUDA-specific GPU acceleration
+memory_management = []  # Advanced memory management
+memory_metrics = ["memory_management"]  # Enhanced memory metrics tracking
+memory_visualization = ["memory_metrics"]  # Memory usage visualization
+memory_call_stack = ["memory_metrics"]  # Capture call stacks for memory events
+profiling = []  # Performance profiling tools
+random = []  # Random number generation utilities
+types = []  # Type conversion utilities
+ufuncs = []  # Universal Functions (ufuncs) system
+linalg = ["ndarray-linalg"]  # Linear algebra with BLAS/LAPACK bindings
+openblas = ["ndarray-linalg/openblas-static"]  # Use OpenBLAS backend
+intel-mkl = ["ndarray-linalg/intel-mkl"]  # Use Intel MKL backend
+netlib = ["ndarray-linalg/netlib"]  # Use Netlib backend
+all = [
+    "simd", "parallel", "cache", "validation", "logging", 
+    "gpu", "memory_management", "profiling", "random", "types",
+    "linalg", "ufuncs"
+]  # Enable all features except backend-specific ones
+
+[[example]]
+name = "gpu_example"
+path = "examples/gpu_example.rs"
+required-features = ["gpu"]
+
+[[example]]
+name = "gpu_kernel_library"
+path = "examples/gpu_kernel_library.rs"
+required-features = ["gpu"]
+
+[[example]]
+name = "memory_management"
+path = "examples/memory_management.rs"
+required-features = ["memory_management"]
+
+[[example]]
+name = "logging_example"
+path = "examples/logging_example.rs"
+required-features = ["logging"]
+
+[[example]]
+name = "random_example"
+path = "examples/random_example.rs"
+required-features = ["random"]
+
+[[example]]
+name = "profiling_example"
+path = "examples/profiling_example.rs"
+required-features = ["profiling"]
+
+[[example]]
+name = "type_conversion_example"
+path = "examples/type_conversion_example.rs"
+required-features = ["types"]
+
+[[example]]
+name = "integrated_features"
+path = "examples/integrated_features.rs"
+required-features = ["logging", "profiling", "random", "memory_management", "types"]
+
+[[example]]
+name = "memory_metrics_example"
+path = "examples/memory_metrics_example.rs"
+required-features = ["memory_management"]
+
+[[example]]
+name = "memory_metrics_bufferpool"
+path = "examples/memory_metrics_bufferpool.rs"
+required-features = ["memory_management"]
+
+[[example]]
+name = "memory_metrics_chunking"
+path = "examples/memory_metrics_chunking.rs"
+required-features = ["memory_management"]
+
+[[example]]
+name = "memory_metrics_gpu"
+path = "examples/memory_metrics_gpu.rs"
+required-features = ["memory_management", "memory_metrics", "gpu"]
+
+[[example]]
+name = "memory_metrics_snapshots"
+path = "examples/memory_metrics_snapshots.rs"
+required-features = ["memory_management", "memory_metrics"]
+
+[[example]]
+name = "ndarray_ufuncs_example"
+path = "examples/ndarray_ufuncs_example.rs"
+required-features = ["ufuncs"]
+
+[[example]]
+name = "advanced_indexing_example"
+path = "examples/advanced_indexing_example.rs"
+
+[[example]]
+name = "advanced_ndarray_example"
+path = "examples/advanced_ndarray_example.rs"
+required-features = ["ufuncs"]
+
+[[example]]
+name = "ndarray_advanced_operations"
+path = "examples/ndarray_advanced_operations.rs"
+
+[[example]]
+name = "ndarray_statistical_operations"
+path = "examples/ndarray_statistical_operations.rs"
+
+[[example]]
+name = "ndarray_correlation_binning"
+path = "examples/ndarray_correlation_binning.rs"

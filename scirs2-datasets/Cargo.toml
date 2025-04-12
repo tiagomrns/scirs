@@ -1,0 +1,34 @@
+[package]
+name = "scirs2-datasets"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+license.workspace = true
+description = "Datasets module for SciRS2"
+repository.workspace = true
+keywords = ["datasets", "machine-learning", "data", "scientific", "scipy"]
+categories = ["science", "data-structures", "algorithms"]
+
+[dependencies]
+# Core dependencies
+ndarray = { workspace = true, features = ["serde"] }
+scirs2-core = { workspace = true, features = ["cache"] }
+rand.workspace = true
+rand_distr.workspace = true
+thiserror.workspace = true
+
+# Data handling
+serde = { workspace = true, features = ["derive"] }
+serde_json.workspace = true
+csv.workspace = true
+
+# Datasets specific dependencies
+reqwest = { workspace = true, optional = true }
+dirs.workspace = true
+flate2.workspace = true
+zip.workspace = true
+blake3.workspace = true
+
+[features]
+default = []
+download = ["reqwest"]

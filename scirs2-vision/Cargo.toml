@@ -1,0 +1,42 @@
+[package]
+name = "scirs2-vision"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+license.workspace = true
+description = "Computer vision module for SciRS2"
+repository.workspace = true
+keywords = ["vision", "image-processing", "scientific", "ai", "machine-learning"]
+categories = ["science", "mathematics", "algorithms", "ai"]
+
+[dependencies]
+# Core dependencies
+scirs2-core.workspace = true
+scirs2-ndimage.workspace = true
+ndarray.workspace = true
+num-traits.workspace = true
+num-complex.workspace = true
+thiserror.workspace = true
+rand.workspace = true
+
+# Vision specific dependencies
+image = { workspace = true, features = ["jpeg", "png", "gif"] }
+
+[features]
+default = []
+
+[[example]]
+name = "feature_detection"
+path = "examples/feature_detection.rs"
+
+[[example]]
+name = "color_transformations"
+path = "examples/color_transformations.rs"
+
+[[example]]
+name = "image_segmentation"
+path = "examples/image_segmentation.rs"
+
+[[example]]
+name = "morphological_operations"
+path = "examples/morphological_operations.rs"

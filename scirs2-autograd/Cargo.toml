@@ -1,0 +1,53 @@
+[package]
+name = "scirs2-autograd"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+license.workspace = true
+description = "Automatic differentiation module for SciRS2"
+repository.workspace = true
+keywords = ["automatic-differentiation", "machine-learning", "scientific", "ai", "deep-learning"]
+categories = ["science", "mathematics", "algorithms", "ai"]
+
+[dependencies]
+ndarray = { workspace = true, features = ["serde"] }
+num-traits.workspace = true
+rayon.workspace = true
+rand.workspace = true
+rand_core.workspace = true
+rand_distr.workspace = true
+approx.workspace = true
+thiserror.workspace = true
+num-complex.workspace = true
+serde = { workspace = true }
+serde_json.workspace = true
+once_cell.workspace = true
+smallvec.workspace = true
+uuid = { workspace = true, features = ["v4"] }
+rustc-hash.workspace = true
+libc.workspace = true
+matrixmultiply.workspace = true
+num.workspace = true
+special.workspace = true
+scirs2-core = { version = "0.1.0-alpha.1", path = "../scirs2-core" }
+# Remove dependency on scirs2-linalg to avoid circular dependency
+
+# BLAS dependencies - feature-gated
+blas-src = { workspace = true, optional = true }
+intel-mkl-src = { workspace = true, optional = true }
+cblas-sys = { workspace = true, optional = true }
+
+[features]
+default = []
+blas = []
+intel-mkl = ["intel-mkl-src", "cblas-sys"]
+accelerate = ["blas-src/accelerate", "cblas-sys"]
+openblas = ["blas-src/openblas", "cblas-sys"]
+mkl = ["intel-mkl-src", "cblas-sys"]
+
+[[example]]
+name = "basic_autograd"
+path = "examples/basic_autograd.rs"
+
+[lib]
+doctest = false

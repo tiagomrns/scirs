@@ -1,32 +1,30 @@
 [package]
 name = "scirs2-ndimage"
-version.workspace = true
-edition.workspace = true
-authors.workspace = true
-license.workspace = true
+version = "0.1.0-alpha.1"
+edition = "2021"
+authors = ["SciRS2 Team"]
+license = "Apache-2.0"
 description = "N-dimensional image processing module for SciRS2"
-repository.workspace = true
+repository = "https://github.com/cool-japan/scirs"
 keywords = ["image", "processing", "scientific", "scipy", "numerical"]
 categories = ["science", "mathematics", "algorithms"]
 
 [dependencies]
 # Core dependencies
-scirs2-core = { workspace = true, features = ["simd", "validation", "parallel", "cache"] }
-scirs2-interpolate.workspace = true
-ndarray.workspace = true
-num-traits.workspace = true
-thiserror.workspace = true
-ndarray-rand.workspace = true
-approx.workspace = true
-cached.workspace = true
-# Use scirs2-core's modules instead of direct dependencies
-# rayon.workspace = true
-# wide.workspace = true  # Direct SIMD acceleration
+scirs2-core = { path = "../scirs2-core", version = "0.1.0-alpha.1", features = ["validation", "parallel"] }
+scirs2-interpolate = { path = "../scirs2-interpolate", version = "0.1.0-alpha.1" }
+ndarray = { version = "0.16.1", features = ["serde", "rayon"] }
+num-traits = "0.2.19"
+thiserror = "2.0.12"
+ndarray-rand = "0.14.0"
+approx = "0.5.1"
+cached = "0.48.1"
 
 [dev-dependencies]
-criterion.workspace = true
+criterion = "0.5.1"
 
-[[bench]]
-name = "rank_filter_bench"
-path = "../benches/ndimage/rank_filter_bench.rs"
-harness = false
+# Temporarily commented out for publishing
+# [[bench]]
+# name = "rank_filter_bench"
+# path = "../benches/ndimage/rank_filter_bench.rs"
+# harness = false

@@ -1,24 +1,25 @@
 [package]
 name = "scirs2-transform"
-version.workspace = true
-edition.workspace = true
-authors.workspace = true
-license.workspace = true
+version = "0.1.0-alpha.1"
+edition = "2021"
+authors = ["SciRS2 Team"]
+license = "Apache-2.0"
 description = "Data transformation module for SciRS2"
-repository.workspace = true
+repository = "https://github.com/cool-japan/scirs"
 keywords = ["transform", "feature-engineering", "scientific", "ai", "machine-learning"]
-categories = ["science", "mathematics", "algorithms", "ai"]
+categories = ["science", "mathematics", "algorithms"]
 
 [dependencies]
 # Core dependencies
-scirs2-core.workspace = true
-scirs2-linalg.workspace = true
-scirs2-stats.workspace = true
-ndarray.workspace = true
-num-traits.workspace = true
-num-complex.workspace = true
-thiserror.workspace = true
-approx.workspace = true
+scirs2-core = { path = "../scirs2-core", version = "0.1.0-alpha.1", features = ["validation"] }
+# Temporarily commented out for publishing
+# scirs2-linalg = { path = "../scirs2-linalg", version = "0.1.0-alpha.1" }
+# scirs2-stats = { path = "../scirs2-stats", version = "0.1.0-alpha.1" }
+ndarray = { version = "0.16.1", features = ["serde", "rayon"] }
+num-traits = "0.2.19"
+num-complex = "0.4.6"
+thiserror = "2.0.12"
+approx = "0.5.1"
 
 # Future dependency for PandRS with appropriate abstractions
 # pandrs_wrapper = { path = "../wrappers/pandrs_wrapper", optional = true }

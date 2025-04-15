@@ -15,11 +15,11 @@ pub enum MetricsError {
 
     /// Statistics error
     #[error("Statistics error: {0}")]
-    StatsError(#[from] scirs2_stats::error::StatsError),
+    StatsError(String),
 
     /// Linear algebra error
     #[error("Linear algebra error: {0}")]
-    LinalgError(#[from] scirs2_linalg::error::LinalgError),
+    LinalgError(String),
 
     /// Core error
     #[error("Core error: {0}")]

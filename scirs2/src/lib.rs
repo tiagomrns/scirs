@@ -18,22 +18,84 @@
 //! * Spatial algorithms - [`spatial`](spatial)
 //! * Clustering algorithms - [`cluster`](cluster)
 //! * N-dimensional image processing - [`ndimage`](ndimage)
+//! * Neural network building blocks - [`neural`](neural)
+//! * Automatic differentiation - [`autograd`](autograd)
 //! * Physical and mathematical constants - [`constants`](constants)
 //! * Input/output utilities - [`io`](io)
-//! * And more...
+//! * Text processing - [`text`](text)
+//! * Computer vision - [`vision`](vision)
+//! * Time series analysis - [`series`](series)
+//! * Graph processing - [`graph`](graph)
+//! * Data transformation - [`transform`](transform)
+//! * ML evaluation metrics - [`metrics`](metrics)
+//! * ML optimization algorithms - [`optim`](optim)
+//! * Dataset utilities - [`datasets`](datasets)
 //!
 //! ## Examples
 //!
 //! ```rust,no_run
-//! // Example will be provided as modules are implemented
+//! use scirs2::prelude::*;
+//! 
+//! fn main() -> Result<(), Box<dyn std::error::Error>> {
+//!     // Example using linear algebra module (when enabled)
+//!     #[cfg(feature = "linalg")]
+//!     {
+//!         use ndarray::array;
+//!         
+//!         // Create a matrix
+//!         let a = array![[1.0, 2.0], [3.0, 4.0]];
+//!         
+//!         // Calculate determinant
+//!         if let Ok(det_val) = scirs2::linalg::det(&a.view()) {
+//!             println!("Determinant: {}", det_val);
+//!         }
+//!         
+//!         // Calculate matrix inverse
+//!         if let Ok(inv_a) = scirs2::linalg::inv(&a.view()) {
+//!             println!("Inverse matrix: {:?}", inv_a);
+//!         }
+//!     }
+//!     
+//!     // Example using stats module (when enabled)
+//!     #[cfg(feature = "stats")]
+//!     {
+//!         use ndarray::array;
+//!         
+//!         // Create a data array
+//!         let data = array![1.0, 2.0, 3.0, 4.0, 5.0];
+//!         
+//!         // Calculate mean
+//!         if let Ok(mean_val) = scirs2::stats::mean(&data.view()) {
+//!             println!("Mean: {}", mean_val);
+//!         }
+//!         
+//!         // Calculate standard deviation
+//!         if let Ok(std_val) = scirs2::stats::std(&data.view(), 0) {
+//!             println!("Standard deviation: {}", std_val);
+//!         }
+//!     }
+//!     
+//!     Ok(())
+//! }
 //! ```
 
 // Re-export from scirs2-core
-pub use scirs2_core::{constants, error, utils};
+pub use scirs2_core::{constants, error, utils, validation};
+#[cfg(feature = "cache")]
+pub use scirs2_core::cache;
+#[cfg(feature = "logging")]
+pub use scirs2_core::logging;
+#[cfg(feature = "profiling")]
+pub use scirs2_core::profiling;
+#[cfg(feature = "memory_management")]
+pub use scirs2_core::memory;
 
 // Optional modules (enabled via features)
 #[cfg(feature = "linalg")]
 pub use scirs2_linalg as linalg;
+
+#[cfg(feature = "stats")]
+pub use scirs2_stats as stats;
 
 #[cfg(feature = "integrate")]
 pub use scirs2_integrate as integrate;
@@ -47,9 +109,6 @@ pub use scirs2_optimize as optimize;
 #[cfg(feature = "fft")]
 pub use scirs2_fft as fft;
 
-#[cfg(feature = "stats")]
-pub use scirs2_stats as stats;
-
 #[cfg(feature = "special")]
 pub use scirs2_special as special;
 
@@ -62,7 +121,6 @@ pub use scirs2_sparse as sparse;
 #[cfg(feature = "spatial")]
 pub use scirs2_spatial as spatial;
 
-// Optional advanced modules
 #[cfg(feature = "cluster")]
 pub use scirs2_cluster as cluster;
 
@@ -75,7 +133,6 @@ pub use scirs2_io as io;
 #[cfg(feature = "datasets")]
 pub use scirs2_datasets as datasets;
 
-// Optional AI/ML modules
 #[cfg(feature = "neural")]
 pub use scirs2_neural as neural;
 
@@ -99,6 +156,44 @@ pub use scirs2_vision as vision;
 
 #[cfg(feature = "series")]
 pub use scirs2_series as series;
+
+#[cfg(feature = "autograd")]
+pub use scirs2_autograd as autograd;
+
+/// Version information
+pub mod version {
+    /// Current SciRS2 version
+    pub const VERSION: &str = env!("CARGO_PKG_VERSION");
+}
+
+/// Re-export of common utilities and types
+pub mod prelude {
+    pub use scirs2_core::validation;
+    // Use the Error type directly from thiserror
+    pub use thiserror::Error;
+    
+    // Core numeric utilities
+    pub use ndarray::{Array, Array1, Array2, ArrayD};
+    
+    // Re-export common type conversions
+    pub use num_traits::{Float, Zero, One};
+    
+    // Various modules with feature gates
+    #[cfg(feature = "linalg")]
+    pub use crate::linalg;
+    
+    #[cfg(feature = "stats")]
+    pub use crate::stats;
+    
+    #[cfg(feature = "special")]
+    pub use crate::special;
+    
+    #[cfg(feature = "optimize")]
+    pub use crate::optimize;
+    
+    #[cfg(feature = "neural")]
+    pub use crate::neural;
+}
 
 // Public API
 /// SciRS2 version information

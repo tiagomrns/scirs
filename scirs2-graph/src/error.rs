@@ -19,7 +19,7 @@ pub enum GraphError {
 
     /// Linear algebra error
     #[error("Linear algebra error: {0}")]
-    LinAlgError(#[from] scirs2_linalg::error::LinalgError),
+    LinAlgError(String),
 
     /// Sparse matrix error
     #[error("Sparse matrix error: {0}")]

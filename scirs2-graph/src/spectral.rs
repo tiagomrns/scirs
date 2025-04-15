@@ -15,7 +15,7 @@ use crate::error::{GraphError, Result};
 fn mock_eigsh(
     matrix: &Array2<f64>,
     k: usize,
-) -> std::result::Result<(Vec<f64>, Array2<f64>), scirs2_linalg::error::LinalgError> {
+) -> std::result::Result<(Vec<f64>, Array2<f64>), String> {
     // Just return the k smallest eigenvalues (approximated as the diagonal)
     // and identity matrix as eigenvectors for testing purposes
     let n = matrix.shape()[0];
@@ -290,7 +290,7 @@ where
 
     // Compute the eigenvalues of the Laplacian
     // We only need the smallest 2 eigenvalues
-    let (eigenvalues, _) = mock_eigsh(&laplacian, 2).map_err(GraphError::LinAlgError)?;
+    let (eigenvalues, _) = mock_eigsh(&laplacian, 2).map_err(|e| GraphError::LinAlgError(e))?;
 
     // The second eigenvalue is the algebraic connectivity
     Ok(eigenvalues[1])
@@ -338,7 +338,7 @@ where
 
     // Compute the eigenvectors corresponding to the smallest n_clusters eigenvalues
     let (_eigenvalues, _eigenvectors) =
-        mock_eigsh(&laplacian_matrix, n_clusters).map_err(GraphError::LinAlgError)?;
+        mock_eigsh(&laplacian_matrix, n_clusters).map_err(|e| GraphError::LinAlgError(e))?;
 
     // For testing, we'll just make up some random cluster assignments
     let mut labels = Vec::with_capacity(graph.node_count());

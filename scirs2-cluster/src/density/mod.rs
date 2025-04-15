@@ -9,7 +9,50 @@
 
 use ndarray::{Array1, Array2, ArrayView2};
 use num_traits::{Float, FromPrimitive};
-use scirs2_spatial::distance;
+// Directly implement distance functions
+mod distance {
+    use num_traits::Float;
+
+    /// Calculates the Euclidean distance (L2 norm) between two vectors
+    pub fn euclidean<F: Float>(a: &[F], b: &[F]) -> F {
+        let mut sum = F::zero();
+        for (a_i, b_i) in a.iter().zip(b.iter()) {
+            let diff = *a_i - *b_i;
+            sum = sum + diff * diff;
+        }
+        sum.sqrt()
+    }
+
+    /// Calculates the Manhattan distance (L1 norm) between two vectors
+    pub fn manhattan<F: Float>(a: &[F], b: &[F]) -> F {
+        let mut sum = F::zero();
+        for (a_i, b_i) in a.iter().zip(b.iter()) {
+            sum = sum + (*a_i - *b_i).abs();
+        }
+        sum
+    }
+
+    /// Calculates the Chebyshev distance (L∞ norm) between two vectors
+    pub fn chebyshev<F: Float>(a: &[F], b: &[F]) -> F {
+        let mut max = F::zero();
+        for (a_i, b_i) in a.iter().zip(b.iter()) {
+            let abs_diff = (*a_i - *b_i).abs();
+            if abs_diff > max {
+                max = abs_diff;
+            }
+        }
+        max
+    }
+
+    /// Calculates the Minkowski distance between two vectors with power p
+    pub fn minkowski<F: Float>(a: &[F], b: &[F], p: F) -> F {
+        let mut sum = F::zero();
+        for (a_i, b_i) in a.iter().zip(b.iter()) {
+            sum = sum + ((*a_i - *b_i).abs()).powf(p);
+        }
+        sum.powf(F::one() / p)
+    }
+}
 use std::collections::HashSet;
 use std::fmt::Debug;
 

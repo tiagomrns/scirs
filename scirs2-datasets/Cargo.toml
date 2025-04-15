@@ -1,33 +1,33 @@
 [package]
 name = "scirs2-datasets"
-version.workspace = true
-edition.workspace = true
-authors.workspace = true
-license.workspace = true
+version = "0.1.0-alpha.1"
+edition = "2021"
+authors = ["SciRS2 Team"]
+license = "Apache-2.0"
 description = "Datasets module for SciRS2"
-repository.workspace = true
+repository = "https://github.com/cool-japan/scirs"
 keywords = ["datasets", "machine-learning", "data", "scientific", "scipy"]
 categories = ["science", "data-structures", "algorithms"]
 
 [dependencies]
 # Core dependencies
-ndarray = { workspace = true, features = ["serde"] }
-scirs2-core = { workspace = true, features = ["cache"] }
-rand.workspace = true
-rand_distr.workspace = true
-thiserror.workspace = true
+ndarray = { version = "0.16.1", features = ["serde"] }
+scirs2-core = { path = "../scirs2-core", version = "0.1.0-alpha.1", features = ["cache"] }
+rand = "0.9.0"
+rand_distr = "0.5.1"
+thiserror = "1.0.69"
 
 # Data handling
-serde = { workspace = true, features = ["derive"] }
-serde_json.workspace = true
-csv.workspace = true
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+csv = "1.2"
 
 # Datasets specific dependencies
-reqwest = { workspace = true, optional = true }
-dirs.workspace = true
-flate2.workspace = true
-zip.workspace = true
-blake3.workspace = true
+reqwest = { version = "0.11", features = ["blocking", "json"], optional = true }
+dirs = "5.0"
+flate2 = "1.0"
+zip = "0.6"
+blake3 = "1.5"
 
 [features]
 default = []

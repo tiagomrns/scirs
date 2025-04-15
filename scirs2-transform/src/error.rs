@@ -13,14 +13,6 @@ pub enum TransformError {
     #[error("Transformation error: {0}")]
     TransformationError(String),
 
-    /// Linear algebra error
-    #[error("Linear algebra error: {0}")]
-    LinalgError(#[from] scirs2_linalg::error::LinalgError),
-
-    /// Statistics error
-    #[error("Statistics error: {0}")]
-    StatsError(#[from] scirs2_stats::error::StatsError),
-
     /// Core error
     #[error("Core error: {0}")]
     CoreError(#[from] scirs2_core::error::CoreError),

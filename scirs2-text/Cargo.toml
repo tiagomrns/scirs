@@ -1,37 +1,36 @@
 [package]
 name = "scirs2-text"
-version.workspace = true
-edition.workspace = true
-authors.workspace = true
-license.workspace = true
+version = "0.1.0-alpha.1"
+edition = "2021"
+authors = ["SciRS2 Team"]
+license = "Apache-2.0"
 description = "Text processing module for SciRS2"
-repository.workspace = true
+repository = "https://github.com/cool-japan/scirs"
 keywords = ["text", "nlp", "scientific", "ai", "machine-learning"]
-categories = ["science", "mathematics", "algorithms", "ai"]
+categories = ["science", "mathematics", "algorithms"]
 
 [dependencies]
 # Core dependencies
-scirs2-core = { workspace = true, features = ["parallel"] }
-scirs2-linalg.workspace = true
-ndarray.workspace = true
-num-traits.workspace = true
-num-complex.workspace = true
-thiserror.workspace = true
-# Using scirs2-core's parallel feature instead of direct rayon
-# rayon.workspace = true
-rand.workspace = true
+scirs2-core = { path = "../scirs2-core", version = "0.1.0-alpha.1", features = ["parallel"] }
+# Temporarily removed for publishing
+# scirs2-linalg = { path = "../scirs2-linalg", version = "0.1.0-alpha.1" }
+ndarray = { version = "0.16.1", features = ["serde", "rayon"] }
+num-traits = "0.2.19"
+num-complex = "0.4.6"
+thiserror = "2.0.12"
+rand = "0.9.0"
 
 # Text processing specific dependencies
-regex.workspace = true
-unicode-normalization.workspace = true
-unicode-segmentation.workspace = true
-lazy_static.workspace = true
-tempfile.workspace = true
+regex = "1.10"
+unicode-normalization = "0.1"
+unicode-segmentation = "1.10"
+lazy_static = "1.4"
+tempfile = "3.9"
 
 # Feature-gated dependencies
-tokenizers = { workspace = true, optional = true }
-serde = { workspace = true, features = ["derive"], optional = true }
-serde_json = { workspace = true, optional = true }
+tokenizers = { version = "0.15", optional = true }
+serde = { version = "1.0", features = ["derive"], optional = true }
+serde_json = { version = "1.0", optional = true }
 
 [features]
 default = []

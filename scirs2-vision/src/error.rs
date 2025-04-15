@@ -17,9 +17,9 @@ pub enum VisionError {
     #[error("Operation failed: {0}")]
     OperationError(String),
 
-    /// Underlying ndimage error
+    /// Underlying ndimage error (temporarily simplified for publishing)
     #[error("ndimage error: {0}")]
-    NdimageError(#[from] scirs2_ndimage::NdimageError),
+    NdimageError(String),
 
     /// I/O error
     #[error("I/O error: {0}")]

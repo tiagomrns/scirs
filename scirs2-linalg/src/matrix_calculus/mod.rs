@@ -5,12 +5,58 @@
 //! * Computing Jacobians of vector-valued functions
 //! * Computing Hessians of scalar-valued functions
 //! * Computing directional derivatives
+//! * Jacobian-vector and vector-Jacobian products
+//! * Matrix-valued function derivatives
+//! * Taylor series approximations
+//! * Critical point finding
+//! * Additional advanced matrix calculus operations
+//!
+//! ## Basic Operations
+//!
+//! The core functionality includes computing derivatives of functions:
+//! * `gradient` - Compute the gradient of a scalar-valued function
+//! * `jacobian` - Compute the Jacobian of a vector-valued function
+//! * `hessian` - Compute the Hessian of a scalar-valued function
+//! * `directional_derivative` - Compute the derivative along a specified direction
+//!
+//! ## Enhanced Operations
+//!
+//! Advanced operations are available in the `enhanced` submodule:
+//! * Jacobian-vector and vector-Jacobian products for efficient computation
+//! * Matrix-valued function gradient and Jacobian computation
+//! * Taylor series approximation of functions
+//! * Numerical critical point finding for optimization
+//! * Hessian-vector products for large-scale optimization
+//!
+//! ## Examples
+//!
+//! ```ignore
+//! use ndarray::{array, ArrayView1};
+//! use scirs2_linalg::matrix_calculus::gradient;
+//! use scirs2_linalg::error::LinalgResult;
+//!
+//! // Define a simple quadratic function
+//! let f = |x: &ArrayView1<f64>| -> LinalgResult<f64> {
+//!     Ok(x[0] * x[0] + 2.0_f64 * x[1] * x[1])
+//! };
+//!
+//! // Compute the gradient at point [1.0, 1.0]
+//! let x = array![1.0_f64, 1.0_f64];
+//! let grad = gradient(f, &x.view(), None).unwrap();
+//!
+//! // The gradient should be [2*x[0], 4*x[1]] = [2.0, 4.0]
+//! assert!((grad[0] - 2.0_f64).abs() < 1e-10_f64);
+//! assert!((grad[1] - 4.0_f64).abs() < 1e-10_f64);
+//! ```
 
 use ndarray::{Array1, Array2, ArrayView1};
 use num_traits::{Float, One, Zero};
 use std::fmt::Debug;
 
 use crate::error::{LinalgError, LinalgResult};
+
+// Export the enhanced matrix calculus operations
+pub mod enhanced;
 
 /// Compute the Jacobian matrix of a vector-valued function.
 ///

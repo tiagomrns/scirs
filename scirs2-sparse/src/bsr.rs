@@ -123,48 +123,40 @@ where
 
         // Validate input
         if indptr.len() != block_rows + 1 {
-            return Err(SparseError::DimensionError(format!(
-                "indptr length ({}) does not match block rows + 1 ({})",
-                indptr.len(),
-                block_rows + 1
-            )));
+            return Err(SparseError::DimensionMismatch {
+                expected: block_rows + 1,
+                found: indptr.len(),
+            });
         }
 
         if data.len() != indptr[block_rows] {
-            return Err(SparseError::DimensionError(format!(
-                "data length ({}) does not match indptr[-1] ({})",
-                data.len(),
-                indptr[block_rows]
-            )));
+            return Err(SparseError::DimensionMismatch {
+                expected: indptr[block_rows],
+                found: data.len(),
+            });
         }
 
         if indices.len() != data.len() {
-            return Err(SparseError::DimensionError(format!(
-                "indices length ({}) does not match data length ({})",
-                indices.len(),
-                data.len()
-            )));
+            return Err(SparseError::DimensionMismatch {
+                expected: data.len(),
+                found: indices.len(),
+            });
         }
 
-        for (i, block) in data.iter().enumerate() {
+        for block in data.iter() {
             if block.len() != r {
-                return Err(SparseError::DimensionError(format!(
-                    "block {} has {} rows, expected {}",
-                    i,
-                    block.len(),
-                    r
-                )));
+                return Err(SparseError::DimensionMismatch {
+                    expected: r,
+                    found: block.len(),
+                });
             }
 
-            for (j, row) in block.iter().enumerate() {
+            for row in block.iter() {
                 if row.len() != c {
-                    return Err(SparseError::DimensionError(format!(
-                        "block {}, row {} has length {}, expected {}",
-                        i,
-                        j,
-                        row.len(),
-                        c
-                    )));
+                    return Err(SparseError::DimensionMismatch {
+                        expected: c,
+                        found: row.len(),
+                    });
                 }
             }
         }

@@ -1,7 +1,7 @@
 # SciRS2 Clustering Module
 
 [![crates.io](https://img.shields.io/crates/v/scirs2-cluster.svg)](https://crates.io/crates/scirs2-cluster)
-[![License](https://img.shields.io/crates/l/scirs2-cluster.svg)](../LICENSE)
+[[![License](https://img.shields.io/badge/license-MIT%2FApache--2.0-blue.svg)]](../LICENSE)
 [![Documentation](https://img.shields.io/docsrs/scirs2-cluster)](https://docs.rs/scirs2-cluster)
 
 A comprehensive clustering module for the SciRS2 scientific computing library in Rust. This crate provides implementations of various clustering algorithms with a focus on performance, flexibility, and idiomatic Rust code.
@@ -35,7 +35,7 @@ Add this to your `Cargo.toml`:
 
 ```toml
 [dependencies]
-scirs2-cluster = "0.1.0-alpha.1"
+scirs2-cluster = "0.1.0-alpha.2"
 ndarray = "0.15"
 ```
 
@@ -43,7 +43,7 @@ To enable optimizations through the core module, add feature flags:
 
 ```toml
 [dependencies]
-scirs2-cluster = { version = "0.1.0-alpha.1", features = ["parallel"] }
+scirs2-cluster = { version = "0.1.0-alpha.2", features = ["parallel"] }
 ```
 
 ## Usage
@@ -131,8 +131,12 @@ println!("Number of noise points: {}", noise_count);
 
 ## License
 
-This project is licensed under the Apache License, Version 2.0 - see the [LICENSE](../LICENSE) file for details.
+This project is dual-licensed under:
 
+- [MIT License](../LICENSE-MIT)
+- [Apache License Version 2.0](../LICENSE-APACHE)
+
+You can choose to use either license. See the [LICENSE](../LICENSE) file for details.
 ## Contributing
 
 Contributions are welcome! Please see the project's [CONTRIBUTING.md](../CONTRIBUTING.md) file for guidelines.

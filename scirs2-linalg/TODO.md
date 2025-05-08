@@ -101,32 +101,82 @@ This module provides linear algebra functionality comparable to NumPy/SciPy's li
 - [x] Mixed-precision operations
 - [x] Sparse-dense matrix operations
 
+## NumPy/SciPy Compatibility Improvements
+
+- [ ] Consistent API with NumPy's linalg
+  - [ ] Standardize function naming and parameter ordering
+  - [ ] Ensure equivalent functionality for all NumPy linalg functions
+  - [ ] Document differences from NumPy where they exist for good reasons
+- [ ] Type-generic linear algebra operations
+  - [ ] Unified wrappers for operations on different numeric types
+  - [ ] Consistent error handling across numeric types
+  - [ ] Automatic precision selection based on input requirements
+- [ ] Higher-dimensional array support
+  - [ ] Convert key operations to handle arrays with multiple batch dimensions
+  - [ ] Implement broadcasting behavior consistent with NumPy
+  - [ ] Support for vectorized application of operations to batched arrays
+
 ## Optimization Tasks
 
 - [ ] Comprehensive tests and benchmarks
+  - [ ] Test suite that verifies numerical accuracy against SciPy results
+  - [ ] Performance benchmarks for all key operations
+  - [ ] Correctness validation for edge cases
 - [ ] Performance optimizations for large matrices
   - [ ] Cache-friendly algorithms
   - [x] SIMD optimizations
   - [x] Loop tiling and blocking (implemented in SIMD-accelerated matrix multiplication)
   - [ ] Memory layout optimizations
+  - [ ] Fusion of consecutive operations when possible
 - [ ] Improve error messages and handling
+  - [ ] More detailed error diagnostics for singular matrices
+  - [ ] Suggestions for regularization approaches when decompositions fail
+  - [ ] Improved numerical stability checks
 - [ ] Add more examples and documentation
+  - [ ] Practical tutorials for common scientific and engineering applications
+  - [ ] Conversion guides for SciPy/NumPy users
+  - [ ] Performance optimization guidelines
 - [ ] Support for sparse matrices
+  - [ ] Integration with scirs2-sparse for all relevant operations
+  - [ ] Specialized algorithms for sparse linear algebra
+  - [ ] Support for mixed sparse-dense operations
 - [ ] Parallel computation support
   - [x] Initial Rayon integration
   - [ ] Algorithm-specific parallel implementations
   - [ ] Work-stealing scheduler optimizations
   - [ ] Thread pool configurations
+  - [ ] Standard `workers` parameter across parallelizable functions
 
 ## Feature Enhancements
 
 - [ ] Autodiff for matrix operations
+  - [ ] Forward and reverse mode automatic differentiation
+  - [ ] Matrix calculus operations with gradient tracking
+  - [ ] Integration with optimization frameworks
 - [ ] Complex number support
+  - [ ] Complete implementation for all decompositions
+  - [ ] Specialized algorithms for common complex matrix operations
+  - [ ] Handling of Hermitian matrices and operations
 - [ ] Extended precision operations
+  - [ ] Support for higher precision beyond f64
+  - [ ] Specialized algorithms that maintain precision
+  - [ ] Error bounds calculations
 - [ ] Random matrix generation
+  - [ ] Standard distributions (uniform, normal, etc.)
+  - [ ] Specialized matrices (orthogonal, correlation, etc.)
+  - [ ] Structured random matrices for testing
 - [ ] Matrix calculus utilities
+  - [ ] Derivatives of matrix operations
+  - [ ] Matrix differential operators
+  - [ ] Support for matrix-valued functions
 - [ ] Statistical functions on matrices
+  - [ ] Matrix-variate distributions
+  - [ ] Statistical tests for matrices
+  - [ ] Random sampling from matrix distributions
 - [ ] Eigenvalue solvers for specific matrix types
+  - [ ] Specialized fast algorithms for structured matrices
+  - [ ] Sparse eigensolvers (Arnoldi, Lanczos methods)
+  - [ ] Partial eigenvalue computation for large matrices
 
 ## Integration Tasks
 
@@ -134,18 +184,22 @@ This module provides linear algebra functionality comparable to NumPy/SciPy's li
   - [ ] CUDA support
   - [ ] OpenCL support
   - [ ] Vulkan compute support
+  - [ ] ROCm support for AMD GPUs
 - [ ] Support for distributed linear algebra
   - [ ] MPI integration
   - [ ] Distributed matrix operations
   - [ ] Collective operations
+  - [ ] Scalable algorithms for large clusters
 - [ ] Integration with other scientific computing ecosystems
   - [ ] Python interoperability
   - [ ] Julia interoperability
   - [ ] C/C++ interoperability
+  - [ ] WebAssembly support
 - [ ] Hardware-specific optimizations
   - [ ] AVX/AVX2/AVX-512 optimizations
   - [ ] ARM Neon optimizations
   - [ ] GPU offloading
+  - [ ] TPU/IPU support for AI workloads
 
 ## Documentation and Examples
 
@@ -155,6 +209,7 @@ This module provides linear algebra functionality comparable to NumPy/SciPy's li
 - [ ] Jupyter notebook examples
 - [ ] Interactive examples
 - [ ] Domain-specific guides (engineering, finance, ML, etc.)
+- [ ] Algorithm selection guidelines based on problem characteristics
 
 ## Long-term Goals
 
@@ -164,3 +219,24 @@ This module provides linear algebra functionality comparable to NumPy/SciPy's li
 - [ ] Seamless integration with AI/ML frameworks
 - [ ] Automatic algorithm selection based on problem characteristics
 - [ ] Self-tuning performance based on hardware and problem size
+
+## Advanced Matrix Decompositions
+
+- [ ] Generalized eigenvalue decompositions
+- [ ] Randomized SVD for large matrices
+- [ ] Hierarchical matrix factorizations
+- [ ] Kronecker-factored approximate curvature
+- [ ] CUR decomposition for feature selection
+- [ ] Tensor-Train decomposition for high-dimensional problems
+- [ ] Scalable algorithms for tall-and-skinny or short-and-fat matrices
+
+## Special Matrix Types and Operations
+
+- [ ] Sparse factorizations (sparse Cholesky, sparse LU)
+- [ ] Circulant and Toeplitz solvers using FFT
+- [ ] Preconditioners for iterative methods
+- [ ] Fast transforms (DCT, DST, Hadamard)
+- [ ] Doubly stochastic matrix approximation
+- [ ] Low-rank updates to factorizations
+- [ ] Structured matrix approximations
+- [ ] Matrix differential equations solvers

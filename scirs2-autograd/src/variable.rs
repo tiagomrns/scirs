@@ -222,7 +222,6 @@ impl FullName {
             variable_name,
         }
     }
-
 }
 
 impl Display for FullName {

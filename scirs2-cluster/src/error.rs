@@ -1,5 +1,6 @@
 //! Error types for the clustering module
 
+use scirs2_linalg::error::LinalgError;
 use thiserror::Error;
 
 /// Error type for clustering operations
@@ -20,6 +21,14 @@ pub enum ClusteringError {
     /// Hierarchical clustering specific errors
     #[error("Hierarchical clustering error: {0}")]
     HierarchyError(String),
+
+    /// Invalid state error
+    #[error("Invalid state: {0}")]
+    InvalidState(String),
+
+    /// Linear algebra error
+    #[error("Linear algebra error: {0}")]
+    LinalgError(#[from] LinalgError),
 
     /// Other error
     #[error("Error: {0}")]

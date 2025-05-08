@@ -1,7 +1,7 @@
 # SciRS2 Spatial
 
 [![crates.io](https://img.shields.io/crates/v/scirs2-spatial.svg)](https://crates.io/crates/scirs2-spatial)
-[![License](https://img.shields.io/crates/l/scirs2-spatial.svg)](../LICENSE)
+[[![License](https://img.shields.io/badge/license-MIT%2FApache--2.0-blue.svg)]](../LICENSE)
 [![Documentation](https://img.shields.io/docsrs/scirs2-spatial)](https://docs.rs/scirs2-spatial)
 
 Spatial algorithms and data structures for the SciRS2 scientific computing library. This module provides tools for spatial queries, distance calculations, and geometric algorithms.
@@ -10,8 +10,11 @@ Spatial algorithms and data structures for the SciRS2 scientific computing libra
 
 - **k-d Tree Implementation**: Efficient spatial indexing for nearest neighbor queries
 - **Distance Functions**: Various distance metrics for spatial data
-- **Convex Hull Algorithms**: Algorithms for computing convex hulls
-- **Voronoi Diagrams**: Functions for generating Voronoi diagrams
+- **Convex Hull Algorithms**: Robust algorithms for computing convex hulls in 2D and 3D
+- **Delaunay Triangulation**: Efficient triangulation algorithms with robust handling of degenerate cases
+- **Voronoi Diagrams**: Functions for generating Voronoi diagrams with special case handling
+- **Set-Based Distances**: Hausdorff distance, Wasserstein distance, and other set comparison metrics
+- **Polygon Operations**: Point-in-polygon testing, area calculation, and other polygon algorithms
 - **Utility Functions**: Helper functions for spatial data processing
 
 ## Installation
@@ -20,14 +23,14 @@ Add the following to your `Cargo.toml`:
 
 ```toml
 [dependencies]
-scirs2-spatial = "0.1.0-alpha.1"
+scirs2-spatial = "0.1.0-alpha.2"
 ```
 
 To enable optimizations through the core module, add feature flags:
 
 ```toml
 [dependencies]
-scirs2-spatial = { version = "0.1.0-alpha.1", features = ["parallel"] }
+scirs2-spatial = { version = "0.1.0-alpha.2", features = ["parallel"] }
 ```
 
 ## Usage
@@ -122,14 +125,24 @@ fn convex_hull_example() -> CoreResult<()> {
         [0.2, 0.8]
     ];
     
-    // Compute the convex hull
-    let hull = convex_hull::convex_hull(&points, false)?;
+    // Compute the convex hull (robust against degenerate inputs)
+    let hull = convex_hull::convex_hull(&points.view(), false)?;
     
     println!("Convex hull indices: {:?}", hull);
     println!("Hull points:");
     for &idx in &hull {
         println!("  {:?}", points.row(idx));
     }
+    
+    // Create a ConvexHull object for more advanced operations
+    let hull_obj = convex_hull::ConvexHull::new(&points.view())?;
+    println!("Hull vertices: {:?}", hull_obj.vertices());
+    println!("Hull simplices: {:?}", hull_obj.simplices());
+    
+    // Check if a point is in the hull
+    let test_point = array![0.2, 0.2];
+    let is_in_hull = hull_obj.is_point_in_hull(&test_point)?;
+    println!("Point {:?} is in hull: {}", test_point, is_in_hull);
     
     Ok(())
 }
@@ -145,11 +158,26 @@ fn voronoi_example() -> CoreResult<()> {
         [0.5, 0.5]
     ];
     
-    // Generate Voronoi diagram
-    let diagram = voronoi::voronoi_diagram(&points, None)?;
+    // Generate Voronoi diagram (robust against degenerate inputs)
+    let vor = voronoi::Voronoi::new(&points.view(), false)?;
     
-    println!("Voronoi vertices: {:?}", diagram.vertices);
-    println!("Voronoi regions: {:?}", diagram.regions);
+    println!("Voronoi vertices: {:?}", vor.vertices());
+    println!("Voronoi regions: {:?}", vor.regions());
+    println!("Ridge points: {:?}", vor.ridge_points());
+    println!("Ridge vertices: {:?}", vor.ridge_vertices());
+    
+    // Generate furthest-site Voronoi diagram
+    let furthest_vor = voronoi::Voronoi::new(&points.view(), true)?;
+    println!("Furthest-site Voronoi vertices: {:?}", furthest_vor.vertices());
+    
+    // Special case: triangle input (handled automatically with special processing)
+    let triangle = array![
+        [0.0, 0.0],
+        [1.0, 0.0],
+        [0.5, 0.866]
+    ];
+    let vor_triangle = voronoi::Voronoi::new(&triangle.view(), false)?;
+    println!("Triangle Voronoi vertices: {:?}", vor_triangle.vertices());
     
     Ok(())
 }
@@ -213,15 +241,82 @@ use scirs2_spatial::convex_hull::{
 
 ### Voronoi Diagrams
 
-Functions for Voronoi diagrams:
+Functions for Voronoi diagrams with robust handling for special cases:
 
 ```rust
 use scirs2_spatial::voronoi::{
-    voronoi_diagram,        // Generate Voronoi diagram
-    voronoi_plot,           // Generate points for plotting Voronoi diagram
-    VoronoiDiagram,         // Voronoi diagram structure
-    VoronoiRegion,          // Voronoi region structure
+    voronoi,                // Generate Voronoi diagram function
+    Voronoi,                // Voronoi diagram structure
 };
+
+// Create Voronoi diagram
+let points = array![
+    [0.0, 0.0],
+    [1.0, 0.0],
+    [0.0, 1.0],
+    [1.0, 1.0]
+];
+
+// Using constructor (handles special cases and degenerate inputs automatically)
+let vor = Voronoi::new(&points.view(), false).unwrap();
+
+// Or using function
+let vor2 = voronoi(&points.view(), false).unwrap();
+
+// Access Voronoi diagram properties
+let vertices = vor.vertices();        // Coordinates of Voronoi vertices
+let regions = vor.regions();          // Vertices forming each Voronoi region
+let ridge_points = vor.ridge_points(); // Point pairs separated by each ridge
+let ridge_vertices = vor.ridge_vertices(); // Vertices forming each ridge
+
+// Voronoi also handles degenerate cases like triangles or nearly collinear points
+let triangle = array![
+    [0.0, 0.0],
+    [1.0, 0.0],
+    [0.5, 0.866]
+];
+let vor_triangle = Voronoi::new(&triangle.view(), false).unwrap();
+```
+
+### Set-Based Distances
+
+Metrics for comparing sets of points:
+
+```rust
+use scirs2_spatial::set_distance::{
+    hausdorff_distance,     // Hausdorff distance between point sets
+    directed_hausdorff,     // Directed Hausdorff distance with indices
+    wasserstein_distance,   // Earth Mover's Distance (Wasserstein metric)
+    gromov_hausdorff_distance, // Distance between metric spaces
+};
+
+// Example: Calculate Hausdorff distance between two point sets
+let set1 = array![[0.0, 0.0], [1.0, 0.0], [0.0, 1.0]];
+let set2 = array![[0.0, 0.5], [1.0, 0.5], [0.5, 1.0]];
+let distance = hausdorff_distance(&set1.view(), &set2.view(), None);
+```
+
+### Polygon Operations
+
+Functions for working with 2D polygons:
+
+```rust
+use scirs2_spatial::polygon::{
+    point_in_polygon,       // Check if a point is inside a polygon
+    point_on_boundary,      // Check if a point is on polygon boundary
+    polygon_area,           // Calculate polygon area
+    polygon_centroid,       // Find the centroid of a polygon
+    polygon_contains_polygon, // Check if one polygon contains another
+    is_simple_polygon,      // Check if polygon is non-self-intersecting
+    convex_hull_graham,     // Compute convex hull using Graham scan
+};
+
+// Example: Check if a point is inside a polygon
+let polygon = array![[0.0, 0.0], [1.0, 0.0], [1.0, 1.0], [0.0, 1.0]];
+let inside = point_in_polygon(&[0.5, 0.5], &polygon.view());
+
+// Example: Calculate polygon area
+let area = polygon_area(&polygon.view());
 ```
 
 ### Utilities
@@ -234,11 +329,72 @@ use scirs2_spatial::utils::{
     delaunay_triangulation, // Generate Delaunay triangulation
     triangulate,            // Triangulate a polygon
     orient,                 // Orient points (clockwise/counterclockwise)
-    point_in_polygon,       // Check if point is in polygon
 };
 ```
 
+### KD-Tree Optimizations
+
+The module includes optimizations for KD-tree operations to efficiently handle large point sets:
+
+```rust
+use scirs2_spatial::kdtree::KDTree;
+use scirs2_spatial::kdtree_optimized::KDTreeOptimized;
+use ndarray::array;
+
+// Create a KD-tree
+let points = array![[0.0, 0.0], [1.0, 0.0], [0.0, 1.0], [1.0, 1.0]];
+let kdtree = KDTree::new(&points).unwrap();
+
+// Use optimized Hausdorff distance computation
+let other_points = array![[0.1, 0.1], [0.9, 0.9]];
+let hausdorff_dist = kdtree.hausdorff_distance(&other_points.view(), None).unwrap();
+
+// Batch nearest neighbor queries
+let query_points = array![[0.5, 0.5], [0.2, 0.8], [0.8, 0.2]];
+let (indices, distances) = kdtree.batch_nearest_neighbor(&query_points.view()).unwrap();
+```
+
 ## Advanced Features
+
+### Robust Handling of Degenerate Geometries
+
+The module includes special handling for degenerate geometric cases:
+
+```rust
+use scirs2_spatial::delaunay::Delaunay;
+use scirs2_spatial::voronoi::Voronoi;
+use ndarray::array;
+
+// Special case: Nearly collinear points in 2D
+let almost_collinear = array![
+    [0.0, 0.0],
+    [1.0, 0.0],
+    [2.0, 0.0],
+    [0.0, 1e-10]  // Nearly collinear
+];
+
+// Will handle this automatically with numerical perturbation
+let delaunay = Delaunay::new(&almost_collinear.view()).unwrap();
+let voronoi = Voronoi::new(&almost_collinear.view(), false).unwrap();
+
+// Special case: Triangle in 2D (handled with custom algorithm)
+let triangle = array![
+    [0.0, 0.0],
+    [1.0, 0.0],
+    [0.5, 0.866]
+];
+let vor_triangle = Voronoi::new(&triangle.view(), false).unwrap();
+
+// Special case: Points with tiny numerical differences
+let slightly_different = array![
+    [0.0, 0.0],
+    [1e-14, 1e-14],
+    [1.0, 0.0],
+    [0.0, 1.0]
+];
+// Will handle this automatically with numerical stability techniques
+let delaunay = Delaunay::new(&slightly_different.view()).unwrap();
+```
 
 ### Optimized Ball Tree for High-Dimensional Data
 
@@ -296,4 +452,9 @@ See the [CONTRIBUTING.md](../CONTRIBUTING.md) file for contribution guidelines.
 
 ## License
 
-This project is licensed under the Apache License, Version 2.0 - see the [LICENSE](../LICENSE) file for details.
+This project is dual-licensed under:
+
+- [MIT License](../LICENSE-MIT)
+- [Apache License Version 2.0](../LICENSE-APACHE)
+
+You can choose to use either license. See the [LICENSE](../LICENSE) file for details.

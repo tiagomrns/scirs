@@ -7,6 +7,7 @@
 //!
 //! * Fast Fourier Transform (FFT) and inverse FFT for 1D, 2D, and N-dimensional arrays
 //! * Real-to-complex and complex-to-real FFT optimized for real-valued data
+//! * Hermitian-to-real and real-to-Hermitian FFT for complex signals with real spectra
 //! * Discrete cosine transform (DCT) types I-IV and their inverses
 //! * Discrete sine transform (DST) types I-IV and their inverses
 //! * Fractional Fourier Transform (FrFT) for rotations in the time-frequency plane
@@ -55,12 +56,14 @@ pub use error::{FFTError, FFTResult};
 pub mod dct;
 pub mod dst;
 pub mod fft;
+pub mod hfft;
 pub mod rfft;
 
 // Re-export basic functions
 pub use dct::{dct, dct2, dctn, idct, idct2, idctn, DCTType};
 pub use dst::{dst, dst2, dstn, idst, idst2, idstn, DSTType};
 pub use fft::{fft, fft2, fftn, ifft, ifft2, ifftn};
+pub use hfft::{hfft, hfft2, hfftn, ihfft, ihfft2, ihfftn};
 
 // Re-export parallel implementations when available
 #[cfg(feature = "parallel")]
@@ -69,7 +72,7 @@ pub use rfft::{irfft, irfft2, irfftn, rfft, rfft2, rfftn};
 
 // Helper modules
 pub mod helper;
-pub use helper::{fftfreq, fftshift, ifftshift, rfftfreq};
+pub use helper::{fftfreq, fftshift, ifftshift, next_fast_len, prev_fast_len, rfftfreq};
 
 // Advanced FFT modules
 pub mod frft;

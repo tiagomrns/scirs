@@ -43,17 +43,78 @@ This module provides special functions similar to SciPy's special module.
   - [x] Spherical harmonics
   - [x] Mathieu functions
   - [x] Zeta functions
+  - [ ] Kelvin functions
+  - [ ] Parabolic cylinder functions
+  - [ ] Spheroidal wave functions
+  - [ ] Wright Omega function
+  - [ ] Lambert W function
+  - [ ] Struve functions
+  - [ ] Coulomb functions
+  - [ ] Fresnel integrals
+  - [ ] Wright Bessel functions
+  - [ ] Logarithmic integral
 - [ ] Enhance numerical precision
   - [ ] Improved algorithms for edge cases
   - [ ] Better handling of overflow and underflow
   - [ ] Extended precision options
+  - [ ] Specialized routines for extreme parameter values
+  - [ ] Use precomputed data for high-precision constants
 - [ ] Optimize performance
   - [ ] Use more efficient algorithms for function evaluation
   - [ ] Precomputed coefficients and lookup tables where appropriate
+  - [ ] Parallelization of array operations
+  - [ ] SIMD optimizations for vector operations
+  - [ ] Function-specific optimizations similar to SciPy's specialized implementations
+- [ ] Add comprehensive testing infrastructure
+  - [ ] Test data for validation against known values
+  - [ ] Property-based testing for mathematical identities
+  - [ ] Edge case testing with extreme parameter values
+  - [ ] Regression tests for fixed numerical issues
+  - [ ] Roundtrip testing where applicable
+
+## Documentation and Examples
+
 - [ ] Add more examples and documentation
   - [ ] Tutorial for common special function applications
   - [ ] Visual examples showing function behavior
+  - [ ] Mathematical background for each function category
+  - [ ] Numerical behavior documentation for edge cases
+  - [ ] Performance characteristics and limitations
 - [ ] Fix ignored doctests
+
+## Array Support and Interoperability
+
+- [ ] Enhance array operations
+  - [ ] Support for multidimensional arrays
+  - [ ] Vectorized operations for all functions
+  - [ ] Lazy evaluation for large arrays
+  - [ ] GPU acceleration for array operations
+  - [ ] Support for array-like objects
+- [ ] Implement alternative backends similar to SciPy's array API
+  - [ ] Generalized interface for custom array types
+  - [ ] Support for generic array operations
+  - [ ] Feature flags for different array implementations
+
+## Combinatorial Functions
+
+- [ ] Add combinatorial functions
+  - [ ] Binomial coefficients
+  - [ ] Factorial and double factorial
+  - [ ] Permutations and combinations
+  - [ ] Stirling numbers
+  - [ ] Bell numbers
+  - [ ] Bernoulli numbers
+  - [ ] Euler numbers
+
+## Statistical Functions
+
+- [ ] Add statistical convenience functions
+  - [ ] Logistic function and its derivatives
+  - [ ] Softmax and log-softmax functions
+  - [ ] Log1p, expm1 (already in std but with array support)
+  - [ ] LogSumExp for numerical stability
+  - [ ] Normalized sinc function
+  - [ ] Statistical distributions related functions
 
 ## Long-term Goals
 
@@ -63,3 +124,6 @@ This module provides special functions similar to SciPy's special module.
 - [ ] Comprehensive coverage of all SciPy special functions
 - [ ] Advanced visualization tools for special functions
 - [ ] Domain-specific packages for physics, engineering, and statistics
+- [ ] Support for complex arguments in all functions
+- [ ] Consistent API design for all function families
+- [ ] Feature parity with SciPy's special module

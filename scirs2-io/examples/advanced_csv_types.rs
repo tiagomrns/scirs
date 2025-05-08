@@ -1,6 +1,4 @@
-use scirs2_io::csv::{
-    read_csv_typed, write_csv_typed, ColumnType, CsvWriterConfig,
-};
+use scirs2_io::csv::{read_csv_typed, write_csv_typed, ColumnType, CsvWriterConfig};
 use std::error::Error;
 
 fn main() -> Result<(), Box<dyn Error>> {

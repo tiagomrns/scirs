@@ -58,22 +58,113 @@ This module provides multidimensional image processing functionality similar to 
   - [ ] Statistical measures (sum, mean, variance)
   - [ ] Label and find objects
 
-## Future Tasks
+## Filter Operations Enhancement
 
-- [ ] Fourier domain processing
-  - [ ] Fourier filtering
-  - [ ] Correlation and convolution in frequency domain
+- [ ] Comprehensive filter implementation
+  - [ ] Uniform filter implementation
+  - [ ] Minimum/maximum filters
+  - [ ] Prewitt filter
+  - [ ] Generic filter framework
+  - [ ] Customizable filter footprints
+- [ ] Boundary handling
+  - [ ] Support all boundary modes (reflect, nearest, wrap, mirror, constant)
+  - [ ] Optimized implementation for each boundary condition
+- [ ] Vectorized filtering
+  - [ ] Batch operations on multiple images
+  - [ ] Parallelized implementation for multi-core systems
+- [ ] Order-statistics-based filters
+  - [ ] Rank filter with variable ranking
+  - [ ] Percentile filter with optimizations
+  - [ ] Median filter (optimized)
 
-- [ ] Performance optimization
-  - [ ] SIMD acceleration for filters
-  - [ ] Parallel processing for large images
-  - [ ] Memory-efficient implementations
+## Fourier Domain Processing
+
+- [ ] Fourier-based operations
+  - [ ] Fourier Gaussian filter
+  - [ ] Fourier uniform filter
+  - [ ] Fourier ellipsoid filter
+  - [ ] Fourier shift operations
+- [ ] Optimization for large arrays
+  - [ ] Memory-efficient FFT-based filtering
+  - [ ] Streaming operations for large data
+- [ ] Integration with scirs2-fft
+  - [ ] Leverage FFT implementations
+  - [ ] Consistent API across modules
+
+## Interpolation and Transformations
+
+- [ ] Comprehensive interpolation
+  - [ ] Map coordinates with various order splines
+  - [ ] Affine transformation with matrix input
+  - [ ] Zoom functionality with customizable spline order
+  - [ ] Shift operation with sub-pixel precision
+  - [ ] Rotation with customizable center point
+- [ ] Performance optimizations
+  - [ ] Pre-computed coefficient caching
+  - [ ] SIMD-optimized interpolation kernels
+  - [ ] Parallel implementation for large images
+- [ ] Specialized transforms
+  - [ ] Non-rigid transformations
+  - [ ] Perspective transformations
+  - [ ] Multi-resolution approaches
+
+## Morphological Operations
+
+- [ ] Binary morphology
+  - [ ] Binary erosion/dilation with arbitrary structuring elements
+  - [ ] Binary opening/closing
+  - [ ] Binary propagation
+  - [ ] Binary hit-or-miss transform
+- [ ] Grayscale morphology
+  - [ ] Grayscale erosion/dilation
+  - [ ] Grayscale opening/closing
+  - [ ] Top-hat and black-hat transforms
+  - [ ] Morphological gradient, laplace
+- [ ] Distance transforms
+  - [ ] Euclidean distance transform
+  - [ ] City-block distance
+  - [ ] Chessboard distance
+  - [ ] Fast algorithms for specific metrics
+
+## Measurement and Analysis
+
+- [ ] Region analysis
+  - [ ] Connected component labeling
+  - [ ] Object properties (area, perimeter)
+  - [ ] Region-based statistics
+  - [ ] Watershed segmentation enhancements
+- [ ] Statistical measurements
+  - [ ] Mean, variance, standard deviation by label
+  - [ ] Histogram by label
+  - [ ] Center of mass computation
+  - [ ] Moment calculations
+- [ ] Feature measurement
+  - [ ] Find objects with size filtering
+  - [ ] Extrema detection (maxima, minima)
+  - [ ] Object orientation and principal axes
+
+## Backend Support and Integration
+
+- [ ] Alternative backend support
+  - [ ] Delegation system for GPU acceleration
+  - [ ] CuPy/CUDA backend integration
+  - [ ] Unified API across backends
+- [ ] Memory management
+  - [ ] Views vs. copies control
+  - [ ] In-place operation options
+  - [ ] Memory footprint optimization
+- [ ] Thread pool integration
+  - [ ] Shared worker pool with other modules
+  - [ ] Thread count control and optimization
+
+## Documentation and Examples
 
 - [ ] Documentation and examples
   - [ ] Document all public APIs with examples
   - [ ] Create tutorial notebooks for common tasks
   - [ ] Add visual examples for different methods
   - [ ] Create comprehensive user guide
+  - [ ] Gallery of example applications
 
 ## Testing and Quality Assurance
 
@@ -85,6 +176,7 @@ This module provides multidimensional image processing functionality similar to 
 - [ ] Validation against SciPy's ndimage
   - [ ] Numerical comparison tests
   - [ ] Performance comparison benchmarks
+  - [ ] API compatibility verification
 
 ## Next Steps (Immediate)
 

@@ -1,11 +1,76 @@
 //! Extended precision matrix operations
 //!
 //! This module provides functions for performing matrix operations with extended precision.
+//!
+//! ## Overview
+//!
+//! This module provides utilities for higher precision matrix computations:
+//!
+//! * Basic operations with extended precision (matrix-vector, matrix-matrix multiply)
+//! * Linear system solvers with extended precision
+//! * Eigenvalue computations with extended precision
+//! * Matrix factorizations (LU, QR, Cholesky, SVD) with extended precision
+//!
+//! Extended precision operations are useful for computations involving ill-conditioned matrices,
+//! or when working with matrices that have entries with widely different magnitudes.
+//!
+//! ## Examples
+//!
+//! Basic operations:
+//!
+//! ```ignore
+//! use ndarray::{array, ArrayView2, ArrayView1};
+//! use scirs2_linalg::extended_precision::{extended_matmul, extended_matvec};
+//!
+//! // Create a matrix and vectors in f32 precision
+//! let a = array![[1.0_f32, 2.0_f32], [3.0_f32, 4.0_f32]];
+//! let x = array![0.1_f32, 0.2_f32];
+//!
+//! // Compute matrix-vector product with higher precision
+//! let y = extended_matvec::<_, f64>(&a.view(), &x.view()).unwrap();
+//!
+//! // Compute matrix-matrix product with higher precision
+//! let b = array![[5.0_f32, 6.0_f32], [7.0_f32, 8.0_f32]];
+//! let c = extended_matmul::<_, f64>(&a.view(), &b.view()).unwrap();
+//! ```
+//!
+//! Matrix factorizations with extended precision:
+//!
+//! ```ignore
+//! use ndarray::{array, ArrayView2};
+//! use scirs2_linalg::extended_precision::factorizations::{extended_lu, extended_qr, extended_cholesky};
+//!
+//! let a = array![
+//!     [2.0_f32, 1.0_f32, 1.0_f32],
+//!     [4.0_f32, 3.0_f32, 3.0_f32],
+//!     [8.0_f32, 7.0_f32, 9.0_f32]
+//! ];
+//!
+//! // LU decomposition with extended precision
+//! let (p, l, u) = extended_lu::<_, f64>(&a.view()).unwrap();
+//!
+//! // QR decomposition with extended precision
+//! let (q, r) = extended_qr::<_, f64>(&a.view()).unwrap();
+//!
+//! // Cholesky decomposition with extended precision
+//! let spd_matrix = array![
+//!     [4.0_f32, 1.0_f32, 1.0_f32],
+//!     [1.0_f32, 5.0_f32, 2.0_f32],
+//!     [1.0_f32, 2.0_f32, 6.0_f32]
+//! ];
+//! let l = extended_cholesky::<_, f64>(&spd_matrix.view()).unwrap();
+//! ```
 
 use ndarray::{Array1, Array2, ArrayView1, ArrayView2};
 use num_traits::{Float, One, Zero};
 
 use crate::error::LinalgResult;
+
+// Extended precision eigenvalue computations - temporarily disabled
+// pub mod eigen;
+
+// Extended precision matrix factorizations - temporarily disabled
+// pub mod factorizations;
 
 /// Trait for promoting numerical types to higher precision
 pub trait PromotableTo<T> {

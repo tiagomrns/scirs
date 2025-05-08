@@ -1,9 +1,9 @@
 [package]
 name = "scirs2-autograd"
-version = "0.1.0-alpha.1"
+version = "0.1.0-alpha.2"
 edition = "2021"
 authors = ["SciRS2 Team"]
-license = "Apache-2.0"
+license = "MIT OR Apache-2.0"
 description = "Automatic differentiation module for SciRS2"
 repository = "https://github.com/cool-japan/scirs"
 keywords = ["autograd", "machine-learning", "scientific", "ai", "ml"]
@@ -29,7 +29,7 @@ libc = "0.2"
 matrixmultiply = "0.3.2"
 num = "0.4.0"
 special = "0.10.2"
-scirs2-core = { version = "0.1.0-alpha.1", path = "../scirs2-core" }
+scirs2-core = { version = "0.1.0-alpha.2", path = "../scirs2-core" }
 # Remove dependency on scirs2-linalg to avoid circular dependency
 
 # BLAS dependencies - feature-gated

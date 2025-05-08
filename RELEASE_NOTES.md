@@ -50,6 +50,11 @@ The following modules are included as previews and may undergo significant chang
 - **scirs2-optim**: ML-specific optimization algorithms
 - **scirs2-series**: Time series analysis
 - **scirs2-text**: Text processing utilities
+- **scirs2-io**: Input/output utilities
+- **scirs2-datasets**: Dataset utilities
+- **scirs2-graph**: Graph processing algorithms
+- **scirs2-vision**: Computer vision operations
+- **scirs2-autograd**: Automatic differentiation engine
 
 ## Key Capabilities
 
@@ -87,23 +92,23 @@ Add the following to your `Cargo.toml`:
 
 ```toml
 [dependencies]
-scirs2 = "0.1.0-alpha.1"  # Import the whole library
+scirs2 = "0.1.0-alpha.2"  # Import the whole library
 ```
 
 Or select only the modules you need:
 
 ```toml
 [dependencies]
-scirs2-linalg = "0.1.0-alpha.1"     # Linear algebra only
-scirs2-stats = "0.1.0-alpha.1"      # Statistics only
-scirs2-optimize = "0.1.0-alpha.1"   # Optimization only
+scirs2-linalg = "0.1.0-alpha.2"     # Linear algebra only
+scirs2-stats = "0.1.0-alpha.2"      # Statistics only
+scirs2-optimize = "0.1.0-alpha.2"   # Optimization only
 ```
 
 You can also enable specific features:
 
 ```toml
 [dependencies]
-scirs2-core = { version = "0.1.0-alpha.1", features = ["simd", "parallel"] }
+scirs2-core = { version = "0.1.0-alpha.2", features = ["simd", "parallel"] }
 ```
 
 ## Usage Examples
@@ -133,12 +138,12 @@ use scirs2_stats::distributions::normal::Normal;
 let normal = Normal::new(0.0, 1.0).unwrap();
 
 // Calculate PDF, CDF, and quantiles
-let pdf = normal.pdf(1.0).unwrap();
-let cdf = normal.cdf(1.0).unwrap();
-let ppf = normal.ppf(0.975).unwrap();
+let pdf = normal.pdf(1.0)?;
+let cdf = normal.cdf(1.0)?;
+let ppf = normal.ppf(0.975)?;
 
 // Generate random samples
-let samples = normal.random_sample(1000, None).unwrap();
+let samples = normal.random_sample(1000, None)?;
 ```
 
 ### Optimization
@@ -176,7 +181,7 @@ SciRS2 is inspired by SciPy and other scientific computing libraries. We thank t
 
 ## License
 
-SciRS2 is licensed under the Apache License, Version 2.0. See the LICENSE file for details.
+SciRS2 is dual-licensed under MIT License and Apache License, Version 2.0. You can choose to use either license. See the LICENSE file for details.
 
 ## Contributing
 

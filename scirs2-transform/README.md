@@ -1,7 +1,7 @@
 # SciRS2 Transform
 
 [![crates.io](https://img.shields.io/crates/v/scirs2-transform.svg)](https://crates.io/crates/scirs2-transform)
-[![License](https://img.shields.io/crates/l/scirs2-transform.svg)](../LICENSE)
+[[![License](https://img.shields.io/badge/license-MIT%2FApache--2.0-blue.svg)]](../LICENSE)
 [![Documentation](https://img.shields.io/docsrs/scirs2-transform)](https://docs.rs/scirs2-transform)
 
 This crate provides data transformation utilities for the SciRS2 library, designed to mimic the functionality of scikit-learn's preprocessing and decomposition modules.
@@ -84,14 +84,14 @@ Add this to your `Cargo.toml`:
 
 ```toml
 [dependencies]
-scirs2-transform = "0.1.0-alpha.1"
+scirs2-transform = "0.1.0-alpha.2"
 ```
 
 To enable optimizations through the core module, add feature flags:
 
 ```toml
 [dependencies]
-scirs2-transform = { version = "0.1.0-alpha.1", features = ["parallel"] }
+scirs2-transform = { version = "0.1.0-alpha.2", features = ["parallel"] }
 ```
 
 ## Examples
@@ -100,4 +100,9 @@ See the documentation for detailed examples of each transformation.
 
 ## License
 
-This project is licensed under the Apache License, Version 2.0 - see the [LICENSE](../LICENSE) file for details.
+This project is dual-licensed under:
+
+- [MIT License](../LICENSE-MIT)
+- [Apache License Version 2.0](../LICENSE-APACHE)
+
+You can choose to use either license. See the [LICENSE](../LICENSE) file for details.

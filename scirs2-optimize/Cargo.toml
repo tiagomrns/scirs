@@ -1,22 +1,23 @@
 [package]
 name = "scirs2-optimize"
-version = "0.1.0-alpha.1"
+version = "0.1.0-alpha.2"
 edition = "2021"
 authors = ["SciRS2 Team"]
 description = "Optimization module for SciRS2"
-license = "Apache-2.0"
+license = "MIT OR Apache-2.0"
 repository = "https://github.com/cool-japan/scirs"
 keywords = ["optimization", "minimize", "scientific", "scipy", "numerical"]
 categories = ["science", "mathematics", "algorithms"]
 
 [dependencies]
 # Core dependencies
-scirs2-core = { path = "../scirs2-core", version = "0.1.0-alpha.1" }
-scirs2-linalg = { path = "../scirs2-linalg", version = "0.1.0-alpha.1" }
+scirs2-core = { path = "../scirs2-core", version = "0.1.0-alpha.2" }
+scirs2-linalg = { path = "../scirs2-linalg", version = "0.1.0-alpha.2" }
 ndarray = { version = "0.16.1", features = ["serde", "rayon"] }
 num-traits = "0.2.19"
 num-complex = "0.4.6"
 thiserror = "2.0.12"
+openblas-src = "0.10.11"
 
 # Optimization specific dependencies
 argmin = "0.10.0"

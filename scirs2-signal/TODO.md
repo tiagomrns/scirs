@@ -10,13 +10,29 @@ This module provides signal processing functionality similar to SciPy's signal m
   - [x] FIR and IIR filters
   - [x] Filter design (Butterworth, Chebyshev, Bessel, etc.)
   - [x] Zero-phase filtering (filtfilt)
+  - [x] Savitzky-Golay filters
 - [x] Convolution and correlation
   - [x] 1D convolution with different modes
   - [x] Cross-correlation
   - [x] Deconvolution
 - [x] Spectral analysis
   - [x] Periodogram
+  - [x] Welch's method implementation
   - [x] Type aliases for complex return types
+  - [x] Short-time Fourier transform (STFT) implementation
+  - [x] Spectrogram computation
+  - [x] Signal detrending (constant, linear, polynomial)
+- [x] Wavelet transforms
+  - [x] Continuous wavelet transform (CWT)
+  - [x] Wavelet function implementations (Ricker, Morlet, Paul)
+- [x] Linear system modeling and analysis
+  - [x] Basic LTI system framework
+  - [x] Transfer function representation
+  - [x] Zero-pole-gain representation
+  - [x] State-space representation
+  - [x] Frequency response calculation
+  - [x] Bode plot generation
+  - [x] Stability analysis
 - [x] Peak finding and analysis
   - [x] Peak detection with various criteria
   - [x] Peak properties (prominence, width)
@@ -36,31 +52,229 @@ This module provides signal processing functionality similar to SciPy's signal m
 
 ## Future Tasks
 
-- [ ] Implement additional functionality
-  - [ ] Implement remaining STFT and spectrogram functions
-  - [ ] Complete Welch's method implementation
-  - [ ] Add wavelet transforms
-  - [ ] Implement filter bank design
-- [ ] Add more filter types and design methods
-  - [ ] Parks-McClellan optimal FIR filters
-  - [ ] Savitzky-Golay filters
-  - [ ] Adaptive filters
-- [ ] Enhance spectral analysis
-  - [ ] Multitaper methods
-  - [ ] Higher-order spectral analysis
-  - [ ] Time-frequency representations
-- [ ] Add more examples and documentation
-  - [ ] Tutorial for common signal processing tasks
-  - [ ] Visual examples for different methods
-- [ ] Performance optimization
-  - [ ] Parallelization of computationally intensive operations
-  - [ ] Memory optimization for large signals
+- [ ] Implement advanced filter types and design methods
+  - [ ] Parks-McClellan optimal FIR filters (Remez exchange algorithm)
+  - [ ] Minimum phase filter conversion
+  - [ ] Filter design in the Z-domain
+  - [ ] Matched filter implementation
+  - [ ] Adaptive filters (LMS, RLS, Kalman)
+  - [ ] Comb filters and notch filters
+  - [ ] Filter bank design (QMF, wavelet filter banks)
+  - [ ] IIR filter stabilization methods
+  - [ ] Bessel filter improvements
+  - [ ] Allpass filter design
+  - [ ] Digital filter analysis (group delay, passband ripple)
+
+- [ ] Enhance linear system modeling and analysis
+  - [x] Linear Time-Invariant (LTI) systems
+    - [x] State-space models
+    - [x] Transfer function models
+    - [x] Zeros-poles-gain models
+  - [x] Frequency response computation  
+  - [x] Stability analysis
+  - [x] Basic continuous-to-discrete system conversion
+  - [x] Complete impulse response analysis
+  - [x] Complete step response simulation
+  - [x] Linear system simulation with arbitrary inputs
+  - [ ] System interconnection (series, parallel, feedback)
+  - [ ] Controllability and observability analysis
+  - [ ] Laplace transform support
+  - [ ] Conversion between discrete and continuous systems
+  - [ ] System reduction and minimal realizations
+  - [ ] System identification from data
+
+- [ ] Implement advanced spectral analysis techniques
+  - [ ] Multitaper spectral estimation
+  - [ ] Lomb-Scargle periodogram for unevenly sampled data
+  - [ ] Higher-order spectral analysis (bispectrum, trispectrum)
+  - [x] Chirp Z-transform (CZT) for non-uniform frequency sampling
+  - [ ] Parametric spectral estimation (AR, ARMA models)
+  - [ ] Time-frequency analysis (Wigner-Ville distribution)
+  - [ ] Reassigned spectrograms for improved resolution
+  - [ ] Synchrosqueezed wavelet transforms
+  - [x] Complex Morlet wavelet analysis
+  - [ ] Constant-Q transforms
+  - [ ] Spectral peak detection and tracking
+
+- [x] Extend wavelet functionality
+  - [x] Implement discrete wavelet transform (DWT)
+  - [x] Stationary wavelet transform (SWT)
+  - [x] Wavelet packet decomposition
+  - [x] Additional wavelet families
+    - [x] Daubechies wavelets
+    - [x] Symlets
+    - [x] Coiflets
+    - [x] Biorthogonal wavelets
+    - [x] Meyer wavelets
+    - [x] Discrete Meyer (DMeyer) wavelets
+  - [x] Multi-level wavelet decomposition
+  - [x] Complex wavelets
+    - [x] Complex Morlet wavelet
+    - [x] Complex Gaussian wavelet
+    - [x] Shannon wavelet
+    - [x] Frequency B-Spline (FBSP) wavelet
+  - [x] Wavelet-based denoising
+    - [x] Hard thresholding
+    - [x] Soft thresholding
+    - [x] Garrote thresholding
+    - [x] Universal, SURE, and minimax threshold selection
+  - [x] Signal reconstruction from wavelet coefficients
+  - [x] Fast wavelet transform algorithms
+  - [x] 2D wavelet transforms for image processing
+    - [x] 2D discrete wavelet transform (DWT2D)
+    - [x] 2D stationary wavelet transform (SWT2D)
+    - [x] 2D wavelet packet transform (WPT2D)
+      - [x] Full decomposition (all nodes)
+      - [x] Selective/adaptive decomposition (based on criteria)
+      - [x] Path-based node identification
+      - [x] Energy-based node analysis
+    - [x] Multi-level 2D decomposition and reconstruction
+    - [x] Image-specific wavelet operations (denoising, edge detection, compression)
+    - [x] Parallel processing for improved performance
+    - [x] Coefficient visualization utilities
+      - [x] Coefficient arrangement for visualization
+      - [x] Energy distribution analysis
+      - [x] Coefficient normalization methods
+      - [x] Coefficient heatmap generation
+      - [x] Customizable colormaps
+
+- [ ] Enhance Short-Time Fourier Transform (STFT)
+  - [ ] Class-based interface (similar to SciPy's `ShortTimeFFT`)
+  - [ ] Dual window calculation for energy conservation
+  - [ ] Various padding options (zero, symmetric, reflect)
+  - [ ] Phase-shift controls
+  - [ ] Customizable normalization schemes
+  - [ ] Streaming STFT computation
+  - [ ] Memory-efficient implementation for large signals
+
+- [x] Signal enhancement and restoration
+  - [x] Implement denoising algorithms
+    - [x] Wavelet-based denoising with multiple methods
+    - [ ] Wiener filtering
+    - [ ] Non-local means denoising
+    - [ ] Total variation denoising
+    - [ ] Median filtering
+    - [ ] Kalman filtering
+  - [ ] Signal deconvolution techniques
+  - [ ] Blind source separation methods
+  - [ ] Missing data interpolation
+  - [ ] Sparse signal recovery
+  - [ ] Robust filtering for outliers
+  - [ ] Multi-band signal separation
+  - [ ] Harmonic/percussive separation for audio
+
+- [ ] Window function enhancements
+  - [ ] Organize into dedicated namespace
+  - [ ] Extended window catalog
+    - [ ] Kaiser-Bessel derived
+    - [ ] DPSS (Slepian) windows
+    - [ ] Lanczos
+    - [ ] Flat-top windows
+  - [ ] Window design tools
+  - [ ] Window analysis utilities
+
+- [ ] Special function generators and analysis
+  - [ ] Maximum length sequences (MLS)
+  - [ ] Pink and brown noise generation
+  - [ ] Pseudo-random binary sequences (PRBS)
+  - [ ] Synchronized swept-sine generation
+  - [ ] Exponential sine sweeps
+  - [ ] Golomb rulers and perfect sequences
+  - [x] Hilbert transform implementation
+  - [x] Analytic signal generation
+  - [x] Instantaneous frequency estimation
+  - [x] Instantaneous phase computation
+  - [x] Signal envelope detection
+  - [ ] B-splines and spline filtering
+  - [ ] Polynomial interpolation
+
+- [ ] Advanced resampling and interpolation
+  - [ ] Sinc interpolation
+  - [ ] Lagrange interpolation
+  - [ ] Hermite interpolation
+  - [ ] Time-varying resampling
+  - [ ] Non-uniform sampling conversion
+  - [ ] Fractional delay filtering
+  - [ ] Phase vocoder for time-stretching
+
+- [ ] Performance and usability optimization
+  - [x] Parallelization for multi-core processing
+    - [x] Parallel 2D wavelet transforms using Rayon
+    - [ ] Parallel spectral analysis algorithms
+    - [ ] Parallel filtering operations
+  - [ ] SIMD vectorization for compute-intensive operations
+  - [ ] GPU acceleration for large datasets
+  - [x] Memory optimization for large signals
+    - [x] Efficient array handling in wavelet transforms
+    - [ ] Streaming processing for large images
+  - [ ] Streaming processing for real-time applications
+  - [x] Zero-copy algorithms for memory efficiency
+    - [x] View-based operations in wavelet transforms
+    - [ ] Zero-copy filtering implementations
+  - [ ] Improved documentation and examples
+    - [ ] Comprehensive API reference
+    - [x] Tutorials for wavelet image processing
+    - [ ] Visual examples for different methods
+    - [ ] Performance benchmarking tools
+
+- [ ] Test infrastructure
+  - [ ] Energy conservation tests
+  - [ ] Complex-valued window tests
+  - [ ] Border handling tests
+  - [ ] Multi-dimensional signal tests
 
 ## Long-term Goals
 
-- [ ] Performance comparable to or better than SciPy's signal
-- [ ] Integration with FFT and interpolation modules
-- [ ] Real-time signal processing capabilities
-- [ ] Support for specialized domains (audio, biomedical, communications)
-- [ ] GPU-accelerated implementations for large datasets
-- [ ] Advanced visualization tools
+- [ ] Complete parity with SciPy's signal module
+  - [ ] Implement all functions with identical APIs
+  - [ ] Ensure numerical accuracy matches or exceeds SciPy
+  - [ ] Comprehensive test suite with direct comparisons to SciPy results
+  - [ ] Performance comparable to or better than SciPy's signal module
+
+- [ ] Advanced integration with other scirs modules
+  - [x] Integration with scirs2-fft for frequency-domain processing
+    - [x] CZT implementation utilizing scirs2-fft
+    - [x] Hilbert transform implementation using scirs2-fft
+    - [ ] Further optimization of STFT and spectrogram calculations
+    - [ ] Shared window functions and frequency analysis tools
+  - [ ] Integration with scirs2-interpolate for advanced resampling
+  - [ ] Integration with scirs2-linalg for matrix-based signal processing
+  - [ ] Integration with scirs2-optimize for parameter estimation
+  - [ ] Integration with scirs2-sparse for sparse signal representation
+
+- [ ] Domain-specific signal processing extensions
+  - [ ] Audio processing capabilities
+    - [ ] Filter banks and auditory models
+    - [ ] Feature extraction (MFCCs, spectral features)
+    - [ ] Source separation algorithms
+    - [ ] Audio effects processing
+  - [ ] Biomedical signal processing
+    - [ ] ECG/EEG/EMG analysis
+    - [ ] Event detection in physiological signals
+    - [ ] Artifact removal techniques
+    - [ ] Time-series classification
+  - [ ] Communications signal processing
+    - [ ] Modulation/demodulation
+    - [ ] Channel equalization
+    - [ ] Error detection and correction
+    - [ ] Synchronization algorithms
+  - [ ] Radar and sonar processing
+    - [ ] Pulse compression
+    - [ ] Doppler processing
+    - [ ] Range-Doppler analysis
+    - [ ] Target detection algorithms
+
+- [ ] High-performance implementation options
+  - [ ] Real-time signal processing capabilities with bounded latency
+  - [ ] GPU-accelerated implementations for large datasets
+  - [ ] Multi-threaded processing with work-stealing schedulers
+  - [ ] SIMD-optimized algorithms for critical operations
+  - [ ] Zero-copy streaming signal processing pipelines
+  - [ ] Configurable precision (single/double/extended)
+
+- [ ] Comprehensive ecosystem
+  - [ ] Advanced visualization tools tailored for signal analysis
+  - [ ] Standardized benchmark suite for performance evaluation
+  - [ ] Interactive examples and notebooks
+  - [ ] Comprehensive API documentation
+  - [ ] Integration with machine learning models for signal analysis

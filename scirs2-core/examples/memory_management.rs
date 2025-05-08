@@ -1,7 +1,5 @@
-use ndarray::{Array2, Dim};
-use scirs2_core::memory::{
-    global_buffer_pool, BufferPool, ChunkProcessor2D, GlobalBufferPool, ZeroCopyView,
-};
+use ndarray::Array2;
+use scirs2_core::memory::{global_buffer_pool, BufferPool, ChunkProcessor2D, ZeroCopyView};
 
 fn main() {
     println!("Memory Management Example");
@@ -31,7 +29,7 @@ fn chunk_processing_example() {
     // Create a large 2D array
     let rows = 10;
     let cols = 10;
-    let mut array = Array2::from_shape_fn((rows, cols), |(i, j)| i * cols + j);
+    let array = Array2::from_shape_fn((rows, cols), |(i, j)| i * cols + j);
 
     println!("Original array:");
     print_array(&array);
@@ -124,7 +122,7 @@ fn global_buffer_pool_example() {
 }
 
 #[cfg(feature = "memory_management")]
-fn print_array<T: std::fmt::Display>(
+fn print_array<T: std::fmt::Display + Copy>(
     array: &ndarray::ArrayBase<impl ndarray::Data<Elem = T>, ndarray::Dim<[usize; 2]>>,
 ) {
     for row in array.rows() {

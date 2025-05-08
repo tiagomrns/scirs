@@ -1,7 +1,7 @@
 # SciRS2 Interpolation Module
 
 [![crates.io](https://img.shields.io/crates/v/scirs2-interpolate.svg)](https://crates.io/crates/scirs2-interpolate)
-[![License](https://img.shields.io/crates/l/scirs2-interpolate.svg)](../LICENSE)
+[[![License](https://img.shields.io/badge/license-MIT%2FApache--2.0-blue.svg)]](../LICENSE)
 [![Documentation](https://img.shields.io/docsrs/scirs2-interpolate)](https://docs.rs/scirs2-interpolate)
 
 The `scirs2-interpolate` crate provides a comprehensive set of interpolation methods for scientific computing in Rust. It aims to provide functionality similar to SciPy's interpolation module while leveraging Rust's performance and safety features.
@@ -17,6 +17,7 @@ The `scirs2-interpolate` crate provides a comprehensive set of interpolation met
   - Natural cubic splines
   - Not-a-knot cubic splines
   - Akima splines (robust to outliers)
+  - PCHIP (Piecewise Cubic Hermite Interpolating Polynomial) for shape preservation
 
 - **Multi-dimensional Interpolation**
   - Regular grid interpolation
@@ -251,6 +252,29 @@ for x_val in [1.5, 2.5, 3.5, 4.5].iter() {
 }
 ```
 
+### PCHIP Interpolation (Shape Preserving)
+
+```rust
+use ndarray::array;
+use scirs2_interpolate::{pchip_interpolate, PchipInterpolator};
+
+// Monotonically increasing data
+let x = array![0.0, 1.0, 2.0, 3.0, 4.0];
+let y = array![0.0, 1.0, 4.0, 9.0, 16.0];
+
+// Using the convenience function
+let x_new = array![0.5, 1.5, 2.5, 3.5];
+let y_interp = pchip_interpolate(&x.view(), &y.view(), &x_new.view()).unwrap();
+println!("PCHIP interpolated values: {:?}", y_interp);
+
+// Or create an interpolator object for more control
+let interp = PchipInterpolator::new(&x.view(), &y.view()).unwrap();
+let y_at_point = interp.evaluate(2.5).unwrap();
+println!("PCHIP value at x=2.5: {}", y_at_point);
+
+// PCHIP preserves monotonicity of the data, unlike cubic spline which may introduce oscillations
+```
+
 ### Tensor Product Interpolation
 
 ```rust
@@ -348,4 +372,9 @@ The module is designed with performance in mind:
 
 ## License
 
-This crate is part of the SciRS2 project and is licensed under the Apache License 2.0.
+This project is dual-licensed under:
+
+- [MIT License](../LICENSE-MIT)
+- [Apache License Version 2.0](../LICENSE-APACHE)
+
+You can choose to use either license. See the [LICENSE](../LICENSE) file for details.

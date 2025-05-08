@@ -1,9 +1,9 @@
 [package]
 name = "scirs2-series"
-version = "0.1.0-alpha.1"
+version = "0.1.0-alpha.2"
 edition = "2021"
 authors = ["SciRS2 Team"]
-license = "Apache-2.0"
+license = "MIT OR Apache-2.0"
 description = "Time series analysis module for SciRS2"
 repository = "https://github.com/cool-japan/scirs"
 keywords = ["time-series", "forecasting", "scientific", "ai", "machine-learning"]
@@ -11,10 +11,10 @@ categories = ["science", "mathematics", "algorithms"]
 
 [dependencies]
 # Core dependencies
-scirs2-core = { path = "../scirs2-core", version = "0.1.0-alpha.1" }
+scirs2-core = { path = "../scirs2-core", version = "0.1.0-alpha.2" }
 # Temporarily commented out for publishing
-# scirs2-stats = { path = "../scirs2-stats", version = "0.1.0-alpha.1" }
-# scirs2-fft = { path = "../scirs2-fft", version = "0.1.0-alpha.1" }
+# scirs2-stats = { path = "../scirs2-stats", version = "0.1.0-alpha.2" }
+# scirs2-fft = { path = "../scirs2-fft", version = "0.1.0-alpha.2" }
 ndarray = { version = "0.16.1", features = ["serde", "rayon"] }
 num-traits = "0.2.19"
 num-complex = "0.4.6"

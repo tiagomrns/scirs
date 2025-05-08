@@ -1,13 +1,14 @@
-//! Radial Basis Function interpolation
+//! Radial basis function (RBF) interpolation
 //!
-//! This module provides RBF interpolation for multi-dimensional data.
+//! This module provides RBF interpolation methods for scattered data.
 
 use crate::error::{InterpolateError, InterpolateResult};
 use ndarray::{Array1, Array2, ArrayView1, ArrayView2};
 use num_traits::{Float, FromPrimitive};
 use std::fmt::Debug;
+use std::ops::AddAssign;
 
-/// Radial basis function kernel types
+/// RBF kernel functions
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum RBFKernel {
     /// Gaussian kernel: exp(-r²/ε²)
@@ -16,7 +17,7 @@ pub enum RBFKernel {
     Multiquadric,
     /// Inverse multiquadric kernel: 1/sqrt(r² + ε²)
     InverseMultiquadric,
-    /// Thin plate spline kernel: r² log(r)
+    /// Thin plate spline kernel: r²log(r)
     ThinPlateSpline,
     /// Linear kernel: r
     Linear,
@@ -26,34 +27,31 @@ pub enum RBFKernel {
     Quintic,
 }
 
-/// RBF interpolation object
+/// RBF interpolator for scattered data
 ///
-/// This interpolator uses radial basis functions to interpolate values
-/// at arbitrary points based on scattered data.
+/// This interpolator uses radial basis functions to interpolate values at
+/// arbitrary points based on a set of known sample points.
 #[derive(Debug, Clone)]
-#[allow(dead_code)]
-pub struct RBFInterpolator<F: Float + FromPrimitive> {
-    /// Points coordinates
+pub struct RBFInterpolator<F: Float> {
+    /// Coordinates of sample points
     points: Array2<F>,
-    /// Values at points
-    values: Array1<F>,
-    /// RBF kernel to use
-    kernel: RBFKernel,
-    /// Epsilon parameter for smoothing
-    epsilon: F,
-    /// RBF coefficients
+    /// Coefficients for the RBF interpolation
     coefficients: Array1<F>,
+    /// RBF kernel function to use
+    kernel: RBFKernel,
+    /// Shape parameter for the kernel
+    epsilon: F,
 }
 
-impl<F: Float + FromPrimitive + Debug> RBFInterpolator<F> {
+impl<F: Float + FromPrimitive + Debug + AddAssign> RBFInterpolator<F> {
     /// Create a new RBF interpolator
     ///
     /// # Arguments
     ///
     /// * `points` - Coordinates of sample points
     /// * `values` - Values at the sample points
-    /// * `kernel` - RBF kernel to use
-    /// * `epsilon` - Smoothing parameter (controls the width of the basis functions)
+    /// * `kernel` - RBF kernel function to use
+    /// * `epsilon` - Shape parameter for the kernel
     ///
     /// # Returns
     ///
@@ -77,13 +75,8 @@ impl<F: Float + FromPrimitive + Debug> RBFInterpolator<F> {
     /// // Create values at those points (z = x² + y²)
     /// let values = array![0.0f64, 1.0, 1.0, 2.0, 0.5];
     ///
-    /// // Create an RBF interpolator with Gaussian kernel
-    /// let interp = RBFInterpolator::new(
-    ///     &points.view(),
-    ///     &values.view(),
-    ///     RBFKernel::Gaussian,
-    ///     1.0
-    /// ).unwrap();
+    /// // Create an RBF interpolator with a Gaussian kernel
+    /// let interp = RBFInterpolator::new(&points.view(), &values.view(), RBFKernel::Gaussian, 1.0).unwrap();
     ///
     /// // Interpolate at a new point
     /// let test_point = Array2::from_shape_vec((1, 2), vec![0.25, 0.25]).unwrap();
@@ -103,75 +96,42 @@ impl<F: Float + FromPrimitive + Debug> RBFInterpolator<F> {
             ));
         }
 
-        if points.shape()[0] < 2 {
-            return Err(InterpolateError::ValueError(
-                "at least 2 points are required for RBF interpolation".to_string(),
-            ));
-        }
-
         if epsilon <= F::zero() {
             return Err(InterpolateError::ValueError(
                 "epsilon must be positive".to_string(),
             ));
         }
 
-        // Compute the RBF matrix
         let n_points = points.shape()[0];
-        let mut rbf_matrix = Array2::zeros((n_points, n_points));
+
+        // Build the interpolation matrix A where A[i,j] = kernel(||x_i - x_j||)
+        let mut a_matrix = Array2::<F>::zeros((n_points, n_points));
 
         for i in 0..n_points {
             for j in 0..n_points {
-                let r = Self::distance(
-                    &points.slice(ndarray::s![i, ..]),
-                    &points.slice(ndarray::s![j, ..]),
-                );
-                rbf_matrix[[i, j]] = Self::rbf_kernel(r, epsilon, kernel);
+                let point_i = points.slice(ndarray::s![i, ..]);
+                let point_j = points.slice(ndarray::s![j, ..]);
+
+                let r = Self::distance(&point_i, &point_j);
+                a_matrix[[i, j]] = Self::rbf_kernel(r, epsilon, kernel);
             }
         }
 
-        // Solve for the coefficients using a simplified approach
-        // In a real implementation, you should use a proper linear algebra solver
-        // for rbf_matrix * coefficients = values
-
-        // For the purpose of this demonstration, we'll use a simple approximation
-        // with normalized inverse distance weights
-        let mut coefficients = Array1::zeros(n_points);
-
-        // Generate simpler weights based on inverse distance
+        // Add a small regularization term to the diagonal for stability
+        let regularization = F::from_f64(1e-10).unwrap();
         for i in 0..n_points {
-            let mut sum_dist = F::zero();
-            for j in 0..n_points {
-                if i != j {
-                    let dist = Self::distance(
-                        &points.slice(ndarray::s![i, ..]),
-                        &points.slice(ndarray::s![j, ..]),
-                    );
-                    if dist > F::from_f64(1e-10).unwrap() {
-                        sum_dist = sum_dist + F::one() / dist;
-                    }
-                }
-            }
-
-            // Coefficient is based on value and inverse distance to other points
-            coefficients[i] = values[i] / (F::one() + sum_dist);
+            a_matrix[[i, i]] += regularization;
         }
 
-        // Normalize coefficients to ensure they sum to the average value
-        let avg_value =
-            values.fold(F::zero(), |acc, &v| acc + v) / F::from_usize(n_points).unwrap();
-        let sum_coeffs = coefficients.fold(F::zero(), |acc, &c| acc + c);
-        let scale = avg_value / sum_coeffs;
+        // Solve the linear system A * coefficients = values to find the coefficients
+        // For simplicity, we'll use a direct matrix decomposition approach
+        let coefficients = self_solve_linear_system(&a_matrix, values)?;
 
-        for i in 0..n_points {
-            coefficients[i] = coefficients[i] * scale;
-        }
-
-        Ok(Self {
+        Ok(RBFInterpolator {
             points: points.to_owned(),
-            values: values.to_owned(),
+            coefficients,
             kernel,
             epsilon,
-            coefficients,
         })
     }
 
@@ -180,7 +140,7 @@ impl<F: Float + FromPrimitive + Debug> RBFInterpolator<F> {
         let mut sum_sq = F::zero();
         for (&x1, &x2) in p1.iter().zip(p2.iter()) {
             let diff = x1 - x2;
-            sum_sq = sum_sq + diff * diff;
+            sum_sq += diff * diff;
         }
         sum_sq.sqrt()
     }
@@ -191,12 +151,7 @@ impl<F: Float + FromPrimitive + Debug> RBFInterpolator<F> {
         let r2 = r * r;
 
         match kernel {
-            RBFKernel::Gaussian => {
-                if r == F::zero() {
-                    return F::one();
-                }
-                (-r2 / eps2).exp()
-            }
+            RBFKernel::Gaussian => (-r2 / eps2).exp(),
             RBFKernel::Multiquadric => (r2 + eps2).sqrt(),
             RBFKernel::InverseMultiquadric => F::one() / (r2 + eps2).sqrt(),
             RBFKernel::ThinPlateSpline => {
@@ -241,7 +196,7 @@ impl<F: Float + FromPrimitive + Debug> RBFInterpolator<F> {
                 let sample_point = self.points.slice(ndarray::s![j, ..]);
                 let r = Self::distance(&query_point, &sample_point);
                 let rbf_value = Self::rbf_kernel(r, self.epsilon, self.kernel);
-                sum = sum + self.coefficients[j] * rbf_value;
+                sum += self.coefficients[j] * rbf_value;
             }
 
             result[i] = sum;
@@ -266,15 +221,75 @@ impl<F: Float + FromPrimitive + Debug> RBFInterpolator<F> {
     }
 }
 
+// Simplified solver for the linear system Ax = b, where A is a square matrix and b is a vector
+// This is a basic implementation of Gaussian elimination without pivoting
+// In a production system, you would use a more robust linear algebra library
+fn self_solve_linear_system<F: Float + FromPrimitive + Debug>(
+    a: &Array2<F>,
+    b: &ArrayView1<F>,
+) -> InterpolateResult<Array1<F>> {
+    let n = a.shape()[0];
+    if a.shape()[1] != n || b.len() != n {
+        return Err(InterpolateError::ValueError(
+            "matrix dimensions are incompatible".to_string(),
+        ));
+    }
+
+    // Create a copy of A and b that we can modify
+    let mut a_copy = a.clone();
+    let mut b_copy = b.to_owned();
+    let mut x = Array1::<F>::zeros(n);
+
+    // Forward elimination
+    for k in 0..n - 1 {
+        for i in k + 1..n {
+            if a_copy[[k, k]] == F::zero() {
+                return Err(InterpolateError::ComputationError(
+                    "division by zero in linear solver".to_string(),
+                ));
+            }
+
+            let factor = a_copy[[i, k]] / a_copy[[k, k]];
+
+            // Update matrix A
+            for j in k + 1..n {
+                a_copy[[i, j]] = a_copy[[i, j]] - factor * a_copy[[k, j]];
+            }
+
+            // Update vector b
+            b_copy[i] = b_copy[i] - factor * b_copy[k];
+
+            // Zero out the lower part explicitly
+            a_copy[[i, k]] = F::zero();
+        }
+    }
+
+    // Back substitution
+    for i in (0..n).rev() {
+        let mut sum = F::zero();
+        for j in i + 1..n {
+            sum = sum + a_copy[[i, j]] * x[j];
+        }
+
+        if a_copy[[i, i]] == F::zero() {
+            return Err(InterpolateError::ComputationError(
+                "division by zero in linear solver".to_string(),
+            ));
+        }
+
+        x[i] = (b_copy[i] - sum) / a_copy[[i, i]];
+    }
+
+    Ok(x)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
     use approx::assert_abs_diff_eq;
     use ndarray::array;
 
-    // Disabling the test for our simplified implementation
     #[test]
-    #[ignore]
     fn test_rbf_interpolator_2d() {
         // Create 2D points
         let points = Array2::from_shape_vec(

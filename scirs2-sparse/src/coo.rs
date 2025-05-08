@@ -28,6 +28,14 @@ impl<T> CooMatrix<T>
 where
     T: Clone + Copy + Zero + PartialEq,
 {
+    /// Get the triplets (row indices, column indices, data)
+    pub fn get_triplets(&self) -> (Vec<usize>, Vec<usize>, Vec<T>) {
+        (
+            self.row_indices.clone(),
+            self.col_indices.clone(),
+            self.data.clone(),
+        )
+    }
     /// Create a new COO matrix from raw data
     ///
     /// # Arguments
@@ -62,9 +70,10 @@ where
     ) -> SparseResult<Self> {
         // Validate input data
         if data.len() != row_indices.len() || data.len() != col_indices.len() {
-            return Err(SparseError::DimensionError(
-                "Data, row indices, and column indices must have the same length".to_string(),
-            ));
+            return Err(SparseError::DimensionMismatch {
+                expected: data.len(),
+                found: std::cmp::min(row_indices.len(), col_indices.len()),
+            });
         }
 
         let (rows, cols) = shape;
@@ -263,6 +272,19 @@ where
         }
     }
 
+    /// Get the value at the specified position
+    pub fn get(&self, row: usize, col: usize) -> T
+    where
+        T: Zero,
+    {
+        for i in 0..self.data.len() {
+            if self.row_indices[i] == row && self.col_indices[i] == col {
+                return self.data[i];
+            }
+        }
+        T::zero()
+    }
+
     /// Sum duplicate entries (elements with the same row and column indices)
     pub fn sum_duplicates(&mut self)
     where
@@ -324,11 +346,10 @@ impl CooMatrix<f64> {
     /// * Result of matrix-vector multiplication
     pub fn dot(&self, vec: &[f64]) -> SparseResult<Vec<f64>> {
         if vec.len() != self.cols {
-            return Err(SparseError::DimensionError(format!(
-                "Vector length ({}) must match matrix columns ({})",
-                vec.len(),
-                self.cols
-            )));
+            return Err(SparseError::DimensionMismatch {
+                expected: self.cols,
+                found: vec.len(),
+            });
         }
 
         let mut result = vec![0.0; self.rows];

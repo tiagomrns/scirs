@@ -1,9 +1,9 @@
 [package]
 name = "scirs2-io"
-version = "0.1.0-alpha.1"
+version = "0.1.0-alpha.2"
 edition = "2021"
 authors = ["SciRS2 Team"]
-license = "Apache-2.0"
+license = "MIT OR Apache-2.0"
 description = "Input/Output utilities module for SciRS2"
 repository = "https://github.com/cool-japan/scirs"
 keywords = ["io", "serialization", "data", "scientific", "scipy"]
@@ -11,7 +11,7 @@ categories = ["science", "encoding"]
 
 [dependencies]
 ndarray = { version = "0.16.1", features = ["serde", "rayon"] }
-scirs2-core = { path = "../scirs2-core", version = "0.1.0-alpha.1" }
+scirs2-core = { path = "../scirs2-core", version = "0.1.0-alpha.2" }
 byteorder = "1.4"
 image = "0.24"
 serde = { version = "1.0", features = ["derive"] }
@@ -34,3 +34,4 @@ tempfile = "3.9"
 num-complex = "0.4.6"
 regex = "1.10"
 glob = "0.3"
+netcdf3 = "0.5.2"

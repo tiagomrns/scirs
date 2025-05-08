@@ -7,7 +7,13 @@
 //! ## Overview
 //!
 //! * 1D interpolation methods (`interp1d` module)
+//!   * Linear, nearest, cubic interpolation
+//!   * PCHIP (Piecewise Cubic Hermite Interpolating Polynomial) - shape-preserving interpolation
 //! * Spline interpolation (`spline` module)
+//! * Bivariate splines (`bivariate` module):
+//!   * `BivariateSpline` - Base class for bivariate splines
+//!   * `SmoothBivariateSpline` - Smooth bivariate spline approximation
+//!   * `RectBivariateSpline` - Bivariate spline approximation over a rectangular mesh
 //! * Multivariate interpolation (`interpnd` module)
 //! * Advanced interpolation methods (`advanced` module):
 //!   * Akima spline interpolation - robust to outliers
@@ -32,6 +38,7 @@ pub use error::{InterpolateError, InterpolateResult};
 
 // Interpolation modules
 pub mod advanced;
+pub mod bivariate;
 pub mod grid;
 pub mod interp1d;
 pub mod interpnd;
@@ -46,12 +53,17 @@ pub use advanced::barycentric::{
 };
 pub use advanced::kriging::{make_kriging_interpolator, CovarianceFunction, KrigingInterpolator};
 pub use advanced::rbf::{RBFInterpolator, RBFKernel};
+pub use bivariate::{
+    BivariateInterpolator, BivariateSpline, RectBivariateSpline, SmoothBivariateSpline,
+    SmoothBivariateSplineBuilder,
+};
 pub use grid::{
     create_regular_grid, map_grid_to_points, resample_grid_to_grid, resample_to_grid,
     GridTransformMethod,
 };
 pub use interp1d::{
-    cubic_interpolate, linear_interpolate, nearest_interpolate, Interp1d, InterpolationMethod,
+    cubic_interpolate, linear_interpolate, nearest_interpolate, pchip_interpolate, Interp1d,
+    InterpolationMethod, PchipInterpolator,
 };
 pub use interpnd::{
     make_interp_nd, make_interp_scattered, map_coordinates, ExtrapolateMode, GridType,

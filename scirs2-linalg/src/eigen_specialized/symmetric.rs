@@ -194,10 +194,10 @@ where
             diagonal[n - 2] = working_matrix[[n - 2, n - 2]];
             diagonal[n - 1] = working_matrix[[n - 1, n - 1]];
             off_diagonal[n - 2] = working_matrix[[n - 1, n - 2]];
-        },
+        }
         std::cmp::Ordering::Equal => {
             diagonal[0] = working_matrix[[0, 0]];
-        },
+        }
         std::cmp::Ordering::Less => {
             // No action needed for n = 0
         }

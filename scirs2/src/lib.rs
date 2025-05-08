@@ -35,7 +35,7 @@
 //!
 //! ```rust,no_run
 //! use scirs2::prelude::*;
-//! 
+//!
 //! fn main() -> Result<(), Box<dyn std::error::Error>> {
 //!     // Example using linear algebra module (when enabled)
 //!     #[cfg(feature = "linalg")]
@@ -80,15 +80,15 @@
 //! ```
 
 // Re-export from scirs2-core
-pub use scirs2_core::{constants, error, utils, validation};
 #[cfg(feature = "cache")]
 pub use scirs2_core::cache;
 #[cfg(feature = "logging")]
 pub use scirs2_core::logging;
-#[cfg(feature = "profiling")]
-pub use scirs2_core::profiling;
 #[cfg(feature = "memory_management")]
 pub use scirs2_core::memory;
+#[cfg(feature = "profiling")]
+pub use scirs2_core::profiling;
+pub use scirs2_core::{constants, error, utils, validation};
 
 // Optional modules (enabled via features)
 #[cfg(feature = "linalg")]
@@ -171,26 +171,26 @@ pub mod prelude {
     pub use scirs2_core::validation;
     // Use the Error type directly from thiserror
     pub use thiserror::Error;
-    
+
     // Core numeric utilities
     pub use ndarray::{Array, Array1, Array2, ArrayD};
-    
+
     // Re-export common type conversions
-    pub use num_traits::{Float, Zero, One};
-    
+    pub use num_traits::{Float, One, Zero};
+
     // Various modules with feature gates
     #[cfg(feature = "linalg")]
     pub use crate::linalg;
-    
+
     #[cfg(feature = "stats")]
     pub use crate::stats;
-    
+
     #[cfg(feature = "special")]
     pub use crate::special;
-    
+
     #[cfg(feature = "optimize")]
     pub use crate::optimize;
-    
+
     #[cfg(feature = "neural")]
     pub use crate::neural;
 }

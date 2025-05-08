@@ -1,9 +1,9 @@
 [package]
 name = "scirs2-text"
-version = "0.1.0-alpha.1"
+version = "0.1.0-alpha.2"
 edition = "2021"
 authors = ["SciRS2 Team"]
-license = "Apache-2.0"
+license = "MIT OR Apache-2.0"
 description = "Text processing module for SciRS2"
 repository = "https://github.com/cool-japan/scirs"
 keywords = ["text", "nlp", "scientific", "ai", "machine-learning"]
@@ -11,14 +11,15 @@ categories = ["science", "mathematics", "algorithms"]
 
 [dependencies]
 # Core dependencies
-scirs2-core = { path = "../scirs2-core", version = "0.1.0-alpha.1", features = ["parallel"] }
+scirs2-core = { path = "../scirs2-core", version = "0.1.0-alpha.2", features = ["parallel"] }
 # Temporarily removed for publishing
-# scirs2-linalg = { path = "../scirs2-linalg", version = "0.1.0-alpha.1" }
+# scirs2-linalg = { path = "../scirs2-linalg", version = "0.1.0-alpha.2" }
 ndarray = { version = "0.16.1", features = ["serde", "rayon"] }
 num-traits = "0.2.19"
 num-complex = "0.4.6"
 thiserror = "2.0.12"
 rand = "0.9.0"
+approx = "0.5.1"
 
 # Text processing specific dependencies
 regex = "1.10"

@@ -13,12 +13,12 @@
 //! ## Usage
 //!
 //! ```rust,no_run
-//! use scirs2_core::memory::{ChunkProcessor, BufferPool};
+//! use scirs2_core::memory::{ChunkProcessor2D, BufferPool};
 //! use ndarray::Array2;
 //!
 //! // Process a large array in chunks
 //! let large_array = Array2::<f64>::zeros((10000, 10000));
-//! let mut processor = ChunkProcessor::new(&large_array, (1000, 1000));
+//! let mut processor = ChunkProcessor2D::new(&large_array, (1000, 1000));
 //!
 //! processor.process_chunks(|chunk, coords| {
 //!     // Process each chunk (e.g., compute statistics, apply transformations)
@@ -26,7 +26,7 @@
 //! });
 //!
 //! // Use a buffer pool to reuse memory
-//! let pool = BufferPool::<f64>::new();
+//! let mut pool = BufferPool::<f64>::new();
 //!
 //! // Acquire a buffer from the pool
 //! let mut buffer = pool.acquire_vec(1000);

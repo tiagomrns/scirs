@@ -1,10 +1,10 @@
 [package]
 name = "scirs2-spatial"
-version = "0.1.0-alpha.1"
+version = "0.1.0-alpha.2"
 edition = "2021"
 authors = ["SciRS2 Team"]
 description = "Spatial algorithms module for SciRS2"
-license = "Apache-2.0"
+license = "MIT OR Apache-2.0"
 repository = "https://github.com/cool-japan/scirs"
 keywords = ["spatial", "distance", "scientific", "scipy", "numerical"]
 categories = ["science", "mathematics", "algorithms"]
@@ -15,7 +15,17 @@ ndarray = { version = "0.16.1", features = ["serde", "rayon"] }
 num-traits = "0.2.19"
 num-complex = "0.4.6"
 thiserror = "2.0.12"
+rayon = "1.9.0"
+
+# Computational geometry
+qhull = "0.4.0"
+rand = "0.9.0"
+
+[features]
+default = []
+parallel = []
 
 [dev-dependencies]
 approx = "0.5.1"
 criterion = "0.5.1"
+rand_chacha = "0.9.0"

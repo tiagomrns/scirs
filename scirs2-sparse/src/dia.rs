@@ -62,19 +62,18 @@ where
 
         // Validate input data
         if data.len() != offsets.len() {
-            return Err(SparseError::DimensionError(
-                "Number of diagonals must match number of offsets".to_string(),
-            ));
+            return Err(SparseError::DimensionMismatch {
+                expected: data.len(),
+                found: offsets.len(),
+            });
         }
 
-        for (i, diag) in data.iter().enumerate() {
+        for diag in data.iter() {
             if diag.len() != max_dim {
-                return Err(SparseError::DimensionError(format!(
-                    "Diagonal {} has length {}, expected {}",
-                    i,
-                    diag.len(),
-                    max_dim
-                )));
+                return Err(SparseError::DimensionMismatch {
+                    expected: max_dim,
+                    found: diag.len(),
+                });
             }
         }
 

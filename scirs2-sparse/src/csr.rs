@@ -11,6 +11,7 @@ use std::cmp::PartialEq;
 ///
 /// A sparse matrix format that compresses rows, making it efficient for
 /// row operations and matrix-vector multiplication.
+#[derive(Clone)]
 pub struct CsrMatrix<T> {
     /// Number of rows
     rows: usize,
@@ -28,6 +29,40 @@ impl<T> CsrMatrix<T>
 where
     T: Clone + Copy + Zero + PartialEq,
 {
+    /// Get the value at the specified position
+    pub fn get(&self, row: usize, col: usize) -> T {
+        // Check bounds
+        if row >= self.rows || col >= self.cols {
+            return T::zero();
+        }
+
+        // Find the element in the CSR format
+        for j in self.indptr[row]..self.indptr[row + 1] {
+            if self.indices[j] == col {
+                return self.data[j];
+            }
+        }
+
+        // Element not found, return zero
+        T::zero()
+    }
+
+    /// Get the triplets (row indices, column indices, data)
+    pub fn get_triplets(&self) -> (Vec<usize>, Vec<usize>, Vec<T>) {
+        let mut rows = Vec::new();
+        let mut cols = Vec::new();
+        let mut values = Vec::new();
+
+        for i in 0..self.rows {
+            for j in self.indptr[i]..self.indptr[i + 1] {
+                rows.push(i);
+                cols.push(self.indices[j]);
+                values.push(self.data[j]);
+            }
+        }
+
+        (rows, cols, values)
+    }
     /// Create a new CSR matrix from raw data
     ///
     /// # Arguments
@@ -62,9 +97,10 @@ where
     ) -> SparseResult<Self> {
         // Validate input data
         if data.len() != row_indices.len() || data.len() != col_indices.len() {
-            return Err(SparseError::DimensionError(
-                "Data, row indices, and column indices must have the same length".to_string(),
-            ));
+            return Err(SparseError::DimensionMismatch {
+                expected: data.len(),
+                found: std::cmp::min(row_indices.len(), col_indices.len()),
+            });
         }
 
         let (rows, cols) = shape;
@@ -145,15 +181,17 @@ where
 
         // Validate input data
         if indptr.len() != rows + 1 {
-            return Err(SparseError::DimensionError(
-                "Row pointer array length must be rows + 1".to_string(),
-            ));
+            return Err(SparseError::DimensionMismatch {
+                expected: rows + 1,
+                found: indptr.len(),
+            });
         }
 
         if data.len() != indices.len() {
-            return Err(SparseError::DimensionError(
-                "Data and indices must have the same length".to_string(),
-            ));
+            return Err(SparseError::DimensionMismatch {
+                expected: data.len(),
+                found: indices.len(),
+            });
         }
 
         // Check if indptr is monotonically increasing
@@ -364,10 +402,10 @@ impl<
     /// * Result containing the product matrix
     pub fn matmul(&self, other: &CsrMatrix<T>) -> SparseResult<CsrMatrix<T>> {
         if self.cols != other.rows {
-            return Err(SparseError::DimensionError(format!(
-                "Matrix dimensions incompatible for multiplication: {}x{} and {}x{}",
-                self.rows, self.cols, other.rows, other.cols
-            )));
+            return Err(SparseError::DimensionMismatch {
+                expected: self.cols,
+                found: other.rows,
+            });
         }
 
         // For simplicity, we'll implement this using dense operations
@@ -440,11 +478,10 @@ impl CsrMatrix<f64> {
     /// * Result of matrix-vector multiplication
     pub fn dot(&self, vec: &[f64]) -> SparseResult<Vec<f64>> {
         if vec.len() != self.cols {
-            return Err(SparseError::DimensionError(format!(
-                "Vector length ({}) must match matrix columns ({})",
-                vec.len(),
-                self.cols
-            )));
+            return Err(SparseError::DimensionMismatch {
+                expected: self.cols,
+                found: vec.len(),
+            });
         }
 
         let mut result = vec![0.0; self.rows];

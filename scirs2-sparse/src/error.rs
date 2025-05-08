@@ -1,8 +1,10 @@
-//! Error types for the SciRS2 sparse matrix module
+//! Error types for the SciRS2 sparse module
+//!
+//! This module provides error types for both sparse matrix and sparse array operations.
 
 use thiserror::Error;
 
-/// Sparse matrix error type
+/// Sparse matrix/array error type
 #[derive(Error, Debug)]
 pub enum SparseError {
     /// Computation error (generic error)
@@ -10,21 +12,44 @@ pub enum SparseError {
     ComputationError(String),
 
     /// Dimension mismatch error
-    #[error("Dimension mismatch error: {0}")]
-    DimensionError(String),
+    #[error("Dimension mismatch: expected {expected}, found {found}")]
+    DimensionMismatch { expected: usize, found: usize },
+
+    /// Index out of bounds error
+    #[error("Index {index:?} out of bounds for array with shape {shape:?}")]
+    IndexOutOfBounds {
+        index: (usize, usize),
+        shape: (usize, usize),
+    },
+
+    /// Invalid axis error
+    #[error("Invalid axis specified")]
+    InvalidAxis,
+
+    /// Invalid slice range error
+    #[error("Invalid slice range specified")]
+    InvalidSliceRange,
+
+    /// Inconsistent data error
+    #[error("Inconsistent data: {reason}")]
+    InconsistentData { reason: String },
+
+    /// Not implemented error
+    #[error("Feature not implemented: {feature}")]
+    NotImplemented { feature: String },
 
     /// Singular matrix error
     #[error("Singular matrix error: {0}")]
-    SingularMatrixError(String),
+    SingularMatrix(String),
 
     /// Value error (invalid value)
     #[error("Value error: {0}")]
     ValueError(String),
 
-    /// Not implemented error
-    #[error("Not implemented: {0}")]
-    NotImplementedError(String),
+    /// Conversion error
+    #[error("Conversion error: {0}")]
+    ConversionError(String),
 }
 
-/// Result type for sparse matrix operations
+/// Result type for sparse matrix/array operations
 pub type SparseResult<T> = Result<T, SparseError>;

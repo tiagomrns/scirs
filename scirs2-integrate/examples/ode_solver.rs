@@ -223,7 +223,7 @@ fn main() {
             [0.0, 20.0],
             array![2.0, 0.0], // Start with displacement but no velocity
             Some(ODEOptions {
-                method: ODEMethod::BDF,
+                method: ODEMethod::Bdf,
                 bdf_order: 2, // BDF2 is a good balance of stability and accuracy
                 rtol: 1e-4,
                 atol: 1e-6,
@@ -284,7 +284,7 @@ fn main() {
             [0.0, 40.0],
             array![1.0, 0.0, 0.0], // Initial concentrations
             Some(ODEOptions {
-                method: ODEMethod::BDF,
+                method: ODEMethod::Bdf,
                 bdf_order: 3, // Higher order for this challenging problem
                 rtol: 1e-4,
                 atol: 1e-8,      // Stricter absolute tolerance for small values

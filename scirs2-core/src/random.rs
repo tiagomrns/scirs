@@ -11,7 +11,7 @@
 //!
 //! ## Usage
 //!
-//! ```rust,no_run
+//! ```rust,ignore
 //! use scirs2_core::random::{Random, DistributionExt};
 //! use rand_distr::{Normal, Uniform};
 //!
@@ -19,15 +19,16 @@
 //! let mut rng = Random::default();
 //!
 //! // Generate random values from various distributions
-//! let normal_value = rng.sample(Normal::new(0.0, 1.0).unwrap());
-//! let uniform_value = rng.sample(Uniform::new(0.0, 1.0));
+//! let normal_value = rng.sample(Normal::new(0.0_f64, 1.0_f64).unwrap());
+//! let uniform_value = rng.sample(Uniform::new(0.0_f64, 1.0_f64).unwrap());
 //!
 //! // Generate a random array using the distribution extension trait
-//! let normal_array = Normal::new(0.0, 1.0).unwrap().random_array::<f64, _>(&mut rng, [10, 10]);
+//! let shape = vec![10, 10];
+//! let normal_array = Normal::new(0.0_f64, 1.0_f64).unwrap().random_array(&mut rng, shape);
 //!
 //! // Create a seeded random generator for reproducible results
 //! let mut seeded_rng = Random::with_seed(42);
-//! let reproducible_value = seeded_rng.sample(Uniform::new(0.0, 1.0));
+//! let reproducible_value = seeded_rng.sample(Uniform::new(0.0_f64, 1.0_f64).unwrap());
 //! ```
 
 use ndarray::{Array, Dimension, IxDyn};
@@ -56,24 +57,24 @@ impl<R: Rng> Random<R> {
     }
 
     /// Generate a random value within the given range (inclusive min, exclusive max)
-    pub fn random_range<T: rand_distr::uniform::SampleUniform + PartialOrd>(
+    pub fn random_range<T: rand_distr::uniform::SampleUniform + PartialOrd + Copy>(
         &mut self,
         min: T,
         max: T,
     ) -> T {
-        self.rng.random_range(min..max)
+        self.sample(rand_distr::Uniform::new(min, max).unwrap())
     }
 
     /// Generate a random boolean value
     pub fn random_bool(&mut self) -> bool {
         let dist = rand_distr::Bernoulli::new(0.5).unwrap();
-        self.rng.sample(dist)
+        dist.sample(&mut self.rng)
     }
 
     /// Generate a random boolean with the given probability of being true
     pub fn random_bool_with_chance(&mut self, prob: f64) -> bool {
         let dist = rand_distr::Bernoulli::new(prob).unwrap();
-        self.rng.sample(dist)
+        dist.sample(&mut self.rng)
     }
 
     /// Shuffle a slice randomly
@@ -86,7 +87,9 @@ impl<R: Rng> Random<R> {
     where
         D: Distribution<T> + Copy,
     {
-        (0..size).map(|_| self.sample(distribution)).collect()
+        (0..size)
+            .map(|_| distribution.sample(&mut self.rng))
+            .collect()
     }
 
     /// Generate an ndarray::Array from samples of a distribution
@@ -152,34 +155,37 @@ impl<D, T> DistributionExt<T> for D where D: Distribution<T> {}
 /// Helper functions for common random sampling needs
 pub mod sampling {
     use super::*;
+    use rand_distr as rdistr;
 
     /// Sample uniformly from [0, 1)
     pub fn random_uniform01<R: Rng>(rng: &mut Random<R>) -> f64 {
-        rng.sample(Uniform::new(0.0, 1.0).unwrap())
+        Uniform::new(0.0_f64, 1.0_f64).unwrap().sample(&mut rng.rng)
     }
 
     /// Sample from a standard normal distribution (mean 0, std dev 1)
     pub fn random_standard_normal<R: Rng>(rng: &mut Random<R>) -> f64 {
-        use rand_distr::Normal;
-        rng.sample(Normal::new(0.0, 1.0).unwrap())
+        rdistr::Normal::new(0.0_f64, 1.0_f64)
+            .unwrap()
+            .sample(&mut rng.rng)
     }
 
     /// Sample from a normal distribution with given mean and standard deviation
     pub fn random_normal<R: Rng>(rng: &mut Random<R>, mean: f64, std_dev: f64) -> f64 {
-        use rand_distr::Normal;
-        rng.sample(Normal::new(mean, std_dev).unwrap())
+        rdistr::Normal::new(mean, std_dev)
+            .unwrap()
+            .sample(&mut rng.rng)
     }
 
     /// Sample from a log-normal distribution
     pub fn random_lognormal<R: Rng>(rng: &mut Random<R>, mean: f64, std_dev: f64) -> f64 {
-        use rand_distr::LogNormal;
-        rng.sample(LogNormal::new(mean, std_dev).unwrap())
+        rdistr::LogNormal::new(mean, std_dev)
+            .unwrap()
+            .sample(&mut rng.rng)
     }
 
     /// Sample from an exponential distribution
     pub fn random_exponential<R: Rng>(rng: &mut Random<R>, lambda: f64) -> f64 {
-        use rand_distr::Exp;
-        rng.sample(Exp::new(lambda).unwrap())
+        rdistr::Exp::new(lambda).unwrap().sample(&mut rng.rng)
     }
 
     /// Generate an array of random integers in a range

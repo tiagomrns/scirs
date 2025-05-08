@@ -11,24 +11,148 @@ This module provides optimization algorithms similar to SciPy's optimize module.
 - [x] Least squares minimization (Levenberg-Marquardt, Trust Region Reflective)
 - [x] Root finding (Powell, Broyden's methods, Anderson, Krylov)
 - [x] Integration with existing optimization libraries (argmin)
+- [x] Bounds support for all unconstrained minimization methods:
+  - Powell's method with boundary-respecting line search
+  - Nelder-Mead with boundary projection for simplex operations
+  - BFGS with projected gradients and modified gradient calculations at boundaries
+  - Conjugate Gradient with projected search directions
 
-## Future Tasks
+## Implemented Algorithms
 
-- [ ] Fix any warnings in the current implementation
-- [ ] Add more algorithm options and variants
+- [x] Fix any warnings in the current implementation
+- [x] Support for bounds in unconstrained optimization algorithms
+- [x] Add L-BFGS-B algorithm for bound-constrained optimization
+- [x] Add L-BFGS algorithm for large-scale optimization
+- [x] Add TrustNCG (Trust-region Newton-Conjugate-Gradient) algorithm
+- [x] Add NewtonCG (Newton-Conjugate-Gradient) algorithm
+- [x] Add TrustKrylov (Trust-region truncated generalized Lanczos / conjugate gradient algorithm)
+- [x] Add TrustExact (Trust-region nearly exact algorithm)
+
+## Algorithm Variants and Extensions
+
+- [ ] Implement additional algorithm variants
+  - [ ] Dogleg trust-region method
+  - [ ] Truncated Newton methods with various preconditioners
+  - [ ] Quasi-Newton methods with different update formulas (SR1, DFP)
+  - [ ] Augmented Lagrangian methods for constrained optimization
+  - [ ] Interior point methods for constrained optimization
 - [ ] Improve convergence criteria and control
-- [ ] Add more examples and test cases
-- [ ] Enhance documentation with theoretical background
+  - [ ] Adaptive tolerance selection
+  - [ ] Multiple stopping criteria options
+  - [ ] Early stopping capabilities
+  - [ ] Robust convergence detection for noisy functions
+- [ ] Add more robust line search methods
+  - [ ] Hager-Zhang line search
+  - [ ] Strong Wolfe conditions enforcement
+  - [ ] Non-monotone line searches for difficult problems
+
+## Global Optimization Methods
+
+- [ ] Implement global optimization algorithms
+  - [ ] Simulated annealing
+  - [ ] Differential evolution
+  - [ ] Particle swarm optimization
+  - [ ] Bayesian optimization with Gaussian processes
+  - [ ] Basin-hopping algorithm
+  - [ ] Dual annealing
+- [ ] Multi-start strategies
+  - [ ] Systematic sampling of initial points
+  - [ ] Clustering of local minima
+  - [ ] Adaptive restart strategies
+- [ ] Hybrid global-local methods
+  - [ ] Global search followed by local refinement
+  - [ ] Parallel exploration of multiple basins
+  - [ ] Topography-based search strategies
+
+## Least Squares Enhancements
+
+- [ ] Robust least squares methods
+  - [ ] Huber loss functions
+  - [ ] Bisquare loss functions
+  - [ ] Other M-estimators for outlier resistance
+- [ ] Enhance non-linear least squares capabilities
+  - [ ] Separable least squares for partially linear problems
+  - [ ] Sparsity-aware algorithms for large-scale problems
+  - [ ] Implement more robust Jacobian approximations
+- [ ] Extended least squares functionality
+  - [ ] Weighted least squares
+  - [ ] Bounded-variable least squares
+  - [ ] Total least squares (errors-in-variables)
+
+## Performance Optimizations
+
 - [ ] Performance optimizations for high-dimensional problems
-- [ ] Support for bounds and constraints in more algorithms
-- [ ] Implement global optimization methods
-- [ ] Add visualization tools for optimization process
+  - [ ] Efficient handling of sparse Jacobians and Hessians
+  - [ ] Memory-efficient implementations for large-scale problems
+  - [ ] Subspace methods for very high-dimensional problems
+- [ ] Parallel computation support
+  - [ ] Add `workers` parameter to parallelizable algorithms
+  - [ ] Implement parallel function evaluation for gradient approximation
+  - [ ] Parallel exploration in global optimization methods
+  - [ ] Asynchronous parallel optimization for varying evaluation times
+- [ ] JIT and auto-vectorization
+  - [ ] Support for just-in-time compilation of objective functions
+  - [ ] SIMD-friendly implementations of key algorithms
+  - [ ] Profile-guided optimizations for critical code paths
+
+## Documentation and Usability
+
+- [ ] Add more examples and test cases
+  - [ ] Real-world optimization problems with solutions
+  - [ ] Benchmarks against SciPy implementations
+  - [ ] Multi-disciplinary examples (engineering, finance, ML, etc.)
+- [ ] Enhance documentation with theoretical background
+  - [ ] Mathematical derivations and algorithm descriptions
+  - [ ] Convergence properties and limitations
+  - [ ] Guidelines for algorithm selection
 - [ ] Improve error handling and diagnostics
+  - [ ] More informative error messages
+  - [ ] Diagnostic tools for identifying optimization issues
+  - [ ] Suggestions for addressing common problems
+- [ ] Add visualization tools for optimization process
+  - [ ] Trajectory visualization
+  - [ ] Contour plots with optimization paths
+  - [ ] Progress monitoring tools
+  - [ ] Convergence analysis visualizations
+
+## Advanced Features
+
+- [ ] Constrained optimization improvements
+  - [ ] Robust handling of infeasible starting points
+  - [ ] Support for nonlinear equality and inequality constraints
+  - [ ] Improved detection and handling of degenerate constraints
+- [ ] Multi-objective optimization
+  - [ ] Pareto front approximation
+  - [ ] Scalarization methods (weighted sum, ε-constraint)
+  - [ ] Evolutionary multi-objective algorithms
+- [ ] Integration with automatic differentiation
+  - [ ] Forward-mode AD for low-dimensional problems
+  - [ ] Reverse-mode AD for high-dimensional problems
+  - [ ] Mixed-mode AD for specific problem structures
+- [ ] Support for stochastic optimization methods
+  - [ ] Stochastic gradient descent with variants
+  - [ ] ADAM, RMSProp, and other adaptive methods
+  - [ ] Mini-batch processing for large datasets
+- [ ] Special-purpose optimizers
+  - [ ] Implement specialized optimizers for machine learning
+  - [ ] Sparse optimization with L1/group regularization
+  - [ ] Optimize algorithm selection based on problem characteristics
 
 ## Long-term Goals
 
 - [ ] Create a unified API for all optimization methods
+  - [ ] Consistent interface across algorithms
+  - [ ] Interchangeable components (line searches, trust regions)
+  - [ ] Flexible callback system for monitoring and control
 - [ ] Support for parallel and distributed optimization
-- [ ] Integration with automatic differentiation for gradient-based methods
-- [ ] Support for stochastic optimization methods
-- [ ] Implement specialized optimizers for machine learning
+  - [ ] MPI integration for cluster computing
+  - [ ] Out-of-core optimization for very large problems
+  - [ ] GPU acceleration for suitable algorithms
+- [ ] Integration with other scientific computing modules
+  - [ ] Seamless integration with scirs2-linalg for matrix operations
+  - [ ] Integration with scirs2-stats for statistical optimization problems
+  - [ ] Integration with scirs2-neural for neural network training
+- [ ] Self-tuning algorithms
+  - [ ] Adaptive parameter selection
+  - [ ] Automatic algorithm switching based on problem behavior
+  - [ ] Performance modeling for computational resource allocation

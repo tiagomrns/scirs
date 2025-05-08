@@ -82,6 +82,8 @@
 //! // Fast matrix multiplication for large matrices
 //! let c = blas_accelerated::matmul(&a.view(), &b.view()).unwrap();
 //! ```
+extern crate blas as _;
+extern crate openblas_src;
 
 // Export error types
 pub mod error;
@@ -113,6 +115,7 @@ mod iterative_solvers;
 pub mod kronecker;
 pub mod lowrank;
 pub mod matrix_calculus;
+pub mod matrix_factorization;
 pub mod matrix_functions;
 pub mod matrixfree;
 pub mod mixed_precision;
@@ -121,6 +124,8 @@ pub mod optim;
 pub mod projection;
 pub mod quantization;
 pub mod random;
+// 一時的にrandom_newモジュールを無効化（コンパイル問題解決まで）
+// pub mod random_new;
 pub mod simd_ops;
 mod solve;
 pub mod sparse_dense;
@@ -158,13 +163,22 @@ pub mod accelerated {
 
 // Re-exports for user convenience
 pub use self::basic::{det, inv, matrix_power};
-pub use self::complex::*;
+// Re-export complex module functions explicitly to avoid conflicts
+pub use self::complex::enhanced_ops::{
+    det as complex_det, frobenius_norm, hermitian_part, inner_product, is_hermitian, is_unitary,
+    matrix_exp, matvec, polar_decomposition, power_method, rank as complex_rank,
+    schur as complex_schur, skew_hermitian_part, trace,
+};
+pub use self::complex::{complex_inverse, complex_matmul, hermitian_transpose};
 pub use self::decomposition::*;
 // Eigen module exports included in other use statements
 pub use self::eigen_specialized::*;
 pub use self::extended_precision::*;
 pub use self::iterative_solvers::*;
 pub use self::matrix_calculus::*;
+pub use self::matrix_factorization::{
+    cur_decomposition, interpolative_decomposition, nmf, rank_revealing_qr, utv_decomposition,
+};
 pub use self::matrixfree::{
     block_diagonal_operator, conjugate_gradient as matrix_free_conjugate_gradient,
     diagonal_operator, gmres as matrix_free_gmres, jacobi_preconditioner,
@@ -202,6 +216,12 @@ pub mod prelude {
     pub use super::batch::attention::{
         batch_flash_attention, batch_multi_head_attention, batch_multi_query_attention,
     };
+    pub use super::complex::enhanced_ops::{
+        det as complex_det, frobenius_norm as complex_frobenius_norm, hermitian_part,
+        inner_product as complex_inner_product, is_hermitian, is_unitary,
+        matrix_exp as complex_exp, matvec as complex_matvec, polar_decomposition as complex_polar,
+        schur as complex_schur, skew_hermitian_part,
+    };
     pub use super::complex::{
         complex_inverse, complex_matmul, complex_norm_frobenius, hermitian_transpose,
     };
@@ -216,6 +236,13 @@ pub mod prelude {
     pub use super::eigen_specialized::symmetric::{symmetric_eigh, symmetric_eigvalsh};
     pub use super::eigen_specialized::tridiagonal::{tridiagonal_eigh, tridiagonal_eigvalsh};
     pub use super::extended_precision::{extended_matmul, extended_matvec, extended_solve};
+    // Temporarily disable extended precision eigen and factorizations
+    // pub use super::extended_precision::eigen::{
+    //     extended_eigvals, extended_eig, extended_eigvalsh
+    // };
+    // pub use super::extended_precision::factorizations::{
+    //     extended_lu, extended_qr, extended_cholesky, extended_svd
+    // };
     pub use super::iterative_solvers::{
         bicgstab, conjugate_gradient, gauss_seidel, geometric_multigrid, jacobi_method, minres,
         successive_over_relaxation,
@@ -223,8 +250,15 @@ pub mod prelude {
     pub use super::kronecker::{
         kfac_factorization, kfac_update, kron, kron_factorize, kron_matmul, kron_matvec,
     };
-    pub use super::lowrank::{nmf, pca, randomized_svd, truncated_svd};
+    pub use super::lowrank::{nmf as lowrank_nmf, pca, randomized_svd, truncated_svd};
+    pub use super::matrix_calculus::enhanced::{
+        hessian_vector_product, jacobian_vector_product, matrix_gradient, taylor_approximation,
+        vector_jacobian_product,
+    };
     pub use super::matrix_calculus::{directional_derivative, gradient, hessian, jacobian};
+    pub use super::matrix_factorization::{
+        cur_decomposition, interpolative_decomposition, nmf, rank_revealing_qr, utv_decomposition,
+    };
     pub use super::matrix_functions::{expm, logm, matrix_power, sqrtm};
     pub use super::matrixfree::{
         block_diagonal_operator, conjugate_gradient as matrix_free_conjugate_gradient,
@@ -255,6 +289,12 @@ pub mod prelude {
         banded, diagonal, hilbert, low_rank, normal, orthogonal, permutation, random_correlation,
         sparse, spd, toeplitz, uniform, vandermonde, with_condition_number, with_eigenvalues,
     };
+    // 一時的にrandom_newエクスポートを無効化（コンパイル問題解決まで）
+    // pub use super::random_new::{
+    //     uniform as enhanced_uniform, normal as enhanced_normal, complex as complex_random,
+    //     orthogonal as enhanced_orthogonal, unitary, hilbert as enhanced_hilbert,
+    //     toeplitz as enhanced_toeplitz, vandermonde as enhanced_vandermonde
+    // };
     #[cfg(feature = "simd")]
     pub use super::simd_ops::{
         simd_axpy_f32, simd_axpy_f64, simd_dot_f32, simd_dot_f64, simd_frobenius_norm_f32,

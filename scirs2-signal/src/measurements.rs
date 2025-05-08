@@ -453,8 +453,8 @@ mod tests {
 
         // Add noise with known power
         let noise_amplitude = 0.1; // -20 dB relative to signal
-        // Using rand API that's compatible with 0.9.0
-        use rand::Rng;  // Import the Rng trait to access its methods
+                                   // Using rand API that's compatible with 0.9.0
+        use rand::Rng; // Import the Rng trait to access its methods
         let mut rng = rand::rng();
         let noisy: Vec<f64> = clean
             .iter()

@@ -1,7 +1,8 @@
-use ndarray::ArrayView1;
+use ndarray::{array, ArrayView1};
 use scirs2_integrate::{
     gaussian::gauss_legendre,
     monte_carlo::{monte_carlo, MonteCarloOptions},
+    ode::{solve_ivp, ODEMethod, ODEOptions},
     quad::{quad, simpson, trapezoid},
     romberg::{self, romberg},
 };
@@ -149,4 +150,63 @@ fn main() {
         romberg_2d_result,
         (romberg_2d_result - exact_result_2d).abs()
     );
+
+    // ODE solver comparison
+    println!("\nODE solver comparison:");
+    println!("Solving y' = -y, y(0) = 1, exact solution: y(t) = exp(-t)");
+    println!("Comparing at t = 10, exact = 4.5399e-5");
+
+    let exact_ode_result = (-10.0_f64).exp();
+    let decay_system = |_t: f64, y: ArrayView1<f64>| array![-y[0]];
+
+    // Create a map of methods to test
+    let methods = [
+        ("RK23", ODEMethod::RK23),
+        ("RK45", ODEMethod::RK45),
+        ("DOP853", ODEMethod::DOP853),
+        ("BDF", ODEMethod::Bdf),
+        ("Radau (experimental)", ODEMethod::Radau),
+        ("LSODA (experimental)", ODEMethod::LSODA),
+    ];
+
+    for (method_name, method) in methods {
+        let result = time_integration(&format!("{method_name}"), || {
+            solve_ivp(
+                decay_system,
+                [0.0, 10.0],
+                array![1.0],
+                Some(ODEOptions {
+                    method,
+                    rtol: 1e-6,
+                    atol: 1e-8,
+                    max_steps: 1000,
+                    ..Default::default()
+                }),
+            )
+        });
+
+        match result {
+            Ok(res) => {
+                let y_final = res.y.last().unwrap()[0];
+                println!(
+                    "  Result: {:.6e}, Error: {:.2e}, Steps: {}, Function evals: {}",
+                    y_final,
+                    (y_final - exact_ode_result).abs(),
+                    res.n_steps,
+                    res.n_eval
+                );
+                if method == ODEMethod::LSODA || method == ODEMethod::Radau {
+                    if let Some(msg) = res.message {
+                        println!("  Message: {}", msg);
+                    }
+                }
+            }
+            Err(e) => {
+                println!("  Failed: {}", e);
+                if method == ODEMethod::LSODA || method == ODEMethod::Radau {
+                    println!("  Note: This method is still experimental");
+                }
+            }
+        }
+    }
 }

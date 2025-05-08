@@ -2,6 +2,8 @@
 //!
 //! This module provides functions for generating various types of random matrices,
 //! which are useful for testing, simulation, and machine learning applications.
+//! It leverages the scirs2-core random number generation for enhanced performance
+//! and consistency.
 //!
 //! ## Features
 //!
@@ -11,6 +13,15 @@
 //! * Symmetric positive definite random matrices
 //! * Structured random matrices (banded, sparse, etc.)
 //! * Matrices with specific eigenvalue distributions
+//! * Random correlation matrices
+//! * Matrices with specific condition numbers
+//! * Low-rank matrices
+//! * Vandermonde matrices
+//! * Permutation matrices
+//! * Hilbert matrices
+//! * Random polynomials
+//! * Sparse random matrices
+//! * Special matrix types for machine learning applications
 //!
 //! ## Examples
 //!

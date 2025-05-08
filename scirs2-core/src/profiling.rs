@@ -15,7 +15,7 @@
 //! use scirs2_core::profiling::{Profiler, Timer, MemoryTracker};
 //!
 //! // Start the global profiler
-//! Profiler::global().start();
+//! Profiler::global().lock().unwrap().start();
 //!
 //! // Time a function call
 //! let result = Timer::time_function("matrix_multiplication", || {
@@ -37,10 +37,10 @@
 //! tracker.stop();
 //!
 //! // Print profiling report
-//! Profiler::global().print_report();
+//! Profiler::global().lock().unwrap().print_report();
 //!
 //! // Stop profiling
-//! Profiler::global().stop();
+//! Profiler::global().lock().unwrap().stop();
 //! ```
 
 use once_cell::sync::Lazy;

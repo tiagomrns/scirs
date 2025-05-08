@@ -1,7 +1,7 @@
 use ndarray::Array4;
 use scirs2_io::image::{
-    create_animated_gif, extract_gif_frames, read_image_sequence,
-    write_image_sequence, AnimationMetadata, ImageFormat,
+    create_animated_gif, extract_gif_frames, read_image_sequence, write_image_sequence,
+    AnimationMetadata, ImageFormat,
 };
 use std::error::Error;
 use std::fs;

@@ -62,9 +62,10 @@ where
     ) -> SparseResult<Self> {
         // Validate input data
         if data.len() != row_indices.len() || data.len() != col_indices.len() {
-            return Err(SparseError::DimensionError(
-                "Data, row indices, and column indices must have the same length".to_string(),
-            ));
+            return Err(SparseError::DimensionMismatch {
+                expected: data.len(),
+                found: std::cmp::min(row_indices.len(), col_indices.len()),
+            });
         }
 
         let (rows, cols) = shape;
@@ -145,15 +146,17 @@ where
 
         // Validate input data
         if indptr.len() != cols + 1 {
-            return Err(SparseError::DimensionError(
-                "Column pointer array length must be cols + 1".to_string(),
-            ));
+            return Err(SparseError::DimensionMismatch {
+                expected: cols + 1,
+                found: indptr.len(),
+            });
         }
 
         if data.len() != indices.len() {
-            return Err(SparseError::DimensionError(
-                "Data and indices must have the same length".to_string(),
-            ));
+            return Err(SparseError::DimensionMismatch {
+                expected: data.len(),
+                found: indices.len(),
+            });
         }
 
         // Check if indptr is monotonically increasing
@@ -359,11 +362,10 @@ impl CscMatrix<f64> {
     /// * Result of matrix-vector multiplication
     pub fn dot(&self, vec: &[f64]) -> SparseResult<Vec<f64>> {
         if vec.len() != self.cols {
-            return Err(SparseError::DimensionError(format!(
-                "Vector length ({}) must match matrix columns ({})",
-                vec.len(),
-                self.cols
-            )));
+            return Err(SparseError::DimensionMismatch {
+                expected: self.cols,
+                found: vec.len(),
+            });
         }
 
         let mut result = vec![0.0; self.rows];

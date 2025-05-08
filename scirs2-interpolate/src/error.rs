@@ -17,9 +17,19 @@ pub enum InterpolateError {
     #[error("Value error: {0}")]
     ValueError(String),
 
+    /// Shape error (ndarray shape mismatch)
+    #[error("Shape error: {0}")]
+    ShapeError(String),
+
     /// Not implemented error
     #[error("Not implemented: {0}")]
     NotImplementedError(String),
+}
+
+impl From<ndarray::ShapeError> for InterpolateError {
+    fn from(err: ndarray::ShapeError) -> Self {
+        InterpolateError::ShapeError(err.to_string())
+    }
 }
 
 /// Result type for interpolation operations

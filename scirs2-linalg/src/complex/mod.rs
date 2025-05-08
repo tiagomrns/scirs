@@ -1,13 +1,37 @@
 //! Complex matrix operations
 //!
 //! This module provides functions for working with complex matrices.
+//!
+//! ## Basic Operations
+//!
+//! * Complex matrix multiplication
+//! * Hermitian transpose (conjugate transpose)
+//! * Complex matrix inverse
+//! * Frobenius norm
+//!
+//! ## Enhanced Operations
+//!
+//! * Complex matrix determinant
+//! * Matrix-vector multiplication
+//! * Inner product for complex vectors
+//! * Hermitian and unitary matrix validation
+//! * Decompositions (Polar, Schur)
+//! * Projections onto Hermitian and skew-Hermitian spaces
+//! * Matrix exponential
+//! * Matrix rank estimation
+//! * Power method for eigenvalues
 
 use ndarray::{Array2, ArrayView2};
 use num_complex::Complex;
 use num_traits::{Float, One, Zero};
 use std::fmt::Debug;
 
+use scirs2_core::validation::check_square;
+
 use crate::error::{LinalgError, LinalgResult};
+
+pub mod enhanced_ops;
+pub use enhanced_ops::*;
 
 /// Complex matrix multiplication C = A * B
 pub fn complex_matmul<F>(
@@ -82,14 +106,10 @@ pub fn complex_inverse<F>(a: &ArrayView2<Complex<F>>) -> LinalgResult<Array2<Com
 where
     F: Float + Zero + One + Debug,
 {
-    let n = a.nrows();
+    // Check if the matrix is square using scirs2-core validation
+    check_square(a, "matrix")?;
 
-    if a.ncols() != n {
-        return Err(LinalgError::ShapeError(format!(
-            "Matrix must be square for inversion, got shape {:?}",
-            a.shape()
-        )));
-    }
+    let n = a.nrows();
 
     // Simple implementation for now - could be optimized
     // For larger matrices, we would use LU decomposition

@@ -427,11 +427,10 @@ where
         let result = blas_attention_f32(query_f32, key_f32, value_f32, scale_f32);
 
         // Convert the result back to F type
-        return Some(unsafe { 
-            std::mem::transmute::<
-                Result<Array3<f32>, LinalgError>, 
-                Result<Array3<F>, LinalgError>
-            >(result) 
+        return Some(unsafe {
+            std::mem::transmute::<Result<Array3<f32>, LinalgError>, Result<Array3<F>, LinalgError>>(
+                result,
+            )
         });
     }
 

@@ -1,17 +1,17 @@
 [package]
 name = "scirs2-sparse"
-version = "0.1.0-alpha.1"
+version = "0.1.0-alpha.2"
 edition = "2021"
 authors = ["SciRS2 Team"]
 description = "Sparse matrix module for SciRS2"
-license = "Apache-2.0"
+license = "MIT OR Apache-2.0"
 repository = "https://github.com/cool-japan/scirs"
 keywords = ["sparse-matrix", "csr", "scientific", "scipy", "numerical"]
 categories = ["science", "mathematics", "algorithms"]
 
 [dependencies]
 # Core dependencies
-scirs2-core = { path = "../scirs2-core", version = "0.1.0-alpha.1" }
+scirs2-core = { path = "../scirs2-core", version = "0.1.0-alpha.2" }
 # Removed scirs2-linalg to avoid circular dependency
 ndarray = { version = "0.16.1", features = ["serde", "rayon"] }
 num-traits = "0.2.19"
@@ -22,6 +22,11 @@ thiserror = "2.0.12"
 sprs = "0.11.3"
 rand = "0.9.0"
 
+# For IO operations
+byteorder = "1.5.0"
+
+
 [dev-dependencies]
 approx = "0.5.1"
 criterion = "0.5.1"
+tempfile = "3.10.1"

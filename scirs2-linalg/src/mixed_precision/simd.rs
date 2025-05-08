@@ -276,7 +276,9 @@ where
                             let mut block_sum = sum_arr.iter().sum::<f64>();
 
                             // Process remaining elements
-                            for (offset, &a_val) in a_row_slice.iter().enumerate().skip(l).take(k_end - k0 - l) {
+                            for (offset, &a_val) in
+                                a_row_slice.iter().enumerate().skip(l).take(k_end - k0 - l)
+                            {
                                 let l_remain = offset;
                                 let b_idx = (k0 + l_remain) * n + j;
                                 // Compute in higher precision

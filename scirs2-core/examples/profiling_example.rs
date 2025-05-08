@@ -1,4 +1,4 @@
-use scirs2_core::profiling::{profiling_memory_tracker, Profiler, Timer};
+use scirs2_core::profiling::{Profiler, Timer};
 use std::thread;
 use std::time::Duration;
 
@@ -94,9 +94,6 @@ fn hierarchical_timing_example() {
 
 #[cfg(feature = "profiling")]
 fn memory_tracking_example() {
-    // Use a memory tracker to monitor memory usage
-    let tracker = profiling_memory_tracker();
-
     // Create some example operations with memory tracking
     {
         let mem_tracker = scirs2_core::profiling::MemoryTracker::start("allocate_vector");
@@ -106,13 +103,8 @@ fn memory_tracking_example() {
         let large_vector = vec![0; 1_000_000];
         println!("Vector size: {} elements", large_vector.len());
 
-        // In a real implementation, the MemoryTracker would detect this allocation
-        tracker.track_allocation(
-            "large_vector",
-            large_vector.len() * std::mem::size_of::<i32>(),
-        );
-
-        // Stop the tracker
+        // In a real implementation, the MemoryTracker would detect this allocation automatically
+        // In this example, we manually stop the tracker
         mem_tracker.stop();
     }
 
@@ -125,16 +117,10 @@ fn memory_tracking_example() {
         let matrix = vec![vec![0.0; matrix_size]; matrix_size];
         println!("Matrix size: {}x{} elements", matrix.len(), matrix[0].len());
 
-        // In a real implementation, the MemoryTracker would detect this allocation
-        tracker.track_allocation(
-            "matrix",
-            matrix.len() * matrix[0].len() * std::mem::size_of::<f64>(),
-        );
-
-        // Stop the tracker
+        // In a real implementation, the MemoryTracker would detect this allocation automatically
+        // In this example, we manually stop the tracker
         mem_tracker.stop();
     }
 
-    // Report memory usage
-    println!("Total memory tracked: {} bytes", tracker.get_total_usage());
+    // Report memory usage - the Profiler will contain the report, which is printed at the end of main
 }

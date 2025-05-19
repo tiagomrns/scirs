@@ -37,7 +37,7 @@ pub struct MomentumSGD<F> {
     pub momentum_sgd_namespace_id: &'static str,
 }
 
-impl<'t, 'g, F: Float> MomentumSGD<F> {
+impl<F: Float> MomentumSGD<F> {
     /// Instantiates `MomentumSGD` optimizer with the recommended parameters.
     pub fn default(
         unique_namespace_id: &'static str,
@@ -100,13 +100,13 @@ impl<F: Float> Optimizer<F> for MomentumSGD<F> {
             let param = params[i].as_ref();
             let namespace = g.env().namespace(self.momentum_sgd_namespace_id);
             let var_id = param.get_variable_id().expect("Got non-variable tensor");
-            let v = g.variable_by_name(&format!("{}", var_id), &namespace);
+            let v = g.variable_by_name(format!("{}", var_id), &namespace);
 
             ret.push(
                 Tensor::builder(g)
                     .append_input(param, true)
                     .append_input(grads[i].as_ref(), false)
-                    .append_input(&v, true)
+                    .append_input(v, true)
                     .build(sgd::MomentumSGDOp {
                         lr: self.alpha,
                         momentum: self.momentum,

@@ -1721,7 +1721,7 @@ mod tests {
             .unwrap();
 
         // Scale factor (1/sqrt(d_k))
-        let scale = 1.0 / (2.0_f64).sqrt() as f64;
+        let scale = 1.0 / (2.0_f64).sqrt();
 
         let result = attention(&query.view(), &key.view(), &value.view(), None, scale).unwrap();
 
@@ -1753,7 +1753,7 @@ mod tests {
             .into_shape_with_order((1, 2, 2))
             .unwrap();
 
-        let scale = 1.0 / (2.0_f64).sqrt() as f64;
+        let scale = 1.0 / (2.0_f64).sqrt();
 
         let result = causal_attention(&query.view(), &key.view(), &value.view(), scale).unwrap();
 

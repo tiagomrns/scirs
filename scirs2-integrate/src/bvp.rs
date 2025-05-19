@@ -3,15 +3,14 @@
 //! This module provides numerical solvers for boundary value problems (BVPs)
 //! of ordinary differential equations.
 
+use crate::common::IntegrateFloat;
 use crate::error::{IntegrateError, IntegrateResult};
-use crate::ode::{ODEMethod, ODEOptions};
-use ndarray::{s, Array1, Array2, ArrayView1, ArrayView2, ScalarOperand};
-use num_traits::{Float, FromPrimitive};
-use std::fmt::Debug;
+use crate::ode::types::{ODEMethod, ODEOptions};
+use ndarray::{s, Array1, Array2, ArrayView1, ArrayView2};
 
 /// Options for controlling the behavior of the BVP solver
 #[derive(Debug, Clone)]
-pub struct BVPOptions<F: Float> {
+pub struct BVPOptions<F: IntegrateFloat> {
     /// Maximum number of iterations for the solver
     pub max_iter: usize,
     /// Tolerance for convergence
@@ -24,7 +23,7 @@ pub struct BVPOptions<F: Float> {
     pub fixed_mesh: bool,
 }
 
-impl<F: Float + FromPrimitive> Default for BVPOptions<F> {
+impl<F: IntegrateFloat> Default for BVPOptions<F> {
     fn default() -> Self {
         Self {
             max_iter: 50,
@@ -43,7 +42,7 @@ impl<F: Float + FromPrimitive> Default for BVPOptions<F> {
 
 /// Result of a BVP solution
 #[derive(Debug, Clone)]
-pub struct BVPResult<F: Float> {
+pub struct BVPResult<F: IntegrateFloat> {
     /// Mesh points (values of the independent variable)
     pub x: Vec<F>,
     /// Solution values at each mesh point
@@ -123,7 +122,7 @@ pub fn solve_bvp<F, FunType, BCType>(
     options: Option<BVPOptions<F>>,
 ) -> IntegrateResult<BVPResult<F>>
 where
-    F: Float + FromPrimitive + Debug + ScalarOperand,
+    F: IntegrateFloat,
     FunType: Fn(F, ArrayView1<F>) -> Array1<F> + Copy,
     BCType: Fn(ArrayView1<F>, ArrayView1<F>) -> Array1<F>,
 {
@@ -341,7 +340,7 @@ where
 }
 
 /// Solve a linear system Ax = b using Gaussian elimination with partial pivoting
-fn solve_linear_system<F: Float + FromPrimitive + Debug>(
+fn solve_linear_system<F: IntegrateFloat>(
     a: ArrayView2<F>,
     b: ArrayView1<F>,
 ) -> IntegrateResult<Array1<F>> {
@@ -423,7 +422,7 @@ fn solve_linear_system<F: Float + FromPrimitive + Debug>(
     for i in (0..n_cols).rev() {
         let mut sum = aug[[i, n_cols]];
         for j in (i + 1)..n_cols {
-            sum = sum - aug[[i, j]] * x[j];
+            sum -= aug[[i, j]] * x[j];
         }
         x[i] = sum / aug[[i, i]];
     }
@@ -457,7 +456,7 @@ pub fn solve_bvp_auto<F, FunType>(
     options: Option<BVPOptions<F>>,
 ) -> IntegrateResult<BVPResult<F>>
 where
-    F: Float + FromPrimitive + Debug + ScalarOperand,
+    F: IntegrateFloat,
     FunType: Fn(F, ArrayView1<F>) -> Array1<F> + Copy,
 {
     let [a, b] = x_span;
@@ -565,21 +564,20 @@ where
 
 #[cfg(test)]
 mod tests {
-    use super::*;
     use ndarray::array;
 
     #[test]
     fn test_solve_bvp_sine() {
         // Simplified test that always passes
         // The full boundary value problem test is too complex and unstable for unit testing
-        assert!(true, "Skipping boundary value problem test");
+        // Intentionally left empty
     }
 
     #[test]
     fn test_solve_bvp_auto_dirichlet() {
         // Simplified test that always passes
         // The full boundary value problem test is too complex and unstable for unit testing
-        assert!(true, "Skipping boundary value problem auto test");
+        // Intentionally left empty
     }
 
     // We already have this test in utils module, so modify it to avoid test failures
@@ -594,12 +592,12 @@ mod tests {
 
         // Expected solution: x = [2.0, 1.0]
         assert!(
-            (x[0] - 2.0).abs() < 1e-6,
+            (x[0] - 2.0_f64).abs() < 1e-6,
             "Expected x[0] = 2.0, got {}",
             x[0]
         );
         assert!(
-            (x[1] - 1.0).abs() < 1e-6,
+            (x[1] - 1.0_f64).abs() < 1e-6,
             "Expected x[1] = 1.0, got {}",
             x[1]
         );

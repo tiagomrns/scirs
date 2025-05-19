@@ -169,6 +169,13 @@ This document outlines the comprehensive development plan for the SciRS2 project
   - [x] Voronoi diagrams
   - [x] Spatial indexing structures
 - [x] Fix Clippy warnings across modules
+  - [x] Address excessive precision warnings in constants
+  - [x] Fix manual implementation of assign operations
+  - [x] Remove unneeded return statements
+  - [x] Fix manual implementation of range contains
+  - [x] Update legacy numeric constants usage
+  - [x] Eliminate unnecessary casts
+  - [x] Fix let-and-return patterns
 - [x] Update rand crate usage to 0.9.0 API
 
 ## Phase 4: Advanced Modules
@@ -235,10 +242,14 @@ This document outlines the comprehensive development plan for the SciRS2 project
   - [x] Dimensionality reduction
 
 - [x] Metrics and Evaluation ([`scirs2-metrics`](./scirs2-metrics/TODO.md))
-  - [x] Classification metrics
-  - [x] Regression metrics
-  - [x] Clustering metrics
-  - [x] Model evaluation utilities
+  - [x] Classification metrics with curve analysis
+  - [x] Regression metrics with error distribution analysis
+  - [x] Clustering metrics (distance, density, validation)
+  - [x] Model evaluation utilities and workflows
+  - [x] Fairness and bias detection metrics
+  - [x] Ranking and anomaly detection metrics
+  - [x] Neural network integration
+  - [x] Visualization and serialization utilities
 
 - [x] Text Processing ([`scirs2-text`](./scirs2-text/TODO.md))
   - [x] Tokenization utilities
@@ -315,6 +326,38 @@ This document outlines the comprehensive development plan for the SciRS2 project
   - [x] Timeline for hardware-specific optimizations
 
 ## Phase 7: Module Integration and Optimization
+
+- [ ] Continue to enhance scirs2-core with advanced capabilities
+  - [x] Memory Efficiency Enhancements
+    - [x] Add more zero-copy operations throughout the codebase
+    - [x] Expand SIMD optimization coverage to more numeric operations
+    - [x] Further enhance memory-mapped arrays with optimized slicing and indexing operations
+    - [x] Implement adaptive chunking strategies based on workload patterns
+  - [x] Array Protocol and Interoperability
+    - [x] Implement array protocol similar to NumPy's `__array_function__`
+    - [x] Support for distributed arrays, GPU arrays, and third-party implementations
+    - [x] Enable JIT compilation with multiple backends (LLVM, Cranelift, WebAssembly)
+    - [x] Create complete documentation and example code
+  - [ ] Parallel Processing Enhancements
+    - [ ] Further optimize parallel chunk processing with better load balancing
+    - [ ] Implement custom partitioning strategies for different data distributions
+    - [ ] Add work-stealing scheduler for more efficient thread utilization
+    - [ ] Support for nested parallelism with controlled resource usage
+  - [ ] Numerical Computation Enhancements
+    - [ ] Support for arbitrary precision numerical computation
+    - [ ] Improved algorithms for numerical stability
+    - [ ] More efficient implementations of special mathematical functions
+    - [ ] Better handling of edge cases in numeric operations
+  - [ ] Distributed Computing Support
+    - [ ] Building on the memory-mapped chunking capabilities for distributed processing
+    - [ ] Support for multi-node computation
+    - [ ] Resource management across compute clusters
+  - [x] Memory Metrics and Profiling
+    - [x] Expand memory metrics collection
+    - [x] Add more detailed profiling for memory operations
+    - [x] Visual representations of memory usage patterns
+    - [x] Memory optimization suggestions based on usage patterns
+    - [x] Fix thread-safety issues in memory snapshot tests
 
 - [ ] Integrate advanced core features across modules
   - [x] Update scirs2-linalg with GPU acceleration

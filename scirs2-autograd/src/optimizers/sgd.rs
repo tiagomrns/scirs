@@ -32,7 +32,7 @@ pub struct SGD<F> {
     pub alpha: F,
 }
 
-impl<'t, 'g, F: Float> SGD<F> {
+impl<F: Float> SGD<F> {
     pub fn new(alpha: F) -> SGD<F> {
         SGD { alpha }
     }

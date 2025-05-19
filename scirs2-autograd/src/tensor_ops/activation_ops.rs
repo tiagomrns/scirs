@@ -9,11 +9,11 @@ use crate::tensor_ops::*;
 use crate::Float;
 use ndarray;
 
-pub struct ELU<T> {
+pub struct Elu<T> {
     pub alpha: T,
 }
 
-pub struct ELUGrad<T> {
+pub struct EluGrad<T> {
     pub alpha: T,
 }
 
@@ -180,7 +180,7 @@ impl<T: Float> op::Op<T> for Identity {
     }
 }
 
-impl<T: Float> op::Op<T> for ELU<T> {
+impl<T: Float> op::Op<T> for Elu<T> {
     fn compute(&self, ctx: &mut crate::op::ComputeContext<T>) -> Result<(), crate::op::OpError> {
         let ret = ctx.input(0).mapv(move |a| {
             if a > T::zero() {
@@ -199,12 +199,12 @@ impl<T: Float> op::Op<T> for ELU<T> {
             .append_input(ctx.input(0), false)
             .append_input(gy, false)
             .set_shape(&shape(gy))
-            .build(ELUGrad { alpha: self.alpha });
+            .build(EluGrad { alpha: self.alpha });
         ctx.append_input_grad(0, Some(gx))
     }
 }
 
-impl<T: Float> op::Op<T> for ELUGrad<T> {
+impl<T: Float> op::Op<T> for EluGrad<T> {
     fn compute(&self, ctx: &mut crate::op::ComputeContext<T>) -> Result<(), crate::op::OpError> {
         let x = &ctx.input(0);
         let a = x.mapv(move |a| {

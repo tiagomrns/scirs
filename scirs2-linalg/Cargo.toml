@@ -1,6 +1,6 @@
 [package]
 name = "scirs2-linalg"
-version = "0.1.0-alpha.2"
+version = "0.1.0-alpha.3"
 edition = "2021"
 authors = ["SciRS2 Team"]
 description = "Linear algebra module for SciRS2"
@@ -11,7 +11,7 @@ categories = ["science", "mathematics", "algorithms"]
 
 [dependencies]
 # Core dependencies
-scirs2-core = { path = "../scirs2-core", version = "0.1.0-alpha.2", features = ["linalg", "openblas", "parallel", "simd", "random"] }
+scirs2-core = { path = "../scirs2-core", version = "0.1.0-alpha.3", features = ["linalg", "openblas", "parallel", "simd", "random"] }
 ndarray = { version = "0.16.1", features = ["serde", "rayon"] }
 num-traits = "0.2.19"
 num-complex = "0.4.6"
@@ -24,18 +24,19 @@ ndarray-rand = "0.15.0"
 approx = "0.5.1"
 wide = "0.7.32"
 rayon = "1.10.0"
-scirs2-autograd = { path = "../scirs2-autograd", version = "0.1.0-alpha.2", optional = true }
-openblas-src = "0.10.11"
-blas = "0.23.0"
+half = { version = "2.4.0", features = ["num-traits", "serde", "alloc"] }
+scirs2-autograd = { path = "../scirs2-autograd", version = "0.1.0-alpha.3", optional = true }
+openblas-src = { workspace = true }
+blas = { workspace = true }
 
 [dev-dependencies]
 approx = "0.5.1"
 criterion = "0.5.1"
 
 [features]
-default = ["openblas", "simd"]
+default = ["openblas-backend", "simd"]
 netlib = ["scirs2-core/netlib"]
-openblas = ["scirs2-core/openblas"]
+openblas-backend = ["scirs2-core/openblas"]
 intel-mkl = ["scirs2-core/intel-mkl"]
 tensor_contraction = [] # Optional tensor contraction functionality
 simd = ["scirs2-core/simd"] # SIMD-accelerated operations

@@ -17,6 +17,16 @@ Special functions module for the SciRS2 scientific computing library. This modul
 - **Hypergeometric Functions**: Various hypergeometric functions
 - **Mathieu Functions**: Solutions to Mathieu's differential equation
 - **Zeta Functions**: Riemann and Hurwitz zeta functions
+- **Lambert W Function**: The inverse of w*exp(w)
+- **Kelvin Functions**: ber, bei, ker, kei and their derivatives
+- **Struve Functions**: Solutions to the Struve differential equation
+- **Fresnel Integrals**: S(x) and C(x) functions for diffraction 
+- **Parabolic Cylinder Functions**: Solutions to the Weber differential equation
+- **Wright Omega Function**: Solves ω + log(ω) = z
+- **Spheroidal Wave Functions**: Solutions to the Helmholtz equation in spheroidal coordinates
+- **Wright Bessel Functions**: Generalized Bessel functions defined by E.M. Wright
+- **Coulomb Functions**: Solutions to the Coulomb wave equation
+- **Logarithmic Integral**: The function Li(x) = ∫₂ˣ dt/ln(t)
 
 ## Installation
 
@@ -24,14 +34,14 @@ Add the following to your `Cargo.toml`:
 
 ```toml
 [dependencies]
-scirs2-special = "0.1.0-alpha.2"
+scirs2-special = "0.1.0-alpha.3"
 ```
 
 To enable optimizations through the core module, add feature flags:
 
 ```toml
 [dependencies]
-scirs2-special = { version = "0.1.0-alpha.2", features = ["parallel"] }
+scirs2-special = { version = "0.1.0-alpha.3", features = ["parallel"] }
 ```
 
 ## Usage
@@ -422,6 +432,11 @@ The module includes several example applications in the `examples/` directory:
 - `mathieu_functions.rs`: Mathieu function demonstration
 - `spherical_harmonics.rs`: Visualizing spherical harmonics
 - `zeta_functions.rs`: Working with zeta functions
+- `wright_omega_example.rs`: Demonstrates the Wright Omega function
+- `wright_bessel_example.rs`: Demonstrates the Wright Bessel functions
+- `spheroidal_wave_example.rs`: Demonstrates spheroidal wave functions
+- `coulomb_example.rs`: Demonstrates Coulomb wave functions
+- `logarithmic_integral.rs`: Demonstrates the logarithmic integral function
 
 ## Contributing
 

@@ -93,9 +93,11 @@
     - [x] Laplace distribution
     - [x] Logistic distribution
   - [ ] Implement circular distributions:
-    - [ ] von Mises distribution
+    - [x] Created trait for circular distributions
+    - [x] Initial skeleton of von Mises distribution
     - [ ] Wrapped normal distribution
-    - [ ] Wrapped Cauchy distribution
+    - [x] Initial skeleton of wrapped Cauchy distribution
+    - [ ] Fix numeric stability issues and library dependencies
 
 - [ ] Advanced distribution features:
   - [x] Support multivariate distributions
@@ -171,77 +173,81 @@
 
 - [ ] Add hypothesis testing functions:
   - [ ] Parametric tests:
-    - [ ] T-tests (one-sample, two-sample, paired)
+    - [x] T-tests (one-sample, two-sample, paired)
     - [ ] ANOVA (one-way, multi-way)
     - [ ] MANOVA (multivariate analysis of variance)
     - [ ] ANCOVA (analysis of covariance)
   - [ ] Non-parametric tests:
     - [ ] Chi-square tests (goodness-of-fit, independence)
-    - [ ] Kolmogorov-Smirnov test (one-sample, two-sample)
-    - [ ] Mann-Whitney U test
-    - [ ] Wilcoxon signed-rank test
-    - [ ] Kruskal-Wallis test
-    - [ ] Friedman test
-  - [ ] Normality tests:
-    - [ ] Shapiro-Wilk test
-    - [ ] Anderson-Darling test
-    - [ ] D'Agostino's K-squared test
+    - [x] Kolmogorov-Smirnov test (one-sample, two-sample)
+    - [x] Mann-Whitney U test
+    - [x] Wilcoxon signed-rank test
+    - [x] Kruskal-Wallis test
+    - [x] Friedman test
+  - [x] Normality tests:
+    - [x] Shapiro-Wilk test
+    - [x] Anderson-Darling test
+    - [x] D'Agostino's K-squared test
   - [ ] Other tests:
-    - [ ] Levene's test for homogeneity of variance
+    - [x] Levene's test for homogeneity of variance
     - [ ] Mauchly's test for sphericity
-    - [ ] Bartlett's test for equal variances
-    - [ ] Brown-Forsythe test for equal variances
+    - [x] Bartlett's test for equal variances
+    - [x] Brown-Forsythe test for equal variances
 
 - [ ] Add descriptive statistics capabilities:
-  - [ ] Correlation measures:
-    - [ ] Pearson correlation coefficient
-    - [ ] Spearman rank correlation
-    - [ ] Kendall tau correlation
-    - [ ] Point-biserial correlation
-    - [ ] Partial correlation
-    - [ ] Intraclass correlation coefficient
-  - [ ] Dispersion measures:
-    - [ ] Mean absolute deviation
-    - [ ] Median absolute deviation
-    - [ ] Interquartile range
-    - [ ] Range
-    - [ ] Coefficient of variation
-    - [ ] Gini coefficient
-  - [ ] Quantile-based statistics:
-    - [ ] Percentiles and quantiles
-    - [ ] Quartiles and quintiles
-    - [ ] Box plot statistics
-    - [ ] Winsorized mean and variance
-  - [ ] Distribution characteristics:
-    - [ ] Modes (unimodal, bimodal, multimodal)
-    - [ ] Entropy and information measures
-    - [ ] Skewness and kurtosis with confidence intervals
+  - [x] Correlation measures:
+    - [x] Pearson correlation coefficient
+    - [x] Spearman rank correlation
+    - [x] Kendall tau correlation
+    - [x] Point-biserial correlation
+    - [x] Partial correlation
+    - [x] Intraclass correlation coefficient
+  - [x] Dispersion measures:
+    - [x] Mean absolute deviation
+    - [x] Median absolute deviation
+    - [x] Interquartile range
+    - [x] Range
+    - [x] Coefficient of variation
+    - [x] Gini coefficient
+  - [x] Quantile-based statistics:
+    - [x] Percentiles and quantiles with multiple interpolation methods
+    - [x] Quartiles and quintiles
+    - [x] Box plot statistics (including whiskers and outlier detection)
+    - [x] Winsorized mean and variance
+  - [x] Distribution characteristics:
+    - [x] Modes (unimodal, bimodal, multimodal)
+    - [x] Entropy and information measures
+    - [x] Skewness and kurtosis with confidence intervals
 
 - [ ] Add regression and modeling features:
-  - [ ] Linear models:
-    - [ ] Improve linear regression implementation
-    - [ ] Multiple linear regression
-    - [ ] Polynomial regression
-    - [ ] Stepwise regression
-    - [ ] Robust regression methods
-  - [ ] Regularized models:
-    - [ ] Ridge regression (L2 regularization)
-    - [ ] Lasso regression (L1 regularization)
-    - [ ] Elastic Net (L1 + L2 regularization)
-    - [ ] Group lasso and sparse group lasso
+  - [x] Linear models:
+    - [x] Improve linear regression implementation
+    - [x] Multiple linear regression
+    - [x] Polynomial regression
+    - [x] Stepwise regression with stability checks
+    - [x] Robust regression methods
+      - [x] RANSAC implementation
+      - [x] Huber regression
+      - [x] Theil-Sen estimator
+  - [x] Regularized models:
+    - [x] Ridge regression (L2 regularization)
+    - [x] Lasso regression (L1 regularization)
+    - [x] Elastic Net (L1 + L2 regularization)
+    - [x] Group lasso and sparse group lasso
+    - [x] Numerical stability improvements for all regularizers
   - [ ] Generalized linear models:
     - [ ] Logistic regression
     - [ ] Poisson regression
     - [ ] Negative binomial regression
     - [ ] Gamma regression
     - [ ] Quasi-likelihood models
-  - [ ] Model diagnostics:
-    - [ ] Residual analysis
-    - [ ] Influence measures
-    - [ ] Heteroscedasticity tests
-    - [ ] VIF calculation for multicollinearity
-    - [ ] Model selection criteria (AIC, BIC, etc.)
-    - [ ] Cross-validation utilities
+  - [x] Model diagnostics:
+    - [x] Residual analysis
+    - [x] Influence measures
+    - [x] Heteroscedasticity tests
+    - [x] VIF calculation for multicollinearity
+    - [x] Model selection criteria (AIC, BIC, etc.)
+    - [x] Cross-validation utilities
 
 ## 7. Monte Carlo and Sampling Methods
 

@@ -448,10 +448,8 @@ impl Profiler {
     /// Register the start of a memory tracker
     pub fn register_memory_tracker_start(&mut self, _tracker: &MemoryTracker) {
         if !self.running {
-            return;
+            // Nothing to do at start, just ensure the method exists for symmetry
         }
-
-        // Nothing to do at start, just ensure the method exists for symmetry
     }
 
     /// Register the stop of a memory tracker

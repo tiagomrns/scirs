@@ -1,7 +1,10 @@
 //! Correlation measures
 //!
 //! This module provides functions for computing various correlation coefficients
-//! between datasets, including Pearson, Spearman, and Kendall tau correlation.
+//! between datasets, including Pearson, Spearman, Kendall tau, and intraclass correlation.
+
+// Import the intraclass correlation module
+pub mod intraclass;
 
 use crate::error::{StatsError, StatsResult};
 use crate::{mean, std};
@@ -392,6 +395,124 @@ where
     pearson_r::<F, _>(&x_resid.view(), &y_resid.view())
 }
 
+/// Calculates the partial correlation coefficient and p-value.
+///
+/// Partial correlation measures the relationship between two variables while controlling
+/// for the effects of one or more other variables. It indicates the strength of the
+/// relationship between two variables that would be observed if the control variables
+/// were held constant.
+///
+/// This function also computes a p-value for testing the hypothesis of no partial correlation.
+///
+/// # Arguments
+///
+/// * `x` - First input data array
+/// * `y` - Second input data array
+/// * `z` - Array of control variables (each column is a control variable)
+/// * `alternative` - The alternative hypothesis: "two-sided" (default), "less", or "greater"
+///
+/// # Returns
+///
+/// A tuple containing (partial correlation coefficient, p-value)
+///
+/// # Examples
+///
+/// ```
+/// use ndarray::{array, Array2};
+/// use scirs2_stats::partial_corrr;
+///
+/// // Create sample data
+/// let x = array![10.0, 8.0, 13.0, 9.0, 11.0, 14.0, 6.0, 4.0, 12.0, 7.0, 5.0];
+/// let y = array![8.04, 6.95, 7.58, 8.81, 8.33, 9.96, 7.24, 4.26, 10.84, 4.82, 5.68];
+///
+/// // Control variable
+/// let z1 = array![7.0, 5.0, 8.0, 7.0, 8.0, 7.0, 5.0, 3.0, 9.0, 4.0, 6.0];
+/// let z = Array2::from_shape_vec((11, 1), z1.to_vec()).unwrap();
+///
+/// // Calculate partial correlation coefficient and p-value
+/// let (pr, p_value) = partial_corrr(&x.view(), &y.view(), &z.view(), "two-sided").unwrap();
+///
+/// println!("Partial correlation coefficient: {}", pr);
+/// println!("Two-sided p-value: {}", p_value);
+/// ```
+pub fn partial_corrr<F, D1, D2>(
+    x: &ArrayBase<D1, Ix1>,
+    y: &ArrayBase<D1, Ix1>,
+    z: &ArrayBase<D2, Ix2>,
+    alternative: &str,
+) -> StatsResult<(F, F)>
+where
+    F: Float + std::fmt::Debug + NumCast + std::iter::Sum<F> + 'static,
+    D1: Data<Elem = F>,
+    D2: Data<Elem = F>,
+{
+    // Calculate the partial correlation coefficient
+    let pr = partial_corr::<F, _, _>(x, y, z)?;
+
+    // Get sample size and number of control variables
+    let n = x.len();
+    let p = z.shape()[1];
+
+    // Calculate degrees of freedom (adjusted for control variables)
+    // df = n - 2 - p (where p is the number of control variables)
+    let df = F::from(n - 2 - p).unwrap();
+
+    // For very small sample sizes or limited degrees of freedom, p-value calculation becomes unreliable
+    if df <= F::from(2.0).unwrap() {
+        return Ok((pr, F::one()));
+    }
+
+    // Validate alternative parameter
+    match alternative {
+        "two-sided" | "less" | "greater" => {}
+        _ => {
+            return Err(StatsError::InvalidArgument(format!(
+                "Invalid alternative parameter: {}. Use 'two-sided', 'less', or 'greater'",
+                alternative
+            )));
+        }
+    }
+
+    // Convert to t-statistic
+    // t = r * sqrt(df/(1-r^2))
+    // Calculate t-statistic (handle perfect correlations to avoid numerical issues)
+    let t_stat = if pr.abs() >= F::one() {
+        if pr > F::zero() {
+            F::from(1e6).unwrap() // Very large positive value
+        } else {
+            F::from(-1e6).unwrap() // Very large negative value
+        }
+    } else {
+        pr * (df / (F::one() - pr * pr)).sqrt()
+    };
+
+    // Calculate p-value based on t-distribution
+    let p_value = match alternative {
+        "less" => {
+            // One-sided test: correlation is negative (less than zero)
+            if pr >= F::zero() {
+                F::one() // r is non-negative, so p-value = 1
+            } else {
+                student_t_cdf(t_stat, df)
+            }
+        }
+        "greater" => {
+            // One-sided test: correlation is positive (greater than zero)
+            if pr <= F::zero() {
+                F::one() // r is non-positive, so p-value = 1
+            } else {
+                F::one() - student_t_cdf(t_stat, df)
+            }
+        }
+        _ => {
+            // Two-sided test: correlation is nonzero
+            F::from(2.0).unwrap() * (F::one() - student_t_cdf(t_stat.abs(), df))
+        }
+    };
+
+    Ok((pr, p_value))
+}
+
 /// Helper function to compute residuals by regressing one variable on control variables
 fn compute_residuals<F, D1, D2>(
     y: &ArrayBase<D1, Ix1>,
@@ -638,6 +759,117 @@ where
     Ok(corr)
 }
 
+/// Calculates the point-biserial correlation coefficient and p-value.
+///
+/// The point-biserial correlation measures the relationship between a binary variable
+/// and a continuous variable. It is mathematically equivalent to the Pearson correlation
+/// when one of the variables is binary (coded as 0 and 1).
+///
+/// This function also computes a p-value for testing the hypothesis of no correlation.
+///
+/// # Arguments
+///
+/// * `binary` - Binary variable (should only contain 0 and 1)
+/// * `continuous` - Continuous variable
+/// * `alternative` - The alternative hypothesis: "two-sided" (default), "less", or "greater"
+///
+/// # Returns
+///
+/// A tuple containing (correlation coefficient, p-value)
+///
+/// # Examples
+///
+/// ```
+/// use ndarray::array;
+/// use scirs2_stats::point_biserialr;
+///
+/// // Create data with binary predictor and continuous outcome
+/// let binary = array![0.0, 1.0, 0.0, 1.0, 0.0, 1.0, 0.0, 1.0];
+/// let continuous = array![2.5, 4.5, 3.2, 5.1, 2.0, 4.8, 2.8, 5.5];
+///
+/// // Calculate point-biserial correlation coefficient and p-value
+/// let (rpb, p_value) = point_biserialr(&binary.view(), &continuous.view(), "two-sided").unwrap();
+///
+/// println!("Point-biserial correlation coefficient: {}", rpb);
+/// println!("Two-sided p-value: {}", p_value);
+///
+/// // A high positive coefficient indicates that group 1 (binary = 1) has higher values
+/// // than group 0 (binary = 0)
+/// ```
+pub fn point_biserialr<F, D>(
+    binary: &ArrayBase<D, Ix1>,
+    continuous: &ArrayBase<D, Ix1>,
+    alternative: &str,
+) -> StatsResult<(F, F)>
+where
+    F: Float + std::fmt::Debug + NumCast + std::iter::Sum<F>,
+    D: Data<Elem = F>,
+{
+    // Calculate the point-biserial correlation coefficient
+    let rpb = point_biserial::<F, _>(binary, continuous)?;
+
+    // Get sample size
+    let n = binary.len();
+
+    // For very small sample sizes, p-value calculation becomes unreliable
+    if n <= 3 {
+        return Ok((rpb, F::one()));
+    }
+
+    // Validate alternative parameter
+    match alternative {
+        "two-sided" | "less" | "greater" => {}
+        _ => {
+            return Err(StatsError::InvalidArgument(format!(
+                "Invalid alternative parameter: {}. Use 'two-sided', 'less', or 'greater'",
+                alternative
+            )));
+        }
+    }
+
+    // Convert to t-statistic
+    // The t-statistic for point-biserial correlation is calculated using the formula:
+    // t = r * sqrt((n-2)/(1-r^2))
+    let df = F::from(n - 2).unwrap();
+
+    // Calculate t-statistic (handle perfect correlations to avoid numerical issues)
+    let t_stat = if rpb.abs() >= F::one() {
+        if rpb > F::zero() {
+            F::from(1e6).unwrap() // Very large positive value
+        } else {
+            F::from(-1e6).unwrap() // Very large negative value
+        }
+    } else {
+        rpb * (df / (F::one() - rpb * rpb)).sqrt()
+    };
+
+    // Calculate p-value based on t-distribution
+    let p_value = match alternative {
+        "less" => {
+            // One-sided test: correlation is negative (less than zero)
+            if rpb >= F::zero() {
+                F::one() // r is non-negative, so p-value = 1
+            } else {
+                student_t_cdf(t_stat, df)
+            }
+        }
+        "greater" => {
+            // One-sided test: correlation is positive (greater than zero)
+            if rpb <= F::zero() {
+                F::one() // r is non-positive, so p-value = 1
+            } else {
+                F::one() - student_t_cdf(t_stat, df)
+            }
+        }
+        _ => {
+            // Two-sided test: correlation is nonzero
+            F::from(2.0).unwrap() * (F::one() - student_t_cdf(t_stat.abs(), df))
+        }
+    };
+
+    Ok((rpb, p_value))
+}
+
 /// Compute a correlation matrix for a set of variables.
 ///
 /// # Arguments
@@ -818,4 +1050,600 @@ mod tests {
         assert_abs_diff_eq!(corr_mat[[0, 1]], -1.0, epsilon = 1e-10); // Perfect negative correlation
         assert_abs_diff_eq!(corr_mat[[0, 2]], -1.0, epsilon = 1e-10); // Perfect negative correlation
     }
+
+    #[test]
+    fn test_pearsonr_with_pvalue() {
+        // Perfect positive correlation
+        let x = array![1.0, 2.0, 3.0, 4.0, 5.0];
+        let y = array![2.0, 4.0, 6.0, 8.0, 10.0];
+
+        let (r, p) = pearsonr(&x.view(), &y.view(), "two-sided").unwrap();
+        assert_abs_diff_eq!(r, 1.0, epsilon = 1e-10);
+        assert!(p < 0.05); // Statistically significant
+
+        // Small sample with n=2 should have p-value = 1.0
+        let x_small = array![1.0, 2.0];
+        let y_small = array![2.0, 4.0];
+
+        let (_, p) = pearsonr(&x_small.view(), &y_small.view(), "two-sided").unwrap();
+        assert_abs_diff_eq!(p, 1.0, epsilon = 1e-10);
+    }
+}
+
+/// Calculates the Pearson correlation coefficient and p-value for testing non-correlation.
+///
+/// The Pearson correlation coefficient measures the linear relationship between two datasets.
+/// It ranges from -1 to +1, where:
+/// * +1 indicates a perfect positive linear correlation
+/// * 0 indicates no linear correlation
+/// * -1 indicates a perfect negative linear correlation
+///
+/// This function also computes a p-value that indicates the probability of observing a correlation
+/// coefficient as extreme or more extreme, given that the true correlation is zero.
+///
+/// # Arguments
+///
+/// * `x` - First input data array
+/// * `y` - Second input data array
+/// * `alternative` - The alternative hypothesis: "two-sided" (default), "less", or "greater"
+///
+/// # Returns
+///
+/// A tuple containing (correlation coefficient, p-value)
+///
+/// # Examples
+///
+/// ```
+/// use ndarray::array;
+/// use scirs2_stats::pearsonr;
+///
+/// // Create two datasets with a positive linear relationship
+/// let x = array![1.0, 2.0, 3.0, 4.0, 5.0];
+/// let y = array![1.1, 2.2, 2.9, 4.1, 5.0];
+///
+/// // Calculate Pearson correlation coefficient and p-value
+/// let (r, p_value) = pearsonr(&x.view(), &y.view(), "two-sided").unwrap();
+///
+/// println!("Pearson correlation coefficient: {}", r);
+/// println!("Two-sided p-value: {}", p_value);
+///
+/// // A coefficient close to 1 indicates a strong positive linear relationship
+/// assert!(r > 0.9);
+/// ```
+pub fn pearsonr<F, D>(
+    x: &ArrayBase<D, Ix1>,
+    y: &ArrayBase<D, Ix1>,
+    alternative: &str,
+) -> StatsResult<(F, F)>
+where
+    F: Float + std::fmt::Debug + NumCast + std::iter::Sum<F>,
+    D: Data<Elem = F>,
+{
+    // Validate input dimensions
+    if x.len() != y.len() {
+        return Err(StatsError::DimensionMismatch(
+            "Input arrays must have the same length".to_string(),
+        ));
+    }
+
+    let n = x.len();
+
+    // Need at least 2 observations
+    if n < 2 {
+        return Err(StatsError::InvalidArgument(
+            "At least 2 observations are required".to_string(),
+        ));
+    }
+
+    // Validate alternative parameter
+    match alternative {
+        "two-sided" | "less" | "greater" => {}
+        _ => {
+            return Err(StatsError::InvalidArgument(format!(
+                "Invalid alternative parameter: {}. Use 'two-sided', 'less', or 'greater'",
+                alternative
+            )));
+        }
+    }
+
+    // Calculate correlation coefficient
+    let r = pearson_r::<F, _>(x, y)?;
+
+    // Special case: n=2
+    if n == 2 {
+        // For n=2, the correlation coefficient is always -1 or 1, and the p-value is always 1
+        return Ok((r, F::one()));
+    }
+
+    // Calculate p-value
+    // Under the null hypothesis of no correlation, the test statistic
+    // follows a t-distribution with n-2 degrees of freedom
+    let r_abs = r.abs();
+    let df = F::from(n - 2).unwrap();
+
+    // Convert r to t-statistic
+    let t_stat = r_abs * (df / (F::one() - r_abs * r_abs)).sqrt();
+
+    // Calculate p-value based on t-distribution
+    let p_value = match alternative {
+        "less" => {
+            // One-sided test: correlation is negative (less than zero)
+            if r >= F::zero() {
+                F::one() // r is non-negative, so p-value = 1
+            } else {
+                student_t_cdf(t_stat, df)
+            }
+        }
+        "greater" => {
+            // One-sided test: correlation is positive (greater than zero)
+            if r <= F::zero() {
+                F::one() // r is non-positive, so p-value = 1
+            } else {
+                F::one() - student_t_cdf(t_stat, df)
+            }
+        }
+        _ => {
+            // Two-sided test: correlation is nonzero
+            F::from(2.0).unwrap() * (F::one() - student_t_cdf(t_stat, df))
+        }
+    };
+
+    Ok((r, p_value))
+}
+
+// Implementation of Student's t-distribution CDF
+fn student_t_cdf<F: Float + NumCast>(t: F, df: F) -> F {
+    let t_f64 = <f64 as NumCast>::from(t).unwrap();
+    let df_f64 = <f64 as NumCast>::from(df).unwrap();
+
+    // Use the regularized incomplete beta function for the CDF
+    let x = df_f64 / (df_f64 + t_f64 * t_f64);
+
+    // P(T <= t) = 1 - 0.5 * I_x(df/2, 1/2) for t > 0
+    // P(T <= t) = 0.5 * I_x(df/2, 1/2) for t <= 0
+    let p = if t_f64 <= 0.0 {
+        0.5 * beta_cdf(x, df_f64 / 2.0, 0.5)
+    } else {
+        1.0 - 0.5 * beta_cdf(x, df_f64 / 2.0, 0.5)
+    };
+
+    F::from(p).unwrap()
+}
+
+// Beta cumulative distribution function
+fn beta_cdf(x: f64, a: f64, b: f64) -> f64 {
+    if x <= 0.0 {
+        return 0.0;
+    }
+    if x >= 1.0 {
+        return 1.0;
+    }
+
+    // Use the relationship with the regularized incomplete beta function
+    if x <= (a / (a + b)) {
+        // For x in the first half of the range
+        let beta_x = beta_incomplete(a, b, x);
+        let beta_full = beta_function(a, b);
+        beta_x / beta_full
+    } else {
+        // For x in the second half, use the symmetry relation
+        let beta_x = beta_incomplete(b, a, 1.0 - x);
+        let beta_full = beta_function(a, b);
+        1.0 - beta_x / beta_full
+    }
+}
+
+// Incomplete beta function
+fn beta_incomplete(a: f64, b: f64, x: f64) -> f64 {
+    if x <= 0.0 {
+        return 0.0;
+    }
+    if x >= 1.0 {
+        return beta_function(a, b);
+    }
+
+    // Using a continued fraction expansion
+    if x < (a + 1.0) / (a + b + 2.0) {
+        // Use the continued fraction representation
+        let bt = beta_continued_fraction(a, b, x);
+        bt * x.powf(a) * (1.0 - x).powf(b) / a
+    } else {
+        // Use the symmetry relation
+        let bt = beta_continued_fraction(b, a, 1.0 - x);
+        beta_function(a, b) - bt * (1.0 - x).powf(b) * x.powf(a) / b
+    }
+}
+
+// Continued fraction for the incomplete beta function
+fn beta_continued_fraction(a: f64, b: f64, x: f64) -> f64 {
+    let max_iter = 100;
+    let epsilon = 1e-10;
+
+    let qab = a + b;
+    let qap = a + 1.0;
+    let qam = a - 1.0;
+
+    let mut c = 1.0;
+    let mut d = 1.0 - qab * x / qap;
+    if d.abs() < epsilon {
+        d = epsilon;
+    }
+    d = 1.0 / d;
+    let mut h = d;
+
+    for m in 1..max_iter {
+        let m2 = 2 * m;
+
+        // Even step
+        let aa = m as f64 * (b - m as f64) * x / ((qam + m2 as f64) * (a + m2 as f64));
+        d = 1.0 + aa * d;
+        if d.abs() < epsilon {
+            d = epsilon;
+        }
+        c = 1.0 + aa / c;
+        if c.abs() < epsilon {
+            c = epsilon;
+        }
+        d = 1.0 / d;
+        h *= d * c;
+
+        // Odd step
+        let aa = -(a + m as f64) * (qab + m as f64) * x / ((a + m2 as f64) * (qap + m2 as f64));
+        d = 1.0 + aa * d;
+        if d.abs() < epsilon {
+            d = epsilon;
+        }
+        c = 1.0 + aa / c;
+        if c.abs() < epsilon {
+            c = epsilon;
+        }
+        d = 1.0 / d;
+        h *= d * c;
+
+        // Check for convergence
+        if (d * c - 1.0).abs() < epsilon {
+            break;
+        }
+    }
+
+    h
+}
+
+// Beta function
+fn beta_function(a: f64, b: f64) -> f64 {
+    gamma_function(a) * gamma_function(b) / gamma_function(a + b)
+}
+
+// Gamma function approximation (Lanczos approximation)
+fn gamma_function(x: f64) -> f64 {
+    if x <= 0.0 {
+        panic!("Gamma function not defined for non-positive values");
+    }
+
+    // For small values, use the reflection formula
+    if x < 0.5 {
+        return std::f64::consts::PI / ((std::f64::consts::PI * x).sin() * gamma_function(1.0 - x));
+    }
+
+    // Lanczos approximation for gamma function
+    let p = [
+        676.5203681218851,
+        -1259.1392167224028,
+        771.323428777653,
+        -176.61502916214,
+        12.507343278687,
+        -0.1385710952657,
+        9.984369578019e-6,
+        1.50563273515e-7,
+    ];
+
+    let z = x - 1.0;
+    let mut result = 0.9999999999998;
+
+    for (i, &value) in p.iter().enumerate() {
+        result += value / (z + (i + 1) as f64);
+    }
+
+    let t = z + p.len() as f64 - 0.5;
+
+    // sqrt(2*pi) = 2.506628274631000502415765284811
+    2.506628274631 * t.powf(z + 0.5) * (-t).exp() * result
+}
+
+/// Calculates the Spearman rank correlation coefficient and p-value.
+///
+/// The Spearman rank correlation coefficient is a non-parametric measure of rank correlation
+/// (statistical dependence between the rankings of two variables). It assesses how well the
+/// relationship between two variables can be described using a monotonic function.
+///
+/// This function also computes a p-value for testing the hypothesis of no correlation.
+///
+/// # Arguments
+///
+/// * `x` - First input data array
+/// * `y` - Second input data array
+/// * `alternative` - The alternative hypothesis: "two-sided" (default), "less", or "greater"
+///
+/// # Returns
+///
+/// A tuple containing (correlation coefficient, p-value)
+///
+/// # Examples
+///
+/// ```
+/// use ndarray::array;
+/// use scirs2_stats::spearmanr;
+///
+/// // Create two datasets with a monotonic (but not linear) relationship
+/// let x = array![1.0, 2.0, 3.0, 4.0, 5.0];
+/// let y = array![1.0, 4.0, 9.0, 16.0, 25.0]; // y = x²
+///
+/// // Calculate Spearman correlation coefficient and p-value
+/// let (rho, p_value) = spearmanr(&x.view(), &y.view(), "two-sided").unwrap();
+///
+/// println!("Spearman correlation coefficient: {}", rho);
+/// println!("Two-sided p-value: {}", p_value);
+///
+/// // Perfect monotonic relationship (rho = 1.0)
+/// assert!(rho > 0.99);
+/// ```
+pub fn spearmanr<F, D>(
+    x: &ArrayBase<D, Ix1>,
+    y: &ArrayBase<D, Ix1>,
+    alternative: &str,
+) -> StatsResult<(F, F)>
+where
+    F: Float + std::fmt::Debug + NumCast + std::iter::Sum<F>,
+    D: Data<Elem = F>,
+{
+    // Calculate Spearman's rank correlation coefficient (rho)
+    let rho = spearman_r::<F, _>(x, y)?;
+
+    // Get sample size
+    let n = x.len();
+
+    // For very small sample sizes, p-value calculation becomes unreliable
+    if n <= 3 {
+        return Ok((rho, F::one()));
+    }
+
+    // Validate alternative parameter
+    match alternative {
+        "two-sided" | "less" | "greater" => {}
+        _ => {
+            return Err(StatsError::InvalidArgument(format!(
+                "Invalid alternative parameter: {}. Use 'two-sided', 'less', or 'greater'",
+                alternative
+            )));
+        }
+    }
+
+    // Calculate p-value based on the t-statistic
+    // This is an approximation that works well for n > 10
+    // For large n, the t-statistic is approximately:
+    // t = rho * sqrt((n-2)/(1-rho²))
+
+    let rho_abs = rho.abs();
+    let df = F::from(n - 2).unwrap();
+
+    // Calculate t-statistic (handles rho near ±1.0 to avoid numerical issues)
+    let t_stat = if rho_abs >= F::one() {
+        df.sqrt() * F::from(1e6).unwrap() // Large value simulating infinity
+    } else {
+        rho * (df / (F::one() - rho * rho)).sqrt()
+    };
+
+    // Calculate p-value based on t-distribution
+    let p_value = match alternative {
+        "less" => {
+            // One-sided test: correlation is negative (less than zero)
+            if rho >= F::zero() {
+                F::one() // rho is non-negative, so p-value = 1
+            } else {
+                student_t_cdf(t_stat, df)
+            }
+        }
+        "greater" => {
+            // One-sided test: correlation is positive (greater than zero)
+            if rho <= F::zero() {
+                F::one() // rho is non-positive, so p-value = 1
+            } else {
+                F::one() - student_t_cdf(t_stat, df)
+            }
+        }
+        _ => {
+            // Two-sided test: correlation is nonzero
+            F::from(2.0).unwrap() * (F::one() - student_t_cdf(t_stat.abs(), df))
+        }
+    };
+
+    Ok((rho, p_value))
+}
+
+/// Calculates the Kendall tau rank correlation coefficient and p-value.
+///
+/// The Kendall tau rank correlation coefficient measures the ordinal association
+/// between two variables. It assesses the similarity of the orderings when ranked
+/// by each quantity, based on the number of concordant and discordant pairs.
+///
+/// This function also computes a p-value for testing the hypothesis of no correlation.
+///
+/// # Arguments
+///
+/// * `x` - First input data array
+/// * `y` - Second input data array
+/// * `method` - The calculation method: "b" (default) or "c"
+/// * `alternative` - The alternative hypothesis: "two-sided" (default), "less", or "greater"
+///
+/// # Returns
+///
+/// A tuple containing (correlation coefficient, p-value)
+///
+/// # Examples
+///
+/// ```
+/// use ndarray::array;
+/// use scirs2_stats::kendallr;
+///
+/// // Create two datasets with a perfect negative ordinal relationship
+/// let x = array![1.0, 2.0, 3.0, 4.0, 5.0];
+/// let y = array![5.0, 4.0, 3.0, 2.0, 1.0];
+///
+/// // Calculate Kendall tau correlation coefficient and p-value
+/// let (tau, p_value) = kendallr(&x.view(), &y.view(), "b", "two-sided").unwrap();
+///
+/// println!("Kendall tau correlation coefficient: {}", tau);
+/// println!("Two-sided p-value: {}", p_value);
+///
+/// // Perfect negative ordinal association (tau should be -1.0)
+/// assert!((tau - (-1.0f64)).abs() < 1e-10f64);
+/// ```
+pub fn kendallr<F, D>(
+    x: &ArrayBase<D, Ix1>,
+    y: &ArrayBase<D, Ix1>,
+    method: &str,
+    alternative: &str,
+) -> StatsResult<(F, F)>
+where
+    F: Float + std::fmt::Debug + NumCast + std::iter::Sum<F>,
+    D: Data<Elem = F>,
+{
+    // Calculate Kendall's tau correlation coefficient
+    let tau = kendall_tau::<F, _>(x, y, method)?;
+
+    // Get sample size
+    let n = x.len();
+
+    // For very small sample sizes, p-value calculation becomes unreliable
+    if n <= 3 {
+        return Ok((tau, F::one()));
+    }
+
+    // Validate alternative parameter
+    match alternative {
+        "two-sided" | "less" | "greater" => {}
+        _ => {
+            return Err(StatsError::InvalidArgument(format!(
+                "Invalid alternative parameter: {}. Use 'two-sided', 'less', or 'greater'",
+                alternative
+            )));
+        }
+    }
+
+    // Calculate p-value
+    // For Kendall's tau, we can use a normal approximation for n ≥ 10
+    let n_f = F::from(n).unwrap();
+
+    // Set up for ties handling
+    let mut concordant = 0;
+    let mut discordant = 0;
+    let mut ties_x = 0;
+    let mut ties_y = 0;
+    let mut _ties_xy = 0;
+
+    // Count concordant and discordant pairs, and ties
+    for i in 0..n {
+        for j in (i + 1)..n {
+            let x_diff = x[j] - x[i];
+            let y_diff = y[j] - y[i];
+
+            if x_diff.is_zero() && y_diff.is_zero() {
+                _ties_xy += 1;
+            } else if x_diff.is_zero() {
+                ties_x += 1;
+            } else if y_diff.is_zero() {
+                ties_y += 1;
+            } else if (x_diff > F::zero() && y_diff > F::zero())
+                || (x_diff < F::zero() && y_diff < F::zero())
+            {
+                concordant += 1;
+            } else {
+                discordant += 1;
+            }
+        }
+    }
+
+    // Calculate variance under the null hypothesis (accounting for ties)
+    let n0 = n * (n - 1) / 2;
+    let n1 = concordant + discordant + ties_x;
+    let n2 = concordant + discordant + ties_y;
+
+    // Standard variance formula for Kendall's tau
+    let var_tau = if method == "b" {
+        let n1_f = F::from(n1).unwrap();
+        let n2_f = F::from(n2).unwrap();
+        let n0_f = F::from(n0).unwrap();
+
+        // Variance for tau-b (accounting for ties)
+        if n1 == 0 || n2 == 0 {
+            // No variance possible, can't calculate p-value
+            return Ok((tau, F::one()));
+        }
+
+        // Calculate variance under H0 for tau-b
+        let v0 = F::from(n * (n - 1) * (2 * n + 5)).unwrap() / F::from(18).unwrap();
+        let v1 = F::from(ties_x * (ties_x - 1) * (2 * ties_x + 5)).unwrap() / F::from(18).unwrap();
+        let v2 = F::from(ties_y * (ties_y - 1) * (2 * ties_y + 5)).unwrap() / F::from(18).unwrap();
+
+        let v = (v0 - v1 - v2) / (n1_f * n2_f).sqrt();
+        v / n0_f
+    } else {
+        // Variance for tau-c
+        let m = n.min(2);
+        let m_f = F::from(m).unwrap();
+
+        (F::from(2).unwrap() * (F::from(2).unwrap() * m_f + F::from(1).unwrap()))
+            / (F::from(9).unwrap() * m_f * n_f * (n_f - F::one()))
+    };
+
+    // Calculate z-score
+    let z = tau / var_tau.sqrt();
+
+    // Calculate p-value using normal distribution
+    let p_value = match alternative {
+        "less" => {
+            // One-sided test: correlation is negative (less than zero)
+            if tau >= F::zero() {
+                F::one() // tau is non-negative, so p-value = 1
+            } else {
+                normal_cdf(z)
+            }
+        }
+        "greater" => {
+            // One-sided test: correlation is positive (greater than zero)
+            if tau <= F::zero() {
+                F::one() // tau is non-positive, so p-value = 1
+            } else {
+                F::one() - normal_cdf(z)
+            }
+        }
+        _ => {
+            // Two-sided test: correlation is nonzero
+            F::from(2.0).unwrap() * F::min(normal_cdf(z.abs()), F::one() - normal_cdf(z.abs()))
+        }
+    };
+
+    Ok((tau, p_value))
+}
+
+// Standard normal cumulative distribution function
+fn normal_cdf<F: Float + NumCast>(z: F) -> F {
+    let z_f64 = <f64 as NumCast>::from(z).unwrap();
+
+    // Approximation of the standard normal CDF
+    // Based on Abramowitz and Stegun formula 26.2.17
+    let abs_z = z_f64.abs();
+    let t = 1.0 / (1.0 + 0.2316419 * abs_z);
+
+    let poly = t
+        * (0.319381530
+            + t * (-0.356563782 + t * (1.781477937 + t * (-1.821255978 + t * 1.330274429))));
+
+    let p = if z_f64 >= 0.0 {
+        1.0 - (1.0 / (2.0 * std::f64::consts::PI).sqrt()) * (-0.5 * z_f64 * z_f64).exp() * poly
+    } else {
+        (1.0 / (2.0 * std::f64::consts::PI).sqrt()) * (-0.5 * z_f64 * z_f64).exp() * poly
+    };
+
+    F::from(p).unwrap()
 }

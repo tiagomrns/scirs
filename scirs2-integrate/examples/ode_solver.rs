@@ -74,7 +74,7 @@ fn main() {
     println!("  Accepted steps: {}", result_adaptive.n_accepted);
     println!("  Rejected steps: {}", result_adaptive.n_rejected);
     println!("  Function evaluations: {}", result_adaptive.n_eval);
-    println!("  Final step size: {}", result_adaptive.final_step.unwrap());
+    // println!("  Final step size: {}", result_adaptive.final_step.unwrap()); // final_step field doesn't exist
     println!("  Success:    {}", result_adaptive.success);
 
     // Example 2: Harmonic oscillator - y'' + y = 0
@@ -146,7 +146,7 @@ fn main() {
     println!("  Accepted steps: {}", result_adaptive.n_accepted);
     println!("  Rejected steps: {}", result_adaptive.n_rejected);
     println!("  Function evaluations: {}", result_adaptive.n_eval);
-    println!("  Final step size: {}", result_adaptive.final_step.unwrap());
+    // println!("  Final step size: {}", result_adaptive.final_step.unwrap()); // final_step field doesn't exist
     println!("  Success:    {}", result_adaptive.success);
 
     // Example 3: Stiff ODE - Van der Pol oscillator
@@ -224,7 +224,7 @@ fn main() {
             array![2.0, 0.0], // Start with displacement but no velocity
             Some(ODEOptions {
                 method: ODEMethod::Bdf,
-                bdf_order: 2, // BDF2 is a good balance of stability and accuracy
+                max_order: Some(2), // BDF2 is a good balance of stability and accuracy
                 rtol: 1e-4,
                 atol: 1e-6,
                 ..Default::default()
@@ -285,7 +285,7 @@ fn main() {
             array![1.0, 0.0, 0.0], // Initial concentrations
             Some(ODEOptions {
                 method: ODEMethod::Bdf,
-                bdf_order: 3, // Higher order for this challenging problem
+                max_order: Some(3), // Higher order for this challenging problem
                 rtol: 1e-4,
                 atol: 1e-8,      // Stricter absolute tolerance for small values
                 max_steps: 1000, // Allow more steps if needed
@@ -335,10 +335,11 @@ fn main() {
                 n_eval: 0,
                 n_accepted: 0,
                 n_rejected: 0,
+                n_jac: 0,
+                n_lu: 0,
                 success: false,
                 message: Some("Failed to solve".to_string()),
                 method: ODEMethod::RK45,
-                final_step: None,
             }
         })
     });

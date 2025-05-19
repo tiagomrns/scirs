@@ -2,9 +2,8 @@
 //!
 //! This module provides utilities needed across multiple integration methods.
 
+use crate::IntegrateFloat;
 use ndarray::{Array1, Array2, ArrayView1, ArrayView2};
-use num_traits::{Float, FromPrimitive};
-use std::fmt::Debug;
 
 /// Compute the numerical Jacobian of a vector-valued function
 ///
@@ -25,7 +24,7 @@ pub fn numerical_jacobian<F, Func>(
     eps: F,
 ) -> Array2<F>
 where
-    F: Float + FromPrimitive + Debug,
+    F: IntegrateFloat,
     Func: Fn(ArrayView1<F>) -> Array1<F>,
 {
     let n = x.len();
@@ -39,7 +38,7 @@ where
 
     for i in 0..n {
         let mut x_perturbed = x.to_owned();
-        x_perturbed[i] = x_perturbed[i] + eps;
+        x_perturbed[i] += eps;
 
         let f_perturbed = f(x_perturbed.view());
 
@@ -72,7 +71,7 @@ pub fn numerical_jacobian_with_param<F, Func>(
     eps: F,
 ) -> Array2<F>
 where
-    F: Float + FromPrimitive + Debug,
+    F: IntegrateFloat,
     Func: Fn(F, ArrayView1<F>) -> Array1<F>,
 {
     let n = x.len();
@@ -86,7 +85,7 @@ where
 
     for i in 0..n {
         let mut x_perturbed = x.to_owned();
-        x_perturbed[i] = x_perturbed[i] + eps;
+        x_perturbed[i] += eps;
 
         let f_perturbed = f(t, x_perturbed.view());
 
@@ -108,10 +107,7 @@ where
 /// # Returns
 ///
 /// * The solution vector
-pub fn solve_linear_system<F: Float + FromPrimitive + Debug>(
-    a: ArrayView2<F>,
-    b: ArrayView1<F>,
-) -> Array1<F> {
+pub fn solve_linear_system<F: IntegrateFloat>(a: ArrayView2<F>, b: ArrayView1<F>) -> Array1<F> {
     let n_rows = a.shape()[0];
     let n_cols = a.shape()[1];
 
@@ -216,7 +212,7 @@ pub fn solve_linear_system<F: Float + FromPrimitive + Debug>(
     for i in (0..n_cols).rev() {
         let mut sum = aug[[i, n_cols]];
         for j in (i + 1)..n_cols {
-            sum = sum - aug[[i, j]] * x[j];
+            sum -= aug[[i, j]] * x[j];
         }
         x[i] = sum / aug[[i, i]];
     }
@@ -243,7 +239,7 @@ pub fn newton_method<F, Func>(
     max_iter: usize,
 ) -> (Array1<F>, bool)
 where
-    F: Float + FromPrimitive + Debug,
+    F: IntegrateFloat,
     Func: Fn(ArrayView1<F>) -> Array1<F>,
 {
     let mut x = x0.to_owned();
@@ -298,7 +294,7 @@ pub fn newton_method_with_param<F, Func>(
     max_iter: usize,
 ) -> (Array1<F>, bool)
 where
-    F: Float + FromPrimitive + Debug,
+    F: IntegrateFloat,
     Func: Fn(F, ArrayView1<F>) -> Array1<F>,
 {
     let mut x = x0.to_owned();
@@ -400,35 +396,35 @@ mod tests {
 
         // Expected solution: x = [2.0, 1.0]
         assert!(
-            (x[0] - 2.0).abs() < 1e-8,
+            (x[0] - 2.0_f64).abs() < 1e-8,
             "Expected x[0] = 2.0, got {}",
             x[0]
         );
         assert!(
-            (x[1] - 1.0).abs() < 1e-8,
+            (x[1] - 1.0_f64).abs() < 1e-8,
             "Expected x[1] = 1.0, got {}",
             x[1]
         );
 
         // Test with a 3x3 system
-        let a = array![[3.0, 2.0, -1.0], [2.0, -2.0, 4.0], [-1.0, 0.5, -1.0]];
-        let b = array![1.0, -2.0, 0.0];
+        let a = array![[3.0_f64, 2.0, -1.0], [2.0, -2.0, 4.0], [-1.0, 0.5, -1.0]];
+        let b = array![1.0_f64, -2.0, 0.0];
 
         let x = solve_linear_system(a.view(), b.view());
 
         // Expected solution: x = [1.0, -2.0, -2.0]
         assert!(
-            (x[0] - 1.0).abs() < 1e-8,
+            (x[0] - 1.0_f64).abs() < 1e-8,
             "Expected x[0] = 1.0, got {}",
             x[0]
         );
         assert!(
-            (x[1] - (-2.0)).abs() < 1e-8,
+            (x[1] - (-2.0_f64)).abs() < 1e-8,
             "Expected x[1] = -2.0, got {}",
             x[1]
         );
         assert!(
-            (x[2] - (-2.0)).abs() < 1e-8,
+            (x[2] - (-2.0_f64)).abs() < 1e-8,
             "Expected x[2] = -2.0, got {}",
             x[2]
         );

@@ -26,6 +26,7 @@ struct Conv2DTransposeParams {
 }
 
 // Panics for invalid inputs
+#[allow(clippy::too_many_arguments)]
 fn conv2d_transpose_extract_params<F: Float>(
     gy: &NdArrayView<F>,
     w: &NdArrayView<F>,
@@ -86,6 +87,7 @@ fn conv2d_transpose_extract_params<F: Float>(
     })
 }
 
+#[allow(clippy::too_many_arguments)]
 fn conv2d_transpose_impl<F: Float>(
     gy: &NdArrayView<F>,
     w: &NdArrayView<F>,
@@ -140,15 +142,12 @@ fn conv2d_transpose_impl<F: Float>(
 
     let gy_size_per_batch = gy.len() / batch_size;
     let cols_size_per_batch = xch * kh * kw * yh * yw;
-    let ret_size_per_batch = (xch * xh * xw) as usize;
+    let ret_size_per_batch = xch * xh * xw;
 
     let cols_size = batch_size * cols_size_per_batch;
     let ret_size = batch_size * ret_size_per_batch;
 
-    let mut cols: Vec<F> = Vec::with_capacity(cols_size);
-    unsafe {
-        cols.set_len(cols_size);
-    }
+    let mut cols: Vec<F> = vec![F::zero(); cols_size];
     let mut ret = vec![F::zero(); ret_size]; // = gx
 
     let a = gy_slice.par_iter().step_by(gy_size_per_batch);
@@ -265,9 +264,7 @@ impl<T: Float> crate::op::Op<T> for Conv2DTranspose {
                 ctx.append_output(gx);
                 Ok(())
             }
-            Err(e) => {
-                return Err(e);
-            }
+            Err(e) => Err(e),
         }
     }
 
@@ -277,8 +274,8 @@ impl<T: Float> crate::op::Op<T> for Conv2DTranspose {
         let gy = ctx.output_grad();
 
         let gx = Tensor::builder(ctx.graph())
-            .append_input(&gy, false)
-            .append_input(&w, false)
+            .append_input(gy, false)
+            .append_input(w, false)
             .build(super::conv2d::Conv2D {
                 pad: self.pad,
                 stride: self.stride,
@@ -286,9 +283,9 @@ impl<T: Float> crate::op::Op<T> for Conv2DTranspose {
             });
 
         let gw = Tensor::builder(ctx.graph())
-            .append_input(&gy, false)
-            .append_input(&x, false)
-            .append_input(&stop_gradient(w), false)
+            .append_input(gy, false)
+            .append_input(x, false)
+            .append_input(stop_gradient(w), false)
             .build(Conv2DTransposeFilterGrad {
                 pad: self.pad,
                 stride: self.stride,
@@ -300,6 +297,7 @@ impl<T: Float> crate::op::Op<T> for Conv2DTranspose {
     }
 }
 
+#[allow(clippy::too_many_arguments)]
 fn conv2d_transpose_filter_grad_impl<F: Float>(
     x: &NdArrayView<F>,
     w: &NdArrayView<F>,
@@ -330,7 +328,7 @@ fn conv2d_transpose_filter_grad_impl<F: Float>(
     // gy -> gy_cols
     let gy_cols = im2col_batch(
         gy,
-        batch_size as usize,
+        batch_size,
         gy_shape[1] as i32,
         gy_shape[2] as i32,
         gy_shape[3] as i32,
@@ -456,8 +454,8 @@ impl<T: Float> crate::op::Op<T> for Conv2DTransposeFilterGrad {
         let x = ctx.input(1);
 
         let ggy = Tensor::builder(ctx.graph())
-            .append_input(&x, false)
-            .append_input(&gw, false)
+            .append_input(x, false)
+            .append_input(gw, false)
             .build(Conv2DTranspose {
                 pad: self.pad,
                 stride: self.stride,
@@ -465,8 +463,8 @@ impl<T: Float> crate::op::Op<T> for Conv2DTransposeFilterGrad {
             });
 
         let ggx = Tensor::builder(ctx.graph())
-            .append_input(&gy, false)
-            .append_input(&gw, false)
+            .append_input(gy, false)
+            .append_input(gw, false)
             .build(super::conv2d::Conv2D {
                 pad: self.pad,
                 stride: self.stride,

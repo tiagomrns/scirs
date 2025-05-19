@@ -1,10 +1,11 @@
 //! Extended precision matrix operations example
 //!
 //! This example demonstrates the use of extended precision operations for improved accuracy.
+//! This includes matrix operations, determinant calculation, factorizations and eigendecompositions.
 
 use ndarray::{Array1, Array2};
 use scirs2_linalg::error::LinalgResult;
-use scirs2_linalg::extended_precision::{extended_matmul, extended_solve};
+use scirs2_linalg::prelude::*;
 
 fn main() -> LinalgResult<()> {
     println!("Extended Precision Matrix Operations Example");
@@ -135,6 +136,281 @@ fn main() -> LinalgResult<()> {
     }
 
     println!("\nMaximum difference between methods: {:.6e}", max_diff);
+
+    // Extended precision determinant calculation
+    println!("\nExtended Precision Determinant Calculation");
+    println!("---------------------------------------\n");
+
+    // Create a Hilbert matrix of order 6 (extremely ill-conditioned)
+    let n = 6;
+    let mut hilbert_det = Array2::zeros((n, n));
+    for i in 0..n {
+        for j in 0..n {
+            hilbert_det[[i, j]] = 1.0 / ((i + j + 1) as f64);
+        }
+    }
+
+    // Convert to f32 for comparison
+    let hilbert_det_f32: Array2<f32> =
+        Array2::from_shape_fn((n, n), |(i, j)| hilbert_det[[i, j]] as f32);
+
+    println!("Hilbert matrix of order {}:", n);
+    for i in 0..n {
+        for j in 0..n {
+            print!("{:.4} ", hilbert_det[[i, j]]);
+        }
+        println!();
+    }
+
+    // Calculate determinant with standard precision
+    let det_std = match det(&hilbert_det_f32.view()) {
+        Ok(d) => d,
+        Err(e) => {
+            println!("Error calculating standard precision determinant: {}", e);
+            0.0
+        }
+    };
+
+    // Calculate determinant with extended precision
+    let det_ext = extended_det::<_, f64>(&hilbert_det_f32.view())?;
+
+    // Calculate f64 reference
+    let det_f64 = det(&hilbert_det.view())?;
+    let det_f64_as_f32 = det_f64 as f32;
+
+    println!(
+        "\nDeterminant with standard precision (f32): {:.10e}",
+        det_std
+    );
+    println!(
+        "Determinant with extended precision (f32->f64->f32): {:.10e}",
+        det_ext
+    );
+    println!("Reference determinant (f64): {:.10e}", det_f64);
+    println!(
+        "Reference determinant (f64 as f32): {:.10e}",
+        det_f64_as_f32
+    );
+
+    // Compute errors with respect to f64 reference
+    let error_std = (det_std - det_f64_as_f32).abs();
+    let error_ext = (det_ext - det_f64_as_f32).abs();
+
+    println!(
+        "\nAbsolute error from reference (standard precision): {:.10e}",
+        error_std
+    );
+    println!(
+        "Absolute error from reference (extended precision): {:.10e}",
+        error_ext
+    );
+
+    if error_ext < error_std {
+        println!("Improvement factor: {:.2}x", error_std / error_ext);
+    } else {
+        println!("No improvement observed in this case.");
+    }
+
+    // Extended precision factorization example
+    println!("\nExtended Precision Matrix Factorizations");
+    println!("-------------------------------------\n");
+
+    // Create an ill-conditioned test matrix
+    let test_matrix_f32 = Array2::from_shape_fn((4, 4), |(i, j)| {
+        if i == j {
+            1.0f32
+        } else {
+            0.9f32 // Close to identity but ill-conditioned
+        }
+    });
+
+    println!("Test matrix (close to singular):");
+    for i in 0..test_matrix_f32.nrows() {
+        for j in 0..test_matrix_f32.ncols() {
+            print!("{:.4} ", test_matrix_f32[[i, j]]);
+        }
+        println!();
+    }
+
+    // LU factorization with extended precision
+    println!("\nLU factorization with extended precision:");
+    let (p, l, u) = extended_lu::<_, f64>(&test_matrix_f32.view())?;
+
+    println!("L matrix:");
+    for i in 0..l.nrows() {
+        for j in 0..l.ncols() {
+            print!("{:.6} ", l[[i, j]]);
+        }
+        println!();
+    }
+
+    println!("\nU matrix:");
+    for i in 0..u.nrows() {
+        for j in 0..u.ncols() {
+            print!("{:.6} ", u[[i, j]]);
+        }
+        println!();
+    }
+
+    // Verify A ≈ P^T * L * U
+    let p_t = p.t();
+    let lu = l.dot(&u);
+    let reconstructed = p_t.dot(&lu);
+
+    println!("\nOriginal matrix:");
+    for i in 0..test_matrix_f32.nrows() {
+        for j in 0..test_matrix_f32.ncols() {
+            print!("{:.6} ", test_matrix_f32[[i, j]]);
+        }
+        println!();
+    }
+
+    println!("\nReconstructed matrix (P^T * L * U):");
+    for i in 0..reconstructed.nrows() {
+        for j in 0..reconstructed.ncols() {
+            print!("{:.6} ", reconstructed[[i, j]]);
+        }
+        println!();
+    }
+
+    // Calculate reconstruction error
+    let mut max_error = 0.0f32;
+    for i in 0..test_matrix_f32.nrows() {
+        for j in 0..test_matrix_f32.ncols() {
+            let error = (test_matrix_f32[[i, j]] - reconstructed[[i, j]]).abs();
+            if error > max_error {
+                max_error = error;
+            }
+        }
+    }
+
+    println!("\nMaximum reconstruction error: {:.10e}", max_error);
+
+    // Extended precision eigenvalue decomposition
+    println!("\nExtended Precision Eigenvalue Decomposition");
+    println!("----------------------------------------\n");
+
+    // Create a symmetric matrix that's moderately ill-conditioned
+    let n = 5;
+    let mut sym_matrix = Array2::<f32>::zeros((n, n));
+
+    // Fill with Hilbert-like entries but ensure symmetry
+    for i in 0..n {
+        for j in 0..=i {
+            sym_matrix[[i, j]] = 1.0 / ((i + j + 1) as f32);
+            sym_matrix[[j, i]] = sym_matrix[[i, j]]; // Ensure symmetry
+        }
+    }
+
+    println!("Symmetric matrix:");
+    for i in 0..n {
+        for j in 0..n {
+            print!("{:.4} ", sym_matrix[[i, j]]);
+        }
+        println!();
+    }
+
+    // Compute eigenvalues and eigenvectors with standard precision
+    let (eigvals_std, eigvecs_std) = match scirs2_linalg::eigh(&sym_matrix.view()) {
+        Ok(result) => result,
+        Err(e) => {
+            println!(
+                "Error computing standard precision eigendecomposition: {}",
+                e
+            );
+            (Array1::zeros(n), Array2::zeros((n, n)))
+        }
+    };
+
+    // Compute eigenvalues and eigenvectors with extended precision
+    let (eigvals_ext, eigvecs_ext) = extended_eigh::<_, f64>(&sym_matrix.view(), None, None)?;
+
+    println!("\nEigenvalues with standard precision:");
+    for (i, &val) in eigvals_std.iter().enumerate() {
+        println!("λ{} = {:.10e}", i + 1, val);
+    }
+
+    println!("\nEigenvalues with extended precision:");
+    for (i, &val) in eigvals_ext.iter().enumerate() {
+        println!("λ{} = {:.10e}", i + 1, val);
+    }
+
+    // Check orthogonality of eigenvectors
+    let mut max_nonortho_std = 0.0f32;
+    let mut max_nonortho_ext = 0.0f32;
+
+    for i in 0..n {
+        for j in i + 1..n {
+            let dot_std = eigvecs_std.column(i).dot(&eigvecs_std.column(j));
+            let dot_ext = eigvecs_ext.column(i).dot(&eigvecs_ext.column(j));
+
+            max_nonortho_std = max_nonortho_std.max(dot_std.abs());
+            max_nonortho_ext = max_nonortho_ext.max(dot_ext.abs());
+        }
+    }
+
+    println!(
+        "\nMaximum non-orthogonality of eigenvectors (standard precision): {:.10e}",
+        max_nonortho_std
+    );
+    println!(
+        "Maximum non-orthogonality of eigenvectors (extended precision): {:.10e}",
+        max_nonortho_ext
+    );
+
+    // Check eigenvector quality: A*v = lambda*v
+    let mut max_residual_std = 0.0f32;
+    let mut max_residual_ext = 0.0f32;
+
+    for j in 0..n {
+        // Standard precision
+        let v_std = eigvecs_std.column(j).to_owned();
+        let av_std = sym_matrix.dot(&v_std);
+        let lambda_v_std = &v_std * eigvals_std[j];
+
+        let residual_std = (&av_std - &lambda_v_std)
+            .iter()
+            .map(|&x| x.abs())
+            .fold(0.0f32, |a, b| a.max(b));
+
+        max_residual_std = max_residual_std.max(residual_std);
+
+        // Extended precision
+        let v_ext = eigvecs_ext.column(j).to_owned();
+        let av_ext = sym_matrix.dot(&v_ext);
+        let lambda_v_ext = &v_ext * eigvals_ext[j];
+
+        let residual_ext = (&av_ext - &lambda_v_ext)
+            .iter()
+            .map(|&x| x.abs())
+            .fold(0.0f32, |a, b| a.max(b));
+
+        max_residual_ext = max_residual_ext.max(residual_ext);
+    }
+
+    println!(
+        "\nMaximum residual |A*v - lambda*v| (standard precision): {:.10e}",
+        max_residual_std
+    );
+    println!(
+        "Maximum residual |A*v - lambda*v| (extended precision): {:.10e}",
+        max_residual_ext
+    );
+    println!(
+        "Improvement factor: {:.2}x",
+        max_residual_std / max_residual_ext
+    );
+
+    // Summary of benefits
+    println!("\nSummary of Extended Precision Benefits");
+    println!("=====================================");
+    println!("1. Improved accuracy for ill-conditioned matrices");
+    println!("2. Better numerical stability for matrix decompositions");
+    println!("3. More accurate determinant calculation for nearly singular matrices");
+    println!("4. Better solutions for linear systems with challenging numerical properties");
+    println!("5. Reduced accumulation of rounding errors in matrix operations");
+    println!("6. Higher quality eigendecompositions for sensitive applications");
+    println!("7. More orthogonal eigenvectors for symmetric matrices");
 
     Ok(())
 }

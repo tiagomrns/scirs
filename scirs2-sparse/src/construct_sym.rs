@@ -234,20 +234,20 @@ where
             let mut cols = Vec::new();
 
             // Add diagonal elements
-            for i in 0..n {
-                if !diag[i].is_zero() {
-                    data.push(diag[i]);
+            for (i, &diag_val) in diag.iter().enumerate().take(n) {
+                if !diag_val.is_zero() {
+                    data.push(diag_val);
                     rows.push(i);
                     cols.push(i);
                 }
             }
 
             // Add off-diagonal elements (only the lower triangular part)
-            for i in 0..n - 1 {
-                if !offdiag[i].is_zero() {
+            for (i, &offdiag_val) in offdiag.iter().enumerate().take(n - 1) {
+                if !offdiag_val.is_zero() {
                     // For SymCOO, we only store the lower triangular part
                     // So we store (i+1, i) instead of (i, i+1)
-                    data.push(offdiag[i]);
+                    data.push(offdiag_val);
                     rows.push(i + 1);
                     cols.push(i);
                 }
@@ -351,10 +351,10 @@ where
 
             // Add off-diagonals (only lower triangular part)
             for (k, diag) in diagonals.iter().enumerate().skip(1) {
-                for i in 0..diag.len() {
-                    if !diag[i].is_zero() {
+                for (i, &diag_val) in diag.iter().enumerate() {
+                    if !diag_val.is_zero() {
                         // Store in lower triangular part (i+k, i)
-                        data.push(diag[i]);
+                        data.push(diag_val);
                         rows.push(i + k);
                         cols.push(i);
                     }

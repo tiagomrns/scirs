@@ -720,27 +720,6 @@ impl<'env, F: Float> VariableEnvironment<F> {
 }
 
 impl<'g, F: Float> Graph<F> {
-    /// Same as `Context::variable(VariableID)`
-    #[inline]
-    pub fn variable_by_id(&'g self, vid: VariableID) -> Tensor<'g, F> {
-        let tid = {
-            let temp = self.variable2node.borrow();
-            temp.get(&vid).cloned()
-        };
-        if let Some(tid) = tid {
-            // use existing tensor
-            self.tensor(tid)
-        } else {
-            // allocate a new tensor
-            let allocated = Tensor::builder(self)
-                .set_variable(vid)
-                .build(crate::tensor_ops::basic_source_ops::Variable);
-            // register vid -> tid map
-            self.variable2node.borrow_mut().insert(vid, allocated.id);
-            allocated
-        }
-    }
-
     /// Same as `Context::variable((namespace, name))`
     pub fn variable_by_name<S: AsRef<str>>(
         &self,

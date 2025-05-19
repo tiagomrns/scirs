@@ -7,18 +7,21 @@ use rand::seq::SliceRandom;
 use rand::SeedableRng;
 use std::fmt::Debug;
 
+/// Type alias for train-val split return type
+type SplitResult<F> = Result<(
+    Array<F, IxDyn>,
+    Array<F, IxDyn>,
+    Array<F, IxDyn>,
+    Array<F, IxDyn>,
+)>;
+
 /// Split data into training and validation sets
 pub fn train_val_split<F: Float + Debug + ScalarOperand>(
     x: &Array<F, IxDyn>,
     y: &Array<F, IxDyn>,
     val_size: f64,
     shuffle: bool,
-) -> Result<(
-    Array<F, IxDyn>,
-    Array<F, IxDyn>,
-    Array<F, IxDyn>,
-    Array<F, IxDyn>,
-)> {
+) -> SplitResult<F> {
     if val_size <= 0.0 || val_size >= 1.0 {
         return Err(crate::error::NeuralError::InferenceError(
             "Validation size must be between 0 and 1".to_string(),
@@ -166,7 +169,7 @@ impl KFold {
         let mut result = Vec::with_capacity(self.n_splits);
         let mut current = 0;
 
-        for (_fold, &fold_size) in fold_sizes_updated.iter().enumerate() {
+        for &fold_size in fold_sizes_updated.iter() {
             let start = current;
             let end = current + fold_size;
 
@@ -192,7 +195,7 @@ pub fn create_batches<F: Float + Debug + ScalarOperand>(
     shuffle: bool,
 ) -> Vec<(Array<F, IxDyn>, Array<F, IxDyn>)> {
     let n_samples = x.shape()[0];
-    let n_batches = (n_samples + batch_size - 1) / batch_size; // Ceiling division
+    let n_batches = n_samples.div_ceil(batch_size); // Ceiling division
 
     // Create indices
     let mut indices: Vec<usize> = (0..n_samples).collect();

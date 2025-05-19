@@ -1,3 +1,6 @@
+// FIXME: This example has compilation errors - field `final_step` doesn't exist
+#![allow(dead_code)]
+
 use ndarray::{array, ArrayView1};
 use scirs2_integrate::ode::{solve_ivp, ODEMethod, ODEOptions};
 use std::f64::consts::PI;
@@ -61,10 +64,10 @@ fn main() {
     println!("  Number of function evaluations: {}", result.n_eval);
     println!("  Number of accepted steps: {}", result.n_accepted);
     println!("  Number of rejected steps: {}", result.n_rejected);
-    println!(
-        "  Final step size: {:.6e}",
-        result.final_step.unwrap_or(0.0)
-    );
+    // println!(
+    //     "  Final step size: {:.6e}",
+    //     result.final_step.unwrap_or(0.0)  // FIXME: final_step field doesn't exist in ODEResult
+    // );
     println!("  Success: {}", result.success);
 
     // Check final state (should be close to [1, 0] after 5 full cycles)

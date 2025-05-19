@@ -6,20 +6,20 @@
 //! functions that can be well-approximated by polynomials.
 
 use crate::error::{IntegrateError, IntegrateResult};
+use crate::IntegrateFloat;
 use ndarray::{Array1, ArrayView1};
-use num_traits::{Float, FromPrimitive};
 use std::fmt::Debug;
 
 /// Gauss-Legendre quadrature nodes and weights
 #[derive(Debug, Clone)]
-pub struct GaussLegendreQuadrature<F: Float> {
+pub struct GaussLegendreQuadrature<F: IntegrateFloat> {
     /// Quadrature nodes (points) on the interval [-1, 1]
     pub nodes: Array1<F>,
     /// Quadrature weights
     pub weights: Array1<F>,
 }
 
-impl<F: Float + FromPrimitive + Debug> GaussLegendreQuadrature<F> {
+impl<F: IntegrateFloat> GaussLegendreQuadrature<F> {
     /// Create a new Gauss-Legendre quadrature with the given number of points
     ///
     /// # Arguments
@@ -226,7 +226,7 @@ impl<F: Float + FromPrimitive + Debug> GaussLegendreQuadrature<F> {
         let mut result = F::zero();
         for (i, &x) in self.nodes.iter().enumerate() {
             let transformed_x = mid + half_length * x;
-            result = result + self.weights[i] * f(transformed_x);
+            result += self.weights[i] * f(transformed_x);
         }
 
         // Scale by half-length due to the change of variables
@@ -258,7 +258,7 @@ impl<F: Float + FromPrimitive + Debug> GaussLegendreQuadrature<F> {
 /// ```
 pub fn gauss_legendre<F, Func>(f: Func, a: F, b: F, n: usize) -> IntegrateResult<F>
 where
-    F: Float + FromPrimitive + Debug,
+    F: IntegrateFloat,
     Func: Fn(F) -> F,
 {
     let quadrature = GaussLegendreQuadrature::new(n)?;
@@ -297,7 +297,7 @@ pub fn multi_gauss_legendre<F, Func>(
     n_points: usize,
 ) -> IntegrateResult<F>
 where
-    F: Float + FromPrimitive + Debug,
+    F: IntegrateFloat,
     Func: Fn(ArrayView1<F>) -> F,
 {
     if ranges.is_empty() {
@@ -319,7 +319,7 @@ where
         n_dims: usize,
     ) -> F
     where
-        F: Float + FromPrimitive + Debug,
+        F: IntegrateFloat,
         Func: Fn(ArrayView1<F>) -> F,
     {
         if dim == n_dims {
@@ -340,7 +340,7 @@ where
 
             // Recursively integrate remaining dimensions
             let inner_result = integrate_recursive(f, ranges, quadrature, dim + 1, point, n_dims);
-            result = result + quadrature.weights[i] * inner_result;
+            result += quadrature.weights[i] * inner_result;
         }
 
         // Scale by half-length due to the change of variables
@@ -359,6 +359,230 @@ where
         &mut point,
         n_dims,
     ))
+}
+
+/// Gauss-Kronrod 15-point rule for integration with error estimation
+///
+/// Returns:
+/// - Integral estimate
+/// - Error estimate
+/// - Number of function evaluations
+pub fn gauss_kronrod15<F, Func>(f: Func, a: F, b: F) -> (F, F, usize)
+where
+    F: IntegrateFloat,
+    Func: Fn(F) -> F,
+{
+    // Gauss-Kronrod 15-point rule (7-point Gauss, 15-point Kronrod)
+    // Points and weights from SciPy
+    let xgk = [
+        -0.9914553711208126f64,
+        -0.9491079123427585,
+        -0.8648644233597691,
+        -0.7415311855993944,
+        -0.5860872354676911,
+        -0.4058451513773972,
+        -0.2077849550078985,
+        0.0,
+        0.2077849550078985,
+        0.4058451513773972,
+        0.5860872354676911,
+        0.7415311855993944,
+        0.8648644233597691,
+        0.9491079123427585,
+        0.9914553711208126,
+    ];
+
+    let wgk = [
+        0.022935322010529224f64,
+        0.063_092_092_629_978_56,
+        0.10479001032225018,
+        0.14065325971552592,
+        0.169_004_726_639_267_9,
+        0.190_350_578_064_785_4,
+        0.20443294007529889,
+        0.20948214108472782,
+        0.20443294007529889,
+        0.190_350_578_064_785_4,
+        0.169_004_726_639_267_9,
+        0.14065325971552592,
+        0.10479001032225018,
+        0.063_092_092_629_978_56,
+        0.022935322010529224,
+    ];
+
+    // Abscissae for the 7-point Gauss rule (odd indices of xgk)
+    let wg = [
+        0.129_484_966_168_869_7_f64,
+        0.27970539148927664,
+        0.381_830_050_505_118_9,
+        0.417_959_183_673_469_4,
+        0.381_830_050_505_118_9,
+        0.27970539148927664,
+        0.129_484_966_168_869_7,
+    ];
+
+    // Apply the rule
+    let half_length = (b - a) / F::from_f64(2.0).unwrap();
+    let center = (a + b) / F::from_f64(2.0).unwrap();
+
+    let mut result_kronrod = F::zero();
+    let mut result_gauss = F::zero();
+
+    // Evaluate function at center point
+    let fc = f(center);
+
+    // Accumulate for Kronrod rule
+    result_kronrod += F::from_f64(wgk[7]).unwrap() * fc;
+
+    // Evaluate at other points
+    for i in 0..7 {
+        let x = F::from_f64(xgk[i]).unwrap();
+        let abscissa = center - half_length * x;
+        let fval = f(abscissa);
+        result_kronrod += F::from_f64(wgk[i]).unwrap() * fval;
+        result_gauss += F::from_f64(wg[i]).unwrap() * fval;
+
+        let abscissa = center + half_length * x;
+        let fval = f(abscissa);
+        result_kronrod += F::from_f64(wgk[14 - i]).unwrap() * fval;
+        result_gauss += F::from_f64(wg[6 - i]).unwrap() * fval;
+    }
+
+    // Evaluate remaining Kronrod points
+    for i in [1, 3, 5, 9, 11, 13] {
+        let x = F::from_f64(xgk[i]).unwrap();
+        let abscissa = center - half_length * x;
+        let fval = f(abscissa);
+        result_kronrod += F::from_f64(wgk[i]).unwrap() * fval;
+
+        let abscissa = center + half_length * x;
+        let fval = f(abscissa);
+        result_kronrod += F::from_f64(wgk[i]).unwrap() * fval;
+    }
+
+    // Scale results
+    result_kronrod *= half_length;
+    result_gauss *= half_length;
+
+    // Compute error estimate
+    let error = (result_kronrod - result_gauss).abs();
+
+    (result_kronrod, error, 15)
+}
+
+/// Gauss-Kronrod 21-point rule for integration with error estimation
+///
+/// Returns:
+/// - Integral estimate
+/// - Error estimate
+/// - Number of function evaluations
+pub fn gauss_kronrod21<F, Func>(f: Func, a: F, b: F) -> (F, F, usize)
+where
+    F: IntegrateFloat,
+    Func: Fn(F) -> F,
+{
+    // Gauss-Kronrod 21-point rule (10-point Gauss, 21-point Kronrod)
+    // Points and weights from SciPy
+    let xgk = [
+        -0.9956571630258081f64,
+        -0.9739065285171717,
+        -0.9301574913557082,
+        -0.8650633666889845,
+        -0.7808177265864169,
+        -0.6794095682990244,
+        -0.5627571346686047,
+        -0.4333953941292472,
+        -0.2943928627014602,
+        -0.1488743389816312,
+        0.0,
+        0.1488743389816312,
+        0.2943928627014602,
+        0.4333953941292472,
+        0.5627571346686047,
+        0.6794095682990244,
+        0.7808177265864169,
+        0.8650633666889845,
+        0.9301574913557082,
+        0.9739065285171717,
+        0.9956571630258081,
+    ];
+
+    let wgk = [
+        0.011694638867371874f64,
+        0.032558162307964725,
+        0.054755896574351995,
+        0.075_039_674_810_919_96,
+        0.093_125_454_583_697_6,
+        0.109_387_158_802_297_64,
+        0.123_491_976_262_065_84,
+        0.134_709_217_311_473_34,
+        0.142_775_938_577_060_09,
+        0.147_739_104_901_338_49,
+        0.149_445_554_002_916_9,
+        0.147_739_104_901_338_49,
+        0.142_775_938_577_060_09,
+        0.134_709_217_311_473_34,
+        0.123_491_976_262_065_84,
+        0.109_387_158_802_297_64,
+        0.093_125_454_583_697_6,
+        0.075_039_674_810_919_96,
+        0.054755896574351995,
+        0.032558162307964725,
+        0.011694638867371874,
+    ];
+
+    // Abscissae for the 10-point Gauss rule (every other point)
+    let wg = [
+        0.066_671_344_308_688_14_f64,
+        0.149_451_349_150_580_6,
+        0.219_086_362_515_982_04,
+        0.269_266_719_309_996_35,
+        0.295_524_224_714_752_87,
+        0.295_524_224_714_752_87,
+        0.269_266_719_309_996_35,
+        0.219_086_362_515_982_04,
+        0.149_451_349_150_580_6,
+        0.066_671_344_308_688_14,
+    ];
+
+    // Apply the rule
+    let half_length = (b - a) / F::from_f64(2.0).unwrap();
+    let center = (a + b) / F::from_f64(2.0).unwrap();
+
+    let mut result_kronrod = F::zero();
+    let mut result_gauss = F::zero();
+
+    // Evaluate function at center point
+    let fc = f(center);
+    result_kronrod += F::from_f64(wgk[10]).unwrap() * fc;
+
+    // Evaluate at other points
+    for i in 0..10 {
+        let x = F::from_f64(xgk[i]).unwrap();
+        let abscissa = center - half_length * x;
+        let fval = f(abscissa);
+        result_kronrod += F::from_f64(wgk[i]).unwrap() * fval;
+
+        let abscissa = center + half_length * x;
+        let fval = f(abscissa);
+        result_kronrod += F::from_f64(wgk[20 - i]).unwrap() * fval;
+
+        // Add to Gauss result for every other point
+        if i % 2 == 0 {
+            let idx = i / 2;
+            result_gauss += F::from_f64(wg[idx]).unwrap() * fval;
+            result_gauss += F::from_f64(wg[9 - idx]).unwrap() * fval;
+        }
+    }
+
+    // Scale results
+    result_kronrod *= half_length;
+    result_gauss *= half_length;
+
+    // Compute error estimate
+    let error = (result_kronrod - result_gauss).abs();
+
+    (result_kronrod, error, 21)
 }
 
 #[cfg(test)]

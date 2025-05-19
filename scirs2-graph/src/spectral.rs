@@ -290,7 +290,7 @@ where
 
     // Compute the eigenvalues of the Laplacian
     // We only need the smallest 2 eigenvalues
-    let (eigenvalues, _) = mock_eigsh(&laplacian, 2).map_err(|e| GraphError::LinAlgError(e))?;
+    let (eigenvalues, _) = mock_eigsh(&laplacian, 2).map_err(GraphError::LinAlgError)?;
 
     // The second eigenvalue is the algebraic connectivity
     Ok(eigenvalues[1])
@@ -338,7 +338,7 @@ where
 
     // Compute the eigenvectors corresponding to the smallest n_clusters eigenvalues
     let (_eigenvalues, _eigenvectors) =
-        mock_eigsh(&laplacian_matrix, n_clusters).map_err(|e| GraphError::LinAlgError(e))?;
+        mock_eigsh(&laplacian_matrix, n_clusters).map_err(GraphError::LinAlgError)?;
 
     // For testing, we'll just make up some random cluster assignments
     let mut labels = Vec::with_capacity(graph.node_count());

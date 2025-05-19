@@ -15,7 +15,7 @@ pub struct AdaGrad<F: Float> {
     pub adagrad_namespace_id: &'static str,
 }
 
-impl<'t, 'g, F: Float> AdaGrad<F> {
+impl<F: Float> AdaGrad<F> {
     pub fn default(
         adagrad_namespace_id: &'static str,
         var_id_list: impl IntoIterator<Item = VariableID>,
@@ -78,7 +78,7 @@ impl<F: Float> Optimizer<F> for AdaGrad<F> {
                 Tensor::builder(g)
                     .append_input(param, true)
                     .append_input(grads[i].as_ref(), false)
-                    .append_input(&h, true)
+                    .append_input(h, true)
                     .build(adagrad::AdaGradOp { lr: self.lr }),
             );
         }

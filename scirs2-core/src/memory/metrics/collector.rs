@@ -8,6 +8,8 @@ use std::time::{Duration, Instant};
 
 use crate::memory::metrics::event::{MemoryEvent, MemoryEventType};
 use rand::prelude::*;
+#[cfg(feature = "memory_metrics")]
+use serde::{Deserialize, Serialize};
 
 // Define a simple Random struct for sampling when the random feature is not enabled
 struct Random {
@@ -70,6 +72,7 @@ pub struct AllocationStats {
 
 /// Component memory statistics
 #[derive(Debug, Clone)]
+#[cfg_attr(feature = "memory_metrics", derive(Serialize, Deserialize))]
 pub struct ComponentMemoryStats {
     /// Current memory usage
     pub current_usage: usize,
@@ -85,6 +88,10 @@ pub struct ComponentMemoryStats {
 
 /// Memory usage report
 #[derive(Debug, Clone)]
+#[cfg_attr(
+    feature = "memory_metrics",
+    derive(serde::Serialize, serde::Deserialize)
+)]
 pub struct MemoryReport {
     /// Total current memory usage across all components
     pub total_current_usage: usize,
@@ -352,6 +359,18 @@ impl MemoryMetricsCollector {
     pub fn get_events(&self) -> Vec<MemoryEvent> {
         let events = self.events.read().unwrap();
         events.iter().cloned().collect()
+    }
+
+    /// Export the report as JSON
+    #[cfg(feature = "memory_metrics")]
+    pub fn to_json(&self) -> serde_json::Value {
+        serde_json::to_value(self).unwrap_or(serde_json::Value::Null)
+    }
+
+    /// Export the report as JSON - stub when memory_metrics is disabled
+    #[cfg(not(feature = "memory_metrics"))]
+    pub fn to_json(&self) -> String {
+        "{}".to_string()
     }
 }
 

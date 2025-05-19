@@ -17,7 +17,7 @@ pub struct LogSoftmax {
 impl<T: Float> op::Op<T> for LogSoftmax {
     fn compute(&self, ctx: &mut crate::op::ComputeContext<T>) -> Result<(), crate::op::OpError> {
         let x = &ctx.input(0);
-        ctx.append_output(x - &crate::tensor_ops::math_ops::logsumexp_forward(&x, self.axis, true));
+        ctx.append_output(x - &crate::tensor_ops::math_ops::logsumexp_forward(x, self.axis, true));
         Ok(())
     }
 
@@ -119,9 +119,9 @@ impl<T: Float> op::Op<T> for SparseSoftmaxCrossEntropy {
         let log_x = nth_tensor(ctx.output(), 1);
 
         let gx1 = Tensor::builder(s)
-            .append_input(&log_x, false)
-            .append_input(&t, false)
-            .append_input(&gy, false)
+            .append_input(log_x, false)
+            .append_input(t, false)
+            .append_input(gy, false)
             .build(SparseSoftmaxCrossEntropyGrad);
 
         // gx2 won't be used in most cases.
@@ -180,7 +180,7 @@ impl<T: Float> op::Op<T> for SoftmaxCrossEntropy {
         let output = ctx.output();
         let log_x = nth_tensor(output, 1);
         let gy = ctx.output_grad();
-        let x = exp(&log_x);
+        let x = exp(log_x);
         let t = ctx.input(1);
 
         // x = softmax, gy = dy/dx

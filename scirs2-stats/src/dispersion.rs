@@ -8,6 +8,7 @@ use crate::error::{StatsError, StatsResult};
 use crate::{mean, median};
 use ndarray::{Array1, ArrayView1};
 use num_traits::Float;
+use std::cmp::Ordering;
 
 /// Compute the mean absolute deviation (MAD) of a dataset.
 ///
@@ -349,6 +350,93 @@ where
     }
 }
 
+/// Compute the Gini coefficient of a dataset.
+///
+/// The Gini coefficient is a measure of statistical dispersion used to represent
+/// the income or wealth inequality within a nation or group. A Gini coefficient of 0
+/// represents perfect equality (everyone has the same income), while a coefficient of 1
+/// represents perfect inequality (one person has all the income, everyone else has none).
+///
+/// # Arguments
+///
+/// * `x` - Input data (should be non-negative values)
+///
+/// # Returns
+///
+/// * The Gini coefficient
+///
+/// # Examples
+///
+/// ```
+/// use ndarray::array;
+/// use scirs2_stats::gini_coefficient;
+///
+/// // Perfect equality
+/// let equal_data = array![100.0, 100.0, 100.0, 100.0, 100.0];
+/// let gini_equal = gini_coefficient(&equal_data.view()).unwrap();
+/// assert!(gini_equal < 1e-10); // Should be 0.0
+///
+/// // Perfect inequality
+/// let unequal_data = array![0.0, 0.0, 0.0, 0.0, 100.0];
+/// let gini_unequal = gini_coefficient(&unequal_data.view()).unwrap();
+/// println!("Gini coefficient (perfect inequality): {}", gini_unequal);
+/// // Should be close to 0.8 (1 - 1/n, where n=5)
+/// ```
+pub fn gini_coefficient<F>(x: &ArrayView1<F>) -> StatsResult<F>
+where
+    F: Float + std::iter::Sum<F> + std::ops::Div<Output = F>,
+{
+    // Check for empty array
+    if x.is_empty() {
+        return Err(StatsError::InvalidArgument(
+            "Empty array provided".to_string(),
+        ));
+    }
+
+    // Check for negative values
+    if x.iter().any(|&v| v < F::zero()) {
+        return Err(StatsError::InvalidArgument(
+            "Gini coefficient requires non-negative values".to_string(),
+        ));
+    }
+
+    // Special case: if all values are zero, Gini is undefined
+    if x.iter().all(|&v| v <= F::epsilon()) {
+        return Err(StatsError::InvalidArgument(
+            "Gini coefficient is undefined when all values are zero".to_string(),
+        ));
+    }
+
+    // Make a sorted copy of the data (ascending order)
+    let mut sorted_data: Vec<F> = x.iter().cloned().collect();
+    sorted_data.sort_by(|a, b| a.partial_cmp(b).unwrap_or(Ordering::Equal));
+
+    // Calculate the Gini coefficient using the formula:
+    // G = (2*sum(i*y_i) / (n*sum(y_i))) - (n+1)/n
+    // where y_i are the sorted values and i is the rank
+
+    let n = F::from(sorted_data.len()).unwrap();
+    let sum_values = sorted_data.iter().cloned().sum::<F>();
+
+    if sum_values <= F::epsilon() {
+        return Err(StatsError::InvalidArgument(
+            "Gini coefficient is undefined when sum of values is zero".to_string(),
+        ));
+    }
+
+    // Calculate weighted sum using enumerate to avoid needless range loop
+    let weighted_sum = sorted_data
+        .iter()
+        .enumerate()
+        .map(|(i, &value)| F::from(i + 1).unwrap() * value)
+        .sum::<F>();
+
+    // Calculate Gini coefficient
+    let gini = (F::from(2.0).unwrap() * weighted_sum / (n * sum_values)) - (n + F::one()) / n;
+
+    Ok(gini)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -490,5 +578,41 @@ mod tests {
         assert_abs_diff_eq!(p60_higher, 6.0, epsilon = 1e-10);
         assert_abs_diff_eq!(p60_nearest, 6.0, epsilon = 1e-10);
         assert_abs_diff_eq!(p60_midpoint, 5.5, epsilon = 1e-10);
+    }
+
+    #[test]
+    fn test_gini_coefficient() {
+        // Test perfect equality
+        let equal_data = array![100.0, 100.0, 100.0, 100.0, 100.0];
+        let gini_equal = gini_coefficient(&equal_data.view()).unwrap();
+        assert_abs_diff_eq!(gini_equal, 0.0, epsilon = 1e-10);
+
+        // Test perfect inequality
+        let unequal_data = array![0.0, 0.0, 0.0, 0.0, 100.0];
+        let gini_unequal = gini_coefficient(&unequal_data.view()).unwrap();
+        // For n=5, perfect inequality gives G = 0.8 (1 - 1/n)
+        assert_abs_diff_eq!(gini_unequal, 0.8, epsilon = 1e-10);
+
+        // Test a realistic income distribution
+        let income_data = array![
+            20000.0, 25000.0, 30000.0, 35000.0, 40000.0, 45000.0, 50000.0, 60000.0, 80000.0,
+            150000.0
+        ];
+        let gini_income = gini_coefficient(&income_data.view()).unwrap();
+        // This should give a value around 0.3-0.4 which is typical for moderate inequality
+        assert!(gini_income > 0.2 && gini_income < 0.5);
+
+        // Test error cases
+        let empty_data: Array1<f64> = array![];
+        let result_empty = gini_coefficient(&empty_data.view());
+        assert!(result_empty.is_err());
+
+        let negative_data = array![10.0, -5.0, 20.0, 30.0, -10.0];
+        let result_negative = gini_coefficient(&negative_data.view());
+        assert!(result_negative.is_err());
+
+        let zero_data = array![0.0, 0.0, 0.0, 0.0, 0.0];
+        let result_zero = gini_coefficient(&zero_data.view());
+        assert!(result_zero.is_err());
     }
 }

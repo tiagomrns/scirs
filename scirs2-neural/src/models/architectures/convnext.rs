@@ -201,14 +201,14 @@ impl<F: Float + Debug + ScalarOperand + Send + Sync> Layer<F> for ConvNeXtBlock<
         _grad_output: &Array<F, IxDyn>,
     ) -> Result<Array<F, IxDyn>> {
         // Not implemented for this example
-        Err(Error::NotImplemented(
+        Err(Error::NotImplementedError(
             "ConvNeXtBlock backward not implemented".to_string(),
         ))
     }
 
     fn update(&mut self, _learning_rate: F) -> Result<()> {
         // Not implemented for this example
-        Err(Error::NotImplemented(
+        Err(Error::NotImplementedError(
             "ConvNeXtBlock update not implemented".to_string(),
         ))
     }
@@ -284,13 +284,13 @@ impl<F: Float + Debug + ScalarOperand + Send + Sync> Layer<F> for ConvNeXtDownsa
         _input: &Array<F, IxDyn>,
         _grad_output: &Array<F, IxDyn>,
     ) -> Result<Array<F, IxDyn>> {
-        Err(Error::NotImplemented(
+        Err(Error::NotImplementedError(
             "ConvNeXtDownsample backward not implemented".to_string(),
         ))
     }
 
     fn update(&mut self, _learning_rate: F) -> Result<()> {
-        Err(Error::NotImplemented(
+        Err(Error::NotImplementedError(
             "ConvNeXtDownsample update not implemented".to_string(),
         ))
     }
@@ -380,13 +380,13 @@ impl<F: Float + Debug + ScalarOperand + Send + Sync> Layer<F> for ConvNeXtStage<
         _input: &Array<F, IxDyn>,
         _grad_output: &Array<F, IxDyn>,
     ) -> Result<Array<F, IxDyn>> {
-        Err(Error::NotImplemented(
+        Err(Error::NotImplementedError(
             "ConvNeXtStage backward not implemented".to_string(),
         ))
     }
 
     fn update(&mut self, _learning_rate: F) -> Result<()> {
-        Err(Error::NotImplemented(
+        Err(Error::NotImplementedError(
             "ConvNeXtStage update not implemented".to_string(),
         ))
     }
@@ -478,7 +478,7 @@ impl<F: Float + Debug + ScalarOperand + Send + Sync> ConvNeXt<F> {
             let mut head_seq = Sequential::new();
             let mut rng = SmallRng::seed_from_u64(42);
             head_seq.add(LayerNorm2D::<F>::new::<SmallRng>(
-                config.dims.last().unwrap().clone(),
+                *config.dims.last().unwrap(),
                 1e-6,
                 Some("head_norm"),
             )?);
@@ -489,7 +489,7 @@ impl<F: Float + Debug + ScalarOperand + Send + Sync> ConvNeXt<F> {
             }
 
             head_seq.add(Dense::<F>::new(
-                config.dims.last().unwrap().clone(),
+                *config.dims.last().unwrap(),
                 config.num_classes,
                 Some("relu"),
                 &mut rng,
@@ -620,13 +620,13 @@ impl<F: Float + Debug + ScalarOperand + Send + Sync> Layer<F> for ConvNeXt<F> {
         _input: &Array<F, IxDyn>,
         _grad_output: &Array<F, IxDyn>,
     ) -> Result<Array<F, IxDyn>> {
-        Err(Error::NotImplemented(
+        Err(Error::NotImplementedError(
             "ConvNeXt backward not implemented".to_string(),
         ))
     }
 
     fn update(&mut self, _learning_rate: F) -> Result<()> {
-        Err(Error::NotImplemented(
+        Err(Error::NotImplementedError(
             "ConvNeXt update not implemented".to_string(),
         ))
     }

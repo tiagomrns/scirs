@@ -6,7 +6,7 @@ pub struct StandardNormal<T: Float> {
     pub arr_rng: ArrayRng<T>,
 }
 
-impl<'a, T: Float> StandardNormal<T> {
+impl<T: Float> StandardNormal<T> {
     pub fn new(arr_rng: ArrayRng<T>) -> Self {
         Self { arr_rng }
     }
@@ -16,7 +16,7 @@ pub struct StandardUniform<T: Float> {
     pub arr_rng: ArrayRng<T>,
 }
 
-impl<'a, T: Float> StandardUniform<T> {
+impl<T: Float> StandardUniform<T> {
     pub fn new(arr_rng: ArrayRng<T>) -> Self {
         Self { arr_rng }
     }
@@ -28,7 +28,7 @@ pub struct RandomUniform<T: Float> {
     pub min: f64,
 }
 
-impl<'a, T: Float> RandomUniform<T> {
+impl<T: Float> RandomUniform<T> {
     pub fn new(arr_rng: ArrayRng<T>, min: f64, max: f64) -> Self {
         Self { arr_rng, max, min }
     }
@@ -40,7 +40,7 @@ pub struct RandomNormal<T: Float> {
     pub stddev: f64,
 }
 
-impl<'a, T: Float> RandomNormal<T> {
+impl<T: Float> RandomNormal<T> {
     pub fn new(arr_rng: ArrayRng<T>, mean: f64, stddev: f64) -> Self {
         Self {
             arr_rng,
@@ -55,7 +55,7 @@ pub struct Bernoulli<T: Float> {
     pub p: f64,
 }
 
-impl<'a, T: Float> Bernoulli<T> {
+impl<T: Float> Bernoulli<T> {
     pub fn new(arr_rng: ArrayRng<T>, p: f64) -> Self {
         Self { arr_rng, p }
     }
@@ -66,7 +66,7 @@ pub struct Exponential<T: Float> {
     pub lambda: f64,
 }
 
-impl<'a, T: Float> Exponential<T> {
+impl<T: Float> Exponential<T> {
     pub fn new(arr_rng: ArrayRng<T>, lambda: f64) -> Self {
         Self { arr_rng, lambda }
     }
@@ -78,7 +78,7 @@ pub struct LogNormal<T: Float> {
     pub stddev: f64,
 }
 
-impl<'a, T: Float> LogNormal<T> {
+impl<T: Float> LogNormal<T> {
     pub fn new(arr_rng: ArrayRng<T>, mean: f64, stddev: f64) -> Self {
         Self {
             arr_rng,
@@ -94,7 +94,7 @@ pub struct Gamma<T: Float> {
     pub scale: f64,
 }
 
-impl<'a, T: Float> Gamma<T> {
+impl<T: Float> Gamma<T> {
     pub fn new(arr_rng: ArrayRng<T>, shape_param: f64, scale: f64) -> Self {
         Self {
             arr_rng,

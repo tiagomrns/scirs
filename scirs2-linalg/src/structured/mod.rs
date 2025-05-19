@@ -52,6 +52,7 @@ mod utils;
 pub use circulant::CirculantMatrix;
 pub use hankel::HankelMatrix;
 pub use toeplitz::ToeplitzMatrix;
+pub use utils::{solve_circulant, solve_toeplitz};
 
 /// A trait for structured matrices that can be represented efficiently
 ///

@@ -28,6 +28,9 @@ This module provides implementations of various statistical algorithms, modeled 
   - Goodness-of-fit tests: Chi-square, Kolmogorov-Smirnov
 - Random number generation
 - Regression models
+  - Linear, polynomial, and stepwise regression
+  - Robust regression methods (RANSAC, Huber, Theil-Sen)
+  - Regularized models (Ridge, Lasso, Elastic Net)
 - Sampling techniques (bootstrap, stratified sampling)
 - Contingency table functions
 
@@ -37,7 +40,7 @@ Add scirs2-stats to your Cargo.toml:
 
 ```toml
 [dependencies]
-scirs2-stats = "0.1.0-alpha.2"
+scirs2-stats = "0.1.0-alpha.3"
 ndarray = "0.16.1"
 ```
 
@@ -242,6 +245,13 @@ let permutation = sampling::permutation(&data.view(), Some(123)).unwrap();
 ```
 
 ## Recent Updates
+
+- Enhanced regression module:
+  - Improved robust regression with RANSAC implementation
+  - Enhanced numerical stability for regularized regression
+  - Added comprehensive model diagnostics
+  - Implemented stepwise regression with stability checks
+  - Optimized coefficient calculation for large datasets
 
 - Added dispersion measures:
   - Mean absolute deviation (MAD)

@@ -6,14 +6,14 @@
 
 use crate::error::{IntegrateError, IntegrateResult};
 use crate::quad::trapezoid;
+use crate::IntegrateFloat;
 use ndarray::{Array1, Array2, ArrayView1};
-use num_traits::{Float, FromPrimitive};
 use rand_distr::{Distribution, Uniform};
 use std::fmt::Debug;
 
 /// Options for controlling the behavior of Romberg integration
 #[derive(Debug, Clone)]
-pub struct RombergOptions<F: Float> {
+pub struct RombergOptions<F: IntegrateFloat> {
     /// Maximum number of iterations
     pub max_iters: usize,
     /// Absolute error tolerance
@@ -27,7 +27,7 @@ pub struct RombergOptions<F: Float> {
     pub min_monte_carlo_samples: usize,
 }
 
-impl<F: Float + FromPrimitive> Default for RombergOptions<F> {
+impl<F: IntegrateFloat> Default for RombergOptions<F> {
     fn default() -> Self {
         Self {
             max_iters: 20,
@@ -41,7 +41,7 @@ impl<F: Float + FromPrimitive> Default for RombergOptions<F> {
 
 /// Result of a Romberg integration computation
 #[derive(Debug, Clone)]
-pub struct RombergResult<F: Float> {
+pub struct RombergResult<F: IntegrateFloat> {
     /// Estimated value of the integral
     pub value: F,
     /// Estimated absolute error
@@ -84,7 +84,7 @@ pub fn romberg<F, Func>(
     options: Option<RombergOptions<F>>,
 ) -> IntegrateResult<RombergResult<F>>
 where
-    F: Float + FromPrimitive + Debug,
+    F: IntegrateFloat,
     Func: Fn(F) -> F + Copy,
 {
     let opts = options.unwrap_or_default();
@@ -185,7 +185,7 @@ where
 /// ```
 /// Result of a multidimensional Romberg integration computation
 #[derive(Debug, Clone)]
-pub struct MultiRombergResult<F: Float> {
+pub struct MultiRombergResult<F: IntegrateFloat> {
     /// Estimated value of the integral
     pub value: F,
     /// Estimated absolute error
@@ -213,7 +213,7 @@ pub fn multi_romberg<F, Func>(
     options: Option<RombergOptions<F>>,
 ) -> IntegrateResult<F>
 where
-    F: Float + FromPrimitive + Debug + std::ops::AddAssign + rand_distr::uniform::SampleUniform,
+    F: IntegrateFloat + rand_distr::uniform::SampleUniform,
     Func: Fn(ArrayView1<F>) -> F + Copy,
 {
     let result = multi_romberg_with_details(f, ranges, options)?;
@@ -230,7 +230,7 @@ pub fn multi_romberg_with_details<F, Func>(
     options: Option<RombergOptions<F>>,
 ) -> IntegrateResult<MultiRombergResult<F>>
 where
-    F: Float + FromPrimitive + Debug + std::ops::AddAssign + rand_distr::uniform::SampleUniform,
+    F: IntegrateFloat + rand_distr::uniform::SampleUniform,
     Func: Fn(ArrayView1<F>) -> F + Copy,
 {
     if ranges.is_empty() {
@@ -277,7 +277,7 @@ fn integrate_adaptive_nested<F, Func>(
     opts: &RombergOptions<F>,
 ) -> IntegrateResult<MultiRombergResult<F>>
 where
-    F: Float + FromPrimitive + Debug + std::ops::AddAssign + rand_distr::uniform::SampleUniform,
+    F: IntegrateFloat + rand_distr::uniform::SampleUniform,
     Func: Fn(ArrayView1<F>) -> F + Copy,
 {
     let n_dims = ranges.len();
@@ -452,7 +452,7 @@ fn monte_carlo_high_dimensions<F, Func>(
     opts: &RombergOptions<F>,
 ) -> IntegrateResult<MultiRombergResult<F>>
 where
-    F: Float + FromPrimitive + Debug + std::ops::AddAssign + rand_distr::uniform::SampleUniform,
+    F: IntegrateFloat + rand_distr::uniform::SampleUniform,
     Func: Fn(ArrayView1<F>) -> F + Copy,
 {
     let n_dims = ranges.len();
@@ -475,7 +475,7 @@ where
     // Estimate the volume of the integration domain
     let mut volume = F::one();
     for &(a, b) in ranges {
-        volume = volume * (b - a);
+        volume *= b - a;
     }
 
     // Perform stratified sampling to reduce variance
@@ -550,7 +550,7 @@ mod tests {
 
         // Test integrating exp(-x²) from -1 to 1
         // This is related to the error function, with exact result: sqrt(π)·erf(1)
-        let result = romberg(|x| (-x * x).exp(), -1.0, 1.0, None).unwrap();
+        let result = romberg(|x: f64| (-x * x).exp(), -1.0, 1.0, None).unwrap();
         let exact = PI.sqrt() * libm::erf(1.0);
         assert_relative_eq!(result.value, exact, epsilon = 1e-10);
         assert!(result.converged);

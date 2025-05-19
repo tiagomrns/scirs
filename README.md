@@ -283,7 +283,7 @@ SciRS2 and all its modules are available on [crates.io](https://crates.io/crates
 ```toml
 # Add the main integration crate for all functionality
 [dependencies]
-scirs2 = "0.1.0-alpha.2"
+scirs2 = "0.1.0-alpha.3"
 ```
 
 Or include only the specific modules you need:
@@ -291,16 +291,16 @@ Or include only the specific modules you need:
 ```toml
 [dependencies]
 # Core utilities
-scirs2-core = "0.1.0-alpha.2"
+scirs2-core = "0.1.0-alpha.3"
 
 # Scientific computing modules
-scirs2-linalg = "0.1.0-alpha.2"
-scirs2-stats = "0.1.0-alpha.2"
-scirs2-optimize = "0.1.0-alpha.2"
+scirs2-linalg = "0.1.0-alpha.3"
+scirs2-stats = "0.1.0-alpha.3"
+scirs2-optimize = "0.1.0-alpha.3"
 
 # AI/ML modules
-scirs2-neural = "0.1.0-alpha.2"
-scirs2-autograd = "0.1.0-alpha.2"
+scirs2-neural = "0.1.0-alpha.3"
+scirs2-autograd = "0.1.0-alpha.3"
 ```
 
 ### Example Usage
@@ -473,10 +473,11 @@ We are currently working on:
 
 ### Publication Status
 
-All SciRS2 modules have been published to crates.io as alpha releases (0.1.0-alpha.2), making the entire ecosystem available to the Rust community while development continues.
+All SciRS2 modules have been published to crates.io as alpha releases (0.1.0-alpha.3), making the entire ecosystem available to the Rust community while development continues.
 
 - **Alpha Release (0.1.0-alpha.1)**: Initial modules released on crates.io (April 2025)
-- **Alpha Release (0.1.0-alpha.2)**: All modules released on crates.io (May 2025)
+- **Alpha Release (0.1.0-alpha.3)**: All modules released on crates.io (May 2025)
+- **Alpha Release (0.1.0-alpha.3)**: Fixed memory metrics snapshot system and updated tests (May 2025)
 - **Beta Release (0.1.0-beta.1)**: Planned after incorporating initial feedback
 - **First Stable Release (0.1.0)**: Targeted after API stabilization and comprehensive testing
 

@@ -838,7 +838,7 @@ mod tests {
             find_critical_points(f, &domain.view(), grid_points, threshold).unwrap();
 
         // Should find a point close to (1, -2)
-        assert!(critical_points.len() > 0);
+        assert!(!critical_points.is_empty());
 
         // Check if any point is close to the true minimum
         let found_min = critical_points

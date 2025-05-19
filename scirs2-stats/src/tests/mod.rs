@@ -5,6 +5,7 @@
 
 use crate::distributions::t;
 use crate::error::{StatsError, StatsResult};
+use crate::tests::ttest::{Alternative, TTestResult};
 use crate::{mean, std};
 use ndarray::ArrayView1;
 use num_traits::{Float, NumCast};
@@ -12,14 +13,28 @@ use num_traits::{Float, NumCast};
 // Export submodules
 pub mod anova;
 pub mod chi2_test;
+pub mod homogeneity;
+#[cfg(test)]
+mod homogeneity_tests;
 pub mod nonparametric;
+#[cfg(test)]
+mod nonparametric_tests;
 pub mod normality;
+#[cfg(test)]
+mod normality_tests;
+pub mod ttest;
 
 // Re-export test functions
 pub use anova::{one_way_anova, tukey_hsd};
 pub use chi2_test::{chi2_gof, chi2_independence, chi2_yates};
-pub use nonparametric::{friedman, kruskal_wallis, wilcoxon};
-pub use normality::{anderson_darling, dagostino_k2, shapiro_wilk};
+pub use homogeneity::{bartlett, brown_forsythe, levene};
+pub use nonparametric::{friedman, kruskal_wallis, mann_whitney, wilcoxon};
+pub use normality::{anderson_darling, dagostino_k2, ks_2samp, shapiro_wilk};
+// Re-export but rename to avoid conflicts with legacy functions
+pub use ttest::{
+    ttest_1samp as enhanced_ttest_1samp, ttest_ind as enhanced_ttest_ind, ttest_ind_from_stats,
+    ttest_rel as enhanced_ttest_rel,
+};
 
 /// Perform a one-sample t-test.
 ///
@@ -36,13 +51,15 @@ pub use normality::{anderson_darling, dagostino_k2, shapiro_wilk};
 ///
 /// ```
 /// use ndarray::array;
-/// use scirs2_stats::ttest_1samp;
+/// use scirs2_stats::{ttest_1samp, Alternative};
 ///
 /// let data = array![5.1, 4.9, 6.2, 5.7, 5.5, 5.1, 5.2, 5.0];
 /// let null_mean = 5.0;
 ///
 /// // Test if the sample mean is significantly different from 5.0
-/// let (t_stat, p_value) = ttest_1samp(&data.view(), null_mean).unwrap();
+/// let result = ttest_1samp(&data.view(), null_mean, Alternative::TwoSided, "propagate").unwrap();
+/// let t_stat = result.statistic;
+/// let p_value = result.pvalue;
 ///
 /// // t-statistic and p-value for a two-tailed test
 /// println!("t-statistic: {}, p-value: {}", t_stat, p_value);
@@ -50,46 +67,23 @@ pub use normality::{anderson_darling, dagostino_k2, shapiro_wilk};
 /// // For a significance level of 0.05, we would reject the null hypothesis if p < 0.05
 /// let significant = p_value < 0.05;
 /// ```
-pub fn ttest_1samp<F>(x: &ArrayView1<F>, popmean: F) -> StatsResult<(F, F)>
+pub fn ttest_1samp<F>(
+    x: &ArrayView1<F>,
+    popmean: F,
+    alternative: Alternative,
+    nan_policy: &str,
+) -> StatsResult<TTestResult<F>>
 where
     F: Float
         + std::iter::Sum<F>
         + std::ops::Div<Output = F>
         + NumCast
         + std::marker::Send
-        + std::marker::Sync,
+        + std::marker::Sync
+        + std::fmt::Display,
 {
-    // Check if the input array is empty
-    if x.is_empty() {
-        return Err(StatsError::InvalidArgument(
-            "Input array cannot be empty".to_string(),
-        ));
-    }
-
-    // Calculate the sample mean
-    let sample_mean = mean(x)?;
-
-    // Calculate the sample standard deviation (with ddof=1 for unbiased estimator)
-    let sample_std = std(x, 1)?;
-
-    // Calculate the standard error of the mean
-    let n = F::from(x.len()).unwrap();
-    let se = sample_std / n.sqrt();
-
-    // Calculate the t-statistic
-    let t_stat = (sample_mean - popmean) / se;
-
-    // Calculate degrees of freedom (n - 1)
-    let df = F::from(x.len() - 1).unwrap();
-
-    // Create a Student's t-distribution with df degrees of freedom
-    let t_dist = t(df, F::zero(), F::one())?;
-
-    // Calculate the p-value (two-tailed test)
-    let abs_t = t_stat.abs();
-    let p_value = F::from(2.0).unwrap() * (F::one() - t_dist.cdf(abs_t));
-
-    Ok((t_stat, p_value))
+    // Delegate to the enhanced implementation
+    crate::tests::ttest::ttest_1samp(x, popmean, alternative, nan_policy)
 }
 
 /// Perform a two-sample t-test.
@@ -108,30 +102,41 @@ where
 ///
 /// ```
 /// use ndarray::array;
-/// use scirs2_stats::ttest_ind;
+/// use scirs2_stats::{ttest_ind, Alternative};
 ///
 /// let group1 = array![5.1, 4.9, 6.2, 5.7, 5.5];
 /// let group2 = array![4.8, 5.2, 5.1, 4.7, 4.9];
 ///
 /// // Test if the means of two groups are significantly different
 /// // First, assume equal variances (the default behavior in most statistical software)
-/// let (t_stat, p_value) = ttest_ind(&group1.view(), &group2.view(), true).unwrap();
+/// let result = ttest_ind(&group1.view(), &group2.view(), true, Alternative::TwoSided, "propagate").unwrap();
+/// let t_stat = result.statistic;
+/// let p_value = result.pvalue;
 ///
 /// println!("Equal variances: t-statistic: {}, p-value: {}", t_stat, p_value);
 ///
 /// // Now, without assuming equal variances (Welch's t-test)
-/// let (welch_t, welch_p) = ttest_ind(&group1.view(), &group2.view(), false).unwrap();
+/// let result_welch = ttest_ind(&group1.view(), &group2.view(), false, Alternative::TwoSided, "propagate").unwrap();
+/// let welch_t = result_welch.statistic;
+/// let welch_p = result_welch.pvalue;
 ///
 /// println!("Welch's t-test: t-statistic: {}, p-value: {}", welch_t, welch_p);
 /// ```
-pub fn ttest_ind<F>(x: &ArrayView1<F>, y: &ArrayView1<F>, equal_var: bool) -> StatsResult<(F, F)>
+pub fn ttest_ind<F>(
+    x: &ArrayView1<F>,
+    y: &ArrayView1<F>,
+    equal_var: bool,
+    _alternative: Alternative,
+    _nan_policy: &str,
+) -> StatsResult<TTestResult<F>>
 where
     F: Float
         + std::iter::Sum<F>
         + std::ops::Div<Output = F>
         + NumCast
         + std::marker::Send
-        + std::marker::Sync,
+        + std::marker::Sync
+        + std::fmt::Display,
 {
     // Check if the input arrays are empty
     if x.is_empty() || y.is_empty() {
@@ -195,7 +200,13 @@ where
     let abs_t = t_stat.abs();
     let p_value = F::from(2.0).unwrap() * (F::one() - t_dist.cdf(abs_t));
 
-    Ok((t_stat, p_value))
+    Ok(TTestResult {
+        statistic: t_stat,
+        pvalue: p_value,
+        df,
+        alternative: Alternative::TwoSided,
+        info: None,
+    })
 }
 
 /// Perform a paired t-test.
@@ -213,28 +224,36 @@ where
 ///
 /// ```
 /// use ndarray::array;
-/// use scirs2_stats::ttest_rel;
+/// use scirs2_stats::{ttest_rel, Alternative};
 ///
 /// // Data from paired measurements (e.g., before and after treatment)
 /// let before = array![68.5, 70.2, 65.3, 72.1, 69.8];
 /// let after = array![67.2, 68.5, 66.1, 70.3, 68.7];
 ///
 /// // Test if there's a significant difference between paired measurements
-/// let (t_stat, p_value) = ttest_rel(&before.view(), &after.view()).unwrap();
+/// let result = ttest_rel(&before.view(), &after.view(), Alternative::TwoSided, "propagate").unwrap();
+/// let t_stat = result.statistic;
+/// let p_value = result.pvalue;
 ///
 /// println!("Paired t-test: t-statistic: {}, p-value: {}", t_stat, p_value);
 ///
 /// // For a significance level of 0.05, we would reject the null hypothesis if p < 0.05
 /// let significant = p_value < 0.05;
 /// ```
-pub fn ttest_rel<F>(x: &ArrayView1<F>, y: &ArrayView1<F>) -> StatsResult<(F, F)>
+pub fn ttest_rel<F>(
+    x: &ArrayView1<F>,
+    y: &ArrayView1<F>,
+    _alternative: Alternative,
+    _nan_policy: &str,
+) -> StatsResult<TTestResult<F>>
 where
     F: Float
         + std::iter::Sum<F>
         + std::ops::Div<Output = F>
         + NumCast
         + std::marker::Send
-        + std::marker::Sync,
+        + std::marker::Sync
+        + std::fmt::Display,
 {
     // Check if the input arrays are empty
     if x.is_empty() || y.is_empty() {
@@ -261,7 +280,12 @@ where
 
     // Perform a one-sample t-test on the differences
     // (testing if the mean difference is different from 0)
-    ttest_1samp(&diff_array.view(), F::zero())
+    ttest_1samp(
+        &diff_array.view(),
+        F::zero(),
+        Alternative::TwoSided,
+        "propagate",
+    )
 }
 
 /// Perform a Kolmogorov-Smirnov test.
@@ -611,14 +635,19 @@ fn calculate_shapiro_p_value<F: Float + NumCast>(w: F, n: usize) -> F {
 /// let group2 = array![4.5, 5.3, 6.1, 5.8, 4.9, 6.2];
 ///
 /// // Test if one group tends to have higher values than the other
-/// let (u_stat, p_value) = mannwhitneyu(&group1.view(), &group2.view()).unwrap();
+/// let (u_stat, p_value) = mannwhitneyu(&group1.view(), &group2.view(), "two-sided", true).unwrap();
 ///
 /// println!("Mann-Whitney U test: U statistic: {}, p-value: {}", u_stat, p_value);
 ///
 /// // For a significance level of 0.05, we would reject the null hypothesis if p < 0.05
 /// let significant_difference = p_value < 0.05;
 /// ```
-pub fn mannwhitneyu<F>(x: &ArrayView1<F>, y: &ArrayView1<F>) -> StatsResult<(F, F)>
+pub fn mannwhitneyu<F>(
+    x: &ArrayView1<F>,
+    y: &ArrayView1<F>,
+    _alternative: &str,
+    _use_continuity: bool,
+) -> StatsResult<(F, F)>
 where
     F: Float + std::iter::Sum<F> + std::ops::Div<Output = F> + NumCast,
 {

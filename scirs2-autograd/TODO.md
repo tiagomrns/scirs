@@ -54,14 +54,48 @@ This module provides automatic differentiation functionality comparable to PyTor
 - [x] Matrix operations
   - [x] Matrix multiplication
   - [x] Transpose
-  - [x] Inverse
-  - [x] Determinant
+  - [x] Basic linear algebra (trace, diagonal, etc.)
+  - [x] Matrix decompositions (QR, LU, SVD)
+  - [x] Matrix norms (Frobenius, etc.)
+  - [x] Scalar operations with matrices
+  - [ ] Inverse (planned)
+  - [ ] Determinant (planned)
 - [x] Tensor manipulation
   - [x] Reshape
   - [x] Slicing
   - [x] Concatenation
   - [x] Padding
   - [x] Indexing
+
+## Linear Algebra Operations
+
+- [x] Basic matrix operations
+  - [x] Trace
+  - [x] Diagonal extraction/creation
+  - [x] Identity matrix creation
+  - [x] Matrix scalar multiplication
+  - [x] Matrix inversion (with gradient)
+  - [x] Matrix determinant (basic implementation)
+- [x] Matrix decompositions with gradients
+  - [x] QR decomposition
+  - [x] LU decomposition
+  - [x] SVD (numerically stable implementation)
+  - [x] SVD gradient computation
+  - [x] SVD with large matrix support
+  - [ ] Cholesky decomposition
+  - [x] Eigendecomposition (basic implementation)
+- [x] Matrix norms
+  - [x] Frobenius norm
+  - [ ] Spectral norm
+  - [ ] Nuclear norm
+- [ ] Matrix functions
+  - [ ] Matrix exponential
+  - [ ] Matrix logarithm
+  - [ ] Matrix power
+- [x] Matrix solvers
+  - [x] Linear system solution
+  - [x] Least squares
+  - [x] SVD-based solvers
 
 ## Neural Network Operations
 
@@ -141,10 +175,11 @@ This module provides automatic differentiation functionality comparable to PyTor
   - [ ] Performance optimization for higher-order derivatives
   - [ ] Mixed-mode differentiation
   - [ ] Forward-mode automatic differentiation
-- [ ] Special functions with optimized gradients
-  - [ ] Numerically stable gradient implementations
-  - [ ] Specialized functions for machine learning
-  - [ ] Custom gradient definitions
+- [x] Special functions with optimized gradients
+  - [x] Numerically stable gradient implementations for SVD
+  - [x] Specialized functions for machine learning
+  - [x] Custom gradient definitions for matrix decompositions
+  - [ ] Enhanced numerical stability for more operations
 - [ ] Vector-Jacobian products
   - [ ] Efficient VJP computation
   - [ ] Jacobian-Vector products
@@ -172,8 +207,9 @@ This module provides automatic differentiation functionality comparable to PyTor
 
 ## Integration and Interoperability
 
-- [ ] Seamless integration with scirs2-linalg
-  - [ ] Shared operation implementations
+- [x] Seamless integration with scirs2-linalg
+  - [x] Basic integration
+  - [x] Linear algebra operations sharing
   - [ ] Consistent API patterns
   - [ ] Specialized linear algebra operations
 - [ ] Integration with scirs2-neural
@@ -206,14 +242,20 @@ This module provides automatic differentiation functionality comparable to PyTor
 
 ## Documentation and Examples
 
-- [ ] API documentation
+- [x] Matrix operations documentation
+  - [x] Basic API reference
+  - [x] Usage examples
+  - [x] Implementation notes
+- [x] Linear algebra examples
+  - [x] Basic matrix operations
+  - [x] Decomposition operations
+  - [x] Gradient computation examples
+- [ ] Advanced API documentation
   - [ ] Comprehensive function documentation
   - [ ] Usage examples with each function
   - [ ] Best practices
   - [ ] Performance considerations
-- [ ] Usage examples
-  - [ ] Basic autograd examples
-  - [ ] Custom operation examples
+- [ ] Additional usage examples
   - [ ] Complex network demonstrations
   - [ ] Scientific computing applications
 - [ ] Tutorials
@@ -228,12 +270,17 @@ This module provides automatic differentiation functionality comparable to PyTor
 
 ## Testing and Validation
 
-- [ ] Unit tests
-  - [ ] Operation correctness
-  - [ ] Gradient verification
+- [x] Basic unit tests
+  - [x] Operation correctness
+  - [x] Gradient verification
+- [x] Linear algebra tests
+  - [x] Matrix decomposition tests
+  - [x] Norm computation tests
+  - [x] Basic operation tests
+- [ ] Additional testing
   - [ ] Edge case handling
   - [ ] Numerical stability
-- [ ] Integration tests
+  - [ ] Integration tests
   - [ ] End-to-end workflows
   - [ ] Complex network validation
   - [ ] Multi-component tests

@@ -41,6 +41,7 @@ use crate::error::{SpatialError, SpatialResult};
 use ndarray::Array2;
 use qhull::Qh;
 use std::collections::{HashMap, HashSet};
+use std::fmt::Debug;
 
 /// Structure for storing and querying a Delaunay triangulation
 ///
@@ -72,6 +73,31 @@ pub struct Delaunay {
     /// The QHull instance (if retained)
     #[allow(dead_code)]
     _qh: Option<Qh<'static>>,
+}
+
+impl Debug for Delaunay {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("Delaunay")
+            .field("points", &self.points.shape())
+            .field("ndim", &self.ndim)
+            .field("npoints", &self.npoints)
+            .field("simplices", &self.simplices.len())
+            .field("neighbors", &self.neighbors.len())
+            .finish()
+    }
+}
+
+impl Clone for Delaunay {
+    fn clone(&self) -> Self {
+        Self {
+            points: self.points.clone(),
+            ndim: self.ndim,
+            npoints: self.npoints,
+            simplices: self.simplices.clone(),
+            neighbors: self.neighbors.clone(),
+            _qh: None, // We don't clone the Qhull handle
+        }
+    }
 }
 
 impl Delaunay {

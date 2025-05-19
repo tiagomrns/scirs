@@ -1,6 +1,6 @@
 [package]
 name = "scirs2-optimize"
-version = "0.1.0-alpha.2"
+version = "0.1.0-alpha.3"
 edition = "2021"
 authors = ["SciRS2 Team"]
 description = "Optimization module for SciRS2"
@@ -11,8 +11,8 @@ categories = ["science", "mathematics", "algorithms"]
 
 [dependencies]
 # Core dependencies
-scirs2-core = { path = "../scirs2-core", version = "0.1.0-alpha.2" }
-scirs2-linalg = { path = "../scirs2-linalg", version = "0.1.0-alpha.2" }
+scirs2-core = { path = "../scirs2-core", version = "0.1.0-alpha.3" }
+scirs2-linalg = { path = "../scirs2-linalg", version = "0.1.0-alpha.3" }
 ndarray = { version = "0.16.1", features = ["serde", "rayon"] }
 num-traits = "0.2.19"
 num-complex = "0.4.6"
@@ -21,7 +21,36 @@ openblas-src = "0.10.11"
 
 # Optimization specific dependencies
 argmin = "0.10.0"
+rand = "0.9.0"
+rand_distr.workspace = true
+rayon = "1.5"
+friedrich = "0.5.0"
+scirs2-sparse = { path = "../scirs2-sparse", version = "0.1.0-alpha.3" }
 
 [dev-dependencies]
 approx = "0.5.1"
 criterion = "0.5.1"
+
+[[example]]
+name = "global_optimization"
+path = "examples/global_optimization.rs"
+
+[[example]]
+name = "sparse_numerical_differentiation"
+path = "examples/sparse_numerical_differentiation.rs"
+
+[[example]]
+name = "powell_example"
+path = "examples/powell_example.rs"
+
+[[example]]
+name = "scalar_optimization"
+path = "examples/scalar_optimization.rs"
+
+[[bin]]
+name = "test_debug_hessian"
+path = "test_debug_hessian.rs"
+
+[[bin]]
+name = "test_debug_multistart"
+path = "test_debug_multistart.rs"

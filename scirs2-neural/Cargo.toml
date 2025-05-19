@@ -1,6 +1,6 @@
 [package]
 name = "scirs2-neural"
-version = "0.1.0-alpha.2"
+version = "0.1.0-alpha.3"
 edition = "2021"
 authors = ["SciRS2 Team"]
 license = "MIT OR Apache-2.0"
@@ -11,14 +11,17 @@ categories = ["science", "mathematics", "algorithms"]
 
 [dependencies]
 # Core dependencies
-scirs2-core = { path = "../scirs2-core", version = "0.1.0-alpha.2", optional = true, features = ["linalg", "openblas"] }
+scirs2-core = { path = "../scirs2-core", version = "0.1.0-alpha.3", optional = true, features = ["linalg", "openblas"] }
 # Temporarily commented out for publishing
-# scirs2-linalg = { path = "../scirs2-linalg", version = "0.1.0-alpha.2", optional = true }
-# scirs2-optimize = { path = "../scirs2-optimize", version = "0.1.0-alpha.2", optional = true }
-# scirs2-optim = { path = "../scirs2-optim", version = "0.1.0-alpha.2", optional = true }
+# scirs2-linalg = { path = "../scirs2-linalg", version = "0.1.0-alpha.3", optional = true }
+# scirs2-optimize = { path = "../scirs2-optimize", version = "0.1.0-alpha.3", optional = true }
+# scirs2-optim = { path = "../scirs2-optim", version = "0.1.0-alpha.3", optional = true }
+# Integration with other scirs2 modules
+scirs2-metrics = { path = "../scirs2-metrics", version = "0.1.0-alpha.3", optional = true, default-features = false, features = ["neural_common"] }
 ndarray = { version = "0.16.1", features = ["serde", "rayon"] }
 ndarray-stats = "0.5.0"
 ndarray-linalg = { version = "0.17.0", features = ["openblas-static"] }
+ndarray-rand = "0.14.0"
 num-integer = "0.1.46"
 approx = "0.5.1"
 num-traits = "0.2.19"
@@ -32,7 +35,7 @@ openblas-src = "0.10.11"
 # AI/ML specific dependencies
 autograd = "1.1.1"
 # Temporarily commented out for publishing
-# scirs2-autograd = { path = "../scirs2-autograd", version = "0.1.0-alpha.2" }
+# scirs2-autograd = { path = "../scirs2-autograd", version = "0.1.0-alpha.3" }
 
 # Note: clip_example.rs and feature_fusion_example.rs were removed due to BLAS linking issues
 
@@ -58,10 +61,12 @@ optim = [] # Empty feature for compatibility with existing code
 openblas = ["ndarray-linalg/openblas-static"]
 netlib = ["ndarray-linalg/netlib"]
 intel-mkl = ["ndarray-linalg/intel-mkl"]
+# Integration with other modules
+metrics_integration = ["dep:scirs2-metrics"]
 
 [[example]]
-name = "autograd_example"
-path = "examples/autograd_example.rs"
+name = "neural_autograd_example"
+path = "examples/neural_autograd_example.rs"
 
 [[example]]
 name = "transformer_example"
@@ -86,3 +91,7 @@ path = "examples/model_serialization_example.rs"
 [[example]]
 name = "advanced_optimizers_example"
 path = "examples/advanced_optimizers_example.rs"
+
+[[example]]
+name = "metrics_integration_example"
+path = "examples/metrics_integration_example.rs"

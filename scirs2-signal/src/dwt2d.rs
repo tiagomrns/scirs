@@ -270,8 +270,8 @@ where
 
     // Calculate output dimensions (ceiling division for half the size)
     // Use integer division that rounds up
-    let output_rows = (rows + 1) / 2; // TODO: Replace with div_ceil when stable
-    let output_cols = (cols + 1) / 2; // TODO: Replace with div_ceil when stable
+    let output_rows = rows.div_ceil(2); // TODO: Replace with div_ceil when stable
+    let output_cols = cols.div_ceil(2); // TODO: Replace with div_ceil when stable
 
     // Create output arrays for each subband
     let mut ll = Array2::zeros((output_rows, output_cols));

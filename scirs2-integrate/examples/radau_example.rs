@@ -85,7 +85,7 @@ fn main() {
     println!("  Number of function evaluations: {}", result.n_eval);
     println!("  Number of accepted steps: {}", result.n_accepted);
     println!("  Number of rejected steps: {}", result.n_rejected);
-    println!("  Final step size: {:.6e}", result.final_step.unwrap());
+    // println!("  Final step size: {:.6e}", result.final_step.unwrap());
     println!("  Success: {}", result.success);
     if let Some(msg) = &result.message {
         println!("  Message: {}", msg);

@@ -53,8 +53,8 @@ pub struct ReduceGradCommon {
 
 macro_rules! impl_reduce_forward {
     ($forward_name:ident, $reduce_fn_name:ident, $reduce_default:ident) => {
-        fn $forward_name<'v, T: Float>(
-            x: &NdArrayView<'v, T>,
+        fn $forward_name<T: Float>(
+            x: &NdArrayView<'_, T>,
             mut axes: Vec<usize>,
             keep_dims: bool,
         ) -> NdArray<T> {
@@ -124,7 +124,7 @@ impl<T: Float> op::Op<T> for ReduceSumToScalar {
     fn compute(&self, ctx: &mut crate::op::ComputeContext<T>) -> Result<(), crate::op::OpError> {
         let x = &ctx.input(0);
         // Debug information for empty arrays
-        if x.len() == 0 {
+        if x.is_empty() {
             ctx.append_output(ndarray::arr0(T::zero()).into_dyn());
         } else {
             ctx.append_output(ndarray::arr0(x.sum()).into_dyn());
@@ -134,8 +134,8 @@ impl<T: Float> op::Op<T> for ReduceSumToScalar {
 
     fn grad(&self, ctx: &mut crate::op::GradientContext<T>) {
         let gx = Tensor::builder(ctx.graph())
-            .append_input(&ctx.output_grad(), false)
-            .append_input(&shape(ctx.input(0)), false)
+            .append_input(ctx.output_grad(), false)
+            .append_input(shape(ctx.input(0)), false)
             .build(ReduceSumToScalarGrad);
         ctx.append_input_grad(0, Some(gx))
     }
@@ -156,7 +156,7 @@ impl<T: Float> op::Op<T> for ReduceSumToScalarGrad {
 
     fn grad(&self, ctx: &mut crate::op::GradientContext<T>) {
         let gx = Tensor::builder(ctx.graph())
-            .append_input(&ctx.output_grad(), false)
+            .append_input(ctx.output_grad(), false)
             .build(ReduceSumToScalar);
         ctx.append_input_grad(0, Some(gx));
         ctx.append_input_grad(1, None);
@@ -178,9 +178,9 @@ impl<T: Float> op::Op<T> for ReduceSum {
             sparse_axes: self.sparse_axes,
         };
         let gx = Tensor::builder(ctx.graph())
-            .append_input(&ctx.output_grad(), false)
-            .append_input(&shape(&ctx.input(0)), false)
-            .append_input(&ctx.input(1), false)
+            .append_input(ctx.output_grad(), false)
+            .append_input(shape(ctx.input(0)), false)
+            .append_input(ctx.input(1), false)
             .build(grad_op);
         ctx.append_input_grad(0, Some(gx));
         ctx.append_input_grad(1, None);
@@ -200,7 +200,7 @@ impl<T: Float> op::Op<T> for ReduceMean {
         // Make reduction_len
         let mut reduction_len = 1.;
         for &axis in axes.iter() {
-            reduction_len *= x_shape[axis as usize] as f32;
+            reduction_len *= x_shape[axis] as f32;
         }
         // Do summation
         let mut sum = compute_reduce_sum(x, axes, self.keep_dims);
@@ -218,8 +218,8 @@ impl<T: Float> op::Op<T> for ReduceMean {
 
         // Broadcast gy into x's shape
         let broadcast = Tensor::builder(ctx.graph())
-            .append_input(&ctx.output_grad(), false)
-            .append_input(&shape(x), false)
+            .append_input(ctx.output_grad(), false)
+            .append_input(shape(x), false)
             .append_input(axes, false)
             .build(ReduceGradCommon {
                 should_make_broadcast_dims: !self.keep_dims,
@@ -255,9 +255,9 @@ impl<T: Float> op::Op<T> for ReduceProd {
         let gy = ctx.output_grad();
         let output = ctx.output();
         let tmp = Tensor::builder(ctx.graph())
-            .append_input(&(gy * output), false)
-            .append_input(&shape(x0), false)
-            .append_input(&x1, false)
+            .append_input(gy * output, false)
+            .append_input(shape(x0), false)
+            .append_input(x1, false)
             .build(grad_op);
         let gx = tmp / x0;
         ctx.append_input_grad(0, Some(gx));
@@ -276,10 +276,10 @@ impl<T: Float> op::Op<T> for ReduceMin {
 
     fn grad<'a>(&self, ctx: &mut crate::op::GradientContext<'a, 'a, T>) {
         min_max_grad(
-            &ctx.output_grad(),
-            &ctx.input(0),
-            &ctx.input(1),
-            &ctx.output(),
+            ctx.output_grad(),
+            ctx.input(0),
+            ctx.input(1),
+            ctx.output(),
             self.keep_dims,
             self.sparse_axes,
             ctx,
@@ -298,10 +298,10 @@ impl<T: Float> op::Op<T> for ReduceMax {
 
     fn grad<'a>(&self, ctx: &mut crate::op::GradientContext<'a, 'a, T>) {
         min_max_grad(
-            &ctx.output_grad(),
-            &ctx.input(0),
-            &ctx.input(1),
-            &ctx.output(),
+            ctx.output_grad(),
+            ctx.input(0),
+            ctx.input(1),
+            ctx.output(),
             self.keep_dims,
             self.sparse_axes,
             ctx,
@@ -482,7 +482,7 @@ impl<T: Float> op::Op<T> for ReduceGradCommon {
         };
         let axes = &ctx.input(2);
         let gx = Tensor::builder(ctx.graph())
-            .append_input(&ctx.output_grad(), false)
+            .append_input(ctx.output_grad(), false)
             .append_input(axes, false)
             .build(sum);
         ctx.append_input_grad(0, Some(gx));

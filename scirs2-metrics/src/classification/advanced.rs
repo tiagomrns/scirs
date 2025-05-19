@@ -112,19 +112,19 @@ where
 
     // For multi-class case, calculate coefficients from confusion matrix
     let mut t = 0.0;
-    for i in 0..n_classes {
-        for j in 0..n_classes {
-            t += cm[i][j];
+    for row in &cm {
+        for &cell in row {
+            t += cell;
         }
     }
 
     // Calculate sums of rows and columns
     let mut c = vec![0.0; n_classes];
     let mut k = vec![0.0; n_classes];
-    for i in 0..n_classes {
-        for j in 0..n_classes {
-            c[j] += cm[i][j];
-            k[i] += cm[i][j];
+    for (i, row) in cm.iter().enumerate() {
+        for (j, &cell) in row.iter().enumerate() {
+            c[j] += cell;
+            k[i] += cell;
         }
     }
 
@@ -141,14 +141,14 @@ where
     }
 
     let mut denominator_1 = 0.0;
-    for i in 0..n_classes {
-        denominator_1 += k[i] * k[i];
+    for &val in &k {
+        denominator_1 += val * val;
     }
     denominator_1 = t * t - denominator_1;
 
     let mut denominator_2 = 0.0;
-    for i in 0..n_classes {
-        denominator_2 += c[i] * c[i];
+    for &val in &c {
+        denominator_2 += val * val;
     }
     denominator_2 = t * t - denominator_2;
 
@@ -352,9 +352,11 @@ where
 
     // Calculate observed agreement (accuracy)
     let mut observed = 0.0;
+    #[allow(clippy::needless_range_loop)]
     for i in 0..n_classes {
         observed += cm[i][i];
     }
+    // NOTE: This could be rewritten using iterators, but the current approach is more readable
     observed /= n_samples as f64;
 
     // Calculate expected agreement (due to chance)
@@ -643,14 +645,14 @@ where
 /// ```
 /// // Due to some implementation complexities with the doctest,
 /// // we'll show pseudocode here and the actual implementation is tested in unit tests
-/// 
+///
 /// // Example 1: Binary classification
 /// // y_true = [0, 1, 1, 0]
 /// // y_prob = [[0.9, 0.1], [0.1, 0.9], [0.2, 0.8], [0.7, 0.3]]
 /// // log_loss(y_true, y_prob, 1e-15, true) -> ~0.2
-/// 
+///
 /// // Example 2: Multi-class classification
-/// // y_true = [0, 1, 2, 1] 
+/// // y_true = [0, 1, 2, 1]
 /// // y_prob = [
 /// //   [0.9, 0.05, 0.05],  // Sample 0 probabilities
 /// //   [0.1, 0.8, 0.1],    // Sample 1 probabilities

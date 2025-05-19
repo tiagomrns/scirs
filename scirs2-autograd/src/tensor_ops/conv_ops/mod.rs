@@ -70,6 +70,7 @@ fn test_im2col_batch() {
     )
 }
 
+#[allow(clippy::too_many_arguments)]
 fn im2col<T: Float>(
     mut x_ptr: *const T, // 4-dimensional
     mut ret_ptr: *mut T, // 4-dimensional (result)
@@ -123,6 +124,7 @@ fn im2col<T: Float>(
     }
 }
 
+#[allow(clippy::too_many_arguments)]
 fn im2col_batch<T: Float>(
     x: &[T],           // 4-dimensional
     batch_size: usize, // x.shape[0]
@@ -145,10 +147,7 @@ fn im2col_batch<T: Float>(
     let size_per_batch_x = xch as usize * channel_size;
     let size_per_batch_y = (xch * kw * kh * yh * yw) as usize;
 
-    let mut ret = Vec::with_capacity(batch_size * size_per_batch_y);
-    unsafe {
-        ret.set_len(batch_size * size_per_batch_y);
-    }
+    let mut ret = vec![T::zero(); batch_size * size_per_batch_y];
 
     let a = x.par_iter().step_by(size_per_batch_x);
     let b = ret.par_iter_mut().step_by(size_per_batch_y);
@@ -175,6 +174,7 @@ fn im2col_batch<T: Float>(
     ret
 }
 
+#[allow(clippy::too_many_arguments)]
 fn col2im<T: Float>(
     mut x_ptr: *const T, // 6-dimensional cols
     mut ret_ptr: *mut T, // 4-dimensional

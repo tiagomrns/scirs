@@ -1,3 +1,15 @@
+# SciRS2 0.1.0-alpha.3 Release Notes
+
+## 0.1.0-alpha.3 (May 2025)
+
+This release fixes issues with the memory metrics snapshot system in scirs2-core and improves thread safety in tests.
+
+### Bug Fixes
+
+- Fixed thread-safety issues in memory snapshot tests
+- Improved mutex lock handling to prevent poisoning
+- Enhanced test robustness for memory tracking
+
 # SciRS2 0.1.0 Release Notes
 
 We're excited to announce the initial release of SciRS2 (Scientific Computing in Rust), a comprehensive scientific computing library designed to provide SciPy-compatible APIs while leveraging Rust's performance, safety, and concurrency features.
@@ -92,23 +104,23 @@ Add the following to your `Cargo.toml`:
 
 ```toml
 [dependencies]
-scirs2 = "0.1.0-alpha.2"  # Import the whole library
+scirs2 = "0.1.0-alpha.3"  # Import the whole library
 ```
 
 Or select only the modules you need:
 
 ```toml
 [dependencies]
-scirs2-linalg = "0.1.0-alpha.2"     # Linear algebra only
-scirs2-stats = "0.1.0-alpha.2"      # Statistics only
-scirs2-optimize = "0.1.0-alpha.2"   # Optimization only
+scirs2-linalg = "0.1.0-alpha.3"     # Linear algebra only
+scirs2-stats = "0.1.0-alpha.3"      # Statistics only
+scirs2-optimize = "0.1.0-alpha.3"   # Optimization only
 ```
 
 You can also enable specific features:
 
 ```toml
 [dependencies]
-scirs2-core = { version = "0.1.0-alpha.2", features = ["simd", "parallel"] }
+scirs2-core = { version = "0.1.0-alpha.3", features = ["simd", "parallel"] }
 ```
 
 ## Usage Examples

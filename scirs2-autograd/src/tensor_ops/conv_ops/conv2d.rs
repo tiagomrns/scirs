@@ -112,6 +112,7 @@ fn fast_im2col_gemm_fused_kernel<F: Float>(
 }
 
 #[cfg(not(feature = "blas"))]
+#[allow(clippy::too_many_arguments)]
 fn slow_im2col_gemm_fused_kernel<F: Float>(
     x: &[F], // 4-dimensional
     filter: &[F],
@@ -274,6 +275,7 @@ fn fast_col_x_filter_kernel<F: Float>(
 }
 
 #[cfg(not(feature = "blas"))]
+#[allow(clippy::too_many_arguments)]
 fn slow_col_x_filter_kernel<F: Float>(
     cols: &[F],
     filter: &[F],
@@ -286,10 +288,7 @@ fn slow_col_x_filter_kernel<F: Float>(
     batch_size: usize,
 ) -> Vec<F> {
     let size_per_batch_y = ych * yh * yw;
-    let mut y = Vec::with_capacity(batch_size * size_per_batch_y);
-    unsafe {
-        y.set_len(batch_size * size_per_batch_y);
-    }
+    let mut y = vec![F::zero(); batch_size * size_per_batch_y];
     let m = ych;
     let n = yh * yw;
     let k = xch * kh * kw;
@@ -346,6 +345,7 @@ struct Conv2DParams {
 }
 
 // Panics for invalid inputs
+#[allow(clippy::too_many_arguments)]
 fn conv2d_extract_params<F: Float>(
     x: &NdArrayView<F>,
     w: &NdArrayView<F>,
@@ -404,6 +404,7 @@ fn conv2d_extract_params<F: Float>(
 }
 
 /// Returns: (conv result, im2col result)
+#[allow(clippy::too_many_arguments)]
 fn conv2d_impl<F: Float>(
     x: &NdArrayView<F>,
     w: &NdArrayView<F>,
@@ -559,8 +560,8 @@ impl<T: Float> crate::op::Op<T> for Conv2D {
         let w = ctx.input(1);
 
         let gx = Tensor::builder(ctx.graph())
-            .append_input(&gy, false)
-            .append_input(&w, false)
+            .append_input(gy, false)
+            .append_input(w, false)
             .build(super::conv2d_transpose::Conv2DTranspose {
                 pad: self.pad,
                 stride: self.stride,
@@ -569,11 +570,11 @@ impl<T: Float> crate::op::Op<T> for Conv2D {
 
         let cols = nth_tensor(y, 1);
         let gw = Tensor::builder(ctx.graph())
-            .append_input(&cols, false)
-            .append_input(&gy, false)
-            .append_input(&w, false)
-            .append_backprop_input(&x)
-            .append_backprop_input(&gy)
+            .append_input(cols, false)
+            .append_input(gy, false)
+            .append_input(w, false)
+            .append_backprop_input(x)
+            .append_backprop_input(gy)
             .build(Conv2DFilterGrad {
                 pad: self.pad,
                 stride: self.stride,
@@ -602,8 +603,8 @@ impl<T: Float> crate::op::Op<T> for Conv2DWithCols {
         let gy = ctx.output_grad();
 
         let gx = Tensor::builder(ctx.graph())
-            .append_input(&gy, false)
-            .append_input(&w, false)
+            .append_input(gy, false)
+            .append_input(w, false)
             .build(super::conv2d_transpose::Conv2DTranspose {
                 pad: self.pad,
                 stride: self.stride,
@@ -611,11 +612,11 @@ impl<T: Float> crate::op::Op<T> for Conv2DWithCols {
             });
 
         let gw = Tensor::builder(ctx.graph())
-            .append_input(&cols, false)
-            .append_input(&gy, false)
-            .append_input(&w, false)
-            .append_backprop_input(&y.get_backprop_input(0))
-            .append_backprop_input(&gy)
+            .append_input(cols, false)
+            .append_input(gy, false)
+            .append_input(w, false)
+            .append_backprop_input(y.get_backprop_input(0))
+            .append_backprop_input(gy)
             .build(Conv2DFilterGrad {
                 pad: self.pad,
                 stride: self.stride,
@@ -750,8 +751,8 @@ impl<T: Float> crate::op::Op<T> for Conv2DFilterGrad {
 
         // grad grad
         let gx = Tensor::builder(ctx.graph())
-            .append_input(&gy, false)
-            .append_input(&ggw, false)
+            .append_input(gy, false)
+            .append_input(ggw, false)
             .build(super::conv2d_transpose::Conv2DTranspose {
                 pad: self.pad,
                 stride: self.stride,
@@ -759,10 +760,10 @@ impl<T: Float> crate::op::Op<T> for Conv2DFilterGrad {
             });
 
         let ggy = Tensor::builder(ctx.graph())
-            .append_input(&cols, false)
-            .append_input(&ggw, false)
-            .append_backprop_input(&y.get_backprop_input(0))
-            .append_backprop_input(&ggw)
+            .append_input(cols, false)
+            .append_input(ggw, false)
+            .append_backprop_input(y.get_backprop_input(0))
+            .append_backprop_input(ggw)
             .build(Conv2DWithCols {
                 pad: self.pad,
                 stride: self.stride,

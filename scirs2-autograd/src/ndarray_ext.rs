@@ -340,7 +340,7 @@ pub fn from_scalar<T: Float>(value: T) -> NdArray<T> {
 
 /// Get shape of an ndarray view
 #[inline]
-pub fn shape_of_view<'a, T>(view: &NdArrayView<'a, T>) -> Vec<usize> {
+pub fn shape_of_view<T>(view: &NdArrayView<'_, T>) -> Vec<usize> {
     view.shape().to_vec()
 }
 
@@ -358,14 +358,14 @@ pub fn get_default_rng<A: Float>() -> ArrayRng<A> {
 
 /// Create a deep copy of an ndarray
 #[inline]
-pub fn deep_copy<'a, T: Float + Clone>(array: &NdArrayView<'a, T>) -> NdArray<T> {
+pub fn deep_copy<T: Float + Clone>(array: &NdArrayView<'_, T>) -> NdArray<T> {
     array.to_owned()
 }
 
 /// Select elements from an array along an axis
 #[inline]
-pub fn select<'a, T: Float + Clone>(
-    array: &NdArrayView<'a, T>,
+pub fn select<T: Float + Clone>(
+    array: &NdArrayView<'_, T>,
     axis: ndarray::Axis,
     indices: &[usize],
 ) -> NdArray<T> {
@@ -517,7 +517,7 @@ pub mod array_gen {
         let mut current = start;
         while current < end {
             data.push(current);
-            current = current + step;
+            current += step;
         }
 
         NdArray::<T>::from_shape_vec(ndarray::IxDyn(&[data.len()]), data).unwrap()

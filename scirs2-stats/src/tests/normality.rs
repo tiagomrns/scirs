@@ -670,3 +670,213 @@ fn gamma_function(x: f64) -> f64 {
 
     (2.0 * std::f64::consts::PI).sqrt() * t.powf(z + 0.5) * (-t).exp() * result
 }
+
+/// Performs the Kolmogorov-Smirnov two-sample test.
+///
+/// The Kolmogorov-Smirnov two-sample test tests the null hypothesis that
+/// two samples come from the same distribution, without making any assumptions
+/// about what that common distribution is.
+///
+/// # Arguments
+///
+/// * `x` - First sample
+/// * `y` - Second sample
+/// * `alternative` - The alternative hypothesis, one of "two-sided" (default),
+///   "less" (the CDF of x lies below that of y), or "greater" (the CDF of x lies
+///   above that of y)
+///
+/// # Returns
+///
+/// A tuple containing the test statistic (D) and p-value
+///
+/// # Examples
+///
+/// ```
+/// use ndarray::array;
+/// use scirs2_stats::ks_2samp;
+///
+/// // Create two samples
+/// let sample1 = array![0.1, 0.2, 0.3, 0.4, 0.5];
+/// let sample2 = array![0.6, 0.7, 0.8, 0.9, 1.0];
+///
+/// // Test if they come from the same distribution
+/// let (stat, p_value) = ks_2samp(&sample1.view(), &sample2.view(), "two-sided").unwrap();
+///
+/// println!("KS test statistic: {}, p-value: {}", stat, p_value);
+/// // For a significance level of 0.05, we would reject the null hypothesis if p < 0.05
+/// let same_distribution = p_value >= 0.05;
+/// ```
+pub fn ks_2samp<F>(x: &ArrayView1<F>, y: &ArrayView1<F>, alternative: &str) -> StatsResult<(F, F)>
+where
+    F: Float + std::iter::Sum<F> + std::ops::Div<Output = F> + NumCast + std::fmt::Display,
+{
+    // Check if the arrays are empty
+    if x.is_empty() {
+        return Err(StatsError::InvalidArgument(
+            "First sample array cannot be empty".to_string(),
+        ));
+    }
+    if y.is_empty() {
+        return Err(StatsError::InvalidArgument(
+            "Second sample array cannot be empty".to_string(),
+        ));
+    }
+
+    // Validate alternative parameter
+    match alternative {
+        "two-sided" | "less" | "greater" => {}
+        _ => {
+            return Err(StatsError::InvalidArgument(format!(
+                "Invalid alternative hypothesis: {}. Use 'two-sided', 'less', or 'greater'",
+                alternative
+            )));
+        }
+    }
+
+    let n1 = x.len();
+    let n2 = y.len();
+    let n1_f = F::from(n1).unwrap();
+    let n2_f = F::from(n2).unwrap();
+
+    // Sort the data
+    let mut x_sorted = Vec::with_capacity(n1);
+    let mut y_sorted = Vec::with_capacity(n2);
+
+    for &val in x.iter() {
+        x_sorted.push(val);
+    }
+    for &val in y.iter() {
+        y_sorted.push(val);
+    }
+
+    x_sorted.sort_by(|a, b| a.partial_cmp(b).unwrap_or(std::cmp::Ordering::Equal));
+    y_sorted.sort_by(|a, b| a.partial_cmp(b).unwrap_or(std::cmp::Ordering::Equal));
+
+    // Calculate empirical distribution functions
+    let mut ecdf_x = Vec::with_capacity(n1);
+    let mut ecdf_y = Vec::with_capacity(n2);
+
+    for (i, &val) in x_sorted.iter().enumerate() {
+        ecdf_x.push((val, F::from(i + 1).unwrap() / n1_f));
+    }
+    for (i, &val) in y_sorted.iter().enumerate() {
+        ecdf_y.push((val, F::from(i + 1).unwrap() / n2_f));
+    }
+
+    // Combine samples to get all points where the ECDFs are evaluated
+    let mut all_points: Vec<F> = Vec::with_capacity(n1 + n2);
+    for &val in &x_sorted {
+        all_points.push(val);
+    }
+    for &val in &y_sorted {
+        all_points.push(val);
+    }
+    all_points.sort_by(|a, b| a.partial_cmp(b).unwrap_or(std::cmp::Ordering::Equal));
+    all_points.dedup();
+
+    // Calculate ECDFs at all points
+    let mut fx = F::zero();
+    let mut fy = F::zero();
+
+    let mut d_plus = F::zero(); // max(Fy - Fx), when Fy > Fx
+    let mut d_minus = F::zero(); // max(Fx - Fy), when Fx > Fy
+
+    let mut ix = 0;
+    let mut iy = 0;
+
+    for &point in &all_points {
+        // Update Fx (ECDF of x)
+        while ix < n1 && x_sorted[ix] <= point {
+            fx = F::from(ix + 1).unwrap() / n1_f;
+            ix += 1;
+        }
+
+        // Update Fy (ECDF of y)
+        while iy < n2 && y_sorted[iy] <= point {
+            fy = F::from(iy + 1).unwrap() / n2_f;
+            iy += 1;
+        }
+
+        // Update D+ and D-
+        // D+ measures if y values tend to be larger (Fy > Fx)
+        // D- measures if x values tend to be larger (Fx > Fy)
+        if fy > fx {
+            let diff = fy - fx;
+            if diff > d_plus {
+                d_plus = diff;
+            }
+        }
+
+        if fx > fy {
+            let diff = fx - fy;
+            if diff > d_minus {
+                d_minus = diff;
+            }
+        }
+    }
+
+    // Calculate the test statistic based on the alternative hypothesis
+    let d = match alternative {
+        // "less" - testing if x tends to have smaller values than y (x ≤ y)
+        // Reject when y has too many larger values (large D+)
+        "less" => d_plus,
+
+        // "greater" - testing if x tends to have larger values than y (x ≥ y)
+        // Reject when x has too many larger values (large D-)
+        "greater" => d_minus,
+
+        // "two-sided" - testing if distributions are different
+        // Reject when the largest difference in either direction is large
+        _ => d_plus.max(d_minus),
+    };
+
+    // Calculate p-value
+    let p_value = calculate_ks_2samp_p_value(d, n1, n2, alternative);
+
+    Ok((d, p_value))
+}
+
+// Calculate the p-value for the two-sample KS test
+fn calculate_ks_2samp_p_value<F: Float + NumCast>(
+    d: F,
+    n1: usize,
+    n2: usize,
+    alternative: &str,
+) -> F {
+    let d_f64 = <f64 as NumCast>::from(d).unwrap();
+    let n1_f64 = n1 as f64;
+    let n2_f64 = n2 as f64;
+
+    // Effective sample size
+    let n = (n1_f64 * n2_f64) / (n1_f64 + n2_f64);
+    let z = d_f64 * (n * 0.5).sqrt();
+
+    let p = if alternative == "two-sided" {
+        // Asymptotic p-value for two-sided test
+        // Using the Kolmogorov distribution
+        if z < 0.27 {
+            1.0
+        } else if z < 1.0 {
+            let z_sq = z * z;
+            let z_cb = z_sq * z;
+            let z_4 = z_cb * z;
+            let z_5 = z_4 * z;
+            let z_6 = z_5 * z;
+
+            1.0 - 2.506628275 * (z - (z_cb / 3.0) + (7.0 * z_5 / 90.0) - (z_6 / 42.0)).exp()
+        } else if z < 3.1 {
+            2.0 * (-2.0 * z * z).exp()
+        } else {
+            0.0
+        }
+    } else if alternative == "greater" {
+        // One-sided "greater" test (x CDF above y CDF)
+        1.0 - (-2.0 * z * z).exp()
+    } else {
+        // One-sided "less" test (x CDF below y CDF)
+        (-2.0 * z * z).exp()
+    };
+
+    // Ensure p-value is in [0, 1]
+    F::from(p.clamp(0.0, 1.0)).unwrap()
+}

@@ -133,7 +133,7 @@ impl<T: Float> op::Op<T> for InferBinOpShape {
             let max = a_shape
                 .iter()
                 .zip(b_shape)
-                .map(|(a, b)| T::from(a.clone().max(b)).unwrap())
+                .map(|(a, b)| T::from((*a).max(b)).unwrap())
                 .collect::<Vec<T>>();
             ctx.append_output(NdArray::from_shape_vec(ndarray::IxDyn(&[a_rank]), max).unwrap())
         } else if !a_is_scalar {
@@ -245,7 +245,7 @@ impl<T: Float> op::Op<T> for Reshape {
         let x = ctx.input(0);
         let gx = Tensor::builder(ctx.graph())
             .append_input(gy, false)
-            .append_input(shape(&x), false)
+            .append_input(shape(x), false)
             .build(Reshape);
         ctx.append_input_grad(0, Some(gx));
         ctx.append_input_grad(1, None);
@@ -321,8 +321,8 @@ impl<T: Float> op::Op<T> for IndexOp {
         let gy = ctx.output_grad();
         let gx = Tensor::builder(ctx.graph())
             .set_shape(&shape(x))
-            .append_input(&x, false)
-            .append_input(&gy, false)
+            .append_input(x, false)
+            .append_input(gy, false)
             .build(op);
         ctx.append_input_grad(0, Some(gx));
     }
@@ -406,9 +406,9 @@ impl<T: Float> op::Op<T> for Gather {
         let x1 = ctx.input(1);
         let gy = ctx.output_grad();
         let gx = Tensor::builder(ctx.graph())
-            .append_input(&x, false)
-            .append_input(&x1, false)
-            .append_input(&gy, false)
+            .append_input(x, false)
+            .append_input(x1, false)
+            .append_input(gy, false)
             .set_shape(&shape(x))
             .build(GatherGrad { axis: self.axis });
         ctx.append_input_grad(0, None);
@@ -549,7 +549,7 @@ impl<T: Float> op::Op<T> for AddN {
     fn grad(&self, ctx: &mut op::GradientContext<T>) {
         let gy = ctx.output_grad().to_owned();
         for i in 0..ctx.inputs().len() {
-            ctx.append_input_grad(i, Some(gy.clone()));
+            ctx.append_input_grad(i, Some(gy));
         }
     }
 }
@@ -566,8 +566,8 @@ impl<T: Float> op::Op<T> for Clip<T> {
         let x0 = ctx.input(0);
         let gx = Tensor::builder(ctx.graph())
             .set_shape(&shape(gy))
-            .append_input(&x0, false)
-            .append_input(&gy, false)
+            .append_input(x0, false)
+            .append_input(gy, false)
             .build(ClipGrad {
                 min: self.min,
                 max: self.max,
@@ -628,7 +628,7 @@ impl<T: Float> op::Op<T> for Concat {
         for i in 0..num_inputs {
             let mut builder = Tensor::builder(graph)
                 .set_shape(&input0_shape)
-                .append_input(&output_grad, false);
+                .append_input(output_grad, false);
 
             for input in &inputs {
                 builder = builder.append_input(input, false);
@@ -740,8 +740,8 @@ impl<T: Float> op::Op<T> for Split {
         let x = ctx.input(0);
         let gy = ctx.output_grad();
         let gx = Tensor::builder(ctx.graph())
-            .append_input(&x, false)
-            .append_input(&gy, false)
+            .append_input(x, false)
+            .append_input(gy, false)
             .set_shape(&shape(x))
             .build(op);
         ctx.append_input_grad(0, Some(gx));
@@ -817,8 +817,8 @@ impl<T: Float> op::Op<T> for Slice {
         let x = ctx.input(0);
         let gy = ctx.output_grad();
         let gx = Tensor::builder(ctx.graph())
-            .append_input(&x, false)
-            .append_input(&gy, false)
+            .append_input(x, false)
+            .append_input(gy, false)
             .set_shape(&shape(x))
             .build(op);
         ctx.append_input_grad(0, Some(gx));
@@ -861,7 +861,7 @@ impl<T: Float> op::Op<T> for Squeeze {
         axes.sort();
         for (adjust, &i) in axes.iter().enumerate() {
             let axis = if i < 0 {
-                (x.ndim() as isize + i as isize) as usize
+                (x.ndim() as isize + i) as usize
             } else {
                 i as usize
             };
@@ -892,7 +892,7 @@ impl<T: Float> op::Op<T> for ExpandDims {
         let mut output_shape = ret.shape().to_vec();
         for &i in axes.iter() {
             let axis = if i < 0 {
-                (ret.ndim() as isize + i as isize) as usize
+                (ret.ndim() as isize + i) as usize
             } else {
                 i as usize
             };

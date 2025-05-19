@@ -240,17 +240,17 @@ impl LtiSystem for TransferFunction {
 
                 // For an impulse, the input at t[0] is 1/dt, and 0 otherwise
                 // Inject impulse: u[0] = 1/dt, which approximates a continuous impulse
-                for j in 0..ss.n_inputs {
-                    for i in 0..ss.n_states {
-                        x[i] += ss.b[i * ss.n_inputs + j] * (1.0 / dt);
+                for (j, _) in (0..ss.n_inputs).enumerate() {
+                    for (i, x_i) in x.iter_mut().enumerate().take(ss.n_states) {
+                        *x_i += ss.b[i * ss.n_inputs + j] * (1.0 / dt);
                     }
                 }
 
                 // Record initial output
                 for i in 0..ss.n_outputs {
                     let mut y = 0.0;
-                    for j in 0..ss.n_states {
-                        y += ss.c[i * ss.n_states + j] * x[j];
+                    for (j, &x_j) in x.iter().enumerate().take(ss.n_states) {
+                        y += ss.c[i * ss.n_states + j] * x_j;
                     }
                     if i == 0 {
                         // For SISO systems
@@ -259,13 +259,13 @@ impl LtiSystem for TransferFunction {
                 }
 
                 // Simulate the system response for the rest of the time points
-                for k in 1..t.len() {
+                for (_k, response_k) in response.iter_mut().enumerate().skip(1).take(t.len() - 1) {
                     // Update state: dx/dt = Ax + Bu, use forward Euler for simplicity
                     let mut x_new = vec![0.0; ss.n_states];
 
-                    for i in 0..ss.n_states {
-                        for j in 0..ss.n_states {
-                            x_new[i] += ss.a[i * ss.n_states + j] * x[j] * dt;
+                    for (i, x_new_val) in x_new.iter_mut().enumerate().take(ss.n_states) {
+                        for (j, &x_val) in x.iter().enumerate().take(ss.n_states) {
+                            *x_new_val += ss.a[i * ss.n_states + j] * x_val * dt;
                         }
                         // No input term (Bu) after initial impulse
                     }
@@ -276,12 +276,12 @@ impl LtiSystem for TransferFunction {
                     // Calculate output: y = Cx + Du (u is zero after initial impulse)
                     for i in 0..ss.n_outputs {
                         let mut y = 0.0;
-                        for j in 0..ss.n_states {
-                            y += ss.c[i * ss.n_states + j] * x[j];
+                        for (j, &x_j) in x.iter().enumerate().take(ss.n_states) {
+                            y += ss.c[i * ss.n_states + j] * x_j;
                         }
                         if i == 0 {
                             // For SISO systems
-                            response[k] = y;
+                            *response_k = y;
                         }
                     }
                 }
@@ -371,9 +371,9 @@ impl LtiSystem for TransferFunction {
             let mut step = vec![0.0; t.len()];
 
             // Convolve with a unit step (running sum of impulse response)
-            for i in 0..t.len() {
-                for j in 0..=i {
-                    step[i] += impulse[j];
+            for (i, step_val) in step.iter_mut().enumerate().take(t.len()) {
+                for &impulse_val in impulse.iter().take(i + 1) {
+                    *step_val += impulse_val;
                 }
             }
 

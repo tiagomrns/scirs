@@ -64,6 +64,42 @@ pub trait ContinuousDistribution<F: Float>: Distribution<F> {
     }
 }
 
+/// Trait for circular probability distributions
+///
+/// Circular distributions are probability distributions on the circle - specialized
+/// continuous distributions for periodic phenomena like angles, directions, and
+/// cyclic processes.
+pub trait CircularDistribution<F: Float>: Distribution<F> {
+    /// Calculate the probability density function (PDF) at a given angle
+    fn pdf(&self, x: F) -> F;
+
+    /// Calculate the cumulative distribution function (CDF) at a given angle
+    /// Note that for circular distributions, the CDF might not have all usual CDF properties
+    fn cdf(&self, x: F) -> F;
+
+    /// Generate a single random angle from this distribution
+    fn rvs_single(&self) -> StatsResult<F>;
+
+    /// Calculate the circular mean (mean direction)
+    /// This is different from the arithmetic mean for circular data
+    fn circular_mean(&self) -> F;
+
+    /// Calculate the circular variance
+    /// Ranges from 0 (concentrated at one point) to 1 (uniform around circle)
+    fn circular_variance(&self) -> F;
+
+    /// Calculate the circular standard deviation
+    fn circular_std(&self) -> F;
+
+    /// Calculate the mean resultant length
+    /// A measure of concentration for circular data
+    fn mean_resultant_length(&self) -> F;
+
+    /// Calculate the concentration parameter
+    /// A parameter that controls how concentrated the distribution is around the mean direction
+    fn concentration(&self) -> F;
+}
+
 /// Trait for discrete probability distributions
 pub trait DiscreteDistribution<F: Float>: Distribution<F> {
     /// Calculate the probability mass function (PMF) at a given point

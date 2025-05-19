@@ -101,35 +101,35 @@ where
     let mut detail_coeffs = vec![0.0; signal_len];
 
     // Perform the convolution (without downsampling)
-    for i in 0..signal_len {
+    for (i, (approx_coeff, detail_coeff)) in approx_coeffs.iter_mut().zip(detail_coeffs.iter_mut()).enumerate() {
         // We need to offset the convolution to center the output
         let offset = filter_len / 2;
         let idx = i + offset;
 
         // Convolve with low-pass filter for approximation coefficients
         let mut approx_sum = 0.0;
-        for j in 0..filter_len {
+        for (j, &filter_val) in dec_lo_upsampled.iter().enumerate() {
             if idx + j < extended_signal.len() {
-                approx_sum += extended_signal[idx + j] * dec_lo_upsampled[j];
+                approx_sum += extended_signal[idx + j] * filter_val;
             }
         }
-        approx_coeffs[i] = approx_sum;
+        *approx_coeff = approx_sum;
 
         // Convolve with high-pass filter for detail coefficients
         let mut detail_sum = 0.0;
-        for j in 0..filter_len {
+        for (j, &filter_val) in dec_hi_upsampled.iter().enumerate() {
             if idx + j < extended_signal.len() {
-                detail_sum += extended_signal[idx + j] * dec_hi_upsampled[j];
+                detail_sum += extended_signal[idx + j] * filter_val;
             }
         }
-        detail_coeffs[i] = detail_sum;
+        *detail_coeff = detail_sum;
     }
 
     // Apply the scaling factor of 2^(level/2) to match the expected energy scaling
     let scale_factor = 2.0_f64.sqrt().powi(level as i32);
-    for i in 0..signal_len {
-        approx_coeffs[i] *= scale_factor;
-        detail_coeffs[i] *= scale_factor;
+    for (approx_coeff, detail_coeff) in approx_coeffs.iter_mut().zip(detail_coeffs.iter_mut()) {
+        *approx_coeff *= scale_factor;
+        *detail_coeff *= scale_factor;
     }
 
     Ok((approx_coeffs, detail_coeffs))
@@ -151,7 +151,7 @@ where
 /// # Examples
 ///
 /// ```ignore
-/// // This example is marked as ignore until the implementation is fully tested
+/// # FIXME: Numerical precision issues in SWT reconstruction
 /// use scirs2_signal::swt::{swt_decompose, swt_reconstruct};
 /// use scirs2_signal::dwt::Wavelet;
 ///
@@ -208,9 +208,9 @@ pub fn swt_reconstruct(
     let mut scaled_approx = approx.to_vec();
     let mut scaled_detail = detail.to_vec();
 
-    for i in 0..signal_len {
-        scaled_approx[i] *= scale_factor;
-        scaled_detail[i] *= scale_factor;
+    for (approx_val, detail_val) in scaled_approx.iter_mut().zip(scaled_detail.iter_mut()) {
+        *approx_val *= scale_factor;
+        *detail_val *= scale_factor;
     }
 
     // Extend the coefficients for convolution
@@ -220,28 +220,28 @@ pub fn swt_reconstruct(
     // Convolve and add the results
     let mut result = vec![0.0; signal_len];
 
-    for i in 0..signal_len {
+    for (i, result_val) in result.iter_mut().enumerate() {
         let offset = filter_len / 2;
         let idx = i + offset;
 
         // Convolve approximation with reconstruction low-pass filter
         let mut approx_sum = 0.0;
-        for j in 0..filter_len {
+        for (j, &filter_val) in rec_lo_upsampled.iter().enumerate() {
             if idx + j < extended_approx.len() {
-                approx_sum += extended_approx[idx + j] * rec_lo_upsampled[j];
+                approx_sum += extended_approx[idx + j] * filter_val;
             }
         }
 
         // Convolve detail with reconstruction high-pass filter
         let mut detail_sum = 0.0;
-        for j in 0..filter_len {
+        for (j, &filter_val) in rec_hi_upsampled.iter().enumerate() {
             if idx + j < extended_detail.len() {
-                detail_sum += extended_detail[idx + j] * rec_hi_upsampled[j];
+                detail_sum += extended_detail[idx + j] * filter_val;
             }
         }
 
         // The result is the sum of the two convolutions
-        result[i] = approx_sum + detail_sum;
+        *result_val = approx_sum + detail_sum;
     }
 
     Ok(result)
@@ -354,7 +354,7 @@ where
 /// # Examples
 ///
 /// ```ignore
-/// // This example is marked as ignore until the implementation is fully tested
+/// # FIXME: Numerical precision issues in SWT reconstruction
 /// use scirs2_signal::swt::{swt, iswt};
 /// use scirs2_signal::dwt::Wavelet;
 ///
@@ -458,8 +458,8 @@ fn extend_signal(signal: &[f64], filter_len: usize, mode: &str) -> SignalResult<
             extended.extend_from_slice(signal);
 
             // End padding
-            for i in 0..pad {
-                extended.push(signal[i]);
+            for &value in signal.iter().take(pad) {
+                extended.push(value);
             }
         }
         "zero" => {

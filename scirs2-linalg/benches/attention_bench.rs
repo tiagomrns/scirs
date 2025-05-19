@@ -2,7 +2,7 @@
 extern crate criterion;
 
 use criterion::{black_box, BenchmarkId, Criterion};
-use ndarray::{Array2, Array3, ShapeBuilder};
+use ndarray::{Array2, Array3};
 use scirs2_linalg::attention::{
     causal_attention, flash_attention, linear_attention, multi_head_attention,
     scaled_dot_product_attention, AttentionConfig,
@@ -12,7 +12,7 @@ fn attention_benchmark(c: &mut Criterion) {
     let mut group = c.benchmark_group("attention");
 
     let batch_size = 8;
-    let seq_lens = vec![16, 32, 64, 128]; // Various sequence lengths to benchmark
+    let seq_lens = [16, 32, 64, 128]; // Various sequence lengths to benchmark
     let d_model = 64;
 
     for &seq_len in seq_lens.iter() {

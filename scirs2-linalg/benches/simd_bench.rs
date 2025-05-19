@@ -1,10 +1,10 @@
 use criterion::{black_box, criterion_group, criterion_main, BenchmarkId, Criterion};
-use ndarray::{Array1, Array2, ArrayView1, ArrayView2, Axis};
+use ndarray::{Array1, Array2, ArrayView1, ArrayView2};
 use scirs2_linalg::{
     blas_accelerated,
     simd_ops::{
-        simd_dot_f32, simd_dot_f64, simd_matmul_f32, simd_matmul_f64, simd_matrix_max_f32,
-        simd_matrix_min_f32, simd_matvec_f32, simd_matvec_f64,
+        simd_dot_f32, simd_matmul_f32,
+        simd_matvec_f32,
     },
 };
 
@@ -31,7 +31,11 @@ fn regular_matvec_f32(a: &ArrayView2<f32>, x: &ArrayView1<f32>) -> Array1<f32> {
     let mut result = Array1::zeros(n);
 
     for i in 0..n {
-        result[i] = a.row(i).dot(&x);
+        let mut sum = 0.0;
+        for j in 0..a.ncols() {
+            sum += a[[i, j]] * x[j];
+        }
+        result[i] = sum;
     }
 
     result
@@ -83,9 +87,11 @@ fn bench_matvec(c: &mut Criterion) {
             b.iter(|| {
                 black_box(
                     blas_accelerated::gemv(
-                        &black_box(matrix.view()),
-                        &black_box(vector.view()),
-                        None,
+                        1.0,
+                        &matrix.view(),
+                        &vector.view(),
+                        0.0,
+                        &Array1::<f32>::zeros(matrix.nrows()).view()
                     )
                     .unwrap(),
                 )

@@ -84,14 +84,14 @@ Add this to your `Cargo.toml`:
 
 ```toml
 [dependencies]
-scirs2-transform = "0.1.0-alpha.2"
+scirs2-transform = "0.1.0-alpha.3"
 ```
 
 To enable optimizations through the core module, add feature flags:
 
 ```toml
 [dependencies]
-scirs2-transform = { version = "0.1.0-alpha.2", features = ["parallel"] }
+scirs2-transform = { version = "0.1.0-alpha.3", features = ["parallel"] }
 ```
 
 ## Examples

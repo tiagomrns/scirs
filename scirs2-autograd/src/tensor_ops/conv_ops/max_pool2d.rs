@@ -20,6 +20,7 @@ pub struct MaxPool2DGradGrad {
 
 macro_rules! impl_max_pool {
     ($t:ty, $i:ident) => {
+        #[allow(clippy::too_many_arguments)]
         unsafe fn $i<T: Float>(
             input: *const T,
             pad: usize,
@@ -109,6 +110,7 @@ fn test_max_pool() {
 
 macro_rules! impl_max_pool_grad {
     ($t:ty, $i:ident) => {
+        #[allow(clippy::too_many_arguments)]
         fn $i<T: Float>(
             batch: usize,
             mut gy: *const T,
@@ -231,7 +233,7 @@ impl<T: Float> crate::op::Op<T> for MaxPool2D {
         let indices = nth_tensor(y, 1);
         let gx = Tensor::builder(ctx.graph())
             .append_input(gy, false)
-            .append_input(&indices, false)
+            .append_input(indices, false)
             .build(MaxPool2DGrad {
                 pad: self.pad,
                 stride: self.stride,
@@ -281,7 +283,7 @@ impl<T: Float> crate::op::Op<T> for MaxPool2DGrad {
         let ggx = &ctx.output_grad();
         let argmax = &ctx.input(1);
         let ggy = Tensor::builder(ctx.graph())
-            .append_input(&ggx, false)
+            .append_input(ggx, false)
             .append_input(argmax, false)
             .build(MaxPool2DGradGrad {
                 pad: self.pad,

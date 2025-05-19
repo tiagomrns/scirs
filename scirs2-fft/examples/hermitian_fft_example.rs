@@ -48,7 +48,7 @@ fn main() {
                 (spectrum[i].re - spectrum[conj_idx].re).abs()
                     + (spectrum[i].im + spectrum[conj_idx].im).abs()
             );
-            println!("");
+            println!();
         }
     }
 

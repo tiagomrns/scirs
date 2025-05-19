@@ -11,6 +11,7 @@ pub mod beta;
 pub mod binomial;
 pub mod cauchy;
 pub mod chi_square;
+pub mod circular;
 pub mod exponential;
 pub mod f;
 pub mod gamma;
@@ -34,6 +35,7 @@ pub use beta::Beta;
 pub use binomial::Binomial;
 pub use cauchy::Cauchy;
 pub use chi_square::ChiSquare;
+pub use circular::{VonMises, WrappedCauchy};
 pub use exponential::Exponential;
 pub use f::F;
 pub use gamma::Gamma;
@@ -681,4 +683,71 @@ where
     F: num_traits::Float + num_traits::NumCast + num_traits::FloatConst,
 {
     Hypergeometric::new(n_population, n_success, n_draws, loc)
+}
+
+/// Create a von Mises distribution with the given parameters.
+///
+/// This is a convenience function to create a von Mises distribution
+/// (also known as circular normal distribution) with the given
+/// mean direction and concentration parameters.
+///
+/// # Arguments
+///
+/// * `mu` - Mean direction (in radians)
+/// * `kappa` - Concentration parameter (kappa ≥ 0)
+///
+/// # Returns
+///
+/// * A von Mises distribution object
+///
+/// # Examples
+///
+/// ```
+/// use scirs2_stats::distributions;
+///
+/// let vm = distributions::vonmises(0.0f64, 1.0).unwrap();
+/// let pdf_at_zero = vm.pdf(0.0);
+/// // Maximum PDF value is at the mean direction (mu)
+/// ```
+pub fn vonmises<F>(mu: F, kappa: F) -> StatsResult<circular::VonMises<F>>
+where
+    F: num_traits::Float 
+        + rand_distr::uniform::SampleUniform
+        + std::fmt::Debug 
+        + 'static,
+{
+    circular::von_mises(mu, kappa)
+}
+
+/// Create a wrapped Cauchy distribution with the given parameters.
+///
+/// This is a convenience function to create a wrapped Cauchy distribution
+/// with the given mean direction and concentration parameters.
+///
+/// # Arguments
+///
+/// * `mu` - Mean direction (in radians)
+/// * `gamma` - Concentration parameter (0 < gamma < 1)
+///
+/// # Returns
+///
+/// * A wrapped Cauchy distribution object
+///
+/// # Examples
+///
+/// ```
+/// use scirs2_stats::distributions;
+///
+/// let wc = distributions::wrapcauchy(0.0f64, 0.5).unwrap();
+/// let pdf_at_zero = wc.pdf(0.0);
+/// // Maximum PDF value is at the mean direction (mu)
+/// ```
+pub fn wrapcauchy<F>(mu: F, gamma: F) -> StatsResult<circular::WrappedCauchy<F>>
+where
+    F: num_traits::Float 
+        + rand_distr::uniform::SampleUniform
+        + std::fmt::Debug 
+        + 'static,
+{
+    circular::wrapped_cauchy(mu, gamma)
 }

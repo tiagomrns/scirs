@@ -84,20 +84,33 @@ fn main() {
 
     // Get the report as JSON for machine processing
     let report = generate_memory_report();
-    let json = report.to_json();
-    println!("\nJSON Report Format (excerpt):");
-    println!("{{");
-    println!(
-        "  \"total_current_usage\": {},",
-        json["total_current_usage"]
-    );
-    println!("  \"total_peak_usage\": {},", json["total_peak_usage"]);
-    println!(
-        "  \"total_allocation_count\": {}",
-        json["total_allocation_count"]
-    );
-    println!("  ...");
-    println!("}}");
+
+    #[cfg(feature = "memory_metrics")]
+    {
+        // If memory_metrics feature is enabled, we get a serde_json::Value
+        let json = report.to_json();
+        println!("\nJSON Report Format (excerpt):");
+        println!("{{");
+        println!(
+            "  \"total_current_usage\": {},",
+            json["total_current_usage"]
+        );
+        println!("  \"total_peak_usage\": {},", json["total_peak_usage"]);
+        println!(
+            "  \"total_allocation_count\": {}",
+            json["total_allocation_count"]
+        );
+        println!("  ...");
+        println!("}}");
+    }
+
+    #[cfg(not(feature = "memory_metrics"))]
+    {
+        // If memory_metrics feature is disabled, we get a String
+        let json = report.to_json();
+        println!("\nJSON Report Format (feature disabled):");
+        println!("{}", json);
+    }
 }
 
 // Simulate matrix operations with memory tracking

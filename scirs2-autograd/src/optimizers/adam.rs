@@ -53,7 +53,7 @@ pub struct Adam<F: Float> {
     pub adam_namespace_id: &'static str,
 }
 
-impl<'t, 'g, F: Float> Adam<F> {
+impl<F: Float> Adam<F> {
     /// Instantiates `Adam` optimizer with the recommended parameters in the original paper.
     pub fn default(
         unique_namespace_id: &'static str,
@@ -130,24 +130,30 @@ impl<F: Float> Optimizer<F> for Adam<F> {
             let param = params[i].as_ref();
             let namespace = g.namespace(self.adam_namespace_id);
             let var_id = param.get_variable_id().expect("Got non-variable tensor");
-            let m = g.variable_by_name(&format!("{}m", var_id), &namespace);
-            let v = g.variable_by_name(&format!("{}v", var_id), &namespace);
-            let t = g.variable_by_name(&format!("{}t", var_id), &namespace);
+            let m = g.variable_by_name(format!("{}m", var_id), &namespace);
+            let v = g.variable_by_name(format!("{}v", var_id), &namespace);
+            let t = g.variable_by_name(format!("{}t", var_id), &namespace);
 
-            ret.push(
-                Tensor::builder(g)
-                    .append_input(param, true)
-                    .append_input(grads[i].as_ref(), false)
-                    .append_input(&m, true)
-                    .append_input(&v, true)
-                    .append_input(&t, true)
-                    .build(adam::AdamOp {
-                        alpha: self.alpha,
-                        eps: self.eps,
-                        b1: self.b1,
-                        b2: self.b2,
-                    }),
-            );
+            // Create the Adam operation, which will return multiple outputs
+            // Only the first output (updated parameter) is what we need to return
+            let adam_op = Tensor::builder(g)
+                .append_input(param, true)
+                .append_input(grads[i].as_ref(), false)
+                .append_input(m, true)
+                .append_input(v, true)
+                .append_input(t, true)
+                .build(adam::AdamOp {
+                    alpha: self.alpha,
+                    eps: self.eps,
+                    b1: self.b1,
+                    b2: self.b2,
+                });
+            
+            // Log Adam operation construction
+            eprintln!("Created AdamOp with all 5 inputs");
+            
+            // Add the updated parameter to the result
+            ret.push(adam_op);
         }
         ret
     }

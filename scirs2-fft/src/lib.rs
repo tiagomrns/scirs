@@ -50,12 +50,50 @@
 pub mod error;
 pub use error::{FFTError, FFTResult};
 
+// FFT plan caching
+pub mod plan_cache;
+pub use plan_cache::{get_global_cache, init_global_cache, CacheStats, PlanCache};
+
+// Worker pool management
+pub mod worker_pool;
+pub use worker_pool::{
+    get_global_pool, get_workers, init_global_pool, set_workers, with_workers, WorkerConfig,
+    WorkerPool, WorkerPoolInfo,
+};
+
+// FFT backend system
+pub mod backend;
+pub use backend::{
+    get_backend_info, get_backend_manager, get_backend_name, init_backend_manager, list_backends,
+    set_backend, BackendContext, BackendInfo, BackendManager, FftBackend,
+};
+
+// FFT context managers
+pub mod context;
+pub use context::{
+    fft_context, with_backend, with_fft_settings, without_cache, FftContext, FftContextBuilder,
+    FftSettingsGuard,
+};
+
+// Advanced striding support
+pub mod strided_fft;
+pub use strided_fft::{fft_strided, fft_strided_complex, ifft_strided};
+
+// Plan serialization
+pub mod plan_serialization;
+pub use plan_serialization::{PlanDatabaseStats, PlanInfo, PlanMetrics, PlanSerializationManager};
+
+// Auto-tuning for hardware optimization
+pub mod auto_tuning;
+pub use auto_tuning::{AutoTuneConfig, AutoTuner, FftVariant, SizeRange, SizeStep};
+
 // Core modules are used conditionally in feature-specific implementations
 
 // FFT module structure
 pub mod dct;
 pub mod dst;
 pub mod fft;
+pub mod fht;
 pub mod hfft;
 pub mod rfft;
 
@@ -63,6 +101,7 @@ pub mod rfft;
 pub use dct::{dct, dct2, dctn, idct, idct2, idctn, DCTType};
 pub use dst::{dst, dst2, dstn, idst, idst2, idstn, DSTType};
 pub use fft::{fft, fft2, fftn, ifft, ifft2, ifftn};
+pub use fht::{fht, fht_sample_points, fhtoffset, ifht};
 pub use hfft::{hfft, hfft2, hfftn, ihfft, ihfft2, ihfftn};
 
 // Re-export parallel implementations when available
@@ -76,14 +115,84 @@ pub use helper::{fftfreq, fftshift, ifftshift, next_fast_len, prev_fast_len, rff
 
 // Advanced FFT modules
 pub mod frft;
+pub mod frft_dft;
+pub mod frft_ozaktas;
 pub mod nufft;
 pub mod spectrogram;
 pub mod waterfall;
-pub use frft::{frft, frft_complex};
+pub use frft::{frft, frft_complex, frft_dft, frft_stable};
 pub use spectrogram::{spectrogram, spectrogram_normalized, stft as spectrogram_stft};
 pub use waterfall::{
     apply_colormap, waterfall_3d, waterfall_lines, waterfall_mesh, waterfall_mesh_colored,
 };
+
+// Long-term goal implementations
+#[cfg(feature = "never")]
+pub mod distributed;
+#[cfg(feature = "never")]
+pub mod optimized_fft;
+#[cfg(feature = "never")]
+pub mod signal_processing;
+pub mod sparse_fft;
+pub mod sparse_fft_cuda_kernels;
+pub mod sparse_fft_cuda_kernels_frequency_pruning;
+pub mod sparse_fft_cuda_kernels_iterative;
+pub mod sparse_fft_cuda_kernels_spectral_flatness;
+pub mod sparse_fft_gpu;
+pub mod sparse_fft_gpu_cuda;
+pub mod sparse_fft_gpu_kernels;
+pub mod sparse_fft_gpu_memory;
+#[cfg(feature = "never")]
+pub mod time_frequency;
+#[cfg(feature = "never")]
+pub use distributed::{
+    CommunicationPattern, DecompositionStrategy, DistributedConfig, DistributedFFT,
+};
+#[cfg(feature = "never")]
+pub use optimized_fft::{OptimizationLevel, OptimizedConfig, OptimizedFFT};
+#[cfg(feature = "never")]
+pub use signal_processing::{
+    convolve, cross_correlate, design_fir_filter, fir_filter, frequency_filter, FilterSpec,
+    FilterType, FilterWindow,
+};
+pub use sparse_fft::WindowFunction;
+pub use sparse_fft::{
+    adaptive_sparse_fft, frequency_pruning_sparse_fft, reconstruct_filtered,
+    reconstruct_high_resolution, reconstruct_spectrum, reconstruct_time_domain, sparse_fft,
+    sparse_fft2, sparse_fftn, spectral_flatness_sparse_fft,
+};
+pub use sparse_fft_cuda_kernels::{
+    execute_cuda_compressed_sensing_sparse_fft, execute_cuda_sublinear_sparse_fft,
+    CUDACompressedSensingSparseFFTKernel, CUDASublinearSparseFFTKernel, CUDAWindowKernel,
+};
+pub use sparse_fft_cuda_kernels_frequency_pruning::{
+    execute_cuda_frequency_pruning_sparse_fft, CUDAFrequencyPruningSparseFFTKernel,
+};
+pub use sparse_fft_cuda_kernels_iterative::{
+    execute_cuda_iterative_sparse_fft, CUDAIterativeSparseFFTKernel,
+};
+pub use sparse_fft_cuda_kernels_spectral_flatness::{
+    execute_cuda_spectral_flatness_sparse_fft, CUDASpectralFlatnessSparseFFTKernel,
+};
+pub use sparse_fft_gpu::{gpu_batch_sparse_fft, gpu_sparse_fft, GPUBackend};
+pub use sparse_fft_gpu_cuda::{
+    cuda_batch_sparse_fft, cuda_sparse_fft, get_cuda_devices, is_cuda_available, CUDAContext,
+    CUDADeviceInfo, CUDAStream,
+};
+pub use sparse_fft_gpu_kernels::{
+    execute_sparse_fft_kernel, GPUKernel, KernelConfig, KernelFactory, KernelImplementation,
+    KernelLauncher, KernelStats,
+};
+pub use sparse_fft_gpu_memory::{
+    get_global_memory_manager, init_global_memory_manager, memory_efficient_gpu_sparse_fft,
+    AllocationStrategy, BufferLocation, BufferType,
+};
+// Batch processing module
+pub mod sparse_fft_batch;
+pub use sparse_fft_batch::{batch_sparse_fft, spectral_flatness_batch_sparse_fft, BatchConfig};
+
+#[cfg(feature = "never")]
+pub use time_frequency::{time_frequency_transform, TFConfig, TFTransform, WaveletType};
 
 // Memory-efficient FFT operations
 pub mod memory_efficient;
@@ -91,9 +200,45 @@ pub use memory_efficient::{
     fft2_efficient, fft_inplace, fft_streaming, process_in_chunks, FftMode,
 };
 
+// Optimized N-dimensional FFT
+pub mod ndim_optimized;
+pub use ndim_optimized::{fftn_memory_efficient, fftn_optimized, rfftn_optimized};
+
+// Hartley transform
+pub mod hartley;
+pub use hartley::{dht, dht2, fht as hartley_fht, idht};
+
+// Higher-order DCT and DST types (V-VIII)
+pub mod higher_order_dct_dst;
+pub use higher_order_dct_dst::{
+    dct_v, dct_vi, dct_vii, dct_viii, dst_v, dst_vi, dst_vii, dst_viii, idct_v, idct_vi, idct_vii,
+    idct_viii, idst_v, idst_vi, idst_vii, idst_viii,
+};
+
+// Modified DCT and DST (MDCT/MDST)
+pub mod mdct;
+pub use mdct::{imdct, imdst, mdct, mdct_overlap_add, mdst};
+
 // Window functions
 pub mod window;
 pub use window::{apply_window, get_window, Window};
+
+// Extended window functions and analysis
+pub mod window_extended;
+pub use window_extended::{
+    analyze_window, compare_windows, get_extended_window, visualize_window, ExtendedWindow,
+    WindowProperties,
+};
+
+// Chirp Z-Transform
+pub mod czt;
+pub use czt::{czt, czt_points, zoom_fft, CZT};
+
+// Automatic padding strategies
+pub mod padding;
+pub use padding::{
+    auto_pad_1d, auto_pad_complex, auto_pad_nd, remove_padding_1d, AutoPadConfig, PaddingMode,
+};
 
 /// Performs a Short-Time Fourier Transform (STFT).
 ///

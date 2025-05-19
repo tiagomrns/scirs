@@ -1,7 +1,7 @@
 //! Non-parametric statistical tests
 //!
 //! This module provides implementations of various non-parametric statistical tests,
-//! including the Wilcoxon signed-rank test and the Kruskal-Wallis test.
+//! including the Wilcoxon signed-rank test, Mann-Whitney U test, and the Kruskal-Wallis test.
 
 use crate::error::{StatsError, StatsResult};
 use ndarray::ArrayView1;
@@ -127,9 +127,9 @@ where
         let avg_rank = F::from(i + j).unwrap() / F::from(2.0).unwrap() + F::one();
 
         // Assign ranks to all tied values
-        for k in i..=j {
-            let _original_idx = ranked_diffs[k].1;
-            ranks[k] = avg_rank;
+        for (idx, rank) in ranks.iter_mut().enumerate().take(j + 1).skip(i) {
+            let _original_idx = ranked_diffs[idx].1;
+            *rank = avg_rank;
         }
 
         i = j + 1;
@@ -173,6 +173,201 @@ where
     let p_value = F::from(2.0).unwrap() * normal_cdf(-z.abs());
 
     Ok((w, p_value))
+}
+
+/// Performs the Mann-Whitney U test for independent samples.
+///
+/// The Mann-Whitney U test (also known as Wilcoxon rank-sum test) is a non-parametric
+/// test for assessing whether two independent samples come from the same distribution.
+/// It's an alternative to the independent t-test when the data cannot be assumed to be
+/// normally distributed.
+///
+/// # Arguments
+///
+/// * `x` - First array of observations
+/// * `y` - Second array of observations
+/// * `alternative` - Alternative hypothesis: "two-sided" (default), "less", or "greater"
+/// * `use_continuity` - Whether to apply continuity correction
+///
+/// # Returns
+///
+/// A tuple containing (test statistic, p-value)
+///
+/// # Examples
+///
+/// ```
+/// use ndarray::array;
+/// use scirs2_stats::mann_whitney;
+///
+/// // Create two independent samples
+/// let group1 = array![2.9, 3.0, 2.5, 2.6, 3.2, 2.8];
+/// let group2 = array![3.8, 3.7, 3.9, 4.0, 4.2];
+///
+/// // Perform the Mann-Whitney U test
+/// let (stat, p_value) = mann_whitney(&group1.view(), &group2.view(), "two-sided", true).unwrap();
+///
+/// println!("Mann-Whitney U test: U = {}, p-value = {}", stat, p_value);
+/// // For a significance level of 0.05, we would reject the null hypothesis if p < 0.05
+/// let significant = p_value < 0.05;
+/// ```
+pub fn mann_whitney<F>(
+    x: &ArrayView1<F>,
+    y: &ArrayView1<F>,
+    alternative: &str,
+    use_continuity: bool,
+) -> StatsResult<(F, F)>
+where
+    F: Float + std::iter::Sum<F> + std::ops::Div<Output = F> + NumCast + std::fmt::Debug,
+{
+    // Check if the arrays are empty
+    if x.is_empty() || y.is_empty() {
+        return Err(StatsError::InvalidArgument(
+            "Input arrays cannot be empty".to_string(),
+        ));
+    }
+
+    // Check alternative parameter
+    match alternative {
+        "two-sided" | "less" | "greater" => {}
+        _ => {
+            return Err(StatsError::InvalidArgument(format!(
+                "Unknown alternative: {}. Use 'two-sided', 'less', or 'greater'",
+                alternative
+            )))
+        }
+    }
+
+    // Get the sizes of the samples
+    let n1 = x.len();
+    let n2 = y.len();
+
+    // Combine all values into a single vector, keeping track of which sample they're from
+    let mut all_values = Vec::with_capacity(n1 + n2);
+
+    // 0 indicates group x, 1 indicates group y
+    for &value in x.iter() {
+        all_values.push((value, 0));
+    }
+    for &value in y.iter() {
+        all_values.push((value, 1));
+    }
+
+    // Sort the values
+    all_values.sort_by(|(a, _), (b, _)| a.partial_cmp(b).unwrap_or(Ordering::Equal));
+
+    // Assign ranks, handling ties
+    let n = all_values.len();
+    let mut ranks = vec![F::zero(); n];
+
+    let mut i = 0;
+    while i < n {
+        let current_value = all_values[i].0;
+        let mut j = i;
+
+        // Find the end of the tie group
+        while j < n - 1 && all_values[j + 1].0 == current_value {
+            j += 1;
+        }
+
+        // Calculate average rank for this tie group
+        let avg_rank = F::from(i + j).unwrap() / F::from(2.0).unwrap() + F::one();
+
+        // Assign ranks to all tied values
+        for rank in ranks.iter_mut().take(j + 1).skip(i) {
+            *rank = avg_rank;
+        }
+
+        i = j + 1;
+    }
+
+    // Calculate the rank sum for group x
+    let mut rank_sum_x = F::zero();
+    for i in 0..n {
+        if all_values[i].1 == 0 {
+            rank_sum_x = rank_sum_x + ranks[i];
+        }
+    }
+
+    // Calculate the U statistics
+    let n1_f = F::from(n1).unwrap();
+    let n2_f = F::from(n2).unwrap();
+
+    let u1 = rank_sum_x - (n1_f * (n1_f + F::one())) / F::from(2.0).unwrap();
+    let u2 = n1_f * n2_f - u1;
+
+    // The Mann-Whitney U statistic is the minimum of U1 and U2
+    let u = u1.min(u2);
+
+    // Calculate the mean and standard deviation of U under the null hypothesis
+    let mean_u = n1_f * n2_f / F::from(2.0).unwrap();
+
+    // Calculate tie correction factor
+    let mut tie_correction = F::zero();
+    if i < n {
+        let mut i = 0;
+        while i < n {
+            let current_value = all_values[i].0;
+            let mut j = i;
+
+            // Find the end of the tie group
+            while j < n - 1 && all_values[j + 1].0 == current_value {
+                j += 1;
+            }
+
+            // If there are ties, calculate the correction factor
+            if j > i {
+                let t = F::from(j - i + 1).unwrap();
+                tie_correction = tie_correction + (t.powi(3) - t);
+            }
+
+            i = j + 1;
+        }
+    }
+
+    let n_f = F::from(n).unwrap();
+    let tie_correction = tie_correction / (n_f.powi(3) - n_f);
+
+    let var_u =
+        (n1_f * n2_f * (n_f + F::one()) / F::from(12.0).unwrap()) * (F::one() - tie_correction);
+    let std_dev_u = var_u.sqrt();
+
+    // Apply continuity correction if requested
+    let correction = if use_continuity {
+        F::from(0.5).unwrap()
+    } else {
+        F::zero()
+    };
+
+    // Calculate z-score based on the alternative hypothesis
+    let z = match alternative {
+        "less" => {
+            if u == u1 {
+                (u + correction - mean_u) / std_dev_u
+            } else {
+                (u - correction - mean_u) / std_dev_u
+            }
+        }
+        "greater" => {
+            if u == u1 {
+                (u - correction - mean_u) / std_dev_u
+            } else {
+                (u + correction - mean_u) / std_dev_u
+            }
+        }
+        _ => {
+            // "two-sided"
+            (u.abs() - correction - mean_u.abs()) / std_dev_u
+        }
+    };
+
+    // Calculate p-value based on the alternative hypothesis
+    let p_value = match alternative {
+        "less" => normal_cdf(z),
+        "greater" => F::one() - normal_cdf(z),
+        _ => F::from(2.0).unwrap() * normal_cdf(-z.abs()),
+    };
+
+    Ok((u, p_value))
 }
 
 /// Performs the Kruskal-Wallis H-test for independent samples.

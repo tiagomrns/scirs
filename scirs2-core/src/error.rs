@@ -135,6 +135,10 @@ pub enum CoreError {
     #[error("{0}")]
     DomainError(ErrorContext),
 
+    /// Dispatch error (array protocol dispatch failed)
+    #[error("{0}")]
+    DispatchError(ErrorContext),
+
     /// Convergence error (algorithm did not converge)
     #[error("{0}")]
     ConvergenceError(ErrorContext),
@@ -175,6 +179,10 @@ pub enum CoreError {
     #[error("{0}")]
     ConfigError(ErrorContext),
 
+    /// Invalid argument error
+    #[error("{0}")]
+    InvalidArgument(ErrorContext),
+
     /// Permission error (insufficient permissions)
     #[error("{0}")]
     PermissionError(ErrorContext),
@@ -183,6 +191,14 @@ pub enum CoreError {
     #[error("{0}")]
     ValidationError(ErrorContext),
 
+    /// JIT compilation error (error during JIT compilation)
+    #[error("{0}")]
+    JITError(ErrorContext),
+
+    /// JSON error
+    #[error("JSON error: {0}")]
+    JSONError(ErrorContext),
+
     /// IO error
     #[error("IO error: {0}")]
     IoError(#[from] std::io::Error),
@@ -190,6 +206,31 @@ pub enum CoreError {
 
 /// Result type alias for core operations
 pub type CoreResult<T> = Result<T, CoreError>;
+
+/// Convert from serde_json::Error to CoreError
+#[cfg(feature = "serialization")]
+impl From<serde_json::Error> for CoreError {
+    fn from(err: serde_json::Error) -> Self {
+        CoreError::JSONError(ErrorContext::new(format!("JSON error: {}", err)))
+    }
+}
+
+/// Convert from OperationError to CoreError
+impl From<crate::array_protocol::OperationError> for CoreError {
+    fn from(err: crate::array_protocol::OperationError) -> Self {
+        use crate::array_protocol::OperationError;
+        match err {
+            // Preserving NotImplemented for compatibility with older code,
+            // but it will eventually be replaced with NotImplementedError
+            OperationError::NotImplemented(msg) => {
+                CoreError::NotImplementedError(ErrorContext::new(msg))
+            }
+            OperationError::ShapeMismatch(msg) => CoreError::ShapeError(ErrorContext::new(msg)),
+            OperationError::TypeMismatch(msg) => CoreError::TypeError(ErrorContext::new(msg)),
+            OperationError::Other(msg) => CoreError::ComputationError(ErrorContext::new(msg)),
+        }
+    }
+}
 
 /// Macro to create a new error context with location information
 ///

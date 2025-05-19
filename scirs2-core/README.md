@@ -25,6 +25,8 @@ Core utilities and common functionality for the SciRS2 library. This crate provi
 - **Parallel Processing**: Multi-core support for improved performance (via `parallel` feature)
 - **GPU Acceleration**: Support for GPU computation via CUDA, WebGPU, Metal (via `gpu` feature)
 - **Memory Management**: Efficient memory usage for large-scale computations (via `memory_management` feature)
+- **Memory-Efficient Operations**: Chunked processing, lazy evaluation, and out-of-core arrays (via `memory_efficient` feature)
+- **Scientific Arrays**: Masked arrays and record arrays for scientific computing (via `array` feature)
 
 ### Development Support
 
@@ -44,7 +46,7 @@ Add the following to your `Cargo.toml`, including only the features you need:
 
 ```toml
 [dependencies]
-scirs2-core = { version = "0.1.0-alpha.2", features = ["validation", "simd", "parallel", "cache"] }
+scirs2-core = { version = "0.1.0-alpha.3", features = ["validation", "simd", "parallel", "cache"] }
 ```
 
 Basic usage examples:
@@ -100,6 +102,8 @@ The core module uses feature flags to enable optional functionality:
 - `gpu`: Enable GPU acceleration abstractions
 - `cuda`: Enable CUDA-specific GPU acceleration (requires `gpu` feature)
 - `memory_management`: Enable advanced memory management tools
+- `memory_efficient`: Enable memory-efficient operations (chunking, lazy evaluation, out-of-core processing)
+- `array`: Enable scientific array types (MaskedArray, RecordArray)
 - `memory_metrics`: Enable detailed memory usage tracking and analysis
 - `memory_visualization`: Enable memory usage visualization capabilities
 - `memory_call_stack`: Enable call stack tracking for memory operations
@@ -114,16 +118,16 @@ Each module should enable only the features it requires:
 
 ```toml
 # For modules performing numerical computations
-scirs2-core = { version = "0.1.0-alpha.2", features = ["validation", "simd"] }
+scirs2-core = { version = "0.1.0-alpha.3", features = ["validation", "simd"] }
 
 # For modules with parallel operations and caching
-scirs2-core = { version = "0.1.0-alpha.2", features = ["validation", "parallel", "cache"] }
+scirs2-core = { version = "0.1.0-alpha.3", features = ["validation", "parallel", "cache"] }
 
 # For AI/ML modules that need GPU acceleration
-scirs2-core = { version = "0.1.0-alpha.2", features = ["validation", "gpu", "memory_management", "random"] }
+scirs2-core = { version = "0.1.0-alpha.3", features = ["validation", "gpu", "memory_management", "random"] }
 
 # For development and testing
-scirs2-core = { version = "0.1.0-alpha.2", features = ["validation", "logging", "profiling"] }
+scirs2-core = { version = "0.1.0-alpha.3", features = ["validation", "logging", "profiling"] }
 ```
 
 ## Core Module Components
@@ -174,6 +178,65 @@ pool.release_vec(buffer);
 // Efficient transformations with zero-copy views
 let view = ZeroCopyView::new(&array);
 let transformed = view.transform(|&x| x * 2.0);
+```
+
+#### Memory-Efficient Operations
+
+```rust
+use scirs2_core::memory_efficient::{
+    chunk_wise_op, chunk_wise_binary_op, chunk_wise_reduce, ChunkingStrategy,
+    LazyArray, evaluate, create_disk_array, transpose_view, diagonal_view
+};
+
+// Process large arrays in chunks to reduce memory usage
+let result = chunk_wise_op(
+    &large_array,
+    |chunk| chunk.map(|&x| x * x),
+    ChunkingStrategy::Auto,
+)?;
+
+// Create a lazy array that defers computation until needed
+let lazy_array = LazyArray::new(data.clone());
+let lazy_result = lazy_array.map(|&x| x * 2.0);
+let result = evaluate(&lazy_result)?;
+
+// Store large arrays on disk when they don't fit in RAM
+let disk_array = create_disk_array(
+    &data,
+    path,
+    ChunkingStrategy::Fixed(1000),
+    false,  // read-only
+)?;
+
+// Create memory-efficient views without copying data
+let transposed = transpose_view(&data)?;
+let diagonal = diagonal_view(&data)?;
+```
+
+#### Scientific Arrays
+
+```rust
+use scirs2_core::array::{
+    MaskedArray, mask_array, masked_equal, masked_invalid,
+    RecordArray, Record, FieldValue, record_array_from_arrays
+};
+
+// Create a masked array to handle missing/invalid data
+let data = Array1::from_vec(vec![1.0, 2.0, f64::NAN, 4.0, 5.0]);
+let masked = masked_invalid(&data);  // Automatically masks NaN values
+
+// Apply operations while preserving the mask
+let result = &masked * 2.0;  // Masked values remain masked
+
+// Create a record array for heterogeneous data
+let names = vec![FieldValue::String("Alice".to_string()), FieldValue::String("Bob".to_string())];
+let ages = vec![FieldValue::Int(30), FieldValue::Int(25)];
+let record_array = record_array_from_arrays(&["name", "age"], &[names, ages])?;
+
+// Access records and fields
+let record = record_array.get_record(0)?;
+let name = record.get_field_as_string("name")?;
+let age = record.get_field_as_int("age")?;
 ```
 
 #### Enhanced Memory Metrics, Snapshots, and GPU Memory Tracking
@@ -508,6 +571,38 @@ impl DataLoader {
     }
 }
 ```
+
+## Current Status
+
+The core module now provides a comprehensive foundation for the entire SciRS2 ecosystem with:
+
+- **Complete ndarray Extensions**: Advanced indexing, statistical operations, and array manipulation similar to NumPy
+- **Array Protocol Implementation**: Extensible protocol for interoperability between different array implementations
+- **GPU Acceleration**: Backend abstraction layer supporting CUDA, WebGPU, Metal, and OpenCL
+- **Memory Management**: Advanced memory management including memory mapping, metrics, and adaptive chunking
+- **Memory Efficiency**: Zero-copy transformations, buffer pools, and chunk-based processing
+- **Profiling and Diagnostics**: Function-level timing, memory tracking, and performance reporting
+- **Robust Testing**: Comprehensive test suite with all basic functionality passing
+
+Future work will focus on:
+- Enhancing parallel processing with better load balancing and nested parallelism
+- Adding support for distributed computing across multiple nodes
+- Improving GPU acceleration with more specialized kernels and tensor core support
+- Extending memory management with cross-device support and out-of-core processing
+
+## Known Issues
+
+The array protocol implementation is currently in active development and has known test failures in the following areas:
+
+- Distributed arrays: `test_distributed_ndarray_creation`, `test_distributed_ndarray_to_array`
+- Custom array types: `example_custom_array_type`, `example_distributed_array`
+- Gradient computation: `test_gradient_computation_add`, `test_gradient_computation_multiply`, `test_sgd_optimizer`
+- Mixed precision: `test_mixed_precision_array`
+- Array operations: `test_operations_with_ndarray`
+- Serialization: `test_model_serializer`, `test_save_load_checkpoint`
+- Training: `test_mse_loss`
+
+These failures are expected as part of the ongoing implementation work and will be addressed in future releases.
 
 ## Contributing
 

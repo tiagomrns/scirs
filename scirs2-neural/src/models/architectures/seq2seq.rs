@@ -27,6 +27,12 @@ use rand::SeedableRng;
 
 use ndarray::{Array, Axis, IxDyn, ScalarOperand};
 use num_traits::Float;
+
+/// Type alias for encoder forward output
+type EncoderOutput<F> = (Array<F, IxDyn>, Vec<Array<F, IxDyn>>);
+
+/// Type alias for attention forward output
+type AttentionOutput<F> = (Array<F, IxDyn>, Vec<Array<F, IxDyn>>);
 use serde::{Deserialize, Serialize};
 use std::fmt::Debug;
 
@@ -336,13 +342,13 @@ impl<F: Float + Debug + ScalarOperand + Send + Sync> Layer<F> for Attention<F> {
         _input: &Array<F, IxDyn>,
         _grad_output: &Array<F, IxDyn>,
     ) -> Result<Array<F, IxDyn>> {
-        Err(NeuralError::NotImplemented(
+        Err(NeuralError::NotImplementedError(
             "Backward pass for Attention is not implemented yet".to_string(),
         ))
     }
 
     fn update(&mut self, _learning_rate: F) -> Result<()> {
-        Err(NeuralError::NotImplemented(
+        Err(NeuralError::NotImplementedError(
             "Update for Attention is not implemented yet".to_string(),
         ))
     }
@@ -536,10 +542,7 @@ impl<F: Float + Debug + ScalarOperand + Send + Sync> Seq2SeqEncoder<F> {
     }
 
     /// Forward pass through the encoder
-    pub fn forward(
-        &self,
-        input_seq: &Array<F, IxDyn>,
-    ) -> Result<(Array<F, IxDyn>, Vec<Array<F, IxDyn>>)> {
+    pub fn forward(&self, input_seq: &Array<F, IxDyn>) -> Result<EncoderOutput<F>> {
         // Apply embedding
         let mut x = self.embedding.forward(input_seq)?;
 
@@ -612,7 +615,7 @@ impl<F: Float + Debug + ScalarOperand + Send + Sync> Layer<F> for Seq2SeqEncoder
         _input: &Array<F, IxDyn>,
         _grad_output: &Array<F, IxDyn>,
     ) -> Result<Array<F, IxDyn>> {
-        Err(NeuralError::NotImplemented(
+        Err(NeuralError::NotImplementedError(
             "Not implemented yet".to_string(),
         ))
     }
@@ -626,7 +629,7 @@ impl<F: Float + Debug + ScalarOperand + Send + Sync> Layer<F> for Seq2SeqEncoder
     }
 
     fn update(&mut self, _learning_rate: F) -> Result<()> {
-        Err(NeuralError::NotImplemented(
+        Err(NeuralError::NotImplementedError(
             "Not implemented yet".to_string(),
         ))
     }
@@ -688,6 +691,7 @@ pub struct Seq2SeqDecoder<F: Float + Debug + ScalarOperand + Send + Sync> {
 
 impl<F: Float + Debug + ScalarOperand + Send + Sync> Seq2SeqDecoder<F> {
     /// Create a new Seq2SeqDecoder
+    #[allow(clippy::too_many_arguments)]
     pub fn new(
         vocab_size: usize,
         embedding_dim: usize,
@@ -827,7 +831,7 @@ impl<F: Float + Debug + ScalarOperand + Send + Sync> Seq2SeqDecoder<F> {
         input_tokens: &Array<F, IxDyn>,
         prev_states: &[Array<F, IxDyn>],
         encoder_outputs: Option<&Array<F, IxDyn>>,
-    ) -> Result<(Array<F, IxDyn>, Vec<Array<F, IxDyn>>)> {
+    ) -> Result<AttentionOutput<F>> {
         // Apply embedding
         let mut x = self.embedding.forward(input_tokens)?;
 
@@ -983,13 +987,13 @@ impl<F: Float + Debug + ScalarOperand + Send + Sync> Layer<F> for Seq2SeqDecoder
         _input: &Array<F, IxDyn>,
         _grad_output: &Array<F, IxDyn>,
     ) -> Result<Array<F, IxDyn>> {
-        Err(NeuralError::NotImplemented(
+        Err(NeuralError::NotImplementedError(
             "Not implemented yet".to_string(),
         ))
     }
 
     fn update(&mut self, _learning_rate: F) -> Result<()> {
-        Err(NeuralError::NotImplemented(
+        Err(NeuralError::NotImplementedError(
             "Not implemented yet".to_string(),
         ))
     }
@@ -1282,13 +1286,13 @@ impl<F: Float + Debug + ScalarOperand + Send + Sync> Layer<F> for Seq2Seq<F> {
         _input: &Array<F, IxDyn>,
         _grad_output: &Array<F, IxDyn>,
     ) -> Result<Array<F, IxDyn>> {
-        Err(NeuralError::NotImplemented(
+        Err(NeuralError::NotImplementedError(
             "Not implemented yet".to_string(),
         ))
     }
 
     fn update(&mut self, _learning_rate: F) -> Result<()> {
-        Err(NeuralError::NotImplemented(
+        Err(NeuralError::NotImplementedError(
             "Not implemented yet".to_string(),
         ))
     }

@@ -58,6 +58,7 @@ fn bench_wavelets_single_level(c: &mut Criterion) {
     group.finish();
 }
 
+#[allow(dead_code)]
 fn bench_wavelets_multi_level(c: &mut Criterion) {
     let mut group = c.benchmark_group("multi_level_dwt");
     group.measurement_time(Duration::from_secs(10));
@@ -111,6 +112,7 @@ fn bench_wavelets_multi_level(c: &mut Criterion) {
     group.finish();
 }
 
+#[allow(dead_code)]
 fn bench_stationary_wavelet_transform(c: &mut Criterion) {
     let mut group = c.benchmark_group("swt");
     group.measurement_time(Duration::from_secs(10));
@@ -187,6 +189,7 @@ fn bench_stationary_wavelet_transform(c: &mut Criterion) {
     group.finish();
 }
 
+#[allow(dead_code)]
 fn bench_wavelet_packet_transform(c: &mut Criterion) {
     let mut group = c.benchmark_group("wpt");
     group.measurement_time(Duration::from_secs(10));

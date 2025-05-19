@@ -56,7 +56,7 @@ pub struct Tensor<'graph, F: Float> {
     pub(crate) graph: &'graph Graph<F>,
 }
 
-impl<'tensor, 'graph: 'tensor, F: Float> Tensor<'graph, F> {
+impl<'graph, F: Float> Tensor<'graph, F> {
     #[inline]
     #[allow(dead_code)]
     pub(crate) fn get_incoming_tensors(&self) -> Ref<SmallVec<IncomingTensor>> {
@@ -200,7 +200,7 @@ impl<'tensor, 'graph: 'tensor, F: Float> Tensor<'graph, F> {
     #[inline]
     pub fn register_hook<H: crate::hooks::Hook<F> + 'static>(self, hook: H) -> Tensor<'graph, F> {
         Tensor::builder(self.graph)
-            .append_input(&self, false)
+            .append_input(self, false)
             .build(crate::tensor_ops::hook_ops::HookOp::new(hook))
     }
 
@@ -444,11 +444,29 @@ pub(crate) struct TensorInternal<F: Float> {
 }
 
 impl<F: Float> TensorInternal<F> {
+    /// Creates a new empty TensorInternal
+    #[allow(dead_code)]
+    pub fn new() -> Self {
+        TensorInternal {
+            id: 0,
+            op: Some(Box::new(Dummy)),
+            incoming_nodes: SmallVec::new(),
+            topo_rank: 0,
+            shape: None,
+            placeholder_name: None,
+            is_differentiable: true,
+            backprop_inputs: None,
+            known_shape: None,
+            variable_id: None,
+        }
+    }
+
     /// Returns the Op of this tensor
-    pub fn get_op(&self) -> &Box<dyn op::Op<F>> {
+    pub fn get_op(&self) -> &dyn op::Op<F> {
         self.op
             .as_ref()
             .expect("bad impl: Op is now stolen in gradient.rs")
+            .as_ref()
     }
 
     #[inline(always)]
@@ -541,7 +559,7 @@ impl<T: Float> fmt::Display for TensorInternal<T> {
 /// Denotes a tensor that enters a certain tensor in a computation graph
 ///
 /// See also [TensorBuilder](struct.TensorBuilder.html).
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 #[allow(dead_code)]
 pub(crate) struct IncomingTensor {
     // Tensor id

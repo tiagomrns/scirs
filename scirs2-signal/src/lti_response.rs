@@ -192,23 +192,23 @@ pub fn lsim<T: LtiSystem>(system: &T, u: &[f64], t: &[f64]) -> SignalResult<Vec<
                 let mut x_dot = vec![0.0; ss.n_states];
 
                 // Calculate x_dot = Ax + Bu
-                for i in 0..ss.n_states {
+                for (i, x_dot_i) in x_dot.iter_mut().enumerate().take(ss.n_states) {
                     // First the Ax term
                     for (j, &x_val) in x.iter().enumerate().take(ss.n_states) {
-                        x_dot[i] += ss.a[i * ss.n_states + j] * x_val;
+                        *x_dot_i += ss.a[i * ss.n_states + j] * x_val;
                     }
 
                     // Then add the Bu term if inputs are available
                     if !u.is_empty() {
                         for j in 0..ss.n_inputs {
-                            x_dot[i] += ss.b[i * ss.n_inputs + j] * u[k];
+                            *x_dot_i += ss.b[i * ss.n_inputs + j] * u[k];
                         }
                     }
                 }
 
                 // Update x = x + x_dot * dt
-                for i in 0..ss.n_states {
-                    x[i] += x_dot[i] * dt;
+                for (i, x_val) in x.iter_mut().enumerate().take(ss.n_states) {
+                    *x_val += x_dot[i] * dt;
                 }
             }
         }
@@ -220,8 +220,8 @@ pub fn lsim<T: LtiSystem>(system: &T, u: &[f64], t: &[f64]) -> SignalResult<Vec<
                 let mut output = 0.0;
 
                 // Calculate Cx term
-                for j in 0..ss.n_states {
-                    output += ss.c[i * ss.n_states + j] * x[j];
+                for (j, &x_val) in x.iter().enumerate().take(ss.n_states) {
+                    output += ss.c[i * ss.n_states + j] * x_val;
                 }
 
                 // Add Du term if inputs are available
@@ -242,17 +242,17 @@ pub fn lsim<T: LtiSystem>(system: &T, u: &[f64], t: &[f64]) -> SignalResult<Vec<
                 let mut x_new = vec![0.0; ss.n_states];
 
                 // Calculate Ax term
-                for i in 0..ss.n_states {
-                    for j in 0..ss.n_states {
-                        x_new[i] += ss.a[i * ss.n_states + j] * x[j];
+                for (i, x_new_val) in x_new.iter_mut().enumerate().take(ss.n_states) {
+                    for (j, &x_val) in x.iter().enumerate().take(ss.n_states) {
+                        *x_new_val += ss.a[i * ss.n_states + j] * x_val;
                     }
                 }
 
                 // Add Bu term if inputs are available
                 if !u.is_empty() {
-                    for i in 0..ss.n_states {
+                    for (i, x_new_val) in x_new.iter_mut().enumerate().take(ss.n_states) {
                         for j in 0..ss.n_inputs {
-                            x_new[i] += ss.b[i * ss.n_inputs + j] * u[k];
+                            *x_new_val += ss.b[i * ss.n_inputs + j] * u[k];
                         }
                     }
                 }

@@ -22,7 +22,7 @@ pub enum NeuralError {
     /// Validation error
     ValidationError(String),
     /// Not implemented error
-    NotImplemented(String),
+    NotImplementedError(String),
     /// IO error
     IOError(String),
     /// Other error
@@ -38,7 +38,7 @@ impl fmt::Display for NeuralError {
             NeuralError::SerializationError(msg) => write!(f, "Serialization error: {}", msg),
             NeuralError::DeserializationError(msg) => write!(f, "Deserialization error: {}", msg),
             NeuralError::ValidationError(msg) => write!(f, "Validation error: {}", msg),
-            NeuralError::NotImplemented(msg) => write!(f, "Not implemented: {}", msg),
+            NeuralError::NotImplementedError(msg) => write!(f, "Not implemented: {}", msg),
             NeuralError::IOError(msg) => write!(f, "IO error: {}", msg),
             NeuralError::Other(msg) => write!(f, "Error: {}", msg),
         }

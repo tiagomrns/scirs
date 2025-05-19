@@ -203,9 +203,8 @@ pub fn csr_to_coo(csr: &CsrMatrix<f64>) -> CooMatrix<f64> {
     let mut row_indices = Vec::new();
     let mut col_indices = Vec::new();
 
-    for i in 0..rows {
-        for j in 0..cols {
-            let val = dense[i][j];
+    for (i, row) in dense.iter().enumerate().take(rows) {
+        for (j, &val) in row.iter().enumerate().take(cols) {
             if val != 0.0 {
                 data.push(val);
                 row_indices.push(i);
@@ -234,9 +233,8 @@ pub fn csc_to_coo(csc: &CscMatrix<f64>) -> CooMatrix<f64> {
     let mut row_indices = Vec::new();
     let mut col_indices = Vec::new();
 
-    for i in 0..rows {
-        for j in 0..cols {
-            let val = dense[i][j];
+    for (i, row) in dense.iter().enumerate().take(rows) {
+        for (j, &val) in row.iter().enumerate().take(cols) {
             if val != 0.0 {
                 data.push(val);
                 row_indices.push(i);
@@ -265,9 +263,8 @@ pub fn coo_to_csr(coo: &CooMatrix<f64>) -> CsrMatrix<f64> {
     let mut row_indices = Vec::new();
     let mut col_indices = Vec::new();
 
-    for i in 0..rows {
-        for j in 0..cols {
-            let val = dense[i][j];
+    for (i, row) in dense.iter().enumerate().take(rows) {
+        for (j, &val) in row.iter().enumerate().take(cols) {
             if val != 0.0 {
                 data.push(val);
                 row_indices.push(i);
@@ -296,9 +293,8 @@ pub fn coo_to_csc(coo: &CooMatrix<f64>) -> CscMatrix<f64> {
     let mut row_indices = Vec::new();
     let mut col_indices = Vec::new();
 
-    for i in 0..rows {
-        for j in 0..cols {
-            let val = dense[i][j];
+    for (i, row) in dense.iter().enumerate().take(rows) {
+        for (j, &val) in row.iter().enumerate().take(cols) {
             if val != 0.0 {
                 data.push(val);
                 row_indices.push(i);

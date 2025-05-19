@@ -101,7 +101,13 @@ where
                 // Pad right side
                 let offset = start + input_len;
                 for i in 0..pad_width[0].1 {
-                    let src_idx = input_len - 2 - i;
+                    // Use saturating_sub to avoid overflow
+                    let src_idx = if input_len > 1 {
+                        input_len.saturating_sub(2).saturating_sub(i)
+                    } else {
+                        0 // For single element arrays, just repeat the element
+                    };
+
                     if src_idx < input_len {
                         output_array1[offset + i] = input_array1[src_idx];
                     }
@@ -572,8 +578,8 @@ where
     }
 
     // Check if the input will fit in the output at the specified position
-    for dim in 0..input.ndim() {
-        if start_indices[dim] + input.shape()[dim] > output.shape()[dim] {
+    for (dim, &start_idx) in start_indices.iter().enumerate().take(input.ndim()) {
+        if start_idx + input.shape()[dim] > output.shape()[dim] {
             return Err(NdimageError::DimensionError(format!(
                 "Input array will not fit in output array at specified position (dimension {})",
                 dim
@@ -596,8 +602,8 @@ where
     ) -> Result<()> {
         if dim == input.ndim() {
             // We have full indices, copy the value
-            let out_idx = ndarray::IxDyn(&out_indices);
-            let in_idx = ndarray::IxDyn(&in_indices);
+            let out_idx = ndarray::IxDyn(out_indices);
+            let in_idx = ndarray::IxDyn(in_indices);
             output[&out_idx] = input[&in_idx].clone();
             return Ok(());
         }
@@ -675,6 +681,7 @@ where
     }
 
     // Recursive function to pad each region
+    #[allow(clippy::too_many_arguments)]
     fn pad_recursive<
         T: Clone + Debug,
         S1: ndarray::DataMut<Elem = T>,
@@ -686,12 +693,12 @@ where
         in_indices: &mut Vec<usize>,
         dim: usize,
         center_starts: &[usize],
-        pad_width: &[(usize, usize)],
+        _pad_width: &[(usize, usize)],
     ) -> Result<()> {
         if dim == input.ndim() {
             // We have full indices, copy the value
-            let out_idx = ndarray::IxDyn(&out_indices);
-            let in_idx = ndarray::IxDyn(&in_indices);
+            let out_idx = ndarray::IxDyn(out_indices);
+            let in_idx = ndarray::IxDyn(in_indices);
             output[&out_idx] = input[&in_idx].clone();
             return Ok(());
         }
@@ -711,7 +718,7 @@ where
                 in_indices,
                 dim + 1,
                 center_starts,
-                pad_width,
+                _pad_width,
             )?;
         } else {
             // Calculate reflected index
@@ -727,7 +734,7 @@ where
                 in_indices,
                 dim + 1,
                 center_starts,
-                pad_width,
+                _pad_width,
             )?;
         }
 
@@ -850,7 +857,7 @@ where
     fn get_mirror_idx(idx: isize, len: usize) -> usize {
         if idx < 0 {
             // Mirror from the start
-            idx.abs() as usize % len
+            idx.unsigned_abs() % len
         } else if idx >= len as isize {
             // Mirror from the end
             (len as isize - 1 - (idx - len as isize) % (len as isize)) as usize
@@ -861,6 +868,7 @@ where
     }
 
     // Recursive function to pad each region
+    #[allow(clippy::too_many_arguments)]
     fn pad_recursive<
         T: Clone + Debug,
         S1: ndarray::DataMut<Elem = T>,
@@ -872,12 +880,12 @@ where
         in_indices: &mut Vec<usize>,
         dim: usize,
         center_starts: &[usize],
-        pad_width: &[(usize, usize)],
+        _pad_width: &[(usize, usize)],
     ) -> Result<()> {
         if dim == input.ndim() {
             // We have full indices, copy the value
-            let out_idx = ndarray::IxDyn(&out_indices);
-            let in_idx = ndarray::IxDyn(&in_indices);
+            let out_idx = ndarray::IxDyn(out_indices);
+            let in_idx = ndarray::IxDyn(in_indices);
             output[&out_idx] = input[&in_idx].clone();
             return Ok(());
         }
@@ -897,7 +905,7 @@ where
                 in_indices,
                 dim + 1,
                 center_starts,
-                pad_width,
+                _pad_width,
             )?;
         } else {
             // Calculate mirrored index
@@ -913,7 +921,7 @@ where
                 in_indices,
                 dim + 1,
                 center_starts,
-                pad_width,
+                _pad_width,
             )?;
         }
 
@@ -1020,6 +1028,7 @@ where
     }
 
     // Recursive function to pad each region
+    #[allow(clippy::too_many_arguments)]
     fn pad_recursive<
         T: Clone + Debug,
         S1: ndarray::DataMut<Elem = T>,
@@ -1031,12 +1040,12 @@ where
         in_indices: &mut Vec<usize>,
         dim: usize,
         center_starts: &[usize],
-        pad_width: &[(usize, usize)],
+        _pad_width: &[(usize, usize)],
     ) -> Result<()> {
         if dim == input.ndim() {
             // We have full indices, copy the value
-            let out_idx = ndarray::IxDyn(&out_indices);
-            let in_idx = ndarray::IxDyn(&in_indices);
+            let out_idx = ndarray::IxDyn(out_indices);
+            let in_idx = ndarray::IxDyn(in_indices);
             output[&out_idx] = input[&in_idx].clone();
             return Ok(());
         }
@@ -1056,7 +1065,7 @@ where
                 in_indices,
                 dim + 1,
                 center_starts,
-                pad_width,
+                _pad_width,
             )?;
         } else {
             // Calculate wrapped index
@@ -1072,7 +1081,7 @@ where
                 in_indices,
                 dim + 1,
                 center_starts,
-                pad_width,
+                _pad_width,
             )?;
         }
 
@@ -1206,6 +1215,7 @@ where
     }
 
     // Recursive function to pad each region
+    #[allow(clippy::too_many_arguments)]
     fn pad_recursive<
         T: Clone + Debug,
         S1: ndarray::DataMut<Elem = T>,
@@ -1217,12 +1227,12 @@ where
         in_indices: &mut Vec<usize>,
         dim: usize,
         center_starts: &[usize],
-        pad_width: &[(usize, usize)],
+        _pad_width: &[(usize, usize)],
     ) -> Result<()> {
         if dim == input.ndim() {
             // We have full indices, copy the value
-            let out_idx = ndarray::IxDyn(&out_indices);
-            let in_idx = ndarray::IxDyn(&in_indices);
+            let out_idx = ndarray::IxDyn(out_indices);
+            let in_idx = ndarray::IxDyn(in_indices);
             output[&out_idx] = input[&in_idx].clone();
             return Ok(());
         }
@@ -1242,7 +1252,7 @@ where
                 in_indices,
                 dim + 1,
                 center_starts,
-                pad_width,
+                _pad_width,
             )?;
         } else {
             // Calculate nearest index
@@ -1258,7 +1268,7 @@ where
                 in_indices,
                 dim + 1,
                 center_starts,
-                pad_width,
+                _pad_width,
             )?;
         }
 

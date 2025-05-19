@@ -1,6 +1,7 @@
 use ndarray::array;
 use scirs2_linalg::structured::{
-    structured_to_operator, CirculantMatrix, HankelMatrix, StructuredMatrix, ToeplitzMatrix,
+    solve_circulant, solve_toeplitz, structured_to_operator, CirculantMatrix, HankelMatrix,
+    StructuredMatrix, ToeplitzMatrix,
 };
 use scirs2_linalg::MatrixFreeOp;
 
@@ -97,9 +98,60 @@ fn main() {
     println!("x = {:?}", x);
     println!("Op(x) = {:?}", y_op);
 
+    // Get direct result from Toeplitz matrix
+    let direct_y = toeplitz.matvec(&x.view()).unwrap();
+
     println!("\nCompare with direct matrix-vector product:");
-    println!("Tx = {:?}", y);
+    println!("Direct Tx = {:?}", direct_y);
 
     // Notice that the results are identical, but the matrix-free approach
     // doesn't require storing the full matrix
+
+    // ----- Solving Toeplitz systems -----
+    println!("\n=== Solving Toeplitz systems ===");
+
+    // Create a simple Toeplitz system
+    let c = array![1.0, 0.5, 0.3]; // First column
+    let r = array![1.0, 0.7, 0.2]; // First row
+    let b = array![1.0, 2.0, 3.0]; // Right-hand side
+
+    // Solve using the specialized Levinson recursion algorithm
+    let x = solve_toeplitz(c.view(), r.view(), b.view()).unwrap();
+
+    println!("Toeplitz system:");
+    println!("First column = {:?}", c);
+    println!("First row = {:?}", r);
+    println!("Right-hand side = {:?}", b);
+    println!("Solution = {:?}", x);
+
+    // Verify the solution
+    let toeplitz = ToeplitzMatrix::new(c.view(), r.view()).unwrap();
+    let tx = toeplitz.matvec(&x.view()).unwrap();
+
+    println!("\nVerification (Tx should equal b):");
+    println!("Tx = {:?}", tx);
+    println!("b = {:?}", b);
+
+    // ----- Solving Circulant systems -----
+    println!("\n=== Solving Circulant systems ===");
+
+    // Create a circulant system
+    let c = array![1.0, 2.0, 3.0]; // First row
+    let b = array![14.0, 10.0, 12.0]; // Right-hand side
+
+    // Solve using the specialized solver
+    let x = solve_circulant(c.view(), b.view()).unwrap();
+
+    println!("Circulant system:");
+    println!("First row = {:?}", c);
+    println!("Right-hand side = {:?}", b);
+    println!("Solution = {:?}", x);
+
+    // Verify the solution
+    let circulant = CirculantMatrix::new(c.view()).unwrap();
+    let cx = circulant.matvec(&x.view()).unwrap();
+
+    println!("\nVerification (Cx should equal b):");
+    println!("Cx = {:?}", cx);
+    println!("b = {:?}", b);
 }

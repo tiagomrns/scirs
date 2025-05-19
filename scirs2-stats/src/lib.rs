@@ -35,7 +35,7 @@
 //!   - Normality tests (Shapiro-Wilk, Anderson-Darling, D'Agostino's K²)
 //!   - Goodness-of-fit tests (Chi-square)
 //! * Random number generation
-//! * Regression models
+//! * Regression models (linear, regularized, robust)
 //! * Contingency table functions
 //! * Masked array statistics
 //! * Quasi-Monte Carlo
@@ -66,7 +66,7 @@
 //!
 //! ```
 //! use ndarray::{array, Array2};
-//! use scirs2_stats::{pearson_r, spearman_r, kendall_tau, corrcoef};
+//! use scirs2_stats::{pearson_r, pearsonr, spearman_r, kendall_tau, corrcoef};
 //!
 //! let x = array![1.0, 2.0, 3.0, 4.0, 5.0];
 //! let y = array![5.0, 4.0, 3.0, 2.0, 1.0];
@@ -74,6 +74,10 @@
 //! // Calculate Pearson correlation coefficient (linear correlation)
 //! let r = pearson_r(&x.view(), &y.view()).unwrap();
 //! println!("Pearson correlation: {}", r);  // Should be -1.0 (perfect negative correlation)
+//!
+//! // Calculate Pearson correlation with p-value
+//! let (r, p) = pearsonr(&x.view(), &y.view(), "two-sided").unwrap();
+//! println!("Pearson correlation: {}, p-value: {}", r, p);
 //!
 //! // Spearman rank correlation (monotonic relationship)
 //! let rho = spearman_r(&x.view(), &y.view()).unwrap();
@@ -178,9 +182,9 @@
 //! ```
 //! use ndarray::{array, Array2};
 //! use scirs2_stats::{
-//!     ttest_1samp, ttest_ind, ttest_rel, kstest, shapiro, mannwhitneyu,
+//!     ttest_1samp, ttest_ind, ttest_rel, kstest, shapiro, mann_whitney,
 //!     shapiro_wilk, anderson_darling, dagostino_k2, wilcoxon, kruskal_wallis, friedman,
-//!     distributions
+//!     ks_2samp, distributions, Alternative
 //! };
 //!
 //! // One-sample t-test (we'll use a larger sample for normality tests)
@@ -188,13 +192,17 @@
 //!     5.1, 4.9, 6.2, 5.7, 5.5, 5.1, 5.2, 5.0, 5.3, 5.4,
 //!     5.6, 5.8, 5.9, 6.0, 5.2, 5.4, 5.3, 5.1, 5.2, 5.0
 //! ];
-//! let (t_stat, p_value) = ttest_1samp(&data.view(), 5.0).unwrap();
+//! let result = ttest_1samp(&data.view(), 5.0, Alternative::TwoSided, "propagate").unwrap();
+//! let t_stat = result.statistic;
+//! let p_value = result.pvalue;
 //! println!("One-sample t-test: t={}, p={}", t_stat, p_value);
 //!
 //! // Two-sample t-test
 //! let group1 = array![5.1, 4.9, 6.2, 5.7, 5.5];
 //! let group2 = array![4.8, 5.2, 5.1, 4.7, 4.9];
-//! let (t_stat, p_value) = ttest_ind(&group1.view(), &group2.view(), true).unwrap();
+//! let result = ttest_ind(&group1.view(), &group2.view(), true, Alternative::TwoSided, "propagate").unwrap();
+//! let t_stat = result.statistic;
+//! let p_value = result.pvalue;
 //! println!("Two-sample t-test: t={}, p={}", t_stat, p_value);
 //!
 //! // Normality tests
@@ -221,6 +229,12 @@
 //! let (w, p_value) = wilcoxon(&before.view(), &after.view(), "wilcox", true).unwrap();
 //! println!("Wilcoxon signed-rank test: W={}, p={}", w, p_value);
 //!
+//! // Mann-Whitney U test (independent samples)
+//! let males = array![19.0, 22.0, 16.0, 29.0, 24.0];
+//! let females = array![20.0, 11.0, 17.0, 12.0];
+//! let (u, p_value) = mann_whitney(&males.view(), &females.view(), "two-sided", true).unwrap();
+//! println!("Mann-Whitney U test: U={}, p={}", u, p_value);
+//!
 //! // Kruskal-Wallis test (unpaired samples)
 //! let group1 = array![2.9, 3.0, 2.5, 2.6, 3.2];
 //! let group2 = array![3.8, 3.7, 3.9, 4.0, 4.2];
@@ -239,11 +253,17 @@
 //! let (chi2, p_value) = friedman(&data.view()).unwrap();
 //! println!("Friedman test: Chi²={}, p={}", chi2, p_value);
 //!
-//! // Distribution fit test
+//! // One-sample distribution fit test
 //! let normal = distributions::norm(0.0f64, 1.0).unwrap();
 //! let standardized_data = array![0.1, -0.2, 0.3, -0.1, 0.2];
 //! let (ks_stat, p_value) = kstest(&standardized_data.view(), |x| normal.cdf(x)).unwrap();
-//! println!("Kolmogorov-Smirnov test: D={}, p={}", ks_stat, p_value);
+//! println!("Kolmogorov-Smirnov one-sample test: D={}, p={}", ks_stat, p_value);
+//!
+//! // Two-sample KS test
+//! let sample1 = array![0.1, 0.2, 0.3, 0.4, 0.5];
+//! let sample2 = array![0.6, 0.7, 0.8, 0.9, 1.0];
+//! let (ks_stat, p_value) = ks_2samp(&sample1.view(), &sample2.view(), "two-sided").unwrap();
+//! println!("Kolmogorov-Smirnov two-sample test: D={}, p={}", ks_stat, p_value);
 //! ```
 //!
 //! ### Random Number Generation
@@ -289,6 +309,7 @@ pub use error::{StatsError, StatsResult};
 
 // Module substructure following SciPy's organization
 pub mod contingency; // Contingency table functions
+#[path = "distributions/mod_without_circular.rs"]
 pub mod distributions; // Statistical distributions
 pub mod mstats; // Masked array statistics
 pub mod qmc; // Quasi-Monte Carlo
@@ -303,21 +324,50 @@ pub use descriptive::*;
 pub mod tests;
 pub use tests::anova::{one_way_anova, tukey_hsd};
 pub use tests::chi2_test::{chi2_gof, chi2_independence, chi2_yates};
-pub use tests::nonparametric::{friedman, kruskal_wallis, wilcoxon};
-pub use tests::normality::{anderson_darling, dagostino_k2, shapiro_wilk};
+pub use tests::nonparametric::mann_whitney as mannwhitneyu;
+pub use tests::nonparametric::{friedman, kruskal_wallis, mann_whitney, wilcoxon};
+pub use tests::normality::{anderson_darling, dagostino_k2, ks_2samp, shapiro_wilk};
+pub use tests::ttest::{
+    ttest_1samp, ttest_ind, ttest_ind_from_stats, ttest_rel, Alternative, TTestResult,
+};
 pub use tests::*;
 
 // Correlation measures
 mod correlation;
-pub use correlation::{corrcoef, kendall_tau, partial_corr, pearson_r, point_biserial, spearman_r};
+pub use correlation::intraclass::icc;
+pub use correlation::{
+    corrcoef, kendall_tau, kendallr, partial_corr, partial_corrr, pearson_r, pearsonr,
+    point_biserial, point_biserialr, spearman_r, spearmanr,
+};
 
 // Dispersion and variability measures
 mod dispersion;
-pub use dispersion::{coef_variation, data_range, iqr, mean_abs_deviation, median_abs_deviation};
+pub use dispersion::{
+    coef_variation, data_range, gini_coefficient, iqr, mean_abs_deviation, median_abs_deviation,
+};
+
+// Quantile-based statistics
+mod quantile;
+pub use quantile::{
+    boxplot_stats, deciles, percentile, quantile, quartiles, quintiles, winsorized_mean,
+    winsorized_variance, QuantileInterpolation,
+};
+
+// Distribution characteristics statistics
+pub mod distribution_characteristics;
+pub use distribution_characteristics::{
+    cross_entropy, entropy, kl_divergence, kurtosis_ci, mode, skewness_ci, ConfidenceInterval,
+    Mode, ModeMethod,
+};
 
 // Core functions for regression analysis
-mod regression;
-pub use regression::*;
+pub mod regression;
+pub use regression::{
+    elastic_net, group_lasso, huber_regression, lasso_regression, linear_regression, linregress,
+    multilinear_regression, odr, polyfit, ransac, ridge_regression, stepwise_regression,
+    theilslopes, HuberT, RegressionResults, StepwiseCriterion, StepwiseDirection, StepwiseResults,
+    TheilSlopesResult,
+};
 
 // Core functions for random number generation
 pub mod random;

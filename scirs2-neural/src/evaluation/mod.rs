@@ -118,7 +118,7 @@ impl<F: Float + Debug + ScalarOperand + FromPrimitive + std::fmt::Display + Send
                 MetricType::RSquared => Box::new(RSquaredMetric::new()),
                 MetricType::AUC => Box::new(AUCMetric::new()),
                 MetricType::Custom(name) => {
-                    return Err(Error::NotImplemented(format!(
+                    return Err(Error::NotImplementedError(format!(
                         "Custom metric '{}' is not yet supported",
                         name
                     )));

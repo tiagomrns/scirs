@@ -21,6 +21,21 @@ Fast Fourier Transform implementation and related functionality for the SciRS2 s
 - **Time-Frequency Analysis**: STFT, spectrogram, and waterfall plots for visualization
 - **Visualization Tools**: Colormaps and 3D data formatting for signal visualization
 - **Spectral Analysis**: Comprehensive tools for frequency domain analysis
+- **Sparse FFT**: Algorithms for efficiently computing FFT of sparse signals
+  - Sublinear-time sparse FFT
+  - Compressed sensing-based approach
+  - Iterative and deterministic variants
+  - Frequency pruning and spectral flatness methods
+  - Advanced batch processing for multiple signals
+    - Parallel CPU implementation for high throughput
+    - Memory-efficient processing for large batches
+    - Optimized GPU batch processing with CUDA
+- **GPU Acceleration**: CUDA-accelerated implementations for high-performance computing
+  - GPU-optimized batch processing with stream management
+  - Multiple algorithm variants and specialized kernels
+  - Memory management optimizations and efficient buffer allocation
+  - Spectral flatness analysis with GPU acceleration
+  - Memory pooling for iterative operations
 
 ## Installation
 
@@ -28,9 +43,13 @@ Add the following to your `Cargo.toml`:
 
 ```toml
 [dependencies]
-scirs2-fft = "0.1.0-alpha.2"
+scirs2-fft = "0.1.0-alpha.3"
 # Optional: Enable parallel processing
-scirs2-fft = { version = "0.1.0-alpha.2", features = ["parallel"] }
+scirs2-fft = { version = "0.1.0-alpha.3", features = ["parallel"] }
+# Optional: Enable CUDA GPU acceleration
+scirs2-fft = { version = "0.1.0-alpha.3", features = ["cuda"] }
+# Optional: Enable both parallel processing and CUDA
+scirs2-fft = { version = "0.1.0-alpha.3", features = ["parallel", "cuda"] }
 ```
 
 Basic usage examples:
@@ -278,6 +297,153 @@ use scirs2_fft::helper::{
 };
 ```
 
+### Sparse FFT
+
+Efficient algorithms for signals with few significant frequency components:
+
+```rust
+use scirs2_fft::sparse_fft::{
+    sparse_fft,                   // Compute sparse FFT
+    sparse_fft2,                  // 2D sparse FFT
+    sparse_fftn,                  // N-dimensional sparse FFT
+    adaptive_sparse_fft,          // Adaptively adjust sparsity parameter
+    frequency_pruning_sparse_fft, // Using frequency pruning algorithm
+    spectral_flatness_sparse_fft, // Using spectral flatness algorithm
+    reconstruct_spectrum,         // Reconstruct full spectrum from sparse result
+    reconstruct_time_domain,      // Reconstruct time domain signal
+    reconstruct_high_resolution,  // High-resolution reconstruction
+    SparseFFTAlgorithm,           // Algorithm variants
+    WindowFunction,               // Window functions for sparse FFT
+};
+```
+
+### GPU Acceleration
+
+CUDA-accelerated implementations for high-performance computing:
+
+```rust
+use scirs2_fft::{
+    // GPU-accelerated sparse FFT
+    cuda_sparse_fft,
+    cuda_batch_sparse_fft,
+    is_cuda_available,
+    get_cuda_devices,
+    
+    // GPU memory management
+    init_global_memory_manager,
+    get_global_memory_manager,
+    BufferLocation,
+    AllocationStrategy,
+    
+    // GPU backend management
+    GPUBackend,
+    
+    // CUDA kernel management
+    execute_cuda_sublinear_sparse_fft,
+    execute_cuda_compressed_sensing_sparse_fft,
+    execute_cuda_iterative_sparse_fft,
+    KernelStats,
+    KernelConfig,
+};
+
+// Check if CUDA is available
+if is_cuda_available() {
+    // Get available CUDA devices
+    let devices = get_cuda_devices().unwrap();
+    println!("Found {} CUDA device(s)", devices.len());
+    
+    // Initialize memory manager
+    init_global_memory_manager(
+        GPUBackend::CUDA,
+        0,  // Use first device
+        AllocationStrategy::CacheBySize,
+        1024 * 1024 * 1024  // 1 GB limit
+    ).unwrap();
+    
+    // Create a signal
+    let signal = vec![1.0, 2.0, 3.0, 4.0];
+    
+    // Compute sparse FFT on GPU with different algorithms
+    
+    // 1. Sublinear algorithm (fastest for most cases)
+    let result_sublinear = cuda_sparse_fft(
+        &signal,
+        2,  // Expected sparsity
+        0,  // Device ID
+        Some(SparseFFTAlgorithm::Sublinear),
+        Some(WindowFunction::Hann)
+    ).unwrap();
+    
+    // 2. CompressedSensing algorithm (best accuracy)
+    let result_cs = cuda_sparse_fft(
+        &signal,
+        2,
+        0,
+        Some(SparseFFTAlgorithm::CompressedSensing),
+        Some(WindowFunction::Hann)
+    ).unwrap();
+    
+    // 3. Iterative algorithm (best for noisy signals)
+    let result_iterative = cuda_sparse_fft(
+        &signal,
+        2,
+        0,
+        Some(SparseFFTAlgorithm::Iterative),
+        Some(WindowFunction::Hann)
+    ).unwrap();
+    
+    // 4. Frequency Pruning algorithm (best for large signals)
+    let result_frequency_pruning = cuda_sparse_fft(
+        &signal,
+        2,
+        0,
+        Some(SparseFFTAlgorithm::FrequencyPruning),
+        Some(WindowFunction::Hann)
+    ).unwrap();
+    
+    // Batch processing for multiple signals
+    let signals = vec![
+        vec![1.0, 2.0, 3.0, 4.0],
+        vec![4.0, 3.0, 2.0, 1.0],
+    ];
+    
+    let batch_results = cuda_batch_sparse_fft(
+        &signals,
+        2,  // Expected sparsity
+        0,  // Device ID
+        Some(SparseFFTAlgorithm::Sublinear),
+        Some(WindowFunction::Hann)
+    ).unwrap();
+    
+    println!("CUDA-accelerated sparse FFT completed!");
+    println!("Found {} significant frequencies", result_sublinear.values.len());
+    println!("Computation time: {:?}", result_sublinear.computation_time);
+}
+```
+
+The GPU acceleration module provides:
+
+1. **Multiple Algorithm Support**:
+   - `Sublinear`: Fastest algorithm for most cases
+   - `CompressedSensing`: Highest accuracy for clean signals
+   - `Iterative`: Best performance on noisy signals
+   - `FrequencyPruning`: Excellent for very large signals with clustered frequency components
+
+2. **Memory Management**:
+   - Efficient buffer allocation and caching strategies
+   - Automatic cleanup and resource management
+   - Support for pinned, device, and unified memory
+
+3. **Performance Features**:
+   - Batch processing for multiple signals
+   - Automatic performance tuning based on signal characteristics
+   - Hardware-specific optimizations
+
+4. **Platform Support**:
+   - CUDA for NVIDIA GPUs
+   - Extensible architecture for other GPU platforms
+   - Automatic CPU fallback when GPU is unavailable
+
 ## Performance
 
 The FFT implementation in this module is optimized for performance:
@@ -286,8 +452,26 @@ The FFT implementation in this module is optimized for performance:
 - Provides SIMD-accelerated implementations when available
 - Includes specialized implementations for common cases 
 - Parallel implementations for large arrays using Rayon
+- GPU acceleration for even greater performance on supported hardware
 - Offers automatic selection of the most efficient algorithm
 - Smart thresholds to choose between sequential and parallel implementations
+
+## Testing
+
+To run the tests for this crate:
+
+```bash
+# Run only library tests (recommended to avoid timeouts with large-scale tests)
+cargo test --lib
+
+# Or use the Makefile.toml task (if cargo-make is installed)
+cargo make test
+
+# Run all tests including benchmarks (may timeout on slower systems)
+cargo test
+```
+
+Some of the extensive benchmark tests with large FFT sizes may timeout during testing. We recommend using the `--lib` flag to run only the core library tests.
 
 ## Contributing
 

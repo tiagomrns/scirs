@@ -255,16 +255,13 @@ where
             let curr_node = curr_node.inner();
             for child in curr_node.get_backprop_inputs() {
                 let child = child.as_tensor(g);
-                if !map.contains_key(&child.id) {
+                if let std::collections::hash_map::Entry::Vacant(e) = map.entry(child.id) {
                     if child.is_source() || !child.is_differentiable() {
                         // Add to result, but don't allow any more recursive search
                         // because there will be no `xs` nodes in this direction....
-                        map.insert(
-                            child.id,
-                            GradientInfo::new(
-                                child.is_differentiable() && is_given_xs(child.id, xs),
-                            ),
-                        );
+                        e.insert(GradientInfo::new(
+                            child.is_differentiable() && is_given_xs(child.id, xs),
+                        ));
                     } else {
                         // Recurse
                         dfs_stack.push((child.id, false));

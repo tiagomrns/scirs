@@ -4,9 +4,13 @@
 //! operations for improved performance on modern CPUs. These implementations
 //! leverage core SIMD support through the scirs2-core::simd module.
 
+#[allow(unused_imports)]
 use crate::error::{LinalgError, LinalgResult};
+#[allow(unused_imports)]
 use ndarray::{s, Array1, Array2, ArrayView1, ArrayView2};
+#[allow(unused_imports)]
 use scirs2_core::simd::{simd_maximum_f32, simd_maximum_f64, simd_minimum_f32, simd_minimum_f64};
+#[allow(unused_imports)]
 use wide::{f32x8, f64x4};
 
 /// Compute matrix-vector product using SIMD instructions for f32 values
@@ -950,9 +954,9 @@ pub fn simd_frobenius_norm_f64(a: &ArrayView2<f64>) -> f64 {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
-    use approx::assert_relative_eq;
-    use ndarray::array;
+    // Import only what is needed when tests are run
+    #[allow(unused_imports)]
+    use {super::*, approx::assert_relative_eq, ndarray::array};
 
     #[test]
     #[cfg(feature = "simd")]

@@ -14,6 +14,13 @@ This module provides linear algebra functionality comparable to NumPy/SciPy's li
 - [x] Core functionality implemented
 - [x] Fix all warnings and doctests in the implementation
 - [x] Advanced functionality and edge cases
+- [x] SciPy-compatible API wrappers (compat module)
+- [x] Create comprehensive test suite against SciPy
+- [x] Add comprehensive documentation and tutorials
+
+## Known Issues
+
+- Matrix functions' implementation may have numerical stability issues
 
 ## Matrix Operations
 
@@ -98,43 +105,60 @@ This module provides linear algebra functionality comparable to NumPy/SciPy's li
   - [x] Position-aware attention variants (RoPE, ALiBi, relative positional)
   - [x] Batched attention operations for high-throughput training
 - [x] Quantization-aware linear algebra
+  - [x] Basic integer quantization (8-bit, 4-bit)
+  - [x] Symmetric and asymmetric quantization
+  - [x] Per-channel quantization
+  - [x] Quantized matrix-free operations
+  - [x] Numerical stability analysis for quantization
+  - [x] Fusion operations for quantized matrices
+  - [x] Specialized solvers for quantized matrices
 - [x] Mixed-precision operations
+  - [x] Basic mixed-precision linear algebra (matmul, matvec, solve)
+  - [x] Iterative refinement for improved accuracy
+  - [x] Mixed-precision QR and SVD
+  - [x] Cholesky decomposition with mixed precision
+  - [x] Enhanced dot product with Kahan summation for numerical stability
+  - [x] SIMD-accelerated mixed-precision operations
+  - [x] Mixed-precision least squares solver
+  - [x] Mixed-precision matrix inversion
+  - [x] Mixed-precision determinant calculation
 - [x] Sparse-dense matrix operations
 
 ## NumPy/SciPy Compatibility Improvements
 
-- [ ] Consistent API with NumPy's linalg
-  - [ ] Standardize function naming and parameter ordering
-  - [ ] Ensure equivalent functionality for all NumPy linalg functions
-  - [ ] Document differences from NumPy where they exist for good reasons
-- [ ] Type-generic linear algebra operations
-  - [ ] Unified wrappers for operations on different numeric types
-  - [ ] Consistent error handling across numeric types
-  - [ ] Automatic precision selection based on input requirements
-- [ ] Higher-dimensional array support
-  - [ ] Convert key operations to handle arrays with multiple batch dimensions
-  - [ ] Implement broadcasting behavior consistent with NumPy
-  - [ ] Support for vectorized application of operations to batched arrays
+- [x] Consistent API with NumPy's linalg
+  - [x] Standardize function naming and parameter ordering (via compat module)
+  - [x] Ensure equivalent functionality for all NumPy linalg functions (most core functions)
+  - [x] Document differences from NumPy where they exist for good reasons
+- [x] Type-generic linear algebra operations
+  - [x] Unified wrappers for operations on different numeric types
+  - [x] Consistent error handling across numeric types
+  - [x] Automatic precision selection based on input requirements
+- [x] Higher-dimensional array support
+  - [x] Convert key operations to handle arrays with multiple batch dimensions
+  - [x] Implement broadcasting behavior consistent with NumPy
+  - [x] Support for vectorized application of operations to batched arrays
 
 ## Optimization Tasks
 
-- [ ] Comprehensive tests and benchmarks
-  - [ ] Test suite that verifies numerical accuracy against SciPy results
+- [x] Comprehensive tests and benchmarks
+  - [x] Test suite that verifies numerical accuracy against SciPy results
   - [ ] Performance benchmarks for all key operations
-  - [ ] Correctness validation for edge cases
-- [ ] Performance optimizations for large matrices
-  - [ ] Cache-friendly algorithms
+  - [x] Correctness validation for edge cases
+- [x] Performance optimizations for large matrices
+  - [x] Cache-friendly algorithms (implemented in perf_opt module)
   - [x] SIMD optimizations
   - [x] Loop tiling and blocking (implemented in SIMD-accelerated matrix multiplication)
-  - [ ] Memory layout optimizations
-  - [ ] Fusion of consecutive operations when possible
-- [ ] Improve error messages and handling
-  - [ ] More detailed error diagnostics for singular matrices
+  - [x] Memory layout optimizations (blocked and in-place operations)
+  - [x] Fusion of consecutive operations for quantized matrices
+  - [x] Memory-efficient operations with matrix-free approach
+- [x] Improve error messages and handling
+  - [x] More detailed error diagnostics for singular matrices
   - [ ] Suggestions for regularization approaches when decompositions fail
   - [ ] Improved numerical stability checks
-- [ ] Add more examples and documentation
-  - [ ] Practical tutorials for common scientific and engineering applications
-  - [ ] Conversion guides for SciPy/NumPy users
+- [x] Add more examples and documentation
+  - [x] Practical tutorials for common scientific and engineering applications
+  - [x] Conversion guides for SciPy/NumPy users (via examples and compat module)
   - [ ] Performance optimization guidelines
 - [ ] Support for sparse matrices
   - [ ] Integration with scirs2-sparse for all relevant operations
@@ -149,22 +173,23 @@ This module provides linear algebra functionality comparable to NumPy/SciPy's li
 
 ## Feature Enhancements
 
-- [ ] Autodiff for matrix operations
-  - [ ] Forward and reverse mode automatic differentiation
-  - [ ] Matrix calculus operations with gradient tracking
-  - [ ] Integration with optimization frameworks
-- [ ] Complex number support
-  - [ ] Complete implementation for all decompositions
-  - [ ] Specialized algorithms for common complex matrix operations
-  - [ ] Handling of Hermitian matrices and operations
-- [ ] Extended precision operations
-  - [ ] Support for higher precision beyond f64
-  - [ ] Specialized algorithms that maintain precision
-  - [ ] Error bounds calculations
-- [ ] Random matrix generation
-  - [ ] Standard distributions (uniform, normal, etc.)
-  - [ ] Specialized matrices (orthogonal, correlation, etc.)
-  - [ ] Structured random matrices for testing
+- [x] Autodiff for matrix operations
+  - [x] Basic integration with scirs2-autograd
+  - [ ] Forward and reverse mode automatic differentiation (limited by scirs2-autograd)
+  - [ ] Matrix calculus operations with gradient tracking (pending scirs2-autograd features)
+  - [x] Framework for integration with optimization (ready for when features are available)
+- [x] Complex number support
+  - [x] Complete implementation for all decompositions
+  - [x] Specialized algorithms for common complex matrix operations
+  - [x] Handling of Hermitian matrices and operations
+- [x] Extended precision operations
+  - [x] Support for higher precision operations using a type-generic approach
+  - [x] Specialized algorithms with extended precision for key operations
+  - [x] Error bounds calculations for ill-conditioned matrices
+- [x] Random matrix generation
+  - [x] Standard distributions (uniform, normal, etc.)
+  - [x] Specialized matrices (orthogonal, correlation, etc.)
+  - [x] Structured random matrices for testing
 - [ ] Matrix calculus utilities
   - [ ] Derivatives of matrix operations
   - [ ] Matrix differential operators

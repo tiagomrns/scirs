@@ -11,6 +11,9 @@ use rand::SeedableRng;
 use std::fmt::Debug;
 use std::marker::PhantomData;
 
+/// Type alias for batch result
+type BatchResult<F> = Result<(Array<F, IxDyn>, Array<F, IxDyn>)>;
+
 /// Data loader for efficient batch processing
 pub struct DataLoader<
     F: Float + Debug + ScalarOperand + FromPrimitive + Send + Sync,
@@ -89,8 +92,13 @@ impl<
         }
     }
 
+    /// Check if the dataloader is empty
+    pub fn is_empty(&self) -> bool {
+        self.len() == 0
+    }
+
     /// Get the next batch from the dataset
-    pub fn next_batch(&mut self) -> Option<Result<(Array<F, IxDyn>, Array<F, IxDyn>)>> {
+    pub fn next_batch(&mut self) -> Option<BatchResult<F>> {
         if self.position >= self.dataset.len() {
             return None;
         }

@@ -842,15 +842,15 @@ where
     let mut block_mask = vec![vec![false; n]; m];
 
     // First pass: determine dimensions and create block mask
-    for i in 0..m {
-        for j in 0..n {
+    for (i, row_size) in row_sizes.iter_mut().enumerate().take(m) {
+        for (j, col_size) in col_sizes.iter_mut().enumerate().take(n) {
             if let Some(block) = blocks[i][j] {
                 let shape = block.shape();
 
                 // Set row size if not already set
-                if row_sizes[i] == 0 {
-                    row_sizes[i] = shape.0;
-                } else if row_sizes[i] != shape.0 {
+                if *row_size == 0 {
+                    *row_size = shape.0;
+                } else if *row_size != shape.0 {
                     return Err(SparseError::ValueError(format!(
                         "Inconsistent row dimensions in block row {}. Expected {}, got {}",
                         i, row_sizes[i], shape.0
@@ -858,12 +858,12 @@ where
                 }
 
                 // Set column size if not already set
-                if col_sizes[j] == 0 {
-                    col_sizes[j] = shape.1;
-                } else if col_sizes[j] != shape.1 {
+                if *col_size == 0 {
+                    *col_size = shape.1;
+                } else if *col_size != shape.1 {
                     return Err(SparseError::ValueError(format!(
                         "Inconsistent column dimensions in block column {}. Expected {}, got {}",
-                        j, col_sizes[j], shape.1
+                        j, *col_size, shape.1
                     )));
                 }
 
@@ -873,16 +873,16 @@ where
     }
 
     // Handle case where a block row or column has no arrays (all None)
-    for i in 0..m {
-        if row_sizes[i] == 0 {
+    for (i, &row_size) in row_sizes.iter().enumerate().take(m) {
+        if row_size == 0 {
             return Err(SparseError::ValueError(format!(
                 "Block row {} has no arrays, cannot determine dimensions",
                 i
             )));
         }
     }
-    for j in 0..n {
-        if col_sizes[j] == 0 {
+    for (j, &col_size) in col_sizes.iter().enumerate().take(n) {
+        if col_size == 0 {
             return Err(SparseError::ValueError(format!(
                 "Block column {} has no arrays, cannot determine dimensions",
                 j
@@ -906,9 +906,9 @@ where
 
     // If there are no blocks, return an empty matrix
     let mut has_blocks = false;
-    for i in 0..m {
-        for j in 0..n {
-            if block_mask[i][j] {
+    for mask_row in block_mask.iter().take(m) {
+        for &mask_elem in mask_row.iter().take(n) {
+            if mask_elem {
                 has_blocks = true;
                 break;
             }
@@ -945,17 +945,20 @@ where
     let mut cols = Vec::new();
     let mut data = Vec::new();
 
-    for i in 0..m {
-        for j in 0..n {
+    for (i, row_offset) in row_offsets.iter().take(m).enumerate() {
+        for (j, col_offset) in col_offsets.iter().take(n).enumerate() {
             if let Some(block) = blocks[i][j] {
                 let (block_rows, block_cols, block_data) = block.find();
-                let row_offset = row_offsets[i];
-                let col_offset = col_offsets[j];
 
-                for k in 0..block_data.len() {
-                    rows.push(block_rows[k] + row_offset);
-                    cols.push(block_cols[k] + col_offset);
-                    data.push(block_data[k]);
+                for (((&row, &col), &val), _) in block_rows
+                    .iter()
+                    .zip(block_cols.iter())
+                    .zip(block_data.iter())
+                    .zip(0..block_data.len())
+                {
+                    rows.push(row + *row_offset);
+                    cols.push(col + *col_offset);
+                    data.push(val);
                 }
             }
         }

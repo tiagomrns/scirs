@@ -20,6 +20,26 @@ pub enum FFTError {
     /// Not implemented error
     #[error("Not implemented: {0}")]
     NotImplementedError(String),
+
+    /// I/O error
+    #[error("I/O error: {0}")]
+    IOError(String),
+
+    /// Backend error
+    #[error("Backend error: {0}")]
+    BackendError(String),
+
+    /// Plan creation error
+    #[error("Plan creation error: {0}")]
+    PlanError(String),
+
+    /// Communication error (for distributed FFT)
+    #[error("Communication error: {0}")]
+    CommunicationError(String),
+
+    /// Memory error (e.g., allocation failed)
+    #[error("Memory error: {0}")]
+    MemoryError(String),
 }
 
 /// Result type for FFT operations

@@ -57,6 +57,10 @@ pub enum LinalgError {
     /// Invalid input error
     #[error("Invalid input error: {0}")]
     InvalidInputError(String),
+
+    /// Numerical error (e.g., overflow, underflow, division by zero)
+    #[error("Numerical error: {0}")]
+    NumericalError(String),
 }
 
 /// Result type for linear algebra operations

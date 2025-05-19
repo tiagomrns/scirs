@@ -11,17 +11,18 @@ Automatic differentiation module for SciRS2, providing functionality comparable 
 - Reverse-mode automatic differentiation
 - Tensor-based computation with graph tracking
 - Optimizers for machine learning tasks (SGD, Adam, etc.)
-- Neural network operations:
+- Neural network operations with numerical stability enhancements:
   - Activation functions
   - Cross-entropy loss functions
   - Convolution operations
   - Pooling operations
   - Batch normalization
-- Gradient computation and propagation
+- Gradient computation and propagation with improved numerical stability
 - Lazy tensor evaluation
 - Higher-order derivatives
 - GPU computation support (planned)
 - BLAS acceleration for linear algebra operations
+- Numerically stable SVD gradient computation
 
 ## Installation
 
@@ -29,14 +30,14 @@ Add the following to your `Cargo.toml`:
 
 ```toml
 [dependencies]
-scirs2-autograd = "0.1.0-alpha.2"
+scirs2-autograd = "0.1.0-alpha.3"
 ```
 
 To enable optimizations and GPU support:
 
 ```toml
 [dependencies]
-scirs2-autograd = { version = "0.1.0-alpha.2", features = ["blas", "cuda"] }
+scirs2-autograd = { version = "0.1.0-alpha.3", features = ["blas", "cuda"] }
 ```
 
 ## Usage
@@ -125,6 +126,8 @@ for epoch in 0..10 {
 - Higher-order derivatives for complex optimization problems
 - Support for custom operations and gradients
 - Memory-efficient computation graph management
+- Numerically stable matrix decompositions including SVD
+- Enhanced gradient precision for large matrices
 - Integration with the broader SciRS2 ecosystem
 - Multi-dimensional tensor operations
 - Broadcasting operations like NumPy

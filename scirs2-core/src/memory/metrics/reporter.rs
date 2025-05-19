@@ -2,6 +2,7 @@
 //!
 //! This module provides formatters and visualizers for memory metrics.
 
+#[cfg(feature = "memory_metrics")]
 use serde_json::{json, Value as JsonValue};
 use std::time::Duration;
 
@@ -117,6 +118,7 @@ impl MemoryReport {
     }
 
     /// Export the report as JSON
+    #[cfg(feature = "memory_metrics")]
     pub fn to_json(&self) -> JsonValue {
         let mut component_stats = serde_json::Map::new();
 
@@ -162,6 +164,12 @@ impl MemoryReport {
             "duration_formatted": format_duration(self.duration),
             "components": component_stats,
         })
+    }
+
+    /// Export the report as JSON - stub when memory_metrics is disabled
+    #[cfg(not(feature = "memory_metrics"))]
+    pub fn to_json(&self) -> String {
+        "{}".to_string()
     }
 
     /// Generate a visual chart (ASCII or SVG)
@@ -335,11 +343,19 @@ mod tests {
             duration: Duration::from_secs(30),
         };
 
-        let json = report.to_json();
+        #[cfg(feature = "memory_metrics")]
+        {
+            let json = report.to_json();
+            assert_eq!(json["total_current_usage"], 1024);
+            assert_eq!(json["total_peak_usage"], 2048);
+            assert_eq!(json["total_allocation_count"], 10);
+            assert_eq!(json["components"]["Component1"]["current_usage"], 1024);
+        }
 
-        assert_eq!(json["total_current_usage"], 1024);
-        assert_eq!(json["total_peak_usage"], 2048);
-        assert_eq!(json["total_allocation_count"], 10);
-        assert_eq!(json["components"]["Component1"]["current_usage"], 1024);
+        #[cfg(not(feature = "memory_metrics"))]
+        {
+            // Just to avoid the unused variable warning
+            let _ = report;
+        }
     }
 }

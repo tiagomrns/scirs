@@ -342,7 +342,7 @@ impl<T: Float> op::Op<T> for Inv {
     }
 
     fn grad(&self, ctx: &mut op::GradientContext<T>) {
-        ctx.append_input_grad(0, Some(neg(&square(ctx.output())) * ctx.output_grad()));
+        ctx.append_input_grad(0, Some(neg(square(ctx.output())) * ctx.output_grad()));
     }
 }
 
@@ -435,19 +435,16 @@ impl<T: Float> op::Op<T> for Transpose {
             ));
         }
 
-        let ret = unsafe {
-            let mut dims = Vec::with_capacity(perm_len);
-            for (i, d) in perm.iter().enumerate() {
-                let d = d.to_usize().unwrap();
-                if self.invert_axes {
-                    *dims.get_unchecked_mut(d) = i;
-                } else {
-                    *dims.get_unchecked_mut(i) = d;
-                }
+        let mut dims = vec![0; perm_len];
+        for (i, d) in perm.iter().enumerate() {
+            let d = d.to_usize().unwrap();
+            if self.invert_axes {
+                dims[d] = i;
+            } else {
+                dims[i] = d;
             }
-            dims.set_len(perm_len);
-            x.permuted_axes(dims.as_slice())
-        };
+        }
+        let ret = x.permuted_axes(dims.as_slice());
 
         ctx.append_output(ret.to_owned());
         Ok(())
@@ -455,9 +452,9 @@ impl<T: Float> op::Op<T> for Transpose {
 
     fn grad(&self, ctx: &mut op::GradientContext<T>) {
         let gx = Tensor::builder(ctx.graph())
-            .append_input(&ctx.output_grad(), false)
-            .append_input(&ctx.input(1), false)
-            .set_shape(&shape(&ctx.input(0)))
+            .append_input(ctx.output_grad(), false)
+            .append_input(ctx.input(1), false)
+            .set_shape(&shape(ctx.input(0)))
             .build(Transpose {
                 invert_axes: !self.invert_axes,
             });
@@ -996,7 +993,7 @@ impl<T: Float> op::Op<T> for Cos {
     }
 
     fn grad(&self, ctx: &mut op::GradientContext<T>) {
-        ctx.append_input_grad(0, Some(neg(&(sin(ctx.input(0)) * ctx.output_grad()))));
+        ctx.append_input_grad(0, Some(neg(sin(ctx.input(0)) * ctx.output_grad())));
     }
 }
 
@@ -1015,7 +1012,7 @@ impl<T: Float> op::Op<T> for Tan {
     }
 
     fn grad(&self, ctx: &mut op::GradientContext<T>) {
-        let cos = cos(&ctx.input(0));
+        let cos = cos(ctx.input(0));
         ctx.append_input_grad(0, Some(ctx.output_grad() / square(cos)));
     }
 }

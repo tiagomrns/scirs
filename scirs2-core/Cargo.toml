@@ -1,6 +1,6 @@
 [package]
 name = "scirs2-core"
-version = "0.1.0-alpha.2"
+version = "0.1.0-alpha.3"
 edition = "2021"
 authors = ["SciRS2 Team"]
 description = "Core utilities and common functionality for SciRS2"
@@ -17,15 +17,28 @@ num-complex = "0.4.6"
 thiserror = "2.0.12"
 once_cell.workspace = true
 cached = { workspace = true, optional = true }  # Memoization and caching
-chrono.workspace = true
+chrono = { workspace = true, features = ["serde"] }
 rand = "0.9.0"
 rand_distr.workspace = true
-serde.workspace = true  # Serialization for memory snapshots
-serde_json.workspace = true  # JSON serialization for memory metrics
+serde = { version = "1.0", features = ["derive"], optional = true }  # Serialization
+serde_json = { version = "1.0", optional = true }  # JSON serialization
+uuid = { version = "1.7.0", features = ["v4"] }  # Used for unique identifiers
+tempfile = { workspace = true, optional = true }  # For temporary files in memory_efficient
+bincode = { workspace = true, optional = true }  # For serialization in memory_efficient
+memmap2 = { version = "0.7.1", optional = true }  # For memory-mapped arrays
 
 # Feature-gated dependencies
 wide = { workspace = true, optional = true }  # SIMD acceleration
 rayon = { workspace = true, optional = true }  # Parallel processing
+
+# Compression libraries
+lz4 = { version = "1.24.0", optional = true }   # LZ4 compression
+zstd = { version = "0.13.0", optional = true }  # Zstandard compression
+snap = { version = "1.1.0", optional = true }   # Snappy compression
+
+# System monitoring for resource-aware prefetching
+libc = { version = "0.2.153", optional = true }  # System calls for resource monitoring
+num_cpus = { version = "1.16.0", optional = true }  # CPU count detection
 
 # BLAS/LAPACK dependencies for linear algebra operations
 ndarray-linalg = { workspace = true, optional = true }  # LAPACK bindings for ndarray
@@ -36,7 +49,7 @@ criterion = "0.5.1"
 tempfile.workspace = true
 
 [features]
-default = []  # No performance features enabled by default for now
+default = ["array", "serialization"]  # Enable array module by default
 simd = ["wide"]  # SIMD operations
 parallel = ["rayon", "ndarray/rayon"]  # Parallel processing with rayon
 cache = ["cached"]  # Caching and memoization functionality
@@ -45,7 +58,11 @@ logging = []  # Structured logging and diagnostics
 gpu = []  # GPU acceleration abstractions
 cuda = ["gpu"]  # CUDA-specific GPU acceleration
 memory_management = []  # Advanced memory management
-memory_metrics = ["memory_management"]  # Enhanced memory metrics tracking
+memory_efficient = ["tempfile", "bincode", "memmap2", "rayon"]  # Memory-efficient operations
+memory_compression = ["memory_efficient", "lz4", "zstd", "snap", "serde", "serde_json", "libc", "num_cpus"]  # Compressed memory-mapped arrays
+memory_metrics = ["memory_management", "serde", "serde_json"]  # Enhanced memory metrics tracking
+serialization = ["serde", "serde_json"]  # Serialization support
+array = []  # Scientific array types (MaskedArray, RecordArray)
 memory_visualization = ["memory_metrics"]  # Memory usage visualization
 memory_call_stack = ["memory_metrics"]  # Capture call stacks for memory events
 profiling = []  # Performance profiling tools
@@ -53,13 +70,13 @@ random = []  # Random number generation utilities
 types = []  # Type conversion utilities
 ufuncs = []  # Universal Functions (ufuncs) system
 linalg = ["ndarray-linalg"]  # Linear algebra with BLAS/LAPACK bindings
-openblas = ["ndarray-linalg/openblas-static"]  # Use OpenBLAS backend
+openblas = ["ndarray-linalg/openblas-system"]  # Use OpenBLAS backend
 intel-mkl = ["ndarray-linalg/intel-mkl"]  # Use Intel MKL backend
 netlib = ["ndarray-linalg/netlib"]  # Use Netlib backend
 all = [
-    "simd", "parallel", "cache", "validation", "logging", 
-    "gpu", "memory_management", "profiling", "random", "types",
-    "linalg", "ufuncs"
+    "simd", "parallel", "cache", "validation", "logging",
+    "gpu", "memory_management", "memory_efficient", "memory_compression",
+    "array", "profiling", "random", "types", "linalg", "ufuncs"
 ]  # Enable all features except backend-specific ones
 
 [[example]]
@@ -128,6 +145,71 @@ path = "examples/memory_metrics_snapshots.rs"
 required-features = ["memory_management", "memory_metrics"]
 
 [[example]]
+name = "memory_efficient_example"
+path = "examples/memory_efficient_example.rs"
+required-features = ["memory_efficient"]
+
+[[example]]
+name = "memory_mapped_array"
+path = "examples/memory_mapped_array.rs"
+required-features = ["memory_efficient"]
+
+[[example]]
+name = "memory_mapped_adaptive"
+path = "examples/memory_mapped_adaptive.rs"
+required-features = ["memory_efficient"]
+
+[[example]]
+name = "memory_mapped_chunks"
+path = "examples/memory_mapped_chunks.rs"
+required-features = ["memory_efficient"]
+
+[[example]]
+name = "memory_mapped_compressed"
+path = "examples/memory_mapped_compressed.rs"
+required-features = ["memory_compression"]
+
+[[example]]
+name = "memory_mapped_mutation"
+path = "examples/memory_mapped_mutation.rs"
+required-features = ["memory_efficient"]
+
+[[example]]
+name = "memory_mapped_parallel"
+path = "examples/memory_mapped_parallel.rs"
+required-features = ["memory_efficient", "parallel"]
+
+[[example]]
+name = "memory_mapped_running_stats"
+path = "examples/memory_mapped_running_stats.rs"
+required-features = ["memory_efficient"]
+
+[[example]]
+name = "memory_mapped_simple"
+path = "examples/memory_mapped_simple.rs"
+required-features = ["memory_efficient"]
+
+[[example]]
+name = "memory_mapped_slicing"
+path = "examples/memory_mapped_slicing.rs"
+required-features = ["memory_efficient"]
+
+[[example]]
+name = "memory_mapped_zerocopy"
+path = "examples/memory_mapped_zerocopy.rs"
+required-features = ["memory_efficient"]
+
+[[example]]
+name = "scientific_arrays_example"
+path = "examples/scientific_arrays_example.rs"
+required-features = ["array"]
+
+[[example]]
+name = "large_dataset_processing"
+path = "examples/large_dataset_processing.rs"
+required-features = ["memory_efficient", "array", "random"]
+
+[[example]]
 name = "ndarray_ufuncs_example"
 path = "examples/ndarray_ufuncs_example.rs"
 required-features = ["ufuncs"]
@@ -152,3 +234,13 @@ path = "examples/ndarray_statistical_operations.rs"
 [[example]]
 name = "ndarray_correlation_binning"
 path = "examples/ndarray_correlation_binning.rs"
+
+[[example]]
+name = "memory_mapped_prefetching"
+path = "examples/memory_mapped_prefetching.rs"
+required-features = ["memory_compression"]
+
+[[example]]
+name = "advanced_prefetching_example"
+path = "examples/advanced_prefetching_example.rs"
+required-features = ["memory_compression"]

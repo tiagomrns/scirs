@@ -15,6 +15,23 @@ use rand::SeedableRng;
 use std::fmt::Debug;
 use std::time::Instant;
 
+/// Helper function to extract complex values from various types (for doctests)
+pub fn try_as_complex<T: 'static + Copy>(val: T) -> Option<Complex64> {
+    use std::any::Any;
+
+    // Try to use runtime type checking with Any for complex types
+    if let Some(complex) = (&val as &dyn Any).downcast_ref::<Complex64>() {
+        return Some(*complex);
+    }
+
+    // Try to handle f32 complex numbers
+    if let Some(complex32) = (&val as &dyn Any).downcast_ref::<num_complex::Complex<f32>>() {
+        return Some(Complex64::new(complex32.re as f64, complex32.im as f64));
+    }
+
+    None
+}
+
 /// Sparsity estimation method
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum SparsityEstimationMethod {

@@ -8,7 +8,7 @@
 //!
 //! # Basic Usage
 //!
-//! ```ignore
+//! ```
 //! use scirs2_metrics::visualization::{
 //!     VisualizationData, VisualizationMetadata, PlotType, PlottingBackend, backends
 //! };
@@ -35,7 +35,7 @@
 //!
 //! The module provides specialized visualizers for common metrics visualizations:
 //!
-//! ```ignore
+//! ```
 //! use ndarray::array;
 //! use scirs2_metrics::classification::confusion_matrix;
 //! use scirs2_metrics::visualization::{
@@ -72,6 +72,7 @@ pub mod backends;
 pub mod calibration;
 pub mod confusion_matrix;
 pub mod helpers;
+pub mod interactive;
 pub mod learning_curve;
 pub mod precision_recall;
 pub mod roc_curve;
@@ -81,6 +82,10 @@ pub use backends::PlottingBackend;
 pub use calibration::CalibrationVisualizer;
 pub use confusion_matrix::ConfusionMatrixVisualizer;
 pub use helpers::*;
+pub use interactive::{
+    interactive_roc_curve_from_labels, interactive_roc_curve_visualization, InteractiveOptions,
+    InteractiveROCVisualizer,
+};
 pub use learning_curve::LearningCurveVisualizer;
 pub use precision_recall::PrecisionRecallVisualizer;
 pub use roc_curve::ROCCurveVisualizer;

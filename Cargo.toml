@@ -34,7 +34,7 @@ resolver = "2"
 bench_crates = ["scirs2-ndimage"]
 
 [workspace.package]
-version = "0.1.0-alpha.3"
+version = "0.1.0-alpha.4"
 edition = "2021"
 authors = ["SciRS2 Team"]
 description = "A Rust port of SciPy with AI/ML extensions - Scientific Computing and AI Library"
@@ -46,7 +46,9 @@ categories = ["science", "mathematics", "algorithms", "ai"]
 [workspace.dependencies]
 ndarray = { version = "0.16.1", features = ["serde", "rayon"] }
 ndarray-stats = "0.6.0"
+ndarray-stats-05 = { package = "ndarray-stats", version = "0.5.0" }
 ndarray-rand = "0.15.0"
+ndarray-rand-014 = { package = "ndarray-rand", version = "0.14.0" }
 num-traits = "0.2.19"
 num-complex = "0.4.6"
 num-integer = "0.1.46"
@@ -71,7 +73,7 @@ nalgebra = "0.33.2"
 ndarray-linalg = { version = "0.17.0", features = ["openblas-system"] }
 openblas-src = { version = "0.10.11", features = ["cblas", "lapacke"] }
 blas = "0.23.0"
-rustfft = "6.2.0"
+rustfft = { version = "6.2.0", default-features = false, features = [] }
 argmin = "0.10.0"
 sprs = "0.11.3"
 
@@ -79,6 +81,7 @@ sprs = "0.11.3"
 serde = { version = "1.0", features = ["derive"] }
 csv = "1.2"
 image = "0.24"
+image-025 = { package = "image", version = "0.25", features = ["jpeg", "png", "gif"] }
 
 # IO and file handling
 flate2 = "1.0"
@@ -109,53 +112,80 @@ rustc-hash = "1.1.0"
 matrixmultiply = "0.3.2"
 num = "0.4.0"
 special = "0.10.2"
+special-11 = { package = "special", version = "0.11.4" }
 unicode-normalization = "0.1"
 unicode-segmentation = "1.10"
 lazy_static = "1.4"
 statrs = "0.16.0"
 petgraph = "0.6"
+itertools = "0.13"
 
 # BLAS specific - these are feature-gated in modules
 blas-src = { version = "0.8", default-features = false }
 intel-mkl-src = { version = "0.8.1", default-features = false }
 cblas-sys = { version = "0.1.4", default-features = false }
 
-# HTTP clients
+# Additional dependencies for modules
+half = { version = "2.4.0", features = ["num-traits", "serde", "alloc"] }
+crossbeam-utils = { version = "0.8.19" }
+crossbeam-deque = { version = "0.8.3" }
+num_cpus = { version = "1.16.0" }
+memmap2 = { version = "0.7.1" }
+snap = { version = "1.1.0" }
+cranelift-module = { version = "0.118.0" }
+cranelift-jit = { version = "0.118.0" }
+cranelift-frontend = { version = "0.118.0" }
+plotly = { version = "0.12.1" }
+plotters = { version = "0.3.5" }
 reqwest = { version = "0.11", features = ["blocking", "json"] }
 
 # Math libraries
 libm = "0.2"
+array-init = "2.1.0"
+netcdf3 = "0.5.2"
+sobol = "1.0.2"
+halton = "0.2.1"
+ordered-float = "3.9.2"
+kamadak-exif = "0.5"
+friedrich = "0.5.0"
+ureq = "2.9"
+qhull = "0.4.0"
+parking_lot = "0.12.1"
+serde_yaml = "0.9"
+toml = "0.8"
+ciborium = "0.2"
+serde_cbor = "0.11.2"
 
 # Base scirs2 crates
-scirs2-core = { path = "./scirs2-core" }
-scirs2 = { path = "./scirs2", default-features = false }
-scirs2-linalg = { path = "./scirs2-linalg" }
-scirs2-integrate = { path = "./scirs2-integrate" }
-scirs2-interpolate = { path = "./scirs2-interpolate" }
-scirs2-optimize = { path = "./scirs2-optimize" }
-scirs2-fft = { path = "./scirs2-fft" }
-scirs2-stats = { path = "./scirs2-stats" }
-scirs2-special = { path = "./scirs2-special" }
-scirs2-signal = { path = "./scirs2-signal" }
-scirs2-sparse = { path = "./scirs2-sparse" }
-scirs2-spatial = { path = "./scirs2-spatial" }
+scirs2-core = { version = "0.1.0-alpha.4", path = "./scirs2-core" }
+scirs2 = { version = "0.1.0-alpha.4", path = "./scirs2", default-features = false }
+scirs2-linalg = { version = "0.1.0-alpha.4", path = "./scirs2-linalg" }
+scirs2-integrate = { version = "0.1.0-alpha.4", path = "./scirs2-integrate" }
+scirs2-interpolate = { version = "0.1.0-alpha.4", path = "./scirs2-interpolate" }
+scirs2-optimize = { version = "0.1.0-alpha.4", path = "./scirs2-optimize" }
+scirs2-fft = { version = "0.1.0-alpha.4", path = "./scirs2-fft" }
+scirs2-stats = { version = "0.1.0-alpha.4", path = "./scirs2-stats" }
+scirs2-special = { version = "0.1.0-alpha.4", path = "./scirs2-special" }
+scirs2-signal = { version = "0.1.0-alpha.4", path = "./scirs2-signal" }
+scirs2-sparse = { version = "0.1.0-alpha.4", path = "./scirs2-sparse" }
+scirs2-spatial = { version = "0.1.0-alpha.4", path = "./scirs2-spatial" }
 
 # Advanced modules
-scirs2-cluster = { path = "./scirs2-cluster" }
-scirs2-ndimage = { path = "./scirs2-ndimage" }
-scirs2-io = { path = "./scirs2-io" }
-scirs2-datasets = { path = "./scirs2-datasets" }
+scirs2-cluster = { version = "0.1.0-alpha.4", path = "./scirs2-cluster" }
+scirs2-ndimage = { version = "0.1.0-alpha.4", path = "./scirs2-ndimage" }
+scirs2-io = { version = "0.1.0-alpha.4", path = "./scirs2-io" }
+scirs2-datasets = { version = "0.1.0-alpha.4", path = "./scirs2-datasets" }
 
 # AI/ML modules
-scirs2-neural = { path = "./scirs2-neural" }
-scirs2-optim = { path = "./scirs2-optim" }
-scirs2-graph = { path = "./scirs2-graph" }
-scirs2-transform = { path = "./scirs2-transform" }
-scirs2-metrics = { path = "./scirs2-metrics" }
-scirs2-text = { path = "./scirs2-text" }
-scirs2-vision = { path = "./scirs2-vision" }
-scirs2-series = { path = "./scirs2-series" }
-scirs2-autograd = { path = "./scirs2-autograd" }
+scirs2-neural = { version = "0.1.0-alpha.4", path = "./scirs2-neural" }
+scirs2-optim = { version = "0.1.0-alpha.4", path = "./scirs2-optim" }
+scirs2-graph = { version = "0.1.0-alpha.4", path = "./scirs2-graph" }
+scirs2-transform = { version = "0.1.0-alpha.4", path = "./scirs2-transform" }
+scirs2-metrics = { version = "0.1.0-alpha.4", path = "./scirs2-metrics", default-features = false }
+scirs2-text = { version = "0.1.0-alpha.4", path = "./scirs2-text" }
+scirs2-vision = { version = "0.1.0-alpha.4", path = "./scirs2-vision" }
+scirs2-series = { version = "0.1.0-alpha.4", path = "./scirs2-series" }
+scirs2-autograd = { version = "0.1.0-alpha.4", path = "./scirs2-autograd" }
 
 [profile.release]
 opt-level = 3

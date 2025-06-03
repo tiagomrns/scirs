@@ -1,14 +1,49 @@
-# SciRS2 0.1.0-alpha.3 Release Notes
+# SciRS2 0.1.0-alpha.4 Release Notes
+
+## 0.1.0-alpha.4 (June 2025)
+
+### Major Improvements
+
+#### Enhanced Autograd Module
+- **Refactored tensor operations**: Improved gradient computation and Jacobian calculation
+- **Added conv2d_transpose operation**: Support for transposed convolution in neural networks
+- **Fixed gradient propagation issues**: More accurate backpropagation through complex operations
+- **Improved error handling**: Better error messages and context in gradient computations
+
+#### Linear Algebra Enhancements
+- **Fixed matrix_exp accuracy**: Corrected Padé coefficients for accurate matrix exponential computation
+- **Added Hermitian eigenvalue decomposition tests**: Ensure accuracy for Hermitian matrices
+- **Enhanced complex matrix operations**: Better support for complex decompositions
+
+#### Array Protocol Improvements (scirs2-core)
+- **Enhanced gradient support**: Better integration with autograd module
+- **Improved neural network operations**: More efficient backpropagation support
+- **Extended training utilities**: Better support for model training workflows
+
+### Code Quality Improvements
+- **Cleaned up repository**: Removed numerous temporary documentation files and work summaries
+- **Reorganized documentation**: Moved documentation files to appropriate `docs/` directories
+- **Improved code organization**: Better module structure and file organization
+- **Test file cleanup**: Moved test files from root directories to appropriate tests/ or examples/ directories
+- **Removed temporary files**: Cleaned up .bak, .old, and temporary output files across all modules
+
+### Bug Fixes
+- Fixed gradient computation issues in autograd module
+- Corrected matrix exponential implementation in linalg
+- Resolved various test failures and warnings
+- Fixed Jacobian computation for neural network operations
+
+### Testing Improvements
+- Added comprehensive test examples for conv2d_transpose
+- Added Jacobian computation tests
+- Added matrix multiplication gradient tests
+- Enhanced test coverage for complex operations
 
 ## 0.1.0-alpha.3 (May 2025)
 
-This release fixes issues with the memory metrics snapshot system in scirs2-core and improves thread safety in tests.
+## 0.1.0-alpha.2 (May 2025)
 
-### Bug Fixes
-
-- Fixed thread-safety issues in memory snapshot tests
-- Improved mutex lock handling to prevent poisoning
-- Enhanced test robustness for memory tracking
+## 0.1.0-alpha.1 (April 2025)
 
 # SciRS2 0.1.0 Release Notes
 
@@ -104,23 +139,23 @@ Add the following to your `Cargo.toml`:
 
 ```toml
 [dependencies]
-scirs2 = "0.1.0-alpha.3"  # Import the whole library
+scirs2 = "0.1.0-alpha.4"  # Import the whole library
 ```
 
 Or select only the modules you need:
 
 ```toml
 [dependencies]
-scirs2-linalg = "0.1.0-alpha.3"     # Linear algebra only
-scirs2-stats = "0.1.0-alpha.3"      # Statistics only
-scirs2-optimize = "0.1.0-alpha.3"   # Optimization only
+scirs2-linalg = "0.1.0-alpha.4"     # Linear algebra only
+scirs2-stats = "0.1.0-alpha.4"      # Statistics only
+scirs2-optimize = "0.1.0-alpha.4"   # Optimization only
 ```
 
 You can also enable specific features:
 
 ```toml
 [dependencies]
-scirs2-core = { version = "0.1.0-alpha.3", features = ["simd", "parallel"] }
+scirs2-core = { version = "0.1.0-alpha.4", features = ["simd", "parallel"] }
 ```
 
 ## Usage Examples

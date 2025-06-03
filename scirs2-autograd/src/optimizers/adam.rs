@@ -9,7 +9,7 @@ use crate::{Context, Float, VariableEnvironment};
 /// Adam optimizer
 ///
 /// This implementation is based on https://arxiv.org/abs/1412.6980v8.
-///    ```ignoreignore
+///    ```
 /// use scirs2_autograd as ag;
 ///
 /// use ag::prelude::*;
@@ -18,7 +18,7 @@ use crate::{Context, Float, VariableEnvironment};
 ///
 /// // Define parameters to optimize.
 /// let mut env = ag::VariableEnvironment::new();
-/// let rng = ag::ndarray_ext::ArrayRng::<f32>::default();
+/// let mut rng = ag::ndarray_ext::ArrayRng::<f32>::default();
 ///
 /// let w = env.slot().set(rng.glorot_uniform(&[28 * 28, 10]));
 /// let b = env.slot().set(ag::ndarray_ext::zeros(&[1, 10]));
@@ -42,7 +42,7 @@ use crate::{Context, Float, VariableEnvironment};
 ///     //     println!("updates: {:?}", result.unwrap());
 ///     // }
 /// });
-///    ```ignoreignore
+///    ```
 ///
 /// See also <https://github.com/raskr/rust-autograd/blob/master/examples/>
 pub struct Adam<F: Float> {
@@ -148,10 +148,10 @@ impl<F: Float> Optimizer<F> for Adam<F> {
                     b1: self.b1,
                     b2: self.b2,
                 });
-            
+
             // Log Adam operation construction
             eprintln!("Created AdamOp with all 5 inputs");
-            
+
             // Add the updated parameter to the result
             ret.push(adam_op);
         }

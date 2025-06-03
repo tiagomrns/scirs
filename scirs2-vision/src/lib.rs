@@ -5,6 +5,9 @@
 
 #![warn(missing_docs)]
 
+// Re-export image crate with the expected name
+extern crate image as image;
+
 pub mod color;
 pub mod error;
 pub mod feature;
@@ -13,6 +16,7 @@ pub mod feature;
 /// Includes operations like filtering, histogram manipulation,
 /// and morphological operations.
 pub mod preprocessing;
+pub mod quality;
 pub mod segmentation;
 pub mod transform;
 

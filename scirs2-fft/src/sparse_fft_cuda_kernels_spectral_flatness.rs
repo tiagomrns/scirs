@@ -236,10 +236,8 @@ impl GPUKernel for CUDASpectralFlatnessSparseFFTKernel {
         }
 
         // Sort windows by flatness (lowest = most sparse = most interesting)
-        let mut flatness_windows: Vec<(f64, usize)> = window_flatness
-            .into_iter()
-            .zip(window_indices)
-            .collect();
+        let mut flatness_windows: Vec<(f64, usize)> =
+            window_flatness.into_iter().zip(window_indices).collect();
 
         flatness_windows.sort_by(|a, b| a.0.partial_cmp(&b.0).unwrap_or(std::cmp::Ordering::Equal));
 
@@ -481,7 +479,7 @@ mod tests {
     }
 
     #[test]
-    #[ignore = "Ignored for alpha-3 release - GPU-dependent test"]
+    #[ignore = "Ignored for alpha-4 release - GPU-dependent test"]
     fn test_cuda_spectral_flatness_sparse_fft() {
         use rand::Rng;
 

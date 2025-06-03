@@ -866,7 +866,7 @@ pub fn jaccard<T: Float>(point1: &[T], point2: &[T]) -> T {
 /// assert_eq!(dist_matrix.shape(), &[3, 3]);
 /// assert!((dist_matrix[(0, 1)] - 1.0f64).abs() < 1e-6);
 /// assert!((dist_matrix[(0, 2)] - 1.0f64).abs() < 1e-6);
-/// assert!((dist_matrix[(1, 2)] - 1.4142135623730951f64).abs() < 1e-6);
+/// assert!((dist_matrix[(1, 2)] - std::f64::consts::SQRT_2).abs() < 1e-6);
 /// ```
 pub fn pdist<T, F>(x: &Array2<T>, metric: F) -> Array2<T>
 where
@@ -915,7 +915,7 @@ where
 ///
 /// assert_eq!(dist_matrix.shape(), &[2, 2]);
 /// assert!((dist_matrix[(0, 0)] - 1.0f64).abs() < 1e-6);
-/// assert!((dist_matrix[(0, 1)] - 1.4142135623730951f64).abs() < 1e-6);
+/// assert!((dist_matrix[(0, 1)] - std::f64::consts::SQRT_2).abs() < 1e-6);
 /// assert!((dist_matrix[(1, 0)] - 1.0f64).abs() < 1e-6);
 /// assert!((dist_matrix[(1, 1)] - 1.0f64).abs() < 1e-6);
 /// ```
@@ -1069,6 +1069,373 @@ pub fn squareform_to_condensed<T: Float>(distances: &Array2<T>) -> Vec<T> {
     result
 }
 
+/// Dice distance between two boolean vectors
+///
+/// The Dice distance between two boolean vectors u and v is defined as:
+/// (c_TF + c_FT) / (2 * c_TT + c_FT + c_TF)
+/// where c_ij is the number of occurrences of u\[k\]=i and v\[k\]=j for k<n.
+///
+/// # Arguments
+///
+/// * `point1` - First boolean vector
+/// * `point2` - Second boolean vector
+///
+/// # Returns
+///
+/// * The Dice distance
+///
+/// # Examples
+///
+/// ```
+/// use scirs2_spatial::distance::dice;
+///
+/// let u = &[true, false, true, false];
+/// let v = &[true, true, false, false];
+///
+/// let dist: f64 = dice(u, v);
+/// println!("Dice distance: {}", dist);
+/// ```
+pub fn dice<T: Float>(point1: &[bool], point2: &[bool]) -> T {
+    if point1.len() != point2.len() {
+        return T::nan();
+    }
+
+    let mut n_true_true = 0;
+    let mut n_true_false = 0;
+    let mut n_false_true = 0;
+
+    for i in 0..point1.len() {
+        if point1[i] && point2[i] {
+            n_true_true += 1;
+        } else if point1[i] && !point2[i] {
+            n_true_false += 1;
+        } else if !point1[i] && point2[i] {
+            n_false_true += 1;
+        }
+    }
+
+    let num = T::from(n_true_false + n_false_true).unwrap();
+    let denom = T::from(2 * n_true_true + n_true_false + n_false_true).unwrap();
+
+    if denom > T::zero() {
+        num / denom
+    } else {
+        T::zero()
+    }
+}
+
+/// Kulsinski distance between two boolean vectors
+///
+/// The Kulsinski distance between two boolean vectors u and v is defined as:
+/// (c_TF + c_FT - c_TT + n) / (c_FT + c_TF + n)
+/// where c_ij is the number of occurrences of u\[k\]=i and v\[k\]=j for k<n.
+///
+/// # Arguments
+///
+/// * `point1` - First boolean vector
+/// * `point2` - Second boolean vector
+///
+/// # Returns
+///
+/// * The Kulsinski distance
+///
+/// # Examples
+///
+/// ```
+/// use scirs2_spatial::distance::kulsinski;
+///
+/// let u = &[true, false, true, false];
+/// let v = &[true, true, false, false];
+///
+/// let dist: f64 = kulsinski(u, v);
+/// println!("Kulsinski distance: {}", dist);
+/// ```
+pub fn kulsinski<T: Float>(point1: &[bool], point2: &[bool]) -> T {
+    if point1.len() != point2.len() {
+        return T::nan();
+    }
+
+    let mut n_true_true = 0;
+    let mut n_true_false = 0;
+    let mut n_false_true = 0;
+    let n = point1.len();
+
+    for i in 0..n {
+        if point1[i] && point2[i] {
+            n_true_true += 1;
+        } else if point1[i] && !point2[i] {
+            n_true_false += 1;
+        } else if !point1[i] && point2[i] {
+            n_false_true += 1;
+        }
+    }
+
+    let num = T::from(n_true_false + n_false_true - n_true_true + n).unwrap();
+    let denom = T::from(n_true_false + n_false_true + n).unwrap();
+
+    if denom > T::zero() {
+        num / denom
+    } else {
+        T::zero()
+    }
+}
+
+/// Rogers-Tanimoto distance between two boolean vectors
+///
+/// The Rogers-Tanimoto distance between two boolean vectors u and v is defined as:
+/// 2(c_TF + c_FT) / (c_TT + c_FF + 2(c_TF + c_FT))
+/// where c_ij is the number of occurrences of u\[k\]=i and v\[k\]=j for k<n.
+///
+/// # Arguments
+///
+/// * `point1` - First boolean vector
+/// * `point2` - Second boolean vector
+///
+/// # Returns
+///
+/// * The Rogers-Tanimoto distance
+///
+/// # Examples
+///
+/// ```
+/// use scirs2_spatial::distance::rogerstanimoto;
+///
+/// let u = &[true, false, true, false];
+/// let v = &[true, true, false, false];
+///
+/// let dist: f64 = rogerstanimoto(u, v);
+/// println!("Rogers-Tanimoto distance: {}", dist);
+/// ```
+pub fn rogerstanimoto<T: Float>(point1: &[bool], point2: &[bool]) -> T {
+    if point1.len() != point2.len() {
+        return T::nan();
+    }
+
+    let mut n_true_true = 0;
+    let mut n_true_false = 0;
+    let mut n_false_true = 0;
+    let mut n_false_false = 0;
+
+    for i in 0..point1.len() {
+        if point1[i] && point2[i] {
+            n_true_true += 1;
+        } else if point1[i] && !point2[i] {
+            n_true_false += 1;
+        } else if !point1[i] && point2[i] {
+            n_false_true += 1;
+        } else {
+            n_false_false += 1;
+        }
+    }
+
+    let r = n_true_false + n_false_true;
+
+    let num = T::from(2 * r).unwrap();
+    let denom = T::from(n_true_true + n_false_false + 2 * r).unwrap();
+
+    if denom > T::zero() {
+        num / denom
+    } else {
+        T::zero()
+    }
+}
+
+/// Russell-Rao distance between two boolean vectors
+///
+/// The Russell-Rao distance between two boolean vectors u and v is defined as:
+/// (n - c_TT) / n
+/// where c_ij is the number of occurrences of u\[k\]=i and v\[k\]=j for k<n.
+///
+/// # Arguments
+///
+/// * `point1` - First boolean vector
+/// * `point2` - Second boolean vector
+///
+/// # Returns
+///
+/// * The Russell-Rao distance
+///
+/// # Examples
+///
+/// ```
+/// use scirs2_spatial::distance::russellrao;
+///
+/// let u = &[true, false, true, false];
+/// let v = &[true, true, false, false];
+///
+/// let dist: f64 = russellrao(u, v);
+/// println!("Russell-Rao distance: {}", dist);
+/// ```
+pub fn russellrao<T: Float>(point1: &[bool], point2: &[bool]) -> T {
+    if point1.len() != point2.len() {
+        return T::nan();
+    }
+
+    let mut n_true_true = 0;
+    let n = point1.len();
+
+    for i in 0..n {
+        if point1[i] && point2[i] {
+            n_true_true += 1;
+        }
+    }
+
+    let num = T::from(n - n_true_true).unwrap();
+    let denom = T::from(n).unwrap();
+
+    if denom > T::zero() {
+        num / denom
+    } else {
+        T::zero()
+    }
+}
+
+/// Sokal-Michener distance between two boolean vectors
+///
+/// The Sokal-Michener distance between two boolean vectors u and v is defined as:
+/// 2(c_TF + c_FT) / (c_TT + c_FF + 2(c_TF + c_FT))
+/// where c_ij is the number of occurrences of u\[k\]=i and v\[k\]=j for k<n.
+///
+/// # Arguments
+///
+/// * `point1` - First boolean vector
+/// * `point2` - Second boolean vector
+///
+/// # Returns
+///
+/// * The Sokal-Michener distance
+///
+/// # Examples
+///
+/// ```
+/// use scirs2_spatial::distance::sokalmichener;
+///
+/// let u = &[true, false, true, false];
+/// let v = &[true, true, false, false];
+///
+/// let dist: f64 = sokalmichener(u, v);
+/// println!("Sokal-Michener distance: {}", dist);
+/// ```
+pub fn sokalmichener<T: Float>(point1: &[bool], point2: &[bool]) -> T {
+    // This is the same as Rogers-Tanimoto
+    rogerstanimoto(point1, point2)
+}
+
+/// Sokal-Sneath distance between two boolean vectors
+///
+/// The Sokal-Sneath distance between two boolean vectors u and v is defined as:
+/// 2(c_TF + c_FT) / (c_TT + 2(c_TF + c_FT))
+/// where c_ij is the number of occurrences of u\[k\]=i and v\[k\]=j for k<n.
+///
+/// # Arguments
+///
+/// * `point1` - First boolean vector
+/// * `point2` - Second boolean vector
+///
+/// # Returns
+///
+/// * The Sokal-Sneath distance
+///
+/// # Examples
+///
+/// ```
+/// use scirs2_spatial::distance::sokalsneath;
+///
+/// let u = &[true, false, true, false];
+/// let v = &[true, true, false, false];
+///
+/// let dist: f64 = sokalsneath(u, v);
+/// println!("Sokal-Sneath distance: {}", dist);
+/// ```
+pub fn sokalsneath<T: Float>(point1: &[bool], point2: &[bool]) -> T {
+    if point1.len() != point2.len() {
+        return T::nan();
+    }
+
+    let mut n_true_true = 0;
+    let mut n_true_false = 0;
+    let mut n_false_true = 0;
+
+    for i in 0..point1.len() {
+        if point1[i] && point2[i] {
+            n_true_true += 1;
+        } else if point1[i] && !point2[i] {
+            n_true_false += 1;
+        } else if !point1[i] && point2[i] {
+            n_false_true += 1;
+        }
+    }
+
+    let r = n_true_false + n_false_true;
+
+    let num = T::from(2 * r).unwrap();
+    let denom = T::from(n_true_true + 2 * r).unwrap();
+
+    if denom > T::zero() {
+        num / denom
+    } else {
+        T::zero()
+    }
+}
+
+/// Yule distance between two boolean vectors
+///
+/// The Yule distance between two boolean vectors u and v is defined as:
+/// 2(c_TF * c_FT) / (c_TT * c_FF + c_TF * c_FT)
+/// where c_ij is the number of occurrences of u\[k\]=i and v\[k\]=j for k<n.
+///
+/// # Arguments
+///
+/// * `point1` - First boolean vector
+/// * `point2` - Second boolean vector
+///
+/// # Returns
+///
+/// * The Yule distance
+///
+/// # Examples
+///
+/// ```
+/// use scirs2_spatial::distance::yule;
+///
+/// let u = &[true, false, true, false];
+/// let v = &[true, true, false, false];
+///
+/// let dist: f64 = yule(u, v);
+/// println!("Yule distance: {}", dist);
+/// ```
+pub fn yule<T: Float>(point1: &[bool], point2: &[bool]) -> T {
+    if point1.len() != point2.len() {
+        return T::nan();
+    }
+
+    let mut n_true_true = 0;
+    let mut n_true_false = 0;
+    let mut n_false_true = 0;
+    let mut n_false_false = 0;
+
+    for i in 0..point1.len() {
+        if point1[i] && point2[i] {
+            n_true_true += 1;
+        } else if point1[i] && !point2[i] {
+            n_true_false += 1;
+        } else if !point1[i] && point2[i] {
+            n_false_true += 1;
+        } else {
+            n_false_false += 1;
+        }
+    }
+
+    let num = T::from(2 * n_true_false * n_false_true).unwrap();
+    let denom = T::from(n_true_true * n_false_false + n_true_false * n_false_true).unwrap();
+
+    if denom > T::zero() {
+        num / denom
+    } else {
+        T::zero()
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -1206,7 +1573,11 @@ mod tests {
         // Check off-diagonal elements
         assert_relative_eq!(dist_matrix[(0, 1)], 1.0, epsilon = 1e-6);
         assert_relative_eq!(dist_matrix[(0, 2)], 1.0, epsilon = 1e-6);
-        assert_relative_eq!(dist_matrix[(1, 2)], 1.4142135623730951, epsilon = 1e-6);
+        assert_relative_eq!(
+            dist_matrix[(1, 2)],
+            std::f64::consts::SQRT_2,
+            epsilon = 1e-6
+        );
 
         // Check symmetry
         assert_relative_eq!(dist_matrix[(1, 0)], dist_matrix[(0, 1)], epsilon = 1e-6);
@@ -1225,7 +1596,11 @@ mod tests {
         assert_eq!(dist_matrix.shape(), &[2, 2]);
 
         assert_relative_eq!(dist_matrix[(0, 0)], 1.0, epsilon = 1e-6);
-        assert_relative_eq!(dist_matrix[(0, 1)], 1.4142135623730951, epsilon = 1e-6);
+        assert_relative_eq!(
+            dist_matrix[(0, 1)],
+            std::f64::consts::SQRT_2,
+            epsilon = 1e-6
+        );
         assert_relative_eq!(dist_matrix[(1, 0)], 1.0, epsilon = 1e-6);
         assert_relative_eq!(dist_matrix[(1, 1)], 1.0, epsilon = 1e-6);
     }
@@ -1244,372 +1619,5 @@ mod tests {
         // Test conversion from square to condensed form
         let condensed2 = squareform_to_condensed(&square);
         assert_eq!(condensed2, condensed);
-    }
-}
-
-/// Dice distance between two boolean vectors
-///
-/// The Dice distance between two boolean vectors u and v is defined as:
-/// (c_TF + c_FT) / (2 * c_TT + c_FT + c_TF)
-/// where c_ij is the number of occurrences of u[k]=i and v[k]=j for k<n.
-///
-/// # Arguments
-///
-/// * `point1` - First boolean vector
-/// * `point2` - Second boolean vector
-///
-/// # Returns
-///
-/// * The Dice distance
-///
-/// # Examples
-///
-/// ```
-/// use scirs2_spatial::distance::dice;
-///
-/// let u = &[true, false, true, false];
-/// let v = &[true, true, false, false];
-///
-/// let dist: f64 = dice(u, v);
-/// println!("Dice distance: {}", dist);
-/// ```
-pub fn dice<T: Float>(point1: &[bool], point2: &[bool]) -> T {
-    if point1.len() != point2.len() {
-        return T::nan();
-    }
-
-    let mut n_true_true = 0;
-    let mut n_true_false = 0;
-    let mut n_false_true = 0;
-
-    for i in 0..point1.len() {
-        if point1[i] && point2[i] {
-            n_true_true += 1;
-        } else if point1[i] && !point2[i] {
-            n_true_false += 1;
-        } else if !point1[i] && point2[i] {
-            n_false_true += 1;
-        }
-    }
-
-    let num = T::from(n_true_false + n_false_true).unwrap();
-    let denom = T::from(2 * n_true_true + n_true_false + n_false_true).unwrap();
-
-    if denom > T::zero() {
-        num / denom
-    } else {
-        T::zero()
-    }
-}
-
-/// Kulsinski distance between two boolean vectors
-///
-/// The Kulsinski distance between two boolean vectors u and v is defined as:
-/// (c_TF + c_FT - c_TT + n) / (c_FT + c_TF + n)
-/// where c_ij is the number of occurrences of u[k]=i and v[k]=j for k<n.
-///
-/// # Arguments
-///
-/// * `point1` - First boolean vector
-/// * `point2` - Second boolean vector
-///
-/// # Returns
-///
-/// * The Kulsinski distance
-///
-/// # Examples
-///
-/// ```
-/// use scirs2_spatial::distance::kulsinski;
-///
-/// let u = &[true, false, true, false];
-/// let v = &[true, true, false, false];
-///
-/// let dist: f64 = kulsinski(u, v);
-/// println!("Kulsinski distance: {}", dist);
-/// ```
-pub fn kulsinski<T: Float>(point1: &[bool], point2: &[bool]) -> T {
-    if point1.len() != point2.len() {
-        return T::nan();
-    }
-
-    let mut n_true_true = 0;
-    let mut n_true_false = 0;
-    let mut n_false_true = 0;
-    let n = point1.len();
-
-    for i in 0..n {
-        if point1[i] && point2[i] {
-            n_true_true += 1;
-        } else if point1[i] && !point2[i] {
-            n_true_false += 1;
-        } else if !point1[i] && point2[i] {
-            n_false_true += 1;
-        }
-    }
-
-    let num = T::from(n_true_false + n_false_true - n_true_true + n).unwrap();
-    let denom = T::from(n_true_false + n_false_true + n).unwrap();
-
-    if denom > T::zero() {
-        num / denom
-    } else {
-        T::zero()
-    }
-}
-
-/// Rogers-Tanimoto distance between two boolean vectors
-///
-/// The Rogers-Tanimoto distance between two boolean vectors u and v is defined as:
-/// 2(c_TF + c_FT) / (c_TT + c_FF + 2(c_TF + c_FT))
-/// where c_ij is the number of occurrences of u[k]=i and v[k]=j for k<n.
-///
-/// # Arguments
-///
-/// * `point1` - First boolean vector
-/// * `point2` - Second boolean vector
-///
-/// # Returns
-///
-/// * The Rogers-Tanimoto distance
-///
-/// # Examples
-///
-/// ```
-/// use scirs2_spatial::distance::rogerstanimoto;
-///
-/// let u = &[true, false, true, false];
-/// let v = &[true, true, false, false];
-///
-/// let dist: f64 = rogerstanimoto(u, v);
-/// println!("Rogers-Tanimoto distance: {}", dist);
-/// ```
-pub fn rogerstanimoto<T: Float>(point1: &[bool], point2: &[bool]) -> T {
-    if point1.len() != point2.len() {
-        return T::nan();
-    }
-
-    let mut n_true_true = 0;
-    let mut n_true_false = 0;
-    let mut n_false_true = 0;
-    let mut n_false_false = 0;
-
-    for i in 0..point1.len() {
-        if point1[i] && point2[i] {
-            n_true_true += 1;
-        } else if point1[i] && !point2[i] {
-            n_true_false += 1;
-        } else if !point1[i] && point2[i] {
-            n_false_true += 1;
-        } else {
-            n_false_false += 1;
-        }
-    }
-
-    let r = n_true_false + n_false_true;
-
-    let num = T::from(2 * r).unwrap();
-    let denom = T::from(n_true_true + n_false_false + 2 * r).unwrap();
-
-    if denom > T::zero() {
-        num / denom
-    } else {
-        T::zero()
-    }
-}
-
-/// Russell-Rao distance between two boolean vectors
-///
-/// The Russell-Rao distance between two boolean vectors u and v is defined as:
-/// (n - c_TT) / n
-/// where c_ij is the number of occurrences of u[k]=i and v[k]=j for k<n.
-///
-/// # Arguments
-///
-/// * `point1` - First boolean vector
-/// * `point2` - Second boolean vector
-///
-/// # Returns
-///
-/// * The Russell-Rao distance
-///
-/// # Examples
-///
-/// ```
-/// use scirs2_spatial::distance::russellrao;
-///
-/// let u = &[true, false, true, false];
-/// let v = &[true, true, false, false];
-///
-/// let dist: f64 = russellrao(u, v);
-/// println!("Russell-Rao distance: {}", dist);
-/// ```
-pub fn russellrao<T: Float>(point1: &[bool], point2: &[bool]) -> T {
-    if point1.len() != point2.len() {
-        return T::nan();
-    }
-
-    let mut n_true_true = 0;
-    let n = point1.len();
-
-    for i in 0..n {
-        if point1[i] && point2[i] {
-            n_true_true += 1;
-        }
-    }
-
-    let num = T::from(n - n_true_true).unwrap();
-    let denom = T::from(n).unwrap();
-
-    if denom > T::zero() {
-        num / denom
-    } else {
-        T::zero()
-    }
-}
-
-/// Sokal-Michener distance between two boolean vectors
-///
-/// The Sokal-Michener distance between two boolean vectors u and v is defined as:
-/// 2(c_TF + c_FT) / (c_TT + c_FF + 2(c_TF + c_FT))
-/// where c_ij is the number of occurrences of u[k]=i and v[k]=j for k<n.
-///
-/// # Arguments
-///
-/// * `point1` - First boolean vector
-/// * `point2` - Second boolean vector
-///
-/// # Returns
-///
-/// * The Sokal-Michener distance
-///
-/// # Examples
-///
-/// ```
-/// use scirs2_spatial::distance::sokalmichener;
-///
-/// let u = &[true, false, true, false];
-/// let v = &[true, true, false, false];
-///
-/// let dist: f64 = sokalmichener(u, v);
-/// println!("Sokal-Michener distance: {}", dist);
-/// ```
-pub fn sokalmichener<T: Float>(point1: &[bool], point2: &[bool]) -> T {
-    // This is the same as Rogers-Tanimoto
-    rogerstanimoto(point1, point2)
-}
-
-/// Sokal-Sneath distance between two boolean vectors
-///
-/// The Sokal-Sneath distance between two boolean vectors u and v is defined as:
-/// 2(c_TF + c_FT) / (c_TT + 2(c_TF + c_FT))
-/// where c_ij is the number of occurrences of u[k]=i and v[k]=j for k<n.
-///
-/// # Arguments
-///
-/// * `point1` - First boolean vector
-/// * `point2` - Second boolean vector
-///
-/// # Returns
-///
-/// * The Sokal-Sneath distance
-///
-/// # Examples
-///
-/// ```
-/// use scirs2_spatial::distance::sokalsneath;
-///
-/// let u = &[true, false, true, false];
-/// let v = &[true, true, false, false];
-///
-/// let dist: f64 = sokalsneath(u, v);
-/// println!("Sokal-Sneath distance: {}", dist);
-/// ```
-pub fn sokalsneath<T: Float>(point1: &[bool], point2: &[bool]) -> T {
-    if point1.len() != point2.len() {
-        return T::nan();
-    }
-
-    let mut n_true_true = 0;
-    let mut n_true_false = 0;
-    let mut n_false_true = 0;
-
-    for i in 0..point1.len() {
-        if point1[i] && point2[i] {
-            n_true_true += 1;
-        } else if point1[i] && !point2[i] {
-            n_true_false += 1;
-        } else if !point1[i] && point2[i] {
-            n_false_true += 1;
-        }
-    }
-
-    let r = n_true_false + n_false_true;
-
-    let num = T::from(2 * r).unwrap();
-    let denom = T::from(n_true_true + 2 * r).unwrap();
-
-    if denom > T::zero() {
-        num / denom
-    } else {
-        T::zero()
-    }
-}
-
-/// Yule distance between two boolean vectors
-///
-/// The Yule distance between two boolean vectors u and v is defined as:
-/// 2(c_TF * c_FT) / (c_TT * c_FF + c_TF * c_FT)
-/// where c_ij is the number of occurrences of u[k]=i and v[k]=j for k<n.
-///
-/// # Arguments
-///
-/// * `point1` - First boolean vector
-/// * `point2` - Second boolean vector
-///
-/// # Returns
-///
-/// * The Yule distance
-///
-/// # Examples
-///
-/// ```
-/// use scirs2_spatial::distance::yule;
-///
-/// let u = &[true, false, true, false];
-/// let v = &[true, true, false, false];
-///
-/// let dist: f64 = yule(u, v);
-/// println!("Yule distance: {}", dist);
-/// ```
-pub fn yule<T: Float>(point1: &[bool], point2: &[bool]) -> T {
-    if point1.len() != point2.len() {
-        return T::nan();
-    }
-
-    let mut n_true_true = 0;
-    let mut n_true_false = 0;
-    let mut n_false_true = 0;
-    let mut n_false_false = 0;
-
-    for i in 0..point1.len() {
-        if point1[i] && point2[i] {
-            n_true_true += 1;
-        } else if point1[i] && !point2[i] {
-            n_true_false += 1;
-        } else if !point1[i] && point2[i] {
-            n_false_true += 1;
-        } else {
-            n_false_false += 1;
-        }
-    }
-
-    let num = T::from(2 * n_true_false * n_false_true).unwrap();
-    let denom = T::from(n_true_true * n_false_false + n_true_false * n_false_true).unwrap();
-
-    if denom > T::zero() {
-        num / denom
-    } else {
-        T::zero()
     }
 }

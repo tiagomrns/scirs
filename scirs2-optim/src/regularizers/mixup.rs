@@ -403,8 +403,8 @@ mod tests {
         assert_ne!(lambda1, lambda3);
 
         // Lambda should be between 0 and 1
-        assert!(lambda1 >= 0.0.into() && lambda1 <= 1.0.into());
-        assert!(lambda3 >= 0.0.into() && lambda3 <= 1.0.into());
+        assert!((0.0..=1.0).contains(&lambda1));
+        assert!((0.0..=1.0).contains(&lambda3));
     }
 
     #[test]

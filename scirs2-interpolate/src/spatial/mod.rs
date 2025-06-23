@@ -60,7 +60,16 @@
 //! ```
 
 pub mod balltree;
+pub mod enhanced_search;
 pub mod kdtree;
+pub mod optimized_search;
 
 pub use balltree::BallTree;
+pub use enhanced_search::{
+    make_enhanced_searcher, make_high_performance_searcher, EnhancedNearestNeighborSearcher,
+    IndexType, SearchConfig,
+};
 pub use kdtree::KdTree;
+#[cfg(feature = "parallel")]
+pub use optimized_search::ParallelQueryProcessor;
+pub use optimized_search::{CacheFriendlyKNN, OptimizedSpatialSearch, SimdDistanceOps};

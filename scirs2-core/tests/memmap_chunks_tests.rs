@@ -2,7 +2,8 @@
 mod tests {
     use ndarray::Array1;
     use scirs2_core::memory_efficient::{
-        create_mmap, AccessMode, ChunkingStrategy, MemoryMappedChunkIter, MemoryMappedChunks,
+        create_mmap, AccessMode, ChunkingStrategy, MemoryMappedArray, MemoryMappedChunkIter,
+        MemoryMappedChunks,
     };
     use tempfile::tempdir;
 
@@ -88,7 +89,14 @@ mod tests {
         // Create memory-mapped array
         let temp_dir = tempdir().unwrap();
         let file_path = temp_dir.path().join("test_chunks_mutation.bin");
-        let mut mmap = create_mmap(&data, &file_path, AccessMode::Write, 0).unwrap();
+
+        // Use save_array to create the file with proper header
+        use scirs2_core::memory_efficient::ZeroCopySerialization;
+        MemoryMappedArray::<i32>::save_array(&data, &file_path, None).unwrap();
+
+        // Open for read-write access
+        let mut mmap =
+            MemoryMappedArray::<i32>::open_zero_copy(&file_path, AccessMode::ReadWrite).unwrap();
 
         // Get the original data
         let original = mmap.as_array::<ndarray::Ix1>().unwrap();
@@ -105,9 +113,16 @@ mod tests {
             }
         });
 
+        // Flush changes to disk
+        mmap.flush().unwrap();
+
         // Verify changes persisted by reading directly from the file
+        // Drop the mmap to ensure file is closed
+        drop(mmap);
+
+        // Reopen the file
         let reopened_mmap =
-            create_mmap::<i32, _, _>(&data, &file_path, AccessMode::ReadOnly, 0).unwrap();
+            MemoryMappedArray::<i32>::open_zero_copy(&file_path, AccessMode::ReadOnly).unwrap();
         let modified = reopened_mmap.as_array::<ndarray::Ix1>().unwrap();
 
         println!(

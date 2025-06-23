@@ -1817,7 +1817,7 @@ pub fn determine_data_type(bits: u8) -> super::QuantizedDataType {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::prelude::{dequantize_matrix, quantize_matrix};
+    use crate::quantization::{dequantize_matrix, quantize_matrix};
     use approx::assert_relative_eq;
     use ndarray::array;
 

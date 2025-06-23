@@ -305,8 +305,8 @@ mod tests {
         let result = qmr(&identity, &b, options).unwrap();
         assert!(result.converged);
         assert_eq!(result.iterations, 1); // Should converge in 1 iteration
-        for i in 0..3 {
-            assert!((result.x[i] - b[i]).abs() < 1e-10);
+        for (i, &b_val) in b.iter().enumerate() {
+            assert!((result.x[i] - b_val).abs() < 1e-10);
         }
     }
 
@@ -316,7 +316,7 @@ mod tests {
         let diag = vec![2.0, 3.0, 4.0];
         let diagonal = DiagonalOperator::new(diag.clone());
         let b = vec![2.0, 6.0, 8.0]; // [2, 3, 4] * [1, 2, 2] = [2, 6, 8]
-        let expected = vec![1.0, 2.0, 2.0];
+        let expected = [1.0, 2.0, 2.0];
 
         let options = QMROptions {
             rtol: 1e-10,
@@ -327,13 +327,13 @@ mod tests {
         let result = qmr(&diagonal, &b, options).unwrap();
         assert!(result.converged);
         assert!(result.iterations <= 10); // May take a few more iterations
-        for i in 0..3 {
+        for (i, &exp_val) in expected.iter().enumerate() {
             assert!(
-                (result.x[i] - expected[i]).abs() < 1e-9,
+                (result.x[i] - exp_val).abs() < 1e-9,
                 "x[{}] = {} != {}",
                 i,
                 result.x[i],
-                expected[i]
+                exp_val
             );
         }
     }
@@ -355,8 +355,8 @@ mod tests {
         let result = qmr(&identity, &b, options).unwrap();
         assert!(result.converged);
         assert!(result.iterations <= 1); // Should converge very quickly
-        for i in 0..3 {
-            assert!((result.x[i] - b[i]).abs() < 1e-10);
+        for (i, &b_val) in b.iter().enumerate() {
+            assert!((result.x[i] - b_val).abs() < 1e-10);
         }
     }
 

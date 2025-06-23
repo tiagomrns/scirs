@@ -43,6 +43,10 @@ SciRS2 is a comprehensive scientific computing and AI/ML infrastructure in Rust,
 - **Type Safety**: Strong typing and compile-time checks
 - **Error Handling**: Comprehensive error system with context
 
+## Project Scale
+
+This project now contains **over 1.5 million lines of code** and runs **over 6,500 tests** across all modules, demonstrating the comprehensive nature of the SciRS2 ecosystem.
+
 ## Project Goals
 
 - Create a comprehensive scientific computing and machine learning library in Rust
@@ -62,6 +66,7 @@ SciRS2 adopts a modular architecture with separate crates for different function
 # Core Scientific Computing Modules
 ├── Cargo.toml                # Workspace configuration
 ├── scirs2-core/              # Core utilities and common functionality
+├── scirs2-autograd/          # Automatic differentiation engine
 ├── scirs2-linalg/            # Linear algebra module
 ├── scirs2-integrate/         # Numerical integration
 ├── scirs2-interpolate/       # Interpolation algorithms
@@ -80,7 +85,6 @@ SciRS2 adopts a modular architecture with separate crates for different function
 ├── scirs2-datasets/          # Sample datasets and loaders
 
 # AI/ML Modules
-├── scirs2-autograd/          # Automatic differentiation engine
 ├── scirs2-neural/            # Neural network building blocks
 ├── scirs2-optim/             # ML-specific optimization algorithms
 ├── scirs2-graph/             # Graph processing algorithms
@@ -178,6 +182,7 @@ Each module has its own README with detailed documentation and is available on c
 ### Core Modules
 - [**scirs2-core**](scirs2-core/README.md): Core utilities and common functionality [![crates.io](https://img.shields.io/crates/v/scirs2-core.svg)](https://crates.io/crates/scirs2-core)
 - [**scirs2-linalg**](scirs2-linalg/README.md): Linear algebra module [![crates.io](https://img.shields.io/crates/v/scirs2-linalg.svg)](https://crates.io/crates/scirs2-linalg)
+- [**scirs2-autograd**](scirs2-autograd/README.md): Automatic differentiation engine [![crates.io](https://img.shields.io/crates/v/scirs2-autograd.svg)](https://crates.io/crates/scirs2-autograd)
 - [**scirs2-integrate**](scirs2-integrate/README.md): Numerical integration [![crates.io](https://img.shields.io/crates/v/scirs2-integrate.svg)](https://crates.io/crates/scirs2-integrate)
 - [**scirs2-interpolate**](scirs2-interpolate/README.md): Interpolation algorithms [![crates.io](https://img.shields.io/crates/v/scirs2-interpolate.svg)](https://crates.io/crates/scirs2-interpolate)
 - [**scirs2-optimize**](scirs2-optimize/README.md): Optimization algorithms [![crates.io](https://img.shields.io/crates/v/scirs2-optimize.svg)](https://crates.io/crates/scirs2-optimize)
@@ -195,7 +200,6 @@ Each module has its own README with detailed documentation and is available on c
 - [**scirs2-datasets**](scirs2-datasets/README.md): Sample datasets and loaders [![crates.io](https://img.shields.io/crates/v/scirs2-datasets.svg)](https://crates.io/crates/scirs2-datasets)
 
 ### AI/ML Modules
-- [**scirs2-autograd**](scirs2-autograd/README.md): Automatic differentiation engine [![crates.io](https://img.shields.io/crates/v/scirs2-autograd.svg)](https://crates.io/crates/scirs2-autograd)
 - [**scirs2-neural**](scirs2-neural/README.md): Neural network building blocks [![crates.io](https://img.shields.io/crates/v/scirs2-neural.svg)](https://crates.io/crates/scirs2-neural)
 - [**scirs2-optim**](scirs2-optim/README.md): ML-specific optimization algorithms [![crates.io](https://img.shields.io/crates/v/scirs2-optim.svg)](https://crates.io/crates/scirs2-optim)
 - [**scirs2-graph**](scirs2-graph/README.md): Graph processing algorithms [![crates.io](https://img.shields.io/crates/v/scirs2-graph.svg)](https://crates.io/crates/scirs2-graph)
@@ -283,7 +287,7 @@ SciRS2 and all its modules are available on [crates.io](https://crates.io/crates
 ```toml
 # Add the main integration crate for all functionality
 [dependencies]
-scirs2 = "0.1.0-alpha.4"
+scirs2 = "0.1.0-alpha.5"
 ```
 
 Or include only the specific modules you need:
@@ -291,16 +295,16 @@ Or include only the specific modules you need:
 ```toml
 [dependencies]
 # Core utilities
-scirs2-core = "0.1.0-alpha.4"
+scirs2-core = "0.1.0-alpha.5"
 
 # Scientific computing modules
-scirs2-linalg = "0.1.0-alpha.4"
-scirs2-stats = "0.1.0-alpha.4"
-scirs2-optimize = "0.1.0-alpha.4"
+scirs2-linalg = "0.1.0-alpha.5"
+scirs2-stats = "0.1.0-alpha.5"
+scirs2-optimize = "0.1.0-alpha.5"
 
 # AI/ML modules
-scirs2-neural = "0.1.0-alpha.4"
-scirs2-autograd = "0.1.0-alpha.4"
+scirs2-neural = "0.1.0-alpha.5"
+scirs2-autograd = "0.1.0-alpha.5"
 ```
 
 ### Example Usage
@@ -463,26 +467,28 @@ The following modules are in preview state and may undergo API changes:
 - **Memory Metrics** for detailed memory usage analysis
 - **Optimized SIMD Operations** for performance-critical code
 
-### Current Focus: Module Integration
+### Key Capabilities
 
-We are currently working on:
-- Integrating advanced core features across all modules
-- Performance optimization and benchmarking
-- Comprehensive documentation and examples
-- API refinement based on community feedback
+SciRS2 provides:
+- **Advanced Error Handling**: Comprehensive error framework with recovery strategies, async support, and diagnostics engine
+- **Computer Vision Registration**: Rigid, affine, homography, and non-rigid registration algorithms with RANSAC robustness
+- **Performance Benchmarking**: Automated benchmarking framework with SciPy comparison and optimization tools
+- **Numerical Precision**: High-precision eigenvalue solvers and optimized numerical algorithms
 
-### Publication Status and Plans
+### Installation
 
-All SciRS2 modules have been published to crates.io as alpha releases (0.1.0-alpha.4), making the entire ecosystem available to the Rust community while development continues.
+All SciRS2 modules are available on crates.io. Add the modules you need to your `Cargo.toml`:
 
-- **Alpha Release (0.1.0-alpha.1)**: Initial modules released on crates.io (April 2025)
-- **Alpha Release (0.1.0-alpha.2)**: All modules released on crates.io (May 2025)
-- **Alpha Release (0.1.0-alpha.3)**: Fixed memory metrics snapshot system and updated tests (May 2025)
-- **Alpha Release (0.1.0-alpha.4)**: Enhanced autograd module, fixed matrix operations, and cleaned up repository (June 2025)
-- **Beta Release (0.1.0-beta.1)**: Planned after incorporating feedbacks (July 2025)
-- **First Stable Release (0.1.0)**: Targeted after API stabilization and comprehensive testing (August 2025)
+```toml
+[dependencies]
+scirs2 = "0.1.0-alpha.5"  # Core library with all modules
+# Or individual modules:
+scirs2-linalg = "0.1.0-alpha.5"  # Linear algebra
+scirs2-stats = "0.1.0-alpha.5"   # Statistics
+# ... and more
+```
 
-For a detailed development roadmap, check the [TODO.md](TODO.md) file.
+For development roadmap and contribution guidelines, see [TODO.md](TODO.md) and [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ## Performance Characteristics
 

@@ -146,10 +146,25 @@ where
     // Copy the input values
     full_spectrum.extend_from_slice(&complex_input);
 
-    // For the test to pass, we need a simpler approach
-    // Just resize with zeros which matches the test expectations for our specific test case
-    // signal=[1,2,3,4], n_output=8 -> recovered=[1,2,3,4]
+    // If we need more values, use Hermitian symmetry to reconstruct them
     if n_output > input_len {
+        // For rfft output, we have n//2 + 1 values
+        // To reconstruct the full spectrum, we need to add the conjugate values
+        // in reverse order (excluding DC and Nyquist if present)
+        let start_idx = if n_output % 2 == 0 {
+            input_len - 1
+        } else {
+            input_len
+        };
+
+        for i in (1..start_idx).rev() {
+            if full_spectrum.len() >= n_output {
+                break;
+            }
+            full_spectrum.push(complex_input[i].conj());
+        }
+
+        // If we still need more values (shouldn't happen with proper rfft output), pad with zeros
         full_spectrum.resize(n_output, Complex64::zero());
     }
 

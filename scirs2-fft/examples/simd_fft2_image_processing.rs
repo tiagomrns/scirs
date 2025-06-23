@@ -102,7 +102,7 @@ fn frequency_domain_filter(
     filter_type: &str,
 ) -> Vec<f64> {
     // Step 1: Compute the 2D FFT of the image
-    let spectrum = fft2_adaptive(image, [height, width], None, None).unwrap();
+    let spectrum = fft2_adaptive(image, Some((height, width)), None).unwrap();
 
     // Step 2: Create a frequency domain filter
     let mut filter = vec![Complex64::new(0.0, 0.0); width * height];
@@ -177,7 +177,7 @@ fn frequency_domain_filter(
 
     // Step 4: Compute the inverse 2D FFT
     let filtered_image_complex =
-        ifft2_adaptive(&filtered_spectrum, [height, width], None, None).unwrap();
+        ifft2_adaptive(&filtered_spectrum, Some((height, width)), None).unwrap();
 
     // Step 5: Extract real part (the filtered image)
     let filtered_image: Vec<f64> = filtered_image_complex.iter().map(|c| c.re).collect();

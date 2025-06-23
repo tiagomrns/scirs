@@ -1,11 +1,11 @@
-//! Parallel K-means clustering implementation using Rayon
+//! Parallel K-means clustering implementation using core parallel operations
 //!
 //! This module provides a parallel implementation of the K-means clustering algorithm
 //! that leverages multiple CPU cores for improved performance on large datasets.
 
-use ndarray::{s, Array1, Array2, ArrayView1, ArrayView2, Axis};
+use ndarray::{s, Array1, Array2, ArrayView2, Axis};
 use num_traits::{Float, FromPrimitive};
-use rayon::prelude::*;
+use scirs2_core::parallel_ops::*;
 use std::fmt::Debug;
 use std::sync::Mutex;
 
@@ -101,12 +101,10 @@ where
 
     let opts = options.unwrap_or_default();
 
-    // Set thread pool size if specified
-    if let Some(n_threads) = opts.n_threads {
-        rayon::ThreadPoolBuilder::new()
-            .num_threads(n_threads)
-            .build_global()
-            .ok();
+    // Set thread pool size if specified (note: core parallel operations manage threading)
+    if let Some(_n_threads) = opts.n_threads {
+        // Core parallel operations handle thread management automatically
+        // The n_threads parameter is noted but core handles optimal thread allocation
     }
 
     let mut best_centroids = None;
@@ -319,21 +317,6 @@ where
         .sum();
 
     Ok(inertia)
-}
-
-/// Compute squared Euclidean distance between two vectors (for performance)
-#[inline]
-#[allow(dead_code)]
-fn squared_euclidean_distance<F>(x: ArrayView1<F>, y: ArrayView1<F>) -> F
-where
-    F: Float + FromPrimitive,
-{
-    let mut sum = F::zero();
-    for i in 0..x.len() {
-        let diff = x[i] - y[i];
-        sum = sum + diff * diff;
-    }
-    sum
 }
 
 #[cfg(test)]

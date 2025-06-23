@@ -80,7 +80,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         &noisy_signal,
         sparsity,
         Some(SparseFFTAlgorithm::Sublinear),
-        Some(WindowFunction::Hann),
+        None,
     )?;
     let duration_cpu = start.elapsed();
     println!("CPU time: {:.3} ms", duration_cpu.as_millis());
@@ -88,8 +88,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     // CPU implementation with spectral flatness algorithm
     println!("Running CPU sparse FFT with spectral flatness algorithm...");
     let start = Instant::now();
-    let result_spectral =
-        spectral_flatness_sparse_fft(&noisy_signal, 0.3, 32, Some(WindowFunction::Hann))?;
+    let result_spectral = spectral_flatness_sparse_fft(&noisy_signal, 0.3, 32)?;
     let duration_spectral = start.elapsed();
     println!(
         "CPU time with spectral flatness: {:.3} ms",
@@ -123,10 +122,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let result_direct = execute_cuda_spectral_flatness_sparse_fft(
         &signal_complex,
         sparsity,
-        Some(0.3), // Flatness threshold
-        Some(32),  // Window size
-        WindowFunction::Hann,
-        0, // Use first CUDA device
+        0.3, // Flatness threshold
     )?;
     let duration_direct = start.elapsed();
     println!(

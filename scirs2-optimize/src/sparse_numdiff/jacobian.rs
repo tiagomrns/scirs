@@ -4,7 +4,7 @@
 //! using various finite difference methods.
 
 use ndarray::{Array1, ArrayView1};
-use rayon::prelude::*;
+use scirs2_core::parallel_ops::*;
 use scirs2_sparse::{csr_array::CsrArray, sparray::SparseArray};
 
 use super::coloring::determine_column_groups;

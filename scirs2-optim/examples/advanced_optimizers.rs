@@ -4,6 +4,10 @@ use ndarray::Array1;
 use plotters::prelude::*;
 use scirs2_optim::optimizers::{Adam, AdamW, Optimizer, RAdam, RMSprop, SGD};
 
+// Type aliases to simplify complex types
+type OptimizerList = Vec<(String, Box<dyn Optimizer<f64, ndarray::Ix1>>)>;
+type OptimizerSlice<'a> = &'a [(String, Box<dyn Optimizer<f64, ndarray::Ix1>>)];
+
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Define a simple 2D quadratic function: f(x, y) = x^2 + 2y^2
     // Minimum at (0, 0)
@@ -13,7 +17,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let learning_rate = 0.1;
     let num_iterations = 100;
 
-    let mut optimizers: Vec<(String, Box<dyn Optimizer<f64, ndarray::Ix1>>)> = vec![
+    let mut optimizers: OptimizerList = vec![
         ("SGD".to_string(), Box::new(SGD::new(learning_rate))),
         ("Adam".to_string(), Box::new(Adam::new(learning_rate))),
         ("AdamW".to_string(), Box::new(AdamW::new(learning_rate))),
@@ -87,7 +91,7 @@ fn compute_gradients(params: &Array1<f64>) -> Array1<f64> {
 fn plot_paths(
     filename: &str,
     paths: &[Vec<(f64, f64)>],
-    optimizers: &[(String, Box<dyn Optimizer<f64, ndarray::Ix1>>)],
+    optimizers: OptimizerSlice,
 ) -> Result<(), Box<dyn std::error::Error>> {
     // Determine plot boundaries
     let mut x_min = f64::INFINITY;
@@ -155,28 +159,28 @@ fn plot_paths(
 
         // Draw markers at start and end
         chart.draw_series(PointSeries::of_element(
-            vec![path.first().unwrap().clone()],
+            vec![*path.first().unwrap()],
             5,
             color,
             &|c, s, st| Circle::new(c, s, st.filled()),
         ))?;
 
         chart.draw_series(PointSeries::of_element(
-            vec![path.last().unwrap().clone()],
+            vec![*path.last().unwrap()],
             5,
             color,
             &|c, s, st| {
                 EmptyElement::at(c)
                     + Circle::new((0, 0), s, st.filled())
-                    + Text::new(format!("{}", name), (10, 0), ("sans-serif", 10).into_font())
+                    + Text::new(name.to_string(), (10, 0), ("sans-serif", 10).into_font())
             },
         ))?;
     }
 
     chart
         .configure_series_labels()
-        .background_style(&WHITE.mix(0.8))
-        .border_style(&BLACK)
+        .background_style(WHITE.mix(0.8))
+        .border_style(BLACK)
         .draw()?;
 
     println!("Path plot saved to {}", filename);
@@ -188,7 +192,7 @@ fn plot_paths(
 fn plot_loss_history(
     filename: &str,
     loss_histories: &[Vec<f64>],
-    optimizers: &[(String, Box<dyn Optimizer<f64, ndarray::Ix1>>)],
+    optimizers: OptimizerSlice,
 ) -> Result<(), Box<dyn std::error::Error>> {
     let root = BitMapBackend::new(filename, (800, 600)).into_drawing_area();
     root.fill(&WHITE)?;
@@ -236,8 +240,8 @@ fn plot_loss_history(
 
     chart
         .configure_series_labels()
-        .background_style(&WHITE.mix(0.8))
-        .border_style(&BLACK)
+        .background_style(WHITE.mix(0.8))
+        .border_style(BLACK)
         .draw()?;
 
     println!("Loss history plot saved to {}", filename);

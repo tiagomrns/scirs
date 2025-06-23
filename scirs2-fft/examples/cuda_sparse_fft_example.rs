@@ -2,10 +2,11 @@ use num_complex::Complex64;
 use plotly::common::Title;
 use plotly::{common::Mode, layout::Axis, Layout, Plot, Scatter};
 use scirs2_fft::{
-    cuda_sparse_fft, get_cuda_devices, is_cuda_available, sparse_fft,
-    sparse_fft::{SparseFFTAlgorithm, WindowFunction},
+    sparse_fft,
+    sparse_fft::SparseFFTAlgorithm,
     sparse_fft_gpu::GPUBackend,
-    sparse_fft_gpu_memory::init_global_memory_manager,
+    sparse_fft_gpu_cuda::{cuda_sparse_fft, get_cuda_devices},
+    sparse_fft_gpu_memory::{init_global_memory_manager, is_cuda_available},
 };
 use std::f64::consts::PI;
 
@@ -24,18 +25,8 @@ fn main() {
         let devices = get_cuda_devices().unwrap();
         println!("Found {} CUDA device(s):", devices.len());
 
-        for device in &devices {
-            println!(
-                "  - Device {}: {} ({:.1} GB)",
-                device.device_id,
-                device.name,
-                device.total_memory as f64 / (1024.0 * 1024.0 * 1024.0)
-            );
-            println!(
-                "    Compute capability: {}.{}",
-                device.compute_capability.0, device.compute_capability.1
-            );
-            println!("    Multiprocessors: {}", device.multiprocessor_count);
+        for (idx, device) in devices.iter().enumerate() {
+            println!("  - Device {} (initialized: {})", idx, device.initialized);
         }
     }
 
@@ -61,13 +52,7 @@ fn main() {
     // 2. Compute regular CPU sparse FFT for comparison
     println!("\nComputing regular CPU sparse FFT for comparison...");
     let cpu_start = std::time::Instant::now();
-    let cpu_result = sparse_fft(
-        &signal,
-        6,
-        Some(SparseFFTAlgorithm::Sublinear),
-        Some(WindowFunction::Hann),
-    )
-    .unwrap();
+    let cpu_result = sparse_fft(&signal, 6, Some(SparseFFTAlgorithm::Sublinear), None).unwrap();
     let cpu_elapsed = cpu_start.elapsed();
 
     println!(
@@ -85,7 +70,7 @@ fn main() {
         6,
         0, // Use first CUDA device
         Some(SparseFFTAlgorithm::Sublinear),
-        Some(WindowFunction::Hann),
+        None,
     )
     .unwrap();
     let cuda_elapsed = cuda_start.elapsed();
@@ -178,13 +163,8 @@ fn main() {
 
     // CPU
     let cpu_start = std::time::Instant::now();
-    let _large_cpu_result = sparse_fft(
-        &large_signal,
-        6,
-        Some(SparseFFTAlgorithm::Sublinear),
-        Some(WindowFunction::Hann),
-    )
-    .unwrap();
+    let _large_cpu_result =
+        sparse_fft(&large_signal, 6, Some(SparseFFTAlgorithm::Sublinear), None).unwrap();
     let cpu_elapsed = cpu_start.elapsed();
 
     // CUDA
@@ -194,7 +174,7 @@ fn main() {
         6,
         0, // Use first CUDA device
         Some(SparseFFTAlgorithm::Sublinear),
-        Some(WindowFunction::Hann),
+        None,
     )
     .unwrap();
     let cuda_elapsed = cuda_start.elapsed();

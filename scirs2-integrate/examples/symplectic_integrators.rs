@@ -120,7 +120,7 @@ fn pendulum() {
         println!("  Final energy: {:.6}", final_energy);
         println!(
             "  Absolute energy change: {:.2e}",
-            ((final_energy - initial_energy) as f64).abs()
+            f64::abs(final_energy - initial_energy)
         );
     }
     println!();
@@ -166,7 +166,7 @@ fn kepler_orbit() {
 
     for i in 0..result.q.len() {
         let q = &result.q[i];
-        let radius = ((q[0] * q[0] + q[1] * q[1]) as f64).sqrt();
+        let radius = f64::sqrt(q[0] * q[0] + q[1] * q[1]);
 
         min_radius = min_radius.min(radius);
         max_radius = max_radius.max(radius);
@@ -180,7 +180,7 @@ fn kepler_orbit() {
 
     // Check if orbit is closed
     let final_q = result.q.last().unwrap();
-    let final_radius = ((final_q[0] * final_q[0] + final_q[1] * final_q[1]) as f64).sqrt();
+    let final_radius = f64::sqrt(final_q[0] * final_q[0] + final_q[1] * final_q[1]);
 
     println!("  Final radius: {:.6}", final_radius);
     println!();

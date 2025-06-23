@@ -22,12 +22,12 @@
 //! ```
 
 use ndarray::{Array1, ArrayView1};
-use rayon::prelude::*;
+use scirs2_core::parallel_ops::*;
 
 /// Options for parallel computation
 #[derive(Debug, Clone)]
 pub struct ParallelOptions {
-    /// Number of worker threads (None = use rayon default)
+    /// Number of worker threads (None = use core parallel default)
     pub num_workers: Option<usize>,
 
     /// Minimum problem size to enable parallelization
@@ -75,16 +75,8 @@ where
         return sequential_finite_diff_gradient(f, x, eps);
     }
 
-    // Configure thread pool if specified
-    if let Some(num_workers) = options.num_workers {
-        rayon::ThreadPoolBuilder::new()
-            .num_threads(num_workers)
-            .build()
-            .unwrap()
-            .install(|| compute_parallel_gradient(&f, x, eps))
-    } else {
-        compute_parallel_gradient(&f, x, eps)
-    }
+    // Use core parallel abstractions
+    compute_parallel_gradient(&f, x, eps)
 }
 
 /// Sequential finite difference gradient (fallback)

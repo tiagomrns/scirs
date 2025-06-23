@@ -56,7 +56,7 @@
 
 use ndarray::{Array1, ArrayView2};
 use num_traits::Float;
-use rayon::prelude::*;
+use scirs2_core::parallel_ops::*;
 use std::fmt::Debug;
 
 use crate::error::InterpolateResult;
@@ -91,15 +91,12 @@ impl ParallelConfig {
         self
     }
 
-    /// Initialize a Rayon thread pool with the configured number of workers
-    pub fn init_thread_pool(&self) -> Result<rayon::ThreadPool, rayon::ThreadPoolBuildError> {
-        let mut builder = rayon::ThreadPoolBuilder::new();
-
-        if let Some(n_workers) = self.n_workers {
-            builder = builder.num_threads(n_workers);
-        }
-
-        builder.build()
+    /// Thread pool initialization is now handled globally by scirs2-core
+    /// This method is kept for compatibility but no longer creates a new pool
+    pub fn init_thread_pool(&self) -> InterpolateResult<()> {
+        // Thread pool configuration is now handled globally by scirs2-core
+        // The n_workers parameter is preserved for future use but currently ignored
+        Ok(())
     }
 
     /// Get the chunk size to use for a given total size

@@ -39,9 +39,11 @@ fn test_cgs_well_conditioned() {
     let op = matrix.as_linear_operator();
 
     let b = vec![5.0, 5.0, 4.5];
-    let mut options = CGSOptions::default();
-    options.rtol = 1e-8;
-    options.atol = 1e-10;
+    let options = CGSOptions::<f64> {
+        rtol: 1e-8,
+        atol: 1e-10,
+        ..Default::default()
+    };
 
     let result = cgs(op.as_ref(), &b, options).unwrap();
 
@@ -80,18 +82,22 @@ fn test_cgs_with_preconditioner() {
     let b = vec![11.5, 10.0, 8.0, 5.5];
 
     // Without preconditioner
-    let mut options_no_precond = CGSOptions::default();
-    options_no_precond.max_iter = 100;
-    options_no_precond.rtol = 1e-6;
+    let options_no_precond = CGSOptions::<f64> {
+        max_iter: 100,
+        rtol: 1e-6,
+        ..Default::default()
+    };
 
     let result_no_precond = cgs(op.as_ref(), &b, options_no_precond).unwrap();
 
     // With Jacobi preconditioner
     let precond = JacobiPreconditioner::new(&matrix).unwrap();
-    let mut options_precond = CGSOptions::default();
-    options_precond.max_iter = 100;
-    options_precond.rtol = 1e-6;
-    options_precond.right_preconditioner = Some(Box::new(precond) as Box<dyn LinearOperator<f64>>);
+    let options_precond = CGSOptions::<f64> {
+        max_iter: 100,
+        rtol: 1e-6,
+        right_preconditioner: Some(Box::new(precond) as Box<dyn LinearOperator<f64>>),
+        ..Default::default()
+    };
 
     let result_precond = cgs(op.as_ref(), &b, options_precond).unwrap();
 
@@ -150,10 +156,12 @@ fn test_cgs_real_world_pattern() {
     // Create a simple RHS
     let b: Vec<f64> = (0..n * n).map(|i| (i + 1) as f64).collect();
 
-    let mut options = CGSOptions::default();
-    options.max_iter = 200; // May need more iterations for larger problems
-    options.rtol = 1e-5;
-    options.atol = 1e-7;
+    let options = CGSOptions::<f64> {
+        max_iter: 200, // May need more iterations for larger problems
+        rtol: 1e-5,
+        atol: 1e-7,
+        ..Default::default()
+    };
 
     let result = cgs(op.as_ref(), &b, options).unwrap();
 
@@ -181,8 +189,10 @@ fn test_cgs_symmetric_vs_cg() {
     let op = matrix.as_linear_operator();
 
     let b = vec![2.0, 2.0, 2.0];
-    let mut options = CGSOptions::default();
-    options.rtol = 1e-8;
+    let options = CGSOptions::<f64> {
+        rtol: 1e-8,
+        ..Default::default()
+    };
 
     let result = cgs(op.as_ref(), &b, options).unwrap();
 

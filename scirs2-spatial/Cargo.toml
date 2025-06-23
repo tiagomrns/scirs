@@ -1,6 +1,6 @@
 [package]
 name = "scirs2-spatial"
-version = "0.1.0-alpha.4"
+version = "0.1.0-alpha.5"
 edition = "2021"
 authors = ["SciRS2 Team"]
 description = "Spatial algorithms module for SciRS2"
@@ -11,11 +11,11 @@ categories = ["science", "mathematics", "algorithms"]
 
 [dependencies]
 # Core dependencies
+scirs2-core = { workspace = true, features = ["simd", "parallel", "linalg"] }
 ndarray = { workspace = true }
 num-traits = { workspace = true }
 num-complex = { workspace = true }
 thiserror = { workspace = true }
-rayon = { workspace = true }
 num = { workspace = true }
 approx = { workspace = true }
 
@@ -23,9 +23,9 @@ approx = { workspace = true }
 qhull = { workspace = true }
 rand = { workspace = true }
 
-# Linear algebra dependencies
-scirs2-linalg = { workspace = true }
-ndarray-linalg = { workspace = true }
+# Linear algebra dependencies handled through scirs2-core
+# scirs2-linalg = { workspace = true }  # Temporarily disabled due to compilation errors
+# ndarray-linalg = { workspace = true } # Removed - use scirs2-core BLAS abstractions
 
 [features]
 default = []
@@ -36,3 +36,24 @@ approx = { workspace = true }
 criterion = { workspace = true }
 rand_chacha = { workspace = true }
 plotters = { workspace = true }
+num_cpus = { workspace = true }
+
+[[bench]]
+name = "spatial_benchmarks"
+harness = false
+
+[[bench]]
+name = "simple_spatial_bench"
+harness = false
+
+[[bench]]
+name = "quick_spatial_bench"
+harness = false
+
+[[bench]]
+name = "minimal_bench"
+harness = false
+
+[[bench]]
+name = "simd_bench"
+harness = false

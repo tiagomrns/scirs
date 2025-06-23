@@ -5,6 +5,7 @@ use crate::error::{OptimizeError, OptimizeResult};
 use crate::result::OptimizeResults;
 use ndarray::{Array1, Array2, ArrayBase, Axis, Data, Ix1};
 
+#[allow(clippy::many_single_char_names)]
 pub fn minimize_trust_constr<F, S>(
     func: F,
     x0: &ArrayBase<S, Ix1>,
@@ -272,6 +273,7 @@ where
 }
 
 /// Compute a trust-region step for constrained optimization
+#[allow(clippy::many_single_char_names)]
 fn compute_trust_region_step_constrained(
     g: &Array1<f64>,
     b: &Array2<f64>,

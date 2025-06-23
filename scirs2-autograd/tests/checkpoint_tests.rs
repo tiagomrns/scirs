@@ -10,12 +10,12 @@ fn test_checkpoint_basic() {
         let b = T::convert_to_tensor(array![[5.0, 6.0], [7.0, 8.0]], ctx);
 
         // Regular computation without checkpointing
-        let c1 = T::matmul(&a, &b);
-        let d1 = T::sum_all(&c1);
+        let c1 = T::matmul(a, b);
+        let d1 = T::sum_all(c1);
 
         // Same computation with checkpointing
-        let c2 = T::checkpoint(&T::matmul(&a, &b));
-        let d2 = T::sum_all(&c2);
+        let c2 = T::checkpoint(&T::matmul(a, b));
+        let d2 = T::sum_all(c2);
 
         // Both computations should yield the same result
         let result1 = d1.eval(ctx).unwrap();
@@ -51,7 +51,7 @@ fn test_detach() {
 
         // Create a computation that uses the detached tensor
         let b = T::detach(&a);
-        let c = T::sum_all(&b);
+        let c = T::sum_all(b);
 
         // The forward computation should work as normal
         let result = c.eval(ctx).unwrap();
@@ -82,14 +82,14 @@ fn test_checkpoint_segment() {
         let b = T::convert_to_tensor(array![[5.0, 6.0], [7.0, 8.0]], ctx);
 
         // First approach: run computations directly
-        let c1 = T::matmul(&a, &b);
-        let d1 = T::square(&c1);
-        let result1 = T::sum_all(&d1);
+        let c1 = T::matmul(a, b);
+        let d1 = T::square(c1);
+        let result1 = T::sum_all(d1);
 
         // Second approach: use manual checkpointing
-        let c2 = T::checkpoint(&T::matmul(&a, &b));
-        let d2 = T::square(&c2);
-        let result2 = T::sum_all(&d2);
+        let c2 = T::checkpoint(&T::matmul(a, b));
+        let d2 = T::square(c2);
+        let result2 = T::sum_all(d2);
 
         // Both should produce the same result
         let val1 = result1.eval(ctx).unwrap();
@@ -127,20 +127,20 @@ fn test_checkpoint_deep_network() {
         let w3 = T::convert_to_tensor(array![[1.1], [1.2]], ctx);
 
         // Regular computation
-        let layer1 = T::matmul(&input, &w1);
-        let act1 = T::relu(&layer1);
-        let layer2 = T::matmul(&act1, &w2);
-        let act2 = T::relu(&layer2);
-        let output = T::matmul(&act2, &w3);
-        let loss = T::sum_all(&output);
+        let layer1 = T::matmul(input, w1);
+        let act1 = T::relu(layer1);
+        let layer2 = T::matmul(act1, w2);
+        let act2 = T::relu(layer2);
+        let output = T::matmul(act2, w3);
+        let loss = T::sum_all(output);
 
         // Same computation with checkpointing
-        let layer1_ckpt = T::matmul(&input, &w1);
-        let act1_ckpt = T::checkpoint(&T::relu(&layer1_ckpt));
-        let layer2_ckpt = T::matmul(&act1_ckpt, &w2);
-        let act2_ckpt = T::checkpoint(&T::relu(&layer2_ckpt));
-        let output_ckpt = T::matmul(&act2_ckpt, &w3);
-        let loss_ckpt = T::sum_all(&output_ckpt);
+        let layer1_ckpt = T::matmul(input, w1);
+        let act1_ckpt = T::checkpoint(&T::relu(layer1_ckpt));
+        let layer2_ckpt = T::matmul(act1_ckpt, w2);
+        let act2_ckpt = T::checkpoint(&T::relu(layer2_ckpt));
+        let output_ckpt = T::matmul(act2_ckpt, w3);
+        let loss_ckpt = T::sum_all(output_ckpt);
 
         // Both computations should produce the same result
         let result = loss.eval(ctx).unwrap();
@@ -186,12 +186,12 @@ fn test_adaptive_checkpoint() {
         let threshold = 1000;
 
         // Regular computation
-        let c1 = T::matmul(&a, &b);
-        let d1 = T::sum_all(&c1);
+        let c1 = T::matmul(a, b);
+        let d1 = T::sum_all(c1);
 
         // Small tensor with adaptive checkpoint (should not checkpoint)
-        let c2 = T::adaptive_checkpoint(&T::matmul(&a, &b), threshold);
-        let d2 = T::sum_all(&c2);
+        let c2 = T::adaptive_checkpoint(&T::matmul(a, b), threshold);
+        let d2 = T::sum_all(c2);
 
         // Large tensor with adaptive checkpoint (should checkpoint)
         let _large_result = T::adaptive_checkpoint(&large_tensor, threshold);
@@ -235,13 +235,13 @@ fn test_checkpoint_group() {
         // Run functions directly without using a separate closure
 
         // Regular computation
-        let c1 = T::matmul(&a, &b);
-        let d1 = T::transpose(&c1, &[1, 0]);
+        let c1 = T::matmul(a, b);
+        let d1 = T::transpose(c1, &[1, 0]);
 
         // Checkpoint group computation
-        let (c2, d2) = ckpt_group.checkpoint_fn((&a, &b), |inputs| {
+        let (c2, d2) = ckpt_group.checkpoint_fn((a, &b), |inputs| {
             let c = T::matmul(inputs.0, inputs.1);
-            let d = T::transpose(&c, &[1, 0]);
+            let d = T::transpose(c, &[1, 0]);
             (c, d)
         });
 
@@ -272,8 +272,8 @@ fn test_checkpoint_group() {
         }
 
         // Compute gradients through both outputs
-        let loss1 = T::sum_all(&c1) + T::sum_all(&d1);
-        let loss2 = T::sum_all(&c2) + T::sum_all(&d2);
+        let loss1 = T::sum_all(c1) + T::sum_all(d1);
+        let loss2 = T::sum_all(c2) + T::sum_all(d2);
 
         let grad1 = T::grad(&[loss1], &[&a])[0];
         let grad2 = T::grad(&[loss2], &[&a])[0];
@@ -301,9 +301,9 @@ fn test_stop_gradient() {
         let a = T::convert_to_tensor(array![[1.0, 2.0], [3.0, 4.0]], ctx);
 
         // Apply stop_gradient (which is an alias for detach)
-        let b = T::stop_gradient(&a);
-        let c = T::square(&b);
-        let d = T::sum_all(&c);
+        let b = T::stop_gradient(a);
+        let c = T::square(b);
+        let d = T::sum_all(c);
 
         // Forward pass should work normally
         let result = d.eval(ctx).unwrap();

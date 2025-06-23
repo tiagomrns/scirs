@@ -288,8 +288,7 @@ mod tests {
     #[test]
     fn test_lookahead_with_config() {
         let sgd = SGD::new(0.01);
-        let optimizer: Lookahead<f64, _, ndarray::Ix1> =
-            Lookahead::with_config(sgd, 0.8.into(), 10);
+        let optimizer: Lookahead<f64, _, ndarray::Ix1> = Lookahead::with_config(sgd, 0.8, 10);
 
         assert_abs_diff_eq!(optimizer.alpha(), 0.8);
         assert_eq!(optimizer.k(), 10);
@@ -299,8 +298,7 @@ mod tests {
     fn test_lookahead_step() {
         let mut sgd = SGD::new(0.1);
         sgd.set_momentum(0.0);
-        let mut optimizer: Lookahead<f64, _, ndarray::Ix1> =
-            Lookahead::with_config(sgd, 0.5.into(), 2);
+        let mut optimizer: Lookahead<f64, _, ndarray::Ix1> = Lookahead::with_config(sgd, 0.5, 2);
 
         let params = Array1::from_vec(vec![1.0, 2.0, 3.0]);
         let gradients = Array1::from_vec(vec![0.1, 0.2, 0.3]);
@@ -342,8 +340,7 @@ mod tests {
     fn test_slow_weights_for_eval() {
         let mut sgd = SGD::new(0.1);
         sgd.set_momentum(0.0);
-        let mut optimizer: Lookahead<f64, _, ndarray::Ix1> =
-            Lookahead::with_config(sgd, 0.5.into(), 2);
+        let mut optimizer: Lookahead<f64, _, ndarray::Ix1> = Lookahead::with_config(sgd, 0.5, 2);
 
         let params = Array1::from_vec(vec![1.0, 2.0, 3.0]);
         let gradients = Array1::from_vec(vec![0.1, 0.2, 0.3]);

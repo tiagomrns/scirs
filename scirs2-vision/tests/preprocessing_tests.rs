@@ -222,12 +222,12 @@ fn test_normalize_brightness() {
 
     // Darkest should be around 0.2*255 = ~51, brightest around 0.8*255 = ~204
     assert!(
-        darkest_normalized >= 50 && darkest_normalized <= 52,
+        (50..=52).contains(&darkest_normalized),
         "Normalized darkest value should be around 51, got {}",
         darkest_normalized
     );
     assert!(
-        brightest_normalized >= 203 && brightest_normalized <= 205,
+        (203..=205).contains(&brightest_normalized),
         "Normalized brightest value should be around 204, got {}",
         brightest_normalized
     );

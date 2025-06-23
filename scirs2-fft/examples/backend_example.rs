@@ -82,7 +82,7 @@ fn main() {
 
     // All should work with the same interface
     let result1 = fft(&vec_input, None).unwrap();
-    let result2 = fft(&ndarray_input.as_slice().unwrap(), None).unwrap();
+    let result2 = fft(ndarray_input.as_slice().unwrap(), None).unwrap();
 
     println!("  Vec input FFT: success");
     println!("  ndarray input FFT: success");

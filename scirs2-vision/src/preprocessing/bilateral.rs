@@ -6,7 +6,7 @@
 use crate::error::Result;
 #[allow(unused_imports)] // GenericImageView is used for the dimensions() method
 use image::{DynamicImage, GenericImageView, GrayImage, ImageBuffer, Luma, Rgb, RgbImage};
-use rayon::prelude::*;
+use scirs2_core::parallel_ops::*;
 use std::sync::Arc;
 
 /// Parameters for bilateral filtering

@@ -1,6 +1,6 @@
 [package]
 name = "scirs2-cluster"
-version = "0.1.0-alpha.4"
+version = "0.1.0-alpha.5"
 edition = "2021"
 authors = ["SciRS2 Team"]
 license = "MIT OR Apache-2.0"
@@ -11,15 +11,26 @@ categories = ["science", "mathematics", "algorithms"]
 
 [dependencies]
 # Core dependencies
-scirs2-core = { workspace = true }
+scirs2-core = { workspace = true, features = ["parallel", "simd"] }
 scirs2-spatial = { workspace = true }
 scirs2-linalg = { workspace = true }
 scirs2-stats = { workspace = true }
 ndarray = { workspace = true }
-ndarray-linalg = { workspace = true }
+# BLAS dependencies removed - using core abstractions
+# ndarray-linalg = { workspace = true }
 num-traits = { workspace = true }
 thiserror = { workspace = true }
 rand = { workspace = true }
 rand_distr = { workspace = true }
 approx = { workspace = true }
-rayon = { workspace = true }
+
+[dev-dependencies]
+proptest = "1.4.0"
+criterion = { version = "0.5", features = ["html_reports"] }
+
+[features]
+default = []
+
+[[bench]]
+name = "clustering_benchmarks"
+harness = false

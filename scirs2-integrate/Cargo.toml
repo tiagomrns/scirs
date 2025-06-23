@@ -1,6 +1,6 @@
 [package]
 name = "scirs2-integrate"
-version = "0.1.0-alpha.4"
+version = "0.1.0-alpha.5"
 edition = "2021"
 authors = ["SciRS2 Team"]
 description = "Numerical integration module for SciRS2"
@@ -25,10 +25,10 @@ libc = { workspace = true }
 libm = { workspace = true }
 sobol = { workspace = true }
 halton = { workspace = true }
+# Note: wide crate is accessed via scirs2-core, not directly
 
 # Optional dependencies
 scirs2-autograd = { workspace = true, optional = true }
-rayon = { workspace = true, optional = true }
 
 [dev-dependencies]
 approx = { workspace = true }
@@ -39,11 +39,15 @@ plotters = { workspace = true }
 name = "integrator_bench"
 harness = false
 
+[[bench]]
+name = "scipy_comparison"
+harness = false
+
 [features]
 default = []
 simd = ["scirs2-core/simd"]
-parallel = ["scirs2-core/parallel", "rayon"]
+parallel = ["scirs2-core/parallel"]
 autodiff = ["scirs2-autograd"]
 symplectic = []  # Feature flag for symplectic integrators
-parallel_jacobian = ["rayon"]  # Feature flag for parallel Jacobian computation
+parallel_jacobian = ["scirs2-core/parallel"]  # Feature flag for parallel Jacobian computation
 new_ode = []  # Feature flag for new ODE module structure

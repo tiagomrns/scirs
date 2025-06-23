@@ -254,7 +254,7 @@ mod tests {
         let gradients = Array1::from_vec(vec![0.1, 0.2, 0.3]);
 
         // Create optimizer
-        let mut optimizer = AdamW::new(0.01.into());
+        let mut optimizer = AdamW::new(0.01);
 
         // Run one step
         let new_params = optimizer.step(&params, &gradients).unwrap();
@@ -277,11 +277,7 @@ mod tests {
 
         // Create optimizer with small learning rate and high weight decay
         let mut optimizer = AdamW::new_with_config(
-            0.01.into(),
-            0.9.into(),
-            0.999.into(),
-            1e-8.into(),
-            0.1.into(), // high weight decay
+            0.01, 0.9, 0.999, 1e-8, 0.1, // high weight decay
         );
 
         // Run multiple steps
@@ -325,7 +321,7 @@ mod tests {
         let gradients = Array1::from_vec(vec![0.1, 0.2, 0.3]);
 
         // Create optimizer
-        let mut optimizer = AdamW::new(0.01.into());
+        let mut optimizer = AdamW::new(0.01);
 
         // Run one step
         optimizer.step(&params, &gradients).unwrap();

@@ -4,13 +4,14 @@ use crate::tensor_ops::convert_to_tensor;
 use crate::Float;
 use ndarray::Array2;
 use ndarray::ScalarOperand;
-use ndarray_linalg::{Lapack, UPLO};
+// BLAS dependencies removed - using core abstractions
+// use ndarray_linalg::{Lapack, UPLO};
 
 /// Cholesky decomposition operation with gradient support
 #[derive(Clone)]
 pub(crate) struct CholeskyOp;
 
-impl<F: Float + Lapack + ScalarOperand> Op<F> for CholeskyOp {
+impl<F: Float + ScalarOperand> Op<F> for CholeskyOp {
     fn name(&self) -> &'static str {
         "Cholesky"
     }
@@ -24,41 +25,33 @@ impl<F: Float + Lapack + ScalarOperand> Op<F> for CholeskyOp {
         }
 
         // Get ndarray data directly
-        let matrix = input
+        let _matrix = input
             .view()
             .into_dimensionality::<ndarray::Ix2>()
             .map_err(|_| OpError::Other("Failed to convert to 2D array".into()))?;
 
-        // To use cholesky, we need to create a mutable copy
-        let mut matrix_data = matrix.to_owned();
+        // TODO: Replace with scirs2-core linear algebra when available
+        // For now, return an error as Cholesky decomposition requires BLAS
+        return Err(OpError::Other(
+            "Cholesky decomposition not yet implemented - waiting for scirs2-core linear algebra module".to_string(),
+        ));
 
-        // Compute Cholesky decomposition (lower triangular)
-        // Use the associated function correctly
-        let result = ndarray_linalg::Lapack::cholesky(
-            ndarray_linalg::MatrixLayout::C {
-                row: shape[0] as i32,
-                lda: shape[0] as i32,
-            },
-            UPLO::Lower,
-            matrix_data.as_slice_mut().unwrap(),
-        );
+        #[allow(unreachable_code)]
+        {
+            // When implemented, we'll need to create a mutable copy and process it
+            let mut matrix_data = _matrix.to_owned();
 
-        if result.is_err() {
-            return Err(OpError::Other(
-                "Cholesky decomposition failed - matrix not positive definite".into(),
-            ));
-        }
-
-        // The result is stored in-place in matrix_data (lower triangular part)
-        // Zero out the upper triangular part to get a clean L matrix
-        for i in 0..shape[0] {
-            for j in (i + 1)..shape[1] {
-                matrix_data[[i, j]] = F::zero();
+            // The result is stored in-place in matrix_data (lower triangular part)
+            // Zero out the upper triangular part to get a clean L matrix
+            for i in 0..shape[0] {
+                for j in (i + 1)..shape[1] {
+                    matrix_data[[i, j]] = F::zero();
+                }
             }
-        }
 
-        ctx.append_output(matrix_data.into_dyn());
-        Ok(())
+            ctx.append_output(matrix_data.into_dyn());
+            Ok(())
+        } // End unreachable block
     }
 
     fn grad(&self, ctx: &mut GradientContext<F>) {
@@ -545,7 +538,7 @@ impl<F: Float> Op<F> for BandMatrixOp {
 // Public API functions
 
 /// Compute Cholesky decomposition with gradient support
-pub fn cholesky<'g, F: Float + Lapack + ScalarOperand>(matrix: &Tensor<'g, F>) -> Tensor<'g, F> {
+pub fn cholesky<'g, F: Float + ScalarOperand>(matrix: &Tensor<'g, F>) -> Tensor<'g, F> {
     let g = matrix.graph();
     Tensor::builder(g)
         .append_input(matrix, false)

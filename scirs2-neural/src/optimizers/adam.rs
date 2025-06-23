@@ -241,17 +241,4 @@ impl<F: Float + ScalarOperand + Debug> Optimizer<F> for Adam<F> {
 }
 
 // Enable direct usage of scirs2-optim's Adam when the optim feature is enabled
-#[cfg(feature = "optim")]
-impl<F: Float + ScalarOperand + Debug + 'static> Adam<F> {
-    /// Create a wrapper around scirs2-optim's Adam optimizer
-    pub fn from_optim_adam(
-        learning_rate: F,
-        beta1: F,
-        beta2: F,
-        epsilon: F,
-        weight_decay: F,
-    ) -> super::wrappers::OptimOptimizerWrapper<F, ndarray::IxDyn, scirs2_optim::optimizers::Adam<F>>
-    {
-        super::wrappers::wrap_adam(learning_rate, beta1, beta2, epsilon, weight_decay)
-    }
-}
+// TODO: Uncomment when scirs2-optim crate is available

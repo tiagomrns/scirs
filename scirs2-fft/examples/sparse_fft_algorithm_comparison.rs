@@ -8,8 +8,8 @@ use rand_distr::{Distribution, Normal};
 use scirs2_fft::{
     sparse_fft::{SparseFFTAlgorithm, SparseFFTResult, WindowFunction},
     sparse_fft_gpu::GPUBackend,
-    sparse_fft_gpu_cuda::{cuda_sparse_fft, get_cuda_devices, is_cuda_available},
-    sparse_fft_gpu_memory::{init_global_memory_manager, AllocationStrategy},
+    sparse_fft_gpu_cuda::{cuda_sparse_fft, get_cuda_devices},
+    sparse_fft_gpu_memory::{init_global_memory_manager, is_cuda_available, AllocationStrategy},
 };
 use std::f64::consts::PI;
 use std::time::Instant;
@@ -23,10 +23,10 @@ fn create_sparse_signal(n: usize, frequencies: &[(usize, f64)], noise_level: f64
     let mut signal = vec![0.0; n];
 
     // Add sinusoidal components
-    for i in 0..n {
+    for (i, sample) in signal.iter_mut().enumerate().take(n) {
         let t = 2.0 * PI * (i as f64) / (n as f64);
         for &(freq, amp) in frequencies {
-            signal[i] += amp * (freq as f64 * t).sin();
+            *sample += amp * (freq as f64 * t).sin();
         }
     }
 
@@ -47,10 +47,10 @@ fn calculate_frequency_error(result: &SparseFFTResult, true_frequencies: &[(usiz
 
     // For each true frequency, find the closest detected frequency
     for &(true_freq, _true_amp) in true_frequencies {
-        let mut min_error = std::f64::MAX;
+        let mut min_error = f64::MAX;
 
         // Find the closest detected frequency
-        for (_i, &detected_freq) in result.indices.iter().enumerate() {
+        for &detected_freq in result.indices.iter() {
             let error =
                 (detected_freq as f64 - true_freq as f64).abs() / (true_freq as f64).max(1.0);
             if error < min_error {
@@ -426,14 +426,8 @@ fn main() {
         let devices = get_cuda_devices().unwrap();
         println!("\nCUDA is available with {} device(s):", devices.len());
 
-        for device in &devices {
-            println!(
-                "  - {} (Device {}, Compute Capability {}.{})",
-                device.name,
-                device.device_id,
-                device.compute_capability.0,
-                device.compute_capability.1
-            );
+        for (idx, device) in devices.iter().enumerate() {
+            println!("  - Device {} (initialized: {})", idx, device.initialized);
         }
 
         // Initialize GPU memory manager

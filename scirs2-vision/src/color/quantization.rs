@@ -7,7 +7,7 @@ use crate::error::Result;
 use image::{DynamicImage, Rgb, RgbImage};
 use rand::prelude::*;
 use rand::{rng, Rng};
-use rayon::prelude::*;
+use scirs2_core::parallel_ops::*;
 use std::collections::HashMap;
 
 /// K-means color quantization parameters

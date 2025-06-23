@@ -158,7 +158,7 @@ fn run_1d_benchmarks(results: &mut Vec<BenchmarkResult>) {
         let iterations = if size < 10000 { 100 } else { 20 };
 
         let standard_fn = || fft(&signal, None).unwrap();
-        let simd_fn = || fft_simd(&signal, None, None).unwrap();
+        let simd_fn = || fft_simd(&signal, None).unwrap();
 
         run_benchmark(
             results,
@@ -176,7 +176,7 @@ fn run_1d_benchmarks(results: &mut Vec<BenchmarkResult>) {
         let iterations = if size < 10000 { 100 } else { 20 };
 
         let standard_fn = || fft(&signal, None).unwrap();
-        let simd_fn = || fft_simd(&signal, None, None).unwrap();
+        let simd_fn = || fft_simd(&signal, None).unwrap();
 
         run_benchmark(
             results,
@@ -203,7 +203,10 @@ fn run_2d_benchmarks(results: &mut Vec<BenchmarkResult>) {
             result.into_raw_vec_and_offset().0
         };
 
-        let simd_fn = || fft2_simd(&signal, [size, size], None, None).unwrap();
+        let simd_fn = || {
+            let result = fft2_simd(&signal, Some((size, size)), None).unwrap();
+            result.into_raw_vec_and_offset().0
+        };
 
         run_benchmark(
             results,
@@ -238,7 +241,10 @@ fn run_nd_benchmarks(results: &mut Vec<BenchmarkResult>) {
             result.into_raw_vec_and_offset().0
         };
 
-        let simd_fn = || fftn_simd(&signal, &shape, None, None).unwrap();
+        let simd_fn = || {
+            let result = fftn_simd(&signal, Some(&shape), None, None).unwrap();
+            result.into_raw_vec_and_offset().0
+        };
 
         run_benchmark(
             results,
@@ -271,7 +277,10 @@ fn run_nd_benchmarks(results: &mut Vec<BenchmarkResult>) {
             result.into_raw_vec_and_offset().0
         };
 
-        let simd_fn = || fftn_simd(&signal, &shape, None, None).unwrap();
+        let simd_fn = || {
+            let result = fftn_simd(&signal, Some(&shape), None, None).unwrap();
+            result.into_raw_vec_and_offset().0
+        };
 
         run_benchmark(
             results,

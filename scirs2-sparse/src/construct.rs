@@ -298,6 +298,143 @@ where
     }
 }
 
+/// Creates a random sparse array with specified density
+///
+/// # Arguments
+/// * `shape` - Shape of the output array (m, n)
+/// * `density` - Density of non-zero elements (between 0.0 and 1.0)
+/// * `seed` - Optional seed for the random number generator
+/// * `format` - Format of the output array ("csr" or "coo")
+///
+/// # Returns
+/// A sparse array with random non-zero elements
+///
+/// # Examples
+///
+/// ```
+/// use scirs2_sparse::construct::random_array;
+///
+/// // Create a 10x10 array with 30% non-zero elements
+/// let random = random_array::<f64>((10, 10), 0.3, None, "csr").unwrap();
+/// assert_eq!(random.shape(), (10, 10));
+///
+/// // Create a random array with a specific seed
+/// let seeded = random_array::<f64>((5, 5), 0.5, Some(42), "coo").unwrap();
+/// assert_eq!(seeded.shape(), (5, 5));
+/// ```
+pub fn random_array<T>(
+    shape: (usize, usize),
+    density: f64,
+    seed: Option<u64>,
+    format: &str,
+) -> SparseResult<Box<dyn SparseArray<T>>>
+where
+    T: Float
+        + Add<Output = T>
+        + Sub<Output = T>
+        + Mul<Output = T>
+        + Div<Output = T>
+        + Debug
+        + Copy
+        + 'static,
+{
+    let (m, n) = shape;
+
+    if !(0.0..=1.0).contains(&density) {
+        return Err(SparseError::ValueError(
+            "Density must be between 0.0 and 1.0".to_string(),
+        ));
+    }
+
+    if m == 0 || n == 0 {
+        return Err(SparseError::ValueError(
+            "Matrix dimensions must be positive".to_string(),
+        ));
+    }
+
+    // Calculate the number of non-zero elements
+    let nnz = (m * n) as f64 * density;
+    let nnz = nnz.round() as usize;
+
+    // Create random indices
+    let mut rows = Vec::with_capacity(nnz);
+    let mut cols = Vec::with_capacity(nnz);
+    let mut data = Vec::with_capacity(nnz);
+
+    // Create RNG
+    let mut rng = if let Some(seed_value) = seed {
+        rand::rngs::StdRng::seed_from_u64(seed_value)
+    } else {
+        // For a random seed, use rng
+        let seed = rand::Rng::random::<u64>(&mut rand::rng());
+        rand::rngs::StdRng::seed_from_u64(seed)
+    };
+
+    // Generate random elements
+    let total = m * n;
+
+    if density > 0.4 {
+        // For high densities, more efficient to generate a mask
+        let mut indices: Vec<usize> = (0..total).collect();
+        indices.shuffle(&mut rng);
+
+        for &idx in indices.iter().take(nnz) {
+            let row = idx / n;
+            let col = idx % n;
+
+            rows.push(row);
+            cols.push(col);
+
+            // Generate random non-zero value
+            // For simplicity, using values between -1 and 1
+            let mut val: f64 = rng.random_range(-1.0..1.0);
+            // Make sure the value is not zero
+            while val.abs() < 1e-10 {
+                val = rng.random_range(-1.0..1.0);
+            }
+            data.push(T::from(val).unwrap());
+        }
+    } else {
+        // For low densities, use a set to track already-chosen positions
+        let mut positions = std::collections::HashSet::with_capacity(nnz);
+
+        while positions.len() < nnz {
+            let row = rng.random_range(0..m);
+            let col = rng.random_range(0..n);
+            let pos = row * n + col; // Using row/col as usize indices
+
+            if positions.insert(pos) {
+                rows.push(row);
+                cols.push(col);
+
+                // Generate random non-zero value
+                let mut val: f64 = rng.random_range(-1.0..1.0);
+                // Make sure the value is not zero
+                while val.abs() < 1e-10 {
+                    val = rng.random_range(-1.0..1.0);
+                }
+                data.push(T::from(val).unwrap());
+            }
+        }
+    }
+
+    // Create the output array
+    match format.to_lowercase().as_str() {
+        "csr" => CsrArray::from_triplets(&rows, &cols, &data, shape, false)
+            .map(|array| Box::new(array) as Box<dyn SparseArray<T>>),
+        "coo" => CooArray::from_triplets(&rows, &cols, &data, shape, false)
+            .map(|array| Box::new(array) as Box<dyn SparseArray<T>>),
+        "dok" => DokArray::from_triplets(&rows, &cols, &data, shape)
+            .map(|array| Box::new(array) as Box<dyn SparseArray<T>>),
+        "lil" => LilArray::from_triplets(&rows, &cols, &data, shape)
+            .map(|array| Box::new(array) as Box<dyn SparseArray<T>>),
+        _ => Err(SparseError::ValueError(format!(
+            "Unknown sparse format: {}. Supported formats are 'csr', 'coo', 'dok', and 'lil'",
+            format
+        ))),
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -453,142 +590,5 @@ mod tests {
             "Too many non-zeros in LIL: {}",
             nnz_lil
         );
-    }
-}
-
-/// Creates a random sparse array with specified density
-///
-/// # Arguments
-/// * `shape` - Shape of the output array (m, n)
-/// * `density` - Density of non-zero elements (between 0.0 and 1.0)
-/// * `seed` - Optional seed for the random number generator
-/// * `format` - Format of the output array ("csr" or "coo")
-///
-/// # Returns
-/// A sparse array with random non-zero elements
-///
-/// # Examples
-///
-/// ```
-/// use scirs2_sparse::construct::random_array;
-///
-/// // Create a 10x10 array with 30% non-zero elements
-/// let random = random_array::<f64>((10, 10), 0.3, None, "csr").unwrap();
-/// assert_eq!(random.shape(), (10, 10));
-///
-/// // Create a random array with a specific seed
-/// let seeded = random_array::<f64>((5, 5), 0.5, Some(42), "coo").unwrap();
-/// assert_eq!(seeded.shape(), (5, 5));
-/// ```
-pub fn random_array<T>(
-    shape: (usize, usize),
-    density: f64,
-    seed: Option<u64>,
-    format: &str,
-) -> SparseResult<Box<dyn SparseArray<T>>>
-where
-    T: Float
-        + Add<Output = T>
-        + Sub<Output = T>
-        + Mul<Output = T>
-        + Div<Output = T>
-        + Debug
-        + Copy
-        + 'static,
-{
-    let (m, n) = shape;
-
-    if !(0.0..=1.0).contains(&density) {
-        return Err(SparseError::ValueError(
-            "Density must be between 0.0 and 1.0".to_string(),
-        ));
-    }
-
-    if m == 0 || n == 0 {
-        return Err(SparseError::ValueError(
-            "Matrix dimensions must be positive".to_string(),
-        ));
-    }
-
-    // Calculate the number of non-zero elements
-    let nnz = (m * n) as f64 * density;
-    let nnz = nnz.round() as usize;
-
-    // Create random indices
-    let mut rows = Vec::with_capacity(nnz);
-    let mut cols = Vec::with_capacity(nnz);
-    let mut data = Vec::with_capacity(nnz);
-
-    // Create RNG
-    let mut rng = if let Some(seed_value) = seed {
-        rand::rngs::StdRng::seed_from_u64(seed_value)
-    } else {
-        // For a random seed, use rng
-        let seed = rand::Rng::random::<u64>(&mut rand::rng());
-        rand::rngs::StdRng::seed_from_u64(seed)
-    };
-
-    // Generate random elements
-    let total = m * n;
-
-    if density > 0.4 {
-        // For high densities, more efficient to generate a mask
-        let mut indices: Vec<usize> = (0..total).collect();
-        indices.shuffle(&mut rng);
-
-        for &idx in indices.iter().take(nnz) {
-            let row = idx / n;
-            let col = idx % n;
-
-            rows.push(row);
-            cols.push(col);
-
-            // Generate random non-zero value
-            // For simplicity, using values between -1 and 1
-            let mut val: f64 = rng.random_range(-1.0..1.0);
-            // Make sure the value is not zero
-            while val.abs() < 1e-10 {
-                val = rng.random_range(-1.0..1.0);
-            }
-            data.push(T::from(val).unwrap());
-        }
-    } else {
-        // For low densities, use a set to track already-chosen positions
-        let mut positions = std::collections::HashSet::with_capacity(nnz);
-
-        while positions.len() < nnz {
-            let row = rng.random_range(0..m);
-            let col = rng.random_range(0..n);
-            let pos = row * n + col; // Using row/col as usize indices
-
-            if positions.insert(pos) {
-                rows.push(row);
-                cols.push(col);
-
-                // Generate random non-zero value
-                let mut val: f64 = rng.random_range(-1.0..1.0);
-                // Make sure the value is not zero
-                while val.abs() < 1e-10 {
-                    val = rng.random_range(-1.0..1.0);
-                }
-                data.push(T::from(val).unwrap());
-            }
-        }
-    }
-
-    // Create the output array
-    match format.to_lowercase().as_str() {
-        "csr" => CsrArray::from_triplets(&rows, &cols, &data, shape, false)
-            .map(|array| Box::new(array) as Box<dyn SparseArray<T>>),
-        "coo" => CooArray::from_triplets(&rows, &cols, &data, shape, false)
-            .map(|array| Box::new(array) as Box<dyn SparseArray<T>>),
-        "dok" => DokArray::from_triplets(&rows, &cols, &data, shape)
-            .map(|array| Box::new(array) as Box<dyn SparseArray<T>>),
-        "lil" => LilArray::from_triplets(&rows, &cols, &data, shape)
-            .map(|array| Box::new(array) as Box<dyn SparseArray<T>>),
-        _ => Err(SparseError::ValueError(format!(
-            "Unknown sparse format: {}. Supported formats are 'csr', 'coo', 'dok', and 'lil'",
-            format
-        ))),
     }
 }

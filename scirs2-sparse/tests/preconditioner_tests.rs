@@ -23,8 +23,10 @@ fn test_cg_with_jacobi_preconditioner() {
     let b = vec![2.0, 1.0, 2.0];
 
     // Solve with preconditioner
-    let mut options = CGOptions::default();
-    options.preconditioner = Some(Box::new(precond));
+    let options = CGOptions::<f64> {
+        preconditioner: Some(Box::new(precond)),
+        ..Default::default()
+    };
 
     let result = cg(op.as_ref(), &b, options).unwrap();
 

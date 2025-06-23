@@ -3,11 +3,11 @@
 //! This module provides utilities for parallel text processing
 //! using multiple threads.
 
-use crate::error::{Result, TextError};
+use crate::error::Result;
 use crate::tokenize::Tokenizer;
 use crate::vectorize::Vectorizer;
 use ndarray::Array2;
-use rayon::prelude::*;
+use scirs2_core::parallel_ops::*;
 use std::sync::{Arc, Mutex};
 
 /// Parallel tokenizer
@@ -159,7 +159,7 @@ pub struct ParallelTextProcessor {
 impl Default for ParallelTextProcessor {
     fn default() -> Self {
         Self {
-            num_threads: rayon::current_num_threads(),
+            num_threads: num_threads(),
         }
     }
 }
@@ -280,23 +280,12 @@ impl ParallelCorpusProcessor {
         F: Fn(&[&str]) -> Result<Vec<R>> + Send + Sync,
         R: Send,
     {
-        // Configure thread pool if requested
-        let pool_builder = rayon::ThreadPoolBuilder::new();
-        let pool_builder = if let Some(threads) = self.num_threads {
-            pool_builder.num_threads(threads)
-        } else {
-            pool_builder
-        };
-
-        let pool = pool_builder
-            .build()
-            .map_err(|e| TextError::RuntimeError(format!("Failed to build thread pool: {}", e)))?;
-
-        // Process in batches
+        // Process in batches using scirs2-core parallel abstractions
         let results = Arc::new(Mutex::new(Vec::new()));
         let errors = Arc::new(Mutex::new(Vec::new()));
 
-        pool.install(|| {
+        // Use scirs2-core parallel processing instead of custom thread pool
+        {
             // Collect results with indices to preserve order
             let indexed_results: Vec<_> = corpus
                 .par_chunks(self.batch_size)
@@ -312,7 +301,7 @@ impl ParallelCorpusProcessor {
                 if let Err(e) = result {
                     let mut errors = errors.lock().unwrap();
                     errors.push(e.clone());
-                    return;
+                    return Err(e.clone());
                 }
             }
 
@@ -325,7 +314,7 @@ impl ParallelCorpusProcessor {
             for (_, batch_results) in sorted_results {
                 results_guard.extend(batch_results);
             }
-        });
+        }
 
         // Check for errors
         let errors = errors.lock().unwrap();

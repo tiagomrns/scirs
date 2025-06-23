@@ -12,7 +12,7 @@ use crate::sparse_fft_gpu::{GPUBackend, GPUSparseFFTConfig};
 
 use num_complex::Complex64;
 use num_traits::NumCast;
-use rayon::prelude::*;
+use scirs2_core::parallel_ops::*;
 use std::fmt::Debug;
 use std::time::Instant;
 
@@ -337,10 +337,7 @@ where
                 let result = crate::execute_cuda_spectral_flatness_sparse_fft(
                     &signal_complex?,
                     0, // Will be determined automatically
-                    Some(flatness_threshold),
-                    Some(window_size),
-                    window,
-                    device,
+                    flatness_threshold,
                 )?;
 
                 all_results.push(result);

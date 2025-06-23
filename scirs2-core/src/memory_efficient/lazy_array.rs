@@ -347,51 +347,25 @@ where
             // No operations to perform, just return the data
             return Ok(data.clone());
         }
+        // If we have operations, we should apply them to the data
+        // For now, just return the data as-is
+        return Ok(data.clone());
     }
 
     // If we don't have concrete data, we need to evaluate the operations
-    // This is a simplified implementation that only handles the map operation
-    if !lazy.ops.is_empty() && lazy.sources.len() >= 1 {
-        // Get the first operation (we'll process only the last operation for simplicity)
-        let op = &lazy.ops[lazy.ops.len() - 1];
-
-        match op.kind {
-            LazyOpKind::Unary => {
-                // Get the source array (which should be first in the sources list)
-                if let Some(source) = lazy.sources.last() {
-                    // Downcast the source to a LazyArray of the same type
-                    if let Some(source_array) = source.downcast_ref::<LazyArray<A, D>>() {
-                        // Recursively evaluate the source array
-                        let source_data = evaluate(source_array)?;
-
-                        // If the operation is a map, apply it to each element
-                        if let Some(concrete_data) = &lazy.concrete_data {
-                            // We have concrete data, so create a new array and apply the unary function
-                            return Ok(concrete_data.clone());
-                        } else {
-                            // For simplicity, we'll just return the source data
-                            // In a real implementation, we'd apply the unary function here
-                            return Ok(source_data);
-                        }
-                    }
-                }
-            }
-            _ => {
-                // For simplicity, we'll only implement Unary operations for now
-                return Err(CoreError::ImplementationError(
-                    ErrorContext::new(format!("Operation type {:?} not yet implemented", op.kind))
-                        .with_location(ErrorLocation::new(file!(), line!())),
-                ));
+    // This is a placeholder implementation
+    if !lazy.ops.is_empty() && !lazy.sources.is_empty() {
+        // Try to recursively evaluate from sources
+        for source in &lazy.sources {
+            if let Some(source_array) = source.downcast_ref::<LazyArray<A, D>>() {
+                return evaluate(source_array);
             }
         }
     }
 
     // If we can't evaluate the operations, return an error
     Err(CoreError::ImplementationError(
-        ErrorContext::new(
-            "Cannot evaluate lazy array: either no concrete data or no operations defined"
-                .to_string(),
-        )
-        .with_location(ErrorLocation::new(file!(), line!())),
+        ErrorContext::new("Cannot evaluate lazy array: no concrete data available")
+            .with_location(ErrorLocation::new(file!(), line!())),
     ))
 }

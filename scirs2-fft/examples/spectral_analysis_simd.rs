@@ -96,7 +96,7 @@ fn main() {
 
         // Measure FFT performance
         let start = Instant::now();
-        let _ = fft_adaptive(&large_signal, None, None);
+        let _ = fft_adaptive(&large_signal, None);
         let elapsed = start.elapsed();
 
         println!("  FFT computation time: {:?}", elapsed);
@@ -176,7 +176,7 @@ fn spectral_analysis(signal: &[f64], sample_rate: f64) -> (Vec<f64>, Vec<f64>) {
         .collect();
 
     // Compute FFT with adaptive SIMD acceleration
-    let spectrum = fft_adaptive(&windowed_signal, None, None).unwrap();
+    let spectrum = fft_adaptive(&windowed_signal, None).unwrap();
 
     // Calculate frequency axis
     let freqs = fftfreq(signal.len(), 1.0 / sample_rate).unwrap();
@@ -239,7 +239,7 @@ fn bandpass_filter(
     high_cutoff: f64,
 ) -> Vec<f64> {
     // Compute FFT with adaptive SIMD acceleration
-    let mut spectrum = fft_adaptive(signal, None, None).unwrap();
+    let mut spectrum = fft_adaptive(signal, None).unwrap();
 
     // Calculate frequency resolution
     let freq_resolution = sample_rate / signal.len() as f64;
@@ -260,7 +260,7 @@ fn bandpass_filter(
     }
 
     // Compute inverse FFT to get filtered signal
-    let filtered_signal = ifft_adaptive(&spectrum, None, None).unwrap();
+    let filtered_signal = ifft_adaptive(&spectrum, None).unwrap();
 
     // Extract real part
     filtered_signal.iter().map(|c| c.re).collect()
@@ -301,7 +301,7 @@ fn compute_spectrogram(
         }
 
         // Compute FFT
-        let spectrum = fft_adaptive(&windowed_frame, None, None).unwrap();
+        let spectrum = fft_adaptive(&windowed_frame, None).unwrap();
 
         // Calculate power for each frequency bin (use only positive frequencies)
         for i in 0..=window_size / 2 {

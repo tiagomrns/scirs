@@ -187,7 +187,7 @@ mod tests {
 
     #[test]
     fn test_cosine_annealing_warm_restarts_init() {
-        let scheduler = CosineAnnealingWarmRestarts::new(0.1f64, 0.001, 10, 2.0.into());
+        let scheduler = CosineAnnealingWarmRestarts::new(0.1f64, 0.001, 10, 2.0);
 
         assert_abs_diff_eq!(scheduler.get_learning_rate(), 0.1);
         assert_eq!(scheduler.cycle(), 0);
@@ -196,7 +196,7 @@ mod tests {
 
     #[test]
     fn test_cosine_annealing_warm_restarts_first_cycle() {
-        let mut scheduler = CosineAnnealingWarmRestarts::new(0.1f64, 0.001, 10, 2.0.into());
+        let mut scheduler = CosineAnnealingWarmRestarts::new(0.1f64, 0.001, 10, 2.0);
 
         // Check learning rate at the beginning of the first cycle
         assert_abs_diff_eq!(scheduler.get_learning_rate(), 0.1);
@@ -235,7 +235,7 @@ mod tests {
 
     #[test]
     fn test_cosine_annealing_warm_restarts_multiple_cycles() {
-        let mut scheduler = CosineAnnealingWarmRestarts::new(0.1f64, 0.001, 10, 2.0.into());
+        let mut scheduler = CosineAnnealingWarmRestarts::new(0.1f64, 0.001, 10, 2.0);
 
         // First cycle: 10 iterations
         for _ in 0..10 {
@@ -267,7 +267,7 @@ mod tests {
 
     #[test]
     fn test_cosine_annealing_warm_restarts_reset() {
-        let mut scheduler = CosineAnnealingWarmRestarts::new(0.1f64, 0.001, 10, 2.0.into());
+        let mut scheduler = CosineAnnealingWarmRestarts::new(0.1f64, 0.001, 10, 2.0);
 
         // Run for a few cycles
         for _ in 0..50 {
@@ -285,7 +285,7 @@ mod tests {
 
     #[test]
     fn test_cosine_annealing_warm_restarts_lr_pattern() {
-        let mut scheduler = CosineAnnealingWarmRestarts::new(0.1f64, 0.001, 10, 2.0.into());
+        let mut scheduler = CosineAnnealingWarmRestarts::new(0.1f64, 0.001, 10, 2.0);
 
         // Run for a full cycle and capture the learning rates
         let mut lrs = Vec::new();
@@ -313,7 +313,7 @@ mod tests {
     #[test]
     fn test_cosine_annealing_warm_restarts_fractional_t_mult() {
         // Test with a t_mult < 1.0, which should decrease cycle length
-        let mut scheduler = CosineAnnealingWarmRestarts::new(0.1f64, 0.001, 10, 0.5.into());
+        let mut scheduler = CosineAnnealingWarmRestarts::new(0.1f64, 0.001, 10, 0.5);
 
         // First cycle: 10 iterations
         for _ in 0..10 {
@@ -335,7 +335,7 @@ mod tests {
     #[test]
     fn test_cosine_annealing_warm_restarts_t_mult_one() {
         // Test with t_mult = 1.0, which should keep cycle length constant
-        let mut scheduler = CosineAnnealingWarmRestarts::new(0.1f64, 0.001, 10, 1.0.into());
+        let mut scheduler = CosineAnnealingWarmRestarts::new(0.1f64, 0.001, 10, 1.0);
 
         // First cycle: 10 iterations
         for _ in 0..10 {

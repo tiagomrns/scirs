@@ -286,7 +286,7 @@ mod tests {
         // Test random value generation within range
         for _ in 0..100 {
             let value = sd.random_in_range((-0.5, 0.5));
-            assert!(value >= -0.5 && value <= 0.5);
+            assert!((-0.5..=0.5).contains(&value));
         }
 
         // Test with very small range (should not panic)
@@ -301,8 +301,8 @@ mod tests {
         for _ in 0..10 {
             let (b, alpha, beta) = sd.get_gate();
             assert_eq!(b, 1.0);
-            assert!(alpha >= -1.0 && alpha <= 1.0);
-            assert!(beta >= 0.0 && beta <= 1.0);
+            assert!((-1.0..=1.0).contains(&alpha));
+            assert!((0.0..=1.0).contains(&beta));
         }
 
         // Test with p=0.0 - gate should always be inactive
@@ -311,7 +311,7 @@ mod tests {
             let (b, alpha, beta) = sd.get_gate();
             assert_eq!(b, 0.0);
             assert_eq!(alpha, 0.0);
-            assert!(beta >= 0.0 && beta <= 1.0);
+            assert!((0.0..=1.0).contains(&beta));
         }
     }
 

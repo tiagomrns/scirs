@@ -290,7 +290,7 @@ mod tests {
         let gradients = Array1::from_vec(vec![0.1, 0.2, 0.3]);
 
         // Create optimizer
-        let mut optimizer = RAdam::new(0.01.into());
+        let mut optimizer = RAdam::new(0.01);
 
         // Run one step
         let new_params = optimizer.step(&params, &gradients).unwrap();
@@ -312,7 +312,7 @@ mod tests {
         let gradients = Array1::from_vec(vec![0.1, 0.2, 0.3]);
 
         // Create optimizer with small learning rate
-        let mut optimizer = RAdam::new(0.01.into());
+        let mut optimizer = RAdam::new(0.01);
 
         // Run multiple steps to move past the adaptive phase
         for _ in 0..100 {
@@ -334,11 +334,7 @@ mod tests {
 
         // Create optimizer with weight decay
         let mut optimizer = RAdam::new_with_config(
-            0.01.into(),
-            0.9.into(),
-            0.999.into(),
-            1e-8.into(),
-            0.1.into(), // Add weight decay
+            0.01, 0.9, 0.999, 1e-8, 0.1, // Add weight decay
         );
 
         // Run one step
@@ -356,7 +352,7 @@ mod tests {
     //     let optimizer = RAdam::new_with_config(
     //         0.02.into(),
     //         0.8.into(),
-    //         0.9.into(),
+    //         0.9,
     //         1e-10.into(),
     //         0.05.into(),
     //     );
@@ -375,7 +371,7 @@ mod tests {
         let gradients = Array1::from_vec(vec![0.1, 0.2, 0.3]);
 
         // Create optimizer
-        let mut optimizer = RAdam::new(0.01.into());
+        let mut optimizer = RAdam::new(0.01);
 
         // Run one step
         optimizer.step(&params, &gradients).unwrap();

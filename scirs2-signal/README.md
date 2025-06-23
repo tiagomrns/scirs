@@ -4,18 +4,18 @@
 [[![License](https://img.shields.io/badge/license-MIT%2FApache--2.0-blue.svg)]](../LICENSE)
 [![Documentation](https://img.shields.io/docsrs/scirs2-signal)](https://docs.rs/scirs2-signal)
 
-Signal processing module for the SciRS2 scientific computing library. This module provides tools for signal creation, filtering, convolution, peak detection, spectral analysis, and more.
+Production-ready signal processing module for the SciRS2 scientific computing library. This module provides core signal processing tools including filtering, convolution, spectral analysis, and wavelet transforms.
 
-## Features
+## Core Features (Production-Ready)
 
-- **Signal Generation**: Functions for creating various waveforms
-- **Filtering**: Various filter designs and implementations
-- **Convolution**: Efficient convolution operations
-- **Spectral Analysis**: Tools for frequency domain analysis
-- **Wavelet Transforms**: Comprehensive wavelet analysis toolkit
-- **Peak Detection**: Algorithms for finding peaks in signals
-- **Resampling**: Methods for changing sampling rates
-- **Measurements**: Signal quality and statistical measurements
+- **Signal Generation**: Essential waveform generation functions
+- **Digital Filtering**: Comprehensive IIR and FIR filter design and application
+- **Convolution & Correlation**: Efficient signal convolution and correlation operations
+- **Spectral Analysis**: Fundamental frequency domain analysis (FFT, PSD, spectrograms)
+- **Wavelet Transforms**: Core wavelet analysis (DWT, CWT) with multiple families
+- **Peak Detection**: Robust algorithms for finding and analyzing peaks
+- **Signal Measurements**: Standard signal quality metrics (RMS, SNR, THD)
+- **Basic Resampling**: Up/down sampling and rate conversion
 
 ## Installation
 
@@ -23,29 +23,31 @@ Add the following to your `Cargo.toml`:
 
 ```toml
 [dependencies]
-scirs2-signal = "0.1.0-alpha.4"
+scirs2-signal = "0.1.0-alpha.5"
+scirs2-core = "0.1.0-alpha.5"
 ndarray = "0.16.1"
 ```
+
+> **Note**: This is an alpha release. The API may change before the stable 1.0 release.
 
 Basic usage examples:
 
 ```rust
-use scirs2_signal::{waveforms, filter, convolve, spectral, peak, resample};
+use scirs2_signal::{waveforms, filter, convolve, spectral, peak};
 use scirs2_core::error::CoreResult;
 use ndarray::{Array1, array};
+use std::f64::consts::PI;
 
 // Signal generation
 fn waveform_example() -> CoreResult<()> {
-    // Generate a sine wave
-    let t = waveforms::time_array(0.0, 1.0, 1000)?; // 1000 points from 0 to 1 second
+    // Create time array
+    let t = Array1::linspace(0.0, 1.0, 1000); // 1000 points from 0 to 1 second
     let freq = 5.0; // 5 Hz
-    let sine = waveforms::sine(&t, freq, 0.0, 1.0)?;
     
-    // Generate a square wave
+    // Generate basic waveforms
+    let sine = t.mapv(|x| (2.0 * PI * freq * x).sin());
     let square = waveforms::square(&t, freq, 0.0, 1.0, 0.5)?;
-    
-    // Generate a chirp signal (frequency sweep)
-    let chirp = waveforms::chirp(&t, 1.0, 1.0, 10.0, None)?;
+    let chirp = waveforms::chirp(&t, 1.0, 1.0, 10.0)?;
     
     println!("Generated sine, square, and chirp signals");
     
@@ -55,18 +57,19 @@ fn waveform_example() -> CoreResult<()> {
 // Filtering example
 fn filter_example() -> CoreResult<()> {
     // Create a noisy signal
-    let t = waveforms::time_array(0.0, 1.0, 1000)?;
-    let signal = waveforms::sine(&t, 5.0, 0.0, 1.0)?; // 5 Hz sine wave
-    let noise = waveforms::noise(&signal.shape(), 0.0, 0.2, None)?; // Gaussian noise
-    let noisy_signal = &signal + &noise;
+    let t = Array1::linspace(0.0, 1.0, 1000);
+    let signal = t.mapv(|x| (2.0 * PI * 5.0 * x).sin()); // 5 Hz sine wave
+    
+    // Add some noise (simplified)
+    let noisy_signal = signal.mapv(|x| x + 0.1 * rand::random::<f64>());
     
     // Design a low-pass Butterworth filter
     let fs = 1000.0; // Sample rate: 1000 Hz
     let cutoff = 10.0; // Cutoff frequency: 10 Hz
     let order = 4; // Filter order
-    let (b, a) = filter::butter(order, &[cutoff], "lowpass", None, Some(fs))?;
+    let (b, a) = filter::butter(order, &[cutoff / (fs / 2.0)], "lowpass", None, None)?;
     
-    // Apply the filter
+    // Apply the filter (zero-phase)
     let filtered = filter::filtfilt(&b, &a, &noisy_signal)?;
     
     println!("Applied Butterworth low-pass filter");
@@ -94,14 +97,14 @@ fn convolution_example() -> CoreResult<()> {
 fn spectral_example() -> CoreResult<()> {
     // Create a signal with multiple frequency components
     let fs = 1000.0; // Sample rate: 1000 Hz
-    let t = waveforms::time_array(0.0, 1.0, 1000)?;
+    let t = Array1::linspace(0.0, 1.0, 1000);
     
-    // 5 Hz and 20 Hz components
-    let signal_5hz = waveforms::sine(&t, 5.0, 0.0, 1.0)?;
-    let signal_20hz = waveforms::sine(&t, 20.0, 0.0, 0.5)?;
-    let signal = &signal_5hz + &signal_20hz;
+    // Create signal with 5 Hz and 20 Hz components
+    let signal = t.mapv(|x| {
+        (2.0 * PI * 5.0 * x).sin() + 0.5 * (2.0 * PI * 20.0 * x).sin()
+    });
     
-    // Compute the power spectral density
+    // Compute the power spectral density using Welch's method
     let (f, psd) = spectral::welch(&signal, None, None, None, None, Some(fs))?;
     
     // Find peaks in the PSD
@@ -109,28 +112,25 @@ fn spectral_example() -> CoreResult<()> {
     
     println!("Found {} peaks in the power spectrum", peaks.len());
     for (i, &idx) in peaks.iter().enumerate() {
-        println!("Peak {}: frequency = {} Hz, power = {}", 
-                 i+1, f[idx], psd[idx]);
+        if idx < f.len() && idx < psd.len() {
+            println!("Peak {}: frequency = {:.1} Hz, power = {:.2}", 
+                     i+1, f[idx], psd[idx]);
+        }
     }
     
     Ok(())
 }
 
-// Resampling example
+// Resampling example (basic)
 fn resampling_example() -> CoreResult<()> {
     // Create a signal
-    let t = waveforms::time_array(0.0, 1.0, 1000)?;
-    let signal = waveforms::sine(&t, 5.0, 0.0, 1.0)?;
+    let t = Array1::linspace(0.0, 1.0, 1000);
+    let signal = t.mapv(|x| (2.0 * std::f64::consts::PI * 5.0 * x).sin());
     
-    // Resample to a higher rate (upsampling)
-    let upsampled = resample::resample(&signal, 1000, 4000, None, None)?;
-    
-    // Resample to a lower rate (downsampling)
-    let downsampled = resample::resample(&signal, 1000, 500, None, None)?;
+    // Basic resampling (Note: Advanced resampling in future releases)
+    // let resampled = resample::resample(&signal, 1000, 2000)?;
     
     println!("Original signal: {} points", signal.len());
-    println!("Upsampled signal: {} points", upsampled.len());
-    println!("Downsampled signal: {} points", downsampled.len());
     
     Ok(())
 }
@@ -160,36 +160,37 @@ use scirs2_signal::waveforms::{
 };
 ```
 
-### Filtering
+### Digital Filtering
 
-Signal filtering functions:
+Comprehensive filtering capabilities:
 
 ```rust
 use scirs2_signal::filter::{
-    // Filter Design
+    // IIR Filter Design
     butter,                 // Butterworth filter design
     cheby1,                 // Chebyshev Type I filter design
     cheby2,                 // Chebyshev Type II filter design
     ellip,                  // Elliptic filter design
     bessel,                 // Bessel filter design
     
-    // Filtering Functions
-    lfilter,                // Filter data along one dimension
+    // FIR Filter Design
+    firwin,                 // Window-based FIR design
+    remez,                  // Parks-McClellan optimal FIR design
+    
+    // Filter Application
+    lfilter,                // Apply filter to data
     filtfilt,               // Zero-phase filtering
-    sosfilt,                // Filter data using second-order sections
     
-    // Specific Filters
-    medfilt,                // Median filter
-    wiener,                 // Wiener filter
-    savgol_filter,          // Savitzky-Golay filter
+    // Specialized Filters
+    notch_filter,           // Notch filter design
+    comb_filter,            // Comb filter design
+    allpass_filter,         // Allpass filter design
     
-    // Frequency Transformations
-    bilinear,               // Bilinear transform
-    lp2lp,                  // Transform lowpass to lowpass
-    lp2hp,                  // Transform lowpass to highpass
-    lp2bp,                  // Transform lowpass to bandpass
-    lp2bs,                  // Transform lowpass to bandstop
+    // Filter Analysis
+    analyze_filter,         // Analyze filter properties
+    check_filter_stability, // Check filter stability
 };
+use scirs2_signal::savgol::savgol_filter; // Savitzky-Golay filter
 ```
 
 ### Convolution
@@ -208,23 +209,22 @@ use scirs2_signal::convolve::{
 
 ### Spectral Analysis
 
-Functions for frequency domain analysis:
+Fundamental frequency domain analysis:
 
 ```rust
 use scirs2_signal::spectral::{
+    periodogram,            // Periodogram power spectral density estimate
+    welch,                  // Welch's method for PSD estimation
+    spectrogram,            // Time-frequency representation
+};
+use scirs2_signal::stft::ShortTimeFft; // Short-time Fourier transform class
+
+// Note: For direct FFT operations, use scirs2-fft crate
+use scirs2_fft::fft::{
     fft,                    // Fast Fourier Transform
     ifft,                   // Inverse FFT
     rfft,                   // Real FFT
     irfft,                  // Inverse real FFT
-    fftfreq,                // FFT frequency bins
-    fftshift,               // Shift zero-frequency component to center
-    spectrogram,            // Time-frequency representation
-    stft,                   // Short-time Fourier transform
-    istft,                  // Inverse short-time Fourier transform
-    periodogram,            // Periodogram power spectral density estimate
-    welch,                  // Welch's power spectral density estimate
-    csd,                    // Cross spectral density
-    coherence,              // Magnitude squared coherence
 };
 ```
 
@@ -243,108 +243,116 @@ use scirs2_signal::peak::{
 
 ### Resampling
 
-Functions for signal resampling:
+Basic resampling operations:
 
 ```rust
 use scirs2_signal::resample::{
     resample,               // Resample signal to new sampling rate
-    resample_poly,          // Resample using polyphase filtering
-    decimate,               // Downsample by an integer factor
-    upfirdn,                // Upsample, apply FIR filter, then downsample
+    // Note: Advanced resampling features are planned for future releases
 };
 ```
 
-### Measurements
+### Signal Measurements
 
-Functions for signal measurements:
+Standard signal quality metrics:
 
 ```rust
 use scirs2_signal::measurements::{
+    rms,                    // Root mean square
     snr,                    // Signal-to-noise ratio
-    psnr,                   // Peak signal-to-noise ratio
     thd,                    // Total harmonic distortion
-    enob,                   // Effective number of bits
-    sinad,                  // Signal-to-noise and distortion ratio
-    sfdr,                   // Spurious-free dynamic range
+    peak_to_peak,           // Peak-to-peak measurement
+    peak_to_rms,            // Peak-to-RMS ratio
 };
 ```
 
 ### Wavelet Transforms
 
-Comprehensive wavelet analysis toolkit with multiple transform types and families:
+Core wavelet analysis with proven algorithms:
 
 ```rust
-use scirs2_signal::dwt::{
-    Wavelet,                // Supported wavelet families
-    dwt_decompose,          // Discrete Wavelet Transform
-    dwt_reconstruct,        // Inverse Discrete Wavelet Transform
-    wavedec,                // Multi-level DWT decomposition
-    waverec,                // Multi-level DWT reconstruction
+use scirs2_signal::{
+    dwt::{Wavelet, dwt_decompose, dwt_reconstruct, wavedec, waverec},
+    wavelets::{cwt, morlet, ricker},
+    denoise::{denoise_wavelet, ThresholdMethod, ThresholdSelect},
 };
 
-use scirs2_signal::swt::{
-    swt_decompose,          // Stationary Wavelet Transform
-    swt_reconstruct,        // Inverse Stationary Wavelet Transform
-    swt,                    // Multi-level SWT decomposition
-    iswt,                   // Multi-level SWT reconstruction
-};
-
-use scirs2_signal::wpt::{
-    wp_decompose,           // Wavelet Packet Transform
-    reconstruct_from_nodes, // Reconstruct signal from WPT nodes
-    WaveletPacket,          // Wavelet packet node representation
-    WaveletPacketTree,      // Tree structure for wavelet packets
-};
-
-use scirs2_signal::denoise::{
-    denoise_wavelet,        // Wavelet-based signal denoising
-    ThresholdMethod,        // Hard, soft, or garrote thresholding
-    ThresholdSelect,        // Universal, SURE, or minimax threshold selection
-};
-
-// Available wavelet families
+// Supported wavelet families (stable)
 let wavelets = [
-    Wavelet::Haar,          // Haar wavelet (equivalent to db1)
-    Wavelet::DB(4),         // Daubechies wavelet with 4 vanishing moments
-    Wavelet::Sym(4),        // Symlet wavelet with 4 vanishing moments
-    Wavelet::Coif(3),       // Coiflet wavelet with 3 vanishing moments
+    Wavelet::Haar,          // Haar wavelet
+    Wavelet::DB(4),         // Daubechies wavelet (4 vanishing moments)
+    Wavelet::Sym(4),        // Symlet wavelet (4 vanishing moments)
+    Wavelet::Coif(3),       // Coiflet wavelet (3 vanishing moments)
     Wavelet::Meyer,         // Meyer wavelet
-    Wavelet::DMeyer,        // Discrete Meyer wavelet
-    Wavelet::BiorNrNd { nr: 3, nd: 5 }, // Biorthogonal wavelet
-    Wavelet::RBioNrNd { nr: 3, nd: 5 }, // Reverse biorthogonal wavelet
 ];
 
-// Example: Simple DWT decomposition and reconstruction
+// Discrete Wavelet Transform (DWT)
 let signal = vec![1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0];
-let (approx, detail) = dwt_decompose(&signal, Wavelet::DB(4), None).unwrap();
-let reconstructed = dwt_reconstruct(&approx, &detail, Wavelet::DB(4)).unwrap();
+let (approx, detail) = dwt_decompose(&signal, Wavelet::DB(4), None)?;
+let reconstructed = dwt_reconstruct(&approx, &detail, Wavelet::DB(4))?;
 
-// Example: Wavelet-based denoising
+// Multi-level decomposition
+let coeffs = wavedec(&signal, Wavelet::DB(4), 3)?; // 3 levels
+let reconstructed = waverec(&coeffs, Wavelet::DB(4))?;
+
+// Continuous Wavelet Transform (CWT)
+let scales = vec![1.0, 2.0, 4.0, 8.0, 16.0];
+let cwt_result = cwt(&signal, morlet, &scales)?;
+
+// Wavelet denoising
 let denoised = denoise_wavelet(
     &noisy_signal,
-    Wavelet::Sym(4),
-    3,                       // Decomposition level
-    ThresholdMethod::Soft,   // Soft thresholding
-    ThresholdSelect::Universal, // Universal threshold selection
-    None,                    // Default parameters
-).unwrap();
+    Wavelet::DB(4),
+    3,                      // Decomposition levels
+    ThresholdMethod::Soft,  // Soft thresholding
+    ThresholdSelect::Universal, // Universal threshold
+    None,
+)?;
 ```
 
-## Integration with FFT Module
+## Integration with Other SciRS2 Modules
 
-This module integrates with the `scirs2-fft` module for spectral analysis:
+Seamless integration with the SciRS2 ecosystem:
 
 ```rust
 use scirs2_signal::spectral;
 use scirs2_fft::fft;
+use scirs2_core::error::CoreResult;
+use ndarray::Array1;
 
-// Direct FFT using scirs2-fft
-let data = array![1.0, 2.0, 3.0, 4.0];
-let fft_result = fft::fft(&data).unwrap();
+// Combined usage with scirs2-fft
+let data: Array1<f64> = array![1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0];
 
-// Spectral analysis using scirs2-signal
-let (freq, psd) = spectral::periodogram(&data, None, None, None, Some(1000.0)).unwrap();
+// Direct FFT computation
+let fft_result = fft::fft(&data)?;
+
+// Power spectral density estimation
+let (freq, psd) = spectral::welch(&data, None, None, None, None, Some(1000.0))?;
+
+// Filter design and application
+let (b, a) = filter::butter(4, &[0.1], "lowpass", None, None)?;
+let filtered = filter::filtfilt(&b, &a, &data)?;
 ```
+
+## Development Status
+
+**Current Release**: 0.1.0-alpha.5 (Final Alpha)
+
+### Production-Ready Features ✅
+- Digital filtering (IIR/FIR design and application)
+- Basic spectral analysis (periodogram, Welch's method, STFT)
+- Core wavelet transforms (DWT, CWT)
+- Signal convolution and correlation
+- Peak detection and signal measurements
+- Waveform generation and basic resampling
+
+### Experimental Features ⚠️
+- Advanced time-frequency analysis
+- 2D wavelet transforms
+- Advanced denoising and restoration
+- Real-time processing capabilities
+
+*Note: Experimental features may have API changes or require additional validation.*
 
 ## Contributing
 

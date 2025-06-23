@@ -14,6 +14,9 @@ use scirs2_optim::{
 };
 use std::error::Error;
 
+// Type alias to simplify complex return type
+type OptimizationResult = Result<(Array1<f64>, Vec<(f64, f64, f64)>), Box<dyn Error>>;
+
 /// A simple 2D function with multiple local minima
 /// f(x, y) = x^2 + 5*sin(y) + (x*y)^2
 fn multimodal_function(point: &Array1<f64>) -> f64 {
@@ -42,7 +45,7 @@ fn optimize<S: LearningRateScheduler<f64>>(
     initial_point: &Array1<f64>,
     scheduler: S,
     iterations: usize,
-) -> Result<(Array1<f64>, Vec<(f64, f64, f64)>), Box<dyn Error>> {
+) -> OptimizationResult {
     let mut optimizer = SGD::<f64>::new(scheduler.get_learning_rate());
     let mut point = initial_point.clone();
     let mut trajectory = Vec::with_capacity(iterations);

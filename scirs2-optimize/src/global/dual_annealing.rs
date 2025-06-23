@@ -142,7 +142,7 @@ where
     }
 
     /// Perform local search using gradient-based method
-    fn local_search(&mut self) -> (Array1<f64>, f64, usize) {
+    fn local_search(&self) -> (Array1<f64>, f64, usize) {
         let result = minimize(
             |x| (self.func)(x),
             &self.current_x.to_vec(),

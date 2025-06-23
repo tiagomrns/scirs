@@ -7,12 +7,6 @@ use ndarray::{Array2, ArrayView2};
 use rand::rng;
 use rand_distr::{Distribution, Normal};
 use scirs2_linalg::prelude::*;
-use scirs2_linalg::quantization::{
-    dequantize_matrix, quantize_matrix, quantized_matmul, QuantizationParams, QuantizedMatrix,
-};
-use scirs2_linalg::{
-    calibrate_matrix, get_activation_calibration_config, get_weight_calibration_config,
-};
 
 // Simple struct to represent a neural network layer
 struct SimpleLayer {
@@ -149,9 +143,17 @@ fn quantize_network(
     for (i, layer) in network.iter().enumerate() {
         println!("Quantizing layer {}: {}", i, layer.name);
 
-        // Use helper functions to get recommended calibration configs
-        let weights_config = get_weight_calibration_config(bits, false);
-        let bias_config = get_weight_calibration_config(bits, true); // More aggressive for biases
+        // Create calibration configs for weights and biases
+        let weights_config = CalibrationConfig {
+            method: CalibrationMethod::MinMax,
+            symmetric: true,
+            ..CalibrationConfig::default()
+        };
+        let bias_config = CalibrationConfig {
+            method: CalibrationMethod::MinMax,
+            symmetric: false, // Biases can be asymmetric
+            ..CalibrationConfig::default()
+        };
 
         // Quantize weights
         println!("  Weights shape: {:?}", layer.weights.dim());
@@ -198,7 +200,11 @@ fn run_network_quantized(
     let (weights_params, bias_params) = &quantization_params[0];
 
     // For activations, we need to quantize the input
-    let activation_config = get_activation_calibration_config(8, false, false);
+    let activation_config = CalibrationConfig {
+        method: CalibrationMethod::MinMax,
+        symmetric: false,
+        ..CalibrationConfig::default()
+    };
     let act_params = calibrate_matrix(&input.view(), 8, &activation_config).unwrap();
     let (q_input, _) = quantize_matrix(&input.view(), 8, act_params.method);
 
@@ -222,7 +228,11 @@ fn run_network_quantized(
     let hidden_activated = relu(&hidden_bias.view());
 
     // For second layer, quantize the activations from first layer
-    let hidden_config = get_activation_calibration_config(8, true, false); // ReLU output is non-negative
+    let hidden_config = CalibrationConfig {
+        method: CalibrationMethod::MinMax,
+        symmetric: false, // ReLU output is non-negative
+        ..CalibrationConfig::default()
+    };
     let hidden_params = calibrate_matrix(&hidden_activated.view(), 8, &hidden_config).unwrap();
     let (q_hidden, _) = quantize_matrix(&hidden_activated.view(), 8, hidden_params.method);
 
@@ -326,8 +336,16 @@ fn mixed_precision_quantization(network: &[SimpleLayer], input: &Array2<f32>) {
 
     // Quantize each layer with its specific bit width
     for (i, (layer, &(w_bits, _, _))) in network.iter().zip(layer_configs.iter()).enumerate() {
-        let weights_config = get_weight_calibration_config(w_bits, false);
-        let bias_config = get_weight_calibration_config(w_bits, true);
+        let weights_config = CalibrationConfig {
+            method: CalibrationMethod::MinMax,
+            symmetric: true,
+            ..CalibrationConfig::default()
+        };
+        let bias_config = CalibrationConfig {
+            method: CalibrationMethod::MinMax,
+            symmetric: false,
+            ..CalibrationConfig::default()
+        };
 
         // Quantize weights
         let weights_params =
@@ -355,7 +373,11 @@ fn mixed_precision_quantization(network: &[SimpleLayer], input: &Array2<f32>) {
     let (_, a_bits0, _) = layer_configs[0];
 
     // Quantize input
-    let activation_config = get_activation_calibration_config(a_bits0, false, false);
+    let activation_config = CalibrationConfig {
+        method: CalibrationMethod::MinMax,
+        symmetric: false,
+        ..CalibrationConfig::default()
+    };
     let act_params = calibrate_matrix(&input.view(), a_bits0, &activation_config).unwrap();
     let (q_input, _) = quantize_matrix(&input.view(), a_bits0, act_params.method);
 
@@ -377,7 +399,11 @@ fn mixed_precision_quantization(network: &[SimpleLayer], input: &Array2<f32>) {
 
     // Quantize activations for second layer
     let (_, a_bits1, _) = layer_configs[1];
-    let hidden_config = get_activation_calibration_config(a_bits1, true, false);
+    let hidden_config = CalibrationConfig {
+        method: CalibrationMethod::MinMax,
+        symmetric: false,
+        ..CalibrationConfig::default()
+    };
     let hidden_params =
         calibrate_matrix(&hidden_activated.view(), a_bits1, &hidden_config).unwrap();
     let (q_hidden, _) = quantize_matrix(&hidden_activated.view(), a_bits1, hidden_params.method);

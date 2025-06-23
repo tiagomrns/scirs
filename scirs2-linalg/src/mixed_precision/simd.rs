@@ -6,7 +6,7 @@
 
 use crate::error::{LinalgError, LinalgResult};
 use ndarray::{Array1, Array2, ArrayView1, ArrayView2};
-use wide::f64x4;
+use scirs2_core::simd_ops::SimdUnifiedOps;
 
 /// Perform mixed-precision matrix-vector multiplication with SIMD acceleration
 ///
@@ -78,8 +78,8 @@ where
 
             // Compute dot product in higher precision using SIMD
             let mut j = 0;
-            let chunk_size = 4; // f64x4 SIMD width
-            let mut sum_vec = f64x4::splat(0.0);
+            let chunk_size = 4; // Process 4 elements at a time
+            let mut sum = 0.0f64;
 
             while j + chunk_size <= ncols {
                 // Load chunks and convert to f64
@@ -96,19 +96,13 @@ where
                     vector_slice[j + 3] as f64,
                 ];
 
-                // Convert to SIMD vectors (already in f64 precision)
-                let row_vec = f64x4::new(row_chunk_f64);
-                let vec_vec = f64x4::new(vec_chunk_f64);
-
-                // Multiply and accumulate in high precision
-                sum_vec += row_vec * vec_vec;
+                // Convert to views and compute dot product using core SIMD in f64
+                let row_view = ArrayView1::from(&row_chunk_f64);
+                let vec_view = ArrayView1::from(&vec_chunk_f64);
+                sum += f64::simd_dot(&row_view, &vec_view);
 
                 j += chunk_size;
             }
-
-            // Extract and sum the SIMD vector components
-            let sum_arr: [f64; 4] = sum_vec.into();
-            let mut sum = sum_arr.iter().sum::<f64>();
 
             // Process remaining elements
             for k in j..ncols {
@@ -235,8 +229,8 @@ where
 
                             // Compute dot product in higher precision using SIMD
                             let mut l = 0;
-                            let chunk_size = 4; // f64x4 SIMD width
-                            let mut sum_vec = f64x4::splat(0.0);
+                            let chunk_size = 4; // Process 4 elements at a time
+                            let mut block_sum = 0.0f64;
 
                             while l + chunk_size <= (k_end - k0) {
                                 // Extract and convert column slice from B (with stride handling)
@@ -261,19 +255,13 @@ where
                                     b_slice[b_col_indices[3]] as f64,
                                 ];
 
-                                // Convert to SIMD vectors (already in f64 precision)
-                                let a_vec = f64x4::new(a_chunk_f64);
-                                let b_vec = f64x4::new(b_chunk_f64);
-
-                                // Multiply and accumulate in high precision
-                                sum_vec += a_vec * b_vec;
+                                // Convert to views and compute dot product using core SIMD in f64
+                                let a_view = ArrayView1::from(&a_chunk_f64);
+                                let b_view = ArrayView1::from(&b_chunk_f64);
+                                block_sum += f64::simd_dot(&a_view, &b_view);
 
                                 l += chunk_size;
                             }
-
-                            // Extract and sum the SIMD vector components
-                            let sum_arr: [f64; 4] = sum_vec.into();
-                            let mut block_sum = sum_arr.iter().sum::<f64>();
 
                             // Process remaining elements
                             for (offset, &a_val) in
@@ -397,8 +385,8 @@ where
     if let (Some(a_slice), Some(b_slice)) = (a.as_slice(), b.as_slice()) {
         // Process with SIMD in higher precision
         let mut i = 0;
-        let chunk_size = 4; // f64x4 SIMD width
-        let mut sum_vec = f64x4::splat(0.0);
+        let chunk_size = 4; // Process 4 elements at a time
+        let mut sum = 0.0f64;
 
         while i + chunk_size <= n {
             // Load chunks and convert to f64
@@ -415,19 +403,13 @@ where
                 b_slice[i + 3] as f64,
             ];
 
-            // Convert to SIMD vectors (already in f64 precision)
-            let a_vec = f64x4::new(a_chunk_f64);
-            let b_vec = f64x4::new(b_chunk_f64);
-
-            // Multiply and accumulate in high precision
-            sum_vec += a_vec * b_vec;
+            // Convert to views and compute dot product using core SIMD in f64
+            let a_view = ArrayView1::from(&a_chunk_f64);
+            let b_view = ArrayView1::from(&b_chunk_f64);
+            sum += f64::simd_dot(&a_view, &b_view);
 
             i += chunk_size;
         }
-
-        // Extract and sum the SIMD vector components
-        let sum_arr: [f64; 4] = sum_vec.into();
-        let mut sum = sum_arr.iter().sum::<f64>();
 
         // Process remaining elements
         for j in i..n {

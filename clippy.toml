@@ -4,3 +4,7 @@ too-many-arguments-threshold = 30
 
 disallowed-methods = []
 disallowed-types = []
+
+# Allow approximate constants in tests - these are often testing against known reference values
+allow-expect-in-tests = true
+allow-unwrap-in-tests = true

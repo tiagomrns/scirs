@@ -15,7 +15,7 @@ fn test_frobenius_norm() {
     ag::run::<f64, _, _>(|ctx| {
         // Test with a known matrix
         let a = T::convert_to_tensor(array![[3.0, 4.0], [5.0, 12.0]], ctx);
-        let norm = T::frobenius_norm(&a);
+        let norm = T::frobenius_norm(a);
 
         let result = norm.eval(ctx).unwrap();
 
@@ -133,7 +133,7 @@ fn test_nuclear_norm() {
 
         let result_b = norm_b.eval(ctx).unwrap();
         // For a rank 1 matrix, nuclear norm equals Frobenius norm
-        let frob_b = T::frobenius_norm(&b);
+        let frob_b = T::frobenius_norm(b);
         let frob_result = frob_b.eval(ctx).unwrap();
 
         println!(
@@ -183,7 +183,7 @@ fn test_norm_gradient_stability() {
         let a = T::convert_to_tensor(a_data, ctx);
 
         // Test all three norms
-        let frob_norm = T::frobenius_norm(&a);
+        let frob_norm = T::frobenius_norm(a);
         let spec_norm = T::spectral_norm(&a);
         let nuc_norm = T::nuclear_norm(&a);
 

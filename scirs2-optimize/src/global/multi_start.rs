@@ -10,7 +10,7 @@ use crate::unconstrained::{
 use ndarray::{Array1, ArrayView1};
 use rand::prelude::*;
 use rand::rngs::StdRng;
-use rayon::prelude::*;
+use scirs2_core::parallel_ops::*;
 
 /// Options for multi-start optimization
 #[derive(Debug, Clone)]
@@ -164,7 +164,7 @@ where
     }
 
     /// Generate grid-based starting points
-    fn generate_grid_points(&mut self) -> Vec<Array1<f64>> {
+    fn generate_grid_points(&self) -> Vec<Array1<f64>> {
         let points_per_dim = (self.options.n_starts as f64)
             .powf(1.0 / self.ndim as f64)
             .ceil() as usize;

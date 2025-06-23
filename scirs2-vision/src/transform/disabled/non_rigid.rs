@@ -9,7 +9,6 @@ use crate::error::{Result, VisionError};
 use image::{DynamicImage, GenericImageView, ImageBuffer, Rgba};
 use ndarray::{Array1, Array2};
 // SVD is used in solver imports
-use rand::distr::Uniform;
 use rand::rngs::StdRng;
 use rand::{Rng, SeedableRng};
 use std::f64::consts::PI;
@@ -133,6 +132,12 @@ impl ThinPlateSpline {
             target_y[i] = target_points[i].1;
         }
 
+        // TODO: Replace with proper linear solver
+        // For now, return an error
+        return Err(VisionError::LinAlgError(
+            "TPS solve not implemented without ndarray-linalg".to_string(),
+        ));
+        /*
         // Solve the linear system for x and y mappings
         use ndarray_linalg::solve::Solve;
         
@@ -143,14 +148,21 @@ impl ThinPlateSpline {
         let coef_y = Solve::solve(&l, &target_y).map_err(|e| {
             VisionError::LinAlgError(format!("Failed to solve for y coefficients: {}", e))
         })?;
+        */
 
-        Ok(Self {
-            source_points: source_points.to_vec(),
-            target_points: target_points.to_vec(),
-            coef_x,
-            coef_y,
-            lambda,
-        })
+        #[allow(unreachable_code)]
+        {
+            let coef_x = Array1::zeros(n + 3);
+            let coef_y = Array1::zeros(n + 3);
+            
+            Ok(Self {
+                source_points: source_points.to_vec(),
+                target_points: target_points.to_vec(),
+                coef_x,
+                coef_y,
+                lambda,
+            })
+        }
     }
 
     /// Get the regularization parameter
@@ -290,14 +302,13 @@ impl ElasticDeformation {
         };
 
         // Generate random displacement fields
-        let dist = Uniform::new(-1.0, 1.0).unwrap();
         let mut dx_map = Array2::zeros((height as usize, width as usize));
         let mut dy_map = Array2::zeros((height as usize, width as usize));
 
         for y in 0..height as usize {
             for x in 0..width as usize {
-                dx_map[[y, x]] = rng.sample(dist);
-                dy_map[[y, x]] = rng.sample(dist);
+                dx_map[[y, x]] = rng.random_range(-1.0..1.0);
+                dy_map[[y, x]] = rng.random_range(-1.0..1.0);
             }
         }
 

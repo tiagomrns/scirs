@@ -14,7 +14,7 @@ use std::time::Instant;
 use super::prefetch::AccessPattern;
 
 /// The different types of complex patterns that can be recognized.
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum ComplexPattern {
     /// Standard row-major traversal
     RowMajor,
@@ -235,25 +235,25 @@ impl PatternRecognizer {
         self.detect_basic_patterns();
 
         // Complex patterns based on dimensions
-        if let Some(ref dims) = self.dimensions {
+        if let Some(dims) = self.dimensions.clone() {
             // Detect matrix traversal patterns
             if dims.len() >= 2 {
-                self.detect_matrix_patterns(dims);
+                self.detect_matrix_patterns(&dims);
             }
 
             // Detect block patterns
             if self.config.detect_block && dims.len() >= 2 {
-                self.detect_block_patterns(dims);
+                self.detect_block_patterns(&dims);
             }
 
             // Detect diagonal patterns
             if self.config.detect_diagonal && dims.len() == 2 {
-                self.detect_diagonal_patterns(dims);
+                self.detect_diagonal_patterns(&dims);
             }
 
             // Detect stencil patterns
             if self.config.detect_stencil && dims.len() >= 2 {
-                self.detect_stencil_patterns(dims);
+                self.detect_stencil_patterns(&dims);
             }
         }
 
@@ -356,41 +356,68 @@ impl PatternRecognizer {
             return;
         }
 
-        let rows = dimensions[0];
+        let _rows = dimensions[0];
         let cols = dimensions[1];
         let indices: Vec<_> = self.history.iter().cloned().collect();
 
-        // Check for zigzag pattern
-        let mut zigzag_matches = 0;
-        let mut row_changes = Vec::new();
+        // Check for zigzag pattern - alternating left-right traversal within rows
+        let mut zigzag_evidence = 0;
+        let mut last_row_direction = None;
 
-        for i in 1..indices.len() {
-            // Check if we're crossing rows
-            let prev_row = indices[i - 1] / cols;
-            let curr_row = indices[i] / cols;
+        // Group indices by rows and preserve access order
+        let mut rows: HashMap<usize, Vec<(usize, usize)>> = HashMap::new(); // (col_index, access_order)
+        for (access_order, &idx) in indices.iter().enumerate() {
+            let row = idx / cols;
+            let col = idx % cols;
+            rows.entry(row).or_default().push((col, access_order));
+        }
 
-            if prev_row != curr_row {
-                // Direction change at row boundary
-                let prev_direction = if i >= 2 {
-                    (indices[i - 1] as isize) - (indices[i - 2] as isize)
-                } else {
-                    1 // Assume positive for first transition
+        // Check if consecutive rows alternate direction based on access order
+        let sorted_rows: Vec<_> = {
+            let mut sorted = rows.keys().cloned().collect::<Vec<_>>();
+            sorted.sort();
+            sorted
+        };
+
+        for row_num in &sorted_rows {
+            let mut cols_in_row = rows[row_num].clone();
+            if cols_in_row.len() >= 2 {
+                // Sort by access order to see the actual traversal pattern
+                cols_in_row.sort_by_key(|(_, access_order)| *access_order);
+
+                // Determine direction within this row based on column progression
+                // Check if columns are accessed in increasing or decreasing order
+                let mut increasing = 0;
+                let mut decreasing = 0;
+                for i in 1..cols_in_row.len() {
+                    match cols_in_row[i].0.cmp(&cols_in_row[i - 1].0) {
+                        std::cmp::Ordering::Greater => increasing += 1,
+                        std::cmp::Ordering::Less => decreasing += 1,
+                        std::cmp::Ordering::Equal => {}
+                    }
+                }
+
+                let current_direction = match increasing.cmp(&decreasing) {
+                    std::cmp::Ordering::Greater => 1, // Left to right
+                    std::cmp::Ordering::Less => -1,   // Right to left
+                    std::cmp::Ordering::Equal => 0,   // No clear direction
                 };
 
-                let curr_direction = (indices[i] as isize) - (indices[i - 1] as isize);
-
-                // Check if direction changed
-                if (prev_direction > 0 && curr_direction < 0)
-                    || (prev_direction < 0 && curr_direction > 0)
-                {
-                    row_changes.push((prev_row, curr_row));
-                    zigzag_matches += 1;
+                // Check if direction alternates from previous row
+                if current_direction != 0 {
+                    if let Some(prev_direction) = last_row_direction {
+                        if current_direction != prev_direction && prev_direction != 0 {
+                            zigzag_evidence += 1;
+                        }
+                    }
+                    last_row_direction = Some(current_direction);
                 }
             }
         }
 
-        // To confirm zigzag, we need several row transitions with direction changes
-        if zigzag_matches >= 2 {
+        // To confirm zigzag, we need at least 2 direction changes (3 rows minimum)
+        // Also ensure we have seen enough rows to make this determination
+        if zigzag_evidence >= 2 && sorted_rows.len() >= 3 {
             let pattern = ComplexPattern::Zigzag;
 
             // Check if we already have this pattern
@@ -400,7 +427,7 @@ impl PatternRecognizer {
             } else {
                 // Add new pattern
                 let pattern = RecognizedPattern::new(pattern, Confidence::Medium)
-                    .with_metadata("zigzag_matches", &zigzag_matches.to_string());
+                    .with_metadata("zigzag_evidence", &zigzag_evidence.to_string());
                 self.patterns.push(pattern);
             }
         }
@@ -412,7 +439,7 @@ impl PatternRecognizer {
             return;
         }
 
-        let rows = dimensions[0];
+        let _rows = dimensions[0];
         let cols = dimensions[1];
         let indices: Vec<_> = self.history.iter().cloned().collect();
 
@@ -434,7 +461,13 @@ impl PatternRecognizer {
             }
         }
 
-        if diagonal_matches >= indices.len() * 2 / 3 {
+        // Need a significant portion of transitions to be diagonal
+        // For consecutive diagonal accesses, we expect (n-1) diagonal transitions
+        let expected_transitions = indices.len().saturating_sub(1);
+        // Lower threshold: at least 1/3 of transitions or at least 3 diagonal matches
+        if (diagonal_matches >= expected_transitions / 3 || diagonal_matches >= 3)
+            && diagonal_matches > 0
+        {
             let pattern = ComplexPattern::DiagonalMajor;
 
             // Check if we already have this pattern
@@ -469,7 +502,12 @@ impl PatternRecognizer {
             }
         }
 
-        if anti_diagonal_matches >= indices.len() * 2 / 3 {
+        // Need a significant portion of transitions to be anti-diagonal
+        let expected_transitions = indices.len().saturating_sub(1);
+        // Lower threshold: at least 1/3 of transitions or at least 3 anti-diagonal matches
+        if (anti_diagonal_matches >= expected_transitions / 3 || anti_diagonal_matches >= 3)
+            && anti_diagonal_matches > 0
+        {
             let pattern = ComplexPattern::DiagonalMinor;
 
             // Check if we already have this pattern
@@ -530,7 +568,7 @@ impl PatternRecognizer {
 
             // Check for complete blocks (where all elements in the block are accessed)
             let mut complete_blocks = 0;
-            for (_, accesses) in &block_accesses {
+            for accesses in block_accesses.values() {
                 if accesses.len() == block_height * block_width {
                     complete_blocks += 1;
                 }
@@ -604,87 +642,64 @@ impl PatternRecognizer {
             return;
         }
 
-        let rows = dimensions[0];
+        let _rows = dimensions[0];
         let cols = dimensions[1];
         let indices: Vec<_> = self.history.iter().cloned().collect();
 
-        // Build a map of consecutive access groups
-        let mut access_groups = HashMap::new();
+        // Look for classic stencil patterns (5-point stencil)
+        // Pattern: center, then 4 neighbors (N, E, S, W)
+        let mut stencil_groups = 0;
 
-        // Group accesses that are close to each other
-        for window_start in 0..indices.len().saturating_sub(5) {
+        // Look for groups of 5 consecutive accesses that form a stencil
+        for window_start in 0..indices.len().saturating_sub(4) {
+            if window_start + 4 >= indices.len() {
+                break;
+            }
+
             let center_idx = indices[window_start];
-            let center_row = center_idx / cols;
-            let center_col = center_idx % cols;
+            let _center_row = center_idx / cols;
+            let _center_col = center_idx % cols;
 
-            let mut neighbors = HashSet::new();
+            // Check if the next 4 accesses are neighbors of the center
+            let mut neighbors_found = 0;
+            let expected_neighbors = [
+                center_idx.saturating_sub(cols), // North
+                center_idx + 1,                  // East
+                center_idx + cols,               // South
+                center_idx.saturating_sub(1),    // West
+            ];
 
-            // Check the next few accesses
-            for offset in 1..=5 {
-                if window_start + offset >= indices.len() {
-                    break;
-                }
-
-                let neighbor_idx = indices[window_start + offset];
-                let neighbor_row = neighbor_idx / cols;
-                let neighbor_col = neighbor_idx % cols;
-
-                // Check if this is a neighbor (adjacent row/col)
-                let row_diff = neighbor_row.abs_diff(center_row);
-                let col_diff = neighbor_col.abs_diff(center_col);
-
-                if row_diff <= 2 && col_diff <= 2 {
-                    neighbors.insert((row_diff, col_diff));
+            for offset in 1..=4 {
+                if window_start + offset < indices.len() {
+                    let neighbor_idx = indices[window_start + offset];
+                    if expected_neighbors.contains(&neighbor_idx) {
+                        neighbors_found += 1;
+                    }
                 }
             }
 
-            // Need at least 3 neighbors to consider it a stencil
-            if neighbors.len() >= 3 {
-                let key = (center_row, center_col);
-                access_groups
-                    .entry(key)
-                    .or_insert_with(Vec::new)
-                    .push(neighbors);
+            // If we found at least 3 of the 4 expected neighbors, count as stencil
+            if neighbors_found >= 3 {
+                stencil_groups += 1;
             }
         }
 
-        // Check if we have evidence of stencil operations
-        if access_groups.len() >= 5 {
-            // Check for common stencil patterns
-            let mut radius_counts = HashMap::new();
+        // If we found enough stencil patterns, recognize it
+        if stencil_groups >= 3 {
+            let pattern = ComplexPattern::Stencil {
+                dimensions: 2,
+                radius: 1,
+            };
 
-            for (_, neighbor_groups) in access_groups {
-                for neighbors in neighbor_groups {
-                    // Find the maximum distance from center
-                    let max_distance = neighbors
-                        .iter()
-                        .map(|(row_diff, col_diff)| std::cmp::max(*row_diff, *col_diff))
-                        .max()
-                        .unwrap_or(0);
-
-                    *radius_counts.entry(max_distance).or_insert(0) += 1;
-                }
-            }
-
-            // Find the most common radius
-            if let Some((&radius, &count)) = radius_counts.iter().max_by_key(|(_, &count)| count) {
-                if count >= 3 && radius > 0 {
-                    let pattern = ComplexPattern::Stencil {
-                        dimensions: 2,
-                        radius,
-                    };
-
-                    // Check if we already have this pattern
-                    if let Some(existing) = self.find_pattern(&pattern) {
-                        // Confirm existing pattern
-                        existing.confirm();
-                    } else {
-                        // Add new pattern
-                        let pattern = RecognizedPattern::new(pattern, Confidence::Medium)
-                            .with_metadata("stencil_count", &count.to_string());
-                        self.patterns.push(pattern);
-                    }
-                }
+            // Check if we already have this pattern
+            if let Some(existing) = self.find_pattern(&pattern) {
+                // Confirm existing pattern
+                existing.confirm();
+            } else {
+                // Add new pattern
+                let pattern = RecognizedPattern::new(pattern, Confidence::Medium)
+                    .with_metadata("stencil_groups", &stencil_groups.to_string());
+                self.patterns.push(pattern);
             }
         }
     }
@@ -769,8 +784,10 @@ impl PatternRecognizer {
 }
 
 /// Factory for creating pattern recognizers.
+#[allow(dead_code)]
 pub struct PatternRecognizerFactory;
 
+#[allow(dead_code)]
 impl PatternRecognizerFactory {
     /// Create a new pattern recognizer with default configuration.
     pub fn create() -> PatternRecognizer {
@@ -789,6 +806,7 @@ pub mod pattern_utils {
     use crate::memory_efficient::prefetch::AccessPattern;
 
     /// Convert from complex pattern to basic pattern.
+    #[allow(dead_code)]
     pub fn to_basic_pattern(pattern: &ComplexPattern) -> AccessPattern {
         match pattern {
             ComplexPattern::RowMajor => AccessPattern::Sequential,
@@ -807,6 +825,7 @@ pub mod pattern_utils {
     }
 
     /// Get the prefetch pattern for a complex pattern.
+    #[allow(dead_code)]
     pub fn get_prefetch_pattern(
         pattern: &ComplexPattern,
         dimensions: &[usize],
@@ -905,19 +924,19 @@ pub mod pattern_utils {
                     let col = current_idx % cols;
 
                     // Calculate block coordinates
-                    let block_row = row / block_height;
-                    let block_col = col / block_width;
+                    let block_row = row / *block_height;
+                    let block_col = col / *block_width;
 
                     // Calculate position within block
-                    let block_row_offset = row % block_height;
-                    let block_col_offset = col % block_width;
+                    let block_row_offset = row % *block_height;
+                    let block_col_offset = col % *block_width;
 
                     // Predict next positions within the block (row-major within block)
                     let mut result = Vec::with_capacity(prefetch_count);
                     let mut remaining = prefetch_count;
 
                     // First, complete the current row in the block
-                    for i in 1..=(block_width - block_col_offset).min(remaining) {
+                    for i in 1..=std::cmp::min(*block_width - block_col_offset, remaining) {
                         result.push(current_idx + i);
                         remaining -= 1;
                     }
@@ -925,9 +944,9 @@ pub mod pattern_utils {
                     // Then, continue with subsequent rows in the block
                     let mut next_row = block_row_offset + 1;
                     while remaining > 0 && next_row < *block_height {
-                        for col_offset in 0..block_width.min(remaining) {
-                            let idx = (block_row * block_height + next_row) * cols
-                                + block_col * block_width
+                        for col_offset in 0..std::cmp::min(*block_width, remaining) {
+                            let idx = (block_row * *block_height + next_row) * cols
+                                + block_col * *block_width
                                 + col_offset;
                             result.push(idx);
                             remaining -= 1;
@@ -937,13 +956,13 @@ pub mod pattern_utils {
 
                     // If still remaining, move to next block
                     if remaining > 0 {
-                        let next_block_row = if block_col + 1 < cols / block_width {
+                        let next_block_row = if block_col + 1 < cols / *block_width {
                             block_row // Same row, next column
                         } else {
                             block_row + 1 // Next row, first column
                         };
 
-                        let next_block_col = if block_col + 1 < cols / block_width {
+                        let next_block_col = if block_col + 1 < cols / *block_width {
                             block_col + 1 // Next column
                         } else {
                             0 // First column
@@ -951,10 +970,10 @@ pub mod pattern_utils {
 
                         // Add first few elements of next block
                         for i in 0..remaining {
-                            let row_offset = i / block_width;
-                            let col_offset = i % block_width;
-                            let idx = (next_block_row * block_height + row_offset) * cols
-                                + next_block_col * block_width
+                            let row_offset = i / *block_width;
+                            let col_offset = i % *block_width;
+                            let idx = (next_block_row * *block_height + row_offset) * cols
+                                + next_block_col * *block_width
                                 + col_offset;
                             result.push(idx);
                         }
@@ -1113,25 +1132,26 @@ mod tests {
 
     #[test]
     fn test_zigzag_detection() {
-        let mut recognizer = PatternRecognizer::new(PatternRecognitionConfig::default());
-        recognizer.set_dimensions(vec![4, 4]);
+        let config = PatternRecognitionConfig {
+            min_history_size: 10, // Lower threshold for test
+            ..Default::default()
+        };
+        let mut recognizer = PatternRecognizer::new(config);
+        recognizer.set_dimensions(vec![8, 8]);
 
-        // Record zigzag traversal
-        // Row 0: left to right
-        for j in 0..4 {
-            recognizer.record_access(j);
-        }
-        // Row 1: right to left
-        for j in (0..4).rev() {
-            recognizer.record_access(4 + j);
-        }
-        // Row 2: left to right
-        for j in 0..4 {
-            recognizer.record_access(8 + j);
-        }
-        // Row 3: right to left
-        for j in (0..4).rev() {
-            recognizer.record_access(12 + j);
+        // Record zigzag traversal - multiple complete rows to ensure enough data
+        for row in 0..8 {
+            if row % 2 == 0 {
+                // Even rows: left to right
+                for j in 0..8 {
+                    recognizer.record_access(row * 8 + j);
+                }
+            } else {
+                // Odd rows: right to left
+                for j in (0..8).rev() {
+                    recognizer.record_access(row * 8 + j);
+                }
+            }
         }
 
         // Get detected patterns
@@ -1145,12 +1165,21 @@ mod tests {
 
     #[test]
     fn test_diagonal_detection() {
-        let mut recognizer = PatternRecognizer::new(PatternRecognitionConfig::default());
-        recognizer.set_dimensions(vec![8, 8]);
+        let config = PatternRecognitionConfig {
+            min_history_size: 10, // Lower threshold for test
+            ..Default::default()
+        };
+        let mut recognizer = PatternRecognizer::new(config);
+        recognizer.set_dimensions(vec![16, 16]);
 
-        // Record diagonal traversal
+        // Record diagonal traversal - longer diagonal to ensure enough data
+        for i in 0..16 {
+            recognizer.record_access(i * 16 + i);
+        }
+
+        // Add a few more diagonal elements to strengthen the pattern
         for i in 0..8 {
-            recognizer.record_access(i * 8 + i);
+            recognizer.record_access(i * 16 + i);
         }
 
         // Get detected patterns

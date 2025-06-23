@@ -65,7 +65,7 @@ where
 
     #[cfg(feature = "parallel_jacobian")]
     {
-        use rayon::prelude::*;
+        use scirs2_core::parallel_ops::*;
 
         // Calculate base perturbation size
         let eps_base = F::from_f64(1e-8).unwrap() * perturbation_scale;

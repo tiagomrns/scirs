@@ -166,7 +166,7 @@ impl<T: Float + Send + Sync + 'static, D: crate::distance::Distance<T> + 'static
             // Using parallel_for when available for batch processing
             #[cfg(feature = "parallel")]
             {
-                use rayon::prelude::*;
+                use scirs2_core::parallel_ops::*;
 
                 let batch_results: Vec<_> = (batch_start..batch_end)
                     .into_par_iter()

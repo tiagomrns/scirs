@@ -22,7 +22,8 @@ mod tests {
         assert_eq!(mmap.shape, vec![100]);
         assert_eq!(mmap.size, 100);
         assert_eq!(mmap.mode, AccessMode::Write);
-        assert_eq!(mmap.offset, 0);
+        // The offset will be non-zero due to the header
+        assert!(mmap.offset > 0);
         assert!(!mmap.is_temp());
     }
 

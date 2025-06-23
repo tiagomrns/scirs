@@ -118,7 +118,7 @@ pub fn run_ransac<M: RansacModel>(
 
         // Fisher-Yates shuffle
         for i in (1..n_points).rev() {
-            let j = (rng.random::<f32>() * (i as f32 + 1.0)) as usize;
+            let j = rng.random_range(0..=i);
             sample_indices.swap(i, j);
         }
 
@@ -447,7 +447,7 @@ impl Homography {
                 // If we get a zero vector, restart with random
                 let mut rng = rand::rng();
                 for i in 0..n {
-                    v[i] = rng.random();
+                    v[i] = rng.random::<f64>();
                 }
                 let norm = v.iter().map(|&x| x * x).sum::<f64>().sqrt();
                 v.mapv_inplace(|x| x / norm);

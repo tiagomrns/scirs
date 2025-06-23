@@ -1,10 +1,6 @@
 use crate::ndarray_ext::{NdArray, NdArrayView};
 use crate::op;
-#[cfg(all(feature = "blas", feature = "intel-mkl"))]
-use crate::same_type;
 use crate::tensor::Tensor;
-#[cfg(all(feature = "blas", feature = "intel-mkl"))]
-use crate::tensor_ops::blas_ffi::*;
 use crate::tensor_ops::*;
 use crate::Float;
 use ndarray;
@@ -277,15 +273,8 @@ macro_rules! elem_wise_vm_with_param_or_std {
 
 impl<T: Float> op::Op<T> for Abs {
     fn compute(&self, ctx: &mut op::ComputeContext<T>) -> Result<(), op::OpError> {
-        #[cfg(all(feature = "blas", feature = "intel-mkl"))]
-        {
-            elem_wise_vm_or_std!(vsAbs, vdAbs, |a| a.abs(), ctx);
-        }
-        #[cfg(not(all(feature = "blas", feature = "intel-mkl")))]
-        {
-            let ret = ctx.input(0).map(|a| a.abs());
-            ctx.append_output(ret);
-        }
+        let ret = ctx.input(0).map(|a| a.abs());
+        ctx.append_output(ret);
         Ok(())
     }
 
@@ -308,16 +297,8 @@ impl<T: Float> op::Op<T> for NegOp {
 
 impl<T: Float> op::Op<T> for Square {
     fn compute(&self, ctx: &mut op::ComputeContext<T>) -> Result<(), op::OpError> {
-        #[cfg(all(feature = "blas", feature = "intel-mkl"))]
-        {
-            elem_wise_vm_or_std!(vsSqr, vdSqr, |a| a * a, ctx);
-        }
-
-        #[cfg(not(all(feature = "blas", feature = "intel-mkl")))]
-        {
-            let ret = ctx.input(0).mapv(|a| a * a);
-            ctx.append_output(ret);
-        }
+        let ret = ctx.input(0).mapv(|a| a * a);
+        ctx.append_output(ret);
         Ok(())
     }
 
@@ -329,15 +310,8 @@ impl<T: Float> op::Op<T> for Square {
 
 impl<T: Float> op::Op<T> for Inv {
     fn compute(&self, ctx: &mut op::ComputeContext<T>) -> Result<(), op::OpError> {
-        #[cfg(all(feature = "blas", feature = "intel-mkl"))]
-        {
-            elem_wise_vm_or_std!(vsInv, vdInv, |a| a.recip(), ctx);
-        }
-        #[cfg(not(all(feature = "blas", feature = "intel-mkl")))]
-        {
-            let ret = ctx.input(0).map(|a| a.recip());
-            ctx.append_output(ret);
-        }
+        let ret = ctx.input(0).map(|a| a.recip());
+        ctx.append_output(ret);
         Ok(())
     }
 
@@ -348,15 +322,8 @@ impl<T: Float> op::Op<T> for Inv {
 
 impl<T: Float> op::Op<T> for InvSqrt {
     fn compute(&self, ctx: &mut op::ComputeContext<T>) -> Result<(), op::OpError> {
-        #[cfg(all(feature = "blas", feature = "intel-mkl"))]
-        {
-            elem_wise_vm_or_std!(vsInvSqrt, vdInvSqrt, |a| a.sqrt().recip(), ctx);
-        }
-        #[cfg(not(all(feature = "blas", feature = "intel-mkl")))]
-        {
-            let ret = ctx.input(0).map(|a| a.sqrt().recip());
-            ctx.append_output(ret);
-        }
+        let ret = ctx.input(0).map(|a| a.sqrt().recip());
+        ctx.append_output(ret);
         Ok(())
     }
 
@@ -388,15 +355,8 @@ impl<T: Float> op::Op<T> for Sign {
 
 impl<T: Float> op::Op<T> for Floor {
     fn compute(&self, ctx: &mut op::ComputeContext<T>) -> Result<(), op::OpError> {
-        #[cfg(all(feature = "blas", feature = "intel-mkl"))]
-        {
-            elem_wise_vm_or_std!(vsFloor, vdFloor, |a| a.floor(), ctx);
-        }
-        #[cfg(not(all(feature = "blas", feature = "intel-mkl")))]
-        {
-            let ret = ctx.input(0).map(|a| a.floor());
-            ctx.append_output(ret);
-        }
+        let ret = ctx.input(0).map(|a| a.floor());
+        ctx.append_output(ret);
         Ok(())
     }
 
@@ -407,15 +367,8 @@ impl<T: Float> op::Op<T> for Floor {
 
 impl<T: Float> op::Op<T> for Ceil {
     fn compute(&self, ctx: &mut op::ComputeContext<T>) -> Result<(), op::OpError> {
-        #[cfg(all(feature = "blas", feature = "intel-mkl"))]
-        {
-            elem_wise_vm_or_std!(vsCeil, vdCeil, |a| a.ceil(), ctx);
-        }
-        #[cfg(not(all(feature = "blas", feature = "intel-mkl")))]
-        {
-            let ret = ctx.input(0).map(|a| a.ceil());
-            ctx.append_output(ret);
-        }
+        let ret = ctx.input(0).map(|a| a.ceil());
+        ctx.append_output(ret);
         Ok(())
     }
 
@@ -498,14 +451,12 @@ pub(crate) fn fast_inplace_exp_impl<F: Float>(x: &mut NdArray<F>) {
                 x.as_ptr() as *const f32,
                 x.as_mut_ptr() as *mut f32,
             );
-            return;
         } else if same_type::<F, f64>() {
             vdExp(
                 x.len() as BlasIF,
                 x.as_ptr() as *const f64,
                 x.as_mut_ptr() as *mut f64,
             );
-            return;
         } else {
             x.mapv_inplace(move |a| a.exp());
         }
@@ -521,14 +472,12 @@ pub(crate) fn fast_inplace_ln_impl<F: Float>(x: &mut NdArray<F>) {
                 x.as_ptr() as *const f32,
                 x.as_mut_ptr() as *mut f32,
             );
-            return;
         } else if same_type::<F, f64>() {
             vdLn(
                 x.len() as BlasIF,
                 x.as_ptr() as *const f64,
                 x.as_mut_ptr() as *mut f64,
             );
-            return;
         } else {
             x.mapv_inplace(move |a| a.ln());
         }
@@ -608,15 +557,8 @@ impl<T: Float> op::Op<T> for LogSumExp {
 
 impl<T: Float> op::Op<T> for Pow<T> {
     fn compute(&self, ctx: &mut op::ComputeContext<T>) -> Result<(), op::OpError> {
-        #[cfg(all(feature = "blas", feature = "intel-mkl"))]
-        {
-            elem_wise_vm_with_param_or_std!(vsPowx, vdPowx, powf, self.a, ctx);
-        }
-        #[cfg(not(all(feature = "blas", feature = "intel-mkl")))]
-        {
-            let ret = ctx.input(0).map(|a| a.powf(self.a));
-            ctx.append_output(ret);
-        }
+        let ret = ctx.input(0).map(|a| a.powf(self.a));
+        ctx.append_output(ret);
         Ok(())
     }
 
@@ -629,15 +571,8 @@ impl<T: Float> op::Op<T> for Pow<T> {
 
 impl<T: Float> op::Op<T> for Sqrt {
     fn compute(&self, ctx: &mut op::ComputeContext<T>) -> Result<(), op::OpError> {
-        #[cfg(all(feature = "blas", feature = "intel-mkl"))]
-        {
-            elem_wise_vm_or_std!(vsSqrt, vdSqrt, |a| a.sqrt(), ctx);
-        }
-        #[cfg(not(all(feature = "blas", feature = "intel-mkl")))]
-        {
-            let ret = ctx.input(0).map(|a| a.sqrt());
-            ctx.append_output(ret);
-        }
+        let ret = ctx.input(0).map(|a| a.sqrt());
+        ctx.append_output(ret);
         Ok(())
     }
 
@@ -651,15 +586,8 @@ impl<T: Float> op::Op<T> for Sqrt {
 
 impl<T: Float> op::Op<T> for Log10 {
     fn compute(&self, ctx: &mut op::ComputeContext<T>) -> Result<(), op::OpError> {
-        #[cfg(all(feature = "blas", feature = "intel-mkl"))]
-        {
-            elem_wise_vm_or_std!(vsLog10, vdLog10, |a| a.log10(), ctx);
-        }
-        #[cfg(not(all(feature = "blas", feature = "intel-mkl")))]
-        {
-            let ret = ctx.input(0).map(|a| a.log10());
-            ctx.append_output(ret);
-        }
+        let ret = ctx.input(0).map(|a| a.log10());
+        ctx.append_output(ret);
         Ok(())
     }
 
@@ -671,15 +599,8 @@ impl<T: Float> op::Op<T> for Log10 {
 
 impl<T: Float> op::Op<T> for Log2 {
     fn compute(&self, ctx: &mut op::ComputeContext<T>) -> Result<(), op::OpError> {
-        #[cfg(all(feature = "blas", feature = "intel-mkl"))]
-        {
-            elem_wise_vm_or_std!(vsLog2, vdLog2, |a| a.log2(), ctx);
-        }
-        #[cfg(not(all(feature = "blas", feature = "intel-mkl")))]
-        {
-            let ret = ctx.input(0).map(|a| a.log2());
-            ctx.append_output(ret);
-        }
+        let ret = ctx.input(0).map(|a| a.log2());
+        ctx.append_output(ret);
         Ok(())
     }
 
@@ -691,15 +612,8 @@ impl<T: Float> op::Op<T> for Log2 {
 
 impl<T: Float> op::Op<T> for Ln {
     fn compute(&self, ctx: &mut op::ComputeContext<T>) -> Result<(), op::OpError> {
-        #[cfg(all(feature = "blas", feature = "intel-mkl"))]
-        {
-            elem_wise_vm_or_std!(vsLn, vdLn, |a| a.ln(), ctx);
-        }
-        #[cfg(not(all(feature = "blas", feature = "intel-mkl")))]
-        {
-            let ret = ctx.input(0).map(|a| a.ln());
-            ctx.append_output(ret);
-        }
+        let ret = ctx.input(0).map(|a| a.ln());
+        ctx.append_output(ret);
         Ok(())
     }
 
@@ -710,15 +624,8 @@ impl<T: Float> op::Op<T> for Ln {
 
 impl<T: Float> op::Op<T> for Exp {
     fn compute(&self, ctx: &mut op::ComputeContext<T>) -> Result<(), op::OpError> {
-        #[cfg(all(feature = "blas", feature = "intel-mkl"))]
-        {
-            elem_wise_vm_or_std!(vsExp, vdExp, |a| a.exp(), ctx);
-        }
-        #[cfg(not(all(feature = "blas", feature = "intel-mkl")))]
-        {
-            let ret = ctx.input(0).map(|a| a.exp());
-            ctx.append_output(ret);
-        }
+        let ret = ctx.input(0).map(|a| a.exp());
+        ctx.append_output(ret);
         Ok(())
     }
 
@@ -729,15 +636,8 @@ impl<T: Float> op::Op<T> for Exp {
 
 impl<T: Float> op::Op<T> for Exp2 {
     fn compute(&self, ctx: &mut op::ComputeContext<T>) -> Result<(), op::OpError> {
-        #[cfg(all(feature = "blas", feature = "intel-mkl"))]
-        {
-            elem_wise_vm_or_std!(vsExp2, vdExp2, |a| a.exp2(), ctx);
-        }
-        #[cfg(not(all(feature = "blas", feature = "intel-mkl")))]
-        {
-            let ret = ctx.input(0).map(|a| a.exp2());
-            ctx.append_output(ret);
-        }
+        let ret = ctx.input(0).map(|a| a.exp2());
+        ctx.append_output(ret);
         Ok(())
     }
 
@@ -752,10 +652,7 @@ impl<T: Float> op::Op<T> for Exp2 {
 impl<T: Float> op::Op<T> for Exp10 {
     fn compute(&self, ctx: &mut op::ComputeContext<T>) -> Result<(), op::OpError> {
         let ten = T::from(10).unwrap();
-        #[cfg(all(feature = "blas", feature = "intel-mkl"))]
-        {
-            elem_wise_vm_or_std!(vsExp10, vdExp10, |a| ten.powf(a), ctx);
-        }
+
         #[cfg(not(all(feature = "blas", feature = "intel-mkl")))]
         {
             let ret = ctx.input(0).map(move |&a| ten.powf(a));
@@ -772,15 +669,8 @@ impl<T: Float> op::Op<T> for Exp10 {
 
 impl<T: Float> op::Op<T> for Atanh {
     fn compute(&self, ctx: &mut op::ComputeContext<T>) -> Result<(), op::OpError> {
-        #[cfg(all(feature = "blas", feature = "intel-mkl"))]
-        {
-            elem_wise_vm_or_std!(vsAtanh, vdAtanh, |a| a.atanh(), ctx);
-        }
-        #[cfg(not(all(feature = "blas", feature = "intel-mkl")))]
-        {
-            let ret = ctx.input(0).map(|a| a.atanh());
-            ctx.append_output(ret);
-        }
+        let ret = ctx.input(0).map(|a| a.atanh());
+        ctx.append_output(ret);
         Ok(())
     }
 
@@ -793,15 +683,8 @@ impl<T: Float> op::Op<T> for Atanh {
 
 impl<T: Float> op::Op<T> for Acosh {
     fn compute(&self, ctx: &mut op::ComputeContext<T>) -> Result<(), op::OpError> {
-        #[cfg(all(feature = "blas", feature = "intel-mkl"))]
-        {
-            elem_wise_vm_or_std!(vsAcosh, vdAcosh, |a| a.acosh(), ctx);
-        }
-        #[cfg(not(all(feature = "blas", feature = "intel-mkl")))]
-        {
-            let ret = ctx.input(0).map(|a| a.acosh());
-            ctx.append_output(ret);
-        }
+        let ret = ctx.input(0).map(|a| a.acosh());
+        ctx.append_output(ret);
         Ok(())
     }
 
@@ -815,15 +698,8 @@ impl<T: Float> op::Op<T> for Acosh {
 
 impl<T: Float> op::Op<T> for Asinh {
     fn compute(&self, ctx: &mut op::ComputeContext<T>) -> Result<(), op::OpError> {
-        #[cfg(all(feature = "blas", feature = "intel-mkl"))]
-        {
-            elem_wise_vm_or_std!(vsAsinh, vdAsinh, |a| a.asinh(), ctx);
-        }
-        #[cfg(not(all(feature = "blas", feature = "intel-mkl")))]
-        {
-            let ret = ctx.input(0).map(|a| a.asinh());
-            ctx.append_output(ret);
-        }
+        let ret = ctx.input(0).map(|a| a.asinh());
+        ctx.append_output(ret);
         Ok(())
     }
 
@@ -837,15 +713,8 @@ impl<T: Float> op::Op<T> for Asinh {
 
 impl<T: Float> op::Op<T> for Tanh {
     fn compute(&self, ctx: &mut op::ComputeContext<T>) -> Result<(), op::OpError> {
-        #[cfg(all(feature = "blas", feature = "intel-mkl"))]
-        {
-            elem_wise_vm_or_std!(vsTanh, vdTanh, |a| a.tanh(), ctx);
-        }
-        #[cfg(not(all(feature = "blas", feature = "intel-mkl")))]
-        {
-            let ret = ctx.input(0).map(|a| a.tanh());
-            ctx.append_output(ret);
-        }
+        let ret = ctx.input(0).map(|a| a.tanh());
+        ctx.append_output(ret);
         Ok(())
     }
 
@@ -859,15 +728,8 @@ impl<T: Float> op::Op<T> for Tanh {
 
 impl<T: Float> op::Op<T> for Cosh {
     fn compute(&self, ctx: &mut op::ComputeContext<T>) -> Result<(), op::OpError> {
-        #[cfg(all(feature = "blas", feature = "intel-mkl"))]
-        {
-            elem_wise_vm_or_std!(vsCosh, vdCosh, |a| a.cosh(), ctx);
-        }
-        #[cfg(not(all(feature = "blas", feature = "intel-mkl")))]
-        {
-            let ret = ctx.input(0).map(|a| a.cosh());
-            ctx.append_output(ret);
-        }
+        let ret = ctx.input(0).map(|a| a.cosh());
+        ctx.append_output(ret);
         Ok(())
     }
 
@@ -878,15 +740,8 @@ impl<T: Float> op::Op<T> for Cosh {
 
 impl<T: Float> op::Op<T> for Sinh {
     fn compute(&self, ctx: &mut op::ComputeContext<T>) -> Result<(), op::OpError> {
-        #[cfg(all(feature = "blas", feature = "intel-mkl"))]
-        {
-            elem_wise_vm_or_std!(vsSinh, vdSinh, |a| a.sinh(), ctx);
-        }
-        #[cfg(not(all(feature = "blas", feature = "intel-mkl")))]
-        {
-            let ret = ctx.input(0).map(|a| a.sinh());
-            ctx.append_output(ret);
-        }
+        let ret = ctx.input(0).map(|a| a.sinh());
+        ctx.append_output(ret);
         Ok(())
     }
 
@@ -897,15 +752,8 @@ impl<T: Float> op::Op<T> for Sinh {
 
 impl<T: Float> op::Op<T> for Atan {
     fn compute(&self, ctx: &mut op::ComputeContext<T>) -> Result<(), op::OpError> {
-        #[cfg(all(feature = "blas", feature = "intel-mkl"))]
-        {
-            elem_wise_vm_or_std!(vsAtan, vdAtan, |a| a.atan(), ctx);
-        }
-        #[cfg(not(all(feature = "blas", feature = "intel-mkl")))]
-        {
-            let ret = ctx.input(0).map(|a| a.atan());
-            ctx.append_output(ret);
-        }
+        let ret = ctx.input(0).map(|a| a.atan());
+        ctx.append_output(ret);
         Ok(())
     }
 
@@ -919,15 +767,8 @@ impl<T: Float> op::Op<T> for Atan {
 
 impl<T: Float> op::Op<T> for Acos {
     fn compute(&self, ctx: &mut op::ComputeContext<T>) -> Result<(), op::OpError> {
-        #[cfg(all(feature = "blas", feature = "intel-mkl"))]
-        {
-            elem_wise_vm_or_std!(vsAcos, vdAcos, |a| a.acos(), ctx);
-        }
-        #[cfg(not(all(feature = "blas", feature = "intel-mkl")))]
-        {
-            let ret = ctx.input(0).map(|a| a.acos());
-            ctx.append_output(ret);
-        }
+        let ret = ctx.input(0).map(|a| a.acos());
+        ctx.append_output(ret);
         Ok(())
     }
 
@@ -940,15 +781,8 @@ impl<T: Float> op::Op<T> for Acos {
 
 impl<T: Float> op::Op<T> for Asin {
     fn compute(&self, ctx: &mut op::ComputeContext<T>) -> Result<(), op::OpError> {
-        #[cfg(all(feature = "blas", feature = "intel-mkl"))]
-        {
-            elem_wise_vm_or_std!(vsAsin, vdAsin, |a| a.asin(), ctx);
-        }
-        #[cfg(not(all(feature = "blas", feature = "intel-mkl")))]
-        {
-            let ret = ctx.input(0).map(|a| a.asin());
-            ctx.append_output(ret);
-        }
+        let ret = ctx.input(0).map(|a| a.asin());
+        ctx.append_output(ret);
         Ok(())
     }
 
@@ -961,15 +795,8 @@ impl<T: Float> op::Op<T> for Asin {
 
 impl<T: Float> op::Op<T> for Sin {
     fn compute(&self, ctx: &mut op::ComputeContext<T>) -> Result<(), op::OpError> {
-        #[cfg(all(feature = "blas", feature = "intel-mkl"))]
-        {
-            elem_wise_vm_or_std!(vsSin, vdSin, |a| a.sin(), ctx);
-        }
-        #[cfg(not(all(feature = "blas", feature = "intel-mkl")))]
-        {
-            let ret = ctx.input(0).map(|a| a.sin());
-            ctx.append_output(ret);
-        }
+        let ret = ctx.input(0).map(|a| a.sin());
+        ctx.append_output(ret);
         Ok(())
     }
 
@@ -980,15 +807,8 @@ impl<T: Float> op::Op<T> for Sin {
 
 impl<T: Float> op::Op<T> for Cos {
     fn compute(&self, ctx: &mut op::ComputeContext<T>) -> Result<(), op::OpError> {
-        #[cfg(all(feature = "blas", feature = "intel-mkl"))]
-        {
-            elem_wise_vm_or_std!(vsCos, vdCos, |a| a.cos(), ctx);
-        }
-        #[cfg(not(all(feature = "blas", feature = "intel-mkl")))]
-        {
-            let ret = ctx.input(0).map(|a| a.cos());
-            ctx.append_output(ret);
-        }
+        let ret = ctx.input(0).map(|a| a.cos());
+        ctx.append_output(ret);
         Ok(())
     }
 
@@ -999,15 +819,8 @@ impl<T: Float> op::Op<T> for Cos {
 
 impl<T: Float> op::Op<T> for Tan {
     fn compute(&self, ctx: &mut op::ComputeContext<T>) -> Result<(), op::OpError> {
-        #[cfg(all(feature = "blas", feature = "intel-mkl"))]
-        {
-            elem_wise_vm_or_std!(vsTan, vdTan, |a| a.tan(), ctx);
-        }
-        #[cfg(not(all(feature = "blas", feature = "intel-mkl")))]
-        {
-            let ret = ctx.input(0).map(|a| a.tan());
-            ctx.append_output(ret);
-        }
+        let ret = ctx.input(0).map(|a| a.tan());
+        ctx.append_output(ret);
         Ok(())
     }
 

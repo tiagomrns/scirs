@@ -45,8 +45,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Compute the instantaneous frequency
     let inst_freq: Vec<f64> = phase
         .windows(2)
-        .enumerate()
-        .map(|(_i, window)| {
+        .map(|window| {
             let mut diff = window[1] - window[0];
             // Handle phase wrapping
             if diff > PI {

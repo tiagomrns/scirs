@@ -139,10 +139,10 @@ fn main() {
 fn create_sparse_signal(n: usize, frequencies: &[(usize, f64)]) -> Vec<f64> {
     let mut signal = vec![0.0; n];
 
-    for i in 0..n {
+    for (i, sample) in signal.iter_mut().enumerate().take(n) {
         let t = 2.0 * PI * (i as f64) / (n as f64);
         for &(freq, amp) in frequencies {
-            signal[i] += amp * (freq as f64 * t).sin();
+            *sample += amp * (freq as f64 * t).sin();
         }
     }
 

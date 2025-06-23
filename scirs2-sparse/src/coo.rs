@@ -444,7 +444,7 @@ mod tests {
         // 1*1 + 0*2 + 2*3 = 7
         // 0*1 + 0*2 + 3*3 = 9
         // 4*1 + 5*2 + 0*3 = 14
-        let expected = vec![7.0, 9.0, 14.0];
+        let expected = [7.0, 9.0, 14.0];
 
         assert_eq!(result.len(), expected.len());
         for (a, b) in result.iter().zip(expected.iter()) {

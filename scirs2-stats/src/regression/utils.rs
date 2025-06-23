@@ -2,8 +2,8 @@
 
 use crate::error::StatsResult;
 use ndarray::{Array1, Array2, ArrayView1, ArrayView2};
-use ndarray_linalg::Scalar;
 use num_traits::Float;
+use scirs2_linalg::inv;
 
 /// Helper functions for working with Float trait to avoid method ambiguity
 /// Returns the absolute value of a Float
@@ -70,13 +70,12 @@ where
     F: Float
         + std::iter::Sum<F>
         + std::ops::Div<Output = F>
-        + Scalar
         + std::fmt::Debug
         + 'static
-        + ndarray_linalg::Lapack,
+        + num_traits::NumAssign
+        + num_traits::One
+        + ndarray::ScalarOperand,
 {
-    use ndarray_linalg::Inverse;
-
     // Calculate the mean squared error of the residuals
     let mse = residuals
         .iter()
@@ -88,8 +87,8 @@ where
     let xtx = x.t().dot(x);
 
     // Invert X'X to get (X'X)^-1
-    let xtx_inv = match <Array2<F> as Inverse>::inv(&xtx) {
-        Ok(inv) => inv,
+    let xtx_inv = match inv(&xtx.view(), None) {
+        Ok(inv_result) => inv_result,
         Err(_) => {
             // If inversion fails, return zeros for standard errors
             return Ok(Array1::<F>::zeros(x.ncols()));

@@ -1147,8 +1147,8 @@ mod tests {
 
         // Verify the matrix is non-trivial (has at least a few non-zero entries)
         let (rows, _, data) = c.find();
-        assert!(rows.len() > 0);
-        assert!(data.len() > 0);
+        assert!(!rows.is_empty());
+        assert!(!data.is_empty());
 
         // Now test with COO format to ensure both formats work
         let c_coo = kronsum(&*a, &*b, "coo").unwrap();
@@ -1156,8 +1156,8 @@ mod tests {
 
         // Verify the COO format also has non-zero entries
         let (coo_rows, _, coo_data) = c_coo.find();
-        assert!(coo_rows.len() > 0);
-        assert!(coo_data.len() > 0);
+        assert!(!coo_rows.is_empty());
+        assert!(!coo_data.is_empty());
     }
 
     #[test]

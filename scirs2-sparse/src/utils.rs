@@ -249,10 +249,10 @@ mod tests {
         assert_eq!(eye.nnz(), n);
 
         let dense = eye.to_dense();
-        for i in 0..n {
-            for j in 0..n {
+        for (i, row) in dense.iter().enumerate() {
+            for (j, &value) in row.iter().enumerate() {
                 let expected = if i == j { 1.0 } else { 0.0 };
-                assert_eq!(dense[i][j], expected);
+                assert_eq!(value, expected);
             }
         }
     }

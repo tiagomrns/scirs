@@ -2,7 +2,7 @@
 //!
 //! This module provides SIMD-accelerated implementations of matrix operations
 //! on quantized data for improved performance. These implementations leverage
-//! the wide crate for SIMD operations and work with the quantization types
+//! the scirs2-core SIMD abstractions for SIMD operations and work with the quantization types
 //! defined in the parent module.
 
 use crate::error::{LinalgError, LinalgResult};
@@ -12,7 +12,7 @@ use crate::quantization::{
     QuantizedVector,
 };
 use ndarray::{Array1, Array2, ArrayView1};
-use wide::f32x8;
+use scirs2_core::simd_ops::SimdUnifiedOps;
 
 /// SIMD-accelerated quantized matrix-vector multiplication
 ///
@@ -73,7 +73,7 @@ pub fn simd_quantized_matvec(
 
                 // Process each row of the matrix
                 for (i, row) in data.rows().into_iter().enumerate() {
-                    // We'll use f32x8 SIMD registers to accumulate 8 values at once
+                    // We'll use SIMD to accumulate 8 values at once
                     let chunk_size = 8;
                     let mut acc = 0.0f32;
 
@@ -93,10 +93,9 @@ pub fn simd_quantized_matvec(
                             *val = dequantized * vec_slice[idx];
                         }
 
-                        // Sum the products into our accumulator
-                        let sum_vec = f32x8::new(row_vals);
-                        let sum_arr: [f32; 8] = sum_vec.into();
-                        acc += sum_arr.iter().sum::<f32>();
+                        // Sum the products into our accumulator using core SIMD operations
+                        let row_vals_slice = ArrayView1::from(&row_vals);
+                        acc += f32::simd_sum(&row_vals_slice);
 
                         j += chunk_size;
                     }
@@ -178,10 +177,6 @@ pub fn simd_quantized_matvec(
                         let chunk_size = 8;
                         let mut j = 0;
 
-                        // SIMD scaling factors
-                        let scale_vec = f32x8::splat(scale);
-                        let zero_point_vec = f32x8::splat(zero_point as f32);
-
                         while j + chunk_size <= row_slice.len() {
                             // Load chunks from row and vector
                             let row_chunk = [
@@ -206,19 +201,19 @@ pub fn simd_quantized_matvec(
                                 vec_slice[j + 7],
                             ];
 
-                            // Convert to SIMD vectors
-                            let row_vec = f32x8::new(row_chunk);
-                            let vec_vec = f32x8::new(vec_chunk);
+                            // Convert to ndarray views for core SIMD operations
+                            let _row_view = ArrayView1::from(&row_chunk);
+                            let vec_view = ArrayView1::from(&vec_chunk);
 
-                            // Dequantize row values: (row - zero_point) * scale
-                            let dequantized = (row_vec - zero_point_vec) * scale_vec;
+                            // Create dequantized values: (row - zero_point) * scale
+                            let mut dequantized = [0.0f32; 8];
+                            for (k, val) in dequantized.iter_mut().enumerate() {
+                                *val = (row_chunk[k] - zero_point as f32) * scale;
+                            }
+                            let dequantized_view = ArrayView1::from(&dequantized);
 
-                            // Multiply and accumulate
-                            let prod = dequantized * vec_vec;
-
-                            // Sum the products
-                            let sum_arr: [f32; 8] = prod.into();
-                            acc += sum_arr.iter().sum::<f32>();
+                            // Multiply and accumulate using core SIMD
+                            acc += f32::simd_dot(&dequantized_view, &vec_view);
 
                             j += chunk_size;
                         }
@@ -438,15 +433,6 @@ pub fn simd_quantized_matmul(
                                     let mut l = 0;
                                     let chunk_size = 8;
 
-                                    // SIMD constants
-                                    let a_scale_vec = f32x8::splat(a_scale);
-                                    let a_zero_vec = f32x8::splat(a_zero);
-                                    let b_scale_vec = f32x8::splat(b_scale);
-                                    let b_zero_vec = f32x8::splat(b_zero);
-
-                                    // Accumulate SIMD vector sums
-                                    let mut sum_vec = f32x8::splat(0.0);
-
                                     while l + chunk_size <= k_block_size {
                                         // Load chunks
                                         let a_chunk = [
@@ -470,23 +456,22 @@ pub fn simd_quantized_matmul(
                                             b_slice[l + 7] as f32,
                                         ];
 
-                                        // Convert to SIMD vectors
-                                        let a_vec = f32x8::new(a_chunk);
-                                        let b_vec = f32x8::new(b_chunk);
+                                        // Dequantize chunks
+                                        let mut a_dequant = [0.0f32; 8];
+                                        let mut b_dequant = [0.0f32; 8];
 
-                                        // Dequantize both vectors
-                                        let a_dequant = (a_vec - a_zero_vec) * a_scale_vec;
-                                        let b_dequant = (b_vec - b_zero_vec) * b_scale_vec;
+                                        for k in 0..8 {
+                                            a_dequant[k] = (a_chunk[k] - a_zero) * a_scale;
+                                            b_dequant[k] = (b_chunk[k] - b_zero) * b_scale;
+                                        }
 
-                                        // Multiply and accumulate
-                                        sum_vec += a_dequant * b_dequant;
+                                        // Convert to views and compute dot product using core SIMD
+                                        let a_view = ArrayView1::from(&a_dequant);
+                                        let b_view = ArrayView1::from(&b_dequant);
+                                        sum += f32::simd_dot(&a_view, &b_view);
 
                                         l += chunk_size;
                                     }
-
-                                    // Extract and sum the SIMD vector components
-                                    let sum_arr: [f32; 8] = sum_vec.into();
-                                    sum += sum_arr.iter().sum::<f32>();
 
                                     // Process remaining elements
                                     for m in l..k_block_size {
@@ -648,12 +633,6 @@ pub fn simd_quantized_dot(
         let chunk_size = 8;
         let mut sum = 0.0f32;
 
-        // SIMD constants
-        let a_scale_vec = f32x8::splat(a_scale);
-        let a_zero_vec = f32x8::splat(a_zero);
-        let b_scale_vec = f32x8::splat(b_scale);
-        let b_zero_vec = f32x8::splat(b_zero);
-
         while i + chunk_size <= a.length {
             // Load chunks
             let a_chunk = [
@@ -678,20 +657,19 @@ pub fn simd_quantized_dot(
                 b_slice[i + 7] as f32,
             ];
 
-            // Convert to SIMD vectors
-            let a_vec = f32x8::new(a_chunk);
-            let b_vec = f32x8::new(b_chunk);
+            // Dequantize chunks
+            let mut a_dequant = [0.0f32; 8];
+            let mut b_dequant = [0.0f32; 8];
 
-            // Dequantize both vectors
-            let a_dequant = (a_vec - a_zero_vec) * a_scale_vec;
-            let b_dequant = (b_vec - b_zero_vec) * b_scale_vec;
+            for k in 0..8 {
+                a_dequant[k] = (a_chunk[k] - a_zero) * a_scale;
+                b_dequant[k] = (b_chunk[k] - b_zero) * b_scale;
+            }
 
-            // Multiply and accumulate
-            let products = a_dequant * b_dequant;
-
-            // Sum the products
-            let sum_arr: [f32; 8] = products.into();
-            sum += sum_arr.iter().sum::<f32>();
+            // Convert to views and compute dot product using core SIMD
+            let a_view = ArrayView1::from(&a_dequant);
+            let b_view = ArrayView1::from(&b_dequant);
+            sum += f32::simd_dot(&a_view, &b_view);
 
             i += chunk_size;
         }

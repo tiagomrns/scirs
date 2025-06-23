@@ -365,7 +365,7 @@ mod tests {
             0.01,                      // 100% blend (full transition)
         ];
 
-        for (_i, expected) in expected_rates.iter().enumerate() {
+        for expected in expected_rates.iter() {
             scheduler.step();
             assert_relative_eq!(scheduler.get_learning_rate(), *expected, epsilon = 1e-10);
         }

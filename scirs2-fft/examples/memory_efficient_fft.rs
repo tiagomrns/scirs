@@ -106,7 +106,7 @@ fn large_array_processing() {
     println!("\n--- Processing Large Arrays in Chunks ---");
 
     // Create a large signal (1 million points)
-    let n = 1_000_000;
+    let n: usize = 1_000_000;
     println!("Creating a large signal with {} points...", n);
 
     // Use a simple function to generate the signal
@@ -120,7 +120,7 @@ fn large_array_processing() {
     // Process the signal in chunks
     println!("Processing signal in chunks...");
     let chunk_size = 1024;
-    let num_chunks = (n + chunk_size - 1) / chunk_size;
+    let num_chunks = n.div_ceil(chunk_size);
     println!("  Chunk size: {}", chunk_size);
     println!("  Number of chunks: {}", num_chunks);
 

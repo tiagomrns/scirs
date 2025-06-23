@@ -8,9 +8,9 @@
 use crate::error::{Result, VisionError};
 use image::{DynamicImage, GenericImageView, ImageBuffer, Rgba};
 use ndarray::{Array1, Array2};
-use rand::distr::Uniform;
 use rand::rngs::StdRng;
 use rand::{Rng, SeedableRng};
+use scirs2_linalg::solve;
 use std::f64::consts::PI;
 
 /// Non-rigid transformation interface
@@ -132,28 +132,14 @@ impl ThinPlateSpline {
             target_y[i] = target_points[i].1;
         }
 
-        // Solve the linear system for x and y mappings
-        use ndarray_linalg::solve::Solve;
+        // Solve the linear system for x and y mappings using scirs2-linalg
+        let coef_x = solve(&l.view(), &target_x.view(), None).map_err(|e| {
+            VisionError::LinAlgError(format!("Failed to solve for x coefficients: {}", e))
+        })?;
 
-        let coef_x = match Solve::solve(&l, &target_x) {
-            Ok(coef) => coef,
-            Err(e) => {
-                return Err(VisionError::LinAlgError(format!(
-                    "Failed to solve for x coefficients: {}",
-                    e
-                )))
-            }
-        };
-
-        let coef_y = match Solve::solve(&l, &target_y) {
-            Ok(coef) => coef,
-            Err(e) => {
-                return Err(VisionError::LinAlgError(format!(
-                    "Failed to solve for y coefficients: {}",
-                    e
-                )))
-            }
-        };
+        let coef_y = solve(&l.view(), &target_y.view(), None).map_err(|e| {
+            VisionError::LinAlgError(format!("Failed to solve for y coefficients: {}", e))
+        })?;
 
         Ok(Self {
             source_points: source_points.to_vec(),
@@ -295,19 +281,19 @@ impl ElasticDeformation {
         let mut rng = if let Some(seed_value) = seed {
             StdRng::seed_from_u64(seed_value)
         } else {
-            // According to CLAUDE.md, should use rng() instead of thread_rng() for rand 0.9.0
-            StdRng::from_rng(&mut rand::rng())
+            // For rand 0.9.0+, we need to create a seeded RNG for reproducibility
+            let mut thread_rng = rand::rng();
+            StdRng::from_rng(&mut thread_rng)
         };
 
         // Generate random displacement fields
-        let dist = Uniform::new(-1.0, 1.0).unwrap();
         let mut dx_map = Array2::zeros((height as usize, width as usize));
         let mut dy_map = Array2::zeros((height as usize, width as usize));
 
         for y in 0..height as usize {
             for x in 0..width as usize {
-                dx_map[[y, x]] = rng.sample(dist);
-                dy_map[[y, x]] = rng.sample(dist);
+                dx_map[[y, x]] = rng.random_range(-1.0..1.0);
+                dy_map[[y, x]] = rng.random_range(-1.0..1.0);
             }
         }
 

@@ -8,31 +8,33 @@ on:
 
 env:
   CARGO_TERM_COLOR: always
+  GH_TOKEN: ${{ github.token }}
 
 jobs:
   test:
-    name: Test
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      
+
+      - uses: Swatinem/rust-cache@v2 
+
       - name: Install Rust
         uses: dtolnay/rust-toolchain@stable
         with:
           components: rustfmt, clippy
 
-      - name: "Install cargo nextest"
-        uses: taiki-e/install-action@735e5933943122c5ac182670a935f54a949265c1 # v2
+      - name: Install cargo-nextest
+        uses: taiki-e/install-action@v2
         with:
           tool: cargo-nextest
-      
-      - name: Install system dependencies
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y build-essential libopenblas-dev pkg-config libfreetype6-dev libfontconfig1-dev
 
-      - name: Rust Cache
-        uses: Swatinem/rust-cache@v2
-      
+      - name: Install system libs
+        run: |
+          sudo apt-get update -y
+          sudo apt-get install -y build-essential libopenblas-dev \
+              pkg-config libfreetype6-dev libfontconfig1-dev
+
       - name: Run tests
-        run: cargo nextest run --verbose
+        run: |
+          cargo nextest run --workspace --all-features \
+                            --test-threads=1 --no-fail-fast

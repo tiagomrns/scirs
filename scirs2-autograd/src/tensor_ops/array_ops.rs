@@ -503,7 +503,6 @@ pub(crate) fn inplace_add_impl<F: Float>(mut a: NdArrayViewMut<F>, b: &NdArrayVi
                 b.as_ptr() as *const f32,
                 a.as_mut_ptr() as *mut f32,
             );
-            return;
         } else if same_type::<F, f64>() {
             vdAdd(
                 a.len() as MklInt,
@@ -532,14 +531,7 @@ impl<T: Float> op::Op<T> for AddN {
         } else {
             let mut base = &ctx.input(0) + &ctx.input(1);
             for i in 2..inputs_len {
-                #[cfg(feature = "mkl")]
-                {
-                    inplace_add_impl(base.view_mut(), &ctx.input(i));
-                }
-                #[cfg(not(feature = "mkl"))]
-                {
-                    base += &ctx.input(i);
-                }
+                base += &ctx.input(i);
             }
             ctx.append_output(base);
         }

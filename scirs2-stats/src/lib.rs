@@ -1,3 +1,5 @@
+#![allow(clippy::approx_constant)]
+
 //! Statistical functions module
 //!
 //! This module provides implementations of various statistical algorithms,
@@ -301,7 +303,7 @@
 //! // Generate a random permutation
 //! let permutation = sampling::permutation(&data.view(), Some(123)).unwrap();
 //! ```
-extern crate openblas_src;
+// Linear algebra operations provided by scirs2-linalg
 
 // Export error types
 pub mod error;

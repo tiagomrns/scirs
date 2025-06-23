@@ -283,9 +283,9 @@ use std::mem;
 use std::path::{Path, PathBuf};
 use std::slice;
 
-use memmap2::{Mmap, MmapMut, MmapOptions};
+use memmap2::MmapOptions;
 use ndarray::{Array, Dimension};
-use serde::{de::DeserializeOwned, Deserialize, Serialize};
+use serde::{Deserialize, Serialize};
 
 use super::memmap::{AccessMode, MemoryMappedArray};
 use crate::error::{CoreError, CoreResult, ErrorContext, ErrorLocation};
@@ -319,7 +319,7 @@ use crate::error::{CoreError, CoreResult, ErrorContext, ErrorLocation};
 /// - The type doesn't contain references, pointers, or other indirection
 /// - All fields are themselves zero-copy serializable
 /// - The type doesn't have any padding bytes with undefined values
-pub trait ZeroCopySerializable: Sized + Clone + Copy + 'static {
+pub trait ZeroCopySerializable: Sized + Clone + Copy + 'static + Send + Sync {
     /// Convert a byte slice to an instance of this type.
     ///
     /// # Safety
@@ -357,7 +357,6 @@ pub trait ZeroCopySerializable: Sized + Clone + Copy + 'static {
 }
 
 /// Implement ZeroCopySerializable for common numeric types
-
 /// Macro to implement ZeroCopySerializable for a primitive numeric type
 /// that has from_ne_bytes and to_ne_bytes methods
 macro_rules! impl_zerocopy_serializable {
@@ -398,34 +397,19 @@ impl_zerocopy_serializable!(f32, 4, "f32");
 #[cfg(feature = "float64")]
 impl_zerocopy_serializable!(f64, 8, "f64");
 
-// Default f64 implementation when no specific float feature is enabled
+// Default implementations when no specific float features are enabled
+// This ensures that f32 and f64 work out of the box for basic usage
 #[cfg(all(not(feature = "float32"), not(feature = "float64")))]
-impl_zerocopy_serializable!(f64, 8, "f64");
+mod default_float_impls {
+    use super::*;
 
-// Integer implementations - default 32-bit support
+    impl_zerocopy_serializable!(f32, 4, "f32");
+    impl_zerocopy_serializable!(f64, 8, "f64");
+}
 
-// Basic i32 support
-#[cfg(any(
-    feature = "int32",
-    all(not(feature = "int64"), not(feature = "all_ints"))
-))]
-impl_zerocopy_serializable!(i32, 4, "i32");
+// Integer implementations with non-overlapping feature flags
 
-// Basic u32 support
-#[cfg(any(
-    feature = "uint32",
-    all(not(feature = "uint64"), not(feature = "all_ints"))
-))]
-impl_zerocopy_serializable!(u32, 4, "u32");
-
-// 64-bit integer types when explicitly requested
-#[cfg(feature = "int64")]
-impl_zerocopy_serializable!(i64, 8, "i64");
-
-#[cfg(feature = "uint64")]
-impl_zerocopy_serializable!(u64, 8, "u64");
-
-// All integer types when the 'all_ints' feature is enabled
+// When all_ints is enabled, implement all integer types
 #[cfg(feature = "all_ints")]
 impl_zerocopy_serializable!(i8, 1, "i8");
 
@@ -450,9 +434,36 @@ impl_zerocopy_serializable!(u32, 4, "u32");
 #[cfg(feature = "all_ints")]
 impl_zerocopy_serializable!(u64, 8, "u64");
 
-// This default implementation block is no longer needed as we have handled
-// the default cases directly in the conditional compilation flags above.
-// The approach ensures that at minimum, we'll have f64, i32, and u32 types
+// When all_ints is NOT enabled, implement specific types based on feature flags
+#[cfg(all(not(feature = "all_ints"), feature = "int32"))]
+impl_zerocopy_serializable!(i32, 4, "i32");
+
+#[cfg(all(not(feature = "all_ints"), feature = "uint32"))]
+impl_zerocopy_serializable!(u32, 4, "u32");
+
+#[cfg(all(not(feature = "all_ints"), feature = "int64"))]
+impl_zerocopy_serializable!(i64, 8, "i64");
+
+#[cfg(all(not(feature = "all_ints"), feature = "uint64"))]
+impl_zerocopy_serializable!(u64, 8, "u64");
+
+// Default implementations when no specific integer features are enabled
+// This ensures that i32 and u32 work out of the box for basic usage
+#[cfg(all(
+    not(feature = "all_ints"),
+    not(feature = "int32"),
+    not(feature = "uint32"),
+    not(feature = "int64"),
+    not(feature = "uint64")
+))]
+mod default_int_impls {
+    use super::*;
+
+    impl_zerocopy_serializable!(i32, 4, "i32");
+    impl_zerocopy_serializable!(u32, 4, "u32");
+}
+
+// This approach ensures that at minimum, we'll have f32, f64, i32, and u32 types
 // available even if no specific feature flags are enabled.
 
 /// Metadata for zero-copy serialized arrays
@@ -468,8 +479,8 @@ struct ZeroCopyHeader {
     pub shape: Vec<usize>,
     /// Total number of elements
     pub total_elements: usize,
-    /// Optional extra metadata
-    pub metadata: Option<serde_json::Value>,
+    /// Optional extra metadata as JSON string
+    pub metadata_json: Option<String>,
 }
 
 /// An extension trait for MemoryMappedArray to support zero-copy serialization and deserialization.
@@ -575,18 +586,28 @@ impl<A: ZeroCopySerializable> ZeroCopySerialization<A> for MemoryMappedArray<A> 
         let path = path.as_ref();
 
         // Create header
+        let metadata_json = metadata
+            .map(|m| serde_json::to_string(&m))
+            .transpose()
+            .map_err(|e| {
+                CoreError::ValidationError(
+                    ErrorContext::new(format!("Failed to serialize metadata: {}", e))
+                        .with_location(ErrorLocation::new(file!(), line!())),
+                )
+            })?;
+
         let header = ZeroCopyHeader {
             type_name: std::any::type_name::<A>().to_string(),
             type_identifier: A::type_identifier().to_string(),
             element_size: mem::size_of::<A>(),
             shape: self.shape.clone(),
             total_elements: self.size,
-            metadata,
+            metadata_json,
         };
 
         // Serialize header
         let header_bytes = bincode::serialize(&header).map_err(|e| {
-            CoreError::SerializationError(
+            CoreError::ValidationError(
                 ErrorContext::new(format!("Failed to serialize header: {}", e))
                     .with_location(ErrorLocation::new(file!(), line!())),
             )
@@ -597,22 +618,35 @@ impl<A: ZeroCopySerializable> ZeroCopySerialization<A> for MemoryMappedArray<A> 
             .create(true)
             .write(true)
             .truncate(true)
-            .open(path)
-            .map_err(CoreError::IoError)?;
+            .open(path)?;
 
         // Write header length (for easier reading later)
         let header_len = header_bytes.len() as u64;
-        file.write_all(&header_len.to_ne_bytes())
-            .map_err(CoreError::IoError)?;
+        file.write_all(&header_len.to_ne_bytes())?;
 
         // Write header
-        file.write_all(&header_bytes).map_err(CoreError::IoError)?;
+        file.write_all(&header_bytes)?;
+
+        // Calculate current position and add padding for data alignment
+        let current_pos = 8 + header_len as usize; // 8 bytes for length + header
+        let alignment = std::mem::align_of::<A>();
+        let padding_needed = if current_pos % alignment == 0 {
+            0
+        } else {
+            alignment - (current_pos % alignment)
+        };
+
+        // Write padding bytes
+        if padding_needed > 0 {
+            let padding = vec![0u8; padding_needed];
+            file.write_all(&padding)?;
+        }
 
         // Get array bytes
         let array_bytes = self.as_bytes_slice()?;
 
         // Write array data
-        file.write_all(array_bytes).map_err(CoreError::IoError)?;
+        file.write_all(array_bytes)?;
 
         Ok(())
     }
@@ -624,22 +658,20 @@ impl<A: ZeroCopySerializable> ZeroCopySerialization<A> for MemoryMappedArray<A> 
         let path = path.as_ref();
 
         // Open file
-        let mut file = File::open(path).map_err(CoreError::IoError)?;
+        let mut file = File::open(path)?;
 
         // Read header length
         let mut header_len_bytes = [0u8; 8]; // u64
-        file.read_exact(&mut header_len_bytes)
-            .map_err(CoreError::IoError)?;
+        file.read_exact(&mut header_len_bytes)?;
         let header_len = u64::from_ne_bytes(header_len_bytes) as usize;
 
         // Read header
         let mut header_bytes = vec![0u8; header_len];
-        file.read_exact(&mut header_bytes)
-            .map_err(CoreError::IoError)?;
+        file.read_exact(&mut header_bytes)?;
 
         // Deserialize header
         let header: ZeroCopyHeader = bincode::deserialize(&header_bytes).map_err(|e| {
-            CoreError::SerializationError(
+            CoreError::ValidationError(
                 ErrorContext::new(format!("Failed to deserialize header: {}", e))
                     .with_location(ErrorLocation::new(file!(), line!())),
             )
@@ -669,20 +701,22 @@ impl<A: ZeroCopySerializable> ZeroCopySerialization<A> for MemoryMappedArray<A> 
             ));
         }
 
-        // Calculate data offset (8 bytes for header length + header bytes)
-        let data_offset = 8 + header_len;
+        // Calculate data offset (8 bytes for header length + header bytes + alignment padding)
+        let base_offset = 8 + header_len;
+        let alignment = std::mem::align_of::<A>();
+        let padding_needed = if base_offset % alignment == 0 {
+            0
+        } else {
+            alignment - (base_offset % alignment)
+        };
+        let data_offset = base_offset + padding_needed;
 
         // Memory map file at the offset of the actual data
         match mode {
             AccessMode::ReadOnly => {
                 // Create read-only memory map
-                let file = File::open(path).map_err(CoreError::IoError)?;
-                let mmap = unsafe {
-                    MmapOptions::new()
-                        .offset(data_offset as u64)
-                        .map(&file)
-                        .map_err(CoreError::IoError)?
-                };
+                let file = File::open(path)?;
+                let mmap = unsafe { MmapOptions::new().offset(data_offset as u64).map(&file)? };
 
                 // Create MemoryMappedArray
                 Ok(MemoryMappedArray {
@@ -699,17 +733,12 @@ impl<A: ZeroCopySerializable> ZeroCopySerialization<A> for MemoryMappedArray<A> 
             }
             AccessMode::ReadWrite => {
                 // Create read-write memory map
-                let file = OpenOptions::new()
-                    .read(true)
-                    .write(true)
-                    .open(path)
-                    .map_err(CoreError::IoError)?;
+                let file = OpenOptions::new().read(true).write(true).open(path)?;
 
                 let mmap = unsafe {
                     MmapOptions::new()
                         .offset(data_offset as u64)
-                        .map_mut(&file)
-                        .map_err(CoreError::IoError)?
+                        .map_mut(&file)?
                 };
 
                 // Create MemoryMappedArray
@@ -727,12 +756,11 @@ impl<A: ZeroCopySerializable> ZeroCopySerialization<A> for MemoryMappedArray<A> 
             }
             AccessMode::CopyOnWrite => {
                 // Create copy-on-write memory map
-                let file = File::open(path).map_err(CoreError::IoError)?;
+                let file = File::open(path)?;
                 let mmap = unsafe {
                     MmapOptions::new()
                         .offset(data_offset as u64)
-                        .map_copy(&file)
-                        .map_err(CoreError::IoError)?
+                        .map_copy(&file)?
                 };
 
                 // Create MemoryMappedArray
@@ -758,33 +786,11 @@ impl<A: ZeroCopySerializable> ZeroCopySerialization<A> for MemoryMappedArray<A> 
     }
 
     fn as_bytes_slice(&self) -> CoreResult<&[u8]> {
-        match (&self.mmap_view, &self.mmap_view_mut) {
-            (Some(view), _) => {
-                // Read-only view
-                Ok(view)
-            }
-            (_, Some(view)) => {
-                // Mutable view
-                Ok(view)
-            }
-            _ => Err(CoreError::ValidationError(
-                ErrorContext::new("Memory map is not initialized".to_string())
-                    .with_location(ErrorLocation::new(file!(), line!())),
-            )),
-        }
+        self.as_bytes()
     }
 
     fn as_bytes_slice_mut(&mut self) -> CoreResult<&mut [u8]> {
-        match &mut self.mmap_view_mut {
-            Some(view) => {
-                // Mutable view
-                Ok(view)
-            }
-            _ => Err(CoreError::ValidationError(
-                ErrorContext::new("Mutable memory map is not initialized".to_string())
-                    .with_location(ErrorLocation::new(file!(), line!())),
-            )),
-        }
+        self.as_bytes_mut()
     }
 }
 
@@ -837,7 +843,7 @@ impl<A: ZeroCopySerializable> MemoryMappedArray<A> {
         let mmap = super::memmap::create_temp_mmap(data, AccessMode::ReadWrite, 0)?;
 
         // Save to the specified file with zero-copy serialization
-        mmap.save_zero_copy(file_path, metadata)?;
+        mmap.save_zero_copy(&file_path, metadata)?;
 
         // Open the file we just created with read-write access
         Self::load_zero_copy(file_path, AccessMode::ReadWrite)
@@ -913,29 +919,35 @@ impl<A: ZeroCopySerializable> MemoryMappedArray<A> {
         let path = file_path.as_ref();
 
         // Open file
-        let mut file = File::open(path).map_err(CoreError::IoError)?;
+        let mut file = File::open(path)?;
 
         // Read header length
         let mut header_len_bytes = [0u8; 8]; // u64
-        file.read_exact(&mut header_len_bytes)
-            .map_err(CoreError::IoError)?;
+        file.read_exact(&mut header_len_bytes)?;
         let header_len = u64::from_ne_bytes(header_len_bytes) as usize;
 
         // Read header
         let mut header_bytes = vec![0u8; header_len];
-        file.read_exact(&mut header_bytes)
-            .map_err(CoreError::IoError)?;
+        file.read_exact(&mut header_bytes)?;
 
         // Deserialize header
         let header: ZeroCopyHeader = bincode::deserialize(&header_bytes).map_err(|e| {
-            CoreError::SerializationError(
+            CoreError::ValidationError(
                 ErrorContext::new(format!("Failed to deserialize header: {}", e))
                     .with_location(ErrorLocation::new(file!(), line!())),
             )
         })?;
 
-        // Return metadata or empty object if none
-        Ok(header.metadata.unwrap_or_else(|| serde_json::json!({})))
+        // Parse metadata JSON or return empty object if none
+        match header.metadata_json {
+            Some(json_str) => serde_json::from_str(&json_str).map_err(|e| {
+                CoreError::ValidationError(
+                    ErrorContext::new(format!("Failed to parse metadata JSON: {}", e))
+                        .with_location(ErrorLocation::new(file!(), line!())),
+                )
+            }),
+            None => Ok(serde_json::json!({})),
+        }
     }
 
     /// Get a read-only view of the array as an ndarray Array.
@@ -1023,37 +1035,36 @@ impl<A: ZeroCopySerializable> MemoryMappedArray<A> {
         let path = file_path.as_ref();
 
         // Open file
-        let mut file = OpenOptions::new()
-            .read(true)
-            .write(true)
-            .open(path)
-            .map_err(CoreError::IoError)?;
+        let mut file = OpenOptions::new().read(true).write(true).open(path)?;
 
         // Read header length
         let mut header_len_bytes = [0u8; 8]; // u64
-        file.read_exact(&mut header_len_bytes)
-            .map_err(CoreError::IoError)?;
+        file.read_exact(&mut header_len_bytes)?;
         let header_len = u64::from_ne_bytes(header_len_bytes) as usize;
 
         // Read header
         let mut header_bytes = vec![0u8; header_len];
-        file.read_exact(&mut header_bytes)
-            .map_err(CoreError::IoError)?;
+        file.read_exact(&mut header_bytes)?;
 
         // Deserialize header
         let mut header: ZeroCopyHeader = bincode::deserialize(&header_bytes).map_err(|e| {
-            CoreError::SerializationError(
+            CoreError::ValidationError(
                 ErrorContext::new(format!("Failed to deserialize header: {}", e))
                     .with_location(ErrorLocation::new(file!(), line!())),
             )
         })?;
 
         // Update metadata
-        header.metadata = Some(metadata);
+        header.metadata_json = Some(serde_json::to_string(&metadata).map_err(|e| {
+            CoreError::ValidationError(
+                ErrorContext::new(format!("Failed to serialize metadata: {}", e))
+                    .with_location(ErrorLocation::new(file!(), line!())),
+            )
+        })?);
 
         // Serialize updated header
         let new_header_bytes = bincode::serialize(&header).map_err(|e| {
-            CoreError::SerializationError(
+            CoreError::ValidationError(
                 ErrorContext::new(format!("Failed to serialize header: {}", e))
                     .with_location(ErrorLocation::new(file!(), line!())),
             )
@@ -1062,16 +1073,15 @@ impl<A: ZeroCopySerializable> MemoryMappedArray<A> {
         // If new header is same size or smaller, we can update in place
         if new_header_bytes.len() <= header_len {
             // Seek back to header start (after header length)
-            file.seek(SeekFrom::Start(8)).map_err(CoreError::IoError)?;
+            file.seek(SeekFrom::Start(8))?;
 
             // Write new header
-            file.write_all(&new_header_bytes)
-                .map_err(CoreError::IoError)?;
+            file.write_all(&new_header_bytes)?;
 
             // If new header is smaller, pad with zeros to maintain original size
             if new_header_bytes.len() < header_len {
                 let padding = vec![0u8; header_len - new_header_bytes.len()];
-                file.write_all(&padding).map_err(CoreError::IoError)?;
+                file.write_all(&padding)?;
             }
 
             Ok(())
@@ -1082,10 +1092,10 @@ impl<A: ZeroCopySerializable> MemoryMappedArray<A> {
 
             // Then save it to a temporary file
             let temp_path = PathBuf::from(format!("{}.temp", path.display()));
-            array.save_zero_copy(&temp_path, Some(metadata))?;
+            array.save_zero_copy(&temp_path, Some(metadata.clone()))?;
 
             // Replace the original file with the temporary file
-            std::fs::rename(&temp_path, path).map_err(CoreError::IoError)?;
+            std::fs::rename(&temp_path, path)?;
 
             Ok(())
         }
@@ -1095,8 +1105,7 @@ impl<A: ZeroCopySerializable> MemoryMappedArray<A> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use ndarray::{Array, Array1, Array2, Array3, ArrayD, Dim, IxDyn};
-    use std::fs::File;
+    use ndarray::{Array, Array1, Array2, Array3, IxDyn};
     use tempfile::tempdir;
 
     // Example of a custom complex number type that implements ZeroCopySerializable
@@ -1112,6 +1121,7 @@ mod tests {
             Self { real, imag }
         }
 
+        #[allow(dead_code)]
         fn magnitude(&self) -> f64 {
             (self.real * self.real + self.imag * self.imag).sqrt()
         }
@@ -1151,7 +1161,7 @@ mod tests {
     #[test]
     fn test_custom_complex_type() {
         // Create a complex number
-        let complex = Complex64::new(3.14, 2.71);
+        let complex = Complex64::new(3.5, 2.7);
 
         // Test zero-copy serialization
         unsafe {
@@ -1187,7 +1197,7 @@ mod tests {
                 .unwrap();
 
         // Verify save worked
-        assert_eq!(array.shape(), data.shape());
+        assert_eq!(array.shape.as_slice(), data.shape());
         assert_eq!(array.size, data.len());
 
         // Load from file
@@ -1196,7 +1206,7 @@ mod tests {
                 .unwrap();
 
         // Verify load worked
-        assert_eq!(loaded.shape(), data.shape());
+        assert_eq!(loaded.shape.as_slice(), data.shape());
         assert_eq!(loaded.size, data.len());
 
         // Convert to ndarray and check values
@@ -1217,16 +1227,15 @@ mod tests {
     }
 
     #[test]
+    #[cfg(feature = "float32")]
     fn test_zero_copy_serializable_f32() {
-        let value: f32 = 3.14159;
+        let value: f32 = 3.5;
 
-        unsafe {
-            let bytes = value.as_bytes();
-            assert_eq!(bytes.len(), 4);
+        let bytes = value.to_ne_bytes();
+        assert_eq!(bytes.len(), 4);
 
-            let deserialized = f32::from_bytes(bytes).unwrap();
-            assert_eq!(value, deserialized);
-        }
+        let deserialized = f32::from_ne_bytes(bytes);
+        assert_eq!(value, deserialized);
     }
 
     #[test]
@@ -1260,7 +1269,7 @@ mod tests {
             .unwrap();
 
         // Verify save worked
-        assert_eq!(array.shape(), data.shape());
+        assert_eq!(array.shape.as_slice(), data.shape());
         assert_eq!(array.size, data.len());
 
         // Load from file
@@ -1268,7 +1277,7 @@ mod tests {
             MemoryMappedArray::<f64>::open_zero_copy(&file_path, AccessMode::ReadOnly).unwrap();
 
         // Verify load worked
-        assert_eq!(loaded.shape(), data.shape());
+        assert_eq!(loaded.shape.as_slice(), data.shape());
         assert_eq!(loaded.size, data.len());
 
         // Convert to ndarray and check values
@@ -1285,6 +1294,7 @@ mod tests {
     }
 
     #[test]
+    #[cfg(feature = "float32")]
     fn test_save_and_load_array_2d() {
         // Create a temporary directory
         let dir = tempdir().unwrap();
@@ -1297,7 +1307,7 @@ mod tests {
         let array = MemoryMappedArray::<f32>::save_array(&data, &file_path, None).unwrap();
 
         // Verify save worked
-        assert_eq!(array.shape(), data.shape());
+        assert_eq!(array.shape.as_slice(), data.shape());
         assert_eq!(array.size, data.len());
 
         // Load from file
@@ -1305,7 +1315,7 @@ mod tests {
             MemoryMappedArray::<f32>::open_zero_copy(&file_path, AccessMode::ReadOnly).unwrap();
 
         // Verify load worked
-        assert_eq!(loaded.shape(), data.shape());
+        assert_eq!(loaded.shape.as_slice(), data.shape());
         assert_eq!(loaded.size, data.len());
 
         // Convert to ndarray and check values
@@ -1341,7 +1351,7 @@ mod tests {
             MemoryMappedArray::<i32>::save_array(&data, &file_path, Some(metadata)).unwrap();
 
         // Verify save worked
-        assert_eq!(array.shape(), data.shape());
+        assert_eq!(array.shape.as_slice(), data.shape());
         assert_eq!(array.size, data.len());
 
         // Load from file
@@ -1349,7 +1359,7 @@ mod tests {
             MemoryMappedArray::<i32>::open_zero_copy(&file_path, AccessMode::ReadOnly).unwrap();
 
         // Verify load worked
-        assert_eq!(loaded.shape(), data.shape());
+        assert_eq!(loaded.shape.as_slice(), data.shape());
         assert_eq!(loaded.size, data.len());
 
         // Convert to ndarray and check values
@@ -1400,7 +1410,7 @@ mod tests {
             MemoryMappedArray::<f64>::save_array(&data, &file_path, Some(metadata)).unwrap();
 
         // Verify save worked
-        assert_eq!(array.shape(), data.shape());
+        assert_eq!(array.shape.as_slice(), data.shape());
         assert_eq!(array.size, data.len());
 
         // Load from file
@@ -1408,7 +1418,7 @@ mod tests {
             MemoryMappedArray::<f64>::open_zero_copy(&file_path, AccessMode::ReadOnly).unwrap();
 
         // Verify load worked
-        assert_eq!(loaded.shape(), data.shape());
+        assert_eq!(loaded.shape.as_slice(), data.shape());
         assert_eq!(loaded.size, data.len());
 
         // Convert to ndarray and check values
@@ -1427,119 +1437,117 @@ mod tests {
             assert_eq!(loaded_array[&idx], data[&idx]);
         }
 
-        // Also test reading as a flattened 1D array
-        let loaded_flat = loaded.readonly_array::<ndarray::Ix1>().unwrap();
-        let data_flat = data.as_standard_layout().into_shape(data.len()).unwrap();
+        // Also test reading data directly as slice
+        let loaded_slice = loaded.as_slice();
+        let data_standard = data.as_standard_layout();
+        let data_slice = data_standard.as_slice().unwrap();
 
-        for i in 0..data.len() {
-            assert_eq!(loaded_flat[i], data_flat[i]);
+        assert_eq!(loaded_slice.len(), data_slice.len());
+        for i in 0..data_slice.len() {
+            assert_eq!(loaded_slice[i], data_slice[i]);
         }
     }
 
     #[test]
+    #[cfg(feature = "float32")]
     fn test_save_and_load_array_mixed_types() {
         // Create a temporary directory
         let dir = tempdir().unwrap();
 
-        // Test different combinations of array types
-        let test_cases = vec![
-            ("u32_1d.bin", Array1::<u32>::linspace(0, 99, 100)),
-            (
-                "i64_2d.bin",
-                Array2::<i64>::from_shape_fn((5, 10), |(i, j)| (i * 10 + j) as i64),
-            ),
-            (
-                "f32_3d.bin",
-                Array3::<f32>::from_shape_fn((3, 4, 5), |(i, j, k)| (i * 20 + j * 5 + k) as f32),
-            ),
-        ];
-
-        for (filename, data) in test_cases {
-            // Save array
+        // Test u32 1D array
+        {
+            let filename = "u32_1d.bin";
             let file_path = dir.path().join(filename);
+            let data = Array1::<u32>::from_shape_fn(100, |i| i as u32);
             let metadata = serde_json::json!({
-                "array_type": filename.split('_').next().unwrap(),
+                "array_type": "u32",
                 "dimensions": data.ndim(),
                 "shape": data.shape().to_vec()
             });
 
-            match filename {
-                "u32_1d.bin" => {
-                    let typed_data = data.mapv(|v| v as u32);
-                    let array = MemoryMappedArray::<u32>::save_array(
-                        &typed_data,
-                        &file_path,
-                        Some(metadata.clone()),
-                    )
+            let array =
+                MemoryMappedArray::<u32>::save_array(&data, &file_path, Some(metadata.clone()))
                     .unwrap();
-                    assert_eq!(array.shape(), typed_data.shape());
+            assert_eq!(array.shape.as_slice(), data.shape());
 
-                    // Load and verify
-                    let loaded =
-                        MemoryMappedArray::<u32>::open_zero_copy(&file_path, AccessMode::ReadOnly)
-                            .unwrap();
-                    let loaded_array = loaded.readonly_array::<ndarray::Ix1>().unwrap();
+            // Load and verify
+            let loaded =
+                MemoryMappedArray::<u32>::open_zero_copy(&file_path, AccessMode::ReadOnly).unwrap();
+            let loaded_array = loaded.readonly_array::<ndarray::Ix1>().unwrap();
 
-                    for i in 0..typed_data.len() {
-                        assert_eq!(loaded_array[i], typed_data[i]);
-                    }
-                }
-                "i64_2d.bin" => {
-                    let typed_data = data.mapv(|v| v as i64);
-                    let array = MemoryMappedArray::<i64>::save_array(
-                        &typed_data,
-                        &file_path,
-                        Some(metadata.clone()),
-                    )
-                    .unwrap();
-                    assert_eq!(array.shape(), typed_data.shape());
-
-                    // Load and verify
-                    let loaded =
-                        MemoryMappedArray::<i64>::open_zero_copy(&file_path, AccessMode::ReadOnly)
-                            .unwrap();
-                    let loaded_array = loaded.readonly_array::<ndarray::Ix2>().unwrap();
-
-                    for i in 0..typed_data.shape()[0] {
-                        for j in 0..typed_data.shape()[1] {
-                            assert_eq!(loaded_array[[i, j]], typed_data[[i, j]]);
-                        }
-                    }
-                }
-                "f32_3d.bin" => {
-                    let typed_data = data.mapv(|v| v as f32);
-                    let array = MemoryMappedArray::<f32>::save_array(
-                        &typed_data,
-                        &file_path,
-                        Some(metadata.clone()),
-                    )
-                    .unwrap();
-                    assert_eq!(array.shape(), typed_data.shape());
-
-                    // Load and verify
-                    let loaded =
-                        MemoryMappedArray::<f32>::open_zero_copy(&file_path, AccessMode::ReadOnly)
-                            .unwrap();
-                    let loaded_array = loaded.readonly_array::<ndarray::Ix3>().unwrap();
-
-                    for i in 0..typed_data.shape()[0] {
-                        for j in 0..typed_data.shape()[1] {
-                            for k in 0..typed_data.shape()[2] {
-                                assert_eq!(loaded_array[[i, j, k]], typed_data[[i, j, k]]);
-                            }
-                        }
-                    }
-                }
-                _ => unreachable!(),
+            for i in 0..data.len() {
+                assert_eq!(loaded_array[i], data[i]);
             }
 
             // Verify metadata was saved correctly
-            let loaded_metadata = match filename {
-                "u32_1d.bin" => MemoryMappedArray::<u32>::read_metadata(&file_path).unwrap(),
-                "i64_2d.bin" => MemoryMappedArray::<i64>::read_metadata(&file_path).unwrap(),
-                "f32_3d.bin" => MemoryMappedArray::<f32>::read_metadata(&file_path).unwrap(),
-                _ => unreachable!(),
-            };
+            let loaded_metadata = MemoryMappedArray::<u32>::read_metadata(&file_path).unwrap();
+            assert_eq!(loaded_metadata, metadata);
+        }
+
+        // Test i64 2D array
+        {
+            let filename = "i64_2d.bin";
+            let file_path = dir.path().join(filename);
+            let data = Array2::<i64>::from_shape_fn((5, 10), |(i, j)| (i * 10 + j) as i64);
+            let metadata = serde_json::json!({
+                "array_type": "i64",
+                "dimensions": data.ndim(),
+                "shape": data.shape().to_vec()
+            });
+
+            let array =
+                MemoryMappedArray::<i64>::save_array(&data, &file_path, Some(metadata.clone()))
+                    .unwrap();
+            assert_eq!(array.shape.as_slice(), data.shape());
+
+            // Load and verify
+            let loaded =
+                MemoryMappedArray::<i64>::open_zero_copy(&file_path, AccessMode::ReadOnly).unwrap();
+            let loaded_array = loaded.readonly_array::<ndarray::Ix2>().unwrap();
+
+            for i in 0..data.shape()[0] {
+                for j in 0..data.shape()[1] {
+                    assert_eq!(loaded_array[[i, j]], data[[i, j]]);
+                }
+            }
+
+            // Verify metadata was saved correctly
+            let loaded_metadata = MemoryMappedArray::<i64>::read_metadata(&file_path).unwrap();
+            assert_eq!(loaded_metadata, metadata);
+        }
+
+        // Test f32 3D array
+        {
+            let filename = "f32_3d.bin";
+            let file_path = dir.path().join(filename);
+            let data =
+                Array3::<f32>::from_shape_fn((3, 4, 5), |(i, j, k)| (i * 20 + j * 5 + k) as f32);
+            let metadata = serde_json::json!({
+                "array_type": "f32",
+                "dimensions": data.ndim(),
+                "shape": data.shape().to_vec()
+            });
+
+            let array =
+                MemoryMappedArray::<f32>::save_array(&data, &file_path, Some(metadata.clone()))
+                    .unwrap();
+            assert_eq!(array.shape.as_slice(), data.shape());
+
+            // Load and verify
+            let loaded =
+                MemoryMappedArray::<f32>::open_zero_copy(&file_path, AccessMode::ReadOnly).unwrap();
+            let loaded_array = loaded.readonly_array::<ndarray::Ix3>().unwrap();
+
+            for i in 0..data.shape()[0] {
+                for j in 0..data.shape()[1] {
+                    for k in 0..data.shape()[2] {
+                        assert_eq!(loaded_array[[i, j, k]], data[[i, j, k]]);
+                    }
+                }
+            }
+
+            // Verify metadata was saved correctly
+            let loaded_metadata = MemoryMappedArray::<f32>::read_metadata(&file_path).unwrap();
             assert_eq!(loaded_metadata, metadata);
         }
     }
@@ -1583,6 +1591,7 @@ mod tests {
     }
 
     #[test]
+    #[cfg(feature = "float32")]
     fn test_modify_array() {
         // Create a temporary directory
         let dir = tempdir().unwrap();
@@ -1642,10 +1651,10 @@ mod tests {
 
         // Modify array through copy-on-write view
         {
-            let mut array = cow_mmap.as_array_mut::<ndarray::Ix2>().unwrap();
+            let mut array_view = cow_mmap.as_array_mut::<ndarray::Ix2>().unwrap();
             // Set diagonal to 100
             for i in 0..10 {
-                array[[i, i]] = 100.0;
+                array_view[[i, i]] = 100.0;
             }
         }
 

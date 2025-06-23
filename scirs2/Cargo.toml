@@ -1,6 +1,6 @@
 [package]
 name = "scirs2"
-version = "0.1.0-alpha.4"
+version = "0.1.0-alpha.5"
 edition = "2021"
 authors = ["SciRS2 Team"]
 description = "A Rust port of SciPy with AI/ML extensions - Scientific Computing and AI Library"
@@ -59,6 +59,13 @@ cache = []
 logging = []
 profiling = []
 memory_management = []
+
+# BLAS backend override features (optional - platform defaults are used if not specified)
+# These allow users to override platform defaults when needed
+accelerate = ["linalg", "scirs2-linalg/accelerate"]  # Force use of macOS Accelerate framework
+openblas = ["linalg", "scirs2-linalg/openblas-backend"]  # Force use of OpenBLAS
+intel-mkl = ["linalg", "scirs2-linalg/intel-mkl"]  # Force use of Intel MKL
+netlib = ["linalg", "scirs2-linalg/netlib"]  # Force use of reference Netlib
 
 # Functional groupings
 standard = [

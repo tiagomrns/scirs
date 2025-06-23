@@ -18,7 +18,7 @@ mod tests {
         let standard_result = fft(&signal, None).unwrap();
 
         // Compute FFT with SIMD implementation
-        let simd_result = fft_simd(&signal, None, None).unwrap();
+        let simd_result = fft_simd(&signal, None).unwrap();
 
         // Compare results
         assert_eq!(standard_result.len(), simd_result.len());

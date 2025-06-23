@@ -22,6 +22,7 @@
 //!    Numerical Recipes in C++: The Art of Scientific Computing.
 
 use crate::optimizations::{exponential_integral_e1_pade, exponential_integral_pade, get_constant};
+use crate::validation::check_positive;
 use crate::{SpecialError, SpecialResult};
 use num_complex::Complex64;
 use std::f64::consts::PI;
@@ -68,11 +69,7 @@ const MEDIUM_EPS: f64 = 1e-10;
 /// 1. Abramowitz, M. and Stegun, I. A. (1972). Handbook of Mathematical Functions, Section 5.
 pub fn li(x: f64) -> SpecialResult<f64> {
     // Check for domain error
-    if x <= 0.0 {
-        return Err(SpecialError::DomainError(String::from(
-            "Logarithmic integral is defined only for x > 0",
-        )));
-    }
+    check_positive(x, "x")?;
 
     // Special case: Li(1) = -∞
     if (x - 1.0).abs() < f64::EPSILON {
@@ -153,9 +150,9 @@ pub fn li(x: f64) -> SpecialResult<f64> {
 pub fn li_complex(z: Complex64) -> SpecialResult<Complex64> {
     // Check for domain error
     if z.norm() < f64::EPSILON {
-        return Err(SpecialError::DomainError(String::from(
-            "Logarithmic integral is not defined at z = 0",
-        )));
+        return Err(SpecialError::DomainError(
+            "Logarithmic integral is not defined at z = 0".to_string(),
+        ));
     }
 
     // Special case: Li(1) = -∞

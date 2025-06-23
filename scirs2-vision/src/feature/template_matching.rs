@@ -6,7 +6,7 @@
 use crate::error::{Result, VisionError};
 use image::{DynamicImage, GenericImageView, GrayImage, Rgb, RgbImage};
 use ndarray::{s, Array2};
-use rayon::prelude::*;
+use scirs2_core::parallel_ops::*;
 
 /// Template matching method
 #[derive(Debug, Clone, Copy)]

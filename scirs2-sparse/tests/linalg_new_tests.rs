@@ -47,9 +47,11 @@ fn test_bicg_solver() {
     let b = vec![3.0, 2.0];
 
     // Solve using BiCG
-    let mut options = BiCGOptions::default();
-    options.atol = 1e-8;
-    options.rtol = 1e-8;
+    let options = BiCGOptions::<f64> {
+        atol: 1e-8,
+        rtol: 1e-8,
+        ..Default::default()
+    };
     let result = bicg(op.as_ref(), &b, options).unwrap();
 
     // Check convergence (for some small problems, BiCG may struggle)

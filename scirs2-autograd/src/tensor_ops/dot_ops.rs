@@ -2,131 +2,12 @@
 use crate::ndarray_ext::NdArray;
 use crate::same_type;
 use crate::tensor::Tensor;
-#[cfg(feature = "blas")]
-use crate::tensor_ops::blas_ffi::*;
+
 use crate::Float;
 use crate::NdArrayView;
 use crate::{op, NdArrayViewMut};
 use ndarray;
-#[cfg(feature = "blas")]
-use ndarray::Dimension;
 use ndarray::{ArrayView2, ArrayViewMut2};
-#[cfg(feature = "blas")]
-use std::cmp;
-#[cfg(feature = "blas")]
-use std::mem;
-
-#[cfg(feature = "blas")]
-#[inline]
-fn blas_row_major_2d<T: 'static, F>(a: &ndarray::ArrayView2<F>) -> bool
-where
-    F: Float,
-{
-    if !same_type::<F, T>() {
-        return false;
-    }
-    is_blas_2d(&a.raw_dim(), a.strides(), MemoryOrder::C)
-}
-
-#[cfg(feature = "blas")]
-#[inline]
-fn blas_row_major_nd<T: 'static, F>(a: &NdArrayView<F>) -> bool
-where
-    F: Float,
-{
-    if !same_type::<F, T>() {
-        return false;
-    }
-    let strides = a.strides();
-    let rank = strides.len();
-    is_blas_nd(
-        a.shape(),
-        strides[rank - 2],
-        strides[rank - 1],
-        MemoryOrder::C,
-    )
-}
-
-#[cfg(feature = "blas")]
-#[inline]
-fn blas_row_major_2d_mut<T: 'static, F>(a: &ndarray::ArrayViewMut2<F>) -> bool
-where
-    F: Float,
-{
-    if !same_type::<F, T>() {
-        return false;
-    }
-    is_blas_2d(&a.raw_dim(), a.strides(), MemoryOrder::C)
-}
-
-#[cfg(feature = "blas")]
-#[inline]
-fn blas_row_major_nd_mut<T: 'static, F>(a: &NdArrayViewMut<F>) -> bool
-where
-    F: Float,
-{
-    if !same_type::<F, T>() {
-        return false;
-    }
-    let strides = a.strides();
-    let rank = strides.len();
-    is_blas_nd(
-        a.shape(),
-        strides[rank - 2],
-        strides[rank - 1],
-        MemoryOrder::C,
-    )
-}
-
-#[cfg(feature = "blas")]
-fn is_blas_nd(shape: &[usize], stride0: isize, stride1: isize, order: MemoryOrder) -> bool {
-    let (m, n) = (shape[0], shape[1]);
-    let (inner_stride, outer_dim) = match order {
-        MemoryOrder::C => (stride1, n),
-        MemoryOrder::F => (stride0, m),
-    };
-    if !(inner_stride == 1 || outer_dim == 1) {
-        return false;
-    }
-    if stride0 < 1 || stride1 < 1 {
-        return false;
-    }
-    if (stride0 > BlasIF::max_value() as isize || stride0 < BlasIF::min_value() as isize)
-        || (stride1 > BlasIF::max_value() as isize || stride1 < BlasIF::min_value() as isize)
-    {
-        return false;
-    }
-    if m > BlasIF::max_value() as usize || n > BlasIF::max_value() as usize {
-        return false;
-    }
-    true
-}
-
-#[cfg(feature = "blas")]
-fn is_blas_2d(dim: &ndarray::Ix2, stride: &[isize], order: MemoryOrder) -> bool {
-    let (m, n) = dim.into_pattern();
-    let s0 = stride[0] as isize;
-    let s1 = stride[1] as isize;
-    let (inner_stride, outer_dim) = match order {
-        MemoryOrder::C => (s1, n),
-        MemoryOrder::F => (s0, m),
-    };
-    if !(inner_stride == 1 || outer_dim == 1) {
-        return false;
-    }
-    if s0 < 1 || s1 < 1 {
-        return false;
-    }
-    if (s0 > BlasIF::max_value() as isize || s0 < BlasIF::min_value() as isize)
-        || (s1 > BlasIF::max_value() as isize || s1 < BlasIF::min_value() as isize)
-    {
-        return false;
-    }
-    if m > BlasIF::max_value() as usize || n > BlasIF::max_value() as usize {
-        return false;
-    }
-    true
-}
 
 // Read pointer to type `A` as type `B`.
 //
@@ -137,247 +18,7 @@ fn cast_as<A: 'static + Copy, B: 'static + Copy>(a: &A) -> B {
     unsafe { ::std::ptr::read(a as *const _ as *const B) }
 }
 
-// blas version of ndarray's mat_mul_impl
-#[cfg(feature = "blas")]
-fn mat_mul_impl_blas<F: Float>(
-    alpha: F,
-    lhs: &ArrayView2<'_, F>,
-    rhs: &ArrayView2<'_, F>,
-    beta: F,
-    c: &mut ArrayViewMut2<'_, F>,
-) {
-    const GEMM_BLAS_CUTOFF: usize = 7;
-
-    // size cutoff for using BLAS
-    let cut = GEMM_BLAS_CUTOFF;
-    let ((mut m, a), (_, mut n)) = (lhs.dim(), rhs.dim());
-    if !(m > cut || n > cut || a > cut) || !(same_type::<F, f32>() || same_type::<F, f64>()) {
-        return mat_mul_impl_slow(alpha, lhs, rhs, beta, c);
-    }
-    {
-        // Use `c` for c-order and `f` for an f-order matrix
-        // We can handle c * c, f * f generally and
-        // c * f and f * c if the `f` matrix is square.
-        let mut lhs_ = lhs.view();
-        let mut rhs_ = rhs.view();
-        let mut c_ = c.view_mut();
-        let lhs_s0 = lhs_.strides()[0];
-        let rhs_s0 = rhs_.strides()[0];
-        let both_f = lhs_s0 == 1 && rhs_s0 == 1;
-        let mut lhs_trans = CblasNoTrans;
-        let mut rhs_trans = CblasNoTrans;
-        if both_f {
-            // A^t B^t = C^t => B A = C
-            let lhs_t = lhs_.reversed_axes();
-            lhs_ = rhs_.reversed_axes();
-            rhs_ = lhs_t;
-            c_ = c_.reversed_axes();
-            mem::swap(&mut m, &mut n);
-        } else if lhs_s0 == 1 && m == a {
-            lhs_ = lhs_.reversed_axes();
-            lhs_trans = CblasTrans
-        } else if rhs_s0 == 1 && a == n {
-            rhs_ = rhs_.reversed_axes();
-            rhs_trans = CblasTrans
-        }
-
-        macro_rules! call_kernel_def {
-            ($ty:ty, $f:ident) => {
-                if blas_row_major_2d::<$ty, _>(&lhs_)
-                    && blas_row_major_2d::<$ty, _>(&rhs_)
-                    && blas_row_major_2d_mut::<$ty, _>(&c_)
-                {
-                    let (m, k) = match lhs_trans {
-                        CblasNoTrans => lhs_.dim(),
-                        _ => {
-                            let (rows, cols) = lhs_.dim();
-                            (cols, rows)
-                        }
-                    };
-                    let n = match rhs_trans {
-                        CblasNoTrans => rhs_.raw_dim()[1],
-                        _ => rhs_.raw_dim()[0],
-                    };
-                    // adjust strides, these may [1, 1] for column matrices
-                    let lhs_stride = cmp::max(lhs_.strides()[0] as BlasIF, k as BlasIF);
-                    let rhs_stride = cmp::max(rhs_.strides()[0] as BlasIF, n as BlasIF);
-                    let c_stride = cmp::max(c_.strides()[0] as BlasIF, n as BlasIF);
-
-                    // gemm is C ← αA^Op B^Op + βC
-                    // Where Op is notrans/trans/conjtrans
-                    unsafe {
-                        $f(
-                            CblasRowMajor,
-                            lhs_trans,
-                            rhs_trans,
-                            m as BlasIF,               // m, rows of Op(a)
-                            n as BlasIF,               // n, cols of Op(b)
-                            k as BlasIF,               // k, cols of Op(a)
-                            cast_as(&alpha),           // alpha
-                            lhs_.as_ptr() as *const _, // a
-                            lhs_stride,                // lda
-                            rhs_.as_ptr() as *const _, // b
-                            rhs_stride,                // ldb
-                            cast_as(&beta),            // beta
-                            c_.as_mut_ptr() as *mut _, // c
-                            c_stride,                  // ldc
-                        );
-                    }
-                    return;
-                }
-            };
-        }
-        call_kernel_def!(f32, cblas_sgemm);
-        call_kernel_def!(f64, cblas_dgemm);
-    }
-    mat_mul_impl_slow(alpha, lhs, rhs, beta, c)
-}
-
-#[allow(unused_assignments)]
-#[cfg(feature = "blas")]
-fn batch_mat_mul_impl_fast<F: Float>(
-    alpha: F,
-    lhs: &NdArrayView<'_, F>,
-    rhs: &NdArrayView<'_, F>,
-    beta: F,
-    c: &mut NdArrayViewMut<'_, F>,
-) {
-    let lhs_shape = lhs.shape();
-    let rhs_shape = rhs.shape();
-    let c_shape = c.shape();
-
-    let rank = lhs.ndim();
-
-    let (mut m, a, mut n) = (
-        lhs_shape[rank - 2],
-        lhs_shape[rank - 1],
-        rhs_shape[rank - 1],
-    );
-
-    let lhs_batch_size: usize = lhs_shape[rank - 2..].iter().product();
-    let rhs_batch_size: usize = rhs_shape[rank - 2..].iter().product();
-    let c_batch_size: usize = c_shape[rank - 2..].iter().product();
-
-    {
-        use rayon::prelude::*;
-        use std::slice;
-
-        // Use `c` for c-order and `f` for an f-order matrix
-        // We can handle c * c, f * f generally and
-        // c * f and f * c if the `f` matrix is square.
-        let mut lhs_ = lhs.view();
-        let mut rhs_ = rhs.view();
-        let mut c_ = c.view_mut();
-
-        let mut lhs_strides = lhs_.strides();
-        let mut rhs_strides = rhs_.strides();
-
-        // copy if batch dims appear in last two dims.
-        let copied_lhs;
-        let copied_rhs;
-        if batch_mat_mul_requires_copy(lhs_strides) {
-            copied_lhs = crate::ndarray_ext::deep_copy(&lhs_);
-            lhs_ = copied_lhs.view();
-            lhs_strides = lhs_.strides();
-        }
-        if batch_mat_mul_requires_copy(rhs_strides) {
-            copied_rhs = crate::ndarray_ext::deep_copy(&rhs_);
-            rhs_ = copied_rhs.view();
-            rhs_strides = rhs_.strides();
-        }
-
-        let lhs_s0 = lhs_strides[rank - 2];
-        let rhs_s0 = rhs_strides[rank - 2];
-        let both_f = lhs_s0 == 1 && rhs_s0 == 1;
-
-        let mut lhs_trans = CblasNoTrans;
-        let mut rhs_trans = CblasNoTrans;
-
-        // Update lhs, rhs info if needed
-        if both_f {
-            // A^t B^t = C^t => B A = C
-            let mut lhs_t = lhs_;
-            lhs_t.swap_axes(rank - 2, rank - 1);
-            lhs_ = rhs_;
-            lhs_.swap_axes(rank - 2, rank - 1);
-            rhs_ = lhs_t;
-            c_.swap_axes(rank - 2, rank - 1);
-            mem::swap(&mut m, &mut n);
-        } else if lhs_s0 == 1 && m == a {
-            lhs_.swap_axes(rank - 2, rank - 1);
-            lhs_trans = CblasTrans;
-        } else if rhs_s0 == 1 && a == n {
-            rhs_.swap_axes(rank - 2, rank - 1);
-            rhs_trans = CblasTrans;
-        }
-
-        #[cfg(feature = "blas")]
-        {
-            let lhs_slice = unsafe { slice::from_raw_parts(lhs_.as_ptr(), lhs_.len()) };
-            let rhs_slice = unsafe { slice::from_raw_parts(rhs_.as_ptr(), rhs_.len()) };
-            let c_slice = unsafe { slice::from_raw_parts_mut(c_.as_mut_ptr(), c_.len()) };
-
-            macro_rules! call_kernel_def {
-                ($ty:ty, $f:ident) => {
-                    if blas_row_major_nd::<$ty, _>(&lhs_)
-                        && blas_row_major_nd::<$ty, _>(&rhs_)
-                        && blas_row_major_nd_mut::<$ty, _>(&c_)
-                    {
-                        let (m, k) = match lhs_trans {
-                            CblasNoTrans => {
-                                let s = lhs_.shape();
-                                (s[rank - 2], s[rank - 1])
-                            }
-                            _ => {
-                                let s = lhs_.shape();
-                                (s[rank - 1], s[rank - 2])
-                            }
-                        };
-                        let n = match rhs_trans {
-                            CblasNoTrans => rhs_.raw_dim()[rank - 1],
-                            _ => rhs_.raw_dim()[rank - 2],
-                        };
-                        // adjust strides, these may [1, 1] for column matrices
-                        let lhs_stride = cmp::max(lhs_.strides()[rank - 2] as BlasIF, k as BlasIF);
-                        let rhs_stride = cmp::max(rhs_.strides()[rank - 2] as BlasIF, n as BlasIF);
-                        let c_stride = cmp::max(c_.strides()[rank - 2] as BlasIF, n as BlasIF);
-
-                        let a = lhs_slice.par_iter().step_by(lhs_batch_size);
-                        let b = rhs_slice.par_iter().step_by(rhs_batch_size);
-                        let c = c_slice.par_iter_mut().step_by(c_batch_size);
-
-                        a.zip_eq(b).zip_eq(c).for_each(|((lhs, rhs), c)| {
-                            unsafe {
-                                // blas
-                                $f(
-                                    CblasRowMajor,
-                                    lhs_trans,
-                                    rhs_trans,
-                                    m as BlasIF,                 // m, rows of Op(a)
-                                    n as BlasIF,                 // n, cols of Op(b)
-                                    k as BlasIF,                 // k, cols of Op(a)
-                                    cast_as(&alpha),             // alpha
-                                    lhs as *const F as *const _, // a
-                                    lhs_stride,                  // lda
-                                    rhs as *const F as *const _, // b
-                                    rhs_stride,                  // ldb
-                                    cast_as(&beta),              // beta
-                                    c as *mut F as *mut _,       // c
-                                    c_stride,                    // ldc
-                                );
-                            }
-                        });
-
-                        return;
-                    }
-                };
-            }
-            call_kernel_def!(f32, cblas_sgemm);
-            call_kernel_def!(f64, cblas_dgemm);
-        }
-    }
-    batch_mat_mul_impl_slow(alpha, lhs, rhs, beta, c)
-}
+// Note: mat_mul_impl and batch_mat_mul_impl removed as they were unused wrappers
 
 /// C ← α A B + β C
 fn mat_mul_impl_slow<F: Float>(
@@ -476,7 +117,7 @@ fn batch_mat_mul_impl_slow<F: Float>(
     let bp_init = rhs.as_ptr();
     let cp_init = c.as_mut_ptr();
 
-    use rayon::prelude::*;
+    use scirs2_core::parallel_ops::*;
     use std::slice;
 
     unsafe {
@@ -545,10 +186,6 @@ fn dot_shape_error(m: usize, k: usize, k2: usize, n: usize) -> String {
 
 // ========= Op impls =========
 
-#[cfg(feature = "blas")]
-use cblas_sys::CBLAS_LAYOUT::CblasRowMajor;
-#[cfg(feature = "blas")]
-use cblas_sys::CBLAS_TRANSPOSE::{CblasNoTrans, CblasTrans};
 use ndarray::ShapeBuilder;
 
 pub struct MatMul {
@@ -678,14 +315,7 @@ impl<T: Float> op::Op<T> for MatMul {
         let a_view = a_final.view();
         let b_view = b_final.view();
 
-        #[cfg(feature = "blas")]
-        {
-            mat_mul_impl_blas(T::one(), &a_view, &b_view, T::zero(), &mut c.view_mut());
-        }
-        #[cfg(not(feature = "blas"))]
-        {
-            mat_mul_impl_slow(T::one(), &a_view, &b_view, T::zero(), &mut c.view_mut());
-        }
+        mat_mul_impl_slow(T::one(), &a_view, &b_view, T::zero(), &mut c.view_mut());
 
         ctx.append_output(c.into_dyn());
         Ok(())
@@ -766,14 +396,7 @@ impl<T: Float> op::Op<T> for BatchMatMul {
             // BatchMatMul's ret val is a c-order array.
             c = ndarray::Array::from_shape_vec_unchecked(ret_shape, v);
         }
-        #[cfg(feature = "blas")]
-        {
-            batch_mat_mul_impl_fast(T::one(), &x0, &x1, T::zero(), &mut c.view_mut());
-        }
-        #[cfg(not(feature = "blas"))]
-        {
-            batch_mat_mul_impl_slow(T::one(), &x0, &x1, T::zero(), &mut c.view_mut())
-        }
+        batch_mat_mul_impl_slow(T::one(), &x0, &x1, T::zero(), &mut c.view_mut());
 
         // reshape to dst shape with safe unwrapping
         ctx.append_output(c);

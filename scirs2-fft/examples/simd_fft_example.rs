@@ -37,7 +37,7 @@ fn main() {
     // SIMD-accelerated FFT (if available)
     if simd_available {
         let start = Instant::now();
-        let simd_fft = fft_simd(&signal, None, None).unwrap();
+        let simd_fft = fft_simd(&signal, None).unwrap();
         let simd_time = start.elapsed();
         println!("SIMD-accelerated FFT time: {:?}", simd_time);
 
@@ -59,7 +59,7 @@ fn main() {
 
     // Adaptive FFT (automatically selects the best implementation)
     let start = Instant::now();
-    let _adaptive_fft = fft_adaptive(&signal, None, None).unwrap();
+    let _adaptive_fft = fft_adaptive(&signal, None).unwrap();
     let adaptive_time = start.elapsed();
     println!("Adaptive FFT time: {:?}", adaptive_time);
 
@@ -90,14 +90,14 @@ fn benchmark_performance() {
 
         // Adaptive FFT
         let start = Instant::now();
-        let _ = fft_adaptive(&signal, None, None).unwrap();
+        let _ = fft_adaptive(&signal, None).unwrap();
         let adaptive_time = start.elapsed();
         println!("  Adaptive FFT time: {:?}", adaptive_time);
 
         if simd_support_available() {
             // SIMD FFT
             let start = Instant::now();
-            let _ = fft_simd(&signal, None, None).unwrap();
+            let _ = fft_simd(&signal, None).unwrap();
             let simd_time = start.elapsed();
             println!("  SIMD FFT time: {:?}", simd_time);
 

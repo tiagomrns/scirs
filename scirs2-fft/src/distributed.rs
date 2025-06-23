@@ -6,7 +6,7 @@
 
 use crate::error::{FFTError, FFTResult};
 use crate::fft::fft;
-use ndarray::{s, Array, ArrayBase, ArrayD, Data, Dimension, IxDyn};
+use ndarray::{s, ArrayBase, ArrayD, Data, Dimension, IxDyn};
 use num_complex::Complex64;
 use num_traits::NumCast;
 use std::fmt::Debug;
@@ -121,8 +121,11 @@ impl DistributedFFT {
         // Measure performance
         let start = Instant::now();
 
+        // Convert input to dynamic array for easier indexing
+        let input_dyn = input.to_owned().into_dyn();
+
         // 1. First decompose the data according to our strategy
-        let local_data = self.decompose_data(input)?;
+        let local_data = self.decompose_data(&input_dyn)?;
 
         // Measure decomposition time
         let decomp_time = start.elapsed();
@@ -159,11 +162,9 @@ impl DistributedFFT {
     }
 
     /// Decompose the input data based on the current strategy
-    pub fn decompose_data<S, D>(&self, input: &ArrayBase<S, D>) -> FFTResult<ArrayD<Complex64>>
+    pub fn decompose_data<T>(&self, input: &ArrayD<T>) -> FFTResult<ArrayD<Complex64>>
     where
-        S: Data,
-        D: Dimension,
-        S::Elem: Into<Complex64> + Copy + NumCast,
+        T: Into<Complex64> + Copy + NumCast,
     {
         // For testing, limit the size to avoid timeouts
         let is_testing = cfg!(test) || std::env::var("RUST_TEST").is_ok();
@@ -198,7 +199,7 @@ impl DistributedFFT {
                 }
             } else {
                 // 1D case
-                let result = fft(&input.as_slice().unwrap_or(&[]), None)?;
+                let result = fft(input.as_slice().unwrap_or(&[]), None)?;
                 for (i, val) in result.iter().enumerate().take(output.len()) {
                     output[i] = *val;
                 }
@@ -308,7 +309,7 @@ impl DistributedFFT {
                         let copy_len = flat_output.len().min(exchanged_data.len());
 
                         for i in 0..copy_len {
-                            flat_output[i] = exchanged_data.iter().nth(i).unwrap().clone();
+                            flat_output[i] = *exchanged_data.iter().nth(i).unwrap();
                         }
                     }
                 }
@@ -326,15 +327,13 @@ impl DistributedFFT {
 
     // Helper methods for different decomposition strategies
 
-    fn slab_decomposition<S, D>(
+    fn slab_decomposition<T>(
         &self,
-        input: &ArrayBase<S, D>,
+        input: &ArrayD<T>,
         is_testing: bool,
     ) -> FFTResult<ArrayD<Complex64>>
     where
-        S: Data,
-        D: Dimension,
-        S::Elem: Into<Complex64> + Copy + NumCast,
+        T: Into<Complex64> + Copy + NumCast,
     {
         let shape = input.shape();
 
@@ -354,7 +353,7 @@ impl DistributedFFT {
 
         // For slab decomposition, we divide along the first dimension
         let total_slabs = shape[0];
-        let slabs_per_node = (total_slabs + self.config.node_count - 1) / self.config.node_count;
+        let slabs_per_node = total_slabs.div_ceil(self.config.node_count);
 
         // Calculate my portion
         let my_start = self.config.rank * slabs_per_node;
@@ -376,20 +375,25 @@ impl DistributedFFT {
         // Create output array
         let mut output = ArrayD::zeros(IxDyn(my_shape.as_slice()));
 
-        // Copy my portion of the data
+        // Copy my portion of the data using dynamic indexing
         if input.ndim() == 1 {
             // 1D case
             for i in my_start..actual_end {
-                let val: Complex64 = NumCast::from(input[i]).unwrap_or(Complex64::new(0.0, 0.0));
-                output[[i - my_start]] = val;
+                let input_idx = IxDyn(&[i]);
+                let output_idx = IxDyn(&[i - my_start]);
+                let val: Complex64 =
+                    NumCast::from(input[input_idx]).unwrap_or(Complex64::new(0.0, 0.0));
+                output[output_idx] = val;
             }
         } else if input.ndim() == 2 {
             // 2D case
             for i in my_start..actual_end {
                 for j in 0..shape[1].min(max_size) {
+                    let input_idx = IxDyn(&[i, j]);
+                    let output_idx = IxDyn(&[i - my_start, j]);
                     let val: Complex64 =
-                        NumCast::from(input[[i, j]]).unwrap_or(Complex64::new(0.0, 0.0));
-                    output[[i - my_start, j]] = val;
+                        NumCast::from(input[input_idx]).unwrap_or(Complex64::new(0.0, 0.0));
+                    output[output_idx] = val;
                 }
             }
         } else if input.ndim() == 3 {
@@ -397,32 +401,32 @@ impl DistributedFFT {
             for i in my_start..actual_end {
                 for j in 0..shape[1].min(max_size) {
                     for k in 0..shape[2].min(max_size) {
+                        let input_idx = IxDyn(&[i, j, k]);
+                        let output_idx = IxDyn(&[i - my_start, j, k]);
                         let val: Complex64 =
-                            NumCast::from(input[[i, j, k]]).unwrap_or(Complex64::new(0.0, 0.0));
-                        output[[i - my_start, j, k]] = val;
+                            NumCast::from(input[input_idx]).unwrap_or(Complex64::new(0.0, 0.0));
+                        output[output_idx] = val;
                     }
                 }
             }
         } else {
             // For higher dimensions, we'd need a more general approach
             // This is a simplified implementation
-            return Err(FFTError::DimensionError(format!(
-                "Dimensions higher than 3 not yet implemented for slab decomposition"
-            )));
+            return Err(FFTError::DimensionError(
+                "Dimensions higher than 3 not yet implemented for slab decomposition".to_string(),
+            ));
         }
 
         Ok(output)
     }
 
-    fn pencil_decomposition<S, D>(
+    fn pencil_decomposition<T>(
         &self,
-        input: &ArrayBase<S, D>,
+        input: &ArrayD<T>,
         is_testing: bool,
     ) -> FFTResult<ArrayD<Complex64>>
     where
-        S: Data,
-        D: Dimension,
-        S::Elem: Into<Complex64> + Copy + NumCast,
+        T: Into<Complex64> + Copy + NumCast,
     {
         let shape = input.shape();
 
@@ -467,8 +471,8 @@ impl DistributedFFT {
         let n1 = shape[0];
         let n2 = shape[1];
 
-        let rows_per_node = (n1 + p1 - 1) / p1;
-        let cols_per_node = (n2 + p2 - 1) / p2;
+        let rows_per_node = n1.div_ceil(p1);
+        let cols_per_node = n2.div_ceil(p2);
 
         let my_start_row = my_row * rows_per_node;
         let my_end_row = (my_start_row + rows_per_node).min(n1);
@@ -494,14 +498,16 @@ impl DistributedFFT {
         // Create output array
         let mut output = ArrayD::zeros(IxDyn(my_shape.as_slice()));
 
-        // Copy my portion of the data
+        // Copy my portion of the data using dynamic indexing
         if input.ndim() == 2 {
             // 2D case
             for i in my_start_row..actual_end_row {
                 for j in my_start_col..actual_end_col {
+                    let input_idx = IxDyn(&[i, j]);
+                    let output_idx = IxDyn(&[i - my_start_row, j - my_start_col]);
                     let val: Complex64 =
-                        NumCast::from(input[[i, j]]).unwrap_or(Complex64::new(0.0, 0.0));
-                    output[[i - my_start_row, j - my_start_col]] = val;
+                        NumCast::from(input[input_idx]).unwrap_or(Complex64::new(0.0, 0.0));
+                    output[output_idx] = val;
                 }
             }
         } else if input.ndim() == 3 {
@@ -509,31 +515,31 @@ impl DistributedFFT {
             for i in my_start_row..actual_end_row {
                 for j in my_start_col..actual_end_col {
                     for k in 0..shape[2].min(max_size) {
+                        let input_idx = IxDyn(&[i, j, k]);
+                        let output_idx = IxDyn(&[i - my_start_row, j - my_start_col, k]);
                         let val: Complex64 =
-                            NumCast::from(input[[i, j, k]]).unwrap_or(Complex64::new(0.0, 0.0));
-                        output[[i - my_start_row, j - my_start_col, k]] = val;
+                            NumCast::from(input[input_idx]).unwrap_or(Complex64::new(0.0, 0.0));
+                        output[output_idx] = val;
                     }
                 }
             }
         } else {
             // For higher dimensions, we'd need a more general approach
-            return Err(FFTError::DimensionError(format!(
-                "Dimensions higher than 3 not yet implemented for pencil decomposition"
-            )));
+            return Err(FFTError::DimensionError(
+                "Dimensions higher than 3 not yet implemented for pencil decomposition".to_string(),
+            ));
         }
 
         Ok(output)
     }
 
-    fn volumetric_decomposition<S, D>(
+    fn volumetric_decomposition<T>(
         &self,
-        input: &ArrayBase<S, D>,
+        input: &ArrayD<T>,
         is_testing: bool,
     ) -> FFTResult<ArrayD<Complex64>>
     where
-        S: Data,
-        D: Dimension,
-        S::Elem: Into<Complex64> + Copy + NumCast,
+        T: Into<Complex64> + Copy + NumCast,
     {
         let shape = input.shape();
 
@@ -582,9 +588,9 @@ impl DistributedFFT {
         let n2 = shape[1];
         let n3 = shape[2];
 
-        let planes_per_node = (n1 + p1 - 1) / p1;
-        let rows_per_node = (n2 + p2 - 1) / p2;
-        let cols_per_node = (n3 + p3 - 1) / p3;
+        let planes_per_node = n1.div_ceil(p1);
+        let rows_per_node = n2.div_ceil(p2);
+        let cols_per_node = n3.div_ceil(p3);
 
         let my_start_plane = my_plane * planes_per_node;
         let my_end_plane = (my_start_plane + planes_per_node).min(n1);
@@ -615,37 +621,39 @@ impl DistributedFFT {
         // Create output array
         let mut output = ArrayD::zeros(IxDyn(my_shape.as_slice()));
 
-        // Copy my portion of the data
+        // Copy my portion of the data using dynamic indexing
         if input.ndim() == 3 {
             // 3D case
             for i in my_start_plane..actual_end_plane {
                 for j in my_start_row..actual_end_row {
                     for k in my_start_col..actual_end_col {
+                        let input_idx = IxDyn(&[i, j, k]);
+                        let output_idx =
+                            IxDyn(&[i - my_start_plane, j - my_start_row, k - my_start_col]);
                         let val: Complex64 =
-                            NumCast::from(input[[i, j, k]]).unwrap_or(Complex64::new(0.0, 0.0));
-                        output[[i - my_start_plane, j - my_start_row, k - my_start_col]] = val;
+                            NumCast::from(input[input_idx]).unwrap_or(Complex64::new(0.0, 0.0));
+                        output[output_idx] = val;
                     }
                 }
             }
         } else {
             // For higher dimensions, we'd need a more general approach
-            return Err(FFTError::DimensionError(format!(
+            return Err(FFTError::DimensionError(
                 "Dimensions higher than 3 not yet implemented for volumetric decomposition"
-            )));
+                    .to_string(),
+            ));
         }
 
         Ok(output)
     }
 
-    fn adaptive_decomposition<S, D>(
+    fn adaptive_decomposition<T>(
         &self,
-        input: &ArrayBase<S, D>,
+        input: &ArrayD<T>,
         is_testing: bool,
     ) -> FFTResult<ArrayD<Complex64>>
     where
-        S: Data,
-        D: Dimension,
-        S::Elem: Into<Complex64> + Copy + NumCast,
+        T: Into<Complex64> + Copy + NumCast,
     {
         let ndim = input.ndim();
 
@@ -836,7 +844,7 @@ impl Communicator for MockCommunicator {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use ndarray::{Array1, Array2, Array3};
+    use ndarray::{Array1, Array2};
 
     #[test]
     fn test_distributed_config_default() {
@@ -894,7 +902,7 @@ mod tests {
 
         let dfft = DistributedFFT::new_mock(config);
 
-        let input = Array1::from_vec(vec![1.0, 2.0, 3.0, 4.0]);
+        let input = Array1::from_vec(vec![1.0, 2.0, 3.0, 4.0]).into_dyn();
         let result = dfft.slab_decomposition(&input, true);
         assert!(result.is_ok());
 
@@ -917,8 +925,9 @@ mod tests {
 
         let dfft = DistributedFFT::new_mock(config);
 
-        let input =
-            Array2::from_shape_vec((4, 2), vec![1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0]).unwrap();
+        let input = Array2::from_shape_vec((4, 2), vec![1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0])
+            .unwrap()
+            .into_dyn();
         let result = dfft.slab_decomposition(&input, true);
         assert!(result.is_ok());
 
@@ -942,7 +951,9 @@ mod tests {
 
         let dfft = DistributedFFT::new_mock(config);
 
-        let input = Array2::from_shape_vec((4, 4), (1..=16).map(|x| x as f64).collect()).unwrap();
+        let input = Array2::from_shape_vec((4, 4), (1..=16).map(|x| x as f64).collect())
+            .unwrap()
+            .into_dyn();
         let result = dfft.pencil_decomposition(&input, true);
         assert!(result.is_ok());
 
@@ -966,7 +977,7 @@ mod tests {
         };
 
         let dfft1 = DistributedFFT::new_mock(config1);
-        let input1 = Array1::from_vec((1..=16).map(|x| x as f64).collect());
+        let input1 = Array1::from_vec((1..=16).map(|x| x as f64).collect()).into_dyn();
         let result1 = dfft1.adaptive_decomposition(&input1, true);
         assert!(result1.is_ok());
 
@@ -982,7 +993,9 @@ mod tests {
         };
 
         let dfft2 = DistributedFFT::new_mock(config2);
-        let input2 = Array2::from_shape_vec((4, 4), (1..=16).map(|x| x as f64).collect()).unwrap();
+        let input2 = Array2::from_shape_vec((4, 4), (1..=16).map(|x| x as f64).collect())
+            .unwrap()
+            .into_dyn();
         let result2 = dfft2.adaptive_decomposition(&input2, true);
         assert!(result2.is_ok());
     }

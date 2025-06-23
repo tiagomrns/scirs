@@ -114,21 +114,11 @@ pub fn fft_inplace(
         let result = match mode {
             FftMode::Forward => crate::simd_fft::fft_adaptive(
                 input,
-                Some(n),
-                if normalize {
-                    Some(crate::simd_fft::NormMode::Forward)
-                } else {
-                    None
-                },
+                if normalize { Some("forward") } else { None },
             )?,
             FftMode::Inverse => crate::simd_fft::ifft_adaptive(
                 input,
-                Some(n),
-                if normalize {
-                    Some(crate::simd_fft::NormMode::Backward)
-                } else {
-                    None
-                },
+                if normalize { Some("backward") } else { None },
             )?,
         };
 

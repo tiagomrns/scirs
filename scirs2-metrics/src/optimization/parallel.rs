@@ -1,10 +1,10 @@
 //! Parallel computation utilities for metrics
 //!
-//! This module provides tools for computing metrics in parallel using Rayon.
+//! This module provides tools for computing metrics in parallel using core parallel operations.
 
 use ndarray::{ArrayBase, Data, Dimension};
 use parking_lot;
-use rayon::prelude::*;
+use scirs2_core::parallel_ops::*;
 use std::sync::Arc;
 
 use crate::error::Result;

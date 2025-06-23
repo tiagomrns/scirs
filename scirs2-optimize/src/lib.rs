@@ -5,6 +5,9 @@
 //!
 
 #![allow(clippy::field_reassign_with_default)]
+// Allow common mathematical conventions in optimization code
+#![allow(clippy::many_single_char_names)] // x, f, g, h, n, m etc. are standard in optimization
+#![allow(clippy::similar_names)] // x_pp, x_pm, x_mp, x_mm are standard for finite differences
 //! ## Submodules
 //!
 //! * `unconstrained`: Unconstrained optimization algorithms
@@ -184,22 +187,31 @@
 //! # }
 //! ```
 
-extern crate openblas_src;
+// BLAS backend linking handled through scirs2-core
 
 // Export error types
 pub mod error;
 pub use error::{OptimizeError, OptimizeResult};
 
 // Module structure
+#[cfg(feature = "async")]
+pub mod async_parallel;
+pub mod automatic_differentiation;
 pub mod constrained;
 pub mod global;
+pub mod jit_optimization;
 pub mod least_squares;
+pub mod ml_optimizers;
+pub mod multi_objective;
+pub mod neural_integration;
 pub mod parallel;
 pub mod roots;
 pub mod roots_anderson;
 pub mod roots_krylov;
 pub mod scalar;
+pub mod simd_ops;
 pub mod sparse_numdiff; // Refactored into a module with submodules
+pub mod stochastic;
 pub mod unconstrained;
 
 // Common optimization result structure
@@ -207,30 +219,70 @@ pub mod result;
 pub use result::OptimizeResults;
 
 // Convenience re-exports for common functions
+#[cfg(feature = "async")]
+pub use async_parallel::{
+    AsyncDifferentialEvolution, AsyncOptimizationConfig, AsyncOptimizationStats,
+    SlowEvaluationStrategy,
+};
+pub use automatic_differentiation::{
+    autodiff, create_ad_gradient, create_ad_hessian, optimize_ad_mode, ADMode, ADResult,
+    AutoDiffFunction, AutoDiffOptions,
+};
 pub use constrained::minimize_constrained;
 pub use global::{
-    basinhopping, bayesian_optimization, differential_evolution, dual_annealing, multi_start,
-    particle_swarm, simulated_annealing,
+    basinhopping, bayesian_optimization, differential_evolution, dual_annealing,
+    generate_diverse_start_points, multi_start, multi_start_with_clustering, particle_swarm,
+    simulated_annealing,
 };
+pub use jit_optimization::{optimize_function, FunctionPattern, JitCompiler, JitOptions, JitStats};
 pub use least_squares::{
     bounded_least_squares, least_squares, robust_least_squares, separable_least_squares,
     total_least_squares, weighted_least_squares, BisquareLoss, CauchyLoss, HuberLoss,
 };
+pub use ml_optimizers::{
+    ml_problems, ADMMOptimizer, CoordinateDescentOptimizer, ElasticNetOptimizer,
+    GroupLassoOptimizer, LassoOptimizer,
+};
+pub use multi_objective::{
+    scalarization, MultiObjectiveConfig, MultiObjectiveResult, MultiObjectiveSolution, NSGAII,
+    NSGAIII,
+};
+pub use neural_integration::{optimizers, NeuralOptimizer, NeuralParameters, NeuralTrainer};
 pub use roots::root;
 pub use scalar::minimize_scalar;
 pub use sparse_numdiff::{sparse_hessian, sparse_jacobian, SparseFiniteDiffOptions};
+pub use stochastic::{
+    minimize_adam, minimize_adamw, minimize_rmsprop, minimize_sgd, minimize_sgd_momentum,
+    minimize_stochastic, AdamOptions, AdamWOptions, DataProvider, InMemoryDataProvider,
+    LearningRateSchedule, MomentumOptions, RMSPropOptions, SGDOptions, StochasticGradientFunction,
+    StochasticMethod, StochasticOptions,
+};
 pub use unconstrained::{minimize, Bounds};
 
 // Prelude module for convenient imports
 pub mod prelude {
+    #[cfg(feature = "async")]
+    pub use crate::async_parallel::{
+        AsyncDifferentialEvolution, AsyncOptimizationConfig, AsyncOptimizationStats,
+        SlowEvaluationStrategy,
+    };
+    pub use crate::automatic_differentiation::{
+        autodiff, create_ad_gradient, create_ad_hessian, optimize_ad_mode, ADMode, ADResult,
+        AutoDiffFunction, AutoDiffOptions, Dual, DualNumber,
+    };
     pub use crate::constrained::{minimize_constrained, Method as ConstrainedMethod};
     pub use crate::error::{OptimizeError, OptimizeResult};
     pub use crate::global::{
         basinhopping, bayesian_optimization, differential_evolution, dual_annealing,
-        particle_swarm, simulated_annealing, AcquisitionFunctionType, BasinHoppingOptions,
-        BayesianOptimizationOptions, BayesianOptimizer, DifferentialEvolutionOptions,
-        DualAnnealingOptions, InitialPointGenerator, KernelType, Parameter, ParticleSwarmOptions,
-        SimulatedAnnealingOptions, Space,
+        generate_diverse_start_points, multi_start_with_clustering, particle_swarm,
+        simulated_annealing, AcquisitionFunctionType, BasinHoppingOptions,
+        BayesianOptimizationOptions, BayesianOptimizer, ClusterCentroid, ClusteringAlgorithm,
+        ClusteringOptions, ClusteringResult, DifferentialEvolutionOptions, DualAnnealingOptions,
+        InitialPointGenerator, KernelType, LocalMinimum, Parameter, ParticleSwarmOptions,
+        SimulatedAnnealingOptions, Space, StartPointStrategy,
+    };
+    pub use crate::jit_optimization::{
+        optimize_function, FunctionPattern, JitCompiler, JitOptions, JitStats,
     };
     pub use crate::least_squares::{
         bounded_least_squares, least_squares, robust_least_squares, separable_least_squares,
@@ -238,6 +290,17 @@ pub mod prelude {
         HuberLoss, LinearSolver, Method as LeastSquaresMethod, RobustLoss, RobustOptions,
         SeparableOptions, SeparableResult, TLSMethod, TotalLeastSquaresOptions,
         TotalLeastSquaresResult, WeightedOptions,
+    };
+    pub use crate::ml_optimizers::{
+        ml_problems, ADMMOptimizer, CoordinateDescentOptimizer, ElasticNetOptimizer,
+        GroupLassoOptimizer, LassoOptimizer,
+    };
+    pub use crate::multi_objective::{
+        scalarization, MultiObjectiveConfig, MultiObjectiveResult, MultiObjectiveSolution, NSGAII,
+        NSGAIII,
+    };
+    pub use crate::neural_integration::{
+        optimizers, NeuralOptimizer, NeuralParameters, NeuralTrainer,
     };
     pub use crate::parallel::{
         parallel_evaluate_batch, parallel_finite_diff_gradient, ParallelOptions,

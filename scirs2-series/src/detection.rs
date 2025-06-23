@@ -506,7 +506,13 @@ pub fn detect_and_decompose<F>(
     method: DecompositionType,
 ) -> Result<AutoDecompositionResult<F>>
 where
-    F: Float + FromPrimitive + Debug + std::iter::Sum,
+    F: Float
+        + FromPrimitive
+        + Debug
+        + std::iter::Sum
+        // + ndarray_linalg::Lapack  // TODO: Replace with scirs2-core linear algebra trait when available
+        + ndarray::ScalarOperand
+        + num_traits::NumCast,
 {
     // First, detect periods
     let period_result = detect_periods(ts, detection_options)?;
@@ -671,29 +677,37 @@ mod tests {
             ts[i] = ((i / 10) as f64) + 2.0 * ((i % 12) as f64 - 6.0).abs() / 6.0;
         }
 
-        let mut options = PeriodDetectionOptions::default();
-        options.threshold = 0.05; // Lower threshold for test
+        let options = PeriodDetectionOptions {
+            threshold: 0.05, // Lower threshold for test
+            ..Default::default()
+        };
 
         // Force a known period since automatic detection can be unreliable in tests
         let forced_period = 12;
 
         // For MSTL decomposition, directly use MSTL without automatic detection
-        let mut mstl_options = crate::decomposition::MSTLOptions::default();
-        mstl_options.seasonal_periods = vec![forced_period];
+        let mstl_options = crate::decomposition::MSTLOptions {
+            seasonal_periods: vec![forced_period],
+            ..Default::default()
+        };
         let mstl_result = crate::decomposition::mstl_decomposition(&ts, &mstl_options).unwrap();
         assert_eq!(mstl_result.trend.len(), ts.len());
         assert_eq!(mstl_result.seasonal_components.len(), 1);
 
         // For TBATS decomposition, directly use TBATS without automatic detection
-        let mut tbats_options = crate::decomposition::TBATSOptions::default();
-        tbats_options.seasonal_periods = vec![forced_period as f64];
+        let tbats_options = crate::decomposition::TBATSOptions {
+            seasonal_periods: vec![forced_period as f64],
+            ..Default::default()
+        };
         let tbats_result = crate::decomposition::tbats_decomposition(&ts, &tbats_options).unwrap();
         assert_eq!(tbats_result.trend.len(), ts.len());
         assert_eq!(tbats_result.seasonal_components.len(), 1);
 
         // For STR decomposition, directly use STR without automatic detection
-        let mut str_options = crate::decomposition::STROptions::default();
-        str_options.seasonal_periods = vec![forced_period as f64];
+        let str_options = crate::decomposition::STROptions {
+            seasonal_periods: vec![forced_period as f64],
+            ..Default::default()
+        };
         let str_result = crate::decomposition::str_decomposition(&ts, &str_options).unwrap();
         assert_eq!(str_result.trend.len(), ts.len());
         assert_eq!(str_result.seasonal_components.len(), 1);

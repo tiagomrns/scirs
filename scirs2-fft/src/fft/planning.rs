@@ -12,8 +12,7 @@ use num_complex::Complex64;
 use num_traits::NumCast;
 use rustfft::{num_complex::Complex as RustComplex, FftPlanner};
 
-#[cfg(feature = "parallel")]
-use rayon::prelude::*;
+use scirs2_core::parallel_ops::*;
 
 /// Compute a 2D FFT using parallel processing for rows and columns
 ///
@@ -77,7 +76,7 @@ where
 
     // Number of workers for parallel computation
     #[cfg(feature = "parallel")]
-    let num_workers = workers.unwrap_or_else(|| rayon::current_num_threads().min(8));
+    let num_workers = workers.unwrap_or_else(|| num_threads().min(8));
 
     // Convert input array to complex numbers
     let mut complex_input = Array2::<Complex64>::zeros((input_shape[0], input_shape[1]));
@@ -263,7 +262,7 @@ where
 
     // Number of workers for parallel computation
     #[cfg(feature = "parallel")]
-    let num_workers = workers.unwrap_or_else(|| rayon::current_num_threads().min(8));
+    let num_workers = workers.unwrap_or_else(|| num_threads().min(8));
 
     // Convert input to complex and copy to output shape
     let mut complex_input = Array2::<Complex64>::zeros((input_shape[0], input_shape[1]));

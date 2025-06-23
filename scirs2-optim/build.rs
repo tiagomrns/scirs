@@ -1,5 +1,4 @@
 fn main() {
-    // Link to OpenBLAS for doctests
-    println!("cargo:rustc-link-lib=openblas");
-    println!("cargo:rustc-link-search=/usr/lib/x86_64-linux-gnu/openblas-pthread");
+    // Platform-specific BLAS linking is handled by scirs2-core's build configuration
+    // No need for explicit linking here
 }

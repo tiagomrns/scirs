@@ -197,7 +197,7 @@ mod tests {
         let mut img = GrayImage::new(10, 10);
         for y in 0..10 {
             for x in 0..10 {
-                let value = if x >= 3 && x <= 6 && y >= 3 && y <= 6 {
+                let value = if (3..=6).contains(&x) && (3..=6).contains(&y) {
                     255
                 } else {
                     0

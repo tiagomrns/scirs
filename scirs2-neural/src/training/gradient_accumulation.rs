@@ -6,9 +6,9 @@
 
 use crate::data::{DataLoader, Dataset};
 use crate::error::{NeuralError, Result};
-use crate::layers::Layer;
+use crate::layers::{Layer, ParamLayer};
 use crate::losses::Loss;
-use crate::optimizers::{Optimizer, OptimizerExt};
+use crate::optimizers::{Optimizer, OptimizerStep};
 
 use ndarray::ScalarOperand;
 use ndarray::{Array, IxDyn};
@@ -161,7 +161,10 @@ impl<F: Float + Debug + ScalarOperand + Send + Sync + FromPrimitive> GradientAcc
     }
 
     /// Apply accumulated gradients to update model parameters
-    pub fn apply_gradients<L: Layer<F> + ?Sized, O: Optimizer<F> + ?Sized>(
+    pub fn apply_gradients<
+        L: ParamLayer<F> + ?Sized,
+        O: Optimizer<F> + OptimizerStep<F> + ?Sized,
+    >(
         &mut self,
         model: &mut L,
         optimizer: &mut O,
@@ -322,7 +325,7 @@ impl<F: Float + Debug + ScalarOperand + Send + Sync + FromPrimitive> Accumulatio
     }
 
     /// Train for one epoch with gradient accumulation
-    pub fn train_epoch<L: Layer<F>, O: Optimizer<F>>(
+    pub fn train_epoch<L: ParamLayer<F>, O: Optimizer<F>>(
         &mut self,
         model: &mut L,
         optimizer: &mut O,
@@ -463,7 +466,7 @@ impl<F: Float + Debug + ScalarOperand + Send + Sync + FromPrimitive>
     }
 
     /// Apply accumulated gradients if it's time to update
-    pub fn on_batch_end<L: Layer<F>, O: Optimizer<F>>(
+    pub fn on_batch_end<L: ParamLayer<F>, O: Optimizer<F>>(
         &mut self,
         model: &mut L,
         optimizer: &mut O,
@@ -493,7 +496,7 @@ pub struct GradientAccumulationTrainer<
     /// Configuration for gradient accumulation
     pub config: GradientAccumulationConfig,
     /// Model to train
-    model: Box<dyn Layer<F> + Send + Sync>,
+    model: Box<dyn ParamLayer<F> + Send + Sync>,
     /// Optimizer for parameter updates
     optimizer: Box<dyn Optimizer<F> + Send + Sync>,
     /// Loss function
@@ -524,7 +527,7 @@ impl<F: Float + Debug + ScalarOperand + Send + Sync + FromPrimitive + std::fmt::
         verbose: usize,
     ) -> Self
     where
-        L: Layer<F> + Send + Sync + 'static,
+        L: ParamLayer<F> + Send + Sync + 'static,
         O: Optimizer<F> + Send + Sync + 'static,
         LF: Loss<F> + Send + Sync + 'static,
     {

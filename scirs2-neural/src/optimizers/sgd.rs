@@ -158,15 +158,4 @@ impl<F: Float + ScalarOperand + Debug> Optimizer<F> for SGD<F> {
 }
 
 // Enable direct usage of scirs2-optim's SGD when the optim feature is enabled
-#[cfg(feature = "optim")]
-impl<F: Float + ScalarOperand + Debug + 'static> SGD<F> {
-    /// Create a wrapper around scirs2-optim's SGD optimizer
-    pub fn from_optim_sgd(
-        learning_rate: F,
-        momentum: F,
-        weight_decay: F,
-    ) -> super::wrappers::OptimOptimizerWrapper<F, ndarray::IxDyn, scirs2_optim::optimizers::SGD<F>>
-    {
-        super::wrappers::wrap_sgd(learning_rate, momentum, weight_decay)
-    }
-}
+// TODO: Uncomment when scirs2-optim crate is available

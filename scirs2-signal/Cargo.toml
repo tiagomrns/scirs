@@ -1,6 +1,6 @@
 [package]
 name = "scirs2-signal"
-version = "0.1.0-alpha.4"
+version = "0.1.0-alpha.5"
 edition = "2021"
 authors = ["SciRS2 Team"]
 description = "Signal processing module for SciRS2"
@@ -11,12 +11,13 @@ categories = ["science", "mathematics", "algorithms"]
 
 [dependencies]
 # Core dependencies
-scirs2-core = { workspace = true }
+scirs2-core = { workspace = true, features = ["parallel"] }
 ndarray = { workspace = true }
 num-traits = { workspace = true }
 num-complex = { workspace = true }
+num-integer = { workspace = true }
 thiserror = { workspace = true }
-openblas-src = { workspace = true }
+# BLAS dependencies handled through scirs2-core
 
 # Signal processing specific dependencies
 rustfft = { workspace = true }
@@ -26,14 +27,15 @@ scirs2-special = { workspace = true }
 rand = { workspace = true }
 rand_distr = { workspace = true }
 plotly = { workspace = true }
-ndarray-linalg = { workspace = true }
+# BLAS dependencies removed - using core abstractions
+# ndarray-linalg = { workspace = true }
 ndarray-rand = { workspace = true }
-# Optional rayon dependency for parallel processing
-rayon = { workspace = true, optional = true }
+# Optional rayon dependency for parallel processing - now handled by scirs2-core
+# rayon = { workspace = true, optional = true }
 
 [features]
 default = []
-parallel = ["rayon"]
+parallel = ["scirs2-core/parallel"]  # Use scirs2-core parallel abstractions
 
 [dev-dependencies]
 approx = { workspace = true }

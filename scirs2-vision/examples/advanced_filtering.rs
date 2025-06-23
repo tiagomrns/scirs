@@ -41,10 +41,10 @@ fn demonstrate_guided_filter(img: &DynamicImage) -> Result<()> {
     }
 
     // Apply guided filter with different parameters
-    let radii = vec![2, 5, 10];
-    let epsilons = vec![0.01, 0.1, 0.5];
+    let radii = [2, 5, 10];
+    let epsilons = [0.01, 0.1, 0.5];
 
-    for (_i, (&radius, &epsilon)) in radii.iter().zip(epsilons.iter()).enumerate() {
+    for (&radius, &epsilon) in radii.iter().zip(epsilons.iter()) {
         println!(
             "  - Applying guided filter with radius={}, epsilon={}",
             radius, epsilon

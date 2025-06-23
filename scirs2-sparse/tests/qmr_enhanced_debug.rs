@@ -42,14 +42,14 @@ fn test_qmr_identity_step_by_step() {
         Ok(result) => {
             println!("QMR converged in {} iterations", result.iterations);
             // The solution should be the same as b for the identity matrix
-            for i in 0..3 {
+            for (i, b_val) in b.iter().enumerate().take(3) {
                 assert!(
-                    (result.x[i] - b[i]).abs() < 1e-10,
+                    (result.x[i] - b_val).abs() < 1e-10,
                     "Solution x[{}] = {} should match b[{}] = {}",
                     i,
                     result.x[i],
                     i,
-                    b[i]
+                    b_val
                 );
             }
             assert!(result.converged, "QMR should converge for identity matrix");

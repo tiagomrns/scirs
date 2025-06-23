@@ -105,8 +105,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     if let Ok(img2) = image::open(img_path) {
         println!("\n=== Feature Matching ===");
 
-        // Simulate a transformed image by rotating slightly
-        let img2 = img2; // In practice, load a second image
+        // In practice, load a second image for matching
 
         // Match ORB descriptors
         let orb_descriptors2 = detect_and_compute_orb(&img2, &orb_config)?;

@@ -23,7 +23,7 @@ mod tests {
             .collect();
 
         // Compute FFT
-        let spectrum = fft_adaptive(&signal, None, None)?;
+        let spectrum = fft_adaptive(&signal, None)?;
 
         // The spectrum should have peaks at bin 8 (frequency = n/128) and n-8
         // Due to the properties of the sine wave at frequency 1/128
@@ -49,7 +49,7 @@ mod tests {
         );
 
         // Now do inverse FFT
-        let reconstructed = ifft_adaptive(&spectrum, None, None)?;
+        let reconstructed = ifft_adaptive(&spectrum, None)?;
 
         // Check the reconstructed signal matches the original
         for i in 0..n {
@@ -84,7 +84,7 @@ mod tests {
         }
 
         // Compute 2D FFT
-        let spectrum = fft2_adaptive(&signal, [n_rows, n_cols], None, None)?;
+        let spectrum = fft2_adaptive(&signal, Some((n_rows, n_cols)), None)?;
 
         // The spectrum should have peaks at (3, 5), (3, n_cols-5), (n_rows-3, 5), (n_rows-3, n_cols-5)
         // due to the properties of the sine/cosine waves
@@ -98,8 +98,7 @@ mod tests {
                     continue; // Skip DC component
                 }
 
-                let idx = i * n_cols + j;
-                if magnitude(&spectrum[idx]) > (n_rows * n_cols) as f64 / 8.0 {
+                if magnitude(&spectrum[[i, j]]) > (n_rows * n_cols) as f64 / 8.0 {
                     peak_positions.push((i, j));
                 }
             }
@@ -140,7 +139,7 @@ mod tests {
         }
 
         // Compute N-dimensional FFT
-        let spectrum = fftn_adaptive(&signal, &shape, None, None)?;
+        let spectrum = fftn_adaptive(&signal, Some(&shape), None, None)?;
 
         // Verify the result has the correct dimensions
         assert_eq!(spectrum.len(), total_elements);
@@ -210,12 +209,16 @@ mod tests {
 
         // Create a large test signal to benefit from parallel planning
         let n = 4096;
-        let signal: Vec<f64> = (0..n)
-            .map(|i| (2.0 * PI * i as f64 / 512.0).sin())
+        let signal: Vec<Complex64> = (0..n)
+            .map(|i| Complex64::new((2.0 * PI * i as f64 / 512.0).sin(), 0.0))
             .collect();
 
         // Test with parallel planning
-        let spectrum = crate::planning_parallel::fft_with_parallel_planning(&signal, None)?;
+        let planner = crate::planning_parallel::ParallelPlanner::new(None);
+        let plan = planner.plan_fft(&[n], false, crate::planning::PlannerBackend::RustFFT)?;
+        let executor = crate::planning_parallel::ParallelExecutor::new(plan, None);
+        let mut spectrum = vec![Complex64::new(0.0, 0.0); n];
+        executor.execute(&signal, &mut spectrum)?;
 
         // Verify the result has the correct dimension
         assert_eq!(spectrum.len(), n);

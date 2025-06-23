@@ -349,7 +349,7 @@ mod tests {
     #[test]
     fn test_sam_with_config() {
         let sgd = SGD::new(0.01);
-        let optimizer: SAM<f64, _, ndarray::Ix1> = SAM::with_config(sgd, 0.1.into(), true);
+        let optimizer: SAM<f64, _, ndarray::Ix1> = SAM::with_config(sgd, 0.1, true);
 
         assert_abs_diff_eq!(optimizer.rho(), 0.1);
         assert!(optimizer.is_adaptive());
@@ -383,7 +383,7 @@ mod tests {
     #[test]
     fn test_sam_adaptive() {
         let sgd = SGD::new(0.1);
-        let mut optimizer: SAM<f64, _, ndarray::Ix1> = SAM::with_config(sgd, 0.05.into(), true);
+        let mut optimizer: SAM<f64, _, ndarray::Ix1> = SAM::with_config(sgd, 0.05, true);
 
         let params = Array1::from_vec(vec![1.0, 2.0, 3.0]);
         let gradients = Array1::from_vec(vec![0.1, 0.2, 0.3]);

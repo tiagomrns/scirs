@@ -11,6 +11,9 @@ use scirs2_optim::{
 };
 use std::error::Error;
 
+// Type alias to simplify complex return type
+type TrainingLog = Vec<(usize, f64, f64)>;
+
 /// Generates a synthetic regression dataset with varying difficulty levels
 fn generate_dataset(
     difficulty: usize,
@@ -61,7 +64,7 @@ fn compute_mse(predictions: &Array1<f64>, targets: &Array1<f64>) -> f64 {
 fn train_with_curriculum(
     curriculum_scheduler: &mut CurriculumScheduler<f64>,
     epochs_per_stage: usize,
-) -> Result<Vec<(usize, f64, f64)>, Box<dyn Error>> {
+) -> Result<TrainingLog, Box<dyn Error>> {
     let mut rng = rand::rng();
     let mut training_log = Vec::new();
 

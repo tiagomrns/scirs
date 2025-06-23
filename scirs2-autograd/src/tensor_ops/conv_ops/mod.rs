@@ -6,7 +6,7 @@ use crate::tensor_ops::*;
 use crate::Float;
 use crate::Tensor;
 use ndarray;
-use rayon::prelude::*;
+use scirs2_core::parallel_ops::*;
 use std::f32;
 use std::slice;
 
@@ -15,13 +15,7 @@ pub mod conv2d;
 #[macro_use]
 pub mod conv2d_transpose;
 pub mod max_pool2d;
-#[cfg(feature = "blas")]
-use crate::tensor_ops::blas_ffi::*;
-#[cfg(feature = "blas")]
-use cblas_sys::{
-    CBLAS_LAYOUT::CblasRowMajor,
-    CBLAS_TRANSPOSE::{CblasNoTrans, CblasTrans},
-};
+// BLAS dependencies removed - all operations now use core abstractions or fallback implementations
 
 #[test]
 fn test_im2col_batch() {
@@ -37,7 +31,7 @@ fn test_im2col_batch() {
 
     let x: Vec<f32> = vec![(0..xch * xw * xh).map(|a| a as f32).collect::<Vec<f32>>(); 2]
         .into_iter()
-        .flat_map(|a| a)
+        .flatten()
         .collect();
 
     let batch_size = 2;
@@ -45,11 +39,11 @@ fn test_im2col_batch() {
     let ret = im2col_batch(
         x.as_slice(),
         batch_size,
-        xch as i32,
-        xh as i32,
-        xw as i32,
-        kh as i32,
-        kw as i32,
+        xch,
+        xh,
+        xw,
+        kh,
+        kw,
         op.pad as i32,
         op.pad as i32,
         op.stride as i32,

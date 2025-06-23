@@ -7,9 +7,9 @@
 
 use crate::data::{DataLoader, Dataset};
 use crate::error::{NeuralError, Result};
-use crate::layers::Layer;
+use crate::layers::{Layer, ParamLayer};
 use crate::losses::Loss;
-use crate::optimizers::{Optimizer, OptimizerExt};
+use crate::optimizers::{Optimizer, OptimizerStep};
 
 use ndarray::ScalarOperand;
 use ndarray::{Array, IxDyn};
@@ -247,7 +247,11 @@ impl<
     }
 
     /// Train a step with mixed precision
-    pub fn train_step<LM: Layer<LF> + ?Sized, HM: Layer<F> + ?Sized, O: Optimizer<F>>(
+    pub fn train_step<
+        LM: Layer<LF> + ?Sized,
+        HM: Layer<F> + ParamLayer<F> + ?Sized,
+        O: Optimizer<F> + OptimizerStep<F>,
+    >(
         &mut self,
         low_precision_model: &mut LM,
         high_precision_model: &mut HM,
@@ -341,7 +345,7 @@ impl<
     #[allow(clippy::too_many_arguments)]
     pub fn train_epoch<
         LM: Layer<LF> + ?Sized,
-        HM: Layer<F> + ?Sized,
+        HM: ParamLayer<F> + ?Sized,
         O: Optimizer<F>,
         D: Dataset<F> + Clone,
     >(
@@ -408,7 +412,7 @@ pub struct MixedPrecisionModel<
     LF: Float + Debug + ScalarOperand + Send + Sync,
 > {
     /// High precision model
-    pub high_precision_model: Box<dyn Layer<F> + Send + Sync>,
+    pub high_precision_model: Box<dyn ParamLayer<F> + Send + Sync>,
     /// Low precision model
     pub low_precision_model: Box<dyn Layer<LF> + Send + Sync>,
     /// Mixed precision manager
@@ -429,7 +433,7 @@ impl<
         config: MixedPrecisionConfig,
     ) -> Result<Self>
     where
-        HM: Layer<F> + Send + Sync + Clone + 'static,
+        HM: ParamLayer<F> + Send + Sync + Clone + 'static,
         LM: Layer<LF> + Send + Sync + 'static,
     {
         let mut manager = MixedPrecisionManager::new(config);
@@ -566,7 +570,7 @@ impl<
     }
 
     /// Optimize a step with mixed precision
-    pub fn step<LM: Layer<LF>, HM: Layer<F>>(
+    pub fn step<LM: Layer<LF>, HM: ParamLayer<F>>(
         &mut self,
         low_precision_model: &mut LM,
         high_precision_model: &mut HM,

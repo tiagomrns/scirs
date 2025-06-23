@@ -355,7 +355,7 @@ mod tests {
     fn test_expm_diagonal() {
         // For diagonal matrix D, exp(D) is diagonal with exp(d_ii) on diagonal
         let n = 3;
-        let diag_values = vec![0.5, 1.0, 2.0];
+        let diag_values = [0.5, 1.0, 2.0];
         let mut rows = Vec::new();
         let mut cols = Vec::new();
         let mut values = Vec::new();

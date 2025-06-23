@@ -32,7 +32,18 @@ pub enum SignalError {
     /// Not implemented error
     #[error("Not implemented: {0}")]
     NotImplementedError(String),
+
+    /// Runtime error
+    #[error("Runtime error: {0}")]
+    RuntimeError(String),
 }
+
+// Conversion from scirs2_linalg errors
+// impl From<scirs2_linalg::LinalgError> for SignalError {
+//     fn from(err: scirs2_linalg::LinalgError) -> Self {
+//         SignalError::Compute(format!("Linear algebra error: {}", err))
+//     }
+// }
 
 /// Result type for signal processing operations
 pub type SignalResult<T> = Result<T, SignalError>;

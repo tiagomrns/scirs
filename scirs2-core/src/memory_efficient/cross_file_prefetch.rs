@@ -4,13 +4,14 @@
 //! or arrays and prefetching related data. This is particularly useful for scientific
 //! computing workloads where multiple datasets are often accessed together in predictable ways.
 
-use std::collections::{HashMap, HashSet, VecDeque};
+#[cfg(feature = "memory_compression")]
+use std::collections::HashSet;
+use std::collections::{HashMap, VecDeque};
 use std::hash::{Hash, Hasher};
 use std::path::{Path, PathBuf};
-use std::sync::{Arc, Mutex, RwLock, Weak};
+use std::sync::{Arc, Mutex, Weak};
 use std::time::{Duration, Instant};
 
-use super::prefetch::{PrefetchConfig, PrefetchStats};
 use crate::error::{CoreError, CoreResult, ErrorContext};
 
 /// Default correlation threshold for considering files related
@@ -211,43 +212,43 @@ impl CrossFilePrefetchConfigBuilder {
     }
 
     /// Set the correlation window.
-    pub fn with_correlation_window(mut self, window: Duration) -> Self {
+    pub const fn with_correlation_window(mut self, window: Duration) -> Self {
         self.config.correlation_window = window;
         self
     }
 
     /// Set the minimum occurrences for correlation.
-    pub fn with_min_occurrences(mut self, occurrences: usize) -> Self {
+    pub const fn with_min_occurrences(mut self, occurrences: usize) -> Self {
         self.config.min_occurrences = occurrences;
         self
     }
 
     /// Set the maximum number of datasets to prefetch.
-    pub fn with_max_prefetch_datasets(mut self, max_datasets: usize) -> Self {
+    pub const fn with_max_prefetch_datasets(mut self, max_datasets: usize) -> Self {
         self.config.max_prefetch_datasets = max_datasets;
         self
     }
 
     /// Set the maximum elements to prefetch per dataset.
-    pub fn with_max_prefetch_elements(mut self, max_elements: usize) -> Self {
+    pub const fn with_max_prefetch_elements(mut self, max_elements: usize) -> Self {
         self.config.max_prefetch_elements = max_elements;
         self
     }
 
     /// Enable or disable prefetching entire files.
-    pub fn with_prefetch_entire_file(mut self, enable: bool) -> Self {
+    pub const fn with_prefetch_entire_file(mut self, enable: bool) -> Self {
         self.config.prefetch_entire_file = enable;
         self
     }
 
     /// Set the correlation expiry time.
-    pub fn with_correlation_expiry(mut self, expiry: Duration) -> Self {
+    pub const fn with_correlation_expiry(mut self, expiry: Duration) -> Self {
         self.config.correlation_expiry = expiry;
         self
     }
 
     /// Enable or disable learning from access patterns.
-    pub fn with_enable_learning(mut self, enable: bool) -> Self {
+    pub const fn with_enable_learning(mut self, enable: bool) -> Self {
         self.config.enable_learning = enable;
         self
     }
@@ -258,10 +259,17 @@ impl CrossFilePrefetchConfigBuilder {
     }
 }
 
+impl Default for CrossFilePrefetchConfigBuilder {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 /// A correlation between datasets.
 #[derive(Debug, Clone)]
 struct DatasetCorrelation {
     /// Primary dataset
+    #[allow(dead_code)]
     primary: DatasetId,
 
     /// Related dataset
@@ -303,10 +311,7 @@ impl DatasetCorrelation {
         self.strength = (self.strength * 0.9) + 0.1;
 
         // Update index correlations
-        let entry = self
-            .index_correlations
-            .entry(primary_index)
-            .or_insert_with(Vec::new);
+        let entry = self.index_correlations.entry(primary_index).or_default();
 
         for &related_index in related_indices {
             if !entry.contains(&related_index) {
@@ -325,22 +330,69 @@ impl DatasetCorrelation {
         if let Some(indices) = self.index_correlations.get(&primary_index) {
             indices.iter().take(max_count).copied().collect()
         } else {
-            // If no specific index correlation, return nearby indices based on the primary index
-            let mut nearby = Vec::with_capacity(max_count);
+            // Try to detect patterns from existing correlations
+            if let Some(predicted) = self.predict_from_pattern(primary_index, max_count) {
+                predicted
+            } else {
+                // If no pattern detected, return nearby indices based on the primary index
+                let mut nearby = Vec::with_capacity(max_count);
 
-            // Add the exact same index first
-            nearby.push(primary_index);
+                // Add the exact same index first
+                nearby.push(primary_index);
 
-            // Add some nearby indices
-            for i in 1..=max_count / 2 {
-                if primary_index >= i {
-                    nearby.push(primary_index - i);
+                // Add some nearby indices
+                for i in 1..=max_count / 2 {
+                    if primary_index >= i {
+                        nearby.push(primary_index - i);
+                    }
+                    nearby.push(primary_index + i);
                 }
-                nearby.push(primary_index + i);
-            }
 
-            nearby.into_iter().take(max_count).collect()
+                nearby.into_iter().take(max_count).collect()
+            }
         }
+    }
+
+    /// Predict related indices based on patterns in existing correlations.
+    fn predict_from_pattern(&self, primary_index: usize, _max_count: usize) -> Option<Vec<usize>> {
+        // Need at least 2 data points to detect a pattern
+        if self.index_correlations.len() < 2 {
+            return None;
+        }
+
+        // Collect known correlations as (primary, related) pairs
+        let mut correlations: Vec<(usize, usize)> = Vec::new();
+        for (&primary, related_indices) in &self.index_correlations {
+            // Use the first related index as the primary correlation
+            if let Some(&first_related) = related_indices.first() {
+                correlations.push((primary, first_related));
+            }
+        }
+
+        // Sort by primary index
+        correlations.sort_by_key(|(primary, _)| *primary);
+
+        // Try to detect a linear pattern: related = primary * scale + offset
+        if correlations.len() >= 2 {
+            let (p1, r1) = correlations[0];
+            let (p2, r2) = correlations[1];
+
+            // Calculate slope (scale factor)
+            if p2 != p1 {
+                let scale = (r2 as f64 - r1 as f64) / (p2 as f64 - p1 as f64);
+                let offset = r1 as f64 - scale * p1 as f64;
+
+                // Predict the related index
+                let predicted_related = (scale * primary_index as f64 + offset).round() as usize;
+
+                // Validate the prediction makes sense (positive and reasonable)
+                if predicted_related < 1_000_000 {
+                    return Some(vec![predicted_related]);
+                }
+            }
+        }
+
+        None
     }
 }
 
@@ -432,49 +484,46 @@ impl CrossFilePrefetchManager {
     /// Update correlations based on a new access.
     fn update_correlations(&mut self, access: &DataAccess) {
         let current_time = Instant::now();
-        let window_start = current_time - self.config.correlation_window;
+        let correlation_window = Duration::from_millis(100); // Shorter window for temporal correlation
 
-        // Collect recent accesses within the correlation window
-        let recent_accesses: Vec<_> = self
-            .access_history
-            .iter()
-            .filter(|record| {
-                record.timestamp >= window_start && record.access.dataset != access.dataset
-                // Only different datasets
-            })
-            .collect();
+        // Look for recent accesses from other datasets that could be correlated
+        // We want to find accesses that happened just before this one
+        let recent_threshold = current_time - correlation_window;
 
-        // Group by dataset
-        let mut dataset_accesses: HashMap<&DatasetId, Vec<&AccessRecord>> = HashMap::new();
-        for record in &recent_accesses {
-            dataset_accesses
-                .entry(&record.access.dataset)
-                .or_default()
-                .push(record);
-        }
+        // Find the most recent access from each other dataset
+        let mut recent_by_dataset: HashMap<&DatasetId, &AccessRecord> = HashMap::new();
 
-        // Update correlations for each dataset
-        for (related_dataset, records) in dataset_accesses {
-            // Check if we have enough occurrences
-            if records.len() < self.config.min_occurrences {
+        for record in self.access_history.iter().rev() {
+            // Skip if too old
+            if record.timestamp < recent_threshold {
+                break;
+            }
+
+            // Skip if same dataset
+            if record.access.dataset == access.dataset {
                 continue;
             }
 
-            // Extract indices from the related dataset
-            let related_indices: Vec<usize> = records.iter().map(|r| r.access.index).collect();
+            // Record the most recent access from this dataset
+            if !recent_by_dataset.contains_key(&record.access.dataset) {
+                recent_by_dataset.insert(&record.access.dataset, record);
+            }
+        }
 
-            // Get or create correlation
+        // Create correlations: recent access predicts current access
+        for (related_dataset, recent_record) in recent_by_dataset {
+            // Get or create correlation from related dataset to current dataset
             let correlation = self
                 .correlations
-                .entry(access.dataset.clone())
-                .or_default()
                 .entry(related_dataset.clone())
+                .or_default()
+                .entry(access.dataset.clone())
                 .or_insert_with(|| {
-                    DatasetCorrelation::new(access.dataset.clone(), related_dataset.clone())
+                    DatasetCorrelation::new(related_dataset.clone(), access.dataset.clone())
                 });
 
-            // Update the correlation
-            correlation.update(access.index, &related_indices);
+            // Update the correlation: recent_index predicts current_index
+            correlation.update(recent_record.access.index, &[access.index]);
         }
 
         // Clean up expired correlations
@@ -621,7 +670,10 @@ impl CrossFilePrefetchRegistry {
             }
         });
 
-        unsafe { INSTANCE.as_ref().unwrap() }
+        #[allow(static_mut_refs)]
+        unsafe {
+            INSTANCE.as_ref().unwrap()
+        }
     }
 
     /// Record a data access.
@@ -703,8 +755,9 @@ impl CrossFilePrefetchRegistry {
     }
 }
 
+#[cfg(feature = "memory_compression")]
 /// Implementation of DatasetPrefetcher for CompressedMemMappedArray.
-pub struct CompressedArrayPrefetcher<A: Clone + Copy + 'static> {
+pub struct CompressedArrayPrefetcher<A: Clone + Copy + Send + Sync + 'static> {
     /// Dataset ID
     dataset_id: DatasetId,
 
@@ -712,7 +765,8 @@ pub struct CompressedArrayPrefetcher<A: Clone + Copy + 'static> {
     array: Arc<super::compressed_memmap::CompressedMemMappedArray<A>>,
 }
 
-impl<A: Clone + Copy + 'static> CompressedArrayPrefetcher<A> {
+#[cfg(feature = "memory_compression")]
+impl<A: Clone + Copy + Send + Sync + 'static> CompressedArrayPrefetcher<A> {
     /// Create a new prefetcher for a compressed array.
     pub fn new(
         dataset_id: DatasetId,
@@ -722,14 +776,15 @@ impl<A: Clone + Copy + 'static> CompressedArrayPrefetcher<A> {
     }
 }
 
-impl<A: Clone + Copy + 'static> DatasetPrefetcher for CompressedArrayPrefetcher<A> {
+#[cfg(feature = "memory_compression")]
+impl<A: Clone + Copy + Send + Sync + 'static> DatasetPrefetcher for CompressedArrayPrefetcher<A> {
     fn prefetch_indices(&self, indices: &[usize]) -> CoreResult<()> {
         if indices.is_empty() {
             return Ok(());
         }
 
         // For compressed arrays, we need to convert flat indices to block indices
-        let block_size = self.array.metadata.block_size;
+        let block_size = self.array.block_size();
 
         // Calculate unique block indices to prefetch
         let mut block_indices = HashSet::new();
@@ -748,7 +803,7 @@ impl<A: Clone + Copy + 'static> DatasetPrefetcher for CompressedArrayPrefetcher<
 
     fn prefetch_all(&self) -> CoreResult<()> {
         // Prefetch all blocks
-        let total_blocks = self.array.metadata.num_blocks;
+        let total_blocks = self.array.num_blocks();
         for block_idx in 0..total_blocks {
             self.array.preload_block(block_idx)?;
         }
@@ -762,7 +817,7 @@ impl<A: Clone + Copy + 'static> DatasetPrefetcher for CompressedArrayPrefetcher<
 }
 
 /// Implementation of DatasetPrefetcher for MemoryMappedArray.
-pub struct MemoryMappedArrayPrefetcher<A: Clone + Copy + 'static> {
+pub struct MemoryMappedArrayPrefetcher<A: Clone + Copy + Send + Sync + 'static> {
     /// Dataset ID
     dataset_id: DatasetId,
 
@@ -770,10 +825,11 @@ pub struct MemoryMappedArrayPrefetcher<A: Clone + Copy + 'static> {
     array: Arc<super::memmap::MemoryMappedArray<A>>,
 
     /// Chunk size for prefetching
+    #[allow(dead_code)]
     chunk_size: usize,
 }
 
-impl<A: Clone + Copy + 'static> MemoryMappedArrayPrefetcher<A> {
+impl<A: Clone + Copy + Send + Sync + 'static> MemoryMappedArrayPrefetcher<A> {
     /// Create a new prefetcher for a memory-mapped array.
     pub fn new(
         dataset_id: DatasetId,
@@ -788,7 +844,7 @@ impl<A: Clone + Copy + 'static> MemoryMappedArrayPrefetcher<A> {
     }
 }
 
-impl<A: Clone + Copy + 'static> DatasetPrefetcher for MemoryMappedArrayPrefetcher<A> {
+impl<A: Clone + Copy + Send + Sync + 'static> DatasetPrefetcher for MemoryMappedArrayPrefetcher<A> {
     fn prefetch_indices(&self, indices: &[usize]) -> CoreResult<()> {
         if indices.is_empty() {
             return Ok(());
@@ -799,14 +855,14 @@ impl<A: Clone + Copy + 'static> DatasetPrefetcher for MemoryMappedArrayPrefetche
         // but ensures the memory is mapped
 
         // Ensure the array is readable
-        let _array = self.array.readonly_array()?;
+        let _array = self.array.as_array::<ndarray::IxDyn>()?;
 
         Ok(())
     }
 
     fn prefetch_all(&self) -> CoreResult<()> {
         // For memory-mapped arrays, just ensure the file is mapped
-        let _array = self.array.readonly_array()?;
+        let _array = self.array.as_array::<ndarray::IxDyn>()?;
 
         Ok(())
     }
@@ -816,23 +872,26 @@ impl<A: Clone + Copy + 'static> DatasetPrefetcher for MemoryMappedArrayPrefetche
     }
 }
 
+#[cfg(feature = "memory_compression")]
 /// Extension traits for compressed arrays to enable cross-file prefetching.
-pub trait CompressedArrayPrefetchExt<A: Clone + Copy + 'static> {
+pub trait CompressedArrayPrefetchExt<A: Clone + Copy + Send + Sync + 'static> {
     /// Register with the cross-file prefetching system.
+    #[allow(dead_code)]
     fn register_for_cross_prefetch(
         &self,
         dataset_id: DatasetId,
     ) -> CoreResult<Arc<CompressedArrayPrefetcher<A>>>;
 }
 
-impl<A: Clone + Copy + 'static> CompressedArrayPrefetchExt<A>
+#[cfg(feature = "memory_compression")]
+impl<A: Clone + Copy + Send + Sync + 'static> CompressedArrayPrefetchExt<A>
     for super::compressed_memmap::CompressedMemMappedArray<A>
 {
     fn register_for_cross_prefetch(
         &self,
         dataset_id: DatasetId,
     ) -> CoreResult<Arc<CompressedArrayPrefetcher<A>>> {
-        let array = Arc::new(self.clone());
+        let array = Arc::new((*self).clone());
         let prefetcher = Arc::new(CompressedArrayPrefetcher::new(dataset_id.clone(), array));
 
         CrossFilePrefetchRegistry::global().register_dataset(dataset_id, prefetcher.clone())?;
@@ -842,8 +901,9 @@ impl<A: Clone + Copy + 'static> CompressedArrayPrefetchExt<A>
 }
 
 /// Extension traits for memory-mapped arrays to enable cross-file prefetching.
-pub trait MemoryMappedArrayPrefetchExt<A: Clone + Copy + 'static> {
+pub trait MemoryMappedArrayPrefetchExt<A: Clone + Copy + Send + Sync + 'static> {
     /// Register with the cross-file prefetching system.
+    #[allow(dead_code)]
     fn register_for_cross_prefetch(
         &self,
         dataset_id: DatasetId,
@@ -851,7 +911,7 @@ pub trait MemoryMappedArrayPrefetchExt<A: Clone + Copy + 'static> {
     ) -> CoreResult<Arc<MemoryMappedArrayPrefetcher<A>>>;
 }
 
-impl<A: Clone + Copy + 'static> MemoryMappedArrayPrefetchExt<A>
+impl<A: Clone + Copy + Send + Sync + 'static> MemoryMappedArrayPrefetchExt<A>
     for super::memmap::MemoryMappedArray<A>
 {
     fn register_for_cross_prefetch(
@@ -859,7 +919,7 @@ impl<A: Clone + Copy + 'static> MemoryMappedArrayPrefetchExt<A>
         dataset_id: DatasetId,
         chunk_size: usize,
     ) -> CoreResult<Arc<MemoryMappedArrayPrefetcher<A>>> {
-        let array = Arc::new(self.clone());
+        let array = Arc::new((*self).clone());
         let prefetcher = Arc::new(MemoryMappedArrayPrefetcher::new(
             dataset_id.clone(),
             array,
@@ -873,7 +933,8 @@ impl<A: Clone + Copy + 'static> MemoryMappedArrayPrefetchExt<A>
 }
 
 /// Middleware wrapper for tracking array accesses.
-pub struct TrackedArray<A: Clone + Copy + 'static, T> {
+#[allow(dead_code)]
+pub struct TrackedArray<A: Clone + Copy + 'static + Send + Sync, T> {
     /// Underlying array
     array: T,
 
@@ -884,7 +945,8 @@ pub struct TrackedArray<A: Clone + Copy + 'static, T> {
     _phantom: std::marker::PhantomData<A>,
 }
 
-impl<A: Clone + Copy + 'static, T> TrackedArray<A, T> {
+#[allow(dead_code)]
+impl<A: Clone + Copy + 'static + Send + Sync, T> TrackedArray<A, T> {
     /// Create a new tracked array.
     pub fn new(array: T, dataset_id: DatasetId) -> Self {
         Self {
@@ -895,7 +957,7 @@ impl<A: Clone + Copy + 'static, T> TrackedArray<A, T> {
     }
 
     /// Get a reference to the underlying array.
-    pub fn inner(&self) -> &T {
+    pub const fn inner(&self) -> &T {
         &self.array
     }
 
@@ -905,7 +967,7 @@ impl<A: Clone + Copy + 'static, T> TrackedArray<A, T> {
     }
 
     /// Get the dataset ID.
-    pub fn dataset_id(&self) -> &DatasetId {
+    pub const fn dataset_id(&self) -> &DatasetId {
         &self.dataset_id
     }
 
@@ -928,11 +990,13 @@ impl<A: Clone + Copy + 'static, T> TrackedArray<A, T> {
     }
 }
 
+#[cfg(feature = "memory_compression")]
 /// Implementation of TrackedArray for CompressedMemMappedArray.
-impl<A: Clone + Copy + 'static>
+impl<A: Clone + Copy + 'static + Send + Sync>
     TrackedArray<A, super::compressed_memmap::CompressedMemMappedArray<A>>
 {
     /// Get an element from the array, recording the access.
+    #[allow(dead_code)]
     pub fn get(&self, indices: &[usize]) -> CoreResult<A> {
         let start = Instant::now();
 
@@ -942,7 +1006,7 @@ impl<A: Clone + Copy + 'static>
         for i in (0..indices.len()).rev() {
             flat_index += indices[i] * stride;
             if i > 0 {
-                stride *= self.array.metadata.shape[i];
+                stride *= self.array.shape()[i];
             }
         }
 

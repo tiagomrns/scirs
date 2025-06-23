@@ -93,26 +93,12 @@ impl PerspectiveTransform {
             a[[idx, 8]] = -v;
         }
 
-        // Solve the system using SVD
-        use ndarray_linalg::svddc::SVDDC;
-        let svd = a.svddc()
-            .map_err(|e| VisionError::LinAlgError(e.to_string()))?;
-        let (_, s, vt) = svd;
-
-        // Find the smallest singular value index
-        let min_idx = s
-            .iter()
-            .enumerate()
-            .min_by(|(_, &a), (_, &b)| a.partial_cmp(&b).unwrap())
-            .map(|(idx, _)| idx)
-            .unwrap_or(8);
-
-        // Get the corresponding right singular vector
-        let h = vt.row(min_idx);
-        let h_data = h.to_vec();
+        // TODO: Replace with proper SVD implementation
+        // For now, use a simple direct eigenvector solution for smallest eigenvalue
+        let h = compute_homography_from_system(&a)?;
 
         // Create homography matrix
-        let h_matrix = Array2::from_shape_vec((3, 3), h_data)?;
+        let h_matrix = Array2::from_shape_vec((3, 3), h.to_vec())?;
 
         // Normalize so that h[2,2] = 1
         let norm_factor = h_matrix[[2, 2]];
@@ -181,9 +167,40 @@ impl PerspectiveTransform {
     ///
     /// * The inverse perspective transformation
     pub fn inverse(&self) -> Result<Self> {
-        use ndarray_linalg::solve::Inverse;
-        let inv = self.matrix.inv()
-            .map_err(|e| VisionError::LinAlgError(e.to_string()))?;
+        // Compute the determinant to check invertibility
+        let det = compute_determinant(&self.matrix);
+        if det.abs() < 1e-10 {
+            return Err(VisionError::OperationFailed(
+                "Matrix is singular, cannot compute inverse".to_string(),
+            ));
+        }
+
+        // Compute the adjugate matrix
+        let mut inv = Array2::zeros((3, 3));
+
+        // Cofactors for the inverse
+        inv[[0, 0]] =
+            self.matrix[[1, 1]] * self.matrix[[2, 2]] - self.matrix[[1, 2]] * self.matrix[[2, 1]];
+        inv[[0, 1]] =
+            self.matrix[[0, 2]] * self.matrix[[2, 1]] - self.matrix[[0, 1]] * self.matrix[[2, 2]];
+        inv[[0, 2]] =
+            self.matrix[[0, 1]] * self.matrix[[1, 2]] - self.matrix[[0, 2]] * self.matrix[[1, 1]];
+        inv[[1, 0]] =
+            self.matrix[[1, 2]] * self.matrix[[2, 0]] - self.matrix[[1, 0]] * self.matrix[[2, 2]];
+        inv[[1, 1]] =
+            self.matrix[[0, 0]] * self.matrix[[2, 2]] - self.matrix[[0, 2]] * self.matrix[[2, 0]];
+        inv[[1, 2]] =
+            self.matrix[[0, 2]] * self.matrix[[1, 0]] - self.matrix[[0, 0]] * self.matrix[[1, 2]];
+        inv[[2, 0]] =
+            self.matrix[[1, 0]] * self.matrix[[2, 1]] - self.matrix[[1, 1]] * self.matrix[[2, 0]];
+        inv[[2, 1]] =
+            self.matrix[[0, 1]] * self.matrix[[2, 0]] - self.matrix[[0, 0]] * self.matrix[[2, 1]];
+        inv[[2, 2]] =
+            self.matrix[[0, 0]] * self.matrix[[1, 1]] - self.matrix[[0, 1]] * self.matrix[[1, 0]];
+
+        // Divide by determinant
+        inv.mapv_inplace(|v| v / det);
+
         Ok(Self { matrix: inv })
     }
 
@@ -563,4 +580,103 @@ mod tests {
             assert_eq!(color[2], 0);
         }
     }
+}
+
+// Helper function to compute determinant
+fn compute_determinant(matrix: &Array2<f64>) -> f64 {
+    let m = matrix;
+    m[[0, 0]] * (m[[1, 1]] * m[[2, 2]] - m[[1, 2]] * m[[2, 1]])
+        - m[[0, 1]] * (m[[1, 0]] * m[[2, 2]] - m[[1, 2]] * m[[2, 0]])
+        + m[[0, 2]] * (m[[1, 0]] * m[[2, 1]] - m[[1, 1]] * m[[2, 0]])
+}
+
+// Helper method to compute homography from the linear system
+fn compute_homography_from_system(a: &Array2<f64>) -> Result<Vec<f64>> {
+    // This is a simplified version to compute the homography
+    // In a real implementation, we'd use SVD, but for now we'll
+    // use a simpler approach based on the normal equations
+
+    // Step 1: Compute A^T * A
+    let (m, n) = a.dim();
+    let mut ata = Array2::zeros((n, n));
+
+    for i in 0..n {
+        for j in 0..n {
+            for k in 0..m {
+                ata[[i, j]] += a[[k, i]] * a[[k, j]];
+            }
+        }
+    }
+
+    // Find the smallest eigenvalue of A^T * A using power iteration
+    let eigenvector = find_smallest_eigenvector(&ata)?;
+
+    Ok(eigenvector)
+}
+
+// Finds the eigenvector corresponding to the smallest eigenvalue
+fn find_smallest_eigenvector(matrix: &Array2<f64>) -> Result<Vec<f64>> {
+    let n = matrix.shape()[0];
+
+    // Start with a random vector
+    let mut v = vec![1.0; n];
+
+    // Normalize v
+    let mut norm: f64 = 0.0;
+    for val in &v {
+        norm += val * val;
+    }
+    norm = norm.sqrt();
+
+    for v_i in v.iter_mut().take(n) {
+        *v_i /= norm;
+    }
+
+    // Iterate to find eigenvector
+    for _ in 0..50 {
+        // Matrix-vector multiplication: Mv
+        let mut mv = vec![0.0; n];
+        for i in 0..n {
+            for j in 0..n {
+                mv[i] += matrix[[i, j]] * v[j];
+            }
+        }
+
+        // Compute Rayleigh quotient: v^T * M * v / (v^T * v)
+        let mut rayleigh = 0.0;
+        for i in 0..n {
+            rayleigh += v[i] * mv[i];
+        }
+
+        // Shift to find smallest eigenvalue: v = v - rayleigh*v
+        for i in 0..n {
+            v[i] = mv[i] - rayleigh * v[i];
+        }
+
+        // Renormalize
+        norm = 0.0;
+        for val in &v {
+            norm += val * val;
+        }
+        norm = norm.sqrt();
+
+        if norm < 1e-10 {
+            // Use a different starting vector if we converge to zero
+            for (i, v_i) in v.iter_mut().enumerate().take(n) {
+                *v_i = (i + 1) as f64;
+            }
+
+            norm = 0.0;
+            for val in &v {
+                norm += val * val;
+            }
+            norm = norm.sqrt();
+        }
+
+        for v_i in v.iter_mut().take(n) {
+            *v_i /= norm;
+        }
+    }
+
+    Ok(v)
 }

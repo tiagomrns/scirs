@@ -7,7 +7,7 @@
 
 use crate::error::Result;
 use ndarray::{s, Array2, Array3};
-use rayon::prelude::*;
+use scirs2_core::parallel_ops::*;
 use std::sync::Mutex;
 
 /// Apply non-local means denoising to a grayscale image
@@ -173,7 +173,7 @@ pub fn nlm_denoise_color(
 
 /// Fast non-local means denoising using parallel processing
 ///
-/// This version uses Rayon for parallel processing to speed up computation.
+/// This version uses parallel processing to speed up computation.
 ///
 /// # Arguments
 ///

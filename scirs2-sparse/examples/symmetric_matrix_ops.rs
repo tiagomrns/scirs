@@ -32,7 +32,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let indptr = vec![0, 1, 3, 5];
 
     // Create SymCsrMatrix - the base representation
-    let sym_csr_matrix = SymCsrMatrix::new(data.clone(), indices, indptr, (3, 3))?;
+    let sym_csr_matrix = SymCsrMatrix::new(data.clone(), indptr, indices, (3, 3))?;
     println!("Created a 3x3 symmetric matrix in CSR format");
     println!(
         "  Storage: only the lower triangular part ({} elements)",

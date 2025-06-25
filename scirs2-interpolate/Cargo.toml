@@ -1,6 +1,6 @@
 [package]
 name = "scirs2-interpolate"
-version = "0.1.0-alpha.5"
+version.workspace = true
 edition = "2021"
 authors = ["SciRS2 Team"]
 description = "Interpolation module for SciRS2"
@@ -42,3 +42,6 @@ linalg = []
 # Enable SIMD optimizations for performance-critical operations
 # Provides 2-4x speedup for B-spline evaluation and distance calculations
 simd = ["scirs2-core/simd"]
+
+# Enable parallel processing features
+parallel = ["scirs2-core/parallel"]

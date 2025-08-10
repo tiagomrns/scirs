@@ -6,7 +6,7 @@
 
 ## 🛠️ Improvements
 
-*To be updated with improvements*
+New functions to access BsrMatrix struct fields, to solve [Issue #48](https://github.com/cool-japan/scirs/issues/48).
 
 ## 🐛 Bug Fixes
 

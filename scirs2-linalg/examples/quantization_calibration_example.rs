@@ -11,39 +11,41 @@ use scirs2_linalg::quantization::calibration::{
 };
 use scirs2_linalg::quantization::{dequantize_matrix, quantize_matrix};
 
+#[allow(dead_code)]
 fn main() {
     println!("Quantization Calibration Example");
     println!("================================\n");
 
     // Create a synthetic dataset with different distributions
     println!("Creating synthetic data with multiple distributions...");
-    let uniform_data = create_uniform_data();
-    let normal_data = create_normal_data();
-    let bimodal_data = create_bimodal_data();
-    let mixed_data = create_mixed_scale_data();
+    let uniformdata = create_uniformdata();
+    let normaldata = create_normaldata();
+    let bimodaldata = create_bimodaldata();
+    let mixeddata = create_mixed_scaledata();
 
     // Compare different calibration methods
     println!("\nComparing calibration methods on uniform distribution:");
-    compare_calibration_methods(&uniform_data, 8);
+    compare_calibration_methods(&uniformdata, 8);
 
     println!("\nComparing calibration methods on normal distribution:");
-    compare_calibration_methods(&normal_data, 8);
+    compare_calibration_methods(&normaldata, 8);
 
     println!("\nComparing calibration methods on bimodal distribution:");
-    compare_calibration_methods(&bimodal_data, 8);
+    compare_calibration_methods(&bimodaldata, 8);
 
     // Compare per-channel vs standard quantization
     println!("\nComparing per-channel quantization on mixed scale data:");
-    compare_per_channel_quantization(&mixed_data, 8);
+    compare_per_channel_quantization(&mixeddata, 8);
 
     // Compare different bit-width quantization
     println!("\nComparing different bit-widths using entropy calibration:");
-    compare_bit_widths(&normal_data);
+    compare_bit_widths(&normaldata);
 }
 
 /// Create a matrix with uniform distribution
-fn create_uniform_data() -> Array2<f32> {
-    let mut rng = rng();
+#[allow(dead_code)]
+fn create_uniformdata() -> Array2<f32> {
+    let mut rng = rand::rng();
     let uniform = Uniform::new(-1.0, 1.0).unwrap();
 
     let mut data = Array2::zeros((10, 10));
@@ -57,8 +59,9 @@ fn create_uniform_data() -> Array2<f32> {
 }
 
 /// Create a matrix with normal distribution
-fn create_normal_data() -> Array2<f32> {
-    let mut rng = rng();
+#[allow(dead_code)]
+fn create_normaldata() -> Array2<f32> {
+    let mut rng = rand::rng();
     let normal = Normal::new(0.0, 1.0).unwrap();
 
     let mut data = Array2::zeros((10, 10));
@@ -72,8 +75,9 @@ fn create_normal_data() -> Array2<f32> {
 }
 
 /// Create a matrix with bimodal distribution
-fn create_bimodal_data() -> Array2<f32> {
-    let mut rng = rng();
+#[allow(dead_code)]
+fn create_bimodaldata() -> Array2<f32> {
+    let mut rng = rand::rng();
     let normal1 = Normal::new(-2.0, 0.5).unwrap();
     let normal2 = Normal::new(2.0, 0.5).unwrap();
 
@@ -93,8 +97,9 @@ fn create_bimodal_data() -> Array2<f32> {
 }
 
 /// Create a matrix with mixed scales in different columns
-fn create_mixed_scale_data() -> Array2<f32> {
-    let mut rng = rng();
+#[allow(dead_code)]
+fn create_mixed_scaledata() -> Array2<f32> {
+    let mut rng = rand::rng();
 
     let mut data = Array2::zeros((10, 3));
 
@@ -117,6 +122,7 @@ fn create_mixed_scale_data() -> Array2<f32> {
 }
 
 /// Compare different calibration methods on the same data
+#[allow(dead_code)]
 fn compare_calibration_methods(data: &Array2<f32>, bits: u8) {
     let methods = [
         CalibrationMethod::MinMax,
@@ -142,7 +148,7 @@ fn compare_calibration_methods(data: &Array2<f32>, bits: u8) {
             symmetric: true,
             percentile: 0.995,
             num_bins: 100,
-            window_size: 3,
+            windowsize: 3,
             per_channel: false,
             ema_factor: 0.9,
             convergence_threshold: 0.01,
@@ -172,6 +178,7 @@ fn compare_calibration_methods(data: &Array2<f32>, bits: u8) {
 }
 
 /// Compare per-channel vs standard quantization
+#[allow(dead_code)]
 fn compare_per_channel_quantization(data: &Array2<f32>, bits: u8) {
     println!("Standard Symmetric Quantization:");
     let config_std = CalibrationConfig {
@@ -182,8 +189,8 @@ fn compare_per_channel_quantization(data: &Array2<f32>, bits: u8) {
     };
 
     let params_std = calibrate_matrix(&data.view(), bits, &config_std).unwrap();
-    let (quantized_std, _) = quantize_matrix(&data.view(), bits, params_std.method);
-    let dequantized_std = dequantize_matrix(&quantized_std, &params_std);
+    let (quantized_std_, _) = quantize_matrix(&data.view(), bits, params_std.method);
+    let dequantized_std = dequantize_matrix(&quantized_std_, &params_std);
 
     let mse_std = (data - &dequantized_std).mapv(|x| x * x).sum() / data.len() as f32;
 
@@ -207,8 +214,8 @@ fn compare_per_channel_quantization(data: &Array2<f32>, bits: u8) {
         }
     }
 
-    let (quantized_pc, _) = quantize_matrix(&data.view(), bits, params_pc.method);
-    let dequantized_pc = dequantize_matrix(&quantized_pc, &params_pc);
+    let (quantized_pc_, _) = quantize_matrix(&data.view(), bits, params_pc.method);
+    let dequantized_pc = dequantize_matrix(&quantized_pc_, &params_pc);
 
     let mse_pc = (data - &dequantized_pc).mapv(|x| x * x).sum() / data.len() as f32;
 
@@ -225,19 +232,20 @@ fn compare_per_channel_quantization(data: &Array2<f32>, bits: u8) {
     println!("{:-^10} | {:-^15} | {:-^15}", "", "", "");
 
     for j in 0..cols {
-        let col_data = data.column(j);
+        let coldata = data.column(j);
         let col_std = dequantized_std.column(j);
         let col_pc = dequantized_pc.column(j);
 
-        let col_mse_std = (&col_data - &col_std).mapv(|x| x * x).sum() / col_data.len() as f32;
+        let col_mse_std = (&coldata - &col_std).mapv(|x| x * x).sum() / coldata.len() as f32;
 
-        let col_mse_pc = (&col_data - &col_pc).mapv(|x| x * x).sum() / col_data.len() as f32;
+        let col_mse_pc = (&coldata - &col_pc).mapv(|x| x * x).sum() / coldata.len() as f32;
 
         println!("{:^10} | {:^15.6} | {:^15.6}", j, col_mse_std, col_mse_pc);
     }
 }
 
 /// Compare different bit-widths using entropy calibration
+#[allow(dead_code)]
 fn compare_bit_widths(data: &Array2<f32>) {
     let bits = [4, 8, 16];
 

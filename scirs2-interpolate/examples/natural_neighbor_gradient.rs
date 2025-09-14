@@ -12,11 +12,13 @@ use scirs2_interpolate::voronoi::{
 use std::error::Error;
 
 // Define a test function and its analytical gradient
+#[allow(dead_code)]
 fn test_function(x: f64, y: f64) -> f64 {
     // Function: f(x,y) = sin(x)*cos(y)
     x.sin() * y.cos()
 }
 
+#[allow(dead_code)]
 fn analytical_gradient(x: f64, y: f64) -> Vec<f64> {
     // Gradient of f(x,y) = sin(x)*cos(y):
     // df/dx = cos(x)*cos(y)
@@ -24,6 +26,7 @@ fn analytical_gradient(x: f64, y: f64) -> Vec<f64> {
     vec![x.cos() * y.cos(), -x.sin() * y.sin()]
 }
 
+#[allow(dead_code)]
 fn main() -> Result<(), Box<dyn Error>> {
     // Generate scattered data points
     let n_points = 100;

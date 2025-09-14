@@ -5,6 +5,7 @@
 use ndarray::Array1;
 use scirs2_integrate::ode::enzyme_kinetics::{pathways, EnzymeParameters};
 
+#[allow(dead_code)]
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("Simple Enzyme Kinetics Test\n");
 
@@ -14,7 +15,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     params.temperature = 298.15; // Set to reference temperature to avoid correction
     let substrate_conc = 1.0; // At Km
     let rate = params.calculate_rate(&[substrate_conc]);
-    println!("   Rate at Km = {:.1} μM/s (should be ~50)", rate);
+    println!("   Rate at Km = {rate:.1} μM/s (should be ~50)");
     assert!((rate - 50.0).abs() < 1.0);
 
     // Test 2: Hill kinetics
@@ -22,7 +23,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let mut hill_params = EnzymeParameters::hill(1.0, 100.0, 2.0);
     hill_params.temperature = 298.15; // Set to reference temperature to avoid correction
     let rate_hill = hill_params.calculate_rate(&[substrate_conc]);
-    println!("   Hill rate at Kd = {:.1} μM/s (should be ~50)", rate_hill);
+    println!("   Hill rate at Kd = {rate_hill:.1} μM/s (should be ~50)");
     assert!((rate_hill - 50.0).abs() < 1.0);
 
     // Test 3: Simple glycolysis pathway
@@ -67,8 +68,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     temp_params.temperature = 310.15; // 37°C
     let rate_37c = temp_params.calculate_rate(&[1.0]);
 
-    println!("   Rate at 25°C: {:.1} μM/s", rate_25c);
-    println!("   Rate at 37°C: {:.1} μM/s", rate_37c);
+    println!("   Rate at 25°C: {rate_25c:.1} μM/s");
+    println!("   Rate at 37°C: {rate_37c:.1} μM/s");
     println!("   Temperature factor: {:.2}", rate_37c / rate_25c);
 
     assert!(rate_37c > rate_25c); // Rate should increase with temperature

@@ -3,6 +3,7 @@ use scirs2_integrate::dae::{solve_semi_explicit_dae, DAEOptions};
 use scirs2_integrate::ode::ODEMethod;
 use std::f64::consts::PI;
 
+#[allow(dead_code)]
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("Pendulum as a DAE System Example");
     println!("================================\n");
@@ -158,6 +159,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 }
 
 /// Analyze the period of the pendulum by detecting zero crossings
+#[allow(dead_code)]
 fn analyze_period(t: &[f64], x: &[Array1<f64>]) {
     let mut crossings = Vec::new();
 
@@ -189,11 +191,8 @@ fn analyze_period(t: &[f64], x: &[Array1<f64>]) {
         let avg_period = periods.iter().sum::<f64>() / periods.len() as f64;
         let theoretical_period = 2.0 * std::f64::consts::PI * (1.0 / 9.81_f64).sqrt();
 
-        println!("Average period: {:.6} seconds", avg_period);
-        println!(
-            "Theoretical period for small oscillations: {:.6} seconds",
-            theoretical_period
-        );
+        println!("Average period: {avg_period:.6} seconds");
+        println!("Theoretical period for small oscillations: {theoretical_period:.6} seconds");
         println!(
             "Difference: {:.3}%",
             100.0 * (avg_period - theoretical_period).abs() / theoretical_period
@@ -202,8 +201,8 @@ fn analyze_period(t: &[f64], x: &[Array1<f64>]) {
         if periods.len() >= 2 {
             let first_period = periods[0];
             let last_period = periods[periods.len() - 1];
-            println!("First period: {:.6} seconds", first_period);
-            println!("Last period: {:.6} seconds", last_period);
+            println!("First period: {first_period:.6} seconds");
+            println!("Last period: {last_period:.6} seconds");
             println!(
                 "Period change: {:.6}%",
                 100.0 * (last_period - first_period) / first_period

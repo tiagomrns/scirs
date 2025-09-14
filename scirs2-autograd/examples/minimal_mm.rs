@@ -1,6 +1,7 @@
 use ag::tensor_ops::*;
 use scirs2_autograd as ag;
 
+#[allow(dead_code)]
 fn main() {
     println!("Minimal matrix multiplication example");
 

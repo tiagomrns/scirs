@@ -55,7 +55,7 @@ pub struct ConfigEntry {
     /// Whether this configuration can be changed at runtime
     pub hot_reloadable: bool,
     /// Default value
-    pub default_value: Option<String>,
+    pub defaultvalue: Option<String>,
     /// Environment variable name (if different from key)
     pub env_var: Option<String>,
 }
@@ -82,7 +82,7 @@ impl fmt::Display for Environment {
             Environment::Testing => write!(f, "testing"),
             Environment::Staging => write!(f, "staging"),
             Environment::Production => write!(f, "production"),
-            Environment::Custom(name) => write!(f, "{}", name),
+            Environment::Custom(name) => write!(f, "{name}"),
         }
     }
 }
@@ -159,12 +159,12 @@ impl ConfigValidator for PositiveIntValidator {
             },
             Ok(n) => ValidationResult {
                 is_valid: false,
-                errors: vec![format!("Value must be positive, got {}", n)],
+                errors: vec![format!("Value must be positive, got {n}")],
                 warnings: Vec::new(),
             },
             Err(_) => ValidationResult {
                 is_valid: false,
-                errors: vec![format!("Invalid integer: {}", value)],
+                errors: vec![format!("Invalid integer: {value}")],
                 warnings: Vec::new(),
             },
         }
@@ -201,7 +201,7 @@ impl ConfigValidator for PortValidator {
             },
             Err(_) => ValidationResult {
                 is_valid: false,
-                errors: vec![format!("Invalid port number: {}", value)],
+                errors: vec![format!("Invalid port number: {value}")],
                 warnings: Vec::new(),
             },
         }
@@ -235,7 +235,7 @@ impl ConfigValidator for UrlValidator {
         } else {
             ValidationResult {
                 is_valid: false,
-                errors: vec![format!("Invalid URL format: {}", value)],
+                errors: vec![format!("Invalid URL format: {value}")],
                 warnings: Vec::new(),
             }
         }
@@ -267,6 +267,12 @@ pub struct ProductionConfig {
 }
 
 impl ProductionConfig {
+    /// Register a configuration key-value pair
+    pub fn register_config(&mut self, key: &str, value: String) -> CoreResult<()> {
+        // Use the set method to register configuration
+        self.set(key, value.as_str())
+    }
+
     /// Create a new production configuration manager
     pub fn new() -> Self {
         let mut validators: HashMap<String, Box<dyn ConfigValidator>> = HashMap::new();
@@ -312,7 +318,7 @@ impl ProductionConfig {
                     value: config_value,
                     validator: None,
                     hot_reloadable: false, // Env vars are not hot reloadable
-                    default_value: None,
+                    defaultvalue: None,
                     env_var: Some(key),
                 };
 
@@ -328,9 +334,8 @@ impl ProductionConfig {
         let path = path.as_ref();
         let content = fs::read_to_string(path).map_err(|e| {
             CoreError::ConfigError(ErrorContext::new(format!(
-                "Failed to read config file {}: {}",
-                path.display(),
-                e
+                "Failed to read config file {path}: {e}",
+                path = path.display()
             )))
         })?;
 
@@ -349,14 +354,14 @@ impl ProductionConfig {
             Some("yaml" | "yml") => self.parse_yaml_config(&content),
             Some("toml") => self.parse_toml_config(&content),
             _ => Err(CoreError::ConfigError(ErrorContext::new(format!(
-                "Unsupported config file format: {}",
-                path.display()
+                "Unsupported config file format: {path}",
+                path = path.display()
             )))),
         }
     }
 
     /// Parse JSON configuration
-    fn parse_json_config(&self, _content: &str) -> CoreResult<()> {
+    fn parse_json_config(&self, content: &str) -> CoreResult<()> {
         // In a real implementation, use serde_json
         Err(CoreError::ConfigError(ErrorContext::new(
             "JSON parsing not implemented in this example",
@@ -364,7 +369,7 @@ impl ProductionConfig {
     }
 
     /// Parse YAML configuration
-    fn parse_yaml_config(&self, _content: &str) -> CoreResult<()> {
+    fn parse_yaml_config(&self, content: &str) -> CoreResult<()> {
         // In a real implementation, use serde_yaml
         Err(CoreError::ConfigError(ErrorContext::new(
             "YAML parsing not implemented in this example",
@@ -372,7 +377,7 @@ impl ProductionConfig {
     }
 
     /// Parse TOML configuration
-    fn parse_toml_config(&self, _content: &str) -> CoreResult<()> {
+    fn parse_toml_config(&self, content: &str) -> CoreResult<()> {
         // In a real implementation, use toml crate
         Err(CoreError::ConfigError(ErrorContext::new(
             "TOML parsing not implemented in this example",
@@ -391,9 +396,8 @@ impl ProductionConfig {
                     let validation_result = validator.validate(&value);
                     if !validation_result.is_valid {
                         return Err(CoreError::ConfigError(ErrorContext::new(format!(
-                            "Validation failed for {}: {}",
-                            key,
-                            validation_result.errors.join(", ")
+                            "Validation failed for {key}: {errors}",
+                            errors = validation_result.errors.join(", ")
                         ))));
                     }
                 }
@@ -420,7 +424,7 @@ impl ProductionConfig {
                 value: config_value,
                 validator: None,
                 hot_reloadable: true,
-                default_value: None,
+                defaultvalue: None,
                 env_var: None,
             };
             entries.insert(key, entry);
@@ -457,8 +461,7 @@ impl ProductionConfig {
             match value_str.parse::<T>() {
                 Ok(value) => Ok(Some(value)),
                 Err(e) => Err(CoreError::ConfigError(ErrorContext::new(format!(
-                    "Failed to parse config value '{}' for key '{}': {}",
-                    value_str, key, e
+                    "Failed to parse config value '{value_str}' for key '{key}': {e}"
                 )))),
             }
         } else {
@@ -479,12 +482,12 @@ impl ProductionConfig {
     }
 
     /// Register a configuration entry with validation
-    pub fn register_config(
-        &self,
+    pub fn register(
+        &mut self,
         key: String,
-        default_value: Option<String>,
+        defaultvalue: Option<String>,
         validator: Option<String>,
-        hot_reloadable: bool,
+        reloadable: bool,
         description: Option<String>,
     ) -> CoreResult<()> {
         let mut entries = self.entries.write().map_err(|_| {
@@ -496,30 +499,20 @@ impl ProductionConfig {
             return Ok(()); // Already registered
         }
 
-        let value = if let Some(default) = &default_value {
-            ConfigValue {
-                value: default.clone(),
-                source: ConfigSource::Default,
-                timestamp: SystemTime::now(),
-                is_sensitive: self.is_sensitive_key(&key),
-                description: description.clone(),
-            }
-        } else {
-            ConfigValue {
-                value: String::new(),
-                source: ConfigSource::Default,
-                timestamp: SystemTime::now(),
-                is_sensitive: self.is_sensitive_key(&key),
-                description: description.clone(),
-            }
+        let value = ConfigValue {
+            value: defaultvalue.clone().unwrap_or_default(),
+            source: ConfigSource::Default,
+            timestamp: SystemTime::now(),
+            is_sensitive: self.is_sensitive_key(&key),
+            description: description.clone(),
         };
 
         let entry = ConfigEntry {
             key: key.clone(),
             value,
             validator,
-            hot_reloadable,
-            default_value,
+            hot_reloadable: reloadable,
+            defaultvalue,
             env_var: Some(format!("SCIRS_{}", key.to_uppercase())),
         };
 
@@ -543,7 +536,7 @@ impl ProductionConfig {
 
     /// Set feature flag
     pub fn set_feature_flag(
-        &self,
+        &mut self,
         name: String,
         enabled: bool,
         rollout_percentage: f64,
@@ -670,7 +663,7 @@ impl ProductionConfig {
                         if current_modified > *last_modified {
                             // File has been modified, reload it
                             if let Err(e) = self.load_from_file(file_path) {
-                                eprintln!("Failed to reload config file {}: {}", file_path, e);
+                                eprintln!("Failed to reload config file {file_path}: {e}");
                             } else {
                                 reloaded_files.push(file_path.clone());
                             }
@@ -731,18 +724,15 @@ impl fmt::Display for ConfigSummary {
 
 /// Global configuration instance
 static GLOBAL_CONFIG: std::sync::LazyLock<ProductionConfig> = std::sync::LazyLock::new(|| {
-    let config = ProductionConfig::new();
+    let mut config = ProductionConfig::new();
 
     // Load from environment on startup
     if let Err(e) = config.load_from_env() {
-        eprintln!(
-            "Warning: Failed to load configuration from environment: {}",
-            e
-        );
+        eprintln!("Warning: Failed to load configuration from environment: {e}");
     }
 
     // Register common configurations
-    let _ = config.register_config(
+    let _ = config.register(
         "log_level".to_string(),
         Some("info".to_string()),
         None,
@@ -750,7 +740,7 @@ static GLOBAL_CONFIG: std::sync::LazyLock<ProductionConfig> = std::sync::LazyLoc
         Some("Logging level (trace, debug, info, warn, error)".to_string()),
     );
 
-    let _ = config.register_config(
+    let _ = config.register(
         "max_memory_mb".to_string(),
         Some("1024".to_string()),
         Some("positive_int".to_string()),
@@ -758,7 +748,7 @@ static GLOBAL_CONFIG: std::sync::LazyLock<ProductionConfig> = std::sync::LazyLoc
         Some("Maximum memory usage in megabytes".to_string()),
     );
 
-    let _ = config.register_config(
+    let _ = config.register(
         "worker_threads".to_string(),
         Some("4".to_string()),
         Some("positive_int".to_string()),
@@ -770,6 +760,7 @@ static GLOBAL_CONFIG: std::sync::LazyLock<ProductionConfig> = std::sync::LazyLoc
 });
 
 /// Get the global configuration instance
+#[allow(dead_code)]
 pub fn global_config() -> &'static ProductionConfig {
     &GLOBAL_CONFIG
 }
@@ -861,7 +852,7 @@ mod tests {
 
     #[test]
     fn test_feature_flags() {
-        let config = ProductionConfig::new();
+        let mut config = ProductionConfig::new();
 
         config
             .set_feature_flag("test_feature".to_string(), true, 100.0)
@@ -887,12 +878,12 @@ mod tests {
 
     #[test]
     fn test_config_registration() {
-        let config = ProductionConfig::new();
+        let mut config = ProductionConfig::new();
 
         config
-            .register_config(
+            .register(
                 "test_config".to_string(),
-                Some("default_value".to_string()),
+                Some("defaultvalue".to_string()),
                 Some("positive_int".to_string()),
                 true,
                 Some("Test configuration".to_string()),
@@ -900,7 +891,7 @@ mod tests {
             .unwrap();
 
         let entry = config.get_entry("test_config").unwrap().unwrap();
-        assert_eq!(entry.default_value, Some("default_value".to_string()));
+        assert_eq!(entry.defaultvalue, Some("defaultvalue".to_string()));
         assert_eq!(entry.validator, Some("positive_int".to_string()));
         assert!(entry.hot_reloadable);
     }

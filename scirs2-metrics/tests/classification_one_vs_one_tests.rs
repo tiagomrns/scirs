@@ -6,6 +6,7 @@ use scirs2_metrics::classification::one_vs_one::{
 };
 
 #[test]
+#[allow(dead_code)]
 fn test_one_vs_one_accuracy() {
     // Test case 1: Perfect prediction
     let y_true_1 = array![0, 1, 2, 0, 1, 2];
@@ -39,6 +40,7 @@ fn test_one_vs_one_accuracy() {
 }
 
 #[test]
+#[allow(dead_code)]
 fn test_one_vs_one_precision_recall() {
     // Test case 1: Perfect prediction
     let y_true_1 = array![0, 1, 2, 0, 1, 2];
@@ -77,6 +79,7 @@ fn test_one_vs_one_precision_recall() {
 }
 
 #[test]
+#[allow(dead_code)]
 fn test_one_vs_one_f1_score() {
     // Test case 1: Perfect prediction
     let y_true_1 = array![0, 1, 2, 0, 1, 2];
@@ -104,6 +107,7 @@ fn test_one_vs_one_f1_score() {
 }
 
 #[test]
+#[allow(dead_code)]
 fn test_weighted_one_vs_one_f1_score() {
     // Test case 1: Perfect prediction
     let y_true_1 = array![0, 1, 2, 0, 1, 2];
@@ -135,6 +139,7 @@ fn test_weighted_one_vs_one_f1_score() {
 }
 
 #[test]
+#[allow(dead_code)]
 fn test_edge_cases() {
     // Different array lengths
     let y_true_1 = array![0, 1, 2];

@@ -36,7 +36,16 @@ where
 
 impl<A> TensorTrain<A>
 where
-    A: Clone + Float + NumAssign + Zero + Debug + Sum + 'static + ndarray::ScalarOperand,
+    A: Clone
+        + Float
+        + NumAssign
+        + Zero
+        + Debug
+        + Sum
+        + 'static
+        + ndarray::ScalarOperand
+        + Send
+        + Sync,
 {
     /// Creates a new TensorTrain from the given cores, ranks, and original shape.
     ///
@@ -73,7 +82,7 @@ where
 
         if cores.len() != shape.len() {
             return Err(LinalgError::ShapeError(format!(
-                "Number of cores ({}) must match the shape length ({})",
+                "Number of _cores ({}) must match the shape length ({})",
                 cores.len(),
                 shape.len()
             )));
@@ -147,27 +156,27 @@ where
             let core = &self.cores[i];
 
             // Get current result shape and prepare for contraction
-            let current_shape = result.shape().to_vec();
-            let current_rank = current_shape[current_shape.len() - 1];
+            let currentshape = result.shape().to_vec();
+            let current_rank = currentshape[currentshape.len() - 1];
 
             // Reshape result to prepare for contraction
             let result_flat = result
                 .into_shape_with_order((
-                    current_shape[..current_shape.len() - 1].iter().product(),
+                    currentshape[..currentshape.len() - 1].iter().product(),
                     current_rank,
                 ))
                 .map_err(|e| LinalgError::ComputationError(format!("Reshape error: {}", e)))?;
 
             // Contract with the current core along the rank dimension
-            let mut new_shape = current_shape[..current_shape.len() - 1].to_vec();
-            new_shape.push(self.shape[i]);
-            new_shape.push(self.ranks[i + 1]);
+            let mut newshape = currentshape[..currentshape.len() - 1].to_vec();
+            newshape.push(self.shape[i]);
+            newshape.push(self.ranks[i + 1]);
 
             // Compute the contraction manually
-            let mut result_contracted = Array::zeros(ndarray::IxDyn(&new_shape));
+            let mut result_contracted = Array::zeros(ndarray::IxDyn(&newshape));
 
             // Handle different dimensionality cases
-            match new_shape.len() - 2 {
+            match newshape.len() - 2 {
                 0 => {
                     // Special case: no free indices
                     for k in 0..self.shape[i] {
@@ -182,7 +191,7 @@ where
                 }
                 1 => {
                     // One free index dimension
-                    for idx1 in 0..new_shape[0] {
+                    for idx1 in 0..newshape[0] {
                         for k in 0..self.shape[i] {
                             for l in 0..self.ranks[i + 1] {
                                 let mut sum = A::zero();
@@ -196,9 +205,9 @@ where
                 }
                 2 => {
                     // Two free index dimensions
-                    for idx1 in 0..new_shape[0] {
-                        for idx2 in 0..new_shape[1] {
-                            let flat_idx = idx1 * new_shape[1] + idx2;
+                    for idx1 in 0..newshape[0] {
+                        for idx2 in 0..newshape[1] {
+                            let flat_idx = idx1 * newshape[1] + idx2;
                             for k in 0..self.shape[i] {
                                 for l in 0..self.ranks[i + 1] {
                                     let mut sum = A::zero();
@@ -213,12 +222,11 @@ where
                 }
                 3 => {
                     // Three free index dimensions
-                    for idx1 in 0..new_shape[0] {
-                        for idx2 in 0..new_shape[1] {
-                            for idx3 in 0..new_shape[2] {
-                                let stride2 = new_shape[2];
-                                let flat_idx =
-                                    idx1 * new_shape[1] * stride2 + idx2 * stride2 + idx3;
+                    for idx1 in 0..newshape[0] {
+                        for idx2 in 0..newshape[1] {
+                            for idx3 in 0..newshape[2] {
+                                let stride2 = newshape[2];
+                                let flat_idx = idx1 * newshape[1] * stride2 + idx2 * stride2 + idx3;
                                 for k in 0..self.shape[i] {
                                     for l in 0..self.ranks[i + 1] {
                                         let mut sum = A::zero();
@@ -258,7 +266,7 @@ where
                         let mut idx = 0;
                         let mut stride = 1;
 
-                        for i in (0..indices.len()).rev() {
+                        for i in (0.._indices.len()).rev() {
                             idx += indices[i] * stride;
                             if i > 0 {
                                 stride *= shape[i];
@@ -268,7 +276,7 @@ where
                         idx
                     }
 
-                    let free_dims = new_shape[..new_shape.len() - 2].to_vec();
+                    let free_dims = newshape[..newshape.len() - 2].to_vec();
                     let mut indices = Vec::new();
 
                     let mut callback = |idx: &[usize]| {
@@ -325,7 +333,7 @@ where
                 // Recursively process each index at the current depth
                 for i in 0..shape[depth] {
                     current_idx.push(i);
-                    set_values(result, final_result, current_idx, shape, depth + 1);
+                    set_values(_result, final_result, current_idx, shape, depth + 1);
                     current_idx.pop();
                 }
             }
@@ -451,11 +459,11 @@ where
             let (q, r) = qr_decomposition(&core_mat)?;
 
             // Get the shape value before moving q
-            let q_shape1 = q.shape()[1];
+            let qshape1 = q.shape()[1];
 
             // Update the current core
             cores[i] = q
-                .into_shape_with_order((r1, n, q_shape1))
+                .into_shape_with_order((r1, n, qshape1))
                 .map_err(|e| LinalgError::ComputationError(format!("Reshape error: {}", e)))?;
 
             // Update the next core
@@ -566,13 +574,23 @@ where
 ///     }
 /// }
 /// ```
+#[allow(dead_code)]
 pub fn tensor_train_decomposition<A, D>(
     tensor: &ArrayView<A, D>,
     max_rank: Option<usize>,
     epsilon: Option<A>,
 ) -> LinalgResult<TensorTrain<A>>
 where
-    A: Clone + Float + NumAssign + Zero + Debug + Sum + 'static + ndarray::ScalarOperand,
+    A: Clone
+        + Float
+        + NumAssign
+        + Zero
+        + Debug
+        + Sum
+        + 'static
+        + ndarray::ScalarOperand
+        + Send
+        + Sync,
     D: Dimension,
 {
     // Convert to dynamic dimensionality
@@ -656,9 +674,19 @@ where
 }
 
 // Helper function for full SVD decomposition
+#[allow(dead_code)]
 fn svd<A>(matrix: &Array2<A>) -> LinalgResult<(Array2<A>, Array1<A>, Array2<A>)>
 where
-    A: Clone + Float + NumAssign + Zero + Debug + Sum + 'static + ndarray::ScalarOperand,
+    A: Clone
+        + Float
+        + NumAssign
+        + Zero
+        + Debug
+        + Sum
+        + 'static
+        + ndarray::ScalarOperand
+        + Send
+        + Sync,
 {
     use crate::decomposition::svd as svd_decomp;
 
@@ -668,12 +696,22 @@ where
 }
 
 // Helper function for SVD with truncation based on relative error
+#[allow(dead_code)]
 fn svd_with_truncation<A>(
     matrix: &Array2<A>,
     epsilon: A,
 ) -> LinalgResult<(Array2<A>, Array1<A>, Array2<A>)>
 where
-    A: Clone + Float + NumAssign + Zero + Debug + Sum + 'static + ndarray::ScalarOperand,
+    A: Clone
+        + Float
+        + NumAssign
+        + Zero
+        + Debug
+        + Sum
+        + 'static
+        + ndarray::ScalarOperand
+        + Send
+        + Sync,
 {
     let (u, s, vt) = svd(matrix)?;
 
@@ -706,34 +744,54 @@ where
 }
 
 // Helper function for SVD with maximum rank constraint
+#[allow(dead_code)]
 fn svd_with_max_rank<A>(
     matrix: &Array2<A>,
     max_rank: usize,
 ) -> LinalgResult<(Array2<A>, Array1<A>, Array2<A>)>
 where
-    A: Clone + Float + NumAssign + Zero + Debug + Sum + 'static + ndarray::ScalarOperand,
+    A: Clone
+        + Float
+        + NumAssign
+        + Zero
+        + Debug
+        + Sum
+        + 'static
+        + ndarray::ScalarOperand
+        + Send
+        + Sync,
 {
     let (u, s, vt) = svd(matrix)?;
 
-    // Compute the rank to use (minimum of max_rank and the number of singular values)
-    let rank = max_rank.min(s.len());
+    // Compute the _rank to use (minimum of max_rank and the number of singular values)
+    let _rank = max_rank.min(s.len());
 
     // Truncate the matrices
-    let u_trunc = u.slice(ndarray::s![.., ..rank]).to_owned();
-    let s_trunc = s.slice(ndarray::s![..rank]).to_owned();
-    let vt_trunc = vt.slice(ndarray::s![..rank, ..]).to_owned();
+    let u_trunc = u.slice(ndarray::s![.., .._rank]).to_owned();
+    let s_trunc = s.slice(ndarray::s![.._rank]).to_owned();
+    let vt_trunc = vt.slice(ndarray::s![.._rank, ..]).to_owned();
 
     Ok((u_trunc, s_trunc, vt_trunc))
 }
 
 // Helper function for SVD with both truncation and maximum rank
+#[allow(dead_code)]
 fn svd_with_truncation_and_max_rank<A>(
     matrix: &Array2<A>,
     epsilon: A,
     max_rank: usize,
 ) -> LinalgResult<(Array2<A>, Array1<A>, Array2<A>)>
 where
-    A: Clone + Float + NumAssign + Zero + Debug + Sum + 'static + ndarray::ScalarOperand,
+    A: Clone
+        + Float
+        + NumAssign
+        + Zero
+        + Debug
+        + Sum
+        + 'static
+        + ndarray::ScalarOperand
+        + Send
+        + Sync,
 {
     let (u, s, vt) = svd(matrix)?;
 
@@ -745,33 +803,43 @@ where
     };
 
     // Find the number of singular values to keep based on epsilon
-    let mut rank = 0;
+    let mut _rank = 0;
     for (i, &val) in s_norm.iter().enumerate() {
         if val < epsilon {
-            rank = i;
+            _rank = i;
             break;
         }
-        rank = i + 1;
+        _rank = i + 1;
     }
 
     // Ensure at least one singular value is kept
-    rank = rank.max(1);
+    _rank = rank.max(1);
 
     // Apply max_rank constraint
-    rank = rank.min(max_rank);
+    _rank = rank.min(max_rank);
 
     // Truncate the matrices
-    let u_trunc = u.slice(ndarray::s![.., ..rank]).to_owned();
-    let s_trunc = s.slice(ndarray::s![..rank]).to_owned();
-    let vt_trunc = vt.slice(ndarray::s![..rank, ..]).to_owned();
+    let u_trunc = u.slice(ndarray::s![.., .._rank]).to_owned();
+    let s_trunc = s.slice(ndarray::s![.._rank]).to_owned();
+    let vt_trunc = vt.slice(ndarray::s![.._rank, ..]).to_owned();
 
     Ok((u_trunc, s_trunc, vt_trunc))
 }
 
 // Helper function for QR decomposition
+#[allow(dead_code)]
 fn qr_decomposition<A>(matrix: &Array2<A>) -> LinalgResult<(Array2<A>, Array2<A>)>
 where
-    A: Clone + Float + NumAssign + Zero + Debug + Sum + 'static + ndarray::ScalarOperand,
+    A: Clone
+        + Float
+        + NumAssign
+        + Zero
+        + Debug
+        + Sum
+        + 'static
+        + ndarray::ScalarOperand
+        + Send
+        + Sync,
 {
     use crate::decomposition::qr;
 

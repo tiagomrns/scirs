@@ -36,9 +36,9 @@ impl<F: IntegrateFloat, S: SymplecticIntegrator<F>> CompositionMethod<F, S> {
     /// # Returns
     ///
     /// A new composition method
-    pub fn new(base_method: S, coefficients: Vec<F>) -> Self {
+    pub fn new(_basemethod: S, coefficients: Vec<F>) -> Self {
         CompositionMethod {
-            base_method,
+            base_method: _basemethod,
             coefficients,
         }
     }
@@ -55,7 +55,7 @@ impl<F: IntegrateFloat, S: SymplecticIntegrator<F>> CompositionMethod<F, S> {
     /// # Returns
     ///
     /// A fourth-order symplectic integrator
-    pub fn fourth_order(base_method: S) -> Self {
+    pub fn fourth_order(_basemethod: S) -> Self {
         // Constants for Yoshida 4th-order composition
         let two = F::one() + F::one();
         let two_to_third = two.powf(F::from_f64(1.0 / 3.0).unwrap());
@@ -66,7 +66,7 @@ impl<F: IntegrateFloat, S: SymplecticIntegrator<F>> CompositionMethod<F, S> {
         let coefficients = vec![w1, w0, w1];
 
         CompositionMethod {
-            base_method,
+            base_method: _basemethod,
             coefficients,
         }
     }
@@ -82,8 +82,8 @@ impl<F: IntegrateFloat, S: SymplecticIntegrator<F>> CompositionMethod<F, S> {
     /// # Returns
     ///
     /// A sixth-order symplectic integrator
-    pub fn sixth_order(base_method: S) -> Self {
-        // Coefficients for 6th-order composition method (Yoshida 1990)
+    pub fn sixth_order(_basemethod: S) -> Self {
+        // Coefficients for 6th-order composition _method (Yoshida 1990)
         let w1 = F::from_f64(0.784513610477560).unwrap();
         let w2 = F::from_f64(0.235573213359357).unwrap();
         let w3 = F::from_f64(-1.17767998417887).unwrap();
@@ -93,7 +93,7 @@ impl<F: IntegrateFloat, S: SymplecticIntegrator<F>> CompositionMethod<F, S> {
         let coefficients = vec![w1, w2, w3, w4, w3, w2, w1];
 
         CompositionMethod {
-            base_method,
+            base_method: _basemethod,
             coefficients,
         }
     }
@@ -109,7 +109,7 @@ impl<F: IntegrateFloat, S: SymplecticIntegrator<F>> CompositionMethod<F, S> {
     /// # Returns
     ///
     /// An eighth-order symplectic integrator
-    pub fn eighth_order(base_method: S) -> Self {
+    pub fn eighth_order(_basemethod: S) -> Self {
         // Coefficients for 8th-order composition (Yoshida 1990)
         let w = [
             F::from_f64(0.74167036435061).unwrap(),
@@ -133,7 +133,7 @@ impl<F: IntegrateFloat, S: SymplecticIntegrator<F>> CompositionMethod<F, S> {
         }
 
         CompositionMethod {
-            base_method,
+            base_method: _basemethod,
             coefficients,
         }
     }
@@ -245,13 +245,11 @@ mod tests {
             // Allow some tolerance in ratio checks
             assert!(
                 base_ratio > 3.5 && base_ratio < 4.5,
-                "Base method convergence rate incorrect: {}",
-                base_ratio
+                "Base method convergence rate incorrect: {base_ratio}"
             );
             assert!(
                 fourth_ratio > 12.0 && fourth_ratio < 20.0,
-                "4th-order method convergence rate incorrect: {}",
-                fourth_ratio
+                "4th-order method convergence rate incorrect: {fourth_ratio}"
             );
         }
 
@@ -310,9 +308,7 @@ mod tests {
         ) {
             assert!(
                 fourth_error < base_error,
-                "4th-order method should have better energy conservation. Base: {}, 4th-order: {}",
-                base_error,
-                fourth_error
+                "4th-order method should have better energy conservation. Base: {base_error}, 4th-order: {fourth_error}"
             );
         }
     }

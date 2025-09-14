@@ -12,6 +12,7 @@ use scirs2_integrate::{
 };
 use std::time::{Duration, Instant};
 
+#[allow(dead_code)]
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("=== Auto-Tuning for Hardware Configurations ===\n");
 
@@ -30,12 +31,14 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     Ok(())
 }
 
+#[allow(dead_code)]
 fn hardware_detection_example() -> Result<(), Box<dyn std::error::Error>> {
     println!("🖥️  Hardware Detection");
     println!("{}", "=".repeat(50));
 
     // Detect hardware characteristics
-    let hardware = HardwareDetector::detect();
+    let detector = HardwareDetector;
+    let hardware = detector.detect();
 
     println!("Hardware Information:");
     println!("CPU Model: {}", hardware.cpu_model);
@@ -80,11 +83,13 @@ fn hardware_detection_example() -> Result<(), Box<dyn std::error::Error>> {
     Ok(())
 }
 
+#[allow(dead_code)]
 fn algorithm_tuning_example() -> Result<(), Box<dyn std::error::Error>> {
     println!("⚙️  Algorithm-Specific Auto-Tuning");
     println!("{}", "=".repeat(50));
 
-    let hardware = HardwareDetector::detect();
+    let detector = HardwareDetector;
+    let hardware = detector.detect();
     let tuner = AutoTuner::new(hardware.clone());
 
     // Test different problem sizes
@@ -94,7 +99,7 @@ fn algorithm_tuning_example() -> Result<(), Box<dyn std::error::Error>> {
     println!("{}", "─".repeat(70));
 
     for &size in &problem_sizes {
-        let profile = tuner.tune_for_problem_size(size);
+        let profile = tuner.tune_for_problemsize(size);
 
         println!(
             "{:10}      {:3}      {:6}      {:6}     {:3}    {:7} MB",
@@ -134,11 +139,13 @@ fn algorithm_tuning_example() -> Result<(), Box<dyn std::error::Error>> {
     Ok(())
 }
 
+#[allow(dead_code)]
 fn benchmark_tuning_example() -> Result<(), Box<dyn std::error::Error>> {
     println!("📊 Benchmark-Based Tuning");
     println!("{}", "=".repeat(50));
 
-    let hardware = HardwareDetector::detect();
+    let detector = HardwareDetector;
+    let hardware = detector.detect();
     let mut tuner = AutoTuner::new(hardware);
 
     // Define a simple benchmark function for matrix-vector multiplication
@@ -159,18 +166,18 @@ fn benchmark_tuning_example() -> Result<(), Box<dyn std::error::Error>> {
 
     println!("Tuning matrix-vector multiplication for 1000×1000 matrices...");
 
-    let base_profile = tuner.tune_for_problem_size(1000 * 1000);
+    let base_profile = tuner.tune_for_problemsize(1000 * 1000);
     let base_time = benchmark_fn(&base_profile);
 
-    println!("Base configuration: {:.2?}", base_time);
+    println!("Base configuration: {base_time:.2?}");
 
     let optimized_profile = tuner.benchmark_tune::<f64>("matvec", benchmark_fn, 1000 * 1000);
     let optimized_time = benchmark_fn(&optimized_profile);
 
-    println!("Optimized configuration: {:.2?}", optimized_time);
+    println!("Optimized configuration: {optimized_time:.2?}");
 
     let speedup = base_time.as_nanos() as f64 / optimized_time.as_nanos() as f64;
-    println!("Speedup: {:.2}x", speedup);
+    println!("Speedup: {speedup:.2}x");
 
     println!("Optimized parameters:");
     println!("  Threads: {}", optimized_profile.num_threads);
@@ -182,17 +189,19 @@ fn benchmark_tuning_example() -> Result<(), Box<dyn std::error::Error>> {
     Ok(())
 }
 
+#[allow(dead_code)]
 fn memory_optimization_example() -> Result<(), Box<dyn std::error::Error>> {
     println!("🧠 Memory-Aware Optimization");
     println!("{}", "=".repeat(50));
 
-    let hardware = HardwareDetector::detect();
+    let detector = HardwareDetector;
+    let hardware = detector.detect();
 
     // Demonstrate memory pool optimization
     println!("Memory Pool Optimization:");
 
-    let small_profile = AutoTuner::new(hardware.clone()).tune_for_problem_size(1000);
-    let large_profile = AutoTuner::new(hardware.clone()).tune_for_problem_size(1000000);
+    let small_profile = AutoTuner::new(hardware.clone()).tune_for_problemsize(1000);
+    let large_profile = AutoTuner::new(hardware.clone()).tune_for_problemsize(1000000);
 
     println!(
         "Small problem (1K): Pool size = {:.1} MB",
@@ -237,7 +246,7 @@ fn memory_optimization_example() -> Result<(), Box<dyn std::error::Error>> {
 
         let efficiency = baseline_time.unwrap().as_nanos() as f64 / elapsed.as_nanos() as f64;
 
-        println!("{:10}   {:8.2?}   {:6.2}x", name, elapsed, efficiency);
+        println!("{name:10}   {elapsed:8.2?}   {efficiency:6.2}x");
     }
 
     // Demonstrate Monte Carlo integration tuning

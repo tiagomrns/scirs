@@ -21,6 +21,7 @@
 use crate::error::{SpatialError, SpatialResult};
 use ndarray::{Array1, Array2, ArrayView1, ArrayView2};
 // Simple linear system solver
+#[allow(dead_code)]
 fn solve_linear_system(a: Array2<f64>, b: Array1<f64>) -> SpatialResult<Array1<f64>> {
     // We should use a proper linear algebra library, but for now we'll use a simple approach
     // This is not numerically stable for ill-conditioned matrices
@@ -240,7 +241,7 @@ impl RBFInterpolator {
     /// * If fewer than d+1 points are provided (where d is the dimensionality)
     /// * If the system of equations is singular
     pub fn new(
-        points: &ArrayView2<f64>,
+        points: &ArrayView2<'_, f64>,
         values: &ArrayView1<f64>,
         kernel: RBFKernel,
         epsilon: Option<f64>,
@@ -299,7 +300,7 @@ impl RBFInterpolator {
     /// # Returns
     ///
     /// A reasonable default value for epsilon
-    fn default_epsilon(kernel: RBFKernel, points: &ArrayView2<f64>) -> f64 {
+    fn default_epsilon(kernel: RBFKernel, points: &ArrayView2<'_, f64>) -> f64 {
         match kernel {
             RBFKernel::Gaussian => {
                 // For Gaussian, a typical choice is 1 / (2 * average distance^2)
@@ -333,14 +334,14 @@ impl RBFInterpolator {
     /// # Returns
     ///
     /// The average distance between points
-    fn average_distance(points: &ArrayView2<f64>) -> f64 {
+    fn average_distance(points: &ArrayView2<'_, f64>) -> f64 {
         let n_points = points.nrows();
 
         if n_points <= 1 {
             return 0.0;
         }
 
-        // Sample a subset of pairs for efficiency if there are too many points
+        // Sample a subset of pairs for efficiency if there are too many _points
         let max_pairs = 1000;
         let mut total_dist = 0.0;
         let mut n_pairs = 0;
@@ -403,7 +404,7 @@ impl RBFInterpolator {
     ///
     /// * If the system of equations is singular
     fn solve_rbf_system(
-        points: &ArrayView2<f64>,
+        points: &ArrayView2<'_, f64>,
         values: &ArrayView1<f64>,
         kernel: RBFKernel,
         epsilon: f64,
@@ -434,8 +435,7 @@ impl RBFInterpolator {
             match weights {
                 Ok(weights) => Ok((weights, None)),
                 Err(e) => Err(SpatialError::ComputationError(format!(
-                    "Failed to solve RBF system: {}",
-                    e
+                    "Failed to solve RBF system: {e}"
                 ))),
             }
         } else {
@@ -492,8 +492,7 @@ impl RBFInterpolator {
                     Ok((weights, Some(poly_coefs)))
                 }
                 Err(e) => Err(SpatialError::ComputationError(format!(
-                    "Failed to solve augmented RBF system: {}",
-                    e
+                    "Failed to solve augmented RBF system: {e}"
                 ))),
             }
         }
@@ -516,13 +515,13 @@ impl RBFInterpolator {
         // Check dimension
         if point.len() != self.dim {
             return Err(SpatialError::DimensionError(format!(
-                "Query point has dimension {}, expected {}",
+                "Query _point has dimension {}, expected {}",
                 point.len(),
                 self.dim
             )));
         }
 
-        // Evaluate the RBF interpolant at the query point
+        // Evaluate the RBF interpolant at the query _point
         let mut result = 0.0;
 
         // Sum over all RBF terms
@@ -559,11 +558,11 @@ impl RBFInterpolator {
     /// # Errors
     ///
     /// * If the points dimensions don't match the interpolator
-    pub fn interpolate_many(&self, points: &ArrayView2<f64>) -> SpatialResult<Array1<f64>> {
+    pub fn interpolate_many(&self, points: &ArrayView2<'_, f64>) -> SpatialResult<Array1<f64>> {
         // Check dimensions
         if points.ncols() != self.dim {
             return Err(SpatialError::DimensionError(format!(
-                "Query points have dimension {}, expected {}",
+                "Query _points have dimension {}, expected {}",
                 points.ncols(),
                 self.dim
             )));

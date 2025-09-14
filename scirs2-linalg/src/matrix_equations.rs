@@ -34,6 +34,7 @@ use std::fmt::{Debug, Display};
 ///
 /// let x = solve_generalized_sylvester(&a.view(), &b.view(), &c.view(), &d.view(), &e.view()).unwrap();
 /// ```
+#[allow(dead_code)]
 pub fn solve_generalized_sylvester<A>(
     a: &ArrayView2<A>,
     b: &ArrayView2<A>,
@@ -42,7 +43,15 @@ pub fn solve_generalized_sylvester<A>(
     e: &ArrayView2<A>,
 ) -> LinalgResult<Array2<A>>
 where
-    A: Float + NumAssign + Debug + Display + ndarray::ScalarOperand + std::iter::Sum + 'static,
+    A: Float
+        + NumAssign
+        + Debug
+        + Display
+        + ndarray::ScalarOperand
+        + std::iter::Sum
+        + 'static
+        + Send
+        + Sync,
 {
     let (m, n) = (a.shape()[0], b.shape()[0]);
 
@@ -59,8 +68,7 @@ where
     }
     if e.shape() != [m, n] {
         return Err(LinalgError::ShapeError(format!(
-            "Matrix E must have shape [{}, {}]",
-            m, n
+            "Matrix E must have shape [{m}, {n}]"
         )));
     }
 
@@ -101,7 +109,7 @@ where
     // Vectorize E
     let e_vec: Vec<A> = e.t().iter().cloned().collect();
     let e_vec = Array2::from_shape_vec((m * n, 1), e_vec)
-        .map_err(|e| LinalgError::ShapeError(format!("Failed to reshape vector: {}", e)))?;
+        .map_err(|e| LinalgError::ShapeError(format!("Failed to reshape vector: {e}")))?;
 
     // Solve the linear system (use column vector view)
     let e_vec_1d = e_vec.column(0);
@@ -110,7 +118,7 @@ where
     // Reshape solution back to matrix form
     let x_data: Vec<A> = x_vec.iter().cloned().collect();
     Ok(Array2::from_shape_vec((n, m), x_data)
-        .map_err(|e| LinalgError::ShapeError(format!("Failed to reshape solution: {}", e)))?
+        .map_err(|e| LinalgError::ShapeError(format!("Failed to reshape solution: {e}")))?
         .t()
         .to_owned())
 }
@@ -136,13 +144,22 @@ where
 ///
 /// let x = solve_sylvester(&a.view(), &b.view(), &c.view()).unwrap();
 /// ```
+#[allow(dead_code)]
 pub fn solve_sylvester<A>(
     a: &ArrayView2<A>,
     b: &ArrayView2<A>,
     c: &ArrayView2<A>,
 ) -> LinalgResult<Array2<A>>
 where
-    A: Float + NumAssign + Debug + Display + ndarray::ScalarOperand + std::iter::Sum + 'static,
+    A: Float
+        + NumAssign
+        + Debug
+        + Display
+        + ndarray::ScalarOperand
+        + std::iter::Sum
+        + 'static
+        + Send
+        + Sync,
 {
     let (m, n) = (a.shape()[0], b.shape()[0]);
 
@@ -159,8 +176,7 @@ where
     }
     if c.shape() != [m, n] {
         return Err(LinalgError::ShapeError(format!(
-            "Matrix C must have shape [{}, {}]",
-            m, n
+            "Matrix C must have shape [{m}, {n}]"
         )));
     }
 
@@ -200,7 +216,7 @@ where
     // Vectorize C (column-major order)
     let c_vec: Vec<A> = c.t().iter().cloned().collect();
     let c_vec = Array2::from_shape_vec((m * n, 1), c_vec)
-        .map_err(|e| LinalgError::ShapeError(format!("Failed to reshape vector: {}", e)))?;
+        .map_err(|e| LinalgError::ShapeError(format!("Failed to reshape vector: {e}")))?;
 
     // Solve the linear system
     let c_vec_1d = c_vec.column(0);
@@ -209,7 +225,7 @@ where
     // Reshape solution back to matrix form (column-major order)
     let x_data: Vec<A> = x_vec.iter().cloned().collect();
     Ok(Array2::from_shape_vec((n, m), x_data)
-        .map_err(|e| LinalgError::ShapeError(format!("Failed to reshape solution: {}", e)))?
+        .map_err(|e| LinalgError::ShapeError(format!("Failed to reshape solution: {e}")))?
         .t()
         .to_owned())
 }
@@ -238,6 +254,7 @@ where
 ///
 /// let x = solve_continuous_riccati(&a.view(), &b.view(), &q.view(), &r.view()).unwrap();
 /// ```
+#[allow(dead_code)]
 pub fn solve_continuous_riccati<A>(
     a: &ArrayView2<A>,
     b: &ArrayView2<A>,
@@ -245,7 +262,15 @@ pub fn solve_continuous_riccati<A>(
     r: &ArrayView2<A>,
 ) -> LinalgResult<Array2<A>>
 where
-    A: Float + NumAssign + Debug + Display + ndarray::ScalarOperand + std::iter::Sum + 'static,
+    A: Float
+        + NumAssign
+        + Debug
+        + Display
+        + ndarray::ScalarOperand
+        + std::iter::Sum
+        + 'static
+        + Send
+        + Sync,
 {
     let n = a.shape()[0];
     let m = b.shape()[1];
@@ -258,8 +283,7 @@ where
     }
     if b.shape() != [n, m] {
         return Err(LinalgError::ShapeError(format!(
-            "Matrix B must have shape [{}, m]",
-            n
+            "Matrix B must have shape [{n}, m]"
         )));
     }
     if q.shape() != [n, n] {
@@ -344,6 +368,7 @@ where
 ///
 /// # Returns
 /// * Solution matrix X (n × n, symmetric positive semidefinite)
+#[allow(dead_code)]
 pub fn solve_discrete_riccati<A>(
     a: &ArrayView2<A>,
     b: &ArrayView2<A>,
@@ -351,7 +376,15 @@ pub fn solve_discrete_riccati<A>(
     r: &ArrayView2<A>,
 ) -> LinalgResult<Array2<A>>
 where
-    A: Float + NumAssign + Debug + Display + ndarray::ScalarOperand + std::iter::Sum + 'static,
+    A: Float
+        + NumAssign
+        + Debug
+        + Display
+        + ndarray::ScalarOperand
+        + std::iter::Sum
+        + 'static
+        + Send
+        + Sync,
 {
     let n = a.shape()[0];
     let m = b.shape()[1];
@@ -364,8 +397,7 @@ where
     }
     if b.shape() != [n, m] {
         return Err(LinalgError::ShapeError(format!(
-            "Matrix B must have shape [{}, m]",
-            n
+            "Matrix B must have shape [{n}, m]"
         )));
     }
     if q.shape() != [n, n] {
@@ -434,9 +466,18 @@ where
 ///
 /// # Returns
 /// * Solution matrix X (n × n)
+#[allow(dead_code)]
 pub fn solve_stein<A>(a: &ArrayView2<A>, q: &ArrayView2<A>) -> LinalgResult<Array2<A>>
 where
-    A: Float + NumAssign + Debug + Display + ndarray::ScalarOperand + std::iter::Sum + 'static,
+    A: Float
+        + NumAssign
+        + Debug
+        + Display
+        + ndarray::ScalarOperand
+        + std::iter::Sum
+        + 'static
+        + Send
+        + Sync,
 {
     let n = a.shape()[0];
 
@@ -475,7 +516,7 @@ where
     // Vectorize -Q
     let q_vec: Vec<A> = q.t().iter().map(|&x| -x).collect();
     let q_vec = Array2::from_shape_vec((n * n, 1), q_vec)
-        .map_err(|e| LinalgError::ShapeError(format!("Failed to reshape vector: {}", e)))?;
+        .map_err(|e| LinalgError::ShapeError(format!("Failed to reshape vector: {e}")))?;
 
     // Solve the linear system
     let q_vec_1d = q_vec.column(0);
@@ -484,7 +525,7 @@ where
     // Reshape solution back to matrix form
     let x_data: Vec<A> = x_vec.iter().cloned().collect();
     Ok(Array2::from_shape_vec((n, n), x_data)
-        .map_err(|e| LinalgError::ShapeError(format!("Failed to reshape solution: {}", e)))?
+        .map_err(|e| LinalgError::ShapeError(format!("Failed to reshape solution: {e}")))?
         .t()
         .to_owned())
 }

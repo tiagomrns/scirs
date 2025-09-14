@@ -2,6 +2,7 @@ use num_complex::Complex64;
 use scirs2_fft::planning_adaptive::{AdaptiveExecutor, AdaptivePlanningConfig};
 use std::time::{Duration, Instant};
 
+#[allow(dead_code)]
 fn main() {
     println!("Adaptive FFT Planning Example");
     println!("============================\n");

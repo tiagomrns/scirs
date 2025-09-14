@@ -6,6 +6,7 @@ use scirs2_metrics::fairness::{
 };
 
 #[test]
+#[allow(dead_code)]
 fn test_demographic_parity_difference() {
     // Test case 1: Perfect demographic parity
     // Both groups have 2/5 = 40% positive predictions
@@ -45,6 +46,7 @@ fn test_demographic_parity_difference() {
 }
 
 #[test]
+#[allow(dead_code)]
 fn test_disparate_impact() {
     // Test case 1: Perfect fairness
     // Both groups have 2/5 = 40% positive predictions
@@ -77,6 +79,7 @@ fn test_disparate_impact() {
 }
 
 #[test]
+#[allow(dead_code)]
 fn test_equalized_odds_difference() {
     // Test case 1: Perfect equalized odds
     let y_true_1 = array![0.0, 1.0, 0.0, 1.0, 0.0, 0.0, 1.0, 0.0, 1.0, 0.0];
@@ -118,6 +121,7 @@ fn test_equalized_odds_difference() {
 }
 
 #[test]
+#[allow(dead_code)]
 fn test_equal_opportunity_difference() {
     // Test case 1: Perfect equal opportunity
     let y_true_1 = array![0.0, 1.0, 0.0, 1.0, 0.0, 0.0, 1.0, 0.0, 1.0, 0.0];
@@ -161,6 +165,7 @@ fn test_equal_opportunity_difference() {
 }
 
 #[test]
+#[allow(dead_code)]
 fn test_consistency_score() {
     // Test case 1: Perfectly consistent predictions
     // Create a feature matrix with 6 points in 2 clusters

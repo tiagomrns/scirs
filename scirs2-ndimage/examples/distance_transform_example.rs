@@ -9,6 +9,7 @@ use scirs2_ndimage::morphology::{
     distance_transform_bf, distance_transform_cdt, distance_transform_edt,
 };
 
+#[allow(dead_code)]
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("Demonstrating distance transform functions\n");
 
@@ -27,8 +28,12 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // Calculate the Euclidean distance transform
     let input_dyn = input.clone().into_dimensionality::<IxDyn>().unwrap();
-    let (edt, _) = distance_transform_edt(&input_dyn, None, true, false);
-    let edt = edt.unwrap().into_dimensionality::<ndarray::Ix2>().unwrap();
+    let (edt_result, _) =
+        distance_transform_edt(&input_dyn, None, true, false).expect("Distance transform failed");
+    let edt = edt_result
+        .unwrap()
+        .into_dimensionality::<ndarray::Ix2>()
+        .unwrap();
 
     println!(
         "\nEuclidean Distance Transform (distance from each true pixel to nearest false pixel):"
@@ -36,15 +41,20 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     print_distance_2d(&edt);
 
     // Calculate the city block distance transform
-    let (cdt, _) = distance_transform_cdt(&input_dyn, "cityblock", true, false);
-    let cdt = cdt.unwrap().into_dimensionality::<ndarray::Ix2>().unwrap();
+    let (cdt_result, _) = distance_transform_cdt(&input_dyn, "cityblock", true, false)
+        .expect("City block distance transform failed");
+    let cdt = cdt_result
+        .unwrap()
+        .into_dimensionality::<ndarray::Ix2>()
+        .unwrap();
 
     println!("\nCity Block (Manhattan) Distance Transform:");
     print_integer_distance_2d(&cdt);
 
     // Calculate the chessboard distance transform
-    let (chess, _) = distance_transform_cdt(&input_dyn, "chessboard", true, false);
-    let chess = chess
+    let (chess_result, _) = distance_transform_cdt(&input_dyn, "chessboard", true, false)
+        .expect("Chessboard distance transform failed");
+    let chess = chess_result
         .unwrap()
         .into_dimensionality::<ndarray::Ix2>()
         .unwrap();
@@ -53,8 +63,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     print_integer_distance_2d(&chess);
 
     // Calculate the distance transform with brute force
-    let (bf_edt, _) = distance_transform_bf(&input_dyn, "euclidean", None, true, false);
-    let bf_edt = bf_edt
+    let (bf_edt_result, _) = distance_transform_bf(&input_dyn, "euclidean", None, true, false)
+        .expect("Brute force distance transform failed");
+    let bf_edt = bf_edt_result
         .unwrap()
         .into_dimensionality::<ndarray::Ix2>()
         .unwrap();
@@ -63,7 +74,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     print_distance_2d(&bf_edt);
 
     // Demonstrate distance transform with indices
-    let (_, indices) = distance_transform_edt(&input_dyn, None, false, true);
+    let (_, indices) = distance_transform_edt(&input_dyn, None, false, true)
+        .expect("Distance transform with indices failed");
     let indices = indices.unwrap();
 
     println!("\nDistance Transform with Indices (showing a slice of the indices):");
@@ -76,8 +88,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // Demonstrate custom sampling
     let sampling = [1.0, 0.5]; // Non-uniform pixel spacing
-    let (custom_edt, _) = distance_transform_edt(&input_dyn, Some(&sampling), true, false);
-    let custom_edt = custom_edt
+    let (custom_edt_result, _) = distance_transform_edt(&input_dyn, Some(&sampling), true, false)
+        .expect("Custom sampling distance transform failed");
+    let custom_edt = custom_edt_result
         .unwrap()
         .into_dimensionality::<ndarray::Ix2>()
         .unwrap();
@@ -90,6 +103,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 }
 
 // Helper function to print a 2D binary array
+#[allow(dead_code)]
 fn print_binary_2d(arr: &Array2<bool>) {
     for i in 0..arr.shape()[0] {
         for j in 0..arr.shape()[1] {
@@ -104,6 +118,7 @@ fn print_binary_2d(arr: &Array2<bool>) {
 }
 
 // Helper function to print a 2D floating-point distance array
+#[allow(dead_code)]
 fn print_distance_2d(arr: &Array2<f64>) {
     for i in 0..arr.shape()[0] {
         for j in 0..arr.shape()[1] {
@@ -119,6 +134,7 @@ fn print_distance_2d(arr: &Array2<f64>) {
 }
 
 // Helper function to print a 2D integer distance array
+#[allow(dead_code)]
 fn print_integer_distance_2d(arr: &Array2<i32>) {
     for i in 0..arr.shape()[0] {
         for j in 0..arr.shape()[1] {
@@ -130,6 +146,7 @@ fn print_integer_distance_2d(arr: &Array2<i32>) {
 }
 
 // Helper function to print indices from a distance transform
+#[allow(dead_code)]
 fn print_indices_2d(indices: &ndarray::ArrayBase<ndarray::OwnedRepr<i32>, IxDyn>, dim: usize) {
     // The indices array has an extra dimension: [dimension, rows, columns]
     for i in 0..indices.shape()[1] {

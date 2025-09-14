@@ -13,6 +13,7 @@ use scirs2_fft::{
 use std::f64::consts::PI;
 use std::time::Instant;
 
+#[allow(dead_code)]
 fn main() -> FFTResult<()> {
     println!("Specialized Hardware Accelerator Example");
     println!("========================================");
@@ -24,7 +25,7 @@ fn main() -> FFTResult<()> {
     test_performance_comparison()?;
 
     // Test different signal sizes
-    test_signal_size_scaling()?;
+    test_signalsize_scaling()?;
 
     // Test power efficiency
     test_power_efficiency()?;
@@ -33,6 +34,7 @@ fn main() -> FFTResult<()> {
 }
 
 /// Test hardware discovery and capabilities
+#[allow(dead_code)]
 fn test_hardware_discovery() -> FFTResult<()> {
     println!("\n--- Hardware Discovery ---");
 
@@ -48,7 +50,7 @@ fn test_hardware_discovery() -> FFTResult<()> {
 
     println!("Discovered {} accelerator(s):", discovered.len());
     for id in &discovered {
-        println!("  - {}", id);
+        println!("  - {id}");
     }
 
     // Initialize all accelerators
@@ -57,7 +59,7 @@ fn test_hardware_discovery() -> FFTResult<()> {
     // Show detailed information for each accelerator
     for id in &discovered {
         if let Some(info) = manager.get_accelerator_info(id) {
-            println!("\nAccelerator: {}", id);
+            println!("\nAccelerator: {id}");
             println!("  Type: {}", info.accelerator_type);
             println!("  Name: {}", info.name);
             println!("  Vendor: {}", info.vendor);
@@ -95,7 +97,7 @@ fn test_hardware_discovery() -> FFTResult<()> {
             if !info.capabilities.custom_features.is_empty() {
                 println!("  Custom features:");
                 for (feature, value) in &info.capabilities.custom_features {
-                    println!("    {}: {}", feature, value);
+                    println!("    {feature}: {value}");
                 }
             }
         }
@@ -105,17 +107,18 @@ fn test_hardware_discovery() -> FFTResult<()> {
 }
 
 /// Test performance comparison between different accelerators
+#[allow(dead_code)]
 fn test_performance_comparison() -> FFTResult<()> {
     println!("\n--- Performance Comparison ---");
 
-    let signal_sizes = vec![256, 512, 1024, 2048];
+    let signalsizes = vec![256, 512, 1024, 2048];
     let sparsity_levels = vec![4, 8, 16, 32];
 
-    for signal_size in signal_sizes {
+    for signalsize in signalsizes {
         for &sparsity in &sparsity_levels {
-            println!("\nSignal size: {}, Sparsity: {}", signal_size, sparsity);
+            println!("\nSignal size: {signalsize}, Sparsity: {sparsity}");
 
-            let signal = create_test_signal(signal_size);
+            let signal = create_test_signal(signalsize);
             let config = SparseFFTConfig {
                 sparsity,
                 algorithm: SparseFFTAlgorithm::Sublinear,
@@ -128,15 +131,15 @@ fn test_performance_comparison() -> FFTResult<()> {
             match specialized_hardware_sparse_fft(&signal, config) {
                 Ok(result) => {
                     let elapsed = start.elapsed();
-                    let throughput = signal_size as f64 / elapsed.as_secs_f64();
+                    let throughput = signalsize as f64 / elapsed.as_secs_f64();
 
-                    println!("  Specialized Hardware: {:?}", elapsed);
-                    println!("    Throughput: {:.0} samples/sec", throughput);
+                    println!("  Specialized Hardware: {elapsed:?}");
+                    println!("    Throughput: {throughput:.0} samples/sec");
                     println!("    Found components: {}", result.values.len());
                     println!("    Execution time: {:?}", result.computation_time);
                 }
                 Err(e) => {
-                    println!("  Specialized Hardware: Failed ({})", e);
+                    println!("  Specialized Hardware: Failed ({e})");
                 }
             }
         }
@@ -146,18 +149,19 @@ fn test_performance_comparison() -> FFTResult<()> {
 }
 
 /// Test scaling behavior with different signal sizes
-fn test_signal_size_scaling() -> FFTResult<()> {
+#[allow(dead_code)]
+fn test_signalsize_scaling() -> FFTResult<()> {
     println!("\n--- Signal Size Scaling ---");
 
-    let signal_sizes = vec![1024, 4096, 16384, 65536, 262144];
+    let signalsizes = vec![1024, 4096, 16384, 65536, 262144];
     let sparsity = 16;
 
-    println!("Testing scaling with sparsity = {}", sparsity);
+    println!("Testing scaling with sparsity = {sparsity}");
     println!("Signal Size\tExecution Time\tThroughput (samples/sec)\tEfficiency");
     println!("===========\t==============\t=======================\t==========");
 
-    for signal_size in signal_sizes {
-        let signal = create_test_signal(signal_size);
+    for signalsize in signalsizes {
+        let signal = create_test_signal(signalsize);
         let config = SparseFFTConfig {
             sparsity,
             algorithm: SparseFFTAlgorithm::Sublinear,
@@ -169,16 +173,13 @@ fn test_signal_size_scaling() -> FFTResult<()> {
         match specialized_hardware_sparse_fft(&signal, config) {
             Ok(_result) => {
                 let elapsed = start.elapsed();
-                let throughput = signal_size as f64 / elapsed.as_secs_f64();
-                let efficiency = throughput / (signal_size as f64); // Relative efficiency
+                let throughput = signalsize as f64 / elapsed.as_secs_f64();
+                let efficiency = throughput / (signalsize as f64); // Relative efficiency
 
-                println!(
-                    "{}\t\t{:?}\t\t{:.0}\t\t\t{:.3}",
-                    signal_size, elapsed, throughput, efficiency
-                );
+                println!("{signalsize}\t\t{elapsed:?}\t\t{throughput:.0}\t\t\t{efficiency:.3}");
             }
             Err(e) => {
-                println!("{}\t\tFailed: {}", signal_size, e);
+                println!("{signalsize}\t\tFailed: {e}");
             }
         }
     }
@@ -187,6 +188,7 @@ fn test_signal_size_scaling() -> FFTResult<()> {
 }
 
 /// Test power efficiency of different accelerators
+#[allow(dead_code)]
 fn test_power_efficiency() -> FFTResult<()> {
     println!("\n--- Power Efficiency Analysis ---");
 
@@ -252,6 +254,7 @@ fn test_power_efficiency() -> FFTResult<()> {
 }
 
 /// Create a test signal with sparse frequency components
+#[allow(dead_code)]
 fn create_test_signal(n: usize) -> Vec<f64> {
     let mut signal = vec![0.0; n];
 
@@ -291,7 +294,7 @@ fn display_accelerator_recommendations() {
     println!("For different use cases:");
     println!();
 
-    println!("Ultra-Low Latency Applications (< 1 μs):");
+    println!("Advanced-Low Latency Applications (< 1 μs):");
     println!("  ✓ ASIC accelerators - Purpose-built for sparse FFT");
     println!("  ✓ FPGA with custom bitstreams - Configurable for specific needs");
     println!("  • Consider: Power consumption vs latency trade-offs");

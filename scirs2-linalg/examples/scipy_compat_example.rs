@@ -1,6 +1,7 @@
 use ndarray::{array, Array2};
 use scirs2_linalg::compat;
 
+#[allow(dead_code)]
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     // This example demonstrates the SciPy-compatible API
     println!("SciPy-compatible API example for scirs2-linalg");

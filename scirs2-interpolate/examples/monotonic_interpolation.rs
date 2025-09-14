@@ -5,6 +5,7 @@ use scirs2_interpolate::interp1d::monotonic::{
 };
 use scirs2_interpolate::pchip_interpolate;
 
+#[allow(dead_code)]
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("Monotonic Interpolation Methods Examples");
     println!("=======================================\n");
@@ -216,6 +217,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 }
 
 /// Check if an interpolation is monotonic
+#[allow(dead_code)]
 fn check_monotonicity(
     label: &str,
     x: &Array1<f64>,
@@ -302,6 +304,7 @@ fn check_monotonicity(
 
 /// Check if a specific segment is monotonic
 #[allow(clippy::too_many_arguments)]
+#[allow(dead_code)]
 fn check_segment_monotonicity(
     label: &str,
     x: &Array1<f64>,
@@ -410,6 +413,7 @@ fn check_segment_monotonicity(
 }
 
 /// Check if interpolation avoids overshooting by comparing with data extrema
+#[allow(dead_code)]
 fn check_extrema(
     label: &str,
     y_data: &Array1<f64>,
@@ -418,13 +422,13 @@ fn check_extrema(
     y_steffen: &Array1<f64>,
     y_akima: &Array1<f64>,
 ) {
-    // Find min and max of original data
+    // Find min and max of original _data
     let data_min = y_data.iter().fold(f64::INFINITY, |a, &b| f64::min(a, b));
     let data_max = y_data
         .iter()
         .fold(f64::NEG_INFINITY, |a, &b| f64::max(a, b));
 
-    // Find min and max of interpolated data
+    // Find min and max of interpolated _data
     let pchip_min = y_pchip.iter().fold(f64::INFINITY, |a, &b| f64::min(a, b));
     let pchip_max = y_pchip
         .iter()

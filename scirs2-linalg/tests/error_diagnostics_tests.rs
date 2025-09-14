@@ -2,7 +2,8 @@ use ndarray::array;
 use scirs2_linalg::{inv, solve};
 
 #[test]
-fn test_enhanced_error_singular_matrix() {
+#[allow(dead_code)]
+fn test_enhanced_error_singularmatrix() {
     // Test enhanced error messages for singular matrix
     let singular = array![[1.0, 2.0], [2.0, 4.0]];
 
@@ -21,6 +22,7 @@ fn test_enhanced_error_singular_matrix() {
 }
 
 #[test]
+#[allow(dead_code)]
 fn test_enhanced_error_solve() {
     // Test enhanced error messages for solve
     let singular = array![[1.0, 2.0], [2.0, 4.0]];
@@ -41,6 +43,7 @@ fn test_enhanced_error_solve() {
 }
 
 #[test]
+#[allow(dead_code)]
 fn test_error_no_enhancement_for_dimension_error() {
     // Test that dimension errors don't get enhanced
     let non_square = array![[1.0, 2.0, 3.0], [4.0, 5.0, 6.0]];

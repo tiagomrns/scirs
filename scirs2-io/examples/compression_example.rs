@@ -11,6 +11,7 @@ use scirs2_io::compression::{
 use std::fs::File;
 use std::io::Write;
 
+#[allow(dead_code)]
 fn main() {
     // Basic data compression example
     if let Err(e) = basic_compression_example() {
@@ -40,6 +41,7 @@ fn main() {
     println!("Compression examples completed!");
 }
 
+#[allow(dead_code)]
 fn basic_compression_example() -> Result<(), Box<dyn std::error::Error>> {
     println!("\n=== Basic Compression Example ===");
 
@@ -78,6 +80,7 @@ fn basic_compression_example() -> Result<(), Box<dyn std::error::Error>> {
     Ok(())
 }
 
+#[allow(dead_code)]
 fn file_compression_example() -> Result<(), Box<dyn std::error::Error>> {
     println!("\n=== File Compression Example ===");
 
@@ -121,6 +124,7 @@ fn file_compression_example() -> Result<(), Box<dyn std::error::Error>> {
     Ok(())
 }
 
+#[allow(dead_code)]
 fn array_compression_example() -> Result<(), Box<dyn std::error::Error>> {
     println!("\n=== Array Compression Example ===");
 
@@ -151,7 +155,8 @@ fn array_compression_example() -> Result<(), Box<dyn std::error::Error>> {
         CompressionAlgorithm::Bzip2,
     ] {
         // Define output path
-        let output_path = format!("array_compressed.{}", algorithm.extension());
+        let extension = algorithm.extension();
+        let output_path = format!("array_compressed.{extension}");
 
         // Compress the array
         compress_array(&output_path, &array, *algorithm, Some(6), None)?;
@@ -192,6 +197,7 @@ fn array_compression_example() -> Result<(), Box<dyn std::error::Error>> {
     Ok(())
 }
 
+#[allow(dead_code)]
 fn chunked_array_compression_example() -> Result<(), Box<dyn std::error::Error>> {
     println!("\n=== Chunked Array Compression Example ===");
 
@@ -276,6 +282,7 @@ fn chunked_array_compression_example() -> Result<(), Box<dyn std::error::Error>>
     Ok(())
 }
 
+#[allow(dead_code)]
 fn compare_algorithms() -> Result<(), Box<dyn std::error::Error>> {
     println!("\n=== Compression Algorithm Comparison ===");
 
@@ -326,6 +333,7 @@ fn compare_algorithms() -> Result<(), Box<dyn std::error::Error>> {
 
 // Helper functions to create different test arrays
 
+#[allow(dead_code)]
 fn create_sine_wave_array(shape: &[usize]) -> Array<f64, IxDyn> {
     let mut data = Vec::with_capacity(shape.iter().product());
 
@@ -339,6 +347,7 @@ fn create_sine_wave_array(shape: &[usize]) -> Array<f64, IxDyn> {
     Array::from_shape_vec(IxDyn(shape), data).unwrap()
 }
 
+#[allow(dead_code)]
 fn create_random_array(shape: &[usize]) -> Array<f64, IxDyn> {
     let mut data = Vec::with_capacity(shape.iter().product());
 
@@ -355,6 +364,7 @@ fn create_random_array(shape: &[usize]) -> Array<f64, IxDyn> {
     Array::from_shape_vec(IxDyn(shape), data).unwrap()
 }
 
+#[allow(dead_code)]
 fn create_mixed_array(shape: &[usize]) -> Array<f64, IxDyn> {
     let mut data = Vec::with_capacity(shape.iter().product());
     let mut rng = rand::rng();

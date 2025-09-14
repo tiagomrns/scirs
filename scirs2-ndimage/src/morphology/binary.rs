@@ -27,7 +27,7 @@ use ndarray::{Array, Array1, Array2, Dimension, Ix1, Ix2, IxDyn};
 
 use super::structuring::generate_binary_structure_dyn;
 use super::utils::get_structure_center_dyn;
-use crate::error::{NdimageError, Result};
+use crate::error::{NdimageError, NdimageResult};
 
 /// Erode a binary array using a structuring element
 ///
@@ -50,6 +50,7 @@ use crate::error::{NdimageError, Result};
 ///
 /// # Examples
 ///
+/// ## Basic 2D erosion
 /// ```
 /// use ndarray::Array2;
 /// use scirs2_ndimage::morphology::binary_erosion;
@@ -57,12 +58,84 @@ use crate::error::{NdimageError, Result};
 /// // Create a simple 3x3 array filled with true values
 /// let input = Array2::from_elem((3, 3), true);
 ///
-/// // Erode the array
+/// // Erode the array with default 3x3 structuring element
 /// let result = binary_erosion(&input, None, None, None, None, None, None).unwrap();
 ///
 /// // The center of the eroded array is still true, but the border elements may be eroded
 /// assert!(result[[1, 1]]);
 /// ```
+///
+/// ## Custom structuring element
+/// ```
+/// use ndarray::{Array2, array};
+/// use scirs2_ndimage::morphology::binary_erosion;
+///
+/// let input = array![
+///     [true,  true,  true,  true,  true],
+///     [true,  true,  true,  true,  true],
+///     [true,  true,  true,  true,  true],
+///     [true,  true,  true,  true,  true],
+///     [true,  true,  true,  true,  true]
+/// ];
+///
+/// // Create a cross-shaped structuring element
+/// let structure = array![
+///     [false, true,  false],
+///     [true,  true,  true],
+///     [false, true,  false]
+/// ];
+///
+/// let result = binary_erosion(&input, Some(&structure), None, None, None, None, None).unwrap();
+/// // Only pixels where the entire cross fits will remain true
+/// ```
+///
+/// ## Multiple iterations for heavy erosion
+/// ```
+/// use ndarray::Array2;
+/// use scirs2_ndimage::morphology::binary_erosion;
+///
+/// // Create a larger filled region
+/// let input = Array2::from_elem((10, 10), true);
+///
+/// // Apply erosion multiple times to shrink the region significantly
+/// let heavily_eroded = binary_erosion(&input, None, Some(3), None, None, None, None).unwrap();
+///
+/// // The object will be much smaller after 3 iterations
+/// assert_eq!(heavily_eroded.shape(), input.shape());
+/// ```
+///
+/// ## Using a mask to limit erosion area
+/// ```
+/// use ndarray::{Array2, array};
+/// use scirs2_ndimage::morphology::binary_erosion;
+///
+/// let input = Array2::from_elem((5, 5), true);
+///
+/// // Create a mask that only allows erosion in the center region
+/// let mask = array![
+///     [false, false, false, false, false],
+///     [false, true,  true,  true,  false],
+///     [false, true,  true,  true,  false],
+///     [false, true,  true,  true,  false],
+///     [false, false, false, false, false]
+/// ];
+///
+/// let masked_erosion = binary_erosion(&input, None, None, Some(&mask), None, None, None).unwrap();
+/// // Erosion only occurs within the masked region
+/// ```
+///
+/// ## 1D signal processing
+/// ```
+/// use ndarray::Array1;
+/// use scirs2_ndimage::morphology::binary_erosion;
+///
+/// let signal = Array1::from_vec(vec![false, true, true, true, false]);
+/// let eroded = binary_erosion(&signal, None, None, None, None, None, None).unwrap();
+///
+/// // The signal will be eroded from the edges inward
+/// assert_eq!(eroded.len(), signal.len());
+/// ```
+#[allow(dead_code)]
 pub fn binary_erosion<D>(
     input: &Array<bool, D>,
     structure: Option<&Array<bool, D>>,
@@ -71,7 +144,7 @@ pub fn binary_erosion<D>(
     border_value: Option<bool>,
     origin: Option<&[isize]>,
     brute_force: Option<bool>,
-) -> Result<Array<bool, D>>
+) -> NdimageResult<Array<bool, D>>
 where
     D: Dimension + 'static,
 {
@@ -241,6 +314,7 @@ where
 }
 
 /// Implementation of binary erosion for 1D arrays
+#[allow(dead_code)]
 fn binary_erosion1d(
     input: &Array1<bool>,
     structure: Option<&Array1<bool>>,
@@ -249,7 +323,7 @@ fn binary_erosion1d(
     border_value: Option<bool>,
     origin: Option<&[isize]>,
     brute_force: Option<bool>,
-) -> Result<Array1<bool>> {
+) -> NdimageResult<Array1<bool>> {
     // Default parameter values
     let iters = iterations.unwrap_or(1);
     let border_val = border_value.unwrap_or(false);
@@ -312,13 +386,13 @@ fn binary_erosion1d(
 
                 // Check if position is within bounds
                 if pos < 0 || pos >= prev.len() as isize {
-                    // Outside bounds - use border value
+                    // Outside bounds - use border _value
                     if !border_val {
                         fits = false;
                         break;
                     }
                 } else if !prev[pos as usize] {
-                    // Position is within bounds but value is false
+                    // Position is within bounds but _value is false
                     fits = false;
                     break;
                 }
@@ -339,6 +413,7 @@ fn binary_erosion1d(
 }
 
 /// Implementation of binary erosion for 2D arrays
+#[allow(dead_code)]
 fn binary_erosion2d(
     input: &Array2<bool>,
     structure: Option<&Array2<bool>>,
@@ -347,7 +422,7 @@ fn binary_erosion2d(
     border_value: Option<bool>,
     origin: Option<&[isize]>,
     brute_force: Option<bool>,
-) -> Result<Array2<bool>> {
+) -> NdimageResult<Array2<bool>> {
     // Default parameter values
     let iters = iterations.unwrap_or(1);
     let border_val = border_value.unwrap_or(false);
@@ -426,13 +501,13 @@ fn binary_erosion2d(
 
                         // Check if position is within bounds
                         if ni < 0 || ni >= shape[0] as isize || nj < 0 || nj >= shape[1] as isize {
-                            // Outside bounds - use border value
+                            // Outside bounds - use border _value
                             if !border_val {
                                 fits = false;
                                 break 'outer;
                             }
                         } else if !prev[[ni as usize, nj as usize]] {
-                            // Position is within bounds but value is false
+                            // Position is within bounds but _value is false
                             fits = false;
                             break 'outer;
                         }
@@ -455,6 +530,7 @@ fn binary_erosion2d(
 }
 
 /// Implementation of binary erosion for n-dimensional arrays (using dynamic dimensions)
+#[allow(dead_code)]
 fn binary_erosion_dyn(
     input: &Array<bool, IxDyn>,
     structure: Option<&Array<bool, IxDyn>>,
@@ -463,7 +539,7 @@ fn binary_erosion_dyn(
     border_value: Option<bool>,
     origin: Option<&[isize]>,
     _brute_force: Option<bool>,
-) -> Result<Array<bool, IxDyn>> {
+) -> NdimageResult<Array<bool, IxDyn>> {
     let iterations = iterations.unwrap_or(1);
     let border = border_value.unwrap_or(false);
 
@@ -538,7 +614,7 @@ fn binary_erosion_dyn(
                     }
                 }
 
-                // Get the value, using border value if out of bounds
+                // Get the value, using border _value if out of bounds
                 let val = if within_bounds {
                     let input_idx: Vec<_> = input_pos.iter().map(|&x| x as usize).collect();
                     temp[input_idx.as_slice()]
@@ -578,6 +654,7 @@ fn binary_erosion_dyn(
 /// # Returns
 ///
 /// * `Result<Array<bool, D>>` - Dilated array
+#[allow(dead_code)]
 pub fn binary_dilation<D>(
     input: &Array<bool, D>,
     structure: Option<&Array<bool, D>>,
@@ -586,7 +663,7 @@ pub fn binary_dilation<D>(
     border_value: Option<bool>,
     origin: Option<&[isize]>,
     brute_force: Option<bool>,
-) -> Result<Array<bool, D>>
+) -> NdimageResult<Array<bool, D>>
 where
     D: Dimension + 'static,
 {
@@ -756,6 +833,7 @@ where
 }
 
 /// Implementation of binary dilation for 1D arrays
+#[allow(dead_code)]
 fn binary_dilation1d(
     input: &Array1<bool>,
     structure: Option<&Array1<bool>>,
@@ -764,7 +842,7 @@ fn binary_dilation1d(
     border_value: Option<bool>,
     origin: Option<&[isize]>,
     brute_force: Option<bool>,
-) -> Result<Array1<bool>> {
+) -> NdimageResult<Array1<bool>> {
     // Default parameter values
     let iters = iterations.unwrap_or(1);
     let border_val = border_value.unwrap_or(false);
@@ -814,7 +892,7 @@ fn binary_dilation1d(
                 }
             }
 
-            // Initialize current position value
+            // Initialize current position _value
             *val = prev[i];
 
             // If position is already true, no need to check neighbors
@@ -834,13 +912,13 @@ fn binary_dilation1d(
 
                 // Check if position is within bounds
                 if pos < 0 || pos >= prev.len() as isize {
-                    // Outside bounds - use border value
+                    // Outside bounds - use border _value
                     if border_val {
                         *val = true;
                         break;
                     }
                 } else if prev[pos as usize] {
-                    // Position has a true value in input
+                    // Position has a true _value in input
                     *val = true;
                     break;
                 }
@@ -859,6 +937,7 @@ fn binary_dilation1d(
 }
 
 /// Implementation of binary dilation for 2D arrays
+#[allow(dead_code)]
 fn binary_dilation2d(
     input: &Array2<bool>,
     structure: Option<&Array2<bool>>,
@@ -867,7 +946,7 @@ fn binary_dilation2d(
     border_value: Option<bool>,
     origin: Option<&[isize]>,
     brute_force: Option<bool>,
-) -> Result<Array2<bool>> {
+) -> NdimageResult<Array2<bool>> {
     // Default parameter values
     let iters = iterations.unwrap_or(1);
     let border_val = border_value.unwrap_or(false);
@@ -930,7 +1009,7 @@ fn binary_dilation2d(
                     }
                 }
 
-                // Copy current value first
+                // Copy current _value first
                 temp[[i, j]] = prev[[i, j]];
 
                 // If already true, skip checking neighbors
@@ -954,13 +1033,13 @@ fn binary_dilation2d(
 
                         // Check if neighbor position is within bounds
                         if ni < 0 || ni >= shape[0] as isize || nj < 0 || nj >= shape[1] as isize {
-                            // Outside bounds - use border value
+                            // Outside bounds - use border _value
                             if border_val {
                                 found_true = true;
                                 break 'outer;
                             }
                         } else if prev[[ni as usize, nj as usize]] {
-                            // Position is within bounds and value is true
+                            // Position is within bounds and _value is true
                             found_true = true;
                             break 'outer;
                         }
@@ -985,6 +1064,7 @@ fn binary_dilation2d(
 }
 
 /// Implementation of binary dilation for n-dimensional arrays (using dynamic dimensions)
+#[allow(dead_code)]
 fn binary_dilation_dyn(
     input: &Array<bool, IxDyn>,
     structure: Option<&Array<bool, IxDyn>>,
@@ -993,7 +1073,7 @@ fn binary_dilation_dyn(
     border_value: Option<bool>,
     origin: Option<&[isize]>,
     _brute_force: Option<bool>,
-) -> Result<Array<bool, IxDyn>> {
+) -> NdimageResult<Array<bool, IxDyn>> {
     let iterations = iterations.unwrap_or(1);
     let border = border_value.unwrap_or(false);
 
@@ -1041,7 +1121,7 @@ fn binary_dilation_dyn(
                 }
             }
 
-            // Check if any structure element touches a true value
+            // Check if any structure element touches a true _value
             let mut any_fit = false;
 
             // Check each structure element
@@ -1068,7 +1148,7 @@ fn binary_dilation_dyn(
                     }
                 }
 
-                // Get the value, using border value if out of bounds
+                // Get the value, using border _value if out of bounds
                 let val = if within_bounds {
                     let input_idx: Vec<_> = input_pos.iter().map(|&x| x as usize).collect();
                     temp[input_idx.as_slice()]
@@ -1076,7 +1156,7 @@ fn binary_dilation_dyn(
                     border
                 };
 
-                // Dilation requires at least one value to be true
+                // Dilation requires at least one _value to be true
                 if val {
                     any_fit = true;
                     break;
@@ -1109,6 +1189,7 @@ fn binary_dilation_dyn(
 /// # Returns
 ///
 /// * `Result<Array<bool, D>>` - Opened array
+#[allow(dead_code)]
 pub fn binary_opening<D>(
     input: &Array<bool, D>,
     structure: Option<&Array<bool, D>>,
@@ -1117,7 +1198,7 @@ pub fn binary_opening<D>(
     border_value: Option<bool>,
     origin: Option<&[isize]>,
     brute_force: Option<bool>,
-) -> Result<Array<bool, D>>
+) -> NdimageResult<Array<bool, D>>
 where
     D: Dimension + 'static,
 {
@@ -1161,6 +1242,7 @@ where
 /// # Returns
 ///
 /// * `Result<Array<bool, D>>` - Closed array
+#[allow(dead_code)]
 pub fn binary_closing<D>(
     input: &Array<bool, D>,
     structure: Option<&Array<bool, D>>,
@@ -1169,7 +1251,7 @@ pub fn binary_closing<D>(
     border_value: Option<bool>,
     origin: Option<&[isize]>,
     brute_force: Option<bool>,
-) -> Result<Array<bool, D>>
+) -> NdimageResult<Array<bool, D>>
 where
     D: Dimension + 'static,
 {
@@ -1208,11 +1290,12 @@ where
 /// # Returns
 ///
 /// * `Result<Array<bool, D>>` - Array with filled holes
+#[allow(dead_code)]
 pub fn binary_fill_holes<D>(
     input: &Array<bool, D>,
     _structure: Option<&Array<bool, D>>,
     _origin: Option<&[isize]>,
-) -> Result<Array<bool, D>>
+) -> NdimageResult<Array<bool, D>>
 where
     D: Dimension + 'static,
 {
@@ -1259,6 +1342,7 @@ where
 /// // Apply hit-or-miss transform
 /// let result = binary_hit_or_miss(&input, Some(&structure1), None, None, None, None, None).unwrap();
 /// ```
+#[allow(dead_code)]
 pub fn binary_hit_or_miss<D>(
     input: &Array<bool, D>,
     structure1: Option<&Array<bool, D>>,
@@ -1267,7 +1351,7 @@ pub fn binary_hit_or_miss<D>(
     border_value: Option<bool>,
     origin1: Option<&[isize]>,
     origin2: Option<&[isize]>,
-) -> Result<Array<bool, D>>
+) -> NdimageResult<Array<bool, D>>
 where
     D: Dimension + 'static,
 {
@@ -1319,6 +1403,7 @@ where
 }
 
 /// Apply binary hit-or-miss transform to a 1D array
+#[allow(dead_code)]
 fn binary_hit_or_miss_1d<D>(
     input: &Array<bool, ndarray::Ix1>,
     _structure1: Option<&Array<bool, D>>,
@@ -1327,7 +1412,7 @@ fn binary_hit_or_miss_1d<D>(
     _border_value: Option<bool>,
     _origin1: Option<&[isize]>,
     _origin2: Option<&[isize]>,
-) -> Result<Array<bool, ndarray::Ix1>>
+) -> NdimageResult<Array<bool, ndarray::Ix1>>
 where
     D: Dimension + 'static,
 {
@@ -1336,6 +1421,7 @@ where
 }
 
 /// Apply binary hit-or-miss transform to a 2D array
+#[allow(dead_code)]
 fn binary_hit_or_miss_2d<D>(
     input: &Array<bool, ndarray::Ix2>,
     structure1: Option<&Array<bool, D>>,
@@ -1344,7 +1430,7 @@ fn binary_hit_or_miss_2d<D>(
     border_value: Option<bool>,
     origin1: Option<&[isize]>,
     origin2: Option<&[isize]>,
-) -> Result<Array<bool, ndarray::Ix2>>
+) -> NdimageResult<Array<bool, ndarray::Ix2>>
 where
     D: Dimension + 'static,
 {
@@ -1521,7 +1607,8 @@ mod tests {
     fn test_binary_erosion() {
         // Test with all true values
         let input = Array2::from_elem((5, 5), true);
-        let result = binary_erosion(&input, None, None, None, None, None, None).unwrap();
+        let result = binary_erosion(&input, None, None, None, None, None, None)
+            .expect("binary_erosion should succeed for test");
 
         // Border elements should be eroded, but center should remain true
         assert_eq!(result.shape(), input.shape());
@@ -1544,7 +1631,8 @@ mod tests {
         let input = Array2::from_elem((5, 5), true);
 
         // Apply erosion with 2 iterations
-        let result = binary_erosion(&input, None, Some(2), None, None, None, None).unwrap();
+        let result = binary_erosion(&input, None, Some(2), None, None, None, None)
+            .expect("binary_erosion with iterations should succeed for test");
 
         // Only the very center should remain true after 2 iterations
         assert!(result[[2, 2]]);
@@ -1563,7 +1651,8 @@ mod tests {
         input[[2, 2]] = true;
 
         // Apply dilation
-        let result = binary_dilation(&input, None, None, None, None, None, None).unwrap();
+        let result = binary_dilation(&input, None, None, None, None, None, None)
+            .expect("binary_dilation should succeed for test");
 
         // Center and direct neighbors should be true
         assert!(result[[2, 2]]); // Center
@@ -1602,7 +1691,8 @@ mod tests {
         input[[6, 6]] = true;
 
         // Apply opening
-        let result = binary_opening(&input, None, None, None, None, None, None).unwrap();
+        let result = binary_opening(&input, None, None, None, None, None, None)
+            .expect("binary_opening should succeed for test");
 
         // The larger feature should survive
         assert!(result[[5, 5]]);
@@ -1630,7 +1720,8 @@ mod tests {
         input[[3, 3]] = true;
 
         // Apply closing
-        let result = binary_closing(&input, None, None, None, None, None, None).unwrap();
+        let result = binary_closing(&input, None, None, None, None, None, None)
+            .expect("binary_closing should succeed for test");
 
         // The hole should be filled
         assert!(result[[2, 2]]);
@@ -1661,7 +1752,8 @@ mod tests {
         }
 
         // Apply erosion with default structure
-        let result = binary_erosion(&input, None, None, None, None, None, None).unwrap();
+        let result = binary_erosion(&input, None, None, None, None, None, None)
+            .expect("binary_erosion 3D should succeed for test");
 
         // Only the center should remain true after erosion
         assert!(result[[1, 1, 1]]);
@@ -1684,7 +1776,8 @@ mod tests {
         input[[1, 1, 1]] = true;
 
         // Apply dilation with default structure
-        let result = binary_dilation(&input, None, None, None, None, None, None).unwrap();
+        let result = binary_dilation(&input, None, None, None, None, None, None)
+            .expect("binary_dilation 3D should succeed for test");
 
         // Center should remain true
         assert!(result[[1, 1, 1]]);

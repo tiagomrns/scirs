@@ -2,6 +2,7 @@ use ndarray::{array, Array2};
 use scirs2_linalg::lapack::svd;
 
 #[test]
+#[allow(dead_code)]
 fn debug_svd_implementation() {
     // Test with a simple 2x2 matrix first
     let a = array![[1.0_f64, 0.0], [0.0, 1.0]];

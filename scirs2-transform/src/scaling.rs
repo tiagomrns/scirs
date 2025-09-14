@@ -8,8 +8,8 @@ use num_traits::{Float, NumCast};
 
 use crate::error::{Result, TransformError};
 
-// Define a small value to use for comparison with zero
-const EPSILON: f64 = 1e-10;
+/// Small epsilon value for numerical stability and comparison with zero
+pub const EPSILON: f64 = 1e-10;
 
 /// QuantileTransformer for non-linear transformations
 ///
@@ -38,14 +38,14 @@ impl QuantileTransformer {
     ///
     /// # Returns
     /// * A new QuantileTransformer instance
-    pub fn new(n_quantiles: usize, output_distribution: &str, clip: bool) -> Result<Self> {
+    pub fn new(n_quantiles: usize, outputdistribution: &str, clip: bool) -> Result<Self> {
         if n_quantiles < 2 {
             return Err(TransformError::InvalidInput(
                 "n_quantiles must be at least 2".to_string(),
             ));
         }
 
-        if output_distribution != "uniform" && output_distribution != "normal" {
+        if outputdistribution != "uniform" && outputdistribution != "normal" {
             return Err(TransformError::InvalidInput(
                 "output_distribution must be 'uniform' or 'normal'".to_string(),
             ));
@@ -53,7 +53,7 @@ impl QuantileTransformer {
 
         Ok(QuantileTransformer {
             n_quantiles,
-            output_distribution: output_distribution.to_string(),
+            output_distribution: outputdistribution.to_string(),
             clip,
             quantiles: None,
             references: None,
@@ -248,6 +248,7 @@ impl QuantileTransformer {
 /// Approximation of the inverse normal cumulative distribution function
 ///
 /// This uses the Beasley-Springer-Moro algorithm for approximating the inverse normal CDF
+#[allow(dead_code)]
 fn inverse_normal_cdf(u: f64) -> f64 {
     // Constants for the Beasley-Springer-Moro algorithm
     const A0: f64 = 2.50662823884;
@@ -322,6 +323,7 @@ impl MaxAbsScaler {
     }
 
     /// Creates a MaxAbsScaler with default settings (same as new())
+    #[allow(dead_code)]
     pub fn with_defaults() -> Self {
         Self::new()
     }
@@ -688,7 +690,7 @@ mod tests {
     #[test]
     fn test_max_abs_scaler_errors() {
         // Test with empty data
-        let empty_data = Array::<f64, _>::zeros((0, 2));
+        let empty_data = Array2::<f64>::zeros((0, 2));
         let mut scaler = MaxAbsScaler::new();
         assert!(scaler.fit(&empty_data).is_err());
 

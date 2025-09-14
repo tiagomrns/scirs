@@ -212,7 +212,7 @@ impl JitCompiler {
     }
 
     /// Generate a signature for function caching
-    fn generate_signature<F>(&self, _fun: &F, n_vars: usize) -> u64
+    fn generate_signature<F>(&self, fun: &F, n_vars: usize) -> u64
     where
         F: Fn(&ArrayView1<f64>) -> f64,
     {
@@ -224,7 +224,7 @@ impl JitCompiler {
         let mut hasher = DefaultHasher::new();
         n_vars.hash(&mut hasher);
         // Function pointer address (not reliable across runs, but works for caching within a session)
-        (std::ptr::addr_of!(*_fun) as usize).hash(&mut hasher);
+        (std::ptr::addr_of!(*fun) as usize).hash(&mut hasher);
         hasher.finish()
     }
 
@@ -267,7 +267,7 @@ impl JitCompiler {
     }
 
     /// Create optimized implementation for quadratic functions
-    fn create_quadratic_implementation<F>(&self, fun: F, _n_vars: usize) -> JitCompilationResult
+    fn create_quadratic_implementation<F>(&self, fun: F, n_vars: usize) -> JitCompilationResult
     where
         F: Fn(&ArrayView1<f64>) -> f64 + Send + Sync + 'static,
     {
@@ -281,11 +281,7 @@ impl JitCompiler {
     }
 
     /// Create optimized implementation for sum of squares
-    fn create_sum_of_squares_implementation<F>(
-        &self,
-        fun: F,
-        _n_vars: usize,
-    ) -> JitCompilationResult
+    fn create_sum_of_squares_implementation<F>(&self, fun: F, n_vars: usize) -> JitCompilationResult
     where
         F: Fn(&ArrayView1<f64>) -> f64 + Send + Sync + 'static,
     {
@@ -332,7 +328,7 @@ impl JitCompiler {
     }
 
     /// Create optimized implementation for polynomial functions
-    fn create_polynomial_implementation<F>(&self, fun: F, _n_vars: usize) -> JitCompilationResult
+    fn create_polynomial_implementation<F>(&self, fun: F, n_vars: usize) -> JitCompilationResult
     where
         F: Fn(&ArrayView1<f64>) -> f64 + Send + Sync + 'static,
     {
@@ -367,12 +363,12 @@ impl JitCompiler {
             FunctionPattern::Quadratic => {
                 // For quadratic functions f(x) = x^T Q x + b^T x + c
                 // gradient = 2Qx + b, Hessian = 2Q
-                let gradient = Box::new(move |_x: &ArrayView1<f64>| {
+                let gradient = Box::new(move |x: &ArrayView1<f64>| {
                     // Would compute 2Qx + b here
                     Array1::zeros(n_vars)
                 });
 
-                let hessian = Box::new(move |_x: &ArrayView1<f64>| {
+                let hessian = Box::new(move |x: &ArrayView1<f64>| {
                     // Would return 2Q here
                     Array2::zeros((n_vars, n_vars))
                 });
@@ -381,7 +377,7 @@ impl JitCompiler {
             }
             FunctionPattern::Separable => {
                 // For separable functions, gradient can be computed in parallel
-                let gradient = Box::new(move |_x: &ArrayView1<f64>| {
+                let gradient = Box::new(move |x: &ArrayView1<f64>| {
                     // Parallel gradient computation for separable functions
                     Array1::zeros(n_vars)
                 });
@@ -476,7 +472,7 @@ impl PatternDetector {
     }
 
     fn generate_sample_points(&mut self, n_vars: usize) -> Result<(), OptimizeError> {
-        use rand::prelude::*;
+        use rand::{prelude::*, rng};
         let mut rng = rand::rng();
 
         // Generate various types of sample points
@@ -485,7 +481,7 @@ impl PatternDetector {
         for _ in 0..n_samples {
             let mut point = Array1::zeros(n_vars);
             for j in 0..n_vars {
-                point[j] = rng.random_range(-2.0..2.0);
+                point[j] = rng.gen_range(-2.0..2.0);
             }
             self.sample_points.push(point);
         }
@@ -497,19 +493,19 @@ impl PatternDetector {
         Ok(())
     }
 
-    fn is_quadratic(&self, _values: &[f64], _n_vars: usize) -> bool {
-        // Check if function values follow quadratic pattern
+    fn is_quadratic(&self, _values: &[f64], _nvars: usize) -> bool {
+        // Check if function _values follow quadratic pattern
         // This is simplified - a real implementation would fit a quadratic model
         false // Conservative default
     }
 
-    fn is_sum_of_squares(&self, _values: &[f64]) -> bool {
+    fn is_sum_of_squares(&self, values: &[f64]) -> bool {
         // Check if function is non-negative (necessary for sum of squares)
         // A real implementation would do more sophisticated analysis
         false
     }
 
-    fn is_separable<F>(&self, _fun: &F, _n_vars: usize) -> Result<bool, OptimizeError>
+    fn is_separable<F>(&self, fun: &F, n_vars: usize) -> Result<bool, OptimizeError>
     where
         F: Fn(&ArrayView1<f64>) -> f64,
     {
@@ -519,7 +515,7 @@ impl PatternDetector {
         Ok(false)
     }
 
-    fn detect_polynomial_degree(&self, _values: &[f64]) -> Option<usize> {
+    fn detect_polynomial_degree(&self, values: &[f64]) -> Option<usize> {
         // Fit polynomials of increasing degree and check goodness of fit
         // Return the minimum degree that fits well
         None
@@ -598,6 +594,7 @@ pub struct JitStats {
 }
 
 /// Create an optimized function wrapper with JIT compilation
+#[allow(dead_code)]
 pub fn optimize_function<F>(
     fun: F,
     n_vars: usize,

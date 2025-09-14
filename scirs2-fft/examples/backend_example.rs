@@ -5,6 +5,7 @@
 // use num_complex::Complex64;  // Unused import
 use scirs2_fft::{fft, get_backend_info, get_backend_name, ifft, list_backends, BackendContext};
 
+#[allow(dead_code)]
 fn main() {
     println!("FFT Backend System Example");
     println!("=========================");

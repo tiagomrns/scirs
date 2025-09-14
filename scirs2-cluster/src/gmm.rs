@@ -12,6 +12,7 @@ use std::iter::Sum;
 
 use crate::error::{ClusteringError, Result};
 use crate::vq::kmeans_plus_plus;
+use statrs::statistics::Statistics;
 
 /// Type alias for GMM parameters
 type GMMParams<F> = (Array1<F>, Array2<F>, Vec<Array2<F>>);
@@ -95,7 +96,9 @@ pub struct GaussianMixture<F: Float> {
     converged: bool,
 }
 
-impl<F: Float + FromPrimitive + Debug + ScalarOperand + Sum> GaussianMixture<F> {
+impl<F: Float + FromPrimitive + Debug + ScalarOperand + Sum + std::borrow::Borrow<f64>>
+    GaussianMixture<F>
+{
     /// Create a new GMM instance
     pub fn new(options: GMMOptions<F>) -> Self {
         Self {
@@ -159,8 +162,8 @@ impl<F: Float + FromPrimitive + Debug + ScalarOperand + Sum> GaussianMixture<F> 
         let mut converged = false;
 
         for iter in 0..self.options.max_iter {
-            // E-step: compute responsibilities
-            let (resp, new_lower_bound) = self.e_step(data, &weights, &means, &covariances)?;
+            // E-step: compute resp_onsibilities
+            let (resp_, new_lower_bound) = self.e_step(data, &weights, &means, &covariances)?;
 
             // Check convergence
             let change = (new_lower_bound - lower_bound).abs();
@@ -178,7 +181,7 @@ impl<F: Float + FromPrimitive + Debug + ScalarOperand + Sum> GaussianMixture<F> 
             lower_bound = new_lower_bound;
 
             // M-step: update parameters
-            (weights, means, covariances) = self.m_step(data, resp)?;
+            (weights, means, covariances) = self.m_step(data, resp_)?;
         }
 
         Ok((
@@ -210,7 +213,7 @@ impl<F: Float + FromPrimitive + Debug + ScalarOperand + Sum> GaussianMixture<F> 
                 // Random selection from data points
                 let mut rng = match self.options.random_seed {
                     Some(seed) => rand::rngs::StdRng::seed_from_u64(seed),
-                    None => rand::rngs::StdRng::seed_from_u64(rand::rng().random()),
+                    None => rand::rngs::StdRng::seed_from_u64(rand::rng().random::<u64>()),
                 };
 
                 let mut means = Array2::zeros((n_components, n_features));
@@ -227,7 +230,7 @@ impl<F: Float + FromPrimitive + Debug + ScalarOperand + Sum> GaussianMixture<F> 
 
         // Compute data variance for initialization
         let data_mean = data.mean_axis(Axis(0)).unwrap();
-        let mut variance = Array1::zeros(n_features);
+        let mut variance = Array1::<F>::zeros(n_features);
 
         for i in 0..n_samples {
             let diff = &data.slice(s![i, ..]) - &data_mean;
@@ -237,15 +240,18 @@ impl<F: Float + FromPrimitive + Debug + ScalarOperand + Sum> GaussianMixture<F> 
 
         match self.options.covariance_type {
             CovarianceType::Spherical => {
-                let avg_variance = variance.mean().unwrap();
+                let avg_variance = variance.sum() / F::from(variance.len()).unwrap();
                 for _ in 0..n_components {
-                    let cov = Array2::eye(n_features) * avg_variance;
+                    let mut cov = Array2::<F>::zeros((n_features, n_features));
+                    for i in 0..n_features {
+                        cov[[i, i]] = avg_variance;
+                    }
                     covariances.push(cov);
                 }
             }
             CovarianceType::Diagonal => {
                 for _ in 0..n_components {
-                    let mut cov = Array2::zeros((n_features, n_features));
+                    let mut cov = Array2::<F>::zeros((n_features, n_features));
                     for i in 0..n_features {
                         cov[[i, i]] = variance[i];
                     }
@@ -255,7 +261,7 @@ impl<F: Float + FromPrimitive + Debug + ScalarOperand + Sum> GaussianMixture<F> 
             CovarianceType::Full | CovarianceType::Tied => {
                 // Initialize with diagonal covariance
                 for _ in 0..n_components {
-                    let mut cov = Array2::zeros((n_features, n_features));
+                    let mut cov = Array2::<F>::zeros((n_features, n_features));
                     for i in 0..n_features {
                         cov[[i, i]] = variance[i];
                     }
@@ -267,7 +273,7 @@ impl<F: Float + FromPrimitive + Debug + ScalarOperand + Sum> GaussianMixture<F> 
         Ok((weights, means, covariances))
     }
 
-    /// E-step: compute responsibilities
+    /// E-step: compute resp_onsibilities
     fn e_step(
         &self,
         data: ArrayView2<F>,
@@ -301,28 +307,28 @@ impl<F: Float + FromPrimitive + Debug + ScalarOperand + Sum> GaussianMixture<F> 
         // Compute log normalization
         let log_prob_norm = self.logsumexp(log_prob.view(), Axis(1))?;
 
-        // Compute responsibilities
-        let mut resp = log_prob.clone();
+        // Compute resp_onsibilities
+        let mut resp_ = log_prob.clone();
         for i in 0..n_samples {
             for k in 0..n_components {
-                resp[[i, k]] = (resp[[i, k]] - log_prob_norm[i]).exp();
+                resp_[[i, k]] = (resp_[[i, k]] - log_prob_norm[i]).exp();
             }
         }
 
         // Compute lower bound
-        let lower_bound = log_prob_norm.mean().unwrap();
+        let lower_bound = log_prob_norm.sum() / F::from(log_prob_norm.len()).unwrap();
 
-        Ok((resp, lower_bound))
+        Ok((resp_, lower_bound))
     }
 
     /// M-step: update parameters
-    fn m_step(&self, data: ArrayView2<F>, resp: Array2<F>) -> Result<GMMParams<F>> {
+    fn m_step(&self, data: ArrayView2<F>, resp_: Array2<F>) -> Result<GMMParams<F>> {
         let n_samples = data.shape()[0];
         let n_features = data.shape()[1];
         let n_components = self.options.n_components;
 
         // Compute weights
-        let nk = resp.sum_axis(Axis(0));
+        let nk = resp_.sum_axis(Axis(0));
         let weights = &nk / F::from(n_samples).unwrap();
 
         // Compute means
@@ -330,7 +336,7 @@ impl<F: Float + FromPrimitive + Debug + ScalarOperand + Sum> GaussianMixture<F> 
         for k in 0..n_components {
             let mut mean_k = Array1::zeros(n_features);
             for i in 0..n_samples {
-                mean_k = mean_k + &data.slice(s![i, ..]) * resp[[i, k]];
+                mean_k = mean_k + &data.slice(s![i, ..]) * resp_[[i, k]];
             }
             means.slice_mut(s![k, ..]).assign(&(&mean_k / nk[k]));
         }
@@ -347,7 +353,7 @@ impl<F: Float + FromPrimitive + Debug + ScalarOperand + Sum> GaussianMixture<F> 
                     for i in 0..n_samples {
                         let diff = &data.slice(s![i, ..]) - &mean_k;
                         let outer = self.outer_product(diff.view(), diff.view());
-                        cov = cov + &outer * resp[[i, k]];
+                        cov = cov + &outer * resp_[[i, k]];
                     }
 
                     cov = cov / nk[k];
@@ -368,7 +374,7 @@ impl<F: Float + FromPrimitive + Debug + ScalarOperand + Sum> GaussianMixture<F> 
                     for i in 0..n_samples {
                         let diff = &data.slice(s![i, ..]) - &mean_k;
                         for j in 0..n_features {
-                            cov[[j, j]] = cov[[j, j]] + diff[j] * diff[j] * resp[[i, k]];
+                            cov[[j, j]] = cov[[j, j]] + diff[j] * diff[j] * resp_[[i, k]];
                         }
                     }
 
@@ -472,17 +478,17 @@ impl<F: Float + FromPrimitive + Debug + ScalarOperand + Sum> GaussianMixture<F> 
         let means = self.means.as_ref().unwrap();
         let covariances = self.covariances.as_ref().unwrap();
 
-        let (resp, _) = self.e_step(data, weights, means, covariances)?;
+        let (resp__, _) = self.e_step(data, weights, means, covariances)?;
 
-        // Assign to component with highest responsibility
+        // Assign to component with highest resp_onsibility
         let mut labels = Array1::zeros(data.shape()[0]);
         for i in 0..data.shape()[0] {
-            let mut max_resp = F::neg_infinity();
+            let mut max_resp_ = F::neg_infinity();
             let mut best_k = 0;
 
             for k in 0..self.options.n_components {
-                if resp[[i, k]] > max_resp {
-                    max_resp = resp[[i, k]];
+                if resp__[[i, k]] > max_resp_ {
+                    max_resp_ = resp__[[i, k]];
                     best_k = k;
                 }
             }
@@ -527,9 +533,10 @@ impl<F: Float + FromPrimitive + Debug + ScalarOperand + Sum> GaussianMixture<F> 
 ///
 /// let labels = gaussian_mixture(data.view(), options).unwrap();
 /// ```
+#[allow(dead_code)]
 pub fn gaussian_mixture<F>(data: ArrayView2<F>, options: GMMOptions<F>) -> Result<Array1<i32>>
 where
-    F: Float + FromPrimitive + Debug + ScalarOperand + Sum,
+    F: Float + FromPrimitive + Debug + ScalarOperand + Sum + std::borrow::Borrow<f64>,
 {
     let mut gmm = GaussianMixture::new(options);
     gmm.fit(data)?;

@@ -21,11 +21,11 @@ mod tests {
     }
 
     #[test]
-    fn test_lazy_array_with_shape() {
+    fn test_lazy_array_withshape() {
         let shape = vec![3, 4];
 
         // Create a lazy array with shape only
-        let lazy = LazyArray::<f64, ndarray::Dim<[usize; 2]>>::with_shape(shape.clone());
+        let lazy = LazyArray::<f64, ndarray::Dim<[usize; 2]>>::withshape(shape.clone());
 
         // Check that the shape is correct
         assert_eq!(lazy.shape, shape);

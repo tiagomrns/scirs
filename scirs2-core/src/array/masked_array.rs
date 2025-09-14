@@ -113,11 +113,11 @@ where
     }
 
     /// Get a view of the data with masked values replaced by `fill_value`
-    pub fn filled(&self, fill_value: Option<A>) -> Array<A, D>
+    pub fn value_2(&self, fillvalue: Option<A>) -> Array<A, D>
     where
         <D as Dimension>::Pattern: ndarray::NdIndex<D>,
     {
-        let fill = fill_value.map_or_else(|| self.fill_value.clone(), |v| v);
+        let fill = fillvalue.map_or_else(|| self.fill_value.clone(), |v| v);
 
         // Create new array with same shape as data
         let mut result = Array::from_elem(self.data.raw_dim(), fill);
@@ -169,8 +169,8 @@ where
     }
 
     /// Set the fill value for the array
-    pub fn set_fill_value(&mut self, fill_value: A) {
-        self.fill_value = fill_value;
+    pub fn value_3(&mut self, fillvalue: A) {
+        self.fill_value = fillvalue;
     }
 
     /// Returns a new array containing only unmasked values
@@ -256,7 +256,7 @@ where
         F: Fn(&A) -> bool,
     {
         // Apply condition to each element of data
-        let new_mask = self.data.mapv(|ref x| condition(x));
+        let new_mask = self.data.mapv(|x| condition(&x));
 
         // Combine with existing mask
         let combined_mask = &self.mask | &new_mask;
@@ -272,18 +272,18 @@ where
     ///
     /// # Errors
     /// Returns `ArrayError::ShapeMismatch` if the mask shapes don't match.
-    pub fn mask_or(&self, other_mask: &Array<bool, D>) -> Result<Self, ArrayError> {
+    pub fn mask_or(&self, othermask: &Array<bool, D>) -> Result<Self, ArrayError> {
         // Check that shapes match
-        if self.mask.shape() != other_mask.shape() {
+        if self.mask.shape() != othermask.shape() {
             return Err(ArrayError::ShapeMismatch {
                 expected: self.mask.shape().to_vec(),
-                found: other_mask.shape().to_vec(),
+                found: othermask.shape().to_vec(),
                 msg: "Mask shapes must match for mask_or operation".to_string(),
             });
         }
 
         // Combine masks
-        let combined_mask = &self.mask | other_mask;
+        let combined_mask = &self.mask | othermask;
 
         Ok(Self {
             data: self.data.clone(),
@@ -296,18 +296,18 @@ where
     ///
     /// # Errors
     /// Returns `ArrayError::ShapeMismatch` if the mask shapes don't match.
-    pub fn mask_and(&self, other_mask: &Array<bool, D>) -> Result<Self, ArrayError> {
+    pub fn mask_and(&self, othermask: &Array<bool, D>) -> Result<Self, ArrayError> {
         // Check that shapes match
-        if self.mask.shape() != other_mask.shape() {
+        if self.mask.shape() != othermask.shape() {
             return Err(ArrayError::ShapeMismatch {
                 expected: self.mask.shape().to_vec(),
-                found: other_mask.shape().to_vec(),
+                found: othermask.shape().to_vec(),
                 msg: "Mask shapes must match for mask_and operation".to_string(),
             });
         }
 
         // Combine masks
-        let combined_mask = &self.mask & other_mask;
+        let combined_mask = &self.mask & othermask;
 
         Ok(Self {
             data: self.data.clone(),
@@ -459,7 +459,7 @@ where
                     }
                 } else {
                     min_val = Some(val.clone());
-                    min_idx = Some(i);
+                    min_idx = Some(0);
                 }
             }
         }
@@ -481,7 +481,7 @@ where
                     }
                 } else {
                     max_val = Some(val.clone());
-                    max_idx = Some(i);
+                    max_idx = Some(0);
                 }
             }
         }
@@ -499,8 +499,7 @@ where
 {
     /// Compute the mean of all unmasked elements
     ///
-    /// # Panics
-    /// Panics if the count cannot be converted to type A.
+    /// Returns `None` if there are no unmasked elements or if count conversion fails.
     pub fn mean(&self) -> Option<A> {
         let count = self.count();
 
@@ -516,13 +515,13 @@ where
             .map(|(_, val)| *val)
             .sum();
 
-        Some(sum / A::from(count).unwrap())
+        // Safe conversion with proper error handling
+        A::from(count).map(|count_val| sum / count_val)
     }
 
     /// Compute the variance of all unmasked elements
     ///
-    /// # Panics
-    /// Panics if the count cannot be converted to type A.
+    /// Returns `None` if there are insufficient unmasked elements or if count conversion fails.
     pub fn var(&self, ddof: usize) -> Option<A> {
         let count = self.count();
 
@@ -542,8 +541,8 @@ where
             .map(|(_, val)| (*val - mean) * (*val - mean))
             .sum();
 
-        // Apply degrees of freedom correction
-        Some(sum_sq_diff / A::from(count - ddof).unwrap())
+        // Apply degrees of freedom correction with safe conversion
+        A::from(count - ddof).map(|denom| sum_sq_diff / denom)
     }
 
     /// Compute the standard deviation of all unmasked elements
@@ -562,6 +561,7 @@ where
 }
 
 /// Helper function to create a default fill value for a given type
+#[allow(dead_code)]
 fn default_fill_value<A, S, D>(data: &ArrayBase<S, D>) -> A
 where
     A: Clone,
@@ -580,7 +580,7 @@ where
 }
 
 /// Function to check if a value is masked
-pub const fn is_masked<A>(_value: &A) -> bool
+pub const fn is_masked<A>(value: &A) -> bool
 where
     A: PartialEq,
 {
@@ -590,6 +590,7 @@ where
 }
 
 /// Create a masked array with elements equal to a given value masked
+#[allow(dead_code)]
 pub fn masked_equal<A, S, D>(data: ArrayBase<S, D>, value: A) -> MaskedArray<A, S, D>
 where
     A: Clone + PartialEq,
@@ -607,6 +608,7 @@ where
 }
 
 /// Create a masked array with NaN and infinite values masked
+#[allow(dead_code)]
 pub fn masked_invalid<A, S, D>(data: ArrayBase<S, D>) -> MaskedArray<A, S, D>
 where
     A: Clone + PartialEq + Float,
@@ -629,6 +631,7 @@ where
 ///
 /// # Errors
 /// Returns `ArrayError::ShapeMismatch` if the mask shape doesn't match the data shape.
+#[allow(dead_code)]
 pub fn mask_array<A, S, D>(
     data: ArrayBase<S, D>,
     mask: Option<Array<bool, D>>,
@@ -643,6 +646,7 @@ where
 }
 
 /// Create a masked array with values outside a range masked
+#[allow(dead_code)]
 pub fn masked_outside<A, S, D>(
     data: ArrayBase<S, D>,
     min_val: &A,
@@ -667,6 +671,7 @@ where
 }
 
 /// Create a masked array with values inside a range masked
+#[allow(dead_code)]
 pub fn masked_inside<A, S, D>(
     data: ArrayBase<S, D>,
     min_val: &A,
@@ -691,6 +696,7 @@ where
 }
 
 /// Create a masked array with values greater than a given value masked
+#[allow(dead_code)]
 pub fn masked_greater<A, S, D>(data: ArrayBase<S, D>, value: &A) -> MaskedArray<A, S, D>
 where
     A: Clone + PartialEq + PartialOrd,
@@ -711,6 +717,7 @@ where
 }
 
 /// Create a masked array with values less than a given value masked
+#[allow(dead_code)]
 pub fn masked_less<A, S, D>(data: ArrayBase<S, D>, value: &A) -> MaskedArray<A, S, D>
 where
     A: Clone + PartialEq + PartialOrd,
@@ -731,6 +738,7 @@ where
 }
 
 /// Create a masked array with values where a condition is true
+#[allow(dead_code)]
 pub fn masked_where<A, S, D, F>(
     condition: F,
     data: ArrayBase<S, D>,
@@ -743,7 +751,7 @@ where
     F: Fn(&A) -> bool,
 {
     // Create a mask by applying the condition function to each element
-    let mask = data.mapv(|ref x| condition(x));
+    let mask = data.map(|x| condition(x));
 
     // Use provided fill value or create a default
     let fill_value = fill_value.map_or_else(|| default_fill_value(&data), |v| v);
@@ -770,7 +778,7 @@ where
             if i > 0 && i % 10 == 0 {
                 writeln!(f)?;
             }
-            if *self.mask.iter().nth(i).unwrap_or(&false) {
+            if *self.mask.iter().nth(0).unwrap_or(&false) {
                 write!(f, " --,")?;
             } else {
                 write!(f, " {elem},")?;
@@ -926,7 +934,8 @@ mod tests {
         let data = array![1.0, 2.0, 3.0, 4.0, 5.0];
         let mask = array![false, true, false, true, false];
 
-        let ma = MaskedArray::new(data.clone(), Some(mask.clone()), None).unwrap();
+        let ma = MaskedArray::new(data.clone(), Some(mask.clone()), None)
+            .expect("Failed to create MaskedArray in test");
 
         assert_eq!(ma.data, data);
         assert_eq!(ma.mask, mask);
@@ -939,12 +948,13 @@ mod tests {
         let data = array![1.0, 2.0, 3.0, 4.0, 5.0];
         let mask = array![false, true, false, true, false];
 
-        let ma = MaskedArray::new(data, Some(mask), Some(999.0)).unwrap();
+        let ma = MaskedArray::new(data, Some(mask), Some(999.0))
+            .expect("Failed to create MaskedArray in test");
 
-        let filled = ma.filled(None);
+        let filled = ma.value_2(None);
         assert_eq!(filled, array![1.0, 999.0, 3.0, 999.0, 5.0]);
 
-        let filled_custom = ma.filled(Some(-1.0));
+        let filled_custom = ma.value_2(Some(-1.0));
         assert_eq!(filled_custom, array![1.0, -1.0, 3.0, -1.0, 5.0]);
     }
 
@@ -982,14 +992,14 @@ mod tests {
             Some(array![false, true, false, false, false]),
             Some(0.0),
         )
-        .unwrap();
+        .expect("Failed to create MaskedArray in test");
 
         let b = MaskedArray::new(
             array![5.0, 4.0, 3.0, 2.0, 1.0],
             Some(array![false, false, false, true, false]),
             Some(0.0),
         )
-        .unwrap();
+        .expect("Failed to create MaskedArray in test");
 
         // Addition
         let c = &a + &b;
@@ -1017,14 +1027,14 @@ mod tests {
             Some(array![false, false, false]),
             Some(0.0),
         )
-        .unwrap();
+        .expect("Failed to create MaskedArray in test");
 
         let h = MaskedArray::new(
             array![1.0, 0.0, 3.0],
             Some(array![false, false, false]),
             Some(0.0),
         )
-        .unwrap();
+        .expect("Failed to create MaskedArray in test");
 
         let i = &g / &h;
         assert_eq!(i.mask, array![false, true, false]);
@@ -1037,7 +1047,7 @@ mod tests {
             Some(array![false, true, false, true, false]),
             Some(0.0),
         )
-        .unwrap();
+        .expect("Failed to create MaskedArray in test");
 
         let compressed = ma.compressed();
         assert_eq!(compressed, array![1.0, 3.0, 5.0]);

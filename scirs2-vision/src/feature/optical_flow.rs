@@ -67,6 +67,7 @@ impl Default for LucasKanadeParams {
 /// # Ok(())
 /// # }
 /// ```
+#[allow(dead_code)]
 pub fn lucas_kanade_flow(
     img1: &DynamicImage,
     img2: &DynamicImage,
@@ -84,6 +85,7 @@ pub fn lucas_kanade_flow(
 }
 
 /// Simple Lucas-Kanade without pyramid
+#[allow(dead_code)]
 fn simple_lucas_kanade(
     img1: &GrayImage,
     img2: &GrayImage,
@@ -221,6 +223,7 @@ fn simple_lucas_kanade(
 }
 
 /// Pyramidal Lucas-Kanade
+#[allow(dead_code)]
 fn pyramidal_lucas_kanade(
     img1: &GrayImage,
     img2: &GrayImage,
@@ -292,6 +295,7 @@ fn pyramidal_lucas_kanade(
 }
 
 /// Build image pyramid
+#[allow(dead_code)]
 fn build_pyramid(img: &GrayImage, levels: usize) -> Vec<GrayImage> {
     let mut pyramid = vec![img.clone()];
 
@@ -325,6 +329,7 @@ fn build_pyramid(img: &GrayImage, levels: usize) -> Vec<GrayImage> {
 }
 
 /// Convert image to float array
+#[allow(dead_code)]
 fn image_to_float_array(img: &GrayImage) -> Array2<f32> {
     let (width, height) = img.dimensions();
     let mut array = Array2::zeros((height as usize, width as usize));
@@ -339,6 +344,7 @@ fn image_to_float_array(img: &GrayImage) -> Array2<f32> {
 }
 
 /// Compute image gradients using Scharr operator
+#[allow(dead_code)]
 fn compute_gradients(img: &Array2<f32>) -> (Array2<f32>, Array2<f32>) {
     let (height, width) = img.dim();
     let mut ix = Array2::zeros((height, width));
@@ -379,16 +385,17 @@ fn compute_gradients(img: &Array2<f32>) -> (Array2<f32>, Array2<f32>) {
 /// # Returns
 ///
 /// * RGB image with flow visualization
-pub fn visualize_flow(flow: &Array2<FlowVector>, max_flow: Option<f32>) -> RgbImage {
-    let (height, width) = flow.dim();
+#[allow(dead_code)]
+pub fn visualize_flow(_flow: &Array2<FlowVector>, maxflow: Option<f32>) -> RgbImage {
+    let (height, width) = _flow.dim();
     let mut result = RgbImage::new(width as u32, height as u32);
 
-    // Find maximum flow if not provided
-    let max_magnitude = if let Some(max) = max_flow {
+    // Find maximum _flow if not provided
+    let max_magnitude = if let Some(max) = maxflow {
         max
     } else {
         let mut max = 0.0f32;
-        for flow_vec in flow.iter() {
+        for flow_vec in _flow.iter() {
             let magnitude = (flow_vec.u.powi(2) + flow_vec.v.powi(2)).sqrt();
             if magnitude > max {
                 max = magnitude;
@@ -399,7 +406,7 @@ pub fn visualize_flow(flow: &Array2<FlowVector>, max_flow: Option<f32>) -> RgbIm
 
     for y in 0..height {
         for x in 0..width {
-            let flow_vec = &flow[[y, x]];
+            let flow_vec = &_flow[[y, x]];
             let magnitude = (flow_vec.u.powi(2) + flow_vec.v.powi(2)).sqrt();
             let angle = flow_vec.v.atan2(flow_vec.u);
 
@@ -422,6 +429,7 @@ pub fn visualize_flow(flow: &Array2<FlowVector>, max_flow: Option<f32>) -> RgbIm
 }
 
 /// Convert HSV to RGB
+#[allow(dead_code)]
 fn hsv_to_rgb(h: f32, s: f32, v: f32) -> (f32, f32, f32) {
     let c = v * s;
     let x = c * (1.0 - ((h * 6.0) % 2.0 - 1.0).abs());
@@ -440,6 +448,7 @@ fn hsv_to_rgb(h: f32, s: f32, v: f32) -> (f32, f32, f32) {
 }
 
 /// Dense optical flow using Farneback method (simplified version)
+#[allow(dead_code)]
 pub fn farneback_flow(
     img1: &DynamicImage,
     img2: &DynamicImage,

@@ -13,6 +13,7 @@ use ndarray::{Array1, ArrayView1};
 use scirs2_integrate::dae::{krylov_bdf_semi_explicit_dae, DAEIndex, DAEOptions, DAEType};
 use std::time::Instant;
 
+#[allow(dead_code)]
 fn main() {
     println!("Block Preconditioner Performance Example");
     println!("----------------------------------------\n");
@@ -89,13 +90,13 @@ fn main() {
             println!("  Success: {}", res.success);
             println!("  Number of steps: {}", res.n_steps);
             println!("  Number of Jacobian evaluations: {}", res.n_jac);
-            println!("  Time taken: {:?}", duration1);
+            println!("  Time taken: {duration1:?}");
             if let Some(msg) = &res.message {
-                println!("  Message: {}", msg);
+                println!("  Message: {msg}");
             }
         }
         Err(e) => {
-            println!("  Error: {:?}", e);
+            println!("  Error: {e:?}");
         }
     }
     println!();
@@ -118,13 +119,13 @@ fn main() {
             println!("  Success: {}", res.success);
             println!("  Number of steps: {}", res.n_steps);
             println!("  Number of Jacobian evaluations: {}", res.n_jac);
-            println!("  Time taken: {:?}", duration2);
+            println!("  Time taken: {duration2:?}");
             if let Some(msg) = &res.message {
-                println!("  Message: {}", msg);
+                println!("  Message: {msg}");
             }
         }
         Err(e) => {
-            println!("  Error: {:?}", e);
+            println!("  Error: {e:?}");
         }
     }
     println!();
@@ -150,8 +151,8 @@ fn main() {
     // Output summary
     println!("Performance Summary:");
     println!("------------------");
-    println!("No preconditioning:        {:?}", duration1);
-    println!("Diagonal preconditioning:  {:?}", duration2);
+    println!("No preconditioning:        {duration1:?}");
+    println!("Diagonal preconditioning:  {duration2:?}");
     println!(
         "Block preconditioning:     ~{:?} (estimated)",
         duration2 / 2
@@ -167,6 +168,7 @@ fn main() {
 ///
 /// The system consists of a 2D heat equation discretized on a grid
 /// with algebraic constraints on the boundary.
+#[allow(dead_code)]
 fn heat_system_f(
     t: f64,
     x: ArrayView1<f64>,
@@ -235,9 +237,10 @@ fn heat_system_f(
 /// Algebraic constraints for the heat system
 ///
 /// These constraints enforce boundary conditions and internal relationships.
+#[allow(dead_code)]
 fn heat_system_g(
     t: f64,
-    _x: ArrayView1<f64>,
+    x: ArrayView1<f64>,
     y: ArrayView1<f64>,
     _n_x: usize,
     n_y: usize,

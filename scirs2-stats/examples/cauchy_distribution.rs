@@ -1,7 +1,8 @@
 use scirs2_stats::distributions::cauchy::Cauchy;
-use scirs2_stats::traits::distribution::{ContinuousDistribution, Distribution};
+use scirs2_stats::traits::{ContinuousCDF, ContinuousDistribution, Distribution};
 use std::error::Error;
 
+#[allow(dead_code)]
 fn main() -> Result<(), Box<dyn Error>> {
     println!("Cauchy (Lorentz) Distribution Example");
     println!("------------------------------------");
@@ -228,12 +229,10 @@ fn main() -> Result<(), Box<dyn Error>> {
     println!("  PPF at p=0.75 (trait): {}", q_trait);
     println!("  PPF at p=0.75 (direct): {}", q_direct);
 
-    let sf_trait = ContinuousDistribution::sf(&standard_cauchy, 0.0);
-    println!("  Survival function at x=0 (trait): {}", sf_trait);
-    println!(
-        "  Survival function computed manually: {}",
-        1.0 - standard_cauchy.cdf(0.0)
-    );
+    // Note: Cauchy distribution doesn't implement ContinuousCDF trait
+    // so we calculate survival function manually
+    let sf_manual = 1.0 - standard_cauchy.cdf(0.0);
+    println!("  Survival function at x=0 (manual): {}", sf_manual);
 
     println!("\nAdvantage of trait system:");
     println!("- Consistent interface for working with different distributions");

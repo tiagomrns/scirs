@@ -47,6 +47,7 @@ struct SubRegion {
 /// * `tol` - Desired absolute tolerance
 /// * `max_evals` - Maximum number of function evaluations
 /// * `max_depth` - Maximum recursion depth
+#[allow(dead_code)]
 pub fn adaptive_cubature<F>(
     f: F,
     a: &Array1<f64>,
@@ -73,8 +74,7 @@ where
     for i in 0..dim {
         if a[i] >= b[i] {
             return Err(IntegrateError::ValueError(format!(
-                "Invalid integration bounds: a[{}] >= b[{}]",
-                i, i
+                "Invalid integration bounds: a[{i}] >= b[{i}]"
             )));
         }
     }
@@ -105,7 +105,7 @@ where
         // Get the region with the largest estimated error
         let current_region = region_queue.pop_front().unwrap();
 
-        // Update max depth reached
+        // Update max _depth reached
         max_depth_reached = max_depth_reached.max(current_region.depth);
 
         // Compute integral for this region
@@ -148,7 +148,7 @@ where
         let right_b = current_region.b.clone();
         right_a[max_width_dim] = mid_point;
 
-        // Create new subregions with increased depth
+        // Create new subregions with increased _depth
         let left_region = SubRegion {
             a: left_a,
             b: left_b,
@@ -208,10 +208,10 @@ where
     }
 
     let elapsed = start_time.elapsed();
-    println!("Adaptive cubature completed in {:.2?}", elapsed);
-    println!("Total evaluations: {}", n_evals);
-    println!("Total subregions: {}", n_subregions);
-    println!("Maximum depth: {}", max_depth_reached);
+    println!("Adaptive cubature completed in {elapsed:.2?}");
+    println!("Total evaluations: {n_evals}");
+    println!("Total subregions: {n_subregions}");
+    println!("Maximum depth: {max_depth_reached}");
 
     Ok(AdaptiveCubatureResult {
         value: total_integral,
@@ -226,6 +226,7 @@ where
 ///
 /// # Returns
 /// Tuple containing (integral estimate, error estimate, number of evaluations)
+#[allow(dead_code)]
 fn integrate_region<F>(
     f: &F,
     a: &Array1<f64>,
@@ -338,6 +339,7 @@ where
 }
 
 /// Function with a single sharp peak at the center
+#[allow(dead_code)]
 fn peak_function(x: ArrayView1<f64>) -> f64 {
     let mut sum_sq = 0.0;
     for i in 0..x.len() {
@@ -347,6 +349,7 @@ fn peak_function(x: ArrayView1<f64>) -> f64 {
 }
 
 /// Function with multiple peaks
+#[allow(dead_code)]
 fn multi_peak_function(x: ArrayView1<f64>) -> f64 {
     let d = x.len() as f64;
     let p1 = {
@@ -369,6 +372,7 @@ fn multi_peak_function(x: ArrayView1<f64>) -> f64 {
 }
 
 /// Function with a sharp ridge (challenging for adaptive methods)
+#[allow(dead_code)]
 fn ridge_function(x: ArrayView1<f64>) -> f64 {
     if x.len() < 2 {
         return 0.0;
@@ -383,6 +387,7 @@ fn ridge_function(x: ArrayView1<f64>) -> f64 {
 }
 
 /// Function with a discontinuity
+#[allow(dead_code)]
 fn discontinuous_function(x: ArrayView1<f64>) -> f64 {
     if x.len() < 2 {
         return 0.0;
@@ -399,6 +404,7 @@ fn discontinuous_function(x: ArrayView1<f64>) -> f64 {
 }
 
 /// Run a test case and report results with reference solution
+#[allow(dead_code)]
 fn run_test<F>(
     f: F,
     a: &Array1<f64>,
@@ -411,9 +417,9 @@ fn run_test<F>(
 ) where
     F: Fn(ArrayView1<f64>) -> f64 + Sync,
 {
-    println!("\n=== Testing {} function ===", name);
+    println!("\n=== Testing {name} function ===");
     println!("Dimension: {}", a.len());
-    println!("Tolerance: {:.2e}", tol);
+    println!("Tolerance: {tol:.2e}");
 
     let result = adaptive_cubature(f, a, b, tol, max_evals, max_depth).unwrap();
 
@@ -424,12 +430,13 @@ fn run_test<F>(
 
     if let Some(ref_value) = reference {
         let actual_error = (result.value - ref_value).abs();
-        println!("Reference value: {:.10}", ref_value);
-        println!("Actual error: {:.10}", actual_error);
+        println!("Reference value: {ref_value:.10}");
+        println!("Actual error: {actual_error:.10}");
         println!("Relative error: {:.10}", actual_error / ref_value.abs());
     }
 }
 
+#[allow(dead_code)]
 fn main() {
     println!("Adaptive Cubature Integration Examples");
     println!("=====================================");
@@ -462,7 +469,7 @@ fn main() {
     // For a 4D Gaussian peak centered at (0.5, 0.5, 0.5, 0.5), the integral is approximately
     // (2π)^(d/2)/(d*k)^(d/2) where d is dimension and k is the coefficient in exponent
     let peak_4d_reference =
-        (2.0 * PI).powf(dim as f64 / 2.0) / (20.0 * dim as f64).powf(dim as f64 / 2.0);
+        (2.0_f64 * PI).powf(dim as f64 / 2.0) / (20.0_f64 * dim as f64).powf(dim as f64 / 2.0);
 
     run_test(
         peak_function,

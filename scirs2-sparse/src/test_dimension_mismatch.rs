@@ -2,6 +2,7 @@ use crate::csr::CsrMatrix;
 use crate::sym_csr::SymCsrMatrix;
 
 #[test]
+#[allow(dead_code)]
 fn test_csr_to_sym_csr_dimensions() {
     // Create a simple symmetric CSR matrix
     let rows = vec![0, 0, 1, 1, 2, 2, 2];

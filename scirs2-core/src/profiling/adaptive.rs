@@ -27,7 +27,7 @@
 //! // Configure adaptive optimizer
 //! let config = OptimizationConfig::production()
 //!     .with_goal(OptimizationGoal::Balanced)
-//!     .with_learning_rate(0.01)
+//!     .with_learningrate(0.01)
 //!     .with_adaptation_interval(std::time::Duration::from_secs(60));
 //!
 //! let mut optimizer = AdaptiveOptimizer::new(config)?;
@@ -64,17 +64,15 @@ use std::collections::{HashMap, VecDeque};
 use std::sync::{Arc, Mutex, RwLock};
 use std::time::{Duration, Instant, SystemTime};
 
-#[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
 
 /// Adaptive optimization configuration
-#[derive(Debug, Clone)]
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct OptimizationConfig {
     /// Primary optimization goal
     pub goal: OptimizationGoal,
     /// Learning rate for adaptive algorithms
-    pub learning_rate: f64,
+    pub learningrate: f64,
     /// Interval between optimization adjustments
     pub adaptation_interval: Duration,
     /// Historical data retention period
@@ -99,7 +97,7 @@ impl Default for OptimizationConfig {
     fn default() -> Self {
         Self {
             goal: OptimizationGoal::Balanced,
-            learning_rate: 0.01,
+            learningrate: 0.01,
             adaptation_interval: Duration::from_secs(60),
             history_retention: Duration::from_secs(24 * 60 * 60), // 24 hours
             confidence_threshold: 0.95,
@@ -118,7 +116,7 @@ impl OptimizationConfig {
     pub fn production() -> Self {
         Self {
             goal: OptimizationGoal::Performance,
-            learning_rate: 0.005, // Conservative for production
+            learningrate: 0.005, // Conservative for production
             adaptation_interval: Duration::from_secs(300), // 5 minutes
             confidence_threshold: 0.99, // High confidence required
             max_adjustment_rate: 0.05, // Conservative 5% max change
@@ -131,7 +129,7 @@ impl OptimizationConfig {
     pub fn development() -> Self {
         Self {
             goal: OptimizationGoal::Development,
-            learning_rate: 0.02, // More aggressive for experimentation
+            learningrate: 0.02, // More aggressive for experimentation
             adaptation_interval: Duration::from_secs(30),
             confidence_threshold: 0.85,
             max_adjustment_rate: 0.2, // Allow larger adjustments
@@ -159,8 +157,8 @@ impl OptimizationConfig {
     }
 
     /// Set learning rate
-    pub fn with_learning_rate(mut self, rate: f64) -> Self {
-        self.learning_rate = rate.clamp(0.001, 0.1);
+    pub fn with_learningrate(mut self, rate: f64) -> Self {
+        self.learningrate = rate.clamp(0.001, 0.1);
         self
     }
 
@@ -190,8 +188,7 @@ impl OptimizationConfig {
 }
 
 /// Optimization goals
-#[derive(Debug, Clone, PartialEq, Eq)]
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub enum OptimizationGoal {
     /// Optimize for maximum performance (speed)
     Performance,
@@ -208,8 +205,7 @@ pub enum OptimizationGoal {
 }
 
 /// Objective weights for multi-objective optimization
-#[derive(Debug, Clone)]
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ObjectiveWeight {
     /// Objective name
     pub name: String,
@@ -230,8 +226,7 @@ impl PartialEq for ObjectiveWeight {
 impl Eq for ObjectiveWeight {}
 
 /// Priority levels for objectives
-#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
 pub enum Priority {
     /// Low priority
     Low,
@@ -244,15 +239,14 @@ pub enum Priority {
 }
 
 /// Resource constraints for optimization
-#[derive(Debug, Clone)]
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ResourceConstraints {
     /// Maximum memory usage (bytes)
     pub max_memory_usage: Option<usize>,
     /// Maximum CPU usage (0.0 to 1.0)
     pub max_cpu_usage: Option<f64>,
     /// Maximum network bandwidth (bytes/sec)
-    pub max_network_bandwidth: Option<usize>,
+    pub max_networkbandwidth: Option<usize>,
     /// Maximum disk I/O (bytes/sec)
     pub max_disk_io: Option<usize>,
     /// Maximum number of threads
@@ -266,7 +260,7 @@ impl Default for ResourceConstraints {
         Self {
             max_memory_usage: None,
             max_cpu_usage: Some(0.9), // 90% CPU usage limit
-            max_network_bandwidth: None,
+            max_networkbandwidth: None,
             max_disk_io: None,
             max_threads: Some({
                 #[cfg(feature = "num_cpus")]
@@ -284,8 +278,7 @@ impl Default for ResourceConstraints {
 }
 
 /// Workload profile for optimization
-#[derive(Debug, Clone)]
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct WorkloadProfile {
     /// Workload name
     pub name: String,
@@ -308,8 +301,7 @@ pub struct WorkloadProfile {
 }
 
 /// Memory access patterns
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub enum MemoryPattern {
     /// Sequential access pattern
     Sequential,
@@ -324,8 +316,7 @@ pub enum MemoryPattern {
 }
 
 /// Parallelism characteristics
-#[derive(Debug, Clone)]
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ParallelismProfile {
     /// Can benefit from parallelization
     pub parallelizable: bool,
@@ -338,8 +329,7 @@ pub struct ParallelismProfile {
 }
 
 /// Load balancing types
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub enum LoadBalanceType {
     /// Even load distribution
     Even,
@@ -352,8 +342,7 @@ pub enum LoadBalanceType {
 }
 
 /// I/O characteristics
-#[derive(Debug, Clone)]
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct IOProfile {
     /// I/O intensity (0.0 to 1.0)
     pub intensity: f64,
@@ -362,12 +351,11 @@ pub struct IOProfile {
     /// Read/write ratio
     pub read_write_ratio: f64,
     /// Buffer size preferences
-    pub preferred_buffer_size: Option<usize>,
+    pub preferred_buffersize: Option<usize>,
 }
 
 /// I/O types
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub enum IOType {
     /// Primarily disk I/O
     Disk,
@@ -382,8 +370,7 @@ pub enum IOType {
 }
 
 /// Workload types
-#[derive(Debug, Clone, PartialEq, Eq)]
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub enum WorkloadType {
     /// CPU-intensive computations
     ComputeIntensive,
@@ -520,7 +507,7 @@ impl WorkloadProfileBuilder {
                 intensity: 0.1,
                 io_type: IOType::None,
                 read_write_ratio: 0.8,
-                preferred_buffer_size: None,
+                preferred_buffersize: None,
             },
             workload_type: WorkloadType::Balanced,
             expected_duration: None,
@@ -553,8 +540,8 @@ impl WorkloadProfileBuilder {
     }
 
     /// Set workload type
-    pub fn with_workload_type(mut self, workload_type: WorkloadType) -> Self {
-        self.workload_type = workload_type;
+    pub fn with_workload_type(mut self, workloadtype: WorkloadType) -> Self {
+        self.workload_type = workloadtype;
         self
     }
 
@@ -571,7 +558,7 @@ impl WorkloadProfileBuilder {
     }
 
     /// Set parallelism profile
-    pub const fn with_parallelism(
+    pub fn with_parallelism(
         mut self,
         parallelizable: bool,
         optimal_threads: Option<usize>,
@@ -582,9 +569,9 @@ impl WorkloadProfileBuilder {
     }
 
     /// Set I/O profile
-    pub fn with_io_profile(mut self, intensity: f64, io_type: IOType) -> Self {
+    pub fn with_io_profile(mut self, intensity: f64, iotype: IOType) -> Self {
         self.io_profile.intensity = intensity.clamp(0.0, 1.0);
-        self.io_profile.io_type = io_type;
+        self.io_profile.io_type = iotype;
         self
     }
 
@@ -684,8 +671,7 @@ pub enum AlgorithmPreference {
 }
 
 /// Performance metric for optimization
-#[derive(Debug, Clone)]
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct PerformanceMetric {
     /// Metric name
     pub name: String,
@@ -702,8 +688,7 @@ pub struct PerformanceMetric {
 }
 
 /// Performance trend
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub enum Trend {
     /// Performance is improving
     Improving,
@@ -716,8 +701,7 @@ pub enum Trend {
 }
 
 /// Optimization recommendation
-#[derive(Debug, Clone)]
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct OptimizationRecommendation {
     /// Parameter to adjust
     pub parameter: String,
@@ -736,8 +720,7 @@ pub struct OptimizationRecommendation {
 }
 
 /// Expected impact of optimization
-#[derive(Debug, Clone)]
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Impact {
     /// Performance improvement (percentage)
     pub performance_improvement: f64,
@@ -750,8 +733,7 @@ pub struct Impact {
 }
 
 /// Risk levels for optimization changes
-#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
 pub enum RiskLevel {
     /// Low risk change
     Low,
@@ -849,7 +831,7 @@ impl AdaptiveOptimizer {
         }
 
         // Initialize baseline metrics
-        self.collect_baseline_metrics()?;
+        self.collectbaseline_metrics()?;
 
         self.state = OptimizerState::Learning;
         self.last_optimization = Instant::now();
@@ -869,22 +851,20 @@ impl AdaptiveOptimizer {
     pub fn record_metric(
         &mut self,
         workload: &str,
-        metric_name: &str,
+        metricname: &str,
         value: f64,
     ) -> CoreResult<()> {
         let metric = PerformanceMetric {
-            name: metric_name.to_string(),
+            name: metricname.to_string(),
             value,
             target: None,
             timestamp: SystemTime::now(),
             confidence: 1.0,
-            trend: self.calculate_trend(workload, metric_name, value),
+            trend: self.calculate_trend(workload, metricname, value),
         };
 
         if let Ok(mut history) = self.performance_history.lock() {
-            let workload_metrics = history
-                .entry(workload.to_string())
-                .or_insert_with(VecDeque::new);
+            let workload_metrics = history.entry(workload.to_string()).or_default();
             workload_metrics.push_back(metric);
 
             // Limit history size
@@ -906,32 +886,24 @@ impl AdaptiveOptimizer {
         self.active_recommendations
             .lock()
             .map(|recs| recs.clone())
-            .map_err(|_| {
-                CoreError::from(std::io::Error::new(
-                    std::io::ErrorKind::Other,
-                    "Failed to access recommendations",
-                ))
-            })
+            .map_err(|_| CoreError::from(std::io::Error::other("Failed to access recommendations")))
     }
 
     /// Apply optimization recommendation
-    pub fn apply_recommendation(&mut self, recommendation_id: usize) -> CoreResult<()> {
+    pub fn apply_recommendation(&mut self, recommendationid: usize) -> CoreResult<()> {
         let recommendation = {
             let mut recs = self.active_recommendations.lock().map_err(|_| {
-                CoreError::from(std::io::Error::new(
-                    std::io::ErrorKind::Other,
-                    "Failed to access recommendations",
-                ))
+                CoreError::from(std::io::Error::other("Failed to access recommendations"))
             })?;
 
-            if recommendation_id >= recs.len() {
+            if recommendationid >= recs.len() {
                 return Err(CoreError::from(std::io::Error::new(
                     std::io::ErrorKind::InvalidInput,
                     "Recommendation ID out of range",
                 )));
             }
 
-            recs.remove(recommendation_id)
+            recs.remove(recommendationid)
         };
 
         // Apply the recommendation
@@ -969,21 +941,21 @@ impl AdaptiveOptimizer {
     }
 
     /// Get workload-specific optimization hints
-    pub fn get_workload_hints(&self, workload_name: &str) -> CoreResult<OptimizationHints> {
+    pub fn get_optimization_hints(&self, workloadname: &str) -> CoreResult<OptimizationHints> {
         if let Ok(workloads) = self.workloads.read() {
-            if let Some(workload) = workloads.get(workload_name) {
+            if let Some(workload) = workloads.get(workloadname) {
                 return Ok(workload.get_optimization_hints());
             }
         }
 
         Err(CoreError::from(std::io::Error::new(
             std::io::ErrorKind::NotFound,
-            format!("Workload '{}' not found", workload_name),
+            format!("Workload '{workloadname}' not found"),
         )))
     }
 
     /// Collect baseline performance metrics
-    fn collect_baseline_metrics(&mut self) -> CoreResult<()> {
+    fn collectbaseline_metrics(&mut self) -> CoreResult<()> {
         // In a real implementation, this would collect system metrics
         let mut baseline = HashMap::new();
         baseline.insert("cpu_usage".to_string(), 45.0);
@@ -999,12 +971,12 @@ impl AdaptiveOptimizer {
     }
 
     /// Calculate performance trend
-    fn calculate_trend(&self, workload: &str, metric_name: &str, _current_value: f64) -> Trend {
+    fn calculate_trend(&self, workload: &str, metricname: &str, value: f64) -> Trend {
         if let Ok(history) = self.performance_history.lock() {
             if let Some(workload_metrics) = history.get(workload) {
                 let recent_values: Vec<f64> = workload_metrics
                     .iter()
-                    .filter(|m| m.name == metric_name)
+                    .filter(|m| m.name == metricname)
                     .rev()
                     .take(10)
                     .map(|m| m.value)
@@ -1101,8 +1073,8 @@ impl AdaptiveOptimizer {
                     if latest.name == "execution_time" && latest.trend == Trend::Degrading {
                         recommendations.push(OptimizationRecommendation {
                             parameter: "thread_count".to_string(),
-                            current_value: "4".to_string(),
-                            suggested_value: "8".to_string(),
+                            current_value: 4.to_string(),
+                            suggested_value: 8.to_string(),
                             expected_impact: Impact {
                                 performance_improvement: 25.0,
                                 memory_change: 10.0,
@@ -1110,7 +1082,7 @@ impl AdaptiveOptimizer {
                                 benefit_score: 0.8,
                             },
                             confidence: 0.85,
-                            rationale: format!("Workload '{}' shows degrading execution time. Increasing thread count may improve parallelization.", workload),
+                            rationale: format!("Workload '{workload}' shows degrading execution time. Increasing thread count may improve parallelization."),
                             risk_level: RiskLevel::Low,
                         });
                     }
@@ -1119,8 +1091,8 @@ impl AdaptiveOptimizer {
                     if latest.name == "memory_usage" && latest.value > 2000.0 {
                         recommendations.push(OptimizationRecommendation {
                             parameter: "chunk_size".to_string(),
-                            current_value: "1048576".to_string(),
-                            suggested_value: "524288".to_string(),
+                            current_value: 1048576.to_string(),
+                            suggested_value: 524288.to_string(),
                             expected_impact: Impact {
                                 performance_improvement: 5.0,
                                 memory_change: -30.0,
@@ -1192,11 +1164,11 @@ mod tests {
     fn test_optimization_config() {
         let config = OptimizationConfig::production()
             .with_goal(OptimizationGoal::Performance)
-            .with_learning_rate(0.01)
+            .with_learningrate(0.01)
             .with_confidence_threshold(0.95);
 
         assert_eq!(config.goal, OptimizationGoal::Performance);
-        assert_eq!(config.learning_rate, 0.01);
+        assert_eq!(config.learningrate, 0.01);
         assert_eq!(config.confidence_threshold, 0.95);
     }
 

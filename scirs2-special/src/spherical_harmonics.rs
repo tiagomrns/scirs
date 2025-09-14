@@ -34,7 +34,6 @@ use std::fmt::Debug;
 ///
 /// ```
 /// use scirs2_special::sph_harm;
-/// use std::f64::consts::PI;
 ///
 /// // Y₀⁰(θ, φ) = 1/(2√π)
 /// let y00: f64 = sph_harm(0, 0, PI/2.0, 0.0).unwrap();
@@ -45,6 +44,7 @@ use std::fmt::Debug;
 /// let expected = f64::sqrt(3.0/(4.0*PI)) * f64::cos(PI/4.0);
 /// assert!((y10 - expected).abs() < 1e-10);
 /// ```
+#[allow(dead_code)]
 pub fn sph_harm<F>(l: usize, m: i32, theta: F, phi: F) -> SpecialResult<F>
 where
     F: Float + FromPrimitive + Debug,
@@ -123,7 +123,6 @@ where
 ///
 /// ```
 /// use scirs2_special::sph_harm_complex;
-/// use std::f64::consts::PI;
 ///
 /// // Y₀⁰(θ, φ) = 1/(2√π)
 /// let (re, im): (f64, f64) = sph_harm_complex(0, 0, PI/2.0, 0.0).unwrap();
@@ -138,6 +137,7 @@ where
 /// assert!((re - expected_re).abs() < 1e-10);
 /// assert!((im - expected_im).abs() < 1e-10);
 /// ```
+#[allow(dead_code)]
 pub fn sph_harm_complex<F>(l: usize, m: i32, theta: F, phi: F) -> SpecialResult<(F, F)>
 where
     F: Float + FromPrimitive + Debug,

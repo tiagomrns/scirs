@@ -1,13 +1,16 @@
 [package]
 name = "scirs2-special"
 version.workspace = true
-edition = "2021"
-authors = ["SciRS2 Team"]
-description = "Special functions module for SciRS2"
-license = "MIT OR Apache-2.0"
-repository = "https://github.com/cool-japan/scirs"
+edition.workspace = true
+authors.workspace = true
+description = "Special functions module for SciRS2 (scirs2-special)"
+license.workspace = true
+repository.workspace = true
 keywords = ["special-functions", "gamma", "scientific", "scipy", "numerical"]
 categories = ["science", "mathematics", "algorithms"]
+
+[lints]
+workspace = true
 
 [dependencies]
 # Core dependencies
@@ -18,19 +21,30 @@ num-complex = { workspace = true }
 thiserror = { workspace = true }
 approx = { workspace = true }
 lazy_static = { workspace = true }
+regex = { workspace = true, optional = true }
+plotters = { workspace = true, optional = true }
+serde = { workspace = true, features = ["derive"] }
+serde_json = { workspace = true }
+log = { workspace = true }
+rand = { workspace = true }
+statrs = { workspace = true }
 
 [features]
-default = []
+default = ["python-interop"]
 parallel = ["scirs2-core/parallel", "ndarray/rayon"]  # rayon accessed through core
 simd = ["scirs2-core/simd"]
 lazy = ["futures"]
 gpu = ["scirs2-core/gpu"]  # GPU accessed through core
 # array-api = ["arrayfire", "candle"]  # Disabled - placeholder for future implementation
-# high-precision = ["rug"]             # Disabled - placeholder for future implementation
+high-precision = ["rug"]               # Arbitrary precision computations
+python-interop = ["regex"]             # Python interoperability features
+plotting = ["plotters"]                # Visualization and plotting support
+interactive = []                       # Interactive visualization (future feature)
+fast-compile = []                      # Enable fast compilation mode for development
 
 # Optional dependencies for advanced features
 [dependencies.futures]
-version = "0.3"
+workspace = true
 optional = true
 
 # GPU and parallel dependencies removed - using core abstractions
@@ -56,10 +70,13 @@ optional = true
 # version = "0.6"
 # optional = true
 
-# [dependencies.rug]
-# version = "1.19"
-# optional = true
+[dependencies.rug]
+workspace = true
+optional = true
 
 [dev-dependencies]
 criterion = { workspace = true }
-tokio = { version = "1.0", features = ["full"] }
+tokio = { workspace = true, features = ["full"] }
+quickcheck = { workspace = true }
+quickcheck_macros = { workspace = true }
+chrono = { workspace = true }

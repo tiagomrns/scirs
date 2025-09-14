@@ -7,6 +7,7 @@ use num_complex::Complex;
 use scirs2_linalg::complex::{complex_matmul, complex_norm_frobenius, hermitian_transpose};
 use scirs2_linalg::error::LinalgResult;
 
+#[allow(dead_code)]
 fn main() -> LinalgResult<()> {
     println!("Complex Matrix Operations Examples");
     println!("==================================\n");

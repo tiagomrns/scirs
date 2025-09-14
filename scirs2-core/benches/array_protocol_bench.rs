@@ -6,6 +6,7 @@ use ndarray::Array2;
 use scirs2_core::array_protocol::{self, add, matmul, transpose, NdarrayWrapper};
 
 // Add bench_ndarray_matmul with criterion
+#[allow(dead_code)]
 fn bench_ndarray_matmul(c: &mut Criterion) {
     let a = Array2::<f64>::ones((100, 100));
     let b = Array2::<f64>::ones((100, 100));
@@ -14,6 +15,7 @@ fn bench_ndarray_matmul(c: &mut Criterion) {
 }
 
 // Add bench_array_protocol_matmul with criterion
+#[allow(dead_code)]
 fn bench_array_protocol_matmul(c: &mut Criterion) {
     array_protocol::init();
 
@@ -29,6 +31,7 @@ fn bench_array_protocol_matmul(c: &mut Criterion) {
 }
 
 // Add bench_ndarray_add with criterion
+#[allow(dead_code)]
 fn bench_ndarray_add(c: &mut Criterion) {
     let a = Array2::<f64>::ones((100, 100));
     let b = Array2::<f64>::ones((100, 100));
@@ -37,6 +40,7 @@ fn bench_ndarray_add(c: &mut Criterion) {
 }
 
 // Add bench_array_protocol_add with criterion
+#[allow(dead_code)]
 fn bench_array_protocol_add(c: &mut Criterion) {
     array_protocol::init();
 
@@ -52,6 +56,7 @@ fn bench_array_protocol_add(c: &mut Criterion) {
 }
 
 // Add bench_ndarray_transpose with criterion
+#[allow(dead_code)]
 fn bench_ndarray_transpose(c: &mut Criterion) {
     let a = Array2::<f64>::ones((100, 100));
 
@@ -59,6 +64,7 @@ fn bench_ndarray_transpose(c: &mut Criterion) {
 }
 
 // Add bench_array_protocol_transpose with criterion
+#[allow(dead_code)]
 fn bench_array_protocol_transpose(c: &mut Criterion) {
     array_protocol::init();
 
@@ -71,6 +77,7 @@ fn bench_array_protocol_transpose(c: &mut Criterion) {
 }
 
 #[cfg(feature = "gpu")]
+#[allow(dead_code)]
 fn bench_gpu_array_matmul(c: &mut Criterion) {
     use scirs2_core::array_protocol::{GPUBackend, GPUConfig, GPUNdarray};
 

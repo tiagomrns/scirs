@@ -30,25 +30,25 @@ where
     F: Float + FromPrimitive + Debug + Display + ScalarOperand,
 {
     /// Create a new VAR model
-    pub fn new(order: usize, n_vars: usize) -> Result<Self> {
-        if order == 0 {
+    pub fn new(_order: usize, nvars: usize) -> Result<Self> {
+        if _order == 0 {
             return Err(TimeSeriesError::InvalidInput(
-                "VAR order must be at least 1".to_string(),
+                "VAR _order must be at least 1".to_string(),
             ));
         }
-        if n_vars == 0 {
+        if nvars == 0 {
             return Err(TimeSeriesError::InvalidInput(
                 "Number of variables must be at least 1".to_string(),
             ));
         }
 
-        let coefficients = vec![Array2::zeros((n_vars, n_vars)); order];
-        let intercept = Array1::zeros(n_vars);
-        let covariance = Array2::eye(n_vars);
+        let coefficients = vec![Array2::zeros((nvars, nvars)); _order];
+        let intercept = Array1::zeros(nvars);
+        let covariance = Array2::eye(nvars);
 
         Ok(Self {
-            order,
-            n_vars,
+            order: _order,
+            n_vars: nvars,
             coefficients,
             intercept,
             covariance,
@@ -61,7 +61,7 @@ where
     where
         S: Data<Elem = F>,
     {
-        scirs2_core::validation::check_array_finite(data, "data")?;
+        scirs2_core::validation::checkarray_finite(data, "data")?;
 
         let (t, k) = data.dim();
         if k != self.n_vars {
@@ -185,17 +185,17 @@ where
     }
 
     /// Calculate impulse response function
-    pub fn impulse_response(&self, periods: usize, shock_var: usize) -> Result<Array2<F>> {
+    pub fn impulse_response(&self, periods: usize, shockvar: usize) -> Result<Array2<F>> {
         if !self.is_fitted {
             return Err(TimeSeriesError::InvalidInput(
                 "Model must be fitted before calculating impulse response".to_string(),
             ));
         }
 
-        if shock_var >= self.n_vars {
+        if shockvar >= self.n_vars {
             return Err(TimeSeriesError::InvalidInput(format!(
                 "Shock variable {} out of range (0-{})",
-                shock_var,
+                shockvar,
                 self.n_vars - 1
             )));
         }
@@ -204,7 +204,7 @@ where
 
         // Initial shock
         let mut shock = Array1::zeros(self.n_vars);
-        shock[shock_var] = F::one();
+        shock[shockvar] = F::one();
         responses.row_mut(0).assign(&shock);
 
         // Calculate responses
@@ -271,14 +271,14 @@ where
     }
 
     /// Test for Granger causality
-    pub fn granger_causality(&self, cause_var: usize, effect_var: usize) -> Result<(F, F)> {
+    pub fn granger_causality(&self, cause_var: usize, effectvar: usize) -> Result<(F, F)> {
         if !self.is_fitted {
             return Err(TimeSeriesError::InvalidInput(
                 "Model must be fitted before testing Granger causality".to_string(),
             ));
         }
 
-        if cause_var >= self.n_vars || effect_var >= self.n_vars {
+        if cause_var >= self.n_vars || effectvar >= self.n_vars {
             return Err(TimeSeriesError::InvalidInput(
                 "Variable indices out of range".to_string(),
             ));
@@ -341,18 +341,18 @@ where
     F: Float + FromPrimitive + Debug + Display + ScalarOperand,
 {
     /// Create a new VECM model
-    pub fn new(n_vars: usize, rank: usize, lag_order: usize) -> Result<Self> {
-        if rank >= n_vars {
+    pub fn new(_n_vars: usize, rank: usize, lagorder: usize) -> Result<Self> {
+        if rank >= _n_vars {
             return Err(TimeSeriesError::InvalidInput(
                 "Cointegration rank must be less than number of variables".to_string(),
             ));
         }
 
-        let adjustment = Array2::zeros((n_vars, rank));
-        let cointegration = Array2::zeros((n_vars, rank));
-        let short_run = vec![Array2::zeros((n_vars, n_vars)); lag_order - 1];
-        let deterministic = Array2::zeros((n_vars, 2)); // constant and trend
-        let covariance = Array2::eye(n_vars);
+        let adjustment = Array2::zeros((_n_vars, rank));
+        let cointegration = Array2::zeros((_n_vars, rank));
+        let short_run = vec![Array2::zeros((_n_vars, _n_vars)); lagorder - 1];
+        let deterministic = Array2::zeros((_n_vars, 2)); // constant and trend
+        let covariance = Array2::eye(_n_vars);
 
         Ok(Self {
             rank,
@@ -370,7 +370,7 @@ where
     where
         S: Data<Elem = F>,
     {
-        scirs2_core::validation::check_array_finite(data, "data")?;
+        scirs2_core::validation::checkarray_finite(data, "data")?;
 
         // Placeholder implementation
         // Would implement full Johansen procedure
@@ -393,6 +393,7 @@ where
 }
 
 /// Helper function to solve normal equations (X'X)β = X'Y
+#[allow(dead_code)]
 fn solve_normal_equations<F>(xtx: &Array2<F>, xty: &Array2<F>) -> Result<Array2<F>>
 where
     F: Float + FromPrimitive + Debug + Display + ScalarOperand,
@@ -422,6 +423,7 @@ where
 }
 
 /// Solve using Cholesky decomposition
+#[allow(dead_code)]
 fn solve_cholesky<F>(a: &Array2<F>, b: &Array2<F>) -> Result<Array2<F>>
 where
     F: Float + FromPrimitive + Debug + Display + ScalarOperand,
@@ -491,6 +493,7 @@ where
 }
 
 /// Solve using LU decomposition with partial pivoting
+#[allow(dead_code)]
 fn solve_lu_decomposition<F>(a: &Array2<F>, b: &Array2<F>) -> Result<Array2<F>>
 where
     F: Float + FromPrimitive + Debug + Display + ScalarOperand,
@@ -591,6 +594,7 @@ pub enum SelectionCriterion {
 }
 
 /// Select optimal VAR order
+#[allow(dead_code)]
 pub fn select_var_order<S, F>(
     data: &ArrayBase<S, Ix2>,
     max_order: usize,
@@ -604,16 +608,16 @@ where
     let mut best_order = 1;
     let mut best_criterion = F::infinity();
 
-    for order in 1..=max_order {
-        if t <= order + 1 {
+    for _order in 1..=max_order {
+        if t <= _order + 1 {
             break;
         }
 
-        let mut model = VARModel::new(order, k)?;
+        let mut model = VARModel::new(_order, k)?;
         model.fit(data)?;
 
         let log_det = matrix_log_determinant(&model.covariance);
-        let n_params = order * k * k + k;
+        let n_params = _order * k * k + k;
 
         let criterion_value = match criterion {
             SelectionCriterion::AIC => {
@@ -639,7 +643,7 @@ where
 
         if criterion_value < best_criterion {
             best_criterion = criterion_value;
-            best_order = order;
+            best_order = _order;
         }
     }
 
@@ -647,13 +651,14 @@ where
 }
 
 /// Calculate log determinant of a matrix using LU decomposition
+#[allow(dead_code)]
 fn matrix_log_determinant<F>(matrix: &Array2<F>) -> F
 where
     F: Float + FromPrimitive + Debug + Display + ScalarOperand,
 {
     let n = matrix.nrows();
     if n != matrix.ncols() {
-        return F::neg_infinity(); // Invalid matrix
+        return F::neg_infinity(); // Invalid _matrix
     }
 
     if n == 0 {
@@ -708,7 +713,7 @@ where
     for i in 0..n {
         let diag_element = lu[[i, i]];
         if diag_element.abs() < F::from(1e-12).unwrap() {
-            return F::neg_infinity(); // Singular matrix
+            return F::neg_infinity(); // Singular _matrix
         }
         log_det = log_det + diag_element.abs().ln();
     }

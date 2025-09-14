@@ -17,6 +17,7 @@ use std::ops::Not;
 /// # Arguments
 ///
 /// * `array` - Mutable reference to a 2D complex array
+#[allow(dead_code)]
 pub fn enforce_hermitian_symmetry(array: &mut Array2<Complex64>) {
     let (rows, cols) = array.dim();
 
@@ -26,7 +27,7 @@ pub fn enforce_hermitian_symmetry(array: &mut Array2<Complex64>) {
     }
 
     // For a truly Hermitian-symmetric result, we need to:
-    // 1. Ensure that array[i, j] = conj(array[rows-i, cols-j]) for all i, j
+    // 1. Ensure that array[i, j] = conj(_array[rows-i, cols-j]) for all i, j
     // 2. Ensure that array[i, 0] and array[0, j] have special properties
 
     // Ensure first row and column elements satisfy Hermitian constraints
@@ -62,6 +63,7 @@ pub fn enforce_hermitian_symmetry(array: &mut Array2<Complex64>) {
 /// # Arguments
 ///
 /// * `array` - Mutable reference to an N-dimensional complex array
+#[allow(dead_code)]
 pub fn enforce_hermitian_symmetry_nd(array: &mut Array<Complex64, IxDyn>) {
     let shape = array.shape().to_vec();
     let ndim = shape.len();
@@ -71,7 +73,7 @@ pub fn enforce_hermitian_symmetry_nd(array: &mut Array<Complex64, IxDyn>) {
     }
 
     // Make DC component real
-    // Use direct array access instead of indices
+    // Use direct _array access instead of indices
     if let Some(slice) = array.as_slice_mut() {
         if !slice.is_empty() {
             slice[0] = Complex64::new(slice[0].re, 0.0);
@@ -106,7 +108,7 @@ pub fn enforce_hermitian_symmetry_nd(array: &mut Array<Complex64, IxDyn>) {
                 // Apply 2D symmetry (same as in enforce_hermitian_symmetry)
                 enforce_hermitian_symmetry(&mut array2);
 
-                // Copy back to the original array
+                // Copy back to the original _array
                 let view2 = array2.view();
                 let flat = view2.as_slice().unwrap();
                 if let Some(target) = array.as_slice_mut() {
@@ -127,7 +129,7 @@ pub fn enforce_hermitian_symmetry_nd(array: &mut Array<Complex64, IxDyn>) {
                     let mut slice = view.slice_mut(ndarray::s![.., .., k]);
                     let mut array2 = Array2::zeros((dim1, dim2));
 
-                    // Copy data to a temporary 2D array
+                    // Copy data to a temporary 2D _array
                     for i in 0..dim1 {
                         for j in 0..dim2 {
                             array2[[i, j]] = slice[[i, j]];
@@ -162,6 +164,7 @@ pub fn enforce_hermitian_symmetry_nd(array: &mut Array<Complex64, IxDyn>) {
 /// # Returns
 ///
 /// * `true` if the array is approximately Hermitian-symmetric, `false` otherwise
+#[allow(dead_code)]
 pub fn is_hermitian_symmetric<D>(array: &Array<Complex64, D>, tolerance: Option<f64>) -> bool
 where
     D: Dimension,
@@ -205,7 +208,7 @@ where
     if shape.len() == 2 {
         let (rows, cols) = (shape[0], shape[1]);
 
-        // Check the array using direct indexing for 2D
+        // Check the _array using direct indexing for 2D
         let array2 = array
             .to_owned()
             .into_dimensionality::<ndarray::Ix2>()
@@ -254,6 +257,7 @@ where
 /// # Returns
 ///
 /// * A complex array with Hermitian symmetry
+#[allow(dead_code)]
 pub fn create_hermitian_symmetric_signal(
     amplitudes: &[f64],
     randomize_phases: bool,

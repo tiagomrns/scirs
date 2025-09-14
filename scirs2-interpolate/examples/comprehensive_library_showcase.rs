@@ -49,6 +49,7 @@ use std::time::Instant;
 #[cfg(feature = "simd")]
 use scirs2_interpolate::SimdBSplineEvaluator;
 
+#[allow(dead_code)]
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("🎯 === SciRS2-Interpolate Comprehensive Library Showcase === 🎯\n");
 
@@ -93,6 +94,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     Ok(())
 }
 
+#[allow(dead_code)]
 fn print_library_overview() {
     println!("🏗️ Library Architecture:");
     println!("   • 22+ interpolation methods implemented");
@@ -103,6 +105,7 @@ fn print_library_overview() {
     println!("   • Comprehensive error handling and edge case management");
 }
 
+#[allow(dead_code)]
 fn demonstrate_basic_interpolation() -> InterpolateResult<()> {
     println!("\n1. 1D Interpolation Methods:");
 
@@ -160,6 +163,7 @@ fn demonstrate_basic_interpolation() -> InterpolateResult<()> {
     Ok(())
 }
 
+#[allow(dead_code)]
 fn demonstrate_advanced_methods() -> InterpolateResult<()> {
     println!("\n1. RBF Interpolation with Stability Monitoring:");
 
@@ -178,7 +182,7 @@ fn demonstrate_advanced_methods() -> InterpolateResult<()> {
     if let Some(report) = rbf.condition_report() {
         println!(
             "   RBF Matrix Condition: {:.2e} ({})",
-            report.condition_number,
+            report._conditionnumber,
             match report.stability_level {
                 StabilityLevel::Excellent => "Excellent",
                 StabilityLevel::Good => "Good",
@@ -229,6 +233,7 @@ fn demonstrate_advanced_methods() -> InterpolateResult<()> {
     Ok(())
 }
 
+#[allow(dead_code)]
 fn demonstrate_simd_optimizations() -> InterpolateResult<()> {
     let simd_config = get_simd_config();
     println!("\n1. SIMD Configuration:");
@@ -298,6 +303,7 @@ fn demonstrate_simd_optimizations() -> InterpolateResult<()> {
     Ok(())
 }
 
+#[allow(dead_code)]
 fn demonstrate_numerical_stability() -> InterpolateResult<()> {
     println!("\n1. Matrix Condition Assessment:");
 
@@ -306,7 +312,7 @@ fn demonstrate_numerical_stability() -> InterpolateResult<()> {
     let good_report = assess_matrix_condition(&good_matrix.view())?;
     println!(
         "   Identity matrix: condition {:.2e} ({})",
-        good_report.condition_number,
+        good_report._conditionnumber,
         if good_report.is_well_conditioned {
             "Well-conditioned"
         } else {
@@ -320,7 +326,7 @@ fn demonstrate_numerical_stability() -> InterpolateResult<()> {
     let bad_report = assess_matrix_condition(&bad_matrix.view())?;
     println!(
         "   Near-singular matrix: condition {:.2e} ({})",
-        bad_report.condition_number,
+        bad_report._conditionnumber,
         if bad_report.is_well_conditioned {
             "Well-conditioned"
         } else {
@@ -350,7 +356,7 @@ fn demonstrate_numerical_stability() -> InterpolateResult<()> {
             if let Some(report) = interpolator.condition_report() {
                 println!(
                     "   Challenging RBF condition: {:.2e}",
-                    report.condition_number
+                    report._conditionnumber
                 );
                 if !report.is_well_conditioned {
                     println!("   ⚠️  Potential numerical issues detected!");
@@ -365,6 +371,7 @@ fn demonstrate_numerical_stability() -> InterpolateResult<()> {
     Ok(())
 }
 
+#[allow(dead_code)]
 fn demonstrate_high_dimensional() -> InterpolateResult<()> {
     println!("\n1. Sparse Grid Interpolation (5D):");
 
@@ -417,6 +424,7 @@ fn demonstrate_high_dimensional() -> InterpolateResult<()> {
     Ok(())
 }
 
+#[allow(dead_code)]
 fn demonstrate_specialized_methods() -> InterpolateResult<()> {
     println!("\n1. Enhanced Grid Data Interpolation:");
 
@@ -476,6 +484,7 @@ fn demonstrate_specialized_methods() -> InterpolateResult<()> {
     Ok(())
 }
 
+#[allow(dead_code)]
 fn performance_comparison() -> InterpolateResult<()> {
     println!("\nPerformance Benchmarks (1000 evaluations):");
 
@@ -540,6 +549,7 @@ fn performance_comparison() -> InterpolateResult<()> {
     Ok(())
 }
 
+#[allow(dead_code)]
 fn print_library_statistics() {
     println!("\n📊 Library Statistics:");
     println!("   ✅ Basic Methods: Linear, Cubic, PCHIP, Akima, Monotonic");

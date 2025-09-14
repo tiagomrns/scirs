@@ -10,7 +10,7 @@
 //! use scirs2_optimize::{Bounds, least_squares::bounded::{bounded_least_squares, BoundedOptions}};
 //!
 //! // Define a function that returns the residuals
-//! fn residual(x: &[f64], _data: &[f64]) -> Array1<f64> {
+//! fn residual(x: &[f64], data: &[f64]) -> Array1<f64> {
 //!     array![
 //!         x[0] + 2.0 * x[1] - 2.0,
 //!         x[0] - x[1] - 1.0,
@@ -101,6 +101,7 @@ impl Default for BoundedOptions {
 /// * `jacobian` - Optional Jacobian function
 /// * `data` - Additional data to pass to residuals and jacobian
 /// * `options` - Options for the optimization
+#[allow(dead_code)]
 pub fn bounded_least_squares<F, J, D, S1, S2>(
     residuals: F,
     x0: &ArrayBase<S1, Ix1>,
@@ -129,6 +130,7 @@ where
 }
 
 /// Trust region reflective algorithm for bounded least squares
+#[allow(dead_code)]
 fn trust_region_reflective<F, J, D, S1, S2>(
     residuals: F,
     x0: &ArrayBase<S1, Ix1>,
@@ -199,7 +201,7 @@ where
         let cost = 0.5 * res.iter().map(|&r| r * r).sum::<f64>();
 
         // Compute Jacobian
-        let (jac, _jac_evals) = match &jacobian {
+        let (jac, jac_evals) = match &jacobian {
             Some(jac_fn) => {
                 let j = jac_fn(x.as_slice().unwrap(), data.as_slice().unwrap());
                 njev += 1;
@@ -220,7 +222,7 @@ where
 
         // Check convergence on projected gradient
         if proj_grad.iter().all(|&g| g.abs() < options.gtol) {
-            let mut result = OptimizeResults::default();
+            let mut result = OptimizeResults::<f64>::default();
             result.x = x;
             result.fun = cost;
             result.nfev = nfev;
@@ -237,7 +239,7 @@ where
         // Check step size for convergence
         let step_norm = step.iter().map(|&s| s * s).sum::<f64>().sqrt();
         if step_norm < options.xtol {
-            let mut result = OptimizeResults::default();
+            let mut result = OptimizeResults::<f64>::default();
             result.x = x;
             result.fun = cost;
             result.nfev = nfev;
@@ -283,7 +285,7 @@ where
         if rho > 0.01 {
             // Check convergence on cost function
             if actual_reduction.abs() < options.ftol * cost {
-                let mut result = OptimizeResults::default();
+                let mut result = OptimizeResults::<f64>::default();
                 result.x = x_new;
                 result.fun = cost_new;
                 result.nfev = nfev;
@@ -304,7 +306,7 @@ where
     let res_final = residuals(x.as_slice().unwrap(), data.as_slice().unwrap());
     let final_cost = 0.5 * res_final.iter().map(|&r| r * r).sum::<f64>();
 
-    let mut result = OptimizeResults::default();
+    let mut result = OptimizeResults::<f64>::default();
     result.x = x;
     result.fun = final_cost;
     result.nfev = nfev;
@@ -317,6 +319,7 @@ where
 }
 
 /// Project point to bounds
+#[allow(dead_code)]
 fn project_to_bounds(x: &Array1<f64>, bounds: &Bounds) -> Array1<f64> {
     let mut x_proj = x.clone();
 
@@ -333,6 +336,7 @@ fn project_to_bounds(x: &Array1<f64>, bounds: &Bounds) -> Array1<f64> {
 }
 
 /// Compute projected gradient for bounded problems
+#[allow(dead_code)]
 fn compute_projected_gradient(
     x: &Array1<f64>,
     gradient: &Array1<f64>,
@@ -362,6 +366,7 @@ fn compute_projected_gradient(
 }
 
 /// Solve trust region subproblem with bounds
+#[allow(dead_code)]
 fn solve_trust_region_bounds(
     jac: &Array2<f64>,
     _res: &Array1<f64>,
@@ -377,7 +382,7 @@ fn solve_trust_region_bounds(
     let neg_gradient = -gradient;
 
     // Try to solve normal equations
-    let gn_step = if let Some(step) = solve_linear_system(&jt_j, &neg_gradient) {
+    let gn_step = if let Some(step) = solve(&jt_j, &neg_gradient) {
         step
     } else {
         // Use gradient descent as fallback
@@ -416,6 +421,7 @@ fn solve_trust_region_bounds(
 }
 
 /// Compute predicted reduction in cost
+#[allow(dead_code)]
 fn compute_predicted_reduction(jac: &Array2<f64>, res: &Array1<f64>, step: &Array1<f64>) -> f64 {
     let jac_step = jac.dot(step);
     let linear_term = res.dot(&jac_step);
@@ -425,75 +431,11 @@ fn compute_predicted_reduction(jac: &Array2<f64>, res: &Array1<f64>, step: &Arra
 }
 
 /// Simple linear system solver (same as in other modules)
-fn solve_linear_system(a: &Array2<f64>, b: &Array1<f64>) -> Option<Array1<f64>> {
-    let n = a.shape()[0];
-    if n != a.shape()[1] || n != b.len() {
-        return None;
-    }
+#[allow(dead_code)]
+fn solve(a: &Array2<f64>, b: &Array1<f64>) -> Option<Array1<f64>> {
+    use scirs2_linalg::solve;
 
-    // Create augmented matrix [A|b]
-    let mut aug = Array2::zeros((n, n + 1));
-    for i in 0..n {
-        for j in 0..n {
-            aug[[i, j]] = a[[i, j]];
-        }
-        aug[[i, n]] = b[i];
-    }
-
-    // Gaussian elimination with partial pivoting
-    for i in 0..n {
-        // Find pivot
-        let mut max_row = i;
-        let mut max_val = aug[[i, i]].abs();
-
-        for j in i + 1..n {
-            if aug[[j, i]].abs() > max_val {
-                max_row = j;
-                max_val = aug[[j, i]].abs();
-            }
-        }
-
-        // Check for singularity
-        if max_val < 1e-10 {
-            return None;
-        }
-
-        // Swap rows if needed
-        if max_row != i {
-            for j in 0..=n {
-                let temp = aug[[i, j]];
-                aug[[i, j]] = aug[[max_row, j]];
-                aug[[max_row, j]] = temp;
-            }
-        }
-
-        // Eliminate below
-        for j in i + 1..n {
-            let c = aug[[j, i]] / aug[[i, i]];
-            aug[[j, i]] = 0.0;
-
-            for k in i + 1..=n {
-                aug[[j, k]] -= c * aug[[i, k]];
-            }
-        }
-    }
-
-    // Back substitution
-    let mut x = Array1::zeros(n);
-    for i in (0..n).rev() {
-        let mut sum = aug[[i, n]];
-        for j in i + 1..n {
-            sum -= aug[[i, j]] * x[j];
-        }
-
-        if aug[[i, i]].abs() < 1e-10 {
-            return None;
-        }
-
-        x[i] = sum / aug[[i, i]];
-    }
-
-    Some(x)
+    solve(&a.view(), &b.view(), None).ok()
 }
 
 #[cfg(test)]
@@ -504,7 +446,7 @@ mod tests {
     #[test]
     fn test_bounded_least_squares_simple() {
         // Overdetermined system with bounds
-        fn residual(x: &[f64], _data: &[f64]) -> Array1<f64> {
+        fn residual(x: &[f64], data: &[f64]) -> Array1<f64> {
             array![
                 x[0] + 2.0 * x[1] - 2.0,
                 x[0] - x[1] - 1.0,
@@ -536,7 +478,7 @@ mod tests {
     #[test]
     fn test_bounded_vs_unbounded() {
         // Problem where bounds affect the solution
-        fn residual(x: &[f64], _data: &[f64]) -> Array1<f64> {
+        fn residual(x: &[f64], data: &[f64]) -> Array1<f64> {
             array![
                 x[0] - 5.0, // Wants x[0] = 5.0
                 x[1] - 3.0  // Wants x[1] = 3.0

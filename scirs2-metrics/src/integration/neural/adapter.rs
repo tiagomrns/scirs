@@ -126,14 +126,14 @@ impl<F: Float + Debug + Display + FromPrimitive> NeuralMetricAdapter<F> {
 /// ```rust
 /// # use scirs2_metrics::integration::neural::NeuralMetricAdapter;
 /// # use ndarray::Array;
-/// # use scirs2_neural::evaluation::Metric;
+/// # use scirs2__neural::evaluation::Metric;
 ///
-/// # fn example<F: num_traits::Float + std::fmt::Debug + std::fmt::Display + num_traits::FromPrimitive>() {
+/// # fn example<F: num_traits:: Float + std::fmt::Debug + std::fmt::Display + num_traits::FromPrimitive>() {
 /// let metric = NeuralMetricAdapter::<F>::accuracy();
 ///
 /// // Use with scirs2-neural's Metric trait
-/// let predictions = Array::<F, _>::zeros([10, 5].into_dyn());
-/// let targets = Array::<F, _>::zeros([10, 5].into_dyn());
+/// let predictions = Array::<F>::zeros([10, 5].into_dyn());
+/// let targets = Array::<F>::zeros([10, 5].into_dyn());
 ///
 /// let result = metric.update(&predictions, &targets, None);
 /// # }
@@ -145,8 +145,7 @@ impl<F: Float + Debug + Display + FromPrimitive + Send + Sync> scirs2_neural::ev
     fn update(
         &mut self,
         predictions: &Array<F, IxDyn>,
-        targets: &Array<F, IxDyn>,
-        _loss: Option<F>,
+        targets: &Array<F, IxDyn>, _loss: Option<F>,
     ) {
         // This method is not used directly as scirs2_neural metrics handle state internally
         // Our adapter only computes metrics on demand

@@ -7,16 +7,19 @@ use scirs2_optim::{
 use std::error::Error;
 
 /// Simple quadratic loss function for demonstration
+#[allow(dead_code)]
 fn quadratic_loss(x: &Array1<f64>) -> f64 {
     x.iter().map(|&xi| xi * xi).sum()
 }
 
 /// Compute gradient of quadratic loss
+#[allow(dead_code)]
 fn quadratic_gradient(x: &Array1<f64>) -> Array1<f64> {
     x * 2.0
 }
 
 /// Test a scheduler and print its learning rate schedule
+#[allow(dead_code)]
 fn test_scheduler<S: LearningRateScheduler<f64>>(
     name: &str,
     mut scheduler: S,
@@ -63,6 +66,7 @@ fn test_scheduler<S: LearningRateScheduler<f64>>(
     Ok(params)
 }
 
+#[allow(dead_code)]
 fn main() -> Result<(), Box<dyn Error>> {
     // Initial parameters
     let initial_params = Array1::from_vec(vec![5.0, -3.0, 2.0, -4.0]);
@@ -141,13 +145,11 @@ fn main() -> Result<(), Box<dyn Error>> {
     )?;
 
     // 5. Create a noisy scheduler
-    let mut rng = rand::rng();
+    let mut rng = scirs2_core::random::rng();
     let noisy_scheduler = CustomScheduler::new(0.1, move |step| {
-        use rand::Rng;
-
         // Exponential decay with noise
         let base_lr = 0.1 * 0.95f64.powi((step / 10) as i32);
-        let noise = rng.random_range(-0.01..0.01); // Add noise in range [-0.01, 0.01]
+        let noise = rng.gen_range(-0.01..0.01); // Add noise in range [-0.01..0.01]
         (base_lr + noise).max(0.001) // Ensure LR doesn't go below 0.001
     });
 

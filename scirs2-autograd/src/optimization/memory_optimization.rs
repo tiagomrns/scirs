@@ -39,35 +39,35 @@ impl<F: Float> MemoryOptimizer<F> {
     /// Optimize memory usage in a computation graph
     pub fn optimize(
         &mut self,
-        _graph: &mut Graph<F>,
+        graph: &mut Graph<F>,
     ) -> Result<MemoryOptimizationReport, OptimizationError> {
         let mut report = MemoryOptimizationReport::new();
 
         // Analyze memory usage patterns
-        self.analysis = Some(self.analyze_memory_usage(_graph)?);
+        self.analysis = Some(self.analyze_memory_usage(graph)?);
 
         if self.config.enable_gradient_checkpointing {
-            let checkpoints = self.apply_gradient_checkpointing(_graph)?;
+            let checkpoints = self.apply_gradient_checkpointing(graph)?;
             report.gradient_checkpoints_added = checkpoints;
         }
 
         if self.config.enable_memory_pooling {
-            let pools = self.setup_memory_pooling(_graph)?;
+            let pools = self.setup_memory_pooling(graph)?;
             report.memory_pools_created = pools;
         }
 
         if self.config.enable_in_place_operations {
-            let in_place_ops = self.apply_in_place_operations(_graph)?;
+            let in_place_ops = self.apply_in_place_operations(graph)?;
             report.in_place_operations_applied = in_place_ops;
         }
 
         if self.config.enable_tensor_reuse {
-            let reused = self.apply_tensor_reuse(_graph)?;
+            let reused = self.apply_tensor_reuse(graph)?;
             report.tensors_reused = reused;
         }
 
         if self.config.enable_lifetime_optimization {
-            let optimized = self.optimize_tensor_lifetimes(_graph)?;
+            let optimized = self.optimize_tensor_lifetimes(graph)?;
             report.lifetime_optimizations = optimized;
         }
 
@@ -75,7 +75,7 @@ impl<F: Float> MemoryOptimizer<F> {
     }
 
     /// Analyze memory usage patterns in the graph
-    fn analyze_memory_usage(&self, _graph: &Graph<F>) -> Result<MemoryAnalysis, OptimizationError> {
+    fn analyze_memory_usage(&self, graph: &Graph<F>) -> Result<MemoryAnalysis, OptimizationError> {
         let mut analysis = MemoryAnalysis::new();
 
         // Analyze:
@@ -95,7 +95,7 @@ impl<F: Float> MemoryOptimizer<F> {
     /// Apply gradient checkpointing
     fn apply_gradient_checkpointing(
         &self,
-        _graph: &mut Graph<F>,
+        graph: &mut Graph<F>,
     ) -> Result<usize, OptimizationError> {
         let mut checkpoints_added = 0;
 
@@ -104,11 +104,11 @@ impl<F: Float> MemoryOptimizer<F> {
         // 2. Recomputation cost is relatively low
         // 3. It provides significant memory savings
 
-        let candidates = self.find_checkpoint_candidates(_graph)?;
+        let candidates = self.find_checkpoint_candidates(graph)?;
 
         for candidate in candidates {
             if self.should_checkpoint(&candidate) {
-                self.insert_checkpoint(_graph, &candidate)?;
+                self.insert_checkpoint(graph, &candidate)?;
                 checkpoints_added += 1;
             }
         }
@@ -119,7 +119,7 @@ impl<F: Float> MemoryOptimizer<F> {
     /// Find candidates for gradient checkpointing
     fn find_checkpoint_candidates(
         &self,
-        _graph: &Graph<F>,
+        graph: &Graph<F>,
     ) -> Result<Vec<CheckpointCandidate<F>>, OptimizationError> {
         let candidates = Vec::new();
 
@@ -145,7 +145,7 @@ impl<F: Float> MemoryOptimizer<F> {
     /// Insert a checkpoint at a specific location
     fn insert_checkpoint(
         &self,
-        _graph: &mut Graph<F>,
+        graph: &mut Graph<F>,
         _candidate: &CheckpointCandidate<F>,
     ) -> Result<(), OptimizationError> {
         // Insert a checkpoint operation that:
@@ -157,16 +157,16 @@ impl<F: Float> MemoryOptimizer<F> {
     }
 
     /// Setup memory pooling
-    fn setup_memory_pooling(&self, _graph: &mut Graph<F>) -> Result<usize, OptimizationError> {
+    fn setup_memory_pooling(&self, graph: &mut Graph<F>) -> Result<usize, OptimizationError> {
         let mut pools_created = 0;
 
         // Analyze tensor size patterns
-        let size_patterns = self.analyze_tensor_sizes(_graph)?;
+        let size_patterns = self.analyze_tensor_sizes(graph)?;
 
         // Create pools for common sizes
         for (size, frequency) in size_patterns {
             if frequency >= self.config.pool_frequency_threshold {
-                self.create_memory_pool(size)?;
+                MemoryOptimizer::<F>::create_memory_pool(size)?;
                 pools_created += 1;
             }
         }
@@ -177,7 +177,7 @@ impl<F: Float> MemoryOptimizer<F> {
     /// Analyze tensor size patterns
     fn analyze_tensor_sizes(
         &self,
-        _graph: &Graph<F>,
+        graph: &Graph<F>,
     ) -> Result<HashMap<usize, usize>, OptimizationError> {
         let size_frequency = HashMap::new();
 
@@ -188,13 +188,13 @@ impl<F: Float> MemoryOptimizer<F> {
     }
 
     /// Create a memory pool for a specific size
-    fn create_memory_pool(&self, _size: usize) -> Result<(), OptimizationError> {
-        // Create a memory pool that can reuse buffers of the specified size
+    fn create_memory_pool(size: usize) -> Result<(), OptimizationError> {
+        // Create a memory pool that can reuse buffers of the specified _size
         Ok(())
     }
 
     /// Apply in-place operations where safe
-    fn apply_in_place_operations(&self, _graph: &mut Graph<F>) -> Result<usize, OptimizationError> {
+    fn apply_in_place_operations(&self, graph: &mut Graph<F>) -> Result<usize, OptimizationError> {
         let mut in_place_applied = 0;
 
         // Find operations that can be done in-place:
@@ -202,11 +202,11 @@ impl<F: Float> MemoryOptimizer<F> {
         // - Operations where the output has the same shape as input
         // - No aliasing issues
 
-        let candidates = self.find_in_place_candidates(_graph)?;
+        let candidates = self.find_in_place_candidates(graph)?;
 
         for candidate in candidates {
-            if self.can_apply_in_place(&candidate) {
-                self.convert_to_in_place(_graph, &candidate)?;
+            if MemoryOptimizer::<F>::can_apply_in_place(&candidate) {
+                self.convert_to_in_place(graph, &candidate)?;
                 in_place_applied += 1;
             }
         }
@@ -217,7 +217,7 @@ impl<F: Float> MemoryOptimizer<F> {
     /// Find candidates for in-place operations
     fn find_in_place_candidates(
         &self,
-        _graph: &Graph<F>,
+        graph: &Graph<F>,
     ) -> Result<Vec<InPlaceCandidate<F>>, OptimizationError> {
         // Look for operations like:
         // - Element-wise arithmetic
@@ -229,7 +229,7 @@ impl<F: Float> MemoryOptimizer<F> {
     }
 
     /// Check if an operation can be safely converted to in-place
-    fn can_apply_in_place(&self, _candidate: &InPlaceCandidate<F>) -> bool {
+    fn can_apply_in_place(candidate: &InPlaceCandidate<F>) -> bool {
         // Safety checks:
         // - Input tensor is not used by other operations
         // - No gradient computation conflicts
@@ -242,7 +242,7 @@ impl<F: Float> MemoryOptimizer<F> {
     /// Convert an operation to in-place
     fn convert_to_in_place(
         &self,
-        _graph: &mut Graph<F>,
+        graph: &mut Graph<F>,
         _candidate: &InPlaceCandidate<F>,
     ) -> Result<(), OptimizationError> {
         // Replace the operation with an in-place version
@@ -250,7 +250,7 @@ impl<F: Float> MemoryOptimizer<F> {
     }
 
     /// Apply tensor reuse optimization
-    fn apply_tensor_reuse(&self, _graph: &mut Graph<F>) -> Result<usize, OptimizationError> {
+    fn apply_tensor_reuse(&self, graph: &mut Graph<F>) -> Result<usize, OptimizationError> {
         let mut reused_count = 0;
 
         // Find tensors that can be reused:
@@ -258,10 +258,10 @@ impl<F: Float> MemoryOptimizer<F> {
         // - Compatible shapes and types
         // - No aliasing conflicts
 
-        let reuse_groups = self.find_tensor_reuse_opportunities(_graph)?;
+        let reuse_groups = self.find_tensor_reuse_opportunities(graph)?;
 
         for group in reuse_groups {
-            self.apply_tensor_reuse_group(_graph, &group)?;
+            self.apply_tensor_reuse_group(graph, &group)?;
             reused_count += group.tensors.len() - 1; // All but one reuse the same memory
         }
 
@@ -271,7 +271,7 @@ impl<F: Float> MemoryOptimizer<F> {
     /// Find opportunities for tensor reuse
     fn find_tensor_reuse_opportunities(
         &self,
-        _graph: &Graph<F>,
+        graph: &Graph<F>,
     ) -> Result<Vec<TensorReuseGroup<F>>, OptimizationError> {
         // Analyze tensor lifetimes and find non-overlapping tensors
         // that can share the same memory
@@ -282,15 +282,15 @@ impl<F: Float> MemoryOptimizer<F> {
     /// Apply tensor reuse for a group of tensors
     fn apply_tensor_reuse_group(
         &self,
-        _graph: &mut Graph<F>,
+        graph: &mut Graph<F>,
         _group: &TensorReuseGroup<F>,
     ) -> Result<(), OptimizationError> {
-        // Modify the graph to reuse memory for tensors in the group
+        // Modify the graph to reuse memory for tensors in the _group
         Ok(())
     }
 
     /// Optimize tensor lifetimes
-    fn optimize_tensor_lifetimes(&self, _graph: &mut Graph<F>) -> Result<usize, OptimizationError> {
+    fn optimize_tensor_lifetimes(&self, graph: &mut Graph<F>) -> Result<usize, OptimizationError> {
         let mut optimizations = 0;
 
         // Strategies:
@@ -298,27 +298,27 @@ impl<F: Float> MemoryOptimizer<F> {
         // - Defer allocations as late as possible
         // - Reorder operations to minimize peak memory
 
-        optimizations += self.apply_early_release(_graph)?;
-        optimizations += self.apply_late_allocation(_graph)?;
-        optimizations += self.reorder_for_memory(_graph)?;
+        optimizations += self.apply_early_release(graph)?;
+        optimizations += self.apply_late_allocation(graph)?;
+        optimizations += self.reorder_for_memory(graph)?;
 
         Ok(optimizations)
     }
 
     /// Apply early release of tensors
-    fn apply_early_release(&self, _graph: &mut Graph<F>) -> Result<usize, OptimizationError> {
+    fn apply_early_release(&self, graph: &mut Graph<F>) -> Result<usize, OptimizationError> {
         // Insert explicit release operations as soon as tensors are no longer needed
         Ok(0)
     }
 
     /// Apply late allocation of tensors
-    fn apply_late_allocation(&self, _graph: &mut Graph<F>) -> Result<usize, OptimizationError> {
+    fn apply_late_allocation(&self, graph: &mut Graph<F>) -> Result<usize, OptimizationError> {
         // Delay tensor allocation until just before they're needed
         Ok(0)
     }
 
     /// Reorder operations to minimize peak memory usage
-    fn reorder_for_memory(&self, _graph: &mut Graph<F>) -> Result<usize, OptimizationError> {
+    fn reorder_for_memory(&self, graph: &mut Graph<F>) -> Result<usize, OptimizationError> {
         // Reorder operations (where dependencies allow) to reduce peak memory
         Ok(0)
     }
@@ -539,7 +539,7 @@ impl<F: Float> TensorLifetimeAnalyzer<F> {
     #[allow(dead_code)]
     pub(crate) fn analyze(
         &self,
-        _graph: &Graph<F>,
+        graph: &Graph<F>,
     ) -> Result<HashMap<*const crate::tensor::TensorInternal<F>, TensorLifetime>, OptimizationError>
     {
         let lifetimes = HashMap::new();
@@ -556,10 +556,9 @@ impl<F: Float> TensorLifetimeAnalyzer<F> {
     /// Find overlapping tensor lifetimes
     #[allow(dead_code)]
     pub(crate) fn find_overlapping_lifetimes(
-        &self,
-        _lifetimes: &HashMap<*const crate::tensor::TensorInternal<F>, TensorLifetime>,
+        self_lifetimes: &HashMap<*const crate::tensor::TensorInternal<F>, TensorLifetime>,
     ) -> Vec<Vec<*const crate::tensor::TensorInternal<F>>> {
-        // Group tensors with overlapping lifetimes
+        // Group tensors with overlapping _lifetimes
         // These cannot share memory
         Vec::new()
     }
@@ -567,10 +566,9 @@ impl<F: Float> TensorLifetimeAnalyzer<F> {
     /// Find non-overlapping tensor groups
     #[allow(dead_code)]
     pub(crate) fn find_reusable_groups(
-        &self,
-        _lifetimes: &HashMap<*const crate::tensor::TensorInternal<F>, TensorLifetime>,
+        self_lifetimes: &HashMap<*const crate::tensor::TensorInternal<F>, TensorLifetime>,
     ) -> Vec<Vec<*const crate::tensor::TensorInternal<F>>> {
-        // Group tensors with non-overlapping lifetimes
+        // Group tensors with non-overlapping _lifetimes
         // These can potentially share memory
         Vec::new()
     }

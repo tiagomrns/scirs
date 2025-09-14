@@ -6,6 +6,7 @@
 use ndarray::array;
 use scirs2_stats::{distributions, ks_2samp};
 
+#[allow(dead_code)]
 fn main() {
     println!("Kolmogorov-Smirnov Test Examples");
     println!("================================\n");

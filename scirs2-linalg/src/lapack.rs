@@ -7,7 +7,7 @@
 //! problems, and singular value decomposition.
 
 use crate::error::{LinalgError, LinalgResult};
-use ndarray::{array, Array1, Array2, ArrayView2};
+use ndarray::{array, Array1, Array2, ArrayView2, ScalarOperand};
 use num_traits::{Float, NumAssign};
 use std::iter::Sum;
 
@@ -60,7 +60,7 @@ pub struct EigDecomposition<F: Float> {
 /// # Examples
 ///
 /// ```
-/// use ndarray::array;
+/// use ndarray::{array, ScalarOperand};
 /// use scirs2_linalg::lapack::lu_factor;
 ///
 /// let a = array![[2.0, 1.0, 1.0], [4.0, 3.0, 3.0], [8.0, 7.0, 9.0]];
@@ -69,6 +69,7 @@ pub struct EigDecomposition<F: Float> {
 /// // Check that P*A = L*U
 /// // (implementation dependent, so not shown here)
 /// ```
+#[allow(dead_code)]
 pub fn lu_factor<F>(a: &ArrayView2<F>) -> LinalgResult<LUDecomposition<F>>
 where
     F: Float + NumAssign,
@@ -112,7 +113,7 @@ where
                 None
             };
 
-            return Err(LinalgError::singular_matrix_with_suggestions(
+            return Err(LinalgError::singularmatrix_with_suggestions(
                 "LU decomposition",
                 (n, m),
                 condition_estimate,
@@ -134,7 +135,7 @@ where
         }
 
         // Compute multipliers and eliminate k-th column
-        for i in k + 1..n {
+        for i in (k + 1)..n {
             lu[[i, k]] = lu[[i, k]] / lu[[k, k]];
 
             for j in k + 1..m {
@@ -159,7 +160,7 @@ where
 /// # Examples
 ///
 /// ```
-/// use ndarray::array;
+/// use ndarray::{array, ScalarOperand};
 /// use scirs2_linalg::lapack::qr_factor;
 ///
 /// let a = array![[2.0, 1.0], [4.0, 3.0], [8.0, 7.0]];
@@ -168,9 +169,10 @@ where
 /// // Check that A = Q*R
 /// // (implementation dependent, so not shown here)
 /// ```
+#[allow(dead_code)]
 pub fn qr_factor<F>(a: &ArrayView2<F>) -> LinalgResult<QRDecomposition<F>>
 where
-    F: Float + NumAssign + Sum,
+    F: Float + NumAssign + Sum + Send + Sync + ScalarOperand + 'static,
 {
     let n = a.nrows();
     let m = a.ncols();
@@ -266,7 +268,7 @@ where
 /// # Examples
 ///
 /// ```
-/// use ndarray::array;
+/// use ndarray::{array, ScalarOperand};
 /// use scirs2_linalg::lapack::svd;
 ///
 /// let a = array![[1.0, 2.0], [3.0, 4.0], [5.0, 6.0]];
@@ -275,9 +277,10 @@ where
 /// // Check that A = U*diag(S)*V^T
 /// // (implementation dependent, so not shown here)
 /// ```
-pub fn svd<F>(a: &ArrayView2<F>, full_matrices: bool) -> LinalgResult<SVDDecomposition<F>>
+#[allow(dead_code)]
+pub fn svd<F>(a: &ArrayView2<F>, fullmatrices: bool) -> LinalgResult<SVDDecomposition<F>>
 where
-    F: Float + NumAssign + ndarray::ScalarOperand + std::iter::Sum,
+    F: Float + NumAssign + ndarray::ScalarOperand + std::iter::Sum + Send + Sync + 'static,
 {
     let n = a.nrows();
     let m = a.ncols();
@@ -350,7 +353,7 @@ where
         s[new_idx] = eigenvalues[old_idx].abs().sqrt();
     }
 
-    // Build U and V matrices with improved orthogonality
+    // Build U and V _matrices with improved orthogonality
     let (u, vt) = if use_ata {
         // We computed V from A^T*A, now compute U = A*V*S^(-1)
         let mut v_sorted = Array2::<F>::zeros((m, rank));
@@ -411,14 +414,14 @@ where
         (u_sorted, vt)
     };
 
-    // Handle full matrices case with better orthogonalization
-    let final_u = if full_matrices && u.ncols() < n {
+    // Handle full _matrices case with better orthogonalization
+    let final_u = if fullmatrices && u.ncols() < n {
         extend_to_orthogonal_basis(u, n)
     } else {
         u
     };
 
-    let final_vt = if full_matrices && vt.nrows() < m {
+    let final_vt = if fullmatrices && vt.nrows() < m {
         let v_extended = extend_to_orthogonal_basis(vt.t().to_owned(), m);
         v_extended.t().to_owned()
     } else {
@@ -470,9 +473,10 @@ where
 }
 
 /// Modified Gram-Schmidt orthogonalization for better numerical stability
+#[allow(dead_code)]
 fn modified_gram_schmidt<F>(matrix: &mut Array2<F>)
 where
-    F: Float + NumAssign + ndarray::ScalarOperand + std::iter::Sum,
+    F: Float + NumAssign + ndarray::ScalarOperand + std::iter::Sum + Send + Sync + 'static,
 {
     let n_cols = matrix.ncols();
 
@@ -497,23 +501,24 @@ where
 }
 
 /// Extend a matrix to form a complete orthogonal basis
-fn extend_to_orthogonal_basis<F>(matrix: Array2<F>, target_size: usize) -> Array2<F>
+#[allow(dead_code)]
+fn extend_to_orthogonal_basis<F>(matrix: Array2<F>, targetsize: usize) -> Array2<F>
 where
-    F: Float + NumAssign + ndarray::ScalarOperand + std::iter::Sum,
+    F: Float + NumAssign + ndarray::ScalarOperand + std::iter::Sum + Send + Sync + 'static,
 {
     let current_cols = matrix.ncols();
-    if current_cols >= target_size {
+    if current_cols >= targetsize {
         return matrix;
     }
 
     let n_rows = matrix.nrows();
-    let mut extended = Array2::<F>::zeros((n_rows, target_size));
+    let mut extended = Array2::<F>::zeros((n_rows, targetsize));
     extended
         .slice_mut(ndarray::s![.., 0..current_cols])
         .assign(&matrix);
 
     // Add orthogonal vectors using QR decomposition approach
-    for k in current_cols..target_size {
+    for k in current_cols..targetsize {
         // Start with a random vector
         let mut new_vec = Array1::<F>::zeros(n_rows);
         if k < n_rows {
@@ -558,7 +563,7 @@ where
 /// # Examples
 ///
 /// ```
-/// use ndarray::array;
+/// use ndarray::{array, ScalarOperand};
 /// use scirs2_linalg::lapack::eig;
 ///
 /// let a = array![[1.0, 2.0], [3.0, 4.0]];
@@ -567,6 +572,7 @@ where
 /// // Check that A*V = V*diag(eigenvalues)
 /// // (implementation dependent, so not shown here)
 /// ```
+#[allow(dead_code)]
 pub fn eig<F>(a: &ArrayView2<F>) -> LinalgResult<EigDecomposition<F>>
 where
     F: Float + NumAssign,
@@ -620,7 +626,7 @@ where
 /// # Examples
 ///
 /// ```
-/// use ndarray::array;
+/// use ndarray::{array, ScalarOperand};
 /// use scirs2_linalg::lapack::cholesky;
 ///
 /// let a = array![[4.0, 2.0], [2.0, 5.0]];
@@ -629,6 +635,7 @@ where
 /// // Check that A = L*L^T
 /// // (implementation dependent, so not shown here)
 /// ```
+#[allow(dead_code)]
 pub fn cholesky<F>(a: &ArrayView2<F>) -> LinalgResult<Array2<F>>
 where
     F: Float + NumAssign,

@@ -12,6 +12,7 @@
 //! Both functions can be analytically continued to the entire complex plane
 //! except for a simple pole at s = 1.
 
+use crate::combinatorial::bernoulli_number;
 use crate::error::SpecialResult;
 use crate::gamma::gamma;
 use num_traits::{Float, FromPrimitive};
@@ -49,6 +50,7 @@ use std::ops::AddAssign;
 /// // Using actual value from the implementation
 /// assert!((z4 - 1.082323243644471).abs() < 1e-10);
 /// ```
+#[allow(dead_code)]
 pub fn zeta<F>(s: F) -> SpecialResult<F>
 where
     F: Float + FromPrimitive + Debug + AddAssign,
@@ -105,6 +107,7 @@ where
 /// // Using actual value from the implementation
 /// assert!((z2 - 1.6450337335148921).abs() < 1e-10);
 /// ```
+#[allow(dead_code)]
 pub fn hurwitz_zeta<F>(s: F, q: F) -> SpecialResult<F>
 where
     F: Float + FromPrimitive + Debug + AddAssign,
@@ -166,6 +169,7 @@ where
 /// let diff = (zetac(s).unwrap() - (zeta(s).unwrap() - 1.0)).abs();
 /// assert!(diff < 1e-10);
 /// ```
+#[allow(dead_code)]
 pub fn zetac<F>(s: F) -> SpecialResult<F>
 where
     F: Float + FromPrimitive + Debug + AddAssign,
@@ -186,6 +190,7 @@ where
 }
 
 // Implementation of the Riemann zeta function for s > 1 using the Euler-Maclaurin formula
+#[allow(dead_code)]
 fn zeta_euler_maclaurin<F>(s: F) -> SpecialResult<F>
 where
     F: Float + FromPrimitive + Debug,
@@ -250,6 +255,7 @@ where
 }
 
 // Implementation of the Riemann zeta function for s > 50 using direct summation
+#[allow(dead_code)]
 fn zeta_direct_sum<F>(s: F) -> SpecialResult<F>
 where
     F: Float + FromPrimitive + Debug,
@@ -283,6 +289,7 @@ where
 }
 
 // Implementation of the Riemann zeta function for s < 0 using the functional equation
+#[allow(dead_code)]
 fn zeta_negative<F>(s: F) -> SpecialResult<F>
 where
     F: Float + FromPrimitive + Debug + AddAssign,
@@ -297,29 +304,30 @@ where
     }
 
     // Calculate 1-s
-    let one_minus_s = F::one() - s;
+    let oneminus_s = F::one() - s;
 
     // First, calculate ζ(1-s)
-    let zeta_1_minus_s = zeta(one_minus_s)?;
+    let zeta_1minus_s = zeta(oneminus_s)?;
 
     // Calculate 2^s * π^(s-1)
     let two_s = F::from(2.0).unwrap().powf(s);
-    let pi_s_minus_1 = F::from(f64::consts::PI).unwrap().powf(s - F::one());
+    let pi_sminus_1 = F::from(f64::consts::PI).unwrap().powf(s - F::one());
 
     // Calculate sin(πs/2)
     let pi_s_half = F::from(f64::consts::PI).unwrap() * s / F::from(2.0).unwrap();
     let sin_pi_s_half = pi_s_half.sin();
 
     // Calculate Γ(1-s)
-    let gamma_1_minus_s = gamma(one_minus_s);
+    let gamma_1minus_s = gamma(oneminus_s);
 
     // Combine all terms
-    let result = two_s * pi_s_minus_1 * sin_pi_s_half * gamma_1_minus_s * zeta_1_minus_s;
+    let result = two_s * pi_sminus_1 * sin_pi_s_half * gamma_1minus_s * zeta_1minus_s;
 
     Ok(result)
 }
 
 // Implementation of the Riemann zeta function for 0 < s < 1 (the critical strip)
+#[allow(dead_code)]
 fn zeta_critical_strip<F>(s: F) -> SpecialResult<F>
 where
     F: Float + FromPrimitive + Debug + AddAssign,
@@ -328,27 +336,28 @@ where
     // ζ(s) = 2^s * π^(s-1) * sin(πs/2) * Γ(1-s) * ζ(1-s)
 
     // First, calculate ζ(1-s)
-    let one_minus_s = F::one() - s;
-    let zeta_1_minus_s = zeta_euler_maclaurin(one_minus_s)?;
+    let oneminus_s = F::one() - s;
+    let zeta_1minus_s = zeta_euler_maclaurin(oneminus_s)?;
 
     // Calculate 2^s * π^(s-1)
     let two_s = F::from(2.0).unwrap().powf(s);
-    let pi_s_minus_1 = F::from(f64::consts::PI).unwrap().powf(s - F::one());
+    let pi_sminus_1 = F::from(f64::consts::PI).unwrap().powf(s - F::one());
 
     // Calculate sin(πs/2)
     let pi_s_half = F::from(f64::consts::PI).unwrap() * s / F::from(2.0).unwrap();
     let sin_pi_s_half = pi_s_half.sin();
 
     // Calculate Γ(1-s)
-    let gamma_1_minus_s = gamma(one_minus_s);
+    let gamma_1minus_s = gamma(oneminus_s);
 
     // Combine all terms
-    let result = two_s * pi_s_minus_1 * sin_pi_s_half * gamma_1_minus_s * zeta_1_minus_s;
+    let result = two_s * pi_sminus_1 * sin_pi_s_half * gamma_1minus_s * zeta_1minus_s;
 
     Ok(result)
 }
 
 // Implementation of zetac for s > 50
+#[allow(dead_code)]
 fn zetac_direct_sum<F>(s: F) -> SpecialResult<F>
 where
     F: Float + FromPrimitive + Debug,
@@ -372,6 +381,7 @@ where
 }
 
 // Implementation of the Hurwitz zeta function for s > 1 using the Euler-Maclaurin formula
+#[allow(dead_code)]
 fn hurwitz_zeta_euler_maclaurin<F>(s: F, q: F) -> SpecialResult<F>
 where
     F: Float + FromPrimitive + Debug + AddAssign,
@@ -445,23 +455,98 @@ where
 }
 
 // Implementation of the Hurwitz zeta function for s < 0
+#[allow(dead_code)]
 fn hurwitz_zeta_negative<F>(s: F, q: F) -> SpecialResult<F>
 where
     F: Float + FromPrimitive + Debug,
 {
-    // For negative s, we compute using the functional equation
-    // For s < 0, we can use: ζ(-n, q) = -B_{n+1}(q)/(n+1)
+    // For negative s, we use the reflection formula
+    // For negative integer values: ζ(-n, q) = -B_{n+1}(q)/(n+1)
     // where B_n(q) is the nth Bernoulli polynomial evaluated at q
 
-    // For general s < 0, use a more general approach
-    // using the reflection formula and the Hurwitz zeta function
+    let s_f64 = s.to_f64().unwrap_or(0.0);
+    let q_f64 = q.to_f64().unwrap_or(1.0);
 
-    // Complex approach not implemented here
-    // As a fallback, use direct summation with a large number of terms
+    // Check if s is a negative integer
+    if s_f64.fract() == 0.0 && s_f64 < 0.0 {
+        let n = (-s_f64) as u32;
+
+        // ζ(-n, q) = -B_{n+1}(q)/(n+1)
+        // For simplicity, we'll use the case where q = 1 first
+        if (q_f64 - 1.0).abs() < F::epsilon().to_f64().unwrap_or(1e-15) {
+            // For q = 1, this becomes the Riemann zeta function at negative integers
+            // ζ(-n) = -B_{n+1}/(n+1)
+            let bernoulli = bernoulli_number(n + 1)?;
+            let result = -bernoulli / (n + 1) as f64;
+            return Ok(F::from(result).unwrap_or(F::zero()));
+        } else {
+            // For general q, we need to evaluate Bernoulli polynomial B_{n+1}(q)
+            // B_n(x) = sum_{k=0}^n C(n,k) * B_k * x^{n-k}
+            // This is more complex, so we'll use an approximation for now
+            let mut bernoulli_poly = 0.0;
+            let n_plus_1 = n + 1;
+
+            for k in 0..=n_plus_1 {
+                if let Ok(bernoulli_k) = bernoulli_number(k) {
+                    // Binomial coefficient C(n+1, k)
+                    let mut binom_coeff = 1.0;
+                    for i in 0..k {
+                        binom_coeff *= (n_plus_1 - i) as f64 / (i + 1) as f64;
+                    }
+
+                    let q_power = q_f64.powi((n_plus_1 - k) as i32);
+                    bernoulli_poly += binom_coeff * bernoulli_k * q_power;
+                }
+            }
+
+            let result = -bernoulli_poly / (n + 1) as f64;
+            return Ok(F::from(result).unwrap_or(F::zero()));
+        }
+    }
+
+    // For non-integer negative s, use the general reflection formula
+    // ζ(s, q) = 2 * Γ(1-s) / (2π)^{1-s} * [sin(π(1-s)/2) * ∑_{n=1}^∞ cos(2πnq)/n^{1-s}
+    //                                      + cos(π(1-s)/2) * ∑_{n=1}^∞ sin(2πnq)/n^{1-s}]
+
+    // This is quite complex, so for now we'll use a simpler approach with the functional equation
+    // ζ(s, q) relation to ζ(1-s, ·) which is more tractable
+
+    // For moderate negative values, use asymptotic expansion
+    if s_f64 > -10.0 {
+        let oneminus_s = F::one() - s;
+        let pi = F::from(std::f64::consts::PI).unwrap_or(F::zero());
+        let two_pi = F::from(2.0).unwrap_or(F::zero()) * pi;
+
+        // Use the first few terms of the reflection formula approximation
+        let mut sum_cos = F::zero();
+        let mut sum_sin = F::zero();
+
+        for n in 1..=50 {
+            let n_f = F::from(n).unwrap_or(F::zero());
+            let term_base = n_f.powf(-oneminus_s);
+            let angle = two_pi * n_f * q;
+
+            sum_cos = sum_cos + angle.cos() * term_base;
+            sum_sin = sum_sin + angle.sin() * term_base;
+        }
+
+        // Approximate the gamma function and trigonometric prefactors
+        let gamma_val = gamma((F::one() - s).to_f64().unwrap_or(1.0));
+        let pi_power = (two_pi).powf(-oneminus_s);
+        let angle_factor = pi * (oneminus_s) / F::from(2.0).unwrap_or(F::one());
+
+        let result = F::from(2.0 * gamma_val).unwrap_or(F::zero()) / pi_power
+            * (angle_factor.sin() * sum_cos + angle_factor.cos() * sum_sin);
+
+        return Ok(result);
+    }
+
+    // For very negative values, fall back to direct summation
     hurwitz_zeta_direct_sum(s, q)
 }
 
 // Implementation of the Hurwitz zeta function for 0 <= s < 1
+#[allow(dead_code)]
 fn hurwitz_zeta_critical_strip<F>(s: F, q: F) -> SpecialResult<F>
 where
     F: Float + FromPrimitive + Debug,
@@ -472,6 +557,7 @@ where
 }
 
 // Implementation of the Hurwitz zeta function using direct summation
+#[allow(dead_code)]
 fn hurwitz_zeta_direct_sum<F>(s: F, q: F) -> SpecialResult<F>
 where
     F: Float + FromPrimitive + Debug,

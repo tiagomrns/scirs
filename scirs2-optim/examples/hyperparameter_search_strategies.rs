@@ -37,7 +37,7 @@ impl MockModel {
     /// Simulate training and return validation performance
     fn train_and_evaluate(&mut self) -> f64 {
         // Simulate realistic performance based on hyperparameters
-        let mut rng = rng();
+        let mut rng = rand::rng();
 
         // Base performance with some randomness
         let mut performance = 0.5 + rng.random::<f64>() * 0.1;
@@ -75,6 +75,7 @@ impl MockModel {
 }
 
 /// Extract problem features for neural predictor
+#[allow(dead_code)]
 fn extract_problem_features() -> Array1<f64> {
     // In a real scenario, these would be actual dataset/problem characteristics
     Array1::from_vec(vec![
@@ -90,6 +91,7 @@ fn extract_problem_features() -> Array1<f64> {
 }
 
 /// Example 1: Grid Search for Systematic Exploration
+#[allow(dead_code)]
 fn grid_search_example() -> Result<()> {
     println!("=== Grid Search Example ===");
 
@@ -154,6 +156,7 @@ fn grid_search_example() -> Result<()> {
 }
 
 /// Example 2: Random Search for Efficient Sampling
+#[allow(dead_code)]
 fn random_search_example() -> Result<()> {
     println!("\n=== Random Search Example ===");
 
@@ -219,7 +222,7 @@ fn random_search_example() -> Result<()> {
         .windows(2)
         .enumerate()
         .filter(|(_, window)| window[1] > window[0])
-        .map(|(i, _)| i + 1)
+        .map(|(i_, _)| i_ + 1)
         .collect::<Vec<_>>();
 
     println!("Improvements found at trials: {:?}", improvement_steps);
@@ -232,6 +235,7 @@ fn random_search_example() -> Result<()> {
 }
 
 /// Example 3: Bayesian Optimization for Intelligent Search
+#[allow(dead_code)]
 fn bayesian_optimization_example() -> Result<()> {
     println!("\n=== Bayesian Optimization Example ===");
 
@@ -322,6 +326,7 @@ fn bayesian_optimization_example() -> Result<()> {
 }
 
 /// Example 4: Population-Based Training
+#[allow(dead_code)]
 fn population_based_training_example() -> Result<()> {
     println!("\n=== Population-Based Training Example ===");
 
@@ -337,14 +342,20 @@ fn population_based_training_example() -> Result<()> {
         let hyperparams = HashMap::from([
             (
                 "learning_rate".to_string(),
-                0.001 * (1.0 + rng().random::<f64>()),
+                0.001 * (1.0 + rand::rng().random::<f64>()),
             ),
-            ("weight_decay".to_string(), 0.01 * rng().random::<f64>()),
+            (
+                "weight_decay".to_string(),
+                0.01 * rand::rng().random::<f64>(),
+            ),
             (
                 "batch_size".to_string(),
-                32.0 + rng().random::<f64>() * 96.0,
+                32.0 + rand::rng().random::<f64>() * 96.0,
             ),
-            ("momentum".to_string(), 0.9 + rng().random::<f64>() * 0.09),
+            (
+                "momentum".to_string(),
+                0.9 + rand::rng().random::<f64>() * 0.09,
+            ),
         ]);
 
         let mut model = MockModel::new(&hyperparams);
@@ -369,7 +380,7 @@ fn population_based_training_example() -> Result<()> {
 
             // Perturb hyperparameters
             for (param, value) in new_hyperparams.iter_mut() {
-                let perturbation = 1.0 + (rng().random::<f64>() - 0.5) * 0.2;
+                let perturbation = 1.0 + (rand::rng().random::<f64>() - 0.5) * 0.2;
                 *value *= perturbation;
 
                 // Apply bounds
@@ -393,7 +404,7 @@ fn population_based_training_example() -> Result<()> {
         // Statistics for this generation
         let best_performance = population[0].1;
         let avg_performance: f64 =
-            population.iter().map(|(_, perf, _)| perf).sum::<f64>() / population.len() as f64;
+            population.iter().map(|(_, perf_, _)| *perf_).sum::<f64>() / population.len() as f64;
         let worst_performance = population.last().unwrap().1;
 
         if generation % 5 == 4 {
@@ -419,7 +430,7 @@ fn population_based_training_example() -> Result<()> {
     // Population diversity analysis
     let lr_values: Vec<f64> = population
         .iter()
-        .map(|(params, _, _)| params["learning_rate"])
+        .map(|(params__, _, _)| params__["learning_rate"])
         .collect();
     let lr_std = {
         let mean = lr_values.iter().sum::<f64>() / lr_values.len() as f64;
@@ -434,6 +445,7 @@ fn population_based_training_example() -> Result<()> {
 }
 
 /// Example 5: Neural Hyperparameter Prediction
+#[allow(dead_code)]
 fn neural_predictor_example() -> Result<()> {
     println!("\n=== Neural Hyperparameter Prediction Example ===");
 
@@ -446,7 +458,7 @@ fn neural_predictor_example() -> Result<()> {
 
     for _ in 0..200 {
         // Simulate different problem characteristics
-        let mut rng = rng();
+        let mut rng = rand::rng();
         let features = Array1::from_vec(vec![
             rng.random::<f64>() * 10000.0,    // dataset_size
             rng.random::<f64>() * 1000.0,     // input_dims
@@ -500,13 +512,22 @@ fn neural_predictor_example() -> Result<()> {
 
         // Compare with random hyperparameters
         let random_hyperparams = HashMap::from([
-            ("learning_rate".to_string(), rng().random::<f64>() * 0.01),
-            ("weight_decay".to_string(), rng().random::<f64>() * 0.01),
+            (
+                "learning_rate".to_string(),
+                rand::rng().random::<f64>() * 0.01,
+            ),
+            (
+                "weight_decay".to_string(),
+                rand::rng().random::<f64>() * 0.01,
+            ),
             (
                 "batch_size".to_string(),
-                16.0 + rng().random::<f64>() * 112.0,
+                16.0 + rand::rng().random::<f64>() * 112.0,
             ),
-            ("momentum".to_string(), 0.9 + rng().random::<f64>() * 0.09),
+            (
+                "momentum".to_string(),
+                0.9 + rand::rng().random::<f64>() * 0.09,
+            ),
         ]);
 
         let mut random_model = MockModel::new(&random_hyperparams);
@@ -519,6 +540,7 @@ fn neural_predictor_example() -> Result<()> {
 }
 
 /// Example 6: Multi-Objective Hyperparameter Optimization
+#[allow(dead_code)]
 fn multi_objective_optimization_example() -> Result<()> {
     println!("\n=== Multi-Objective Optimization Example ===");
 
@@ -571,14 +593,14 @@ fn multi_objective_optimization_example() -> Result<()> {
 
     // Find Pareto optimal solutions
     let mut pareto_optimal = Vec::new();
-    for (i, (params_i, acc_i, time_i, _)) in pareto_front.iter().enumerate() {
+    for (i, (params_i, acc_i, time_i_, _)) in pareto_front.iter().enumerate() {
         let mut is_dominated = false;
 
-        for (j, (_, acc_j, time_j, _)) in pareto_front.iter().enumerate() {
+        for (j, (_, acc_j, time_j_, _)) in pareto_front.iter().enumerate() {
             if i != j
                 && *acc_j >= *acc_i
-                && *time_j <= *time_i
-                && (*acc_j > *acc_i || *time_j < *time_i)
+                && *time_j_ <= *time_i_
+                && (*acc_j > *acc_i || *time_j_ < *time_i_)
             {
                 is_dominated = true;
                 break;
@@ -586,7 +608,7 @@ fn multi_objective_optimization_example() -> Result<()> {
         }
 
         if !is_dominated {
-            pareto_optimal.push((params_i.clone(), *acc_i, *time_i));
+            pareto_optimal.push((params_i.clone(), *acc_i, *time_i_));
         }
     }
 
@@ -604,6 +626,7 @@ fn multi_objective_optimization_example() -> Result<()> {
 }
 
 /// Example 7: Hyperparameter Sensitivity Analysis
+#[allow(dead_code)]
 fn sensitivity_analysis_example() -> Result<()> {
     println!("\n=== Hyperparameter Sensitivity Analysis ===");
 
@@ -674,7 +697,7 @@ fn sensitivity_analysis_example() -> Result<()> {
         );
 
         // Calculate sensitivity (performance variance)
-        let performances: Vec<f64> = results.iter().map(|(_, _, perf)| *perf).collect();
+        let performances: Vec<f64> = results.iter().map(|(_, perf, _)| *perf).collect();
         let mean_perf = performances.iter().sum::<f64>() / performances.len() as f64;
         let variance = performances
             .iter()
@@ -689,6 +712,7 @@ fn sensitivity_analysis_example() -> Result<()> {
     Ok(())
 }
 
+#[allow(dead_code)]
 fn main() -> Result<()> {
     println!("SciRS2 Hyperparameter Search Strategies Examples");
     println!("===============================================\n");

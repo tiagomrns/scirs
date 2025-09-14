@@ -25,6 +25,7 @@ use scirs2_integrate::ode::{
 use std::fs::File;
 use std::io::Write;
 
+#[allow(dead_code)]
 fn main() -> IntegrateResult<()> {
     // Brusselator model parameters
     let a = 1.0; // Parameter A
@@ -55,21 +56,21 @@ fn main() -> IntegrateResult<()> {
     type EventFunc = Box<dyn Fn(f64, ArrayView1<f64>) -> f64>;
     let event_funcs: Vec<EventFunc> = vec![
         // Event 1: dx/dt = 0 (X maximum or minimum)
-        Box::new(move |_t: f64, state: ArrayView1<f64>| -> f64 {
+        Box::new(move |t: f64, state: ArrayView1<f64>| -> f64 {
             let x = state[0];
             let y = state[1];
             a + x * x * y - b * x - x // dx/dt
         }),
         // Event 2: dy/dt = 0 (Y maximum or minimum)
-        Box::new(move |_t: f64, state: ArrayView1<f64>| -> f64 {
+        Box::new(move |t: f64, state: ArrayView1<f64>| -> f64 {
             let x = state[0];
             let y = state[1];
             b * x - x * x * y // dy/dt
         }),
         // Event 3: X concentration crosses threshold of 2.0
-        Box::new(move |_t: f64, state: ArrayView1<f64>| -> f64 { state[0] - 2.0 }),
+        Box::new(move |t: f64, state: ArrayView1<f64>| -> f64 { state[0] - 2.0 }),
         // Event 4: Time limit reached (t = 50)
-        Box::new(move |t: f64, _state: ArrayView1<f64>| -> f64 { t - 50.0 }),
+        Box::new(move |t: f64, state: ArrayView1<f64>| -> f64 { t - 50.0 }),
     ];
 
     // Event specifications
@@ -118,7 +119,7 @@ fn main() -> IntegrateResult<()> {
     );
 
     println!("Simulating Brusselator chemical reaction system with event detection...");
-    println!("Parameters: A = {}, B = {}", a, b);
+    println!("Parameters: A = {a}, B = {b}");
     println!("Oscillatory behavior expected: {}", b > 1.0 + a * a);
 
     // Solve the ODE with event detection
@@ -152,7 +153,7 @@ fn main() -> IntegrateResult<()> {
 
             let avg_period = periods.iter().sum::<f64>() / periods.len() as f64;
 
-            println!("  Average oscillation period: {:.4} time units", avg_period);
+            println!("  Average oscillation period: {avg_period:.4} time units");
             println!(
                 "  Oscillation frequency: {:.4} cycles/time unit",
                 1.0 / avg_period
@@ -233,15 +234,16 @@ fn main() -> IntegrateResult<()> {
 }
 
 /// Save the results to a CSV file for plotting
+#[allow(dead_code)]
 fn save_results_to_csv(
     result: &scirs2_integrate::ode::ODEResultWithEvents<f64>,
 ) -> IntegrateResult<()> {
     let mut file = File::create("brusselator_results.csv")
-        .map_err(|e| IntegrateError::ComputationError(format!("Failed to create file: {}", e)))?;
+        .map_err(|e| IntegrateError::ComputationError(format!("Failed to create file: {e}")))?;
 
     // Write header
     writeln!(file, "time,x,y,x_maximum,y_maximum,x_threshold")
-        .map_err(|e| IntegrateError::ComputationError(format!("Failed to write header: {}", e)))?;
+        .map_err(|e| IntegrateError::ComputationError(format!("Failed to write header: {e}")))?;
 
     // Get event times for each event type
     let x_max_times: Vec<f64> = result
@@ -281,7 +283,7 @@ fn save_results_to_csv(
             "{},{},{},{},{},{}",
             t, x, y, x_max as i32, y_max as i32, x_thresh as i32
         )
-        .map_err(|e| IntegrateError::ComputationError(format!("Failed to write data: {}", e)))?;
+        .map_err(|e| IntegrateError::ComputationError(format!("Failed to write data: {e}")))?;
     }
 
     Ok(())

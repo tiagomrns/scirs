@@ -1,7 +1,8 @@
-//! Simple test of Butterworth filter design
+// Simple test of Butterworth filter design
 
 use scirs2_signal::filter::butter;
 
+#[allow(dead_code)]
 fn main() {
     println!("Testing Butterworth Filter Design");
 

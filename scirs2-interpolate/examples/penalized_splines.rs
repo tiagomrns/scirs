@@ -4,6 +4,7 @@ use scirs2_interpolate::penalized::{
     cross_validate_lambda, pspline_with_custom_penalty, PSpline, PenaltyType,
 };
 
+#[allow(dead_code)]
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("Penalized Splines (P-splines) Examples");
     println!("======================================\n");
@@ -282,6 +283,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 }
 
 /// Helper function to generate uniformly spaced knots
+#[allow(dead_code)]
 fn generate_uniform_knots(
     x: &ArrayView1<f64>,
     n_knots: usize,
@@ -298,18 +300,18 @@ fn generate_uniform_knots(
     // Create knot vector
     let mut knots = Array1::zeros(n_knots + degree + 1);
 
-    // First degree+1 knots are at x_min
+    // First degree+1 _knots are at x_min
     for i in 0..=degree {
         knots[i] = x_min;
     }
 
-    // Middle knots are uniformly spaced
+    // Middle _knots are uniformly spaced
     for i in 1..n_knots - degree {
         let t = i as f64 / (n_knots - degree) as f64;
         knots[i + degree] = x_min + t * (x_max - x_min);
     }
 
-    // Last degree+1 knots are at x_max
+    // Last degree+1 _knots are at x_max
     for i in 0..=degree {
         knots[n_knots + i] = x_max;
     }

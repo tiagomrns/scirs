@@ -56,25 +56,25 @@ where
     /// # Returns
     ///
     /// A new `ToeplitzMatrix` instance
-    pub fn new(first_row: ArrayView1<A>, first_col: ArrayView1<A>) -> LinalgResult<Self> {
+    pub fn new(_first_row: ArrayView1<A>, firstcol: ArrayView1<A>) -> LinalgResult<Self> {
         // Check that the first elements match
-        if first_row.is_empty() || first_col.is_empty() {
+        if _first_row.is_empty() || firstcol.is_empty() {
             return Err(LinalgError::InvalidInputError(
                 "Row and column must not be empty".to_string(),
             ));
         }
 
-        if (first_row[0] - first_col[0]).abs() > A::epsilon() {
+        if (_first_row[0] - firstcol[0]).abs() > A::epsilon() {
             return Err(LinalgError::InvalidInputError(
                 "First element of row and column must be the same".to_string(),
             ));
         }
 
         Ok(ToeplitzMatrix {
-            first_row: first_row.to_owned(),
-            first_col: first_col.to_owned(),
-            nrows: first_col.len(),
-            ncols: first_row.len(),
+            first_row: _first_row.to_owned(),
+            first_col: firstcol.to_owned(),
+            nrows: firstcol.len(),
+            ncols: _first_row.len(),
         })
     }
 
@@ -87,16 +87,16 @@ where
     /// # Returns
     ///
     /// A new symmetric `ToeplitzMatrix` instance
-    pub fn new_symmetric(first_row: ArrayView1<A>) -> LinalgResult<Self> {
-        let n = first_row.len();
+    pub fn new_symmetric(_firstrow: ArrayView1<A>) -> LinalgResult<Self> {
+        let n = _firstrow.len();
         let mut first_col = Array1::zeros(n);
 
         for i in 0..n {
-            first_col[i] = first_row[i];
+            first_col[i] = _firstrow[i];
         }
 
         Ok(ToeplitzMatrix {
-            first_row: first_row.to_owned(),
+            first_row: _firstrow.to_owned(),
             first_col,
             nrows: n,
             ncols: n,

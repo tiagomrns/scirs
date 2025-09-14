@@ -66,8 +66,7 @@ impl<F: Float + NumAssign + Sum + Debug + 'static> IC0Preconditioner<F> {
                 Some(idx) => idx,
                 None => {
                     return Err(SparseError::ValueError(format!(
-                        "Missing diagonal element at position {}",
-                        i
+                        "Missing diagonal element at position {i}"
                     )));
                 }
             };
@@ -128,7 +127,7 @@ impl<F: Float + NumAssign + Sum + Debug + 'static> IC0Preconditioner<F> {
             }
         }
 
-        // Create the L factor as a CSR matrix
+        // Create the L factor as a CSR _matrix
         let l_factor = CsrMatrix::from_raw_csr(l_data, l_indptr, l_indices, (n, n))?;
 
         Ok(Self { l_factor })

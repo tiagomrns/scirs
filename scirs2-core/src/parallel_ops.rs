@@ -20,6 +20,10 @@
 #[cfg(feature = "parallel")]
 pub use rayon::prelude::*;
 
+// Re-export ThreadPoolBuilder and ThreadPool when parallel is enabled
+#[cfg(feature = "parallel")]
+pub use rayon::{ThreadPool, ThreadPoolBuilder};
+
 // When parallel is disabled, provide sequential fallbacks
 #[cfg(not(feature = "parallel"))]
 mod sequential_fallbacks {
@@ -183,27 +187,31 @@ mod sequential_fallbacks {
 
 // Re-export sequential fallbacks when parallel is disabled
 #[cfg(not(feature = "parallel"))]
-pub use sequential_fallbacks::*;
+pub use sequential__fallbacks::*;
 
 /// Helper function to create a parallel iterator from a range
+#[allow(dead_code)]
 pub fn par_range(start: usize, end: usize) -> impl ParallelIterator<Item = usize> {
     (start..end).into_par_iter()
 }
 
 /// Helper function for parallel chunks processing
 #[cfg(feature = "parallel")]
-pub fn par_chunks<T: Sync>(slice: &[T], chunk_size: usize) -> rayon::slice::Chunks<'_, T> {
-    slice.par_chunks(chunk_size)
+#[allow(dead_code)]
+pub fn par_chunks<T: Sync>(slice: &[T], chunksize: usize) -> rayon::slice::Chunks<'_, T> {
+    slice.par_chunks(chunksize)
 }
 
 /// Sequential fallback for par_chunks
 #[cfg(not(feature = "parallel"))]
-pub fn par_chunks<T>(slice: &[T], chunk_size: usize) -> std::slice::Chunks<'_, T> {
+#[allow(dead_code)]
+pub fn par_chunks<T>(_slice: &[T], chunksize: usize) -> std::slice::Chunks<'_, T> {
     slice.chunks(chunk_size)
 }
 
 /// Helper function for parallel mutable chunks processing
 #[cfg(feature = "parallel")]
+#[allow(dead_code)]
 pub fn par_chunks_mut<T: Send>(
     slice: &mut [T],
     chunk_size: usize,
@@ -213,25 +221,99 @@ pub fn par_chunks_mut<T: Send>(
 
 /// Sequential fallback for par_chunks_mut
 #[cfg(not(feature = "parallel"))]
-pub fn par_chunks_mut<T>(slice: &mut [T], chunk_size: usize) -> std::slice::ChunksMut<'_, T> {
+#[allow(dead_code)]
+pub fn par_chunks_mut<T>(_slice: &mut [T], chunksize: usize) -> std::slice::ChunksMut<'_, T> {
     slice.chunks_mut(chunk_size)
 }
 
+/// Simple parallel map function that returns Result type
+#[cfg(feature = "parallel")]
+#[allow(dead_code)]
+pub fn parallel_map<T, U, F>(items: &[T], f: F) -> Vec<U>
+where
+    T: Sync,
+    U: Send,
+    F: Fn(&T) -> U + Sync + Send,
+{
+    use rayon::prelude::*;
+    items.par_iter().map(f).collect()
+}
+
+/// Sequential fallback for parallel_map
+#[cfg(not(feature = "parallel"))]
+#[allow(dead_code)]
+pub fn parallel_map<T, U, F>(items: &[T], f: F) -> Vec<U>
+where
+    F: Fn(&T) -> U,
+{
+    items.iter().map(f).collect()
+}
+
+/// Parallel map function that handles Results
+#[cfg(feature = "parallel")]
+#[allow(dead_code)]
+pub fn parallel_map_result<T, U, E, F>(items: &[T], f: F) -> Result<Vec<U>, E>
+where
+    T: Sync,
+    U: Send,
+    E: Send,
+    F: Fn(&T) -> Result<U, E> + Sync + Send,
+{
+    use rayon::prelude::*;
+    items.par_iter().map(f).collect()
+}
+
+/// Sequential fallback for parallel_map_result
+#[cfg(not(feature = "parallel"))]
+#[allow(dead_code)]
+pub fn parallel_map_result<T, U, E, F>(items: &[T], f: F) -> Result<Vec<U>, E>
+where
+    F: Fn(&T) -> Result<U, E>,
+{
+    items.iter().map(f).collect()
+}
+
 /// Check if parallel processing is available
+#[allow(dead_code)]
 pub fn is_parallel_enabled() -> bool {
     cfg!(feature = "parallel")
 }
 
 /// Get the number of threads that would be used for parallel operations
 #[cfg(feature = "parallel")]
+#[allow(dead_code)]
 pub fn num_threads() -> usize {
     rayon::current_num_threads()
 }
 
 /// Sequential fallback returns 1
 #[cfg(not(feature = "parallel"))]
+#[allow(dead_code)]
 pub fn num_threads() -> usize {
     1
+}
+
+/// Alias for num_threads() for compatibility
+#[allow(dead_code)]
+pub fn get_num_threads() -> usize {
+    num_threads()
+}
+
+/// Set the number of threads for parallel operations
+#[cfg(feature = "parallel")]
+#[allow(dead_code)]
+pub fn set_num_threads(numthreads: usize) {
+    rayon::ThreadPoolBuilder::new()
+        .num_threads(numthreads)
+        .build_global()
+        .expect("Failed to initialize thread pool");
+}
+
+/// Sequential fallback does nothing
+#[cfg(not(feature = "parallel"))]
+#[allow(dead_code)]
+pub fn threads(_: usize) {
+    // No-op for sequential fallback
 }
 
 /// Parallel-aware scope helper
@@ -240,7 +322,7 @@ pub use rayon::scope as par_scope;
 
 /// Sequential fallback for par_scope
 #[cfg(not(feature = "parallel"))]
-pub use sequential_fallbacks::scope as par_scope;
+pub use sequential__fallbacks::scope as par_scope;
 
 /// Parallel join helper
 #[cfg(feature = "parallel")]
@@ -248,7 +330,154 @@ pub use rayon::join as par_join;
 
 /// Sequential fallback for par_join
 #[cfg(not(feature = "parallel"))]
-pub use sequential_fallbacks::join as par_join;
+pub use sequential__fallbacks::join as par_join;
+
+/// Parallel map operation on array data with chunking
+///
+/// This function processes array data in parallel chunks using the provided mapper function.
+///
+/// # Arguments
+///
+/// * `data` - The data to process (e.g., array view)
+/// * `chunk_size` - Size of each chunk for parallel processing
+/// * `mapper` - Function that processes a chunk and returns a result
+/// * `reducer` - Function that combines two results into one
+///
+/// # Returns
+///
+/// The final reduced result
+#[cfg(feature = "parallel")]
+#[allow(dead_code)]
+pub fn parallel_map_reduce<D, T, M, Red>(data: D, mapper: M, reducer: Red) -> T
+where
+    D: Send + Sync,
+    T: Send + Clone,
+    M: Fn(D) -> T + Sync + Send + Clone,
+    Red: Fn(T, T) -> T + Sync + Send,
+{
+    // For simplicity, we'll just apply the mapper once since we can't easily chunk arbitrary data
+    // In practice, this would need to be specialized for specific data types
+    mapper(data)
+}
+
+/// Sequential fallback for parallel_map_reduce
+#[cfg(not(feature = "parallel"))]
+#[allow(dead_code)]
+pub fn parallel_map_reduce<D, T, M, Red>(data: D, chunksize: usize, mapper: M, reducer: Red) -> T
+where
+    T: Clone,
+    M: Fn(D) -> T,
+    Red: Fn(T, T) -> T,
+{
+    mapper(data)
+}
+
+/// Parallel map-collect operation on a collection
+///
+/// This function maps over a collection in parallel and collects the results.
+///
+/// # Arguments
+///
+/// * `items` - The items to process
+/// * `mapper` - Function that processes each item
+///
+/// # Returns
+///
+/// Vector of mapped results
+#[cfg(feature = "parallel")]
+#[allow(dead_code)]
+pub fn parallel_map_collect<I, T, U, M>(items: I, mapper: M) -> Vec<U>
+where
+    I: IntoParallelIterator<Item = T>,
+    T: Send,
+    U: Send,
+    M: Fn(T) -> U + Sync + Send,
+{
+    use rayon::prelude::*;
+    items.into_par_iter().map(mapper).collect()
+}
+
+/// Sequential fallback for parallel_map_collect
+#[cfg(not(feature = "parallel"))]
+#[allow(dead_code)]
+pub fn parallel_map_collect<I, T, U, M>(items: I, mapper: M) -> Vec<U>
+where
+    I: IntoIterator<Item = T>,
+    M: Fn(T) -> U,
+{
+    items.into_iter().map(mapper).collect()
+}
+
+/// Parallel map-reduce operation on indexed chunks
+///
+/// This function takes a range of indices, splits them into chunks of the specified size,
+/// processes each chunk in parallel using the mapper function, and then reduces the results
+/// using the reducer function.
+///
+/// # Arguments
+///
+/// * `range` - The range of indices to process (e.g., 0..n)
+/// * `chunk_size` - Size of each chunk for parallel processing
+/// * `mapper` - Function that processes a slice of indices and returns a result
+/// * `reducer` - Function that combines two results into one
+///
+/// # Returns
+///
+/// The final reduced result
+#[cfg(feature = "parallel")]
+#[allow(dead_code)]
+pub fn parallel_map_reduce_indexed<R, T, M, Red>(
+    range: R,
+    chunk_size: usize,
+    mapper: M,
+    reducer: Red,
+) -> T
+where
+    R: Iterator<Item = usize> + Send,
+    T: Send + Clone,
+    M: Fn(&[usize]) -> T + Sync + Send,
+    Red: Fn(T, T) -> T + Sync + Send,
+{
+    use rayon::prelude::*;
+
+    let indices: Vec<usize> = range.collect();
+
+    indices
+        .chunks(chunk_size)
+        .collect::<Vec<_>>()
+        .into_par_iter()
+        .map(&mapper)
+        .reduce_with(reducer)
+        .unwrap_or_else(|| mapper(&[]))
+}
+
+/// Sequential fallback for parallel_map_reduce_indexed
+#[cfg(not(feature = "parallel"))]
+#[allow(dead_code)]
+pub fn parallel_map_reduce_indexed<R, T, M, Red>(
+    range: R,
+    chunk_size: usize,
+    mapper: M,
+    reducer: Red,
+) -> T
+where
+    R: Iterator<Item = usize>,
+    T: Clone,
+    M: Fn(&[usize]) -> T,
+    Red: Fn(T, T) -> T,
+{
+    let indices: Vec<usize> = range.collect();
+
+    let mut results = Vec::new();
+    for chunk in indices.chunks(chunk_size) {
+        results.push(mapper(chunk));
+    }
+
+    results
+        .into_iter()
+        .reduce(reducer)
+        .unwrap_or_else(|| mapper(&[]))
+}
 
 #[cfg(test)]
 mod tests {

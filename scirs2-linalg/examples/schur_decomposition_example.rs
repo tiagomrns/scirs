@@ -8,6 +8,7 @@
 use ndarray::{array, Array2};
 use scirs2_linalg::compat;
 
+#[allow(dead_code)]
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("Schur Decomposition Example");
     println!("==========================\n");
@@ -80,16 +81,16 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // Test using SciPy-compatible interface
     println!("4. SciPy-Compatible Interface:");
-    let scipy_matrix = array![[2.0, -1.0], [1.0, 0.0]];
-    println!("Matrix A = \n{:8.6}", scipy_matrix);
+    let scipymatrix = array![[2.0, -1.0], [1.0, 0.0]];
+    println!("Matrix A = \n{:8.6}", scipymatrix);
 
-    let (z_scipy, t_scipy) = compat::schur(&scipy_matrix.view(), "real", None, false, None, true)?;
+    let (z_scipy, t_scipy) = compat::schur(&scipymatrix.view(), "real", None, false, None, true)?;
     println!("Z (via SciPy interface) = \n{:8.6}", z_scipy);
     println!("T (via SciPy interface) = \n{:8.6}", t_scipy);
 
     // Verify the decomposition
     let scipy_reconstructed = z_scipy.dot(&t_scipy).dot(&z_scipy.t());
-    let scipy_diff = &scipy_matrix - &scipy_reconstructed;
+    let scipy_diff = &scipymatrix - &scipy_reconstructed;
     let scipy_error = scipy_diff
         .iter()
         .map(|&x: &f64| x.abs())
@@ -101,10 +102,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // Demonstrate eigenvalue extraction from Schur form
     println!("5. Eigenvalue Extraction:");
-    let eig_matrix = array![[5.0, 1.0], [0.0, 3.0]];
-    println!("Matrix A = \n{:8.6}", eig_matrix);
+    let eigmatrix = array![[5.0, 1.0], [0.0, 3.0]];
+    println!("Matrix A = \n{:8.6}", eigmatrix);
 
-    let (_, t_eig) = compat::schur(&eig_matrix.view(), "real", None, false, None, true)?;
+    let (_, t_eig) = compat::schur(&eigmatrix.view(), "real", None, false, None, true)?;
     println!("Schur form T = \n{:8.6}", t_eig);
 
     // For upper triangular matrices, eigenvalues are the diagonal elements
@@ -118,8 +119,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let lambda1 = t_eig[[0, 0]];
     let lambda2 = t_eig[[1, 1]];
 
-    let a_minus_lambda1_i = &eig_matrix - &(ndarray::Array2::<f64>::eye(2) * lambda1);
-    let a_minus_lambda2_i = &eig_matrix - &(ndarray::Array2::<f64>::eye(2) * lambda2);
+    let a_minus_lambda1_i = &eigmatrix - &(ndarray::Array2::<f64>::eye(2) * lambda1);
+    let a_minus_lambda2_i = &eigmatrix - &(ndarray::Array2::<f64>::eye(2) * lambda2);
 
     // Calculate determinants (should be close to zero)
     let det1 = a_minus_lambda1_i[[0, 0]] * a_minus_lambda1_i[[1, 1]]

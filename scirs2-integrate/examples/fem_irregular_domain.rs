@@ -5,6 +5,7 @@ use scirs2_integrate::{
 use std::f64::consts::PI;
 use std::time::Instant;
 
+#[allow(dead_code)]
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("FEM solver example for irregular domain (L-shaped domain)");
     println!("Solving: ∇²u = f");
@@ -12,7 +13,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("Boundary conditions: u = 0 on outer boundaries");
 
     // Create an L-shaped domain
-    let mesh = create_l_shaped_mesh(20);
+    let mesh = create_lshaped_mesh(20);
 
     println!("Mesh generated with:");
     println!("  - {} nodes", mesh.points.len());
@@ -79,7 +80,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let mesh = &result.mesh;
 
     println!("\nResults:");
-    println!("  - Computation time: {:.4} seconds", solve_time);
+    println!("  - Computation time: {solve_time:.4} seconds");
     println!("  - Residual norm: {:.6e}", result.residual_norm);
 
     // Find maximum solution value and its location
@@ -96,8 +97,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     }
 
     println!("\nSolution analysis:");
-    println!("  - Maximum solution value: {:.6e}", max_u);
-    println!("  - Location of maximum: ({:.4}, {:.4})", max_u_x, max_u_y);
+    println!("  - Maximum solution value: {max_u:.6e}");
+    println!("  - Location of maximum: ({max_u_x:.4}, {max_u_y:.4})");
 
     // Print solution at selected points (e.g., along a diagonal)
     println!("\nSolution along y = x diagonal:");
@@ -172,7 +173,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
 /// Create a mesh for an L-shaped domain
 /// The domain is [0,1]×[0,1] minus [0.5,1]×[0.5,1]
-fn create_l_shaped_mesh(divisions: usize) -> TriangularMesh {
+#[allow(dead_code)]
+fn create_lshaped_mesh(divisions: usize) -> TriangularMesh {
     let mut mesh = TriangularMesh::new();
 
     // Calculate step size

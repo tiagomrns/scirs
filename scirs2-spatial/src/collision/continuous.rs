@@ -19,6 +19,7 @@ use super::shapes::{Box3D, Circle, Sphere, Triangle3D};
 ///
 /// `Some((time, pos1, pos2))` if the spheres will collide within the time step, where pos1 and pos2 are
 /// the positions of the spheres at the time of collision, `None` otherwise
+#[allow(dead_code)]
 pub fn continuous_sphere_sphere_collision(
     sphere1: &Sphere,
     velocity1: &[f64; 3],
@@ -90,7 +91,7 @@ pub fn continuous_sphere_sphere_collision(
     // Calculate the time of collision
     let t = (-b - discriminant.sqrt()) / (2.0 * a);
 
-    // Check if the collision occurs within the time step
+    // Check if the collision occurs within the time _step
     if t >= 0.0 && t <= time_step {
         Some((
             t,
@@ -122,6 +123,7 @@ pub fn continuous_sphere_sphere_collision(
 /// # Returns
 ///
 /// `Some(time)` if the circles will collide within the time step, `None` otherwise
+#[allow(dead_code)]
 pub fn continuous_circle_circle_collision(
     circle1: &Circle,
     velocity1: &[f64; 2],
@@ -177,7 +179,7 @@ pub fn continuous_circle_circle_collision(
     // Calculate the time of collision
     let t = (-b - discriminant.sqrt()) / (2.0 * a);
 
-    // Check if the collision occurs within the time step
+    // Check if the collision occurs within the time _step
     if t >= 0.0 && t <= time_step {
         Some(t)
     } else {
@@ -197,6 +199,7 @@ pub fn continuous_circle_circle_collision(
 /// # Returns
 ///
 /// `Some(time)` if the point will collide with the triangle within the time step, `None` otherwise
+#[allow(dead_code)]
 pub fn continuous_point_triangle3d_collision(
     point: &[f64; 3],
     velocity: &[f64; 3],
@@ -225,9 +228,9 @@ pub fn continuous_point_triangle3d_collision(
     let intersection =
         super::narrowphase::ray_triangle3d_collision(point, &ray_direction, triangle);
 
-    // Check if the intersection occurs within the time step
+    // Check if the intersection occurs within the time _step
     match intersection {
-        Some((t, _hit_point, _barycentric)) => {
+        Some((t, hit_point, barycentric)) => {
             let actual_t = t / speed; // Convert from ray parameter to time
             if actual_t >= 0.0 && actual_t <= time_step {
                 Some(actual_t)
@@ -251,6 +254,7 @@ pub fn continuous_point_triangle3d_collision(
 /// # Returns
 ///
 /// `Some(time)` if the boxes will collide within the time step, `None` otherwise
+#[allow(dead_code)]
 pub fn continuous_box3d_box3d_collision(
     box1: &Box3D,
     velocity1: &[f64; 3],
@@ -283,7 +287,7 @@ pub fn continuous_box3d_box3d_collision(
     let t_out = t_exit[0].min(t_exit[1]).min(t_exit[2]);
 
     // If exit time is less than entry time, or entry time is after the time step,
-    // or exit time is negative, there is no collision within the time step
+    // or exit time is negative, there is no collision within the time _step
     if t_in > t_out || t_in > time_step || t_out < 0.0 {
         return None;
     }
@@ -308,6 +312,7 @@ pub fn continuous_box3d_box3d_collision(
 /// # Returns
 ///
 /// `Some(time)` if the triangle will collide with the sphere within the time step, `None` otherwise
+#[allow(dead_code)]
 pub fn continuous_triangle3d_sphere_collision(
     triangle: &Triangle3D,
     velocity: &[f64; 3],
@@ -551,6 +556,7 @@ pub fn continuous_triangle3d_sphere_collision(
 /// # Returns
 ///
 /// `Some(time)` if the sphere will collide with the triangle within the time step, `None` otherwise
+#[allow(dead_code)]
 pub fn continuous_sphere_triangle3d_collision(
     sphere: &Sphere,
     velocity: &[f64; 3],

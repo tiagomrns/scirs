@@ -14,6 +14,7 @@ use scirs2_cluster::spectral::{spectral_clustering, AffinityMode, SpectralCluste
 use scirs2_cluster::vq::{kmeans2, MinitMethod, MissingMethod};
 
 /// Generate synthetic clustered data for benchmarks
+#[allow(dead_code)]
 fn generate_clustered_data(
     n_samples: usize,
     n_features: usize,
@@ -28,7 +29,7 @@ fn generate_clustered_data(
     for cluster_id in 0..n_clusters {
         let start_idx = cluster_id * cluster_size;
         let end_idx = if cluster_id == n_clusters - 1 {
-            n_samples // Handle remainder samples in last cluster
+            n_samples // Handle remainder _samples in last cluster
         } else {
             start_idx + cluster_size
         };
@@ -51,12 +52,13 @@ fn generate_clustered_data(
 }
 
 /// Generate random data for worst-case benchmarks
-fn generate_random_data(n_samples: usize, n_features: usize) -> Array2<f64> {
+#[allow(dead_code)]
+fn generate_random_data(_n_samples: usize, nfeatures: usize) -> Array2<f64> {
     let mut rng = StdRng::seed_from_u64(42);
-    let mut data = Array2::zeros((n_samples, n_features));
+    let mut data = Array2::zeros((_n_samples, nfeatures));
 
-    for i in 0..n_samples {
-        for j in 0..n_features {
+    for i in 0.._n_samples {
+        for j in 0..nfeatures {
             data[[i, j]] = rng.random_range(-1.0..1.0);
         }
     }
@@ -65,6 +67,7 @@ fn generate_random_data(n_samples: usize, n_features: usize) -> Array2<f64> {
 }
 
 /// Benchmark K-means clustering
+#[allow(dead_code)]
 fn bench_kmeans(c: &mut Criterion) {
     let mut group = c.benchmark_group("kmeans");
 
@@ -121,6 +124,7 @@ fn bench_kmeans(c: &mut Criterion) {
 }
 
 /// Benchmark hierarchical clustering
+#[allow(dead_code)]
 fn bench_hierarchical(c: &mut Criterion) {
     let mut group = c.benchmark_group("hierarchical_clustering");
     group.measurement_time(Duration::from_secs(10)); // Longer measurement time for slower algorithms
@@ -155,6 +159,7 @@ fn bench_hierarchical(c: &mut Criterion) {
 }
 
 /// Benchmark DBSCAN clustering
+#[allow(dead_code)]
 fn bench_dbscan(c: &mut Criterion) {
     let mut group = c.benchmark_group("dbscan");
 
@@ -183,6 +188,7 @@ fn bench_dbscan(c: &mut Criterion) {
 }
 
 /// Benchmark spectral clustering
+#[allow(dead_code)]
 fn bench_spectral(c: &mut Criterion) {
     let mut group = c.benchmark_group("spectral_clustering");
     group.measurement_time(Duration::from_secs(15)); // Longer time for eigenvalue computations
@@ -221,6 +227,7 @@ fn bench_spectral(c: &mut Criterion) {
 }
 
 /// Benchmark distance computation metrics
+#[allow(dead_code)]
 fn bench_distance_metrics(c: &mut Criterion) {
     let mut group = c.benchmark_group("distance_metrics");
 
@@ -253,6 +260,7 @@ fn bench_distance_metrics(c: &mut Criterion) {
 }
 
 /// Benchmark cluster validation metrics
+#[allow(dead_code)]
 fn bench_validation_metrics(c: &mut Criterion) {
     use scirs2_cluster::hierarchy::{cophenet, validate_linkage_matrix};
 
@@ -301,6 +309,7 @@ fn bench_validation_metrics(c: &mut Criterion) {
 }
 
 /// Benchmark data structure operations
+#[allow(dead_code)]
 fn bench_data_structures(c: &mut Criterion) {
     use scirs2_cluster::hierarchy::{condensed_to_square, square_to_condensed, DisjointSet};
 
@@ -367,6 +376,7 @@ fn bench_data_structures(c: &mut Criterion) {
 }
 
 /// Benchmark memory usage and scalability
+#[allow(dead_code)]
 fn bench_scalability(c: &mut Criterion) {
     let mut group = c.benchmark_group("scalability");
     group.measurement_time(Duration::from_secs(20));
@@ -413,6 +423,7 @@ fn bench_scalability(c: &mut Criterion) {
 }
 
 /// Benchmark worst-case scenarios
+#[allow(dead_code)]
 fn bench_worst_case(c: &mut Criterion) {
     let mut group = c.benchmark_group("worst_case");
     group.measurement_time(Duration::from_secs(15));

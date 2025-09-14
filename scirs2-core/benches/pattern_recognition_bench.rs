@@ -8,12 +8,14 @@ use scirs2_core::memory_efficient::{ComplexPattern, PatternRecognitionConfig, Pa
 use std::hint::black_box;
 
 /// Simulate row-major access pattern
-fn generate_row_major_pattern(rows: usize, cols: usize) -> Vec<usize> {
+#[allow(dead_code)]
+fn row_major_pattern(rows: usize, cols: usize) -> Vec<usize> {
     (0..rows * cols).collect()
 }
 
 /// Simulate column-major access pattern
-fn generate_column_major_pattern(rows: usize, cols: usize) -> Vec<usize> {
+#[allow(dead_code)]
+fn column_major_pattern(rows: usize, cols: usize) -> Vec<usize> {
     let mut pattern = Vec::with_capacity(rows * cols);
     for j in 0..cols {
         for i in 0..rows {
@@ -24,7 +26,8 @@ fn generate_column_major_pattern(rows: usize, cols: usize) -> Vec<usize> {
 }
 
 /// Simulate zigzag access pattern
-fn generate_zigzag_pattern(rows: usize, cols: usize) -> Vec<usize> {
+#[allow(dead_code)]
+fn zigzag_pattern(rows: usize, cols: usize) -> Vec<usize> {
     let mut pattern = Vec::with_capacity(rows * cols);
     for row in 0..rows {
         if row % 2 == 0 {
@@ -42,7 +45,7 @@ fn generate_zigzag_pattern(rows: usize, cols: usize) -> Vec<usize> {
 
 /// Simulate diagonal access pattern
 #[allow(dead_code)]
-fn generate_diagonal_pattern(rows: usize, cols: usize) -> Vec<usize> {
+fn diagonal_pattern(rows: usize, cols: usize) -> Vec<usize> {
     let mut pattern = Vec::new();
     let min_dim = rows.min(cols);
     for i in 0..min_dim {
@@ -52,7 +55,8 @@ fn generate_diagonal_pattern(rows: usize, cols: usize) -> Vec<usize> {
 }
 
 /// Simulate block access pattern
-fn generate_block_pattern(rows: usize, cols: usize, block_size: usize) -> Vec<usize> {
+#[allow(dead_code)]
+fn block_pattern(rows: usize, cols: usize, blocksize: usize) -> Vec<usize> {
     let mut pattern = Vec::new();
 
     // Access in blocks
@@ -70,16 +74,18 @@ fn generate_block_pattern(rows: usize, cols: usize, block_size: usize) -> Vec<us
 }
 
 /// Simulate random access pattern
-fn generate_random_pattern(rows: usize, cols: usize, count: usize) -> Vec<usize> {
+#[allow(dead_code)]
+fn random_pattern(rows: usize, cols: usize, count: usize) -> Vec<usize> {
     use rand::{rngs::StdRng, Rng, SeedableRng};
     let mut rng = StdRng::seed_from_u64(42);
     let max_idx = rows * cols;
 
-    (0..count).map(|_| rng.random_range(0..max_idx)).collect()
+    (0..count).map(|_| rng.gen_range(0..max_idx)).collect()
 }
 
 /// Simulate stencil access pattern (5-point stencil)
-fn generate_stencil_pattern(rows: usize, cols: usize) -> Vec<usize> {
+#[allow(dead_code)]
+fn stencil_pattern(rows: usize, cols: usize) -> Vec<usize> {
     let mut pattern = Vec::new();
 
     // Access interior points with their 5-point stencil
@@ -97,8 +103,9 @@ fn generate_stencil_pattern(rows: usize, cols: usize) -> Vec<usize> {
 }
 
 /// Benchmark pattern detection speed
+#[allow(dead_code)]
 fn bench_pattern_detection(c: &mut Criterion) {
-    let mut group = c.benchmark_group("pattern_detection");
+    let mut group = c.benchmark_group(pattern_detection);
 
     // Test different matrix sizes
     let sizes = vec![(32, 32), (64, 64), (128, 128), (256, 256)];
@@ -191,8 +198,9 @@ fn bench_pattern_detection(c: &mut Criterion) {
 }
 
 /// Benchmark recognition accuracy with mixed patterns
+#[allow(dead_code)]
 fn bench_mixed_patterns(c: &mut Criterion) {
-    let mut group = c.benchmark_group("mixed_patterns");
+    let mut group = c.benchmark_group(mixed_patterns);
 
     group.bench_function("transition_detection", |b| {
         let rows = 64;
@@ -227,8 +235,9 @@ fn bench_mixed_patterns(c: &mut Criterion) {
 }
 
 /// Benchmark memory overhead of pattern recognition
+#[allow(dead_code)]
 fn bench_memory_overhead(c: &mut Criterion) {
-    let mut group = c.benchmark_group("memory_overhead");
+    let mut group = c.benchmark_group(memory_overhead);
 
     // Test with different history sizes
     let history_sizes = vec![100, 500, 1000, 5000];
@@ -258,8 +267,9 @@ fn bench_memory_overhead(c: &mut Criterion) {
 }
 
 /// Benchmark pattern-specific optimizations
+#[allow(dead_code)]
 fn bench_pattern_optimizations(c: &mut Criterion) {
-    let mut group = c.benchmark_group("pattern_optimizations");
+    let mut group = c.benchmark_group(pattern_optimizations);
 
     // Test with different configurations
     let configs = vec![
@@ -325,8 +335,9 @@ fn bench_pattern_optimizations(c: &mut Criterion) {
 }
 
 /// Benchmark real-world scenarios
+#[allow(dead_code)]
 fn bench_real_world_scenarios(c: &mut Criterion) {
-    let mut group = c.benchmark_group("real_world");
+    let mut group = c.benchmark_group(real_world);
 
     // Matrix multiplication access pattern
     group.bench_function("matrix_multiply", |b| {
@@ -382,7 +393,7 @@ fn bench_real_world_scenarios(c: &mut Criterion) {
     });
 
     // Sparse matrix access pattern
-    group.bench_function("sparse_matrix", |b| {
+    group.bench_function("sparsematrix", |b| {
         let rows = 1000;
         let cols = 1000;
         let nnz = 5000; // 0.5% density

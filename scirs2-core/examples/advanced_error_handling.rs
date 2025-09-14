@@ -5,7 +5,7 @@
 
 use scirs2_core::error::prelude::*;
 use scirs2_core::error::{
-    diagnostics::{diagnose_error, ErrorDiagnostics},
+    diagnostics::ErrorDiagnostics,
     recovery::{hints, CircuitBreaker, ErrorAggregator, RecoveryStrategy, RetryExecutor},
 };
 use std::time::Duration;
@@ -15,17 +15,18 @@ use scirs2_core::error::async_handling::{
     retry_with_exponential_backoff, with_timeout, AsyncCircuitBreaker, AsyncProgressTracker,
 };
 
+#[allow(dead_code)]
 fn main() -> CoreResult<()> {
     println!("🚀 SciRS2 Advanced Error Handling Demo\n");
 
     // 1. Basic error handling with context
-    basic_error_handling_demo()?;
+    basicerror_handling_demo()?;
 
     // 2. Recovery strategies with retry mechanisms
     retry_mechanisms_demo()?;
 
     // 3. Circuit breaker pattern for fault tolerance
-    circuit_breaker_demo()?;
+    circuitbreaker_demo()?;
 
     // 4. Error aggregation for batch operations
     error_aggregation_demo()?;
@@ -38,7 +39,7 @@ fn main() -> CoreResult<()> {
     {
         tokio::runtime::Runtime::new()
             .unwrap()
-            .block_on(async { async_error_handling_demo().await })?;
+            .block_on(async { asyncerror_handling_demo().await })?;
     }
 
     println!("✅ All error handling demonstrations completed successfully!");
@@ -46,18 +47,19 @@ fn main() -> CoreResult<()> {
 }
 
 /// Demonstrate basic error handling with rich context
-fn basic_error_handling_demo() -> CoreResult<()> {
+#[allow(dead_code)]
+fn basicerror_handling_demo() -> CoreResult<()> {
     println!("📋 1. Basic Error Handling with Context");
 
     // Create errors with automatic location tracking
-    let domain_error = domain_error!("Input value must be positive");
-    let computation_error = computation_error!("Matrix is singular", "solve_linear_system");
+    let domainerror = domainerror!("Input value must be positive");
+    let computationerror = computationerror!("Matrix is singular", "solve_linear_system");
 
-    println!("   Domain Error: {}", domain_error);
-    println!("   Computation Error: {}", computation_error);
+    println!("   Domain Error: {domainerror}");
+    println!("   Computation Error: {computationerror}");
 
     // Convert errors to recoverable format
-    let recoverable = RecoverableError::new(domain_error)
+    let recoverable = RecoverableError::error(domainerror)
         .with_metadata("input_value", "-5.0")
         .with_metadata("expected_range", "> 0.0");
 
@@ -69,14 +71,15 @@ fn basic_error_handling_demo() -> CoreResult<()> {
 }
 
 /// Demonstrate retry mechanisms with different backoff strategies
+#[allow(dead_code)]
 fn retry_mechanisms_demo() -> CoreResult<()> {
     println!("🔄 2. Retry Mechanisms with Backoff Strategies");
 
     // Exponential backoff strategy
     let exponential_strategy = RecoveryStrategy::ExponentialBackoff {
         max_attempts: 3,
-        initial_delay: Duration::from_millis(100),
-        max_delay: Duration::from_secs(2),
+        initialdelay: Duration::from_millis(100),
+        maxdelay: Duration::from_secs(2),
         multiplier: 2.0,
     };
 
@@ -85,21 +88,21 @@ fn retry_mechanisms_demo() -> CoreResult<()> {
     let mut attempt_count = 0;
     let result = executor.execute(|| {
         attempt_count += 1;
-        println!("   🔧 Attempt {} of simulated operation", attempt_count);
+        println!("   🔧 Attempt {attempt_count} of simulated operation");
 
         if attempt_count < 3 {
             Err(CoreError::ComputationError(error_context!(
                 "Temporary failure - network timeout"
             )))
         } else {
-            println!("   ✅ Operation succeeded on attempt {}", attempt_count);
+            println!("   ✅ Operation succeeded on attempt {attempt_count}");
             Ok("Operation completed successfully")
         }
     });
 
     match result {
-        Ok(message) => println!("   📊 Result: {}", message),
-        Err(e) => println!("   ❌ Final failure: {}", e),
+        Ok(message) => println!("   📊 Result: {message}"),
+        Err(e) => println!("   ❌ Final failure: {e}"),
     }
 
     // Linear backoff strategy
@@ -115,17 +118,18 @@ fn retry_mechanisms_demo() -> CoreResult<()> {
         Ok("Linear retry succeeded")
     });
 
-    println!("   📊 Linear backoff result: {:?}", linear_result);
+    println!("   📊 Linear backoff result: {linear_result:?}");
     println!("   ✅ Retry mechanisms demo completed\n");
 
     Ok(())
 }
 
 /// Demonstrate circuit breaker pattern for fault tolerance
-fn circuit_breaker_demo() -> CoreResult<()> {
+#[allow(dead_code)]
+fn circuitbreaker_demo() -> CoreResult<()> {
     println!("⚡ 3. Circuit Breaker Pattern for Fault Tolerance");
 
-    let circuit_breaker = CircuitBreaker::new(
+    let circuitbreaker = CircuitBreaker::new(
         2,                          // failure threshold
         Duration::from_millis(100), // timeout
         Duration::from_millis(500), // recovery timeout
@@ -133,29 +137,29 @@ fn circuit_breaker_demo() -> CoreResult<()> {
 
     println!(
         "   📊 Initial circuit breaker status: {}",
-        circuit_breaker.status()
+        circuitbreaker.status()
     );
 
     // Simulate failures to trigger circuit breaker
     for i in 1..=4 {
-        println!("   🔧 Circuit breaker test attempt {}", i);
+        println!("   🔧 Circuit breaker test attempt {i}");
 
-        let result = circuit_breaker.execute(|| {
+        let result = circuitbreaker.execute(|| {
             if i <= 2 {
                 Err(CoreError::ComputationError(error_context!(
                     "Simulated service failure"
                 )))
             } else {
-                Ok(format!("Success on attempt {}", i))
+                Ok(format!("Success on attempt {i}"))
             }
         });
 
         match result {
-            Ok(msg) => println!("   ✅ {}", msg),
-            Err(e) => println!("   ❌ Failed: {}", e),
+            Ok(msg) => println!("   ✅ {msg}"),
+            Err(e) => println!("   ❌ Failed: {e}"),
         }
 
-        println!("   📊 Circuit status: {}", circuit_breaker.status());
+        println!("   📊 Circuit status: {}", circuitbreaker.status());
     }
 
     println!("   ✅ Circuit breaker demo completed\n");
@@ -163,10 +167,11 @@ fn circuit_breaker_demo() -> CoreResult<()> {
 }
 
 /// Demonstrate error aggregation for batch operations
+#[allow(dead_code)]
 fn error_aggregation_demo() -> CoreResult<()> {
     println!("📦 4. Error Aggregation for Batch Operations");
 
-    let mut aggregator = ErrorAggregator::with_max_errors(5);
+    let mut aggregator = ErrorAggregator::errors(5);
 
     // Simulate batch processing with some failures
     let operations = vec![
@@ -181,27 +186,27 @@ fn error_aggregation_demo() -> CoreResult<()> {
 
     for (name, should_succeed) in operations {
         if should_succeed {
-            println!("   ✅ {} completed successfully", name);
+            println!("   ✅ {name} completed successfully");
             successful_operations.push(name);
         } else {
-            println!("   ❌ {} failed", name);
+            println!("   ❌ {name} failed");
             let error = CoreError::ComputationError(error_context!(format!(
                 "{} encountered an error",
                 name
             )));
-            aggregator.add_simple_error(error);
+            aggregator.add_simpleerror(error);
         }
     }
 
     println!("\n   📊 Batch Operation Summary:");
-    println!("   Successful operations: {:?}", successful_operations);
+    println!("   Successful operations: {successful_operations:?}");
     println!("   Total errors collected: {}", aggregator.error_count());
 
-    if aggregator.has_errors() {
+    if aggregator.haserrors() {
         println!("\n   📋 Error Summary:");
         println!("{}", aggregator.summary());
 
-        if let Some(most_severe) = aggregator.most_severe_error() {
+        if let Some(most_severe) = aggregator.most_severeerror() {
             println!("\n   🔥 Most severe error recovery suggestions:");
             println!("{}", most_severe.recovery_report());
         }
@@ -212,6 +217,7 @@ fn error_aggregation_demo() -> CoreResult<()> {
 }
 
 /// Demonstrate advanced error diagnostics and pattern analysis
+#[allow(dead_code)]
 fn error_diagnostics_demo() -> CoreResult<()> {
     println!("🔍 5. Advanced Error Diagnostics and Analysis");
 
@@ -233,12 +239,12 @@ fn error_diagnostics_demo() -> CoreResult<()> {
         println!("   🔬 Analyzing Error {} - {}", i + 1, error);
 
         // Get comprehensive diagnostic report
-        let diagnostics = diagnose_error(error);
+        let diagnostics = scirs2_core::error::diagnostics::error(error);
         println!("   📊 Diagnostic Report:");
         println!("{}", diagnostics.generate_report());
 
         // Record error for pattern analysis
-        ErrorDiagnostics::global().record_error(error, format!("demo_context_{}", i + 1));
+        ErrorDiagnostics::global().recorderror(error, format!("demo_context_{}", i + 1));
     }
 
     // Demonstrate recovery hints
@@ -254,7 +260,7 @@ fn error_diagnostics_demo() -> CoreResult<()> {
 
 /// Demonstrate async error handling capabilities
 #[cfg(feature = "async")]
-async fn async_error_handling_demo() -> CoreResult<()> {
+async fn asyncerror_handling_demo() -> CoreResult<()> {
     println!("⏰ 6. Async Error Handling and Recovery");
 
     // Timeout handling
@@ -357,8 +363,8 @@ fn scientific_computing_scenario() -> CoreResult<()> {
     // Setup retry strategy for numerical methods
     let scientific_retry = RecoveryStrategy::ExponentialBackoff {
         max_attempts: 5,
-        initial_delay: Duration::from_millis(200),
-        max_delay: Duration::from_secs(10),
+        initialdelay: Duration::from_millis(200),
+        maxdelay: Duration::from_secs(10),
         multiplier: 1.5,
     };
 
@@ -371,13 +377,13 @@ fn scientific_computing_scenario() -> CoreResult<()> {
 
     match result {
         Ok(solution) => {
-            println!("   ✅ Scientific computation completed: {}", solution);
+            println!("   ✅ Scientific computation completed: {solution}");
         }
         Err(e) => {
-            println!("   ❌ Scientific computation failed: {}", e);
+            println!("   ❌ Scientific computation failed: {e}");
 
             // Generate comprehensive diagnostic report
-            let diagnostics = diagnose_error(&e);
+            let diagnostics = scirs2_core::error::diagnostics::error(&e);
             println!("\n   📊 Scientific Error Analysis:");
             println!("{}", diagnostics.generate_report());
         }
@@ -387,6 +393,7 @@ fn scientific_computing_scenario() -> CoreResult<()> {
 }
 
 /// Simulate an iterative solver that might fail
+#[allow(dead_code)]
 fn simulate_iterative_solver(matrix_size: usize, max_iterations: usize) -> CoreResult<String> {
     // Simulate different failure modes
     use rand::Rng;
@@ -403,8 +410,7 @@ fn simulate_iterative_solver(matrix_size: usize, max_iterations: usize) -> CoreR
                 ))))
             } else {
                 Ok(format!(
-                    "Linear system solved for {}x{} matrix",
-                    matrix_size, matrix_size
+                    "Linear system solved for {matrix_size}x{matrix_size} matrix"
                 ))
             }
         }

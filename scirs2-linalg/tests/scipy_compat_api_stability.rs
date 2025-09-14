@@ -14,6 +14,7 @@ use std::collections::HashMap;
 const STABILITY_TOL: f64 = 1e-12;
 
 /// Helper function to check if two results are consistently equal
+#[allow(dead_code)]
 fn results_consistent<T: PartialEq + std::fmt::Debug>(
     result1: &LinalgResult<T>,
     result2: &LinalgResult<T>,
@@ -42,6 +43,7 @@ fn results_consistent<T: PartialEq + std::fmt::Debug>(
 }
 
 /// Helper function to check if two arrays are consistently equal
+#[allow(dead_code)]
 fn arrays_consistent(a: &Array2<f64>, b: &Array2<f64>, tol: f64) -> bool {
     if a.shape() != b.shape() {
         return false;
@@ -52,6 +54,7 @@ fn arrays_consistent(a: &Array2<f64>, b: &Array2<f64>, tol: f64) -> bool {
 }
 
 /// Helper function to check if two vectors are consistently equal
+#[allow(dead_code)]
 fn vectors_consistent(a: &Array1<f64>, b: &Array1<f64>, tol: f64) -> bool {
     if a.len() != b.len() {
         return false;
@@ -68,15 +71,15 @@ mod parameter_stability_tests {
     #[test]
     fn test_determinant_parameter_stability() {
         // Test that det() behavior is consistent across parameter variations
-        let test_matrix = array![[2.0, 1.0], [1.0, 2.0]];
+        let testmatrix = array![[2.0, 1.0], [1.0, 2.0]];
 
         // Base case
-        let det_base = compat::det(&test_matrix.view(), false, true);
+        let det_base = compat::det(&testmatrix.view(), false, true);
 
         // Different parameter combinations that should yield same result
-        let det_no_overwrite = compat::det(&test_matrix.view(), false, true);
-        let det_with_overwrite = compat::det(&test_matrix.view(), true, true);
-        let det_no_check = compat::det(&test_matrix.view(), false, false);
+        let det_no_overwrite = compat::det(&testmatrix.view(), false, true);
+        let det_with_overwrite = compat::det(&testmatrix.view(), true, true);
+        let det_no_check = compat::det(&testmatrix.view(), false, false);
 
         // All should give consistent results
         assert!(results_consistent(
@@ -99,11 +102,11 @@ mod parameter_stability_tests {
 
     #[test]
     fn test_inverse_parameter_stability() {
-        let test_matrix = array![[3.0, 1.0], [2.0, 1.0]];
+        let testmatrix = array![[3.0, 1.0], [2.0, 1.0]];
 
-        let inv_base = compat::inv(&test_matrix.view(), false, true);
-        let inv_overwrite = compat::inv(&test_matrix.view(), true, true);
-        let inv_no_check = compat::inv(&test_matrix.view(), false, false);
+        let inv_base = compat::inv(&testmatrix.view(), false, true);
+        let inv_overwrite = compat::inv(&testmatrix.view(), true, true);
+        let inv_no_check = compat::inv(&testmatrix.view(), false, false);
 
         // Check result consistency
         match (&inv_base, &inv_overwrite, &inv_no_check) {
@@ -117,18 +120,17 @@ mod parameter_stability_tests {
 
     #[test]
     fn test_norm_parameter_combinations() {
-        let test_matrix = array![[3.0, 4.0], [1.0, 2.0]];
+        let testmatrix = array![[3.0, 4.0], [1.0, 2.0]];
 
         // Test all supported norm types with different parameter combinations
         let norm_types = ["fro", "1", "-1", "2", "-2", "inf", "-inf"];
 
         for norm_type in &norm_types {
             let norm_with_check =
-                compat::norm(&test_matrix.view(), Some(norm_type), None, false, true);
+                compat::norm(&testmatrix.view(), Some(norm_type), None, false, true);
             let norm_without_check =
-                compat::norm(&test_matrix.view(), Some(norm_type), None, false, false);
-            let norm_keepdims =
-                compat::norm(&test_matrix.view(), Some(norm_type), None, true, true);
+                compat::norm(&testmatrix.view(), Some(norm_type), None, false, false);
+            let norm_keepdims = compat::norm(&testmatrix.view(), Some(norm_type), None, true, true);
 
             // All should give consistent results (keepdims might differ in shape but not value)
             assert!(results_consistent(
@@ -146,11 +148,11 @@ mod parameter_stability_tests {
 
     #[test]
     fn test_eigenvalue_parameter_stability() {
-        let symmetric_matrix = array![[2.0, 1.0], [1.0, 3.0]];
+        let symmetricmatrix = array![[2.0, 1.0], [1.0, 3.0]];
 
         // Test eigenvalues only vs eigenvalues + eigenvectors
         let (evals_only, evecs_none) = compat::eigh(
-            &symmetric_matrix.view(),
+            &symmetricmatrix.view(),
             None,
             false,
             true,
@@ -165,7 +167,7 @@ mod parameter_stability_tests {
         .unwrap();
 
         let (evals_with_evecs, evecs_some) = compat::eigh(
-            &symmetric_matrix.view(),
+            &symmetricmatrix.view(),
             None,
             false,
             false,
@@ -192,7 +194,7 @@ mod parameter_stability_tests {
 
         // Test different lower/upper parameter
         let (evals_lower, _) = compat::eigh(
-            &symmetric_matrix.view(),
+            &symmetricmatrix.view(),
             None,
             true,
             true,
@@ -207,7 +209,7 @@ mod parameter_stability_tests {
         .unwrap();
 
         let (evals_upper, _) = compat::eigh(
-            &symmetric_matrix.view(),
+            &symmetricmatrix.view(),
             None,
             false,
             true,
@@ -230,12 +232,12 @@ mod parameter_stability_tests {
 
     #[test]
     fn test_decomposition_parameter_stability() {
-        let test_matrix = array![[4.0, 2.0, 1.0], [2.0, 5.0, 3.0], [1.0, 3.0, 6.0]];
+        let testmatrix = array![[4.0, 2.0, 1.0], [2.0, 5.0, 3.0], [1.0, 3.0, 6.0]];
 
         // LU decomposition with different parameters
-        let lu_base = compat::lu(&test_matrix.view(), false, false, true, false);
-        let lu_no_check = compat::lu(&test_matrix.view(), false, false, false, false);
-        let lu_overwrite = compat::lu(&test_matrix.view(), false, true, true, false);
+        let lu_base = compat::lu(&testmatrix.view(), false, false, true, false);
+        let lu_no_check = compat::lu(&testmatrix.view(), false, false, false, false);
+        let lu_overwrite = compat::lu(&testmatrix.view(), false, true, true, false);
 
         match (&lu_base, &lu_no_check, &lu_overwrite) {
             (Ok((p1, l1, u1)), Ok((p2, l2, u2)), Ok((p3, l3, u3))) => {
@@ -251,9 +253,9 @@ mod parameter_stability_tests {
         }
 
         // QR decomposition with different modes
-        let qr_full = compat::qr(&test_matrix.view(), false, None, "full", false, true);
-        let qr_economic = compat::qr(&test_matrix.view(), false, None, "economic", false, true);
-        let qr_r_only = compat::qr(&test_matrix.view(), false, None, "r", false, true);
+        let qr_full = compat::qr(&testmatrix.view(), false, None, "full", false, true);
+        let qr_economic = compat::qr(&testmatrix.view(), false, None, "economic", false, true);
+        let qr_r_only = compat::qr(&testmatrix.view(), false, None, "r", false, true);
 
         // All should succeed and R matrices should be consistent in their overlap
         assert!(qr_full.is_ok());
@@ -336,8 +338,8 @@ mod api_contract_tests {
         let vector = array![1.0, 2.0, 3.0];
 
         // Matrix norms
-        let supported_matrix_norms = ["fro", "1", "-1", "2", "-2", "inf", "-inf"];
-        for norm_type in &supported_matrix_norms {
+        let supportedmatrix_norms = ["fro", "1", "-1", "2", "-2", "inf", "-inf"];
+        for norm_type in &supportedmatrix_norms {
             let norm_result = compat::norm(&matrix.view(), Some(norm_type), None, false, true);
             match norm_result {
                 Ok(val) => {
@@ -372,11 +374,11 @@ mod api_contract_tests {
 
     #[test]
     fn test_decomposition_output_contracts() {
-        let spd_matrix = array![[4.0, 2.0], [2.0, 3.0]];
-        let general_matrix = array![[1.0, 2.0, 3.0], [4.0, 5.0, 6.0], [7.0, 8.0, 10.0]];
+        let spdmatrix = array![[4.0, 2.0], [2.0, 3.0]];
+        let generalmatrix = array![[1.0, 2.0, 3.0], [4.0, 5.0, 6.0], [7.0, 8.0, 10.0]];
 
         // Cholesky decomposition contract
-        let chol_result = compat::cholesky(&spd_matrix.view(), true, false, true);
+        let chol_result = compat::cholesky(&spdmatrix.view(), true, false, true);
         if let Ok(l) = chol_result {
             // L should be lower triangular
             for i in 0..l.nrows() {
@@ -389,11 +391,11 @@ mod api_contract_tests {
 
             // L * L^T should reconstruct the original matrix
             let reconstructed = l.dot(&l.t());
-            assert!(arrays_consistent(&reconstructed, &spd_matrix, 1e-10));
+            assert!(arrays_consistent(&reconstructed, &spdmatrix, 1e-10));
         }
 
         // QR decomposition contract
-        let qr_result = compat::qr(&general_matrix.view(), false, None, "full", false, true);
+        let qr_result = compat::qr(&generalmatrix.view(), false, None, "full", false, true);
         if let Ok((Some(q), r)) = qr_result {
             // Q should be orthogonal
             let qtq = q.t().dot(&q);
@@ -412,11 +414,11 @@ mod api_contract_tests {
 
             // Q * R should reconstruct the original matrix
             let reconstructed = q.dot(&r);
-            assert!(arrays_consistent(&reconstructed, &general_matrix, 1e-10));
+            assert!(arrays_consistent(&reconstructed, &generalmatrix, 1e-10));
         }
 
         // SVD decomposition contract
-        let svd_result = compat::svd(&general_matrix.view(), true, true, false, true, "gesdd");
+        let svd_result = compat::svd(&generalmatrix.view(), true, true, false, true, "gesdd");
         if let Ok((u_opt, s, vt_opt)) = svd_result {
             if let (Some(u), Some(vt)) = (u_opt, vt_opt) {
                 // Singular values should be non-negative and sorted
@@ -505,11 +507,11 @@ mod api_contract_tests {
 
     #[test]
     fn test_eigenvalue_api_contract() {
-        let symmetric_matrix = array![[4.0, 1.0, 0.0], [1.0, 3.0, 1.0], [0.0, 1.0, 2.0]];
+        let symmetricmatrix = array![[4.0, 1.0, 0.0], [1.0, 3.0, 1.0], [0.0, 1.0, 2.0]];
 
         // Eigenvalues only
         let (eigenvals, eigenvecs_opt) = compat::eigh(
-            &symmetric_matrix.view(),
+            &symmetricmatrix.view(),
             None,
             false,
             true,
@@ -524,7 +526,7 @@ mod api_contract_tests {
         .unwrap();
 
         // Should get eigenvalues but no eigenvectors
-        assert_eq!(eigenvals.len(), symmetric_matrix.nrows());
+        assert_eq!(eigenvals.len(), symmetricmatrix.nrows());
         assert!(eigenvecs_opt.is_none());
 
         // Eigenvalues should be sorted (ascending for eigh)
@@ -534,7 +536,7 @@ mod api_contract_tests {
 
         // Eigenvalues + eigenvectors
         let (eigenvals_with_vecs, eigenvecs_with_opt) = compat::eigh(
-            &symmetric_matrix.view(),
+            &symmetricmatrix.view(),
             None,
             false,
             false,
@@ -549,7 +551,7 @@ mod api_contract_tests {
         .unwrap();
 
         // Should get both eigenvalues and eigenvectors
-        assert_eq!(eigenvals_with_vecs.len(), symmetric_matrix.nrows());
+        assert_eq!(eigenvals_with_vecs.len(), symmetricmatrix.nrows());
         assert!(eigenvecs_with_opt.is_some());
 
         if let Some(eigenvecs) = eigenvecs_with_opt {
@@ -559,7 +561,7 @@ mod api_contract_tests {
             assert!(arrays_consistent(&vtv, &identity, 1e-10));
 
             // Should satisfy A * V = V * Λ
-            let av = symmetric_matrix.dot(&eigenvecs);
+            let av = symmetricmatrix.dot(&eigenvecs);
             let vl = eigenvecs.dot(&Array2::from_diag(&eigenvals_with_vecs));
             assert!(arrays_consistent(&av, &vl, 1e-8));
         }
@@ -610,15 +612,15 @@ mod error_consistency_tests {
 
     #[test]
     fn test_finite_check_error_consistency() {
-        let inf_matrix = array![[1.0, f64::INFINITY], [2.0, 3.0]];
-        let nan_matrix = array![[1.0, 2.0], [f64::NAN, 3.0]];
+        let infmatrix = array![[1.0, f64::INFINITY], [2.0, 3.0]];
+        let nanmatrix = array![[1.0, 2.0], [f64::NAN, 3.0]];
         let inf_vector = array![1.0, f64::INFINITY, 3.0];
 
         // All functions with check_finite=true should consistently reject non-finite inputs
-        assert!(compat::det(&inf_matrix.view(), false, true).is_err());
-        assert!(compat::det(&nan_matrix.view(), false, true).is_err());
-        assert!(compat::inv(&inf_matrix.view(), false, true).is_err());
-        assert!(compat::norm(&inf_matrix.view(), Some("fro"), None, false, true).is_err());
+        assert!(compat::det(&infmatrix.view(), false, true).is_err());
+        assert!(compat::det(&nanmatrix.view(), false, true).is_err());
+        assert!(compat::inv(&infmatrix.view(), false, true).is_err());
+        assert!(compat::norm(&infmatrix.view(), Some("fro"), None, false, true).is_err());
         assert!(compat::vector_norm(&inf_vector.view(), Some(2.0), true).is_err());
 
         // Functions with check_finite=false should handle these more gracefully
@@ -627,42 +629,35 @@ mod error_consistency_tests {
 
     #[test]
     fn test_not_implemented_error_consistency() {
-        let test_matrix = array![[1.0, 2.0], [3.0, 4.0]];
+        let testmatrix = array![[1.0, 2.0], [3.0, 4.0]];
 
         // Functions that are not yet implemented should consistently return NotImplementedError
         // Schur decomposition is now implemented
-        assert!(compat::schur(&test_matrix.view(), "real", None, false, None, true).is_ok());
+        assert!(compat::schur(&testmatrix.view(), "real", None, false, None, true).is_ok());
 
         // Matrix trigonometric functions are now implemented
-        assert!(compat::cosm(&test_matrix.view()).is_ok());
-        assert!(compat::sinm(&test_matrix.view()).is_ok());
-        assert!(compat::tanm(&test_matrix.view()).is_ok());
+        assert!(compat::cosm(&testmatrix.view()).is_ok());
+        assert!(compat::sinm(&testmatrix.view()).is_ok());
+        assert!(compat::tanm(&testmatrix.view()).is_ok());
     }
 
     #[test]
     fn test_invalid_parameter_error_consistency() {
-        let test_matrix = array![[1.0, 2.0], [3.0, 4.0]];
+        let testmatrix = array![[1.0, 2.0], [3.0, 4.0]];
 
         // Invalid parameters should consistently return InvalidInput errors
         assert!(matches!(
-            compat::qr(
-                &test_matrix.view(),
-                false,
-                None,
-                "invalid_mode",
-                false,
-                true
-            ),
+            compat::qr(&testmatrix.view(), false, None, "invalid_mode", false, true),
             Err(LinalgError::InvalidInputError(_))
         ));
 
         assert!(matches!(
-            compat::polar(&test_matrix.view(), "invalid_side"),
+            compat::polar(&testmatrix.view(), "invalid_side"),
             Err(LinalgError::InvalidInput(_))
         ));
 
         assert!(matches!(
-            compat::rq(&test_matrix.view(), false, None, "invalid_mode", true),
+            compat::rq(&testmatrix.view(), false, None, "invalid_mode", true),
             Err(LinalgError::InvalidInput(_))
         ));
     }
@@ -690,14 +685,14 @@ mod regression_tests {
         assert!((det_5x5 - 1.0).abs() < STABILITY_TOL);
 
         // Specific matrix with known determinant: [[2,3],[1,2]] has det = 1
-        let known_det_matrix = array![[2.0, 3.0], [1.0, 2.0]];
-        let known_det: f64 = compat::det(&known_det_matrix.view(), false, true).unwrap();
+        let known_detmatrix = array![[2.0, 3.0], [1.0, 2.0]];
+        let known_det: f64 = compat::det(&known_detmatrix.view(), false, true).unwrap();
         assert!((known_det - 1.0).abs() < STABILITY_TOL);
 
         // Known inverse: [[3,1],[2,1]] has inverse [[1,-1],[-2,3]]
-        let known_inv_matrix = array![[3.0, 1.0], [2.0, 1.0]];
+        let known_invmatrix = array![[3.0, 1.0], [2.0, 1.0]];
         let expected_inverse = array![[1.0, -1.0], [-2.0, 3.0]];
-        let computed_inverse = compat::inv(&known_inv_matrix.view(), false, true).unwrap();
+        let computed_inverse = compat::inv(&known_invmatrix.view(), false, true).unwrap();
         assert!(arrays_consistent(
             &computed_inverse,
             &expected_inverse,
@@ -705,9 +700,9 @@ mod regression_tests {
         ));
 
         // Known eigenvalues: diagonal matrix has eigenvalues equal to diagonal elements
-        let diag_matrix = array![[5.0, 0.0, 0.0], [0.0, 3.0, 0.0], [0.0, 0.0, 1.0]];
+        let diagmatrix = array![[5.0, 0.0, 0.0], [0.0, 3.0, 0.0], [0.0, 0.0, 1.0]];
         let (eigenvals, _) = compat::eigh(
-            &diag_matrix.view(),
+            &diagmatrix.view(),
             None,
             false,
             true,
@@ -728,18 +723,18 @@ mod regression_tests {
         ));
 
         // Known norms
-        let norm_test_matrix = array![[3.0, 4.0], [0.0, 0.0]];
+        let norm_testmatrix = array![[3.0, 4.0], [0.0, 0.0]];
         // Frobenius norm should be 5.0
         let fro_norm: f64 =
-            compat::norm(&norm_test_matrix.view(), Some("fro"), None, false, true).unwrap();
+            compat::norm(&norm_testmatrix.view(), Some("fro"), None, false, true).unwrap();
         assert!((fro_norm - 5.0).abs() < STABILITY_TOL);
         // 1-norm should be 4.0 (max column sum)
         let norm_1: f64 =
-            compat::norm(&norm_test_matrix.view(), Some("1"), None, false, true).unwrap();
+            compat::norm(&norm_testmatrix.view(), Some("1"), None, false, true).unwrap();
         assert!((norm_1 - 4.0).abs() < STABILITY_TOL);
         // inf-norm should be 7.0 (max row sum)
         let norm_inf: f64 =
-            compat::norm(&norm_test_matrix.view(), Some("inf"), None, false, true).unwrap();
+            compat::norm(&norm_testmatrix.view(), Some("inf"), None, false, true).unwrap();
         assert!((norm_inf - 7.0).abs() < STABILITY_TOL);
     }
 
@@ -840,8 +835,8 @@ mod regression_tests {
         assert!(cond > 1e7);
 
         // Very small but well-conditioned matrix
-        let small_matrix = Array2::eye(2) * 1e-10;
-        let det_small: f64 = compat::det(&small_matrix.view(), false, true).unwrap();
+        let smallmatrix = Array2::eye(2) * 1e-10;
+        let det_small: f64 = compat::det(&smallmatrix.view(), false, true).unwrap();
         assert!((det_small - 1e-20).abs() < 1e-25);
 
         // Matrix with large dynamic range - condition number calculation may be limited by numerical precision
@@ -869,18 +864,18 @@ mod version_compatibility_tests {
     fn test_default_parameter_behavior() {
         // Test that default parameter behavior remains consistent
 
-        let test_matrix = array![[2.0, 1.0], [1.0, 2.0]];
+        let testmatrix = array![[2.0, 1.0], [1.0, 2.0]];
 
         // These should be equivalent ways to call functions with defaults
-        let det1: f64 = compat::det(&test_matrix.view(), false, true).unwrap();
-        let det2: f64 = compat::det(&test_matrix.view(), false, true).unwrap(); // Same call
+        let det1: f64 = compat::det(&testmatrix.view(), false, true).unwrap();
+        let det2: f64 = compat::det(&testmatrix.view(), false, true).unwrap(); // Same call
 
         assert!((det1 - det2).abs() < f64::EPSILON);
 
         // Norm with default (None) vs explicit "fro"
-        let norm_default: f64 = compat::norm(&test_matrix.view(), None, None, false, true).unwrap();
+        let norm_default: f64 = compat::norm(&testmatrix.view(), None, None, false, true).unwrap();
         let norm_explicit: f64 =
-            compat::norm(&test_matrix.view(), Some("fro"), None, false, true).unwrap();
+            compat::norm(&testmatrix.view(), Some("fro"), None, false, true).unwrap();
 
         assert!((norm_default - norm_explicit).abs() < STABILITY_TOL);
 
@@ -896,11 +891,11 @@ mod version_compatibility_tests {
     fn test_optional_parameter_handling() {
         // Test that optional parameters are handled consistently
 
-        let test_matrix = array![[4.0, 2.0], [2.0, 3.0]];
+        let testmatrix = array![[4.0, 2.0], [2.0, 3.0]];
 
         // Functions with many optional parameters should handle None gracefully
         let (eigenvals1, _) = compat::eigh(
-            &test_matrix.view(),
+            &testmatrix.view(),
             None,
             false,
             true,
@@ -916,7 +911,7 @@ mod version_compatibility_tests {
 
         // Same call with explicit None values
         let (eigenvals2, _) = compat::eigh(
-            &test_matrix.view(),
+            &testmatrix.view(),
             None,
             false,
             true,
@@ -933,8 +928,8 @@ mod version_compatibility_tests {
         assert!(vectors_consistent(&eigenvals1, &eigenvals2, STABILITY_TOL));
 
         // Pseudoinverse with and without explicit None
-        let pinv1 = compat::pinv(&test_matrix.view(), None, false, true).unwrap();
-        let pinv2 = compat::pinv(&test_matrix.view(), None, false, true).unwrap();
+        let pinv1 = compat::pinv(&testmatrix.view(), None, false, true).unwrap();
+        let pinv2 = compat::pinv(&testmatrix.view(), None, false, true).unwrap();
 
         assert!(arrays_consistent(&pinv1, &pinv2, STABILITY_TOL));
     }
@@ -943,23 +938,23 @@ mod version_compatibility_tests {
     fn test_function_signature_stability() {
         // Test that function signatures accept the expected types
 
-        let f64_matrix = array![[1.0_f64, 2.0], [3.0, 4.0]];
-        let f64_matrix_symmetric = array![[2.0_f64, 1.0], [1.0, 3.0]];
+        let f64matrix = array![[1.0_f64, 2.0], [3.0, 4.0]];
+        let f64matrix_symmetric = array![[2.0_f64, 1.0], [1.0, 3.0]];
         let f64_vector = array![1.0_f64, 2.0];
 
         // These should all compile and run without type issues
-        let _det: f64 = compat::det(&f64_matrix.view(), false, true).unwrap();
-        let _inv: Array2<f64> = compat::inv(&f64_matrix.view(), false, true).unwrap();
-        let _norm: f64 = compat::norm(&f64_matrix.view(), Some("fro"), None, false, true).unwrap();
+        let _det: f64 = compat::det(&f64matrix.view(), false, true).unwrap();
+        let _inv: Array2<f64> = compat::inv(&f64matrix.view(), false, true).unwrap();
+        let _norm: f64 = compat::norm(&f64matrix.view(), Some("fro"), None, false, true).unwrap();
         let _vnorm: f64 = compat::vector_norm(&f64_vector.view(), Some(2.0), true).unwrap();
 
         // Decomposition return types should be consistent
         let (p, l, u): (Array2<f64>, Array2<f64>, Array2<f64>) =
-            compat::lu(&f64_matrix.view(), false, false, true, false).unwrap();
+            compat::lu(&f64matrix.view(), false, false, true, false).unwrap();
         let (q_opt, r): (Option<Array2<f64>>, Array2<f64>) =
-            compat::qr(&f64_matrix.view(), false, None, "full", false, true).unwrap();
+            compat::qr(&f64matrix.view(), false, None, "full", false, true).unwrap();
         let (eigenvals, eigenvecs_opt): (Array1<f64>, Option<Array2<f64>>) = compat::eigh(
-            &f64_matrix_symmetric.view(),
+            &f64matrix_symmetric.view(),
             None,
             false,
             false,
@@ -998,7 +993,7 @@ mod integration_stability_tests {
     fn test_complete_workflow_stability() {
         // Test a complete scientific computing workflow for API stability
 
-        let base_matrix = array![[4.0, 2.0, 1.0], [2.0, 5.0, 3.0], [1.0, 3.0, 6.0]];
+        let basematrix = array![[4.0, 2.0, 1.0], [2.0, 5.0, 3.0], [1.0, 3.0, 6.0]];
         let rhs = array![[1.0], [2.0], [3.0]];
 
         // Run the workflow multiple times to ensure stability
@@ -1008,10 +1003,10 @@ mod integration_stability_tests {
             let mut workflow_results = HashMap::new();
 
             // Step 1: Matrix analysis
-            let det = compat::det(&base_matrix.view(), false, true).unwrap();
-            let cond = compat::cond(&base_matrix.view(), Some("2")).unwrap();
-            let rank = compat::matrix_rank(&base_matrix.view(), None, false, true).unwrap();
-            let norm = compat::norm(&base_matrix.view(), Some("fro"), None, false, true).unwrap();
+            let det = compat::det(&basematrix.view(), false, true).unwrap();
+            let cond = compat::cond(&basematrix.view(), Some("2")).unwrap();
+            let rank = compat::matrix_rank(&basematrix.view(), None, false, true).unwrap();
+            let norm = compat::norm(&basematrix.view(), Some("fro"), None, false, true).unwrap();
 
             workflow_results.insert("det", det);
             workflow_results.insert("cond", cond);
@@ -1019,10 +1014,10 @@ mod integration_stability_tests {
             workflow_results.insert("norm", norm);
 
             // Step 2: Decompositions
-            let (_, l, u) = compat::lu(&base_matrix.view(), false, false, true, false).unwrap();
-            let (_, r) = compat::qr(&base_matrix.view(), false, None, "full", false, true).unwrap();
+            let (_, l, u) = compat::lu(&basematrix.view(), false, false, true, false).unwrap();
+            let (_, r) = compat::qr(&basematrix.view(), false, None, "full", false, true).unwrap();
             let (eigenvals, _) = compat::eigh(
-                &base_matrix.view(),
+                &basematrix.view(),
                 None,
                 false,
                 true,
@@ -1053,7 +1048,7 @@ mod integration_stability_tests {
 
             // Step 3: Solve system
             let solution = compat::compat_solve(
-                &base_matrix.view(),
+                &basematrix.view(),
                 &rhs.view(),
                 false,
                 false,
@@ -1068,7 +1063,7 @@ mod integration_stability_tests {
             workflow_results.insert("solution_norm", solution_norm);
 
             // Step 4: Matrix functions
-            let matrix_exp = compat::expm(&(base_matrix.clone() * 0.1).view(), None).unwrap();
+            let matrix_exp = compat::expm(&(basematrix.clone() * 0.1).view(), None).unwrap();
             let exp_norm =
                 compat::norm(&matrix_exp.view(), Some("fro"), None, false, true).unwrap();
             workflow_results.insert("exp_norm", exp_norm);
@@ -1102,7 +1097,7 @@ mod integration_stability_tests {
     fn test_error_handling_stability() {
         // Test that error handling is stable across multiple calls
 
-        let singular_matrix = array![[1.0, 2.0], [2.0, 4.0]];
+        let singularmatrix = array![[1.0, 2.0], [2.0, 4.0]];
         let non_square = array![[1.0, 2.0, 3.0], [4.0, 5.0, 6.0]];
         let mismatched_rhs = array![[1.0], [2.0], [3.0]];
 
@@ -1113,7 +1108,7 @@ mod integration_stability_tests {
 
             // Solve with mismatched dimensions should always fail
             assert!(compat::compat_solve(
-                &singular_matrix.view(),
+                &singularmatrix.view(),
                 &mismatched_rhs.view(),
                 false,
                 false,
@@ -1129,7 +1124,7 @@ mod integration_stability_tests {
 
             // Invalid parameters should always fail
             assert!(
-                compat::qr(&singular_matrix.view(), false, None, "invalid", false, true).is_err()
+                compat::qr(&singularmatrix.view(), false, None, "invalid", false, true).is_err()
             );
         }
     }

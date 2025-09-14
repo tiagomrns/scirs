@@ -7,6 +7,7 @@ use ndarray::Array1;
 use scirs2_io::harwell_boeing::{self, ccs_to_hb, hb_to_ccs, HBMatrixType, HBSparseMatrix};
 use tempfile::tempdir;
 
+#[allow(dead_code)]
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("🔢 Harwell-Boeing Sparse Matrix Format Example");
     println!("==============================================");
@@ -27,7 +28,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     Ok(())
 }
 
-fn create_and_write_matrix(temp_dir: &tempfile::TempDir) -> Result<(), Box<dyn std::error::Error>> {
+#[allow(dead_code)]
+fn create_and_write_matrix(tempdir: &tempfile::TempDir) -> Result<(), Box<dyn std::error::Error>> {
     println!("\n📝 Creating and Writing Harwell-Boeing Matrix...");
 
     // Create a simple sparse matrix in CCS format
@@ -68,7 +70,7 @@ fn create_and_write_matrix(temp_dir: &tempfile::TempDir) -> Result<(), Box<dyn s
     println!("     Non-zeros: {}", hb_matrix.header.nnzero);
 
     // Write to file
-    let hb_file = temp_dir.path().join("example_matrix.hb");
+    let hb_file = tempdir.path().join("example_matrix.hb");
     harwell_boeing::write_harwell_boeing(&hb_file, &hb_matrix)?;
 
     println!(
@@ -79,10 +81,11 @@ fn create_and_write_matrix(temp_dir: &tempfile::TempDir) -> Result<(), Box<dyn s
     Ok(())
 }
 
-fn read_and_analyze_matrix(temp_dir: &tempfile::TempDir) -> Result<(), Box<dyn std::error::Error>> {
+#[allow(dead_code)]
+fn read_and_analyze_matrix(tempdir: &tempfile::TempDir) -> Result<(), Box<dyn std::error::Error>> {
     println!("\n📖 Reading and Analyzing Harwell-Boeing Matrix...");
 
-    let hb_file = temp_dir.path().join("example_matrix.hb");
+    let hb_file = tempdir.path().join("example_matrix.hb");
 
     // Read the matrix back
     let matrix = harwell_boeing::read_harwell_boeing(&hb_file)?;
@@ -119,11 +122,12 @@ fn read_and_analyze_matrix(temp_dir: &tempfile::TempDir) -> Result<(), Box<dyn s
     }
 
     // Verify matrix structure
-    verify_matrix_structure(&matrix)?;
+    verifymatrix_structure(&matrix)?;
 
     Ok(())
 }
 
+#[allow(dead_code)]
 fn demonstrate_format_conversion(
     temp_dir: &tempfile::TempDir,
 ) -> Result<(), Box<dyn std::error::Error>> {
@@ -174,7 +178,7 @@ fn demonstrate_format_conversion(
     println!("  ✅ Round-trip conversion successful - data integrity preserved");
 
     // Save reconverted matrix
-    let reconverted_file = temp_dir.path().join("reconverted_matrix.hb");
+    let reconverted_file = temp_dir.path().join("reconvertedmatrix.hb");
     harwell_boeing::write_harwell_boeing(&reconverted_file, &reconverted)?;
 
     println!(
@@ -185,6 +189,7 @@ fn demonstrate_format_conversion(
     Ok(())
 }
 
+#[allow(dead_code)]
 fn demonstrate_different_matrix_types(
     temp_dir: &tempfile::TempDir,
 ) -> Result<(), Box<dyn std::error::Error>> {
@@ -197,7 +202,7 @@ fn demonstrate_different_matrix_types(
     let sym_rowind = Array1::from(vec![0, 1, 1, 2]);
     let sym_values = Array1::from(vec![1.0, 2.0, 3.0, 4.0]);
 
-    let symmetric_matrix = ccs_to_hb(
+    let symmetricmatrix = ccs_to_hb(
         &sym_colptr,
         &sym_rowind,
         &sym_values,
@@ -207,15 +212,15 @@ fn demonstrate_different_matrix_types(
         HBMatrixType::RealSymmetric,
     );
 
-    let sym_file = temp_dir.path().join("symmetric_matrix.hb");
-    harwell_boeing::write_harwell_boeing(&sym_file, &symmetric_matrix)?;
+    let sym_file = temp_dir.path().join("symmetricmatrix.hb");
+    harwell_boeing::write_harwell_boeing(&sym_file, &symmetricmatrix)?;
     println!(
         "  ✅ Symmetric matrix saved: {:?}",
         sym_file.file_name().unwrap()
     );
 
     // 2. Pattern matrix (no values, structure only)
-    let pattern_matrix = ccs_to_hb(
+    let patternmatrix = ccs_to_hb(
         &sym_colptr,
         &sym_rowind,
         &sym_values, // Values will be ignored for pattern matrix
@@ -225,8 +230,8 @@ fn demonstrate_different_matrix_types(
         HBMatrixType::Pattern,
     );
 
-    let pattern_file = temp_dir.path().join("pattern_matrix.hb");
-    harwell_boeing::write_harwell_boeing(&pattern_file, &pattern_matrix)?;
+    let pattern_file = temp_dir.path().join("patternmatrix.hb");
+    harwell_boeing::write_harwell_boeing(&pattern_file, &patternmatrix)?;
     println!(
         "  ✅ Pattern matrix saved: {:?}",
         pattern_file.file_name().unwrap()
@@ -258,7 +263,8 @@ fn demonstrate_different_matrix_types(
     Ok(())
 }
 
-fn verify_matrix_structure(matrix: &HBSparseMatrix<f64>) -> Result<(), Box<dyn std::error::Error>> {
+#[allow(dead_code)]
+fn verifymatrix_structure(matrix: &HBSparseMatrix<f64>) -> Result<(), Box<dyn std::error::Error>> {
     // Basic structural checks
     assert_eq!(
         matrix.colptr.len(),
@@ -309,6 +315,7 @@ fn verify_matrix_structure(matrix: &HBSparseMatrix<f64>) -> Result<(), Box<dyn s
     Ok(())
 }
 
+#[allow(dead_code)]
 fn estimate_storage_size(matrix: &HBSparseMatrix<f64>) -> usize {
     let ptr_size = matrix.colptr.len() * std::mem::size_of::<usize>();
     let idx_size = matrix.rowind.len() * std::mem::size_of::<usize>();

@@ -297,6 +297,7 @@ impl<F: Float + ndarray::ScalarOperand + FromPrimitive> Op<F> for MatrixFunction
 // Helper functions
 
 /// Compute matrix sine using Taylor series
+#[allow(dead_code)]
 fn compute_matrix_sine<F: Float + ndarray::ScalarOperand + FromPrimitive>(
     matrix: &ndarray::ArrayView2<F>,
 ) -> Result<Array2<F>, OpError> {
@@ -322,6 +323,7 @@ fn compute_matrix_sine<F: Float + ndarray::ScalarOperand + FromPrimitive>(
 }
 
 /// Compute matrix cosine using Taylor series
+#[allow(dead_code)]
 fn compute_matrix_cosine<F: Float + ndarray::ScalarOperand + FromPrimitive>(
     matrix: &ndarray::ArrayView2<F>,
 ) -> Result<Array2<F>, OpError> {
@@ -347,6 +349,7 @@ fn compute_matrix_cosine<F: Float + ndarray::ScalarOperand + FromPrimitive>(
 }
 
 /// Compute matrix sign function using Newton iteration
+#[allow(dead_code)]
 fn compute_matrix_sign<F: Float + ndarray::ScalarOperand + FromPrimitive>(
     matrix: &ndarray::ArrayView2<F>,
 ) -> Result<Array2<F>, OpError> {
@@ -373,6 +376,7 @@ fn compute_matrix_sign<F: Float + ndarray::ScalarOperand + FromPrimitive>(
 }
 
 /// Compute matrix hyperbolic sine
+#[allow(dead_code)]
 fn compute_matrix_sinh<F: Float + ndarray::ScalarOperand + FromPrimitive>(
     matrix: &ndarray::ArrayView2<F>,
 ) -> Result<Array2<F>, OpError> {
@@ -385,6 +389,7 @@ fn compute_matrix_sinh<F: Float + ndarray::ScalarOperand + FromPrimitive>(
 }
 
 /// Compute matrix hyperbolic cosine
+#[allow(dead_code)]
 fn compute_matrix_cosh<F: Float + ndarray::ScalarOperand + FromPrimitive>(
     matrix: &ndarray::ArrayView2<F>,
 ) -> Result<Array2<F>, OpError> {
@@ -397,6 +402,7 @@ fn compute_matrix_cosh<F: Float + ndarray::ScalarOperand + FromPrimitive>(
 }
 
 /// Compute matrix exponential (from matrix_ops.rs)
+#[allow(dead_code)]
 fn compute_matrix_exp<F: Float + ndarray::ScalarOperand + FromPrimitive>(
     matrix: &ndarray::ArrayView2<F>,
 ) -> Result<Array2<F>, OpError> {
@@ -421,6 +427,7 @@ fn compute_matrix_exp<F: Float + ndarray::ScalarOperand + FromPrimitive>(
 }
 
 /// Compute matrix inverse
+#[allow(dead_code)]
 fn compute_matrix_inverse<F: Float>(matrix: &ndarray::ArrayView2<F>) -> Result<Array2<F>, OpError> {
     let n = matrix.shape()[0];
     let mut a = matrix.to_owned();
@@ -473,6 +480,7 @@ fn compute_matrix_inverse<F: Float>(matrix: &ndarray::ArrayView2<F>) -> Result<A
 }
 
 /// Compute general matrix function using eigendecomposition
+#[allow(dead_code)]
 fn compute_matrix_function<F: Float + ndarray::ScalarOperand + FromPrimitive>(
     matrix: &ndarray::ArrayView2<F>,
     func: fn(F) -> F,
@@ -510,6 +518,7 @@ fn compute_matrix_function<F: Float + ndarray::ScalarOperand + FromPrimitive>(
 }
 
 /// Check if matrix is symmetric
+#[allow(dead_code)]
 fn is_symmetric_matrix<F: Float>(matrix: &ndarray::ArrayView2<F>) -> bool {
     let n = matrix.shape()[0];
     for i in 0..n {
@@ -523,6 +532,7 @@ fn is_symmetric_matrix<F: Float>(matrix: &ndarray::ArrayView2<F>) -> bool {
 }
 
 /// Simple symmetric eigendecomposition
+#[allow(dead_code)]
 fn compute_symmetric_eigen<F: Float + ndarray::ScalarOperand + FromPrimitive>(
     matrix: &ndarray::ArrayView2<F>,
 ) -> Result<(Array1<F>, Array2<F>), OpError> {
@@ -654,82 +664,88 @@ fn compute_symmetric_eigen<F: Float + ndarray::ScalarOperand + FromPrimitive>(
 // Public API functions
 
 /// Compute matrix sine
+#[allow(dead_code)]
 pub fn sinm<'g, F: Float + ndarray::ScalarOperand + FromPrimitive>(
     matrix: &Tensor<'g, F>,
 ) -> Tensor<'g, F> {
     let g = matrix.graph();
-    let matrix_shape = crate::tensor_ops::shape(matrix);
+    let matrixshape = crate::tensor_ops::shape(matrix);
 
     Tensor::builder(g)
         .append_input(matrix, false)
-        .set_shape(&matrix_shape)
+        .setshape(&matrixshape)
         .build(MatrixSineOp)
 }
 
 /// Compute matrix cosine
+#[allow(dead_code)]
 pub fn cosm<'g, F: Float + ndarray::ScalarOperand + FromPrimitive>(
     matrix: &Tensor<'g, F>,
 ) -> Tensor<'g, F> {
     let g = matrix.graph();
-    let matrix_shape = crate::tensor_ops::shape(matrix);
+    let matrixshape = crate::tensor_ops::shape(matrix);
 
     Tensor::builder(g)
         .append_input(matrix, false)
-        .set_shape(&matrix_shape)
+        .setshape(&matrixshape)
         .build(MatrixCosineOp)
 }
 
 /// Compute matrix sign function
+#[allow(dead_code)]
 pub fn signm<'g, F: Float + ndarray::ScalarOperand + FromPrimitive>(
     matrix: &Tensor<'g, F>,
 ) -> Tensor<'g, F> {
     let g = matrix.graph();
-    let matrix_shape = crate::tensor_ops::shape(matrix);
+    let matrixshape = crate::tensor_ops::shape(matrix);
 
     Tensor::builder(g)
         .append_input(matrix, false)
-        .set_shape(&matrix_shape)
+        .setshape(&matrixshape)
         .build(MatrixSignOp)
 }
 
 /// Compute matrix hyperbolic sine
+#[allow(dead_code)]
 pub fn sinhm<'g, F: Float + ndarray::ScalarOperand + FromPrimitive>(
     matrix: &Tensor<'g, F>,
 ) -> Tensor<'g, F> {
     let g = matrix.graph();
-    let matrix_shape = crate::tensor_ops::shape(matrix);
+    let matrixshape = crate::tensor_ops::shape(matrix);
 
     Tensor::builder(g)
         .append_input(matrix, false)
-        .set_shape(&matrix_shape)
+        .setshape(&matrixshape)
         .build(MatrixSinhOp)
 }
 
 /// Compute matrix hyperbolic cosine
+#[allow(dead_code)]
 pub fn coshm<'g, F: Float + ndarray::ScalarOperand + FromPrimitive>(
     matrix: &Tensor<'g, F>,
 ) -> Tensor<'g, F> {
     let g = matrix.graph();
-    let matrix_shape = crate::tensor_ops::shape(matrix);
+    let matrixshape = crate::tensor_ops::shape(matrix);
 
     Tensor::builder(g)
         .append_input(matrix, false)
-        .set_shape(&matrix_shape)
+        .setshape(&matrixshape)
         .build(MatrixCoshOp)
 }
 
 /// Compute general matrix function
+#[allow(dead_code)]
 pub fn funm<'g, F: Float + ndarray::ScalarOperand + FromPrimitive>(
     matrix: &Tensor<'g, F>,
     func: fn(F) -> F,
     name: &'static str,
 ) -> Tensor<'g, F> {
     let g = matrix.graph();
-    let matrix_shape = crate::tensor_ops::shape(matrix);
+    let matrixshape = crate::tensor_ops::shape(matrix);
 
     Tensor::builder(g)
         .append_input(matrix, false)
-        .set_shape(&matrix_shape)
+        .setshape(&matrixshape)
         .build(MatrixFunctionOp {
             function: func,
             name,

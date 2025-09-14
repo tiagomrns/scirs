@@ -5,6 +5,7 @@ use scirs2_integrate::{
 use std::f64::consts::PI;
 use std::time::Instant;
 
+#[allow(dead_code)]
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("Method of Lines example: 2D Heat equation solver");
     println!("Solving: ∂u/∂t = α(∂²u/∂x² + ∂²u/∂y²)");
@@ -101,7 +102,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let t = &result.t;
     let u = &result.u; // Solution values [time, y, x]
 
-    println!("Solution computed in {:.4} seconds", solve_time);
+    println!("Solution computed in {solve_time:.4} seconds");
     println!("ODE solver info: {:?}", result.ode_info);
 
     // Calculate maximum error at final time
@@ -138,11 +139,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Calculate L2 error norm
     l2_error = (l2_error * dx * dy).sqrt();
 
-    println!(
-        "Maximum error at final time (t = {:.4}): {:.2e}",
-        final_time, max_error
-    );
-    println!("L2 error norm at final time: {:.2e}", l2_error);
+    println!("Maximum error at final time (t = {final_time:.4}): {max_error:.2e}");
+    println!("L2 error norm at final time: {l2_error:.2e}");
 
     // Print solution at selected points and times
     let time_indices = [0, nt / 4, nt / 2, 3 * nt / 4, nt - 1];
@@ -167,16 +165,12 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         let error = (numerical - exact).abs();
 
         println!(
-            "{:<10.4} {:<10.4} {:<10.4} {:<15.8e} {:<15.8e} {:<10.2e}",
-            time, x, y, numerical, exact, error
+            "{time:<10.4} {x:<10.4} {y:<10.4} {numerical:<15.8e} {exact:<15.8e} {error:<10.2e}"
         );
     }
 
     // Print solution profile along x-axis at final time (y=0.5)
-    println!(
-        "\nSolution profile along x-axis (y=0.5) at final time (t = {:.4}):",
-        final_time
-    );
+    println!("\nSolution profile along x-axis (y=0.5) at final time (t = {final_time:.4}):");
     println!(
         "{:<10} {:<15} {:<15} {:<10}",
         "x", "Numerical", "Exact", "Error"
@@ -191,17 +185,11 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         let exact = (PI * x).sin() * (PI * y).sin() * (-2.0 * PI * PI * alpha * final_time).exp();
         let error = (numerical - exact).abs();
 
-        println!(
-            "{:<10.4} {:<15.8e} {:<15.8e} {:<10.2e}",
-            x, numerical, exact, error
-        );
+        println!("{x:<10.4} {numerical:<15.8e} {exact:<15.8e} {error:<10.2e}");
     }
 
     // Print solution profile along y-axis at final time (x=0.5)
-    println!(
-        "\nSolution profile along y-axis (x=0.5) at final time (t = {:.4}):",
-        final_time
-    );
+    println!("\nSolution profile along y-axis (x=0.5) at final time (t = {final_time:.4}):");
     println!(
         "{:<10} {:<15} {:<15} {:<10}",
         "y", "Numerical", "Exact", "Error"
@@ -216,10 +204,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         let exact = (PI * x).sin() * (PI * y).sin() * (-2.0 * PI * PI * alpha * final_time).exp();
         let error = (numerical - exact).abs();
 
-        println!(
-            "{:<10.4} {:<15.8e} {:<15.8e} {:<10.2e}",
-            y, numerical, exact, error
-        );
+        println!("{y:<10.4} {numerical:<15.8e} {exact:<15.8e} {error:<10.2e}");
     }
 
     println!("\nConvergence test with different grid sizes:");

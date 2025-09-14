@@ -11,6 +11,7 @@ use std::path::Path;
 use std::time::Instant;
 use tempfile::tempdir;
 
+#[allow(dead_code)]
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("Memory-Mapped Arrays Example");
     println!("============================\n");
@@ -37,7 +38,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 }
 
 /// Basic example of creating and using memory-mapped arrays
-fn basic_example(temp_dir: &Path) -> Result<(), Box<dyn std::error::Error>> {
+#[allow(dead_code)]
+fn basic_example(tempdir: &Path) -> Result<(), Box<dyn std::error::Error>> {
     println!("\n1. Basic Memory-Mapped Array Example");
     println!("----------------------------------");
 
@@ -46,8 +48,8 @@ fn basic_example(temp_dir: &Path) -> Result<(), Box<dyn std::error::Error>> {
     println!("Created a 1D array with 100 elements");
 
     // Create a memory-mapped file from the data
-    let file_path = temp_dir.join("basic_example.bin");
-    let mmap = create_mmap::<f64, _, _>(&data, &file_path, AccessMode::Write, 0)?;
+    let file_path = tempdir.join("basic_example.bin");
+    let mmap = create_mmap(&data, &file_path, AccessMode::Write, 0)?;
     println!("Created memory-mapped array at: {:?}", file_path);
     println!("  Shape: {:?}", mmap.shape);
     println!("  Size: {} elements", mmap.size);
@@ -69,7 +71,8 @@ fn basic_example(temp_dir: &Path) -> Result<(), Box<dyn std::error::Error>> {
 }
 
 /// Example showing how to work with large arrays using memory mapping
-fn large_array_example(_temp_dir: &Path) -> Result<(), Box<dyn std::error::Error>> {
+#[allow(dead_code)]
+fn large_array_example(tempdir: &Path) -> Result<(), Box<dyn std::error::Error>> {
     println!("\n2. Large Array Processing Example");
     println!("-------------------------------");
 
@@ -83,7 +86,7 @@ fn large_array_example(_temp_dir: &Path) -> Result<(), Box<dyn std::error::Error
     println!("Created a {}x{} array ({:.2} MB)", rows, cols, size_mb);
 
     // Use a temporary memory-mapped file instead
-    let mut mmap = create_temp_mmap::<f32, _, _>(&data, AccessMode::ReadWrite, 0)?;
+    let mut mmap = create_temp_mmap(&data, AccessMode::ReadWrite, 0)?;
     println!("Created temporary memory-mapped array");
 
     // Process the data without loading it all into memory
@@ -117,7 +120,8 @@ fn large_array_example(_temp_dir: &Path) -> Result<(), Box<dyn std::error::Error
 }
 
 /// Example showing how to work with multi-dimensional arrays
-fn multi_dimensional_example(_temp_dir: &Path) -> Result<(), Box<dyn std::error::Error>> {
+#[allow(dead_code)]
+fn multi_dimensional_example(tempdir: &Path) -> Result<(), Box<dyn std::error::Error>> {
     println!("\n3. Multi-Dimensional Array Example");
     println!("---------------------------------");
 
@@ -127,7 +131,7 @@ fn multi_dimensional_example(_temp_dir: &Path) -> Result<(), Box<dyn std::error:
     println!("Created a 10x10x10 3D array");
 
     // Create a temporary memory-mapped file
-    let mmap = create_temp_mmap::<i32, _, _>(&data, AccessMode::ReadWrite, 0)?;
+    let mmap = create_temp_mmap(&data, AccessMode::ReadWrite, 0)?;
     println!("Created temporary memory-mapped 3D array");
 
     // Access as a regular ndarray array
@@ -148,7 +152,8 @@ fn multi_dimensional_example(_temp_dir: &Path) -> Result<(), Box<dyn std::error:
 }
 
 /// Example comparing performance between memory-mapped and in-memory arrays
-fn performance_comparison_example(_temp_dir: &Path) -> Result<(), Box<dyn std::error::Error>> {
+#[allow(dead_code)]
+fn performance_comparison_example(tempdir: &Path) -> Result<(), Box<dyn std::error::Error>> {
     println!("\n4. Performance Comparison Example");
     println!("--------------------------------");
 
@@ -173,7 +178,7 @@ fn performance_comparison_example(_temp_dir: &Path) -> Result<(), Box<dyn std::e
 
     // For simplicity in this test, use a temporary memory-mapped array instead
     let start = Instant::now();
-    let mmap = create_temp_mmap::<f64, _, _>(&data, AccessMode::ReadWrite, 0)?;
+    let mmap = create_temp_mmap(&data, AccessMode::ReadWrite, 0)?;
     let mmap_creation_time = start.elapsed();
     println!(
         "Memory-mapped array creation time: {:?}",

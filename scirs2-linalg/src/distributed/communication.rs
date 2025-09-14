@@ -26,6 +26,40 @@ pub enum CommunicationBackend {
     Custom,
 }
 
+/// TCP message header for reliable communication
+#[derive(Debug, Clone, Serialize, Deserialize)]
+struct TcpMessageHeader {
+    /// Source node rank
+    source: usize,
+    /// Destination node rank
+    destination: usize,
+    /// Message tag
+    tag: u32,
+    /// Data size in bytes
+    datasize: usize,
+    /// Sequence number
+    sequence: u64,
+    /// Timestamp
+    timestamp: u64,
+    /// Data checksum for integrity
+    checksum: u64,
+}
+
+/// Connection pool for TCP connections
+struct TcpConnectionPool {
+    connections: HashMap<usize, std::net::TcpStream>,
+    listener: Option<std::net::TcpListener>,
+}
+
+impl TcpConnectionPool {
+    fn new() -> Self {
+        Self {
+            connections: HashMap::new(),
+            listener: None,
+        }
+    }
+}
+
 /// Message tags for different operation types
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum MessageTag {
@@ -113,11 +147,22 @@ pub struct DistributedCommunicator {
     message_buffer: Arc<Mutex<HashMap<(usize, MessageTag), Vec<u8>>>>,
     /// Communication statistics
     stats: Arc<Mutex<CommunicationStats>>,
+    /// TCP connection pool (for TCP backend)
+    tcp_pool: Arc<Mutex<TcpConnectionPool>>,
+    /// Node address mapping (rank -> address)
+    node_addresses: HashMap<usize, String>,
 }
 
 impl DistributedCommunicator {
     /// Create a new distributed communicator
     pub fn new(config: &super::DistributedConfig) -> LinalgResult<Self> {
+        // Create node address mapping (simplified - in practice would use discovery service)
+        let mut node_addresses = HashMap::new();
+        for rank in 0.._config.num_nodes {
+            let port = 7000 + rank; // Base port + rank
+            node_addresses.insert(rank, format!("127.0.0.1:{}", port));
+        }
+
         Ok(Self {
             rank: config.node_rank,
             size: config.num_nodes,
@@ -125,18 +170,20 @@ impl DistributedCommunicator {
             sequence_counter: Arc::new(Mutex::new(0)),
             message_buffer: Arc::new(Mutex::new(HashMap::new())),
             stats: Arc::new(Mutex::new(CommunicationStats::default())),
+            tcp_pool: Arc::new(Mutex::new(TcpConnectionPool::new())),
+            node_addresses,
         })
     }
     
     /// Send a matrix to another node
-    pub fn send_matrix<T>(&self, matrix: &ArrayView2<T>, dest: usize, tag: MessageTag) -> LinalgResult<()>
+    pub fn sendmatrix<T>(&self, matrix: &ArrayView2<T>, dest: usize, tag: MessageTag) -> LinalgResult<()>
     where
         T: Clone + Send + Sync + Serialize,
     {
         let start_time = Instant::now();
         
         // Serialize matrix data
-        let serialized = self.serialize_matrix(matrix)?;
+        let serialized = self.serializematrix(matrix)?;
         
         // Create message
         let sequence = self.next_sequence();
@@ -169,7 +216,7 @@ impl DistributedCommunicator {
     }
     
     /// Receive a matrix from another node
-    pub fn recv_matrix<T>(&self, source: usize, tag: MessageTag) -> LinalgResult<Array2<T>>
+    pub fn recvmatrix<T>(&self, source: usize, tag: MessageTag) -> LinalgResult<Array2<T>>
     where
         T: Clone + Send + Sync + for<'de> Deserialize<'de>,
     {
@@ -195,7 +242,7 @@ impl DistributedCommunicator {
         };
         
         // Deserialize matrix
-        let matrix = self.deserialize_matrix(&message.data)?;
+        let matrix = self.deserializematrix(&message.data)?;
         
         // Update statistics
         let elapsed = start_time.elapsed();
@@ -205,21 +252,21 @@ impl DistributedCommunicator {
     }
     
     /// Broadcast a matrix to all nodes
-    pub fn broadcast_matrix<T>(&self, matrix: &ArrayView2<T>) -> LinalgResult<()>
+    pub fn broadcastmatrix<T>(&self, matrix: &ArrayView2<T>) -> LinalgResult<()>
     where
         T: Clone + Send + Sync + Serialize,
     {
         if self.rank == 0 {
             // Root node sends to all others
             for dest in 1..self.size {
-                self.send_matrix(matrix, dest, MessageTag::Data)?;
+                self.sendmatrix(matrix, dest, MessageTag::Data)?;
             }
         }
         Ok(())
     }
     
     /// Gather matrices from all nodes to root
-    pub fn gather_matrices<T>(&self, local_matrix: &ArrayView2<T>) -> LinalgResult<Option<Vec<Array2<T>>>>
+    pub fn gather_matrices<T>(&self, localmatrix: &ArrayView2<T>) -> LinalgResult<Option<Vec<Array2<T>>>>
     where
         T: Clone + Send + Sync + Serialize + for<'de> Deserialize<'de>,
     {
@@ -228,29 +275,29 @@ impl DistributedCommunicator {
             let mut matrices = Vec::with_capacity(self.size);
             
             // Add local matrix
-            matrices.push(local_matrix.to_owned());
+            matrices.push(localmatrix.to_owned());
             
             // Receive from other nodes
             for source in 1..self.size {
-                let matrix = self.recv_matrix(source, MessageTag::Data)?;
+                let matrix = self.recvmatrix(source, MessageTag::Data)?;
                 matrices.push(matrix);
             }
             
             Ok(Some(matrices))
         } else {
             // Non-root nodes send their data
-            self.send_matrix(local_matrix, 0, MessageTag::Data)?;
+            self.sendmatrix(localmatrix, 0, MessageTag::Data)?;
             Ok(None)
         }
     }
     
     /// All-reduce operation (sum matrices across all nodes)
-    pub fn allreduce_sum<T>(&self, local_matrix: &ArrayView2<T>) -> LinalgResult<Array2<T>>
+    pub fn allreduce_sum<T>(&self, localmatrix: &ArrayView2<T>) -> LinalgResult<Array2<T>>
     where
         T: Clone + Send + Sync + Serialize + for<'de> Deserialize<'de> + num_traits::Zero + std::ops::Add<Output = T>,
     {
         // Gather all matrices to root
-        if let Some(matrices) = self.gather_matrices(local_matrix)? {
+        if let Some(matrices) = self.gather_matrices(localmatrix)? {
             // Sum all matrices (only on root)
             let mut result = matrices[0].clone();
             for matrix in matrices.iter().skip(1) {
@@ -258,16 +305,16 @@ impl DistributedCommunicator {
             }
             
             // Broadcast result to all nodes
-            self.broadcast_matrix(&result.view())?;
+            self.broadcastmatrix(&result.view())?;
             Ok(result)
         } else {
             // Non-root nodes receive the result
-            self.recv_matrix(0, MessageTag::Data)
+            self.recvmatrix(0, MessageTag::Data)
         }
     }
     
     /// Scatter operation (distribute parts of a matrix to all nodes)
-    pub fn scatter_matrix<T>(&self, matrix: Option<&ArrayView2<T>>) -> LinalgResult<Array2<T>>
+    pub fn scattermatrix<T>(&self, matrix: Option<&ArrayView2<T>>) -> LinalgResult<Array2<T>>
     where
         T: Clone + Send + Sync + Serialize + for<'de> Deserialize<'de>,
     {
@@ -287,7 +334,7 @@ impl DistributedCommunicator {
                 let end_row = start_row + chunk_rows;
                 
                 let chunk = matrix.slice(ndarray::s![start_row..end_row, ..]);
-                self.send_matrix(&chunk, dest, MessageTag::Data)?;
+                self.sendmatrix(&chunk, dest, MessageTag::Data)?;
                 
                 start_row = end_row;
             }
@@ -297,7 +344,7 @@ impl DistributedCommunicator {
             Ok(matrix.slice(ndarray::s![..root_rows, ..]).to_owned())
         } else {
             // Receive chunk from root
-            self.recv_matrix(0, MessageTag::Data)
+            self.recvmatrix(0, MessageTag::Data)
         }
     }
     
@@ -307,19 +354,19 @@ impl DistributedCommunicator {
         if self.rank == 0 {
             // Root waits for all nodes to arrive
             for source in 1..self.size {
-                let _: Array2<f64> = self.recv_matrix(source, MessageTag::Sync)?;
+                let _: Array2<f64> = self.recvmatrix(source, MessageTag::Sync)?;
             }
             
             // Send release signal to all nodes
             let dummy = Array2::<f64>::zeros((1, 1));
             for dest in 1..self.size {
-                self.send_matrix(&dummy.view(), dest, MessageTag::Sync)?;
+                self.sendmatrix(&dummy.view(), dest, MessageTag::Sync)?;
             }
         } else {
             // Non-root nodes signal arrival and wait for release
             let dummy = Array2::<f64>::zeros((1, 1));
-            self.send_matrix(&dummy.view(), 0, MessageTag::Sync)?;
-            let _: Array2<f64> = self.recv_matrix(0, MessageTag::Sync)?;
+            self.sendmatrix(&dummy.view(), 0, MessageTag::Sync)?;
+            let _: Array2<f64> = self.recvmatrix(0, MessageTag::Sync)?;
         }
         
         Ok(())
@@ -335,8 +382,7 @@ impl DistributedCommunicator {
             },
             CommunicationBackend::MPI => {
                 // MPI finalization would go here
-            },
-            _ => {
+            }_ => {
                 // Other backends cleanup
             },
         }
@@ -357,7 +403,7 @@ impl DistributedCommunicator {
         *counter
     }
     
-    fn serialize_matrix<T>(&self, matrix: &ArrayView2<T>) -> LinalgResult<Vec<u8>>
+    fn serializematrix<T>(&self, matrix: &ArrayView2<T>) -> LinalgResult<Vec<u8>>
     where
         T: Serialize,
     {
@@ -366,7 +412,7 @@ impl DistributedCommunicator {
         })
     }
     
-    fn deserialize_matrix<T>(&self, data: &[u8]) -> LinalgResult<Array2<T>>
+    fn deserializematrix<T>(&self, data: &[u8]) -> LinalgResult<Array2<T>>
     where
         T: for<'de> Deserialize<'de>,
     {
@@ -406,32 +452,152 @@ impl DistributedCommunicator {
         }
     }
     
-    fn send_tcp(&self, _message: Message<Vec<u8>>) -> LinalgResult<()> {
-        // TCP implementation would go here
-        Err(LinalgError::NotImplemented("TCP backend not implemented".to_string()))
+    fn send_tcp(&self, message: Message<Vec<u8>>) -> LinalgResult<()> {
+        use std::net::TcpStream;
+        use std::io::Write;
+        
+        // Get connection info for destination node
+        let dest_address = self.get_node_address(message.metadata.destination)?;
+        
+        // Establish TCP connection
+        let mut stream = TcpStream::connect(&dest_address)
+            .map_err(|e| LinalgError::CommunicationError(
+                format!("Failed to connect to {}: {}", dest_address, e)
+            ))?;
+        
+        // Send message header first
+        let header = TcpMessageHeader {
+            source: message.metadata.source,
+            destination: message.metadata.destination,
+            tag: message.metadata.tag as u32,
+            datasize: message.data.len(),
+            sequence: message.metadata.sequence,
+            timestamp: message.metadata.timestamp,
+            checksum: self.calculate_checksum(&message.data),
+        };
+        
+        let header_bytes = bincode::serialize(&header)
+            .map_err(|e| LinalgError::SerializationError(format!("Header serialization failed: {}", e)))?;
+        
+        // Send header size first (4 bytes)
+        let headersize = header_bytes.len() as u32;
+        stream.write_all(&headersize.to_be_bytes())
+            .map_err(|e| LinalgError::CommunicationError(format!("Failed to send header size: {}", e)))?;
+        
+        // Send header
+        stream.write_all(&header_bytes)
+            .map_err(|e| LinalgError::CommunicationError(format!("Failed to send header: {}", e)))?;
+        
+        // Send data in chunks for large messages
+        const CHUNK_SIZE: usize = 64 * 1024; // 64KB chunks
+        for chunk in message.data.chunks(CHUNK_SIZE) {
+            stream.write_all(chunk)
+                .map_err(|e| LinalgError::CommunicationError(format!("Failed to send data chunk: {}", e)))?;
+        }
+        
+        // Ensure all data is sent
+        stream.flush()
+            .map_err(|e| LinalgError::CommunicationError(format!("Failed to flush TCP stream: {}", e)))?;
+        
+        Ok(())
     }
     
-    fn recv_tcp(&self, _source: usize, _tag: MessageTag) -> LinalgResult<Message<Vec<u8>>> {
-        // TCP implementation would go here
-        Err(LinalgError::NotImplemented("TCP backend not implemented".to_string()))
+    fn recv_tcp(&self, source: usize, tag: MessageTag) -> LinalgResult<Message<Vec<u8>>> {
+        use std::net::{TcpListener, TcpStream};
+        use std::io::Read;
+        
+        // Listen for incoming connections on our port
+        let listen_address = self.get_node_address(self.rank)?;
+        let listener = TcpListener::bind(&listen_address)
+            .map_err(|e| LinalgError::CommunicationError(
+                format!("Failed to bind to {}: {}", listen_address, e)
+            ))?;
+        
+        // Accept connection (in practice, would have connection pooling)
+        let (mut stream, remote_addr) = listener.accept()
+            .map_err(|e| LinalgError::CommunicationError(format!("Failed to accept connection: {}", e)))?;
+        
+        // Read header size
+        let mut headersize_bytes = [0u8; 4];
+        stream.read_exact(&mut headersize_bytes)
+            .map_err(|e| LinalgError::CommunicationError(format!("Failed to read header size: {}", e)))?;
+        let headersize = u32::from_be_bytes(headersize_bytes) as usize;
+        
+        // Read header
+        let mut header_bytes = vec![0u8; headersize];
+        stream.read_exact(&mut header_bytes)
+            .map_err(|e| LinalgError::CommunicationError(format!("Failed to read header: {}", e)))?;
+        
+        let header: TcpMessageHeader = bincode::deserialize(&header_bytes)
+            .map_err(|e| LinalgError::SerializationError(format!("Header deserialization failed: {}", e)))?;
+        
+        // Validate header
+        if header.source != source {
+            return Err(LinalgError::CommunicationError(format!(
+                "Expected message from node {}, got from node {}",
+                source, header.source
+            )));
+        }
+        
+        if header.tag != tag as u32 {
+            return Err(LinalgError::CommunicationError(format!(
+                "Expected message with tag {:?}, got tag {}",
+                tag, header.tag
+            )));
+        }
+        
+        // Read data
+        let mut data = vec![0u8; header.datasize];
+        let mut bytes_read = 0;
+        while bytes_read < header.datasize {
+            let chunksize = std::cmp::min(header.datasize - bytes_read, 64 * 1024);
+            let mut chunk = vec![0u8; chunksize];
+            stream.read_exact(&mut chunk)
+                .map_err(|e| LinalgError::CommunicationError(format!("Failed to read data chunk: {}", e)))?;
+            
+            data[bytes_read..bytes_read + chunksize].copy_from_slice(&chunk);
+            bytes_read += chunksize;
+        }
+        
+        // Verify checksum
+        let received_checksum = self.calculate_checksum(&data);
+        if received_checksum != header.checksum {
+            return Err(LinalgError::CommunicationError(format!(
+                "Checksum mismatch: expected {}, got {}",
+                header.checksum, received_checksum
+            )));
+        }
+        
+        // Create message
+        let metadata = MessageMetadata {
+            source: header.source,
+            destination: header.destination,
+            tag,
+            size_bytes: data.len(),
+            sequence: header.sequence,
+            timestamp: header.timestamp,
+            compressed: false,
+        };
+        
+        Ok(Message { metadata, data })
     }
     
-    fn send_mpi(&self, _message: Message<Vec<u8>>) -> LinalgResult<()> {
+    fn send_mpi(&selfmessage: Message<Vec<u8>>) -> LinalgResult<()> {
         // MPI implementation would go here
         Err(LinalgError::NotImplemented("MPI backend not implemented".to_string()))
     }
     
-    fn recv_mpi(&self, _source: usize, _tag: MessageTag) -> LinalgResult<Message<Vec<u8>>> {
+    fn recv_mpi(&self_source: usize, tag: MessageTag) -> LinalgResult<Message<Vec<u8>>> {
         // MPI implementation would go here
         Err(LinalgError::NotImplemented("MPI backend not implemented".to_string()))
     }
     
-    fn send_rdma(&self, _message: Message<Vec<u8>>) -> LinalgResult<()> {
+    fn send_rdma(&selfmessage: Message<Vec<u8>>) -> LinalgResult<()> {
         // RDMA implementation would go here
         Err(LinalgError::NotImplemented("RDMA backend not implemented".to_string()))
     }
     
-    fn recv_rdma(&self, _source: usize, _tag: MessageTag) -> LinalgResult<Message<Vec<u8>>> {
+    fn recv_rdma(&self_source: usize, tag: MessageTag) -> LinalgResult<Message<Vec<u8>>> {
         // RDMA implementation would go here
         Err(LinalgError::NotImplemented("RDMA backend not implemented".to_string()))
     }
@@ -448,6 +614,39 @@ impl DistributedCommunicator {
         stats.messages_received += 1;
         stats.bytes_received += bytes;
         stats.total_recv_time += duration;
+    }
+    
+    /// Get node address for TCP communication
+    fn get_node_address(&self, rank: usize) -> LinalgResult<String> {
+        self.node_addresses.get(&rank)
+            .cloned()
+            .ok_or_else(|| LinalgError::CommunicationError(
+                format!("No address found for node rank {}", rank)
+            ))
+    }
+    
+    /// Calculate checksum for data integrity
+    fn calculate_checksum(&self, data: &[u8]) -> u64 {
+        use std::collections::hash_map::DefaultHasher;
+        use std::hash::{Hash, Hasher};
+        
+        let mut hasher = DefaultHasher::new();
+        data.hash(&mut hasher);
+        hasher.finish()
+    }
+    
+    /// Compress data using LZ4 algorithm (mock implementation)
+    fn compress_data(&self, data: &[u8]) -> LinalgResult<Vec<u8>> {
+        // In a real implementation, this would use lz4 compression
+        // For now, just return the original data
+        Ok(data.to_vec())
+    }
+    
+    /// Decompress data (mock implementation)
+    fn decompress_data(&self, compresseddata: &[u8]) -> LinalgResult<Vec<u8>> {
+        // In a real implementation, this would decompress LZ4 _data
+        // For now, just return the original _data
+        Ok(compressed_data.to_vec())
     }
 }
 
@@ -540,8 +739,8 @@ mod tests {
         
         // Test serialization
         let matrix = Array2::from_shape_fn((3, 3), |(i, j)| (i + j) as f64);
-        let serialized = comm.serialize_matrix(&matrix.view()).unwrap();
-        let deserialized: Array2<f64> = comm.deserialize_matrix(&serialized).unwrap();
+        let serialized = comm.serializematrix(&matrix.view()).unwrap();
+        let deserialized: Array2<f64> = comm.deserializematrix(&serialized).unwrap();
         
         assert_eq!(matrix, deserialized);
     }

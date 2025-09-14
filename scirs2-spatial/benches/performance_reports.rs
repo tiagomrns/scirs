@@ -28,17 +28,17 @@ pub struct PerformanceReportGenerator {
 }
 
 impl PerformanceReportGenerator {
-    pub fn new(output_dir: &str) -> io::Result<Self> {
-        std::fs::create_dir_all(output_dir)?;
+    pub fn new(_outputdir: &str) -> io::Result<Self> {
+        std::fs::create_dir_all(_outputdir)?;
         Ok(Self {
             data_points: Vec::new(),
-            output_dir: output_dir.to_string(),
+            output_dir: _outputdir.to_string(),
         })
     }
 
     /// Add a performance data point
-    pub fn add_data_point(&mut self, data_point: PerformanceDataPoint) {
-        self.data_points.push(data_point);
+    pub fn add_data_point(&mut self, datapoint: PerformanceDataPoint) {
+        self.data_points.push(datapoint);
     }
 
     /// Generate comprehensive performance report
@@ -62,7 +62,7 @@ impl PerformanceReportGenerator {
         let chart_path = format!("{}/speedup_comparison.png", self.output_dir);
         let root = BitMapBackend::new(&chart_path, (800, 600)).into_drawing_area();
         root.fill(&WHITE)
-            .map_err(|e| io::Error::new(io::ErrorKind::Other, format!("Chart error: {}", e)))?;
+            .map_err(|e| io::Error::other(format!("Chart error: {e}")))?;
 
         let mut chart = ChartBuilder::on(&root)
             .caption("SIMD vs Scalar Speedup Comparison", ("sans-serif", 40))
@@ -70,14 +70,14 @@ impl PerformanceReportGenerator {
             .x_label_area_size(50)
             .y_label_area_size(60)
             .build_cartesian_2d(0..20000usize, 0.0..10.0f64)
-            .map_err(|e| io::Error::new(io::ErrorKind::Other, format!("Chart error: {}", e)))?;
+            .map_err(|e| io::Error::other(format!("Chart error: {e}")))?;
 
         chart
             .configure_mesh()
             .x_desc("Data Size")
             .y_desc("Speedup (x)")
             .draw()
-            .map_err(|e| io::Error::new(io::ErrorKind::Other, format!("Chart error: {}", e)))?;
+            .map_err(|e| io::Error::other(format!("Chart error: {e}")))?;
 
         // Extract SIMD speedup data
         let simd_data: Vec<(usize, f64)> = self
@@ -90,7 +90,7 @@ impl PerformanceReportGenerator {
         if !simd_data.is_empty() {
             chart
                 .draw_series(LineSeries::new(simd_data.iter().cloned(), &BLUE))
-                .map_err(|e| io::Error::new(io::ErrorKind::Other, format!("Chart error: {}", e)))?
+                .map_err(|e| io::Error::other(format!("Chart error: {e}")))?
                 .label("SIMD Speedup")
                 .legend(|(x, y)| PathElement::new(vec![(x, y), (x + 10, y)], BLUE));
         }
@@ -106,7 +106,7 @@ impl PerformanceReportGenerator {
         if !parallel_data.is_empty() {
             chart
                 .draw_series(LineSeries::new(parallel_data.iter().cloned(), &RED))
-                .map_err(|e| io::Error::new(io::ErrorKind::Other, format!("Chart error: {}", e)))?
+                .map_err(|e| io::Error::other(format!("Chart error: {e}")))?
                 .label("Parallel Speedup")
                 .legend(|(x, y)| PathElement::new(vec![(x, y), (x + 10, y)], RED));
         }
@@ -114,9 +114,9 @@ impl PerformanceReportGenerator {
         chart
             .configure_series_labels()
             .draw()
-            .map_err(|e| io::Error::new(io::ErrorKind::Other, format!("Chart error: {}", e)))?;
+            .map_err(|e| io::Error::other(format!("Chart error: {e}")))?;
         root.present()
-            .map_err(|e| io::Error::new(io::ErrorKind::Other, format!("Chart error: {}", e)))?;
+            .map_err(|e| io::Error::other(format!("Chart error: {e}")))?;
 
         Ok(())
     }
@@ -126,7 +126,7 @@ impl PerformanceReportGenerator {
         let chart_path = format!("{}/scaling_analysis.png", self.output_dir);
         let root = BitMapBackend::new(&chart_path, (800, 600)).into_drawing_area();
         root.fill(&WHITE)
-            .map_err(|e| io::Error::new(io::ErrorKind::Other, format!("Chart error: {}", e)))?;
+            .map_err(|e| io::Error::other(format!("Chart error: {e}")))?;
 
         let max_size = self
             .data_points
@@ -146,14 +146,14 @@ impl PerformanceReportGenerator {
             .x_label_area_size(50)
             .y_label_area_size(60)
             .build_cartesian_2d(0..max_size, 0.0..max_time)
-            .map_err(|e| io::Error::new(io::ErrorKind::Other, format!("Chart error: {}", e)))?;
+            .map_err(|e| io::Error::other(format!("Chart error: {e}")))?;
 
         chart
             .configure_mesh()
             .x_desc("Data Size")
             .y_desc("Time (ms)")
             .draw()
-            .map_err(|e| io::Error::new(io::ErrorKind::Other, format!("Chart error: {}", e)))?;
+            .map_err(|e| io::Error::other(format!("Chart error: {e}")))?;
 
         // Group data by algorithm type
         let mut algorithm_data: HashMap<String, Vec<(usize, f64)>> = HashMap::new();
@@ -181,9 +181,7 @@ impl PerformanceReportGenerator {
                 let color = colors[i % colors.len()];
                 chart
                     .draw_series(LineSeries::new(data.iter().cloned(), color))
-                    .map_err(|e| {
-                        io::Error::new(io::ErrorKind::Other, format!("Chart error: {}", e))
-                    })?
+                    .map_err(|e| io::Error::other(format!("Chart error: {e}")))?
                     .label(algorithm)
                     .legend(move |(x, y)| PathElement::new(vec![(x, y), (x + 10, y)], color));
             }
@@ -192,9 +190,9 @@ impl PerformanceReportGenerator {
         chart
             .configure_series_labels()
             .draw()
-            .map_err(|e| io::Error::new(io::ErrorKind::Other, format!("Chart error: {}", e)))?;
+            .map_err(|e| io::Error::other(format!("Chart error: {e}")))?;
         root.present()
-            .map_err(|e| io::Error::new(io::ErrorKind::Other, format!("Chart error: {}", e)))?;
+            .map_err(|e| io::Error::other(format!("Chart error: {e}")))?;
 
         Ok(())
     }
@@ -204,7 +202,7 @@ impl PerformanceReportGenerator {
         let chart_path = format!("{}/memory_analysis.png", self.output_dir);
         let root = BitMapBackend::new(&chart_path, (800, 600)).into_drawing_area();
         root.fill(&WHITE)
-            .map_err(|e| io::Error::new(io::ErrorKind::Other, format!("Chart error: {}", e)))?;
+            .map_err(|e| io::Error::other(format!("Chart error: {e}")))?;
 
         let max_size = self
             .data_points
@@ -224,14 +222,14 @@ impl PerformanceReportGenerator {
             .x_label_area_size(50)
             .y_label_area_size(60)
             .build_cartesian_2d(0..max_size, 0.0..max_memory)
-            .map_err(|e| io::Error::new(io::ErrorKind::Other, format!("Chart error: {}", e)))?;
+            .map_err(|e| io::Error::other(format!("Chart error: {e}")))?;
 
         chart
             .configure_mesh()
             .x_desc("Data Size")
             .y_desc("Memory Usage (MB)")
             .draw()
-            .map_err(|e| io::Error::new(io::ErrorKind::Other, format!("Chart error: {}", e)))?;
+            .map_err(|e| io::Error::other(format!("Chart error: {e}")))?;
 
         // Plot memory usage data
         let memory_data: Vec<(usize, f64)> = self
@@ -243,7 +241,7 @@ impl PerformanceReportGenerator {
         if !memory_data.is_empty() {
             chart
                 .draw_series(LineSeries::new(memory_data.iter().cloned(), &BLUE))
-                .map_err(|e| io::Error::new(io::ErrorKind::Other, format!("Chart error: {}", e)))?
+                .map_err(|e| io::Error::other(format!("Chart error: {e}")))?
                 .label("Memory Usage")
                 .legend(|(x, y)| PathElement::new(vec![(x, y), (x + 10, y)], BLUE));
 
@@ -258,7 +256,7 @@ impl PerformanceReportGenerator {
 
             chart
                 .draw_series(LineSeries::new(theoretical_data.iter().cloned(), &RED))
-                .map_err(|e| io::Error::new(io::ErrorKind::Other, format!("Chart error: {}", e)))?
+                .map_err(|e| io::Error::other(format!("Chart error: {e}")))?
                 .label("Theoretical O(n²)")
                 .legend(|(x, y)| PathElement::new(vec![(x, y), (x + 10, y)], RED));
         }
@@ -266,9 +264,9 @@ impl PerformanceReportGenerator {
         chart
             .configure_series_labels()
             .draw()
-            .map_err(|e| io::Error::new(io::ErrorKind::Other, format!("Chart error: {}", e)))?;
+            .map_err(|e| io::Error::other(format!("Chart error: {e}")))?;
         root.present()
-            .map_err(|e| io::Error::new(io::ErrorKind::Other, format!("Chart error: {}", e)))?;
+            .map_err(|e| io::Error::other(format!("Chart error: {e}")))?;
 
         Ok(())
     }
@@ -278,7 +276,7 @@ impl PerformanceReportGenerator {
         let chart_path = format!("{}/metric_comparison.png", self.output_dir);
         let root = BitMapBackend::new(&chart_path, (800, 600)).into_drawing_area();
         root.fill(&WHITE)
-            .map_err(|e| io::Error::new(io::ErrorKind::Other, format!("Chart error: {}", e)))?;
+            .map_err(|e| io::Error::other(format!("Chart error: {e}")))?;
 
         // Group data by metric type
         let mut metric_groups: HashMap<String, Vec<f64>> = HashMap::new();
@@ -308,7 +306,7 @@ impl PerformanceReportGenerator {
             .x_label_area_size(80)
             .y_label_area_size(60)
             .build_cartesian_2d(0..metrics.len(), 0.0..max_throughput)
-            .map_err(|e| io::Error::new(io::ErrorKind::Other, format!("Chart error: {}", e)))?;
+            .map_err(|e| io::Error::other(format!("Chart error: {e}")))?;
 
         chart
             .configure_mesh()
@@ -316,7 +314,7 @@ impl PerformanceReportGenerator {
             .y_desc("Throughput (ops/sec)")
             .x_label_formatter(&|x| metrics.get(*x).cloned().unwrap_or_default())
             .draw()
-            .map_err(|e| io::Error::new(io::ErrorKind::Other, format!("Chart error: {}", e)))?;
+            .map_err(|e| io::Error::other(format!("Chart error: {e}")))?;
 
         // Create bar chart for each metric
         for (i, metric) in metrics.iter().enumerate() {
@@ -328,14 +326,12 @@ impl PerformanceReportGenerator {
                         [(i, 0.0), (i, avg_throughput)],
                         BLUE.filled(),
                     )))
-                    .map_err(|e| {
-                        io::Error::new(io::ErrorKind::Other, format!("Chart error: {}", e))
-                    })?;
+                    .map_err(|e| io::Error::other(format!("Chart error: {e}")))?;
             }
         }
 
         root.present()
-            .map_err(|e| io::Error::new(io::ErrorKind::Other, format!("Chart error: {}", e)))?;
+            .map_err(|e| io::Error::other(format!("Chart error: {e}")))?;
 
         Ok(())
     }
@@ -390,8 +386,8 @@ impl PerformanceReportGenerator {
         if !simd_speedups.is_empty() {
             let avg_simd = simd_speedups.iter().sum::<f64>() / simd_speedups.len() as f64;
             let max_simd = simd_speedups.iter().fold(0.0f64, |a, &b| a.max(b));
-            writeln!(file, "  SIMD Average Speedup: {:.2}x", avg_simd)?;
-            writeln!(file, "  SIMD Maximum Speedup: {:.2}x", max_simd)?;
+            writeln!(file, "  SIMD Average Speedup: {avg_simd:.2}x")?;
+            writeln!(file, "  SIMD Maximum Speedup: {max_simd:.2}x")?;
         }
 
         let parallel_speedups: Vec<f64> = self
@@ -405,8 +401,8 @@ impl PerformanceReportGenerator {
             let avg_parallel =
                 parallel_speedups.iter().sum::<f64>() / parallel_speedups.len() as f64;
             let max_parallel = parallel_speedups.iter().fold(0.0f64, |a, &b| a.max(b));
-            writeln!(file, "  Parallel Average Speedup: {:.2}x", avg_parallel)?;
-            writeln!(file, "  Parallel Maximum Speedup: {:.2}x", max_parallel)?;
+            writeln!(file, "  Parallel Average Speedup: {avg_parallel:.2}x")?;
+            writeln!(file, "  Parallel Maximum Speedup: {max_parallel:.2}x")?;
         }
 
         // Memory statistics
@@ -418,8 +414,8 @@ impl PerformanceReportGenerator {
             .map(|dp| dp.memory_mb)
             .fold(0.0f64, f64::max);
 
-        writeln!(file, "  Average Memory Usage: {:.2} MB", avg_memory)?;
-        writeln!(file, "  Peak Memory Usage: {:.2} MB", max_memory)?;
+        writeln!(file, "  Average Memory Usage: {avg_memory:.2} MB")?;
+        writeln!(file, "  Peak Memory Usage: {max_memory:.2} MB")?;
 
         // Throughput statistics
         let max_throughput = self
@@ -428,7 +424,7 @@ impl PerformanceReportGenerator {
             .map(|dp| dp.throughput_ops_per_sec)
             .fold(0.0f64, f64::max);
 
-        writeln!(file, "  Peak Throughput: {:.0} ops/sec", max_throughput)?;
+        writeln!(file, "  Peak Throughput: {max_throughput:.0} ops/sec")?;
 
         writeln!(file)?;
 
@@ -437,11 +433,7 @@ impl PerformanceReportGenerator {
         let data_sizes: Vec<usize> = self.data_points.iter().map(|dp| dp.data_size).collect();
         let min_size = data_sizes.iter().min().unwrap_or(&0);
         let max_size = data_sizes.iter().max().unwrap_or(&0);
-        writeln!(
-            file,
-            "  Tested Size Range: {} - {} points",
-            min_size, max_size
-        )?;
+        writeln!(file, "  Tested Size Range: {min_size} - {max_size} points")?;
 
         // Find optimal size ranges
         let small_data_perf: Vec<&PerformanceDataPoint> = self
@@ -461,8 +453,7 @@ impl PerformanceReportGenerator {
                 / small_data_perf.len() as f64;
             writeln!(
                 file,
-                "  Small Data (<= 1,000): Average speedup {:.2}x",
-                avg_small_speedup
+                "  Small Data (<= 1,000): Average speedup {avg_small_speedup:.2}x"
             )?;
         }
 
@@ -471,8 +462,7 @@ impl PerformanceReportGenerator {
                 / large_data_perf.len() as f64;
             writeln!(
                 file,
-                "  Large Data (>= 10,000): Average speedup {:.2}x",
-                avg_large_speedup
+                "  Large Data (>= 10,000): Average speedup {avg_large_speedup:.2}x"
             )?;
         }
 
@@ -646,6 +636,7 @@ impl PerformanceReportGenerator {
 }
 
 /// Create sample performance data for testing
+#[allow(dead_code)]
 pub fn create_sample_data() -> Vec<PerformanceDataPoint> {
     vec![
         PerformanceDataPoint {

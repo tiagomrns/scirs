@@ -10,6 +10,7 @@ use crate::error::{Result, TimeSeriesError};
 use crate::optimization::{LBFGSOptimizer, OptimizationOptions};
 use crate::tests::{adf_test, ADFRegression};
 use crate::utils::{autocorrelation, partial_autocorrelation};
+use statrs::statistics::Statistics;
 
 /// ARIMA model parameters
 #[derive(Debug, Clone)]
@@ -34,6 +35,26 @@ pub struct ArimaModel<F> {
     pub n_obs: usize,
     /// Whether the model is fitted
     pub is_fitted: bool,
+}
+
+/// ARIMA model configuration
+#[derive(Debug, Clone)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+pub struct ArimaConfig {
+    /// AR order
+    pub p: usize,
+    /// Differencing order
+    pub d: usize,
+    /// MA order
+    pub q: usize,
+    /// Seasonal AR order
+    pub seasonal_p: usize,
+    /// Seasonal differencing order
+    pub seasonal_d: usize,
+    /// Seasonal MA order
+    pub seasonal_q: usize,
+    /// Seasonal period
+    pub seasonal_period: usize,
 }
 
 /// Seasonal ARIMA parameters
@@ -147,7 +168,7 @@ where
     where
         S: Data<Elem = F>,
     {
-        scirs2_core::validation::check_array_finite(data, "data")?;
+        scirs2_core::validation::checkarray_finite(data, "data")?;
 
         let min_required = self.p + self.q + self.d + 1;
         crate::validation::check_array_length(data, min_required, "ARIMA model fitting")?;
@@ -367,7 +388,7 @@ where
     }
 
     /// Calculate gradient for MA coefficient
-    fn ma_gradient(&self, _data: &Array1<F>, residuals: &Array1<F>, idx: usize) -> Result<F> {
+    fn ma_gradient(&self, data: &Array1<F>, residuals: &Array1<F>, idx: usize) -> Result<F> {
         let n = residuals.len();
         let mut grad = F::zero();
 
@@ -500,6 +521,7 @@ where
 }
 
 /// Automatic ARIMA order selection
+#[allow(dead_code)]
 pub fn auto_arima<S, F>(
     data: &ArrayBase<S, Ix1>,
     options: &ArimaSelectionOptions,
@@ -508,7 +530,7 @@ where
     S: Data<Elem = F>,
     F: Float + FromPrimitive + Debug + Display + ScalarOperand,
 {
-    scirs2_core::validation::check_array_finite(data, "data")?;
+    scirs2_core::validation::checkarray_finite(data, "data")?;
 
     // Determine optimal differencing order
     let d = if options.test_stationarity {
@@ -577,6 +599,7 @@ where
 }
 
 /// Stepwise search for optimal ARIMA parameters
+#[allow(dead_code)]
 fn stepwise_search<F>(
     data: &Array1<F>,
     d: usize,
@@ -604,15 +627,15 @@ where
         (0, d, 2),
     ];
 
-    for (p, _, q) in candidates {
+    for (p, d_val, q) in candidates {
         if p <= options.max_p && q <= options.max_q {
-            if let Ok(mut model) = ArimaModel::new(p, d, q) {
+            if let Ok(mut model) = ArimaModel::new(p, d_val, q) {
                 if model.fit(data).is_ok() {
                     let ic = model.get_ic(options.criterion);
                     if ic < best_ic {
                         best_ic = ic;
                         best_model = model;
-                        best_params.pdq = (p, d, q);
+                        best_params.pdq = (p, d_val, q);
                     }
                 }
             }
@@ -648,6 +671,7 @@ where
 }
 
 /// Determine optimal differencing order
+#[allow(dead_code)]
 fn determine_differencing_order<S, F>(data: &ArrayBase<S, Ix1>, max_d: usize) -> Result<usize>
 where
     S: Data<Elem = F>,
@@ -677,6 +701,7 @@ where
 }
 
 /// Determine optimal seasonal differencing order
+#[allow(dead_code)]
 fn determine_seasonal_differencing_order<S, F>(
     data: &ArrayBase<S, Ix1>,
     period: usize,
@@ -708,6 +733,7 @@ where
 }
 
 /// Apply single differencing
+#[allow(dead_code)]
 fn apply_single_differencing<S, F>(data: &ArrayBase<S, Ix1>, d: usize) -> Result<Array1<F>>
 where
     S: Data<Elem = F>,
@@ -733,6 +759,7 @@ where
 }
 
 /// Apply seasonal differencing
+#[allow(dead_code)]
 fn apply_seasonal_differencing<S, F>(
     data: &ArrayBase<S, Ix1>,
     period: usize,
@@ -762,6 +789,7 @@ where
 }
 
 /// Apply both regular and seasonal differencing
+#[allow(dead_code)]
 fn apply_differencing<S, F>(
     data: &ArrayBase<S, Ix1>,
     d: usize,

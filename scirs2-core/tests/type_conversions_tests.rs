@@ -1,7 +1,7 @@
 #[cfg(feature = "types")]
 mod type_conversion_tests {
     use approx::assert_relative_eq;
-    use num_complex::Complex64;
+    use num__complex::Complex64;
     use scirs2_core::types::{ComplexExt, ComplexOps, NumericConversion};
 
     #[test]
@@ -14,7 +14,7 @@ mod type_conversion_tests {
     }
 
     #[test]
-    fn test_numeric_conversion_errors() {
+    fn test_numeric_conversionerrors() {
         // Test overflow
         assert!(1e20f64.to_numeric::<i32>().is_err());
 
@@ -92,7 +92,7 @@ mod type_conversion_tests {
     }
 
     #[test]
-    fn test_complex_conversion_errors() {
+    fn test_complex_conversionerrors() {
         // Test complex number conversion errors
         let large_z = Complex64::new(1e40, 1e40);
 

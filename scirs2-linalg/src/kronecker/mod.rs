@@ -9,6 +9,7 @@ use num_traits::{Float, NumAssign};
 use std::iter::Sum;
 
 // Helper function to convert ndarray::ShapeError to LinalgError
+#[allow(dead_code)]
 fn shape_err_to_linalg(err: ndarray::ShapeError) -> crate::error::LinalgError {
     crate::error::LinalgError::ShapeError(err.to_string())
 }
@@ -51,9 +52,10 @@ use crate::norm::matrix_norm;
 /// //  [0.3, 0.6, 0.4, 0.8],
 /// //  [0.9, 1.2, 1.2, 1.6]]
 /// ```
+#[allow(dead_code)]
 pub fn kron<F>(a: &ArrayView2<F>, b: &ArrayView2<F>) -> LinalgResult<Array2<F>>
 where
-    F: Float + NumAssign + Sum,
+    F: Float + NumAssign + Sum + Send + Sync + ScalarOperand + 'static,
 {
     let (m, n) = a.dim();
     let (p, q) = b.dim();
@@ -105,13 +107,14 @@ where
 ///
 /// // This should equal (A ⊗ B) * x
 /// ```
+#[allow(dead_code)]
 pub fn kron_matvec<F>(
     a: &ArrayView2<F>,
     b: &ArrayView2<F>,
     x: &ndarray::ArrayView1<F>,
 ) -> LinalgResult<ndarray::Array1<F>>
 where
-    F: Float + NumAssign + Sum + ScalarOperand,
+    F: Float + NumAssign + Sum + ScalarOperand + Send + Sync,
 {
     let (m, n) = a.dim();
     let (p, q) = b.dim();
@@ -185,13 +188,14 @@ where
 ///
 /// // This should equal (A ⊗ B) * X
 /// ```
+#[allow(dead_code)]
 pub fn kron_matmul<F>(
     a: &ArrayView2<F>,
     b: &ArrayView2<F>,
     x: &ArrayView2<F>,
 ) -> LinalgResult<Array2<F>>
 where
-    F: Float + NumAssign + Sum + ScalarOperand,
+    F: Float + NumAssign + Sum + ScalarOperand + Send + Sync,
 {
     let (m, n) = a.dim();
     let (p, q) = b.dim();
@@ -267,13 +271,14 @@ where
 ///
 /// // a_approx and b_approx should be close to the original a and b
 /// ```
+#[allow(dead_code)]
 pub fn kron_factorize<F>(
     m: &ArrayView2<F>,
     m_rows: usize,
     n_cols: usize,
 ) -> LinalgResult<(Array2<F>, Array2<F>)>
 where
-    F: Float + NumAssign + Sum + ScalarOperand,
+    F: Float + NumAssign + Sum + ScalarOperand + Send + Sync,
 {
     let (total_rows, total_cols) = m.dim();
 
@@ -284,8 +289,7 @@ where
     // Check if the matrix can be factorized with the given dimensions
     if m_rows * p_rows != total_rows || n_cols * q_cols != total_cols {
         return Err(LinalgError::ShapeError(format!(
-            "Matrix of shape ({}, {}) cannot be factorized into ({}, {}) and ({}, {})",
-            total_rows, total_cols, m_rows, n_cols, p_rows, q_cols
+            "Matrix of shape ({total_rows}, {total_cols}) cannot be factorized into ({m_rows}, {n_cols}) and ({p_rows}, {q_cols})"
         )));
     }
 
@@ -374,8 +378,8 @@ where
 ///
 /// # Arguments
 ///
-/// * `input_acts` - Input activations matrix of shape (batch_size, input_dim)
-/// * `output_grads` - Output gradients matrix of shape (batch_size, output_dim)
+/// * `input_acts` - Input activations matrix of shape (batchsize, input_dim)
+/// * `output_grads` - Output gradients matrix of shape (batchsize, output_dim)
 /// * `damping` - Damping factor for regularization (default: 1e-4)
 ///
 /// # Returns
@@ -407,31 +411,31 @@ where
 ///
 /// // The Kronecker product a_cov ⊗ s_cov approximates the Fisher Information Matrix
 /// ```
+#[allow(dead_code)]
 pub fn kfac_factorization<F>(
     input_acts: &ArrayView2<F>,
     output_grads: &ArrayView2<F>,
     damping: Option<F>,
 ) -> LinalgResult<(Array2<F>, Array2<F>)>
 where
-    F: Float + NumAssign + Sum + ScalarOperand,
+    F: Float + NumAssign + Sum + ScalarOperand + Send + Sync,
 {
-    let (batch_size1, input_dim) = input_acts.dim();
-    let (batch_size2, output_dim) = output_grads.dim();
+    let (batchsize1, input_dim) = input_acts.dim();
+    let (batchsize2, output_dim) = output_grads.dim();
 
     // Check dimensions
-    if batch_size1 != batch_size2 {
+    if batchsize1 != batchsize2 {
         return Err(LinalgError::ShapeError(format!(
-            "Batch sizes must match: {} vs {}",
-            batch_size1, batch_size2
+            "Batch sizes must match: {batchsize1} vs {batchsize2}"
         )));
     }
 
-    let batch_size = batch_size1;
+    let batchsize = batchsize1;
     let damping_factor = damping.unwrap_or_else(|| F::from(1e-4).unwrap());
 
     // Append 1s to input activations for bias term
-    let mut input_acts_with_bias = Array2::zeros((batch_size, input_dim + 1));
-    for i in 0..batch_size {
+    let mut input_acts_with_bias = Array2::zeros((batchsize, input_dim + 1));
+    for i in 0..batchsize {
         for j in 0..input_dim {
             input_acts_with_bias[[i, j]] = input_acts[[i, j]];
         }
@@ -445,11 +449,11 @@ where
         for j in 0..(input_dim + 1) {
             let mut sum = F::zero();
 
-            for b in 0..batch_size {
+            for b in 0..batchsize {
                 sum += input_acts_with_bias[[b, i]] * input_acts_with_bias[[b, j]];
             }
 
-            a_cov[[i, j]] = sum / F::from(batch_size).unwrap();
+            a_cov[[i, j]] = sum / F::from(batchsize).unwrap();
         }
     }
 
@@ -465,11 +469,11 @@ where
         for j in 0..output_dim {
             let mut sum = F::zero();
 
-            for b in 0..batch_size {
+            for b in 0..batchsize {
                 sum += output_grads[[b, i]] * output_grads[[b, j]];
             }
 
-            s_cov[[i, j]] = sum / F::from(batch_size).unwrap();
+            s_cov[[i, j]] = sum / F::from(batchsize).unwrap();
         }
     }
 
@@ -511,7 +515,7 @@ where
 /// let weights = array![[0.1, 0.2], [0.3, 0.4], [0.05, 0.1]];  // Including bias row
 /// let gradients = array![[0.01, 0.02], [0.03, 0.04], [0.005, 0.01]];  // Including bias gradients
 ///
-/// // Input activations (batch_size x input_dim) and output gradients (batch_size x output_dim)
+/// // Input activations (batchsize x input_dim) and output gradients (batchsize x output_dim)
 /// let input_acts = array![[1.0, 2.0], [3.0, 4.0], [5.0, 6.0]];
 /// let output_grads = array![[0.1, 0.2], [0.3, 0.4], [0.5, 0.6]];
 ///
@@ -532,6 +536,7 @@ where
 ///     0.01
 /// ).unwrap();
 /// ```
+#[allow(dead_code)]
 pub fn kfac_update<F>(
     weights: &ArrayView2<F>,
     gradients: &ArrayView2<F>,
@@ -540,7 +545,7 @@ pub fn kfac_update<F>(
     learning_rate: F,
 ) -> LinalgResult<Array2<F>>
 where
-    F: Float + NumAssign + Sum + ScalarOperand,
+    F: Float + NumAssign + Sum + ScalarOperand + Send + Sync,
 {
     let (input_dim, output_dim) = weights.dim();
     let (grad_rows, grad_cols) = gradients.dim();
@@ -548,8 +553,7 @@ where
     // Check dimensions
     if input_dim != grad_rows || output_dim != grad_cols {
         return Err(LinalgError::ShapeError(format!(
-            "Weights ({}, {}) and gradients ({}, {}) must have the same shape",
-            input_dim, output_dim, grad_rows, grad_cols
+            "Weights ({input_dim}, {output_dim}) and gradients ({grad_rows}, {grad_cols}) must have the same shape"
         )));
     }
 
@@ -621,7 +625,7 @@ pub struct KFACOptimizer<F> {
 
 impl<F> KFACOptimizer<F>
 where
-    F: Float + NumAssign + Sum + ScalarOperand,
+    F: Float + NumAssign + Sum + ScalarOperand + Send + Sync,
 {
     /// Create a new K-FAC optimizer with default parameters
     ///
@@ -633,9 +637,9 @@ where
     /// # Returns
     ///
     /// * New K-FAC optimizer instance
-    pub fn new(decay_factor: Option<F>, base_damping: Option<F>) -> Self {
+    pub fn new(decay_factor: Option<F>, basedamping: Option<F>) -> Self {
         let decay = decay_factor.unwrap_or_else(|| F::from(0.95).unwrap());
-        let damping = base_damping.unwrap_or_else(|| F::from(1e-4).unwrap());
+        let damping = basedamping.unwrap_or_else(|| F::from(1e-4).unwrap());
 
         Self {
             decay_factor: decay,
@@ -754,15 +758,15 @@ where
     /// * `loss_improved` - Whether the loss improved in the last step
     /// * `improvement_ratio` - Ratio of actual vs predicted improvement
     ///
-    pub fn adjust_damping(&mut self, loss_improved: bool, improvement_ratio: Option<F>) {
+    pub fn adjust_damping(&mut self, loss_improved: bool, improvementratio: Option<F>) {
         if loss_improved {
-            // Loss improved: decrease damping
-            if let Some(ratio) = improvement_ratio {
-                if ratio > F::from(0.75).unwrap() {
+            // Loss _improved: decrease damping
+            if let Some(_ratio) = improvementratio {
+                if _ratio > F::from(0.75).unwrap() {
                     // Very good step: aggressive damping reduction
                     self.adaptive_damping =
                         (self.adaptive_damping / F::from(3.0).unwrap()).max(self.min_damping);
-                } else if ratio > F::from(0.25).unwrap() {
+                } else if _ratio > F::from(0.25).unwrap() {
                     // Good step: moderate damping reduction
                     self.adaptive_damping =
                         (self.adaptive_damping / F::from(2.0).unwrap()).max(self.min_damping);
@@ -814,7 +818,7 @@ pub struct BlockDiagonalFisher<F> {
 
 impl<F> BlockDiagonalFisher<F>
 where
-    F: Float + NumAssign + Sum + ScalarOperand,
+    F: Float + NumAssign + Sum + ScalarOperand + Send + Sync,
 {
     /// Create a new block-diagonal Fisher approximation
     ///
@@ -980,36 +984,35 @@ where
             .zip(self.inverse_factors.iter())
             .zip(self.layer_dims.iter())
         {
-            // Ensure gradients have the expected shape
-            let (batch_size, grad_output_dim) = grads.dim();
+            // Ensure _gradients have the expected shape
+            let (batchsize, grad_output_dim) = grads.dim();
             if grad_output_dim != output_dim {
                 return Err(LinalgError::ShapeError(format!(
-                    "Gradient output dimension mismatch: expected {}, got {}",
-                    output_dim, grad_output_dim
+                    "Gradient output dimension mismatch: expected {output_dim}, got {grad_output_dim}"
                 )));
             }
 
             // Create extended gradient matrix with bias terms (add column of zeros for bias gradient)
             let mut extended_grads = Array2::zeros((input_dim + 1, output_dim));
 
-            // Copy the weight gradients
+            // Copy the weight _gradients
             for i in 0..input_dim {
                 for j in 0..output_dim {
-                    // Average gradients across batch
+                    // Average _gradients across batch
                     let mut sum = F::zero();
-                    for b in 0..batch_size {
+                    for b in 0..batchsize {
                         sum += grads[[b, j]]; // Accumulate gradient for output j
                     }
-                    extended_grads[[i, j]] = sum / F::from(batch_size).unwrap();
+                    extended_grads[[i, j]] = sum / F::from(batchsize).unwrap();
                 }
             }
-            // Bias gradients are typically the mean of output gradients
+            // Bias _gradients are typically the mean of output _gradients
             for j in 0..output_dim {
                 let mut sum = F::zero();
-                for b in 0..batch_size {
+                for b in 0..batchsize {
                     sum += grads[[b, j]];
                 }
-                extended_grads[[input_dim, j]] = sum / F::from(batch_size).unwrap();
+                extended_grads[[input_dim, j]] = sum / F::from(batchsize).unwrap();
             }
 
             // Apply Kronecker-factored preconditioning: P^-1 * G = A^-1 * G * S^-1
@@ -1017,8 +1020,8 @@ where
             let preconditioned_grad = temp.dot(output_inv);
 
             // Extract the weight part (excluding bias) and reshape back to original format
-            let mut result = Array2::zeros((batch_size, output_dim));
-            for b in 0..batch_size {
+            let mut result = Array2::zeros((batchsize, output_dim));
+            for b in 0..batchsize {
                 for j in 0..output_dim {
                     // Use the weight part of the preconditioned gradient
                     result[[b, j]] = preconditioned_grad[[0, j]]; // Use first row as representative
@@ -1094,6 +1097,7 @@ pub struct BlockFisherMemoryInfo {
 /// # Returns
 ///
 /// * Updated weights and updated K-FAC state
+#[allow(dead_code)]
 pub fn advanced_kfac_step<F>(
     weights: &ArrayView2<F>,
     gradients: &ArrayView2<F>,
@@ -1105,14 +1109,14 @@ pub fn advanced_kfac_step<F>(
     gradient_clip: Option<F>,
 ) -> LinalgResult<Array2<F>>
 where
-    F: Float + NumAssign + Sum + ScalarOperand,
+    F: Float + NumAssign + Sum + ScalarOperand + Send + Sync,
 {
     // Update covariance estimates with moving averages
     let (input_cov, output_cov) = kfac_optimizer.update_covariances(input_acts, output_grads)?;
 
     // Compute stable inverses
-    let input_inv = stable_matrix_inverse(&input_cov.view(), kfac_optimizer.get_damping())?;
-    let output_inv = stable_matrix_inverse(&output_cov.view(), kfac_optimizer.get_damping())?;
+    let input_inv = stablematrix_inverse(&input_cov.view(), kfac_optimizer.get_damping())?;
+    let output_inv = stablematrix_inverse(&output_cov.view(), kfac_optimizer.get_damping())?;
 
     // Compute natural gradient: G_nat = A^-1 * G * S^-1
     let temp = input_inv.dot(gradients);
@@ -1129,7 +1133,7 @@ where
         }
     }
 
-    // Apply momentum if specified (would need momentum state in optimizer)
+    // Apply _momentum if specified (would need _momentum state in optimizer)
     // For now, just use the natural gradient directly
 
     // Update weights: w = w - lr * natural_grad
@@ -1144,9 +1148,10 @@ where
 }
 
 /// Compute stable matrix inverse with enhanced regularization
-fn stable_matrix_inverse<F>(matrix: &ArrayView2<F>, damping: F) -> LinalgResult<Array2<F>>
+#[allow(dead_code)]
+fn stablematrix_inverse<F>(matrix: &ArrayView2<F>, damping: F) -> LinalgResult<Array2<F>>
 where
-    F: Float + NumAssign + Sum + ScalarOperand,
+    F: Float + NumAssign + Sum + ScalarOperand + Send + Sync,
 {
     let n = matrix.nrows();
 
@@ -1385,7 +1390,7 @@ mod tests {
         let output_grads = array![[0.1, 0.2], [0.3, 0.4], [0.5, 0.6]];
 
         // First update should initialize averages
-        let (input_cov1, _output_cov1) = optimizer
+        let (input_cov1, output_cov1) = optimizer
             .update_covariances(&input_acts.view(), &output_grads.view())
             .unwrap();
 
@@ -1394,7 +1399,7 @@ mod tests {
         assert!(optimizer.output_cov_avg.is_some());
 
         // Second update should use moving averages
-        let (input_cov2, _output_cov2) = optimizer
+        let (input_cov2, output_cov2) = optimizer
             .update_covariances(&input_acts.view(), &output_grads.view())
             .unwrap();
 
@@ -1514,11 +1519,11 @@ mod tests {
     }
 
     #[test]
-    fn test_stable_matrix_inverse() {
+    fn test_stablematrix_inverse() {
         // Test with a simple positive definite matrix
         let matrix = array![[2.0, 1.0], [1.0, 2.0]];
         let damping = 0.01;
-        let inv = stable_matrix_inverse(&matrix.view(), damping).unwrap();
+        let inv = stablematrix_inverse(&matrix.view(), damping).unwrap();
 
         // Create the regularized matrix (what we actually inverted)
         let mut regularized = matrix.clone();
@@ -1526,7 +1531,7 @@ mod tests {
             regularized[[i, i]] += damping;
         }
 
-        // Check that regularized_matrix * inverse ≈ identity
+        // Check that regularizedmatrix * inverse ≈ identity
         let product = regularized.dot(&inv);
         let identity = Array2::eye(2);
 

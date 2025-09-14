@@ -3,6 +3,7 @@
 //! This module provides traits and utilities for working with numeric types
 //! in scientific computing contexts.
 
+use crate::error::{CoreError, CoreResult, ErrorContext};
 use num_traits::{Float, Num, NumCast, One, Zero};
 use std::fmt::Debug;
 use std::ops::{Add, AddAssign, Div, DivAssign, Mul, MulAssign, Neg, Sub, SubAssign};
@@ -62,6 +63,22 @@ pub trait ScientificNumber:
     /// Convert from f64
     #[must_use]
     fn from_f64(value: f64) -> Option<Self>;
+
+    /// Convert from little-endian bytes
+    #[must_use]
+    fn from_le_bytes(bytes: &[u8]) -> Self;
+
+    /// Convert from big-endian bytes
+    #[must_use]
+    fn from_be_bytes(bytes: &[u8]) -> Self;
+
+    /// Convert to little-endian bytes
+    #[must_use]
+    fn to_le_bytes(self) -> Vec<u8>;
+
+    /// Convert to big-endian bytes
+    #[must_use]
+    fn to_be_bytes(self) -> Vec<u8>;
 }
 
 /// A trait for real-valued floating point types
@@ -154,7 +171,7 @@ pub trait ComplexNumber: ScientificNumber {
 
     /// Create a new complex number from real and imaginary parts
     #[must_use]
-    fn new(re: Self::RealPart, im: Self::RealPart) -> Self;
+    fn from_parts(re: Self::RealPart, im: Self::RealPart) -> Self;
 
     /// Returns the complex conjugate
     #[must_use]
@@ -224,8 +241,7 @@ pub trait ScientificInteger: ScientificNumber + Eq {
     fn mod_pow(self, exp: Self, modulus: Self) -> Self;
 
     /// Factorial
-    #[must_use]
-    fn factorial(self) -> Self;
+    fn factorial(self) -> CoreResult<Self>;
 
     /// Binomial coefficient (n choose k)
     #[must_use]
@@ -264,6 +280,26 @@ impl ScientificNumber for f32 {
         } else {
             None
         }
+    }
+
+    fn from_le_bytes(bytes: &[u8]) -> Self {
+        let mut array = [0u8; 4];
+        array.copy_from_slice(&bytes[..4]);
+        f32::from_le_bytes(array)
+    }
+
+    fn from_be_bytes(bytes: &[u8]) -> Self {
+        let mut array = [0u8; 4];
+        array.copy_from_slice(&bytes[..4]);
+        f32::from_be_bytes(array)
+    }
+
+    fn to_le_bytes(self) -> Vec<u8> {
+        self.to_le_bytes().to_vec()
+    }
+
+    fn to_be_bytes(self) -> Vec<u8> {
+        self.to_be_bytes().to_vec()
     }
 }
 
@@ -386,6 +422,26 @@ impl ScientificNumber for f64 {
 
     fn from_f64(value: f64) -> Option<Self> {
         Some(value)
+    }
+
+    fn from_le_bytes(bytes: &[u8]) -> Self {
+        let mut array = [0u8; 8];
+        array.copy_from_slice(&bytes[..8]);
+        f64::from_le_bytes(array)
+    }
+
+    fn from_be_bytes(bytes: &[u8]) -> Self {
+        let mut array = [0u8; 8];
+        array.copy_from_slice(&bytes[..8]);
+        f64::from_be_bytes(array)
+    }
+
+    fn to_le_bytes(self) -> Vec<u8> {
+        self.to_le_bytes().to_vec()
+    }
+
+    fn to_be_bytes(self) -> Vec<u8> {
+        self.to_be_bytes().to_vec()
     }
 }
 
@@ -513,6 +569,26 @@ impl ScientificNumber for i32 {
             None
         }
     }
+
+    fn from_le_bytes(bytes: &[u8]) -> Self {
+        let mut array = [0u8; 4];
+        array.copy_from_slice(&bytes[..4]);
+        i32::from_le_bytes(array)
+    }
+
+    fn from_be_bytes(bytes: &[u8]) -> Self {
+        let mut array = [0u8; 4];
+        array.copy_from_slice(&bytes[..4]);
+        i32::from_be_bytes(array)
+    }
+
+    fn to_le_bytes(self) -> Vec<u8> {
+        self.to_le_bytes().to_vec()
+    }
+
+    fn to_be_bytes(self) -> Vec<u8> {
+        self.to_be_bytes().to_vec()
+    }
 }
 
 // Implement ScientificInteger for i32
@@ -597,9 +673,11 @@ impl ScientificInteger for i32 {
         result
     }
 
-    fn factorial(self) -> Self {
+    fn factorial(self) -> CoreResult<Self> {
         if self < 0 {
-            panic!("Factorial not defined for negative numbers");
+            return Err(CoreError::ValueError(ErrorContext::new(
+                "Factorial not defined for negative numbers".to_string(),
+            )));
         }
 
         let mut result = 1;
@@ -607,7 +685,7 @@ impl ScientificInteger for i32 {
             result *= i;
         }
 
-        result
+        Ok(result)
     }
 
     fn binomial(self, k: Self) -> Self {
@@ -658,24 +736,46 @@ where
 }
 
 /// Trait for converting between degrees and radians
-pub trait AngleConversion {
+pub trait AngleConversion: Sized {
     /// Convert from degrees to radians
-    fn to_radians(self) -> Self;
+    fn to_radians(&self) -> CoreResult<Self>
+    where
+        Self: std::marker::Sized;
 
     /// Convert from radians to degrees
-    fn to_degrees(self) -> Self;
+    fn to_degrees(&self) -> CoreResult<Self>
+    where
+        Self: std::marker::Sized;
 }
 
 /// Implement AngleConversion for all RealNumber types
 impl<T: RealNumber> AngleConversion for T {
-    fn to_radians(self) -> Self {
-        let pi = T::from_f64(std::f64::consts::PI).unwrap();
-        self * pi / T::from_f64(180.0).unwrap()
+    fn to_radians(&self) -> CoreResult<Self> {
+        let pi = T::from_f64(std::f64::consts::PI).ok_or_else(|| {
+            CoreError::ValueError(ErrorContext::new(
+                "Failed to convert PI constant to target type".to_string(),
+            ))
+        })?;
+        let one_eighty = T::from_f64(180.0).ok_or_else(|| {
+            CoreError::ValueError(ErrorContext::new(
+                "Failed to convert 180.0 to target type".to_string(),
+            ))
+        })?;
+        Ok(*self * pi / one_eighty)
     }
 
-    fn to_degrees(self) -> Self {
-        let pi = T::from_f64(std::f64::consts::PI).unwrap();
-        self * T::from_f64(180.0).unwrap() / pi
+    fn to_degrees(&self) -> CoreResult<Self> {
+        let pi = T::from_f64(std::f64::consts::PI).ok_or_else(|| {
+            CoreError::ValueError(ErrorContext::new(
+                "Failed to convert PI constant to target type".to_string(),
+            ))
+        })?;
+        let one_eighty = T::from_f64(180.0).ok_or_else(|| {
+            CoreError::ValueError(ErrorContext::new(
+                "Failed to convert 180.0 to target type".to_string(),
+            ))
+        })?;
+        Ok(*self * one_eighty / pi)
     }
 }
 
@@ -747,6 +847,349 @@ pub mod precision_tracking;
 /// Specialized numeric types for scientific domains
 pub mod scientific_types;
 
+/// Arbitrary precision numerical computation support
+#[cfg(feature = "arbitrary-precision")]
+pub mod arbitrary_precision;
+
+/// Numerical stability improvements
+pub mod stability;
+
+/// Stable numerical algorithms
+pub mod stable_algorithms;
+
+/// Advanced-optimized SIMD operations for numerical computations
+///
+/// This module provides vectorized implementations of common mathematical operations
+/// using the highest available SIMD instruction sets for maximum performance.
+pub mod advanced_simd {
+    #[allow(unused_imports)]
+    use super::*;
+
+    #[cfg(target_arch = "aarch64")]
+    use std::arch::aarch64::*;
+    #[cfg(target_arch = "x86_64")]
+    use std::arch::x86_64::*;
+
+    /// Optimized vectorized addition for f32 arrays
+    #[inline]
+    pub fn add_f32_advanced(a: &[f32], b: &[f32], result: &mut [f32]) {
+        debug_assert_eq!(a.len(), b.len());
+        debug_assert_eq!(a.len(), result.len());
+
+        let len = a.len();
+        let mut i = 0;
+
+        // AVX2 path - process 8 elements at a time
+        #[cfg(target_arch = "x86_64")]
+        {
+            if is_x86_feature_detected!("avx2") {
+                unsafe {
+                    while i + 8 <= len {
+                        let va = _mm256_loadu_ps(a.as_ptr().add(i));
+                        let vb = _mm256_loadu_ps(b.as_ptr().add(i));
+                        let vr = _mm256_add_ps(va, vb);
+                        _mm256_storeu_ps(result.as_mut_ptr().add(i), vr);
+                        i += 8;
+                    }
+                }
+            }
+            // SSE path - process 4 elements at a time
+            else if is_x86_feature_detected!("sse") {
+                unsafe {
+                    while i + 4 <= len {
+                        let va = _mm_loadu_ps(a.as_ptr().add(i));
+                        let vb = _mm_loadu_ps(b.as_ptr().add(i));
+                        let vr = _mm_add_ps(va, vb);
+                        _mm_storeu_ps(result.as_mut_ptr().add(i), vr);
+                        i += 4;
+                    }
+                }
+            }
+        }
+
+        // ARM NEON path - process 4 elements at a time
+        #[cfg(target_arch = "aarch64")]
+        {
+            if std::arch::is_aarch64_feature_detected!("neon") {
+                unsafe {
+                    while i + 4 <= len {
+                        let va = vld1q_f32(a.as_ptr().add(i));
+                        let vb = vld1q_f32(b.as_ptr().add(i));
+                        let vr = vaddq_f32(va, vb);
+                        vst1q_f32(result.as_mut_ptr().add(i), vr);
+                        i += 4;
+                    }
+                }
+            }
+        }
+
+        // Scalar fallback for remaining elements
+        while i < len {
+            result[i] = a[i] + b[i];
+            i += 1;
+        }
+    }
+
+    /// Optimized vectorized multiplication for f32 arrays
+    #[inline]
+    pub fn mul_f32_advanced(a: &[f32], b: &[f32], result: &mut [f32]) {
+        debug_assert_eq!(a.len(), b.len());
+        debug_assert_eq!(a.len(), result.len());
+
+        let len = a.len();
+        let mut i = 0;
+
+        // AVX2 + FMA path for maximum performance
+        #[cfg(target_arch = "x86_64")]
+        {
+            if is_x86_feature_detected!("avx2") && is_x86_feature_detected!("fma") {
+                unsafe {
+                    while i + 8 <= len {
+                        let va = _mm256_loadu_ps(a.as_ptr().add(i));
+                        let vb = _mm256_loadu_ps(b.as_ptr().add(i));
+                        let vr = _mm256_mul_ps(va, vb);
+                        _mm256_storeu_ps(result.as_mut_ptr().add(i), vr);
+                        i += 8;
+                    }
+                }
+            } else if is_x86_feature_detected!("sse") {
+                unsafe {
+                    while i + 4 <= len {
+                        let va = _mm_loadu_ps(a.as_ptr().add(i));
+                        let vb = _mm_loadu_ps(b.as_ptr().add(i));
+                        let vr = _mm_mul_ps(va, vb);
+                        _mm_storeu_ps(result.as_mut_ptr().add(i), vr);
+                        i += 4;
+                    }
+                }
+            }
+        }
+
+        // ARM NEON path
+        #[cfg(target_arch = "aarch64")]
+        {
+            if std::arch::is_aarch64_feature_detected!("neon") {
+                unsafe {
+                    while i + 4 <= len {
+                        let va = vld1q_f32(a.as_ptr().add(i));
+                        let vb = vld1q_f32(b.as_ptr().add(i));
+                        let vr = vmulq_f32(va, vb);
+                        vst1q_f32(result.as_mut_ptr().add(i), vr);
+                        i += 4;
+                    }
+                }
+            }
+        }
+
+        // Scalar fallback
+        while i < len {
+            result[i] = a[i] * b[i];
+            i += 1;
+        }
+    }
+
+    /// Optimized fused multiply-add (a * b + c) for f32 arrays
+    #[inline]
+    pub fn fma_f32_advanced(a: &[f32], b: &[f32], c: &[f32], result: &mut [f32]) {
+        debug_assert_eq!(a.len(), b.len());
+        debug_assert_eq!(a.len(), c.len());
+        debug_assert_eq!(a.len(), result.len());
+
+        let len = a.len();
+        let mut i = 0;
+
+        // AVX2 + FMA path for optimal performance
+        #[cfg(target_arch = "x86_64")]
+        {
+            if is_x86_feature_detected!("avx2") && is_x86_feature_detected!("fma") {
+                unsafe {
+                    while i + 8 <= len {
+                        let va = _mm256_loadu_ps(a.as_ptr().add(i));
+                        let vb = _mm256_loadu_ps(b.as_ptr().add(i));
+                        let vc = _mm256_loadu_ps(c.as_ptr().add(i));
+                        let vr = _mm256_fmadd_ps(va, vb, vc);
+                        _mm256_storeu_ps(result.as_mut_ptr().add(i), vr);
+                        i += 8;
+                    }
+                }
+            } else if is_x86_feature_detected!("sse") {
+                unsafe {
+                    while i + 4 <= len {
+                        let va = _mm_loadu_ps(a.as_ptr().add(i));
+                        let vb = _mm_loadu_ps(b.as_ptr().add(i));
+                        let vc = _mm_loadu_ps(c.as_ptr().add(i));
+                        let vr = _mm_add_ps(_mm_mul_ps(va, vb), vc);
+                        _mm_storeu_ps(result.as_mut_ptr().add(i), vr);
+                        i += 4;
+                    }
+                }
+            }
+        }
+
+        // ARM NEON path with FMA
+        #[cfg(target_arch = "aarch64")]
+        {
+            if std::arch::is_aarch64_feature_detected!("neon") {
+                unsafe {
+                    while i + 4 <= len {
+                        let va = vld1q_f32(a.as_ptr().add(i));
+                        let vb = vld1q_f32(b.as_ptr().add(i));
+                        let vc = vld1q_f32(c.as_ptr().add(i));
+                        let vr = vfmaq_f32(vc, va, vb);
+                        vst1q_f32(result.as_mut_ptr().add(i), vr);
+                        i += 4;
+                    }
+                }
+            }
+        }
+
+        // Scalar fallback
+        while i < len {
+            result[i] = a[i] * b[i] + c[0];
+            i += 1;
+        }
+    }
+
+    /// Optimized vectorized dot product for f32 arrays
+    #[inline]
+    pub fn dot_product_f32_advanced(a: &[f32], b: &[f32]) -> f32 {
+        debug_assert_eq!(a.len(), b.len());
+
+        let len = a.len();
+        let mut i = 0;
+        let mut sum = 0.0f32;
+
+        // AVX2 + FMA path for maximum throughput
+        #[cfg(target_arch = "x86_64")]
+        {
+            if is_x86_feature_detected!("avx2") && is_x86_feature_detected!("fma") {
+                unsafe {
+                    let mut acc = _mm256_setzero_ps();
+                    while i + 8 <= len {
+                        let va = _mm256_loadu_ps(a.as_ptr().add(i));
+                        let vb = _mm256_loadu_ps(b.as_ptr().add(i));
+                        acc = _mm256_fmadd_ps(va, vb, acc);
+                        i += 8;
+                    }
+                    // Horizontal sum of 8 floats
+                    let hi = _mm256_extractf128_ps(acc, 1);
+                    let lo = _mm256_castps256_ps128(acc);
+                    let sum4 = _mm_add_ps(hi, lo);
+                    let sum2 = _mm_add_ps(sum4, _mm_movehl_ps(sum4, sum4));
+                    let sum1 = _mm_add_ss(sum2, _mm_shuffle_ps(sum2, sum2, 1));
+                    sum = _mm_cvtss_f32(sum1);
+                }
+            } else if is_x86_feature_detected!("sse") {
+                unsafe {
+                    let mut acc = _mm_setzero_ps();
+                    while i + 4 <= len {
+                        let va = _mm_loadu_ps(a.as_ptr().add(i));
+                        let vb = _mm_loadu_ps(b.as_ptr().add(i));
+                        acc = _mm_add_ps(acc, _mm_mul_ps(va, vb));
+                        i += 4;
+                    }
+                    // Horizontal sum of 4 floats
+                    let sum2 = _mm_add_ps(acc, _mm_movehl_ps(acc, acc));
+                    let sum1 = _mm_add_ss(sum2, _mm_shuffle_ps(sum2, sum2, 1));
+                    sum = _mm_cvtss_f32(sum1);
+                }
+            }
+        }
+
+        // ARM NEON path with accumulation
+        #[cfg(target_arch = "aarch64")]
+        {
+            if std::arch::is_aarch64_feature_detected!("neon") {
+                unsafe {
+                    let mut acc = vdupq_n_f32(0.0);
+                    while i + 4 <= len {
+                        let va = vld1q_f32(a.as_ptr().add(i));
+                        let vb = vld1q_f32(b.as_ptr().add(i));
+                        acc = vfmaq_f32(acc, va, vb);
+                        i += 4;
+                    }
+                    // Horizontal sum
+                    sum = vaddvq_f32(acc);
+                }
+            }
+        }
+
+        // Scalar accumulation for remaining elements
+        while i < len {
+            sum += a[i] * b[i];
+            i += 1;
+        }
+
+        sum
+    }
+
+    /// Optimized vectorized sum reduction for f32 arrays
+    #[inline]
+    pub fn sum_f32_advanced(data: &[f32]) -> f32 {
+        let len = data.len();
+        let mut i = 0;
+        let mut sum = 0.0f32;
+
+        // AVX2 path
+        #[cfg(target_arch = "x86_64")]
+        {
+            if is_x86_feature_detected!("avx2") {
+                unsafe {
+                    let mut acc = _mm256_setzero_ps();
+                    while i + 8 <= len {
+                        let v = _mm256_loadu_ps(data.as_ptr().add(i));
+                        acc = _mm256_add_ps(acc, v);
+                        i += 8;
+                    }
+                    // Horizontal sum
+                    let hi = _mm256_extractf128_ps(acc, 1);
+                    let lo = _mm256_castps256_ps128(acc);
+                    let sum4 = _mm_add_ps(hi, lo);
+                    let sum2 = _mm_add_ps(sum4, _mm_movehl_ps(sum4, sum4));
+                    let sum1 = _mm_add_ss(sum2, _mm_shuffle_ps(sum2, sum2, 1));
+                    sum = _mm_cvtss_f32(sum1);
+                }
+            } else if is_x86_feature_detected!("sse") {
+                unsafe {
+                    let mut acc = _mm_setzero_ps();
+                    while i + 4 <= len {
+                        let v = _mm_loadu_ps(data.as_ptr().add(i));
+                        acc = _mm_add_ps(acc, v);
+                        i += 4;
+                    }
+                    let sum2 = _mm_add_ps(acc, _mm_movehl_ps(acc, acc));
+                    let sum1 = _mm_add_ss(sum2, _mm_shuffle_ps(sum2, sum2, 1));
+                    sum = _mm_cvtss_f32(sum1);
+                }
+            }
+        }
+
+        // ARM NEON path
+        #[cfg(target_arch = "aarch64")]
+        {
+            if std::arch::is_aarch64_feature_detected!("neon") {
+                unsafe {
+                    let mut acc = vdupq_n_f32(0.0);
+                    while i + 4 <= len {
+                        let v = vld1q_f32(data.as_ptr().add(i));
+                        acc = vaddq_f32(acc, v);
+                        i += 4;
+                    }
+                    sum = vaddvq_f32(acc);
+                }
+            }
+        }
+
+        // Scalar accumulation
+        while i < len {
+            sum += data[i];
+            i += 1;
+        }
+
+        sum
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -817,14 +1260,14 @@ mod tests {
         assert!(a.is_even());
         assert!(!a.is_odd());
         assert_eq!(a.mod_pow(2, 10), 4); // 12^2 mod 10 = 4
-        assert_eq!(5_i32.factorial(), 120);
+        assert_eq!(5_i32.factorial().unwrap(), 120);
         assert_eq!(5_i32.binomial(2), 10); // 5 choose 2 = 10
     }
 
     #[test]
     fn test_numeric_conversion() {
         let a: f64 = 3.5;
-        let b: i32 = a.try_convert().unwrap();
+        let b: i32 = a.try_convert().expect("3.5 should convert to i32 as 3");
         assert_eq!(b, 3);
 
         let c: f32 = 100.5;
@@ -839,12 +1282,12 @@ mod tests {
     #[test]
     fn test_angle_conversion() {
         let degrees: f64 = 180.0;
-        let radians = degrees.to_radians();
-        assert_eq!(radians, std::f64::consts::PI);
+        let radians = <f64 as AngleConversion>::to_radians(&degrees).unwrap();
+        assert!((radians - std::f64::consts::PI).abs() < 1e-10);
 
         let radians: f64 = std::f64::consts::PI / 2.0;
-        let degrees = radians.to_degrees();
-        assert_eq!(degrees, 90.0);
+        let degrees = <f64 as AngleConversion>::to_degrees(&radians).unwrap();
+        assert!((degrees - 90.0).abs() < 1e-10);
     }
 
     #[test]

@@ -66,7 +66,7 @@ where
     /// # Returns
     /// A new empty `LilArray`
     pub fn new(shape: (usize, usize)) -> Self {
-        let (rows, _) = shape;
+        let (rows, cols) = shape;
         let data = vec![Vec::new(); rows];
         let indices = vec![Vec::new(); rows];
 
@@ -104,7 +104,7 @@ where
         for (i, (row_data, row_indices)) in data.iter().zip(indices.iter()).enumerate() {
             if row_data.len() != row_indices.len() {
                 return Err(SparseError::InconsistentData {
-                    reason: format!("Row {}: data and indices have different lengths", i),
+                    reason: format!("Row {i}: data and indices have different lengths"),
                 });
             }
 
@@ -129,7 +129,7 @@ where
                 .copied()
                 .zip(row_data.iter().copied())
                 .collect();
-            pairs.sort_by_key(|&(idx, _)| idx);
+            pairs.sort_by_key(|&(idx_, _)| idx_);
 
             // Extract sorted data
             let mut sorted_data = Vec::with_capacity(row_data.len());
@@ -235,7 +235,7 @@ where
                     .collect();
 
                 // Sort by column index
-                pairs.sort_by_key(|&(idx, _)| idx);
+                pairs.sort_by_key(|&(idx_, _)| idx_);
 
                 // Extract sorted data
                 self.indices[row].clear();
@@ -309,7 +309,7 @@ where
     }
 
     fn to_csr(&self) -> SparseResult<Box<dyn SparseArray<T>>> {
-        let (rows, _cols) = self.shape;
+        let (rows, cols) = self.shape;
         let nnz = self.nnz();
 
         let mut data = Vec::with_capacity(nnz);

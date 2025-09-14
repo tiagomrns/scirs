@@ -193,6 +193,7 @@ impl<
 ///
 /// # Returns
 /// The estimated gradient vector
+#[allow(dead_code)]
 fn finite_difference_gradient<F, T>(
     interpolator: &T,
     query: &ArrayView1<F>,

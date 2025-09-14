@@ -102,6 +102,42 @@ pub use self::rule_lemmatizer::{
     LemmatizerConfig, PosTag, RuleCondition, RuleLemmatizer, RuleLemmatizerBuilder,
 };
 
+/// Create a POS-aware lemmatizer that automatically detects part-of-speech tags
+/// for improved lemmatization accuracy.
+///
+/// This function creates a lemmatizer that combines automatic POS tagging with
+/// rule-based lemmatization for better accuracy than using lemmatization alone.
+///
+/// # Example
+///
+/// ```
+/// use scirs2_text::stemming::create_pos_aware_lemmatizer;
+/// use scirs2_text::stemming::Stemmer;
+///
+/// # fn main() -> Result<(), Box<dyn std::error::Error>> {
+/// let lemmatizer = create_pos_aware_lemmatizer();
+///
+/// // Automatic POS detection improves accuracy
+/// assert_eq!(lemmatizer.stem("running")?, "run");
+/// assert_eq!(lemmatizer.stem("better")?, "good");  // Uses POS context
+/// assert_eq!(lemmatizer.stem("flies")?, "fly");    // Disambiguated by context
+/// # Ok(())
+/// # }
+/// ```
+#[allow(dead_code)]
+pub fn create_pos_aware_lemmatizer() -> crate::pos_tagging::PosAwareLemmatizer {
+    crate::pos_tagging::PosAwareLemmatizer::new()
+}
+
+/// Create a POS-aware lemmatizer with custom configurations
+#[allow(dead_code)]
+pub fn create_pos_aware_lemmatizer_with_config(
+    posconfig: crate::pos_tagging::PosTaggerConfig,
+    lemmaconfig: LemmatizerConfig,
+) -> crate::pos_tagging::PosAwareLemmatizer {
+    crate::pos_tagging::PosAwareLemmatizer::with_configs(posconfig, lemmaconfig)
+}
+
 lazy_static! {
     // Porter stemmer regex patterns
     static ref VOWEL_SEQUENCE: Regex = Regex::new(r"[aeiouy]").unwrap();
@@ -171,7 +207,7 @@ impl PorterStemmer {
     fn step1a(&self, word: String) -> String {
         if word.ends_with("sses") || word.ends_with("ies") {
             word[..word.len() - 2].to_string()
-        } else if word.ends_with("s") && !word.ends_with("ss") {
+        } else if word.ends_with("s") && !word.ends_with("ss") && !word.ends_with("ness") {
             word[..word.len() - 1].to_string()
         } else {
             word
@@ -185,7 +221,7 @@ impl PorterStemmer {
         if word.ends_with("eed") {
             let stem = &word[..word.len() - 3];
             if self.measure(stem) > 0 {
-                word = format!("{}{}", stem, "ee");
+                word = format!("{stem}ee");
             }
         } else if word.ends_with("ed") {
             let stem = &word[..word.len() - 2];
@@ -223,7 +259,7 @@ impl PorterStemmer {
         if word.ends_with("y") && word.len() > 1 {
             let stem = &word[..word.len() - 1];
             if VOWEL_SEQUENCE.is_match(stem) {
-                return format!("{}{}", stem, "i");
+                return format!("{stem}i");
             }
         }
         word
@@ -258,7 +294,7 @@ impl PorterStemmer {
             if word.ends_with(suffix) {
                 let stem = &word[..word.len() - suffix.len()];
                 if self.measure(stem) > 0 {
-                    return format!("{}{}", stem, replacement);
+                    return format!("{stem}{replacement}");
                 }
             }
         }
@@ -282,7 +318,7 @@ impl PorterStemmer {
             if word.ends_with(suffix) {
                 let stem = &word[..word.len() - suffix.len()];
                 if self.measure(stem) > 0 {
-                    return format!("{}{}", stem, replacement);
+                    return format!("{stem}{replacement}");
                 }
             }
         }
@@ -371,8 +407,7 @@ impl SnowballStemmer {
                 language: "english".to_string(),
             }),
             _ => Err(TextError::InvalidInput(format!(
-                "Unsupported language: {}",
-                language
+                "Unsupported language: {language}"
             ))),
         }
     }
@@ -422,7 +457,7 @@ impl SnowballStemmer {
         }
 
         let mut stemmed = word.to_lowercase();
-        let (_r1, _r2) = self.find_r1_r2(&stemmed);
+        let _r1_r2 = self.find_r1_r2(&stemmed);
 
         // Step 0: Remove trailing apostrophes
         if stemmed.ends_with("'s'") {
@@ -435,12 +470,15 @@ impl SnowballStemmer {
 
         // Step 1a: Plurals
         if stemmed.ends_with("sses") {
-            stemmed = format!("{}ss", &stemmed[..stemmed.len() - 4]);
+            let truncated = &stemmed[..stemmed.len() - 4];
+            stemmed = format!("{truncated}ss");
         } else if stemmed.ends_with("ied") || stemmed.ends_with("ies") {
             if stemmed.len() > 4 {
-                stemmed = format!("{}i", &stemmed[..stemmed.len() - 3]);
+                let truncated = &stemmed[..stemmed.len() - 3];
+                stemmed = format!("{truncated}i");
             } else {
-                stemmed = format!("{}ie", &stemmed[..stemmed.len() - 3]);
+                let truncated = &stemmed[..stemmed.len() - 3];
+                stemmed = format!("{truncated}ie");
             }
         } else if stemmed.ends_with("s") && !stemmed.ends_with("us") && !stemmed.ends_with("ss") {
             // Check if word contains a vowel before the s
@@ -513,7 +551,7 @@ impl SimpleLemmatizer {
     }
 
     /// Load lemmatization dictionary from a file
-    pub fn from_dict_file(_path: &str) -> Result<Self> {
+    pub fn from_dict_file(path: &str) -> Result<Self> {
         // In a real implementation, this would load from a file
         Ok(Self::new())
     }
@@ -558,7 +596,7 @@ mod tests {
 
         for (word, expected) in test_cases {
             let stemmed = stemmer.stem(word).unwrap();
-            assert_eq!(stemmed, expected, "Failed for word: {}", word);
+            assert_eq!(stemmed, expected, "Failed for word: {word}");
         }
     }
 
@@ -575,7 +613,7 @@ mod tests {
 
         for (word, expected) in test_cases {
             let stemmed = stemmer.stem(word).unwrap();
-            assert_eq!(stemmed, expected, "Failed for word: {}", word);
+            assert_eq!(stemmed, expected, "Failed for word: {word}");
         }
     }
 
@@ -594,7 +632,7 @@ mod tests {
 
         for (word, expected) in test_cases {
             let lemma = lemmatizer.stem(word).unwrap();
-            assert_eq!(lemma, expected, "Failed for word: {}", word);
+            assert_eq!(lemma, expected, "Failed for word: {word}");
         }
     }
 
@@ -625,6 +663,74 @@ mod tests {
         // Test without POS tag
         assert_eq!(lemmatizer.lemmatize("running", None), "run");
         assert_eq!(lemmatizer.lemmatize("went", None), "go");
+    }
+
+    #[test]
+    fn test_pos_aware_lemmatizer_integration() {
+        let pos_aware = create_pos_aware_lemmatizer();
+        let rule_only = RuleLemmatizer::new();
+
+        // Test cases where POS awareness should improve accuracy
+        let test_cases = vec![
+            "flies",   // Could be verb (3rd person) or noun (plural)
+            "running", // Could be verb or noun/adjective
+            "better",  // Could be adjective (comparative) or adverb
+            "works",   // Could be verb or noun
+            "watches", // Could be verb or noun
+        ];
+
+        for word in test_cases {
+            let pos_aware_result = pos_aware.stem(word).unwrap();
+            let rule_only_result = rule_only.stem(word).unwrap();
+
+            println!(
+                "Word: '{word}' -> POS-aware: '{pos_aware_result}', Rule-only: '{rule_only_result}'"
+            );
+
+            // Both should produce valid results
+            assert!(!pos_aware_result.is_empty());
+            assert!(!rule_only_result.is_empty());
+        }
+    }
+
+    #[test]
+    fn test_pos_aware_lemmatizer_accuracy() {
+        let pos_aware = create_pos_aware_lemmatizer();
+
+        // Test cases where POS awareness provides clear benefit
+        assert_eq!(pos_aware.stem("running").unwrap(), "run");
+        assert_eq!(pos_aware.stem("better").unwrap(), "good");
+        assert_eq!(pos_aware.stem("went").unwrap(), "go");
+        assert_eq!(pos_aware.stem("children").unwrap(), "child");
+        assert_eq!(pos_aware.stem("feet").unwrap(), "foot");
+
+        // Test regular patterns that should work consistently
+        assert_eq!(pos_aware.stem("cats").unwrap(), "cat");
+        assert_eq!(pos_aware.stem("quickly").unwrap(), "quick");
+        assert_eq!(pos_aware.stem("happiness").unwrap(), "happiness"); // May not be in exceptions
+    }
+
+    #[test]
+    fn test_pos_aware_lemmatizer_custom_config() {
+        let pos_config = crate::pos_tagging::PosTaggerConfig {
+            use_context: false,
+            smoothing_factor: 0.01,
+            use_morphology: true,
+            use_capitalization: true,
+        };
+
+        let lemma_config = LemmatizerConfig {
+            use_pos_tagging: true,
+            default_pos: PosTag::Verb,
+            apply_case_restoration: false,
+            check_vowels: true,
+        };
+
+        let pos_aware = create_pos_aware_lemmatizer_with_config(pos_config, lemma_config);
+
+        // Test with custom configuration
+        let result = pos_aware.stem("Running").unwrap();
+        assert_eq!(result, "run"); // Should not restore case due to config
     }
 
     #[test]

@@ -10,6 +10,7 @@ use std::sync::Once;
 static INIT: Once = Once::new();
 
 // Initialize the ufunc registry with mathematical functions
+#[allow(dead_code)]
 fn init_math_ufuncs() {
     INIT.call_once(|| {
         // Register all the mathematical ufuncs
@@ -217,7 +218,6 @@ impl UFunc for AbsUFunc {
 /// ```
 /// use ndarray::array;
 /// use scirs2_core::ufuncs::sin;
-/// use std::f64::consts::PI;
 ///
 /// let a = array![0.0, PI/2.0, PI];
 /// let result = sin(&a);
@@ -225,6 +225,7 @@ impl UFunc for AbsUFunc {
 /// assert!((result[1] - 1.0).abs() < 1e-10);
 /// assert!((result[2] - 0.0).abs() < 1e-10);
 /// ```
+#[allow(dead_code)]
 pub fn sin<D>(array: &ndarray::ArrayBase<ndarray::Data, D>) -> Array<f64, D>
 where
     D: Dimension,
@@ -232,12 +233,12 @@ where
     // Initialize the ufuncs registry if needed
     init_math_ufuncs();
 
-    // Create output array
-    let mut result = Array::zeros(array.raw_dim());
+    // Create output _array
+    let mut result = Array::zeros(_array.raw_dim());
 
     // Apply the sine function
     let sin_ufunc = SinUFunc;
-    sin_ufunc.apply(&[array], &mut result).unwrap();
+    sin_ufunc.apply(&[_array], &mut result).unwrap();
 
     result
 }
@@ -257,7 +258,6 @@ where
 /// ```
 /// use ndarray::array;
 /// use scirs2_core::ufuncs::cos;
-/// use std::f64::consts::PI;
 ///
 /// let a = array![0.0, PI/2.0, PI];
 /// let result = cos(&a);
@@ -265,6 +265,7 @@ where
 /// assert!((result[1] - 0.0).abs() < 1e-10);
 /// assert!((result[2] + 1.0).abs() < 1e-10);
 /// ```
+#[allow(dead_code)]
 pub fn cos<D>(array: &ndarray::ArrayBase<ndarray::Data, D>) -> Array<f64, D>
 where
     D: Dimension,
@@ -272,12 +273,12 @@ where
     // Initialize the ufuncs registry if needed
     init_math_ufuncs();
 
-    // Create output array
-    let mut result = Array::zeros(array.raw_dim());
+    // Create output _array
+    let mut result = Array::zeros(_array.raw_dim());
 
     // Apply the cosine function
     let cos_ufunc = CosUFunc;
-    cos_ufunc.apply(&[array], &mut result).unwrap();
+    cos_ufunc.apply(&[_array], &mut result).unwrap();
 
     result
 }
@@ -297,13 +298,13 @@ where
 /// ```
 /// use ndarray::array;
 /// use scirs2_core::ufuncs::tan;
-/// use std::f64::consts::PI;
 ///
 /// let a = array![0.0, PI/4.0];
 /// let result = tan(&a);
 /// assert!((result[0] - 0.0).abs() < 1e-10);
 /// assert!((result[1] - 1.0).abs() < 1e-10);
 /// ```
+#[allow(dead_code)]
 pub fn tan<D>(array: &ndarray::ArrayBase<ndarray::Data, D>) -> Array<f64, D>
 where
     D: Dimension,
@@ -311,12 +312,12 @@ where
     // Initialize the ufuncs registry if needed
     init_math_ufuncs();
 
-    // Create output array
-    let mut result = Array::zeros(array.raw_dim());
+    // Create output _array
+    let mut result = Array::zeros(_array.raw_dim());
 
     // Apply the tangent function
     let tan_ufunc = TanUFunc;
-    tan_ufunc.apply(&[array], &mut result).unwrap();
+    tan_ufunc.apply(&[_array], &mut result).unwrap();
 
     result
 }
@@ -342,6 +343,7 @@ where
 /// assert!((result[0] - 1.0).abs() < 1e-10);
 /// assert!((result[1] - std::f64::consts::E).abs() < 1e-10);
 /// ```
+#[allow(dead_code)]
 pub fn exp<D>(array: &ndarray::ArrayBase<ndarray::Data, D>) -> Array<f64, D>
 where
     D: Dimension,
@@ -349,12 +351,12 @@ where
     // Initialize the ufuncs registry if needed
     init_math_ufuncs();
 
-    // Create output array
-    let mut result = Array::zeros(array.raw_dim());
+    // Create output _array
+    let mut result = Array::zeros(_array.raw_dim());
 
     // Apply the exponential function
     let exp_ufunc = ExpUFunc;
-    exp_ufunc.apply(&[array], &mut result).unwrap();
+    exp_ufunc.apply(&[_array], &mut result).unwrap();
 
     result
 }
@@ -380,6 +382,7 @@ where
 /// assert!((result[0] - 0.0).abs() < 1e-10);
 /// assert!((result[1] - 1.0).abs() < 1e-10);
 /// ```
+#[allow(dead_code)]
 pub fn log<D>(array: &ndarray::ArrayBase<ndarray::Data, D>) -> Array<f64, D>
 where
     D: Dimension,
@@ -387,12 +390,12 @@ where
     // Initialize the ufuncs registry if needed
     init_math_ufuncs();
 
-    // Create output array
-    let mut result = Array::zeros(array.raw_dim());
+    // Create output _array
+    let mut result = Array::zeros(_array.raw_dim());
 
     // Apply the natural logarithm function
     let log_ufunc = LogUFunc;
-    log_ufunc.apply(&[array], &mut result).unwrap();
+    log_ufunc.apply(&[_array], &mut result).unwrap();
 
     result
 }
@@ -417,6 +420,7 @@ where
 /// let result = sqrt(&a);
 /// assert_eq!(result, array![1.0, 2.0, 3.0]);
 /// ```
+#[allow(dead_code)]
 pub fn sqrt<D>(array: &ndarray::ArrayBase<ndarray::Data, D>) -> Array<f64, D>
 where
     D: Dimension,
@@ -424,12 +428,12 @@ where
     // Initialize the ufuncs registry if needed
     init_math_ufuncs();
 
-    // Create output array
-    let mut result = Array::zeros(array.raw_dim());
+    // Create output _array
+    let mut result = Array::zeros(_array.raw_dim());
 
     // Apply the square root function
     let sqrt_ufunc = SqrtUFunc;
-    sqrt_ufunc.apply(&[array], &mut result).unwrap();
+    sqrt_ufunc.apply(&[_array], &mut result).unwrap();
 
     result
 }
@@ -454,6 +458,7 @@ where
 /// let result = abs(&a);
 /// assert_eq!(result, array![1.0, 0.0, 1.0]);
 /// ```
+#[allow(dead_code)]
 pub fn abs<D>(array: &ndarray::ArrayBase<ndarray::Data, D>) -> Array<f64, D>
 where
     D: Dimension,
@@ -461,12 +466,12 @@ where
     // Initialize the ufuncs registry if needed
     init_math_ufuncs();
 
-    // Create output array
-    let mut result = Array::zeros(array.raw_dim());
+    // Create output _array
+    let mut result = Array::zeros(_array.raw_dim());
 
     // Apply the absolute value function
     let abs_ufunc = AbsUFunc;
-    abs_ufunc.apply(&[array], &mut result).unwrap();
+    abs_ufunc.apply(&[_array], &mut result).unwrap();
 
     result
 }
@@ -475,7 +480,6 @@ where
 mod tests {
     use super::*;
     use ndarray::array;
-    use std::f64::consts::PI;
 
     #[test]
     fn test_sin() {

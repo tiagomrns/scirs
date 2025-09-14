@@ -10,6 +10,7 @@ use std::fmt::Debug;
 use std::time::Instant;
 
 /// Compute Jacobian matrix using standard (serial) finite differences
+#[allow(dead_code)]
 fn finite_difference_jacobian<F, Func>(
     f: &Func,
     t: F,
@@ -49,6 +50,7 @@ where
 }
 
 /// Compute Jacobian matrix using parallel finite differences (if parallel_jacobian feature is enabled)
+#[allow(dead_code)]
 fn parallel_finite_difference_jacobian<F, Func>(
     f: &Func,
     t: F,
@@ -112,7 +114,8 @@ where
 }
 
 // A large ODE system for demonstration
-fn large_ode_system(_t: f64, y: ArrayView1<f64>) -> Array1<f64> {
+#[allow(dead_code)]
+fn large_ode_system(t: f64, y: ArrayView1<f64>) -> Array1<f64> {
     let n = y.len();
     let mut result = Array1::zeros(n);
 
@@ -131,6 +134,7 @@ fn large_ode_system(_t: f64, y: ArrayView1<f64>) -> Array1<f64> {
     result
 }
 
+#[allow(dead_code)]
 fn main() {
     println!("Simple Parallel Jacobian Example");
     println!("================================");
@@ -149,7 +153,7 @@ fn main() {
     let system_sizes = [10, 100, 500];
 
     for &n in &system_sizes {
-        println!("\nTesting with system size: {}", n);
+        println!("\nTesting with system size: {n}");
 
         // Create a random initial state
         let mut y = Array1::zeros(n);
@@ -164,18 +168,18 @@ fn main() {
         let serial_start = Instant::now();
         let _serial_jac = finite_difference_jacobian(&large_ode_system, t, &y, &f_y, 1.0);
         let serial_time = serial_start.elapsed();
-        println!("  Serial computation: {:?}", serial_time);
+        println!("  Serial computation: {serial_time:?}");
 
         // Parallel computation (uses serial if feature is disabled)
         let parallel_start = Instant::now();
         let _parallel_jac =
             parallel_finite_difference_jacobian(&large_ode_system, t, &y, &f_y, 1.0);
         let parallel_time = parallel_start.elapsed();
-        println!("  Parallel computation: {:?}", parallel_time);
+        println!("  Parallel computation: {parallel_time:?}");
 
         // Calculate speedup
         let speedup = serial_time.as_secs_f64() / parallel_time.as_secs_f64();
-        println!("  Speedup: {:.2}x", speedup);
+        println!("  Speedup: {speedup:.2}x");
     }
 
     println!("\nNote: For best performance, compile with --release flag");

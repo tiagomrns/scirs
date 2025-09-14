@@ -1,12 +1,13 @@
-//! Signal processing utilities
-//!
-//! This module provides additional utility functions for signal processing
-//! that extend beyond the basic utilities in the utils module.
-//!
-//! # Submodules
-//!
-//! * `spectral` - Utilities for spectral analysis
+// Signal processing utilities
+//
+// This module provides additional utility functions for signal processing
+// that extend beyond the basic utilities in the utils module.
+//
+// # Submodules
+//
+// * `spectral` - Utilities for spectral analysis
 
+#[allow(unused_imports)]
 pub mod spectral;
 
 // Re-export commonly used functions from submodules

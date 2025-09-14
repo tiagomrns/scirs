@@ -1,6 +1,7 @@
 use ag::tensor_ops as T;
 use scirs2_autograd as ag;
 
+#[allow(dead_code)]
 fn main() {
     // Example to compute partial derivatives of z = 2x^2 + 3y + 1
     ag::run(|ctx: &mut ag::Context<_>| {

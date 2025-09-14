@@ -3,6 +3,7 @@ use scirs2_integrate::pde::implicit::{ImplicitOptions, ADI2D};
 use scirs2_integrate::pde::{BoundaryCondition, BoundaryConditionType, BoundaryLocation, Domain};
 use std::f64::consts::PI;
 
+#[allow(dead_code)]
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Define 2D domain: (x,y) ∈ [0,1]×[0,1]
     let domain = Domain::new(vec![0.0..1.0, 0.0..1.0], vec![51, 51])?;
@@ -82,18 +83,20 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("Number of linear solves: {}", result.num_linear_solves);
 
     if let Some(info) = result.info {
-        println!("{}", info);
+        println!("{info}");
     }
 
     Ok(())
 }
 
 /// Analytical solution for the 2D heat equation with given initial and boundary conditions
+#[allow(dead_code)]
 fn analytical_solution(x: f64, y: f64, t: f64) -> f64 {
     (PI * x).sin() * (PI * y).sin() * (-2.0 * PI * PI * t).exp()
 }
 
 /// Compare numerical and analytical solutions
+#[allow(dead_code)]
 fn compare_with_analytical(
     result: &scirs2_integrate::pde::implicit::ADIResult,
     domain: &Domain,
@@ -131,9 +134,9 @@ fn compare_with_analytical(
     }
     avg_error /= (nx * ny) as f64;
 
-    println!("\nError analysis at t = {:.4}:", final_time);
-    println!("Maximum absolute error: {:.6e}", max_error);
-    println!("Average absolute error: {:.6e}", avg_error);
+    println!("\nError analysis at t = {final_time:.4}:");
+    println!("Maximum absolute error: {max_error:.6e}");
+    println!("Average absolute error: {avg_error:.6e}");
 
     // Print solution at selected points
     println!("\nSolution values at selected points:");
@@ -148,10 +151,7 @@ fn compare_with_analytical(
             let num_val = numerical[[i, j]];
             let error = (ana_val - num_val).abs();
 
-            println!(
-                "({:.2},{:.2}) | {:.8} | {:.8} | {:.2e}",
-                x, y, ana_val, num_val, error
-            );
+            println!("({x:.2},{y:.2}) | {ana_val:.8} | {num_val:.8} | {error:.2e}");
         }
     }
 
@@ -180,10 +180,7 @@ fn compare_with_analytical(
         let num_val = result.u[idx][[i_center, j_center, 0]];
         let error = (ana_val - num_val).abs();
 
-        println!(
-            " {:.4} | {:.8} | {:.8} | {:.2e}",
-            t, ana_val, num_val, error
-        );
+        println!(" {t:.4} | {ana_val:.8} | {num_val:.8} | {error:.2e}");
     }
 
     Ok(())

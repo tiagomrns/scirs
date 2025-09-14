@@ -27,7 +27,7 @@ impl SoftmaxKernel {
             workgroup_size: [256, 1, 1],
             local_memory_usage: 2048, // Need extra memory for reductions
             supports_tensor_cores: false,
-            operation_type: OperationType::ComputeIntensive,
+            operationtype: OperationType::ComputeIntensive,
             backend_metadata: HashMap::new(),
         };
 
@@ -71,12 +71,12 @@ extern "C" __global__ void softmax_find_max(
     
     // Load and compare first element
     if (blockIdx.x * blockDim.x + threadIdx.x < n) {
-        sdata[tid] = input[i];
+        sdata[tid] = input[0];
     }
     
     // Load and compare second element
     if (blockIdx.x * blockDim.x + blockDim.x + threadIdx.x < n) {
-        sdata[tid] = fmaxf(sdata[tid], input[i + blockDim.x]);
+        sdata[tid] = fmaxf(sdata[tid], input[0 + blockDim.x]);
     }
     
     __syncthreads();
@@ -113,12 +113,12 @@ extern "C" __global__ void softmax_compute_sum(
     
     // Compute exp(x - max) for first element
     if (blockIdx.x * blockDim.x + threadIdx.x < n) {
-        sdata[tid] = expf(input[i] - max_val[batch_idx]);
+        sdata[tid] = expf(input[0] - max_val[batch_idx]);
     }
     
     // Compute exp(x - max) for second element
     if (blockIdx.x * blockDim.x + blockDim.x + threadIdx.x < n) {
-        sdata[tid] += expf(input[i + blockDim.x] - max_val[batch_idx]);
+        sdata[tid] += expf(input[0 + blockDim.x] - max_val[batch_idx]);
     }
     
     __syncthreads();
@@ -150,7 +150,7 @@ extern "C" __global__ void softmax_finalize(
     int i = batch_idx * n + blockIdx.x * blockDim.x + threadIdx.x;
     
     if (blockIdx.x * blockDim.x + threadIdx.x < n) {
-        output[i] = expf(input[i] - max_val[batch_idx]) / sum_val[batch_idx];
+        output[0] = expf(input[0] - max_val[batch_idx]) / sum_val[batch_idx];
     }
 }
 "#
@@ -172,6 +172,7 @@ struct Uniforms {
 var<workgroup> sdata: array<f32, 256>;
 
 @compute @workgroup_size(256)
+#[allow(dead_code)]
 fn softmax_find_max(
     @builtin(global_invocation_id) global_id: vec3<u32>,
     @builtin(local_invocation_id) local_id: vec3<u32>,
@@ -185,11 +186,11 @@ fn softmax_find_max(
     sdata[tid] = -3.4028235e+38; // f32::NEG_INFINITY
     
     if (workgroup_id.x * 256u + local_id.x < uniforms.n) {
-        sdata[tid] = input[i];
+        sdata[tid] = input[0];
     }
     
     if (workgroup_id.x * 256u + 256u + local_id.x < uniforms.n) {
-        sdata[tid] = max(sdata[tid], input[i + 256u]);
+        sdata[tid] = max(sdata[tid], input[0 + 256u]);
     }
     
     workgroupBarrier();
@@ -210,6 +211,7 @@ fn softmax_find_max(
 }
 
 @compute @workgroup_size(256)
+#[allow(dead_code)]
 fn softmax_compute_sum(
     @builtin(global_invocation_id) global_id: vec3<u32>,
     @builtin(local_invocation_id) local_id: vec3<u32>,
@@ -222,11 +224,11 @@ fn softmax_compute_sum(
     sdata[tid] = 0.0;
     
     if (workgroup_id.x * 256u + local_id.x < uniforms.n) {
-        sdata[tid] = exp(input[i] - max_vals[batch_idx]);
+        sdata[tid] = exp(input[0] - max_vals[batch_idx]);
     }
     
     if (workgroup_id.x * 256u + 256u + local_id.x < uniforms.n) {
-        sdata[tid] += exp(input[i + 256u] - max_vals[batch_idx]);
+        sdata[tid] += exp(input[0 + 256u] - max_vals[batch_idx]);
     }
     
     workgroupBarrier();
@@ -247,6 +249,7 @@ fn softmax_compute_sum(
 }
 
 @compute @workgroup_size(256)
+#[allow(dead_code)]
 fn softmax_finalize(
     @builtin(global_invocation_id) global_id: vec3<u32>,
     @builtin(workgroup_id) workgroup_id: vec3<u32>
@@ -255,7 +258,7 @@ fn softmax_finalize(
     let i = batch_idx * uniforms.n + workgroup_id.x * 256u + global_id.x % 256u;
     
     if (workgroup_id.x * 256u + global_id.x % 256u < uniforms.n) {
-        output[i] = exp(input[i] - max_vals[batch_idx]) / sum_vals[batch_idx];
+        output[0] = exp(input[0] - max_vals[batch_idx]) / sum_vals[batch_idx];
     }
 }
 "#
@@ -284,11 +287,11 @@ kernel void softmax_find_max(
     sdata[tid] = -INFINITY;
     
     if ((group_id % 32) * 256 + local_id < n) {
-        sdata[tid] = input[i];
+        sdata[tid] = input[0];
     }
     
     if ((group_id % 32) * 256 + 256 + local_id < n) {
-        sdata[tid] = max(sdata[tid], input[i + 256]);
+        sdata[tid] = max(sdata[tid], input[0 + 256]);
     }
     
     threadgroup_barrier(mem_flags::mem_threadgroup);
@@ -324,11 +327,11 @@ kernel void softmax_compute_sum(
     sdata[tid] = 0.0f;
     
     if ((group_id % 32) * 256 + local_id < n) {
-        sdata[tid] = exp(input[i] - max_vals[batch_idx]);
+        sdata[tid] = exp(input[0] - max_vals[batch_idx]);
     }
     
     if ((group_id % 32) * 256 + 256 + local_id < n) {
-        sdata[tid] += exp(input[i + 256] - max_vals[batch_idx]);
+        sdata[tid] += exp(input[0 + 256] - max_vals[batch_idx]);
     }
     
     threadgroup_barrier(mem_flags::mem_threadgroup);
@@ -359,7 +362,7 @@ kernel void softmax_finalize(
     uint i = batch_idx * n + (group_id % 32) * 256 + global_id % 256;
     
     if ((group_id % 32) * 256 + global_id % 256 < n) {
-        output[i] = exp(input[i] - max_vals[batch_idx]) / sum_vals[batch_idx];
+        output[0] = exp(input[0] - max_vals[batch_idx]) / sum_vals[batch_idx];
     }
 }
 "#
@@ -368,8 +371,7 @@ kernel void softmax_finalize(
         // OpenCL kernel for softmax
         let opencl_source = r#"
 __kernel void softmax_find_max(
-    __global const float* input,
-    __global float* max_vals,
+    __global const float* input__global float* max_vals,
     const int n,
     const int batch_size)
 {
@@ -382,11 +384,11 @@ __kernel void softmax_find_max(
     sdata[tid] = -INFINITY;
     
     if (get_group_id(0) * get_local_size(0) + get_local_id(0) < n) {
-        sdata[tid] = input[i];
+        sdata[tid] = input[0];
     }
     
     if (get_group_id(0) * get_local_size(0) + get_local_size(0) + get_local_id(0) < n) {
-        sdata[tid] = max(sdata[tid], input[i + get_local_size(0)]);
+        sdata[tid] = max(sdata[tid], input[0 + get_local_size(0)]);
     }
     
     barrier(CLK_LOCAL_MEM_FENCE);
@@ -404,9 +406,7 @@ __kernel void softmax_find_max(
 }
 
 __kernel void softmax_compute_sum(
-    __global const float* input,
-    __global const float* max_vals,
-    __global float* sum_vals,
+    __global const float* input__global const float* max_vals__global float* sum_vals,
     const int n,
     const int batch_size)
 {
@@ -419,11 +419,11 @@ __kernel void softmax_compute_sum(
     sdata[tid] = 0.0f;
     
     if (get_group_id(0) * get_local_size(0) + get_local_id(0) < n) {
-        sdata[tid] = exp(input[i] - max_vals[batch_idx]);
+        sdata[tid] = exp(input[0] - max_vals[batch_idx]);
     }
     
     if (get_group_id(0) * get_local_size(0) + get_local_size(0) + get_local_id(0) < n) {
-        sdata[tid] += exp(input[i + get_local_size(0)] - max_vals[batch_idx]);
+        sdata[tid] += exp(input[0 + get_local_size(0)] - max_vals[batch_idx]);
     }
     
     barrier(CLK_LOCAL_MEM_FENCE);
@@ -441,10 +441,7 @@ __kernel void softmax_compute_sum(
 }
 
 __kernel void softmax_finalize(
-    __global const float* input,
-    __global float* output,
-    __global const float* max_vals,
-    __global const float* sum_vals,
+    __global const float* input__global float* output__global const float* max_vals__global const float* sum_vals,
     const int n,
     const int batch_size)
 {
@@ -452,7 +449,7 @@ __kernel void softmax_finalize(
     int i = batch_idx * n + get_group_id(0) * get_local_size(0) + get_local_id(0);
     
     if (get_group_id(0) * get_local_size(0) + get_local_id(0) < n) {
-        output[i] = exp(input[i] - max_vals[batch_idx]) / sum_vals[batch_idx];
+        output[0] = exp(input[0] - max_vals[batch_idx]) / sum_vals[batch_idx];
     }
 }
 "#
@@ -486,7 +483,7 @@ impl GpuKernel for SoftmaxKernel {
 
     fn can_specialize(&self, params: &KernelParams) -> bool {
         matches!(
-            params.data_type,
+            params.datatype,
             DataType::Float32 | DataType::Float64 | DataType::Float16 | DataType::BFloat16
         )
     }

@@ -1,37 +1,39 @@
-//! Robust Filtering module
-//!
-//! This module implements robust filtering techniques for handling outliers
-//! and non-Gaussian noise in signal and image processing applications.
-//!
-//! Robust filters are designed to be insensitive to outliers and provide
-//! better performance than traditional linear filters when dealing with
-//! impulsive noise or contaminated data.
-//!
-//! The implementation includes:
-//! - Alpha-trimmed mean filtering
-//! - Hampel filter for outlier detection and replacement
-//! - Winsorized filtering
-//! - Huber loss-based robust filtering
-//! - Adaptive robust filtering
-//!
-//! # Example
-//! ```
-//! use ndarray::Array1;
-//! use scirs2_signal::robust::{alpha_trimmed_filter, hampel_filter};
-//!
-//! // Create a test signal with outliers
-//! let signal = Array1::from_vec(vec![1.0, 1.2, 1.1, 10.0, 1.3, 1.2, -5.0, 1.1]);
-//!
-//! // Apply alpha-trimmed mean filter
-//! let filtered = alpha_trimmed_filter(&signal, 5, 0.2).unwrap();
-//!
-//! // Apply Hampel filter for outlier detection
-//! let (cleaned, outliers) = hampel_filter(&signal, 5, 3.0).unwrap();
-//! ```
+use ndarray::s;
+// Robust Filtering module
+//
+// This module implements robust filtering techniques for handling outliers
+// and non-Gaussian noise in signal and image processing applications.
+//
+// Robust filters are designed to be insensitive to outliers and provide
+// better performance than traditional linear filters when dealing with
+// impulsive noise or contaminated data.
+//
+// The implementation includes:
+// - Alpha-trimmed mean filtering
+// - Hampel filter for outlier detection and replacement
+// - Winsorized filtering
+// - Huber loss-based robust filtering
+// - Adaptive robust filtering
+//
+// # Example
+// ```
+// use ndarray::Array1;
+// use scirs2_signal::robust::{alpha_trimmed_filter, hampel_filter};
+//
+// // Create a test signal with outliers
+// let signal = Array1::from_vec(vec![1.0, 1.2, 1.1, 10.0, 1.3, 1.2, -5.0, 1.1]);
+//
+// // Apply alpha-trimmed mean filter
+// let filtered = alpha_trimmed_filter(&signal, 5, 0.2).unwrap();
+//
+// // Apply Hampel filter for outlier detection
+// let (cleaned, outliers) = hampel_filter(&signal, 5, 3.0).unwrap();
+// ```
 
 use crate::error::{SignalError, SignalResult};
-use ndarray::{s, Array1, Array2};
+use ndarray::{Array1, Array2};
 
+#[allow(unused_imports)]
 /// Configuration for robust filtering algorithms
 #[derive(Debug, Clone)]
 pub struct RobustConfig {
@@ -93,6 +95,7 @@ pub enum EdgeMode {
 /// let signal = Array1::from_vec(vec![1.0, 1.2, 10.0, 1.1, 1.3]);
 /// let filtered = alpha_trimmed_filter(&signal, 3, 0.2).unwrap();
 /// ```
+#[allow(dead_code)]
 pub fn alpha_trimmed_filter(
     signal: &Array1<f64>,
     window_size: usize,
@@ -100,7 +103,7 @@ pub fn alpha_trimmed_filter(
 ) -> SignalResult<Array1<f64>> {
     if window_size % 2 == 0 || window_size < 3 {
         return Err(SignalError::ValueError(
-            "Window size must be odd and >= 3".to_string(),
+            "Window _size must be odd and >= 3".to_string(),
         ));
     }
 
@@ -124,7 +127,7 @@ pub fn alpha_trimmed_filter(
 
     if keep_count == 0 {
         return Err(SignalError::ValueError(
-            "Alpha value too large for given window size".to_string(),
+            "Alpha value too large for given window _size".to_string(),
         ));
     }
 
@@ -189,6 +192,7 @@ pub fn alpha_trimmed_filter(
 /// let signal = Array1::from_vec(vec![1.0, 1.2, 10.0, 1.1, 1.3]);
 /// let (filtered, outliers) = hampel_filter(&signal, 3, 3.0).unwrap();
 /// ```
+#[allow(dead_code)]
 pub fn hampel_filter(
     signal: &Array1<f64>,
     window_size: usize,
@@ -196,7 +200,7 @@ pub fn hampel_filter(
 ) -> SignalResult<(Array1<f64>, Vec<usize>)> {
     if window_size % 2 == 0 || window_size < 3 {
         return Err(SignalError::ValueError(
-            "Window size must be odd and >= 3".to_string(),
+            "Window _size must be odd and >= 3".to_string(),
         ));
     }
 
@@ -297,6 +301,7 @@ pub fn hampel_filter(
 /// let signal = Array1::from_vec(vec![1.0, 1.2, 10.0, 1.1, 1.3]);
 /// let filtered = winsorize_filter(&signal, 3, 10.0).unwrap();
 /// ```
+#[allow(dead_code)]
 pub fn winsorize_filter(
     signal: &Array1<f64>,
     window_size: usize,
@@ -304,7 +309,7 @@ pub fn winsorize_filter(
 ) -> SignalResult<Array1<f64>> {
     if window_size % 2 == 0 || window_size < 3 {
         return Err(SignalError::ValueError(
-            "Window size must be odd and >= 3".to_string(),
+            "Window _size must be odd and >= 3".to_string(),
         ));
     }
 
@@ -392,6 +397,7 @@ pub fn winsorize_filter(
 /// let signal = Array1::from_vec(vec![1.0, 1.2, 10.0, 1.1, 1.3]);
 /// let filtered = huber_filter(&signal, 3, 1.35).unwrap();
 /// ```
+#[allow(dead_code)]
 pub fn huber_filter(
     signal: &Array1<f64>,
     window_size: usize,
@@ -399,7 +405,7 @@ pub fn huber_filter(
 ) -> SignalResult<Array1<f64>> {
     if window_size % 2 == 0 || window_size < 3 {
         return Err(SignalError::ValueError(
-            "Window size must be odd and >= 3".to_string(),
+            "Window _size must be odd and >= 3".to_string(),
         ));
     }
 
@@ -495,6 +501,7 @@ pub fn huber_filter(
 /// # Returns
 ///
 /// * Filtered 2D array
+#[allow(dead_code)]
 pub fn robust_filter_2d<F>(
     image: &Array2<f64>,
     filter_fn: F,

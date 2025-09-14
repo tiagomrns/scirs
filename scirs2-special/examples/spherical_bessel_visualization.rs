@@ -11,6 +11,7 @@ use scirs2_special::bessel::spherical::{spherical_jn, spherical_jn_scaled, spher
 use std::fs::File;
 use std::io::{self, Write};
 
+#[allow(dead_code)]
 fn main() -> io::Result<()> {
     // Create output file
     let mut file = File::create("spherical_bessel_functions.csv")?;
@@ -51,6 +52,7 @@ fn main() -> io::Result<()> {
     Ok(())
 }
 
+#[allow(dead_code)]
 fn write_bessel_values(file: &mut File, x: f64) -> io::Result<()> {
     // Calculate regular spherical Bessel functions
     let j0 = spherical_jn(0, x);

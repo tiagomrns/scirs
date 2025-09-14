@@ -85,11 +85,11 @@ impl RobustLoss for SquaredLoss {
         0.5 * r * r
     }
 
-    fn weight(&self, _r: f64) -> f64 {
+    fn weight(&self, r: f64) -> f64 {
         1.0
     }
 
-    fn weight_derivative(&self, _r: f64) -> f64 {
+    fn weight_derivative(&self, r: f64) -> f64 {
         0.0
     }
 }
@@ -296,6 +296,7 @@ impl Default for RobustOptions {
 /// * `jacobian` - Optional Jacobian function
 /// * `data` - Additional data to pass to residuals and jacobian
 /// * `options` - Options for the optimization
+#[allow(dead_code)]
 pub fn robust_least_squares<F, J, L, D, S1, S2>(
     residuals: F,
     x0: &ArrayBase<S1, Ix1>,
@@ -324,6 +325,7 @@ where
 }
 
 /// IRLS (Iteratively Reweighted Least Squares) optimizer
+#[allow(dead_code)]
 fn irls_optimizer<F, J, L, D, S1, S2>(
     residuals: F,
     x0: &ArrayBase<S1, Ix1>,
@@ -400,7 +402,7 @@ where
         prev_weights = weights.clone();
 
         // Compute Jacobian
-        let (jac, _jac_evals) = match &jacobian {
+        let (jac, jac_evals) = match &jacobian {
             Some(jac_fn) => {
                 let j = jac_fn(x.as_slice().unwrap(), data.as_slice().unwrap());
                 njev += 1;
@@ -430,7 +432,7 @@ where
         let neg_jt_wr = -weighted_jac.t().dot(&weighted_res);
 
         // Solve for step
-        match solve_linear_system(&jt_wj, &neg_jt_wr) {
+        match solve(&jt_wj, &neg_jt_wr) {
             Some(step) => {
                 // Take the step
                 let mut line_search_alpha = 1.0;
@@ -482,7 +484,7 @@ where
     let final_cost = compute_robust_cost(&res, &loss);
 
     // Create result
-    let mut result = OptimizeResults::default();
+    let mut result = OptimizeResults::<f64>::default();
     result.x = x;
     result.fun = final_cost;
     result.nfev = nfev;
@@ -500,6 +502,7 @@ where
 }
 
 /// Gradient-based robust optimizer (fallback implementation)
+#[allow(dead_code)]
 fn gradient_based_robust_optimizer<F, J, L, D, S1, S2>(
     _residuals: F,
     x0: &ArrayBase<S1, Ix1>,
@@ -518,8 +521,8 @@ where
 {
     // For now, return a basic implementation
     // In practice, this would implement a gradient-based optimization
-    // using the robust loss function directly
-    let mut result = OptimizeResults::default();
+    // using the robust _loss function directly
+    let mut result = OptimizeResults::<f64>::default();
     result.x = x0.to_owned();
     result.fun = 0.0;
     result.success = false;
@@ -529,80 +532,17 @@ where
 }
 
 /// Compute the total robust cost
+#[allow(dead_code)]
 fn compute_robust_cost<L: RobustLoss>(residuals: &Array1<f64>, loss: &L) -> f64 {
     residuals.iter().map(|&r| loss.loss(r)).sum()
 }
 
 /// Simple linear system solver (same as in least_squares.rs)
-fn solve_linear_system(a: &Array2<f64>, b: &Array1<f64>) -> Option<Array1<f64>> {
-    let n = a.shape()[0];
-    if n != a.shape()[1] || n != b.len() {
-        return None;
-    }
+#[allow(dead_code)]
+fn solve(a: &Array2<f64>, b: &Array1<f64>) -> Option<Array1<f64>> {
+    use scirs2_linalg::solve;
 
-    // Create augmented matrix [A|b]
-    let mut aug = Array2::zeros((n, n + 1));
-    for i in 0..n {
-        for j in 0..n {
-            aug[[i, j]] = a[[i, j]];
-        }
-        aug[[i, n]] = b[i];
-    }
-
-    // Gaussian elimination with partial pivoting
-    for i in 0..n {
-        // Find pivot
-        let mut max_row = i;
-        let mut max_val = aug[[i, i]].abs();
-
-        for j in i + 1..n {
-            if aug[[j, i]].abs() > max_val {
-                max_row = j;
-                max_val = aug[[j, i]].abs();
-            }
-        }
-
-        // Check for singularity
-        if max_val < 1e-10 {
-            return None;
-        }
-
-        // Swap rows if needed
-        if max_row != i {
-            for j in 0..=n {
-                let temp = aug[[i, j]];
-                aug[[i, j]] = aug[[max_row, j]];
-                aug[[max_row, j]] = temp;
-            }
-        }
-
-        // Eliminate below
-        for j in i + 1..n {
-            let c = aug[[j, i]] / aug[[i, i]];
-            aug[[j, i]] = 0.0;
-
-            for k in i + 1..=n {
-                aug[[j, k]] -= c * aug[[i, k]];
-            }
-        }
-    }
-
-    // Back substitution
-    let mut x = Array1::zeros(n);
-    for i in (0..n).rev() {
-        let mut sum = aug[[i, n]];
-        for j in i + 1..n {
-            sum -= aug[[i, j]] * x[j];
-        }
-
-        if aug[[i, i]].abs() < 1e-10 {
-            return None;
-        }
-
-        x[i] = sum / aug[[i, i]];
-    }
-
-    Some(x)
+    solve(&a.view(), &b.view(), None).ok()
 }
 
 #[cfg(test)]
@@ -657,13 +597,13 @@ mod tests {
     fn test_robust_least_squares_linear() {
         // Linear regression with outliers
 
-        fn residual(_x: &[f64], data: &[f64]) -> Array1<f64> {
+        fn residual(x: &[f64], data: &[f64]) -> Array1<f64> {
             // data contains t values and y values concatenated
             let n = data.len() / 2;
             let t_values = &data[0..n];
             let y_values = &data[n..];
 
-            let params = _x;
+            let params = x;
             let mut res = Array1::zeros(n);
             for i in 0..n {
                 res[i] = y_values[i] - (params[0] + params[1] * t_values[i]);
@@ -671,7 +611,7 @@ mod tests {
             res
         }
 
-        fn jacobian(_x: &[f64], data: &[f64]) -> Array2<f64> {
+        fn jacobian(x: &[f64], data: &[f64]) -> Array2<f64> {
             let n = data.len() / 2;
             let t_values = &data[0..n];
 
@@ -709,7 +649,7 @@ mod tests {
             array![x[0] - 1.0, x[1] - 2.0]
         }
 
-        fn jacobian(_x: &[f64], _: &[f64]) -> Array2<f64> {
+        fn jacobian(x: &[f64], _: &[f64]) -> Array2<f64> {
             array![[1.0, 0.0], [0.0, 1.0]]
         }
 

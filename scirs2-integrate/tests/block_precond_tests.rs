@@ -3,6 +3,7 @@ use scirs2_integrate::dae::{create_block_ilu_preconditioner, create_block_jacobi
 use std::time::Instant;
 
 // Test helper: Create a test matrix with block structure
+#[allow(dead_code)]
 fn create_test_matrix(
     n_x: usize,
     n_y: usize,
@@ -54,14 +55,15 @@ fn create_test_matrix(
 }
 
 // Test helper: Create a right-hand side vector
-fn create_rhs(n_x: usize, n_y: usize) -> Array1<f64> {
-    let mut rhs = Array1::zeros(n_x + n_y);
+#[allow(dead_code)]
+fn create_rhs(n_x: usize, ny: usize) -> Array1<f64> {
+    let mut rhs = Array1::zeros(n_x + ny);
 
     // Fill with representative values
     for i in 0..n_x {
         rhs[i] = (i as f64 + 1.0).sin();
     }
-    for i in 0..n_y {
+    for i in 0..ny {
         rhs[n_x + i] = (i as f64 + 1.0).cos();
     }
 
@@ -69,6 +71,7 @@ fn create_rhs(n_x: usize, n_y: usize) -> Array1<f64> {
 }
 
 // Test helper: Apply the full Jacobian matrix to a vector
+#[allow(dead_code)]
 fn matrix_vector_product(
     f_x: &Array2<f64>,
     f_y: &Array2<f64>,
@@ -84,12 +87,12 @@ fn matrix_vector_product(
 
     let mut result = Array1::zeros(n_total);
 
-    // Extract the x and y components of the input vector
+    // Extract the _x and _y components of the input vector
     let v_x = v.slice(ndarray::s![0..n_x]).to_owned();
     let v_y = v.slice(ndarray::s![n_x..]).to_owned();
 
     // Apply the Jacobian blocks
-    // (I - h * β * ∂f/∂x) * v_x
+    // (I - h * β * ∂f/∂_x) * v_x
     for i in 0..n_x {
         result[i] = v_x[i]; // Identity part
         for j in 0..n_x {
@@ -97,21 +100,21 @@ fn matrix_vector_product(
         }
     }
 
-    // (-h * β * ∂f/∂y) * v_y
+    // (-h * β * ∂f/∂_y) * v_y
     for i in 0..n_x {
         for j in 0..n_y {
             result[i] -= h * beta * f_y[[i, j]] * v_y[j];
         }
     }
 
-    // (∂g/∂x) * v_x
+    // (∂g/∂_x) * v_x
     for i in 0..n_y {
         for j in 0..n_x {
             result[n_x + i] += g_x[[i, j]] * v_x[j];
         }
     }
 
-    // (∂g/∂y) * v_y
+    // (∂g/∂_y) * v_y
     for i in 0..n_y {
         for j in 0..n_y {
             result[n_x + i] += g_y[[i, j]] * v_y[j];
@@ -124,6 +127,7 @@ fn matrix_vector_product(
 // Test helper: Simple GMRES solver to check preconditioner effectiveness
 type PreconditionerFn = Box<dyn Fn(&Array1<f64>) -> Array1<f64>>;
 
+#[allow(dead_code)]
 fn simple_gmres<F>(
     matvec: F,
     b: &Array1<f64>,
@@ -275,6 +279,7 @@ where
 }
 
 #[test]
+#[allow(dead_code)]
 fn test_block_ilu_preconditioner() {
     // Small problem to verify correctness
     let n_x = 5;
@@ -318,18 +323,16 @@ fn test_block_ilu_preconditioner() {
     // Verify that preconditioner reduces iteration count
     assert!(
         iter_ilu < iter_no_precond,
-        "Block ILU preconditioner didn't reduce iteration count: {} vs {}",
-        iter_ilu,
-        iter_no_precond
+        "Block ILU preconditioner didn't reduce iteration count: {iter_ilu} vs {iter_no_precond}"
     );
 
     println!(
-        "Block ILU preconditioner test succeeded: reduced iterations from {} to {}",
-        iter_no_precond, iter_ilu
+        "Block ILU preconditioner test succeeded: reduced iterations from {iter_no_precond} to {iter_ilu}"
     );
 }
 
 #[test]
+#[allow(dead_code)]
 fn test_block_jacobi_preconditioner() {
     // Create a larger test case
     let n_x = 10;
@@ -409,18 +412,16 @@ fn test_block_jacobi_preconditioner() {
     // Verify that preconditioner reduces iteration count
     assert!(
         iter_jacobi < iter_no_precond,
-        "Block Jacobi preconditioner didn't reduce iteration count: {} vs {}",
-        iter_jacobi,
-        iter_no_precond
+        "Block Jacobi preconditioner didn't reduce iteration count: {iter_jacobi} vs {iter_no_precond}"
     );
 
     println!(
-        "Block Jacobi preconditioner test succeeded: reduced iterations from {} to {}",
-        iter_no_precond, iter_jacobi
+        "Block Jacobi preconditioner test succeeded: reduced iterations from {iter_no_precond} to {iter_jacobi}"
     );
 }
 
 #[test]
+#[allow(dead_code)]
 fn test_preconditioner_performance() {
     // Create a large test case for performance comparison
     let n_x = 50;
@@ -454,18 +455,9 @@ fn test_preconditioner_performance() {
     let duration_ilu = start.elapsed();
 
     // Print performance comparison
-    println!(
-        "Performance comparison for problem size n_x={}, n_y={}:",
-        n_x, n_y
-    );
-    println!(
-        "  No preconditioning:  {:?}, iterations: {}",
-        duration_no_precond, iter_no_precond
-    );
-    println!(
-        "  Block ILU:           {:?}, iterations: {}",
-        duration_ilu, iter_ilu
-    );
+    println!("Performance comparison for problem size n_x={n_x}, n_y={n_y}:");
+    println!("  No preconditioning:  {duration_no_precond:?}, iterations: {iter_no_precond}");
+    println!("  Block ILU:           {duration_ilu:?}, iterations: {iter_ilu}");
     println!(
         "  Block ILU speedup:   {:.2}x",
         duration_no_precond.as_secs_f64() / duration_ilu.as_secs_f64()

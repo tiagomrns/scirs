@@ -1,12 +1,15 @@
-//! Spectral analysis functions
-//!
-//! This module provides functions for estimating power spectral densities and spectrograms.
+// Spectral analysis functions
+//
+// This module provides functions for estimating power spectral densities and spectrograms.
 
 use crate::error::{SignalError, SignalResult};
 use num_complex::Complex64;
 use num_traits::{Float, NumCast};
+use rand::Rng;
+use std::f64::consts::PI;
 use std::fmt::Debug;
 
+#[allow(unused_imports)]
 /// Type alias for periodogram result containing frequencies and power spectral density values
 pub type PeriodogramResult = SignalResult<(Vec<f64>, Vec<f64>)>;
 
@@ -26,13 +29,13 @@ pub type SpectrogramResult = SignalResult<(Vec<f64>, Vec<f64>, Vec<Vec<f64>>)>;
 /// # Returns
 ///
 /// * Window function as a vector of length `nperseg`
-fn get_window(window_type: &str, nperseg: usize) -> SignalResult<Vec<f64>> {
-    match window_type.to_lowercase().as_str() {
+#[allow(dead_code)]
+fn get_window(_windowtype: &str, nperseg: usize) -> SignalResult<Vec<f64>> {
+    match _windowtype.to_lowercase().as_str() {
         "hann" => {
             let mut window = Vec::with_capacity(nperseg);
             for i in 0..nperseg {
-                let value = 0.5
-                    * (1.0 - (2.0 * std::f64::consts::PI * i as f64 / (nperseg - 1) as f64).cos());
+                let value = 0.5 * (1.0 - (2.0 * PI * i as f64 / (nperseg - 1) as f64).cos());
                 window.push(value);
             }
             Ok(window)
@@ -40,8 +43,7 @@ fn get_window(window_type: &str, nperseg: usize) -> SignalResult<Vec<f64>> {
         "hamming" => {
             let mut window = Vec::with_capacity(nperseg);
             for i in 0..nperseg {
-                let value = 0.54
-                    - 0.46 * (2.0 * std::f64::consts::PI * i as f64 / (nperseg - 1) as f64).cos();
+                let value = 0.54 - 0.46 * (2.0 * PI * i as f64 / (nperseg - 1) as f64).cos();
                 window.push(value);
             }
             Ok(window)
@@ -49,9 +51,8 @@ fn get_window(window_type: &str, nperseg: usize) -> SignalResult<Vec<f64>> {
         "blackman" => {
             let mut window = Vec::with_capacity(nperseg);
             for i in 0..nperseg {
-                let value = 0.42
-                    - 0.5 * (2.0 * std::f64::consts::PI * i as f64 / (nperseg - 1) as f64).cos()
-                    + 0.08 * (4.0 * std::f64::consts::PI * i as f64 / (nperseg - 1) as f64).cos();
+                let value = 0.42 - 0.5 * (2.0 * PI * i as f64 / (nperseg - 1) as f64).cos()
+                    + 0.08 * (4.0 * PI * i as f64 / (nperseg - 1) as f64).cos();
                 window.push(value);
             }
             Ok(window)
@@ -59,7 +60,7 @@ fn get_window(window_type: &str, nperseg: usize) -> SignalResult<Vec<f64>> {
         "boxcar" | "rectangular" => Ok(vec![1.0; nperseg]),
         _ => Err(SignalError::ValueError(format!(
             "Unknown window type: {}",
-            window_type
+            _windowtype
         ))),
     }
 }
@@ -74,8 +75,9 @@ fn get_window(window_type: &str, nperseg: usize) -> SignalResult<Vec<f64>> {
 /// # Returns
 ///
 /// * Detrended signal
-fn apply_detrend(x: &[f64], detrend_type: &str) -> SignalResult<Vec<f64>> {
-    match detrend_type {
+#[allow(dead_code)]
+fn apply_detrend(x: &[f64], detrendtype: &str) -> SignalResult<Vec<f64>> {
+    match detrendtype {
         "constant" => {
             // Remove mean
             let mean = x.iter().sum::<f64>() / x.len() as f64;
@@ -108,7 +110,7 @@ fn apply_detrend(x: &[f64], detrend_type: &str) -> SignalResult<Vec<f64>> {
         "none" => Ok(x.to_vec()),
         _ => Err(SignalError::ValueError(format!(
             "Unknown detrend option: {}",
-            detrend_type
+            detrendtype
         ))),
     }
 }
@@ -127,6 +129,7 @@ fn apply_detrend(x: &[f64], detrend_type: &str) -> SignalResult<Vec<f64>> {
 /// # Returns
 ///
 /// * A tuple containing (frequencies, power spectral density)
+#[allow(dead_code)]
 pub fn periodogram<T>(
     x: &[T],
     fs: Option<f64>,
@@ -254,6 +257,7 @@ where
 ///
 /// * A tuple containing (frequencies, power spectral density)
 #[allow(clippy::too_many_arguments)]
+#[allow(dead_code)]
 pub fn welch<T>(
     x: &[T],
     fs: Option<f64>,
@@ -418,6 +422,7 @@ where
 /// # Returns
 ///
 /// * Padded signal
+#[allow(dead_code)]
 fn apply_boundary(x: &[f64], nperseg: usize, boundary: &str) -> SignalResult<Vec<f64>> {
     match boundary {
         "zeros" => {
@@ -465,6 +470,7 @@ fn apply_boundary(x: &[f64], nperseg: usize, boundary: &str) -> SignalResult<Vec
 ///
 /// * A tuple containing (frequencies, time segments, STFT values)
 #[allow(clippy::too_many_arguments)]
+#[allow(dead_code)]
 pub fn stft<T>(
     x: &[T],
     fs: Option<f64>,
@@ -641,6 +647,7 @@ where
 ///
 /// * A tuple containing (frequencies, time segments, spectrogram values)
 #[allow(clippy::too_many_arguments)]
+#[allow(dead_code)]
 pub fn spectrogram<T>(
     x: &[T],
     fs: Option<f64>,
@@ -738,10 +745,10 @@ mod tests {
     use super::*;
     use approx::assert_relative_eq;
     use rand::Rng;
-    use std::f64::consts::PI;
-
     #[test]
     fn test_periodogram_sine_wave() {
+        let a = vec![1.0, 2.0, 3.0, 4.0, 5.0];
+        let b = vec![0.5, 0.5];
         // Generate a sine wave at 10 Hz
         let fs = 100.0;
         let t: Vec<f64> = (0..1000).map(|i| i as f64 / fs).collect();
@@ -771,6 +778,8 @@ mod tests {
 
     #[test]
     fn test_welch_sine_wave() {
+        let a = vec![1.0, 2.0, 3.0, 4.0, 5.0];
+        let b = vec![0.5, 0.5];
         // Generate a sine wave at 10 Hz with noise
         let fs = 100.0;
         let t: Vec<f64> = (0..2000).map(|i| i as f64 / fs).collect();
@@ -780,7 +789,7 @@ mod tests {
         // Add noise
         let mut rng = rand::rng();
         x.iter_mut().for_each(|val| {
-            *val += rng.random_range(-0.1..0.1);
+            *val += rng.gen_range(-0.1..0.1);
         });
 
         // Compute Welch's periodogram
@@ -803,6 +812,8 @@ mod tests {
 
     #[test]
     fn test_stft_sine_wave() {
+        let a = vec![1.0, 2.0, 3.0, 4.0, 5.0];
+        let b = vec![0.5, 0.5];
         // Generate a chirp signal (increasing frequency)
         let fs = 1000.0;
         let t: Vec<f64> = (0..2000).map(|i| i as f64 / fs).collect();
@@ -864,6 +875,8 @@ mod tests {
 
     #[test]
     fn test_spectrogram_modes() {
+        let a = vec![1.0, 2.0, 3.0, 4.0, 5.0];
+        let b = vec![0.5, 0.5];
         // Generate a test signal
         let fs = 100.0;
         let t: Vec<f64> = (0..1000).map(|i| i as f64 / fs).collect();

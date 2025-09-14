@@ -5,6 +5,7 @@
 
 use crate::error::{IntegrateError, IntegrateResult};
 use crate::IntegrateFloat;
+use std::f64::consts::PI;
 use std::fmt::Debug;
 
 /// Options for controlling the behavior of the adaptive quadrature algorithm
@@ -63,12 +64,13 @@ pub struct QuadResult<F: IntegrateFloat> {
 /// # Examples
 ///
 /// ```
-/// use scirs2_integrate::trapezoid;
+/// use scirs2__integrate::trapezoid;
 ///
 /// // Integrate f(x) = x² from 0 to 1 (exact result: 1/3)
 /// let result = trapezoid(|x: f64| x * x, 0.0, 1.0, 100);
 /// assert!((result - 1.0/3.0).abs() < 1e-4);
 /// ```
+#[allow(dead_code)]
 pub fn trapezoid<F, Func>(f: Func, a: F, b: F, n: usize) -> F
 where
     F: IntegrateFloat,
@@ -105,12 +107,13 @@ where
 /// # Examples
 ///
 /// ```
-/// use scirs2_integrate::simpson;
+/// use scirs2__integrate::simpson;
 ///
 /// // Integrate f(x) = x² from 0 to 1 (exact result: 1/3)
 /// let result = simpson(|x: f64| x * x, 0.0, 1.0, 100).unwrap();
 /// assert!((result - 1.0/3.0).abs() < 1e-6);
 /// ```
+#[allow(dead_code)]
 pub fn simpson<F, Func>(mut f: Func, a: F, b: F, n: usize) -> IntegrateResult<F>
 where
     F: IntegrateFloat,
@@ -162,13 +165,14 @@ where
 /// # Examples
 ///
 /// ```
-/// use scirs2_integrate::quad;
+/// use scirs2__integrate::quad;
 ///
 /// // Integrate f(x) = x² from 0 to 1 (exact result: 1/3)
 /// let result = quad(|x: f64| x * x, 0.0, 1.0, None).unwrap();
 /// assert!((result.value - 1.0/3.0).abs() < 1e-8);
 /// assert!(result.converged);
 /// ```
+#[allow(dead_code)]
 pub fn quad<F, Func>(
     f: Func,
     a: F,
@@ -209,6 +213,7 @@ where
 }
 
 /// Internal implementation of adaptive quadrature
+#[allow(dead_code)]
 fn adaptive_quad_impl<F, Func>(
     f: Func,
     a: F,

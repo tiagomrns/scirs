@@ -7,6 +7,7 @@ use std::io::{BufRead, BufReader, BufWriter, Write};
 
 /// This example demonstrates using CSV functionality for scientific data
 /// with metadata in comments.
+#[allow(dead_code)]
 fn main() -> Result<(), Box<dyn Error>> {
     println!("=== Scientific CSV Fixed Example ===\n");
 
@@ -24,6 +25,7 @@ fn main() -> Result<(), Box<dyn Error>> {
 }
 
 /// Create a sample scientific data file with metadata
+#[allow(dead_code)]
 fn create_sample_scientific_data() -> Result<(), Box<dyn Error>> {
     println!("Creating sample scientific data file...");
 
@@ -73,8 +75,9 @@ fn create_sample_scientific_data() -> Result<(), Box<dyn Error>> {
 }
 
 /// Extract metadata from comment lines
-fn extract_metadata_from_file(file_path: &str) -> Result<HashMap<String, String>, Box<dyn Error>> {
-    let file = File::open(file_path)?;
+#[allow(dead_code)]
+fn extract_metadata_from_file(_filepath: &str) -> Result<HashMap<String, String>, Box<dyn Error>> {
+    let file = File::open(_filepath)?;
     let reader = BufReader::new(file);
     let mut metadata = HashMap::new();
 
@@ -96,6 +99,7 @@ fn extract_metadata_from_file(file_path: &str) -> Result<HashMap<String, String>
 }
 
 /// Read and process the scientific data
+#[allow(dead_code)]
 fn read_and_process_scientific_data() -> Result<(), Box<dyn Error>> {
     println!("\nReading and processing scientific data...");
 
@@ -180,7 +184,7 @@ fn read_and_process_scientific_data() -> Result<(), Box<dyn Error>> {
     println!("\nStatistics by material:");
 
     for (material, values) in &materials {
-        let material_temps: Vec<f64> = values.iter().map(|(_, t, _)| *t).collect();
+        let material_temps: Vec<f64> = values.iter().map(|(_, temp, _)| *temp).collect();
         let temp_sum: f64 = material_temps.iter().sum();
         let temp_mean = temp_sum / material_temps.len() as f64;
 
@@ -218,6 +222,7 @@ fn read_and_process_scientific_data() -> Result<(), Box<dyn Error>> {
 }
 
 /// Convert units and create a derived data file
+#[allow(dead_code)]
 fn convert_units_and_create_derived_data() -> Result<(), Box<dyn Error>> {
     println!("\nConverting units and creating derived data...");
 

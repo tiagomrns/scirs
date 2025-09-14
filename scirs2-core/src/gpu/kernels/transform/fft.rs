@@ -48,7 +48,7 @@ impl FftKernel {
             workgroup_size: [256, 1, 1],
             local_memory_usage: 8192, // Varies based on implementation
             supports_tensor_cores: false,
-            operation_type: OperationType::ComputeIntensive,
+            operationtype: OperationType::ComputeIntensive,
             backend_metadata: HashMap::new(),
         };
 
@@ -101,6 +101,7 @@ struct Uniforms {
 @group(0) @binding(2) var<storage, write> output: array<Complex>;
 
 @compute @workgroup_size(256)
+#[allow(dead_code)]
 fn fft_1d_forward(@builtin(global_invocation_id) global_id: vec3<u32>) {
     let i = global_id.x;
 
@@ -180,11 +181,7 @@ __kernel void fft_1d_forward(
 
     /// Generate a kernel specialized for a specific size
     #[allow(dead_code)]
-    fn generate_specialized_kernel(
-        &self,
-        _data_type: DataType,
-        _size: usize,
-    ) -> Result<FftKernel, GpuError> {
+    fn specialized_for_size(&self, size: usize) -> Result<FftKernel, GpuError> {
         // In a real implementation, we would generate different kernels
         // optimized for different sizes (especially powers of 2)
 
@@ -208,7 +205,7 @@ impl GpuKernel for FftKernel {
 
     fn can_specialize(&self, params: &KernelParams) -> bool {
         // We can specialize for complex types
-        match params.data_type {
+        match params.datatype {
             DataType::Float32 | DataType::Float64 => {
                 // We need input dimensions to specialize
                 !params.input_dims.is_empty()

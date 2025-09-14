@@ -14,13 +14,12 @@ use scirs2_metrics::{
 };
 
 // Helper function to print what would be rendered
-fn print_visualization_info(title: &str, plot_type: &PlotType, filename: &str) {
-    println!(
-        "Would render a {:?} plot titled '{}' to {}",
-        plot_type, title, filename
-    );
+#[allow(dead_code)]
+fn print_visualization_info(_title: &str, plottype: &PlotType, filename: &str) {
+    println!("Would render a {plottype:?} plot titled '{_title}' to {filename}");
 }
 
+#[allow(dead_code)]
 fn main() {
     // Example 1: Confusion Matrix Visualization
     println!("\n===== Example 1: Confusion Matrix Visualization =====");
@@ -29,11 +28,11 @@ fn main() {
     let y_true = array![0, 1, 2, 0, 1, 2, 0, 1, 2];
     let y_pred = array![0, 2, 1, 0, 0, 2, 1, 1, 2];
 
-    let (cm, _) = confusion_matrix(&y_true, &y_pred, None).unwrap();
-    println!("Confusion Matrix:\n{:?}", cm);
+    let (cm_, _labels) = confusion_matrix(&y_true, &y_pred, None).unwrap();
+    println!("Confusion Matrix:\n{cm_:?}");
 
     // Create a visualizer for the confusion matrix
-    let cm_f64 = cm.mapv(|x| x as f64);
+    let cm_f64 = cm_.mapv(|x| x as f64);
     let cm_viz = helpers::visualize_confusion_matrix(
         cm_f64.view(),
         Some(vec![
@@ -99,12 +98,13 @@ fn main() {
     println!("\n===== Example 4: Calibration Curve Visualization =====");
 
     // Compute calibration curve
-    let (prob_true, prob_pred, _) = calibration_curve(&y_true_binary, &y_score, Some(5)).unwrap();
+    let (prob_true, prob_pred_, _counts) =
+        calibration_curve(&y_true_binary, &y_score, Some(5)).unwrap();
     println!("Calibration Curve Points: {} points", prob_true.len());
 
     // Create a visualizer for the calibration curve
     let cal_viz =
-        helpers::visualize_calibration_curve(prob_true.view(), prob_pred.view(), 5, "uniform");
+        helpers::visualize_calibration_curve(prob_true.view(), prob_pred_.view(), 5, "uniform");
 
     // Print what would be rendered
     let metadata = cal_viz.get_metadata();

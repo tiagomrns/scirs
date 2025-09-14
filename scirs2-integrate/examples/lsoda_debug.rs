@@ -1,6 +1,7 @@
 use ndarray::{array, ArrayView1};
 use scirs2_integrate::ode::{solve_ivp, ODEMethod, ODEOptions};
 
+#[allow(dead_code)]
 fn main() {
     println!("LSODA Solver Debug Example");
     println!("-------------------------");
@@ -16,10 +17,7 @@ fn main() {
 
     for &initial_step in &step_sizes {
         for &min_step in &min_steps {
-            println!(
-                "\nTrying with initial_step={}, min_step={}",
-                initial_step, min_step
-            );
+            println!("\nTrying with initial_step={initial_step}, min_step={min_step}");
 
             let result = solve_ivp(
                 decay_system,
@@ -53,11 +51,11 @@ fn main() {
                     );
 
                     if let Some(msg) = res.message {
-                        println!("  Message: {}", msg);
+                        println!("  Message: {msg}");
                     }
                 }
                 Err(e) => {
-                    println!("  Failed: {}", e);
+                    println!("  Failed: {e}");
                 }
             }
         }
@@ -74,8 +72,7 @@ fn main() {
 
     for &(initial_step, min_step, max_steps) in &configs {
         println!(
-            "\nTrying Van der Pol with: initial_step={}, min_step={}, max_steps={}",
-            initial_step, min_step, max_steps
+            "\nTrying Van der Pol with: initial_step={initial_step}, min_step={min_step}, max_steps={max_steps}"
         );
 
         let result = solve_ivp(
@@ -106,11 +103,11 @@ fn main() {
                 );
 
                 if let Some(msg) = res.message {
-                    println!("  Message: {}", msg);
+                    println!("  Message: {msg}");
                 }
             }
             Err(e) => {
-                println!("  Failed: {}", e);
+                println!("  Failed: {e}");
             }
         }
     }

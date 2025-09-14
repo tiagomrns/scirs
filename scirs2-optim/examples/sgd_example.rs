@@ -3,6 +3,7 @@
 use ndarray::Array1;
 use scirs2_optim::optimizers::{Optimizer, SGD};
 
+#[allow(dead_code)]
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("SGD Optimizer Example");
     println!("=====================");

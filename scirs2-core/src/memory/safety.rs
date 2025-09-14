@@ -217,8 +217,7 @@ impl SafetyTracker {
         let limit = self.memory_limit.load(Ordering::SeqCst);
         if current + size > limit {
             return Err(CoreError::MemoryError(ErrorContext::new(format!(
-                "Allocation would exceed memory limit: current={}, limit={}, requested={}",
-                current, limit, size
+                "Allocation would exceed memory limit: current={current}, limit={limit}, requested={size}"
             ))));
         }
 
@@ -315,8 +314,7 @@ impl SafeArithmetic {
     {
         a.checked_add(&b).ok_or_else(|| {
             CoreError::ComputationError(ErrorContext::new(format!(
-                "Arithmetic overflow in addition: {} + {}",
-                a, b
+                "Arithmetic overflow in addition: {a} + {b}"
             )))
         })
     }
@@ -328,8 +326,7 @@ impl SafeArithmetic {
     {
         a.checked_sub(&b).ok_or_else(|| {
             CoreError::ComputationError(ErrorContext::new(format!(
-                "Arithmetic underflow in subtraction: {} - {}",
-                a, b
+                "Arithmetic underflow in subtraction: {a} - {b}"
             )))
         })
     }
@@ -341,8 +338,7 @@ impl SafeArithmetic {
     {
         a.checked_mul(&b).ok_or_else(|| {
             CoreError::ComputationError(ErrorContext::new(format!(
-                "Arithmetic overflow in multiplication: {} * {}",
-                a, b
+                "Arithmetic overflow in multiplication: {a} * {b}"
             )))
         })
     }
@@ -360,8 +356,7 @@ impl SafeArithmetic {
 
         a.checked_div(&b).ok_or_else(|| {
             CoreError::ComputationError(ErrorContext::new(format!(
-                "Arithmetic error in division: {} / {}",
-                a, b
+                "Arithmetic error in division: {a} / {b}"
             )))
         })
     }
@@ -405,8 +400,7 @@ impl SafeArrayOps {
         let len = array.len();
         array.get_mut(index).ok_or_else(|| {
             CoreError::IndexError(ErrorContext::new(format!(
-                "Array index {} out of bounds for array of length {}",
-                index, len
+                "Array index {index} out of bounds for array of length {len}"
             )))
         })
     }
@@ -415,8 +409,7 @@ impl SafeArrayOps {
     pub fn safe_slice<T>(array: &[T], start: usize, end: usize) -> CoreResult<&[T]> {
         if start > end {
             return Err(CoreError::IndexError(ErrorContext::new(format!(
-                "Invalid slice: start index {} greater than end index {}",
-                start, end
+                "Invalid slice: start index {start} greater than end index {end}"
             ))));
         }
 
@@ -497,6 +490,7 @@ static GLOBAL_SAFETY_TRACKER: std::sync::LazyLock<SafetyTracker> =
     std::sync::LazyLock::new(SafetyTracker::new);
 
 /// Get the global safety tracker
+#[allow(dead_code)]
 pub fn global_safety_tracker() -> &'static SafetyTracker {
     &GLOBAL_SAFETY_TRACKER
 }
@@ -664,7 +658,7 @@ mod tests {
         let cleanup_called_clone = cleanup_called.clone();
 
         {
-            let _guard = ResourceGuard::new(42, move |_| {
+            let guard = ResourceGuard::new(42, move |_| {
                 *cleanup_called_clone.lock().unwrap() = true;
             });
         } // Guard is dropped here

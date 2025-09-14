@@ -4,6 +4,7 @@ use rand::prelude::*;
 use scirs2_cluster::density::optics::{extract_dbscan_clustering, extract_xi_clusters, optics};
 use scirs2_cluster::density::DistanceMetric;
 
+#[allow(dead_code)]
 fn main() {
     // Generate synthetic data with clusters of varying density
     let data = generate_data();
@@ -39,6 +40,7 @@ fn main() {
     }
 }
 
+#[allow(dead_code)]
 fn generate_data() -> Array2<f64> {
     let mut rng = StdRng::seed_from_u64(42);
 
@@ -90,6 +92,7 @@ fn generate_data() -> Array2<f64> {
     Array2::from_shape_vec((75, 2), data).unwrap()
 }
 
+#[allow(dead_code)]
 fn print_cluster_stats(labels: &Array1<i32>) {
     // Find number of clusters (max label + 1)
     let max_label = labels.iter().max().unwrap_or(&-1);

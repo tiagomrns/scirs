@@ -3,6 +3,7 @@
 
 use std::f64::consts::PI;
 
+#[allow(dead_code)]
 fn main() {
     println!("GPU Kernel Optimization Example");
     println!("===============================\n");
@@ -47,14 +48,14 @@ fn main() {
     println!("");
     println!("// Configure kernel parameters");
     println!("let config = KernelConfig {{");
-    println!("    block_size: 256,");
-    println!("    use_mixed_precision: true,");
+    println!("    blocksize: 256,");
+    println!("    use_mixedprecision: true,");
     println!("    ..Default::default()");
     println!("}};");
     println!("");
     println!("// Launch optimized sparse FFT kernel");
     println!("let stats = launcher.launch_sparse_fft_kernel(");
-    println!("    input_size, sparsity, algorithm, window");
+    println!("    inputsize, sparsity, algorithm, window");
     println!(");");
     println!("```");
 }

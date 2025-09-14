@@ -13,11 +13,12 @@ use scirs2_spatial::polygon::{
 };
 
 /// Visualize a polygon and highlight points inside/outside/on boundary
+#[allow(dead_code)]
 fn visualize_polygon(polygon: &ArrayView2<f64>, title: &str) {
     let grid_size = 21;
     let mut grid = vec![vec!['.'; grid_size]; grid_size];
 
-    // Scale factor to fit the polygon in the grid
+    // Scale factor to fit the _polygon in the grid
     let min_x = polygon.column(0).fold(f64::INFINITY, |a, &b| a.min(b));
     let max_x = polygon.column(0).fold(f64::NEG_INFINITY, |a, &b| a.max(b));
     let min_y = polygon.column(1).fold(f64::INFINITY, |a, &b| a.min(b));
@@ -85,7 +86,7 @@ fn visualize_polygon(polygon: &ArrayView2<f64>, title: &str) {
     }
 
     // Print the visualization
-    println!("{}", title);
+    println!("{title}");
     println!("{}", "-".repeat(title.len()));
 
     // Print the grid
@@ -96,6 +97,7 @@ fn visualize_polygon(polygon: &ArrayView2<f64>, title: &str) {
     println!("V: Vertex, E: Edge, I: Inside, O: Outside, B: Boundary\n");
 }
 
+#[allow(dead_code)]
 fn main() {
     println!("Polygon Operations Examples");
     println!("==========================");
@@ -123,9 +125,9 @@ fn main() {
         let inside = point_in_polygon(point, &square.view());
         let on_boundary = point_on_boundary(point, &square.view(), 1e-10);
 
-        println!("Point {:?} ({}): ", point, desc);
-        println!("  Inside: {}", inside);
-        println!("  On boundary: {}", on_boundary);
+        println!("Point {point:?} ({desc}): ");
+        println!("  Inside: {inside}");
+        println!("  On boundary: {on_boundary}");
     }
 
     println!();
@@ -163,13 +165,13 @@ fn main() {
         let area = polygon_area(&shape.view());
         let centroid = polygon_centroid(&shape.view());
 
-        println!("{} Polygon:", name);
+        println!("{name} Polygon:");
         println!("  Vertices: {}", shape.shape()[0]);
-        println!("  Area: {:.2}", area);
+        println!("  Area: {area:.2}");
         println!("  Centroid: ({:.2}, {:.2})", centroid[0], centroid[1]);
         println!();
 
-        visualize_polygon(&shape.view(), &format!("{} Polygon", name));
+        visualize_polygon(&shape.view(), &format!("{name} Polygon"));
     }
 
     // Example 3: Complex polygons

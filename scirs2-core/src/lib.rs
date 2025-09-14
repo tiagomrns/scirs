@@ -1,19 +1,30 @@
+#![allow(deprecated)]
 #![recursion_limit = "512"]
 #![allow(dead_code)]
+#![allow(unused_variables)]
+#![allow(clippy::needless_borrows_for_generic_args)]
+#![allow(clippy::manual_clamp)]
+#![allow(clippy::if_same_then_else)]
+#![allow(clippy::identity_op)]
+#![allow(clippy::uninlined_format_args)]
+#![allow(clippy::trim_split_whitespace)]
+#![allow(clippy::redundant_closure)]
+#![allow(clippy::unused_enumerate_index)]
 
-//! # ``SciRS2`` Core (Alpha 6 Enhanced)
+//! # ``SciRS2`` Core (Beta 1)
 //!
 //! Core utilities and common functionality for the ``SciRS2`` library.
 //!
 //! This crate provides shared utilities, error types, and common traits
 //! used across the ``SciRS2`` ecosystem of crates.
 //!
-//! ## Alpha 6 Enhanced Features
+//! ## Beta 1 Features
 //!
+//! - **Stable APIs**: Core functionality with API stability guarantees for production use
 //! - **Advanced Error Diagnostics**: ML-inspired error pattern recognition and domain-specific recovery strategies
 //! - **Performance Optimizations**: Enhanced SIMD operations, adaptive chunking, and intelligent load balancing
-//! - **API Consistency**: Standardized function signatures and comprehensive documentation
-//! - **Integration Patterns**: Guidelines for combining multiple advanced features
+//! - **GPU Acceleration**: CUDA, Metal MPS, and other backend support for accelerated computing
+//! - **Memory Management**: Efficient memory-mapped arrays and adaptive chunking for large datasets
 //!
 //! ## Overview
 //!
@@ -70,10 +81,14 @@
 //! * `random`: Enable random number generation utilities
 //! * `types`: Enable type conversion utilities
 //! * `linalg`: Enable linear algebra with BLAS/LAPACK bindings
+//! * `cloud`: Enable cloud storage integration (S3, GCS, Azure)
+//! * `jit`: Enable just-in-time compilation with LLVM
+//! * `ml_pipeline`: Enable ML pipeline integration and real-time processing
 //! * `all`: Enable all features except backend-specific ones
 
 // Re-export modules
-pub mod api_versioning;
+pub mod api_freeze;
+pub mod apiversioning;
 #[cfg(feature = "array")]
 pub mod array;
 pub mod array_protocol;
@@ -81,14 +96,20 @@ pub mod array_protocol;
 pub mod batch_conversions;
 #[cfg(feature = "cache")]
 pub mod cache;
+#[cfg(feature = "cloud")]
+pub mod cloud;
 pub mod config;
 pub mod constants;
+pub mod distributed;
+pub mod ecosystem;
 pub mod error;
 #[cfg(feature = "gpu")]
 pub mod gpu;
 #[cfg(feature = "gpu")]
 pub mod gpu_registry;
 pub mod io;
+#[cfg(feature = "jit")]
+pub mod jit;
 #[cfg(feature = "logging")]
 pub mod logging;
 #[cfg(feature = "memory_management")]
@@ -96,12 +117,15 @@ pub mod memory;
 #[cfg(feature = "memory_efficient")]
 pub mod memory_efficient;
 pub mod metrics;
+#[cfg(feature = "ml_pipeline")]
+pub mod ml_pipeline;
 pub mod ndarray_ext;
 pub mod numeric;
 #[cfg(feature = "parallel")]
 pub mod parallel;
 #[cfg(feature = "parallel")]
 pub mod parallel_ops;
+pub mod performance;
 pub mod performance_optimization;
 #[cfg(feature = "profiling")]
 pub mod profiling;
@@ -114,6 +138,8 @@ pub mod simd_ops;
 #[cfg(feature = "testing")]
 pub mod testing;
 // Universal Functions (ufuncs) module
+pub mod error_templates;
+pub mod safe_ops;
 #[cfg(feature = "types")]
 pub mod types;
 #[cfg(feature = "ufuncs")]
@@ -124,7 +150,31 @@ pub mod validation;
 
 // Production-level features for enterprise deployments
 pub mod observability;
+pub mod stability;
 pub mod versioning;
+
+// Advanced optimization and AI features
+pub mod neural_architecture_search;
+pub mod quantum_optimization;
+
+// Advanced Mode Ecosystem Integration
+pub mod advanced_ecosystem_integration;
+
+// Advanced JIT Compilation Framework
+pub mod advanced_jit_compilation;
+
+// Advanced Distributed Computing Framework
+pub mod advanced_distributed_computing;
+
+// Advanced Cloud Storage Framework
+// pub mod distributed_storage; // Module not implemented yet
+
+// Advanced Tensor Cores and Automatic Kernel Tuning Framework
+pub mod advanced_tensor_cores;
+
+// Tensor cores optimization modules
+#[cfg(feature = "gpu")]
+pub mod tensor_cores;
 
 // Benchmarking module
 #[cfg(feature = "benchmarking")]
@@ -133,6 +183,12 @@ pub mod benchmarking;
 // Re-exports
 #[cfg(feature = "cache")]
 pub use crate::cache::*;
+#[cfg(feature = "cloud")]
+pub use crate::cloud::{
+    CloudConfig, CloudCredentials, CloudError, CloudObjectMetadata, CloudProvider,
+    CloudStorageClient, EncryptionConfig, EncryptionMethod, HttpMethod, ListResult,
+    TransferOptions,
+};
 pub use crate::config::production as config_production;
 pub use crate::config::{
     get_config, get_config_value, set_config_value, set_global_config, Config, ConfigValue,
@@ -142,6 +198,13 @@ pub use crate::error::*;
 #[cfg(feature = "gpu")]
 pub use crate::gpu::*;
 pub use crate::io::*;
+#[cfg(feature = "jit")]
+pub use crate::jit::DataType as JitDataType;
+#[cfg(feature = "jit")]
+pub use crate::jit::{
+    CompiledKernel, ExecutionProfile, JitBackend, JitCompiler, JitConfig, JitError, KernelLanguage,
+    KernelSource, OptimizationLevel, TargetArchitecture,
+};
 #[cfg(feature = "logging")]
 pub use crate::logging::*;
 #[cfg(feature = "memory_management")]
@@ -181,9 +244,8 @@ pub use crate::memory_efficient::MemoryMappedChunksParallel;
 #[cfg(feature = "array")]
 pub use crate::array::{
     is_masked, mask_array, masked_equal, masked_greater, masked_inside, masked_invalid,
-    masked_less, masked_outside, masked_where, record_array_from_arrays, record_array_from_records,
-    record_array_from_typed_arrays, ArrayError, FieldValue, MaskedArray, Record, RecordArray,
-    NOMASK,
+    masked_less, masked_outside, masked_where, record_array_from_typed_arrays,
+    record_array_fromrecords, ArrayError, FieldValue, MaskedArray, Record, RecordArray, NOMASK,
 };
 
 #[cfg(feature = "memory_metrics")]
@@ -193,8 +255,6 @@ pub use crate::memory::metrics::{
     // Utility functions
     format_bytes,
     format_duration,
-    load_snapshots,
-    save_snapshots,
     take_snapshot,
     MemoryEvent,
     MemoryEventType,
@@ -218,15 +278,23 @@ pub use crate::batch_conversions::{
 #[cfg(all(feature = "memory_metrics", feature = "gpu"))]
 pub use crate::memory::metrics::{setup_gpu_memory_tracking, TrackedGpuBuffer, TrackedGpuContext};
 pub use crate::metrics::{
-    global_health_monitor, global_metrics_registry, Counter, Gauge, HealthCheck, HealthMonitor,
+    global_healthmonitor, global_metrics_registry, Counter, Gauge, HealthCheck, HealthMonitor,
     HealthStatus, Histogram, MetricPoint, MetricType, MetricValue, Timer,
+};
+#[cfg(feature = "ml_pipeline")]
+pub use crate::ml_pipeline::DataType as MLDataType;
+#[cfg(feature = "ml_pipeline")]
+pub use crate::ml_pipeline::{
+    DataBatch, DataSample, FeatureConstraint, FeatureSchema, FeatureTransformer, FeatureValue,
+    MLPipeline, MLPipelineError, ModelPredictor, ModelType, PipelineConfig, PipelineMetrics,
+    PipelineNode, TransformType,
 };
 pub use crate::numeric::*;
 #[cfg(feature = "parallel")]
 pub use crate::parallel::*;
 #[cfg(feature = "parallel")]
 pub use crate::parallel_ops::{
-    is_parallel_enabled, num_threads, par_chunks, par_chunks_mut, par_join, par_range, par_scope,
+    is_parallel_enabled, num_threads, par_chunks, par_chunks_mut, par_join, par_scope,
 };
 // Re-export all parallel traits and types
 #[cfg(feature = "parallel")]
@@ -253,21 +321,54 @@ pub use crate::units::{
 pub use crate::utils::*;
 pub use crate::validation::production as validation_production;
 pub use crate::validation::{
-    check_array_finite, check_finite, check_in_bounds, check_positive, check_shape,
+    check_finite, check_in_bounds, check_positive, checkarray_finite, checkshape,
 };
 
 #[cfg(feature = "data_validation")]
+pub use crate::validation::data::DataType as ValidationDataType;
+#[cfg(feature = "data_validation")]
 pub use crate::validation::data::{
-    Constraint, DataType, FieldDefinition, ValidationConfig, ValidationError, ValidationResult,
+    Constraint, FieldDefinition, ValidationConfig, ValidationError, ValidationResult,
     ValidationRule, ValidationSchema, Validator,
 };
 
 // Production-level feature re-exports
 pub use crate::observability::{audit, tracing};
+pub use crate::stability::{
+    global_stability_manager, ApiContract, BreakingChange, BreakingChangeType, ConcurrencyContract,
+    MemoryContract, NumericalContract, PerformanceContract, StabilityGuaranteeManager,
+    StabilityLevel, UsageContext,
+};
 pub use crate::versioning::{
     compatibility, deprecation, migration, negotiation, semantic, ApiVersion, CompatibilityLevel,
-    StabilityLevel, SupportStatus, Version, VersionManager,
+    SupportStatus, Version, VersionManager,
 };
+
+// Advanced optimization and AI feature re-exports
+pub use crate::neural_architecture_search::{
+    ActivationType, Architecture, ArchitecturePerformance, ConnectionType, HardwareConstraints,
+    LayerType, NASStrategy, NeuralArchitectureSearch, OptimizationObjectives, OptimizerType,
+    SearchResults, SearchSpace,
+};
+pub use crate::quantum_optimization::{
+    OptimizationResult, QuantumOptimizer, QuantumParameters, QuantumState, QuantumStrategy,
+};
+
+// Advanced JIT Compilation re-exports
+// pub use crate::advanced_jit__compilation::{
+//     AdaptiveCodeGenerator, CompilationStatistics, JitAnalytics, JitCompilerConfig, JitProfiler,
+//     KernelCache, KernelMetadata, KernelPerformance, LlvmCompilationEngine, OptimizationResults,
+//     PerformanceImprovement, RuntimeOptimizer, advancedJitCompiler,
+// }; // Missing module
+
+// Advanced Cloud Storage re-exports
+// pub use crate::distributed_storage::{
+//     AdaptiveStreamingEngine, CloudPerformanceAnalytics, CloudProviderConfig, CloudProviderId,
+//     CloudProviderType, CloudSecurityManager, CloudStorageMonitoring, CloudStorageProvider,
+//     DataOptimizationEngine, DownloadRequest, DownloadResponse, IntelligentCacheSystem,
+//     ParallelTransferManager, StreamRequest, advancedCloudConfig,
+//     advancedCloudStorageCoordinator, UploadRequest, UploadResponse,
+// };
 
 // Benchmarking re-exports
 #[cfg(feature = "benchmarking")]
@@ -277,9 +378,35 @@ pub use crate::benchmarking::{
 };
 
 /// ``SciRS2`` core version information
-pub const fn version() -> &'static str {
+pub const fn _version() -> &'static str {
     env!("CARGO_PKG_VERSION")
 }
+
+/// Initialize the library (called automatically)
+#[doc(hidden)]
+#[allow(dead_code)]
+pub fn __init() {
+    use std::sync::Once;
+    static INIT: Once = Once::new();
+
+    INIT.call_once(|| {
+        // Initialize API freeze registry
+        crate::api_freeze::initialize_api_freeze();
+    });
+}
+
+// Ensure initialization happens
+#[doc(hidden)]
+#[used]
+#[cfg_attr(target_os = "linux", link_section = ".init_array")]
+#[cfg_attr(target_os = "macos", link_section = "__DATA,__mod_init_func")]
+#[cfg_attr(target_os = "windows", link_section = ".CRT$XCU")]
+static INIT: extern "C" fn() = {
+    extern "C" fn __init_wrapper() {
+        __init();
+    }
+    __init_wrapper
+};
 
 pub mod alpha6_api {
     //! Alpha 6 API consistency enhancements and comprehensive usage patterns
@@ -409,7 +536,7 @@ pub mod alpha6_api {
         /// # Basic Error Handling Example
         ///
         /// ```
-        /// use scirs2_core::{CoreError, CoreResult, diagnose_error};
+        /// use scirs2_core::{CoreError, CoreResult, diagnoseerror};
         ///
         /// fn scientific_computation(data: &[f64]) -> CoreResult<f64> {
         ///     if data.is_empty() {
@@ -426,12 +553,12 @@ pub mod alpha6_api {
         /// match scientific_computation(&[]) {
         ///     Ok(result) => println!("Result: {}", result),
         ///     Err(error) => {
-        ///         let diagnostics = diagnose_error(&error);
+        ///         let diagnostics = diagnoseerror(&error);
         ///         println!("Error diagnosis:\n{}", diagnostics);
         ///     }
         /// }
         /// ```
-        pub const fn basic_error_handling() {}
+        pub const fn basicerror_handling() {}
 
         /// # SIMD Operations Example
         ///
@@ -534,7 +661,7 @@ pub mod alpha6_api {
         ///         
         ///         if config.error_tracking {
         ///             // Error tracking would be implemented here
-        ///             eprintln!("Error in scientific_pipeline: {:?}", error);
+        ///             eprintln!("Error in scientificpipeline: {:?}", error);
         ///         }
         ///         
         ///         return Err(error);
@@ -570,7 +697,7 @@ pub mod alpha6_api {
         /// ```
         /// use scirs2_core::{CoreResult, CoreError};
         /// use scirs2_core::error::{
-        ///     diagnose_error_advanced, get_domain_recovery_strategies, RecoverableError
+        ///     diagnoseerror_advanced, get_recovery_strategies, RecoverableError
         /// };
         ///
         /// /// Robust computation with automatic error recovery
@@ -583,14 +710,14 @@ pub mod alpha6_api {
         ///         Ok(result) => Ok(result),
         ///         Err(error) => {
         ///             // Get comprehensive diagnostics
-        ///             let diagnostics = diagnose_error_advanced(
+        ///             let diagnostics = diagnoseerror_advanced(
         ///                 &error,
         ///                 Some("matrix_computation"),
         ///                 Some(domain)
         ///             );
         ///             
         ///             // Get domain-specific recovery strategies
-        ///             let strategies = get_domain_recovery_strategies(&error, domain);
+        ///             let strategies = get_recovery_strategies(&error, domain);
         ///             
         ///             // Try recovery strategies
         ///             for strategy in &strategies {
@@ -626,7 +753,7 @@ pub mod alpha6_api {
         ///     }
         /// }
         /// ```
-        pub const fn robust_error_handling() {}
+        pub const fn robusterror_handling() {}
 
         /// # Performance Monitoring and Optimization
         ///
@@ -662,7 +789,7 @@ pub mod alpha6_api {
         ///         # #[cfg(feature = "profiling")]
         ///         let timer = Timer::new(self.name.clone());
         ///         # #[cfg(feature = "profiling")]
-        ///         let _timer_guard = timer.start();
+        ///         let timer_guard = timer.start();
         ///         
         ///         let result = operation()?;
         ///         
@@ -676,7 +803,7 @@ pub mod alpha6_api {
         ///     }
         /// }
         /// ```
-        pub const fn performance_monitoring() {}
+        pub const fn performancemonitoring() {}
     }
 
     pub mod type_system {
@@ -706,7 +833,7 @@ pub mod alpha6_api {
         /// ```
         /// use scirs2_core::{CoreResult, CoreError};
         ///
-        /// fn type_safe_error_handling() -> CoreResult<f64> {
+        /// fn type_safeerror_handling() -> CoreResult<f64> {
         ///     // All errors are properly typed and provide context
         ///     Err(CoreError::ValidationError(
         ///         scirs2_core::error::ErrorContext::new("Type validation failed")

@@ -79,10 +79,10 @@ pub enum FastKrigingMethod {
 /// # #[cfg(feature = "linalg")]
 /// # {
 /// use ndarray::{Array1, Array2};
-/// use scirs2_interpolate::advanced::fast_kriging::{
+/// use scirs2__interpolate::advanced::fast_kriging::{
 ///     FastKriging, FastKrigingMethod, FastKrigingBuilder
 /// };
-/// use scirs2_interpolate::advanced::kriging::CovarianceFunction;
+/// use scirs2__interpolate::advanced::kriging::CovarianceFunction;
 ///
 /// // Create sample data
 /// let n_points = 100; // Reduced for testing
@@ -191,10 +191,10 @@ where
 /// # #[cfg(feature = "linalg")]
 /// # {
 /// use ndarray::{Array1, Array2};
-/// use scirs2_interpolate::advanced::fast_kriging::{
+/// use scirs2__interpolate::advanced::fast_kriging::{
 ///     FastKrigingBuilder, FastKrigingMethod
 /// };
-/// use scirs2_interpolate::advanced::kriging::CovarianceFunction;
+/// use scirs2__interpolate::advanced::kriging::CovarianceFunction;
 ///
 /// // Create sample data
 /// let points = Array2::<f64>::zeros((100, 2));
@@ -348,26 +348,26 @@ where
     }
 
     /// Set covariance function
-    pub fn covariance_function(mut self, cov_fn: CovarianceFunction) -> Self {
-        self.cov_fn = cov_fn;
+    pub fn covariance_function(mut self, covfn: CovarianceFunction) -> Self {
+        self.cov_fn = covfn;
         self
     }
 
     /// Set length scales (one per dimension)
-    pub fn length_scales(mut self, length_scales: Array1<F>) -> Self {
-        self.length_scales = Some(length_scales);
+    pub fn length_scales(mut self, lengthscales: Array1<F>) -> Self {
+        self.length_scales = Some(lengthscales);
         self
     }
 
     /// Set a single isotropic length scale
-    pub fn length_scale(mut self, length_scale: F) -> Self {
-        self.sigma_sq = length_scale;
+    pub fn length_scale(mut self, lengthscale: F) -> Self {
+        self.sigma_sq = lengthscale;
         self
     }
 
     /// Set signal variance
-    pub fn sigma_sq(mut self, sigma_sq: F) -> Self {
-        self.sigma_sq = sigma_sq;
+    pub fn sigma_sq(mut self, sigmasq: F) -> Self {
+        self.sigma_sq = sigmasq;
         self
     }
 
@@ -378,8 +378,8 @@ where
     }
 
     /// Set trend function type
-    pub fn trend_function(mut self, trend_fn: TrendFunction) -> Self {
-        self.trend_fn = trend_fn;
+    pub fn trend_function(mut self, trendfn: TrendFunction) -> Self {
+        self.trend_fn = trendfn;
         self
     }
 
@@ -390,8 +390,8 @@ where
     }
 
     /// Set maximum number of neighbors for local kriging
-    pub fn max_neighbors(mut self, max_neighbors: usize) -> Self {
-        self.max_neighbors = max_neighbors;
+    pub fn max_neighbors(mut self, maxneighbors: usize) -> Self {
+        self.max_neighbors = maxneighbors;
         self
     }
 
@@ -468,8 +468,8 @@ where
 /// # #[cfg(feature = "linalg")]
 /// # {
 /// use ndarray::{Array1, Array2};
-/// use scirs2_interpolate::advanced::fast_kriging::make_local_kriging;
-/// use scirs2_interpolate::advanced::kriging::CovarianceFunction;
+/// use scirs2__interpolate::advanced::fast_kriging::make_local_kriging;
+/// use scirs2__interpolate::advanced::kriging::CovarianceFunction;
 ///
 /// // Create sample data
 /// let points = Array2::<f64>::zeros((100, 2));
@@ -489,6 +489,7 @@ where
 /// let pred = kriging.predict(&query_point.view()).unwrap();
 /// # }
 /// ```
+#[allow(dead_code)]
 pub fn make_local_kriging<
     F: Float
         + FromPrimitive
@@ -508,8 +509,8 @@ pub fn make_local_kriging<
     _points: &ArrayView2<F>,
     _values: &ArrayView1<F>,
     _cov_fn: CovarianceFunction,
-    _length_scale: F,
-    _max_neighbors: usize,
+    _scale: F,
+    neighbors: usize,
 ) -> InterpolateResult<FastKriging<F>> {
     // Implementation placeholder - will be completed in future update
     Err(InterpolateError::NotImplemented(
@@ -540,8 +541,8 @@ pub fn make_local_kriging<
 /// # #[cfg(feature = "linalg")]
 /// # {
 /// use ndarray::{Array1, Array2};
-/// use scirs2_interpolate::advanced::fast_kriging::make_fixed_rank_kriging;
-/// use scirs2_interpolate::advanced::kriging::CovarianceFunction;
+/// use scirs2__interpolate::advanced::fast_kriging::make_fixed_rank_kriging;
+/// use scirs2__interpolate::advanced::kriging::CovarianceFunction;
 ///
 /// // Create sample data
 /// let points = Array2::<f64>::zeros((100, 2));
@@ -561,6 +562,7 @@ pub fn make_local_kriging<
 /// let pred = kriging.predict(&query_point.view()).unwrap();
 /// # }
 /// ```
+#[allow(dead_code)]
 pub fn make_fixed_rank_kriging<
     F: Float
         + FromPrimitive
@@ -580,8 +582,8 @@ pub fn make_fixed_rank_kriging<
     _points: &ArrayView2<F>,
     _values: &ArrayView1<F>,
     _cov_fn: CovarianceFunction,
-    _length_scale: F,
-    _rank: usize,
+    _scale: F,
+    rank: usize,
 ) -> InterpolateResult<FastKriging<F>> {
     // Implementation placeholder - will be completed in future update
     Err(InterpolateError::NotImplemented(
@@ -612,8 +614,8 @@ pub fn make_fixed_rank_kriging<
 /// # #[cfg(feature = "linalg")]
 /// # {
 /// use ndarray::{Array1, Array2};
-/// use scirs2_interpolate::advanced::fast_kriging::make_tapered_kriging;
-/// use scirs2_interpolate::advanced::kriging::CovarianceFunction;
+/// use scirs2__interpolate::advanced::fast_kriging::make_tapered_kriging;
+/// use scirs2__interpolate::advanced::kriging::CovarianceFunction;
 ///
 /// // Create sample data
 /// let points = Array2::<f64>::zeros((100, 2));
@@ -633,6 +635,7 @@ pub fn make_fixed_rank_kriging<
 /// let pred = kriging.predict(&query_point.view()).unwrap();
 /// # }
 /// ```
+#[allow(dead_code)]
 pub fn make_tapered_kriging<
     F: Float
         + FromPrimitive
@@ -652,8 +655,8 @@ pub fn make_tapered_kriging<
     _points: &ArrayView2<F>,
     _values: &ArrayView1<F>,
     _cov_fn: CovarianceFunction,
-    _length_scale: F,
-    _taper_range: F,
+    _scale: F,
+    range: F,
 ) -> InterpolateResult<FastKriging<F>> {
     // Implementation placeholder - will be completed in future update
     Err(InterpolateError::NotImplemented(
@@ -684,8 +687,8 @@ pub fn make_tapered_kriging<
 /// # #[cfg(feature = "linalg")]
 /// # {
 /// use ndarray::{Array1, Array2};
-/// use scirs2_interpolate::advanced::fast_kriging::make_hodlr_kriging;
-/// use scirs2_interpolate::advanced::kriging::CovarianceFunction;
+/// use scirs2__interpolate::advanced::fast_kriging::make_hodlr_kriging;
+/// use scirs2__interpolate::advanced::kriging::CovarianceFunction;
 ///
 /// // Create sample data
 /// let points = Array2::<f64>::zeros((100, 2));
@@ -705,6 +708,7 @@ pub fn make_tapered_kriging<
 /// let pred = kriging.predict(&query_point.view()).unwrap();
 /// # }
 /// ```
+#[allow(dead_code)]
 pub fn make_hodlr_kriging<
     F: Float
         + FromPrimitive
@@ -724,8 +728,8 @@ pub fn make_hodlr_kriging<
     _points: &ArrayView2<F>,
     _values: &ArrayView1<F>,
     _cov_fn: CovarianceFunction,
-    _length_scale: F,
-    _leaf_size: usize,
+    _scale: F,
+    size: usize,
 ) -> InterpolateResult<FastKriging<F>> {
     // Implementation placeholder - will be completed in future update
     Err(InterpolateError::NotImplemented(
@@ -745,19 +749,20 @@ pub fn make_hodlr_kriging<
 /// # Example
 ///
 /// ```
-/// use scirs2_interpolate::advanced::fast_kriging::select_approximation_method;
+/// use scirs2__interpolate::advanced::fast_kriging::select_approximation_method;
 ///
 /// // Get recommended method for a dataset with 10,000 points
 /// let method = select_approximation_method(10_000);
 /// ```
-pub fn select_approximation_method(n_points: usize) -> FastKrigingMethod {
-    if n_points < 500 {
+#[allow(dead_code)]
+pub fn select_approximation_method(_npoints: usize) -> FastKrigingMethod {
+    if _npoints < 500 {
         // For small datasets, local kriging is accurate and fast enough
         FastKrigingMethod::Local
-    } else if n_points < 5_000 {
+    } else if _npoints < 5_000 {
         // For medium datasets, use fixed rank with moderate rank
         FastKrigingMethod::FixedRank(50)
-    } else if n_points < 50_000 {
+    } else if _npoints < 50_000 {
         // For large datasets, use tapering with moderate range
         FastKrigingMethod::Tapering(3.0)
     } else {

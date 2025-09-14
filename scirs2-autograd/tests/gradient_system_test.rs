@@ -53,7 +53,7 @@ mod tests {
 
             // Future tests to uncomment once proper gradient system is fully fixed:
             // let result = gradients[0].eval(g).unwrap();
-            // for (idx, _) in data.indexed_iter() {
+            // for (idx_) in data.indexed_iter() {
             //     assert!((result[idx] - 1.0).abs() < 1e-5,
             //         "Gradient at {:?} should be 1.0", idx);
             // }

@@ -98,8 +98,8 @@ impl ErrorModel {
     }
 
     /// Set the maximum edit distance to consider
-    pub fn with_max_distance(mut self, max_distance: usize) -> Self {
-        self.max_edit_distance = max_distance;
+    pub fn with_max_distance(mut self, maxdistance: usize) -> Self {
+        self.max_edit_distance = maxdistance;
         self
     }
 

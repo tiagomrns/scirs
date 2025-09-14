@@ -31,7 +31,7 @@ use crate::error::{Result, TimeSeriesError};
 ///
 /// ```
 /// use ndarray::Array1;
-/// use scirs2_series::trends::{estimate_piecewise_trend, PiecewiseTrendOptions, BreakpointMethod, SegmentModelType};
+/// use scirs2__series::trends::{estimate_piecewise_trend, PiecewiseTrendOptions, BreakpointMethod, SegmentModelType};
 ///
 /// // Create a sample time series with a piecewise trend and noise
 /// let n = 100;
@@ -67,6 +67,7 @@ use crate::error::{Result, TimeSeriesError};
 /// // The trend should have the same length as the input
 /// assert_eq!(trend.len(), ts.len());
 /// ```
+#[allow(dead_code)]
 pub fn estimate_piecewise_trend<F>(
     ts: &Array1<F>,
     options: &PiecewiseTrendOptions,
@@ -143,6 +144,7 @@ where
 }
 
 /// Detects breakpoints using the binary segmentation algorithm
+#[allow(dead_code)]
 fn detect_breakpoints_binary_segmentation<F>(
     ts: &Array1<F>,
     options: &PiecewiseTrendOptions,
@@ -227,6 +229,7 @@ where
 }
 
 /// Detects breakpoints using the PELT (Pruned Exact Linear Time) algorithm
+#[allow(dead_code)]
 fn detect_breakpoints_pelt<F>(ts: &Array1<F>, options: &PiecewiseTrendOptions) -> Result<Vec<usize>>
 where
     F: Float + FromPrimitive + Debug,
@@ -319,6 +322,7 @@ where
 }
 
 /// Detects breakpoints using the bottom-up segmentation algorithm
+#[allow(dead_code)]
 fn detect_breakpoints_bottom_up<F>(
     ts: &Array1<F>,
     options: &PiecewiseTrendOptions,
@@ -376,13 +380,13 @@ where
         }
 
         // Find the pair with the lowest merge cost
-        if let Some((idx, _)) = merge_costs.iter().min_by(|(_, cost1), (_, cost2)| {
+        if let Some((idx_, _)) = merge_costs.iter().min_by(|(_, cost1), (_, cost2)| {
             cost1
                 .partial_cmp(cost2)
                 .unwrap_or(std::cmp::Ordering::Equal)
         }) {
             // Remove the breakpoint
-            all_breakpoints.remove(*idx);
+            all_breakpoints.remove(*idx_);
         } else {
             break;
         }
@@ -392,6 +396,7 @@ where
 }
 
 /// Calculates the improvement in criterion from splitting a segment
+#[allow(dead_code)]
 fn calculate_split_improvement<F>(
     segment_ts: &ArrayView1<F>,
     left_ts: &ArrayView1<F>,
@@ -468,6 +473,7 @@ where
 }
 
 /// Calculates the cost of a single segment using the specified criterion
+#[allow(dead_code)]
 fn calculate_segment_cost<F>(
     segment_ts: &ArrayView1<F>,
     model_type: SegmentModelType,
@@ -560,18 +566,19 @@ where
 }
 
 /// Fits a linear model to a segment
-fn fit_linear_model<F>(segment_ts: &ArrayView1<F>) -> Result<Array1<F>>
+#[allow(dead_code)]
+fn fit_linear_model<F>(_segmentts: &ArrayView1<F>) -> Result<Array1<F>>
 where
     F: Float + FromPrimitive + Debug,
 {
-    let n = segment_ts.len();
+    let n = _segmentts.len();
 
     // Create x values: 0, 1, 2, ...
     let x_values: Vec<F> = (0..n).map(|i| F::from_usize(i).unwrap()).collect();
 
     // Calculate means
     let mean_x = F::from_usize(n - 1).unwrap() / F::from_f64(2.0).unwrap();
-    let mean_y = segment_ts.sum() / F::from_usize(n).unwrap();
+    let mean_y = _segmentts.sum() / F::from_usize(n).unwrap();
 
     // Calculate covariance and variance
     let mut cov_xy = F::zero();
@@ -579,7 +586,7 @@ where
 
     for i in 0..n {
         let x_dev = x_values[i] - mean_x;
-        let y_dev = segment_ts[i] - mean_y;
+        let y_dev = _segmentts[i] - mean_y;
 
         cov_xy = cov_xy + x_dev * y_dev;
         var_x = var_x + x_dev * x_dev;
@@ -604,18 +611,16 @@ where
 }
 
 /// Fits a polynomial model of specified degree to a segment
-fn fit_polynomial_model<F>(segment_ts: &ArrayView1<F>, degree: usize) -> Result<Array1<F>>
+#[allow(dead_code)]
+fn fit_polynomial_model<F>(_segmentts: &ArrayView1<F>, degree: usize) -> Result<Array1<F>>
 where
     F: Float + FromPrimitive + Debug,
 {
-    let n = segment_ts.len();
+    let n = _segmentts.len();
 
     if n <= degree {
         return Err(TimeSeriesError::InsufficientData {
-            message: format!(
-                "Segment length must be greater than polynomial degree ({})",
-                degree
-            ),
+            message: format!("Segment length must be greater than polynomial degree ({degree})"),
             required: degree + 1,
             actual: n,
         });
@@ -650,7 +655,7 @@ where
 
         let mut sum = F::zero();
         for k in 0..n {
-            sum = sum + x_design[[k, i]] * segment_ts[k];
+            sum = sum + x_design[[k, i]] * _segmentts[k];
         }
         xty[i] = sum;
     }
@@ -676,6 +681,7 @@ where
 }
 
 /// Solves a linear system using LU decomposition
+#[allow(dead_code)]
 fn solve_linear_system<F>(a: Array2<F>, b: Vec<F>) -> Result<Vec<F>>
 where
     F: Float + FromPrimitive + Debug,
@@ -755,6 +761,7 @@ where
 }
 
 /// Fits a piecewise model to segments defined by breakpoints
+#[allow(dead_code)]
 fn fit_piecewise_model<F>(
     ts: &Array1<F>,
     breakpoints: &[usize],
@@ -835,6 +842,7 @@ where
 /// # Returns
 ///
 /// A `TrendWithConfidenceInterval` struct containing the estimated trend and confidence bounds
+#[allow(dead_code)]
 pub fn estimate_piecewise_trend_with_ci<F>(
     ts: &Array1<F>,
     options: &PiecewiseTrendOptions,

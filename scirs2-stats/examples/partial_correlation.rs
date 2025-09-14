@@ -1,6 +1,7 @@
 use ndarray::{array, Array2};
 use scirs2_stats::{partial_corr, partial_corrr};
 
+#[allow(dead_code)]
 fn main() {
     // Create sample data
     let x = array![10.0, 8.0, 13.0, 9.0, 11.0, 14.0, 6.0, 4.0, 12.0, 7.0, 5.0];

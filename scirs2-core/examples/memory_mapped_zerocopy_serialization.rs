@@ -11,7 +11,7 @@
 use ndarray::{Array, Array1, Array2, Array3, IxDyn};
 use scirs2_core::error::{CoreError, CoreResult, ErrorContext, ErrorLocation};
 use scirs2_core::memory_efficient::{AccessMode, MemoryMappedArray, ZeroCopySerializable};
-use serde_json::json;
+use serde__json::json;
 use std::fs::File;
 use std::io::Write;
 use std::mem;
@@ -29,7 +29,7 @@ struct Complex64 {
 }
 
 impl Complex64 {
-    fn new(real: f64, imag: f64) -> Self {
+    fn real(real: f64, imag: f64) -> Self {
         Self { real, imag }
     }
 
@@ -40,8 +40,8 @@ impl Complex64 {
 
 // Implementation of ZeroCopySerializable for our custom type
 impl ZeroCopySerializable for Complex64 {
-    unsafe fn from_bytes(bytes: &[u8]) -> CoreResult<Self> {
-        if !Self::validate_bytes(bytes) {
+    unsafe fn bytes(bytes: &[u8]) -> CoreResult<Self> {
+        if !Self::validate_bytes(_bytes) {
             return Err(CoreError::ValidationError(
                 ErrorContext::new(format!(
                     "Invalid byte length for Complex64: expected {} got {}",
@@ -67,6 +67,7 @@ impl ZeroCopySerializable for Complex64 {
     }
 }
 
+#[allow(dead_code)]
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("Memory-Mapped Array Zero-Copy Serialization Example");
     println!("==================================================\n");
@@ -98,7 +99,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 }
 
 /// Example demonstrating custom type serialization with zero-copy operations
-fn custom_type_example(temp_dir: &Path) -> Result<(), Box<dyn std::error::Error>> {
+#[allow(dead_code)]
+fn custom_type_example(tempdir: &Path) -> Result<(), Box<dyn std::error::Error>> {
     println!("\n6. Custom Type Serialization Example");
     println!("-----------------------------------");
 
@@ -162,7 +164,7 @@ fn custom_type_example(temp_dir: &Path) -> Result<(), Box<dyn std::error::Error>
     );
 
     // Read the array
-    let loaded_array = loaded.readonly_array::<ndarray::Ix2>()?;
+    let loaded_array = loaded.readonlyarray::<ndarray::Ix2>()?;
 
     // Calculate magnitude for each element in a corner sample
     println!("\nCalculating magnitudes from loaded array (3x3 corner):");
@@ -198,18 +200,19 @@ fn custom_type_example(temp_dir: &Path) -> Result<(), Box<dyn std::error::Error>
     // Read and display metadata
     let loaded_metadata = MemoryMappedArray::<Complex64>::read_metadata(&file_path)?;
     println!("\nMetadata from file:");
-    println!("  Description: {}", loaded_metadata["description"]);
-    println!("  Type: {}", loaded_metadata["type"]);
+    println!("  Description: {}", loaded_metadata[description]);
+    println!("  Type: {}", loaded_metadata[type]);
     println!(
         "  Pattern: {}",
-        loaded_metadata["custom_properties"]["pattern"]
+        loaded_metadata[custom_properties]["pattern"]
     );
 
     Ok(())
 }
 
 /// Basic example of zero-copy serialization and deserialization
-fn basic_serialization_example(temp_dir: &Path) -> Result<(), Box<dyn std::error::Error>> {
+#[allow(dead_code)]
+fn basic_serialization_example(tempdir: &Path) -> Result<(), Box<dyn std::error::Error>> {
     println!("\n1. Basic Zero-Copy Serialization Example");
     println!("-----------------------------------------");
 
@@ -231,7 +234,7 @@ fn basic_serialization_example(temp_dir: &Path) -> Result<(), Box<dyn std::error
 
     // Save with zero-copy serialization
     let start = Instant::now();
-    let _mmap = MemoryMappedArray::<f64>::save_array(&data, &file_path, Some(metadata))?;
+    let mmap = MemoryMappedArray::<f64>::save_array(&data, &file_path, Some(metadata))?;
     let save_time = start.elapsed();
     println!(
         "Saved array with zero-copy serialization in {:?}",
@@ -249,7 +252,7 @@ fn basic_serialization_example(temp_dir: &Path) -> Result<(), Box<dyn std::error
     );
 
     // Verify the loaded array
-    let loaded_array = loaded.readonly_array::<ndarray::Ix1>()?;
+    let loaded_array = loaded.readonlyarray::<ndarray::Ix1>()?;
     println!(
         "Loaded array shape: {:?}, elements: {}",
         loaded_array.shape(),
@@ -265,16 +268,17 @@ fn basic_serialization_example(temp_dir: &Path) -> Result<(), Box<dyn std::error
     // Read metadata
     let loaded_metadata = MemoryMappedArray::<f64>::read_metadata(&file_path)?;
     println!("\nMetadata from file:");
-    println!("  Description: {}", loaded_metadata["description"]);
-    println!("  Created: {}", loaded_metadata["created"]);
-    println!("  Elements: {}", loaded_metadata["elements"]);
-    println!("  Element type: {}", loaded_metadata["element_type"]);
+    println!("  Description: {}", loaded_metadata[description]);
+    println!("  Created: {}", loaded_metadata[created]);
+    println!("  Elements: {}", loaded_metadata[elements]);
+    println!("  Element type: {}", loaded_metadata[element_type]);
 
     Ok(())
 }
 
 /// Example demonstrating working with metadata in zero-copy serialized files
-fn metadata_example(temp_dir: &Path) -> Result<(), Box<dyn std::error::Error>> {
+#[allow(dead_code)]
+fn metadata_example(_tempdir: &Path) -> Result<(), Box<dyn std::error::Error>> {
     println!("\n2. Working with Metadata Example");
     println!("--------------------------------");
 
@@ -293,7 +297,7 @@ fn metadata_example(temp_dir: &Path) -> Result<(), Box<dyn std::error::Error>> {
         "created": "2023-05-20T10:30:00Z",
         "license": "MIT",
         "properties": {
-            "sampling_rate": 1000,
+            "samplingrate": 1000,
             "units": "meters",
             "calibration_factor": 1.05,
             "valid_range": [0.0, 100.0]
@@ -308,12 +312,9 @@ fn metadata_example(temp_dir: &Path) -> Result<(), Box<dyn std::error::Error>> {
     // Read metadata without loading the array
     let metadata = MemoryMappedArray::<f32>::read_metadata(&file_path)?;
     println!("\nMetadata before update:");
-    println!("  Description: {}", metadata["description"]);
-    println!("  Version: {}", metadata["version"]);
-    println!(
-        "  Sampling rate: {}",
-        metadata["properties"]["sampling_rate"]
-    );
+    println!("  Description: {}", metadata[description]);
+    println!("  Version: {}", metadata[version]);
+    println!("  Sampling rate: {}", metadata[properties]["samplingrate"]);
 
     // Update metadata (without rewriting the entire array)
     println!("\nUpdating metadata...");
@@ -325,7 +326,7 @@ fn metadata_example(temp_dir: &Path) -> Result<(), Box<dyn std::error::Error>> {
         "updated": "2023-05-20T11:45:00Z",
         "license": "MIT",
         "properties": {
-            "sampling_rate": 1000,
+            "samplingrate": 1000,
             "units": "meters",
             "calibration_factor": 1.08,  // Updated calibration
             "valid_range": [0.0, 100.0],
@@ -338,19 +339,19 @@ fn metadata_example(temp_dir: &Path) -> Result<(), Box<dyn std::error::Error>> {
     // Read updated metadata
     let updated = MemoryMappedArray::<f32>::read_metadata(&file_path)?;
     println!("\nMetadata after update:");
-    println!("  Description: {}", updated["description"]);
-    println!("  Version: {}", updated["version"]);
-    println!("  Updated: {}", updated["updated"]);
+    println!("  Description: {}", updated[description]);
+    println!("  Version: {}", updated[version]);
+    println!("  Updated: {}", updated[updated]);
     println!(
         "  Calibration factor: {}",
-        updated["properties"]["calibration_factor"]
+        updated[properties]["calibration_factor"]
     );
-    println!("  Processing: {}", updated["properties"]["processing"]);
-    println!("  Tags: {}", updated["tags"]);
+    println!("  Processing: {}", updated[properties]["processing"]);
+    println!("  Tags: {}", updated[tags]);
 
     // Load the array and verify data wasn't affected by metadata update
     let loaded = MemoryMappedArray::<f32>::open_zero_copy(&file_path, AccessMode::ReadOnly)?;
-    let loaded_array = loaded.readonly_array::<ndarray::Ix1>()?;
+    let loaded_array = loaded.readonlyarray::<ndarray::Ix1>()?;
 
     // Check a few values
     println!("\nVerifying data integrity after metadata update:");
@@ -362,7 +363,8 @@ fn metadata_example(temp_dir: &Path) -> Result<(), Box<dyn std::error::Error>> {
 }
 
 /// Example demonstrating zero-copy serialization with multidimensional arrays
-fn multidimensional_example(temp_dir: &Path) -> Result<(), Box<dyn std::error::Error>> {
+#[allow(dead_code)]
+fn multidimensional_example(tempdir: &Path) -> Result<(), Box<dyn std::error::Error>> {
     println!("\n3. Multidimensional Array Example");
     println!("---------------------------------");
 
@@ -382,7 +384,7 @@ fn multidimensional_example(temp_dir: &Path) -> Result<(), Box<dyn std::error::E
     println!("Loaded 3D array from file");
 
     // Verify the loaded array
-    let loaded_array = loaded.readonly_array::<ndarray::Ix3>()?;
+    let loaded_array = loaded.readonlyarray::<ndarray::Ix3>()?;
     println!(
         "Loaded array shape: {:?}, elements: {}",
         loaded_array.shape(),
@@ -421,7 +423,7 @@ fn multidimensional_example(temp_dir: &Path) -> Result<(), Box<dyn std::error::E
     // Load dynamic array
     let loaded_dyn =
         MemoryMappedArray::<f64>::open_zero_copy(&dyn_file_path, AccessMode::ReadOnly)?;
-    let loaded_dyn_array = loaded_dyn.readonly_array::<ndarray::IxDyn>()?;
+    let loaded_dyn_array = loaded_dyn.readonlyarray::<ndarray::IxDyn>()?;
 
     println!(
         "Loaded dynamic array shape: {:?}, elements: {}",
@@ -448,7 +450,8 @@ fn multidimensional_example(temp_dir: &Path) -> Result<(), Box<dyn std::error::E
 }
 
 /// Example comparing performance of zero-copy serialization with traditional methods
-fn performance_comparison(temp_dir: &Path) -> Result<(), Box<dyn std::error::Error>> {
+#[allow(dead_code)]
+fn performance_comparison(tempdir: &Path) -> Result<(), Box<dyn std::error::Error>> {
     println!("\n4. Performance Comparison Example");
     println!("--------------------------------");
 
@@ -480,7 +483,7 @@ fn performance_comparison(temp_dir: &Path) -> Result<(), Box<dyn std::error::Err
 
     // 3. Loading with zero-copy deserialization
     let start = Instant::now();
-    let _loaded_zero_copy =
+    let loaded_zero_copy =
         MemoryMappedArray::<f64>::open_zero_copy(&zero_copy_path, AccessMode::ReadOnly)?;
     let zero_copy_load_time = start.elapsed();
 
@@ -489,13 +492,13 @@ fn performance_comparison(temp_dir: &Path) -> Result<(), Box<dyn std::error::Err
     let mut file = File::open(&traditional_path)?;
     let mut buffer = Vec::new();
     std::io::Read::read_to_end(&mut file, &mut buffer)?;
-    let _loaded_traditional: Array2<f64> = bincode::deserialize(&buffer)?;
+    let loaded_traditional: Array2<f64> = bincode::deserialize(&buffer)?;
     let traditional_load_time = start.elapsed();
 
     // 5. Array access time (zero-copy)
     let loaded = MemoryMappedArray::<f64>::open_zero_copy(&zero_copy_path, AccessMode::ReadOnly)?;
     let start = Instant::now();
-    let array = loaded.readonly_array::<ndarray::Ix2>()?;
+    let array = loaded.readonlyarray::<ndarray::Ix2>()?;
     let mut _sum = 0.0;
     for i in 0..10 {
         for j in 0..10 {
@@ -588,7 +591,8 @@ fn performance_comparison(temp_dir: &Path) -> Result<(), Box<dyn std::error::Err
 }
 
 /// Example demonstrating updating data in a zero-copy serialized file
-fn updating_data_example(temp_dir: &Path) -> Result<(), Box<dyn std::error::Error>> {
+#[allow(dead_code)]
+fn updating_data_example(_tempdir: &Path) -> Result<(), Box<dyn std::error::Error>> {
     println!("\n5. Updating Data Example");
     println!("------------------------");
 
@@ -640,7 +644,7 @@ fn updating_data_example(temp_dir: &Path) -> Result<(), Box<dyn std::error::Erro
 
     // Load again to verify changes
     let loaded = MemoryMappedArray::<f32>::open_zero_copy(&file_path, AccessMode::ReadOnly)?;
-    let loaded_array = loaded.readonly_array::<ndarray::Ix2>()?;
+    let loaded_array = loaded.readonlyarray::<ndarray::Ix2>()?;
 
     // Display modified data
     println!("\nModified array (10x10):");

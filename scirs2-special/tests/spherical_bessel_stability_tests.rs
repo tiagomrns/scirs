@@ -25,6 +25,7 @@ const J1_SMALL_REFERENCE: [f64; 5] = [
 ];
 
 #[test]
+#[allow(dead_code)]
 fn test_spherical_jn_small_args() {
     // Test j₀(x)
     let j0_01 = spherical_jn(0, 0.01);
@@ -67,6 +68,7 @@ fn test_spherical_jn_small_args() {
 }
 
 #[test]
+#[allow(dead_code)]
 fn test_spherical_jn_scaled_basic() {
     // Test that spherical_jn_scaled behaves correctly
     let j0_scaled_100 = spherical_jn_scaled(0, 100.0);
@@ -95,6 +97,7 @@ fn test_spherical_jn_scaled_basic() {
 }
 
 #[test]
+#[allow(dead_code)]
 fn test_spherical_yn_exact_forms() {
     // Test stability for increasing x
     // For n = 0, y₀(x) = -cos(x)/x (closed form)
@@ -125,6 +128,7 @@ fn test_spherical_yn_exact_forms() {
 }
 
 #[test]
+#[allow(dead_code)]
 fn test_large_orders_basic() {
     // Test a few large orders
     let x: f64 = 30.0;
@@ -145,6 +149,7 @@ fn test_large_orders_basic() {
 }
 
 #[test]
+#[allow(dead_code)]
 fn test_j0_zeros() {
     // Test zeros of j₀(x) at π, 2π, 3π
     let pi = std::f64::consts::PI;
@@ -160,6 +165,7 @@ fn test_j0_zeros() {
 }
 
 #[test]
+#[allow(dead_code)]
 fn test_recurrence_simple() {
     // Test that recurrence relation works for a simple case
     let x = 15.0;
@@ -182,6 +188,7 @@ fn test_recurrence_simple() {
 }
 
 #[test]
+#[allow(dead_code)]
 fn test_small_arguments_series() {
     // Test series expansions for small x
     let small_x: f64 = 0.01;

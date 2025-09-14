@@ -6,6 +6,7 @@
 use ndarray::Array1;
 use scirs2_optim::optimizers::{Adam, Lion, Optimizer, LAMB, SGD};
 
+#[allow(dead_code)]
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("LAMB Optimizer Example");
     println!("=====================");
@@ -161,6 +162,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 }
 
 #[test]
+#[allow(dead_code)]
 fn test_lamb_on_rastrigin() {
     // Instead of using the Rastrigin function which is highly non-convex
     // and may not converge predictably, let's use a simple quadratic function

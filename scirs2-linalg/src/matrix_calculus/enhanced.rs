@@ -12,7 +12,7 @@ use ndarray::{Array1, Array2, ArrayView1, ArrayView2};
 use num_traits::{Float, One, Zero};
 use std::fmt::Debug;
 
-use scirs2_core::validation::{check_1d, check_2d, check_same_shape};
+use scirs2_core::validation::{check_1d, check_2d, check_sameshape};
 
 use crate::error::{LinalgError, LinalgResult};
 use crate::matrix_calculus::gradient;
@@ -55,6 +55,7 @@ use crate::matrix_calculus::gradient;
 /// assert!((jvp[0] - 4.0_f64).abs() < 1e-10_f64);
 /// assert!((jvp[1] - 27.0_f64).abs() < 1e-10_f64);
 /// ```
+#[allow(dead_code)]
 pub fn jacobian_vector_product<F>(
     f: impl Fn(&ArrayView1<F>) -> LinalgResult<Array1<F>>,
     x: &ArrayView1<F>,
@@ -67,7 +68,7 @@ where
     // Validate inputs
     check_1d(x, "x")?;
     check_1d(v, "v")?;
-    check_same_shape(x, "x", v, "v")?;
+    check_sameshape(x, "x", v, "v")?;
 
     let eps = epsilon.unwrap_or_else(|| F::epsilon().sqrt());
 
@@ -130,6 +131,7 @@ where
 /// assert!((vjp[0] - 4.0_f64).abs() < 1e-10_f64);
 /// assert!((vjp[1] - 27.0_f64).abs() < 1e-10_f64);
 /// ```
+#[allow(dead_code)]
 pub fn vector_jacobian_product<F>(
     f: impl Fn(&ArrayView1<F>) -> LinalgResult<Array1<F>> + Copy,
     x: &ArrayView1<F>,
@@ -217,6 +219,7 @@ where
 /// assert!((hvp[0] - 2.0_f64).abs() < 1e-10_f64);
 /// assert!((hvp[1] - 4.0_f64).abs() < 1e-10_f64);
 /// ```
+#[allow(dead_code)]
 pub fn hessian_vector_product<F>(
     f: impl Fn(&ArrayView1<F>) -> LinalgResult<F> + Copy,
     x: &ArrayView1<F>,
@@ -229,7 +232,7 @@ where
     // Validate inputs
     check_1d(x, "x")?;
     check_1d(v, "v")?;
-    check_same_shape(x, "x", v, "v")?;
+    check_sameshape(x, "x", v, "v")?;
 
     let _n = x.len();
     let eps = epsilon.unwrap_or_else(|| F::epsilon().cbrt()); // More accurate for 2nd derivatives
@@ -295,6 +298,7 @@ where
 /// assert!((grad[[1, 0]] - 6.0_f64).abs() < 1e-10_f64);
 /// assert!((grad[[1, 1]] - 8.0_f64).abs() < 1e-10_f64);
 /// ```
+#[allow(dead_code)]
 pub fn matrix_gradient<F>(
     f: impl Fn(&ArrayView2<F>) -> LinalgResult<F>,
     x: &ArrayView2<F>,
@@ -376,6 +380,7 @@ where
 /// assert!((jac[[1, 1, 0]] - 6.0_f64).abs() < 1e-10_f64);
 /// assert!((jac[[1, 1, 1]] - 8.0_f64).abs() < 1e-10_f64);
 /// ```
+#[allow(dead_code)]
 pub fn matrix_jacobian<F>(
     f: impl Fn(&ArrayView2<F>) -> LinalgResult<Array1<F>>,
     x: &ArrayView2<F>,
@@ -463,6 +468,7 @@ where
 /// // Should be closer to true value f(1.1,1.2) = 1.21 + 1.44 = 2.65
 /// assert!((approx2 - 2.65_f64).abs() < 1e-10_f64);
 /// ```
+#[allow(dead_code)]
 pub fn taylor_approximation<F>(
     f: impl Fn(&ArrayView1<F>) -> LinalgResult<F> + Copy,
     x: &ArrayView1<F>,
@@ -495,7 +501,7 @@ where
     // Validate inputs
     check_1d(x, "x")?;
     check_1d(y, "y")?;
-    check_same_shape(x, "x", y, "y")?;
+    check_sameshape(x, "x", y, "y")?;
 
     let eps = epsilon.unwrap_or_else(|| F::epsilon().sqrt());
 
@@ -598,6 +604,7 @@ where
 /// });
 /// assert!(found_min);
 /// ```
+#[allow(dead_code)]
 pub fn find_critical_points<F>(
     f: impl Fn(&ArrayView1<F>) -> LinalgResult<F> + Copy,
     domain: &ArrayView2<F>,
@@ -637,15 +644,15 @@ where
 
     if grid_points < 2 {
         return Err(LinalgError::InvalidInputError(
-            "Grid points must be at least 2 per dimension".to_string(),
+            "Grid _points must be at least 2 per dimension".to_string(),
         ));
     }
 
     let dims = domain.nrows();
     let mut critical_points = Vec::new();
 
-    // Generate a grid of test points
-    // For each dimension, create a set of points
+    // Generate a grid of test _points
+    // For each dimension, create a set of _points
     let mut grid_dimensions = Vec::with_capacity(dims);
     for i in 0..dims {
         let min = domain[[i, 0]];
@@ -660,7 +667,7 @@ where
         grid_dimensions.push(points);
     }
 
-    // Now generate all combinations of points in the grid
+    // Now generate all combinations of _points in the grid
     fn generate_grid_points<F: Float + Copy>(
         dims: &[Vec<F>],
         current: &mut Vec<F>,
@@ -683,7 +690,7 @@ where
     let mut all_grid_points = Vec::new();
     generate_grid_points(&grid_dimensions, &mut Vec::new(), 0, &mut all_grid_points);
 
-    // Check each grid point for critical points
+    // Check each grid point for critical _points
     for point in all_grid_points {
         let grad = gradient(f, &point.view(), None)?;
 
@@ -753,7 +760,7 @@ mod tests {
     }
 
     #[test]
-    fn test_matrix_gradient() {
+    fn testmatrix_gradient() {
         // Function: f(X) = tr(X^T X) = sum of squares of all elements
         let f = |x: &ArrayView2<f64>| -> LinalgResult<f64> {
             let sum_of_squares = x.iter().fold(0.0, |acc, &val| acc + val * val);
@@ -771,7 +778,7 @@ mod tests {
     }
 
     #[test]
-    fn test_matrix_jacobian() {
+    fn testmatrix_jacobian() {
         // Function: f(X) = [sum(X), sum(X^2)]
         let f = |x: &ArrayView2<f64>| -> LinalgResult<Array1<f64>> {
             let sum = x.sum();

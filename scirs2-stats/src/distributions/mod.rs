@@ -4,6 +4,8 @@
 //! following SciPy's `stats.distributions` module.
 
 use crate::error::StatsResult;
+use num_traits::Float;
+use statrs::statistics::Statistics;
 
 // Export distributions
 pub mod bernoulli;
@@ -79,9 +81,10 @@ pub use weibull::Weibull;
 /// let pdf_at_zero = normal.pdf(0.0);
 /// assert!((pdf_at_zero - 0.3989423).abs() < 1e-7);
 /// ```
+#[allow(dead_code)]
 pub fn norm<F>(loc: F, scale: F) -> StatsResult<Normal<F>>
 where
-    F: num_traits::Float + num_traits::NumCast,
+    F: num_traits::Float + num_traits::NumCast + std::fmt::Display,
 {
     Normal::new(loc, scale)
 }
@@ -109,9 +112,10 @@ where
 /// let pdf_at_half = unif.pdf(0.5);
 /// assert!((pdf_at_half - 1.0).abs() < 1e-10);
 /// ```
+#[allow(dead_code)]
 pub fn uniform<F>(low: F, high: F) -> StatsResult<Uniform<F>>
 where
-    F: num_traits::Float + num_traits::NumCast,
+    F: num_traits::Float + num_traits::NumCast + std::fmt::Display,
 {
     Uniform::new(low, high)
 }
@@ -140,9 +144,15 @@ where
 /// let pdf_at_zero = t.pdf(0.0);
 /// assert!((pdf_at_zero - 0.3796).abs() < 1e-4);
 /// ```
+#[allow(dead_code)]
 pub fn t<F>(df: F, loc: F, scale: F) -> StatsResult<StudentT<F>>
 where
-    F: num_traits::Float + num_traits::NumCast + std::marker::Send + std::marker::Sync,
+    F: num_traits::Float
+        + num_traits::NumCast
+        + std::marker::Send
+        + std::marker::Sync
+        + std::fmt::Display
+        + 'static,
 {
     StudentT::new(df, loc, scale)
 }
@@ -171,9 +181,15 @@ where
 /// let pdf_at_one = chi2.pdf(1.0);
 /// assert!((pdf_at_one - 0.303).abs() < 1e-3);
 /// ```
+#[allow(dead_code)]
 pub fn chi2<F>(df: F, loc: F, scale: F) -> StatsResult<ChiSquare<F>>
 where
-    F: num_traits::Float + num_traits::NumCast + std::marker::Send + std::marker::Sync,
+    F: num_traits::Float
+        + num_traits::NumCast
+        + std::marker::Send
+        + std::marker::Sync
+        + std::fmt::Display
+        + 'static,
 {
     ChiSquare::new(df, loc, scale)
 }
@@ -203,9 +219,10 @@ where
 /// let pdf_at_one = f_dist.pdf(1.0);
 /// assert!((pdf_at_one - 0.335).abs() < 1e-3);
 /// ```
+#[allow(dead_code)]
 pub fn f<T>(dfn: T, dfd: T, loc: T, scale: T) -> StatsResult<F<T>>
 where
-    T: num_traits::Float + num_traits::NumCast,
+    T: num_traits::Float + num_traits::NumCast + std::fmt::Display,
 {
     F::new(dfn, dfd, loc, scale)
 }
@@ -233,9 +250,10 @@ where
 /// let pmf_at_two = poisson.pmf(2.0);
 /// assert!((pmf_at_two - 0.224).abs() < 1e-3);
 /// ```
+#[allow(dead_code)]
 pub fn poisson<F>(mu: F, loc: F) -> StatsResult<Poisson<F>>
 where
-    F: num_traits::Float + num_traits::NumCast,
+    F: num_traits::Float + num_traits::NumCast + std::fmt::Display,
 {
     Poisson::new(mu, loc)
 }
@@ -264,13 +282,16 @@ where
 /// let pdf_at_one = gamma.pdf(1.0);
 /// assert!((pdf_at_one - 0.3678794).abs() < 1e-6);
 /// ```
+#[allow(dead_code)]
 pub fn gamma<F>(shape: F, scale: F, loc: F) -> StatsResult<Gamma<F>>
 where
     F: num_traits::Float
         + num_traits::NumCast
         + std::fmt::Debug
         + std::marker::Send
-        + std::marker::Sync,
+        + std::marker::Sync
+        + std::fmt::Display
+        + 'static,
 {
     Gamma::new(shape, scale, loc)
 }
@@ -301,9 +322,10 @@ where
 /// // This should be around 1.875 (exact: 15/8 = 1.875)
 /// assert!((beta.pdf(0.5) - 1.875).abs() < 1e-3);
 /// ```
+#[allow(dead_code)]
 pub fn beta<F>(alpha: F, beta: F, loc: F, scale: F) -> StatsResult<Beta<F>>
 where
-    F: num_traits::Float + num_traits::NumCast + std::fmt::Debug,
+    F: num_traits::Float + num_traits::NumCast + std::fmt::Debug + std::fmt::Display,
 {
     Beta::new(alpha, beta, loc, scale)
 }
@@ -331,9 +353,10 @@ where
 /// let pdf_at_one = exp.pdf(1.0);
 /// assert!((pdf_at_one - 0.36787944).abs() < 1e-7);
 /// ```
+#[allow(dead_code)]
 pub fn expon<F>(rate: F, loc: F) -> StatsResult<Exponential<F>>
 where
-    F: num_traits::Float + num_traits::NumCast + std::fmt::Debug,
+    F: num_traits::Float + num_traits::NumCast + std::fmt::Debug + std::fmt::Display,
 {
     Exponential::new(rate, loc)
 }
@@ -363,9 +386,10 @@ where
 /// let pdf_at_one = lognorm.pdf(1.0);
 /// assert!((pdf_at_one - 0.3989423).abs() < 1e-7);
 /// ```
+#[allow(dead_code)]
 pub fn lognorm<F>(mu: F, sigma: F, loc: F) -> StatsResult<Lognormal<F>>
 where
-    F: num_traits::Float + num_traits::NumCast,
+    F: num_traits::Float + num_traits::NumCast + std::fmt::Display,
 {
     Lognormal::new(mu, sigma, loc)
 }
@@ -394,11 +418,44 @@ where
 /// let pdf_at_one = w.pdf(1.0);
 /// assert!((pdf_at_one - 0.73575888).abs() < 1e-7);
 /// ```
+#[allow(dead_code)]
 pub fn weibull<F>(shape: F, scale: F, loc: F) -> StatsResult<Weibull<F>>
 where
-    F: num_traits::Float + num_traits::NumCast,
+    F: num_traits::Float + num_traits::NumCast + std::fmt::Display,
 {
     Weibull::new(shape, scale, loc)
+}
+
+/// Create a Weibull distribution with the given parameters.
+///
+/// This is an alias for `weibull()` to match SciPy's naming convention
+/// for the minimum value (Type III) Weibull distribution.
+///
+/// # Arguments
+///
+/// * `shape` - Shape parameter (k > 0)
+/// * `scale` - Scale parameter (lambda > 0)
+/// * `loc` - Location parameter (default: 0)
+///
+/// # Returns
+///
+/// * A Weibull distribution object
+///
+/// # Examples
+///
+/// ```
+/// use scirs2_stats::distributions;
+///
+/// let w = distributions::weibull_min(2.0f64, 1.0, 0.0).unwrap();
+/// let pdf_at_one = w.pdf(1.0);
+/// assert!((pdf_at_one - 0.73575888).abs() < 1e-7);
+/// ```
+#[allow(dead_code)]
+pub fn weibull_min<F>(shape: F, scale: F, loc: F) -> StatsResult<Weibull<F>>
+where
+    F: num_traits::Float + num_traits::NumCast + std::fmt::Display,
+{
+    weibull(shape, scale, loc)
 }
 
 /// Create a Pareto distribution with the given parameters.
@@ -425,9 +482,10 @@ where
 /// let pdf_at_two = p.pdf(2.0);
 /// assert!((pdf_at_two - 0.1875).abs() < 1e-7);
 /// ```
+#[allow(dead_code)]
 pub fn pareto<F>(shape: F, scale: F, loc: F) -> StatsResult<Pareto<F>>
 where
-    F: num_traits::Float + num_traits::NumCast,
+    F: num_traits::Float + num_traits::NumCast + std::fmt::Display,
 {
     Pareto::new(shape, scale, loc)
 }
@@ -455,9 +513,10 @@ where
 /// let pdf_at_zero = c.pdf(0.0);
 /// assert!((pdf_at_zero - 0.3183099).abs() < 1e-7);
 /// ```
+#[allow(dead_code)]
 pub fn cauchy<F>(loc: F, scale: F) -> StatsResult<Cauchy<F>>
 where
-    F: num_traits::Float + num_traits::NumCast,
+    F: num_traits::Float + num_traits::NumCast + std::fmt::Display,
 {
     Cauchy::new(loc, scale)
 }
@@ -485,9 +544,10 @@ where
 /// let pdf_at_zero = l.pdf(0.0);
 /// assert!((pdf_at_zero - 0.5).abs() < 1e-7);
 /// ```
+#[allow(dead_code)]
 pub fn laplace<F>(loc: F, scale: F) -> StatsResult<Laplace<F>>
 where
-    F: num_traits::Float + num_traits::NumCast,
+    F: num_traits::Float + num_traits::NumCast + std::fmt::Display,
 {
     Laplace::new(loc, scale)
 }
@@ -515,9 +575,10 @@ where
 /// let pdf_at_zero = l.pdf(0.0);
 /// assert!((pdf_at_zero - 0.25).abs() < 1e-7);
 /// ```
+#[allow(dead_code)]
 pub fn logistic<F>(loc: F, scale: F) -> StatsResult<Logistic<F>>
 where
-    F: num_traits::Float + num_traits::NumCast,
+    F: num_traits::Float + num_traits::NumCast + std::fmt::Display,
 {
     Logistic::new(loc, scale)
 }
@@ -544,11 +605,41 @@ where
 /// let pmf_at_one = b.pmf(1.0);
 /// assert!((pmf_at_one - 0.3).abs() < 1e-7);
 /// ```
+#[allow(dead_code)]
 pub fn bernoulli<F>(p: F) -> StatsResult<Bernoulli<F>>
 where
     F: num_traits::Float + num_traits::NumCast + std::fmt::Display,
 {
     Bernoulli::new(p)
+}
+
+/// Create a Bernoulli distribution with the given parameter.
+///
+/// This is an alias for `bernoulli()` to match SciPy's abbreviated naming convention.
+///
+/// # Arguments
+///
+/// * `p` - Success probability (0 ≤ p ≤ 1)
+///
+/// # Returns
+///
+/// * A Bernoulli distribution object
+///
+/// # Examples
+///
+/// ```
+/// use scirs2_stats::distributions;
+///
+/// let b = distributions::bern(0.3f64).unwrap();
+/// let pmf_at_one = b.pmf(1.0);
+/// assert!((pmf_at_one - 0.3).abs() < 1e-7);
+/// ```
+#[allow(dead_code)]
+pub fn bern<F>(p: F) -> StatsResult<Bernoulli<F>>
+where
+    F: num_traits::Float + num_traits::NumCast + std::fmt::Display,
+{
+    bernoulli(p)
 }
 
 /// Create a Binomial distribution with the given parameters.
@@ -574,9 +665,10 @@ where
 /// let pmf_at_5 = b.pmf(5.0);
 /// assert!((pmf_at_5 - 0.24609375).abs() < 1e-7);
 /// ```
+#[allow(dead_code)]
 pub fn binom<F>(n: usize, p: F) -> StatsResult<Binomial<F>>
 where
-    F: num_traits::Float + num_traits::NumCast,
+    F: num_traits::Float + num_traits::NumCast + std::fmt::Display,
 {
     Binomial::new(n, p)
 }
@@ -603,9 +695,10 @@ where
 /// let pmf_at_2 = g.pmf(2.0);
 /// assert!((pmf_at_2 - 0.147).abs() < 1e-3);
 /// ```
+#[allow(dead_code)]
 pub fn geom<F>(p: F) -> StatsResult<Geometric<F>>
 where
-    F: num_traits::Float + num_traits::NumCast,
+    F: num_traits::Float + num_traits::NumCast + std::fmt::Display,
 {
     Geometric::new(p)
 }
@@ -633,9 +726,10 @@ where
 /// let pmf_at_7 = nb.pmf(7.0);
 /// assert!((pmf_at_7 - 0.1311) < 1e-4);
 /// ```
+#[allow(dead_code)]
 pub fn nbinom<F>(r: F, p: F) -> StatsResult<NegativeBinomial<F>>
 where
-    F: num_traits::Float + num_traits::NumCast,
+    F: num_traits::Float + num_traits::NumCast + std::fmt::Display,
 {
     NegativeBinomial::new(r, p)
 }
@@ -673,6 +767,7 @@ where
 /// // Calculate mean
 /// let mean = hyper.mean(); // Should be around 4.2
 /// ```
+#[allow(dead_code)]
 pub fn hypergeom<F>(
     n_population: usize,
     n_success: usize,
@@ -680,7 +775,7 @@ pub fn hypergeom<F>(
     loc: F,
 ) -> StatsResult<Hypergeometric<F>>
 where
-    F: num_traits::Float + num_traits::NumCast + num_traits::FloatConst,
+    F: num_traits::Float + num_traits::NumCast + num_traits::FloatConst + std::fmt::Display,
 {
     Hypergeometric::new(n_population, n_success, n_draws, loc)
 }
@@ -709,11 +804,13 @@ where
 /// let pdf_at_zero = vm.pdf(0.0);
 /// // Maximum PDF value is at the mean direction (mu)
 /// ```
+#[allow(dead_code)]
 pub fn vonmises<F>(mu: F, kappa: F) -> StatsResult<circular::VonMises<F>>
 where
-    F: num_traits::Float 
+    F: num_traits::Float
         + rand_distr::uniform::SampleUniform
-        + std::fmt::Debug 
+        + std::fmt::Debug
+        + std::fmt::Display
         + 'static,
 {
     circular::von_mises(mu, kappa)
@@ -742,11 +839,13 @@ where
 /// let pdf_at_zero = wc.pdf(0.0);
 /// // Maximum PDF value is at the mean direction (mu)
 /// ```
+#[allow(dead_code)]
 pub fn wrapcauchy<F>(mu: F, gamma: F) -> StatsResult<circular::WrappedCauchy<F>>
 where
-    F: num_traits::Float 
+    F: num_traits::Float
         + rand_distr::uniform::SampleUniform
-        + std::fmt::Debug 
+        + std::fmt::Debug
+        + std::fmt::Display
         + 'static,
 {
     circular::wrapped_cauchy(mu, gamma)

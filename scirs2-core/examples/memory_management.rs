@@ -6,6 +6,7 @@
 //! - 2D chunk processing for memory-efficient operations on large arrays
 
 #[cfg(not(feature = "memory_management"))]
+#[allow(dead_code)]
 fn main() {
     println!("This example requires the 'memory_management' feature to be enabled.");
     println!("Run with: cargo run --example memory_management --features memory_management");
@@ -17,6 +18,7 @@ use ndarray::Array2;
 use scirs2_core::memory::{global_buffer_pool, BufferPool, ChunkProcessor2D, ZeroCopyView};
 
 #[cfg(feature = "memory_management")]
+#[allow(dead_code)]
 fn main() {
     println!("Memory Management Example");
 
@@ -34,6 +36,7 @@ fn main() {
 }
 
 #[cfg(feature = "memory_management")]
+#[allow(dead_code)]
 fn chunk_processing_example() {
     // Create a large 2D array
     let rows = 10;
@@ -55,6 +58,7 @@ fn chunk_processing_example() {
 }
 
 #[cfg(feature = "memory_management")]
+#[allow(dead_code)]
 fn buffer_pool_example() {
     // Create a buffer pool
     let mut pool = BufferPool::<f64>::new();
@@ -90,6 +94,7 @@ fn buffer_pool_example() {
 }
 
 #[cfg(feature = "memory_management")]
+#[allow(dead_code)]
 fn zero_copy_example() {
     // Create an array
     let array = Array2::from_shape_fn((4, 4), |(i, j)| i * 4 + j);
@@ -108,6 +113,7 @@ fn zero_copy_example() {
 }
 
 #[cfg(feature = "memory_management")]
+#[allow(dead_code)]
 fn global_buffer_pool_example() {
     // Get a reference to the global buffer pool
     let pool = global_buffer_pool();
@@ -131,6 +137,7 @@ fn global_buffer_pool_example() {
 }
 
 #[cfg(feature = "memory_management")]
+#[allow(dead_code)]
 fn print_array<T: std::fmt::Display + Copy>(
     array: &ndarray::ArrayBase<impl ndarray::Data<Elem = T>, ndarray::Dim<[usize; 2]>>,
 ) {

@@ -79,11 +79,11 @@
 //!
 //! // Create an actual scheduler using the configuration
 //! let mut scheduler = MetricLRScheduler::new(
-//!     scheduler_config.initial_lr,
-//!     scheduler_config.factor,
-//!     scheduler_config.patience,
-//!     scheduler_config.min_lr,
-//!     &scheduler_config.metric_name,
+//!     scheduler_configinitial_lr,
+//!     scheduler_configfactor,
+//!     scheduler_configpatience,
+//!     scheduler_configmin_lr,
+//!     &scheduler_configmetric_name,
 //!     true // maximize
 //! );
 //!

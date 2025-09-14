@@ -6,6 +6,7 @@ use scirs2_optim::{
     schedulers::{CyclicLR, LearningRateScheduler},
 };
 
+#[allow(dead_code)]
 fn simulate_loss(x: &Array1<f64>) -> f64 {
     // Rosenbrock function
     let a = 1.0;
@@ -22,6 +23,7 @@ fn simulate_loss(x: &Array1<f64>) -> f64 {
     loss
 }
 
+#[allow(dead_code)]
 fn compute_gradient(x: &Array1<f64>) -> Array1<f64> {
     // Numerical gradient computation
     let mut grad = Array1::zeros(x.len());
@@ -40,6 +42,7 @@ fn compute_gradient(x: &Array1<f64>) -> Array1<f64> {
     grad
 }
 
+#[allow(dead_code)]
 fn main() {
     // Initialize parameters
     let params = Array1::from_vec(vec![-1.0, 1.5, 2.0, -2.5]);
@@ -78,14 +81,16 @@ fn main() {
 
     // 4. Custom scale function
     println!("\nCustom Scale Function (Sine Wave):");
-    let mut custom_scheduler =
-        CyclicLR::triangular(0.0001, 0.001, 50).with_scale_fn(|step, half_cycle, _, _| {
-            let position = (step % (2 * half_cycle)) as f64 / (2.0 * half_cycle as f64);
+    let mut custom_scheduler = CyclicLR::triangular(0.0001, 0.001, 50).with_scale_fn(
+        |step, half_cycle__, _gamma, _unused| {
+            let position = (step % (2 * half_cycle__)) as f64 / (2.0 * half_cycle__ as f64);
             (position * std::f64::consts::PI * 2.0).sin().abs()
-        });
+        },
+    );
     run_optimization(params.clone(), &mut optimizer, &mut custom_scheduler, 200);
 }
 
+#[allow(dead_code)]
 fn run_optimization<LR: LearningRateScheduler<f64>>(
     mut params: Array1<f64>,
     optimizer: &mut SGD<f64>,

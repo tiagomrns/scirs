@@ -63,6 +63,7 @@ impl<F: Float> Default for MINRESOptions<F> {
 /// let result = minres(&identity, &b, options).unwrap();
 /// assert!(result.converged);
 /// ```
+#[allow(dead_code)]
 pub fn minres<F>(
     a: &dyn LinearOperator<F>,
     b: &[F],
@@ -257,6 +258,7 @@ where
 }
 
 /// Compute residual r = b - Ax
+#[allow(dead_code)]
 fn compute_residual<F>(a: &dyn LinearOperator<F>, b: &[F], x: &[F]) -> SparseResult<Vec<F>>
 where
     F: Float + NumAssign,
@@ -269,11 +271,13 @@ where
 }
 
 /// Compute 2-norm of a vector
+#[allow(dead_code)]
 fn norm2<F: Float + Sum>(v: &[F]) -> F {
     v.iter().map(|&x| x * x).sum::<F>().sqrt()
 }
 
 /// Compute inner product of two vectors
+#[allow(dead_code)]
 fn inner<F: Float + Sum>(a: &[F], b: &[F]) -> F {
     a.iter().zip(b.iter()).map(|(&ai, &bi)| ai * bi).sum()
 }

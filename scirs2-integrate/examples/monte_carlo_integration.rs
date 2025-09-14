@@ -4,6 +4,7 @@ use rand_distr::{Distribution, Normal};
 use scirs2_integrate::monte_carlo::{importance_sampling, monte_carlo, MonteCarloOptions};
 use std::f64::consts::PI;
 
+#[allow(dead_code)]
 fn main() {
     println!("Monte Carlo Integration Examples\n");
 
@@ -58,7 +59,7 @@ fn main() {
 
     // Approximate reference value
     let reference: f64 = 0.7468241328124271;
-    println!("Reference value: {:.15}", reference);
+    println!("Reference value: {reference:.15}");
 
     // Without antithetic sampling
     let options_standard = MonteCarloOptions {
@@ -122,7 +123,7 @@ fn main() {
 
     // Approximate reference value
     let reference = 3.139525976351711;
-    println!("Reference value: {:.15}", reference);
+    println!("Reference value: {reference:.15}");
 
     // Standard Monte Carlo
     let options_standard = MonteCarloOptions {
@@ -199,7 +200,7 @@ fn main() {
     // The volume of a 5D hypersphere with radius 1 is pi^(5/2) / (5/2 * Gamma(5/2))
     // This simplifies to pi^(5/2) / (15/4), which is approximately 5.2638
     let exact_volume: f64 = PI.powf(2.5) * 4.0 / 15.0;
-    println!("Exact volume of 5D unit hypersphere: {:.15}", exact_volume);
+    println!("Exact volume of 5D unit hypersphere: {exact_volume:.15}");
 
     // Estimate the volume using Monte Carlo integration over [-1,1]^5
     // We'll use the indicator function: 1 if inside the sphere, 0 if outside
@@ -239,7 +240,7 @@ fn main() {
         "Monte Carlo result (ratio in hypercube): {:.8}",
         result.value
     );
-    println!("Estimated hypersphere volume: {:.8}", estimated_volume);
+    println!("Estimated hypersphere volume: {estimated_volume:.8}");
     println!("Standard error (scaled): {:.8}", result.std_error * 32.0);
     println!(
         "Absolute error: {:.8}",

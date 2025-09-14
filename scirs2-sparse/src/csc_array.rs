@@ -184,13 +184,13 @@ where
         }
 
         if !sorted {
-            all_data.sort_by_key(|&(_, col, _)| col);
+            all_data.sort_by_key(|&(_, col_, _)| col_);
         }
 
         // Count elements per column
         let mut col_counts = vec![0; shape.1];
-        for &(_, col, _) in &all_data {
-            col_counts[col] += 1;
+        for &(_, col_, _) in &all_data {
+            col_counts[col_] += 1;
         }
 
         // Create indptr
@@ -206,8 +206,8 @@ where
         let mut indices = Vec::with_capacity(nnz);
         let mut values = Vec::with_capacity(nnz);
 
-        for (row, _, val) in all_data {
-            indices.push(row);
+        for (row_, _, val) in all_data {
+            indices.push(row_);
             values.push(val);
         }
 
@@ -533,7 +533,7 @@ where
             }
 
             // Sort by row index
-            col_data.sort_by_key(|&(row, _)| row);
+            col_data.sort_by_key(|&(row_, _)| row_);
 
             // Put the sorted data back
             for (i, (row, val)) in col_data.into_iter().enumerate() {
@@ -732,6 +732,14 @@ where
 
     fn as_any(&self) -> &dyn std::any::Any {
         self
+    }
+
+    fn get_indptr(&self) -> Option<&Array1<usize>> {
+        Some(&self.indptr)
+    }
+
+    fn indptr(&self) -> Option<&Array1<usize>> {
+        Some(&self.indptr)
     }
 }
 

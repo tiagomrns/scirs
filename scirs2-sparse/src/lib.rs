@@ -1,3 +1,5 @@
+#![allow(deprecated)]
+#![allow(dead_code)]
 //! Sparse module
 //!
 //! This module provides implementations of various sparse matrix and array formats and operations,
@@ -97,6 +99,9 @@ pub use dia_array::DiaArray;
 pub mod bsr_array;
 pub use bsr_array::BsrArray;
 
+pub mod banded_array;
+pub use banded_array::BandedArray;
+
 // Symmetric array formats
 pub mod sym_csr;
 pub use sym_csr::{SymCsrArray, SymCsrMatrix};
@@ -126,6 +131,9 @@ pub use dia::DiaMatrix;
 pub mod bsr;
 pub use bsr::BsrMatrix;
 
+pub mod banded;
+pub use banded::BandedMatrix;
+
 // Utility functions
 pub mod utils;
 
@@ -139,41 +147,95 @@ pub use linalg::{
     bicg,
     bicgstab,
     cg,
+    cholesky_decomposition,
+    // Enhanced operators
+    convolution_operator,
     diag_matrix,
+    eigs,
+    eigsh,
+    enhanced_add,
+    enhanced_diagonal,
+    enhanced_scale,
+    enhanced_subtract,
     expm,
     // Functions from matfuncs
     expm_multiply,
     eye,
+    finite_difference_operator,
+    // GCROT solver
+    gcrot,
     gmres,
+    incomplete_cholesky,
+    incomplete_lu,
     inv,
+    lanczos,
+    // Decomposition functions
+    lu_decomposition,
     matmul,
     matrix_power,
     multiply,
     norm,
     onenormest,
+    // Eigenvalue functions
+    power_iteration,
+    qr_decomposition,
     sparse_direct_solve,
     sparse_lstsq,
     spsolve,
+    svd_truncated,
+    // SVD functions
+    svds,
+    // TFQMR solver
+    tfqmr,
+    ArpackOptions,
     // Interfaces
     AsLinearOperator,
     // Types from iterative
     BiCGOptions,
     BiCGSTABOptions,
     BiCGSTABResult,
+    // Enhanced operator types
+    BoundaryCondition,
     CGOptions,
     CGSOptions,
     CGSResult,
+    CholeskyResult,
+    ConvolutionMode,
+    ConvolutionOperator,
     // Operator types
     DiagonalOperator,
+    EigenResult,
+    EigenvalueMethod,
+    EnhancedDiagonalOperator,
+    EnhancedDifferenceOperator,
+    EnhancedOperatorOptions,
+    EnhancedScaledOperator,
+    EnhancedSumOperator,
+    FiniteDifferenceOperator,
+    GCROTOptions,
+    GCROTResult,
     GMRESOptions,
+    ICOptions,
     // Preconditioners
     ILU0Preconditioner,
+    ILUOptions,
     IdentityOperator,
     IterationResult,
     JacobiPreconditioner,
+    // Decomposition types
+    LUResult,
+    LanczosOptions,
     LinearOperator,
+    // Eigenvalue types
+    PowerIterationOptions,
+    QRResult,
     SSORPreconditioner,
+    // SVD types
+    SVDOptions,
+    SVDResult,
     ScaledIdentityOperator,
+    TFQMROptions,
+    TFQMRResult,
 };
 
 // Format conversions
@@ -197,11 +259,131 @@ pub use sym_ops::{
     sym_coo_matvec, sym_csr_matvec, sym_csr_quadratic_form, sym_csr_rank1_update, sym_csr_trace,
 };
 
+// GPU-accelerated operations
+pub mod gpu;
+pub mod gpu_kernel_execution;
+pub mod gpu_ops;
+pub mod gpu_spmv_implementation;
+pub use gpu_kernel_execution::{
+    calculate_adaptive_workgroup_size, execute_spmv_kernel, execute_symmetric_spmv_kernel,
+    execute_triangular_solve_kernel, GpuKernelConfig, GpuMemoryManager as GpuKernelMemoryManager,
+    GpuPerformanceProfiler, MemoryStrategy,
+};
+pub use gpu_ops::{
+    gpu_sparse_matvec, gpu_sym_sparse_matvec, AdvancedGpuOps, GpuKernelScheduler, GpuMemoryManager,
+    GpuOptions, GpuProfiler, OptimizedGpuOps,
+};
+pub use gpu_spmv_implementation::GpuSpMV;
+
+// Memory-efficient algorithms and patterns
+pub mod memory_efficient;
+pub use memory_efficient::{
+    streaming_sparse_matvec, CacheAwareOps, MemoryPool, MemoryTracker, OutOfCoreProcessor,
+};
+
+// SIMD-accelerated operations
+pub mod simd_ops;
+pub use simd_ops::{
+    simd_csr_matvec, simd_sparse_elementwise, simd_sparse_linear_combination, simd_sparse_matmul,
+    simd_sparse_norm, simd_sparse_scale, simd_sparse_transpose, ElementwiseOp, SimdOptions,
+};
+
+// Parallel vector operations for iterative solvers
+pub mod parallel_vector_ops;
+pub use parallel_vector_ops::{
+    advanced_sparse_matvec_csr, parallel_axpy, parallel_dot, parallel_linear_combination,
+    parallel_norm2, parallel_sparse_matvec_csr, parallel_vector_add, parallel_vector_copy,
+    parallel_vector_scale, parallel_vector_sub, ParallelVectorOptions,
+};
+
+// Quantum-inspired sparse matrix operations (Advanced mode)
+pub mod quantum_inspired_sparse;
+pub use quantum_inspired_sparse::{
+    QuantumProcessorStats, QuantumSparseConfig, QuantumSparseProcessor, QuantumStrategy,
+};
+
+// Neural-adaptive sparse matrix operations (Advanced mode)
+pub mod neural_adaptive_sparse;
+pub use neural_adaptive_sparse::{
+    NeuralAdaptiveConfig, NeuralAdaptiveSparseProcessor, NeuralProcessorStats, OptimizationStrategy,
+};
+
+// Quantum-Neural hybrid optimization (Advanced mode)
+pub mod quantum_neural_hybrid;
+pub use quantum_neural_hybrid::{
+    HybridStrategy, QuantumNeuralConfig, QuantumNeuralHybridProcessor, QuantumNeuralHybridStats,
+};
+
+// Adaptive memory compression for advanced-large sparse matrices (Advanced mode)
+pub mod adaptive_memory_compression;
+pub use adaptive_memory_compression::{
+    AdaptiveCompressionConfig, AdaptiveMemoryCompressor, CompressedMatrix, CompressionAlgorithm,
+    MemoryStats,
+};
+
+// Real-time performance monitoring and adaptation (Advanced mode)
+pub mod realtime_performance_monitor;
+pub use realtime_performance_monitor::{
+    Alert, AlertSeverity, Forecast, PerformanceMetrics, PerformanceMonitorConfig,
+    PerformanceSample, ProcessorType, RealTimePerformanceMonitor,
+};
+
+// Compressed sparse graph algorithms
+pub mod csgraph;
+pub use csgraph::{
+    all_pairs_shortest_path,
+    bellman_ford_single_source,
+    bfs_distances,
+    // Traversal algorithms
+    breadth_first_search,
+    compute_laplacianmatrix,
+    connected_components,
+    degree_matrix,
+    depth_first_search,
+    dijkstra_single_source,
+    floyd_warshall,
+    has_path,
+    is_connected,
+    is_laplacian,
+    is_spanning_tree,
+    // Minimum spanning trees
+    kruskal_mst,
+    // Laplacian matrices
+    laplacian,
+    largest_component,
+    minimum_spanning_tree,
+    num_edges,
+    num_vertices,
+    prim_mst,
+    reachable_vertices,
+    reconstruct_path,
+    // Graph algorithms
+    shortest_path,
+    // Shortest path algorithms
+    single_source_shortest_path,
+    spanning_tree_weight,
+    strongly_connected_components,
+    to_adjacency_list,
+    topological_sort,
+    traversegraph,
+    // Connected components
+    undirected_connected_components,
+    // Graph utilities
+    validate_graph,
+    weakly_connected_components,
+    LaplacianType,
+    MSTAlgorithm,
+    // Enums and types
+    ShortestPathMethod,
+    TraversalOrder,
+};
+
 // Re-export warnings from scipy for compatibility
 pub struct SparseEfficiencyWarning;
 pub struct SparseWarning;
 
 /// Check if an object is a sparse array
+#[allow(dead_code)]
 pub fn is_sparse_array<T>(obj: &dyn SparseArray<T>) -> bool
 where
     T: num_traits::Float
@@ -217,6 +399,7 @@ where
 }
 
 /// Check if an object is a symmetric sparse array
+#[allow(dead_code)]
 pub fn is_sym_sparse_array<T>(obj: &dyn SymSparseArray<T>) -> bool
 where
     T: num_traits::Float
@@ -232,6 +415,7 @@ where
 }
 
 /// Check if an object is a sparse matrix (legacy API)
+#[allow(dead_code)]
 pub fn is_sparse_matrix(obj: &dyn std::any::Any) -> bool {
     obj.is::<CsrMatrix<f64>>()
         || obj.is::<CscMatrix<f64>>()

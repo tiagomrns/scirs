@@ -1,5 +1,6 @@
 use scirs2_special::{pbdv, pbdv_seq, pbvv, pbvv_seq, pbwa};
 
+#[allow(dead_code)]
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("Parabolic Cylinder Functions Example");
     println!("===================================\n");
@@ -103,11 +104,11 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let v = 2.0;
 
     // Verify the recurrence relation: D_{v+1}(x) = x*D_v(x) - v*D_{v-1}(x)
-    let (d_v_minus_1, _) = pbdv(v - 1.0, x)?;
-    let (d_v, _) = pbdv(v, x)?;
-    let (d_v_plus_1, _) = pbdv(v + 1.0, x)?;
+    let (d_vminus_1_, _) = pbdv(v - 1.0, x)?;
+    let (d_v_, _) = pbdv(v, x)?;
+    let (d_v_plus_1_, _) = pbdv(v + 1.0, x)?;
 
-    let recurrence_value = x * d_v - v * d_v_minus_1;
+    let recurrence_value = x * d_v_ - v * d_vminus_1_;
     println!("Recurrence relation for D_v:");
     println!(
         "  D_{:.0}({:.1}) from recurrence: {:.8e}",
@@ -115,24 +116,24 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         x,
         recurrence_value
     );
-    println!("  D_{:.0}({:.1}) direct: {:.8e}", v + 1.0, x, d_v_plus_1);
+    println!("  D_{:.0}({:.1}) direct: {:.8e}", v + 1.0, x, d_v_plus_1_);
     println!(
         "  Difference: {:.2e}",
-        (recurrence_value - d_v_plus_1).abs()
+        (recurrence_value - d_v_plus_1_).abs()
     );
 
     // Verify the asymptotic behavior of D_v(x) for large x
     println!("\nAsymptotic Behavior of D_v(x) for Large x:");
 
     let large_x = 100.0;
-    let (d_large_x, _) = pbdv(v, large_x)?;
+    let (d_large_x_, _) = pbdv(v, large_x)?;
 
     // Asymptotic approximation: D_v(x) ≈ x^v * e^(-x²/4) for large x
     let asymptotic_approx = large_x.powf(v) * (-large_x * large_x / 4.0).exp();
 
-    println!("  D_{:.0}({:.1}) direct: {:.8e}", v, large_x, d_large_x);
+    println!("  D_{:.0}({:.1}) direct: {:.8e}", v, large_x, d_large_x_);
     println!("  Asymptotic approximation: {:.8e}", asymptotic_approx);
-    println!("  Ratio: {:.8}", d_large_x / asymptotic_approx);
+    println!("  Ratio: {:.8}", d_large_x_ / asymptotic_approx);
 
     Ok(())
 }

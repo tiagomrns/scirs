@@ -1,6 +1,7 @@
 use ndarray::array;
 use scirs2_stats::{point_biserial, point_biserialr};
 
+#[allow(dead_code)]
 fn main() {
     // Create binary and continuous data
     let binary = array![0.0, 1.0, 0.0, 1.0, 0.0, 1.0, 0.0, 1.0];

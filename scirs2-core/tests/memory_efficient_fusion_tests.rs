@@ -113,7 +113,7 @@ mod tests {
             TypeId::of::<f64>()
         }
 
-        fn can_fuse_with(&self, _other: &dyn FusedOp) -> bool {
+        fn can_fuse_with(&self, other: &dyn FusedOp) -> bool {
             true
         }
 
@@ -148,7 +148,7 @@ mod tests {
 
         // Add a square operation
         let square_op = Arc::new(SquareOp);
-        fusion.add_op(square_op).unwrap();
+        fusion.add_op(Arc::new(SquareOp)).unwrap();
 
         // Should now have one operation
         assert!(!fusion.is_empty());
@@ -161,7 +161,7 @@ mod tests {
 
         // Add a square operation
         let square_op = Arc::new(SquareOp);
-        fusion.add_op(square_op).unwrap();
+        fusion.add_op(Arc::new(SquareOp)).unwrap();
 
         // Try to add an operation with mismatched types
         struct MismatchOp;
@@ -176,13 +176,13 @@ mod tests {
             fn output_type(&self) -> TypeId {
                 TypeId::of::<i32>()
             }
-            fn can_fuse_with(&self, _: &dyn FusedOp) -> bool {
+            fn can_fuse_with(&self, other: &dyn FusedOp) -> bool {
                 false
             }
-            fn fuse_with(&self, _: &dyn FusedOp) -> Arc<dyn FusedOp> {
+            fn fuse_with(&self, other: &dyn FusedOp) -> Arc<dyn FusedOp> {
                 Arc::new(MismatchOp)
             }
-            fn apply(&self, _: &dyn Any) -> Result<Box<dyn Any>, CoreError> {
+            fn apply(&self, input: &dyn Any) -> Result<Box<dyn Any>, CoreError> {
                 Ok(Box::new(0))
             }
             fn clone_op(&self) -> Arc<dyn FusedOp> {
@@ -191,7 +191,7 @@ mod tests {
         }
 
         let mismatch_op = Arc::new(MismatchOp);
-        let result = fusion.add_op(mismatch_op);
+        let result = fusion.add_op(Arc::new(MismatchOp));
 
         // Should fail due to type mismatch
         assert!(result.is_err());
@@ -205,8 +205,8 @@ mod tests {
         let square_op = Arc::new(SquareOp);
         let sqrt_op = Arc::new(SqrtOp);
 
-        fusion.add_op(square_op).unwrap();
-        fusion.add_op(sqrt_op).unwrap();
+        fusion.add_op(Arc::new(SquareOp)).unwrap();
+        fusion.add_op(Arc::new(SqrtOp)).unwrap();
 
         // Before optimization
         assert_eq!(fusion.num_ops(), 2);
@@ -224,7 +224,7 @@ mod tests {
 
         // Add square operation
         let square_op = Arc::new(SquareOp);
-        fusion.add_op(square_op).unwrap();
+        fusion.add_op(Arc::new(SquareOp)).unwrap();
 
         // Apply to input
         let input = 3.0;
@@ -239,7 +239,7 @@ mod tests {
     fn test_op_fusion_register() {
         // Register a square operation for f64
         let square_op = Arc::new(SquareOp);
-        register_fusion::<f64>(square_op).unwrap();
+        register_fusion::<f64>(Arc::new(SquareOp)).unwrap();
 
         // This is hard to test fully because the registry is global and we can't easily
         // query it directly, but at least we can verify registration doesn't error
@@ -260,7 +260,7 @@ mod tests {
 
         // Add a single operation
         let square_op = Arc::new(SquareOp);
-        fusion.add_op(square_op).unwrap();
+        fusion.add_op(Arc::new(SquareOp)).unwrap();
 
         // Optimizing a fusion with one op should succeed but do nothing
         fusion.optimize().unwrap();
@@ -273,7 +273,7 @@ mod tests {
 
         // Add square operation for f64
         let square_op = Arc::new(SquareOp);
-        fusion.add_op(square_op).unwrap();
+        fusion.add_op(Arc::new(SquareOp)).unwrap();
 
         // Try to apply with wrong type
         let input = 3i32;

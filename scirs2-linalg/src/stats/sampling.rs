@@ -9,7 +9,7 @@ use num_traits::{Float, One, Zero};
 
 use crate::decomposition::cholesky;
 use crate::error::{LinalgError, LinalgResult};
-use crate::random::random_normal_matrix;
+use crate::random::random_normalmatrix;
 use crate::stats::distributions::{MatrixNormalParams, WishartParams};
 
 /// Generate samples from a multivariate normal distribution
@@ -24,6 +24,7 @@ use crate::stats::distributions::{MatrixNormalParams, WishartParams};
 /// # Returns
 ///
 /// * Matrix with samples as rows
+#[allow(dead_code)]
 pub fn sample_multivariate_normal<F>(
     mean: &ArrayView1<F>,
     cov: &ArrayView2<F>,
@@ -39,7 +40,10 @@ where
         + ndarray::ScalarOperand
         + num_traits::FromPrimitive
         + num_traits::NumAssign
-        + std::iter::Sum,
+        + std::iter::Sum
+        + Send
+        + Sync
+        + 'static,
 {
     let p = mean.len();
 
@@ -52,8 +56,8 @@ where
         )));
     }
 
-    // Generate standard normal samples
-    let z = random_normal_matrix::<F>((n_samples, p), rng_seed)?;
+    // Generate standard normal _samples
+    let z = random_normalmatrix::<F>((n_samples, p), rng_seed)?;
 
     // Compute Cholesky factorization of covariance matrix
     let l = cholesky(cov, None)?;
@@ -82,7 +86,8 @@ where
 /// # Returns
 ///
 /// * Vector of matrix samples
-pub fn sample_matrix_normal_multiple<F>(
+#[allow(dead_code)]
+pub fn samplematrix_normal_multiple<F>(
     params: &MatrixNormalParams<F>,
     n_samples: usize,
     rng_seed: Option<u64>,
@@ -96,13 +101,16 @@ where
         + ndarray::ScalarOperand
         + num_traits::FromPrimitive
         + num_traits::NumAssign
-        + std::iter::Sum,
+        + std::iter::Sum
+        + Send
+        + Sync
+        + 'static,
 {
     let mut samples = Vec::with_capacity(n_samples);
 
     for i in 0..n_samples {
         let seed = rng_seed.map(|s| s.wrapping_add(i as u64));
-        let sample = crate::stats::distributions::sample_matrix_normal(params, seed)?;
+        let sample = crate::stats::distributions::samplematrix_normal(params, seed)?;
         samples.push(sample);
     }
 
@@ -120,6 +128,7 @@ where
 /// # Returns
 ///
 /// * Vector of positive definite matrix samples
+#[allow(dead_code)]
 pub fn sample_wishart_multiple<F>(
     params: &WishartParams<F>,
     n_samples: usize,
@@ -134,13 +143,16 @@ where
         + ndarray::ScalarOperand
         + num_traits::FromPrimitive
         + num_traits::NumAssign
-        + std::iter::Sum,
+        + std::iter::Sum
+        + Send
+        + Sync
+        + 'static,
 {
     let mut samples = Vec::with_capacity(n_samples);
 
     for i in 0..n_samples {
-        let seed = rng_seed.map(|s| s.wrapping_add(i as u64));
-        let sample = crate::stats::distributions::sample_wishart(params, seed)?;
+        let _seed = rng_seed.map(|s| s.wrapping_add(i as u64));
+        let sample = crate::stats::distributions::sample_wishart(params, _seed)?;
         samples.push(sample);
     }
 
@@ -159,6 +171,7 @@ where
 /// # Returns
 ///
 /// * Vector of positive definite matrix samples
+#[allow(dead_code)]
 pub fn sample_inverse_wishart<F>(
     scale: &ArrayView2<F>,
     dof: F,
@@ -175,7 +188,9 @@ where
         + ndarray::ScalarOperand
         + num_traits::FromPrimitive
         + num_traits::NumAssign
-        + std::iter::Sum,
+        + std::iter::Sum
+        + Send
+        + Sync,
 {
     let _p = scale.nrows();
 
@@ -192,8 +207,8 @@ where
     let mut samples = Vec::with_capacity(n_samples);
 
     for i in 0..n_samples {
-        let seed = rng_seed.map(|s| s.wrapping_add(i as u64));
-        let wishart_sample = crate::stats::distributions::sample_wishart(&wishart_params, seed)?;
+        let _seed = rng_seed.map(|s| s.wrapping_add(i as u64));
+        let wishart_sample = crate::stats::distributions::sample_wishart(&wishart_params, _seed)?;
         let inverse_wishart_sample = crate::basic::inv(&wishart_sample.view(), None)?;
         samples.push(inverse_wishart_sample);
     }
@@ -215,7 +230,8 @@ where
 /// # Returns
 ///
 /// * Vector of matrix samples
-pub fn sample_matrix_t<F>(
+#[allow(dead_code)]
+pub fn samplematrix_t<F>(
     mean: &ArrayView2<F>,
     row_cov: &ArrayView2<F>,
     col_cov: &ArrayView2<F>,
@@ -233,7 +249,9 @@ where
         + ndarray::ScalarOperand
         + num_traits::FromPrimitive
         + num_traits::NumAssign
-        + std::iter::Sum,
+        + std::iter::Sum
+        + Send
+        + Sync,
 {
     let (m, n) = mean.dim();
 
@@ -247,16 +265,16 @@ where
     let mut samples = Vec::with_capacity(n_samples);
 
     for i in 0..n_samples {
-        let seed = rng_seed.map(|s| s.wrapping_add(i as u64));
+        let _seed = rng_seed.map(|s| s.wrapping_add(i as u64));
 
         // Sample from matrix normal
         let matrix_normal_params =
             MatrixNormalParams::new(mean.to_owned(), row_cov.to_owned(), col_cov.to_owned())?;
         let normal_sample =
-            crate::stats::distributions::sample_matrix_normal(&matrix_normal_params, seed)?;
+            crate::stats::distributions::samplematrix_normal(&matrix_normal_params, _seed)?;
 
         // Sample chi-square for scaling (simplified - using normal approximation)
-        let chi_approx = random_normal_matrix::<F>((1, 1), seed)?;
+        let chi_approx = random_normalmatrix::<F>((1, 1), _seed)?;
         let scale_factor = (dof / (dof + chi_approx[[0, 0]] * chi_approx[[0, 0]])).sqrt();
 
         // Scale the normal sample
@@ -273,16 +291,17 @@ where
 ///
 /// * `data` - Original dataset matrix (samples as rows)
 /// * `n_bootstrap` - Number of bootstrap samples
-/// * `sample_size` - Size of each bootstrap sample (if None, use original size)
+/// * `samplesize` - Size of each bootstrap sample (if None, use original size)
 /// * `rng_seed` - Optional random seed
 ///
 /// # Returns
 ///
 /// * Vector of bootstrap sample matrices
+#[allow(dead_code)]
 pub fn bootstrap_sample<F>(
     data: &ArrayView2<F>,
     n_bootstrap: usize,
-    sample_size: Option<usize>,
+    samplesize: Option<usize>,
     rng_seed: Option<u64>,
 ) -> LinalgResult<Vec<Array2<F>>>
 where
@@ -290,20 +309,20 @@ where
 {
     let n_original = data.nrows();
     let p = data.ncols();
-    let n_sample = sample_size.unwrap_or(n_original);
+    let n_sample = samplesize.unwrap_or(n_original);
 
     let mut samples = Vec::with_capacity(n_bootstrap);
 
     // Simple pseudorandom number generation for sampling indices
-    let mut seed = rng_seed.unwrap_or(42);
+    let mut _seed = rng_seed.unwrap_or(42);
 
     for _ in 0..n_bootstrap {
         let mut bootstrap_sample = Array2::zeros((n_sample, p));
 
         for i in 0..n_sample {
             // Simple linear congruential generator for index selection
-            seed = seed.wrapping_mul(1664525).wrapping_add(1013904223);
-            let index = (seed as usize) % n_original;
+            _seed = _seed.wrapping_mul(1664525).wrapping_add(1013904223);
+            let index = (_seed as usize) % n_original;
 
             // Copy the selected row
             for j in 0..p {
@@ -328,6 +347,7 @@ where
 /// # Returns
 ///
 /// * Vector of permuted sample matrices
+#[allow(dead_code)]
 pub fn permutation_sample<F>(
     data: &ArrayView2<F>,
     n_permutations: usize,
@@ -340,15 +360,15 @@ where
     let p = data.ncols();
 
     let mut samples = Vec::with_capacity(n_permutations);
-    let mut seed = rng_seed.unwrap_or(42);
+    let mut _seed = rng_seed.unwrap_or(42);
 
     for _ in 0..n_permutations {
         let mut permuted_sample = data.to_owned();
 
         // Fisher-Yates shuffle algorithm
         for i in (1..n).rev() {
-            seed = seed.wrapping_mul(1664525).wrapping_add(1013904223);
-            let j = (seed as usize) % (i + 1);
+            _seed = _seed.wrapping_mul(1664525).wrapping_add(1013904223);
+            let j = (_seed as usize) % (i + 1);
 
             // Swap rows i and j
             for k in 0..p {
@@ -380,6 +400,7 @@ where
 /// # Returns
 ///
 /// * Vector of samples from the target distribution
+#[allow(dead_code)]
 pub fn metropolis_hastings_sample<F>(
     log_density: impl Fn(&ArrayView2<F>) -> LinalgResult<F>,
     initial_value: Array2<F>,
@@ -397,7 +418,9 @@ where
         + ndarray::ScalarOperand
         + num_traits::FromPrimitive
         + num_traits::NumAssign
-        + std::iter::Sum,
+        + std::iter::Sum
+        + Send
+        + Sync,
 {
     let (m, n) = initial_value.dim();
     let total_samples = n_samples + burn_in;
@@ -411,23 +434,23 @@ where
     let l = cholesky(proposal_cov, None)?;
 
     for i in 0..total_samples {
-        let seed = rng_seed.map(|s| s.wrapping_add(i as u64));
+        let _seed = rng_seed.map(|s| s.wrapping_add(i as u64));
 
         // Generate proposal
-        let noise = random_normal_matrix::<F>((m, n), seed)?;
+        let noise = random_normalmatrix::<F>((m, n), _seed)?;
         let proposal_noise = l.t().dot(&noise);
         let proposal = &current + &proposal_noise;
 
         // Compute acceptance probability
         let proposal_log_density = match log_density(&proposal.view()) {
-            Ok(density) => density,
-            Err(_) => F::neg_infinity(), // Reject if density evaluation fails
+            Ok(_density) => _density,
+            Err(_) => F::neg_infinity(), // Reject if _density evaluation fails
         };
 
         let log_alpha = proposal_log_density - current_log_density;
 
         // Accept or reject
-        let uniform_sample = random_normal_matrix::<F>((1, 1), seed)?;
+        let uniform_sample = random_normalmatrix::<F>((1, 1), _seed)?;
         let uniform = (uniform_sample[[0, 0]].abs() % F::one()).abs(); // Rough uniform approximation
 
         if log_alpha > uniform.ln() {
@@ -436,7 +459,7 @@ where
             accepted += 1;
         }
 
-        // Collect sample after burn-in
+        // Collect sample after burn-_in
         if i >= burn_in {
             samples.push(current.clone());
         }
@@ -446,8 +469,7 @@ where
     let acceptance_rate = accepted as f64 / total_samples as f64;
     if !(0.2..=0.7).contains(&acceptance_rate) {
         eprintln!(
-            "Warning: MCMC acceptance rate is {:.3}, consider adjusting proposal covariance",
-            acceptance_rate
+            "Warning: MCMC acceptance rate is {acceptance_rate:.3}, consider adjusting proposal covariance"
         );
     }
 
@@ -503,13 +525,13 @@ mod tests {
     }
 
     #[test]
-    fn test_sample_matrix_normal_multiple() {
+    fn test_samplematrix_normal_multiple() {
         let mean = array![[0.0, 0.0], [0.0, 0.0]];
         let row_cov = array![[1.0, 0.0], [0.0, 1.0]];
         let col_cov = array![[1.0, 0.0], [0.0, 1.0]];
 
         let params = MatrixNormalParams::new(mean, row_cov, col_cov).unwrap();
-        let samples = sample_matrix_normal_multiple(&params, 5, Some(42)).unwrap();
+        let samples = samplematrix_normal_multiple(&params, 5, Some(42)).unwrap();
 
         assert_eq!(samples.len(), 5);
         for sample in &samples {

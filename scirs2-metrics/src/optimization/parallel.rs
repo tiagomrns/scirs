@@ -116,6 +116,7 @@ where
 /// // Check results
 /// assert_eq!(results.len(), 2);
 /// ```
+#[allow(dead_code)]
 pub fn compute_metrics_batch<T, S1, S2, D1, D2>(
     y_true: &ArrayBase<S1, D1>,
     y_pred: &ArrayBase<S2, D2>,
@@ -189,6 +190,7 @@ where
 /// let expected: f64 = (0..1000).map(|x| (x * x) as f64).sum();
 /// assert!((result - expected).abs() < 1e-10);
 /// ```
+#[allow(dead_code)]
 pub fn chunked_parallel_compute<T, R>(
     data: &[T],
     chunk_size: usize,
@@ -241,6 +243,7 @@ pub trait ChunkedMetric<T> {
 /// # Returns
 ///
 /// * Computed metric value
+#[allow(dead_code)]
 pub fn compute_chunked_metric<T, M>(
     data: &[T],
     metric: &M,

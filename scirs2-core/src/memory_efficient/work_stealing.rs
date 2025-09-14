@@ -302,7 +302,7 @@ impl PrioritizedTask {
 struct PriorityTaskQueue {
     queues: [VecDeque<PrioritizedTask>; 4], // One for each priority level
     total_size: usize,
-    max_size: usize,
+    maxsize: usize,
 }
 
 impl PriorityTaskQueue {
@@ -315,12 +315,12 @@ impl PriorityTaskQueue {
                 VecDeque::new(), // Critical
             ],
             total_size: 0,
-            max_size,
+            maxsize: max_size,
         }
     }
 
     fn push(&mut self, task: PrioritizedTask) -> Result<(), PrioritizedTask> {
-        if self.total_size >= self.max_size {
+        if self.total_size >= self.maxsize {
             return Err(task);
         }
 
@@ -363,7 +363,7 @@ impl PriorityTaskQueue {
 
     #[allow(dead_code)]
     fn is_full(&self) -> bool {
-        self.total_size >= self.max_size
+        self.total_size >= self.maxsize
     }
 }
 
@@ -421,7 +421,7 @@ impl Worker {
         self.other_workers.push(worker_queue);
     }
 
-    fn run(&self, result_sender: crossbeam::channel::Sender<Box<dyn std::any::Any + Send>>) {
+    fn run(self, result_sender: crossbeam::channel::Sender<Box<dyn std::any::Any + Send>>) {
         let mut consecutive_steals = 0;
         let mut last_steal_attempt = Instant::now();
 
@@ -671,13 +671,13 @@ impl WorkStealingScheduler {
             let result_sender = self.result_sender.clone();
 
             let handle = thread::Builder::new()
-                .name(format!("worker-{}", worker_id))
+                .name(format!("worker-{worker_id}"))
                 .spawn(move || {
                     worker.run(result_sender);
                 })
                 .map_err(|e| {
                     CoreError::StreamError(
-                        ErrorContext::new(format!("Failed to start worker thread: {}", e))
+                        ErrorContext::new(format!("{e}"))
                             .with_location(ErrorLocation::new(file!(), line!())),
                     )
                 })?;
@@ -974,11 +974,13 @@ impl Default for WorkStealingConfigBuilder {
 }
 
 /// Create a default work-stealing scheduler
+#[allow(dead_code)]
 pub fn create_work_stealing_scheduler() -> CoreResult<WorkStealingScheduler> {
     WorkStealingScheduler::new(WorkStealingConfig::default())
 }
 
 /// Create a work-stealing scheduler optimized for CPU-intensive tasks
+#[allow(dead_code)]
 pub fn create_cpu_intensive_scheduler() -> CoreResult<WorkStealingScheduler> {
     let config = WorkStealingConfigBuilder::new()
         .num_workers(
@@ -995,6 +997,7 @@ pub fn create_cpu_intensive_scheduler() -> CoreResult<WorkStealingScheduler> {
 }
 
 /// Create a work-stealing scheduler optimized for I/O-intensive tasks
+#[allow(dead_code)]
 pub fn create_io_intensive_scheduler() -> CoreResult<WorkStealingScheduler> {
     let num_workers = std::thread::available_parallelism()
         .map(|n| n.get() * 2) // More threads for I/O

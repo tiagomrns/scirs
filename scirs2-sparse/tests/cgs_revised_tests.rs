@@ -4,6 +4,7 @@ use scirs2_sparse::{
 };
 
 #[test]
+#[allow(dead_code)]
 fn test_cgs_identity() {
     // Test CGS on identity matrix - should converge in 1 iteration
     let rows = vec![0, 1, 2];
@@ -27,6 +28,7 @@ fn test_cgs_identity() {
 }
 
 #[test]
+#[allow(dead_code)]
 fn test_cgs_well_conditioned() {
     // Test CGS on a well-conditioned non-symmetric matrix
     // This matrix is diagonally dominant
@@ -63,6 +65,7 @@ fn test_cgs_well_conditioned() {
 }
 
 #[test]
+#[allow(dead_code)]
 fn test_cgs_with_preconditioner() {
     // Test CGS with Jacobi preconditioner on a moderately ill-conditioned matrix
     let rows = vec![0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 2, 2, 3, 3, 3, 3];
@@ -108,6 +111,7 @@ fn test_cgs_with_preconditioner() {
 }
 
 #[test]
+#[allow(dead_code)]
 fn test_cgs_real_world_pattern() {
     // Test CGS on a sparse matrix with real-world sparsity pattern
     // This represents a simple finite difference discretization
@@ -177,6 +181,7 @@ fn test_cgs_real_world_pattern() {
 }
 
 #[test]
+#[allow(dead_code)]
 fn test_cgs_symmetric_vs_cg() {
     // CGS should also work on symmetric positive definite matrices
     // though CG would be preferred in practice

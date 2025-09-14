@@ -21,6 +21,7 @@ use std::time::Instant;
 // #[cfg(feature = "simd")]
 // use scirs2_integrate::ode::utils::{simd_ode_function_eval, simd_rk_step, SimdOdeOps};
 
+#[allow(dead_code)]
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("=== SIMD Optimization for ODE Solving ===");
 
@@ -44,7 +45,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("{}", "-".repeat(80));
 
     for &n in &system_sizes {
-        println!("\\n--- System Size: {} equations ---", n);
+        println!("\\n--- System Size: {n} equations ---");
 
         // Create a large system of coupled oscillators
         // d²x_i/dt² + ω_i² * x_i + c * (x_i - x_{i-1}) = 0
@@ -100,6 +101,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 }
 
 /// Create a coupled oscillator system for benchmarking
+#[allow(dead_code)]
 fn create_coupled_oscillator_system(
     n: usize,
 ) -> impl Fn(f64, ArrayView1<f64>) -> Array1<f64> + Copy {
@@ -137,6 +139,7 @@ fn create_coupled_oscillator_system(
 }
 
 /// Create initial conditions for the coupled oscillator system
+#[allow(dead_code)]
 fn create_initial_conditions(n: usize) -> Array1<f64> {
     let mut y0 = Array1::zeros(2 * n);
 
@@ -151,6 +154,7 @@ fn create_initial_conditions(n: usize) -> Array1<f64> {
 }
 
 /// Test method performance and print results
+#[allow(dead_code)]
 fn test_method_performance<F>(
     method_name: &str,
     method: F,
@@ -183,6 +187,7 @@ where
 }
 
 /// Compute total energy of the oscillator system (should be conserved)
+#[allow(dead_code)]
 fn compute_system_energy(y: &Array1<f64>) -> f64 {
     let n = y.len() / 2;
     let mut energy = 0.0;
@@ -208,13 +213,14 @@ fn compute_system_energy(y: &Array1<f64>) -> f64 {
 
 /// Demonstrate SIMD operations
 #[cfg(feature = "simd")]
+#[allow(dead_code)]
 fn demonstrate_simd_operations() -> Result<(), Box<dyn std::error::Error>> {
     println!("Testing individual SIMD operations on large vectors...");
 
     let sizes = vec![1000, 10000, 100000];
 
     for &size in &sizes {
-        println!("\\nVector size: {}", size);
+        println!("\\nVector size: {size}");
 
         // Create test vectors
         let a = Array1::from_iter((0..size).map(|i| (i as f64).sin()));
@@ -231,7 +237,7 @@ fn demonstrate_simd_operations() -> Result<(), Box<dyn std::error::Error>> {
             ("Infinity norm", test_simd_inf_norm),
         ];
 
-        for (op_name, _test_func) in ops {
+        for (op_name, test_func) in ops {
             // SIMD version
             let start = Instant::now();
             let _result_simd = match op_name {
@@ -296,7 +302,7 @@ fn demonstrate_simd_operations() -> Result<(), Box<dyn std::error::Error>> {
             let std_time = start.elapsed();
 
             let speedup = std_time.as_nanos() as f64 / simd_time.as_nanos() as f64;
-            println!("  {:<20}: {:.1}x speedup", op_name, speedup);
+            println!("  {op_name:<20}: {speedup:.1}x speedup");
         }
     }
 
@@ -305,6 +311,7 @@ fn demonstrate_simd_operations() -> Result<(), Box<dyn std::error::Error>> {
 
 // Helper functions for SIMD operation testing
 #[cfg(feature = "simd")]
+#[allow(dead_code)]
 fn test_simd_max(a: &ArrayView1<f64>, b: &ArrayView1<f64>) -> f64 {
     // Note: SIMD methods are placeholders for demonstration
     let result = a
@@ -316,6 +323,7 @@ fn test_simd_max(a: &ArrayView1<f64>, b: &ArrayView1<f64>) -> f64 {
 }
 
 #[cfg(feature = "simd")]
+#[allow(dead_code)]
 fn test_simd_min(a: &ArrayView1<f64>, b: &ArrayView1<f64>) -> f64 {
     // Note: SIMD methods are placeholders for demonstration
     let result = a
@@ -327,18 +335,21 @@ fn test_simd_min(a: &ArrayView1<f64>, b: &ArrayView1<f64>) -> f64 {
 }
 
 #[cfg(feature = "simd")]
-fn test_simd_l2_norm(a: &ArrayView1<f64>, _b: &ArrayView1<f64>) -> f64 {
+#[allow(dead_code)]
+fn test_simd_l2_norm(a: &ArrayView1<f64>, b: &ArrayView1<f64>) -> f64 {
     // Note: SIMD methods are placeholders for demonstration
     a.iter().map(|x| x * x).sum::<f64>().sqrt()
 }
 
 #[cfg(feature = "simd")]
-fn test_simd_inf_norm(a: &ArrayView1<f64>, _b: &ArrayView1<f64>) -> f64 {
+#[allow(dead_code)]
+fn test_simd_inf_norm(a: &ArrayView1<f64>, b: &ArrayView1<f64>) -> f64 {
     // Note: SIMD methods are placeholders for demonstration
     a.iter().map(|x| x.abs()).fold(0.0f64, |acc, x| acc.max(x))
 }
 
 /// Analyze scalability of SIMD vs standard methods
+#[allow(dead_code)]
 fn analyze_scalability() -> Result<(), Box<dyn std::error::Error>> {
     println!("Analyzing scalability characteristics...");
 
@@ -374,16 +385,13 @@ fn analyze_scalability() -> Result<(), Box<dyn std::error::Error>> {
         #[cfg(feature = "simd")]
         {
             let speedup = std_time.as_nanos() as f64 / simd_time.as_nanos() as f64;
-            println!("Size {}: {:.1}x speedup with SIMD", n, speedup);
+            println!("Size {n}: {speedup:.1}x speedup with SIMD");
         }
 
         #[cfg(not(feature = "simd"))]
         {
-            println!(
-                "Size {}: {:.2} ms (standard method)",
-                n,
-                std_time.as_millis()
-            );
+            let time_ms = std_time.as_millis();
+            println!("Size {n}: {time_ms:.2} ms (standard method)");
         }
     }
 
@@ -391,6 +399,7 @@ fn analyze_scalability() -> Result<(), Box<dyn std::error::Error>> {
 }
 
 /// Print recommendations for using SIMD optimizations
+#[allow(dead_code)]
 fn print_recommendations() {
     println!("SIMD optimization is most beneficial when:");
     println!("• System size is large (>100 equations)");

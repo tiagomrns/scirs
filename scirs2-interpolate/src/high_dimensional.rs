@@ -21,7 +21,7 @@
 //!
 //! ```rust
 //! use ndarray::{Array1, Array2};
-//! use scirs2_interpolate::high_dimensional::{
+//! use scirs2__interpolate::high_dimensional::{
 //!     HighDimensionalInterpolator, DimensionReductionMethod
 //! };
 //!
@@ -33,7 +33,7 @@
 //!
 //! // Create interpolator with dimension reduction
 //! let interpolator = HighDimensionalInterpolator::builder()
-//!     .with_dimension_reduction(DimensionReductionMethod::PCA { target_dims: 10 })
+//!     .with_dimension_reduction(DimensionReductionMethod::PCA { targetdims: 10 })
 //!     .build(&points.view(), &values.view())
 //!     .unwrap();
 //!
@@ -250,7 +250,7 @@ where
     /// # Examples
     ///
     /// ```rust
-    /// use scirs2_interpolate::high_dimensional::HighDimensionalInterpolatorBuilder;
+    /// use scirs2__interpolate::high_dimensional::HighDimensionalInterpolatorBuilder;
     /// use ndarray::Array2;
     ///
     /// let builder = HighDimensionalInterpolatorBuilder::<f64>::new();
@@ -264,10 +264,10 @@ where
     /// # Examples
     ///
     /// ```rust
-    /// use scirs2_interpolate::high_dimensional::{HighDimensionalInterpolatorBuilder, DimensionReductionMethod};
+    /// use scirs2__interpolate::high_dimensional::{HighDimensionalInterpolatorBuilder, DimensionReductionMethod};
     ///
     /// let builder = HighDimensionalInterpolatorBuilder::<f64>::new()
-    ///     .with_dimension_reduction(DimensionReductionMethod::PCA { target_dims: 5 });
+    ///     .with_dimension_reduction(DimensionReductionMethod::PCA { targetdims: 5 });
     /// ```
     pub fn with_dimension_reduction(mut self, method: DimensionReductionMethod) -> Self {
         self.dimension_reduction = method;
@@ -279,10 +279,10 @@ where
     /// # Examples
     ///
     /// ```rust
-    /// use scirs2_interpolate::high_dimensional::{HighDimensionalInterpolatorBuilder, LocalMethod};
+    /// use scirs2__interpolate::high_dimensional::{HighDimensionalInterpolatorBuilder, LocalMethod};
     ///
     /// let builder = HighDimensionalInterpolatorBuilder::<f64>::new()
-    ///     .with_local_method(LocalMethod::KNearestNeighbors { k: 8, weight_power: 1.5 });
+    ///     .with_local_method(LocalMethod::KNearestNeighbors { k: 8, weightpower: 1.5 });
     /// ```
     pub fn with_local_method(mut self, method: LocalMethod) -> Self {
         self.local_method = method;
@@ -296,8 +296,8 @@ where
     }
 
     /// Set the spatial index type
-    pub fn with_spatial_index(mut self, index_type: SpatialIndexType) -> Self {
-        self.spatial_index_type = index_type;
+    pub fn with_spatial_index(mut self, indextype: SpatialIndexType) -> Self {
+        self.spatial_index_type = indextype;
         self
     }
 
@@ -308,13 +308,13 @@ where
         values: &ArrayView1<F>,
     ) -> InterpolateResult<HighDimensionalInterpolator<F>> {
         if points.nrows() != values.len() {
-            return Err(InterpolateError::ValueError(
+            return Err(InterpolateError::invalid_input(
                 "Number of points must match number of values".to_string(),
             ));
         }
 
         if points.nrows() < 2 {
-            return Err(InterpolateError::ValueError(
+            return Err(InterpolateError::invalid_input(
                 "At least 2 points are required".to_string(),
             ));
         }
@@ -566,7 +566,7 @@ where
     /// # Examples
     ///
     /// ```rust
-    /// use scirs2_interpolate::high_dimensional::HighDimensionalInterpolator;
+    /// use scirs2__interpolate::high_dimensional::HighDimensionalInterpolator;
     ///
     /// // Create a builder for high-dimensional interpolation
     /// let builder = HighDimensionalInterpolator::<f64>::builder();
@@ -591,7 +591,7 @@ where
     /// # Examples
     ///
     /// ```rust
-    /// use scirs2_interpolate::high_dimensional::{HighDimensionalInterpolator, DimensionReductionMethod};
+    /// use scirs2__interpolate::high_dimensional::{HighDimensionalInterpolator, DimensionReductionMethod};
     /// use ndarray::{Array1, Array2};
     ///
     /// // Create sample 5D data
@@ -604,7 +604,7 @@ where
     /// let values = Array1::from_vec(vec![0.0, 1.0, 2.0, 3.0]);
     ///
     /// let interpolator = HighDimensionalInterpolator::builder()
-    ///     .with_dimension_reduction(DimensionReductionMethod::PCA { target_dims: 3 })
+    ///     .with_dimension_reduction(DimensionReductionMethod::PCA { targetdims: 3 })
     ///     .build(&points.view(), &values.view())
     ///     .unwrap();
     ///
@@ -725,7 +725,7 @@ where
     /// Perform local interpolation using neighbors
     fn interpolate_local(
         &self,
-        _query: &Array1<F>,
+        self_query: &Array1<F>,
         neighbors: &[(usize, F)],
     ) -> InterpolateResult<F> {
         if neighbors.is_empty() {
@@ -817,7 +817,7 @@ where
     /// # Examples
     ///
     /// ```rust
-    /// use scirs2_interpolate::high_dimensional::HighDimensionalInterpolator;
+    /// use scirs2__interpolate::high_dimensional::HighDimensionalInterpolator;
     /// use ndarray::{Array1, Array2};
     ///
     /// let points = Array2::from_shape_vec((3, 2), vec![0.0, 0.0, 1.0, 0.0, 0.0, 1.0]).unwrap();
@@ -865,7 +865,7 @@ where
     /// # Examples
     ///
     /// ```rust
-    /// use scirs2_interpolate::high_dimensional::HighDimensionalInterpolator;
+    /// use scirs2__interpolate::high_dimensional::HighDimensionalInterpolator;
     /// use ndarray::{Array1, Array2};
     ///
     /// let points = Array2::from_shape_vec((3, 2), vec![0.0, 0.0, 1.0, 0.0, 0.0, 1.0]).unwrap();
@@ -962,7 +962,7 @@ where
 /// # Examples
 ///
 /// ```rust
-/// use scirs2_interpolate::high_dimensional::make_knn_interpolator;
+/// use scirs2__interpolate::high_dimensional::make_knn_interpolator;
 /// use ndarray::{Array1, Array2};
 ///
 /// // Create 3D scattered data
@@ -980,6 +980,7 @@ where
 /// let query = Array1::from_vec(vec![0.5, 0.5, 0.5]);
 /// let result = interpolator.interpolate(&query.view()).unwrap();
 /// ```
+#[allow(dead_code)]
 pub fn make_knn_interpolator<F>(
     points: &ArrayView2<F>,
     values: &ArrayView1<F>,
@@ -1026,7 +1027,7 @@ where
 /// # Examples
 ///
 /// ```rust
-/// use scirs2_interpolate::high_dimensional::make_pca_interpolator;
+/// use scirs2__interpolate::high_dimensional::make_pca_interpolator;
 /// use ndarray::{Array1, Array2};
 ///
 /// // Create high-dimensional data that lies on a lower-dimensional manifold
@@ -1044,6 +1045,7 @@ where
 /// let query = Array1::from_vec(vec![1.5, 1.5, 1.5, 0.0, 0.0, 0.0]);
 /// let result = interpolator.interpolate(&query.view()).unwrap();
 /// ```
+#[allow(dead_code)]
 pub fn make_pca_interpolator<F>(
     points: &ArrayView2<F>,
     values: &ArrayView1<F>,
@@ -1091,7 +1093,7 @@ where
 /// # Examples
 ///
 /// ```rust
-/// use scirs2_interpolate::high_dimensional::make_local_rbf_interpolator;
+/// use scirs2__interpolate::high_dimensional::make_local_rbf_interpolator;
 /// use ndarray::{Array1, Array2};
 ///
 /// // Create scattered 2D data
@@ -1109,6 +1111,7 @@ where
 /// let query = Array1::from_vec(vec![0.5, 0.5]);
 /// let result = interpolator.interpolate(&query.view()).unwrap();
 /// ```
+#[allow(dead_code)]
 pub fn make_local_rbf_interpolator<F>(
     points: &ArrayView2<F>,
     values: &ArrayView1<F>,

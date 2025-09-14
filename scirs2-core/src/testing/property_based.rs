@@ -155,7 +155,7 @@ impl PropertyTestEngine {
         let rng = if let Some(seed) = config.seed {
             StdRng::seed_from_u64(seed)
         } else {
-            StdRng::from_seed(Default::default())
+            StdRng::seed_from_u64(Default::default())
         };
 
         Self {
@@ -194,7 +194,7 @@ impl PropertyTestEngine {
                 Ok(false) => {
                     failures.push(PropertyFailure {
                         case_number: case_num,
-                        inputs: inputs.iter().map(|i| format!("{:?}", i)).collect(),
+                        inputs: inputs.iter().map(|i| format!("{i:?}")).collect(),
                         expected: "Property should hold".to_string(),
                         actual: "Property violated".to_string(),
                         error: None,
@@ -203,10 +203,10 @@ impl PropertyTestEngine {
                 Err(error) => {
                     failures.push(PropertyFailure {
                         case_number: case_num,
-                        inputs: inputs.iter().map(|i| format!("{:?}", i)).collect(),
+                        inputs: inputs.iter().map(|i| format!("{i:?}")).collect(),
                         expected: "Property should hold".to_string(),
                         actual: "Error during testing".to_string(),
-                        error: Some(format!("{:?}", error)),
+                        error: Some(format!("{error:?}")),
                     });
                 }
             }
@@ -264,17 +264,18 @@ pub struct FloatGenerator {
 
 impl FloatGenerator {
     /// Create a new float generator
-    pub fn new(min_value: f64, max_value: f64) -> Self {
+    pub fn new(min_value: f64, maxvalue: f64) -> Self {
         Self {
             #[cfg(feature = "random")]
-            rng: StdRng::from_seed(Default::default()),
+            rng: StdRng::seed_from_u64(Default::default()),
             min_value,
             max_value,
         }
     }
 
     /// Create a generator with seed
-    pub fn with_seed(min_value: f64, max_value: f64, seed: u64) -> Self {
+    #[allow(unused_variables)]
+    pub fn with_seed(min_value: f64, maxvalue: f64, seed: u64) -> Self {
         Self {
             #[cfg(feature = "random")]
             rng: StdRng::seed_from_u64(seed),
@@ -284,11 +285,12 @@ impl FloatGenerator {
     }
 }
 
+#[allow(deprecated)]
 impl PropertyGenerator<f64> for FloatGenerator {
     fn generate(&mut self) -> f64 {
         #[cfg(feature = "random")]
         {
-            self.rng.random_range(self.min_value..=self.max_value)
+            self.rng.gen_range(self.min_value..=self.max_value)
         }
         #[cfg(not(feature = "random"))]
         {
@@ -299,7 +301,7 @@ impl PropertyGenerator<f64> for FloatGenerator {
     fn generate_range(&mut self, min: f64, max: f64) -> f64 {
         #[cfg(feature = "random")]
         {
-            self.rng.random_range(min..=max)
+            self.rng.gen_range(min..=max)
         }
         #[cfg(not(feature = "random"))]
         {
@@ -431,7 +433,7 @@ where
     F: Fn(f64, f64) -> CoreResult<f64>,
 {
     /// Create a new identity property test
-    pub fn new(operation: F, identity_element: f64, tolerance: f64) -> Self {
+    pub fn new(operation: F, identityelement: f64, tolerance: f64) -> Self {
         Self {
             operation,
             identity_element,
@@ -740,7 +742,7 @@ impl PropertyTestUtils {
         // Test square function properties
         suite.add_test("square_function_properties", |_runner| {
             let prop_config = PropertyTestConfig::default().with_test_cases(100);
-            let _results = Self::test_function_properties(
+            let results = Self::test_function_properties(
                 |x| Ok(x * x),
                 false,      // not idempotent
                 Some(true), // monotonically increasing for x >= 0

@@ -70,7 +70,7 @@ impl<N: Clone + Eq + Hash> Node<N> {
     }
 
     /// Get the f-value (f = g + h)
-    pub fn f(&self) -> f64 {
+    pub fn f(&mut self) -> f64 {
         self.g + self.h
     }
 }
@@ -88,7 +88,9 @@ impl<N: Clone + Eq + Hash> Ord for Node<N> {
     fn cmp(&self, other: &Self) -> Ordering {
         // We want to prioritize nodes with lower f-values
         // But BinaryHeap is a max-heap, so we invert the comparison
-        other.f().partial_cmp(&self.f()).unwrap_or(Ordering::Equal)
+        let self_f = self.g + self.h;
+        let other_f = other.g + other.h;
+        other_f.partial_cmp(&self_f).unwrap_or(Ordering::Equal)
     }
 }
 
@@ -187,8 +189,8 @@ impl AStarPlanner {
     }
 
     /// Set the maximum number of iterations
-    pub fn with_max_iterations(mut self, max_iterations: usize) -> Self {
-        self.max_iterations = Some(max_iterations);
+    pub fn with_max_iterations(mut self, maxiterations: usize) -> Self {
+        self.max_iterations = Some(maxiterations);
         self
     }
 
@@ -240,7 +242,7 @@ impl AStarPlanner {
         while let Some(current) = open_set.pop() {
             // Check if we've reached the goal
             if current.state == goal {
-                return Ok(Some(self.reconstruct_path(current)));
+                return Ok(Some(AStarPlanner::reconstruct_path(goal.clone(), current)));
             }
 
             // Check if we've exceeded the maximum number of iterations
@@ -297,15 +299,15 @@ impl AStarPlanner {
     }
 
     // Reconstruct the path from the goal node to the start node
-    fn reconstruct_path<N: Clone + Eq + Hash>(&self, goal_node: Rc<Node<N>>) -> Path<N> {
+    fn reconstruct_path<N: Clone + Eq + Hash>(goal: N, node: Rc<Node<N>>) -> Path<N> {
         let mut path = Vec::new();
-        let mut current = Some(goal_node);
+        let mut current = Some(node);
         let mut cost = 0.0;
 
-        while let Some(node) = current {
-            path.push(node.state.clone());
-            cost = node.g;
-            current = node.parent.clone();
+        while let Some(_node) = current {
+            path.push(_node.state.clone());
+            cost = _node.g;
+            current = _node.parent.clone();
         }
 
         // Reverse the path so it goes from start to goal
@@ -318,11 +320,13 @@ impl AStarPlanner {
 // Useful heuristic functions
 
 /// Manhattan distance heuristic for 2D grid-based pathfinding
+#[allow(dead_code)]
 pub fn manhattan_distance(a: &[i32; 2], b: &[i32; 2]) -> f64 {
     ((a[0] - b[0]).abs() + (a[1] - b[1]).abs()) as f64
 }
 
 /// Euclidean distance heuristic for continuous 2D space
+#[allow(dead_code)]
 pub fn euclidean_distance_2d(a: &[f64; 2], b: &[f64; 2]) -> f64 {
     let dx = a[0] - b[0];
     let dy = a[1] - b[1];
@@ -330,6 +334,7 @@ pub fn euclidean_distance_2d(a: &[f64; 2], b: &[f64; 2]) -> f64 {
 }
 
 /// Euclidean distance for n-dimensional points
+#[allow(dead_code)]
 pub fn euclidean_distance(a: &ArrayView1<f64>, b: &ArrayView1<f64>) -> SpatialResult<f64> {
     if a.len() != b.len() {
         return Err(SpatialError::DimensionError(format!(
@@ -352,7 +357,7 @@ pub fn euclidean_distance(a: &ArrayView1<f64>, b: &ArrayView1<f64>) -> SpatialRe
 #[derive(Clone)]
 pub struct GridAStarPlanner {
     pub grid: Vec<Vec<bool>>, // true if cell is an obstacle
-    pub diagonals_allowed: bool,
+    pub diagonalsallowed: bool,
 }
 
 impl GridAStarPlanner {
@@ -361,11 +366,11 @@ impl GridAStarPlanner {
     /// # Arguments
     ///
     /// * `grid` - 2D grid where true represents an obstacle
-    /// * `diagonals_allowed` - Whether diagonal movements are allowed
-    pub fn new(grid: Vec<Vec<bool>>, diagonals_allowed: bool) -> Self {
+    /// * `diagonalsallowed` - Whether diagonal movements are allowed
+    pub fn new(grid: Vec<Vec<bool>>, diagonalsallowed: bool) -> Self {
         GridAStarPlanner {
             grid,
-            diagonals_allowed,
+            diagonalsallowed,
         }
     }
 
@@ -397,7 +402,7 @@ impl GridAStarPlanner {
     /// Get valid neighbors for a given position
     fn get_neighbors(&self, pos: &[i32; 2]) -> Vec<([i32; 2], f64)> {
         let mut neighbors = Vec::new();
-        let directions = if self.diagonals_allowed {
+        let directions = if self.diagonalsallowed {
             // Include diagonal directions
             vec![
                 [-1, 0],
@@ -465,16 +470,16 @@ pub struct ContinuousAStarPlanner {
     /// Step size for edge discretization
     pub step_size: f64,
     /// Collision distance threshold
-    pub collision_threshold: f64,
+    pub collisionthreshold: f64,
 }
 
 impl ContinuousAStarPlanner {
     /// Create a new continuous space A* planner
-    pub fn new(obstacles: Vec<Vec<[f64; 2]>>, step_size: f64, collision_threshold: f64) -> Self {
+    pub fn new(obstacles: Vec<Vec<[f64; 2]>>, step_size: f64, collisionthreshold: f64) -> Self {
         ContinuousAStarPlanner {
             obstacles,
             step_size,
-            collision_threshold,
+            collisionthreshold,
         }
     }
 

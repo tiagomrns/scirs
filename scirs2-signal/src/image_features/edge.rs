@@ -1,10 +1,12 @@
-//! Edge-based feature extraction for images
+// Edge-based feature extraction for images
 
 use crate::error::SignalResult;
 use ndarray::Array2;
 use std::collections::HashMap;
 
+#[allow(unused_imports)]
 /// Extract edge-based features from an image
+#[allow(dead_code)]
 pub fn extract_edge_features(
     image: &Array2<f64>,
     features: &mut HashMap<String, f64>,

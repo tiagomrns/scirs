@@ -216,10 +216,10 @@ pub struct VariableNamespaceMut<'env, F: Float> {
 }
 
 impl FullName {
-    fn new(namespace_id: &'static str, variable_name: String) -> Self {
+    fn new(_namespace_id: &'static str, variablename: String) -> Self {
         FullName {
-            namespace_id: namespace_id.to_string(),
-            variable_name,
+            namespace_id: _namespace_id.to_string(),
+            variable_name: variablename,
         }
     }
 }
@@ -228,7 +228,7 @@ impl Display for FullName {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         let ns = self.namespace_id.deref();
         let name = self.variable_name.deref();
-        write!(f, "{}\u{00001}{}", ns, name)
+        write!(f, "{ns}\u{00001}{name}")
     }
 }
 
@@ -277,7 +277,7 @@ pub trait NamespaceTrait<F: Float> {
         self.env()
             .name_to_id
             .iter()
-            .filter_map(|(v_name, _)| {
+            .filter_map(|(v_name, _v_id)| {
                 if v_name.namespace_id == self.name() {
                     Some(v_name.variable_name.deref())
                 } else {
@@ -349,6 +349,7 @@ impl<'ns, 'env, F: Float> VariableSlot<'ns, 'env, F> {
     }
 }
 
+#[allow(dead_code)]
 fn register_variable<F: Float, D: ndarray::Dimension, S: Into<String>>(
     v: ndarray::Array<F, D>,
     namespace_id: &'static str,
@@ -401,6 +402,7 @@ impl<F: Float> VariableNamespaceMut<'_, F> {
     }
 }
 
+#[allow(dead_code)]
 fn iter<F: Float>(
     ns: &impl NamespaceTrait<F>,
 ) -> impl Iterator<Item = (&str, &RefCell<NdArray<F>>)> {
@@ -424,6 +426,7 @@ impl<'ns, 'env, F: Float> VariableNamespaceMut<'env, F> {
 }
 
 #[test]
+#[allow(dead_code)]
 fn test_env_iter() {
     use crate::ndarray_ext;
 
@@ -443,6 +446,7 @@ fn test_env_iter() {
 }
 
 #[test]
+#[allow(dead_code)]
 fn test_namespace_iter() {
     use crate::ndarray_ext;
 
@@ -450,27 +454,41 @@ fn test_namespace_iter() {
     env.slot().name("v1").set(ndarray_ext::zeros(&[3, 2]));
     env.slot().name("v2").set(ndarray_ext::zeros(&[2, 3]));
 
-    for (i, (name, arr)) in env.default_namespace().iter().enumerate() {
-        if i == 0 {
-            assert_eq!(name, "v1");
-            assert_eq!(arr.borrow().shape(), &[3, 2]);
-        }
-        if i == 1 {
-            assert_eq!(name, "v2");
-            assert_eq!(arr.borrow().shape(), &[2, 3]);
+    let mut found_v1 = false;
+    let mut found_v2 = false;
+    for (name, arr) in env.default_namespace().iter() {
+        match name {
+            "v1" => {
+                assert_eq!(arr.borrow().shape(), &[3, 2]);
+                found_v1 = true;
+            }
+            "v2" => {
+                assert_eq!(arr.borrow().shape(), &[2, 3]);
+                found_v2 = true;
+            }
+            _ => panic!("Unexpected variable name: {}", name),
         }
     }
+    assert!(found_v1, "Variable v1 not found");
+    assert!(found_v2, "Variable v2 not found");
 
-    for (i, (name, arr)) in env.default_namespace_mut().iter().enumerate() {
-        if i == 0 {
-            assert_eq!(name, "v1");
-            assert_eq!(arr.borrow().shape(), &[3, 2]);
-        }
-        if i == 1 {
-            assert_eq!(name, "v2");
-            assert_eq!(arr.borrow().shape(), &[2, 3]);
+    let mut found_v1_mut = false;
+    let mut found_v2_mut = false;
+    for (name, arr) in env.default_namespace_mut().iter() {
+        match name {
+            "v1" => {
+                assert_eq!(arr.borrow().shape(), &[3, 2]);
+                found_v1_mut = true;
+            }
+            "v2" => {
+                assert_eq!(arr.borrow().shape(), &[2, 3]);
+                found_v2_mut = true;
+            }
+            _ => panic!("Unexpected variable name: {}", name),
         }
     }
+    assert!(found_v1_mut, "Variable v1 not found in mutable iterator");
+    assert!(found_v2_mut, "Variable v2 not found in mutable iterator");
 }
 
 #[derive(Serialize)]
@@ -631,9 +649,9 @@ impl<'env, F: Float> VariableEnvironment<F> {
     /// See [variable](crate::variable).
     /// Same as [`Context::namespace`](Context::namespace()).
     #[inline]
-    pub fn namespace(&'env self, namespace_id: &'static str) -> VariableNamespace<'env, F> {
+    pub fn namespace(&'env self, namespaceid: &'static str) -> VariableNamespace<'env, F> {
         VariableNamespace {
-            namespace_id,
+            namespace_id: namespaceid,
             env: self,
         }
     }
@@ -776,6 +794,7 @@ impl<'g, F: Float> Graph<F> {
 }
 
 #[allow(unused)]
+#[allow(dead_code)]
 fn compile_common_usages() {
     use crate::prelude::*;
     use crate::tensor_ops as T;
@@ -802,6 +821,7 @@ fn compile_common_usages() {
 }
 
 #[test]
+#[allow(dead_code)]
 fn save_and_load() {
     use crate::ndarray_ext;
     use std::collections::HashMap;
@@ -854,6 +874,7 @@ fn save_and_load() {
 }
 
 #[test]
+#[allow(dead_code)]
 fn save_and_init() {
     // Temporarily disable this test as it uses mutable rng without declaring it as mut
     use crate::ndarray_ext;

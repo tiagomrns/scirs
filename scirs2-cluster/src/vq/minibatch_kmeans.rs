@@ -79,6 +79,7 @@ impl<F: Float + FromPrimitive> Default for MiniBatchKMeansOptions<F> {
 ///
 /// let (centroids, labels) = minibatch_kmeans(ArrayView2::from(&data), 2, None).unwrap();
 /// ```
+#[allow(dead_code)]
 pub fn minibatch_kmeans<F>(
     data: ArrayView2<F>,
     k: usize,
@@ -173,7 +174,7 @@ where
         // We don't need to do this on every iteration, just for the final result
         if iter == opts.max_iter - 1 {
             // This will be used only for the final return value
-            let (_new_labels, _) = assign_labels(data, centroids.view())?;
+            let (_new_labels_) = assign_labels(data, centroids.view())?;
             // We don't store this since we'll recompute it at the end anyway
         }
 
@@ -243,6 +244,7 @@ where
 /// # Returns
 ///
 /// * Tuple of (batch_inertia, has_converged)
+#[allow(dead_code)]
 fn mini_batch_step<F>(
     data: &ArrayView2<F>,
     batch_indices: &[usize],
@@ -359,6 +361,7 @@ where
 /// # Returns
 ///
 /// * Tuple of (labels, distances)
+#[allow(dead_code)]
 fn assign_labels<F>(
     data: ArrayView2<F>,
     centroids: ArrayView2<F>,

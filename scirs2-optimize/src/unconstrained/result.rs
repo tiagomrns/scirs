@@ -10,8 +10,6 @@ pub struct OptimizeResult<T> {
     /// Objective function value at solution
     pub fun: T,
     /// Number of iterations performed
-    pub iterations: usize,
-    /// Number of iterations (alternative name)
     pub nit: usize,
     /// Number of function evaluations
     pub func_evals: usize,
@@ -32,7 +30,6 @@ impl<T: Default> Default for OptimizeResult<T> {
         Self {
             x: Array1::zeros(0),
             fun: T::default(),
-            iterations: 0,
             nit: 0,
             func_evals: 0,
             nfev: 0,

@@ -17,6 +17,7 @@ use ndarray::{Array2, Array3};
 /// # Returns
 ///
 /// * Result containing enhanced image
+#[allow(dead_code)]
 pub fn single_scale_retinex(img: &DynamicImage, sigma: f32) -> Result<DynamicImage> {
     let rgb = img.to_rgb8();
     let (width, height) = rgb.dimensions();
@@ -77,6 +78,7 @@ pub fn single_scale_retinex(img: &DynamicImage, sigma: f32) -> Result<DynamicIma
 /// # Returns
 ///
 /// * Result containing enhanced image
+#[allow(dead_code)]
 pub fn multi_scale_retinex(
     img: &DynamicImage,
     sigmas: &[f32],
@@ -160,6 +162,7 @@ pub fn multi_scale_retinex(
 /// # Returns
 ///
 /// * Result containing enhanced image
+#[allow(dead_code)]
 pub fn msrcr(
     img: &DynamicImage,
     sigmas: &[f32],
@@ -212,6 +215,7 @@ pub fn msrcr(
 }
 
 /// Adaptive histogram equalization on Retinex output
+#[allow(dead_code)]
 pub fn retinex_with_clahe(
     img: &DynamicImage,
     sigmas: &[f32],
@@ -226,6 +230,7 @@ pub fn retinex_with_clahe(
 }
 
 /// Gaussian blur for 3D arrays (color images)
+#[allow(dead_code)]
 fn gaussian_blur_3d(img: &Array3<f32>, sigma: f32) -> Result<Array3<f32>> {
     let (height, width, channels) = img.dim();
     let mut blurred = Array3::zeros((height, width, channels));
@@ -250,6 +255,7 @@ fn gaussian_blur_3d(img: &Array3<f32>, sigma: f32) -> Result<Array3<f32>> {
 }
 
 /// Create 1D Gaussian kernel
+#[allow(dead_code)]
 fn create_gaussian_kernel(size: usize, sigma: f32) -> Vec<f32> {
     let mut kernel = vec![0.0; size];
     let center = size / 2;
@@ -272,6 +278,7 @@ fn create_gaussian_kernel(size: usize, sigma: f32) -> Vec<f32> {
 }
 
 /// Separable convolution (horizontal then vertical)
+#[allow(dead_code)]
 fn separable_convolution(img: &ndarray::ArrayView2<f32>, kernel: &[f32]) -> Result<Array2<f32>> {
     let (height, width) = img.dim();
     let kernel_size = kernel.len();
@@ -317,6 +324,7 @@ fn separable_convolution(img: &ndarray::ArrayView2<f32>, kernel: &[f32]) -> Resu
 }
 
 /// Find min and max values in 2D array
+#[allow(dead_code)]
 fn find_min_max(arr: &ndarray::ArrayView2<f32>) -> (f32, f32) {
     let mut min_val = f32::MAX;
     let mut max_val = f32::MIN;
@@ -330,15 +338,16 @@ fn find_min_max(arr: &ndarray::ArrayView2<f32>) -> (f32, f32) {
 }
 
 /// Simplified Retinex with dynamic adaptation
-pub fn adaptive_retinex(img: &DynamicImage, adaptation_level: f32) -> Result<DynamicImage> {
+#[allow(dead_code)]
+pub fn adaptive_retinex(img: &DynamicImage, adaptationlevel: f32) -> Result<DynamicImage> {
     // Use different scales based on image size
     let (width, height) = img.dimensions();
     let image_size = ((width * height) as f32).sqrt();
 
     let sigmas = vec![
-        image_size * 0.01 * adaptation_level,
-        image_size * 0.05 * adaptation_level,
-        image_size * 0.1 * adaptation_level,
+        image_size * 0.01 * adaptationlevel,
+        image_size * 0.05 * adaptationlevel,
+        image_size * 0.1 * adaptationlevel,
     ];
 
     multi_scale_retinex(img, &sigmas, None)

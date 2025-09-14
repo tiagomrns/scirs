@@ -11,6 +11,7 @@ use scirs2_core::gpu::{
 };
 
 #[test]
+#[allow(dead_code)]
 fn test_metal_device_detection() {
     use scirs2_core::gpu::backends::detect_gpu_backends;
 
@@ -43,6 +44,7 @@ fn test_metal_device_detection() {
 }
 
 #[test]
+#[allow(dead_code)]
 fn test_metal_context_creation() {
     let result = GpuContext::new(GpuBackend::Metal);
 
@@ -63,6 +65,7 @@ fn test_metal_context_creation() {
 }
 
 #[test]
+#[allow(dead_code)]
 fn test_metal_buffer_creation() {
     let context = match GpuContext::new(GpuBackend::Metal) {
         Ok(c) => c,
@@ -86,6 +89,7 @@ fn test_metal_buffer_creation() {
 }
 
 #[test]
+#[allow(dead_code)]
 fn test_metal_buffer_options() {
     use metal::MTLCPUCacheMode;
     use metal::MTLHazardTrackingMode;
@@ -117,6 +121,7 @@ fn test_metal_buffer_options() {
 }
 
 #[test]
+#[allow(dead_code)]
 fn test_metal_kernel_compilation() {
     let context = match GpuContext::new(GpuBackend::Metal) {
         Ok(c) => c,
@@ -124,11 +129,11 @@ fn test_metal_kernel_compilation() {
     };
 
     // Test getting a kernel from the registry
-    let result = context.get_kernel("axpy");
+    let result = context.get_kernel(axpy);
     assert!(result.is_ok(), "Failed to get AXPY kernel");
 
     // Test complex number kernel
-    let complex_result = context.get_kernel("complex_multiply");
+    let complex_result = context.get_kernel(complex_multiply);
     assert!(
         complex_result.is_ok(),
         "Failed to get complex multiply kernel"
@@ -136,6 +141,7 @@ fn test_metal_kernel_compilation() {
 }
 
 #[test]
+#[allow(dead_code)]
 fn test_metal_kernel_execution() {
     let context = match GpuContext::new(GpuBackend::Metal) {
         Ok(c) => c,
@@ -151,7 +157,7 @@ fn test_metal_kernel_execution() {
     let mut y_buffer = context.create_buffer_from_slice(&y);
 
     // Get AXPY kernel
-    let kernel = match context.get_kernel("axpy") {
+    let kernel = match context.get_kernel(axpy) {
         Ok(k) => k,
         Err(_) => return, // Skip if kernel not available
     };
@@ -177,6 +183,7 @@ fn test_metal_kernel_execution() {
 }
 
 #[test]
+#[allow(dead_code)]
 fn test_metal_complex_operations() {
     let context = match GpuContext::new(GpuBackend::Metal) {
         Ok(c) => c,
@@ -203,7 +210,7 @@ fn test_metal_complex_operations() {
     let result_buffer = context.create_buffer::<f32>(8);
 
     // Get complex multiply kernel
-    let kernel = match context.get_kernel("complex_multiply") {
+    let kernel = match context.get_kernel(complex_multiply) {
         Ok(k) => k,
         Err(_) => return, // Skip if kernel not available
     };
@@ -244,6 +251,7 @@ fn test_metal_complex_operations() {
 }
 
 #[test]
+#[allow(dead_code)]
 fn test_metal_performance_shaders() {
     #[cfg(feature = "metal-performance-shaders")]
     {
@@ -263,6 +271,7 @@ fn test_metal_performance_shaders() {
 }
 
 #[test]
+#[allow(dead_code)]
 fn test_metal_unified_memory() {
     let context = match MetalContext::new() {
         Ok(c) => c,
@@ -273,7 +282,7 @@ fn test_metal_unified_memory() {
     println!("Unified Memory: {}", context.has_unified_memory());
 
     // On Apple Silicon, unified memory should be true
-    if context.device_name().contains("Apple") {
+    if context.device_name().contains(Apple) {
         assert!(
             context.has_unified_memory(),
             "Apple Silicon should have unified memory"
@@ -282,14 +291,15 @@ fn test_metal_unified_memory() {
 }
 
 #[test]
-fn test_metal_error_handling() {
+#[allow(dead_code)]
+fn test_metalerror_handling() {
     let context = match GpuContext::new(GpuBackend::Metal) {
         Ok(c) => c,
         Err(_) => return, // Skip test if Metal not available
     };
 
     // Test invalid kernel name
-    let result = context.get_kernel("nonexistent_kernel");
+    let result = context.get_kernel(nonexistent_kernel);
     assert!(matches!(result, Err(GpuError::KernelNotFound(_))));
 
     // Test buffer size limits
@@ -301,6 +311,7 @@ fn test_metal_error_handling() {
 
 #[test]
 #[should_panic(expected = "Data size exceeds buffer size")]
+#[allow(dead_code)]
 fn test_metal_buffer_overflow() {
     let context = match GpuContext::new(GpuBackend::Metal) {
         Ok(c) => c,

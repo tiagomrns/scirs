@@ -8,6 +8,7 @@ use scirs2_vision::transform::{warp_affine, AffineTransform};
 use std::env;
 use std::path::Path;
 
+#[allow(dead_code)]
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Get command line arguments
     let args: Vec<String> = env::args().collect();
@@ -31,7 +32,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("\nDetecting ORB features...");
     let orb_config = OrbConfig {
         num_features: 1000,
-        scale_factor: 1.2,
+        scalefactor: 1.2,
         num_levels: 8,
         fast_threshold: 20,
         use_harris_detector: true,
@@ -126,6 +127,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 }
 
 /// Draw matches between two images
+#[allow(dead_code)]
 fn draw_matches(
     img1: &image::DynamicImage,
     img2: &image::DynamicImage,
@@ -159,7 +161,7 @@ fn draw_matches(
     }
 
     // Draw matches
-    for (i, &(idx1, idx2, _)) in matches.iter().enumerate() {
+    for (i, &(idx1, idx2, _distance)) in matches.iter().enumerate() {
         let kp1 = &kps1[idx1].keypoint;
         let kp2 = &kps2[idx2].keypoint;
 
@@ -187,6 +189,7 @@ fn draw_matches(
 }
 
 /// Create a composite image showing alignment
+#[allow(dead_code)]
 fn create_composite(base: &image::DynamicImage, aligned: &image::DynamicImage) -> RgbaImage {
     let (width, height) = base.dimensions();
     let mut result = RgbaImage::new(width, height);
@@ -213,6 +216,7 @@ fn create_composite(base: &image::DynamicImage, aligned: &image::DynamicImage) -
 }
 
 /// Draw a circle on an image
+#[allow(dead_code)]
 fn draw_circle(img: &mut RgbaImage, cx: u32, cy: u32, radius: u32, color: Rgba<u8>) {
     let (width, height) = img.dimensions();
 
@@ -229,6 +233,7 @@ fn draw_circle(img: &mut RgbaImage, cx: u32, cy: u32, radius: u32, color: Rgba<u
 }
 
 /// Draw a line on an image
+#[allow(dead_code)]
 fn draw_line(img: &mut RgbaImage, x0: u32, y0: u32, x1: u32, y1: u32, color: Rgba<u8>) {
     let (width, height) = img.dimensions();
 

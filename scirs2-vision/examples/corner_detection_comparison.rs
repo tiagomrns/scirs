@@ -13,12 +13,13 @@ use scirs2_vision::feature::{
 use scirs2_vision::preprocessing::gaussian_blur;
 use std::path::PathBuf;
 
+#[allow(dead_code)]
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("SciRS2 Vision - Corner Detection Comparison");
 
     // In a real application, you would provide your own image file path
     let image_path = "examples/input/input.jpg"; // Change this to your image path
-    println!("Attempting to load image from: {}", image_path);
+    println!("Attempting to load image from: {image_path}");
 
     // Check if the image file exists
     let path = PathBuf::from(image_path);
@@ -144,9 +145,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // Create visualization for good features
     let mut features_img = blurred.to_luma8();
-    for (x, y, _) in &good_features {
+    for (x, y_, _score) in &good_features {
         let px = x.round() as u32;
-        let py = y.round() as u32;
+        let py = y_.round() as u32;
         if px < features_img.width() && py < features_img.height() {
             features_img.put_pixel(px, py, image::Luma([255u8]));
         }

@@ -74,7 +74,7 @@ pub struct AdaptiveToleranceState {
     /// Estimated gradient scale
     gradient_scale: f64,
     /// Number of stagnant iterations
-    stagnant_iterations: usize,
+    stagnant_nit: usize,
     /// Problem dimension
     problem_dim: usize,
     /// Options
@@ -93,7 +93,7 @@ impl AdaptiveToleranceState {
             step_history: VecDeque::with_capacity(options.history_length),
             function_scale: 1.0,
             gradient_scale: 1.0,
-            stagnant_iterations: 0,
+            stagnant_nit: 0,
             problem_dim,
             options,
         }
@@ -199,7 +199,7 @@ impl AdaptiveToleranceState {
     /// Update stagnation detection
     fn update_stagnation_detection(&mut self) {
         if self.function_history.len() < 3 {
-            self.stagnant_iterations = 0;
+            self.stagnant_nit = 0;
             return;
         }
 
@@ -227,9 +227,9 @@ impl AdaptiveToleranceState {
 
         // Consider stagnant if relative change is very small
         if relative_change < 1e-10 {
-            self.stagnant_iterations += 1;
+            self.stagnant_nit += 1;
         } else {
-            self.stagnant_iterations = 0;
+            self.stagnant_nit = 0;
         }
     }
 
@@ -281,9 +281,9 @@ impl AdaptiveToleranceState {
         );
 
         // Stagnation-based adaptation
-        if self.options.use_stagnation_detection && self.stagnant_iterations > 5 {
+        if self.options.use_stagnation_detection && self.stagnant_nit > 5 {
             // Relax tolerances if we're stagnating
-            let relaxation_factor = 1.0 + 0.1 * (self.stagnant_iterations as f64 - 5.0).min(10.0);
+            let relaxation_factor = 1.0 + 0.1 * (self.stagnant_nit as f64 - 5.0).min(10.0);
             self.current_ftol *= relaxation_factor;
             self.current_gtol *= relaxation_factor;
             self.current_xtol *= relaxation_factor;
@@ -344,7 +344,7 @@ impl AdaptiveToleranceState {
         AdaptationStats {
             function_scale: self.function_scale,
             gradient_scale: self.gradient_scale,
-            stagnant_iterations: self.stagnant_iterations,
+            stagnant_nit: self.stagnant_nit,
             current_ftol: self.current_ftol,
             current_gtol: self.current_gtol,
             current_xtol: self.current_xtol,
@@ -370,7 +370,7 @@ pub struct ConvergenceStatus {
 pub struct AdaptationStats {
     pub function_scale: f64,
     pub gradient_scale: f64,
-    pub stagnant_iterations: usize,
+    pub stagnant_nit: usize,
     pub current_ftol: f64,
     pub current_gtol: f64,
     pub current_xtol: f64,
@@ -378,6 +378,7 @@ pub struct AdaptationStats {
 }
 
 /// Create adaptive tolerance options optimized for specific problem types
+#[allow(dead_code)]
 pub fn create_adaptive_options_for_problem(
     problem_type: &str,
     problem_size: usize,
@@ -429,6 +430,7 @@ pub fn create_adaptive_options_for_problem(
 }
 
 /// Enhanced convergence check with adaptive tolerances
+#[allow(dead_code)]
 pub fn check_convergence_adaptive(
     function_change: f64,
     step_norm: f64,
@@ -487,7 +489,7 @@ mod tests {
         }
 
         let stats = state.get_adaptation_stats();
-        assert!(stats.stagnant_iterations > 5);
+        assert!(stats.stagnant_nit > 5);
     }
 
     #[test]

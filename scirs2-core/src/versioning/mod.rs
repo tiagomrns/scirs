@@ -43,9 +43,9 @@
 //!     .breaking_change("Changed function signatures")
 //!     .build()?;
 //!
-//! version_manager.register_version(v1_0_0.clone())?;
-//! version_manager.register_version(v1_1_0.clone())?;
-//! version_manager.register_version(v2_0_0.clone())?;
+//! version_manager.registerversion(v1_0_0.clone())?;
+//! version_manager.registerversion(v1_1_0.clone())?;
+//! version_manager.registerversion(v2_0_0.clone())?;
 //!
 //! // Check compatibility
 //! let compat = version_manager.check_compatibility(&v1_0_0.version, &v1_1_0.version)?;
@@ -53,7 +53,7 @@
 //!
 //! // Negotiate version with client capabilities
 //! let client_caps = ClientCapabilities::new("test_client".to_string(), Version::parse("1.0.5")?);
-//! let negotiated = version_manager.negotiate_version(&client_caps)?;
+//! let negotiated = version_manager.negotiateversion(&client_caps)?;
 //! assert!(negotiated.negotiated_version.major() >= 1);
 //! # Ok(())
 //! # }
@@ -68,7 +68,6 @@ pub mod semantic;
 use crate::error::CoreError;
 use std::collections::{BTreeSet, HashMap};
 
-#[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
 
 // Re-export main types
@@ -79,8 +78,7 @@ pub use negotiation::{ClientCapabilities, NegotiationResult, VersionNegotiator};
 pub use semantic::{Version, VersionBuilder, VersionConstraint, VersionRange};
 
 /// API version information with metadata
-#[derive(Debug, Clone, PartialEq, Eq)]
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct ApiVersion {
     /// The semantic version
     pub version: Version,
@@ -95,7 +93,7 @@ pub struct ApiVersion {
     /// Feature flags supported in this version
     pub features: BTreeSet<String>,
     /// Breaking changes from previous version
-    pub breaking_changes: Vec<String>,
+    pub breakingchanges: Vec<String>,
     /// New features in this version
     pub new_features: Vec<String>,
     /// Bug fixes in this version
@@ -103,14 +101,13 @@ pub struct ApiVersion {
     /// Deprecated features in this version
     pub deprecated_features: Vec<String>,
     /// Minimum client version required
-    pub min_client_version: Option<Version>,
+    pub min_clientversion: Option<Version>,
     /// Maximum client version supported
-    pub max_client_version: Option<Version>,
+    pub max_clientversion: Option<Version>,
 }
 
 /// API stability levels
-#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
 pub enum StabilityLevel {
     /// Experimental - subject to breaking changes
     Experimental,
@@ -142,8 +139,7 @@ impl StabilityLevel {
 }
 
 /// Support status for API versions
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub enum SupportStatus {
     /// Active development and support
     Active,
@@ -176,7 +172,7 @@ pub struct VersionManager {
     /// Registered API versions
     versions: HashMap<Version, ApiVersion>,
     /// Current active version
-    current_version: Option<Version>,
+    currentversion: Option<Version>,
     /// Compatibility checker
     compatibility_checker: CompatibilityChecker,
     /// Version negotiator
@@ -193,7 +189,7 @@ impl VersionManager {
     pub fn new() -> Self {
         Self {
             versions: HashMap::new(),
-            current_version: None,
+            currentversion: None,
             compatibility_checker: CompatibilityChecker::new(),
             negotiator: VersionNegotiator::new(),
             migration_manager: MigrationManager::new(),
@@ -206,29 +202,26 @@ impl VersionManager {
     /// # Errors
     ///
     /// Returns an error if the version is already registered.
-    pub fn register_version(&mut self, api_version: ApiVersion) -> Result<(), CoreError> {
-        let version = api_version.version.clone();
+    pub fn registerversion(&mut self, apiversion: ApiVersion) -> Result<(), CoreError> {
+        let version = apiversion.version.clone();
 
         // Validate version is not already registered
         if self.versions.contains_key(&version) {
             return Err(CoreError::ComputationError(
-                crate::error::ErrorContext::new(format!(
-                    "Version {} is already registered",
-                    version
-                )),
+                crate::error::ErrorContext::new(format!("Version {version} is already registered")),
             ));
         }
 
         // Register with compatibility checker
-        self.compatibility_checker.register_version(&api_version)?;
+        self.compatibility_checker.register_version(&apiversion)?;
 
         // Register with migration manager
-        self.migration_manager.register_version(&api_version)?;
+        self.migration_manager.register_version(&apiversion)?;
 
         // Register with deprecation manager
-        self.deprecation_manager.register_version(&api_version)?;
+        self.deprecation_manager.register_version(&apiversion)?;
 
-        self.versions.insert(version, api_version);
+        self.versions.insert(version, apiversion);
         Ok(())
     }
 
@@ -237,26 +230,26 @@ impl VersionManager {
     /// # Errors
     ///
     /// Returns an error if the version is not registered.
-    pub fn set_current_version(&mut self, version: Version) -> Result<(), CoreError> {
+    pub fn set_currentversion(&mut self, version: Version) -> Result<(), CoreError> {
         if !self.versions.contains_key(&version) {
             return Err(CoreError::ComputationError(
-                crate::error::ErrorContext::new(format!("Version {} is not registered", version)),
+                crate::error::ErrorContext::new(format!("Version {version} is not registered")),
             ));
         }
 
-        self.current_version = Some(version);
+        self.currentversion = Some(version);
         Ok(())
     }
 
     /// Get the current active version
     #[must_use]
-    pub fn current_version(&self) -> Option<&Version> {
-        self.current_version.as_ref()
+    pub fn currentversion(&self) -> Option<&Version> {
+        self.currentversion.as_ref()
     }
 
     /// Get all registered versions
     #[must_use]
-    pub fn get_versions(&self) -> Vec<&ApiVersion> {
+    pub fn getversions(&self) -> Vec<&ApiVersion> {
         let mut versions: Vec<_> = self.versions.values().collect();
         versions.sort_by(|a, b| a.version.cmp(&b.version));
         versions
@@ -264,7 +257,7 @@ impl VersionManager {
 
     /// Get supported versions (active and maintenance)
     #[must_use]
-    pub fn get_supported_versions(&self) -> Vec<&ApiVersion> {
+    pub fn get_supportedversions(&self) -> Vec<&ApiVersion> {
         self.versions
             .values()
             .filter(|v| {
@@ -278,7 +271,7 @@ impl VersionManager {
 
     /// Get version by version number
     #[must_use]
-    pub fn get_version(&self, version: &Version) -> Option<&ApiVersion> {
+    pub fn getversion(&self, version: &Version) -> Option<&ApiVersion> {
         self.versions.get(version)
     }
 
@@ -289,11 +282,11 @@ impl VersionManager {
     /// Returns an error if compatibility checking fails.
     pub fn check_compatibility(
         &self,
-        from_version: &Version,
-        to_version: &Version,
+        fromversion: &Version,
+        toversion: &Version,
     ) -> Result<CompatibilityLevel, CoreError> {
         self.compatibility_checker
-            .check_compatibility(from_version, to_version)
+            .check_compatibility(fromversion, toversion)
     }
 
     /// Get detailed compatibility report
@@ -303,11 +296,11 @@ impl VersionManager {
     /// Returns an error if compatibility report generation fails.
     pub fn get_compatibility_report(
         &self,
-        from_version: &Version,
-        to_version: &Version,
+        fromversion: &Version,
+        toversion: &Version,
     ) -> Result<CompatibilityReport, CoreError> {
         self.compatibility_checker
-            .get_compatibility_report(from_version, to_version)
+            .get_compatibility_report(fromversion, toversion)
     }
 
     /// Negotiate version with client
@@ -315,18 +308,18 @@ impl VersionManager {
     /// # Errors
     ///
     /// Returns an error if version negotiation fails.
-    pub fn negotiate_version(
+    pub fn negotiateversion(
         &self,
         client_capabilities: &ClientCapabilities,
     ) -> Result<NegotiationResult, CoreError> {
-        let supported_versions: Vec<_> = self
-            .get_supported_versions()
+        let supportedversions: Vec<_> = self
+            .get_supportedversions()
             .into_iter()
             .map(|v| &v.version)
             .collect();
 
         self.negotiator
-            .negotiate(client_capabilities, &supported_versions)
+            .negotiate(client_capabilities, &supportedversions)
     }
 
     /// Get migration plan between versions
@@ -336,19 +329,19 @@ impl VersionManager {
     /// Returns an error if migration plan generation fails.
     pub fn get_migration_plan(
         &self,
-        from_version: &Version,
-        to_version: &Version,
+        fromversion: &Version,
+        toversion: &Version,
     ) -> Result<MigrationPlan, CoreError> {
         self.migration_manager
-            .create_migration_plan(from_version, to_version)
+            .create_migration_plan(fromversion, toversion)
     }
 
     /// Check if a version is deprecated
     #[must_use]
-    pub fn is_deprecated(&self, version: &Version) -> bool {
-        if let Some(api_version) = self.versions.get(version) {
+    pub fn isversion_deprecated(&self, version: &Version) -> bool {
+        if let Some(apiversion) = self.versions.get(version) {
             matches!(
-                api_version.support_status,
+                apiversion.support_status,
                 SupportStatus::Deprecated | SupportStatus::EndOfLife
             )
         } else {
@@ -358,7 +351,7 @@ impl VersionManager {
 
     /// Get deprecation information for a version
     #[must_use]
-    pub fn get_deprecation_info(&self, version: &Version) -> Option<DeprecationStatus> {
+    pub fn get_deprecation_status(&self, version: &Version) -> Option<DeprecationStatus> {
         self.deprecation_manager.get_deprecation_status(version)
     }
 
@@ -398,9 +391,9 @@ impl VersionManager {
 
     /// Check if an upgrade path exists
     #[must_use]
-    pub fn has_upgrade_path(&self, from_version: &Version, to_version: &Version) -> bool {
+    pub fn has_upgrade_path(&self, fromversion: &Version, toversion: &Version) -> bool {
         self.migration_manager
-            .has_migration_path(from_version, to_version)
+            .has_migration_path(fromversion, toversion)
     }
 
     /// Validate version constraints
@@ -412,38 +405,38 @@ impl VersionManager {
         &self,
         constraint: &VersionConstraint,
     ) -> Result<Vec<&Version>, CoreError> {
-        let matching_versions: Vec<_> = self
+        let matchingversions: Vec<_> = self
             .versions
             .keys()
             .filter(|v| constraint.matches(v))
             .collect();
 
-        Ok(matching_versions)
+        Ok(matchingversions)
     }
 
     /// Get version statistics
     #[must_use]
-    pub fn get_version_statistics(&self) -> VersionStatistics {
+    pub fn getversion_statistics(&self) -> VersionStatistics {
         let mut stats = VersionStatistics::default();
 
-        for api_version in self.versions.values() {
-            stats.total_versions += 1;
+        for apiversion in self.versions.values() {
+            stats.totalversions += 1;
 
-            match api_version.stability {
-                StabilityLevel::Experimental => stats.experimental_versions += 1,
-                StabilityLevel::Alpha => stats.alpha_versions += 1,
-                StabilityLevel::Beta => stats.beta_versions += 1,
-                StabilityLevel::Stable => stats.stable_versions += 1,
-                StabilityLevel::Mature => stats.mature_versions += 1,
-                StabilityLevel::Legacy => stats.legacy_versions += 1,
+            match apiversion.stability {
+                StabilityLevel::Experimental => stats.experimentalversions += 1,
+                StabilityLevel::Alpha => stats.alphaversions += 1,
+                StabilityLevel::Beta => stats.betaversions += 1,
+                StabilityLevel::Stable => stats.stableversions += 1,
+                StabilityLevel::Mature => stats.matureversions += 1,
+                StabilityLevel::Legacy => stats.legacyversions += 1,
             }
 
-            match api_version.support_status {
-                SupportStatus::Active => stats.active_versions += 1,
-                SupportStatus::Maintenance => stats.maintenance_versions += 1,
-                SupportStatus::Deprecated => stats.deprecated_versions += 1,
-                SupportStatus::EndOfLife => stats.end_of_life_versions += 1,
-                SupportStatus::SecurityOnly => stats.security_only_versions += 1,
+            match apiversion.support_status {
+                SupportStatus::Active => stats.activeversions += 1,
+                SupportStatus::Maintenance => stats.maintenanceversions += 1,
+                SupportStatus::Deprecated => stats.deprecatedversions += 1,
+                SupportStatus::EndOfLife => stats.end_of_lifeversions += 1,
+                SupportStatus::SecurityOnly => stats.security_onlyversions += 1,
             }
         }
 
@@ -460,10 +453,10 @@ impl VersionManager {
         let now = chrono::Utc::now();
 
         // Check for expired versions
-        for (version, api_version) in &mut self.versions {
-            if let Some(eol_date) = api_version.end_of_life {
-                if now > eol_date && api_version.support_status != SupportStatus::EndOfLife {
-                    api_version.support_status = SupportStatus::EndOfLife;
+        for (version, apiversion) in &mut self.versions {
+            if let Some(eol_date) = apiversion.end_of_life {
+                if now > eol_date && apiversion.support_status != SupportStatus::EndOfLife {
+                    apiversion.support_status = SupportStatus::EndOfLife;
                     report.versions_marked_eol.push(version.clone());
                 }
             }
@@ -488,38 +481,36 @@ impl Default for VersionManager {
 }
 
 /// Version statistics for monitoring and reporting
-#[derive(Debug, Clone, Default)]
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub struct VersionStatistics {
     /// Total number of registered versions
-    pub total_versions: usize,
+    pub totalversions: usize,
     /// Experimental versions
-    pub experimental_versions: usize,
+    pub experimentalversions: usize,
     /// Alpha versions
-    pub alpha_versions: usize,
+    pub alphaversions: usize,
     /// Beta versions
-    pub beta_versions: usize,
+    pub betaversions: usize,
     /// Stable versions
-    pub stable_versions: usize,
+    pub stableversions: usize,
     /// Mature versions
-    pub mature_versions: usize,
+    pub matureversions: usize,
     /// Legacy versions
-    pub legacy_versions: usize,
+    pub legacyversions: usize,
     /// Active versions
-    pub active_versions: usize,
+    pub activeversions: usize,
     /// Maintenance versions
-    pub maintenance_versions: usize,
+    pub maintenanceversions: usize,
     /// Deprecated versions
-    pub deprecated_versions: usize,
+    pub deprecatedversions: usize,
     /// End of life versions
-    pub end_of_life_versions: usize,
+    pub end_of_lifeversions: usize,
     /// Security only versions
-    pub security_only_versions: usize,
+    pub security_onlyversions: usize,
 }
 
 /// Maintenance report for version management operations
-#[derive(Debug, Clone, Default)]
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub struct MaintenanceReport {
     /// Versions marked as end of life
     pub versions_marked_eol: Vec<Version>,
@@ -537,12 +528,12 @@ pub struct ApiVersionBuilder {
     support_status: SupportStatus,
     end_of_life: Option<chrono::DateTime<chrono::Utc>>,
     features: BTreeSet<String>,
-    breaking_changes: Vec<String>,
+    breakingchanges: Vec<String>,
     new_features: Vec<String>,
     bug_fixes: Vec<String>,
     deprecated_features: Vec<String>,
-    min_client_version: Option<Version>,
-    max_client_version: Option<Version>,
+    min_clientversion: Option<Version>,
+    max_clientversion: Option<Version>,
 }
 
 impl ApiVersionBuilder {
@@ -556,12 +547,12 @@ impl ApiVersionBuilder {
             support_status: SupportStatus::Active,
             end_of_life: None,
             features: BTreeSet::new(),
-            breaking_changes: Vec::new(),
+            breakingchanges: Vec::new(),
             new_features: Vec::new(),
             bug_fixes: Vec::new(),
             deprecated_features: Vec::new(),
-            min_client_version: None,
-            max_client_version: None,
+            min_clientversion: None,
+            max_clientversion: None,
         }
     }
 
@@ -603,7 +594,7 @@ impl ApiVersionBuilder {
     /// Add a breaking change
     #[must_use]
     pub fn breaking_change(mut self, change: &str) -> Self {
-        self.breaking_changes.push(change.to_string());
+        self.breakingchanges.push(change.to_string());
         self
     }
 
@@ -630,15 +621,15 @@ impl ApiVersionBuilder {
 
     /// Set minimum client version
     #[must_use]
-    pub fn min_client_version(mut self, version: Version) -> Self {
-        self.min_client_version = Some(version);
+    pub fn min_clientversion(mut self, version: Version) -> Self {
+        self.min_clientversion = Some(version);
         self
     }
 
     /// Set maximum client version
     #[must_use]
-    pub fn max_client_version(mut self, version: Version) -> Self {
-        self.max_client_version = Some(version);
+    pub fn max_clientversion(mut self, version: Version) -> Self {
+        self.max_clientversion = Some(version);
         self
     }
 
@@ -661,12 +652,12 @@ impl ApiVersionBuilder {
             support_status: self.support_status,
             end_of_life: self.end_of_life,
             features: self.features,
-            breaking_changes: self.breaking_changes,
+            breakingchanges: self.breakingchanges,
             new_features: self.new_features,
             bug_fixes: self.bug_fixes,
             deprecated_features: self.deprecated_features,
-            min_client_version: self.min_client_version,
-            max_client_version: self.max_client_version,
+            min_clientversion: self.min_clientversion,
+            max_clientversion: self.max_clientversion,
         })
     }
 }
@@ -676,48 +667,48 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_version_manager_creation() {
+    fn testversion_manager_creation() {
         let manager = VersionManager::new();
-        assert!(manager.current_version().is_none());
-        assert_eq!(manager.get_versions().len(), 0);
+        assert!(manager.currentversion().is_none());
+        assert_eq!(manager.getversions().len(), 0);
     }
 
     #[test]
-    fn test_api_version_builder() {
+    fn test_apiversion_builder() {
         let version = Version::parse("1.0.0").unwrap();
-        let api_version = ApiVersionBuilder::new(version)
+        let apiversion = ApiVersionBuilder::new(version)
             .stability(StabilityLevel::Stable)
             .feature("feature1")
             .new_feature("New awesome feature")
             .build()
             .unwrap();
 
-        assert_eq!(api_version.version.to_string(), "1.0.0");
-        assert_eq!(api_version.stability, StabilityLevel::Stable);
-        assert!(api_version.features.contains("feature1"));
-        assert_eq!(api_version.new_features.len(), 1);
+        assert_eq!(apiversion.version.to_string(), "1.0.0");
+        assert_eq!(apiversion.stability, StabilityLevel::Stable);
+        assert!(apiversion.features.contains("feature1"));
+        assert_eq!(apiversion.new_features.len(), 1);
     }
 
     #[test]
-    fn test_version_registration() {
+    fn testversion_registration() {
         let mut manager = VersionManager::new();
         let version = Version::parse("1.0.0").unwrap();
-        let api_version = ApiVersionBuilder::new(version.clone()).build().unwrap();
+        let apiversion = ApiVersionBuilder::new(version.clone()).build().unwrap();
 
-        manager.register_version(api_version).unwrap();
-        assert_eq!(manager.get_versions().len(), 1);
-        assert!(manager.get_version(&version).is_some());
+        manager.registerversion(apiversion).unwrap();
+        assert_eq!(manager.getversions().len(), 1);
+        assert!(manager.getversion(&version).is_some());
     }
 
     #[test]
-    fn test_current_version_setting() {
+    fn test_currentversion_setting() {
         let mut manager = VersionManager::new();
         let version = Version::parse("1.0.0").unwrap();
-        let api_version = ApiVersionBuilder::new(version.clone()).build().unwrap();
+        let apiversion = ApiVersionBuilder::new(version.clone()).build().unwrap();
 
-        manager.register_version(api_version).unwrap();
-        manager.set_current_version(version.clone()).unwrap();
-        assert_eq!(manager.current_version(), Some(&version));
+        manager.registerversion(apiversion).unwrap();
+        manager.set_currentversion(version.clone()).unwrap();
+        assert_eq!(manager.currentversion(), Some(&version));
     }
 
     #[test]
@@ -738,7 +729,7 @@ mod tests {
     }
 
     #[test]
-    fn test_version_statistics() {
+    fn testversion_statistics() {
         let mut manager = VersionManager::new();
 
         // Add some versions
@@ -752,14 +743,14 @@ mod tests {
             .build()
             .unwrap();
 
-        manager.register_version(v1).unwrap();
-        manager.register_version(v2).unwrap();
+        manager.registerversion(v1).unwrap();
+        manager.registerversion(v2).unwrap();
 
-        let stats = manager.get_version_statistics();
-        assert_eq!(stats.total_versions, 2);
-        assert_eq!(stats.stable_versions, 1);
-        assert_eq!(stats.beta_versions, 1);
-        assert_eq!(stats.active_versions, 1);
-        assert_eq!(stats.maintenance_versions, 1);
+        let stats = manager.getversion_statistics();
+        assert_eq!(stats.totalversions, 2);
+        assert_eq!(stats.stableversions, 1);
+        assert_eq!(stats.betaversions, 1);
+        assert_eq!(stats.activeversions, 1);
+        assert_eq!(stats.maintenanceversions, 1);
     }
 }

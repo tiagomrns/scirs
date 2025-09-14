@@ -1,14 +1,15 @@
-//! Core DWT decomposition and reconstruction functions
-//!
-//! This module provides the core functions for single-level discrete wavelet transform
-//! decomposition and reconstruction.
+// Core DWT decomposition and reconstruction functions
+//
+// This module provides the core functions for single-level discrete wavelet transform
+// decomposition and reconstruction.
 
 use super::boundary::extend_signal;
-use super::filters::Wavelet;
+use crate::dwt::Wavelet;
 use crate::error::{SignalError, SignalResult};
 use num_traits::{Float, NumCast};
 use std::fmt::Debug;
 
+#[allow(unused_imports)]
 /// Perform single-level discrete wavelet transform (DWT) decomposition
 ///
 /// # Arguments
@@ -33,6 +34,7 @@ use std::fmt::Debug;
 /// println!("Approximation: {:?}", approx);
 /// println!("Detail: {:?}", detail);
 /// ```
+#[allow(dead_code)]
 pub fn dwt_decompose<T>(
     data: &[T],
     wavelet: Wavelet,
@@ -132,14 +134,19 @@ where
 /// // Basic test - reconstruction should succeed
 /// assert!(reconstructed.len() > 0);
 /// ```
-pub fn dwt_reconstruct(approx: &[f64], detail: &[f64], wavelet: Wavelet) -> SignalResult<Vec<f64>> {
-    if approx.is_empty() || detail.is_empty() {
+#[allow(dead_code)]
+pub fn dwt_reconstruct(
+    _approx: &[f64],
+    detail: &[f64],
+    wavelet: Wavelet,
+) -> SignalResult<Vec<f64>> {
+    if _approx.is_empty() || detail.is_empty() {
         return Err(SignalError::ValueError(
             "Input arrays are empty".to_string(),
         ));
     }
 
-    if approx.len() != detail.len() {
+    if _approx.len() != detail.len() {
         return Err(SignalError::ValueError(
             "Approximation and detail coefficients must have the same length".to_string(),
         ));
@@ -150,19 +157,19 @@ pub fn dwt_reconstruct(approx: &[f64], detail: &[f64], wavelet: Wavelet) -> Sign
     let filter_len = filters.rec_lo.len();
 
     // Apply inverse scaling for Haar wavelet to match the expected output
-    let mut scaled_approx = approx.to_vec();
+    let mut scaled_approx = _approx.to_vec();
     let mut scaled_detail = detail.to_vec();
 
     if let Wavelet::Haar = wavelet {
         let scale_factor = 1.0 / 2.0_f64.sqrt();
-        for i in 0..approx.len() {
+        for i in 0.._approx.len() {
             scaled_approx[i] *= scale_factor;
             scaled_detail[i] *= scale_factor;
         }
     }
 
     // Calculate output length
-    let input_len = approx.len();
+    let input_len = _approx.len();
     let output_len = 2 * input_len;
 
     // Allocate output array

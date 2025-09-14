@@ -4,6 +4,7 @@ use scirs2_cluster::vq::{
 };
 use std::time::Instant;
 
+#[allow(dead_code)]
 fn main() {
     println!("Parallel K-means Clustering Demo");
     println!("{}", "=".repeat(50));
@@ -130,12 +131,13 @@ fn main() {
     }
 }
 
-fn generate_clustered_data(n_samples: usize, n_features: usize, n_clusters: usize) -> Array2<f64> {
+#[allow(dead_code)]
+fn generate_clustered_data(n_samples: usize, n_features: usize, nclusters: usize) -> Array2<f64> {
     let mut data = Vec::with_capacity(n_samples * n_features);
 
-    // Generate data with clear clusters
+    // Generate data with clear _clusters
     for i in 0..n_samples {
-        let cluster = i % n_clusters;
+        let cluster = i % nclusters;
 
         for _j in 0..n_features {
             // Base value for cluster separation
@@ -151,6 +153,7 @@ fn generate_clustered_data(n_samples: usize, n_features: usize, n_clusters: usiz
     Array2::from_shape_vec((n_samples, n_features), data).unwrap()
 }
 
+#[allow(dead_code)]
 fn calculate_cluster_agreement(
     labels1: &ndarray::Array1<usize>,
     labels2: &ndarray::Array1<usize>,
@@ -198,6 +201,7 @@ fn calculate_cluster_agreement(
     agreement_count as f64 / n_samples as f64
 }
 
+#[allow(dead_code)]
 fn calculate_inertia(
     data: &Array2<f64>,
     labels: &ndarray::Array1<usize>,

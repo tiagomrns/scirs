@@ -266,8 +266,7 @@ impl ThresholdAnalyzer {
                     (1.0, 0.0) => fn_ += 1,
                     _ => {
                         return Err(MetricsError::InvalidArgument(format!(
-                            "Invalid true value: {}",
-                            true_val
+                            "Invalid true value: {true_val}"
                         )));
                     }
                 }
@@ -541,10 +540,10 @@ impl ThresholdAnalyzer {
     /// # Returns
     ///
     /// * `Result<Vec<f64>>` - Values of the specified metric
-    pub fn get_metric_values(&mut self, metric_name: &str) -> Result<Vec<f64>> {
+    pub fn get_metric_values(&mut self, metricname: &str) -> Result<Vec<f64>> {
         let metrics = self.calculate_metrics()?;
 
-        let values = match metric_name {
+        let values = match metricname {
             "threshold" => metrics.iter().map(|m| m.threshold).collect(),
             "tpr" | "recall" | "sensitivity" => metrics.iter().map(|m| m.tpr).collect(),
             "fpr" => metrics.iter().map(|m| m.fpr).collect(),
@@ -559,8 +558,7 @@ impl ThresholdAnalyzer {
             "balanced_accuracy" => metrics.iter().map(|m| m.balanced_accuracy).collect(),
             _ => {
                 return Err(MetricsError::InvalidArgument(format!(
-                    "Unknown metric: {}",
-                    metric_name
+                    "Unknown metric: {metricname}"
                 )))
             }
         };
@@ -602,6 +600,7 @@ impl ThresholdAnalyzer {
 /// # Returns
 ///
 /// * `Result<(f64, ThresholdMetrics)>` - Optimal threshold and its metrics
+#[allow(dead_code)]
 pub fn find_optimal_threshold<S1, S2>(
     y_true: &ArrayBase<S1, Ix1>,
     y_score: &ArrayBase<S2, Ix1>,
@@ -629,6 +628,7 @@ where
 /// # Returns
 ///
 /// * `Result<ThresholdMetrics>` - Metrics at the specified threshold
+#[allow(dead_code)]
 pub fn threshold_metrics<S1, S2>(
     y_true: &ArrayBase<S1, Ix1>,
     y_score: &ArrayBase<S2, Ix1>,
@@ -655,6 +655,7 @@ where
 /// # Returns
 ///
 /// * `Result<Vec<ThresholdMetrics>>` - Metrics at all thresholds
+#[allow(dead_code)]
 pub fn all_threshold_metrics<S1, S2>(
     y_true: &ArrayBase<S1, Ix1>,
     y_score: &ArrayBase<S2, Ix1>,

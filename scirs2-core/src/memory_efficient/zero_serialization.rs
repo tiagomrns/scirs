@@ -30,7 +30,7 @@
 //! ```no_run
 //! use ndarray::Array2;
 //! use scirs2_core::memory_efficient::{MemoryMappedArray, ZeroCopySerialization};
-//! use serde_json::json;
+//! use serde__json::json;
 //! use std::path::Path;
 //!
 //! # fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -48,8 +48,8 @@
 //! });
 //!
 //! // Save with zero-copy serialization
-//! let file_path = Path::new("array_data.bin");
-//! MemoryMappedArray::<f64>::save_array(&data, &file_path, Some(metadata))?;
+//! let filepath = Path::new("array_data.bin");
+//! MemoryMappedArray::<f64>::save_array(&data, &filepath, Some(metadata))?;
 //! # Ok(())
 //! # }
 //! ```
@@ -62,11 +62,11 @@
 //!
 //! # fn main() -> Result<(), Box<dyn std::error::Error>> {
 //! // Load with zero-copy deserialization
-//! let file_path = Path::new("array_data.bin");
-//! let array = MemoryMappedArray::<f64>::open_zero_copy(&file_path, AccessMode::ReadOnly)?;
+//! let filepath = Path::new("array_data.bin");
+//! let array = MemoryMappedArray::<f64>::open_zero_copy(&filepath, AccessMode::ReadOnly)?;
 //!
 //! // Access as a standard ndarray
-//! let ndarray = array.readonly_array::<ndarray::Ix2>()?;
+//! let ndarray = array.readonlyarray::<ndarray::Ix2>()?;
 //! println!("Value at [10, 20]: {}", ndarray[[10, 20]]);
 //! # Ok(())
 //! # }
@@ -76,14 +76,14 @@
 //!
 //! ```no_run
 //! use scirs2_core::memory_efficient::{MemoryMappedArray, ZeroCopySerialization};
-//! use serde_json::json;
+//! use serde__json::json;
 //! use std::path::Path;
 //!
 //! # fn main() -> Result<(), Box<dyn std::error::Error>> {
-//! let file_path = Path::new("array_data.bin");
+//! let filepath = Path::new("array_data.bin");
 //!
 //! // Read metadata without loading the array
-//! let metadata = MemoryMappedArray::<f64>::read_metadata(&file_path)?;
+//! let metadata = MemoryMappedArray::<f64>::read_metadata(&filepath)?;
 //! println!("Description: {}", metadata["description"]);
 //!
 //! // Update metadata without rewriting the array
@@ -96,7 +96,7 @@
 //!         "cols": 100
 //!     }
 //! });
-//! MemoryMappedArray::<f64>::update_metadata(&file_path, updated_metadata)?;
+//! MemoryMappedArray::<f64>::update_metadata(&filepath, updated_metadata)?;
 //! # Ok(())
 //! # }
 //! ```
@@ -108,10 +108,10 @@
 //! use std::path::Path;
 //!
 //! # fn main() -> Result<(), Box<dyn std::error::Error>> {
-//! let file_path = Path::new("array_data.bin");
+//! let filepath = Path::new("array_data.bin");
 //!
 //! // Load with read-write access
-//! let mut array = MemoryMappedArray::<f64>::open_zero_copy(&file_path, AccessMode::ReadWrite)?;
+//! let mut array = MemoryMappedArray::<f64>::open_zero_copy(&filepath, AccessMode::ReadWrite)?;
 //!
 //! // Modify the array
 //! {
@@ -224,7 +224,7 @@
 //! ```no_run
 //! use ndarray::Array2;
 //! use scirs2_core::memory_efficient::{AccessMode, MemoryMappedArray, ZeroCopySerialization};
-//! use serde_json::json;
+//! use serde__json::json;
 //! use std::path::Path;
 //!
 //! # #[repr(C)]
@@ -242,20 +242,20 @@
 //! });
 //!
 //! // Save with metadata
-//! let file_path = Path::new("complex_array.bin");
+//! let filepath = Path::new("complex_array.bin");
 //! let metadata = json!({
 //!     "description": "Complex number array",
 //!     "type": "Complex64"
 //! });
 //!
 //! // Save the array with zero-copy serialization
-//! MemoryMappedArray::<Complex64>::save_array(&data, &file_path, Some(metadata))?;
+//! MemoryMappedArray::<Complex64>::save_array(&data, &filepath, Some(metadata))?;
 //!
 //! // Load with zero-copy deserialization
-//! let array = MemoryMappedArray::<Complex64>::open_zero_copy(&file_path, AccessMode::ReadOnly)?;
+//! let array = MemoryMappedArray::<Complex64>::open_zero_copy(&filepath, AccessMode::ReadOnly)?;
 //!
 //! // Access as an ndarray
-//! let loaded_data = array.readonly_array::<ndarray::Ix2>()?;
+//! let loaded_data = array.readonlyarray::<ndarray::Ix2>()?;
 //! println!("First element: real={}, imag={}", loaded_data[[0, 0]].real, loaded_data[[0, 0]].imag);
 //! # Ok(())
 //! # }
@@ -289,6 +289,7 @@ use serde::{Deserialize, Serialize};
 
 use super::memmap::{AccessMode, MemoryMappedArray};
 use crate::error::{CoreError, CoreResult, ErrorContext, ErrorLocation};
+// use statrs::statistics::Statistics; // Not needed
 
 /// Trait for zero-copy serializable types.
 ///
@@ -516,7 +517,7 @@ pub trait ZeroCopySerialization<A: ZeroCopySerializable> {
     ///
     /// ```no_run
     /// # use scirs2_core::memory_efficient::{MemoryMappedArray, ZeroCopySerialization};
-    /// # use serde_json::json;
+    /// # use serde__json::json;
     /// # fn example() -> Result<(), Box<dyn std::error::Error>> {
     /// # let mmap: MemoryMappedArray<f64> = unimplemented!();
     /// let metadata = json!({"description": "Example array", "created": "2023-05-20"});
@@ -591,7 +592,7 @@ impl<A: ZeroCopySerializable> ZeroCopySerialization<A> for MemoryMappedArray<A> 
             .transpose()
             .map_err(|e| {
                 CoreError::ValidationError(
-                    ErrorContext::new(format!("Failed to serialize metadata: {}", e))
+                    ErrorContext::new(format!("{e}"))
                         .with_location(ErrorLocation::new(file!(), line!())),
                 )
             })?;
@@ -608,7 +609,7 @@ impl<A: ZeroCopySerializable> ZeroCopySerialization<A> for MemoryMappedArray<A> 
         // Serialize header
         let header_bytes = bincode::serialize(&header).map_err(|e| {
             CoreError::ValidationError(
-                ErrorContext::new(format!("Failed to serialize header: {}", e))
+                ErrorContext::new(format!("{e}"))
                     .with_location(ErrorLocation::new(file!(), line!())),
             )
         })?;
@@ -672,7 +673,7 @@ impl<A: ZeroCopySerializable> ZeroCopySerialization<A> for MemoryMappedArray<A> 
         // Deserialize header
         let header: ZeroCopyHeader = bincode::deserialize(&header_bytes).map_err(|e| {
             CoreError::ValidationError(
-                ErrorContext::new(format!("Failed to deserialize header: {}", e))
+                ErrorContext::new(format!("{e}"))
                     .with_location(ErrorLocation::new(file!(), line!())),
             )
         })?;
@@ -728,7 +729,7 @@ impl<A: ZeroCopySerializable> ZeroCopySerialization<A> for MemoryMappedArray<A> 
                     mmap_view: Some(mmap),
                     mmap_view_mut: None,
                     is_temp: false,
-                    _phantom: PhantomData,
+                    phantom: PhantomData,
                 })
             }
             AccessMode::ReadWrite => {
@@ -751,7 +752,7 @@ impl<A: ZeroCopySerializable> ZeroCopySerialization<A> for MemoryMappedArray<A> 
                     mmap_view: None,
                     mmap_view_mut: Some(mmap),
                     is_temp: false,
-                    _phantom: PhantomData,
+                    phantom: PhantomData,
                 })
             }
             AccessMode::CopyOnWrite => {
@@ -773,7 +774,7 @@ impl<A: ZeroCopySerializable> ZeroCopySerialization<A> for MemoryMappedArray<A> 
                     mmap_view: None,
                     mmap_view_mut: Some(mmap),
                     is_temp: false,
-                    _phantom: PhantomData,
+                    phantom: PhantomData,
                 })
             }
             AccessMode::Write => {
@@ -805,7 +806,7 @@ impl<A: ZeroCopySerializable> MemoryMappedArray<A> {
     /// # Arguments
     ///
     /// * `data` - The source ndarray to be converted and saved
-    /// * `file_path` - Path where the memory-mapped array will be saved
+    /// * `filepath` - Path where the memory-mapped array will be saved
     /// * `metadata` - Optional metadata to include with the array
     ///
     /// # Returns
@@ -817,7 +818,7 @@ impl<A: ZeroCopySerializable> MemoryMappedArray<A> {
     /// ```no_run
     /// # use ndarray::Array2;
     /// # use scirs2_core::memory_efficient::MemoryMappedArray;
-    /// # use serde_json::json;
+    /// # use serde__json::json;
     /// # fn example() -> Result<(), Box<dyn std::error::Error>> {
     /// // Create an ndarray
     /// let data = Array2::<f64>::from_shape_fn((100, 100), |(i, j)| (i * 100 + j) as f64);
@@ -846,7 +847,7 @@ impl<A: ZeroCopySerializable> MemoryMappedArray<A> {
         mmap.save_zero_copy(&file_path, metadata)?;
 
         // Open the file we just created with read-write access
-        Self::load_zero_copy(file_path, AccessMode::ReadWrite)
+        Self::load_zero_copy(&file_path, AccessMode::ReadWrite)
     }
 
     /// Open a zero-copy serialized memory-mapped array from a file.
@@ -857,7 +858,7 @@ impl<A: ZeroCopySerializable> MemoryMappedArray<A> {
     ///
     /// # Arguments
     ///
-    /// * `file_path` - Path to the file containing the serialized array
+    /// * `filepath` - Path to the file containing the serialized array
     /// * `mode` - Access mode (ReadOnly, ReadWrite, or CopyOnWrite)
     ///
     /// # Returns
@@ -873,13 +874,13 @@ impl<A: ZeroCopySerializable> MemoryMappedArray<A> {
     /// let array = MemoryMappedArray::<f64>::open_zero_copy("data/temperature.bin", AccessMode::ReadOnly)?;
     ///
     /// // Access the array
-    /// let ndarray = array.readonly_array::<ndarray::Ix2>()?;
+    /// let ndarray = array.readonlyarray::<ndarray::Ix2>()?;
     /// println!("First value: {}", ndarray[[0, 0]]);
     /// # Ok(())
     /// # }
     /// ```
-    pub fn open_zero_copy(file_path: impl AsRef<Path>, mode: AccessMode) -> CoreResult<Self> {
-        Self::load_zero_copy(file_path, mode)
+    pub fn open_zero_copy(filepath: impl AsRef<Path>, mode: AccessMode) -> CoreResult<Self> {
+        Self::load_zero_copy(filepath, mode)
     }
 
     /// Read the metadata from a zero-copy serialized file without loading the entire array.
@@ -890,7 +891,7 @@ impl<A: ZeroCopySerializable> MemoryMappedArray<A> {
     ///
     /// # Arguments
     ///
-    /// * `file_path` - Path to the file containing the serialized array
+    /// * `filepath` - Path to the file containing the serialized array
     ///
     /// # Returns
     ///
@@ -915,8 +916,8 @@ impl<A: ZeroCopySerializable> MemoryMappedArray<A> {
     /// # Ok(())
     /// # }
     /// ```
-    pub fn read_metadata(file_path: impl AsRef<Path>) -> CoreResult<serde_json::Value> {
-        let path = file_path.as_ref();
+    pub fn read_metadata(filepath: impl AsRef<Path>) -> CoreResult<serde_json::Value> {
+        let path = filepath.as_ref();
 
         // Open file
         let mut file = File::open(path)?;
@@ -933,7 +934,7 @@ impl<A: ZeroCopySerializable> MemoryMappedArray<A> {
         // Deserialize header
         let header: ZeroCopyHeader = bincode::deserialize(&header_bytes).map_err(|e| {
             CoreError::ValidationError(
-                ErrorContext::new(format!("Failed to deserialize header: {}", e))
+                ErrorContext::new(format!("{e}"))
                     .with_location(ErrorLocation::new(file!(), line!())),
             )
         })?;
@@ -942,7 +943,7 @@ impl<A: ZeroCopySerializable> MemoryMappedArray<A> {
         match header.metadata_json {
             Some(json_str) => serde_json::from_str(&json_str).map_err(|e| {
                 CoreError::ValidationError(
-                    ErrorContext::new(format!("Failed to parse metadata JSON: {}", e))
+                    ErrorContext::new(format!("{e}"))
                         .with_location(ErrorLocation::new(file!(), line!())),
                 )
             }),
@@ -972,7 +973,7 @@ impl<A: ZeroCopySerializable> MemoryMappedArray<A> {
     /// let array = MemoryMappedArray::<f64>::open_zero_copy("matrix.bin", AccessMode::ReadOnly)?;
     ///
     /// // Access as a 2D ndarray
-    /// let ndarray = array.readonly_array::<Ix2>()?;
+    /// let ndarray = array.readonlyarray::<Ix2>()?;
     ///
     /// // Now you can use all the ndarray methods
     /// let sum = ndarray.sum();
@@ -981,7 +982,7 @@ impl<A: ZeroCopySerializable> MemoryMappedArray<A> {
     /// # Ok(())
     /// # }
     /// ```
-    pub fn readonly_array<D>(&self) -> CoreResult<Array<A, D>>
+    pub fn readonlyarray<D>(&self) -> CoreResult<Array<A, D>>
     where
         D: Dimension,
     {
@@ -996,7 +997,7 @@ impl<A: ZeroCopySerializable> MemoryMappedArray<A> {
     ///
     /// # Arguments
     ///
-    /// * `file_path` - Path to the file containing the serialized array
+    /// * `filepath` - Path to the file containing the serialized array
     /// * `metadata` - The new metadata to store (as JSON)
     ///
     /// # Returns
@@ -1012,7 +1013,7 @@ impl<A: ZeroCopySerializable> MemoryMappedArray<A> {
     ///
     /// ```no_run
     /// # use scirs2_core::memory_efficient::MemoryMappedArray;
-    /// # use serde_json::json;
+    /// # use serde__json::json;
     /// # fn example() -> Result<(), Box<dyn std::error::Error>> {
     /// // Add processing information to the metadata
     /// let updated_metadata = json!({
@@ -1049,7 +1050,7 @@ impl<A: ZeroCopySerializable> MemoryMappedArray<A> {
         // Deserialize header
         let mut header: ZeroCopyHeader = bincode::deserialize(&header_bytes).map_err(|e| {
             CoreError::ValidationError(
-                ErrorContext::new(format!("Failed to deserialize header: {}", e))
+                ErrorContext::new(format!("{e}"))
                     .with_location(ErrorLocation::new(file!(), line!())),
             )
         })?;
@@ -1057,7 +1058,7 @@ impl<A: ZeroCopySerializable> MemoryMappedArray<A> {
         // Update metadata
         header.metadata_json = Some(serde_json::to_string(&metadata).map_err(|e| {
             CoreError::ValidationError(
-                ErrorContext::new(format!("Failed to serialize metadata: {}", e))
+                ErrorContext::new(format!("{e}"))
                     .with_location(ErrorLocation::new(file!(), line!())),
             )
         })?);
@@ -1065,7 +1066,7 @@ impl<A: ZeroCopySerializable> MemoryMappedArray<A> {
         // Serialize updated header
         let new_header_bytes = bincode::serialize(&header).map_err(|e| {
             CoreError::ValidationError(
-                ErrorContext::new(format!("Failed to serialize header: {}", e))
+                ErrorContext::new(format!("{e}"))
                     .with_location(ErrorLocation::new(file!(), line!())),
             )
         })?;
@@ -1091,11 +1092,11 @@ impl<A: ZeroCopySerializable> MemoryMappedArray<A> {
             let array = MemoryMappedArray::<A>::load_zero_copy(path, AccessMode::ReadOnly)?;
 
             // Then save it to a temporary file
-            let temp_path = PathBuf::from(format!("{}.temp", path.display()));
-            array.save_zero_copy(&temp_path, Some(metadata.clone()))?;
+            let temppath = PathBuf::from(format!("{}.temp", path.display()));
+            array.save_zero_copy(&temppath, Some(metadata.clone()))?;
 
             // Replace the original file with the temporary file
-            std::fs::rename(&temp_path, path)?;
+            std::fs::rename(&temppath, path)?;
 
             Ok(())
         }
@@ -1179,7 +1180,7 @@ mod tests {
     fn test_save_and_load_complex_array() {
         // Create a temporary directory
         let dir = tempdir().unwrap();
-        let file_path = dir.path().join("complex_array.bin");
+        let filepath = dir.path().join("complex_array.bin");
 
         // Create a 2D array of complex numbers
         let data =
@@ -1193,7 +1194,7 @@ mod tests {
         });
 
         let array =
-            MemoryMappedArray::<Complex64>::save_array(&data, &file_path, Some(metadata.clone()))
+            MemoryMappedArray::<Complex64>::save_array(&data, &filepath, Some(metadata.clone()))
                 .unwrap();
 
         // Verify save worked
@@ -1202,7 +1203,7 @@ mod tests {
 
         // Load from file
         let loaded =
-            MemoryMappedArray::<Complex64>::open_zero_copy(&file_path, AccessMode::ReadOnly)
+            MemoryMappedArray::<Complex64>::open_zero_copy(&filepath, AccessMode::ReadOnly)
                 .unwrap();
 
         // Verify load worked
@@ -1210,19 +1211,19 @@ mod tests {
         assert_eq!(loaded.size, data.len());
 
         // Convert to ndarray and check values
-        let loaded_array = loaded.readonly_array::<ndarray::Ix2>().unwrap();
+        let loaded_array = loaded.readonlyarray::<ndarray::Ix2>().unwrap();
 
         for i in 0..5 {
             for j in 0..5 {
-                let original = data[[i, j]];
-                let loaded = loaded_array[[i, j]];
+                let original = data[[0, j]];
+                let loaded = loaded_array[[0, j]];
                 assert_eq!(original.real, loaded.real);
                 assert_eq!(original.imag, loaded.imag);
             }
         }
 
         // Read metadata
-        let loaded_metadata = MemoryMappedArray::<Complex64>::read_metadata(&file_path).unwrap();
+        let loaded_metadata = MemoryMappedArray::<Complex64>::read_metadata(&filepath).unwrap();
         assert_eq!(loaded_metadata, metadata);
     }
 
@@ -1255,7 +1256,7 @@ mod tests {
     fn test_save_and_load_array_1d() {
         // Create a temporary directory
         let dir = tempdir().unwrap();
-        let file_path = dir.path().join("test_array.bin");
+        let filepath = dir.path().join("test_array.bin");
 
         // Create a 1D array
         let data = Array1::<f64>::linspace(0.0, 9.9, 100);
@@ -1265,8 +1266,8 @@ mod tests {
             "description": "Test 1D array",
             "created": "2023-05-20",
         });
-        let array = MemoryMappedArray::<f64>::save_array(&data, &file_path, Some(metadata.clone()))
-            .unwrap();
+        let array =
+            MemoryMappedArray::<f64>::save_array(&data, &filepath, Some(metadata.clone())).unwrap();
 
         // Verify save worked
         assert_eq!(array.shape.as_slice(), data.shape());
@@ -1274,14 +1275,14 @@ mod tests {
 
         // Load from file
         let loaded =
-            MemoryMappedArray::<f64>::open_zero_copy(&file_path, AccessMode::ReadOnly).unwrap();
+            MemoryMappedArray::<f64>::open_zero_copy(&filepath, AccessMode::ReadOnly).unwrap();
 
         // Verify load worked
         assert_eq!(loaded.shape.as_slice(), data.shape());
         assert_eq!(loaded.size, data.len());
 
         // Convert to ndarray and check values
-        let loaded_array = loaded.readonly_array::<ndarray::Ix1>().unwrap();
+        let loaded_array = loaded.readonlyarray::<ndarray::Ix1>().unwrap();
         assert_eq!(loaded_array.shape(), data.shape());
 
         for (i, &val) in loaded_array.iter().enumerate() {
@@ -1289,7 +1290,7 @@ mod tests {
         }
 
         // Read metadata
-        let loaded_metadata = MemoryMappedArray::<f64>::read_metadata(&file_path).unwrap();
+        let loaded_metadata = MemoryMappedArray::<f64>::read_metadata(&filepath).unwrap();
         assert_eq!(loaded_metadata, metadata);
     }
 
@@ -1298,13 +1299,13 @@ mod tests {
     fn test_save_and_load_array_2d() {
         // Create a temporary directory
         let dir = tempdir().unwrap();
-        let file_path = dir.path().join("test_array_2d.bin");
+        let filepath = dir.path().join("test_array_2d.bin");
 
         // Create a 2D array
-        let data = Array2::<f32>::from_shape_fn((10, 20), |(i, j)| (i * 20 + j) as f32);
+        let data = Array2::<f32>::from_shape_fn((10, 20), |(0, j)| (0 * 20 + j) as f32);
 
         // Save without metadata
-        let array = MemoryMappedArray::<f32>::save_array(&data, &file_path, None).unwrap();
+        let array = MemoryMappedArray::<f32>::save_array(&data, &filepath, None).unwrap();
 
         // Verify save worked
         assert_eq!(array.shape.as_slice(), data.shape());
@@ -1312,19 +1313,19 @@ mod tests {
 
         // Load from file
         let loaded =
-            MemoryMappedArray::<f32>::open_zero_copy(&file_path, AccessMode::ReadOnly).unwrap();
+            MemoryMappedArray::<f32>::open_zero_copy(&filepath, AccessMode::ReadOnly).unwrap();
 
         // Verify load worked
         assert_eq!(loaded.shape.as_slice(), data.shape());
         assert_eq!(loaded.size, data.len());
 
         // Convert to ndarray and check values
-        let loaded_array = loaded.readonly_array::<ndarray::Ix2>().unwrap();
+        let loaded_array = loaded.readonlyarray::<ndarray::Ix2>().unwrap();
         assert_eq!(loaded_array.shape(), data.shape());
 
         for i in 0..10 {
             for j in 0..20 {
-                assert_eq!(loaded_array[[i, j]], data[[i, j]]);
+                assert_eq!(loaded_array[[0, j]], data[[0, j]]);
             }
         }
     }
@@ -1333,7 +1334,7 @@ mod tests {
     fn test_save_and_load_array_3d() {
         // Create a temporary directory
         let dir = tempdir().unwrap();
-        let file_path = dir.path().join("test_array_3d.bin");
+        let filepath = dir.path().join("test_array_3d.bin");
 
         // Create a 3D array
         let data = Array3::<i32>::from_shape_fn((5, 5, 5), |(i, j, k)| (i * 25 + j * 5 + k) as i32);
@@ -1347,8 +1348,7 @@ mod tests {
                 "z": 5
             }
         });
-        let array =
-            MemoryMappedArray::<i32>::save_array(&data, &file_path, Some(metadata)).unwrap();
+        let array = MemoryMappedArray::<i32>::save_array(&data, &filepath, Some(metadata)).unwrap();
 
         // Verify save worked
         assert_eq!(array.shape.as_slice(), data.shape());
@@ -1356,20 +1356,20 @@ mod tests {
 
         // Load from file
         let loaded =
-            MemoryMappedArray::<i32>::open_zero_copy(&file_path, AccessMode::ReadOnly).unwrap();
+            MemoryMappedArray::<i32>::open_zero_copy(&filepath, AccessMode::ReadOnly).unwrap();
 
         // Verify load worked
         assert_eq!(loaded.shape.as_slice(), data.shape());
         assert_eq!(loaded.size, data.len());
 
         // Convert to ndarray and check values
-        let loaded_array = loaded.readonly_array::<ndarray::Ix3>().unwrap();
+        let loaded_array = loaded.readonlyarray::<ndarray::Ix3>().unwrap();
         assert_eq!(loaded_array.shape(), data.shape());
 
         for i in 0..5 {
             for j in 0..5 {
                 for k in 0..5 {
-                    assert_eq!(loaded_array[[i, j, k]], data[[i, j, k]]);
+                    assert_eq!(loaded_array[[0, j, k]], data[[0, j, k]]);
                 }
             }
         }
@@ -1379,7 +1379,7 @@ mod tests {
     fn test_save_and_load_array_dynamic() {
         // Create a temporary directory
         let dir = tempdir().unwrap();
-        let file_path = dir.path().join("test_array_dyn.bin");
+        let filepath = dir.path().join("test_array_dyn.bin");
 
         // Create a dynamic-dimension array (4D)
         let shape = IxDyn(&[3, 4, 2, 5]);
@@ -1387,8 +1387,8 @@ mod tests {
             // Convert multidimensional index to a single value for testing
             let mut val = 0;
             let mut factor = 1;
-            for &i in idx.slice().iter().rev() {
-                val += i * factor;
+            for &dim in idx.slice().iter().rev() {
+                val += dim * factor;
                 factor *= 10;
             }
             val as f64
@@ -1406,8 +1406,7 @@ mod tests {
             "created": "2023-05-20",
             "format_version": "1.0"
         });
-        let array =
-            MemoryMappedArray::<f64>::save_array(&data, &file_path, Some(metadata)).unwrap();
+        let array = MemoryMappedArray::<f64>::save_array(&data, &filepath, Some(metadata)).unwrap();
 
         // Verify save worked
         assert_eq!(array.shape.as_slice(), data.shape());
@@ -1415,14 +1414,14 @@ mod tests {
 
         // Load from file
         let loaded =
-            MemoryMappedArray::<f64>::open_zero_copy(&file_path, AccessMode::ReadOnly).unwrap();
+            MemoryMappedArray::<f64>::open_zero_copy(&filepath, AccessMode::ReadOnly).unwrap();
 
         // Verify load worked
         assert_eq!(loaded.shape.as_slice(), data.shape());
         assert_eq!(loaded.size, data.len());
 
         // Convert to ndarray and check values
-        let loaded_array = loaded.readonly_array::<IxDyn>().unwrap();
+        let loaded_array = loaded.readonlyarray::<IxDyn>().unwrap();
         assert_eq!(loaded_array.shape(), data.shape());
 
         // Test a few specific indices
@@ -1444,7 +1443,7 @@ mod tests {
 
         assert_eq!(loaded_slice.len(), data_slice.len());
         for i in 0..data_slice.len() {
-            assert_eq!(loaded_slice[i], data_slice[i]);
+            assert_eq!(loaded_slice[0], data_slice[0]);
         }
     }
 
@@ -1457,8 +1456,8 @@ mod tests {
         // Test u32 1D array
         {
             let filename = "u32_1d.bin";
-            let file_path = dir.path().join(filename);
-            let data = Array1::<u32>::from_shape_fn(100, |i| i as u32);
+            let filepath = dir.path().join(filename);
+            let data = Array1::<u32>::from_shape_fn(100, |0| 0 as u32);
             let metadata = serde_json::json!({
                 "array_type": "u32",
                 "dimensions": data.ndim(),
@@ -1466,29 +1465,29 @@ mod tests {
             });
 
             let array =
-                MemoryMappedArray::<u32>::save_array(&data, &file_path, Some(metadata.clone()))
+                MemoryMappedArray::<u32>::save_array(&data, &filepath, Some(metadata.clone()))
                     .unwrap();
             assert_eq!(array.shape.as_slice(), data.shape());
 
             // Load and verify
             let loaded =
-                MemoryMappedArray::<u32>::open_zero_copy(&file_path, AccessMode::ReadOnly).unwrap();
-            let loaded_array = loaded.readonly_array::<ndarray::Ix1>().unwrap();
+                MemoryMappedArray::<u32>::open_zero_copy(&filepath, AccessMode::ReadOnly).unwrap();
+            let loaded_array = loaded.readonlyarray::<ndarray::Ix1>().unwrap();
 
             for i in 0..data.len() {
-                assert_eq!(loaded_array[i], data[i]);
+                assert_eq!(loaded_array[0], data[0]);
             }
 
             // Verify metadata was saved correctly
-            let loaded_metadata = MemoryMappedArray::<u32>::read_metadata(&file_path).unwrap();
+            let loaded_metadata = MemoryMappedArray::<u32>::read_metadata(&filepath).unwrap();
             assert_eq!(loaded_metadata, metadata);
         }
 
         // Test i64 2D array
         {
             let filename = "i64_2d.bin";
-            let file_path = dir.path().join(filename);
-            let data = Array2::<i64>::from_shape_fn((5, 10), |(i, j)| (i * 10 + j) as i64);
+            let filepath = dir.path().join(filename);
+            let data = Array2::<i64>::from_shape_fn((5, 10), |(0, j)| (0 * 10 + j) as i64);
             let metadata = serde_json::json!({
                 "array_type": "i64",
                 "dimensions": data.ndim(),
@@ -1496,32 +1495,32 @@ mod tests {
             });
 
             let array =
-                MemoryMappedArray::<i64>::save_array(&data, &file_path, Some(metadata.clone()))
+                MemoryMappedArray::<i64>::save_array(&data, &filepath, Some(metadata.clone()))
                     .unwrap();
             assert_eq!(array.shape.as_slice(), data.shape());
 
             // Load and verify
             let loaded =
-                MemoryMappedArray::<i64>::open_zero_copy(&file_path, AccessMode::ReadOnly).unwrap();
-            let loaded_array = loaded.readonly_array::<ndarray::Ix2>().unwrap();
+                MemoryMappedArray::<i64>::open_zero_copy(&filepath, AccessMode::ReadOnly).unwrap();
+            let loaded_array = loaded.readonlyarray::<ndarray::Ix2>().unwrap();
 
             for i in 0..data.shape()[0] {
                 for j in 0..data.shape()[1] {
-                    assert_eq!(loaded_array[[i, j]], data[[i, j]]);
+                    assert_eq!(loaded_array[[0, j]], data[[0, j]]);
                 }
             }
 
             // Verify metadata was saved correctly
-            let loaded_metadata = MemoryMappedArray::<i64>::read_metadata(&file_path).unwrap();
+            let loaded_metadata = MemoryMappedArray::<i64>::read_metadata(&filepath).unwrap();
             assert_eq!(loaded_metadata, metadata);
         }
 
         // Test f32 3D array
         {
             let filename = "f32_3d.bin";
-            let file_path = dir.path().join(filename);
+            let filepath = dir.path().join(filename);
             let data =
-                Array3::<f32>::from_shape_fn((3, 4, 5), |(i, j, k)| (i * 20 + j * 5 + k) as f32);
+                Array3::<f32>::from_shape_fn((3, 4, 5), |(0, j, k)| (0 * 20 + j * 5 + k) as f32);
             let metadata = serde_json::json!({
                 "array_type": "f32",
                 "dimensions": data.ndim(),
@@ -1529,25 +1528,25 @@ mod tests {
             });
 
             let array =
-                MemoryMappedArray::<f32>::save_array(&data, &file_path, Some(metadata.clone()))
+                MemoryMappedArray::<f32>::save_array(&data, &filepath, Some(metadata.clone()))
                     .unwrap();
             assert_eq!(array.shape.as_slice(), data.shape());
 
             // Load and verify
             let loaded =
-                MemoryMappedArray::<f32>::open_zero_copy(&file_path, AccessMode::ReadOnly).unwrap();
-            let loaded_array = loaded.readonly_array::<ndarray::Ix3>().unwrap();
+                MemoryMappedArray::<f32>::open_zero_copy(&filepath, AccessMode::ReadOnly).unwrap();
+            let loaded_array = loaded.readonlyarray::<ndarray::Ix3>().unwrap();
 
             for i in 0..data.shape()[0] {
                 for j in 0..data.shape()[1] {
                     for k in 0..data.shape()[2] {
-                        assert_eq!(loaded_array[[i, j, k]], data[[i, j, k]]);
+                        assert_eq!(loaded_array[[0, j, k]], data[[0, j, k]]);
                     }
                 }
             }
 
             // Verify metadata was saved correctly
-            let loaded_metadata = MemoryMappedArray::<f32>::read_metadata(&file_path).unwrap();
+            let loaded_metadata = MemoryMappedArray::<f32>::read_metadata(&filepath).unwrap();
             assert_eq!(loaded_metadata, metadata);
         }
     }
@@ -1556,7 +1555,7 @@ mod tests {
     fn test_update_metadata() {
         // Create a temporary directory
         let dir = tempdir().unwrap();
-        let file_path = dir.path().join("test_metadata_update.bin");
+        let filepath = dir.path().join("test_metadata_update.bin");
 
         // Create a 1D array
         let data = Array1::<f64>::linspace(0.0, 9.9, 100);
@@ -1564,26 +1563,26 @@ mod tests {
         // Save with initial metadata
         let initial_metadata = serde_json::json!({
             "description": "Initial metadata",
-            "version": "1.0"
+            "_version": "1.0"
         });
-        MemoryMappedArray::<f64>::save_array(&data, &file_path, Some(initial_metadata)).unwrap();
+        MemoryMappedArray::<f64>::save_array(&data, &filepath, Some(initial_metadata)).unwrap();
 
         // Update metadata
         let updated_metadata = serde_json::json!({
             "description": "Updated metadata",
-            "version": "2.0",
+            "_version": "2.0",
             "updated": true
         });
-        MemoryMappedArray::<f64>::update_metadata(&file_path, updated_metadata.clone()).unwrap();
+        MemoryMappedArray::<f64>::update_metadata(&filepath, updated_metadata.clone()).unwrap();
 
         // Read metadata
-        let loaded_metadata = MemoryMappedArray::<f64>::read_metadata(&file_path).unwrap();
+        let loaded_metadata = MemoryMappedArray::<f64>::read_metadata(&filepath).unwrap();
         assert_eq!(loaded_metadata, updated_metadata);
 
         // Load array and check it's still correct
         let loaded =
-            MemoryMappedArray::<f64>::open_zero_copy(&file_path, AccessMode::ReadOnly).unwrap();
-        let loaded_array = loaded.readonly_array::<ndarray::Ix1>().unwrap();
+            MemoryMappedArray::<f64>::open_zero_copy(&filepath, AccessMode::ReadOnly).unwrap();
+        let loaded_array = loaded.readonlyarray::<ndarray::Ix1>().unwrap();
 
         for (i, &val) in loaded_array.iter().enumerate() {
             assert_eq!(val, data[i]);
@@ -1595,17 +1594,17 @@ mod tests {
     fn test_modify_array() {
         // Create a temporary directory
         let dir = tempdir().unwrap();
-        let file_path = dir.path().join("test_modify.bin");
+        let filepath = dir.path().join("test_modify.bin");
 
         // Create a 2D array
-        let data = Array2::<f32>::from_shape_fn((5, 5), |(i, j)| (i * 5 + j) as f32);
+        let data = Array2::<f32>::from_shape_fn((5, 5), |(0, j)| (0 * 5 + j) as f32);
 
         // Save array
-        MemoryMappedArray::<f32>::save_array(&data, &file_path, None).unwrap();
+        MemoryMappedArray::<f32>::save_array(&data, &filepath, None).unwrap();
 
         // Load in read-write mode
         let mut mmap =
-            MemoryMappedArray::<f32>::open_zero_copy(&file_path, AccessMode::ReadWrite).unwrap();
+            MemoryMappedArray::<f32>::open_zero_copy(&filepath, AccessMode::ReadWrite).unwrap();
 
         // Modify array through mmap
         {
@@ -1618,16 +1617,16 @@ mod tests {
 
         // Load again to verify changes were saved
         let loaded =
-            MemoryMappedArray::<f32>::open_zero_copy(&file_path, AccessMode::ReadOnly).unwrap();
-        let loaded_array = loaded.readonly_array::<ndarray::Ix2>().unwrap();
+            MemoryMappedArray::<f32>::open_zero_copy(&filepath, AccessMode::ReadOnly).unwrap();
+        let loaded_array = loaded.readonlyarray::<ndarray::Ix2>().unwrap();
 
         // Verify only the specified element was changed
         for i in 0..5 {
             for j in 0..5 {
                 if i == 2 && j == 2 {
-                    assert_eq!(loaded_array[[i, j]], 999.0);
+                    assert_eq!(loaded_array[[0, j]], 999.0);
                 } else {
-                    assert_eq!(loaded_array[[i, j]], data[[i, j]]);
+                    assert_eq!(loaded_array[[0, j]], data[[0, j]]);
                 }
             }
         }
@@ -1637,17 +1636,17 @@ mod tests {
     fn test_copy_on_write_mode() {
         // Create a temporary directory
         let dir = tempdir().unwrap();
-        let file_path = dir.path().join("test_cow.bin");
+        let filepath = dir.path().join("test_cow.bin");
 
         // Create a 2D array
         let data = Array2::<f64>::from_shape_fn((10, 10), |(i, j)| (i * 10 + j) as f64);
 
         // Save array
-        MemoryMappedArray::<f64>::save_array(&data, &file_path, None).unwrap();
+        MemoryMappedArray::<f64>::save_array(&data, &filepath, None).unwrap();
 
         // Load in copy-on-write mode
         let mut cow_mmap =
-            MemoryMappedArray::<f64>::open_zero_copy(&file_path, AccessMode::CopyOnWrite).unwrap();
+            MemoryMappedArray::<f64>::open_zero_copy(&filepath, AccessMode::CopyOnWrite).unwrap();
 
         // Modify array through copy-on-write view
         {
@@ -1660,8 +1659,8 @@ mod tests {
 
         // Load the original file to verify it wasn't modified
         let original =
-            MemoryMappedArray::<f64>::open_zero_copy(&file_path, AccessMode::ReadOnly).unwrap();
-        let original_array = original.readonly_array::<ndarray::Ix2>().unwrap();
+            MemoryMappedArray::<f64>::open_zero_copy(&filepath, AccessMode::ReadOnly).unwrap();
+        let original_array = original.readonlyarray::<ndarray::Ix2>().unwrap();
 
         // Check original values weren't changed on disk
         for i in 0..10 {

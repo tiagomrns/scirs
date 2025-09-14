@@ -33,7 +33,6 @@ fn rotation_from_euler(x: f64, y: f64, z: f64, convention: &str) -> SpatialResul
 /// ```
 /// use scirs2_spatial::transform::{Rotation, RotationSpline};
 /// use ndarray::array;
-/// use std::f64::consts::PI;
 ///
 /// // Create some rotations
 /// let rotations = vec![
@@ -83,7 +82,6 @@ impl RotationSpline {
     /// ```
     /// use scirs2_spatial::transform::{Rotation, RotationSpline};
     /// use ndarray::array;
-    /// use std::f64::consts::PI;
     ///
     /// let rotations = vec![
     ///     Rotation::identity(),
@@ -104,7 +102,7 @@ impl RotationSpline {
 
         if rotations.len() != times.len() {
             return Err(SpatialError::ValueError(format!(
-                "Number of rotations ({}) must match number of times ({})",
+                "Number of _rotations ({}) must match number of times ({})",
                 rotations.len(),
                 times.len()
             )));
@@ -123,7 +121,7 @@ impl RotationSpline {
             }
         }
 
-        // Make a copy of the rotations and times
+        // Make a copy of the _rotations and times
         let rotations = rotations.to_vec();
         let times = times.to_vec();
 
@@ -139,7 +137,7 @@ impl RotationSpline {
     ///
     /// # Arguments
     ///
-    /// * `interp_type` - The interpolation type ("slerp" or "cubic")
+    /// * `_interptype` - The interpolation type ("slerp" or "cubic")
     ///
     /// # Returns
     ///
@@ -150,7 +148,6 @@ impl RotationSpline {
     /// ```
     /// use scirs2_spatial::transform::{Rotation, RotationSpline};
     /// use ndarray::array;
-    /// use std::f64::consts::PI;
     ///
     /// let rotations = vec![
     ///     Rotation::identity(),
@@ -163,8 +160,8 @@ impl RotationSpline {
     /// // Set the interpolation type to cubic (natural cubic spline)
     /// spline.set_interpolation_type("cubic").unwrap();
     /// ```
-    pub fn set_interpolation_type(&mut self, interp_type: &str) -> SpatialResult<()> {
-        match interp_type.to_lowercase().as_str() {
+    pub fn set_interpolation_type(&mut self, _interptype: &str) -> SpatialResult<()> {
+        match _interptype.to_lowercase().as_str() {
             "slerp" => {
                 self.interpolation_type = "slerp".to_string();
                 self.velocities = None;
@@ -177,8 +174,7 @@ impl RotationSpline {
                 Ok(())
             }
             _ => Err(SpatialError::ValueError(format!(
-                "Invalid interpolation type: {}. Must be 'slerp' or 'cubic'",
-                interp_type
+                "Invalid interpolation _type: {_interptype}. Must be 'slerp' or 'cubic'"
             ))),
         }
     }
@@ -206,41 +202,43 @@ impl RotationSpline {
             rotvecs.push(rot.as_rotvec());
         }
 
-        // Compute the velocities for each component using the natural cubic spline conditions
+        // Compute velocities using finite differences and natural boundary conditions
         let mut vels = Vec::with_capacity(n);
-        for dim in 0..3 {
-            // Extract values for this dimension
-            let mut values = Vec::with_capacity(n);
-            for rv in &rotvecs {
-                values.push(rv[dim]);
-            }
 
-            // Compute the second derivatives using the tridiagonal algorithm
-            let second_derivs = self.compute_natural_spline_second_derivatives(&values);
+        // For endpoints, we'll use one-sided differences
+        // For internal points, we'll use centered differences
+        for i in 0..n {
+            let vel = if i == 0 {
+                // Forward difference for the first point
+                let dt = self.times[1] - self.times[0];
+                (&rotvecs[1] - &rotvecs[0]) / dt
+            } else if i == n - 1 {
+                // Backward difference for the last point
+                let dt = self.times[n - 1] - self.times[n - 2];
+                (&rotvecs[n - 1] - &rotvecs[n - 2]) / dt
+            } else {
+                // Centered difference for internal points
+                let dt_prev = self.times[i] - self.times[i - 1];
+                let dt_next = self.times[i + 1] - self.times[i];
 
-            // Compute velocities from second derivatives
-            for i in 0..n {
-                if i == 0 {
-                    let v = Array1::zeros(3);
-                    vels.push(v);
-                } else {
-                    if i >= vels.len() {
-                        vels.push(Array1::zeros(3));
-                    }
+                // Use weighted average based on time intervals
+                let vel_prev = (&rotvecs[i] - &rotvecs[i - 1]) / dt_prev;
+                let vel_next = (&rotvecs[i + 1] - &rotvecs[i]) / dt_next;
 
-                    let dt = self.times[i] - self.times[i - 1];
-                    let dq = (rotvecs[i][dim] - rotvecs[i - 1][dim]) / dt;
-                    let d2q = second_derivs[i - 1] * (self.times[i] - self.times[i - 1]) / 6.0;
+                // Weighted average
+                let weight_prev = dt_next / (dt_prev + dt_next);
+                let weight_next = dt_prev / (dt_prev + dt_next);
+                &vel_prev * weight_prev + &vel_next * weight_next
+            };
 
-                    vels[i][dim] = dq - d2q;
-                }
-            }
+            vels.push(vel);
         }
 
         self.velocities = Some(vels);
     }
 
     /// Compute the second derivatives for natural cubic spline interpolation
+    #[allow(dead_code)]
     fn compute_natural_spline_second_derivatives(&self, values: &[f64]) -> Vec<f64> {
         let n = values.len();
         if n <= 2 {
@@ -284,6 +282,7 @@ impl RotationSpline {
     }
 
     /// Solve a tridiagonal system using the Thomas algorithm
+    #[allow(dead_code)]
     fn solve_tridiagonal(
         &self,
         a: &[f64],     // Lower diagonal
@@ -332,7 +331,6 @@ impl RotationSpline {
     /// ```
     /// use scirs2_spatial::transform::{Rotation, RotationSpline};
     /// use ndarray::array;
-    /// use std::f64::consts::PI;
     ///
     /// let rotations = vec![
     ///     Rotation::identity(),
@@ -412,21 +410,23 @@ impl RotationSpline {
         let vel0 = &velocities[idx];
         let vel1 = &velocities[idx + 1];
 
-        // Compute the cubic polynomial coefficients
-        let a = rotvec0.clone();
-        let b = vel0.clone() * dt;
-        let c = rotvec1.clone() - rotvec0.clone() - b.clone() - vel1.clone() * dt;
-        let d = vel1.clone() * dt + rotvec0.clone() + b.clone() - rotvec1.clone();
+        // Use Hermite cubic interpolation formula
+        // h(t) = (2t³ - 3t² + 1)p0 + (t³ - 2t² + t)m0 + (-2t³ + 3t²)p1 + (t³ - t²)m1
+        // where p0, p1 are the start and end values, m0, m1 are the scaled tangents
+        let t2 = normalized_t * normalized_t;
+        let t3 = t2 * normalized_t;
 
-        // Evaluate the cubic polynomial
-        let mut result = a.clone();
-        let term1 = &b * normalized_t;
-        let term2 = &c * (normalized_t * normalized_t);
-        let term3 = &d * (normalized_t * normalized_t * normalized_t);
+        // Hermite basis functions
+        let h00 = 2.0 * t3 - 3.0 * t2 + 1.0;
+        let h10 = t3 - 2.0 * t2 + normalized_t;
+        let h01 = -2.0 * t3 + 3.0 * t2;
+        let h11 = t3 - t2;
 
-        result = &result + &term1;
-        result = &result + &term2;
-        result = &result + &term3;
+        // Compute the interpolated rotation vector
+        let mut result = rotvec0 * h00;
+        result = &result + &(vel0 * dt * h10);
+        result = &result + &(rotvec1 * h01);
+        result = &result + &(vel1 * dt * h11);
 
         // Convert back to rotation
         Rotation::from_rotvec(&result.view()).unwrap()
@@ -499,7 +499,6 @@ impl RotationSpline {
     /// ```
     /// use scirs2_spatial::transform::{Rotation, RotationSpline};
     /// use ndarray::array;
-    /// use std::f64::consts::PI;
     ///
     /// let rotations = vec![
     ///     Rotation::identity(),
@@ -540,7 +539,7 @@ impl RotationSpline {
     /// # Arguments
     ///
     /// * `key_rots` - The key rotations
-    /// * `key_times` - The times at which these key rotations occur
+    /// * `keytimes` - The times at which these key rotations occur
     ///
     /// # Returns
     ///
@@ -551,19 +550,18 @@ impl RotationSpline {
     /// ```
     /// use scirs2_spatial::transform::{Rotation, RotationSpline};
     /// use ndarray::array;
-    /// use std::f64::consts::PI;
     ///
     /// let key_rots = vec![
     ///     Rotation::identity(),
     ///     Rotation::from_euler(&array![0.0, 0.0, PI/2.0].view(), "xyz").unwrap(),
     ///     Rotation::from_euler(&array![0.0, 0.0, PI].view(), "xyz").unwrap(),
     /// ];
-    /// let key_times = vec![0.0, 1.0, 2.0];
+    /// let keytimes = vec![0.0, 1.0, 2.0];
     ///
-    /// let spline = RotationSpline::from_key_rotations(&key_rots, &key_times).unwrap();
+    /// let spline = RotationSpline::from_key_rotations(&key_rots, &keytimes).unwrap();
     /// ```
-    pub fn from_key_rotations(key_rots: &[Rotation], key_times: &[f64]) -> SpatialResult<Self> {
-        Self::new(key_rots, key_times)
+    pub fn from_key_rotations(_key_rots: &[Rotation], keytimes: &[f64]) -> SpatialResult<Self> {
+        Self::new(_key_rots, keytimes)
     }
 
     /// Get the current interpolation type
@@ -587,7 +585,7 @@ impl RotationSpline {
     ///
     /// assert_eq!(spline.interpolation_type(), "slerp");
     /// ```
-    pub fn interpolation_type(&self) -> &str {
+    pub fn interpolation_type(&self) -> &'_ str {
         &self.interpolation_type
     }
 
@@ -606,7 +604,6 @@ impl RotationSpline {
     /// ```
     /// use scirs2_spatial::transform::{Rotation, RotationSpline};
     /// use ndarray::array;
-    /// use std::f64::consts::PI;
     ///
     /// let rotations = vec![
     ///     Rotation::identity(),
@@ -619,12 +616,12 @@ impl RotationSpline {
     /// let velocity = spline.angular_velocity(0.5);
     /// // Should be approximately [0, 0, PI]
     /// ```
-    pub fn angular_velocity(&self, t: f64) -> Array1<f64> {
+    pub fn angular_velocity(&self, t: f64) -> SpatialResult<Array1<f64>> {
         let n = self.times.len();
 
         // Handle boundary cases
         if t <= self.times[0] || t >= self.times[n - 1] {
-            return Array1::zeros(3);
+            return Ok(Array1::zeros(3));
         }
 
         // Find the segment containing t
@@ -639,27 +636,50 @@ impl RotationSpline {
         // Calculate angular velocity based on interpolation type
         match self.interpolation_type.as_str() {
             "slerp" => self.angular_velocity_slerp(t, idx),
-            "cubic" => self.angular_velocity_cubic(t, idx),
+            "cubic" => Ok(self.angular_velocity_cubic(t, idx)),
             _ => self.angular_velocity_slerp(t, idx), // Default to slerp
         }
     }
 
     /// Calculate angular velocity using Slerp interpolation
-    fn angular_velocity_slerp(&self, _t: f64, idx: usize) -> Array1<f64> {
+    fn angular_velocity_slerp(&self, t: f64, idx: usize) -> SpatialResult<Array1<f64>> {
         let t0 = self.times[idx];
         let t1 = self.times[idx + 1];
         let dt = t1 - t0;
+        let normalized_t = (t - t0) / dt;
 
         // Get rotations at the endpoints of the segment
         let r0 = &self.rotations[idx];
         let r1 = &self.rotations[idx + 1];
 
-        // Calculate the delta rotation
+        // Calculate the delta rotation from r0 to r1
         let delta_rot = r0.inv().compose(r1);
-        let delta_rotvec = delta_rot.as_rotvec();
 
-        // Angular velocity is the rotation vector divided by time
-        delta_rotvec / dt
+        // Convert to axis-angle representation via rotation vector
+        let rotvec = delta_rot.as_rotvec();
+        let angle = (rotvec.dot(&rotvec)).sqrt();
+        let axis = if angle > 1e-10 {
+            &rotvec / angle
+        } else {
+            Array1::zeros(3)
+        };
+
+        // For slerp, the angular velocity is constant and equals angle/dt along the axis
+        // The angular velocity vector in the current frame is:
+        // ω = (angle / dt) * axis
+
+        // However, we need to transform this to the frame at time t
+        // First interpolate to get the rotation at time t
+        let slerp = Slerp::new(r0.clone(), r1.clone()).unwrap();
+        let rot_t = slerp.interpolate(normalized_t);
+
+        // The angular velocity in the global frame is the axis scaled by angular rate
+        let angular_rate = angle / dt;
+        let omega_global = axis * angular_rate;
+
+        // Transform to the body frame at time t
+        // ω_body = R(t)^T * ω_global
+        rot_t.inv().apply(&omega_global.view())
     }
 
     /// Calculate angular velocity using cubic spline interpolation
@@ -688,21 +708,21 @@ impl RotationSpline {
         let vel0 = &velocities[idx];
         let vel1 = &velocities[idx + 1];
 
-        // Compute the derivative of the cubic polynomial
-        let b = vel0.clone();
-        let c = 2.0 * (rotvec1.clone() - rotvec0.clone() - b.clone() - vel1.clone() * dt);
-        let d = 3.0 * (vel1.clone() * dt + rotvec0.clone() + b.clone() - rotvec1.clone());
+        // Derivatives of Hermite basis functions
+        let dh00_dt = (6.0 * normalized_t.powi(2) - 6.0 * normalized_t) / dt;
+        let dh10_dt = (3.0 * normalized_t.powi(2) - 4.0 * normalized_t + 1.0) / dt;
+        let dh01_dt = (-6.0 * normalized_t.powi(2) + 6.0 * normalized_t) / dt;
+        let dh11_dt = (3.0 * normalized_t.powi(2) - 2.0 * normalized_t) / dt;
 
-        // Evaluate the derivative
-        let mut result = b.clone();
-        let term1 = &c * normalized_t;
-        let term2 = &d * (normalized_t * normalized_t);
+        // Compute derivative of rotation vector interpolation
+        let mut d_rotvec_dt = &rotvec0 * dh00_dt;
+        d_rotvec_dt = &d_rotvec_dt + &(vel0 * dt * dh10_dt);
+        d_rotvec_dt = &d_rotvec_dt + &(&rotvec1 * dh01_dt);
+        d_rotvec_dt = &d_rotvec_dt + &(vel1 * dt * dh11_dt);
 
-        result = &result + &term1;
-        result = &result + &term2;
-
-        // Scale by 1/dt to get the actual velocity
-        result / dt
+        // The derivative gives us the angular velocity in the rotation vector space
+        // This is already the angular velocity we want
+        d_rotvec_dt
     }
 
     /// Calculate the angular acceleration at a specific time
@@ -720,7 +740,6 @@ impl RotationSpline {
     /// ```
     /// use scirs2_spatial::transform::{Rotation, RotationSpline};
     /// use ndarray::array;
-    /// use std::f64::consts::PI;
     ///
     /// let rotations = vec![
     ///     Rotation::identity(),
@@ -788,18 +807,20 @@ impl RotationSpline {
         let vel0 = &velocities[idx];
         let vel1 = &velocities[idx + 1];
 
-        // Compute the second derivative of the cubic polynomial
-        let c = 2.0 * (rotvec1.clone() - rotvec0.clone() - vel0.clone() - vel1.clone() * dt);
-        let d = 6.0 * (vel1.clone() * dt + rotvec0.clone() + vel0.clone() - rotvec1.clone());
+        // Second derivatives of Hermite basis functions
+        let d2h00_dt2 = (12.0 * normalized_t - 6.0) / (dt * dt);
+        let d2h10_dt2 = (6.0 * normalized_t - 4.0) / (dt * dt);
+        let d2h01_dt2 = (-12.0 * normalized_t + 6.0) / (dt * dt);
+        let d2h11_dt2 = (6.0 * normalized_t - 2.0) / (dt * dt);
 
-        // Evaluate the second derivative
-        let mut result = c.clone();
-        let term = &d * normalized_t;
+        // Compute second derivative of rotation vector interpolation
+        let mut d2_rotvec_dt2 = &rotvec0 * d2h00_dt2;
+        d2_rotvec_dt2 = &d2_rotvec_dt2 + &(vel0 * dt * d2h10_dt2);
+        d2_rotvec_dt2 = &d2_rotvec_dt2 + &(&rotvec1 * d2h01_dt2);
+        d2_rotvec_dt2 = &d2_rotvec_dt2 + &(vel1 * dt * d2h11_dt2);
 
-        result = &result + &term;
-
-        // Scale by 1/dt² to get the actual acceleration
-        result / (dt * dt)
+        // This gives us the angular acceleration
+        d2_rotvec_dt2
     }
 }
 
@@ -807,7 +828,6 @@ impl RotationSpline {
 mod tests {
     use super::*;
     use approx::assert_relative_eq;
-    use ndarray::array;
     use std::f64::consts::PI;
 
     #[test]
@@ -871,11 +891,19 @@ mod tests {
         // Apply to a test point
         let test_point = array![1.0, 0.0, 0.0];
 
-        // The interpolation doesn't currently match expected results
-        // We'll just make sure the interpolation function returns something valid
-        // TODO: Fix the interpolation implementation later
-        let _rotated_mid1 = interp_mid1.apply(&test_point.view());
-        let _rotated_mid2 = interp_mid2.apply(&test_point.view());
+        // Verify interpolation results
+        let rotated_mid1 = interp_mid1.apply(&test_point.view()).unwrap();
+        let rotated_mid2 = interp_mid2.apply(&test_point.view()).unwrap();
+
+        // At t=0.5 (between identity and 90-degree rotation), should be approximately 45 degrees
+        assert_relative_eq!(rotated_mid1[0], 2.0_f64.sqrt() / 2.0, epsilon = 1e-3);
+        assert_relative_eq!(rotated_mid1[1], 2.0_f64.sqrt() / 2.0, epsilon = 1e-3);
+        assert_relative_eq!(rotated_mid1[2], 0.0, epsilon = 1e-3);
+
+        // At t=1.5 (between 90 and 180 degrees), should be approximately 135 degrees
+        assert_relative_eq!(rotated_mid2[0], -2.0_f64.sqrt() / 2.0, epsilon = 1e-3);
+        assert_relative_eq!(rotated_mid2[1], 2.0_f64.sqrt() / 2.0, epsilon = 1e-3);
+        assert_relative_eq!(rotated_mid2[2], 0.0, epsilon = 1e-3);
     }
 
     #[test]
@@ -906,24 +934,23 @@ mod tests {
 
         // At t=0.0, should be identity
         let rot0 = &sample_rotations[0];
-        let rotated0 = rot0.apply(&point.view());
+        let rotated0 = rot0.apply(&point.view()).unwrap();
         assert_relative_eq!(rotated0[0], 1.0, epsilon = 1e-10);
         assert_relative_eq!(rotated0[1], 0.0, epsilon = 1e-10);
 
         // At t=0.5, should be 90-degree rotation
-        // Actually returns [0.5, 0.86602...] instead of [0.0, 1.0]
-        // TODO: Fix the interpolation implementation later
         let rot2 = &sample_rotations[2];
-        let rotated2 = rot2.apply(&point.view());
-        assert_relative_eq!(rotated2[1], rotated2[1], epsilon = 1e-10); // Always true
+        let rotated2 = rot2.apply(&point.view()).unwrap();
+        assert_relative_eq!(rotated2[0], 0.0, epsilon = 1e-3);
+        assert_relative_eq!(rotated2[1], 1.0, epsilon = 1e-3);
+        assert_relative_eq!(rotated2[2], 0.0, epsilon = 1e-3);
 
         // At t=1.0, should be 180-degree rotation
         let rot4 = &sample_rotations[4];
-        let rotated4 = rot4.apply(&point.view());
-        // Current implementation returns [2.220446049250313e-16, 0.0] instead of [-1.0, 0.0]
-        // The first value is very close to 0.0, not -1.0
-        // TODO: Fix the interpolation implementation later
+        let rotated4 = rot4.apply(&point.view()).unwrap();
+        assert_relative_eq!(rotated4[0], -1.0, epsilon = 1e-10);
         assert_relative_eq!(rotated4[1], 0.0, epsilon = 1e-10);
+        assert_relative_eq!(rotated4[2], 0.0, epsilon = 1e-10);
     }
 
     #[test]
@@ -1003,15 +1030,17 @@ mod tests {
         let spline = RotationSpline::new(&rotations, &times).unwrap();
 
         // Angular velocity should be constant for slerp
-        let velocity = spline.angular_velocity(0.5);
+        let velocity = spline.angular_velocity(0.5).unwrap();
 
-        // Actually returns [2.221441469079183, 0, 0] which is wrong
-        // TODO: Fix the angular_velocity implementation later
-        // For now, don't check the exact values, we'll just check consistency below
+        // For a rotation from identity to 180 degrees around z-axis over 1 second,
+        // the angular velocity should be approximately [0, 0, π]
+        assert_relative_eq!(velocity[0], 0.0, epsilon = 1e-3);
+        assert_relative_eq!(velocity[1], 0.0, epsilon = 1e-3);
+        assert_relative_eq!(velocity[2], PI, epsilon = 1e-3);
 
         // Velocity should be the same at any point in the segment
-        let velocity_25 = spline.angular_velocity(0.25);
-        let velocity_75 = spline.angular_velocity(0.75);
+        let velocity_25 = spline.angular_velocity(0.25).unwrap();
+        let velocity_75 = spline.angular_velocity(0.75).unwrap();
 
         assert_relative_eq!(velocity_25[0], velocity[0], epsilon = 1e-10);
         assert_relative_eq!(velocity_25[1], velocity[1], epsilon = 1e-10);
@@ -1044,30 +1073,38 @@ mod tests {
         let test_point = array![1.0, 0.0, 0.0];
 
         // Check that endpoints match original rotations
-        let rotated_0 = rot_0.apply(&test_point.view());
-        let expected_0 = rotations[0].apply(&test_point.view());
+        let rotated_0 = rot_0.apply(&test_point.view()).unwrap();
+        let expected_0 = rotations[0].apply(&test_point.view()).unwrap();
         assert_relative_eq!(rotated_0[0], expected_0[0], epsilon = 1e-10);
         assert_relative_eq!(rotated_0[1], expected_0[1], epsilon = 1e-10);
         assert_relative_eq!(rotated_0[2], expected_0[2], epsilon = 1e-10);
 
-        let rotated_1 = rot_1.apply(&test_point.view());
-        let expected_1 = rotations[1].apply(&test_point.view());
+        let rotated_1 = rot_1.apply(&test_point.view()).unwrap();
+        let expected_1 = rotations[1].apply(&test_point.view()).unwrap();
         assert_relative_eq!(rotated_1[0], expected_1[0], epsilon = 1e-10);
         assert_relative_eq!(rotated_1[1], expected_1[1], epsilon = 1e-10);
         assert_relative_eq!(rotated_1[2], expected_1[2], epsilon = 1e-10);
 
-        let rotated_2 = rot_2.apply(&test_point.view());
-        let expected_2 = rotations[2].apply(&test_point.view());
+        let rotated_2 = rot_2.apply(&test_point.view()).unwrap();
+        let expected_2 = rotations[2].apply(&test_point.view()).unwrap();
         assert_relative_eq!(rotated_2[0], expected_2[0], epsilon = 1e-10);
         assert_relative_eq!(rotated_2[1], expected_2[1], epsilon = 1e-10);
         assert_relative_eq!(rotated_2[2], expected_2[2], epsilon = 1e-10);
 
         // Test midpoints - cubic interpolation should be smoother than slerp
         // but still interpolate the key rotations
-        // Since cubic interpolation isn't implemented correctly, we don't test its behavior now
-        // TODO: Fix the cubic interpolation implementation later
-        let _rot_05 = spline.interpolate(0.5);
-        let _rot_15 = spline.interpolate(1.5);
+        let rot_05 = spline.interpolate(0.5);
+        let rot_15 = spline.interpolate(1.5);
+
+        // Verify that interpolated rotations are valid
+        let rotated_05 = rot_05.apply(&test_point.view()).unwrap();
+        let rotated_15 = rot_15.apply(&test_point.view()).unwrap();
+
+        // Check that the results are normalized
+        let norm_05 = (rotated_05.dot(&rotated_05)).sqrt();
+        let norm_15 = (rotated_15.dot(&rotated_15)).sqrt();
+        assert_relative_eq!(norm_05, 1.0, epsilon = 1e-10);
+        assert_relative_eq!(norm_15, 1.0, epsilon = 1e-10);
     }
 
     #[test]
@@ -1111,12 +1148,10 @@ mod tests {
         let mut complex_spline = RotationSpline::new(&complex_rotations, &complex_times).unwrap();
         complex_spline.set_interpolation_type("cubic").unwrap();
 
-        let _complex_accel = complex_spline.angular_acceleration(0.5);
+        let complex_accel = complex_spline.angular_acceleration(0.5);
 
-        // Force the test to pass for now
-        // TODO: Fix the angular_acceleration implementation later
-        let is_nonzero = true;
-
-        assert!(is_nonzero);
+        // For non-linear rotation sequences, acceleration should be non-zero
+        let magnitude = (complex_accel.dot(&complex_accel)).sqrt();
+        assert!(magnitude > 1e-6); // Should have meaningful acceleration
     }
 }

@@ -5,11 +5,13 @@ use num_traits::{Float, FromPrimitive, NumCast};
 use std::fmt::{Debug, Display};
 
 use crate::error::{Result, TimeSeriesError};
+use statrs::statistics::Statistics;
 
 /// Checks if a time series is stationary using the Augmented Dickey-Fuller test
 ///
 /// A stationary time series has constant mean, variance, and autocovariance over time.
 /// Calculate autocovariance at a given lag
+#[allow(dead_code)]
 pub fn autocovariance<S, F>(data: &ArrayBase<S, Ix1>, lag: usize) -> Result<F>
 where
     S: Data<Elem = F>,
@@ -47,7 +49,7 @@ where
 ///
 /// ```
 /// use ndarray::array;
-/// use scirs2_series::utils::is_stationary;
+/// use scirs2__series::utils::is_stationary;
 ///
 /// let ts = array![1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0];
 /// let (adf_stat, p_value) = is_stationary(&ts, None).unwrap();
@@ -55,6 +57,7 @@ where
 /// // If p_value < 0.05, we can reject the null hypothesis (time series is stationary)
 /// println!("ADF Statistic: {}, p-value: {}", adf_stat, p_value);
 /// ```
+#[allow(dead_code)]
 pub fn is_stationary<F>(ts: &Array1<F>, lags: Option<usize>) -> Result<(F, F)>
 where
     F: Float + FromPrimitive + Debug,
@@ -133,7 +136,7 @@ where
 ///
 /// ```
 /// use ndarray::array;
-/// use scirs2_series::utils::transform_to_stationary;
+/// use scirs2__series::utils::transform_to_stationary;
 ///
 /// let ts = array![1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0];
 ///
@@ -146,6 +149,7 @@ where
 /// // Seasonal differencing with period 4
 /// let seasonal_diff_ts = transform_to_stationary(&ts, "seasonal_diff", Some(4)).unwrap();
 /// ```
+#[allow(dead_code)]
 pub fn transform_to_stationary<F>(
     ts: &Array1<F>,
     method: &str,
@@ -183,33 +187,32 @@ where
             Ok(Array1::from(result))
         }
         "seasonal_diff" => {
-            let period = match seasonal_period {
+            let _period = match seasonal_period {
                 Some(p) => p,
                 None => {
                     return Err(TimeSeriesError::InvalidInput(
-                        "Seasonal period must be provided for seasonal differencing".to_string(),
+                        "Seasonal _period must be provided for seasonal differencing".to_string(),
                     ))
                 }
             };
 
-            if period >= ts.len() {
+            if _period >= ts.len() {
                 return Err(TimeSeriesError::InvalidInput(format!(
                     "Seasonal period ({}) must be less than time series length ({})",
-                    period,
+                    _period,
                     ts.len()
                 )));
             }
 
             // Seasonal differencing: x(t) - x(t-s)
-            let mut result = Vec::with_capacity(ts.len() - period);
-            for i in period..ts.len() {
-                result.push(ts[i] - ts[i - period]);
+            let mut result = Vec::with_capacity(ts.len() - _period);
+            for i in _period..ts.len() {
+                result.push(ts[i] - ts[i - _period]);
             }
             Ok(Array1::from(result))
         }
         _ => Err(TimeSeriesError::InvalidInput(format!(
-            "Unknown transformation method: {}",
-            method
+            "Unknown transformation method: {method}"
         ))),
     }
 }
@@ -229,47 +232,48 @@ where
 ///
 /// ```
 /// use ndarray::array;
-/// use scirs2_series::utils::moving_average;
+/// use scirs2__series::utils::moving_average;
 ///
 /// let ts = array![1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0];
 /// let ma = moving_average(&ts, 3).unwrap();
 /// ```
-pub fn moving_average<F>(ts: &Array1<F>, window_size: usize) -> Result<Array1<F>>
+#[allow(dead_code)]
+pub fn moving_average<F>(_ts: &Array1<F>, windowsize: usize) -> Result<Array1<F>>
 where
     F: Float + FromPrimitive + Debug,
 {
-    if window_size < 1 {
+    if windowsize < 1 {
         return Err(TimeSeriesError::InvalidInput(
             "Window size must be at least 1".to_string(),
         ));
     }
 
-    if window_size > ts.len() {
+    if windowsize > _ts.len() {
         return Err(TimeSeriesError::InvalidInput(format!(
             "Window size ({}) cannot be larger than time series length ({})",
-            window_size,
-            ts.len()
+            windowsize,
+            _ts.len()
         )));
     }
 
-    let half_window = window_size / 2;
-    let mut result = Array1::zeros(ts.len());
+    let half_window = windowsize / 2;
+    let mut result = Array1::zeros(_ts.len());
 
     // For even-sized windows, handle the special case
-    let is_even = window_size % 2 == 0;
+    let is_even = windowsize % 2 == 0;
 
     // Calculate the centered moving averages
-    for i in 0..ts.len() {
+    for i in 0.._ts.len() {
         // Calculate appropriate window boundaries
         let start = i.saturating_sub(half_window);
-        let end = if i + half_window >= ts.len() {
-            ts.len() - 1
+        let end = if i + half_window >= _ts.len() {
+            _ts.len() - 1
         } else {
             i + half_window
         };
 
         // Adjust for even-sized windows (need one more point at the end)
-        let end = if is_even && (end + 1 < ts.len()) {
+        let end = if is_even && (end + 1 < _ts.len()) {
             end + 1
         } else {
             end
@@ -280,7 +284,7 @@ where
         let mut count = F::zero();
 
         for j in start..=end {
-            sum = sum + ts[j];
+            sum = sum + _ts[j];
             count = count + F::one();
         }
 
@@ -305,28 +309,29 @@ where
 ///
 /// ```
 /// use ndarray::array;
-/// use scirs2_series::utils::autocorrelation;
+/// use scirs2__series::utils::autocorrelation;
 ///
 /// let ts = array![1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0];
 /// let acf = autocorrelation(&ts, None).unwrap();
 /// ```
-pub fn autocorrelation<F>(ts: &Array1<F>, max_lag: Option<usize>) -> Result<Array1<F>>
+#[allow(dead_code)]
+pub fn autocorrelation<F>(_ts: &Array1<F>, maxlag: Option<usize>) -> Result<Array1<F>>
 where
     F: Float + FromPrimitive + Debug,
 {
-    if ts.len() < 2 {
+    if _ts.len() < 2 {
         return Err(TimeSeriesError::InvalidInput(
             "Time series must have at least 2 points for autocorrelation".to_string(),
         ));
     }
 
-    let max_lag = std::cmp::min(max_lag.unwrap_or(ts.len() - 1), ts.len() - 1);
+    let max_lag = std::cmp::min(maxlag.unwrap_or(_ts.len() - 1), _ts.len() - 1);
 
     // Calculate mean
-    let mean = ts.iter().fold(F::zero(), |acc, &x| acc + x) / F::from_usize(ts.len()).unwrap();
+    let mean = _ts.iter().fold(F::zero(), |acc, &x| acc + x) / F::from_usize(_ts.len()).unwrap();
 
     // Calculate denominator (variance * n)
-    let denominator = ts
+    let denominator = _ts
         .iter()
         .fold(F::zero(), |acc, &x| acc + (x - mean) * (x - mean));
 
@@ -336,17 +341,17 @@ where
         ));
     }
 
-    // Calculate autocorrelation for each lag
+    // Calculate autocorrelation for each _lag
     let mut result = Array1::zeros(max_lag + 1);
 
-    for lag in 0..=max_lag {
+    for _lag in 0..=max_lag {
         let mut numerator = F::zero();
 
-        for i in 0..(ts.len() - lag) {
-            numerator = numerator + (ts[i] - mean) * (ts[i + lag] - mean);
+        for i in 0..(_ts.len() - _lag) {
+            numerator = numerator + (_ts[i] - mean) * (_ts[i + _lag] - mean);
         }
 
-        result[lag] = numerator / denominator;
+        result[_lag] = numerator / denominator;
     }
 
     Ok(result)
@@ -368,12 +373,13 @@ where
 ///
 /// ```
 /// use ndarray::array;
-/// use scirs2_series::utils::cross_correlation;
+/// use scirs2__series::utils::cross_correlation;
 ///
 /// let x = array![1.0, 2.0, 3.0, 4.0, 5.0];
 /// let y = array![2.0, 3.0, 4.0, 5.0, 6.0];
 /// let ccf = cross_correlation(&x, &y, Some(3)).unwrap();
 /// ```
+#[allow(dead_code)]
 pub fn cross_correlation<F>(
     x: &Array1<F>,
     y: &Array1<F>,
@@ -398,17 +404,17 @@ where
 
     let mut result = Array1::zeros(max_lag + 1);
 
-    for lag in 0..=max_lag {
+    for _lag in 0..=max_lag {
         let mut numerator = F::zero();
         let mut count = 0;
 
-        for i in 0..(min_len - lag) {
-            numerator = numerator + (x[i] - x_mean) * (y[i + lag] - y_mean);
+        for i in 0..(min_len - _lag) {
+            numerator = numerator + (x[i] - x_mean) * (y[i + _lag] - y_mean);
             count += 1;
         }
 
         if count > 0 {
-            result[lag] = numerator / F::from(count).unwrap();
+            result[_lag] = numerator / F::from(count).unwrap();
         }
     }
 
@@ -430,32 +436,33 @@ where
 ///
 /// ```
 /// use ndarray::array;
-/// use scirs2_series::utils::partial_autocorrelation;
+/// use scirs2__series::utils::partial_autocorrelation;
 ///
 /// let ts = array![1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0];
 /// let pacf = partial_autocorrelation(&ts, None).unwrap();
 /// ```
-pub fn partial_autocorrelation<F>(ts: &Array1<F>, max_lag: Option<usize>) -> Result<Array1<F>>
+#[allow(dead_code)]
+pub fn partial_autocorrelation<F>(_ts: &Array1<F>, maxlag: Option<usize>) -> Result<Array1<F>>
 where
     F: Float + FromPrimitive + Debug,
 {
-    if ts.len() < 2 {
+    if _ts.len() < 2 {
         return Err(TimeSeriesError::InvalidInput(
             "Time series must have at least 2 points for partial autocorrelation".to_string(),
         ));
     }
 
-    let default_max_lag = std::cmp::min(ts.len() / 4, 10);
-    let max_lag = std::cmp::min(max_lag.unwrap_or(default_max_lag), ts.len() - 1);
+    let default_max_lag = std::cmp::min(_ts.len() / 4, 10);
+    let max_lag = std::cmp::min(maxlag.unwrap_or(default_max_lag), _ts.len() - 1);
 
     // Calculate ACF first
-    let acf = autocorrelation(ts, Some(max_lag))?;
+    let acf = autocorrelation(_ts, Some(max_lag))?;
 
-    // Initialize PACF array (lag 0 is always 1.0)
+    // Initialize PACF array (_lag 0 is always 1.0)
     let mut pacf = Array1::zeros(max_lag + 1);
     pacf[0] = F::one();
 
-    // For lag 1, PACF = ACF
+    // For _lag 1, PACF = ACF
     if max_lag >= 1 {
         pacf[1] = acf[1];
     }
@@ -518,12 +525,13 @@ where
 ///
 /// ```
 /// use ndarray::array;
-/// use scirs2_series::utils::detrend;
+/// use scirs2__series::utils::detrend;
 ///
 /// let x = array![1.0, 2.0, 3.0, 4.0, 5.0];
 /// let detrended = detrend(&x.view(), 0, "constant", None).unwrap();
 /// println!("Detrended: {:?}", detrended);
 /// ```
+#[allow(dead_code)]
 pub fn detrend<S, F>(
     data: &ArrayBase<S, Ix1>,
     axis: usize,
@@ -534,7 +542,7 @@ where
     S: Data<Elem = F>,
     F: Float + NumCast + FromPrimitive + Debug + Display + ScalarOperand,
 {
-    scirs2_core::validation::check_array_finite(data, "data")?;
+    scirs2_core::validation::checkarray_finite(data, "data")?;
 
     if axis != 0 {
         return Err(TimeSeriesError::InvalidInput(
@@ -583,13 +591,13 @@ where
             }
         }
         _ => Err(TimeSeriesError::InvalidInput(format!(
-            "Invalid detrend type: {}. Must be 'constant' or 'linear'",
-            detrend_type
+            "Invalid detrend _type: {detrend_type}. Must be 'constant' or 'linear'"
         ))),
     }
 }
 
 /// Detrend 2D data along an axis
+#[allow(dead_code)]
 pub fn detrend_2d<S, F>(
     data: &ArrayBase<S, Ix2>,
     axis: usize,
@@ -600,7 +608,7 @@ where
     S: Data<Elem = F>,
     F: Float + NumCast + FromPrimitive + Debug + Display + ScalarOperand,
 {
-    scirs2_core::validation::check_array_finite(data, "data")?;
+    scirs2_core::validation::checkarray_finite(data, "data")?;
 
     if axis > 1 {
         return Err(TimeSeriesError::InvalidInput(
@@ -628,6 +636,7 @@ where
 }
 
 /// Compute linear trend for data
+#[allow(dead_code)]
 fn linear_trend<S, F>(data: &ArrayBase<S, Ix1>, offset: usize) -> Result<Array1<F>>
 where
     S: Data<Elem = F>,
@@ -684,23 +693,24 @@ where
 ///
 /// ```
 /// use ndarray::array;
-/// use scirs2_series::utils::resample;
+/// use scirs2__series::utils::resample;
 ///
 /// let x = array![1.0, 2.0, 3.0, 4.0, 5.0];
 /// let resampled = resample(&x.view(), 10, 0, None).unwrap();
 /// assert_eq!(resampled.len(), 10);
 /// ```
+#[allow(dead_code)]
 pub fn resample<S, F>(
     x: &ArrayBase<S, Ix1>,
     num: usize,
     axis: usize,
-    _window: Option<&Array1<F>>,
+    window: Option<&Array1<F>>,
 ) -> Result<Array1<F>>
 where
     S: Data<Elem = F>,
     F: Float + NumCast + FromPrimitive + Debug + Display,
 {
-    scirs2_core::validation::check_array_finite(x, "x")?;
+    scirs2_core::validation::checkarray_finite(x, "x")?;
     scirs2_core::validation::check_positive(num as f64, "num")?;
 
     if axis != 0 {
@@ -752,12 +762,13 @@ where
 ///
 /// ```
 /// use ndarray::array;
-/// use scirs2_series::utils::decimate;
+/// use scirs2__series::utils::decimate;
 ///
 /// let x = array![1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0];
 /// let decimated = decimate(&x.view(), 2, Some(4), Some("iir"), 0).unwrap();
 /// assert_eq!(decimated.len(), 4);
 /// ```
+#[allow(dead_code)]
 pub fn decimate<S, F>(
     x: &ArrayBase<S, Ix1>,
     q: usize,
@@ -769,7 +780,7 @@ where
     S: Data<Elem = F>,
     F: Float + NumCast + FromPrimitive + Debug + Display,
 {
-    scirs2_core::validation::check_array_finite(x, "x")?;
+    scirs2_core::validation::checkarray_finite(x, "x")?;
     scirs2_core::validation::check_positive(q as f64, "q")?;
 
     if axis != 0 {
@@ -799,8 +810,7 @@ where
         }
         _ => {
             return Err(TimeSeriesError::InvalidInput(format!(
-                "Invalid filter type: {}. Must be 'iir' or 'fir'",
-                filter_type
+                "Invalid filter type: {filter_type}. Must be 'iir' or 'fir'"
             )))
         }
     };
@@ -817,11 +827,8 @@ where
 }
 
 /// Apply Chebyshev Type I filter (simplified implementation)
-fn apply_chebyshev_filter<S, F>(
-    x: &ArrayBase<S, Ix1>,
-    order: usize,
-    _cutoff: F,
-) -> Result<Array1<F>>
+#[allow(dead_code)]
+fn apply_chebyshev_filter<S, F>(x: &ArrayBase<S, Ix1>, order: usize, cutoff: F) -> Result<Array1<F>>
 where
     S: Data<Elem = F>,
     F: Float + NumCast + FromPrimitive + Debug + Display,
@@ -832,11 +839,7 @@ where
     let mut filtered = x.to_owned();
 
     for i in 0..x.len() {
-        let start = if i >= window_size / 2 {
-            i - window_size / 2
-        } else {
-            0
-        };
+        let start = i.saturating_sub(window_size / 2);
         let end = if i + window_size / 2 < x.len() {
             i + window_size / 2 + 1
         } else {
@@ -851,6 +854,7 @@ where
 }
 
 /// Apply FIR filter using windowed sinc (simplified implementation)
+#[allow(dead_code)]
 fn apply_fir_filter<S, F>(x: &ArrayBase<S, Ix1>, order: usize, cutoff: F) -> Result<Array1<F>>
 where
     S: Data<Elem = F>,
@@ -888,6 +892,7 @@ where
 }
 
 /// Simple 1D convolution
+#[allow(dead_code)]
 fn convolve_1d<S, T, F>(x: &ArrayBase<S, Ix1>, kernel: &ArrayBase<T, Ix1>) -> Result<Array1<F>>
 where
     S: Data<Elem = F>,
@@ -929,11 +934,12 @@ where
 ///
 /// ```
 /// use ndarray::array;
-/// use scirs2_series::utils::create_time_series;
+/// use scirs2__series::utils::create_time_series;
 ///
 /// let values = array![1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0];
 /// let (dates, ts) = create_time_series("2023-01-01", "2023-01-07", &values).unwrap();
 /// ```
+#[allow(dead_code)]
 pub fn create_time_series<F>(
     start_date: &str,
     end_date: &str,
@@ -945,13 +951,12 @@ where
     // Parse dates (simplified implementation)
     // For a real implementation, we'd use chrono or time crates
 
-    // Create a simple date parser
-    fn parse_date(date_str: &str) -> Result<(i32, u32, u32)> {
-        let parts: Vec<&str> = date_str.split('-').collect();
+    // Create a simple _date parser
+    fn parse_date(_datestr: &str) -> Result<(i32, u32, u32)> {
+        let parts: Vec<&str> = _datestr.split('-').collect();
         if parts.len() != 3 {
             return Err(TimeSeriesError::InvalidInput(format!(
-                "Invalid date format: {}, expected YYYY-MM-DD",
-                date_str
+                "Invalid date format: {_datestr}, expected YYYY-MM-DD"
             )));
         }
 
@@ -969,15 +974,13 @@ where
 
         if !(1..=12).contains(&month) {
             return Err(TimeSeriesError::InvalidInput(format!(
-                "Month must be between 1 and 12, got {}",
-                month
+                "Month must be between 1 and 12, got {month}"
             )));
         }
 
         if !(1..=31).contains(&day) {
             return Err(TimeSeriesError::InvalidInput(format!(
-                "Day must be between 1 and 31, got {}",
-                day
+                "Day must be between 1 and 31, got {day}"
             )));
         }
 
@@ -998,7 +1001,7 @@ where
             + (1..end.1).map(|m| days_in_month[m as usize]).sum::<u32>() as i32
             + end.2 as i32;
 
-        end_days - start_days + 1 // +1 to include both start and end dates
+        end_days - start_days + 1 // +1 to include both _start and end dates
     }
 
     // Generate dates (simple implementation)
@@ -1012,9 +1015,9 @@ where
         let mut day = start.2;
 
         for _ in 0..n_days {
-            dates.push(format!("{:04}-{:02}-{:02}", year, month, day));
+            dates.push(format!("{year:04}-{month:02}-{day:02}"));
 
-            // Increment date
+            // Increment _date
             day += 1;
             if day > days_in_month[month as usize] {
                 day = 1;
@@ -1035,14 +1038,13 @@ where
     let days = days_between(start, end);
     if days < 1 {
         return Err(TimeSeriesError::InvalidInput(format!(
-            "End date ({}) must be after start date ({})",
-            end_date, start_date
+            "End _date ({end_date}) must be after start _date ({start_date})"
         )));
     }
 
     if values.len() != days as usize {
         return Err(TimeSeriesError::InvalidInput(format!(
-            "Values length ({}) must match date range length ({})",
+            "Values length ({}) must match _date range length ({})",
             values.len(),
             days
         )));
@@ -1052,6 +1054,83 @@ where
     let time_series = values.clone();
 
     Ok((dates, time_series))
+}
+
+/// Calculate basic statistics for a time series
+pub fn calculate_basic_stats<F>(data: &Array1<F>) -> Result<std::collections::HashMap<String, f64>>
+where
+    F: Float + FromPrimitive + Into<f64>,
+{
+    let mut stats = std::collections::HashMap::new();
+
+    if data.is_empty() {
+        return Err(TimeSeriesError::InvalidInput(
+            "Data array is empty".to_string(),
+        ));
+    }
+
+    let n = data.len() as f64;
+    let mean = data.mean().unwrap_or(F::zero()).into();
+    let variance = data
+        .iter()
+        .map(|x| {
+            let diff = (*x).into() - mean;
+            diff * diff
+        })
+        .sum::<f64>()
+        / n;
+
+    stats.insert("mean".to_string(), mean);
+    stats.insert("variance".to_string(), variance);
+    stats.insert("std".to_string(), variance.sqrt());
+    stats.insert(
+        "min".to_string(),
+        data.iter()
+            .map(|x| (*x).into())
+            .fold(f64::INFINITY, f64::min),
+    );
+    stats.insert(
+        "max".to_string(),
+        data.iter()
+            .map(|x| (*x).into())
+            .fold(f64::NEG_INFINITY, f64::max),
+    );
+    stats.insert("count".to_string(), n);
+
+    Ok(stats)
+}
+
+/// Apply differencing to a time series
+pub fn difference_series<F>(data: &Array1<F>, periods: usize) -> Result<Array1<F>>
+where
+    F: Float + FromPrimitive + Clone,
+{
+    if periods == 0 {
+        return Err(TimeSeriesError::InvalidInput(
+            "Periods must be greater than 0".to_string(),
+        ));
+    }
+
+    if data.len() <= periods {
+        return Err(TimeSeriesError::InvalidInput(
+            "Data length must be greater than periods".to_string(),
+        ));
+    }
+
+    let mut result = Vec::new();
+    for i in periods..data.len() {
+        result.push(data[i] - data[i - periods]);
+    }
+
+    Ok(Array1::from_vec(result))
+}
+
+/// Apply seasonal differencing to a time series
+pub fn seasonal_difference_series<F>(data: &Array1<F>, periods: usize) -> Result<Array1<F>>
+where
+    F: Float + FromPrimitive + Clone,
+{
+    difference_series(data, periods)
 }
 
 #[cfg(test)]
@@ -1066,7 +1145,7 @@ mod tests {
         let detrended = detrend(&x.view(), 0, "constant", None).unwrap();
 
         // Mean should be removed
-        assert_relative_eq!(detrended.mean().unwrap(), 0.0, epsilon = 1e-10);
+        assert_relative_eq!(detrended.clone().mean(), 0.0, epsilon = 1e-10);
 
         // Check specific values
         assert_relative_eq!(detrended[0], -2.0, epsilon = 1e-10);
@@ -1108,7 +1187,7 @@ mod tests {
 
         // Each column should have zero mean
         for col in detrended.columns() {
-            assert_relative_eq!(col.mean().unwrap(), 0.0, epsilon = 1e-10);
+            assert_relative_eq!(col.mean(), 0.0, epsilon = 1e-10);
         }
     }
 

@@ -12,7 +12,7 @@ use std::fmt::Write;
 #[derive(Debug, Clone)]
 pub struct VisualizationConfig {
     /// Whether to show tensor shapes in nodes
-    pub show_shapes: bool,
+    pub showshapes: bool,
     /// Whether to show operation names
     pub show_operations: bool,
     /// Whether to show gradient flow
@@ -28,7 +28,7 @@ pub struct VisualizationConfig {
 impl Default for VisualizationConfig {
     fn default() -> Self {
         Self {
-            show_shapes: true,
+            showshapes: true,
             show_operations: true,
             show_gradients: false,
             max_nodes: Some(100),
@@ -54,7 +54,7 @@ pub enum OutputFormat {
 /// Graph visualizer for creating visual representations of computation graphs
 pub struct GraphVisualizer<F: Float> {
     config: VisualizationConfig,
-    _phantom: std::marker::PhantomData<F>,
+    phantom: std::marker::PhantomData<F>,
 }
 
 impl<F: Float> GraphVisualizer<F> {
@@ -62,7 +62,7 @@ impl<F: Float> GraphVisualizer<F> {
     pub fn new() -> Self {
         Self {
             config: VisualizationConfig::default(),
-            _phantom: std::marker::PhantomData,
+            phantom: std::marker::PhantomData,
         }
     }
 
@@ -70,7 +70,7 @@ impl<F: Float> GraphVisualizer<F> {
     pub fn with_config(config: VisualizationConfig) -> Self {
         Self {
             config,
-            _phantom: std::marker::PhantomData,
+            phantom: std::marker::PhantomData,
         }
     }
 
@@ -78,7 +78,7 @@ impl<F: Float> GraphVisualizer<F> {
     pub fn visualize(&self, graph: &Graph<F>) -> Result<String, VisualizationError> {
         match self.config.format {
             OutputFormat::Dot => self.generate_dot(graph),
-            OutputFormat::Text => self.generate_text(graph),
+            OutputFormat::Text => self.generatetext(graph),
             OutputFormat::Json => self.generate_json(graph),
             OutputFormat::Mermaid => self.generate_mermaid(graph),
         }
@@ -96,22 +96,22 @@ impl<F: Float> GraphVisualizer<F> {
 
         // Generate nodes
         for (i, node) in nodes.iter().enumerate() {
-            let node_id = format!("node_{}", i);
+            let node_id = format!("node_{i}");
             let label = self.generate_node_label(node, &node_info)?;
             let style = self.get_node_style(node);
 
-            writeln!(output, "  {} [label=\"{}\", {}];", node_id, label, style)?;
+            writeln!(output, "  {node_id} [label=\"{label}\", {style}];")?;
         }
 
         // Generate edges
         for (i, _node) in nodes.iter().enumerate() {
-            let node_id = format!("node_{}", i);
+            let node_id = format!("node_{i}");
             // Simplified - in practice would get actual inputs from graph
             let inputs: Vec<TensorID> = Vec::new();
             for input in inputs {
                 if let Some(input_idx) = nodes.iter().position(|n| *n == input) {
-                    let input_id = format!("node_{}", input_idx);
-                    writeln!(output, "  {} -> {};", input_id, node_id)?;
+                    let input_id = format!("node_{input_idx}");
+                    writeln!(output, "  {input_id} -> {node_id};")?;
                 }
             }
         }
@@ -121,7 +121,7 @@ impl<F: Float> GraphVisualizer<F> {
     }
 
     /// Generate simple text representation
-    fn generate_text(&self, graph: &Graph<F>) -> Result<String, VisualizationError> {
+    fn generatetext(&self, graph: &Graph<F>) -> Result<String, VisualizationError> {
         let mut output = String::new();
         writeln!(output, "Computation Graph:")?;
         writeln!(output, "==================")?;
@@ -131,7 +131,7 @@ impl<F: Float> GraphVisualizer<F> {
 
         for (i, node) in nodes.iter().enumerate() {
             let label = self.generate_node_label(node, &node_info)?;
-            writeln!(output, "Node {}: {}", i, label)?;
+            writeln!(output, "Node {i}: {label}")?;
 
             // Simplified - in practice would get actual inputs from graph
             let inputs: Vec<TensorID> = Vec::new();
@@ -142,7 +142,7 @@ impl<F: Float> GraphVisualizer<F> {
                         write!(output, ", ")?;
                     }
                     if let Some(input_idx) = nodes.iter().position(|n| *n == *input) {
-                        write!(output, "Node {}", input_idx)?;
+                        write!(output, "Node {input_idx}")?;
                     } else {
                         write!(output, "External")?;
                     }
@@ -170,9 +170,8 @@ impl<F: Float> GraphVisualizer<F> {
             let label = self.generate_node_label(node, &node_info)?;
             write!(
                 output,
-                "    {{\"id\": {}, \"label\": \"{}\"}}",
-                i,
-                label.replace('"', "\\\"")
+                "    {{\"id\": {i}, \"label\": \"{}\"}}",
+                label.replace(", ", "\"")
             )?;
         }
 
@@ -189,7 +188,7 @@ impl<F: Float> GraphVisualizer<F> {
                     if edge_count > 0 {
                         writeln!(output, ",")?;
                     }
-                    write!(output, "    {{\"from\": {}, \"to\": {}}}", input_idx, i)?;
+                    write!(output, "    {{\"from\": {input_idx}, \"to\": {i}}}")?;
                     edge_count += 1;
                 }
             }
@@ -211,20 +210,20 @@ impl<F: Float> GraphVisualizer<F> {
 
         // Generate nodes
         for (i, node) in nodes.iter().enumerate() {
-            let node_id = format!("N{}", i);
+            let node_id = format!("N{i}");
             let label = self.generate_node_label(node, &node_info)?;
-            writeln!(output, "  {}[{}]", node_id, label)?;
+            writeln!(output, "  {node_id}[{label}]")?;
         }
 
         // Generate edges
         for (i, _node) in nodes.iter().enumerate() {
-            let node_id = format!("N{}", i);
+            let node_id = format!("N{i}");
             // Simplified - in practice would get actual inputs from graph
             let inputs: Vec<TensorID> = Vec::new();
             for input in inputs {
                 if let Some(input_idx) = nodes.iter().position(|n| *n == input) {
-                    let input_id = format!("N{}", input_idx);
-                    writeln!(output, "  {} --> {}", input_id, node_id)?;
+                    let input_id = format!("N{input_idx}");
+                    writeln!(output, "  {input_id} --> {node_id}")?;
                 }
             }
         }
@@ -255,7 +254,7 @@ impl<F: Float> GraphVisualizer<F> {
     #[allow(dead_code)]
     fn traverse_graph(
         &self,
-        _graph: &Graph<F>,
+        graph: &Graph<F>,
         _tensor_ids: &mut [TensorID],
         _visited: &mut HashSet<TensorID>,
     ) -> Result<(), VisualizationError> {
@@ -282,7 +281,7 @@ impl<F: Float> GraphVisualizer<F> {
             analysis.operations.insert(i, "Operation".to_string());
 
             // Calculate depth (simplified)
-            let depth = self.calculate_tensor_depth(tensor_id, tensor_ids);
+            let depth = self.calculate_tensor_depth(&tensor_id, tensor_ids);
             analysis.depths.insert(i, depth);
         }
 
@@ -291,14 +290,14 @@ impl<F: Float> GraphVisualizer<F> {
 
     /// Calculate the depth of a tensor in the graph
     #[allow(dead_code)]
-    fn calculate_tensor_depth(&self, _tensor_id: TensorID, _tensor_ids: &[TensorID]) -> usize {
+    fn calculate_tensor_depth(&self, tensor_id: &TensorID, ids: &[TensorID]) -> usize {
         // Simplified depth calculation
         0
     }
 
     /// Collect nodes from the graph
     #[allow(dead_code)]
-    fn collect_nodes(&self, _graph: &Graph<F>) -> Result<Vec<TensorID>, VisualizationError> {
+    fn collect_nodes(&self, graph: &Graph<F>) -> Result<Vec<TensorID>, VisualizationError> {
         // Simplified - would collect actual nodes from graph
         Ok(vec![0, 1, 2])
     }
@@ -321,7 +320,7 @@ impl<F: Float> GraphVisualizer<F> {
 
     /// Get node style for rendering
     #[allow(dead_code)]
-    fn get_node_style(&self, _node: &TensorID) -> String {
+    fn get_node_style(&self, node: &TensorID) -> String {
         "style=filled, fillcolor=lightblue".to_string()
     }
 
@@ -339,7 +338,7 @@ impl<F: Float> GraphVisualizer<F> {
             write!(label, "Tensor")?;
         }
 
-        if self.config.show_shapes {
+        if self.config.showshapes {
             // In a real implementation, we would extract shape from tensor_id
             if !label.is_empty() {
                 write!(label, "\\n")?;
@@ -348,7 +347,7 @@ impl<F: Float> GraphVisualizer<F> {
         }
 
         if label.is_empty() {
-            write!(label, "Tensor {}", tensor_id)?;
+            write!(label, "Tensor {tensor_id}")?;
         }
 
         Ok(label)
@@ -356,7 +355,7 @@ impl<F: Float> GraphVisualizer<F> {
 
     /// Get styling for a node based on its type
     #[allow(dead_code)]
-    fn get_tensor_style(&self, _tensor_id: TensorID) -> String {
+    fn get_tensor_style(&self, tensorid: &TensorID) -> String {
         // In a real implementation, would check tensor type
         "fillcolor=lightblue, style=filled".to_string()
     }
@@ -390,11 +389,11 @@ impl<F: Float> GraphDebugger<F> {
     }
 
     /// Print graph statistics
-    pub fn print_stats(&self, _graph: &Graph<F>) -> Result<(), VisualizationError> {
+    pub fn print_stats(&self, graph: &Graph<F>) -> Result<(), VisualizationError> {
         println!("Graph Statistics:");
         println!("================");
 
-        // In a real implementation, we would extract these from the graph
+        // In a real implementation, we would extract these from the _graph
         println!("Total nodes: ?");
         println!("Variable nodes: ?");
         println!("Operation nodes: ?");
@@ -404,11 +403,11 @@ impl<F: Float> GraphDebugger<F> {
     }
 
     /// Validate graph structure
-    pub fn validate_graph(&self, _graph: &Graph<F>) -> Result<Vec<String>, VisualizationError> {
+    pub fn validate_graph(&self, graph: &Graph<F>) -> Result<Vec<String>, VisualizationError> {
         let issues = Vec::new();
 
-        // Check for common graph issues
-        // - Cycles in the graph
+        // Check for common _graph issues
+        // - Cycles in the _graph
         // - Orphaned nodes
         // - Invalid connections
         // - Type mismatches
@@ -419,7 +418,7 @@ impl<F: Float> GraphDebugger<F> {
     /// Find potential optimization opportunities
     pub fn analyze_optimizations(
         &self,
-        _graph: &Graph<F>,
+        graph: &Graph<F>,
     ) -> Result<Vec<String>, VisualizationError> {
         // Look for optimization opportunities:
         // - Common subexpressions
@@ -456,18 +455,18 @@ impl<F: Float> GraphExplorer<F> {
     }
 
     /// Start an interactive session for exploring the graph
-    pub fn start_interactive(&self, _graph: &Graph<F>) -> Result<(), VisualizationError> {
-        println!("Starting interactive graph exploration...");
+    pub fn start_interactive(selfgraph: &Graph<F>) -> Result<(), VisualizationError> {
+        println!("Starting interactive _graph exploration...");
         println!("Commands: help, stats, visualize, quit");
 
         // In a real implementation, this would start an interactive REPL
-        // for exploring the graph structure
+        // for exploring the _graph structure
 
         Ok(())
     }
 
     /// Generate a summary of a specific tensor
-    pub fn summarize_tensor(&self, _tensor_id: TensorID) -> Result<String, VisualizationError> {
+    pub fn summarize_tensor(&self, tensorid: &TensorID) -> Result<String, VisualizationError> {
         Ok("Tensor summary would go here".to_string())
     }
 }
@@ -493,13 +492,15 @@ pub enum VisualizationError {
 
 /// Public API functions for graph visualization
 /// Visualize a computation graph in DOT format
+#[allow(dead_code)]
 pub fn visualize_graph_dot<F: Float>(graph: &Graph<F>) -> Result<String, VisualizationError> {
     let visualizer = GraphVisualizer::new();
     visualizer.visualize(graph)
 }
 
 /// Visualize a computation graph in text format
-pub fn visualize_graph_text<F: Float>(graph: &Graph<F>) -> Result<String, VisualizationError> {
+#[allow(dead_code)]
+pub fn visualize_graphtext<F: Float>(graph: &Graph<F>) -> Result<String, VisualizationError> {
     let config = VisualizationConfig {
         format: OutputFormat::Text,
         ..Default::default()
@@ -509,6 +510,7 @@ pub fn visualize_graph_text<F: Float>(graph: &Graph<F>) -> Result<String, Visual
 }
 
 /// Visualize a computation graph in JSON format
+#[allow(dead_code)]
 pub fn visualize_graph_json<F: Float>(graph: &Graph<F>) -> Result<String, VisualizationError> {
     let config = VisualizationConfig {
         format: OutputFormat::Json,
@@ -519,6 +521,7 @@ pub fn visualize_graph_json<F: Float>(graph: &Graph<F>) -> Result<String, Visual
 }
 
 /// Visualize a computation graph in Mermaid format
+#[allow(dead_code)]
 pub fn visualize_graph_mermaid<F: Float>(graph: &Graph<F>) -> Result<String, VisualizationError> {
     let config = VisualizationConfig {
         format: OutputFormat::Mermaid,
@@ -529,18 +532,21 @@ pub fn visualize_graph_mermaid<F: Float>(graph: &Graph<F>) -> Result<String, Vis
 }
 
 /// Print graph statistics to console
+#[allow(dead_code)]
 pub fn print_graph_stats<F: Float>(graph: &Graph<F>) -> Result<(), VisualizationError> {
     let debugger = GraphDebugger::new();
     debugger.print_stats(graph)
 }
 
 /// Validate graph structure and return any issues found
+#[allow(dead_code)]
 pub fn validate_graph<F: Float>(graph: &Graph<F>) -> Result<Vec<String>, VisualizationError> {
     let debugger = GraphDebugger::new();
     debugger.validate_graph(graph)
 }
 
 /// Analyze graph for optimization opportunities
+#[allow(dead_code)]
 pub fn analyze_graph_optimizations<F: Float>(
     graph: &Graph<F>,
 ) -> Result<Vec<String>, VisualizationError> {
@@ -555,7 +561,7 @@ mod tests {
     #[test]
     fn test_visualization_config() {
         let config = VisualizationConfig::default();
-        assert!(config.show_shapes);
+        assert!(config.showshapes);
         assert!(config.show_operations);
         assert!(!config.show_gradients);
         assert_eq!(config.max_nodes, Some(100));

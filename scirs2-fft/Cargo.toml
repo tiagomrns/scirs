@@ -1,11 +1,11 @@
 [package]
 name = "scirs2-fft"
 version.workspace = true
-edition = "2021"
-authors = ["SciRS2 Team"]
-description = "Fast Fourier Transform module for SciRS2"
-license = "MIT OR Apache-2.0"
-repository = "https://github.com/cool-japan/scirs"
+edition.workspace = true
+authors.workspace = true
+description = "Fast Fourier Transform module for SciRS2 (scirs2-fft)"
+license.workspace = true
+repository.workspace = true
 keywords = ["fft", "fourier", "scientific", "scipy", "numerical"]
 categories = ["science", "mathematics", "algorithms"]
 
@@ -15,10 +15,14 @@ helper = []
 window = []
 minimal = []
 parallel = []
+serde = [] # Serialization support
 cuda = [] # Optional CUDA support for GPU acceleration (dependencies disabled)
 hip = [] # Optional ROCm/HIP support for AMD GPU acceleration
 sycl = [] # Optional SYCL support for cross-platform GPU acceleration
 never = [] # Used to conditionally disable tests during development
+
+[lints]
+workspace = true
 
 [dependencies]
 # Core dependencies
@@ -26,7 +30,7 @@ ndarray = { workspace = true }
 num-traits = { workspace = true }
 num-complex = { workspace = true }
 thiserror = { workspace = true }
-scirs2-core = { workspace = true, features = ["simd", "parallel", "gpu"] }
+scirs2-core = { workspace = true, features = ["simd", "parallel", "gpu", "validation"] }
 
 # FFT specific dependencies
 rustfft = { workspace = true }

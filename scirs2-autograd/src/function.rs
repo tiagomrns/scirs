@@ -21,6 +21,7 @@ use crate::tensor::Tensor;
 /// # Returns
 ///
 /// A new tensor containing the element-wise sum.
+#[allow(dead_code)]
 pub fn add<F: Float + Debug + Send + Sync + 'static>(
     a: &Tensor<F>,
     b: &Tensor<F>,
@@ -47,6 +48,7 @@ pub fn add<F: Float + Debug + Send + Sync + 'static>(
 /// # Returns
 ///
 /// A new tensor containing the element-wise difference.
+#[allow(dead_code)]
 pub fn sub<F: Float + Debug + Send + Sync + 'static>(
     a: &Tensor<F>,
     b: &Tensor<F>,
@@ -73,6 +75,7 @@ pub fn sub<F: Float + Debug + Send + Sync + 'static>(
 /// # Returns
 ///
 /// A new tensor containing the element-wise product.
+#[allow(dead_code)]
 pub fn mul<F: Float + Debug + Send + Sync + 'static>(
     a: &Tensor<F>,
     b: &Tensor<F>,
@@ -99,6 +102,7 @@ pub fn mul<F: Float + Debug + Send + Sync + 'static>(
 /// # Returns
 ///
 /// A new tensor containing the element-wise quotient.
+#[allow(dead_code)]
 pub fn div<F: Float + Debug + Send + Sync + 'static>(
     a: &Tensor<F>,
     b: &Tensor<F>,
@@ -125,6 +129,7 @@ pub fn div<F: Float + Debug + Send + Sync + 'static>(
 /// # Returns
 ///
 /// A new tensor containing the matrix product.
+#[allow(dead_code)]
 pub fn matmul<F: Float + Debug + Send + Sync + 'static>(
     a: &Tensor<F>,
     b: &Tensor<F>,
@@ -136,13 +141,13 @@ pub fn matmul<F: Float + Debug + Send + Sync + 'static>(
         ));
     }
 
-    let a_shape = a.shape();
-    let b_shape = b.shape();
+    let ashape = a.shape();
+    let bshape = b.shape();
 
-    if a_shape[a_shape.len() - 1] != b_shape[b_shape.len() - 2] {
+    if ashape[ashape.len() - 1] != bshape[bshape.len() - 2] {
         return Err(AutogradError::ShapeMismatch(format!(
             "Matrix multiplication dimension mismatch: {:?} and {:?}",
-            a_shape, b_shape
+            ashape, bshape
         )));
     }
 
@@ -153,7 +158,7 @@ pub fn matmul<F: Float + Debug + Send + Sync + 'static>(
     let b_cols = b.data.shape()[1];
 
     // Create result matrix
-    let mut result_data_2d = Array::<F, _>::zeros((a_rows, b_cols));
+    let mut result_data_2d = Array::<F>::zeros((a_rows, b_cols));
 
     // Manually compute matrix multiplication
     for i in 0..a_rows {
@@ -187,6 +192,7 @@ pub fn matmul<F: Float + Debug + Send + Sync + 'static>(
 /// # Returns
 ///
 /// A new tensor with ReLU applied element-wise.
+#[allow(dead_code)]
 pub fn relu<F: Float + Debug + Send + Sync + 'static>(x: &Tensor<F>) -> Result<Tensor<F>> {
     let result_data = x.data.mapv(|v| if v > F::zero() { v } else { F::zero() });
 
@@ -207,6 +213,7 @@ pub fn relu<F: Float + Debug + Send + Sync + 'static>(x: &Tensor<F>) -> Result<T
 /// # Returns
 ///
 /// A new tensor with sigmoid applied element-wise.
+#[allow(dead_code)]
 pub fn sigmoid<F: Float + Debug + Send + Sync + 'static>(x: &Tensor<F>) -> Result<Tensor<F>> {
     let result_data = x.data.mapv(|v| F::one() / (F::one() + (-v).exp()));
 
@@ -227,6 +234,7 @@ pub fn sigmoid<F: Float + Debug + Send + Sync + 'static>(x: &Tensor<F>) -> Resul
 /// # Returns
 ///
 /// A new tensor with tanh applied element-wise.
+#[allow(dead_code)]
 pub fn tanh<F: Float + Debug + Send + Sync + 'static>(x: &Tensor<F>) -> Result<Tensor<F>> {
     let result_data = x.data.mapv(|v| v.tanh());
 
@@ -248,6 +256,7 @@ pub fn tanh<F: Float + Debug + Send + Sync + 'static>(x: &Tensor<F>) -> Result<T
 /// # Returns
 ///
 /// A new tensor with the sum results.
+#[allow(dead_code)]
 pub fn sum<F: Float + Debug + Send + Sync + 'static>(
     x: &Tensor<F>,
     axis: Option<usize>,
@@ -287,6 +296,7 @@ pub fn sum<F: Float + Debug + Send + Sync + 'static>(
 /// # Returns
 ///
 /// A new tensor with the mean results.
+#[allow(dead_code)]
 pub fn mean<F: Float + Debug + Send + Sync + 'static>(
     x: &Tensor<F>,
     axis: Option<usize>,
@@ -331,6 +341,7 @@ pub fn mean<F: Float + Debug + Send + Sync + 'static>(
 /// # Returns
 ///
 /// A new tensor with the same data but reshaped.
+#[allow(dead_code)]
 pub fn reshape<F: Float + Debug + Send + Sync + 'static>(
     x: &Tensor<F>,
     shape: &[usize],
@@ -361,10 +372,10 @@ pub fn reshape<F: Float + Debug + Send + Sync + 'static>(
     // since it's just a view of the same data
     if x.requires_grad {
         // Create a backward function that reshapes gradients back to original shape
-        let original_shape = x.shape().to_vec();
+        let originalshape = x.shape().to_vec();
         let backward = Box::new(move |grad: Array<F, IxDyn>| -> Result<Array<F, IxDyn>> {
-            // Use to_shape instead of into_shape to avoid FnOnce issues
-            match grad.clone().into_shape_with_order(original_shape.clone()) {
+            // Use toshape instead of intoshape to avoid FnOnce issues
+            match grad.clone().into_shape_with_order(originalshape.clone()) {
                 Ok(reshaped_grad) => Ok(reshaped_grad),
                 Err(e) => Err(AutogradError::OperationError(format!(
                     "Gradient reshape error: {}",
@@ -392,6 +403,7 @@ pub fn reshape<F: Float + Debug + Send + Sync + 'static>(
 /// # Returns
 ///
 /// A new tensor with the dimensions swapped.
+#[allow(dead_code)]
 pub fn transpose<F: Float + Debug + Send + Sync + 'static>(
     x: &Tensor<F>,
     dim0: usize,
@@ -461,6 +473,7 @@ pub fn transpose<F: Float + Debug + Send + Sync + 'static>(
 /// # Returns
 ///
 /// A new tensor with the natural logarithm applied element-wise.
+#[allow(dead_code)]
 pub fn log<F: Float + Debug + Send + Sync + 'static>(x: &Tensor<F>) -> Result<Tensor<F>> {
     let result_data = x.data.mapv(|v| v.ln());
 
@@ -488,6 +501,7 @@ pub fn log<F: Float + Debug + Send + Sync + 'static>(x: &Tensor<F>) -> Result<Te
 /// # Returns
 ///
 /// A new tensor with the exponential applied element-wise.
+#[allow(dead_code)]
 pub fn exp<F: Float + Debug + Send + Sync + 'static>(x: &Tensor<F>) -> Result<Tensor<F>> {
     let result_data = x.data.mapv(|v| v.exp());
 
@@ -516,6 +530,7 @@ pub fn exp<F: Float + Debug + Send + Sync + 'static>(x: &Tensor<F>) -> Result<Te
 /// # Returns
 ///
 /// A new tensor with softmax applied along the specified dimension.
+#[allow(dead_code)]
 pub fn softmax<F: Float + Debug + Send + Sync + 'static>(
     x: &Tensor<F>,
     dim: usize,
@@ -642,6 +657,7 @@ pub fn softmax<F: Float + Debug + Send + Sync + 'static>(
 /// # Returns
 ///
 /// A new tensor that is the concatenation of the input tensors.
+#[allow(dead_code)]
 pub fn cat<F: Float + Debug + Send + Sync + 'static>(
     tensors: &[&Tensor<F>],
     dim: usize,
@@ -653,8 +669,8 @@ pub fn cat<F: Float + Debug + Send + Sync + 'static>(
     }
 
     // Check dimension compatibility
-    let ref_shape = tensors[0].shape();
-    let ndim = ref_shape.len();
+    let refshape = tensors[0].shape();
+    let ndim = refshape.len();
 
     if dim >= ndim {
         return Err(AutogradError::ShapeMismatch(format!(
@@ -673,11 +689,11 @@ pub fn cat<F: Float + Debug + Send + Sync + 'static>(
             )));
         }
 
-        for (j, (&s1, &s2)) in ref_shape.iter().zip(shape.iter()).enumerate() {
+        for (j, (&s1, &s2)) in refshape.iter().zip(shape.iter()).enumerate() {
             if j != dim && s1 != s2 {
                 return Err(AutogradError::ShapeMismatch(format!(
                     "Incompatible shapes for concatenation: {:?} and {:?} at dimension {}",
-                    ref_shape, shape, j
+                    refshape, shape, j
                 )));
             }
         }
@@ -685,11 +701,11 @@ pub fn cat<F: Float + Debug + Send + Sync + 'static>(
 
     // Implement concatenation along the specified dimension
     // First, we'll create a new shape for the result tensor
-    let mut result_shape = ref_shape.to_vec();
-    result_shape[dim] = tensors.iter().map(|t| t.shape()[dim]).sum();
+    let mut resultshape = refshape.to_vec();
+    resultshape[dim] = tensors.iter().map(|t| t.shape()[dim]).sum();
     
     // Create an empty array with the new shape
-    let mut result_data = Array::<F, IxDyn>::zeros(result_shape.clone());
+    let mut result_data = Array::<F, IxDyn>::zeros(resultshape.clone());
     
     // Now fill the result by copying each tensor into the appropriate slice
     let mut offset = 0;
@@ -729,18 +745,18 @@ pub fn cat<F: Float + Debug + Send + Sync + 'static>(
             total_dim_size += tensor.shape()[dim];
 
             if tensor.requires_grad {
-                let _tensor_shape = tensor.shape();
+                let _tensorshape = tensor.shape();
                 let _dim_clone = dim;
 
                 backward_fns.push(Some(Box::new(
                     move |grad: Array<F, IxDyn>| -> Result<Array<F, IxDyn>> {
                         // Extract the appropriate slice of the gradient for this tensor
-                        let tensor_shape = _tensor_shape.clone();
-                        let dim = _dim_clone;
+                        let tensorshape = tensorshape.clone();
+                        let dim = dim_clone;
                         let offset = offset; // Capture from outer scope
                         
                         // Get the size of this tensor along the concatenation dimension
-                        let size_along_dim = tensor_shape[dim];
+                        let size_along_dim = tensorshape[dim];
                         
                         // Create a slice of the gradient corresponding to this tensor
                         let mut indices: Vec<ndarray::SliceInfo<_, ndarray::SliceArg>> = 

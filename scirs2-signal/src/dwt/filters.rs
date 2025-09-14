@@ -1,11 +1,13 @@
-//! Wavelet filter definitions and generation functions
-//!
-//! This module provides various wavelet filter definitions, including Haar, Daubechies,
-//! Symlets, Coiflets, Biorthogonal, and Meyer wavelets.
+// Wavelet filter definitions and generation functions
+//
+// This module provides various wavelet filter definitions, including Haar, Daubechies,
+// Symlets, Coiflets, Biorthogonal, and Meyer wavelets.
 
 use crate::error::{SignalError, SignalResult};
 
+#[allow(unused_imports)]
 /// Represents a wavelet filter pair (decomposition and reconstruction filters)
+#[derive(Clone)]
 pub struct WaveletFilters {
     /// Decomposition low-pass filter
     pub dec_lo: Vec<f64>,
@@ -43,7 +45,7 @@ impl WaveletFilters {
 }
 
 /// Predefined wavelet types
-#[derive(Debug, Copy, Clone, PartialEq)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq, Hash, serde::Serialize, serde::Deserialize)]
 pub enum Wavelet {
     /// Haar wavelet (equivalent to db1)
     Haar,
@@ -51,6 +53,8 @@ pub enum Wavelet {
     DB(usize),
     /// Coiflet wavelets with N vanishing moments
     Coif(usize),
+    /// Coiflet wavelets with N vanishing moments (alternative name)
+    Coiflet(usize),
     /// Symlet wavelets with N vanishing moments
     Sym(usize),
     /// Biorthogonal wavelets with Nr/Nd vanishing moments
@@ -61,6 +65,8 @@ pub enum Wavelet {
     Meyer,
     /// Discrete Meyer wavelet
     DMeyer,
+    /// Compatibility alias for Daubechies 4
+    Daubechies4,
 }
 
 impl Wavelet {
@@ -107,15 +113,38 @@ impl Wavelet {
                 }
                 coif_filters(n)
             }
+            Wavelet::Coiflet(n) => {
+                if n == 0 {
+                    return Err(SignalError::ValueError(
+                        "Coiflet wavelet order must be at least 1".to_string(),
+                    ));
+                }
+                if n > 5 {
+                    return Err(SignalError::ValueError(
+                        "Coiflet wavelet order must be at most 5".to_string(),
+                    ));
+                }
+                coif_filters(n)
+            }
             Wavelet::BiorNrNd { nr, nd } => bior_filters(nr, nd),
             Wavelet::RBioNrNd { nr, nd } => rbior_filters(nr, nd),
             Wavelet::Meyer => meyer_filters(),
             Wavelet::DMeyer => dmeyer_filters(),
+            Wavelet::Daubechies4 => db_filters(4),
+        }
+    }
+
+    /// Get the filter length for this wavelet
+    pub fn get_filter_length(&self) -> SignalResult<usize> {
+        match self.filters() {
+            Ok(filters) => Ok(filters.dec_lo.len()),
+            Err(e) => Err(e),
         }
     }
 }
 
 /// Haar wavelet filters
+#[allow(dead_code)]
 fn haar_filters() -> WaveletFilters {
     let dec_lo = vec![0.7071067811865475, 0.7071067811865475];
     let dec_hi = vec![-0.7071067811865475, 0.7071067811865475];
@@ -126,6 +155,7 @@ fn haar_filters() -> WaveletFilters {
 }
 
 /// Daubechies wavelet filters
+#[allow(dead_code)]
 fn db_filters(n: usize) -> SignalResult<WaveletFilters> {
     // Coefficients for Daubechies wavelets up to db20
     let coeffs = match n {
@@ -620,6 +650,7 @@ fn db_filters(n: usize) -> SignalResult<WaveletFilters> {
 }
 
 /// Symlet wavelet filters
+#[allow(dead_code)]
 fn sym_filters(n: usize) -> SignalResult<WaveletFilters> {
     // Symlets are similar to Daubechies but more symmetrical
     // For now, we'll implement a few commonly used ones
@@ -750,6 +781,7 @@ fn sym_filters(n: usize) -> SignalResult<WaveletFilters> {
 }
 
 /// Coiflet wavelet filters
+#[allow(dead_code)]
 fn coif_filters(n: usize) -> SignalResult<WaveletFilters> {
     // Coiflet filter coefficients
     let coeffs = match n {
@@ -893,6 +925,7 @@ fn coif_filters(n: usize) -> SignalResult<WaveletFilters> {
 }
 
 /// Biorthogonal wavelet filters
+#[allow(dead_code)]
 fn bior_filters(nr: usize, nd: usize) -> SignalResult<WaveletFilters> {
     // Biorthogonal wavelets use different filters for decomposition and reconstruction
     // The filters are defined by their order (nr, nd)
@@ -1089,13 +1122,13 @@ fn bior_filters(nr: usize, nd: usize) -> SignalResult<WaveletFilters> {
                     -0.0129475118625466,
                     0.0289161098263542,
                     0.0529984818906909,
-                    -0.134_913_073_607_712,
+                    -0.134913073607712,
                     -0.1638291834577726,
                     0.5097608153878514,
-                    0.951_556_053_042_669,
+                    0.951556053042669,
                     0.5097608153878514,
                     -0.1638291834577726,
-                    -0.134_913_073_607_712,
+                    -0.134913073607712,
                     0.0529984818906909,
                     0.0289161098263542,
                     -0.0129475118625466,
@@ -1231,6 +1264,7 @@ fn bior_filters(nr: usize, nd: usize) -> SignalResult<WaveletFilters> {
 }
 
 /// Reverse biorthogonal wavelet filters
+#[allow(dead_code)]
 fn rbior_filters(nr: usize, nd: usize) -> SignalResult<WaveletFilters> {
     // Reverse biorthogonal wavelets are just biorthogonal wavelets with
     // decomposition and reconstruction filters swapped
@@ -1282,6 +1316,7 @@ fn rbior_filters(nr: usize, nd: usize) -> SignalResult<WaveletFilters> {
 /// These are approximations of the Meyer wavelet for DWT
 /// The Meyer wavelet is defined in the frequency domain and doesn't have
 /// a finite filter representation. This implementation uses a FIR approximation.
+#[allow(dead_code)]
 fn meyer_filters() -> SignalResult<WaveletFilters> {
     // Use a 62-tap FIR approximation for the Meyer wavelet
     let filter_len = 62;
@@ -1383,6 +1418,7 @@ fn meyer_filters() -> SignalResult<WaveletFilters> {
 /// The Discrete Meyer wavelet is a more computationally efficient
 /// approximation of the Meyer wavelet that uses FIR filters.
 /// This implementation uses the coefficients from PyWavelets/SciPy.
+#[allow(dead_code)]
 fn dmeyer_filters() -> SignalResult<WaveletFilters> {
     // These are pre-computed Discrete Meyer wavelet coefficients
     // Comparable to the ones used in SciPy/PyWavelets (dmey)

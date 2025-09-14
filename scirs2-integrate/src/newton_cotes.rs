@@ -9,6 +9,7 @@
 use crate::error::{IntegrateError, IntegrateResult};
 use crate::IntegrateFloat;
 use ndarray::Array1;
+use std::f64::consts::PI;
 // use num_traits::Float;
 
 /// Represents the type of Newton-Cotes formula to generate
@@ -58,7 +59,7 @@ pub struct NewtonCotesResult<F: IntegrateFloat> {
 /// # Examples
 ///
 /// ```
-/// use scirs2_integrate::newton_cotes::{newton_cotes, NewtonCotesType, NewtonCotesResult};
+/// use scirs2__integrate::newton_cotes::{newton_cotes, NewtonCotesType, NewtonCotesResult};
 ///
 /// // Generate a 5-point closed Newton-Cotes formula (Boole's rule)
 /// let result: NewtonCotesResult<f64> = newton_cotes(5, NewtonCotesType::Closed, None, None).unwrap();
@@ -79,6 +80,7 @@ pub struct NewtonCotesResult<F: IntegrateFloat> {
 ///
 /// - Higher-order rules (n > 8) may have poor numerical properties due to
 ///   Runge's phenomenon and should be used with caution.
+#[allow(dead_code)]
 pub fn newton_cotes<F: IntegrateFloat>(
     n: usize,
     formula_type: NewtonCotesType,
@@ -169,6 +171,7 @@ pub fn newton_cotes<F: IntegrateFloat>(
 }
 
 /// Calculates the weights for a Newton-Cotes formula
+#[allow(dead_code)]
 fn calculate_weights<F: IntegrateFloat>(
     n: usize,
     formula_type: &NewtonCotesType,
@@ -297,6 +300,7 @@ fn calculate_weights<F: IntegrateFloat>(
 }
 
 /// Calculates weights for Newton-Cotes formulas of any order using general approach
+#[allow(dead_code)]
 fn calculate_weights_general<F: IntegrateFloat>(
     n: usize,
     formula_type: &NewtonCotesType,
@@ -389,6 +393,7 @@ fn calculate_weights_general<F: IntegrateFloat>(
 }
 
 /// Calculates error coefficient for error estimation
+#[allow(dead_code)]
 fn calculate_error_coefficient<F: IntegrateFloat>(
     n: usize,
     formula_type: &NewtonCotesType,
@@ -450,6 +455,7 @@ fn calculate_error_coefficient<F: IntegrateFloat>(
 /// # Returns
 ///
 /// Approximate value of the integral and an error estimate
+#[allow(dead_code)]
 pub fn newton_cotes_integrate<F, Func>(
     f: Func,
     a: F,
@@ -487,7 +493,6 @@ where
 mod tests {
     use super::*;
     use approx::assert_abs_diff_eq;
-    use std::f64::consts::PI;
 
     #[test]
     fn test_newton_cotes_trapezoidal() {
@@ -541,15 +546,15 @@ mod tests {
     #[test]
     fn test_newton_cotes_integrate() {
         // Test integration of x^2 from 0 to 1 = 1/3
-        let (result, _) =
+        let (result_, error) =
             newton_cotes_integrate(|x| x * x, 0.0, 1.0, 3, NewtonCotesType::Closed).unwrap();
-        assert_abs_diff_eq!(result, 1.0 / 3.0, epsilon = 1e-14);
+        assert_abs_diff_eq!(result_, 1.0 / 3.0, epsilon = 1e-14);
 
         // Test integration of sin(x) from 0 to pi = 2
         // Simpson's rule gives 2π/3 ≈ 2.094, which has ~5% error
-        let (result, _) =
-            newton_cotes_integrate(|x| x.sin(), 0.0, PI, 3, NewtonCotesType::Closed).unwrap();
-        assert_abs_diff_eq!(result, 2.0, epsilon = 0.1);
+        let (result_, error) =
+            newton_cotes_integrate(|x: f64| x.sin(), 0.0, PI, 3, NewtonCotesType::Closed).unwrap();
+        assert_abs_diff_eq!(result_, 2.0, epsilon = 0.1);
     }
 
     #[test]

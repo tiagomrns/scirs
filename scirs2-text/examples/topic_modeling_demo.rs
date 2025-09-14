@@ -5,6 +5,7 @@ use scirs2_text::{
 };
 use std::collections::HashMap;
 
+#[allow(dead_code)]
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("Topic Modeling with LDA Demo");
     println!("===========================\n");
@@ -49,8 +50,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // Train LDA model
     let mut lda = LdaBuilder::new()
-        .n_topics(3)
-        .max_iter(100)
+        .ntopics(3)
+        .maxiter(100)
         .random_seed(42)
         .doc_topic_prior(0.1)
         .topic_word_prior(0.01)
@@ -68,7 +69,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             .iter()
             .enumerate()
             .max_by(|(_, a), (_, b)| a.partial_cmp(b).unwrap())
-            .map(|(idx, _)| idx)
+            .map(|(idx_, _)| idx_)
             .unwrap();
 
         println!(
@@ -90,7 +91,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         println!("\nTopic {}:", topic.id);
         println!("Top words:");
         for (word, weight) in &topic.top_words {
-            println!("  {} ({:.4})", word, weight);
+            println!("  {word} ({weight:.4})");
         }
     }
 
@@ -100,15 +101,15 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let new_doc_vec = vectorizer.transform(new_doc)?;
     let new_doc_topics = lda.transform(&new_doc_vec.insert_axis(ndarray::Axis(0)))?;
 
-    println!("Document: \"{}\"", new_doc);
+    println!("Document: \"{new_doc}\"");
     println!("Topic distribution:");
     for (topic_idx, &prob) in new_doc_topics.row(0).iter().enumerate() {
-        println!("  Topic {}: {:.3}", topic_idx, prob);
+        println!("  Topic {topic_idx}: {prob:.3}");
     }
 
     // Create another LDA model with different configuration
     println!("\n\nTrying different LDA configuration:");
-    let mut lda2 = LatentDirichletAllocation::with_n_topics(4);
+    let mut lda2 = LatentDirichletAllocation::with_ntopics(4);
     lda2.fit(&doc_term_matrix)?;
 
     let topics2 = lda2.get_topics(5, &word_index_map)?;
@@ -117,7 +118,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         let words: Vec<String> = topic
             .top_words
             .iter()
-            .map(|(word, _)| word.clone())
+            .map(|(word_, _)| word_.clone())
             .collect();
         println!("Topic {}: {}", topic.id, words.join(", "));
     }

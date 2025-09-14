@@ -1,14 +1,17 @@
 [package]
 name = "scirs2-metrics"
 version.workspace = true
-edition = "2021"
-authors = ["SciRS2 Team"]
-license = "MIT OR Apache-2.0"
-description = "Machine Learning evaluation metrics module for SciRS2"
-repository = "https://github.com/cool-japan/scirs"
+edition.workspace = true
+authors.workspace = true
+description = "Machine Learning evaluation metrics module for SciRS2 (scirs2-metrics)"
+license.workspace = true
+repository.workspace = true
 keywords = ["metrics", "evaluation", "scientific", "ai", "machine-learning"]
 categories = ["science", "mathematics", "algorithms"]
 build = "build.rs"
+
+[lints]
+workspace = true
 
 [dependencies]
 # Core dependencies
@@ -28,16 +31,22 @@ approx = { workspace = true }
 rand = { workspace = true }
 rand_distr = { workspace = true }
 parking_lot = { workspace = true }
+num_cpus = { workspace = true }
+crossbeam-utils = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true }
 serde_yaml = { workspace = true }
 toml = { workspace = true }
 ciborium = { workspace = true }  # CBOR serialization
 chrono = { workspace = true }
+statrs = { workspace = true }
 
 # Visualization dependencies (optional)
 plotters = { workspace = true, optional = true }
 plotly = { workspace = true, optional = true }
+
+# Async runtime for dashboard server (optional)
+tokio = { workspace = true, optional = true, features = ["rt-multi-thread", "net", "io-util"] }
 
 # BLAS dependencies handled through scirs2-core
 
@@ -54,6 +63,8 @@ optim_integration = [] # Common optimization functionality - external integratio
 # Visualization backends
 plotters_backend = ["dep:plotters"]
 plotly_backend = ["dep:plotly"]
+# Dashboard server (requires tokio)
+dashboard_server = ["dep:tokio"]
 # Enable external ML library wrappers
 # pandrs = ["dep:pandrs_wrapper"]
 

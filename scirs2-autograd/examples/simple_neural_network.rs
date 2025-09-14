@@ -11,6 +11,7 @@ use scirs2_autograd as ag;
 // src/tensor_ops/basic_source_ops.rs where Variable op is implemented with
 // `unreachable!()` in its compute method.
 
+#[allow(dead_code)]
 fn main() {
     println!("Creating a simple neural network for binary classification");
 

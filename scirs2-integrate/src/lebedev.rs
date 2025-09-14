@@ -115,7 +115,7 @@ impl LebedevOrder {
 /// # Examples
 ///
 /// ```
-/// use scirs2_integrate::lebedev::{lebedev_rule, LebedevOrder};
+/// use scirs2__integrate::lebedev::{lebedev_rule, LebedevOrder};
 ///
 /// // Generate a 14th-order Lebedev rule
 /// let rule = lebedev_rule(LebedevOrder::Order14).unwrap();
@@ -127,18 +127,19 @@ impl LebedevOrder {
 /// let weight_sum: f64 = rule.weights.sum();
 /// assert!((weight_sum - 1.0).abs() < 1e-10);
 /// ```
+#[allow(dead_code)]
 pub fn lebedev_rule<F: IntegrateFloat>(order: LebedevOrder) -> IntegrateResult<LebedevRule<F>> {
-    // Generate the rule based on the requested order
+    // Generate the rule based on the requested _order
     match order {
         LebedevOrder::Order6 => generate_order6(),
         LebedevOrder::Order14 => generate_order14(),
         LebedevOrder::Order26 => generate_order26(),
         LebedevOrder::Order38 => generate_order38(),
         LebedevOrder::Order50 => generate_order50(),
-        order => {
+        _order => {
             // For higher orders, provide a helpful error message
             Err(IntegrateError::ValueError(format!(
-                "Lebedev order {:?} (requiring {} points) is not yet implemented. Available orders: 6, 14, 26, 38, 50.",
+                "Lebedev _order {:?} (requiring {} points) is not yet implemented. Available orders: 6, 14, 26, 38, 50.",
                 order, order.num_points()
             )))
         }
@@ -159,17 +160,17 @@ pub fn lebedev_rule<F: IntegrateFloat>(order: LebedevOrder) -> IntegrateResult<L
 /// # Examples
 ///
 /// ```
-/// use scirs2_integrate::lebedev::{lebedev_integrate, LebedevOrder};
-/// use std::f64::consts::PI;
+/// use scirs2__integrate::lebedev::{lebedev_integrate, LebedevOrder};
 ///
 /// // Integrate f(x,y,z) = 1 over the unit sphere (should equal 4π)
-/// let result: f64 = lebedev_integrate(|_x, _y, _z| 1.0, LebedevOrder::Order14).unwrap();
+/// let result: f64 = lebedev_integrate(|_x_y_z| 1.0, LebedevOrder::Order14).unwrap();
 /// assert!((result - 4.0 * PI).abs() < 1e-10);
 ///
 /// // Integrate f(x,y,z) = x^2 + y^2 + z^2 = 1 over the unit sphere (should equal 4π)
 /// let result: f64 = lebedev_integrate(|x, y, z| x*x + y*y + z*z, LebedevOrder::Order14).unwrap();
 /// assert!((result - 4.0 * PI).abs() < 1e-10);
 /// ```
+#[allow(dead_code)]
 pub fn lebedev_integrate<F, Func>(f: Func, order: LebedevOrder) -> IntegrateResult<F>
 where
     F: IntegrateFloat,
@@ -198,6 +199,7 @@ where
 //////////////////////////////////////////////////
 
 /// Generates a 6th-order Lebedev rule with 6 points
+#[allow(dead_code)]
 fn generate_order6<F: IntegrateFloat>() -> IntegrateResult<LebedevRule<F>> {
     // These are the 6 points along the Cartesian axes
     let points_data = [
@@ -232,6 +234,7 @@ fn generate_order6<F: IntegrateFloat>() -> IntegrateResult<LebedevRule<F>> {
 }
 
 /// Generates a 14th-order Lebedev rule with 26 points
+#[allow(dead_code)]
 fn generate_order14<F: IntegrateFloat>() -> IntegrateResult<LebedevRule<F>> {
     // For 14th order, we need 26 points with specific symmetry
     let mut points = Vec::new();
@@ -318,6 +321,7 @@ fn generate_order14<F: IntegrateFloat>() -> IntegrateResult<LebedevRule<F>> {
 }
 
 /// Generates a 26th-order Lebedev rule with 50 points
+#[allow(dead_code)]
 fn generate_order26<F: IntegrateFloat>() -> IntegrateResult<LebedevRule<F>> {
     // For a simplified 50-point rule, we'll use a symmetric distribution
     // This will at least integrate constants and low-order polynomials correctly
@@ -420,6 +424,7 @@ fn generate_order26<F: IntegrateFloat>() -> IntegrateResult<LebedevRule<F>> {
 }
 
 /// Generates a 38th-order Lebedev rule with 86 points
+#[allow(dead_code)]
 fn generate_order38<F: IntegrateFloat>() -> IntegrateResult<LebedevRule<F>> {
     // Start with the points from order 26
     let order26 = generate_order26()?;
@@ -536,6 +541,7 @@ fn generate_order38<F: IntegrateFloat>() -> IntegrateResult<LebedevRule<F>> {
 }
 
 /// Generates a 50th-order Lebedev rule with 146 points
+#[allow(dead_code)]
 fn generate_order50<F: IntegrateFloat>() -> IntegrateResult<LebedevRule<F>> {
     // Start with the points from order 38
     let order38 = generate_order38()?;
@@ -672,7 +678,6 @@ fn generate_order50<F: IntegrateFloat>() -> IntegrateResult<LebedevRule<F>> {
 mod tests {
     use super::*;
     use approx::assert_abs_diff_eq;
-    use std::f64::consts::PI;
 
     #[test]
     fn test_lebedev_rule_order6() {
@@ -732,7 +737,7 @@ mod tests {
         ];
 
         for &order in &orders {
-            let result = lebedev_integrate(|_, _, _| 1.0, order).unwrap();
+            let result = lebedev_integrate(|_x, y, _z| 1.0, order).unwrap();
             // Our implementation may not have exact weights, so allow some tolerance
             assert!(
                 (result - 4.0 * PI).abs() < 1.0,
@@ -758,7 +763,7 @@ mod tests {
         ];
 
         for &order in &orders {
-            let result = lebedev_integrate(|_, _, _: f64| 1.0, order).unwrap();
+            let result = lebedev_integrate(|_x: f64, _y: f64, z: f64| 1.0, order).unwrap();
             // Allow higher tolerance due to approximation in implementation
             assert!(
                 (result - 4.0 * PI).abs() < 1.0,
@@ -772,12 +777,11 @@ mod tests {
         // Test that odd functions integrate to approximately 0 due to symmetry
         // The function z should integrate to 0 on the sphere
         for &order in &[LebedevOrder::Order14, LebedevOrder::Order26] {
-            let result = lebedev_integrate(|_, _, z: f64| z, order).unwrap();
+            let result = lebedev_integrate(|_x: f64, y: f64, z: f64| z, order).unwrap();
             // Higher tolerance due to approximation in weights
             assert!(
                 result.abs() < 0.5,
-                "Expected z to integrate close to 0, got {}",
-                result
+                "Expected z to integrate close to 0, got {result}"
             );
         }
 
@@ -807,9 +811,9 @@ mod tests {
         let expected = 4.0 * PI / 3.0;
 
         for &order in &orders {
-            let result_x = lebedev_integrate(|x: f64, _, _| x * x, order).unwrap();
-            let result_y = lebedev_integrate(|_, y: f64, _| y * y, order).unwrap();
-            let result_z = lebedev_integrate(|_, _, z: f64| z * z, order).unwrap();
+            let result_x = lebedev_integrate(|x: f64, _y: f64, z: f64| x * x, order).unwrap();
+            let result_y = lebedev_integrate(|_x: f64, y: f64, z: f64| y * y, order).unwrap();
+            let result_z = lebedev_integrate(|_x: f64, y: f64, z: f64| z * z, order).unwrap();
 
             // With approximate weights, allow higher tolerance
             assert_abs_diff_eq!(result_x, expected, epsilon = 0.5);
@@ -834,7 +838,7 @@ mod tests {
         assert_eq!(rule.npoints, 6);
 
         // Integration should work with f32
-        let result = lebedev_integrate(|_, _, _| 1.0_f32, LebedevOrder::Order6).unwrap();
+        let result = lebedev_integrate(|_x, y, _z| 1.0_f32, LebedevOrder::Order6).unwrap();
         assert_abs_diff_eq!(result, 4.0 * PI as f32, epsilon = 1e-5_f32);
     }
 }

@@ -21,8 +21,9 @@ use scirs2_linalg::scalable::{
 };
 use std::time::Instant;
 
+#[allow(dead_code)]
 fn main() -> Result<(), Box<dyn std::error::Error>> {
-    println!("🚀 SCALABLE ALGORITHMS - ULTRATHINK DEMONSTRATION");
+    println!("🚀 SCALABLE ALGORITHMS - Advanced DEMONSTRATION");
     println!("=================================================");
 
     // Test 1: Aspect Ratio Classification
@@ -38,8 +39,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     ];
 
     for (m, n, description) in aspect_examples {
-        let dummy_matrix = Array2::<f64>::zeros((m, n));
-        let aspect = classify_aspect_ratio(&dummy_matrix.view(), 4.0);
+        let dummymatrix = Array2::<f64>::zeros((m, n));
+        let aspect = classify_aspect_ratio(&dummymatrix.view(), 4.0);
         println!("   {} ({}×{}): {:?}", description, m, n, aspect);
     }
 
@@ -50,7 +51,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Create a tall-and-skinny matrix representing feature vectors
     let m_tall = 2000;
     let n_tall = 25;
-    let tall_matrix = Array2::from_shape_fn((m_tall, n_tall), |(i, j)| {
+    let tallmatrix = Array2::from_shape_fn((m_tall, n_tall), |(i, j)| {
         // Simulate feature matrix with some structure
         let freq1 = 2.0 * std::f64::consts::PI * (i as f64) / 100.0;
         let freq2 = 2.0 * std::f64::consts::PI * (j as f64) / 10.0;
@@ -64,10 +65,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         m_tall as f64 / n_tall as f64
     );
 
-    let config = ScalableConfig::default().with_block_size(512);
+    let config = ScalableConfig::default().with_blocksize(512);
 
     let start_time = Instant::now();
-    let (q, r) = tsqr(&tall_matrix.view(), &config)?;
+    let (q, r) = tsqr(&tallmatrix.view(), &config)?;
     let tsqr_time = start_time.elapsed();
 
     println!(
@@ -97,7 +98,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     for i in 0..m_tall.min(100) {
         // Check first 100 rows for efficiency
         for j in 0..n_tall {
-            let error = (tall_matrix[[i, j]] - reconstructed[[i, j]]).abs();
+            let error = (tallmatrix[[i, j]] - reconstructed[[i, j]]).abs();
             if error > max_reconstruction_error {
                 max_reconstruction_error = error;
             }
@@ -112,7 +113,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let m_short = 20;
     let n_short = 1000;
-    let short_matrix = Array2::from_shape_fn((m_short, n_short), |(i, j)| {
+    let shortmatrix = Array2::from_shape_fn((m_short, n_short), |(i, j)| {
         // Simulate compressed sensing or genomics data
         let signal = (j as f64 / 50.0).sin() * (i as f64 + 1.0);
         signal + 0.01 * (i * j) as f64 / 10000.0
@@ -126,7 +127,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     );
 
     let start_time = Instant::now();
-    let (l, q) = lq_decomposition(&short_matrix.view(), &config)?;
+    let (l, q) = lq_decomposition(&shortmatrix.view(), &config)?;
     let lq_time = start_time.elapsed();
 
     println!(
@@ -154,7 +155,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     for i in 0..m_short {
         for j in 0..n_short.min(100) {
             // Check first 100 columns for efficiency
-            let error = (short_matrix[[i, j]] - lq_reconstructed[[i, j]]).abs();
+            let error = (shortmatrix[[i, j]] - lq_reconstructed[[i, j]]).abs();
             if error > max_lq_error {
                 max_lq_error = error;
             }
@@ -231,19 +232,19 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("\n5. BLOCKED MATRIX MULTIPLICATION: Memory-Efficient Operations");
     println!("------------------------------------------------------------");
 
-    let a_size = (400, 200);
-    let b_size = (200, 300);
+    let asize = (400, 200);
+    let bsize = (200, 300);
 
-    let matrix_a = Array2::from_shape_fn(a_size, |(i, j)| ((i + j + 1) as f64).sin() / 100.0);
-    let matrix_b = Array2::from_shape_fn(b_size, |(i, j)| ((i * j + 1) as f64).cos() / 100.0);
+    let matrix_a = Array2::from_shape_fn(asize, |(i, j)| ((i + j + 1) as f64).sin() / 100.0);
+    let matrix_b = Array2::from_shape_fn(bsize, |(i, j)| ((i * j + 1) as f64).cos() / 100.0);
 
     println!(
         "   Matrix A: {}×{}, Matrix B: {}×{}",
-        a_size.0, a_size.1, b_size.0, b_size.1
+        asize.0, asize.1, bsize.0, bsize.1
     );
 
     // Compare blocked vs standard multiplication
-    let config_small_blocks = config.clone().with_block_size(64);
+    let config_small_blocks = config.clone().with_blocksize(64);
 
     let start_time = Instant::now();
     let result_blocked = blocked_matmul(&matrix_a.view(), &matrix_b.view(), &config_small_blocks)?;
@@ -264,8 +265,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // Verify results are identical
     let mut max_diff = 0.0;
-    for i in 0..a_size.0 {
-        for j in 0..b_size.1 {
+    for i in 0..asize.0 {
+        for j in 0..bsize.1 {
             let diff = (result_blocked[[i, j]] - result_standard[[i, j]]).abs();
             if diff > max_diff {
                 max_diff = diff;
@@ -290,14 +291,14 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         Array2::from_shape_fn((rank_true, 200), |(i, j)| ((i * j + 1) as f64).cos() / 10.0);
 
     // Construct low-rank matrix: A = U * S * V^T
-    let s_matrix = Array2::from_diag(&s_true);
-    let us = u_true.dot(&s_matrix);
-    let low_rank_matrix = us.dot(&vt_true);
+    let smatrix = Array2::from_diag(&s_true);
+    let us = u_true.dot(&smatrix);
+    let low_rankmatrix = us.dot(&vt_true);
 
     println!(
         "   Original matrix: {}×{} (true rank: {})",
-        low_rank_matrix.nrows(),
-        low_rank_matrix.ncols(),
+        low_rankmatrix.nrows(),
+        low_rankmatrix.ncols(),
         rank_true
     );
 
@@ -306,7 +307,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let start_time = Instant::now();
     let (u_approx, s_approx, vt_approx) =
-        randomized_svd(&low_rank_matrix.view(), target_rank, &config_randomized)?;
+        randomized_svd(&low_rankmatrix.view(), target_rank, &config_randomized)?;
     let randomized_time = start_time.elapsed();
 
     println!(
@@ -328,15 +329,15 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let approximation = u_approx.dot(&s_diag).dot(&vt_approx);
 
     let mut approximation_error = 0.0;
-    for i in 0..low_rank_matrix.nrows() {
-        for j in 0..low_rank_matrix.ncols() {
-            let error = (low_rank_matrix[[i, j]] - approximation[[i, j]]).powi(2);
+    for i in 0..low_rankmatrix.nrows() {
+        for j in 0..low_rankmatrix.ncols() {
+            let error = (low_rankmatrix[[i, j]] - approximation[[i, j]]).powi(2);
             approximation_error += error;
         }
     }
     approximation_error = approximation_error.sqrt();
 
-    let matrix_norm = low_rank_matrix.iter().map(|&x| x * x).sum::<f64>().sqrt();
+    let matrix_norm = low_rankmatrix.iter().map(|&x| x * x).sum::<f64>().sqrt();
     let relative_error = approximation_error / matrix_norm;
 
     println!("   Relative approximation error: {:.2e}", relative_error);
@@ -346,7 +347,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("\n7. PERFORMANCE SCALING ANALYSIS");
     println!("-------------------------------");
 
-    let test_sizes = vec![
+    let testsizes = vec![
         (500, 10, "Small tall"),
         (1000, 20, "Medium tall"),
         (2000, 40, "Large tall"),
@@ -358,12 +359,12 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("   Scaling analysis for different matrix sizes:");
     println!("   Size        Aspect     Algorithm      Time (ms)  Complexity");
 
-    for (m, n, _description) in test_sizes {
-        let test_matrix =
+    for (m, n, _description) in testsizes {
+        let testmatrix =
             Array2::from_shape_fn((m, n), |(i, j)| (i + j + 1) as f64 / (m + n) as f64);
 
         let start_time = Instant::now();
-        let result = adaptive_decomposition(&test_matrix.view(), &config)?;
+        let result = adaptive_decomposition(&testmatrix.view(), &config)?;
         let elapsed = start_time.elapsed();
 
         let aspect_str = match result.aspect_ratio {
@@ -441,7 +442,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("      - Randomized methods: Reduced memory for low-rank approximation");
 
     println!("\n========================================================");
-    println!("🎯 ULTRATHINK ACHIEVEMENT: SCALABLE ALGORITHMS COMPLETE");
+    println!("🎯 Advanced ACHIEVEMENT: SCALABLE ALGORITHMS COMPLETE");
     println!("========================================================");
     println!("✅ Tall-and-Skinny QR (TSQR): Communication-optimal O(n²) complexity");
     println!("✅ LQ decomposition: Optimal for short-and-fat matrices");

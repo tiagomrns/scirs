@@ -41,16 +41,16 @@ pub trait InPlaceOptimizer<A: Float + ScalarOperand + Debug, D: Dimension> {
 /// Memory-efficient SGD optimizer with in-place updates
 #[derive(Debug, Clone)]
 pub struct InPlaceSGD<A: Float> {
-    learning_rate: A,
+    _learningrate: A,
     momentum: A,
     weight_decay: A,
 }
 
 impl<A: Float + ScalarOperand + Debug> InPlaceSGD<A> {
     /// Create a new in-place SGD optimizer
-    pub fn new(learning_rate: A) -> Self {
+    pub fn new(_learningrate: A) -> Self {
         Self {
-            learning_rate,
+            _learningrate,
             momentum: A::zero(),
             weight_decay: A::zero(),
         }
@@ -63,8 +63,8 @@ impl<A: Float + ScalarOperand + Debug> InPlaceSGD<A> {
     }
 
     /// Set weight decay
-    pub fn with_weight_decay(mut self, weight_decay: A) -> Self {
-        self.weight_decay = weight_decay;
+    pub fn with_weight_decay(mut self, weightdecay: A) -> Self {
+        self.weight_decay = weightdecay;
         self
     }
 }
@@ -74,12 +74,12 @@ impl<A: Float + ScalarOperand + Debug, D: Dimension> InPlaceOptimizer<A, D> for 
         // Apply weight decay if configured
         if self.weight_decay > A::zero() {
             params.zip_mut_with(gradients, |p, &g| {
-                *p = *p - self.learning_rate * (g + *p * self.weight_decay);
+                *p = *p - self._learningrate * (g + *p * self.weight_decay);
             });
         } else {
             // Simple gradient descent
             params.zip_mut_with(gradients, |p, &g| {
-                *p = *p - self.learning_rate * g;
+                *p = *p - self._learningrate * g;
             });
         }
         Ok(())
@@ -89,7 +89,7 @@ impl<A: Float + ScalarOperand + Debug, D: Dimension> InPlaceOptimizer<A, D> for 
 /// Memory-efficient Adam optimizer with in-place updates
 #[derive(Debug)]
 pub struct InPlaceAdam<A: Float, D: Dimension> {
-    learning_rate: A,
+    _learningrate: A,
     beta1: A,
     beta2: A,
     epsilon: A,
@@ -103,9 +103,9 @@ pub struct InPlaceAdam<A: Float, D: Dimension> {
 
 impl<A: Float + ScalarOperand + Debug, D: Dimension> InPlaceAdam<A, D> {
     /// Create a new in-place Adam optimizer
-    pub fn new(learning_rate: A) -> Self {
+    pub fn new(_learningrate: A) -> Self {
         Self {
-            learning_rate,
+            _learningrate,
             beta1: A::from(0.9).unwrap(),
             beta2: A::from(0.999).unwrap(),
             epsilon: A::from(1e-8).unwrap(),
@@ -129,8 +129,8 @@ impl<A: Float + ScalarOperand + Debug, D: Dimension> InPlaceAdam<A, D> {
     }
 
     /// Set weight decay
-    pub fn with_weight_decay(mut self, weight_decay: A) -> Self {
-        self.weight_decay = weight_decay;
+    pub fn with_weight_decay(mut self, weightdecay: A) -> Self {
+        self.weight_decay = weightdecay;
         self
     }
 
@@ -198,7 +198,7 @@ impl<A: Float + ScalarOperand + Debug, D: Dimension> InPlaceOptimizer<A, D> for 
         for ((p, &m_i), &v_i) in params_iter.zip(m_iter).zip(v_iter) {
             let m_hat = m_i / bias1;
             let v_hat = v_i / bias2;
-            *p = *p - self.learning_rate * m_hat / (v_hat.sqrt() + self.epsilon);
+            *p = *p - self._learningrate * m_hat / (v_hat.sqrt() + self.epsilon);
         }
 
         Ok(())
@@ -303,7 +303,7 @@ pub mod fused {
         let one_minus_beta2 = one - beta2;
 
         if let Some(wd) = weight_decay {
-            // Fused Adam with weight decay
+            // Fused Adam with weight _decay
             for ((((p, &g), m_val), v_val), bias_corrected) in params
                 .iter_mut()
                 .zip(gradients.iter())
@@ -311,7 +311,7 @@ pub mod fused {
                 .zip(v.iter_mut())
                 .zip(std::iter::repeat((bias1, bias2)))
             {
-                // Apply weight decay to gradient
+                // Apply weight _decay to gradient
                 let g_with_decay = g + *p * wd;
 
                 // Update momentum
@@ -326,7 +326,7 @@ pub mod fused {
                 *p = *p - lr * m_hat / (v_hat.sqrt() + epsilon);
             }
         } else {
-            // Fused Adam without weight decay
+            // Fused Adam without weight _decay
             for ((((p, &g), m_val), v_val), bias_corrected) in params
                 .iter_mut()
                 .zip(gradients.iter())
@@ -361,37 +361,34 @@ pub mod fused {
         A: Float + ScalarOperand,
         D: Dimension,
     {
-        if let Some(buf) = momentum_buf {
+        if let Some(_buf) = momentum_buf {
             if let Some(wd) = weight_decay {
-                // Fused SGD with momentum and weight decay
-                for (((p, &g), buf_val), _) in params
-                    .iter_mut()
-                    .zip(gradients.iter())
-                    .zip(buf.iter_mut())
-                    .zip(std::iter::repeat(()))
+                // Fused SGD with momentum and weight _decay
+                for ((p, g), buf_val) in
+                    params.iter_mut().zip(gradients.iter()).zip(_buf.iter_mut())
                 {
-                    let g_with_decay = g + *p * wd;
+                    let g_with_decay = *g + *p * wd;
                     *buf_val = momentum * *buf_val + (A::one() - dampening) * g_with_decay;
                     *p = *p - lr * *buf_val;
                 }
             } else {
                 // Fused SGD with momentum only
-                for ((p, &g), buf_val) in
-                    params.iter_mut().zip(gradients.iter()).zip(buf.iter_mut())
+                for ((p, g), buf_val) in
+                    params.iter_mut().zip(gradients.iter()).zip(_buf.iter_mut())
                 {
-                    *buf_val = momentum * *buf_val + (A::one() - dampening) * g;
+                    *buf_val = momentum * *buf_val + (A::one() - dampening) * *g;
                     *p = *p - lr * *buf_val;
                 }
             }
         } else if let Some(wd) = weight_decay {
-            // Fused SGD with weight decay only
-            for (p, &g) in params.iter_mut().zip(gradients.iter()) {
-                *p = *p - lr * (g + *p * wd);
+            // Fused SGD with weight _decay only
+            for (p, g) in params.iter_mut().zip(gradients.iter()) {
+                *p = *p - lr * (*g + *p * wd);
             }
         } else {
             // Simple fused SGD
-            for (p, &g) in params.iter_mut().zip(gradients.iter()) {
-                *p = *p - lr * g;
+            for (p, g) in params.iter_mut().zip(gradients.iter()) {
+                *p = *p - lr * *g;
             }
         }
     }
@@ -417,15 +414,15 @@ pub mod fused {
         }
 
         if let Some(max_norm_val) = max_norm {
-            // Second pass: normalize if norm exceeds max_norm
+            // Second pass: normalize if _norm exceeds max_norm
             let norm_sq = gradients
                 .iter()
                 .map(|&x| x * x)
                 .fold(A::zero(), |acc, x| acc + x);
-            let norm = norm_sq.sqrt();
+            let _norm = norm_sq.sqrt();
 
-            if norm > max_norm_val {
-                let scale = max_norm_val / norm;
+            if _norm > max_norm_val {
+                let scale = max_norm_val / _norm;
                 for g in gradients.iter_mut() {
                     *g = *g * scale;
                 }
@@ -442,7 +439,7 @@ pub mod fused {
         A: Float + ScalarOperand,
         D: Dimension,
     {
-        // Apply value bounds first
+        // Apply value _bounds first
         if let Some((min_val, max_val)) = value_bounds {
             for p in params.iter_mut() {
                 if *p < min_val {
@@ -453,7 +450,7 @@ pub mod fused {
             }
         }
 
-        // Apply L2 norm constraint
+        // Apply L2 norm _constraint
         if let Some(max_norm) = l2_constraint {
             let norm_sq = params
                 .iter()
@@ -487,9 +484,9 @@ pub mod mixed_precision {
 
     impl LossScaler {
         /// Create a new loss scaler
-        pub fn new(initial_scale: f32) -> Self {
+        pub fn new(_initialscale: f32) -> Self {
             Self {
-                scale: initial_scale,
+                scale: _initialscale,
                 growth_factor: 2.0,
                 backoff_factor: 0.5,
                 growth_interval: 2000,
@@ -520,10 +517,10 @@ pub mod mixed_precision {
         }
 
         /// Update scale based on gradient overflow detection
-        pub fn update(&mut self, found_inf: bool) {
+        pub fn update(&mut self, foundinf: bool) {
             self.steps_since_update += 1;
 
-            if found_inf {
+            if foundinf {
                 // Reduce scale if overflow detected
                 self.scale *= self.backoff_factor;
                 self.steps_since_update = 0;
@@ -680,28 +677,28 @@ pub mod gradient_checkpointing {
         }
 
         /// Optimize checkpointing strategy based on memory usage
-        pub fn optimize_strategy(&mut self, target_memory_usage: f64) {
+        pub fn optimize_strategy(&mut self, target_memoryusage: f64) {
             let current_usage = self.memory_tracker.usage_ratio();
 
-            if current_usage > target_memory_usage {
-                // Increase checkpointing frequency to reduce memory usage
+            if current_usage > target_memoryusage {
+                // Increase checkpointing frequency to reduce memory _usage
                 self.strategy = match &self.strategy {
                     CheckpointStrategy::Uniform { interval } => CheckpointStrategy::Uniform {
                         interval: (interval / 2).max(1),
                     },
                     CheckpointStrategy::MemoryAware { .. } => CheckpointStrategy::MemoryAware {
-                        memory_threshold: target_memory_usage * 0.8,
+                        memory_threshold: target_memoryusage * 0.8,
                     },
                     other => other.clone(),
                 };
-            } else if current_usage < target_memory_usage * 0.5 {
+            } else if current_usage < target_memoryusage * 0.5 {
                 // Decrease checkpointing frequency to improve performance
                 self.strategy = match &self.strategy {
                     CheckpointStrategy::Uniform { interval } => CheckpointStrategy::Uniform {
                         interval: interval * 2,
                     },
                     CheckpointStrategy::MemoryAware { .. } => CheckpointStrategy::MemoryAware {
-                        memory_threshold: target_memory_usage * 1.2,
+                        memory_threshold: target_memoryusage * 1.2,
                     },
                     other => other.clone(),
                 };
@@ -754,9 +751,9 @@ pub mod gradient_checkpointing {
 
             let mut current_activation = self.checkpoints[&checkpoint_depth].clone();
 
-            // Recompute forward from checkpoint to target depth
-            for depth in (checkpoint_depth + 1)..=target_depth {
-                current_activation = recompute_fn(depth, &current_activation)?;
+            // Recompute forward from checkpoint to target _depth
+            for _depth in (checkpoint_depth + 1)..=target_depth {
+                current_activation = recompute_fn(_depth, &current_activation)?;
             }
 
             Ok(current_activation)
@@ -880,7 +877,7 @@ pub mod gradient_checkpointing {
         /// History of memory usage for adaptive optimization
         memory_history: VecDeque<f64>,
         /// Target memory usage ratio
-        target_memory_ratio: f64,
+        target_memoryratio: f64,
         /// Adaptation frequency (steps)
         adaptation_frequency: usize,
         /// Current step count
@@ -889,11 +886,11 @@ pub mod gradient_checkpointing {
 
     impl<A: Float + ScalarOperand + Debug, D: Dimension> AutoCheckpointer<A, D> {
         /// Create a new auto checkpointer
-        pub fn new(initial_strategy: CheckpointStrategy, target_memory_ratio: f64) -> Self {
+        pub fn new(_initial_strategy: CheckpointStrategy, target_memoryratio: f64) -> Self {
             Self {
-                checkpointer: GradientCheckpointer::new(initial_strategy),
+                checkpointer: GradientCheckpointer::new(_initial_strategy),
                 memory_history: VecDeque::with_capacity(100),
-                target_memory_ratio: target_memory_ratio.clamp(0.1, 0.9),
+                target_memoryratio: target_memoryratio.clamp(0.1, 0.9),
                 adaptation_frequency: 10,
                 step_count: 0,
             }
@@ -948,10 +945,9 @@ pub mod gradient_checkpointing {
                 / 10.0.min(self.memory_history.len() as f64);
 
             // Optimize strategy if we're significantly off target
-            let deviation = (recent_avg - self.target_memory_ratio).abs();
+            let deviation = (recent_avg - self.target_memoryratio).abs();
             if deviation > 0.1 {
-                self.checkpointer
-                    .optimize_strategy(self.target_memory_ratio);
+                self.checkpointer.optimize_strategy(self.target_memoryratio);
             }
         }
 
@@ -978,7 +974,7 @@ pub mod gradient_checkpointing {
                 current_usage: usage.current_ratio(),
                 peak_usage: usage.peak_ratio(),
                 average_usage: avg_usage,
-                target_usage: self.target_memory_ratio,
+                target_usage: self.target_memoryratio,
                 checkpoints_stored: self.checkpointer.checkpoints.len(),
             }
         }
@@ -1023,7 +1019,7 @@ pub mod adaptive {
     /// Memory-aware batch size adapter
     #[derive(Debug, Clone)]
     pub struct MemoryAwareBatchSizer {
-        initial_batch_size: usize,
+        _initial_batchsize: usize,
         max_batch_size: usize,
         min_batch_size: usize,
         current_batch_size: usize,
@@ -1033,12 +1029,12 @@ pub mod adaptive {
 
     impl MemoryAwareBatchSizer {
         /// Create a new memory-aware batch sizer
-        pub fn new(initial_batch_size: usize) -> Self {
+        pub fn new(_initial_batchsize: usize) -> Self {
             Self {
-                initial_batch_size,
-                max_batch_size: initial_batch_size * 4,
-                min_batch_size: initial_batch_size.max(1) / 4,
-                current_batch_size: initial_batch_size,
+                _initial_batchsize,
+                max_batch_size: _initial_batchsize * 4,
+                min_batch_size: _initial_batchsize.max(1) / 4,
+                current_batch_size: _initial_batchsize,
                 memory_threshold: 0.8,
                 adaptation_factor: 1.2,
             }
@@ -1062,12 +1058,12 @@ pub mod adaptive {
         }
 
         /// Adapt batch size based on memory usage
-        pub fn adapt(&mut self, memory_usage_ratio: f64) {
-            if memory_usage_ratio > self.memory_threshold {
+        pub fn adapt(&mut self, memory_usageratio: f64) {
+            if memory_usageratio > self.memory_threshold {
                 // Reduce batch size if memory usage is high
                 let new_size = (self.current_batch_size as f64 / self.adaptation_factor) as usize;
                 self.current_batch_size = new_size.max(self.min_batch_size);
-            } else if memory_usage_ratio < self.memory_threshold * 0.7 {
+            } else if memory_usageratio < self.memory_threshold * 0.7 {
                 // Increase batch size if memory usage is low
                 let new_size = (self.current_batch_size as f64 * self.adaptation_factor) as usize;
                 self.current_batch_size = new_size.min(self.max_batch_size);
@@ -1076,7 +1072,7 @@ pub mod adaptive {
 
         /// Reset to initial batch size
         pub fn reset(&mut self) {
-            self.current_batch_size = self.initial_batch_size;
+            self.current_batch_size = self._initial_batchsize;
         }
     }
 
@@ -1461,7 +1457,7 @@ mod tests {
 
     #[test]
     fn test_auto_checkpointer() {
-        let mut auto_checkpointer: gradient_checkpointing::AutoCheckpointer<f64, ndarray::Ix1> =
+        let mut auto_checkpointer: AutoCheckpointer<f64, ndarray::Ix1> =
             gradient_checkpointing::AutoCheckpointer::new(
                 gradient_checkpointing::CheckpointStrategy::Uniform { interval: 2 },
                 0.6, // target 60% memory usage
@@ -1478,10 +1474,10 @@ mod tests {
 
         // Execute several steps
         for depth in 0..5 {
-            let (output, _checkpoint) = auto_checkpointer
+            let (output_checkpoint, _) = auto_checkpointer
                 .auto_step(depth, &input, forward_fn)
                 .unwrap();
-            assert_eq!(output, 3.0); // 1 + 2
+            assert_eq!(output_checkpoint, 3.0); // 1 + 2
         }
 
         let stats = auto_checkpointer.get_memory_stats();

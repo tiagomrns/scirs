@@ -1,10 +1,10 @@
-// FIXME: This example has compilation errors - field `final_step` doesn't exist
 #![allow(dead_code)]
 
 use ndarray::{array, ArrayView1};
 use scirs2_integrate::ode::{solve_ivp, ODEMethod, ODEOptions};
 use std::f64::consts::PI;
 
+#[allow(dead_code)]
 fn main() {
     println!("DOP853 High-Order Runge-Kutta Solver Example");
     println!("--------------------------------------------");
@@ -46,7 +46,7 @@ fn main() {
             .iter()
             .enumerate()
             .min_by(|(_, &a), (_, &b)| (a - t).abs().partial_cmp(&(b - t).abs()).unwrap())
-            .map(|(idx, _)| idx)
+            .map(|(idx_, _)| idx_)
             .unwrap_or(0);
 
         let y0 = result.y[idx][0];
@@ -64,10 +64,6 @@ fn main() {
     println!("  Number of function evaluations: {}", result.n_eval);
     println!("  Number of accepted steps: {}", result.n_accepted);
     println!("  Number of rejected steps: {}", result.n_rejected);
-    // println!(
-    //     "  Final step size: {:.6e}",
-    //     result.final_step.unwrap_or(0.0)  // FIXME: final_step field doesn't exist in ODEResult
-    // );
     println!("  Success: {}", result.success);
 
     // Check final state (should be close to [1, 0] after 5 full cycles)

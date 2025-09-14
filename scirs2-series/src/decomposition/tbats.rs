@@ -4,12 +4,13 @@
 //! ARMA errors, Trend, and Seasonal components.
 
 use ndarray::{Array1, Array2, ScalarOperand};
-// use ndarray_linalg::Solve;  // TODO: Replace with scirs2-core linear algebra when available
 use num_traits::{Float, FromPrimitive, NumCast};
+use scirs2_linalg::solve;
 use std::fmt::Debug;
 
 use super::common::box_cox_transform;
 use crate::error::{Result, TimeSeriesError};
+use statrs::statistics::Statistics;
 
 /// Options for TBATS (Trigonometric seasonality, Box-Cox transformation, ARMA errors, Trend and Seasonal components)
 #[derive(Debug, Clone)]
@@ -122,7 +123,7 @@ pub struct TBATSParameters {
 ///
 /// ```
 /// use ndarray::array;
-/// use scirs2_series::decomposition::{tbats_decomposition, TBATSOptions};
+/// use scirs2__series::decomposition::{tbats_decomposition, TBATSOptions};
 ///
 /// let ts = array![1.0, 2.0, 3.0, 2.0, 1.0, 2.0, 3.0, 2.0, 1.0, 2.0, 3.0, 2.0,
 ///                 1.5, 2.5, 3.5, 2.5, 1.5, 2.5, 3.5, 2.5, 1.5, 2.5, 3.5, 2.5];
@@ -136,15 +137,10 @@ pub struct TBATSParameters {
 /// println!("Seasonal Components: {:?}", result.seasonal_components);
 /// println!("Residuals: {:?}", result.residuals);
 /// ```
+#[allow(dead_code)]
 pub fn tbats_decomposition<F>(ts: &Array1<F>, options: &TBATSOptions) -> Result<TBATSResult<F>>
 where
-    F: Float
-        + FromPrimitive
-        + Debug
-        + std::iter::Sum
-        // + ndarray_linalg::Lapack  // TODO: Replace with scirs2-core linear algebra trait when available
-        + ScalarOperand
-        + NumCast,
+    F: Float + FromPrimitive + Debug + std::iter::Sum + ScalarOperand + NumCast,
 {
     let n = ts.len();
 
@@ -190,7 +186,7 @@ where
     }
 
     // Step 1: Apply Box-Cox transformation if requested
-    let (transformed_ts, _lambda) = if options.use_box_cox {
+    let (transformed_ts, lambda) = if options.use_box_cox {
         let lambda = options.box_cox_lambda.unwrap_or_else(|| {
             // Estimate optimal lambda using profile likelihood (simplified)
             estimate_box_cox_lambda(ts)
@@ -260,6 +256,7 @@ where
 }
 
 /// Estimate optimal Box-Cox lambda parameter
+#[allow(dead_code)]
 fn estimate_box_cox_lambda<F>(ts: &Array1<F>) -> f64
 where
     F: Float + FromPrimitive + Debug,
@@ -282,7 +279,8 @@ where
 }
 
 /// Calculate the size of the state vector
-fn calculate_state_size(options: &TBATSOptions, fourier_terms: &[usize]) -> usize {
+#[allow(dead_code)]
+fn calculate_state_size(options: &TBATSOptions, fourierterms: &[usize]) -> usize {
     let mut size = 1; // Level
 
     if options.use_trend {
@@ -290,7 +288,7 @@ fn calculate_state_size(options: &TBATSOptions, fourier_terms: &[usize]) -> usiz
     }
 
     // Seasonal components (2 states per Fourier term: sin and cos)
-    for &k in fourier_terms {
+    for &k in fourierterms {
         size += 2 * k;
     }
 
@@ -298,6 +296,7 @@ fn calculate_state_size(options: &TBATSOptions, fourier_terms: &[usize]) -> usiz
 }
 
 /// Initialize the state vector
+#[allow(dead_code)]
 fn initialize_state<F>(
     state: &mut Array1<F>,
     ts: &Array1<F>,
@@ -345,19 +344,14 @@ where
 }
 
 /// Estimate model parameters using simplified maximum likelihood
+#[allow(dead_code)]
 fn estimate_parameters<F>(
     ts: &Array1<F>,
     options: &TBATSOptions,
     fourier_terms: &[usize],
 ) -> Result<TBATSParameters>
 where
-    F: Float
-        + FromPrimitive
-        + Debug
-        + std::iter::Sum
-        // + ndarray_linalg::Lapack  // TODO: Replace with scirs2-core linear algebra trait when available
-        + ScalarOperand
-        + NumCast,
+    F: Float + FromPrimitive + Debug + std::iter::Sum + ScalarOperand + NumCast,
 {
     // Simplified parameter estimation
     // In practice, this would use numerical optimization (e.g., Nelder-Mead)
@@ -401,19 +395,14 @@ where
 }
 
 /// Estimate Fourier coefficients using regression
+#[allow(dead_code)]
 fn estimate_fourier_coefficients<F>(
     ts: &Array1<F>,
     options: &TBATSOptions,
     fourier_terms: &[usize],
 ) -> Result<Vec<Vec<(f64, f64)>>>
 where
-    F: Float
-        + FromPrimitive
-        + Debug
-        + std::iter::Sum
-        // + ndarray_linalg::Lapack  // TODO: Replace with scirs2-core linear algebra trait when available
-        + ScalarOperand
-        + NumCast,
+    F: Float + FromPrimitive + Debug + std::iter::Sum + ScalarOperand + NumCast,
 {
     let n = ts.len();
     let mut all_coefficients = Vec::new();
@@ -437,12 +426,10 @@ where
         }
 
         // Solve least squares: design_matrix * coeffs = ts
-        // TODO: Replace with scirs2-core matrix solve when available
-        // For now, use a simple least squares implementation
         let xtx = design_matrix.t().dot(&design_matrix);
         let xty = design_matrix.t().dot(ts);
 
-        // Simple regularized pseudo-inverse for stability
+        // Regularized normal equations for numerical stability
         let n = xtx.shape()[0];
         let mut xtx_reg = xtx.clone();
         let lambda = F::from(1e-6).unwrap();
@@ -450,8 +437,8 @@ where
             xtx_reg[[i, i]] = xtx_reg[[i, i]] + lambda;
         }
 
-        // TODO: This is a temporary implementation - use core linear algebra when available
-        let coeffs = simple_matrix_solve(&xtx_reg, &xty)?;
+        // Solve the regularized system
+        let coeffs = solve_regularized_least_squares(&xtx_reg, &xty)?;
 
         // Extract coefficient pairs
         let mut seasonal_coeffs = Vec::new();
@@ -468,6 +455,7 @@ where
 }
 
 /// Estimate residual variance
+#[allow(dead_code)]
 fn estimate_residual_variance<F>(
     ts: &Array1<F>,
     fourier_coefficients: &[Vec<(f64, f64)>],
@@ -509,6 +497,7 @@ where
 }
 
 /// Apply state space model (simplified version)
+#[allow(dead_code)]
 fn apply_state_space_model<F>(
     ts: &Array1<F>,
     parameters: &TBATSParameters,
@@ -544,6 +533,7 @@ where
 type TBATSComponentsResult<F> = Result<(Array1<F>, Array1<F>, Vec<Array1<F>>, Array1<F>, f64)>;
 
 /// Extract components from state space results
+#[allow(dead_code)]
 fn extract_components<F>(
     ts: &Array1<F>,
     states: &Array2<F>,
@@ -621,11 +611,11 @@ where
     Ok((level, trend, seasonal_components, residuals, log_likelihood))
 }
 
-/// Simple matrix solve using Gaussian elimination
-/// TODO: Remove this when scirs2-core provides linear algebra functionality
-fn simple_matrix_solve<F>(a: &Array2<F>, b: &Array1<F>) -> Result<Array1<F>>
+/// Solve regularized least squares system using scirs2-linalg
+#[allow(dead_code)]
+fn solve_regularized_least_squares<F>(a: &Array2<F>, b: &Array1<F>) -> Result<Array1<F>>
 where
-    F: Float + FromPrimitive + ScalarOperand,
+    F: Float + FromPrimitive + ScalarOperand + NumCast + 'static,
 {
     let n = a.shape()[0];
     if n != a.shape()[1] || n != b.len() {
@@ -634,58 +624,16 @@ where
         ));
     }
 
-    // Create augmented matrix
-    let mut aug = a.clone();
-    let mut rhs = b.clone();
+    // Convert to f64 for scirs2-linalg computation
+    let a_f64 = a.mapv(|x| x.to_f64().unwrap_or(0.0));
+    let b_f64 = b.mapv(|x| x.to_f64().unwrap_or(0.0));
 
-    // Forward elimination
-    for i in 0..n {
-        // Find pivot
-        let mut max_row = i;
-        for k in (i + 1)..n {
-            if aug[[k, i]].abs() > aug[[max_row, i]].abs() {
-                max_row = k;
-            }
-        }
+    // Solve using scirs2-linalg
+    let x_f64 = solve(&a_f64.view(), &b_f64.view(), None)
+        .map_err(|e| TimeSeriesError::DecompositionError(format!("Linear solve failed: {e}")))?;
 
-        // Swap rows
-        if max_row != i {
-            for j in 0..n {
-                let temp = aug[[i, j]];
-                aug[[i, j]] = aug[[max_row, j]];
-                aug[[max_row, j]] = temp;
-            }
-            let temp = rhs[i];
-            rhs[i] = rhs[max_row];
-            rhs[max_row] = temp;
-        }
-
-        // Check for singular matrix
-        if aug[[i, i]].abs() < F::from(1e-10).unwrap() {
-            return Err(TimeSeriesError::DecompositionError(
-                "Matrix is singular".to_string(),
-            ));
-        }
-
-        // Eliminate column
-        for k in (i + 1)..n {
-            let factor = aug[[k, i]] / aug[[i, i]];
-            for j in i..n {
-                aug[[k, j]] = aug[[k, j]] - factor * aug[[i, j]];
-            }
-            rhs[k] = rhs[k] - factor * rhs[i];
-        }
-    }
-
-    // Back substitution
-    let mut x = Array1::zeros(n);
-    for i in (0..n).rev() {
-        let mut sum = rhs[i];
-        for j in (i + 1)..n {
-            sum = sum - aug[[i, j]] * x[j];
-        }
-        x[i] = sum / aug[[i, i]];
-    }
+    // Convert back to original type
+    let x = x_f64.mapv(|val| F::from_f64(val).unwrap_or_else(F::zero));
 
     Ok(x)
 }

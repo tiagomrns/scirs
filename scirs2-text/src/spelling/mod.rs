@@ -55,7 +55,7 @@
 //!
 //! // Correct a misspelled word in context
 //! let text = "I recieved your mesage";
-//! let corrected = corrector.correct_text(text)?;
+//! let corrected = corrector.correcttext(text)?;
 //! // Check for corrections
 //! assert!(corrected.contains("received"));
 //! assert!(corrected.contains("message"));
@@ -91,7 +91,7 @@ pub trait SpellingCorrector {
     fn is_correct(&self, word: &str) -> bool;
 
     /// Correct all words in a text
-    fn correct_text(&self, text: &str) -> Result<String> {
+    fn correcttext(&self, text: &str) -> Result<String> {
         let mut result = text.to_string();
 
         // Extract words for processing

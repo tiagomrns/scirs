@@ -9,13 +9,14 @@ use scirs2_fft::{fftn_adaptive, ifftn_adaptive, simd_support_available};
 use std::f64::consts::PI;
 use std::time::Instant;
 
+#[allow(dead_code)]
 fn main() {
     println!("SIMD-accelerated N-dimensional FFT Volumetric Data Example");
     println!("-------------------------------------------------------");
 
     // Check for SIMD support
     let simd_available = simd_support_available();
-    println!("SIMD support available: {}", simd_available);
+    println!("SIMD support available: {simd_available}");
 
     // Define volume dimensions
     let width = 64;
@@ -25,52 +26,49 @@ fn main() {
     let total_voxels = width * height * depth;
 
     println!(
-        "\nGenerating volumetric test data ({} x {} x {} = {} voxels)",
-        width, height, depth, total_voxels
+        "\nGenerating volumetric test data ({width} x {height} x {depth} = {total_voxels} voxels)"
     );
 
     // Generate a test volumetric dataset with various frequency components
-    let volume_data = generate_test_volume(width, height, depth);
+    let volume_data = generate_testvolume(width, height, depth);
 
     // Apply a low-pass filter in the frequency domain
     println!("\nApplying 3D low-pass filter in the frequency domain...");
     let start = Instant::now();
-    let filtered_volume = frequency_domain_filter_3d(&volume_data, &shape, "lowpass");
+    let filteredvolume = frequency_domain_filter_3d(&volume_data, &shape, "lowpass");
     let processing_time = start.elapsed();
-    println!("Processing time: {:?}", processing_time);
+    println!("Processing time: {processing_time:?}");
 
     // Measure the difference between original and filtered data
     let mut sum_diff = 0.0;
     for i in 0..total_voxels {
-        sum_diff += (volume_data[i] - filtered_volume[i]).abs();
+        sum_diff += (volume_data[i] - filteredvolume[i]).abs();
     }
     let mean_diff = sum_diff / total_voxels as f64;
-    println!("Mean absolute difference after filtering: {:.6}", mean_diff);
+    println!("Mean absolute difference after filtering: {mean_diff:.6}");
 
     // Performance comparison
     println!("\nPerformance comparison for different volume sizes:");
     for &size in &[16, 32, 64] {
-        let test_shape = [size, size, size];
+        let testshape = [size, size, size];
         let test_total = size * size * size;
-        let test_data = generate_test_volume(size, size, size);
+        let test_data = generate_testvolume(size, size, size);
 
-        println!(
-            "\nVolume size: {} x {} x {} = {} voxels",
-            size, size, size, test_total
-        );
+        println!("\nVolume size: {size} x {size} x {size} = {test_total} voxels");
         let start = Instant::now();
-        let _filtered = frequency_domain_filter_3d(&test_data, &test_shape, "lowpass");
+        let filtered = frequency_domain_filter_3d(&test_data, &testshape, "lowpass");
         let time = start.elapsed();
-        println!("Processing time: {:?}", time);
+        println!("Processing time: {time:?}");
 
         // Calculate operations per second metric
         let ops_per_sec = test_total as f64 / time.as_secs_f64();
-        println!("Voxels processed per second: {:.2e}", ops_per_sec);
+        println!("Voxels processed per second: {ops_per_sec:.2e}");
     }
 }
 
 /// Generate a test volume with various frequency components
-fn generate_test_volume(width: usize, height: usize, depth: usize) -> Vec<f64> {
+#[allow(dead_code)]
+fn generate_testvolume(width: usize, height: usize, depth: usize) -> Vec<f64> {
     let mut volume = vec![0.0; width * height * depth];
 
     for z in 0..depth {
@@ -109,7 +107,8 @@ fn generate_test_volume(width: usize, height: usize, depth: usize) -> Vec<f64> {
 }
 
 /// Apply a frequency domain filter to volumetric (3D) data
-fn frequency_domain_filter_3d(volume: &[f64], shape: &[usize], filter_type: &str) -> Vec<f64> {
+#[allow(dead_code)]
+fn frequency_domain_filter_3d(volume: &[f64], shape: &[usize], filtertype: &str) -> Vec<f64> {
     // Step 1: Compute the N-dimensional FFT of the volume
     let spectrum = fftn_adaptive(volume, Some(shape), None, None).unwrap();
 
@@ -150,7 +149,7 @@ fn frequency_domain_filter_3d(volume: &[f64], shape: &[usize], filter_type: &str
                     ((freq_x.pow(2) + freq_y.pow(2) + freq_z.pow(2)) as f64) / max_distance;
 
                 // Apply different filter types
-                let filter_value = match filter_type {
+                let filter_value = match filtertype {
                     "lowpass" => {
                         // Lowpass: keep low frequencies, attenuate high frequencies
                         let cutoff = 0.1;
@@ -211,13 +210,13 @@ fn frequency_domain_filter_3d(volume: &[f64], shape: &[usize], filter_type: &str
         .collect();
 
     // Step 4: Compute the inverse N-dimensional FFT
-    let filtered_volume_complex =
+    let filteredvolume_complex =
         ifftn_adaptive(&filtered_spectrum, Some(shape), None, None).unwrap();
 
     // Step 5: Extract real part (the filtered volume)
-    let filtered_volume: Vec<f64> = filtered_volume_complex.iter().map(|c| c.re).collect();
+    let filteredvolume: Vec<f64> = filteredvolume_complex.iter().map(|c| c.re).collect();
 
-    filtered_volume
+    filteredvolume
 }
 
 /// Visualization information (simulation for a real system)
@@ -237,7 +236,7 @@ fn simulate_visualization(volume: &[f64], shape: &[usize]) {
         max_val = max_val.max(val);
     }
 
-    println!("- Data range: {:.6} to {:.6}", min_val, max_val);
+    println!("- Data range: {min_val:.6} to {max_val:.6}");
 
     // Print a few data points for verification
     println!("- Sample data points:");

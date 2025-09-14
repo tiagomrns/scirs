@@ -31,6 +31,7 @@ use crate::error::{OptimError, Result};
 /// clip_gradients(&mut gradients, -5.0, 5.0);
 /// assert_eq!(gradients, Array1::from_vec(vec![-5.0, 0.5, 5.0, -0.2]));
 /// ```
+#[allow(dead_code)]
 pub fn clip_gradients<A, D>(
     gradients: &mut Array<A, D>,
     min_value: A,
@@ -77,6 +78,7 @@ where
 /// assert!(diff0 < 1e-5);
 /// assert!(diff1 < 1e-5);
 /// ```
+#[allow(dead_code)]
 pub fn clip_gradient_norm<A, D>(
     gradients: &mut Array<A, D>,
     max_norm: A,
@@ -91,15 +93,15 @@ where
         ));
     }
 
-    // Calculate current L2 norm
-    let norm = gradients
+    // Calculate current L2 _norm
+    let _norm = gradients
         .iter()
         .fold(A::zero(), |acc, &x| acc + x * x)
         .sqrt();
 
-    // If norm exceeds max_norm, scale gradients
-    if norm > max_norm {
-        let scale = max_norm / norm;
+    // If _norm exceeds max_norm, scale gradients
+    if _norm > max_norm {
+        let scale = max_norm / _norm;
         for grad in gradients.iter_mut() {
             *grad = *grad * scale;
         }
@@ -131,6 +133,7 @@ where
 /// gradient_centralization(&mut gradients);
 /// assert_eq!(gradients, Array1::from_vec(vec![-1.0, 0.0, 1.0, 0.0]));
 /// ```
+#[allow(dead_code)]
 pub fn gradient_centralization<A, D>(gradients: &mut Array<A, D>) -> &mut Array<A, D>
 where
     A: Float + ScalarOperand + Debug,
@@ -169,6 +172,7 @@ where
 /// zero_small_gradients(&mut gradients, 0.01);
 /// assert_eq!(gradients, Array1::from_vec(vec![0.0, 0.02, 0.0, 0.3]));
 /// ```
+#[allow(dead_code)]
 pub fn zero_small_gradients<A, D>(gradients: &mut Array<A, D>, threshold: A) -> &mut Array<A, D>
 where
     A: Float + ScalarOperand + Debug,

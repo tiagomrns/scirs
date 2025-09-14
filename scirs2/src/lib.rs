@@ -1,3 +1,4 @@
+#![allow(deprecated)]
 //! # SciRS2
 //!
 //! SciRS2 is a comprehensive scientific computing library for Rust,
@@ -149,7 +150,7 @@ pub use scirs2_transform as transform;
 pub use scirs2_metrics as metrics;
 
 #[cfg(feature = "text")]
-pub use scirs2_text as text;
+pub use scirs2text as text;
 
 #[cfg(feature = "vision")]
 pub use scirs2_vision as vision;
@@ -197,6 +198,7 @@ pub mod prelude {
 
 // Public API
 /// SciRS2 version information
+#[allow(dead_code)]
 pub fn version() -> &'static str {
     env!("CARGO_PKG_VERSION")
 }

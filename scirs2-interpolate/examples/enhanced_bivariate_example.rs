@@ -4,12 +4,14 @@ use scirs2_interpolate::{
 };
 
 /// Create a 2D test function: f(x,y) = sin(πx) * cos(πy)
+#[allow(dead_code)]
 fn test_function(x: f64, y: f64) -> f64 {
     let pi = std::f64::consts::PI;
     f64::sin(pi * x) * f64::cos(pi * y)
 }
 
 /// Generate a 2D grid of data points
+#[allow(dead_code)]
 fn generate_grid_data(nx: usize, ny: usize) -> (Array1<f64>, Array1<f64>, Array2<f64>) {
     let x = Array1::linspace(0.0, 1.0, nx);
     let y = Array1::linspace(0.0, 1.0, ny);
@@ -26,18 +28,19 @@ fn generate_grid_data(nx: usize, ny: usize) -> (Array1<f64>, Array1<f64>, Array2
 }
 
 /// Generate scattered data points
-fn generate_scattered_data(n_points: usize) -> (Array1<f64>, Array1<f64>, Array1<f64>) {
+#[allow(dead_code)]
+fn generate_scattered_data(_npoints: usize) -> (Array1<f64>, Array1<f64>, Array1<f64>) {
     use rand::rngs::StdRng;
     use rand::{Rng, SeedableRng};
 
     // Create a seeded RNG for reproducibility
     let mut rng = StdRng::seed_from_u64(42);
 
-    let mut x = Array1::zeros(n_points);
-    let mut y = Array1::zeros(n_points);
-    let mut z = Array1::zeros(n_points);
+    let mut x = Array1::zeros(_npoints);
+    let mut y = Array1::zeros(_npoints);
+    let mut z = Array1::zeros(_npoints);
 
-    for i in 0..n_points {
+    for i in 0.._npoints {
         x[i] = rng.random::<f64>();
         y[i] = rng.random::<f64>();
         z[i] = test_function(x[i], y[i]);
@@ -47,6 +50,7 @@ fn generate_scattered_data(n_points: usize) -> (Array1<f64>, Array1<f64>, Array1
 }
 
 /// Compute mean squared error between predicted and actual values
+#[allow(dead_code)]
 fn compute_mse(predicted: &Array2<f64>, actual: &Array2<f64>) -> f64 {
     let mut sum_sq_error = 0.0;
     let n = predicted.len();
@@ -61,6 +65,7 @@ fn compute_mse(predicted: &Array2<f64>, actual: &Array2<f64>) -> f64 {
     sum_sq_error / (n as f64)
 }
 
+#[allow(dead_code)]
 fn main() {
     println!("Enhanced Bivariate Spline Interpolation Example");
     println!("=============================================\n");
@@ -75,6 +80,7 @@ fn main() {
     bivariate_calculus_example();
 }
 
+#[allow(dead_code)]
 fn rect_bivariate_example() {
     println!("1. RectBivariateSpline with Different Degrees");
     println!("-------------------------------------------");
@@ -163,6 +169,7 @@ fn rect_bivariate_example() {
     println!();
 }
 
+#[allow(dead_code)]
 fn smooth_bivariate_example() {
     println!("2. SmoothBivariateSpline with Different Smoothing Parameters");
     println!("-------------------------------------------------------");
@@ -261,6 +268,7 @@ fn smooth_bivariate_example() {
     println!();
 }
 
+#[allow(dead_code)]
 fn bivariate_calculus_example() {
     println!("3. Bivariate Spline Derivatives and Integration");
     println!("--------------------------------------------");

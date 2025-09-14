@@ -25,7 +25,7 @@ mod tests {
     }
 
     #[test]
-    fn test_basic_gradient_shape() {
+    fn test_basic_gradientshape() {
         // Just test that the gradient has the expected shape
         ag::run(|g| {
             // Create a tensor with shape [2, 2]

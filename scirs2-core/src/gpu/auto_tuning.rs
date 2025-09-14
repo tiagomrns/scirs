@@ -46,7 +46,7 @@ pub struct KernelParameters {
     /// Register usage per thread
     pub register_usage: Option<usize>,
     /// Cache configuration hints
-    pub cache_config: CacheConfig,
+    pub cacheconfig: CacheConfig,
     /// Custom parameters for kernel-specific tuning
     pub custom_params: HashMap<String, ParameterValue>,
 }
@@ -58,7 +58,7 @@ impl Default for KernelParameters {
             global_work_size: [1024, 1024, 1],
             local_memory_size: 0,
             register_usage: None,
-            cache_config: CacheConfig::Balanced,
+            cacheconfig: CacheConfig::Balanced,
             custom_params: HashMap::new(),
         }
     }
@@ -107,7 +107,7 @@ impl ParameterValue {
             ParameterValue::Int(val) => val.to_string(),
             ParameterValue::Float(val) => val.to_string(),
             ParameterValue::Bool(val) => val.to_string(),
-            _ => format!("{:?}", self),
+            _ => format!("{self:?}"),
         }
     }
 }
@@ -135,13 +135,26 @@ pub struct PerformanceMetrics {
     /// Throughput (operations per second)
     pub throughput: f64,
     /// Memory bandwidth utilization
-    pub memory_bandwidth_util: f64,
+    pub memorybandwidth_util: f64,
     /// Compute utilization
     pub compute_utilization: f64,
     /// Energy efficiency (operations per joule)
     pub energy_efficiency: Option<f64>,
     /// Cache hit rates
     pub cache_metrics: CacheMetrics,
+}
+
+impl Default for PerformanceMetrics {
+    fn default() -> Self {
+        Self {
+            execution_time: Duration::from_millis(0),
+            throughput: 0.0,
+            memorybandwidth_util: 0.0,
+            compute_utilization: 0.0,
+            energy_efficiency: None,
+            cache_metrics: CacheMetrics::default(),
+        }
+    }
 }
 
 /// Cache performance metrics
@@ -155,6 +168,10 @@ pub struct CacheMetrics {
     pub shared_memory_conflicts: usize,
     /// Global memory coalescing efficiency
     pub coalescing_efficiency: f64,
+    /// Memory throughput in GB/s
+    pub memory_throughput: f64,
+    /// Cache pressure indicator
+    pub cache_pressure: f64,
 }
 
 /// Auto-tuning strategy configuration
@@ -262,6 +279,7 @@ pub struct TuningResult {
 }
 
 /// Automatic kernel tuner
+#[derive(Debug)]
 pub struct AutoTuner {
     backend: GpuBackend,
     strategy: TuningStrategy,
@@ -295,14 +313,14 @@ impl AutoTuner {
     }
 
     /// Auto-tune a kernel for optimal performance
-    pub fn tune_kernel(
+    pub fn tune(
         &self,
-        kernel_name: &str,
         kernel: &GpuKernelHandle,
-        problem_size: &[usize],
+        kernel_name: &str,
+        problemsize: &[usize],
         tuning_space: TuningSpace,
     ) -> Result<TuningResult, AutoTuningError> {
-        let cache_key = self.generate_cache_key(kernel_name, problem_size);
+        let cache_key = self.generate_cache_key(kernel_name, problemsize);
 
         // Check cache first
         if self.strategy.use_history {
@@ -329,7 +347,7 @@ impl AutoTuner {
             }
 
             // Benchmark this configuration
-            match self.benchmark_configuration(kernel, params, problem_size) {
+            match self.benchmark_configuration(kernel, params, problemsize) {
                 Ok(metrics) => {
                     evaluations += 1;
 
@@ -349,7 +367,7 @@ impl AutoTuner {
                 }
                 Err(e) => {
                     // Log benchmark failure but continue
-                    eprintln!("Benchmark failed for configuration {:?}: {}", params, e);
+                    eprintln!("Benchmark failed for configuration {params:?}: {e}");
                 }
             }
         }
@@ -421,7 +439,7 @@ impl AutoTuner {
                             global_work_size: [1024, 1024, 1], // Default
                             local_memory_size,
                             register_usage: None,
-                            cache_config,
+                            cacheconfig: cache_config,
                             custom_params: HashMap::new(),
                         });
                     }
@@ -454,7 +472,7 @@ impl AutoTuner {
                     global_work_size: [1024, 1024, 1],
                     local_memory_size,
                     register_usage: None,
-                    cache_config,
+                    cacheconfig: cache_config,
                     custom_params: HashMap::new(),
                 });
             }
@@ -464,11 +482,11 @@ impl AutoTuner {
     }
 
     /// Validate if a configuration is valid for the device
-    fn is_valid_configuration(&self, work_group_size: [u32; 3], local_memory_size: usize) -> bool {
+    fn is_valid_configuration(&self, work_group_size: [u32; 3], local_memorysize: usize) -> bool {
         let total_threads = work_group_size[0] * work_group_size[1] * work_group_size[2];
 
         total_threads <= self.device_info.max_work_group_size as u32
-            && local_memory_size <= self.device_info.max_local_memory_size
+            && local_memorysize <= self.device_info.max_local_memory_size
     }
 
     /// Benchmark a specific configuration
@@ -476,7 +494,7 @@ impl AutoTuner {
         &self,
         kernel: &GpuKernelHandle,
         params: &KernelParameters,
-        problem_size: &[usize],
+        problemsize: &[usize],
     ) -> Result<PerformanceMetrics, AutoTuningError> {
         let mut execution_times = Vec::new();
 
@@ -501,31 +519,31 @@ impl AutoTuner {
         let avg_time = execution_times.iter().sum::<Duration>() / execution_times.len() as u32;
 
         // Calculate throughput (simplified)
-        let total_ops = problem_size.iter().product::<usize>() as f64;
+        let total_ops = problemsize.iter().product::<usize>() as f64;
         let throughput = total_ops / avg_time.as_secs_f64();
 
         Ok(PerformanceMetrics {
             execution_time: avg_time,
             throughput,
-            memory_bandwidth_util: 0.8, // Mock value
-            compute_utilization: 0.9,   // Mock value
+            memorybandwidth_util: 0.8, // Mock value
+            compute_utilization: 0.9,  // Mock value
             energy_efficiency: None,
             cache_metrics: CacheMetrics::default(),
         })
     }
 
     /// Check if tuning has converged
-    fn check_convergence(&self, _best_performance: &PerformanceMetrics, iteration: usize) -> bool {
+    fn check_convergence(&self, performance: &PerformanceMetrics, iteration: usize) -> bool {
         // Simple convergence check based on iteration count
         // In practice, would compare recent improvements
         iteration > 10 && iteration % 10 == 0
     }
 
     /// Generate cache key for tuning results
-    fn generate_cache_key(&self, kernel_name: &str, problem_size: &[usize]) -> String {
+    fn generate_cache_key(&self, kernel_name: &str, problemsize: &[usize]) -> String {
         format!(
             "{}_{}_{}_{:?}",
-            self.backend, self.device_info.compute_capability, kernel_name, problem_size
+            self.backend, self.device_info.compute_capability, kernel_name, problemsize
         )
     }
 
@@ -655,7 +673,7 @@ mod tests {
     }
 
     #[test]
-    fn test_matrix_multiply_preset() {
+    fn testmatrix_multiply_preset() {
         let space = presets::matrix_multiply_space();
         assert!(space.work_group_sizes.contains(&[16, 16, 1]));
         assert!(space.cache_configs.contains(&CacheConfig::PreferShared));

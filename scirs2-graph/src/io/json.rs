@@ -133,6 +133,7 @@ pub struct JsonGraph {
 }
 
 /// Default value for directed field
+#[allow(dead_code)]
 fn default_directed() -> bool {
     false
 }
@@ -156,6 +157,7 @@ fn default_directed() -> bool {
 /// - Edge declarations with optional weights, labels, and data
 /// - Graph metadata and directedness specification
 /// - Flexible attribute storage for future extensions
+#[allow(dead_code)]
 pub fn read_json_format<N, E, P>(path: P, weighted: bool) -> Result<Graph<N, E>>
 where
     N: Node + std::fmt::Debug + FromStr + Clone,
@@ -165,7 +167,7 @@ where
     let file = File::open(path)?;
     let reader = BufReader::new(file);
     let json_graph: JsonGraph = serde_json::from_reader(reader)
-        .map_err(|e| GraphError::Other(format!("Failed to parse JSON: {}", e)))?;
+        .map_err(|e| GraphError::Other(format!("Failed to parse JSON: {e}")))?;
 
     // Verify this is an undirected graph
     if json_graph.directed {
@@ -204,7 +206,7 @@ where
         let weight = if weighted {
             if let Some(w) = json_edge.weight {
                 E::from_str(&w.to_string())
-                    .map_err(|_| GraphError::Other(format!("Failed to parse edge weight: {}", w)))?
+                    .map_err(|_| GraphError::Other(format!("Failed to parse edge weight: {w}")))?
             } else {
                 E::default()
             }
@@ -230,6 +232,7 @@ where
 ///
 /// * `Ok(DiGraph)` - The directed graph read from the file
 /// * `Err(GraphError)` - If there was an error reading or parsing the file
+#[allow(dead_code)]
 pub fn read_json_format_digraph<N, E, P>(path: P, weighted: bool) -> Result<DiGraph<N, E>>
 where
     N: Node + std::fmt::Debug + FromStr + Clone,
@@ -239,7 +242,7 @@ where
     let file = File::open(path)?;
     let reader = BufReader::new(file);
     let json_graph: JsonGraph = serde_json::from_reader(reader)
-        .map_err(|e| GraphError::Other(format!("Failed to parse JSON: {}", e)))?;
+        .map_err(|e| GraphError::Other(format!("Failed to parse JSON: {e}")))?;
 
     let mut graph = DiGraph::new();
 
@@ -271,7 +274,7 @@ where
         let weight = if weighted {
             if let Some(w) = json_edge.weight {
                 E::from_str(&w.to_string())
-                    .map_err(|_| GraphError::Other(format!("Failed to parse edge weight: {}", w)))?
+                    .map_err(|_| GraphError::Other(format!("Failed to parse edge weight: {w}")))?
             } else {
                 E::default()
             }
@@ -298,6 +301,7 @@ where
 ///
 /// * `Ok(())` - If the graph was written successfully
 /// * `Err(GraphError)` - If there was an error writing the file
+#[allow(dead_code)]
 pub fn write_json_format<N, E, Ix, P>(
     graph: &Graph<N, E, Ix>,
     path: P,
@@ -355,9 +359,9 @@ where
 
     // Write JSON to file
     let json_string = serde_json::to_string_pretty(&json_graph)
-        .map_err(|e| GraphError::Other(format!("Failed to serialize JSON: {}", e)))?;
+        .map_err(|e| GraphError::Other(format!("Failed to serialize JSON: {e}")))?;
 
-    write!(file, "{}", json_string)?;
+    write!(file, "{json_string}")?;
 
     Ok(())
 }
@@ -374,6 +378,7 @@ where
 ///
 /// * `Ok(())` - If the graph was written successfully
 /// * `Err(GraphError)` - If there was an error writing the file
+#[allow(dead_code)]
 pub fn write_json_format_digraph<N, E, Ix, P>(
     graph: &DiGraph<N, E, Ix>,
     path: P,
@@ -431,9 +436,9 @@ where
 
     // Write JSON to file
     let json_string = serde_json::to_string_pretty(&json_graph)
-        .map_err(|e| GraphError::Other(format!("Failed to serialize JSON: {}", e)))?;
+        .map_err(|e| GraphError::Other(format!("Failed to serialize JSON: {e}")))?;
 
-    write!(file, "{}", json_string)?;
+    write!(file, "{json_string}")?;
 
     Ok(())
 }

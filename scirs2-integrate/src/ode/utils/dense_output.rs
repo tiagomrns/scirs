@@ -89,8 +89,7 @@ impl<F: IntegrateFloat> DenseSolution<F> {
 
         if t < *t_min || t > *t_max {
             return Err(IntegrateError::ValueError(format!(
-                "Evaluation time {} is outside the solution range [{}, {}]",
-                t, t_min, t_max
+                "Evaluation time {t} is outside the solution range [{t_min}, {t_max}]"
             )));
         }
 
@@ -144,7 +143,7 @@ impl<F: IntegrateFloat> DenseSolution<F> {
     }
 
     /// Create a dense sequence of solution values for plotting or analysis
-    pub fn dense_output(&self, n_points: usize) -> IntegrateResult<(Vec<F>, Vec<Array1<F>>)> {
+    pub fn dense_output(&self, npoints: usize) -> IntegrateResult<(Vec<F>, Vec<Array1<F>>)> {
         if self.t.is_empty() {
             return Err(IntegrateError::ComputationError(
                 "Empty solution".to_string(),
@@ -153,12 +152,12 @@ impl<F: IntegrateFloat> DenseSolution<F> {
 
         let t_min = *self.t.first().unwrap();
         let t_max = *self.t.last().unwrap();
-        let dt = (t_max - t_min) / F::from_usize(n_points - 1).unwrap();
+        let dt = (t_max - t_min) / F::from_usize(npoints - 1).unwrap();
 
-        let mut times = Vec::with_capacity(n_points);
-        let mut values = Vec::with_capacity(n_points);
+        let mut times = Vec::with_capacity(npoints);
+        let mut values = Vec::with_capacity(npoints);
 
-        for i in 0..n_points {
+        for i in 0..npoints {
             let t = t_min + dt * F::from_usize(i).unwrap();
             times.push(t);
             values.push(self.evaluate(t)?);
@@ -325,6 +324,7 @@ impl<F: IntegrateFloat> RadauInterpolant<F> {
 }
 
 /// Convert an ODE result to a dense solution for continuous evaluation
+#[allow(dead_code)]
 pub fn create_dense_solution<F, Func>(
     t: Vec<F>,
     y: Vec<Array1<F>>,

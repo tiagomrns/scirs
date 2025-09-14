@@ -12,6 +12,7 @@ use std::fmt::Debug;
 use super::config::WindowFunction;
 
 /// Apply a window function to the signal
+#[allow(dead_code)]
 pub fn apply_window<T>(
     signal: &[T],
     window_function: WindowFunction,
@@ -24,9 +25,8 @@ where
     let signal_complex: Vec<Complex64> = signal
         .iter()
         .map(|&val| {
-            let val_f64 = NumCast::from(val).ok_or_else(|| {
-                FFTError::ValueError(format!("Could not convert {:?} to f64", val))
-            })?;
+            let val_f64 = NumCast::from(val)
+                .ok_or_else(|| FFTError::ValueError(format!("Could not convert {val:?} to f64")))?;
             Ok(Complex64::new(val_f64, 0.0))
         })
         .collect::<FFTResult<Vec<_>>>()?;
@@ -38,7 +38,7 @@ where
         return Ok(signal_complex);
     }
 
-    // Apply the selected window function
+    // Apply the selected window _function
     let windowed_signal = match window_function {
         WindowFunction::None => signal_complex, // Already handled above, but included for completeness
 
@@ -85,12 +85,12 @@ where
 
         WindowFunction::Kaiser => {
             let mut windowed = signal_complex;
-            let beta = kaiser_beta;
+            let _beta = kaiser_beta;
             let alpha = (n - 1) as f64 / 2.0;
-            let i0_beta = modified_bessel_i0(beta);
+            let i0_beta = modified_bessel_i0(_beta);
 
             for (i, sample) in windowed.iter_mut().enumerate() {
-                let x = beta * (1.0 - ((i as f64 - alpha) / alpha).powi(2)).sqrt();
+                let x = _beta * (1.0 - ((i as f64 - alpha) / alpha).powi(2)).sqrt();
                 let window_val = modified_bessel_i0(x) / i0_beta;
                 *sample *= window_val;
             }
@@ -103,6 +103,7 @@ where
 
 /// Modified Bessel function of the first kind, order 0
 /// Used for Kaiser window computation
+#[allow(dead_code)]
 fn modified_bessel_i0(x: f64) -> f64 {
     let mut sum = 1.0;
     let mut term = 1.0;

@@ -48,11 +48,11 @@ impl<A: Float + Debug + ScalarOperand + FromPrimitive> StochasticDepth<A> {
     /// * `drop_prob` - The base probability of dropping a layer
     /// * `layer_idx` - The index of the current layer
     /// * `num_layers` - The total number of layers in the network
-    pub fn new(drop_prob: A, layer_idx: usize, num_layers: usize) -> Self {
+    pub fn new(drop_prob: A, layer_idx: usize, numlayers: usize) -> Self {
         Self {
             drop_prob,
             layer_idx,
-            num_layers,
+            num_layers: numlayers,
             rng_state: 0,
         }
     }
@@ -62,8 +62,8 @@ impl<A: Float + Debug + ScalarOperand + FromPrimitive> StochasticDepth<A> {
     /// # Arguments
     ///
     /// * `layer_idx` - New layer index
-    pub fn set_layer(&mut self, layer_idx: usize) {
-        self.layer_idx = layer_idx;
+    pub fn set_layer(&mut self, layeridx: usize) {
+        self.layer_idx = layeridx;
     }
 
     /// Set the RNG state for deterministic behavior
@@ -142,13 +142,13 @@ impl<A: Float + Debug + ScalarOperand + FromPrimitive> StochasticDepth<A> {
 impl<A: Float + Debug + ScalarOperand + FromPrimitive, D: Dimension> Regularizer<A, D>
     for StochasticDepth<A>
 {
-    fn apply(&self, _params: &Array<A, D>, _gradients: &mut Array<A, D>) -> Result<A> {
+    fn apply(&self, _params: &Array<A, D>, gradients: &mut Array<A, D>) -> Result<A> {
         // This method is not the primary way to use stochastic depth,
         // prefer apply_layer for layer-wise applications
         Ok(A::zero())
     }
 
-    fn penalty(&self, _params: &Array<A, D>) -> Result<A> {
+    fn penalty(&self, params: &Array<A, D>) -> Result<A> {
         // Stochastic depth doesn't add a direct penalty term
         Ok(A::zero())
     }

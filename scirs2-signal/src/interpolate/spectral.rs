@@ -1,13 +1,12 @@
-//! Spectral and frequency-domain interpolation methods
-//!
-//! This module provides frequency-domain interpolation algorithms including
-//! sinc interpolation, FFT-based spectral interpolation, automatic method selection,
-//! and comprehensive resampling utilities.
+// Spectral and frequency-domain interpolation methods
+//
+// This module provides frequency-domain interpolation algorithms including
+// sinc interpolation, FFT-based spectral interpolation, automatic method selection,
+// and comprehensive resampling utilities.
 
 use crate::error::{SignalError, SignalResult};
 use ndarray::Array1;
 use rustfft::{num_complex::Complex, FftPlanner};
-use std::f64::consts::PI;
 
 use super::basic::linear_interpolate;
 use super::core::{find_nearest_valid_index, InterpolationConfig, InterpolationMethod};
@@ -37,7 +36,8 @@ use super::core::{find_nearest_valid_index, InterpolationConfig, InterpolationMe
 /// let result = sinc_interpolate(&signal, 0.4).unwrap();
 /// // Result contains bandlimited interpolated values
 /// ```
-pub fn sinc_interpolate(signal: &Array1<f64>, cutoff_freq: f64) -> SignalResult<Array1<f64>> {
+#[allow(dead_code)]
+pub fn sinc_interpolate(_signal: &Array1<f64>, cutofffreq: f64) -> SignalResult<Array1<f64>> {
     if cutoff_freq <= 0.0 || cutoff_freq > 0.5 {
         return Err(SignalError::ValueError(
             "Cutoff frequency must be in the range (0, 0.5]".to_string(),
@@ -49,7 +49,7 @@ pub fn sinc_interpolate(signal: &Array1<f64>, cutoff_freq: f64) -> SignalResult<
     // Check if input has any missing values
     let has_missing = signal.iter().any(|&x| x.is_nan());
     if !has_missing {
-        return Ok(signal.clone());
+        return Ok(_signal.clone());
     }
 
     // Find indices of missing and non-missing points
@@ -62,13 +62,13 @@ pub fn sinc_interpolate(signal: &Array1<f64>, cutoff_freq: f64) -> SignalResult<
             missing_indices.push(i);
         } else {
             valid_indices.push(i);
-            valid_values.push(signal[i]);
+            valid_values.push(_signal[i]);
         }
     }
 
     if valid_indices.is_empty() {
         return Err(SignalError::ValueError(
-            "All values are missing in the input signal".to_string(),
+            "All values are missing in the input _signal".to_string(),
         ));
     }
 
@@ -147,6 +147,7 @@ pub fn sinc_interpolate(signal: &Array1<f64>, cutoff_freq: f64) -> SignalResult<
 /// let config = InterpolationConfig::default();
 /// let result = spectral_interpolate(&signal, &config).unwrap();
 /// ```
+#[allow(dead_code)]
 pub fn spectral_interpolate(
     signal: &Array1<f64>,
     config: &InterpolationConfig,
@@ -267,6 +268,7 @@ pub fn spectral_interpolate(
 /// let (result, method) = auto_interpolate(&signal, &config, true).unwrap();
 /// println!("Best method: {:?}", method);
 /// ```
+#[allow(dead_code)]
 pub fn auto_interpolate(
     signal: &Array1<f64>,
     config: &InterpolationConfig,
@@ -303,12 +305,12 @@ pub fn auto_interpolate(
         let n_valid = valid_indices.len();
 
         if n_valid < 5 {
-            // Not enough points for cross-validation
+            // Not enough points for cross-_validation
             let result = linear_interpolate(signal)?;
             return Ok((result, InterpolationMethod::Linear));
         }
 
-        // Prepare for k-fold cross-validation (k=5)
+        // Prepare for k-fold cross-_validation (k=5)
         let k = 5.min(n_valid);
         let fold_size = n_valid / k;
 
@@ -318,7 +320,7 @@ pub fn auto_interpolate(
         for &method in &methods {
             let mut total_error = 0.0;
 
-            // K-fold cross-validation
+            // K-fold cross-_validation
             for fold in 0..k {
                 let start = fold * fold_size;
                 let end = if fold == k - 1 {
@@ -330,7 +332,7 @@ pub fn auto_interpolate(
                 // Create temporary signal with additional missing values
                 let mut temp_signal = signal.clone();
 
-                // Mask out validation fold
+                // Mask out _validation fold
                 for &idx in valid_indices.iter().skip(start).take(end - start) {
                     temp_signal[idx] = f64::NAN;
                 }
@@ -338,7 +340,7 @@ pub fn auto_interpolate(
                 // Interpolate with current method
                 let interpolated = super::core::interpolate(&temp_signal, method, config)?;
 
-                // Calculate error on validation fold
+                // Calculate error on _validation fold
                 let mut fold_error = 0.0;
                 for &idx in valid_indices.iter().skip(start).take(end - start) {
                     let error = interpolated[idx] - signal[idx];
@@ -387,13 +389,12 @@ pub fn auto_interpolate(
 }
 
 pub mod resampling {
-    //! Advanced resampling utilities for signal interpolation and sample rate conversion
-    //!
-    //! This module provides high-quality resampling algorithms based on windowed sinc
-    //! interpolation, polyphase filtering, and other advanced signal processing techniques.
-
     use crate::error::{SignalError, SignalResult};
-    use std::f64::consts::PI;
+
+    /// Advanced resampling utilities for signal interpolation and sample rate conversion
+    //
+    // This module provides high-quality resampling algorithms based on windowed sinc
+    // interpolation, polyphase filtering, and other advanced signal processing techniques.
 
     /// Configuration for high-quality resampling
     #[derive(Debug, Clone)]
@@ -447,7 +448,7 @@ pub mod resampling {
 
         if target_length == 0 {
             return Err(SignalError::ValueError(
-                "Target length must be positive".to_string(),
+                "Target _length must be positive".to_string(),
             ));
         }
 
@@ -520,7 +521,7 @@ pub mod resampling {
     }
 
     /// Evaluates the sinc kernel at a fractional position
-    fn evaluate_sinc_kernel(kernel: &[f64], position: f64, _cutoff: f64) -> f64 {
+    fn evaluate_sinc_kernel(_kernel: &[f64], position: f64, cutoff: f64) -> f64 {
         let idx = position.round() as i32 + kernel.len() as i32 / 2;
 
         if idx >= 0 && (idx as usize) < kernel.len() {
@@ -566,15 +567,15 @@ pub mod resampling {
 }
 
 pub mod polynomial {
-    //! Polynomial interpolation methods and utilities
-    //!
-    //! This module provides various polynomial interpolation techniques including
-    //! Lagrange interpolation, Newton's method, Chebyshev interpolation, and
-    //! least-squares polynomial fitting.
-
     use crate::error::{SignalError, SignalResult};
     use ndarray::{Array1, Array2};
     use scirs2_linalg::solve;
+
+    /// Polynomial interpolation methods and utilities
+    ///
+    /// This module provides various polynomial interpolation techniques including
+    /// Lagrange interpolation, Newton's method, Chebyshev interpolation, and
+    /// least-squares polynomial fitting.
 
     /// Lagrange polynomial interpolation
     ///
@@ -621,7 +622,7 @@ pub mod polynomial {
                         let denominator = x_known[i] - x_known[j];
                         if denominator.abs() < 1e-12 {
                             return Err(SignalError::ValueError(
-                                "Duplicate x-coordinates in known points".to_string(),
+                                "Duplicate x-coordinates in _known points".to_string(),
                             ));
                         }
                         product *= (x - x_known[j]) / denominator;
@@ -683,7 +684,7 @@ pub mod polynomial {
 
         match solve(&at_a.view(), &at_b.view(), None) {
             Ok(coeffs) => Ok(coeffs.to_vec()),
-            Err(_) => Err(SignalError::Compute(
+            Err(_) => Err(SignalError::ComputationError(
                 "Failed to solve polynomial fitting system".to_string(),
             )),
         }
@@ -758,14 +759,14 @@ pub mod polynomial {
                 let denominator = x_known[i + j] - x_known[i];
                 if denominator.abs() < 1e-12 {
                     return Err(SignalError::ValueError(
-                        "Duplicate x-coordinates in known points".to_string(),
+                        "Duplicate x-coordinates in _known points".to_string(),
                     ));
                 }
                 dd_table[i][j] = (dd_table[i + 1][j - 1] - dd_table[i][j - 1]) / denominator;
             }
         }
 
-        // Evaluate Newton polynomial at target points
+        // Evaluate Newton polynomial at _target points
         let mut result = vec![0.0; x_target.len()];
 
         for (target_idx, &x) in x_target.iter().enumerate() {
@@ -787,9 +788,7 @@ pub mod polynomial {
 /// Unit tests for spectral interpolation methods
 #[cfg(test)]
 mod tests {
-    use super::super::core::InterpolationConfig;
     use super::*;
-    use ndarray::Array1;
 
     #[test]
     fn test_sinc_interpolate() {
@@ -830,6 +829,8 @@ mod tests {
 
     #[test]
     fn test_auto_interpolate() {
+        let a = vec![1.0, 2.0, 3.0, 4.0, 5.0];
+        let b = vec![0.5, 0.5];
         let signal = Array1::from_vec(vec![1.0, f64::NAN, 3.0, f64::NAN, 5.0]);
         let config = InterpolationConfig::default();
 
@@ -856,7 +857,7 @@ mod tests {
         let signal = Array1::from_vec(vec![1.0, 2.0, f64::NAN, 4.0, 5.0, 6.0, f64::NAN, 8.0]);
         let config = InterpolationConfig::default();
 
-        let (result, _method) = auto_interpolate(&signal, &config, true).unwrap();
+        let (result, method) = auto_interpolate(&signal, &config, true).unwrap();
 
         // All values should be valid
         assert!(result.iter().all(|&x| !x.is_nan()));
@@ -895,7 +896,7 @@ mod tests {
 
     #[test]
     fn test_polynomial_lagrange() {
-        use polynomial::lagrange_interpolate;
+        use super::polynomial::lagrange_interpolate;
 
         let x_known = [0.0, 1.0, 2.0];
         let y_known = [1.0, 2.0, 5.0]; // y = x^2 + 1
@@ -910,7 +911,7 @@ mod tests {
 
     #[test]
     fn test_polynomial_fit() {
-        use polynomial::{polynomial_eval, polynomial_fit};
+        use super::polynomial::{polynomial_eval, polynomial_fit};
 
         let x = [0.0, 1.0, 2.0, 3.0];
         let y = [1.0, 2.0, 5.0, 10.0]; // Roughly y = x^2 + 1

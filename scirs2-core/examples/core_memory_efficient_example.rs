@@ -6,6 +6,7 @@ use scirs2_core::memory_efficient::{
 };
 use std::time::Instant;
 
+#[allow(dead_code)]
 fn main() -> Result<(), CoreError> {
     println!("Memory-Efficient Operations Example");
     println!("===================================\n");
@@ -86,6 +87,7 @@ fn main() -> Result<(), CoreError> {
 }
 
 // Helper function to get a corner of an array for display
+#[allow(dead_code)]
 fn get_corner<T: Clone>(arr: &Array2<T>, size: usize) -> Array2<T> {
     let s = std::cmp::min(size, arr.shape()[0]);
     arr.slice(ndarray::s![0..s, 0..s]).to_owned()

@@ -60,10 +60,10 @@ impl<F: Float> Op<F> for BooleanMaskOp {
         let g = ctx.graph();
 
         // Get the input shape for creating gradient array
-        let input_shape = crate::tensor_ops::shape(ctx.input(0));
+        let inputshape = crate::tensor_ops::shape(ctx.input(0));
 
         // Create gradient tensor with same shape as input, filled with zeros
-        let zeros = crate::tensor_ops::zeros(&input_shape, g);
+        let zeros = crate::tensor_ops::zeros(&inputshape, g);
 
         // In a full implementation, we'd need to scatter the gradient values
         // back to their original positions based on the mask
@@ -97,22 +97,22 @@ impl<F: Float> Op<F> for TakeOp {
         let data = ctx.input(0);
         let indices = ctx.input(1);
 
-        let data_shape = data.shape();
-        let indices_shape = indices.shape();
+        let datashape = data.shape();
+        let indicesshape = indices.shape();
 
         // Normalize axis
         let axis = if self.axis < 0 {
-            (data_shape.len() as isize + self.axis) as usize
+            (datashape.len() as isize + self.axis) as usize
         } else {
             self.axis as usize
         };
 
-        if axis >= data_shape.len() {
+        if axis >= datashape.len() {
             return Err(OpError::IncompatibleShape("Axis out of bounds".into()));
         }
 
         // For simplicity, we'll handle 1D indices for now
-        if indices_shape.len() != 1 {
+        if indicesshape.len() != 1 {
             return Err(OpError::IncompatibleShape(
                 "Only 1D indices supported for now".into(),
             ));
@@ -120,10 +120,10 @@ impl<F: Float> Op<F> for TakeOp {
 
         let indices_view = indices.view();
         let data_view = data.view();
-        let axis_size = data_shape[axis];
+        let axis_size = datashape[axis];
 
         // Collect indices as integers
-        let index_values: Result<Vec<usize>, _> = indices_view
+        let index_values: Result<Vec<usize>, OpError> = indices_view
             .iter()
             .map(|&idx| {
                 let idx_int = idx
@@ -140,11 +140,11 @@ impl<F: Float> Op<F> for TakeOp {
         let index_values = index_values?;
 
         // Create output shape: replace axis dimension with number of indices
-        let mut output_shape = data_shape.to_vec();
-        output_shape[axis] = index_values.len();
+        let mut outputshape = datashape.to_vec();
+        outputshape[axis] = index_values.len();
 
         // Create output array
-        let mut output = Array::<F, IxDyn>::zeros(IxDyn(&output_shape));
+        let mut output = Array::<F, IxDyn>::zeros(IxDyn(&outputshape));
 
         // Select elements along the specified axis
         for (out_idx, &src_idx) in index_values.iter().enumerate() {
@@ -163,8 +163,8 @@ impl<F: Float> Op<F> for TakeOp {
         let g = ctx.graph();
 
         // Create gradient with same shape as input
-        let input_shape = crate::tensor_ops::shape(ctx.input(0));
-        let zeros = crate::tensor_ops::zeros(&input_shape, g);
+        let inputshape = crate::tensor_ops::shape(ctx.input(0));
+        let zeros = crate::tensor_ops::zeros(&inputshape, g);
 
         // In a full implementation, we'd scatter gradients back to original positions
         ctx.append_input_grad(0, Some(zeros));
@@ -198,17 +198,17 @@ impl<F: Float> Op<F> for ScatterOp {
         let indices = ctx.input(0);
         let updates = ctx.input(1);
 
-        let indices_shape = indices.shape();
-        let updates_shape = updates.shape();
+        let indicesshape = indices.shape();
+        let updatesshape = updates.shape();
 
         // For simplicity, handle 1D case
-        if indices_shape.len() != 1 || updates_shape.len() != 1 {
+        if indicesshape.len() != 1 || updatesshape.len() != 1 {
             return Err(OpError::IncompatibleShape(
                 "Only 1D scatter supported for now".into(),
             ));
         }
 
-        if indices_shape[0] != updates_shape[0] {
+        if indicesshape[0] != updatesshape[0] {
             return Err(OpError::IncompatibleShape(
                 "Indices and updates must have same length".into(),
             ));
@@ -244,8 +244,8 @@ impl<F: Float> Op<F> for ScatterOp {
 
         // Gradient w.r.t. updates: gather from output gradient at specified indices
         // This is essentially a gather operation
-        let updates_shape = crate::tensor_ops::shape(ctx.input(1));
-        let zeros_updates = crate::tensor_ops::zeros(&updates_shape, g);
+        let updatesshape = crate::tensor_ops::shape(ctx.input(1));
+        let zeros_updates = crate::tensor_ops::zeros(&updatesshape, g);
 
         ctx.append_input_grad(0, None); // No gradient for indices
         ctx.append_input_grad(1, Some(zeros_updates)); // Simplified gradient for updates
@@ -310,11 +310,11 @@ impl<F: Float> Op<F> for WhereOp {
 
         // Gradient flows to x where condition is true, to y where condition is false
         // This requires evaluating the condition, which we'll simplify for now
-        let x_shape = crate::tensor_ops::shape(ctx.input(1));
-        let y_shape = crate::tensor_ops::shape(ctx.input(2));
+        let xshape = crate::tensor_ops::shape(ctx.input(1));
+        let yshape = crate::tensor_ops::shape(ctx.input(2));
 
-        let zeros_x = crate::tensor_ops::zeros(&x_shape, g);
-        let zeros_y = crate::tensor_ops::zeros(&y_shape, g);
+        let zeros_x = crate::tensor_ops::zeros(&xshape, g);
+        let zeros_y = crate::tensor_ops::zeros(&yshape, g);
 
         ctx.append_input_grad(0, None); // No gradient for condition
         ctx.append_input_grad(1, Some(zeros_x)); // Simplified gradient for x
@@ -337,7 +337,7 @@ impl<F: Float> Op<F> for AdvancedGatherOp {
 
     fn compute(&self, ctx: &mut ComputeContext<F>) -> Result<(), OpError> {
         let data = ctx.input(0);
-        let data_shape = data.shape();
+        let datashape = data.shape();
 
         // For now, implement a simplified version that works with 2D indexing
         if self.axes.len() != 2 || ctx.inputs().len() != 3 {
@@ -361,8 +361,8 @@ impl<F: Float> Op<F> for AdvancedGatherOp {
         let data_view = data.view();
 
         // Create output array with same shape as index arrays
-        let output_shape = indices0.shape();
-        let mut output = Array::<F, IxDyn>::zeros(output_shape);
+        let outputshape = indices0.shape();
+        let mut output = Array::<F, IxDyn>::zeros(outputshape);
 
         // Gather elements using paired indices
         for ((out_elem, &idx0), &idx1) in output
@@ -377,7 +377,7 @@ impl<F: Float> Op<F> for AdvancedGatherOp {
                 .to_usize()
                 .ok_or_else(|| OpError::Other("Index must be non-negative integer".into()))?;
 
-            if i0 >= data_shape[0] || i1 >= data_shape[1] {
+            if i0 >= datashape[0] || i1 >= datashape[1] {
                 return Err(OpError::Other("Index out of bounds".into()));
             }
 
@@ -393,8 +393,8 @@ impl<F: Float> Op<F> for AdvancedGatherOp {
         let g = ctx.graph();
 
         // Create gradient with same shape as input
-        let input_shape = crate::tensor_ops::shape(ctx.input(0));
-        let zeros = crate::tensor_ops::zeros(&input_shape, g);
+        let inputshape = crate::tensor_ops::shape(ctx.input(0));
+        let zeros = crate::tensor_ops::zeros(&inputshape, g);
 
         ctx.append_input_grad(0, Some(zeros));
         ctx.append_input_grad(1, None); // No gradient for indices
@@ -405,6 +405,7 @@ impl<F: Float> Op<F> for AdvancedGatherOp {
 // Public API functions
 
 /// Boolean masking - select elements where mask is true
+#[allow(dead_code)]
 pub fn boolean_mask<'g, F: Float>(data: &Tensor<'g, F>, mask: &Tensor<'g, F>) -> Tensor<'g, F> {
     let g = data.graph();
     Tensor::builder(g)
@@ -414,6 +415,7 @@ pub fn boolean_mask<'g, F: Float>(data: &Tensor<'g, F>, mask: &Tensor<'g, F>) ->
 }
 
 /// Take elements from tensor using indices along specified axis
+#[allow(dead_code)]
 pub fn take<'g, F: Float>(
     data: &Tensor<'g, F>,
     indices: &Tensor<'g, F>,
@@ -427,6 +429,7 @@ pub fn take<'g, F: Float>(
 }
 
 /// Scatter values into a tensor at specified indices
+#[allow(dead_code)]
 pub fn scatter<'g, F: Float>(
     indices: &Tensor<'g, F>,
     updates: &Tensor<'g, F>,
@@ -441,6 +444,7 @@ pub fn scatter<'g, F: Float>(
 }
 
 /// Conditional selection - choose elements from x or y based on condition
+#[allow(dead_code)]
 pub fn where_op<'g, F: Float>(
     condition: &Tensor<'g, F>,
     x: &Tensor<'g, F>,
@@ -455,6 +459,7 @@ pub fn where_op<'g, F: Float>(
 }
 
 /// Advanced gather with multiple index arrays
+#[allow(dead_code)]
 pub fn advanced_gather<'g, F: Float>(
     data: &Tensor<'g, F>,
     indices: &[&Tensor<'g, F>],
@@ -476,6 +481,7 @@ pub fn advanced_gather<'g, F: Float>(
 /// Convenience functions for common indexing patterns
 ///
 /// Get elements at specific 2D coordinates
+#[allow(dead_code)]
 pub fn get_at_coords<'g, F: Float>(
     data: &Tensor<'g, F>,
     row_indices: &Tensor<'g, F>,
@@ -485,6 +491,7 @@ pub fn get_at_coords<'g, F: Float>(
 }
 
 /// Select rows from a 2D tensor
+#[allow(dead_code)]
 pub fn select_rows<'g, F: Float>(
     data: &Tensor<'g, F>,
     row_indices: &Tensor<'g, F>,
@@ -493,6 +500,7 @@ pub fn select_rows<'g, F: Float>(
 }
 
 /// Select columns from a 2D tensor  
+#[allow(dead_code)]
 pub fn select_columns<'g, F: Float>(
     data: &Tensor<'g, F>,
     col_indices: &Tensor<'g, F>,

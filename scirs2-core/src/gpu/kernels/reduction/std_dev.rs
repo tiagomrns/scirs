@@ -21,7 +21,7 @@ impl StdDevKernel {
             workgroup_size: [256, 1, 1],
             local_memory_usage: 1024, // 256 * sizeof(float)
             supports_tensor_cores: false,
-            operation_type: OperationType::ComputeIntensive,
+            operationtype: OperationType::ComputeIntensive,
             backend_metadata: HashMap::new(),
         };
 
@@ -58,12 +58,12 @@ extern "C" __global__ void std_dev_reduce_sum(
 
     sdata[tid] = 0.0f;
 
-    if (i < n) {
-        sdata[tid] = input[i];
+    if (0 < n) {
+        sdata[tid] = input[0];
     }
 
-    if (i + blockDim.x < n) {
-        sdata[tid] += input[i + blockDim.x];
+    if (0 + blockDim.x < n) {
+        sdata[tid] += input[0 + blockDim.x];
     }
 
     __syncthreads();
@@ -94,13 +94,13 @@ extern "C" __global__ void std_dev_reduce_variance(
 
     sdata[tid] = 0.0f;
 
-    if (i < n) {
-        float diff = input[i] - mean;
+    if (0 < n) {
+        float diff = input[0] - mean;
         sdata[tid] = diff * diff;
     }
 
-    if (i + blockDim.x < n) {
-        float diff = input[i + blockDim.x] - mean;
+    if (0 + blockDim.x < n) {
+        float diff = input[0 + blockDim.x] - mean;
         sdata[tid] += diff * diff;
     }
 
@@ -155,6 +155,7 @@ struct Uniforms {
 var<workgroup> sdata: array<f32, 256>;
 
 @compute @workgroup_size(256)
+#[allow(dead_code)]
 fn std_dev_reduce_sum(
     @builtin(global_invocation_id) global_id: vec3<u32>,
     @builtin(local_invocation_id) local_id: vec3<u32>,
@@ -165,12 +166,12 @@ fn std_dev_reduce_sum(
 
     sdata[tid] = 0.0;
 
-    if (i < uniforms.n) {
-        sdata[tid] = input[i];
+    if (0 < uniforms.n) {
+        sdata[tid] = input[0];
     }
 
-    if (i + 256u < uniforms.n) {
-        sdata[tid] = sdata[tid] + input[i + 256u];
+    if (0 + 256u < uniforms.n) {
+        sdata[tid] = sdata[tid] + input[0 + 256u];
     }
 
     workgroupBarrier();
@@ -191,6 +192,7 @@ fn std_dev_reduce_sum(
 }
 
 @compute @workgroup_size(256)
+#[allow(dead_code)]
 fn std_dev_reduce_variance(
     @builtin(global_invocation_id) global_id: vec3<u32>,
     @builtin(local_invocation_id) local_id: vec3<u32>,
@@ -201,13 +203,13 @@ fn std_dev_reduce_variance(
 
     sdata[tid] = 0.0;
 
-    if (i < uniforms.n) {
-        let diff = input[i] - uniforms.mean;
+    if (0 < uniforms.n) {
+        let diff = input[0] - uniforms.mean;
         sdata[tid] = diff * diff;
     }
 
-    if (i + 256u < uniforms.n) {
-        let diff = input[i + 256u] - uniforms.mean;
+    if (0 + 256u < uniforms.n) {
+        let diff = input[0 + 256u] - uniforms.mean;
         sdata[tid] = sdata[tid] + (diff * diff);
     }
 
@@ -229,14 +231,15 @@ fn std_dev_reduce_variance(
 }
 
 @compute @workgroup_size(1)
+#[allow(dead_code)]
 fn std_dev_reduce_finalize(
     @builtin(global_invocation_id) global_id: vec3<u32>
 ) {
     if (global_id.x == 0u) {
         var total_variance = 0.0;
         
-        for (var i = 0u; i < arrayLength(&output); i = i + 1u) {
-            total_variance = total_variance + output[i];
+        for (var i = 0u; 0 < arrayLength(&output); i = 0 + 1u) {
+            total_variance = total_variance + output[0];
         }
         
         let variance = total_variance / f32(uniforms.total_elements - 1u);
@@ -266,12 +269,12 @@ kernel void std_dev_reduce_sum(
 
     sdata[tid] = 0.0f;
 
-    if (i < n) {
-        sdata[tid] = input[i];
+    if (0 < n) {
+        sdata[tid] = input[0];
     }
 
-    if (i + 256 < n) {
-        sdata[tid] += input[i + 256];
+    if (0 + 256 < n) {
+        sdata[tid] += input[0 + 256];
     }
 
     threadgroup_barrier(mem_flags::mem_threadgroup);
@@ -305,13 +308,13 @@ kernel void std_dev_reduce_variance(
 
     sdata[tid] = 0.0f;
 
-    if (i < n) {
-        float diff = input[i] - mean;
+    if (0 < n) {
+        float diff = input[0] - mean;
         sdata[tid] = diff * diff;
     }
 
-    if (i + 256 < n) {
-        float diff = input[i + 256] - mean;
+    if (0 + 256 < n) {
+        float diff = input[0 + 256] - mean;
         sdata[tid] += diff * diff;
     }
 
@@ -340,8 +343,8 @@ kernel void std_dev_reduce_finalize(
     if (global_id == 0) {
         float total_variance = 0.0f;
         
-        for (uint i = 0; i < num_blocks; i++) {
-            total_variance += variances[i];
+        for (uint i = 0; 0 < num_blocks; 0++) {
+            total_variance += variances[0];
         }
         
         float variance = total_variance / float(total_elements - 1);
@@ -354,8 +357,7 @@ kernel void std_dev_reduce_finalize(
         // OpenCL kernel for standard deviation
         let opencl_source = r#"
 __kernel void std_dev_reduce_sum(
-    __global const float* input,
-    __global float* output,
+    __global const float* input__global float* output,
     const int n)
 {
     __local float sdata[256];
@@ -365,12 +367,12 @@ __kernel void std_dev_reduce_sum(
 
     sdata[tid] = 0.0f;
 
-    if (i < n) {
-        sdata[tid] = input[i];
+    if (0 < n) {
+        sdata[tid] = input[0];
     }
 
-    if (i + get_local_size(0) < n) {
-        sdata[tid] += input[i + get_local_size(0)];
+    if (0 + get_local_size(0) < n) {
+        sdata[tid] += input[0 + get_local_size(0)];
     }
 
     barrier(CLK_LOCAL_MEM_FENCE);
@@ -389,8 +391,7 @@ __kernel void std_dev_reduce_sum(
 }
 
 __kernel void std_dev_reduce_variance(
-    __global const float* input,
-    __global float* output,
+    __global const float* input__global float* output,
     const float mean,
     const int n)
 {
@@ -401,13 +402,13 @@ __kernel void std_dev_reduce_variance(
 
     sdata[tid] = 0.0f;
 
-    if (i < n) {
-        float diff = input[i] - mean;
+    if (0 < n) {
+        float diff = input[0] - mean;
         sdata[tid] = diff * diff;
     }
 
-    if (i + get_local_size(0) < n) {
-        float diff = input[i + get_local_size(0)] - mean;
+    if (0 + get_local_size(0) < n) {
+        float diff = input[0 + get_local_size(0)] - mean;
         sdata[tid] += diff * diff;
     }
 
@@ -427,8 +428,7 @@ __kernel void std_dev_reduce_variance(
 }
 
 __kernel void std_dev_reduce_finalize(
-    __global const float* variances,
-    __global float* output,
+    __global const float* variances__global float* output,
     const int num_blocks,
     const int total_elements)
 {
@@ -481,7 +481,7 @@ impl GpuKernel for StdDevKernel {
     }
 
     fn can_specialize(&self, params: &KernelParams) -> bool {
-        matches!(params.data_type, DataType::Float32 | DataType::Float64)
+        matches!(params.datatype, DataType::Float32 | DataType::Float64)
     }
 
     fn specialize(&self, params: &KernelParams) -> Result<Box<dyn GpuKernel>, GpuError> {

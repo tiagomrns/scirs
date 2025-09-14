@@ -19,9 +19,9 @@ pub struct TrackedGpuBuffer<T: GpuDataType> {
 
 impl<T: GpuDataType> TrackedGpuBuffer<T> {
     /// Create a new tracked GPU buffer from an existing buffer
-    pub fn new(buffer: GpuBuffer<T>, component_name: impl Into<String>) -> Self {
+    pub fn new(buffer: GpuBuffer<T>, componentname: impl Into<String>) -> Self {
         let size_bytes = buffer.len() * std::mem::size_of::<T>();
-        let component_name = component_name.into();
+        let component_name = componentname.into();
 
         // Track the initial allocation
         track_allocation(&component_name, size_bytes, &buffer as *const _ as usize);
@@ -56,12 +56,12 @@ impl<T: GpuDataType> TrackedGpuBuffer<T> {
 
     /// Copy data from the host to the device
     pub fn copy_from_host(&self, data: &[T]) {
-        self.inner.copy_from_host(data);
+        let _ = self.inner.copy_from_host(data);
     }
 
     /// Copy data from the device to the host
     pub fn copy_to_host(&self, data: &mut [T]) {
-        self.inner.copy_to_host(data);
+        let _ = self.inner.copy_to_host(data);
     }
 
     /// Convert the buffer contents to a vector
@@ -124,10 +124,10 @@ pub struct TrackedGpuContext {
 
 impl TrackedGpuContext {
     /// Create a new tracked GPU context
-    pub fn new(inner: GpuContext, component_name: impl Into<String>) -> Self {
+    pub fn new(context: GpuContext, componentname: impl Into<String>) -> Self {
         Self {
-            inner,
-            component_name: component_name.into(),
+            inner: context,
+            component_name: componentname.into(),
         }
     }
 
@@ -146,21 +146,21 @@ impl TrackedGpuContext {
     }
 
     /// Get the backend name
-    pub const fn backend_name(&self) -> &str {
+    pub fn backend_name(&self) -> &str {
         self.inner.backend_name()
     }
 
     /// Create a tracked buffer with the given size
     pub fn create_buffer<T: GpuDataType>(&self, size: usize) -> TrackedGpuBuffer<T> {
         let buffer = self.inner.create_buffer::<T>(size);
-        let buffer_name = format!("{}::Buffer_{:p}", self.component_name, &buffer);
+        let buffer_name = format!("{}:{:p}", self.component_name, &buffer);
         TrackedGpuBuffer::new(buffer, buffer_name)
     }
 
     /// Create a tracked buffer from a slice
     pub fn create_buffer_from_slice<T: GpuDataType>(&self, data: &[T]) -> TrackedGpuBuffer<T> {
         let buffer = self.inner.create_buffer_from_slice(data);
-        let buffer_name = format!("{}::Buffer_{:p}", self.component_name, &buffer);
+        let buffer_name = format!("{}:{:p}", self.component_name, &buffer);
         TrackedGpuBuffer::new(buffer, buffer_name)
     }
 
@@ -196,6 +196,7 @@ impl TrackedGpuContext {
 ///
 /// This sets up tracking hooks for CUDA, WebGPU, Metal, and OpenCL backends
 /// and reports memory allocations and deallocations to the memory metrics system.
+#[allow(dead_code)]
 pub fn setup_gpu_memory_tracking() {
     // In a real implementation, this would set up hooks to track GPU memory
     // This would be different for each backend
@@ -229,9 +230,9 @@ mod tests {
         let tracked_ctx = TrackedGpuContext::new(context, "GpuTests");
 
         // Create a buffer
-        let buffer_size = 1000;
+        let buffersize = 1000;
         let element_size = std::mem::size_of::<f32>();
-        let buffer = tracked_ctx.create_buffer::<f32>(buffer_size);
+        let buffer = tracked_ctx.create_buffer::<f32>(buffersize);
 
         // Check that allocation was tracked
         let report = generate_memory_report();
@@ -242,12 +243,12 @@ mod tests {
         let buffer_component = report
             .component_stats
             .keys()
-            .find(|name| name.starts_with("GpuTests::Buffer_"))
+            .find(|name| name.starts_with("GpuTests:"))
             .expect("Should have a buffer component");
 
         // Verify buffer size
         let component_stats = &report.component_stats[buffer_component];
-        assert_eq!(component_stats.current_usage, buffer_size * element_size);
+        assert_eq!(component_stats.current_usage, buffersize * element_size);
 
         // Drop the buffer
         drop(buffer);

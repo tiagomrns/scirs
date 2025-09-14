@@ -10,13 +10,14 @@ use std::hash::Hash;
 /// Find all subgraph matches of a pattern graph in a target graph
 ///
 /// Returns a vector of mappings from pattern nodes to target nodes for each match found.
+#[allow(dead_code)]
 pub fn find_subgraph_matches<N1, N2, E, Ix>(
     pattern: &Graph<N1, E, Ix>,
     target: &Graph<N2, E, Ix>,
 ) -> Vec<HashMap<N1, N2>>
 where
-    N1: Node + Clone + Hash + Eq,
-    N2: Node + Clone + Hash + Eq,
+    N1: Node + Clone + Hash + Eq + std::fmt::Debug,
+    N2: Node + Clone + Hash + Eq + std::fmt::Debug,
     E: EdgeWeight,
     Ix: IndexType,
 {
@@ -46,6 +47,7 @@ where
     matches
 }
 
+#[allow(dead_code)]
 fn find_matches_recursive<N1, N2, E, Ix>(
     pattern_nodes: &[N1],
     pattern: &Graph<N1, E, Ix>,
@@ -55,8 +57,8 @@ fn find_matches_recursive<N1, N2, E, Ix>(
     target_node: &N2,
     matches: &mut Vec<HashMap<N1, N2>>,
 ) where
-    N1: Node + Clone + Hash + Eq,
-    N2: Node + Clone + Hash + Eq,
+    N1: Node + Clone + Hash + Eq + std::fmt::Debug,
+    N2: Node + Clone + Hash + Eq + std::fmt::Debug,
     E: EdgeWeight,
     Ix: IndexType,
 {
@@ -76,10 +78,10 @@ fn find_matches_recursive<N1, N2, E, Ix>(
     // Try to map pattern_node to target_node
     current_mapping.insert(pattern_node.clone(), target_node.clone());
 
-    // Check if this mapping is consistent with edges
+    // Check if this _mapping is consistent with edges
     if is_mapping_consistent(pattern, target, current_mapping) {
         if pattern_idx + 1 < pattern_nodes.len() {
-            // Continue mapping with remaining nodes
+            // Continue _mapping with remaining _nodes
             if let Ok(target_neighbors) = target.neighbors(target_node) {
                 for next_target in target_neighbors {
                     find_matches_recursive(
@@ -109,7 +111,7 @@ fn find_matches_recursive<N1, N2, E, Ix>(
                 }
             }
         } else {
-            // Last node - check if complete mapping is valid
+            // Last _node - check if complete _mapping is valid
             find_matches_recursive(
                 pattern_nodes,
                 pattern,
@@ -126,14 +128,15 @@ fn find_matches_recursive<N1, N2, E, Ix>(
     current_mapping.remove(pattern_node);
 }
 
+#[allow(dead_code)]
 fn is_mapping_consistent<N1, N2, E, Ix>(
     pattern: &Graph<N1, E, Ix>,
     target: &Graph<N2, E, Ix>,
     mapping: &HashMap<N1, N2>,
 ) -> bool
 where
-    N1: Node + Hash + Eq,
-    N2: Node + Hash + Eq,
+    N1: Node + Hash + Eq + std::fmt::Debug,
+    N2: Node + Hash + Eq + std::fmt::Debug,
     E: EdgeWeight,
     Ix: IndexType,
 {
@@ -165,13 +168,14 @@ where
 ///
 /// # Returns
 /// * `bool` - True if the graphs are isomorphic, false otherwise
+#[allow(dead_code)]
 pub fn are_graphs_isomorphic<N1, N2, E, Ix>(
     graph1: &Graph<N1, E, Ix>,
     graph2: &Graph<N2, E, Ix>,
 ) -> bool
 where
-    N1: Node + Clone + Hash + Eq,
-    N2: Node + Clone + Hash + Eq,
+    N1: Node + Clone + Hash + Eq + std::fmt::Debug,
+    N2: Node + Clone + Hash + Eq + std::fmt::Debug,
     E: EdgeWeight,
     Ix: IndexType,
 {
@@ -202,13 +206,14 @@ where
 ///
 /// # Returns
 /// * `Option<HashMap<N1, N2>>` - Mapping from graph1 nodes to graph2 nodes if isomorphic
+#[allow(dead_code)]
 pub fn find_isomorphism<N1, N2, E, Ix>(
     graph1: &Graph<N1, E, Ix>,
     graph2: &Graph<N2, E, Ix>,
 ) -> Option<HashMap<N1, N2>>
 where
-    N1: Node + Clone + Hash + Eq,
-    N2: Node + Clone + Hash + Eq,
+    N1: Node + Clone + Hash + Eq + std::fmt::Debug,
+    N2: Node + Clone + Hash + Eq + std::fmt::Debug,
     E: EdgeWeight,
     Ix: IndexType,
 {
@@ -228,13 +233,14 @@ where
 }
 
 /// Check if two graphs have the same degree sequence
+#[allow(dead_code)]
 fn have_same_degree_sequence<N1, N2, E, Ix>(
     graph1: &Graph<N1, E, Ix>,
     graph2: &Graph<N2, E, Ix>,
 ) -> bool
 where
-    N1: Node,
-    N2: Node,
+    N1: Node + std::fmt::Debug,
+    N2: Node + std::fmt::Debug,
     E: EdgeWeight,
     Ix: IndexType,
 {
@@ -265,6 +271,7 @@ where
 }
 
 /// Backtracking algorithm to find isomorphism
+#[allow(dead_code)]
 fn backtrack_isomorphism<N1, N2, E, Ix>(
     nodes1: &[N1],
     nodes2: &[N2],
@@ -274,8 +281,8 @@ fn backtrack_isomorphism<N1, N2, E, Ix>(
     depth: usize,
 ) -> bool
 where
-    N1: Node + Clone + Hash + Eq,
-    N2: Node + Clone + Hash + Eq,
+    N1: Node + Clone + Hash + Eq + std::fmt::Debug,
+    N2: Node + Clone + Hash + Eq + std::fmt::Debug,
     E: EdgeWeight,
     Ix: IndexType,
 {
@@ -322,6 +329,7 @@ where
 }
 
 /// Check if a partial mapping is valid (preserves edges among mapped nodes)
+#[allow(dead_code)]
 fn is_partial_mapping_valid<N1, N2, E, Ix>(
     graph1: &Graph<N1, E, Ix>,
     graph2: &Graph<N2, E, Ix>,
@@ -329,8 +337,8 @@ fn is_partial_mapping_valid<N1, N2, E, Ix>(
     _mapped_count: usize,
 ) -> bool
 where
-    N1: Node + Hash + Eq,
-    N2: Node + Hash + Eq,
+    N1: Node + Hash + Eq + std::fmt::Debug,
+    N2: Node + Hash + Eq + std::fmt::Debug,
     E: EdgeWeight,
     Ix: IndexType,
 {
@@ -350,14 +358,15 @@ where
 }
 
 /// Check if a complete mapping is a valid isomorphism
+#[allow(dead_code)]
 fn is_valid_isomorphism<N1, N2, E, Ix>(
     graph1: &Graph<N1, E, Ix>,
     graph2: &Graph<N2, E, Ix>,
     mapping: &HashMap<N1, N2>,
 ) -> bool
 where
-    N1: Node + Hash + Eq,
-    N2: Node + Hash + Eq,
+    N1: Node + Hash + Eq + std::fmt::Debug,
+    N2: Node + Hash + Eq + std::fmt::Debug,
     E: EdgeWeight,
     Ix: IndexType,
 {
@@ -384,8 +393,8 @@ where
 #[derive(Debug, Clone)]
 struct VF2State<N1, N2>
 where
-    N1: Node + Clone + Hash + Eq,
-    N2: Node + Clone + Hash + Eq,
+    N1: Node + Clone + Hash + Eq + std::fmt::Debug,
+    N2: Node + Clone + Hash + Eq + std::fmt::Debug,
 {
     /// Current mapping from graph1 to graph2
     mapping: HashMap<N1, N2>,
@@ -405,8 +414,8 @@ where
 
 impl<N1, N2> VF2State<N1, N2>
 where
-    N1: Node + Clone + Hash + Eq,
-    N2: Node + Clone + Hash + Eq,
+    N1: Node + Clone + Hash + Eq + std::fmt::Debug,
+    N2: Node + Clone + Hash + Eq + std::fmt::Debug,
 {
     /// Create a new empty VF2 state
     fn new() -> Self {
@@ -701,13 +710,14 @@ where
 /// This implementation uses the VF2 algorithm which provides significant performance
 /// improvements over naive backtracking through intelligent state space exploration
 /// and feasibility-based pruning.
+#[allow(dead_code)]
 pub fn find_isomorphism_vf2<N1, N2, E, Ix>(
     graph1: &Graph<N1, E, Ix>,
     graph2: &Graph<N2, E, Ix>,
 ) -> Option<HashMap<N1, N2>>
 where
-    N1: Node + Clone + Hash + Eq,
-    N2: Node + Clone + Hash + Eq,
+    N1: Node + Clone + Hash + Eq + std::fmt::Debug,
+    N2: Node + Clone + Hash + Eq + std::fmt::Debug,
     E: EdgeWeight,
     Ix: IndexType,
 {
@@ -735,14 +745,15 @@ where
 }
 
 /// Core VF2 matching recursive function
+#[allow(dead_code)]
 fn vf2_match<N1, N2, E, Ix>(
     state: &mut VF2State<N1, N2>,
     graph1: &Graph<N1, E, Ix>,
     graph2: &Graph<N2, E, Ix>,
 ) -> bool
 where
-    N1: Node + Clone + Hash + Eq,
-    N2: Node + Clone + Hash + Eq,
+    N1: Node + Clone + Hash + Eq + std::fmt::Debug,
+    N2: Node + Clone + Hash + Eq + std::fmt::Debug,
     E: EdgeWeight,
     Ix: IndexType,
 {
@@ -777,13 +788,14 @@ where
 ///
 /// This function first attempts to use the efficient VF2 algorithm for isomorphism checking.
 /// For very small graphs or edge cases, it may fall back to the simpler backtracking algorithm.
+#[allow(dead_code)]
 pub fn are_graphs_isomorphic_enhanced<N1, N2, E, Ix>(
     graph1: &Graph<N1, E, Ix>,
     graph2: &Graph<N2, E, Ix>,
 ) -> bool
 where
-    N1: Node + Clone + Hash + Eq,
-    N2: Node + Clone + Hash + Eq,
+    N1: Node + Clone + Hash + Eq + std::fmt::Debug,
+    N2: Node + Clone + Hash + Eq + std::fmt::Debug,
     E: EdgeWeight,
     Ix: IndexType,
 {

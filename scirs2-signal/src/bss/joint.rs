@@ -1,12 +1,14 @@
-//! Joint Blind Source Separation and Joint Diagonalization
-//!
-//! This module implements Joint BSS techniques for multi-dataset blind source separation.
+use ndarray::s;
+// Joint Blind Source Separation and Joint Diagonalization
+//
+// This module implements Joint BSS techniques for multi-dataset blind source separation.
 
 use super::{BssConfig, JadeMultiResult};
 use crate::error::{SignalError, SignalResult};
-use ndarray::{s, Array2, Axis};
+use ndarray::{Array2, Axis};
 use scirs2_linalg::{eigh, svd};
 
+#[allow(unused_imports)]
 /// Apply Joint Blind Source Separation (JBSS) to separate mixed signals from multiple datasets
 ///
 /// JBSS extends BSS to multiple datasets with shared sources but different mixing matrices.
@@ -20,6 +22,7 @@ use scirs2_linalg::{eigh, svd};
 /// # Returns
 ///
 /// * Tuple containing (vector of extracted sources, vector of mixing matrices)
+#[allow(dead_code)]
 pub fn joint_bss(
     datasets: &[Array2<f64>],
     n_components: usize,
@@ -84,7 +87,7 @@ pub fn joint_bss(
     let (_eigvals, eigvecs) = match eigh(&joint_cov.view(), None) {
         Ok((vals, vecs)) => (vals, vecs),
         Err(_) => {
-            return Err(SignalError::Compute(
+            return Err(SignalError::ComputationError(
                 "Failed to compute eigendecomposition of joint covariance".to_string(),
             ));
         }
@@ -113,7 +116,7 @@ pub fn joint_bss(
         let (u, s, vt) = match svd(&unmixing.view(), false, None) {
             Ok((u, s, vt)) => (u, s, vt),
             Err(_) => {
-                return Err(SignalError::Compute(
+                return Err(SignalError::ComputationError(
                     "Failed to compute SVD of unmixing matrix".to_string(),
                 ));
             }
@@ -146,6 +149,7 @@ pub fn joint_bss(
 /// # Returns
 ///
 /// * Tuple containing (extracted sources, mixing matrix)
+#[allow(dead_code)]
 pub fn joint_diagonalization(
     signals: &Array2<f64>,
     n_components: usize,
@@ -261,7 +265,7 @@ pub fn joint_diagonalization(
     let (u, s, vt) = match svd(&w.view(), false, None) {
         Ok((u, s, vt)) => (u, s, vt),
         Err(_) => {
-            return Err(SignalError::Compute(
+            return Err(SignalError::ComputationError(
                 "Failed to compute SVD of unmixing matrix".to_string(),
             ));
         }

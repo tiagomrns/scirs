@@ -25,12 +25,12 @@ pub enum ParameterConstraint<A: Float> {
     /// Constrain L2 norm to a maximum value
     L2NormConstraint {
         /// Maximum allowed L2 norm
-        max_norm: A,
+        maxnorm: A,
     },
     /// Constrain L1 norm to a maximum value
     L1NormConstraint {
         /// Maximum allowed L1 norm
-        max_norm: A,
+        maxnorm: A,
     },
     /// Ensure all values are non-negative
     NonNegative,
@@ -46,17 +46,17 @@ pub enum ParameterConstraint<A: Float> {
     /// Constrain symmetric matrices to be positive definite
     PositiveDefinite {
         /// Minimum eigenvalue to ensure positive definiteness
-        min_eigenvalue: A,
+        mineigenvalue: A,
     },
     /// Spectral norm constraint (maximum singular value)
     SpectralNorm {
         /// Maximum allowed spectral norm
-        max_norm: A,
+        maxnorm: A,
     },
     /// Nuclear norm constraint (sum of singular values)
     NuclearNorm {
         /// Maximum allowed nuclear norm
-        max_norm: A,
+        maxnorm: A,
     },
     /// Custom constraint function
     Custom {
@@ -83,17 +83,17 @@ impl<A: Float> ParameterConstraint<A> {
                     }
                 });
             }
-            ParameterConstraint::L2NormConstraint { max_norm } => {
+            ParameterConstraint::L2NormConstraint { maxnorm } => {
                 let norm = params.mapv(|x| x * x).sum().sqrt();
-                if norm > *max_norm {
-                    let scale = *max_norm / norm;
+                if norm > *maxnorm {
+                    let scale = *maxnorm / norm;
                     params.mapv_inplace(|x| x * scale);
                 }
             }
-            ParameterConstraint::L1NormConstraint { max_norm } => {
+            ParameterConstraint::L1NormConstraint { maxnorm } => {
                 let norm = params.mapv(|x| x.abs()).sum();
-                if norm > *max_norm {
-                    let scale = *max_norm / norm;
+                if norm > *maxnorm {
+                    let scale = *maxnorm / norm;
                     params.mapv_inplace(|x| x * scale);
                 }
             }
@@ -139,35 +139,34 @@ impl<A: Float> ParameterConstraint<A> {
                     ));
                 }
             }
-            ParameterConstraint::PositiveDefinite { min_eigenvalue: _ } => {
+            ParameterConstraint::PositiveDefinite { mineigenvalue: _ } => {
                 // Positive definite constraint requires eigenvalue computation
                 return Err(OptimError::InvalidConfig(
                     "Positive definite constraint requires specialized eigenvalue operations"
                         .to_string(),
                 ));
             }
-            ParameterConstraint::SpectralNorm { max_norm } => {
+            ParameterConstraint::SpectralNorm { maxnorm } => {
                 // Spectral norm constraint requires SVD computation
                 // For now, approximate with Frobenius norm
                 let frobenius_norm = params.mapv(|x| x * x).sum().sqrt();
-                if frobenius_norm > *max_norm {
-                    let scale = *max_norm / frobenius_norm;
+                if frobenius_norm > *maxnorm {
+                    let scale = *maxnorm / frobenius_norm;
                     params.mapv_inplace(|x| x * scale);
                 }
             }
-            ParameterConstraint::NuclearNorm { max_norm } => {
+            ParameterConstraint::NuclearNorm { maxnorm } => {
                 // Nuclear norm constraint requires SVD computation
                 // For now, approximate with L1 norm
                 let l1_norm = params.mapv(|x| x.abs()).sum();
-                if l1_norm > *max_norm {
-                    let scale = *max_norm / l1_norm;
+                if l1_norm > *maxnorm {
+                    let scale = *maxnorm / l1_norm;
                     params.mapv_inplace(|x| x * scale);
                 }
             }
             ParameterConstraint::Custom { name } => {
                 return Err(OptimError::InvalidConfig(format!(
-                    "Custom constraint '{}' not implemented",
-                    name
+                    "Custom constraint '{name}' not implemented"
                 )));
             }
         }
@@ -246,16 +245,16 @@ impl<A: Float> ParameterGroupConfig<A> {
     }
 
     /// Add L2 norm constraint
-    pub fn with_l2_norm_constraint(mut self, max_norm: A) -> Self {
+    pub fn with_l2_norm_constraint(mut self, maxnorm: A) -> Self {
         self.constraints
-            .push(ParameterConstraint::L2NormConstraint { max_norm });
+            .push(ParameterConstraint::L2NormConstraint { maxnorm });
         self
     }
 
     /// Add L1 norm constraint
-    pub fn with_l1_norm_constraint(mut self, max_norm: A) -> Self {
+    pub fn with_l1_norm_constraint(mut self, maxnorm: A) -> Self {
         self.constraints
-            .push(ParameterConstraint::L1NormConstraint { max_norm });
+            .push(ParameterConstraint::L1NormConstraint { maxnorm });
         self
     }
 
@@ -285,23 +284,23 @@ impl<A: Float> ParameterGroupConfig<A> {
     }
 
     /// Add positive definite constraint for symmetric matrices
-    pub fn with_positive_definite(mut self, min_eigenvalue: A) -> Self {
+    pub fn with_positive_definite(mut self, mineigenvalue: A) -> Self {
         self.constraints
-            .push(ParameterConstraint::PositiveDefinite { min_eigenvalue });
+            .push(ParameterConstraint::PositiveDefinite { mineigenvalue });
         self
     }
 
     /// Add spectral norm constraint
-    pub fn with_spectral_norm(mut self, max_norm: A) -> Self {
+    pub fn with_spectral_norm(mut self, maxnorm: A) -> Self {
         self.constraints
-            .push(ParameterConstraint::SpectralNorm { max_norm });
+            .push(ParameterConstraint::SpectralNorm { maxnorm });
         self
     }
 
     /// Add nuclear norm constraint
-    pub fn with_nuclear_norm(mut self, max_norm: A) -> Self {
+    pub fn with_nuclear_norm(mut self, maxnorm: A) -> Self {
         self.constraints
-            .push(ParameterConstraint::NuclearNorm { max_norm });
+            .push(ParameterConstraint::NuclearNorm { maxnorm });
         self
     }
 
@@ -407,10 +406,10 @@ pub trait GroupedOptimizer<A: Float + ScalarOperand + Debug, D: Dimension>:
     ) -> Result<usize>;
 
     /// Get parameter group by ID
-    fn get_group(&self, group_id: usize) -> Result<&ParameterGroup<A, D>>;
+    fn get_group(&self, groupid: usize) -> Result<&ParameterGroup<A, D>>;
 
     /// Get mutable parameter group by ID
-    fn get_group_mut(&mut self, group_id: usize) -> Result<&mut ParameterGroup<A, D>>;
+    fn get_group_mut(&mut self, groupid: usize) -> Result<&mut ParameterGroup<A, D>>;
 
     /// Get all parameter groups
     fn groups(&self) -> &[ParameterGroup<A, D>];
@@ -426,10 +425,10 @@ pub trait GroupedOptimizer<A: Float + ScalarOperand + Debug, D: Dimension>:
     ) -> Result<Vec<Array<A, D>>>;
 
     /// Set learning rate for a specific group
-    fn set_group_learning_rate(&mut self, group_id: usize, lr: A) -> Result<()>;
+    fn set_group_learning_rate(&mut self, groupid: usize, lr: A) -> Result<()>;
 
     /// Set weight decay for a specific group
-    fn set_group_weight_decay(&mut self, group_id: usize, wd: A) -> Result<()>;
+    fn set_group_weight_decay(&mut self, groupid: usize, wd: A) -> Result<()>;
 }
 
 /// Helper struct for managing parameter groups
@@ -471,7 +470,7 @@ impl<A: Float + ScalarOperand + Debug, D: Dimension> GroupManager<A, D> {
         self.groups
             .iter()
             .find(|g| g.id == id)
-            .ok_or_else(|| OptimError::InvalidConfig(format!("Group {} not found", id)))
+            .ok_or_else(|| OptimError::InvalidConfig(format!("Group {id} not found")))
     }
 
     /// Get mutable group by ID
@@ -479,7 +478,7 @@ impl<A: Float + ScalarOperand + Debug, D: Dimension> GroupManager<A, D> {
         self.groups
             .iter_mut()
             .find(|g| g.id == id)
-            .ok_or_else(|| OptimError::InvalidConfig(format!("Group {} not found", id)))
+            .ok_or_else(|| OptimError::InvalidConfig(format!("Group {id} not found")))
     }
 
     /// Get all groups
@@ -534,14 +533,14 @@ pub mod checkpointing {
         /// Timestamp when checkpoint was created
         pub timestamp: String,
         /// Version of the optimizer
-        pub optimizer_version: String,
+        pub optimizerversion: String,
         /// Custom metadata
         pub custom: HashMap<String, String>,
     }
 
     impl CheckpointMetadata {
         /// Create new metadata with current timestamp
-        pub fn new(optimizer_version: String) -> Self {
+        pub fn new(optimizerversion: String) -> Self {
             use std::time::{SystemTime, UNIX_EPOCH};
 
             let timestamp = SystemTime::now()
@@ -552,7 +551,7 @@ pub mod checkpointing {
 
             Self {
                 timestamp,
-                optimizer_version,
+                optimizerversion,
                 custom: HashMap::new(),
             }
         }
@@ -565,7 +564,11 @@ pub mod checkpointing {
     }
 
     /// Trait for optimizers that support checkpointing
-    pub trait Checkpointable<A: Float, D: Dimension> {
+    pub trait Checkpointable<
+        A: Float + ToString + std::fmt::Display + std::str::FromStr,
+        D: Dimension,
+    >
+    {
         /// Create a checkpoint of the current optimizer state
         fn create_checkpoint(&self) -> Result<OptimizerCheckpoint<A, D>>;
 
@@ -573,20 +576,536 @@ pub mod checkpointing {
         fn restore_checkpoint(&mut self, checkpoint: &OptimizerCheckpoint<A, D>) -> Result<()>;
 
         /// Save checkpoint to file (simple text format)
-        fn save_checkpoint<P: AsRef<Path>>(&self, _path: P) -> Result<()> {
-            // TODO: Implement simple text-based serialization format
-            // For now, return error indicating feature not implemented
-            Err(OptimError::InvalidConfig(
-                "File-based checkpointing not yet implemented".to_string(),
-            ))
+        fn save_checkpoint<P: AsRef<Path>>(&self, path: P) -> Result<()> {
+            use std::fs::File;
+            use std::io::{BufWriter, Write};
+
+            let checkpoint = self.create_checkpoint()?;
+            let path = path.as_ref();
+
+            // Create the file
+            let file = File::create(path).map_err(|e| {
+                OptimError::InvalidConfig(format!("Failed to create checkpoint file: {e}"))
+            })?;
+            let mut writer = BufWriter::new(file);
+
+            // Write header
+            writeln!(writer, "# ScirS2 Optimizer Checkpoint v1.0").map_err(|e| {
+                OptimError::InvalidConfig(format!("Failed to write checkpoint header: {e}"))
+            })?;
+            writeln!(writer, "# Timestamp: {}", checkpoint.metadata.timestamp).map_err(|e| {
+                OptimError::InvalidConfig(format!("Failed to write timestamp: {e}"))
+            })?;
+            writeln!(
+                writer,
+                "# Optimizer Version: {}",
+                checkpoint.metadata.optimizerversion
+            )
+            .map_err(|e| OptimError::InvalidConfig(format!("Failed to write version: {e}")))?;
+            writeln!(writer, "# Step: {}", checkpoint.step)
+                .map_err(|e| OptimError::InvalidConfig(format!("Failed to write step: {e}")))?;
+            writeln!(writer)
+                .map_err(|e| OptimError::InvalidConfig(format!("Failed to write newline: {e}")))?;
+
+            // Write custom metadata
+            writeln!(writer, "[METADATA]").map_err(|e| {
+                OptimError::InvalidConfig(format!("Failed to write metadata section: {e}"))
+            })?;
+            for (key, value) in &checkpoint.metadata.custom {
+                writeln!(writer, "{}={}", key, value).map_err(|e| {
+                    OptimError::InvalidConfig(format!("Failed to write metadata entry: {e}"))
+                })?;
+            }
+            writeln!(writer)
+                .map_err(|e| OptimError::InvalidConfig(format!("Failed to write newline: {e}")))?;
+
+            // Write global state
+            writeln!(writer, "[GLOBAL_STATE]").map_err(|e| {
+                OptimError::InvalidConfig(format!("Failed to write global state section: {e}"))
+            })?;
+            for (key, value) in &checkpoint.global_state {
+                writeln!(writer, "{}={}", key, value).map_err(|e| {
+                    OptimError::InvalidConfig(format!("Failed to write global state entry: {e}"))
+                })?;
+            }
+            writeln!(writer)
+                .map_err(|e| OptimError::InvalidConfig(format!("Failed to write newline: {e}")))?;
+
+            // Write parameter groups
+            writeln!(writer, "[GROUPS]").map_err(|e| {
+                OptimError::InvalidConfig(format!("Failed to write groups section: {e}"))
+            })?;
+            writeln!(writer, "count={}", checkpoint.groups.len()).map_err(|e| {
+                OptimError::InvalidConfig(format!("Failed to write group count: {e}"))
+            })?;
+            writeln!(writer)
+                .map_err(|e| OptimError::InvalidConfig(format!("Failed to write newline: {e}")))?;
+
+            for group in &checkpoint.groups {
+                // Write group header
+                writeln!(writer, "[GROUP_{}]", group.id).map_err(|e| {
+                    OptimError::InvalidConfig(format!("Failed to write group header: {e}"))
+                })?;
+
+                // Write group config
+                writeln!(
+                    writer,
+                    "learning_rate={}",
+                    group
+                        .config
+                        .learning_rate
+                        .map(|lr| lr.to_string())
+                        .unwrap_or_else(|| "None".to_string())
+                )
+                .map_err(|e| {
+                    OptimError::InvalidConfig(format!("Failed to write learning rate: {e}"))
+                })?;
+                writeln!(
+                    writer,
+                    "weight_decay={}",
+                    group
+                        .config
+                        .weight_decay
+                        .map(|wd| wd.to_string())
+                        .unwrap_or_else(|| "None".to_string())
+                )
+                .map_err(|e| {
+                    OptimError::InvalidConfig(format!("Failed to write weight decay: {e}"))
+                })?;
+                writeln!(
+                    writer,
+                    "momentum={}",
+                    group
+                        .config
+                        .momentum
+                        .map(|m| m.to_string())
+                        .unwrap_or_else(|| "None".to_string())
+                )
+                .map_err(|e| OptimError::InvalidConfig(format!("Failed to write momentum: {e}")))?;
+
+                // Write custom params
+                writeln!(
+                    writer,
+                    "custom_params_count={}",
+                    group.config.custom_params.len()
+                )
+                .map_err(|e| {
+                    OptimError::InvalidConfig(format!("Failed to write custom params count: {e}"))
+                })?;
+                for (key, value) in &group.config.custom_params {
+                    writeln!(writer, "custom_{}={}", key, value).map_err(|e| {
+                        OptimError::InvalidConfig(format!("Failed to write custom param: {e}"))
+                    })?;
+                }
+
+                // Write parameters
+                writeln!(writer, "param_count={}", group.params.len()).map_err(|e| {
+                    OptimError::InvalidConfig(format!("Failed to write param count: {e}"))
+                })?;
+                for (i, param) in group.params.iter().enumerate() {
+                    writeln!(writer, "param_{}shape={:?}", i, param.shape()).map_err(|e| {
+                        OptimError::InvalidConfig(format!("Failed to write param shape: {e}"))
+                    })?;
+                    write!(writer, "param_{}_data=", i).map_err(|e| {
+                        OptimError::InvalidConfig(format!("Failed to write param data label: {e}"))
+                    })?;
+
+                    // Write array data as space-separated values
+                    for (j, &val) in param.iter().enumerate() {
+                        if j > 0 {
+                            write!(writer, " ").map_err(|e| {
+                                OptimError::InvalidConfig(format!("Failed to write space: {e}"))
+                            })?;
+                        }
+                        write!(writer, "{}", val).map_err(|e| {
+                            OptimError::InvalidConfig(format!("Failed to write value: {e}"))
+                        })?;
+                    }
+                    writeln!(writer).map_err(|e| {
+                        OptimError::InvalidConfig(format!("Failed to write newline: {e}"))
+                    })?;
+                }
+
+                // Write optimizer state
+                writeln!(writer, "state_count={}", group.state.len()).map_err(|e| {
+                    OptimError::InvalidConfig(format!("Failed to write state count: {e}"))
+                })?;
+                for (state_name, state_arrays) in &group.state {
+                    writeln!(writer, "state_name={}", state_name).map_err(|e| {
+                        OptimError::InvalidConfig(format!("Failed to write state name: {e}"))
+                    })?;
+                    writeln!(writer, "state_array_count={}", state_arrays.len()).map_err(|e| {
+                        OptimError::InvalidConfig(format!("Failed to write state array count: {e}"))
+                    })?;
+                    for (i, array) in state_arrays.iter().enumerate() {
+                        writeln!(writer, "state_{}shape={:?}", i, array.shape()).map_err(|e| {
+                            OptimError::InvalidConfig(format!("Failed to write state shape: {e}"))
+                        })?;
+                        write!(writer, "state_{}_data=", i).map_err(|e| {
+                            OptimError::InvalidConfig(format!(
+                                "Failed to write state data label: {}",
+                                e
+                            ))
+                        })?;
+
+                        // Write array data
+                        for (j, &val) in array.iter().enumerate() {
+                            if j > 0 {
+                                write!(writer, " ").map_err(|e| {
+                                    OptimError::InvalidConfig(format!(
+                                        "Failed to write space: {}",
+                                        e
+                                    ))
+                                })?;
+                            }
+                            write!(writer, "{}", val).map_err(|e| {
+                                OptimError::InvalidConfig(format!("Failed to write value: {e}"))
+                            })?;
+                        }
+                        writeln!(writer).map_err(|e| {
+                            OptimError::InvalidConfig(format!("Failed to write newline: {e}"))
+                        })?;
+                    }
+                }
+
+                writeln!(writer).map_err(|e| {
+                    OptimError::InvalidConfig(format!("Failed to write newline: {e}"))
+                })?;
+            }
+
+            writer.flush().map_err(|e| {
+                OptimError::InvalidConfig(format!("Failed to flush checkpoint file: {e}"))
+            })?;
+
+            Ok(())
         }
 
         /// Load checkpoint from file (simple text format)
-        fn load_checkpoint<P: AsRef<Path>>(&mut self, _path: P) -> Result<()> {
-            // TODO: Implement simple text-based deserialization format
-            // For now, return error indicating feature not implemented
+        fn load_checkpoint<P: AsRef<Path>>(&mut self, path: P) -> Result<()> {
+            use std::fs::File;
+            use std::io::{BufRead, BufReader};
+
+            let path = path.as_ref();
+            let file = File::open(path).map_err(|e| {
+                OptimError::InvalidConfig(format!("Failed to open checkpoint file: {e}"))
+            })?;
+            let reader = BufReader::new(file);
+            let mut lines = reader.lines();
+
+            // Read header
+            let mut step = 0;
+            let mut optimizerversion = String::new();
+            let mut timestamp = String::new();
+
+            while let Some(Ok(line)) = lines.next() {
+                if line.starts_with("# Step: ") {
+                    step = line.trim_start_matches("# Step: ").parse().map_err(|_| {
+                        OptimError::InvalidConfig("Invalid step format".to_string())
+                    })?;
+                } else if line.starts_with("# Optimizer Version: ") {
+                    optimizerversion = line.trim_start_matches("# Optimizer Version: ").to_string();
+                } else if line.starts_with("# Timestamp: ") {
+                    timestamp = line.trim_start_matches("# Timestamp: ").to_string();
+                } else if line.starts_with("[METADATA]") {
+                    break;
+                }
+            }
+
+            // Read metadata
+            let mut custom_metadata = HashMap::new();
+            while let Some(Ok(line)) = lines.next() {
+                if line.is_empty() || line.starts_with("[") {
+                    if line.starts_with("[GLOBAL_STATE]") {
+                        break;
+                    }
+                    continue;
+                }
+                if let Some((key, value)) = line.split_once('=') {
+                    custom_metadata.insert(key.to_string(), value.to_string());
+                }
+            }
+
+            // Read global state
+            let mut global_state = HashMap::new();
+            while let Some(Ok(line)) = lines.next() {
+                if line.is_empty() || line.starts_with("[") {
+                    if line.starts_with("[GROUPS]") {
+                        break;
+                    }
+                    continue;
+                }
+                if let Some((key, value)) = line.split_once('=') {
+                    global_state.insert(key.to_string(), value.to_string());
+                }
+            }
+
+            // Read groups count
+            let mut group_count = 0;
+            while let Some(Ok(line)) = lines.next() {
+                if line.starts_with("count=") {
+                    group_count = line.trim_start_matches("count=").parse().map_err(|_| {
+                        OptimError::InvalidConfig("Invalid group count".to_string())
+                    })?;
+                    break;
+                }
+            }
+
+            // Read parameter groups
+            let mut groups = Vec::new();
+            for _ in 0..group_count {
+                // Skip to group header
+                let mut group_id = 0;
+                while let Some(Ok(line)) = lines.next() {
+                    if line.starts_with("[GROUP_") {
+                        let id_str = line.trim_start_matches("[GROUP_").trim_end_matches(']');
+                        group_id = id_str.parse().map_err(|_| {
+                            OptimError::InvalidConfig("Invalid group ID".to_string())
+                        })?;
+                        break;
+                    }
+                }
+
+                // Read group config
+                let mut learning_rate = None;
+                let mut weight_decay = None;
+                let mut momentum = None;
+                let mut custom_params = HashMap::new();
+                let mut _custom_params_count = 0;
+
+                while let Some(Ok(line)) = lines.next() {
+                    if line.starts_with("learning_rate=") {
+                        let val_str = line.trim_start_matches("learning_rate=");
+                        if val_str != "None" {
+                            learning_rate = Some(A::from_str(val_str).map_err(|_| {
+                                OptimError::InvalidConfig("Invalid learning rate".to_string())
+                            })?);
+                        }
+                    } else if line.starts_with("weight_decay=") {
+                        let val_str = line.trim_start_matches("weight_decay=");
+                        if val_str != "None" {
+                            weight_decay = Some(A::from_str(val_str).map_err(|_| {
+                                OptimError::InvalidConfig("Invalid weight decay".to_string())
+                            })?);
+                        }
+                    } else if line.starts_with("momentum=") {
+                        let val_str = line.trim_start_matches("momentum=");
+                        if val_str != "None" {
+                            momentum = Some(A::from_str(val_str).map_err(|_| {
+                                OptimError::InvalidConfig("Invalid momentum".to_string())
+                            })?);
+                        }
+                    } else if line.starts_with("custom_params_count=") {
+                        _custom_params_count = line
+                            .trim_start_matches("custom_params_count=")
+                            .parse()
+                            .map_err(|_| {
+                                OptimError::InvalidConfig("Invalid custom params count".to_string())
+                            })?;
+                    } else if line.starts_with("custom_") {
+                        if let Some((key_with_prefix, value)) = line.split_once('=') {
+                            let key = key_with_prefix.trim_start_matches("custom_");
+                            custom_params.insert(
+                                key.to_string(),
+                                A::from_str(value).map_err(|_| {
+                                    OptimError::InvalidConfig(
+                                        "Invalid custom param value".to_string(),
+                                    )
+                                })?,
+                            );
+                        }
+                    } else if line.starts_with("param_count=") {
+                        break;
+                    }
+                }
+
+                // Create group config
+                let config = ParameterGroupConfig {
+                    learning_rate,
+                    weight_decay,
+                    momentum,
+                    constraints: Vec::new(), // Constraints are not persisted in this simple format
+                    custom_params,
+                };
+
+                // Read parameters
+                let param_count: usize = lines
+                    .next()
+                    .ok_or_else(|| OptimError::InvalidConfig("Missing param count".to_string()))?
+                    .map_err(|e| OptimError::InvalidConfig(format!("Failed to read line: {e}")))?
+                    .trim_start_matches("param_count=")
+                    .parse()
+                    .map_err(|_| OptimError::InvalidConfig("Invalid param count".to_string()))?;
+
+                let mut params = Vec::new();
+                for i in 0..param_count {
+                    // Read shape
+                    let shape_line = lines
+                        .next()
+                        .ok_or_else(|| {
+                            OptimError::InvalidConfig("Missing param shape".to_string())
+                        })?
+                        .map_err(|e| {
+                            OptimError::InvalidConfig(format!("Failed to read line: {e}"))
+                        })?;
+
+                    let shape_str = shape_line
+                        .trim_start_matches(&format!("param_{}shape=", i))
+                        .trim_start_matches('[')
+                        .trim_end_matches(']');
+
+                    let shape: Vec<usize> = shape_str
+                        .split(", ")
+                        .map(|s| {
+                            s.parse()
+                                .map_err(|_| OptimError::InvalidConfig("Invalid shape".to_string()))
+                        })
+                        .collect::<Result<Vec<_>>>()?;
+
+                    // Read data
+                    let data_line = lines
+                        .next()
+                        .ok_or_else(|| OptimError::InvalidConfig("Missing param data".to_string()))?
+                        .map_err(|e| {
+                            OptimError::InvalidConfig(format!("Failed to read line: {e}"))
+                        })?;
+
+                    let data_str = data_line.trim_start_matches(&format!("param_{}_data=", i));
+                    let data: Vec<A> = data_str
+                        .split(' ')
+                        .filter(|s| !s.is_empty())
+                        .map(|s| {
+                            A::from_str(s).map_err(|_| {
+                                OptimError::InvalidConfig("Invalid data value".to_string())
+                            })
+                        })
+                        .collect::<Result<Vec<_>>>()?;
+
+                    // Create array from shape and data with dynamic dimensions
+                    let array: Array<A, ndarray::IxDyn> = Array::from_shape_vec(shape, data)
+                        .map_err(|e| {
+                            OptimError::InvalidConfig(format!("Failed to create array: {e}"))
+                        })?;
+                    params.push(array);
+                }
+
+                // Read optimizer state
+                let state_count: usize = lines
+                    .next()
+                    .ok_or_else(|| OptimError::InvalidConfig("Missing state count".to_string()))?
+                    .map_err(|e| OptimError::InvalidConfig(format!("Failed to read line: {e}")))?
+                    .trim_start_matches("state_count=")
+                    .parse()
+                    .map_err(|_| OptimError::InvalidConfig("Invalid state count".to_string()))?;
+
+                let mut state = HashMap::new();
+                for _ in 0..state_count {
+                    let state_name = lines
+                        .next()
+                        .ok_or_else(|| OptimError::InvalidConfig("Missing state name".to_string()))?
+                        .map_err(|e| {
+                            OptimError::InvalidConfig(format!("Failed to read line: {e}"))
+                        })?
+                        .trim_start_matches("state_name=")
+                        .to_string();
+
+                    let array_count: usize = lines
+                        .next()
+                        .ok_or_else(|| {
+                            OptimError::InvalidConfig("Missing state array count".to_string())
+                        })?
+                        .map_err(|e| {
+                            OptimError::InvalidConfig(format!("Failed to read line: {e}"))
+                        })?
+                        .trim_start_matches("state_array_count=")
+                        .parse()
+                        .map_err(|_| {
+                            OptimError::InvalidConfig("Invalid state array count".to_string())
+                        })?;
+
+                    let mut state_arrays = Vec::new();
+                    for i in 0..array_count {
+                        // Read shape
+                        let shape_line = lines
+                            .next()
+                            .ok_or_else(|| {
+                                OptimError::InvalidConfig("Missing state shape".to_string())
+                            })?
+                            .map_err(|e| {
+                                OptimError::InvalidConfig(format!("Failed to read line: {e}"))
+                            })?;
+
+                        let shape_str = shape_line
+                            .trim_start_matches(&format!("state_{}shape=", i))
+                            .trim_start_matches('[')
+                            .trim_end_matches(']');
+
+                        let shape: Vec<usize> = shape_str
+                            .split(", ")
+                            .map(|s| {
+                                s.parse().map_err(|_| {
+                                    OptimError::InvalidConfig("Invalid state shape".to_string())
+                                })
+                            })
+                            .collect::<Result<Vec<_>>>()?;
+
+                        // Read data
+                        let data_line = lines
+                            .next()
+                            .ok_or_else(|| {
+                                OptimError::InvalidConfig("Missing state data".to_string())
+                            })?
+                            .map_err(|e| {
+                                OptimError::InvalidConfig(format!("Failed to read line: {e}"))
+                            })?;
+
+                        let data_str = data_line.trim_start_matches(&format!("state_{}_data=", i));
+                        let data: Vec<A> = data_str
+                            .split(' ')
+                            .filter(|s| !s.is_empty())
+                            .map(|s| {
+                                A::from_str(s).map_err(|_| {
+                                    OptimError::InvalidConfig("Invalid state value".to_string())
+                                })
+                            })
+                            .collect::<Result<Vec<_>>>()?;
+
+                        // Create array with dynamic dimensions
+                        let array = Array::from_shape_vec(shape, data).map_err(|e| {
+                            OptimError::InvalidConfig(format!("Failed to create state array: {e}"))
+                        })?;
+                        state_arrays.push(array);
+                    }
+
+                    state.insert(state_name, state_arrays);
+                }
+
+                // Create group checkpoint
+                groups.push(ParameterGroupCheckpoint {
+                    id: group_id,
+                    params,
+                    config,
+                    state,
+                });
+            }
+
+            // Create checkpoint metadata
+            let mut metadata = CheckpointMetadata::new(optimizerversion);
+            metadata.timestamp = timestamp;
+            metadata.custom = custom_metadata;
+
+            // Create the checkpoint with dynamic dimensions
+            let _dyn_checkpoint = OptimizerCheckpoint::<A, ndarray::IxDyn> {
+                step,
+                groups,
+                global_state,
+                metadata,
+            };
+
+            // For now, we'll need to implement conversion from IxDyn to D
+            // This is a limitation of the current design
+            // TODO: Implement proper dimension conversion
             Err(OptimError::InvalidConfig(
-                "File-based checkpointing not yet implemented".to_string(),
+                "Checkpoint loading with dimension conversion not yet implemented".to_string(),
             ))
         }
     }
@@ -595,7 +1114,7 @@ pub mod checkpointing {
     #[derive(Debug)]
     pub struct CheckpointManager<A: Float, D: Dimension> {
         checkpoints: HashMap<String, OptimizerCheckpoint<A, D>>,
-        max_checkpoints: usize,
+        _maxcheckpoints: usize,
         checkpoint_keys: Vec<String>, // To maintain order for LRU eviction
     }
 
@@ -604,16 +1123,16 @@ pub mod checkpointing {
         pub fn new() -> Self {
             Self {
                 checkpoints: HashMap::new(),
-                max_checkpoints: 10,
+                _maxcheckpoints: 10,
                 checkpoint_keys: Vec::new(),
             }
         }
 
         /// Create a new checkpoint manager with maximum number of checkpoints
-        pub fn with_max_checkpoints(max_checkpoints: usize) -> Self {
+        pub fn with_max_checkpoints(_maxcheckpoints: usize) -> Self {
             Self {
                 checkpoints: HashMap::new(),
-                max_checkpoints,
+                _maxcheckpoints,
                 checkpoint_keys: Vec::new(),
             }
         }
@@ -627,7 +1146,7 @@ pub mod checkpointing {
             }
 
             // If we're at capacity, remove oldest checkpoint
-            if self.checkpoints.len() >= self.max_checkpoints {
+            if self.checkpoints.len() >= self._maxcheckpoints {
                 if let Some(oldest_key) = self.checkpoint_keys.first().cloned() {
                     self.checkpoints.remove(&oldest_key);
                     self.checkpoint_keys.retain(|k| k != &oldest_key);
@@ -687,7 +1206,7 @@ pub mod checkpointing {
             step: usize,
             groups: &[ParameterGroup<A, D>],
             global_state: HashMap<String, String>,
-            optimizer_version: String,
+            optimizerversion: String,
         ) -> OptimizerCheckpoint<A, D> {
             let group_checkpoints = groups
                 .iter()
@@ -703,7 +1222,7 @@ pub mod checkpointing {
                 step,
                 groups: group_checkpoints,
                 global_state,
-                metadata: CheckpointMetadata::new(optimizer_version),
+                metadata: CheckpointMetadata::new(optimizerversion),
             }
         }
 
@@ -714,9 +1233,8 @@ pub mod checkpointing {
         ) -> Result<()> {
             if checkpoint.groups.len() != expected_groups {
                 return Err(OptimError::InvalidConfig(format!(
-                    "Checkpoint has {} groups, expected {}",
-                    checkpoint.groups.len(),
-                    expected_groups
+                    "Checkpoint has {} groups, expected {expected_groups}",
+                    checkpoint.groups.len()
                 )));
             }
 
@@ -828,7 +1346,7 @@ mod tests {
 
         // Test L2 norm constraint
         let mut params = Array1::from_vec(vec![3.0, 4.0]); // norm = 5
-        let l2_constraint = ParameterConstraint::L2NormConstraint { max_norm: 2.0 };
+        let l2_constraint = ParameterConstraint::L2NormConstraint { maxnorm: 2.0 };
         l2_constraint.apply(&mut params).unwrap();
         let new_norm = params.mapv(|x| x * x).sum().sqrt();
         assert_relative_eq!(new_norm, 2.0, epsilon = 1e-6);
@@ -939,7 +1457,7 @@ mod tests {
 
         // Test spectral norm constraint (approximated with Frobenius norm)
         let mut params = Array1::from_vec(vec![3.0, 4.0]); // Frobenius norm = 5
-        let spectral_constraint = ParameterConstraint::SpectralNorm { max_norm: 2.0 };
+        let spectral_constraint = ParameterConstraint::SpectralNorm { maxnorm: 2.0 };
         spectral_constraint.apply(&mut params).unwrap();
 
         let new_norm = params.mapv(|x| x * x).sum().sqrt();
@@ -952,7 +1470,7 @@ mod tests {
 
         // Test nuclear norm constraint (approximated with L1 norm)
         let mut params = Array1::from_vec(vec![3.0, -4.0, 2.0]); // L1 norm = 9
-        let nuclear_constraint = ParameterConstraint::NuclearNorm { max_norm: 3.0 };
+        let nuclear_constraint = ParameterConstraint::NuclearNorm { maxnorm: 3.0 };
         nuclear_constraint.apply(&mut params).unwrap();
 
         let new_l1_norm = params.mapv(|x| x.abs()).sum();
@@ -975,7 +1493,7 @@ mod tests {
         // Test that positive definite constraint returns appropriate error
         let mut params = Array1::from_vec(vec![1.0, 2.0, 3.0]);
         let pd_constraint = ParameterConstraint::PositiveDefinite {
-            min_eigenvalue: 0.01,
+            mineigenvalue: 0.01,
         };
         let result = pd_constraint.apply(&mut params);
 
@@ -1002,8 +1520,8 @@ mod tests {
         }
 
         match &config.constraints[1] {
-            ParameterConstraint::SpectralNorm { max_norm } => {
-                assert_eq!(*max_norm, 2.0);
+            ParameterConstraint::SpectralNorm { maxnorm } => {
+                assert_eq!(*maxnorm, 2.0);
             }
             _ => panic!("Expected SpectralNorm constraint"),
         }

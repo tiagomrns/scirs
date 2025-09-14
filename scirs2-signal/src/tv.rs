@@ -1,44 +1,45 @@
-//! Total Variation denoising module
-//!
-//! This module implements Total Variation (TV) denoising techniques for signal and image
-//! processing. TV denoising preserves sharp edges while removing noise by minimizing
-//! the total variation of the signal or image.
-//!
-//! The implementation includes:
-//! - 1D Total Variation denoising (Rudin-Osher-Fatemi model)
-//! - 2D Total Variation denoising for images
-//! - Anisotropic and isotropic TV variants
-//! - Accelerated optimization algorithms
-//!
-//! # Example
-//! ```
-//! use ndarray::Array1;
-//! use scirs2_signal::tv::{tv_denoise_1d, TvConfig};
-//! use rand::Rng;
-//!
-//! // Create a test signal with noise
-//! let n = 500;
-//! let mut clean_signal = Array1::zeros(n);
-//! for i in 100..400 {
-//!     clean_signal[i] = 1.0;
-//! }
-//!
-//! // Add noise
-//! let mut rng = rand::rng();
-//! let mut noisy_signal = clean_signal.clone();
-//! for i in 0..n {
-//!     noisy_signal[i] += 0.2 * rng.gen_range(-1.0..1.0);
-//! }
-//!
-//! // Apply Total Variation denoising
-//! let config = TvConfig::default();
-//! let denoised = tv_denoise_1d(&noisy_signal, 0.5, &config).unwrap();
-//! ```
-
-use ndarray::{Array1, Array2, Array3, Axis};
+// Total Variation denoising module
+//
+// This module implements Total Variation (TV) denoising techniques for signal and image
+// processing. TV denoising preserves sharp edges while removing noise by minimizing
+// the total variation of the signal or image.
+//
+// The implementation includes:
+// - 1D Total Variation denoising (Rudin-Osher-Fatemi model)
+// - 2D Total Variation denoising for images
+// - Anisotropic and isotropic TV variants
+// - Accelerated optimization algorithms
+//
+// # Example
+// ```
+// use ndarray::Array1;
+// use scirs2_signal::tv::{tv_denoise_1d, TvConfig};
+// use rand::prelude::*;
+//
+// // Create a test signal with noise
+// let n = 500;
+// let mut clean_signal = Array1::zeros(n);
+// for i in 100..400 {
+//     clean_signal[i] = 1.0;
+// }
+//
+// // Add noise
+// let mut rng = rand::rng();
+// let mut noisy_signal = clean_signal.clone();
+// for i in 0..n {
+//     noisy_signal[i] += 0.2 * rng.gen_range(-1.0..1.0);
+// }
+//
+// // Apply Total Variation denoising
+// let config = TvConfig::default();
+// let denoised = tv_denoise_1d(&noisy_signal, 0.5, &config).unwrap();
+// ```
 
 use crate::error::{SignalError, SignalResult};
+use ndarray::{Array1, Array2, Array3, Axis};
+use rand::Rng;
 
+#[allow(unused_imports)]
 /// Variant of Total Variation regularization
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum TvVariant {
@@ -107,6 +108,7 @@ impl Default for TvConfig {
 /// let config = TvConfig::default();
 /// let denoised = tv_denoise_1d(&signal, 0.5, &config).unwrap();
 /// ```
+#[allow(dead_code)]
 pub fn tv_denoise_1d(
     signal: &Array1<f64>,
     weight: f64,
@@ -128,6 +130,7 @@ pub fn tv_denoise_1d(
 }
 
 /// Chambolle's algorithm for 1D Total Variation denoising
+#[allow(dead_code)]
 fn tv_denoise_1d_chambolle(
     signal: &Array1<f64>,
     weight: f64,
@@ -207,6 +210,7 @@ fn tv_denoise_1d_chambolle(
 }
 
 /// Fast Iterative Shrinkage-Thresholding Algorithm for 1D Total Variation denoising
+#[allow(dead_code)]
 fn tv_denoise_1d_fista(
     signal: &Array1<f64>,
     weight: f64,
@@ -271,6 +275,7 @@ fn tv_denoise_1d_fista(
 }
 
 /// Computes the gradient of the Total Variation energy for 1D signals
+#[allow(dead_code)]
 fn compute_tv_gradient_1d(
     signal: &Array1<f64>,
     original: &Array1<f64>,
@@ -348,6 +353,7 @@ fn compute_tv_gradient_1d(
 /// let config = TvConfig::default();
 /// let denoised = tv_denoise_2d(&image, 0.5, &config).unwrap();
 /// ```
+#[allow(dead_code)]
 pub fn tv_denoise_2d(
     image: &Array2<f64>,
     weight: f64,
@@ -369,6 +375,7 @@ pub fn tv_denoise_2d(
 }
 
 /// Chambolle's algorithm for 2D Total Variation denoising
+#[allow(dead_code)]
 fn tv_denoise_2d_chambolle(
     image: &Array2<f64>,
     weight: f64,
@@ -504,6 +511,7 @@ fn tv_denoise_2d_chambolle(
 }
 
 /// Fast Iterative Shrinkage-Thresholding Algorithm for 2D Total Variation denoising
+#[allow(dead_code)]
 fn tv_denoise_2d_fista(
     image: &Array2<f64>,
     weight: f64,
@@ -574,6 +582,7 @@ fn tv_denoise_2d_fista(
 }
 
 /// Computes the gradient of the Total Variation energy for 2D images
+#[allow(dead_code)]
 fn compute_tv_gradient_2d(
     image: &Array2<f64>,
     original: &Array2<f64>,
@@ -672,6 +681,7 @@ fn compute_tv_gradient_2d(
 ///
 /// # Returns
 /// * The denoised color image
+#[allow(dead_code)]
 pub fn tv_denoise_color(
     image: &Array3<f64>,
     weight: f64,
@@ -719,6 +729,7 @@ pub fn tv_denoise_color(
 ///
 /// # Returns
 /// * The denoised color image
+#[allow(dead_code)]
 fn tv_denoise_color_vectorial(
     image: &Array3<f64>,
     weight: f64,
@@ -880,6 +891,7 @@ fn tv_denoise_color_vectorial(
 ///
 /// # Returns
 /// * The denoised signal
+#[allow(dead_code)]
 pub fn tv_bregman_1d(
     signal: &Array1<f64>,
     weight: f64,
@@ -916,6 +928,7 @@ pub fn tv_bregman_1d(
 ///
 /// # Returns
 /// * The denoised image
+#[allow(dead_code)]
 pub fn tv_bregman_2d(
     image: &Array2<f64>,
     weight: f64,
@@ -956,6 +969,7 @@ pub fn tv_bregman_2d(
 ///
 /// # Returns
 /// * The inpainted image
+#[allow(dead_code)]
 pub fn tv_inpaint(
     image: &Array2<f64>,
     weight: f64,

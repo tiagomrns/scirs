@@ -153,6 +153,7 @@ impl NonMonotoneState {
 }
 
 /// Main advanced line search function
+#[allow(dead_code)]
 pub fn advanced_line_search<F, G>(
     fun: &mut F,
     grad_fun: Option<&mut G>,
@@ -189,6 +190,7 @@ where
 
 /// Hager-Zhang line search (from CG_DESCENT algorithm)
 /// This is one of the most robust line search methods available
+#[allow(dead_code)]
 fn hager_zhang_line_search<F, G>(
     fun: &mut F,
     mut grad_fun: Option<&mut G>,
@@ -415,6 +417,7 @@ where
 }
 
 /// Interpolation function for Hager-Zhang method
+#[allow(dead_code)]
 fn interpolate_hager_zhang(
     alpha_lo: f64,
     alpha_hi: f64,
@@ -459,6 +462,7 @@ fn interpolate_hager_zhang(
 }
 
 /// Non-monotone line search for difficult optimization problems
+#[allow(dead_code)]
 fn non_monotone_line_search<F, G>(
     fun: &mut F,
     mut grad_fun: Option<&mut G>,
@@ -521,7 +525,7 @@ where
                 let dphi = grad_new.dot(direction);
 
                 if dphi >= options.c2 * dphi0 {
-                    // Update non-monotone state
+                    // Update non-monotone _state
                     if let Some(nm_state) = nm_state {
                         nm_state.update(phi);
                     }
@@ -573,6 +577,7 @@ where
 }
 
 /// Enhanced Strong Wolfe line search with improved interpolation
+#[allow(dead_code)]
 fn enhanced_strong_wolfe<F, G>(
     fun: &mut F,
     grad_fun: Option<&mut G>,
@@ -693,6 +698,7 @@ where
 }
 
 /// Enhanced zoom phase with better interpolation
+#[allow(dead_code)]
 fn enhanced_zoom<F, G>(
     fun: &mut F,
     grad_fun: &mut G,
@@ -774,6 +780,7 @@ where
 }
 
 /// More-Thuente line search with safeguarding
+#[allow(dead_code)]
 fn more_thuente_line_search<F, G>(
     fun: &mut F,
     grad_fun: Option<&mut G>,
@@ -794,6 +801,7 @@ where
 }
 
 /// Adaptive line search that adjusts parameters based on problem characteristics
+#[allow(dead_code)]
 fn adaptive_line_search<F, G>(
     fun: &mut F,
     grad_fun: Option<&mut G>,
@@ -870,6 +878,7 @@ where
 
 // Helper interpolation functions
 
+#[allow(dead_code)]
 fn interpolate_cubic(
     alpha: f64,
     alpha_max: f64,
@@ -889,11 +898,13 @@ fn interpolate_cubic(
     }
 }
 
-fn interpolate_quadratic(alpha: f64, phi: f64, phi0: f64, _dphi: f64, dphi0: f64) -> f64 {
+#[allow(dead_code)]
+fn interpolate_quadratic(alpha: f64, phi: f64, phi0: f64, dphi: f64, dphi0: f64) -> f64 {
     let alpha_q = -dphi0 * alpha * alpha / (2.0 * (phi - phi0 - dphi0 * alpha));
     alpha_q.max(1.1 * alpha)
 }
 
+#[allow(dead_code)]
 fn interpolate_cubic_zoom(
     alpha_lo: f64,
     alpha_hi: f64,
@@ -918,6 +929,7 @@ fn interpolate_cubic_zoom(
     0.5 * (alpha_lo + alpha_hi)
 }
 
+#[allow(dead_code)]
 fn interpolate_quadratic_zoom(alpha_lo: f64, alpha_hi: f64, phi_lo: f64, phi_hi: f64) -> f64 {
     let d = alpha_hi - alpha_lo;
     let a = (phi_hi - phi_lo) / (d * d);
@@ -931,8 +943,9 @@ fn interpolate_quadratic_zoom(alpha_lo: f64, alpha_hi: f64, phi_lo: f64, phi_hi:
 }
 
 /// Create a non-monotone state for algorithms that need it
-pub fn create_non_monotone_state(memory_size: usize) -> NonMonotoneState {
-    NonMonotoneState::new(memory_size)
+#[allow(dead_code)]
+pub fn create_non_monotone_state(_memory_size: usize) -> NonMonotoneState {
+    NonMonotoneState::new(_memory_size)
 }
 
 #[cfg(test)]

@@ -26,6 +26,7 @@ use std::iter::Sum;
 /// Uses 13th order Padé approximation for high accuracy (machine precision).
 /// The algorithm automatically selects the appropriate scaling factor based
 /// on the matrix norm to ensure numerical stability.
+#[allow(dead_code)]
 pub fn expm<F>(a: &CsrMatrix<F>) -> SparseResult<CsrMatrix<F>>
 where
     F: Float + NumAssign + Sum + 'static + std::fmt::Debug,
@@ -77,6 +78,7 @@ where
 /// Compute the Padé approximation of exp(A)
 ///
 /// Uses the diagonal Padé approximant of order (p,p)
+#[allow(dead_code)]
 fn pade_approximation<F>(a: &CsrMatrix<F>, p: usize) -> SparseResult<CsrMatrix<F>>
 where
     F: Float + NumAssign + Sum + 'static + std::fmt::Debug,
@@ -183,6 +185,7 @@ where
 }
 
 /// Compute the infinity norm of a sparse matrix
+#[allow(dead_code)]
 fn matrix_inf_norm<F>(a: &CsrMatrix<F>) -> SparseResult<F>
 where
     F: Float + NumAssign + Sum + std::fmt::Debug,
@@ -204,6 +207,7 @@ where
 }
 
 /// Scale a sparse matrix by a scalar
+#[allow(dead_code)]
 fn scale_matrix<F>(a: &CsrMatrix<F>, scale: F) -> SparseResult<CsrMatrix<F>>
 where
     F: Float + NumAssign,
@@ -216,6 +220,7 @@ where
 }
 
 /// Create a sparse identity matrix
+#[allow(dead_code)]
 fn sparse_identity<F>(n: usize) -> SparseResult<CsrMatrix<F>>
 where
     F: Float + Zero + One,
@@ -234,6 +239,7 @@ where
 }
 
 /// Create a sparse zero matrix
+#[allow(dead_code)]
 fn sparse_zero<F>(n: usize) -> SparseResult<CsrMatrix<F>>
 where
     F: Float + Zero,
@@ -242,6 +248,7 @@ where
 }
 
 /// Add two sparse matrices
+#[allow(dead_code)]
 fn sparse_add<F>(a: &CsrMatrix<F>, b: &CsrMatrix<F>) -> SparseResult<CsrMatrix<F>>
 where
     F: Float + NumAssign,
@@ -274,6 +281,7 @@ where
 /// Solve a linear system A * X = B for sparse matrices
 ///
 /// Note: This is a placeholder - in practice you'd use a more sophisticated solver
+#[allow(dead_code)]
 fn sparse_solve<F>(a: &CsrMatrix<F>, b: &CsrMatrix<F>) -> SparseResult<CsrMatrix<F>>
 where
     F: Float + NumAssign + Sum + 'static + std::fmt::Debug,

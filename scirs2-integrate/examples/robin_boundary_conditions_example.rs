@@ -13,6 +13,7 @@ use scirs2_integrate::{
 };
 use std::f64::consts::PI;
 
+#[allow(dead_code)]
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("=== Robin and Mixed Boundary Conditions Examples ===\n");
 
@@ -31,6 +32,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     Ok(())
 }
 
+#[allow(dead_code)]
 fn heat_conduction_example() -> Result<(), Box<dyn std::error::Error>> {
     println!("🔥 Heat Conduction with Convective Boundary Conditions");
     println!("{}", "=".repeat(60));
@@ -50,10 +52,7 @@ fn heat_conduction_example() -> Result<(), Box<dyn std::error::Error>> {
     println!("Equation: u'' = -q/k = -{:.0}", q / k);
     println!("Left BC: u'(0) + (h/k)*u(0) = (h/k)*T_env");
     println!("Right BC: -u'(L) + (h/k)*u(L) = (h/k)*T_env");
-    println!(
-        "Parameters: q={} W/m³, k={} W/m·K, h={} W/m²·K, T_env={}°C",
-        q, k, h, t_env
-    );
+    println!("Parameters: q={q} W/m³, k={k} W/m·K, h={h} W/m²·K, T_env={t_env}°C");
 
     // Define the ODE: u'' = -q/k, so if y = [u, u'], then y' = [u', -q/k]
     let ode_fn = |_x: f64, y: ArrayView1<f64>| Array1::from_vec(vec![y[1], -q / k]);
@@ -101,7 +100,7 @@ fn heat_conduction_example() -> Result<(), Box<dyn std::error::Error>> {
             let u = result.y[idx][0];
             let u_prime = result.y[idx][1];
 
-            println!("{:5.2}     {:6.2}     {:8.2}", x, u, u_prime);
+            println!("{x:5.2}     {u:6.2}     {u_prime:8.2}");
         }
 
         // Check heat flux balance at boundaries
@@ -111,18 +110,12 @@ fn heat_conduction_example() -> Result<(), Box<dyn std::error::Error>> {
         let q_conv_right = h * (result.y.last().unwrap()[0] - t_env);
 
         println!("\nHeat flux balance check:");
-        println!(
-            "Left:  Conduction = {:.2} W/m², Convection = {:.2} W/m²",
-            q_left, q_conv_left
-        );
-        println!(
-            "Right: Conduction = {:.2} W/m², Convection = {:.2} W/m²",
-            q_right, q_conv_right
-        );
+        println!("Left:  Conduction = {q_left:.2} W/m², Convection = {q_conv_left:.2} W/m²");
+        println!("Right: Conduction = {q_right:.2} W/m², Convection = {q_conv_right:.2} W/m²");
     } else {
         println!("❌ Solution failed to converge");
         if let Some(msg) = result.message {
-            println!("Error: {}", msg);
+            println!("Error: {msg}");
         }
     }
 
@@ -130,6 +123,7 @@ fn heat_conduction_example() -> Result<(), Box<dyn std::error::Error>> {
     Ok(())
 }
 
+#[allow(dead_code)]
 fn beam_deflection_example() -> Result<(), Box<dyn std::error::Error>> {
     println!("🏗️  Beam Deflection with Mixed Boundary Conditions");
     println!("{}", "=".repeat(60));
@@ -147,13 +141,10 @@ fn beam_deflection_example() -> Result<(), Box<dyn std::error::Error>> {
     let length = 2.0; // Beam length [m]
 
     println!("Problem: Beam deflection under uniform load");
-    println!("Equation: EI*u'''' = q₀ = {}", q0);
+    println!("Equation: EI*u'''' = q₀ = {q0}");
     println!("Left BC (clamped): u(0) = 0, u'(0) = 0");
     println!("Right BC (simply supported): u(L) = 0, u''(L) = 0");
-    println!(
-        "Parameters: EI = {} N·m², q₀ = {} N/m, L = {} m",
-        ei, q0, length
-    );
+    println!("Parameters: EI = {ei} N·m², q₀ = {q0} N/m, L = {length} m");
 
     // Define the ODE system
     let ode_fn = |_x: f64, y: ArrayView1<f64>| {
@@ -215,10 +206,7 @@ fn beam_deflection_example() -> Result<(), Box<dyn std::error::Error>> {
             let u_double_prime = result.y[idx][2];
             let moment = -ei * u_double_prime; // Bending moment M = -EI*u''
 
-            println!(
-                "{:5.2}     {:8.5}     {:8.5}     {:7.1}",
-                x, u, u_prime, moment
-            );
+            println!("{x:5.2}     {u:8.5}     {u_prime:8.5}     {moment:7.1}");
         }
 
         // Find maximum deflection
@@ -228,7 +216,7 @@ fn beam_deflection_example() -> Result<(), Box<dyn std::error::Error>> {
             .map(|y| y[0].abs())
             .fold(0.0f64, |a, b| a.max(b));
 
-        println!("\nMaximum deflection: {:.5} m", max_deflection);
+        println!("\nMaximum deflection: {max_deflection:.5} m");
 
         // Check boundary conditions
         let u0 = result.y[0][0];
@@ -237,14 +225,14 @@ fn beam_deflection_example() -> Result<(), Box<dyn std::error::Error>> {
         let u_double_prime_l = result.y.last().unwrap()[2];
 
         println!("Boundary condition verification:");
-        println!("u(0) = {:.2e} (should be 0)", u0);
-        println!("u'(0) = {:.2e} (should be 0)", u_prime_0);
-        println!("u(L) = {:.2e} (should be 0)", u_l);
-        println!("u''(L) = {:.2e} (should be 0)", u_double_prime_l);
+        println!("u(0) = {u0:.2e} (should be 0)");
+        println!("u'(0) = {u_prime_0:.2e} (should be 0)");
+        println!("u(L) = {u_l:.2e} (should be 0)");
+        println!("u''(L) = {u_double_prime_l:.2e} (should be 0)");
     } else {
         println!("❌ Solution failed to converge");
         if let Some(msg) = result.message {
-            println!("Error: {}", msg);
+            println!("Error: {msg}");
         }
     }
 
@@ -252,6 +240,7 @@ fn beam_deflection_example() -> Result<(), Box<dyn std::error::Error>> {
     Ok(())
 }
 
+#[allow(dead_code)]
 fn reaction_diffusion_example() -> Result<(), Box<dyn std::error::Error>> {
     println!("🧪 Reaction-Diffusion with Robin Boundary Conditions");
     println!("{}", "=".repeat(60));
@@ -264,7 +253,7 @@ fn reaction_diffusion_example() -> Result<(), Box<dyn std::error::Error>> {
     let s = 5.0; // Source term
 
     println!("Problem: Steady-state reaction-diffusion");
-    println!("Equation: {}*u'' - {}*u + {} = 0", d, k, s);
+    println!("Equation: {d}*u'' - {k}*u + {s} = 0");
     println!("Robin BC: 2*u + u' = 10 at x=0");
     println!("Robin BC: u - 0.5*u' = 3 at x=1");
 
@@ -303,10 +292,7 @@ fn reaction_diffusion_example() -> Result<(), Box<dyn std::error::Error>> {
             let reaction_rate = k * u;
 
             if i % 4 == 0 || i == result.x.len() - 1 {
-                println!(
-                    "{:5.2}    {:6.3}    {:6.3}    {:6.3}",
-                    x, u, u_prime, reaction_rate
-                );
+                println!("{x:5.2}    {u:6.3}    {u_prime:6.3}    {reaction_rate:6.3}");
             }
         }
 
@@ -320,15 +306,12 @@ fn reaction_diffusion_example() -> Result<(), Box<dyn std::error::Error>> {
         let bc_right = u1 - 0.5 * u_prime_1;
 
         println!("\nBoundary condition verification:");
-        println!("Left BC: 2*u(0) + u'(0) = {:.3} (should be 10.0)", bc_left);
-        println!(
-            "Right BC: u(1) - 0.5*u'(1) = {:.3} (should be 3.0)",
-            bc_right
-        );
+        println!("Left BC: 2*u(0) + u'(0) = {bc_left:.3} (should be 10.0)");
+        println!("Right BC: u(1) - 0.5*u'(1) = {bc_right:.3} (should be 3.0)");
     } else {
         println!("❌ Solution failed to converge");
         if let Some(msg) = result.message {
-            println!("Error: {}", msg);
+            println!("Error: {msg}");
         }
     }
 
@@ -336,6 +319,7 @@ fn reaction_diffusion_example() -> Result<(), Box<dyn std::error::Error>> {
     Ok(())
 }
 
+#[allow(dead_code)]
 fn periodic_example() -> Result<(), Box<dyn std::error::Error>> {
     println!("🔄 Periodic Boundary Conditions");
     println!("{}", "=".repeat(60));
@@ -374,7 +358,7 @@ fn periodic_example() -> Result<(), Box<dyn std::error::Error>> {
             let u_prime = result.y[i][1];
 
             if i % 4 == 0 || i == result.x.len() - 1 {
-                println!("{:5.2}    {:6.3}    {:6.3}", x, u, u_prime);
+                println!("{x:5.2}    {u:6.3}    {u_prime:6.3}");
             }
         }
 
@@ -400,7 +384,7 @@ fn periodic_example() -> Result<(), Box<dyn std::error::Error>> {
     } else {
         println!("❌ Solution failed to converge");
         if let Some(msg) = result.message {
-            println!("Error: {}", msg);
+            println!("Error: {msg}");
         }
     }
 

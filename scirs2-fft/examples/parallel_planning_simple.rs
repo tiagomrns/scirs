@@ -7,6 +7,7 @@ use num_complex::Complex64;
 use scirs2_fft::{ParallelExecutor, ParallelPlanner, ParallelPlanningConfig};
 use std::time::Instant;
 
+#[allow(dead_code)]
 fn main() {
     println!("Simple Parallel FFT Planning Example");
     println!("===================================\n");
@@ -27,7 +28,7 @@ fn main() {
     let planner = ParallelPlanner::new(Some(config.clone()));
 
     // Define FFT sizes we want to plan for
-    let fft_sizes = [
+    let fftsizes = [
         vec![1024],          // 1D FFT of size 1024
         vec![512, 512],      // 2D FFT of size 512x512
         vec![128, 128, 128], // 3D FFT of size 128x128x128
@@ -35,7 +36,7 @@ fn main() {
     ];
 
     // Convert to the format expected by plan_multiple
-    let plan_specs: Vec<_> = fft_sizes
+    let plan_specs: Vec<_> = fftsizes
         .iter()
         .map(|shape| (shape.clone(), true, Default::default()))
         .collect();
@@ -71,11 +72,12 @@ fn main() {
     executor.execute(&input, &mut output).unwrap();
     let elapsed = start.elapsed();
 
-    println!("FFT of size {} executed in {:?}", size, elapsed);
+    println!("FFT of size {size} executed in {elapsed:?}");
     println!("First few output values: {:?}", &output[..4]);
 }
 
 // Create a simple test signal
+#[allow(dead_code)]
 fn create_signal(size: usize) -> Vec<Complex64> {
     (0..size)
         .map(|i| {

@@ -1,13 +1,13 @@
 use ndarray::{Array1, Array2, ArrayView1, ArrayView2, Axis};
 use num_traits::{Float, FromPrimitive};
 use std::collections::HashMap;
-use std::fmt::Display;
+use std::fmt::{Debug, Display};
 use std::hash::{Hash, Hasher};
 use std::marker::{Send, Sync};
 
 use crate::error::ClusteringError;
 use scirs2_core::validation::{
-    check_array_finite, check_positive, clustering::validate_clustering_data,
+    check_positive, checkarray_finite, clustering::validate_clustering_data,
     parameters::check_unit_interval,
 };
 use scirs2_spatial::distance::EuclideanDistance;
@@ -119,6 +119,7 @@ impl<T: Float> Hash for FloatPoint<T> {
 /// let bandwidth = estimate_bandwidth(&data.view(), Some(0.5), None, None).unwrap();
 /// println!("Estimated bandwidth: {}", bandwidth);
 /// ```
+#[allow(dead_code)]
 pub fn estimate_bandwidth<T: Float + Display + FromPrimitive + Send + Sync + 'static>(
     data: &ArrayView2<T>,
     quantile: Option<T>,
@@ -126,12 +127,12 @@ pub fn estimate_bandwidth<T: Float + Display + FromPrimitive + Send + Sync + 'st
     _random_state: Option<u64>,
 ) -> Result<T, ClusteringError> {
     // Check that all data is finite
-    check_array_finite(data, "data")?;
+    checkarray_finite(data, "data")?;
 
     let quantile = quantile.unwrap_or_else(|| T::from(0.3).unwrap());
     let _quantile = check_unit_interval(quantile, "quantile", "estimate_bandwidth")?;
 
-    // Select a subset of samples if specified
+    // Select a subset of _samples if specified
     let data = if let Some(n) = n_samples {
         if n >= data.nrows() {
             data.to_owned()
@@ -203,6 +204,7 @@ pub fn estimate_bandwidth<T: Float + Display + FromPrimitive + Send + Sync + 'st
 /// # Returns
 ///
 /// * `Array2<T>` - Coordinates of bin seeds to use as initial kernel positions.
+#[allow(dead_code)]
 pub fn get_bin_seeds<T: Float + Display + FromPrimitive + Send + Sync + 'static>(
     data: &ArrayView2<T>,
     bin_size: T,
@@ -264,6 +266,7 @@ pub fn get_bin_seeds<T: Float + Display + FromPrimitive + Send + Sync + 'static>
 /// # Returns
 ///
 /// * `(Vec<T>, usize, usize)` - (Final seed position, number of points within bandwidth, iterations performed)
+#[allow(dead_code)]
 fn mean_shift_single_seed<
     T: Float
         + Display
@@ -293,7 +296,7 @@ fn mean_shift_single_seed<
 
     loop {
         // Find points within bandwidth
-        let (indices, _) = match kdtree.query_radius(&my_mean.to_vec(), bandwidth) {
+        let (indices, _distances) = match kdtree.query_radius(&my_mean.to_vec(), bandwidth) {
             Ok((idx, distances)) => (idx, distances),
             Err(_) => return (my_mean.to_vec(), 0, completed_iterations),
         };
@@ -306,8 +309,8 @@ fn mean_shift_single_seed<
         // Calculate new mean
         my_mean.fill(T::zero());
         let mut sum = Array1::zeros(my_mean.dim());
-        for &idx in &indices {
-            let row_clone = data.row(idx).to_owned();
+        for &point_idx in &indices {
+            let row_clone = data.row(point_idx).to_owned();
             for (s, v) in sum.iter_mut().zip(row_clone.iter()) {
                 *s = *s + *v;
             }
@@ -329,12 +332,12 @@ fn mean_shift_single_seed<
     }
 
     // Find number of points within bandwidth of final position
-    let (indices, _) = match kdtree.query_radius(&my_mean.to_vec(), bandwidth) {
+    let (final_indices, _distances) = match kdtree.query_radius(&my_mean.to_vec(), bandwidth) {
         Ok((idx, distances)) => (idx, distances),
         Err(_) => return (my_mean.to_vec(), 0, completed_iterations),
     };
 
-    (my_mean.to_vec(), indices.len(), completed_iterations)
+    (my_mean.to_vec(), final_indices.len(), completed_iterations)
 }
 
 /// Perform Mean Shift clustering of data using a flat kernel.
@@ -367,6 +370,7 @@ fn mean_shift_single_seed<
 /// let (centers, labels) = mean_shift(&data.view(), options).unwrap();
 /// println!("Number of clusters: {}", centers.nrows());
 /// ```
+#[allow(dead_code)]
 pub fn mean_shift<
     T: Float
         + Display
@@ -375,7 +379,8 @@ pub fn mean_shift<
         + Send
         + Sync
         + 'static
-        + ndarray::ScalarOperand,
+        + ndarray::ScalarOperand
+        + Debug,
 >(
     data: &ArrayView2<T>,
     options: MeanShiftOptions<T>,
@@ -405,7 +410,8 @@ impl<
             + Send
             + Sync
             + 'static
-            + ndarray::ScalarOperand,
+            + ndarray::ScalarOperand
+            + Debug,
     > MeanShift<T>
 {
     /// Create a new Mean Shift instance with the given options.
@@ -421,7 +427,8 @@ impl<
     /// Fit the Mean Shift model to the data.
     pub fn fit(&mut self, data: &ArrayView2<T>) -> Result<&mut Self, ClusteringError> {
         // Use comprehensive clustering data validation
-        validate_clustering_data(data, "Mean Shift", true, Some(1))?;
+        let config = crate::input_validation::ValidationConfig::default();
+        crate::input_validation::validate_clustering_data(data.view(), &config)?;
 
         let (n_samples, n_features) = data.dim();
 
@@ -484,6 +491,21 @@ impl<
             })
         });
 
+        // If cluster_all is false, filter out centers with low intensity
+        // A center with intensity 1 means only the seed point itself is within bandwidth
+        // which indicates it's likely an outlier
+        if !self.options.cluster_all {
+            let min_density_threshold = 2; // Require at least 2 points for a valid cluster
+            sorted_by_intensity.retain(|(_, intensity)| *intensity >= min_density_threshold);
+
+            if sorted_by_intensity.is_empty() {
+                return Err(ClusteringError::ComputationError(
+                    "No clusters found with sufficient density. All points appear to be outliers."
+                        .to_string(),
+                ));
+            }
+        }
+
         // Debug: print number of centers before deduplication
         #[cfg(debug_assertions)]
         if sorted_by_intensity.len() > 1 {
@@ -495,8 +517,8 @@ impl<
 
         // Convert to Array2
         let mut sorted_centers = Array2::zeros((sorted_by_intensity.len(), n_features));
-        for (i, (center, _)) in sorted_by_intensity.iter().enumerate() {
-            for (j, &val) in center.0.iter().enumerate() {
+        for (i, center_) in sorted_by_intensity.iter().enumerate() {
+            for (j, &val) in center_.0 .0.iter().enumerate() {
                 sorted_centers[[i, j]] = val;
             }
         }
@@ -514,14 +536,14 @@ impl<
 
         for i in 0..sorted_centers.nrows() {
             if unique[i] {
-                let (indices, _) = kdtree
+                let (indices_, _distances) = kdtree
                     .query_radius(&sorted_centers.row(i).to_vec(), merge_threshold)
                     .map_err(|e| {
                         ClusteringError::ComputationError(format!("Failed to query KDTree: {}", e))
                     })?;
 
                 // Mark all neighbors as non-unique, except the current point
-                for &idx in indices.iter() {
+                for &idx in indices_.iter() {
                     if idx != i {
                         unique[idx] = false;
                     }
@@ -534,7 +556,7 @@ impl<
             .iter()
             .enumerate()
             .filter(|&(_, &is_unique)| is_unique)
-            .map(|(i, _)| i)
+            .map(|(i_, _)| i_)
             .collect();
 
         let mut cluster_centers = Array2::zeros((unique_indices.len(), n_features));
@@ -564,7 +586,7 @@ impl<
 
                 if !indices.is_empty() {
                     let idx = indices[0];
-                    let distance = distances[0];
+                    let distance = T::from(distances[0]).unwrap();
 
                     if self.options.cluster_all || (distance <= bandwidth) {
                         labels[point_idx] = T::to_i32(&T::from(idx).unwrap()).unwrap();
@@ -612,7 +634,7 @@ impl<
         })?;
 
         // Check that all data is finite
-        check_array_finite(data, "prediction data")?;
+        checkarray_finite(data, "prediction data")?;
 
         let n_samples = data.nrows();
         let mut labels = Array1::zeros(n_samples);
@@ -629,12 +651,12 @@ impl<
             let batch = data.slice(ndarray::s![i..end, ..]);
 
             for (row_idx, row) in batch.rows().into_iter().enumerate() {
-                let (indices, _) = kdtree.query(&row.to_vec(), 1).map_err(|e| {
+                let (indices_, _distances) = kdtree.query(&row.to_vec(), 1).map_err(|e| {
                     ClusteringError::ComputationError(format!("Failed to query KDTree: {}", e))
                 })?;
 
-                if !indices.is_empty() {
-                    labels[i + row_idx] = T::to_i32(&T::from(indices[0]).unwrap()).unwrap();
+                if !indices_.is_empty() {
+                    labels[i + row_idx] = T::to_i32(&T::from(indices_[0]).unwrap()).unwrap();
                 } else {
                     // Should never happen, but just in case
                     labels[i + row_idx] = -1;
@@ -649,7 +671,7 @@ impl<
 #[cfg(test)]
 mod tests {
     use super::*;
-    use ndarray::{array, Array2};
+    use ndarray::{array, Array2, ArrayView1};
     use std::collections::HashSet;
 
     #[test]

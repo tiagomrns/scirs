@@ -7,16 +7,14 @@ use scirs2_fft::{
 };
 use std::f64::consts::PI;
 
+#[allow(dead_code)]
 fn main() {
     println!("Sparse FFT Reconstruction Example");
     println!("=================================\n");
 
     // Create a signal with a few frequency components plus some noise
     let n = 1024;
-    println!(
-        "Creating a signal with n = {} samples and 3 frequency components",
-        n
-    );
+    println!("Creating a signal with n = {n} samples and 3 frequency components");
 
     // Parameters for our frequency components
     let frequencies = vec![(3, 1.0), (7, 0.5), (15, 0.25)];
@@ -53,17 +51,11 @@ fn main() {
 
     // Compute error between original clean signal and reconstruction
     let clean_error = compute_error(&clean_signal, &reconstructed);
-    println!(
-        "Error between original clean signal and reconstruction: {:.6}",
-        clean_error
-    );
+    println!("Error between original clean signal and reconstruction: {clean_error:.6}");
 
     // Compute error between noisy signal and reconstruction
     let noisy_error = compute_error(&noisy_signal, &reconstructed);
-    println!(
-        "Error between noisy signal and reconstruction: {:.6}",
-        noisy_error
-    );
+    println!("Error between noisy signal and reconstruction: {noisy_error:.6}");
     println!("(Lower error with clean signal shows noise reduction effect)");
 
     // 3. High-resolution reconstruction
@@ -71,7 +63,7 @@ fn main() {
     let target_length = n * 2;
     let high_res = reconstruct_high_resolution(&sparse_result, n, target_length).unwrap();
 
-    println!("Original signal length: {}", n);
+    println!("Original signal length: {n}");
     println!("High-resolution signal length: {}", high_res.len());
 
     // 4. Filtered reconstruction - demonstrating low-pass filter
@@ -131,6 +123,7 @@ fn main() {
 }
 
 // Helper function to create a sparse signal
+#[allow(dead_code)]
 fn create_sparse_signal(n: usize, frequencies: &[(usize, f64)]) -> Vec<f64> {
     let mut signal = vec![0.0; n];
 
@@ -145,6 +138,7 @@ fn create_sparse_signal(n: usize, frequencies: &[(usize, f64)]) -> Vec<f64> {
 }
 
 // Helper function to compute error between original and reconstructed signals
+#[allow(dead_code)]
 fn compute_error(original: &[f64], reconstructed: &[Complex64]) -> f64 {
     if original.len() != reconstructed.len() {
         // Handle simple case for high-resolution where lengths don't match
@@ -179,6 +173,7 @@ fn compute_error(original: &[f64], reconstructed: &[Complex64]) -> f64 {
 }
 
 // Create visualization plots
+#[allow(dead_code)]
 fn create_plots(
     noisy_signal: &[f64],
     basic_recon: &[Complex64],
@@ -199,7 +194,7 @@ fn create_plots(
 
     let mut time_plot = Plot::new();
 
-    // Original noisy signal
+    // Original noisy _signal
     let noisy_trace = Scatter::new(
         (slice_start..slice_end).collect::<Vec<_>>(),
         noisy_signal[slice_start..slice_end].to_vec(),
@@ -266,7 +261,7 @@ fn create_plots(
         .map(|i| hires_slice_start as f64 + i as f64 / 2.0)
         .collect();
 
-    // Original noisy signal
+    // Original noisy _signal
     let orig_trace = Scatter::new(
         orig_times.clone(),
         noisy_signal[hires_slice_start..hires_slice_end].to_vec(),
@@ -274,7 +269,7 @@ fn create_plots(
     .mode(Mode::Lines)
     .name("Original Signal");
 
-    // High-resolution signal (using twice as many points)
+    // High-resolution _signal (using twice as many points)
     let hires_trace = Scatter::new(
         hires_times,
         high_res_real[2 * hires_slice_start..2 * hires_slice_end].to_vec(),

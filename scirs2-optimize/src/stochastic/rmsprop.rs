@@ -11,6 +11,7 @@ use crate::stochastic::{
 };
 use crate::unconstrained::result::OptimizeResult;
 use ndarray::Array1;
+use statrs::statistics::Statistics;
 
 /// Options for RMSProp optimization
 #[derive(Debug, Clone)]
@@ -55,6 +56,7 @@ impl Default for RMSPropOptions {
 }
 
 /// RMSProp optimizer implementation
+#[allow(dead_code)]
 pub fn minimize_rmsprop<F>(
     mut grad_func: F,
     mut x: Array1<f64>,
@@ -192,7 +194,7 @@ where
             // Progress reporting
             if iteration % 100 == 0 {
                 let grad_norm = gradient.mapv(|g| g * g).sum().sqrt();
-                let rms_norm = s.mapv(|s| s.sqrt()).mean().unwrap_or(0.0);
+                let rms_norm = s.mapv(|s| s.sqrt()).mean();
                 println!(
                     "  Iteration {}: loss = {:.6e}, |grad| = {:.3e}, RMS = {:.3e}, lr = {:.3e}",
                     iteration, current_loss, grad_norm, rms_norm, current_lr
@@ -205,7 +207,6 @@ where
                 return Ok(OptimizeResult {
                     x: best_x,
                     fun: best_f,
-                    iterations: iteration,
                     nit: iteration,
                     func_evals,
                     nfev: func_evals,
@@ -226,7 +227,6 @@ where
                 return Ok(OptimizeResult {
                     x: best_x,
                     fun: best_f,
-                    iterations: iteration,
                     nit: iteration,
                     func_evals,
                     nfev: func_evals,
@@ -247,7 +247,6 @@ where
     Ok(OptimizeResult {
         x: best_x,
         fun: final_loss.min(best_f),
-        iterations: options.max_iter,
         nit: options.max_iter,
         func_evals,
         nfev: func_evals,
@@ -259,6 +258,7 @@ where
 }
 
 /// Graves' RMSProp implementation with improved numerical stability
+#[allow(dead_code)]
 pub fn minimize_graves_rmsprop<F>(
     mut grad_func: F,
     mut x: Array1<f64>,
@@ -354,7 +354,6 @@ where
     Ok(OptimizeResult {
         x: best_x,
         fun: best_f,
-        iterations: options.max_iter,
         nit: options.max_iter,
         func_evals,
         nfev: func_evals,
@@ -376,12 +375,12 @@ mod tests {
     struct QuadraticFunction;
 
     impl StochasticGradientFunction for QuadraticFunction {
-        fn compute_gradient(&mut self, x: &ArrayView1<f64>, _batch_data: &[f64]) -> Array1<f64> {
+        fn compute_gradient(&mut self, x: &ArrayView1<f64>, _batchdata: &[f64]) -> Array1<f64> {
             // Gradient of f(x) = sum(x_i^2) is 2*x
             x.mapv(|xi| 2.0 * xi)
         }
 
-        fn compute_value(&mut self, x: &ArrayView1<f64>, _batch_data: &[f64]) -> f64 {
+        fn compute_value(&mut self, x: &ArrayView1<f64>, _batchdata: &[f64]) -> f64 {
             // f(x) = sum(x_i^2)
             x.mapv(|xi| xi * xi).sum()
         }

@@ -15,7 +15,7 @@ use serde::{Deserialize, Serialize};
 #[derive(Debug, Clone)]
 pub struct LeakDetectionConfig {
     /// Window size for leak detection analysis
-    pub analysis_window_size: usize,
+    pub analysis_windowsize: usize,
     /// Minimum threshold for considering a component as potentially leaking (bytes)
     pub leak_threshold_bytes: usize,
     /// Minimum time threshold for leak detection (seconds)
@@ -29,7 +29,7 @@ pub struct LeakDetectionConfig {
 impl Default for LeakDetectionConfig {
     fn default() -> Self {
         Self {
-            analysis_window_size: 100,
+            analysis_windowsize: 100,
             leak_threshold_bytes: 1024 * 1024, // 1 MB
             leak_threshold_duration: Duration::from_secs(30),
             growth_rate_threshold: 1024.0, // 1 KB/sec
@@ -162,7 +162,7 @@ pub enum OptimizationRecommendation {
         /// Expected memory savings
         expected_savings: usize,
         /// Suggested pool sizes
-        suggested_pool_sizes: Vec<usize>,
+        suggested_poolsizes: Vec<usize>,
     },
     /// Batch allocations
     BatchAllocations {
@@ -230,9 +230,9 @@ pub struct MemoryAnalytics {
 
 impl MemoryAnalytics {
     /// Create a new memory analytics engine
-    pub fn new(leak_config: LeakDetectionConfig) -> Self {
+    pub fn new(leakconfig: LeakDetectionConfig) -> Self {
         Self {
-            leak_config,
+            leak_config: leakconfig,
             usage_history: HashMap::new(),
             allocation_history: HashMap::new(),
         }
@@ -251,7 +251,7 @@ impl MemoryAnalytics {
         alloc_history.push_back((timestamp, event.size, event.event_type));
 
         // Limit history size
-        while alloc_history.len() > self.leak_config.analysis_window_size {
+        while alloc_history.len() > self.leak_config.analysis_windowsize {
             alloc_history.pop_front();
         }
 
@@ -263,7 +263,7 @@ impl MemoryAnalytics {
         usage_history.push_back((timestamp, current_usage));
 
         // Limit history size
-        while usage_history.len() > self.leak_config.analysis_window_size {
+        while usage_history.len() > self.leak_config.analysis_windowsize {
             usage_history.pop_front();
         }
     }
@@ -565,8 +565,9 @@ impl MemoryAnalytics {
         let mut plateau_value = 0;
 
         for i in 1..values.len() {
-            let diff_ratio = if values[i - 1] > 0 {
-                (values[i] as f64 - values[i - 1] as f64).abs() / values[i - 1] as f64
+            let diff_ratio = if values[i.saturating_sub(1)] > 0 {
+                (values[i] as f64 - values[i.saturating_sub(1)] as f64).abs()
+                    / values[i.saturating_sub(1)] as f64
             } else {
                 0.0
             };
@@ -574,7 +575,7 @@ impl MemoryAnalytics {
             if diff_ratio < 0.05 {
                 // Less than 5% change
                 if plateau_start == 0 {
-                    plateau_start = i - 1;
+                    plateau_start = i.saturating_sub(1);
                 }
             } else {
                 if plateau_start > 0 {
@@ -788,7 +789,7 @@ impl MemoryAnalytics {
         if efficiency.allocation_frequency > 50.0 {
             recommendations.push(OptimizationRecommendation::UseBufferPooling {
                 expected_savings: (efficiency.allocation_frequency * 1024.0) as usize, // Rough estimate
-                suggested_pool_sizes: vec![1024, 4096, 16384, 65536],
+                suggested_poolsizes: vec![1024, 4096, 16384, 65536],
             });
         }
 

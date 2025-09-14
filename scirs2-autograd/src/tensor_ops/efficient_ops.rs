@@ -17,7 +17,7 @@ static RESHAPE_CACHE: LazyLock<Mutex<ReshapeCache>> =
 
 /// Cache for reshape operations to avoid recomputing stride information
 struct ReshapeCache {
-    /// Cached reshape transformations: (from_shape, to_shape) -> is_contiguous
+    /// Cached reshape transformations: (fromshape, toshape) -> is_contiguous
     cache: std::collections::HashMap<(Vec<usize>, Vec<usize>), bool>,
     /// Maximum cache size
     max_size: usize,
@@ -31,13 +31,13 @@ impl ReshapeCache {
         }
     }
 
-    fn get(&mut self, from_shape: &[usize], to_shape: &[usize]) -> Option<bool> {
+    fn get(&mut self, fromshape: &[usize], toshape: &[usize]) -> Option<bool> {
         self.cache
-            .get(&(from_shape.to_vec(), to_shape.to_vec()))
+            .get(&(fromshape.to_vec(), toshape.to_vec()))
             .copied()
     }
 
-    fn insert(&mut self, from_shape: &[usize], to_shape: &[usize], is_contiguous: bool) {
+    fn insert(&mut self, fromshape: &[usize], toshape: &[usize], iscontiguous: bool) {
         if self.cache.len() >= self.max_size {
             // Simple eviction: clear half the cache
             let keys_to_remove: Vec<_> =
@@ -47,7 +47,7 @@ impl ReshapeCache {
             }
         }
         self.cache
-            .insert((from_shape.to_vec(), to_shape.to_vec()), is_contiguous);
+            .insert((fromshape.to_vec(), toshape.to_vec()), iscontiguous);
     }
 
     fn clear(&mut self) {
@@ -62,7 +62,7 @@ impl ReshapeCache {
 /// 2. Caching reshape metadata to avoid repeated computations
 /// 3. Using efficient memory layouts for better cache performance
 pub struct EfficientReshapeOp {
-    pub new_shape: Vec<usize>,
+    pub newshape: Vec<usize>,
     pub allow_zero_copy: bool,
 }
 
@@ -73,46 +73,42 @@ impl<F: Float> Op<F> for EfficientReshapeOp {
 
     fn compute(&self, ctx: &mut ComputeContext<F>) -> Result<(), OpError> {
         let input = ctx.input(0);
-        let input_shape = input.shape();
+        let inputshape = input.shape();
 
         // Validate reshape compatibility
-        let input_size: usize = input_shape.iter().product();
-        let new_size: usize = self.new_shape.iter().product();
+        let input_size: usize = inputshape.iter().product();
+        let new_size: usize = self.newshape.iter().product();
 
         if input_size != new_size {
             return Err(OpError::IncompatibleShape(format!(
                 "Cannot reshape array of size {} into shape {:?} (size {})",
-                input_size, self.new_shape, new_size
+                input_size, self.newshape, new_size
             )));
         }
 
         // Check cache for reshape compatibility
         let mut cache = RESHAPE_CACHE.lock().unwrap();
-        let _is_contiguous = cache.get(input_shape, &self.new_shape);
+        let _is_contiguous = cache.get(inputshape, &self.newshape);
 
         let result = if self.allow_zero_copy {
             // Try zero-copy reshape first
-            match input.view().into_shape_with_order(IxDyn(&self.new_shape)) {
+            match input.view().into_shape_with_order(IxDyn(&self.newshape)) {
                 Ok(reshaped_view) => {
                     // Successful zero-copy reshape
-                    cache.insert(input_shape, &self.new_shape, true);
+                    cache.insert(inputshape, &self.newshape, true);
                     reshaped_view.to_owned()
                 }
                 Err(_) => {
                     // Zero-copy failed, fall back to copying
-                    cache.insert(input_shape, &self.new_shape, false);
-                    let flattened: Array<F, _> = input.iter().cloned().collect();
-                    flattened
-                        .into_shape_with_order(IxDyn(&self.new_shape))
-                        .unwrap()
+                    cache.insert(inputshape, &self.newshape, false);
+                    let vec: Vec<F> = input.iter().cloned().collect();
+                    Array::from_shape_vec(IxDyn(&self.newshape), vec).unwrap()
                 }
             }
         } else {
             // Always copy (useful when zero-copy behavior is not desired)
-            let flattened: Array<F, _> = input.iter().cloned().collect();
-            flattened
-                .into_shape_with_order(IxDyn(&self.new_shape))
-                .unwrap()
+            let vec: Vec<F> = input.iter().cloned().collect();
+            Array::from_shape_vec(IxDyn(&self.newshape), vec).unwrap()
         };
 
         ctx.append_output(result);
@@ -124,8 +120,8 @@ impl<F: Float> Op<F> for EfficientReshapeOp {
         let input = ctx.input(0);
 
         // Gradient needs to be reshaped back to input shape
-        let input_shape = crate::tensor_ops::shape(input);
-        let reshaped_grad = efficient_reshape(gy, &input_shape);
+        let inputshape = crate::tensor_ops::shape(input);
+        let reshaped_grad = efficient_reshape(gy, &inputshape);
         ctx.append_input_grad(0, Some(reshaped_grad));
     }
 }
@@ -176,9 +172,9 @@ impl<F: Float> Op<F> for EfficientSliceOp {
 
     fn compute(&self, ctx: &mut ComputeContext<F>) -> Result<(), OpError> {
         let input = ctx.input(0);
-        let input_shape = input.shape();
+        let inputshape = input.shape();
 
-        if self.slices.len() > input_shape.len() {
+        if self.slices.len() > inputshape.len() {
             return Err(OpError::IncompatibleShape(
                 "More slice dimensions than tensor dimensions".into(),
             ));
@@ -188,7 +184,7 @@ impl<F: Float> Op<F> for EfficientSliceOp {
         let mut slice_elements = Vec::new();
 
         for (i, slice_range) in self.slices.iter().enumerate() {
-            let dim_size = input_shape[i] as isize;
+            let dim_size = inputshape[i] as isize;
 
             let start = slice_range.start.unwrap_or(0);
             let end = slice_range.end.unwrap_or(dim_size);
@@ -210,7 +206,7 @@ impl<F: Float> Op<F> for EfficientSliceOp {
         }
 
         // Add full slices for remaining dimensions
-        for _ in self.slices.len()..input_shape.len() {
+        for _ in self.slices.len()..inputshape.len() {
             slice_elements.push(SliceInfoElem::Slice {
                 start: 0,
                 end: None,
@@ -235,8 +231,8 @@ impl<F: Float> Op<F> for EfficientSliceOp {
         let g = ctx.graph();
 
         // Create a gradient tensor with the same shape as the input, filled with zeros
-        let input_shape = crate::tensor_ops::shape(input);
-        let grad_input = crate::tensor_ops::zeros(&input_shape, g);
+        let inputshape = crate::tensor_ops::shape(input);
+        let grad_input = crate::tensor_ops::zeros(&inputshape, g);
 
         // In a full implementation, we would scatter the gradient values back
         // to their original positions. For now, we use a simplified approach.
@@ -275,10 +271,10 @@ impl<F: Float> Op<F> for EfficientConcatOp {
         }
 
         // Check that all inputs have compatible shapes
-        let first_shape = inputs[0].shape();
+        let firstshape = inputs[0].shape();
         let axis = self.axis;
 
-        if axis >= first_shape.len() {
+        if axis >= firstshape.len() {
             return Err(OpError::IncompatibleShape(
                 "Axis out of bounds for concatenation".into(),
             ));
@@ -286,29 +282,28 @@ impl<F: Float> Op<F> for EfficientConcatOp {
 
         for input in inputs.iter().skip(1) {
             let shape = input.shape();
-            if shape.len() != first_shape.len() {
+            if shape.len() != firstshape.len() {
                 return Err(OpError::IncompatibleShape(
                     "All inputs must have the same number of dimensions".into(),
                 ));
             }
 
-            for (i, (&dim1, &dim2)) in first_shape.iter().zip(shape.iter()).enumerate() {
+            for (i, (&dim1, &dim2)) in firstshape.iter().zip(shape.iter()).enumerate() {
                 if i != axis && dim1 != dim2 {
                     return Err(OpError::IncompatibleShape(format!(
-                        "All inputs must have the same size except in axis {}",
-                        axis
+                        "All inputs must have the same size except in axis {axis}"
                     )));
                 }
             }
         }
 
         // Calculate output shape
-        let mut output_shape = first_shape.to_vec();
+        let mut outputshape = firstshape.to_vec();
         let concat_size: usize = inputs.iter().map(|input| input.shape()[axis]).sum();
-        output_shape[axis] = concat_size;
+        outputshape[axis] = concat_size;
 
         // Create output array
-        let mut output = Array::<F, IxDyn>::zeros(IxDyn(&output_shape));
+        let mut output = Array::<F, IxDyn>::zeros(IxDyn(&outputshape));
 
         // Copy data from each input
         let mut current_offset = 0;
@@ -316,8 +311,8 @@ impl<F: Float> Op<F> for EfficientConcatOp {
             let input_size = input.shape()[axis];
 
             // Create slice for where to place this input
-            let mut slice_start = vec![0; output_shape.len()];
-            let mut slice_end = output_shape.clone();
+            let mut slice_start = vec![0; outputshape.len()];
+            let mut slice_end = outputshape.clone();
 
             slice_start[axis] = current_offset;
             slice_end[axis] = current_offset + input_size;
@@ -343,11 +338,11 @@ impl<F: Float> Op<F> for EfficientConcatOp {
         // Split the gradient back to each input
         for i in 0..num_inputs {
             let input = ctx.input(i);
-            let input_shape = crate::tensor_ops::shape(input);
+            let inputshape = crate::tensor_ops::shape(input);
 
             // Create a slice of the gradient for this input
             // For now, use a simplified approach
-            let grad_slice = crate::tensor_ops::zeros(&input_shape, graph);
+            let grad_slice = crate::tensor_ops::zeros(&inputshape, graph);
 
             ctx.append_input_grad(i, Some(grad_slice));
         }
@@ -355,6 +350,7 @@ impl<F: Float> Op<F> for EfficientConcatOp {
 }
 
 /// Helper function to copy slice data efficiently
+#[allow(dead_code)]
 fn copy_slice_data<F: Float>(
     output: &mut Array<F, IxDyn>,
     input: &NdArrayView<F>,
@@ -379,40 +375,43 @@ fn copy_slice_data<F: Float>(
 // Public API functions
 
 /// Efficient reshape operation with optional zero-copy optimization
+#[allow(dead_code)]
 pub fn efficient_reshape<'g, F: Float>(
     tensor: &Tensor<'g, F>,
-    _new_shape: &Tensor<'g, F>,
+    _newshape: &Tensor<'g, F>,
 ) -> Tensor<'g, F> {
     let g = tensor.graph();
 
     // Extract shape values - this is simplified
     // In practice, we'd need to evaluate the shape tensor to get the actual values
-    let shape_values = vec![1]; // Placeholder - would extract from new_shape tensor
+    let shape_values = vec![1]; // Placeholder - would extract from newshape tensor
 
     Tensor::builder(g)
         .append_input(tensor, false)
         .build(EfficientReshapeOp {
-            new_shape: shape_values,
+            newshape: shape_values,
             allow_zero_copy: true,
         })
 }
 
 /// Efficient reshape with explicit shape values
-pub fn efficient_reshape_with_shape<'g, F: Float>(
+#[allow(dead_code)]
+pub fn efficient_reshape_withshape<'g, F: Float>(
     tensor: &Tensor<'g, F>,
-    new_shape: &[usize],
+    newshape: &[usize],
 ) -> Tensor<'g, F> {
     let g = tensor.graph();
 
     Tensor::builder(g)
         .append_input(tensor, false)
         .build(EfficientReshapeOp {
-            new_shape: new_shape.to_vec(),
+            newshape: newshape.to_vec(),
             allow_zero_copy: true,
         })
 }
 
 /// Efficient slice operation
+#[allow(dead_code)]
 pub fn efficient_slice<'g, F: Float>(
     tensor: &Tensor<'g, F>,
     slices: &[SliceRange],
@@ -427,6 +426,7 @@ pub fn efficient_slice<'g, F: Float>(
 }
 
 /// Efficient concatenation of multiple tensors
+#[allow(dead_code)]
 pub fn efficient_concat<'g, F: Float>(tensors: &[&Tensor<'g, F>], axis: usize) -> Tensor<'g, F> {
     if tensors.is_empty() {
         panic!("Cannot concatenate empty tensor list");
@@ -446,6 +446,7 @@ pub fn efficient_concat<'g, F: Float>(tensors: &[&Tensor<'g, F>], axis: usize) -
 }
 
 /// Efficient transpose operation with cache-friendly memory access
+#[allow(dead_code)]
 pub fn efficient_transpose<'g, F: Float>(
     tensor: &Tensor<'g, F>,
     _axes: Option<&[usize]>,
@@ -466,11 +467,13 @@ pub fn efficient_transpose<'g, F: Float>(
 }
 
 /// Clear the reshape operation cache
+#[allow(dead_code)]
 pub fn clear_reshape_cache() {
     RESHAPE_CACHE.lock().unwrap().clear();
 }
 
 /// Get statistics about the reshape cache
+#[allow(dead_code)]
 pub fn get_reshape_cache_stats() -> (usize, usize) {
     let cache = RESHAPE_CACHE.lock().unwrap();
     (cache.cache.len(), cache.max_size)
@@ -553,14 +556,14 @@ mod tests {
     #[test]
     fn test_efficient_reshape_op_creation() {
         let op = EfficientReshapeOp {
-            new_shape: vec![2, 3, 4],
+            newshape: vec![2, 3, 4],
             allow_zero_copy: true,
         };
         assert_eq!(
             <EfficientReshapeOp as crate::op::Op<f32>>::name(&op),
             "EfficientReshape"
         );
-        assert_eq!(op.new_shape, vec![2, 3, 4]);
+        assert_eq!(op.newshape, vec![2, 3, 4]);
         assert!(op.allow_zero_copy);
     }
 
@@ -598,16 +601,16 @@ mod tests {
     fn test_reshape_cache() {
         let mut cache = ReshapeCache::new();
 
-        let from_shape = vec![2, 3];
-        let to_shape = vec![6];
+        let fromshape = vec![2, 3];
+        let toshape = vec![6];
 
-        assert_eq!(cache.get(&from_shape, &to_shape), None);
+        assert_eq!(cache.get(&fromshape, &toshape), None);
 
-        cache.insert(&from_shape, &to_shape, true);
-        assert_eq!(cache.get(&from_shape, &to_shape), Some(true));
+        cache.insert(&fromshape, &toshape, true);
+        assert_eq!(cache.get(&fromshape, &toshape), Some(true));
 
         cache.clear();
-        assert_eq!(cache.get(&from_shape, &to_shape), None);
+        assert_eq!(cache.get(&fromshape, &toshape), None);
     }
 
     #[test]

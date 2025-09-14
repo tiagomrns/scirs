@@ -21,6 +21,7 @@ use scirs2_linalg::{
     svd,
 };
 
+#[allow(dead_code)]
 fn main() -> LinalgResult<()> {
     println!("=== SciPy to scirs2-linalg Migration Guide ===\n");
 
@@ -54,6 +55,7 @@ fn main() -> LinalgResult<()> {
 }
 
 /// Demonstrates migration of basic matrix operations
+#[allow(dead_code)]
 fn basic_operations_migration() -> LinalgResult<()> {
     println!("📊 Basic Matrix Operations Migration");
     println!("{}", "=".repeat(50));
@@ -116,6 +118,7 @@ fn basic_operations_migration() -> LinalgResult<()> {
 }
 
 /// Demonstrates migration of matrix decompositions
+#[allow(dead_code)]
 fn decompositions_migration() -> LinalgResult<()> {
     println!("🔬 Matrix Decompositions Migration");
     println!("{}", "=".repeat(50));
@@ -133,7 +136,7 @@ fn decompositions_migration() -> LinalgResult<()> {
     println!("Python: P, L, U = linalg.lu(a)");
     println!("Rust:   let (l, u, p) = lu(&a.view(), None)?;");
 
-    let (_l, _u, _p) = lu(&a.view(), None)?;
+    let _l_u_p = lu(&a.view(), None)?;
     println!("✅ LU decomposition successful");
 
     // QR decomposition
@@ -184,6 +187,7 @@ fn decompositions_migration() -> LinalgResult<()> {
 }
 
 /// Demonstrates migration of linear system solving
+#[allow(dead_code)]
 fn linear_solving_migration() -> LinalgResult<()> {
     println!("🎯 Linear System Solving Migration");
     println!("{}", "=".repeat(50));
@@ -250,6 +254,7 @@ fn linear_solving_migration() -> LinalgResult<()> {
 }
 
 /// Demonstrates migration of eigenvalue computations
+#[allow(dead_code)]
 fn eigenvalue_migration() -> LinalgResult<()> {
     println!("🌀 Eigenvalue Computations Migration");
     println!("{}", "=".repeat(50));
@@ -306,9 +311,9 @@ fn eigenvalue_migration() -> LinalgResult<()> {
     // Eigenvalues only (more efficient)
     println!("\n🔹 Eigenvalues Only");
     println!("Python: eigenvals = linalg.eigvals(a_sym)");
-    println!("Rust:   let (eigenvals, _) = eigh(&a_sym.view(), None)?;  // Ignore eigenvectors");
+    println!("Rust:   let (eigenvals_) = eigh(&a_sym.view(), None)?;  // Ignore eigenvectors");
 
-    let (eigenvals_only, _) = eigh(&a_sym.view(), None)?;
+    let eigenvals_only = eigh(&a_sym.view(), None)?;
     println!("Eigenvalues only: {:?}", eigenvals_only);
 
     println!("\n");
@@ -316,6 +321,7 @@ fn eigenvalue_migration() -> LinalgResult<()> {
 }
 
 /// Demonstrates migration of matrix properties
+#[allow(dead_code)]
 fn matrix_properties_migration() -> LinalgResult<()> {
     println!("📏 Matrix Properties Migration");
     println!("{}", "=".repeat(50));
@@ -382,6 +388,7 @@ fn matrix_properties_migration() -> LinalgResult<()> {
 }
 
 /// Demonstrates advanced features and key differences
+#[allow(dead_code)]
 fn advanced_features_differences() -> LinalgResult<()> {
     println!("🚀 Advanced Features and Key Differences");
     println!("{}", "=".repeat(50));
@@ -413,10 +420,10 @@ fn advanced_features_differences() -> LinalgResult<()> {
     // Error handling differences
     println!("\n🔹 Error Handling Differences");
     println!("Python: try:");
-    println!("            result = linalg.inv(singular_matrix)");
+    println!("            result = linalg.inv(singularmatrix)");
     println!("        except LinAlgError as e:");
     println!("            print(f'Error: {{e}}')");
-    println!("Rust:   match inv(&singular_matrix.view(), None) {{");
+    println!("Rust:   match inv(&singularmatrix.view(), None) {{");
     println!("            Ok(result) => {{ /* use result */ }}");
     println!("            Err(e) => println!(\"Error: {{}}\", e),");
     println!("        }}");

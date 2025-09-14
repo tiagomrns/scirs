@@ -18,6 +18,7 @@ struct RegressionResult {
 }
 
 /// Simple implementation of Theil-Sen estimator
+#[allow(dead_code)]
 fn simple_theilslopes(x: &[f64], y: &[f64]) -> TheilSlopesResult {
     assert_eq!(x.len(), y.len(), "x and y must have same length");
 
@@ -68,6 +69,7 @@ fn simple_theilslopes(x: &[f64], y: &[f64]) -> TheilSlopesResult {
 }
 
 /// Simple OLS (Ordinary Least Squares) implementation
+#[allow(dead_code)]
 fn simple_ols(x: &[f64], y: &[f64]) -> RegressionResult {
     assert_eq!(x.len(), y.len(), "x and y must have same length");
 
@@ -112,7 +114,8 @@ fn simple_ols(x: &[f64], y: &[f64]) -> RegressionResult {
 }
 
 /// Simple implementation of RANSAC (Random Sample Consensus) regression
-fn simple_ransac(x: &[f64], y: &[f64], threshold: f64, n_trials: usize) -> RegressionResult {
+#[allow(dead_code)]
+fn simple_ransac(x: &[f64], y: &[f64], threshold: f64, ntrials: usize) -> RegressionResult {
     assert_eq!(x.len(), y.len(), "x and y must have same length");
 
     let n = x.len();
@@ -133,7 +136,7 @@ fn simple_ransac(x: &[f64], y: &[f64], threshold: f64, n_trials: usize) -> Regre
     let mut best_model = (0.0, 0.0); // (slope, intercept)
     let mut best_inlier_mask = vec![false; n];
 
-    for _ in 0..n_trials {
+    for _ in 0..ntrials {
         // Select 2 random points
         let idx1 = (rng % n as u64) as usize;
         rng = (rng.wrapping_mul(1103515245).wrapping_add(12345)) % 2147483648; // Simple LCG
@@ -223,7 +226,8 @@ fn simple_ransac(x: &[f64], y: &[f64], threshold: f64, n_trials: usize) -> Regre
 }
 
 /// A simplified implementation of Huber regression
-fn simple_huber(x: &[f64], y: &[f64], epsilon: f64, max_iter: usize) -> RegressionResult {
+#[allow(dead_code)]
+fn simple_huber(x: &[f64], y: &[f64], epsilon: f64, maxiter: usize) -> RegressionResult {
     assert_eq!(x.len(), y.len(), "x and y must have same length");
 
     // Start with OLS estimate
@@ -233,7 +237,7 @@ fn simple_huber(x: &[f64], y: &[f64], epsilon: f64, max_iter: usize) -> Regressi
         ..
     } = simple_ols(x, y);
 
-    for _ in 0..max_iter {
+    for _ in 0..maxiter {
         let mut numerator = 0.0;
         let mut denominator = 0.0;
 
@@ -311,6 +315,7 @@ fn simple_huber(x: &[f64], y: &[f64], epsilon: f64, max_iter: usize) -> Regressi
 }
 
 /// Text-based visualization of regression lines
+#[allow(dead_code)]
 fn visualize_regression_lines(
     x: &[f64],
     y: &[f64],
@@ -418,12 +423,13 @@ fn visualize_regression_lines(
 
     println!("+{}+", "-".repeat(60));
     println!("Legend: ● Data points, X Outliers");
-    for (i, &(name, _, _)) in models.iter().enumerate() {
-        println!("        {} {}", symbols[i % symbols.len()], name);
+    for (i, name__) in models.iter().enumerate() {
+        println!("        {} {:?}", symbols[i % symbols.len()], name__);
     }
     println!("        + Multiple lines overlap");
 }
 
+#[allow(dead_code)]
 fn main() {
     println!("=== Robust Regression Comparison ===");
 

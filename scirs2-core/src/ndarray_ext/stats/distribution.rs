@@ -38,6 +38,7 @@ pub type Histogram2dResult<T> =
 /// assert_eq!(hist.len(), 5);
 /// assert_eq!(bin_edges.len(), 6);
 /// ```
+#[allow(dead_code)]
 pub fn histogram<T>(
     array: ArrayView<T, Ix1>,
     bins: usize,
@@ -176,6 +177,7 @@ where
 /// assert_eq!(x_edges.len(), 5);
 /// assert_eq!(y_edges.len(), 5);
 /// ```
+#[allow(dead_code)]
 pub fn histogram2d<T>(
     x: ArrayView<T, Ix1>,
     y: ArrayView<T, Ix1>,
@@ -360,6 +362,7 @@ where
 /// ```
 ///
 /// This function is equivalent to ``NumPy``'s `np.quantile` function.
+#[allow(dead_code)]
 pub fn quantile<T>(
     array: ArrayView<T, Ix1>,
     q: ArrayView<T, Ix1>,
@@ -463,6 +466,7 @@ where
 /// ```
 ///
 /// This function is equivalent to ``NumPy``'s `np.bincount` function.
+#[allow(dead_code)]
 pub fn bincount(
     array: ArrayView<usize, Ix1>,
     minlength: Option<usize>,
@@ -539,6 +543,7 @@ pub fn bincount(
 /// ```
 ///
 /// This function is equivalent to ``NumPy``'s `np.digitize` function.
+#[allow(dead_code)]
 pub fn digitize<T>(
     array: ArrayView<T, Ix1>,
     bins: ArrayView<T, Ix1>,
@@ -558,7 +563,7 @@ where
 
     // Check that bins are monotonically increasing
     for i in 1..bins.len() {
-        if bins[i] <= bins[i - 1] {
+        if bins[i] <= bins[i.saturating_sub(1)] {
             return Err("Bins must be monotonically increasing");
         }
     }

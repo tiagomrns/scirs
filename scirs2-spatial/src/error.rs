@@ -20,6 +20,10 @@ pub enum SpatialError {
     /// Not implemented error
     #[error("Not implemented: {0}")]
     NotImplementedError(String),
+
+    /// Invalid input error
+    #[error("Invalid input: {0}")]
+    InvalidInput(String),
 }
 
 /// Result type for spatial operations

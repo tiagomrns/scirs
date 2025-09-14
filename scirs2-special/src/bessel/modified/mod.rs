@@ -43,6 +43,7 @@ use std::fmt::Debug;
 /// // I₀(0) = 1
 /// assert!((i0(0.0f64) - 1.0).abs() < 1e-10);
 /// ```
+#[allow(dead_code)]
 pub fn i0<F: Float + FromPrimitive + Debug>(x: F) -> F {
     // Special case
     if x == F::zero() {
@@ -150,6 +151,7 @@ pub fn i0<F: Float + FromPrimitive + Debug>(x: F) -> F {
 /// // I₁(0) = 0
 /// assert!(i1(0.0f64).abs() < 1e-10);
 /// ```
+#[allow(dead_code)]
 pub fn i1<F: Float + FromPrimitive + Debug>(x: F) -> F {
     // Special case
     if x == F::zero() {
@@ -270,6 +272,7 @@ pub fn i1<F: Float + FromPrimitive + Debug>(x: F) -> F {
 /// // I₁(x) comparison
 /// assert!((iv(1.0f64, x) - i1(x)).abs() < 1e-10);
 /// ```
+#[allow(dead_code)]
 pub fn iv<F: Float + FromPrimitive + Debug + std::ops::AddAssign>(v: F, x: F) -> F {
     // Special cases
     if x == F::zero() {
@@ -294,7 +297,7 @@ pub fn iv<F: Float + FromPrimitive + Debug + std::ops::AddAssign>(v: F, x: F) ->
         } else if n > 1 {
             // For higher integer orders, use forward recurrence
             // I_{n+1}(x) = -(2n/x) I_n(x) + I_{n-1}(x)
-            let mut i_v_minus_1 = i0(abs_x);
+            let mut i_vminus_1 = i0(abs_x);
             let mut i_v = i1(abs_x);
 
             for k in 1..n {
@@ -302,8 +305,8 @@ pub fn iv<F: Float + FromPrimitive + Debug + std::ops::AddAssign>(v: F, x: F) ->
                 // The recurrence relation for modified Bessel functions is actually:
                 // I_{v+1}(x) = (2v/x) I_v(x) + I_{v-1}(x)
                 // Note the sign difference compared to regular Bessel functions
-                let i_v_plus_1 = (k_f + k_f) / abs_x * i_v + i_v_minus_1;
-                i_v_minus_1 = i_v;
+                let i_v_plus_1 = (k_f + k_f) / abs_x * i_v + i_vminus_1;
+                i_vminus_1 = i_v;
                 i_v = i_v_plus_1;
             }
 
@@ -376,10 +379,10 @@ pub fn iv<F: Float + FromPrimitive + Debug + std::ops::AddAssign>(v: F, x: F) ->
         if log_result < F::from(constants::f64::LN_MAX).unwrap() {
             // Add higher order terms for better accuracy
             let mu = F::from(4.0).unwrap() * v * v; // μ = 4v²
-            let mu_minus_1 = mu - F::one(); // μ-1
+            let muminus_1 = mu - F::one(); // μ-1
 
-            let correction = F::one() - mu_minus_1 / (F::from(8.0).unwrap() * abs_x)
-                + mu_minus_1 * (mu_minus_1 + F::from(2.0).unwrap())
+            let correction = F::one() - muminus_1 / (F::from(8.0).unwrap() * abs_x)
+                + muminus_1 * (muminus_1 + F::from(2.0).unwrap())
                     / (F::from(128.0).unwrap() * abs_x * abs_x);
 
             let result = log_result.exp() * correction;
@@ -437,6 +440,7 @@ pub fn iv<F: Float + FromPrimitive + Debug + std::ops::AddAssign>(v: F, x: F) ->
 /// let k0_1 = k0(1.0f64);
 /// assert!(k0_1 > 0.4 && k0_1 < 0.5);
 /// ```
+#[allow(dead_code)]
 pub fn k0<F: Float + FromPrimitive + Debug>(x: F) -> F {
     // K₀ is singular at x = 0
     if x <= F::zero() {
@@ -482,6 +486,7 @@ pub fn k0<F: Float + FromPrimitive + Debug>(x: F) -> F {
 /// let k1_1 = k1(1.0f64);
 /// assert!(k1_1 > 0.5 && k1_1 < 0.6);
 /// ```
+#[allow(dead_code)]
 pub fn k1<F: Float + FromPrimitive + Debug>(x: F) -> F {
     // K₁ is singular at x = 0
     if x <= F::zero() {
@@ -532,6 +537,7 @@ pub fn k1<F: Float + FromPrimitive + Debug>(x: F) -> F {
 /// // K₁(x) comparison
 /// assert!((kv(1.0f64, x) - k1(x)).abs() < 1e-10);
 /// ```
+#[allow(dead_code)]
 pub fn kv<F: Float + FromPrimitive + Debug + std::ops::AddAssign>(v: F, x: F) -> F {
     // Kᵥ is singular at x = 0
     if x <= F::zero() {
@@ -559,7 +565,189 @@ pub fn kv<F: Float + FromPrimitive + Debug + std::ops::AddAssign>(v: F, x: F) ->
         * (F::one() + (F::from(4.0).unwrap() * v * v - F::one()) / (F::from(8.0).unwrap() * x))
 }
 
+/// Exponentially scaled modified Bessel function of the first kind of order 0.
+///
+/// This function computes i0e(x) = i0(x) * exp(-abs(x)) for real x,
+/// which prevents overflow for large positive arguments while preserving relative accuracy.
+///
+/// # Arguments
+///
+/// * `x` - Input value
+///
+/// # Returns
+///
+/// * I₀ₑ(x) Exponentially scaled modified Bessel function value
+///
+/// # Examples
+///
+/// ```
+/// use scirs2_special::bessel::modified::i0e;
+///
+/// let x = 10.0f64;
+/// let result = i0e(x);
+/// assert!(result.is_finite());
+/// ```
+#[allow(dead_code)]
+pub fn i0e<F: Float + FromPrimitive + Debug>(x: F) -> F {
+    let abs_x = x.abs();
+    i0(x) * (-abs_x).exp()
+}
+
+/// Exponentially scaled modified Bessel function of the first kind of order 1.
+///
+/// This function computes i1e(x) = i1(x) * exp(-abs(x)) for real x,
+/// which prevents overflow for large positive arguments while preserving relative accuracy.
+///
+/// # Arguments
+///
+/// * `x` - Input value
+///
+/// # Returns
+///
+/// * I₁ₑ(x) Exponentially scaled modified Bessel function value
+///
+/// # Examples
+///
+/// ```
+/// use scirs2_special::bessel::modified::i1e;
+///
+/// let x = 10.0f64;
+/// let result = i1e(x);
+/// assert!(result.is_finite());
+/// ```
+#[allow(dead_code)]
+pub fn i1e<F: Float + FromPrimitive + Debug>(x: F) -> F {
+    let abs_x = x.abs();
+    let sign = if x.is_sign_positive() {
+        F::one()
+    } else {
+        -F::one()
+    };
+    sign * i1(abs_x) * (-abs_x).exp()
+}
+
+/// Exponentially scaled modified Bessel function of the first kind of arbitrary order.
+///
+/// This function computes ive(v, x) = iv(v, x) * exp(-abs(x)) for real x,
+/// which prevents overflow for large positive arguments while preserving relative accuracy.
+///
+/// # Arguments
+///
+/// * `v` - Order (any real number)
+/// * `x` - Input value
+///
+/// # Returns
+///
+/// * Iᵥₑ(x) Exponentially scaled modified Bessel function value
+///
+/// # Examples
+///
+/// ```
+/// use scirs2_special::bessel::modified::ive;
+///
+/// let x = 10.0f64;
+/// let result = ive(2.5, x);
+/// assert!(result.is_finite());
+/// ```
+#[allow(dead_code)]
+pub fn ive<F: Float + FromPrimitive + Debug + std::ops::AddAssign>(v: F, x: F) -> F {
+    let abs_x = x.abs();
+    iv(v, x) * (-abs_x).exp()
+}
+
+/// Exponentially scaled modified Bessel function of the second kind of order 0.
+///
+/// This function computes k0e(x) = k0(x) * exp(x) for real x,
+/// which prevents underflow for large positive arguments while preserving relative accuracy.
+///
+/// # Arguments
+///
+/// * `x` - Input value (must be positive)
+///
+/// # Returns
+///
+/// * K₀ₑ(x) Exponentially scaled modified Bessel function value
+///
+/// # Examples
+///
+/// ```
+/// use scirs2_special::bessel::modified::k0e;
+///
+/// let x = 10.0f64;
+/// let result = k0e(x);
+/// assert!(result.is_finite());
+/// ```
+#[allow(dead_code)]
+pub fn k0e<F: Float + FromPrimitive + Debug>(x: F) -> F {
+    if x <= F::zero() {
+        return F::infinity();
+    }
+    k0(x) * x.exp()
+}
+
+/// Exponentially scaled modified Bessel function of the second kind of order 1.
+///
+/// This function computes k1e(x) = k1(x) * exp(x) for real x,
+/// which prevents underflow for large positive arguments while preserving relative accuracy.
+///
+/// # Arguments
+///
+/// * `x` - Input value (must be positive)
+///
+/// # Returns
+///
+/// * K₁ₑ(x) Exponentially scaled modified Bessel function value
+///
+/// # Examples
+///
+/// ```
+/// use scirs2_special::bessel::modified::k1e;
+///
+/// let x = 10.0f64;
+/// let result = k1e(x);
+/// assert!(result.is_finite());
+/// ```
+#[allow(dead_code)]
+pub fn k1e<F: Float + FromPrimitive + Debug>(x: F) -> F {
+    if x <= F::zero() {
+        return F::infinity();
+    }
+    k1(x) * x.exp()
+}
+
+/// Exponentially scaled modified Bessel function of the second kind of arbitrary order.
+///
+/// This function computes kve(v, x) = kv(v, x) * exp(x) for real x,
+/// which prevents underflow for large positive arguments while preserving relative accuracy.
+///
+/// # Arguments
+///
+/// * `v` - Order (any real number)
+/// * `x` - Input value (must be positive)
+///
+/// # Returns
+///
+/// * Kᵥₑ(x) Exponentially scaled modified Bessel function value
+///
+/// # Examples
+///
+/// ```
+/// use scirs2_special::bessel::modified::kve;
+///
+/// let x = 10.0f64;
+/// let result = kve(2.5, x);
+/// assert!(result.is_finite());
+/// ```
+#[allow(dead_code)]
+pub fn kve<F: Float + FromPrimitive + Debug + std::ops::AddAssign>(v: F, x: F) -> F {
+    if x <= F::zero() {
+        return F::infinity();
+    }
+    kv(v, x) * x.exp()
+}
+
 /// Helper function to return maximum of two values.
+#[allow(dead_code)]
 fn max<T: PartialOrd>(a: T, b: T) -> T {
     if a > b {
         a

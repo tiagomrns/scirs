@@ -1,22 +1,23 @@
-//! Stationary Wavelet Transform (SWT)
-//!
-//! This module provides implementations of the Stationary Wavelet Transform (SWT),
-//! also known as the Undecimated Wavelet Transform or the à trous algorithm.
-//! Unlike the standard Discrete Wavelet Transform (DWT), the SWT does not
-//! downsample the signal after filtering, which makes it translation invariant.
-//!
-//! The SWT is particularly useful for applications such as:
-//! * Denoising (often provides better results than DWT)
-//! * Feature extraction
-//! * Pattern recognition
-//! * Edge detection
-//! * Change point detection
+// Stationary Wavelet Transform (SWT)
+//
+// This module provides implementations of the Stationary Wavelet Transform (SWT),
+// also known as the Undecimated Wavelet Transform or the à trous algorithm.
+// Unlike the standard Discrete Wavelet Transform (DWT), the SWT does not
+// downsample the signal after filtering, which makes it translation invariant.
+//
+// The SWT is particularly useful for applications such as:
+// * Denoising (often provides better results than DWT)
+// * Feature extraction
+// * Pattern recognition
+// * Edge detection
+// * Change point detection
 
 use crate::dwt::Wavelet;
 use crate::error::{SignalError, SignalResult};
 use num_traits::{Float, NumCast};
 use std::fmt::Debug;
 
+#[allow(unused_imports)]
 /// Performs one level of the stationary wavelet transform.
 ///
 /// Unlike the standard DWT, the SWT does not downsample the signal after filtering.
@@ -51,6 +52,7 @@ use std::fmt::Debug;
 /// assert_eq!(ca.len(), signal.len());
 /// assert_eq!(cd.len(), signal.len());
 /// ```
+#[allow(dead_code)]
 pub fn swt_decompose<T>(
     data: &[T],
     wavelet: Wavelet,
@@ -177,6 +179,7 @@ where
 /// assert!(rec_energy > 0.0);
 /// assert!(rec_energy / orig_energy > 0.5); // At least 50% energy preserved
 /// ```
+#[allow(dead_code)]
 pub fn swt_reconstruct(
     approx: &[f64],
     detail: &[f64],
@@ -291,6 +294,7 @@ pub fn swt_reconstruct(
 ///     assert_eq!(detail.len(), signal.len());
 /// }
 /// ```
+#[allow(dead_code)]
 pub fn swt<T>(
     data: &[T],
     wavelet: Wavelet,
@@ -384,6 +388,7 @@ where
 /// assert!(rec_energy > 0.0);
 /// assert!(rec_energy / orig_energy > 0.5); // At least 50% energy preserved
 /// ```
+#[allow(dead_code)]
 pub fn iswt(details: &[Vec<f64>], approx: &[f64], wavelet: Wavelet) -> SignalResult<Vec<f64>> {
     if details.is_empty() {
         return Err(SignalError::ValueError(
@@ -422,9 +427,10 @@ pub fn iswt(details: &[Vec<f64>], approx: &[f64], wavelet: Wavelet) -> SignalRes
 }
 
 /// Helper function to extend the signal for filtering
-fn extend_signal(signal: &[f64], filter_len: usize, mode: &str) -> SignalResult<Vec<f64>> {
+#[allow(dead_code)]
+fn extend_signal(signal: &[f64], filterlen: usize, mode: &str) -> SignalResult<Vec<f64>> {
     let n = signal.len();
-    let pad = filter_len - 1;
+    let pad = filterlen - 1;
 
     let mut extended = Vec::with_capacity(n + 2 * pad);
 
@@ -436,7 +442,7 @@ fn extend_signal(signal: &[f64], filter_len: usize, mode: &str) -> SignalResult<
                 extended.push(signal[reflect_idx]);
             }
 
-            // Original signal
+            // Original _signal
             extended.extend_from_slice(signal);
 
             // End padding
@@ -466,7 +472,7 @@ fn extend_signal(signal: &[f64], filter_len: usize, mode: &str) -> SignalResult<
                 extended.push(signal[n - pad + i]);
             }
 
-            // Original signal
+            // Original _signal
             extended.extend_from_slice(signal);
 
             // End padding
@@ -501,9 +507,10 @@ fn extend_signal(signal: &[f64], filter_len: usize, mode: &str) -> SignalResult<
 /// # Returns
 ///
 /// * The upsampled filter
+#[allow(dead_code)]
 fn upsample_filter(filter: &[f64], level: usize) -> Vec<f64> {
     if level == 1 {
-        // At level 1, return the original filter
+        // At level 1, return the original _filter
         return filter.to_vec();
     }
 
@@ -512,7 +519,7 @@ fn upsample_filter(filter: &[f64], level: usize) -> Vec<f64> {
     let new_len = filter.len() + (filter.len() - 1) * zeros_to_insert;
     let mut upsampled = vec![0.0; new_len];
 
-    // Insert filter coefficients with zeros in between
+    // Insert _filter coefficients with zeros in between
     for (i, &coeff) in filter.iter().enumerate() {
         upsampled[i * (zeros_to_insert + 1)] = coeff;
     }
@@ -521,10 +528,11 @@ fn upsample_filter(filter: &[f64], level: usize) -> Vec<f64> {
 }
 
 /// Helper function to upsample filter pairs
-fn upsample_filters(dec_lo: &[f64], dec_hi: &[f64], level: usize) -> (Vec<f64>, Vec<f64>) {
+#[allow(dead_code)]
+fn upsample_filters(_dec_lo: &[f64], dechi: &[f64], level: usize) -> (Vec<f64>, Vec<f64>) {
     (
-        upsample_filter(dec_lo, level),
-        upsample_filter(dec_hi, level),
+        upsample_filter(_dec_lo, level),
+        upsample_filter(dechi, level),
     )
 }
 
@@ -626,6 +634,8 @@ mod tests {
 
     #[test]
     fn test_multi_level_swt() {
+        let a = vec![1.0, 2.0, 3.0, 4.0, 5.0];
+        let b = vec![0.5, 0.5];
         // Test signal with increasing values
         let signal = vec![1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0];
 

@@ -4,6 +4,7 @@
 //! without requiring complex dependencies.
 
 #[cfg(feature = "profiling")]
+#[allow(dead_code)]
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     use scirs2_core::profiling::adaptive::{
         AdaptiveOptimizer, OptimizationConfig, OptimizationGoal, Priority, WorkloadProfile,
@@ -16,7 +17,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Create basic optimizer
     let config = OptimizationConfig::default()
         .with_goal(OptimizationGoal::Balanced)
-        .with_learning_rate(0.01);
+        .with_learningrate(0.01);
 
     let mut optimizer = AdaptiveOptimizer::new(config)?;
     println!("✅ Created adaptive optimizer");
@@ -56,6 +57,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 }
 
 #[cfg(not(feature = "profiling"))]
+#[allow(dead_code)]
 fn main() {
     println!("⚠️  This example requires the 'profiling' feature to be enabled.");
     println!("Run with: cargo run --example adaptive_optimization_test --features profiling");

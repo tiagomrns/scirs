@@ -15,7 +15,7 @@
 
 use ndarray::{s, Array1, Array2, ArrayView2};
 use num_traits::{Float, NumAssign, One, Zero};
-use rand::Rng;
+use rand::{self, Rng};
 use std::fmt::Debug;
 use std::iter::Sum;
 
@@ -75,6 +75,7 @@ use crate::error::{LinalgError, LinalgResult};
 /// error = error.sqrt();
 /// assert!(error / 9.0_f64 < 0.5_f64); // Average error per element
 /// ```
+#[allow(dead_code)]
 pub fn nmf<F>(
     a: &ArrayView2<F>,
     rank: usize,
@@ -114,15 +115,16 @@ where
     let mut h = Array2::<F>::zeros((rank, n));
 
     // Use random initialization
+    let mut rng = rand::rng();
     for i in 0..m {
         for j in 0..rank {
-            w[[i, j]] = F::from(rand::random::<f64>()).unwrap() + epsilon;
+            w[[i, j]] = F::from(rng.random::<f64>()).unwrap() + epsilon;
         }
     }
 
     for i in 0..rank {
         for j in 0..n {
-            h[[i, j]] = F::from(rand::random::<f64>()).unwrap() + epsilon;
+            h[[i, j]] = F::from(rng.random::<f64>()).unwrap() + epsilon;
         }
     }
 
@@ -231,13 +233,23 @@ where
 /// let approx = c.dot(&z);
 /// assert_eq!(approx.shape(), a.shape());
 /// ```
+#[allow(dead_code)]
 pub fn interpolative_decomposition<F>(
     a: &ArrayView2<F>,
     k: usize,
     method: &str,
 ) -> LinalgResult<(Array2<F>, Array2<F>)>
 where
-    F: Float + NumAssign + Zero + One + Sum + Debug + 'static + ndarray::ScalarOperand,
+    F: Float
+        + NumAssign
+        + Zero
+        + One
+        + Sum
+        + Debug
+        + 'static
+        + ndarray::ScalarOperand
+        + Send
+        + Sync,
 {
     // Validate inputs
     check_2d(a, "a")?;
@@ -246,8 +258,7 @@ where
 
     if k > n || k == 0 {
         return Err(LinalgError::InvalidInputError(format!(
-            "k must be between 1 and n (number of columns) = {}",
-            n
+            "k must be between 1 and n (number of columns) = {n}"
         )));
     }
 
@@ -448,8 +459,7 @@ where
             Ok((c, z))
         }
         _ => Err(LinalgError::InvalidInputError(format!(
-            "Unknown method: {}. Expected 'qr' or 'svd'",
-            method
+            "Unknown method: {method}. Expected 'qr' or 'svd'"
         ))),
     }
 }
@@ -506,6 +516,7 @@ where
 /// let approx = c.dot(&u).dot(&r);
 /// assert_eq!(approx.shape(), a.shape());
 /// ```
+#[allow(dead_code)]
 pub fn cur_decomposition<F>(
     a: &ArrayView2<F>,
     k: usize,
@@ -514,7 +525,16 @@ pub fn cur_decomposition<F>(
     method: &str,
 ) -> LinalgResult<(Array2<F>, Array2<F>, Array2<F>)>
 where
-    F: Float + NumAssign + Zero + One + Sum + Debug + 'static + ndarray::ScalarOperand,
+    F: Float
+        + NumAssign
+        + Zero
+        + One
+        + Sum
+        + Debug
+        + 'static
+        + ndarray::ScalarOperand
+        + Send
+        + Sync,
 {
     // Validate inputs
     check_2d(a, "a")?;
@@ -534,7 +554,7 @@ where
 
     if c_samples > n || r_samples > m {
         return Err(LinalgError::InvalidInputError(
-            "Number of samples cannot exceed matrix dimensions".to_string(),
+            "Number of _samples cannot exceed matrix dimensions".to_string(),
         ));
     }
 
@@ -622,8 +642,9 @@ where
             // First, compute approximate leverage scores via randomized SVD
 
             // Sketch the matrix for faster SVD
+            let mut rng = rand::rng();
             let omega = Array2::<F>::from_shape_fn((n, k + 5), |_| {
-                F::from(rand::random::<f64>() * 2.0 - 1.0).unwrap()
+                F::from(rng.random::<f64>() * 2.0 - 1.0).unwrap()
             });
 
             let y = a.dot(&omega);
@@ -690,7 +711,7 @@ where
 
             // Sample columns with replacement based on leverage scores
             for _ in 0..c_samples {
-                let rand_val = F::from(rand::random::<f64>()).unwrap();
+                let rand_val = F::from(rng.random::<f64>()).unwrap();
                 let mut cumsum = F::zero();
                 let mut selected = 0;
 
@@ -707,7 +728,7 @@ where
 
             // Sample rows with replacement based on leverage scores
             for _ in 0..r_samples {
-                let rand_val = F::from(rand::random::<f64>()).unwrap();
+                let rand_val = F::from(rng.random::<f64>()).unwrap();
                 let mut cumsum = F::zero();
                 let mut selected = 0;
 
@@ -780,8 +801,7 @@ where
             Ok((c, u, r))
         }
         _ => Err(LinalgError::InvalidInputError(format!(
-            "Unknown method: {}. Expected 'uniform' or 'leverage'",
-            method
+            "Unknown method: {method}. Expected 'uniform' or 'leverage'"
         ))),
     }
 }
@@ -849,12 +869,22 @@ where
 /// assert!(r[[1, 1]].abs() > 1e-10_f64);
 /// assert!(r[[2, 2]].abs() < 1e-10_f64 || r[[2, 2]].abs() / r[[0, 0]].abs() < 1e-10_f64);
 /// ```
+#[allow(dead_code)]
 pub fn rank_revealing_qr<F>(
     a: &ArrayView2<F>,
     tol: F,
 ) -> LinalgResult<(Array2<F>, Array2<F>, Array2<F>)>
 where
-    F: Float + NumAssign + Zero + One + Sum + Debug + 'static + ndarray::ScalarOperand,
+    F: Float
+        + NumAssign
+        + Zero
+        + One
+        + Sum
+        + Debug
+        + 'static
+        + ndarray::ScalarOperand
+        + Send
+        + Sync,
 {
     // Validate inputs
     check_2d(a, "a")?;
@@ -1042,13 +1072,23 @@ where
 /// error = error.sqrt();
 /// assert!(error < 1e-10_f64);
 /// ```
+#[allow(dead_code)]
 pub fn utv_decomposition<F>(
     a: &ArrayView2<F>,
     variant: &str,
     tol: F,
 ) -> LinalgResult<(Array2<F>, Array2<F>, Array2<F>)>
 where
-    F: Float + NumAssign + Zero + One + Sum + Debug + 'static + ndarray::ScalarOperand,
+    F: Float
+        + NumAssign
+        + Zero
+        + One
+        + Sum
+        + Debug
+        + 'static
+        + ndarray::ScalarOperand
+        + Send
+        + Sync,
 {
     // Validate inputs
     check_2d(a, "a")?;
@@ -1158,8 +1198,7 @@ where
             Ok((u, t, v))
         }
         _ => Err(LinalgError::InvalidInputError(format!(
-            "Unknown variant: {}. Expected 'urv' or 'utv'",
-            variant
+            "Unknown variant: {variant}. Expected 'urv' or 'utv'"
         ))),
     }
 }

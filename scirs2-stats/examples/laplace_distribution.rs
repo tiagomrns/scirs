@@ -1,7 +1,9 @@
 use scirs2_stats::distributions::laplace::Laplace;
-use scirs2_stats::traits::distribution::{ContinuousDistribution, Distribution};
+use scirs2_stats::traits::{ContinuousDistribution, Distribution};
+use statrs::statistics::Statistics;
 use std::error::Error;
 
+#[allow(dead_code)]
 fn main() -> Result<(), Box<dyn Error>> {
     println!("Laplace (Double Exponential) Distribution Example");
     println!("------------------------------------------------");
@@ -233,7 +235,7 @@ fn main() -> Result<(), Box<dyn Error>> {
     println!("  PPF at p=0.75 (trait): {}", q_trait);
     println!("  PPF at p=0.75 (direct): {}", q_direct);
 
-    let sf_trait = ContinuousDistribution::sf(&standard_laplace, 0.0);
+    let sf_trait = 1.0 - ContinuousDistribution::cdf(&standard_laplace, 0.0);
     println!("  Survival function at x=0 (trait): {}", sf_trait);
     println!(
         "  Survival function computed manually: {}",

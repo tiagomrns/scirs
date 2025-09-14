@@ -1,15 +1,15 @@
-//! FIR (Finite Impulse Response) filter design functions
-//!
-//! This module provides comprehensive FIR filter design capabilities including
-//! window-based design (firwin) and optimal equiripple design (Parks-McClellan/Remez).
-//! FIR filters offer linear phase response and guaranteed stability.
+// FIR (Finite Impulse Response) filter design functions
+//
+// This module provides comprehensive FIR filter design capabilities including
+// window-based design (firwin) and optimal equiripple design (Parks-McClellan/Remez).
+// FIR filters offer linear phase response and guaranteed stability.
 
+use super::common::validation::validate_cutoff_frequency;
 use crate::error::{SignalError, SignalResult};
 use num_traits::{Float, NumCast};
 use std::fmt::Debug;
 
-use super::common::validation::validate_cutoff_frequency;
-
+#[allow(unused_imports)]
 /// FIR filter design using window method
 ///
 /// Designs a linear phase FIR filter using the window method. The filter
@@ -37,11 +37,17 @@ use super::common::validation::validate_cutoff_frequency;
 /// // Design a highpass filter
 /// let h = firwin(65, 0.3, "hamming", false).unwrap();
 /// ```
-pub fn firwin<T>(numtaps: usize, cutoff: T, window: &str, pass_zero: bool) -> SignalResult<Vec<f64>>
+#[allow(dead_code)]
+pub fn firwin<T>(
+    _numtaps: usize,
+    cutoff: T,
+    window: &str,
+    pass_zero: bool,
+) -> SignalResult<Vec<f64>>
 where
     T: Float + NumCast + Debug,
 {
-    if numtaps < 3 {
+    if _numtaps < 3 {
         return Err(SignalError::ValueError(
             "Number of taps must be at least 3".to_string(),
         ));
@@ -50,8 +56,8 @@ where
     let wc = validate_cutoff_frequency(cutoff)?;
 
     // Calculate the ideal impulse response
-    let mid = (numtaps - 1) as f64 / 2.0;
-    let mut h = vec![0.0; numtaps];
+    let mid = (_numtaps - 1) as f64 / 2.0;
+    let mut h = vec![0.0; _numtaps];
 
     for (i, item) in h.iter_mut().enumerate() {
         let n = i as f64 - mid;
@@ -70,7 +76,7 @@ where
                 sinc_val
             } else {
                 // Highpass: subtract lowpass from delta function
-                if i == numtaps / 2 {
+                if i == _numtaps / 2 {
                     1.0 - sinc_val
                 } else {
                     -sinc_val
@@ -80,7 +86,7 @@ where
     }
 
     // Apply window function
-    let window_coeffs = generate_window(numtaps, window)?;
+    let window_coeffs = generate_window(_numtaps, window)?;
     for (i, coeff) in h.iter_mut().enumerate() {
         *coeff *= window_coeffs[i];
     }
@@ -138,6 +144,7 @@ where
 /// let desired = vec![1.0, 1.0, 0.0, 0.0];
 /// let h = remez(65, &bands, &desired, None, None, None).unwrap();
 /// ```
+#[allow(dead_code)]
 pub fn remez(
     numtaps: usize,
     bands: &[f64],
@@ -355,28 +362,29 @@ pub fn remez(
 /// # Returns
 ///
 /// * Window coefficients as a vector
-fn generate_window(length: usize, window_type: &str) -> SignalResult<Vec<f64>> {
-    let mut window = vec![0.0; length];
+#[allow(dead_code)]
+fn generate_window(_length: usize, windowtype: &str) -> SignalResult<Vec<f64>> {
+    let mut window = vec![0.0; _length];
 
-    match window_type.to_lowercase().as_str() {
+    match windowtype.to_lowercase().as_str() {
         "hamming" => {
             for (i, w) in window.iter_mut().enumerate() {
                 let n = i as f64;
-                let total = length as f64;
+                let total = _length as f64;
                 *w = 0.54 - 0.46 * (2.0 * std::f64::consts::PI * n / (total - 1.0)).cos();
             }
         }
         "hann" | "hanning" => {
             for (i, w) in window.iter_mut().enumerate() {
                 let n = i as f64;
-                let total = length as f64;
+                let total = _length as f64;
                 *w = 0.5 * (1.0 - (2.0 * std::f64::consts::PI * n / (total - 1.0)).cos());
             }
         }
         "blackman" => {
             for (i, w) in window.iter_mut().enumerate() {
                 let n = i as f64;
-                let total = length as f64;
+                let total = _length as f64;
                 let arg = 2.0 * std::f64::consts::PI * n / (total - 1.0);
                 *w = 0.42 - 0.5 * arg.cos() + 0.08 * (2.0 * arg).cos();
             }
@@ -387,7 +395,7 @@ fn generate_window(length: usize, window_type: &str) -> SignalResult<Vec<f64>> {
         _ => {
             return Err(SignalError::ValueError(format!(
                 "Unknown window type: {}. Supported types: hamming, hann, blackman, rectangular",
-                window_type
+                windowtype
             )));
         }
     }
@@ -398,6 +406,7 @@ fn generate_window(length: usize, window_type: &str) -> SignalResult<Vec<f64>> {
 /// Solve a linear system Ax = b using Gaussian elimination
 ///
 /// Internal helper function for the Remez exchange algorithm.
+#[allow(dead_code)]
 fn solve_linear_system(a: &[Vec<f64>], b: &[f64]) -> SignalResult<Vec<f64>> {
     let n = a.len();
     if n == 0 || a[0].len() != n || b.len() != n {

@@ -32,13 +32,22 @@ use std::fmt::{Debug, Display};
 /// let a = array![[1.0, 2.0], [3.0, 4.0]];
 /// let (u, s, vt) = jacobi_svd(&a.view(), 100, 1e-14).unwrap();
 /// ```
+#[allow(dead_code)]
 pub fn jacobi_svd<A>(
     a: &ArrayView2<A>,
     max_iterations: usize,
     tolerance: A,
 ) -> LinalgResult<(Array2<A>, Array1<A>, Array2<A>)>
 where
-    A: Float + NumAssign + Debug + Display + ndarray::ScalarOperand + std::iter::Sum + 'static,
+    A: Float
+        + NumAssign
+        + Debug
+        + Display
+        + ndarray::ScalarOperand
+        + std::iter::Sum
+        + Send
+        + Sync
+        + 'static,
 {
     let (m, n) = (a.nrows(), a.ncols());
 
@@ -54,7 +63,7 @@ where
     let mut v = Array2::eye(n);
     let mut b = a.to_owned();
 
-    // Jacobi rotation iterations
+    // Jacobi rotation _iterations
     for _iter in 0..max_iterations {
         let mut max_off_diag = A::zero();
         let mut p = 0;
@@ -181,12 +190,21 @@ where
 /// let (u, p) = polar_decomposition(&a.view(), true).unwrap();
 /// assert!(p.is_some());
 /// ```
+#[allow(dead_code)]
 pub fn polar_decomposition<A>(
     a: &ArrayView2<A>,
     compute_p: bool,
 ) -> LinalgResult<(Array2<A>, Option<Array2<A>>)>
 where
-    A: Float + NumAssign + Debug + Display + ndarray::ScalarOperand + std::iter::Sum + 'static,
+    A: Float
+        + NumAssign
+        + Debug
+        + Display
+        + ndarray::ScalarOperand
+        + std::iter::Sum
+        + Send
+        + Sync
+        + 'static,
 {
     let (m, n) = (a.nrows(), a.ncols());
 
@@ -226,13 +244,22 @@ where
 ///
 /// # Returns
 /// * Tuple (U, P) where U is unitary and P is positive semidefinite
+#[allow(dead_code)]
 pub fn polar_decomposition_newton<A>(
     a: &ArrayView2<A>,
     max_iterations: usize,
     tolerance: A,
 ) -> LinalgResult<(Array2<A>, Array2<A>)>
 where
-    A: Float + NumAssign + Debug + Display + ndarray::ScalarOperand + std::iter::Sum + 'static,
+    A: Float
+        + NumAssign
+        + Debug
+        + Display
+        + ndarray::ScalarOperand
+        + std::iter::Sum
+        + Send
+        + Sync
+        + 'static,
 {
     let (m, n) = (a.nrows(), a.ncols());
 
@@ -312,12 +339,21 @@ where
 /// ```
 pub type QRPivotingResult<A> = (Array2<A>, Array2<A>, Array2<A>, usize);
 
+#[allow(dead_code)]
 pub fn qr_with_column_pivoting<A>(
     a: &ArrayView2<A>,
     tolerance: A,
 ) -> LinalgResult<QRPivotingResult<A>>
 where
-    A: Float + NumAssign + Debug + Display + ndarray::ScalarOperand + std::iter::Sum + 'static,
+    A: Float
+        + NumAssign
+        + Debug
+        + Display
+        + ndarray::ScalarOperand
+        + std::iter::Sum
+        + Send
+        + Sync
+        + 'static,
 {
     // This is already implemented as complete_orthogonal_decomposition in decomposition.rs
     // We'll provide a wrapper that extracts the rank information
@@ -434,7 +470,7 @@ mod tests {
     fn test_qr_with_column_pivoting() {
         // Rank-deficient matrix
         let a = array![[1.0, 2.0, 3.0], [4.0, 5.0, 6.0], [7.0, 8.0, 9.0]];
-        let (q, _r, p, rank) = qr_with_column_pivoting(&a.view(), 1e-10).unwrap();
+        let (q, r, p, rank) = qr_with_column_pivoting(&a.view(), 1e-10).unwrap();
 
         // Matrix should have rank 2
         assert_eq!(rank, 2);

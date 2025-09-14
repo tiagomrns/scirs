@@ -9,7 +9,7 @@ use scirs2_core::validation::{check_1d, check_2d, check_positive};
 use std::fmt::Debug;
 
 use super::{pad_array, BorderMode};
-use crate::error::{NdimageError, Result};
+use crate::error::{NdimageError, NdimageResult};
 // use scirs2_core::parallel;
 
 /// Apply a minimum filter to an n-dimensional array
@@ -41,14 +41,24 @@ use crate::error::{NdimageError, Result};
 /// // Apply 3x3 minimum filter
 /// let filtered = minimum_filter(&input, &[3, 3], None, None).unwrap();
 /// ```
+#[allow(dead_code)]
 pub fn minimum_filter<T, D>(
     input: &Array<T, D>,
     size: &[usize],
     mode: Option<BorderMode>,
     origin: Option<&[isize]>,
-) -> Result<Array<T, D>>
+) -> NdimageResult<Array<T, D>>
 where
-    T: Float + FromPrimitive + Debug + PartialOrd + Clone + Send + Sync,
+    T: Float
+        + FromPrimitive
+        + Debug
+        + PartialOrd
+        + Clone
+        + Send
+        + Sync
+        + std::ops::AddAssign
+        + std::ops::DivAssign
+        + 'static,
     D: Dimension + 'static,
 {
     extrema_filter(input, size, mode, origin, FilterType::Min)
@@ -83,14 +93,24 @@ where
 /// // Apply 3x3 maximum filter
 /// let filtered = maximum_filter(&input, &[3, 3], None, None).unwrap();
 /// ```
+#[allow(dead_code)]
 pub fn maximum_filter<T, D>(
     input: &Array<T, D>,
     size: &[usize],
     mode: Option<BorderMode>,
     origin: Option<&[isize]>,
-) -> Result<Array<T, D>>
+) -> NdimageResult<Array<T, D>>
 where
-    T: Float + FromPrimitive + Debug + PartialOrd + Clone + Send + Sync,
+    T: Float
+        + FromPrimitive
+        + Debug
+        + PartialOrd
+        + Clone
+        + Send
+        + Sync
+        + std::ops::AddAssign
+        + std::ops::DivAssign
+        + 'static,
     D: Dimension + 'static,
 {
     extrema_filter(input, size, mode, origin, FilterType::Max)
@@ -104,15 +124,25 @@ enum FilterType {
 }
 
 /// Generic extrema filter (handles both min and max filters)
+#[allow(dead_code)]
 fn extrema_filter<T, D>(
     input: &Array<T, D>,
     size: &[usize],
     mode: Option<BorderMode>,
     origin: Option<&[isize]>,
     filter_type: FilterType,
-) -> Result<Array<T, D>>
+) -> NdimageResult<Array<T, D>>
 where
-    T: Float + FromPrimitive + Debug + PartialOrd + Clone + Send + Sync,
+    T: Float
+        + FromPrimitive
+        + Debug
+        + PartialOrd
+        + Clone
+        + Send
+        + Sync
+        + std::ops::AddAssign
+        + std::ops::DivAssign
+        + 'static,
     D: Dimension + 'static,
 {
     let border_mode = mode.unwrap_or(BorderMode::Reflect);
@@ -219,13 +249,14 @@ where
 }
 
 /// Apply an extrema filter to a 1D array
+#[allow(dead_code)]
 fn extrema_filter_1d<T>(
     input: &Array1<T>,
     size: usize,
     mode: &BorderMode,
     origin: isize,
     filter_type: FilterType,
-) -> Result<Array1<T>>
+) -> NdimageResult<Array1<T>>
 where
     T: Float + FromPrimitive + Debug + PartialOrd + Clone,
 {
@@ -269,13 +300,14 @@ where
 }
 
 /// Apply an extrema filter to a 2D array
+#[allow(dead_code)]
 fn extrema_filter_2d<T>(
     input: &Array2<T>,
     size: &[usize],
     mode: &BorderMode,
     origin: &[isize],
     filter_type: FilterType,
-) -> Result<Array2<T>>
+) -> NdimageResult<Array2<T>>
 where
     T: Float + FromPrimitive + Debug + PartialOrd + Clone,
 {
@@ -328,15 +360,25 @@ where
 }
 
 /// Apply an extrema filter to an n-dimensional array with arbitrary dimensionality
+#[allow(dead_code)]
 fn extrema_filter_nd<T, D>(
     input: &Array<T, D>,
     size: &[usize],
     mode: &BorderMode,
     origin: &[isize],
     filter_type: FilterType,
-) -> Result<Array<T, D>>
+) -> NdimageResult<Array<T, D>>
 where
-    T: Float + FromPrimitive + Debug + PartialOrd + Clone + Send + Sync,
+    T: Float
+        + FromPrimitive
+        + Debug
+        + PartialOrd
+        + Clone
+        + Send
+        + Sync
+        + std::ops::AddAssign
+        + std::ops::DivAssign
+        + 'static,
     D: Dimension + 'static,
 {
     // Calculate padding required for each dimension
@@ -463,16 +505,254 @@ where
             })?;
         }
         _ => {
-            // For higher dimensions, display warning
-            return Err(NdimageError::NotImplementedError(format!(
-                "{} filter for arrays with more than 2 dimensions is not efficiently implemented yet",
-                match filter_type {
-                    FilterType::Min => "Minimum",
-                    FilterType::Max => "Maximum",
-                }
-            )));
+            // For higher dimensions, use general n-dimensional algorithm
+            output = extrema_filter_nd_general(input, size, mode, origin, filter_type, &pad_width)?;
         }
     }
+
+    Ok(output)
+}
+
+/// Apply an extrema filter to an n-dimensional array (general case)
+#[allow(dead_code)]
+fn extrema_filter_nd_general<T, D>(
+    input: &Array<T, D>,
+    size: &[usize],
+    mode: &BorderMode,
+    origin: &[isize],
+    filter_type: FilterType,
+    pad_width: &[(usize, usize)],
+) -> NdimageResult<Array<T, D>>
+where
+    T: Float
+        + FromPrimitive
+        + Debug
+        + PartialOrd
+        + Clone
+        + Send
+        + Sync
+        + std::ops::AddAssign
+        + std::ops::DivAssign
+        + 'static,
+    D: Dimension + 'static,
+{
+    // Pad input for border handling
+    let padded_input = pad_array(input, pad_width, mode, None)?;
+
+    // Create output array
+    let mut output = Array::<T, D>::zeros(input.raw_dim());
+
+    // Get the shape of the input
+    let inputshape = input.shape();
+
+    // Generate all possible coordinate combinations for the input
+    let total_elements = input.len();
+
+    // Use parallel iteration if the array is large enough
+    #[cfg(feature = "parallel")]
+    {
+        use scirs2_core::parallel_ops::*;
+
+        if total_elements > 10000 {
+            return extrema_filter_nd_parallel(input, &padded_input, size, filter_type, inputshape);
+        }
+    }
+
+    // Sequential implementation for smaller arrays or when parallel feature is disabled
+    extrema_filter_nd_sequential(
+        input,
+        &padded_input,
+        size,
+        filter_type,
+        inputshape,
+        &mut output,
+    )
+}
+
+/// Sequential n-dimensional extrema filter implementation
+#[allow(dead_code)]
+fn extrema_filter_nd_sequential<T, D>(
+    input: &Array<T, D>,
+    padded_input: &Array<T, D>,
+    size: &[usize],
+    filter_type: FilterType,
+    inputshape: &[usize],
+    output: &mut Array<T, D>,
+) -> NdimageResult<Array<T, D>>
+where
+    T: Float + FromPrimitive + Debug + PartialOrd + Clone,
+    D: Dimension + 'static,
+{
+    let ndim = input.ndim();
+
+    // Helper function to convert linear index to n-dimensional coordinates
+    fn index_to_coords(mut index: usize, shape: &[usize]) -> Vec<usize> {
+        let mut coords = vec![0; shape.len()];
+        for i in (0..shape.len()).rev() {
+            coords[i] = index % shape[i];
+            index /= shape[i];
+        }
+        coords
+    }
+
+    // Iterate through each position in the _input array
+    for linear_idx in 0..input.len() {
+        let coords = index_to_coords(linear_idx, inputshape);
+
+        // Initialize extrema with the first element in the window
+        let extrema_coords = coords.clone();
+        let padded_dyn = padded_input.view().into_dyn();
+        let mut extrema = padded_dyn[ndarray::IxDyn(&extrema_coords)];
+
+        // Generate all window coordinates around this position
+        let mut window_coords = vec![0; ndim];
+        let mut finished = false;
+
+        while !finished {
+            // Calculate actual coordinate in padded array
+            let mut actual_coords = Vec::with_capacity(ndim);
+            for d in 0..ndim {
+                actual_coords.push(coords[d] + window_coords[d]);
+            }
+
+            // Get value at this window position
+            let val = padded_dyn[ndarray::IxDyn(&actual_coords)];
+
+            // Update extrema based on filter _type
+            match filter_type {
+                FilterType::Min => {
+                    if val < extrema {
+                        extrema = val;
+                    }
+                }
+                FilterType::Max => {
+                    if val > extrema {
+                        extrema = val;
+                    }
+                }
+            }
+
+            // Increment window coordinates (n-dimensional counter)
+            let mut carry = 1;
+            for d in (0..ndim).rev() {
+                window_coords[d] += carry;
+                if window_coords[d] < size[d] {
+                    carry = 0;
+                    break;
+                } else {
+                    window_coords[d] = 0;
+                }
+            }
+
+            finished = carry == 1; // All dimensions have wrapped around
+        }
+
+        // Set the extrema value in the output
+        let mut output_dyn = output.view_mut().into_dyn();
+        output_dyn[ndarray::IxDyn(&coords)] = extrema;
+    }
+
+    Ok(output.clone())
+}
+
+/// Parallel n-dimensional extrema filter implementation
+#[cfg(feature = "parallel")]
+#[allow(dead_code)]
+fn extrema_filter_nd_parallel<T, D>(
+    input: &Array<T, D>,
+    padded_input: &Array<T, D>,
+    size: &[usize],
+    filter_type: FilterType,
+    inputshape: &[usize],
+) -> NdimageResult<Array<T, D>>
+where
+    T: Float
+        + FromPrimitive
+        + Debug
+        + PartialOrd
+        + Clone
+        + Send
+        + Sync
+        + std::ops::AddAssign
+        + std::ops::DivAssign
+        + 'static,
+    D: Dimension + 'static,
+{
+    use scirs2_core::parallel_ops::*;
+
+    let ndim = input.ndim();
+    let total_elements = input.len();
+
+    // Helper function to convert linear index to n-dimensional coordinates
+    fn index_to_coords(mut index: usize, shape: &[usize]) -> Vec<usize> {
+        let mut coords = vec![0; shape.len()];
+        for i in (0..shape.len()).rev() {
+            coords[i] = index % shape[i];
+            index /= shape[i];
+        }
+        coords
+    }
+
+    // Collect results in parallel
+    let results: Vec<T> = (0..total_elements)
+        .into_par_iter()
+        .map(|linear_idx| {
+            let coords = index_to_coords(linear_idx, inputshape);
+
+            // Initialize extrema with the first element in the window
+            let mut extrema_coords = coords.clone();
+            let mut extrema = padded_input[&*extrema_coords];
+
+            // Generate all window coordinates around this position
+            let mut window_coords = vec![0; ndim];
+            let mut finished = false;
+
+            while !finished {
+                // Calculate actual coordinate in padded array
+                let mut actual_coords = Vec::with_capacity(ndim);
+                for d in 0..ndim {
+                    actual_coords.push(coords[d] + window_coords[d]);
+                }
+
+                // Get value at this window position
+                let val = padded_input[&*actual_coords];
+
+                // Update extrema based on filter _type
+                match filter_type {
+                    FilterType::Min => {
+                        if val < extrema {
+                            extrema = val;
+                        }
+                    }
+                    FilterType::Max => {
+                        if val > extrema {
+                            extrema = val;
+                        }
+                    }
+                }
+
+                // Increment window coordinates (n-dimensional counter)
+                let mut carry = 1;
+                for d in (0..ndim).rev() {
+                    window_coords[d] += carry;
+                    if window_coords[d] < size[d] {
+                        carry = 0;
+                        break;
+                    } else {
+                        window_coords[d] = 0;
+                    }
+                }
+
+                finished = carry == 1; // All dimensions have wrapped around
+            }
+
+            extrema
+        })
+        .collect();
+
+    // Convert results back to n-dimensional array
+    let output = Array::from_shape_vec(input.raw_dim(), results)
+        .map_err(|_| NdimageError::DimensionError("Failed to create output array".into()))?;
 
     Ok(output)
 }
@@ -517,21 +797,48 @@ mod tests {
 
     #[test]
     fn test_extrema_filter_3d() {
-        // Create a small 3D array
-        let input = Array3::<f64>::zeros((2, 2, 2));
+        // Create a small 3D array with varying values
+        let mut input = Array3::<f64>::zeros((3, 3, 3));
+        input[[1, 1, 1]] = 5.0;
+        input[[0, 0, 0]] = 1.0;
+        input[[2, 2, 2]] = 9.0;
 
-        // Check that 3D filters correctly return NotImplementedError
-        let min_result = minimum_filter(&input, &[2, 2, 2], None, None);
-        let max_result = maximum_filter(&input, &[2, 2, 2], None, None);
+        // Apply 3D minimum filter
+        let min_result = minimum_filter(&input, &[2, 2, 2], None, None).unwrap();
 
-        assert!(min_result.is_err());
-        assert!(max_result.is_err());
+        // Apply 3D maximum filter
+        let max_result = maximum_filter(&input, &[2, 2, 2], None, None).unwrap();
 
-        if let Err(err) = min_result {
-            match err {
-                NdimageError::NotImplementedError(_) => (),
-                _ => panic!("Expected NotImplementedError but got {:?}", err),
-            }
+        // Check shapes are preserved
+        assert_eq!(min_result.shape(), input.shape());
+        assert_eq!(max_result.shape(), input.shape());
+
+        // Check some basic properties
+        // The minimum in any 2x2x2 window should be <= all values in input
+        for elem in min_result.iter() {
+            assert!(*elem <= 9.0);
+        }
+
+        // The maximum in any 2x2x2 window should be >= all minimum values in input
+        for elem in max_result.iter() {
+            assert!(*elem >= 0.0);
+        }
+    }
+
+    #[test]
+    fn test_extrema_filter_4d() {
+        // Test 4D arrays to ensure general n-dimensional support
+        let input = ndarray::Array4::<f64>::from_elem((2, 2, 2, 2), 3.0);
+
+        let min_result = minimum_filter(&input, &[2, 2, 2, 2], None, None).unwrap();
+        let max_result = maximum_filter(&input, &[2, 2, 2, 2], None, None).unwrap();
+
+        // All values should be 3.0 since input is uniform
+        for elem in min_result.iter() {
+            assert_eq!(*elem, 3.0);
+        }
+        for elem in max_result.iter() {
+            assert_eq!(*elem, 3.0);
         }
     }
 }

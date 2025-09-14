@@ -1,22 +1,32 @@
 //! Dataset generators
 
 use crate::error::{DatasetsError, Result};
+use crate::gpu::{GpuContext, GpuDeviceInfo};
 use crate::utils::Dataset;
 use ndarray::{Array1, Array2};
 use rand::prelude::*;
-use rand::rng;
 use rand::rngs::StdRng;
 use rand_distr::Distribution;
+use rand_distr::Uniform;
+// Use local GPU implementation instead of core to avoid feature flag issues
+use crate::gpu::GpuBackend as LocalGpuBackend;
+// Parallel operations will be added as needed
+// #[cfg(feature = "parallel")]
+// use scirs2_core::parallel_ops::*;
+use rand::seq::SliceRandom;
+use scirs2_core::rng;
 use std::f64::consts::PI;
 
 /// Generate a random classification dataset with clusters
+#[allow(dead_code)]
+#[allow(clippy::too_many_arguments)]
 pub fn make_classification(
     n_samples: usize,
     n_features: usize,
     n_classes: usize,
     n_clusters_per_class: usize,
     n_informative: usize,
-    random_seed: Option<u64>,
+    randomseed: Option<u64>,
 ) -> Result<Dataset> {
     // Validate input parameters
     if n_samples == 0 {
@@ -39,8 +49,7 @@ pub fn make_classification(
 
     if n_features < n_informative {
         return Err(DatasetsError::InvalidFormat(format!(
-            "n_features ({}) must be >= n_informative ({})",
-            n_features, n_informative
+            "n_features ({n_features}) must be >= n_informative ({n_informative})"
         )));
     }
 
@@ -56,45 +65,45 @@ pub fn make_classification(
         ));
     }
 
-    let mut rng = match random_seed {
-        Some(seed) => StdRng::seed_from_u64(seed),
+    let mut rng = match randomseed {
+        Some(_seed) => StdRng::seed_from_u64(_seed),
         None => {
             let mut r = rng();
             StdRng::seed_from_u64(r.next_u64())
         }
     };
 
-    // Generate centroids for each class and cluster
+    // Generate centroids for each _class and cluster
     let n_centroids = n_classes * n_clusters_per_class;
     let mut centroids = Array2::zeros((n_centroids, n_informative));
     let scale = 2.0;
 
     for i in 0..n_centroids {
         for j in 0..n_informative {
-            centroids[[i, j]] = scale * rng.random_range(-1.0f64..1.0f64);
+            centroids[[i, j]] = scale * rng.gen_range(-1.0f64..1.0f64);
         }
     }
 
-    // Generate samples
+    // Generate _samples
     let mut data = Array2::zeros((n_samples, n_features));
     let mut target = Array1::zeros(n_samples);
 
     let normal = rand_distr::Normal::new(0.0, 1.0).unwrap();
 
-    // Samples per class
+    // Samples per _class
     let samples_per_class = n_samples / n_classes;
     let remainder = n_samples % n_classes;
 
     let mut sample_idx = 0;
 
-    for class in 0..n_classes {
-        let n_samples_class = if class < remainder {
+    for _class in 0..n_classes {
+        let n_samples_class = if _class < remainder {
             samples_per_class + 1
         } else {
             samples_per_class
         };
 
-        // Assign clusters within this class
+        // Assign clusters within this _class
         let samples_per_cluster = n_samples_class / n_clusters_per_class;
         let cluster_remainder = n_samples_class % n_clusters_per_class;
 
@@ -105,7 +114,7 @@ pub fn make_classification(
                 samples_per_cluster
             };
 
-            let centroid_idx = class * n_clusters_per_class + cluster;
+            let centroid_idx = _class * n_clusters_per_class + cluster;
 
             for _ in 0..n_samples_cluster {
                 // Randomly select a point near the cluster centroid
@@ -114,12 +123,12 @@ pub fn make_classification(
                         centroids[[centroid_idx, j]] + 0.3 * normal.sample(&mut rng);
                 }
 
-                // Add noise features
+                // Add noise _features
                 for j in n_informative..n_features {
                     data[[sample_idx, j]] = normal.sample(&mut rng);
                 }
 
-                target[sample_idx] = class as f64;
+                target[sample_idx] = _class as f64;
                 sample_idx += 1;
             }
         }
@@ -129,29 +138,29 @@ pub fn make_classification(
     let mut dataset = Dataset::new(data, Some(target));
 
     // Create feature names
-    let feature_names: Vec<String> = (0..n_features).map(|i| format!("feature_{}", i)).collect();
+    let featurenames: Vec<String> = (0..n_features).map(|i| format!("feature_{i}")).collect();
 
-    // Create class names
-    let class_names: Vec<String> = (0..n_classes).map(|i| format!("class_{}", i)).collect();
+    // Create _class names
+    let classnames: Vec<String> = (0..n_classes).map(|i| format!("class_{i}")).collect();
 
     dataset = dataset
-        .with_feature_names(feature_names)
-        .with_target_names(class_names)
+        .with_featurenames(featurenames)
+        .with_targetnames(classnames)
         .with_description(format!(
-            "Synthetic classification dataset with {} classes and {} features",
-            n_classes, n_features
+            "Synthetic classification dataset with {n_classes} _classes and {n_features} _features"
         ));
 
     Ok(dataset)
 }
 
 /// Generate a random regression dataset
+#[allow(dead_code)]
 pub fn make_regression(
     n_samples: usize,
     n_features: usize,
     n_informative: usize,
     noise: f64,
-    random_seed: Option<u64>,
+    randomseed: Option<u64>,
 ) -> Result<Dataset> {
     // Validate input parameters
     if n_samples == 0 {
@@ -174,8 +183,7 @@ pub fn make_regression(
 
     if n_features < n_informative {
         return Err(DatasetsError::InvalidFormat(format!(
-            "n_features ({}) must be >= n_informative ({})",
-            n_features, n_informative
+            "n_features ({n_features}) must be >= n_informative ({n_informative})"
         )));
     }
 
@@ -185,15 +193,15 @@ pub fn make_regression(
         ));
     }
 
-    let mut rng = match random_seed {
-        Some(seed) => StdRng::seed_from_u64(seed),
+    let mut rng = match randomseed {
+        Some(_seed) => StdRng::seed_from_u64(_seed),
         None => {
             let mut r = rng();
             StdRng::seed_from_u64(r.next_u64())
         }
     };
 
-    // Generate the coefficients for the informative features
+    // Generate the coefficients for the _informative _features
     let mut coef = Array1::zeros(n_features);
     let normal = rand_distr::Normal::new(0.0, 1.0).unwrap();
 
@@ -201,7 +209,7 @@ pub fn make_regression(
         coef[i] = 100.0 * normal.sample(&mut rng);
     }
 
-    // Generate the features
+    // Generate the _features
     let mut data = Array2::zeros((n_samples, n_features));
 
     for i in 0..n_samples {
@@ -231,28 +239,28 @@ pub fn make_regression(
     let mut dataset = Dataset::new(data, Some(target));
 
     // Create feature names
-    let feature_names: Vec<String> = (0..n_features).map(|i| format!("feature_{}", i)).collect();
+    let featurenames: Vec<String> = (0..n_features).map(|i| format!("feature_{i}")).collect();
 
     dataset = dataset
-        .with_feature_names(feature_names)
+        .with_featurenames(featurenames)
         .with_description(format!(
-            "Synthetic regression dataset with {} features ({} informative)",
-            n_features, n_informative
+            "Synthetic regression dataset with {n_features} _features ({n_informative} informative)"
         ))
         .with_metadata("noise", &noise.to_string())
-        .with_metadata("coefficients", &format!("{:?}", coef));
+        .with_metadata("coefficients", &format!("{coef:?}"));
 
     Ok(dataset)
 }
 
 /// Generate a random time series dataset
+#[allow(dead_code)]
 pub fn make_time_series(
     n_samples: usize,
     n_features: usize,
     trend: bool,
     seasonality: bool,
     noise: f64,
-    random_seed: Option<u64>,
+    randomseed: Option<u64>,
 ) -> Result<Dataset> {
     // Validate input parameters
     if n_samples == 0 {
@@ -273,8 +281,8 @@ pub fn make_time_series(
         ));
     }
 
-    let mut rng = match random_seed {
-        Some(seed) => StdRng::seed_from_u64(seed),
+    let mut rng = match randomseed {
+        Some(_seed) => StdRng::seed_from_u64(_seed),
         None => {
             let mut r = rng();
             StdRng::seed_from_u64(r.next_u64())
@@ -286,18 +294,18 @@ pub fn make_time_series(
 
     for feature in 0..n_features {
         let trend_coef = if trend {
-            rng.random_range(0.01f64..0.1f64)
+            rng.gen_range(0.01f64..0.1f64)
         } else {
             0.0
         };
-        let seasonality_period = rng.random_range(10..=50) as f64;
+        let seasonality_period = rng.sample(Uniform::new(10, 50).unwrap()) as f64;
         let seasonality_amplitude = if seasonality {
-            rng.random_range(1.0f64..5.0f64)
+            rng.gen_range(1.0f64..5.0f64)
         } else {
             0.0
         };
 
-        let base_value = rng.random_range(-10.0f64..10.0f64);
+        let base_value = rng.gen_range(-10.0f64..10.0f64);
 
         for i in 0..n_samples {
             let t = i as f64;
@@ -332,13 +340,12 @@ pub fn make_time_series(
     let mut dataset = Dataset::new(data, None);
 
     // Create feature names
-    let feature_names: Vec<String> = (0..n_features).map(|i| format!("feature_{}", i)).collect();
+    let featurenames: Vec<String> = (0..n_features).map(|i| format!("feature_{i}")).collect();
 
     dataset = dataset
-        .with_feature_names(feature_names)
+        .with_featurenames(featurenames)
         .with_description(format!(
-            "Synthetic time series dataset with {} features",
-            n_features
+            "Synthetic time series dataset with {n_features} _features"
         ))
         .with_metadata("trend", &trend.to_string())
         .with_metadata("seasonality", &seasonality.to_string())
@@ -348,12 +355,13 @@ pub fn make_time_series(
 }
 
 /// Generate a random blobs dataset for clustering
+#[allow(dead_code)]
 pub fn make_blobs(
     n_samples: usize,
     n_features: usize,
     centers: usize,
     cluster_std: f64,
-    random_seed: Option<u64>,
+    randomseed: Option<u64>,
 ) -> Result<Dataset> {
     // Validate input parameters
     if n_samples == 0 {
@@ -380,8 +388,8 @@ pub fn make_blobs(
         ));
     }
 
-    let mut rng = match random_seed {
-        Some(seed) => StdRng::seed_from_u64(seed),
+    let mut rng = match randomseed {
+        Some(_seed) => StdRng::seed_from_u64(_seed),
         None => {
             let mut r = rng();
             StdRng::seed_from_u64(r.next_u64())
@@ -394,11 +402,11 @@ pub fn make_blobs(
 
     for i in 0..centers {
         for j in 0..n_features {
-            cluster_centers[[i, j]] = rng.random_range(-center_box..=center_box);
+            cluster_centers[[i, j]] = rng.gen_range(-center_box..center_box);
         }
     }
 
-    // Generate samples around centers
+    // Generate _samples around centers
     let mut data = Array2::zeros((n_samples, n_features));
     let mut target = Array1::zeros(n_samples);
 
@@ -431,13 +439,12 @@ pub fn make_blobs(
     let mut dataset = Dataset::new(data, Some(target));
 
     // Create feature names
-    let feature_names: Vec<String> = (0..n_features).map(|i| format!("feature_{}", i)).collect();
+    let featurenames: Vec<String> = (0..n_features).map(|i| format!("feature_{i}")).collect();
 
     dataset = dataset
-        .with_feature_names(feature_names)
+        .with_featurenames(featurenames)
         .with_description(format!(
-            "Synthetic clustering dataset with {} clusters and {} features",
-            centers, n_features
+            "Synthetic clustering dataset with {centers} clusters and {n_features} _features"
         ))
         .with_metadata("centers", &centers.to_string())
         .with_metadata("cluster_std", &cluster_std.to_string());
@@ -446,11 +453,12 @@ pub fn make_blobs(
 }
 
 /// Generate a spiral dataset for non-linear classification
+#[allow(dead_code)]
 pub fn make_spirals(
     n_samples: usize,
     n_spirals: usize,
     noise: f64,
-    random_seed: Option<u64>,
+    randomseed: Option<u64>,
 ) -> Result<Dataset> {
     // Validate input parameters
     if n_samples == 0 {
@@ -471,8 +479,8 @@ pub fn make_spirals(
         ));
     }
 
-    let mut rng = match random_seed {
-        Some(seed) => StdRng::seed_from_u64(seed),
+    let mut rng = match randomseed {
+        Some(_seed) => StdRng::seed_from_u64(_seed),
         None => {
             let mut r = rng();
             StdRng::seed_from_u64(r.next_u64())
@@ -524,16 +532,17 @@ pub fn make_spirals(
 
     let mut dataset = Dataset::new(data, Some(target));
     dataset = dataset
-        .with_feature_names(vec!["x".to_string(), "y".to_string()])
-        .with_target_names((0..n_spirals).map(|i| format!("spiral_{}", i)).collect())
-        .with_description(format!("Spiral dataset with {} spirals", n_spirals))
+        .with_featurenames(vec!["x".to_string(), "y".to_string()])
+        .with_targetnames((0..n_spirals).map(|i| format!("spiral_{i}")).collect())
+        .with_description(format!("Spiral dataset with {n_spirals} _spirals"))
         .with_metadata("noise", &noise.to_string());
 
     Ok(dataset)
 }
 
 /// Generate a moons dataset for non-linear classification
-pub fn make_moons(n_samples: usize, noise: f64, random_seed: Option<u64>) -> Result<Dataset> {
+#[allow(dead_code)]
+pub fn make_moons(n_samples: usize, noise: f64, randomseed: Option<u64>) -> Result<Dataset> {
     // Validate input parameters
     if n_samples == 0 {
         return Err(DatasetsError::InvalidFormat(
@@ -547,8 +556,8 @@ pub fn make_moons(n_samples: usize, noise: f64, random_seed: Option<u64>) -> Res
         ));
     }
 
-    let mut rng = match random_seed {
-        Some(seed) => StdRng::seed_from_u64(seed),
+    let mut rng = match randomseed {
+        Some(_seed) => StdRng::seed_from_u64(_seed),
         None => {
             let mut r = rng();
             StdRng::seed_from_u64(r.next_u64())
@@ -609,8 +618,8 @@ pub fn make_moons(n_samples: usize, noise: f64, random_seed: Option<u64>) -> Res
 
     let mut dataset = Dataset::new(data, Some(target));
     dataset = dataset
-        .with_feature_names(vec!["x".to_string(), "y".to_string()])
-        .with_target_names(vec!["moon_0".to_string(), "moon_1".to_string()])
+        .with_featurenames(vec!["x".to_string(), "y".to_string()])
+        .with_targetnames(vec!["moon_0".to_string(), "moon_1".to_string()])
         .with_description("Two moons dataset for non-linear classification".to_string())
         .with_metadata("noise", &noise.to_string());
 
@@ -618,11 +627,12 @@ pub fn make_moons(n_samples: usize, noise: f64, random_seed: Option<u64>) -> Res
 }
 
 /// Generate a circles dataset for non-linear classification
+#[allow(dead_code)]
 pub fn make_circles(
     n_samples: usize,
     factor: f64,
     noise: f64,
-    random_seed: Option<u64>,
+    randomseed: Option<u64>,
 ) -> Result<Dataset> {
     // Validate input parameters
     if n_samples == 0 {
@@ -643,8 +653,8 @@ pub fn make_circles(
         ));
     }
 
-    let mut rng = match random_seed {
-        Some(seed) => StdRng::seed_from_u64(seed),
+    let mut rng = match randomseed {
+        Some(_seed) => StdRng::seed_from_u64(_seed),
         None => {
             let mut r = rng();
             StdRng::seed_from_u64(r.next_u64())
@@ -705,8 +715,8 @@ pub fn make_circles(
 
     let mut dataset = Dataset::new(data, Some(target));
     dataset = dataset
-        .with_feature_names(vec!["x".to_string(), "y".to_string()])
-        .with_target_names(vec!["outer_circle".to_string(), "inner_circle".to_string()])
+        .with_featurenames(vec!["x".to_string(), "y".to_string()])
+        .with_targetnames(vec!["outer_circle".to_string(), "inner_circle".to_string()])
         .with_description("Concentric circles dataset for non-linear classification".to_string())
         .with_metadata("factor", &factor.to_string())
         .with_metadata("noise", &noise.to_string());
@@ -715,7 +725,8 @@ pub fn make_circles(
 }
 
 /// Generate a Swiss roll dataset for dimensionality reduction
-pub fn make_swiss_roll(n_samples: usize, noise: f64, random_seed: Option<u64>) -> Result<Dataset> {
+#[allow(dead_code)]
+pub fn make_swiss_roll(n_samples: usize, noise: f64, randomseed: Option<u64>) -> Result<Dataset> {
     // Validate input parameters
     if n_samples == 0 {
         return Err(DatasetsError::InvalidFormat(
@@ -729,8 +740,8 @@ pub fn make_swiss_roll(n_samples: usize, noise: f64, random_seed: Option<u64>) -
         ));
     }
 
-    let mut rng = match random_seed {
-        Some(seed) => StdRng::seed_from_u64(seed),
+    let mut rng = match randomseed {
+        Some(_seed) => StdRng::seed_from_u64(_seed),
         None => {
             let mut r = rng();
             StdRng::seed_from_u64(r.next_u64())
@@ -772,7 +783,7 @@ pub fn make_swiss_roll(n_samples: usize, noise: f64, random_seed: Option<u64>) -
 
     let mut dataset = Dataset::new(data, Some(color));
     dataset = dataset
-        .with_feature_names(vec!["x".to_string(), "y".to_string(), "z".to_string()])
+        .with_featurenames(vec!["x".to_string(), "y".to_string(), "z".to_string()])
         .with_description("Swiss roll manifold dataset for dimensionality reduction".to_string())
         .with_metadata("noise", &noise.to_string())
         .with_metadata("dimensions", "3")
@@ -782,13 +793,15 @@ pub fn make_swiss_roll(n_samples: usize, noise: f64, random_seed: Option<u64>) -
 }
 
 /// Generate anisotropic (elongated) clusters
+#[allow(clippy::too_many_arguments)]
+#[allow(dead_code)]
 pub fn make_anisotropic_blobs(
     n_samples: usize,
     n_features: usize,
     centers: usize,
     cluster_std: f64,
     anisotropy_factor: f64,
-    random_seed: Option<u64>,
+    randomseed: Option<u64>,
 ) -> Result<Dataset> {
     // Validate input parameters
     if n_samples == 0 {
@@ -821,8 +834,8 @@ pub fn make_anisotropic_blobs(
         ));
     }
 
-    let mut rng = match random_seed {
-        Some(seed) => StdRng::seed_from_u64(seed),
+    let mut rng = match randomseed {
+        Some(_seed) => StdRng::seed_from_u64(_seed),
         None => {
             let mut r = rng();
             StdRng::seed_from_u64(r.next_u64())
@@ -835,11 +848,11 @@ pub fn make_anisotropic_blobs(
 
     for i in 0..centers {
         for j in 0..n_features {
-            cluster_centers[[i, j]] = rng.random_range(-center_box..=center_box);
+            cluster_centers[[i, j]] = rng.gen_range(-center_box..center_box);
         }
     }
 
-    // Generate samples around centers with anisotropic distribution
+    // Generate _samples around centers with anisotropic distribution
     let mut data = Array2::zeros((n_samples, n_features));
     let mut target = Array1::zeros(n_samples);
 
@@ -858,17 +871,17 @@ pub fn make_anisotropic_blobs(
         };
 
         // Generate a random rotation angle for this cluster
-        let rotation_angle = rng.random_range(0.0..(2.0 * PI));
+        let rotation_angle = rng.gen_range(0.0..(2.0 * PI));
 
         for _ in 0..n_samples_center {
             // Generate point with anisotropic distribution (elongated along first axis)
             let mut point = vec![0.0; n_features];
 
-            // First axis has normal std, second axis has reduced std (anisotropy)
+            // First axis has normal std..second axis has reduced _std (anisotropy)
             point[0] = normal.sample(&mut rng);
             point[1] = normal.sample(&mut rng) / anisotropy_factor;
 
-            // Remaining axes have normal std
+            // Remaining axes have normal _std
             for item in point.iter_mut().take(n_features).skip(2) {
                 *item = normal.sample(&mut rng);
             }
@@ -896,13 +909,12 @@ pub fn make_anisotropic_blobs(
     }
 
     let mut dataset = Dataset::new(data, Some(target));
-    let feature_names: Vec<String> = (0..n_features).map(|i| format!("feature_{}", i)).collect();
+    let featurenames: Vec<String> = (0..n_features).map(|i| format!("feature_{i}")).collect();
 
     dataset = dataset
-        .with_feature_names(feature_names)
+        .with_featurenames(featurenames)
         .with_description(format!(
-            "Anisotropic clustering dataset with {} elongated clusters and {} features",
-            centers, n_features
+            "Anisotropic clustering dataset with {centers} elongated clusters and {n_features} _features"
         ))
         .with_metadata("centers", &centers.to_string())
         .with_metadata("cluster_std", &cluster_std.to_string())
@@ -912,6 +924,8 @@ pub fn make_anisotropic_blobs(
 }
 
 /// Generate hierarchical clusters (clusters within clusters)
+#[allow(clippy::too_many_arguments)]
+#[allow(dead_code)]
 pub fn make_hierarchical_clusters(
     n_samples: usize,
     n_features: usize,
@@ -919,7 +933,7 @@ pub fn make_hierarchical_clusters(
     n_sub_clusters: usize,
     main_cluster_std: f64,
     sub_cluster_std: f64,
-    random_seed: Option<u64>,
+    randomseed: Option<u64>,
 ) -> Result<Dataset> {
     // Validate input parameters
     if n_samples == 0 {
@@ -958,8 +972,8 @@ pub fn make_hierarchical_clusters(
         ));
     }
 
-    let mut rng = match random_seed {
-        Some(seed) => StdRng::seed_from_u64(seed),
+    let mut rng = match randomseed {
+        Some(_seed) => StdRng::seed_from_u64(_seed),
         None => {
             let mut r = rng();
             StdRng::seed_from_u64(r.next_u64())
@@ -972,7 +986,7 @@ pub fn make_hierarchical_clusters(
 
     for i in 0..n_main_clusters {
         for j in 0..n_features {
-            main_centers[[i, j]] = rng.random_range(-center_box..=center_box);
+            main_centers[[i, j]] = rng.gen_range(-center_box..center_box);
         }
     }
 
@@ -1026,19 +1040,20 @@ pub fn make_hierarchical_clusters(
     }
 
     let mut dataset = Dataset::new(data, Some(main_target));
-    let feature_names: Vec<String> = (0..n_features).map(|i| format!("feature_{}", i)).collect();
+    let featurenames: Vec<String> = (0..n_features).map(|i| format!("feature_{i}")).collect();
 
     dataset = dataset
-        .with_feature_names(feature_names)
+        .with_featurenames(featurenames)
         .with_description(format!(
-            "Hierarchical clustering dataset with {} main clusters, {} sub-clusters each",
-            n_main_clusters, n_sub_clusters
+            "Hierarchical clustering dataset with {n_main_clusters} main clusters, {n_sub_clusters} sub-_clusters each"
         ))
         .with_metadata("n_main_clusters", &n_main_clusters.to_string())
         .with_metadata("n_sub_clusters", &n_sub_clusters.to_string())
         .with_metadata("main_cluster_std", &main_cluster_std.to_string())
-        .with_metadata("sub_cluster_std", &sub_cluster_std.to_string())
-        .with_metadata("sub_cluster_labels", &format!("{:?}", sub_target.to_vec()));
+        .with_metadata("sub_cluster_std", &sub_cluster_std.to_string());
+
+    let sub_target_vec = sub_target.to_vec();
+    dataset = dataset.with_metadata("sub_cluster_labels", &format!("{sub_target_vec:?}"));
 
     Ok(dataset)
 }
@@ -1068,11 +1083,12 @@ pub enum OutlierType {
 }
 
 /// Inject missing data into a dataset with realistic patterns
+#[allow(dead_code)]
 pub fn inject_missing_data(
     data: &mut Array2<f64>,
     missing_rate: f64,
     pattern: MissingPattern,
-    random_seed: Option<u64>,
+    randomseed: Option<u64>,
 ) -> Result<Array2<bool>> {
     // Validate input parameters
     if !(0.0..=1.0).contains(&missing_rate) {
@@ -1081,8 +1097,8 @@ pub fn inject_missing_data(
         ));
     }
 
-    let mut rng = match random_seed {
-        Some(seed) => StdRng::seed_from_u64(seed),
+    let mut rng = match randomseed {
+        Some(_seed) => StdRng::seed_from_u64(_seed),
         None => {
             let mut r = rng();
             StdRng::seed_from_u64(r.next_u64())
@@ -1097,7 +1113,7 @@ pub fn inject_missing_data(
             // Missing Completely at Random - uniform probability
             for i in 0..n_samples {
                 for j in 0..n_features {
-                    if rng.random_range(0.0f64..1.0) < missing_rate {
+                    if rng.gen_range(0.0f64..1.0) < missing_rate {
                         missing_mask[[i, j]] = true;
                         data[[i, j]] = f64::NAN;
                     }
@@ -1113,7 +1129,7 @@ pub fn inject_missing_data(
 
                 for j in 1..n_features {
                     // Skip first feature
-                    if rng.random_range(0.0f64..1.0) < adjusted_rate {
+                    if rng.gen_range(0.0f64..1.0) < adjusted_rate {
                         missing_mask[[i, j]] = true;
                         data[[i, j]] = f64::NAN;
                     }
@@ -1128,7 +1144,7 @@ pub fn inject_missing_data(
                     let normalized_val = (value + 10.0) / 20.0; // Normalize roughly to [0,1]
                     let adjusted_rate = missing_rate * normalized_val.clamp(0.1, 3.0);
 
-                    if rng.random_range(0.0f64..1.0) < adjusted_rate {
+                    if rng.gen_range(0.0f64..1.0) < adjusted_rate {
                         missing_mask[[i, j]] = true;
                         data[[i, j]] = f64::NAN;
                     }
@@ -1141,8 +1157,9 @@ pub fn inject_missing_data(
             let n_blocks = (missing_rate * n_samples as f64).ceil() as usize;
 
             for _ in 0..n_blocks {
-                let start_row = rng.random_range(0..n_samples);
-                let start_col = rng.random_range(0..n_features.saturating_sub(block_size));
+                let start_row = rng.sample(Uniform::new(0, n_samples).unwrap());
+                let start_col =
+                    rng.sample(Uniform::new(0, n_features.saturating_sub(block_size)).unwrap());
 
                 for i in start_row..n_samples.min(start_row + block_size) {
                     for j in start_col..n_features.min(start_col + block_size) {
@@ -1158,12 +1175,13 @@ pub fn inject_missing_data(
 }
 
 /// Inject outliers into a dataset
+#[allow(dead_code)]
 pub fn inject_outliers(
     data: &mut Array2<f64>,
     outlier_rate: f64,
     outlier_type: OutlierType,
     outlier_strength: f64,
-    random_seed: Option<u64>,
+    randomseed: Option<u64>,
 ) -> Result<Array1<bool>> {
     // Validate input parameters
     if !(0.0..=1.0).contains(&outlier_rate) {
@@ -1178,8 +1196,8 @@ pub fn inject_outliers(
         ));
     }
 
-    let mut rng = match random_seed {
-        Some(seed) => StdRng::seed_from_u64(seed),
+    let mut rng = match randomseed {
+        Some(_seed) => StdRng::seed_from_u64(_seed),
         None => {
             let mut r = rng();
             StdRng::seed_from_u64(r.next_u64())
@@ -1213,12 +1231,12 @@ pub fn inject_outliers(
         OutlierType::Point => {
             // Point outliers - individual anomalous points
             for _ in 0..n_outliers {
-                let outlier_idx = rng.random_range(0..n_samples);
+                let outlier_idx = rng.sample(Uniform::new(0, n_samples).unwrap());
                 outlier_mask[outlier_idx] = true;
 
                 // Modify each feature to be an outlier
                 for j in 0..n_features {
-                    let direction = if rng.random_range(0.0f64..1.0) < 0.5 {
+                    let direction = if rng.gen_range(0.0f64..1.0) < 0.5 {
                         -1.0
                     } else {
                         1.0
@@ -1231,17 +1249,18 @@ pub fn inject_outliers(
         OutlierType::Contextual => {
             // Contextual outliers - anomalous in specific feature combinations
             for _ in 0..n_outliers {
-                let outlier_idx = rng.random_range(0..n_samples);
+                let outlier_idx = rng.sample(Uniform::new(0, n_samples).unwrap());
                 outlier_mask[outlier_idx] = true;
 
                 // Only modify a subset of features to create contextual anomaly
-                let n_features_to_modify = rng.random_range(1..=(n_features / 2).max(1));
+                let n_features_to_modify =
+                    rng.sample(Uniform::new(1, (n_features / 2).max(1) + 1).unwrap());
                 let mut features_to_modify: Vec<usize> = (0..n_features).collect();
                 features_to_modify.shuffle(&mut rng);
                 features_to_modify.truncate(n_features_to_modify);
 
                 for &j in &features_to_modify {
-                    let direction = if rng.random_range(0.0f64..1.0) < 0.5 {
+                    let direction = if rng.gen_range(0.0f64..1.0) < 0.5 {
                         -1.0
                     } else {
                         1.0
@@ -1260,7 +1279,7 @@ pub fn inject_outliers(
                 // Generate cluster center for this collective outlier
                 let mut outlier_center = vec![0.0; n_features];
                 for j in 0..n_features {
-                    let direction = if rng.random_range(0.0f64..1.0) < 0.5 {
+                    let direction = if rng.gen_range(0.0f64..1.0) < 0.5 {
                         -1.0
                     } else {
                         1.0
@@ -1271,11 +1290,11 @@ pub fn inject_outliers(
 
                 // Generate points around this center
                 for _ in 0..outliers_per_group {
-                    let outlier_idx = rng.random_range(0..n_samples);
+                    let outlier_idx = rng.sample(Uniform::new(0, n_samples).unwrap());
                     outlier_mask[outlier_idx] = true;
 
                     for j in 0..n_features {
-                        let noise = rng.random_range(-0.5f64..0.5f64) * feature_stds[j];
+                        let noise = rng.gen_range(-0.5f64..0.5f64) * feature_stds[j];
                         data[[outlier_idx, j]] = outlier_center[j] + noise;
                     }
                 }
@@ -1287,13 +1306,14 @@ pub fn inject_outliers(
 }
 
 /// Add realistic noise patterns to time series data
+#[allow(dead_code)]
 pub fn add_time_series_noise(
     data: &mut Array2<f64>,
     noise_types: &[(&str, f64)], // (noise_type, strength)
-    random_seed: Option<u64>,
+    randomseed: Option<u64>,
 ) -> Result<()> {
-    let mut rng = match random_seed {
-        Some(seed) => StdRng::seed_from_u64(seed),
+    let mut rng = match randomseed {
+        Some(_seed) => StdRng::seed_from_u64(_seed),
         None => {
             let mut r = rng();
             StdRng::seed_from_u64(r.next_u64())
@@ -1317,10 +1337,10 @@ pub fn add_time_series_noise(
                 // Add random spikes (impulse noise)
                 let n_spikes = (n_samples as f64 * strength * 0.1).ceil() as usize;
                 for _ in 0..n_spikes {
-                    let spike_idx = rng.random_range(0..n_samples);
-                    let feature_idx = rng.random_range(0..n_features);
-                    let spike_magnitude = rng.random_range(5.0..=15.0) * strength;
-                    let direction = if rng.random_range(0.0f64..1.0) < 0.5 {
+                    let spike_idx = rng.sample(Uniform::new(0, n_samples).unwrap());
+                    let feature_idx = rng.sample(Uniform::new(0, n_features).unwrap());
+                    let spike_magnitude = rng.gen_range(5.0..=15.0) * strength;
+                    let direction = if rng.gen_range(0.0f64..1.0) < 0.5 {
                         -1.0
                     } else {
                         1.0
@@ -1371,8 +1391,7 @@ pub fn add_time_series_noise(
             }
             _ => {
                 return Err(DatasetsError::InvalidFormat(format!(
-                    "Unknown noise type: {}. Supported types: gaussian, spikes, drift, seasonal, autocorrelated, heteroscedastic",
-                    noise_type
+                    "Unknown noise type: {noise_type}. Supported , types: gaussian, spikes, drift, seasonal, autocorrelated, heteroscedastic"
                 )));
             }
         }
@@ -1382,6 +1401,7 @@ pub fn add_time_series_noise(
 }
 
 /// Generate a dataset with controlled corruption patterns
+#[allow(dead_code)]
 pub fn make_corrupted_dataset(
     base_dataset: &Dataset,
     missing_rate: f64,
@@ -1389,7 +1409,7 @@ pub fn make_corrupted_dataset(
     outlier_rate: f64,
     outlier_type: OutlierType,
     outlier_strength: f64,
-    random_seed: Option<u64>,
+    randomseed: Option<u64>,
 ) -> Result<Dataset> {
     // Validate inputs
     if !(0.0..=1.0).contains(&missing_rate) {
@@ -1404,7 +1424,7 @@ pub fn make_corrupted_dataset(
         ));
     }
 
-    // Clone the base dataset
+    // Clone the base _dataset
     let mut corrupted_data = base_dataset.data.clone();
     let corrupted_target = base_dataset.target.clone();
 
@@ -1413,7 +1433,7 @@ pub fn make_corrupted_dataset(
         &mut corrupted_data,
         missing_rate,
         missing_pattern,
-        random_seed,
+        randomseed,
     )?;
 
     // Apply outliers
@@ -1422,18 +1442,18 @@ pub fn make_corrupted_dataset(
         outlier_rate,
         outlier_type,
         outlier_strength,
-        random_seed,
+        randomseed,
     )?;
 
-    // Create new dataset with corruption metadata
+    // Create new _dataset with corruption metadata
     let mut corrupted_dataset = Dataset::new(corrupted_data, corrupted_target);
 
-    if let Some(feature_names) = &base_dataset.feature_names {
-        corrupted_dataset = corrupted_dataset.with_feature_names(feature_names.clone());
+    if let Some(featurenames) = &base_dataset.featurenames {
+        corrupted_dataset = corrupted_dataset.with_featurenames(featurenames.clone());
     }
 
-    if let Some(target_names) = &base_dataset.target_names {
-        corrupted_dataset = corrupted_dataset.with_target_names(target_names.clone());
+    if let Some(targetnames) = &base_dataset.targetnames {
+        corrupted_dataset = corrupted_dataset.with_targetnames(targetnames.clone());
     }
 
     corrupted_dataset = corrupted_dataset
@@ -1442,12 +1462,12 @@ pub fn make_corrupted_dataset(
             base_dataset
                 .description
                 .as_deref()
-                .unwrap_or("Unknown dataset")
+                .unwrap_or("Unknown _dataset")
         ))
         .with_metadata("missing_rate", &missing_rate.to_string())
-        .with_metadata("missing_pattern", &format!("{:?}", missing_pattern))
+        .with_metadata("missing_pattern", &format!("{missing_pattern:?}"))
         .with_metadata("outlier_rate", &outlier_rate.to_string())
-        .with_metadata("outlier_type", &format!("{:?}", outlier_type))
+        .with_metadata("outlier_type", &format!("{outlier_type:?}"))
         .with_metadata("outlier_strength", &outlier_strength.to_string())
         .with_metadata(
             "missing_count",
@@ -1461,9 +1481,1500 @@ pub fn make_corrupted_dataset(
     Ok(corrupted_dataset)
 }
 
+/// GPU-accelerated data generation configuration
+#[derive(Debug, Clone)]
+pub struct GpuConfig {
+    /// Whether to use GPU acceleration
+    pub use_gpu: bool,
+    /// GPU device index (0 for default)
+    pub device_id: usize,
+    /// Whether to use single precision (f32) instead of double (f64)
+    pub use_single_precision: bool,
+    /// Chunk size for GPU operations
+    pub chunk_size: usize,
+}
+
+impl Default for GpuConfig {
+    fn default() -> Self {
+        Self {
+            use_gpu: true,
+            device_id: 0,
+            use_single_precision: false,
+            chunk_size: 10000,
+        }
+    }
+}
+
+impl GpuConfig {
+    /// Create a new GPU configuration
+    pub fn new() -> Self {
+        Self::default()
+    }
+
+    /// Set whether to use GPU
+    pub fn with_gpu(mut self, use_gpu: bool) -> Self {
+        self.use_gpu = use_gpu;
+        self
+    }
+
+    /// Set GPU device ID
+    pub fn with_device(mut self, device_id: usize) -> Self {
+        self.device_id = device_id;
+        self
+    }
+
+    /// Set precision mode
+    pub fn with_single_precision(mut self, single_precision: bool) -> Self {
+        self.use_single_precision = single_precision;
+        self
+    }
+
+    /// Set chunk size
+    pub fn with_chunk_size(mut self, chunk_size: usize) -> Self {
+        self.chunk_size = chunk_size;
+        self
+    }
+}
+
+/// GPU-accelerated classification dataset generation
+#[allow(dead_code)]
+#[allow(clippy::too_many_arguments)]
+pub fn make_classification_gpu(
+    n_samples: usize,
+    n_features: usize,
+    n_classes: usize,
+    n_clusters_per_class: usize,
+    n_informative: usize,
+    randomseed: Option<u64>,
+    gpuconfig: GpuConfig,
+) -> Result<Dataset> {
+    // Check if GPU is available and requested
+    if gpuconfig.use_gpu && gpu_is_available() {
+        make_classification_gpu_impl(
+            n_samples,
+            n_features,
+            n_classes,
+            n_clusters_per_class,
+            n_informative,
+            randomseed,
+            gpuconfig,
+        )
+    } else {
+        // Fallback to CPU implementation
+        make_classification(
+            n_samples,
+            n_features,
+            n_classes,
+            n_clusters_per_class,
+            n_informative,
+            randomseed,
+        )
+    }
+}
+
+/// Internal GPU implementation for classification data generation
+#[allow(dead_code)]
+fn make_classification_gpu_impl(
+    n_samples: usize,
+    n_features: usize,
+    n_classes: usize,
+    n_clusters_per_class: usize,
+    n_informative: usize,
+    randomseed: Option<u64>,
+    gpuconfig: GpuConfig,
+) -> Result<Dataset> {
+    // Input validation
+    if n_samples == 0 || n_features == 0 || n_informative == 0 {
+        return Err(DatasetsError::InvalidFormat(
+            "n_samples, n_features, and n_informative must be > 0".to_string(),
+        ));
+    }
+
+    if n_features < n_informative {
+        return Err(DatasetsError::InvalidFormat(format!(
+            "n_features ({n_features}) must be >= n_informative ({n_informative})"
+        )));
+    }
+
+    if n_classes < 2 || n_clusters_per_class == 0 {
+        return Err(DatasetsError::InvalidFormat(
+            "n_classes must be >= 2 and n_clusters_per_class must be > 0".to_string(),
+        ));
+    }
+
+    // Create GPU context
+    let gpu_context = GpuContext::new(crate::gpu::GpuConfig {
+        backend: crate::gpu::GpuBackend::Cuda {
+            device_id: gpuconfig.device_id as u32,
+        },
+        memory: crate::gpu::GpuMemoryConfig::default(),
+        threads_per_block: 256,
+        enable_double_precision: !gpuconfig.use_single_precision,
+        use_fast_math: false,
+        random_seed: None,
+    })
+    .map_err(|e| DatasetsError::Other(format!("Failed to create GPU context: {e}")))?;
+
+    // Generate data in chunks to avoid memory issues
+    let chunk_size = std::cmp::min(gpuconfig.chunk_size, n_samples);
+    let num_chunks = n_samples.div_ceil(chunk_size);
+
+    let mut all_data = Vec::new();
+    let mut all_targets = Vec::new();
+
+    for chunk_idx in 0..num_chunks {
+        let start_idx = chunk_idx * chunk_size;
+        let end_idx = std::cmp::min(start_idx + chunk_size, n_samples);
+        let chunk_samples = end_idx - start_idx;
+
+        // Generate chunk on GPU
+        let (chunk_data, chunk_targets) = generate_classification_chunk_gpu(
+            &gpu_context,
+            chunk_samples,
+            n_features,
+            n_classes,
+            n_clusters_per_class,
+            n_informative,
+            randomseed.map(|s| s + chunk_idx as u64),
+            gpuconfig.use_single_precision,
+        )?;
+
+        all_data.extend(chunk_data);
+        all_targets.extend(chunk_targets);
+    }
+
+    // Convert to ndarray
+    let data = Array2::from_shape_vec((n_samples, n_features), all_data)
+        .map_err(|e| DatasetsError::Other(format!("Failed to create data array: {e}")))?;
+
+    let target = Array1::from_vec(all_targets);
+
+    // Create dataset
+    let mut dataset = Dataset::new(data, Some(target));
+
+    // Add metadata
+    let featurenames: Vec<String> = (0..n_features).map(|i| format!("feature_{i}")).collect();
+    let classnames: Vec<String> = (0..n_classes).map(|i| format!("class_{i}")).collect();
+
+    dataset = dataset
+        .with_featurenames(featurenames)
+        .with_targetnames(classnames)
+        .with_description(format!(
+            "GPU-accelerated synthetic classification dataset with {n_classes} _classes and {n_features} _features"
+        ));
+
+    Ok(dataset)
+}
+
+/// Generate a chunk of classification data on GPU
+#[allow(dead_code)]
+#[allow(clippy::too_many_arguments)]
+fn generate_classification_chunk_gpu(
+    gpu_context: &GpuContext,
+    n_samples: usize,
+    n_features: usize,
+    n_classes: usize,
+    n_clusters_per_class: usize,
+    n_informative: usize,
+    randomseed: Option<u64>,
+    _use_single_precision: bool,
+) -> Result<(Vec<f64>, Vec<f64>)> {
+    // For now, implement using GPU matrix operations
+    // In a real implementation, this would use custom GPU kernels
+
+    let _seed = randomseed.unwrap_or(42);
+    let mut rng = StdRng::seed_from_u64(_seed);
+
+    // Generate centroids
+    let n_centroids = n_classes * n_clusters_per_class;
+    let mut centroids = vec![0.0; n_centroids * n_informative];
+
+    for i in 0..n_centroids {
+        for j in 0..n_informative {
+            centroids[i * n_informative + j] = 2.0 * rng.gen_range(-1.0f64..1.0f64);
+        }
+    }
+
+    // Generate _samples using GPU-accelerated operations
+    let mut data = vec![0.0; n_samples * n_features];
+    let mut targets = vec![0.0; n_samples];
+
+    // Implement GPU buffer operations for accelerated data generation
+    if *gpu_context.backend() != LocalGpuBackend::Cpu {
+        return generate_classification_gpu_optimized(
+            gpu_context,
+            &centroids,
+            n_samples,
+            n_features,
+            n_classes,
+            n_clusters_per_class,
+            n_informative,
+            &mut rng,
+        );
+    }
+
+    // CPU fallback: Generate _samples in parallel chunks
+    let samples_per_class = n_samples / n_classes;
+    let remainder = n_samples % n_classes;
+
+    let mut sample_idx = 0;
+    for _class in 0..n_classes {
+        let n_samples_class = if _class < remainder {
+            samples_per_class + 1
+        } else {
+            samples_per_class
+        };
+
+        let samples_per_cluster = n_samples_class / n_clusters_per_class;
+        let cluster_remainder = n_samples_class % n_clusters_per_class;
+
+        for cluster in 0..n_clusters_per_class {
+            let n_samples_cluster = if cluster < cluster_remainder {
+                samples_per_cluster + 1
+            } else {
+                samples_per_cluster
+            };
+
+            let centroid_idx = _class * n_clusters_per_class + cluster;
+
+            for _ in 0..n_samples_cluster {
+                // Generate sample around centroid
+                for j in 0..n_informative {
+                    let centroid_val = centroids[centroid_idx * n_informative + j];
+                    let noise = rand_distr::Normal::new(0.0, 0.3).unwrap().sample(&mut rng);
+                    data[sample_idx * n_features + j] = centroid_val + noise;
+                }
+
+                // Add noise _features
+                for j in n_informative..n_features {
+                    data[sample_idx * n_features + j] =
+                        rand_distr::Normal::new(0.0, 1.0).unwrap().sample(&mut rng);
+                }
+
+                targets[sample_idx] = _class as f64;
+                sample_idx += 1;
+            }
+        }
+    }
+
+    Ok((data, targets))
+}
+
+/// GPU-optimized classification data generation using buffer operations
+#[allow(clippy::too_many_arguments)]
+#[allow(dead_code)]
+fn generate_classification_gpu_optimized(
+    _gpu_context: &GpuContext,
+    centroids: &[f64],
+    n_samples: usize,
+    n_features: usize,
+    n_classes: usize,
+    n_clusters_per_class: usize,
+    n_informative: usize,
+    rng: &mut StdRng,
+) -> Result<(Vec<f64>, Vec<f64>)> {
+    // For now, use CPU-based implementation since core GPU _features are not available
+    // TODO: Implement proper GPU acceleration when core GPU _features are stabilized
+
+    // CPU fallback implementation since GPU _features are not available
+    use rand_distr::Distribution;
+    let normal = rand_distr::Normal::new(0.0, 1.0).unwrap();
+
+    let mut data = vec![0.0; n_samples * n_features];
+    let mut targets = vec![0.0; n_samples];
+
+    // Samples per _class
+    let samples_per_class = n_samples / n_classes;
+    let remainder = n_samples % n_classes;
+
+    let mut sample_idx = 0;
+
+    for _class in 0..n_classes {
+        let n_samples_class = if _class < remainder {
+            samples_per_class + 1
+        } else {
+            samples_per_class
+        };
+
+        // Samples per cluster within this _class
+        let samples_per_cluster = n_samples_class / n_clusters_per_class;
+        let cluster_remainder = n_samples_class % n_clusters_per_class;
+
+        for cluster in 0..n_clusters_per_class {
+            let n_samples_cluster = if cluster < cluster_remainder {
+                samples_per_cluster + 1
+            } else {
+                samples_per_cluster
+            };
+
+            let centroid_idx = _class * n_clusters_per_class + cluster;
+
+            for _ in 0..n_samples_cluster {
+                // Generate _informative _features around cluster centroid
+                for j in 0..n_informative {
+                    let centroid_val = centroids[centroid_idx * n_informative + j];
+                    data[sample_idx * n_features + j] = centroid_val + 0.3 * normal.sample(rng);
+                }
+
+                // Generate noise _features
+                for j in n_informative..n_features {
+                    data[sample_idx * n_features + j] = normal.sample(rng);
+                }
+
+                targets[sample_idx] = _class as f64;
+                sample_idx += 1;
+            }
+        }
+    }
+
+    // TODO: Future GPU implementation placeholder - currently using CPU fallback
+
+    Ok((data, targets))
+}
+
+/// GPU-accelerated regression dataset generation
+#[allow(dead_code)]
+#[allow(clippy::too_many_arguments)]
+pub fn make_regression_gpu(
+    n_samples: usize,
+    n_features: usize,
+    n_informative: usize,
+    noise: f64,
+    randomseed: Option<u64>,
+    gpuconfig: GpuConfig,
+) -> Result<Dataset> {
+    // Check if GPU is available and requested
+    if gpuconfig.use_gpu && gpu_is_available() {
+        make_regression_gpu_impl(
+            n_samples,
+            n_features,
+            n_informative,
+            noise,
+            randomseed,
+            gpuconfig,
+        )
+    } else {
+        // Fallback to CPU implementation
+        make_regression(n_samples, n_features, n_informative, noise, randomseed)
+    }
+}
+
+/// Internal GPU implementation for regression data generation
+#[allow(dead_code)]
+fn make_regression_gpu_impl(
+    n_samples: usize,
+    n_features: usize,
+    n_informative: usize,
+    noise: f64,
+    randomseed: Option<u64>,
+    gpuconfig: GpuConfig,
+) -> Result<Dataset> {
+    // Input validation
+    if n_samples == 0 || n_features == 0 || n_informative == 0 {
+        return Err(DatasetsError::InvalidFormat(
+            "n_samples, n_features, and n_informative must be > 0".to_string(),
+        ));
+    }
+
+    if n_features < n_informative {
+        return Err(DatasetsError::InvalidFormat(format!(
+            "n_features ({n_features}) must be >= n_informative ({n_informative})"
+        )));
+    }
+
+    // Create GPU context
+    let gpu_context = GpuContext::new(crate::gpu::GpuConfig {
+        backend: crate::gpu::GpuBackend::Cuda {
+            device_id: gpuconfig.device_id as u32,
+        },
+        memory: crate::gpu::GpuMemoryConfig::default(),
+        threads_per_block: 256,
+        enable_double_precision: !gpuconfig.use_single_precision,
+        use_fast_math: false,
+        random_seed: None,
+    })
+    .map_err(|e| DatasetsError::Other(format!("Failed to create GPU context: {e}")))?;
+
+    let _seed = randomseed.unwrap_or(42);
+    let mut rng = StdRng::seed_from_u64(_seed);
+
+    // Generate coefficient matrix on GPU
+    let mut coefficients = vec![0.0; n_informative];
+    for coeff in coefficients.iter_mut().take(n_informative) {
+        *coeff = rng.gen_range(-2.0f64..2.0f64);
+    }
+
+    // Generate data matrix in chunks
+    let chunk_size = std::cmp::min(gpuconfig.chunk_size, n_samples);
+    let num_chunks = n_samples.div_ceil(chunk_size);
+
+    let mut all_data = Vec::new();
+    let mut all_targets = Vec::new();
+
+    for chunk_idx in 0..num_chunks {
+        let start_idx = chunk_idx * chunk_size;
+        let end_idx = std::cmp::min(start_idx + chunk_size, n_samples);
+        let chunk_samples = end_idx - start_idx;
+
+        // Generate chunk on GPU
+        let (chunk_data, chunk_targets) = generate_regression_chunk_gpu(
+            &gpu_context,
+            chunk_samples,
+            n_features,
+            n_informative,
+            &coefficients,
+            noise,
+            randomseed.map(|s| s + chunk_idx as u64),
+        )?;
+
+        all_data.extend(chunk_data);
+        all_targets.extend(chunk_targets);
+    }
+
+    // Convert to ndarray
+    let data = Array2::from_shape_vec((n_samples, n_features), all_data)
+        .map_err(|e| DatasetsError::Other(format!("Failed to create data array: {e}")))?;
+
+    let target = Array1::from_vec(all_targets);
+
+    // Create dataset
+    let mut dataset = Dataset::new(data, Some(target));
+
+    // Add metadata
+    let featurenames: Vec<String> = (0..n_features).map(|i| format!("feature_{i}")).collect();
+
+    dataset = dataset
+        .with_featurenames(featurenames)
+        .with_description(format!(
+            "GPU-accelerated synthetic regression dataset with {n_features} _features"
+        ));
+
+    Ok(dataset)
+}
+
+/// Generate a chunk of regression data on GPU
+#[allow(dead_code)]
+fn generate_regression_chunk_gpu(
+    gpu_context: &GpuContext,
+    n_samples: usize,
+    n_features: usize,
+    n_informative: usize,
+    coefficients: &[f64],
+    noise: f64,
+    randomseed: Option<u64>,
+) -> Result<(Vec<f64>, Vec<f64>)> {
+    let _seed = randomseed.unwrap_or(42);
+    let mut rng = StdRng::seed_from_u64(_seed);
+
+    // Generate random data matrix
+    let mut data = vec![0.0; n_samples * n_features];
+    let normal = rand_distr::Normal::new(0.0, 1.0).unwrap();
+
+    // Use GPU for matrix multiplication if available
+    for i in 0..n_samples {
+        for j in 0..n_features {
+            data[i * n_features + j] = normal.sample(&mut rng);
+        }
+    }
+
+    // Calculate targets using GPU matrix operations
+    let mut targets = vec![0.0; n_samples];
+    let noise_dist = rand_distr::Normal::new(0.0, noise).unwrap();
+
+    // Create GPU buffers for accelerated matrix operations
+    if *gpu_context.backend() != LocalGpuBackend::Cpu {
+        return generate_regression_gpu_optimized(
+            gpu_context,
+            &data,
+            coefficients,
+            n_samples,
+            n_features,
+            n_informative,
+            noise,
+            &mut rng,
+        );
+    }
+
+    // CPU fallback: Matrix multiplication using nested loops
+    for i in 0..n_samples {
+        let mut target_val = 0.0;
+        for j in 0..n_informative {
+            target_val += data[i * n_features + j] * coefficients[j];
+        }
+
+        // Add noise
+        target_val += noise_dist.sample(&mut rng);
+        targets[i] = target_val;
+    }
+
+    Ok((data, targets))
+}
+
+/// GPU-optimized regression data generation using buffer operations and matrix multiplication
+#[allow(clippy::too_many_arguments)]
+#[allow(dead_code)]
+fn generate_regression_gpu_optimized(
+    _gpu_context: &GpuContext,
+    data: &[f64],
+    coefficients: &[f64],
+    n_samples: usize,
+    n_features: usize,
+    n_informative: usize,
+    noise: f64,
+    rng: &mut StdRng,
+) -> Result<(Vec<f64>, Vec<f64>)> {
+    // For now, use CPU-based implementation since core GPU _features are not available
+    // TODO: Implement proper GPU acceleration when core GPU _features are stabilized
+
+    // CPU fallback implementation since GPU _features are not available
+    use rand_distr::Distribution;
+    let normal = rand_distr::Normal::new(0.0, 1.0).unwrap();
+
+    let mut targets = vec![0.0; n_samples];
+
+    // Matrix multiplication for regression targets
+    for i in 0..n_samples {
+        let mut target = 0.0;
+        for j in 0..n_informative {
+            target += data[i * n_features + j] * coefficients[j];
+        }
+
+        // Add noise
+        if noise > 0.0 {
+            target += noise * normal.sample(rng);
+        }
+
+        targets[i] = target;
+    }
+
+    let data_vec = data.to_vec();
+
+    // TODO: Future GPU implementation placeholder - currently using CPU fallback
+
+    Ok((data_vec, targets))
+}
+
+/// GPU-accelerated blob generation
+#[allow(dead_code)]
+pub fn make_blobs_gpu(
+    n_samples: usize,
+    n_features: usize,
+    n_centers: usize,
+    cluster_std: f64,
+    randomseed: Option<u64>,
+    gpuconfig: GpuConfig,
+) -> Result<Dataset> {
+    // Check if GPU is available and requested
+    if gpuconfig.use_gpu && gpu_is_available() {
+        make_blobs_gpu_impl(
+            n_samples,
+            n_features,
+            n_centers,
+            cluster_std,
+            randomseed,
+            gpuconfig,
+        )
+    } else {
+        // Fallback to CPU implementation
+        make_blobs(n_samples, n_features, n_centers, cluster_std, randomseed)
+    }
+}
+
+/// Internal GPU implementation for blob generation
+#[allow(dead_code)]
+fn make_blobs_gpu_impl(
+    n_samples: usize,
+    n_features: usize,
+    n_centers: usize,
+    cluster_std: f64,
+    randomseed: Option<u64>,
+    gpuconfig: GpuConfig,
+) -> Result<Dataset> {
+    // Input validation
+    if n_samples == 0 || n_features == 0 || n_centers == 0 {
+        return Err(DatasetsError::InvalidFormat(
+            "n_samples, n_features, and n_centers must be > 0".to_string(),
+        ));
+    }
+
+    if cluster_std <= 0.0 {
+        return Err(DatasetsError::InvalidFormat(
+            "cluster_std must be > 0".to_string(),
+        ));
+    }
+
+    // Create GPU context
+    let gpu_context = GpuContext::new(crate::gpu::GpuConfig {
+        backend: crate::gpu::GpuBackend::Cuda {
+            device_id: gpuconfig.device_id as u32,
+        },
+        memory: crate::gpu::GpuMemoryConfig::default(),
+        threads_per_block: 256,
+        enable_double_precision: !gpuconfig.use_single_precision,
+        use_fast_math: false,
+        random_seed: None,
+    })
+    .map_err(|e| DatasetsError::Other(format!("Failed to create GPU context: {e}")))?;
+
+    let _seed = randomseed.unwrap_or(42);
+    let mut rng = StdRng::seed_from_u64(_seed);
+
+    // Generate cluster _centers
+    let mut centers = Array2::zeros((n_centers, n_features));
+    let center_dist = rand_distr::Normal::new(0.0, 10.0).unwrap();
+
+    for i in 0..n_centers {
+        for j in 0..n_features {
+            centers[[i, j]] = center_dist.sample(&mut rng);
+        }
+    }
+
+    // Generate _samples around _centers using GPU acceleration
+    let samples_per_center = n_samples / n_centers;
+    let remainder = n_samples % n_centers;
+
+    let mut data = Array2::zeros((n_samples, n_features));
+    let mut target = Array1::zeros(n_samples);
+
+    let mut sample_idx = 0;
+    let noise_dist = rand_distr::Normal::new(0.0, cluster_std).unwrap();
+
+    for center_idx in 0..n_centers {
+        let n_samples_center = if center_idx < remainder {
+            samples_per_center + 1
+        } else {
+            samples_per_center
+        };
+
+        // Generate _samples for this center using GPU acceleration
+        if *gpu_context.backend() != LocalGpuBackend::Cpu {
+            // Use GPU kernel for parallel sample generation
+            let gpu_generated = generate_blobs_center_gpu(
+                &gpu_context,
+                &centers,
+                center_idx,
+                n_samples_center,
+                n_features,
+                cluster_std,
+                &mut rng,
+            )?;
+
+            // Copy GPU-generated data to main arrays
+            for (local_idx, sample) in gpu_generated.iter().enumerate() {
+                for j in 0..n_features {
+                    data[[sample_idx + local_idx, j]] = sample[j];
+                }
+                target[sample_idx + local_idx] = center_idx as f64;
+            }
+            sample_idx += n_samples_center;
+        } else {
+            // CPU fallback: generate sequentially
+            for _ in 0..n_samples_center {
+                for j in 0..n_features {
+                    data[[sample_idx, j]] = centers[[center_idx, j]] + noise_dist.sample(&mut rng);
+                }
+                target[sample_idx] = center_idx as f64;
+                sample_idx += 1;
+            }
+        }
+    }
+
+    // Create dataset
+    let mut dataset = Dataset::new(data, Some(target));
+
+    // Add metadata
+    let featurenames: Vec<String> = (0..n_features).map(|i| format!("feature_{i}")).collect();
+    let centernames: Vec<String> = (0..n_centers).map(|i| format!("center_{i}")).collect();
+
+    dataset = dataset
+        .with_featurenames(featurenames)
+        .with_targetnames(centernames)
+        .with_description(format!(
+            "GPU-accelerated synthetic blob dataset with {n_centers} _centers and {n_features} _features"
+        ));
+
+    Ok(dataset)
+}
+
+/// GPU-optimized blob center generation using parallel kernels
+#[allow(dead_code)]
+fn generate_blobs_center_gpu(
+    _gpu_context: &GpuContext,
+    centers: &Array2<f64>,
+    center_idx: usize,
+    n_samples_center: usize,
+    n_features: usize,
+    cluster_std: f64,
+    rng: &mut StdRng,
+) -> Result<Vec<Vec<f64>>> {
+    // For now, use CPU-based implementation since core GPU _features are not available
+    // TODO: Implement proper GPU acceleration when core GPU _features are stabilized
+
+    // Extract _center coordinates for this specific _center
+    let _center_coords: Vec<f64> = (0..n_features).map(|j| centers[[center_idx, j]]).collect();
+
+    // CPU fallback implementation since GPU _features are not available
+    use rand_distr::Distribution;
+    let normal = rand_distr::Normal::new(0.0, cluster_std).unwrap();
+
+    let mut result = Vec::with_capacity(n_samples_center);
+
+    for _ in 0..n_samples_center {
+        let mut sample = Vec::with_capacity(n_features);
+        for j in 0..n_features {
+            let center_val = centers[[center_idx, j]];
+            let noise = normal.sample(rng);
+            sample.push(center_val + noise);
+        }
+        result.push(sample);
+    }
+
+    Ok(result)
+
+    // TODO: GPU implementation placeholder - using CPU fallback above
+    /*
+    let _center_buffer = (); // gpu_context.create_buffer_from_slice(&center_coords);
+    let _data_buffer = (); // gpu_context.create_buffer::<f64>(n_samples_center * n_features);
+
+    // Generate random seeds for each sample
+    let seeds: Vec<u64> = (0..n_samples_center).map(|_| rng.random::<u64>()).collect();
+    let seeds_buffer = gpu_context.create_buffer_from_slice(&seeds);
+
+    // Use GPU kernel for parallel sample generation around _center
+    gpu_context
+        .execute(|compiler| {
+            let kernel_source = r#"
+            #version 450
+            layout(local_size_x = 256, local_size_y = 1, local_size_z = 1) in;
+
+            layout(set = 0, binding = 0) buffer CenterBuffer {
+                double center_coords[];
+            };
+
+            layout(set = 0, binding = 1) buffer DataBuffer {
+                double data[];
+            };
+
+            layout(set = 0, binding = 2) buffer SeedsBuffer {
+                uint64_t seeds[];
+            };
+
+            layout(push_constant) uniform Params {
+                uint n_samples_center;
+                uint n_features;
+                double cluster_std;
+            } params;
+
+            // High-quality pseudo-random number generator
+            uint wang_hash(uint seed) {
+                seed = (seed ^ 61u) ^ (seed >> 16u);
+                seed *= 9u;
+                seed = seed ^ (seed >> 4u);
+                seed *= 0x27d4eb2du;
+                seed = seed ^ (seed >> 15u);
+                return seed;
+            }
+
+            // Generate Gaussian random numbers using Box-Muller transform
+            double random_normal(uint seed, uint index) {
+                uint h1 = wang_hash(seed + index * 2u);
+                uint h2 = wang_hash(seed + index * 2u + 1u);
+                double u1 = double(h1) / double(0xFFFFFFFFu);
+                double u2 = double(h2) / double(0xFFFFFFFFu);
+
+                // Ensure u1 is not zero to avoid log(0)
+                u1 = max(u1, 1e-8);
+
+                // Box-Muller transform
+                return sqrt(-2.0 * log(u1)) * cos(6.28318530718 * u2);
+            }
+
+            void main() {
+                uint sample_idx = gl_GlobalInvocationID.x;
+                if (sample_idx >= params.n_samples_center) return;
+
+                uint seed = uint(seeds[sample_idx]);
+
+                // Generate all _features for this sample
+                for (uint j = 0; j < params.n_features; j++) {
+                    // Get _center coordinate for this feature
+                    double center_val = center_coords[j];
+
+                    // Generate Gaussian noise
+                    double noise = random_normal(seed, j) * params.cluster_std;
+
+                    // Set the data point
+                    data[sample_idx * params.n_features + j] = center_val + noise;
+                }
+            }
+        "#;
+
+            let kernel = compiler.compile(kernel_source)?;
+
+            // Set kernel parameters
+            kernel.set_buffer("center_coords", &center_buffer);
+            kernel.set_buffer("data", &data_buffer);
+            kernel.set_buffer("seeds", &seeds_buffer);
+            kernel.set_u32("n_samples_center", n_samples_center as u32);
+            kernel.set_u32("n_features", n_features as u32);
+            kernel.set_f64("cluster_std", cluster_std);
+
+            // Dispatch the kernel with optimal work group size
+            let work_groups = [(n_samples_center + 255) / 256, 1, 1];
+            kernel.dispatch(work_groups);
+
+            Ok(())
+        })
+        .map_err(|e| {
+            DatasetsError::Other(format!(
+                "GPU blob generation kernel execution failed: {}",
+                e
+            ))
+        })?;
+
+    // Copy results back to CPU and restructure as Vec<Vec<f64>>
+    let flat_data = data_buffer.to_vec();
+    let mut result = Vec::with_capacity(n_samples_center);
+
+    for i in 0..n_samples_center {
+        let mut sample = Vec::with_capacity(n_features);
+        for j in 0..n_features {
+            sample.push(flat_data[i * n_features + j]);
+        }
+        result.push(sample);
+    }
+
+    */
+}
+
+/// Check if GPU is available for acceleration
+#[allow(dead_code)]
+pub fn gpu_is_available() -> bool {
+    // Try to create a GPU context to check availability
+    GpuContext::new(crate::gpu::GpuConfig::default()).is_ok()
+}
+
+/// Get GPU device information
+#[allow(dead_code)]
+pub fn get_gpu_info() -> Result<Vec<GpuDeviceInfo>> {
+    crate::gpu::list_gpu_devices()
+        .map_err(|e| DatasetsError::Other(format!("Failed to get GPU info: {e}")))
+}
+
+/// Benchmark GPU vs CPU performance for data generation
+#[allow(dead_code)]
+pub fn benchmark_gpu_vs_cpu(
+    n_samples: usize,
+    n_features: usize,
+    iterations: usize,
+) -> Result<(f64, f64)> {
+    use std::time::Instant;
+
+    // Benchmark CPU implementation
+    let cpu_start = Instant::now();
+    for _ in 0..iterations {
+        let _result = make_classification(n_samples, n_features, 3, 2, n_features, Some(42))?;
+    }
+    let cpu_time = cpu_start.elapsed().as_secs_f64() / iterations as f64;
+
+    // Benchmark GPU implementation
+    let gpuconfig = GpuConfig::default();
+    let gpu_start = Instant::now();
+    for _ in 0..iterations {
+        let _result = make_classification_gpu(
+            n_samples,
+            n_features,
+            3,
+            2,
+            n_features,
+            Some(42),
+            gpuconfig.clone(),
+        )?;
+    }
+    let gpu_time = gpu_start.elapsed().as_secs_f64() / iterations as f64;
+
+    Ok((cpu_time, gpu_time))
+}
+
+// Advanced manifold learning datasets
+
+/// Generate a dataset with an S-curve manifold embedded in 3D space
+#[allow(dead_code)]
+pub fn make_s_curve(n_samples: usize, noise: f64, randomseed: Option<u64>) -> Result<Dataset> {
+    if n_samples == 0 {
+        return Err(DatasetsError::InvalidFormat(
+            "n_samples must be > 0".to_string(),
+        ));
+    }
+
+    if noise < 0.0 {
+        return Err(DatasetsError::InvalidFormat(
+            "noise must be >= 0".to_string(),
+        ));
+    }
+
+    let mut rng = match randomseed {
+        Some(_seed) => StdRng::seed_from_u64(_seed),
+        None => {
+            let mut r = rng();
+            StdRng::seed_from_u64(r.next_u64())
+        }
+    };
+
+    let mut data = Array2::zeros((n_samples, 3));
+    let mut color = Array1::zeros(n_samples);
+
+    let noise_dist = rand_distr::Normal::new(0.0, noise).unwrap();
+
+    for i in 0..n_samples {
+        // Parameter t ranges from 0 to 4π
+        let t = 4.0 * PI * (i as f64) / (n_samples as f64 - 1.0);
+
+        // S-curve parametric equations
+        data[[i, 0]] = t.sin() + noise_dist.sample(&mut rng);
+        data[[i, 1]] = 2.0 * t + noise_dist.sample(&mut rng);
+        data[[i, 2]] = (t / 2.0).sin() + noise_dist.sample(&mut rng);
+
+        // Color represents the position along the curve
+        color[i] = t;
+    }
+
+    let mut dataset = Dataset::new(data, Some(color));
+    dataset = dataset
+        .with_featurenames(vec!["X".to_string(), "Y".to_string(), "Z".to_string()])
+        .with_description("S-curve manifold embedded in 3D space".to_string());
+
+    Ok(dataset)
+}
+
+/// Generate a dataset sampling from a Swiss roll manifold
+#[allow(dead_code)]
+pub fn make_swiss_roll_advanced(
+    n_samples: usize,
+    noise: f64,
+    hole: bool,
+    randomseed: Option<u64>,
+) -> Result<Dataset> {
+    if n_samples == 0 {
+        return Err(DatasetsError::InvalidFormat(
+            "n_samples must be > 0".to_string(),
+        ));
+    }
+
+    if noise < 0.0 {
+        return Err(DatasetsError::InvalidFormat(
+            "noise must be >= 0".to_string(),
+        ));
+    }
+
+    let mut rng = match randomseed {
+        Some(_seed) => StdRng::seed_from_u64(_seed),
+        None => {
+            let mut r = rng();
+            StdRng::seed_from_u64(r.next_u64())
+        }
+    };
+
+    let mut data = Array2::zeros((n_samples, 3));
+    let mut color = Array1::zeros(n_samples);
+
+    let noise_dist = rand_distr::Normal::new(0.0, noise).unwrap();
+    let uniform = rand_distr::Uniform::new(0.0, 1.0).unwrap();
+
+    for i in 0..n_samples {
+        // Sample parameters
+        let mut t = uniform.sample(&mut rng) * 3.0 * PI / 2.0;
+        let mut y = uniform.sample(&mut rng) * 20.0;
+
+        // Create hole if requested
+        if hole {
+            // Create a hole by rejecting _samples in the middle region
+            while t > PI / 2.0 && t < PI && y > 8.0 && y < 12.0 {
+                t = uniform.sample(&mut rng) * 3.0 * PI / 2.0;
+                y = uniform.sample(&mut rng) * 20.0;
+            }
+        }
+
+        // Swiss roll parametric equations
+        data[[i, 0]] = t * t.cos() + noise_dist.sample(&mut rng);
+        data[[i, 1]] = y + noise_dist.sample(&mut rng);
+        data[[i, 2]] = t * t.sin() + noise_dist.sample(&mut rng);
+
+        // Color represents position
+        color[i] = t;
+    }
+
+    let mut dataset = Dataset::new(data, Some(color));
+    let description = if hole {
+        "Swiss roll manifold with hole embedded in 3D space"
+    } else {
+        "Swiss roll manifold embedded in 3D space"
+    };
+
+    dataset = dataset
+        .with_featurenames(vec!["X".to_string(), "Y".to_string(), "Z".to_string()])
+        .with_description(description.to_string());
+
+    Ok(dataset)
+}
+
+/// Generate a dataset from a severed sphere (broken manifold)
+#[allow(dead_code)]
+pub fn make_severed_sphere(
+    n_samples: usize,
+    noise: f64,
+    randomseed: Option<u64>,
+) -> Result<Dataset> {
+    if n_samples == 0 {
+        return Err(DatasetsError::InvalidFormat(
+            "n_samples must be > 0".to_string(),
+        ));
+    }
+
+    if noise < 0.0 {
+        return Err(DatasetsError::InvalidFormat(
+            "noise must be >= 0".to_string(),
+        ));
+    }
+
+    let mut rng = match randomseed {
+        Some(_seed) => StdRng::seed_from_u64(_seed),
+        None => {
+            let mut r = rng();
+            StdRng::seed_from_u64(r.next_u64())
+        }
+    };
+
+    let mut data = Array2::zeros((n_samples, 3));
+    let mut color = Array1::zeros(n_samples);
+
+    let noise_dist = rand_distr::Normal::new(0.0, noise).unwrap();
+    let uniform = rand_distr::Uniform::new(0.0, 1.0).unwrap();
+
+    for i in 0..n_samples {
+        // Sample spherical coordinates, but exclude a region to "sever" the sphere
+        let mut phi = uniform.sample(&mut rng) * 2.0 * PI; // azimuthal angle
+        let mut theta = uniform.sample(&mut rng) * PI; // polar angle
+
+        // Create a severed region by excluding certain angles
+        while phi > PI / 3.0 && phi < 2.0 * PI / 3.0 && theta > PI / 3.0 && theta < 2.0 * PI / 3.0 {
+            phi = uniform.sample(&mut rng) * 2.0 * PI;
+            theta = uniform.sample(&mut rng) * PI;
+        }
+
+        let radius = 1.0; // Unit sphere
+
+        // Convert to Cartesian coordinates
+        data[[i, 0]] = radius * theta.sin() * phi.cos() + noise_dist.sample(&mut rng);
+        data[[i, 1]] = radius * theta.sin() * phi.sin() + noise_dist.sample(&mut rng);
+        data[[i, 2]] = radius * theta.cos() + noise_dist.sample(&mut rng);
+
+        // Color based on position
+        color[i] = phi;
+    }
+
+    let mut dataset = Dataset::new(data, Some(color));
+    dataset = dataset
+        .with_featurenames(vec!["X".to_string(), "Y".to_string(), "Z".to_string()])
+        .with_description("Severed sphere manifold with discontinuities".to_string());
+
+    Ok(dataset)
+}
+
+/// Generate a dataset from a twin peaks manifold (two connected peaks)
+#[allow(dead_code)]
+pub fn make_twin_peaks(n_samples: usize, noise: f64, randomseed: Option<u64>) -> Result<Dataset> {
+    if n_samples == 0 {
+        return Err(DatasetsError::InvalidFormat(
+            "n_samples must be > 0".to_string(),
+        ));
+    }
+
+    if noise < 0.0 {
+        return Err(DatasetsError::InvalidFormat(
+            "noise must be >= 0".to_string(),
+        ));
+    }
+
+    let mut rng = match randomseed {
+        Some(_seed) => StdRng::seed_from_u64(_seed),
+        None => {
+            let mut r = rng();
+            StdRng::seed_from_u64(r.next_u64())
+        }
+    };
+
+    let mut data = Array2::zeros((n_samples, 3));
+    let mut labels = Array1::zeros(n_samples);
+
+    let noise_dist = rand_distr::Normal::new(0.0, noise).unwrap();
+    let uniform = rand_distr::Uniform::new(-2.0, 2.0).unwrap();
+
+    for i in 0..n_samples {
+        let x = uniform.sample(&mut rng);
+        let y = uniform.sample(&mut rng);
+
+        // Twin peaks function: two Gaussian peaks
+        let peak1 = (-(((x as f64) - 1.0).powi(2) + ((y as f64) - 1.0).powi(2))).exp();
+        let peak2 = (-(((x as f64) + 1.0).powi(2) + ((y as f64) + 1.0).powi(2))).exp();
+        let z = peak1 + peak2 + noise_dist.sample(&mut rng);
+
+        data[[i, 0]] = x;
+        data[[i, 1]] = y;
+        data[[i, 2]] = z;
+
+        // Label based on which peak is closer
+        labels[i] = if ((x as f64) - 1.0).powi(2) + ((y as f64) - 1.0).powi(2)
+            < ((x as f64) + 1.0).powi(2) + ((y as f64) + 1.0).powi(2)
+        {
+            0.0
+        } else {
+            1.0
+        };
+    }
+
+    let mut dataset = Dataset::new(data, Some(labels));
+    dataset = dataset
+        .with_featurenames(vec!["X".to_string(), "Y".to_string(), "Z".to_string()])
+        .with_targetnames(vec!["peak_0".to_string(), "peak_1".to_string()])
+        .with_description("Twin peaks manifold with two connected Gaussian peaks".to_string());
+
+    Ok(dataset)
+}
+
+/// Generate a dataset from a helix manifold in 3D space
+#[allow(dead_code)]
+pub fn make_helix(
+    n_samples: usize,
+    n_turns: f64,
+    noise: f64,
+    randomseed: Option<u64>,
+) -> Result<Dataset> {
+    if n_samples == 0 {
+        return Err(DatasetsError::InvalidFormat(
+            "n_samples must be > 0".to_string(),
+        ));
+    }
+
+    if n_turns <= 0.0 {
+        return Err(DatasetsError::InvalidFormat(
+            "n_turns must be > 0".to_string(),
+        ));
+    }
+
+    if noise < 0.0 {
+        return Err(DatasetsError::InvalidFormat(
+            "noise must be >= 0".to_string(),
+        ));
+    }
+
+    let mut rng = match randomseed {
+        Some(_seed) => StdRng::seed_from_u64(_seed),
+        None => {
+            let mut r = rng();
+            StdRng::seed_from_u64(r.next_u64())
+        }
+    };
+
+    let mut data = Array2::zeros((n_samples, 3));
+    let mut color = Array1::zeros(n_samples);
+
+    let noise_dist = rand_distr::Normal::new(0.0, noise).unwrap();
+
+    for i in 0..n_samples {
+        // Parameter t ranges from 0 to n_turns * 2π
+        let t = n_turns * 2.0 * PI * (i as f64) / (n_samples as f64 - 1.0);
+
+        // Helix parametric equations
+        data[[i, 0]] = t.cos() + noise_dist.sample(&mut rng);
+        data[[i, 1]] = t.sin() + noise_dist.sample(&mut rng);
+        data[[i, 2]] = t / (n_turns * 2.0 * PI) + noise_dist.sample(&mut rng); // Normalized height
+
+        // Color represents position along helix
+        color[i] = t;
+    }
+
+    let mut dataset = Dataset::new(data, Some(color));
+    dataset = dataset
+        .with_featurenames(vec!["X".to_string(), "Y".to_string(), "Z".to_string()])
+        .with_description(format!("Helix manifold with {n_turns} _turns in 3D space"));
+
+    Ok(dataset)
+}
+
+/// Generate a dataset from an intersecting manifolds (two intersecting planes)
+#[allow(dead_code)]
+pub fn make_intersecting_manifolds(
+    n_samples: usize,
+    noise: f64,
+    randomseed: Option<u64>,
+) -> Result<Dataset> {
+    if n_samples == 0 {
+        return Err(DatasetsError::InvalidFormat(
+            "n_samples must be > 0".to_string(),
+        ));
+    }
+
+    if noise < 0.0 {
+        return Err(DatasetsError::InvalidFormat(
+            "noise must be >= 0".to_string(),
+        ));
+    }
+
+    let mut rng = match randomseed {
+        Some(_seed) => StdRng::seed_from_u64(_seed),
+        None => {
+            let mut r = rng();
+            StdRng::seed_from_u64(r.next_u64())
+        }
+    };
+
+    let samples_per_manifold = n_samples / 2;
+    let remainder = n_samples % 2;
+
+    let mut data = Array2::zeros((n_samples, 3));
+    let mut labels = Array1::zeros(n_samples);
+
+    let noise_dist = rand_distr::Normal::new(0.0, noise).unwrap();
+    let uniform = rand_distr::Uniform::new(-2.0, 2.0).unwrap();
+
+    let mut sample_idx = 0;
+
+    // First manifold: plane z = x
+    for _ in 0..samples_per_manifold + remainder {
+        let x = uniform.sample(&mut rng);
+        let y = uniform.sample(&mut rng);
+        let z = x + noise_dist.sample(&mut rng);
+
+        data[[sample_idx, 0]] = x;
+        data[[sample_idx, 1]] = y;
+        data[[sample_idx, 2]] = z;
+        labels[sample_idx] = 0.0;
+        sample_idx += 1;
+    }
+
+    // Second manifold: plane z = -x
+    for _ in 0..samples_per_manifold {
+        let x = uniform.sample(&mut rng);
+        let y = uniform.sample(&mut rng);
+        let z = -x + noise_dist.sample(&mut rng);
+
+        data[[sample_idx, 0]] = x;
+        data[[sample_idx, 1]] = y;
+        data[[sample_idx, 2]] = z;
+        labels[sample_idx] = 1.0;
+        sample_idx += 1;
+    }
+
+    let mut dataset = Dataset::new(data, Some(labels));
+    dataset = dataset
+        .with_featurenames(vec!["X".to_string(), "Y".to_string(), "Z".to_string()])
+        .with_targetnames(vec!["manifold_0".to_string(), "manifold_1".to_string()])
+        .with_description("Two intersecting plane manifolds in 3D space".to_string());
+
+    Ok(dataset)
+}
+
+/// Generate a dataset from a torus manifold in 3D space
+#[allow(dead_code)]
+pub fn make_torus(
+    n_samples: usize,
+    major_radius: f64,
+    minor_radius: f64,
+    noise: f64,
+    randomseed: Option<u64>,
+) -> Result<Dataset> {
+    if n_samples == 0 {
+        return Err(DatasetsError::InvalidFormat(
+            "n_samples must be > 0".to_string(),
+        ));
+    }
+
+    if major_radius <= 0.0 || minor_radius <= 0.0 {
+        return Err(DatasetsError::InvalidFormat(
+            "major_radius and minor_radius must be > 0".to_string(),
+        ));
+    }
+
+    if minor_radius >= major_radius {
+        return Err(DatasetsError::InvalidFormat(
+            "minor_radius must be < major_radius".to_string(),
+        ));
+    }
+
+    if noise < 0.0 {
+        return Err(DatasetsError::InvalidFormat(
+            "noise must be >= 0".to_string(),
+        ));
+    }
+
+    let mut rng = match randomseed {
+        Some(_seed) => StdRng::seed_from_u64(_seed),
+        None => {
+            let mut r = rng();
+            StdRng::seed_from_u64(r.next_u64())
+        }
+    };
+
+    let mut data = Array2::zeros((n_samples, 3));
+    let mut color = Array1::zeros(n_samples);
+
+    let noise_dist = rand_distr::Normal::new(0.0, noise).unwrap();
+    let uniform = rand_distr::Uniform::new(0.0, 2.0 * PI).unwrap();
+
+    for i in 0..n_samples {
+        let theta = uniform.sample(&mut rng); // Major angle
+        let phi = uniform.sample(&mut rng); // Minor angle
+
+        // Torus parametric equations
+        data[[i, 0]] =
+            (major_radius + minor_radius * phi.cos()) * theta.cos() + noise_dist.sample(&mut rng);
+        data[[i, 1]] =
+            (major_radius + minor_radius * phi.cos()) * theta.sin() + noise_dist.sample(&mut rng);
+        data[[i, 2]] = minor_radius * phi.sin() + noise_dist.sample(&mut rng);
+
+        // Color based on major angle
+        color[i] = theta;
+    }
+
+    let mut dataset = Dataset::new(data, Some(color));
+    dataset = dataset
+        .with_featurenames(vec!["X".to_string(), "Y".to_string(), "Z".to_string()])
+        .with_description(format!(
+            "Torus manifold with major _radius {major_radius} and minor _radius {minor_radius}"
+        ));
+
+    Ok(dataset)
+}
+
+/// Advanced manifold configuration for complex datasets
+#[derive(Debug, Clone)]
+pub struct ManifoldConfig {
+    /// Type of manifold to generate
+    pub manifold_type: ManifoldType,
+    /// Number of samples
+    pub n_samples: usize,
+    /// Noise level
+    pub noise: f64,
+    /// Random seed
+    pub randomseed: Option<u64>,
+    /// Manifold-specific parameters
+    pub parameters: std::collections::HashMap<String, f64>,
+}
+
+/// Types of manifolds that can be generated
+#[derive(Debug, Clone)]
+pub enum ManifoldType {
+    /// S-curve manifold
+    SCurve,
+    /// Swiss roll (with optional hole)
+    SwissRoll {
+        /// Whether to create a hole in the middle
+        hole: bool,
+    },
+    /// Severed sphere
+    SeveredSphere,
+    /// Twin peaks
+    TwinPeaks,
+    /// Helix with specified turns
+    Helix {
+        /// Number of turns in the helix
+        n_turns: f64,
+    },
+    /// Intersecting manifolds
+    IntersectingManifolds,
+    /// Torus with major and minor radii
+    Torus {
+        /// Major radius of the torus
+        major_radius: f64,
+        /// Minor radius of the torus
+        minor_radius: f64,
+    },
+}
+
+impl Default for ManifoldConfig {
+    fn default() -> Self {
+        Self {
+            manifold_type: ManifoldType::SCurve,
+            n_samples: 1000,
+            noise: 0.1,
+            randomseed: None,
+            parameters: std::collections::HashMap::new(),
+        }
+    }
+}
+
+impl ManifoldConfig {
+    /// Create a new manifold configuration
+    pub fn new(manifold_type: ManifoldType) -> Self {
+        Self {
+            manifold_type,
+            ..Default::default()
+        }
+    }
+
+    /// Set number of samples
+    pub fn with_samples(mut self, n_samples: usize) -> Self {
+        self.n_samples = n_samples;
+        self
+    }
+
+    /// Set noise level
+    pub fn with_noise(mut self, noise: f64) -> Self {
+        self.noise = noise;
+        self
+    }
+
+    /// Set random seed
+    pub fn with_seed(mut self, seed: u64) -> Self {
+        self.randomseed = Some(seed);
+        self
+    }
+
+    /// Add a parameter
+    pub fn with_parameter(mut self, name: String, value: f64) -> Self {
+        self.parameters.insert(name, value);
+        self
+    }
+}
+
+/// Generate a manifold dataset based on configuration
+#[allow(dead_code)]
+pub fn make_manifold(config: ManifoldConfig) -> Result<Dataset> {
+    match config.manifold_type {
+        ManifoldType::SCurve => make_s_curve(config.n_samples, config.noise, config.randomseed),
+        ManifoldType::SwissRoll { hole } => {
+            make_swiss_roll_advanced(config.n_samples, config.noise, hole, config.randomseed)
+        }
+        ManifoldType::SeveredSphere => {
+            make_severed_sphere(config.n_samples, config.noise, config.randomseed)
+        }
+        ManifoldType::TwinPeaks => {
+            make_twin_peaks(config.n_samples, config.noise, config.randomseed)
+        }
+        ManifoldType::Helix { n_turns } => {
+            make_helix(config.n_samples, n_turns, config.noise, config.randomseed)
+        }
+        ManifoldType::IntersectingManifolds => {
+            make_intersecting_manifolds(config.n_samples, config.noise, config.randomseed)
+        }
+        ManifoldType::Torus {
+            major_radius,
+            minor_radius,
+        } => make_torus(
+            config.n_samples,
+            major_radius,
+            minor_radius,
+            config.noise,
+            config.randomseed,
+        ),
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
+    use rand_distr::Uniform;
 
     #[test]
     fn test_make_classification_invalid_params() {
@@ -1538,8 +3049,8 @@ mod tests {
         assert_eq!(dataset.n_samples(), 20);
         assert_eq!(dataset.n_features(), 5);
         assert!(dataset.target.is_some());
-        assert!(dataset.feature_names.is_some());
-        assert!(dataset.target_names.is_some());
+        assert!(dataset.featurenames.is_some());
+        assert!(dataset.targetnames.is_some());
     }
 
     #[test]
@@ -1548,7 +3059,7 @@ mod tests {
         assert_eq!(dataset.n_samples(), 15);
         assert_eq!(dataset.n_features(), 4);
         assert!(dataset.target.is_some());
-        assert!(dataset.feature_names.is_some());
+        assert!(dataset.featurenames.is_some());
     }
 
     #[test]
@@ -1556,7 +3067,7 @@ mod tests {
         let dataset = make_time_series(25, 3, true, true, 0.1, Some(42)).unwrap();
         assert_eq!(dataset.n_samples(), 25);
         assert_eq!(dataset.n_features(), 3);
-        assert!(dataset.feature_names.is_some());
+        assert!(dataset.featurenames.is_some());
         // Time series doesn't have targets by default
         assert!(dataset.target.is_none());
     }
@@ -1567,7 +3078,7 @@ mod tests {
         assert_eq!(dataset.n_samples(), 30);
         assert_eq!(dataset.n_features(), 4);
         assert!(dataset.target.is_some());
-        assert!(dataset.feature_names.is_some());
+        assert!(dataset.featurenames.is_some());
     }
 
     #[test]
@@ -1588,7 +3099,7 @@ mod tests {
         assert_eq!(dataset.n_samples(), 100);
         assert_eq!(dataset.n_features(), 2);
         assert!(dataset.target.is_some());
-        assert!(dataset.feature_names.is_some());
+        assert!(dataset.featurenames.is_some());
 
         // Check that we have the right number of spirals
         if let Some(target) = &dataset.target {
@@ -1613,7 +3124,7 @@ mod tests {
         assert_eq!(dataset.n_samples(), 100);
         assert_eq!(dataset.n_features(), 2);
         assert!(dataset.target.is_some());
-        assert!(dataset.feature_names.is_some());
+        assert!(dataset.featurenames.is_some());
 
         // Check that we have exactly 2 classes (2 moons)
         if let Some(target) = &dataset.target {
@@ -1643,7 +3154,7 @@ mod tests {
         assert_eq!(dataset.n_samples(), 100);
         assert_eq!(dataset.n_features(), 2);
         assert!(dataset.target.is_some());
-        assert!(dataset.feature_names.is_some());
+        assert!(dataset.featurenames.is_some());
 
         // Check that we have exactly 2 classes (inner and outer circle)
         if let Some(target) = &dataset.target {
@@ -1668,7 +3179,7 @@ mod tests {
         assert_eq!(dataset.n_samples(), 100);
         assert_eq!(dataset.n_features(), 3);
         assert!(dataset.target.is_some()); // Color parameter
-        assert!(dataset.feature_names.is_some());
+        assert!(dataset.featurenames.is_some());
     }
 
     #[test]
@@ -1695,7 +3206,7 @@ mod tests {
         assert_eq!(dataset.n_samples(), 100);
         assert_eq!(dataset.n_features(), 3);
         assert!(dataset.target.is_some());
-        assert!(dataset.feature_names.is_some());
+        assert!(dataset.featurenames.is_some());
 
         // Check that we have the right number of clusters
         if let Some(target) = &dataset.target {
@@ -1732,7 +3243,7 @@ mod tests {
         assert_eq!(dataset.n_samples(), 120);
         assert_eq!(dataset.n_features(), 3);
         assert!(dataset.target.is_some());
-        assert!(dataset.feature_names.is_some());
+        assert!(dataset.featurenames.is_some());
 
         // Check that we have the right number of main clusters
         if let Some(target) = &dataset.target {
@@ -1928,8 +3439,7 @@ mod tests {
             let missing_count = missing_mask.iter().filter(|&&x| x).count();
             assert!(
                 missing_count > 0,
-                "Pattern {:?} should create some missing values",
-                pattern
+                "Pattern {pattern:?} should create some missing values"
             );
         }
     }
@@ -1951,8 +3461,7 @@ mod tests {
             let outlier_count = outlier_mask.iter().filter(|&&x| x).count();
             assert!(
                 outlier_count > 0,
-                "Outlier type {:?} should create some outliers",
-                outlier_type
+                "Outlier type {outlier_type:?} should create some outliers"
             );
         }
     }

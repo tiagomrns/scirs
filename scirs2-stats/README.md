@@ -46,11 +46,11 @@ Add scirs2-stats to your Cargo.toml:
 
 ```toml
 [dependencies]
-scirs2-stats = "0.1.0-alpha.6"
+scirs2-stats = "0.1.0-beta.1"
 ndarray = "0.16.1"
 ```
 
-This version represents the **final alpha release** before the stable 1.0 release, offering production-ready functionality with a stable API.
+This version represents the **first beta release** before the stable 1.0 release, offering production-ready functionality with a stable API.
 
 ## Requirements
 
@@ -255,7 +255,7 @@ let permutation = sampling::permutation(&data.view(), Some(123)).unwrap();
 
 ## Production Readiness
 
-This release (0.1.0-alpha.6) represents a **production-ready** state with:
+This release (0.1.0-beta.1) represents a **production-ready** state with:
 
 - ✅ **Comprehensive functionality**: All core statistical operations implemented
 - ✅ **Extensive testing**: 280+ tests with 99.6% pass rate

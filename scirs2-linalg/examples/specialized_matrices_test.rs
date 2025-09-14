@@ -4,6 +4,7 @@ use ndarray::array;
 use scirs2_linalg::specialized::{BandedMatrix, SymmetricMatrix, TridiagonalMatrix};
 use scirs2_linalg::SpecializedMatrix;
 
+#[allow(dead_code)]
 fn main() {
     println!("Testing specialized matrices...");
 
@@ -53,7 +54,7 @@ fn main() {
     ];
 
     let sym =
-        SymmetricMatrix::from_matrix(&sym_data.view()).expect("Failed to create symmetric matrix");
+        SymmetricMatrix::frommatrix(&sym_data.view()).expect("Failed to create symmetric matrix");
 
     println!("Symmetric matrix created successfully!");
     println!("Size: {}x{}", sym.nrows(), sym.ncols());

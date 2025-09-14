@@ -71,6 +71,7 @@ pub struct NewtonResult<F: IntegrateFloat> {
 ///
 /// This version uses the improved Jacobian handling for performance
 #[allow(clippy::explicit_counter_loop)]
+#[allow(dead_code)]
 pub fn newton_solve<F, Func>(
     f: Func,
     x0: Array1<F>,
@@ -78,7 +79,7 @@ pub fn newton_solve<F, Func>(
     params: NewtonParameters<F>,
 ) -> IntegrateResult<NewtonResult<F>>
 where
-    F: IntegrateFloat,
+    F: IntegrateFloat + std::default::Default,
     Func: Fn(&Array1<F>) -> Array1<F>,
 {
     let _n = x0.len();
@@ -192,6 +193,7 @@ where
 }
 
 /// Modified Newton solve that reuses the same Jacobian for multiple iterations
+#[allow(dead_code)]
 pub fn modified_newton_solve<F, Func>(
     f: Func,
     x0: Array1<F>,
@@ -199,7 +201,7 @@ pub fn modified_newton_solve<F, Func>(
     params: NewtonParameters<F>,
 ) -> IntegrateResult<NewtonResult<F>>
 where
-    F: IntegrateFloat,
+    F: IntegrateFloat + std::default::Default,
     Func: Fn(&Array1<F>) -> Array1<F>,
 {
     // Set large Jacobian update frequency
@@ -213,7 +215,8 @@ where
 }
 
 /// Calculate error norm of residual vector
-fn calculate_error<F: IntegrateFloat>(residual: &Array1<F>, _params: &NewtonParameters<F>) -> F {
+#[allow(dead_code)]
+fn calculate_error<F: IntegrateFloat>(residual: &Array1<F>, params: &NewtonParameters<F>) -> F {
     // Use L-infinity norm (max absolute value)
     let mut max_abs = F::zero();
     for &r in residual.iter() {
@@ -223,6 +226,7 @@ fn calculate_error<F: IntegrateFloat>(residual: &Array1<F>, _params: &NewtonPara
 }
 
 /// Calculate norm of a vector (for relative convergence)
+#[allow(dead_code)]
 fn calculate_norm<F: IntegrateFloat>(x: &Array1<F>) -> F {
     // Use L-infinity norm
     let mut max_abs = F::zero();

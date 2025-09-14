@@ -1,14 +1,15 @@
-//! Detrending functionality
-//!
-//! This module provides functions for removing linear trends and constant offsets
-//! from signal data, which is often useful as a preprocessing step before
-//! spectral analysis or other signal processing operations.
+// Detrending functionality
+//
+// This module provides functions for removing linear trends and constant offsets
+// from signal data, which is often useful as a preprocessing step before
+// spectral analysis or other signal processing operations.
 
 use crate::error::{SignalError, SignalResult};
-use ndarray::{Array1, Array2};
+use ndarray::{array, Array1, Array2};
 use num_traits::{Float, NumCast};
 use std::fmt::Debug;
 
+#[allow(unused_imports)]
 /// Detrend a signal by removing a linear trend or constant offset.
 ///
 /// This function removes a linear trend or constant offset from the input data.
@@ -62,7 +63,8 @@ use std::fmt::Debug;
 /// let mean: f64 = detrended.iter().sum::<f64>() / detrended.len() as f64;
 /// assert!(mean.abs() < 1e-12);
 /// ```
-pub fn detrend<T>(x: &[T], detrend_type: Option<&str>) -> SignalResult<Vec<f64>>
+#[allow(dead_code)]
+pub fn detrend<T>(x: &[T], detrendtype: Option<&str>) -> SignalResult<Vec<f64>>
 where
     T: Float + NumCast + Debug,
 {
@@ -125,7 +127,7 @@ where
                 .collect())
         }
         _ => Err(SignalError::ValueError(format!(
-            "Unknown detrend type: {detrend_str}. Must be 'linear', 'constant', or 'none'."
+            "Unknown detrend _type: {detrend_str}. Must be 'linear', 'constant', or 'none'."
         ))),
     }
 }
@@ -174,6 +176,7 @@ where
 ///     assert!(trend_measure.abs() < 1e-10);
 /// }
 /// ```
+#[allow(dead_code)]
 pub fn detrend_axis(
     x: &Array2<f64>,
     detrend_type: Option<&str>,
@@ -247,7 +250,7 @@ pub fn detrend_axis(
         }
         _ => {
             return Err(SignalError::ValueError(format!(
-                "Unknown detrend type: {detrend_str}. Must be 'linear', 'constant', or 'none'."
+                "Unknown detrend _type: {detrend_str}. Must be 'linear', 'constant', or 'none'."
             )));
         }
     }
@@ -297,6 +300,7 @@ pub fn detrend_axis(
 ///     assert!(detrended_linear[i].abs() > 1e-10);
 /// }
 /// ```
+#[allow(dead_code)]
 pub fn detrend_poly<T>(x: &[T], order: usize) -> SignalResult<Vec<f64>>
 where
     T: Float + NumCast + Debug,
@@ -363,6 +367,7 @@ where
 }
 
 /// Helper function to solve a small linear system Ax = b
+#[allow(dead_code)]
 fn solve_linear_system(a: &Array2<f64>, b: &Array1<f64>) -> SignalResult<Vec<f64>> {
     // Check dimensions
     let (n, m) = a.dim();
@@ -443,8 +448,6 @@ fn solve_linear_system(a: &Array2<f64>, b: &Array1<f64>) -> SignalResult<Vec<f64
 mod tests {
     use super::*;
     use approx::assert_relative_eq;
-    use ndarray::Array2;
-
     #[test]
     fn test_detrend_constant() {
         // Test signal with constant offset
@@ -477,6 +480,8 @@ mod tests {
 
     #[test]
     fn test_detrend_none() {
+        let a = vec![1.0, 2.0, 3.0, 4.0, 5.0];
+        let b = vec![0.5, 0.5];
         // Test with no detrending
         let signal = vec![1.0, 2.0, 3.0, 4.0, 5.0];
         let detrended = detrend(&signal, Some("none")).unwrap();
@@ -489,6 +494,8 @@ mod tests {
 
     #[test]
     fn test_detrend_axis() {
+        let a = vec![1.0, 2.0, 3.0, 4.0, 5.0];
+        let b = vec![0.5, 0.5];
         // Create a 2D array with trends along both axes
         let mut data = Array2::zeros((3, 4));
         for i in 0..3 {
@@ -556,6 +563,8 @@ mod tests {
 
     #[test]
     fn test_detrend_poly() {
+        let a = vec![1.0, 2.0, 3.0, 4.0, 5.0];
+        let b = vec![0.5, 0.5];
         // Create a signal with a cubic trend: y = 0.1*x^3 - 0.5*x^2 + 2*x - 3
         let n = 20;
         let mut signal = vec![0.0; n];

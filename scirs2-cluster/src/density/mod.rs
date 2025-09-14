@@ -125,6 +125,7 @@ pub enum DistanceMetric {
 /// // Print the results
 /// println!("Cluster assignments: {:?}", labels);
 /// ```
+#[allow(dead_code)]
 pub fn dbscan<F: Float + FromPrimitive + Debug + PartialOrd>(
     data: ArrayView2<F>,
     eps: F,
@@ -272,6 +273,7 @@ pub fn dbscan<F: Float + FromPrimitive + Debug + PartialOrd>(
 ///
 /// * `Result<Array1<i32>>` - Cluster labels from a default extraction (using DBSCAN-like extraction
 ///   with a reasonable epsilon value), or an error if the computation fails.
+#[allow(dead_code)]
 pub fn optics<F: Float + FromPrimitive + Debug + PartialOrd>(
     data: ArrayView2<F>,
     min_samples: usize,
@@ -282,8 +284,8 @@ pub fn optics<F: Float + FromPrimitive + Debug + PartialOrd>(
 
     // Convert max_eps to f64 for use with default extraction
     let default_eps = match max_eps {
-        Some(eps) => eps.to_f64().unwrap() / 10.0, // Use smaller epsilon by default
-        None => 0.5,                               // Default eps if none provided
+        Some(_eps) => _eps.to_f64().unwrap() / 10.0, // Use smaller epsilon by default
+        None => 0.5,                                 // Default _eps if none provided
     };
 
     Ok(optics::extract_dbscan_clustering(&result, default_eps))

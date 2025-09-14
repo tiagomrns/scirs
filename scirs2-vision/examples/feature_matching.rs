@@ -14,6 +14,7 @@ use scirs2_vision::feature::{
     matching::*, OrbConfig,
 };
 
+#[allow(dead_code)]
 fn main() -> Result<()> {
     println!("Feature Matching Example");
     println!("========================");
@@ -40,6 +41,7 @@ fn main() -> Result<()> {
 }
 
 /// Test SIFT-like descriptor matching
+#[allow(dead_code)]
 fn test_descriptor_matching(img1: &DynamicImage, img2: &DynamicImage) -> Result<()> {
     println!("\n1. SIFT-like Descriptor Matching");
     println!("=================================");
@@ -62,7 +64,7 @@ fn test_descriptor_matching(img1: &DynamicImage, img2: &DynamicImage) -> Result<
 
     // Advanced brute force matching
     let bf_matcher = BruteForceMatcher::new(BruteForceConfig {
-        distance_metric: DistanceMetric::Euclidean,
+        distancemetric: DistanceMetric::Euclidean,
         max_distance: 0.8,
         cross_check: true,
         use_ratio_test: true,
@@ -104,6 +106,7 @@ fn test_descriptor_matching(img1: &DynamicImage, img2: &DynamicImage) -> Result<
 }
 
 /// Test ORB descriptor matching
+#[allow(dead_code)]
 fn test_orb_matching(img1: &DynamicImage, img2: &DynamicImage) -> Result<()> {
     println!("\n2. ORB Descriptor Matching");
     println!("===========================");
@@ -111,7 +114,7 @@ fn test_orb_matching(img1: &DynamicImage, img2: &DynamicImage) -> Result<()> {
     // Detect and compute ORB descriptors
     let orb_config = OrbConfig {
         num_features: 100,
-        scale_factor: 1.2,
+        scalefactor: 1.2,
         num_levels: 8,
         fast_threshold: 20,
         use_harris_detector: true,
@@ -138,7 +141,7 @@ fn test_orb_matching(img1: &DynamicImage, img2: &DynamicImage) -> Result<()> {
     let orb_descriptors2: Vec<Vec<u32>> = orb_desc2.iter().map(|d| d.descriptor.clone()).collect();
 
     let bf_config = BruteForceConfig {
-        distance_metric: DistanceMetric::Hamming,
+        distancemetric: DistanceMetric::Hamming,
         max_distance: 80.0,
         cross_check: true,
         use_ratio_test: true,
@@ -173,6 +176,7 @@ fn test_orb_matching(img1: &DynamicImage, img2: &DynamicImage) -> Result<()> {
 }
 
 /// Test various matching algorithms
+#[allow(dead_code)]
 fn test_various_matchers(img1: &DynamicImage, img2: &DynamicImage) -> Result<()> {
     println!("\n3. Various Matching Algorithms");
     println!("===============================");
@@ -219,7 +223,7 @@ fn test_various_matchers(img1: &DynamicImage, img2: &DynamicImage) -> Result<()>
         DistanceMetric::Cosine,
     ] {
         let matcher = BruteForceMatcher::new(BruteForceConfig {
-            distance_metric: metric,
+            distancemetric: metric,
             max_distance: 1.0,
             cross_check: false,
             use_ratio_test: false,
@@ -234,6 +238,7 @@ fn test_various_matchers(img1: &DynamicImage, img2: &DynamicImage) -> Result<()>
 }
 
 /// Test RANSAC filtering
+#[allow(dead_code)]
 fn test_ransac_filtering(img1: &DynamicImage, img2: &DynamicImage) -> Result<()> {
     println!("\n4. RANSAC Outlier Rejection");
     println!("============================");
@@ -287,11 +292,11 @@ fn test_ransac_filtering(img1: &DynamicImage, img2: &DynamicImage) -> Result<()>
             println!("  Inlier ratio: {:.2}%", inlier_ratio * 100.0);
 
             // Visualize RANSAC results
-            let filename = format!("output/ransac_{:?}_matches.png", model).to_lowercase();
+            let filename = format!("output/ransac_{model:?}_matches.png").to_lowercase();
             let visualization =
                 visualize_matches(img1, img2, &descriptors1, &descriptors2, &filtered_matches)?;
             visualization.save(&filename).ok();
-            println!("  Saved visualization: {}", filename);
+            println!("  Saved visualization: {filename}");
         }
     }
 
@@ -299,6 +304,7 @@ fn test_ransac_filtering(img1: &DynamicImage, img2: &DynamicImage) -> Result<()>
 }
 
 /// Create two test images with known correspondences
+#[allow(dead_code)]
 fn create_test_images() -> Result<(DynamicImage, DynamicImage)> {
     let width = 400;
     let height = 300;
@@ -400,6 +406,7 @@ fn create_test_images() -> Result<(DynamicImage, DynamicImage)> {
 }
 
 /// Draw a filled circle
+#[allow(dead_code)]
 fn draw_circle(
     img: &mut ImageBuffer<Luma<u8>, Vec<u8>>,
     cx: u32,
@@ -423,6 +430,7 @@ fn draw_circle(
 }
 
 /// Draw a corner pattern
+#[allow(dead_code)]
 fn draw_corner(
     img: &mut ImageBuffer<Luma<u8>, Vec<u8>>,
     cx: u32,
@@ -448,6 +456,7 @@ fn draw_corner(
 }
 
 /// Visualize descriptor matches
+#[allow(dead_code)]
 fn visualize_matches(
     img1: &DynamicImage,
     img2: &DynamicImage,
@@ -515,6 +524,7 @@ fn visualize_matches(
 }
 
 /// Visualize binary descriptor matches
+#[allow(dead_code)]
 fn visualize_binary_matches(
     img1: &DynamicImage,
     img2: &DynamicImage,
@@ -582,6 +592,7 @@ fn visualize_binary_matches(
 }
 
 /// Draw a keypoint marker
+#[allow(dead_code)]
 fn draw_keypoint(img: &mut RgbImage, x: u32, y: u32, color: Rgb<u8>) {
     let (width, height) = img.dimensions();
 
@@ -599,6 +610,7 @@ fn draw_keypoint(img: &mut RgbImage, x: u32, y: u32, color: Rgb<u8>) {
 }
 
 /// Draw a line between two points
+#[allow(dead_code)]
 fn draw_line(img: &mut RgbImage, x1: u32, y1: u32, x2: u32, y2: u32, color: Rgb<u8>) {
     let (width, height) = img.dimensions();
 

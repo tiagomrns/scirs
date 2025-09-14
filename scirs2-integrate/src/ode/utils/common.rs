@@ -47,6 +47,7 @@ pub enum ODEType {
 }
 
 /// Calculate a safe step size based on function derivatives
+#[allow(dead_code)]
 pub fn estimate_initial_step<F, Func>(
     f: &Func,
     t: F,
@@ -109,6 +110,7 @@ where
 }
 
 /// Calculate finite difference approximation of the jacobian matrix
+#[allow(dead_code)]
 pub fn finite_difference_jacobian<F, Func>(
     f: &Func,
     t: F,
@@ -147,6 +149,7 @@ where
 }
 
 /// Apply a scaled norm to an array
+#[allow(dead_code)]
 pub fn scaled_norm<F: IntegrateFloat>(v: &Array1<F>, scale: &Array1<F>) -> F {
     let mut max_err = F::zero();
     for i in 0..v.len() {
@@ -157,6 +160,7 @@ pub fn scaled_norm<F: IntegrateFloat>(v: &Array1<F>, scale: &Array1<F>) -> F {
 }
 
 /// Calculate scaling factors for error control
+#[allow(dead_code)]
 pub fn calculate_error_weights<F: IntegrateFloat>(y: &Array1<F>, atol: F, rtol: F) -> Array1<F> {
     let mut weights = Array1::<F>::zeros(y.len());
     for i in 0..y.len() {
@@ -166,6 +170,7 @@ pub fn calculate_error_weights<F: IntegrateFloat>(y: &Array1<F>, atol: F, rtol: 
 }
 
 /// Solve a linear system Ax = b using Gaussian elimination with partial pivoting
+#[allow(dead_code)]
 pub fn solve_linear_system<F: IntegrateFloat>(
     a: &Array2<F>,
     b: &Array1<F>,
@@ -243,26 +248,33 @@ pub fn solve_linear_system<F: IntegrateFloat>(
 }
 
 /// Extrapolate solution values for use as initial guess
-pub fn extrapolate<F: IntegrateFloat>(times: &[F], values: &[Array1<F>], t_target: F) -> Array1<F> {
+#[allow(dead_code)]
+pub fn extrapolate<F: IntegrateFloat>(
+    times: &[F],
+    values: &[Array1<F>],
+    t_target: F,
+) -> IntegrateResult<Array1<F>> {
     let n = values.len();
 
     if n == 0 {
-        panic!("Cannot extrapolate from empty values");
+        return Err(IntegrateError::ValueError(
+            "Cannot extrapolate from empty values".to_string(),
+        ));
     }
 
     if n == 1 {
-        return values[0].clone();
+        return Ok(values[0].clone());
     }
 
     // Linear extrapolation if we have 2 points
     if n == 2 {
         let dt = times[1] - times[0];
         if dt.abs() < F::from_f64(1e-10).unwrap() {
-            return values[1].clone();
+            return Ok(values[1].clone());
         }
 
         let t_ratio = (t_target - times[1]) / dt;
-        return &values[1] + &((&values[1] - &values[0]) * t_ratio);
+        return Ok(&values[1] + &((&values[1] - &values[0]) * t_ratio));
     }
 
     // Quadratic extrapolation if we have 3 or more points
@@ -287,5 +299,5 @@ pub fn extrapolate<F: IntegrateFloat>(times: &[F], values: &[Array1<F>], t_targe
     let c1 = dt0 * dt2 / (-dt01 * dt12);
     let c2 = dt0 * dt1 / (dt02 * dt12);
 
-    y0 * c0 + y1 * c1 + y2 * c2
+    Ok(y0 * c0 + y1 * c1 + y2 * c2)
 }

@@ -8,7 +8,7 @@
 //! - Principal component analysis with metric
 //! - Modal analysis in structural engineering
 
-use ndarray::{Array1, Array2, ArrayView2};
+use ndarray::{Array1, Array2, ArrayView2, ScalarOperand};
 use num_complex::Complex;
 use num_traits::{Float, NumAssign};
 use std::iter::Sum;
@@ -54,9 +54,10 @@ use super::standard::{eig, eigh, EigenResult};
 /// This function uses the QZ decomposition to solve the generalized eigenvalue problem.
 /// For symmetric matrices with positive definite B, consider using `eigh_gen` for better
 /// numerical properties.
+#[allow(dead_code)]
 pub fn eig_gen<F>(a: &ArrayView2<F>, b: &ArrayView2<F>, workers: Option<usize>) -> EigenResult<F>
 where
-    F: Float + NumAssign + Sum + 'static,
+    F: Float + NumAssign + Sum + Send + Sync + ndarray::ScalarOperand + 'static,
 {
     // Configure workers for parallel operations
     parallel::configure_workers(workers);
@@ -87,7 +88,7 @@ where
     let n = a.nrows();
 
     // Special case: if B is identity matrix, solve standard eigenvalue problem
-    let is_identity = check_identity_matrix(b);
+    let is_identity = check_identitymatrix(b);
 
     if is_identity {
         // B is identity, so Ax = λBx becomes Ax = λx (standard eigenvalue problem)
@@ -168,13 +169,14 @@ where
 /// - Matrix B should be symmetric and positive definite
 /// - The eigenvalues are returned in ascending order
 /// - The eigenvectors satisfy x_i^T B x_j = δ_ij (B-orthogonality condition)
+#[allow(dead_code)]
 pub fn eigh_gen<F>(
     a: &ArrayView2<F>,
     b: &ArrayView2<F>,
     workers: Option<usize>,
 ) -> LinalgResult<(Array1<F>, Array2<F>)>
 where
-    F: Float + NumAssign + Sum + 'static,
+    F: Float + NumAssign + Sum + Send + Sync + ScalarOperand + 'static,
 {
     // Configure workers for parallel operations
     parallel::configure_workers(workers);
@@ -205,10 +207,10 @@ where
     let n = a.nrows();
 
     // Check symmetry of A
-    check_matrix_symmetry(a, "A")?;
+    checkmatrix_symmetry(a, "A")?;
 
     // Check symmetry of B
-    check_matrix_symmetry(b, "B")?;
+    checkmatrix_symmetry(b, "B")?;
 
     // Transform to standard eigenvalue problem using Cholesky decomposition
     // B = L L^T, then the problem becomes (L^{-1} A L^{-T}) y = λ y
@@ -293,13 +295,14 @@ where
 /// let b = array![[1.0_f64, 0.0], [0.0, 1.0]];
 /// let w = eigvals_gen(&a.view(), &b.view(), None).unwrap();
 /// ```
+#[allow(dead_code)]
 pub fn eigvals_gen<F>(
     a: &ArrayView2<F>,
     b: &ArrayView2<F>,
     workers: Option<usize>,
 ) -> LinalgResult<Array1<Complex<F>>>
 where
-    F: Float + NumAssign + Sum + 'static,
+    F: Float + NumAssign + Sum + Send + Sync + ScalarOperand + 'static,
 {
     let (eigenvalues, _) = eig_gen(a, b, workers)?;
     Ok(eigenvalues)
@@ -329,20 +332,22 @@ where
 /// let b = array![[1.0_f64, 0.0], [0.0, 2.0]];
 /// let w = eigvalsh_gen(&a.view(), &b.view(), None).unwrap();
 /// ```
+#[allow(dead_code)]
 pub fn eigvalsh_gen<F>(
     a: &ArrayView2<F>,
     b: &ArrayView2<F>,
     workers: Option<usize>,
 ) -> LinalgResult<Array1<F>>
 where
-    F: Float + NumAssign + Sum + 'static,
+    F: Float + NumAssign + Sum + Send + Sync + ScalarOperand + 'static,
 {
     let (eigenvalues, _) = eigh_gen(a, b, workers)?;
     Ok(eigenvalues)
 }
 
 /// Helper function to check if a matrix is the identity matrix
-fn check_identity_matrix<F>(b: &ArrayView2<F>) -> bool
+#[allow(dead_code)]
+fn check_identitymatrix<F>(b: &ArrayView2<F>) -> bool
 where
     F: Float + NumAssign,
 {
@@ -361,7 +366,8 @@ where
 }
 
 /// Helper function to check matrix symmetry
-fn check_matrix_symmetry<F>(matrix: &ArrayView2<F>, name: &str) -> LinalgResult<()>
+#[allow(dead_code)]
+fn checkmatrix_symmetry<F>(matrix: &ArrayView2<F>, name: &str) -> LinalgResult<()>
 where
     F: Float + NumAssign,
 {
@@ -371,8 +377,7 @@ where
         for j in 0..n {
             if (matrix[[i, j]] - matrix[[j, i]]).abs() > F::epsilon() {
                 return Err(LinalgError::ShapeError(format!(
-                    "Matrix {} must be symmetric for eigh_gen",
-                    name
+                    "Matrix {name} must be symmetric for eigh_gen"
                 )));
             }
         }
@@ -393,8 +398,8 @@ mod tests {
         let a = array![[2.0, 1.0], [1.0, 2.0]];
         let b = Array2::eye(2); // Identity matrix
 
-        let (w_gen, _v_gen) = eig_gen(&a.view(), &b.view(), None).unwrap();
-        let (w_std, _v_std) = eig(&a.view(), None).unwrap();
+        let (w_gen, v_gen) = eig_gen(&a.view(), &b.view(), None).unwrap();
+        let (w_std, v_std) = eig(&a.view(), None).unwrap();
 
         // Sort eigenvalues for comparison
         let mut w_gen_sorted: Vec<_> = w_gen.iter().map(|x| x.re).collect();
@@ -417,7 +422,7 @@ mod tests {
         let a = array![[1.0, 0.0], [0.0, 2.0]];
         let b = array![[2.0, 0.0], [0.0, 1.0]];
 
-        let (w, _v) = eig_gen(&a.view(), &b.view(), None).unwrap();
+        let (w, v) = eig_gen(&a.view(), &b.view(), None).unwrap();
 
         // Sort eigenvalues for predictable testing
         let mut eigenvals: Vec<_> = w.iter().map(|x| x.re).collect();

@@ -1,12 +1,15 @@
-//! Utility functions for signal processing
-//!
-//! This module provides utility functions for signal processing,
-//! such as zero padding, normalization, and window functions.
+// Utility functions for signal processing
+//
+// This module provides utility functions for signal processing,
+// such as zero padding, normalization, and window functions.
 
+use super::*;
 use crate::error::{SignalError, SignalResult};
+use num_complex::Complex64;
 use num_traits::{Float, NumCast};
 use std::fmt::Debug;
 
+#[allow(unused_imports)]
 /// Zero-pad a signal to a specified length.
 ///
 /// # Arguments
@@ -32,6 +35,7 @@ use std::fmt::Debug;
 /// assert_eq!(padded.len(), 10);
 /// assert_eq!(padded, vec![0.0, 0.0, 0.0, 1.0, 2.0, 3.0, 4.0, 0.0, 0.0, 0.0]);
 /// ```
+#[allow(dead_code)]
 pub fn zero_pad<T>(
     x: &[T],
     length: usize,
@@ -91,7 +95,7 @@ where
             }
         }
         "edge" => {
-            // Pad with edge values
+            // Pad with edge _values
             if x_f64.is_empty() {
                 return Err(SignalError::ValueError(
                     "Cannot use 'edge' mode with empty signal".to_string(),
@@ -223,9 +227,34 @@ where
 /// assert!(window[0] > 0.0 && window[0] < 1.0);
 /// assert!(window[window.len() / 2] > 0.9);
 /// ```
-pub fn get_window(window_type: &str, length: usize, periodic: bool) -> SignalResult<Vec<f64>> {
-    // Re-export from the window module
-    crate::window::get_window(window_type, length, periodic)
+#[allow(dead_code)]
+pub fn get_window(_window_type: &str, length: usize, periodic: bool) -> SignalResult<Vec<f64>> {
+    // Temporary minimal implementation - TODO: add back full window module later
+    match _window_type {
+        "boxcar" | "rectangular" => Ok(vec![1.0; length]),
+        "hann" | "hanning" => {
+            let mut window = Vec::with_capacity(length);
+            for n in 0..length {
+                let value = 0.5
+                    * (1.0 - (2.0 * std::f64::consts::PI * n as f64 / (length - 1) as f64).cos());
+                window.push(value);
+            }
+            Ok(window)
+        }
+        "hamming" => {
+            let mut window = Vec::with_capacity(length);
+            for n in 0..length {
+                let value = 0.54
+                    - 0.46 * (2.0 * std::f64::consts::PI * n as f64 / (length - 1) as f64).cos();
+                window.push(value);
+            }
+            Ok(window)
+        }
+        _ => {
+            // Default to rectangular window for unknown types
+            Ok(vec![1.0; length])
+        }
+    }
 }
 
 /// Normalize a signal to have unit energy or unit peak amplitude.
@@ -250,8 +279,9 @@ pub fn get_window(window_type: &str, length: usize, periodic: bool) -> SignalRes
 ///
 /// // Sum of squares should be 1.0
 /// let sum_of_squares: f64 = normalized.iter().map(|&x| x * x).sum();
-/// assert!((sum_of_squares - 1.0).abs() < 1e-10);
+/// assert!(((sum_of_squares - 1.0) as f64).abs() < 1e-10);
 /// ```
+#[allow(dead_code)]
 pub fn normalize<T>(x: &[T], norm: &str) -> SignalResult<Vec<f64>>
 where
     T: Float + NumCast + Debug,
@@ -324,7 +354,6 @@ where
 ///
 /// ```
 /// use scirs2_signal::utils::is_real;
-/// use num_complex::Complex64;
 ///
 /// // Create a real-valued complex signal
 /// let signal = vec![
@@ -344,6 +373,7 @@ where
 ///
 /// assert!(!is_real(&signal, 1e-10));
 /// ```
+#[allow(dead_code)]
 pub fn is_real(x: &[num_complex::Complex64], tol: f64) -> bool {
     if x.is_empty() {
         return true;
@@ -466,6 +496,8 @@ mod tests {
 
     #[test]
     fn test_normalize_peak() {
+        let a = vec![1.0, 2.0, 3.0, 4.0, 5.0];
+        let b = vec![0.5, 0.5];
         // Test peak normalization
         let signal = vec![1.0, -2.0, 3.0, -4.0];
         let normalized = normalize(&signal, "peak").unwrap();

@@ -6,7 +6,7 @@
 use ndarray::{ArrayBase, Data, Dimension};
 use num_traits::{Float, FromPrimitive, NumCast};
 
-use super::{check_same_shape, mean};
+use super::{check_sameshape, mean};
 use crate::error::{MetricsError, Result};
 
 /// Calculates the R² score (coefficient of determination)
@@ -94,6 +94,7 @@ use crate::error::{MetricsError, Result};
 /// let r2 = r2_score(&y_true, &y_pred).unwrap();
 /// assert!(r2 > 0.9);
 /// ```
+#[allow(dead_code)]
 pub fn r2_score<F, S1, S2, D1, D2>(
     y_true: &ArrayBase<S1, D1>,
     y_pred: &ArrayBase<S2, D2>,
@@ -106,7 +107,7 @@ where
     D2: Dimension,
 {
     // Check that arrays have the same shape
-    check_same_shape::<F, S1, S2, D1, D2>(y_true, y_pred)?;
+    check_sameshape::<F, S1, S2, D1, D2>(y_true, y_pred)?;
 
     let _n_samples = y_true.len();
 
@@ -128,7 +129,7 @@ where
 
     if ss_total < F::epsilon() {
         return Err(MetricsError::InvalidInput(
-            "Total sum of squares is zero. R^2 score is not defined when all true values are identical.".to_string(),
+            "Total sum of squares is zero. R^2 score is not defined when all _true values are identical.".to_string(),
         ));
     }
 
@@ -162,6 +163,7 @@ where
 /// let adj_r2 = adjusted_r2_score(&y_true, &y_pred, n_features).unwrap();
 /// assert!(adj_r2 < 1.0);
 /// ```
+#[allow(dead_code)]
 pub fn adjusted_r2_score<F, S1, S2, D1, D2>(
     y_true: &ArrayBase<S1, D1>,
     y_pred: &ArrayBase<S2, D2>,
@@ -178,7 +180,7 @@ where
 
     if n_samples <= n_features + 1 {
         return Err(MetricsError::InvalidInput(
-            "Number of samples must be greater than number of features + 1".to_string(),
+            "Number of samples must be greater than number of _features + 1".to_string(),
         ));
     }
 
@@ -221,6 +223,7 @@ where
 /// let score = explained_variance_score(&y_true, &y_pred).unwrap();
 /// assert!(score > 0.9);
 /// ```
+#[allow(dead_code)]
 pub fn explained_variance_score<F, S1, S2, D1, D2>(
     y_true: &ArrayBase<S1, D1>,
     y_pred: &ArrayBase<S2, D2>,
@@ -233,7 +236,7 @@ where
     D2: Dimension,
 {
     // Check that arrays have the same shape
-    check_same_shape::<F, S1, S2, D1, D2>(y_true, y_pred)?;
+    check_sameshape::<F, S1, S2, D1, D2>(y_true, y_pred)?;
 
     let n_samples = y_true.len();
 
@@ -260,7 +263,7 @@ where
 
     if y_true_var < F::epsilon() {
         return Err(MetricsError::InvalidInput(
-            "Variance of y_true is zero. Explained variance score is not defined when all true values are identical.".to_string(),
+            "Variance of y_true is zero. Explained variance score is not defined when all _true values are identical.".to_string(),
         ));
     }
 
@@ -294,6 +297,7 @@ where
 /// let corr = pearson_correlation(&y_true, &y_pred).unwrap();
 /// assert!(corr > 0.9);
 /// ```
+#[allow(dead_code)]
 pub fn pearson_correlation<F, S1, S2, D1, D2>(
     y_true: &ArrayBase<S1, D1>,
     y_pred: &ArrayBase<S2, D2>,
@@ -306,7 +310,7 @@ where
     D2: Dimension,
 {
     // Check that arrays have the same shape
-    check_same_shape::<F, S1, S2, D1, D2>(y_true, y_pred)?;
+    check_sameshape::<F, S1, S2, D1, D2>(y_true, y_pred)?;
 
     // Calculate means
     let y_true_mean = mean(y_true);
@@ -362,6 +366,7 @@ where
 /// let corr = spearman_correlation(&y_true, &y_pred).unwrap();
 /// assert!(corr > 0.9);
 /// ```
+#[allow(dead_code)]
 pub fn spearman_correlation<F, S1, S2, D1, D2>(
     y_true: &ArrayBase<S1, D1>,
     y_pred: &ArrayBase<S2, D2>,
@@ -374,7 +379,7 @@ where
     D2: Dimension,
 {
     // Check that arrays have the same shape
-    check_same_shape::<F, S1, S2, D1, D2>(y_true, y_pred)?;
+    check_sameshape::<F, S1, S2, D1, D2>(y_true, y_pred)?;
 
     let _n_samples = y_true.len();
 
@@ -387,6 +392,7 @@ where
 }
 
 /// Helper function to compute ranks of an array
+#[allow(dead_code)]
 fn compute_ranks<F, S, D>(x: &ArrayBase<S, D>) -> Result<ndarray::Array1<F>>
 where
     F: Float + NumCast + std::fmt::Debug + FromPrimitive,
@@ -449,6 +455,7 @@ where
 /// let ccc = concordance_correlation(&y_true, &y_pred).unwrap();
 /// assert!(ccc > 0.9);
 /// ```
+#[allow(dead_code)]
 pub fn concordance_correlation<F, S1, S2, D1, D2>(
     y_true: &ArrayBase<S1, D1>,
     y_pred: &ArrayBase<S2, D2>,
@@ -461,7 +468,7 @@ where
     D2: Dimension,
 {
     // Check that arrays have the same shape
-    check_same_shape::<F, S1, S2, D1, D2>(y_true, y_pred)?;
+    check_sameshape::<F, S1, S2, D1, D2>(y_true, y_pred)?;
 
     // Calculate means
     let y_true_mean = mean(y_true);

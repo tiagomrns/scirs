@@ -31,6 +31,7 @@ use ndarray::{Array1, ArrayView1};
 /// # Returns
 ///
 /// The solution as an ODEResult or an error
+#[allow(dead_code)]
 pub fn enhanced_bdf_method<F, Func>(
     f: Func,
     t_span: [F; 2],
@@ -38,7 +39,7 @@ pub fn enhanced_bdf_method<F, Func>(
     opts: ODEOptions<F>,
 ) -> IntegrateResult<ODEResult<F>>
 where
-    F: IntegrateFloat,
+    F: IntegrateFloat + std::default::Default,
     Func: Fn(F, ArrayView1<F>) -> Array1<F>,
 {
     // Check BDF order is valid (1-5 supported)
@@ -56,14 +57,14 @@ where
     // Determine initial step size if not provided
     let h0 = opts.h0.unwrap_or_else(|| {
         // Simple heuristic for initial step size
-        let span = t_end - t_start;
-        span / F::from_usize(100).unwrap() * F::from_f64(0.1).unwrap() // 0.1% of interval
+        let _span = t_end - t_start;
+        _span / F::from_usize(100).unwrap() * F::from_f64(0.1).unwrap() // 0.1% of interval
     });
 
     // Determine minimum and maximum step sizes
     let min_step = opts.min_step.unwrap_or_else(|| {
-        let span = t_end - t_start;
-        span * F::from_f64(1e-10).unwrap() // Minimal step size
+        let _span = t_end - t_start;
+        _span * F::from_f64(1e-10).unwrap() // Minimal step size
     });
 
     let max_step = opts.max_step.unwrap_or_else(|| {
@@ -226,13 +227,10 @@ where
 
         // Predict initial value using extrapolation from previous points
         let y_pred = if hist_values.len() > 1 {
-            extrapolate(&hist_times, &hist_values, next_t)
+            extrapolate(&hist_times, &hist_values, next_t)?
         } else {
             y.clone()
         };
-
-        // Create a function evaluations counter as a Cell to allow mutation
-        let func_evals_cell = std::cell::Cell::new(0usize);
 
         // Create the nonlinear system for BDF
         let bdf_system = |y_next: &Array1<F>| {
@@ -241,7 +239,6 @@ where
 
             // Evaluate function at the current iterate
             let f_eval = f(next_t, y_next.view());
-            func_evals_cell.set(func_evals_cell.get() + 1);
 
             // Initialize residual with c_0 * y_{n+1} term
             let mut residual = y_next.clone() * coeffs[0];
@@ -259,9 +256,6 @@ where
 
             residual
         };
-
-        // Update func_evals after the closure is done
-        let prev_func_evals = func_evals;
 
         // Set up Newton solver parameters based on Jacobian strategy
         let update_freq = match jacobian_strategy {
@@ -288,8 +282,8 @@ where
 
         match newton_result {
             Ok(result) => {
-                // Update counters including Cell-based func_evals
-                func_evals = prev_func_evals + func_evals_cell.get() + result.func_evals;
+                // Update counters
+                func_evals += result.func_evals;
                 n_jac += result.jac_evals;
                 n_lu += result.linear_solves;
                 newton_iters += F::from(result.iterations).unwrap();
@@ -419,8 +413,7 @@ where
         ))
     } else {
         Some(format!(
-            "Integration completed successfully. Jacobian strategy: {:?}, Final order: {}",
-            jacobian_strategy, current_order
+            "Integration completed successfully. Jacobian strategy: {jacobian_strategy:?}, Final order: {current_order}"
         ))
     };
 

@@ -9,12 +9,10 @@ use std::cmp::Ordering;
 use std::fmt;
 use std::str::FromStr;
 
-#[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
 
 /// Semantic version representation following `SemVer` 2.0.0
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub struct Version {
     /// Major version (breaking changes)
     major: u64,
@@ -23,9 +21,9 @@ pub struct Version {
     /// Patch version (backward compatible bug fixes)
     patch: u64,
     /// Pre-release identifier (alpha, beta, rc, etc.)
-    pre_release: Option<String>,
+    prerelease: Option<String>,
     /// Build metadata
-    build_metadata: Option<String>,
+    buildmetadata: Option<String>,
 }
 
 impl Version {
@@ -35,25 +33,47 @@ impl Version {
             major,
             minor,
             patch,
-            pre_release: None,
-            build_metadata: None,
+            prerelease: None,
+            buildmetadata: None,
         }
     }
 
+    /// Parse a simple version string (major.minor.patch format only)
+    pub fn parse_simple(versionstr: &str) -> Result<Self, String> {
+        let parts: Vec<&str> = versionstr.split('.').collect();
+        if parts.len() != 3 {
+            return Err(format!("Invalid version format: {versionstr}"));
+        }
+
+        Ok(Self {
+            major: parts[0]
+                .parse()
+                .map_err(|e| format!("Invalid major version: {e}"))?,
+            minor: parts[1]
+                .parse()
+                .map_err(|e| format!("Invalid minor version: {e}"))?,
+            patch: parts[2]
+                .parse()
+                .map_err(|e| format!("Invalid patch version: {e}"))?,
+            prerelease: None,
+            buildmetadata: None,
+        })
+    }
+
     /// Create a version with pre-release
-    pub fn new_with_pre_release(major: u64, minor: u64, patch: u64, pre_release: String) -> Self {
+    pub fn release(major: u64, minor: u64, patch: u64, prerelease: String) -> Self {
         Self {
             major,
             minor,
             patch,
-            pre_release: Some(pre_release),
-            build_metadata: None,
+            prerelease: Some(prerelease),
+            buildmetadata: None,
         }
     }
 
-    /// Parse a version string
-    pub fn parse(version: &str) -> Result<Self, CoreError> {
-        let version = version.trim();
+    /// Parse a version string (supports pre-release and build metadata)
+    pub fn parse(versionstr: &str) -> Result<Self, CoreError> {
+        let version = versionstr.trim();
 
         // Remove 'v' prefix if present
         let version = if version.starts_with('v') || version.starts_with('V') {
@@ -63,7 +83,7 @@ impl Version {
         };
 
         // Split on '+' to separate build metadata
-        let (version_part, build_metadata) = if let Some(plus_pos) = version.find('+') {
+        let (version_part, buildmetadata) = if let Some(plus_pos) = version.find('+') {
             (
                 &version[..plus_pos],
                 Some(version[plus_pos + 1..].to_string()),
@@ -73,7 +93,7 @@ impl Version {
         };
 
         // Split on '-' to separate pre-release
-        let (core_version, pre_release) = if let Some(dash_pos) = version_part.find('-') {
+        let (core_version, prerelease) = if let Some(dash_pos) = version_part.find('-') {
             (
                 &version_part[..dash_pos],
                 Some(version_part[dash_pos + 1..].to_string()),
@@ -113,8 +133,8 @@ impl Version {
             major,
             minor,
             patch,
-            pre_release,
-            build_metadata,
+            prerelease,
+            buildmetadata,
         })
     }
 
@@ -134,23 +154,23 @@ impl Version {
     }
 
     /// Get pre-release identifier
-    pub fn pre_release(&self) -> Option<&str> {
-        self.pre_release.as_deref()
+    pub fn prerelease(&self) -> Option<&str> {
+        self.prerelease.as_deref()
     }
 
     /// Get build metadata
-    pub fn build_metadata(&self) -> Option<&str> {
-        self.build_metadata.as_deref()
+    pub fn buildmetadata(&self) -> Option<&str> {
+        self.buildmetadata.as_deref()
     }
 
     /// Check if this is a pre-release version
-    pub fn is_pre_release(&self) -> bool {
-        self.pre_release.is_some()
+    pub fn is_prerelease(&self) -> bool {
+        self.prerelease.is_some()
     }
 
     /// Check if this is a stable release
     pub fn is_stable(&self) -> bool {
-        !self.is_pre_release()
+        !self.is_prerelease()
     }
 
     /// Increment major version (resets minor and patch to 0)
@@ -158,33 +178,33 @@ impl Version {
         self.major += 1;
         self.minor = 0;
         self.patch = 0;
-        self.pre_release = None;
-        self.build_metadata = None;
+        self.prerelease = None;
+        self.buildmetadata = None;
     }
 
     /// Increment minor version (resets patch to 0)
     pub fn increment_minor(&mut self) {
         self.minor += 1;
         self.patch = 0;
-        self.pre_release = None;
-        self.build_metadata = None;
+        self.prerelease = None;
+        self.buildmetadata = None;
     }
 
     /// Increment patch version
     pub fn increment_patch(&mut self) {
         self.patch += 1;
-        self.pre_release = None;
-        self.build_metadata = None;
+        self.prerelease = None;
+        self.buildmetadata = None;
     }
 
     /// Set pre-release identifier
-    pub fn set_pre_release(&mut self, pre_release: Option<String>) {
-        self.pre_release = pre_release;
+    pub fn release_2(&mut self, prerelease: Option<String>) {
+        self.prerelease = prerelease;
     }
 
     /// Set build metadata
-    pub fn set_build_metadata(&mut self, build_metadata: Option<String>) {
-        self.build_metadata = build_metadata;
+    pub fn metadata(&mut self, buildmetadata: Option<String>) {
+        self.buildmetadata = buildmetadata;
     }
 
     /// Check if this version is compatible with another version
@@ -194,7 +214,7 @@ impl Version {
     }
 
     /// Check if this version has breaking changes compared to another
-    pub fn has_breaking_changes_from(&self, other: &Self) -> bool {
+    pub fn has_breakingchanges_from(&self, other: &Self) -> bool {
         self.major > other.major
     }
 
@@ -208,12 +228,12 @@ impl fmt::Display for Version {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "{}.{}.{}", self.major, self.minor, self.patch)?;
 
-        if let Some(ref pre_release) = self.pre_release {
-            write!(f, "-{pre_release}")?;
+        if let Some(ref prerelease) = self.prerelease {
+            write!(f, "-{prerelease}")?;
         }
 
-        if let Some(ref build_metadata) = self.build_metadata {
-            write!(f, "+{build_metadata}")?;
+        if let Some(ref buildmetadata) = self.buildmetadata {
+            write!(f, "+{buildmetadata}")?;
         }
 
         Ok(())
@@ -253,17 +273,18 @@ impl Ord for Version {
         }
 
         // Compare pre-release
-        match (&self.pre_release, &other.pre_release) {
+        match (&self.prerelease, &other.prerelease) {
             (None, None) => Ordering::Equal,
             (Some(_), None) => Ordering::Less, // Pre-release < release
             (None, Some(_)) => Ordering::Greater, // Release > pre-release
-            (Some(a), Some(b)) => compare_pre_release(a, b),
+            (Some(a), Some(b)) => compare_prerelease(a, b),
         }
     }
 }
 
 /// Compare pre-release versions according to `SemVer` rules
-fn compare_pre_release(a: &str, b: &str) -> Ordering {
+#[allow(dead_code)]
+fn compare_prerelease(a: &str, b: &str) -> Ordering {
     let a_parts: Vec<&str> = a.split('.').collect();
     let b_parts: Vec<&str> = b.split('.').collect();
 
@@ -291,8 +312,7 @@ fn compare_pre_release(a: &str, b: &str) -> Ordering {
 }
 
 /// Version constraint for specifying version requirements
-#[derive(Debug, Clone, PartialEq, Eq)]
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub enum VersionConstraint {
     /// Exact version match
     Exact(Version),
@@ -320,8 +340,8 @@ pub enum VersionConstraint {
 
 impl VersionConstraint {
     /// Parse a version constraint string
-    pub fn parse(constraint: &str) -> Result<Self, CoreError> {
-        let constraint = constraint.trim();
+    pub fn constraint(constraintstr: &str) -> Result<Self, CoreError> {
+        let constraint = constraintstr.trim();
 
         if constraint == "*" {
             return Ok(Self::Any);
@@ -375,19 +395,17 @@ impl VersionConstraint {
             Self::GreaterThanOrEqual(v) => version >= v,
             Self::LessThan(v) => version < v,
             Self::LessThanOrEqual(v) => version <= v,
-            Self::Compatible(v) => version.major() == v.major() && version >= v,
-            Self::Tilde(v) => {
-                version.major() == v.major() && version.minor() == v.minor() && version >= v
-            }
+            Self::Compatible(v) => version.major == v.major && version >= v,
+            Self::Tilde(v) => version.major == v.major && version.minor == v.minor && version >= v,
             Self::Caret(v) => {
                 if v.major() > 0 {
-                    version.major() == v.major() && version >= v
+                    version.major == v.major && version >= v
                 } else if v.minor() > 0 {
-                    version.major() == 0 && version.minor() == v.minor() && version >= v
+                    version.major == 0 && version.minor == v.minor && version >= v
                 } else {
-                    version.major() == 0
-                        && version.minor() == 0
-                        && version.patch() == v.patch()
+                    version.major == 0
+                        && version.minor == 0
+                        && version.patch == v.patch
                         && version >= v
                 }
             }
@@ -411,15 +429,15 @@ impl fmt::Display for VersionConstraint {
             Self::Caret(v) => write!(f, "^{v}"),
             Self::Any => write!(f, "*"),
             Self::And(constraints) => {
-                let constraint_strs: Vec<String> =
+                let constraintstrs: Vec<String> =
                     constraints.iter().map(|c| c.to_string()).collect();
-                let joined = constraint_strs.join(" && ");
+                let joined = constraintstrs.join(" && ");
                 write!(f, "{joined}")
             }
             Self::Or(constraints) => {
-                let constraint_strs: Vec<String> =
+                let constraintstrs: Vec<String> =
                     constraints.iter().map(|c| c.to_string()).collect();
-                let joined = constraint_strs.join(" || ");
+                let joined = constraintstrs.join(" || ");
                 write!(f, "{joined}")
             }
         }
@@ -427,15 +445,14 @@ impl fmt::Display for VersionConstraint {
 }
 
 /// Version range specification
-#[derive(Debug, Clone, PartialEq, Eq)]
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct VersionRange {
     /// Minimum version (inclusive)
     pub min: Option<Version>,
     /// Maximum version (exclusive)
     pub max: Option<Version>,
     /// Include pre-release versions
-    pub include_pre_release: bool,
+    pub include_prerelease: bool,
 }
 
 impl VersionRange {
@@ -444,20 +461,20 @@ impl VersionRange {
         Self {
             min,
             max,
-            include_pre_release: false,
+            include_prerelease: false,
         }
     }
 
     /// Create a range that includes pre-release versions
-    pub fn with_pre_release(mut self) -> Self {
-        self.include_pre_release = true;
+    pub fn with_prerelease(mut self) -> Self {
+        self.include_prerelease = true;
         self
     }
 
     /// Check if a version is within this range
     pub fn contains(&self, version: &Version) -> bool {
         // Check pre-release inclusion
-        if version.is_pre_release() && !self.include_pre_release {
+        if version.is_prerelease() && !self.include_prerelease {
             return false;
         }
 
@@ -479,7 +496,7 @@ impl VersionRange {
     }
 
     /// Get all versions in a list that fall within this range
-    pub fn filter_versions<'a>(&self, versions: &'a [Version]) -> Vec<&'a Version> {
+    pub fn filterversions<'a>(&self, versions: &'a [Version]) -> Vec<&'a Version> {
         versions.iter().filter(|v| self.contains(v)).collect()
     }
 }
@@ -489,8 +506,8 @@ pub struct VersionBuilder {
     major: u64,
     minor: u64,
     patch: u64,
-    pre_release: Option<String>,
-    build_metadata: Option<String>,
+    prerelease: Option<String>,
+    buildmetadata: Option<String>,
 }
 
 impl VersionBuilder {
@@ -500,20 +517,20 @@ impl VersionBuilder {
             major,
             minor,
             patch,
-            pre_release: None,
-            build_metadata: None,
+            prerelease: None,
+            buildmetadata: None,
         }
     }
 
     /// Set pre-release identifier
-    pub fn pre_release(mut self, pre_release: &str) -> Self {
-        self.pre_release = Some(pre_release.to_string());
+    pub fn release(mut self, prerelease: &str) -> Self {
+        self.prerelease = Some(prerelease.to_string());
         self
     }
 
     /// Set build metadata
-    pub fn build_metadata(mut self, build_metadata: &str) -> Self {
-        self.build_metadata = Some(build_metadata.to_string());
+    pub fn metadata(mut self, buildmetadata: &str) -> Self {
+        self.buildmetadata = Some(buildmetadata.to_string());
         self
     }
 
@@ -523,8 +540,8 @@ impl VersionBuilder {
             major: self.major,
             minor: self.minor,
             patch: self.patch,
-            pre_release: self.pre_release,
-            build_metadata: self.build_metadata,
+            prerelease: self.prerelease,
+            buildmetadata: self.buildmetadata,
         }
     }
 }
@@ -539,7 +556,7 @@ mod tests {
         assert_eq!(version.major(), 1);
         assert_eq!(version.minor(), 2);
         assert_eq!(version.patch(), 3);
-        assert!(!version.is_pre_release());
+        assert!(!version.is_prerelease());
         assert!(version.is_stable());
     }
 
@@ -550,11 +567,11 @@ mod tests {
 
         let version = Version::parse("1.2.3-alpha.1").unwrap();
         assert_eq!(version.to_string(), "1.2.3-alpha.1");
-        assert_eq!(version.pre_release(), Some("alpha.1"));
-        assert!(version.is_pre_release());
+        assert_eq!(version.prerelease(), Some("alpha.1"));
+        assert!(version.is_prerelease());
 
         let version = Version::parse("1.2.3+build.123").unwrap();
-        assert_eq!(version.build_metadata(), Some("build.123"));
+        assert_eq!(version.buildmetadata(), Some("build.123"));
 
         let version = Version::parse("v1.2.3").unwrap();
         assert_eq!(version.to_string(), "1.2.3");
@@ -590,17 +607,17 @@ mod tests {
 
     #[test]
     fn test_version_constraints() {
-        let constraint = VersionConstraint::parse(">=1.2.0").unwrap();
+        let constraint = VersionConstraint::constraint(">=1.2.0").unwrap();
         let version = Version::parse("1.2.3").unwrap();
         assert!(constraint.matches(&version));
 
-        let constraint = VersionConstraint::parse("^1.2.0").unwrap();
+        let constraint = VersionConstraint::constraint("^1.2.0").unwrap();
         let version = Version::parse("1.5.0").unwrap();
         assert!(constraint.matches(&version));
         let version = Version::parse("2.0.0").unwrap();
         assert!(!constraint.matches(&version));
 
-        let constraint = VersionConstraint::parse("~1.2.0").unwrap();
+        let constraint = VersionConstraint::constraint("~1.2.0").unwrap();
         let version = Version::parse("1.2.5").unwrap();
         assert!(constraint.matches(&version));
         let version = Version::parse("1.3.0").unwrap();
@@ -625,15 +642,15 @@ mod tests {
         let version = Version::parse("1.5.0-alpha").unwrap();
         assert!(!range.contains(&version));
 
-        let range = range.with_pre_release();
+        let range = range.with_prerelease();
         assert!(range.contains(&version));
     }
 
     #[test]
     fn test_version_builder() {
         let version = VersionBuilder::new(1, 2, 3)
-            .pre_release("alpha.1")
-            .build_metadata("build.123")
+            .release("alpha.1")
+            .metadata("build.123")
             .build();
 
         assert_eq!(version.to_string(), "1.2.3-alpha.1+build.123");
@@ -648,11 +665,11 @@ mod tests {
         assert!(v1_0_0.is_compatible_with(&v1_2_0));
         assert!(v1_2_0.is_compatible_with(&v1_0_0));
         assert!(!v1_0_0.is_compatible_with(&v2_0_0));
-        assert!(v2_0_0.has_breaking_changes_from(&v1_0_0)); // Major version change indicates breaking changes
+        assert!(v2_0_0.has_breakingchanges_from(&v1_0_0)); // Major version change indicates breaking changes
     }
 
     #[test]
-    fn test_pre_release_comparison() {
+    fn test_prerelease_comparison() {
         let versions = vec![
             Version::parse("1.0.0-alpha").unwrap(),
             Version::parse("1.0.0-alpha.1").unwrap(),
@@ -664,9 +681,9 @@ mod tests {
             Version::parse("1.0.0").unwrap(),
         ];
 
-        let mut sorted_versions = versions.clone();
-        sorted_versions.sort();
+        let mut sortedversions = versions.clone();
+        sortedversions.sort();
 
-        assert_eq!(sorted_versions, versions);
+        assert_eq!(sortedversions, versions);
     }
 }

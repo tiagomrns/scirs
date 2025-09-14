@@ -11,7 +11,6 @@ use ndarray::Array2;
 use num_complex::Complex64;
 use num_traits::NumCast;
 use std::collections::HashMap;
-use std::f64::consts::PI;
 use std::fmt::Debug;
 
 /// Type of wavelet for continuous wavelet transform
@@ -126,6 +125,7 @@ pub struct TFResult {
 }
 
 /// Compute a time-frequency representation of a signal
+#[allow(dead_code)]
 pub fn time_frequency_transform<T>(
     signal: &[T],
     config: &TFConfig,
@@ -170,7 +170,12 @@ where
 }
 
 /// Compute Short-Time Fourier Transform (STFT)
-fn compute_stft<T>(signal: &[T], config: &TFConfig, sample_rate: Option<f64>) -> FFTResult<TFResult>
+#[allow(dead_code)]
+fn compute_stft<T>(
+    _signal: &[T],
+    config: &TFConfig,
+    sample_rate: Option<f64>,
+) -> FFTResult<TFResult>
 where
     T: NumCast + Copy + Debug,
 {
@@ -190,8 +195,8 @@ where
     };
     let window = window::get_window(window_type, window_size, true)?;
 
-    // Calculate number of frames based on signal length, window size, and hop size
-    let num_frames = ((signal.len() - window_size) / hop_size) + 1;
+    // Calculate number of frames based on _signal length, window size, and hop size
+    let num_frames = ((_signal.len() - window_size) / hop_size) + 1;
 
     // Limit number of frames for testing to avoid timeouts
     let num_frames = num_frames.min(config.max_size / window_size);
@@ -231,7 +236,7 @@ where
         // Extract frame
         let start = (time * sample_rate.unwrap_or(1.0)) as usize;
 
-        // Skip if frame would go beyond signal bounds
+        // Skip if frame would go beyond _signal bounds
         if start + window_size > signal.len() {
             continue;
         }
@@ -241,10 +246,10 @@ where
 
         // Copy frame and apply window
         for i in 0..window_size {
-            let signal_val: f64 = NumCast::from(signal[start + i]).ok_or_else(|| {
-                FFTError::ValueError("Failed to convert signal value to f64".to_string())
+            let _signal_val: f64 = NumCast::from(_signal[start + i]).ok_or_else(|| {
+                FFTError::ValueError("Failed to convert _signal value to f64".to_string())
             })?;
-            windowed_frame.push(Complex64::new(signal_val * window[i], 0.0));
+            windowed_frame.push(Complex64::new(_signal_val * window[i], 0.0));
         }
 
         // Zero-padding
@@ -284,7 +289,8 @@ where
 }
 
 /// Compute Continuous Wavelet Transform (CWT)
-fn compute_cwt<T>(signal: &[T], config: &TFConfig, sample_rate: Option<f64>) -> FFTResult<TFResult>
+#[allow(dead_code)]
+fn compute_cwt<T>(_signal: &[T], config: &TFConfig, samplerate: Option<f64>) -> FFTResult<TFResult>
 where
     T: NumCast + Copy + Debug,
 {
@@ -321,16 +327,16 @@ where
     // Initialize result matrix
     let mut coefficients = Array2::zeros((num_freqs, n));
 
-    // Convert signal to complex for FFT
+    // Convert _signal to complex for FFT
     let mut signal_complex = Vec::with_capacity(n);
     for &val in signal.iter().take(n) {
         let val_f64: f64 = NumCast::from(val).ok_or_else(|| {
-            FFTError::ValueError("Failed to convert signal value to f64".to_string())
+            FFTError::ValueError("Failed to convert _signal value to f64".to_string())
         })?;
         signal_complex.push(Complex64::new(val_f64, 0.0));
     }
 
-    // Compute FFT of signal
+    // Compute FFT of _signal
     let signal_fft = fft(&signal_complex, None)?;
 
     // For each scale/frequency (limit to first 3 for testing)
@@ -344,7 +350,7 @@ where
             sample_rate.unwrap_or(1.0),
         )?;
 
-        // Multiply signal FFT with wavelet FFT (convolution in time domain)
+        // Multiply _signal FFT with wavelet FFT (convolution in time domain)
         let mut product = Vec::with_capacity(n);
         for j in 0..n {
             product.push(signal_fft[j] * wavelet_fft[j]);
@@ -385,6 +391,7 @@ where
 }
 
 /// Create the FFT of a wavelet at a given scale/frequency
+#[allow(dead_code)]
 fn create_wavelet_fft(
     wavelet_type: WaveletType,
     scale_freq: f64,
@@ -397,12 +404,12 @@ fn create_wavelet_fft(
     // Normalized frequency vector
     let mut freqs = Vec::with_capacity(n);
     for k in 0..n {
-        let freq = if k <= n / 2 {
+        let _freq = if k <= n / 2 {
             k as f64 / (n as f64 * dt)
         } else {
             -((n - k) as f64) / (n as f64 * dt)
         };
-        freqs.push(freq);
+        freqs.push(_freq);
     }
 
     // Initialize wavelet in frequency domain
@@ -413,8 +420,8 @@ fn create_wavelet_fft(
             // Morlet wavelet parameters
             let omega0 = 6.0; // Central frequency
 
-            for (k, &freq) in freqs.iter().enumerate().take(n) {
-                let norm_freq = freq * scale;
+            for (k, &_freq) in freqs.iter().enumerate().take(n) {
+                let norm_freq = _freq * scale;
                 if norm_freq > 0.0 {
                     // Morlet wavelet in frequency domain
                     let exp_term = (-0.5 * (norm_freq - omega0).powi(2)).exp();
@@ -423,8 +430,8 @@ fn create_wavelet_fft(
             }
         }
         WaveletType::MexicanHat => {
-            for (k, &freq) in freqs.iter().enumerate().take(n) {
-                let norm_freq = freq * scale;
+            for (k, &_freq) in freqs.iter().enumerate().take(n) {
+                let norm_freq = _freq * scale;
                 if norm_freq > 0.0 {
                     // Mexican hat wavelet in frequency domain
                     let exp_term = (-0.5 * norm_freq.powi(2)).exp();
@@ -437,8 +444,8 @@ fn create_wavelet_fft(
             // Paul wavelet parameter
             let m = 4; // Order of the wavelet
 
-            for (k, &freq) in freqs.iter().enumerate().take(n) {
-                let norm_freq = freq * scale;
+            for (k, &_freq) in freqs.iter().enumerate().take(n) {
+                let norm_freq = _freq * scale;
                 if norm_freq > 0.0 {
                     // Paul wavelet in frequency domain
                     let h = (norm_freq > 0.0) as i32 as f64;
@@ -452,8 +459,8 @@ fn create_wavelet_fft(
             // DOG wavelet parameter
             let m = 2; // Order of the derivative
 
-            for (k, &freq) in freqs.iter().enumerate().take(n) {
-                let norm_freq = freq * scale;
+            for (k, &_freq) in freqs.iter().enumerate().take(n) {
+                let norm_freq = _freq * scale;
                 if norm_freq > 0.0 {
                     // DOG wavelet in frequency domain
                     let exp_term = (-0.5 * norm_freq.powi(2)).exp();
@@ -469,6 +476,7 @@ fn create_wavelet_fft(
 }
 
 /// Compute reassigned spectrogram
+#[allow(dead_code)]
 fn compute_reassigned_spectrogram(
     signal: &[f64],
     config: &TFConfig,
@@ -559,6 +567,7 @@ fn compute_reassigned_spectrogram(
 }
 
 /// Compute synchrosqueezed wavelet transform
+#[allow(dead_code)]
 fn compute_synchrosqueezed_wt(
     signal: &[f64],
     config: &TFConfig,
@@ -640,6 +649,7 @@ fn compute_synchrosqueezed_wt(
 }
 
 /// Calculate the spectrogram (magnitude squared of STFT)
+#[allow(dead_code)]
 pub fn spectrogram<T>(
     signal: &[T],
     config: &TFConfig,
@@ -658,6 +668,7 @@ where
 }
 
 /// Calculate the scalogram (magnitude squared of CWT)
+#[allow(dead_code)]
 pub fn scalogram<T>(
     signal: &[T],
     config: &TFConfig,
@@ -676,7 +687,8 @@ where
 }
 
 /// Extract ridge (maximum energy path) from a time-frequency representation
-pub fn extract_ridge(tf_result: &TFResult) -> Vec<(f64, f64)> {
+#[allow(dead_code)]
+pub fn extract_ridge(_tfresult: &TFResult) -> Vec<(f64, f64)> {
     let num_times = tf_result.times.len();
     let num_freqs = tf_result.frequencies.len();
 
@@ -699,7 +711,7 @@ pub fn extract_ridge(tf_result: &TFResult) -> Vec<(f64, f64)> {
         }
 
         // Add (time, frequency) point to ridge
-        ridge.push((tf_result.times[j], tf_result.frequencies[max_freq_idx]));
+        ridge.push((_tf_result.times[j], tf_result.frequencies[max_freq_idx]));
     }
 
     ridge

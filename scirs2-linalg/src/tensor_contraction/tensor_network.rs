@@ -101,7 +101,7 @@ where
     ///
     /// * If any index name in `new_order` does not exist in the tensor node
     /// * If `new_order` does not contain all the indices of the tensor node
-    pub fn transpose(&self, new_order: &[String]) -> LinalgResult<Self> {
+    pub fn transpose(&self, neworder: &[String]) -> LinalgResult<Self> {
         // Check that the number of indices in new_order matches the number of dimensions
         if new_order.len() != self.ndim() {
             return Err(LinalgError::ShapeError(format!(
@@ -116,12 +116,12 @@ where
         let current_indices: HashSet<_> = self.indices.iter().collect();
         if unique_new_indices != current_indices {
             return Err(LinalgError::ValueError(
-                "New order must contain exactly the same indices as the tensor node".to_string(),
+                "New _order must contain exactly the same indices as the tensor node".to_string(),
             ));
         }
 
         // Map from current indices to their positions
-        let index_positions: HashMap<_, _> = self
+        let index_positions: HashMap<_> = self
             .indices
             .iter()
             .enumerate()
@@ -258,21 +258,21 @@ where
         }
 
         // Compute shapes of the result tensor
-        let mut result_shape = Vec::new();
-        result_shape.extend_from_slice(self.data.shape());
-        result_shape.extend_from_slice(other.data.shape());
+        let mut resultshape = Vec::new();
+        resultshape.extend_from_slice(self.data.shape());
+        resultshape.extend_from_slice(other.data.shape());
 
         // Create result tensor
-        let mut result_data = ArrayD::zeros(IxDyn(&result_shape));
+        let mut result_data = ArrayD::zeros(IxDyn(&resultshape));
 
         // Compute outer product
         for self_idx in ndarray::indices(self.data.shape()) {
             for other_idx in ndarray::indices(other.data.shape()) {
                 let mut result_idx = Vec::new();
-                for &i in self_idx.as_array_view().iter() {
+                for &i in self_idx.asarray_view().iter() {
                     result_idx.push(i);
                 }
-                for &i in other_idx.as_array_view().iter() {
+                for &i in other_idx.asarray_view().iter() {
                     result_idx.push(i);
                 }
 
@@ -337,18 +337,18 @@ where
         }
 
         // Determine the shape of the result tensor
-        let mut result_shape = Vec::new();
+        let mut resultshape = Vec::new();
         let mut result_indices = Vec::new();
 
         for (i, idx) in self.indices.iter().enumerate() {
             if i != pos1 && i != pos2 {
-                result_shape.push(self.data.shape()[i]);
+                resultshape.push(self.data.shape()[i]);
                 result_indices.push(idx.clone());
             }
         }
 
         // Create result tensor
-        let mut result_data = ArrayD::zeros(IxDyn(&result_shape));
+        let mut result_data = ArrayD::zeros(IxDyn(&resultshape));
 
         // Perform trace operation
         // Note: This is a naive implementation for clarity; more efficient implementations exist
@@ -412,10 +412,10 @@ where
         index_name: &str,
         position: usize,
     ) -> LinalgResult<TensorNode<A>> {
-        // Check that the index name doesn't already exist
+        // Check that the index _name doesn't already exist
         if self.indices.contains(&index_name.to_string()) {
             return Err(LinalgError::ValueError(format!(
-                "Index name '{}' already exists in tensor",
+                "Index _name '{}' already exists in tensor",
                 index_name
             )));
         }
@@ -430,12 +430,12 @@ where
         }
 
         // Create a new shape with the dummy dimension added
-        let mut new_shape = self.data.shape().to_vec();
-        new_shape.insert(position, 1);
+        let mut newshape = self.data.shape().to_vec();
+        newshape.insert(position, 1);
 
         // Reshape the data to add the dummy dimension
         let mut new_data = self.data.clone();
-        new_data = new_data.into_shape_with_order(new_shape).map_err(|e| {
+        new_data = new_data.into_shape_with_order(newshape).map_err(|e| {
             LinalgError::ComputationError(format!("Failed to reshape tensor: {}", e))
         })?;
 
@@ -463,7 +463,7 @@ where
     /// # Errors
     ///
     /// * If the index does not exist in the tensor
-    pub fn remove_index(&self, index_name: &str) -> LinalgResult<TensorNode<A>> {
+    pub fn remove_index(&self, indexname: &str) -> LinalgResult<TensorNode<A>> {
         // Find the position of the index
         let position = match self.indices.iter().position(|x| x == index_name) {
             Some(p) => p,
@@ -511,7 +511,7 @@ where
     ///
     /// * `TensorNetwork` - A new tensor network
     pub fn new(nodes: Vec<TensorNode<A>>) -> Self {
-        TensorNetwork { nodes }
+        TensorNetwork { _nodes }
     }
 
     /// Adds a tensor node to the network.

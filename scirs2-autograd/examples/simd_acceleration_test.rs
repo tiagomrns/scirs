@@ -8,6 +8,7 @@ use ndarray::Array1;
 use scirs2_autograd as ag;
 use std::time::Instant;
 
+#[allow(dead_code)]
 fn main() {
     println!("Testing SIMD acceleration in autograd binary operations");
 

@@ -12,6 +12,7 @@ use std::f64::consts::PI;
 use std::time::Instant;
 
 // Helper function to create a sparse signal with specified frequencies
+#[allow(dead_code)]
 fn create_sparse_signal(n: usize, frequencies: &[(usize, f64)]) -> Vec<f64> {
     let mut signal = vec![0.0; n];
     for (i, sample) in signal.iter_mut().enumerate().take(n) {
@@ -24,6 +25,7 @@ fn create_sparse_signal(n: usize, frequencies: &[(usize, f64)]) -> Vec<f64> {
 }
 
 // Helper to add noise to signals
+#[allow(dead_code)]
 fn add_noise(signal: &[f64], noise_level: f64) -> Vec<f64> {
     let mut rng = rand::rng();
     signal
@@ -33,6 +35,7 @@ fn add_noise(signal: &[f64], noise_level: f64) -> Vec<f64> {
 }
 
 // Helper to create a batch of signals with varying parameters
+#[allow(dead_code)]
 fn create_test_batch(count: usize) -> Vec<Vec<f64>> {
     let mut signals = Vec::with_capacity(count);
     let _rng = rand::rng();
@@ -59,17 +62,15 @@ fn create_test_batch(count: usize) -> Vec<Vec<f64>> {
     signals
 }
 
+#[allow(dead_code)]
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("Sparse FFT Batch Processing Example");
     println!("===================================\n");
 
     // Create a batch of test signals
-    let batch_size = 20;
-    println!(
-        "Creating {} test signals with varying parameters...",
-        batch_size
-    );
-    let signals = create_test_batch(batch_size);
+    let batchsize = 20;
+    println!("Creating {batchsize} test signals with varying parameters...");
+    let signals = create_test_batch(batchsize);
 
     // 1. Sequential CPU processing (baseline)
     println!("\n1. Sequential CPU Processing:");
@@ -83,7 +84,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let start = Instant::now();
     let config = BatchConfig {
         use_parallel: true,
-        max_batch_size: batch_size,
+        max_batch_size: batchsize,
         ..BatchConfig::default()
     };
     let results_cpu_batch = batch_sparse_fft(
@@ -105,7 +106,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let start = Instant::now();
     let config = BatchConfig {
         use_parallel: true,
-        max_batch_size: batch_size,
+        max_batch_size: batchsize,
         ..BatchConfig::default()
     };
     let results_spectral = spectral_flatness_batch_sparse_fft(
@@ -167,6 +168,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 }
 
 // Process signals sequentially (baseline)
+#[allow(dead_code)]
 fn process_signals_sequentially(
     signals: &[Vec<f64>],
 ) -> Result<Vec<scirs2_fft::sparse_fft::SparseFFTResult>, Box<dyn std::error::Error>> {
@@ -193,6 +195,7 @@ fn process_signals_sequentially(
 }
 
 // Verify that different processing methods give similar results
+#[allow(dead_code)]
 fn verify_results(
     baseline_results: &[scirs2_fft::sparse_fft::SparseFFTResult],
     test_results: &[scirs2_fft::sparse_fft::SparseFFTResult],
@@ -246,6 +249,7 @@ fn verify_results(
 }
 
 // Analyze results from different processing methods
+#[allow(dead_code)]
 fn analyze_results(
     sequential_results: &[scirs2_fft::sparse_fft::SparseFFTResult],
     parallel_results: &[scirs2_fft::sparse_fft::SparseFFTResult],
@@ -269,9 +273,9 @@ fn analyze_results(
         / spectral_results.len() as f64;
 
     println!("Average components found:");
-    println!("  Sequential: {:.1}", seq_avg);
-    println!("  Parallel batch: {:.1}", par_avg);
-    println!("  Spectral flatness: {:.1}", spec_avg);
+    println!("  Sequential: {seq_avg:.1}");
+    println!("  Parallel batch: {par_avg:.1}");
+    println!("  Spectral flatness: {spec_avg:.1}");
 
     // Calculate average computation time
     let seq_time = sequential_results
@@ -291,7 +295,7 @@ fn analyze_results(
         / spectral_results.len() as f64;
 
     println!("Average per-signal processing time (ms):");
-    println!("  Sequential: {:.3}", seq_time);
-    println!("  Parallel batch: {:.3}", par_time);
-    println!("  Spectral flatness: {:.3}", spec_time);
+    println!("  Sequential: {seq_time:.3}");
+    println!("  Parallel batch: {par_time:.3}");
+    println!("  Spectral flatness: {spec_time:.3}");
 }

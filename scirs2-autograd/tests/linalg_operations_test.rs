@@ -7,6 +7,7 @@ use scirs2_autograd as ag;
 
 #[test]
 #[ignore = "Gradient shape propagation architectural limitation - see issue #1"]
+#[allow(dead_code)]
 fn test_matrix_inverse_and_gradient() {
     ag::run(|g| {
         let a = variable(array![[3.0_f64, 1.0], [1.0, 2.0]], g);
@@ -58,6 +59,7 @@ fn test_matrix_inverse_and_gradient() {
 
 #[test]
 #[ignore = "Gradient shape propagation architectural limitation - see issue #1"]
+#[allow(dead_code)]
 fn test_determinant_and_gradient() {
     ag::run(|g| {
         let a = variable(array![[3.0_f64, 1.0], [1.0, 2.0]], g);
@@ -84,6 +86,7 @@ fn test_determinant_and_gradient() {
 }
 
 #[test]
+#[allow(dead_code)]
 fn test_svd_decomposition() {
     ag::run(|g| {
         let a = convert_to_tensor(array![[1.0_f64, 2.0], [3.0, 4.0], [5.0, 6.0]], g);
@@ -118,6 +121,7 @@ fn test_svd_decomposition() {
 }
 
 #[test]
+#[allow(dead_code)]
 fn test_eigendecomposition() {
     ag::run(|g| {
         // Use a symmetric matrix for stable eigendecomposition
@@ -144,6 +148,7 @@ fn test_eigendecomposition() {
 }
 
 #[test]
+#[allow(dead_code)]
 fn test_pseudo_inverse() {
     ag::run(|g| {
         // Overdetermined system (more rows than columns)
@@ -173,6 +178,7 @@ fn test_pseudo_inverse() {
 }
 
 #[test]
+#[allow(dead_code)]
 fn test_matrix_square_root() {
     ag::run(|g| {
         // Positive definite matrix
@@ -207,6 +213,7 @@ fn test_matrix_square_root() {
 }
 
 #[test]
+#[allow(dead_code)]
 fn test_matrix_logarithm() {
     ag::run(|g| {
         // Matrix close to identity for stable logarithm
@@ -228,6 +235,7 @@ fn test_matrix_logarithm() {
 }
 
 #[test]
+#[allow(dead_code)]
 fn test_qr_decomposition() {
     ag::run(|g| {
         let a = convert_to_tensor(array![[1.0_f64, 2.0], [3.0, 4.0], [5.0, 6.0]], g);
@@ -270,6 +278,7 @@ fn test_qr_decomposition() {
 
 #[test]
 #[ignore = "Cholesky decomposition not yet implemented - waiting for scirs2-core linear algebra"]
+#[allow(dead_code)]
 fn test_cholesky_decomposition() {
     ag::run(|g| {
         // Positive definite matrix
@@ -298,6 +307,7 @@ fn test_cholesky_decomposition() {
 }
 
 #[test]
+#[allow(dead_code)]
 fn test_solve_linear_system() {
     ag::run(|g| {
         let a = variable(array![[3.0_f64, 1.0], [1.0, 2.0]], g);
@@ -326,6 +336,7 @@ fn test_solve_linear_system() {
 
 #[test]
 #[ignore = "Gradient shape propagation architectural limitation"]
+#[allow(dead_code)]
 fn test_complex_linear_algebra_chain() {
     ag::run(|g| {
         // Test a complex chain of operations with gradients
@@ -352,6 +363,7 @@ fn test_complex_linear_algebra_chain() {
 }
 
 #[test]
+#[allow(dead_code)]
 fn test_batch_operations() {
     ag::run(|g| {
         // Test batch matrix multiplication

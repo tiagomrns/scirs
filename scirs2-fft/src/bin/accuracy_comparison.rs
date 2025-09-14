@@ -22,6 +22,7 @@ pub struct AccuracyResult {
 }
 
 /// Calculate error metrics between two complex vectors
+#[allow(dead_code)]
 fn calculate_complex_error(actual: &[Complex64], expected: &[Complex64]) -> (f64, f64, f64, f64) {
     assert_eq!(actual.len(), expected.len());
 
@@ -51,6 +52,7 @@ fn calculate_complex_error(actual: &[Complex64], expected: &[Complex64]) -> (f64
 }
 
 /// Calculate error metrics between two real vectors
+#[allow(dead_code)]
 fn calculate_real_error(actual: &[f64], expected: &[f64]) -> (f64, f64, f64, f64) {
     assert_eq!(actual.len(), expected.len());
 
@@ -80,6 +82,7 @@ fn calculate_real_error(actual: &[f64], expected: &[f64]) -> (f64, f64, f64, f64
 }
 
 /// Test FFT against known analytical results
+#[allow(dead_code)]
 pub fn test_fft_accuracy() -> Vec<AccuracyResult> {
     let mut results = Vec::new();
 
@@ -114,7 +117,7 @@ pub fn test_fft_accuracy() -> Vec<AccuracyResult> {
             mean_error,
             rms_error,
             relative_error,
-            notes: format!("Pure sine wave at {} Hz", frequency),
+            notes: format!("Pure sine wave at {frequency} Hz"),
         });
     }
 
@@ -153,6 +156,7 @@ pub fn test_fft_accuracy() -> Vec<AccuracyResult> {
 }
 
 /// Test FFT inverse accuracy
+#[allow(dead_code)]
 pub fn test_inverse_accuracy() -> Vec<AccuracyResult> {
     let mut results = Vec::new();
 
@@ -188,6 +192,7 @@ pub fn test_inverse_accuracy() -> Vec<AccuracyResult> {
 }
 
 /// Test real FFT accuracy
+#[allow(dead_code)]
 pub fn test_rfft_accuracy() -> Vec<AccuracyResult> {
     let mut results = Vec::new();
 
@@ -224,6 +229,7 @@ pub fn test_rfft_accuracy() -> Vec<AccuracyResult> {
 }
 
 /// Test 2D FFT accuracy
+#[allow(dead_code)]
 pub fn test_fft2_accuracy() -> Vec<AccuracyResult> {
     let mut results = Vec::new();
 
@@ -267,6 +273,7 @@ pub fn test_fft2_accuracy() -> Vec<AccuracyResult> {
 }
 
 /// Test DCT accuracy against analytical results
+#[allow(dead_code)]
 pub fn test_dct_accuracy() -> Vec<AccuracyResult> {
     let mut results = Vec::new();
 
@@ -303,7 +310,7 @@ pub fn test_dct_accuracy() -> Vec<AccuracyResult> {
             mean_error: frequency_error,
             rms_error: frequency_error,
             relative_error: frequency_error / frequency,
-            notes: format!("DCT-II frequency detection at {} Hz", frequency),
+            notes: format!("DCT-II frequency detection at {frequency} Hz"),
         });
     }
 
@@ -311,6 +318,7 @@ pub fn test_dct_accuracy() -> Vec<AccuracyResult> {
 }
 
 /// Test fractional FFT properties
+#[allow(dead_code)]
 pub fn test_frft_accuracy() -> Vec<AccuracyResult> {
     let mut results = Vec::new();
 
@@ -344,10 +352,7 @@ pub fn test_frft_accuracy() -> Vec<AccuracyResult> {
             mean_error,
             rms_error,
             relative_error,
-            notes: format!(
-                "FrFT additivity: ({} + {}) vs {}",
-                alpha1, alpha2, alpha_sum
-            ),
+            notes: format!("FrFT additivity: ({alpha1} + {alpha2}) vs {alpha_sum}"),
         });
     }
 
@@ -355,6 +360,7 @@ pub fn test_frft_accuracy() -> Vec<AccuracyResult> {
 }
 
 /// Generate accuracy report
+#[allow(dead_code)]
 pub fn generate_accuracy_report(results: &[AccuracyResult]) {
     println!("=== Accuracy Comparison Report ===");
     println!("Operation | Size | Max Error | Mean Error | RMS Error | Rel Error | Notes");
@@ -374,6 +380,7 @@ pub fn generate_accuracy_report(results: &[AccuracyResult]) {
     }
 }
 
+#[allow(dead_code)]
 fn main() {
     let mut all_results = Vec::new();
 

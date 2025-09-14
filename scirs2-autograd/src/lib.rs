@@ -1,3 +1,4 @@
+#![allow(deprecated)]
 //! Differentiable operations and tensors backed by [ndarray](https://github.com/rust-ndarray/ndarray).
 #![recursion_limit = "1024"]
 //!
@@ -9,9 +10,8 @@
 //! scirs2-autograd = {"<version>", features = ["blas", "<blas-implementation-choice>"] }
 //! ```
 //! `<blas-implementation-choice>` must be one of the following:
-//! - `accelerate` macOS only
-//! - `intel-mkl` Intel/AMD CPU only. Includes Vector Mathematics (VM) ops
 //! - `openblas`
+//! - `netlib`
 //!
 //! ## Features
 //! ### Reverse-mode automatic differentiation using lazy tensors
@@ -96,7 +96,7 @@
 //!
 //! // Hooks
 //! ag::run(|ctx| {
-//!     let x: ag::Tensor<f32> = ones(&[2, 3], ctx).show_shape();
+//!     let x: ag::Tensor<f32> = ones(&[2, 3], ctx).showshape();
 //!     let y: ag::Tensor<f32> = ones(&[2, 3], ctx).raw_hook(|x| println!("{}", x));
 //! });
 //! ```

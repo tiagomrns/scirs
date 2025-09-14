@@ -2,6 +2,7 @@ use ndarray::{array, Array1, ArrayView1};
 use scirs2_integrate::dae::{solve_implicit_dae, DAEOptions, DAEType};
 use scirs2_integrate::ode::ODEMethod;
 
+#[allow(dead_code)]
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("Implicit DAE Solver Example - RLC Circuit");
     println!("==========================================\n");
@@ -96,10 +97,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let damped_freq = omega_n * (1.0 - zeta * zeta).sqrt();
 
     println!("Circuit characteristics:");
-    println!("Natural frequency: {:.3} rad/s", omega_n);
-    println!("Damping ratio: {:.3}", zeta);
+    println!("Natural frequency: {omega_n:.3} rad/s");
+    println!("Damping ratio: {zeta:.3}");
     if zeta < 1.0 {
-        println!("Damped frequency: {:.3} rad/s", damped_freq);
+        println!("Damped frequency: {damped_freq:.3} rad/s");
         println!(
             "Damped period: {:.3} s",
             2.0 * std::f64::consts::PI / damped_freq
@@ -126,10 +127,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         let i_r = result.x[i][2];
         let i_c = result.x[i][3];
 
-        println!(
-            "{:<10.3} {:<12.6} {:<12.6} {:<12.6} {:<12.6} {:<12.6}",
-            t, v_source, v_c, i_l, i_r, i_c
-        );
+        println!("{t:<10.3} {v_source:<12.6} {v_c:<12.6} {i_l:<12.6} {i_r:<12.6} {i_c:<12.6}");
     }
 
     if result.t.len() > 2 * num_print {
@@ -146,10 +144,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             let i_r = result.x[i][2];
             let i_c = result.x[i][3];
 
-            println!(
-                "{:<10.3} {:<12.6} {:<12.6} {:<12.6} {:<12.6} {:<12.6}",
-                t, v_source, v_c, i_l, i_r, i_c
-            );
+            println!("{t:<10.3} {v_source:<12.6} {v_c:<12.6} {i_l:<12.6} {i_r:<12.6} {i_c:<12.6}");
         }
     }
 
@@ -181,7 +176,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         let residual = residual_fn(t, y.view(), yprime.view());
         let residual_norm = residual.iter().fold(0.0, |acc, &x| acc + x * x).sqrt();
 
-        println!("t = {:<8.3}: Residual norm = {:.3e}", t, residual_norm);
+        println!("t = {t:<8.3}: Residual norm = {residual_norm:.3e}");
     }
 
     // Verify that the algebraic constraints are satisfied
@@ -237,8 +232,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         let power_dissipated = i_r * i_r * r;
 
         println!(
-            "{:<10.3} {:<12.6e} {:<12.6e} {:<12.6e} {:<12.6e}",
-            time, inductor_energy, capacitor_energy, power_in, power_dissipated
+            "{time:<10.3} {inductor_energy:<12.6e} {capacitor_energy:<12.6e} {power_in:<12.6e} {power_dissipated:<12.6e}"
         );
 
         // For energy calculations, we'd need to integrate over time
@@ -266,15 +260,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         "\nEnergy balance at final time t = {:.3}:",
         result.t[result.t.len() - 1]
     );
-    println!("Total energy input from source: {:.6e}", total_energy_in);
-    println!(
-        "Total energy dissipated in resistor: {:.6e}",
-        total_energy_dissipated
-    );
-    println!(
-        "Final energy stored in L and C: {:.6e}",
-        final_stored_energy
-    );
+    println!("Total energy input from source: {total_energy_in:.6e}");
+    println!("Total energy dissipated in resistor: {total_energy_dissipated:.6e}");
+    println!("Final energy stored in L and C: {final_stored_energy:.6e}");
     println!(
         "Energy balance (input - dissipated - stored): {:.6e}",
         total_energy_in - total_energy_dissipated - final_stored_energy
@@ -289,7 +277,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         energy_balance
     };
 
-    println!("Relative energy error: {:.6e}", relative_error);
+    println!("Relative energy error: {relative_error:.6e}");
 
     Ok(())
 }

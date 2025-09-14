@@ -90,7 +90,8 @@ mod tests {
 
         // This should panic with "not yet implemented"
         unsafe {
-            let _: ArrayView<u8, _> = scirs2_core::memory_efficient::view_as(&data).unwrap();
+            let _: ArrayView<u8, ndarray::Ix2> =
+                scirs2_core::memory_efficient::view_as(&data).unwrap();
         }
     }
 }

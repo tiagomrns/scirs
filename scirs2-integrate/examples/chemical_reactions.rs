@@ -9,7 +9,8 @@ use scirs2_integrate::ode::{solve_ivp, ODEMethod, ODEOptions};
 /// Simple reversible reaction: A ⇌ B
 /// Rate equations: d[A]/dt = -k₁[A] + k₋₁[B], d[B]/dt = k₁[A] - k₋₁[B]
 /// State vector: [A, B] (concentrations)
-fn reversible_reaction(_t: f64, y: ArrayView1<f64>) -> Array1<f64> {
+#[allow(dead_code)]
+fn reversible_reaction(t: f64, y: ArrayView1<f64>) -> Array1<f64> {
     let a = y[0]; // Concentration of A
     let b = y[1]; // Concentration of B
 
@@ -25,7 +26,8 @@ fn reversible_reaction(_t: f64, y: ArrayView1<f64>) -> Array1<f64> {
 /// Michaelis-Menten enzyme kinetics: E + S ⇌ ES → E + P
 /// Simplified model: d[S]/dt = -k[S][E]/(Km + [S]), d[P]/dt = k[S][E]/(Km + [S])
 /// State vector: [S, P] (substrate and product concentrations)
-fn michaelis_menten_kinetics(_t: f64, y: ArrayView1<f64>) -> Array1<f64> {
+#[allow(dead_code)]
+fn michaelis_menten_kinetics(t: f64, y: ArrayView1<f64>) -> Array1<f64> {
     let s = y[0]; // Substrate concentration
     let _p = y[1]; // Product concentration
 
@@ -45,7 +47,8 @@ fn michaelis_menten_kinetics(_t: f64, y: ArrayView1<f64>) -> Array1<f64> {
 /// Autocatalytic reaction: A + B → 2B (B catalyzes its own formation)
 /// Rate equations: d[A]/dt = -k[A][B], d[B]/dt = k[A][B]
 /// State vector: [A, B]
-fn autocatalytic_reaction(_t: f64, y: ArrayView1<f64>) -> Array1<f64> {
+#[allow(dead_code)]
+fn autocatalytic_reaction(t: f64, y: ArrayView1<f64>) -> Array1<f64> {
     let a = y[0]; // Concentration of A
     let b = y[1]; // Concentration of B
 
@@ -62,7 +65,8 @@ fn autocatalytic_reaction(_t: f64, y: ArrayView1<f64>) -> Array1<f64> {
 /// Lotka-Volterra oscillating reaction (chemical oscillator)
 /// d[X]/dt = k₁[A][X] - k₂[X][Y], d[Y]/dt = k₂[X][Y] - k₃[Y]
 /// State vector: [X, Y]
-fn lotka_volterra_reaction(_t: f64, y: ArrayView1<f64>) -> Array1<f64> {
+#[allow(dead_code)]
+fn lotka_volterra_reaction(t: f64, y: ArrayView1<f64>) -> Array1<f64> {
     let x = y[0]; // Concentration of X
     let y_conc = y[1]; // Concentration of Y
 
@@ -81,7 +85,8 @@ fn lotka_volterra_reaction(_t: f64, y: ArrayView1<f64>) -> Array1<f64> {
 /// A → X, 2X + Y → 3X, B + X → Y + D, X → E
 /// Simplified: d[X]/dt = A - (B+1)[X] + [X]²[Y], d[Y]/dt = B[X] - [X]²[Y]
 /// State vector: [X, Y]
-fn brusselator(_t: f64, y: ArrayView1<f64>) -> Array1<f64> {
+#[allow(dead_code)]
+fn brusselator(t: f64, y: ArrayView1<f64>) -> Array1<f64> {
     let x = y[0]; // Concentration of X
     let y_conc = y[1]; // Concentration of Y
 
@@ -97,7 +102,8 @@ fn brusselator(_t: f64, y: ArrayView1<f64>) -> Array1<f64> {
 /// Oregonator (Belousov-Zhabotinsky reaction model)
 /// Three-variable model for chemical oscillations
 /// State vector: [X, Y, Z] (bromous acid, oxidized catalyst, bromide)
-fn oregonator(_t: f64, y: ArrayView1<f64>) -> Array1<f64> {
+#[allow(dead_code)]
+fn oregonator(t: f64, y: ArrayView1<f64>) -> Array1<f64> {
     let x = y[0]; // HBrO₂ concentration
     let y_conc = y[1]; // Oxidized catalyst concentration
     let z = y[2]; // Br⁻ concentration
@@ -116,7 +122,8 @@ fn oregonator(_t: f64, y: ArrayView1<f64>) -> Array1<f64> {
 /// Glycolysis model (simplified pathway)
 /// Models glucose breakdown with feedback regulation
 /// State vector: [G6P, F6P, ATP] (glucose-6-phosphate, fructose-6-phosphate, ATP)
-fn glycolysis_model(_t: f64, y: ArrayView1<f64>) -> Array1<f64> {
+#[allow(dead_code)]
+fn glycolysis_model(t: f64, y: ArrayView1<f64>) -> Array1<f64> {
     let g6p = y[0]; // Glucose-6-phosphate
     let f6p = y[1]; // Fructose-6-phosphate
     let atp = y[2]; // ATP
@@ -143,6 +150,7 @@ fn glycolysis_model(_t: f64, y: ArrayView1<f64>) -> Array1<f64> {
     array![dg6p_dt, df6p_dt, datp_dt]
 }
 
+#[allow(dead_code)]
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("Chemical Reaction Network Examples\n");
 
@@ -168,10 +176,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let total = y0[0] + y0[1];
     let a_eq = total / (1.0 + k_eq);
     let b_eq = total - a_eq;
-    println!(
-        "   Theoretical equilibrium: [A]={:.3}, [B]={:.3}",
-        a_eq, b_eq
-    );
+    println!("   Theoretical equilibrium: [A]={a_eq:.3}, [B]={b_eq:.3}");
     println!();
 
     // Example 2: Michaelis-Menten Enzyme Kinetics

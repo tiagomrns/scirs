@@ -21,9 +21,9 @@ pub mod sampling;
 pub mod tests;
 
 // Re-export key functions for convenience
-pub use covariance::{correlation_matrix, covariance_matrix, mahalanobis_distance};
+pub use covariance::{correlationmatrix, covariancematrix, mahalanobis_distance};
 pub use distributions::{
-    matrix_normal_logpdf, sample_matrix_normal, sample_wishart, wishart_logpdf, MatrixNormalParams,
+    matrix_normal_logpdf, sample_wishart, samplematrix_normal, wishart_logpdf, MatrixNormalParams,
     WishartParams,
 };
 pub use sampling::{

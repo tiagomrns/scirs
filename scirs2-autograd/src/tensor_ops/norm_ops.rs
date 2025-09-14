@@ -215,6 +215,7 @@ impl<F: Float + ndarray::ScalarOperand> Op<F> for NuclearNormOp {
 // Helper functions
 
 /// Check if matrix is diagonal
+#[allow(dead_code)]
 fn is_diagonal_matrix<F: Float>(matrix: &ArrayView2<F>) -> bool {
     let (m, n) = matrix.dim();
     for i in 0..m {
@@ -228,6 +229,7 @@ fn is_diagonal_matrix<F: Float>(matrix: &ArrayView2<F>) -> bool {
 }
 
 /// Compute nuclear norm for diagonal matrix
+#[allow(dead_code)]
 fn compute_diagonal_nuclear_norm<F: Float>(matrix: &ArrayView2<F>) -> F {
     let (m, n) = matrix.dim();
     let mut sum = F::zero();
@@ -290,12 +292,13 @@ fn compute_nuclear_norm_approximation<F: Float + ndarray::ScalarOperand>(
 }
 
 /// Power iteration for spectral norm
+#[allow(dead_code)]
 fn power_iteration_spectral<F: Float + ndarray::ScalarOperand>(
     matrix: &ArrayView2<F>,
     max_iter: usize,
     tol: F,
 ) -> (Array1<F>, F) {
-    let (m, _n) = matrix.dim();
+    let (m, n) = matrix.dim();
 
     // Initialize with normalized vector
     let mut u = Array1::<F>::zeros(m);
@@ -351,6 +354,7 @@ fn power_iteration_spectral<F: Float + ndarray::ScalarOperand>(
 }
 
 /// Compute gradient for spectral norm
+#[allow(dead_code)]
 fn compute_spectral_norm_gradient<F: Float + ndarray::ScalarOperand>(
     matrix: &ArrayView2<F>,
     grad_scalar: F,
@@ -440,6 +444,7 @@ fn compute_nuclear_norm_gradient<F: Float + ndarray::ScalarOperand>(
 }
 
 /// Improved nuclear norm computation using better SVD approximation
+#[allow(dead_code)]
 fn compute_nuclear_norm_improved<F: Float + ndarray::ScalarOperand>(matrix: &ArrayView2<F>) -> F {
     let (m, n) = matrix.dim();
     let min_dim = m.min(n);
@@ -485,6 +490,7 @@ fn compute_nuclear_norm_improved<F: Float + ndarray::ScalarOperand>(matrix: &Arr
 }
 
 /// Improved nuclear norm gradient computation
+#[allow(dead_code)]
 fn compute_nuclear_norm_gradient_improved<F: Float + ndarray::ScalarOperand>(
     matrix: &ArrayView2<F>,
     grad_scalar: F,
@@ -553,6 +559,7 @@ fn compute_nuclear_norm_gradient_improved<F: Float + ndarray::ScalarOperand>(
 
 // Public API functions
 
+#[allow(dead_code)]
 pub fn frobenius_norm<'g, F: Float>(matrix: &Tensor<'g, F>) -> Tensor<'g, F> {
     let g = matrix.graph();
     Tensor::builder(g)
@@ -560,6 +567,7 @@ pub fn frobenius_norm<'g, F: Float>(matrix: &Tensor<'g, F>) -> Tensor<'g, F> {
         .build(FrobeniusNormOp)
 }
 
+#[allow(dead_code)]
 pub fn spectral_norm<'g, F: Float + ndarray::ScalarOperand>(
     matrix: &Tensor<'g, F>,
 ) -> Tensor<'g, F> {
@@ -569,6 +577,7 @@ pub fn spectral_norm<'g, F: Float + ndarray::ScalarOperand>(
         .build(SpectralNormOp)
 }
 
+#[allow(dead_code)]
 pub fn nuclear_norm<'g, F: Float + ndarray::ScalarOperand>(
     matrix: &Tensor<'g, F>,
 ) -> Tensor<'g, F> {

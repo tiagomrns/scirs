@@ -3,6 +3,7 @@ use std::error::Error;
 use std::fs::File;
 use std::io::Write;
 
+#[allow(dead_code)]
 fn main() -> Result<(), Box<dyn Error>> {
     // Create a CSV file with the advanced data types
     println!("Creating CSV files with date, time, and complex number data types...");

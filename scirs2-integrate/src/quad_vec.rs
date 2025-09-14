@@ -7,6 +7,7 @@
 use ndarray::Array1;
 use std::cmp::Ordering;
 use std::collections::BinaryHeap;
+use std::f64::consts::PI;
 use std::fmt;
 
 use crate::error::{IntegrateError, IntegrateResult};
@@ -33,12 +34,12 @@ impl<T: fmt::Display> fmt::Display for QuadVecResult<T> {
             "QuadVecResult(\n  integral=[{:}],\n  error=[{:}],\n  nfev={},\n  nintervals={},\n  success={}\n)",
             self.integral
                 .iter()
-                .map(|v| format!("{}", v))
+                .map(|v| format!("{v}"))
                 .collect::<Vec<_>>()
                 .join(", "),
             self.error
                 .iter()
-                .map(|v| format!("{}", v))
+                .map(|v| format!("{v}"))
                 .collect::<Vec<_>>()
                 .join(", "),
             self.nfev,
@@ -138,8 +139,9 @@ impl Ord for Subinterval {
 }
 
 /// Compute a norm for error estimation
-fn compute_norm(array: &Array1<f64>, norm_type: NormType) -> f64 {
-    match norm_type {
+#[allow(dead_code)]
+fn compute_norm(array: &Array1<f64>, normtype: NormType) -> f64 {
+    match normtype {
         NormType::Max => {
             let mut max_abs = 0.0;
             for &val in array.iter() {
@@ -151,7 +153,7 @@ fn compute_norm(array: &Array1<f64>, norm_type: NormType) -> f64 {
             max_abs
         }
         NormType::L2 => {
-            let mut sum_squares = 0.0;
+            let mut sum_squares: f64 = 0.0;
             for &val in array.iter() {
                 sum_squares += val * val;
             }
@@ -180,7 +182,7 @@ fn compute_norm(array: &Array1<f64>, norm_type: NormType) -> f64 {
 ///
 /// ```
 /// use ndarray::{Array1, arr1};
-/// use scirs2_integrate::quad_vec::{quad_vec, QuadVecOptions};
+/// use scirs2__integrate::quad_vec::{quad_vec, QuadVecOptions};
 ///
 /// // Integrate a function that returns a 2D vector
 /// let f = |x: f64| arr1(&[x.sin(), x.cos()]);
@@ -190,6 +192,7 @@ fn compute_norm(array: &Array1<f64>, norm_type: NormType) -> f64 {
 /// assert!((result.integral[0] - 2.0).abs() < 1e-10);
 /// assert!(result.integral[1].abs() < 1e-10);
 /// ```
+#[allow(dead_code)]
 pub fn quad_vec<F>(
     f: F,
     a: f64,
@@ -374,6 +377,7 @@ where
 }
 
 /// Compute a property of all intervals combined
+#[allow(dead_code)]
 fn get_total<F, T>(heap: &BinaryHeap<Subinterval>, extra: &Subinterval, extract: F) -> Array1<T>
 where
     F: Fn(&Subinterval) -> &Array1<T>,
@@ -393,6 +397,7 @@ where
 }
 
 /// Evaluate the integral on a specific interval
+#[allow(dead_code)]
 fn evaluate_interval<F>(
     f: &F,
     a: f64,
@@ -562,6 +567,7 @@ where
 }
 
 /// Evaluate a Gauss-Kronrod rule on an interval
+#[allow(dead_code)]
 fn evaluate_rule<F>(
     f: &F,
     a: f64,
@@ -619,7 +625,7 @@ where
     let mut error = Array1::zeros(output_size);
     for i in 0..output_size {
         let diff = (integral_k[i] - integral_g[i]).abs();
-        error[i] = (200.0 * diff).powf(1.5);
+        error[i] = (200.0 * diff).powf(1.5_f64);
     }
 
     Ok((integral_k, error, nfev))
@@ -630,7 +636,6 @@ mod tests {
     use super::*;
     use approx::assert_abs_diff_eq;
     use ndarray::arr1;
-    use std::f64::consts::PI;
 
     #[test]
     fn test_simple_integral() {

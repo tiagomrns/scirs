@@ -1,4 +1,4 @@
-//! Power spectral density estimation using multitaper methods.
+// Power spectral density estimation using multitaper methods.
 
 use super::utils::compute_fft;
 use super::windows::dpss;
@@ -6,9 +6,11 @@ use crate::error::{SignalError, SignalResult};
 use ndarray::{Array1, Array2};
 use num_complex::Complex64;
 use num_traits::{Float, NumCast};
-// PI is only used in doc examples
+use rand::Rng;
 use std::fmt::Debug;
 
+#[allow(unused_imports)]
+// PI is only used in doc examples
 /// Type alias for multitaper PSD calculation result
 pub type MultitaperResult = (Vec<f64>, Vec<f64>, Option<Array2<f64>>, Option<Array1<f64>>);
 
@@ -38,7 +40,6 @@ pub type MultitaperResult = (Vec<f64>, Vec<f64>, Option<Array2<f64>>, Option<Arr
 ///
 /// ```
 /// use scirs2_signal::multitaper::pmtm;
-/// use std::f64::consts::PI;
 ///
 /// // Generate a test signal (sinusoid with noise)
 /// let n = 1024;
@@ -47,7 +48,7 @@ pub type MultitaperResult = (Vec<f64>, Vec<f64>, Option<Array2<f64>>, Option<Arr
 /// use rand::Rng;
 /// let mut rng = rand::rng();
 /// let signal: Vec<f64> = t.iter()
-///     .map(|&ti| (2.0 * PI * 10.0 * ti).sin() + 0.1 * rng.random_range(0.0..1.0))
+///     .map(|&ti| (2.0 * PI * 10.0 * ti).sin() + 0.1 * rng.gen_range(0.0..1.0))
 ///     .collect();
 ///
 /// // Compute multitaper power spectral density
@@ -68,6 +69,7 @@ pub type MultitaperResult = (Vec<f64>, Vec<f64>, Option<Array2<f64>>, Option<Arr
 /// assert!(eigenvalues.is_some());
 /// ```
 #[allow(clippy::too_many_arguments)]
+#[allow(dead_code)]
 pub fn pmtm<T>(
     x: &[T],
     fs: Option<f64>,
@@ -104,8 +106,8 @@ where
     let return_onesided_val = return_onesided.unwrap_or(true);
     let return_tapers_val = return_tapers.unwrap_or(false);
 
-    // Compute DPSS tapers
-    let (tapers, eigenvalues_opt) = dpss(n, nw_val, k_val, true)?;
+    // Compute DPSS _tapers
+    let (_tapers, eigenvalues_opt) = dpss(n, nw_val, k_val, true)?;
 
     // Verify eigenvalues are available
     let eigenvalues = match eigenvalues_opt {
@@ -117,7 +119,7 @@ where
         }
     };
 
-    // Apply tapers to the signal
+    // Apply _tapers to the signal
     let mut tapered_signals = Array2::zeros((k_val, n));
     for i in 0..k_val {
         for j in 0..n {
@@ -165,7 +167,7 @@ where
         f
     };
 
-    // Combine spectra from different tapers using eigenvalue weights
+    // Combine spectra from different _tapers using eigenvalue weights
     let mut psd = Vec::with_capacity(if return_onesided_val {
         nfft_val / 2 + 1
     } else {
@@ -210,7 +212,7 @@ where
 
     // Return results
     if return_tapers_val {
-        Ok((freqs, psd, Some(tapers), Some(eigenvalues)))
+        Ok((freqs, psd, Some(_tapers), Some(eigenvalues)))
     } else {
         Ok((freqs, psd, None, None))
     }
@@ -242,7 +244,6 @@ where
 ///
 /// ```
 /// use scirs2_signal::multitaper::multitaper_spectrogram;
-/// use std::f64::consts::PI;
 ///
 /// // Generate a test signal with changing frequency
 /// let n = 2000;
@@ -253,7 +254,7 @@ where
 /// let signal: Vec<f64> = t.iter()
 ///     .map(|&ti| {
 ///         let freq = 50.0 + 200.0 * ti; // Linear chirp from 50Hz to 250Hz
-///         (2.0 * PI * freq * ti).sin() + 0.1 * rng.random_range(0.0..1.0)
+///         (2.0 * PI * freq * ti).sin() + 0.1 * rng.gen_range(0.0..1.0)
 ///     })
 ///     .collect();
 ///
@@ -273,6 +274,7 @@ where
 /// // The spectrogram should show the frequency increasing over time
 /// ```
 #[allow(clippy::too_many_arguments)]
+#[allow(dead_code)]
 pub fn multitaper_spectrogram<T>(
     x: &[T],
     fs: Option<f64>,
@@ -350,7 +352,7 @@ where
         f
     };
 
-    // Compute DPSS tapers once for the window size
+    // Compute DPSS tapers once for the window _size
     let (tapers, eigenvalues) = dpss(window_size_val, nw_val, k_val, true)?;
     // Verify eigenvalues are available
     let eigenvalues = match eigenvalues {

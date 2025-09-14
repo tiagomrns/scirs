@@ -41,9 +41,9 @@ pub struct LevenshteinWeights {
     /// Cost of deletion operations
     pub deletion_cost: f64,
     /// Cost of substitution operations
-    pub substitution_cost: f64,
+    pub substitutioncost: f64,
     /// Optional map of character-specific substitution costs
-    pub char_substitution_costs: Option<HashMap<(char, char), f64>>,
+    pub char_substitutioncosts: Option<HashMap<(char, char), f64>>,
 }
 
 impl Default for LevenshteinWeights {
@@ -51,20 +51,20 @@ impl Default for LevenshteinWeights {
         Self {
             insertion_cost: 1.0,
             deletion_cost: 1.0,
-            substitution_cost: 1.0,
-            char_substitution_costs: None,
+            substitutioncost: 1.0,
+            char_substitutioncosts: None,
         }
     }
 }
 
 impl LevenshteinWeights {
     /// Create a new weight configuration with specific costs
-    pub fn new(insertion_cost: f64, deletion_cost: f64, substitution_cost: f64) -> Self {
+    pub fn new(insertion_cost: f64, deletion_cost: f64, substitutioncost: f64) -> Self {
         Self {
             insertion_cost,
             deletion_cost,
-            substitution_cost,
-            char_substitution_costs: None,
+            substitutioncost,
+            char_substitutioncosts: None,
         }
     }
 
@@ -73,31 +73,31 @@ impl LevenshteinWeights {
         Self {
             insertion_cost: cost,
             deletion_cost: cost,
-            substitution_cost: cost,
-            char_substitution_costs: None,
+            substitutioncost: cost,
+            char_substitutioncosts: None,
         }
     }
 
     /// Add character-specific substitution costs
-    pub fn with_substitution_costs(mut self, costs: HashMap<(char, char), f64>) -> Self {
-        self.char_substitution_costs = Some(costs);
+    pub fn with_substitutioncosts(mut self, costs: HashMap<(char, char), f64>) -> Self {
+        self.char_substitutioncosts = Some(costs);
         self
     }
 
     /// Get substitution cost for a specific character pair
-    pub fn get_substitution_cost(&self, c1: char, c2: char) -> f64 {
+    pub fn get_substitutioncost(&self, c1: char, c2: char) -> f64 {
         if c1 == c2 {
             return 0.0;
         }
 
-        if let Some(costs) = &self.char_substitution_costs {
+        if let Some(costs) = &self.char_substitutioncosts {
             // Only consider the exact pair (c1, c2), not (c2, c1) to allow directional costs
             if let Some(cost) = costs.get(&(c1, c2)) {
                 return *cost;
             }
         }
 
-        self.substitution_cost
+        self.substitutioncost
     }
 
     /// Get insertion cost
@@ -183,7 +183,7 @@ impl WeightedStringMetric for WeightedLevenshtein {
                     dp[i - 1][j - 1]
                         + self
                             .weights
-                            .get_substitution_cost(chars1[i - 1], chars2[j - 1])
+                            .get_substitutioncost(chars1[i - 1], chars2[j - 1])
                 };
 
                 dp[i][j] = del_cost.min(ins_cost).min(sub_cost);
@@ -234,7 +234,7 @@ pub struct DamerauLevenshteinWeights {
     /// Cost of deletion operations
     pub deletion_cost: f64,
     /// Cost of substitution operations
-    pub substitution_cost: f64,
+    pub substitutioncost: f64,
     /// Cost of transposition operations
     pub transposition_cost: f64,
 }
@@ -244,7 +244,7 @@ impl Default for DamerauLevenshteinWeights {
         Self {
             insertion_cost: 1.0,
             deletion_cost: 1.0,
-            substitution_cost: 1.0,
+            substitutioncost: 1.0,
             transposition_cost: 1.0,
         }
     }
@@ -255,13 +255,13 @@ impl DamerauLevenshteinWeights {
     pub fn new(
         insertion_cost: f64,
         deletion_cost: f64,
-        substitution_cost: f64,
+        substitutioncost: f64,
         transposition_cost: f64,
     ) -> Self {
         Self {
             insertion_cost,
             deletion_cost,
-            substitution_cost,
+            substitutioncost,
             transposition_cost,
         }
     }
@@ -271,7 +271,7 @@ impl DamerauLevenshteinWeights {
         Self {
             insertion_cost: cost,
             deletion_cost: cost,
-            substitution_cost: cost,
+            substitutioncost: cost,
             transposition_cost: cost,
         }
     }
@@ -335,7 +335,7 @@ impl WeightedStringMetric for WeightedDamerauLevenshtein {
                 let sub_cost = if chars1[i - 1] == chars2[j - 1] {
                     dp[i - 1][j - 1] // No change
                 } else {
-                    dp[i - 1][j - 1] + self.weights.substitution_cost
+                    dp[i - 1][j - 1] + self.weights.substitutioncost
                 };
 
                 // Start with min of standard Levenshtein operations
@@ -420,7 +420,7 @@ mod tests {
                                        // Directional costs would need to be explicitly set for both directions
                                        // costs.insert(('a', 'o'), 3.0) // We removed this as we're not testing it anymore
 
-        let weights = LevenshteinWeights::default().with_substitution_costs(costs);
+        let weights = LevenshteinWeights::default().with_substitutioncosts(costs);
         let metric = WeightedLevenshtein::with_weights(weights);
 
         // "kitten" -> "sitting" now has a cheaper k->s substitution

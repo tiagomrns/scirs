@@ -17,6 +17,7 @@ use crate::spectrogram::{spectrogram, spectrogram_normalized};
 use crate::window::Window;
 use ndarray::{Array1, Array2, Array3};
 use num_traits::NumCast;
+use std::f64::consts::PI;
 
 /// Generate data for a 3D waterfall plot from a time-domain signal.
 ///
@@ -70,6 +71,7 @@ use num_traits::NumCast;
 /// assert_eq!(data.shape()[1], freqs.len());    // Frequency dimension
 /// assert_eq!(data.shape()[2], 3);              // X, Y, Z coordinates
 /// ```
+#[allow(dead_code)]
 pub fn waterfall_3d<T>(
     x: &[T],
     fs: Option<f64>,
@@ -181,6 +183,7 @@ where
 /// assert_eq!(time_mesh.shape(), freq_mesh.shape());
 /// assert_eq!(time_mesh.shape(), amplitudes.shape());
 /// ```
+#[allow(dead_code)]
 pub fn waterfall_mesh<T>(
     x: &[T],
     fs: Option<f64>,
@@ -297,6 +300,7 @@ where
 /// assert_eq!(lines.shape()[2], 2);                // [frequency, amplitude] pairs
 /// ```
 #[allow(clippy::too_many_arguments)]
+#[allow(dead_code)]
 pub fn waterfall_lines<T>(
     x: &[T],
     fs: Option<f64>,
@@ -433,6 +437,7 @@ where
 /// assert_eq!(colors.shape()[1], 3);    // [r,g,b] values
 /// assert_eq!(vertices.shape()[0], colors.shape()[0]);  // Same number of vertices and colors
 /// ```
+#[allow(dead_code)]
 pub fn waterfall_mesh_colored<T>(
     x: &[T],
     fs: Option<f64>,
@@ -571,8 +576,9 @@ where
 ///     }
 /// }
 /// ```
+#[allow(dead_code)]
 pub fn apply_colormap(amplitudes: &Array1<f64>, colormap: &str) -> FFTResult<Array2<f64>> {
-    // Verify that amplitudes are in range [0, 1]
+    // Verify that _amplitudes are in range [0, 1]
     for &amp in amplitudes.iter() {
         if !(0.0..=1.0).contains(&amp) {
             return Err(FFTError::ValueError(
@@ -664,8 +670,7 @@ pub fn apply_colormap(amplitudes: &Array1<f64>, colormap: &str) -> FFTResult<Arr
         }
         _ => {
             return Err(FFTError::ValueError(format!(
-                "Unknown colormap: {}. Use 'jet', 'viridis', 'plasma', 'grayscale', or 'hot'.",
-                colormap
+                "Unknown colormap: {colormap}. Use 'jet', 'viridis', 'plasma', 'grayscale', or 'hot'."
             )));
         }
     }
@@ -676,7 +681,6 @@ pub fn apply_colormap(amplitudes: &Array1<f64>, colormap: &str) -> FFTResult<Arr
 #[cfg(test)]
 mod tests {
     use super::*;
-    use std::f64::consts::PI;
 
     // Generate a test signal (chirp: frequency increases with time)
     fn generate_chirp(fs: f64, duration: f64) -> Vec<f64> {
@@ -876,8 +880,7 @@ mod tests {
                 for &component in row {
                     assert!(
                         -epsilon <= component && component <= 1.0 + epsilon,
-                        "Color component out of range: {}",
-                        component
+                        "Color component out of range: {component}"
                     );
                 }
             }

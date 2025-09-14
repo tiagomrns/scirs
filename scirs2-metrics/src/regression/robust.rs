@@ -6,7 +6,7 @@
 use ndarray::{Array1, ArrayBase, Data, Dimension};
 use num_traits::{Float, FromPrimitive, NumCast};
 
-use super::{check_non_negative, check_positive, check_same_shape};
+use super::{check_non_negative, check_positive, check_sameshape};
 use crate::error::{MetricsError, Result};
 
 /// Calculates the mean Poisson deviance
@@ -38,6 +38,7 @@ use crate::error::{MetricsError, Result};
 /// let mpd = mean_poisson_deviance(&y_true, &y_pred).unwrap();
 /// assert!(mpd >= 0.0);
 /// ```
+#[allow(dead_code)]
 pub fn mean_poisson_deviance<F, S1, S2, D1, D2>(
     y_true: &ArrayBase<S1, D1>,
     y_pred: &ArrayBase<S2, D2>,
@@ -50,7 +51,7 @@ where
     D2: Dimension,
 {
     // Check that arrays have the same shape
-    check_same_shape::<F, S1, S2, D1, D2>(y_true, y_pred)?;
+    check_sameshape::<F, S1, S2, D1, D2>(y_true, y_pred)?;
 
     // Check that all values are non-negative
     check_non_negative::<F, S1, S2, D1, D2>(y_true, y_pred)?;
@@ -106,6 +107,7 @@ where
 /// let mgd = mean_gamma_deviance(&y_true, &y_pred).unwrap();
 /// assert!(mgd >= 0.0);
 /// ```
+#[allow(dead_code)]
 pub fn mean_gamma_deviance<F, S1, S2, D1, D2>(
     y_true: &ArrayBase<S1, D1>,
     y_pred: &ArrayBase<S2, D2>,
@@ -118,7 +120,7 @@ where
     D2: Dimension,
 {
     // Check that arrays have the same shape
-    check_same_shape::<F, S1, S2, D1, D2>(y_true, y_pred)?;
+    check_sameshape::<F, S1, S2, D1, D2>(y_true, y_pred)?;
 
     // Check that all values are strictly positive
     check_positive::<F, S1, S2, D1, D2>(y_true, y_pred)?;
@@ -167,6 +169,7 @@ where
 /// let tds = tweedie_deviance_score(&y_true, &y_pred, 2.0).unwrap();
 /// assert!(tds >= 0.0);
 /// ```
+#[allow(dead_code)]
 pub fn tweedie_deviance_score<F, S1, S2, D1, D2>(
     y_true: &ArrayBase<S1, D1>,
     y_pred: &ArrayBase<S2, D2>,
@@ -180,7 +183,7 @@ where
     D2: Dimension,
 {
     // Check that arrays have the same shape
-    check_same_shape::<F, S1, S2, D1, D2>(y_true, y_pred)?;
+    check_sameshape::<F, S1, S2, D1, D2>(y_true, y_pred)?;
 
     if power.abs() < F::epsilon() {
         // Gaussian case (power = 0) -> use mean squared error
@@ -276,6 +279,7 @@ where
 /// let p90_loss = quantile_loss(&y_true, &y_pred, 0.9).unwrap();
 /// assert!(p90_loss >= 0.0);
 /// ```
+#[allow(dead_code)]
 pub fn quantile_loss<F, S1, S2, D1, D2>(
     y_true: &ArrayBase<S1, D1>,
     y_pred: &ArrayBase<S2, D2>,
@@ -289,7 +293,7 @@ where
     D2: Dimension,
 {
     // Check that arrays have the same shape
-    check_same_shape::<F, S1, S2, D1, D2>(y_true, y_pred)?;
+    check_sameshape::<F, S1, S2, D1, D2>(y_true, y_pred)?;
 
     // Check quantile is between 0 and 1
     if quantile <= F::zero() || quantile >= F::one() {
@@ -347,6 +351,7 @@ where
 /// assert!(weights[3] < weights[0]);
 /// assert!(weights[6] < weights[1]);
 /// ```
+#[allow(dead_code)]
 pub fn compute_robust_weights<F, S, D>(
     residuals: &ArrayBase<S, D>,
     method: &str,
@@ -463,6 +468,7 @@ where
 /// let wmse = weighted_mean_squared_error(&y_true, &y_pred, &weights).unwrap();
 /// assert!(wmse >= 0.0);
 /// ```
+#[allow(dead_code)]
 pub fn weighted_mean_squared_error<F, S1, S2, S3, D1, D2, D3>(
     y_true: &ArrayBase<S1, D1>,
     y_pred: &ArrayBase<S2, D2>,
@@ -478,7 +484,7 @@ where
     D3: Dimension,
 {
     // Check that arrays have the same shape
-    check_same_shape::<F, S1, S2, D1, D2>(y_true, y_pred)?;
+    check_sameshape::<F, S1, S2, D1, D2>(y_true, y_pred)?;
 
     let n_samples = y_true.len();
 
@@ -542,6 +548,7 @@ where
 /// let wmedae = weighted_median_absolute_error(&y_true, &y_pred, &weights).unwrap();
 /// assert!(wmedae >= 0.0);
 /// ```
+#[allow(dead_code)]
 pub fn weighted_median_absolute_error<F, S1, S2, S3, D1, D2, D3>(
     y_true: &ArrayBase<S1, D1>,
     y_pred: &ArrayBase<S2, D2>,
@@ -557,7 +564,7 @@ where
     D3: Dimension,
 {
     // Check that arrays have the same shape
-    check_same_shape::<F, S1, S2, D1, D2>(y_true, y_pred)?;
+    check_sameshape::<F, S1, S2, D1, D2>(y_true, y_pred)?;
 
     let n_samples = y_true.len();
 
@@ -644,6 +651,7 @@ where
 /// let m_est = m_estimator(&y_true, &y_pred, "huber", None).unwrap();
 /// assert!(m_est >= 0.0);
 /// ```
+#[allow(dead_code)]
 pub fn m_estimator<F, S1, S2, D1, D2>(
     y_true: &ArrayBase<S1, D1>,
     y_pred: &ArrayBase<S2, D2>,
@@ -658,7 +666,7 @@ where
     D2: Dimension,
 {
     // Check that arrays have the same shape
-    check_same_shape::<F, S1, S2, D1, D2>(y_true, y_pred)?;
+    check_sameshape::<F, S1, S2, D1, D2>(y_true, y_pred)?;
 
     let n_samples = y_true.len();
 

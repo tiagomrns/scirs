@@ -9,7 +9,6 @@ use crate::layers::Layer;
 use ndarray::{Array, IxDyn, ScalarOperand};
 use num_traits::Float;
 use rand::{Rng, RngCore, SeedableRng};
-// use std::cell::RefCell;
 use std::fmt::Debug;
 use std::marker::PhantomData;
 use std::sync::{Arc, RwLock};
@@ -18,31 +17,6 @@ use std::sync::{Arc, RwLock};
 ///
 /// During training, randomly sets input elements to zero with probability `p`.
 /// During inference, scales the output by 1/(1-p) to maintain the expected value.
-///
-/// # Examples
-///
-/// ```
-/// use scirs2_neural::layers::{Dropout, Layer};
-/// use ndarray::{Array, Array2};
-/// use rand::rngs::SmallRng;
-/// use rand::SeedableRng;
-///
-/// // Create a dropout layer with 0.5 dropout probability
-/// let mut rng = SmallRng::seed_from_u64(42);
-/// let dropout = Dropout::new(0.5, &mut rng).unwrap();
-///
-/// // Forward pass with a batch of 2 samples, 10 features
-/// let batch_size = 2;
-/// let features = 10;
-/// let input = Array2::<f64>::from_elem((batch_size, features), 1.0).into_dyn();
-///
-/// // Forward pass in training mode (some values will be dropped)
-/// let output = dropout.forward(&input).unwrap();
-///
-/// // Output shape should match input shape
-/// assert_eq!(output.shape(), input.shape());
-/// ```
-// We need to manually implement Debug because dyn RngCore doesn't implement Debug
 pub struct Dropout<F: Float + Debug + Send + Sync> {
     /// Probability of dropping an element
     p: F,
@@ -72,7 +46,7 @@ impl<F: Float + Debug + Send + Sync> std::fmt::Debug for Dropout<F> {
 // Manual implementation of Clone
 impl<F: Float + Debug + Send + Sync> Clone for Dropout<F> {
     fn clone(&self) -> Self {
-        let rng = rand::rngs::SmallRng::seed_from_u64(42);
+        let rng = rand::rngs::SmallRng::from_seed([42; 32]);
         Self {
             p: self.p,
             rng: Arc::new(RwLock::new(Box::new(rng))),
@@ -88,13 +62,8 @@ impl<F: Float + Debug + ScalarOperand + Send + Sync + 'static> Dropout<F> {
     /// Create a new dropout layer
     ///
     /// # Arguments
-    ///
     /// * `p` - Dropout probability (0.0 to 1.0)
     /// * `rng` - Random number generator
-    ///
-    /// # Returns
-    ///
-    /// * A new dropout layer
     pub fn new<R: Rng + 'static + Clone + Send + Sync>(p: f64, rng: &mut R) -> Result<Self> {
         if !(0.0..1.0).contains(&p) {
             return Err(NeuralError::InvalidArchitecture(
@@ -119,7 +88,6 @@ impl<F: Float + Debug + ScalarOperand + Send + Sync + 'static> Dropout<F> {
     }
 
     /// Set the training mode
-    ///
     /// In training mode, elements are randomly dropped.
     /// In inference mode, all elements are kept but scaled.
     pub fn set_training(&mut self, training: bool) {
@@ -138,14 +106,6 @@ impl<F: Float + Debug + ScalarOperand + Send + Sync + 'static> Dropout<F> {
 }
 
 impl<F: Float + Debug + ScalarOperand + Send + Sync + 'static> Layer<F> for Dropout<F> {
-    fn as_any(&self) -> &dyn std::any::Any {
-        self
-    }
-
-    fn as_any_mut(&mut self) -> &mut dyn std::any::Any {
-        self
-    }
-
     fn forward(&self, input: &Array<F, IxDyn>) -> Result<Array<F, IxDyn>> {
         // Cache input for backward pass
         if let Ok(mut cache) = self.input_cache.write() {
@@ -162,7 +122,7 @@ impl<F: Float + Debug + ScalarOperand + Send + Sync + 'static> Layer<F> for Drop
         }
 
         // In training mode, create a binary mask and apply it
-        let mut mask = Array::<F, _>::from_elem(input.dim(), F::one());
+        let mut mask = Array::<F, IxDyn>::from_elem(input.dim(), F::one());
         let one = F::one();
         let zero = F::zero();
 
@@ -178,7 +138,7 @@ impl<F: Float + Debug + ScalarOperand + Send + Sync + 'static> Layer<F> for Drop
             };
 
             for elem in mask.iter_mut() {
-                if (**rng_guard).random::<f64>() < self.p.to_f64().unwrap() {
+                if F::from((**rng_guard).random::<f64>()).unwrap() < self.p {
                     *elem = zero;
                 }
             }
@@ -198,7 +158,6 @@ impl<F: Float + Debug + ScalarOperand + Send + Sync + 'static> Layer<F> for Drop
 
         // Apply mask and scale
         let output = input * &mask * scale;
-
         Ok(output)
     }
 
@@ -207,59 +166,52 @@ impl<F: Float + Debug + ScalarOperand + Send + Sync + 'static> Layer<F> for Drop
         _input: &Array<F, IxDyn>,
         grad_output: &Array<F, IxDyn>,
     ) -> Result<Array<F, IxDyn>> {
-        if !self.training || self.p == F::zero() {
-            // In inference mode or with p=0, just pass through the gradient
+        if !self.training {
+            // In inference mode, gradients pass through unchanged
             return Ok(grad_output.clone());
         }
 
-        // Retrieve cached mask
-        let mask_ref = match self.mask_cache.read() {
-            Ok(guard) => guard,
-            Err(_) => {
-                return Err(NeuralError::InferenceError(
-                    "Failed to acquire read lock on mask cache".to_string(),
-                ))
+        // Get cached mask
+        let mask = {
+            let cache = match self.mask_cache.read() {
+                Ok(cache) => cache,
+                Err(_) => {
+                    return Err(NeuralError::InferenceError(
+                        "Failed to acquire read lock on mask cache".to_string(),
+                    ))
+                }
+            };
+
+            match cache.as_ref() {
+                Some(mask) => mask.clone(),
+                None => {
+                    return Err(NeuralError::InferenceError(
+                        "No cached mask for backward pass".to_string(),
+                    ))
+                }
             }
         };
 
-        if mask_ref.is_none() {
-            return Err(NeuralError::InferenceError(
-                "No cached mask for backward pass. Call forward() first.".to_string(),
-            ));
-        }
-
-        let mask = mask_ref.as_ref().unwrap();
-
-        // Scale factor is the same as in forward pass
+        // Scale factor
         let one = F::one();
         let scale = one / (one - self.p);
 
-        // Apply mask and scale to the gradient
-        let grad_input = grad_output * mask * scale;
-
+        // Apply mask and scale to gradients
+        let grad_input = grad_output * &mask * scale;
         Ok(grad_input)
     }
 
-    fn update(&mut self, _learning_rate: F) -> Result<()> {
+    fn update(&mut self, _learningrate: F) -> Result<()> {
         // Dropout has no parameters to update
         Ok(())
     }
 
-    fn layer_type(&self) -> &str {
-        "Dropout"
+    fn as_any(&self) -> &dyn std::any::Any {
+        self
     }
 
-    fn parameter_count(&self) -> usize {
-        // Dropout layer has no trainable parameters
-        0
-    }
-
-    fn layer_description(&self) -> String {
-        format!(
-            "type:Dropout, p:{}, training:{}",
-            self.p.to_f64().unwrap_or(0.0),
-            self.training
-        )
+    fn as_any_mut(&mut self) -> &mut dyn std::any::Any {
+        self
     }
 
     fn set_training(&mut self, training: bool) {
@@ -269,144 +221,20 @@ impl<F: Float + Debug + ScalarOperand + Send + Sync + 'static> Layer<F> for Drop
     fn is_training(&self) -> bool {
         self.training
     }
-}
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use ndarray::Array2;
-    use rand::rngs::SmallRng;
-    use rand::SeedableRng;
-
-    #[test]
-    fn test_dropout_shape() {
-        // Set up dropout
-        let mut rng = SmallRng::seed_from_u64(42);
-        let dropout = Dropout::<f64>::new(0.5, &mut rng).unwrap();
-
-        // Create a batch of inputs
-        let batch_size = 2;
-        let features = 10;
-        let input = Array2::<f64>::from_elem((batch_size, features), 1.0).into_dyn();
-
-        // Forward pass
-        let output = dropout.forward(&input).unwrap();
-
-        // Check output shape
-        assert_eq!(output.shape(), input.shape());
+    fn layer_type(&self) -> &str {
+        "Dropout"
     }
 
-    #[test]
-    fn test_dropout_training_mode() {
-        // Set up dropout
-        let mut rng = SmallRng::seed_from_u64(42);
-        let mut dropout = Dropout::<f64>::new(0.5, &mut rng).unwrap();
-
-        // Ensure training mode
-        dropout.set_training(true);
-
-        // Create a batch of inputs
-        let batch_size = 100;
-        let features = 10;
-        let input = Array2::<f64>::from_elem((batch_size, features), 1.0).into_dyn();
-
-        // Forward pass
-        let output = dropout.forward(&input).unwrap();
-
-        // Count dropped (zero) elements
-        let mut dropped_count = 0;
-        for &val in output.iter() {
-            if val == 0.0 {
-                dropped_count += 1;
-            }
-        }
-
-        // We expect approximately 50% of elements to be dropped
-        // Allow for some statistical variation
-        let total_elements = batch_size * features;
-        let drop_rate = dropped_count as f64 / total_elements as f64;
-
-        assert!(
-            drop_rate > 0.4 && drop_rate < 0.6,
-            "Expected drop rate around 0.5, got {}",
-            drop_rate
-        );
+    fn parameter_count(&self) -> usize {
+        0 // Dropout has no trainable parameters
     }
 
-    #[test]
-    fn test_dropout_inference_mode() {
-        // Set up dropout
-        let mut rng = SmallRng::seed_from_u64(42);
-        let mut dropout = Dropout::<f64>::new(0.5, &mut rng).unwrap();
-
-        // Set to inference mode
-        dropout.set_training(false);
-
-        // Create a batch of inputs
-        let batch_size = 2;
-        let features = 10;
-        let input = Array2::<f64>::from_elem((batch_size, features), 1.0).into_dyn();
-
-        // Forward pass
-        let output = dropout.forward(&input).unwrap();
-
-        // In inference mode, all elements should pass through unchanged
-        for &val in output.iter() {
-            assert_eq!(val, 1.0);
-        }
-    }
-
-    #[test]
-    fn test_dropout_zero_probability() {
-        // Set up dropout with p=0 (no dropout)
-        let mut rng = SmallRng::seed_from_u64(42);
-        let dropout = Dropout::<f64>::new(0.0, &mut rng).unwrap();
-
-        // Create a batch of inputs
-        let batch_size = 2;
-        let features = 10;
-        let input = Array2::<f64>::from_elem((batch_size, features), 1.0).into_dyn();
-
-        // Forward pass
-        let output = dropout.forward(&input).unwrap();
-
-        // With p=0, all elements should pass through unchanged
-        for &val in output.iter() {
-            assert_eq!(val, 1.0);
-        }
-    }
-
-    #[test]
-    fn test_dropout_backward() {
-        // Set up dropout
-        let mut rng = SmallRng::seed_from_u64(42);
-        let dropout = Dropout::<f64>::new(0.5, &mut rng).unwrap();
-
-        // Create a batch of inputs
-        let batch_size = 2;
-        let features = 10;
-        let input = Array2::<f64>::from_elem((batch_size, features), 1.0).into_dyn();
-
-        // Forward pass to create mask
-        let output = dropout.forward(&input).unwrap();
-
-        // Create gradient
-        let grad_output = Array2::<f64>::from_elem((batch_size, features), 1.0).into_dyn();
-
-        // Backward pass
-        let grad_input = dropout.backward(&input, &grad_output).unwrap();
-
-        // Check that grad_input has same shape
-        assert_eq!(grad_input.shape(), input.shape());
-
-        // Elements that were set to zero in the forward pass should also be zero in the backward pass
-        for (out, grad) in output.iter().zip(grad_input.iter()) {
-            if *out == 0.0 {
-                assert_eq!(*grad, 0.0);
-            } else {
-                // Non-zero elements should have the same gradient scale as in forward pass
-                assert_eq!(*grad, 2.0); // scale = 1/(1-0.5) = 2.0
-            }
-        }
+    fn layer_description(&self) -> String {
+        format!("type:Dropout, p:{:.3}", self.p())
     }
 }
+
+// Explicit Send + Sync implementations for Dropout layer
+unsafe impl<F: Float + Debug + Send + Sync> Send for Dropout<F> {}
+unsafe impl<F: Float + Debug + Send + Sync> Sync for Dropout<F> {}

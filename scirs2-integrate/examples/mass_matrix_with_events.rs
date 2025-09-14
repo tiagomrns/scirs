@@ -15,6 +15,7 @@ use scirs2_integrate::ode::{
 };
 use std::f64::consts::PI;
 
+#[allow(dead_code)]
 fn main() -> IntegrateResult<()> {
     println!("=== Variable-Mass Pendulum with Event Detection ===");
 
@@ -202,11 +203,11 @@ fn main() -> IntegrateResult<()> {
             // Compare with theoretical prediction for small oscillations
             // Period changes with mass: T(t) = 2π√(l/g) * m(t)^(1/2)
             let initial_period = 2.0 * PI * (l / g).sqrt();
-            println!("  Initial period (constant mass): {:.4} s", initial_period);
+            println!("  Initial period (constant mass): {initial_period:.4} s");
 
             // For small oscillation of variable mass pendulum, the period increases as mass decreases
             let avg_period = periods.iter().sum::<f64>() / periods.len() as f64;
-            println!("  Average observed period: {:.4} s", avg_period);
+            println!("  Average observed period: {avg_period:.4} s");
             println!(
                 "  Period ratio (avg/initial): {:.4}",
                 avg_period / initial_period

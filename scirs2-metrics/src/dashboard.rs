@@ -3,6 +3,25 @@
 //! This module provides a web-based interactive dashboard for visualizing
 //! machine learning metrics in real-time, with export capabilities and
 //! customizable visualizations.
+//!
+//! # HTTP Server Support
+//!
+//! When the `dashboard_server` feature is enabled, this module provides
+//! a real HTTP server implementation using tokio. To use it:
+//!
+//! ```no_run
+//! # #[cfg(feature = "dashboard_server")]
+//! # {
+//! use scirs2_metrics::dashboard::{InteractiveDashboard, DashboardConfig};
+//! use scirs2_metrics::dashboard::server::start_http_server;
+//!
+//! let dashboard = InteractiveDashboard::default();
+//! dashboard.add_metric("accuracy", 0.95).unwrap();
+//!
+//! // Start the HTTP server
+//! let server = start_http_server(dashboard).unwrap();
+//! # }
+//! ```
 
 use crate::error::{MetricsError, Result};
 use ndarray::{Array1, Array2};
@@ -11,6 +30,10 @@ use std::collections::HashMap;
 use std::net::SocketAddr;
 use std::sync::{Arc, Mutex};
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
+
+// Include dashboard server implementation if tokio is available
+#[cfg(feature = "dashboard_server")]
+pub mod server;
 
 /// Configuration for the interactive dashboard
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -111,7 +134,7 @@ impl MetricDataPoint {
 }
 
 /// Dashboard data storage and management
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct DashboardData {
     /// Stored metric data points
     data_points: Arc<Mutex<Vec<MetricDataPoint>>>,
@@ -227,7 +250,7 @@ impl DashboardData {
 }
 
 /// Interactive dashboard server
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct InteractiveDashboard {
     /// Dashboard data
     data: DashboardData,
@@ -276,7 +299,7 @@ impl InteractiveDashboard {
     ) -> Result<()> {
         if metric_names.len() != values.len() {
             return Err(MetricsError::InvalidInput(
-                "Metric names and values must have same length".to_string(),
+                "Metric _names and values must have same length".to_string(),
             ));
         }
 
@@ -289,29 +312,43 @@ impl InteractiveDashboard {
         self.data.add_metrics(points)
     }
 
-    /// Start the dashboard server (placeholder for actual web server)
+    /// Start the dashboard server
     pub fn start_server(&self) -> Result<DashboardServer> {
-        println!(
-            "Starting dashboard server at http://{}",
-            self.config.address
-        );
-        println!("Dashboard title: {}", self.config.title);
-        println!("Refresh interval: {} seconds", self.config.refresh_interval);
-        println!("Real-time updates: {}", self.config.enable_realtime);
+        #[cfg(feature = "dashboard_server")]
+        {
+            // Use actual HTTP server when feature is enabled
+            let _http_server = server::start_http_server(self.clone())?;
 
-        // In a real implementation, this would start an actual web server
-        // For now, we return a mock server
-        Ok(DashboardServer {
-            address: self.config.address,
-            is_running: true,
-        })
+            Ok(DashboardServer {
+                address: self.config.address,
+                is_running: true,
+            })
+        }
+
+        #[cfg(not(feature = "dashboard_server"))]
+        {
+            println!(
+                "Dashboard server feature not enabled. Starting mock server at http://{}",
+                self.config.address
+            );
+            println!("Dashboard title: {}", self.config.title);
+            println!("Refresh interval: {} seconds", self.config.refresh_interval);
+            println!("Real-time updates: {}", self.config.enable_realtime);
+            println!("To use the real HTTP server, enable the 'dashboard_server' feature");
+
+            // Return mock server when feature is not enabled
+            Ok(DashboardServer {
+                address: self.config.address,
+                is_running: true,
+            })
+        }
     }
 
     /// Export data to JSON
     pub fn export_to_json(&self) -> Result<String> {
         let data = self.data.get_all_metrics()?;
         serde_json::to_string_pretty(&data)
-            .map_err(|e| MetricsError::InvalidInput(format!("Failed to serialize data: {}", e)))
+            .map_err(|e| MetricsError::InvalidInput(format!("Failed to serialize data: {e}")))
     }
 
     /// Export data to CSV
@@ -535,7 +572,7 @@ impl InteractiveDashboard {
 </html>
 "#;
 
-        Ok(format!("{}{}{}", html, rows, footer))
+        Ok(format!("{html}{rows}{footer}"))
     }
 }
 
@@ -719,7 +756,7 @@ pub mod utils {
         };
 
         std::fs::write(file_path, content)
-            .map_err(|e| MetricsError::InvalidInput(format!("Failed to write file: {}", e)))?;
+            .map_err(|e| MetricsError::InvalidInput(format!("Failed to write file: {e}")))?;
 
         Ok(())
     }

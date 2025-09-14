@@ -9,6 +9,7 @@ use crate::quad::trapezoid;
 use crate::IntegrateFloat;
 use ndarray::{Array1, Array2, ArrayView1};
 use rand_distr::{Distribution, Uniform};
+use std::f64::consts::PI;
 use std::fmt::Debug;
 
 /// Options for controlling the behavior of Romberg integration
@@ -70,13 +71,14 @@ pub struct RombergResult<F: IntegrateFloat> {
 /// # Examples
 ///
 /// ```
-/// use scirs2_integrate::romberg::romberg;
+/// use scirs2__integrate::romberg::romberg;
 ///
 /// // Integrate f(x) = x² from 0 to 1 (exact result: 1/3)
 /// let result = romberg(|x: f64| x * x, 0.0, 1.0, None).unwrap();
 /// assert!((result.value - 1.0/3.0).abs() < 1e-10);
 /// assert!(result.converged);
 /// ```
+#[allow(dead_code)]
 pub fn romberg<F, Func>(
     f: Func,
     a: F,
@@ -172,7 +174,7 @@ where
 /// # Examples
 ///
 /// ```
-/// use scirs2_integrate::romberg::{MultiRombergResult, IntegrationMethod};
+/// use scirs2__integrate::romberg::{MultiRombergResult, IntegrationMethod};
 ///
 /// // This struct holds the result of a multi-dimensional Romberg integration
 /// let result = MultiRombergResult {
@@ -209,6 +211,7 @@ pub enum IntegrationMethod {
     MonteCarlo,
 }
 
+#[allow(dead_code)]
 pub fn multi_romberg<F, Func>(
     f: Func,
     ranges: &[(F, F)],
@@ -226,6 +229,7 @@ where
 /// using the most appropriate method based on the dimension
 ///
 /// Returns the full result structure with error estimates and method information
+#[allow(dead_code)]
 pub fn multi_romberg_with_details<F, Func>(
     f: Func,
     ranges: &[(F, F)],
@@ -273,6 +277,7 @@ where
 }
 
 /// Integrate a function using adaptive nested integration for dimensions 2-3
+#[allow(dead_code)]
 fn integrate_adaptive_nested<F, Func>(
     f: Func,
     ranges: &[(F, F)],
@@ -448,6 +453,7 @@ where
 }
 
 /// High-dimensional integration using Monte Carlo with variance reduction techniques
+#[allow(dead_code)]
 fn monte_carlo_high_dimensions<F, Func>(
     f: Func,
     ranges: &[(F, F)],
@@ -536,8 +542,6 @@ mod tests {
     use super::*;
     use approx::assert_relative_eq;
 
-    use std::f64::consts::PI;
-
     #[test]
     fn test_romberg_integration() {
         // Test integrating x² from 0 to 1 (exact result: 1/3)
@@ -546,7 +550,7 @@ mod tests {
         assert!(result.converged);
 
         // Test integrating sin(x) from 0 to π (exact result: 2)
-        let result = romberg(|x| x.sin(), 0.0, PI, None).unwrap();
+        let result = romberg(|x: f64| x.sin(), 0.0, PI, None).unwrap();
         assert_relative_eq!(result.value, 2.0, epsilon = 1e-10);
         assert!(result.converged);
 

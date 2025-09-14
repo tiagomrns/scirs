@@ -2,6 +2,7 @@ use scirs2_special::{hurwitz_zeta, zeta, zetac};
 use std::f64::consts::PI;
 
 #[allow(unused_variables)]
+#[allow(dead_code)]
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("Zeta Functions Example");
     println!("=====================\n");

@@ -38,6 +38,7 @@ use std::f64::consts::PI;
 /// assert!((result.re - 0.9999828406).abs() < 1e-8);
 /// assert!(result.im.abs() < 1e-10);
 /// ```
+#[allow(dead_code)]
 pub fn j0_complex(z: Complex64) -> Complex64 {
     // For real values, use the real Bessel function for accuracy
     if z.im.abs() < 1e-15 && z.re >= 0.0 {
@@ -83,6 +84,7 @@ pub fn j0_complex(z: Complex64) -> Complex64 {
 /// assert!((result.re - 0.5001147450).abs() < 1e-8);
 /// assert!(result.im.abs() < 1e-10);
 /// ```
+#[allow(dead_code)]
 pub fn j1_complex(z: Complex64) -> Complex64 {
     // For real values, use the real Bessel function for accuracy
     if z.im.abs() < 1e-15 && z.re >= 0.0 {
@@ -129,6 +131,7 @@ pub fn j1_complex(z: Complex64) -> Complex64 {
 /// assert!((result.re - 0.1941053828).abs() < 1e-8);
 /// assert!(result.im.abs() < 1e-10);
 /// ```
+#[allow(dead_code)]
 pub fn jn_complex(n: i32, z: Complex64) -> Complex64 {
     // For real values, use the real Bessel function for accuracy
     if z.im.abs() < 1e-15 && z.re >= 0.0 {
@@ -186,6 +189,7 @@ pub fn jn_complex(n: i32, z: Complex64) -> Complex64 {
 /// assert!((result.re - 0.6713967072).abs() < 1e-8);
 /// assert!(result.im.abs() < 1e-10);
 /// ```
+#[allow(dead_code)]
 pub fn jv_complex(v: f64, z: Complex64) -> Complex64 {
     // For real values, use the real Bessel function for accuracy
     if z.im.abs() < 1e-15 && z.re >= 0.0 {
@@ -247,6 +251,7 @@ pub fn jv_complex(v: f64, z: Complex64) -> Complex64 {
 /// assert!((result.re - 1.2660658480).abs() < 1e-8);
 /// assert!(result.im.abs() < 1e-10);
 /// ```
+#[allow(dead_code)]
 pub fn i0_complex(z: Complex64) -> Complex64 {
     // For real values, use the real modified Bessel function for accuracy
     if z.im.abs() < 1e-15 && z.re >= 0.0 {
@@ -295,6 +300,7 @@ pub fn i0_complex(z: Complex64) -> Complex64 {
 /// assert!((result.re - 0.4610685044).abs() < 1e-8);
 /// assert!(result.im.abs() < 1e-10);
 /// ```
+#[allow(dead_code)]
 pub fn k0_complex(z: Complex64) -> Complex64 {
     // For real positive values, use the real modified Bessel function for accuracy
     if z.im.abs() < 1e-15 && z.re > 0.0 {
@@ -319,6 +325,7 @@ pub fn k0_complex(z: Complex64) -> Complex64 {
 // Implementation functions for series expansions
 
 /// Series expansion for J₀(z) for small |z|
+#[allow(dead_code)]
 fn j0_series_complex(z: Complex64) -> Complex64 {
     let mut result = Complex64::new(1.0, 0.0);
     let z2 = z * z;
@@ -337,6 +344,7 @@ fn j0_series_complex(z: Complex64) -> Complex64 {
 }
 
 /// Series expansion for J₁(z) for small |z|
+#[allow(dead_code)]
 fn j1_series_complex(z: Complex64) -> Complex64 {
     let mut result = z / Complex64::new(2.0, 0.0);
     let z2 = z * z;
@@ -355,6 +363,7 @@ fn j1_series_complex(z: Complex64) -> Complex64 {
 }
 
 /// Series expansion for Jₙ(z) for small |z|
+#[allow(dead_code)]
 fn jn_series_complex(n: i32, z: Complex64) -> Complex64 {
     if n == 0 {
         return j0_series_complex(z);
@@ -391,6 +400,7 @@ fn jn_series_complex(n: i32, z: Complex64) -> Complex64 {
 }
 
 /// Series expansion for Jᵥ(z) for small |z|
+#[allow(dead_code)]
 fn jv_series_complex(v: f64, z: Complex64) -> Complex64 {
     use crate::gamma::gamma;
 
@@ -415,6 +425,7 @@ fn jv_series_complex(v: f64, z: Complex64) -> Complex64 {
 }
 
 /// Half-integer order Bessel functions
+#[allow(dead_code)]
 fn jv_half_integer_complex(v: f64, z: Complex64) -> Complex64 {
     // For half-integer orders, J_{n+1/2}(z) = √(2/πz) * spherical bessel functions
     let sqrt_2_over_pi_z = (Complex64::new(2.0 / PI, 0.0) / z).sqrt();
@@ -434,6 +445,7 @@ fn jv_half_integer_complex(v: f64, z: Complex64) -> Complex64 {
 }
 
 /// Spherical Bessel function jₙ(z) for complex arguments
+#[allow(dead_code)]
 fn spherical_bessel_jn_complex(n: i32, z: Complex64) -> Complex64 {
     if n == 0 {
         if z.norm() < 1e-8 {
@@ -463,6 +475,7 @@ fn spherical_bessel_jn_complex(n: i32, z: Complex64) -> Complex64 {
 }
 
 /// Series expansion for I₀(z) for small |z|
+#[allow(dead_code)]
 fn i0_series_complex(z: Complex64) -> Complex64 {
     let mut result = Complex64::new(1.0, 0.0);
     let z2 = z * z;
@@ -481,6 +494,7 @@ fn i0_series_complex(z: Complex64) -> Complex64 {
 }
 
 /// Series expansion for K₀(z) for small |z|
+#[allow(dead_code)]
 fn k0_series_complex(z: Complex64) -> Complex64 {
     // K₀(z) has a logarithmic singularity at z=0
     // K₀(z) = -ln(z/2)I₀(z) + Σ
@@ -519,6 +533,7 @@ fn k0_series_complex(z: Complex64) -> Complex64 {
 }
 
 /// Harmonic number H_n = 1 + 1/2 + ... + 1/n
+#[allow(dead_code)]
 fn harmonic_number(n: usize) -> f64 {
     (1..=n).map(|k| 1.0 / k as f64).sum()
 }
@@ -526,6 +541,7 @@ fn harmonic_number(n: usize) -> f64 {
 // Implementation functions for asymptotic expansions
 
 /// Asymptotic expansion for J₀(z) for large |z|
+#[allow(dead_code)]
 fn j0_asymptotic_complex(z: Complex64) -> Complex64 {
     let sqrt_2_over_pi_z = (Complex64::new(2.0 / PI, 0.0) / z).sqrt();
     let phase = z - Complex64::new(PI / 4.0, 0.0);
@@ -533,6 +549,7 @@ fn j0_asymptotic_complex(z: Complex64) -> Complex64 {
 }
 
 /// Asymptotic expansion for J₁(z) for large |z|
+#[allow(dead_code)]
 fn j1_asymptotic_complex(z: Complex64) -> Complex64 {
     let sqrt_2_over_pi_z = (Complex64::new(2.0 / PI, 0.0) / z).sqrt();
     let phase = z - Complex64::new(3.0 * PI / 4.0, 0.0);
@@ -540,6 +557,7 @@ fn j1_asymptotic_complex(z: Complex64) -> Complex64 {
 }
 
 /// Asymptotic expansion for Jₙ(z) for large |z|
+#[allow(dead_code)]
 fn jn_asymptotic_complex(n: i32, z: Complex64) -> Complex64 {
     let sqrt_2_over_pi_z = (Complex64::new(2.0 / PI, 0.0) / z).sqrt();
     let phase = z - Complex64::new((n as f64 + 0.5) * PI / 2.0, 0.0);
@@ -547,6 +565,7 @@ fn jn_asymptotic_complex(n: i32, z: Complex64) -> Complex64 {
 }
 
 /// Asymptotic expansion for Jᵥ(z) for large |z|
+#[allow(dead_code)]
 fn jv_asymptotic_complex(v: f64, z: Complex64) -> Complex64 {
     let sqrt_2_over_pi_z = (Complex64::new(2.0 / PI, 0.0) / z).sqrt();
     let phase = z - Complex64::new((v + 0.5) * PI / 2.0, 0.0);
@@ -554,12 +573,14 @@ fn jv_asymptotic_complex(v: f64, z: Complex64) -> Complex64 {
 }
 
 /// Asymptotic expansion for I₀(z) for large |z|
+#[allow(dead_code)]
 fn i0_asymptotic_complex(z: Complex64) -> Complex64 {
     let sqrt_2_pi_z = (Complex64::new(2.0 * PI, 0.0) * z).sqrt();
     z.exp() / sqrt_2_pi_z
 }
 
 /// Asymptotic expansion for K₀(z) for large |z|
+#[allow(dead_code)]
 fn k0_asymptotic_complex(z: Complex64) -> Complex64 {
     let sqrt_pi_over_2z = (Complex64::new(PI / 2.0, 0.0) / z).sqrt();
     sqrt_pi_over_2z * (-z).exp()

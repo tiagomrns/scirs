@@ -2,6 +2,7 @@ use ndarray::{s, Array2};
 use scirs2_linalg::prelude::*;
 use scirs2_linalg::{largest_k_eigh, smallest_k_eigh};
 
+#[allow(dead_code)]
 fn main() {
     // Create a symmetric test matrix
     println!("Creating test matrix...");
@@ -90,6 +91,7 @@ fn main() {
 }
 
 // Helper function to print a submatrix
+#[allow(dead_code)]
 fn print_submatrix<T: std::fmt::Display>(matrix: &Array2<T>, size: usize) {
     let n = std::cmp::min(size, matrix.shape()[0]);
     let m = std::cmp::min(size, matrix.shape()[1]);

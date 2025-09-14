@@ -8,7 +8,7 @@ A comprehensive clustering module for the SciRS2 scientific computing library in
 
 ## Production Readiness - Final Alpha Release
 
-🎯 **Version 0.1.0-alpha.6** is the final alpha release, ready for production use with:
+🎯 **Version 0.1.0-beta.1** is the first beta release, ready for production use with:
 - **189+ comprehensive tests** covering all algorithms and edge cases
 - **Zero warnings policy** enforced across all code and examples  
 - **Full SciPy API compatibility** maintained for seamless migration
@@ -62,6 +62,7 @@ A comprehensive clustering module for the SciRS2 scientific computing library in
   * Affinity propagation
   * BIRCH (Balanced Iterative Reducing and Clustering using Hierarchies)
   * Gaussian Mixture Models (GMM)
+  * Leader algorithm (single-pass clustering with hierarchical tree support)
 
 * **Evaluation Metrics**
   * Silhouette coefficient
@@ -77,7 +78,7 @@ Add this to your `Cargo.toml`:
 
 ```toml
 [dependencies]
-scirs2-cluster = "0.1.0-alpha.6"
+scirs2-cluster = "0.1.0-beta.1"
 ndarray = "0.15"
 ```
 
@@ -85,7 +86,7 @@ To enable optimizations through the core module, add feature flags:
 
 ```toml
 [dependencies]
-scirs2-cluster = { version = "0.1.0-alpha.6", features = ["parallel", "simd"] }
+scirs2-cluster = { version = "0.1.0-beta.1", features = ["parallel", "simd"] }
 ```
 
 ## Usage

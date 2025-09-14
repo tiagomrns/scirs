@@ -46,7 +46,7 @@
 //! ### Utilities
 //! - `block_diag()` - Block diagonal matrix construction
 
-use ndarray::{Array1, Array2, ArrayView1, ArrayView2, Axis};
+use ndarray::{Array1, Array2, ArrayView1, ArrayView2, Axis, ScalarOperand};
 use num_traits::{Float, NumAssign, Zero};
 use std::iter::Sum;
 
@@ -68,11 +68,12 @@ pub type LstsqResult<F> = (Array2<F>, Option<Array1<F>>, usize, Array1<F>);
 ///
 /// # Returns
 /// * Determinant of the matrix
-pub fn det<F>(a: &ArrayView2<F>, _overwrite_a: bool, check_finite: bool) -> LinalgResult<F>
+#[allow(dead_code)]
+pub fn det<F>(a: &ArrayView2<F>, _overwrite_a: bool, checkfinite: bool) -> LinalgResult<F>
 where
-    F: Float + NumAssign + Sum,
+    F: Float + NumAssign + Sum + Send + Sync + ScalarOperand + 'static,
 {
-    if check_finite {
+    if checkfinite {
         for &elem in a.iter() {
             if !elem.is_finite() {
                 return Err(LinalgError::ValueError(
@@ -94,11 +95,12 @@ where
 ///
 /// # Returns
 /// * Inverse of the matrix
-pub fn inv<F>(a: &ArrayView2<F>, _overwrite_a: bool, check_finite: bool) -> LinalgResult<Array2<F>>
+#[allow(dead_code)]
+pub fn inv<F>(a: &ArrayView2<F>, _overwrite_a: bool, checkfinite: bool) -> LinalgResult<Array2<F>>
 where
-    F: Float + NumAssign + Sum,
+    F: Float + NumAssign + Sum + Send + Sync + ScalarOperand + 'static,
 {
-    if check_finite {
+    if checkfinite {
         for &elem in a.iter() {
             if !elem.is_finite() {
                 return Err(LinalgError::ValueError(
@@ -126,6 +128,7 @@ where
 /// # Returns
 /// * Tuple of (eigenvalues, eigenvectors) if right=true
 #[allow(clippy::too_many_arguments)]
+#[allow(dead_code)]
 pub fn eig<F>(
     a: &ArrayView2<F>,
     b: Option<&ArrayView2<F>>,
@@ -137,7 +140,7 @@ pub fn eig<F>(
     homogeneous_eigvals: bool,
 ) -> LinalgResult<(Array2<F>, Array2<F>)>
 where
-    F: Float + NumAssign + Sum + 'static,
+    F: Float + NumAssign + Sum + Send + Sync + ScalarOperand + 'static,
 {
     if check_finite {
         for &elem in a.iter() {
@@ -176,7 +179,7 @@ where
         ));
     }
 
-    // Note: _overwrite_a, _overwrite_b are ignored in our implementation
+    // Note: _overwrite_a_overwrite_b are ignored in our implementation
     // Our implementation returns complex eigenvalues/eigenvectors
     // We return an error for now as SciPy compat would need real conversion handling
     Err(LinalgError::NotImplementedError(
@@ -202,6 +205,7 @@ where
 /// # Returns
 /// * Eigenvalues if eigvals_only=true, otherwise (eigenvalues, eigenvectors)
 #[allow(clippy::too_many_arguments)]
+#[allow(dead_code)]
 pub fn eigh<F>(
     a: &ArrayView2<F>,
     b: Option<&ArrayView2<F>>,
@@ -216,7 +220,7 @@ pub fn eigh<F>(
     _type_param: u32,
 ) -> LinalgResult<(Array1<F>, Option<Array2<F>>)>
 where
-    F: Float + NumAssign + Sum + 'static,
+    F: Float + NumAssign + Sum + Send + Sync + ScalarOperand + 'static,
 {
     if check_finite {
         for &elem in a.iter() {
@@ -270,6 +274,7 @@ where
 ///
 /// # Returns
 /// * Tuple of (P, L, U) or variations based on parameters
+#[allow(dead_code)]
 pub fn lu<F>(
     a: &ArrayView2<F>,
     permute_l: bool,
@@ -278,7 +283,7 @@ pub fn lu<F>(
     p_indices: bool,
 ) -> LinalgResult<(Array2<F>, Array2<F>, Array2<F>)>
 where
-    F: Float + NumAssign + Sum,
+    F: Float + NumAssign + Sum + Send + Sync + ScalarOperand + 'static,
 {
     if check_finite {
         for &elem in a.iter() {
@@ -312,6 +317,7 @@ where
 ///
 /// # Returns
 /// * Tuple of (Q, R) or just R based on mode
+#[allow(dead_code)]
 pub fn qr<F>(
     a: &ArrayView2<F>,
     _overwrite_a: bool,
@@ -321,7 +327,7 @@ pub fn qr<F>(
     check_finite: bool,
 ) -> LinalgResult<(Option<Array2<F>>, Array2<F>)>
 where
-    F: Float + NumAssign + Sum,
+    F: Float + NumAssign + Sum + Send + Sync + ScalarOperand + 'static,
 {
     if check_finite {
         for &elem in a.iter() {
@@ -339,7 +345,7 @@ where
         ));
     }
 
-    // Note: overwrite_a and lwork are ignored in our implementation
+    // Note: overwrite_a and _lwork are ignored in our implementation
     match mode {
         "full" | "economic" => {
             let (q, r) = decomposition::qr(a, None)?;
@@ -353,8 +359,7 @@ where
             "Raw QR mode not yet supported".to_string(),
         )),
         _ => Err(LinalgError::InvalidInputError(format!(
-            "Invalid QR mode: {}",
-            mode
+            "Invalid QR mode: {mode}"
         ))),
     }
 }
@@ -371,6 +376,7 @@ where
 ///
 /// # Returns
 /// * Tuple of (U, s, Vt) if compute_uv=true, otherwise just s
+#[allow(dead_code)]
 pub fn svd<F>(
     a: &ArrayView2<F>,
     full_matrices: bool,
@@ -380,7 +386,7 @@ pub fn svd<F>(
     _lapack_driver: &str,
 ) -> LinalgResult<SvdResult<F>>
 where
-    F: Float + NumAssign + Sum + ndarray::ScalarOperand,
+    F: Float + NumAssign + Sum + Send + Sync + ScalarOperand + 'static,
 {
     if check_finite {
         for &elem in a.iter() {
@@ -413,6 +419,7 @@ where
 ///
 /// # Returns
 /// * Lower or upper triangular Cholesky factor
+#[allow(dead_code)]
 pub fn cholesky<F>(
     a: &ArrayView2<F>,
     lower: bool,
@@ -420,7 +427,7 @@ pub fn cholesky<F>(
     check_finite: bool,
 ) -> LinalgResult<Array2<F>>
 where
-    F: Float + NumAssign + Sum,
+    F: Float + NumAssign + Sum + Send + Sync + ScalarOperand + 'static,
 {
     if check_finite {
         for &elem in a.iter() {
@@ -458,6 +465,7 @@ where
 /// # Returns
 /// * Solution x
 #[allow(clippy::too_many_arguments)]
+#[allow(dead_code)]
 pub fn compat_solve<F>(
     a: &ArrayView2<F>,
     b: &ArrayView2<F>,
@@ -469,7 +477,7 @@ pub fn compat_solve<F>(
     transposed: bool,
 ) -> LinalgResult<Array2<F>>
 where
-    F: Float + NumAssign + Sum,
+    F: Float + NumAssign + Sum + Send + Sync + ScalarOperand + 'static,
 {
     if check_finite {
         for &elem in a.iter() {
@@ -494,7 +502,7 @@ where
         ));
     }
 
-    // Note: _overwrite_a, _overwrite_b are ignored in our implementation
+    // Note: _overwrite_a_overwrite_b are ignored in our implementation
     solve::solve_multiple(a, b, None)
 }
 
@@ -507,7 +515,7 @@ pub use crate::eigen_specialized::tridiagonal_eigh as eigh_tridiagonal;
 pub use crate::eigen_specialized::tridiagonal_eigvalsh as eigvalsh_tridiagonal;
 
 // Matrix functions
-pub use crate::basic::matrix_power as fractional_matrix_power;
+pub use crate::basic::matrix_power as fractionalmatrix_power;
 pub use crate::matrix_functions::expm;
 pub use crate::matrix_functions::logm;
 // Re-export with SciPy-compatible wrapper
@@ -521,11 +529,12 @@ pub use crate::matrix_functions::logm;
 ///
 /// # Returns
 /// * Matrix square root of a
-pub fn sqrtm<F>(a: &ArrayView2<F>, check_finite: Option<bool>) -> LinalgResult<Array2<F>>
+#[allow(dead_code)]
+pub fn sqrtm<F>(a: &ArrayView2<F>, checkfinite: Option<bool>) -> LinalgResult<Array2<F>>
 where
-    F: Float + Sum + NumAssign + ndarray::ScalarOperand,
+    F: Float + Sum + NumAssign + Send + Sync + ScalarOperand + 'static,
 {
-    let check = check_finite.unwrap_or(true);
+    let check = checkfinite.unwrap_or(true);
     if check {
         for &elem in a.iter() {
             if !elem.is_finite() {
@@ -551,6 +560,7 @@ where
 ///
 /// # Returns
 /// * Norm of the array
+#[allow(dead_code)]
 pub fn norm<F>(
     a: &ArrayView2<F>,
     ord: Option<&str>,
@@ -559,7 +569,7 @@ pub fn norm<F>(
     check_finite: bool,
 ) -> LinalgResult<F>
 where
-    F: Float + Sum + NumAssign + ndarray::ScalarOperand,
+    F: Float + Sum + NumAssign + Send + Sync + ScalarOperand + 'static,
 {
     if check_finite {
         for &elem in a.iter() {
@@ -597,11 +607,12 @@ where
 ///
 /// # Returns
 /// * Norm of the vector
-pub fn vector_norm<F>(a: &ArrayView1<F>, ord: Option<f64>, check_finite: bool) -> LinalgResult<F>
+#[allow(dead_code)]
+pub fn vector_norm<F>(a: &ArrayView1<F>, ord: Option<f64>, checkfinite: bool) -> LinalgResult<F>
 where
-    F: Float + Sum + NumAssign,
+    F: Float + Sum + NumAssign + Send + Sync + ScalarOperand,
 {
-    if check_finite {
+    if checkfinite {
         for &elem in a.iter() {
             if !elem.is_finite() {
                 return Err(LinalgError::ValueError(
@@ -650,6 +661,7 @@ where
 ///
 /// # Returns
 /// * Pseudoinverse of the matrix
+#[allow(dead_code)]
 pub fn pinv<F>(
     a: &ArrayView2<F>,
     rcond: Option<F>,
@@ -657,7 +669,7 @@ pub fn pinv<F>(
     check_finite: bool,
 ) -> LinalgResult<Array2<F>>
 where
-    F: Float + Sum + NumAssign + ndarray::ScalarOperand,
+    F: Float + Sum + NumAssign + Send + Sync + ScalarOperand + 'static,
 {
     if check_finite {
         for &elem in a.iter() {
@@ -700,9 +712,10 @@ where
 ///
 /// # Returns
 /// * Condition number of the matrix
+#[allow(dead_code)]
 pub fn cond<F>(a: &ArrayView2<F>, p: Option<&str>) -> LinalgResult<F>
 where
-    F: Float + Sum + NumAssign + ndarray::ScalarOperand,
+    F: Float + Sum + NumAssign + Send + Sync + ScalarOperand + 'static,
 {
     match p {
         None | Some("2") => norm_mod::cond(a, p, None),
@@ -725,8 +738,7 @@ where
             Ok(norm_a * norm_inv_a)
         }
         _ => Err(LinalgError::InvalidInput(format!(
-            "Unsupported norm type for condition number: {:?}",
-            p
+            "Unsupported norm type for condition number: {p:?}"
         ))),
     }
 }
@@ -741,6 +753,7 @@ where
 ///
 /// # Returns
 /// * Rank of the matrix
+#[allow(dead_code)]
 pub fn matrix_rank<F>(
     a: &ArrayView2<F>,
     tol: Option<F>,
@@ -748,7 +761,7 @@ pub fn matrix_rank<F>(
     check_finite: bool,
 ) -> LinalgResult<usize>
 where
-    F: Float + Sum + NumAssign + ndarray::ScalarOperand,
+    F: Float + Sum + NumAssign + Send + Sync + ScalarOperand + 'static,
 {
     if check_finite {
         for &elem in a.iter() {
@@ -777,6 +790,7 @@ where
 /// # Returns
 /// * Tuple of (solution, residuals, rank, singular_values)
 #[allow(clippy::too_many_arguments)]
+#[allow(dead_code)]
 pub fn lstsq<F>(
     a: &ArrayView2<F>,
     b: &ArrayView2<F>,
@@ -787,7 +801,7 @@ pub fn lstsq<F>(
     _lapack_driver: Option<&str>,
 ) -> LinalgResult<LstsqResult<F>>
 where
-    F: Float + Sum + NumAssign + ndarray::ScalarOperand,
+    F: Float + Sum + NumAssign + Send + Sync + ScalarOperand + 'static,
 {
     if check_finite {
         for &elem in a.iter() {
@@ -806,7 +820,7 @@ where
         }
     }
 
-    // Convert 2D b to 1D for our lstsq function
+    // Convert 2D _b to 1D for our lstsq function
     let b_1d = if b.ncols() == 1 {
         b.column(0).to_owned()
     } else {
@@ -861,6 +875,7 @@ where
 /// # Returns
 /// * Solution to the triangular system
 #[allow(clippy::too_many_arguments)]
+#[allow(dead_code)]
 pub fn solve_triangular<F>(
     a: &ArrayView2<F>,
     b: &ArrayView2<F>,
@@ -871,7 +886,7 @@ pub fn solve_triangular<F>(
     check_finite: bool,
 ) -> LinalgResult<Array2<F>>
 where
-    F: Float + Sum + NumAssign,
+    F: Float + Sum + NumAssign + Send + Sync + ScalarOperand + 'static,
 {
     if check_finite {
         for &elem in a.iter() {
@@ -896,7 +911,7 @@ where
         ));
     }
 
-    // Convert 2D b to 1D for our solve_triangular function
+    // Convert 2D _b to 1D for our solve_triangular function
     let b_1d = if b.ncols() == 1 {
         b.column(0).to_owned()
     } else {
@@ -920,6 +935,7 @@ where
 ///
 /// # Returns
 /// * Tuple of (R, Q)
+#[allow(dead_code)]
 pub fn rq<F>(
     a: &ArrayView2<F>,
     _overwrite_a: bool,
@@ -928,7 +944,7 @@ pub fn rq<F>(
     check_finite: bool,
 ) -> LinalgResult<(Array2<F>, Array2<F>)>
 where
-    F: Float + NumAssign + Sum,
+    F: Float + NumAssign + Sum + Send + Sync + ScalarOperand + 'static,
 {
     if check_finite {
         for &elem in a.iter() {
@@ -942,8 +958,7 @@ where
 
     if mode != "full" && mode != "economic" {
         return Err(LinalgError::InvalidInput(format!(
-            "Invalid RQ mode: {}",
-            mode
+            "Invalid RQ mode: {mode}"
         )));
     }
 
@@ -972,9 +987,10 @@ where
 ///
 /// # Returns
 /// * Tuple of (U, P) for right polar or (P, U) for left polar
+#[allow(dead_code)]
 pub fn polar<F>(a: &ArrayView2<F>, side: &str) -> LinalgResult<(Array2<F>, Array2<F>)>
 where
-    F: Float + Sum + NumAssign + ndarray::ScalarOperand,
+    F: Float + Sum + NumAssign + Send + Sync + ScalarOperand + 'static,
 {
     match side {
         "right" => {
@@ -992,8 +1008,7 @@ where
             Ok((positive, unitary))
         }
         _ => Err(LinalgError::InvalidInput(format!(
-            "Invalid polar decomposition side: {}",
-            side
+            "Invalid polar decomposition side: {side}"
         ))),
     }
 }
@@ -1007,9 +1022,10 @@ where
 ///
 /// # Returns
 /// * Matrix function result
-pub fn funm<F>(a: &ArrayView2<F>, func: &str, _disp: bool) -> LinalgResult<Array2<F>>
+#[allow(dead_code)]
+pub fn funm<F>(a: &ArrayView2<F>, func: &str, disp: bool) -> LinalgResult<Array2<F>>
 where
-    F: Float + Sum + NumAssign + ndarray::ScalarOperand,
+    F: Float + Sum + NumAssign + Send + Sync + ScalarOperand + 'static,
 {
     match func {
         "exp" => matrix_functions::expm(a, None),
@@ -1019,32 +1035,34 @@ where
         "sin" => sinm(a),
         "tan" => tanm(a),
         _ => Err(LinalgError::NotImplementedError(format!(
-            "Matrix function '{}' not yet implemented",
-            func
+            "Matrix function '{func}' not yet implemented"
         ))),
     }
 }
 
 /// Matrix cosine (SciPy-compatible interface)
+#[allow(dead_code)]
 pub fn cosm<F>(a: &ArrayView2<F>) -> LinalgResult<Array2<F>>
 where
-    F: Float + Sum + NumAssign + ndarray::ScalarOperand,
+    F: Float + Sum + NumAssign + Send + Sync + ScalarOperand + 'static,
 {
     matrix_functions::cosm(a)
 }
 
 /// Matrix sine (SciPy-compatible interface)
+#[allow(dead_code)]
 pub fn sinm<F>(a: &ArrayView2<F>) -> LinalgResult<Array2<F>>
 where
-    F: Float + Sum + NumAssign + ndarray::ScalarOperand,
+    F: Float + Sum + NumAssign + Send + Sync + ScalarOperand + 'static,
 {
     matrix_functions::sinm(a)
 }
 
 /// Matrix tangent (SciPy-compatible interface)
+#[allow(dead_code)]
 pub fn tanm<F>(a: &ArrayView2<F>) -> LinalgResult<Array2<F>>
 where
-    F: Float + Sum + NumAssign + ndarray::ScalarOperand,
+    F: Float + Sum + NumAssign + Send + Sync + ScalarOperand + 'static,
 {
     matrix_functions::tanm(a)
 }
@@ -1062,6 +1080,7 @@ where
 /// # Returns
 /// * Tuple of (T, Z) where A = Z T Z^H
 #[allow(clippy::too_many_arguments)]
+#[allow(dead_code)]
 pub fn schur<F>(
     a: &ArrayView2<F>,
     output: &str,
@@ -1071,7 +1090,7 @@ pub fn schur<F>(
     check_finite: bool,
 ) -> LinalgResult<(Array2<F>, Array2<F>)>
 where
-    F: Float + Sum + NumAssign + 'static,
+    F: Float + Sum + NumAssign + Send + Sync + ScalarOperand + 'static,
 {
     if check_finite {
         for &elem in a.iter() {
@@ -1089,8 +1108,7 @@ where
             decomposition::schur(a)
         }
         _ => Err(LinalgError::InvalidInput(format!(
-            "Invalid Schur output type: {}",
-            output
+            "Invalid Schur output type: {output}"
         ))),
     }
 }
@@ -1102,6 +1120,7 @@ where
 ///
 /// # Returns
 /// * Block diagonal matrix
+#[allow(dead_code)]
 pub fn block_diag<F>(arrays: &[ArrayView2<F>]) -> LinalgResult<Array2<F>>
 where
     F: Float + Zero,
@@ -1147,6 +1166,7 @@ where
 ///
 /// # Returns
 /// * Solution to the banded system
+#[allow(dead_code)]
 pub fn solve_banded<F>(
     _ab: &ArrayView2<F>,
     _b: &ArrayView2<F>,
@@ -1155,7 +1175,7 @@ pub fn solve_banded<F>(
     check_finite: bool,
 ) -> LinalgResult<Array2<F>>
 where
-    F: Float + Sum + NumAssign,
+    F: Float + Sum + NumAssign + Send + Sync + ScalarOperand + 'static,
 {
     if check_finite {
         // Check would go here

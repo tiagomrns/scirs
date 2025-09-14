@@ -601,8 +601,8 @@ pub mod conversions {
         /// # Arguments
         ///
         /// * `value` - Temperature value to convert
-        /// * `from_scale` - Source scale: "celsius", "kelvin", "fahrenheit", or "rankine"
-        /// * `to_scale` - Target scale: "celsius", "kelvin", "fahrenheit", or "rankine"
+        /// * `from_scale` - Source scale: celsius, "kelvin", "fahrenheit", or "rankine"
+        /// * `toscale` - Target scale: celsius, "kelvin", "fahrenheit", or "rankine"
         ///
         /// # Returns
         ///
@@ -621,7 +621,7 @@ pub mod conversions {
         /// assert!((fahrenheit - 212.0).abs() < 1e-10);
         /// ```
         #[must_use]
-        pub fn convert_temperature(value: f64, from_scale: &str, to_scale: &str) -> f64 {
+        pub fn convert_temperature(value: f64, from_scale: &str, toscale: &str) -> f64 {
             // Convert from source scale to Kelvin
             let kelvin = match from_scale.to_lowercase().as_str() {
                 "celsius" | "c" => value + ZERO_CELSIUS,
@@ -631,13 +631,13 @@ pub mod conversions {
                 _ => panic!("Unsupported 'from' scale: {from_scale}. Supported scales are Celsius, Kelvin, Fahrenheit, and Rankine"),
             };
 
-            // Convert from Kelvin to target scale
-            match to_scale.to_lowercase().as_str() {
+            // Convert from Kelvin to target _scale
+            match toscale.to_lowercase().as_str() {
                 "celsius" | "c" => kelvin - ZERO_CELSIUS,
                 "kelvin" | "k" => kelvin,
                 "fahrenheit" | "f" => (kelvin - ZERO_CELSIUS) * 9.0 / 5.0 + 32.0,
                 "rankine" | "r" => kelvin * 9.0 / 5.0,
-                _ => panic!("Unsupported 'to' scale: {to_scale}. Supported scales are Celsius, Kelvin, Fahrenheit, and Rankine"),
+                _ => panic!("Unsupported 'to' scale: {toscale}. Supported scales are Celsius, Kelvin, Fahrenheit, and Rankine"),
             }
         }
     }

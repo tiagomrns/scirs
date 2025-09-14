@@ -99,22 +99,22 @@ impl MOLParabolicSolver3D {
             ));
         }
 
-        // Validate time range
+        // Validate time _range
         if time_range[0] >= time_range[1] {
             return Err(PDEError::DomainError(
-                "Invalid time range: start must be less than end".to_string(),
+                "Invalid time _range: start must be less than end".to_string(),
             ));
         }
 
-        // Validate boundary conditions
+        // Validate boundary _conditions
         if boundary_conditions.len() != 6 {
             return Err(PDEError::BoundaryConditions(
-                "3D parabolic PDE requires exactly 6 boundary conditions (one for each face)"
+                "3D parabolic PDE requires exactly 6 boundary _conditions (one for each face)"
                     .to_string(),
             ));
         }
 
-        // Ensure we have boundary conditions for all dimensions/faces
+        // Ensure we have boundary _conditions for all dimensions/faces
         let has_x_lower = boundary_conditions
             .iter()
             .any(|bc| bc.location == BoundaryLocation::Lower && bc.dimension == 0);
@@ -142,7 +142,7 @@ impl MOLParabolicSolver3D {
             || !has_z_upper
         {
             return Err(PDEError::BoundaryConditions(
-                "3D parabolic PDE requires boundary conditions for all faces of the domain"
+                "3D parabolic PDE requires boundary _conditions for all faces of the domain"
                     .to_string(),
             ));
         }
@@ -193,7 +193,7 @@ impl MOLParabolicSolver3D {
     }
 
     /// Solve the 3D parabolic PDE
-    pub fn solve(self) -> PDEResult<MOL3DResult> {
+    pub fn solve(&self) -> PDEResult<MOL3DResult> {
         let start_time = Instant::now();
 
         // Generate spatial grids
@@ -513,6 +513,7 @@ impl MOLParabolicSolver3D {
 
 // Helper function to apply boundary conditions in 3D
 #[allow(clippy::too_many_arguments)]
+#[allow(dead_code)]
 fn apply_boundary_condition_3d(
     dudt: &mut Array3<f64>,
     u: &ArrayView3<f64>,
@@ -541,7 +542,7 @@ fn apply_boundary_condition_3d(
     match bc.bc_type {
         BoundaryConditionType::Dirichlet => {
             // Fixed value: u = bc.value
-            // For Dirichlet, we set dudt = 0 to maintain the fixed value
+            // For Dirichlet, we set dudt = 0 to maintain the _fixed value
 
             if let Some(i) = i_fixed {
                 // X-direction boundary (left or right face)
@@ -1085,14 +1086,304 @@ fn apply_boundary_condition_3d(
             }
         }
         BoundaryConditionType::Periodic => {
-            // Periodic boundary - handle in the ODE function itself
-            // This is more complex for 3D problems and requires special handling of edges and corners
-            // For now, we'll leave this unimplemented
+            // Periodic boundary conditions: values and derivatives wrap around
+            // Handle 3D periodic boundaries with proper edge and corner treatment
+
+            if let Some(i) = i_fixed {
+                // x-direction periodic boundary (left or right face)
+                for k in 0..nz {
+                    for j in 0..ny {
+                        let z = z_grid[k];
+                        let y = y_grid[j];
+                        let x = x_grid[i];
+                        let u_val = u[[k, j, i]];
+                        let t = 0.0; // Time parameter - would need to be passed in for time-dependent BCs
+
+                        // Apply the same computation as for interior points but with periodic wrapping
+                        let left_val = if i == 0 {
+                            u[[k, j, nx - 1]]
+                        } else {
+                            u[[k, j, i - 1]]
+                        };
+                        let right_val = if i == nx - 1 {
+                            u[[k, j, 0]]
+                        } else {
+                            u[[k, j, i + 1]]
+                        };
+                        let front_val = if j == 0 {
+                            u[[k, ny - 1, i]]
+                        } else {
+                            u[[k, j - 1, i]]
+                        };
+                        let back_val = if j == ny - 1 {
+                            u[[k, 0, i]]
+                        } else {
+                            u[[k, j + 1, i]]
+                        };
+                        let bottom_val = if k == 0 {
+                            u[[nz - 1, j, i]]
+                        } else {
+                            u[[k - 1, j, i]]
+                        };
+                        let top_val = if k == nz - 1 {
+                            u[[0, j, i]]
+                        } else {
+                            u[[k + 1, j, i]]
+                        };
+
+                        // Diffusion terms with periodic wrapping
+                        let d_coeff_x = (solver.diffusion_x)(x, y, z, t, u_val);
+                        let d2u_dx2 = (right_val - 2.0 * u_val + left_val) / (dx * dx);
+                        let diffusion_term_x = d_coeff_x * d2u_dx2;
+
+                        let d_coeff_y = (solver.diffusion_y)(x, y, z, t, u_val);
+                        let d2u_dy2 = (back_val - 2.0 * u_val + front_val) / (dy * dy);
+                        let diffusion_term_y = d_coeff_y * d2u_dy2;
+
+                        let d_coeff_z = (solver.diffusion_z)(x, y, z, t, u_val);
+                        let d2u_dz2 = (top_val - 2.0 * u_val + bottom_val) / (dz * dz);
+                        let diffusion_term_z = d_coeff_z * d2u_dz2;
+
+                        // Advection terms with periodic wrapping
+                        let advection_term_x = if let Some(advection_x) = &solver.advection_x {
+                            let a_coeff = advection_x(x, y, z, t, u_val);
+                            let du_dx = (right_val - left_val) / (2.0 * dx);
+                            a_coeff * du_dx
+                        } else {
+                            0.0
+                        };
+
+                        let advection_term_y = if let Some(advection_y) = &solver.advection_y {
+                            let a_coeff = advection_y(x, y, z, t, u_val);
+                            let du_dy = (back_val - front_val) / (2.0 * dy);
+                            a_coeff * du_dy
+                        } else {
+                            0.0
+                        };
+
+                        let advection_term_z = if let Some(advection_z) = &solver.advection_z {
+                            let a_coeff = advection_z(x, y, z, t, u_val);
+                            let du_dz = (top_val - bottom_val) / (2.0 * dz);
+                            a_coeff * du_dz
+                        } else {
+                            0.0
+                        };
+
+                        // Reaction term
+                        let reaction_term = if let Some(reaction) = &solver.reaction_term {
+                            reaction(x, y, z, t, u_val)
+                        } else {
+                            0.0
+                        };
+
+                        dudt[[k, j, i]] = diffusion_term_x
+                            + diffusion_term_y
+                            + diffusion_term_z
+                            + advection_term_x
+                            + advection_term_y
+                            + advection_term_z
+                            + reaction_term;
+                    }
+                }
+            } else if let Some(j) = j_fixed {
+                // y-direction periodic boundary (front or back face)
+                for k in 0..nz {
+                    for i in 0..nx {
+                        let z = z_grid[k];
+                        let y = y_grid[j];
+                        let x = x_grid[i];
+                        let u_val = u[[k, j, i]];
+                        let t = 0.0; // Time parameter
+
+                        // Apply the same computation as for interior points but with periodic wrapping
+                        let left_val = if i == 0 {
+                            u[[k, j, nx - 1]]
+                        } else {
+                            u[[k, j, i - 1]]
+                        };
+                        let right_val = if i == nx - 1 {
+                            u[[k, j, 0]]
+                        } else {
+                            u[[k, j, i + 1]]
+                        };
+                        let front_val = if j == 0 {
+                            u[[k, ny - 1, i]]
+                        } else {
+                            u[[k, j - 1, i]]
+                        };
+                        let back_val = if j == ny - 1 {
+                            u[[k, 0, i]]
+                        } else {
+                            u[[k, j + 1, i]]
+                        };
+                        let bottom_val = if k == 0 {
+                            u[[nz - 1, j, i]]
+                        } else {
+                            u[[k - 1, j, i]]
+                        };
+                        let top_val = if k == nz - 1 {
+                            u[[0, j, i]]
+                        } else {
+                            u[[k + 1, j, i]]
+                        };
+
+                        // Diffusion terms with periodic wrapping
+                        let d_coeff_x = (solver.diffusion_x)(x, y, z, t, u_val);
+                        let d2u_dx2 = (right_val - 2.0 * u_val + left_val) / (dx * dx);
+                        let diffusion_term_x = d_coeff_x * d2u_dx2;
+
+                        let d_coeff_y = (solver.diffusion_y)(x, y, z, t, u_val);
+                        let d2u_dy2 = (back_val - 2.0 * u_val + front_val) / (dy * dy);
+                        let diffusion_term_y = d_coeff_y * d2u_dy2;
+
+                        let d_coeff_z = (solver.diffusion_z)(x, y, z, t, u_val);
+                        let d2u_dz2 = (top_val - 2.0 * u_val + bottom_val) / (dz * dz);
+                        let diffusion_term_z = d_coeff_z * d2u_dz2;
+
+                        // Advection terms with periodic wrapping
+                        let advection_term_x = if let Some(advection_x) = &solver.advection_x {
+                            let a_coeff = advection_x(x, y, z, t, u_val);
+                            let du_dx = (right_val - left_val) / (2.0 * dx);
+                            a_coeff * du_dx
+                        } else {
+                            0.0
+                        };
+
+                        let advection_term_y = if let Some(advection_y) = &solver.advection_y {
+                            let a_coeff = advection_y(x, y, z, t, u_val);
+                            let du_dy = (back_val - front_val) / (2.0 * dy);
+                            a_coeff * du_dy
+                        } else {
+                            0.0
+                        };
+
+                        let advection_term_z = if let Some(advection_z) = &solver.advection_z {
+                            let a_coeff = advection_z(x, y, z, t, u_val);
+                            let du_dz = (top_val - bottom_val) / (2.0 * dz);
+                            a_coeff * du_dz
+                        } else {
+                            0.0
+                        };
+
+                        // Reaction term
+                        let reaction_term = if let Some(reaction) = &solver.reaction_term {
+                            reaction(x, y, z, t, u_val)
+                        } else {
+                            0.0
+                        };
+
+                        dudt[[k, j, i]] = diffusion_term_x
+                            + diffusion_term_y
+                            + diffusion_term_z
+                            + advection_term_x
+                            + advection_term_y
+                            + advection_term_z
+                            + reaction_term;
+                    }
+                }
+            } else if let Some(k) = k_fixed {
+                // z-direction periodic boundary (top or bottom face)
+                for j in 0..ny {
+                    for i in 0..nx {
+                        let z = z_grid[k];
+                        let y = y_grid[j];
+                        let x = x_grid[i];
+                        let u_val = u[[k, j, i]];
+                        let t = 0.0; // Time parameter
+
+                        // Apply the same computation as for interior points but with periodic wrapping
+                        let left_val = if i == 0 {
+                            u[[k, j, nx - 1]]
+                        } else {
+                            u[[k, j, i - 1]]
+                        };
+                        let right_val = if i == nx - 1 {
+                            u[[k, j, 0]]
+                        } else {
+                            u[[k, j, i + 1]]
+                        };
+                        let front_val = if j == 0 {
+                            u[[k, ny - 1, i]]
+                        } else {
+                            u[[k, j - 1, i]]
+                        };
+                        let back_val = if j == ny - 1 {
+                            u[[k, 0, i]]
+                        } else {
+                            u[[k, j + 1, i]]
+                        };
+                        let bottom_val = if k == 0 {
+                            u[[nz - 1, j, i]]
+                        } else {
+                            u[[k - 1, j, i]]
+                        };
+                        let top_val = if k == nz - 1 {
+                            u[[0, j, i]]
+                        } else {
+                            u[[k + 1, j, i]]
+                        };
+
+                        // Diffusion terms with periodic wrapping
+                        let d_coeff_x = (solver.diffusion_x)(x, y, z, t, u_val);
+                        let d2u_dx2 = (right_val - 2.0 * u_val + left_val) / (dx * dx);
+                        let diffusion_term_x = d_coeff_x * d2u_dx2;
+
+                        let d_coeff_y = (solver.diffusion_y)(x, y, z, t, u_val);
+                        let d2u_dy2 = (back_val - 2.0 * u_val + front_val) / (dy * dy);
+                        let diffusion_term_y = d_coeff_y * d2u_dy2;
+
+                        let d_coeff_z = (solver.diffusion_z)(x, y, z, t, u_val);
+                        let d2u_dz2 = (top_val - 2.0 * u_val + bottom_val) / (dz * dz);
+                        let diffusion_term_z = d_coeff_z * d2u_dz2;
+
+                        // Advection terms with periodic wrapping
+                        let advection_term_x = if let Some(advection_x) = &solver.advection_x {
+                            let a_coeff = advection_x(x, y, z, t, u_val);
+                            let du_dx = (right_val - left_val) / (2.0 * dx);
+                            a_coeff * du_dx
+                        } else {
+                            0.0
+                        };
+
+                        let advection_term_y = if let Some(advection_y) = &solver.advection_y {
+                            let a_coeff = advection_y(x, y, z, t, u_val);
+                            let du_dy = (back_val - front_val) / (2.0 * dy);
+                            a_coeff * du_dy
+                        } else {
+                            0.0
+                        };
+
+                        let advection_term_z = if let Some(advection_z) = &solver.advection_z {
+                            let a_coeff = advection_z(x, y, z, t, u_val);
+                            let du_dz = (top_val - bottom_val) / (2.0 * dz);
+                            a_coeff * du_dz
+                        } else {
+                            0.0
+                        };
+
+                        // Reaction term
+                        let reaction_term = if let Some(reaction) = &solver.reaction_term {
+                            reaction(x, y, z, t, u_val)
+                        } else {
+                            0.0
+                        };
+
+                        dudt[[k, j, i]] = diffusion_term_x
+                            + diffusion_term_y
+                            + diffusion_term_z
+                            + advection_term_x
+                            + advection_term_y
+                            + advection_term_z
+                            + reaction_term;
+                    }
+                }
+            }
         }
     }
 }
 
 // Helper function to apply Dirichlet boundary conditions to initial condition
+#[allow(dead_code)]
 fn apply_dirichlet_conditions_to_initial_3d(
     u0: &mut Array3<f64>,
     boundary_conditions: &[BoundaryCondition<f64>],

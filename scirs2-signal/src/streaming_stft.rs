@@ -1,58 +1,61 @@
-//! Streaming Short-Time Fourier Transform (STFT)
-//!
-//! This module provides streaming STFT computation for real-time signal processing
-//! applications. It allows processing of continuous data streams with bounded
-//! latency and memory usage.
-//!
-//! ## Features
-//!
-//! - **Real-time Processing**: Low-latency streaming STFT computation
-//! - **Configurable Overlap**: Support for different overlap ratios
-//! - **Memory Efficient**: Fixed memory usage independent of stream length
-//! - **Multiple Windows**: Support for various window functions
-//! - **Bounded Latency**: Predictable processing delay
-//! - **Frame-by-Frame**: Process data in small chunks
-//!
-//! ## Use Cases
-//!
-//! - Real-time audio processing
-//! - Online spectral analysis
-//! - Streaming signal classification
-//! - Live audio effects processing
-//! - Continuous monitoring systems
-//!
-//! ## Example Usage
-//!
-//! ```rust
-//! use ndarray::Array1;
-//! use scirs2_signal::streaming_stft::{StreamingStft, StreamingStftConfig};
-//! # fn main() -> Result<(), Box<dyn std::error::Error>> {
-//!
-//! // Configure streaming STFT
-//! let config = StreamingStftConfig {
-//!     frame_length: 512,
-//!     hop_length: 256,
-//!     window: "hann".to_string(),
-//!     ..Default::default()
-//! };
-//!
-//! let mut streaming_stft = StreamingStft::new(config)?;
-//!
-//! // Process streaming data
-//! let input_frame = Array1::from_vec(vec![0.0; 256]);
-//! if let Some(spectrum) = streaming_stft.process_frame(&input_frame)? {
-//!     println!("Got spectrum with {} frequency bins", spectrum.len());
-//! }
-//! # Ok(())
-//! # }
-//! ```
+// Streaming Short-Time Fourier Transform (STFT)
+//
+// This module provides streaming STFT computation for real-time signal processing
+// applications. It allows processing of continuous data streams with bounded
+// latency and memory usage.
+//
+// ## Features
+//
+// - **Real-time Processing**: Low-latency streaming STFT computation
+// - **Configurable Overlap**: Support for different overlap ratios
+// - **Memory Efficient**: Fixed memory usage independent of stream length
+// - **Multiple Windows**: Support for various window functions
+// - **Bounded Latency**: Predictable processing delay
+// - **Frame-by-Frame**: Process data in small chunks
+//
+// ## Use Cases
+//
+// - Real-time audio processing
+// - Online spectral analysis
+// - Streaming signal classification
+// - Live audio effects processing
+// - Continuous monitoring systems
+//
+// ## Example Usage
+//
+// ```rust
+// use ndarray::Array1;
+// use scirs2_signal::streaming_stft::{StreamingStft, StreamingStftConfig};
+// # fn main() -> Result<(), Box<dyn std::error::Error>> {
+//
+// // Configure streaming STFT
+// let config = StreamingStftConfig {
+//     frame_length: 512,
+//     hop_length: 256,
+//     window: WindowType::Hann.to_string(),
+//     ..Default::default()
+// };
+//
+// let mut streaming_stft = StreamingStft::new(config)?;
+//
+// // Process streaming data
+// let input_frame = Array1::from_vec(vec![0.0; 256]);
+// if let Some(spectrum) = streaming_stft.process_frame(&input_frame)? {
+//     println!("Got spectrum with {} frequency bins", spectrum.len());
+// }
+// # Ok(())
+// # }
+// ```
 
 use crate::error::{SignalError, SignalResult};
+use crate::lombscargle_enhanced::WindowType;
 use crate::window::get_window;
+use ndarray::s;
 use ndarray::Array1;
 use num_complex::Complex64;
 use std::collections::VecDeque;
 
+#[allow(unused_imports)]
 /// Configuration for streaming STFT
 #[derive(Debug, Clone)]
 pub struct StreamingStftConfig {
@@ -81,7 +84,7 @@ impl Default for StreamingStftConfig {
         Self {
             frame_length: 512,
             hop_length: 256,
-            window: "hann".to_string(),
+            window: WindowType::Hann.to_string(),
             center: true,
             pad_mode: "constant".to_string(),
             magnitude_only: false,
@@ -156,7 +159,7 @@ impl StreamingStft {
         }
 
         // Generate window function
-        let window = get_window(&config.window, config.frame_length, true)?;
+        let window = get_window(&_config.window, config.frame_length, true)?;
         let window_array = Array1::from(window);
 
         // Initialize input buffer
@@ -211,23 +214,23 @@ impl StreamingStft {
         &mut self,
         input_frame: &Array1<f64>,
     ) -> SignalResult<Option<Array1<Complex64>>> {
-        // Add input frame to buffer
+        // Add input _frame to buffer
         for &sample in input_frame.iter() {
             self.input_buffer.push_back(sample);
         }
 
         self.samples_processed += input_frame.len();
 
-        // Check if we have enough samples for a frame
+        // Check if we have enough samples for a _frame
         if self.input_buffer.len() >= self.config.frame_length {
-            // Extract windowed frame
-            let mut frame = Array1::<f64>::zeros(self.config.frame_length);
+            // Extract windowed _frame
+            let mut _frame = Array1::<f64>::zeros(self.config.frame_length);
             for i in 0..self.config.frame_length {
                 frame[i] = self.input_buffer[i];
             }
 
             // Apply window
-            let windowed_frame = &frame * &self.window;
+            let windowed_frame = &_frame * &self.window;
 
             // Compute FFT
             let spectrum = self.compute_fft(&windowed_frame)?;
@@ -332,7 +335,7 @@ impl StreamingStft {
     }
 
     /// Get latency in seconds for given sample rate
-    pub fn get_latency_seconds(&self, sample_rate: f64) -> f64 {
+    pub fn get_latency_seconds(&self, samplerate: f64) -> f64 {
         self.get_latency_samples() as f64 / sample_rate
     }
 
@@ -396,7 +399,7 @@ impl StreamingStft {
     }
 
     /// Compute FFT of windowed frame
-    fn compute_fft(&self, windowed_frame: &Array1<f64>) -> SignalResult<Array1<Complex64>> {
+    fn compute_fft(&self, windowedframe: &Array1<f64>) -> SignalResult<Array1<Complex64>> {
         // Convert to slice for FFT function
         let frame_slice = windowed_frame.as_slice().unwrap();
 
@@ -493,10 +496,10 @@ impl RealTimeStft {
     ///
     /// # Returns
     /// * Number of new spectra available
-    pub fn process_block(&mut self, input_block: &Array1<f64>) -> SignalResult<usize> {
+    pub fn process_block(&mut self, inputblock: &Array1<f64>) -> SignalResult<usize> {
         if input_block.len() != self.block_size {
             return Err(SignalError::ValueError(format!(
-                "Input block size {} does not match expected size {}",
+                "Input _block size {} does not match expected size {}",
                 input_block.len(),
                 self.block_size
             )));
@@ -504,7 +507,7 @@ impl RealTimeStft {
 
         let mut new_spectra_count = 0;
 
-        // Process the block
+        // Process the _block
         if let Some(spectrum) = self.streaming_stft.process_frame(input_block)? {
             // Add to output buffer
             self.output_buffer.push_back(spectrum);
@@ -582,8 +585,6 @@ pub struct RealTimeStftStatistics {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use std::f64::consts::PI;
-
     #[test]
     fn test_streaming_stft_creation() {
         let config = StreamingStftConfig::default();

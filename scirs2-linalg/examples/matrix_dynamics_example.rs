@@ -28,20 +28,21 @@ use scirs2_linalg::matrix_dynamics::{
 use std::f64::consts::PI;
 use std::time::Instant;
 
+#[allow(dead_code)]
 fn main() -> Result<(), Box<dyn std::error::Error>> {
-    println!("🚀 MATRIX DIFFERENTIAL EQUATIONS - ULTRATHINK DEMONSTRATION");
+    println!("🚀 MATRIX DIFFERENTIAL EQUATIONS - Advanced DEMONSTRATION");
     println!("===========================================================");
 
     // Test 1: Matrix Exponential Action - Foundation of Time Evolution
     println!("\n1. MATRIX EXPONENTIAL ACTION: Efficient exp(At)B Computation");
     println!("------------------------------------------------------------");
 
-    let rotation_matrix = array![[0.0, -1.0], [1.0, 0.0]]; // 90° rotation generator
+    let rotationmatrix = array![[0.0, -1.0], [1.0, 0.0]]; // 90° rotation generator
     let initial_vector = array![[1.0], [0.0]]; // Unit vector along x-axis
     let evolution_time = PI / 2.0; // 90° rotation
 
     println!("   Rotation matrix (generator):");
-    println!("   {:.3}", rotation_matrix);
+    println!("   {:.3}", rotationmatrix);
     println!(
         "   Initial vector: {:?}",
         initial_vector.as_slice().unwrap()
@@ -51,7 +52,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let config = DynamicsConfig::default();
     let start_time = Instant::now();
     let evolved_vector = matrix_exp_action(
-        &rotation_matrix.view(),
+        &rotationmatrix.view(),
         &initial_vector.view(),
         evolution_time,
         &config,
@@ -74,21 +75,21 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("-------------------------------------------------------------------");
 
     // Control system: double integrator with damping
-    let system_matrix = array![
+    let systemmatrix = array![
         [0.0, 1.0],  // Position -> Velocity
         [0.0, -0.5]  // Velocity -> Acceleration (with damping)
     ];
-    let noise_matrix = array![[1.0, 0.0], [0.0, 1.0]]; // Identity noise covariance
+    let noisematrix = array![[1.0, 0.0], [0.0, 1.0]]; // Identity noise covariance
 
     println!("   System: Double integrator with damping");
     println!("   A matrix (state transition):");
-    println!("   {:.3}", system_matrix);
+    println!("   {:.3}", systemmatrix);
     println!("   C matrix (noise covariance):");
-    println!("   {:.3}", noise_matrix);
+    println!("   {:.3}", noisematrix);
 
     let start_time = Instant::now();
     let controllability_gramian =
-        lyapunov_solve(&system_matrix.view(), &noise_matrix.view(), &config)?;
+        lyapunov_solve(&systemmatrix.view(), &noisematrix.view(), &config)?;
     let lyapunov_time = start_time.elapsed();
 
     println!(
@@ -99,9 +100,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("   {:.6}", controllability_gramian);
 
     // Verify the Lyapunov equation: AX + XA^T + C = 0
-    let residual = system_matrix.dot(&controllability_gramian)
-        + controllability_gramian.dot(&system_matrix.t())
-        + noise_matrix;
+    let residual = systemmatrix.dot(&controllability_gramian)
+        + controllability_gramian.dot(&systemmatrix.t())
+        + noisematrix;
     let residual_norm = residual.iter().map(|&x| x * x).sum::<f64>().sqrt();
     println!("   Residual norm (should be ~0): {:.2e}", residual_norm);
     println!("   ✅ Lyapunov solver enables controllability and observability analysis");
@@ -111,21 +112,21 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("----------------------------------------------------------");
 
     // Linear-Quadratic Regulator (LQR) problem
-    let state_matrix = array![[0.0, 1.0], [0.0, -0.1]]; // Marginally stable system
-    let input_matrix = array![[0.0], [1.0]]; // Control input affects acceleration
+    let statematrix = array![[0.0, 1.0], [0.0, -0.1]]; // Marginally stable system
+    let inputmatrix = array![[0.0], [1.0]]; // Control input affects acceleration
     let state_cost = array![[1.0, 0.0], [0.0, 0.1]]; // Penalize position more than velocity
     let input_cost = array![[0.1]]; // Control effort penalty
 
     println!("   LQR Problem: Inverted pendulum stabilization");
-    println!("   A matrix (system dynamics): {:.3}", state_matrix);
-    println!("   B matrix (input): {:.3}", input_matrix);
+    println!("   A matrix (system dynamics): {:.3}", statematrix);
+    println!("   B matrix (input): {:.3}", inputmatrix);
     println!("   Q matrix (state cost): {:.3}", state_cost);
     println!("   R matrix (input cost): {:.3}", input_cost);
 
     let start_time = Instant::now();
     let riccati_solution = riccati_solve(
-        &state_matrix.view(),
-        &input_matrix.view(),
+        &statematrix.view(),
+        &inputmatrix.view(),
         &state_cost.view(),
         &input_cost.view(),
         &config,
@@ -141,7 +142,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // Compute optimal feedback gain: K = R^{-1} B^T P
     let input_cost_inv = 1.0 / input_cost[[0, 0]];
-    let optimal_gain = input_cost_inv * input_matrix.t().dot(&riccati_solution);
+    let optimal_gain = input_cost_inv * inputmatrix.t().dot(&riccati_solution);
     println!("   Optimal feedback gain K: {:.6}", optimal_gain);
     println!("   Control law: u = -K*x provides optimal LQR performance");
     println!("   ✅ Riccati solver enables optimal control design");
@@ -153,7 +154,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Chemical reaction network: A -> B -> C with rates k1, k2
     let k1 = 2.0; // A -> B rate
     let k2 = 1.0; // B -> C rate
-    let reaction_matrix = array![
+    let reactionmatrix = array![
         [-k1, 0.0, 0.0], // dA/dt = -k1*A
         [k1, -k2, 0.0],  // dB/dt = k1*A - k2*B
         [0.0, k2, 0.0]   // dC/dt = k2*B
@@ -166,12 +167,12 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     println!("   Chemical Reaction Network: A → B → C");
     println!("   Reaction rate matrix:");
-    println!("   {:.3}", reaction_matrix);
+    println!("   {:.3}", reactionmatrix);
     println!("   Rate constants: k₁ = {:.1}, k₂ = {:.1}", k1, k2);
 
     // Define ODE function: dc/dt = K*c
     let ode_function =
-        |_t: f64, c: &ArrayView2<f64>| -> Result<Array2<f64>, ()> { Ok(reaction_matrix.dot(c)) };
+        |_t: f64, c: &ArrayView2<f64>| -> Result<Array2<f64>, ()> { Ok(reactionmatrix.dot(c)) };
 
     let adaptive_config = DynamicsConfig::default();
     let start_time = Instant::now();
@@ -312,12 +313,12 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         ),
     ];
 
-    for (description, system_matrix) in test_systems {
+    for (description, systemmatrix) in test_systems {
         println!("\n   Testing: {}", description);
         println!("   System matrix A:");
-        println!("   {:.3}", system_matrix);
+        println!("   {:.3}", systemmatrix);
 
-        let (is_stable, eigenvalues, stability_margin) = stability_analysis(&system_matrix.view())?;
+        let (is_stable, eigenvalues, stability_margin) = stability_analysis(&systemmatrix.view())?;
 
         println!("   Eigenvalues: {:?}", eigenvalues.as_slice().unwrap());
         println!("   Stability margin: {:.6}", stability_margin);
@@ -345,7 +346,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("\n7. PERFORMANCE SCALING: Large-Scale Scientific Computing");
     println!("--------------------------------------------------------");
 
-    let matrix_sizes = vec![
+    let matrixsizes = vec![
         (10, "Small system"),
         (50, "Medium system"),
         (100, "Large system"),
@@ -356,9 +357,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("   Size    Description        Time (ms)  Memory (KB)  Complexity");
     println!("   ---------------------------------------------------------------");
 
-    for (n, description) in matrix_sizes {
+    for (n, description) in matrixsizes {
         // Create test matrix (sparse structure for large systems)
-        let test_matrix = Array2::from_shape_fn((n, n), |(i, j)| {
+        let testmatrix = Array2::from_shape_fn((n, n), |(i, j)| {
             if i == j {
                 -1.0 // Stable diagonal
             } else if (i as i32 - j as i32).abs() == 1 {
@@ -368,12 +369,12 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             }
         });
 
-        let test_vector = Array2::from_shape_fn((n, 1), |(i, _)| (i as f64 + 1.0) / n as f64);
+        let test_vector = Array2::from_shape_fn((n, 1), |(i, _j)| (i as f64 + 1.0) / n as f64);
         let test_time = 1.0;
 
         let start_time = Instant::now();
         let _result =
-            matrix_exp_action(&test_matrix.view(), &test_vector.view(), test_time, &config)?;
+            matrix_exp_action(&testmatrix.view(), &test_vector.view(), test_time, &config)?;
         let elapsed = start_time.elapsed();
 
         let memory_estimate = n * n * 8 + n * 8; // Rough estimate in bytes
@@ -465,7 +466,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("      - Stiff ODEs: Implicit methods with adaptive stepping");
 
     println!("\n=========================================================");
-    println!("🎯 ULTRATHINK ACHIEVEMENT: MATRIX DYNAMICS COMPLETE");
+    println!("🎯 Advanced ACHIEVEMENT: MATRIX DYNAMICS COMPLETE");
     println!("=========================================================");
     println!("✅ Matrix exponential methods: Efficient exp(At)B with Krylov techniques");
     println!("✅ Lyapunov equation solver: Stability and controllability analysis");

@@ -3,6 +3,7 @@
 //! This module provides methods for calculating chemical equilibrium compositions,
 //! equilibrium constants, and thermodynamic properties of chemical systems.
 
+use crate::error::{IntegrateError, IntegrateResult};
 use ndarray::{Array1, Array2};
 use std::collections::HashMap;
 
@@ -133,9 +134,15 @@ impl Default for ActivityParams {
 
 impl ThermoData {
     /// Create thermodynamic data for a species
-    pub fn new(name: String, delta_h_f: f64, s0: f64, cp_coeffs: [f64; 4], delta_g_f: f64) -> Self {
+    pub fn new(
+        _name: String,
+        delta_h_f: f64,
+        s0: f64,
+        cp_coeffs: [f64; 4],
+        delta_g_f: f64,
+    ) -> Self {
         Self {
-            name,
+            name: _name,
             delta_h_f,
             s0,
             cp_coeffs,
@@ -156,9 +163,9 @@ impl ThermoData {
     /// Calculate enthalpy at given temperature
     pub fn enthalpy(&self, temperature: f64) -> f64 {
         let t = temperature;
-        let t_ref = 298.15; // Standard temperature
+        let t_ref = 298.15; // Standard _temperature
 
-        // Integrate heat capacity from reference temperature
+        // Integrate heat capacity from reference _temperature
         let delta_h = self.cp_coeffs[0] * (t - t_ref)
             + 0.5 * self.cp_coeffs[1] * (t * t - t_ref * t_ref)
             + (1.0 / 3.0) * self.cp_coeffs[2] * (t * t * t - t_ref * t_ref * t_ref)
@@ -172,7 +179,7 @@ impl ThermoData {
         let t = temperature;
         let t_ref = 298.15;
 
-        // Integrate Cp/T from reference temperature
+        // Integrate Cp/T from reference _temperature
         let delta_s = self.cp_coeffs[0] * (t / t_ref).ln()
             + self.cp_coeffs[1] * (t - t_ref)
             + 0.5 * self.cp_coeffs[2] * (t * t - t_ref * t_ref)
@@ -206,7 +213,7 @@ impl EquilibriumCalculator {
             thermo_data: (0..num_species)
                 .map(|i| {
                     ThermoData::new(
-                        format!("Species_{}", i),
+                        format!("Species_{i}"),
                         0.0, // Default values
                         0.0,
                         [0.0, 0.0, 0.0, 0.0],
@@ -219,8 +226,8 @@ impl EquilibriumCalculator {
     }
 
     /// Set thermodynamic data for species
-    pub fn set_thermo_data(&mut self, thermo_data: Vec<ThermoData>) {
-        self.thermo_data = thermo_data;
+    pub fn set_thermo_data(&mut self, _thermodata: Vec<ThermoData>) {
+        self.thermo_data = _thermodata;
     }
 
     /// Set activity coefficient model
@@ -233,7 +240,7 @@ impl EquilibriumCalculator {
         &self,
         initial_concentrations: Array1<f64>,
         element_balance: Option<Array2<f64>>,
-    ) -> Result<EquilibriumResult, Box<dyn std::error::Error>> {
+    ) -> IntegrateResult<EquilibriumResult> {
         let num_species = self.species_names.len();
         let num_reactions = self.reaction_names.len();
 
@@ -334,12 +341,12 @@ impl EquilibriumCalculator {
             // Prevent damping from becoming too small
             damping_factor = damping_factor.max(0.01);
 
-            // Update concentrations with adaptive damping
+            // Update _concentrations with adaptive damping
             for i in 0..num_species {
                 concentrations[i] = (concentrations[i] - damping_factor * delta_c[i]).max(1e-12);
             }
 
-            // Apply element balance constraints if provided
+            // Apply element _balance constraints if provided
             if let Some(ref element_matrix) = element_balance {
                 concentrations = self.apply_element_balance(
                     &concentrations,
@@ -357,7 +364,7 @@ impl EquilibriumCalculator {
     fn calculate_temperature_corrected_k(
         &self,
         k_standard: &Array1<f64>,
-    ) -> Result<Array1<f64>, Box<dyn std::error::Error>> {
+    ) -> IntegrateResult<Array1<f64>> {
         let mut k_corrected = Array1::zeros(k_standard.len());
         let r = 8.314; // Gas constant J/(mol·K)
         let t_standard = 298.15;
@@ -384,7 +391,7 @@ impl EquilibriumCalculator {
     fn calculate_reaction_thermodynamics(
         &self,
         reaction_idx: usize,
-    ) -> Result<(f64, f64), Box<dyn std::error::Error>> {
+    ) -> IntegrateResult<(f64, f64)> {
         let mut delta_h = 0.0;
         let mut delta_s = 0.0;
 
@@ -408,7 +415,7 @@ impl EquilibriumCalculator {
     fn calculate_activity_coefficients(
         &self,
         concentrations: &Array1<f64>,
-    ) -> Result<Array1<f64>, Box<dyn std::error::Error>> {
+    ) -> IntegrateResult<Array1<f64>> {
         match self.activity_model {
             ActivityModel::Ideal => Ok(Array1::ones(concentrations.len())),
             ActivityModel::DebyeHuckel => self.calculate_debye_huckel_coefficients(concentrations),
@@ -426,7 +433,7 @@ impl EquilibriumCalculator {
     fn calculate_debye_huckel_coefficients(
         &self,
         concentrations: &Array1<f64>,
-    ) -> Result<Array1<f64>, Box<dyn std::error::Error>> {
+    ) -> IntegrateResult<Array1<f64>> {
         let mut activity_coeffs = Array1::ones(concentrations.len());
 
         // Calculate ionic strength
@@ -459,7 +466,7 @@ impl EquilibriumCalculator {
     fn calculate_extended_debye_huckel_coefficients(
         &self,
         concentrations: &Array1<f64>,
-    ) -> Result<Array1<f64>, Box<dyn std::error::Error>> {
+    ) -> IntegrateResult<Array1<f64>> {
         let mut activity_coeffs = Array1::ones(concentrations.len());
 
         // Calculate ionic strength
@@ -498,7 +505,7 @@ impl EquilibriumCalculator {
         &self,
         concentrations: &Array1<f64>,
         k_eq: &Array1<f64>,
-    ) -> Result<Array1<f64>, Box<dyn std::error::Error>> {
+    ) -> IntegrateResult<Array1<f64>> {
         let num_reactions = self.reaction_names.len();
         let mut residuals = Array1::zeros(num_reactions);
 
@@ -526,10 +533,7 @@ impl EquilibriumCalculator {
     }
 
     /// Calculate Jacobian matrix for Newton-Raphson
-    fn calculate_jacobian(
-        &self,
-        concentrations: &Array1<f64>,
-    ) -> Result<Array2<f64>, Box<dyn std::error::Error>> {
+    fn calculate_jacobian(&self, concentrations: &Array1<f64>) -> IntegrateResult<Array2<f64>> {
         let num_species = concentrations.len();
         let num_reactions = self.reaction_names.len();
         let mut jacobian = Array2::zeros((num_reactions, num_species));
@@ -561,7 +565,7 @@ impl EquilibriumCalculator {
         &self,
         a: &Array2<f64>,
         b: &Array1<f64>,
-    ) -> Result<Array1<f64>, Box<dyn std::error::Error>> {
+    ) -> IntegrateResult<Array1<f64>> {
         // Handle underdetermined system (more species than reactions)
         let num_reactions = a.nrows();
         let num_species = a.ncols();
@@ -642,11 +646,11 @@ impl EquilibriumCalculator {
         concentrations: &Array1<f64>,
         element_matrix: &Array2<f64>,
         initial_concentrations: &Array1<f64>,
-    ) -> Result<Array1<f64>, Box<dyn std::error::Error>> {
+    ) -> IntegrateResult<Array1<f64>> {
         // Calculate initial element amounts
         let initial_elements = element_matrix.dot(initial_concentrations);
 
-        // Project current concentrations onto element balance manifold
+        // Project current _concentrations onto element balance manifold
         // This is a simplified version - a full implementation would use Lagrange multipliers
         let mut corrected_conc = concentrations.clone();
 
@@ -671,7 +675,7 @@ impl EquilibriumCalculator {
         &self,
         initial_concentrations: &Array1<f64>,
         final_concentrations: &Array1<f64>,
-    ) -> Result<Array1<f64>, Box<dyn std::error::Error>> {
+    ) -> IntegrateResult<Array1<f64>> {
         let num_reactions = self.reaction_names.len();
         let mut extents = Array1::zeros(num_reactions);
 
@@ -704,10 +708,7 @@ impl EquilibriumCalculator {
     }
 
     /// Calculate Gibbs free energy change
-    fn calculate_delta_g(
-        &self,
-        concentrations: &Array1<f64>,
-    ) -> Result<f64, Box<dyn std::error::Error>> {
+    fn calculate_delta_g(&self, concentrations: &Array1<f64>) -> IntegrateResult<f64> {
         let mut delta_g = 0.0;
         let r = 8.314; // J/(mol·K)
 
@@ -739,7 +740,7 @@ impl EquilibriumCalculator {
     fn solve_single_reaction_equilibrium(
         &self,
         initial_concentrations: Array1<f64>,
-    ) -> Result<EquilibriumResult, Box<dyn std::error::Error>> {
+    ) -> IntegrateResult<EquilibriumResult> {
         let k_eq = self.calculate_temperature_corrected_k(&self.equilibrium_constants)?;
         let ka = k_eq[0];
 
@@ -760,12 +761,14 @@ impl EquilibriumCalculator {
 
         let discriminant = b * b - 4.0 * a * c;
         if discriminant < 0.0 {
-            return Err("No real solution for equilibrium".into());
+            return Err(IntegrateError::ValueError(
+                "No real solution for equilibrium".to_string(),
+            ));
         }
 
         let x = (-b + discriminant.sqrt()) / (2.0 * a);
 
-        // Final concentrations
+        // Final _concentrations
         let ha_final = (ha_initial - x).max(1e-12);
         let h_final = h_initial + x;
         let a_final = x;
@@ -796,7 +799,7 @@ impl EquilibriumCalculator {
     fn solve_amino_acid_equilibrium(
         &self,
         initial_concentrations: Array1<f64>,
-    ) -> Result<EquilibriumResult, Box<dyn std::error::Error>> {
+    ) -> IntegrateResult<EquilibriumResult> {
         let k_eq = self.calculate_temperature_corrected_k(&self.equilibrium_constants)?;
         let ka1 = k_eq[0];
         let ka2 = k_eq[1];
@@ -821,7 +824,7 @@ impl EquilibriumCalculator {
         let alpha1 = ka1 * h / denominator;
         let alpha2 = ka1 * ka2 / denominator;
 
-        // Calculate final concentrations
+        // Calculate final _concentrations
         let h2a_final = alpha0 * total_amino;
         let ha_final = alpha1 * total_amino;
         let a2_final = alpha2 * total_amino;
@@ -854,7 +857,7 @@ impl EquilibriumCalculator {
         &self,
         initial_concentrations: &Array1<f64>,
         k_eq: &Array1<f64>,
-    ) -> Result<Array1<f64>, Box<dyn std::error::Error>> {
+    ) -> IntegrateResult<Array1<f64>> {
         // Check for specific system types that need specialized treatment
         if self.species_names.len() == 5 && self.reaction_names.len() == 2 {
             // Likely a buffer system: [HA, H+, A-, OH-, H2O]
@@ -925,7 +928,7 @@ impl EquilibriumCalculator {
         &self,
         initial_concentrations: &Array1<f64>,
         k_eq: &Array1<f64>,
-    ) -> Result<Array1<f64>, Box<dyn std::error::Error>> {
+    ) -> IntegrateResult<Array1<f64>> {
         // For buffer: [HA, H+, A-, OH-, H2O]
         let ha_initial = initial_concentrations[0];
         let a_initial = initial_concentrations[2];
@@ -949,7 +952,7 @@ impl EquilibriumCalculator {
         &self,
         initial_concentrations: &Array1<f64>,
         k_eq: &Array1<f64>,
-    ) -> Result<Array1<f64>, Box<dyn std::error::Error>> {
+    ) -> IntegrateResult<Array1<f64>> {
         // For amino acid: [H2A, H+, HA-, A2-]
         let total_amino = initial_concentrations[0];
         let ka1 = k_eq[0];
@@ -1001,7 +1004,7 @@ impl EquilibriumCalculator {
         jacobian: &Array2<f64>,
         residuals: &Array1<f64>,
         initial_concentrations: &Array1<f64>,
-    ) -> Result<Array1<f64>, Box<dyn std::error::Error>> {
+    ) -> IntegrateResult<Array1<f64>> {
         let num_reactions = jacobian.nrows();
         let num_species = jacobian.ncols();
 
@@ -1020,7 +1023,7 @@ impl EquilibriumCalculator {
         jacobian: &Array2<f64>,
         residuals: &Array1<f64>,
         _initial_concentrations: &Array1<f64>,
-    ) -> Result<Array1<f64>, Box<dyn std::error::Error>> {
+    ) -> IntegrateResult<Array1<f64>> {
         let num_reactions = jacobian.nrows();
         let num_species = jacobian.ncols();
 
@@ -1244,7 +1247,7 @@ pub mod systems {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
+    use crate::ode::chemical_equilibrium::systems;
     use ndarray::arr1;
 
     #[test]

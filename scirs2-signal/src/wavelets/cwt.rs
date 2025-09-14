@@ -1,10 +1,12 @@
-//! Continuous wavelet transform implementation details
+// Continuous wavelet transform implementation details
 
 use num_complex::Complex64;
 
 /// Helper function to convolve real signal with complex filter using 'same' mode
 ///
 /// Optimized for the CWT case with real input data
+#[allow(unused_imports)]
+#[allow(dead_code)]
 pub fn convolve_complex_same_real(x: &[Complex64], h: &[Complex64]) -> Vec<Complex64> {
     let nx = x.len();
     let nh = h.len();
@@ -38,6 +40,7 @@ pub fn convolve_complex_same_real(x: &[Complex64], h: &[Complex64]) -> Vec<Compl
 /// Helper function to convolve complex signal with complex filter using 'same' mode
 ///
 /// Handles fully complex CWT computation
+#[allow(dead_code)]
 pub fn convolve_complex_same_complex(x: &[Complex64], h: &[Complex64]) -> Vec<Complex64> {
     let nx = x.len();
     let nh = h.len();

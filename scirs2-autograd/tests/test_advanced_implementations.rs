@@ -6,17 +6,18 @@ use ndarray::array;
 use scirs2_autograd as ag;
 
 #[test]
+#[allow(dead_code)]
 fn test_advanced_svd() {
     ag::run(|g| {
         // Test Jacobi SVD
         let a = convert_to_tensor(array![[1.0_f32, 2.0], [3.0, 4.0], [5.0, 6.0]], g);
-        let (_u, _s, _vt) = svd_jacobi(&a, false);
+        let _u_s_vt = svd_jacobi(&a, false);
 
         // For now, just test that we can create the operations without panic
         // The extraction operators need special handling in the framework
 
         // Test randomized SVD
-        let (_u_r, _s_r, _vt_r) = randomized_svd(&a, 2, 2, 3);
+        let _u_r_s_r_vt_r = randomized_svd(&a, 2, 2, 3);
 
         // Operations created successfully
         println!("SVD operations created successfully");
@@ -24,6 +25,7 @@ fn test_advanced_svd() {
 }
 
 #[test]
+#[allow(dead_code)]
 fn test_iterative_solvers() {
     ag::run(|g| {
         // Test Conjugate Gradient
@@ -55,6 +57,7 @@ fn test_iterative_solvers() {
 }
 
 #[test]
+#[allow(dead_code)]
 fn test_matrix_trig_functions() {
     ag::run(|g| {
         // Test matrix sine
@@ -88,13 +91,14 @@ fn test_matrix_trig_functions() {
 }
 
 #[test]
+#[allow(dead_code)]
 fn test_generalized_eigen() {
     ag::run(|g| {
         // Test generalized eigenvalue problem
         let a = convert_to_tensor(array![[2.0_f32, 1.0], [1.0, 2.0]], g);
         let b = convert_to_tensor(array![[1.0_f32, 0.0], [0.0, 1.0]], g);
 
-        let (_eigenvalues, _eigenvectors) = generalized_eigen(&a, &b);
+        let _eigenvalues_eigenvectors = generalized_eigen(&a, &b);
 
         // For now, just test that we can create the operations without panic
         println!("Generalized eigenvalue operation created successfully");
@@ -102,11 +106,12 @@ fn test_generalized_eigen() {
 }
 
 #[test]
+#[allow(dead_code)]
 fn test_qr_with_pivoting() {
     ag::run(|g| {
         // Test QR decomposition with column pivoting
         let a = convert_to_tensor(array![[1.0_f32, 2.0, 3.0], [4.0, 5.0, 6.0]], g);
-        let (_q, _r, _p) = qr_pivot(&a);
+        let _q_r_p = qr_pivot(&a);
 
         // For now, just test that we can create the operations without panic
         println!("QR pivot operation created successfully");
@@ -114,6 +119,7 @@ fn test_qr_with_pivoting() {
 }
 
 #[test]
+#[allow(dead_code)]
 fn test_preconditioned_cg() {
     ag::run(|g| {
         // Test Preconditioned Conjugate Gradient
@@ -141,6 +147,7 @@ fn test_preconditioned_cg() {
 }
 
 #[test]
+#[allow(dead_code)]
 fn test_matrix_sign_function() {
     ag::run(|g| {
         // Test matrix sign function
@@ -160,6 +167,7 @@ fn test_matrix_sign_function() {
 }
 
 #[test]
+#[allow(dead_code)]
 fn test_general_matrix_function() {
     ag::run(|g| {
         // Test general matrix function with exponential on a symmetric matrix
@@ -184,6 +192,7 @@ fn test_general_matrix_function() {
     });
 }
 
+#[allow(dead_code)]
 fn main() {
     println!("Running tests for advanced linear algebra implementations...");
 }

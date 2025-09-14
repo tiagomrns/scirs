@@ -11,8 +11,9 @@ use std::path::Path;
 
 /// Normalizes a string based on case sensitivity settings
 #[inline]
-pub fn normalize_string(text: &str, case_sensitive: bool) -> String {
-    if !case_sensitive {
+#[allow(dead_code)]
+pub fn normalize_string(text: &str, casesensitive: bool) -> String {
+    if !casesensitive {
         text.to_lowercase()
     } else {
         text.to_string()
@@ -20,6 +21,7 @@ pub fn normalize_string(text: &str, case_sensitive: bool) -> String {
 }
 
 /// Extract words from text, normalizing and filtering empty words
+#[allow(dead_code)]
 pub fn extract_words(text: &str) -> Vec<String> {
     text.split_whitespace()
         .map(|s| {
@@ -31,6 +33,7 @@ pub fn extract_words(text: &str) -> Vec<String> {
 }
 
 /// Split text into sentences
+#[allow(dead_code)]
 pub fn split_sentences(text: &str) -> Vec<&str> {
     text.split(['.', '?', '!'])
         .map(|s| s.trim())
@@ -40,12 +43,14 @@ pub fn split_sentences(text: &str) -> Vec<&str> {
 
 /// Check if two words are within the edit distance threshold based on length
 #[inline]
-pub fn is_within_length_threshold(word1: &str, word2: &str, max_edit_distance: usize) -> bool {
-    word1.len() <= word2.len() + max_edit_distance && word1.len() + max_edit_distance >= word2.len()
+#[allow(dead_code)]
+pub fn is_within_length_threshold(_word1: &str, word2: &str, max_editdistance: usize) -> bool {
+    _word1.len() <= word2.len() + max_editdistance && _word1.len() + max_editdistance >= word2.len()
 }
 
 /// Check if a word exists in a dictionary with optional case sensitivity
 #[inline]
+#[allow(dead_code)]
 pub fn dictionary_contains(
     dictionary: &HashMap<String, usize>,
     word: &str,
@@ -63,28 +68,28 @@ pub fn dictionary_contains(
 
 /// Load data from a file line by line with a custom processor
 #[allow(dead_code)]
-pub fn load_from_file<P, F, T>(path: P, mut line_processor: F) -> Result<T>
+pub fn load_from_file<P, F, T>(_path: P, mut lineprocessor: F) -> Result<T>
 where
     P: AsRef<Path>,
     F: FnMut(&str) -> Result<T>,
     T: Default,
 {
     let file =
-        File::open(path).map_err(|e| TextError::IoError(format!("Failed to open file: {}", e)))?;
+        File::open(_path).map_err(|e| TextError::IoError(format!("Failed to open file: {e}")))?;
 
     let reader = BufReader::new(file);
     let mut result = T::default();
 
     for line in reader.lines() {
         let line =
-            line.map_err(|e| TextError::IoError(format!("Failed to read line from file: {}", e)))?;
+            line.map_err(|e| TextError::IoError(format!("Failed to read line from file: {e}")))?;
 
         // Skip empty lines
         if line.trim().is_empty() {
             continue;
         }
 
-        result = line_processor(&line)?;
+        result = lineprocessor(&line)?;
     }
 
     Ok(result)

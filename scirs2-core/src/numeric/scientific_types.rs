@@ -3,7 +3,10 @@
 //! This module provides strongly-typed numeric values for various scientific domains,
 //! ensuring dimensional consistency and providing domain-specific operations.
 
+use crate::error::CoreError;
 use crate::numeric::{RealNumber, ScientificNumber};
+use crate::safe_ops::safe_divide;
+use num_traits::Float;
 use std::fmt;
 use std::marker::PhantomData;
 use std::ops::{Add, Div, Mul, Neg, Sub};
@@ -17,7 +20,7 @@ pub trait Unit: Clone + fmt::Debug + 'static {
     fn symbol() -> &'static str;
 
     /// Whether this is a base unit or derived unit
-    fn is_base_unit() -> bool {
+    fn isbase_unit() -> bool {
         false
     }
 }
@@ -29,7 +32,7 @@ pub struct Quantity<T: ScientificNumber, U: Unit> {
     _unit: PhantomData<U>,
 }
 
-impl<T: ScientificNumber, U: Unit> Quantity<T, U> {
+impl<T: ScientificNumber + Float, U: Unit> Quantity<T, U> {
     /// Create a new quantity
     pub fn new(value: T) -> Self {
         Self {
@@ -47,6 +50,28 @@ impl<T: ScientificNumber, U: Unit> Quantity<T, U> {
     pub fn with_unit(&self) -> (T, &'static str) {
         (self.value, U::symbol())
     }
+
+    /// Safely divide this quantity by a scalar value
+    ///
+    /// # Errors
+    /// Returns an error if the divisor is zero or near-zero
+    pub fn safe_div(self, divisor: T) -> Result<Self, CoreError>
+    where
+        T: fmt::Display + fmt::Debug,
+    {
+        let result = safe_divide(self.value, divisor)?;
+        Ok(Self::new(result))
+    }
+
+    /// Check if the value is finite (not NaN or infinite)
+    pub fn is_finite(&self) -> bool {
+        <T as ScientificNumber>::is_finite(self.value)
+    }
+
+    /// Check if the value is valid for scientific computation
+    pub fn is_valid(&self) -> bool {
+        <T as ScientificNumber>::is_finite(self.value) && !<T as Float>::is_nan(self.value)
+    }
 }
 
 impl<T: ScientificNumber, U: Unit> fmt::Display for Quantity<T, U>
@@ -59,7 +84,7 @@ where
 }
 
 // Arithmetic operations for quantities
-impl<T: ScientificNumber, U: Unit> Add for Quantity<T, U> {
+impl<T: ScientificNumber + Float, U: Unit> Add for Quantity<T, U> {
     type Output = Self;
 
     fn add(self, rhs: Self) -> Self::Output {
@@ -67,7 +92,7 @@ impl<T: ScientificNumber, U: Unit> Add for Quantity<T, U> {
     }
 }
 
-impl<T: ScientificNumber, U: Unit> Sub for Quantity<T, U> {
+impl<T: ScientificNumber + Float, U: Unit> Sub for Quantity<T, U> {
     type Output = Self;
 
     fn sub(self, rhs: Self) -> Self::Output {
@@ -75,7 +100,7 @@ impl<T: ScientificNumber, U: Unit> Sub for Quantity<T, U> {
     }
 }
 
-impl<T: ScientificNumber, U: Unit> Mul<T> for Quantity<T, U> {
+impl<T: ScientificNumber + Float, U: Unit> Mul<T> for Quantity<T, U> {
     type Output = Self;
 
     fn mul(self, rhs: T) -> Self::Output {
@@ -83,15 +108,21 @@ impl<T: ScientificNumber, U: Unit> Mul<T> for Quantity<T, U> {
     }
 }
 
-impl<T: ScientificNumber, U: Unit> Div<T> for Quantity<T, U> {
+impl<T: ScientificNumber + Float, U: Unit> Div<T> for Quantity<T, U> {
     type Output = Self;
 
+    /// Divide the quantity by a scalar
+    ///
+    /// # Note
+    /// This follows standard floating-point behavior:
+    /// - Division by zero produces ±Infinity
+    /// - Use `safe_div()` method for checked division
     fn div(self, rhs: T) -> Self::Output {
         Self::new(self.value / rhs)
     }
 }
 
-impl<T: ScientificNumber + Neg<Output = T>, U: Unit> Neg for Quantity<T, U> {
+impl<T: ScientificNumber + Float + Neg<Output = T>, U: Unit> Neg for Quantity<T, U> {
     type Output = Self;
 
     fn neg(self) -> Self::Output {
@@ -109,7 +140,7 @@ impl Unit for Meter {
     fn symbol() -> &'static str {
         "m"
     }
-    fn is_base_unit() -> bool {
+    fn isbase_unit() -> bool {
         true
     }
 }
@@ -123,7 +154,7 @@ impl Unit for Second {
     fn symbol() -> &'static str {
         "s"
     }
-    fn is_base_unit() -> bool {
+    fn isbase_unit() -> bool {
         true
     }
 }
@@ -137,7 +168,7 @@ impl Unit for Kilogram {
     fn symbol() -> &'static str {
         "kg"
     }
-    fn is_base_unit() -> bool {
+    fn isbase_unit() -> bool {
         true
     }
 }
@@ -151,7 +182,7 @@ impl Unit for Kelvin {
     fn symbol() -> &'static str {
         "K"
     }
-    fn is_base_unit() -> bool {
+    fn isbase_unit() -> bool {
         true
     }
 }
@@ -165,7 +196,7 @@ impl Unit for Ampere {
     fn symbol() -> &'static str {
         "A"
     }
-    fn is_base_unit() -> bool {
+    fn isbase_unit() -> bool {
         true
     }
 }
@@ -179,7 +210,7 @@ impl Unit for Mole {
     fn symbol() -> &'static str {
         "mol"
     }
-    fn is_base_unit() -> bool {
+    fn isbase_unit() -> bool {
         true
     }
 }
@@ -193,7 +224,7 @@ impl Unit for Candela {
     fn symbol() -> &'static str {
         "cd"
     }
-    fn is_base_unit() -> bool {
+    fn isbase_unit() -> bool {
         true
     }
 }
@@ -325,11 +356,21 @@ impl Angle64 {
     }
 
     /// Get the angle in radians
+    pub fn radians_2(&self) -> f64 {
+        self.radians
+    }
+
+    /// Get the angle in radians (alias)
     pub fn radians(&self) -> f64 {
         self.radians
     }
 
     /// Get the angle in degrees
+    pub fn degrees_2(&self) -> f64 {
+        self.radians * 180.0 / std::f64::consts::PI
+    }
+
+    /// Get the angle in degrees (alias)
     pub fn degrees(&self) -> f64 {
         self.radians * 180.0 / std::f64::consts::PI
     }
@@ -437,7 +478,7 @@ impl Complex64 {
     }
 
     /// Get the magnitude (absolute value)
-    pub fn magnitude(&self) -> f64 {
+    pub fn magnitude_2(&self) -> f64 {
         (self.re * self.re + self.im * self.im).sqrt()
     }
 
@@ -463,7 +504,7 @@ impl Complex64 {
     /// Natural logarithm
     pub fn ln(&self) -> Self {
         Self {
-            re: self.magnitude().ln(),
+            re: self.magnitude_2().ln(),
             im: self.phase(),
         }
     }
@@ -475,7 +516,7 @@ impl Complex64 {
 
     /// Power with real exponent
     pub fn powf(&self, exp: f64) -> Self {
-        let magnitude = self.magnitude().powf(exp);
+        let magnitude = self.magnitude_2().powf(exp);
         let phase = self.phase() * exp;
         Self::from_polar(magnitude, phase)
     }
@@ -791,62 +832,62 @@ pub mod utils {
     use super::*;
 
     /// Create a length from meters
-    pub fn meters<T: ScientificNumber>(value: T) -> Length<T> {
+    pub fn meters<T: ScientificNumber + Float>(value: T) -> Length<T> {
         Length::new(value)
     }
 
     /// Create a time from seconds
-    pub fn seconds<T: ScientificNumber>(value: T) -> Time<T> {
+    pub fn seconds<T: ScientificNumber + Float>(value: T) -> Time<T> {
         Time::new(value)
     }
 
     /// Create a mass from kilograms
-    pub fn kilograms<T: ScientificNumber>(value: T) -> Mass<T> {
+    pub fn kilograms<T: ScientificNumber + Float>(value: T) -> Mass<T> {
         Mass::new(value)
     }
 
     /// Create a temperature from kelvin
-    pub fn kelvin<T: ScientificNumber>(value: T) -> Temperature<T> {
+    pub fn kelvin<T: ScientificNumber + Float>(value: T) -> Temperature<T> {
         Temperature::new(value)
     }
 
     /// Create an angle from radians
-    pub fn radians<T: ScientificNumber>(value: T) -> Angle<T> {
+    pub fn radians<T: ScientificNumber + Float>(value: T) -> Angle<T> {
         Angle::new(value)
     }
 
     /// Create an angle from degrees
-    pub fn degrees<T: ScientificNumber>(value: T) -> AngleDegrees<T> {
+    pub fn degrees<T: ScientificNumber + Float>(value: T) -> AngleDegrees<T> {
         AngleDegrees::new(value)
     }
 
     /// Create a frequency from hertz
-    pub fn hertz<T: ScientificNumber>(value: T) -> Frequency<T> {
+    pub fn hertz<T: ScientificNumber + Float>(value: T) -> Frequency<T> {
         Frequency::new(value)
     }
 
     /// Create a force from newtons
-    pub fn newtons<T: ScientificNumber>(value: T) -> Force<T> {
+    pub fn newtons<T: ScientificNumber + Float>(value: T) -> Force<T> {
         Force::new(value)
     }
 
     /// Create an energy from joules
-    pub fn joules<T: ScientificNumber>(value: T) -> Energy<T> {
+    pub fn joules<T: ScientificNumber + Float>(value: T) -> Energy<T> {
         Energy::new(value)
     }
 
     /// Create a power from watts
-    pub fn watts<T: ScientificNumber>(value: T) -> Power<T> {
+    pub fn watts<T: ScientificNumber + Float>(value: T) -> Power<T> {
         Power::new(value)
     }
 
     /// Create a pressure from pascals
-    pub fn pascals<T: ScientificNumber>(value: T) -> Pressure<T> {
+    pub fn pascals<T: ScientificNumber + Float>(value: T) -> Pressure<T> {
         Pressure::new(value)
     }
 
     /// Create a voltage from volts
-    pub fn volts<T: ScientificNumber>(value: T) -> Voltage<T> {
+    pub fn volts<T: ScientificNumber + Float>(value: T) -> Voltage<T> {
         Voltage::new(value)
     }
 }
@@ -896,7 +937,7 @@ mod tests {
         let z1 = Complex64::new(3.0, 4.0);
         let z2 = Complex64::new(1.0, 2.0);
 
-        assert!((z1.magnitude() - 5.0).abs() < 1e-10);
+        assert!((z1.magnitude_2() - 5.0).abs() < 1e-10);
         assert!((z1.phase() - (4.0_f64 / 3.0).atan()).abs() < 1e-10);
 
         let sum = z1 + z2;
@@ -947,17 +988,17 @@ mod tests {
     fn test_unit_display() {
         assert_eq!(Meter::name(), "meter");
         assert_eq!(Meter::symbol(), "m");
-        assert!(Meter::is_base_unit());
+        assert!(Meter::isbase_unit());
 
         assert_eq!(Hertz::name(), "hertz");
         assert_eq!(Hertz::symbol(), "Hz");
-        assert!(!Hertz::is_base_unit());
+        assert!(!Hertz::isbase_unit());
     }
 
     #[test]
     fn test_quantity_display() {
         let length = Length::new(5.5);
-        let formatted = format!("{}", length);
+        let formatted = format!("{length}");
         assert!(formatted.contains("5.5"));
         assert!(formatted.contains("m"));
     }

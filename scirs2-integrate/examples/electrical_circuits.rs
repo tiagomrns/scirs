@@ -9,7 +9,8 @@ use std::f64::consts::PI;
 
 /// Simple RC charging circuit: C(dV/dt) + V/R = V_source/R
 /// State vector: [V_c] (capacitor voltage)
-fn rc_charging_circuit(_t: f64, y: ArrayView1<f64>) -> Array1<f64> {
+#[allow(dead_code)]
+fn rc_charging_circuit(t: f64, y: ArrayView1<f64>) -> Array1<f64> {
     let v_c = y[0]; // Capacitor voltage
 
     // Circuit parameters
@@ -26,7 +27,8 @@ fn rc_charging_circuit(_t: f64, y: ArrayView1<f64>) -> Array1<f64> {
 
 /// RL circuit: L(dI/dt) + R*I = V_source
 /// State vector: [I] (current)
-fn rl_circuit(_t: f64, y: ArrayView1<f64>) -> Array1<f64> {
+#[allow(dead_code)]
+fn rl_circuit(t: f64, y: ArrayView1<f64>) -> Array1<f64> {
     let i = y[0]; // Current
 
     // Circuit parameters
@@ -42,6 +44,7 @@ fn rl_circuit(_t: f64, y: ArrayView1<f64>) -> Array1<f64> {
 
 /// RLC series circuit with sinusoidal source
 /// State vector: [V_c, I] (capacitor voltage, current)
+#[allow(dead_code)]
 fn rlc_circuit(t: f64, y: ArrayView1<f64>) -> Array1<f64> {
     let v_c = y[0]; // Capacitor voltage
     let i = y[1]; // Current
@@ -67,6 +70,7 @@ fn rlc_circuit(t: f64, y: ArrayView1<f64>) -> Array1<f64> {
 
 /// Van der Pol oscillator (nonlinear circuit model)
 /// State vector: [x, y] where x represents voltage and y represents current
+#[allow(dead_code)]
 fn van_der_pol_oscillator(t: f64, y: ArrayView1<f64>) -> Array1<f64> {
     let _t = t; // Time-independent for this example
     let x = y[0];
@@ -83,6 +87,7 @@ fn van_der_pol_oscillator(t: f64, y: ArrayView1<f64>) -> Array1<f64> {
 
 /// Chua's circuit (chaotic circuit)
 /// State vector: [v_c1, v_c2, i_l] (capacitor voltages, inductor current)
+#[allow(dead_code)]
 fn chua_circuit(t: f64, y: ArrayView1<f64>) -> Array1<f64> {
     let _t = t; // Time-independent
     let v_c1 = y[0]; // Voltage across C1
@@ -116,6 +121,7 @@ fn chua_circuit(t: f64, y: ArrayView1<f64>) -> Array1<f64> {
 
 /// RC circuit with diode (nonlinear)
 /// State vector: [V_c] (capacitor voltage)
+#[allow(dead_code)]
 fn rc_diode_circuit(t: f64, y: ArrayView1<f64>) -> Array1<f64> {
     let v_c = y[0]; // Capacitor voltage
 
@@ -142,6 +148,7 @@ fn rc_diode_circuit(t: f64, y: ArrayView1<f64>) -> Array1<f64> {
     array![dv_dt]
 }
 
+#[allow(dead_code)]
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("Electrical Circuit Examples\n");
 
@@ -194,7 +201,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let c = 1e-6_f64;
     let f_res = 1.0_f64 / (2.0 * PI * (l * c).sqrt());
 
-    println!("   Resonant frequency: {:.0} Hz", f_res);
+    println!("   Resonant frequency: {f_res:.0} Hz");
     println!("   Drive frequency: {:.0} Hz", 1000.0 / (2.0 * PI));
     println!(
         "   Final capacitor voltage: {:.3} V",

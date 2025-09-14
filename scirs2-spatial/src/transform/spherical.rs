@@ -48,6 +48,7 @@ use std::f64::consts::{PI, TAU};
 /// # Errors
 ///
 /// Returns an error if the input array doesn't have exactly 3 elements
+#[allow(dead_code)]
 pub fn cart_to_spherical(cart: &ArrayView1<f64>) -> SpatialResult<Array1<f64>> {
     if cart.len() != 3 {
         return Err(SpatialError::DimensionError(format!(
@@ -112,7 +113,6 @@ pub fn cart_to_spherical(cart: &ArrayView1<f64>) -> SpatialResult<Array1<f64>> {
 /// ```
 /// use ndarray::array;
 /// use scirs2_spatial::transform::spherical::spherical_to_cart;
-/// use std::f64::consts::PI;
 ///
 /// // Point at r=2, theta=π/4 (45°), phi=π/3 (60°)
 /// let spherical = array![2.0, PI/4.0, PI/3.0];
@@ -122,6 +122,7 @@ pub fn cart_to_spherical(cart: &ArrayView1<f64>) -> SpatialResult<Array1<f64>> {
 /// # Errors
 ///
 /// Returns an error if the input array doesn't have exactly 3 elements
+#[allow(dead_code)]
 pub fn spherical_to_cart(spherical: &ArrayView1<f64>) -> SpatialResult<Array1<f64>> {
     if spherical.len() != 3 {
         return Err(SpatialError::DimensionError(format!(
@@ -137,16 +138,14 @@ pub fn spherical_to_cart(spherical: &ArrayView1<f64>) -> SpatialResult<Array1<f6
     // Check that r is non-negative
     if r < 0.0 {
         return Err(SpatialError::ValueError(format!(
-            "Radius r must be non-negative, got {}",
-            r
+            "Radius r must be non-negative, got {r}"
         )));
     }
 
     // Check that theta is within valid range
     if !(0.0..=PI).contains(&theta) {
         return Err(SpatialError::ValueError(format!(
-            "Polar angle theta must be in [0, π], got {}",
-            theta
+            "Polar angle theta must be in [0, π], got {theta}"
         )));
     }
 
@@ -185,7 +184,8 @@ pub fn spherical_to_cart(spherical: &ArrayView1<f64>) -> SpatialResult<Array1<f6
 /// # Errors
 ///
 /// Returns an error if any row of the input array doesn't have exactly 3 elements
-pub fn cart_to_spherical_batch(cart: &ArrayView2<f64>) -> SpatialResult<Array2<f64>> {
+#[allow(dead_code)]
+pub fn cart_to_spherical_batch(cart: &ArrayView2<'_, f64>) -> SpatialResult<Array2<f64>> {
     if cart.ncols() != 3 {
         return Err(SpatialError::DimensionError(format!(
             "Cartesian coordinates must have 3 columns, got {}",
@@ -219,7 +219,6 @@ pub fn cart_to_spherical_batch(cart: &ArrayView2<f64>) -> SpatialResult<Array2<f
 /// ```
 /// use ndarray::array;
 /// use scirs2_spatial::transform::spherical::spherical_to_cart_batch;
-/// use std::f64::consts::PI;
 ///
 /// let spherical = array![
 ///     [1.0, PI/2.0, 0.0],      // Point on x-axis
@@ -232,7 +231,8 @@ pub fn cart_to_spherical_batch(cart: &ArrayView2<f64>) -> SpatialResult<Array2<f
 /// # Errors
 ///
 /// Returns an error if any row of the input array doesn't have exactly 3 elements
-pub fn spherical_to_cart_batch(spherical: &ArrayView2<f64>) -> SpatialResult<Array2<f64>> {
+#[allow(dead_code)]
+pub fn spherical_to_cart_batch(spherical: &ArrayView2<'_, f64>) -> SpatialResult<Array2<f64>> {
     if spherical.ncols() != 3 {
         return Err(SpatialError::DimensionError(format!(
             "Spherical coordinates must have 3 columns, got {}",
@@ -267,7 +267,6 @@ pub fn spherical_to_cart_batch(spherical: &ArrayView2<f64>) -> SpatialResult<Arr
 /// ```
 /// use ndarray::array;
 /// use scirs2_spatial::transform::spherical::geodesic_distance;
-/// use std::f64::consts::PI;
 ///
 /// // North pole and a point on the equator
 /// let point1 = array![1.0, 0.0, 0.0];         // North pole
@@ -280,6 +279,7 @@ pub fn spherical_to_cart_batch(spherical: &ArrayView2<f64>) -> SpatialResult<Arr
 /// # Errors
 ///
 /// Returns an error if the input arrays don't have exactly 3 elements
+#[allow(dead_code)]
 pub fn geodesic_distance(
     spherical1: &ArrayView1<f64>,
     spherical2: &ArrayView1<f64>,
@@ -348,7 +348,6 @@ pub fn geodesic_distance(
 /// ```
 /// use ndarray::array;
 /// use scirs2_spatial::transform::spherical::spherical_triangle_area;
-/// use std::f64::consts::PI;
 ///
 /// // Three points on a unit sphere
 /// let p1 = array![1.0, 0.0, 0.0];         // North pole
@@ -358,6 +357,7 @@ pub fn geodesic_distance(
 /// // This forms a spherical triangle with area π/2 steradians
 /// let area = spherical_triangle_area(&p1.view(), &p2.view(), &p3.view()).unwrap();
 /// ```
+#[allow(dead_code)]
 pub fn spherical_triangle_area(
     p1: &ArrayView1<f64>,
     p2: &ArrayView1<f64>,
@@ -407,7 +407,6 @@ pub fn spherical_triangle_area(
 mod tests {
     use super::*;
     use approx::assert_relative_eq;
-    use ndarray::array;
 
     #[test]
     fn test_cart_to_spherical() {

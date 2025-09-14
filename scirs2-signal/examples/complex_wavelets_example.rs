@@ -4,6 +4,7 @@ use scirs2_signal::{
     wavelets::{complex_gaussian, complex_morlet, cwt, fbsp, shannon},
 };
 
+#[allow(dead_code)]
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("Complex Wavelets Example - Time-Frequency Analysis");
     println!("==================================================\n");

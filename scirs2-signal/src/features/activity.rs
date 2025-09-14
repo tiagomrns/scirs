@@ -5,6 +5,7 @@ use num_traits::{Float, NumCast};
 use std::collections::HashMap;
 use std::fmt::Debug;
 
+#[allow(unused_imports)]
 /// Calculate features commonly used for activity recognition
 ///
 /// This is a convenience function that extracts a specific set of features
@@ -18,7 +19,11 @@ use std::fmt::Debug;
 /// # Returns
 ///
 /// * A HashMap containing the extracted features
-pub fn activity_recognition_features<T>(signal: &[T], fs: f64) -> SignalResult<HashMap<String, f64>>
+#[allow(dead_code)]
+pub fn activity_recognition_features<T>(
+    _signal: &[T],
+    fs: f64,
+) -> SignalResult<HashMap<String, f64>>
 where
     T: Float + NumCast + Debug,
 {
@@ -31,16 +36,16 @@ where
         ..Default::default()
     };
 
-    let mut features = extract_features(signal, &options)?;
+    let mut features = extract_features(_signal, &options)?;
 
     // Calculate additional features specific to activity recognition
     // 1. Signal magnitude area
-    if let Some(signal_f64) = signal
+    if let Some(signal_f64) = _signal
         .iter()
         .map(|&val| NumCast::from(val))
         .collect::<Option<Vec<f64>>>()
     {
-        let sma = signal_f64.iter().map(|&x| x.abs()).sum::<f64>() / signal_f64.len() as f64;
+        let sma = signal_f64.iter().map(|&x: &f64| x.abs()).sum::<f64>() / signal_f64.len() as f64;
         features.insert("signal_magnitude_area".to_string(), sma);
     }
 
@@ -57,7 +62,7 @@ where
     }
 
     // 3. Autocorrelation features
-    if let Some(signal_f64) = signal
+    if let Some(signal_f64) = _signal
         .iter()
         .map(|&val| NumCast::from(val))
         .collect::<Option<Vec<f64>>>()
@@ -84,7 +89,8 @@ where
 }
 
 /// Calculate autocorrelation up to a given lag
-fn calculate_autocorrelation(signal: &[f64], max_lag: usize) -> Vec<f64> {
+#[allow(dead_code)]
+fn calculate_autocorrelation(_signal: &[f64], maxlag: usize) -> Vec<f64> {
     let n = signal.len();
     let mean = signal.iter().sum::<f64>() / n as f64;
 
@@ -94,20 +100,20 @@ fn calculate_autocorrelation(signal: &[f64], max_lag: usize) -> Vec<f64> {
     // Calculate autocorrelation for lags from 0 to max_lag
     let mut autocorr = Vec::with_capacity(max_lag + 1);
 
-    // Autocorrelation at lag 0 (variance)
+    // Autocorrelation at _lag 0 (variance)
     let variance = signal_centered.iter().map(|&x| x * x).sum::<f64>() / n as f64;
-    autocorr.push(1.0); // Normalized autocorrelation at lag 0 is always 1
+    autocorr.push(1.0); // Normalized autocorrelation at _lag 0 is always 1
 
     // Autocorrelation for lags 1 to max_lag
-    for lag in 1..=max_lag {
-        if lag >= n {
+    for _lag in 1..=max_lag {
+        if _lag >= n {
             autocorr.push(0.0);
             continue;
         }
 
         let mut sum = 0.0;
-        for i in 0..n - lag {
-            sum += signal_centered[i] * signal_centered[i + lag];
+        for i in 0..n - _lag {
+            sum += signal_centered[i] * signal_centered[i + _lag];
         }
 
         // Normalize by variance
@@ -123,13 +129,14 @@ fn calculate_autocorrelation(signal: &[f64], max_lag: usize) -> Vec<f64> {
 }
 
 /// Find the first peak in a vector
+#[allow(dead_code)]
 fn find_first_peak(signal: &[f64]) -> (usize, f64) {
     if signal.len() <= 2 {
         return (0, if signal.is_empty() { 0.0 } else { signal[0] });
     }
 
     // Skip first point as it's always 1.0 for autocorrelation
-    for i in 2..signal.len() - 1 {
+    for i in 2.._signal.len() - 1 {
         if signal[i] > signal[i - 1] && signal[i] > signal[i + 1] && signal[i] > 0.1 {
             return (i, signal[i]);
         }

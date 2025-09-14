@@ -7,6 +7,7 @@
 use ndarray::{Array1, Array2, ArrayView1};
 use num_complex::Complex;
 use num_traits::{Float, NumAssign, Zero, One};
+use rand;
 use std::fmt::Debug;
 use std::ops::{Add, Sub, Mul};
 
@@ -32,6 +33,7 @@ type SparseEigenResult<T> = LinalgResult<(Array1<Complex<T>>, Array2<Complex<T>>
 /// # Returns
 ///
 /// Tuple of (eigenvalues, eigenvectors) where eigenvalues are sorted by magnitude
+#[allow(dead_code)]
 pub fn sparse_arnoldi_eigen<T>(
     matrix: &SparseMatrixView<T>,
     k: usize,
@@ -64,7 +66,7 @@ where
     // Start with random initial vector
     let mut rng = rand::rng();
     for i in 0..n {
-        v[[i, 0]] = T::from(rand::Rng::random_range(&mut rng, -0.5..0.5)).unwrap();
+        v[[i, 0]] = T::from(rng.random_range(-0.5..0.5)).unwrap();
     }
     
     // Normalize initial vector
@@ -118,10 +120,10 @@ where
         }
     }
     
-    let krylov_size = j;
+    let krylovsize = j;
     
     // Extract Hessenberg matrix for eigenvalue computation
-    let h_active = h.slice(ndarray::s![0..krylov_size, 0..krylov_size]).to_owned();
+    let h_active = h.slice(ndarray::s![0..krylovsize, 0..krylovsize]).to_owned();
     
     // Compute eigenvalues of the Hessenberg matrix
     let (h_eigenvals, h_eigenvecs) = compute_hessenberg_eigenvalues(&h_active)?;
@@ -147,7 +149,7 @@ where
         // Reconstruct eigenvector: eigenvector = V * h_eigenvector
         for j in 0..n {
             let mut sum = Complex::new(T::zero(), T::zero());
-            for l in 0..krylov_size {
+            for l in 0..krylovsize {
                 sum += Complex::new(v[[j, l]], T::zero()) * h_eigenvecs[[l, idx]];
             }
             eigenvectors[[j, i]] = sum;
@@ -173,6 +175,7 @@ where
 /// # Returns
 ///
 /// Tuple of (eigenvalues, eigenvectors) sorted according to the `which` parameter
+#[allow(dead_code)]
 pub fn sparse_lanczos_eigen<T>(
     matrix: &SparseMatrixView<T>,
     k: usize,
@@ -207,7 +210,7 @@ where
     // Start with random initial vector
     let mut rng = rand::rng();
     for i in 0..n {
-        v[[i, 0]] = T::from(rand::Rng::random_range(&mut rng, -0.5..0.5)).unwrap();
+        v[[i, 0]] = T::from(rng.random_range(-0.5..0.5)).unwrap();
     }
     
     // Normalize initial vector
@@ -261,11 +264,11 @@ where
         }
     }
     
-    let lanczos_size = j;
+    let lanczossize = j;
     
     // Construct tridiagonal matrix
-    let mut t = Array2::zeros((lanczos_size, lanczos_size));
-    for i in 0..lanczos_size {
+    let mut t = Array2::zeros((lanczossize, lanczossize));
+    for i in 0..lanczossize {
         t[[i, i]] = alpha[i];
         if i > 0 {
             t[[i - 1, i]] = beta[i];
@@ -313,7 +316,6 @@ where
             // Take largest
             selected.extend(pairs.iter().rev().take(remaining).map(|(_, i)| *i));
             selected
-        },
         _ => return Err(LinalgError::ValueError(format!(
             "Invalid which parameter: {}. Must be 'largest', 'smallest', or 'both'",
             which
@@ -333,7 +335,7 @@ where
         // Reconstruct eigenvector: eigenvector = V * t_eigenvector
         for j in 0..n {
             let mut sum = T::zero();
-            for l in 0..lanczos_size {
+            for l in 0..lanczossize {
                 sum += v[[j, l]] * t_eigenvecs[[l, idx]];
             }
             eigenvectors[[j, i]] = sum;
@@ -344,6 +346,7 @@ where
 }
 
 /// Check convergence of Arnoldi iteration
+#[allow(dead_code)]
 fn check_arnoldi_convergence<T>(h: &Array2<T>, j: usize, tolerance: T) -> bool
 where
     T: Float + Copy,
@@ -358,6 +361,7 @@ where
 }
 
 /// Check convergence of Lanczos iteration
+#[allow(dead_code)]
 fn check_lanczos_convergence<T>(alpha: &Array1<T>, beta: &Array1<T>, j: usize, tolerance: T) -> bool
 where
     T: Float + Copy,
@@ -372,6 +376,7 @@ where
 }
 
 /// Compute eigenvalues of a small Hessenberg matrix
+#[allow(dead_code)]
 fn compute_hessenberg_eigenvalues<T>(h: &Array2<T>) -> LinalgResult<(Array1<Complex<T>>, Array2<Complex<T>>)>
 where
     T: Float + NumAssign + Clone + Copy + Debug + ndarray::ScalarOperand,
@@ -391,6 +396,7 @@ where
 }
 
 /// Solve eigenvalue problem for tridiagonal matrix
+#[allow(dead_code)]
 fn solve_tridiagonal_eigen<T>(t: &Array2<T>) -> LinalgResult<(Array1<T>, Array2<T>)>
 where
     T: Float + NumAssign + Clone + Copy + Debug + ndarray::ScalarOperand,
@@ -400,6 +406,7 @@ where
 }
 
 /// Simple QR algorithm for small complex matrices
+#[allow(dead_code)]
 fn qr_algorithm_complex<T>(a: &mut Array2<Complex<T>>) -> LinalgResult<(Array1<Complex<T>>, Array2<Complex<T>>)>
 where
     T: Float + NumAssign + Clone + Copy + Debug + ndarray::ScalarOperand,
@@ -429,7 +436,8 @@ where
 /// # Returns
 ///
 /// Eigenvalues and eigenvectors within the specified range
-pub fn sparse_eigen_range<T>(
+#[allow(dead_code)]
+pub fn sparse_eirandom_range<T>(
     matrix: &SparseMatrixView<T>,
     range: (T, T),
     max_iter: usize,
@@ -486,7 +494,7 @@ mod tests {
     use crate::sparse_dense::sparse_from_ndarray;
 
     #[test]
-    fn test_sparse_lanczos_small_matrix() {
+    fn test_sparse_lanczos_smallmatrix() {
         // Create a small symmetric test matrix
         let dense = array![
             [4.0, 1.0, 0.0],
@@ -500,7 +508,7 @@ mod tests {
         let result = sparse_lanczos_eigen(&sparse, 1, "largest", 50, 1e-8);
         assert!(result.is_ok());
         
-        let (eigenvals, _eigenvecs) = result.unwrap();
+        let (eigenvals_eigenvecs) = result.unwrap();
         assert_eq!(eigenvals.len(), 1);
         
         // The largest eigenvalue should be approximately 5.14

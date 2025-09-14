@@ -8,6 +8,7 @@ use ndarray::{Array1, Array2, ArrayBase, Data, Ix1};
 /// Anderson mixing is an acceleration technique that combines the current and previous
 /// iterates to accelerate convergence. It can be viewed as a type of multisecant quasi-Newton
 /// method that uses information from multiple previous iterations.
+#[allow(dead_code)]
 pub fn root_anderson<F, J, S>(
     func: F,
     x0: &ArrayBase<S, Ix1>,
@@ -177,6 +178,7 @@ where
 }
 
 /// Solves a least squares problem ||Ax - b|| using QR decomposition
+#[allow(dead_code)]
 pub fn solve_least_squares(a: &Array2<f64>, b: &Array1<f64>) -> Option<Array1<f64>> {
     let (m, n) = (a.nrows(), a.ncols());
     if m < n {

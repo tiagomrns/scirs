@@ -11,6 +11,7 @@ use scirs2_core::CoreResult;
 use std::thread;
 use std::time::Duration;
 
+#[allow(dead_code)]
 fn main() -> CoreResult<()> {
     println!("🧠 SciRS2 Core Adaptive Optimization Demo");
     println!("==========================================\n");
@@ -53,6 +54,7 @@ fn main() -> CoreResult<()> {
     Ok(())
 }
 
+#[allow(dead_code)]
 fn demo_optimization_configurations() -> CoreResult<()> {
     println!("⚙️  Optimization Configuration Examples");
     println!("-------------------------------------");
@@ -60,12 +62,12 @@ fn demo_optimization_configurations() -> CoreResult<()> {
     // Production configuration
     let production_config = OptimizationConfig::production()
         .with_goal(OptimizationGoal::Performance)
-        .with_learning_rate(0.005)
+        .with_learningrate(0.005)
         .with_confidence_threshold(0.99);
 
     println!("🏭 Production Configuration:");
     println!("  - Goal: {:?}", production_config.goal);
-    println!("  - Learning Rate: {:.3}", production_config.learning_rate);
+    println!("  - Learning Rate: {:.3}", production_config.learningrate);
     println!(
         "  - Confidence Threshold: {:.2}",
         production_config.confidence_threshold
@@ -85,12 +87,12 @@ fn demo_optimization_configurations() -> CoreResult<()> {
 
     // Development configuration
     let dev_config = OptimizationConfig::development()
-        .with_learning_rate(0.02)
+        .with_learningrate(0.02)
         .with_adaptation_interval(Duration::from_secs(30));
 
     println!("\n🔧 Development Configuration:");
     println!("  - Goal: {:?}", dev_config.goal);
-    println!("  - Learning Rate: {:.3}", dev_config.learning_rate);
+    println!("  - Learning Rate: {:.3}", dev_config.learningrate);
     println!(
         "  - Adaptation Interval: {}s",
         dev_config.adaptation_interval.as_secs()
@@ -141,6 +143,7 @@ fn demo_optimization_configurations() -> CoreResult<()> {
     Ok(())
 }
 
+#[allow(dead_code)]
 fn demo_workload_profiling() -> CoreResult<()> {
     println!("📊 Workload Profiling and Registration");
     println!("-------------------------------------");
@@ -277,6 +280,7 @@ fn demo_workload_profiling() -> CoreResult<()> {
     Ok(())
 }
 
+#[allow(dead_code)]
 fn demo_basic_adaptive_optimization() -> CoreResult<()> {
     println!("🚀 Basic Adaptive Optimization");
     println!("-----------------------------");
@@ -351,15 +355,15 @@ fn demo_basic_adaptive_optimization() -> CoreResult<()> {
         println!("\n🔄 Iteration {}", iteration + 1);
 
         for (workload, metrics) in &scenarios {
-            for (metric_name, base_value) in metrics {
+            for (metricname, base_value) in metrics {
                 // Add some variation and potential degradation
                 let variation = (iteration as f64 * 0.1) + (rand::random::<f64>() - 0.5) * 0.2;
                 let value = base_value * (1.0 + variation);
 
-                optimizer.record_metric(workload, metric_name, value)?;
+                optimizer.record_metric(workload, metricname, value)?;
 
                 if iteration % 2 == 0 {
-                    println!("  📈 {}: {} = {:.2}", workload, metric_name, value);
+                    println!("  📈 {}: {} = {:.2}", workload, metricname, value);
                 }
             }
         }
@@ -392,20 +396,21 @@ fn demo_basic_adaptive_optimization() -> CoreResult<()> {
 
     // Get workload-specific hints
     println!("\n🎯 Workload-Specific Optimization Hints:");
-    for workload_name in ["data_processing", "image_processing", "database_queries"] {
-        if let Ok(hints) = optimizer.get_workload_hints(workload_name) {
-            println!("  📊 {}:", workload_name);
-            println!(
-                "    - Preferred Threads: {:?}",
-                hints.preferred_thread_count
-            );
-            println!(
-                "    - Memory Strategy: {:?}",
-                hints.memory_allocation_strategy
-            );
-            println!("    - Algorithm Prefs: {:?}", hints.algorithm_preferences);
-        }
-    }
+    // TODO: Re-enable when get_workload_hints method is available
+    // for workload_name in ["data_processing", "image_processing", "database_queries"] {
+    //     if let Ok(hints) = optimizer.get_workload_hints(workload_name) {
+    //         println!("  📊 {}:", workload_name);
+    //         println!(
+    //             "    - Preferred Threads: {:?}",
+    //             hints.preferred_thread_count
+    //         );
+    //         println!(
+    //             "    - Memory Strategy: {:?}",
+    //             hints.memory_allocation_strategy
+    //         );
+    //         println!("    - Algorithm Prefs: {:?}", hints.algorithm_preferences);
+    //     }
+    // }
 
     optimizer.stop_optimization()?;
     println!("\n🛑 Optimization stopped");
@@ -413,6 +418,7 @@ fn demo_basic_adaptive_optimization() -> CoreResult<()> {
     Ok(())
 }
 
+#[allow(dead_code)]
 fn demo_multi_objective_optimization() -> CoreResult<()> {
     println!("🎯 Multi-Objective Optimization Demo");
     println!("-----------------------------------");
@@ -420,7 +426,7 @@ fn demo_multi_objective_optimization() -> CoreResult<()> {
     // Create optimizer focused on balanced optimization
     let config = OptimizationConfig::default()
         .with_goal(OptimizationGoal::Balanced)
-        .with_learning_rate(0.01)
+        .with_learningrate(0.01)
         .with_adaptation_interval(Duration::from_secs(3));
 
     let mut optimizer = AdaptiveOptimizer::new(config)?;
@@ -534,6 +540,7 @@ fn demo_multi_objective_optimization() -> CoreResult<()> {
     Ok(())
 }
 
+#[allow(dead_code)]
 fn demo_real_time_adaptation() -> CoreResult<()> {
     println!("⚡ Real-time Adaptation Demo");
     println!("--------------------------");
@@ -660,6 +667,7 @@ fn demo_real_time_adaptation() -> CoreResult<()> {
     Ok(())
 }
 
+#[allow(dead_code)]
 fn demo_enterprise_features() -> CoreResult<()> {
     println!("🏢 Enterprise Features Demo");
     println!("-------------------------");
@@ -765,8 +773,8 @@ fn demo_enterprise_features() -> CoreResult<()> {
         println!("\n🎯 Enterprise Scenario: {}", scenario);
 
         for (workload, metrics) in workload_metrics {
-            for (metric_name, value) in metrics {
-                optimizer.record_metric(workload, metric_name, value)?;
+            for (metricname, value) in metrics {
+                optimizer.record_metric(workload, metricname, value)?;
             }
             println!("  📈 Updated metrics for {}", workload);
         }

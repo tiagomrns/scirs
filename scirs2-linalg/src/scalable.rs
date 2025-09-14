@@ -61,7 +61,7 @@ pub struct ScalableConfig {
     /// Threshold for classifying aspect ratios
     pub aspect_threshold: f64,
     /// Block size for hierarchical algorithms
-    pub block_size: usize,
+    pub blocksize: usize,
     /// Number of oversampling for randomized methods
     pub oversampling: usize,
     /// Number of power iterations for randomized methods
@@ -74,7 +74,7 @@ impl Default for ScalableConfig {
     fn default() -> Self {
         Self {
             aspect_threshold: 4.0,
-            block_size: 128,
+            blocksize: 128,
             oversampling: 10,
             power_iterations: 2,
             workers: WorkerConfig::default(),
@@ -95,8 +95,8 @@ impl ScalableConfig {
     }
 
     /// Set the block size
-    pub fn with_block_size(mut self, block_size: usize) -> Self {
-        self.block_size = block_size;
+    pub fn with_blocksize(mut self, blocksize: usize) -> Self {
+        self.blocksize = blocksize;
         self
     }
 
@@ -107,8 +107,8 @@ impl ScalableConfig {
     }
 
     /// Set power iterations
-    pub fn with_power_iterations(mut self, power_iterations: usize) -> Self {
-        self.power_iterations = power_iterations;
+    pub fn with_power_iterations(mut self, poweriterations: usize) -> Self {
+        self.power_iterations = poweriterations;
         self
     }
 
@@ -129,6 +129,7 @@ impl ScalableConfig {
 /// # Returns
 ///
 /// * Aspect ratio classification
+#[allow(dead_code)]
 pub fn classify_aspect_ratio<F>(matrix: &ArrayView2<F>, threshold: f64) -> AspectRatio {
     let (m, n) = matrix.dim();
     let ratio = m as f64 / n as f64;
@@ -163,20 +164,21 @@ pub fn classify_aspect_ratio<F>(matrix: &ArrayView2<F>, threshold: f64) -> Aspec
 /// use ndarray::Array2;
 /// use scirs2_linalg::scalable::{tsqr, ScalableConfig};
 ///
-/// let tall_matrix = Array2::from_shape_fn((1000, 50), |(i, j)| {
+/// let tallmatrix = Array2::from_shape_fn((1000, 50), |(i, j)| {
 ///     (i as f64 + j as f64).sin()
 /// });
 /// let config = ScalableConfig::default();
-/// let (q, r) = tsqr(&tall_matrix.view(), &config).unwrap();
+/// let (q, r) = tsqr(&tallmatrix.view(), &config).unwrap();
 /// ```
+#[allow(dead_code)]
 pub fn tsqr<F>(
     matrix: &ArrayView2<F>,
     config: &ScalableConfig,
 ) -> LinalgResult<(Array2<F>, Array2<F>)>
 where
-    F: Float + NumAssign + Zero + One + Sum + ndarray::ScalarOperand + 'static,
+    F: Float + NumAssign + Zero + One + Sum + ndarray::ScalarOperand + Send + Sync + 'static,
 {
-    let (_m, _n) = matrix.dim();
+    let _m_n = matrix.dim();
 
     // Verify this is actually a tall matrix
     if classify_aspect_ratio(matrix, config.aspect_threshold) != AspectRatio::TallSkinny {
@@ -204,13 +206,14 @@ where
 /// # Returns
 ///
 /// * (U, S, Vt) approximate SVD with rank columns/rows
+#[allow(dead_code)]
 pub fn randomized_svd<F>(
     matrix: &ArrayView2<F>,
     rank: usize,
     config: &ScalableConfig,
 ) -> LinalgResult<(Array2<F>, Array1<F>, Array2<F>)>
 where
-    F: Float + NumAssign + Zero + One + Sum + ndarray::ScalarOperand + 'static,
+    F: Float + NumAssign + Zero + One + Sum + ndarray::ScalarOperand + Send + Sync + 'static,
 {
     let (m, n) = matrix.dim();
     let effective_rank = rank.min(m.min(n));
@@ -238,7 +241,7 @@ where
     }
 
     // Step 4: Compute QR decomposition of Y
-    let (q, _r) = qr(&y.view(), None)?;
+    let (q, r) = qr(&y.view(), None)?;
 
     // Stage B: Compute the SVD of the smaller matrix B = Q^T * A
     let b = q.t().dot(matrix);
@@ -268,14 +271,15 @@ where
 /// # Returns
 ///
 /// * (L, Q) where L is lower triangular and Q is orthogonal
+#[allow(dead_code)]
 pub fn lq_decomposition<F>(
     matrix: &ArrayView2<F>,
     config: &ScalableConfig,
 ) -> LinalgResult<(Array2<F>, Array2<F>)>
 where
-    F: Float + NumAssign + Zero + One + Sum + ndarray::ScalarOperand + 'static,
+    F: Float + NumAssign + Zero + One + Sum + ndarray::ScalarOperand + Send + Sync + 'static,
 {
-    let (m, _n) = matrix.dim();
+    let (m, n) = matrix.dim();
 
     // Verify this is a short-and-fat matrix
     if classify_aspect_ratio(matrix, config.aspect_threshold) != AspectRatio::ShortFat {
@@ -321,20 +325,21 @@ where
 /// use scirs2_linalg::scalable::{adaptive_decomposition, ScalableConfig, AspectRatio};
 ///
 /// // Tall matrix - should select TSQR
-/// let tall_matrix = Array2::from_shape_fn((500, 20), |(i, j)| {
+/// let tallmatrix = Array2::from_shape_fn((500, 20), |(i, j)| {
 ///     (i + j + 1) as f64
 /// });
 ///
 /// let config = ScalableConfig::default();
-/// let result = adaptive_decomposition(&tall_matrix.view(), &config).unwrap();
+/// let result = adaptive_decomposition(&tallmatrix.view(), &config).unwrap();
 /// assert_eq!(result.aspect_ratio, AspectRatio::TallSkinny);
 /// ```
+#[allow(dead_code)]
 pub fn adaptive_decomposition<F>(
     matrix: &ArrayView2<F>,
     config: &ScalableConfig,
 ) -> LinalgResult<AdaptiveResult<F>>
 where
-    F: Float + NumAssign + Zero + One + Sum + ndarray::ScalarOperand + 'static,
+    F: Float + NumAssign + Zero + One + Sum + ndarray::ScalarOperand + Send + Sync + 'static,
 {
     let (m, n) = matrix.dim();
     let aspect = classify_aspect_ratio(matrix, config.aspect_threshold);
@@ -435,39 +440,39 @@ impl Default for PerformanceMetrics {
 ///
 /// This function uses block algorithms to minimize cache misses and
 /// improve performance for tall-skinny or short-fat matrices.
+#[allow(dead_code)]
 pub fn blocked_matmul<F>(
     a: &ArrayView2<F>,
     b: &ArrayView2<F>,
     config: &ScalableConfig,
 ) -> LinalgResult<Array2<F>>
 where
-    F: Float + NumAssign + Zero + One + Sum + ndarray::ScalarOperand + 'static,
+    F: Float + NumAssign + Zero + One + Sum + ndarray::ScalarOperand + Send + Sync + 'static,
 {
     let (m, k) = a.dim();
     let (k2, n) = b.dim();
 
     if k != k2 {
         return Err(LinalgError::ShapeError(format!(
-            "Matrix dimensions incompatible for multiplication: {}x{} * {}x{}",
-            m, k, k2, n
+            "Matrix dimensions incompatible for multiplication: {m}x{k} * {k2}x{n}"
         )));
     }
 
     // For small matrices, use standard multiplication
-    if m * n * k < config.block_size * config.block_size * config.block_size {
+    if m * n * k < config.blocksize * config.blocksize * config.blocksize {
         return Ok(a.dot(b));
     }
 
     let mut c = Array2::zeros((m, n));
-    let block_size = config.block_size;
+    let blocksize = config.blocksize;
 
     // Block-wise multiplication
-    for bi in (0..m).step_by(block_size) {
-        for bj in (0..n).step_by(block_size) {
-            for bk in (0..k).step_by(block_size) {
-                let i_end = (bi + block_size).min(m);
-                let j_end = (bj + block_size).min(n);
-                let k_end = (bk + block_size).min(k);
+    for bi in (0..m).step_by(blocksize) {
+        for bj in (0..n).step_by(blocksize) {
+            for bk in (0..k).step_by(blocksize) {
+                let i_end = (bi + blocksize).min(m);
+                let j_end = (bj + blocksize).min(n);
+                let k_end = (bk + blocksize).min(k);
 
                 let a_block = a.slice(ndarray::s![bi..i_end, bk..k_end]);
                 let b_block = b.slice(ndarray::s![bk..k_end, bj..j_end]);
@@ -484,41 +489,46 @@ where
 
 // Helper functions for complexity and performance estimation
 
+#[allow(dead_code)]
 fn estimate_tsqr_complexity(m: usize, n: usize) -> usize {
     // TSQR complexity: O(mn^2) but with reduced communication
     // Communication complexity: O(n^2) instead of O(mn^2)
     2 * m * n * n + n * n * n / 3
 }
 
+#[allow(dead_code)]
 fn estimate_lq_complexity(m: usize, n: usize) -> usize {
     // LQ complexity similar to QR but for transposed matrix
     2 * m * m * n - 2 * m * m * m / 3
 }
 
+#[allow(dead_code)]
 fn estimate_qr_complexity(m: usize, n: usize) -> usize {
     // Standard QR complexity
     2 * m * n * n - 2 * n * n * n / 3
 }
 
-fn estimate_memory_usage(m: usize, n: usize, aspect_ratio: &AspectRatio) -> usize {
-    let element_size = std::mem::size_of::<f64>(); // Assume f64
+#[allow(dead_code)]
+fn estimate_memory_usage(m: usize, n: usize, aspectratio: &AspectRatio) -> usize {
+    let elementsize = std::mem::size_of::<f64>(); // Assume f64
 
-    match aspect_ratio {
+    match aspectratio {
         AspectRatio::TallSkinny => {
             // TSQR: Original matrix + Q blocks + R factors
-            (m * n + m * n + n * n) * element_size
+            (m * n + m * n + n * n) * elementsize
         }
         AspectRatio::ShortFat => {
             // LQ: Original matrix + L factor + Q factor
-            (m * n + m * m + m * n) * element_size
+            (m * n + m * m + m * n) * elementsize
         }
         AspectRatio::Square => {
             // Standard QR: Original matrix + Q + R
-            (m * n + m * m + m * n) * element_size
+            (m * n + m * m + m * n) * elementsize
         }
     }
 }
 
+#[allow(dead_code)]
 fn calculate_performance_metrics(
     m: usize,
     n: usize,
@@ -555,29 +565,29 @@ mod tests {
 
     #[test]
     fn test_aspect_ratio_classification() {
-        let tall_matrix = Array2::<f64>::zeros((1000, 10));
-        let short_matrix = Array2::<f64>::zeros((10, 1000));
-        let square_matrix = Array2::<f64>::zeros((100, 100));
+        let tallmatrix = Array2::<f64>::zeros((1000, 10));
+        let shortmatrix = Array2::<f64>::zeros((10, 1000));
+        let squarematrix = Array2::<f64>::zeros((100, 100));
 
         assert_eq!(
-            classify_aspect_ratio(&tall_matrix.view(), 4.0),
+            classify_aspect_ratio(&tallmatrix.view(), 4.0),
             AspectRatio::TallSkinny
         );
         assert_eq!(
-            classify_aspect_ratio(&short_matrix.view(), 4.0),
+            classify_aspect_ratio(&shortmatrix.view(), 4.0),
             AspectRatio::ShortFat
         );
         assert_eq!(
-            classify_aspect_ratio(&square_matrix.view(), 4.0),
+            classify_aspect_ratio(&squarematrix.view(), 4.0),
             AspectRatio::Square
         );
     }
 
     #[test]
-    fn test_tsqr_small_matrix() {
+    fn test_tsqr_smallmatrix() {
         let matrix = array![[1.0, 2.0], [3.0, 4.0], [5.0, 6.0], [7.0, 8.0], [9.0, 10.0]];
 
-        let config = ScalableConfig::default().with_block_size(2);
+        let config = ScalableConfig::default().with_blocksize(2);
         let (q, r) = tsqr(&matrix.view(), &config).unwrap();
 
         // Verify Q is orthogonal (Q^T * Q = I)
@@ -627,10 +637,10 @@ mod tests {
 
     #[test]
     fn test_adaptive_decomposition() {
-        let tall_matrix = Array2::from_shape_fn((100, 5), |(i, j)| (i + j) as f64);
+        let tallmatrix = Array2::from_shape_fn((100, 5), |(i, j)| (i + j) as f64);
         let config = ScalableConfig::default();
 
-        let result = adaptive_decomposition(&tall_matrix.view(), &config).unwrap();
+        let result = adaptive_decomposition(&tallmatrix.view(), &config).unwrap();
 
         // Check aspect ratio detection
         assert_eq!(result.aspect_ratio, AspectRatio::TallSkinny);
@@ -648,24 +658,59 @@ mod tests {
     }
 
     #[test]
-    #[ignore] // SVD implementation has numerical issues, skip for now
     fn test_randomized_svd() {
-        // Create a simple test matrix - identity-like
-        let matrix = Array2::from_shape_fn((6, 4), |(i, j)| if i == j { 2.0 } else { 0.0 });
+        // Create a well-conditioned test matrix with known rank
+        // A = U * S * V^T where U and V are orthogonal
+        let m = 6;
+        let n = 4;
+        let true_rank = 2;
 
-        let config = ScalableConfig::default().with_oversampling(2);
-        let (u_approx, s_approx, vt_approx) = randomized_svd(&matrix.view(), 2, &config).unwrap();
+        // Create a rank-2 matrix
+        let mut matrix = Array2::zeros((m, n));
+        // Add rank-1 components
+        for i in 0..m {
+            for j in 0..n {
+                matrix[[i, j]] = 3.0 * (i as f64 / m as f64) * (j as f64 / n as f64);
+                matrix[[i, j]] += 2.0 * ((i + 1) as f64 / m as f64) * ((n - j) as f64 / n as f64);
+            }
+        }
+
+        // Add small perturbation to avoid exact zeros
+        for i in 0..m {
+            for j in 0..n {
+                matrix[[i, j]] += 0.01 * rand::random::<f64>();
+            }
+        }
+
+        let config = ScalableConfig::default()
+            .with_oversampling(2)
+            .with_power_iterations(1);
+        let result = randomized_svd(&matrix.view(), true_rank, &config);
+
+        // Check if the function returns successfully
+        assert!(result.is_ok(), "Randomized SVD failed: {:?}", result.err());
+
+        let (u_approx, s_approx, vt_approx) = result.unwrap();
 
         // Check dimensions
-        assert_eq!(u_approx.dim(), (6, 2));
-        assert_eq!(s_approx.dim(), 2);
-        assert_eq!(vt_approx.dim(), (2, 4));
+        assert_eq!(u_approx.dim(), (m, true_rank));
+        assert_eq!(s_approx.dim(), true_rank);
+        assert_eq!(vt_approx.dim(), (true_rank, n));
 
         // Check that singular values are positive and in descending order
         assert!(s_approx[0] > 0.0);
         for i in 0..s_approx.len() - 1 {
             assert!(s_approx[i] >= s_approx[i + 1]);
         }
+
+        // Check reconstruction error
+        let reconstructed = u_approx.dot(&Array2::from_diag(&s_approx)).dot(&vt_approx);
+        let error = (&matrix - &reconstructed).mapv(|x| x.abs()).sum();
+        assert!(
+            error / ((m * n) as f64) < 0.1,
+            "Reconstruction error too large: {}",
+            error
+        );
     }
 
     #[test]
@@ -673,7 +718,7 @@ mod tests {
         let a = Array2::from_shape_fn((20, 30), |(i, j)| (i + j) as f64);
         let b = Array2::from_shape_fn((30, 25), |(i, j)| (i * j) as f64);
 
-        let config = ScalableConfig::default().with_block_size(10);
+        let config = ScalableConfig::default().with_blocksize(10);
         let result_blocked = blocked_matmul(&a.view(), &b.view(), &config).unwrap();
         let result_standard = a.dot(&b);
 

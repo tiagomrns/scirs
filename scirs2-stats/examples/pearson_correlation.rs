@@ -1,6 +1,7 @@
 use ndarray::array;
 use scirs2_stats::{pearson_r, pearsonr};
 
+#[allow(dead_code)]
 fn main() {
     println!("Pearson Correlation Coefficient Examples");
     println!("=======================================\n");

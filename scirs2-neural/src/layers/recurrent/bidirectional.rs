@@ -4,8 +4,8 @@ use crate::error::{NeuralError, Result};
 use crate::layers::Layer;
 use ndarray::{concatenate, Array, Axis, IxDyn, ScalarOperand};
 use num_traits::Float;
-use std::cell::RefCell;
 use std::fmt::Debug;
+use std::sync::{Arc, RwLock};
 
 /// Bidirectional RNN wrapper for recurrent layers
 ///
@@ -14,15 +14,14 @@ use std::fmt::Debug;
 /// and concatenates the results.
 ///
 /// # Examples
-///
 /// ```
-/// use scirs2_neural::layers::{Bidirectional, RNN, Layer, RecurrentActivation};
+/// use scirs2_neural::layers::{Layer, recurrent::{Bidirectional, RNN, rnn::RecurrentActivation}};
 /// use ndarray::{Array, Array3};
 /// use rand::rngs::SmallRng;
 /// use rand::SeedableRng;
 ///
 /// // Create RNN layers for forward and backward directions
-/// let mut rng = SmallRng::seed_from_u64(42);
+/// let mut rng = rand::rng();
 /// let forward_rnn = RNN::new(10, 20, RecurrentActivation::Tanh, &mut rng).unwrap();
 /// let backward_rnn = RNN::new(10, 20, RecurrentActivation::Tanh, &mut rng).unwrap();
 ///
@@ -39,7 +38,7 @@ use std::fmt::Debug;
 /// // Output should have dimensions [batch_size, seq_len, hidden_size*2]
 /// assert_eq!(output.shape(), &[batch_size, seq_len, 40]);
 /// ```
-pub struct Bidirectional<F: Float + Debug> {
+pub struct Bidirectional<F: Float + Debug + Send + Sync> {
     /// Forward direction layer
     forward_layer: Box<dyn Layer<F> + Send + Sync>,
     /// Backward direction layer (using the same layer type)
@@ -47,20 +46,18 @@ pub struct Bidirectional<F: Float + Debug> {
     /// Name for the layer
     name: Option<String>,
     /// Input cache for backward pass
-    input_cache: RefCell<Option<Array<F, IxDyn>>>,
+    input_cache: Arc<RwLock<Option<Array<F, IxDyn>>>>,
 }
 
-impl<F: Float + Debug + ScalarOperand + 'static> Bidirectional<F> {
+impl<F: Float + Debug + ScalarOperand + Send + Sync + 'static> Bidirectional<F> {
     /// Create a new bidirectional wrapper
     ///
     /// # Arguments
-    ///
     /// * `forward_layer` - The recurrent layer to use in forward direction
     /// * `backward_layer` - Optional recurrent layer for backward direction (if None, forward layer will be used)
     /// * `name` - Optional name for the layer
     ///
     /// # Returns
-    ///
     /// * A new bidirectional layer
     pub fn new(
         forward_layer: Box<dyn Layer<F> + Send + Sync>,
@@ -71,7 +68,7 @@ impl<F: Float + Debug + ScalarOperand + 'static> Bidirectional<F> {
             forward_layer,
             backward_layer,
             name: name.map(String::from),
-            input_cache: RefCell::new(None),
+            input_cache: Arc::new(RwLock::new(None)),
         })
     }
 
@@ -90,22 +87,20 @@ impl<F: Float + Debug + ScalarOperand + 'static> Bidirectional<F> {
     }
 }
 
-impl<F: Float + Debug + ScalarOperand + 'static> Layer<F> for Bidirectional<F> {
+impl<F: Float + Debug + ScalarOperand + Send + Sync + 'static> Layer<F> for Bidirectional<F> {
     fn forward(&self, input: &Array<F, IxDyn>) -> Result<Array<F, IxDyn>> {
         // Cache input for backward pass
-        self.input_cache.replace(Some(input.clone()));
+        *self.input_cache.write().unwrap() = Some(input.clone());
 
         // Check input dimensions
-        let input_shape = input.shape();
-        if input_shape.len() != 3 {
+        let inputshape = input.shape();
+        if inputshape.len() != 3 {
             return Err(NeuralError::InferenceError(format!(
-                "Expected 3D input [batch_size, seq_len, input_size], got {:?}",
-                input_shape
+                "Expected 3D input [batch_size, seq_len, input_size], got {inputshape:?}"
             )));
         }
-
-        let _batch_size = input_shape[0];
-        let seq_len = input_shape[1];
+        let _batch_size = inputshape[0];
+        let seq_len = inputshape[1];
 
         // Forward direction
         let forward_output = self.forward_layer.forward(input)?;
@@ -121,7 +116,6 @@ impl<F: Float + Debug + ScalarOperand + 'static> Layer<F> for Bidirectional<F> {
                 let slice = input.slice(ndarray::s![.., t..t + 1, ..]);
                 reversed_slices.push(slice);
             }
-
             let views: Vec<_> = reversed_slices.iter().map(|s| s.view()).collect();
             let reversed_input = concatenate(Axis(1), &views)?.into_dyn();
 
@@ -142,7 +136,6 @@ impl<F: Float + Debug + ScalarOperand + 'static> Layer<F> for Bidirectional<F> {
             let forward_view = forward_output.view();
             let backward_view = backward_output_aligned.view();
             let output = concatenate(Axis(2), &[forward_view, backward_view])?.into_dyn();
-
             return Ok(output);
         }
 
@@ -177,7 +170,6 @@ impl<F: Float + Debug + ScalarOperand + 'static> Layer<F> for Bidirectional<F> {
         let forward_view = forward_output.view();
         let backward_view = backward_output_aligned.view();
         let output = concatenate(Axis(2), &[forward_view, backward_view])?.into_dyn();
-
         Ok(output)
     }
 
@@ -186,27 +178,25 @@ impl<F: Float + Debug + ScalarOperand + 'static> Layer<F> for Bidirectional<F> {
         _input: &Array<F, IxDyn>,
         grad_output: &Array<F, IxDyn>,
     ) -> Result<Array<F, IxDyn>> {
-        // Retrieve cached input
-        let input_ref = self.input_cache.borrow();
+        // Retrieve cached _input
+        let input_ref = self.input_cache.read().unwrap();
         if input_ref.is_none() {
             return Err(NeuralError::InferenceError(
-                "No cached input for backward pass. Call forward() first.".to_string(),
+                "No cached _input for backward pass. Call forward() first.".to_string(),
             ));
         }
         let cached_input = input_ref.as_ref().unwrap();
 
         // Check gradient dimensions
-        let grad_shape = grad_output.shape();
-        if grad_shape.len() != 3 {
+        let gradshape = grad_output.shape();
+        if gradshape.len() != 3 {
             return Err(NeuralError::InferenceError(format!(
-                "Expected 3D gradient [batch_size, seq_len, hidden_size*2], got {:?}",
-                grad_shape
+                "Expected 3D gradient [batch_size, seq_len, hidden_size*2], got {gradshape:?}"
             )));
         }
-
-        let _batch_size = grad_shape[0];
-        let seq_len = grad_shape[1];
-        let total_hidden = grad_shape[2];
+        let _batch_size = gradshape[0];
+        let seq_len = gradshape[1];
+        let total_hidden = gradshape[2];
 
         // If no backward layer, we need to handle gradients for both directions processed
         // by the same layer
@@ -235,7 +225,7 @@ impl<F: Float + Debug + ScalarOperand + 'static> Layer<F> for Bidirectional<F> {
                 backward_grad_slices.iter().map(|s| s.view()).collect();
             let grad_backward_reversed = concatenate(Axis(1), &backward_grad_views)?.into_dyn();
 
-            // Reverse the input for backward processing
+            // Reverse the _input for backward processing
             let mut input_slices = Vec::new();
             for t in (0..seq_len).rev() {
                 let slice = cached_input.slice(ndarray::s![.., t..t + 1, ..]);
@@ -261,9 +251,11 @@ impl<F: Float + Debug + ScalarOperand + 'static> Layer<F> for Bidirectional<F> {
 
             // Sum the gradients from forward and backward paths
             let grad_input = grad_input_forward + grad_input_backward;
-
             return Ok(grad_input);
         }
+
+        // Get the backward layer
+        let backward_layer = self.backward_layer.as_ref().unwrap();
 
         // Split gradient into forward and backward components
         let hidden_size = total_hidden / 2;
@@ -279,7 +271,7 @@ impl<F: Float + Debug + ScalarOperand + 'static> Layer<F> for Bidirectional<F> {
         // Backward pass through forward layer
         let grad_input_forward = self.forward_layer.backward(cached_input, &grad_forward)?;
 
-        // For backward layer, we need to reverse the gradient and input
+        // For backward layer, we need to reverse the gradient and _input
         // Reverse the gradient for backward layer
         let mut backward_grad_slices = Vec::new();
         for t in (0..seq_len).rev() {
@@ -289,7 +281,7 @@ impl<F: Float + Debug + ScalarOperand + 'static> Layer<F> for Bidirectional<F> {
         let backward_grad_views: Vec<_> = backward_grad_slices.iter().map(|s| s.view()).collect();
         let grad_backward_reversed = concatenate(Axis(1), &backward_grad_views)?.into_dyn();
 
-        // Reverse the input for backward layer
+        // Reverse the _input for backward layer
         let mut input_slices = Vec::new();
         for t in (0..seq_len).rev() {
             let slice = cached_input.slice(ndarray::s![.., t..t + 1, ..]);
@@ -299,7 +291,6 @@ impl<F: Float + Debug + ScalarOperand + 'static> Layer<F> for Bidirectional<F> {
         let input_reversed = concatenate(Axis(1), &input_views)?.into_dyn();
 
         // Backward pass through backward layer
-        let backward_layer = self.backward_layer.as_ref().unwrap();
         let grad_input_backward_reversed =
             backward_layer.backward(&input_reversed, &grad_backward_reversed)?;
 
@@ -314,17 +305,16 @@ impl<F: Float + Debug + ScalarOperand + 'static> Layer<F> for Bidirectional<F> {
 
         // Sum the gradients from forward and backward paths
         let grad_input = grad_input_forward + grad_input_backward;
-
         Ok(grad_input)
     }
 
-    fn update(&mut self, learning_rate: F) -> Result<()> {
+    fn update(&mut self, learningrate: F) -> Result<()> {
         // Update forward layer
-        self.forward_layer.update(learning_rate)?;
+        self.forward_layer.update(learningrate)?;
 
         // Update backward layer if present
         if let Some(ref mut backward_layer) = self.backward_layer {
-            backward_layer.update(learning_rate)?;
+            backward_layer.update(learningrate)?;
         }
 
         Ok(())

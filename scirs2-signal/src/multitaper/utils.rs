@@ -1,4 +1,4 @@
-//! Utility functions for multitaper spectral estimation.
+// Utility functions for multitaper spectral estimation.
 
 use super::windows::dpss;
 use crate::error::{SignalError, SignalResult};
@@ -6,9 +6,10 @@ use crate::filter::filtfilt;
 use ndarray::Array2;
 use num_complex::Complex64;
 use num_traits::{Float, NumCast};
-use std::f64::consts::PI;
+use rand::Rng;
 use std::fmt::Debug;
 
+#[allow(unused_imports)]
 /// Compute multitaper spectral coherence between two signals.
 ///
 /// This function estimates the spectral coherence between two signals using
@@ -33,7 +34,6 @@ use std::fmt::Debug;
 ///
 /// ```
 /// use scirs2_signal::multitaper::coherence;
-/// use std::f64::consts::PI;
 ///
 /// // Generate two related signals
 /// let n = 1024;
@@ -44,12 +44,12 @@ use std::fmt::Debug;
 /// use rand::Rng;
 /// let mut rng = rand::rng();
 /// let signal1: Vec<f64> = t.iter()
-///     .map(|&ti| (2.0 * PI * 10.0 * ti).sin() + 0.1 * rng.random_range(0.0..1.0))
+///     .map(|&ti| (2.0 * PI * 10.0 * ti).sin() + 0.1 * rng.gen_range(0.0..1.0))
 ///     .collect();
 ///     
 /// // Signal 2: 10 Hz cosine (highly coherent with signal1 at 10 Hz)
 /// let signal2: Vec<f64> = t.iter()
-///     .map(|&ti| (2.0 * PI * 10.0 * ti).cos() + 0.1 * rng.random_range(0.0..1.0))
+///     .map(|&ti| (2.0 * PI * 10.0 * ti).cos() + 0.1 * rng.gen_range(0.0..1.0))
 ///     .collect();
 ///
 /// // Compute coherence
@@ -66,11 +66,12 @@ use std::fmt::Debug;
 /// // Coherence should be high near 10 Hz
 /// let f10_idx = freqs.iter().enumerate()
 ///     .min_by(|(_, a), (_, b)| ((*a) - 10.0).abs().partial_cmp(&((*b) - 10.0).abs()).unwrap())
-///     .map(|(idx, _)| idx)
+///     .map(|(idx_)| idx)
 ///     .unwrap();
 /// assert!(coh[f10_idx] >= 0.0); // Coherence should be non-negative
 /// ```
 #[allow(clippy::too_many_arguments)]
+#[allow(dead_code)]
 pub fn coherence<T, U>(
     x: &[T],
     y: &[U],
@@ -254,7 +255,6 @@ where
 /// ```
 /// use scirs2_signal::multitaper::multitaper_filtfilt;
 /// use scirs2_signal::filter::butter;
-/// use std::f64::consts::PI;
 ///
 /// // Generate a test signal (sinusoid with noise)
 /// let n = 1000;
@@ -274,6 +274,7 @@ where
 /// // The higher frequency component should be attenuated
 /// ```
 #[allow(clippy::too_many_arguments)]
+#[allow(dead_code)]
 pub fn multitaper_filtfilt<T>(
     b: &[f64],
     a: &[f64],
@@ -388,6 +389,7 @@ where
 /// # Returns
 ///
 /// * Complex FFT result
+#[allow(dead_code)]
 pub fn compute_fft(x: &[Complex64]) -> SignalResult<Vec<Complex64>> {
     let n = x.len();
 
@@ -450,6 +452,7 @@ pub fn compute_fft(x: &[Complex64]) -> SignalResult<Vec<Complex64>> {
 /// # Returns
 ///
 /// * true if n is a power of 2, false otherwise
+#[allow(dead_code)]
 pub fn is_power_of_two(n: usize) -> bool {
     n > 0 && (n & (n - 1)) == 0
 }

@@ -1,6 +1,7 @@
 use ndarray::{array, ArrayView1};
 use scirs2_integrate::ode::{solve_ivp, ODEMethod, ODEOptions};
 
+#[allow(dead_code)]
 fn main() {
     println!("LSODA Minimal Test Example");
     println!("-------------------------");
@@ -14,10 +15,7 @@ fn main() {
     let min_step = 1e-3;
 
     println!("Solving y' = -y with y(0) = 1 using LSODA");
-    println!(
-        "Parameters: initial_step={}, min_step={}",
-        initial_step, min_step
-    );
+    println!("Parameters: initial_step={initial_step}, min_step={min_step}");
 
     let result = solve_ivp(
         decay_system,
@@ -61,15 +59,15 @@ fn main() {
                 let y = res.y[i][0];
                 let exact = (-t).exp();
                 let error = (y - exact).abs();
-                println!("  {:.4}   {:.6}   {:.6}   {:.2e}", t, y, exact, error);
+                println!("  {t:.4}   {y:.6}   {exact:.6}   {error:.2e}");
             }
 
             if let Some(msg) = res.message {
-                println!("\nMessage: {}", msg);
+                println!("\nMessage: {msg}");
             }
         }
         Err(e) => {
-            println!("Failed: {}", e);
+            println!("Failed: {e}");
 
             // Compare with a known reliable method
             println!("\nTrying with DOP853 method for comparison:");

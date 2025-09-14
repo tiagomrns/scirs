@@ -30,6 +30,7 @@ use crate::error::{LinalgError, LinalgResult};
 /// let result = dot(&x.view(), &y.view()).unwrap();
 /// assert!((result - 32.0).abs() < 1e-10); // 1*4 + 2*5 + 3*6 = 32
 /// ```
+#[allow(dead_code)]
 pub fn dot<F>(x: &ArrayView1<F>, y: &ArrayView1<F>) -> LinalgResult<F>
 where
     F: Float + NumAssign + 'static,
@@ -66,6 +67,7 @@ where
 /// let result = norm(&x.view()).unwrap();
 /// assert!((result - 5.0).abs() < 1e-10); // sqrt(3^2 + 4^2) = 5
 /// ```
+#[allow(dead_code)]
 pub fn norm<F>(x: &ArrayView1<F>) -> LinalgResult<F>
 where
     F: Float + NumAssign + 'static,
@@ -113,6 +115,7 @@ where
 /// assert!((result[0] - 8.0).abs() < 1e-10); // 1*2 + 2*3 = 8
 /// assert!((result[1] - 18.0).abs() < 1e-10); // 3*2 + 4*3 = 18
 /// ```
+#[allow(dead_code)]
 pub fn gemv<F>(
     alpha: F,
     a: &ArrayView2<F>,
@@ -186,6 +189,7 @@ where
 /// assert!((result[[1, 0]] - 43.0).abs() < 1e-10); // 3*5 + 4*7 = 43
 /// assert!((result[[1, 1]] - 50.0).abs() < 1e-10); // 3*6 + 4*8 = 50
 /// ```
+#[allow(dead_code)]
 pub fn gemm<F>(
     alpha: F,
     a: &ArrayView2<F>,
@@ -257,6 +261,7 @@ where
 /// assert!((c[[1, 0]] - 43.0).abs() < 1e-10); // 3*5 + 4*7 = 43
 /// assert!((c[[1, 1]] - 50.0).abs() < 1e-10); // 3*6 + 4*8 = 50
 /// ```
+#[allow(dead_code)]
 pub fn matmul<F>(a: &ArrayView2<F>, b: &ArrayView2<F>) -> LinalgResult<Array2<F>>
 where
     F: Float + NumAssign + 'static,
@@ -296,6 +301,7 @@ where
 /// assert!((x[0] - 2.0).abs() < 1e-10);
 /// assert!((x[1] - 3.0).abs() < 1e-10);
 /// ```
+#[allow(dead_code)]
 pub fn solve<F>(a: &ArrayView2<F>, b: &ArrayView1<F>) -> LinalgResult<Array1<F>>
 where
     F: Float + NumAssign + 'static,
@@ -407,6 +413,7 @@ where
 /// assert!((identity[[1, 0]]).abs() < 1e-10);
 /// assert!((identity[[1, 1]] - 1.0).abs() < 1e-10);
 /// ```
+#[allow(dead_code)]
 pub fn inv<F>(a: &ArrayView2<F>) -> LinalgResult<Array2<F>>
 where
     F: Float + NumAssign + 'static,

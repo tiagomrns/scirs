@@ -42,6 +42,7 @@ use crate::error::{MetricsError, Result};
 ///
 /// let ovo_acc = one_vs_one_accuracy(&y_true, &y_pred).unwrap();
 /// ```
+#[allow(dead_code)]
 pub fn one_vs_one_accuracy<T, S1, S2, D1, D2>(
     y_true: &ArrayBase<S1, D1>,
     y_pred: &ArrayBase<S2, D2>,
@@ -69,7 +70,7 @@ where
         ));
     }
 
-    // Get unique classes from true labels
+    // Get unique classes from _true labels
     let mut classes: BTreeSet<T> = BTreeSet::new();
     for label in y_true.iter() {
         classes.insert(label.clone());
@@ -153,6 +154,7 @@ where
 ///
 /// let (precision, recall) = one_vs_one_precision_recall(&y_true, &y_pred).unwrap();
 /// ```
+#[allow(dead_code)]
 pub fn one_vs_one_precision_recall<T, S1, S2, D1, D2>(
     y_true: &ArrayBase<S1, D1>,
     y_pred: &ArrayBase<S2, D2>,
@@ -262,6 +264,7 @@ where
 ///
 /// let f1_scores = one_vs_one_f1_score(&y_true, &y_pred).unwrap();
 /// ```
+#[allow(dead_code)]
 pub fn one_vs_one_f1_score<T, S1, S2, D1, D2>(
     y_true: &ArrayBase<S1, D1>,
     y_pred: &ArrayBase<S2, D2>,
@@ -320,6 +323,7 @@ where
 ///
 /// let weighted_f1 = weighted_one_vs_one_f1_score(&y_true, &y_pred).unwrap();
 /// ```
+#[allow(dead_code)]
 pub fn weighted_one_vs_one_f1_score<T, S1, S2, D1, D2>(
     y_true: &ArrayBase<S1, D1>,
     y_pred: &ArrayBase<S2, D2>,
@@ -334,7 +338,7 @@ where
     // Get F1 score for each class
     let f1_per_class = one_vs_one_f1_score(y_true, y_pred)?;
 
-    // Count instances of each class in true labels
+    // Count instances of each class in _true labels
     let mut class_counts: HashMap<T, usize> = HashMap::new();
     for label in y_true.iter() {
         *class_counts.entry(label.clone()).or_insert(0) += 1;

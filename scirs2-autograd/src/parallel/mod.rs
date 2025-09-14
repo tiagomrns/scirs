@@ -185,8 +185,8 @@ impl ThreadPool {
     }
 
     /// Resize the thread pool
-    pub fn resize(&mut self, new_size: usize) -> Result<(), ThreadPoolError> {
-        if new_size == 0 {
+    pub fn resize(&mut self, newsize: usize) -> Result<(), ThreadPoolError> {
+        if newsize == 0 {
             return Err(ThreadPoolError::InvalidConfiguration(
                 "Thread pool size cannot be zero".into(),
             ));
@@ -194,7 +194,7 @@ impl ThreadPool {
 
         // Implementation would recreate the thread pool with new size
         // For now, just update the config
-        self.config.num_threads = new_size;
+        self.config.num_threads = newsize;
         Ok(())
     }
 
@@ -279,13 +279,13 @@ impl Worker {
         }
     }
 
-    fn set_thread_priority(_priority: ThreadPriority) {
-        // Platform-specific thread priority setting would go here
+    fn set_thread_priority(priority: ThreadPriority) {
+        // Platform-specific thread _priority setting would go here
         // For now, this is a no-op
     }
 
-    fn set_cpu_affinity(_worker_id: usize, _affinity: &CpuAffinity) {
-        // Platform-specific CPU affinity setting would go here
+    fn set_cpu_affinity(_worker_id: usize, affinity: &CpuAffinity) {
+        // Platform-specific CPU _affinity setting would go here
         // For now, this is a no-op
     }
 }
@@ -382,9 +382,9 @@ pub struct WorkerStats {
 }
 
 impl WorkerStats {
-    fn new(worker_id: usize) -> Self {
+    fn new(_workerid: usize) -> Self {
         Self {
-            worker_id,
+            worker_id: _workerid,
             tasks_completed: 0,
             total_time: Duration::ZERO,
             queue_size: 0,
@@ -410,9 +410,9 @@ impl ParallelScheduler {
     }
 
     /// Create a scheduler with custom thread pool
-    pub fn with_thread_pool(thread_pool: Arc<ThreadPool>) -> Self {
+    pub fn with_thread_pool(_threadpool: Arc<ThreadPool>) -> Self {
         Self {
-            thread_pool,
+            thread_pool: _threadpool,
             config: SchedulerConfig::default(),
         }
     }
@@ -423,7 +423,7 @@ impl ParallelScheduler {
         F: FnOnce() -> R + Send + 'static,
         R: Send + 'static,
     {
-        if self.should_parallelize(&operation) {
+        if ParallelScheduler::should_parallelize(&operation) {
             self.thread_pool.execute_and_wait(operation)
         } else {
             // Execute on current thread for small operations
@@ -448,7 +448,7 @@ impl ParallelScheduler {
     }
 
     /// Check if an operation should be parallelized
-    fn should_parallelize<F, R>(&self, _operation: &F) -> bool
+    fn should_parallelize<F, R>(operation: &F) -> bool
     where
         F: FnOnce() -> R + Send + 'static,
         R: Send + 'static,
@@ -528,6 +528,7 @@ pub enum ThreadPoolError {
 
 /// Public API functions for thread pool management
 /// Initialize the global thread pool with default configuration
+#[allow(dead_code)]
 pub fn init_thread_pool() -> Result<(), ThreadPoolError> {
     let mut pool = GLOBAL_THREAD_POOL.lock().unwrap();
     if pool.is_none() {
@@ -537,6 +538,7 @@ pub fn init_thread_pool() -> Result<(), ThreadPoolError> {
 }
 
 /// Initialize the global thread pool with custom configuration
+#[allow(dead_code)]
 pub fn init_thread_pool_with_config(config: ThreadPoolConfig) -> Result<(), ThreadPoolError> {
     let mut pool = GLOBAL_THREAD_POOL.lock().unwrap();
     *pool = Some(ThreadPool::with_config(config));
@@ -544,6 +546,7 @@ pub fn init_thread_pool_with_config(config: ThreadPoolConfig) -> Result<(), Thre
 }
 
 /// Execute a task on the global thread pool
+#[allow(dead_code)]
 pub fn execute_global<F>(f: F) -> Result<(), ThreadPoolError>
 where
     F: FnOnce() + Send + 'static,
@@ -559,6 +562,7 @@ where
 }
 
 /// Execute a task and wait for completion on the global thread pool
+#[allow(dead_code)]
 pub fn execute_and_wait_global<F, R>(f: F) -> Result<R, ThreadPoolError>
 where
     F: FnOnce() -> R + Send + 'static,
@@ -575,12 +579,14 @@ where
 }
 
 /// Get global thread pool statistics
+#[allow(dead_code)]
 pub fn get_global_thread_pool_stats() -> Option<ThreadPoolStats> {
     let pool = GLOBAL_THREAD_POOL.lock().unwrap();
     pool.as_ref().map(|p| p.get_stats())
 }
 
 /// Shutdown the global thread pool
+#[allow(dead_code)]
 pub fn shutdown_global_thread_pool() -> Result<(), ThreadPoolError> {
     let mut pool = GLOBAL_THREAD_POOL.lock().unwrap();
     if let Some(pool) = pool.take() {
@@ -591,6 +597,7 @@ pub fn shutdown_global_thread_pool() -> Result<(), ThreadPoolError> {
 }
 
 /// Set the number of threads for the global thread pool
+#[allow(dead_code)]
 pub fn set_global_thread_count(count: usize) -> Result<(), ThreadPoolError> {
     let config = ThreadPoolConfig {
         num_threads: count,
@@ -600,6 +607,7 @@ pub fn set_global_thread_count(count: usize) -> Result<(), ThreadPoolError> {
 }
 
 /// Get the current number of threads in the global thread pool
+#[allow(dead_code)]
 pub fn get_global_thread_count() -> usize {
     let pool = GLOBAL_THREAD_POOL.lock().unwrap();
     pool.as_ref()
@@ -608,6 +616,7 @@ pub fn get_global_thread_count() -> usize {
 }
 
 /// Check if the global thread pool is initialized
+#[allow(dead_code)]
 pub fn is_thread_pool_initialized() -> bool {
     let pool = GLOBAL_THREAD_POOL.lock().unwrap();
     pool.is_some()

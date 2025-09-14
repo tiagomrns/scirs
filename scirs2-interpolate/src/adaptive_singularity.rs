@@ -20,7 +20,7 @@
 //!
 //! ```rust
 //! use ndarray::Array1;
-//! use scirs2_interpolate::adaptive_singularity::{SingularityDetector, SingularityType};
+//! use scirs2__interpolate::adaptive_singularity::{SingularityDetector, SingularityType};
 //!
 //! // Create sample data with a singularity (jump discontinuity)
 //! let x = Array1::linspace(0.0, 2.0, 100);
@@ -300,11 +300,7 @@ where
 
             if is_potential_discontinuity {
                 // Calculate local variation for normalization
-                let start_idx = if i >= window_size / 2 {
-                    i - window_size / 2
-                } else {
-                    0
-                };
+                let start_idx = i.saturating_sub(window_size / 2);
                 let end_idx = std::cmp::min(i + window_size / 2, n - 1);
 
                 let local_var = self.calculate_local_variation(y, start_idx, end_idx);
@@ -618,6 +614,7 @@ where
 /// # Returns
 ///
 /// The number of refinements applied and the detected singularities
+#[allow(dead_code)]
 pub fn apply_singularity_handling<T>(
     spline: &mut MultiscaleBSpline<T>,
     detector: &SingularityDetector<T>,

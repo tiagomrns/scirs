@@ -1,3 +1,4 @@
+#![allow(deprecated)]
 //! Fast Fourier Transform module
 //!
 //! This module provides implementations of various Fast Fourier Transform algorithms,
@@ -109,6 +110,13 @@ pub use planning_parallel::{
 pub mod auto_tuning;
 pub use auto_tuning::{AutoTuneConfig, AutoTuner, FftVariant, SizeRange, SizeStep};
 
+// Advanced mode coordinator for advanced AI-driven optimization (temporarily disabled)
+// pub mod advanced_coordinator;
+// pub use advanced_coordinator::{
+//     create_advanced_fft_coordinator, create_advanced_fft_coordinator_with_config,
+//     FftPerformanceMetrics, FftRecommendation, advancedFftConfig, advancedFftCoordinator,
+// };
+
 // Core modules are used conditionally in feature-specific implementations
 
 // FFT module structure
@@ -213,7 +221,7 @@ pub use sparse_fft_gpu_cuda::{
     cuda_batch_sparse_fft,
     cuda_sparse_fft,
     get_cuda_devices,
-    GpuContext,
+    FftGpuContext,
     GpuDeviceInfo,
     // CUDAStream - migrated to core GPU abstractions
 };
@@ -344,6 +352,7 @@ pub use padding::{
 /// assert_eq!(times.len(), result.shape()[1]);
 /// ```
 #[allow(clippy::too_many_arguments)]
+#[allow(dead_code)]
 pub fn stft<T>(
     x: &[T],
     window: Window,
@@ -417,16 +426,17 @@ where
 ///   IEEE Transactions on Signal Processing, Vol. 47, No. 9, 1999.
 
 /// Helper function to try and extract a Complex value
+#[allow(dead_code)]
 fn try_as_complex<U: 'static + Copy>(val: U) -> Option<num_complex::Complex64> {
     use num_complex::Complex64;
     use std::any::Any;
 
-    // Try to use runtime type checking with Any for complex types
-    if let Some(complex) = (&val as &dyn Any).downcast_ref::<Complex64>() {
-        return Some(*complex);
+    // Try to use runtime type checking with Any for _complex types
+    if let Some(_complex) = (&val as &dyn Any).downcast_ref::<Complex64>() {
+        return Some(*_complex);
     }
 
-    // Try to handle f32 complex numbers
+    // Try to handle f32 _complex numbers
     if let Some(complex32) = (&val as &dyn Any).downcast_ref::<num_complex::Complex<f32>>() {
         return Some(Complex64::new(complex32.re as f64, complex32.im as f64));
     }
@@ -434,6 +444,7 @@ fn try_as_complex<U: 'static + Copy>(val: U) -> Option<num_complex::Complex64> {
     None
 }
 
+#[allow(dead_code)]
 pub fn hilbert<T>(x: &[T]) -> FFTResult<Vec<num_complex::Complex64>>
 where
     T: num_traits::NumCast + Copy + std::fmt::Debug + 'static,
@@ -537,6 +548,7 @@ where
 /// assert_eq!(bounds, vec![(-2, 2), (-1, 1)]);
 /// ```
 #[must_use]
+#[allow(dead_code)]
 pub fn fft_bounds(shape: &[usize]) -> Vec<(i32, i32)> {
     shape
         .iter()

@@ -1,31 +1,32 @@
-#[macro_use]
+use std::hint::black_box;
 extern crate criterion;
 
-use criterion::{black_box, BenchmarkId, Criterion};
+use criterion::{criterion_group, criterion_main, BenchmarkId, Criterion};
 use ndarray::{Array2, Array3};
-use scirs2_linalg::attention::{
+use scirs2__linalg::attention::{
     causal_attention, flash_attention, linear_attention, multi_head_attention,
     scaled_dot_product_attention, AttentionConfig,
 };
 
+#[allow(dead_code)]
 fn attention_benchmark(c: &mut Criterion) {
     let mut group = c.benchmark_group("attention");
 
-    let batch_size = 8;
+    let batchsize = 8;
     let seq_lens = [16, 32, 64, 128]; // Various sequence lengths to benchmark
     let d_model = 64;
 
     for &seq_len in seq_lens.iter() {
         // Prepare tensors
-        let query = Array3::<f32>::ones((batch_size, seq_len, d_model));
-        let key = Array3::<f32>::ones((batch_size, seq_len, d_model));
-        let value = Array3::<f32>::ones((batch_size, seq_len, d_model));
+        let query = Array3::<f32>::ones((batchsize, seq_len, d_model));
+        let key = Array3::<f32>::ones((batchsize, seq_len, d_model));
+        let value = Array3::<f32>::ones((batchsize, seq_len, d_model));
 
         // Scaled dot-product attention
         group.bench_with_input(
             BenchmarkId::new("scaled_dot_product", seq_len),
             &seq_len,
-            |b, _| {
+            |b_| {
                 b.iter(|| {
                     let scale = 1.0 / f32::sqrt(d_model as f32);
                     black_box(
@@ -43,7 +44,7 @@ fn attention_benchmark(c: &mut Criterion) {
         );
 
         // Causal attention (for autoregressive models)
-        group.bench_with_input(BenchmarkId::new("causal", seq_len), &seq_len, |b, _| {
+        group.bench_with_input(BenchmarkId::new("causal", seq_len), &seq_len, |b_| {
             b.iter(|| {
                 let scale = 1.0 / f32::sqrt(d_model as f32);
                 black_box(
@@ -53,7 +54,7 @@ fn attention_benchmark(c: &mut Criterion) {
         });
 
         // Flash attention
-        group.bench_with_input(BenchmarkId::new("flash", seq_len), &seq_len, |b, _| {
+        group.bench_with_input(BenchmarkId::new("flash", seq_len), &seq_len, |b_| {
             b.iter(|| {
                 let scale = 1.0 / f32::sqrt(d_model as f32);
                 black_box(
@@ -71,7 +72,7 @@ fn attention_benchmark(c: &mut Criterion) {
         });
 
         // Linear attention
-        group.bench_with_input(BenchmarkId::new("linear", seq_len), &seq_len, |b, _| {
+        group.bench_with_input(BenchmarkId::new("linear", seq_len), &seq_len, |b_| {
             b.iter(|| {
                 let scale = 1.0 / f32::sqrt(d_model as f32);
                 black_box(
@@ -81,7 +82,7 @@ fn attention_benchmark(c: &mut Criterion) {
         });
 
         // Multi-head attention
-        group.bench_with_input(BenchmarkId::new("multi_head", seq_len), &seq_len, |b, _| {
+        group.bench_with_input(BenchmarkId::new("multi_head", seq_len), &seq_len, |b_| {
             // Linear projection weights
             let num_heads = 8;
             let head_dim = d_model / num_heads;

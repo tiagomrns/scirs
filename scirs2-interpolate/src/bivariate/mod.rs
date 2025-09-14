@@ -44,7 +44,9 @@ pub trait BivariateInterpolator<F: Float + FromPrimitive + Debug + std::fmt::Dis
 
 /// Base struct for bivariate splines
 #[derive(Debug, Clone)]
-pub struct BivariateSpline<F: Float + FromPrimitive + Debug + std::fmt::Display> {
+pub struct BivariateSpline<
+    F: Float + FromPrimitive + Debug + std::fmt::Display + crate::traits::InterpolationFloat,
+> {
     /// x knots
     tx: Array1<F>,
     /// y knots
@@ -59,7 +61,9 @@ pub struct BivariateSpline<F: Float + FromPrimitive + Debug + std::fmt::Display>
     fp: Option<F>,
 }
 
-impl<F: Float + FromPrimitive + Debug + std::fmt::Display> BivariateSpline<F> {
+impl<F: Float + FromPrimitive + Debug + std::fmt::Display + crate::traits::InterpolationFloat>
+    BivariateSpline<F>
+{
     /// Create a new bivariate spline from knots and coefficients
     pub fn from_tck(
         tx: Array1<F>,
@@ -106,7 +110,7 @@ impl<F: Float + FromPrimitive + Debug + std::fmt::Display> BivariateSpline<F> {
     ) -> InterpolateResult<()> {
         // Check lengths
         if x.len() != y.len() || x.len() != z.len() {
-            return Err(InterpolateError::ValueError(
+            return Err(InterpolateError::invalid_input(
                 "x, y, and z should have a same length".to_string(),
             ));
         }
@@ -114,12 +118,12 @@ impl<F: Float + FromPrimitive + Debug + std::fmt::Display> BivariateSpline<F> {
         // Check weights if provided
         if let Some(w) = w {
             if x.len() != w.len() {
-                return Err(InterpolateError::ValueError(
+                return Err(InterpolateError::invalid_input(
                     "x, y, z, and w should have a same length".to_string(),
                 ));
             }
             if !w.iter().all(|&w_i| w_i >= F::zero()) {
-                return Err(InterpolateError::ValueError(
+                return Err(InterpolateError::invalid_input(
                     "w should be positive".to_string(),
                 ));
             }
@@ -128,7 +132,7 @@ impl<F: Float + FromPrimitive + Debug + std::fmt::Display> BivariateSpline<F> {
         // Check epsilon
         if let Some(eps) = eps {
             if !(F::zero() < eps && eps < F::one()) {
-                return Err(InterpolateError::ValueError(
+                return Err(InterpolateError::invalid_input(
                     "eps should be between (0, 1)".to_string(),
                 ));
             }
@@ -136,7 +140,7 @@ impl<F: Float + FromPrimitive + Debug + std::fmt::Display> BivariateSpline<F> {
 
         // Check data size relative to degrees
         if x.len() < (kx + 1) * (ky + 1) {
-            return Err(InterpolateError::ValueError(
+            return Err(InterpolateError::invalid_input(
                 "The length of x, y and z should be at least (kx+1) * (ky+1)".to_string(),
             ));
         }
@@ -177,7 +181,7 @@ impl<F: Float + FromPrimitive + Debug + std::fmt::Display> BivariateSpline<F> {
         if x.len() >= 2 {
             for i in 0..x.len() - 1 {
                 if x[i + 1] <= x[i] {
-                    return Err(InterpolateError::ValueError(
+                    return Err(InterpolateError::invalid_input(
                         "x must be strictly increasing when `grid` is True".to_string(),
                     ));
                 }
@@ -186,7 +190,7 @@ impl<F: Float + FromPrimitive + Debug + std::fmt::Display> BivariateSpline<F> {
         if y.len() >= 2 {
             for i in 0..y.len() - 1 {
                 if y[i + 1] <= y[i] {
-                    return Err(InterpolateError::ValueError(
+                    return Err(InterpolateError::invalid_input(
                         "y must be strictly increasing when `grid` is True".to_string(),
                     ));
                 }
@@ -222,7 +226,7 @@ impl<F: Float + FromPrimitive + Debug + std::fmt::Display> BivariateSpline<F> {
 
         // Check that x and y have the same shape
         if x.shape() != y.shape() {
-            return Err(InterpolateError::ValueError(
+            return Err(InterpolateError::invalid_input(
                 "x and y must have the same shape in point evaluation mode".to_string(),
             ));
         }
@@ -252,7 +256,7 @@ impl<F: Float + FromPrimitive + Debug + std::fmt::Display> BivariateSpline<F> {
             || y < self.ty[self.ky]
             || y > self.ty[self.ty.len() - self.ky - 1]
         {
-            return Err(InterpolateError::DomainError(format!(
+            return Err(InterpolateError::OutOfBounds(format!(
                 "Point ({:?}, {:?}) is outside the domain of the spline",
                 x, y
             )));
@@ -297,7 +301,7 @@ impl<F: Float + FromPrimitive + Debug + std::fmt::Display> BivariateSpline<F> {
 
         // Check bounds
         if x < knots[0] || x > knots[n - 1] {
-            return Err(InterpolateError::DomainError(format!(
+            return Err(InterpolateError::OutOfBounds(format!(
                 "x={:?} is outside the knot range [{:?}, {:?}]",
                 x,
                 knots[0],
@@ -326,8 +330,8 @@ impl<F: Float + FromPrimitive + Debug + std::fmt::Display> BivariateSpline<F> {
     }
 }
 
-impl<F: Float + FromPrimitive + Debug + std::fmt::Display> BivariateInterpolator<F>
-    for BivariateSpline<F>
+impl<F: Float + FromPrimitive + Debug + std::fmt::Display + crate::traits::InterpolationFloat>
+    BivariateInterpolator<F> for BivariateSpline<F>
 {
     fn evaluate(
         &self,
@@ -357,14 +361,14 @@ impl<F: Float + FromPrimitive + Debug + std::fmt::Display> BivariateInterpolator
         let y_max = self.ty[self.ty.len() - self.ky - 1];
 
         if xa < x_min || xb > x_max || ya < y_min || yb > y_max {
-            return Err(InterpolateError::DomainError(format!(
+            return Err(InterpolateError::OutOfBounds(format!(
                 "Integration domain [{:?}, {:?}] x [{:?}, {:?}] is outside the spline domain [{:?}, {:?}] x [{:?}, {:?}]",
                 xa, xb, ya, yb, x_min, x_max, y_min, y_max
             )));
         }
 
         if xa > xb || ya > yb {
-            return Err(InterpolateError::ValueError(
+            return Err(InterpolateError::invalid_input(
                 "Integration bounds should satisfy xa <= xb and ya <= yb".to_string(),
             ));
         }
@@ -389,13 +393,18 @@ impl<F: Float + FromPrimitive + Debug + std::fmt::Display> BivariateInterpolator
 ///
 /// This class approximates a set of data points with a smooth bivariate spline.
 #[derive(Debug, Clone)]
-pub struct SmoothBivariateSpline<F: Float + FromPrimitive + Debug + std::fmt::Display> {
+pub struct SmoothBivariateSpline<
+    F: Float + FromPrimitive + Debug + std::fmt::Display + crate::traits::InterpolationFloat,
+> {
     /// The underlying bivariate spline
     spline: BivariateSpline<F>,
 }
 
 /// Builder for SmoothBivariateSpline
-pub struct SmoothBivariateSplineBuilder<'a, F: Float + FromPrimitive + Debug + std::fmt::Display> {
+pub struct SmoothBivariateSplineBuilder<
+    'a,
+    F: Float + FromPrimitive + Debug + std::fmt::Display + crate::traits::InterpolationFloat,
+> {
     x: &'a ArrayView1<'a, F>,
     y: &'a ArrayView1<'a, F>,
     z: &'a ArrayView1<'a, F>,
@@ -407,7 +416,11 @@ pub struct SmoothBivariateSplineBuilder<'a, F: Float + FromPrimitive + Debug + s
     eps: Option<F>,
 }
 
-impl<'a, F: Float + FromPrimitive + Debug + std::fmt::Display> SmoothBivariateSplineBuilder<'a, F> {
+impl<
+        'a,
+        F: Float + FromPrimitive + Debug + std::fmt::Display + crate::traits::InterpolationFloat,
+    > SmoothBivariateSplineBuilder<'a, F>
+{
     /// Create a new builder with required parameters
     pub fn new(
         x: &'a ArrayView1<'a, F>,
@@ -468,7 +481,7 @@ impl<'a, F: Float + FromPrimitive + Debug + std::fmt::Display> SmoothBivariateSp
         // Check smoothing factor
         if let Some(s) = self.s {
             if s < F::zero() {
-                return Err(InterpolateError::ValueError(
+                return Err(InterpolateError::invalid_input(
                     "s should be s >= 0.0".to_string(),
                 ));
             }
@@ -624,7 +637,9 @@ impl<'a, F: Float + FromPrimitive + Debug + std::fmt::Display> SmoothBivariateSp
     }
 }
 
-impl<F: Float + FromPrimitive + Debug + std::fmt::Display> SmoothBivariateSpline<F> {
+impl<F: Float + FromPrimitive + Debug + std::fmt::Display + crate::traits::InterpolationFloat>
+    SmoothBivariateSpline<F>
+{
     /// Create a new smooth bivariate spline with default parameters
     ///
     /// # Arguments
@@ -644,8 +659,8 @@ impl<F: Float + FromPrimitive + Debug + std::fmt::Display> SmoothBivariateSpline
     }
 }
 
-impl<F: Float + FromPrimitive + Debug + std::fmt::Display> BivariateInterpolator<F>
-    for SmoothBivariateSpline<F>
+impl<F: Float + FromPrimitive + Debug + std::fmt::Display + crate::traits::InterpolationFloat>
+    BivariateInterpolator<F> for SmoothBivariateSpline<F>
 {
     fn evaluate(
         &self,
@@ -676,13 +691,21 @@ impl<F: Float + FromPrimitive + Debug + std::fmt::Display> BivariateInterpolator
 ///
 /// Can be used for both smoothing and interpolating data.
 #[derive(Debug, Clone)]
-pub struct RectBivariateSpline<F: Float + FromPrimitive + Debug + std::fmt::Display> {
+pub struct RectBivariateSpline<
+    F: Float + FromPrimitive + Debug + std::fmt::Display + crate::traits::InterpolationFloat,
+> {
     /// The underlying bivariate spline
     spline: BivariateSpline<F>,
 }
 
-impl<F: Float + FromPrimitive + Debug + std::fmt::Display + std::ops::AddAssign>
-    RectBivariateSpline<F>
+impl<
+        F: Float
+            + FromPrimitive
+            + Debug
+            + std::fmt::Display
+            + std::ops::AddAssign
+            + crate::traits::InterpolationFloat,
+    > RectBivariateSpline<F>
 {
     /// Create a new bivariate spline over a rectangular mesh
     ///
@@ -705,23 +728,23 @@ impl<F: Float + FromPrimitive + Debug + std::fmt::Display + std::ops::AddAssign>
     ) -> InterpolateResult<Self> {
         // Check input
         if !x.iter().zip(x.iter().skip(1)).all(|(&a, &b)| b > a) {
-            return Err(InterpolateError::ValueError(
+            return Err(InterpolateError::invalid_input(
                 "x must be strictly increasing".to_string(),
             ));
         }
         if !y.iter().zip(y.iter().skip(1)).all(|(&a, &b)| b > a) {
-            return Err(InterpolateError::ValueError(
+            return Err(InterpolateError::invalid_input(
                 "y must be strictly increasing".to_string(),
             ));
         }
 
         if z.shape()[0] != x.len() {
-            return Err(InterpolateError::ValueError(
+            return Err(InterpolateError::invalid_input(
                 "x dimension of z must have same number of elements as x".to_string(),
             ));
         }
         if z.shape()[1] != y.len() {
-            return Err(InterpolateError::ValueError(
+            return Err(InterpolateError::invalid_input(
                 "y dimension of z must have same number of elements as y".to_string(),
             ));
         }
@@ -729,7 +752,7 @@ impl<F: Float + FromPrimitive + Debug + std::fmt::Display + std::ops::AddAssign>
         // Check smoothing factor
         if let Some(s) = s {
             if s < F::zero() {
-                return Err(InterpolateError::ValueError(
+                return Err(InterpolateError::invalid_input(
                     "s should be s >= 0.0".to_string(),
                 ));
             }
@@ -891,8 +914,8 @@ impl<F: Float + FromPrimitive + Debug + std::fmt::Display + std::ops::AddAssign>
     }
 }
 
-impl<F: Float + FromPrimitive + Debug + std::fmt::Display> BivariateInterpolator<F>
-    for RectBivariateSpline<F>
+impl<F: Float + FromPrimitive + Debug + std::fmt::Display + crate::traits::InterpolationFloat>
+    BivariateInterpolator<F> for RectBivariateSpline<F>
 {
     fn evaluate(
         &self,

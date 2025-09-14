@@ -53,7 +53,8 @@ where
     /// Number of block rows
     block_rows: usize,
     /// Number of block columns (needed for internal calculations)
-    _block_cols: usize,
+    #[allow(dead_code)]
+    block_cols: usize,
     /// Data array (blocks stored row by row)
     data: Vec<Vec<Vec<T>>>,
     /// Column indices for each block
@@ -131,7 +132,7 @@ where
         #[allow(clippy::manual_div_ceil)]
         let block_rows = (rows + r - 1) / r; // Ceiling division
         #[allow(clippy::manual_div_ceil)]
-        let _block_cols = (cols + c - 1) / c; // Ceiling division
+        let block_cols = (cols + c - 1) / c; // Ceiling division
 
         // Validate input
         if indptr.len() != block_rows + 1 {
@@ -179,11 +180,11 @@ where
                     "Each index vector must contain exactly one block column index".to_string(),
                 ));
             }
-            if idx_vec[0] >= _block_cols {
+            if idx_vec[0] >= block_cols {
                 return Err(SparseError::ValueError(format!(
                     "index {} out of bounds (max {})",
                     idx_vec[0],
-                    _block_cols - 1
+                    block_cols - 1
                 )));
             }
         }
@@ -193,7 +194,7 @@ where
             cols,
             block_size,
             block_rows,
-            _block_cols,
+            block_cols,
             data,
             indices,
             indptr,
@@ -224,7 +225,7 @@ where
         #[allow(clippy::manual_div_ceil)]
         let block_rows = (rows + r - 1) / r; // Ceiling division
         #[allow(clippy::manual_div_ceil)]
-        let _block_cols = (cols + c - 1) / c; // Ceiling division
+        let block_cols = (cols + c - 1) / c; // Ceiling division
 
         // Initialize empty BSR array
         let data = Vec::new();
@@ -236,7 +237,7 @@ where
             cols,
             block_size,
             block_rows,
-            _block_cols,
+            block_cols,
             data,
             indices,
             indptr,
@@ -282,7 +283,7 @@ where
         #[allow(clippy::manual_div_ceil)]
         let block_rows = (rows + r - 1) / r; // Ceiling division
         #[allow(clippy::manual_div_ceil)]
-        let _block_cols = (cols + c - 1) / c; // Ceiling division
+        let block_cols = (cols + c - 1) / c; // Ceiling division
 
         // First, we'll construct a temporary DOK-like representation for the blocks
         let mut block_data = std::collections::HashMap::new();
@@ -315,9 +316,9 @@ where
         }
 
         // Now convert the DOK-like format to BSR
-        let mut rows_with_blocks: Vec<usize> = block_data.keys().map(|&(row, _)| row).collect();
-        rows_with_blocks.sort();
-        rows_with_blocks.dedup();
+        let mut rowswith_blocks: Vec<usize> = block_data.keys().map(|&(row_, _)| row_).collect();
+        rowswith_blocks.sort();
+        rowswith_blocks.dedup();
 
         // Create indptr array
         let mut indptr = vec![0; block_rows + 1];
@@ -328,7 +329,7 @@ where
         let mut indices = Vec::new();
 
         for row_idx in 0..block_rows {
-            if rows_with_blocks.contains(&row_idx) {
+            if rowswith_blocks.contains(&row_idx) {
                 // Get all blocks for this row
                 let mut row_blocks: Vec<(usize, Vec<Vec<T>>)> = block_data
                     .iter()
@@ -337,7 +338,7 @@ where
                     .collect();
 
                 // Sort by column index
-                row_blocks.sort_by_key(|&(col, _)| col);
+                row_blocks.sort_by_key(|&(col_, _)| col_);
 
                 // Add to data and indices
                 for (col, block) in row_blocks {
@@ -752,7 +753,7 @@ where
             }
 
             // Sort by column index
-            row_blocks.sort_by_key(|&(col, _)| col);
+            row_blocks.sort_by_key(|&(col_, _)| col_);
 
             // Add sorted blocks to new data structures
             for (col, block) in row_blocks {
@@ -1015,14 +1016,14 @@ where
                     let block_col = self.indices[k][0];
                     let block = &self.data[k];
 
-                    writeln!(f, "Block at ({}, {}): ", block_row, block_col)?;
+                    writeln!(f, "Block at ({block_row}, {block_col}): ")?;
                     for row in block {
                         write!(f, "  [")?;
                         for (j, &val) in row.iter().enumerate() {
                             if j > 0 {
                                 write!(f, ", ")?;
                             }
-                            write!(f, "{:?}", val)?;
+                            write!(f, "{val:?}")?;
                         }
                         writeln!(f, "]")?;
                     }

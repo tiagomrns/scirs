@@ -8,6 +8,7 @@ use ndarray::Array1;
 use scirs2_optim::optimizers::{Adam, Optimizer, SparseAdam, SparseGradient};
 use std::time::Instant;
 
+#[allow(dead_code)]
 fn main() {
     println!("SparseAdam Optimizer Example");
     println!("===========================\n");
@@ -90,6 +91,7 @@ fn main() {
 /// - x_train: Training inputs with sparse features
 /// - y_train: Training targets
 /// - true_weights: The true weights used to generate the data
+#[allow(dead_code)]
 fn generate_sparse_data(
     n_samples: usize,
     n_features: usize,
@@ -98,7 +100,7 @@ fn generate_sparse_data(
     // Generate true weights (only a small fraction are non-zero)
     let mut true_weights = Array1::zeros(n_features);
     let active_indices: Vec<usize> = (0..n_features)
-        .step_by(n_features / n_active_features)  // Evenly spaced active features
+        .step_by(n_features / n_active_features)  // Evenly spaced active _features
         .take(n_active_features)
         .collect();
 
@@ -115,10 +117,10 @@ fn generate_sparse_data(
         let mut indices = Vec::with_capacity(n_active_features);
         let mut values = Vec::with_capacity(n_active_features);
 
-        // Choose random features (including some that are in the true model)
+        // Choose random _features (including some that are in the true model)
         let mut target_sum = 0.0;
 
-        // Always include some of the truly active features
+        // Always include some of the truly active _features
         let n_true_active = n_active_features / 2;
         for j in 0..n_true_active {
             let idx = active_indices[j % active_indices.len()];
@@ -128,7 +130,7 @@ fn generate_sparse_data(
             target_sum += value * true_weights[idx];
         }
 
-        // Add some random other features
+        // Add some random other _features
         for _ in n_true_active..n_active_features {
             let idx = (rand_value(0.0, 1.0) * n_features as f64) as usize % n_features;
             if !indices.contains(&idx) {
@@ -189,6 +191,7 @@ impl SparseInput {
 }
 
 /// Train model using standard Adam optimizer
+#[allow(dead_code)]
 fn train_with_adam(
     x_train: &[SparseInput],
     y_train: &Array1<f64>,
@@ -199,14 +202,14 @@ fn train_with_adam(
     let n_samples = x_train.len();
     let n_features = true_weights.len();
 
-    // Initialize weights to zero
-    let mut weights = Array1::zeros(n_features);
+    // Initialize _weights to zero
+    let mut _weights = Array1::zeros(n_features);
 
     for iter in 0..n_iterations {
         // Forward pass - compute predictions and loss
         let mut loss = 0.0;
         for (i, x) in x_train.iter().enumerate() {
-            let pred = x.dot(&weights);
+            let pred = x.dot(&_weights);
             let error = pred - y_train[i];
             loss += error * error;
         }
@@ -215,16 +218,16 @@ fn train_with_adam(
         // Compute gradients (accumulated over all samples)
         let mut gradients = Array1::zeros(n_features);
         for (i, x) in x_train.iter().enumerate() {
-            let pred = x.dot(&weights);
+            let pred = x.dot(&_weights);
             let error = 2.0 * (pred - y_train[i]) / n_samples as f64;
             x.accumulate_gradient(error, &mut gradients);
         }
 
-        // Update weights using Adam
-        weights = optimizer.step(&weights, &gradients).unwrap();
+        // Update _weights using Adam
+        _weights = optimizer.step(&_weights, &gradients).unwrap();
 
         // Calculate parameter error (L2 norm of difference)
-        let param_error = (&weights - true_weights).map(|x| x * x).sum().sqrt();
+        let param_error = (&_weights - true_weights).map(|x| x * x).sum().sqrt();
 
         // Print progress
         if iter == 0 || iter == n_iterations - 1 || (iter + 1) % 10 == 0 {
@@ -241,18 +244,19 @@ fn train_with_adam(
     // Final evaluation
     let mut final_loss = 0.0;
     for (i, x) in x_train.iter().enumerate() {
-        let pred = x.dot(&weights);
+        let pred = x.dot(&_weights);
         let error = pred - y_train[i];
         final_loss += error * error;
     }
     final_loss /= n_samples as f64;
 
-    let param_error = (&weights - true_weights).map(|x| x * x).sum().sqrt();
+    let param_error = (&_weights - true_weights).map(|x| x * x).sum().sqrt();
 
     (final_loss, param_error)
 }
 
 /// Train model using SparseAdam optimizer
+#[allow(dead_code)]
 fn train_with_sparse_adam(
     x_train: &[SparseInput],
     y_train: &Array1<f64>,
@@ -263,14 +267,14 @@ fn train_with_sparse_adam(
     let n_samples = x_train.len();
     let n_features = true_weights.len();
 
-    // Initialize weights to zero
-    let mut weights = Array1::zeros(n_features);
+    // Initialize _weights to zero
+    let mut _weights = Array1::zeros(n_features);
 
     for iter in 0..n_iterations {
         // Forward pass - compute predictions and loss
         let mut loss = 0.0;
         for (i, x) in x_train.iter().enumerate() {
-            let pred = x.dot(&weights);
+            let pred = x.dot(&_weights);
             let error = pred - y_train[i];
             loss += error * error;
         }
@@ -284,7 +288,7 @@ fn train_with_sparse_adam(
 
         // Gather gradients from all samples
         for (i, x) in x_train.iter().enumerate() {
-            let pred = x.dot(&weights);
+            let pred = x.dot(&_weights);
             let error = 2.0 * (pred - y_train[i]) / n_samples as f64;
 
             // Add each feature's gradient contribution
@@ -306,11 +310,11 @@ fn train_with_sparse_adam(
         // Create sparse gradient
         let sparse_grad = SparseGradient::new(all_indices, all_values, n_features);
 
-        // Update weights using SparseAdam
-        weights = optimizer.step_sparse(&weights, &sparse_grad).unwrap();
+        // Update _weights using SparseAdam
+        _weights = optimizer.step_sparse(&_weights, &sparse_grad).unwrap();
 
         // Calculate parameter error (L2 norm of difference)
-        let param_error = (&weights - true_weights).map(|x| x * x).sum().sqrt();
+        let param_error = (&_weights - true_weights).map(|x| x * x).sum().sqrt();
 
         // Print progress
         if iter == 0 || iter == n_iterations - 1 || (iter + 1) % 10 == 0 {
@@ -327,18 +331,19 @@ fn train_with_sparse_adam(
     // Final evaluation
     let mut final_loss = 0.0;
     for (i, x) in x_train.iter().enumerate() {
-        let pred = x.dot(&weights);
+        let pred = x.dot(&_weights);
         let error = pred - y_train[i];
         final_loss += error * error;
     }
     final_loss /= n_samples as f64;
 
-    let param_error = (&weights - true_weights).map(|x| x * x).sum().sqrt();
+    let param_error = (&_weights - true_weights).map(|x| x * x).sum().sqrt();
 
     (final_loss, param_error)
 }
 
 /// Generate a random value in the given range
+#[allow(dead_code)]
 fn rand_value(min: f64, max: f64) -> f64 {
     min + (max - min) * rand::random::<f64>()
 }

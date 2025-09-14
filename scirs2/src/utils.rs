@@ -29,6 +29,7 @@ use crate::error::{SciRS2Error, SciRS2Result, check_value};
 /// assert!((x[0] - 0.0).abs() < 1e-10);
 /// assert!((x[4] - 1.0).abs() < 1e-10);
 /// ```
+#[allow(dead_code)]
 pub fn linspace<T>(start: T, stop: T, num: usize, endpoint: bool) -> Array1<T>
 where
     T: Float + FromPrimitive + std::fmt::Debug,
@@ -80,6 +81,7 @@ where
 /// assert!((x[0] - 1.0).abs() < 1e-10);
 /// assert!((x[3] - 1000.0).abs() < 1e-10);
 /// ```
+#[allow(dead_code)]
 pub fn logspace<T>(start: T, stop: T, num: usize, endpoint: bool, base: T) -> SciRS2Result<Array1<T>>
 where
     T: Float + FromPrimitive + std::fmt::Debug,
@@ -115,6 +117,7 @@ where
 /// assert!((x[0] - 1.0).abs() < 1e-10);
 /// assert!((x[3] - 1000.0).abs() < 1e-10);
 /// ```
+#[allow(dead_code)]
 pub fn geomspace<T>(start: T, stop: T, num: usize, endpoint: bool, base: T) -> SciRS2Result<Array1<T>>
 where
     T: Float + FromPrimitive + std::fmt::Debug,
@@ -158,6 +161,7 @@ where
 /// assert!(!allclose(&a.view(), &c.view(), 1e-8, 1e-8));
 /// assert!(allclose(&a.view(), &c.view(), 1e-2, 1e-2));
 /// ```
+#[allow(dead_code)]
 pub fn allclose<A, D, T>(a: &A, b: &A, rtol: T, atol: T) -> bool
 where
     A: ndarray::NdIndex<D>,
@@ -203,6 +207,7 @@ where
 /// assert_eq!(yy[[0, 0]], 4.0);
 /// assert_eq!(yy[[1, 0]], 5.0);
 /// ```
+#[allow(dead_code)]
 pub fn meshgrid<T: Float + Copy>(x: &[T], y: &[T]) -> (ndarray::Array2<T>, ndarray::Array2<T>) {
     let nx = x.len();
     let ny = y.len();
@@ -232,6 +237,7 @@ pub fn meshgrid<T: Float + Copy>(x: &[T], y: &[T]) -> (ndarray::Array2<T>, ndarr
 /// # Returns
 ///
 /// * `true` if values are close, `false` otherwise
+#[allow(dead_code)]
 pub fn isclose<T: Float>(a: T, b: T, rtol: T, atol: T) -> bool {
     let diff = (a - b).abs();
     diff <= atol + rtol * b.abs()
@@ -246,6 +252,7 @@ pub fn isclose<T: Float>(a: T, b: T, rtol: T, atol: T) -> bool {
 /// # Returns
 ///
 /// * Array with shape (n, len(arrays)) where n is the product of the input array lengths
+#[allow(dead_code)]
 pub fn cartesian_product<T: Clone + Copy>(arrays: &[&[T]]) -> Vec<Vec<T>> {
     if arrays.is_empty() {
         return vec![vec![]];
@@ -280,6 +287,7 @@ pub fn cartesian_product<T: Clone + Copy>(arrays: &[&[T]]) -> Vec<Vec<T>> {
 /// # Returns
 ///
 /// * Array with evenly spaced values
+#[allow(dead_code)]
 pub fn arange<T: Float + FromPrimitive>(start: T, stop: T, step: T) -> Array1<T> {
     if start >= stop && step > T::zero() || start <= stop && step < T::zero() {
         return Array1::zeros(0);
@@ -305,6 +313,7 @@ pub fn arange<T: Float + FromPrimitive>(start: T, stop: T, step: T) -> Array1<T>
 /// # Returns
 ///
 /// * Matrix with diagonal filled with val
+#[allow(dead_code)]
 pub fn fill_diagonal<T: Clone>(mut a: Array2<T>, val: T) -> Array2<T> {
     let min_dim = a.nrows().min(a.ncols());
     
@@ -325,6 +334,7 @@ pub fn fill_diagonal<T: Clone>(mut a: Array2<T>, val: T) -> Array2<T> {
 /// # Returns
 ///
 /// * `true` if array is symmetric, `false` otherwise
+#[allow(dead_code)]
 pub fn is_symmetric<T: Float>(a: &ArrayView2<T>, tol: T) -> bool {
     if a.nrows() != a.ncols() {
         return false;

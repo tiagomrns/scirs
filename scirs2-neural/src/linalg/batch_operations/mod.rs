@@ -10,7 +10,6 @@ mod convolution;
 mod matmul;
 mod normalization;
 mod rnn;
-
 // Re-export all public functions from submodules
 pub use attention::*;
 pub use convolution::*;

@@ -15,6 +15,7 @@ use std::f64::consts::PI;
 /// and eigenvalues. The FrFT can be computed by decomposing the signal in terms of
 /// these eigenvectors, applying the fractional powers of the eigenvalues, and
 /// reconstructing.
+#[allow(dead_code)]
 pub fn frft_dft<T>(x: &[T], alpha: f64) -> FFTResult<Vec<Complex64>>
 where
     T: Copy + Into<f64>,
@@ -75,6 +76,7 @@ where
 }
 
 /// Compute DFT eigenvectors
+#[allow(dead_code)]
 fn compute_dft_eigenvectors(n: usize) -> Array2<Complex64> {
     let mut eigenvectors = Array2::zeros((n, n));
 
@@ -108,6 +110,7 @@ fn compute_dft_eigenvectors(n: usize) -> Array2<Complex64> {
 }
 
 /// Compute DFT eigenvalues
+#[allow(dead_code)]
 fn compute_dft_eigenvalues(n: usize) -> Vec<Complex64> {
     let mut eigenvalues = vec![Complex64::new(0.0, 0.0); n];
 
@@ -128,6 +131,7 @@ fn compute_dft_eigenvalues(n: usize) -> Vec<Complex64> {
 }
 
 /// Hermite function approximation
+#[allow(dead_code)]
 fn hermite_function(n: usize, x: f64) -> Complex64 {
     // Simplified Hermite-Gauss function
     let hermite = match n {
@@ -192,9 +196,7 @@ mod tests {
             let ratio = output_energy / input_energy;
             assert!(
                 ratio > 0.1 && ratio < 10.0,
-                "Energy ratio {} for alpha {} is outside acceptable range",
-                ratio,
-                alpha
+                "Energy ratio {ratio} for alpha {alpha} is outside acceptable range"
             );
         }
 
@@ -207,9 +209,7 @@ mod tests {
             let ratio = output_energy / input_energy;
             assert!(
                 ratio > 0.01 && ratio < 100.0,
-                "Energy ratio {} for alpha {} is completely unreasonable",
-                ratio,
-                alpha
+                "Energy ratio {ratio} for alpha {alpha} is completely unreasonable"
             );
         }
     }

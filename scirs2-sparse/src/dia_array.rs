@@ -560,9 +560,9 @@ where
                     .cloned()
                     .zip(self.data.drain(..))
                     .collect();
-                offset_data.sort_by_key(|&(offset, _)| offset);
+                offset_data.sort_by_key(|&(offset_, _)| offset_);
 
-                self.offsets = offset_data.iter().map(|&(offset, _)| offset).collect();
+                self.offsets = offset_data.iter().map(|&(offset_, _)| offset_).collect();
                 self.data = offset_data.into_iter().map(|(_, data)| data).collect();
 
                 // Get the index of the newly added diagonal
@@ -617,9 +617,9 @@ where
             .cloned()
             .zip(self.data.drain(..))
             .collect();
-        offset_data.sort_by_key(|&(offset, _)| offset);
+        offset_data.sort_by_key(|&(offset_, _)| offset_);
 
-        self.offsets = offset_data.iter().map(|&(offset, _)| offset).collect();
+        self.offsets = offset_data.iter().map(|&(offset_, _)| offset_).collect();
         self.data = offset_data.into_iter().map(|(_, data)| data).collect();
     }
 
@@ -922,7 +922,7 @@ where
                         .min(self.shape.0.saturating_sub((-offset) as usize))
                 };
 
-                write!(f, "Diagonal {}: [", offset)?;
+                write!(f, "Diagonal {offset}: [")?;
                 for j in 0..length.min(10) {
                     if j > 0 {
                         write!(f, ", ")?;

@@ -1,17 +1,20 @@
 [package]
 name = "scirs2-io"
 version.workspace = true
-edition = "2021"
-authors = ["SciRS2 Team"]
-license = "MIT OR Apache-2.0"
-description = "Input/Output utilities module for SciRS2"
-repository = "https://github.com/cool-japan/scirs"
+edition.workspace = true
+authors.workspace = true
+description = "Input/Output utilities module for SciRS2 (scirs2-io)"
+license.workspace = true
+repository.workspace = true
 keywords = ["io", "serialization", "data", "scientific", "scipy"]
 categories = ["science", "encoding"]
 
+[lints]
+workspace = true
+
 [dependencies]
 ndarray = { workspace = true }
-scirs2-core = { workspace = true, features = ["parallel"] }
+scirs2-core = { workspace = true, features = ["parallel", "simd", "gpu"] }
 byteorder = { workspace = true }
 image = { workspace = true }
 serde = { workspace = true }
@@ -43,9 +46,35 @@ tokio = { workspace = true, optional = true, features = ["fs", "io-util", "time"
 futures = { workspace = true, optional = true }
 futures-util = { workspace = true, optional = true }
 log = { workspace = true, optional = true }
+async-trait = { workspace = true, optional = true }
 memmap2 = { workspace = true }
 bytemuck = { workspace = true }
 reqwest = { workspace = true, optional = true }
+num_cpus = { workspace = true }
+statrs = { workspace = true }
+indexmap = { workspace = true, features = ["serde"] }
+serde_yaml = { workspace = true }
+toml = { workspace = true }
+num-traits = { workspace = true }
+uuid = { workspace = true, features = ["v4", "serde"] }
+urlencoding = { workspace = true }
+crossbeam-channel = { workspace = true }
+cron = { workspace = true }
+snap = { workspace = true }
+brotli = { workspace = true }
+# Database drivers
+rusqlite = { workspace = true, optional = true }
+sqlx = { workspace = true, optional = true, features = ["runtime-tokio-rustls", "postgres", "mysql", "sqlite"] }
+duckdb = { workspace = true, optional = true }
+mongodb = { workspace = true, optional = true }
+redis = { workspace = true, optional = true }
+# Real-time streaming
+tokio-tungstenite = { workspace = true, optional = true }
+rumqttc = { workspace = true, optional = true }
+eventsource-client = { workspace = true, optional = true }
+tonic = { workspace = true, optional = true }
+prost = { workspace = true, optional = true }
+url = { workspace = true }
 
 [dev-dependencies]
 tokio-test = { workspace = true }
@@ -56,12 +85,30 @@ csv = []
 compression = []
 validation = []
 hdf5 = ["dep:hdf5"]
-async = ["dep:tokio", "dep:futures", "dep:futures-util"]
+async = ["dep:tokio", "dep:futures", "dep:futures-util", "dep:async-trait"]
 reqwest = ["dep:reqwest", "dep:log"]
 aws-sdk-s3 = []
 google-cloud-storage = []
 azure-storage-blobs = []
-all = ["csv", "compression", "validation", "hdf5", "async", "reqwest", "aws-sdk-s3", "google-cloud-storage", "azure-storage-blobs"]
+gpu = []
+exif = []
+# Database features
+sqlite = ["dep:rusqlite"]
+postgres = ["dep:sqlx", "async"]
+mysql = ["dep:sqlx", "async"]
+duckdb = ["dep:duckdb"]
+mongodb = ["dep:mongodb", "async"]
+redis = ["dep:redis"]
+database = ["sqlite", "postgres", "mysql"]
+database-full = ["database", "duckdb"]  # Includes DuckDB (requires compatible Arrow/chrono versions)
+# Real-time streaming features
+websocket = ["dep:tokio-tungstenite", "async"]
+mqtt = ["dep:rumqttc", "async"]
+sse = ["dep:eventsource-client", "async", "reqwest"]
+grpc = ["dep:tonic", "dep:prost", "async"]
+realtime = ["websocket", "mqtt", "sse", "grpc"]
+all = ["csv", "compression", "validation", "hdf5", "async", "reqwest", "aws-sdk-s3", "google-cloud-storage", "azure-storage-blobs", "gpu", "exif", "database", "mongodb", "redis", "realtime"]
+all-experimental = ["all", "duckdb"]  # Includes experimental features (may have dependency conflicts)
 
 [[example]]
 name = "hdf5_example"

@@ -63,6 +63,8 @@ pub struct Space {
     parameters: Vec<(String, Parameter)>,
     /// Dimensionality after transformation
     transformed_n_dims: usize,
+    /// Bounds for parameters
+    bounds: Vec<(f64, f64)>,
 }
 
 impl Space {
@@ -71,6 +73,7 @@ impl Space {
         Self {
             parameters: Vec::new(),
             transformed_n_dims: 0,
+            bounds: Vec::new(),
         }
     }
 
@@ -84,6 +87,14 @@ impl Space {
             Parameter::Integer(_, _) => 1,
             Parameter::Categorical(values) => values.len(),
         };
+
+        // Add bounds for this parameter
+        let bounds = match &parameter {
+            Parameter::Real(lower, upper) => (*lower, *upper),
+            Parameter::Integer(lower, upper) => (*lower as f64, *upper as f64),
+            Parameter::Categorical(_) => (0.0, 1.0),
+        };
+        self.bounds.push(bounds);
 
         self.parameters.push((name, parameter));
         self
@@ -110,15 +121,15 @@ impl Space {
             for (i, (_, param)) in self.parameters.iter().enumerate() {
                 match param {
                     Parameter::Real(lower, upper) => {
-                        // Use random_range directly instead of Uniform distribution
-                        sample[i] = rng.random_range(*lower..*upper);
+                        // Use gen_range directly instead of Uniform distribution
+                        sample[i] = rng.gen_range(*lower..*upper);
                     }
                     Parameter::Integer(lower, upper) => {
-                        let range = rng.random_range(*lower..=*upper);
+                        let range = rng.gen_range(*lower..=*upper);
                         sample[i] = range as f64;
                     }
                     Parameter::Categorical(values) => {
-                        let index = rng.random_range(0..values.len());
+                        let index = rng.gen_range(0..values.len());
                         sample[i] = index as f64;
                     }
                 }
@@ -223,7 +234,7 @@ pub trait AcquisitionFunction: Send + Sync {
     fn evaluate(&self, x: &ArrayView1<f64>) -> f64;
 
     /// Compute gradient of acquisition function (if available)
-    fn gradient(&self, _x: &ArrayView1<f64>) -> Option<Array1<f64>> {
+    fn gradient(&self, x: &ArrayView1<f64>) -> Option<Array1<f64>> {
         None
     }
 }
@@ -265,7 +276,7 @@ impl AcquisitionFunction for ExpectedImprovement {
         }
     }
 
-    fn gradient(&self, _x: &ArrayView1<f64>) -> Option<Array1<f64>> {
+    fn gradient(&self, x: &ArrayView1<f64>) -> Option<Array1<f64>> {
         // For now, use numerical approximation
         None
     }
@@ -292,7 +303,7 @@ impl AcquisitionFunction for LowerConfidenceBound {
         mean - self.kappa * std
     }
 
-    fn gradient(&self, _x: &ArrayView1<f64>) -> Option<Array1<f64>> {
+    fn gradient(&self, x: &ArrayView1<f64>) -> Option<Array1<f64>> {
         // For now, use numerical approximation
         None
     }
@@ -326,7 +337,7 @@ impl AcquisitionFunction for ProbabilityOfImprovement {
         0.5 * (1.0 + approx_erf(z * std::f64::consts::SQRT_2 / 2.0))
     }
 
-    fn gradient(&self, _x: &ArrayView1<f64>) -> Option<Array1<f64>> {
+    fn gradient(&self, x: &ArrayView1<f64>) -> Option<Array1<f64>> {
         // For now, use numerical approximation
         None
     }
@@ -334,6 +345,7 @@ impl AcquisitionFunction for ProbabilityOfImprovement {
 
 // Approximation of the error function (erf)
 // Abramowitz and Stegun formula 7.1.26
+#[allow(dead_code)]
 fn approx_erf(x: f64) -> f64 {
     // Constants
     let a1 = 0.254829592;
@@ -483,13 +495,15 @@ pub struct BayesianOptimizer {
     best_observation: Option<Observation>,
     /// Random number generator
     rng: StdRng,
+    /// Current iteration number
+    iteration: usize,
 }
 
 impl BayesianOptimizer {
     /// Create a new Bayesian optimizer
     pub fn new(space: Space, options: Option<BayesianOptimizationOptions>) -> Self {
         let options = options.unwrap_or_default();
-        let seed = options.seed.unwrap_or_else(rand::random);
+        let seed = options.seed.unwrap_or_else(|| rand::rng().random());
         let rng = StdRng::seed_from_u64(seed);
 
         Self {
@@ -498,6 +512,7 @@ impl BayesianOptimizer {
             observations: Vec::new(),
             best_observation: None,
             rng,
+            iteration: 0,
         }
     }
 
@@ -511,26 +526,93 @@ impl BayesianOptimizer {
                     self.space.sample(1, &mut self.rng)
                 }
                 InitialPointGenerator::LatinHypercube => {
-                    // For now, fall back to random
-                    // TODO: Implement LHS
-                    self.space.sample(1, &mut self.rng)
+                    // Implement Latin Hypercube Sampling
+                    let dim = self.space.bounds.len();
+                    let n_samples = 1;
+
+                    // Create intervals for each dimension
+                    let mut sample = Array1::zeros(dim);
+
+                    for (i, (low, high)) in self.space.bounds.iter().enumerate() {
+                        // For single sample, pick random position in interval
+                        let interval_size = (high - low) / n_samples as f64;
+                        let offset = self.rng.gen_range(0.0..1.0) * interval_size;
+                        sample[i] = low + offset;
+                    }
+
+                    vec![sample]
                 }
                 InitialPointGenerator::Sobol => {
-                    // For now, fall back to random
-                    // TODO: Implement Sobol
-                    self.space.sample(1, &mut self.rng)
+                    // Implement basic Sobol sequence
+                    let dim = self.space.bounds.len();
+                    let mut sample = Array1::zeros(dim);
+
+                    // Use iteration count as seed for Sobol sequence
+                    let seed = self.iteration as u32 + 1;
+
+                    for (i, (low, high)) in self.space.bounds.iter().enumerate() {
+                        // Simple digital scrambling based on Van der Corput sequence
+                        let mut n = seed;
+                        let mut denom = 1.0;
+                        let mut result = 0.0;
+                        let base = 2u32;
+
+                        while n > 0 {
+                            denom *= base as f64;
+                            result += (n % base) as f64 / denom;
+                            n /= base;
+                        }
+
+                        // Scale to bounds with dimension-specific offset
+                        let offset = ((i + 1) as f64 * 0.5).fract();
+                        let value = (result + offset).fract();
+                        sample[i] = low + value * (high - low);
+                    }
+
+                    vec![sample]
                 }
                 InitialPointGenerator::Halton => {
-                    // For now, fall back to random
-                    // TODO: Implement Halton
-                    self.space.sample(1, &mut self.rng)
+                    // Implement Halton sequence
+                    let dim = self.space.bounds.len();
+                    let mut sample = Array1::zeros(dim);
+
+                    // First few prime numbers for Halton bases
+                    let primes = [2u32, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37, 41, 43, 47];
+                    let seed = self.iteration as u32 + 1;
+
+                    for (i, (low, high)) in self.space.bounds.iter().enumerate() {
+                        // Use different prime base for each dimension
+                        let base = if i < primes.len() {
+                            primes[i]
+                        } else {
+                            primes[i % primes.len()]
+                        };
+
+                        // Compute Halton value using radical inverse
+                        let mut n = seed;
+                        let mut denom = 1.0;
+                        let mut result = 0.0;
+
+                        while n > 0 {
+                            denom *= base as f64;
+                            result += (n % base) as f64 / denom;
+                            n /= base;
+                        }
+
+                        // Scale to bounds
+                        sample[i] = low + result * (high - low);
+                    }
+
+                    vec![sample]
                 }
             };
 
+            self.iteration += 1;
             return samples[0].clone();
         }
 
         // Otherwise, optimize the acquisition function
+        self.iteration += 1;
         self.optimize_acquisition_function()
     }
 
@@ -690,7 +772,6 @@ impl BayesianOptimizer {
             nfev: self.observations.len(),
             func_evals: self.observations.len(),
             nit: iterations,
-            iterations,
             success: true,
             message: "Optimization terminated successfully".to_string(),
             ..Default::default()
@@ -699,6 +780,7 @@ impl BayesianOptimizer {
 }
 
 /// Perform Bayesian optimization on a function
+#[allow(dead_code)]
 pub fn bayesian_optimization<F>(
     func: F,
     bounds: Vec<(f64, f64)>,

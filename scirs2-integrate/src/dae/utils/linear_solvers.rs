@@ -16,6 +16,7 @@ use ndarray::{Array1, Array2, ArrayView1, ArrayView2};
 ///
 /// # Returns
 /// * `Result<Array1<F>, IntegrateError>` - The solution vector x
+#[allow(dead_code)]
 pub fn solve_linear_system<F>(a: &ArrayView2<F>, b: &ArrayView1<F>) -> IntegrateResult<Array1<F>>
 where
     F: IntegrateFloat,
@@ -119,6 +120,7 @@ where
 ///
 /// # Returns
 /// * `Result<Array1<F>, IntegrateError>` - The solution vector x
+#[allow(dead_code)]
 pub fn solve_lu<F>(a: &ArrayView2<F>, b: &ArrayView1<F>) -> IntegrateResult<Array1<F>>
 where
     F: IntegrateFloat,
@@ -256,6 +258,7 @@ where
 ///
 /// # Returns
 /// * The L2 norm of the vector
+#[allow(dead_code)]
 pub fn vector_norm<F>(v: &ArrayView1<F>) -> F
 where
     F: IntegrateFloat,
@@ -274,6 +277,7 @@ where
 ///
 /// # Returns
 /// * The Frobenius norm of the matrix
+#[allow(dead_code)]
 pub fn matrix_norm<F>(m: &ArrayView2<F>) -> F
 where
     F: IntegrateFloat,

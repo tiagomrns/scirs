@@ -114,7 +114,7 @@ impl MatrixMarketHeader {
         let parts: Vec<&str> = line.split_whitespace().collect();
         if parts.len() != 3 {
             return Err(GraphError::Other(
-                "Invalid Matrix Market size line - expected 3 numbers".to_string(),
+                "Invalid Matrix Market size _line - expected 3 numbers".to_string(),
             ));
         }
 
@@ -198,6 +198,7 @@ impl MatrixMarketHeader {
 /// The Matrix Market format supports both pattern (unweighted) and valued (weighted) matrices.
 /// For pattern matrices, edges have default weights.
 /// For valued matrices, the third column contains edge weights.
+#[allow(dead_code)]
 pub fn read_matrix_market_format<N, E, P>(path: P, weighted: bool) -> Result<Graph<N, E>>
 where
     N: Node + std::fmt::Debug + FromStr + Clone,
@@ -213,7 +214,7 @@ where
     let header_line = lines
         .next()
         .ok_or_else(|| GraphError::Other("Empty file".to_string()))?
-        .map_err(|e| GraphError::Other(format!("Error reading header line: {}", e)))?;
+        .map_err(|e| GraphError::Other(format!("Error reading header line: {e}")))?;
 
     let (object, format, field, symmetry) = MatrixMarketHeader::parse_header_line(&header_line)?;
 
@@ -266,8 +267,7 @@ where
         // Parse row and column (1-indexed in Matrix Market format)
         if parts.len() < 2 {
             return Err(GraphError::Other(format!(
-                "Invalid data line - expected at least 2 columns: {}",
-                line
+                "Invalid data line - expected at least 2 columns: {line}"
             )));
         }
 
@@ -316,8 +316,7 @@ where
     // Verify we read the expected number of entries
     if entries_read != nnz {
         return Err(GraphError::Other(format!(
-            "Expected {} entries, but read {}",
-            nnz, entries_read
+            "Expected {nnz} entries, but read {entries_read}"
         )));
     }
 
@@ -335,6 +334,7 @@ where
 ///
 /// * `Ok(DiGraph)` - The directed graph read from the file
 /// * `Err(GraphError)` - If there was an error reading or parsing the file
+#[allow(dead_code)]
 pub fn read_matrix_market_format_digraph<N, E, P>(path: P, weighted: bool) -> Result<DiGraph<N, E>>
 where
     N: Node + std::fmt::Debug + FromStr + Clone,
@@ -350,7 +350,7 @@ where
     let header_line = lines
         .next()
         .ok_or_else(|| GraphError::Other("Empty file".to_string()))?
-        .map_err(|e| GraphError::Other(format!("Error reading header line: {}", e)))?;
+        .map_err(|e| GraphError::Other(format!("Error reading header line: {e}")))?;
 
     let (object, format, field, symmetry) = MatrixMarketHeader::parse_header_line(&header_line)?;
 
@@ -403,8 +403,7 @@ where
         // Parse row and column (1-indexed in Matrix Market format)
         if parts.len() < 2 {
             return Err(GraphError::Other(format!(
-                "Invalid data line - expected at least 2 columns: {}",
-                line
+                "Invalid data line - expected at least 2 columns: {line}"
             )));
         }
 
@@ -446,8 +445,7 @@ where
     // Verify we read the expected number of entries
     if entries_read != nnz {
         return Err(GraphError::Other(format!(
-            "Expected {} entries, but read {}",
-            nnz, entries_read
+            "Expected {nnz} entries, but read {entries_read}"
         )));
     }
 
@@ -466,6 +464,7 @@ where
 ///
 /// * `Ok(())` - If the graph was written successfully
 /// * `Err(GraphError)` - If there was an error writing the file
+#[allow(dead_code)]
 pub fn write_matrix_market_format<N, E, Ix, P>(
     graph: &Graph<N, E, Ix>,
     path: P,
@@ -488,8 +487,7 @@ where
     let field_type = if weighted { "real" } else { "pattern" };
     writeln!(
         file,
-        "%%MatrixMarket matrix coordinate {} general",
-        field_type
+        "%%MatrixMarket matrix coordinate {field_type} general"
     )?;
 
     // Write comment
@@ -502,7 +500,7 @@ where
     let edge_count = edges.len();
 
     // Write size line
-    writeln!(file, "{} {} {}", node_count, node_count, edge_count)?;
+    writeln!(file, "{node_count} {node_count} {edge_count}")?;
 
     // Create node index mapping
     let mut node_to_index = std::collections::HashMap::new();
@@ -522,7 +520,7 @@ where
         if weighted {
             writeln!(file, "{} {} {}", source_idx, target_idx, edge.weight)?;
         } else {
-            writeln!(file, "{} {}", source_idx, target_idx)?;
+            writeln!(file, "{source_idx} {target_idx}")?;
         }
     }
 
@@ -541,6 +539,7 @@ where
 ///
 /// * `Ok(())` - If the graph was written successfully
 /// * `Err(GraphError)` - If there was an error writing the file
+#[allow(dead_code)]
 pub fn write_matrix_market_format_digraph<N, E, Ix, P>(
     graph: &DiGraph<N, E, Ix>,
     path: P,
@@ -563,8 +562,7 @@ where
     let field_type = if weighted { "real" } else { "pattern" };
     writeln!(
         file,
-        "%%MatrixMarket matrix coordinate {} general",
-        field_type
+        "%%MatrixMarket matrix coordinate {field_type} general"
     )?;
 
     // Write comment
@@ -577,7 +575,7 @@ where
     let edge_count = edges.len();
 
     // Write size line
-    writeln!(file, "{} {} {}", node_count, node_count, edge_count)?;
+    writeln!(file, "{node_count} {node_count} {edge_count}")?;
 
     // Create node index mapping
     let mut node_to_index = std::collections::HashMap::new();
@@ -597,7 +595,7 @@ where
         if weighted {
             writeln!(file, "{} {} {}", source_idx, target_idx, edge.weight)?;
         } else {
-            writeln!(file, "{} {}", source_idx, target_idx)?;
+            writeln!(file, "{source_idx} {target_idx}")?;
         }
     }
 

@@ -11,6 +11,7 @@ use scirs2_metrics::integration::optim::{
 };
 
 #[test]
+#[allow(dead_code)]
 fn test_metric_optimizer_basic_functionality() {
     // Test the basic metric optimizer functionality
     let mut optimizer = MetricOptimizer::<f64>::new("accuracy", true);
@@ -35,6 +36,7 @@ fn test_metric_optimizer_basic_functionality() {
 }
 
 #[test]
+#[allow(dead_code)]
 fn test_optimization_modes() {
     // Test maximize mode
     let mut maximizer = MetricOptimizer::<f64>::new("accuracy", true);
@@ -52,6 +54,7 @@ fn test_optimization_modes() {
 }
 
 #[test]
+#[allow(dead_code)]
 fn test_additional_metrics_tracking() {
     let mut optimizer = MetricOptimizer::<f64>::new("f1_score", true);
 
@@ -76,6 +79,7 @@ fn test_additional_metrics_tracking() {
 }
 
 #[test]
+#[allow(dead_code)]
 fn test_scheduler_config_creation() {
     let optimizer = MetricOptimizer::<f64>::new("accuracy", true);
 
@@ -98,6 +102,7 @@ fn test_scheduler_config_creation() {
 }
 
 #[test]
+#[allow(dead_code)]
 fn test_scheduler_config_manual_creation() {
     let config = SchedulerConfig::new(
         0.001,
@@ -117,6 +122,7 @@ fn test_scheduler_config_manual_creation() {
 }
 
 #[test]
+#[allow(dead_code)]
 fn test_real_world_workflow() {
     // Simulate a real training workflow with metrics
     let y_true = array![1, 0, 1, 1, 0, 1, 0, 0, 1, 1];
@@ -174,6 +180,7 @@ fn test_real_world_workflow() {
 }
 
 #[test]
+#[allow(dead_code)]
 fn test_integration_with_different_numeric_types() {
     // Test with f32
     let mut optimizer_f32 = MetricOptimizer::<f32>::new("mse", false);
@@ -189,6 +196,7 @@ fn test_integration_with_different_numeric_types() {
 }
 
 #[test]
+#[allow(dead_code)]
 fn test_reset_functionality() {
     let mut optimizer = MetricOptimizer::<f64>::new("f1", true);
 
@@ -210,6 +218,7 @@ fn test_reset_functionality() {
 }
 
 #[test]
+#[allow(dead_code)]
 fn test_display_optimization_mode() {
     assert_eq!(format!("{}", OptimizationMode::Minimize), "minimize");
     assert_eq!(format!("{}", OptimizationMode::Maximize), "maximize");
@@ -231,7 +240,7 @@ impl<F: Clone> MockScheduler<F> {
 }
 
 impl MetricSchedulerTrait<f64> for MockScheduler<f64> {
-    fn step_with_metric(&mut self, _metric: f64) -> f64 {
+    fn step_with_metric(&mut self, metric: f64) -> f64 {
         // Simple mock: reduce LR by 10% on each step
         self.learning_rate *= 0.9;
         self.learning_rate
@@ -251,6 +260,7 @@ impl MetricSchedulerTrait<f64> for MockScheduler<f64> {
 }
 
 #[test]
+#[allow(dead_code)]
 fn test_external_scheduler_trait() {
     let mut scheduler = MockScheduler::new(0.01);
 

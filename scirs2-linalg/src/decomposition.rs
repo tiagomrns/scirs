@@ -1,6 +1,6 @@
 //! Matrix decomposition functions
 
-use ndarray::{Array1, Array2, ArrayView2};
+use ndarray::{Array1, Array2, ArrayView2, ScalarOperand};
 use num_traits::{Float, NumAssign, One};
 use std::iter::Sum;
 
@@ -34,47 +34,62 @@ type CODResult<F> = LinalgResult<(Array2<F>, Array2<F>, Array2<F>)>;
 /// # Examples
 ///
 /// ```
-/// use ndarray::array;
+/// use ndarray::{array, ScalarOperand};
 /// use scirs2_linalg::cholesky;
 ///
 /// let a = array![[4.0, 2.0], [2.0, 5.0]];
 /// let l = cholesky(&a.view(), None).unwrap();
 /// // l should be [[2.0, 0.0], [1.0, 2.0]]
 /// ```
+#[allow(dead_code)]
 pub fn cholesky<F>(a: &ArrayView2<F>, workers: Option<usize>) -> LinalgResult<Array2<F>>
 where
-    F: Float + NumAssign + Sum,
+    F: Float + NumAssign + Sum + Send + Sync + ScalarOperand + 'static,
 {
     // Parameter validation using helper function
     validate_decomposition(a, "Cholesky decomposition", true)?;
 
-    // Configure OpenMP thread count if workers specified
-    // Note: This affects BLAS/LAPACK operations that use OpenMP
-    if let Some(num_workers) = workers {
-        std::env::set_var("OMP_NUM_THREADS", num_workers.to_string());
-    }
+    // Choose parallel implementation based on matrix size and worker count
+    let use_work_stealing = if let Some(num_workers) = workers {
+        // For larger matrices and multiple workers, consider work-stealing
+        num_workers > 1 && a.nrows() > 100
+    } else {
+        false
+    };
 
-    // Use the LAPACK implementation with enhanced error handling
-    match lapack_cholesky(a) {
-        Ok(result) => Ok(result),
-        Err(e) => {
-            // Enhanced error handling for common Cholesky failures
-            match e {
-                LinalgError::NonPositiveDefiniteError(_) => {
-                    Err(LinalgError::non_positive_definite_with_suggestions(
-                        "Cholesky decomposition",
-                        a.dim(),
-                        None,
-                    ))
+    if use_work_stealing {
+        // Use work-stealing scheduler for large matrices
+        use crate::parallel::parallel_cholesky_work_stealing;
+        parallel_cholesky_work_stealing(a, workers.unwrap())
+    } else {
+        // Configure OpenMP thread count if workers specified
+        // Note: This affects BLAS/LAPACK operations that use OpenMP
+        if let Some(num_workers) = workers {
+            std::env::set_var("OMP_NUM_THREADS", num_workers.to_string());
+        }
+
+        // Use the LAPACK implementation with enhanced error handling
+        match lapack_cholesky(a) {
+            Ok(result) => Ok(result),
+            Err(e) => {
+                // Enhanced error handling for common Cholesky failures
+                match e {
+                    LinalgError::NonPositiveDefiniteError(_) => {
+                        Err(LinalgError::non_positive_definite_with_suggestions(
+                            "Cholesky decomposition",
+                            a.dim(),
+                            None,
+                        ))
+                    }
+                    LinalgError::SingularMatrixError(_) => {
+                        Err(LinalgError::singularmatrix_with_suggestions(
+                            "Cholesky decomposition",
+                            a.dim(),
+                            None,
+                        ))
+                    }
+                    _ => Err(e),
                 }
-                LinalgError::SingularMatrixError(_) => {
-                    Err(LinalgError::singular_matrix_with_suggestions(
-                        "Cholesky decomposition",
-                        a.dim(),
-                        None,
-                    ))
-                }
-                _ => Err(e),
             }
         }
     }
@@ -97,7 +112,7 @@ where
 /// # Examples
 ///
 /// ```
-/// use ndarray::array;
+/// use ndarray::{array, ScalarOperand};
 /// use scirs2_linalg::lu;
 ///
 /// // Non-singular matrix example
@@ -105,12 +120,13 @@ where
 /// let (p, l, u) = lu(&a.view(), None).unwrap();
 /// // Result should be a valid LU decomposition where P*L*U = A
 /// ```
+#[allow(dead_code)]
 pub fn lu<F>(
     a: &ArrayView2<F>,
     workers: Option<usize>,
 ) -> LinalgResult<(Array2<F>, Array2<F>, Array2<F>)>
 where
-    F: Float + NumAssign + One + Sum,
+    F: Float + NumAssign + One + Sum + Send + Sync + ScalarOperand + 'static,
 {
     // Parameter validation
     if a.is_empty() {
@@ -128,6 +144,29 @@ where
         }
     }
 
+    // Choose parallel implementation based on matrix size and worker count
+    let use_work_stealing = if let Some(num_workers) = workers {
+        // For larger matrices and multiple workers, consider work-stealing
+        num_workers > 1 && a.nrows() > 100
+    } else {
+        false
+    };
+
+    if use_work_stealing && workers.is_some() {
+        // Use work-stealing scheduler for large matrices
+        use crate::parallel::parallel_lu_work_stealing;
+        let (l, u, piv) = parallel_lu_work_stealing(a, workers.unwrap())?;
+
+        // Convert Array1<usize> permutation to Array2<F> permutation matrix
+        let n = a.nrows();
+        let mut p = Array2::<F>::zeros((n, n));
+        for (i, &piv_index) in piv.iter().enumerate() {
+            p[[i, piv_index]] = F::one();
+        }
+
+        return Ok((p, l, u));
+    }
+
     // Configure OpenMP thread count if workers specified
     if let Some(num_workers) = workers {
         std::env::set_var("OMP_NUM_THREADS", num_workers.to_string());
@@ -140,7 +179,7 @@ where
             // Enhanced error handling for common LU failures
             match e {
                 LinalgError::SingularMatrixError(_) => {
-                    return Err(LinalgError::singular_matrix_with_suggestions(
+                    return Err(LinalgError::singularmatrix_with_suggestions(
                         "LU decomposition",
                         a.dim(),
                         None,
@@ -198,16 +237,17 @@ where
 /// # Examples
 ///
 /// ```
-/// use ndarray::array;
+/// use ndarray::{array, ScalarOperand};
 /// use scirs2_linalg::qr;
 ///
 /// let a = array![[1.0, 2.0], [3.0, 4.0]];
 /// let (q, r) = qr(&a.view(), None).unwrap();
 /// // Result should be a valid QR decomposition where Q*R = A
 /// ```
+#[allow(dead_code)]
 pub fn qr<F>(a: &ArrayView2<F>, workers: Option<usize>) -> LinalgResult<(Array2<F>, Array2<F>)>
 where
-    F: Float + NumAssign + Sum,
+    F: Float + NumAssign + Sum + Send + Sync + ScalarOperand + 'static,
 {
     // Parameter validation
     if a.is_empty() {
@@ -225,6 +265,20 @@ where
         }
     }
 
+    // Choose parallel implementation based on matrix size and worker count
+    let use_work_stealing = if let Some(num_workers) = workers {
+        // For larger matrices and multiple workers, consider work-stealing
+        num_workers > 1 && a.nrows() > 100
+    } else {
+        false
+    };
+
+    if use_work_stealing {
+        // Use work-stealing scheduler for large matrices
+        use crate::parallel::parallel_qr_work_stealing;
+        return parallel_qr_work_stealing(a, workers.unwrap());
+    }
+
     // Configure OpenMP thread count if workers specified
     if let Some(num_workers) = workers {
         std::env::set_var("OMP_NUM_THREADS", num_workers.to_string());
@@ -236,13 +290,9 @@ where
         Err(e) => {
             // Enhanced error handling for common QR failures
             match e {
-                LinalgError::SingularMatrixError(_) => {
-                    Err(LinalgError::singular_matrix_with_suggestions(
-                        "QR decomposition",
-                        a.dim(),
-                        None,
-                    ))
-                }
+                LinalgError::SingularMatrixError(_) => Err(
+                    LinalgError::singularmatrix_with_suggestions("QR decomposition", a.dim(), None),
+                ),
                 _ => Err(e),
             }
         }
@@ -268,20 +318,21 @@ where
 /// # Examples
 ///
 /// ```
-/// use ndarray::array;
+/// use ndarray::{array, ScalarOperand};
 /// use scirs2_linalg::svd;
 ///
 /// let a = array![[1.0, 0.0], [0.0, 1.0]];
 /// let (u, s, vh) = svd(&a.view(), false, None).unwrap();
 /// // Result should be a valid SVD where U*diag(S)*Vh = A
 /// ```
+#[allow(dead_code)]
 pub fn svd<F>(
     a: &ArrayView2<F>,
     full_matrices: bool,
     workers: Option<usize>,
 ) -> LinalgResult<(Array2<F>, Array1<F>, Array2<F>)>
 where
-    F: Float + NumAssign + Sum + ndarray::ScalarOperand,
+    F: Float + NumAssign + Sum + Send + Sync + ScalarOperand + 'static,
 {
     // Parameter validation
     if a.is_empty() {
@@ -299,6 +350,20 @@ where
         }
     }
 
+    // Choose parallel implementation based on matrix size and worker count
+    let use_work_stealing = if let Some(num_workers) = workers {
+        // For larger _matrices and multiple workers, consider work-stealing
+        num_workers > 1 && a.nrows() > 100
+    } else {
+        false
+    };
+
+    if use_work_stealing {
+        // Use work-stealing scheduler for large _matrices
+        use crate::parallel::parallel_svd_work_stealing;
+        return parallel_svd_work_stealing(a, workers.unwrap());
+    }
+
     // Configure OpenMP thread count if workers specified
     if let Some(num_workers) = workers {
         std::env::set_var("OMP_NUM_THREADS", num_workers.to_string());
@@ -312,7 +377,7 @@ where
             match e {
                 LinalgError::ConvergenceError(_) => {
                     Err(LinalgError::ConvergenceError(format!(
-                        "SVD computation failed to converge\nMatrix shape: {}×{}\nSuggestions:\n1. Try different SVD algorithm or increase iteration limit\n2. Check matrix conditioning - use condition number estimation\n3. Consider rank-revealing QR decomposition for rank-deficient matrices",
+                        "SVD computation failed to converge\nMatrix shape: {}×{}\nSuggestions:\n1. Try different SVD algorithm or increase iteration limit\n2. Check matrix conditioning - use condition number estimation\n3. Consider rank-revealing QR decomposition for rank-deficient _matrices",
                         a.nrows(), a.ncols()
                     )))
                 }
@@ -324,36 +389,40 @@ where
 
 // Convenience wrapper functions for backward compatibility
 /// Compute Cholesky decomposition using default thread count
+#[allow(dead_code)]
 pub fn cholesky_default<F>(a: &ArrayView2<F>) -> LinalgResult<Array2<F>>
 where
-    F: Float + NumAssign + Sum,
+    F: Float + NumAssign + Sum + Send + Sync + ScalarOperand + 'static,
 {
     cholesky(a, None)
 }
 
 /// Compute LU decomposition using default thread count
+#[allow(dead_code)]
 pub fn lu_default<F>(a: &ArrayView2<F>) -> LinalgResult<(Array2<F>, Array2<F>, Array2<F>)>
 where
-    F: Float + NumAssign + One + Sum,
+    F: Float + NumAssign + One + Sum + Send + Sync + ScalarOperand + 'static,
 {
     lu(a, None)
 }
 
 /// Compute QR decomposition using default thread count
+#[allow(dead_code)]
 pub fn qr_default<F>(a: &ArrayView2<F>) -> LinalgResult<(Array2<F>, Array2<F>)>
 where
-    F: Float + NumAssign + Sum,
+    F: Float + NumAssign + Sum + Send + Sync + ScalarOperand + 'static,
 {
     qr(a, None)
 }
 
 /// Compute SVD using default thread count
+#[allow(dead_code)]
 pub fn svd_default<F>(
     a: &ArrayView2<F>,
     full_matrices: bool,
 ) -> LinalgResult<(Array2<F>, Array1<F>, Array2<F>)>
 where
-    F: Float + NumAssign + Sum + ndarray::ScalarOperand,
+    F: Float + NumAssign + Sum + Send + Sync + ScalarOperand + 'static,
 {
     svd(a, full_matrices, None)
 }
@@ -374,16 +443,17 @@ where
 /// # Examples
 ///
 /// ```
-/// use ndarray::array;
+/// use ndarray::{array, ScalarOperand};
 /// use scirs2_linalg::schur;
 ///
 /// let a = array![[1.0_f64, 2.0], [3.0, 4.0]];
 /// let (z, t) = schur(&a.view()).unwrap();
 /// // Result should be a valid Schur decomposition where Z*T*Z^T = A
 /// ```
+#[allow(dead_code)]
 pub fn schur<F>(a: &ArrayView2<F>) -> LinalgResult<(Array2<F>, Array2<F>)>
 where
-    F: Float + NumAssign + Sum + 'static,
+    F: Float + NumAssign + Sum + Send + Sync + ScalarOperand + 'static,
 {
     if a.nrows() != a.ncols() {
         return Err(LinalgError::ShapeError(format!(
@@ -433,7 +503,7 @@ where
 /// # Examples
 ///
 /// ```ignore
-/// use ndarray::array;
+/// use ndarray::{array, ScalarOperand};
 /// use scirs2_linalg::qz;
 ///
 /// let a = array![[1.0_f64, 2.0], [3.0, 4.0]];
@@ -444,7 +514,7 @@ where
 #[allow(dead_code)]
 pub fn qz<F>(a: &ArrayView2<F>, b: &ArrayView2<F>) -> QZResult<F>
 where
-    F: Float + NumAssign + Sum + 'static,
+    F: Float + NumAssign + Sum + Send + Sync + ScalarOperand + 'static,
 {
     if a.nrows() != a.ncols() || b.nrows() != b.ncols() {
         return Err(LinalgError::ShapeError(format!(
@@ -534,7 +604,7 @@ where
 /// # Examples
 ///
 /// ```ignore
-/// use ndarray::array;
+/// use ndarray::{array, ScalarOperand};
 /// use scirs2_linalg::complete_orthogonal_decomposition;
 ///
 /// let a = array![[1.0_f64, 2.0, 3.0], [4.0, 5.0, 6.0], [7.0, 8.0, 9.0]];
@@ -545,7 +615,7 @@ where
 #[allow(dead_code)]
 pub fn complete_orthogonal_decomposition<F>(a: &ArrayView2<F>) -> CODResult<F>
 where
-    F: Float + NumAssign + Sum + 'static,
+    F: Float + NumAssign + Sum + Send + Sync + ScalarOperand + 'static,
 {
     let n_rows = a.nrows();
     let n_cols = a.ncols();
@@ -635,8 +705,13 @@ where
                         .fold(F::zero(), |acc, (&vi, &ci)| acc + vi * ci);
 
                     // column = column - 2 * v * (v^T * column)
+                    let two = F::from(2.0).ok_or_else(|| {
+                        LinalgError::NumericalError(
+                            "Failed to convert 2.0 to target type".to_string(),
+                        )
+                    })?;
                     for i in k..n_rows {
-                        a_copy[[i, j]] -= F::from(2.0).unwrap() * v[i - k] * dot_product;
+                        a_copy[[i, j]] -= two * v[i - k] * dot_product;
                     }
                 }
 
@@ -649,9 +724,12 @@ where
                 }
 
                 // Apply the Householder reflection
+                let two = F::from(2.0).ok_or_else(|| {
+                    LinalgError::NumericalError("Failed to convert 2.0 to target type".to_string())
+                })?;
                 for i in k..n_rows {
                     for j in k..n_rows {
-                        q_sub[[i, j]] -= F::from(2.0).unwrap() * v[i - k] * v[j - k];
+                        q_sub[[i, j]] -= two * v[i - k] * v[j - k];
                     }
                 }
 
@@ -716,8 +794,13 @@ where
                             .zip(row.iter())
                             .fold(F::zero(), |acc, (&vi, &ri)| acc + vi * ri);
 
+                        let two = F::from(2.0).ok_or_else(|| {
+                            LinalgError::NumericalError(
+                                "Failed to convert 2.0 to target type".to_string(),
+                            )
+                        })?;
                         for j in k..n_cols {
-                            a_copy[[i, j]] -= F::from(2.0).unwrap() * v[j - k] * dot_product;
+                            a_copy[[i, j]] -= two * v[j - k] * dot_product;
                         }
                     }
 
@@ -732,7 +815,12 @@ where
                     // Apply the Householder reflection
                     for i in k..n_cols {
                         for j in k..n_cols {
-                            p_sub[[i, j]] -= F::from(2.0).unwrap() * v[i - k] * v[j - k];
+                            let two = F::from(2.0).ok_or_else(|| {
+                                LinalgError::NumericalError(
+                                    "Failed to convert 2.0 to target type".to_string(),
+                                )
+                            })?;
+                            p_sub[[i, j]] -= two * v[i - k] * v[j - k];
                         }
                     }
 
@@ -843,7 +931,7 @@ mod tests {
     fn test_qz() {
         let a = array![[1.0, 2.0], [3.0, 4.0]];
         let b = array![[5.0, 6.0], [7.0, 8.0]];
-        let (q, _a_decomp, b_decomp, z) = qz(&a.view(), &b.view()).unwrap();
+        let (q, a_decomp, b_decomp, z) = qz(&a.view(), &b.view()).unwrap();
 
         // Verify that Q and Z are orthogonal (within numerical tolerance)
         let qt = q.t();

@@ -7,17 +7,18 @@ use ndarray::array;
 use scirs2_linalg::compat;
 use scirs2_linalg::matrix_functions::{cosm, sinm, tanm};
 
+#[allow(dead_code)]
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("Matrix Trigonometric Functions Example");
     println!("=====================================\n");
 
     // Test with zero matrix
     println!("1. Zero Matrix Tests:");
-    let zero_matrix = array![[0.0, 0.0], [0.0, 0.0]];
+    let zeromatrix = array![[0.0, 0.0], [0.0, 0.0]];
 
-    let cos_zero = cosm(&zero_matrix.view())?;
-    let sin_zero = sinm(&zero_matrix.view())?;
-    let tan_zero = tanm(&zero_matrix.view())?;
+    let cos_zero = cosm(&zeromatrix.view())?;
+    let sin_zero = sinm(&zeromatrix.view())?;
+    let tan_zero = tanm(&zeromatrix.view())?;
 
     println!("cos(0) = \n{:8.6}", cos_zero);
     println!("sin(0) = \n{:8.6}", sin_zero);
@@ -26,16 +27,16 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // Test with diagonal matrix
     println!("2. Diagonal Matrix Tests:");
-    let diag_matrix = array![
+    let diagmatrix = array![
         [std::f64::consts::FRAC_PI_4, 0.0],
         [0.0, std::f64::consts::FRAC_PI_6]
     ];
 
-    let cos_diag = cosm(&diag_matrix.view())?;
-    let sin_diag = sinm(&diag_matrix.view())?;
-    let tan_diag = tanm(&diag_matrix.view())?;
+    let cos_diag = cosm(&diagmatrix.view())?;
+    let sin_diag = sinm(&diagmatrix.view())?;
+    let tan_diag = tanm(&diagmatrix.view())?;
 
-    println!("Matrix A = \n{:8.6}", diag_matrix);
+    println!("Matrix A = \n{:8.6}", diagmatrix);
     println!("cos(A) = \n{:8.6}", cos_diag);
     println!("sin(A) = \n{:8.6}", sin_diag);
     println!("tan(A) = \n{:8.6}", tan_diag);
@@ -43,10 +44,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // Test fundamental trigonometric identity: sin²(A) + cos²(A) = I
     println!("3. Trigonometric Identity Test:");
-    let test_matrix = array![[0.1, 0.02], [0.02, 0.1]];
+    let testmatrix = array![[0.1, 0.02], [0.02, 0.1]];
 
-    let sin_test = sinm(&test_matrix.view())?;
-    let cos_test = cosm(&test_matrix.view())?;
+    let sin_test = sinm(&testmatrix.view())?;
+    let cos_test = cosm(&testmatrix.view())?;
 
     // Compute sin²(A) and cos²(A)
     let sin_squared = sin_test.dot(&sin_test);
@@ -56,7 +57,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let identity_test = &sin_squared + &cos_squared;
     let identity = array![[1.0, 0.0], [0.0, 1.0]];
 
-    println!("Test matrix A = \n{:8.6}", test_matrix);
+    println!("Test matrix A = \n{:8.6}", testmatrix);
     println!("sin²(A) + cos²(A) = \n{:8.6}", identity_test);
     println!("Expected identity = \n{:8.6}", identity);
 
@@ -67,13 +68,13 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // Test using SciPy-compatible interface
     println!("4. SciPy-Compatible Interface:");
-    let scipy_matrix = array![[0.0, 0.5], [-0.5, 0.0]]; // Antisymmetric matrix
+    let scipymatrix = array![[0.0, 0.5], [-0.5, 0.0]]; // Antisymmetric matrix
 
-    let scipy_cos = compat::cosm(&scipy_matrix.view())?;
-    let scipy_sin = compat::sinm(&scipy_matrix.view())?;
-    let scipy_tan = compat::tanm(&scipy_matrix.view())?;
+    let scipy_cos = compat::cosm(&scipymatrix.view())?;
+    let scipy_sin = compat::sinm(&scipymatrix.view())?;
+    let scipy_tan = compat::tanm(&scipymatrix.view())?;
 
-    println!("Antisymmetric matrix A = \n{:8.6}", scipy_matrix);
+    println!("Antisymmetric matrix A = \n{:8.6}", scipymatrix);
     println!("cos(A) via SciPy interface = \n{:8.6}", scipy_cos);
     println!("sin(A) via SciPy interface = \n{:8.6}", scipy_sin);
     println!("tan(A) via SciPy interface = \n{:8.6}", scipy_tan);
@@ -81,7 +82,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // Verify that exp(A) ≈ cos(A) + sin(A) for antisymmetric matrix
     println!("5. Relationship with Matrix Exponential:");
-    let exp_antisym = scirs2_linalg::matrix_functions::expm(&scipy_matrix.view(), None)?;
+    let exp_antisym = scirs2_linalg::matrix_functions::expm(&scipymatrix.view(), None)?;
     let cos_plus_sin = &scipy_cos + &scipy_sin;
 
     println!("exp(A) = \n{:8.6}", exp_antisym);

@@ -96,7 +96,7 @@ mod test {
         // Might fail if empty cluster is created
         match result2 {
             Ok(_) => println!("Succeeded without empty clusters"),
-            Err(e) => println!("Failed as expected: {}", e),
+            Err(e) => println!("Failed as expected: {e}"),
         }
     }
 

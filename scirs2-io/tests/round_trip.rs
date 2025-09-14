@@ -25,6 +25,7 @@ use std::collections::HashMap;
 use tempfile::tempdir;
 
 #[test]
+#[allow(dead_code)]
 fn test_csv_round_trip_basic() {
     let dir = tempdir().unwrap();
     let file_path = dir.path().join("test.csv");
@@ -89,6 +90,7 @@ fn test_csv_round_trip_basic() {
 }
 
 #[test]
+#[allow(dead_code)]
 fn test_csv_round_trip_with_options() {
     let dir = tempdir().unwrap();
     let file_path = dir.path().join("test_semicolon.csv");
@@ -158,6 +160,7 @@ fn test_csv_round_trip_with_options() {
 }
 
 #[test]
+#[allow(dead_code)]
 fn test_matrix_market_sparse_round_trip() {
     let dir = tempdir().unwrap();
     let file_path = dir.path().join("test.mtx");
@@ -257,6 +260,7 @@ fn test_matrix_market_sparse_round_trip() {
 }
 
 #[test]
+#[allow(dead_code)]
 fn test_matrix_market_parallel_round_trip() {
     let dir = tempdir().unwrap();
     let file_path = dir.path().join("test_parallel.mtx");
@@ -307,7 +311,7 @@ fn test_matrix_market_parallel_round_trip() {
         read_result
     );
 
-    let (read_matrix, _stats) = read_result.unwrap();
+    let (read_matrix, stats) = read_result.unwrap();
 
     // Verify matrix integrity
     assert_eq!(read_matrix.rows, original_matrix.rows);
@@ -331,6 +335,7 @@ fn test_matrix_market_parallel_round_trip() {
 
 #[test]
 #[cfg(feature = "hdf5")]
+#[allow(dead_code)]
 fn test_hdf5_round_trip_basic() {
     let dir = tempdir().unwrap();
     let file_path = dir.path().join("test.h5");
@@ -393,6 +398,7 @@ fn test_hdf5_round_trip_basic() {
 
 #[test]
 #[cfg(feature = "hdf5")]
+#[allow(dead_code)]
 fn test_hdf5_round_trip_with_groups_and_attributes() {
     let dir = tempdir().unwrap();
     let file_path = dir.path().join("structured.h5");
@@ -493,6 +499,7 @@ fn test_hdf5_round_trip_with_groups_and_attributes() {
 }
 
 #[test]
+#[allow(dead_code)]
 fn test_serialize_round_trip_json() {
     let dir = tempdir().unwrap();
     let file_path = dir.path().join("test.json");
@@ -529,6 +536,7 @@ fn test_serialize_round_trip_json() {
 }
 
 #[test]
+#[allow(dead_code)]
 fn test_serialize_round_trip_messagepack() {
     let dir = tempdir().unwrap();
     let file_path = dir.path().join("test.msgpack");
@@ -566,6 +574,7 @@ fn test_serialize_round_trip_messagepack() {
 }
 
 #[test]
+#[allow(dead_code)]
 fn test_serialize_round_trip_binary() {
     let dir = tempdir().unwrap();
     let file_path = dir.path().join("test.bin");
@@ -603,6 +612,7 @@ fn test_serialize_round_trip_binary() {
 }
 
 #[test]
+#[allow(dead_code)]
 fn test_validation_round_trip() {
     let dir = tempdir().unwrap();
     let file_path = dir.path().join("data.csv");
@@ -660,6 +670,7 @@ fn test_validation_round_trip() {
 
 #[test]
 #[cfg(feature = "hdf5")]
+#[allow(dead_code)]
 fn test_compression_round_trip() {
     let dir = tempdir().unwrap();
     let file_path = dir.path().join("compressed.h5");
@@ -711,6 +722,7 @@ fn test_compression_round_trip() {
 }
 
 #[test]
+#[allow(dead_code)]
 fn test_large_data_round_trip() {
     let dir = tempdir().unwrap();
     let matrix_file = dir.path().join("large_matrix.mtx");
@@ -794,6 +806,7 @@ fn test_large_data_round_trip() {
 
 /// Test precision preservation across different numeric types
 #[test]
+#[allow(dead_code)]
 fn test_precision_round_trip() {
     let dir = tempdir().unwrap();
 

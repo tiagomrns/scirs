@@ -6,6 +6,7 @@
 use num_complex::Complex64;
 use scirs2_special::{i0_complex, j0_complex, j1_complex, jn_complex, jv_complex, k0_complex};
 
+#[allow(dead_code)]
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("=== SCIRS2-SPECIAL Complex Bessel Functions Demo ===\n");
 
@@ -28,6 +29,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     Ok(())
 }
 
+#[allow(dead_code)]
 fn demo_first_kind_bessel() -> Result<(), Box<dyn std::error::Error>> {
     println!("1. Bessel Functions of the First Kind");
     println!("====================================");
@@ -79,6 +81,7 @@ fn demo_first_kind_bessel() -> Result<(), Box<dyn std::error::Error>> {
     Ok(())
 }
 
+#[allow(dead_code)]
 fn demo_modified_bessel() -> Result<(), Box<dyn std::error::Error>> {
     println!("2. Modified Bessel Functions");
     println!("============================");
@@ -125,6 +128,7 @@ fn demo_modified_bessel() -> Result<(), Box<dyn std::error::Error>> {
     Ok(())
 }
 
+#[allow(dead_code)]
 fn demo_half_integer_bessel() -> Result<(), Box<dyn std::error::Error>> {
     println!("3. Half-Integer Order Bessel Functions");
     println!("======================================");
@@ -154,6 +158,7 @@ fn demo_half_integer_bessel() -> Result<(), Box<dyn std::error::Error>> {
     Ok(())
 }
 
+#[allow(dead_code)]
 fn demo_mathematical_properties() -> Result<(), Box<dyn std::error::Error>> {
     println!("4. Mathematical Properties Verification");
     println!("======================================");
@@ -213,6 +218,7 @@ fn demo_mathematical_properties() -> Result<(), Box<dyn std::error::Error>> {
     Ok(())
 }
 
+#[allow(dead_code)]
 fn demo_complex_arguments() -> Result<(), Box<dyn std::error::Error>> {
     println!("5. Complex Arguments and Special Cases");
     println!("=====================================");
@@ -279,6 +285,7 @@ fn demo_complex_arguments() -> Result<(), Box<dyn std::error::Error>> {
 }
 
 // Helper function for π
+#[allow(dead_code)]
 fn pi() -> f64 {
     std::f64::consts::PI
 }

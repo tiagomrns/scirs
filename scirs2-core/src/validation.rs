@@ -64,8 +64,11 @@ where
 {
     if value <= T::zero() {
         return Err(CoreError::ValueError(
-            ErrorContext::new(format!("{} must be positive, got {value}", name.into()))
-                .with_location(ErrorLocation::new(file!(), line!())),
+            ErrorContext::new({
+                let name_str = name.into();
+                format!("{name_str} must be positive, got {value}")
+            })
+            .with_location(ErrorLocation::new(file!(), line!())),
         ));
     }
     Ok(value)
@@ -93,8 +96,11 @@ where
 {
     if value < T::zero() {
         return Err(CoreError::ValueError(
-            ErrorContext::new(format!("{} must be non-negative, got {value}", name.into()))
-                .with_location(ErrorLocation::new(file!(), line!())),
+            ErrorContext::new({
+                let name_str = name.into();
+                format!("{name_str} must be non-negative, got {value}")
+            })
+            .with_location(ErrorLocation::new(file!(), line!())),
         ));
     }
     Ok(value)
@@ -122,8 +128,11 @@ where
 {
     if !value.is_finite() {
         return Err(CoreError::ValueError(
-            ErrorContext::new(format!("{} must be finite, got {value}", name.into()))
-                .with_location(ErrorLocation::new(file!(), line!())),
+            ErrorContext::new({
+                let name_str = name.into();
+                format!("{name_str} must be finite, got {value}")
+            })
+            .with_location(ErrorLocation::new(file!(), line!())),
         ));
     }
     Ok(value)
@@ -144,7 +153,7 @@ where
 /// # Errors
 ///
 /// Returns `CoreError::ValueError` if any value in the array is not finite.
-pub fn check_array_finite<S, A, D>(array: &ArrayBase<S, D>, name: A) -> CoreResult<()>
+pub fn checkarray_finite<S, A, D>(array: &ArrayBase<S, D>, name: A) -> CoreResult<()>
 where
     S: ndarray::Data,
     D: Dimension,
@@ -170,7 +179,7 @@ where
 /// # Arguments
 ///
 /// * `array` - The array to check
-/// * `expected_shape` - The expected shape
+/// * `expectedshape` - The expected shape
 /// * `name` - The name of the array being checked
 ///
 /// # Returns
@@ -181,9 +190,9 @@ where
 /// # Errors
 ///
 /// Returns `CoreError::ShapeError` if the array does not have the expected shape.
-pub fn check_shape<S, D, A>(
+pub fn checkshape<S, D, A>(
     array: &ArrayBase<S, D>,
-    expected_shape: &[usize],
+    expectedshape: &[usize],
     name: A,
 ) -> CoreResult<()>
 where
@@ -191,11 +200,11 @@ where
     D: Dimension,
     A: Into<String>,
 {
-    let actual_shape = array.shape();
-    if actual_shape != expected_shape {
+    let actualshape = array.shape();
+    if actualshape != expectedshape {
         return Err(CoreError::ShapeError(
             ErrorContext::new(format!(
-                "{} has incorrect shape: expected {expected_shape:?}, got {actual_shape:?}",
+                "{} has incorrect shape: expected {expectedshape:?}, got {actualshape:?}",
                 name.into()
             ))
             .with_location(ErrorLocation::new(file!(), line!())),
@@ -227,8 +236,12 @@ where
 {
     if array.ndim() != 1 {
         return Err(CoreError::ShapeError(
-            ErrorContext::new(format!("{} must be 1D, got {}D", name.into(), array.ndim()))
-                .with_location(ErrorLocation::new(file!(), line!())),
+            ErrorContext::new({
+                let name_str = name.into();
+                let ndim = array.ndim();
+                format!("{name_str} must be 1D, got {ndim}D")
+            })
+            .with_location(ErrorLocation::new(file!(), line!())),
         ));
     }
     Ok(())
@@ -257,8 +270,12 @@ where
 {
     if array.ndim() != 2 {
         return Err(CoreError::ShapeError(
-            ErrorContext::new(format!("{} must be 2D, got {}D", name.into(), array.ndim()))
-                .with_location(ErrorLocation::new(file!(), line!())),
+            ErrorContext::new({
+                let name_str = name.into();
+                let ndim = array.ndim();
+                format!("{name_str} must be 2D, got {ndim}D")
+            })
+            .with_location(ErrorLocation::new(file!(), line!())),
         ));
     }
     Ok(())
@@ -281,7 +298,7 @@ where
 /// # Errors
 ///
 /// Returns `CoreError::ShapeError` if the arrays have different shapes.
-pub fn check_same_shape<S1, S2, D1, D2, A, B>(
+pub fn check_sameshape<S1, S2, D1, D2, A, B>(
     a: &ArrayBase<S1, D1>,
     a_name: A,
     b: &ArrayBase<S2, D2>,
@@ -295,16 +312,16 @@ where
     A: Into<String>,
     B: Into<String>,
 {
-    let a_shape = a.shape();
-    let b_shape = b.shape();
-    if a_shape != b_shape {
+    let ashape = a.shape();
+    let bshape = b.shape();
+    if ashape != bshape {
         return Err(CoreError::ShapeError(
             ErrorContext::new(format!(
                 "{} and {} must have the same shape, got {:?} and {:?}",
                 a_name.into(),
                 b_name.into(),
-                a_shape,
-                b_shape
+                ashape,
+                bshape
             ))
             .with_location(ErrorLocation::new(file!(), line!())),
         ));
@@ -408,8 +425,7 @@ where
         if p < S::Elem::zero() || p > S::Elem::one() {
             return Err(CoreError::ValueError(
                 ErrorContext::new(format!(
-                    "{} must contain only values between 0 and 1, got {} at {:?}",
-                    name, p, idx
+                    "{name} must contain only values between 0 and 1, got {p} at {idx:?}"
                 ))
                 .with_location(ErrorLocation::new(file!(), line!())),
             ));
@@ -443,7 +459,10 @@ where
 {
     let tol = tol.unwrap_or_else(|| {
         let eps: f64 = 1e-10;
-        num_traits::cast(eps).unwrap()
+        num_traits::cast(eps).unwrap_or_else(|| {
+            // Fallback to epsilon
+            S::Elem::epsilon()
+        })
     });
 
     check_probabilities(probs, name.to_string())?;
@@ -453,8 +472,11 @@ where
 
     if (sum - one).abs() > tol {
         return Err(CoreError::ValueError(
-            ErrorContext::new(format!("{} must sum to 1, got sum = {}", name.into(), sum))
-                .with_location(ErrorLocation::new(file!(), line!())),
+            ErrorContext::new({
+                let name_str = name.into();
+                format!("{name_str} must sum to 1, got sum = {sum}")
+            })
+            .with_location(ErrorLocation::new(file!(), line!())),
         ));
     }
 
@@ -480,8 +502,11 @@ where
 {
     if array.is_empty() {
         return Err(CoreError::ValueError(
-            ErrorContext::new(format!("{} cannot be empty", name.into()))
-                .with_location(ErrorLocation::new(file!(), line!())),
+            ErrorContext::new({
+                let name_str = name.into();
+                format!("{name_str} cannot be empty")
+            })
+            .with_location(ErrorLocation::new(file!(), line!())),
         ));
     }
     Ok(())
@@ -554,8 +579,7 @@ pub mod clustering {
         if n_clusters == 0 {
             return Err(CoreError::ValueError(
                 ErrorContext::new(format!(
-                    "{}: number of clusters must be > 0, got {}",
-                    operation, n_clusters
+                    "{operation}: number of _clusters must be > 0, got {n_clusters}"
                 ))
                 .with_location(ErrorLocation::new(file!(), line!())),
             ));
@@ -564,8 +588,7 @@ pub mod clustering {
         if n_clusters > n_samples {
             return Err(CoreError::ValueError(
                 ErrorContext::new(format!(
-                    "{}: number of clusters ({}) cannot exceed number of samples ({})",
-                    operation, n_clusters, n_samples
+                    "{operation}: number of _clusters ({n_clusters}) cannot exceed number of samples ({n_samples})"
                 ))
                 .with_location(ErrorLocation::new(file!(), line!())),
             ));
@@ -604,14 +627,14 @@ pub mod clustering {
         // Check 2D for most clustering algorithms
         check_2d(data, "data")?;
 
-        // Check minimum samples if specified
+        // Check minimum _samples if specified
         if let Some(min) = min_samples {
             check_min_samples(data, min, "data")?;
         }
 
-        // Check finite if requested
+        // Check _finite if requested
         if check_finite {
-            check_array_finite(data, "data")?;
+            checkarray_finite(data, "data")?;
         }
 
         Ok(())
@@ -644,15 +667,12 @@ pub mod parameters {
     {
         if max_iter == 0 {
             return Err(CoreError::ValueError(
-                ErrorContext::new(format!(
-                    "{}: max_iter must be > 0, got {}",
-                    operation, max_iter
-                ))
-                .with_location(ErrorLocation::new(file!(), line!())),
+                ErrorContext::new(format!("{operation}: max_iter must be > 0, got {max_iter}"))
+                    .with_location(ErrorLocation::new(file!(), line!())),
             ));
         }
 
-        check_positive(tolerance, format!("{} tolerance", operation))?;
+        check_positive(tolerance, format!("{operation} tolerance"))?;
 
         Ok(())
     }
@@ -676,8 +696,7 @@ pub mod parameters {
         if value < T::zero() || value > T::one() {
             return Err(CoreError::ValueError(
                 ErrorContext::new(format!(
-                    "{}: {} must be in [0, 1], got {}",
-                    operation, name, value
+                    "{operation}: {name} must be in [0, 1], got {value}"
                 ))
                 .with_location(ErrorLocation::new(file!(), line!())),
             ));
@@ -696,11 +715,11 @@ pub mod parameters {
     ///
     /// * `Ok(bandwidth)` if bandwidth is valid
     /// * `Err(CoreError::ValueError)` if bandwidth is invalid
-    pub fn check_bandwidth<T>(bandwidth: T, operation: &str) -> CoreResult<T>
+    pub fn checkbandwidth<T>(bandwidth: T, operation: &str) -> CoreResult<T>
     where
         T: Float + std::fmt::Display + Copy,
     {
-        check_positive(bandwidth, format!("{} bandwidth", operation))
+        check_positive(bandwidth, format!("{operation} bandwidth"))
     }
 }
 
@@ -745,22 +764,22 @@ mod tests {
     }
 
     #[test]
-    fn test_check_array_finite() {
+    fn test_checkarray_finite() {
         let a = arr1(&[1.0, 2.0, 3.0]);
-        assert!(check_array_finite(&a, "array").is_ok());
+        assert!(checkarray_finite(&a, "array").is_ok());
 
         let b = arr1(&[1.0, f64::INFINITY, 3.0]);
-        assert!(check_array_finite(&b, "array").is_err());
+        assert!(checkarray_finite(&b, "array").is_err());
 
         let c = arr1(&[1.0, f64::NAN, 3.0]);
-        assert!(check_array_finite(&c, "array").is_err());
+        assert!(checkarray_finite(&c, "array").is_err());
     }
 
     #[test]
-    fn test_check_shape() {
+    fn test_checkshape() {
         let a = arr2(&[[1.0, 2.0], [3.0, 4.0]]);
-        assert!(check_shape(&a, &[2, 2], "array").is_ok());
-        assert!(check_shape(&a, &[2, 3], "array").is_err());
+        assert!(checkshape(&a, &[2, 2], "array").is_ok());
+        assert!(checkshape(&a, &[2, 3], "array").is_err());
     }
 
     #[test]
@@ -782,13 +801,13 @@ mod tests {
     }
 
     #[test]
-    fn test_check_same_shape() {
+    fn test_check_sameshape() {
         let a = arr2(&[[1.0, 2.0], [3.0, 4.0]]);
         let b = arr2(&[[5.0, 6.0], [7.0, 8.0]]);
-        assert!(check_same_shape(&a, "a", &b, "b").is_ok());
+        assert!(check_sameshape(&a, "a", &b, "b").is_ok());
 
         let c = arr2(&[[1.0, 2.0, 3.0], [4.0, 5.0, 6.0]]);
-        assert!(check_same_shape(&a, "a", &c, "c").is_err());
+        assert!(check_sameshape(&a, "a", &c, "c").is_err());
     }
 
     #[test]
@@ -906,17 +925,587 @@ mod tests {
         }
 
         #[test]
-        fn test_check_bandwidth() {
-            assert!(check_bandwidth(1.0, "test").is_ok());
-            assert!(check_bandwidth(0.1, "test").is_ok());
-            assert!(check_bandwidth(0.0, "test").is_err());
-            assert!(check_bandwidth(-1.0, "test").is_err());
+        fn test_checkbandwidth() {
+            assert!(checkbandwidth(1.0, "test").is_ok());
+            assert!(checkbandwidth(0.1, "test").is_ok());
+            assert!(checkbandwidth(0.0, "test").is_err());
+            assert!(checkbandwidth(-1.0, "test").is_err());
+        }
+    }
+}
+
+/// Custom validator implementations for flexible validation logic
+pub mod custom {
+    use super::*;
+    use std::fmt;
+    use std::marker::PhantomData;
+
+    /// Trait for implementing custom validators
+    pub trait Validator<T> {
+        /// Validate the value and return Ok(()) if valid, or an error if invalid
+        fn validate(&self, value: &T, name: &str) -> CoreResult<()>;
+
+        /// Get a description of what this validator checks
+        fn description(&self) -> String;
+
+        /// Chain this validator with another validator
+        fn and<V: Validator<T>>(self, other: V) -> CompositeValidator<T, Self, V>
+        where
+            Self: Sized,
+        {
+            CompositeValidator::new(self, other)
+        }
+
+        /// Create a conditional validator that only applies when a condition is met
+        fn when<F>(self, condition: F) -> ConditionalValidator<T, Self, F>
+        where
+            Self: Sized,
+            F: Fn(&T) -> bool,
+        {
+            ConditionalValidator::new(self, condition)
+        }
+    }
+
+    /// A validator that combines two validators with AND logic
+    pub struct CompositeValidator<T, V1, V2> {
+        validator1: V1,
+        validator2: V2,
+        _phantom: PhantomData<T>,
+    }
+
+    impl<T, V1, V2> CompositeValidator<T, V1, V2> {
+        pub fn new(validator1: V1, validator2: V2) -> Self {
+            Self {
+                validator1,
+                validator2,
+                _phantom: PhantomData,
+            }
+        }
+    }
+
+    impl<T, V1, V2> Validator<T> for CompositeValidator<T, V1, V2>
+    where
+        V1: Validator<T>,
+        V2: Validator<T>,
+    {
+        fn validate(&self, value: &T, name: &str) -> CoreResult<()> {
+            self.validator1.validate(value, name)?;
+            self.validator2.validate(value, name)?;
+            Ok(())
+        }
+
+        fn description(&self) -> String {
+            format!(
+                "{} AND {}",
+                self.validator1.description(),
+                self.validator2.description()
+            )
+        }
+    }
+
+    /// A validator that only applies when a condition is met
+    pub struct ConditionalValidator<T, V, F> {
+        validator: V,
+        condition: F,
+        phantom: PhantomData<T>,
+    }
+
+    impl<T, V, F> ConditionalValidator<T, V, F> {
+        pub fn new(validator: V, condition: F) -> Self {
+            Self {
+                validator,
+                condition,
+                phantom: PhantomData,
+            }
+        }
+    }
+
+    impl<T, V, F> Validator<T> for ConditionalValidator<T, V, F>
+    where
+        V: Validator<T>,
+        F: Fn(&T) -> bool,
+    {
+        fn validate(&self, value: &T, name: &str) -> CoreResult<()> {
+            if (self.condition)(value) {
+                self.validator.validate(value, name)
+            } else {
+                Ok(())
+            }
+        }
+
+        fn description(&self) -> String {
+            {
+                let desc = self.validator.description();
+                format!("IF condition THEN {desc}")
+            }
+        }
+    }
+
+    /// Custom validator for ranges with inclusive/exclusive bounds
+    pub struct RangeValidator<T> {
+        min: Option<T>,
+        max: Option<T>,
+        min_inclusive: bool,
+        max_inclusive: bool,
+    }
+
+    impl<T> RangeValidator<T>
+    where
+        T: PartialOrd + Copy + fmt::Display,
+    {
+        pub fn new() -> Self {
+            Self {
+                min: None,
+                max: None,
+                min_inclusive: true,
+                max_inclusive: true,
+            }
+        }
+
+        pub fn min(mut self, min: T) -> Self {
+            self.min = Some(min);
+            self
+        }
+
+        pub fn max(mut self, max: T) -> Self {
+            self.max = Some(max);
+            self
+        }
+
+        pub fn min_exclusive(mut self, min: T) -> Self {
+            self.min = Some(min);
+            self.min_inclusive = false;
+            self
+        }
+
+        pub fn max_exclusive(mut self, max: T) -> Self {
+            self.max = Some(max);
+            self.max_inclusive = false;
+            self
+        }
+
+        pub fn in_range(min: T, max: T) -> Self {
+            Self::new().min(min).max(max)
+        }
+
+        pub fn in_range_exclusive(min: T, max: T) -> Self {
+            Self::new().min_exclusive(min).max_exclusive(max)
+        }
+    }
+
+    impl<T> Default for RangeValidator<T>
+    where
+        T: PartialOrd + Copy + fmt::Display,
+    {
+        fn default() -> Self {
+            Self::new()
+        }
+    }
+
+    impl<T> Validator<T> for RangeValidator<T>
+    where
+        T: PartialOrd + Copy + fmt::Display,
+    {
+        fn validate(&self, value: &T, name: &str) -> CoreResult<()> {
+            if let Some(min) = self.min {
+                let valid = if self.min_inclusive {
+                    *value >= min
+                } else {
+                    *value > min
+                };
+                if !valid {
+                    let op = if self.min_inclusive { ">=" } else { ">" };
+                    return Err(CoreError::ValueError(
+                        ErrorContext::new(format!("{name} must be {op} {min}, got {value}"))
+                            .with_location(ErrorLocation::new(file!(), line!())),
+                    ));
+                }
+            }
+
+            if let Some(max) = self.max {
+                let valid = if self.max_inclusive {
+                    *value <= max
+                } else {
+                    *value < max
+                };
+                if !valid {
+                    let op = if self.max_inclusive { "<=" } else { "<" };
+                    return Err(CoreError::ValueError(
+                        ErrorContext::new(format!("{name} must be {op} {max}, got {value}"))
+                            .with_location(ErrorLocation::new(file!(), line!())),
+                    ));
+                }
+            }
+
+            Ok(())
+        }
+
+        fn description(&self) -> String {
+            match (self.min, self.max) {
+                (Some(min), Some(max)) => {
+                    let min_op = if self.min_inclusive { ">=" } else { ">" };
+                    let max_op = if self.max_inclusive { "<=" } else { "<" };
+                    format!("value {min_op} {min} and {max_op} {max}")
+                }
+                (Some(min), None) => {
+                    let op = if self.min_inclusive { ">=" } else { ">" };
+                    format!("value {op} {min}")
+                }
+                (None, Some(max)) => {
+                    let op = if self.max_inclusive { "<=" } else { "<" };
+                    format!("value {op} {max}")
+                }
+                (None, None) => "no range constraints".to_string(),
+            }
+        }
+    }
+
+    /// Type alias for shape validation function to reduce complexity
+    type ShapeValidatorFn = Box<dyn Fn(&[usize]) -> CoreResult<()>>;
+
+    /// Custom validator for array properties
+    pub struct ArrayValidator<T, D>
+    where
+        D: Dimension,
+    {
+        shape_validator: Option<ShapeValidatorFn>,
+        element_validator: Option<Box<dyn Validator<T>>>,
+        size_validator: Option<RangeValidator<usize>>,
+        phantom: PhantomData<D>,
+    }
+
+    impl<T, D> ArrayValidator<T, D>
+    where
+        D: Dimension,
+    {
+        pub fn new() -> Self {
+            Self {
+                shape_validator: None,
+                element_validator: None,
+                size_validator: None,
+                phantom: PhantomData,
+            }
+        }
+
+        pub fn withshape<F>(mut self, validator: F) -> Self
+        where
+            F: Fn(&[usize]) -> CoreResult<()> + 'static,
+        {
+            self.shape_validator = Some(Box::new(validator));
+            self
+        }
+
+        pub fn with_elements<V>(mut self, validator: V) -> Self
+        where
+            V: Validator<T> + 'static,
+        {
+            self.element_validator = Some(Box::new(validator));
+            self
+        }
+
+        pub fn with_size(mut self, validator: RangeValidator<usize>) -> Self {
+            self.size_validator = Some(validator);
+            self
+        }
+
+        pub fn minsize(self, minsize: usize) -> Self {
+            self.with_size(RangeValidator::new().min(minsize))
+        }
+
+        pub fn maxsize(self, maxsize: usize) -> Self {
+            self.with_size(RangeValidator::new().max(maxsize))
+        }
+
+        pub fn exact_size(self, size: usize) -> Self {
+            self.with_size(RangeValidator::new().min(size).max(size))
+        }
+    }
+
+    impl<T, D> Default for ArrayValidator<T, D>
+    where
+        D: Dimension,
+    {
+        fn default() -> Self {
+            Self::new()
+        }
+    }
+
+    impl<S, T, D> Validator<ArrayBase<S, D>> for ArrayValidator<T, D>
+    where
+        S: ndarray::Data<Elem = T>,
+        T: Clone,
+        D: Dimension,
+    {
+        fn validate(&self, array: &ArrayBase<S, D>, name: &str) -> CoreResult<()> {
+            // Validate shape
+            if let Some(ref shape_validator) = self.shape_validator {
+                shape_validator(array.shape())?;
+            }
+
+            // Validate size
+            if let Some(ref size_validator) = self.size_validator {
+                size_validator.validate(&array.len(), &format!("{name} size"))?;
+            }
+
+            // Validate elements
+            if let Some(ref element_validator) = self.element_validator {
+                for (idx, element) in array.indexed_iter() {
+                    element_validator.validate(element, &format!("{name} element at {idx:?}"))?;
+                }
+            }
+
+            Ok(())
+        }
+
+        fn description(&self) -> String {
+            let mut parts = Vec::new();
+
+            if self.shape_validator.is_some() {
+                parts.push("shape validation".to_string());
+            }
+
+            if let Some(ref size_validator) = self.size_validator {
+                {
+                    let desc = size_validator.description();
+                    parts.push(format!("size {desc}"));
+                }
+            }
+
+            if let Some(ref element_validator) = self.element_validator {
+                {
+                    let desc = element_validator.description();
+                    parts.push(format!("elements {desc}"));
+                }
+            }
+
+            if parts.is_empty() {
+                "no array constraints".to_string()
+            } else {
+                parts.join(" AND ")
+            }
+        }
+    }
+
+    /// Custom validator for function-based validation
+    pub struct FunctionValidator<T, F> {
+        func: F,
+        description: String,
+        phantom: PhantomData<T>,
+    }
+
+    impl<T, F> FunctionValidator<T, F>
+    where
+        F: Fn(&T, &str) -> CoreResult<()>,
+    {
+        pub fn new(func: F, description: impl Into<String>) -> Self {
+            Self {
+                func,
+                description: description.into(),
+                phantom: PhantomData,
+            }
+        }
+    }
+
+    impl<T, F> Validator<T> for FunctionValidator<T, F>
+    where
+        F: Fn(&T, &str) -> CoreResult<()>,
+    {
+        fn validate(&self, value: &T, name: &str) -> CoreResult<()> {
+            (self.func)(value, name)
+        }
+
+        fn description(&self) -> String {
+            self.description.clone()
+        }
+    }
+
+    /// Builder for creating complex validators
+    pub struct ValidatorBuilder<T> {
+        validators: Vec<Box<dyn Validator<T>>>,
+    }
+
+    impl<T: 'static> ValidatorBuilder<T> {
+        pub fn new() -> Self {
+            Self {
+                validators: Vec::new(),
+            }
+        }
+
+        pub fn with_validator<V: Validator<T> + 'static>(mut self, validator: V) -> Self {
+            self.validators.push(Box::new(validator));
+            self
+        }
+
+        pub fn with_function<F>(self, func: F, description: impl Into<String>) -> Self
+        where
+            F: Fn(&T, &str) -> CoreResult<()> + 'static,
+        {
+            self.with_validator(FunctionValidator::new(func, description))
+        }
+
+        pub fn build(self) -> MultiValidator<T> {
+            MultiValidator {
+                validators: self.validators,
+            }
+        }
+    }
+
+    impl<T: 'static> Default for ValidatorBuilder<T> {
+        fn default() -> Self {
+            Self::new()
+        }
+    }
+
+    /// Validator that runs multiple validators
+    pub struct MultiValidator<T> {
+        validators: Vec<Box<dyn Validator<T>>>,
+    }
+
+    impl<T: 'static> Validator<T> for MultiValidator<T> {
+        fn validate(&self, value: &T, name: &str) -> CoreResult<()> {
+            for validator in &self.validators {
+                validator.validate(value, name)?;
+            }
+            Ok(())
+        }
+
+        fn description(&self) -> String {
+            if self.validators.is_empty() {
+                "no validators".to_string()
+            } else {
+                self.validators
+                    .iter()
+                    .map(|v| v.description())
+                    .collect::<Vec<_>>()
+                    .join(" AND ")
+            }
+        }
+    }
+
+    /// Convenience function to validate with a custom validator
+    pub fn validate_with<T, V: Validator<T>>(
+        value: &T,
+        validator: &V,
+        name: impl Into<String>,
+    ) -> CoreResult<()> {
+        validator.validate(value, &name.into())
+    }
+
+    #[cfg(test)]
+    mod tests {
+        use super::*;
+        use ndarray::arr1;
+
+        #[test]
+        fn test_range_validator() {
+            let validator = RangeValidator::in_range(0.0, 1.0);
+
+            assert!(validator.validate(&0.5, "value").is_ok());
+            assert!(validator.validate(&0.0, "value").is_ok());
+            assert!(validator.validate(&1.0, "value").is_ok());
+            assert!(validator.validate(&-0.1, "value").is_err());
+            assert!(validator.validate(&1.1, "value").is_err());
+        }
+
+        #[test]
+        fn test_range_validator_exclusive() {
+            let validator = RangeValidator::in_range_exclusive(0.0, 1.0);
+
+            assert!(validator.validate(&0.5, "value").is_ok());
+            assert!(validator.validate(&0.0, "value").is_err());
+            assert!(validator.validate(&1.0, "value").is_err());
+        }
+
+        #[test]
+        fn test_composite_validator() {
+            let positive = RangeValidator::new().min(0.0);
+            let max_one = RangeValidator::new().max(1.0);
+            let validator = positive.and(max_one);
+
+            assert!(validator.validate(&0.5, "value").is_ok());
+            assert!(validator.validate(&-0.1, "value").is_err());
+            assert!(validator.validate(&1.1, "value").is_err());
+        }
+
+        #[test]
+        fn test_conditional_validator() {
+            let validator = RangeValidator::new().min(0.0).when(|x: &f64| *x > 0.0);
+
+            assert!(validator.validate(&0.5, "value").is_ok());
+            assert!(validator.validate(&-0.5, "value").is_ok()); // Condition not met
+            assert!(validator.validate(&0.0, "value").is_ok()); // Condition not met
+        }
+
+        #[test]
+        fn testarray_validator() {
+            let element_validator = RangeValidator::in_range(0.0, 1.0);
+            let array_validator = ArrayValidator::new()
+                .with_elements(element_validator)
+                .minsize(2);
+
+            let validarray = arr1(&[0.2, 0.8]);
+            assert!(array_validator.validate(&validarray, "array").is_ok());
+
+            let invalidarray = arr1(&[0.2, 1.5]);
+            assert!(array_validator.validate(&invalidarray, "array").is_err());
+
+            let too_smallarray = arr1(&[0.5]);
+            assert!(array_validator.validate(&too_smallarray, "array").is_err());
+        }
+
+        #[test]
+        fn test_function_validator() {
+            let validator = FunctionValidator::new(
+                |value: &i32, name: &str| {
+                    if *value % 2 == 0 {
+                        Ok(())
+                    } else {
+                        Err(CoreError::ValueError(
+                            ErrorContext::new(format!("{name} must be even, got {value}"))
+                                .with_location(ErrorLocation::new(file!(), line!())),
+                        ))
+                    }
+                },
+                "value must be even",
+            );
+
+            assert!(validator.validate(&4, "number").is_ok());
+            assert!(validator.validate(&3, "number").is_err());
+        }
+
+        #[test]
+        fn test_validator_builder() {
+            let validator = ValidatorBuilder::new()
+                .with_validator(RangeValidator::new().min(0.0))
+                .with_validator(RangeValidator::new().max(1.0))
+                .with_function(
+                    |value: &f64, name: &str| {
+                        if *value != 0.5 {
+                            Ok(())
+                        } else {
+                            Err(CoreError::ValueError(
+                                ErrorContext::new(format!("{name} cannot be 0.5"))
+                                    .with_location(ErrorLocation::new(file!(), line!())),
+                            ))
+                        }
+                    },
+                    "value cannot be 0.5",
+                )
+                .build();
+
+            assert!(validator.validate(&0.3, "value").is_ok());
+            assert!(validator.validate(&0.5, "value").is_err());
+            assert!(validator.validate(&-0.1, "value").is_err());
+            assert!(validator.validate(&1.1, "value").is_err());
         }
     }
 }
 
 // Production-level validation with comprehensive security and performance features
 pub mod production;
+
+/// Cross-platform validation utilities for consistent behavior across operating systems and architectures
+pub mod cross_platform;
 
 /// Comprehensive data validation system with schema validation and constraint enforcement
 #[cfg(feature = "data_validation")]

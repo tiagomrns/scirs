@@ -4,8 +4,8 @@
 //! These integrals arise in optics and electromagnetics, particularly in the
 //! study of diffraction patterns and are defined as:
 //!
-//! S(x) = ∫_0^x sin(πt²/2) dt
-//! C(x) = ∫_0^x cos(πt²/2) dt
+//! S(x) = ∫_0_^x sin(πt²/2) dt
+//! C(x) = ∫_0_^x cos(πt²/2) dt
 //!
 //! There are also modified Fresnel integrals that are used in certain applications.
 
@@ -21,8 +21,8 @@ use crate::error::{SpecialError, SpecialResult};
 ///
 /// The Fresnel integrals are defined as:
 ///
-/// S(x) = ∫_0^x sin(πt²/2) dt
-/// C(x) = ∫_0^x cos(πt²/2) dt
+/// S(x) = ∫_0_^x sin(πt²/2) dt
+/// C(x) = ∫_0_^x cos(πt²/2) dt
 ///
 /// # Arguments
 ///
@@ -40,6 +40,7 @@ use crate::error::{SpecialError, SpecialResult};
 /// let (s, c) = fresnel(1.0).unwrap();
 /// println!("S(1.0) = {}, C(1.0) = {}", s, c);
 /// ```
+#[allow(dead_code)]
 pub fn fresnel(x: f64) -> SpecialResult<(f64, f64)> {
     if x.is_nan() {
         return Err(SpecialError::DomainError(
@@ -82,6 +83,7 @@ pub fn fresnel(x: f64) -> SpecialResult<(f64, f64)> {
 /// println!("S({} + {}i) = {} + {}i", z.re, z.im, s.re, s.im);
 /// println!("C({} + {}i) = {} + {}i", z.re, z.im, c.re, c.im);
 /// ```
+#[allow(dead_code)]
 pub fn fresnel_complex(z: Complex64) -> SpecialResult<(Complex64, Complex64)> {
     if z.is_nan() {
         return Err(SpecialError::DomainError(
@@ -104,6 +106,7 @@ pub fn fresnel_complex(z: Complex64) -> SpecialResult<(Complex64, Complex64)> {
 }
 
 /// Implementation of Fresnel integrals using power series for small x.
+#[allow(dead_code)]
 fn fresnel_power_series(x: f64) -> SpecialResult<(f64, f64)> {
     let sign = x.signum();
     let x = x.abs();
@@ -264,6 +267,7 @@ fn fresnel_power_series(x: f64) -> SpecialResult<(f64, f64)> {
 }
 
 /// Implementation of Fresnel integrals using asymptotic expansions for large x.
+#[allow(dead_code)]
 fn fresnel_asymptotic(x: f64) -> SpecialResult<(f64, f64)> {
     let sign = x.signum();
     let x = x.abs();
@@ -340,7 +344,7 @@ fn fresnel_asymptotic(x: f64) -> SpecialResult<(f64, f64)> {
 
         // Avoid direct power calculation which could overflow
         // Instead, build up the power by multiplication
-        let mut z2_pow_k = z2_inv; // Start with (1/z2)
+        let mut z2_pow_k: f64 = z2_inv; // Start with (1/z2)
         for _ in 1..k {
             z2_pow_k *= z2_inv; // Multiply by (1/z2) k-1 more times
 
@@ -410,6 +414,7 @@ fn fresnel_asymptotic(x: f64) -> SpecialResult<(f64, f64)> {
 }
 
 /// Implementation of complex Fresnel integrals using power series.
+#[allow(dead_code)]
 fn fresnel_complex_power_series(z: Complex64) -> SpecialResult<(Complex64, Complex64)> {
     // Special case for very small |z|
     if z.norm() < 1e-100 {
@@ -578,6 +583,7 @@ fn fresnel_complex_power_series(z: Complex64) -> SpecialResult<(Complex64, Compl
 }
 
 /// Implementation of complex Fresnel integrals using asymptotic expansions.
+#[allow(dead_code)]
 fn fresnel_complex_asymptotic(z: Complex64) -> SpecialResult<(Complex64, Complex64)> {
     // Special cases for extreme values
     if !z.is_finite() {
@@ -735,7 +741,7 @@ fn fresnel_complex_asymptotic(z: Complex64) -> SpecialResult<(Complex64, Complex
 ///
 /// The Fresnel sine integral is defined as:
 ///
-/// S(x) = ∫_0^x sin(πt²/2) dt
+/// S(x) = ∫_0_^x sin(πt²/2) dt
 ///
 /// # Arguments
 ///
@@ -753,6 +759,7 @@ fn fresnel_complex_asymptotic(z: Complex64) -> SpecialResult<(Complex64, Complex
 /// let s = fresnels(1.0).unwrap();
 /// println!("S(1.0) = {}", s);
 /// ```
+#[allow(dead_code)]
 pub fn fresnels(x: f64) -> SpecialResult<f64> {
     let (s, _) = fresnel(x)?;
     Ok(s)
@@ -764,7 +771,7 @@ pub fn fresnels(x: f64) -> SpecialResult<f64> {
 ///
 /// The Fresnel cosine integral is defined as:
 ///
-/// C(x) = ∫_0^x cos(πt²/2) dt
+/// C(x) = ∫_0_^x cos(πt²/2) dt
 ///
 /// # Arguments
 ///
@@ -782,6 +789,7 @@ pub fn fresnels(x: f64) -> SpecialResult<f64> {
 /// let c = fresnelc(1.0).unwrap();
 /// println!("C(1.0) = {}", c);
 /// ```
+#[allow(dead_code)]
 pub fn fresnelc(x: f64) -> SpecialResult<f64> {
     let (_, c) = fresnel(x)?;
     Ok(c)
@@ -813,6 +821,7 @@ pub fn fresnelc(x: f64) -> SpecialResult<f64> {
 /// println!("F₊(1.0) = {} + {}i", f_plus.re, f_plus.im);
 /// println!("K₊(1.0) = {} + {}i", k_plus.re, k_plus.im);
 /// ```
+#[allow(dead_code)]
 pub fn mod_fresnel_plus(x: f64) -> SpecialResult<(Complex64, Complex64)> {
     if x.is_nan() {
         return Err(SpecialError::DomainError(
@@ -878,7 +887,7 @@ pub fn mod_fresnel_plus(x: f64) -> SpecialResult<(Complex64, Complex64)> {
 
         // Handle potential cancellation in 0.5 - c for large x
         // For large x, both c and s approach 0.5, so we compute the difference directly
-        let half_minus_c = if z > 10.0 {
+        let halfminus_c = if z > 10.0 {
             // For large z, compute the difference using the asymptotic series directly
             let _z_sq = z * z;
             let pi_z = PI * z;
@@ -896,8 +905,8 @@ pub fn mod_fresnel_plus(x: f64) -> SpecialResult<(Complex64, Complex64)> {
             -s
         };
 
-        let half_minus_c_minus_is = Complex64::new(half_minus_c, minus_s);
-        half_minus_c_minus_is * sqrt_pi * exp_i_pi_4
+        let halfminus_cminus_is = Complex64::new(halfminus_c, minus_s);
+        halfminus_cminus_is * sqrt_pi * exp_i_pi_4
     } else {
         // For negative x: F₊(-x) = (1/2 + C(x) + iS(x))·√π·exp(iπ/4)
         // Similar improved calculations for -x
@@ -961,16 +970,17 @@ pub fn mod_fresnel_plus(x: f64) -> SpecialResult<(Complex64, Complex64)> {
 /// # Examples
 ///
 /// ```
-/// use scirs2_special::mod_fresnel_minus;
+/// use scirs2_special::mod_fresnelminus;
 ///
-/// let (f_minus, k_minus) = mod_fresnel_minus(1.0).unwrap();
-/// println!("F₋(1.0) = {} + {}i", f_minus.re, f_minus.im);
-/// println!("K₋(1.0) = {} + {}i", k_minus.re, k_minus.im);
+/// let (fminus, kminus) = mod_fresnelminus(1.0).unwrap();
+/// println!("F₋(1.0) = {} + {}i", fminus.re, fminus.im);
+/// println!("K₋(1.0) = {} + {}i", kminus.re, kminus.im);
 /// ```
-pub fn mod_fresnel_minus(x: f64) -> SpecialResult<(Complex64, Complex64)> {
+#[allow(dead_code)]
+pub fn mod_fresnelminus(x: f64) -> SpecialResult<(Complex64, Complex64)> {
     if x.is_nan() {
         return Err(SpecialError::DomainError(
-            "NaN input to mod_fresnel_minus".to_string(),
+            "NaN input to mod_fresnelminus".to_string(),
         ));
     }
 
@@ -978,13 +988,13 @@ pub fn mod_fresnel_minus(x: f64) -> SpecialResult<(Complex64, Complex64)> {
     if x.abs() < 1e-100 {
         // For x ≈ 0, F₋(0) approaches √π·e^(-iπ/4)/2
         let sqrt_pi = PI.sqrt();
-        let exp_minus_i_pi_4 = Complex64::new(1.0, 0.0) * Complex64::new(0.5, -0.5).sqrt();
-        let f_minus_0 = sqrt_pi * exp_minus_i_pi_4 / 2.0;
+        let expminus_i_pi_4 = Complex64::new(1.0, 0.0) * Complex64::new(0.5, -0.5).sqrt();
+        let fminus_0 = sqrt_pi * expminus_i_pi_4 / 2.0;
 
         // K₋(0) ≈ 1/2
-        let k_minus_0 = Complex64::new(0.5, 0.0);
+        let kminus_0 = Complex64::new(0.5, 0.0);
 
-        return Ok((f_minus_0, k_minus_0));
+        return Ok((fminus_0, kminus_0));
     }
 
     // Special case for extremely large x
@@ -1024,15 +1034,15 @@ pub fn mod_fresnel_minus(x: f64) -> SpecialResult<(Complex64, Complex64)> {
     };
 
     let exp_phase = reduced_phase.exp();
-    let exp_minus_i_pi_4 = Complex64::new(0.5, -0.5).sqrt(); // e^(-iπ/4) = (1-i)/√2
+    let expminus_i_pi_4 = Complex64::new(0.5, -0.5).sqrt(); // e^(-iπ/4) = (1-i)/√2
 
     // Compute F₋(x) with improved numerical stability
-    let f_minus = if x >= 0.0 {
+    let fminus = if x >= 0.0 {
         // For positive x: F₋(x) = (1/2 - C(x) + iS(x))·√π·exp(-iπ/4)
 
         // Handle potential cancellation in 0.5 - c for large x
         // For large x, both c and s approach 0.5, so we compute the difference directly
-        let half_minus_c = if z > 10.0 {
+        let halfminus_c = if z > 10.0 {
             // For large z, compute the difference using the asymptotic series directly
             let pi_z = PI * z;
             1.0 / (2.0 * pi_z) * z.cos() // First term of asymptotic expansion
@@ -1048,8 +1058,8 @@ pub fn mod_fresnel_minus(x: f64) -> SpecialResult<(Complex64, Complex64)> {
             s
         };
 
-        let half_minus_c_plus_is = Complex64::new(half_minus_c, plus_s);
-        half_minus_c_plus_is * sqrt_pi * exp_minus_i_pi_4
+        let halfminus_c_plus_is = Complex64::new(halfminus_c, plus_s);
+        halfminus_c_plus_is * sqrt_pi * expminus_i_pi_4
     } else {
         // For negative x: F₋(-x) = (1/2 + C(x) - iS(x))·√π·exp(-iπ/4)
         // Similar improved calculations for -x
@@ -1067,26 +1077,26 @@ pub fn mod_fresnel_minus(x: f64) -> SpecialResult<(Complex64, Complex64)> {
             -s
         };
 
-        let half_plus_c_minus_is = Complex64::new(half_plus_c, minus_s);
-        half_plus_c_minus_is * sqrt_pi * exp_minus_i_pi_4
+        let half_plus_cminus_is = Complex64::new(half_plus_c, minus_s);
+        half_plus_cminus_is * sqrt_pi * expminus_i_pi_4
     };
 
     // Compute K₋(x) = exp(i(x² + π/4)) · F₋(x) / √π with careful multiplication
     // Use intermediate variable to avoid catastrophic cancellation
-    let k_minus_unnormalized = exp_phase * f_minus;
-    let k_minus = k_minus_unnormalized * sqrt_pi_inv;
+    let kminus_unnormalized = exp_phase * fminus;
+    let kminus = kminus_unnormalized * sqrt_pi_inv;
 
     // Final check for numerical stability
-    if !f_minus.is_finite() || !k_minus.is_finite() {
+    if !fminus.is_finite() || !kminus.is_finite() {
         // Fallback to asymptotic approximations for very large arguments
         if x.abs() > 10.0 {
             // For large |x|, the integrals decay like 1/x
             let decay_factor = 1.0 / x.abs();
-            let f_minus_approx = Complex64::new(decay_factor, -decay_factor);
-            let k_minus_approx = Complex64::new(decay_factor, decay_factor) * sqrt_pi_inv;
-            return Ok((f_minus_approx, k_minus_approx));
+            let fminus_approx = Complex64::new(decay_factor, -decay_factor);
+            let kminus_approx = Complex64::new(decay_factor, decay_factor) * sqrt_pi_inv;
+            return Ok((fminus_approx, kminus_approx));
         }
     }
 
-    Ok((f_minus, k_minus))
+    Ok((fminus, kminus))
 }

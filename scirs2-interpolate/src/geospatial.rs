@@ -18,7 +18,7 @@
 //!
 //! ```rust
 //! use ndarray::Array1;
-//! use scirs2_interpolate::geospatial::{
+//! use scirs2__interpolate::geospatial::{
 //!     GeospatialInterpolator, CoordinateSystem, InterpolationModel
 //! };
 //!
@@ -276,8 +276,8 @@ where
     }
 
     /// Set the coordinate reference system
-    pub fn with_coordinate_system(mut self, coord_sys: CoordinateSystem) -> Self {
-        self.config.coordinate_system = coord_sys;
+    pub fn with_coordinate_system(mut self, coordsys: CoordinateSystem) -> Self {
+        self.config.coordinate_system = coordsys;
         self
     }
 
@@ -288,8 +288,8 @@ where
     }
 
     /// Enable or disable spherical distance calculations
-    pub fn with_spherical_distance(mut self, use_spherical: bool) -> Self {
-        self.config.use_spherical_distance = use_spherical;
+    pub fn with_spherical_distance(mut self, usespherical: bool) -> Self {
+        self.config.use_spherical_distance = usespherical;
         self
     }
 
@@ -300,8 +300,8 @@ where
     }
 
     /// Set maximum number of neighbors
-    pub fn with_max_neighbors(mut self, max_neighbors: usize) -> Self {
-        self.config.max_neighbors = Some(max_neighbors);
+    pub fn with_max_neighbors(mut self, maxneighbors: usize) -> Self {
+        self.config.max_neighbors = Some(maxneighbors);
         self
     }
 
@@ -404,7 +404,7 @@ where
         }
 
         // Project query coordinates
-        let (_x_coords, _y_coords) = self.project_coordinates(latitudes, longitudes)?;
+        let _x_coords_y_coords = self.project_coordinates(latitudes, longitudes)?;
 
         // Use the fitted interpolator
         if let Some(ref interpolator) = self.interpolator {
@@ -494,7 +494,7 @@ where
         &mut self,
         _x_coords: &Array1<T>,
         _y_coords: &Array1<T>,
-        _values: &ArrayView1<T>,
+        values: &ArrayView1<T>,
     ) -> InterpolateResult<()> {
         // For now, compute basic statistics
         // In a full implementation, this would include:
@@ -503,10 +503,10 @@ where
         // - Range estimation
         // - Spatial clustering metrics
 
-        let n = _values.len();
+        let n = values.len();
         if n > 1 {
-            let mean_val = _values.sum() / T::from_usize(n).unwrap();
-            let variance = _values
+            let mean_val = values.sum() / T::from_usize(n).unwrap();
+            let variance = values
                 .iter()
                 .map(|&x| (x - mean_val) * (x - mean_val))
                 .sum::<T>()
@@ -804,6 +804,7 @@ where
 }
 
 /// Convenience function to create a geospatial interpolator for climate data
+#[allow(dead_code)]
 pub fn make_climate_interpolator<T>() -> GeospatialInterpolator<T>
 where
     T: Float
@@ -832,6 +833,7 @@ where
 }
 
 /// Convenience function to create a geospatial interpolator for elevation data
+#[allow(dead_code)]
 pub fn make_elevation_interpolator<T>() -> GeospatialInterpolator<T>
 where
     T: Float
@@ -1009,16 +1011,21 @@ mod tests {
 
     #[test]
     fn test_thin_plate_spline_model() {
-        let latitudes = Array1::from_vec(vec![40.0, 41.0, 42.0, 43.0, 44.0]);
-        let longitudes = Array1::from_vec(vec![-74.0, -75.0, -76.0, -77.0, -78.0]);
-        let elevations = Array1::from_vec(vec![100.0, 200.0, 300.0, 400.0, 500.0]);
+        // Use non-collinear points for thin plate spline
+        let latitudes = Array1::from_vec(vec![40.0, 41.0, 40.5, 41.5, 40.8]);
+        let longitudes = Array1::from_vec(vec![-74.0, -74.5, -75.0, -74.2, -74.8]);
+        let elevations = Array1::from_vec(vec![100.0, 200.0, 150.0, 250.0, 180.0]);
 
         let mut interpolator = GeospatialInterpolator::new()
             .with_interpolation_model(InterpolationModel::ThinPlateSpline);
 
         let fit_result =
             interpolator.fit(&latitudes.view(), &longitudes.view(), &elevations.view());
-        assert!(fit_result.is_ok());
+        assert!(
+            fit_result.is_ok(),
+            "Failed to fit thin plate spline: {:?}",
+            fit_result.err()
+        );
 
         let query_lats = Array1::from_vec(vec![40.5]);
         let query_lons = Array1::from_vec(vec![-74.5]);

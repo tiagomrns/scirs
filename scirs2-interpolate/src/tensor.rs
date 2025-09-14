@@ -38,8 +38,8 @@ impl<F: Float + FromPrimitive + Debug> TensorProductInterpolator<F> {
     ///
     /// ```rust
     /// use ndarray::Array1;
-    /// use scirs2_interpolate::tensor::TensorProductInterpolator;
-    /// use scirs2_interpolate::interp1d::InterpolationMethod;
+    /// use scirs2__interpolate::tensor::TensorProductInterpolator;
+    /// use scirs2__interpolate::interp1d::InterpolationMethod;
     ///
     /// // Create coordinates for a 2D grid
     /// let x_coords = Array1::from_vec(vec![0.0, 1.0, 2.0]);
@@ -97,6 +97,7 @@ impl<F: Float + FromPrimitive + Debug> TensorProductInterpolator<F> {
 /// # Returns
 ///
 /// Interpolated values at the points
+#[allow(dead_code)]
 pub fn tensor_product_interpolate<F>(
     _coords: &[Array1<F>],
     _values: &ndarray::ArrayD<F>,
@@ -187,6 +188,7 @@ impl<F: Float + FromPrimitive + Debug> LagrangeTensorInterpolator<F> {
 /// # Returns
 ///
 /// Interpolated values at the points
+#[allow(dead_code)]
 pub fn lagrange_tensor_interpolate<F>(
     _coords: &[Array1<F>],
     _values: &ndarray::ArrayD<F>,

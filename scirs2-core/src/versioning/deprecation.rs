@@ -7,12 +7,10 @@ use super::Version;
 use crate::error::CoreError;
 use std::collections::HashMap;
 
-#[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
 
 /// Deprecation policy configuration
-#[derive(Debug, Clone)]
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct DeprecationPolicy {
     /// Default deprecation period in days
     pub default_deprecation_period: u32,
@@ -38,7 +36,7 @@ impl Default for DeprecationPolicy {
                 AutoDeprecationRule::MajorVersionSuperseded {
                     versions_to_keep: 2,
                 },
-                AutoDeprecationRule::AgeBasedDeprecation { max_age_days: 1095 }, // 3 years
+                AutoDeprecationRule::AgeBasedDeprecation { maxage_days: 1095 }, // 3 years
             ],
             deprecation_support_level: SupportLevel::SecurityOnly,
             migration_assistance: true,
@@ -47,8 +45,7 @@ impl Default for DeprecationPolicy {
 }
 
 /// Support levels during deprecation
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub enum SupportLevel {
     /// Full support continues
     Full,
@@ -61,13 +58,12 @@ pub enum SupportLevel {
 }
 
 /// Automatic deprecation rules
-#[derive(Debug, Clone)]
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum AutoDeprecationRule {
     /// Deprecate when superseded by newer major versions
     MajorVersionSuperseded { versions_to_keep: u32 },
     /// Deprecate based on age
-    AgeBasedDeprecation { max_age_days: u32 },
+    AgeBasedDeprecation { maxage_days: u32 },
     /// Deprecate when usage falls below threshold
     UsageBasedDeprecation { min_usage_percent: f64 },
     /// Deprecate unstable versions after stable release
@@ -75,8 +71,7 @@ pub enum AutoDeprecationRule {
 }
 
 /// Deprecation status for a version
-#[derive(Debug, Clone)]
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct DeprecationStatus {
     /// Version being deprecated
     pub version: Version,
@@ -101,8 +96,7 @@ pub struct DeprecationStatus {
 }
 
 /// Phases of deprecation lifecycle
-#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
 pub enum DeprecationPhase {
     /// Actively supported
     Active,
@@ -138,8 +132,7 @@ impl DeprecationPhase {
 }
 
 /// Reasons for deprecation
-#[derive(Debug, Clone)]
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum DeprecationReason {
     /// Superseded by newer version
     SupersededBy(Version),
@@ -160,8 +153,7 @@ pub enum DeprecationReason {
 }
 
 /// Usage metrics for deprecation decisions
-#[derive(Debug, Clone)]
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct UsageMetrics {
     /// Number of active users/clients
     pub active_users: u64,
@@ -176,8 +168,7 @@ pub struct UsageMetrics {
 }
 
 /// Usage trend indicators
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub enum UsageTrend {
     /// Usage is increasing
     Increasing,
@@ -190,8 +181,7 @@ pub enum UsageTrend {
 }
 
 /// Deprecation announcement
-#[derive(Debug, Clone)]
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct DeprecationAnnouncement {
     /// Version being deprecated
     pub version: Version,
@@ -210,8 +200,7 @@ pub struct DeprecationAnnouncement {
 }
 
 /// Deprecation timeline
-#[derive(Debug, Clone)]
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct DeprecationTimeline {
     /// When deprecation was announced
     pub announced: chrono::DateTime<chrono::Utc>,
@@ -226,8 +215,7 @@ pub struct DeprecationTimeline {
 }
 
 /// Deprecation milestone
-#[derive(Debug, Clone)]
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct DeprecationMilestone {
     /// Milestone date
     pub date: chrono::DateTime<chrono::Utc>,
@@ -238,8 +226,7 @@ pub struct DeprecationMilestone {
 }
 
 /// Communication channels for deprecation announcements
-#[derive(Debug, Clone)]
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum CommunicationChannel {
     /// Email notification
     Email,
@@ -257,6 +244,38 @@ pub enum CommunicationChannel {
     SocialMedia,
     /// Direct notification
     DirectNotification,
+}
+
+/// Helper function to create a deprecation timeline
+fn deprecation_timeline(
+    version: &Version,
+    _replacement_version: Option<&Version>,
+) -> DeprecationTimeline {
+    let now = chrono::Utc::now();
+    let deprecated_date = now + chrono::Duration::days(30);
+    let end_of_life = now + chrono::Duration::days(180);
+    let removal_date = now + chrono::Duration::days(365);
+
+    let milestones = vec![
+        DeprecationMilestone {
+            date: deprecated_date,
+            description: format!("Version {version} will be deprecated"),
+            actions: vec!["Update to newer version".to_string()],
+        },
+        DeprecationMilestone {
+            date: end_of_life,
+            description: format!("Version {version} reaches end of life"),
+            actions: vec!["Support will be discontinued".to_string()],
+        },
+    ];
+
+    DeprecationTimeline {
+        announced: now,
+        deprecated_date,
+        end_of_life,
+        removal_date: Some(removal_date),
+        milestones,
+    }
 }
 
 /// Deprecation manager implementation
@@ -289,14 +308,14 @@ impl DeprecationManager {
     }
 
     /// Register a version for deprecation management
-    pub fn register_version(&mut self, api_version: &super::ApiVersion) -> Result<(), CoreError> {
+    pub fn register_version(&mut self, apiversion: &super::ApiVersion) -> Result<(), CoreError> {
         // Create active status for new version
         let status = DeprecationStatus {
-            version: api_version.version.clone(),
+            version: apiversion.version.clone(),
             phase: DeprecationPhase::Active,
-            announced_date: api_version.release_date,
-            end_of_life_date: api_version.end_of_life.unwrap_or_else(|| {
-                api_version.release_date
+            announced_date: apiversion.release_date,
+            end_of_life_date: apiversion.end_of_life.unwrap_or_else(|| {
+                apiversion.release_date
                     + chrono::Duration::days(self.policy.default_deprecation_period as i64)
             }),
             actual_end_of_life: None,
@@ -307,8 +326,7 @@ impl DeprecationManager {
             usage_metrics: None,
         };
 
-        self.deprecations
-            .insert(api_version.version.clone(), status);
+        self.deprecations.insert(apiversion.version.clone(), status);
         Ok(())
     }
 
@@ -321,8 +339,7 @@ impl DeprecationManager {
     ) -> Result<DeprecationAnnouncement, CoreError> {
         let status = self.deprecations.get_mut(version).ok_or_else(|| {
             CoreError::ComputationError(crate::error::ErrorContext::new(format!(
-                "Version {} not registered",
-                version
+                "Version {version} not registered"
             )))
         })?;
 
@@ -399,7 +416,7 @@ impl DeprecationManager {
     ) -> Result<(), CoreError> {
         if !self.deprecations.contains_key(version) {
             return Err(CoreError::ComputationError(
-                crate::error::ErrorContext::new(format!("Version {} not registered", version)),
+                crate::error::ErrorContext::new(format!("Version {version} not registered")),
             ));
         }
 
@@ -460,11 +477,11 @@ impl DeprecationManager {
             AutoDeprecationRule::MajorVersionSuperseded { versions_to_keep } => {
                 actions.extend(self.apply_major_version_rule(*versions_to_keep)?);
             }
-            AutoDeprecationRule::AgeBasedDeprecation { max_age_days } => {
-                actions.extend(self.apply_age_based_rule(*max_age_days, now)?);
+            AutoDeprecationRule::AgeBasedDeprecation { maxage_days } => {
+                actions.extend(self.apply_agebased_rule(*maxage_days, now)?);
             }
             AutoDeprecationRule::UsageBasedDeprecation { min_usage_percent } => {
-                actions.extend(self.apply_usage_based_rule(*min_usage_percent)?);
+                actions.extend(self.apply_usagebased_rule(*min_usage_percent)?);
             }
             AutoDeprecationRule::StableVersionReleased => {
                 actions.extend(self.apply_stable_release_rule()?);
@@ -476,45 +493,52 @@ impl DeprecationManager {
 
     /// Apply major version superseded rule
     fn apply_major_version_rule(
-        &mut self,
+        &self,
         versions_to_keep: u32,
     ) -> Result<Vec<MaintenanceAction>, CoreError> {
         let mut actions = Vec::new();
 
         // Group versions by major version and collect them to avoid borrowing issues
-        let mut major_versions: std::collections::BTreeMap<u64, Vec<Version>> =
+        let mut majorversions: std::collections::BTreeMap<u64, Vec<Version>> =
             std::collections::BTreeMap::new();
         for version in self.deprecations.keys() {
-            major_versions
+            majorversions
                 .entry(version.major())
                 .or_default()
                 .push(version.clone());
         }
 
         // Find majors to deprecate
-        let major_keys: Vec<u64> = major_versions.keys().cloned().collect();
+        let major_keys: Vec<u64> = majorversions.keys().cloned().collect();
         if major_keys.len() > versions_to_keep as usize {
             let to_deprecate = &major_keys[..major_keys.len() - versions_to_keep as usize];
 
             for &major in to_deprecate {
-                if let Some(versions) = major_versions.get(&major) {
+                if let Some(versions) = majorversions.get(&major) {
                     for version in versions {
                         if let Some(status) = self.deprecations.get(version) {
                             if status.phase == DeprecationPhase::Active {
                                 let latest_major = major_keys.last().unwrap();
                                 let replacement = Version::new(*latest_major, 0, 0);
 
-                                let _announcement = self.announce_deprecation(
-                                    version,
-                                    DeprecationReason::SupersededBy(replacement.clone()),
-                                    Some(replacement),
-                                )?;
+                                let _announcement = DeprecationAnnouncement {
+                                    version: version.clone(),
+                                    announcement_date: chrono::Utc::now(),
+                                    timeline: deprecation_timeline(version, Some(&replacement)),
+                                    message: format!(
+                                        "Version {version} is deprecated in favor of {replacement}"
+                                    ),
+                                    migration_instructions: Some(format!(
+                                        "Please migrate to version {replacement}"
+                                    )),
+                                    support_contact: None,
+                                    communication_channels: vec![],
+                                };
 
                                 actions.push(MaintenanceAction::AutoDeprecation {
                                     version: version.clone(),
                                     rule: format!(
-                                        "Major version superseded (keep {})",
-                                        versions_to_keep
+                                        "Major version superseded (keep {versions_to_keep})"
                                     ),
                                 });
                             }
@@ -528,27 +552,34 @@ impl DeprecationManager {
     }
 
     /// Apply age-based deprecation rule
-    fn apply_age_based_rule(
-        &mut self,
-        max_age_days: u32,
+    fn apply_agebased_rule(
+        &self,
+        maxage_days: u32,
         now: chrono::DateTime<chrono::Utc>,
     ) -> Result<Vec<MaintenanceAction>, CoreError> {
         let mut actions = Vec::new();
-        let max_age = chrono::Duration::days(max_age_days as i64);
+        let maxage = chrono::Duration::days(maxage_days as i64);
 
         for (version, status) in &self.deprecations.clone() {
             if status.phase == DeprecationPhase::Active {
                 let age = now.signed_duration_since(status.announced_date);
-                if age > max_age {
-                    let _announcement = self.announce_deprecation(
-                        version,
-                        DeprecationReason::MaintenanceBurden,
-                        None,
-                    )?;
+                if age > maxage {
+                    let _announcement = DeprecationAnnouncement {
+                        version: version.clone(),
+                        timeline: deprecation_timeline(version, None),
+                        announcement_date: now,
+                        message: format!("Version {version} deprecated due to maintenance burden"),
+                        migration_instructions: Some("Please upgrade to newer version".to_string()),
+                        support_contact: Some("support@scirs.org".to_string()),
+                        communication_channels: vec![
+                            CommunicationChannel::Documentation,
+                            CommunicationChannel::Email,
+                        ],
+                    };
 
                     actions.push(MaintenanceAction::AutoDeprecation {
                         version: version.clone(),
-                        rule: format!("Age-based deprecation (max {} days)", max_age_days),
+                        rule: format!("Age-based deprecation (max {maxage_days} days)"),
                     });
                 }
             }
@@ -558,7 +589,7 @@ impl DeprecationManager {
     }
 
     /// Apply usage-based deprecation rule
-    fn apply_usage_based_rule(
+    fn apply_usagebased_rule(
         &self,
         _min_usage_percent: f64,
     ) -> Result<Vec<MaintenanceAction>, CoreError> {
@@ -582,7 +613,7 @@ impl DeprecationManager {
         replacement: Option<&Version>,
     ) -> String {
         let reason_str = match reason {
-            DeprecationReason::SupersededBy(v) => format!("superseded by version {}", v),
+            DeprecationReason::SupersededBy(v) => format!("{v}"),
             DeprecationReason::SecurityConcerns => "security concerns".to_string(),
             DeprecationReason::PerformanceIssues => "performance issues".to_string(),
             DeprecationReason::MaintenanceBurden => "maintenance burden".to_string(),
@@ -592,15 +623,11 @@ impl DeprecationManager {
             DeprecationReason::VendorEndOfSupport => "vendor end of support".to_string(),
         };
 
-        let mut message = format!(
-            "Version {} has been deprecated due to {}. ",
-            version, reason_str
-        );
+        let mut message = format!("Version {version} has been deprecated due to {reason_str}. ");
 
         if let Some(replacement) = replacement {
             message.push_str(&format!(
-                "Please migrate to version {} as soon as possible. ",
-                replacement
+                "Please migrate to version {replacement} as soon as possible. "
             ));
         }
 
@@ -618,24 +645,23 @@ impl DeprecationManager {
     /// Generate migration instructions
     fn generate_migration_instructions(
         &self,
-        _version: &Version,
+        _current_version: &Version,
         replacement: Option<&Version>,
     ) -> Option<String> {
         replacement.map(|replacement| {
             format!(
-                "To migrate to version {}:\n\
-                1. Update your dependency to version {}\n\
+                "To migrate to version {replacement}:\n\
+                1. Update your dependency to version {replacement}\n\
                 2. Review the changelog for breaking changes\n\
                 3. Update your code as necessary\n\
                 4. Test thoroughly before deploying\n\
-                5. Contact support if you need assistance",
-                replacement, replacement
+                5. Contact support if you need assistance"
             )
         })
     }
 
     /// Get all deprecated versions
-    pub fn get_deprecated_versions(&self) -> Vec<&DeprecationStatus> {
+    pub fn get_deprecatedversions(&self) -> Vec<&DeprecationStatus> {
         self.deprecations
             .values()
             .filter(|status| status.phase != DeprecationPhase::Active)
@@ -643,7 +669,7 @@ impl DeprecationManager {
     }
 
     /// Get versions in specific phase
-    pub fn get_versions_in_phase(&self, phase: DeprecationPhase) -> Vec<&DeprecationStatus> {
+    pub fn getversions_in_phase(&self, phase: DeprecationPhase) -> Vec<&DeprecationStatus> {
         self.deprecations
             .values()
             .filter(|status| status.phase == phase)
@@ -697,10 +723,10 @@ mod tests {
         let version = Version::new(1, 0, 0);
 
         // Register version first
-        let api_version = super::super::ApiVersionBuilder::new(version.clone())
+        let apiversion = super::super::ApiVersionBuilder::new(version.clone())
             .build()
             .unwrap();
-        manager.register_version(&api_version).unwrap();
+        manager.register_version(&apiversion).unwrap();
 
         // Announce deprecation
         let replacement = Version::new(2, 0, 0);
@@ -737,10 +763,10 @@ mod tests {
         // Register multiple major versions
         for major in 1..=5 {
             let version = Version::new(major, 0, 0);
-            let api_version = super::super::ApiVersionBuilder::new(version)
+            let apiversion = super::super::ApiVersionBuilder::new(version)
                 .build()
                 .unwrap();
-            manager.register_version(&api_version).unwrap();
+            manager.register_version(&apiversion).unwrap();
         }
 
         // Apply major version rule

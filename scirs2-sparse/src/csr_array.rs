@@ -11,21 +11,94 @@ use std::ops::{Add, Div, Mul, Sub};
 use crate::error::{SparseError, SparseResult};
 use crate::sparray::{SparseArray, SparseSum};
 
-/// CSR Array format
+/// CSR Array format - Compressed Sparse Row matrix representation
 ///
-/// The CSR (Compressed Sparse Row) format stores a sparse array in three arrays:
-/// - data: array of non-zero values
-/// - indices: column indices of the non-zero values
-/// - indptr: index pointers; for each row, points to the first non-zero element
+/// The CSR (Compressed Sparse Row) format is one of the most popular sparse matrix formats,
+/// storing a sparse array using three arrays:
+/// - `data`: array of non-zero values in row-major order
+/// - `indices`: column indices of the non-zero values
+/// - `indptr`: row pointers; `indptr[i]` is the index into `data`/`indices` where row `i` starts
 ///
-/// # Notes
+/// The CSR format is particularly efficient for:
+/// - ✅ Matrix-vector multiplications (`A * x`)
+/// - ✅ Matrix-matrix multiplications with other sparse matrices
+/// - ✅ Row-wise operations and row slicing
+/// - ✅ Iterating over non-zero elements row by row
+/// - ✅ Adding and subtracting sparse matrices
 ///
-/// - Efficient for row-oriented operations
-/// - Fast matrix-vector multiplications
-/// - Fast row slicing
-/// - Slow column slicing
-/// - Slow constructing by setting individual elements
+/// But less efficient for:
+/// - ❌ Column-wise operations and column slicing
+/// - ❌ Inserting or modifying individual elements after construction
+/// - ❌ Operations that require column access patterns
 ///
+/// # Memory Layout
+///
+/// For a matrix with `m` rows, `n` columns, and `nnz` non-zero elements:
+/// - `data`: length `nnz` - stores the actual non-zero values
+/// - `indices`: length `nnz` - stores column indices for each non-zero value
+/// - `indptr`: length `m+1` - stores cumulative count of non-zeros per row
+///
+/// # Examples
+///
+/// ## Basic Construction and Access
+/// ```
+/// use scirs2_sparse::csr_array::CsrArray;
+///
+/// // Create a 3x3 matrix:
+/// // [1.0, 0.0, 2.0]
+/// // [0.0, 3.0, 0.0]
+/// // [4.0, 0.0, 5.0]
+/// let rows = vec![0, 0, 1, 2, 2];
+/// let cols = vec![0, 2, 1, 0, 2];
+/// let data = vec![1.0, 2.0, 3.0, 4.0, 5.0];
+/// let matrix = CsrArray::from_triplets(&rows, &cols, &data, (3, 3), false).unwrap();
+///
+/// // Access elements
+/// assert_eq!(matrix.get(0, 0), 1.0);
+/// assert_eq!(matrix.get(0, 1), 0.0);  // Zero element
+/// assert_eq!(matrix.get(1, 1), 3.0);
+///
+/// // Get matrix properties
+/// assert_eq!(matrix.shape(), (3, 3));
+/// assert_eq!(matrix.nnz(), 5);
+/// ```
+///
+/// ## Matrix Operations
+/// ```
+/// use scirs2_sparse::csr_array::CsrArray;
+/// use ndarray::Array1;
+///
+/// let rows = vec![0, 1, 2];
+/// let cols = vec![0, 1, 2];
+/// let data = vec![2.0, 3.0, 4.0];
+/// let matrix = CsrArray::from_triplets(&rows, &cols, &data, (3, 3), false).unwrap();
+///
+/// // Matrix-vector multiplication
+/// let x = Array1::from_vec(vec![1.0, 2.0, 3.0]);
+/// let y = matrix.dot(&x).unwrap();
+/// assert_eq!(y[0], 2.0);  // 2.0 * 1.0
+/// assert_eq!(y[1], 6.0);  // 3.0 * 2.0
+/// assert_eq!(y[2], 12.0); // 4.0 * 3.0
+/// ```
+///
+/// ## Format Conversion
+/// ```
+/// use scirs2_sparse::csr_array::CsrArray;
+///
+/// let rows = vec![0, 1];
+/// let cols = vec![0, 1];
+/// let data = vec![1.0, 2.0];
+/// let csr = CsrArray::from_triplets(&rows, &cols, &data, (2, 2), false).unwrap();
+///
+/// // Convert to dense array
+/// let dense = csr.to_array();
+/// assert_eq!(dense[[0, 0]], 1.0);
+/// assert_eq!(dense[[1, 1]], 2.0);
+///
+/// // Convert to other sparse formats
+/// let coo = csr.to_coo();
+/// let csc = csr.to_csc();
+/// ```
 #[derive(Clone)]
 pub struct CsrArray<T>
 where
@@ -137,18 +210,74 @@ where
 
     /// Create a CSR array from triplet format (COO-like)
     ///
+    /// This function creates a CSR (Compressed Sparse Row) array from coordinate triplets.
+    /// The triplets represent non-zero elements as (row, column, value) tuples.
+    ///
     /// # Arguments
-    /// * `rows` - Row indices
-    /// * `cols` - Column indices
-    /// * `data` - Values
-    /// * `shape` - Shape of the sparse array
-    /// * `sorted` - Whether the triplets are sorted by row
+    /// * `rows` - Row indices of non-zero elements
+    /// * `cols` - Column indices of non-zero elements  
+    /// * `data` - Values of non-zero elements
+    /// * `shape` - Shape of the sparse array (nrows, ncols)
+    /// * `sorted` - Whether the triplets are already sorted by (row, col). If false, sorting will be performed.
     ///
     /// # Returns
-    /// A new `CsrArray`
+    /// A new `CsrArray` containing the sparse matrix
     ///
     /// # Errors
-    /// Returns an error if the data is not consistent
+    /// Returns an error if:
+    /// - `rows`, `cols`, and `data` have different lengths
+    /// - Any index is out of bounds for the given shape
+    /// - The resulting data structure is inconsistent
+    ///
+    /// # Examples
+    ///
+    /// Create a simple 3x3 sparse matrix:
+    /// ```
+    /// use scirs2_sparse::csr_array::CsrArray;
+    ///
+    /// // Create a 3x3 matrix with the following structure:
+    /// // [1.0, 0.0, 2.0]
+    /// // [0.0, 3.0, 0.0]
+    /// // [4.0, 0.0, 5.0]
+    /// let rows = vec![0, 0, 1, 2, 2];
+    /// let cols = vec![0, 2, 1, 0, 2];
+    /// let data = vec![1.0, 2.0, 3.0, 4.0, 5.0];
+    /// let shape = (3, 3);
+    ///
+    /// let matrix = CsrArray::from_triplets(&rows, &cols, &data, shape, false).unwrap();
+    /// assert_eq!(matrix.get(0, 0), 1.0);
+    /// assert_eq!(matrix.get(0, 1), 0.0);
+    /// assert_eq!(matrix.get(1, 1), 3.0);
+    /// ```
+    ///
+    /// Create an empty sparse matrix:
+    /// ```
+    /// use scirs2_sparse::csr_array::CsrArray;
+    ///
+    /// let rows: Vec<usize> = vec![];
+    /// let cols: Vec<usize> = vec![];
+    /// let data: Vec<f64> = vec![];
+    /// let shape = (5, 5);
+    ///
+    /// let matrix = CsrArray::from_triplets(&rows, &cols, &data, shape, false).unwrap();
+    /// assert_eq!(matrix.nnz(), 0);
+    /// assert_eq!(matrix.shape(), (5, 5));
+    /// ```
+    ///
+    /// Handle duplicate entries (they will be preserved):
+    /// ```
+    /// use scirs2_sparse::csr_array::CsrArray;
+    ///
+    /// // Multiple entries at the same position
+    /// let rows = vec![0, 0];
+    /// let cols = vec![0, 0];
+    /// let data = vec![1.0, 2.0];
+    /// let shape = (2, 2);
+    ///
+    /// let matrix = CsrArray::from_triplets(&rows, &cols, &data, shape, false).unwrap();
+    /// // Note: CSR format preserves duplicates; use sum_duplicates() to combine them
+    /// assert_eq!(matrix.nnz(), 2);
+    /// ```
     pub fn from_triplets(
         rows: &[usize],
         cols: &[usize],
@@ -182,13 +311,13 @@ where
         }
 
         if !sorted {
-            all_data.sort_by_key(|&(row, col, _)| (row, col));
+            all_data.sort_by_key(|&(row, col_, _)| (row, col_));
         }
 
         // Count elements per row
         let mut row_counts = vec![0; shape.0];
-        for &(row, _, _) in &all_data {
-            row_counts[row] += 1;
+        for &(row_, _, _) in &all_data {
+            row_counts[row_] += 1;
         }
 
         // Create indptr
@@ -735,7 +864,7 @@ where
             }
 
             // Sort by column index
-            row_data.sort_by_key(|&(col, _)| col);
+            row_data.sort_by_key(|&(col_, _)| col_);
 
             // Put the sorted data back
             for (i, (col, val)) in row_data.into_iter().enumerate() {
@@ -965,6 +1094,14 @@ where
 
     fn as_any(&self) -> &dyn std::any::Any {
         self
+    }
+
+    fn get_indptr(&self) -> Option<&Array1<usize>> {
+        Some(&self.indptr)
+    }
+
+    fn indptr(&self) -> Option<&Array1<usize>> {
+        Some(&self.indptr)
     }
 }
 

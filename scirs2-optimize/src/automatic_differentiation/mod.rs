@@ -118,6 +118,7 @@ where
 }
 
 /// Main automatic differentiation function
+#[allow(dead_code)]
 pub fn autodiff<F>(
     func: F,
     x: &ArrayView1<f64>,
@@ -146,6 +147,7 @@ where
 }
 
 /// Forward-mode automatic differentiation
+#[allow(dead_code)]
 fn autodiff_forward<F>(
     func: F,
     x: &ArrayView1<f64>,
@@ -195,6 +197,7 @@ where
 }
 
 /// Reverse-mode automatic differentiation
+#[allow(dead_code)]
 fn autodiff_reverse<F>(
     func: F,
     x: &ArrayView1<f64>,
@@ -237,6 +240,7 @@ where
 }
 
 /// Create a gradient function using automatic differentiation
+#[allow(dead_code)]
 pub fn create_ad_gradient<F>(
     func: F,
     options: AutoDiffOptions,
@@ -257,6 +261,7 @@ where
 }
 
 /// Create a Hessian function using automatic differentiation
+#[allow(dead_code)]
 pub fn create_ad_hessian<F>(
     func: F,
     options: AutoDiffOptions,
@@ -279,6 +284,7 @@ where
 }
 
 /// Optimize AD mode selection based on problem characteristics
+#[allow(dead_code)]
 pub fn optimize_ad_mode(problem_dim: usize, output_dim: usize, expected_sparsity: f64) -> ADMode {
     // Forward mode is efficient when input dimension is small
     // Reverse mode is efficient when output dimension is small (typically 1 for optimization)

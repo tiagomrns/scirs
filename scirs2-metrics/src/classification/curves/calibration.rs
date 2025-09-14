@@ -33,6 +33,7 @@ use ndarray::{Array1, ArrayBase, Data, Dimension};
 /// Type alias for calibration curve result
 pub type CalibrationCurveResult = (Array1<f64>, Array1<f64>, Array1<usize>);
 
+#[allow(dead_code)]
 pub fn calibration_curve<S1, S2, D1, D2>(
     y_true: &ArrayBase<S1, D1>,
     y_prob: &ArrayBase<S2, D2>,

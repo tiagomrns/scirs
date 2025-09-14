@@ -1,15 +1,16 @@
 use ndarray::array;
 use scirs2_linalg::compat;
 
+#[allow(dead_code)]
 fn main() {
     println!("Testing eigenvalue computation...");
 
     // Test 1: Diagonal matrix (should have eigenvalues [1, 3, 5])
-    let diag_matrix = array![[5.0, 0.0, 0.0], [0.0, 3.0, 0.0], [0.0, 0.0, 1.0]];
-    println!("Diagonal matrix: {:?}", diag_matrix);
+    let diagmatrix = array![[5.0, 0.0, 0.0], [0.0, 3.0, 0.0], [0.0, 0.0, 1.0]];
+    println!("Diagonal matrix: {:?}", diagmatrix);
 
     match compat::eigh(
-        &diag_matrix.view(),
+        &diagmatrix.view(),
         None,
         false,
         false, // Get eigenvectors too
@@ -28,7 +29,7 @@ fn main() {
                 println!("Eigenvectors: {:?}", eigenvecs);
 
                 // Test A*V = V*Λ
-                let av = diag_matrix.dot(&eigenvecs);
+                let av = diagmatrix.dot(&eigenvecs);
                 let vl = eigenvecs.dot(&ndarray::Array2::from_diag(&eigenvals));
                 println!("A*V: {:?}", av);
                 println!("V*Λ: {:?}", vl);
@@ -39,11 +40,11 @@ fn main() {
     }
 
     // Test 2: Simple 2x2 symmetric matrix
-    let simple_matrix = array![[2.0, 1.0], [1.0, 3.0]];
-    println!("\nSimple 2x2 matrix: {:?}", simple_matrix);
+    let simplematrix = array![[2.0, 1.0], [1.0, 3.0]];
+    println!("\nSimple 2x2 matrix: {:?}", simplematrix);
 
     match compat::eigh(
-        &simple_matrix.view(),
+        &simplematrix.view(),
         None,
         false,
         false, // Get eigenvectors too
@@ -61,7 +62,7 @@ fn main() {
                 println!("Eigenvectors: {:?}", eigenvecs);
 
                 // Test A*V = V*Λ
-                let av = simple_matrix.dot(&eigenvecs);
+                let av = simplematrix.dot(&eigenvecs);
                 let vl = eigenvecs.dot(&ndarray::Array2::from_diag(&eigenvals));
                 println!("A*V: {:?}", av);
                 println!("V*Λ: {:?}", vl);

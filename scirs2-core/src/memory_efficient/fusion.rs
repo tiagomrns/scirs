@@ -147,6 +147,7 @@ impl Default for OpFusion {
 }
 
 /// Register a fused operation in the global registry
+#[allow(dead_code)]
 pub fn register_fusion<T: 'static>(op: Arc<dyn FusedOp>) -> Result<(), CoreError> {
     let type_id = TypeId::of::<T>();
 

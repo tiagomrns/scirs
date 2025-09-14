@@ -67,14 +67,14 @@ impl AutoPadConfig {
     }
 
     /// Set minimum padding
-    pub fn with_min_pad(mut self, min_pad: usize) -> Self {
-        self.min_pad = min_pad;
+    pub fn with_min_pad(mut self, minpad: usize) -> Self {
+        self.min_pad = minpad;
         self
     }
 
     /// Set maximum padding
-    pub fn with_max_pad(mut self, max_pad: usize) -> Self {
-        self.max_pad = Some(max_pad);
+    pub fn with_max_pad(mut self, maxpad: usize) -> Self {
+        self.max_pad = Some(maxpad);
         self
     }
 
@@ -92,6 +92,7 @@ impl AutoPadConfig {
 }
 
 /// Automatically pad a 1D array for optimal FFT performance
+#[allow(dead_code)]
 pub fn auto_pad_1d<T>(x: &Array1<T>, config: &AutoPadConfig) -> FFTResult<Array1<T>>
 where
     T: Clone + Zero,
@@ -234,6 +235,7 @@ where
 }
 
 /// Automatically pad a complex array for optimal FFT performance
+#[allow(dead_code)]
 pub fn auto_pad_complex(
     x: &Array1<Complex<f64>>,
     config: &AutoPadConfig,
@@ -322,6 +324,7 @@ pub fn auto_pad_complex(
 }
 
 /// Remove padding from a 1D array after FFT
+#[allow(dead_code)]
 pub fn remove_padding_1d<T>(
     padded: &Array1<T>,
     original_size: usize,
@@ -348,6 +351,7 @@ where
 }
 
 /// Automatic padding for N-dimensional arrays
+#[allow(dead_code)]
 pub fn auto_pad_nd<S, D>(
     x: &ArrayBase<S, D>,
     config: &AutoPadConfig,
@@ -361,7 +365,7 @@ where
     let default_axes = (0..shape.len()).collect::<Vec<_>>();
     let axes = axes.unwrap_or(&default_axes[..]);
 
-    let mut padded_shape = shape.to_vec();
+    let mut paddedshape = shape.to_vec();
 
     // Calculate padded sizes for specified axes
     for &axis in axes {
@@ -377,7 +381,7 @@ where
             next_fast_len(n + config.min_pad, false)
         };
 
-        padded_shape[axis] = if let Some(max_pad) = config.max_pad {
+        paddedshape[axis] = if let Some(max_pad) = config.max_pad {
             target_size.min(n + max_pad)
         } else {
             target_size
@@ -385,7 +389,7 @@ where
     }
 
     // Create padded array
-    let mut padded = ArrayD::zeros(padded_shape.clone());
+    let mut padded = ArrayD::zeros(paddedshape.clone());
 
     // Copy original data - simplified implementation
     let x_dyn = x
@@ -398,7 +402,7 @@ where
     match x_dyn.ndim() {
         1 => {
             let start = if config.center {
-                (padded_shape[0] - shape[0]) / 2
+                (paddedshape[0] - shape[0]) / 2
             } else {
                 0
             };
@@ -406,12 +410,12 @@ where
         }
         2 => {
             let start0 = if config.center && axes.contains(&0) {
-                (padded_shape[0] - shape[0]) / 2
+                (paddedshape[0] - shape[0]) / 2
             } else {
                 0
             };
             let start1 = if config.center && axes.contains(&1) {
-                (padded_shape[1] - shape[1]) / 2
+                (paddedshape[1] - shape[1]) / 2
             } else {
                 0
             };

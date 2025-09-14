@@ -76,7 +76,7 @@ impl SpatialTree {
 
         if embedding.shape()[1] != 2 {
             return Err(TransformError::InvalidInput(
-                "QuadTree requires 2D embedding".to_string(),
+                "QuadTree requires 2D _embedding".to_string(),
             ));
         }
 
@@ -130,7 +130,7 @@ impl SpatialTree {
 
         if embedding.shape()[1] != 3 {
             return Err(TransformError::InvalidInput(
-                "OctTree requires 3D embedding".to_string(),
+                "OctTree requires 3D _embedding".to_string(),
             ));
         }
 
@@ -188,6 +188,7 @@ impl SpatialTree {
     }
 
     /// Compute forces on a point using Barnes-Hut approximation
+    #[allow(clippy::too_many_arguments)]
     fn compute_forces(
         &self,
         point: &Array1<f64>,
@@ -346,6 +347,7 @@ impl QuadTreeNode {
     }
 
     /// Compute forces using Barnes-Hut approximation for quadtree
+    #[allow(clippy::too_many_arguments)]
     fn compute_forces_quad(
         &self,
         point: &Array1<f64>,
@@ -369,6 +371,7 @@ impl QuadTreeNode {
     }
 
     /// Recursive force computation for quadtree
+    #[allow(clippy::too_many_arguments)]
     fn compute_forces_recursive_quad(
         &self,
         point: &Array1<f64>,
@@ -424,8 +427,8 @@ impl QuadTreeNode {
             }
         } else if self.is_leaf {
             // Leaf node without center of mass (empty node)
-            for &idx in &self.point_indices {
-                if idx != point_idx {
+            for &_idx in &self.point_indices {
+                if _idx != point_idx {
                     // Compute exact force for this point
                     // This will be handled by attractive forces in the main gradient computation
                 }
@@ -648,6 +651,7 @@ impl OctTreeNode {
     }
 
     /// Compute forces using Barnes-Hut approximation for octree
+    #[allow(clippy::too_many_arguments)]
     fn compute_forces_oct(
         &self,
         point: &Array1<f64>,
@@ -671,6 +675,7 @@ impl OctTreeNode {
     }
 
     /// Recursive force computation for octree
+    #[allow(clippy::too_many_arguments)]
     fn compute_forces_recursive_oct(
         &self,
         point: &Array1<f64>,
@@ -807,8 +812,8 @@ impl TSNE {
     }
 
     /// Sets the number of components in the embedded space
-    pub fn with_n_components(mut self, n_components: usize) -> Self {
-        self.n_components = n_components;
+    pub fn with_n_components(mut self, ncomponents: usize) -> Self {
+        self.n_components = ncomponents;
         self
     }
 
@@ -819,36 +824,42 @@ impl TSNE {
     }
 
     /// Sets the early exaggeration factor
-    pub fn with_early_exaggeration(mut self, early_exaggeration: f64) -> Self {
-        self.early_exaggeration = early_exaggeration;
+    pub fn with_early_exaggeration(mut self, earlyexaggeration: f64) -> Self {
+        self.early_exaggeration = earlyexaggeration;
         self
     }
 
     /// Sets the learning rate for gradient descent
-    pub fn with_learning_rate(mut self, learning_rate: f64) -> Self {
-        self.learning_rate = learning_rate;
+    pub fn with_learning_rate(mut self, learningrate: f64) -> Self {
+        self.learning_rate = learningrate;
         self
     }
 
     /// Sets the maximum number of iterations
-    pub fn with_max_iter(mut self, max_iter: usize) -> Self {
-        self.max_iter = max_iter;
+    pub fn with_max_iter(mut self, maxiter: usize) -> Self {
+        self.max_iter = maxiter;
         self
     }
 
     /// Sets the number of iterations without progress before early stopping
-    pub fn with_n_iter_without_progress(mut self, n_iter_without_progress: usize) -> Self {
-        self.n_iter_without_progress = n_iter_without_progress;
+    pub fn with_n_iter_without_progress(mut self, n_iter_withoutprogress: usize) -> Self {
+        self.n_iter_without_progress = n_iter_withoutprogress;
         self
     }
 
     /// Sets the minimum gradient norm for convergence
-    pub fn with_min_grad_norm(mut self, min_grad_norm: f64) -> Self {
-        self.min_grad_norm = min_grad_norm;
+    pub fn with_min_grad_norm(mut self, min_gradnorm: f64) -> Self {
+        self.min_grad_norm = min_gradnorm;
         self
     }
 
     /// Sets the metric for pairwise distance computation
+    ///
+    /// Supported metrics:
+    /// - "euclidean": Euclidean distance (L2 norm) - default
+    /// - "manhattan": Manhattan distance (L1 norm)
+    /// - "cosine": Cosine distance (1 - cosine similarity)
+    /// - "chebyshev": Chebyshev distance (maximum coordinate difference)
     pub fn with_metric(mut self, metric: &str) -> Self {
         self.metric = metric.to_string();
         self
@@ -876,8 +887,8 @@ impl TSNE {
     /// * n_jobs = -1: Use all available cores
     /// * n_jobs = 1: Use single-core (disable multicore)
     /// * n_jobs > 1: Use specific number of cores
-    pub fn with_n_jobs(mut self, n_jobs: i32) -> Self {
-        self.n_jobs = n_jobs;
+    pub fn with_n_jobs(mut self, njobs: i32) -> Self {
+        self.n_jobs = njobs;
         self
     }
 
@@ -888,8 +899,8 @@ impl TSNE {
     }
 
     /// Sets the random state for reproducibility
-    pub fn with_random_state(mut self, random_state: u64) -> Self {
-        self.random_state = Some(random_state);
+    pub fn with_random_state(mut self, randomstate: u64) -> Self {
+        self.random_state = Some(randomstate);
         self
     }
 
@@ -1002,55 +1013,194 @@ impl TSNE {
         Ok(p_symmetric)
     }
 
-    /// Compute pairwise Euclidean distances with optional multicore support
+    /// Compute pairwise distances with optional multicore support
     fn compute_pairwise_distances(&self, x: &Array2<f64>) -> Result<Array2<f64>> {
         let n_samples = x.shape()[0];
         let mut distances = Array2::zeros((n_samples, n_samples));
 
-        if self.metric == "euclidean" {
-            if self.n_jobs == 1 {
-                // Single-core computation
-                for i in 0..n_samples {
-                    for j in i + 1..n_samples {
-                        let mut dist_squared = 0.0;
-                        for k in 0..x.shape()[1] {
-                            let diff = x[[i, k]] - x[[j, k]];
-                            dist_squared += diff * diff;
+        match self.metric.as_str() {
+            "euclidean" => {
+                if self.n_jobs == 1 {
+                    // Single-core computation
+                    for i in 0..n_samples {
+                        for j in i + 1..n_samples {
+                            let mut dist_squared = 0.0;
+                            for k in 0..x.shape()[1] {
+                                let diff = x[[i, k]] - x[[j, k]];
+                                dist_squared += diff * diff;
+                            }
+                            distances[[i, j]] = dist_squared;
+                            distances[[j, i]] = dist_squared;
                         }
-                        distances[[i, j]] = dist_squared;
-                        distances[[j, i]] = dist_squared;
+                    }
+                } else {
+                    // Multi-core computation
+                    let upper_triangle_indices: Vec<(usize, usize)> = (0..n_samples)
+                        .flat_map(|i| ((i + 1)..n_samples).map(move |j| (i, j)))
+                        .collect();
+
+                    let n_features = x.shape()[1];
+                    let squared_distances: Vec<f64> = upper_triangle_indices
+                        .par_iter()
+                        .map(|&(i, j)| {
+                            let mut dist_squared = 0.0;
+                            for k in 0..n_features {
+                                let diff = x[[i, k]] - x[[j, k]];
+                                dist_squared += diff * diff;
+                            }
+                            dist_squared
+                        })
+                        .collect();
+
+                    // Fill the distance matrix
+                    for (idx, &(i, j)) in upper_triangle_indices.iter().enumerate() {
+                        distances[[i, j]] = squared_distances[idx];
+                        distances[[j, i]] = squared_distances[idx];
                     }
                 }
-            } else {
-                // Multi-core computation
-                let upper_triangle_indices: Vec<(usize, usize)> = (0..n_samples)
-                    .flat_map(|i| ((i + 1)..n_samples).map(move |j| (i, j)))
-                    .collect();
-
-                let n_features = x.shape()[1];
-                let squared_distances: Vec<f64> = upper_triangle_indices
-                    .par_iter()
-                    .map(|&(i, j)| {
-                        let mut dist_squared = 0.0;
-                        for k in 0..n_features {
-                            let diff = x[[i, k]] - x[[j, k]];
-                            dist_squared += diff * diff;
+            }
+            "manhattan" => {
+                if self.n_jobs == 1 {
+                    // Single-core Manhattan distance computation
+                    for i in 0..n_samples {
+                        for j in i + 1..n_samples {
+                            let mut dist = 0.0;
+                            for k in 0..x.shape()[1] {
+                                dist += (x[[i, k]] - x[[j, k]]).abs();
+                            }
+                            distances[[i, j]] = dist;
+                            distances[[j, i]] = dist;
                         }
-                        dist_squared
-                    })
-                    .collect();
+                    }
+                } else {
+                    // Multi-core Manhattan distance computation
+                    let upper_triangle_indices: Vec<(usize, usize)> = (0..n_samples)
+                        .flat_map(|i| ((i + 1)..n_samples).map(move |j| (i, j)))
+                        .collect();
 
-                // Fill the distance matrix
-                for (idx, &(i, j)) in upper_triangle_indices.iter().enumerate() {
-                    distances[[i, j]] = squared_distances[idx];
-                    distances[[j, i]] = squared_distances[idx];
+                    let n_features = x.shape()[1];
+                    let manhattan_distances: Vec<f64> = upper_triangle_indices
+                        .par_iter()
+                        .map(|&(i, j)| {
+                            let mut dist = 0.0;
+                            for k in 0..n_features {
+                                dist += (x[[i, k]] - x[[j, k]]).abs();
+                            }
+                            dist
+                        })
+                        .collect();
+
+                    // Fill the distance matrix
+                    for (idx, &(i, j)) in upper_triangle_indices.iter().enumerate() {
+                        distances[[i, j]] = manhattan_distances[idx];
+                        distances[[j, i]] = manhattan_distances[idx];
+                    }
                 }
             }
-        } else {
-            return Err(TransformError::InvalidInput(format!(
-                "Metric '{}' not implemented. Currently only 'euclidean' is supported",
-                self.metric
-            )));
+            "cosine" => {
+                // First normalize all vectors for cosine distance computation
+                let mut normalized_x = Array2::zeros((n_samples, x.shape()[1]));
+                for i in 0..n_samples {
+                    let row = x.row(i);
+                    let norm = row.iter().map(|v| v * v).sum::<f64>().sqrt();
+                    if norm > EPSILON {
+                        for j in 0..x.shape()[1] {
+                            normalized_x[[i, j]] = x[[i, j]] / norm;
+                        }
+                    } else {
+                        // Handle zero vectors
+                        for j in 0..x.shape()[1] {
+                            normalized_x[[i, j]] = 0.0;
+                        }
+                    }
+                }
+
+                if self.n_jobs == 1 {
+                    // Single-core cosine distance computation
+                    for i in 0..n_samples {
+                        for j in i + 1..n_samples {
+                            let mut dot_product = 0.0;
+                            for k in 0..x.shape()[1] {
+                                dot_product += normalized_x[[i, k]] * normalized_x[[j, k]];
+                            }
+                            // Cosine distance = 1 - cosine similarity
+                            let cosine_dist = 1.0 - dot_product.clamp(-1.0, 1.0);
+                            distances[[i, j]] = cosine_dist;
+                            distances[[j, i]] = cosine_dist;
+                        }
+                    }
+                } else {
+                    // Multi-core cosine distance computation
+                    let upper_triangle_indices: Vec<(usize, usize)> = (0..n_samples)
+                        .flat_map(|i| ((i + 1)..n_samples).map(move |j| (i, j)))
+                        .collect();
+
+                    let n_features = x.shape()[1];
+                    let cosine_distances: Vec<f64> = upper_triangle_indices
+                        .par_iter()
+                        .map(|&(i, j)| {
+                            let mut dot_product = 0.0;
+                            for k in 0..n_features {
+                                dot_product += normalized_x[[i, k]] * normalized_x[[j, k]];
+                            }
+                            // Cosine distance = 1 - cosine similarity
+                            1.0 - dot_product.clamp(-1.0, 1.0)
+                        })
+                        .collect();
+
+                    // Fill the distance matrix
+                    for (idx, &(i, j)) in upper_triangle_indices.iter().enumerate() {
+                        distances[[i, j]] = cosine_distances[idx];
+                        distances[[j, i]] = cosine_distances[idx];
+                    }
+                }
+            }
+            "chebyshev" => {
+                if self.n_jobs == 1 {
+                    // Single-core Chebyshev distance computation
+                    for i in 0..n_samples {
+                        for j in i + 1..n_samples {
+                            let mut max_dist = 0.0;
+                            for k in 0..x.shape()[1] {
+                                let diff = (x[[i, k]] - x[[j, k]]).abs();
+                                max_dist = max_dist.max(diff);
+                            }
+                            distances[[i, j]] = max_dist;
+                            distances[[j, i]] = max_dist;
+                        }
+                    }
+                } else {
+                    // Multi-core Chebyshev distance computation
+                    let upper_triangle_indices: Vec<(usize, usize)> = (0..n_samples)
+                        .flat_map(|i| ((i + 1)..n_samples).map(move |j| (i, j)))
+                        .collect();
+
+                    let n_features = x.shape()[1];
+                    let chebyshev_distances: Vec<f64> = upper_triangle_indices
+                        .par_iter()
+                        .map(|&(i, j)| {
+                            let mut max_dist = 0.0;
+                            for k in 0..n_features {
+                                let diff = (x[[i, k]] - x[[j, k]]).abs();
+                                max_dist = max_dist.max(diff);
+                            }
+                            max_dist
+                        })
+                        .collect();
+
+                    // Fill the distance matrix
+                    for (idx, &(i, j)) in upper_triangle_indices.iter().enumerate() {
+                        distances[[i, j]] = chebyshev_distances[idx];
+                        distances[[j, i]] = chebyshev_distances[idx];
+                    }
+                }
+            }
+            _ => {
+                return Err(TransformError::InvalidInput(format!(
+                    "Metric '{}' not implemented. Supported metrics are: 'euclidean', 'manhattan', 'cosine', 'chebyshev'",
+                    self.metric
+                )));
+            }
         }
 
         Ok(distances)
@@ -1219,6 +1369,7 @@ impl TSNE {
     }
 
     /// Main t-SNE optimization loop using gradient descent
+    #[allow(clippy::too_many_arguments)]
     fn tsne_optimization(
         &self,
         p: Array2<f64>,
@@ -1363,6 +1514,7 @@ impl TSNE {
     }
 
     /// Compute gradient and error for exact t-SNE with optional multicore support
+    #[allow(clippy::too_many_arguments)]
     fn compute_gradient_exact(
         &self,
         embedding: &Array2<f64>,
@@ -1517,6 +1669,7 @@ impl TSNE {
     }
 
     /// Compute gradient and error using Barnes-Hut approximation
+    #[allow(clippy::too_many_arguments)]
     fn compute_gradient_barnes_hut(
         &self,
         embedding: &Array2<f64>,
@@ -1609,6 +1762,7 @@ impl TSNE {
     }
 
     /// Update embedding using gradient descent with momentum and adaptive gains
+    #[allow(clippy::too_many_arguments)]
     fn gradient_update(
         &self,
         embedding: &mut Array2<f64>,
@@ -1636,7 +1790,7 @@ impl TSNE {
                 // Ensure minimum gain
                 gains[[i, j]] = gains[[i, j]].max(0.01);
 
-                // Update with momentum and adaptive learning rate
+                // Update with momentum and adaptive learning _rate
                 update[[i, j]] = momentum * update[[i, j]] - eta * gains[[i, j]] * grad[[i, j]];
                 embedding[[i, j]] += update[[i, j]];
             }
@@ -1674,6 +1828,8 @@ impl TSNE {
 ///
 /// # Returns
 /// * `Result<f64>` - Trustworthiness score between 0.0 and 1.0
+#[allow(dead_code)]
+#[allow(clippy::too_many_arguments)]
 pub fn trustworthiness<S1, S2>(
     x: &ArrayBase<S1, Ix2>,
     x_embedded: &ArrayBase<S2, Ix2>,
@@ -1701,8 +1857,7 @@ where
 
     if metric != "euclidean" {
         return Err(TransformError::InvalidInput(format!(
-            "Metric '{}' not implemented. Currently only 'euclidean' is supported",
-            metric
+            "Metric '{metric}' not implemented. Currently only 'euclidean' is supported"
         )));
     }
 
@@ -1724,7 +1879,7 @@ where
         }
     }
 
-    // Compute pairwise distances in embedded space
+    // Compute pairwise distances in _embedded space
     let mut dist_embedded = Array2::zeros((n_samples, n_samples));
     for i in 0..n_samples {
         for j in 0..n_samples {
@@ -1742,7 +1897,7 @@ where
         }
     }
 
-    // For each point, find the n_neighbors nearest neighbors in the original space
+    // For each point, find the n_neighbors nearest _neighbors in the original space
     let mut nn_orig = Array2::<usize>::zeros((n_samples, n_neighbors));
     for i in 0..n_samples {
         // Get the indices of the sorted distances
@@ -1751,12 +1906,12 @@ where
         pairs.sort_by(|a, b| a.1.partial_cmp(&b.1).unwrap_or(std::cmp::Ordering::Equal));
 
         // The first element will be i itself (distance 0), so skip it
-        for (j, &(idx, _)) in pairs.iter().enumerate().take(n_neighbors) {
-            nn_orig[[i, j]] = idx;
+        for (j, &(idx_, _)) in pairs.iter().enumerate().take(n_neighbors) {
+            nn_orig[[i, j]] = idx_;
         }
     }
 
-    // For each point, find the n_neighbors nearest neighbors in the embedded space
+    // For each point, find the n_neighbors nearest _neighbors in the _embedded space
     let mut nn_embedded = Array2::<usize>::zeros((n_samples, n_neighbors));
     for i in 0..n_samples {
         // Get the indices of the sorted distances
@@ -1765,7 +1920,7 @@ where
         pairs.sort_by(|a, b| a.1.partial_cmp(&b.1).unwrap_or(std::cmp::Ordering::Equal));
 
         // The first element will be i itself (distance 0), so skip it
-        for (j, &(idx, _)) in pairs.iter().enumerate().take(n_neighbors) {
+        for (j, &(idx, _)) in pairs.iter().skip(1).take(n_neighbors).enumerate() {
             nn_embedded[[i, j]] = idx;
         }
     }
@@ -1784,7 +1939,7 @@ where
                     row.iter().enumerate().map(|(idx, &d)| (idx, d)).collect();
                 pairs.sort_by(|a, b| a.1.partial_cmp(&b.1).unwrap_or(std::cmp::Ordering::Equal));
 
-                let rank = pairs.iter().position(|&(idx, _)| idx == j).unwrap_or(0) - n_neighbors;
+                let rank = pairs.iter().position(|&(idx_, _)| idx_ == j).unwrap_or(0) - n_neighbors;
 
                 t += rank as f64;
             }

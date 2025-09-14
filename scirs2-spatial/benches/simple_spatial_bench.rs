@@ -11,12 +11,14 @@ use std::hint::black_box;
 use std::time::Duration;
 
 // Simple data generator
-fn generate_test_data(n_points: usize, dimensions: usize) -> Array2<f64> {
+#[allow(dead_code)]
+fn generate_test_data(_npoints: usize, dimensions: usize) -> Array2<f64> {
     let mut rng = StdRng::seed_from_u64(42);
-    Array2::from_shape_fn((n_points, dimensions), |_| rng.random_range(-10.0..10.0))
+    Array2::from_shape_fn((_npoints, dimensions), |_| rng.gen_range(-10.0..10.0))
 }
 
 // Basic distance calculation benchmark
+#[allow(dead_code)]
 fn bench_distance_calculations(c: &mut Criterion) {
     let mut group = c.benchmark_group("distance_calculations");
 
@@ -27,7 +29,7 @@ fn bench_distance_calculations(c: &mut Criterion) {
             group.throughput(Throughput::Elements(size as u64));
 
             group.bench_with_input(
-                BenchmarkId::new("euclidean_pairwise", format!("{}x{}", size, dim)),
+                BenchmarkId::new("euclidean_pairwise", format!("{size}x{dim}")),
                 &(size, dim),
                 |b, _| {
                     b.iter(|| {
@@ -45,7 +47,7 @@ fn bench_distance_calculations(c: &mut Criterion) {
             );
 
             group.bench_with_input(
-                BenchmarkId::new("manhattan_pairwise", format!("{}x{}", size, dim)),
+                BenchmarkId::new("manhattan_pairwise", format!("{size}x{dim}")),
                 &(size, dim),
                 |b, _| {
                     b.iter(|| {
@@ -68,6 +70,7 @@ fn bench_distance_calculations(c: &mut Criterion) {
 }
 
 // Distance matrix benchmark
+#[allow(dead_code)]
 fn bench_distance_matrix(c: &mut Criterion) {
     let mut group = c.benchmark_group("distance_matrix");
 
@@ -90,6 +93,7 @@ fn bench_distance_matrix(c: &mut Criterion) {
 }
 
 // Memory scaling benchmark
+#[allow(dead_code)]
 fn bench_memory_scaling(c: &mut Criterion) {
     let mut group = c.benchmark_group("memory_scaling");
     group.measurement_time(Duration::from_secs(10));
@@ -103,7 +107,7 @@ fn bench_memory_scaling(c: &mut Criterion) {
         ));
 
         group.bench_with_input(
-            BenchmarkId::new("memory_usage", format!("{:.1}MB", memory_mb)),
+            BenchmarkId::new("memory_usage", format!("{memory_mb:.1}MB")),
             &size,
             |b, _| {
                 b.iter(|| {
@@ -118,6 +122,7 @@ fn bench_memory_scaling(c: &mut Criterion) {
 }
 
 // Simple performance validation
+#[allow(dead_code)]
 fn bench_performance_validation(c: &mut Criterion) {
     let mut group = c.benchmark_group("performance_validation");
 

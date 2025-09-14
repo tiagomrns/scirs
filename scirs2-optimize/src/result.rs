@@ -3,6 +3,7 @@
 //! This module defines the common result structures for optimization algorithms.
 
 use ndarray::Array1;
+use num_traits::Zero;
 use std::fmt;
 
 /// A structure that contains the results of an optimization.
@@ -75,7 +76,7 @@ where
 
 impl<T> Default for OptimizeResults<T>
 where
-    T: Default + Clone + num_traits::Zero,
+    T: Default + Clone + Zero,
 {
     fn default() -> Self {
         OptimizeResults {

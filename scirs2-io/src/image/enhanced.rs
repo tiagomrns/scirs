@@ -9,7 +9,8 @@
 
 use crate::error::{IoError, Result};
 use crate::image::{ColorMode, ImageData, ImageFormat};
-use ndarray::Array3;
+use ndarray::{Array3, ArrayView1};
+use scirs2_core::simd_ops::SimdUnifiedOps;
 use std::collections::HashMap;
 use std::path::Path;
 
@@ -193,11 +194,11 @@ impl EnhancedImageProcessor {
         new_height: u32,
         method: InterpolationMethod,
     ) -> Result<ImageData> {
-        let (height, width, channels) = image.data.dim();
+        let (_height, width, channels) = image.data.dim();
         let raw_data = image.data.iter().cloned().collect::<Vec<u8>>();
 
         let img_buffer = if channels == 3 {
-            image::RgbImage::from_raw(width as u32, height as u32, raw_data)
+            image::RgbImage::from_raw(width as u32, _height as u32, raw_data)
                 .ok_or_else(|| IoError::FormatError("Invalid RGB image dimensions".to_string()))?
         } else {
             return Err(IoError::FormatError(
@@ -245,10 +246,10 @@ impl EnhancedImageProcessor {
         let path = path.as_ref();
         let compression = compression.unwrap_or(self.compression.clone());
 
-        let (height, width, _) = image.data.dim();
+        let (height, width_, _) = image.data.dim();
         let raw_data = image.data.iter().cloned().collect::<Vec<u8>>();
 
-        let img_buffer = image::RgbImage::from_raw(width as u32, height as u32, raw_data)
+        let img_buffer = image::RgbImage::from_raw(width_ as u32, height as u32, raw_data)
             .ok_or_else(|| IoError::FormatError("Invalid image dimensions".to_string()))?;
 
         let dynamic_img = image::DynamicImage::ImageRgb8(img_buffer);
@@ -275,7 +276,7 @@ impl EnhancedImageProcessor {
                 encoder
                     .encode(
                         dynamic_img.as_bytes(),
-                        width as u32,
+                        width_ as u32,
                         height as u32,
                         image::ColorType::Rgb8.into(),
                     )
@@ -316,15 +317,55 @@ impl EnhancedImageProcessor {
 
         let mut gray_data = Array3::zeros((height, width, 3));
 
+        // Process image in rows for better cache locality and SIMD efficiency
         for y in 0..height {
+            // Extract row data for SIMD processing
+            let _row_size = width * 3;
+            let mut r_values = vec![0f32; width];
+            let mut g_values = vec![0f32; width];
+            let mut b_values = vec![0f32; width];
+
+            // Extract RGB values for the entire row
             for x in 0..width {
-                let r = image.data[[y, x, 0]] as f32;
-                let g = image.data[[y, x, 1]] as f32;
-                let b = image.data[[y, x, 2]] as f32;
+                r_values[x] = image.data[[y, x, 0]] as f32;
+                g_values[x] = image.data[[y, x, 1]] as f32;
+                b_values[x] = image.data[[y, x, 2]] as f32;
+            }
 
-                // Use luminance formula: 0.299*R + 0.587*G + 0.114*B
-                let gray = (0.299 * r + 0.587 * g + 0.114 * b) as u8;
+            // Create coefficient arrays for SIMD multiplication
+            let r_coeff = vec![0.299f32; width];
+            let g_coeff = vec![0.587f32; width];
+            let b_coeff = vec![0.114f32; width];
 
+            // Use SIMD operations for luminance calculation
+            // First multiply each channel by its coefficient
+            let _r_weighted = vec![0f32; width];
+            let _g_weighted = vec![0f32; width];
+            let _b_weighted = vec![0f32; width];
+
+            let r_values_view = ArrayView1::from(&r_values);
+            let g_values_view = ArrayView1::from(&g_values);
+            let b_values_view = ArrayView1::from(&b_values);
+            let r_coeff_view = ArrayView1::from(&r_coeff);
+            let g_coeff_view = ArrayView1::from(&g_coeff);
+            let b_coeff_view = ArrayView1::from(&b_coeff);
+
+            let r_weighted = f32::simd_mul(&r_values_view, &r_coeff_view);
+            let g_weighted = f32::simd_mul(&g_values_view, &g_coeff_view);
+            let b_weighted = f32::simd_mul(&b_values_view, &b_coeff_view);
+
+            // Add the weighted values together
+            let r_weighted_view = ArrayView1::from(&r_weighted);
+            let g_weighted_view = ArrayView1::from(&g_weighted);
+            let b_weighted_view = ArrayView1::from(&b_weighted);
+
+            let gray_values = f32::simd_add(&r_weighted_view, &g_weighted_view);
+            let gray_values_view = ArrayView1::from(&gray_values);
+            let gray_values_final = f32::simd_add(&gray_values_view, &b_weighted_view);
+
+            // Store the grayscale values back to the output array
+            for x in 0..width {
+                let gray = gray_values_final[x].clamp(0.0, 255.0) as u8;
                 gray_data[[y, x, 0]] = gray;
                 gray_data[[y, x, 1]] = gray;
                 gray_data[[y, x, 2]] = gray;
@@ -386,10 +427,10 @@ impl EnhancedImageProcessor {
 
     /// Apply Gaussian blur filter
     pub fn gaussian_blur(&self, image: &ImageData, radius: f32) -> Result<ImageData> {
-        let (height, width, _) = image.data.dim();
+        let (height, width_, _) = image.data.dim();
         let raw_data = image.data.iter().cloned().collect::<Vec<u8>>();
 
-        let img_buffer = image::RgbImage::from_raw(width as u32, height as u32, raw_data)
+        let img_buffer = image::RgbImage::from_raw(width_ as u32, height as u32, raw_data)
             .ok_or_else(|| IoError::FormatError("Invalid image dimensions".to_string()))?;
 
         let dynamic_img = image::DynamicImage::ImageRgb8(img_buffer);
@@ -397,7 +438,7 @@ impl EnhancedImageProcessor {
         let rgb_blurred = blurred.to_rgb8();
         let blurred_raw = rgb_blurred.into_raw();
 
-        let blurred_data = Array3::from_shape_vec((height, width, 3), blurred_raw)
+        let blurred_data = Array3::from_shape_vec((height, width_, 3), blurred_raw)
             .map_err(|e| IoError::FormatError(e.to_string()))?;
 
         Ok(ImageData {
@@ -504,12 +545,14 @@ impl ImagePyramid {
 
 /// Convenience functions for enhanced image operations
 /// Create an image pyramid with default configuration
+#[allow(dead_code)]
 pub fn create_image_pyramid(image: &ImageData) -> Result<ImagePyramid> {
     let processor = EnhancedImageProcessor::new();
     processor.create_pyramid(image, PyramidConfig::default())
 }
 
 /// Save image with lossless compression
+#[allow(dead_code)]
 pub fn save_lossless<P: AsRef<Path>>(
     image: &ImageData,
     path: P,
@@ -526,6 +569,7 @@ pub fn save_lossless<P: AsRef<Path>>(
 }
 
 /// Save image with high quality compression
+#[allow(dead_code)]
 pub fn save_high_quality<P: AsRef<Path>>(
     image: &ImageData,
     path: P,
@@ -542,6 +586,7 @@ pub fn save_high_quality<P: AsRef<Path>>(
 }
 
 /// Batch convert images with enhanced compression
+#[allow(dead_code)]
 pub fn batch_convert_with_compression<P1: AsRef<Path>, P2: AsRef<Path>>(
     input_dir: P1,
     output_dir: P2,
@@ -711,7 +756,7 @@ mod tests {
         assert_eq!(max_size, 128);
 
         processor.clear_cache();
-        let (count, _) = processor.cache_stats();
+        let count_ = processor.cache_stats();
         assert_eq!(count, 0);
     }
 }

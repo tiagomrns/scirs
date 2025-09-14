@@ -2,6 +2,7 @@ use ndarray::{Array1, ArrayView1};
 use scirs2_integrate::qmc::{qmc_quad, Halton, Sobol};
 use std::f64::consts::PI;
 
+#[allow(dead_code)]
 fn main() {
     println!("Quasi-Monte Carlo Integration Examples");
     println!("======================================");

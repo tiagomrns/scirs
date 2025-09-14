@@ -41,6 +41,7 @@ impl<F: Float> Default for QMROptions<F> {
 ///
 /// This implementation is a simplified version that provides QMR-like
 /// behavior using a BiCG-based approach with quasi-minimization.
+#[allow(dead_code)]
 pub fn qmr<F>(
     a: &dyn LinearOperator<F>,
     b: &[F],
@@ -259,22 +260,27 @@ where
 }
 
 // Helper functions
+#[allow(dead_code)]
 fn dot<F: Float + Sum>(a: &[F], b: &[F]) -> F {
     a.iter().zip(b.iter()).map(|(&ai, &bi)| ai * bi).sum()
 }
 
+#[allow(dead_code)]
 fn norm2<F: Float + Sum>(v: &[F]) -> F {
     v.iter().map(|&vi| vi * vi).sum::<F>().sqrt()
 }
 
+#[allow(dead_code)]
 fn vec_add<F: Float>(a: &[F], b: &[F]) -> Vec<F> {
     a.iter().zip(b.iter()).map(|(&ai, &bi)| ai + bi).collect()
 }
 
+#[allow(dead_code)]
 fn vec_sub<F: Float>(a: &[F], b: &[F]) -> Vec<F> {
     a.iter().zip(b.iter()).map(|(&ai, &bi)| ai - bi).collect()
 }
 
+#[allow(dead_code)]
 fn vec_scaled<F: Float>(v: &[F], s: F) -> Vec<F> {
     v.iter().map(|&vi| vi * s).collect()
 }
@@ -282,6 +288,7 @@ fn vec_scaled<F: Float>(v: &[F], s: F) -> Vec<F> {
 // This function was used in a previous implementation but is now unused
 // Keeping it commented here for reference, to be removed in a future cleanup
 /*
+#[allow(dead_code)]
 fn vec_add_scaled<F: Float>(a: &[F], b: &[F], s: F) -> Vec<F> {
     a.iter()
         .zip(b.iter())

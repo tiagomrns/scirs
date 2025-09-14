@@ -172,14 +172,14 @@ impl AdaptivePlanner {
     }
 
     /// Record execution time and potentially adapt strategy
-    pub fn record_execution(&mut self, execution_time: Duration) -> FFTResult<()> {
+    pub fn record_execution(&mut self, executiontime: Duration) -> FFTResult<()> {
         if !self.config.enabled {
             return Ok(());
         }
 
         // Record metrics for current strategy
         if let Some(metrics) = self.metrics.get_mut(&self.current_strategy) {
-            metrics.record(execution_time);
+            metrics.record(executiontime);
         }
 
         // Check if we should evaluate strategies

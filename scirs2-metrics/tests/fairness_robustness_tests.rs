@@ -7,6 +7,7 @@ use scirs2_metrics::fairness::robustness::{
 use scirs2_metrics::fairness::{demographic_parity_difference, equalized_odds_difference};
 
 #[test]
+#[allow(dead_code)]
 fn test_performance_invariance() {
     // Create a dataset with two groups
     let y_true = array![0.0, 1.0, 0.0, 1.0, 0.0, 1.0, 0.0, 1.0];
@@ -88,6 +89,7 @@ fn test_performance_invariance() {
 }
 
 #[test]
+#[allow(dead_code)]
 fn test_influence_function() {
     // Create a small dataset with a clear bias pattern
     let y_true = array![0.0, 1.0, 0.0, 1.0, 0.0, 1.0, 0.0, 1.0];
@@ -143,6 +145,7 @@ fn test_influence_function() {
 }
 
 #[test]
+#[allow(dead_code)]
 fn test_perturbation_sensitivity() {
     // Create test data
     let y_true = array![0.0, 1.0, 0.0, 1.0, 0.0, 1.0, 0.0, 1.0, 0.0, 1.0];
@@ -240,6 +243,7 @@ fn test_perturbation_sensitivity() {
 }
 
 #[test]
+#[allow(dead_code)]
 fn test_perturbation_types() {
     // Create test data with more samples for better statistical properties
     let y_true = array![
@@ -312,6 +316,7 @@ fn test_perturbation_types() {
 }
 
 #[test]
+#[allow(dead_code)]
 fn test_robustness_with_different_fairness_metrics() {
     // Create test data
     let y_true = array![0.0, 1.0, 0.0, 1.0, 0.0, 1.0, 0.0, 1.0, 0.0, 1.0];

@@ -2,8 +2,10 @@
 
 use image::{DynamicImage, GenericImageView};
 use scirs2_vision::feature::{lbp, lbp_histogram, multi_scale_lbp, LBPType};
+use statrs::statistics::Statistics;
 use std::error::Error;
 
+#[allow(dead_code)]
 fn main() -> Result<(), Box<dyn Error>> {
     // Load input image
     let img = image::open("examples/input/input.jpg")?;
@@ -67,6 +69,7 @@ fn main() -> Result<(), Box<dyn Error>> {
 }
 
 /// Compute entropy of a histogram
+#[allow(dead_code)]
 fn compute_entropy(hist: &ndarray::Array1<f32>) -> f32 {
     let mut entropy = 0.0;
     for &p in hist.iter() {
@@ -78,6 +81,7 @@ fn compute_entropy(hist: &ndarray::Array1<f32>) -> f32 {
 }
 
 /// Compare textures in different regions of the image
+#[allow(dead_code)]
 fn compare_regions(img: &DynamicImage) -> Result<(), Box<dyn Error>> {
     let (width, height) = img.dimensions();
 
@@ -108,7 +112,7 @@ fn compare_regions(img: &DynamicImage) -> Result<(), Box<dyn Error>> {
         let hist = lbp_histogram(&lbp_img, 59, true)?; // 58 uniform patterns + 1
         let entropy = compute_entropy(&hist);
 
-        println!("   {} - Entropy: {:.4}", name, entropy);
+        println!("   {name} - Entropy: {entropy:.4}");
         histograms.push(hist);
     }
 
@@ -128,6 +132,7 @@ fn compare_regions(img: &DynamicImage) -> Result<(), Box<dyn Error>> {
 }
 
 /// Compute chi-square distance between histograms
+#[allow(dead_code)]
 fn chi_square_distance(hist1: &ndarray::Array1<f32>, hist2: &ndarray::Array1<f32>) -> f32 {
     let mut distance = 0.0;
     for i in 0..hist1.len() {

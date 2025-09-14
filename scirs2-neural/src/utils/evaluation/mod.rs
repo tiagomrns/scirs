@@ -9,7 +9,6 @@ mod feature_importance;
 mod helpers;
 mod learning_curve;
 mod roc_curve;
-
 pub use confusion_matrix::ConfusionMatrix;
 pub use feature_importance::FeatureImportance;
 pub use learning_curve::LearningCurve;

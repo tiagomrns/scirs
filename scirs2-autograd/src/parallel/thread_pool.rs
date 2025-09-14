@@ -97,7 +97,7 @@ impl AdvancedThreadPool {
                 .iter()
                 .enumerate()
                 .min_by_key(|(_, worker)| worker.get_queue_size())
-                .map(|(id, _)| id)
+                .map(|(id_, _)| id_)
         } else {
             // Simple round-robin based on current time
             let now = Instant::now();
@@ -281,18 +281,18 @@ impl WorkStealingWorker {
         global_queue: &Arc<Mutex<VecDeque<Task>>>,
         config: &ThreadPoolConfig,
     ) -> Option<Task> {
-        // Try local queue first
+        // Try local _queue first
         {
-            let mut queue = local_queue.lock().unwrap();
-            if let Some(task) = queue.pop_front() {
+            let mut _queue = local_queue.lock().unwrap();
+            if let Some(task) = _queue.pop_front() {
                 return Some(task);
             }
         }
 
-        // Try global queue
+        // Try global _queue
         {
-            let mut queue = global_queue.lock().unwrap();
-            if let Some(task) = queue.pop_front() {
+            let mut _queue = global_queue.lock().unwrap();
+            if let Some(task) = _queue.pop_front() {
                 return Some(task);
             }
         }
@@ -444,13 +444,13 @@ pub struct AdvancedThreadPoolStats {
 }
 
 impl AdvancedThreadPoolStats {
-    fn new(num_workers: usize) -> Self {
+    fn new(_numworkers: usize) -> Self {
         Self {
             total_tasks_executed: 0,
             total_execution_time: Duration::ZERO,
             work_steals: 0,
             load_balance_efficiency: 1.0,
-            worker_stats: (0..num_workers).map(WorkerStats::new).collect(),
+            worker_stats: (0.._numworkers).map(WorkerStats::new).collect(),
             queue_contention: 0.0,
         }
     }
@@ -565,11 +565,11 @@ impl NumaAwareThreadPool {
     where
         F: FnOnce() + Send + 'static,
     {
-        let node = preferred_node
+        let _node = preferred_node
             .unwrap_or_else(|| self.select_optimal_node())
             .min(self.pools.len() - 1);
 
-        self.pools[node].submit(task)
+        self.pools[_node].submit(task)
     }
 
     /// Select the optimal NUMA node for task placement
@@ -579,7 +579,7 @@ impl NumaAwareThreadPool {
             .iter()
             .enumerate()
             .min_by_key(|(_, pool)| pool.get_stats().total_tasks_executed)
-            .map(|(id, _)| id)
+            .map(|(id_, _)| id_)
             .unwrap_or(0)
     }
 }

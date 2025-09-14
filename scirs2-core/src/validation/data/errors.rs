@@ -9,15 +9,13 @@ use std::time::Duration;
 use super::config::{ErrorSeverity, ValidationErrorType};
 use crate::error::{CoreError, ErrorContext, ErrorLocation};
 
-#[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
 
 /// Validation error information
-#[derive(Debug, Clone)]
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ValidationError {
     /// Error type
-    pub error_type: ValidationErrorType,
+    pub errortype: ValidationErrorType,
     /// Field path where error occurred
     pub field_path: String,
     /// Error message
@@ -36,9 +34,9 @@ pub struct ValidationError {
 
 impl ValidationError {
     /// Create a new validation error
-    pub fn new(error_type: ValidationErrorType, field_path: &str, message: &str) -> Self {
+    pub fn new(errortype: ValidationErrorType, fieldpath: &str, message: &str) -> Self {
         Self {
-            error_type,
+            errortype,
             field_path: field_path.to_string(),
             message: message.to_string(),
             expected: None,
@@ -81,7 +79,7 @@ impl ValidationError {
 
     /// Get formatted error message
     pub fn formatted_message(&self) -> String {
-        let mut message = format!("{}: {}", self.field_path, self.message);
+        let mut message = format!("{}, {}", self.field_path, self.message);
 
         if let Some(expected) = &self.expected {
             message.push_str(&format!(" (expected: {expected})"));
@@ -103,7 +101,7 @@ impl ValidationError {
 impl From<ValidationError> for CoreError {
     fn from(err: ValidationError) -> Self {
         // Choose the appropriate CoreError variant based on ValidationErrorType
-        match err.error_type {
+        match err.errortype {
             ValidationErrorType::MissingRequiredField => CoreError::ValidationError(
                 ErrorContext::new(err.formatted_message())
                     .with_location(ErrorLocation::new(file!(), line!())),
@@ -173,8 +171,7 @@ impl From<ValidationError> for CoreError {
 }
 
 /// Validation statistics
-#[derive(Debug, Clone, Default)]
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub struct ValidationStats {
     /// Number of fields validated
     pub fields_validated: usize,
@@ -226,8 +223,7 @@ impl ValidationStats {
 }
 
 /// Validation result
-#[derive(Debug, Clone)]
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ValidationResult {
     /// Whether validation passed
     pub valid: bool,
@@ -274,13 +270,13 @@ impl ValidationResult {
     }
 
     /// Add an error
-    pub fn add_error(&mut self, error: ValidationError) {
+    pub fn adderror(&mut self, error: ValidationError) {
         self.valid = false;
         self.errors.push(error);
     }
 
     /// Add multiple errors
-    pub fn add_errors(&mut self, mut errors: Vec<ValidationError>) {
+    pub fn adderrors(&mut self, mut errors: Vec<ValidationError>) {
         if !errors.is_empty() {
             self.valid = false;
             self.errors.append(&mut errors);
@@ -319,7 +315,7 @@ impl ValidationResult {
     }
 
     /// Get errors by field path
-    pub fn errors_for_field(&self, field_path: &str) -> Vec<&ValidationError> {
+    pub fn errors_for_field(&self, fieldpath: &str) -> Vec<&ValidationError> {
         self.errors
             .iter()
             .filter(|e| e.field_path == field_path)
@@ -327,7 +323,7 @@ impl ValidationResult {
     }
 
     /// Get warnings by field path
-    pub fn warnings_for_field(&self, field_path: &str) -> Vec<&ValidationError> {
+    pub fn warnings_for_field(&self, fieldpath: &str) -> Vec<&ValidationError> {
         self.warnings
             .iter()
             .filter(|w| w.field_path == field_path)
@@ -356,14 +352,14 @@ impl ValidationResult {
         if !self.errors.is_empty() {
             report.push_str("\n\nErrors:");
             for (i, error) in self.errors.iter().enumerate() {
-                report.push_str(&format!("\n  {}. {}", i + 1, error.formatted_message()));
+                report.push_str(&format!("{}. {}", i + 1, error.formatted_message()));
             }
         }
 
         if !self.warnings.is_empty() {
             report.push_str("\n\nWarnings:");
             for (i, warning) in self.warnings.iter().enumerate() {
-                report.push_str(&format!("\n  {}. {}", i + 1, warning.formatted_message()));
+                report.push_str(&format!("{}. {}", i + 1, warning.formatted_message()));
             }
         }
 
@@ -380,7 +376,7 @@ impl ValidationResult {
             "\n  Elements processed: {}",
             self.stats.elements_processed
         ));
-        report.push_str(&format!("\n  Processing time: {:?}", self.duration));
+        report.push_str(&format!("\n  Duration: {:?}", self.duration));
 
         if self.stats.cache_hit_rate > 0.0 {
             report.push_str(&format!(
@@ -408,7 +404,7 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_validation_error() {
+    fn test_validationerror() {
         let error = ValidationError::new(
             ValidationErrorType::TypeMismatch,
             "test_field",
@@ -420,7 +416,7 @@ mod tests {
         .with_severity(ErrorSeverity::Error)
         .with_context("line", "42");
 
-        assert_eq!(error.error_type, ValidationErrorType::TypeMismatch);
+        assert_eq!(error.errortype, ValidationErrorType::TypeMismatch);
         assert_eq!(error.field_path, "test_field");
         assert_eq!(error.message, "Type mismatch error");
         assert_eq!(error.expected, Some("string".to_string()));
@@ -466,7 +462,7 @@ mod tests {
         // Add error
         let error =
             ValidationError::new(ValidationErrorType::TypeMismatch, "field1", "Error message");
-        result.add_error(error);
+        result.adderror(error);
 
         assert!(!result.is_valid());
         assert_eq!(result.errors().len(), 1);
@@ -484,8 +480,8 @@ mod tests {
         assert_eq!(result.warnings().len(), 1);
 
         // Test field filtering
-        let field1_errors = result.errors_for_field("field1");
-        assert_eq!(field1_errors.len(), 1);
+        let field1errors = result.errors_for_field("field1");
+        assert_eq!(field1errors.len(), 1);
 
         let field2_warnings = result.warnings_for_field("field2");
         assert_eq!(field2_warnings.len(), 1);
@@ -504,10 +500,10 @@ mod tests {
     }
 
     #[test]
-    fn test_error_severity_counting() {
+    fn testerror_severity_counting() {
         let mut result = ValidationResult::new();
 
-        let critical_error = ValidationError::new(
+        let criticalerror = ValidationError::new(
             ValidationErrorType::IntegrityFailure,
             "field1",
             "Critical error",
@@ -517,7 +513,7 @@ mod tests {
         let warning = ValidationError::new(ValidationErrorType::Performance, "field2", "Warning")
             .with_severity(ErrorSeverity::Warning);
 
-        result.add_error(critical_error);
+        result.adderror(criticalerror);
         result.add_warning(warning);
 
         assert_eq!(result.error_count_by_severity(ErrorSeverity::Critical), 1);

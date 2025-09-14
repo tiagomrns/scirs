@@ -51,10 +51,10 @@ pub struct EventSpec<F: IntegrateFloat> {
 
 impl<F: IntegrateFloat> EventSpec<F> {
     /// Check if the maximum count has been reached for this event
-    pub fn max_count_reached(&self, _id: &str, current_count: Option<usize>) -> bool {
+    pub fn max_count_reached(&self, currentcount: Option<usize>) -> bool {
         if let Some(max) = self.max_count {
-            if let Some(count) = current_count {
-                return count >= max;
+            if let Some(_count) = currentcount {
+                return _count >= max;
             }
         }
         false
@@ -115,7 +115,7 @@ impl<F: IntegrateFloat> EventRecord<F> {
 
     /// Add a detected event to the record
     pub fn add_event(&mut self, event: Event<F>) {
-        // Update count for this event type
+        // Update count for this _event type
         *self.counts.entry(event.id.clone()).or_insert(0) += 1;
 
         // Add to the list of events
@@ -133,9 +133,9 @@ impl<F: IntegrateFloat> EventRecord<F> {
     }
 
     /// Check if the maximum event count has been reached for a specific event type
-    pub fn max_count_reached(&self, id: &str, max_count: Option<usize>) -> bool {
-        if let Some(max) = max_count {
-            self.get_count(id) >= max
+    pub fn max_count_reached(&self, _id: &str, maxcount: Option<usize>) -> bool {
+        if let Some(max) = maxcount {
+            self.get_count(_id) >= max
         } else {
             false
         }
@@ -221,7 +221,7 @@ impl<F: IntegrateFloat> EventHandler<F> {
 
         for (i, (func, spec)) in event_funcs.iter().zip(self.specs.iter()).enumerate() {
             // Skip if we've already reached the maximum count for this event
-            if spec.max_count_reached(&spec.id, self.record.counts.get(&spec.id).cloned()) {
+            if spec.max_count_reached(self.record.counts.get(&spec.id).cloned()) {
                 continue;
             }
 
@@ -241,7 +241,7 @@ impl<F: IntegrateFloat> EventHandler<F> {
                 };
 
                 if triggered {
-                    // Refine the event time if requested and dense output is available
+                    // Refine the event time if requested and dense _output is available
                     let (event_t, event_y, event_val, dir) =
                         if spec.precise_time && dense_output.is_some() {
                             self.refine_event_time(
@@ -340,7 +340,7 @@ impl<F: IntegrateFloat> EventHandler<F> {
             // Compute midpoint time
             t_mid = (t_left + t_right) / F::from_f64(2.0).unwrap();
 
-            // Get state at midpoint using dense output
+            // Get state at midpoint using dense _output
             y_mid = dense_output.evaluate(t_mid)?;
 
             // Evaluate event function at midpoint
@@ -379,6 +379,7 @@ impl<F: IntegrateFloat> EventHandler<F> {
 }
 
 /// Function to create a terminal event (one that stops integration when triggered)
+#[allow(dead_code)]
 pub fn terminal_event<F: IntegrateFloat>(id: &str, direction: EventDirection) -> EventSpec<F> {
     EventSpec {
         id: id.to_string(),

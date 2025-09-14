@@ -32,7 +32,7 @@ use crate::error::{Result, TimeSeriesError};
 ///
 /// ```
 /// use ndarray::Array1;
-/// use scirs2_series::trends::{estimate_spline_trend, SplineTrendOptions, SplineType, KnotPlacementStrategy};
+/// use scirs2__series::trends::{estimate_spline_trend, SplineTrendOptions, SplineType, KnotPlacementStrategy};
 ///
 /// // Create a sample time series with a trend and noise
 /// let n = 100;
@@ -52,6 +52,7 @@ use crate::error::{Result, TimeSeriesError};
 /// // The trend should have the same length as the input
 /// assert_eq!(trend.len(), ts.len());
 /// ```
+#[allow(dead_code)]
 pub fn estimate_spline_trend<F>(ts: &Array1<F>, options: &SplineTrendOptions) -> Result<Array1<F>>
 where
     F: Float + FromPrimitive + Debug,
@@ -112,44 +113,47 @@ where
 }
 
 /// Generates uniformly spaced knot positions
-fn generate_uniform_knots(n: usize, num_knots: usize) -> Vec<usize> {
-    let mut knots = Vec::with_capacity(num_knots);
+#[allow(dead_code)]
+fn generate_uniform_knots(n: usize, numknots: usize) -> Vec<usize> {
+    let mut _knots = Vec::with_capacity(numknots);
 
     // Ensure first and last points are included
-    knots.push(0);
+    _knots.push(0);
 
-    if num_knots > 2 {
-        let step = (n - 1) as f64 / (num_knots - 1) as f64;
-        for i in 1..(num_knots - 1) {
+    if numknots > 2 {
+        let step = (n - 1) as f64 / (numknots - 1) as f64;
+        for i in 1..(numknots - 1) {
             let pos = (i as f64 * step).round() as usize;
-            knots.push(pos);
+            _knots.push(pos);
         }
     }
 
-    knots.push(n - 1);
-    knots
+    _knots.push(n - 1);
+    _knots
 }
 
 /// Generates knots at quantile positions of the data
-fn generate_quantile_knots(n: usize, num_knots: usize) -> Vec<usize> {
-    let mut knots = Vec::with_capacity(num_knots);
+#[allow(dead_code)]
+fn generate_quantile_knots(n: usize, numknots: usize) -> Vec<usize> {
+    let mut _knots = Vec::with_capacity(numknots);
 
     // Ensure first and last points are included
-    knots.push(0);
+    _knots.push(0);
 
-    if num_knots > 2 {
-        for i in 1..(num_knots - 1) {
-            let quantile = i as f64 / (num_knots - 1) as f64;
+    if numknots > 2 {
+        for i in 1..(numknots - 1) {
+            let quantile = i as f64 / (numknots - 1) as f64;
             let pos = (quantile * (n - 1) as f64).round() as usize;
-            knots.push(pos);
+            _knots.push(pos);
         }
     }
 
-    knots.push(n - 1);
-    knots
+    _knots.push(n - 1);
+    _knots
 }
 
 /// Fits a cubic spline to the time series data
+#[allow(dead_code)]
 fn fit_cubic_spline<F>(ts: &Array1<F>, knots: &[usize], extrapolate: bool) -> Result<Array1<F>>
 where
     F: Float + FromPrimitive + Debug,
@@ -250,6 +254,7 @@ where
 }
 
 /// Fits a natural cubic spline to the time series data
+#[allow(dead_code)]
 fn fit_natural_cubic_spline<F>(
     ts: &Array1<F>,
     knots: &[usize],
@@ -264,11 +269,12 @@ where
 }
 
 /// Fits a B-spline to the time series data
+#[allow(dead_code)]
 fn fit_bspline<F>(
     ts: &Array1<F>,
     knots: &[usize],
     degree: usize,
-    _extrapolate: bool,
+    extrapolate: bool,
 ) -> Result<Array1<F>>
 where
     F: Float + FromPrimitive + Debug,
@@ -300,12 +306,13 @@ where
 }
 
 /// Fits a P-spline (penalized B-spline) to the time series data
+#[allow(dead_code)]
 fn fit_pspline<F>(
     ts: &Array1<F>,
     knots: &[usize],
     degree: usize,
     lambda: F,
-    _extrapolate: bool,
+    extrapolate: bool,
 ) -> Result<Array1<F>>
 where
     F: Float + FromPrimitive + Debug,
@@ -337,17 +344,18 @@ where
 }
 
 /// Creates a B-spline basis matrix
-fn create_bspline_basis<F>(x_values: Vec<F>, knots: &[usize], degree: usize) -> Result<Array2<F>>
+#[allow(dead_code)]
+fn create_bspline_basis<F>(_xvalues: Vec<F>, knots: &[usize], degree: usize) -> Result<Array2<F>>
 where
     F: Float + FromPrimitive + Debug,
 {
-    let n = x_values.len();
+    let n = _xvalues.len();
 
     // For a B-spline of degree p with n knots, we have n+p-1 basis functions
     let num_basis = knots.len() + degree - 1;
     let mut basis = Array2::<F>::zeros((n, num_basis));
 
-    // Convert knot indices to float x values
+    // Convert knot indices to float x _values
     let mut augmented_knots = Vec::with_capacity(knots.len() + 2 * degree);
 
     // Add p knots at the beginning and end for proper boundary behavior
@@ -366,7 +374,7 @@ where
     // Implement the Cox-de Boor recursion formula
     // Start with degree 0 (piecewise constant)
     for i in 0..n {
-        let x = x_values[i];
+        let x = _xvalues[i];
 
         for j in 0..(augmented_knots.len() - 1) {
             if j < num_basis {
@@ -387,7 +395,7 @@ where
 
     for d in 1..=degree {
         for i in 0..n {
-            let x = x_values[i];
+            let x = _xvalues[i];
 
             for j in 0..(num_basis - d) {
                 let mut sum = F::zero();
@@ -415,6 +423,7 @@ where
 }
 
 /// Solves a linear system for spline coefficients
+#[allow(dead_code)]
 fn solve_spline_system<F>(basis: &Array2<F>, ts: &Array1<F>) -> Result<Vec<F>>
 where
     F: Float + FromPrimitive + Debug,
@@ -449,6 +458,7 @@ where
 }
 
 /// Solves a regularized linear system for penalized spline coefficients
+#[allow(dead_code)]
 fn solve_regularized_system<F>(basis: Array2<F>, ts: &Array1<F>, lambda: F) -> Result<Vec<F>>
 where
     F: Float + FromPrimitive + Debug,
@@ -510,6 +520,7 @@ where
 }
 
 /// Solves a linear system using Cholesky decomposition
+#[allow(dead_code)]
 fn solve_linear_system<F>(a: Array2<F>, b: Vec<F>) -> Result<Vec<F>>
 where
     F: Float + FromPrimitive + Debug,
@@ -595,6 +606,7 @@ where
 /// # Returns
 ///
 /// A `TrendWithConfidenceInterval` struct containing the estimated trend and confidence bounds
+#[allow(dead_code)]
 pub fn estimate_spline_trend_with_ci<F>(
     ts: &Array1<F>,
     options: &SplineTrendOptions,

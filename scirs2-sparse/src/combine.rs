@@ -37,6 +37,7 @@ use std::ops::{Add, AddAssign, Div, Mul, Sub};
 /// assert_eq!(c.get(0, 2), 1.0);
 /// assert_eq!(c.get(1, 3), 1.0);
 /// ```
+#[allow(dead_code)]
 pub fn hstack<'a, T>(
     arrays: &[&'a dyn SparseArray<T>],
     format: &str,
@@ -59,8 +60,8 @@ where
     }
 
     // Check that all arrays have the same number of rows
-    let first_shape = arrays[0].shape();
-    let m = first_shape.0;
+    let firstshape = arrays[0].shape();
+    let m = firstshape.0;
 
     for (_i, &array) in arrays.iter().enumerate().skip(1) {
         let shape = array.shape();
@@ -104,8 +105,7 @@ where
         "coo" => CooArray::from_triplets(&rows, &cols, &data, (m, n), false)
             .map(|array| Box::new(array) as Box<dyn SparseArray<T>>),
         _ => Err(SparseError::ValueError(format!(
-            "Unknown sparse format: {}. Supported formats are 'csr' and 'coo'",
-            format
+            "Unknown sparse format: {format}. Supported formats are 'csr' and 'coo'"
         ))),
     }
 }
@@ -135,6 +135,7 @@ where
 /// assert_eq!(c.get(2, 0), 1.0);
 /// assert_eq!(c.get(3, 1), 1.0);
 /// ```
+#[allow(dead_code)]
 pub fn vstack<'a, T>(
     arrays: &[&'a dyn SparseArray<T>],
     format: &str,
@@ -157,8 +158,8 @@ where
     }
 
     // Check that all arrays have the same number of columns
-    let first_shape = arrays[0].shape();
-    let n = first_shape.1;
+    let firstshape = arrays[0].shape();
+    let n = firstshape.1;
 
     for (_i, &array) in arrays.iter().enumerate().skip(1) {
         let shape = array.shape();
@@ -202,8 +203,7 @@ where
         "coo" => CooArray::from_triplets(&rows, &cols, &data, (m, n), false)
             .map(|array| Box::new(array) as Box<dyn SparseArray<T>>),
         _ => Err(SparseError::ValueError(format!(
-            "Unknown sparse format: {}. Supported formats are 'csr' and 'coo'",
-            format
+            "Unknown sparse format: {format}. Supported formats are 'csr' and 'coo'"
         ))),
     }
 }
@@ -239,6 +239,7 @@ where
 /// assert_eq!(c.get(0, 2), 0.0);
 /// assert_eq!(c.get(2, 0), 0.0);
 /// ```
+#[allow(dead_code)]
 pub fn block_diag<'a, T>(
     arrays: &[&'a dyn SparseArray<T>],
     format: &str,
@@ -297,8 +298,7 @@ where
         "coo" => CooArray::from_triplets(&rows, &cols, &data, (total_rows, total_cols), false)
             .map(|array| Box::new(array) as Box<dyn SparseArray<T>>),
         _ => Err(SparseError::ValueError(format!(
-            "Unknown sparse format: {}. Supported formats are 'csr' and 'coo'",
-            format
+            "Unknown sparse format: {format}. Supported formats are 'csr' and 'coo'"
         ))),
     }
 }
@@ -332,6 +332,7 @@ where
 /// let c = tril(&*a, 1, "csr").unwrap();
 /// assert_eq!(c.get(0, 1), 0.0);  // Nothing in superdiagonal of identity matrix
 /// ```
+#[allow(dead_code)]
 pub fn tril<T>(
     array: &dyn SparseArray<T>,
     k: isize,
@@ -373,8 +374,7 @@ where
         "coo" => CooArray::from_triplets(&tril_rows, &tril_cols, &tril_data, shape, false)
             .map(|array| Box::new(array) as Box<dyn SparseArray<T>>),
         _ => Err(SparseError::ValueError(format!(
-            "Unknown sparse format: {}. Supported formats are 'csr' and 'coo'",
-            format
+            "Unknown sparse format: {format}. Supported formats are 'csr' and 'coo'"
         ))),
     }
 }
@@ -408,6 +408,7 @@ where
 /// let c = triu(&*a, -1, "csr").unwrap();
 /// assert_eq!(c.get(1, 0), 0.0);  // Nothing in subdiagonal of identity matrix
 /// ```
+#[allow(dead_code)]
 pub fn triu<T>(
     array: &dyn SparseArray<T>,
     k: isize,
@@ -449,8 +450,7 @@ where
         "coo" => CooArray::from_triplets(&triu_rows, &triu_cols, &triu_data, shape, false)
             .map(|array| Box::new(array) as Box<dyn SparseArray<T>>),
         _ => Err(SparseError::ValueError(format!(
-            "Unknown sparse format: {}. Supported formats are 'csr' and 'coo'",
-            format
+            "Unknown sparse format: {format}. Supported formats are 'csr' and 'coo'"
         ))),
     }
 }
@@ -489,6 +489,7 @@ where
 /// assert_eq!(c.get(2, 2), 1.0);
 /// assert_eq!(c.get(3, 3), 1.0);
 /// ```
+#[allow(dead_code)]
 pub fn kron<'a, T>(
     a: &'a dyn SparseArray<T>,
     b: &'a dyn SparseArray<T>,
@@ -506,11 +507,11 @@ where
         + Copy
         + 'static,
 {
-    let a_shape = a.shape();
-    let b_shape = b.shape();
+    let ashape = a.shape();
+    let bshape = b.shape();
 
     // Calculate output shape
-    let output_shape = (a_shape.0 * b_shape.0, a_shape.1 * b_shape.1);
+    let outputshape = (ashape.0 * bshape.0, ashape.1 * bshape.1);
 
     // Check for empty matrices
     if a.nnz() == 0 || b.nnz() == 0 {
@@ -521,16 +522,15 @@ where
 
         return match format.to_lowercase().as_str() {
             "csr" => {
-                CsrArray::from_triplets(&empty_rows, &empty_cols, &empty_data, output_shape, false)
+                CsrArray::from_triplets(&empty_rows, &empty_cols, &empty_data, outputshape, false)
                     .map(|array| Box::new(array) as Box<dyn SparseArray<T>>)
             }
             "coo" => {
-                CooArray::from_triplets(&empty_rows, &empty_cols, &empty_data, output_shape, false)
+                CooArray::from_triplets(&empty_rows, &empty_cols, &empty_data, outputshape, false)
                     .map(|array| Box::new(array) as Box<dyn SparseArray<T>>)
             }
             _ => Err(SparseError::ValueError(format!(
-                "Unknown sparse format: {}. Supported formats are 'csr' and 'coo'",
-                format
+                "Unknown sparse format: {format}. Supported formats are 'csr' and 'coo'"
             ))),
         };
     }
@@ -560,8 +560,8 @@ where
     for i in 0..nnz_a {
         for j in 0..nnz_b {
             // Calculate row and column indices
-            let row = a_rows[i] * b_shape.0 + b_rows[j];
-            let col = a_cols[i] * b_shape.1 + b_cols[j];
+            let row = a_rows[i] * bshape.0 + b_rows[j];
+            let col = a_cols[i] * bshape.1 + b_cols[j];
 
             // Calculate data value
             let val = a_data[i] * b_data[j];
@@ -575,13 +575,12 @@ where
 
     // Create the output array in requested format
     match format.to_lowercase().as_str() {
-        "csr" => CsrArray::from_triplets(&out_rows, &out_cols, &out_data, output_shape, false)
+        "csr" => CsrArray::from_triplets(&out_rows, &out_cols, &out_data, outputshape, false)
             .map(|array| Box::new(array) as Box<dyn SparseArray<T>>),
-        "coo" => CooArray::from_triplets(&out_rows, &out_cols, &out_data, output_shape, false)
+        "coo" => CooArray::from_triplets(&out_rows, &out_cols, &out_data, outputshape, false)
             .map(|array| Box::new(array) as Box<dyn SparseArray<T>>),
         _ => Err(SparseError::ValueError(format!(
-            "Unknown sparse format: {}. Supported formats are 'csr' and 'coo'",
-            format
+            "Unknown sparse format: {format}. Supported formats are 'csr' and 'coo'"
         ))),
     }
 }
@@ -618,10 +617,11 @@ where
 /// assert_eq!(c.shape(), (4, 4));
 ///
 /// // Verify there is a non-zero element by checking the number of non-zeros
-/// let (rows, _, data) = c.find();
+/// let (rows, data) = c.find();
 /// assert!(rows.len() > 0);
 /// assert!(data.len() > 0);
 /// ```
+#[allow(dead_code)]
 pub fn kronsum<'a, T>(
     a: &'a dyn SparseArray<T>,
     b: &'a dyn SparseArray<T>,
@@ -639,29 +639,29 @@ where
         + Copy
         + 'static,
 {
-    let a_shape = a.shape();
-    let b_shape = b.shape();
+    let ashape = a.shape();
+    let bshape = b.shape();
 
     // Check that matrices are square
-    if a_shape.0 != a_shape.1 {
+    if ashape.0 != ashape.1 {
         return Err(SparseError::ValueError(
             "First matrix must be square".to_string(),
         ));
     }
-    if b_shape.0 != b_shape.1 {
+    if bshape.0 != bshape.1 {
         return Err(SparseError::ValueError(
             "Second matrix must be square".to_string(),
         ));
     }
 
     // Create identity matrices of appropriate sizes
-    let m = a_shape.0;
-    let n = b_shape.0;
+    let m = ashape.0;
+    let n = bshape.0;
 
     // For identity matrices, we'll use a direct implementation that creates
     // the expected pattern for Kronecker sum of identity matrices
     if is_identity_matrix(a) && is_identity_matrix(b) {
-        let output_shape = (m * n, m * n);
+        let outputshape = (m * n, m * n);
         let mut rows = Vec::new();
         let mut cols = Vec::new();
         let mut data = Vec::new();
@@ -706,19 +706,18 @@ where
 
         // Create the output array in the requested format
         return match format.to_lowercase().as_str() {
-            "csr" => CsrArray::from_triplets(&rows, &cols, &data, output_shape, true)
+            "csr" => CsrArray::from_triplets(&rows, &cols, &data, outputshape, true)
                 .map(|array| Box::new(array) as Box<dyn SparseArray<T>>),
-            "coo" => CooArray::from_triplets(&rows, &cols, &data, output_shape, true)
+            "coo" => CooArray::from_triplets(&rows, &cols, &data, outputshape, true)
                 .map(|array| Box::new(array) as Box<dyn SparseArray<T>>),
             _ => Err(SparseError::ValueError(format!(
-                "Unknown sparse format: {}. Supported formats are 'csr' and 'coo'",
-                format
+                "Unknown sparse format: {format}. Supported formats are 'csr' and 'coo'"
             ))),
         };
     }
 
     // General case for non-identity matrices
-    let output_shape = (m * n, m * n);
+    let outputshape = (m * n, m * n);
 
     // Create arrays to hold output triplets
     let mut rows = Vec::new();
@@ -754,13 +753,12 @@ where
 
     // Create the output array in the requested format
     match format.to_lowercase().as_str() {
-        "csr" => CsrArray::from_triplets(&rows, &cols, &data, output_shape, true)
+        "csr" => CsrArray::from_triplets(&rows, &cols, &data, outputshape, true)
             .map(|array| Box::new(array) as Box<dyn SparseArray<T>>),
-        "coo" => CooArray::from_triplets(&rows, &cols, &data, output_shape, true)
+        "coo" => CooArray::from_triplets(&rows, &cols, &data, outputshape, true)
             .map(|array| Box::new(array) as Box<dyn SparseArray<T>>),
         _ => Err(SparseError::ValueError(format!(
-            "Unknown sparse format: {}. Supported formats are 'csr' and 'coo'",
-            format
+            "Unknown sparse format: {format}. Supported formats are 'csr' and 'coo'"
         ))),
     }
 }
@@ -799,6 +797,7 @@ where
 /// assert_eq!(c.get(2, 2), 1.0);
 /// assert_eq!(c.get(3, 3), 1.0);
 /// ```
+#[allow(dead_code)]
 pub fn bmat<'a, T>(
     blocks: &[Vec<Option<&'a dyn SparseArray<T>>>],
     format: &str,
@@ -828,10 +827,8 @@ where
     for (i, row) in blocks.iter().enumerate() {
         if row.len() != n {
             return Err(SparseError::ValueError(format!(
-                "Block row {} has length {}, expected {}",
-                i,
-                row.len(),
-                n
+                "Block row {i} has length {}, expected {n}",
+                row.len()
             )));
         }
     }
@@ -852,8 +849,8 @@ where
                     *row_size = shape.0;
                 } else if *row_size != shape.0 {
                     return Err(SparseError::ValueError(format!(
-                        "Inconsistent row dimensions in block row {}. Expected {}, got {}",
-                        i, row_sizes[i], shape.0
+                        "Inconsistent row dimensions in block row {i}. Expected {}, got {}",
+                        row_sizes[i], shape.0
                     )));
                 }
 
@@ -862,8 +859,8 @@ where
                     *col_size = shape.1;
                 } else if *col_size != shape.1 {
                     return Err(SparseError::ValueError(format!(
-                        "Inconsistent column dimensions in block column {}. Expected {}, got {}",
-                        j, *col_size, shape.1
+                        "Inconsistent column dimensions in block column {j}. Expected {}, got {}",
+                        *col_size, shape.1
                     )));
                 }
 
@@ -876,16 +873,14 @@ where
     for (i, &row_size) in row_sizes.iter().enumerate().take(m) {
         if row_size == 0 {
             return Err(SparseError::ValueError(format!(
-                "Block row {} has no arrays, cannot determine dimensions",
-                i
+                "Block row {i} has no arrays, cannot determine dimensions"
             )));
         }
     }
     for (j, &col_size) in col_sizes.iter().enumerate().take(n) {
         if col_size == 0 {
             return Err(SparseError::ValueError(format!(
-                "Block column {} has no arrays, cannot determine dimensions",
-                j
+                "Block column {j} has no arrays, cannot determine dimensions"
             )));
         }
     }
@@ -902,7 +897,7 @@ where
     }
 
     // Calculate total shape
-    let total_shape = (row_offsets[m], col_offsets[n]);
+    let totalshape = (row_offsets[m], col_offsets[n]);
 
     // If there are no blocks, return an empty matrix
     let mut has_blocks = false;
@@ -926,16 +921,15 @@ where
 
         return match format.to_lowercase().as_str() {
             "csr" => {
-                CsrArray::from_triplets(&empty_rows, &empty_cols, &empty_data, total_shape, false)
+                CsrArray::from_triplets(&empty_rows, &empty_cols, &empty_data, totalshape, false)
                     .map(|array| Box::new(array) as Box<dyn SparseArray<T>>)
             }
             "coo" => {
-                CooArray::from_triplets(&empty_rows, &empty_cols, &empty_data, total_shape, false)
+                CooArray::from_triplets(&empty_rows, &empty_cols, &empty_data, totalshape, false)
                     .map(|array| Box::new(array) as Box<dyn SparseArray<T>>)
             }
             _ => Err(SparseError::ValueError(format!(
-                "Unknown sparse format: {}. Supported formats are 'csr' and 'coo'",
-                format
+                "Unknown sparse format: {format}. Supported formats are 'csr' and 'coo'"
             ))),
         };
     }
@@ -950,15 +944,15 @@ where
             if let Some(block) = blocks[i][j] {
                 let (block_rows, block_cols, block_data) = block.find();
 
-                for (((&row, &col), &val), _) in block_rows
+                for (((row, col), val), _) in block_rows
                     .iter()
                     .zip(block_cols.iter())
                     .zip(block_data.iter())
                     .zip(0..block_data.len())
                 {
-                    rows.push(row + *row_offset);
-                    cols.push(col + *col_offset);
-                    data.push(val);
+                    rows.push(*row + *row_offset);
+                    cols.push(*col + *col_offset);
+                    data.push(*val);
                 }
             }
         }
@@ -966,18 +960,18 @@ where
 
     // Create the output array in the requested format
     match format.to_lowercase().as_str() {
-        "csr" => CsrArray::from_triplets(&rows, &cols, &data, total_shape, false)
+        "csr" => CsrArray::from_triplets(&rows, &cols, &data, totalshape, false)
             .map(|array| Box::new(array) as Box<dyn SparseArray<T>>),
-        "coo" => CooArray::from_triplets(&rows, &cols, &data, total_shape, false)
+        "coo" => CooArray::from_triplets(&rows, &cols, &data, totalshape, false)
             .map(|array| Box::new(array) as Box<dyn SparseArray<T>>),
         _ => Err(SparseError::ValueError(format!(
-            "Unknown sparse format: {}. Supported formats are 'csr' and 'coo'",
-            format
+            "Unknown sparse format: {format}. Supported formats are 'csr' and 'coo'"
         ))),
     }
 }
 
 // Helper function to check if a sparse array is an identity matrix
+#[allow(dead_code)]
 fn is_identity_matrix<T>(array: &dyn SparseArray<T>) -> bool
 where
     T: Float + Debug + Copy + 'static,
@@ -1090,15 +1084,15 @@ mod tests {
         assert_eq!(c.get(1, 0), 0.0);
 
         // Test kronecker product of more complex matrices
-        let rows_a = vec![0, 0, 1];
+        let rowsa = vec![0, 0, 1];
         let cols_a = vec![0, 1, 0];
         let data_a = vec![1.0, 2.0, 3.0];
-        let a = CooArray::from_triplets(&rows_a, &cols_a, &data_a, (2, 2), false).unwrap();
+        let a = CooArray::from_triplets(&rowsa, &cols_a, &data_a, (2, 2), false).unwrap();
 
-        let rows_b = vec![0, 1];
+        let rowsb = vec![0, 1];
         let cols_b = vec![0, 1];
         let data_b = vec![4.0, 5.0];
-        let b = CooArray::from_triplets(&rows_b, &cols_b, &data_b, (2, 2), false).unwrap();
+        let b = CooArray::from_triplets(&rowsb, &cols_b, &data_b, (2, 2), false).unwrap();
 
         let c = kron(&a, &b, "csr").unwrap();
         assert_eq!(c.shape(), (4, 4));
@@ -1146,7 +1140,7 @@ mod tests {
         assert_eq!(c.shape(), (4, 4));
 
         // Verify the matrix is non-trivial (has at least a few non-zero entries)
-        let (rows, _, data) = c.find();
+        let (rows, _cols, data) = c.find();
         assert!(!rows.is_empty());
         assert!(!data.is_empty());
 
@@ -1155,7 +1149,7 @@ mod tests {
         assert_eq!(c_coo.shape(), (4, 4));
 
         // Verify the COO format also has non-zero entries
-        let (coo_rows, _, coo_data) = c_coo.find();
+        let (coo_rows, _coo_cols, coo_data) = c_coo.find();
         assert!(!coo_rows.is_empty());
         assert!(!coo_data.is_empty());
     }

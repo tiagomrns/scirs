@@ -22,6 +22,7 @@ use image::{DynamicImage, GenericImageView, ImageBuffer, Pixel, Rgba};
 /// # Returns
 ///
 /// * Result containing (homography, mask) where mask indicates inliers
+#[allow(dead_code)]
 pub fn find_homography(
     src_points: &[(f64, f64)],
     dst_points: &[(f64, f64)],
@@ -85,6 +86,7 @@ pub fn find_homography(
 /// # Returns
 ///
 /// * Result containing (homography, mask) where mask indicates inliers
+#[allow(dead_code)]
 pub fn find_homography_from_matches(
     matches: &[(usize, usize, f32)],
     keypoints1: &[KeyPoint],
@@ -102,16 +104,15 @@ pub fn find_homography_from_matches(
     let mut src_points = Vec::with_capacity(matches.len());
     let mut dst_points = Vec::with_capacity(matches.len());
 
-    for &(idx1, idx2, _) in matches {
-        if idx1 >= keypoints1.len() || idx2 >= keypoints2.len() {
+    for &(idx1, idx2_, _) in matches {
+        if idx1 >= keypoints1.len() || idx2_ >= keypoints2.len() {
             return Err(crate::error::VisionError::InvalidParameter(format!(
-                "Invalid keypoint indices: ({}, {})",
-                idx1, idx2
+                "Invalid keypoint indices: ({idx1}, {idx2_})"
             )));
         }
 
         let kp1 = &keypoints1[idx1];
-        let kp2 = &keypoints2[idx2];
+        let kp2 = &keypoints2[idx2_];
 
         src_points.push((kp1.x as f64, kp1.y as f64));
         dst_points.push((kp2.x as f64, kp2.y as f64));
@@ -132,6 +133,7 @@ pub fn find_homography_from_matches(
 /// # Returns
 ///
 /// * Result containing warped image
+#[allow(dead_code)]
 pub fn warp_perspective<P>(
     src: &DynamicImage,
     homography: &Homography,
@@ -195,6 +197,7 @@ where
 }
 
 /// Bilinear interpolation for pixels
+#[allow(dead_code)]
 fn interpolate_pixel(
     p00: &Rgba<u8>,
     p01: &Rgba<u8>,
@@ -233,11 +236,12 @@ fn interpolate_pixel(
 /// # Returns
 ///
 /// * Result containing homography matrix
+#[allow(dead_code)]
 pub fn perspective_transform(
     src_quad: &[(f64, f64); 4],
     dst_quad: &[(f64, f64); 4],
 ) -> Result<Homography> {
-    find_homography(src_quad, dst_quad, 1e-10, 0.99).map(|(h, _)| h)
+    find_homography(src_quad, dst_quad, 1e-10, 0.99).map(|(h_, _)| h_)
 }
 
 /// Fit a rectangle to a set of points
@@ -249,6 +253,7 @@ pub fn perspective_transform(
 /// # Returns
 ///
 /// * Rectangle corners (top-left, top-right, bottom-right, bottom-left)
+#[allow(dead_code)]
 pub fn fit_rectangle(points: &[(f64, f64)]) -> [(f64, f64); 4] {
     if points.is_empty() {
         return [(0.0, 0.0); 4];

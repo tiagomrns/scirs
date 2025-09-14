@@ -3,6 +3,7 @@ use std::f64::consts::PI;
 // Removed legacy numeric constant imports
 
 // Simple implementation of Wright Omega function for demonstration purposes
+#[allow(dead_code)]
 fn wright_omega(z: Complex64, tol: f64) -> Complex64 {
     // Handle NaN inputs
     if z.re.is_nan() || z.im.is_nan() {
@@ -81,6 +82,7 @@ fn wright_omega(z: Complex64, tol: f64) -> Complex64 {
 }
 
 // Simple implementation for real-valued Wright Omega
+#[allow(dead_code)]
 fn wright_omega_real(x: f64, tol: f64) -> f64 {
     // Handle NaN input
     if x.is_nan() {
@@ -146,6 +148,7 @@ fn wright_omega_real(x: f64, tol: f64) -> f64 {
     w
 }
 
+#[allow(dead_code)]
 fn main() {
     println!("Wright Omega Function Example\n");
 

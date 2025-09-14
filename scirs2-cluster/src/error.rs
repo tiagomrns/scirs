@@ -39,6 +39,14 @@ pub enum ClusteringError {
     #[error("Core validation error: {0}")]
     CoreError(#[from] CoreError),
 
+    /// I/O error
+    #[error("I/O error: {0}")]
+    IoError(#[from] std::io::Error),
+
+    /// JSON serialization error
+    #[error("JSON error: {0}")]
+    JsonError(#[from] serde_json::Error),
+
     /// Other error
     #[error("Error: {0}")]
     Other(String),

@@ -43,6 +43,7 @@ const CUDA_SUCCESS: i32 = 0;
 const CUDA_MEMCPY_HOST_TO_DEVICE: i32 = 1;
 const CUDA_MEMCPY_DEVICE_TO_HOST: i32 = 2;
 
+#[allow(dead_code)]
 fn check_cuda(code: i32, msg: &str) {
     if code != CUDA_SUCCESS {
         unsafe {
@@ -53,6 +54,7 @@ fn check_cuda(code: i32, msg: &str) {
     }
 }
 
+#[allow(dead_code)]
 fn main() {
     unsafe {
         println!("=== Full CUDA + Rust Example ===\n");

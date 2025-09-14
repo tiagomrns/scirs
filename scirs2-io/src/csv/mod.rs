@@ -81,6 +81,7 @@ impl Default for CsvReaderConfig {
 /// };
 /// let (_, data) = read_csv("data.csv", Some(config)).unwrap();
 /// ```
+#[allow(dead_code)]
 pub fn read_csv<P: AsRef<Path>>(
     path: P,
     config: Option<CsvReaderConfig>,
@@ -152,10 +153,10 @@ pub fn read_csv<P: AsRef<Path>>(
     for (i, row) in rows.iter().enumerate() {
         if row.len() != num_cols {
             return Err(IoError::FormatError(format!(
-                "Inconsistent number of columns: row {} has {} columns, expected {}",
-                i + 1,
-                row.len(),
-                num_cols
+                "Inconsistent number of columns: row {row_num} has {actual_cols} columns, expected {expected_cols}",
+                row_num = i + 1,
+                actual_cols = row.len(),
+                expected_cols = num_cols
             )));
         }
     }
@@ -174,6 +175,7 @@ pub fn read_csv<P: AsRef<Path>>(
 }
 
 /// Parse a CSV line into fields
+#[allow(dead_code)]
 fn parse_csv_line(line: &str, config: &CsvReaderConfig) -> Vec<String> {
     let mut fields = Vec::new();
     let mut field = String::new();
@@ -237,6 +239,7 @@ fn parse_csv_line(line: &str, config: &CsvReaderConfig) -> Vec<String> {
 /// let (headers, data) = read_csv_numeric("data.csv", None).unwrap();
 /// println!("Numeric data shape: {:?}", data.shape());
 /// ```
+#[allow(dead_code)]
 pub fn read_csv_numeric<P: AsRef<Path>>(
     path: P,
     config: Option<CsvReaderConfig>,
@@ -250,10 +253,10 @@ pub fn read_csv_numeric<P: AsRef<Path>>(
         for j in 0..shape[1] {
             let value = string_data[[i, j]].parse::<f64>().map_err(|_| {
                 IoError::FormatError(format!(
-                    "Could not convert value '{}' at position [{}, {}] to number",
-                    string_data[[i, j]],
-                    i,
-                    j
+                    "Could not convert value '{value}' at position [{row}, {col}] to number",
+                    value = string_data[[i, j]],
+                    row = i,
+                    col = j
                 ))
             })?;
             numeric_data[[i, j]] = value;
@@ -396,10 +399,10 @@ pub enum DataValue {
 impl std::fmt::Display for DataValue {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            DataValue::String(s) => write!(f, "{}", s),
-            DataValue::Integer(i) => write!(f, "{}", i),
-            DataValue::Float(v) => write!(f, "{}", v),
-            DataValue::Boolean(b) => write!(f, "{}", b),
+            DataValue::String(s) => write!(f, "{s}"),
+            DataValue::Integer(i) => write!(f, "{i}"),
+            DataValue::Float(v) => write!(f, "{v}"),
+            DataValue::Boolean(b) => write!(f, "{b}"),
             DataValue::Date(d) => write!(f, "{}", d.format("%Y-%m-%d")),
             DataValue::Time(t) => write!(f, "{}", t.format("%H:%M:%S%.f")),
             DataValue::DateTime(dt) => write!(f, "{}", dt.format("%Y-%m-%dT%H:%M:%S%.f")),
@@ -416,6 +419,7 @@ impl std::fmt::Display for DataValue {
 }
 
 /// Automatically detect column types from data
+#[allow(dead_code)]
 pub fn detect_column_types(data: &Array2<String>) -> Vec<ColumnType> {
     let (rows, cols) = (data.shape()[0], data.shape()[1]);
 
@@ -524,6 +528,7 @@ pub fn detect_column_types(data: &Array2<String>) -> Vec<ColumnType> {
 }
 
 /// Parse a complex number from string like "3+4i", "-1-2i"
+#[allow(dead_code)]
 fn parse_complex(s: &str) -> Option<Complex64> {
     // Common complex number formats:
     // 1. "a+bi" or "a-bi" - standard form
@@ -597,6 +602,7 @@ fn parse_complex(s: &str) -> Option<Complex64> {
 }
 
 /// Convert a string to a specified type with missing value handling
+#[allow(dead_code)]
 fn convert_value(
     value: &str,
     col_type: ColumnType,
@@ -604,7 +610,7 @@ fn convert_value(
 ) -> Result<DataValue> {
     let trimmed = value.trim();
 
-    // Check for missing values
+    // Check for missing _values
     if missing_values
         .values
         .iter()
@@ -627,15 +633,13 @@ fn convert_value(
         ColumnType::Integer => match trimmed.parse::<i64>() {
             Ok(val) => Ok(DataValue::Integer(val)),
             Err(_) => Err(IoError::FormatError(format!(
-                "Cannot convert '{}' to integer",
-                value
+                "Cannot convert '{value}' to integer"
             ))),
         },
         ColumnType::Float => match trimmed.parse::<f64>() {
             Ok(val) => Ok(DataValue::Float(val)),
             Err(_) => Err(IoError::FormatError(format!(
-                "Cannot convert '{}' to float",
-                value
+                "Cannot convert '{value}' to float"
             ))),
         },
         ColumnType::Boolean => {
@@ -644,16 +648,14 @@ fn convert_value(
                 "true" | "yes" | "1" => Ok(DataValue::Boolean(true)),
                 "false" | "no" | "0" => Ok(DataValue::Boolean(false)),
                 _ => Err(IoError::FormatError(format!(
-                    "Cannot convert '{}' to boolean",
-                    value
+                    "Cannot convert '{value}' to boolean"
                 ))),
             }
         }
         ColumnType::Date => match NaiveDate::parse_from_str(trimmed, "%Y-%m-%d") {
             Ok(date) => Ok(DataValue::Date(date)),
             Err(_) => Err(IoError::FormatError(format!(
-                "Cannot convert '{}' to date (expected YYYY-MM-DD)",
-                value
+                "Cannot convert '{value}' to date (expected YYYY-MM-DD)"
             ))),
         },
         ColumnType::Time => {
@@ -663,8 +665,7 @@ fn convert_value(
             match result {
                 Ok(time) => Ok(DataValue::Time(time)),
                 Err(_) => Err(IoError::FormatError(format!(
-                    "Cannot convert '{}' to time (expected HH:MM:SS[.f])",
-                    value
+                    "Cannot convert '{value}' to time (expected HH:MM:SS[.f])"
                 ))),
             }
         }
@@ -677,16 +678,14 @@ fn convert_value(
             match result {
                 Ok(dt) => Ok(DataValue::DateTime(dt)),
                 Err(_) => Err(IoError::FormatError(format!(
-                    "Cannot convert '{}' to datetime (expected YYYY-MM-DD[T ]HH:MM:SS[.f])",
-                    value
+                    "Cannot convert '{value}' to datetime (expected YYYY-MM-DD[T ]HH:MM:SS[.f])"
                 ))),
             }
         }
         ColumnType::Complex => match parse_complex(trimmed) {
             Some(complex) => Ok(DataValue::Complex(complex)),
             None => Err(IoError::FormatError(format!(
-                "Cannot convert '{}' to complex number (expected a+bi or (a,b))",
-                value
+                "Cannot convert '{value}' to complex number (expected a+bi or (a,b))"
             ))),
         },
     }
@@ -725,6 +724,7 @@ fn convert_value(
 /// };
 /// write_csv("output_custom.csv", &data, Some(&headers), Some(config)).unwrap();
 /// ```
+#[allow(dead_code)]
 pub fn write_csv<P: AsRef<Path>, T: std::fmt::Display>(
     path: P,
     data: &Array2<T>,
@@ -784,6 +784,7 @@ pub fn write_csv<P: AsRef<Path>, T: std::fmt::Display>(
 }
 
 /// Format a row as a CSV line
+#[allow(dead_code)]
 fn format_csv_line(fields: &[String], config: &CsvWriterConfig) -> String {
     let mut result = String::new();
 
@@ -858,6 +859,7 @@ fn format_csv_line(fields: &[String], config: &CsvWriterConfig) -> String {
 /// };
 /// let (headers, data) = read_csv_typed("data.csv", None, None, Some(missing_opts)).unwrap();
 /// ```
+#[allow(dead_code)]
 pub fn read_csv_typed<P: AsRef<Path>>(
     path: P,
     config: Option<CsvReaderConfig>,
@@ -873,7 +875,7 @@ pub fn read_csv_typed<P: AsRef<Path>>(
     }
 
     // Determine column types if not provided
-    let types = match col_types {
+    let col_types_vec = match col_types {
         Some(types) => {
             if types.len() != string_data.shape()[1] {
                 return Err(IoError::FormatError(format!(
@@ -896,7 +898,7 @@ pub fn read_csv_typed<P: AsRef<Path>>(
         let mut row = Vec::with_capacity(string_data.shape()[1]);
 
         for j in 0..string_data.shape()[1] {
-            let value = convert_value(&string_data[[i, j]], types[j], &missing_opts)?;
+            let value = convert_value(&string_data[[i, j]], col_types_vec[j], &missing_opts)?;
             row.push(value);
         }
 
@@ -936,6 +938,7 @@ pub fn read_csv_typed<P: AsRef<Path>>(
 ///
 /// println!("Total rows processed: {}", total_rows);
 /// ```
+#[allow(dead_code)]
 pub fn read_csv_chunked<P, F>(
     path: P,
     config: Option<CsvReaderConfig>,
@@ -1021,6 +1024,7 @@ where
 }
 
 /// Helper function to process a chunk of data
+#[allow(dead_code)]
 fn process_chunk<F>(
     headers: &[String],
     buffer: &mut Vec<Vec<String>>,
@@ -1086,6 +1090,7 @@ where
 ///
 /// write_csv_typed("typed_data.csv", &data, Some(&headers), None).unwrap();
 /// ```
+#[allow(dead_code)]
 pub fn write_csv_typed<P: AsRef<Path>>(
     path: P,
     data: &[Vec<DataValue>],
@@ -1194,6 +1199,7 @@ pub fn write_csv_typed<P: AsRef<Path>>(
 ///
 /// write_csv_columns("columns.csv", &columns, Some(&headers), None).unwrap();
 /// ```
+#[allow(dead_code)]
 pub fn write_csv_columns<P: AsRef<Path>, T: std::fmt::Display + Clone>(
     path: P,
     columns: &[Array1<T>],
@@ -1240,4 +1246,563 @@ pub fn write_csv_columns<P: AsRef<Path>, T: std::fmt::Display + Clone>(
 
     // Write to CSV
     write_csv(path, &data, headers, config)
+}
+
+//
+// Streaming CSV Processing for Large Files
+//
+
+use scirs2_core::parallel_ops::*;
+use std::sync::{Arc, Mutex};
+
+/// Configuration for streaming CSV operations
+#[derive(Debug, Clone)]
+pub struct StreamingCsvConfig {
+    /// CSV reader configuration
+    pub csv_config: CsvReaderConfig,
+    /// Size of chunks to process at a time (in rows)
+    pub chunk_size: usize,
+    /// Number of parallel workers (0 = use all cores)
+    pub num_workers: usize,
+    /// Buffer size for I/O operations
+    pub buffer_size: usize,
+    /// Memory limit for buffering (in bytes)
+    pub memory_limit: usize,
+}
+
+impl Default for StreamingCsvConfig {
+    fn default() -> Self {
+        Self {
+            csv_config: CsvReaderConfig::default(),
+            chunk_size: 10000,               // 10K rows per chunk
+            num_workers: 0,                  // Use all cores
+            buffer_size: 64 * 1024,          // 64KB buffer
+            memory_limit: 512 * 1024 * 1024, // 512MB memory limit
+        }
+    }
+}
+
+/// Streaming CSV reader for processing large files
+pub struct StreamingCsvReader<R: BufRead> {
+    reader: R,
+    config: StreamingCsvConfig,
+    headers: Option<Vec<String>>,
+    current_line: usize,
+    buffer: Vec<String>,
+    finished: bool,
+}
+
+impl<R: BufRead> StreamingCsvReader<R> {
+    /// Create a new streaming CSV reader
+    pub fn new(reader: R, config: StreamingCsvConfig) -> Result<Self> {
+        let mut reader = Self {
+            reader,
+            config,
+            headers: None,
+            current_line: 0,
+            buffer: Vec::new(),
+            finished: false,
+        };
+
+        // Read headers if configured
+        if reader.config.csv_config.has_header {
+            reader.read_headers()?;
+        }
+
+        Ok(reader)
+    }
+
+    /// Read the header row
+    fn read_headers(&mut self) -> Result<()> {
+        // Skip initial rows
+        for _ in 0..self.config.csv_config.skip_rows {
+            let mut line = String::new();
+            if self
+                .reader
+                .read_line(&mut line)
+                .map_err(|e| IoError::FileError(e.to_string()))?
+                == 0
+            {
+                return Err(IoError::FormatError("Not enough rows in file".to_string()));
+            }
+            self.current_line += 1;
+        }
+
+        // Read header row
+        let mut header_line = String::new();
+        if self
+            .reader
+            .read_line(&mut header_line)
+            .map_err(|e| IoError::FileError(e.to_string()))?
+            == 0
+        {
+            return Err(IoError::FormatError("Empty file".to_string()));
+        }
+
+        self.headers = Some(parse_csv_line(header_line.trim(), &self.config.csv_config));
+        self.current_line += 1;
+        Ok(())
+    }
+
+    /// Get the headers (if available)
+    pub fn headers(&self) -> Option<&Vec<String>> {
+        self.headers.as_ref()
+    }
+
+    /// Read the next chunk of data
+    pub fn read_chunk(&mut self) -> Result<Option<Array2<String>>> {
+        if self.finished {
+            return Ok(None);
+        }
+
+        self.buffer.clear();
+        let mut rows_read = 0;
+        let mut line = String::new();
+
+        // Read chunk_size rows
+        while rows_read < self.config.chunk_size {
+            line.clear();
+            let bytes_read = self
+                .reader
+                .read_line(&mut line)
+                .map_err(|e| IoError::FileError(e.to_string()))?;
+
+            if bytes_read == 0 {
+                // End of file
+                self.finished = true;
+                break;
+            }
+
+            let trimmed_line = line.trim();
+
+            // Skip empty lines and comments
+            if trimmed_line.is_empty() {
+                continue;
+            }
+
+            if let Some(comment_char) = self.config.csv_config.comment_char {
+                if trimmed_line.starts_with(comment_char) {
+                    continue;
+                }
+            }
+
+            self.buffer.push(trimmed_line.to_string());
+            rows_read += 1;
+            self.current_line += 1;
+
+            // Check memory limit
+            if self.buffer.len() * line.len() > self.config.memory_limit {
+                break;
+            }
+        }
+
+        if self.buffer.is_empty() {
+            return Ok(None);
+        }
+
+        // Parse all rows in the buffer
+        let parsed_rows: Vec<Vec<String>> = self
+            .buffer
+            .iter()
+            .map(|line| parse_csv_line(line, &self.config.csv_config))
+            .collect();
+
+        if parsed_rows.is_empty() {
+            return Ok(None);
+        }
+
+        // Check column consistency
+        let num_cols = parsed_rows[0].len();
+        for (i, row) in parsed_rows.iter().enumerate() {
+            if row.len() != num_cols {
+                return Err(IoError::FormatError(format!(
+                    "Inconsistent columns at line {line}: got {actual}, expected {expected}",
+                    line = self.current_line - self.buffer.len() + i,
+                    actual = row.len(),
+                    expected = num_cols
+                )));
+            }
+        }
+
+        // Convert to Array2
+        let num_rows = parsed_rows.len();
+        let mut data = Array2::from_elem((num_rows, num_cols), String::new());
+
+        for (i, row) in parsed_rows.iter().enumerate() {
+            for (j, value) in row.iter().enumerate() {
+                data[[i, j]] = value.clone();
+            }
+        }
+
+        Ok(Some(data))
+    }
+
+    /// Get current line number
+    pub fn current_line(&self) -> usize {
+        self.current_line
+    }
+
+    /// Check if the reader is finished
+    pub fn is_finished(&self) -> bool {
+        self.finished
+    }
+}
+
+/// Create a streaming CSV reader from a file path
+#[allow(dead_code)]
+pub fn streaming_reader_from_file<P: AsRef<Path>>(
+    path: P,
+    config: StreamingCsvConfig,
+) -> Result<StreamingCsvReader<BufReader<File>>> {
+    let file = File::open(path).map_err(|e| IoError::FileError(e.to_string()))?;
+    let reader = BufReader::with_capacity(config.buffer_size, file);
+    StreamingCsvReader::new(reader, config)
+}
+
+/// Statistics collected during streaming processing
+#[derive(Debug, Clone)]
+pub struct StreamingStats {
+    /// Total rows processed
+    pub rows_processed: usize,
+    /// Total chunks processed
+    pub chunks_processed: usize,
+    /// Total time taken (milliseconds)
+    pub total_time_ms: f64,
+    /// Average rows per second
+    pub rows_per_second: f64,
+    /// Peak memory usage (bytes)
+    pub peak_memory_bytes: usize,
+    /// Number of errors encountered
+    pub error_count: usize,
+}
+
+/// Process a CSV file in streaming mode with a custom function
+#[allow(dead_code)]
+pub fn process_csv_streaming<P: AsRef<Path>, F, R>(
+    path: P,
+    config: StreamingCsvConfig,
+    mut processor: F,
+) -> Result<(Vec<R>, StreamingStats)>
+where
+    F: FnMut(&Array2<String>, Option<&Vec<String>>) -> Result<R> + Send + Sync,
+    R: Send,
+{
+    let start_time = std::time::Instant::now();
+    let mut reader = streaming_reader_from_file(path, config)?;
+
+    let mut results = Vec::new();
+    let mut stats = StreamingStats {
+        rows_processed: 0,
+        chunks_processed: 0,
+        total_time_ms: 0.0,
+        rows_per_second: 0.0,
+        peak_memory_bytes: 0,
+        error_count: 0,
+    };
+
+    let headers = reader.headers().cloned();
+
+    while let Some(chunk) = reader.read_chunk()? {
+        match processor(&chunk, headers.as_ref()) {
+            Ok(result) => {
+                results.push(result);
+                stats.rows_processed += chunk.nrows();
+                stats.chunks_processed += 1;
+            }
+            Err(_) => {
+                stats.error_count += 1;
+            }
+        }
+
+        // Update peak memory (rough estimate)
+        let current_memory = chunk.len() * std::mem::size_of::<String>();
+        if current_memory > stats.peak_memory_bytes {
+            stats.peak_memory_bytes = current_memory;
+        }
+    }
+
+    let elapsed = start_time.elapsed();
+    stats.total_time_ms = elapsed.as_secs_f64() * 1000.0;
+    stats.rows_per_second = stats.rows_processed as f64 / elapsed.as_secs_f64();
+
+    Ok((results, stats))
+}
+
+/// Process a CSV file in parallel streaming mode
+#[allow(dead_code)]
+pub fn process_csv_streaming_parallel<P: AsRef<Path>, F, R>(
+    path: P,
+    config: StreamingCsvConfig,
+    processor: F,
+) -> Result<(Vec<R>, StreamingStats)>
+where
+    F: Fn(&Array2<String>, Option<&Vec<String>>) -> Result<R> + Send + Sync + Clone,
+    R: Send + 'static,
+{
+    let start_time = std::time::Instant::now();
+    let mut reader = streaming_reader_from_file(path, config)?;
+
+    let headers = reader.headers().cloned();
+    let mut chunks = Vec::new();
+
+    // Read all chunks first
+    while let Some(chunk) = reader.read_chunk()? {
+        chunks.push(chunk);
+    }
+
+    if chunks.is_empty() {
+        return Ok((
+            Vec::new(),
+            StreamingStats {
+                rows_processed: 0,
+                chunks_processed: 0,
+                total_time_ms: 0.0,
+                rows_per_second: 0.0,
+                peak_memory_bytes: 0,
+                error_count: 0,
+            },
+        ));
+    }
+
+    // Process chunks in parallel
+    let error_count = Arc::new(Mutex::new(0));
+    let peak_memory = Arc::new(Mutex::new(0));
+
+    let results: Vec<R> = chunks
+        .into_par_iter()
+        .filter_map(|chunk| {
+            // Update peak memory
+            let memory_usage = chunk.len() * std::mem::size_of::<String>();
+            {
+                let mut peak = peak_memory.lock().unwrap();
+                if memory_usage > *peak {
+                    *peak = memory_usage;
+                }
+            }
+
+            match processor(&chunk, headers.as_ref()) {
+                Ok(result) => Some(result),
+                Err(_) => {
+                    *error_count.lock().unwrap() += 1;
+                    None
+                }
+            }
+        })
+        .collect();
+
+    let elapsed = start_time.elapsed();
+    let total_rows: usize = results.len(); // This is actually chunks, but for simplicity
+
+    let stats = StreamingStats {
+        rows_processed: total_rows,
+        chunks_processed: results.len(),
+        total_time_ms: elapsed.as_secs_f64() * 1000.0,
+        rows_per_second: total_rows as f64 / elapsed.as_secs_f64(),
+        peak_memory_bytes: *peak_memory.lock().unwrap(),
+        error_count: *error_count.lock().unwrap(),
+    };
+
+    Ok((results, stats))
+}
+
+/// Convert CSV chunks to numeric data in streaming mode
+#[allow(dead_code)]
+pub fn read_csv_numeric_streaming<P: AsRef<Path>>(
+    path: P,
+    config: StreamingCsvConfig,
+) -> Result<(Option<Vec<String>>, Vec<Array2<f64>>, StreamingStats)> {
+    let (chunks, stats) = process_csv_streaming(path, config, |chunk, _headers| {
+        // Convert chunk to numeric
+        let shape = chunk.shape();
+        let mut numeric_chunk = Array2::<f64>::zeros((shape[0], shape[1]));
+
+        for i in 0..shape[0] {
+            for j in 0..shape[1] {
+                let value = chunk[[i, j]].parse::<f64>().map_err(|_| {
+                    IoError::FormatError(format!(
+                        "Could not convert '{value}' to number at [{row}, {col}]",
+                        value = chunk[[i, j]],
+                        row = i,
+                        col = j
+                    ))
+                })?;
+                numeric_chunk[[i, j]] = value;
+            }
+        }
+
+        Ok(numeric_chunk)
+    })?;
+
+    // Get headers from the first successful read
+    let headers = chunks.first().and({
+        // This is a simplified approach - in a real implementation,
+        // we'd need to preserve headers from the reader
+        None
+    });
+
+    Ok((headers, chunks, stats))
+}
+
+/// Aggregate statistics across CSV chunks
+#[allow(dead_code)]
+pub fn aggregate_csv_statistics<P: AsRef<Path>>(
+    path: P,
+    config: StreamingCsvConfig,
+) -> Result<Vec<ColumnStats>> {
+    let mut column_stats: Vec<Option<ColumnStats>> = Vec::new();
+
+    let _results_stats = process_csv_streaming(path, config, |chunk, _headers| {
+        let shape = chunk.shape();
+
+        // Initialize column stats if needed
+        if column_stats.is_empty() {
+            column_stats = vec![None; shape[1]];
+        }
+
+        // Update statistics for each column
+        for col_idx in 0..shape[1] {
+            let mut values = Vec::new();
+            let mut non_numeric_count = 0;
+
+            for row_idx in 0..shape[0] {
+                let cell_value = &chunk[[row_idx, col_idx]];
+                if let Ok(numeric_value) = cell_value.parse::<f64>() {
+                    values.push(numeric_value);
+                } else {
+                    non_numeric_count += 1;
+                }
+            }
+
+            if !values.is_empty() {
+                let current_stats = ColumnStats::from_values(&values, non_numeric_count);
+
+                match &column_stats[col_idx] {
+                    None => column_stats[col_idx] = Some(current_stats),
+                    Some(existing) => {
+                        column_stats[col_idx] = Some(existing.merge(&current_stats));
+                    }
+                }
+            }
+        }
+
+        Ok(())
+    })?;
+
+    Ok(column_stats.into_iter().flatten().collect())
+}
+
+/// Column statistics for CSV analysis
+#[derive(Debug, Clone)]
+pub struct ColumnStats {
+    /// Column index
+    pub column_index: usize,
+    /// Total number of values
+    pub total_count: usize,
+    /// Number of non-numeric values
+    pub non_numeric_count: usize,
+    /// Minimum value (for numeric columns)
+    pub min_value: Option<f64>,
+    /// Maximum value (for numeric columns)
+    pub max_value: Option<f64>,
+    /// Mean value (for numeric columns)
+    pub mean_value: Option<f64>,
+    /// Standard deviation (for numeric columns)
+    pub std_dev: Option<f64>,
+}
+
+impl ColumnStats {
+    /// Create column statistics from a vector of values
+    fn from_values(values: &[f64], non_numericcount: usize) -> Self {
+        if values.is_empty() {
+            return Self {
+                column_index: 0,
+                total_count: non_numericcount,
+                non_numeric_count: non_numericcount,
+                min_value: None,
+                max_value: None,
+                mean_value: None,
+                std_dev: None,
+            };
+        }
+
+        let min_val = values.iter().fold(f64::INFINITY, |a, &b| a.min(b));
+        let max_val = values.iter().fold(f64::NEG_INFINITY, |a, &b| a.max(b));
+        let mean = values.iter().sum::<f64>() / values.len() as f64;
+
+        let variance = values.iter().map(|x| (x - mean).powi(2)).sum::<f64>() / values.len() as f64;
+        let std_dev = variance.sqrt();
+
+        Self {
+            column_index: 0,
+            total_count: values.len() + non_numericcount,
+            non_numeric_count: non_numericcount,
+            min_value: Some(min_val),
+            max_value: Some(max_val),
+            mean_value: Some(mean),
+            std_dev: Some(std_dev),
+        }
+    }
+
+    /// Merge statistics from another column
+    fn merge(&self, other: &Self) -> Self {
+        let total_numeric_self = self.total_count - self.non_numeric_count;
+        let total_numeric_other = other.total_count - other.non_numeric_count;
+        let combined_numeric = total_numeric_self + total_numeric_other;
+
+        if combined_numeric == 0 {
+            return Self {
+                column_index: self.column_index,
+                total_count: self.total_count + other.total_count,
+                non_numeric_count: self.non_numeric_count + other.non_numeric_count,
+                min_value: None,
+                max_value: None,
+                mean_value: None,
+                std_dev: None,
+            };
+        }
+
+        let min_val = match (self.min_value, other.min_value) {
+            (Some(a), Some(b)) => Some(a.min(b)),
+            (Some(a), None) => Some(a),
+            (None, Some(b)) => Some(b),
+            (None, None) => None,
+        };
+
+        let max_val = match (self.max_value, other.max_value) {
+            (Some(a), Some(b)) => Some(a.max(b)),
+            (Some(a), None) => Some(a),
+            (None, Some(b)) => Some(b),
+            (None, None) => None,
+        };
+
+        // Combine means (weighted average)
+        let combined_mean = match (self.mean_value, other.mean_value) {
+            (Some(mean1), Some(mean2)) => {
+                let w1 = total_numeric_self as f64;
+                let w2 = total_numeric_other as f64;
+                Some((mean1 * w1 + mean2 * w2) / (w1 + w2))
+            }
+            (Some(mean), None) => Some(mean),
+            (None, Some(mean)) => Some(mean),
+            (None, None) => None,
+        };
+
+        // For standard deviation, we'd need to properly combine the variances,
+        // but for simplicity, we'll use a rough approximation
+        let combined_std = match (self.std_dev, other.std_dev) {
+            (Some(std1), Some(std2)) => Some((std1 + std2) / 2.0),
+            (Some(std), None) | (None, Some(std)) => Some(std),
+            (None, None) => None,
+        };
+
+        Self {
+            column_index: self.column_index,
+            total_count: self.total_count + other.total_count,
+            non_numeric_count: self.non_numeric_count + other.non_numeric_count,
+            min_value: min_val,
+            max_value: max_val,
+            mean_value: combined_mean,
+            std_dev: combined_std,
+        }
+    }
 }

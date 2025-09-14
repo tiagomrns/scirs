@@ -44,6 +44,7 @@ use num_traits::{Float, FromPrimitive};
 /// assert_eq!(col_means[1], 3.5);
 /// assert_eq!(col_means[2], 4.5);
 /// ```
+#[allow(dead_code)]
 pub fn mean_2d<T>(
     array: &ArrayView<T, Ix2>,
     axis: Option<Axis>,
@@ -84,7 +85,7 @@ where
                     for j in 0..cols {
                         sum = sum + array[[i, j]];
                     }
-                    result[i] = sum / n;
+                    result[0] = sum / n;
                 }
 
                 Ok(result)
@@ -143,6 +144,7 @@ where
 /// assert_eq!(col_medians[1], 3.5);
 /// assert_eq!(col_medians[2], 5.5);
 /// ```
+#[allow(dead_code)]
 pub fn median_2d<T>(
     array: &ArrayView<T, Ix2>,
     axis: Option<Axis>,
@@ -203,7 +205,7 @@ where
                         row_values[row_values.len() / 2]
                     };
 
-                    result[i] = median_value;
+                    result[0] = median_value;
                 }
 
                 Ok(result)
@@ -262,6 +264,7 @@ where
 /// let col_stds = std_dev_2d(&a.view(), Some(Axis(0)), 1).unwrap();
 /// assert_eq!(col_stds.len(), 3);
 /// ```
+#[allow(dead_code)]
 pub fn std_dev_2d<T>(
     array: &ArrayView<T, Ix2>,
     axis: Option<Axis>,
@@ -310,6 +313,7 @@ where
 /// let col_vars = variance_2d(&a.view(), Some(Axis(0)), 1).unwrap();
 /// assert_eq!(col_vars.len(), 3);
 /// ```
+#[allow(dead_code)]
 pub fn variance_2d<T>(
     array: &ArrayView<T, Ix2>,
     axis: Option<Axis>,
@@ -367,7 +371,7 @@ where
                     }
 
                     let divisor = T::from_usize(cols - ddof).unwrap();
-                    result[i] = sum_sq_diff / divisor;
+                    result[0] = sum_sq_diff / divisor;
                 }
 
                 Ok(result)
@@ -417,6 +421,7 @@ where
 /// # Returns
 ///
 /// The minimum value(s) of the array elements
+#[allow(dead_code)]
 pub fn min_2d<T>(
     array: &ArrayView<T, Ix2>,
     axis: Option<Axis>,
@@ -497,6 +502,7 @@ where
 /// # Returns
 ///
 /// The maximum value(s) of the array elements
+#[allow(dead_code)]
 pub fn max_2d<T>(
     array: &ArrayView<T, Ix2>,
     axis: Option<Axis>,
@@ -577,6 +583,7 @@ where
 /// # Returns
 ///
 /// The sum of the array elements
+#[allow(dead_code)]
 pub fn sum_2d<T>(
     array: &ArrayView<T, Ix2>,
     axis: Option<Axis>,
@@ -616,7 +623,7 @@ where
                         for j in 0..cols {
                             sum = sum + array[[i, j]];
                         }
-                        result[i] = sum;
+                        result[0] = sum;
                     }
 
                     Ok(result)
@@ -651,6 +658,7 @@ where
 /// # Returns
 ///
 /// The product of the array elements
+#[allow(dead_code)]
 pub fn product_2d<T>(
     array: &ArrayView<T, Ix2>,
     axis: Option<Axis>,
@@ -726,6 +734,7 @@ where
 /// # Returns
 ///
 /// The percentile value(s) of the array elements
+#[allow(dead_code)]
 pub fn percentile_2d<T>(
     array: &ArrayView<T, Ix2>,
     q: f64,
@@ -797,12 +806,12 @@ where
                         let idx_high = pos.ceil() as usize;
 
                         if idx_low == idx_high {
-                            result[i] = row_values[idx_low];
+                            result[0] = row_values[idx_low];
                         } else {
                             let weight_high = pos - (idx_low as f64);
                             let weight_low = 1.0 - weight_high;
 
-                            result[i] = row_values[idx_low] * T::from_f64(weight_low).unwrap()
+                            result[0] = row_values[idx_low] * T::from_f64(weight_low).unwrap()
                                 + row_values[idx_high] * T::from_f64(weight_high).unwrap();
                         }
                     }
@@ -857,23 +866,47 @@ where
 /// # Returns
 ///
 /// The mean of the array elements
+#[allow(dead_code)]
 pub fn mean<T, D>(
     array: &ArrayView<T, D>,
     axis: Option<Axis>,
 ) -> Result<Array<T, Ix1>, &'static str>
 where
     T: Clone + Float + FromPrimitive,
-    D: Dimension,
+    D: Dimension + ndarray::RemoveAxis,
 {
     if array.is_empty() {
         return Err("Cannot compute mean of an empty array");
     }
 
     match axis {
-        Some(_) => {
-            // For higher dimensional arrays, we need to implement axis-specific logic
-            // This is a placeholder for now
-            Err("Axis-specific mean for arbitrary dimension arrays not yet implemented")
+        Some(ax) => {
+            // Axis-specific mean implementation for arbitrary dimensions
+            let ndim = array.ndim();
+            if ax.index() >= ndim {
+                return Err("Axis index out of bounds");
+            }
+
+            // Create output shape by removing the specified axis
+            let mut outputshape = array.shape().to_vec();
+            outputshape.remove(ax.index());
+
+            // Handle case where removing axis results in scalar
+            if outputshape.is_empty() {
+                outputshape.push(1);
+            }
+
+            // Calculate mean along specified axis using ndarray's mean_axis
+            let result = array
+                .mean_axis(ax)
+                .ok_or("Failed to compute mean along axis")?;
+
+            // Convert to 1D array as expected by function signature
+            let flat_result = result
+                .to_shape((result.len(),))
+                .map_err(|_| "Failed to reshape result to 1D")?;
+
+            Ok(flat_result.into_owned())
         }
         None => {
             // Global mean
@@ -908,13 +941,14 @@ where
 /// # Panics
 ///
 /// Panics if type conversion or partial comparison fails.
+#[allow(dead_code)]
 pub fn median<T, D>(
     array: &ArrayView<T, D>,
     axis: Option<Axis>,
 ) -> Result<Array<T, Ix1>, &'static str>
 where
     T: Clone + Float + FromPrimitive,
-    D: Dimension,
+    D: Dimension + ndarray::RemoveAxis,
 {
     if array.is_empty() {
         return Err("Cannot compute median of an empty array");
@@ -962,6 +996,7 @@ where
 /// # Panics
 ///
 /// Panics if type conversion from usize fails.
+#[allow(dead_code)]
 pub fn variance<T, D>(
     array: &ArrayView<T, D>,
     axis: Option<Axis>,
@@ -969,17 +1004,38 @@ pub fn variance<T, D>(
 ) -> Result<Array<T, Ix1>, &'static str>
 where
     T: Clone + Float + FromPrimitive,
-    D: Dimension,
+    D: Dimension + ndarray::RemoveAxis,
 {
     if array.is_empty() {
         return Err("Cannot compute variance of an empty array");
     }
 
     match axis {
-        Some(_) => {
-            // For higher dimensional arrays, we need to implement axis-specific logic
-            // This is a placeholder for now
-            Err("Axis-specific variance for arbitrary dimension arrays not yet implemented")
+        Some(ax) => {
+            // Axis-specific variance implementation for arbitrary dimensions
+            let ndim = array.ndim();
+            if ax.index() >= ndim {
+                return Err("Axis index out of bounds");
+            }
+
+            // Create output shape by removing the specified axis
+            let mut outputshape = array.shape().to_vec();
+            outputshape.remove(ax.index());
+
+            // Handle case where removing axis results in scalar
+            if outputshape.is_empty() {
+                outputshape.push(1);
+            }
+
+            // Calculate variance along specified axis using ndarray's var_axis
+            let result = array.var_axis(ax, T::from_usize(ddof).unwrap());
+
+            // Convert to 1D array as expected by function signature
+            let flat_result = result
+                .to_shape((result.len(),))
+                .map_err(|_| "Failed to reshape variance result to 1D")?;
+
+            Ok(flat_result.into_owned())
         }
         None => {
             // Global variance
@@ -1025,6 +1081,7 @@ where
 /// # Panics
 ///
 /// Panics if variance calculation panics.
+#[allow(dead_code)]
 pub fn std_dev<T, D>(
     array: &ArrayView<T, D>,
     axis: Option<Axis>,
@@ -1032,7 +1089,7 @@ pub fn std_dev<T, D>(
 ) -> Result<Array<T, Ix1>, &'static str>
 where
     T: Clone + Float + FromPrimitive,
-    D: Dimension,
+    D: Dimension + ndarray::RemoveAxis,
 {
     let var_result = variance(array, axis, ddof)?;
     Ok(var_result.mapv(|x| x.sqrt()))
@@ -1052,20 +1109,42 @@ where
 /// # Errors
 ///
 /// Returns an error if the array is empty.
+#[allow(dead_code)]
 pub fn min<T, D>(array: &ArrayView<T, D>, axis: Option<Axis>) -> Result<Array<T, Ix1>, &'static str>
 where
     T: Clone + Float,
-    D: Dimension,
+    D: Dimension + ndarray::RemoveAxis,
 {
     if array.is_empty() {
         return Err("Cannot compute minimum of an empty array");
     }
 
     match axis {
-        Some(_) => {
-            // For higher dimensional arrays, we need to implement axis-specific logic
-            // This is a placeholder for now
-            Err("Axis-specific minimum for arbitrary dimension arrays not yet implemented")
+        Some(ax) => {
+            // Axis-specific minimum implementation for arbitrary dimensions
+            let ndim = array.ndim();
+            if ax.index() >= ndim {
+                return Err("Axis index out of bounds");
+            }
+
+            // Create output shape by removing the specified axis
+            let mut outputshape = array.shape().to_vec();
+            outputshape.remove(ax.index());
+
+            // Handle case where removing axis results in scalar
+            if outputshape.is_empty() {
+                outputshape.push(1);
+            }
+
+            // Use ndarray's fold_axis to compute minimum along specified axis
+            let result = array.fold_axis(ax, T::infinity(), |&a, &b| if a < b { a } else { b });
+
+            // Convert to 1D array as expected by function signature
+            let flat_result = result
+                .to_shape((result.len(),))
+                .map_err(|_| "Failed to reshape minimum result to 1D")?;
+
+            Ok(flat_result.into_owned())
         }
         None => {
             // Global minimum
@@ -1096,20 +1175,42 @@ where
 /// # Errors
 ///
 /// Returns an error if the array is empty.
+#[allow(dead_code)]
 pub fn max<T, D>(array: &ArrayView<T, D>, axis: Option<Axis>) -> Result<Array<T, Ix1>, &'static str>
 where
     T: Clone + Float,
-    D: Dimension,
+    D: Dimension + ndarray::RemoveAxis,
 {
     if array.is_empty() {
         return Err("Cannot compute maximum of an empty array");
     }
 
     match axis {
-        Some(_) => {
-            // For higher dimensional arrays, we need to implement axis-specific logic
-            // This is a placeholder for now
-            Err("Axis-specific maximum for arbitrary dimension arrays not yet implemented")
+        Some(ax) => {
+            // Axis-specific maximum implementation for arbitrary dimensions
+            let ndim = array.ndim();
+            if ax.index() >= ndim {
+                return Err("Axis index out of bounds");
+            }
+
+            // Create output shape by removing the specified axis
+            let mut outputshape = array.shape().to_vec();
+            outputshape.remove(ax.index());
+
+            // Handle case where removing axis results in scalar
+            if outputshape.is_empty() {
+                outputshape.push(1);
+            }
+
+            // Use ndarray's fold_axis to compute maximum along specified axis
+            let result = array.fold_axis(ax, T::neg_infinity(), |&a, &b| if a > b { a } else { b });
+
+            // Convert to 1D array as expected by function signature
+            let flat_result = result
+                .to_shape((result.len(),))
+                .map_err(|_| "Failed to reshape maximum result to 1D")?;
+
+            Ok(flat_result.into_owned())
         }
         None => {
             // Global maximum
@@ -1145,6 +1246,7 @@ where
 /// # Panics
 ///
 /// Panics if type conversion or partial comparison fails.
+#[allow(dead_code)]
 pub fn percentile<T, D>(
     array: &ArrayView<T, D>,
     q: f64,
@@ -1152,7 +1254,7 @@ pub fn percentile<T, D>(
 ) -> Result<Array<T, Ix1>, &'static str>
 where
     T: Clone + Float + FromPrimitive,
-    D: Dimension,
+    D: Dimension + ndarray::RemoveAxis,
 {
     if array.is_empty() {
         return Err("Cannot compute percentile of an empty array");

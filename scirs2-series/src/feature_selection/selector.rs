@@ -32,7 +32,7 @@ impl FeatureSelector {
     ///
     /// ```
     /// use ndarray::{Array1, Array2};
-    /// use scirs2_series::feature_selection::{FeatureSelector, FeatureSelectionConfig};
+    /// use scirs2__series::feature_selection::{FeatureSelector, FeatureSelectionConfig};
     ///
     /// let features = Array2::from_shape_vec((100, 10), (0..1000).map(|x| x as f64).collect()).unwrap();
     /// let target = Array1::from_vec((0..100).map(|x| x as f64).collect());
@@ -140,7 +140,7 @@ impl FeatureSelector {
             combined_scores[i] = vote_counts[i] + combined_scores[i] / results.len() as f64;
         }
 
-        // Select features based on combined scores
+        // Select _features based on combined scores
         let target_features = n_features.unwrap_or(n_feat / 3).min(n_feat);
         let mut indexed_scores: Vec<(usize, f64)> = combined_scores
             .iter()
@@ -153,7 +153,7 @@ impl FeatureSelector {
         let selected_features: Vec<usize> = indexed_scores
             .into_iter()
             .take(target_features)
-            .map(|(idx, _)| idx)
+            .map(|(idx_, _)| idx_)
             .collect();
 
         let mut metadata = HashMap::new();

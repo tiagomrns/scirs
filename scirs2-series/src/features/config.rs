@@ -500,7 +500,7 @@ pub struct ExpandedStatisticalConfig {
     /// Enable normality tests (Jarque-Bera, Anderson-Darling, etc.)
     pub calculate_normality_tests: bool,
     /// Enable advanced shape measures (biweight, Qn/Sn estimators)
-    pub calculate_advanced_shape_measures: bool,
+    pub calculate_advancedshape_measures: bool,
     /// Enable count-based statistics (zero crossings, local extrema)
     pub calculate_count_statistics: bool,
     /// Enable concentration measures (Herfindahl, Shannon diversity)
@@ -531,7 +531,7 @@ impl Default for ExpandedStatisticalConfig {
             calculate_central_tendency_variations: true,
             calculate_variability_measures: true,
             calculate_normality_tests: true,
-            calculate_advanced_shape_measures: true,
+            calculate_advancedshape_measures: true,
             calculate_count_statistics: true,
             calculate_concentration_measures: true,
 

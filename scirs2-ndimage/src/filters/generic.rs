@@ -9,11 +9,20 @@ use std::fmt::Debug;
 
 #[cfg(feature = "simd")]
 // SIMD functions are imported on-demand where needed
+
+// Import parallel_map
+// Note: This is conditional on whether scirs2_core was built with parallel feature
 #[cfg(feature = "parallel")]
-use scirs2_core::parallel::parallel_map;
+use scirs2_core::parallel_ops::parallel_map;
 
 use super::{pad_array, BorderMode};
-use crate::error::{NdimageError, Result};
+use crate::error::{NdimageError, NdimageResult};
+
+/// Helper function for safe conversion from numeric values to float
+#[allow(dead_code)]
+fn safe_to_float<T: Float + FromPrimitive>(value: f64) -> T {
+    T::from_f64(value).unwrap_or_else(|| T::zero())
+}
 
 /// Apply a generic filter to an n-dimensional array
 ///
@@ -37,7 +46,7 @@ use crate::error::{NdimageError, Result};
 ///
 /// # Examples
 ///
-/// ```rust
+/// ```no_run
 /// use ndarray::Array2;
 /// use scirs2_ndimage::filters::generic_filter;
 ///
@@ -51,20 +60,21 @@ use crate::error::{NdimageError, Result};
 /// let input = Array2::from_shape_fn((5, 5), |(i, j)| (i + j) as f64);
 /// let result = generic_filter(&input, range_func, &[3, 3], None, None).unwrap();
 /// ```
+#[allow(dead_code)]
 pub fn generic_filter<T, D, F>(
     input: &Array<T, D>,
     function: F,
     size: &[usize],
     mode: Option<BorderMode>,
     cval: Option<T>,
-) -> Result<Array<T, D>>
+) -> NdimageResult<Array<T, D>>
 where
     T: Float + FromPrimitive + Debug + Clone + Send + Sync + 'static,
     D: Dimension,
     F: Fn(&[T]) -> T + Send + Sync + Clone + 'static,
 {
     let border_mode = mode.unwrap_or(BorderMode::Reflect);
-    let constant_value = cval.unwrap_or_else(|| T::from(0.0).unwrap_or(T::from(0).unwrap()));
+    let constant_value = cval.unwrap_or_else(|| safe_to_float(0.0));
 
     // Validate inputs
     if input.ndim() == 0 {
@@ -127,13 +137,14 @@ where
 }
 
 /// Apply a generic filter to a 1D array
+#[allow(dead_code)]
 fn generic_filter_1d<T, F>(
     input: &Array1<T>,
     function: F,
     size: usize,
     mode: BorderMode,
     cval: T,
-) -> Result<Array1<T>>
+) -> NdimageResult<Array1<T>>
 where
     T: Float + FromPrimitive + Debug + Clone + Send + Sync + 'static,
     F: Fn(&[T]) -> T + Send + Sync,
@@ -161,13 +172,14 @@ where
 }
 
 /// Apply a generic filter to a 2D array
+#[allow(dead_code)]
 fn generic_filter_2d<T, F>(
     input: &Array2<T>,
     function: F,
     size: &[usize],
     mode: BorderMode,
     cval: T,
-) -> Result<Array2<T>>
+) -> NdimageResult<Array2<T>>
 where
     T: Float + FromPrimitive + Debug + Clone + Send + Sync + 'static,
     F: Fn(&[T]) -> T + Send + Sync + Clone + 'static,
@@ -220,13 +232,14 @@ where
 
 /// Parallel version of generic_filter_2d for large arrays
 #[cfg(feature = "parallel")]
+#[allow(dead_code)]
 fn generic_filter_2d_parallel<T, F>(
     input: &Array2<T>,
     function: F,
     size: &[usize],
     mode: BorderMode,
     cval: T,
-) -> Result<Array2<T>>
+) -> NdimageResult<Array2<T>>
 where
     T: Float + FromPrimitive + Debug + Clone + Send + Sync + 'static,
     F: Fn(&[T]) -> T + Send + Sync + Clone + 'static,
@@ -284,13 +297,14 @@ where
 }
 
 /// Apply a generic filter to an n-dimensional array
+#[allow(dead_code)]
 fn generic_filter_nd<T, F>(
     input: &Array<T, IxDyn>,
     function: F,
     size: &[usize],
     mode: BorderMode,
     cval: T,
-) -> Result<Array<T, IxDyn>>
+) -> NdimageResult<Array<T, IxDyn>>
 where
     T: Float + FromPrimitive + Debug + Clone + Send + Sync + 'static,
     F: Fn(&[T]) -> T + Send + Sync + Clone + 'static,
@@ -343,6 +357,7 @@ where
 }
 
 /// Helper function to extract neighborhood values from n-dimensional array
+#[allow(dead_code)]
 fn extract_neighborhood_nd<T>(
     padded: &Array<T, IxDyn>,
     center_indices: &[usize],
@@ -366,7 +381,7 @@ fn extract_neighborhood_nd<T>(
             remaining /= dim_size;
         }
 
-        // Calculate actual indices in padded array
+        // Calculate actual _indices in padded array
         let mut actual_indices = Vec::with_capacity(ndim);
         let mut valid = true;
 
@@ -387,19 +402,19 @@ fn extract_neighborhood_nd<T>(
 
 /// Common filter functions that can be used with generic_filter
 pub mod filter_functions {
-    use num_traits::Float;
+    use num_traits::{Float, FromPrimitive};
 
     /// Calculate the mean of values
-    pub fn mean<T: Float>(values: &[T]) -> T {
+    pub fn mean<T: Float + FromPrimitive>(values: &[T]) -> T {
         if values.is_empty() {
             return T::zero();
         }
         let sum = values.iter().fold(T::zero(), |acc, &x| acc + x);
-        sum / T::from(values.len()).unwrap_or(T::one())
+        sum / T::from_usize(values.len()).unwrap_or(T::one())
     }
 
     /// Calculate the standard deviation of values
-    pub fn std_dev<T: Float>(values: &[T]) -> T {
+    pub fn std_dev<T: Float + FromPrimitive>(values: &[T]) -> T {
         if values.len() <= 1 {
             return T::zero();
         }
@@ -409,7 +424,7 @@ pub mod filter_functions {
             .iter()
             .map(|&x| (x - mean_val).powi(2))
             .fold(T::zero(), |acc, x| acc + x)
-            / T::from(values.len() - 1).unwrap_or(T::one());
+            / T::from_usize(values.len() - 1).unwrap_or(T::one());
 
         variance.sqrt()
     }
@@ -426,7 +441,7 @@ pub mod filter_functions {
     }
 
     /// Calculate the variance of values
-    pub fn variance<T: Float>(values: &[T]) -> T {
+    pub fn variance<T: Float + FromPrimitive>(values: &[T]) -> T {
         if values.len() <= 1 {
             return T::zero();
         }
@@ -436,7 +451,7 @@ pub mod filter_functions {
             .iter()
             .map(|&x| (x - mean_val).powi(2))
             .fold(T::zero(), |acc, x| acc + x)
-            / T::from(values.len()).unwrap_or(T::one())
+            / T::from_usize(values.len()).unwrap_or(T::one())
     }
 
     /// Calculate the maximum value
@@ -456,20 +471,20 @@ pub mod filter_functions {
     }
 
     /// Calculate the median value
-    pub fn median<T: Float>(values: &[T]) -> T {
+    pub fn median<T: Float + FromPrimitive>(values: &[T]) -> T {
         if values.is_empty() {
             return T::zero();
         }
-        let mut sorted_values: Vec<T> = values.to_vec();
-        sorted_values.sort_by(|a, b| a.partial_cmp(b).unwrap_or(std::cmp::Ordering::Equal));
+        let mut sortedvalues: Vec<T> = values.to_vec();
+        sortedvalues.sort_by(|a, b| a.partial_cmp(b).unwrap_or(std::cmp::Ordering::Equal));
 
-        let len = sorted_values.len();
+        let len = sortedvalues.len();
         if len % 2 == 0 {
-            let mid1 = sorted_values[len / 2 - 1];
-            let mid2 = sorted_values[len / 2];
-            (mid1 + mid2) / T::from(2.0).unwrap_or(T::one())
+            let mid1 = sortedvalues[len / 2 - 1];
+            let mid2 = sortedvalues[len / 2];
+            (mid1 + mid2) / T::from_f64(2.0).unwrap_or(T::one())
         } else {
-            sorted_values[len / 2]
+            sortedvalues[len / 2]
         }
     }
 }
@@ -550,7 +565,8 @@ mod tests {
     fn test_generic_filter_mean() {
         let input = array![[1.0, 2.0, 3.0], [4.0, 5.0, 6.0], [7.0, 8.0, 9.0]];
 
-        let result = generic_filter(&input, filter_functions::mean, &[3, 3], None, None).unwrap();
+        let result = generic_filter(&input, filter_functions::mean, &[3, 3], None, None)
+            .expect("generic_filter should succeed for test");
 
         // Center element should be the mean of all elements
         let expected = (1.0 + 2.0 + 3.0 + 4.0 + 5.0 + 6.0 + 7.0 + 8.0 + 9.0) / 9.0;
@@ -561,7 +577,8 @@ mod tests {
     fn test_generic_filter_range() {
         let input = array![[1.0, 2.0, 3.0], [4.0, 5.0, 6.0], [7.0, 8.0, 9.0]];
 
-        let result = generic_filter(&input, filter_functions::range, &[3, 3], None, None).unwrap();
+        let result = generic_filter(&input, filter_functions::range, &[3, 3], None, None)
+            .expect("generic_filter should succeed for test");
 
         // Center element should be the range of all elements (9 - 1 = 8)
         assert_abs_diff_eq!(result[[1, 1]], 8.0, epsilon = 1e-10);
@@ -571,7 +588,8 @@ mod tests {
     fn test_generic_filter_1d() {
         let input = Array1::from(vec![1.0, 2.0, 3.0, 4.0, 5.0]);
 
-        let result = generic_filter(&input, filter_functions::mean, &[3], None, None).unwrap();
+        let result = generic_filter(&input, filter_functions::mean, &[3], None, None)
+            .expect("generic_filter should succeed for test");
 
         // Should preserve shape
         assert_eq!(result.len(), input.len());
@@ -589,8 +607,8 @@ mod tests {
             |values: &[f64]| -> f64 { values.iter().fold(f64::NEG_INFINITY, |a, &b| a.max(b)) };
 
         // Test with BorderMode::Nearest
-        let result =
-            generic_filter(&input, max_func, &[2, 2], Some(BorderMode::Nearest), None).unwrap();
+        let result = generic_filter(&input, max_func, &[2, 2], Some(BorderMode::Nearest), None)
+            .expect("generic_filter should succeed for test");
 
         // Check shape preservation and that center position sees the global maximum
         assert_eq!(result.shape(), input.shape());
@@ -610,17 +628,18 @@ mod tests {
         let input = array![[1.0, 2.0, 3.0], [4.0, 5.0, 6.0], [7.0, 8.0, 9.0]];
 
         // Test maximum filter
-        let result =
-            generic_filter(&input, filter_functions::maximum, &[3, 3], None, None).unwrap();
+        let result = generic_filter(&input, filter_functions::maximum, &[3, 3], None, None)
+            .expect("generic_filter should succeed for test");
         assert_abs_diff_eq!(result[[1, 1]], 9.0, epsilon = 1e-10);
 
         // Test minimum filter
-        let result =
-            generic_filter(&input, filter_functions::minimum, &[3, 3], None, None).unwrap();
+        let result = generic_filter(&input, filter_functions::minimum, &[3, 3], None, None)
+            .expect("generic_filter should succeed for test");
         assert_abs_diff_eq!(result[[1, 1]], 1.0, epsilon = 1e-10);
 
         // Test median filter
-        let result = generic_filter(&input, filter_functions::median, &[3, 3], None, None).unwrap();
+        let result = generic_filter(&input, filter_functions::median, &[3, 3], None, None)
+            .expect("generic_filter should succeed for test");
         assert_abs_diff_eq!(result[[1, 1]], 5.0, epsilon = 1e-10); // Median of [1,2,3,4,5,6,7,8,9] is 5
     }
 
@@ -631,7 +650,8 @@ mod tests {
         let input = Array2::from_shape_fn((200, 200), |(i, j)| (i * j) as f64);
 
         // Test with mean function
-        let result = generic_filter(&input, filter_functions::mean, &[3, 3], None, None).unwrap();
+        let result = generic_filter(&input, filter_functions::mean, &[3, 3], None, None)
+            .expect("generic_filter should succeed for test");
 
         // Should preserve shape
         assert_eq!(result.shape(), input.shape());

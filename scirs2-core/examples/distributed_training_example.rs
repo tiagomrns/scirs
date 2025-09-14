@@ -29,6 +29,7 @@ use scirs2_core::array_protocol::{
     training::{CrossEntropyLoss, DataLoader, InMemoryDataset, Trainer},
 };
 
+#[allow(dead_code)]
 fn main() {
     // Initialize the array protocol system
     array_protocol::init();
@@ -88,11 +89,11 @@ fn main() {
 
     // Create data loaders
     let batch_size = 32;
-    let _train_loader = DataLoader::new(dist_train_dataset, batch_size, true, Some(42));
+    let train_loader = DataLoader::new(dist_train_dataset, batch_size, true, Some(42));
 
-    let _val_loader = DataLoader::new(dist_val_dataset, batch_size, false, None);
+    let val_loader = DataLoader::new(dist_val_dataset, batch_size, false, None);
 
-    println!("Created data loaders with batch size {}", batch_size);
+    println!("Created data loaders with batch size {batch_size}");
 
     // Part 3: Training Setup
     println!("\nPart 3: Training Setup");
@@ -102,7 +103,7 @@ fn main() {
     let optimizer = Box::new(Adam::new(0.001, Some(0.9), Some(0.999), Some(1e-8)));
 
     // Create loss function
-    let loss_fn = Box::new(CrossEntropyLoss::new(Some("mean")));
+    let lossfn = Box::new(CrossEntropyLoss::new(Some(mean)));
 
     // Create a new model instance for the trainer
     // Note: In production, you would implement proper cloning for Sequential
@@ -113,13 +114,13 @@ fn main() {
     let trainer = Trainer::new(
         new_model,
         Box::new(Adam::new(0.001, Some(0.9), Some(0.999), Some(1e-8))),
-        loss_fn,
+        lossfn,
     );
 
     println!("Created trainer with Adam optimizer and CrossEntropyLoss");
 
     // Create distributed trainer
-    let _dist_trainer = DistributedTrainingFactory::create_trainer(trainer, dist_config.clone());
+    let dist_trainer = DistributedTrainingFactory::create_trainer(trainer, dist_config.clone());
 
     println!("Created distributed trainer");
 
@@ -129,12 +130,12 @@ fn main() {
 
     // Create a temporary directory for saving models
     let temp_dir = tempdir().unwrap();
-    let model_dir = temp_dir.path().join("models");
+    let modeldir = temp_dir.path().join(models);
 
-    println!("Created model directory at: {}", model_dir.display());
+    println!("Created model directory at: {}", modeldir.display());
 
     // Create model serializer
-    let serializer = ModelSerializer::new(&model_dir);
+    let serializer = ModelSerializer::new(&modeldir);
 
     // Save model
     let model_path =
@@ -142,13 +143,13 @@ fn main() {
 
     match model_path {
         Ok(path) => println!("Saved model to: {}", path.display()),
-        Err(e) => println!("Error saving model: {}", e),
+        Err(e) => println!("Error saving model: {e}"),
     }
 
     // Load model
-    let loaded_model = serializer.load_model("example_model", "v1.0");
+    let loadedmodel = serializer.loadmodel("example_model", "v1.0");
 
-    match loaded_model {
+    match loadedmodel {
         Ok((model, optimizer)) => {
             println!("Loaded model with {} layers", model.layers().len());
             println!(
@@ -156,7 +157,7 @@ fn main() {
                 if optimizer.is_some() { "yes" } else { "no" }
             );
         }
-        Err(e) => println!("Error loading model: {}", e),
+        Err(e) => println!("Error loading model: {e}"),
     }
 
     // Part 5: Checkpoint Management
@@ -169,7 +170,7 @@ fn main() {
     metrics.insert("accuracy".to_string(), 0.85);
 
     // Save checkpoint
-    let checkpoint_path = model_dir.join("checkpoint");
+    let checkpoint_path = modeldir.join(checkpoint);
     let result = save_checkpoint(
         &model,
         optimizer.as_ref(),
@@ -180,23 +181,23 @@ fn main() {
 
     match result {
         Ok(()) => println!("Saved checkpoint at epoch 10"),
-        Err(e) => println!("Error saving checkpoint: {}", e),
+        Err(e) => println!("Error saving checkpoint: {e}"),
     }
 
     // Load checkpoint
     let result = load_checkpoint(&checkpoint_path);
 
     match result {
-        Ok((model, _optimizer, epoch, metrics)) => {
-            println!("Loaded checkpoint from epoch {}", epoch);
+        Ok((model_optimizer, epoch, metrics)) => {
+            println!("Loaded checkpoint from epoch {epoch}");
             println!("Loaded model with {} layers", model.layers().len());
             println!(
                 "Metrics: loss = {}, accuracy = {}",
-                metrics.get("loss").unwrap_or(&0.0),
-                metrics.get("accuracy").unwrap_or(&0.0)
+                metrics.get(loss).unwrap_or(&0.0),
+                metrics.get(accuracy).unwrap_or(&0.0)
             );
         }
-        Err(e) => println!("Error loading checkpoint: {}", e),
+        Err(e) => println!("Error loading checkpoint: {e}"),
     }
 
     // Part 6: ONNX Export
@@ -204,23 +205,24 @@ fn main() {
     println!("-----------------");
 
     // Export model to ONNX
-    let onnx_path = model_dir.join("model.onnx");
+    let onnx_path = modeldir.join("model.onnx");
     let result = OnnxExporter::export_model(&model, &onnx_path, &[1, 3, 224, 224]);
 
     match result {
         Ok(()) => println!("Exported model to ONNX format at: {}", onnx_path.display()),
-        Err(e) => println!("Error exporting model to ONNX: {}", e),
+        Err(e) => println!("Error exporting model to ONNX: {e}"),
     }
 
     println!("\nDistributed Training and Model Serialization Example completed successfully!");
 }
 
 /// Create a simple model for demonstration purposes.
+#[allow(dead_code)]
 fn create_model() -> Sequential {
     let mut model = Sequential::new("SimpleModel", Vec::new());
 
     // Add layers
-    model.add_layer(Box::new(Conv2D::with_shape(
+    model.add_layer(Box::new(Conv2D::withshape(
         "conv1",
         3,
         3, // Filter size
@@ -239,7 +241,7 @@ fn create_model() -> Sequential {
         (0, 0), // Padding
     )));
 
-    model.add_layer(Box::new(Conv2D::with_shape(
+    model.add_layer(Box::new(Conv2D::withshape(
         "conv2",
         3,
         3, // Filter size
@@ -258,7 +260,7 @@ fn create_model() -> Sequential {
         (0, 0), // Padding
     )));
 
-    model.add_layer(Box::new(Linear::with_shape(
+    model.add_layer(Box::new(Linear::withshape(
         "fc1",
         32 * 6 * 6, // Input features (assuming input size is 28x28)
         128,        // Output features
@@ -266,7 +268,7 @@ fn create_model() -> Sequential {
         Some(ActivationFunc::ReLU),
     )));
 
-    model.add_layer(Box::new(Linear::with_shape(
+    model.add_layer(Box::new(Linear::withshape(
         "fc_out", 128,  // Input features
         10,   // Output features
         true, // With bias
@@ -277,6 +279,7 @@ fn create_model() -> Sequential {
 }
 
 /// Create a simple dataset for demonstration purposes.
+#[allow(dead_code)]
 fn create_dataset() -> (InMemoryDataset, InMemoryDataset) {
     // Generate random data
     let num_samples = 1000;
@@ -285,7 +288,7 @@ fn create_dataset() -> (InMemoryDataset, InMemoryDataset) {
 
     // Generate random inputs
     let inputs = Array2::<f64>::from_shape_fn((num_samples, num_features), |_| {
-        rand::random::<f64>() * 2.0 - 1.0
+        rand::random::<f64>() * 2.0.saturating_sub(1).0
     });
 
     // Generate random one-hot targets

@@ -268,6 +268,7 @@ where
 /// # Returns
 ///
 /// A `LinearOperator` implementing a diagonal matrix
+#[allow(dead_code)]
 pub fn diagonal_operator<F>(diag: &ArrayView1<F>) -> LinearOperator<F>
 where
     F: Float + NumAssign + Zero + Sum + One + ScalarOperand + Clone + Debug + Send + Sync + 'static,
@@ -300,6 +301,7 @@ where
 /// # Returns
 ///
 /// A `LinearOperator` implementing a block diagonal matrix
+#[allow(dead_code)]
 pub fn block_diagonal_operator<F>(blocks: Vec<LinearOperator<F>>) -> LinearOperator<F>
 where
     F: Float + NumAssign + Zero + Sum + One + ScalarOperand + Clone + Debug + Send + Sync + 'static,
@@ -308,7 +310,7 @@ where
     let n_rows: usize = blocks.iter().map(|b| b.nrows()).sum();
     let n_cols: usize = blocks.iter().map(|b| b.ncols()).sum();
 
-    // Check if all blocks are symmetric/positive definite
+    // Check if all _blocks are symmetric/positive definite
     let all_symmetric = blocks.iter().all(|b| b.is_symmetric());
     let all_positive_definite = all_symmetric && blocks.iter().all(|b| b.is_positive_definite());
 
@@ -363,6 +365,7 @@ where
 /// # Returns
 ///
 /// * Solution vector x
+#[allow(dead_code)]
 pub fn conjugate_gradient<F, A>(
     a: &A,
     b: &Array1<F>,
@@ -480,6 +483,7 @@ where
 /// # Returns
 ///
 /// * Solution vector x
+#[allow(dead_code)]
 pub fn gmres<F, A>(
     a: &A,
     b: &Array1<F>,
@@ -640,6 +644,7 @@ where
 }
 
 /// Helper function for GMRES: compute the Givens rotation matrix parameters
+#[allow(dead_code)]
 fn givens_rotation<F>(a: F, b: F) -> (F, F)
 where
     F: Float + NumAssign + Zero + Sum + One + ScalarOperand + Send + Sync,
@@ -672,6 +677,7 @@ where
 /// # Returns
 ///
 /// A linear operator representing the Jacobi preconditioner
+#[allow(dead_code)]
 pub fn jacobi_preconditioner<F, A>(a: &A) -> LinalgResult<LinearOperator<F>>
 where
     F: Float + NumAssign + Zero + Sum + One + ScalarOperand + Clone + Debug + Send + Sync + 'static,
@@ -725,6 +731,7 @@ where
 /// # Returns
 ///
 /// * Solution vector x
+#[allow(dead_code)]
 pub fn preconditioned_conjugate_gradient<F, A, M>(
     a: &A,
     m: &M,
@@ -912,7 +919,7 @@ mod tests {
     }
 
     #[test]
-    fn test_matrix_free_conjugate_gradient() {
+    fn testmatrix_free_conjugate_gradient() {
         // Create a linear operator representing a symmetric positive definite matrix
         // [4.0, 1.0]
         // [1.0, 3.0]
@@ -936,7 +943,7 @@ mod tests {
     }
 
     #[test]
-    fn test_matrix_free_gmres() {
+    fn testmatrix_free_gmres() {
         // Create a linear operator representing a non-symmetric matrix
         // [3.0, 1.0]
         // [1.0, 2.0]

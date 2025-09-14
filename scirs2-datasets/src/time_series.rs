@@ -58,19 +58,19 @@ lazy_static::lazy_static! {
 /// # Examples
 ///
 /// ```
-/// use scirs2_datasets::time_series::electrocardiogram;
+/// use scirs2__datasets::time_series::electrocardiogram;
 ///
 /// let ecg = electrocardiogram().unwrap();
 /// println!("ECG data shape: ({}, {})", ecg.n_samples(), ecg.n_features());
 /// ```
+#[allow(dead_code)]
 pub fn electrocardiogram() -> Result<Dataset> {
     // Fetch the ECG data file
     let ecg_file = match fetch_data("ecg.dat", REGISTRY.get("ecg.dat")) {
         Ok(path) => path,
         Err(e) => {
             return Err(DatasetsError::LoadingError(format!(
-                "Failed to fetch ECG data: {}",
-                e
+                "Failed to fetch ECG data: {e}"
             )))
         }
     };
@@ -80,8 +80,7 @@ pub fn electrocardiogram() -> Result<Dataset> {
         Ok(data) => data,
         Err(e) => {
             return Err(DatasetsError::LoadingError(format!(
-                "Failed to read ECG data: {}",
-                e
+                "Failed to read ECG data: {e}"
             )))
         }
     };
@@ -115,7 +114,7 @@ pub fn electrocardiogram() -> Result<Dataset> {
     // Create the dataset
     let mut dataset = Dataset::new(data, None);
     dataset = dataset
-        .with_feature_names(vec!["ecg".to_string()])
+        .with_featurenames(vec!["ecg".to_string()])
         .with_description("Electrocardiogram (ECG) data, 5 minutes sampled at 360 Hz".to_string())
         .with_metadata("sampling_rate", "360")
         .with_metadata("units", "mV")
@@ -159,19 +158,19 @@ struct StockPrice {
 /// # Examples
 ///
 /// ```ignore
-/// use scirs2_datasets::time_series::stock_market;
+/// use scirs2__datasets::time_series::stock_market;
 ///
 /// let stock_data = stock_market(true).unwrap(); // Get price changes
 /// println!("Stock data shape: ({}, {})", stock_data.n_samples(), stock_data.n_features());
 /// ```
+#[allow(dead_code)]
 pub fn stock_market(returns: bool) -> Result<Dataset> {
     // Fetch the stock market data file
     let stock_file = match fetch_data("stock_market.csv", REGISTRY.get("stock_market.csv")) {
         Ok(path) => path,
         Err(e) => {
             return Err(DatasetsError::LoadingError(format!(
-                "Failed to fetch stock market data: {}",
-                e
+                "Failed to fetch stock market data: {e}"
             )))
         }
     };
@@ -181,8 +180,7 @@ pub fn stock_market(returns: bool) -> Result<Dataset> {
         Ok(content) => content,
         Err(e) => {
             return Err(DatasetsError::LoadingError(format!(
-                "Failed to read stock market data: {}",
-                e
+                "Failed to read stock market data: {e}"
             )))
         }
     };
@@ -191,7 +189,7 @@ pub fn stock_market(returns: bool) -> Result<Dataset> {
     let records: Result<Vec<StockPrice>> = reader
         .deserialize()
         .map(|result| {
-            result.map_err(|e| DatasetsError::LoadingError(format!("CSV parsing error: {}", e)))
+            result.map_err(|e| DatasetsError::LoadingError(format!("CSV parsing error: {e}")))
         })
         .collect();
 
@@ -241,7 +239,7 @@ pub fn stock_market(returns: bool) -> Result<Dataset> {
     // Create the dataset
     let mut dataset = Dataset::new(data, None);
     dataset = dataset
-        .with_feature_names(symbols.clone())
+        .with_featurenames(symbols.clone())
         .with_description(format!(
             "Stock market data for {} companies from {} to {}",
             symbols.len(),
@@ -254,7 +252,7 @@ pub fn stock_market(returns: bool) -> Result<Dataset> {
             dates.first().unwrap_or(&"unknown".to_string()),
         )
         .with_metadata("end_date", dates.last().unwrap_or(&"unknown".to_string()))
-        .with_metadata("data_type", if returns { "returns" } else { "prices" });
+        .with_metadata("data_type", if returns { "_returns" } else { "prices" });
 
     Ok(dataset)
 }
@@ -293,7 +291,7 @@ struct WeatherObservation {
 /// # Examples
 ///
 /// ```ignore
-/// use scirs2_datasets::time_series::weather;
+/// use scirs2__datasets::time_series::weather;
 ///
 /// // Get temperature data for all locations
 /// let temp_data = weather(Some("temperature")).unwrap();
@@ -303,8 +301,9 @@ struct WeatherObservation {
 /// let all_weather = weather(None).unwrap();
 /// println!("All weather data shape: ({}, {})", all_weather.n_samples(), all_weather.n_features());
 /// ```
+#[allow(dead_code)]
 pub fn weather(feature: Option<&str>) -> Result<Dataset> {
-    // Validate feature parameter
+    // Validate _feature parameter
     let valid_features = vec![
         "temperature",
         "humidity",
@@ -316,8 +315,7 @@ pub fn weather(feature: Option<&str>) -> Result<Dataset> {
     if let Some(f) = feature {
         if !valid_features.contains(&f) {
             return Err(DatasetsError::InvalidFormat(format!(
-                "Invalid feature: {}. Valid features are: {:?}",
-                f, valid_features
+                "Invalid _feature: {f}. Valid features are: {valid_features:?}"
             )));
         }
     }
@@ -327,8 +325,7 @@ pub fn weather(feature: Option<&str>) -> Result<Dataset> {
         Ok(path) => path,
         Err(e) => {
             return Err(DatasetsError::LoadingError(format!(
-                "Failed to fetch weather data: {}",
-                e
+                "Failed to fetch weather data: {e}"
             )))
         }
     };
@@ -338,8 +335,7 @@ pub fn weather(feature: Option<&str>) -> Result<Dataset> {
         Ok(content) => content,
         Err(e) => {
             return Err(DatasetsError::LoadingError(format!(
-                "Failed to read weather data: {}",
-                e
+                "Failed to read weather data: {e}"
             )))
         }
     };
@@ -348,7 +344,7 @@ pub fn weather(feature: Option<&str>) -> Result<Dataset> {
     let records: Result<Vec<WeatherObservation>> = reader
         .deserialize()
         .map(|result| {
-            result.map_err(|e| DatasetsError::LoadingError(format!("CSV parsing error: {}", e)))
+            result.map_err(|e| DatasetsError::LoadingError(format!("CSV parsing error: {e}")))
         })
         .collect();
 
@@ -382,7 +378,7 @@ pub fn weather(feature: Option<&str>) -> Result<Dataset> {
 
     let mut dataset = match feature {
         Some(feat) => {
-            // Single feature mode - create a 2D matrix (dates x locations)
+            // Single _feature mode - create a 2D matrix (dates x locations)
             let mut data = Array2::zeros((dates.len(), locations.len()));
 
             for (i, date) in dates.iter().enumerate() {
@@ -405,7 +401,7 @@ pub fn weather(feature: Option<&str>) -> Result<Dataset> {
 
             // Feature names are location names in this case
             ds = ds
-                .with_feature_names(locations.clone())
+                .with_featurenames(locations.clone())
                 .with_description(format!(
                     "Weather {} data for {} locations from {} to {}",
                     feat,
@@ -413,7 +409,7 @@ pub fn weather(feature: Option<&str>) -> Result<Dataset> {
                     dates.first().unwrap_or(&"unknown".to_string()),
                     dates.last().unwrap_or(&"unknown".to_string())
                 ))
-                .with_metadata("feature", feat)
+                .with_metadata("_feature", feat)
                 .with_metadata("n_locations", &locations.len().to_string())
                 .with_metadata(
                     "start_date",
@@ -425,7 +421,7 @@ pub fn weather(feature: Option<&str>) -> Result<Dataset> {
         }
         None => {
             // All features mode - create a 2D matrix (dates x (features*locations))
-            // Each location will have multiple columns, one for each feature
+            // Each location will have multiple columns, one for each _feature
             let n_features = valid_features.len();
             let mut data = Array2::zeros((dates.len(), n_features * locations.len()));
 
@@ -445,18 +441,18 @@ pub fn weather(feature: Option<&str>) -> Result<Dataset> {
                 }
             }
 
-            // Create feature names: for each location, add each feature
-            let mut feature_names = Vec::with_capacity(n_features * locations.len());
+            // Create _feature names: for each location, add each _feature
+            let mut featurenames = Vec::with_capacity(n_features * locations.len());
             for location in &locations {
                 for feat in &valid_features {
-                    feature_names.push(format!("{}_{}", location, feat));
+                    featurenames.push(format!("{location}_{feat}"));
                 }
             }
 
             // Create the dataset
             let mut ds = Dataset::new(data, None);
             ds = ds
-                .with_feature_names(feature_names)
+                .with_featurenames(featurenames)
                 .with_description(format!(
                     "Weather data (all features) for {} locations from {} to {}",
                     locations.len(),

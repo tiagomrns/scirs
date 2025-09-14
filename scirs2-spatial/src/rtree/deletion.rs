@@ -44,7 +44,7 @@ impl<T: Clone> RTree<T> {
             self.decrement_size();
 
             // If the root has only one child and it's not a leaf, make the child the new root
-            if !self.root.is_leaf && self.root.size() == 1 {
+            if !self.root._isleaf && self.root.size() == 1 {
                 if let Entry::NonLeaf { child, .. } = &self.root.entries[0] {
                     let new_root = (**child).clone();
                     self.root = new_root;
@@ -68,7 +68,7 @@ impl<T: Clone> RTree<T> {
         F: Fn(&T) -> bool + Copy,
     {
         // If this is a leaf node, look for the entry to delete
-        if node.is_leaf {
+        if node._isleaf {
             let mut found_index = None;
 
             for (i, entry) in node.entries.iter().enumerate() {
@@ -80,7 +80,7 @@ impl<T: Clone> RTree<T> {
                 {
                     // Check if the MBRs match
                     if entry_mbr.min == mbr.min && entry_mbr.max == mbr.max {
-                        // If a predicate is provided, check it too
+                        // If a _predicate is provided, check it too
                         if let Some(ref pred) = data_predicate {
                             if pred(data) {
                                 found_index = Some(i);
@@ -131,7 +131,7 @@ impl<T: Clone> RTree<T> {
                             node.entries.remove(i);
                         } else {
                             // Update the MBR of the parent entry
-                            if let Some(child_mbr) = child.mbr() {
+                            if let Ok(Some(child_mbr)) = child.mbr() {
                                 if let Entry::NonLeaf { mbr, .. } = &mut node.entries[i] {
                                     *mbr = child_mbr;
                                 }
@@ -154,9 +154,9 @@ impl<T: Clone> RTree<T> {
         child_index: usize,
     ) -> SpatialResult<()> {
         // Get the child node
-        let child = match &parent.entries[child_index] {
+        let child: &Box<Node<T>> = match &parent.entries[child_index] {
             Entry::NonLeaf { child, .. } => child,
-            _ => {
+            Entry::Leaf { .. } => {
                 return Err(crate::error::SpatialError::ComputationError(
                     "Expected a non-leaf entry".into(),
                 ))
@@ -178,6 +178,7 @@ impl<T: Clone> RTree<T> {
             // Get the child's MBR
             let child_mbr = child
                 .mbr()
+                .unwrap_or_else(|_| Some(Rectangle::from_point(&Array1::zeros(self.ndim()).view())))
                 .unwrap_or_else(|| Rectangle::from_point(&Array1::zeros(self.ndim()).view()));
 
             // Calculate the area of the merged MBR
@@ -197,9 +198,9 @@ impl<T: Clone> RTree<T> {
         }
 
         // Get the sibling
-        let sibling = match &parent.entries[best_sibling_index] {
+        let sibling: &Box<Node<T>> = match &parent.entries[best_sibling_index] {
             Entry::NonLeaf { child, .. } => child,
-            _ => {
+            Entry::Leaf { .. } => {
                 return Err(crate::error::SpatialError::ComputationError(
                     "Expected a non-leaf entry".into(),
                 ))
@@ -208,11 +209,124 @@ impl<T: Clone> RTree<T> {
 
         // If the sibling has enough entries, we can redistribute
         if sibling.size() > self.min_entries {
-            // TODO: Implement entry redistribution
+            // Implement entry redistribution
+
+            // Get mutable references to both child and sibling
+            let (child_idx, sibling_idx) = if child_index < best_sibling_index {
+                (child_index, best_sibling_index)
+            } else {
+                (best_sibling_index, child_index)
+            };
+
+            // Extract entries from parent temporarily
+            let mut child_entry = parent.entries.remove(child_idx);
+            let mut sibling_entry = parent.entries.remove(if sibling_idx > child_idx {
+                sibling_idx - 1
+            } else {
+                sibling_idx
+            });
+
+            // Get mutable references to the nodes
+            let child_node: &mut Box<Node<T>> = match &mut child_entry {
+                Entry::NonLeaf { child, .. } => child,
+                Entry::Leaf { .. } => {
+                    return Err(crate::error::SpatialError::ComputationError(
+                        "Expected a non-leaf entry for child node".into(),
+                    ))
+                }
+            };
+            let sibling_node: &mut Box<Node<T>> = match &mut sibling_entry {
+                Entry::NonLeaf { child, .. } => child,
+                Entry::Leaf { .. } => {
+                    return Err(crate::error::SpatialError::ComputationError(
+                        "Expected a non-leaf entry for sibling node".into(),
+                    ))
+                }
+            };
+
+            // Calculate how many entries to move
+            let total_entries = child_node.size() + sibling_node.size();
+            let target_child_size = total_entries / 2;
+
+            // Move entries from sibling to child if child has fewer entries
+            while child_node.size() < target_child_size && !sibling_node.entries.is_empty() {
+                let entry = sibling_node.entries.remove(0);
+                child_node.entries.push(entry);
+            }
+
+            // Update MBRs
+            if let Ok(Some(child_mbr)) = child_node.mbr() {
+                if let Entry::NonLeaf { mbr, .. } = &mut child_entry {
+                    *mbr = child_mbr;
+                }
+            }
+            if let Ok(Some(sibling_mbr)) = sibling_node.mbr() {
+                if let Entry::NonLeaf { mbr, .. } = &mut sibling_entry {
+                    *mbr = sibling_mbr;
+                }
+            }
+
+            // Put entries back in parent
+            parent.entries.insert(child_idx, child_entry);
+            parent.entries.insert(
+                if sibling_idx > child_idx {
+                    sibling_idx
+                } else {
+                    sibling_idx + 1
+                },
+                sibling_entry,
+            );
+
             Ok(())
         } else {
             // Otherwise, merge the nodes
-            // TODO: Implement node merging
+
+            // Remove both entries from parent
+            let (smaller_idx, larger_idx) = if child_index < best_sibling_index {
+                (child_index, best_sibling_index)
+            } else {
+                (best_sibling_index, child_index)
+            };
+
+            let mut child_entry = parent.entries.remove(smaller_idx);
+            let sibling_entry = parent.entries.remove(larger_idx - 1);
+
+            // Get the nodes
+            let child_node: &mut Box<Node<T>> = match &mut child_entry {
+                Entry::NonLeaf { child, .. } => child,
+                Entry::Leaf { .. } => {
+                    return Err(crate::error::SpatialError::ComputationError(
+                        "Expected a non-leaf entry for child node".into(),
+                    ))
+                }
+            };
+            let sibling_node: Box<Node<T>> = match sibling_entry {
+                Entry::NonLeaf { child, .. } => child,
+                Entry::Leaf { .. } => {
+                    return Err(crate::error::SpatialError::ComputationError(
+                        "Expected a non-leaf entry for sibling node".into(),
+                    ))
+                }
+            };
+
+            // Move all entries from sibling to child
+            for entry in sibling_node.entries {
+                child_node.entries.push(entry);
+            }
+
+            // Update MBR of merged node
+            if let Ok(Some(merged_mbr)) = child_node.mbr() {
+                if let Entry::NonLeaf { mbr, .. } = &mut child_entry {
+                    *mbr = merged_mbr;
+                }
+            }
+
+            // Put the merged node back
+            parent.entries.insert(smaller_idx, child_entry);
+
+            // If parent is now underfull and is not the root, it needs handling too
+            // This would be handled by the caller
+
             Ok(())
         }
     }

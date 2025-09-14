@@ -4,14 +4,14 @@
 //! dimensionality before clustering in fewer dimensions. This method is particularly
 //! useful when the clusters have complex shapes and KMeans would perform poorly.
 
-use ndarray::{s, Array1, Array2, ArrayView2};
+use ndarray::{s, Array1, Array2, ArrayView2, ScalarOperand};
 use num_traits::{Float, FromPrimitive};
 use scirs2_linalg::{eigh, smallest_k_eigh};
 use std::fmt::Debug;
 
 use crate::error::{ClusteringError, Result};
 use crate::vq::{kmeans_with_options, KMeansInit, KMeansOptions};
-use scirs2_core::validation::clustering::*;
+// use scirs2_core::validation::clustering::*;
 
 /// Affinity matrix construction methods
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -38,6 +38,7 @@ pub enum AffinityMode {
 /// # Returns
 ///
 /// * The estimated number of clusters
+#[allow(dead_code)]
 fn eigengap_heuristic<F>(eigenvalues: &[F], max_clusters: usize) -> usize
 where
     F: Float + FromPrimitive + Debug + PartialOrd,
@@ -72,6 +73,7 @@ where
 /// # Returns
 ///
 /// * The normalized graph Laplacian matrix
+#[allow(dead_code)]
 fn normalized_laplacian<F>(affinity: &Array2<F>) -> Result<Array2<F>>
 where
     F: Float + FromPrimitive + Debug + PartialOrd,
@@ -106,10 +108,10 @@ where
     for i in 0..n {
         for j in 0..n {
             if i == j {
-                // Diagonal elements of identity matrix I minus the normalized affinity
+                // Diagonal elements of identity matrix I minus the normalized _affinity
                 laplacian[[i, j]] = F::one() - affinity[[i, j]] * d_inv_sqrt[i] * d_inv_sqrt[j];
             } else {
-                // Off-diagonal elements are the negative normalized affinity
+                // Off-diagonal elements are the negative normalized _affinity
                 laplacian[[i, j]] = -affinity[[i, j]] * d_inv_sqrt[i] * d_inv_sqrt[j];
             }
         }
@@ -128,6 +130,7 @@ where
 /// # Returns
 ///
 /// * Affinity matrix where each row has at most n_neighbors non-zero entries
+#[allow(dead_code)]
 fn knn_affinity<F>(data: ArrayView2<F>, n_neighbors: usize) -> Result<Array2<F>>
 where
     F: Float + FromPrimitive + Debug + PartialOrd,
@@ -195,6 +198,7 @@ where
 /// # Returns
 ///
 /// * Affinity matrix where each element (i,j) is exp(-gamma * ||x_i - x_j||^2)
+#[allow(dead_code)]
 fn rbf_affinity<F>(data: ArrayView2<F>, gamma: F) -> Result<Array2<F>>
 where
     F: Float + FromPrimitive + Debug + PartialOrd,
@@ -329,6 +333,7 @@ impl<F: Float + FromPrimitive> Default for SpectralClusteringOptions<F> {
 /// // Print the results
 /// println!("Cluster assignments: {:?}", labels);
 /// ```
+#[allow(dead_code)]
 pub fn spectral_clustering<F>(
     data: ArrayView2<F>,
     n_clusters: usize,
@@ -339,6 +344,7 @@ where
         + FromPrimitive
         + Debug
         + PartialOrd
+        + ScalarOperand
         + 'static
         + std::iter::Sum
         + std::ops::AddAssign
@@ -346,25 +352,36 @@ where
         + std::ops::MulAssign
         + std::ops::DivAssign
         + std::ops::RemAssign
-        + std::fmt::Display,
+        + std::fmt::Display
+        + Send
+        + Sync,
 {
     let opts = options.unwrap_or_default();
     let n_samples = data.shape()[0];
 
     // Use unified validation
-    validate_clustering_data(&data, "Spectral clustering", false, Some(2))
-        .map_err(|e| ClusteringError::InvalidInput(format!("Spectral clustering: {}", e)))?;
+    scirs2_core::validation::clustering::validate_clustering_data(
+        &data,
+        "Spectral clustering",
+        false,
+        Some(2),
+    )
+    .map_err(|e| ClusteringError::InvalidInput(format!("Spectral clustering: {}", e)))?;
 
-    // Spectral clustering requires at least 2 clusters
+    // Spectral clustering requires at least 2 _clusters
     if n_clusters < 2 {
         return Err(ClusteringError::InvalidInput(format!(
-            "Spectral clustering: number of clusters must be >= 2, got {}",
+            "Spectral clustering: number of _clusters must be >= 2, got {}",
             n_clusters
         )));
     }
 
-    check_n_clusters_bounds(&data, n_clusters, "Spectral clustering")
-        .map_err(|e| ClusteringError::InvalidInput(format!("{}", e)))?;
+    scirs2_core::validation::clustering::check_n_clusters_bounds(
+        &data,
+        n_clusters,
+        "Spectral clustering",
+    )
+    .map_err(|e| ClusteringError::InvalidInput(format!("{}", e)))?;
 
     // Step 1: Create the affinity matrix
     let affinity = match opts.affinity {
@@ -446,9 +463,9 @@ where
         smallest_k_eigh(&stabilized_laplacian.view(), k, max_iter, tolerance)?
     };
 
-    // Determine the actual number of clusters
+    // Determine the actual number of _clusters
     let actual_n_clusters = if opts.auto_n_clusters {
-        // Use eigengap heuristic to determine the number of clusters
+        // Use eigengap heuristic to determine the number of _clusters
         // When using the normalized Laplacian, we need the smaller eigenvalues
         eigengap_heuristic(&eigenvalues.to_vec(), n_clusters)
     } else {
@@ -520,6 +537,7 @@ where
 /// # Returns
 ///
 /// * Array of shape (n_samples,) with binary cluster assignments
+#[allow(dead_code)]
 pub fn spectral_bipartition<F>(
     data: ArrayView2<F>,
     options: Option<SpectralClusteringOptions<F>>,
@@ -529,6 +547,7 @@ where
         + FromPrimitive
         + Debug
         + PartialOrd
+        + ScalarOperand
         + 'static
         + std::iter::Sum
         + std::ops::AddAssign
@@ -536,7 +555,9 @@ where
         + std::ops::MulAssign
         + std::ops::DivAssign
         + std::ops::RemAssign
-        + std::fmt::Display,
+        + std::fmt::Display
+        + Send
+        + Sync,
 {
     // Run spectral clustering with exactly 2 clusters
     let (_, labels) = spectral_clustering(data, 2, options)?;

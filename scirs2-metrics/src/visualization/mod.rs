@@ -48,7 +48,7 @@
 //! let y_pred = array![0, 2, 1, 0, 0, 2];
 //!
 //! // Create confusion matrix
-//! let (cm, _) = confusion_matrix(&y_true, &y_pred, None).unwrap();
+//! let (cm_) = confusion_matrix(&y_true, &y_pred, None).unwrap();
 //! let cm_f64 = cm.mapv(|x| x as f64);
 //!
 //! // Create visualizer
@@ -68,6 +68,7 @@
 //! ```
 
 // Re-export submodules
+pub mod advanced_interactive;
 pub mod backends;
 pub mod calibration;
 pub mod confusion_matrix;
@@ -78,6 +79,12 @@ pub mod precision_recall;
 pub mod roc_curve;
 
 // Re-export common functionality
+pub use advanced_interactive::{
+    CollaborationConfig, CollaborationManager, DashboardConfig, DashboardState, DataSource,
+    EventResponse, EventSystem, ExportConfig, InteractionConfig, InteractiveDashboard,
+    InteractiveWidget, LayoutConfig, LayoutManager, RealtimeConfig, RenderingEngine, ThemeConfig,
+    UpdateManager, WidgetConfig, WidgetEvent, WidgetType,
+};
 pub use backends::PlottingBackend;
 pub use calibration::CalibrationVisualizer;
 pub use confusion_matrix::ConfusionMatrixVisualizer;
@@ -353,8 +360,8 @@ impl VisualizationMetadata {
     /// # Arguments
     ///
     /// * `plot_type` - The plot type
-    pub fn set_plot_type(&mut self, plot_type: PlotType) {
-        self.plot_type = plot_type;
+    pub fn set_plot_type(&mut self, plottype: PlotType) {
+        self.plot_type = plottype;
     }
 
     /// Set the x-axis label
@@ -362,8 +369,8 @@ impl VisualizationMetadata {
     /// # Arguments
     ///
     /// * `x_label` - The x-axis label
-    pub fn set_x_label(&mut self, x_label: impl Into<String>) {
-        self.x_label = x_label.into();
+    pub fn set_x_label(&mut self, xlabel: impl Into<String>) {
+        self.x_label = xlabel.into();
     }
 
     /// Set the y-axis label
@@ -371,8 +378,8 @@ impl VisualizationMetadata {
     /// # Arguments
     ///
     /// * `y_label` - The y-axis label
-    pub fn set_y_label(&mut self, y_label: impl Into<String>) {
-        self.y_label = y_label.into();
+    pub fn set_y_label(&mut self, ylabel: impl Into<String>) {
+        self.y_label = ylabel.into();
     }
 
     /// Set the plot description
@@ -602,8 +609,8 @@ impl VisualizationOptions {
     /// # Arguments
     ///
     /// * `color_map` - The color map
-    pub fn with_color_map(mut self, color_map: ColorMap) -> Self {
-        self.color_map = Some(color_map);
+    pub fn with_color_map(mut self, colormap: ColorMap) -> Self {
+        self.color_map = Some(colormap);
         self
     }
 
@@ -612,8 +619,8 @@ impl VisualizationOptions {
     /// # Arguments
     ///
     /// * `show_grid` - Whether to show grid
-    pub fn with_grid(mut self, show_grid: bool) -> Self {
-        self.show_grid = show_grid;
+    pub fn with_grid(mut self, showgrid: bool) -> Self {
+        self.show_grid = showgrid;
         self
     }
 
@@ -622,8 +629,8 @@ impl VisualizationOptions {
     /// # Arguments
     ///
     /// * `show_legend` - Whether to show legend
-    pub fn with_legend(mut self, show_legend: bool) -> Self {
-        self.show_legend = show_legend;
+    pub fn with_legend(mut self, showlegend: bool) -> Self {
+        self.show_legend = showlegend;
         self
     }
 
@@ -651,8 +658,8 @@ impl VisualizationOptions {
     /// # Arguments
     ///
     /// * `line_width` - The line width
-    pub fn with_line_width(mut self, line_width: f64) -> Self {
-        self.line_width = Some(line_width);
+    pub fn with_line_width(mut self, linewidth: f64) -> Self {
+        self.line_width = Some(linewidth);
         self
     }
 
@@ -661,8 +668,8 @@ impl VisualizationOptions {
     /// # Arguments
     ///
     /// * `marker_size` - The marker size
-    pub fn with_marker_size(mut self, marker_size: f64) -> Self {
-        self.marker_size = Some(marker_size);
+    pub fn with_marker_size(mut self, markersize: f64) -> Self {
+        self.marker_size = Some(markersize);
         self
     }
 
@@ -671,8 +678,8 @@ impl VisualizationOptions {
     /// # Arguments
     ///
     /// * `show_colorbar` - Whether to show colorbar
-    pub fn with_colorbar(mut self, show_colorbar: bool) -> Self {
-        self.show_colorbar = show_colorbar;
+    pub fn with_colorbar(mut self, showcolorbar: bool) -> Self {
+        self.show_colorbar = showcolorbar;
         self
     }
 
@@ -681,8 +688,8 @@ impl VisualizationOptions {
     /// # Arguments
     ///
     /// * `color_palette` - The color palette name
-    pub fn with_color_palette(mut self, color_palette: impl Into<String>) -> Self {
-        self.color_palette = Some(color_palette.into());
+    pub fn with_color_palette(mut self, colorpalette: impl Into<String>) -> Self {
+        self.color_palette = Some(colorpalette.into());
         self
     }
 }

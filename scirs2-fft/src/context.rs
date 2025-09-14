@@ -38,15 +38,15 @@ impl Default for FftContext {
 
 impl FftContext {
     /// Set backend for this context
-    pub fn with_backend(mut self, backend_name: &str) -> FFTResult<Self> {
-        self.backend_context = Some(BackendContext::new(backend_name)?);
+    pub fn with_backend(mut self, backendname: &str) -> FFTResult<Self> {
+        self.backend_context = Some(BackendContext::new(backendname)?);
         Ok(self)
     }
 
     /// Set number of workers for this context
-    pub fn with_workers(mut self, _num_workers: usize) -> Self {
+    pub fn with_workers(mut self, _numworkers: usize) -> Self {
         self.previous_workers = Some(self.worker_pool.get_workers());
-        // Note: Due to static reference limitation, we can't actually change workers
+        // Note: Due to static reference limitation, we can't actually change _workers
         // This is a design limitation that would need a different architecture
         self
     }
@@ -164,6 +164,7 @@ impl Default for FftContextBuilder {
 }
 
 /// Create an FFT context with specific settings
+#[allow(dead_code)]
 pub fn fft_context() -> FftContextBuilder {
     FftContextBuilder::new()
 }
@@ -180,6 +181,7 @@ impl FftSettingsGuard {
 }
 
 /// Use specific FFT settings within a scope
+#[allow(dead_code)]
 pub fn with_fft_settings<F, R>(builder: FftContextBuilder, f: F) -> FFTResult<R>
 where
     F: FnOnce() -> R,
@@ -190,6 +192,7 @@ where
 }
 
 /// Convenience function for using a specific backend
+#[allow(dead_code)]
 pub fn with_backend<F, R>(backend: &str, f: F) -> FFTResult<R>
 where
     F: FnOnce() -> R,
@@ -198,6 +201,7 @@ where
 }
 
 /// Convenience function for using specific number of workers
+#[allow(dead_code)]
 pub fn with_workers<F, R>(workers: usize, f: F) -> FFTResult<R>
 where
     F: FnOnce() -> R,
@@ -206,6 +210,7 @@ where
 }
 
 /// Convenience function for running without cache
+#[allow(dead_code)]
 pub fn without_cache<F, R>(f: F) -> FFTResult<R>
 where
     F: FnOnce() -> R,

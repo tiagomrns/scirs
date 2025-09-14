@@ -16,19 +16,23 @@ mod bessel_tests {
         let j0_small = j0(1e-10);
         assert_relative_eq!(j0_small, 1.0, epsilon = 1e-10);
 
-        // First zero is near 2.4048... in theory, but the improved implementation
-        // uses a different approximation approach so it doesn't exactly match
-        // the theoretical zero. Our actual implementation gives j0(2.5) closer to 0.9998929709193082
-        assert!(j0(2.404825557695773) > 0.99);
+        // Test that J₀ is close to zero at its first zero
+        let first_zero = 2.404825557695773f64;
+        let j0_at_zero = j0(first_zero);
+        assert!(
+            j0_at_zero.abs() < 1e-10,
+            "J₀ should be close to zero at its first zero, got {}",
+            j0_at_zero
+        );
     }
 
     #[test]
     fn test_j0_moderate_values() {
-        // Values from the enhanced implementation
-        assert_relative_eq!(j0(0.5), 0.9999957088990554, epsilon = 1e-10);
-        assert_relative_eq!(j0(1.0), 0.9999828405958571, epsilon = 1e-10);
-        assert_relative_eq!(j0(5.0), 0.9995749018799913, epsilon = 1e-10);
-        assert_relative_eq!(j0(10.0), -0.1743358270942519, epsilon = 1e-10);
+        // SciPy-verified reference values
+        assert_relative_eq!(j0(0.5), 0.9384698072408130, epsilon = 1e-10);
+        assert_relative_eq!(j0(1.0), 0.7651976865579665, epsilon = 1e-10);
+        assert_relative_eq!(j0(5.0), -0.1775967713143383, epsilon = 1e-10);
+        assert_relative_eq!(j0(10.0), -0.2459357644513483, epsilon = 1e-10);
     }
 
     #[test]
@@ -56,11 +60,11 @@ mod bessel_tests {
 
     #[test]
     fn test_j1_moderate_values() {
-        // Values from the enhanced implementation
-        assert_relative_eq!(j1(0.5), 0.25001434692532454, epsilon = 1e-10);
-        assert_relative_eq!(j1(1.0), 0.5001147449893234, epsilon = 1e-10);
-        assert_relative_eq!(j1(5.0), 2.514224470108391, epsilon = 1e-10);
-        assert_relative_eq!(j1(10.0), 0.018826273792249777, epsilon = 1e-10);
+        // SciPy-verified reference values
+        assert_relative_eq!(j1(0.5), 0.2422684576748739, epsilon = 1e-10);
+        assert_relative_eq!(j1(1.0), 0.4400505857449335, epsilon = 1e-10);
+        assert_relative_eq!(j1(5.0), -0.3275791375914653, epsilon = 1e-10);
+        assert_relative_eq!(j1(10.0), 0.04347274616886141, epsilon = 1e-10);
     }
 
     #[test]
@@ -71,10 +75,10 @@ mod bessel_tests {
         assert_relative_eq!(jn(0, x), j0(x), epsilon = 1e-10);
         assert_relative_eq!(jn(1, x), j1(x), epsilon = 1e-10);
 
-        // Test higher orders with values from the enhanced implementation
-        assert_relative_eq!(jn(2, x), 0.6776865150056699, epsilon = 1e-10);
-        assert_relative_eq!(jn(5, x), 0.2975890622248252, epsilon = 1e-10);
-        assert_relative_eq!(jn(10, x), -0.21599011256127287, epsilon = 1e-10);
+        // Test higher orders with SciPy-verified reference values
+        assert_relative_eq!(jn(2, x), 0.04656511627775229, epsilon = 1e-10);
+        assert_relative_eq!(jn(3, x), 0.36483123061366701, epsilon = 1e-10);
+        assert_relative_eq!(jn(5, x), 0.26114054612017007, epsilon = 1e-10);
     }
 
     #[test]
@@ -130,10 +134,10 @@ mod bessel_tests {
 
     #[test]
     fn test_y0_special_cases() {
-        // Values from the enhanced implementation
-        assert_relative_eq!(y0(1.0), 0.08825697139770805, epsilon = 1e-10);
-        assert_relative_eq!(y0(2.0), 0.41084191201546677, epsilon = 1e-10);
-        assert_relative_eq!(y0(5.0), 0.008002265145666503, epsilon = 1e-7);
+        // SciPy-verified reference values
+        assert_relative_eq!(y0(1.0), 0.08825696421567697, epsilon = 1e-10);
+        assert_relative_eq!(y0(2.0), 0.5103756726497451, epsilon = 1e-10);
+        assert_relative_eq!(y0(5.0), -0.30851762524903314, epsilon = 1e-10);
     }
 
     #[test]

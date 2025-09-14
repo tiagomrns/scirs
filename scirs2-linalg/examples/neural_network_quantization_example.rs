@@ -4,8 +4,8 @@
 //! for quantizing different components of a neural network.
 
 use ndarray::{Array2, ArrayView2};
-use rand::rng;
 use rand_distr::{Distribution, Normal};
+use scirs2_core::rng;
 use scirs2_linalg::prelude::*;
 
 // Simple struct to represent a neural network layer
@@ -15,6 +15,7 @@ struct SimpleLayer {
     name: String,
 }
 
+#[allow(dead_code)]
 fn main() {
     println!("Neural Network Quantization Example");
     println!("===================================\n");
@@ -51,6 +52,7 @@ fn main() {
 }
 
 /// Create a simple example network with 2 layers
+#[allow(dead_code)]
 fn create_example_network() -> Vec<SimpleLayer> {
     let mut rng = rng();
 
@@ -95,12 +97,13 @@ fn create_example_network() -> Vec<SimpleLayer> {
 }
 
 /// Create test input data
-fn create_test_input(batch_size: usize, input_size: usize) -> Array2<f32> {
+#[allow(dead_code)]
+fn create_test_input(_batchsize: usize, inputsize: usize) -> Array2<f32> {
     let mut rng = rng();
-    let mut input = Array2::zeros((batch_size, input_size));
+    let mut input = Array2::zeros((_batchsize, inputsize));
 
-    for i in 0..batch_size {
-        for j in 0..input_size {
+    for i in 0.._batchsize {
+        for j in 0..inputsize {
             input[[i, j]] = Normal::new(0.0, 1.0).unwrap().sample(&mut rng);
         }
     }
@@ -109,11 +112,13 @@ fn create_test_input(batch_size: usize, input_size: usize) -> Array2<f32> {
 }
 
 /// ReLU activation function
+#[allow(dead_code)]
 fn relu(x: &ArrayView2<f32>) -> Array2<f32> {
     x.mapv(|v| if v > 0.0 { v } else { 0.0 })
 }
 
 /// Run inference with full precision network
+#[allow(dead_code)]
 fn run_network_full_precision(network: &[SimpleLayer], input: &Array2<f32>) -> Array2<f32> {
     // First layer
     let layer1 = &network[0];
@@ -133,6 +138,7 @@ type QuantizedLayerPair = (QuantizedMatrix, QuantizedMatrix);
 type QuantizationParamsPair = (QuantizationParams, QuantizationParams);
 
 /// Quantize a neural network
+#[allow(dead_code)]
 fn quantize_network(
     network: &[SimpleLayer],
     bits: u8,
@@ -188,6 +194,7 @@ fn quantize_network(
 }
 
 /// Run inference with quantized network
+#[allow(dead_code)]
 fn run_network_quantized(
     network: &[SimpleLayer],
     quantized_network: &[(QuantizedMatrix, QuantizedMatrix)],
@@ -206,16 +213,16 @@ fn run_network_quantized(
         ..CalibrationConfig::default()
     };
     let act_params = calibrate_matrix(&input.view(), 8, &activation_config).unwrap();
-    let (q_input, _) = quantize_matrix(&input.view(), 8, act_params.method);
+    let (q_input, q_input_params) = quantize_matrix(&input.view(), 8, act_params.method);
 
     // Perform quantized matrix multiplication for first layer
-    let hidden = match quantized_matmul(q_weights, weights_params, &q_input, &act_params) {
+    let hidden = match quantized_matmul(q_weights, weights_params, &q_input, &q_input_params) {
         Ok(result) => result,
         Err(e) => {
             println!("Error in quantized matmul: {:?}", e);
             // Fallback to dequantized computation
             let dq_weights = dequantize_matrix(q_weights, weights_params);
-            let dq_input = dequantize_matrix(&q_input, &act_params);
+            let dq_input = dequantize_matrix(&q_input, &q_input_params);
             dq_input.dot(&dq_weights.t())
         }
     };
@@ -234,20 +241,21 @@ fn run_network_quantized(
         ..CalibrationConfig::default()
     };
     let hidden_params = calibrate_matrix(&hidden_activated.view(), 8, &hidden_config).unwrap();
-    let (q_hidden, _) = quantize_matrix(&hidden_activated.view(), 8, hidden_params.method);
+    let (q_hidden, q_hidden_params) =
+        quantize_matrix(&hidden_activated.view(), 8, hidden_params.method);
 
     // Second layer
     let (q_weights2, q_biases2) = &quantized_network[1];
     let (weights_params2, bias_params2) = &quantization_params[1];
 
     // Perform quantized matrix multiplication for second layer
-    let output = match quantized_matmul(q_weights2, weights_params2, &q_hidden, &hidden_params) {
+    let output = match quantized_matmul(q_weights2, weights_params2, &q_hidden, &q_hidden_params) {
         Ok(result) => result,
         Err(e) => {
             println!("Error in quantized matmul: {:?}", e);
             // Fallback to dequantized computation
             let dq_weights = dequantize_matrix(q_weights2, weights_params2);
-            let dq_hidden = dequantize_matrix(&q_hidden, &hidden_params);
+            let dq_hidden = dequantize_matrix(&q_hidden, &q_hidden_params);
             dq_hidden.dot(&dq_weights.t())
         }
     };
@@ -260,6 +268,7 @@ fn run_network_quantized(
 }
 
 /// Compare outputs from full precision and quantized networks
+#[allow(dead_code)]
 fn compare_outputs(full_precision: &Array2<f32>, quantized: &Array2<f32>) {
     // Calculate MSE
     let mse = (full_precision - quantized).mapv(|x| x * x).sum() / full_precision.len() as f32;
@@ -279,10 +288,10 @@ fn compare_outputs(full_precision: &Array2<f32>, quantized: &Array2<f32>) {
     println!("Relative Error: {:.6}%", rel_error);
 
     // For classification tasks, check if top predictions match
-    let batch_size = full_precision.dim().0;
+    let batchsize = full_precision.dim().0;
     let mut top1_matches = 0;
 
-    for i in 0..batch_size {
+    for i in 0..batchsize {
         let mut fp_max_idx = 0;
         let mut fp_max_val = full_precision[[i, 0]];
         let mut q_max_idx = 0;
@@ -307,12 +316,13 @@ fn compare_outputs(full_precision: &Array2<f32>, quantized: &Array2<f32>) {
     println!(
         "Top-1 Accuracy Match: {}/{} ({:.1}%)",
         top1_matches,
-        batch_size,
-        (top1_matches as f32 / batch_size as f32) * 100.0
+        batchsize,
+        (top1_matches as f32 / batchsize as f32) * 100.0
     );
 }
 
 /// Demonstrate mixed precision quantization with different bit widths per layer
+#[allow(dead_code)]
 fn mixed_precision_quantization(network: &[SimpleLayer], input: &Array2<f32>) {
     // Define quantization bit widths for each layer
     // First layer: weights=8-bit, activations=8-bit
@@ -323,7 +333,7 @@ fn mixed_precision_quantization(network: &[SimpleLayer], input: &Array2<f32>) {
     ];
 
     println!("Layer configuration:");
-    for (i, &(_w_bits, _a_bits, desc)) in layer_configs.iter().enumerate() {
+    for (i, &(w_bits, a_bits, desc)) in layer_configs.iter().enumerate() {
         println!("  Layer {}: {}", i, desc);
     }
 
@@ -335,7 +345,9 @@ fn mixed_precision_quantization(network: &[SimpleLayer], input: &Array2<f32>) {
     let mut quantization_params = Vec::new();
 
     // Quantize each layer with its specific bit width
-    for (i, (layer, &(w_bits, _, _))) in network.iter().zip(layer_configs.iter()).enumerate() {
+    for (i, (layer, &(w_bits, _a_bits, _desc))) in
+        network.iter().zip(layer_configs.iter()).enumerate()
+    {
         let weights_config = CalibrationConfig {
             method: CalibrationMethod::MinMax,
             symmetric: true,
@@ -350,12 +362,12 @@ fn mixed_precision_quantization(network: &[SimpleLayer], input: &Array2<f32>) {
         // Quantize weights
         let weights_params =
             calibrate_matrix(&layer.weights.view(), w_bits, &weights_config).unwrap();
-        let (quantized_weights, _) =
+        let quantized_weights =
             quantize_matrix(&layer.weights.view(), w_bits, weights_params.method);
 
         // Quantize biases (typically keep biases at higher precision)
         let bias_params = calibrate_matrix(&layer.biases.view(), 8, &bias_config).unwrap();
-        let (quantized_biases, _) = quantize_matrix(&layer.biases.view(), 8, bias_params.method);
+        let quantized_biases = quantize_matrix(&layer.biases.view(), 8, bias_params.method);
 
         quantized_layers.push((quantized_weights, quantized_biases));
         quantization_params.push((weights_params.clone(), bias_params));
@@ -379,21 +391,21 @@ fn mixed_precision_quantization(network: &[SimpleLayer], input: &Array2<f32>) {
         ..CalibrationConfig::default()
     };
     let act_params = calibrate_matrix(&input.view(), a_bits0, &activation_config).unwrap();
-    let (q_input, _) = quantize_matrix(&input.view(), a_bits0, act_params.method);
+    let (q_input, q_input_params) = quantize_matrix(&input.view(), a_bits0, act_params.method);
 
     // First layer quantized matmul
-    let hidden = match quantized_matmul(q_weights0, weights_params0, &q_input, &act_params) {
+    let hidden = match quantized_matmul(&q_weights0.0, &q_weights0.1, &q_input, &q_input_params) {
         Ok(result) => result,
         Err(_) => {
             // Fallback to dequantized computation
-            let dq_weights = dequantize_matrix(q_weights0, weights_params0);
-            let dq_input = dequantize_matrix(&q_input, &act_params);
+            let dq_weights = dequantize_matrix(&q_weights0.0, &q_weights0.1);
+            let dq_input = dequantize_matrix(&q_input, &q_input_params);
             dq_input.dot(&dq_weights.t())
         }
     };
 
     // Add biases and apply ReLU
-    let dq_biases0 = dequantize_matrix(q_biases0, bias_params0);
+    let dq_biases0 = dequantize_matrix(&q_biases0.0, &q_biases0.1);
     let hidden_bias = &hidden + &dq_biases0.t();
     let hidden_activated = relu(&hidden_bias.view());
 
@@ -406,25 +418,26 @@ fn mixed_precision_quantization(network: &[SimpleLayer], input: &Array2<f32>) {
     };
     let hidden_params =
         calibrate_matrix(&hidden_activated.view(), a_bits1, &hidden_config).unwrap();
-    let (q_hidden, _) = quantize_matrix(&hidden_activated.view(), a_bits1, hidden_params.method);
+    let (q_hidden, q_hidden_params) =
+        quantize_matrix(&hidden_activated.view(), a_bits1, hidden_params.method);
 
     // Second layer forward pass
     let (q_weights1, q_biases1) = &quantized_layers[1];
     let (weights_params1, bias_params1) = &quantization_params[1];
 
     // Second layer quantized matmul
-    let output = match quantized_matmul(q_weights1, weights_params1, &q_hidden, &hidden_params) {
+    let output = match quantized_matmul(&q_weights1.0, &q_weights1.1, &q_hidden, &q_hidden_params) {
         Ok(result) => result,
         Err(_) => {
             // Fallback to dequantized computation
-            let dq_weights = dequantize_matrix(q_weights1, weights_params1);
-            let dq_hidden = dequantize_matrix(&q_hidden, &hidden_params);
+            let dq_weights = dequantize_matrix(&q_weights1.0, &q_weights1.1);
+            let dq_hidden = dequantize_matrix(&q_hidden, &q_hidden_params);
             dq_hidden.dot(&dq_weights.t())
         }
     };
 
     // Add biases
-    let dq_biases1 = dequantize_matrix(q_biases1, bias_params1);
+    let dq_biases1 = dequantize_matrix(&q_biases1.0, &q_biases1.1);
     let output_bias = &output + &dq_biases1.t();
 
     // Compare with full precision
@@ -432,21 +445,21 @@ fn mixed_precision_quantization(network: &[SimpleLayer], input: &Array2<f32>) {
     compare_outputs(&full_precision_output, &output_bias);
 
     // Calculate memory footprint reduction
-    let fp32_weight_size = (layer0.weights.len()
+    let fp32_weightsize = (layer0.weights.len()
         + layer0.biases.len()
         + network[1].weights.len()
         + network[1].biases.len())
         * 4; // 4 bytes per f32
 
-    let mixed_weight_size = (layer0.weights.len() * layer_configs[0].0 as usize / 8) + // First layer weights
+    let mixed_weightsize = (layer0.weights.len() * layer_configs[0].0 as usize / 8) + // First layer weights
         (layer0.biases.len() * 8 / 8) + // First layer biases (8-bit)
         (network[1].weights.len() * layer_configs[1].0 as usize / 8) + // Second layer weights
         (network[1].biases.len() * 8 / 8); // Second layer biases (8-bit)
 
-    let memory_reduction = (1.0 - (mixed_weight_size as f32 / fp32_weight_size as f32)) * 100.0;
+    let memory_reduction = (1.0 - (mixed_weightsize as f32 / fp32_weightsize as f32)) * 100.0;
 
     println!("\nMemory footprint:");
-    println!("  Full precision: {} bytes", fp32_weight_size);
-    println!("  Mixed precision: {} bytes", mixed_weight_size);
+    println!("  Full precision: {} bytes", fp32_weightsize);
+    println!("  Mixed precision: {} bytes", mixed_weightsize);
     println!("  Reduction: {:.1}%", memory_reduction);
 }

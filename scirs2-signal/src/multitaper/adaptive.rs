@@ -1,4 +1,4 @@
-//! Adaptive multitaper spectral estimation.
+// Adaptive multitaper spectral estimation.
 
 use super::utils::compute_fft;
 use super::windows::dpss;
@@ -6,9 +6,11 @@ use crate::error::{SignalError, SignalResult};
 use ndarray::Array2;
 use num_complex::Complex64;
 use num_traits::{Float, NumCast};
-// PI is only used in doc examples
+use rand::Rng;
 use std::fmt::Debug;
 
+#[allow(unused_imports)]
+// PI is only used in doc examples
 /// Compute multitaper spectral density estimate with adaptively weighted spectra.
 ///
 /// This function uses the method of Thomson (1982) to adaptively weight the
@@ -32,7 +34,6 @@ use std::fmt::Debug;
 ///
 /// ```
 /// use scirs2_signal::multitaper::adaptive_psd;
-/// use std::f64::consts::PI;
 ///
 /// // Generate a test signal (sinusoid with noise)
 /// let n = 1024;
@@ -41,7 +42,7 @@ use std::fmt::Debug;
 /// use rand::Rng;
 /// let mut rng = rand::rng();
 /// let signal: Vec<f64> = t.iter()
-///     .map(|&ti| (2.0 * PI * 10.0 * ti).sin() + 0.1 * rng.random_range(0.0..1.0))
+///     .map(|&ti| (2.0 * PI * 10.0 * ti).sin() + 0.1 * rng.gen_range(0.0..1.0))
 ///     .collect();
 ///
 /// // Compute adaptive multitaper power spectral density
@@ -60,6 +61,7 @@ use std::fmt::Debug;
 /// assert!(psd.len() > 0);
 /// ```
 #[allow(clippy::too_many_arguments)]
+#[allow(dead_code)]
 pub fn adaptive_psd<T>(
     x: &[T],
     fs: Option<f64>,

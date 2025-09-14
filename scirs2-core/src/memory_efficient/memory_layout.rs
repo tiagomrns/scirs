@@ -17,7 +17,7 @@
 //! ## Example Usage
 //!
 //! ```rust
-//! use scirs2_core::memory_efficient::memory_layout::{
+//! use scirs2_core::memory_efficient::{
 //!     MemoryLayout, ArrayLayout, LayoutOrder
 //! };
 //!
@@ -28,7 +28,7 @@
 //! let f_layout = MemoryLayout::new_f_order(&[100, 200]);
 //!
 //! // Convert between layouts
-//! let converted = c_layout.to_order(LayoutOrder::Fortran)?;
+//! let converted = c_layout.to_order(LayoutOrder::Fortran).unwrap();
 //!
 //! // Check if layout is contiguous
 //! assert!(c_layout.is_c_contiguous());
@@ -72,7 +72,7 @@ impl LayoutOrder {
             "A" | "ANY" => Ok(LayoutOrder::Any),
             "K" | "KEEP" => Ok(LayoutOrder::Keep),
             _ => Err(CoreError::ValidationError(
-                ErrorContext::new(format!("Invalid layout order: {}", s))
+                ErrorContext::new(format!("Invalid layout order: {s}"))
                     .with_location(ErrorLocation::new(file!(), line!())),
             )),
         }
@@ -213,44 +213,44 @@ impl MemoryLayout {
     }
 
     /// Check if strides represent C-order
-    fn is_c_order(shape: &[usize], strides: &[isize], element_size: usize) -> bool {
+    fn is_c_order(shape: &[usize], strides: &[isize], elementsize: usize) -> bool {
         if shape.len() != strides.len() {
             return false;
         }
 
-        let expected_strides = Self::calculate_strides(shape, LayoutOrder::C, element_size);
+        let expected_strides = Self::calculate_strides(shape, LayoutOrder::C, elementsize);
         strides == expected_strides
     }
 
     /// Check if strides represent F-order
-    fn is_f_order(shape: &[usize], strides: &[isize], element_size: usize) -> bool {
+    fn is_f_order(shape: &[usize], strides: &[isize], elementsize: usize) -> bool {
         if shape.len() != strides.len() {
             return false;
         }
 
-        let expected_strides = Self::calculate_strides(shape, LayoutOrder::Fortran, element_size);
+        let expected_strides = Self::calculate_strides(shape, LayoutOrder::Fortran, elementsize);
         strides == expected_strides
     }
 
     /// Check if layout is contiguous
-    fn check_contiguous(shape: &[usize], strides: &[isize], element_size: usize) -> bool {
-        Self::is_c_order(shape, strides, element_size)
-            || Self::is_f_order(shape, strides, element_size)
+    fn check_contiguous(shape: &[usize], strides: &[isize], elementsize: usize) -> bool {
+        Self::is_c_order(shape, strides, elementsize)
+            || Self::is_f_order(shape, strides, elementsize)
     }
 
     /// Convert to different layout order
-    pub fn to_order(&self, new_order: LayoutOrder) -> CoreResult<Self> {
-        if new_order == LayoutOrder::Keep {
+    pub fn to_order(&self, neworder: LayoutOrder) -> CoreResult<Self> {
+        if neworder == LayoutOrder::Keep {
             return Ok(self.clone());
         }
 
-        if new_order == LayoutOrder::Any {
+        if neworder == LayoutOrder::Any {
             return Ok(self.clone());
         }
 
         Ok(Self::new_with_order(
             &self.shape,
-            new_order,
+            neworder,
             self.element_size,
             self.alignment,
         ))
@@ -274,8 +274,7 @@ impl MemoryLayout {
             if idx >= dim {
                 return Err(CoreError::IndexError(
                     ErrorContext::new(format!(
-                        "Index {} is out of bounds for axis {} with size {}",
-                        idx, i, dim
+                        "Index {idx} is out of bounds for axis {i} with size {dim}"
                     ))
                     .with_location(ErrorLocation::new(file!(), line!())),
                 ));
@@ -292,20 +291,19 @@ impl MemoryLayout {
     }
 
     /// Get multi-dimensional indices for linear index
-    pub fn multi_index(&self, linear_idx: usize) -> CoreResult<Vec<usize>> {
+    pub fn multi_indices(&self, linearidx: usize) -> CoreResult<Vec<usize>> {
         let total_elements = self.shape.iter().product::<usize>();
-        if linear_idx >= total_elements {
+        if linearidx >= total_elements {
             return Err(CoreError::IndexError(
                 ErrorContext::new(format!(
-                    "Linear index {} is out of bounds for array with {} elements",
-                    linear_idx, total_elements
+                    "Linear index {linearidx} is out of bounds for array with {total_elements} elements"
                 ))
                 .with_location(ErrorLocation::new(file!(), line!())),
             ));
         }
 
         let mut indices = vec![0; self.shape.len()];
-        let mut remaining = linear_idx;
+        let mut remaining = linearidx;
 
         match self.order {
             LayoutOrder::C => {
@@ -412,27 +410,27 @@ impl MemoryLayout {
         };
 
         // Create new shape and strides
-        let mut new_shape = vec![0; ndim];
+        let mut newshape = vec![0; ndim];
         let mut new_strides = vec![0; ndim];
 
         for (i, &axis) in axes.iter().enumerate() {
-            new_shape[i] = self.shape[axis];
+            newshape[i] = self.shape[axis];
             new_strides[i] = self.strides[axis];
         }
 
         // Determine new order
-        let new_order = if Self::is_c_order(&new_shape, &new_strides, self.element_size) {
+        let new_order = if Self::is_c_order(&newshape, &new_strides, self.element_size) {
             LayoutOrder::C
-        } else if Self::is_f_order(&new_shape, &new_strides, self.element_size) {
+        } else if Self::is_f_order(&newshape, &new_strides, self.element_size) {
             LayoutOrder::Fortran
         } else {
             LayoutOrder::Any
         };
 
-        let is_contiguous = Self::check_contiguous(&new_shape, &new_strides, self.element_size);
+        let is_contiguous = Self::check_contiguous(&newshape, &new_strides, self.element_size);
 
         Ok(Self {
-            shape: new_shape,
+            shape: newshape,
             strides: new_strides,
             element_size: self.element_size,
             total_size: self.total_size,
@@ -443,15 +441,14 @@ impl MemoryLayout {
     }
 
     /// Reshape the layout to new shape
-    pub fn reshape(&self, new_shape: &[usize]) -> CoreResult<Self> {
-        let new_size = new_shape.iter().product::<usize>();
+    pub fn reshape(&self, newshape: &[usize]) -> CoreResult<Self> {
+        let new_size = newshape.iter().product::<usize>();
         let old_size = self.size();
 
         if new_size != old_size {
             return Err(CoreError::ShapeError(
                 ErrorContext::new(format!(
-                    "Cannot reshape array of size {} into shape with size {}",
-                    old_size, new_size
+                    "Cannot reshape array of size {old_size} into shape with size {new_size}"
                 ))
                 .with_location(ErrorLocation::new(file!(), line!())),
             ));
@@ -465,7 +462,7 @@ impl MemoryLayout {
         };
 
         Ok(Self::new_with_order(
-            new_shape,
+            newshape,
             order,
             self.element_size,
             self.alignment,
@@ -473,37 +470,41 @@ impl MemoryLayout {
     }
 
     /// Create a view with different shape (without copying data)
-    pub fn view(&self, new_shape: &[usize], new_strides: Option<&[isize]>) -> CoreResult<Self> {
+    pub fn new_withshape_and_strides(
+        &self,
+        newshape: &[usize],
+        new_strides: Option<&[isize]>,
+    ) -> CoreResult<Self> {
         let strides = if let Some(strides) = new_strides {
-            if strides.len() != new_shape.len() {
+            if strides.len() != newshape.len() {
                 return Err(CoreError::ShapeError(
                     ErrorContext::new(format!(
                         "Strides length {} doesn't match shape length {}",
                         strides.len(),
-                        new_shape.len()
+                        newshape.len()
                     ))
                     .with_location(ErrorLocation::new(file!(), line!())),
                 ));
             }
             strides.to_vec()
         } else {
-            Self::calculate_strides(new_shape, self.order, self.element_size)
+            Self::calculate_strides(newshape, self.order, self.element_size)
         };
 
         // Determine order
-        let order = if Self::is_c_order(new_shape, &strides, self.element_size) {
+        let order = if Self::is_c_order(newshape, &strides, self.element_size) {
             LayoutOrder::C
-        } else if Self::is_f_order(new_shape, &strides, self.element_size) {
+        } else if Self::is_f_order(newshape, &strides, self.element_size) {
             LayoutOrder::Fortran
         } else {
             LayoutOrder::Any
         };
 
-        let is_contiguous = Self::check_contiguous(new_shape, &strides, self.element_size);
-        let total_size = new_shape.iter().product::<usize>() * self.element_size;
+        let is_contiguous = Self::check_contiguous(newshape, &strides, self.element_size);
+        let total_size = newshape.iter().product::<usize>() * self.element_size;
 
         Ok(Self {
-            shape: new_shape.to_vec(),
+            shape: newshape.to_vec(),
             strides,
             element_size: self.element_size,
             total_size,
@@ -585,7 +586,7 @@ impl ArrayLayout {
         }
 
         for i in 1..strides.len() {
-            if strides[i] < strides[i - 1] {
+            if strides[i] < strides[i.saturating_sub(1)] {
                 return false;
             }
         }
@@ -671,7 +672,7 @@ impl LayoutConverter {
             // Convert each element in the chunk
             #[allow(clippy::needless_range_loop)]
             for linear_idx in start..end {
-                let source_indices = source_layout.multi_index(linear_idx)?;
+                let source_indices = source_layout.multi_indices(linear_idx)?;
                 let target_linear_idx = target_layout.linear_index(&source_indices)?;
                 result[target_linear_idx] = data[linear_idx];
             }
@@ -731,13 +732,13 @@ impl ArrayCreation {
         match order {
             LayoutOrder::C => Array::from_shape_vec(shape, data).map_err(|e| {
                 CoreError::ShapeError(
-                    ErrorContext::new(format!("Shape error: {}", e))
+                    ErrorContext::new(format!("error: {e}"))
                         .with_location(ErrorLocation::new(file!(), line!())),
                 )
             }),
             LayoutOrder::Fortran => Array::from_shape_vec(shape.f(), data).map_err(|e| {
                 CoreError::ShapeError(
-                    ErrorContext::new(format!("Shape error: {}", e))
+                    ErrorContext::new(format!("error: {e}"))
                         .with_location(ErrorLocation::new(file!(), line!())),
                 )
             }),
@@ -834,13 +835,13 @@ mod tests {
     fn test_multi_indexing() {
         let layout = MemoryLayout::new_c_order(&[3, 4]);
 
-        assert_eq!(layout.multi_index(0).unwrap(), vec![0, 0]);
-        assert_eq!(layout.multi_index(1).unwrap(), vec![0, 1]);
-        assert_eq!(layout.multi_index(4).unwrap(), vec![1, 0]);
-        assert_eq!(layout.multi_index(11).unwrap(), vec![2, 3]);
+        assert_eq!(layout.multi_indices(0).unwrap(), vec![0, 0]);
+        assert_eq!(layout.multi_indices(1).unwrap(), vec![0, 1]);
+        assert_eq!(layout.multi_indices(4).unwrap(), vec![1, 0]);
+        assert_eq!(layout.multi_indices(11).unwrap(), vec![2, 3]);
 
         // Test bounds
-        assert!(layout.multi_index(12).is_err());
+        assert!(layout.multi_indices(12).is_err());
     }
 
     #[test]

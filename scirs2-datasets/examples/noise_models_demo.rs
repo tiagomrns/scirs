@@ -10,6 +10,7 @@ use scirs2_datasets::{
     make_time_series, MissingPattern, OutlierType,
 };
 
+#[allow(dead_code)]
 fn main() {
     println!("=== Realistic Noise Models Demonstration ===\n");
 
@@ -36,10 +37,11 @@ fn main() {
     println!("\n=== Noise Models Demo Complete ===================");
 }
 
+#[allow(dead_code)]
 fn demonstrate_missing_data_patterns() {
     println!("Testing different missing data patterns on a sample dataset:");
 
-    let original_data = Array2::from_shape_vec(
+    let originaldata = Array2::from_shape_vec(
         (8, 4),
         vec![
             1.0, 2.0, 3.0, 4.0, 2.0, 4.0, 6.0, 8.0, 3.0, 6.0, 9.0, 12.0, 4.0, 8.0, 12.0, 16.0, 5.0,
@@ -56,14 +58,14 @@ fn demonstrate_missing_data_patterns() {
     ];
 
     for (pattern, description) in patterns {
-        let mut test_data = original_data.clone();
-        let missing_mask = inject_missing_data(&mut test_data, 0.3, pattern, Some(42)).unwrap();
+        let mut testdata = originaldata.clone();
+        let missing_mask = inject_missing_data(&mut testdata, 0.3, pattern, Some(42)).unwrap();
 
         let missing_count = missing_mask.iter().filter(|&&x| x).count();
-        let total_elements = test_data.len();
+        let total_elements = testdata.len();
         let missing_percentage = (missing_count as f64 / total_elements as f64) * 100.0;
 
-        println!("{}:", description);
+        println!("{description}:");
         println!(
             "  Missing elements: {} / {} ({:.1}%)",
             missing_count, total_elements, missing_percentage
@@ -71,15 +73,15 @@ fn demonstrate_missing_data_patterns() {
 
         // Show pattern of missing data
         print!("  Pattern (X = missing): ");
-        for i in 0..test_data.nrows() {
-            for j in 0..test_data.ncols() {
+        for i in 0..testdata.nrows() {
+            for j in 0..testdata.ncols() {
                 if missing_mask[[i, j]] {
                     print!("X ");
                 } else {
                     print!(". ");
                 }
             }
-            if i < test_data.nrows() - 1 {
+            if i < testdata.nrows() - 1 {
                 print!("| ");
             }
         }
@@ -87,15 +89,16 @@ fn demonstrate_missing_data_patterns() {
     }
 }
 
+#[allow(dead_code)]
 fn demonstrate_outlier_injection() {
     println!("Testing different outlier types on a sample dataset:");
 
     // Create a clean dataset with known statistics
-    let mut clean_data = Array2::ones((20, 3));
+    let mut cleandata = Array2::ones((20, 3));
     // Add some structure
     for i in 0..20 {
         for j in 0..3 {
-            clean_data[[i, j]] = (i as f64 + j as f64) / 2.0;
+            cleandata[[i, j]] = (i as f64 + j as f64) / 2.0;
         }
     }
 
@@ -106,20 +109,20 @@ fn demonstrate_outlier_injection() {
     ];
 
     for (outlier_type, description) in outlier_types {
-        let mut test_data = clean_data.clone();
-        let original_stats = calculate_basic_stats(&test_data);
+        let mut testdata = cleandata.clone();
+        let original_stats = calculate_basic_stats(&testdata);
 
         let outlier_mask =
-            inject_outliers(&mut test_data, 0.2, outlier_type, 3.0, Some(42)).unwrap();
-        let corrupted_stats = calculate_basic_stats(&test_data);
+            inject_outliers(&mut testdata, 0.2, outlier_type, 3.0, Some(42)).unwrap();
+        let corrupted_stats = calculate_basic_stats(&testdata);
 
         let outlier_count = outlier_mask.iter().filter(|&&x| x).count();
 
-        println!("{}:", description);
+        println!("{description}:");
         println!(
             "  Outliers injected: {} / {} samples",
             outlier_count,
-            test_data.nrows()
+            testdata.nrows()
         );
         println!(
             "  Mean change: {:.3} -> {:.3} (Δ={:.3})",
@@ -145,6 +148,7 @@ fn demonstrate_outlier_injection() {
     }
 }
 
+#[allow(dead_code)]
 fn demonstrate_time_series_noise() {
     println!("Testing different time series noise types:");
 
@@ -161,7 +165,7 @@ fn demonstrate_time_series_noise() {
         vec![("gaussian", 0.1), ("spikes", 0.05), ("drift", 0.2)], // Combined noise
     ];
 
-    let noise_names = [
+    let noisenames = [
         "Gaussian White Noise",
         "Impulse Spikes",
         "Linear Drift",
@@ -171,14 +175,14 @@ fn demonstrate_time_series_noise() {
         "Combined Noise",
     ];
 
-    for (config, name) in noise_configs.iter().zip(noise_names.iter()) {
-        let mut noisy_data = clean_ts.data.clone();
-        let original_stats = calculate_basic_stats(&noisy_data);
+    for (config, name) in noise_configs.iter().zip(noisenames.iter()) {
+        let mut noisydata = clean_ts.data.clone();
+        let original_stats = calculate_basic_stats(&noisydata);
 
-        add_time_series_noise(&mut noisy_data, config, Some(42)).unwrap();
-        let noisy_stats = calculate_basic_stats(&noisy_data);
+        add_time_series_noise(&mut noisydata, config, Some(42)).unwrap();
+        let noisy_stats = calculate_basic_stats(&noisydata);
 
-        println!("{}:", name);
+        println!("{name}:");
         println!("  Mean: {:.3} -> {:.3}", original_stats.0, noisy_stats.0);
         println!("  Std: {:.3} -> {:.3}", original_stats.1, noisy_stats.1);
         println!(
@@ -188,6 +192,7 @@ fn demonstrate_time_series_noise() {
     }
 }
 
+#[allow(dead_code)]
 fn demonstrate_comprehensive_corruption() {
     println!("Testing comprehensive dataset corruption:");
 
@@ -231,28 +236,29 @@ fn demonstrate_comprehensive_corruption() {
         let usable_percentage =
             ((total_elements - missing_elements) as f64 / total_elements as f64) * 100.0;
 
-        println!("{}:", description);
+        println!("{description}:");
         println!("  Missing data: {:.1}%", missing_rate * 100.0);
         println!("  Outliers: {:.1}%", outlier_rate * 100.0);
         println!("  Usable data: {:.1}%", usable_percentage);
 
         // Show metadata
         if let Some(missing_count) = corrupted.metadata.get("missing_count") {
-            println!("  Actual missing: {} elements", missing_count);
+            println!("  Actual missing: {missing_count} elements");
         }
         if let Some(outlier_count) = corrupted.metadata.get("outlier_count") {
-            println!("  Actual outliers: {} samples", outlier_count);
+            println!("  Actual outliers: {outlier_count} samples");
         }
     }
 }
 
+#[allow(dead_code)]
 fn demonstrate_real_world_applications() {
     println!("Real-world application scenarios:");
 
     println!("\n1. **Medical Data Simulation**:");
-    let medical_data = load_iris().unwrap(); // Stand-in for medical measurements
+    let medicaldata = load_iris().unwrap(); // Stand-in for medical measurements
     let _corrupted_medical = make_corrupted_dataset(
-        &medical_data,
+        &medicaldata,
         0.15,                 // 15% missing - common in medical data
         MissingPattern::MNAR, // High values often missing (privacy, measurement issues)
         0.05,                 // 5% outliers - measurement errors
@@ -268,8 +274,8 @@ fn demonstrate_real_world_applications() {
     println!("    Use case: Testing imputation algorithms for clinical data");
 
     println!("\n2. **Sensor Network Simulation**:");
-    let sensor_data = make_time_series(200, 4, true, true, 0.1, Some(42)).unwrap();
-    let mut sensor_ts = sensor_data.data.clone();
+    let sensordata = make_time_series(200, 4, true, true, 0.1, Some(42)).unwrap();
+    let mut sensor_ts = sensordata.data.clone();
 
     // Add realistic sensor noise
     add_time_series_noise(
@@ -293,9 +299,9 @@ fn demonstrate_real_world_applications() {
     println!("    Use case: Testing robust time series algorithms");
 
     println!("\n3. **Survey Data Simulation**:");
-    let survey_data = load_iris().unwrap(); // Stand-in for survey responses
+    let surveydata = load_iris().unwrap(); // Stand-in for survey responses
     let _corrupted_survey = make_corrupted_dataset(
-        &survey_data,
+        &surveydata,
         0.25,                // 25% missing - typical for surveys
         MissingPattern::MAR, // Missing depends on other responses
         0.08,                // 8% outliers - data entry errors, extreme responses
@@ -334,6 +340,7 @@ fn demonstrate_real_world_applications() {
 }
 
 /// Calculate basic statistics for a 2D array
+#[allow(dead_code)]
 fn calculate_basic_stats(data: &Array2<f64>) -> (f64, f64, f64, f64) {
     let valid_values: Vec<f64> = data.iter().filter(|&&x| !x.is_nan()).cloned().collect();
 

@@ -6,6 +6,7 @@
 //! ```
 
 #[cfg(feature = "tensor_contraction")]
+#[allow(dead_code)]
 fn main() -> scirs2_linalg::error::LinalgResult<()> {
     use ndarray::array;
     use scirs2_linalg::tensor_contraction::cp::{cp_als, CanonicalPolyadic};
@@ -165,6 +166,7 @@ fn main() -> scirs2_linalg::error::LinalgResult<()> {
 }
 
 #[cfg(not(feature = "tensor_contraction"))]
+#[allow(dead_code)]
 fn main() {
     println!("This example requires the 'tensor_contraction' feature.");
     println!("Please run with: cargo run --example cp_decomposition_example --features tensor_contraction");

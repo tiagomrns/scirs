@@ -111,7 +111,7 @@ pub struct UnitDefinition {
     /// Offset for non-linear conversions (e.g., temperature)
     pub si_offset: f64,
     /// Whether this is a base unit in its system
-    pub is_base: bool,
+    pub isbase: bool,
 }
 
 impl UnitDefinition {
@@ -123,7 +123,7 @@ impl UnitDefinition {
         system: UnitSystem,
         si_factor: f64,
         si_offset: f64,
-        is_base: bool,
+        isbase: bool,
     ) -> Self {
         Self {
             name,
@@ -132,7 +132,7 @@ impl UnitDefinition {
             system,
             si_factor,
             si_offset,
-            is_base,
+            isbase,
         }
     }
 
@@ -240,19 +240,19 @@ impl UnitRegistry {
     }
 
     /// Convert a value from one unit to another
-    pub fn convert(&self, value: f64, from_unit: &str, to_unit: &str) -> CoreResult<f64> {
+    pub fn convert(&self, value: f64, from_unit: &str, tounit: &str) -> CoreResult<f64> {
         let from = self.get_unit(from_unit).ok_or_else(|| {
             CoreError::InvalidArgument(ErrorContext::new(format!("Unknown unit: {from_unit}")))
         })?;
 
-        let to = self.get_unit(to_unit).ok_or_else(|| {
-            CoreError::InvalidArgument(ErrorContext::new(format!("Unknown unit: {to_unit}")))
+        let to = self.get_unit(tounit).ok_or_else(|| {
+            CoreError::InvalidArgument(ErrorContext::new(format!("Unknown unit: {tounit}")))
         })?;
 
         if from.dimension != to.dimension {
             return Err(CoreError::InvalidArgument(ErrorContext::new(format!(
                 "Cannot convert {} ({}) to {} ({}): incompatible dimensions",
-                from_unit, from.dimension, to_unit, to.dimension
+                from_unit, from.dimension, tounit, to.dimension
             ))));
         }
 
@@ -264,12 +264,12 @@ impl UnitRegistry {
     }
 
     /// Convert a UnitValue to a different unit
-    pub fn convert_value<T>(&self, value: &UnitValue<T>, to_unit: &str) -> CoreResult<UnitValue<T>>
+    pub fn convert_value<T>(&self, value: &UnitValue<T>, tounit: &str) -> CoreResult<UnitValue<T>>
     where
         T: ScientificNumber + TryFrom<f64>,
         f64: From<T>,
     {
-        let converted_f64 = self.convert(value.value.into(), &value.unit, to_unit)?;
+        let converted_f64 = self.convert(value.value.into(), &value.unit, tounit)?;
 
         let converted_value = T::try_from(converted_f64).map_err(|_| {
             CoreError::TypeError(ErrorContext::new(
@@ -277,7 +277,7 @@ impl UnitRegistry {
             ))
         })?;
 
-        Ok(UnitValue::new(converted_value, to_unit.to_string()))
+        Ok(UnitValue::new(converted_value, tounit.to_string()))
     }
 
     /// Get all units for a given dimension
@@ -722,21 +722,24 @@ static GLOBAL_UNIT_REGISTRY: std::sync::LazyLock<std::sync::RwLock<UnitRegistry>
     std::sync::LazyLock::new(|| std::sync::RwLock::new(UnitRegistry::new()));
 
 /// Get the global unit registry
+#[allow(dead_code)]
 pub fn global_unit_registry() -> &'static std::sync::RwLock<UnitRegistry> {
     &GLOBAL_UNIT_REGISTRY
 }
 
 /// Convert a value between units using the global registry
-pub fn convert(value: f64, from_unit: &str, to_unit: &str) -> CoreResult<f64> {
+#[allow(dead_code)]
+pub fn convert(value: f64, from_unit: &str, tounit: &str) -> CoreResult<f64> {
     let registry = global_unit_registry().read().map_err(|_| {
         CoreError::ComputationError(ErrorContext::new(
             "Failed to acquire read lock on unit registry",
         ))
     })?;
-    registry.convert(value, from_unit, to_unit)
+    registry.convert(value, from_unit, tounit)
 }
 
 /// Create a UnitValue
+#[allow(dead_code)]
 pub fn unit_value<T: ScientificNumber>(value: T, unit: &str) -> UnitValue<T> {
     UnitValue::new(value, unit.to_string())
 }
@@ -770,20 +773,20 @@ pub mod conversions {
         feet * 0.3048
     }
 
-    pub fn inches_to_centimeters(inches: f64) -> f64 {
+    pub fn inches_to_cm(inches: f64) -> f64 {
         inches * 2.54
     }
 
-    pub fn centimeters_to_inches(cm: f64) -> f64 {
+    pub fn cm_to_inches(cm: f64) -> f64 {
         cm / 2.54
     }
 
     /// Mass conversions
-    pub fn kilograms_to_pounds(kg: f64) -> f64 {
+    pub fn kg_to_lbs(kg: f64) -> f64 {
         kg / 0.453_592_37
     }
 
-    pub fn pounds_to_kilograms(lbs: f64) -> f64 {
+    pub fn lbs_to_kg(lbs: f64) -> f64 {
         lbs * 0.453_592_37
     }
 
@@ -914,7 +917,7 @@ mod tests {
         assert_eq!(value.value(), 5.0);
         assert_eq!(value.unit(), "m");
 
-        let formatted = format!("{}", value);
+        let formatted = format!("{value}");
         assert!(formatted.contains("5"));
         assert!(formatted.contains("m"));
     }

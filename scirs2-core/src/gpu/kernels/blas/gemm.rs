@@ -65,28 +65,28 @@ impl GemmKernel {
                 workgroup_size: [16, 16, 1],
                 local_memory_usage: 8192, // 8 KB
                 supports_tensor_cores: false,
-                operation_type: OperationType::ComputeIntensive,
+                operationtype: OperationType::ComputeIntensive,
                 backend_metadata: HashMap::new(),
             },
             GemmImpl::Large => KernelMetadata {
                 workgroup_size: [32, 32, 1],
                 local_memory_usage: 32768, // 32 KB
                 supports_tensor_cores: false,
-                operation_type: OperationType::ComputeIntensive,
+                operationtype: OperationType::ComputeIntensive,
                 backend_metadata: HashMap::new(),
             },
             GemmImpl::Small => KernelMetadata {
                 workgroup_size: [8, 8, 1],
                 local_memory_usage: 2048, // 2 KB
                 supports_tensor_cores: false,
-                operation_type: OperationType::ComputeIntensive,
+                operationtype: OperationType::ComputeIntensive,
                 backend_metadata: HashMap::new(),
             },
             GemmImpl::TensorCore => KernelMetadata {
                 workgroup_size: [16, 16, 1],
                 local_memory_usage: 8192, // 8 KB
                 supports_tensor_cores: true,
-                operation_type: OperationType::ComputeIntensive,
+                operationtype: OperationType::ComputeIntensive,
                 backend_metadata: HashMap::new(),
             },
         };
@@ -109,7 +109,7 @@ impl GemmKernel {
     }
 
     /// Create a GEMM kernel with specific alpha and beta values
-    pub fn with_alpha_beta(_alpha: f32, _beta: f32) -> Box<dyn GpuKernel> {
+    pub fn with_alpha_beta(_alpha: f32, beta: f32) -> Box<dyn GpuKernel> {
         let kernel = Self::new();
 
         // Generate specialized kernel sources with hard-coded alpha/beta values
@@ -122,7 +122,7 @@ impl GemmKernel {
     fn get_sources_for_implementation(
         implementation: GemmImpl,
     ) -> (String, String, String, String, String, String) {
-        let name = format!("gemm_{}", implementation);
+        let name = format!("{implementation}");
 
         // In a real implementation, we would have different optimized kernel sources
         // for each backend and implementation type. Here we'll use the same source for simplicity.
@@ -246,6 +246,7 @@ var<workgroup> As: array<array<f32, 16>, 16>;
 var<workgroup> Bs: array<array<f32, 16>, 16>;
 
 @compute @workgroup_size(16, 16)
+#[allow(dead_code)]
 fn gemm_standard(@builtin(global_invocation_id) global_id: vec3<u32>,
                  @builtin(workgroup_id) workgroup_id: vec3<u32>,
                  @builtin(local_invocation_id) local_id: vec3<u32>) {
@@ -463,15 +464,14 @@ __kernel void gemm_standard(
     }
 
     /// Generate a specialized kernel for the given dimensions
-    fn generate_specialized_kernel(
-        &self,
-        data_type: DataType,
+    fn generate_kernel(
+        datatype: DataType,
         m: usize,
         n: usize,
         k: usize,
     ) -> Result<GemmKernel, GpuError> {
         // Select appropriate implementation based on matrix dimensions
-        let implementation = if data_type == DataType::Float16 || data_type == DataType::BFloat16 {
+        let implementation = if datatype == DataType::Float16 || datatype == DataType::BFloat16 {
             // Use tensor core implementation for half-precision types when possible
             GemmImpl::TensorCore
         } else if m >= 1024 && n >= 1024 && k >= 1024 {
@@ -504,7 +504,7 @@ impl GpuKernel for GemmKernel {
 
     fn can_specialize(&self, params: &KernelParams) -> bool {
         // Check if we can specialize for these parameters
-        match params.data_type {
+        match params.datatype {
             DataType::Float32 | DataType::Float64 | DataType::Float16 | DataType::BFloat16 => {
                 params.input_dims.len() >= 2 && params.output_dims.len() >= 2
             }
@@ -523,7 +523,7 @@ impl GpuKernel for GemmKernel {
         let n = params.output_dims.get(1).copied().unwrap_or(0);
 
         // Generate specialized kernel
-        let specialized = self.generate_specialized_kernel(params.data_type, m, n, k)?;
+        let specialized = Self::generate_kernel(params.datatype, m, n, k)?;
 
         Ok(Box::new(specialized))
     }

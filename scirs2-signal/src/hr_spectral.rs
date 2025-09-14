@@ -1,20 +1,21 @@
-//! High-resolution spectral estimation algorithms
-//!
-//! This module implements advanced spectral estimation methods that provide
-//! superior frequency resolution compared to traditional periodogram-based approaches.
-//! These methods are particularly effective for analyzing sinusoidal signals in noise
-//! and can resolve closely spaced frequency components.
+use ndarray::s;
+// High-resolution spectral estimation algorithms
+//
+// This module implements advanced spectral estimation methods that provide
+// superior frequency resolution compared to traditional periodogram-based approaches.
+// These methods are particularly effective for analyzing sinusoidal signals in noise
+// and can resolve closely spaced frequency components.
 
 use crate::error::{SignalError, SignalResult};
-use ndarray::{s, Array1, Array2, ArrayView1, Axis};
-// use ndarray_linalg::{Eig, Inverse};
+use ndarray::{Array1, Array2, ArrayView1, Axis};
 use num_complex::Complex64;
 use num_traits::Zero;
 use scirs2_linalg::complex::complex_inverse;
 use scirs2_linalg::complex::decompositions::{complex_eig, complex_eigh};
 use scirs2_linalg::solve as compute_solve;
-use std::f64::consts::PI;
 
+#[allow(unused_imports)]
+// use ndarray__linalg::{Eig, Inverse};
 /// Configuration for high-resolution spectral estimation
 #[derive(Debug, Clone)]
 pub struct HrSpectralConfig {
@@ -82,6 +83,7 @@ pub struct HrSpectralResult {
 /// # Returns
 ///
 /// * High-resolution spectral estimate using MUSIC algorithm
+#[allow(dead_code)]
 pub fn music(data: &Array2<f64>, config: &HrSpectralConfig) -> SignalResult<HrSpectralResult> {
     let (n_samples, n_snapshots) = data.dim();
 
@@ -99,7 +101,7 @@ pub fn music(data: &Array2<f64>, config: &HrSpectralConfig) -> SignalResult<HrSp
 
     // Eigendecomposition - use eigh since correlation matrix is Hermitian
     let eig_result = complex_eigh(&correlation_matrix.view())
-        .map_err(|e| SignalError::Compute(format!("Eigendecomposition failed: {}", e)))?;
+        .map_err(|e| SignalError::ComputationError(format!("Eigendecomposition failed: {}", e)))?;
     let eigenvalues = eig_result.eigenvalues;
     let eigenvectors = eig_result.eigenvectors;
 
@@ -124,14 +126,14 @@ pub fn music(data: &Array2<f64>, config: &HrSpectralConfig) -> SignalResult<HrSp
             .flat_map(|(_, vec)| vec.iter().cloned())
             .collect(),
     )
-    .map_err(|_| SignalError::Compute("Failed to construct noise subspace".to_string()))?;
+    .map_err(|_| SignalError::ComputationError("Failed to construct noise subspace".to_string()))?;
 
     // Compute MUSIC pseudospectrum
     let frequencies = create_frequency_grid(config);
     let spectrum = compute_music_spectrum(&noise_eigenvectors, &frequencies)?;
 
     // Extract eigenvalues for result
-    let eigenvals: Array1<f64> = eigen_pairs.iter().map(|(val, _)| *val).collect();
+    let eigenvals: Array1<f64> = eigen_pairs.iter().map(|(val)| *val).collect();
 
     Ok(HrSpectralResult {
         frequencies,
@@ -152,8 +154,9 @@ pub fn music(data: &Array2<f64>, config: &HrSpectralConfig) -> SignalResult<HrSp
 /// # Returns
 ///
 /// * High-resolution spectral estimate using ESPRIT algorithm
+#[allow(dead_code)]
 pub fn esprit(data: &Array2<f64>, config: &HrSpectralConfig) -> SignalResult<HrSpectralResult> {
-    let (n_samples, _n_snapshots) = data.dim();
+    let (n_samples, n_snapshots) = data.dim();
 
     if n_samples < 2 {
         return Err(SignalError::ValueError(
@@ -169,7 +172,7 @@ pub fn esprit(data: &Array2<f64>, config: &HrSpectralConfig) -> SignalResult<HrS
 
     // Eigendecomposition - use eigh since correlation matrix is Hermitian
     let eig_result = complex_eigh(&correlation_matrix.view())
-        .map_err(|e| SignalError::Compute(format!("Eigendecomposition failed: {}", e)))?;
+        .map_err(|e| SignalError::ComputationError(format!("Eigendecomposition failed: {}", e)))?;
     let eigenvalues = eig_result.eigenvalues;
     let eigenvectors = eig_result.eigenvectors;
 
@@ -200,7 +203,9 @@ pub fn esprit(data: &Array2<f64>, config: &HrSpectralConfig) -> SignalResult<HrS
             .flat_map(|(_, vec)| vec.iter().cloned())
             .collect(),
     )
-    .map_err(|_| SignalError::Compute("Failed to construct signal subspace".to_string()))?;
+    .map_err(|_| {
+        SignalError::ComputationError("Failed to construct signal subspace".to_string())
+    })?;
 
     // Create subarray matrices for ESPRIT
     let s1 = signal_eigenvectors
@@ -213,7 +218,7 @@ pub fn esprit(data: &Array2<f64>, config: &HrSpectralConfig) -> SignalResult<HrS
 
     // Extract frequencies from eigenvalues of Phi
     let eig_result = complex_eig(&phi_matrix.view())
-        .map_err(|e| SignalError::Compute(format!("Eigendecomposition failed: {}", e)))?;
+        .map_err(|e| SignalError::ComputationError(format!("Eigendecomposition failed: {}", e)))?;
     let phi_eigenvalues = eig_result.eigenvalues;
     let mut source_freqs: Vec<f64> = phi_eigenvalues
         .iter()
@@ -232,7 +237,7 @@ pub fn esprit(data: &Array2<f64>, config: &HrSpectralConfig) -> SignalResult<HrS
     let frequencies = create_frequency_grid(config);
     let spectrum = create_line_spectrum(&frequencies, &source_freqs)?;
 
-    let eigenvals: Array1<f64> = eigen_pairs.iter().map(|(val, _)| *val).collect();
+    let eigenvals: Array1<f64> = eigen_pairs.iter().map(|(val)| *val).collect();
 
     Ok(HrSpectralResult {
         frequencies,
@@ -253,6 +258,7 @@ pub fn esprit(data: &Array2<f64>, config: &HrSpectralConfig) -> SignalResult<HrS
 /// # Returns
 ///
 /// * High-resolution spectral estimate using MVDR method
+#[allow(dead_code)]
 pub fn minimum_variance(
     data: &Array2<f64>,
     config: &HrSpectralConfig,
@@ -272,8 +278,9 @@ pub fn minimum_variance(
     }
 
     // Invert correlation matrix
-    let inv_correlation = complex_inverse(&regularized_matrix.view())
-        .map_err(|_| SignalError::Compute("Failed to invert correlation matrix".to_string()))?;
+    let inv_correlation = complex_inverse(&regularized_matrix.view()).map_err(|_| {
+        SignalError::ComputationError("Failed to invert correlation matrix".to_string())
+    })?;
 
     // Compute MVDR spectrum
     let frequencies = create_frequency_grid(config);
@@ -281,7 +288,7 @@ pub fn minimum_variance(
 
     // Get eigenvalues for diagnostic purposes
     let eig_result = complex_eigh(&correlation_matrix.view())
-        .map_err(|e| SignalError::Compute(format!("Eigendecomposition failed: {}", e)))?;
+        .map_err(|e| SignalError::ComputationError(format!("Eigendecomposition failed: {}", e)))?;
     let eigenvalues = eig_result.eigenvalues;
     let eigenvals: Array1<f64> = eigenvalues.iter().map(|&val| val.norm()).collect();
 
@@ -305,6 +312,7 @@ pub fn minimum_variance(
 /// # Returns
 ///
 /// * High-resolution spectral estimate using Pisarenko method
+#[allow(dead_code)]
 pub fn pisarenko(
     data: &Array1<f64>,
     order: usize,
@@ -323,7 +331,7 @@ pub fn pisarenko(
 
     // Eigendecomposition
     let eig_result = complex_eigh(&autocorr_matrix.view())
-        .map_err(|e| SignalError::Compute(format!("Eigendecomposition failed: {}", e)))?;
+        .map_err(|e| SignalError::ComputationError(format!("Eigendecomposition failed: {}", e)))?;
     let eigenvalues = eig_result.eigenvalues;
     let eigenvectors = eig_result.eigenvectors;
 
@@ -382,6 +390,7 @@ pub fn pisarenko(
 /// # Returns
 ///
 /// * Parameters of exponential model and spectral estimate
+#[allow(dead_code)]
 pub fn prony(
     data: &Array1<f64>,
     order: usize,
@@ -450,6 +459,7 @@ pub fn prony(
 // Helper functions
 
 /// Estimate correlation matrix from data
+#[allow(dead_code)]
 fn estimate_correlation_matrix(data: &Array2<Complex64>) -> SignalResult<Array2<Complex64>> {
     let (n_samples, n_snapshots) = data.dim();
     let mut correlation = Array2::zeros((n_samples, n_samples));
@@ -474,6 +484,7 @@ fn estimate_correlation_matrix(data: &Array2<Complex64>) -> SignalResult<Array2<
 }
 
 /// Determine signal subspace dimension from eigenvalues
+#[allow(dead_code)]
 fn determine_signal_dimension(
     eigen_pairs: &[(f64, ArrayView1<Complex64>)],
     config: &HrSpectralConfig,
@@ -483,7 +494,7 @@ fn determine_signal_dimension(
     }
 
     // Automatic detection based on eigenvalue drop
-    let eigenvalues: Vec<f64> = eigen_pairs.iter().map(|(val, _)| *val).collect();
+    let eigenvalues: Vec<f64> = eigen_pairs.iter().map(|(val)| *val).collect();
 
     if eigenvalues.is_empty() {
         return Ok(0);
@@ -502,12 +513,14 @@ fn determine_signal_dimension(
 }
 
 /// Create frequency grid for spectrum evaluation
+#[allow(dead_code)]
 fn create_frequency_grid(config: &HrSpectralConfig) -> Array1<f64> {
     let [start, end] = config.freq_range;
     Array1::linspace(start, end, config.num_freqs)
 }
 
 /// Compute MUSIC pseudospectrum
+#[allow(dead_code)]
 fn compute_music_spectrum(
     noise_eigenvectors: &Array2<Complex64>,
     frequencies: &Array1<f64>,
@@ -545,6 +558,7 @@ fn compute_music_spectrum(
 }
 
 /// Compute MVDR spectrum
+#[allow(dead_code)]
 fn compute_mvdr_spectrum(
     inv_correlation: &Array2<Complex64>,
     frequencies: &Array1<f64>,
@@ -579,6 +593,7 @@ fn compute_mvdr_spectrum(
 }
 
 /// Solve ESPRIT equation S2 = S1 * Phi
+#[allow(dead_code)]
 fn solve_esprit_equation(
     s1: &Array2<Complex64>,
     s2: &Array2<Complex64>,
@@ -588,13 +603,15 @@ fn solve_esprit_equation(
     let s1h_s1 = s1_hermitian.dot(s1);
     let s1h_s2 = s1_hermitian.dot(s2);
 
-    let inv_s1h_s1 = complex_inverse(&s1h_s1.view())
-        .map_err(|_| SignalError::Compute("Failed to invert matrix in ESPRIT".to_string()))?;
+    let inv_s1h_s1 = complex_inverse(&s1h_s1.view()).map_err(|_| {
+        SignalError::ComputationError("Failed to invert matrix in ESPRIT".to_string())
+    })?;
 
     Ok(inv_s1h_s1.dot(&s1h_s2))
 }
 
 /// Create line spectrum from estimated frequencies
+#[allow(dead_code)]
 fn create_line_spectrum(
     frequency_grid: &Array1<f64>,
     source_frequencies: &[f64],
@@ -602,7 +619,7 @@ fn create_line_spectrum(
     let mut spectrum = Array1::zeros(frequency_grid.len());
 
     for &source_freq in source_frequencies {
-        // Find closest frequency in grid
+        // Find closest frequency in _grid
         let closest_idx = frequency_grid
             .iter()
             .enumerate()
@@ -621,6 +638,7 @@ fn create_line_spectrum(
 }
 
 /// Create autocorrelation matrix
+#[allow(dead_code)]
 fn create_autocorrelation_matrix(
     data: &Array1<f64>,
     order: usize,
@@ -658,52 +676,86 @@ fn create_autocorrelation_matrix(
 }
 
 /// Find roots of polynomial (simplified implementation)
+#[allow(dead_code)]
 fn find_polynomial_roots(coeffs: &[Complex64]) -> SignalResult<Vec<Complex64>> {
     let n = coeffs.len() - 1;
 
     if n == 0 {
         return Ok(vec![]);
-    } else if n == 1 {
+    }
+
+    // Check for degenerate cases
+    if coeffs.iter().all(|&c| c.norm() < 1e-12) {
+        // All coefficients are zero
+        return Ok(vec![]);
+    }
+
+    // Normalize coefficients to avoid numerical issues
+    let max_coeff = coeffs.iter().map(|c| c.norm()).fold(0.0, f64::max);
+    let normalized_coeffs: Vec<Complex64> = coeffs.iter().map(|&c| c / max_coeff).collect();
+
+    // Find the first non-zero coefficient (leading coefficient)
+    let first_nonzero = normalized_coeffs.iter().position(|&c| c.norm() > 1e-12);
+
+    if first_nonzero.is_none() {
+        return Ok(vec![]);
+    }
+
+    let first_idx = first_nonzero.unwrap();
+    let effective_coeffs = &normalized_coeffs[first_idx..];
+    let effective_n = effective_coeffs.len() - 1;
+
+    if effective_n == 0 {
+        return Ok(vec![]);
+    } else if effective_n == 1 {
         // Linear case: ax + b = 0 => x = -b/a
-        if coeffs[0].norm() > 1e-12 {
-            return Ok(vec![-coeffs[1] / coeffs[0]]);
+        if effective_coeffs[0].norm() > 1e-12 {
+            return Ok(vec![-effective_coeffs[1] / effective_coeffs[0]]);
         } else {
             return Ok(vec![]);
         }
     }
 
     // For higher order polynomials, use companion matrix method
-    let mut companion = Array2::zeros((n, n));
+    let mut companion = Array2::zeros((effective_n, effective_n));
 
     // Fill companion matrix
-    for i in 0..(n - 1) {
+    for i in 0..(effective_n - 1) {
         companion[[i + 1, i]] = Complex64::new(1.0, 0.0);
     }
 
-    for i in 0..n {
-        companion[[i, n - 1]] = -coeffs[n - i] / coeffs[0];
+    // Handle potential division by small leading coefficient
+    let leading_coeff = effective_coeffs[0];
+    if leading_coeff.norm() < 1e-12 {
+        // Try alternative formulation
+        return Ok(vec![]);
+    }
+
+    for i in 0..effective_n {
+        companion[[i, effective_n - 1]] = -effective_coeffs[effective_n - i] / leading_coeff;
     }
 
     // Find eigenvalues of companion matrix
-    let eig_result = complex_eig(&companion.view())
-        .map_err(|_| SignalError::Compute("Failed to find polynomial roots".to_string()))?;
+    let eig_result = complex_eig(&companion.view()).map_err(|_| {
+        SignalError::ComputationError("Failed to find polynomial roots".to_string())
+    })?;
     let eigenvalues = eig_result.eigenvalues;
 
     Ok(eigenvalues.to_vec())
 }
 
 /// Solve linear system Ax = b
+#[allow(dead_code)]
 fn solve_linear_system(a: &Array2<f64>, b: &Array1<f64>) -> SignalResult<Array1<f64>> {
     // Use scirs2_linalg solve
     compute_solve(&a.view(), &b.view(), None)
-        .map_err(|_| SignalError::Compute("Failed to solve linear system".to_string()))
+        .map_err(|_| SignalError::ComputationError("Failed to solve linear system".to_string()))
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
     use approx::assert_relative_eq;
-
     #[test]
     fn test_music_basic() {
         // Create test signal with two sinusoids
@@ -757,7 +809,6 @@ mod tests {
     }
 
     #[test]
-    #[ignore] // TODO: Fix polynomial root finding for degenerate cases
     fn test_pisarenko() {
         // Create test signal with single sinusoid
         let n_samples = 64;
@@ -773,6 +824,15 @@ mod tests {
         assert_eq!(result.frequencies.len(), config.num_freqs);
         assert_eq!(result.spectrum.len(), config.num_freqs);
         assert!(result.source_frequencies.is_some());
+
+        // Check that source frequencies were found
+        if let Some(ref source_freqs) = result.source_frequencies {
+            // Should find at least one frequency near 0.1
+            let found_freq = source_freqs
+                .iter()
+                .any(|&f| (f - freq).abs() < 0.05 || (f - (1.0 - freq)).abs() < 0.05);
+            assert!(found_freq, "Expected to find frequency near {}", freq);
+        }
     }
 
     #[test]

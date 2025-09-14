@@ -13,6 +13,7 @@ macro_rules! benchmark {
     }};
 }
 
+#[allow(dead_code)]
 fn main() {
     println!("=== scirs2-autograd Linear Algebra Performance Benchmark ===\n");
 

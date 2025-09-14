@@ -6,7 +6,7 @@ use std::fmt::Debug;
 
 use super::utils::{interpolate_linear, interpolate_nearest};
 use super::{BoundaryMode, InterpolationOrder};
-use crate::error::{NdimageError, Result};
+use crate::error::{NdimageError, NdimageResult};
 
 /// Zoom an array using interpolation
 ///
@@ -22,6 +22,7 @@ use crate::error::{NdimageError, Result};
 /// # Returns
 ///
 /// * `Result<Array<T, D>>` - Zoomed array
+#[allow(dead_code)]
 pub fn zoom<T, D>(
     input: &Array<T, D>,
     zoom_factor: T,
@@ -29,10 +30,10 @@ pub fn zoom<T, D>(
     mode: Option<BoundaryMode>,
     cval: Option<T>,
     prefilter: Option<bool>,
-) -> Result<Array<T, D>>
+) -> NdimageResult<Array<T, D>>
 where
-    T: Float + FromPrimitive + Debug,
-    D: Dimension,
+    T: Float + FromPrimitive + Debug + std::ops::AddAssign + std::ops::DivAssign + 'static,
+    D: Dimension + 'static,
 {
     // Validate inputs
     if input.ndim() == 0 {
@@ -43,7 +44,7 @@ where
 
     if zoom_factor <= T::zero() {
         return Err(NdimageError::InvalidInput(format!(
-            "Zoom factor must be positive, got {:?}",
+            "Zoom _factor must be positive, got {:?}",
             zoom_factor
         )));
     }
@@ -53,9 +54,9 @@ where
     let const_val = cval.unwrap_or_else(|| T::zero());
     let _prefilter_input = prefilter.unwrap_or(true);
 
-    // Calculate output shape - each dimension scaled by zoom factor
-    let input_shape = input.shape();
-    let output_shape: Vec<usize> = input_shape
+    // Calculate output shape - each dimension scaled by zoom _factor
+    let inputshape = input.shape();
+    let outputshape: Vec<usize> = inputshape
         .iter()
         .map(|&dim| {
             let new_dim = T::from_usize(dim).unwrap_or_else(|| T::one()) * zoom_factor;
@@ -64,7 +65,7 @@ where
         .collect();
 
     // Create output array with calculated shape
-    let output = Array::zeros(ndarray::IxDyn(&output_shape));
+    let output = Array::zeros(ndarray::IxDyn(&outputshape));
 
     // Convert input to dynamic for easier indexing
     let input_dyn = input.clone().into_dyn();
@@ -81,7 +82,7 @@ where
             .as_array_view()
             .iter()
             .map(|&out_coord| {
-                // Scale back by zoom factor to get input coordinate
+                // Scale back by zoom _factor to get input coordinate
                 T::from_usize(out_coord).unwrap_or_else(|| T::zero()) / zoom_factor
             })
             .collect();
@@ -123,6 +124,7 @@ where
 /// # Returns
 ///
 /// * `Result<Array<T, D>>` - Shifted array
+#[allow(dead_code)]
 pub fn shift<T, D>(
     input: &Array<T, D>,
     shift: &[T],
@@ -130,10 +132,10 @@ pub fn shift<T, D>(
     mode: Option<BoundaryMode>,
     cval: Option<T>,
     prefilter: Option<bool>,
-) -> Result<Array<T, D>>
+) -> NdimageResult<Array<T, D>>
 where
-    T: Float + FromPrimitive + Debug,
-    D: Dimension,
+    T: Float + FromPrimitive + Debug + std::ops::AddAssign + std::ops::DivAssign + 'static,
+    D: Dimension + 'static,
 {
     // Validate inputs
     if input.ndim() == 0 {
@@ -222,6 +224,7 @@ where
 ///
 /// * `Result<Array<T, D>>` - Rotated array
 #[allow(clippy::too_many_arguments)] // Necessary to match SciPy's API signature
+#[allow(dead_code)]
 pub fn rotate<T, D>(
     input: &Array<T, D>,
     angle: T,
@@ -231,10 +234,10 @@ pub fn rotate<T, D>(
     mode: Option<BoundaryMode>,
     cval: Option<T>,
     prefilter: Option<bool>,
-) -> Result<Array<T, D>>
+) -> NdimageResult<Array<T, D>>
 where
-    T: Float + FromPrimitive + Debug,
-    D: Dimension,
+    T: Float + FromPrimitive + Debug + std::ops::AddAssign + std::ops::DivAssign + 'static,
+    D: Dimension + 'static,
 {
     // Validate inputs
     if input.ndim() < 2 {
@@ -272,11 +275,11 @@ where
     let input_dyn = input.clone().into_dyn();
 
     // Get input shape and calculate center
-    let input_shape = input.shape();
+    let inputshape = input.shape();
     let center1 =
-        T::from_usize(input_shape[axis1]).unwrap_or_else(|| T::one()) / (T::one() + T::one());
+        T::from_usize(inputshape[axis1]).unwrap_or_else(|| T::one()) / (T::one() + T::one());
     let center2 =
-        T::from_usize(input_shape[axis2]).unwrap_or_else(|| T::one()) / (T::one() + T::one());
+        T::from_usize(inputshape[axis2]).unwrap_or_else(|| T::one()) / (T::one() + T::one());
 
     // For each output pixel, calculate corresponding input coordinates
     for (output_idx, output_val) in result_dyn.indexed_iter_mut() {

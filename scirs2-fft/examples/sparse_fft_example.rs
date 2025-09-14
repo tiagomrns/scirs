@@ -7,6 +7,7 @@ use scirs2_fft::{
 };
 use std::f64::consts::PI;
 
+#[allow(dead_code)]
 fn main() {
     println!("Sparse FFT Example");
     println!("==================\n");
@@ -260,12 +261,18 @@ fn main() {
 
     // 8. Create visualization
     println!("\nCreating visualization...");
-    create_plots(&signal, &full_magnitudes, &pruning_result);
+    create_plots(
+        &signal,
+        &full_magnitudes,
+        &pruning_result,
+        &sparse_2d_result,
+    );
 
     println!("\nExample completed successfully!");
 }
 
 // Helper function to create a sparse signal
+#[allow(dead_code)]
 fn create_sparse_signal(n: usize, frequencies: &[(usize, f64)]) -> Vec<f64> {
     let mut signal = vec![0.0; n];
 
@@ -280,6 +287,7 @@ fn create_sparse_signal(n: usize, frequencies: &[(usize, f64)]) -> Vec<f64> {
 }
 
 // Helper function to create a 2D sparse signal
+#[allow(dead_code)]
 fn create_2d_sparse_signal(rows: usize, cols: usize) -> Vec<f64> {
     let mut signal = vec![0.0; rows * cols];
 
@@ -295,6 +303,7 @@ fn create_2d_sparse_signal(rows: usize, cols: usize) -> Vec<f64> {
 }
 
 // Helper function to compute relative error
+#[allow(dead_code)]
 fn compute_relative_error(original: &[Complex64], reconstructed: &[Complex64]) -> f64 {
     // Make sure we're comparing signals of the same length
     let len = std::cmp::min(original.len(), reconstructed.len());
@@ -333,10 +342,12 @@ fn compute_relative_error(original: &[Complex64], reconstructed: &[Complex64]) -
 }
 
 // Create visualization plots
+#[allow(dead_code)]
 fn create_plots(
     signal: &[f64],
     full_magnitudes: &[f64],
     sparse_result: &scirs2_fft::sparse_fft::SparseFFTResult,
+    sparse_result2: &scirs2_fft::sparse_fft::SparseFFTResult,
 ) {
     // Create time domain plot
     let mut time_plot = Plot::new();

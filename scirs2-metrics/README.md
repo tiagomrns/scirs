@@ -66,6 +66,7 @@ scirs2-metrics = { version = "0.1.0", features = ["neural_common", "optim_integr
 - `optim_integration` (default): Integration with scirs2-optim for metric-based optimization
 - `neural_common`: Integration utilities for neural network training
 - `plotters_backend`: Static plot generation with Plotters backend
+- `dashboard_server`: HTTP server for real-time dashboard (requires tokio)
 
 ## Usage
 
@@ -289,6 +290,56 @@ The visualization module supports multiple plot types:
 - **Bar Charts**: For feature importance, classification reports, etc.
 - **Heatmaps**: For confusion matrices, correlation matrices, etc.
 - **Histograms**: For value distributions, error distributions, etc.
+
+### Interactive Dashboard Server
+
+When the `dashboard_server` feature is enabled, you can create a real-time web dashboard for monitoring metrics:
+
+```rust
+use scirs2_metrics::dashboard::{InteractiveDashboard, DashboardConfig};
+#[cfg(feature = "dashboard_server")]
+use scirs2_metrics::dashboard::server::start_http_server;
+
+// Create dashboard configuration
+let mut config = DashboardConfig::default();
+config.title = "ML Training Dashboard".to_string();
+config.refresh_interval = 2; // Refresh every 2 seconds
+
+// Create interactive dashboard
+let dashboard = InteractiveDashboard::new(config);
+
+// Add metrics
+dashboard.add_metric("accuracy", 0.95)?;
+dashboard.add_metric("loss", 0.12)?;
+dashboard.add_metric("learning_rate", 0.001)?;
+
+// Start HTTP server (requires dashboard_server feature)
+#[cfg(feature = "dashboard_server")]
+{
+    let server = start_http_server(dashboard.clone())?;
+    println!("Dashboard available at http://127.0.0.1:8080");
+    
+    // Update metrics in your training loop
+    for epoch in 0..100 {
+        dashboard.add_metric("epoch", epoch as f64)?;
+        dashboard.add_metric("accuracy", accuracy)?;
+        dashboard.add_metric("loss", loss)?;
+        // ... training code ...
+    }
+}
+
+// Export dashboard data
+let json_data = dashboard.export_to_json()?;
+let csv_data = dashboard.export_to_csv()?;
+let html_report = dashboard.generate_html()?;
+```
+
+The dashboard provides:
+- Real-time metric visualization with auto-refresh
+- RESTful API endpoints (`/api/metrics`, `/api/metrics/names`)
+- Interactive charts using Chart.js
+- Export capabilities (JSON, CSV, HTML)
+- Customizable themes and layouts
 
 ### Custom Visualizations
 

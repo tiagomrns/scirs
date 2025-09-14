@@ -3,6 +3,7 @@
 use ndarray::{array, Array2, Axis};
 use scirs2_stats::distributions::multivariate;
 
+#[allow(dead_code)]
 fn main() {
     println!("Multivariate Distributions Example");
     println!("==================================");
@@ -84,6 +85,7 @@ fn main() {
 }
 
 /// Calculate variance of a specific dimension in a matrix of samples
+#[allow(dead_code)]
 fn calculate_variance(samples: &Array2<f64>, dim: usize) -> f64 {
     let n = samples.shape()[0];
     let mean = samples.mean_axis(Axis(0)).unwrap()[dim];
@@ -98,6 +100,7 @@ fn calculate_variance(samples: &Array2<f64>, dim: usize) -> f64 {
 }
 
 /// Find maximum absolute value in a specific dimension
+#[allow(dead_code)]
 fn find_max_abs(samples: &Array2<f64>, dim: usize) -> f64 {
     let n = samples.shape()[0];
     let mut max_abs = 0.0;

@@ -30,6 +30,7 @@ use std::iter::Sum;
 /// # Returns
 ///
 /// * Solution vector x
+#[allow(dead_code)]
 pub fn quantized_conjugate_gradient<F>(
     a: &QuantizedMatrixFreeOp<F>,
     b: &Array1<F>,
@@ -93,16 +94,16 @@ where
         return Ok(x);
     }
 
-    // Cache for AP product to avoid recomputation in adaptive precision mode
+    // Cache for AP product to avoid recomputation in adaptive _precision mode
     let mut ap;
 
-    // Tracking variables for adaptive precision
+    // Tracking variables for adaptive _precision
     let mut successive_slow_progress = 0;
     let mut previous_residual = rsold;
 
-    for (iteration, _) in (0..max_iter).enumerate() {
+    for (iteration_, _) in (0..max_iter).enumerate() {
         // Keep track of iteration number
-        let iter = iteration;
+        let _iter = iteration_;
 
         // Compute A*p
         ap = a.apply(&p.view())?;
@@ -112,7 +113,7 @@ where
 
         // Safety check for numerical stability
         if pap.abs() < F::epsilon() {
-            if iter == 0usize {
+            if _iter == 0usize {
                 return Err(LinalgError::ComputationError(
                     "Zero curvature detected in first iteration".to_string(),
                 ));
@@ -138,7 +139,7 @@ where
             break;
         }
 
-        // Adaptive precision strategy
+        // Adaptive _precision strategy
         if adaptive_precision {
             // Check if we're making good progress
             let ratio = rsnew / previous_residual;
@@ -203,6 +204,7 @@ where
 /// # Returns
 ///
 /// * Solution vector x
+#[allow(dead_code)]
 pub fn quantized_gmres<F>(
     a: &QuantizedMatrixFreeOp<F>,
     b: &Array1<F>,
@@ -236,10 +238,10 @@ where
         return Ok(x);
     }
 
-    // Get quantization parameters for potential precision adjustments
+    // Get quantization parameters for potential _precision adjustments
     // No direct parameter adjustments in this implementation
 
-    // Tracking variable for adaptive precision
+    // Tracking variable for adaptive _precision
     let mut reorth_step = if adaptive_precision { 1 } else { restart_iter };
 
     // Outer iteration (restarts)
@@ -387,7 +389,7 @@ where
             return Ok(x);
         }
 
-        // Adaptive precision strategy - adjust quantization on restart if needed
+        // Adaptive _precision strategy - adjust quantization on restart if needed
         if adaptive_precision {
             // Note: In a real implementation, we might adjust the quantization parameters
             // here, but that would require rebuilding the quantized operator, which is beyond
@@ -403,6 +405,7 @@ where
 ///
 /// This function computes the cosine and sine values for a Givens rotation
 /// matrix that eliminates the subdiagonal element in the Hessenberg matrix.
+#[allow(dead_code)]
 fn givens_rotation<F>(a: F, b: F) -> (F, F)
 where
     F: Float + NumAssign + Zero + Sum + One + ScalarOperand + Send + Sync,
@@ -434,6 +437,7 @@ where
 /// # Returns
 ///
 /// A quantized matrix-free operator representing the preconditioner
+#[allow(dead_code)]
 pub fn quantized_jacobi_preconditioner<F>(
     a: &QuantizedMatrixFreeOp<F>,
 ) -> LinalgResult<QuantizedMatrixFreeOp<F>>
@@ -527,6 +531,7 @@ where
 /// # Returns
 ///
 /// * Solution vector x
+#[allow(dead_code)]
 pub fn quantized_preconditioned_conjugate_gradient<F>(
     a: &QuantizedMatrixFreeOp<F>,
     m: &QuantizedMatrixFreeOp<F>,
@@ -598,11 +603,11 @@ where
         return Ok(x);
     }
 
-    // Tracking variables for adaptive precision
+    // Tracking variables for adaptive _precision
     let mut successive_slow_progress = 0;
     let mut previous_residual = r.dot(&r);
 
-    for iter in 0..max_iter {
+    for _iter in 0..max_iter {
         // Compute A*p
         let ap = a.apply(&p.view())?;
 
@@ -611,7 +616,7 @@ where
 
         // Safety check for numerical stability
         if pap.abs() < F::epsilon() {
-            if iter == 0usize {
+            if _iter == 0usize {
                 return Err(LinalgError::ComputationError(
                     "Zero curvature detected in first iteration".to_string(),
                 ));
@@ -635,7 +640,7 @@ where
             break;
         }
 
-        // Adaptive precision strategy
+        // Adaptive _precision strategy
         if adaptive_precision {
             let r_squared = r.dot(&r);
 
@@ -697,13 +702,13 @@ mod tests {
     use ndarray::array;
 
     #[test]
-    fn test_quantized_conjugate_gradient_small_matrix() {
+    fn test_quantized_conjugate_gradient_smallmatrix() {
         // Create a test matrix (symmetric positive definite)
         let matrix = array![[4.0f32, 1.0], [1.0, 3.0]];
 
         // Create a quantized matrix-free operator
         let op =
-            QuantizedMatrixFreeOp::from_matrix(&matrix.view(), 8, QuantizationMethod::Symmetric)
+            QuantizedMatrixFreeOp::frommatrix(&matrix.view(), 8, QuantizationMethod::Symmetric)
                 .unwrap()
                 .symmetric()
                 .positive_definite();
@@ -725,13 +730,13 @@ mod tests {
     }
 
     #[test]
-    fn test_quantized_gmres_small_matrix() {
+    fn test_quantized_gmres_smallmatrix() {
         // Create a test matrix (non-symmetric)
         let matrix = array![[3.0f32, 1.0], [1.0, 2.0]];
 
         // Create a quantized matrix-free operator
         let op =
-            QuantizedMatrixFreeOp::from_matrix(&matrix.view(), 8, QuantizationMethod::Symmetric)
+            QuantizedMatrixFreeOp::frommatrix(&matrix.view(), 8, QuantizationMethod::Symmetric)
                 .unwrap();
 
         // Define the right-hand side
@@ -757,7 +762,7 @@ mod tests {
 
         // Create a quantized matrix-free operator
         let op =
-            QuantizedMatrixFreeOp::from_matrix(&matrix.view(), 8, QuantizationMethod::Symmetric)
+            QuantizedMatrixFreeOp::frommatrix(&matrix.view(), 8, QuantizationMethod::Symmetric)
                 .unwrap()
                 .symmetric()
                 .positive_definite();
@@ -789,7 +794,7 @@ mod tests {
 
         // Create a quantized matrix-free operator
         let op =
-            QuantizedMatrixFreeOp::from_matrix(&matrix.view(), 8, QuantizationMethod::Symmetric)
+            QuantizedMatrixFreeOp::frommatrix(&matrix.view(), 8, QuantizationMethod::Symmetric)
                 .unwrap();
 
         // Create a Jacobi preconditioner
@@ -818,7 +823,7 @@ mod tests {
 
         // Create a quantized matrix-free operator
         let op =
-            QuantizedMatrixFreeOp::from_matrix(&matrix.view(), 8, QuantizationMethod::Symmetric)
+            QuantizedMatrixFreeOp::frommatrix(&matrix.view(), 8, QuantizationMethod::Symmetric)
                 .unwrap()
                 .symmetric()
                 .positive_definite();

@@ -21,6 +21,7 @@ use super::shapes::{
 /// # Returns
 ///
 /// `true` if the point is inside or on the boundary of the circle, `false` otherwise
+#[allow(dead_code)]
 pub fn point_circle_collision(point: &[f64; 2], circle: &Circle) -> bool {
     let dx = point[0] - circle.center[0];
     let dy = point[1] - circle.center[1];
@@ -39,6 +40,7 @@ pub fn point_circle_collision(point: &[f64; 2], circle: &Circle) -> bool {
 /// # Returns
 ///
 /// `true` if the point is inside or on the boundary of the box, `false` otherwise
+#[allow(dead_code)]
 pub fn point_box2d_collision(point: &[f64; 2], box2d: &Box2D) -> bool {
     point[0] >= box2d.min[0]
         && point[0] <= box2d.max[0]
@@ -56,6 +58,7 @@ pub fn point_box2d_collision(point: &[f64; 2], box2d: &Box2D) -> bool {
 /// # Returns
 ///
 /// `true` if the point is inside or on the boundary of the triangle, `false` otherwise
+#[allow(dead_code)]
 pub fn point_triangle2d_collision(point: &[f64; 2], triangle: &Triangle2D) -> bool {
     // Compute barycentric coordinates
     let area = 0.5
@@ -104,6 +107,7 @@ pub fn point_triangle2d_collision(point: &[f64; 2], triangle: &Triangle2D) -> bo
 /// # Returns
 ///
 /// `true` if the point is inside or on the boundary of the sphere, `false` otherwise
+#[allow(dead_code)]
 pub fn point_sphere_collision(point: &[f64; 3], sphere: &Sphere) -> bool {
     let dx = point[0] - sphere.center[0];
     let dy = point[1] - sphere.center[1];
@@ -123,6 +127,7 @@ pub fn point_sphere_collision(point: &[f64; 3], sphere: &Sphere) -> bool {
 /// # Returns
 ///
 /// `true` if the point is inside or on the boundary of the box, `false` otherwise
+#[allow(dead_code)]
 pub fn point_box3d_collision(point: &[f64; 3], box3d: &Box3D) -> bool {
     point[0] >= box3d.min[0]
         && point[0] <= box3d.max[0]
@@ -142,6 +147,7 @@ pub fn point_box3d_collision(point: &[f64; 3], box3d: &Box3D) -> bool {
 /// # Returns
 ///
 /// `true` if the point is on the triangle, `false` otherwise
+#[allow(dead_code)]
 pub fn point_triangle3d_collision(point: &[f64; 3], triangle: &Triangle3D) -> bool {
     // For a 3D triangle, we need to check if the point is on the plane of the triangle
     // and then check if it's inside the triangle
@@ -270,6 +276,7 @@ pub fn point_triangle3d_collision(point: &[f64; 3], triangle: &Triangle3D) -> bo
 /// # Returns
 ///
 /// `true` if the circles intersect, `false` otherwise
+#[allow(dead_code)]
 pub fn circle_circle_collision(circle1: &Circle, circle2: &Circle) -> bool {
     let dx = circle1.center[0] - circle2.center[0];
     let dy = circle1.center[1] - circle2.center[1];
@@ -289,12 +296,13 @@ pub fn circle_circle_collision(circle1: &Circle, circle2: &Circle) -> bool {
 /// # Returns
 ///
 /// `true` if the circle and box intersect, `false` otherwise
+#[allow(dead_code)]
 pub fn circle_box2d_collision(circle: &Circle, box2d: &Box2D) -> bool {
-    // Find the closest point on the box to the circle center
+    // Find the closest point on the box to the _circle center
     let closest_x = circle.center[0].max(box2d.min[0]).min(box2d.max[0]);
     let closest_y = circle.center[1].max(box2d.min[1]).min(box2d.max[1]);
 
-    // Calculate distance from the closest point to the circle center
+    // Calculate distance from the closest point to the _circle center
     let dx = circle.center[0] - closest_x;
     let dy = circle.center[1] - closest_y;
     let distance_squared = dx * dx + dy * dy;
@@ -313,6 +321,7 @@ pub fn circle_box2d_collision(circle: &Circle, box2d: &Box2D) -> bool {
 /// # Returns
 ///
 /// `true` if the line segments intersect, `false` otherwise
+#[allow(dead_code)]
 pub fn line2d_line2d_collision(line1: &LineSegment2D, line2: &LineSegment2D) -> bool {
     // Calculate the orientation of three points
     let orientation = |p: &[f64; 2], q: &[f64; 2], r: &[f64; 2]| -> i32 {
@@ -372,6 +381,7 @@ pub fn line2d_line2d_collision(line1: &LineSegment2D, line2: &LineSegment2D) -> 
 /// # Returns
 ///
 /// `true` if the boxes intersect, `false` otherwise
+#[allow(dead_code)]
 pub fn box2d_box2d_collision(box1: &Box2D, box2: &Box2D) -> bool {
     // Check if the boxes overlap in both x and y dimensions
     box1.min[0] <= box2.max[0]
@@ -390,13 +400,14 @@ pub fn box2d_box2d_collision(box1: &Box2D, box2: &Box2D) -> bool {
 /// # Returns
 ///
 /// `true` if the triangle and circle intersect, `false` otherwise
+#[allow(dead_code)]
 pub fn triangle2d_circle_collision(triangle: &Triangle2D, circle: &Circle) -> bool {
-    // Check if the circle center is inside the triangle
+    // Check if the circle center is inside the _triangle
     if point_triangle2d_collision(&circle.center, triangle) {
         return true;
     }
 
-    // Check if the circle intersects any of the triangle's edges
+    // Check if the circle intersects any of the _triangle's edges
     let edges = [
         LineSegment2D {
             start: triangle.v1,
@@ -465,6 +476,7 @@ pub fn triangle2d_circle_collision(triangle: &Triangle2D, circle: &Circle) -> bo
 /// # Returns
 ///
 /// `true` if the spheres intersect, `false` otherwise
+#[allow(dead_code)]
 pub fn sphere_sphere_collision(sphere1: &Sphere, sphere2: &Sphere) -> bool {
     let dx = sphere1.center[0] - sphere2.center[0];
     let dy = sphere1.center[1] - sphere2.center[1];
@@ -485,6 +497,7 @@ pub fn sphere_sphere_collision(sphere1: &Sphere, sphere2: &Sphere) -> bool {
 /// # Returns
 ///
 /// `true` if the sphere and box intersect, `false` otherwise
+#[allow(dead_code)]
 pub fn sphere_box3d_collision(sphere: &Sphere, box3d: &Box3D) -> bool {
     // Find the closest point on the box to the sphere center
     let closest_x = sphere.center[0].max(box3d.min[0]).min(box3d.max[0]);
@@ -511,6 +524,7 @@ pub fn sphere_box3d_collision(sphere: &Sphere, box3d: &Box3D) -> bool {
 /// # Returns
 ///
 /// `true` if the boxes intersect, `false` otherwise
+#[allow(dead_code)]
 pub fn box3d_box3d_collision(box1: &Box3D, box2: &Box3D) -> bool {
     // Check if the boxes overlap in all three dimensions
     box1.min[0] <= box2.max[0]
@@ -531,6 +545,7 @@ pub fn box3d_box3d_collision(box1: &Box3D, box2: &Box3D) -> bool {
 /// # Returns
 ///
 /// `true` if the line segments intersect, `false` otherwise
+#[allow(dead_code)]
 pub fn line3d_line3d_collision(line1: &LineSegment3D, line2: &LineSegment3D) -> bool {
     // 3D line segment intersection is more complex than 2D
     // We need to find the closest points on both lines and check their distance
@@ -667,6 +682,7 @@ pub fn line3d_line3d_collision(line1: &LineSegment3D, line2: &LineSegment3D) -> 
 /// # Returns
 ///
 /// `true` if the sphere and triangle intersect, `false` otherwise
+#[allow(dead_code)]
 pub fn sphere_triangle3d_collision(sphere: &Sphere, triangle: &Triangle3D) -> bool {
     // First, find the closest point on the triangle to the sphere center
 
@@ -823,12 +839,13 @@ pub fn sphere_triangle3d_collision(sphere: &Sphere, triangle: &Triangle3D) -> bo
 /// # Returns
 ///
 /// `Some((distance, hit_point))` if the ray intersects the sphere, `None` otherwise
+#[allow(dead_code)]
 pub fn ray_sphere_collision(
     ray_origin: &[f64; 3],
     ray_direction: &[f64; 3],
     sphere: &Sphere,
 ) -> Option<(f64, [f64; 3])> {
-    // Vector from ray origin to sphere center
+    // Vector from ray _origin to sphere center
     let oc = [
         ray_origin[0] - sphere.center[0],
         ray_origin[1] - sphere.center[1],
@@ -859,7 +876,7 @@ pub fn ray_sphere_collision(
         // Calculate the distance to the intersection point
         let t = (-b - discriminant.sqrt()) / (2.0 * a);
 
-        // If t is negative, the intersection is behind the ray origin
+        // If t is negative, the intersection is behind the ray _origin
         if t < 0.0 {
             // Check the other intersection point
             let t2 = (-b + discriminant.sqrt()) / (2.0 * a);
@@ -897,6 +914,7 @@ pub fn ray_sphere_collision(
 /// # Returns
 ///
 /// `Some((t_enter, t_exit, hit_point))` if the ray intersects the box, `None` otherwise
+#[allow(dead_code)]
 pub fn ray_box3d_collision(
     ray_origin: &[f64; 3],
     ray_direction: &[f64; 3],
@@ -948,7 +966,7 @@ pub fn ray_box3d_collision(
         tmax = tzmax;
     }
 
-    // If tmax is negative, the ray is intersecting behind the origin
+    // If tmax is negative, the ray is intersecting behind the _origin
     if tmax < 0.0 {
         return None;
     }
@@ -977,6 +995,7 @@ pub fn ray_box3d_collision(
 /// # Returns
 ///
 /// `Some((distance, hit_point, barycentric))` if the ray intersects the triangle, `None` otherwise
+#[allow(dead_code)]
 pub fn ray_triangle3d_collision(
     ray_origin: &[f64; 3],
     ray_direction: &[f64; 3],
@@ -1048,7 +1067,7 @@ pub fn ray_triangle3d_collision(
     // Calculate t = f * dot(edge2, q)
     let t = f * (edge2[0] * q[0] + edge2[1] * q[1] + edge2[2] * q[2]);
 
-    // If t is negative, the intersection is behind the ray origin
+    // If t is negative, the intersection is behind the ray _origin
     if t < 0.0 {
         return None;
     }
@@ -1064,4 +1083,386 @@ pub fn ray_triangle3d_collision(
     let barycentric = [u, v, 1.0 - u - v];
 
     Some((t, hit_point, barycentric))
+}
+
+// ---------------------------------------------------------------------------
+// GJK (Gilbert-Johnson-Keerthi) Algorithm for Convex Shape Collision Detection
+// ---------------------------------------------------------------------------
+
+/// Trait for shapes that can be used with the GJK algorithm
+///
+/// The support function returns the farthest point in the given direction
+pub trait GJKShape {
+    /// Returns the farthest point in the shape in the given direction
+    fn support(&self, direction: &[f64; 3]) -> [f64; 3];
+}
+
+/// Implementation of GJK support function for Sphere
+impl GJKShape for Sphere {
+    fn support(&self, direction: &[f64; 3]) -> [f64; 3] {
+        // Normalize the direction vector
+        let length = (direction[0] * direction[0]
+            + direction[1] * direction[1]
+            + direction[2] * direction[2])
+            .sqrt();
+        if length < 1e-10 {
+            return self.center;
+        }
+
+        let normalized = [
+            direction[0] / length,
+            direction[1] / length,
+            direction[2] / length,
+        ];
+
+        [
+            self.center[0] + self.radius * normalized[0],
+            self.center[1] + self.radius * normalized[1],
+            self.center[2] + self.radius * normalized[2],
+        ]
+    }
+}
+
+/// Implementation of GJK support function for Box3D
+impl GJKShape for Box3D {
+    fn support(&self, direction: &[f64; 3]) -> [f64; 3] {
+        [
+            if direction[0] >= 0.0 {
+                self.max[0]
+            } else {
+                self.min[0]
+            },
+            if direction[1] >= 0.0 {
+                self.max[1]
+            } else {
+                self.min[1]
+            },
+            if direction[2] >= 0.0 {
+                self.max[2]
+            } else {
+                self.min[2]
+            },
+        ]
+    }
+}
+
+/// Represents a simplex used in the GJK algorithm
+#[derive(Debug, Clone)]
+struct GJKSimplex {
+    points: Vec<[f64; 3]>,
+}
+
+impl GJKSimplex {
+    fn new() -> Self {
+        Self {
+            points: Vec::with_capacity(4),
+        }
+    }
+
+    fn add_point(&mut self, point: [f64; 3]) {
+        self.points.push(point);
+    }
+
+    fn size(&self) -> usize {
+        self.points.len()
+    }
+
+    fn get_point(&self, index: usize) -> Option<[f64; 3]> {
+        self.points.get(index).copied()
+    }
+
+    #[allow(dead_code)]
+    fn clear(&mut self) {
+        self.points.clear();
+    }
+
+    fn set_points(&mut self, points: Vec<[f64; 3]>) {
+        self.points = points;
+    }
+}
+
+/// Compute the Minkowski difference support point
+#[allow(dead_code)]
+fn support_minkowski_difference<T1: GJKShape, T2: GJKShape>(
+    shape1: &T1,
+    shape2: &T2,
+    direction: &[f64; 3],
+) -> [f64; 3] {
+    let support1 = shape1.support(direction);
+    let neg_direction = [-direction[0], -direction[1], -direction[2]];
+    let support2 = shape2.support(&neg_direction);
+
+    [
+        support1[0] - support2[0],
+        support1[1] - support2[1],
+        support1[2] - support2[2],
+    ]
+}
+
+/// Vector operations helper functions
+#[allow(dead_code)]
+fn dot_product(a: &[f64; 3], b: &[f64; 3]) -> f64 {
+    a[0] * b[0] + a[1] * b[1] + a[2] * b[2]
+}
+
+#[allow(dead_code)]
+fn cross_product(a: &[f64; 3], b: &[f64; 3]) -> [f64; 3] {
+    [
+        a[1] * b[2] - a[2] * b[1],
+        a[2] * b[0] - a[0] * b[2],
+        a[0] * b[1] - a[1] * b[0],
+    ]
+}
+
+#[allow(dead_code)]
+fn subtract_vectors(a: &[f64; 3], b: &[f64; 3]) -> [f64; 3] {
+    [a[0] - b[0], a[1] - b[1], a[2] - b[2]]
+}
+
+#[allow(dead_code)]
+fn negate_vector(a: &[f64; 3]) -> [f64; 3] {
+    [-a[0], -a[1], -a[2]]
+}
+
+/// Handle line simplex (2 points)
+#[allow(dead_code)]
+fn handle_line_simplex(simplex: &mut GJKSimplex, direction: &mut [f64; 3]) -> bool {
+    let a = simplex.get_point(1).unwrap(); // Latest point
+    let b = simplex.get_point(0).unwrap(); // Previous point
+
+    let ab = subtract_vectors(&b, &a);
+    let ao = negate_vector(&a);
+
+    if dot_product(&ab, &ao) > 0.0 {
+        // Origin is beyond point B in direction AB
+        *direction = cross_product(&cross_product(&ab, &ao), &ab);
+    } else {
+        // Origin is beyond point A
+        simplex.set_points(vec![a]);
+        *direction = ao;
+    }
+
+    false // Origin not contained
+}
+
+/// Handle triangle simplex (3 points)
+#[allow(dead_code)]
+fn handle_triangle_simplex(simplex: &mut GJKSimplex, direction: &mut [f64; 3]) -> bool {
+    let a = simplex.get_point(2).unwrap(); // Latest point
+    let b = simplex.get_point(1).unwrap();
+    let c = simplex.get_point(0).unwrap();
+
+    let ab = subtract_vectors(&b, &a);
+    let ac = subtract_vectors(&c, &a);
+    let ao = negate_vector(&a);
+
+    let abc = cross_product(&ab, &ac);
+
+    if dot_product(&cross_product(&abc, &ac), &ao) > 0.0 {
+        if dot_product(&ac, &ao) > 0.0 {
+            // Region AC
+            simplex.set_points(vec![c, a]);
+            *direction = cross_product(&cross_product(&ac, &ao), &ac);
+        } else {
+            return handle_line_simplex_from_points(simplex, direction, a, b);
+        }
+    } else if dot_product(&cross_product(&ab, &abc), &ao) > 0.0 {
+        return handle_line_simplex_from_points(simplex, direction, a, b);
+    } else if dot_product(&abc, &ao) > 0.0 {
+        // Above triangle
+        *direction = abc;
+    } else {
+        // Below triangle
+        simplex.set_points(vec![b, c, a]);
+        *direction = negate_vector(&abc);
+    }
+
+    false // Origin not contained
+}
+
+/// Helper function for handling line simplex from specific points
+#[allow(dead_code)]
+fn handle_line_simplex_from_points(
+    simplex: &mut GJKSimplex,
+    direction: &mut [f64; 3],
+    a: [f64; 3],
+    b: [f64; 3],
+) -> bool {
+    let ab = subtract_vectors(&b, &a);
+    let ao = negate_vector(&a);
+
+    if dot_product(&ab, &ao) > 0.0 {
+        simplex.set_points(vec![b, a]);
+        *direction = cross_product(&cross_product(&ab, &ao), &ab);
+    } else {
+        simplex.set_points(vec![a]);
+        *direction = ao;
+    }
+
+    false
+}
+
+/// Handle tetrahedron simplex (4 points)
+#[allow(dead_code)]
+fn handle_tetrahedron_simplex(simplex: &mut GJKSimplex, direction: &mut [f64; 3]) -> bool {
+    let a = simplex.get_point(3).unwrap(); // Latest point
+    let b = simplex.get_point(2).unwrap();
+    let c = simplex.get_point(1).unwrap();
+    let d = simplex.get_point(0).unwrap();
+
+    let ab = subtract_vectors(&b, &a);
+    let ac = subtract_vectors(&c, &a);
+    let ad = subtract_vectors(&d, &a);
+    let ao = negate_vector(&a);
+
+    let abc = cross_product(&ab, &ac);
+    let acd = cross_product(&ac, &ad);
+    let adb = cross_product(&ad, &ab);
+
+    // Check which face the origin is on the outside of
+    if dot_product(&abc, &ao) > 0.0 {
+        simplex.set_points(vec![c, b, a]);
+        return handle_triangle_simplex(simplex, direction);
+    }
+
+    if dot_product(&acd, &ao) > 0.0 {
+        simplex.set_points(vec![d, c, a]);
+        return handle_triangle_simplex(simplex, direction);
+    }
+
+    if dot_product(&adb, &ao) > 0.0 {
+        simplex.set_points(vec![b, d, a]);
+        return handle_triangle_simplex(simplex, direction);
+    }
+
+    // Origin is inside the tetrahedron
+    true
+}
+
+/// Handle simplex evolution based on current size
+#[allow(dead_code)]
+fn handle_simplex(simplex: &mut GJKSimplex, direction: &mut [f64; 3]) -> bool {
+    match simplex.size() {
+        2 => handle_line_simplex(simplex, direction),
+        3 => handle_triangle_simplex(simplex, direction),
+        4 => handle_tetrahedron_simplex(simplex, direction),
+        _ => false,
+    }
+}
+
+/// GJK collision detection algorithm for two convex shapes
+///
+/// # Arguments
+///
+/// * `shape1` - First convex shape implementing GJKShape trait
+/// * `shape2` - Second convex shape implementing GJKShape trait
+/// * `max_iterations` - Maximum number of iterations (typically 64 is sufficient)
+///
+/// # Returns
+///
+/// `true` if the shapes are colliding, `false` otherwise
+///
+/// # Examples
+///
+/// ```
+/// use scirs2_spatial::collision::{gjk_collision_detection, Sphere, Box3D};
+///
+/// let sphere = Sphere {
+///     center: [0.0, 0.0, 0.0],
+///     radius: 1.0,
+/// };
+///
+/// let bbox = Box3D {
+///     min: [-0.5, -0.5, -0.5],
+///     max: [0.5, 0.5, 0.5],
+/// };
+///
+/// let colliding = gjk_collision_detection(&sphere, &bbox, 64);
+/// println!("Are the shapes colliding? {}", colliding);
+/// ```
+#[allow(dead_code)]
+pub fn gjk_collision_detection<T1: GJKShape, T2: GJKShape>(
+    shape1: &T1,
+    shape2: &T2,
+    max_iterations: usize,
+) -> bool {
+    // Choose initial search direction (can be arbitrary non-zero vector)
+    let mut direction = [1.0, 0.0, 0.0];
+
+    // Get initial support point
+    let initial_support = support_minkowski_difference(shape1, shape2, &direction);
+
+    // If the first support point isn't past the origin, there's no collision
+    if dot_product(&initial_support, &direction) <= 0.0 {
+        return false;
+    }
+
+    let mut simplex = GJKSimplex::new();
+    simplex.add_point(initial_support);
+
+    // Flip direction towards origin
+    direction = negate_vector(&initial_support);
+
+    for _ in 0..max_iterations {
+        let support_point = support_minkowski_difference(shape1, shape2, &direction);
+
+        // If we don't make progress past the origin, there's no collision
+        if dot_product(&support_point, &direction) <= 0.0 {
+            return false;
+        }
+
+        simplex.add_point(support_point);
+
+        // Check if the simplex contains the origin
+        if handle_simplex(&mut simplex, &mut direction) {
+            return true; // Collision detected
+        }
+    }
+
+    false // No collision detected within max _iterations
+}
+
+/// Convenience function for GJK collision detection between two spheres
+///
+/// # Arguments
+///
+/// * `sphere1` - First sphere
+/// * `sphere2` - Second sphere
+///
+/// # Returns
+///
+/// `true` if the spheres are colliding, `false` otherwise
+#[allow(dead_code)]
+pub fn gjk_sphere_sphere_collision(sphere1: &Sphere, sphere2: &Sphere) -> bool {
+    gjk_collision_detection(sphere1, sphere2, 64)
+}
+
+/// Convenience function for GJK collision detection between two boxes
+///
+/// # Arguments
+///
+/// * `box1` - First box
+/// * `box2` - Second box
+///
+/// # Returns
+///
+/// `true` if the boxes are colliding, `false` otherwise
+#[allow(dead_code)]
+pub fn gjk_box_box_collision(box1: &Box3D, box2: &Box3D) -> bool {
+    gjk_collision_detection(box1, box2, 64)
+}
+
+/// Convenience function for GJK collision detection between a sphere and a box
+///
+/// # Arguments
+///
+/// * `sphere` - The sphere
+/// * `bbox` - The box
+///
+/// # Returns
+///
+/// `true` if the sphere and box are colliding, `false` otherwise
+#[allow(dead_code)]
+pub fn gjk_sphere_box_collision(sphere: &Sphere, bbox: &Box3D) -> bool {
+    gjk_collision_detection(sphere, bbox, 64)
 }

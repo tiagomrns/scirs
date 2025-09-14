@@ -7,8 +7,9 @@
 use crate::error::OptimizeError;
 use crate::unconstrained::OptimizeResult;
 use ndarray::{Array1, ArrayView1};
-use rand::prelude::*;
+use rand::prelude::SliceRandom;
 use rand::rngs::StdRng;
+use rand::{rng, Rng, SeedableRng};
 
 /// Options for Simulated Annealing
 #[derive(Debug, Clone)]
@@ -84,7 +85,7 @@ where
         options: SimulatedAnnealingOptions,
     ) -> Self {
         let ndim = x0.len();
-        let seed = options.seed.unwrap_or_else(rand::random);
+        let seed = options.seed.unwrap_or_else(|| rng().random());
         let rng = StdRng::seed_from_u64(seed);
 
         // Evaluate initial point
@@ -112,7 +113,7 @@ where
         let mut neighbor = self.current_x.clone();
 
         // Randomly perturb one or more dimensions
-        let num_dims_to_perturb = self.rng.random_range(1..=self.ndim);
+        let num_dims_to_perturb = self.rng.gen_range(1..=self.ndim);
         let mut dims: Vec<usize> = (0..self.ndim).collect();
         dims.shuffle(&mut self.rng);
 
@@ -189,7 +190,7 @@ where
 
             // Accept or reject
             let acceptance_prob = self.acceptance_probability(neighbor_value);
-            if self.rng.random::<f64>() < acceptance_prob {
+            if self.rng.gen_range(0.0..1.0) < acceptance_prob {
                 self.current_x = neighbor;
                 self.current_value = neighbor_value;
 
@@ -221,7 +222,7 @@ where
 
             if self.options.verbose && self.nit % 100 == 0 {
                 println!(
-                    "Iteration {}: T = {:.6}, best = {:.6}",
+                    "Iteration {}: T = {:.6}..best = {:.6}",
                     self.nit, self.temperature, self.best_value
                 );
             }
@@ -233,7 +234,6 @@ where
             nfev: self.nfev,
             func_evals: self.nfev,
             nit: self.nit,
-            iterations: self.nit,
             success: converged,
             message: if converged {
                 "Temperature reached minimum"
@@ -247,6 +247,7 @@ where
 }
 
 /// Perform global optimization using simulated annealing
+#[allow(dead_code)]
 pub fn simulated_annealing<F>(
     func: F,
     x0: Array1<f64>,

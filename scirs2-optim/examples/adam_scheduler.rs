@@ -4,6 +4,7 @@ use ndarray::Array1;
 use scirs2_optim::optimizers::{Adam, Optimizer};
 use scirs2_optim::schedulers::{ExponentialDecay, LearningRateScheduler};
 
+#[allow(dead_code)]
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("Adam Optimizer with Scheduler Example");
     println!("====================================");

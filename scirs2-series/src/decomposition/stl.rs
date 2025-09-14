@@ -96,7 +96,7 @@ pub struct MultiSeasonalDecompositionResult<F> {
 ///
 /// ```
 /// use ndarray::array;
-/// use scirs2_series::decomposition::{stl_decomposition, STLOptions};
+/// use scirs2__series::decomposition::{stl_decomposition, STLOptions};
 ///
 /// let ts = array![1.0, 2.0, 3.0, 2.0, 1.0, 2.0, 3.0, 2.0, 1.0, 2.0, 3.0, 2.0];
 /// let options = STLOptions::default();
@@ -105,6 +105,7 @@ pub struct MultiSeasonalDecompositionResult<F> {
 /// println!("Seasonal: {:?}", result.seasonal);
 /// println!("Residual: {:?}", result.residual);
 /// ```
+#[allow(dead_code)]
 pub fn stl_decomposition<F>(
     ts: &Array1<F>,
     period: usize,
@@ -319,7 +320,7 @@ where
 ///
 /// ```
 /// use ndarray::array;
-/// use scirs2_series::decomposition::{mstl_decomposition, MSTLOptions};
+/// use scirs2__series::decomposition::{mstl_decomposition, MSTLOptions};
 ///
 /// let ts = array![1.0, 2.0, 3.0, 2.0, 1.0, 2.0, 3.0, 2.0, 1.0, 2.0, 3.0, 2.0,
 ///                 1.5, 2.5, 3.5, 2.5, 1.5, 2.5, 3.5, 2.5, 1.5, 2.5, 3.5, 2.5];
@@ -332,6 +333,7 @@ where
 /// println!("Seasonal Components: {}", result.seasonal_components.len());
 /// println!("Residual: {:?}", result.residual);
 /// ```
+#[allow(dead_code)]
 pub fn mstl_decomposition<F>(
     ts: &Array1<F>,
     options: &MSTLOptions,

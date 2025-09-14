@@ -1,7 +1,122 @@
 //! Airy functions
 //!
-//! This module provides implementations of Airy functions of the first kind (Ai)
+//! This module provides comprehensive implementations of Airy functions of the first kind (Ai)
 //! and second kind (Bi), along with their derivatives.
+//!
+//! ## Mathematical Theory
+//!
+//! ### The Airy Differential Equation
+//!
+//! The Airy functions are solutions to the second-order linear differential equation:
+//!
+//! **Airy's Equation**:
+//! ```text
+//! d²y/dx² - x·y = 0
+//! ```
+//!
+//! This equation appears in various physical contexts, particularly in optics and
+//! quantum mechanics when dealing with problems involving slowly varying potentials.
+//!
+//! ### The Airy Functions
+//!
+//! There are two linearly independent solutions to Airy's equation:
+//!
+//! **Ai(x)** - **Airy function of the first kind**:
+//! - Defined as the solution that decays exponentially as x → +∞
+//! - Oscillates as x → -∞
+//! - Has infinitely many zeros on the negative real axis
+//!
+//! **Bi(x)** - **Airy function of the second kind**:
+//! - Defined as the solution that grows exponentially as x → +∞
+//! - Oscillates as x → -∞ (π/2 out of phase with Ai(x))
+//! - Has infinitely many zeros on the negative real axis
+//!
+//! ### Integral Representations
+//!
+//! **Ai(x)** can be expressed as:
+//! ```text
+//! Ai(x) = (1/π) ∫₀^∞ cos(t³/3 + xt) dt
+//! ```
+//!
+//! **Bi(x)** can be expressed as:
+//! ```text
+//! Bi(x) = (1/π) ∫₀^∞ [exp(-t³/3 + xt) + sin(t³/3 + xt)] dt
+//! ```
+//!
+//! ### Asymptotic Behavior
+//!
+//! **For large positive x** (x → +∞):
+//! ```text
+//! Ai(x) ~ (1/2) π^(-1/2) x^(-1/4) exp(-2x^(3/2)/3)
+//! Bi(x) ~ π^(-1/2) x^(-1/4) exp(2x^(3/2)/3)
+//! ```
+//!
+//! **For large negative x** (x → -∞, |x| → ∞):
+//! ```text
+//! Ai(x) ~ π^(-1/2) |x|^(-1/4) sin(2|x|^(3/2)/3 + π/4)
+//! Bi(x) ~ π^(-1/2) |x|^(-1/4) cos(2|x|^(3/2)/3 + π/4)
+//! ```
+//!
+//! **Near x = 0**:
+//! ```text
+//! Ai(0) = 3^(-2/3) / Γ(2/3) ≈ 0.35502805
+//! Bi(0) = 3^(-1/6) / Γ(2/3) ≈ 0.61492663
+//! Ai'(0) = -3^(-1/3) / Γ(1/3) ≈ -0.25881940
+//! Bi'(0) = 3^(1/6) / Γ(1/3) ≈ 0.44828836
+//! ```
+//!
+//! ### Key Properties
+//!
+//! 1. **Wronskian**: W[Ai(x), Bi(x)] = Ai(x)Bi'(x) - Ai'(x)Bi(x) = 1/π
+//!    - **Significance**: Confirms linear independence of Ai and Bi
+//!
+//! 2. **Connection to Bessel functions**: For complex arguments, Airy functions
+//!    can be expressed in terms of modified Bessel functions of order ±1/3
+//!
+//! 3. **Zeros**: Both Ai(x) and Bi(x) have infinitely many zeros on the negative
+//!    real axis, with asymptotic spacing ~ π/(2|x|^(1/2))
+//!
+//! ### Derivatives
+//!
+//! The derivatives of Airy functions satisfy:
+//! ```text
+//! d/dx[Ai(x)] = Ai'(x)
+//! d/dx[Bi(x)] = Bi'(x)
+//! d/dx[Ai'(x)] = x·Ai(x)
+//! d/dx[Bi'(x)] = x·Bi(x)
+//! ```
+//!
+//! ### Physical Applications
+//!
+//! Airy functions appear in numerous physical contexts:
+//!
+//! 1. **Quantum Mechanics**:
+//!    - Solutions to the Schrödinger equation with linear potential
+//!    - Quantum tunneling through potential barriers
+//!    - WKB approximation near turning points
+//!
+//! 2. **Optics**:
+//!    - Fresnel diffraction patterns
+//!    - Catastrophe optics (caustics)
+//!    - Beam propagation in graded-index media
+//!
+//! 3. **Fluid Mechanics**:
+//!    - Internal gravity waves in stratified fluids
+//!    - Ship wave patterns
+//!
+//! 4. **Electromagnetics**:
+//!    - Wave propagation in inhomogeneous media
+//!    - Antenna radiation patterns
+//!
+//! ### Computational Methods
+//!
+//! This implementation uses several computational strategies:
+//!
+//! 1. **Lookup tables with interpolation** for rapid evaluation
+//! 2. **Series expansions** near x = 0 for high accuracy
+//! 3. **Asymptotic expansions** for large |x| to prevent overflow/underflow
+//! 4. **Recurrence relations** for computing derivatives
+//! 5. **Connection formulas** to extend the domain of validity
 
 use num_traits::{Float, FromPrimitive};
 use std::fmt::Debug;
@@ -123,6 +238,7 @@ const AIRY_TABLE: [(f64, f64, f64, f64, f64); 13] = [
 /// // Ai(0) = 3^(-2/3) / Γ(2/3) ≈ 0.3550
 /// assert!((ai(0.0f64) - 0.3550280538878172).abs() < 1e-10);
 /// ```
+#[allow(dead_code)]
 pub fn ai<F: Float + FromPrimitive + Debug>(x: F) -> F {
     let x_f64 = x.to_f64().unwrap();
 
@@ -182,6 +298,7 @@ pub fn ai<F: Float + FromPrimitive + Debug>(x: F) -> F {
 /// // Ai'(0) = -3^(-1/3) / Γ(1/3) ≈ -0.2588
 /// assert!((aip(0.0f64) + 0.25881940379280677).abs() < 1e-10);
 /// ```
+#[allow(dead_code)]
 pub fn aip<F: Float + FromPrimitive + Debug>(x: F) -> F {
     let x_f64 = x.to_f64().unwrap();
 
@@ -244,6 +361,7 @@ pub fn aip<F: Float + FromPrimitive + Debug>(x: F) -> F {
 /// // Bi(0) = 3^(-1/6) / Γ(2/3) ≈ 0.6149
 /// assert!((bi(0.0f64) - 0.6149266274460007).abs() < 1e-10);
 /// ```
+#[allow(dead_code)]
 pub fn bi<F: Float + FromPrimitive + Debug>(x: F) -> F {
     let x_f64 = x.to_f64().unwrap();
 
@@ -303,6 +421,7 @@ pub fn bi<F: Float + FromPrimitive + Debug>(x: F) -> F {
 /// // Bi'(0) = 3^(1/6) / Γ(1/3) ≈ 0.4483
 /// assert!((bip(0.0f64) - 0.4482883573538264).abs() < 1e-10);
 /// ```
+#[allow(dead_code)]
 pub fn bip<F: Float + FromPrimitive + Debug>(x: F) -> F {
     let x_f64 = x.to_f64().unwrap();
 
@@ -846,9 +965,9 @@ pub mod complex {
                 // Numerical second derivative approximation
                 let h = 1e-5; // Larger step size for stability
                 let aip_z_plus = aip_complex(z + Complex64::new(h, 0.0));
-                let aip_z_minus = aip_complex(z - Complex64::new(h, 0.0));
+                let aip_zminus = aip_complex(z - Complex64::new(h, 0.0));
 
-                let aipp_z = (aip_z_plus - aip_z_minus) / Complex64::new(2.0 * h, 0.0);
+                let aipp_z = (aip_z_plus - aip_zminus) / Complex64::new(2.0 * h, 0.0);
 
                 // Check differential equation: w''(z) - z*w(z) ≈ 0
                 let residual = aipp_z - z * ai_z;
@@ -878,6 +997,212 @@ pub mod complex {
             }
         }
     }
+}
+
+/// Exponentially scaled Airy function Ai(x) * exp(2/3 * x^(3/2)) for x >= 0
+///
+/// For negative x, returns Ai(x)
+#[allow(dead_code)]
+pub fn aie<F: Float + FromPrimitive + Debug>(x: F) -> F {
+    if x >= F::zero() {
+        let two_thirds = F::from_f64(2.0 / 3.0).unwrap();
+        let exp_factor = (two_thirds * x.powf(F::from_f64(1.5).unwrap())).exp();
+        ai(x) * exp_factor
+    } else {
+        ai(x)
+    }
+}
+
+/// Exponentially scaled Airy function Bi(x) * exp(-2/3 * |x|^(3/2)) for x >= 0
+///
+/// For negative x, returns Bi(x)
+#[allow(dead_code)]
+pub fn bie<F: Float + FromPrimitive + Debug>(x: F) -> F {
+    if x >= F::zero() {
+        let two_thirds = F::from_f64(2.0 / 3.0).unwrap();
+        let exp_factor = (-two_thirds * x.powf(F::from_f64(1.5).unwrap())).exp();
+        bi(x) * exp_factor
+    } else {
+        bi(x)
+    }
+}
+
+/// Exponentially scaled Airy functions and their derivatives
+///
+/// Returns (Ai(x)*exp_factor, Ai'(x)*exp_factor, Bi(x)*exp_factor, Bi'(x)*exp_factor)
+/// where exp_factor = exp(2/3 * x^(3/2)) for x >= 0, and 1 for x < 0
+#[allow(dead_code)]
+pub fn airye<F: Float + FromPrimitive + Debug>(x: F) -> (F, F, F, F) {
+    if x >= F::zero() {
+        let two_thirds = F::from_f64(2.0 / 3.0).unwrap();
+        let exp_factor = (two_thirds * x.powf(F::from_f64(1.5).unwrap())).exp();
+        (
+            ai(x) * exp_factor,
+            aip(x) * exp_factor,
+            bi(x) * (-two_thirds * x.powf(F::from_f64(1.5).unwrap())).exp(),
+            bip(x) * (-two_thirds * x.powf(F::from_f64(1.5).unwrap())).exp(),
+        )
+    } else {
+        (ai(x), aip(x), bi(x), bip(x))
+    }
+}
+
+/// Compute zeros of Airy function Ai(x)
+///
+/// Returns the k-th negative zero of Ai(x)
+#[allow(dead_code)]
+pub fn ai_zeros<F: Float + FromPrimitive + Debug>(k: usize) -> crate::SpecialResult<F> {
+    use crate::error::SpecialError;
+
+    if k == 0 {
+        return Err(SpecialError::ValueError(
+            "ai_zeros: k must be >= 1".to_string(),
+        ));
+    }
+
+    // Use known values for the first few zeros for better accuracy
+    if let Some(known_zero) = match k {
+        1 => Some(-2.33810741045976703849),
+        2 => Some(-4.08794944413097061664),
+        3 => Some(-5.52055982809555105913),
+        4 => Some(-6.78670809007175899878),
+        5 => Some(-7.94413358712085312314),
+        _ => None,
+    } {
+        return Ok(F::from_f64(known_zero).unwrap());
+    }
+
+    // For k > 5, use asymptotic approximation
+    let k_f = F::from_usize(k).unwrap();
+    let pi = F::from_f64(std::f64::consts::PI).unwrap();
+    let three_fourths = F::from_f64(0.75).unwrap();
+
+    // McMahon's asymptotic formula for Airy zeros
+    let s = (three_fourths * (k_f - F::from_f64(0.25).unwrap()) * pi)
+        .powf(F::from_f64(2.0 / 3.0).unwrap());
+    let initial_guess = -s;
+
+    // Refine with Newton's method
+    let mut zero = initial_guess;
+    for _ in 0..20 {
+        let f_val = ai(zero);
+        let fp_val = aip(zero);
+
+        if fp_val.abs() < F::epsilon() {
+            break;
+        }
+
+        let correction = f_val / fp_val;
+        zero = zero - correction;
+
+        if correction.abs() < F::from_f64(1e-12).unwrap() {
+            break;
+        }
+    }
+
+    // Ensure the result is negative
+    if zero > F::zero() {
+        return Err(SpecialError::ValueError(
+            "ai_zeros: failed to converge to negative zero".to_string(),
+        ));
+    }
+
+    Ok(zero)
+}
+
+/// Compute zeros of Airy function Bi(x)
+///
+/// Returns the k-th negative zero of Bi(x)
+#[allow(dead_code)]
+pub fn bi_zeros<F: Float + FromPrimitive + Debug>(k: usize) -> crate::SpecialResult<F> {
+    use crate::error::SpecialError;
+
+    if k == 0 {
+        return Err(SpecialError::ValueError(
+            "bi_zeros: k must be >= 1".to_string(),
+        ));
+    }
+
+    // Use known values for the first few zeros for better accuracy
+    if let Some(known_zero) = match k {
+        1 => Some(-1.17371322270912792491),
+        2 => Some(-3.27109330283635271568),
+        3 => Some(-4.83073784166201593267),
+        4 => Some(-6.16985212831289398589),
+        5 => Some(-7.37676207936776371359),
+        _ => None,
+    } {
+        return Ok(F::from_f64(known_zero).unwrap());
+    }
+
+    // For k > 5, use asymptotic approximation
+    let k_f = F::from_usize(k).unwrap();
+    let pi = F::from_f64(std::f64::consts::PI).unwrap();
+    let three_fourths = F::from_f64(0.75).unwrap();
+
+    // McMahon's asymptotic formula for Airy zeros (adjusted for Bi)
+    let s = (three_fourths * (k_f + F::from_f64(0.25).unwrap()) * pi)
+        .powf(F::from_f64(2.0 / 3.0).unwrap());
+    let initial_guess = -s;
+
+    // Refine with Newton's method
+    let mut zero = initial_guess;
+    for _ in 0..20 {
+        let f_val = bi(zero);
+        let fp_val = bip(zero);
+
+        if fp_val.abs() < F::epsilon() {
+            break;
+        }
+
+        let correction = f_val / fp_val;
+        zero = zero - correction;
+
+        if correction.abs() < F::from_f64(1e-12).unwrap() {
+            break;
+        }
+    }
+
+    // Ensure the result is negative
+    if zero > F::zero() {
+        return Err(SpecialError::ValueError(
+            "bi_zeros: failed to converge to negative zero".to_string(),
+        ));
+    }
+
+    Ok(zero)
+}
+
+/// Integral of Airy functions: ∫₀^x Ai(t) dt and ∫₀^x Bi(t) dt
+///
+/// Returns (∫₀^x Ai(t) dt, ∫₀^x Bi(t) dt)
+#[allow(dead_code)]
+pub fn itairy<F: Float + FromPrimitive + Debug>(x: F) -> (F, F) {
+    // Use adaptive integration with Simpson's rule
+    let n_points = 100;
+    let h = x / F::from_usize(n_points).unwrap();
+
+    let mut integral_ai = F::zero();
+    let mut integral_bi = F::zero();
+
+    for i in 0..=n_points {
+        let t = F::from_usize(i).unwrap() * h;
+        let weight = if i == 0 || i == n_points {
+            F::one()
+        } else if i % 2 == 1 {
+            F::from_f64(4.0).unwrap()
+        } else {
+            F::from_f64(2.0).unwrap()
+        };
+
+        integral_ai = integral_ai + weight * ai(t);
+        integral_bi = integral_bi + weight * bi(t);
+    }
+
+    integral_ai = integral_ai * h / F::from_f64(3.0).unwrap();
+    integral_bi = integral_bi * h / F::from_f64(3.0).unwrap();
+
+    (integral_ai, integral_bi)
 }
 
 #[cfg(test)]

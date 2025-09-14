@@ -4,7 +4,7 @@
 
 use crate::error::{Result, TextError};
 use crate::tokenize::Tokenizer;
-use scirs2_core::parallel;
+use scirs2_core::parallel_ops;
 use std::collections::HashMap;
 
 /// Count the frequency of tokens in a text
@@ -17,6 +17,7 @@ use std::collections::HashMap;
 /// # Returns
 ///
 /// * Result containing a HashMap of token frequencies
+#[allow(dead_code)]
 pub fn count_tokens(text: &str, tokenizer: &dyn Tokenizer) -> Result<HashMap<String, usize>> {
     let tokens = tokenizer.tokenize(text)?;
     let mut counts = HashMap::new();
@@ -38,6 +39,7 @@ pub fn count_tokens(text: &str, tokenizer: &dyn Tokenizer) -> Result<HashMap<Str
 /// # Returns
 ///
 /// * Result containing a HashMap of token frequencies
+#[allow(dead_code)]
 pub fn count_tokens_batch(
     texts: &[&str],
     tokenizer: &dyn Tokenizer,
@@ -65,6 +67,7 @@ pub fn count_tokens_batch(
 /// # Returns
 ///
 /// * Result containing a HashMap of token frequencies
+#[allow(dead_code)]
 pub fn count_tokens_batch_parallel<T>(
     texts: &[&str],
     tokenizer: &T,
@@ -77,11 +80,11 @@ where
     let texts_owned: Vec<String> = texts.iter().map(|&s| s.to_string()).collect();
     let tokenizer_boxed = tokenizer.clone_box();
 
-    let token_counts = parallel::parallel_map(&texts_owned, move |text| {
+    let token_counts = parallel_ops::parallel_map_result(&texts_owned, move |text| {
         count_tokens(text, &*tokenizer_boxed).map_err(|e| {
             // Convert TextError to CoreError
             scirs2_core::CoreError::ComputationError(scirs2_core::error::ErrorContext::new(
-                format!("Text processing error: {}", e),
+                format!("Text processing error: {e}"),
             ))
         })
     })?;
@@ -108,6 +111,7 @@ where
 /// # Returns
 ///
 /// * Result containing the filtered text
+#[allow(dead_code)]
 pub fn filter_tokens<F>(text: &str, tokenizer: &dyn Tokenizer, predicate: F) -> Result<String>
 where
     F: Fn(&str) -> bool,
@@ -133,6 +137,7 @@ where
 /// # Returns
 ///
 /// * Result containing a vector of n-grams
+#[allow(dead_code)]
 pub fn extract_ngrams(text: &str, tokenizer: &dyn Tokenizer, n: usize) -> Result<Vec<String>> {
     if n == 0 {
         return Err(TextError::InvalidInput(
@@ -165,6 +170,7 @@ pub fn extract_ngrams(text: &str, tokenizer: &dyn Tokenizer, n: usize) -> Result
 /// # Returns
 ///
 /// * Result containing a HashMap of collocations and their frequencies
+#[allow(dead_code)]
 pub fn extract_collocations(
     text: &str,
     tokenizer: &dyn Tokenizer,
@@ -188,8 +194,8 @@ pub fn extract_collocations(
         }
     }
 
-    // Filter by minimum count
-    collocations.retain(|_, &mut count| count >= min_count);
+    // Filter by minimum _count
+    collocations.retain(|_, &mut _count| _count >= min_count);
 
     Ok(collocations)
 }
@@ -205,6 +211,7 @@ pub fn extract_collocations(
 /// # Returns
 ///
 /// * `(Vec<String>, Vec<String>)` - Training and testing sets
+#[allow(dead_code)]
 pub fn train_test_split(
     texts: &[String],
     test_size: f64,
@@ -223,9 +230,9 @@ pub fn train_test_split(
         return Ok((Vec::new(), Vec::new()));
     }
 
-    // Use the random seed if provided
+    // Use the random _seed if provided
     let mut rng = match random_seed {
-        Some(seed) => rand::rngs::StdRng::seed_from_u64(seed),
+        Some(_seed) => rand::rngs::StdRng::seed_from_u64(_seed),
         None => {
             let mut temp_rng = rand::rng();
             rand::rngs::StdRng::from_rng(&mut temp_rng)
@@ -240,10 +247,10 @@ pub fn train_test_split(
     let test_count = (texts.len() as f64 * test_size).round() as usize;
     let train_count = texts.len() - test_count;
 
-    let train_texts = texts_copy.iter().take(train_count).cloned().collect();
-    let test_texts = texts_copy.iter().skip(train_count).cloned().collect();
+    let traintexts = texts_copy.iter().take(train_count).cloned().collect();
+    let testtexts = texts_copy.iter().skip(train_count).cloned().collect();
 
-    Ok((train_texts, test_texts))
+    Ok((traintexts, testtexts))
 }
 
 #[cfg(test)]

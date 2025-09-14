@@ -7,6 +7,7 @@ use ndarray::{Array1, Array2};
 use scirs2_cluster::metrics::{davies_bouldin_score, silhouette_score};
 use scirs2_cluster::vq::{kmeans2, MinitMethod, MissingMethod};
 
+#[allow(dead_code)]
 fn generate_dataset() -> (Array2<f64>, Array1<i32>) {
     // Generate three well-separated clusters
     let mut data = Vec::new();
@@ -45,6 +46,7 @@ fn generate_dataset() -> (Array2<f64>, Array1<i32>) {
     (data_array, labels_array)
 }
 
+#[allow(dead_code)]
 fn evaluate_clustering(data: &Array2<f64>, labels: &Array1<usize>) {
     // Convert usize labels to i32 for metric functions
     let labels_i32: Array1<i32> = labels.mapv(|x| x as i32);
@@ -67,11 +69,12 @@ fn evaluate_clustering(data: &Array2<f64>, labels: &Array1<usize>) {
     println!("  (Higher silhouette is better, lower Davies-Bouldin is better)");
 }
 
+#[allow(dead_code)]
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("Clustering Evaluation Metrics Demo");
     println!("=================================\n");
 
-    let (data, _true_labels) = generate_dataset();
+    let (data, true_labels) = generate_dataset();
 
     // Test with different numbers of clusters
     let test_k_values = vec![2, 3, 4, 5];

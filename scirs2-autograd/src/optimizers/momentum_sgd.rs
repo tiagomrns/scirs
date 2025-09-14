@@ -62,14 +62,14 @@ impl<F: Float> MomentumSGD<F> {
         momentum_sgd_namespace_id: &'static str,
     ) -> MomentumSGD<F> {
         for vid in var_id_list.into_iter() {
-            let v_name = format!("{}", vid);
+            let v_name = format!("{vid}");
             let v = {
                 let target_var = env
                     .get_array_by_id(vid)
                     .expect("variable array not found")
                     .borrow();
-                let var_shape = target_var.shape();
-                crate::ndarray_ext::zeros(var_shape)
+                let varshape = target_var.shape();
+                crate::ndarray_ext::zeros(varshape)
             };
             let mut ns = env.namespace_mut(momentum_sgd_namespace_id);
             ns.slot().name(v_name).set(v);
@@ -100,7 +100,7 @@ impl<F: Float> Optimizer<F> for MomentumSGD<F> {
             let param = params[i].as_ref();
             let namespace = g.env().namespace(self.momentum_sgd_namespace_id);
             let var_id = param.get_variable_id().expect("Got non-variable tensor");
-            let v = g.variable_by_name(format!("{}", var_id), &namespace);
+            let v = g.variable_by_name(format!("{var_id}"), &namespace);
 
             ret.push(
                 Tensor::builder(g)

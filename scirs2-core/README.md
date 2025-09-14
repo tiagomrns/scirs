@@ -4,18 +4,18 @@
 [![License](https://img.shields.io/badge/license-MIT%2FApache--2.0-blue.svg)](../LICENSE)
 [![Documentation](https://img.shields.io/docsrs/scirs2-core)](https://docs.rs/scirs2-core)
 [![Build Status](https://img.shields.io/badge/build-passing-brightgreen.svg)]()
-[![Version](https://img.shields.io/badge/version-0.1.0--alpha.6-orange.svg)]()
+[![Version](https://img.shields.io/badge/version-0.1.0--beta.1-orange.svg)]()
 [![Production Ready](https://img.shields.io/badge/status-production--ready-green.svg)]()
 
 **Production-Ready Scientific Computing Core for Rust - Final Alpha Release**
 
-🎯 **SciRS2 Core v0.1.0-alpha.6 (Final Alpha)** - The production-ready foundation for the SciRS2 scientific computing ecosystem. This release provides enterprise-grade infrastructure for numerical computation, data validation, memory management, and GPU acceleration with 99.1% test pass rate and zero build warnings.
+🎯 **SciRS2 Core v0.1.0-beta.1 (First Beta)** - The production-ready foundation for the SciRS2 scientific computing ecosystem. This release provides enterprise-grade infrastructure for numerical computation, data validation, memory management, and GPU acceleration with 99.1% test pass rate and zero build warnings.
 
 ## 🚀 Quick Start
 
 ```toml
 [dependencies]
-scirs2-core = { version = "0.1.0-alpha.6", features = ["validation", "simd", "parallel"] }
+scirs2-core = { version = "0.1.0-beta.1", features = ["validation", "simd", "parallel"] }
 ```
 
 ```rust
@@ -239,19 +239,19 @@ Choose features based on your needs:
 
 ```toml
 # Minimal scientific computing
-scirs2-core = { version = "0.1.0-alpha.6", features = ["validation"] }
+scirs2-core = { version = "0.1.0-beta.1", features = ["validation"] }
 
 # High-performance CPU computing
-scirs2-core = { version = "0.1.0-alpha.6", features = ["validation", "simd", "parallel"] }
+scirs2-core = { version = "0.1.0-beta.1", features = ["validation", "simd", "parallel"] }
 
 # GPU-accelerated computing
-scirs2-core = { version = "0.1.0-alpha.6", features = ["validation", "gpu", "cuda"] }
+scirs2-core = { version = "0.1.0-beta.1", features = ["validation", "gpu", "cuda"] }
 
 # Memory-efficient large-scale processing
-scirs2-core = { version = "0.1.0-alpha.6", features = ["validation", "memory_management", "memory_efficient"] }
+scirs2-core = { version = "0.1.0-beta.1", features = ["validation", "memory_management", "memory_efficient"] }
 
 # Full-featured development
-scirs2-core = { version = "0.1.0-alpha.6", features = ["all"] }
+scirs2-core = { version = "0.1.0-beta.1", features = ["all"] }
 ```
 
 ### Available Features
@@ -345,7 +345,7 @@ let result = span.in_span(|| compute_eigenvalues(&matrix))?;
 
 ## 🗺️ Release Status & Roadmap
 
-### ✅ Alpha 5 (Current - Final Alpha) **PRODUCTION READY**
+### ✅ Beta 1 (Current - First Beta) **PRODUCTION READY**
 - ✅ **Complete**: All core systems implemented and stable
 - ✅ **Quality**: 99.1% test pass rate (804/811 tests), zero build warnings
 - ✅ **Features**: 134 feature flags, comprehensive validation and GPU support
@@ -411,7 +411,7 @@ SciRS2 Core is part of the larger SciRS2 ecosystem:
 
 ## 🎯 **Alpha 5 Production Readiness Statement**
 
-**SciRS2 Core v0.1.0-alpha.6 represents a production-ready foundation for scientific computing in Rust.** With 99.1% test pass rate, zero build warnings, 134 comprehensive features, and extensive documentation, this final alpha release is suitable for:
+**SciRS2 Core v0.1.0-beta.1 represents a production-ready foundation for scientific computing in Rust.** With 99.1% test pass rate, zero build warnings, 134 comprehensive features, and extensive documentation, this final alpha release is suitable for:
 
 - ✅ **Research Projects**: Stable APIs for academic and industrial research
 - ✅ **Prototyping**: Full-featured scientific computing capabilities  
@@ -424,4 +424,4 @@ SciRS2 Core is part of the larger SciRS2 ecosystem:
 
 **Built with ❤️ for the scientific computing community**
 
-*Version: 0.1.0-alpha.6 (Final Alpha) | Released: 2025-06-21 | Next: Beta 1 (Q3 2025)*
+*Version: 0.1.0-beta.1 (First Beta) | Released: 2025-06-26 | Next: 1.0 (Q4 2025)*

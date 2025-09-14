@@ -87,6 +87,7 @@ pub struct ExtrapolationResult<F: IntegrateFloat> {
 /// # Returns
 ///
 /// The solution as an ODEResult or an error
+#[allow(dead_code)]
 pub fn gragg_bulirsch_stoer_method<F, Func>(
     f: Func,
     t_span: [F; 2],
@@ -103,18 +104,18 @@ where
 
     // Initialize step size
     let mut h = opts.h0.unwrap_or_else(|| {
-        let span = t_end - t_start;
-        span / F::from_usize(100).unwrap()
+        let _span = t_end - t_start;
+        _span / F::from_usize(100).unwrap()
     });
 
     let min_step = opts.min_step.unwrap_or_else(|| {
-        let span = t_end - t_start;
-        span / F::from_usize(1_000_000).unwrap()
+        let _span = t_end - t_start;
+        _span / F::from_usize(1_000_000).unwrap()
     });
 
     let max_step = opts.max_step.unwrap_or_else(|| {
-        let span = t_end - t_start;
-        span / F::from_usize(10).unwrap()
+        let _span = t_end - t_start;
+        _span / F::from_usize(10).unwrap()
     });
 
     // Storage for solution
@@ -204,6 +205,7 @@ where
 }
 
 /// Perform a single extrapolation step
+#[allow(dead_code)]
 fn extrapolation_step<F, Func>(
     f: &Func,
     t: F,
@@ -316,6 +318,7 @@ where
 }
 
 /// Modified midpoint method sequence (optimal for extrapolation)
+#[allow(dead_code)]
 fn modified_midpoint_sequence<F, Func>(
     f: &Func,
     t0: F,
@@ -344,7 +347,7 @@ where
         t += h_sub;
     }
 
-    // Subsequent steps: y_{k+1} = y_{k-1} + 2h * f(t_k, y_k)
+    // Subsequent _steps: y_{k+1} = y_{k-1} + 2h * f(t_k, y_k)
     for _ in 1..n_steps {
         let dy = f(t, y.view());
         let y_next = &y_prev + &dy * (F::from_f64(2.0).unwrap() * h_sub);
@@ -363,6 +366,7 @@ where
 }
 
 /// Euler method sequence
+#[allow(dead_code)]
 fn euler_sequence<F, Func>(
     f: &Func,
     t0: F,
@@ -387,6 +391,7 @@ where
 }
 
 /// RK4 method sequence
+#[allow(dead_code)]
 fn rk4_sequence<F, Func>(
     f: &Func,
     t0: F,
@@ -422,6 +427,7 @@ where
 ///
 /// Takes a step with size h and two steps with size h/2, then extrapolates
 /// to get a higher-order approximation.
+#[allow(dead_code)]
 pub fn richardson_extrapolation_step<F, Func, Method>(
     method: Method,
     f: &Func,

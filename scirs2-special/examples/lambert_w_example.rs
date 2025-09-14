@@ -1,6 +1,7 @@
 use num_complex::Complex64;
 use scirs2_special::{lambert_w, lambert_w_real};
 
+#[allow(dead_code)]
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("Lambert W Function Example");
     println!("=========================\n");
@@ -33,13 +34,13 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // Branch k = -1
     let z = 0.1;
-    let w_minus1 = lambert_w(Complex64::new(z, 0.0), -1, 1e-12)?;
-    println!("W_-1({}) = {} + {}i", z, w_minus1.re, w_minus1.im);
+    let wminus1 = lambert_w(Complex64::new(z, 0.0), -1, 1e-12)?;
+    println!("W_-1({}) = {} + {}i", z, wminus1.re, wminus1.im);
 
-    let w_exp_w = w_minus1 * w_minus1.exp();
+    let w_exp_w = wminus1 * wminus1.exp();
     println!(
         "Verification: ({} + {}i) * e^({} + {}i) = {} + {}i",
-        w_minus1.re, w_minus1.im, w_minus1.re, w_minus1.im, w_exp_w.re, w_exp_w.im
+        wminus1.re, wminus1.im, wminus1.re, wminus1.im, w_exp_w.re, w_exp_w.im
     );
 
     // Branch k = 1

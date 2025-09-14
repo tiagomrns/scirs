@@ -10,6 +10,7 @@ use scirs2_optim::memory_efficient::{
 };
 use std::error::Error;
 use std::time::Instant;
+// use statrs::statistics::Statistics; // statrs not available
 
 // Comprehensive training example with all memory optimizations
 struct AdvancedTrainer {
@@ -37,19 +38,19 @@ struct AdvancedTrainer {
 }
 
 impl AdvancedTrainer {
-    fn new(input_size: usize, output_size: usize, initial_batch_size: usize) -> Self {
-        let weights = Array2::random((input_size, output_size), Uniform::new(-0.1, 0.1));
+    fn new(_input_size: usize, output_size: usize, initial_batchsize: usize) -> Self {
+        let weights = Array2::random((_input_size, output_size), Uniform::new(-0.1, 0.1));
         let bias = Array1::zeros(output_size);
 
         Self {
-            weights_m: Array2::zeros((input_size, output_size)),
-            weights_v: Array2::zeros((input_size, output_size)),
+            weights_m: Array2::zeros((_input_size, output_size)),
+            weights_v: Array2::zeros((_input_size, output_size)),
             bias_m: Array1::zeros(output_size),
             bias_v: Array1::zeros(output_size),
             weights,
             bias,
             loss_scaler: LossScaler::new(65536.0),
-            batch_sizer: MemoryAwareBatchSizer::new(initial_batch_size)
+            batch_sizer: MemoryAwareBatchSizer::new(initial_batchsize)
                 .with_memory_threshold(0.85)
                 .with_adaptation_factor(1.3),
             step_count: 0,
@@ -180,6 +181,7 @@ impl AdvancedTrainer {
     }
 }
 
+#[allow(dead_code)]
 fn train_with_memory_optimization(
     trainer: &mut AdvancedTrainer,
     data: &Array2<f64>,
@@ -238,6 +240,7 @@ fn train_with_memory_optimization(
     Ok(losses)
 }
 
+#[allow(dead_code)]
 fn benchmark_memory_efficiency() -> Result<(), Box<dyn Error>> {
     println!("\nMemory Efficiency Benchmark");
     println!("===========================");
@@ -293,6 +296,7 @@ fn benchmark_memory_efficiency() -> Result<(), Box<dyn Error>> {
     Ok(())
 }
 
+#[allow(dead_code)]
 fn main() -> Result<(), Box<dyn Error>> {
     // Create synthetic dataset
     let n_samples = 5000;

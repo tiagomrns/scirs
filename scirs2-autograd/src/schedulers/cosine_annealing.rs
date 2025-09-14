@@ -25,7 +25,7 @@ use std::f64::consts::PI;
 ///
 /// # Example
 /// ```
-/// use scirs2_autograd::schedulers::{CosineAnnealingLR, LRScheduler};
+/// use scirs2__autograd::schedulers::{CosineAnnealingLR, LRScheduler};
 ///
 /// let scheduler = CosineAnnealingLR::new(0.1f32, 0.001f32, 100);
 ///
@@ -94,24 +94,24 @@ impl<F: Float> CosineAnnealingLR<F> {
     /// # Arguments
     /// * `eta_max` - Maximum learning rate (initial value)
     /// * `eta_min` - Minimum learning rate
-    /// * `t_0` - Number of steps in the first cycle
+    /// * `t0` - Number of steps in the first cycle
     /// * `t_mult` - Factor to increase cycle length after each restart
     ///
     /// # Panics
-    /// Panics if `t_0` is 0, `t_mult` is 0, or if `eta_min` >= `eta_max`
-    pub fn with_warm_restarts(eta_max: F, eta_min: F, t_0: usize, t_mult: usize) -> Self {
-        assert!(t_0 > 0, "t_0 must be greater than 0");
+    /// Panics if `t0` is 0, `t_mult` is 0, or if `eta_min` >= `eta_max`
+    pub fn with_warm_restarts(eta_max: F, eta_min: F, t0: usize, t_mult: usize) -> Self {
+        assert!(t0 > 0, "t0 must be greater than 0");
         assert!(t_mult > 0, "t_mult must be greater than 0");
         assert!(eta_min < eta_max, "eta_min must be less than eta_max");
 
         Self {
             eta_max,
             eta_min,
-            t_max: t_0,
+            t_max: t0,
             restart: true,
             t_mult,
             current_cycle: 0,
-            current_t_max: t_0,
+            current_t_max: t0,
         }
     }
 
@@ -212,8 +212,8 @@ impl<F: Float> CosineAnnealingLR<F> {
             return false;
         }
 
-        let (cycle, step_in_cycle, _) = self.get_cycle_info(step);
-        step_in_cycle == 0 && cycle > 0
+        let (cycle, step_in_cycle_, _cycle_length) = self.get_cycle_info(step);
+        step_in_cycle_ == 0 && cycle > 0
     }
 
     /// Get the next restart step

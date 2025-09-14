@@ -150,24 +150,22 @@ where
             .write(true)
             .truncate(true)
             .open(file_path)
-            .map_err(|e| LinalgError::ComputationError(format!("Failed to open file: {}", e)))?;
+            .map_err(|e| LinalgError::ComputationError(format!("Failed to open file: {e}")))?;
 
         let mut writer = BufWriter::new(file);
 
         // First write the matrix shape and quantization parameters
         writer
             .write_all(&(rows as u64).to_le_bytes())
-            .map_err(|e| LinalgError::ComputationError(format!("Failed to write rows: {}", e)))?;
+            .map_err(|e| LinalgError::ComputationError(format!("Failed to write rows: {e}")))?;
         writer
             .write_all(&(cols as u64).to_le_bytes())
-            .map_err(|e| {
-                LinalgError::ComputationError(format!("Failed to write columns: {}", e))
-            })?;
+            .map_err(|e| LinalgError::ComputationError(format!("Failed to write columns: {e}")))?;
         writer
             .write_all(&scale.to_le_bytes())
-            .map_err(|e| LinalgError::ComputationError(format!("Failed to write scale: {}", e)))?;
+            .map_err(|e| LinalgError::ComputationError(format!("Failed to write scale: {e}")))?;
         writer.write_all(&zero_point.to_le_bytes()).map_err(|e| {
-            LinalgError::ComputationError(format!("Failed to write zero_point: {}", e))
+            LinalgError::ComputationError(format!("Failed to write zeropoint: {e}"))
         })?;
 
         // Then write the quantized matrix data in chunks
@@ -181,22 +179,19 @@ where
             // Write the quantized chunk - convert i8 to u8 for writing
             // We need to use a bit representation conversion (reinterpret the bytes)
             // rather than a numeric cast to preserve the bit pattern
-            let u8_data: Vec<u8> = quantized_data
-                .iter()
-                .map(|&x| unsafe { std::mem::transmute::<i8, u8>(x) })
-                .collect();
+            let u8_data: Vec<u8> = quantized_data.iter().map(|&x| x.cast_unsigned()).collect();
             writer.write_all(&u8_data).map_err(|e| {
-                LinalgError::ComputationError(format!("Failed to write chunk: {}", e))
+                LinalgError::ComputationError(format!("Failed to write chunk: {e}"))
             })?;
         }
 
         writer
             .flush()
-            .map_err(|e| LinalgError::ComputationError(format!("Failed to flush buffer: {}", e)))?;
+            .map_err(|e| LinalgError::ComputationError(format!("Failed to flush buffer: {e}")))?;
 
         // Determine if the matrix is symmetric
         let symmetric =
-            method == QuantizationMethod::Symmetric && rows == cols && is_matrix_symmetric(matrix);
+            method == QuantizationMethod::Symmetric && rows == cols && ismatrix_symmetric(matrix);
 
         Ok(ChunkedQuantizedMatrix {
             shape: (rows, cols),
@@ -266,14 +261,14 @@ where
 
         // Open the file for reading
         let file = File::open(&self.file_path)
-            .map_err(|e| LinalgError::ComputationError(format!("Failed to open file: {}", e)))?;
+            .map_err(|e| LinalgError::ComputationError(format!("Failed to open file: {e}")))?;
 
         let mut reader = BufReader::new(file);
 
         // Skip header information (2 u64 values for dimensions, f32 for scale, i32 for zero_point)
         reader
             .seek(SeekFrom::Start(24))
-            .map_err(|e| LinalgError::ComputationError(format!("Failed to seek: {}", e)))?;
+            .map_err(|e| LinalgError::ComputationError(format!("Failed to seek: {e}")))?;
 
         // Prepare result vector
         let rows = self.shape.0;
@@ -286,19 +281,16 @@ where
             let chunk_rows = chunk_end - chunk_start;
 
             // Read the quantized chunk
-            let chunk_size = chunk_rows * cols;
-            let mut u8_data = vec![0u8; chunk_size];
+            let chunksize = chunk_rows * cols;
+            let mut u8_data = vec![0u8; chunksize];
 
-            reader.read_exact(&mut u8_data).map_err(|e| {
-                LinalgError::ComputationError(format!("Failed to read chunk: {}", e))
-            })?;
+            reader
+                .read_exact(&mut u8_data)
+                .map_err(|e| LinalgError::ComputationError(format!("Failed to read chunk: {e}")))?;
 
             // Convert back to i8 for processing using a bit pattern conversion
             // rather than a numeric cast to preserve the sign bit
-            let quantized_data: Vec<i8> = u8_data
-                .iter()
-                .map(|&x| unsafe { std::mem::transmute::<u8, i8>(x) })
-                .collect();
+            let quantized_data: Vec<i8> = u8_data.iter().map(|&x| x.cast_signed()).collect();
 
             // Apply the chunk to the input vector
             for i in 0..chunk_rows {
@@ -330,7 +322,7 @@ where
     /// # Returns
     ///
     /// A QuantizedMatrixFreeOp instance
-    pub fn to_matrix_free_op(&self) -> LinalgResult<QuantizedMatrixFreeOp<F>> {
+    pub fn tomatrix_free_op(&self) -> LinalgResult<QuantizedMatrixFreeOp<F>> {
         let rows = self.shape.0;
         let cols = self.shape.1;
 
@@ -354,16 +346,15 @@ where
             let x_f32: Vec<f32> = x.iter().map(|&val| val.as_()).collect();
 
             // Open the file for reading
-            let file = File::open(&file_path).map_err(|e| {
-                LinalgError::ComputationError(format!("Failed to open file: {}", e))
-            })?;
+            let file = File::open(&file_path)
+                .map_err(|e| LinalgError::ComputationError(format!("Failed to open file: {e}")))?;
 
             let mut reader = BufReader::new(file);
 
             // Skip header information
             reader
                 .seek(SeekFrom::Start(24))
-                .map_err(|e| LinalgError::ComputationError(format!("Failed to seek: {}", e)))?;
+                .map_err(|e| LinalgError::ComputationError(format!("Failed to seek: {e}")))?;
 
             // Prepare result vector
             let mut result = Array1::zeros(rows);
@@ -374,19 +365,16 @@ where
                 let chunk_rows = chunk_end - chunk_start;
 
                 // Read the quantized chunk
-                let chunk_size = chunk_rows * cols;
-                let mut u8_data = vec![0u8; chunk_size];
+                let chunksize = chunk_rows * cols;
+                let mut u8_data = vec![0u8; chunksize];
 
                 reader.read_exact(&mut u8_data).map_err(|e| {
-                    LinalgError::ComputationError(format!("Failed to read chunk: {}", e))
+                    LinalgError::ComputationError(format!("Failed to read chunk: {e}"))
                 })?;
 
                 // Convert back to i8 for processing using a bit pattern conversion
                 // rather than a numeric cast to preserve the sign bit
-                let quantized_data: Vec<i8> = u8_data
-                    .iter()
-                    .map(|&x| unsafe { std::mem::transmute::<u8, i8>(x) })
-                    .collect();
+                let quantized_data: Vec<i8> = u8_data.iter().map(|&x| x.cast_signed()).collect();
 
                 // Apply the chunk to the input vector
                 for i in 0..chunk_rows {
@@ -454,7 +442,7 @@ where
 
         if rows * cols <= CHUNK_SIZE * CHUNK_SIZE {
             // Convert to a regular MatrixFreeOp and use the standard solver
-            let op = self.to_matrix_free_op()?;
+            let op = self.tomatrix_free_op()?;
             return quantized_conjugate_gradient(&op, b, max_iter, tol, adaptive_precision);
         }
 
@@ -467,8 +455,7 @@ where
 
         if rows != cols {
             return Err(LinalgError::ShapeError(format!(
-                "Expected square matrix, got shape {}x{}",
-                rows, cols
+                "Expected square matrix, got shape {rows}x{cols}"
             )));
         }
 
@@ -501,7 +488,7 @@ where
             return Ok(x);
         }
 
-        // Tracking variables for adaptive precision
+        // Tracking variables for adaptive _precision
         let mut successive_slow_progress = 0;
         let mut previous_residual = rsold;
 
@@ -533,7 +520,7 @@ where
                 break;
             }
 
-            // Adaptive precision strategy
+            // Adaptive _precision strategy
             if adaptive_precision {
                 // Check if we're making good progress
                 let ratio = rsnew / previous_residual;
@@ -592,10 +579,10 @@ where
     /// # Returns
     ///
     /// A new `ChunkedQuantizedMatrix` instance
-    pub fn from_file(file_path: &str) -> LinalgResult<Self> {
+    pub fn from_file(filepath: &str) -> LinalgResult<Self> {
         // Open the file for reading
-        let file = File::open(file_path)
-            .map_err(|e| LinalgError::ComputationError(format!("Failed to open file: {}", e)))?;
+        let file = File::open(filepath)
+            .map_err(|e| LinalgError::ComputationError(format!("Failed to open file: {e}")))?;
 
         let mut reader = BufReader::new(file);
 
@@ -607,16 +594,16 @@ where
 
         reader
             .read_exact(&mut rows_bytes)
-            .map_err(|e| LinalgError::ComputationError(format!("Failed to read rows: {}", e)))?;
+            .map_err(|e| LinalgError::ComputationError(format!("Failed to read rows: {e}")))?;
         reader
             .read_exact(&mut cols_bytes)
-            .map_err(|e| LinalgError::ComputationError(format!("Failed to read columns: {}", e)))?;
+            .map_err(|e| LinalgError::ComputationError(format!("Failed to read columns: {e}")))?;
         reader
             .read_exact(&mut scale_bytes)
-            .map_err(|e| LinalgError::ComputationError(format!("Failed to read scale: {}", e)))?;
-        reader.read_exact(&mut zero_point_bytes).map_err(|e| {
-            LinalgError::ComputationError(format!("Failed to read zero_point: {}", e))
-        })?;
+            .map_err(|e| LinalgError::ComputationError(format!("Failed to read scale: {e}")))?;
+        reader
+            .read_exact(&mut zero_point_bytes)
+            .map_err(|e| LinalgError::ComputationError(format!("Failed to read zeropoint: {e}")))?;
 
         let rows = u64::from_le_bytes(rows_bytes) as usize;
         let cols = u64::from_le_bytes(cols_bytes) as usize;
@@ -654,7 +641,7 @@ where
         Ok(ChunkedQuantizedMatrix {
             shape: (rows, cols),
             params,
-            file_path: file_path.to_string(),
+            file_path: filepath.to_string(),
             symmetric: false,
             positive_definite: false,
             _phantom: std::marker::PhantomData,
@@ -701,7 +688,8 @@ where
 }
 
 /// Check if a matrix is symmetric
-fn is_matrix_symmetric<F>(matrix: &ArrayView2<F>) -> bool
+#[allow(dead_code)]
+fn ismatrix_symmetric<F>(matrix: &ArrayView2<F>) -> bool
 where
     F: Float + PartialEq,
 {
@@ -722,6 +710,7 @@ where
 }
 
 /// Quantize a chunk of a matrix
+#[allow(dead_code)]
 fn quantize_chunk<F>(chunk: &ArrayView2<F>, params: &QuantizationParams) -> LinalgResult<Vec<i8>>
 where
     F: Float + AsPrimitive<f32>,
@@ -763,12 +752,12 @@ mod tests {
     // Helper to get a temporary file path
     fn get_temp_file_path(name: &str) -> PathBuf {
         let mut path = temp_dir();
-        path.push(format!("quantized_matrix_{}.bin", name));
+        path.push(format!("quantizedmatrix_{}.bin", name));
         path
     }
 
     #[test]
-    fn test_chunked_quantized_matrix() {
+    fn test_chunked_quantizedmatrix() {
         // Create a test matrix
         let matrix = array![[1.0f32, 2.0, 3.0], [4.0, 5.0, 6.0], [7.0, 8.0, 9.0]];
 
@@ -802,7 +791,7 @@ mod tests {
     }
 
     #[test]
-    fn test_chunked_quantized_matrix_from_file() {
+    fn test_chunked_quantizedmatrix_from_file() {
         // Create a test matrix
         let matrix = array![[1.0f32, 2.0, 3.0], [4.0, 5.0, 6.0], [7.0, 8.0, 9.0]];
 

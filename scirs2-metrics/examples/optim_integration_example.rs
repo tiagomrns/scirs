@@ -8,6 +8,7 @@ use scirs2_metrics::classification::{accuracy_score, f1_score, precision_score, 
 use scirs2_metrics::integration::optim::{MetricOptimizer, SchedulerConfig};
 use scirs2_metrics::regression::{mean_squared_error, r2_score};
 
+#[allow(dead_code)]
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("=== SciRS2 Metrics + Optimization Integration Example ===\n");
 
@@ -26,6 +27,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     Ok(())
 }
 
+#[allow(dead_code)]
 fn classification_optimization_example() -> Result<(), Box<dyn std::error::Error>> {
     println!("🔍 Example 1: Classification Metric Optimization");
     println!("================================================");
@@ -95,6 +97,7 @@ fn classification_optimization_example() -> Result<(), Box<dyn std::error::Error
     Ok(())
 }
 
+#[allow(dead_code)]
 fn regression_optimization_example() -> Result<(), Box<dyn std::error::Error>> {
     println!("📊 Example 2: Regression Metric Optimization");
     println!("=============================================");
@@ -141,7 +144,7 @@ fn regression_optimization_example() -> Result<(), Box<dyn std::error::Error>> {
         "  R² progression: {:?}",
         r2_history
             .iter()
-            .map(|&x| format!("{:.3}", x))
+            .map(|&x| format!("{x:.3}"))
             .collect::<Vec<_>>()
     );
 
@@ -149,6 +152,7 @@ fn regression_optimization_example() -> Result<(), Box<dyn std::error::Error>> {
     Ok(())
 }
 
+#[allow(dead_code)]
 fn multi_metric_tracking_example() -> Result<(), Box<dyn std::error::Error>> {
     println!("📈 Example 3: Multi-Metric Tracking");
     println!("===================================");
@@ -174,7 +178,7 @@ fn multi_metric_tracking_example() -> Result<(), Box<dyn std::error::Error>> {
     primary_optimizer.add_additional_value("recall", recall);
 
     println!("Metrics tracked:");
-    println!("  Primary (F1-score): {:.3}", f1);
+    println!("  Primary (F1-score): {f1:.3}");
     println!("  Additional metrics:");
 
     for metric_name in ["accuracy", "precision", "recall"] {
@@ -201,6 +205,7 @@ fn multi_metric_tracking_example() -> Result<(), Box<dyn std::error::Error>> {
     Ok(())
 }
 
+#[allow(dead_code)]
 fn external_scheduler_pattern_example() -> Result<(), Box<dyn std::error::Error>> {
     println!("🔗 Example 4: External Scheduler Integration Pattern");
     println!("====================================================");

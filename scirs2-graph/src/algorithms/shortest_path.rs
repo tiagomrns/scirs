@@ -17,7 +17,7 @@ use crate::error::{GraphError, Result};
 
 /// Path between two nodes in a graph
 #[derive(Debug, Clone)]
-pub struct Path<N: Node, E: EdgeWeight> {
+pub struct Path<N: Node + std::fmt::Debug, E: EdgeWeight> {
     /// The nodes in the path, in order
     pub nodes: Vec<N>,
     /// The total weight of the path
@@ -26,8 +26,8 @@ pub struct Path<N: Node, E: EdgeWeight> {
 
 /// Result of A* search algorithm
 #[derive(Debug, Clone)]
-pub struct AStarResult<N: Node, E: EdgeWeight> {
-    /// The path from start to goal
+pub struct AStarResult<N: Node + std::fmt::Debug, E: EdgeWeight> {
+    /// The path from source to target
     pub path: Vec<N>,
     /// The total cost of the path
     pub cost: E,
@@ -35,22 +35,22 @@ pub struct AStarResult<N: Node, E: EdgeWeight> {
 
 /// State for A* priority queue
 #[derive(Clone)]
-struct AStarState<N: Node, E: EdgeWeight> {
+struct AStarState<N: Node + std::fmt::Debug, E: EdgeWeight> {
     node: N,
     cost: E,
     heuristic: E,
     path: Vec<N>,
 }
 
-impl<N: Node, E: EdgeWeight> PartialEq for AStarState<N, E> {
+impl<N: Node + std::fmt::Debug, E: EdgeWeight> PartialEq for AStarState<N, E> {
     fn eq(&self, other: &Self) -> bool {
         self.node == other.node
     }
 }
 
-impl<N: Node, E: EdgeWeight> Eq for AStarState<N, E> {}
+impl<N: Node + std::fmt::Debug, E: EdgeWeight> Eq for AStarState<N, E> {}
 
-impl<N: Node, E: EdgeWeight + std::ops::Add<Output = E> + Copy + PartialOrd> Ord
+impl<N: Node + std::fmt::Debug, E: EdgeWeight + std::ops::Add<Output = E> + Copy + PartialOrd> Ord
     for AStarState<N, E>
 {
     fn cmp(&self, other: &Self) -> Ordering {
@@ -69,8 +69,8 @@ impl<N: Node, E: EdgeWeight + std::ops::Add<Output = E> + Copy + PartialOrd> Ord
     }
 }
 
-impl<N: Node, E: EdgeWeight + std::ops::Add<Output = E> + Copy + PartialOrd> PartialOrd
-    for AStarState<N, E>
+impl<N: Node + std::fmt::Debug, E: EdgeWeight + std::ops::Add<Output = E> + Copy + PartialOrd>
+    PartialOrd for AStarState<N, E>
 {
     fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
         Some(self.cmp(other))
@@ -88,6 +88,23 @@ impl<N: Node, E: EdgeWeight + std::ops::Add<Output = E> + Copy + PartialOrd> Par
 /// * `Ok(Some(Path))` - If a path exists
 /// * `Ok(None)` - If no path exists
 /// * `Err(GraphError)` - If the source or target node is not in the graph
+///
+/// # Time Complexity
+/// O((V + E) log V) where V is the number of vertices and E is the number of edges.
+/// Using a binary heap (min-heap) priority queue implementation.
+///
+/// # Space Complexity
+/// O(V) for the distance array and predecessor tracking.
+///
+/// # Deprecation Notice
+/// This function will be updated in v1.0 to return a standardized `PathResult` type
+/// that provides more detailed information about the path and search process.
+/// The current API will remain available but deprecated.
+#[deprecated(
+    since = "0.1.0-beta.2",
+    note = "Use `dijkstra_path` for future compatibility. This function will return PathResult in v1.0"
+)]
+#[allow(dead_code)]
 pub fn shortest_path<N, E, Ix>(
     graph: &Graph<N, E, Ix>,
     source: &N,
@@ -108,14 +125,12 @@ where
     // Check if source and target are in the graph
     if !graph.has_node(source) {
         return Err(GraphError::InvalidGraph(format!(
-            "Source node {:?} not found",
-            source
+            "Source node {source:?} not found"
         )));
     }
     if !graph.has_node(target) {
         return Err(GraphError::InvalidGraph(format!(
-            "Target node {:?} not found",
-            target
+            "Target node {target:?} not found"
         )));
     }
 
@@ -186,7 +201,73 @@ where
     }))
 }
 
+/// Finds the shortest path between source and target nodes using Dijkstra's algorithm (modern API)
+///
+/// This function provides the same functionality as `shortest_path` but with a clearer name
+/// that explicitly indicates the algorithm being used. This is the recommended function to use
+/// going forward.
+///
+/// # Arguments
+/// * `graph` - The graph to search in
+/// * `source` - The source node
+/// * `target` - The target node
+///
+/// # Returns
+/// * `Ok(Some(Path))` - If a path exists
+/// * `Ok(None)` - If no path exists
+/// * `Err(GraphError)` - If the source or target node is not in the graph
+///
+/// # Time Complexity
+/// O((V + E) log V) where V is the number of vertices and E is the number of edges.
+///
+/// # Space Complexity
+/// O(V) for the distance array and predecessor tracking.
+///
+/// # Example
+/// ```rust
+/// use scirs2_graph::{Graph, dijkstra_path};
+///
+/// let mut graph: Graph<String, f64> = Graph::new();
+/// graph.add_node("A".to_string());
+/// graph.add_node("B".to_string());
+/// graph.add_edge("A".to_string(), "B".to_string(), 1.0).unwrap();
+///
+/// let path = dijkstra_path(&graph, &"A".to_string(), &"B".to_string()).unwrap();
+/// assert!(path.is_some());
+/// ```
+#[allow(dead_code)]
+pub fn dijkstra_path<N, E, Ix>(
+    graph: &Graph<N, E, Ix>,
+    source: &N,
+    target: &N,
+) -> Result<Option<Path<N, E>>>
+where
+    N: Node + std::fmt::Debug,
+    E: EdgeWeight
+        + num_traits::Zero
+        + num_traits::One
+        + std::ops::Add<Output = E>
+        + PartialOrd
+        + std::marker::Copy
+        + std::fmt::Debug
+        + std::default::Default,
+    Ix: petgraph::graph::IndexType,
+{
+    #[allow(deprecated)]
+    shortest_path(graph, source, target)
+}
+
 /// Finds the shortest path in a directed graph
+///
+/// # Deprecation Notice
+/// This function will be updated in v1.0 to return a standardized `PathResult` type
+/// that provides more detailed information about the path and search process.
+/// The current API will remain available but deprecated.
+#[deprecated(
+    since = "0.1.0-beta.2",
+    note = "Use `dijkstra_path_digraph` for future compatibility. This function will return PathResult in v1.0"
+)]
+#[allow(dead_code)]
 pub fn shortest_path_digraph<N, E, Ix>(
     graph: &DiGraph<N, E, Ix>,
     source: &N,
@@ -208,14 +289,12 @@ where
     // Check if source and target are in the graph
     if !graph.has_node(source) {
         return Err(GraphError::InvalidGraph(format!(
-            "Source node {:?} not found",
-            source
+            "Source node {source:?} not found"
         )));
     }
     if !graph.has_node(target) {
         return Err(GraphError::InvalidGraph(format!(
-            "Target node {:?} not found",
-            target
+            "Target node {target:?} not found"
         )));
     }
 
@@ -286,6 +365,48 @@ where
     }))
 }
 
+/// Finds the shortest path between source and target nodes in a directed graph using Dijkstra's algorithm
+///
+/// This is the modern API that provides a clearer name for directed graph path finding.
+/// This is the recommended function to use for directed graphs.
+///
+/// # Arguments
+/// * `graph` - The directed graph to search in
+/// * `source` - The source node
+/// * `target` - The target node
+///
+/// # Returns
+/// * `Ok(Some(Path))` - If a path exists
+/// * `Ok(None)` - If no path exists
+/// * `Err(GraphError)` - If the source or target node is not in the graph
+///
+/// # Time Complexity
+/// O((V + E) log V) where V is the number of vertices and E is the number of edges.
+///
+/// # Space Complexity
+/// O(V) for the distance array and predecessor tracking.
+#[allow(dead_code)]
+pub fn dijkstra_path_digraph<N, E, Ix>(
+    graph: &DiGraph<N, E, Ix>,
+    source: &N,
+    target: &N,
+) -> Result<Option<Path<N, E>>>
+where
+    N: Node + std::fmt::Debug,
+    E: EdgeWeight
+        + num_traits::Zero
+        + num_traits::One
+        + std::ops::Add<Output = E>
+        + PartialOrd
+        + std::marker::Copy
+        + std::fmt::Debug
+        + std::default::Default,
+    Ix: petgraph::graph::IndexType,
+{
+    #[allow(deprecated)]
+    shortest_path_digraph(graph, source, target)
+}
+
 /// Computes all-pairs shortest paths using the Floyd-Warshall algorithm
 ///
 /// Returns a matrix where entry (i, j) contains the shortest distance from node i to node j.
@@ -296,9 +417,22 @@ where
 ///
 /// # Returns
 /// * `Result<Array2<f64>>` - A matrix of shortest distances
+///
+/// # Time Complexity
+/// O(V³) where V is the number of vertices. This algorithm computes shortest paths
+/// between all pairs of vertices using dynamic programming.
+///
+/// # Space Complexity
+/// O(V²) for the distance matrix.
+///
+/// # Note
+/// This algorithm can detect negative cycles if the diagonal contains negative values
+/// after completion. It works correctly with negative edge weights but not with
+/// negative cycles.
+#[allow(dead_code)]
 pub fn floyd_warshall<N, E, Ix>(graph: &Graph<N, E, Ix>) -> Result<ndarray::Array2<f64>>
 where
-    N: Node,
+    N: Node + std::fmt::Debug,
     E: EdgeWeight + Into<f64> + num_traits::Zero + Copy,
     Ix: petgraph::graph::IndexType,
 {
@@ -343,9 +477,10 @@ where
 }
 
 /// Computes all-pairs shortest paths for a directed graph using Floyd-Warshall
+#[allow(dead_code)]
 pub fn floyd_warshall_digraph<N, E, Ix>(graph: &DiGraph<N, E, Ix>) -> Result<ndarray::Array2<f64>>
 where
-    N: Node,
+    N: Node + std::fmt::Debug,
     E: EdgeWeight + Into<f64> + num_traits::Zero + Copy,
     Ix: petgraph::graph::IndexType,
 {
@@ -391,45 +526,60 @@ where
 ///
 /// # Arguments
 /// * `graph` - The graph to search
-/// * `start` - Starting node
-/// * `goal` - Goal node
-/// * `heuristic` - Heuristic function that estimates distance from a node to the goal
+/// * `source` - Source node
+/// * `target` - Target node
+/// * `heuristic` - Heuristic function that estimates distance from a node to the target
 ///
 /// # Returns
 /// * `Result<AStarResult>` - The shortest path and its cost
+///
+/// # Time Complexity
+/// O(b^d) where b is the branching factor and d is the depth of the solution.
+/// In the worst case with an inadmissible heuristic: O(V²).
+/// With a perfect heuristic: O(V).
+/// Typical case with good heuristic: O(V log V).
+///
+/// # Space Complexity
+/// O(V) for the open set, closed set, and path reconstruction.
+///
+/// # Note
+/// The heuristic function must be admissible (never overestimate the actual cost)
+/// and consistent (satisfy the triangle inequality) to guarantee finding the
+/// optimal path.
+#[allow(dead_code)]
 pub fn astar_search<N, E, Ix, H>(
     graph: &Graph<N, E, Ix>,
-    start: &N,
-    goal: &N,
+    source: &N,
+    target: &N,
     heuristic: H,
 ) -> Result<AStarResult<N, E>>
 where
-    N: Node + Clone + Hash + Eq,
+    N: Node + std::fmt::Debug + Clone + Hash + Eq,
     E: EdgeWeight + Clone + std::ops::Add<Output = E> + num_traits::Zero + PartialOrd + Copy,
     Ix: petgraph::graph::IndexType,
     H: Fn(&N) -> E,
 {
-    if !graph.contains_node(start) || !graph.contains_node(goal) {
-        return Err(GraphError::NodeNotFound);
+    if !graph.contains_node(source) || !graph.contains_node(target) {
+        return Err(GraphError::node_not_found("node"));
     }
 
     let mut open_set = BinaryHeap::new();
     let mut g_score: HashMap<N, E> = HashMap::new();
     let mut came_from: HashMap<N, N> = HashMap::new();
 
-    g_score.insert(start.clone(), E::zero());
+    g_score.insert(source.clone(), E::zero());
 
     open_set.push(AStarState {
-        node: start.clone(),
+        node: source.clone(),
         cost: E::zero(),
-        heuristic: heuristic(start),
-        path: vec![start.clone()],
+        heuristic: heuristic(source),
+        path: vec![source.clone()],
     });
 
     while let Some(current_state) = open_set.pop() {
         let current = &current_state.node;
 
-        if current == goal {
+        if current == target {
             return Ok(AStarResult {
                 path: current_state.path,
                 cost: current_state.cost,
@@ -463,43 +613,49 @@ where
         }
     }
 
-    Err(GraphError::NoPath)
+    Err(GraphError::NoPath {
+        src_node: format!("{source:?}"),
+        target: format!("{target:?}"),
+        nodes: 0,
+        edges: 0,
+    })
 }
 
 /// A* search for directed graphs
+#[allow(dead_code)]
 pub fn astar_search_digraph<N, E, Ix, H>(
     graph: &DiGraph<N, E, Ix>,
-    start: &N,
-    goal: &N,
+    source: &N,
+    target: &N,
     heuristic: H,
 ) -> Result<AStarResult<N, E>>
 where
-    N: Node + Clone + Hash + Eq,
+    N: Node + std::fmt::Debug + Clone + Hash + Eq,
     E: EdgeWeight + Clone + std::ops::Add<Output = E> + num_traits::Zero + PartialOrd + Copy,
     Ix: petgraph::graph::IndexType,
     H: Fn(&N) -> E,
 {
-    if !graph.contains_node(start) || !graph.contains_node(goal) {
-        return Err(GraphError::NodeNotFound);
+    if !graph.contains_node(source) || !graph.contains_node(target) {
+        return Err(GraphError::node_not_found("node"));
     }
 
     let mut open_set = BinaryHeap::new();
     let mut g_score: HashMap<N, E> = HashMap::new();
     let mut came_from: HashMap<N, N> = HashMap::new();
 
-    g_score.insert(start.clone(), E::zero());
+    g_score.insert(source.clone(), E::zero());
 
     open_set.push(AStarState {
-        node: start.clone(),
+        node: source.clone(),
         cost: E::zero(),
-        heuristic: heuristic(start),
-        path: vec![start.clone()],
+        heuristic: heuristic(source),
+        path: vec![source.clone()],
     });
 
     while let Some(current_state) = open_set.pop() {
         let current = &current_state.node;
 
-        if current == goal {
+        if current == target {
             return Ok(AStarResult {
                 path: current_state.path,
                 cost: current_state.cost,
@@ -533,21 +689,27 @@ where
         }
     }
 
-    Err(GraphError::NoPath)
+    Err(GraphError::NoPath {
+        src_node: format!("{source:?}"),
+        target: format!("{target:?}"),
+        nodes: 0,
+        edges: 0,
+    })
 }
 
 /// Finds K shortest paths between two nodes using Yen's algorithm
 ///
 /// Returns up to k shortest paths sorted by total weight.
 /// Each path includes the total weight and the sequence of nodes.
+#[allow(dead_code)]
 pub fn k_shortest_paths<N, E, Ix>(
     graph: &Graph<N, E, Ix>,
-    start: &N,
-    goal: &N,
+    source: &N,
+    target: &N,
     k: usize,
 ) -> Result<Vec<(f64, Vec<N>)>>
 where
-    N: Node + Clone + Hash + Eq + Ord + std::fmt::Debug,
+    N: Node + std::fmt::Debug + Clone + Hash + Eq + Ord,
     E: EdgeWeight
         + Into<f64>
         + Clone
@@ -565,15 +727,15 @@ where
     }
 
     // Check if nodes exist
-    if !graph.contains_node(start) || !graph.contains_node(goal) {
-        return Err(GraphError::NodeNotFound);
+    if !graph.contains_node(source) || !graph.contains_node(target) {
+        return Err(GraphError::node_not_found("node"));
     }
 
     let mut paths = Vec::new();
     let mut candidates = std::collections::BinaryHeap::new();
 
     // Find the shortest path first
-    match shortest_path(graph, start, goal) {
+    match dijkstra_path(graph, source, target) {
         Ok(Some(path)) => {
             let weight: f64 = path.total_weight.into();
             paths.push((weight, path.nodes));
@@ -605,9 +767,9 @@ where
                 }
             }
 
-            // Find shortest path from spur_node to goal avoiding removed edges
+            // Find shortest path from spur_node to target avoiding removed edges
             if let Ok((spur_weight, spur_path)) =
-                shortest_path_avoiding_edges(graph, spur_node, goal, &removed_edges, root_path)
+                shortest_path_avoiding_edges(graph, spur_node, target, &removed_edges, root_path)
             {
                 // Calculate total weight of the new path
                 let mut total_weight = spur_weight;
@@ -648,15 +810,16 @@ where
 }
 
 /// Helper function for k-shortest paths that finds shortest path avoiding certain edges
+#[allow(dead_code)]
 fn shortest_path_avoiding_edges<N, E, Ix>(
     graph: &Graph<N, E, Ix>,
-    start: &N,
-    goal: &N,
+    source: &N,
+    target: &N,
     avoided_edges: &[(N, N)],
     excluded_nodes: &[N],
 ) -> Result<(f64, Vec<N>)>
 where
-    N: Node + Clone + Hash + Eq + Ord,
+    N: Node + std::fmt::Debug + Clone + Hash + Eq + Ord,
     E: EdgeWeight + Into<f64>,
     Ix: petgraph::graph::IndexType,
 {
@@ -666,14 +829,14 @@ where
     let mut previous: HashMap<N, N> = HashMap::new();
     let mut heap = BinaryHeap::new();
 
-    distances.insert(start.clone(), 0.0);
-    heap.push((Reverse(ordered_float::OrderedFloat(0.0)), start.clone()));
+    distances.insert(source.clone(), 0.0);
+    heap.push((Reverse(ordered_float::OrderedFloat(0.0)), source.clone()));
 
     while let Some((Reverse(ordered_float::OrderedFloat(dist)), node)) = heap.pop() {
-        if &node == goal {
+        if &node == target {
             // Reconstruct path
-            let mut path = vec![goal.clone()];
-            let mut current = goal.clone();
+            let mut path = vec![target.clone()];
+            let mut current = target.clone();
 
             while let Some(prev) = previous.get(&current) {
                 path.push(prev.clone());
@@ -695,8 +858,9 @@ where
                     continue;
                 }
 
-                // Skip if this node is in excluded nodes (except start and goal)
-                if &neighbor != start && &neighbor != goal && excluded_nodes.contains(&neighbor) {
+                // Skip if this node is in excluded _nodes (except source and target)
+                if &neighbor != source && &neighbor != target && excluded_nodes.contains(&neighbor)
+                {
                     continue;
                 }
 
@@ -714,7 +878,12 @@ where
         }
     }
 
-    Err(GraphError::NoPath)
+    Err(GraphError::NoPath {
+        src_node: format!("{source:?}"),
+        target: format!("{target:?}"),
+        nodes: 0,
+        edges: 0,
+    })
 }
 
 #[cfg(test)]
@@ -722,6 +891,7 @@ mod tests {
     use super::*;
 
     #[test]
+    #[allow(deprecated)]
     fn test_shortest_path() {
         let mut graph: Graph<i32, f64> = Graph::new();
 

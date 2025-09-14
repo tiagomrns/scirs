@@ -65,12 +65,10 @@ use std::path::{Path, PathBuf};
 use std::sync::{Arc, Mutex, RwLock};
 use std::time::{Duration, Instant, SystemTime};
 
-#[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
 
 /// Coverage configuration
-#[derive(Debug, Clone)]
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct CoverageConfig {
     /// Types of coverage to collect
     pub coverage_types: Vec<CoverageType>,
@@ -85,7 +83,7 @@ pub struct CoverageConfig {
     /// Output directory for reports
     pub output_directory: PathBuf,
     /// Include system/library code in coverage
-    pub include_system_code: bool,
+    pub include_systemcode: bool,
     /// File patterns to exclude from coverage
     pub exclude_patterns: Vec<String>,
     /// File patterns to include (if empty, includes all)
@@ -93,7 +91,7 @@ pub struct CoverageConfig {
     /// Enable real-time coverage updates
     pub real_time_updates: bool,
     /// Sampling rate for performance optimization (1.0 = 100%)
-    pub sampling_rate: f64,
+    pub samplingrate: f64,
     /// Enable historical tracking
     pub enable_history: bool,
     /// History retention period
@@ -101,7 +99,7 @@ pub struct CoverageConfig {
     /// Enable differential coverage
     pub enable_diff_coverage: bool,
     /// Base commit/branch for differential coverage
-    pub diff_base: Option<String>,
+    pub diffbase: Option<String>,
 }
 
 impl Default for CoverageConfig {
@@ -113,7 +111,7 @@ impl Default for CoverageConfig {
             integration_threshold: 60.0,
             report_formats: vec![ReportFormat::Html, ReportFormat::Json],
             output_directory: PathBuf::from("coverage_reports"),
-            include_system_code: false,
+            include_systemcode: false,
             exclude_patterns: vec![
                 "*/tests/*".to_string(),
                 "*/benches/*".to_string(),
@@ -121,11 +119,11 @@ impl Default for CoverageConfig {
             ],
             include_patterns: vec![],
             real_time_updates: true,
-            sampling_rate: 1.0,
+            samplingrate: 1.0,
             enable_history: true,
             history_retention: Duration::from_secs(30 * 24 * 60 * 60), // 30 days
             enable_diff_coverage: false,
-            diff_base: None,
+            diffbase: None,
         }
     }
 }
@@ -137,7 +135,7 @@ impl CoverageConfig {
             coverage_threshold: 85.0,
             branch_threshold: 75.0,
             integration_threshold: 70.0,
-            sampling_rate: 0.1, // 10% sampling for production
+            samplingrate: 0.1, // 10% sampling for production
             real_time_updates: false,
             ..Default::default()
         }
@@ -154,7 +152,7 @@ impl CoverageConfig {
             ],
             coverage_threshold: 75.0,
             real_time_updates: true,
-            sampling_rate: 1.0,
+            samplingrate: 1.0,
             ..Default::default()
         }
     }
@@ -192,7 +190,7 @@ impl CoverageConfig {
     /// Enable differential coverage
     pub fn with_diff_coverage(mut self, base: &str) -> Self {
         self.enable_diff_coverage = true;
-        self.diff_base = Some(base.to_string());
+        self.diffbase = Some(base.to_string());
         self
     }
 
@@ -204,8 +202,7 @@ impl CoverageConfig {
 }
 
 /// Types of coverage analysis
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub enum CoverageType {
     /// Line coverage - tracks executed lines
     Line,
@@ -224,8 +221,7 @@ pub enum CoverageType {
 }
 
 /// Report output formats
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub enum ReportFormat {
     /// HTML report with interactive visualization
     Html,
@@ -242,8 +238,7 @@ pub enum ReportFormat {
 }
 
 /// Coverage data for a single source file
-#[derive(Debug, Clone)]
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct FileCoverage {
     /// File path
     pub file_path: PathBuf,
@@ -317,8 +312,7 @@ impl FileCoverage {
 }
 
 /// Branch coverage information
-#[derive(Debug, Clone)]
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct BranchCoverage {
     /// Line number of the branch
     pub line_number: u32,
@@ -358,8 +352,7 @@ impl BranchCoverage {
 }
 
 /// Types of branches
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub enum BranchType {
     /// If-else statement
     IfElse,
@@ -378,8 +371,7 @@ pub enum BranchType {
 }
 
 /// Function coverage information
-#[derive(Debug, Clone)]
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct FunctionCoverage {
     /// Function name
     pub function_name: String,
@@ -412,8 +404,7 @@ impl FunctionCoverage {
 }
 
 /// Integration coverage point
-#[derive(Debug, Clone)]
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct IntegrationPoint {
     /// Integration point ID
     pub id: String,
@@ -432,8 +423,7 @@ pub struct IntegrationPoint {
 }
 
 /// Types of integration points
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub enum IntegrationType {
     /// Function call
     FunctionCall,
@@ -454,8 +444,7 @@ pub enum IntegrationType {
 }
 
 /// Overall coverage report
-#[derive(Debug, Clone)]
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct CoverageReport {
     /// Report generation timestamp
     pub generated_at: SystemTime,
@@ -521,8 +510,7 @@ impl CoverageReport {
 }
 
 /// Coverage statistics
-#[derive(Debug, Clone)]
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct CoverageStatistics {
     /// Total lines across all files
     pub total_lines: u32,
@@ -553,8 +541,7 @@ pub struct CoverageStatistics {
 }
 
 /// Coverage trends over time
-#[derive(Debug, Clone)]
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct CoverageTrends {
     /// Historical coverage data points
     pub history: Vec<CoverageDataPoint>,
@@ -567,8 +554,7 @@ pub struct CoverageTrends {
 }
 
 /// Historical coverage data point
-#[derive(Debug, Clone)]
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct CoverageDataPoint {
     /// Timestamp
     pub timestamp: SystemTime,
@@ -583,8 +569,7 @@ pub struct CoverageDataPoint {
 }
 
 /// Trend direction
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub enum TrendDirection {
     /// Coverage is improving
     Improving,
@@ -597,8 +582,7 @@ pub enum TrendDirection {
 }
 
 /// Quality gate results
-#[derive(Debug, Clone)]
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct QualityGateResults {
     /// Overall quality gate status
     pub overall_passed: bool,
@@ -613,8 +597,7 @@ pub struct QualityGateResults {
 }
 
 /// Quality gate failure details
-#[derive(Debug, Clone)]
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct QualityGateFailure {
     /// Gate type that failed
     pub gate_type: String,
@@ -629,8 +612,7 @@ pub struct QualityGateFailure {
 }
 
 /// Failure severity levels
-#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
 pub enum FailureSeverity {
     /// Minor failure - coverage slightly below threshold
     Minor,
@@ -643,8 +625,7 @@ pub enum FailureSeverity {
 }
 
 /// Performance impact of coverage collection
-#[derive(Debug, Clone)]
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct PerformanceImpact {
     /// Overhead percentage (execution time increase)
     pub execution_overhead_percent: f64,
@@ -659,8 +640,7 @@ pub struct PerformanceImpact {
 }
 
 /// Coverage improvement recommendations
-#[derive(Debug, Clone)]
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct CoverageRecommendation {
     /// Recommendation type
     pub recommendation_type: RecommendationType,
@@ -677,8 +657,7 @@ pub struct CoverageRecommendation {
 }
 
 /// Types of coverage recommendations
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub enum RecommendationType {
     /// Add missing unit tests
     AddUnitTests,
@@ -697,8 +676,7 @@ pub enum RecommendationType {
 }
 
 /// Recommendation priority levels
-#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
 pub enum RecommendationPriority {
     /// Low priority recommendation
     Low,
@@ -758,10 +736,9 @@ impl CoverageAnalyzer {
         // Create output directory if it doesn't exist
         if !config.output_directory.exists() {
             std::fs::create_dir_all(&config.output_directory).map_err(|e| {
-                CoreError::from(std::io::Error::new(
-                    std::io::ErrorKind::Other,
-                    format!("Failed to create output directory: {}", e),
-                ))
+                CoreError::from(std::io::Error::other(format!(
+                    "Failed to create output directory: {e}"
+                )))
             })?;
         }
 
@@ -780,8 +757,7 @@ impl CoverageAnalyzer {
         if let Ok(mut state) = self.collection_state.lock() {
             match *state {
                 CollectionState::Collecting => {
-                    return Err(CoreError::from(std::io::Error::new(
-                        std::io::ErrorKind::Other,
+                    return Err(CoreError::from(std::io::Error::other(
                         "Coverage collection already in progress",
                     )));
                 }
@@ -849,7 +825,7 @@ impl CoverageAnalyzer {
     }
 
     /// Record line execution
-    pub fn record_line_execution(&self, file_path: &Path, line_number: u32) -> CoreResult<()> {
+    pub fn record_line_execution(&self, file_path: &Path, linenumber: u32) -> CoreResult<()> {
         if let Ok(mut coverage) = self.file_coverage.write() {
             let file_coverage =
                 coverage
@@ -866,7 +842,7 @@ impl CoverageAnalyzer {
                         collected_at: SystemTime::now(),
                     });
 
-            *file_coverage.line_hits.entry(line_number).or_insert(0) += 1;
+            *file_coverage.line_hits.entry(linenumber).or_insert(0) += 1;
         }
 
         Ok(())
@@ -1296,7 +1272,7 @@ impl CoverageAnalyzer {
                 ReportFormat::Json => self.generate_json_report(report)?,
                 ReportFormat::Xml => self.generate_xml_report(report)?,
                 ReportFormat::Lcov => self.generate_lcov_report(report)?,
-                ReportFormat::Text => self.generate_text_report(report)?,
+                ReportFormat::Text => self.generatetext_report(report)?,
                 ReportFormat::Csv => self.generate_csv_report(report)?,
             }
         }
@@ -1310,10 +1286,9 @@ impl CoverageAnalyzer {
         let output_path = self.config.output_directory.join("coverage_report.html");
 
         std::fs::write(output_path, html_content).map_err(|e| {
-            CoreError::from(std::io::Error::new(
-                std::io::ErrorKind::Other,
-                format!("Failed to write HTML report: {}", e),
-            ))
+            CoreError::from(std::io::Error::other(format!(
+                "Failed to write HTML report: {e}"
+            )))
         })?;
 
         Ok(())
@@ -1321,29 +1296,25 @@ impl CoverageAnalyzer {
 
     /// Generate JSON report
     fn generate_json_report(&self, report: &CoverageReport) -> CoreResult<()> {
-        #[cfg(feature = "serde")]
         {
             let json_content = serde_json::to_string_pretty(report).map_err(|e| {
-                CoreError::from(std::io::Error::new(
-                    std::io::ErrorKind::Other,
-                    format!("Failed to serialize JSON report: {}", e),
-                ))
+                CoreError::from(std::io::Error::other(format!(
+                    "Failed to serialize JSON report: {e}"
+                )))
             })?;
 
             let output_path = self.config.output_directory.join("coverage_report.json");
             std::fs::write(output_path, json_content).map_err(|e| {
-                CoreError::from(std::io::Error::new(
-                    std::io::ErrorKind::Other,
-                    format!("Failed to write JSON report: {}", e),
-                ))
+                CoreError::from(std::io::Error::other(format!(
+                    "Failed to write JSON report: {e}"
+                )))
             })?;
         }
 
         #[cfg(not(feature = "serde"))]
         {
             let _ = report; // Suppress unused warning
-            return Err(CoreError::from(std::io::Error::new(
-                std::io::ErrorKind::Other,
+            return Err(CoreError::from(std::io::Error::other(
                 "JSON report requires serde feature",
             )));
         }
@@ -1357,10 +1328,9 @@ impl CoverageAnalyzer {
         let output_path = self.config.output_directory.join("coverage_report.xml");
 
         std::fs::write(output_path, xml_content).map_err(|e| {
-            CoreError::from(std::io::Error::new(
-                std::io::ErrorKind::Other,
-                format!("Failed to write XML report: {}", e),
-            ))
+            CoreError::from(std::io::Error::other(format!(
+                "Failed to write XML report: {e}"
+            )))
         })?;
 
         Ok(())
@@ -1372,25 +1342,23 @@ impl CoverageAnalyzer {
         let output_path = self.config.output_directory.join("coverage.lcov");
 
         std::fs::write(output_path, lcov_content).map_err(|e| {
-            CoreError::from(std::io::Error::new(
-                std::io::ErrorKind::Other,
-                format!("Failed to write LCOV report: {}", e),
-            ))
+            CoreError::from(std::io::Error::other(format!(
+                "Failed to write LCOV report: {e}"
+            )))
         })?;
 
         Ok(())
     }
 
     /// Generate text report
-    fn generate_text_report(&self, report: &CoverageReport) -> CoreResult<()> {
-        let text_content = self.create_text_content(report);
+    fn generatetext_report(&self, report: &CoverageReport) -> CoreResult<()> {
+        let text_content = self.createtext_content(report);
         let output_path = self.config.output_directory.join("coverage_summary.txt");
 
         std::fs::write(output_path, text_content).map_err(|e| {
-            CoreError::from(std::io::Error::new(
-                std::io::ErrorKind::Other,
-                format!("Failed to write text report: {}", e),
-            ))
+            CoreError::from(std::io::Error::other(format!(
+                "Failed to write text report: {e}"
+            )))
         })?;
 
         Ok(())
@@ -1402,10 +1370,9 @@ impl CoverageAnalyzer {
         let output_path = self.config.output_directory.join("coverage_data.csv");
 
         std::fs::write(output_path, csv_content).map_err(|e| {
-            CoreError::from(std::io::Error::new(
-                std::io::ErrorKind::Other,
-                format!("Failed to write CSV report: {}", e),
-            ))
+            CoreError::from(std::io::Error::other(format!(
+                "Failed to write CSV report: {e}"
+            )))
         })?;
 
         Ok(())
@@ -1435,13 +1402,13 @@ impl CoverageAnalyzer {
     </style>
 </head>
 <body>
-    <div class="header">
+    <div class= header>
         <h1>Coverage Report</h1>
         <p>Generated at: {}</p>
         <p>Overall Coverage: {:.2}%</p>
     </div>
     
-    <div class="stats">
+    <div class= stats>
         <div class="stat-box">
             <h3>Line Coverage</h3>
             <div class="coverage-bar">
@@ -1469,7 +1436,7 @@ impl CoverageAnalyzer {
     <p>Status: {}</p>
     
     <h2>Recommendations</h2>
-    <div class="recommendations">
+    <div class= recommendations>
         <ul>
         {}
         </ul>
@@ -1519,7 +1486,7 @@ impl CoverageAnalyzer {
                 .recommendations
                 .iter()
                 .take(5)
-                .map(|r| format!("<li>{}</li>", r.description))
+                .map(|r| format!("<li>{description}</li>", description = r.description))
                 .collect::<Vec<_>>()
                 .join("\n"),
             // File table rows
@@ -1541,8 +1508,8 @@ impl CoverageAnalyzer {
     /// Create XML report content
     fn create_xml_content(&self, report: &CoverageReport) -> String {
         format!(
-            r#"<?xml version="1.0" encoding="UTF-8"?>
-<coverage version="1.0" timestamp="{}">
+            r#"<?xml _version="1.0" encoding="UTF-8"?>
+<coverage _version="1.0" timestamp="{}">
     <project name="scirs2-core">
         <metrics>
             <lines-covered>{}</lines-covered>
@@ -1585,10 +1552,7 @@ impl CoverageAnalyzer {
                     cov.branch_coverage_percentage() / 100.0,
                     cov.line_hits
                         .iter()
-                        .map(|(&line, &hits)| format!(
-                            r#"<line number="{}" hits="{}" />"#,
-                            line, hits
-                        ))
+                        .map(|(&line, &hits)| format!(r#"<line number="{line}" hits="{hits}" />"#))
                         .collect::<Vec<_>>()
                         .join("\n                                    ")
                 ))
@@ -1602,11 +1566,15 @@ impl CoverageAnalyzer {
         let mut lcov_content = String::new();
 
         for (path, cov) in &report.file_coverage {
-            lcov_content.push_str(&format!("SF:{}\n", path.display()));
+            lcov_content.push_str(&format!("SF:{path}\n", path = path.display()));
 
             // Function data
             for func in &cov.functions {
-                lcov_content.push_str(&format!("FN:{},{}\n", func.start_line, func.function_name));
+                lcov_content.push_str(&format!(
+                    "FN:{start_line},{function_name}\n",
+                    start_line = func.start_line,
+                    function_name = func.function_name
+                ));
             }
 
             for func in &cov.functions {
@@ -1616,7 +1584,7 @@ impl CoverageAnalyzer {
                 ));
             }
 
-            lcov_content.push_str(&format!("FNF:{}\n", cov.functions.len()));
+            lcov_content.push_str(&format!("FNF:{count}\n", count = cov.functions.len()));
             lcov_content.push_str(&format!(
                 "FNH:{}\n",
                 cov.functions
@@ -1654,7 +1622,7 @@ impl CoverageAnalyzer {
 
             // Line data
             for (&line, &hits) in &cov.line_hits {
-                lcov_content.push_str(&format!("DA:{},{}\n", line, hits));
+                lcov_content.push_str(&format!("DA:{line},{hits}\n"));
             }
 
             lcov_content.push_str(&format!("LF:{}\n", cov.total_lines));
@@ -1666,7 +1634,7 @@ impl CoverageAnalyzer {
     }
 
     /// Create text report content
-    fn create_text_content(&self, report: &CoverageReport) -> String {
+    fn createtext_content(&self, report: &CoverageReport) -> String {
         let mut content = String::new();
 
         content.push_str("===== COVERAGE REPORT =====\n\n");
@@ -1723,7 +1691,7 @@ impl CoverageAnalyzer {
                 content.push_str(&format!(
                     "  {}. [{}] {}\n",
                     i + 1,
-                    format!("{:?}", rec.priority).to_uppercase(),
+                    format!("{0:?}", rec.priority).to_uppercase(),
                     rec.description
                 ));
             }
@@ -1794,11 +1762,16 @@ impl CoverageAnalyzer {
     }
 
     /// Calculate function complexity (simplified)
-    fn calculate_function_complexity(&self, start_line: u32, end_line: u32) -> u32 {
-        // Simplified complexity calculation based on line count
+    fn calculate_complexity(start_line: u32, endline: u32) -> u32 {
+        // Simplified complexity calculation based on _line count
         // In a real implementation, this would analyze the AST
-        let line_count = end_line.saturating_sub(start_line) + 1;
+        let line_count = endline.saturating_sub(start_line) + 1;
         (line_count / 10).max(1) // Rough approximation
+    }
+
+    /// Calculate function complexity (instance method)
+    fn calculate_function_complexity(&self, start_line: u32, endline: u32) -> u32 {
+        Self::calculate_complexity(start_line, endline)
     }
 
     /// Find complex uncovered functions
@@ -1836,7 +1809,7 @@ impl CoverageAnalyzer {
             memory_overhead_bytes: memory_overhead,
             collection_duration: execution_time,
             instrumentation_points: self.performance_tracker.instrumentation_count,
-            sampling_effectiveness: self.config.sampling_rate,
+            sampling_effectiveness: self.config.samplingrate,
         }
     }
 

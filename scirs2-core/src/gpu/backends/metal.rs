@@ -323,17 +323,15 @@ impl GpuCompilerImpl for MetalCompiler {
 
     fn compile_typed(
         &self,
-        name: &str,
-        _input_type: std::any::TypeId,
-        _output_type: std::any::TypeId,
-    ) -> Arc<dyn GpuKernelImpl> {
+        _type_id: std::any::TypeId,
+    ) -> Result<Arc<dyn GpuKernelImpl>, GpuError> {
         // For typed compilation, we would generate appropriate Metal shader code
         // based on the input/output types. For now, return a stub.
-        Arc::new(MetalKernel::stub(
+        Ok(Arc::new(MetalKernel::stub(
             self.device.clone(),
             self.command_queue.clone(),
-            name.to_string(),
-        ))
+            "typed_kernel".to_string(),
+        )))
     }
 }
 
@@ -379,7 +377,7 @@ impl MetalKernel {
     }
 
     /// Create a stub kernel for typed compilation
-    fn stub(device: Device, command_queue: CommandQueue, _name: String) -> Self {
+    fn stub(device: Device, commandqueue: CommandQueue, name: String) -> Self {
         Self {
             device,
             command_queue,
@@ -426,7 +424,7 @@ impl GpuKernelImpl for MetalKernel {
             .insert(name.to_string(), ScalarValue::F64(value));
     }
 
-    fn dispatch(&self, work_groups: [u32; 3]) {
+    fn dispatch_workgroups(&self, workgroups: [u32; 3]) {
         let Some(pipeline) = &self.pipeline else {
             eprintln!("Warning: Attempting to dispatch stub kernel");
             return;
@@ -444,7 +442,7 @@ impl GpuKernelImpl for MetalKernel {
 
         // Bind buffers (assuming standard binding indices for now)
         let mut buffer_index = 0;
-        for (_name, buffer) in &params.buffers {
+        for (name, buffer) in &params.buffers {
             // Downcast to MetalBuffer to get the underlying Metal buffer
             if let Some(metal_buffer) = buffer.as_any().downcast_ref::<MetalBuffer>() {
                 encoder.set_buffer(buffer_index, Some(metal_buffer.metal_buffer()), 0);

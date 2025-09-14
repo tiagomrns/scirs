@@ -68,6 +68,7 @@ use num_traits::Float;
 /// let outside = point_in_polygon(&[1.5, 0.5], &polygon.view());
 /// assert!(!outside);
 /// ```
+#[allow(dead_code)]
 pub fn point_in_polygon<T: Float>(point: &[T], polygon: &ArrayView2<T>) -> bool {
     let x = point[0];
     let y = point[1];
@@ -148,6 +149,7 @@ pub fn point_in_polygon<T: Float>(point: &[T], polygon: &ArrayView2<T>) -> bool 
 /// let not_on_boundary = point_on_boundary(&[0.5, 0.5], &polygon.view(), 1e-10);
 /// assert!(!not_on_boundary);
 /// ```
+#[allow(dead_code)]
 pub fn point_on_boundary<T: Float>(point: &[T], polygon: &ArrayView2<T>, epsilon: T) -> bool {
     let x = point[0];
     let y = point[1];
@@ -236,6 +238,7 @@ pub fn point_on_boundary<T: Float>(point: &[T], polygon: &ArrayView2<T>, epsilon
 /// let area: f64 = polygon_area(&square.view());
 /// assert!((area - 1.0).abs() < 1e-10);
 /// ```
+#[allow(dead_code)]
 pub fn polygon_area<T: Float>(polygon: &ArrayView2<T>) -> T {
     let n = polygon.shape()[0];
 
@@ -287,6 +290,7 @@ pub fn polygon_area<T: Float>(polygon: &ArrayView2<T>) -> T {
 /// assert!((centroid[0] - 0.5).abs() < 1e-10);
 /// assert!((centroid[1] - 0.5).abs() < 1e-10);
 /// ```
+#[allow(dead_code)]
 pub fn polygon_centroid<T: Float>(polygon: &ArrayView2<T>) -> Vec<T> {
     let n = polygon.shape()[0];
 
@@ -386,6 +390,7 @@ pub fn polygon_centroid<T: Float>(polygon: &ArrayView2<T>) -> Vec<T> {
 /// let contains = polygon_contains_polygon(&outer.view(), &inner.view());
 /// assert!(contains);
 /// ```
+#[allow(dead_code)]
 pub fn polygon_contains_polygon<T: Float>(
     polygon_a: &ArrayView2<T>,
     polygon_b: &ArrayView2<T>,
@@ -459,6 +464,7 @@ pub fn polygon_contains_polygon<T: Float>(
 /// # Returns
 ///
 /// * `true` if the segments intersect, `false` otherwise
+#[allow(dead_code)]
 fn segments_intersect<T: Float>(a1: &[T], a2: &[T], b1: &[T], b2: &[T]) -> bool {
     // Function to compute orientation of triplet (p, q, r)
     // Returns:
@@ -526,6 +532,7 @@ fn segments_intersect<T: Float>(a1: &[T], a2: &[T], b1: &[T], b2: &[T]) -> bool 
 /// # Returns
 ///
 /// * `true` if the segments overlap, `false` otherwise
+#[allow(dead_code)]
 fn segments_overlap<T: Float>(a1: &[T], a2: &[T], b1: &[T], b2: &[T], epsilon: T) -> bool {
     // Check if the segments are collinear
     let cross = (a2[0] - a1[0]) * (b2[1] - b1[1]) - (a2[1] - a1[1]) * (b2[0] - b1[0]);
@@ -578,6 +585,7 @@ fn segments_overlap<T: Float>(a1: &[T], a2: &[T], b1: &[T], b2: &[T], epsilon: T
 /// assert!(is_simple_polygon(&simple.view()));
 /// assert!(!is_simple_polygon(&complex.view()));
 /// ```
+#[allow(dead_code)]
 pub fn is_simple_polygon<T: Float>(polygon: &ArrayView2<T>) -> bool {
     let n = polygon.shape()[0];
 
@@ -643,6 +651,7 @@ pub fn is_simple_polygon<T: Float>(polygon: &ArrayView2<T>) -> bool {
 /// // The hull should have only 4 points (the corners)
 /// assert_eq!(hull.shape()[0], 4);
 /// ```
+#[allow(dead_code)]
 pub fn convex_hull_graham<T: Float + std::fmt::Debug>(points: &ArrayView2<T>) -> Array2<T> {
     let n = points.shape()[0];
 
@@ -680,11 +689,11 @@ pub fn convex_hull_graham<T: Float + std::fmt::Debug>(points: &ArrayView2<T>) ->
     };
 
     // Sort points by polar angle
-    let mut indexed_points: Vec<(usize, T)> = (0..n)
+    let mut indexedpoints: Vec<(usize, T)> = (0..n)
         .map(|i| (i, polar_angle(points[[i, 0]], points[[i, 1]])))
         .collect();
 
-    indexed_points.sort_by(|a, b| {
+    indexedpoints.sort_by(|a, b| {
         // First by polar angle
         let angle_cmp = a.1.partial_cmp(&b.1).unwrap_or(std::cmp::Ordering::Equal);
 
@@ -721,21 +730,21 @@ pub fn convex_hull_graham<T: Float + std::fmt::Debug>(points: &ArrayView2<T>) ->
     // Add first three points
     hull_indices.push(lowest);
 
-    for &(index, _) in &indexed_points {
+    for &(index_, _) in &indexedpoints {
         // Skip pivot point
-        if index == lowest {
+        if index_ == lowest {
             continue;
         }
 
         while hull_indices.len() >= 2 {
             let top = hull_indices.len() - 1;
-            if ccw(hull_indices[top - 1], hull_indices[top], index) {
+            if ccw(hull_indices[top - 1], hull_indices[top], index_) {
                 break;
             }
             hull_indices.pop();
         }
 
-        hull_indices.push(index);
+        hull_indices.push(index_);
     }
 
     // Create the hull array
@@ -748,6 +757,321 @@ pub fn convex_hull_graham<T: Float + std::fmt::Debug>(points: &ArrayView2<T>) ->
     hull
 }
 
+/// Simplify a polygon using the Douglas-Peucker algorithm.
+///
+/// The Douglas-Peucker algorithm recursively removes vertices that contribute less
+/// than a specified tolerance to the shape of the polygon. This is useful for
+/// reducing the complexity of polygons while preserving their essential characteristics.
+///
+/// # Arguments
+///
+/// * `polygon` - The polygon vertices to simplify
+/// * `tolerance` - The perpendicular distance tolerance. Vertices that are closer
+///   than this distance to the line connecting their neighbors may be removed.
+///
+/// # Returns
+///
+/// * A simplified polygon with fewer vertices
+///
+/// # Examples
+///
+/// ```
+/// use ndarray::array;
+/// use scirs2_spatial::polygon::douglas_peucker_simplify;
+///
+/// // A polygon with many points
+/// let complexpolygon = array![
+///     [0.0, 0.0],
+///     [1.0, 0.1],  // Close to the line from (0,0) to (2,0)
+///     [2.0, 0.0],
+///     [2.0, 2.0],
+///     [0.0, 2.0],
+/// ];
+///
+/// let simplified = douglas_peucker_simplify(&complexpolygon.view(), 0.2);
+///
+/// // Should remove the intermediate point at (1.0, 0.1) since it's close to the line
+/// assert!(simplified.shape()[0] < complexpolygon.shape()[0]);
+/// ```
+#[allow(dead_code)]
+pub fn douglas_peucker_simplify<T: Float + std::fmt::Debug>(
+    polygon: &ArrayView2<T>,
+    tolerance: T,
+) -> Array2<T> {
+    let n = polygon.shape()[0];
+
+    if n <= 2 {
+        return polygon.to_owned();
+    }
+
+    // Create a boolean array to mark which points to keep
+    let mut keep = vec![false; n];
+
+    // Always keep the first and last points
+    keep[0] = true;
+    keep[n - 1] = true;
+
+    // Apply Douglas-Peucker recursively
+    douglas_peucker_recursive(polygon, 0, n - 1, tolerance, &mut keep);
+
+    // Count the points to keep
+    let num_keep = keep.iter().filter(|&&x| x).count();
+
+    // Create the simplified polygon
+    let mut simplified = Array2::zeros((num_keep, 2));
+    let mut simplified_idx = 0;
+
+    for i in 0..n {
+        if keep[i] {
+            simplified[[simplified_idx, 0]] = polygon[[i, 0]];
+            simplified[[simplified_idx, 1]] = polygon[[i, 1]];
+            simplified_idx += 1;
+        }
+    }
+
+    simplified
+}
+
+/// Recursive helper function for Douglas-Peucker algorithm
+#[allow(dead_code)]
+fn douglas_peucker_recursive<T: Float>(
+    polygon: &ArrayView2<T>,
+    start: usize,
+    end: usize,
+    tolerance: T,
+    keep: &mut [bool],
+) {
+    if end <= start + 1 {
+        return;
+    }
+
+    // Find the point with the maximum perpendicular distance from the line
+    let mut max_dist = T::zero();
+    let mut max_idx = start;
+
+    let startpoint = [polygon[[start, 0]], polygon[[start, 1]]];
+    let endpoint = [polygon[[end, 0]], polygon[[end, 1]]];
+
+    for i in start + 1..end {
+        let point = [polygon[[i, 0]], polygon[[i, 1]]];
+        let dist = perpendicular_distance(&point, &startpoint, &endpoint);
+
+        if dist > max_dist {
+            max_dist = dist;
+            max_idx = i;
+        }
+    }
+
+    // If the maximum distance is greater than tolerance, keep the point and recurse
+    if max_dist > tolerance {
+        keep[max_idx] = true;
+        douglas_peucker_recursive(polygon, start, max_idx, tolerance, keep);
+        douglas_peucker_recursive(polygon, max_idx, end, tolerance, keep);
+    }
+}
+
+/// Calculate the perpendicular distance from a point to a line segment
+#[allow(dead_code)]
+fn perpendicular_distance<T: Float>(point: &[T; 2], line_start: &[T; 2], lineend: &[T; 2]) -> T {
+    let dx = lineend[0] - line_start[0];
+    let dy = lineend[1] - line_start[1];
+
+    // If the line segment is actually a point, return distance to that point
+    if dx.is_zero() && dy.is_zero() {
+        let px = point[0] - line_start[0];
+        let py = point[1] - line_start[1];
+        return (px * px + py * py).sqrt();
+    }
+
+    // Calculate the perpendicular distance using the cross product formula
+    let numerator = ((dy * (point[0] - line_start[0])) - (dx * (point[1] - line_start[1]))).abs();
+    let denominator = (dx * dx + dy * dy).sqrt();
+
+    numerator / denominator
+}
+
+/// Simplify a polygon using the Visvalingam-Whyatt algorithm.
+///
+/// The Visvalingam-Whyatt algorithm removes vertices by calculating the area of
+/// triangles formed by consecutive triplets of vertices and removing vertices
+/// that form triangles with areas smaller than a threshold.
+///
+/// # Arguments
+///
+/// * `polygon` - The polygon vertices to simplify
+/// * `min_area` - The minimum triangle area threshold. Vertices forming triangles
+///   with areas smaller than this will be candidates for removal.
+///
+/// # Returns
+///
+/// * A simplified polygon with fewer vertices
+///
+/// # Examples
+///
+/// ```
+/// use ndarray::array;
+/// use scirs2_spatial::polygon::visvalingam_whyatt_simplify;
+///
+/// // A polygon with some redundant vertices
+/// let polygon = array![
+///     [0.0, 0.0],
+///     [1.0, 0.0],
+///     [1.01, 0.01],  // Forms a very small triangle
+///     [2.0, 0.0],
+///     [2.0, 2.0],
+///     [0.0, 2.0],
+/// ];
+///
+/// let simplified = visvalingam_whyatt_simplify(&polygon.view(), 0.1);
+///
+/// // Should remove vertices that form very small triangles
+/// assert!(simplified.shape()[0] <= polygon.shape()[0]);
+/// ```
+#[allow(dead_code)]
+pub fn visvalingam_whyatt_simplify<T: Float + std::fmt::Debug>(
+    polygon: &ArrayView2<T>,
+    min_area: T,
+) -> Array2<T> {
+    let n = polygon.shape()[0];
+
+    if n <= 3 {
+        return polygon.to_owned();
+    }
+
+    // Create a list of vertices with their effective areas
+    let mut vertices: Vec<(usize, T)> = Vec::new();
+    let mut active = vec![true; n];
+
+    // Calculate initial areas for all vertices
+    for i in 0..n {
+        let area = calculate_triangle_area(polygon, i, &active);
+        vertices.push((i, area));
+    }
+
+    // Sort by _area (smallest first)
+    vertices.sort_by(|a, b| a.1.partial_cmp(&b.1).unwrap_or(std::cmp::Ordering::Equal));
+
+    // Remove vertices with areas smaller than threshold
+    let removal_candidates: Vec<usize> = vertices
+        .iter()
+        .filter(|(_, area)| *area < min_area)
+        .map(|(idx_, _)| *idx_)
+        .collect();
+
+    for vertex_idx in removal_candidates {
+        if count_active(&active) > 3 && active[vertex_idx] {
+            active[vertex_idx] = false;
+
+            // Recalculate areas for neighboring vertices
+            let prev = find_previous_active(vertex_idx, &active, n);
+            let next = find_next_active(vertex_idx, &active, n);
+
+            if let (Some(prev_idx), Some(next_idx)) = (prev, next) {
+                // Update the _area for the previous vertex
+                update_vertex_area(polygon, prev_idx, &active, &mut vertices);
+                // Update the _area for the next vertex
+                update_vertex_area(polygon, next_idx, &active, &mut vertices);
+            }
+        }
+    }
+
+    // Create the simplified polygon
+    let num_active = count_active(&active);
+    let mut simplified = Array2::zeros((num_active, 2));
+    let mut simplified_idx = 0;
+
+    for i in 0..n {
+        if active[i] {
+            simplified[[simplified_idx, 0]] = polygon[[i, 0]];
+            simplified[[simplified_idx, 1]] = polygon[[i, 1]];
+            simplified_idx += 1;
+        }
+    }
+
+    simplified
+}
+
+/// Calculate the area of triangle formed by vertex i and its active neighbors
+#[allow(dead_code)]
+fn calculate_triangle_area<T: Float>(
+    polygon: &ArrayView2<T>,
+    vertex_idx: usize,
+    active: &[bool],
+) -> T {
+    let n = polygon.shape()[0];
+
+    let prev = find_previous_active(vertex_idx, active, n);
+    let next = find_next_active(vertex_idx, active, n);
+
+    match (prev, next) {
+        (Some(prev_idx), Some(next_idx)) => {
+            let p1 = [polygon[[prev_idx, 0]], polygon[[prev_idx, 1]]];
+            let p2 = [polygon[[vertex_idx, 0]], polygon[[vertex_idx, 1]]];
+            let p3 = [polygon[[next_idx, 0]], polygon[[next_idx, 1]]];
+
+            triangle_area(&p1, &p2, &p3)
+        }
+        _ => T::infinity(), // End vertices have infinite area (never removed)
+    }
+}
+
+/// Calculate the area of a triangle given three points
+#[allow(dead_code)]
+fn triangle_area<T: Float>(p1: &[T; 2], p2: &[T; 2], p3: &[T; 2]) -> T {
+    ((p1[0] * (p2[1] - p3[1]) + p2[0] * (p3[1] - p1[1]) + p3[0] * (p1[1] - p2[1]))
+        / (T::one() + T::one()))
+    .abs()
+}
+
+/// Find the previous active vertex (wrapping around)
+#[allow(dead_code)]
+fn find_previous_active(current: usize, active: &[bool], n: usize) -> Option<usize> {
+    for i in 1..n {
+        let idx = (current + n - i) % n;
+        if active[idx] && idx != current {
+            return Some(idx);
+        }
+    }
+    None
+}
+
+/// Find the next active vertex (wrapping around)
+#[allow(dead_code)]
+fn find_next_active(current: usize, active: &[bool], n: usize) -> Option<usize> {
+    for i in 1..n {
+        let idx = (current + i) % n;
+        if active[idx] && idx != current {
+            return Some(idx);
+        }
+    }
+    None
+}
+
+/// Count the number of active vertices
+#[allow(dead_code)]
+fn count_active(active: &[bool]) -> usize {
+    active.iter().filter(|&&x| x).count()
+}
+
+/// Update the area for a specific vertex in the vertices list
+#[allow(dead_code)]
+fn update_vertex_area<T: Float + std::fmt::Debug>(
+    polygon: &ArrayView2<T>,
+    vertex_idx: usize,
+    active: &[bool],
+    vertices: &mut [(usize, T)],
+) {
+    let new_area = calculate_triangle_area(polygon, vertex_idx, active);
+
+    // Find and update the vertex in the list
+    for (_idx, area) in vertices.iter_mut() {
+        if *_idx == vertex_idx {
+            *area = new_area;
+            break;
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -755,7 +1079,7 @@ mod tests {
     use ndarray::array;
 
     #[test]
-    fn test_point_in_polygon() {
+    fn testpoint_in_polygon() {
         // Simple square
         let square = array![[0.0, 0.0], [1.0, 0.0], [1.0, 1.0], [0.0, 1.0],];
 
@@ -792,7 +1116,7 @@ mod tests {
     }
 
     #[test]
-    fn test_point_on_boundary() {
+    fn testpoint_on_boundary() {
         // Simple square
         let square = array![[0.0, 0.0], [1.0, 0.0], [1.0, 1.0], [0.0, 1.0],];
 
@@ -821,7 +1145,7 @@ mod tests {
     }
 
     #[test]
-    fn test_polygon_area() {
+    fn testpolygon_area() {
         // Square with area 1
         let square = array![[0.0, 0.0], [1.0, 0.0], [1.0, 1.0], [0.0, 1.0],];
 
@@ -838,7 +1162,7 @@ mod tests {
         assert_relative_eq!(polygon_area(&triangle.view()), 0.5, epsilon = 1e-10);
 
         // L-shaped polygon
-        let l_shape = array![
+        let lshape = array![
             [0.0, 0.0],
             [2.0, 0.0],
             [2.0, 1.0],
@@ -847,11 +1171,11 @@ mod tests {
             [0.0, 2.0],
         ];
 
-        assert_relative_eq!(polygon_area(&l_shape.view()), 3.0, epsilon = 1e-10);
+        assert_relative_eq!(polygon_area(&lshape.view()), 3.0, epsilon = 1e-10);
     }
 
     #[test]
-    fn test_polygon_centroid() {
+    fn testpolygon_centroid() {
         // Square with centroid at (0.5, 0.5)
         let square = array![[0.0, 0.0], [1.0, 0.0], [1.0, 1.0], [0.0, 1.0],];
 
@@ -875,7 +1199,7 @@ mod tests {
     }
 
     #[test]
-    fn test_polygon_contains_polygon() {
+    fn testpolygon_contains_polygon() {
         // Outer square
         let outer = array![[0.0, 0.0], [3.0, 0.0], [3.0, 3.0], [0.0, 3.0],];
 
@@ -944,15 +1268,15 @@ mod tests {
         assert!(!found_inside);
 
         // Test with points in a circle-like arrangement
-        let mut circle_points = Array2::zeros((8, 2));
+        let mut circlepoints = Array2::zeros((8, 2));
         for i in 0..8 {
             let angle = 2.0 * std::f64::consts::PI * (i as f64) / 8.0;
-            circle_points[[i, 0]] = angle.cos();
-            circle_points[[i, 1]] = angle.sin();
+            circlepoints[[i, 0]] = angle.cos();
+            circlepoints[[i, 1]] = angle.sin();
         }
 
         // Add some interior points
-        let all_points = array![
+        let allpoints = array![
             [0.0, 0.0],  // Center point
             [0.5, 0.0],  // Interior point
             [0.0, 0.5],  // Interior point
@@ -981,7 +1305,7 @@ mod tests {
             ],
         ];
 
-        let hull = convex_hull_graham(&all_points.view());
+        let hull = convex_hull_graham(&allpoints.view());
 
         // The hull should have 8 points (the circle points)
         assert_eq!(hull.shape()[0], 8);

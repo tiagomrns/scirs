@@ -22,6 +22,7 @@ use scirs2_autograd::variable::Variable;
 /// # Returns
 ///
 /// A new tensor containing the pseudo-inverse with gradient tracking.
+#[allow(dead_code)]
 pub fn pinv<F: Float + Debug + Send + Sync + 'static>(
     a: &Tensor<F>,
     rcond: Option<F>,
@@ -33,9 +34,9 @@ pub fn pinv<F: Float + Debug + Send + Sync + 'static>(
         ));
     }
 
-    let a_shape = a.shape();
-    let m = a_shape[0];
-    let n = a_shape[1];
+    let ashape = a.shape();
+    let m = ashape[0];
+    let n = ashape[1];
 
     // For simplicity, only implement for small matrices
     if m > 2 || n > 2 {
@@ -207,8 +208,8 @@ pub fn pinv<F: Float + Debug + Send + Sync + 'static>(
                     // Simplified gradient approximation
                     // For a proper implementation, see the paper:
                     // "Matrix Backpropagation for Deep Networks with Structured Layers"
-                    let grad_2d = grad.clone().into_shape((n, m)).unwrap();
-                    let pinv_2d = pinv_data.clone().into_shape((n, m)).unwrap();
+                    let grad_2d = grad.clone().intoshape((n, m)).unwrap();
+                    let pinv_2d = pinv_data.clone().intoshape((n, m)).unwrap();
 
                     // Approximate gradient: -A^+ * dL/dA^+ * A^+
                     let mut result = Array2::<F>::zeros((m, n));
@@ -256,6 +257,7 @@ pub fn pinv<F: Float + Debug + Send + Sync + 'static>(
 /// # Returns
 ///
 /// A new tensor containing the matrix square root with gradient tracking.
+#[allow(dead_code)]
 pub fn sqrtm<F: Float + Debug + Send + Sync + 'static>(a: &Tensor<F>) -> AutogradResult<Tensor<F>> {
     // Ensure input is a square 2D tensor
     if a.data.ndim() != 2 {
@@ -264,14 +266,14 @@ pub fn sqrtm<F: Float + Debug + Send + Sync + 'static>(a: &Tensor<F>) -> Autogra
         ));
     }
 
-    let a_shape = a.shape();
-    if a_shape[0] != a_shape[1] {
+    let ashape = a.shape();
+    if ashape[0] != ashape[1] {
         return Err(scirs2_autograd::error::AutogradError::ShapeMismatch(
             "Matrix square root requires a square matrix".to_string(),
         ));
     }
 
-    let n = a_shape[0];
+    let n = ashape[0];
 
     // For simplicity, only implement for small matrices
     if n > 2 {
@@ -413,8 +415,8 @@ pub fn sqrtm<F: Float + Debug + Send + Sync + 'static>(a: &Tensor<F>) -> Autogra
                 Box::new(move |grad: ndarray::Array<F, ndarray::IxDyn>| -> AutogradResult<ndarray::Array<F, ndarray::IxDyn>> {
                     // For sqrtm, the gradient involves solving a Sylvester equation
                     // For simplicity, we'll use a crude approximation
-                    let grad_2d = grad.clone().into_shape((n, n)).unwrap();
-                    let sqrtm_2d = sqrtm_data.clone().into_shape((n, n)).unwrap();
+                    let grad_2d = grad.clone().intoshape((n, n)).unwrap();
+                    let sqrtm_2d = sqrtm_data.clone().intoshape((n, n)).unwrap();
 
                     // Approximate solution: Q = grad * sqrtm^(-1) / 2
                     let sqrtm_inv = if n == 1 {
@@ -502,6 +504,7 @@ pub fn sqrtm<F: Float + Debug + Send + Sync + 'static>(a: &Tensor<F>) -> Autogra
 /// # Returns
 ///
 /// A new tensor containing the matrix logarithm with gradient tracking.
+#[allow(dead_code)]
 pub fn logm<F: Float + Debug + Send + Sync + 'static>(a: &Tensor<F>) -> AutogradResult<Tensor<F>> {
     // Ensure input is a square 2D tensor
     if a.data.ndim() != 2 {
@@ -510,14 +513,14 @@ pub fn logm<F: Float + Debug + Send + Sync + 'static>(a: &Tensor<F>) -> Autograd
         ));
     }
 
-    let a_shape = a.shape();
-    if a_shape[0] != a_shape[1] {
+    let ashape = a.shape();
+    if ashape[0] != ashape[1] {
         return Err(scirs2_autograd::error::AutogradError::ShapeMismatch(
             "Matrix logarithm requires a square matrix".to_string(),
         ));
     }
 
-    let n = a_shape[0];
+    let n = ashape[0];
 
     // For simplicity, only implement for small matrices
     if n > 2 {
@@ -660,7 +663,7 @@ pub fn logm<F: Float + Debug + Send + Sync + 'static>(a: &Tensor<F>) -> Autograd
             Some(
                 Box::new(move |grad: ndarray::Array<F, ndarray::IxDyn>| -> AutogradResult<ndarray::Array<F, ndarray::IxDyn>> {
                     // For simplicity, we'll use a crude approximation for small matrices
-                    let grad_2d = grad.clone().into_shape((n, n)).unwrap();
+                    let grad_2d = grad.clone().intoshape((n, n)).unwrap();
 
                     // Crude approximation: grad_a ≈ A^(-1) * grad
                     let a_inv = if n == 1 {

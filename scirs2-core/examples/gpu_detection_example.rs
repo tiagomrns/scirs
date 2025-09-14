@@ -9,6 +9,7 @@ use scirs2_core::gpu::backends::{
 #[cfg(feature = "gpu")]
 use scirs2_core::gpu::GpuBackend;
 
+#[allow(dead_code)]
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("=== GPU Detection Example ===\n");
 
@@ -22,6 +23,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 }
 
 #[cfg(feature = "gpu")]
+#[allow(dead_code)]
 fn run_detection_demo() -> Result<(), Box<dyn std::error::Error>> {
     println!("1. Backend Installation Check");
     println!("-----------------------------");

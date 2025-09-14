@@ -203,7 +203,7 @@ impl SparseFFT {
             .iter()
             .map(|&val| {
                 let val_f64 = NumCast::from(val).ok_or_else(|| {
-                    FFTError::ValueError(format!("Could not convert {:?} to f64", val))
+                    FFTError::ValueError(format!("Could not convert {val:?} to f64"))
                 })?;
                 Ok(Complex64::new(val_f64, 0.0))
             })
@@ -252,7 +252,7 @@ impl SparseFFT {
             .iter()
             .map(|&val| {
                 let val_f64 = NumCast::from(val).ok_or_else(|| {
-                    FFTError::ValueError(format!("Could not convert {:?} to f64", val))
+                    FFTError::ValueError(format!("Could not convert {val:?} to f64"))
                 })?;
                 Ok(Complex64::new(val_f64, 0.0))
             })
@@ -264,16 +264,16 @@ impl SparseFFT {
         let m = (4 * k * (self.config.iterations as f64).log2() as usize).min(n);
 
         // For a simplified implementation, we'll take random time-domain samples
-        let mut _measurements = Vec::with_capacity(m);
-        let mut _sample_indices = Vec::with_capacity(m);
+        let mut measurements = Vec::with_capacity(m);
+        let mut sample_indices = Vec::with_capacity(m);
 
         for _ in 0..m {
-            let idx = self.rng.random_range(0..n);
-            _sample_indices.push(idx);
-            _measurements.push(signal_complex[idx]);
+            let idx = self.rng.gen_range(0..n);
+            sample_indices.push(idx);
+            measurements.push(signal_complex[idx]);
         }
 
-        // For this demo, we'll just do a regular FFT and extract the k largest components
+        // For this demo..we'll just do a regular FFT and extract the k largest components
         let spectrum = fft(&signal_complex, None)?;
 
         // Find frequency components
@@ -313,7 +313,7 @@ impl SparseFFT {
             .iter()
             .map(|&val| {
                 let val_f64 = NumCast::from(val).ok_or_else(|| {
-                    FFTError::ValueError(format!("Could not convert {:?} to f64", val))
+                    FFTError::ValueError(format!("Could not convert {val:?} to f64"))
                 })?;
                 Ok(Complex64::new(val_f64, 0.0))
             })
@@ -390,7 +390,7 @@ impl SparseFFT {
             .iter()
             .map(|&val| {
                 let val_f64 = NumCast::from(val).ok_or_else(|| {
-                    FFTError::ValueError(format!("Could not convert {:?} to f64", val))
+                    FFTError::ValueError(format!("Could not convert {val:?} to f64"))
                 })?;
                 Ok(Complex64::new(val_f64, 0.0))
             })
@@ -424,7 +424,7 @@ impl SparseFFT {
         let selected_count = k.min(candidates.len());
         let selected_indices: Vec<usize> = candidates[..selected_count]
             .iter()
-            .map(|(_, i, _)| *i)
+            .map(|(_, i_, _)| *i_)
             .collect();
         let selected_values: Vec<Complex64> = candidates[..selected_count]
             .iter()
@@ -448,7 +448,7 @@ impl SparseFFT {
             .iter()
             .map(|&val| {
                 let val_f64 = NumCast::from(val).ok_or_else(|| {
-                    FFTError::ValueError(format!("Could not convert {:?} to f64", val))
+                    FFTError::ValueError(format!("Could not convert {val:?} to f64"))
                 })?;
                 Ok(Complex64::new(val_f64, 0.0))
             })
@@ -475,12 +475,12 @@ impl SparseFFT {
 
             // If flatness is low (indicates structure), find peak in this window
             if flatness < self.config.flatness_threshold {
-                if let Some((local_idx, _)) = window_mags
+                if let Some((local_idx_, _)) = window_mags
                     .iter()
                     .enumerate()
                     .max_by(|(_, a), (_, b)| a.partial_cmp(b).unwrap_or(std::cmp::Ordering::Equal))
                 {
-                    let global_idx = start + local_idx;
+                    let global_idx = start + local_idx_;
                     if !selected_indices.contains(&global_idx) {
                         selected_indices.push(global_idx);
                         selected_values.push(spectrum[global_idx]);
@@ -499,7 +499,7 @@ impl SparseFFT {
             let mut remaining_candidates: Vec<(f64, usize, Complex64)> = spectrum
                 .iter()
                 .enumerate()
-                .filter(|(i, _)| !selected_indices.contains(i))
+                .filter(|(i_, _)| !selected_indices.contains(i_))
                 .map(|(i, &c)| (c.norm(), i, c))
                 .collect();
 
@@ -520,6 +520,7 @@ impl SparseFFT {
 // Public API functions for backward compatibility
 
 /// Compute sparse FFT of a signal
+#[allow(dead_code)]
 pub fn sparse_fft<T>(
     signal: &[T],
     k: usize,
@@ -541,6 +542,7 @@ where
 }
 
 /// Adaptive sparse FFT with automatic sparsity estimation
+#[allow(dead_code)]
 pub fn adaptive_sparse_fft<T>(signal: &[T], threshold: f64) -> FFTResult<SparseFFTResult>
 where
     T: NumCast + Copy + Debug + 'static,
@@ -557,7 +559,11 @@ where
 }
 
 /// Frequency pruning sparse FFT
-pub fn frequency_pruning_sparse_fft<T>(signal: &[T], sensitivity: f64) -> FFTResult<SparseFFTResult>
+#[allow(dead_code)]
+pub fn frequency_pruning_sparse_fft<T>(
+    _signal: &[T],
+    sensitivity: f64,
+) -> FFTResult<SparseFFTResult>
 where
     T: NumCast + Copy + Debug + 'static,
 {
@@ -569,10 +575,11 @@ where
     };
 
     let mut processor = SparseFFT::new(config);
-    processor.sparse_fft(signal)
+    processor.sparse_fft(_signal)
 }
 
 /// Spectral flatness sparse FFT
+#[allow(dead_code)]
 pub fn spectral_flatness_sparse_fft<T>(
     signal: &[T],
     flatness_threshold: f64,
@@ -594,6 +601,7 @@ where
 }
 
 /// 2D sparse FFT (placeholder implementation)
+#[allow(dead_code)]
 pub fn sparse_fft2<T>(
     _signal: &[Vec<T>],
     _k: usize,
@@ -609,6 +617,7 @@ where
 }
 
 /// N-dimensional sparse FFT (placeholder implementation)
+#[allow(dead_code)]
 pub fn sparse_fftn<T>(
     _signal: &[T],
     _shape: &[usize],

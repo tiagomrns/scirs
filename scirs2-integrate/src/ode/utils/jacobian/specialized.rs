@@ -8,6 +8,7 @@ use crate::common::IntegrateFloat;
 use ndarray::{Array1, Array2, ArrayView1};
 
 /// Computes Jacobian for a banded system with specified number of lower and upper diagonals
+#[allow(dead_code)]
 pub fn compute_banded_jacobian<F, Func>(
     f: &Func,
     t: F,
@@ -51,6 +52,7 @@ where
 }
 
 /// Computes Jacobian for a system with diagonal or block-diagonal structure
+#[allow(dead_code)]
 pub fn compute_diagonal_jacobian<F, Func>(
     f: &Func,
     t: F,
@@ -91,6 +93,7 @@ where
 }
 
 /// Group variables based on their interactions to minimize function evaluations
+#[allow(dead_code)]
 pub fn compute_colored_jacobian<F, Func>(
     f: &Func,
     t: F,
@@ -141,6 +144,7 @@ where
 }
 
 /// Generate a simple coloring for a banded matrix
+#[allow(dead_code)]
 pub fn generate_banded_coloring(n: usize, lower: usize, upper: usize) -> Vec<usize> {
     let bandwidth = lower + upper + 1;
     let mut coloring = vec![0; n];
@@ -156,7 +160,8 @@ pub fn generate_banded_coloring(n: usize, lower: usize, upper: usize) -> Vec<usi
 
 /// Update the Jacobian using Broyden's method (rank-1 update)
 /// J_{k+1} = J_k + (df - J_k * dy) * dy^T / (dy^T * dy)
-pub fn broyden_update<F>(jac: &mut Array2<F>, delta_y: &Array1<F>, delta_f: &Array1<F>)
+#[allow(dead_code)]
+pub fn broyden_update<F>(_jac: &mut Array2<F>, delta_y: &Array1<F>, deltaf: &Array1<F>)
 where
     F: IntegrateFloat,
 {
@@ -166,12 +171,12 @@ where
     let mut jac_dy = Array1::zeros(n);
     for i in 0..n {
         for j in 0..n {
-            jac_dy[i] += jac[[i, j]] * delta_y[j];
+            jac_dy[i] += _jac[[i, j]] * delta_y[j];
         }
     }
 
     // Compute correction vector: df - J_k * dy
-    let correction = delta_f - &jac_dy;
+    let correction = deltaf - &jac_dy;
 
     // Compute denominator: dy^T * dy
     let dy_norm_squared = delta_y.iter().map(|&x| x * x).sum::<F>();
@@ -180,13 +185,14 @@ where
     if dy_norm_squared > F::from_f64(1e-14).unwrap() {
         for i in 0..n {
             for j in 0..n {
-                jac[[i, j]] += correction[i] * delta_y[j] / dy_norm_squared;
+                _jac[[i, j]] += correction[i] * delta_y[j] / dy_norm_squared;
             }
         }
     }
 }
 
 /// Performs a block-update of the Jacobian using block structure
+#[allow(dead_code)]
 pub fn block_update<F>(
     jac: &mut Array2<F>,
     delta_y: &Array1<F>,

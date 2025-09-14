@@ -1,6 +1,7 @@
 use ndarray::{array, Array2};
 use scirs2_stats::{stepwise_regression, StepwiseCriterion, StepwiseDirection};
 
+#[allow(dead_code)]
 fn main() {
     println!("Stepwise Regression Example\n");
 

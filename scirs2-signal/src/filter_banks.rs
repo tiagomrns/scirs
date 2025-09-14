@@ -1,57 +1,57 @@
-//! Filter Bank Design and Analysis
-//!
-//! This module provides comprehensive filter bank design and analysis functionality,
-//! including quadrature mirror filters (QMF), wavelet filter banks, and multirate
-//! signal processing systems.
-//!
-//! ## Filter Bank Types
-//!
-//! - **QMF Banks**: Quadrature Mirror Filter banks for perfect reconstruction
-//! - **Wavelet Filter Banks**: Filter banks based on wavelet decomposition
-//! - **Cosine Modulated Banks**: Efficient filter banks using cosine modulation
-//! - **Oversampled Banks**: Filter banks with oversampling for reduced aliasing
-//! - **Polyphase Filter Banks**: Efficient implementation using polyphase decomposition
-//!
-//! ## Features
-//!
-//! - Perfect reconstruction filter bank design
-//! - Aliasing and distortion analysis
-//! - Multirate signal processing operations
-//! - Efficient polyphase implementations
-//! - Filter bank optimization for various criteria
-//!
-//! ## Example Usage
-//!
-//! ```rust
-//! use ndarray::Array1;
-//! use scirs2_signal::filter_banks::{QmfBank, WaveletFilterBank, FilterBankType};
-//! # fn main() -> Result<(), Box<dyn std::error::Error>> {
-//!
-//! // Design a QMF filter bank
-//! let qmf = QmfBank::new(8, FilterBankType::Orthogonal)?;
-//! let input = Array1::from_vec(vec![1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0]);
-//!
-//! // Analysis (decomposition)
-//! let subbands = qmf.analysis(&input)?;
-//!
-//! // Synthesis (reconstruction)
-//! let reconstructed = qmf.synthesis(&subbands)?;
-//!
-//! // Design a wavelet filter bank
-//! let wavelet_bank = WaveletFilterBank::new("db4", 3)?;
-//! let coeffs = wavelet_bank.decompose(&input)?;
-//! let recovered = wavelet_bank.reconstruct(&coeffs)?;
-//! # Ok(())
-//! # }
-//! ```
+// Filter Bank Design and Analysis
+//
+// This module provides comprehensive filter bank design and analysis functionality,
+// including quadrature mirror filters (QMF), wavelet filter banks, and multirate
+// signal processing systems.
+//
+// ## Filter Bank Types
+//
+// - **QMF Banks**: Quadrature Mirror Filter banks for perfect reconstruction
+// - **Wavelet Filter Banks**: Filter banks based on wavelet decomposition
+// - **Cosine Modulated Banks**: Efficient filter banks using cosine modulation
+// - **Oversampled Banks**: Filter banks with oversampling for reduced aliasing
+// - **Polyphase Filter Banks**: Efficient implementation using polyphase decomposition
+//
+// ## Features
+//
+// - Perfect reconstruction filter bank design
+// - Aliasing and distortion analysis
+// - Multirate signal processing operations
+// - Efficient polyphase implementations
+// - Filter bank optimization for various criteria
+//
+// ## Example Usage
+//
+// ```rust
+// use ndarray::Array1;
+// use scirs2_signal::filter_banks::{QmfBank, WaveletFilterBank, FilterBankType};
+// # fn main() -> Result<(), Box<dyn std::error::Error>> {
+//
+// // Design a QMF filter bank
+// let qmf = QmfBank::new(8, FilterBankType::Orthogonal)?;
+// let input = Array1::from_vec(vec![1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0]);
+//
+// // Analysis (decomposition)
+// let subbands = qmf.analysis(&input)?;
+//
+// // Synthesis (reconstruction)
+// let reconstructed = qmf.synthesis(&subbands)?;
+//
+// // Design a wavelet filter bank
+// let wavelet_bank = WaveletFilterBank::new("db4", 3)?;
+// let coeffs = wavelet_bank.decompose(&input)?;
+// let recovered = wavelet_bank.reconstruct(&coeffs)?;
+// # Ok(())
+// # }
+// ```
 
 use crate::dwt::Wavelet;
 use crate::error::{SignalError, SignalResult};
 use crate::filter::{butter, FilterType};
 use ndarray::{Array1, Array2};
 use num_complex::Complex64;
-use std::f64::consts::PI;
 
+#[allow(unused_imports)]
 /// Types of filter banks
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum FilterBankType {
@@ -108,7 +108,7 @@ impl QmfBank {
     ///
     /// # Returns
     /// * QMF filter bank instance
-    pub fn new(num_channels: usize, bank_type: FilterBankType) -> SignalResult<Self> {
+    pub fn new(num_channels: usize, banktype: FilterBankType) -> SignalResult<Self> {
         if num_channels < 2 {
             return Err(SignalError::ValueError(
                 "Number of channels must be at least 2".to_string(),
@@ -186,7 +186,7 @@ impl QmfBank {
         };
 
         // Design Butterworth prototype filter
-        let (b, _a) = butter(order, cutoff, FilterType::Lowpass)?;
+        let (b, a) = butter(order, cutoff, FilterType::Lowpass)?;
         Ok(Array1::from(b))
     }
 
@@ -236,11 +236,11 @@ impl QmfBank {
                 for k in 0..num_channels {
                     for n in 0..filter_length {
                         if k % 2 == 0 {
-                            // Low-pass type filters
+                            // Low-pass _type filters
                             analysis_filters[[k, n]] = prototype[n];
                             synthesis_filters[[k, n]] = prototype[n];
                         } else {
-                            // High-pass type filters (alternating signs)
+                            // High-pass _type filters (alternating signs)
                             analysis_filters[[k, n]] = prototype[n] * (-1.0_f64).powi(n as i32);
                             synthesis_filters[[k, n]] = analysis_filters[[k, n]];
                         }
@@ -267,7 +267,7 @@ impl QmfBank {
                 // Tree-structured filter bank (binary tree)
                 if num_channels.count_ones() != 1 {
                     return Err(SignalError::ValueError(
-                        "Tree-structured filter banks require power-of-2 channels".to_string(),
+                        "Tree-structured filter banks require power-of-2 _channels".to_string(),
                     ));
                 }
 
@@ -497,7 +497,7 @@ impl QmfBank {
     }
 
     /// Compute aliasing distortion
-    fn compute_aliasing_distortion(&self, magnitude_responses: &Array2<f64>) -> f64 {
+    fn compute_aliasing_distortion(&self, magnituderesponses: &Array2<f64>) -> f64 {
         let mut max_aliasing = 0.0f64;
 
         for i in 0..magnitude_responses.ncols() {
@@ -507,7 +507,7 @@ impl QmfBank {
             }
 
             // Aliasing occurs when sum deviates from constant
-            let deviation = (sum - 1.0).abs();
+            let deviation = ((sum - 1.0) as f64).abs();
             max_aliasing = max_aliasing.max(deviation);
         }
 
@@ -515,7 +515,7 @@ impl QmfBank {
     }
 
     /// Compute amplitude distortion
-    fn compute_amplitude_distortion(&self, magnitude_responses: &Array2<f64>) -> f64 {
+    fn compute_amplitude_distortion(&self, magnituderesponses: &Array2<f64>) -> f64 {
         let mut max_distortion = 0.0f64;
 
         // Check passband ripple for each filter
@@ -538,7 +538,7 @@ impl QmfBank {
     }
 
     /// Compute stopband attenuation
-    fn compute_stopband_attenuation(&self, magnitude_responses: &Array2<f64>) -> f64 {
+    fn compute_stopband_attenuation(&self, magnituderesponses: &Array2<f64>) -> f64 {
         let mut min_attenuation = f64::INFINITY;
 
         for k in 0..self.num_channels {
@@ -586,14 +586,14 @@ impl WaveletFilterBank {
     ///
     /// # Returns
     /// * Wavelet filter bank instance
-    pub fn new(wavelet_name: &str, levels: usize) -> SignalResult<Self> {
+    pub fn new(waveletname: &str, levels: usize) -> SignalResult<Self> {
         if levels == 0 {
             return Err(SignalError::ValueError(
                 "Number of levels must be greater than 0".to_string(),
             ));
         }
 
-        // Parse wavelet name and get filters
+        // Parse wavelet _name and get filters
         let wavelet = Self::parse_wavelet_name(wavelet_name)?;
         let filters = wavelet.filters()?;
 
@@ -634,8 +634,8 @@ impl WaveletFilterBank {
             "meyer" => Ok(Wavelet::Meyer),
             "dmeyer" => Ok(Wavelet::DMeyer),
             _ => Err(SignalError::ValueError(format!(
-                "Unknown wavelet name: {}",
-                name
+                "Unknown wavelet _name: {}",
+                _name
             ))),
         }
     }
@@ -822,7 +822,7 @@ impl CosineModulatedFilterBank {
                 for n in 0..filter_length {
                     let arg = 2.0 * (n as f64) / (filter_length - 1) as f64 - 1.0;
                     let i0_beta = Self::modified_bessel_i0(beta);
-                    let i0_arg = Self::modified_bessel_i0(beta * (1.0 - arg * arg).sqrt());
+                    let i0_arg = Self::modified_bessel_i0((beta * (1.0 - arg * arg) as f64).sqrt());
                     prototype[n] = i0_arg / i0_beta;
                 }
             }
@@ -1011,7 +1011,7 @@ impl IirStabilizer {
         if coeffs.len() == 2 {
             // Linear case: ax + b = 0
             if coeffs[0] != 0.0 {
-                roots.push(Complex64::new(-coeffs[1] / coeffs[0], 0.0));
+                roots.push(Complex64::new(-_coeffs[1] / coeffs[0], 0.0));
             }
         } else if coeffs.len() == 3 {
             // Quadratic case: ax^2 + bx + c = 0
@@ -1041,7 +1041,7 @@ impl IirStabilizer {
     fn polynomial_from_roots(roots: &[Complex64]) -> SignalResult<Array1<f64>> {
         let mut coeffs = vec![1.0];
 
-        for &root in roots {
+        for &root in _roots {
             let mut new_coeffs = vec![0.0; coeffs.len() + 1];
 
             // Multiply by (z - root)

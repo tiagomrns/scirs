@@ -9,8 +9,8 @@ use scirs2_fft::{
     apply_colormap, fft, spectrogram, spectrogram_normalized, waterfall_3d, waterfall_lines,
     window::Window,
 };
-use std::f64::consts::PI;
 
+#[allow(dead_code)]
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("Spectrogram Visualization Example");
     println!("---------------------------------\n");

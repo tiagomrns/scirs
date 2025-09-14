@@ -3,6 +3,10 @@
 //! An improvement over the Harris corner detector that uses a simpler
 //! corner score calculation based on the minimum eigenvalue of the
 //! structure tensor matrix.
+//!
+//! # References
+//!
+//! - Shi, J. and Tomasi, C., 1994, June. Good features to track. In 1994 Proceedings of IEEE conference on computer vision and pattern recognition (pp. 593-600). IEEE.
 
 use crate::error::{Result, VisionError};
 use crate::feature::image_to_array;
@@ -38,6 +42,7 @@ use ndarray::Array2;
 /// # Ok(())
 /// # }
 /// ```
+#[allow(dead_code)]
 pub fn shi_tomasi_corners(
     img: &DynamicImage,
     block_size: usize,
@@ -64,17 +69,17 @@ pub fn shi_tomasi_corners(
     for y in 1..(height - 1) {
         for x in 1..(width - 1) {
             // Sobel X
-            let gx = -1.0 * array[[y - 1, x - 1]]
+            let gx = -array[[y - 1, x - 1]]
                 + 1.0 * array[[y - 1, x + 1]]
                 + -2.0 * array[[y, x - 1]]
                 + 2.0 * array[[y, x + 1]]
-                + -1.0 * array[[y + 1, x - 1]]
+                + -array[[y + 1, x - 1]]
                 + 1.0 * array[[y + 1, x + 1]];
 
             // Sobel Y
-            let gy = -1.0 * array[[y - 1, x - 1]]
+            let gy = -array[[y - 1, x - 1]]
                 + -2.0 * array[[y - 1, x]]
-                + -1.0 * array[[y - 1, x + 1]]
+                + -array[[y - 1, x + 1]]
                 + 1.0 * array[[y + 1, x - 1]]
                 + 2.0 * array[[y + 1, x]]
                 + 1.0 * array[[y + 1, x + 1]];
@@ -136,28 +141,28 @@ pub fn shi_tomasi_corners(
         }
     }
 
-    // Step 4: Threshold and extract corners
-    let mut corners = Vec::new();
+    // Step 4: Threshold and extract _corners
+    let mut _corners = Vec::new();
 
     for y in radius..(height - radius) {
         for x in radius..(width - radius) {
             if response[[y, x]] > threshold {
-                corners.push((x, y, response[[y, x]]));
+                _corners.push((x, y, response[[y, x]]));
             }
         }
     }
 
     // Sort by response strength
-    corners.sort_by(|a, b| b.2.partial_cmp(&a.2).unwrap_or(std::cmp::Ordering::Equal));
+    _corners.sort_by(|a, b| b.2.partial_cmp(&a.2).unwrap_or(std::cmp::Ordering::Equal));
 
-    // Filter by minimum distance
+    // Filter by minimum _distance
     let mut selected_corners = Vec::new();
 
-    for (x, y, score) in corners {
+    for (x, y, score) in _corners {
         let mut too_close = false;
 
-        for &(sx, sy, _) in &selected_corners {
-            let dist_sq = ((x as i32 - sx as i32).pow(2) + (y as i32 - sy as i32).pow(2)) as usize;
+        for &(sx, sy_, _) in &selected_corners {
+            let dist_sq = ((x as i32 - sx as i32).pow(2) + (y as i32 - sy_ as i32).pow(2)) as usize;
             if dist_sq < min_distance * min_distance {
                 too_close = true;
                 break;
@@ -175,8 +180,8 @@ pub fn shi_tomasi_corners(
 
     // Create output image
     let mut output = Array2::zeros((height, width));
-    for (x, y, _) in selected_corners {
-        output[[y, x]] = 1.0;
+    for (x, y_, _) in selected_corners {
+        output[[y_, x]] = 1.0;
     }
 
     crate::feature::array_to_image(&output)
@@ -194,8 +199,9 @@ pub fn shi_tomasi_corners(
 /// # Returns
 ///
 /// * Result containing corner points
-pub fn shi_tomasi_corners_simple(img: &DynamicImage, max_corners: usize) -> Result<GrayImage> {
-    shi_tomasi_corners(img, 3, 0.01, max_corners, 10)
+#[allow(dead_code)]
+pub fn shi_tomasi_corners_simple(_img: &DynamicImage, maxcorners: usize) -> Result<GrayImage> {
+    shi_tomasi_corners(_img, 3, 0.01, maxcorners, 10)
 }
 
 /// Extract good features to track with sub-pixel accuracy
@@ -213,6 +219,7 @@ pub fn shi_tomasi_corners_simple(img: &DynamicImage, max_corners: usize) -> Resu
 /// # Returns
 ///
 /// * Result containing vector of (x, y, score) tuples
+#[allow(dead_code)]
 pub fn good_features_to_track(
     img: &DynamicImage,
     block_size: usize,
@@ -238,16 +245,16 @@ pub fn good_features_to_track(
     // Calculate gradients
     for y in 1..(height - 1) {
         for x in 1..(width - 1) {
-            let gx = -1.0 * array[[y - 1, x - 1]]
+            let gx = -array[[y - 1, x - 1]]
                 + 1.0 * array[[y - 1, x + 1]]
                 + -2.0 * array[[y, x - 1]]
                 + 2.0 * array[[y, x + 1]]
-                + -1.0 * array[[y + 1, x - 1]]
+                + -array[[y + 1, x - 1]]
                 + 1.0 * array[[y + 1, x + 1]];
 
-            let gy = -1.0 * array[[y - 1, x - 1]]
+            let gy = -array[[y - 1, x - 1]]
                 + -2.0 * array[[y - 1, x]]
-                + -1.0 * array[[y - 1, x + 1]]
+                + -array[[y - 1, x + 1]]
                 + 1.0 * array[[y + 1, x - 1]]
                 + 2.0 * array[[y + 1, x]]
                 + 1.0 * array[[y + 1, x + 1]];
@@ -289,8 +296,8 @@ pub fn good_features_to_track(
         }
     }
 
-    // Extract corners with sub-pixel refinement
-    let mut corners = Vec::new();
+    // Extract _corners with sub-pixel refinement
+    let mut _corners = Vec::new();
 
     for y in (radius + 1)..(height - radius - 1) {
         for x in (radius + 1)..(width - radius - 1) {
@@ -331,24 +338,24 @@ pub fn good_features_to_track(
                         sub_y -= dy / dyy;
                     }
 
-                    corners.push((sub_x, sub_y, r));
+                    _corners.push((sub_x, sub_y, r));
                 }
             }
         }
     }
 
     // Sort by response strength
-    corners.sort_by(|a, b| b.2.partial_cmp(&a.2).unwrap_or(std::cmp::Ordering::Equal));
+    _corners.sort_by(|a, b| b.2.partial_cmp(&a.2).unwrap_or(std::cmp::Ordering::Equal));
 
-    // Filter by minimum distance
+    // Filter by minimum _distance
     let mut selected_corners = Vec::new();
 
-    for (x, y, score) in corners {
+    for (x, y, score) in _corners {
         let mut too_close = false;
 
-        for &(sx, sy, _) in &selected_corners {
+        for &(sx, sy_, _) in &selected_corners {
             let x_diff: f32 = x - sx;
-            let y_diff: f32 = y - sy;
+            let y_diff: f32 = y - sy_;
             let dist_sq: f32 = x_diff.powi(2) + y_diff.powi(2);
             if dist_sq < (min_distance as f32 * min_distance as f32) {
                 too_close = true;
@@ -411,8 +418,7 @@ mod tests {
         // Should detect corners of the square
         assert!(
             corner_count >= 4,
-            "Should detect at least 4 corners, found {}",
-            corner_count
+            "Should detect at least 4 corners, found {corner_count}"
         );
     }
 

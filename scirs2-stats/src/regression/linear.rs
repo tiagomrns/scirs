@@ -24,8 +24,7 @@ use scirs2_linalg::{lstsq, svd};
 ///
 /// # Examples
 ///
-/// ```ignore
-/// # FIXME: This doc test requires LAPACK/BLAS to be linked properly
+/// ```
 /// use ndarray::{array, Array2};
 /// use scirs2_stats::multilinear_regression;
 ///
@@ -42,7 +41,7 @@ use scirs2_linalg::{lstsq, svd};
 /// let y = array![4.0, 9.0, 14.0, 19.0, 24.0];
 ///
 /// // Perform multivariate regression
-/// let (coeffs, residuals, rank, _) = multilinear_regression(&x.view(), &y.view()).unwrap();
+/// let (coeffs, residuals, rank_) = multilinear_regression(&x.view(), &y.view()).unwrap();
 ///
 /// // Check results
 /// assert!((coeffs[0] - 1.0f64).abs() < 1e-10f64);  // intercept
@@ -50,6 +49,7 @@ use scirs2_linalg::{lstsq, svd};
 /// assert!((coeffs[2] - 3.0f64).abs() < 1e-10f64);  // x2 coefficient
 /// assert_eq!(rank, 2);  // Rank (dimensions or independent vectors)
 /// ```
+#[allow(dead_code)]
 pub fn multilinear_regression<F>(
     x: &ArrayView2<F>,
     y: &ArrayView1<F>,
@@ -63,7 +63,9 @@ where
         + 'static
         + num_traits::NumAssign
         + num_traits::One
-        + ndarray::ScalarOperand,
+        + ndarray::ScalarOperand
+        + Send
+        + Sync,
 {
     // Check input dimensions
     if x.nrows() != y.len() {
@@ -78,7 +80,7 @@ where
     // to solve the linear system X beta = y
 
     // Compute the SVD of X
-    let (_u, s, _vt) = match svd(x, false, None) {
+    let (_u, s, vt) = match svd(x, false, None) {
         Ok(svd_result) => svd_result,
         Err(e) => {
             return Err(StatsError::ComputationError(format!(
@@ -158,8 +160,7 @@ where
 ///
 /// # Examples
 ///
-/// ```ignore
-/// # FIXME: This doc test requires LAPACK/BLAS to be linked properly
+/// ```
 /// use ndarray::{array, Array2};
 /// use scirs2_stats::linear_regression;
 ///
@@ -186,6 +187,7 @@ where
 /// // Perfect fit should have R^2 = 1.0
 /// assert!((results.r_squared - 1.0f64).abs() < 1e-8f64);
 /// ```
+#[allow(dead_code)]
 pub fn linear_regression<F>(
     x: &ArrayView2<F>,
     y: &ArrayView1<F>,
@@ -200,7 +202,9 @@ where
         + 'static
         + num_traits::NumAssign
         + num_traits::One
-        + ndarray::ScalarOperand,
+        + ndarray::ScalarOperand
+        + Send
+        + Sync,
 {
     // Check input dimensions
     if x.nrows() != y.len() {
@@ -222,7 +226,7 @@ where
         )));
     }
 
-    // Default confidence level is 0.95
+    // Default confidence _level is 0.95
     let _conf_level = conf_level.unwrap_or_else(|| F::from(0.95).unwrap());
 
     // Solve the linear system using least squares
@@ -368,9 +372,15 @@ where
 /// assert!(intercept.abs() < 1e-10);
 /// assert!((r - 1.0f64).abs() < 1e-10);  // Perfect correlation
 /// ```
+#[allow(dead_code)]
 pub fn linregress<F>(x: &ArrayView1<F>, y: &ArrayView1<F>) -> StatsResult<(F, F, F, F, F)>
 where
-    F: Float + std::iter::Sum<F> + std::ops::Div<Output = F> + std::fmt::Debug + 'static,
+    F: Float
+        + std::iter::Sum<F>
+        + std::ops::Div<Output = F>
+        + std::fmt::Debug
+        + 'static
+        + std::fmt::Display,
 {
     // Check input dimensions
     if x.len() != y.len() {
@@ -474,18 +484,24 @@ where
 /// let x = array![1.0, 2.0, 3.0, 4.0, 5.0];
 /// let y = array![2.0, 4.0, 6.0, 8.0, 10.0];  // y = 2*x
 ///
-/// let (params, _, _) = odr(&x.view(), &y.view(), None).unwrap();
+/// let (params__) = odr(&x.view(), &y.view(), None).unwrap();
 ///
 /// assert!((params[1] - 2.0f64).abs() < 1e-6);  // slope
 /// assert!(params[0].abs() < 1e-6);  // intercept (should be close to 0)
 /// ```
+#[allow(dead_code)]
 pub fn odr<F>(
     x: &ArrayView1<F>,
     y: &ArrayView1<F>,
     beta0: Option<[F; 2]>,
 ) -> StatsResult<(Array1<F>, Array1<F>, F)>
 where
-    F: Float + std::iter::Sum<F> + std::ops::Div<Output = F> + std::fmt::Debug + 'static,
+    F: Float
+        + std::iter::Sum<F>
+        + std::ops::Div<Output = F>
+        + std::fmt::Debug
+        + 'static
+        + std::fmt::Display,
 {
     // Check input dimensions
     if x.len() != y.len() {
@@ -510,8 +526,8 @@ where
         [beta[0], beta[1]]
     } else {
         // Use linear regression for initial guess
-        let (slope, intercept, _, _, _) = linregress(x, y)?;
-        [intercept, slope]
+        let (slope, intercept___, _, _, _) = linregress(x, y)?;
+        [intercept___, slope]
     };
 
     // Orthogonal Distance Regression Implementation

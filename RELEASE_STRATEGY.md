@@ -68,17 +68,17 @@ This document outlines the strategy for the SciRS2 0.1.0 release, including scop
   - Benchmark and optimize
   - Ensure error handling consistency
 
-### Phase 2: Alpha and Beta Releases (2-4 weeks)
-- **Week 1-2**: Alpha Release
-  - Publish 0.1.0-alpha.2 to crates.io (May 2025)
-  - Collect feedbacks
-  - Fix critical issues
-- **Week 3-8**: Beta Releaseｓ
-  - Publish 0.1.0-beta.1 to crates.io
-  - Create examples
-  - Improve test coverage
-  - Finalize documentation
-  - Complete remaining pre-release tasks
+### Phase 2: Alpha and Beta Releases (Completed)
+- **Alpha Releases**: ✅ Complete
+  - Published 0.1.0-alpha.1 through alpha.6 to crates.io
+  - Collected community feedback
+  - Fixed critical issues
+- **Beta Release**: 🚀 Current Phase
+  - Published 0.1.0-beta.1 to crates.io (June 2025)
+  - Enhanced parallel processing capabilities
+  - Added arbitrary precision arithmetic
+  - Improved numerical stability
+  - Comprehensive documentation and examples
 
 ### Phase 3: Final Release (4-8 weeks)
 - Publish 0.1.0 to crates.io
@@ -88,12 +88,14 @@ This document outlines the strategy for the SciRS2 0.1.0 release, including scop
 ## Versioning Strategy
 
 ### Core Modules
-- Version: **0.1.0**
+- Version: **0.1.0-beta.1**
 - API Stability: Relatively stable, avoid breaking changes in 0.1.x
+- Beta Status: API mostly finalized, gathering final feedback
 
 ### Preview Modules
-- Version: **0.1.0-preview.1**
-- API Stability: May undergo significant changes
+- Version: **0.1.0-beta.1**
+- API Stability: May undergo minor changes based on feedback
+- Beta Status: Feature complete, stabilizing APIs
 
 ### Workspace Dependencies
 - Use workspace-level version for consistency
@@ -109,11 +111,11 @@ This document outlines the strategy for the SciRS2 0.1.0 release, including scop
 - [x] License and attribution information is correct
 
 ### Before Beta Release
-- [ ] Comprehensive documentation
-- [ ] Examples for key functionality
-- [ ] All clippy warnings addressed
-- [ ] Performance benchmarks run
-- [ ] Initial feedback addressed
+- [x] Comprehensive documentation
+- [x] Examples for key functionality
+- [x] All clippy warnings addressed
+- [x] Performance benchmarks run
+- [x] Initial feedback addressed
 
 ### Before Final Release
 - [ ] All documentation complete
@@ -122,12 +124,19 @@ This document outlines the strategy for the SciRS2 0.1.0 release, including scop
 - [ ] Final review of API design
 - [ ] Updates to website and documentation platform
 
-## Post-Release Plan
+## Post-Beta.1 Plan
 
-### Immediate (First Month)
-- Monitor issues and feedback
-- Provide quick fixes for critical issues (0.1.1, 0.1.2, etc.)
-- Engage with community feedback
+### Immediate (Beta Phase - Next 2-4 weeks)
+- Monitor beta feedback closely
+- Address any critical issues in beta.2 if needed
+- Finalize API based on community input
+- Prepare for 0.1.0 stable release
+
+### Stable Release (0.1.0)
+- Target: 4-6 weeks after beta.1
+- Requirements: No critical issues, positive beta feedback
+- Final documentation polish
+- Migration guide from beta to stable
 
 ### Short-term (1-3 Months)
 - Improve documentation based on user questions

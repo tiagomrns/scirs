@@ -27,7 +27,7 @@ impl MaxPoolKernel {
             workgroup_size: [16, 16, 1],
             local_memory_usage: 0,
             supports_tensor_cores: false,
-            operation_type: OperationType::MemoryIntensive,
+            operationtype: OperationType::MemoryIntensive,
             backend_metadata: HashMap::new(),
         };
 
@@ -118,6 +118,7 @@ struct Uniforms {
 @group(0) @binding(2) var<storage, write> output: array<f32>;
 
 @compute @workgroup_size(16, 16)
+#[allow(dead_code)]
 fn max_pool2d(
     @builtin(global_invocation_id) global_id: vec3<u32>
 ) {
@@ -210,8 +211,7 @@ kernel void max_pool2d(
         // OpenCL kernel for max pooling
         let opencl_source = r#"
 __kernel void max_pool2d(
-    __global const float* input,
-    __global float* output,
+    __global const float* input__global float* output,
     const int batch_size,
     const int channels,
     const int input_height,
@@ -284,7 +284,7 @@ impl GpuKernel for MaxPoolKernel {
 
     fn can_specialize(&self, params: &KernelParams) -> bool {
         matches!(
-            params.data_type,
+            params.datatype,
             DataType::Float32 | DataType::Float64 | DataType::Float16 | DataType::BFloat16
         )
     }
@@ -316,7 +316,7 @@ impl AvgPoolKernel {
             workgroup_size: [16, 16, 1],
             local_memory_usage: 0,
             supports_tensor_cores: false,
-            operation_type: OperationType::MemoryIntensive,
+            operationtype: OperationType::MemoryIntensive,
             backend_metadata: HashMap::new(),
         };
 
@@ -412,6 +412,7 @@ struct Uniforms {
 @group(0) @binding(2) var<storage, write> output: array<f32>;
 
 @compute @workgroup_size(16, 16)
+#[allow(dead_code)]
 fn avg_pool2d(@builtin(global_invocation_id) global_id: vec3<u32>) {
     // Implementation similar to max pooling but computing average
 }
@@ -465,7 +466,7 @@ impl GpuKernel for AvgPoolKernel {
 
     fn can_specialize(&self, params: &KernelParams) -> bool {
         matches!(
-            params.data_type,
+            params.datatype,
             DataType::Float32 | DataType::Float64 | DataType::Float16 | DataType::BFloat16
         )
     }

@@ -11,6 +11,7 @@ use scirs2_core::CoreResult;
 use std::thread;
 use std::time::Duration;
 
+#[allow(dead_code)]
 fn main() -> CoreResult<()> {
     println!("📊 SciRS2 Core Performance Dashboards Demo");
     println!("==========================================\n");
@@ -52,6 +53,7 @@ fn main() -> CoreResult<()> {
     Ok(())
 }
 
+#[allow(dead_code)]
 fn demo_dashboard_configurations() -> CoreResult<()> {
     println!("⚙️  Dashboard Configuration Examples");
     println!("-----------------------------------");
@@ -121,6 +123,7 @@ fn demo_dashboard_configurations() -> CoreResult<()> {
     Ok(())
 }
 
+#[allow(dead_code)]
 fn demo_basic_dashboard_setup() -> CoreResult<()> {
     println!("🚀 Basic Dashboard Setup");
     println!("------------------------");
@@ -209,6 +212,7 @@ fn demo_basic_dashboard_setup() -> CoreResult<()> {
     Ok(())
 }
 
+#[allow(dead_code)]
 fn demo_widget_management() -> CoreResult<()> {
     println!("🎛️  Widget Management Demo");
     println!("-------------------------");
@@ -284,6 +288,7 @@ fn demo_widget_management() -> CoreResult<()> {
     Ok(())
 }
 
+#[allow(dead_code)]
 fn demo_real_time_metrics_and_alerts() -> CoreResult<()> {
     println!("🚨 Real-time Metrics and Alerts Demo");
     println!("------------------------------------");
@@ -387,7 +392,7 @@ fn demo_real_time_metrics_and_alerts() -> CoreResult<()> {
             dashboard.update_metric(metric_source, *value)?;
             println!(
                 "  📊 Updated {}: {:.1}",
-                format_metric_source(metric_source),
+                format!("{:?}", metric_source),
                 value
             );
         }
@@ -409,6 +414,7 @@ fn demo_real_time_metrics_and_alerts() -> CoreResult<()> {
     Ok(())
 }
 
+#[allow(dead_code)]
 fn demo_dashboard_customization() -> CoreResult<()> {
     println!("🎨 Dashboard Customization Demo");
     println!("-------------------------------");
@@ -481,6 +487,7 @@ fn demo_dashboard_customization() -> CoreResult<()> {
     Ok(())
 }
 
+#[allow(dead_code)]
 fn demo_export_import() -> CoreResult<()> {
     println!("💾 Export/Import Functionality Demo");
     println!("-----------------------------------");
@@ -543,7 +550,7 @@ fn demo_export_import() -> CoreResult<()> {
     let mut imported_dashboard = PerformanceDashboard::new(new_config)?;
 
     // Import the configuration
-    imported_dashboard.import_config(&exported_config)?;
+    imported_dashboard.import_configuration(&exported_config)?;
 
     let imported_stats = imported_dashboard.get_statistics();
     println!("✅ Import completed");
@@ -566,7 +573,8 @@ fn demo_export_import() -> CoreResult<()> {
     Ok(())
 }
 
-fn format_metric_source(source: &MetricSource) -> String {
+#[allow(dead_code)]
+fn metric_source_name(source: &MetricSource) -> String {
     match source {
         MetricSource::SystemCpu => "System CPU".to_string(),
         MetricSource::SystemMemory => "System Memory".to_string(),

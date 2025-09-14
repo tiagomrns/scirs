@@ -4,6 +4,7 @@ use ndarray::Array1;
 use num_complex::Complex;
 use scirs2_fft::{czt, zoom_fft};
 
+#[allow(dead_code)]
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("Testing basic CZT functionality");
 

@@ -64,9 +64,16 @@ pub struct AnovaResult<F> {
 /// // For a significance level of 0.05, we would reject the null hypothesis if p < 0.05
 /// let significant_differences = anova_result.p_value < 0.05;
 /// ```
+#[allow(dead_code)]
 pub fn one_way_anova<F>(groups: &[&ArrayView1<F>]) -> StatsResult<AnovaResult<F>>
 where
-    F: Float + std::iter::Sum<F> + std::ops::Div<Output = F> + NumCast + Debug,
+    F: Float
+        + std::iter::Sum<F>
+        + std::ops::Div<Output = F>
+        + NumCast
+        + Debug
+        + std::fmt::Display
+        + scirs2_core::simd_ops::SimdUnifiedOps,
 {
     // Check if there are at least two groups
     if groups.len() < 2 {
@@ -108,11 +115,11 @@ where
 
     // Calculate means for each group
     let mut group_means = Vec::with_capacity(groups.len());
-    let mut group_sizes = Vec::with_capacity(groups.len());
+    let mut groupsizes = Vec::with_capacity(groups.len());
 
     for group in groups {
         group_means.push(mean(group)?);
-        group_sizes.push(group.len());
+        groupsizes.push(group.len());
     }
 
     // Calculate sum of squares
@@ -121,8 +128,8 @@ where
     let mut ss_total = F::zero();
 
     // Calculate treatment sum of squares
-    for (&group_mean, &group_size) in group_means.iter().zip(group_sizes.iter()) {
-        let size_f = F::from(group_size).unwrap();
+    for (&group_mean, &groupsize) in group_means.iter().zip(groupsizes.iter()) {
+        let size_f = F::from(groupsize).unwrap();
         ss_treatment = ss_treatment + size_f * (group_mean - grand_mean).powi(2);
     }
 
@@ -211,9 +218,16 @@ where
 /// Type alias for Tukey HSD results
 pub type TukeyHSDResult<F> = Vec<(usize, usize, F, F, bool)>;
 
+#[allow(dead_code)]
 pub fn tukey_hsd<F>(groups: &[&ArrayView1<F>], alpha: F) -> StatsResult<TukeyHSDResult<F>>
 where
-    F: Float + std::iter::Sum<F> + std::ops::Div<Output = F> + NumCast + Debug,
+    F: Float
+        + std::iter::Sum<F>
+        + std::ops::Div<Output = F>
+        + NumCast
+        + Debug
+        + std::fmt::Display
+        + scirs2_core::simd_ops::SimdUnifiedOps,
 {
     // Check if there are at least two groups
     if groups.len() < 2 {
@@ -227,11 +241,11 @@ where
 
     // Calculate group means
     let mut group_means = Vec::with_capacity(groups.len());
-    let mut group_sizes = Vec::with_capacity(groups.len());
+    let mut groupsizes = Vec::with_capacity(groups.len());
 
     for group in groups {
         group_means.push(mean(group)?);
-        group_sizes.push(F::from(group.len()).unwrap());
+        groupsizes.push(F::from(group.len()).unwrap());
     }
 
     // Calculate the studentized range critical value
@@ -251,8 +265,8 @@ where
             let mean_diff = (group_means[i] - group_means[j]).abs();
 
             // Calculate the standard error for this comparison
-            let harmonic_mean_n = (F::from(2.0).unwrap() * group_sizes[i] * group_sizes[j])
-                / (group_sizes[i] + group_sizes[j]);
+            let harmonic_mean_n = (F::from(2.0).unwrap() * groupsizes[i] * groupsizes[j])
+                / (groupsizes[i] + groupsizes[j]);
             let std_error = (anova_result.ms_error / harmonic_mean_n).sqrt();
 
             // Calculate Tukey's q statistic
@@ -281,6 +295,7 @@ where
 ///
 /// This is a simplified approximation. A more accurate implementation would use
 /// a lookup table or a more complex algorithm.
+#[allow(dead_code)]
 fn calculate_studentized_range_critical_value<F: Float + NumCast>(
     alpha: F,
     k: F,
@@ -372,6 +387,7 @@ fn calculate_studentized_range_critical_value<F: Float + NumCast>(
 ///
 /// This is a very rough approximation for educational purposes.
 /// In practice, you would use a more accurate algorithm.
+#[allow(dead_code)]
 fn calculate_studentized_range_p_value<F: Float + NumCast>(q: F, k: F, df: F) -> F {
     // This is a very rough approximation that assumes the studentized range
     // distribution can be approximated using the standard normal distribution

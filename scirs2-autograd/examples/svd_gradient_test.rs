@@ -2,11 +2,12 @@ use ag::tensor_ops::*;
 use ndarray::{array, Array2, Ix2};
 use scirs2_autograd as ag;
 
+#[allow(dead_code)]
 fn main() {
     println!("Testing gradient backpropagation through SVD...");
 
     // Simplified test with a smaller matrix for faster execution
-    ag::run::<f64, _, _>(|g| {
+    ag::run(|g| {
         // Create a simple 2x2 matrix (smaller for faster testing)
         let matrix_data = array![[1.0, 2.0], [3.0, 4.0]];
         let matrix = variable(matrix_data.clone(), g);

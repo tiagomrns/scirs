@@ -4,8 +4,8 @@
 //! with large datasets, including spatial indexing, approximation techniques,
 //! and parallel processing.
 
-use crate::advanced::enhanced_kriging::AnisotropicCovariance;
-use crate::advanced::fast_kriging::{FastKriging, FastKrigingBuilder, FastKrigingMethod};
+use crate::advanced::enhanced__kriging::AnisotropicCovariance;
+use crate::advanced::fast__kriging::{FastKriging, FastKrigingBuilder, FastKrigingMethod};
 use crate::advanced::kriging::CovarianceFunction;
 use crate::error::InterpolateResult;
 use ndarray::{Array1, Array2, ArrayView1, ArrayView2};
@@ -37,8 +37,8 @@ use std::ops::{Add, Div, Mul, Sub};
 /// # #[cfg(feature = "linalg")]
 /// # {
 /// use ndarray::{Array1, Array2};
-/// use scirs2_interpolate::advanced::fast_kriging::make_local_kriging;
-/// use scirs2_interpolate::advanced::kriging::CovarianceFunction;
+/// use scirs2__interpolate::advanced::fast_kriging::make_local_kriging;
+/// use scirs2__interpolate::advanced::kriging::CovarianceFunction;
 ///
 /// // Create sample data
 /// let points = Array2::<f64>::zeros((100, 2));
@@ -58,6 +58,7 @@ use std::ops::{Add, Div, Mul, Sub};
 /// let pred = kriging.predict(&query_point.view()).unwrap();
 /// # }
 /// ```
+#[allow(dead_code)]
 pub fn make_local_kriging<
     F: Float
         + FromPrimitive
@@ -118,8 +119,8 @@ pub fn make_local_kriging<
 /// # #[cfg(feature = "linalg")]
 /// # {
 /// use ndarray::{Array1, Array2};
-/// use scirs2_interpolate::advanced::fast_kriging::make_fixed_rank_kriging;
-/// use scirs2_interpolate::advanced::kriging::CovarianceFunction;
+/// use scirs2__interpolate::advanced::fast_kriging::make_fixed_rank_kriging;
+/// use scirs2__interpolate::advanced::kriging::CovarianceFunction;
 ///
 /// // Create sample data
 /// let points = Array2::<f64>::zeros((100, 2));
@@ -139,6 +140,7 @@ pub fn make_local_kriging<
 /// let pred = kriging.predict(&query_point.view()).unwrap();
 /// # }
 /// ```
+#[allow(dead_code)]
 pub fn make_fixed_rank_kriging<
     F: Float
         + FromPrimitive
@@ -198,8 +200,8 @@ pub fn make_fixed_rank_kriging<
 /// # #[cfg(feature = "linalg")]
 /// # {
 /// use ndarray::{Array1, Array2};
-/// use scirs2_interpolate::advanced::fast_kriging::make_tapered_kriging;
-/// use scirs2_interpolate::advanced::kriging::CovarianceFunction;
+/// use scirs2__interpolate::advanced::fast_kriging::make_tapered_kriging;
+/// use scirs2__interpolate::advanced::kriging::CovarianceFunction;
 ///
 /// // Create sample data
 /// let points = Array2::<f64>::zeros((100, 2));
@@ -219,6 +221,7 @@ pub fn make_fixed_rank_kriging<
 /// let pred = kriging.predict(&query_point.view()).unwrap();
 /// # }
 /// ```
+#[allow(dead_code)]
 pub fn make_tapered_kriging<
     F: Float
         + FromPrimitive
@@ -278,8 +281,8 @@ pub fn make_tapered_kriging<
 /// # #[cfg(feature = "linalg")]
 /// # {
 /// use ndarray::{Array1, Array2};
-/// use scirs2_interpolate::advanced::fast_kriging::make_hodlr_kriging;
-/// use scirs2_interpolate::advanced::kriging::CovarianceFunction;
+/// use scirs2__interpolate::advanced::fast_kriging::make_hodlr_kriging;
+/// use scirs2__interpolate::advanced::kriging::CovarianceFunction;
 ///
 /// // Create sample data
 /// let points = Array2::<f64>::zeros((100, 2));
@@ -299,6 +302,7 @@ pub fn make_tapered_kriging<
 /// let pred = kriging.predict(&query_point.view()).unwrap();
 /// # }
 /// ```
+#[allow(dead_code)]
 pub fn make_hodlr_kriging<
     F: Float
         + FromPrimitive
@@ -339,7 +343,7 @@ pub fn make_hodlr_kriging<
 ///
 /// This function selects an appropriate approximation method based on
 /// the size of the dataset, balancing accuracy and computational efficiency.
-/// 
+///
 /// The selection strategy is:
 /// - < 500 points: Local kriging (most accurate for small datasets)
 /// - 500-5,000 points: Fixed rank with moderate rank (good balance)
@@ -357,8 +361,8 @@ pub fn make_hodlr_kriging<
 /// # Example
 ///
 /// ```
-/// use scirs2_interpolate::advanced::fast_kriging::select_approximation_method;
-/// use scirs2_interpolate::advanced::fast_kriging::FastKrigingMethod;
+/// use scirs2__interpolate::advanced::fast_kriging::select_approximation_method;
+/// use scirs2__interpolate::advanced::fast_kriging::FastKrigingMethod;
 ///
 /// // Get recommended method for different dataset sizes
 /// let small_method = select_approximation_method(100);     // Local
@@ -372,8 +376,9 @@ pub fn make_hodlr_kriging<
 ///     _ => println!("Using approximation method"),
 /// }
 /// ```
-pub fn select_approximation_method(n_points: usize) -> FastKrigingMethod {
-    if n_points < 500 {
+#[allow(dead_code)]
+pub fn select_approximation_method(_npoints: usize) -> FastKrigingMethod {
+    if _n_points < 500 {
         // For small datasets, local kriging is accurate and fast enough
         FastKrigingMethod::Local
     } else if n_points < 5_000 {
@@ -393,16 +398,16 @@ pub fn select_approximation_method(n_points: usize) -> FastKrigingMethod {
 pub struct KrigingPerformanceStats {
     /// Total time taken for fitting (milliseconds)
     pub fit_time_ms: f64,
-    
+
     /// Average time per prediction (milliseconds)
     pub predict_time_ms: f64,
-    
+
     /// Number of data points
     pub n_points: usize,
-    
+
     /// Number of dimensions
     pub n_dims: usize,
-    
+
     /// Approximation method used
     pub method: FastKrigingMethod,
 }
@@ -429,8 +434,8 @@ pub struct KrigingPerformanceStats {
 /// # #[cfg(feature = "linalg")]
 /// # {
 /// use ndarray::{Array1, Array2};
-/// use scirs2_interpolate::advanced::fast_kriging::benchmark_methods;
-/// use scirs2_interpolate::advanced::kriging::CovarianceFunction;
+/// use scirs2__interpolate::advanced::fast_kriging::benchmark_methods;
+/// use scirs2__interpolate::advanced::kriging::CovarianceFunction;
 ///
 /// // Create sample data
 /// let points = Array2::<f64>::zeros((100, 2));
@@ -451,6 +456,7 @@ pub struct KrigingPerformanceStats {
 /// # }
 /// ```
 #[cfg(feature = "std")]
+#[allow(dead_code)]
 pub fn benchmark_methods<
     F: Float
         + FromPrimitive
@@ -473,10 +479,10 @@ pub fn benchmark_methods<
     length_scale: F,
 ) -> Vec<KrigingPerformanceStats> {
     use std::time::Instant;
-    
+
     let n_points = points.shape()[0];
     let n_dims = points.shape()[1];
-    
+
     // Methods to benchmark
     let methods = vec![
         FastKrigingMethod::Local,
@@ -484,28 +490,30 @@ pub fn benchmark_methods<
         FastKrigingMethod::Tapering(3.0),
         FastKrigingMethod::HODLR(32),
     ];
-    
+
     // Create length scales array with isotropic value
     let length_scales = Array1::from_elem(n_dims, length_scale);
-    
+
     // Create a sample of query points for prediction
     let n_query = std::cmp::min(100, n_points / 10);
     let mut query_points = Array2::zeros((n_query, n_dims));
-    
+
     // Use a simple strategy to sample query points from the original dataset
     let stride = n_points / n_query;
     for i in 0..n_query {
         let idx = i * stride;
-        query_points.slice_mut(ndarray::s![i, ..]).assign(&points.slice(ndarray::s![idx, ..]));
+        query_points
+            .slice_mut(ndarray::s![i, ..])
+            .assign(&points.slice(ndarray::s![idx, ..]));
     }
-    
+
     // Track performance
     let mut stats = Vec::new();
-    
+
     for method in methods {
         // Build model and track time
         let start = Instant::now();
-        
+
         let model_result = FastKrigingBuilder::<F>::new()
             .points(points.to_owned())
             .values(values.to_owned())
@@ -513,17 +521,17 @@ pub fn benchmark_methods<
             .length_scales(length_scales.clone())
             .approximation_method(method)
             .build();
-            
+
         let fit_time = start.elapsed().as_secs_f64() * 1000.0;
-        
+
         if let Ok(model) = model_result {
             // Predict and track time
             let start = Instant::now();
-            
+
             let _ = model.predict(&query_points.view());
-            
+
             let predict_time = start.elapsed().as_secs_f64() * 1000.0 / n_query as f64;
-            
+
             stats.push(KrigingPerformanceStats {
                 fit_time_ms: fit_time,
                 predict_time_ms: predict_time,
@@ -533,6 +541,6 @@ pub fn benchmark_methods<
             });
         }
     }
-    
+
     stats
 }

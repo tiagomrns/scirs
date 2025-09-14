@@ -89,7 +89,7 @@ impl DynamicValue {
     }
 
     /// Create a new dynamic value with custom type information
-    pub fn with_type_info<T: Any + Send + Sync>(value: T, type_info: TypeInfo) -> Self {
+    pub fn with_type_info<T: Any + Send + Sync>(value: T, typeinfo: TypeInfo) -> Self {
         Self {
             value: Box::new(value),
             type_info,
@@ -267,7 +267,10 @@ impl HeterogeneousCollection {
     pub fn get_by_type<T: Any>(&self) -> Vec<&DynamicValue> {
         let type_id = TypeId::of::<T>();
         if let Some(indices) = self.type_index.get(&type_id) {
-            indices.iter().filter_map(|&i| self.values.get(i)).collect()
+            indices
+                .iter()
+                .filter_map(|&idx| self.values.get(idx))
+                .collect()
         } else {
             Vec::new()
         }
@@ -276,7 +279,10 @@ impl HeterogeneousCollection {
     /// Get all values of a specific category
     pub fn get_by_category(&self, category: &TypeCategory) -> Vec<&DynamicValue> {
         if let Some(indices) = self.category_index.get(category) {
-            indices.iter().filter_map(|&i| self.values.get(i)).collect()
+            indices
+                .iter()
+                .filter_map(|&idx| self.values.get(idx))
+                .collect()
         } else {
             Vec::new()
         }
@@ -629,6 +635,7 @@ static GLOBAL_TYPE_REGISTRY: std::sync::LazyLock<TypeRegistry> =
     std::sync::LazyLock::new(TypeRegistry::new);
 
 /// Get the global type registry
+#[allow(dead_code)]
 pub fn global_type_registry() -> &'static TypeRegistry {
     &GLOBAL_TYPE_REGISTRY
 }
@@ -643,7 +650,7 @@ pub mod utils {
         I: IntoIterator<Item = DynamicValue>,
     {
         let mut collection = HeterogeneousCollection::new();
-        for value in values {
+        for value in _values {
             collection.push_dynamic(value);
         }
         collection
@@ -653,12 +660,12 @@ pub mod utils {
     pub fn group_by_category(
         collection: &HeterogeneousCollection,
     ) -> HashMap<TypeCategory, Vec<&DynamicValue>> {
-        let mut groups = HashMap::new();
+        let mut groups: HashMap<TypeCategory, Vec<&DynamicValue>> = HashMap::new();
 
         for value in &collection.values {
             groups
                 .entry(value.type_info.category.clone())
-                .or_insert_with(Vec::new)
+                .or_default()
                 .push(value);
         }
 
@@ -761,7 +768,7 @@ mod tests {
 
         let mut sum = 0i32;
         collection
-            .apply_to_type::<i32, _>(|value| {
+            .apply_to_type::<i32>(|value| {
                 sum += *value;
                 Ok(())
             })
@@ -786,13 +793,13 @@ mod tests {
     fn test_metadata() {
         let mut value = DynamicValue::new(42i32);
         value.add_metadata("source".to_string(), "user_input".to_string());
-        value.add_metadata("validated".to_string(), "true".to_string());
+        value.add_metadata("validated".to_string(), true.to_string());
 
         assert_eq!(
             value.get_metadata("source"),
             Some(&"user_input".to_string())
         );
-        assert_eq!(value.get_metadata("validated"), Some(&"true".to_string()));
+        assert_eq!(value.get_metadata("validated"), Some(&true.to_string()));
         assert_eq!(value.get_metadata("nonexistent"), None);
     }
 

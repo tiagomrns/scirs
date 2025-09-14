@@ -161,21 +161,21 @@ impl CrankNicolson1D {
             ));
         }
 
-        // Validate time range
+        // Validate time _range
         if time_range[0] >= time_range[1] {
             return Err(PDEError::DomainError(
-                "Invalid time range: start must be less than end".to_string(),
+                "Invalid time _range: start must be less than end".to_string(),
             ));
         }
 
-        // Validate boundary conditions
+        // Validate boundary _conditions
         if boundary_conditions.len() != 2 {
             return Err(PDEError::BoundaryConditions(
-                "1D parabolic PDE requires exactly 2 boundary conditions".to_string(),
+                "1D parabolic PDE requires exactly 2 boundary _conditions".to_string(),
             ));
         }
 
-        // Ensure we have both lower and upper boundary conditions
+        // Ensure we have both lower and upper boundary _conditions
         let has_lower = boundary_conditions
             .iter()
             .any(|bc| bc.location == BoundaryLocation::Lower);
@@ -185,7 +185,7 @@ impl CrankNicolson1D {
 
         if !has_lower || !has_upper {
             return Err(PDEError::BoundaryConditions(
-                "1D parabolic PDE requires both lower and upper boundary conditions".to_string(),
+                "1D parabolic PDE requires both lower and upper boundary _conditions".to_string(),
             ));
         }
 
@@ -323,8 +323,7 @@ impl CrankNicolson1D {
 
         // Create result
         let info = Some(format!(
-            "Time steps: {}, Linear system solves: {}",
-            num_steps, num_linear_solves
+            "Time steps: {num_steps}, Linear system solves: {num_linear_solves}"
         ));
 
         Ok(ImplicitResult {
@@ -778,21 +777,21 @@ impl BackwardEuler1D {
             ));
         }
 
-        // Validate time range
+        // Validate time _range
         if time_range[0] >= time_range[1] {
             return Err(PDEError::DomainError(
-                "Invalid time range: start must be less than end".to_string(),
+                "Invalid time _range: start must be less than end".to_string(),
             ));
         }
 
-        // Validate boundary conditions
+        // Validate boundary _conditions
         if boundary_conditions.len() != 2 {
             return Err(PDEError::BoundaryConditions(
-                "1D parabolic PDE requires exactly 2 boundary conditions".to_string(),
+                "1D parabolic PDE requires exactly 2 boundary _conditions".to_string(),
             ));
         }
 
-        // Ensure we have both lower and upper boundary conditions
+        // Ensure we have both lower and upper boundary _conditions
         let has_lower = boundary_conditions
             .iter()
             .any(|bc| bc.location == BoundaryLocation::Lower);
@@ -802,7 +801,7 @@ impl BackwardEuler1D {
 
         if !has_lower || !has_upper {
             return Err(PDEError::BoundaryConditions(
-                "1D parabolic PDE requires both lower and upper boundary conditions".to_string(),
+                "1D parabolic PDE requires both lower and upper boundary _conditions".to_string(),
             ));
         }
 
@@ -938,8 +937,7 @@ impl BackwardEuler1D {
 
         // Create result
         let info = Some(format!(
-            "Time steps: {}, Linear system solves: {}",
-            num_steps, num_linear_solves
+            "Time steps: {num_steps}, Linear system solves: {num_linear_solves}"
         ));
 
         Ok(ImplicitResult {
@@ -963,10 +961,10 @@ impl BackwardEuler1D {
     ) {
         let nx = x_grid.len();
 
-        // Clear matrix
+        // Clear _matrix
         a_matrix.fill(0.0);
 
-        // Set up implicit matrix for interior points
+        // Set up implicit _matrix for interior points
         for i in 1..nx - 1 {
             let x = x_grid[i];
             let u_val = 0.0; // Used for linearization around previous state if needed
@@ -977,7 +975,7 @@ impl BackwardEuler1D {
             // Backward Euler coefficients for diffusion term
             let r = d * dt / (dx * dx);
 
-            // Coefficient matrix for implicit scheme
+            // Coefficient _matrix for implicit scheme
             a_matrix[[i, i - 1]] = -r; // Coefficient for u_{i-1}^{n+1}
             a_matrix[[i, i]] = 1.0 + 2.0 * r; // Coefficient for u_{i}^{n+1}
             a_matrix[[i, i + 1]] = -r; // Coefficient for u_{i+1}^{n+1}
@@ -1048,7 +1046,7 @@ impl BackwardEuler1D {
                         }
                         BoundaryConditionType::Robin => {
                             // a*u + b*du/dx = c
-                            if let Some([a_val, b_val, _c_val]) = bc.coefficients {
+                            if let Some([a_val, b_val, c_val]) = bc.coefficients {
                                 // Use second-order one-sided difference for the derivative:
                                 // (-3u_0 + 4u_1 - u_2)/(2dx)
 
@@ -1104,7 +1102,7 @@ impl BackwardEuler1D {
                         }
                         BoundaryConditionType::Robin => {
                             // a*u + b*du/dx = c
-                            if let Some([a_val, b_val, _c_val]) = bc.coefficients {
+                            if let Some([a_val, b_val, c_val]) = bc.coefficients {
                                 // Use second-order one-sided difference for the derivative:
                                 // (3u_{nx-1} - 4u_{nx-2} + u_{nx-3})/(2dx)
 
@@ -1332,6 +1330,7 @@ impl BackwardEuler1D {
 }
 
 /// Helper function to apply Dirichlet boundary conditions to initial condition
+#[allow(dead_code)]
 fn apply_dirichlet_conditions_to_initial_1d(
     u0: &mut Array1<f64>,
     boundary_conditions: &[BoundaryCondition<f64>],

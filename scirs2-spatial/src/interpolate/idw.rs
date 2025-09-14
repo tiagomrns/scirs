@@ -80,7 +80,7 @@ impl IDWInterpolator {
     /// * If power is negative
     /// * If n_neighbors is 0 or greater than n_points
     pub fn new(
-        points: &ArrayView2<f64>,
+        points: &ArrayView2<'_, f64>,
         values: &ArrayView1<f64>,
         power: f64,
         n_neighbors: Option<usize>,
@@ -99,21 +99,19 @@ impl IDWInterpolator {
 
         if power < 0.0 {
             return Err(SpatialError::ValueError(format!(
-                "Power parameter must be non-negative, got {}",
-                power
+                "Power parameter must be non-negative, got {power}"
             )));
         }
 
         if let Some(k) = n_neighbors {
             if k == 0 {
                 return Err(SpatialError::ValueError(
-                    "Number of neighbors must be positive".to_string(),
+                    "Number of _neighbors must be positive".to_string(),
                 ));
             }
             if k > n_points {
                 return Err(SpatialError::ValueError(format!(
-                    "Number of neighbors ({}) cannot exceed number of points ({})",
-                    k, n_points
+                    "Number of _neighbors ({k}) cannot exceed number of points ({n_points})"
                 )));
             }
         }
@@ -227,11 +225,11 @@ impl IDWInterpolator {
     /// # Errors
     ///
     /// * If the points dimensions don't match the interpolator
-    pub fn interpolate_many(&self, points: &ArrayView2<f64>) -> SpatialResult<Array1<f64>> {
+    pub fn interpolate_many(&self, points: &ArrayView2<'_, f64>) -> SpatialResult<Array1<f64>> {
         // Check dimensions
         if points.ncols() != self.dim {
             return Err(SpatialError::DimensionError(format!(
-                "Query points have dimension {}, expected {}",
+                "Query _points have dimension {}, expected {}",
                 points.ncols(),
                 self.dim
             )));
@@ -271,8 +269,7 @@ impl IDWInterpolator {
     pub fn set_power(&mut self, power: f64) -> SpatialResult<()> {
         if power < 0.0 {
             return Err(SpatialError::ValueError(format!(
-                "Power parameter must be non-negative, got {}",
-                power
+                "Power parameter must be non-negative, got {power}"
             )));
         }
 
@@ -289,22 +286,22 @@ impl IDWInterpolator {
     /// # Errors
     ///
     /// * If n_neighbors is 0 or greater than n_points
-    pub fn set_n_neighbors(&mut self, n_neighbors: Option<usize>) -> SpatialResult<()> {
-        if let Some(k) = n_neighbors {
+    pub fn set_n_neighbors(&mut self, _nneighbors: Option<usize>) -> SpatialResult<()> {
+        if let Some(k) = _nneighbors {
             if k == 0 {
                 return Err(SpatialError::ValueError(
-                    "Number of neighbors must be positive".to_string(),
+                    "Number of _neighbors must be positive".to_string(),
                 ));
             }
             if k > self.n_points {
                 return Err(SpatialError::ValueError(format!(
-                    "Number of neighbors ({}) cannot exceed number of points ({})",
+                    "Number of _neighbors ({}) cannot exceed number of points ({})",
                     k, self.n_points
                 )));
             }
         }
 
-        self.n_neighbors = n_neighbors;
+        self.n_neighbors = _nneighbors;
         Ok(())
     }
 

@@ -1,4 +1,4 @@
-# SciRS2 Optim - Production Ready v0.1.0-alpha.6
+# SciRS2 Optim - Production Ready v0.1.0-beta.1
 
 [![crates.io](https://img.shields.io/crates/v/scirs2-optim.svg)](https://crates.io/crates/scirs2-optim)
 [[![License](https://img.shields.io/badge/license-MIT%2FApache--2.0-blue.svg)]](../LICENSE)
@@ -6,7 +6,7 @@
 
 **Production-Ready** optimization algorithms for the SciRS2 scientific computing library. This comprehensive module provides state-of-the-art optimizers, advanced regularization techniques, intelligent learning rate schedulers, and hardware-aware optimization strategies for machine learning and numerical optimization tasks.
 
-🚀 **Final Alpha Release**: This is the production-ready final alpha version with 338 passing tests, zero warnings, and comprehensive feature coverage.
+🚀 **First Beta Release**: This is the production-ready first beta version with 338 passing tests, zero warnings, and comprehensive feature coverage.
 
 ## Features
 
@@ -49,7 +49,7 @@ Add the following to your `Cargo.toml`:
 
 ```toml
 [dependencies]
-scirs2-optim = "0.1.0-alpha.6"
+scirs2-optim = "0.1.0-beta.1"
 ```
 
 To enable advanced features:
@@ -57,7 +57,7 @@ To enable advanced features:
 ```toml
 [dependencies]
 # For metrics integration and hyperparameter optimization
-scirs2-optim = { version = "0.1.0-alpha.6", features = ["metrics_integration"] }
+scirs2-optim = { version = "0.1.0-beta.1", features = ["metrics_integration"] }
 ```
 
 **Available Features**:

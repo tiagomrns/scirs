@@ -1,6 +1,7 @@
 use ndarray::Array1;
 use scirs2_interpolate::{cubic_interpolate, make_tension_spline, ExtrapolateMode};
 
+#[allow(dead_code)]
 fn main() {
     println!("Tension Splines Example");
     println!("======================\n");

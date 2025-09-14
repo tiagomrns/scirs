@@ -184,7 +184,7 @@ impl<A: Float + ScalarOperand + Debug> RAdam<A> {
 
 impl<A, D> Optimizer<A, D> for RAdam<A>
 where
-    A: Float + ScalarOperand + Debug + std::convert::From<f64>,
+    A: Float + ScalarOperand + Debug + Send + Sync + std::convert::From<f64>,
     D: Dimension,
 {
     fn step(&mut self, params: &Array<A, D>, gradients: &Array<A, D>) -> Result<Array<A, D>> {

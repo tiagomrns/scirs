@@ -17,6 +17,7 @@ use scirs2_io::image::{save_image, ColorMode, ImageData, ImageFormat, ImageMetad
 use std::time::Instant;
 use tempfile::tempdir;
 
+#[allow(dead_code)]
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("🖼️  Enhanced Image Capabilities Example");
     println!("======================================");
@@ -47,6 +48,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     Ok(())
 }
 
+#[allow(dead_code)]
 fn demonstrate_image_pyramids() -> Result<(), Box<dyn std::error::Error>> {
     println!("\n📊 Demonstrating Multi-Scale Image Pyramids...");
 
@@ -164,6 +166,7 @@ fn demonstrate_image_pyramids() -> Result<(), Box<dyn std::error::Error>> {
     Ok(())
 }
 
+#[allow(dead_code)]
 fn demonstrate_lossless_compression() -> Result<(), Box<dyn std::error::Error>> {
     println!("\n💾 Demonstrating Lossless Compression...");
 
@@ -318,6 +321,7 @@ fn demonstrate_lossless_compression() -> Result<(), Box<dyn std::error::Error>> 
     Ok(())
 }
 
+#[allow(dead_code)]
 fn demonstrate_advanced_processing() -> Result<(), Box<dyn std::error::Error>> {
     println!("\n🎨 Demonstrating Advanced Image Processing...");
 
@@ -477,6 +481,7 @@ fn demonstrate_advanced_processing() -> Result<(), Box<dyn std::error::Error>> {
     Ok(())
 }
 
+#[allow(dead_code)]
 fn demonstrate_batch_processing() -> Result<(), Box<dyn std::error::Error>> {
     println!("\n⚡ Demonstrating Enhanced Batch Processing...");
 
@@ -594,6 +599,7 @@ fn demonstrate_batch_processing() -> Result<(), Box<dyn std::error::Error>> {
     Ok(())
 }
 
+#[allow(dead_code)]
 fn demonstrate_performance_features() -> Result<(), Box<dyn std::error::Error>> {
     println!("\n🚀 Demonstrating Performance Features...");
 

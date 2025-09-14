@@ -1,5 +1,6 @@
 use scirs2_special::*;
 
+#[allow(dead_code)]
 fn main() {
     // Test j0 values
     println!("J0 function values:");

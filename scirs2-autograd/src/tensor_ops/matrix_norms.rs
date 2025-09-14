@@ -196,6 +196,7 @@ impl<F: Float + ndarray::ScalarOperand> Op<F> for Matrix2NormOp {
 // Helper functions
 
 /// Compute matrix 1-norm (maximum column sum)
+#[allow(dead_code)]
 fn compute_matrix_1_norm<F: Float>(matrix: &ArrayView2<F>) -> F {
     let (m, n) = matrix.dim();
     let mut max_col_sum = F::zero();
@@ -214,7 +215,8 @@ fn compute_matrix_1_norm<F: Float>(matrix: &ArrayView2<F>) -> F {
 }
 
 /// Compute gradient for matrix 1-norm
-fn compute_matrix_1_norm_gradient<F: Float>(matrix: &ArrayView2<F>, grad_scalar: F) -> Array2<F> {
+#[allow(dead_code)]
+fn compute_matrix_1_norm_gradient<F: Float>(matrix: &ArrayView2<F>, gradscalar: F) -> Array2<F> {
     let (m, n) = matrix.dim();
     let mut grad_matrix = Array2::zeros((m, n));
 
@@ -237,9 +239,9 @@ fn compute_matrix_1_norm_gradient<F: Float>(matrix: &ArrayView2<F>, grad_scalar:
     for i in 0..m {
         let elem = matrix[[i, max_col]];
         grad_matrix[[i, max_col]] = if elem > F::zero() {
-            grad_scalar
+            gradscalar
         } else if elem < F::zero() {
-            -grad_scalar
+            -gradscalar
         } else {
             F::zero()
         };
@@ -249,6 +251,7 @@ fn compute_matrix_1_norm_gradient<F: Float>(matrix: &ArrayView2<F>, grad_scalar:
 }
 
 /// Compute matrix infinity-norm (maximum row sum)
+#[allow(dead_code)]
 fn compute_matrix_inf_norm<F: Float>(matrix: &ArrayView2<F>) -> F {
     let (m, n) = matrix.dim();
     let mut max_row_sum = F::zero();
@@ -267,6 +270,7 @@ fn compute_matrix_inf_norm<F: Float>(matrix: &ArrayView2<F>) -> F {
 }
 
 /// Compute gradient for matrix infinity-norm
+#[allow(dead_code)]
 fn compute_matrix_inf_norm_gradient<F: Float>(matrix: &ArrayView2<F>, grad_scalar: F) -> Array2<F> {
     let (m, n) = matrix.dim();
     let mut grad_matrix = Array2::zeros((m, n));
@@ -302,6 +306,7 @@ fn compute_matrix_inf_norm_gradient<F: Float>(matrix: &ArrayView2<F>, grad_scala
 }
 
 /// Compute matrix 2-norm (largest singular value)
+#[allow(dead_code)]
 fn compute_matrix_2_norm<F: Float + ndarray::ScalarOperand>(matrix: &ArrayView2<F>) -> F {
     // Use power iteration to find the largest singular value
     let (_, sigma_max) = power_iteration_2norm(matrix, 50, F::from(1e-8).unwrap());
@@ -309,12 +314,13 @@ fn compute_matrix_2_norm<F: Float + ndarray::ScalarOperand>(matrix: &ArrayView2<
 }
 
 /// Power iteration for 2-norm computation
+#[allow(dead_code)]
 fn power_iteration_2norm<F: Float + ndarray::ScalarOperand>(
     matrix: &ArrayView2<F>,
     max_iter: usize,
     tol: F,
 ) -> (ndarray::Array1<F>, F) {
-    let (m, _n) = matrix.dim();
+    let (m, n) = matrix.dim();
 
     // Initialize with normalized vector
     let mut u = ndarray::Array1::<F>::zeros(m);
@@ -370,6 +376,7 @@ fn power_iteration_2norm<F: Float + ndarray::ScalarOperand>(
 }
 
 /// Compute gradient for matrix 2-norm
+#[allow(dead_code)]
 fn compute_matrix_2_norm_gradient<F: Float + ndarray::ScalarOperand>(
     matrix: &ArrayView2<F>,
     grad_scalar: F,
@@ -400,6 +407,7 @@ fn compute_matrix_2_norm_gradient<F: Float + ndarray::ScalarOperand>(
 // Public API functions
 
 /// Compute the 1-norm of a matrix (maximum column sum)
+#[allow(dead_code)]
 pub fn norm1<'g, F: Float>(matrix: &Tensor<'g, F>) -> Tensor<'g, F> {
     let g = matrix.graph();
     Tensor::builder(g)
@@ -408,6 +416,7 @@ pub fn norm1<'g, F: Float>(matrix: &Tensor<'g, F>) -> Tensor<'g, F> {
 }
 
 /// Compute the 2-norm of a matrix (largest singular value)
+#[allow(dead_code)]
 pub fn norm2<'g, F: Float + ndarray::ScalarOperand>(matrix: &Tensor<'g, F>) -> Tensor<'g, F> {
     let g = matrix.graph();
     Tensor::builder(g)
@@ -416,6 +425,7 @@ pub fn norm2<'g, F: Float + ndarray::ScalarOperand>(matrix: &Tensor<'g, F>) -> T
 }
 
 /// Compute the infinity-norm of a matrix (maximum row sum)
+#[allow(dead_code)]
 pub fn norminf<'g, F: Float>(matrix: &Tensor<'g, F>) -> Tensor<'g, F> {
     let g = matrix.graph();
     Tensor::builder(g)
@@ -425,6 +435,7 @@ pub fn norminf<'g, F: Float>(matrix: &Tensor<'g, F>) -> Tensor<'g, F> {
 
 /// Compute the Frobenius norm of a matrix
 /// This is an alias for the Frobenius norm in norm_ops.rs
+#[allow(dead_code)]
 pub fn normfro<'g, F: Float>(matrix: &Tensor<'g, F>) -> Tensor<'g, F> {
     crate::tensor_ops::norm_ops::frobenius_norm(matrix)
 }

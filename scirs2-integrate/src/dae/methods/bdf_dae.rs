@@ -14,6 +14,7 @@ use ndarray::{Array1, Array2, ArrayView1};
 ///
 /// Implements a specialized BDF method tailored for semi-explicit DAE systems
 /// of the form x' = f(x, y, t), 0 = g(x, y, t)
+#[allow(dead_code)]
 pub fn bdf_semi_explicit_dae<F, FFunc, GFunc>(
     f: FFunc,
     g: GFunc,
@@ -44,19 +45,19 @@ where
 
     // Initial step size
     let mut h = options.h0.unwrap_or_else(|| {
-        let span = t_span[1] - t_span[0];
-        span * F::from_f64(0.01).unwrap() // 1% of interval
+        let _span = t_span[1] - t_span[0];
+        _span * F::from_f64(0.01).unwrap() // 1% of interval
     });
 
     // Step limits
     let min_step = options.min_step.unwrap_or_else(|| {
-        let span = t_span[1] - t_span[0];
-        span * F::from_f64(1e-6).unwrap() // Very small relative to interval
+        let _span = t_span[1] - t_span[0];
+        _span * F::from_f64(1e-6).unwrap() // Very small relative to interval
     });
 
     let max_step = options.max_step.unwrap_or_else(|| {
-        let span = t_span[1] - t_span[0];
-        span * F::from_f64(0.1).unwrap() // 10% of interval
+        let _span = t_span[1] - t_span[0];
+        _span * F::from_f64(0.1).unwrap() // 10% of interval
     });
 
     // Maximum BDF order
@@ -408,8 +409,7 @@ where
             // If step size gets too small, the problem might be too stiff
             if h < min_step {
                 return Err(IntegrateError::ComputationError(format!(
-                    "Failed to converge at t = {}. Step size too small.",
-                    t_current
+                    "Failed to converge at t = {t_current}. Step size too small."
                 )));
             }
 
@@ -496,11 +496,10 @@ where
         y: y_values,
         success,
         message: if success {
-            Some(format!("Successful integration. {} steps taken.", n_steps))
+            Some(format!("Successful integration. {n_steps} steps taken."))
         } else {
             Some(format!(
-                "Integration did not reach end time. {} steps taken.",
-                n_steps
+                "Integration did not reach end time. {n_steps} steps taken."
             ))
         },
         n_eval: n_f_evals,
@@ -522,6 +521,7 @@ where
 ///
 /// Implements a specialized BDF method tailored for fully implicit DAE systems
 /// of the form F(t, y, y') = 0
+#[allow(dead_code)]
 pub fn bdf_implicit_dae<F, FFunc>(
     f: FFunc,
     t_span: [F; 2],
@@ -548,19 +548,19 @@ where
 
     // Initial step size
     let mut h = options.h0.unwrap_or_else(|| {
-        let span = t_span[1] - t_span[0];
-        span * F::from_f64(0.01).unwrap() // 1% of interval
+        let _span = t_span[1] - t_span[0];
+        _span * F::from_f64(0.01).unwrap() // 1% of interval
     });
 
     // Step limits
     let min_step = options.min_step.unwrap_or_else(|| {
-        let span = t_span[1] - t_span[0];
-        span * F::from_f64(1e-6).unwrap() // Very small relative to interval
+        let _span = t_span[1] - t_span[0];
+        _span * F::from_f64(1e-6).unwrap() // Very small relative to interval
     });
 
     let max_step = options.max_step.unwrap_or_else(|| {
-        let span = t_span[1] - t_span[0];
-        span * F::from_f64(0.1).unwrap() // 10% of interval
+        let _span = t_span[1] - t_span[0];
+        _span * F::from_f64(0.1).unwrap() // 10% of interval
     });
 
     // Maximum BDF order
@@ -831,8 +831,7 @@ where
             // If step size gets too small, the problem might be too stiff
             if h < min_step {
                 return Err(IntegrateError::ComputationError(format!(
-                    "Failed to converge at t = {}. Step size too small.",
-                    t_current
+                    "Failed to converge at t = {t_current}. Step size too small."
                 )));
             }
 
@@ -913,11 +912,10 @@ where
         y: empty_y,
         success,
         message: if success {
-            Some(format!("Successful integration. {} steps taken.", n_steps))
+            Some(format!("Successful integration. {n_steps} steps taken."))
         } else {
             Some(format!(
-                "Integration did not reach end time. {} steps taken.",
-                n_steps
+                "Integration did not reach end time. {n_steps} steps taken."
             ))
         },
         n_eval: n_f_evals,
@@ -936,6 +934,7 @@ where
 }
 
 /// Predict the next state for semi-explicit DAE using extrapolation
+#[allow(dead_code)]
 fn predict_step<F>(
     x_history: &[Array1<F>],
     y_history: &[Array1<F>],
@@ -1015,7 +1014,8 @@ where
 }
 
 /// Predict the next state for fully implicit DAE
-fn predict_fully_implicit<F>(y_history: &[Array1<F>], order: usize, _h: F) -> Array1<F>
+#[allow(dead_code)]
+fn predict_fully_implicit<F>(y_history: &[Array1<F>], order: usize, h: F) -> Array1<F>
 where
     F: IntegrateFloat,
 {
@@ -1043,6 +1043,7 @@ where
 }
 
 /// Compute the Jacobian of a function with respect to x variables
+#[allow(dead_code)]
 fn compute_jacobian_x<F, Func>(
     f: &Func,
     t: F,
@@ -1090,6 +1091,7 @@ where
 }
 
 /// Compute the Jacobian of a function with respect to y variables
+#[allow(dead_code)]
 fn compute_jacobian_y<F, Func>(
     f: &Func,
     t: F,
@@ -1137,6 +1139,7 @@ where
 }
 
 /// Compute the Jacobian of a function with respect to y for implicit DAE
+#[allow(dead_code)]
 fn compute_jacobian_y_implicit<F, Func>(
     f: &Func,
     t: F,
@@ -1184,6 +1187,7 @@ where
 }
 
 /// Compute the Jacobian of a function with respect to y' for implicit DAE
+#[allow(dead_code)]
 fn compute_jacobian_yprime_implicit<F, Func>(
     f: &Func,
     t: F,
@@ -1231,6 +1235,7 @@ where
 }
 
 /// Solve a linear system using Gaussian elimination with partial pivoting
+#[allow(dead_code)]
 fn solve_linear_system<F>(a: &Array2<F>, b: &Array1<F>) -> IntegrateResult<Array1<F>>
 where
     F: IntegrateFloat,
@@ -1274,8 +1279,7 @@ where
         // Check for singularity
         if a_copy[[k, k]].abs() < F::from_f64(1e-10).unwrap() {
             return Err(IntegrateError::ComputationError(format!(
-                "Matrix is singular at row {}",
-                k
+                "Matrix is singular at row {k}"
             )));
         }
 

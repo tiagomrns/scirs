@@ -6,7 +6,7 @@
 //! multiple CPU cores.
 
 use crate::error::{IntegrateError, IntegrateResult};
-use crate::monte_carlo::{ErrorEstimationMethod, MonteCarloOptions, MonteCarloResult};
+use crate::monte__carlo::{ErrorEstimationMethod, MonteCarloOptions, MonteCarloResult};
 use crate::IntegrateFloat;
 use ndarray::{Array1, ArrayView1};
 use rand::prelude::*;
@@ -17,7 +17,7 @@ use std::marker::PhantomData;
 use std::sync::{Arc, Mutex};
 
 #[cfg(feature = "parallel")]
-use scirs2_core::parallel_ops::*;
+use scirs2_core::parallel_ops::ThreadPoolBuilder;
 
 /// Options for parallel Monte Carlo integration
 #[derive(Debug, Clone)]
@@ -37,7 +37,7 @@ pub struct ParallelMonteCarloOptions<F: IntegrateFloat> {
     /// Use chunk-based parallelism for better load balancing
     pub use_chunking: bool,
     /// Phantom data for generic type
-    pub _phantom: PhantomData<F>,
+    pub phantom: PhantomData<F>,
 }
 
 impl<F: IntegrateFloat> Default for ParallelMonteCarloOptions<F> {
@@ -50,7 +50,7 @@ impl<F: IntegrateFloat> Default for ParallelMonteCarloOptions<F> {
             n_threads: None,  // Use all available cores
             batch_size: 1000, // Process 1000 samples per batch
             use_chunking: true,
-            _phantom: PhantomData,
+            phantom: PhantomData,
         }
     }
 }
@@ -66,7 +66,7 @@ impl<F: IntegrateFloat> From<MonteCarloOptions<F>> for ParallelMonteCarloOptions
             n_threads: None,
             batch_size: 1000,
             use_chunking: true,
-            _phantom: PhantomData,
+            phantom: PhantomData,
         }
     }
 }
@@ -91,7 +91,7 @@ impl<F: IntegrateFloat> From<MonteCarloOptions<F>> for ParallelMonteCarloOptions
 /// # Examples
 ///
 /// ```
-/// use scirs2_integrate::monte_carlo_parallel::{parallel_monte_carlo, ParallelMonteCarloOptions};
+/// use scirs2__integrate::monte_carlo_parallel::{parallel_monte_carlo, ParallelMonteCarloOptions};
 /// use ndarray::ArrayView1;
 /// use std::marker::PhantomData;
 ///
@@ -100,7 +100,7 @@ impl<F: IntegrateFloat> From<MonteCarloOptions<F>> for ParallelMonteCarloOptions
 ///     n_samples: 1000000,
 ///     n_threads: Some(4),
 ///     batch_size: 5000,
-///     _phantom: PhantomData,
+///     phantom: PhantomData,
 ///     ..Default::default()
 /// };
 ///
@@ -112,6 +112,7 @@ impl<F: IntegrateFloat> From<MonteCarloOptions<F>> for ParallelMonteCarloOptions
 /// ).unwrap();
 /// ```
 #[cfg(feature = "parallel")]
+#[allow(dead_code)]
 pub fn parallel_monte_carlo<F, Func>(
     f: Func,
     ranges: &[(F, F)],
@@ -143,11 +144,11 @@ where
             .num_threads(n_threads)
             .build()
             .map_err(|e| {
-                IntegrateError::ComputationError(format!("Failed to create thread pool: {}", e))
+                IntegrateError::ComputationError(format!("Failed to create thread pool: {e}"))
             })?
     } else {
         ThreadPoolBuilder::new().build().map_err(|e| {
-            IntegrateError::ComputationError(format!("Failed to create thread pool: {}", e))
+            IntegrateError::ComputationError(format!("Failed to create thread pool: {e}"))
         })?
     };
 
@@ -162,6 +163,7 @@ where
 
 /// Chunk-based parallel Monte Carlo integration
 #[cfg(feature = "parallel")]
+#[allow(dead_code)]
 fn parallel_monte_carlo_chunked<F, Func>(
     f: &Func,
     ranges: &[(F, F)],
@@ -271,6 +273,7 @@ where
 
 /// Batch-based parallel Monte Carlo integration
 #[cfg(feature = "parallel")]
+#[allow(dead_code)]
 fn parallel_monte_carlo_batched<F, Func>(
     f: &Func,
     ranges: &[(F, F)],
@@ -390,6 +393,7 @@ where
 }
 
 /// Compute final Monte Carlo result from accumulated statistics
+#[allow(dead_code)]
 fn compute_final_result<F: IntegrateFloat>(
     sum: F,
     sum_sq: F,
@@ -429,6 +433,7 @@ fn compute_final_result<F: IntegrateFloat>(
 /// This advanced method automatically adjusts sampling strategies based on
 /// the variance observed in different regions of the integration domain.
 #[cfg(feature = "parallel")]
+#[allow(dead_code)]
 pub fn adaptive_parallel_monte_carlo<F, Func>(
     f: Func,
     ranges: &[(F, F)],
@@ -442,7 +447,7 @@ where
     rand_distr::StandardNormal: Distribution<F>,
 {
     let opts = options.unwrap_or_default();
-    let initial_samples = opts.n_samples.min(max_samples / 4); // Start with 25% of max samples
+    let initial_samples = opts.n_samples.min(max_samples / 4); // Start with 25% of max _samples
 
     // Initial estimation
     let mut current_opts = opts.clone();
@@ -459,7 +464,7 @@ where
             break;
         }
 
-        // Run additional samples
+        // Run additional _samples
         current_opts.n_samples = next_batch_size;
         let additional_result = parallel_monte_carlo(&f, ranges, Some(current_opts.clone()))?;
 
@@ -490,6 +495,7 @@ where
 
 /// Fallback implementations when parallel feature is not enabled
 #[cfg(not(feature = "parallel"))]
+#[allow(dead_code)]
 pub fn parallel_monte_carlo<F, Func>(
     f: Func,
     ranges: &[(F, F)],
@@ -501,18 +507,19 @@ where
     rand_distr::StandardNormal: Distribution<F>,
 {
     // Convert to regular MonteCarloOptions and use sequential implementation
-    let regular_opts = options.map(|opts| crate::monte_carlo::MonteCarloOptions {
+    let regular_opts = options.map(|opts| crate::monte__carlo::MonteCarloOptions {
         n_samples: opts.n_samples,
         seed: opts.seed,
         error_method: opts.error_method,
         use_antithetic: opts.use_antithetic,
-        _phantom: PhantomData,
+        phantom: PhantomData,
     });
 
     crate::monte_carlo::monte_carlo(f, ranges, regular_opts)
 }
 
 #[cfg(not(feature = "parallel"))]
+#[allow(dead_code)]
 pub fn adaptive_parallel_monte_carlo<F, Func>(
     f: Func,
     ranges: &[(F, F)],
@@ -531,7 +538,7 @@ where
         seed: opts.seed,
         error_method: opts.error_method,
         use_antithetic: opts.use_antithetic,
-        _phantom: PhantomData,
+        phantom: PhantomData,
     });
 
     crate::monte_carlo::monte_carlo(f, ranges, regular_opts)
@@ -539,9 +546,7 @@ where
 
 #[cfg(test)]
 mod tests {
-    use super::*;
     use approx::assert_relative_eq;
-    use ndarray::ArrayView1;
 
     #[test]
     #[cfg(feature = "parallel")]
@@ -618,7 +623,7 @@ mod tests {
             seed: Some(789),
             error_method: ErrorEstimationMethod::BatchMeans,
             use_antithetic: true,
-            _phantom: PhantomData,
+            phantom: PhantomData,
         };
 
         let parallel_opts: ParallelMonteCarloOptions<f64> = regular_opts.into();

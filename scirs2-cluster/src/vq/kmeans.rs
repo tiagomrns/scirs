@@ -7,7 +7,7 @@ use std::fmt::Debug;
 
 use super::{euclidean_distance, vq};
 use crate::error::{ClusteringError, Result};
-use scirs2_core::validation::{clustering::*, parameters::*};
+// use scirs2_core::validation::{clustering::*, parameters::*};
 
 // Re-export kmeans2 related types and functions
 
@@ -58,7 +58,7 @@ impl<F: Float + FromPrimitive> Default for KMeansOptions<F> {
 /// # Examples
 ///
 /// ```
-/// use ndarray::{Array2, ArrayView2};
+/// use ndarray::{ArrayView1, Array2, ArrayView2};
 /// use scirs2_cluster::vq::kmeans;
 ///
 /// let data = Array2::from_shape_vec((6, 2), vec![
@@ -73,6 +73,7 @@ impl<F: Float + FromPrimitive> Default for KMeansOptions<F> {
 /// let (centroids, distortion) = kmeans(data.view(), 2, Some(20), Some(1e-5), Some(true), Some(42)).unwrap();
 /// ```
 #[allow(clippy::too_many_arguments)]
+#[allow(dead_code)]
 pub fn kmeans<F>(
     obs: ArrayView2<F>,
     k_or_guess: usize,
@@ -87,17 +88,26 @@ where
     let k = k_or_guess; // For now, just treat as number of clusters
     let max_iter = iter.unwrap_or(20);
     let tol = thresh.unwrap_or(F::from(1e-5).unwrap());
-    let check_finite_flag = check_finite.unwrap_or(true);
+    let _check_finite_flag = check_finite.unwrap_or(true);
 
-    // Use unified validation
-    validate_clustering_data(&obs, "K-means", check_finite_flag, Some(k))
-        .map_err(|e| ClusteringError::InvalidInput(format!("K-means: {}", e)))?;
-
-    check_n_clusters_bounds(&obs, k, "K-means")
-        .map_err(|e| ClusteringError::InvalidInput(format!("{}", e)))?;
-
-    check_iteration_params(max_iter, tol, "K-means")
-        .map_err(|e| ClusteringError::InvalidInput(format!("{}", e)))?;
+    // Basic validation
+    if obs.is_empty() {
+        return Err(ClusteringError::InvalidInput(
+            "Input data is empty".to_string(),
+        ));
+    }
+    if k == 0 {
+        return Err(ClusteringError::InvalidInput(
+            "Number of clusters must be greater than 0".to_string(),
+        ));
+    }
+    if k > obs.nrows() {
+        return Err(ClusteringError::InvalidInput(format!(
+            "Number of clusters ({}) cannot be greater than number of data points ({})",
+            k,
+            obs.nrows()
+        )));
+    }
 
     // Create options struct for internal use
     let options = KMeansOptions {
@@ -137,7 +147,7 @@ where
 /// # Examples
 ///
 /// ```
-/// use ndarray::{Array2, ArrayView2};
+/// use ndarray::{ArrayView1, Array2, ArrayView2};
 /// use scirs2_cluster::vq::kmeans_with_options;
 ///
 /// let data = Array2::from_shape_vec((6, 2), vec![
@@ -151,6 +161,7 @@ where
 ///
 /// let (centroids, labels) = kmeans_with_options(data.view(), 2, None).unwrap();
 /// ```
+#[allow(dead_code)]
 pub fn kmeans_with_options<F>(
     data: ArrayView2<F>,
     k: usize,
@@ -180,16 +191,9 @@ where
     }
 
     let opts = options.unwrap_or_default();
-    // We create the RNG but don't use it directly in this function
-    if opts.random_seed.is_some() {
-        #[allow(unused_variables)]
-        let seed = opts.random_seed.unwrap();
-        // In a real implementation, we would seed the RNG here
-    } else {
-        // In a real implementation, we would use thread_rng here
-    };
+    // Random seed is handled in kmeans_init function
 
-    let mut best_centroids = None;
+    let mut bestcentroids = None;
     let mut best_labels = None;
     let mut best_inertia = F::infinity();
 
@@ -208,16 +212,17 @@ where
         let (centroids, labels, inertia) = _kmeans_single(data, centroids.view(), &opts)?;
 
         if inertia < best_inertia {
-            best_centroids = Some(centroids);
+            bestcentroids = Some(centroids);
             best_labels = Some(labels);
             best_inertia = inertia;
         }
     }
 
-    Ok((best_centroids.unwrap(), best_labels.unwrap()))
+    Ok((bestcentroids.unwrap(), best_labels.unwrap()))
 }
 
 /// Calculate distortion (sum of squared distances to centroids)
+#[allow(dead_code)]
 fn calculate_distortion<F>(
     data: ArrayView2<F>,
     centroids: ArrayView2<F>,
@@ -242,9 +247,10 @@ where
 }
 
 /// Run a single k-means clustering iteration
+#[allow(dead_code)]
 fn _kmeans_single<F>(
     data: ArrayView2<F>,
-    init_centroids: ArrayView2<F>,
+    initcentroids: ArrayView2<F>,
     opts: &KMeansOptions<F>,
 ) -> Result<(Array2<F>, Array1<usize>, F)>
 where
@@ -252,9 +258,9 @@ where
 {
     let n_samples = data.shape()[0];
     let n_features = data.shape()[1];
-    let k = init_centroids.shape()[0];
+    let k = initcentroids.shape()[0];
 
-    let mut centroids = init_centroids.to_owned();
+    let mut centroids = initcentroids.to_owned();
     let mut labels = Array1::zeros(n_samples);
     let mut prev_centroid_diff = F::infinity();
 
@@ -264,7 +270,7 @@ where
         labels = new_labels;
 
         // Compute new centroids
-        let mut new_centroids = Array2::zeros((k, n_features));
+        let mut newcentroids = Array2::zeros((k, n_features));
         let mut counts = Array1::zeros(k);
 
         for i in 0..n_samples {
@@ -272,7 +278,7 @@ where
             let point = data.slice(s![i, ..]);
 
             for j in 0..n_features {
-                new_centroids[[cluster, j]] = new_centroids[[cluster, j]] + point[j];
+                newcentroids[[cluster, j]] = newcentroids[[cluster, j]] + point[j];
             }
 
             counts[cluster] += 1;
@@ -295,14 +301,14 @@ where
 
                 // Move this point to the empty cluster
                 for j in 0..n_features {
-                    new_centroids[[i, j]] = data[[far_idx, j]];
+                    newcentroids[[i, j]] = data[[far_idx, j]];
                 }
 
                 counts[i] = 1;
             } else {
                 // Normalize by the number of points in the cluster
                 for j in 0..n_features {
-                    new_centroids[[i, j]] = new_centroids[[i, j]] / F::from(counts[i]).unwrap();
+                    newcentroids[[i, j]] = newcentroids[[i, j]] / F::from(counts[i]).unwrap();
                 }
             }
         }
@@ -311,11 +317,11 @@ where
         let mut centroid_diff = F::zero();
         for i in 0..k {
             let dist =
-                euclidean_distance(centroids.slice(s![i, ..]), new_centroids.slice(s![i, ..]));
+                euclidean_distance(centroids.slice(s![i, ..]), newcentroids.slice(s![i, ..]));
             centroid_diff = centroid_diff + dist;
         }
 
-        centroids = new_centroids;
+        centroids = newcentroids;
 
         if centroid_diff <= opts.tol || centroid_diff >= prev_centroid_diff {
             break;
@@ -359,6 +365,7 @@ pub enum KMeansInit {
 /// # Returns
 ///
 /// * Array of shape (k × n_features) with initial centroids
+#[allow(dead_code)]
 pub fn kmeans_init<F>(
     data: ArrayView2<F>,
     k: usize,
@@ -386,7 +393,8 @@ where
 /// # Returns
 ///
 /// * Array of shape (k × n_features) with initial centroids
-pub fn random_init<F>(data: ArrayView2<F>, k: usize, _random_seed: Option<u64>) -> Result<Array2<F>>
+#[allow(dead_code)]
+pub fn random_init<F>(data: ArrayView2<F>, k: usize, random_seed: Option<u64>) -> Result<Array2<F>>
 where
     F: Float + FromPrimitive + Debug + std::iter::Sum,
 {
@@ -404,7 +412,7 @@ where
     let mut centroids = Array2::zeros((k, n_features));
     let mut selected_indices = Vec::with_capacity(k);
 
-    // Select k unique random points from the data
+    // Select k unique random points from the _data
     while selected_indices.len() < k {
         let idx = rng.random_range(0..n_samples);
         if !selected_indices.contains(&idx) {
@@ -433,10 +441,11 @@ where
 /// # Returns
 ///
 /// * Array of shape (k × n_features) with initial centroids
+#[allow(dead_code)]
 pub fn kmeans_plus_plus<F>(
     data: ArrayView2<F>,
     k: usize,
-    _random_seed: Option<u64>,
+    random_seed: Option<u64>,
 ) -> Result<Array2<F>>
 where
     F: Float + FromPrimitive + Debug + std::iter::Sum,
@@ -539,10 +548,11 @@ where
 /// # References
 ///
 /// * [Scalable K-means++ by Bahmani et al.](https://theory.stanford.edu/~sergei/papers/vldb12-kmpar.pdf)
+#[allow(dead_code)]
 pub fn kmeans_parallel<F>(
     data: ArrayView2<F>,
     k: usize,
-    _random_seed: Option<u64>,
+    random_seed: Option<u64>,
 ) -> Result<Array2<F>>
 where
     F: Float + FromPrimitive + Debug + std::iter::Sum,
@@ -642,7 +652,7 @@ where
             let options = KMeansOptions {
                 max_iter: 100,
                 tol: F::from(1e-4).unwrap(),
-                random_seed: _random_seed,
+                random_seed,
                 n_init: 1,
                 init_method: KMeansInit::KMeansPlusPlus,
             };
@@ -653,29 +663,29 @@ where
             .take(k) // Take at most k centers
             .collect();
 
-            // If we didn't get k centers, just take the first k
+            // If we didn't get k centers..just take the first k
             let actual_indices = if init_indices.len() < k {
                 (0..k.min(n_centers)).collect::<Vec<usize>>()
             } else {
                 init_indices
             };
 
-            let mut init_centroids = Array2::zeros((actual_indices.len(), n_features));
+            let mut initcentroids = Array2::zeros((actual_indices.len(), n_features));
             for (i, &idx) in actual_indices.iter().enumerate() {
                 for j in 0..n_features {
-                    init_centroids[[i, j]] = centers_array[[idx, j]];
+                    initcentroids[[i, j]] = centers_array[[idx, j]];
                 }
             }
 
             // Run weighted k-means to get final centroids
-            let (final_centroids, _) = _weighted_kmeans_single(
+            let (finalcentroids_, _) = _weighted_kmeans_single(
                 centers_array.view(),
                 weights_array.view(),
-                init_centroids.view(),
+                initcentroids.view(),
                 &options,
             )?;
 
-            Ok(final_centroids)
+            Ok(finalcentroids_)
         }
         std::cmp::Ordering::Less => {
             // If we have too few centers, add random points
@@ -719,10 +729,11 @@ where
 }
 
 /// Run a single weighted k-means clustering iteration
+#[allow(dead_code)]
 fn _weighted_kmeans_single<F>(
     data: ArrayView2<F>,
     weights: ArrayView1<F>,
-    init_centroids: ArrayView2<F>,
+    initcentroids: ArrayView2<F>,
     opts: &KMeansOptions<F>,
 ) -> Result<(Array2<F>, Array1<usize>)>
 where
@@ -730,19 +741,19 @@ where
 {
     let n_samples = data.shape()[0];
     let n_features = data.shape()[1];
-    let k = init_centroids.shape()[0];
+    let k = initcentroids.shape()[0];
 
-    let mut centroids = init_centroids.to_owned();
+    let mut centroids = initcentroids.to_owned();
     let mut labels = Array1::zeros(n_samples);
     let mut prev_centroid_diff = F::infinity();
 
     for _iter in 0..opts.max_iter {
         // Assign samples to nearest centroid
-        let (new_labels, _) = vq(data, centroids.view())?;
-        labels = new_labels;
+        let (new_labels_, _) = vq(data, centroids.view())?;
+        labels = new_labels_;
 
         // Compute new centroids using weights
-        let mut new_centroids = Array2::zeros((k, n_features));
+        let mut newcentroids = Array2::zeros((k, n_features));
         let mut total_weights = Array1::zeros(k);
 
         for i in 0..n_samples {
@@ -751,7 +762,7 @@ where
             let weight = weights[i];
 
             for j in 0..n_features {
-                new_centroids[[cluster, j]] = new_centroids[[cluster, j]] + point[j] * weight;
+                newcentroids[[cluster, j]] = newcentroids[[cluster, j]] + point[j] * weight;
             }
 
             total_weights[cluster] = total_weights[cluster] + weight;
@@ -777,14 +788,14 @@ where
 
                 // Move this point to the empty cluster
                 for j in 0..n_features {
-                    new_centroids[[i, j]] = data[[far_idx, j]];
+                    newcentroids[[i, j]] = data[[far_idx, j]];
                 }
 
                 total_weights[i] = weights[far_idx];
             } else {
                 // Normalize by the total weight in the cluster
                 for j in 0..n_features {
-                    new_centroids[[i, j]] = new_centroids[[i, j]] / total_weights[i];
+                    newcentroids[[i, j]] = newcentroids[[i, j]] / total_weights[i];
                 }
             }
         }
@@ -793,11 +804,11 @@ where
         let mut centroid_diff = F::zero();
         for i in 0..k {
             let dist =
-                euclidean_distance(centroids.slice(s![i, ..]), new_centroids.slice(s![i, ..]));
+                euclidean_distance(centroids.slice(s![i, ..]), newcentroids.slice(s![i, ..]));
             centroid_diff = centroid_diff + dist;
         }
 
-        centroids = new_centroids;
+        centroids = newcentroids;
 
         if centroid_diff <= opts.tol || centroid_diff >= prev_centroid_diff {
             break;
@@ -845,6 +856,7 @@ where
 /// let metric = Box::new(EuclideanDistance);
 /// let (centroids, labels) = kmeans_with_metric(data.view(), 2, metric, None).unwrap();
 /// ```
+#[allow(dead_code)]
 pub fn kmeans_with_metric<F>(
     data: ArrayView2<F>,
     k: usize,
@@ -876,7 +888,7 @@ where
 
     let opts = options.unwrap_or_default();
 
-    let mut best_centroids = None;
+    let mut bestcentroids = None;
     let mut best_labels = None;
     let mut best_inertia = F::infinity();
 
@@ -896,19 +908,20 @@ where
             _kmeans_single_with_metric(data, centroids.view(), metric.as_ref(), &opts)?;
 
         if inertia < best_inertia {
-            best_centroids = Some(centroids);
+            bestcentroids = Some(centroids);
             best_labels = Some(labels);
             best_inertia = inertia;
         }
     }
 
-    Ok((best_centroids.unwrap(), best_labels.unwrap()))
+    Ok((bestcentroids.unwrap(), best_labels.unwrap()))
 }
 
 /// Run a single k-means clustering iteration with custom distance metric
+#[allow(dead_code)]
 fn _kmeans_single_with_metric<F>(
     data: ArrayView2<F>,
-    init_centroids: ArrayView2<F>,
+    initcentroids: ArrayView2<F>,
     metric: &dyn crate::vq::VQDistanceMetric<F>,
     opts: &KMeansOptions<F>,
 ) -> Result<(Array2<F>, Array1<usize>, F)>
@@ -917,9 +930,9 @@ where
 {
     let n_samples = data.shape()[0];
     let n_features = data.shape()[1];
-    let k = init_centroids.shape()[0];
+    let k = initcentroids.shape()[0];
 
-    let mut centroids = init_centroids.to_owned();
+    let mut centroids = initcentroids.to_owned();
     let mut labels = Array1::zeros(n_samples);
     let mut prev_centroid_diff = F::infinity();
 
@@ -929,7 +942,7 @@ where
         labels = new_labels;
 
         // Compute new centroids
-        let mut new_centroids = Array2::zeros((k, n_features));
+        let mut newcentroids = Array2::zeros((k, n_features));
         let mut counts = Array1::zeros(k);
 
         for i in 0..n_samples {
@@ -937,7 +950,7 @@ where
             let point = data.slice(s![i, ..]);
 
             for j in 0..n_features {
-                new_centroids[[cluster, j]] = new_centroids[[cluster, j]] + point[j];
+                newcentroids[[cluster, j]] = newcentroids[[cluster, j]] + point[j];
             }
 
             counts[cluster] += 1;
@@ -960,14 +973,14 @@ where
 
                 // Move this point to the empty cluster
                 for j in 0..n_features {
-                    new_centroids[[i, j]] = data[[far_idx, j]];
+                    newcentroids[[i, j]] = data[[far_idx, j]];
                 }
 
                 counts[i] = 1;
             } else {
                 // Normalize by the number of points in the cluster
                 for j in 0..n_features {
-                    new_centroids[[i, j]] = new_centroids[[i, j]] / F::from(counts[i]).unwrap();
+                    newcentroids[[i, j]] = newcentroids[[i, j]] / F::from(counts[i]).unwrap();
                 }
             }
         }
@@ -975,11 +988,11 @@ where
         // Check for convergence using custom metric
         let mut centroid_diff = F::zero();
         for i in 0..k {
-            let dist = metric.distance(centroids.slice(s![i, ..]), new_centroids.slice(s![i, ..]));
+            let dist = metric.distance(centroids.slice(s![i, ..]), newcentroids.slice(s![i, ..]));
             centroid_diff = centroid_diff + dist;
         }
 
-        centroids = new_centroids;
+        centroids = newcentroids;
 
         if centroid_diff <= opts.tol || centroid_diff >= prev_centroid_diff {
             break;
@@ -1000,6 +1013,7 @@ where
 }
 
 /// Vector quantization with custom distance metric
+#[allow(dead_code)]
 fn _vq_with_metric<F>(
     data: ArrayView2<F>,
     centroids: ArrayView2<F>,
@@ -1009,7 +1023,7 @@ where
     F: Float + FromPrimitive + Debug + Send + Sync,
 {
     let n_samples = data.shape()[0];
-    let n_centroids = centroids.shape()[0];
+    let ncentroids = centroids.shape()[0];
 
     let mut labels = Array1::zeros(n_samples);
     let mut distances = Array1::zeros(n_samples);
@@ -1019,7 +1033,7 @@ where
         let mut min_dist = F::infinity();
         let mut closest_centroid = 0;
 
-        for j in 0..n_centroids {
+        for j in 0..ncentroids {
             let centroid = centroids.slice(s![j, ..]);
             let dist = metric.distance(point, centroid);
 

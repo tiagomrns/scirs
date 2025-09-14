@@ -346,6 +346,7 @@ where
 /// # Returns
 ///
 /// Comprehensive turning points features structure
+#[allow(dead_code)]
 pub fn calculate_turning_points_features<F>(
     ts: &Array1<F>,
     config: &TurningPointsConfig,
@@ -500,6 +501,7 @@ where
 // =============================================================================
 
 /// Analyze directional changes in the time series
+#[allow(dead_code)]
 fn analyze_directional_changes<F>(
     ts: &Array1<F>,
     turning_points: &[usize],
@@ -513,7 +515,7 @@ where
     let mut upward_magnitudes = Vec::new();
     let mut downward_magnitudes = Vec::new();
 
-    // Analyze changes between consecutive turning points
+    // Analyze changes between consecutive turning _points
     for window in turning_points.windows(2) {
         let start_idx = window[0];
         let end_idx = window[1];
@@ -584,6 +586,7 @@ where
 }
 
 /// Analyze momentum and persistence patterns
+#[allow(dead_code)]
 fn analyze_momentum_persistence<F>(
     ts: &Array1<F>,
     config: &TurningPointsConfig,
@@ -673,6 +676,7 @@ where
 }
 
 /// Characterize local extrema (peaks and valleys)
+#[allow(dead_code)]
 fn characterize_local_extrema<F>(
     ts: &Array1<F>,
     local_maxima: &[usize],
@@ -775,6 +779,7 @@ where
 }
 
 /// Detect trend reversals
+#[allow(dead_code)]
 fn detect_trend_reversals<F>(
     ts: &Array1<F>,
     turning_points: &[usize],
@@ -793,7 +798,7 @@ where
     let range = max_val - min_val;
     let major_abs_threshold = major_threshold * range;
 
-    // Analyze changes between turning points
+    // Analyze changes between turning _points
     for window in turning_points.windows(2) {
         let start_idx = window[0];
         let end_idx = window[1];
@@ -843,6 +848,7 @@ where
 }
 
 /// Analyze temporal patterns in turning points
+#[allow(dead_code)]
 fn analyze_temporal_patterns<F>(
     turning_points: &[usize],
     config: &TurningPointsConfig,
@@ -854,7 +860,7 @@ where
         return Ok(TurningPointTemporalFeatures::default());
     }
 
-    // Calculate intervals between turning points
+    // Calculate intervals between turning _points
     let intervals: Vec<F> = turning_points
         .windows(2)
         .map(|w| F::from(w[1] - w[0]).unwrap())
@@ -901,6 +907,7 @@ where
 }
 
 /// Calculate stability and volatility measures
+#[allow(dead_code)]
 fn calculate_stability_measures<F>(
     ts: &Array1<F>,
     turning_points: &[usize],
@@ -912,7 +919,7 @@ where
 
     // Turning point volatility (average local variance around turning points)
     let mut local_variances = Vec::new();
-    let window_size = 5; // Local window around turning points
+    let window_size = 5; // Local window around turning _points
 
     for &tp_idx in turning_points {
         let start = tp_idx.saturating_sub(window_size / 2);
@@ -978,6 +985,7 @@ where
 }
 
 /// Detect advanced patterns (double peaks, head-shoulders, etc.)
+#[allow(dead_code)]
 fn detect_advanced_patterns<F>(
     ts: &Array1<F>,
     local_maxima: &[usize],
@@ -1008,6 +1016,7 @@ where
 }
 
 /// Analyze relative positions of turning points
+#[allow(dead_code)]
 fn analyze_turning_point_positions<F>(
     ts: &Array1<F>,
     turning_points: &[usize],
@@ -1081,6 +1090,7 @@ where
 }
 
 /// Analyze multi-scale turning points
+#[allow(dead_code)]
 fn analyze_multiscale_turning_points<F>(
     ts: &Array1<F>,
     config: &TurningPointsConfig,
@@ -1111,13 +1121,13 @@ where
         };
 
         // Detect turning points at this scale
-        let (tp, _, _) = detect_turning_points(&smoothed, &smoothed_config)?;
-        multiscale_turning_points.push(tp.len());
+        let (tp__, _, _) = detect_turning_points(&smoothed, &smoothed_config)?;
+        multiscale_turning_points.push(tp__.len());
 
         // Calculate scale consistency (similarity with original scale)
         if !multiscale_turning_points.is_empty() {
             let original_count = multiscale_turning_points[0] as f64;
-            let current_count = tp.len() as f64;
+            let current_count = tp__.len() as f64;
             let consistency =
                 1.0 - (original_count - current_count).abs() / original_count.max(current_count);
             scale_consistencies.push(F::from(consistency).unwrap());
@@ -1175,23 +1185,24 @@ where
 // =============================================================================
 
 /// Apply simple moving average smoothing
-fn apply_moving_average<F>(ts: &Array1<F>, window_size: usize) -> Result<Array1<F>>
+#[allow(dead_code)]
+fn apply_moving_average<F>(_ts: &Array1<F>, windowsize: usize) -> Result<Array1<F>>
 where
     F: Float + FromPrimitive + Clone,
 {
-    let n = ts.len();
-    if window_size >= n {
-        return Ok(ts.clone());
+    let n = _ts.len();
+    if windowsize >= n {
+        return Ok(_ts.clone());
     }
 
     let mut smoothed = Array1::zeros(n);
-    let half_window = window_size / 2;
+    let half_window = windowsize / 2;
 
     for i in 0..n {
         let start = i.saturating_sub(half_window);
         let end = (i + half_window + 1).min(n);
 
-        let window_sum = ts.slice(s![start..end]).sum();
+        let window_sum = _ts.slice(s![start..end]).sum();
         let window_len = F::from(end - start).unwrap();
         smoothed[i] = window_sum / window_len;
     }
@@ -1200,6 +1211,7 @@ where
 }
 
 /// Calculate clustering coefficient for intervals
+#[allow(dead_code)]
 fn calculate_clustering_coefficient<F>(intervals: &[F]) -> Result<F>
 where
     F: Float + FromPrimitive,
@@ -1231,6 +1243,7 @@ where
 }
 
 /// Calculate periodicity strength
+#[allow(dead_code)]
 fn calculate_periodicity_strength<F>(intervals: &[F]) -> Result<F>
 where
     F: Float + FromPrimitive,
@@ -1244,6 +1257,7 @@ where
 }
 
 /// Calculate autocorrelation at specific lag
+#[allow(dead_code)]
 fn calculate_autocorrelation_at_lag<F>(data: &[F], lag: usize) -> Result<F>
 where
     F: Float + FromPrimitive,
@@ -1277,13 +1291,14 @@ where
 }
 
 // Pattern detection functions (simplified implementations)
-fn detect_double_peaks<F>(_ts: &Array1<F>, local_maxima: &[usize]) -> Result<usize>
+#[allow(dead_code)]
+fn detect_double_peaks<F>(_ts: &Array1<F>, localmaxima: &[usize]) -> Result<usize>
 where
     F: Float + FromPrimitive + PartialOrd,
 {
     // Simplified: count consecutive peak pairs
     let mut count = 0;
-    for window in local_maxima.windows(3) {
+    for window in localmaxima.windows(3) {
         let spacing1 = window[1] - window[0];
         let spacing2 = window[2] - window[1];
 
@@ -1298,13 +1313,14 @@ where
     Ok(count)
 }
 
-fn detect_double_bottoms<F>(_ts: &Array1<F>, local_minima: &[usize]) -> Result<usize>
+#[allow(dead_code)]
+fn detect_double_bottoms<F>(_ts: &Array1<F>, localminima: &[usize]) -> Result<usize>
 where
     F: Float + FromPrimitive + PartialOrd,
 {
     // Simplified: count consecutive valley pairs
     let mut count = 0;
-    for window in local_minima.windows(3) {
+    for window in localminima.windows(3) {
         let spacing1 = window[1] - window[0];
         let spacing2 = window[2] - window[1];
 
@@ -1319,6 +1335,7 @@ where
     Ok(count)
 }
 
+#[allow(dead_code)]
 fn detect_head_and_shoulders<F>(
     _ts: &Array1<F>,
     local_maxima: &[usize],
@@ -1344,6 +1361,7 @@ where
     Ok(count)
 }
 
+#[allow(dead_code)]
 fn detect_triangular_patterns<F>(
     _ts: &Array1<F>,
     local_maxima: &[usize],

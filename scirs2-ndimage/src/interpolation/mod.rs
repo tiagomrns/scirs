@@ -6,12 +6,18 @@ use std::fmt::Debug;
 
 mod coordinates;
 mod geometric;
+mod optimized;
+mod specialized_transforms;
 mod spline;
 mod transform;
 mod utils;
 
 pub use coordinates::*;
 pub use geometric::*;
+pub use optimized::{
+    map_coordinates_optimized, zoom_optimized, CoefficientCache, Interpolator1D, Interpolator2D,
+};
+pub use specialized_transforms::*;
 pub use spline::*;
 pub use transform::*;
 pub use utils::*;

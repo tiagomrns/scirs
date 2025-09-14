@@ -6,6 +6,7 @@ use ndarray::array;
 use scirs2_linalg::prelude::*;
 use scirs2_linalg::LinalgError;
 
+#[allow(dead_code)]
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("=== Basic Linear Algebra Tutorial ===\n");
 

@@ -39,6 +39,7 @@ use std::collections::BTreeSet;
 ///
 /// let mcc = matthews_corrcoef(&y_true, &y_pred).unwrap();
 /// ```
+#[allow(dead_code)]
 pub fn matthews_corrcoef<T, S1, S2, D1, D2>(
     y_true: &ArrayBase<S1, D1>,
     y_pred: &ArrayBase<S2, D2>,
@@ -69,10 +70,10 @@ where
     // Get unique classes from both arrays
     let mut classes = BTreeSet::new();
     for yt in y_true.iter() {
-        classes.insert(format!("{:?}", yt));
+        classes.insert(format!("{yt:?}"));
     }
     for yp in y_pred.iter() {
-        classes.insert(format!("{:?}", yp));
+        classes.insert(format!("{yp:?}"));
     }
     let classes: Vec<String> = classes.into_iter().collect();
     let n_classes = classes.len();
@@ -88,8 +89,8 @@ where
 
     // Fill the confusion matrix
     for (yt, yp) in y_true.iter().zip(y_pred.iter()) {
-        let yt_idx = class_to_idx[&format!("{:?}", yt)];
-        let yp_idx = class_to_idx[&format!("{:?}", yp)];
+        let yt_idx = class_to_idx[&format!("{yt:?}")];
+        let yp_idx = class_to_idx[&format!("{yp:?}")];
         cm[yt_idx][yp_idx] += 1.0;
     }
 
@@ -191,6 +192,7 @@ where
 /// // Balanced accuracy: (2/3 + 2/3) / 2 = 2/3
 /// assert!((bal_acc - 2.0/3.0).abs() < 1e-10);
 /// ```
+#[allow(dead_code)]
 pub fn balanced_accuracy_score<T, S1, S2, D1, D2>(
     y_true: &ArrayBase<S1, D1>,
     y_pred: &ArrayBase<S2, D2>,
@@ -218,10 +220,10 @@ where
         ));
     }
 
-    // Get unique classes from true labels
+    // Get unique classes from _true labels
     let mut classes = BTreeSet::new();
     for yt in y_true.iter() {
-        classes.insert(format!("{:?}", yt));
+        classes.insert(format!("{yt:?}"));
     }
     let classes: Vec<String> = classes.into_iter().collect();
     let n_classes = classes.len();
@@ -240,8 +242,8 @@ where
         let mut class_total = 0;
 
         for (yt, yp) in y_true.iter().zip(y_pred.iter()) {
-            let yt_str = format!("{:?}", yt);
-            let yp_str = format!("{:?}", yp);
+            let yt_str = format!("{yt:?}");
+            let yp_str = format!("{yp:?}");
 
             if yt_str == *class {
                 class_total += 1;
@@ -296,6 +298,7 @@ where
 ///
 /// let kappa = cohen_kappa_score(&y_true, &y_pred).unwrap();
 /// ```
+#[allow(dead_code)]
 pub fn cohen_kappa_score<T, S1, S2, D1, D2>(
     y_true: &ArrayBase<S1, D1>,
     y_pred: &ArrayBase<S2, D2>,
@@ -326,10 +329,10 @@ where
     // Get unique classes
     let mut classes = BTreeSet::new();
     for yt in y_true.iter() {
-        classes.insert(format!("{:?}", yt));
+        classes.insert(format!("{yt:?}"));
     }
     for yp in y_pred.iter() {
-        classes.insert(format!("{:?}", yp));
+        classes.insert(format!("{yp:?}"));
     }
     let classes: Vec<String> = classes.into_iter().collect();
     let n_classes = classes.len();
@@ -345,8 +348,8 @@ where
 
     // Fill the confusion matrix
     for (yt, yp) in y_true.iter().zip(y_pred.iter()) {
-        let yt_idx = class_to_idx[&format!("{:?}", yt)];
-        let yp_idx = class_to_idx[&format!("{:?}", yp)];
+        let yt_idx = class_to_idx[&format!("{yt:?}")];
+        let yp_idx = class_to_idx[&format!("{yp:?}")];
         cm[yt_idx][yp_idx] += 1.0;
     }
 
@@ -414,6 +417,7 @@ where
 /// //       = [0.01 + 0.01 + 0.04 + 0.16] / 4 = 0.055
 /// assert!((brier - 0.055).abs() < 1e-10);
 /// ```
+#[allow(dead_code)]
 pub fn brier_score_loss<S1, S2, D1, D2>(
     y_true: &ArrayBase<S1, D1>,
     y_prob: &ArrayBase<S2, D2>,
@@ -500,6 +504,7 @@ where
 /// // jaccard = |intersection| / |union| = 2 / 4 = 0.5
 /// assert!((jaccard - 0.5).abs() < 1e-10);
 /// ```
+#[allow(dead_code)]
 pub fn jaccard_score<T, S1, S2, D1, D2>(
     y_true: &ArrayBase<S1, D1>,
     y_pred: &ArrayBase<S2, D2>,
@@ -580,6 +585,7 @@ where
 /// // 2 out of 4 labels are incorrect: loss = 2/4 = 0.5
 /// assert!((loss - 0.5).abs() < 1e-10);
 /// ```
+#[allow(dead_code)]
 pub fn hamming_loss<T, S1, S2, D1, D2>(
     y_true: &ArrayBase<S1, D1>,
     y_pred: &ArrayBase<S2, D2>,
@@ -663,6 +669,7 @@ where
 /// ```
 // Internal implementation for 2D arrays - private to prevent doctests
 #[doc(hidden)]
+#[allow(dead_code)]
 fn log_loss_2d<T, S1, S2>(
     y_true: &ArrayBase<S1, ndarray::Ix2>,
     y_prob: &ArrayBase<S2, ndarray::Ix2>,
@@ -735,6 +742,7 @@ where
 
 // Internal implementation for 1D arrays - private to prevent doctests
 #[doc(hidden)]
+#[allow(dead_code)]
 fn log_loss_1d<T, S1, S2>(
     y_true: &ArrayBase<S1, ndarray::Ix1>,
     y_prob: &ArrayBase<S2, ndarray::Ix1>,
@@ -791,7 +799,7 @@ where
             loss -= (1.0 - prob).ln();
         } else {
             return Err(MetricsError::InvalidInput(
-                format!("For binary classification with 1D arrays, y_true must contain only 0 or 1 values, got {}", true_val_num)
+                format!("For binary classification with 1D arrays, y_true must contain only 0 or 1 values, got {true_val_num}")
             ));
         }
     }
@@ -805,6 +813,7 @@ where
 }
 
 /// Calculate log loss (logistic loss or cross-entropy loss).
+#[allow(dead_code)]
 pub fn log_loss<T, S1, S2, D1, D2>(
     y_true: &ArrayBase<S1, D1>,
     y_prob: &ArrayBase<S2, D2>,
@@ -867,8 +876,7 @@ where
                         idx
                     } else {
                         return Err(MetricsError::InvalidInput(format!(
-                            "Could not convert label {:?} to index",
-                            val
+                            "Could not convert label {val:?} to index"
                         )));
                     }
                 } else {
@@ -879,8 +887,7 @@ where
 
                 if class_idx >= n_classes {
                     return Err(MetricsError::InvalidInput(format!(
-                        "Class label {} is out of bounds for y_prob with {} classes",
-                        class_idx, n_classes
+                        "Class label {class_idx} is out of bounds for y_prob with {n_classes} classes"
                     )));
                 }
 
@@ -954,6 +961,7 @@ where
 ///
 /// let (prob_true, prob_pred, counts) = calibration_curve(&y_true, &y_prob, 5, "uniform").unwrap();
 /// ```
+#[allow(dead_code)]
 pub fn calibration_curve<S1, S2, D1, D2>(
     y_true: &ArrayBase<S1, D1>,
     y_prob: &ArrayBase<S2, D2>,
@@ -1016,14 +1024,14 @@ where
 
     // Create bin edges
     let bin_edges = if strategy == "uniform" {
-        // Create uniform bins
+        // Create uniform _bins
         let mut edges = Vec::with_capacity(n_bins + 1);
         for i in 0..=n_bins {
             edges.push(i as f64 / n_bins as f64);
         }
         edges
     } else {
-        // Create quantile bins
+        // Create quantile _bins
         let mut probs_sorted: Vec<f64> = y_prob.iter().copied().collect();
         probs_sorted.sort_by(|a, b| a.partial_cmp(b).unwrap());
 
@@ -1052,7 +1060,7 @@ where
             .map(|(i, _)| i)
             .next()
             .unwrap_or_else(|| {
-                // Handle edge case when prob is exactly 1.0
+                // Handle edge case when _prob is exactly 1.0
                 if (prob - 1.0).abs() < 1e-10 {
                     n_bins - 1
                 } else {
@@ -1066,7 +1074,7 @@ where
         counts[bin_idx] += 1.0;
     }
 
-    // Compute mean predicted probability and fraction of true positives for each bin
+    // Compute mean predicted probability and fraction of _true positives for each bin
     for i in 0..n_bins {
         if counts[i] > 0.0 {
             prob_pred[i] /= counts[i];

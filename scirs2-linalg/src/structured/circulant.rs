@@ -49,16 +49,16 @@ where
     /// # Returns
     ///
     /// A new `CirculantMatrix` instance
-    pub fn new(first_row: ArrayView1<A>) -> LinalgResult<Self> {
-        if first_row.is_empty() {
+    pub fn new(_firstrow: ArrayView1<A>) -> LinalgResult<Self> {
+        if _firstrow.is_empty() {
             return Err(LinalgError::InvalidInputError(
                 "First row must not be empty".to_string(),
             ));
         }
 
         Ok(CirculantMatrix {
-            first_row: first_row.to_owned(),
-            n: first_row.len(),
+            first_row: _firstrow.to_owned(),
+            n: _firstrow.len(),
         })
     }
 
@@ -78,7 +78,7 @@ where
             ));
         }
 
-        // For circular convolution, we need to reverse the kernel except the first element
+        // For circular convolution, we need to reverse the _kernel except the first element
         let n = kernel.len();
         let mut first_row = Array1::zeros(n);
 
@@ -88,6 +88,24 @@ where
         }
 
         Ok(CirculantMatrix { first_row, n })
+    }
+
+    /// Get a view of the first row of the circulant matrix
+    ///
+    /// # Returns
+    ///
+    /// An ArrayView1 of the first row
+    pub fn first_row(&self) -> ndarray::ArrayView1<A> {
+        self.first_row.view()
+    }
+
+    /// Get the size of the circulant matrix
+    ///
+    /// # Returns
+    ///
+    /// The size (number of rows/columns) of the matrix
+    pub fn size(&self) -> usize {
+        self.n
     }
 }
 

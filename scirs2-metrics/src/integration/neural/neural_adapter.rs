@@ -14,7 +14,9 @@ type MetricFn<F> =
     Box<dyn Fn(&Array<F, IxDyn>, &Array<F, IxDyn>) -> Result<F, MetricsError> + Send + Sync>;
 
 /// Adapter for using metrics with neural network models
-pub struct NeuralMetricAdapter<F: Float + Debug + Display + FromPrimitive> {
+pub struct NeuralMetricAdapter<
+    F: Float + Debug + Display + FromPrimitive + scirs2_core::simd_ops::SimdUnifiedOps,
+> {
     /// The name of the metric
     pub name: String,
     metric_fn: MetricFn<F>,
@@ -24,7 +26,9 @@ pub struct NeuralMetricAdapter<F: Float + Debug + Display + FromPrimitive> {
     targets: Option<Array<F, IxDyn>>,
 }
 
-impl<F: Float + Debug + Display + FromPrimitive> std::fmt::Debug for NeuralMetricAdapter<F> {
+impl<F: Float + Debug + Display + FromPrimitive + scirs2_core::simd_ops::SimdUnifiedOps>
+    std::fmt::Debug for NeuralMetricAdapter<F>
+{
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let mut builder = f.debug_struct("NeuralMetricAdapter");
         builder.field("name", &self.name);
@@ -40,14 +44,16 @@ impl<F: Float + Debug + Display + FromPrimitive> std::fmt::Debug for NeuralMetri
     }
 }
 
-impl<F: Float + Debug + Display + FromPrimitive> NeuralMetricAdapter<F> {
+impl<F: Float + Debug + Display + FromPrimitive + scirs2_core::simd_ops::SimdUnifiedOps>
+    NeuralMetricAdapter<F>
+{
     /// Create a new neural metric adapter
-    pub fn new(name: &str, metric_fn: MetricFn<F>) -> Self {
+    pub fn new(_name: &str, metricfn: MetricFn<F>) -> Self {
         #[cfg(feature = "neural_common")]
         {
             Self {
-                name: name.to_string(),
-                metric_fn,
+                name: _name.to_string(),
+                metric_fn: metricfn,
                 predictions: None,
                 targets: None,
             }
@@ -56,7 +62,7 @@ impl<F: Float + Debug + Display + FromPrimitive> NeuralMetricAdapter<F> {
         #[cfg(not(feature = "neural_common"))]
         {
             Self {
-                name: name.to_string(),
+                _name: name.to_string(),
                 metric_fn,
             }
         }
@@ -183,7 +189,9 @@ impl<F: Float + Debug + Display + FromPrimitive> NeuralMetricAdapter<F> {
     }
 }
 
-impl<F: Float + Debug + Display + FromPrimitive> MetricComputation<F> for NeuralMetricAdapter<F> {
+impl<F: Float + Debug + Display + FromPrimitive + scirs2_core::simd_ops::SimdUnifiedOps>
+    MetricComputation<F> for NeuralMetricAdapter<F>
+{
     fn compute(
         &self,
         predictions: &Array<F, IxDyn>,
@@ -202,8 +210,16 @@ impl<F: Float + Debug + Display + FromPrimitive> MetricComputation<F> for Neural
 mod neural_trait_impl {
     use super::*;
 
-    impl<F: Float + Debug + Display + FromPrimitive + Send + Sync + 'static>
-        scirs2_neural::evaluation::Metric<F> for NeuralMetricAdapter<F>
+    impl<
+            F: Float
+                + Debug
+                + Display
+                + FromPrimitive
+                + Send
+                + Sync
+                + 'static
+                + scirs2_core::simd_ops::SimdUnifiedOps,
+        > scirs2_neural::evaluation::Metric<F> for NeuralMetricAdapter<F>
     {
         fn update(
             &mut self,

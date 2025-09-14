@@ -53,7 +53,7 @@ pub struct CompressedBuffer<T> {
     #[allow(dead_code)]
     compression_level: CompressionLevel,
     original_size: usize,
-    _phantom: PhantomData<T>,
+    phantom: PhantomData<T>,
 }
 
 impl<T> CompressedBuffer<T>
@@ -85,7 +85,7 @@ where
             algorithm,
             compression_level: level,
             original_size,
-            _phantom: PhantomData,
+            phantom: PhantomData,
         })
     }
 
@@ -448,7 +448,7 @@ mod tests {
         let data2: Vec<f32> = (0..1000).map(|i| i as f32).collect();
 
         let id1 = pool.add_buffer(&data1).expect("Failed to add buffer 1");
-        let _id2 = pool.add_buffer(&data2).expect("Failed to add buffer 2");
+        let id2 = pool.add_buffer(&data2).expect("Failed to add buffer 2");
 
         assert_eq!(pool.stats().buffer_count, 2);
         assert!(pool.total_compression_ratio() > 1.0);
@@ -628,7 +628,7 @@ mod tests {
             algorithm: CompressionAlgorithm::Gzip,
         };
 
-        let display = format!("{}", stats);
+        let display = format!("{stats}");
         assert!(display.contains("Algorithm: Gzip"));
         assert!(display.contains("Buffers: 5"));
         assert!(display.contains("10.00 MB"));
@@ -737,16 +737,16 @@ mod tests {
         let u16_data: Vec<u16> = vec![65535; 100];
         let i64_data: Vec<i64> = vec![-1; 100];
 
-        let _u8_buffer = CompressedBuffer::new(
+        let u8_buffer = CompressedBuffer::new(
             &u8_data,
             CompressionAlgorithm::Gzip,
             CompressionLevel::Default,
         )
         .expect("Failed with u8");
-        let _u16_buffer =
+        let u16_buffer =
             CompressedBuffer::new(&u16_data, CompressionAlgorithm::Lz4, CompressionLevel::Fast)
                 .expect("Failed with u16");
-        let _i64_buffer = CompressedBuffer::new(
+        let i64_buffer = CompressedBuffer::new(
             &i64_data,
             CompressionAlgorithm::None,
             CompressionLevel::Best,

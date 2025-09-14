@@ -6,6 +6,7 @@ use scirs2_optimize::unconstrained::{
     Options,
 };
 
+#[allow(dead_code)]
 fn main() {
     // Rosenbrock function
     let rosenbrock = |x: &ArrayView1<f64>| -> f64 {
@@ -19,7 +20,7 @@ fn main() {
 
     // Create diagnostic collector
     let diagnostic_options = DiagnosticOptions {
-        track_iterations: true,
+        track_nit: true,
         estimate_conditioning: true,
         detect_noise: true,
         analyze_convergence_rate: true,
@@ -95,7 +96,7 @@ fn main() {
     println!("\nPerformance Metrics:");
     println!(
         "  Total iterations: {}",
-        diagnostics.performance_metrics.total_iterations
+        diagnostics.performance_metrics.total_nit
     );
     println!(
         "  Total function evaluations: {}",
@@ -134,7 +135,7 @@ fn main() {
             println!("\nOptimization Result:");
             println!("  Solution: {:?}", result.x);
             println!("  Function value: {}", result.fun);
-            println!("  Iterations: {}", result.iterations);
+            println!("  Iterations: {}", result.nit);
             println!("  Success: {}", result.success);
             println!("  Message: {}", result.message);
         }

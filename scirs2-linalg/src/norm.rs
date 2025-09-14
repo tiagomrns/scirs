@@ -1,14 +1,14 @@
 //! Matrix and vector norms
 
-use ndarray::{ArrayView1, ArrayView2};
+use ndarray::{ArrayView1, ArrayView2, ScalarOperand};
 use num_traits::{Float, NumAssign};
 use std::iter::Sum;
 
 use crate::decomposition::svd;
 use crate::error::{LinalgError, LinalgResult};
 use crate::validation::{
-    validate_finite_matrix, validate_finite_vector, validate_not_empty_matrix,
-    validate_not_empty_vector,
+    validate_finite_vector, validate_finitematrix, validate_not_empty_vector,
+    validate_not_emptymatrix,
 };
 
 /// Compute a matrix norm.
@@ -30,20 +30,21 @@ use crate::validation::{
 /// # Examples
 ///
 /// ```
-/// use ndarray::array;
+/// use ndarray::{array, ScalarOperand};
 /// use scirs2_linalg::matrix_norm;
 ///
 /// let a = array![[1.0_f64, 2.0], [3.0, 4.0]];
 /// let norm_fro = matrix_norm(&a.view(), "fro", None).unwrap();
 /// assert!((norm_fro - 5.477225575051661).abs() < 1e-10);
 /// ```
+#[allow(dead_code)]
 pub fn matrix_norm<F>(a: &ArrayView2<F>, ord: &str, workers: Option<usize>) -> LinalgResult<F>
 where
-    F: Float + NumAssign + Sum + ndarray::ScalarOperand,
+    F: Float + NumAssign + Sum + ndarray::ScalarOperand + Send + Sync + 'static,
 {
     // Parameter validation using validation helpers
-    validate_not_empty_matrix(a, "Matrix norm computation")?;
-    validate_finite_matrix(a, "Matrix norm computation")?;
+    validate_not_emptymatrix(a, "Matrix norm computation")?;
+    validate_finitematrix(a, "Matrix norm computation")?;
 
     match ord {
         "fro" | "f" | "frobenius" => {
@@ -91,8 +92,7 @@ where
             }
         }
         _ => Err(LinalgError::InvalidInputError(format!(
-            "Matrix norm computation failed: Invalid norm order '{}'\nSupported norms: 'fro', 'f', 'frobenius', '1', 'inf', '2'",
-            ord
+            "Matrix norm computation failed: Invalid norm order '{ord}'\nSupported norms: 'fro', 'f', 'frobenius', '1', 'inf', '2'"
         ))),
     }
 }
@@ -114,16 +114,17 @@ where
 /// # Examples
 ///
 /// ```
-/// use ndarray::array;
+/// use ndarray::{array, ScalarOperand};
 /// use scirs2_linalg::vector_norm;
 ///
 /// let x = array![3.0_f64, 4.0];
 /// let norm_2 = vector_norm(&x.view(), 2).unwrap();
 /// assert!((norm_2 - 5.0).abs() < 1e-10);
 /// ```
+#[allow(dead_code)]
 pub fn vector_norm<F>(x: &ArrayView1<F>, ord: usize) -> LinalgResult<F>
 where
-    F: Float + NumAssign + Sum,
+    F: Float + NumAssign + Sum + Send + Sync + ndarray::ScalarOperand + 'static,
 {
     // Parameter validation using validation helpers
     validate_not_empty_vector(x, "Vector norm computation")?;
@@ -159,6 +160,88 @@ where
     }
 }
 
+/// Compute the norm of a vector with parallel processing support.
+///
+/// This function uses parallel computation to calculate vector norms efficiently
+/// for large vectors. The computation is distributed across multiple worker threads
+/// using the scirs2-core parallel operations framework.
+///
+/// # Arguments
+///
+/// * `x` - Input vector
+/// * `ord` - Norm order (1, 2, or usize::MAX for infinity norm)  
+/// * `workers` - Number of worker threads (None = use default)
+///
+/// # Returns
+///
+/// * Norm of the vector
+///
+/// # Examples
+///
+/// ```
+/// use ndarray::{array, ScalarOperand};
+/// use scirs2_linalg::vector_norm_parallel;
+///
+/// let x = array![3.0_f64, 4.0];
+/// let norm2 = vector_norm_parallel(&x.view(), 2, Some(4)).unwrap();
+/// assert!((norm2 - 5.0).abs() < 1e-10);
+/// ```
+#[allow(dead_code)]
+pub fn vector_norm_parallel<F>(
+    x: &ArrayView1<F>,
+    ord: usize,
+    workers: Option<usize>,
+) -> LinalgResult<F>
+where
+    F: Float + NumAssign + Sum + Send + Sync + ScalarOperand,
+{
+    use crate::parallel;
+    use scirs2_core::parallel_ops::*;
+
+    // Configure workers for parallel operations
+    parallel::configure_workers(workers);
+
+    // Parameter validation using validation helpers
+    validate_not_empty_vector(x, "Vector norm computation")?;
+    validate_finite_vector(x, "Vector norm computation")?;
+
+    // Use threshold to determine if parallel processing is worthwhile
+    const PARALLEL_THRESHOLD: usize = 1000;
+
+    if x.len() < PARALLEL_THRESHOLD {
+        // For small vectors, use sequential implementation
+        return vector_norm(x, ord);
+    }
+
+    match ord {
+        1 => {
+            // 1-norm (sum of absolute values) - parallel sum
+            let sum_abs = (0..x.len()).into_par_iter()
+                .map(|i| x[i].abs())
+                .sum();
+            Ok(sum_abs)
+        }
+        2 => {
+            // 2-norm (Euclidean norm) - parallel sum of squares
+            let sum_sq: F = (0..x.len()).into_par_iter()
+                .map(|i| x[i] * x[i])
+                .sum();
+            Ok(sum_sq.sqrt())
+        }
+        usize::MAX => {
+            // Infinity norm (maximum absolute value) - parallel max
+            let max_abs = (0..x.len()).into_par_iter()
+                .map(|i| x[i].abs())
+                .reduce(|| F::zero(), |a, b| if a > b { a } else { b });
+            Ok(max_abs)
+        }
+        _ => Err(LinalgError::InvalidInputError(format!(
+            "Vector norm computation failed: Invalid norm order {}\nSupported norms: 1 (L1), 2 (L2/Euclidean), {} (infinity)",
+            ord, usize::MAX
+        ))),
+    }
+}
+
 /// Compute the condition number of a matrix.
 ///
 /// # Arguments
@@ -178,22 +261,23 @@ where
 /// # Examples
 ///
 /// ```no_run
-/// use ndarray::array;
+/// use ndarray::{array, ScalarOperand};
 /// use scirs2_linalg::cond;
 ///
 /// let a = array![[1.0_f64, 0.0], [0.0, 2.0]];
 /// let c = cond(&a.view(), None, None).unwrap();
 /// assert!((c - 2.0).abs() < 1e-10);
 /// ```
+#[allow(dead_code)]
 pub fn cond<F>(a: &ArrayView2<F>, p: Option<&str>, workers: Option<usize>) -> LinalgResult<F>
 where
-    F: Float + NumAssign + Sum + ndarray::ScalarOperand,
+    F: Float + NumAssign + Sum + ndarray::ScalarOperand + Send + Sync + 'static,
 {
     // Parameter validation using validation helpers
-    use crate::validation::validate_square_matrix;
-    validate_not_empty_matrix(a, "Condition number computation")?;
-    validate_square_matrix(a, "Condition number computation")?;
-    validate_finite_matrix(a, "Condition number computation")?;
+    use crate::validation::validate_squarematrix;
+    validate_not_emptymatrix(a, "Condition number computation")?;
+    validate_squarematrix(a, "Condition number computation")?;
+    validate_finitematrix(a, "Condition number computation")?;
 
     let norm_type = p.unwrap_or("2");
 
@@ -251,8 +335,7 @@ where
             }
         }
         _ => Err(LinalgError::InvalidInputError(format!(
-            "Condition number computation failed: Invalid norm type '{}'\nSupported norms: '1', '2' (default), 'fro', 'f', 'frobenius', 'inf'",
-            norm_type
+            "Condition number computation failed: Invalid norm type '{norm_type}'\nSupported norms: '1', '2' (default), 'fro', 'f', 'frobenius', 'inf'"
         ))),
     }
 }
@@ -272,26 +355,27 @@ where
 /// # Examples
 ///
 /// ```no_run
-/// use ndarray::array;
+/// use ndarray::{array, ScalarOperand};
 /// use scirs2_linalg::matrix_rank;
 ///
 /// let a = array![[1.0_f64, 0.0], [0.0, 1.0]];
 /// let r = matrix_rank(&a.view(), None, None).unwrap();
 /// assert_eq!(r, 2);
 /// ```
+#[allow(dead_code)]
 pub fn matrix_rank<F>(
     a: &ArrayView2<F>,
     tol: Option<F>,
     workers: Option<usize>,
 ) -> LinalgResult<usize>
 where
-    F: Float + NumAssign + Sum + ndarray::ScalarOperand,
+    F: Float + NumAssign + Sum + ndarray::ScalarOperand + Send + Sync + 'static,
 {
     // Parameter validation using validation helpers
     if a.is_empty() {
         return Ok(0);
     }
-    validate_finite_matrix(a, "Matrix rank computation")?;
+    validate_finitematrix(a, "Matrix rank computation")?;
 
     // Validate tolerance
     if let Some(t) = tol {
@@ -333,18 +417,20 @@ where
     since = "0.1.0",
     note = "Use matrix_norm with workers parameter instead"
 )]
+#[allow(dead_code)]
 pub fn matrix_norm_default<F>(a: &ArrayView2<F>, ord: &str) -> LinalgResult<F>
 where
-    F: Float + NumAssign + Sum + ndarray::ScalarOperand,
+    F: Float + NumAssign + Sum + ndarray::ScalarOperand + Send + Sync + 'static,
 {
     matrix_norm(a, ord, None)
 }
 
 /// Compute the condition number without workers parameter (deprecated - use cond with workers)
 #[deprecated(since = "0.1.0", note = "Use cond with workers parameter instead")]
+#[allow(dead_code)]
 pub fn cond_default<F>(a: &ArrayView2<F>, p: Option<&str>) -> LinalgResult<F>
 where
-    F: Float + NumAssign + Sum + ndarray::ScalarOperand,
+    F: Float + NumAssign + Sum + ndarray::ScalarOperand + Send + Sync + 'static,
 {
     cond(a, p, None)
 }
@@ -354,9 +440,10 @@ where
     since = "0.1.0",
     note = "Use matrix_rank with workers parameter instead"
 )]
+#[allow(dead_code)]
 pub fn matrix_rank_default<F>(a: &ArrayView2<F>, tol: Option<F>) -> LinalgResult<usize>
 where
-    F: Float + NumAssign + Sum + ndarray::ScalarOperand,
+    F: Float + NumAssign + Sum + ndarray::ScalarOperand + Send + Sync + 'static,
 {
     matrix_rank(a, tol, None)
 }
@@ -368,7 +455,7 @@ mod tests {
     use ndarray::array;
 
     #[test]
-    fn test_matrix_norm_frobenius() {
+    fn testmatrix_norm_frobenius() {
         let a = array![[1.0, 2.0], [3.0, 4.0]];
         let norm = matrix_norm(&a.view(), "fro", None).unwrap();
         // sqrt(1^2 + 2^2 + 3^2 + 4^2) = sqrt(30) ≈ 5.477
@@ -376,7 +463,7 @@ mod tests {
     }
 
     #[test]
-    fn test_matrix_norm_1() {
+    fn testmatrix_norm_1() {
         let a = array![[1.0, 2.0], [3.0, 4.0]];
         let norm = matrix_norm(&a.view(), "1", None).unwrap();
         // max(1+3, 2+4) = max(4, 6) = 6
@@ -384,7 +471,7 @@ mod tests {
     }
 
     #[test]
-    fn test_matrix_norm_inf() {
+    fn testmatrix_norm_inf() {
         let a = array![[1.0, 2.0], [3.0, 4.0]];
         let norm = matrix_norm(&a.view(), "inf", None).unwrap();
         // max(1+2, 3+4) = max(3, 7) = 7

@@ -66,8 +66,8 @@ impl ComputeDevice {
     }
 
     /// Get the relative performance factor for different operation types
-    pub fn performance_factor(&self, op_type: &WorkloadType) -> f64 {
-        match (self, op_type) {
+    pub fn performance_factor(&self, optype: &WorkloadType) -> f64 {
+        match (self, optype) {
             (ComputeDevice::Cpu, WorkloadType::Sequential) => 1.0,
             (ComputeDevice::Cpu, WorkloadType::Parallel) => 0.3,
             (ComputeDevice::Cpu, WorkloadType::VectorizedMath) => 0.2,
@@ -83,7 +83,6 @@ impl ComputeDevice {
             (ComputeDevice::Npu, WorkloadType::ConvolutionalNN) => 1.5,
             (ComputeDevice::Npu, WorkloadType::MatrixOperations) => 1.2,
             (ComputeDevice::Npu, _) => 0.8,
-
             _ => 0.5, // Default conservative estimate
         }
     }
@@ -116,7 +115,7 @@ pub struct WorkloadCharacteristics {
     /// Type of workload
     pub workload_type: WorkloadType,
     /// Problem size (number of elements or operations)
-    pub problem_size: usize,
+    pub problemsize: usize,
     /// Memory requirements in bytes
     pub memory_requirement: usize,
     /// Computational intensity (operations per memory access)
@@ -126,7 +125,7 @@ pub struct WorkloadCharacteristics {
     /// Parallelization factor (how well it scales with cores)
     pub parallelization_factor: f64,
     /// Preferred data types
-    pub preferred_data_types: Vec<String>,
+    pub preferred_datatypes: Vec<String>,
 }
 
 impl WorkloadCharacteristics {
@@ -134,17 +133,17 @@ impl WorkloadCharacteristics {
     pub fn matrix_multiply(m: usize, n: usize, k: usize) -> Self {
         Self {
             workload_type: WorkloadType::MatrixOperations,
-            problem_size: m * n * k,
+            problemsize: m * n * k,
             memory_requirement: (m * k + k * n + m * n) * 8, // Assume f64
             computational_intensity: (2.0 * k as f64) / 3.0, // 2*K ops per 3 memory accesses
             data_locality: 0.7,                              // Good with proper blocking
             parallelization_factor: 0.9,                     // Scales well with many cores
-            preferred_data_types: vec!["f32".to_string(), "f16".to_string()],
+            preferred_datatypes: vec!["f32".to_string(), "f16".to_string()],
         }
     }
 
     /// Create characteristics for a convolution workload
-    pub fn convolution(
+    pub fn size(
         batch_size: usize,
         channels: usize,
         height: usize,
@@ -156,25 +155,25 @@ impl WorkloadCharacteristics {
 
         Self {
             workload_type: WorkloadType::ConvolutionalNN,
-            problem_size: input_size * kernel_size * kernel_size,
+            problemsize: input_size * kernel_size * kernel_size,
             memory_requirement: (input_size + output_size) * 4, // Assume f32
             computational_intensity: (kernel_size * kernel_size * 2) as f64,
             data_locality: 0.8,           // Good spatial locality in convolutions
             parallelization_factor: 0.95, // Excellent parallelization
-            preferred_data_types: vec!["f16".to_string(), "i8".to_string()],
+            preferred_datatypes: vec!["f16".to_string(), "i8".to_string()],
         }
     }
 
     /// Create characteristics for an element-wise operation
-    pub fn element_wise(size: usize, ops_per_element: usize) -> Self {
+    pub fn element(size: usize, ops_perelement: usize) -> Self {
         Self {
             workload_type: WorkloadType::VectorizedMath,
-            problem_size: size,
+            problemsize: size,
             memory_requirement: size * 8, // Assume f64
-            computational_intensity: ops_per_element as f64 / 2.0, // Read + write
+            computational_intensity: ops_perelement as f64 / 2.0, // Read + write
             data_locality: 1.0,           // Perfect sequential access
             parallelization_factor: 1.0,  // Perfect parallelization
-            preferred_data_types: vec!["f32".to_string(), "f64".to_string()],
+            preferred_datatypes: vec!["f32".to_string(), "f64".to_string()],
         }
     }
 }
@@ -187,7 +186,7 @@ pub struct DeviceCharacteristics {
     /// Peak computational throughput (GFLOPS)
     pub peak_gflops: f64,
     /// Memory bandwidth (GB/s)
-    pub memory_bandwidth: f64,
+    pub memorybandwidth: f64,
     /// Available memory (bytes)
     pub available_memory: usize,
     /// Number of compute units
@@ -204,7 +203,7 @@ impl DeviceCharacteristics {
         Self {
             device: ComputeDevice::Cpu,
             peak_gflops: 200.0,                         // Modern CPU with AVX
-            memory_bandwidth: 50.0,                     // DDR4-3200
+            memorybandwidth: 50.0,                      // DDR4-3200
             available_memory: 16 * 1024 * 1024 * 1024,  // 16 GB
             compute_units: 8,                           // 8 cores
             power_consumption: 95.0,                    // 95W TDP
@@ -217,7 +216,7 @@ impl DeviceCharacteristics {
         Self {
             device: ComputeDevice::Gpu(GpuBackend::Cuda),
             peak_gflops: 10000.0,                         // High-end GPU
-            memory_bandwidth: 900.0,                      // GDDR6X
+            memorybandwidth: 900.0,                       // GDDR6X
             available_memory: 12 * 1024 * 1024 * 1024,    // 12 GB VRAM
             compute_units: 80,                            // Streaming multiprocessors
             power_consumption: 350.0,                     // 350W TGP
@@ -226,14 +225,14 @@ impl DeviceCharacteristics {
     }
 
     /// Estimate execution time for a workload
-    pub fn estimate_execution_time(&self, workload: &WorkloadCharacteristics) -> Duration {
+    pub fn estimateexecution_time(&self, workload: &WorkloadCharacteristics) -> Duration {
         let performance_factor = self.device.performance_factor(&workload.workload_type);
 
         // Simple performance model combining compute and memory bounds
         let compute_time =
-            (workload.problem_size as f64) / (self.peak_gflops * 1e9 * performance_factor);
+            (workload.problemsize as f64) / (self.peak_gflops * 1e9 * performance_factor);
 
-        let memory_time = (workload.memory_requirement as f64) / (self.memory_bandwidth * 1e9);
+        let memory_time = (workload.memory_requirement as f64) / (self.memorybandwidth * 1e9);
 
         // Take the maximum (bottleneck) and add transfer overhead
         let execution_time = compute_time.max(memory_time) + self.transfer_overhead.as_secs_f64();
@@ -308,7 +307,7 @@ impl HeterogeneousScheduler {
             .available_devices
             .iter()
             .map(|device| {
-                let time = device.estimate_execution_time(workload);
+                let time = device.estimateexecution_time(workload);
                 (device.device, time)
             })
             .collect();
@@ -347,7 +346,9 @@ impl HeterogeneousScheduler {
         match best_device {
             ComputeDevice::Cpu => Ok(ExecutionStrategy::CpuOnly),
             ComputeDevice::Gpu(backend) => Ok(ExecutionStrategy::GpuOnly(backend)),
-            _ => Err(HeterogeneousError::NoSuitableDevice),
+            ComputeDevice::Npu => Ok(ExecutionStrategy::CpuOnly), // Fallback to CPU
+            ComputeDevice::Fpga => Ok(ExecutionStrategy::CpuOnly), // Fallback to CPU
+            ComputeDevice::Dsp => Ok(ExecutionStrategy::CpuOnly), // Fallback to CPU
         }
     }
 
@@ -368,7 +369,11 @@ impl HeterogeneousScheduler {
         let execution_time = start_time.elapsed();
 
         // Store performance history for future optimization
-        let key = format!("{:?}_{}", workload.workload_type, workload.problem_size);
+        let key = format!(
+            "{workload_type:?}_{problemsize}",
+            workload_type = workload.workload_type,
+            problemsize = workload.problemsize
+        );
         self.performance_history
             .lock()
             .unwrap()
@@ -382,7 +387,7 @@ impl HeterogeneousScheduler {
         let history = self.performance_history.lock().unwrap();
 
         let total_executions = history.len();
-        let avg_execution_time = if total_executions > 0 {
+        let avgexecution_time = if total_executions > 0 {
             let total_time: Duration = history.values().sum();
             total_time / total_executions as u32
         } else {
@@ -392,7 +397,7 @@ impl HeterogeneousScheduler {
         HeterogeneousStats {
             available_devices: self.available_devices.len(),
             total_executions,
-            avg_execution_time,
+            avgexecution_time,
             device_utilization: self.calculate_device_utilization(),
         }
     }
@@ -414,13 +419,17 @@ impl HeterogeneousScheduler {
         workload: &WorkloadCharacteristics,
         current_strategy: ExecutionStrategy,
     ) -> ExecutionStrategy {
-        let key = format!("{:?}_{}", workload.workload_type, workload.problem_size);
+        let key = format!(
+            "{workload_type:?}_{problemsize}",
+            workload_type = workload.workload_type,
+            problemsize = workload.problemsize
+        );
         let history = self.performance_history.lock().unwrap();
 
-        // If we have historical data, use it to refine the strategy
+        // If we have historical data, use it to refine the _strategy
         if let Some(&_historical_time) = history.get(&key) {
             // Simple heuristic: if historical time is much better than estimated,
-            // stick with the historical strategy
+            // stick with the historical _strategy
             // This is a simplified version - real implementation would be more sophisticated
             return current_strategy;
         }
@@ -443,7 +452,7 @@ pub struct HeterogeneousStats {
     /// Total number of executions
     pub total_executions: usize,
     /// Average execution time
-    pub avg_execution_time: Duration,
+    pub avgexecution_time: Duration,
     /// Device utilization percentages
     pub device_utilization: HashMap<ComputeDevice, f64>,
 }
@@ -499,7 +508,7 @@ pub mod patterns {
         T: Clone + Send + Sync,
         F: Fn(&T) -> T + Send + Sync,
     {
-        let workload = WorkloadCharacteristics::element_wise(data.len(), 1);
+        let workload = WorkloadCharacteristics::element(data.len(), 1);
         let strategy = scheduler.select_strategy(&workload)?;
 
         scheduler.execute_workload(&workload, strategy, |_strategy| {
@@ -519,7 +528,7 @@ pub mod patterns {
         T: Clone + Send + Sync,
         F: Fn(T, &T) -> T + Send + Sync,
     {
-        let workload = WorkloadCharacteristics::element_wise(data.len(), 1);
+        let workload = WorkloadCharacteristics::element(data.len(), 1);
         let strategy = scheduler.select_strategy(&workload)?;
 
         scheduler.execute_workload(&workload, strategy, |_strategy| {
@@ -556,11 +565,11 @@ mod tests {
     }
 
     #[test]
-    fn test_execution_time_estimation() {
+    fn testexecution_time_estimation() {
         let cpu = DeviceCharacteristics::typical_cpu();
-        let workload = WorkloadCharacteristics::element_wise(1000000, 1);
+        let workload = WorkloadCharacteristics::element(1000000, 1);
 
-        let time = cpu.estimate_execution_time(&workload);
+        let time = cpu.estimateexecution_time(&workload);
         assert!(time > Duration::ZERO);
     }
 

@@ -11,6 +11,7 @@ use ndarray::Array1;
 use scirs2_integrate::cubature::{cubature, nquad, Bound, CubatureOptions};
 use std::f64::consts::PI;
 
+#[allow(dead_code)]
 fn main() {
     println!("Cubature Multidimensional Integration Examples");
     println!("==============================================\n");
@@ -90,7 +91,7 @@ fn main() {
     println!("   Error estimate: {:.10e}", result5.abs_error);
     println!("   Function evaluations: {}", result5.n_evals);
     println!("   Converged: {}", result5.converged);
-    println!("   Expected value: {:.10}", PI);
+    println!("   Expected value: {PI:.10}");
     println!("   Note: Current implementation has limitations with infinite domains.\n");
 
     // Example 6: Using nquad for simpler interface

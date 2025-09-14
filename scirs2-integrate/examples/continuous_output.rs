@@ -14,7 +14,8 @@ use std::io::Write;
 /// We convert this to a system of first-order ODEs:
 /// dθ/dt = ω
 /// dω/dt = -(g/L)·sin(θ)
-fn pendulum(_t: f64, y: ArrayView1<f64>) -> Array1<f64> {
+#[allow(dead_code)]
+fn pendulum(t: f64, y: ArrayView1<f64>) -> Array1<f64> {
     // State variables:
     // y[0] = θ (angle from vertical, radians)
     // y[1] = ω (angular velocity)
@@ -35,7 +36,8 @@ fn pendulum(_t: f64, y: ArrayView1<f64>) -> Array1<f64> {
 /// dvy/dt = -μ·y/r³
 ///
 /// Where r = sqrt(x² + y²) is the distance from the origin
-fn two_body(_t: f64, y: ArrayView1<f64>) -> Array1<f64> {
+#[allow(dead_code)]
+fn two_body(t: f64, y: ArrayView1<f64>) -> Array1<f64> {
     // State variables:
     // y[0] = x (position x)
     // y[1] = y (position y)
@@ -74,7 +76,8 @@ fn two_body(_t: f64, y: ArrayView1<f64>) -> Array1<f64> {
 /// We convert to first-order system:
 /// dx/dt = y
 /// dy/dt = μ·(1 - x²)·y - x
-fn van_der_pol(_t: f64, y: ArrayView1<f64>) -> Array1<f64> {
+#[allow(dead_code)]
+fn van_der_pol(t: f64, y: ArrayView1<f64>) -> Array1<f64> {
     // State variables:
     // y[0] = x (position)
     // y[1] = y (velocity)
@@ -86,6 +89,7 @@ fn van_der_pol(_t: f64, y: ArrayView1<f64>) -> Array1<f64> {
 }
 
 /// Writes a CSV file with the solution
+#[allow(dead_code)]
 fn write_solution_csv(
     filename: &str,
     solution: &DenseSolution<f64>,
@@ -102,27 +106,28 @@ fn write_solution_csv(
     // Write header
     let mut header = String::from("t");
     for &idx in component_indices {
-        header.push_str(&format!(",y{}", idx));
+        header.push_str(&format!(",y{idx}"));
     }
-    writeln!(file, "{}", header)
+    writeln!(file, "{header}")
         .map_err(|e| scirs2_integrate::error::IntegrateError::ComputationError(e.to_string()))?;
 
     // Write data
     for (i, t) in times.iter().enumerate() {
-        let mut line = format!("{}", t);
+        let mut line = format!("{t}");
         for &idx in component_indices {
             line.push_str(&format!(",{}", values[i][idx]));
         }
-        writeln!(file, "{}", line).map_err(|e| {
+        writeln!(file, "{line}").map_err(|e| {
             scirs2_integrate::error::IntegrateError::ComputationError(e.to_string())
         })?;
     }
 
-    println!("Wrote solution to {}", filename);
+    println!("Wrote solution to {filename}");
     Ok(())
 }
 
 /// Pendulum simulation with continuous output
+#[allow(dead_code)]
 fn pendulum_simulation() -> IntegrateResult<()> {
     println!("\n=== Pendulum Simulation ===");
 
@@ -177,8 +182,8 @@ fn pendulum_simulation() -> IntegrateResult<()> {
         .fold(0.0_f64, |max, &e| max.max((e - mean_energy).abs()));
 
     println!("Energy analysis:");
-    println!("  Mean energy: {:.8}", mean_energy);
-    println!("  Maximum deviation: {:.8e}", max_deviation);
+    println!("  Mean energy: {mean_energy:.8}");
+    println!("  Maximum deviation: {max_deviation:.8e}");
     println!("  Relative error: {:.8e}", max_deviation / mean_energy);
 
     // Write solution to CSV for visualization
@@ -188,6 +193,7 @@ fn pendulum_simulation() -> IntegrateResult<()> {
 }
 
 /// Two-body problem simulation (planet orbiting a star)
+#[allow(dead_code)]
 fn two_body_simulation() -> IntegrateResult<()> {
     println!("\n=== Two-Body Simulation ===");
 
@@ -241,8 +247,8 @@ fn two_body_simulation() -> IntegrateResult<()> {
         .fold(0.0_f64, |max, &l| max.max((l - mean_l).abs()));
 
     println!("Angular momentum analysis:");
-    println!("  Mean angular momentum: {:.10}", mean_l);
-    println!("  Maximum deviation: {:.10e}", max_deviation);
+    println!("  Mean angular momentum: {mean_l:.10}");
+    println!("  Maximum deviation: {max_deviation:.10e}");
     println!("  Relative error: {:.10e}", max_deviation / mean_l);
 
     // Write solution to CSV for visualization
@@ -268,6 +274,7 @@ fn two_body_simulation() -> IntegrateResult<()> {
 }
 
 /// Van der Pol oscillator simulation with continuous output
+#[allow(dead_code)]
 fn van_der_pol_simulation() -> IntegrateResult<()> {
     println!("\n=== Van der Pol Simulation ===");
 
@@ -329,10 +336,7 @@ fn van_der_pol_simulation() -> IntegrateResult<()> {
         t_at
     };
 
-    println!(
-        "Closest solution points: t = {:.6}, {:.6}, {:.6}",
-        t_before, t_at, t_after
-    );
+    println!("Closest solution points: t = {t_before:.6}, {t_at:.6}, {t_after:.6}");
 
     // Create dense solutions with different interpolation methods
     let linear_solution = create_dense_solution(
@@ -430,6 +434,7 @@ fn van_der_pol_simulation() -> IntegrateResult<()> {
     Ok(())
 }
 
+#[allow(dead_code)]
 fn main() -> IntegrateResult<()> {
     println!("Continuous Output Demonstrations");
     println!("================================");

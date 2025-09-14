@@ -10,6 +10,9 @@ use rand::prelude::*;
 use std::fmt::Debug;
 
 use crate::error::{Result, TimeSeriesError};
+use rand::seq::SliceRandom;
+use scirs2_core::Rng;
+use statrs::statistics::Statistics;
 
 /// Method for anomaly detection
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -159,7 +162,7 @@ pub enum MethodInfo {
 ///
 /// ```
 /// use ndarray::Array1;
-/// use scirs2_series::anomaly::{detect_anomalies, AnomalyOptions, AnomalyMethod};
+/// use scirs2__series::anomaly::{detect_anomalies, AnomalyOptions, AnomalyMethod};
 ///
 /// // Create a time series with some anomalies
 /// let mut ts = Array1::from_vec((0..100).map(|i| (i as f64 / 10.0).sin()).collect());
@@ -175,6 +178,7 @@ pub enum MethodInfo {
 /// let result = detect_anomalies(&ts, &options).unwrap();
 /// println!("Anomalies detected: {}", result.is_anomaly.iter().filter(|&&x| x).count());
 /// ```
+#[allow(dead_code)]
 pub fn detect_anomalies<F>(ts: &Array1<F>, options: &AnomalyOptions) -> Result<AnomalyResult>
 where
     F: Float + FromPrimitive + Debug + NumCast + std::iter::Sum,
@@ -214,6 +218,7 @@ where
 }
 
 /// Statistical Process Control (SPC) anomaly detection
+#[allow(dead_code)]
 fn detect_anomalies_spc<F>(ts: &Array1<F>, options: &AnomalyOptions) -> Result<AnomalyResult>
 where
     F: Float + FromPrimitive + Debug + NumCast + std::iter::Sum,
@@ -348,6 +353,7 @@ where
 }
 
 /// Isolation Forest anomaly detection (simplified version)
+#[allow(dead_code)]
 fn detect_anomalies_isolation_forest<F>(
     ts: &Array1<F>,
     options: &AnomalyOptions,
@@ -418,12 +424,13 @@ where
         threshold,
         method: AnomalyMethod::IsolationForest,
         method_info: Some(MethodInfo::IsolationForest {
-            average_path_length: path_lengths.mean().unwrap_or(0.0),
+            average_path_length: path_lengths.mean(),
         }),
     })
 }
 
 /// Z-score based anomaly detection
+#[allow(dead_code)]
 fn detect_anomalies_zscore<F>(ts: &Array1<F>, options: &AnomalyOptions) -> Result<AnomalyResult>
 where
     F: Float + FromPrimitive + Debug + NumCast + std::iter::Sum,
@@ -454,6 +461,7 @@ where
 }
 
 /// Modified Z-score using median absolute deviation
+#[allow(dead_code)]
 fn detect_anomalies_modified_zscore<F>(
     ts: &Array1<F>,
     options: &AnomalyOptions,
@@ -514,6 +522,7 @@ where
 }
 
 /// Interquartile Range (IQR) anomaly detection
+#[allow(dead_code)]
 fn detect_anomalies_iqr<F>(ts: &Array1<F>, options: &AnomalyOptions) -> Result<AnomalyResult>
 where
     F: Float + FromPrimitive + Debug + NumCast + std::iter::Sum,
@@ -560,6 +569,7 @@ where
 }
 
 /// Placeholder implementations for complex methods
+#[allow(dead_code)]
 fn detect_anomalies_one_class_svm<F>(
     ts: &Array1<F>,
     options: &AnomalyOptions,
@@ -571,6 +581,7 @@ where
     detect_anomalies_distance_based(ts, options)
 }
 
+#[allow(dead_code)]
 fn detect_anomalies_distance_based<F>(
     ts: &Array1<F>,
     options: &AnomalyOptions,
@@ -632,6 +643,7 @@ where
     })
 }
 
+#[allow(dead_code)]
 fn detect_anomalies_prediction_based<F>(
     ts: &Array1<F>,
     _options: &AnomalyOptions,
@@ -695,6 +707,7 @@ where
 
 // Helper functions
 
+#[allow(dead_code)]
 fn seasonally_adjust<F>(ts: &Array1<F>, period: usize) -> Result<Array1<F>>
 where
     F: Float + FromPrimitive + Debug + NumCast + std::iter::Sum,
@@ -729,31 +742,33 @@ where
     Ok(adjusted)
 }
 
-fn create_sliding_windows<F>(ts: &Array1<F>, window_size: usize) -> Result<Array2<f64>>
+#[allow(dead_code)]
+fn create_sliding_windows<F>(_ts: &Array1<F>, windowsize: usize) -> Result<Array2<f64>>
 where
     F: Float + FromPrimitive + Debug + NumCast,
 {
-    let n = ts.len();
-    if n < window_size {
+    let n = _ts.len();
+    if n < windowsize {
         return Err(TimeSeriesError::InsufficientData {
             message: "Time series too short for windowing".to_string(),
-            required: window_size,
+            required: windowsize,
             actual: n,
         });
     }
 
-    let n_windows = n - window_size + 1;
-    let mut windows = Array2::zeros((n_windows, window_size));
+    let n_windows = n - windowsize + 1;
+    let mut windows = Array2::zeros((n_windows, windowsize));
 
     for i in 0..n_windows {
-        for j in 0..window_size {
-            windows[[i, j]] = ts[i + j].to_f64().unwrap_or(0.0);
+        for j in 0..windowsize {
+            windows[[i, j]] = _ts[i + j].to_f64().unwrap_or(0.0);
         }
     }
 
     Ok(windows)
 }
 
+#[allow(dead_code)]
 fn build_isolation_tree(
     data: &Array2<f64>,
     subsample_size: usize,
@@ -779,6 +794,7 @@ fn build_isolation_tree(
     Ok(path_lengths)
 }
 
+#[allow(dead_code)]
 fn calculate_isolation_path_length(
     point: &Array1<f64>,
     data: &Array2<f64>,
@@ -819,6 +835,7 @@ fn calculate_isolation_path_length(
     }
 }
 
+#[allow(dead_code)]
 fn euclidean_distance(a: &Array1<f64>, b: &Array1<f64>) -> f64 {
     a.iter()
         .zip(b.iter())
@@ -827,6 +844,7 @@ fn euclidean_distance(a: &Array1<f64>, b: &Array1<f64>) -> f64 {
         .sqrt()
 }
 
+#[allow(dead_code)]
 fn determine_threshold(scores: &Array1<f64>, contamination: f64) -> f64 {
     let mut sorted_scores: Vec<f64> = scores.to_vec();
     sorted_scores.sort_by(|a, b| a.partial_cmp(b).unwrap_or(std::cmp::Ordering::Equal));
@@ -835,6 +853,7 @@ fn determine_threshold(scores: &Array1<f64>, contamination: f64) -> f64 {
     sorted_scores[threshold_idx.min(sorted_scores.len() - 1)]
 }
 
+#[allow(dead_code)]
 fn calculate_std_dev<F>(data: &Array1<F>) -> F
 where
     F: Float + FromPrimitive + Debug + NumCast + std::iter::Sum,
@@ -875,8 +894,7 @@ mod tests {
         let anomaly_count = result.is_anomaly.iter().filter(|&&x| x).count();
         assert!(
             anomaly_count >= 2,
-            "Should detect at least 2 anomalies, found {}",
-            anomaly_count
+            "Should detect at least 2 anomalies, found {anomaly_count}"
         );
 
         // Anomalies should have high scores

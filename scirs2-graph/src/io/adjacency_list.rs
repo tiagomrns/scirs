@@ -69,6 +69,7 @@ use crate::error::{GraphError, Result};
 ///
 /// Lines starting with '#' are treated as comments and ignored.
 /// Empty lines are also ignored.
+#[allow(dead_code)]
 pub fn read_adjacency_list_format<N, E, P>(path: P, weighted: bool) -> Result<Graph<N, E>>
 where
     N: Node + std::fmt::Debug + FromStr + Clone,
@@ -195,6 +196,7 @@ where
 ///
 /// * `Ok(DiGraph)` - The directed graph read from the file
 /// * `Err(GraphError)` - If there was an error reading or parsing the file
+#[allow(dead_code)]
 pub fn read_adjacency_list_format_digraph<N, E, P>(path: P, weighted: bool) -> Result<DiGraph<N, E>>
 where
     N: Node + std::fmt::Debug + FromStr + Clone,
@@ -318,6 +320,7 @@ where
 ///
 /// * `Ok(())` - If the graph was written successfully
 /// * `Err(GraphError)` - If there was an error writing the file
+#[allow(dead_code)]
 pub fn write_adjacency_list_format<N, E, Ix, P>(
     graph: &Graph<N, E, Ix>,
     path: P,
@@ -362,16 +365,16 @@ where
 
     // Write adjacency list for each node
     for node in all_nodes {
-        write!(file, "{}: ", node)?;
+        write!(file, "{node}: ")?;
 
         if let Some(neighbors) = node_neighbors.get(node) {
             let neighbor_strs: Vec<String> = neighbors
                 .iter()
                 .map(|(neighbor, weight)| {
                     if weighted {
-                        format!("{} {}", neighbor, weight)
+                        format!("{neighbor} {weight}")
                     } else {
-                        format!("{}", neighbor)
+                        format!("{neighbor}")
                     }
                 })
                 .collect();
@@ -401,6 +404,7 @@ where
 ///
 /// * `Ok(())` - If the graph was written successfully
 /// * `Err(GraphError)` - If there was an error writing the file
+#[allow(dead_code)]
 pub fn write_adjacency_list_format_digraph<N, E, Ix, P>(
     graph: &DiGraph<N, E, Ix>,
     path: P,
@@ -445,16 +449,16 @@ where
 
     // Write adjacency list for each node
     for node in all_nodes {
-        write!(file, "{}: ", node)?;
+        write!(file, "{node}: ")?;
 
         if let Some(neighbors) = node_neighbors.get(node) {
             let neighbor_strs: Vec<String> = neighbors
                 .iter()
                 .map(|(neighbor, weight)| {
                     if weighted {
-                        format!("{} {}", neighbor, weight)
+                        format!("{neighbor} {weight}")
                     } else {
-                        format!("{}", neighbor)
+                        format!("{neighbor}")
                     }
                 })
                 .collect();

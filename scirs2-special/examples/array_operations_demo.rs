@@ -6,67 +6,82 @@
 
 use ndarray::{arr1, arr2, Array1};
 use num_complex::Complex64;
-use scirs2_special::array_ops::*;
-use scirs2_special::*;
+#[cfg(feature = "gpu")]
+use scirs2_special::array_ops::{
+    broadcasting, complex, convenience, memory_efficient, ArrayConfig,
+};
+use scirs2_special::gamma;
 use std::time::Instant;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    println!("=== SCIRS2-SPECIAL Array Operations Demo ===\n");
+    #[cfg(not(feature = "gpu"))]
+    {
+        println!("This example requires the 'gpu' feature to be enabled.");
+        println!("Run with: cargo run --example array_operations_demo --features gpu");
+        return Ok(());
+    }
 
-    // 1. Basic Vectorized Operations
-    demo_vectorized_operations().await?;
+    #[cfg(feature = "gpu")]
+    {
+        println!("=== SCIRS2-SPECIAL Array Operations Demo ===\n");
 
-    // 2. Multidimensional Arrays
-    demo_multidimensional_arrays().await?;
+        // 1. Basic Vectorized Operations
+        demo_vectorized_operations().await?;
 
-    // 3. Broadcasting Operations
-    demo_broadcasting()?;
+        // 2. Multidimensional Arrays
+        demo_multidimensional_arrays().await?;
 
-    // 4. Complex Number Arrays
-    demo_complex_arrays()?;
+        // 3. Broadcasting Operations
+        demo_broadcasting()?;
 
-    // 5. Memory-Efficient Processing
-    demo_memory_efficiency()?;
+        // 4. Complex Number Arrays
+        demo_complex_arrays()?;
 
-    // 6. Performance Comparison
-    demo_performance_comparison().await?;
+        // 5. Memory-Efficient Processing
+        demo_memory_efficiency()?;
 
-    println!("=== Array operations demo completed successfully! ===");
-    Ok(())
+        // 6. Performance Comparison
+        demo_performance_comparison().await?;
+
+        println!("=== Array operations demo completed successfully! ===");
+
+        Ok(())
+    }
 }
 
+#[cfg(feature = "gpu")]
 async fn demo_vectorized_operations() -> Result<(), Box<dyn std::error::Error>> {
     println!("1. Vectorized Special Function Operations");
     println!("========================================");
 
     // Gamma function on arrays
-    let gamma_input = arr1(&[1.0, 2.0, 3.0, 4.0, 5.0]);
-    let gamma_result = convenience::gamma_1d(&gamma_input).await?;
+    let gammainput = arr1(&[1.0, 2.0, 3.0, 4.0, 5.0]);
+    let gamma_result = convenience::gamma_1d(&gammainput).await?;
     println!("Gamma function:");
-    println!("  Input:  {:?}", gamma_input);
+    println!("  Input:  {:?}", gammainput);
     println!("  Output: {:?}", gamma_result);
     println!("  Expected: [1, 1, 2, 6, 24]");
 
     // Bessel J0 function on arrays
-    let bessel_input = arr1(&[0.0, 1.0, 2.4048, 5.0]);
-    let bessel_result = convenience::j0_1d(&bessel_input)?;
+    let besselinput = arr1(&[0.0, 1.0, 2.4048, 5.0]);
+    let bessel_result = convenience::j0_1d(&besselinput)?;
     println!("\nBessel J₀ function:");
-    println!("  Input:  {:?}", bessel_input);
+    println!("  Input:  {:?}", besselinput);
     println!("  Output: {:?}", bessel_result);
 
     // Error function on arrays
-    let erf_input = arr1(&[-2.0, -1.0, 0.0, 1.0, 2.0]);
-    let erf_result = convenience::erf_1d(&erf_input)?;
+    let erfinput = arr1(&[-2.0, -1.0, 0.0, 1.0, 2.0]);
+    let erf_result = convenience::erf_1d(&erfinput)?;
     println!("\nError function:");
-    println!("  Input:  {:?}", erf_input);
+    println!("  Input:  {:?}", erfinput);
     println!("  Output: {:?}", erf_result);
 
     // Factorial on arrays
-    let factorial_input = arr1(&[0, 1, 2, 3, 4, 5]);
-    let factorial_result = convenience::factorial_1d(&factorial_input)?;
+    let factorialinput = arr1(&[0, 1, 2, 3, 4, 5]);
+    let factorial_result = convenience::factorial_1d(&factorialinput)?;
     println!("\nFactorial function:");
-    println!("  Input:  {:?}", factorial_input);
+    println!("  Input:  {:?}", factorialinput);
     println!("  Output: {:?}", factorial_result);
 
     // Softmax on arrays
@@ -81,6 +96,7 @@ async fn demo_vectorized_operations() -> Result<(), Box<dyn std::error::Error>> 
     Ok(())
 }
 
+#[cfg(feature = "gpu")]
 async fn demo_multidimensional_arrays() -> Result<(), Box<dyn std::error::Error>> {
     println!("2. Multidimensional Array Operations");
     println!("====================================");
@@ -93,16 +109,16 @@ async fn demo_multidimensional_arrays() -> Result<(), Box<dyn std::error::Error>
     println!("Output:\n{:?}", gamma_2d_result);
 
     // Large array processing
-    let large_input: Array1<f64> = Array1::linspace(0.5, 10.0, 1000);
+    let largeinput: Array1<f64> = Array1::linspace(0.5, 10.0, 1000);
     println!("\nProcessing large array (1000 elements):");
 
     let start = Instant::now();
-    let large_gamma_result = convenience::gamma_1d(&large_input).await?;
+    let large_gamma_result = convenience::gamma_1d(&largeinput).await?;
     let duration = start.elapsed();
 
     println!(
         "  Input range: [{:.2}, {:.2}]",
-        large_input[0], large_input[999]
+        largeinput[0], largeinput[999]
     );
     println!(
         "  Output range: [{:.2e}, {:.2e}]",
@@ -114,6 +130,8 @@ async fn demo_multidimensional_arrays() -> Result<(), Box<dyn std::error::Error>
     Ok(())
 }
 
+#[allow(dead_code)]
+#[cfg(feature = "gpu")]
 fn demo_broadcasting() -> Result<(), Box<dyn std::error::Error>> {
     println!("3. Broadcasting Operations");
     println!("==========================");
@@ -128,8 +146,8 @@ fn demo_broadcasting() -> Result<(), Box<dyn std::error::Error>> {
     );
 
     if can_broadcast {
-        let broadcast_shape = broadcasting::broadcast_shape(&shape1, &shape2)?;
-        println!("Broadcast shape: {:?}", broadcast_shape);
+        let broadcastshape = broadcasting::broadcastshape(&shape1, &shape2)?;
+        println!("Broadcast shape: {:?}", broadcastshape);
     }
 
     // Test various broadcasting scenarios
@@ -145,8 +163,8 @@ fn demo_broadcasting() -> Result<(), Box<dyn std::error::Error>> {
         let compatible = broadcasting::can_broadcast(&shape1, &shape2);
         print!("  {:?} × {:?}: {}", shape1, shape2, compatible);
         if compatible {
-            if let Ok(result_shape) = broadcasting::broadcast_shape(&shape1, &shape2) {
-                print!(" → {:?}", result_shape);
+            if let Ok(resultshape) = broadcasting::broadcastshape(&shape1, &shape2) {
+                print!(" → {:?}", resultshape);
             }
         }
         println!();
@@ -156,6 +174,8 @@ fn demo_broadcasting() -> Result<(), Box<dyn std::error::Error>> {
     Ok(())
 }
 
+#[allow(dead_code)]
+#[cfg(feature = "gpu")]
 fn demo_complex_arrays() -> Result<(), Box<dyn std::error::Error>> {
     println!("4. Complex Number Array Operations");
     println!("==================================");
@@ -196,6 +216,8 @@ fn demo_complex_arrays() -> Result<(), Box<dyn std::error::Error>> {
     Ok(())
 }
 
+#[allow(dead_code)]
+#[cfg(feature = "gpu")]
 fn demo_memory_efficiency() -> Result<(), Box<dyn std::error::Error>> {
     println!("5. Memory-Efficient Processing");
     println!("==============================");
@@ -229,12 +251,12 @@ fn demo_memory_efficiency() -> Result<(), Box<dyn std::error::Error>> {
 
     let configs = [
         convenience::ConfigBuilder::new()
-            .chunk_size(512)
+            .chunksize(512)
             .parallel(false)
             .memory_limit(512 * 1024 * 1024)
             .build(),
         convenience::ConfigBuilder::new()
-            .chunk_size(2048)
+            .chunksize(2048)
             .parallel(false)
             .memory_limit(2 * 1024 * 1024 * 1024)
             .build(),
@@ -243,9 +265,9 @@ fn demo_memory_efficiency() -> Result<(), Box<dyn std::error::Error>> {
 
     for (i, config) in configs.iter().enumerate() {
         println!(
-            "  Config {}: chunk_size={}, parallel={}, memory_limit={}MB",
+            "  Config {}: chunksize={}, parallel={}, memory_limit={}MB",
             i + 1,
-            config.chunk_size,
+            config.chunksize,
             config.parallel,
             config.memory_limit / 1024 / 1024
         );
@@ -255,6 +277,7 @@ fn demo_memory_efficiency() -> Result<(), Box<dyn std::error::Error>> {
     Ok(())
 }
 
+#[cfg(feature = "gpu")]
 async fn demo_performance_comparison() -> Result<(), Box<dyn std::error::Error>> {
     println!("6. Performance Comparison");
     println!("=========================");
@@ -290,18 +313,18 @@ async fn demo_performance_comparison() -> Result<(), Box<dyn std::error::Error>>
 
     // Memory bandwidth test
     println!("Memory bandwidth test (large arrays):");
-    let large_size = 100_000;
-    let large_input: Array1<f64> = Array1::linspace(0.1, 5.0, large_size);
+    let largesize = 100_000;
+    let largeinput: Array1<f64> = Array1::linspace(0.1, 5.0, largesize);
 
     let start = Instant::now();
-    let _large_result = convenience::gamma_1d(&large_input).await?;
+    let _large_result = convenience::gamma_1d(&largeinput).await?;
     let duration = start.elapsed();
 
-    let throughput = large_size as f64 / duration.as_secs_f64();
-    println!("  Processed {} elements in {:?}", large_size, duration);
+    let throughput = largesize as f64 / duration.as_secs_f64();
+    println!("  Processed {} elements in {:?}", largesize, duration);
     println!("  Throughput: {:.0} elements/second", throughput);
 
-    let memory_bandwidth = (large_size * 16) as f64 / duration.as_secs_f64() / 1024.0 / 1024.0; // 16 bytes per f64 (input + output)
+    let memory_bandwidth = (largesize * 16) as f64 / duration.as_secs_f64() / 1024.0 / 1024.0; // 16 bytes per f64 (input + output)
     println!("  Memory bandwidth: {:.1} MB/s", memory_bandwidth);
 
     println!();

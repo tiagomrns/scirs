@@ -7,6 +7,7 @@ use scirs2_metrics::anomaly::{
 };
 
 #[test]
+#[allow(dead_code)]
 fn test_detection_accuracy() {
     // Test case 1: Perfect detection
     let y_true_1 = array![0.0, 0.0, 1.0, 1.0, 0.0, 1.0, 0.0, 0.0, 1.0, 0.0];
@@ -40,6 +41,7 @@ fn test_detection_accuracy() {
 }
 
 #[test]
+#[allow(dead_code)]
 fn test_false_alarm_rate() {
     // Test case 1: No false alarms
     let y_true_1 = array![0.0, 0.0, 1.0, 1.0, 0.0, 1.0, 0.0, 0.0, 1.0, 0.0];
@@ -66,6 +68,7 @@ fn test_false_alarm_rate() {
 }
 
 #[test]
+#[allow(dead_code)]
 fn test_miss_detection_rate() {
     // Test case 1: No missed detections
     let y_true_1 = array![0.0, 0.0, 1.0, 1.0, 0.0, 1.0, 0.0, 0.0, 1.0, 0.0];
@@ -92,6 +95,7 @@ fn test_miss_detection_rate() {
 }
 
 #[test]
+#[allow(dead_code)]
 fn test_anomaly_auc_score() {
     // Test case 1: Perfect separation
     let y_true_1 = array![0.0, 0.0, 0.0, 1.0, 1.0, 1.0];
@@ -123,6 +127,7 @@ fn test_anomaly_auc_score() {
 }
 
 #[test]
+#[allow(dead_code)]
 fn test_anomaly_average_precision_score() {
     // Test case 1: Perfect ranking
     let y_true_1 = array![0.0, 0.0, 0.0, 1.0, 1.0, 1.0];
@@ -145,6 +150,7 @@ fn test_anomaly_average_precision_score() {
 }
 
 #[test]
+#[allow(dead_code)]
 fn test_kl_divergence() {
     // Test case 1: Identical distributions
     let p_1 = array![0.25, 0.25, 0.25, 0.25];
@@ -175,6 +181,7 @@ fn test_kl_divergence() {
 }
 
 #[test]
+#[allow(dead_code)]
 fn test_js_divergence() {
     // Test case 1: Identical distributions
     let p_1 = array![0.25, 0.25, 0.25, 0.25];
@@ -205,6 +212,7 @@ fn test_js_divergence() {
 }
 
 #[test]
+#[allow(dead_code)]
 fn test_wasserstein_distance() {
     // Test case 1: Identical distributions
     let u_1 = array![1.0, 2.0, 3.0, 4.0, 5.0];
@@ -250,6 +258,7 @@ fn test_wasserstein_distance() {
 }
 
 #[test]
+#[allow(dead_code)]
 fn test_edge_cases() {
     // Different array lengths
     let a1 = array![0.0, 1.0, 0.0, 1.0, 0.0];
@@ -289,6 +298,7 @@ fn test_edge_cases() {
 }
 
 #[test]
+#[allow(dead_code)]
 fn test_maximum_mean_discrepancy() {
     // Test case 1: Identical samples
     let x_1 = array![1.0, 2.0, 3.0, 4.0, 5.0];
@@ -342,6 +352,7 @@ fn test_maximum_mean_discrepancy() {
 }
 
 #[test]
+#[allow(dead_code)]
 fn test_precision_recall_with_tolerance() {
     // Test case 1: Perfect detection with zero tolerance
     let y_true_1 = array![0.0, 0.0, 1.0, 1.0, 0.0, 1.0, 0.0, 0.0, 1.0, 0.0];
@@ -416,6 +427,7 @@ fn test_precision_recall_with_tolerance() {
 }
 
 #[test]
+#[allow(dead_code)]
 fn test_point_adjusted_precision_recall() {
     // Test case 1: Perfect detection
     let y_true_1 = array![0.0, 0.0, 1.0, 1.0, 0.0, 1.0, 0.0, 0.0, 1.0, 0.0];
@@ -477,6 +489,7 @@ fn test_point_adjusted_precision_recall() {
 }
 
 #[test]
+#[allow(dead_code)]
 fn test_nab_score() {
     // Test case 1: Perfect prediction (exactly at the anomaly points)
     let mut y_true_1 = vec![0.0; 20];

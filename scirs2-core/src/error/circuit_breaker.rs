@@ -4,6 +4,7 @@
 //! retry logic, fallback strategies, and adaptive error handling for production environments.
 
 use crate::error::{CoreError, CoreResult, ErrorContext};
+use rand::Rng;
 use std::collections::HashMap;
 use std::fmt;
 use std::sync::atomic::{AtomicUsize, Ordering};
@@ -39,7 +40,7 @@ pub struct CircuitBreakerConfig {
     /// Time window for failure counting
     pub failure_window: Duration,
     /// Recovery timeout before moving to half-open
-    pub recovery_timeout: Duration,
+    pub recoverytimeout: Duration,
     /// Success threshold to close the circuit from half-open
     pub success_threshold: usize,
     /// Maximum concurrent requests in half-open state
@@ -53,7 +54,7 @@ impl Default for CircuitBreakerConfig {
         Self {
             failure_threshold: 5,
             failure_window: Duration::from_secs(60),
-            recovery_timeout: Duration::from_secs(30),
+            recoverytimeout: Duration::from_secs(30),
             success_threshold: 3,
             max_half_open_requests: 2,
             minimum_request_threshold: 10,
@@ -115,8 +116,8 @@ impl CircuitBreaker {
         // Check if we should allow the request
         if !self.should_allow_request()? {
             return Err(CoreError::ComputationError(ErrorContext::new(format!(
-                "Circuit breaker '{}' is open - rejecting request",
-                self.name
+                "Circuit breaker '{name}' is open - rejecting request",
+                name = self.name
             ))));
         }
 
@@ -163,7 +164,7 @@ impl CircuitBreaker {
             CircuitState::Open => {
                 // Check if recovery timeout has passed
                 if let Ok(last_change) = self.last_state_change.lock() {
-                    if last_change.elapsed() >= self.config.recovery_timeout {
+                    if last_change.elapsed() >= self.config.recoverytimeout {
                         drop(state); // Release read lock
                         self.transition_to_half_open()?;
                         return Ok(true);
@@ -282,7 +283,10 @@ impl CircuitBreaker {
             *last_change = Instant::now();
         }
 
-        eprintln!("Circuit breaker '{}' opened due to failures", self.name);
+        eprintln!(
+            "Circuit breaker '{name}' opened due to failures",
+            name = self.name
+        );
         Ok(())
     }
 
@@ -299,7 +303,10 @@ impl CircuitBreaker {
             *last_change = Instant::now();
         }
 
-        println!("Circuit breaker '{}' moved to half-open state", self.name);
+        println!(
+            "Circuit breaker '{name}' moved to half-open state",
+            name = self.name
+        );
         Ok(())
     }
 
@@ -322,7 +329,10 @@ impl CircuitBreaker {
             history.clear();
         }
 
-        println!("Circuit breaker '{}' closed - service recovered", self.name);
+        println!(
+            "Circuit breaker '{name}' closed - service recovered",
+            name = self.name
+        );
         Ok(())
     }
 
@@ -389,7 +399,7 @@ impl CircuitBreaker {
             history.clear();
         }
 
-        println!("Circuit breaker '{}' manually reset", self.name);
+        println!("Circuit breaker '{name}' manually reset", name = self.name);
         Ok(())
     }
 }
@@ -416,7 +426,7 @@ impl fmt::Display for CircuitBreakerStatus {
         writeln!(f, "  Total Requests: {}", self.request_count)?;
         writeln!(f, "  Half-open Requests: {}", self.half_open_requests)?;
         if let Some(last_failure) = self.last_failure_time {
-            writeln!(f, "  Last Failure: {:?}", last_failure)?;
+            writeln!(f, "  Last Failure: {last_failure:?}")?;
         }
         writeln!(f, "  Last State Change: {:?} ago", self.last_state_change)?;
         Ok(())
@@ -429,9 +439,9 @@ pub struct RetryPolicy {
     /// Maximum number of retry attempts
     pub max_attempts: usize,
     /// Base delay between retries
-    pub base_delay: Duration,
+    pub basedelay: Duration,
     /// Maximum delay between retries
-    pub max_delay: Duration,
+    pub maxdelay: Duration,
     /// Backoff multiplier
     pub backoff_multiplier: f64,
     /// Jitter to add to delays (0.0 to 1.0)
@@ -444,8 +454,8 @@ impl Default for RetryPolicy {
     fn default() -> Self {
         Self {
             max_attempts: 3,
-            base_delay: Duration::from_millis(100),
-            max_delay: Duration::from_secs(30),
+            basedelay: Duration::from_millis(100),
+            maxdelay: Duration::from_secs(30),
             backoff_multiplier: 2.0,
             jitter: 0.1,
             retry_on: vec![
@@ -464,7 +474,7 @@ pub struct RetryExecutor {
 
 impl RetryExecutor {
     /// Create a new retry executor
-    pub fn new(policy: RetryPolicy) -> Self {
+    pub fn policy(policy: RetryPolicy) -> Self {
         Self { policy }
     }
 
@@ -473,7 +483,7 @@ impl RetryExecutor {
     where
         F: Fn() -> CoreResult<T>,
     {
-        let mut last_error = None;
+        let mut lasterror = None;
 
         for attempt in 0..self.policy.max_attempts {
             match operation() {
@@ -484,11 +494,11 @@ impl RetryExecutor {
                         return Err(error);
                     }
 
-                    last_error = Some(error);
+                    lasterror = Some(error);
 
                     // Don't sleep after the last attempt
                     if attempt < self.policy.max_attempts - 1 {
-                        let delay = self.calculate_delay(attempt);
+                        let delay = self.calculatedelay(attempt);
                         std::thread::sleep(delay);
                     }
                 }
@@ -496,7 +506,7 @@ impl RetryExecutor {
         }
 
         // All attempts failed
-        Err(last_error.unwrap_or_else(|| {
+        Err(lasterror.unwrap_or_else(|| {
             CoreError::ComputationError(ErrorContext::new("All retry attempts failed"))
         }))
     }
@@ -507,7 +517,7 @@ impl RetryExecutor {
         F: Fn() -> Fut,
         Fut: std::future::Future<Output = CoreResult<T>>,
     {
-        let mut last_error = None;
+        let mut lasterror = None;
 
         for attempt in 0..self.policy.max_attempts {
             match operation().await {
@@ -518,60 +528,61 @@ impl RetryExecutor {
                         return Err(error);
                     }
 
-                    last_error = Some(error);
+                    lasterror = Some(error);
 
                     // Don't sleep after the last attempt
                     if attempt < self.policy.max_attempts - 1 {
-                        let delay = self.calculate_delay(attempt);
+                        let delay = self.calculatedelay(attempt);
                         #[cfg(feature = "async")]
                         tokio::time::sleep(delay).await;
                         #[cfg(not(feature = "async"))]
-                        let _delay = delay; // Avoid unused variable warning
+                        let _unuseddelay = delay; // Avoid unused variable warning
                     }
                 }
             }
         }
 
         // All attempts failed
-        Err(last_error.unwrap_or_else(|| {
+        Err(lasterror.unwrap_or_else(|| {
             CoreError::ComputationError(ErrorContext::new("All retry attempts failed"))
         }))
     }
 
     /// Check if we should retry for this error type
     fn should_retry(&self, error: &CoreError) -> bool {
-        let error_type = match error {
+        let errortype = match error {
             CoreError::ComputationError(_) => "ComputationError",
             CoreError::TimeoutError(_) => "TimeoutError",
             CoreError::IoError(_) => "IoError",
-            CoreError::MemoryError(_) => "MemoryError",
-            _ => return false, // Don't retry other error types by default
+            CoreError::MemoryError(_) => return false, // Don't retry memory errors
+            _ => return false,                         // Don't retry other error types by default
         };
 
-        self.policy.retry_on.contains(&error_type.to_string())
+        self.policy.retry_on.contains(&errortype.to_string())
     }
 
     /// Calculate delay for the given attempt
-    fn calculate_delay(&self, attempt: usize) -> Duration {
-        let base_delay_ms = self.policy.base_delay.as_millis() as f64;
-        let exponential_delay = base_delay_ms * self.policy.backoff_multiplier.powi(attempt as i32);
+    fn calculatedelay(&self, attempt: usize) -> Duration {
+        let mut rng = rand::rng();
+        let basedelay_ms = self.policy.basedelay.as_millis() as f64;
+        let exponentialdelay = basedelay_ms * self.policy.backoff_multiplier.powi(attempt as i32);
 
         // Add jitter
-        let jitter_range = exponential_delay * self.policy.jitter;
-        let jitter = (rand::random::<f64>() - 0.5) * 2.0 * jitter_range;
-        let delay_with_jitter = exponential_delay + jitter;
+        let jitter_range = exponentialdelay * self.policy.jitter;
+        let jitter = (rng.random::<f64>() - 0.5) * 2.0 * jitter_range;
+        let delay_with_jitter = exponentialdelay + jitter;
 
         // Cap at max delay
-        let final_delay = delay_with_jitter.min(self.policy.max_delay.as_millis() as f64);
+        let finaldelay = delay_with_jitter.min(self.policy.maxdelay.as_millis() as f64);
 
-        Duration::from_millis(final_delay.max(0.0) as u64)
+        Duration::from_millis(finaldelay.max(0.0) as u64)
     }
 }
 
 /// Fallback strategy for when primary operations fail
 pub trait FallbackStrategy<T>: Send + Sync {
     /// Execute the fallback strategy
-    fn execute(&self, original_error: &CoreError) -> CoreResult<T>;
+    fn error(&self, error: &CoreError) -> CoreResult<T>;
 
     /// Get the name of this fallback strategy
     fn name(&self) -> &str;
@@ -579,23 +590,23 @@ pub trait FallbackStrategy<T>: Send + Sync {
 
 /// Simple fallback that returns a default value
 pub struct DefaultValueFallback<T> {
-    default_value: T,
+    defaultvalue: T,
     name: String,
 }
 
 impl<T: Clone> DefaultValueFallback<T> {
     /// Create a new default value fallback
-    pub fn new(default_value: T, name: String) -> Self {
+    pub fn value(defaultvalue: T, name: String) -> Self {
         Self {
-            default_value,
+            defaultvalue,
             name,
         }
     }
 }
 
 impl<T: Clone + Send + Sync> FallbackStrategy<T> for DefaultValueFallback<T> {
-    fn execute(&self, _original_error: &CoreError) -> CoreResult<T> {
-        Ok(self.default_value.clone())
+    fn error(&self, error: &CoreError) -> CoreResult<T> {
+        Ok(self.defaultvalue.clone())
     }
 
     fn name(&self) -> &str {
@@ -605,7 +616,7 @@ impl<T: Clone + Send + Sync> FallbackStrategy<T> for DefaultValueFallback<T> {
 
 /// Resilient executor that combines circuit breaker, retry, and fallback
 pub struct ResilientExecutor<T> {
-    circuit_breaker: Option<Arc<CircuitBreaker>>,
+    circuitbreaker: Option<Arc<CircuitBreaker>>,
     retry_executor: Option<RetryExecutor>,
     fallback_strategy: Option<Box<dyn FallbackStrategy<T>>>,
 }
@@ -614,21 +625,21 @@ impl<T> ResilientExecutor<T> {
     /// Create a new resilient executor
     pub fn new() -> Self {
         Self {
-            circuit_breaker: None,
+            circuitbreaker: None,
             retry_executor: None,
             fallback_strategy: None,
         }
     }
 
     /// Add circuit breaker protection
-    pub fn with_circuit_breaker(mut self, circuit_breaker: Arc<CircuitBreaker>) -> Self {
-        self.circuit_breaker = Some(circuit_breaker);
+    pub fn with_circuitbreaker(mut self, circuitbreaker: Arc<CircuitBreaker>) -> Self {
+        self.circuitbreaker = Some(circuitbreaker);
         self
     }
 
     /// Add retry logic
-    pub fn with_retry(mut self, retry_policy: RetryPolicy) -> Self {
-        self.retry_executor = Some(RetryExecutor::new(retry_policy));
+    pub fn with_retrypolicy(mut self, retrypolicy: RetryPolicy) -> Self {
+        self.retry_executor = Some(RetryExecutor::policy(retrypolicy));
         self
     }
 
@@ -644,7 +655,7 @@ impl<T> ResilientExecutor<T> {
         F: Fn() -> CoreResult<T> + Clone,
     {
         let final_operation = || {
-            if let Some(cb) = &self.circuit_breaker {
+            if let Some(cb) = &self.circuitbreaker {
                 cb.execute(operation.clone())
             } else {
                 operation()
@@ -661,7 +672,7 @@ impl<T> ResilientExecutor<T> {
             Ok(value) => Ok(value),
             Err(error) => {
                 if let Some(fallback) = &self.fallback_strategy {
-                    fallback.execute(&error)
+                    fallback.error(&error)
                 } else {
                     Err(error)
                 }
@@ -681,7 +692,8 @@ static CIRCUIT_BREAKER_REGISTRY: std::sync::LazyLock<RwLock<HashMap<String, Arc<
     std::sync::LazyLock::new(|| RwLock::new(HashMap::new()));
 
 /// Get or create a circuit breaker
-pub fn get_circuit_breaker(name: &str) -> CoreResult<Arc<CircuitBreaker>> {
+#[allow(dead_code)]
+pub fn get_circuitbreaker(name: &str) -> CoreResult<Arc<CircuitBreaker>> {
     let registry = CIRCUIT_BREAKER_REGISTRY.read().map_err(|_| {
         CoreError::ComputationError(ErrorContext::new("Failed to read circuit breaker registry"))
     })?;
@@ -703,14 +715,15 @@ pub fn get_circuit_breaker(name: &str) -> CoreResult<Arc<CircuitBreaker>> {
         return Ok(cb.clone());
     }
 
-    let circuit_breaker = Arc::new(CircuitBreaker::new(name.to_string()));
-    registry.insert(name.to_string(), circuit_breaker.clone());
+    let circuitbreaker = Arc::new(CircuitBreaker::new(name.to_string()));
+    registry.insert(name.to_string(), circuitbreaker.clone());
 
-    Ok(circuit_breaker)
+    Ok(circuitbreaker)
 }
 
 /// List all registered circuit breakers
-pub fn list_circuit_breakers() -> CoreResult<Vec<CircuitBreakerStatus>> {
+#[allow(dead_code)]
+pub fn list_circuitbreakers() -> CoreResult<Vec<CircuitBreakerStatus>> {
     let registry = CIRCUIT_BREAKER_REGISTRY.read().map_err(|_| {
         CoreError::ComputationError(ErrorContext::new("Failed to read circuit breaker registry"))
     })?;
@@ -726,9 +739,9 @@ pub fn list_circuit_breakers() -> CoreResult<Vec<CircuitBreakerStatus>> {
 /// Convenience macros
 /// Execute with circuit breaker protection
 #[macro_export]
-macro_rules! with_circuit_breaker {
+macro_rules! with_circuitbreaker {
     ($name:expr, $operation:expr) => {{
-        let cb = $crate::error::circuit_breaker::get_circuit_breaker($name)?;
+        let cb = $crate::error::circuitbreaker::get_circuitbreaker($name)?;
         cb.execute(|| $operation)
     }};
 }
@@ -737,13 +750,13 @@ macro_rules! with_circuit_breaker {
 #[macro_export]
 macro_rules! with_retry {
     ($operation:expr) => {{
-        let retry_executor = $crate::error::circuit_breaker::RetryExecutor::new(
-            $crate::error::circuit_breaker::RetryPolicy::default(),
+        let retry_executor = $crate::error::circuitbreaker::RetryExecutor::policy(
+            $crate::error::circuitbreaker::RetryPolicy::default(),
         );
         retry_executor.execute(|| $operation)
     }};
     ($policy:expr, $operation:expr) => {{
-        let retry_executor = $crate::error::circuit_breaker::RetryExecutor::new($policy);
+        let retry_executor = $crate::error::circuitbreaker::RetryExecutor::policy($policy);
         retry_executor.execute(|| $operation)
     }};
 }
@@ -753,7 +766,7 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_circuit_breaker_states() {
+    fn test_circuitbreaker_states() {
         let cb = CircuitBreaker::new("test".to_string());
 
         // Should start in closed state
@@ -772,14 +785,14 @@ mod tests {
     }
 
     #[test]
-    fn test_circuit_breaker_retry_executor() {
+    fn test_circuitbreaker_retry_executor() {
         let policy = RetryPolicy {
             max_attempts: 3,
-            base_delay: Duration::from_millis(1), // Short delay for testing
+            basedelay: Duration::from_millis(1), // Short delay for testing
             ..Default::default()
         };
 
-        let retry_executor = RetryExecutor::new(policy);
+        let retry_executor = RetryExecutor::policy(policy);
         let mut attempt_count = 0;
 
         let result = std::cell::RefCell::new(attempt_count);
@@ -801,20 +814,20 @@ mod tests {
 
     #[test]
     fn test_fallback_strategy() {
-        let fallback = DefaultValueFallback::new(42, "test_fallback".to_string());
+        let fallback = DefaultValueFallback::value(42, "test_fallback".to_string());
         let error = CoreError::ComputationError(ErrorContext::new("test error"));
 
-        let result = fallback.execute(&error).unwrap();
+        let result = fallback.error(&error).unwrap();
         assert_eq!(result, 42);
     }
 
     #[test]
     fn test_resilient_executor() {
         let cb = Arc::new(CircuitBreaker::new("test".to_string()));
-        let fallback = Box::new(DefaultValueFallback::new("fallback", "test".to_string()));
+        let fallback = Box::new(DefaultValueFallback::value("fallback", "test".to_string()));
 
         let executor = ResilientExecutor::new()
-            .with_circuit_breaker(cb)
+            .with_circuitbreaker(cb)
             .with_fallback(fallback);
 
         let result = executor.execute(|| -> CoreResult<&str> {
@@ -826,13 +839,13 @@ mod tests {
     }
 
     #[test]
-    fn test_circuit_breaker_registry() {
-        let cb1 = get_circuit_breaker("test1").unwrap();
-        let cb2 = get_circuit_breaker("test1").unwrap(); // Should get same instance
+    fn test_circuitbreaker_registry() {
+        let cb1 = get_circuitbreaker("test1").unwrap();
+        let cb2 = get_circuitbreaker("test1").unwrap(); // Should get same instance
 
         assert!(Arc::ptr_eq(&cb1, &cb2));
 
-        let cb3 = get_circuit_breaker("test2").unwrap(); // Different instance
+        let cb3 = get_circuitbreaker("test2").unwrap(); // Different instance
         assert!(!Arc::ptr_eq(&cb1, &cb3));
     }
 }

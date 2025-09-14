@@ -252,6 +252,7 @@ thread_local! {
 ///
 /// This function first checks for a thread-local configuration, and falls back to the global configuration.
 #[must_use]
+#[allow(dead_code)]
 pub fn get_config() -> Config {
     // Try to get thread-local config first
     let thread_local = THREAD_LOCAL_CONFIG.with(|config| {
@@ -267,12 +268,14 @@ pub fn get_config() -> Config {
 }
 
 /// Set the global configuration
+#[allow(dead_code)]
 pub fn set_global_config(config: Config) {
     let mut global_config = GLOBAL_CONFIG.write().unwrap();
     *global_config = config;
 }
 
 /// Set a thread-local configuration
+#[allow(dead_code)]
 pub fn set_thread_local_config(config: Config) {
     THREAD_LOCAL_CONFIG.with(|thread_config| {
         let mut config_lock = thread_config.lock().unwrap();
@@ -281,6 +284,7 @@ pub fn set_thread_local_config(config: Config) {
 }
 
 /// Clear the thread-local configuration
+#[allow(dead_code)]
 pub fn clear_thread_local_config() {
     THREAD_LOCAL_CONFIG.with(|thread_config| {
         let mut config_lock = thread_config.lock().unwrap();
@@ -289,6 +293,7 @@ pub fn clear_thread_local_config() {
 }
 
 /// Set a global configuration value
+#[allow(dead_code)]
 pub fn set_config_value(key: &str, value: ConfigValue) {
     let mut global_config = GLOBAL_CONFIG.write().unwrap();
     global_config.set(key, value);
@@ -296,12 +301,14 @@ pub fn set_config_value(key: &str, value: ConfigValue) {
 
 /// Get a global configuration value
 #[must_use]
+#[allow(dead_code)]
 pub fn get_config_value(key: &str) -> Option<ConfigValue> {
     let config = get_config();
     config.get(key).cloned()
 }
 
 /// Set a thread-local configuration value
+#[allow(dead_code)]
 pub fn set_thread_local_config_value(key: &str, value: ConfigValue) {
     THREAD_LOCAL_CONFIG.with(|thread_config| {
         let mut config_lock = thread_config.lock().unwrap();
@@ -371,26 +378,35 @@ mod tests {
     }
 
     #[test]
-    #[ignore] // FIXME: This test has race conditions with other tests that use global config
     fn test_global_config() {
-        // This test modifies global state which can cause race conditions
-        // when running tests in parallel. Should be refactored to use
-        // thread-local config or run in isolation.
-        let original = get_config();
-        let mut new_config = Config::default();
-        new_config.set("test_value", ConfigValue::String("global".to_string()));
+        // Use a unique test key to avoid conflicts with other tests
+        let process_id = std::process::id();
+        let test_key = format!("{process_id}");
 
-        set_global_config(new_config);
+        // Store original value if it exists
+        let original_value = GLOBAL_CONFIG.read().unwrap().values.get(&test_key).cloned();
 
-        let config = get_config();
-        assert_eq!(config.get_string("test_value").unwrap(), "global");
+        // Set test value using a scoped lock to minimize interference
+        {
+            let mut global_config = GLOBAL_CONFIG.write().unwrap();
+            global_config.set(&test_key, ConfigValue::String("test_value".to_string()));
+        }
 
-        // Restore original config
-        set_global_config(original);
+        // Verify the value was set correctly
+        {
+            let config = get_config();
+            assert_eq!(config.get_string(&test_key).unwrap(), "test_value");
+        }
 
-        // Clean up by removing the test key
-        let mut final_config = GLOBAL_CONFIG.write().unwrap();
-        final_config.values.remove("test_value");
+        // Clean up by restoring original state
+        {
+            let mut global_config = GLOBAL_CONFIG.write().unwrap();
+            if let Some(original) = original_value {
+                global_config.set(&test_key, original);
+            } else {
+                global_config.values.remove(&test_key);
+            }
+        }
     }
 
     #[test]

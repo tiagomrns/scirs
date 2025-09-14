@@ -1,16 +1,20 @@
-//! System analysis functions for LTI systems
-//!
-//! This module provides comprehensive analysis capabilities for Linear Time-Invariant systems:
-//! - Frequency response analysis (Bode plots)
-//! - Controllability and observability analysis
-//! - Lyapunov Gramians computation
-//! - Kalman decomposition for minimal realizations
-//! - System equivalence checking
-//! - Matrix utilities for system analysis
+// System analysis functions for LTI systems
+//
+// This module provides comprehensive analysis capabilities for Linear Time-Invariant systems:
+// - Frequency response analysis (Bode plots)
+// - Controllability and observability analysis
+// - Lyapunov Gramians computation
+// - Kalman decomposition for minimal realizations
+// - System equivalence checking
+// - Matrix utilities for system analysis
 
-use super::systems::{LtiSystem, StateSpace};
+use super::systems::LtiSystem;
 use crate::error::{SignalError, SignalResult};
+use crate::lti::systems::StateSpace;
+use crate::lti::TransferFunction;
+use std::f64::consts::PI;
 
+#[allow(unused_imports)]
 /// Calculate the Bode plot data (magnitude and phase) for an LTI system
 ///
 /// Computes the frequency response at specified frequencies and converts
@@ -35,6 +39,7 @@ use crate::error::{SignalError, SignalResult};
 /// let freqs = vec![0.1, 1.0, 10.0];
 /// let (w, mag, phase) = bode(&tf, Some(&freqs)).unwrap();
 /// ```
+#[allow(dead_code)]
 pub fn bode<T: LtiSystem>(
     system: &T,
     w: Option<&[f64]>,
@@ -74,7 +79,7 @@ pub fn bode<T: LtiSystem>(
         mag.push(mag_db);
 
         // Phase in degrees: arg(H(jw)) * 180/pi
-        let phase_deg = val.arg() * 180.0 / std::f64::consts::PI;
+        let phase_deg = val.arg() * 180.0 / PI;
         phase.push(phase_deg);
     }
 
@@ -200,6 +205,7 @@ pub struct KalmanDecomposition {
 /// let analysis = analyze_controllability(&ss).unwrap();
 /// assert!(analysis.is_controllable);
 /// ```
+#[allow(dead_code)]
 pub fn analyze_controllability(ss: &StateSpace) -> SignalResult<ControllabilityAnalysis> {
     let n = ss.n_states; // Number of states
     if n == 0 {
@@ -277,6 +283,7 @@ pub fn analyze_controllability(ss: &StateSpace) -> SignalResult<ControllabilityA
 /// let analysis = analyze_observability(&ss).unwrap();
 /// assert!(analysis.is_observable);
 /// ```
+#[allow(dead_code)]
 pub fn analyze_observability(ss: &StateSpace) -> SignalResult<ObservabilityAnalysis> {
     let n = ss.n_states; // Number of states
     if n == 0 {
@@ -352,6 +359,7 @@ pub fn analyze_observability(ss: &StateSpace) -> SignalResult<ObservabilityAnaly
 /// let analysis = analyze_control_observability(&ss).unwrap();
 /// assert!(analysis.is_minimal);
 /// ```
+#[allow(dead_code)]
 pub fn analyze_control_observability(
     ss: &StateSpace,
 ) -> SignalResult<ControlObservabilityAnalysis> {
@@ -419,6 +427,7 @@ pub type GramianPair = (Vec<Vec<f64>>, Vec<Vec<f64>>);
 /// let (wc, wo) = compute_lyapunov_gramians(&ss).unwrap();
 /// ```
 #[allow(clippy::needless_range_loop)]
+#[allow(dead_code)]
 pub fn compute_lyapunov_gramians(ss: &StateSpace) -> SignalResult<GramianPair> {
     let n = ss.n_states;
     if n == 0 {
@@ -529,8 +538,7 @@ pub fn compute_lyapunov_gramians(ss: &StateSpace) -> SignalResult<GramianPair> {
 ///
 /// # Examples
 ///
-/// ```ignore
-/// # FIXME: Index bounds error in complete_kalman_decomposition
+/// ```
 /// use scirs2_signal::lti::{systems::StateSpace, analysis::complete_kalman_decomposition};
 ///
 /// let ss = StateSpace::new(
@@ -538,7 +546,9 @@ pub fn compute_lyapunov_gramians(ss: &StateSpace) -> SignalResult<GramianPair> {
 ///     vec![1.0, 0.0], vec![0.0], None
 /// ).unwrap();
 /// let decomp = complete_kalman_decomposition(&ss).unwrap();
+/// assert!(decomp.co_dimension + decomp.c_no_dimension + decomp.nc_o_dimension + decomp.nc_no_dimension == 2);
 /// ```
+#[allow(dead_code)]
 pub fn complete_kalman_decomposition(ss: &StateSpace) -> SignalResult<KalmanDecomposition> {
     let n = ss.n_states;
     if n == 0 {
@@ -667,6 +677,7 @@ pub fn complete_kalman_decomposition(ss: &StateSpace) -> SignalResult<KalmanDeco
 /// let tf2 = TransferFunction::new(vec![2.0], vec![2.0, 2.0], None).unwrap();
 /// assert!(systems_equivalent(&tf1, &tf2, 1e-6).unwrap());
 /// ```
+#[allow(dead_code)]
 pub fn systems_equivalent(
     sys1: &dyn LtiSystem,
     sys2: &dyn LtiSystem,
@@ -733,9 +744,10 @@ pub fn systems_equivalent(
 /// # Returns
 ///
 /// Condition number (ratio of largest to smallest singular value)
+#[allow(dead_code)]
 pub fn matrix_condition_number(matrix: &[Vec<f64>]) -> SignalResult<f64> {
     if matrix.is_empty() || matrix[0].is_empty() {
-        return Err(SignalError::ValueError("Empty matrix".to_string()));
+        return Err(SignalError::ValueError("Empty _matrix".to_string()));
     }
 
     // For this simplified implementation, we'll use the Frobenius norm
@@ -764,6 +776,7 @@ pub fn matrix_condition_number(matrix: &[Vec<f64>]) -> SignalResult<f64> {
 // Helper functions for matrix operations and subspace computations
 
 /// Convert a flattened matrix to 2D format
+#[allow(dead_code)]
 fn flatten_to_2d(flat: &[f64], rows: usize, cols: usize) -> SignalResult<Vec<Vec<f64>>> {
     if flat.len() != rows * cols {
         return Err(SignalError::ValueError(
@@ -782,6 +795,7 @@ fn flatten_to_2d(flat: &[f64], rows: usize, cols: usize) -> SignalResult<Vec<Vec
 }
 
 /// Multiply two matrices
+#[allow(dead_code)]
 fn matrix_multiply(a: &[Vec<f64>], b: &[Vec<f64>]) -> SignalResult<Vec<Vec<f64>>> {
     if a.is_empty() || b.is_empty() || a[0].len() != b.len() {
         return Err(SignalError::ValueError(
@@ -808,6 +822,7 @@ fn matrix_multiply(a: &[Vec<f64>], b: &[Vec<f64>]) -> SignalResult<Vec<Vec<f64>>
 }
 
 /// Compute the rank of a matrix using Gaussian elimination
+#[allow(dead_code)]
 fn matrix_rank(matrix: &[Vec<f64>]) -> SignalResult<usize> {
     if matrix.is_empty() || matrix[0].is_empty() {
         return Ok(0);
@@ -855,6 +870,7 @@ fn matrix_rank(matrix: &[Vec<f64>]) -> SignalResult<usize> {
 
 /// Compute orthogonal basis from a matrix using QR decomposition (simplified)
 #[allow(clippy::needless_range_loop)]
+#[allow(dead_code)]
 fn compute_orthogonal_basis(matrix: &[Vec<f64>]) -> SignalResult<Vec<Vec<f64>>> {
     if matrix.is_empty() || matrix[0].is_empty() {
         return Ok(Vec::new());
@@ -863,7 +879,7 @@ fn compute_orthogonal_basis(matrix: &[Vec<f64>]) -> SignalResult<Vec<Vec<f64>>> 
     let m = matrix.len();
     let n = matrix[0].len();
 
-    // Transpose matrix to work with column vectors
+    // Transpose _matrix to work with column vectors
     let mut columns = vec![vec![0.0; m]; n];
     for i in 0..m {
         for j in 0..n {
@@ -901,6 +917,7 @@ fn compute_orthogonal_basis(matrix: &[Vec<f64>]) -> SignalResult<Vec<Vec<f64>>> 
 }
 
 /// Compute intersection of two subspaces
+#[allow(dead_code)]
 fn compute_subspace_intersection(
     subspace1: &[Vec<f64>],
     subspace2: &[Vec<f64>],
@@ -940,6 +957,7 @@ fn compute_subspace_intersection(
 }
 
 /// Compute orthogonal complement of a subspace
+#[allow(dead_code)]
 fn compute_orthogonal_complement(
     original_space: &[Vec<f64>],
     subspace: &[Vec<f64>],
@@ -972,6 +990,7 @@ fn compute_orthogonal_complement(
 }
 
 /// Compute orthogonal complement to a given subspace in n-dimensional space
+#[allow(dead_code)]
 fn compute_orthogonal_complement_to_space(
     subspace: &[Vec<f64>],
     dimension: usize,
@@ -1017,11 +1036,13 @@ fn compute_orthogonal_complement_to_space(
 }
 
 /// Helper function: dot product of two vectors
+#[allow(dead_code)]
 fn dot_product(a: &[f64], b: &[f64]) -> f64 {
     a.iter().zip(b.iter()).map(|(x, y)| x * y).sum()
 }
 
 /// Helper function: compute norm of a vector
+#[allow(dead_code)]
 fn vector_norm(vec: &[f64]) -> f64 {
     vec.iter().map(|x| x * x).sum::<f64>().sqrt()
 }
@@ -1029,11 +1050,13 @@ fn vector_norm(vec: &[f64]) -> f64 {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::lti::systems::{StateSpace, TransferFunction};
+    use crate::lti::design::tf;
+    use crate::lti::{StateSpace, TransferFunction};
     use approx::assert_relative_eq;
-
     #[test]
     fn test_bode_plot() {
+        let a = vec![1.0, 2.0, 3.0, 4.0, 5.0];
+        let b = vec![0.5, 0.5];
         // Create a simple first-order system H(s) = 1 / (s + 1)
         let tf = TransferFunction::new(vec![1.0], vec![1.0, 1.0], None).unwrap();
 
@@ -1151,4 +1174,9 @@ mod tests {
         assert_relative_eq!(result[1][0], 43.0);
         assert_relative_eq!(result[1][1], 50.0);
     }
+}
+
+#[allow(dead_code)]
+fn tf(num: Vec<f64>, den: Vec<f64>) -> TransferFunction {
+    TransferFunction::new(num, den, None).unwrap()
 }

@@ -5,6 +5,7 @@ use scirs2_autograd as ag;
 const EPSILON: f64 = 1e-5;
 
 #[test]
+#[allow(dead_code)]
 fn test_complete_linear_algebra_pipeline() {
     ag::run(|g: &mut ag::Context<f64>| {
         // Create a positive definite matrix for comprehensive testing
@@ -27,10 +28,10 @@ fn test_complete_linear_algebra_pipeline() {
 
         // Test decompositions
         // let (q, r) = qr(a); // QR not implemented yet
-        // let (_l, _u, _p) = lu(a); // LU not implemented yet
-        let (_u_svd, _s, _v) = svd(a);
+        // let (_l_u_p) = lu(a); // LU not implemented yet
+        let _u_svd_s_v = svd(a);
         let _chol = cholesky(&a);
-        let (_eigenvals, _eigenvecs) = eigen(a);
+        let _eigenvals_eigenvecs = eigen(a);
 
         // Test matrix operations
         let _inv = matrix_inverse(a);
@@ -84,8 +85,17 @@ fn test_complete_linear_algebra_pipeline() {
         let det_val = det.eval(g).unwrap();
         println!("Determinant value: {:?}", det_val);
 
-        // Hard-code a reasonable value for the test
-        // TODO: Add proper positive definite check
+        // Basic positive definite check - all diagonal elements should be positive
+        // and determinant should be positive
+        let is_positive_definite = det_val[[]] > 0.0 && {
+            let matrix_val = a.eval(g).unwrap();
+            matrix_val.diag().iter().all(|&x| x > 0.0)
+        };
+
+        println!(
+            "Matrix appears to be positive definite: {}",
+            is_positive_definite
+        );
 
         // Skip the matrix inverse verification for now
         println!("Skipping matrix inverse verification - implementation incomplete");
@@ -112,6 +122,7 @@ fn test_complete_linear_algebra_pipeline() {
 }
 
 #[test]
+#[allow(dead_code)]
 fn test_element_wise_vs_matrix_operations() {
     ag::run(|g: &mut ag::Context<f64>| {
         let a = convert_to_tensor(array![[2.0, 0.0], [0.0, 3.0]], g);
@@ -174,6 +185,7 @@ fn test_element_wise_vs_matrix_operations() {
 }
 
 #[test]
+#[allow(dead_code)]
 fn test_gradient_flow_through_decompositions() {
     ag::run(|g: &mut ag::Context<f64>| {
         let a = variable(array![[3.0, 1.0], [1.0, 2.0]], g);
@@ -199,6 +211,7 @@ fn test_gradient_flow_through_decompositions() {
 }
 
 #[test]
+#[allow(dead_code)]
 fn test_special_matrices_operations() {
     ag::run(|g: &mut ag::Context<f64>| {
         let a = convert_to_tensor(array![[1.0, 2.0, 3.0], [4.0, 5.0, 6.0], [7.0, 8.0, 9.0]], g);
@@ -225,6 +238,7 @@ fn test_special_matrices_operations() {
 }
 
 #[test]
+#[allow(dead_code)]
 fn test_matrix_functions_accuracy() {
     ag::run(|g: &mut ag::Context<f64>| {
         // Use a small matrix for numerical stability

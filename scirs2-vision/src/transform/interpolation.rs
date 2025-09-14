@@ -48,6 +48,7 @@ impl Default for InterpolationMethod {
 /// # Returns
 ///
 /// * Result containing resized image
+#[allow(dead_code)]
 pub fn resize(
     src: &DynamicImage,
     width: u32,
@@ -150,6 +151,7 @@ pub fn resize(
 /// # Returns
 ///
 /// * Interpolated pixel value
+#[allow(dead_code)]
 fn bilinear_interpolate(src: &DynamicImage, x: f64, y: f64) -> Rgba<u8> {
     let (width, height) = src.dimensions();
 
@@ -190,6 +192,7 @@ fn bilinear_interpolate(src: &DynamicImage, x: f64, y: f64) -> Rgba<u8> {
 }
 
 /// Cubic Hermite spline
+#[allow(dead_code)]
 fn cubic_hermite(x: f64) -> f64 {
     // Cubic Hermite spline kernel
     let x = x.abs();
@@ -212,6 +215,7 @@ fn cubic_hermite(x: f64) -> f64 {
 /// # Returns
 ///
 /// * Interpolated pixel value
+#[allow(dead_code)]
 fn bicubic_interpolate(src: &DynamicImage, x: f64, y: f64) -> Rgba<u8> {
     let (width, height) = src.dimensions();
 
@@ -288,6 +292,7 @@ fn bicubic_interpolate(src: &DynamicImage, x: f64, y: f64) -> Rgba<u8> {
 }
 
 /// Lanczos kernel function
+#[allow(dead_code)]
 fn lanczos(x: f64, a: i32) -> f64 {
     if x.abs() < f64::EPSILON {
         return 1.0;
@@ -313,6 +318,7 @@ fn lanczos(x: f64, a: i32) -> f64 {
 /// # Returns
 ///
 /// * Interpolated pixel value
+#[allow(dead_code)]
 fn lanczos_interpolate(src: &DynamicImage, x: f64, y: f64, a: i32) -> Rgba<u8> {
     let (width, height) = src.dimensions();
 
@@ -407,13 +413,14 @@ fn lanczos_interpolate(src: &DynamicImage, x: f64, y: f64, a: i32) -> Rgba<u8> {
 /// # Returns
 ///
 /// * Kernel as a 1D array
-fn create_kernel(kernel_func: fn(f64) -> f64, kernel_size: usize, scale: f64) -> Array1<f64> {
+#[allow(dead_code)]
+fn create_kernel(_kernelfunc: fn(f64) -> f64, kernel_size: usize, scale: f64) -> Array1<f64> {
     let mut kernel = Array1::zeros(kernel_size);
     let radius = (kernel_size as f64 - 1.0) / 2.0;
 
     for i in 0..kernel_size {
         let x = (i as f64 - radius) / scale;
-        kernel[i] = kernel_func(x);
+        kernel[i] = _kernelfunc(x);
     }
 
     // Normalize kernel
@@ -436,6 +443,7 @@ fn create_kernel(kernel_func: fn(f64) -> f64, kernel_size: usize, scale: f64) ->
 /// # Returns
 ///
 /// * Convolved image
+#[allow(dead_code)]
 pub fn convolve_1d(
     src: &Array2<f64>,
     kernel: &Array1<f64>,
@@ -516,6 +524,7 @@ pub fn convolve_1d(
 /// # Returns
 ///
 /// * Resized image
+#[allow(dead_code)]
 pub fn resize_convolution(
     src: &DynamicImage,
     width: u32,
@@ -625,11 +634,13 @@ pub fn resize_convolution(
 }
 
 // Lanczos filter kernel function
+#[allow(dead_code)]
 fn lanczos_kernel(x: f64) -> f64 {
     lanczos(x, 3)
 }
 
 // Bicubic filter kernel function
+#[allow(dead_code)]
 fn bicubic_kernel(x: f64) -> f64 {
     cubic_hermite(x.abs())
 }
@@ -645,6 +656,7 @@ fn bicubic_kernel(x: f64) -> f64 {
 /// # Returns
 ///
 /// * Resized image
+#[allow(dead_code)]
 pub fn resize_lanczos(src: &DynamicImage, width: u32, height: u32) -> Result<DynamicImage> {
     resize_convolution(src, width, height, lanczos_kernel, 7)
 }
@@ -660,6 +672,7 @@ pub fn resize_lanczos(src: &DynamicImage, width: u32, height: u32) -> Result<Dyn
 /// # Returns
 ///
 /// * Resized image
+#[allow(dead_code)]
 pub fn resize_bicubic(src: &DynamicImage, width: u32, height: u32) -> Result<DynamicImage> {
     resize_convolution(src, width, height, bicubic_kernel, 5)
 }
@@ -676,6 +689,7 @@ pub fn resize_bicubic(src: &DynamicImage, width: u32, height: u32) -> Result<Dyn
 /// # Returns
 ///
 /// * Filtered image
+#[allow(dead_code)]
 fn guided_filter(
     guide: &Array2<f64>,
     src: &Array2<f64>,
@@ -793,6 +807,7 @@ fn guided_filter(
 /// # Returns
 ///
 /// * Edge-preserving resized image
+#[allow(dead_code)]
 pub fn resize_edge_preserving(src: &DynamicImage, width: u32, height: u32) -> Result<DynamicImage> {
     // First resize using high-quality Lanczos
     let initial_resize = resize_lanczos(src, width, height)?;

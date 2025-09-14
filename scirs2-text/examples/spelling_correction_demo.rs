@@ -77,6 +77,7 @@ const COMMON_MISSPELLINGS: &[(&str, &str)] = &[
     ("whereever", "wherever"),
 ];
 
+#[allow(dead_code)]
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("Dictionary-based Spelling Correction Demo\n");
 
@@ -105,6 +106,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 }
 
 // Basic correction of common misspellings
+#[allow(dead_code)]
 fn basic_correction_demo(
     corrector: &DictionaryCorrector,
 ) -> Result<(), Box<dyn std::error::Error>> {
@@ -119,10 +121,7 @@ fn basic_correction_demo(
         let corrected = corrector.correct(misspelled)?;
         let success = if &corrected == expected { "✓" } else { "✗" };
 
-        println!(
-            "{:<20} {:<20} {:<20} {}",
-            misspelled, corrected, expected, success
-        );
+        println!("{misspelled:<20} {corrected:<20} {expected:<20} {success}");
     }
 
     // Count successful corrections
@@ -146,6 +145,7 @@ fn basic_correction_demo(
 }
 
 // Create a specialized spelling corrector for programming-related terms
+#[allow(dead_code)]
 fn create_specialized_corrector() -> DictionaryCorrector {
     let mut dictionary = HashMap::new();
 
@@ -192,6 +192,7 @@ fn create_specialized_corrector() -> DictionaryCorrector {
 }
 
 // Compare the basic and specialized correctors
+#[allow(dead_code)]
 fn compare_correctors(
     basic: &DictionaryCorrector,
     specialized: &DictionaryCorrector,
@@ -222,10 +223,7 @@ fn compare_correctors(
         let basic_correction = basic.correct(misspelled)?;
         let specialized_correction = specialized.correct(misspelled)?;
 
-        println!(
-            "{:<15} {:<15} {:<15}",
-            misspelled, basic_correction, specialized_correction
-        );
+        println!("{misspelled:<15} {basic_correction:<15} {specialized_correction:<15}");
     }
 
     println!("\nDictionary sizes:");
@@ -239,6 +237,7 @@ fn compare_correctors(
 }
 
 // Test performance of different correctors and configurations
+#[allow(dead_code)]
 fn performance_test(
     basic: &DictionaryCorrector,
     specialized: &DictionaryCorrector,
@@ -248,7 +247,7 @@ fn performance_test(
     // Create a list of misspelled words to test
     let test_words: Vec<&str> = COMMON_MISSPELLINGS
         .iter()
-        .map(|(misspelled, _)| *misspelled)
+        .map(|(misspelled_, _)| *misspelled_)
         .collect();
 
     // Measure performance of basic corrector
@@ -284,36 +283,34 @@ fn performance_test(
     let strict_time = start.elapsed();
 
     println!("Time to correct {} words:", test_words.len());
-    println!("  - Standard dictionary: {:?}", basic_time);
-    println!("  - Specialized dictionary: {:?}", specialized_time);
-    println!(
-        "  - Strict configuration (max_edit_distance=1): {:?}",
-        strict_time
-    );
+    println!("  - Standard dictionary: {basic_time:?}");
+    println!("  - Specialized dictionary: {specialized_time:?}");
+    println!("  - Strict configuration (max_edit_distance=1): {strict_time:?}");
 
     Ok(())
 }
 
 // Demonstrate text-wide correction
+#[allow(dead_code)]
 fn text_correction_demo(corrector: &DictionaryCorrector) -> Result<(), Box<dyn std::error::Error>> {
     println!("\n=== Text Correction Demo ===\n");
 
     println!("Original text with misspellings:");
-    println!("{}\n", TEXT_WITH_MISSPELLINGS);
+    println!("{TEXT_WITH_MISSPELLINGS}\n");
 
     // Correct the text
-    let corrected_text = corrector.correct_text(TEXT_WITH_MISSPELLINGS)?;
+    let correctedtext = corrector.correcttext(TEXT_WITH_MISSPELLINGS)?;
 
     println!("Corrected text:");
-    println!("{}\n", corrected_text);
+    println!("{correctedtext}\n");
 
     println!("Expected text:");
-    println!("{}\n", EXPECTED_CORRECTED_TEXT);
+    println!("{EXPECTED_CORRECTED_TEXT}\n");
 
     // Calculate how many misspellings were corrected
     let original_words: Vec<&str> = TEXT_WITH_MISSPELLINGS.split_whitespace().collect();
 
-    let corrected_words: Vec<&str> = corrected_text.split_whitespace().collect();
+    let corrected_words: Vec<&str> = correctedtext.split_whitespace().collect();
 
     let expected_words: Vec<&str> = EXPECTED_CORRECTED_TEXT.split_whitespace().collect();
 
@@ -344,6 +341,7 @@ fn text_correction_demo(corrector: &DictionaryCorrector) -> Result<(), Box<dyn s
 }
 
 // Demonstrate custom configurations
+#[allow(dead_code)]
 fn custom_config_demo() -> Result<(), Box<dyn std::error::Error>> {
     println!("\n=== Custom Configuration Demo ===\n");
 
@@ -404,7 +402,7 @@ fn custom_config_demo() -> Result<(), Box<dyn std::error::Error>> {
     // Print table header
     print!("{:<30}", "Configuration");
     for word in &test_cases {
-        print!("{:<15}", word);
+        print!("{word:<15}");
     }
     println!();
     println!("{:-<90}", "");
@@ -413,11 +411,11 @@ fn custom_config_demo() -> Result<(), Box<dyn std::error::Error>> {
     for (name, config) in &configs {
         let corrector = DictionaryCorrector::new(config.clone());
 
-        print!("{:<30}", name);
+        print!("{name:<30}");
 
         for word in &test_cases {
             let corrected = corrector.correct(word)?;
-            print!("{:<15}", corrected);
+            print!("{corrected:<15}");
         }
 
         println!();
@@ -430,7 +428,7 @@ fn custom_config_demo() -> Result<(), Box<dyn std::error::Error>> {
     for word in &test_cases {
         let suggestions = corrector.get_suggestions(word, 3)?;
 
-        println!("Suggestions for '{}': ", word);
+        println!("Suggestions for '{word}': ");
         for (i, suggestion) in suggestions.iter().enumerate() {
             println!("  {}. {}", i + 1, suggestion);
         }

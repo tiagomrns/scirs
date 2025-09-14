@@ -4,6 +4,7 @@ use rand_pcg::Pcg64;
 use scirs2_stats::regression::*;
 
 #[test]
+#[allow(dead_code)]
 fn test_linear_regression() {
     // Create a design matrix with 3 variables (including a constant term)
     let x = Array2::from_shape_vec(
@@ -31,6 +32,7 @@ fn test_linear_regression() {
 }
 
 #[test]
+#[allow(dead_code)]
 fn test_polynomial_regression() {
     let x = array![0.0, 1.0, 2.0, 3.0, 4.0];
     let y = array![1.0, 3.0, 9.0, 19.0, 33.0]; // y = 1 + 2x + x^2
@@ -47,6 +49,7 @@ fn test_polynomial_regression() {
 // Test removed due to inconsistent behavior
 
 #[test]
+#[allow(dead_code)]
 fn test_theil_slopes() {
     // Create data with an outlier
     let x = array![1.0, 2.0, 3.0, 4.0, 5.0];
@@ -59,6 +62,7 @@ fn test_theil_slopes() {
 }
 
 #[test]
+#[allow(dead_code)]
 fn test_ransac() {
     // Create data with outliers
     let x_values = array![1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0];
@@ -78,23 +82,26 @@ fn test_ransac() {
 }
 
 #[test]
+#[allow(dead_code)]
 fn test_ransac_advanced() {
     // Create a dataset with multiple outliers (about 30% outliers)
     let mut x = Vec::new();
     let mut y = Vec::new();
 
     // Create inliers following y = 3x + 2 with some noise
+    use rand::Rng;
+    let mut rng = rand::rng();
     for i in 0..20 {
         let x_val = i as f64;
-        let y_val = 3.0 * x_val + 2.0 + (rand::random::<f64>() - 0.5);
+        let y_val = 3.0 * x_val + 2.0 + (rng.random::<f64>() - 0.5);
         x.push(x_val);
         y.push(y_val);
     }
 
     // Add outliers that don't follow the pattern
     for _ in 0..8 {
-        let x_val = rand::random::<f64>() * 20.0;
-        let y_val = rand::random::<f64>() * 50.0; // Completely random y values
+        let x_val = rng.random::<f64>() * 20.0;
+        let y_val = rng.random::<f64>() * 50.0; // Completely random y values
         x.push(x_val);
         y.push(y_val);
     }
@@ -140,6 +147,7 @@ fn test_ransac_advanced() {
 }
 
 #[test]
+#[allow(dead_code)]
 fn test_ransac_multivariate() {
     // Create a multivariate dataset with outliers
     // The true model is y = 1 + 2*x1 + 3*x2
@@ -192,6 +200,7 @@ fn test_ransac_multivariate() {
 }
 
 #[test]
+#[allow(dead_code)]
 fn test_huber_regression() {
     // Create data with outliers
     let x = Array2::from_shape_vec(
@@ -211,6 +220,7 @@ fn test_huber_regression() {
 }
 
 #[test]
+#[allow(dead_code)]
 fn test_huber_regression_advanced() {
     // Create a design matrix with 3 variables (including a constant term)
     let x = Array2::from_shape_vec(
@@ -228,16 +238,19 @@ fn test_huber_regression_advanced() {
     // y = 1 + 2*x₁ + 3*x₂ + noise + some outliers
     let mut y = Vec::with_capacity(20);
 
+    // Add a temporary RNG for generating outliers
+    use rand::Rng;
+    let mut temp_rng = rand::rng();
     for i in 0..20 {
         let noise = if i < 17 {
             // Regular noise for most observations
-            (rand::random::<f64>() - 0.5) * 0.5
+            (temp_rng.random::<f64>() - 0.5) * 0.5
         } else {
             // Large outliers for last 3 observations
-            if rand::random::<bool>() {
-                10.0 + rand::random::<f64>() * 5.0 // Large positive outlier
+            if temp_rng.random::<bool>() {
+                10.0 + temp_rng.random::<f64>() * 5.0 // Large positive outlier
             } else {
-                -10.0 - rand::random::<f64>() * 5.0 // Large negative outlier
+                -10.0 - temp_rng.random::<f64>() * 5.0 // Large negative outlier
             }
         };
 
@@ -286,9 +299,10 @@ fn test_huber_regression_advanced() {
 }
 
 #[test]
+#[allow(dead_code)]
 fn test_huber_regression_with_regularization() {
     // Use a seeded RNG for reproducible tests
-    let mut rng = Pcg64::seed_from_u64(42);
+    let mut rng = Pcg64::from_seed([42; 32]);
 
     // Create a design matrix with moderately correlated variables
     // to test L2 regularization in Huber regression
@@ -378,6 +392,7 @@ fn test_huber_regression_with_regularization() {
 }
 
 #[test]
+#[allow(dead_code)]
 fn test_regression_summary() {
     // Create a simple linear model
     let x = Array2::from_shape_vec(
@@ -404,6 +419,7 @@ fn test_regression_summary() {
 }
 
 #[test]
+#[allow(dead_code)]
 fn test_predict() {
     // Fit a model
     let x = Array2::from_shape_vec(
@@ -437,6 +453,7 @@ fn test_predict() {
 }
 
 #[test]
+#[allow(dead_code)]
 fn test_compare_robust_methods() {
     // Since we're hitting some type inference issues with Float and Scalar traits,
     // let's simplify this test to focus on the basic functionality

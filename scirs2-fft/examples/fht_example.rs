@@ -3,7 +3,6 @@
 //! This example shows how to use the Fast Hankel Transform for various applications.
 
 use scirs2_fft::{fht, fht_sample_points, fhtoffset, ifht};
-// use std::f64::consts::PI;  // Unused import
 
 /// J0 Bessel function approximation for testing
 #[allow(dead_code)]
@@ -15,6 +14,7 @@ fn bessel_j0(x: f64) -> f64 {
     }
 }
 
+#[allow(dead_code)]
 fn main() {
     println!("Fast Hankel Transform Example");
     println!("============================");
@@ -33,6 +33,7 @@ fn main() {
     example_optimal_offset();
 }
 
+#[allow(dead_code)]
 fn example_basic_fht() {
     println!("Example 1: Basic FHT with order 0");
     println!("---------------------------------");
@@ -56,7 +57,7 @@ fn example_basic_fht() {
 
     // The Hankel transform of a Gaussian is also a Gaussian
     // with reciprocal width
-    println!("Input: Gaussian with σ = {}", sigma);
+    println!("Input: Gaussian with σ = {sigma}");
     println!("Transform: Should be Gaussian with σ' ≈ {}", 1.0 / sigma);
 
     // Find the peak of the transform
@@ -64,7 +65,7 @@ fn example_basic_fht() {
         .iter()
         .position(|&x| x == f_transform.iter().fold(f64::NEG_INFINITY, |a, &b| a.max(b)))
         .unwrap();
-    println!("Peak at index: {}", max_idx);
+    println!("Peak at index: {max_idx}");
 
     // Test inverse transform
     let f_recovered = ifht(&f_transform, dln, mu, None, None).unwrap();
@@ -77,10 +78,11 @@ fn example_basic_fht() {
         .sum::<f64>()
         / n as f64;
 
-    println!("Average recovery error: {:.2e}", error);
+    println!("Average recovery error: {error:.2e}");
     println!();
 }
 
+#[allow(dead_code)]
 fn example_different_orders() {
     println!("Example 2: FHT with different orders");
     println!("-----------------------------------");
@@ -92,7 +94,7 @@ fn example_different_orders() {
     let orders = vec![0.0, 0.5, 1.0, 2.0];
 
     for mu in orders {
-        println!("Testing order μ = {}", mu);
+        println!("Testing order μ = {mu}");
 
         // Create a simple test signal
         let r = fht_sample_points(n, dln, 0.0);
@@ -107,11 +109,12 @@ fn example_different_orders() {
 
         // Simple check: transform should be non-zero
         let norm: f64 = f_transform.iter().map(|x| x * x).sum::<f64>().sqrt();
-        println!("  Transform norm: {:.3e}", norm);
+        println!("  Transform norm: {norm:.3e}");
     }
     println!();
 }
 
+#[allow(dead_code)]
 fn example_biased_transform() {
     println!("Example 3: Biased transform for power laws");
     println!("-----------------------------------------");
@@ -135,9 +138,9 @@ fn example_biased_transform() {
     let norm_unbiased: f64 = f_unbiased.iter().map(|x| x * x).sum::<f64>().sqrt();
     let norm_biased: f64 = f_biased.iter().map(|x| x * x).sum::<f64>().sqrt();
 
-    println!("Power law: r^(-{})", alpha);
-    println!("Unbiased transform norm: {:.3e}", norm_unbiased);
-    println!("Biased transform norm: {:.3e}", norm_biased);
+    println!("Power law: r^(-{alpha})");
+    println!("Unbiased transform norm: {norm_unbiased:.3e}");
+    println!("Biased transform norm: {norm_biased:.3e}");
     println!(
         "Ratio (biased/unbiased): {:.3}",
         norm_biased / norm_unbiased
@@ -145,6 +148,7 @@ fn example_biased_transform() {
     println!();
 }
 
+#[allow(dead_code)]
 fn example_optimal_offset() {
     println!("Example 4: Optimal offset calculation");
     println!("------------------------------------");
@@ -157,7 +161,7 @@ fn example_optimal_offset() {
 
     for bias in bias_values {
         let offset = fhtoffset(dln, mu, None, Some(bias)).unwrap();
-        println!("Bias = {}, Optimal offset = {}", bias, offset);
+        println!("Bias = {bias}, Optimal offset = {offset}");
     }
 
     println!();
@@ -174,7 +178,7 @@ fn example_optimal_offset() {
     for offset in offsets {
         let f_transform = fht(&f, dln, mu, Some(offset), None).unwrap();
         let norm: f64 = f_transform.iter().map(|x| x * x).sum::<f64>().sqrt();
-        println!("  Offset = {}, Transform norm = {:.3e}", offset, norm);
+        println!("  Offset = {offset}, Transform norm = {norm:.3e}");
     }
     println!();
 }

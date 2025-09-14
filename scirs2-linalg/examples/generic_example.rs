@@ -4,6 +4,7 @@ use ndarray::array;
 use scirs2_linalg::generic::PrecisionSelector;
 use scirs2_linalg::prelude::*;
 
+#[allow(dead_code)]
 fn main() {
     println!("Type-generic linear algebra operations\n");
 
@@ -17,6 +18,7 @@ fn main() {
     demo_precision_selection();
 }
 
+#[allow(dead_code)]
 fn demo_f64() {
     println!("=== f64 operations ===");
 
@@ -53,6 +55,7 @@ fn demo_f64() {
     println!("\nSolution to Ax = b: \n{}", x);
 }
 
+#[allow(dead_code)]
 fn demo_f32() {
     println!("\n=== f32 operations ===");
 
@@ -68,6 +71,7 @@ fn demo_f32() {
     println!("\ndet(A) = {}", det);
 }
 
+#[allow(dead_code)]
 fn demo_precision_selection() {
     println!("\n=== Automatic Precision Selection ===");
 

@@ -1,15 +1,17 @@
-//! Real-time signal processing pipelines with zero-latency streaming
-//!
-//! This module provides infrastructure for real-time signal processing with minimal latency.
-//! It includes streaming data structures, zero-copy operations, and efficient buffering
-//! mechanisms for continuous signal processing applications.
+// Real-time signal processing pipelines with zero-latency streaming
+//
+// This module provides infrastructure for real-time signal processing with minimal latency.
+// It includes streaming data structures, zero-copy operations, and efficient buffering
+// mechanisms for continuous signal processing applications.
 
 use crate::error::{SignalError, SignalResult};
 use std::collections::VecDeque;
+use std::sync::atomic::Ordering;
 use std::sync::{Arc, Mutex};
 use std::thread;
 use std::time::{Duration, Instant};
 
+#[allow(unused_imports)]
 /// Configuration for real-time processing
 #[derive(Debug, Clone)]
 pub struct RealtimeConfig {
@@ -118,7 +120,7 @@ pub trait RealtimeProcessor: Send + Sync {
     }
 
     /// Initialize processor with configuration
-    fn initialize(&mut self, _config: &RealtimeConfig) -> SignalResult<()> {
+    fn initialize(&mut self, config: &RealtimeConfig) -> SignalResult<()> {
         Ok(())
     }
 
@@ -139,7 +141,7 @@ impl CircularBuffer {
     /// Create a new circular buffer
     pub fn new(capacity: usize) -> Self {
         Self {
-            buffer: Arc::new(Mutex::new(VecDeque::with_capacity(capacity))),
+            buffer: Arc::new(Mutex::new(VecDeque::with_capacity(_capacity))),
             capacity,
             overrun_count: Arc::new(Mutex::new(0)),
         }
@@ -347,7 +349,7 @@ impl StreamProcessor {
                 let mut output_buf = output_buffer.lock().unwrap();
                 for &sample in &_stream_block.data {
                     if output_buf.len() >= config.buffer_size * 4 {
-                        output_buf.pop_front(); // Drop oldest if buffer full
+                        output_buf.pop_front(); // Drop oldest if _buffer full
                     }
                     output_buf.push_back(sample);
                 }
@@ -394,7 +396,7 @@ impl StreamProcessor {
     }
 }
 
-/// Lock-free ring buffer for ultra-low latency applications
+/// Lock-free ring buffer for advanced-low latency applications
 pub struct LockFreeRingBuffer {
     buffer: Vec<std::sync::atomic::AtomicU64>,
     capacity: usize,
@@ -405,8 +407,8 @@ pub struct LockFreeRingBuffer {
 impl LockFreeRingBuffer {
     /// Create new lock-free ring buffer
     pub fn new(capacity: usize) -> Self {
-        let mut buffer = Vec::with_capacity(capacity);
-        for _ in 0..capacity {
+        let mut buffer = Vec::with_capacity(_capacity);
+        for _ in 0.._capacity {
             buffer.push(std::sync::atomic::AtomicU64::new(0));
         }
 
@@ -420,8 +422,6 @@ impl LockFreeRingBuffer {
 
     /// Write data (non-blocking, returns false if buffer full)
     pub fn write(&self, data: &[f64]) -> bool {
-        use std::sync::atomic::Ordering;
-
         let current_write = self.write_pos.load(Ordering::Acquire);
         let current_read = self.read_pos.load(Ordering::Acquire);
 
@@ -452,8 +452,6 @@ impl LockFreeRingBuffer {
 
     /// Read data (non-blocking, returns actual samples read)
     pub fn read(&self, data: &mut [f64]) -> usize {
-        use std::sync::atomic::Ordering;
-
         let current_read = self.read_pos.load(Ordering::Acquire);
         let current_write = self.write_pos.load(Ordering::Acquire);
 
@@ -482,8 +480,6 @@ impl LockFreeRingBuffer {
 
     /// Get current fill level
     pub fn fill_level(&self) -> usize {
-        use std::sync::atomic::Ordering;
-
         let current_read = self.read_pos.load(Ordering::Acquire);
         let current_write = self.write_pos.load(Ordering::Acquire);
 
@@ -504,7 +500,7 @@ pub struct GainProcessor {
 
 impl GainProcessor {
     pub fn new(gain: f64) -> Self {
-        Self { gain }
+        Self { _gain }
     }
 }
 
@@ -525,10 +521,10 @@ pub struct MovingAverageProcessor {
 }
 
 impl MovingAverageProcessor {
-    pub fn new(window_size: usize) -> Self {
+    pub fn new(_windowsize: usize) -> Self {
         Self {
             window_size,
-            history: VecDeque::with_capacity(window_size),
+            history: VecDeque::with_capacity(_window_size),
             sum: 0.0,
         }
     }
@@ -578,7 +574,7 @@ pub struct ZeroLatencyLimiter {
 }
 
 impl ZeroLatencyLimiter {
-    pub fn new(threshold: f64, _lookahead_ms: f64, attack_ms: f64, release_ms: f64) -> Self {
+    pub fn new(_threshold: f64, _lookahead_ms: f64, attack_ms: f64, releasems: f64) -> Self {
         Self {
             threshold,
             lookahead_samples: 0, // Will be set in initialize

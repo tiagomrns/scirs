@@ -9,6 +9,7 @@ use ndarray::{Array2, ArrayView1, ArrayView2};
 use std::fmt::Debug;
 
 // Utility function to convert f32 to any Float type
+#[allow(dead_code)]
 fn to_f<F>(val: f32) -> F
 where
     F: num_traits::Float + num_traits::FromPrimitive,
@@ -17,6 +18,7 @@ where
 }
 
 // Helper to convert from generic float to f32
+#[allow(dead_code)]
 fn to_f32<F>(val: F) -> f32
 where
     F: num_traits::Float + num_traits::AsPrimitive<f32>,
@@ -42,6 +44,7 @@ where
 /// # Returns
 ///
 /// * Calibrated quantization parameters
+#[allow(dead_code)]
 pub fn calibrate_matrix_ema<F>(
     matrix: &ArrayView2<F>,
     bits: u8,
@@ -178,7 +181,7 @@ where
 
         // Debug output for last iteration
         if _iter == max_iterations - 1 {
-            println!("EMA calibration reached max iterations with MSE: {}", mse);
+            println!("EMA calibration reached max iterations with MSE: {mse}");
         }
     }
 
@@ -204,6 +207,7 @@ where
 /// # Returns
 ///
 /// * Calibrated quantization parameters with per-channel scales
+#[allow(dead_code)]
 pub fn calibrate_matrix_per_channel_ema<F>(
     matrix: &ArrayView2<F>,
     bits: u8,
@@ -430,6 +434,7 @@ where
 /// # Returns
 ///
 /// * Calibrated quantization parameters
+#[allow(dead_code)]
 pub fn calibrate_vector_ema<F>(
     vector: &ArrayView1<F>,
     bits: u8,
@@ -598,6 +603,7 @@ where
 /// Simulate quantization for a vector (f32 version) using given scale and zero point
 ///
 /// This is an overloaded version that takes f32 directly
+#[allow(dead_code)]
 fn simulate_quantization_vector_f32(
     vector: &ArrayView1<f32>,
     scale: f32,
@@ -641,6 +647,7 @@ fn simulate_quantization_vector_f32(
 /// # Returns
 ///
 /// * Dequantized matrix after simulated quantization
+#[allow(dead_code)]
 fn simulate_quantization(
     matrix: &Array2<f32>,
     params: &QuantizationParams,

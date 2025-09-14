@@ -3,6 +3,7 @@ use ndarray::Array2;
 use scirs2_autograd as ag;
 use std::time::Instant;
 
+#[allow(dead_code)]
 fn main() {
     println!("Enhanced Gradient Checkpointing Example");
     println!("======================================");
@@ -36,7 +37,7 @@ fn main() {
     let start = Instant::now();
     let mut non_ckpt_memory_estimate = 0;
 
-    ag::run::<f32, _, _>(|ctx| {
+    ag::run(|ctx| {
         // Start tracking memory usage
         T::CheckpointProfiler::start_tracking();
 
@@ -89,7 +90,7 @@ fn main() {
     let start = Instant::now();
     let mut basic_ckpt_memory_estimate = 0;
 
-    ag::run::<f32, _, _>(|ctx| {
+    ag::run(|ctx| {
         // Reset and start tracking memory usage
         T::CheckpointProfiler::reset_statistics();
         T::CheckpointProfiler::start_tracking();
@@ -165,7 +166,7 @@ fn main() {
     let mut adaptive_ckpt_memory_estimate = 0;
     let memory_threshold = 2048; // 2KB threshold for adaptive checkpointing
 
-    ag::run::<f32, _, _>(|ctx| {
+    ag::run(|ctx| {
         // Reset and start tracking memory usage
         T::CheckpointProfiler::reset_statistics();
         T::CheckpointProfiler::start_tracking();
@@ -233,7 +234,7 @@ fn main() {
     println!("\n4. Running with checkpoint group for multi-output operations...");
 
     // Example using checkpoint groups for functions with multiple outputs
-    ag::run::<f32, _, _>(|ctx| {
+    ag::run(|ctx| {
         // Create inputs for a multi-output operation
         let a = T::convert_to_tensor(Array2::<f32>::eye(feature_size).into_dyn(), ctx);
         let b = T::convert_to_tensor(

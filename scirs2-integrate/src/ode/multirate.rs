@@ -17,10 +17,10 @@ use std::collections::VecDeque;
 /// Multirate ODE system with fast and slow components
 pub trait MultirateSystem<F: IntegrateFloat> {
     /// Evaluate slow component: dy_slow/dt = f_slow(t, y_slow, y_fast)
-    fn slow_rhs(&self, t: F, y_slow: ArrayView1<F>, y_fast: ArrayView1<F>) -> Array1<F>;
+    fn slow_rhs(&self, t: F, y_slow: ArrayView1<F>, yfast: ArrayView1<F>) -> Array1<F>;
 
     /// Evaluate fast component: dy_fast/dt = f_fast(t, y_slow, y_fast)
-    fn fast_rhs(&self, t: F, y_slow: ArrayView1<F>, y_fast: ArrayView1<F>) -> Array1<F>;
+    fn fast_rhs(&self, t: F, y_slow: ArrayView1<F>, yfast: ArrayView1<F>) -> Array1<F>;
 
     /// Get dimension of slow variables
     fn slow_dim(&self) -> usize;
@@ -42,10 +42,10 @@ pub enum MultirateMethod {
         macro_steps: usize,
         micro_steps: usize,
     },
-    /// Compound fast-slow method
+    /// Compound _fast-_slow method
     CompoundFastSlow {
-        fast_method: ODEMethod,
-        slow_method: ODEMethod,
+        _fast_method: ODEMethod,
+        _slow_method: ODEMethod,
     },
     /// Extrapolated multirate method
     Extrapolated { base_ratio: usize, levels: usize },
@@ -185,8 +185,8 @@ impl<F: IntegrateFloat> MultirateSolver<F> {
                     *micro_steps,
                 )?,
                 MultirateMethod::CompoundFastSlow {
-                    fast_method: _,
-                    slow_method: _,
+                    _fast_method: _,
+                    _slow_method: _,
                 } => self.compound_fast_slow_step(&system, t, dt, y_slow.view(), y_fast.view())?,
                 MultirateMethod::Extrapolated { base_ratio, levels } => self.extrapolated_step(
                     &system,
@@ -256,15 +256,15 @@ impl<F: IntegrateFloat> MultirateSolver<F> {
     {
         let dt_micro = dt / F::from(micro_steps).unwrap();
 
-        // RK4 step for slow component (large step)
+        // RK4 step for _slow component (large step)
         let k1_slow = system.slow_rhs(t, y_slow, y_fast);
 
-        // Fast component evolution over macro step with micro steps
+        // Fast component evolution over macro step with micro _steps
         let mut y_fast_current = y_fast.to_owned();
         let mut t_micro = t;
 
         for _ in 0..micro_steps {
-            // RK4 micro step for fast component
+            // RK4 micro step for _fast component
             let k1_fast = system.fast_rhs(t_micro, y_slow, y_fast_current.view());
             let k2_fast = system.fast_rhs(
                 t_micro + dt_micro / F::from(2).unwrap(),
@@ -289,7 +289,7 @@ impl<F: IntegrateFloat> MultirateSolver<F> {
             t_micro += dt_micro;
         }
 
-        // Complete slow step using final fast state
+        // Complete _slow step using final _fast state
         let k2_slow = system.slow_rhs(t + dt / F::from(2).unwrap(), y_slow, y_fast_current.view());
         let k3_slow = system.slow_rhs(
             t + dt / F::from(2).unwrap(),
@@ -325,7 +325,7 @@ impl<F: IntegrateFloat> MultirateSolver<F> {
         S: MultirateSystem<F>,
     {
         // For this implementation, use explicit treatment
-        // In practice, IMEX would treat stiff fast components implicitly
+        // In practice, IMEX would treat stiff _fast components implicitly
         self.explicit_mrk_step(system, t, dt, y_slow, y_fast, _macro_steps, micro_steps)
     }
 
@@ -341,22 +341,22 @@ impl<F: IntegrateFloat> MultirateSolver<F> {
     where
         S: MultirateSystem<F>,
     {
-        // First solve fast subsystem to quasi-steady state
+        // First solve _fast subsystem to quasi-steady state
         let mut y_fast_current = y_fast.to_owned();
-        let dt_fast = dt / F::from(100).unwrap(); // Very small steps for fast system
+        let dt_fast = dt / F::from(100).unwrap(); // Very small steps for _fast system
 
         // Fast relaxation phase
         for _ in 0..50 {
-            // Allow fast system to equilibrate
+            // Allow _fast system to equilibrate
             let k_fast = system.fast_rhs(t, y_slow, y_fast_current.view());
             y_fast_current = y_fast_current + k_fast * dt_fast;
         }
 
-        // Then advance slow system with equilibrated fast variables
+        // Then advance _slow system with equilibrated _fast variables
         let k_slow = system.slow_rhs(t, y_slow, y_fast_current.view());
         let new_y_slow = y_slow.to_owned() + k_slow * dt;
 
-        // Final fast adjustment
+        // Final _fast adjustment
         let k_fast_final = system.fast_rhs(t + dt, new_y_slow.view(), y_fast_current.view());
         let new_y_fast = y_fast_current + k_fast_final * dt;
 
@@ -414,22 +414,22 @@ pub struct FastSlowOscillator<F: IntegrateFloat> {
 }
 
 impl<F: IntegrateFloat> MultirateSystem<F> for FastSlowOscillator<F> {
-    fn slow_rhs(&self, _t: F, y_slow: ArrayView1<F>, y_fast: ArrayView1<F>) -> Array1<F> {
+    fn slow_rhs(&self, t: F, y_slow: ArrayView1<F>, yfast: ArrayView1<F>) -> Array1<F> {
         let x_slow = y_slow[0];
         let v_slow = y_slow[1];
-        let x_fast = y_fast[0];
+        let x_fast = yfast[0];
 
-        // Slow dynamics: influenced by fast oscillations
+        // Slow dynamics: influenced by _fast oscillations
         let dx_slow_dt = v_slow;
         let dv_slow_dt = -self.epsilon * x_slow + self.coupling * x_fast;
 
         Array1::from_vec(vec![dx_slow_dt, dv_slow_dt])
     }
 
-    fn fast_rhs(&self, _t: F, y_slow: ArrayView1<F>, y_fast: ArrayView1<F>) -> Array1<F> {
+    fn fast_rhs(&self, t: F, y_slow: ArrayView1<F>, yfast: ArrayView1<F>) -> Array1<F> {
         let x_slow = y_slow[0];
-        let x_fast = y_fast[0];
-        let v_fast = y_fast[1];
+        let x_fast = yfast[0];
+        let v_fast = yfast[1];
 
         // Fast oscillator dynamics
         let dx_fast_dt = v_fast;
@@ -537,8 +537,8 @@ mod tests {
 
         let options = MultirateOptions {
             method: MultirateMethod::CompoundFastSlow {
-                fast_method: ODEMethod::RK4,
-                slow_method: ODEMethod::RK4,
+                _fast_method: ODEMethod::RK4,
+                _slow_method: ODEMethod::RK4,
             },
             macro_step: 0.1,
             rtol: 1e-6,

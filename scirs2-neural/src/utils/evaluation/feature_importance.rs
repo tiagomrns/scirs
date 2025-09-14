@@ -28,16 +28,13 @@ impl<F: Float + Debug + Display> FeatureImportance<F> {
     /// Create a new feature importance visualization
     ///
     /// # Arguments
-    ///
     /// * `feature_names` - Names of features
     /// * `importance` - Importance scores
     ///
     /// # Returns
-    ///
     /// * `Result<FeatureImportance<F>>` - The feature importance visualization
     ///
     /// # Example
-    ///
     /// ```
     /// use ndarray::Array1;
     /// use scirs2_neural::utils::evaluation::FeatureImportance;
@@ -54,15 +51,15 @@ impl<F: Float + Debug + Display> FeatureImportance<F> {
     /// // Create feature importance visualization
     /// let feature_importance = FeatureImportance::<f64>::new(feature_names, importance).unwrap();
     /// ```
-    pub fn new(feature_names: Vec<String>, importance: Array1<F>) -> Result<Self> {
-        if feature_names.len() != importance.len() {
+    pub fn new(_featurenames: Vec<String>, importance: Array1<F>) -> Result<Self> {
+        if _featurenames.len() != importance.len() {
             return Err(NeuralError::ValidationError(
-                "Number of feature names must match number of importance scores".to_string(),
+                "Number of feature _names must match number of importance scores".to_string(),
             ));
         }
 
         Ok(FeatureImportance {
-            feature_names,
+            feature_names: _featurenames,
             importance,
         })
     }
@@ -70,11 +67,9 @@ impl<F: Float + Debug + Display> FeatureImportance<F> {
     /// Get the top-k most important features
     ///
     /// # Arguments
-    ///
     /// * `k` - Number of top features to return
     ///
     /// # Returns
-    ///
     /// * `(Vec<String>, Array1<F>)` - Feature names and importance scores
     pub fn top_k(&self, k: usize) -> (Vec<String>, Array1<F>) {
         let k = std::cmp::min(k, self.feature_names.len());
@@ -101,32 +96,27 @@ impl<F: Float + Debug + Display> FeatureImportance<F> {
     /// Create an ASCII bar chart of feature importance
     ///
     /// # Arguments
-    ///
     /// * `title` - Optional title for the chart
     /// * `width` - Width of the bar chart
     /// * `k` - Number of top features to include (None for all)
     ///
     /// # Returns
-    ///
     /// * `String` - ASCII bar chart
     pub fn to_ascii(&self, title: Option<&str>, width: usize, k: Option<usize>) -> String {
         self.to_ascii_with_options(title, width, k, &ColorOptions::default())
     }
 
     /// Create an ASCII bar chart of feature importance with color options
-    ///
     /// This method creates a bar chart visualization with customizable colors,
     /// showing feature importance scores in descending order.
     ///
     /// # Arguments
-    ///
     /// * `title` - Optional title for the chart
     /// * `width` - Width of the bar chart
     /// * `k` - Number of top features to include (None for all)
     /// * `color_options` - Color options for visualization
     ///
     /// # Returns
-    ///
     /// * `String` - ASCII bar chart with colors
     pub fn to_ascii_with_options(
         &self,
@@ -145,11 +135,11 @@ impl<F: Float + Debug + Display> FeatureImportance<F> {
         let mut result = String::with_capacity(features.len() * 80);
 
         // Add title if provided
-        if let Some(title_text) = title {
+        if let Some(titletext) = title {
             if color_options.enabled {
-                result.push_str(&stylize(title_text, Style::Bold));
+                result.push_str(&stylize(titletext, Style::Bold));
             } else {
-                result.push_str(title_text);
+                result.push_str(titletext);
             }
             result.push_str("\n\n");
         }
@@ -211,9 +201,9 @@ impl<F: Float + Debug + Display> FeatureImportance<F> {
             };
 
             let formatted_imp = if color_options.enabled {
-                colored_metric_cell(format!("{:.3}", imp), normalized_imp, color_options)
+                colored_metric_cell(format!("{imp:.3}"), normalized_imp, color_options)
             } else {
-                format!("{:.3}", imp)
+                format!("{imp:.3}")
             };
 
             // Format the bar with coloring
@@ -233,8 +223,9 @@ impl<F: Float + Debug + Display> FeatureImportance<F> {
             } else {
                 0
             };
+
             result.push_str(&format!(
-                "{:<width$} | {} |{}|\n",
+                "{:<width$} | {} | {}\n",
                 formatted_name,
                 formatted_imp,
                 bar,

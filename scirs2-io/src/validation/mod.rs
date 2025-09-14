@@ -82,6 +82,7 @@ pub struct IntegrityMetadata {
 /// # Returns
 ///
 /// The checksum as a hex encoded string
+#[allow(dead_code)]
 pub fn calculate_checksum(data: &[u8], algorithm: ChecksumAlgorithm) -> String {
     match algorithm {
         ChecksumAlgorithm::CRC32 => {
@@ -112,6 +113,7 @@ pub fn calculate_checksum(data: &[u8], algorithm: ChecksumAlgorithm) -> String {
 /// # Returns
 ///
 /// The checksum as a hex encoded string
+#[allow(dead_code)]
 pub fn calculate_file_checksum<P: AsRef<Path>>(
     path: P,
     algorithm: ChecksumAlgorithm,
@@ -188,8 +190,13 @@ pub fn calculate_file_checksum<P: AsRef<Path>>(
 /// # Returns
 ///
 /// `true` if the checksum matches, `false` otherwise
-pub fn verify_checksum(data: &[u8], expected_checksum: &str, algorithm: ChecksumAlgorithm) -> bool {
-    let calculated = calculate_checksum(data, algorithm);
+#[allow(dead_code)]
+pub fn verify_checksum(
+    _data: &[u8],
+    expected_checksum: &str,
+    algorithm: ChecksumAlgorithm,
+) -> bool {
+    let calculated = calculate_checksum(_data, algorithm);
     calculated.eq_ignore_ascii_case(expected_checksum)
 }
 
@@ -204,6 +211,7 @@ pub fn verify_checksum(data: &[u8], expected_checksum: &str, algorithm: Checksum
 /// # Returns
 ///
 /// `Ok(true)` if the checksum matches, `Ok(false)` otherwise, or an error
+#[allow(dead_code)]
 pub fn verify_file_checksum<P: AsRef<Path>>(
     path: P,
     expected_checksum: &str,
@@ -223,6 +231,7 @@ pub fn verify_file_checksum<P: AsRef<Path>>(
 /// # Returns
 ///
 /// A struct containing integrity metadata
+#[allow(dead_code)]
 pub fn generate_file_integrity_metadata<P: AsRef<Path>>(
     path: P,
     algorithm: ChecksumAlgorithm,
@@ -231,17 +240,17 @@ pub fn generate_file_integrity_metadata<P: AsRef<Path>>(
 
     // Get file metadata
     let file_metadata = std::fs::metadata(path)
-        .map_err(|e| IoError::FileError(format!("Failed to read file metadata: {}", e)))?;
+        .map_err(|e| IoError::FileError(format!("Failed to read file metadata: {e}")))?;
 
     let size = file_metadata.len();
     let modified = file_metadata
         .modified()
-        .map_err(|e| IoError::FileError(format!("Failed to get modification time: {}", e)))?;
+        .map_err(|e| IoError::FileError(format!("Failed to get modification time: {e}")))?;
 
     // Convert to timestamp
     let timestamp = modified
         .duration_since(std::time::SystemTime::UNIX_EPOCH)
-        .map_err(|e| IoError::FileError(format!("Failed to convert time: {}", e)))?
+        .map_err(|e| IoError::FileError(format!("Failed to convert time: {e}")))?
         .as_secs();
 
     // Calculate checksum
@@ -266,6 +275,7 @@ pub fn generate_file_integrity_metadata<P: AsRef<Path>>(
 /// # Returns
 ///
 /// Result indicating success or failure
+#[allow(dead_code)]
 pub fn save_integrity_metadata<P: AsRef<Path>>(
     metadata: &IntegrityMetadata,
     path: P,
@@ -285,6 +295,7 @@ pub fn save_integrity_metadata<P: AsRef<Path>>(
 /// # Returns
 ///
 /// The loaded integrity metadata
+#[allow(dead_code)]
 pub fn load_integrity_metadata<P: AsRef<Path>>(path: P) -> Result<IntegrityMetadata> {
     let file = File::open(path).map_err(|e| IoError::FileError(e.to_string()))?;
     let reader = BufReader::new(file);
@@ -306,6 +317,7 @@ pub fn load_integrity_metadata<P: AsRef<Path>>(path: P) -> Result<IntegrityMetad
 /// - Ok(true) - Validation passed
 /// - Ok(false) - Validation failed
 /// - Err(e) - Error during validation
+#[allow(dead_code)]
 pub fn validate_file_integrity<P: AsRef<Path>>(
     file_path: P,
     metadata: &IntegrityMetadata,
@@ -352,6 +364,7 @@ pub fn validate_file_integrity<P: AsRef<Path>>(
 /// # Returns
 ///
 /// A struct containing validation results
+#[allow(dead_code)]
 pub fn generate_validation_report<P: AsRef<Path>>(
     file_path: P,
     metadata: &IntegrityMetadata,
@@ -368,7 +381,7 @@ pub fn generate_validation_report<P: AsRef<Path>>(
 
     // Get file metadata
     let file_metadata = std::fs::metadata(file_path)
-        .map_err(|e| IoError::FileError(format!("Failed to read file metadata: {}", e)))?;
+        .map_err(|e| IoError::FileError(format!("Failed to read file metadata: {e}")))?;
 
     let actual_size = file_metadata.len();
     let size_valid = actual_size == metadata.size;
@@ -535,12 +548,12 @@ impl FormatValidatorRegistry {
     }
 
     /// Add a validator to the registry
-    pub fn add_validator<F>(&mut self, format_name: &str, validator: F)
+    pub fn add_validator<F>(&mut self, formatname: &str, validator: F)
     where
         F: Fn(&[u8]) -> bool + Send + Sync + 'static,
     {
         self.validators
-            .push(FormatValidator::new(format_name, validator));
+            .push(FormatValidator::new(formatname, validator));
     }
 
     /// Check if data matches any registered format
@@ -625,6 +638,7 @@ impl FormatValidatorRegistry {
 }
 
 /// Check if a file exists and has the expected size
+#[allow(dead_code)]
 pub fn validate_file_exists_with_size<P: AsRef<Path>>(
     path: P,
     expected_size: Option<u64>,
@@ -657,6 +671,7 @@ pub fn validate_file_exists_with_size<P: AsRef<Path>>(
 /// # Returns
 ///
 /// Result with the path to the checksum file
+#[allow(dead_code)]
 pub fn create_checksum_file<P, Q>(
     data_path: P,
     algorithm: ChecksumAlgorithm,
@@ -671,7 +686,7 @@ where
     // Calculate checksum
     let checksum = calculate_file_checksum(data_path, algorithm)?;
 
-    // Determine output path
+    // Determine output _path
     let output_path = match output_path {
         Some(path) => path.as_ref().to_path_buf(),
         None => {
@@ -693,10 +708,10 @@ where
 
     // Write checksum file
     let mut file = File::create(&output_path)
-        .map_err(|e| IoError::FileError(format!("Failed to create checksum file: {}", e)))?;
+        .map_err(|e| IoError::FileError(format!("Failed to create checksum file: {e}")))?;
 
     file.write_all(content.as_bytes())
-        .map_err(|e| IoError::FileError(format!("Failed to write checksum file: {}", e)))?;
+        .map_err(|e| IoError::FileError(format!("Failed to write checksum file: {e}")))?;
 
     Ok(output_path.to_string_lossy().to_string())
 }
@@ -711,6 +726,7 @@ where
 /// # Returns
 ///
 /// Result indicating if the verification passed
+#[allow(dead_code)]
 pub fn verify_checksum_file<P, Q>(data_path: P, checksum_path: Q) -> Result<bool>
 where
     P: AsRef<Path>,
@@ -720,12 +736,12 @@ where
 
     // Read checksum file
     let mut checksum_file = File::open(checksum_path)
-        .map_err(|e| IoError::FileError(format!("Failed to open checksum file: {}", e)))?;
+        .map_err(|e| IoError::FileError(format!("Failed to open checksum file: {e}")))?;
 
     let mut content = String::new();
     checksum_file
         .read_to_string(&mut content)
-        .map_err(|e| IoError::FileError(format!("Failed to read checksum file: {}", e)))?;
+        .map_err(|e| IoError::FileError(format!("Failed to read checksum file: {e}")))?;
 
     // Parse checksum file (format: "<checksum> *<filename>")
     let parts: Vec<&str> = content.split_whitespace().collect();
@@ -758,6 +774,7 @@ where
 }
 
 /// Add integrity metadata to an array of objects
+#[allow(dead_code)]
 pub fn add_integrity_metadata<T: Serialize>(
     data: &[T],
     algorithm: ChecksumAlgorithm,
@@ -787,6 +804,7 @@ pub fn add_integrity_metadata<T: Serialize>(
 }
 
 /// Verify array integrity using metadata
+#[allow(dead_code)]
 pub fn verify_array_integrity<T: Serialize>(
     data: &[T],
     metadata: &std::collections::HashMap<String, String>,
@@ -814,7 +832,7 @@ pub fn verify_array_integrity<T: Serialize>(
         .ok_or_else(|| IoError::ValidationError("Missing algorithm in metadata".to_string()))?;
 
     let algorithm = ChecksumAlgorithm::from_str(algorithm_str).ok_or_else(|| {
-        IoError::ValidationError(format!("Unknown algorithm in metadata: {}", algorithm_str))
+        IoError::ValidationError(format!("Unknown algorithm in metadata: {algorithm_str}"))
     })?;
 
     let expected_checksum = metadata
@@ -832,6 +850,7 @@ pub fn verify_array_integrity<T: Serialize>(
 }
 
 /// Create a manifest file for a directory with checksums
+#[allow(dead_code)]
 pub fn create_directory_manifest<P, Q>(
     dir_path: P,
     output_path: Q,
@@ -897,9 +916,10 @@ where
 }
 
 /// Helper function to collect files in a directory
+#[allow(dead_code)]
 fn collect_files(dir: &Path, files: &mut Vec<std::path::PathBuf>, recursive: bool) -> Result<()> {
     for entry in std::fs::read_dir(dir)
-        .map_err(|e| IoError::FileError(format!("Failed to read directory: {}", e)))?
+        .map_err(|e| IoError::FileError(format!("Failed to read directory: {e}")))?
     {
         let entry = entry.map_err(|e| IoError::FileError(e.to_string()))?;
         let path = entry.path();
@@ -1089,11 +1109,13 @@ impl ManifestVerificationReport {
 // Convenience functions for common checksum algorithms
 
 /// Convenience function to calculate CRC32 checksum for a file
+#[allow(dead_code)]
 pub fn calculate_crc32<P: AsRef<Path>>(path: P) -> Result<String> {
     calculate_file_checksum(path, ChecksumAlgorithm::CRC32)
 }
 
 /// Convenience function to calculate SHA256 checksum for a file
+#[allow(dead_code)]
 pub fn calculate_sha256<P: AsRef<Path>>(path: P) -> Result<String> {
     calculate_file_checksum(path, ChecksumAlgorithm::SHA256)
 }
@@ -1483,8 +1505,8 @@ impl SchemaValidator {
 
     /// Validate data type
     #[allow(clippy::only_used_in_recursion)]
-    fn validate_type(&self, data: &serde_json::Value, schema_type: &SchemaDataType) -> bool {
-        match schema_type {
+    fn validate_type(&self, data: &serde_json::Value, schematype: &SchemaDataType) -> bool {
+        match schematype {
             SchemaDataType::String => data.is_string(),
             SchemaDataType::Integer => data.is_i64() || data.is_u64(),
             SchemaDataType::Number => data.is_number(),
@@ -1782,6 +1804,7 @@ pub mod schema_helpers {
 }
 
 /// Build schemas from JSON Schema format
+#[allow(dead_code)]
 pub fn schema_from_json_schema(json_schema: &serde_json::Value) -> Result<SchemaDefinition> {
     let object = json_schema
         .as_object()
@@ -1799,7 +1822,7 @@ pub fn schema_from_json_schema(json_schema: &serde_json::Value) -> Result<Schema
         "boolean" => SchemaDataType::Boolean,
         "array" => {
             let items = object.get("items").ok_or_else(|| {
-                IoError::ValidationError("Array schema must have 'items'".to_string())
+                IoError::ValidationError("Array _schema must have 'items'".to_string())
             })?;
             let element_schema = schema_from_json_schema(items)?;
             SchemaDataType::Array(Box::new(element_schema))
@@ -1809,7 +1832,7 @@ pub fn schema_from_json_schema(json_schema: &serde_json::Value) -> Result<Schema
                 .get("properties")
                 .and_then(|p| p.as_object())
                 .ok_or_else(|| {
-                    IoError::ValidationError("Object schema must have 'properties'".to_string())
+                    IoError::ValidationError("Object _schema must have 'properties'".to_string())
                 })?;
 
             let mut prop_schemas = HashMap::new();

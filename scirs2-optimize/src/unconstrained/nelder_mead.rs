@@ -6,6 +6,7 @@ use crate::unconstrained::Options;
 use ndarray::{Array1, ArrayView1};
 
 /// Implements the Nelder-Mead simplex algorithm with optional bounds support
+#[allow(dead_code)]
 pub fn minimize_nelder_mead<F, S>(
     mut fun: F,
     x0: Array1<f64>,
@@ -186,7 +187,6 @@ where
     Ok(OptimizeResult {
         x: x_best,
         fun: final_value,
-        iterations: iter,
         nit: iter,
         func_evals: nfev,
         nfev,

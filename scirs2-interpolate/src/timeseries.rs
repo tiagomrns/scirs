@@ -18,7 +18,7 @@
 //!
 //! ```rust
 //! use ndarray::Array1;
-//! use scirs2_interpolate::timeseries::{
+//! use scirs2__interpolate::timeseries::{
 //!     TimeSeriesInterpolator, TemporalPattern, SeasonalityType
 //! };
 //!
@@ -507,10 +507,7 @@ where
             let times_2d =
                 Array2::from_shape_vec((self.train_times.len(), 1), self.train_times.to_vec())
                     .map_err(|e| {
-                        InterpolateError::ComputationError(format!(
-                            "Failed to reshape times: {}",
-                            e
-                        ))
+                        InterpolateError::ComputationError(format!("Failed to reshape times: {e}"))
                     })?;
 
             let seasonal_rbf = RBFInterpolator::new(
@@ -533,10 +530,7 @@ where
             let times_2d =
                 Array2::from_shape_vec((self.train_times.len(), 1), self.train_times.to_vec())
                     .map_err(|e| {
-                        InterpolateError::ComputationError(format!(
-                            "Failed to reshape times: {}",
-                            e
-                        ))
+                        InterpolateError::ComputationError(format!("Failed to reshape times: {e}"))
                     })?;
 
             let seasonal_rbf = RBFInterpolator::new(
@@ -567,9 +561,9 @@ where
     }
 
     /// Estimate uncertainty for interpolated values
-    fn estimate_uncertainty(&self, _timestamps: &ArrayView1<T>) -> InterpolateResult<Array1<T>> {
+    fn estimate_uncertainty(&self, timestamps: &ArrayView1<T>) -> InterpolateResult<Array1<T>> {
         // Simple uncertainty estimation based on local variance
-        let n = _timestamps.len();
+        let n = timestamps.len();
         let base_uncertainty = self.temporal_stats.noise_level;
 
         // For now, return constant uncertainty
@@ -594,6 +588,7 @@ where
 }
 
 /// Convenience function to create a time series interpolator for daily data
+#[allow(dead_code)]
 pub fn make_daily_interpolator<T>() -> TimeSeriesInterpolator<T>
 where
     T: Float
@@ -621,6 +616,7 @@ where
 }
 
 /// Convenience function to create a time series interpolator for weekly data
+#[allow(dead_code)]
 pub fn make_weekly_interpolator<T>() -> TimeSeriesInterpolator<T>
 where
     T: Float
@@ -648,6 +644,7 @@ where
 }
 
 /// Simple forward fill interpolation for time series
+#[allow(dead_code)]
 pub fn forward_fill<T>(
     timestamps: &ArrayView1<T>,
     values: &ArrayView1<T>,
@@ -658,7 +655,7 @@ where
 {
     if timestamps.len() != values.len() {
         return Err(InterpolateError::DimensionMismatch(
-            "timestamps and values must have same length".to_string(),
+            "_timestamps and values must have same length".to_string(),
         ));
     }
 
@@ -683,6 +680,7 @@ where
 }
 
 /// Simple backward fill interpolation for time series
+#[allow(dead_code)]
 pub fn backward_fill<T>(
     timestamps: &ArrayView1<T>,
     values: &ArrayView1<T>,
@@ -693,7 +691,7 @@ where
 {
     if timestamps.len() != values.len() {
         return Err(InterpolateError::DimensionMismatch(
-            "timestamps and values must have same length".to_string(),
+            "_timestamps and values must have same length".to_string(),
         ));
     }
 

@@ -11,6 +11,7 @@ use scirs2_linalg::quantization::calibration::{
 };
 use scirs2_linalg::quantization::{dequantize_matrix, quantize_matrix, quantized_matmul};
 
+#[allow(dead_code)]
 fn main() {
     println!("Quantization for Machine Learning Example");
     println!("=========================================\n");
@@ -35,13 +36,14 @@ fn main() {
 
 /// Create synthetic model weights with normal distribution
 /// (typical for trained neural networks)
-fn create_model_weights(input_size: usize, output_size: usize) -> Array2<f32> {
-    let mut rng = rng();
+#[allow(dead_code)]
+fn create_model_weights(inputsize: usize, outputsize: usize) -> Array2<f32> {
+    let mut rng = rand::rng();
     let normal = Normal::new(0.0, 0.1).unwrap(); // Small standard deviation typical for weights
 
-    let mut weights = Array2::zeros((output_size, input_size));
-    for i in 0..output_size {
-        for j in 0..input_size {
+    let mut weights = Array2::zeros((outputsize, inputsize));
+    for i in 0..outputsize {
+        for j in 0..inputsize {
             weights[[i, j]] = normal.sample(&mut rng);
         }
     }
@@ -50,13 +52,14 @@ fn create_model_weights(input_size: usize, output_size: usize) -> Array2<f32> {
 }
 
 /// Create synthetic activations with various distributions
-fn create_activations(batch_size: usize, feature_size: usize) -> Array2<f32> {
-    let mut rng = rng();
+#[allow(dead_code)]
+fn create_activations(_batchsize: usize, featuresize: usize) -> Array2<f32> {
+    let mut rng = rand::rng();
 
     // Create activations with ReLU-like distribution (many zeros, positive values)
-    let mut activations = Array2::zeros((batch_size, feature_size));
-    for i in 0..batch_size {
-        for j in 0..feature_size {
+    let mut activations = Array2::zeros((_batchsize, featuresize));
+    for i in 0.._batchsize {
+        for j in 0..featuresize {
             let val = Normal::new(0.0, 1.0).unwrap().sample(&mut rng);
             activations[[i, j]] = if val > 0.0 { val } else { 0.0 };
         }
@@ -64,8 +67,8 @@ fn create_activations(batch_size: usize, feature_size: usize) -> Array2<f32> {
 
     // Add some larger activation values to simulate feature importance
     for _ in 0..5 {
-        let i = rng.random_range(0..batch_size);
-        let j = rng.random_range(0..feature_size);
+        let i = rng.random_range(0.._batchsize);
+        let j = rng.random_range(0..featuresize);
         activations[[i, j]] = rng.random_range(2.0..5.0);
     }
 
@@ -73,6 +76,7 @@ fn create_activations(batch_size: usize, feature_size: usize) -> Array2<f32> {
 }
 
 /// Compare matmul accuracy with different calibration methods
+#[allow(dead_code)]
 fn compare_matmul_accuracy(weights: &Array2<f32>, activations: &Array2<f32>, bits: u8) {
     // Calculate reference result with full precision
     let reference_result = activations.dot(&weights.t());
@@ -95,7 +99,7 @@ fn compare_matmul_accuracy(weights: &Array2<f32>, activations: &Array2<f32>, bit
     );
 
     for &method in &methods {
-        // Configure calibration for weights
+        // Configure calibration for _weights
         let config_weights = CalibrationConfig {
             method,
             symmetric: true,  // Weights often work better with symmetric quantization
@@ -113,12 +117,12 @@ fn compare_matmul_accuracy(weights: &Array2<f32>, activations: &Array2<f32>, bit
             ..Default::default()
         };
 
-        // Calibrate and quantize weights
+        // Calibrate and quantize _weights
         let weights_params = calibrate_matrix(&weights.view(), bits, &config_weights).unwrap();
         let (quantized_weights, _) = quantize_matrix(&weights.view(), bits, weights_params.method);
         let dequantized_weights = dequantize_matrix(&quantized_weights, &weights_params);
 
-        // Calculate weights quantization error
+        // Calculate _weights quantization error
         let weights_mse =
             (weights - &dequantized_weights).mapv(|x| x * x).sum() / weights.len() as f32;
 
@@ -177,6 +181,7 @@ fn compare_matmul_accuracy(weights: &Array2<f32>, activations: &Array2<f32>, bit
 }
 
 /// Compare different bit-widths for matrix multiplication
+#[allow(dead_code)]
 fn compare_bit_widths_matmul(weights: &Array2<f32>, activations: &Array2<f32>) {
     // Calculate reference result with full precision
     let reference_result = activations.dot(&weights.t());
@@ -199,7 +204,7 @@ fn compare_bit_widths_matmul(weights: &Array2<f32>, activations: &Array2<f32>) {
             ..Default::default()
         };
 
-        // Calibrate and quantize weights
+        // Calibrate and quantize _weights
         let weights_params = calibrate_matrix(&weights.view(), bits, &config).unwrap();
         let (quantized_weights, _) = quantize_matrix(&weights.view(), bits, weights_params.method);
 
@@ -245,8 +250,8 @@ fn compare_bit_widths_matmul(weights: &Array2<f32>, activations: &Array2<f32>) {
             * 100.0;
 
         // Calculate memory savings
-        let fp32_size = 32;
-        let memory_savings = (1.0 - (bits as f32 / fp32_size as f32)) * 100.0;
+        let fp32size = 32;
+        let memory_savings = (1.0 - (bits as f32 / fp32size as f32)) * 100.0;
 
         // Print results
         println!(
@@ -257,6 +262,7 @@ fn compare_bit_widths_matmul(weights: &Array2<f32>, activations: &Array2<f32>) {
 }
 
 /// Demonstrate mixed precision quantization (different bit widths for weights and activations)
+#[allow(dead_code)]
 fn demonstrate_mixed_precision(weights: &Array2<f32>, activations: &Array2<f32>) {
     // Calculate reference result with full precision
     let reference_result = activations.dot(&weights.t());
@@ -276,7 +282,7 @@ fn demonstrate_mixed_precision(weights: &Array2<f32>, activations: &Array2<f32>)
     println!("{:-^40} | {:-^15} | {:-^15} | {:-^15}", "", "", "", "");
 
     for &(weight_bits, act_bits, desc) in &configs {
-        // Configure weights with entropy calibration
+        // Configure _weights with entropy calibration
         let weights_config = CalibrationConfig {
             method: CalibrationMethod::EntropyCalibration,
             symmetric: true,
@@ -292,7 +298,7 @@ fn demonstrate_mixed_precision(weights: &Array2<f32>, activations: &Array2<f32>)
             ..Default::default()
         };
 
-        // Calibrate and quantize weights
+        // Calibrate and quantize _weights
         let weights_params =
             calibrate_matrix(&weights.view(), weight_bits, &weights_config).unwrap();
         let (quantized_weights, _) =
@@ -320,10 +326,10 @@ fn demonstrate_mixed_precision(weights: &Array2<f32>, activations: &Array2<f32>)
             * 100.0;
 
         // Calculate memory savings (weighted average based on typical model composition)
-        // Assuming weights are 75% of model size, activations 25%
-        let fp32_size = 32;
-        let weight_savings = 1.0 - (weight_bits as f32 / fp32_size as f32);
-        let act_savings = 1.0 - (act_bits as f32 / fp32_size as f32);
+        // Assuming _weights are 75% of model size, activations 25%
+        let fp32size = 32;
+        let weight_savings = 1.0 - (weight_bits as f32 / fp32size as f32);
+        let act_savings = 1.0 - (act_bits as f32 / fp32size as f32);
         let memory_savings = (weight_savings * 0.75 + act_savings * 0.25) * 100.0;
 
         // Print results

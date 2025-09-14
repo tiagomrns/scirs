@@ -1,5 +1,6 @@
 use ndarray::array;
 
+#[allow(dead_code)]
 fn main() {
     // Matrix: [[4, 1, 0], [1, 3, 1], [0, 1, 2]]
     // Characteristic polynomial: det(A - λI) = 0

@@ -1,0 +1,598 @@
+//! Comprehensive demonstration of advanced hyperparameter tuning capabilities
+//!
+//! This example showcases the full spectrum of hyperparameter tuning features
+//! including Bayesian optimization, ensemble methods, multi-objective optimization,
+//! and adaptive strategies for all supported clustering algorithms.
+
+use ndarray::Array2;
+use scirs2_cluster::{
+    preprocess::standardize,
+    tuning::{
+        AcquisitionFunction, AutoTuner, CVStrategy, CrossValidationConfig, DependencyRelationship,
+        EarlyStoppingConfig, EvaluationMetric, HyperParameter, LoadBalancingStrategy,
+        ParallelConfig, ParameterConstraint, ResourceConstraints, SearchSpace, SearchStrategy,
+        TuningConfig,
+    },
+    StandardSearchSpaces,
+};
+use std::collections::HashMap;
+
+#[allow(dead_code)]
+fn main() -> Result<(), Box<dyn std::error::Error>> {
+    println!("Comprehensive Hyperparameter Tuning Demo");
+    println!("========================================");
+
+    // Generate comprehensive test datasets
+    let datasets = generate_test_datasets();
+
+    // Demonstrate different tuning strategies
+    for (dataset_name, data) in &datasets {
+        println!("\n🔬 Tuning on dataset: {}", dataset_name);
+        println!("   Data shape: {}x{}", data.nrows(), data.ncols());
+
+        // Standardize data
+        let standardized = standardize(data.view(), true)?;
+
+        // Test different search strategies
+        test_bayesian_optimization(&standardized, dataset_name)?;
+        test_ensemble_search(&standardized, dataset_name)?;
+        test_multi_objective_optimization(&standardized, dataset_name)?;
+        test_adaptive_search(&standardized, dataset_name)?;
+        test_evolutionary_search(&standardized, dataset_name)?;
+    }
+
+    // Demonstrate algorithm-specific tuning
+    demonstrate_algorithm_specific_tuning()?;
+
+    // Demonstrate ensemble algorithm selection
+    demonstrate_ensemble_algorithm_selection()?;
+
+    println!("\n✅ Comprehensive hyperparameter tuning demo completed!");
+    Ok(())
+}
+
+/// Test Bayesian optimization with Gaussian process surrogate
+#[allow(dead_code)]
+fn test_bayesian_optimization(
+    data: &Array2<f64>,
+    dataset_name: &str,
+) -> Result<(), Box<dyn std::error::Error>> {
+    println!("\n  🎯 Bayesian Optimization (K-means)");
+
+    let config = TuningConfig {
+        strategy: SearchStrategy::BayesianOptimization {
+            n_initial_points: 10,
+            acquisition_function: AcquisitionFunction::ExpectedImprovement,
+        },
+        metric: EvaluationMetric::SilhouetteScore,
+        cv_config: CrossValidationConfig {
+            strategy: CVStrategy::KFold { k: 5 },
+            shuffle: true,
+            random_seed: Some(42),
+        },
+        max_evaluations: 50,
+        early_stopping: Some(EarlyStoppingConfig {
+            patience: 10,
+            min_improvement: 0.001,
+            evaluation_frequency: 1,
+        }),
+        random_seed: Some(42),
+        parallel_config: Some(ParallelConfig {
+            n_workers: 4,
+            batch_size: 4,
+            load_balancing: LoadBalancingStrategy::WorkStealing,
+        }),
+        resource_constraints: ResourceConstraints {
+            max_memory_per_evaluation: Some(1024 * 1024 * 1024), // 1GB
+            max_time_per_evaluation: Some(30.0),                 // 30 seconds
+            max_total_time: Some(300.0),                         // 5 minutes
+        },
+    };
+
+    let tuner = AutoTuner::new(config);
+
+    // Create advanced search space with constraints
+    let mut search_space = StandardSearchSpaces::kmeans_comprehensive();
+
+    // Add custom constraints
+    search_space.constraints.push(ParameterConstraint::Range {
+        parameter: "n_clusters".to_string(),
+        min: 2.0,
+        max: (data.nrows() / 10).max(2) as f64, // Reasonable upper bound
+    });
+
+    search_space
+        .constraints
+        .push(ParameterConstraint::Dependency {
+            dependent: "max_iter".to_string(),
+            dependency: "n_clusters".to_string(),
+            relationship: DependencyRelationship::Proportional { ratio: 20.0 },
+        });
+
+    let result = tuner.tune_kmeans(data.view(), search_space)?;
+
+    println!("    Best score: {:.4}", result.best_score);
+    println!("    Best parameters: {:?}", result.best_parameters);
+    println!("    Evaluations: {}", result.evaluation_history.len());
+    println!("    Total time: {:.2}s", result.total_time);
+    println!(
+        "    Convergence: {:?}",
+        result.convergence_info.stopping_reason
+    );
+
+    Ok(())
+}
+
+/// Test ensemble search combining multiple strategies
+#[allow(dead_code)]
+fn test_ensemble_search(
+    data: &Array2<f64>,
+    dataset_name: &str,
+) -> Result<(), Box<dyn std::error::Error>> {
+    println!("\n  🎲 Ensemble Search (DBSCAN)");
+
+    let config = TuningConfig {
+        strategy: SearchStrategy::EnsembleSearch {
+            strategies: vec![
+                SearchStrategy::RandomSearch { n_trials: 20 },
+                SearchStrategy::BayesianOptimization {
+                    n_initial_points: 5,
+                    acquisition_function: AcquisitionFunction::UpperConfidenceBound { beta: 2.0 },
+                },
+                SearchStrategy::GridSearch,
+            ],
+            weights: vec![0.4, 0.4, 0.2], // Favor random and Bayesian
+        },
+        metric: EvaluationMetric::SilhouetteScore,
+        cv_config: CrossValidationConfig {
+            strategy: CVStrategy::KFold { k: 3 },
+            shuffle: true,
+            random_seed: Some(42),
+        },
+        max_evaluations: 40,
+        early_stopping: None,
+        random_seed: Some(42),
+        parallel_config: Some(ParallelConfig {
+            n_workers: 2,
+            batch_size: 2,
+            load_balancing: LoadBalancingStrategy::Dynamic,
+        }),
+        resource_constraints: ResourceConstraints {
+            max_memory_per_evaluation: None,
+            max_time_per_evaluation: Some(10.0),
+            max_total_time: Some(120.0),
+        },
+    };
+
+    let tuner = AutoTuner::new(config);
+    let search_space = StandardSearchSpaces::dbscan_comprehensive();
+
+    let result = tuner.tune_dbscan(data.view(), search_space)?;
+
+    println!("    Best score: {:.4}", result.best_score);
+    println!("    Best parameters: {:?}", result.best_parameters);
+    println!(
+        "    Exploration efficiency: {:.3}",
+        result.exploration_stats.diversity_score
+    );
+
+    Ok(())
+}
+
+/// Test multi-objective optimization
+#[allow(dead_code)]
+fn test_multi_objective_optimization(
+    data: &Array2<f64>,
+    dataset_name: &str,
+) -> Result<(), Box<dyn std::error::Error>> {
+    println!("\n  🎯 Multi-Objective Optimization (Hierarchical)");
+
+    let config = TuningConfig {
+        strategy: SearchStrategy::MultiObjective {
+            objectives: vec![
+                EvaluationMetric::SilhouetteScore,
+                EvaluationMetric::CalinskiHarabaszIndex,
+                EvaluationMetric::DaviesBouldinIndex,
+            ],
+            strategy: Box::new(SearchStrategy::BayesianOptimization {
+                n_initial_points: 8,
+                acquisition_function: AcquisitionFunction::ExpectedImprovement,
+            }),
+        },
+        metric: EvaluationMetric::SilhouetteScore, // Primary metric
+        cv_config: CrossValidationConfig {
+            strategy: CVStrategy::StratifiedKFold { k: 4 },
+            shuffle: true,
+            random_seed: Some(42),
+        },
+        max_evaluations: 30,
+        early_stopping: Some(EarlyStoppingConfig {
+            patience: 8,
+            min_improvement: 0.005,
+            evaluation_frequency: 2,
+        }),
+        random_seed: Some(42),
+        parallel_config: None, // Sequential for demonstration
+        resource_constraints: ResourceConstraints {
+            max_memory_per_evaluation: Some(512 * 1024 * 1024), // 512MB
+            max_time_per_evaluation: Some(15.0),
+            max_total_time: Some(200.0),
+        },
+    };
+
+    let tuner = AutoTuner::new(config);
+    let search_space = StandardSearchSpaces::hierarchical_comprehensive();
+
+    let result = tuner.tune_hierarchical(data.view(), search_space)?;
+
+    println!("    Primary score: {:.4}", result.best_score);
+    println!("    Best parameters: {:?}", result.best_parameters);
+    println!(
+        "    Pareto front size: {}",
+        result.exploration_stats.pareto_front_size.unwrap_or(0)
+    );
+
+    Ok(())
+}
+
+/// Test adaptive search that evolves strategy based on performance
+#[allow(dead_code)]
+fn test_adaptive_search(
+    data: &Array2<f64>,
+    dataset_name: &str,
+) -> Result<(), Box<dyn std::error::Error>> {
+    println!("\n  🧠 Adaptive Search (Spectral Clustering)");
+
+    let config = TuningConfig {
+        strategy: SearchStrategy::AdaptiveSearch {
+            initial_strategy: Box::new(SearchStrategy::RandomSearch { trials: 15 }),
+            adaptation_frequency: 10,
+        },
+        metric: EvaluationMetric::SilhouetteScore,
+        cv_config: CrossValidationConfig {
+            strategy: CVStrategy::TimeSeriesSplit { splits: 5 },
+            shuffle: false,
+            random_seed: Some(42),
+        },
+        max_evaluations: 35,
+        early_stopping: Some(EarlyStoppingConfig {
+            patience: 12,
+            min_improvement: 0.002,
+            evaluation_frequency: 1,
+        }),
+        random_seed: Some(42),
+        parallel_config: Some(ParallelConfig {
+            n_workers: 3,
+            batch_size: 3,
+            load_balancing: LoadBalancingStrategy::RoundRobin,
+        }),
+        resource_constraints: ResourceConstraints {
+            max_memory_per_evaluation: Some(2048 * 1024 * 1024), // 2GB
+            max_time_per_evaluation: Some(20.0),
+            max_total_time: Some(180.0),
+        },
+    };
+
+    let tuner = AutoTuner::new(config);
+
+    let mut search_space = StandardSearchSpaces::spectral_comprehensive();
+
+    // Add advanced constraints for spectral clustering
+    search_space
+        .constraints
+        .push(ParameterConstraint::Conditional {
+            condition: "affinity=rbf".to_string(),
+            constraint: Box::new(ParameterConstraint::Range {
+                parameter: "gamma".to_string(),
+                min: 0.001,
+                max: 100.0,
+            }),
+        });
+
+    let result = tuner.tune_spectral(data.view(), search_space)?;
+
+    println!("    Best score: {:.4}", result.best_score);
+    println!(
+        "    Strategy adaptations: {}",
+        result.exploration_stats.strategy_changes
+    );
+    println!(
+        "    Convergence iteration: {:?}",
+        result.convergence_info.convergence_iteration
+    );
+
+    Ok(())
+}
+
+/// Test evolutionary search strategy
+#[allow(dead_code)]
+fn test_evolutionary_search(
+    data: &Array2<f64>,
+    dataset_name: &str,
+) -> Result<(), Box<dyn std::error::Error>> {
+    println!("\n  🧬 Evolutionary Search (GMM)");
+
+    let config = TuningConfig {
+        strategy: SearchStrategy::EvolutionarySearch {
+            population_size: 20,
+            n_generations: 15,
+            mutation_rate: 0.1,
+            crossover_rate: 0.7,
+        },
+        metric: EvaluationMetric::AIC, // Information criterion for model selection
+        cv_config: CrossValidationConfig {
+            strategy: CVStrategy::LeaveOneOut,
+            shuffle: false,
+            random_seed: Some(42),
+        },
+        max_evaluations: 60,
+        early_stopping: Some(EarlyStoppingConfig {
+            patience: 15,
+            min_improvement: 0.001,
+            evaluation_frequency: 5,
+        }),
+        random_seed: Some(42),
+        parallel_config: Some(ParallelConfig {
+            n_workers: 4,
+            batch_size: 5,
+            load_balancing: LoadBalancingStrategy::Dynamic,
+        }),
+        resource_constraints: ResourceConstraints {
+            max_memory_per_evaluation: Some(1024 * 1024 * 1024), // 1GB
+            max_time_per_evaluation: Some(25.0),
+            max_total_time: Some(300.0),
+        },
+    };
+
+    let tuner = AutoTuner::new(config);
+    let search_space = StandardSearchSpaces::gmm_comprehensive();
+
+    let result = tuner.tune_gmm(data.view(), search_space)?;
+
+    println!("    Best AIC: {:.4}", result.best_score);
+    println!(
+        "    Population diversity: {:.3}",
+        result.exploration_stats.population_diversity
+    );
+    println!(
+        "    Generations: {}",
+        result.exploration_stats.n_generations
+    );
+
+    Ok(())
+}
+
+/// Demonstrate algorithm-specific advanced tuning
+#[allow(dead_code)]
+fn demonstrate_algorithm_specific_tuning() -> Result<(), Box<dyn std::error::Error>> {
+    println!("\n📊 Algorithm-Specific Advanced Tuning");
+
+    // Generate specialized datasets for each algorithm
+    let blob_data = generate_blob_clusters(200, 4, 2.0);
+    let density_data = generate_density_clusters(150, 3);
+    let hierarchical_data = generate_hierarchical_clusters(180, 5);
+
+    // K-means with initialization strategies
+    tune_kmeans_initialization_strategies(&blob_data)?;
+
+    // DBSCAN with automatic eps estimation
+    tune_dbscan_with_automatic_eps(&density_data)?;
+
+    // Hierarchical with linkage method selection
+    tune_hierarchical_linkage_methods(&hierarchical_data)?;
+
+    Ok(())
+}
+
+/// Demonstrate ensemble algorithm selection
+#[allow(dead_code)]
+fn demonstrate_ensemble_algorithm_selection() -> Result<(), Box<dyn std::error::Error>> {
+    println!("\n🎭 Ensemble Algorithm Selection");
+
+    let data = generate_mixed_clusters(300);
+    let standardized = standardize(data.view(), true)?;
+
+    // Auto-select best algorithm using ensemble evaluation
+    let best_algorithm = scirs2_cluster::tuning::auto_select_clustering_algorithm(
+        standardized.view(),
+        None, // No cluster count hint
+        None, // Default evaluation config
+    )?;
+
+    println!("   🏆 Best algorithm: {:?}", best_algorithm.algorithm);
+    println!("   📈 Confidence score: {:.4}", best_algorithm.confidence);
+    println!(
+        "   ⚙️  Recommended parameters: {:?}",
+        best_algorithm.recommended_parameters
+    );
+    println!(
+        "   📊 Performance metrics: {:?}",
+        best_algorithm.performance_metrics
+    );
+
+    // Quick algorithm selection for rapid prototyping
+    let quick_result = scirs2_cluster::tuning::quick_algorithm_selection(
+        standardized.view(),
+        Some(4), // Hint: 4 clusters
+    )?;
+
+    println!("\n   ⚡ Quick selection: {:?}", quick_result.algorithm);
+    println!(
+        "   🎯 Expected performance: {:.4}",
+        quick_result.expected_score
+    );
+
+    Ok(())
+}
+
+/// Generate test datasets with different characteristics
+#[allow(dead_code)]
+fn generate_test_datasets() -> HashMap<String, Array2<f64>> {
+    let mut datasets = HashMap::new();
+
+    datasets.insert("blobs".to_string(), generate_blob_clusters(100, 3, 1.5));
+    datasets.insert("moons".to_string(), generate_moon_clusters(80));
+    datasets.insert("circles".to_string(), generate_circle_clusters(90));
+    datasets.insert(
+        "anisotropic".to_string(),
+        generate_anisotropic_clusters(120, 4),
+    );
+    datasets.insert("varied".to_string(), generate_varied_size_clusters(150));
+
+    datasets
+}
+
+/// Generate blob clusters
+#[allow(dead_code)]
+fn generate_blob_clusters(__n_samples: usize, n_clusters: usize, stddev: f64) -> Array2<f64> {
+    let mut data = Vec::new();
+    let samples_per_cluster = __n_samples / n_clusters;
+
+    for cluster in 0..n_clusters {
+        let center_x = (cluster as f64) * 5.0;
+        let center_y = (cluster as f64) * 3.0;
+
+        for _ in 0..samples_per_cluster {
+            let x = center_x + (rand::random::<f64>() - 0.5) * stddev * 2.0;
+            let y = center_y + (rand::random::<f64>() - 0.5) * stddev * 2.0;
+            data.extend_from_slice(&[x, y]);
+        }
+    }
+
+    Array2::from_shape_vec((_n_samples, 2), data).unwrap()
+}
+
+/// Generate moon-shaped clusters
+#[allow(dead_code)]
+fn generate_moon_clusters(_nsamples: usize) -> Array2<f64> {
+    let mut data = Vec::new();
+    let samples_per_moon = __n_samples / 2;
+
+    for i in 0..samples_per_moon {
+        let t = i as f64 / samples_per_moon as f64 * std::f64::consts::PI;
+        let noise = (rand::random::<f64>() - 0.5) * 0.2;
+
+        // First moon
+        let x1 = t.cos() + noise;
+        let y1 = t.sin() + noise;
+        data.extend_from_slice(&[x1, y1]);
+
+        // Second moon
+        let x2 = 1.0 - t.cos() + noise;
+        let y2 = 1.0 - t.sin() - 0.5 + noise;
+        data.extend_from_slice(&[x2, y2]);
+    }
+
+    Array2::from_shape_vec((_n_samples, 2), data).unwrap()
+}
+
+/// Generate circle clusters
+#[allow(dead_code)]
+fn generate_circle_clusters(_nsamples: usize) -> Array2<f64> {
+    let mut data = Vec::new();
+    let samples_per_circle = __n_samples / 2;
+
+    for i in 0..samples_per_circle {
+        let t = i as f64 / samples_per_circle as f64 * 2.0 * std::f64::consts::PI;
+        let noise = (rand::random::<f64>() - 0.5) * 0.1;
+
+        // Inner circle
+        let r1 = 1.0 + noise;
+        let x1 = r1 * t.cos();
+        let y1 = r1 * t.sin();
+        data.extend_from_slice(&[x1, y1]);
+
+        // Outer circle
+        let r2 = 3.0 + noise;
+        let x2 = r2 * t.cos();
+        let y2 = r2 * t.sin();
+        data.extend_from_slice(&[x2, y2]);
+    }
+
+    Array2::from_shape_vec((_n_samples, 2), data).unwrap()
+}
+
+/// Generate anisotropic clusters
+#[allow(dead_code)]
+fn generate_anisotropic_clusters(__n_samples: usize, nclusters: usize) -> Array2<f64> {
+    let mut data = Vec::new();
+    let samples_per_cluster = __n_samples / n_clusters;
+
+    for cluster in 0..n_clusters {
+        let angle = cluster as f64 * std::f64::consts::PI / 2.0;
+        let stretch_x = 1.0 + cluster as f64;
+        let stretch_y = 1.0;
+
+        for _ in 0..samples_per_cluster {
+            let x = (rand::random::<f64>() - 0.5) * stretch_x;
+            let y = (rand::random::<f64>() - 0.5) * stretch_y;
+
+            // Rotate
+            let x_rot = x * angle.cos() - y * angle.sin() + cluster as f64 * 4.0;
+            let y_rot = x * angle.sin() + y * angle.cos();
+
+            data.extend_from_slice(&[x_rot, y_rot]);
+        }
+    }
+
+    Array2::from_shape_vec((_n_samples, 2), data).unwrap()
+}
+
+/// Generate varied size clusters
+#[allow(dead_code)]
+fn generate_varied_size_clusters(_nsamples: usize) -> Array2<f64> {
+    let mut data = Vec::new();
+    let cluster_sizes = vec![__n_samples / 2, __n_samples / 3, __n_samples / 6];
+
+    for (cluster, &size) in cluster_sizes.iter().enumerate() {
+        let center_x = cluster as f64 * 6.0;
+        let center_y = cluster as f64 * 4.0;
+        let stddev = 0.5 + cluster as f64 * 0.3;
+
+        for _ in 0..size {
+            let x = center_x + (rand::random::<f64>() - 0.5) * stddev;
+            let y = center_y + (rand::random::<f64>() - 0.5) * stddev;
+            data.extend_from_slice(&[x, y]);
+        }
+    }
+
+    Array2::from_shape_vec((data.len() / 2, 2), data).unwrap()
+}
+
+/// Other utility functions (placeholders for actual implementations)
+#[allow(dead_code)]
+fn generate_density_clusters(__n_samples: usize, nclusters: usize) -> Array2<f64> {
+    generate_blob_clusters(__n_samples, n_clusters, 0.8)
+}
+
+#[allow(dead_code)]
+fn generate_hierarchical_clusters(__n_samples: usize, nclusters: usize) -> Array2<f64> {
+    generate_blob_clusters(__n_samples, n_clusters, 1.2)
+}
+
+#[allow(dead_code)]
+fn generate_mixed_clusters(_nsamples: usize) -> Array2<f64> {
+    generate_blob_clusters(__n_samples, 4, 1.0)
+}
+
+#[allow(dead_code)]
+fn tune_kmeans_initialization_strategies(
+    _data: &Array2<f64>,
+) -> Result<(), Box<dyn std::error::Error>> {
+    println!("   🎯 K-means initialization strategy tuning");
+    Ok(())
+}
+
+#[allow(dead_code)]
+fn tune_dbscan_with_automatic_eps(data: &Array2<f64>) -> Result<(), Box<dyn std::error::Error>> {
+    println!("   🔍 DBSCAN automatic eps estimation");
+    Ok(())
+}
+
+#[allow(dead_code)]
+fn tune_hierarchical_linkage_methods(
+    _data: &Array2<f64>,
+) -> Result<(), Box<dyn std::error::Error>> {
+    println!("   🌳 Hierarchical linkage method optimization");
+    Ok(())
+}

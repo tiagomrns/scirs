@@ -3,6 +3,7 @@ use scirs2_integrate::ode::{solve_ivp, ODEMethod, ODEOptions};
 use std::fs::File;
 use std::io::Write;
 
+#[allow(dead_code)]
 fn main() {
     println!("LSODA Method Switching Example");
     println!("------------------------------");
@@ -51,7 +52,7 @@ fn main() {
             println!("  Rejected steps: {}", res.n_rejected);
 
             if let Some(msg) = &res.message {
-                println!("  {}", msg);
+                println!("  {msg}");
             }
 
             // Save data to file for potential plotting
@@ -66,15 +67,12 @@ fn main() {
                 // Calculate the stiffness parameter at each time point
                 let delta = 0.1 + 999.9 / (1.0 + (-2.0 * (t - 5.0)).exp());
 
-                writeln!(&mut file, "{:.6} {:.10e} {:.10e} {:.6}", t, y1, y2, delta).unwrap();
+                writeln!(&mut file, "{t:.6} {y1:.10e} {y2:.10e} {delta:.6}").unwrap();
 
                 // Also print selected points to console
                 if i % (res.t.len() / 10).max(1) == 0 || i == res.t.len() - 1 {
                     let stiff_region = if delta > 10.0 { "stiff" } else { "non-stiff" };
-                    println!(
-                        "  t={:.3}: y₁={:.6e}, y₂={:.6e}, δ={:.3} ({})",
-                        t, y1, y2, delta, stiff_region
-                    );
+                    println!("  t={t:.3}: y₁={y1:.6e}, y₂={y2:.6e}, δ={delta:.3} ({stiff_region})");
                 }
             }
 
@@ -83,7 +81,7 @@ fn main() {
             println!("LSODA should switch from Adams to BDF method in the stiff region");
         }
         Err(e) => {
-            println!("Integration failed: {}", e);
+            println!("Integration failed: {e}");
         }
     }
 
@@ -139,7 +137,7 @@ fn main() {
             println!("  Rejected steps: {}", res.n_rejected);
 
             if let Some(msg) = &res.message {
-                println!("  {}", msg);
+                println!("  {msg}");
             }
 
             // Save data to file for potential plotting
@@ -156,12 +154,7 @@ fn main() {
                 let base_k2 = 3.0e7;
                 let k2 = base_k2 * (-(t - 50.0).powi(2) / 500.0).exp().max(0.01);
 
-                writeln!(
-                    &mut file,
-                    "{:.6} {:.10e} {:.10e} {:.10e} {:.6e}",
-                    t, y1, y2, y3, k2
-                )
-                .unwrap();
+                writeln!(&mut file, "{t:.6} {y1:.10e} {y2:.10e} {y3:.10e} {k2:.6e}").unwrap();
 
                 // Print selected points to console
                 if i % (res.t.len() / 10).max(1) == 0 || i == res.t.len() - 1 {
@@ -174,8 +167,7 @@ fn main() {
                     };
 
                     println!(
-                        "  t={:.1}: y=[{:.3e}, {:.3e}, {:.3e}], k₂={:.3e} ({})",
-                        t, y1, y2, y3, k2, stiff_level
+                        "  t={t:.1}: y=[{y1:.3e}, {y2:.3e}, {y3:.3e}], k₂={k2:.3e} ({stiff_level})"
                     );
                 }
             }
@@ -187,7 +179,7 @@ fn main() {
             );
         }
         Err(e) => {
-            println!("Integration failed: {}", e);
+            println!("Integration failed: {e}");
         }
     }
 
@@ -204,7 +196,7 @@ fn main() {
     ];
 
     for (method_name, method) in methods.iter() {
-        println!("\nSolving with {}", method_name);
+        println!("\nSolving with {method_name}");
 
         let result = solve_ivp(
             mixed_system, // Reuse the first example system
@@ -232,14 +224,14 @@ fn main() {
                 // Calculate final error compared to analytical solution for component 2
                 let exact_y2 = (-res.t.last().unwrap()).exp();
                 let error_y2 = (res.y.last().unwrap()[1] - exact_y2).abs();
-                println!("  Final error for reference component: {:.6e}", error_y2);
+                println!("  Final error for reference component: {error_y2:.6e}");
 
                 if let Some(msg) = &res.message {
-                    println!("  {}", msg);
+                    println!("  {msg}");
                 }
             }
             Err(e) => {
-                println!("  Failed: {}", e);
+                println!("  Failed: {e}");
             }
         }
     }

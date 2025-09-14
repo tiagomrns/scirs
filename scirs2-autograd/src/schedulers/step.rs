@@ -13,7 +13,7 @@ use crate::Float;
 ///
 /// # Example
 /// ```
-/// use scirs2_autograd::schedulers::{StepLR, LRScheduler};
+/// use scirs2__autograd::schedulers::{StepLR, LRScheduler};
 ///
 /// let scheduler = StepLR::new(0.1f32, 30, 0.1f32);
 ///

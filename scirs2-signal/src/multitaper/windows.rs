@@ -1,8 +1,10 @@
-//! DPSS (Slepian) window generation for multitaper spectral estimation.
+use ndarray::s;
+// DPSS (Slepian) window generation for multitaper spectral estimation.
 
 use crate::error::{SignalError, SignalResult};
-use ndarray::{s, Array1, Array2};
+use ndarray::{Array1, Array2};
 
+#[allow(unused_imports)]
 /// Compute Discrete Prolate Spheroidal Sequences (DPSS), also known as Slepian sequences.
 ///
 /// DPSS tapers are often used in multitaper spectral estimation and are designed
@@ -37,6 +39,7 @@ use ndarray::{s, Array1, Array2};
 /// assert!(eigenvalues.len() >= 2);
 /// assert!(eigenvalues[0] > 0.0);
 /// ```
+#[allow(dead_code)]
 pub fn dpss(
     n: usize,
     nw: f64,
@@ -80,8 +83,7 @@ pub fn dpss(
     for i in 0..n_points {
         let i_float = i as f64;
         let n_float = n_points as f64;
-        let val =
-            ((n_float - 1.0) / 2.0 - i_float).powi(2) * (2.0 * std::f64::consts::PI * w).powi(2);
+        let val = ((n_float - 1.0) / 2.0 - i_float).powi(2) * (2.0 * PI * w).powi(2);
         diag.push(val);
     }
 
@@ -116,7 +118,7 @@ pub fn dpss(
 
     for i in 0..k {
         // Convert concentration from sin squared to sin
-        lambda[i] = (1.0 - sorted_eigvals[i]).sqrt();
+        lambda[i] = ((1.0 - sorted_eigvals[i]) as f64).sqrt();
 
         // Get eigenvector and normalize
         let mut v = sorted_eigvecs.slice(s![i, ..]).to_owned();
@@ -154,6 +156,7 @@ pub fn dpss(
 /// # Returns
 ///
 /// * Tuple of (eigenvalues, eigenvectors)
+#[allow(dead_code)]
 fn tridiagonal_eig(diag: &[f64], offdiag: &[f64]) -> SignalResult<(Vec<f64>, Array2<f64>)> {
     if diag.is_empty() {
         return Err(SignalError::ValueError(

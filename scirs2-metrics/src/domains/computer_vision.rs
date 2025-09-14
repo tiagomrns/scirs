@@ -110,11 +110,11 @@ impl ObjectDetectionMetrics {
             .filter(|(_, _, _, _, conf, _)| *conf >= self.confidence_threshold)
             .collect();
 
-        // Calculate IoU for all prediction-ground truth pairs
+        // Calculate IoU for all prediction-ground _truth pairs
         let mut matches = Vec::new();
         let mut per_class_stats: HashMap<i32, (usize, usize)> = HashMap::new(); // (tp, fp + fn)
 
-        // Track which ground truth boxes have been matched
+        // Track which ground _truth boxes have been matched
         let mut gt_matched = vec![false; ground_truth.len()];
 
         // Sort predictions by confidence (descending)
@@ -130,7 +130,7 @@ impl ObjectDetectionMetrics {
             let mut best_iou = 0.0;
             let mut best_gt_idx = None;
 
-            // Find best matching ground truth box
+            // Find best matching ground _truth box
             for (gt_idx, gt) in ground_truth.iter().enumerate() {
                 let (gx1, gy1, gx2, gy2, gt_class) = *gt;
 
@@ -143,7 +143,7 @@ impl ObjectDetectionMetrics {
                 }
             }
 
-            // Check if match is above threshold
+            // Check if match is above _threshold
             let is_true_positive = best_iou >= iou_threshold;
             if is_true_positive && best_gt_idx.is_some() {
                 gt_matched[best_gt_idx.unwrap()] = true;
@@ -293,8 +293,8 @@ impl ImageClassificationMetrics {
     }
 
     /// Set top-k values to calculate
-    pub fn with_top_k(mut self, top_k: Vec<usize>) -> Self {
-        self.top_k = top_k;
+    pub fn with_top_k(mut self, topk: Vec<usize>) -> Self {
+        self.top_k = topk;
         self
     }
 
@@ -380,7 +380,7 @@ impl ImageClassificationMetrics {
     ) -> Result<f64> {
         if y_true.len() != y_prob.nrows() {
             return Err(MetricsError::InvalidInput(
-                "Length mismatch between true labels and probabilities".to_string(),
+                "Length mismatch between _true labels and probabilities".to_string(),
             ));
         }
 
@@ -431,8 +431,8 @@ impl SegmentationMetrics {
     }
 
     /// Set index to ignore in calculations (e.g., background class)
-    pub fn with_ignore_index(mut self, ignore_index: i32) -> Self {
-        self.ignore_index = Some(ignore_index);
+    pub fn with_ignore_index(mut self, ignoreindex: i32) -> Self {
+        self.ignore_index = Some(ignoreindex);
         self
     }
 
@@ -444,7 +444,7 @@ impl SegmentationMetrics {
     ) -> Result<SegmentationResults> {
         if y_true.shape() != y_pred.shape() {
             return Err(MetricsError::InvalidInput(
-                "Shape mismatch between true and predicted masks".to_string(),
+                "Shape mismatch between _true and predicted masks".to_string(),
             ));
         }
 

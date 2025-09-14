@@ -3,9 +3,8 @@
 //! This module provides utilities for evaluating clustering results, including
 //! metrics like Dunn index and elbow method for determining optimal number of clusters.
 
-use ndarray::{Array1, Array2, ArrayBase, Data, Ix1, Ix2};
+use ndarray::{ArrayBase, Data, Ix2};
 use num_traits::{Float, NumCast};
-use std::collections::HashMap;
 
 use super::{calculate_distance, group_by_labels, pairwise_distances};
 use crate::error::{MetricsError, Result};
@@ -49,6 +48,7 @@ use crate::error::{MetricsError, Result};
 /// let score = dunn_index_enhanced(&x, &labels).unwrap();
 /// assert!(score > 0.5); // High score for well-separated clusters
 /// ```
+#[allow(dead_code)]
 pub fn dunn_index_enhanced<F, S1, S2, D>(
     x: &ArrayBase<S1, Ix2>,
     labels: &ArrayBase<S2, D>,
@@ -80,7 +80,7 @@ where
     }
 
     // Calculate pairwise distances within the dataset
-    let distances = pairwise_distances::<F, _>(x, "euclidean")?;
+    let distances = pairwise_distances::<F, S1>(x, "euclidean")?;
 
     // Find minimum inter-cluster distance
     let mut min_inter_distance = F::infinity();
@@ -155,6 +155,7 @@ where
 ///
 /// // Now you can plot inertias against k to find the "elbow"
 /// ```
+#[allow(dead_code)]
 pub fn elbow_method<F, S>(
     x: &ArrayBase<S, Ix2>,
     k_range: std::ops::RangeInclusive<usize>,

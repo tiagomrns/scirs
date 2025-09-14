@@ -9,7 +9,7 @@
 
 ## 🚀 Production Status
 
-**Version 0.1.0-alpha.6** - Final alpha release with complete feature set and production-grade stability:
+**Version 0.1.0-beta.1** - Final alpha release with complete feature set and production-grade stability:
 - ✅ **142 unit tests + 39 doctests** - 100% passing
 - ✅ **Zero warnings** - Strict code quality standards
 - ✅ **Performance optimized** - SIMD and parallel processing
@@ -43,7 +43,7 @@
 ### Basic Installation
 ```toml
 [dependencies]
-scirs2-ndimage = "0.1.0-alpha.6"
+scirs2-ndimage = "0.1.0-beta.1"
 ```
 
 ### Production Configuration (Recommended)
@@ -51,7 +51,7 @@ For maximum performance in production environments:
 
 ```toml
 [dependencies]
-scirs2-ndimage = { version = "0.1.0-alpha.6", features = ["parallel", "simd"] }
+scirs2-ndimage = { version = "0.1.0-beta.1", features = ["parallel", "simd"] }
 ndarray = "0.16"  # Required for array operations
 ```
 

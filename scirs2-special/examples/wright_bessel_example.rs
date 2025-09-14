@@ -1,6 +1,7 @@
 use scirs2_special::{wright_bessel, wright_bessel_zeros};
 use std::error::Error;
 
+#[allow(dead_code)]
 fn main() -> Result<(), Box<dyn Error>> {
     println!("Wright Bessel Functions Example");
     println!("==============================\n");

@@ -22,7 +22,7 @@ pub struct PolynomialFeatures {
     /// Whether to include interaction terms only (no powers)
     interaction_only: bool,
     /// Whether to include bias term (constant feature equal to 1)
-    include_bias: bool,
+    includebias: bool,
 }
 
 impl PolynomialFeatures {
@@ -31,52 +31,52 @@ impl PolynomialFeatures {
     /// # Arguments
     /// * `degree` - The degree of the polynomial features to generate
     /// * `interaction_only` - If true, only interaction features are produced (no powers)
-    /// * `include_bias` - If true, include a bias term (constant feature equal to 1)
+    /// * `includebias` - If true, include a bias term (constant feature equal to 1)
     ///
     /// # Returns
     /// * A new PolynomialFeatures instance
-    pub fn new(degree: usize, interaction_only: bool, include_bias: bool) -> Self {
+    pub fn new(degree: usize, interaction_only: bool, includebias: bool) -> Self {
         PolynomialFeatures {
             degree,
             interaction_only,
-            include_bias,
+            includebias,
         }
     }
 
     /// Calculates the number of output features that will be generated
     ///
     /// # Arguments
-    /// * `n_features` - The number of input features
+    /// * `nfeatures` - The number of input features
     ///
     /// # Returns
     /// * The number of features that will be generated
-    pub fn n_output_features(&self, n_features: usize) -> usize {
-        if n_features == 0 {
+    pub fn n_output_features(&self, nfeatures: usize) -> usize {
+        if nfeatures == 0 {
             return 0;
         }
 
         if self.interaction_only {
-            let mut n = if self.include_bias { 1 } else { 0 };
-            for d in 1..=self.degree.min(n_features) {
-                // Binomial coefficient (n_features, d)
+            let mut n = if self.includebias { 1 } else { 0 };
+            for d in 1..=self.degree.min(nfeatures) {
+                // Binomial coefficient (nfeatures, d)
                 let mut b = 1;
                 for i in 0..d {
-                    b = b * (n_features - i) / (i + 1);
+                    b = b * (nfeatures - i) / (i + 1);
                 }
                 n += b;
             }
             n
         } else {
-            // Number of polynomial features is equivalent to the number of terms
-            // in a polynomial of degree `degree` in `n_features` variables
-            let n = if self.include_bias { 1 } else { 0 };
+            // Number of polynomial _features is equivalent to the number of terms
+            // in a polynomial of degree `degree` in `nfeatures` variables
+            let n = if self.includebias { 1 } else { 0 };
             n + (0..=self.degree)
-                .skip(if self.include_bias { 1 } else { 0 })
+                .skip(if self.includebias { 1 } else { 0 })
                 .map(|d| {
-                    // Binomial coefficient (n_features + d - 1, d)
+                    // Binomial coefficient (nfeatures + d - 1, d)
                     let mut b = 1;
                     for i in 0..d {
-                        b = b * (n_features + d - 1 - i) / (i + 1);
+                        b = b * (nfeatures + d - 1 - i) / (i + 1);
                     }
                     b
                 })
@@ -96,7 +96,23 @@ impl PolynomialFeatures {
         S: Data,
         S::Elem: Float + NumCast,
     {
+        // Enhanced input validation
+        if array.is_empty() {
+            return Err(TransformError::InvalidInput(
+                "Input array cannot be empty".to_string(),
+            ));
+        }
+
         let array_f64 = array.mapv(|x| num_traits::cast::<S::Elem, f64>(x).unwrap_or(0.0));
+
+        // Validate for NaN or infinite values
+        for &val in array_f64.iter() {
+            if !val.is_finite() {
+                return Err(TransformError::DataValidationError(
+                    "Input array contains non-finite values (NaN or infinity)".to_string(),
+                ));
+            }
+        }
 
         if !array_f64.is_standard_layout() {
             return Err(TransformError::InvalidInput(
@@ -106,17 +122,49 @@ impl PolynomialFeatures {
 
         let shape = array_f64.shape();
         let n_samples = shape[0];
-        let n_features = shape[1];
+        let nfeatures = shape[1];
 
-        let n_output_features = self.n_output_features(n_features);
+        // Additional validation
+        if self.degree == 0 {
+            return Err(TransformError::InvalidInput(
+                "Degree must be at least 1".to_string(),
+            ));
+        }
+
+        if self.degree > 10 {
+            return Err(TransformError::InvalidInput(
+                "Degree > 10 may cause numerical overflow. Please use a smaller degree."
+                    .to_string(),
+            ));
+        }
+
+        // Check for potential overflow before computing output features
+        let n_output_features = self.n_output_features(nfeatures);
+
+        // Prevent excessive memory usage
+        if n_output_features > 100_000 {
+            return Err(TransformError::MemoryError(format!(
+                "Output would have {n_output_features} features, which exceeds the limit of 100,000. Consider reducing degree or using interaction_only=true"
+            )));
+        }
+
+        // Check for potential numerical overflow based on input data magnitude
+        let max_abs_value = array_f64.iter().map(|&x| x.abs()).fold(0.0, f64::max);
+        if max_abs_value > 100.0 && self.degree > 3 {
+            return Err(TransformError::DataValidationError(format!(
+                "Large input values (max: {max_abs_value:.2}) with high degree ({}) may cause numerical overflow. Consider scaling input data first.",
+                self.degree
+            )));
+        }
+
         let mut result = Array2::zeros((n_samples, n_output_features));
 
         // Generate combinations for each degree
-        let mut powers = vec![0; n_features];
+        let mut powers = vec![0; nfeatures];
         let mut col_idx = 0;
 
         // Add bias term (constant feature equal to 1)
-        if self.include_bias {
+        if self.includebias {
             for i in 0..n_samples {
                 result[[i, col_idx]] = 1.0;
             }
@@ -126,11 +174,11 @@ impl PolynomialFeatures {
         // Add individual features
         // Add individual features
         for i in 0..n_samples {
-            for j in 0..n_features {
+            for j in 0..nfeatures {
                 result[[i, col_idx + j]] = array_f64[[i, j]];
             }
         }
-        col_idx += n_features;
+        col_idx += nfeatures;
 
         // Generate higher-degree features
         if self.degree >= 2 {
@@ -145,26 +193,45 @@ impl PolynomialFeatures {
                 array: &Array2<f64>,
                 result: &mut Array2<f64>,
                 col_idx: &mut usize,
-            ) {
+            ) -> Result<()> {
                 if degree == 0 {
                     // Skip the bias term and individual features
                     let sum: usize = powers.iter().sum();
                     if sum >= 2 && sum <= max_degree {
-                        // Compute the feature values
+                        // Compute the feature values with overflow detection
                         for i in 0..array.shape()[0] {
                             let mut val = 1.0;
                             for (j, &p) in powers.iter().enumerate() {
-                                val *= array[[i, j]].powi(p as i32);
+                                if p > 0 {
+                                    let base = array[[i, j]];
+                                    let powered = base.powi(p as i32);
+
+                                    // Check for overflow/underflow
+                                    if !powered.is_finite() {
+                                        return Err(TransformError::ComputationError(format!(
+                                            "Numerical overflow detected when computing {base}^{p} at sample {i}, feature {j}"
+                                        )));
+                                    }
+
+                                    val *= powered;
+
+                                    // Additional overflow check after multiplication
+                                    if !val.is_finite() {
+                                        return Err(TransformError::ComputationError(format!(
+                                            "Numerical overflow detected during polynomial feature computation at sample {i}"
+                                        )));
+                                    }
+                                }
                             }
                             result[[i, *col_idx]] = val;
                         }
                         *col_idx += 1;
                     }
-                    return;
+                    return Ok(());
                 }
 
                 for j in start..powers.len() {
-                    // When interaction_only=true, only consider powers of 0 or 1
+                    // When interaction_only=true, _only consider powers of 0 or 1
                     let max_power = if interaction_only { 1 } else { degree };
                     for p in 1..=max_power {
                         powers[j] += p;
@@ -177,10 +244,11 @@ impl PolynomialFeatures {
                             array,
                             result,
                             col_idx,
-                        );
+                        )?;
                         powers[j] -= p;
                     }
                 }
+                Ok(())
             }
 
             // Start from degree 2 features
@@ -194,7 +262,25 @@ impl PolynomialFeatures {
                 &array_f64,
                 &mut result,
                 &mut current_col_idx,
-            );
+            )?;
+        }
+
+        // Final validation of the output
+        for &val in result.iter() {
+            if !val.is_finite() {
+                return Err(TransformError::ComputationError(
+                    "Output contains non-finite values. This may be due to numerical overflow."
+                        .to_string(),
+                ));
+            }
+        }
+
+        // Check for extremely large values that might cause issues downstream
+        let max_output_value = result.iter().map(|&x| x.abs()).fold(0.0, f64::max);
+        if max_output_value > 1e15 {
+            return Err(TransformError::DataValidationError(format!(
+                "Output contains extremely large values (max: {max_output_value:.2e}). Consider scaling input data or reducing polynomial degree."
+            )));
         }
 
         Ok(result)
@@ -221,16 +307,39 @@ impl PolynomialFeatures {
 ///                   
 /// let binarized = binarize(&data, 0.0).unwrap();
 /// ```
+#[allow(dead_code)]
 pub fn binarize<S>(array: &ArrayBase<S, Ix2>, threshold: f64) -> Result<Array2<f64>>
 where
     S: Data,
     S::Elem: Float + NumCast,
 {
+    // Enhanced input validation
+    if array.is_empty() {
+        return Err(TransformError::InvalidInput(
+            "Input _array cannot be empty".to_string(),
+        ));
+    }
+
+    if !threshold.is_finite() {
+        return Err(TransformError::InvalidInput(
+            "Threshold must be a finite number".to_string(),
+        ));
+    }
+
     let array_f64 = array.mapv(|x| num_traits::cast::<S::Elem, f64>(x).unwrap_or(0.0));
+
+    // Validate for NaN or infinite values
+    for &val in array_f64.iter() {
+        if !val.is_finite() {
+            return Err(TransformError::DataValidationError(
+                "Input _array contains non-finite values (NaN or infinity)".to_string(),
+            ));
+        }
+    }
 
     if !array_f64.is_standard_layout() {
         return Err(TransformError::InvalidInput(
-            "Input array must be in standard memory layout".to_string(),
+            "Input _array must be in standard memory layout".to_string(),
         ));
     }
 
@@ -258,8 +367,9 @@ where
 /// * `axis` - The axis along which to compute quantiles (0 for columns, 1 for rows)
 ///
 /// # Returns
-/// * `Result<Array2<f64>>` - Array of quantiles with shape (n_features, n_quantiles) if axis=0,
+/// * `Result<Array2<f64>>` - Array of quantiles with shape (nfeatures, n_quantiles) if axis=0,
 ///   or (n_samples, n_quantiles) if axis=1
+#[allow(dead_code)]
 fn compute_quantiles<S>(
     array: &ArrayBase<S, Ix2>,
     n_quantiles: usize,
@@ -284,11 +394,11 @@ where
     }
 
     let shape = array_f64.shape();
-    let n_features = if axis == 0 { shape[1] } else { shape[0] };
+    let nfeatures = if axis == 0 { shape[1] } else { shape[0] };
 
-    let mut quantiles = Array2::zeros((n_features, n_quantiles));
+    let mut quantiles = Array2::zeros((nfeatures, n_quantiles));
 
-    for i in 0..n_features {
+    for i in 0..nfeatures {
         // Extract the data along the given axis
         let data: Vec<f64> = if axis == 0 {
             array_f64.column(i).to_vec()
@@ -299,7 +409,7 @@ where
         let mut sorted_data = data.clone();
         sorted_data.sort_by(|a, b| a.partial_cmp(b).unwrap_or(std::cmp::Ordering::Equal));
 
-        // Compute quantiles
+        // Compute _quantiles
         for j in 0..n_quantiles {
             let q = j as f64 / (n_quantiles - 1) as f64;
             let idx = (q * (sorted_data.len() - 1) as f64).round() as usize;
@@ -320,6 +430,7 @@ where
 ///
 /// # Returns
 /// * `Result<Array2<f64>>` - The discretized array
+#[allow(dead_code)]
 pub fn discretize_equal_width<S>(
     array: &ArrayBase<S, Ix2>,
     n_bins: usize,
@@ -358,25 +469,25 @@ where
 
     let shape = array_f64.shape();
     let n_samples = shape[0];
-    let n_features = shape[1];
+    let nfeatures = shape[1];
 
     let n_output_features = if encode == "onehot" {
         if axis == 0 {
-            n_features * n_bins
+            nfeatures * n_bins
         } else {
             n_samples * n_bins
         }
     } else if axis == 0 {
-        n_features
+        nfeatures
     } else {
         n_samples
     };
 
-    let mut min_values = Array1::zeros(if axis == 0 { n_features } else { n_samples });
-    let mut max_values = Array1::zeros(if axis == 0 { n_features } else { n_samples });
+    let mut min_values = Array1::zeros(if axis == 0 { nfeatures } else { n_samples });
+    let mut max_values = Array1::zeros(if axis == 0 { nfeatures } else { n_samples });
 
     // Compute min and max values along the specified axis
-    for i in 0..(if axis == 0 { n_features } else { n_samples }) {
+    for i in 0..(if axis == 0 { nfeatures } else { n_samples }) {
         let data = if axis == 0 {
             array_f64.column(i)
         } else {
@@ -388,8 +499,8 @@ where
     }
 
     // Create the bin edges
-    let mut bin_edges = Array2::zeros((if axis == 0 { n_features } else { n_samples }, n_bins + 1));
-    for i in 0..(if axis == 0 { n_features } else { n_samples }) {
+    let mut bin_edges = Array2::zeros((if axis == 0 { nfeatures } else { n_samples }, n_bins + 1));
+    for i in 0..(if axis == 0 { nfeatures } else { n_samples }) {
         let min_val = min_values[i];
         let max_val = max_values[i];
         let bin_width = if (max_val - min_val).abs() < EPSILON {
@@ -413,7 +524,7 @@ where
     if encode == "ordinal" {
         // Ordinal encoding: assign each value to its bin index (0 to n_bins - 1)
         for i in 0..n_samples {
-            for j in 0..n_features {
+            for j in 0..nfeatures {
                 let value = array_f64[[i, j]];
                 let feature_idx = if axis == 0 { j } else { i };
 
@@ -430,7 +541,7 @@ where
     } else {
         // One-hot encoding: create a binary feature for each bin
         for i in 0..n_samples {
-            for j in 0..n_features {
+            for j in 0..nfeatures {
                 let value = array_f64[[i, j]];
                 let feature_idx = if axis == 0 { j } else { i };
 
@@ -464,6 +575,7 @@ where
 ///
 /// # Returns
 /// * `Result<Array2<f64>>` - The discretized array
+#[allow(dead_code)]
 pub fn discretize_equal_frequency<S>(
     array: &ArrayBase<S, Ix2>,
     n_bins: usize,
@@ -502,16 +614,16 @@ where
 
     let shape = array_f64.shape();
     let n_samples = shape[0];
-    let n_features = shape[1];
+    let nfeatures = shape[1];
 
     let n_output_features = if encode == "onehot" {
         if axis == 0 {
-            n_features * n_bins
+            nfeatures * n_bins
         } else {
             n_samples * n_bins
         }
     } else if axis == 0 {
-        n_features
+        nfeatures
     } else {
         n_samples
     };
@@ -525,7 +637,7 @@ where
     if encode == "ordinal" {
         // Ordinal encoding: assign each value to its bin index (0 to n_bins - 1)
         for i in 0..n_samples {
-            for j in 0..n_features {
+            for j in 0..nfeatures {
                 let value = array_f64[[i, j]];
                 let feature_idx = if axis == 0 { j } else { i };
 
@@ -542,7 +654,7 @@ where
     } else {
         // One-hot encoding: create a binary feature for each bin
         for i in 0..n_samples {
-            for j in 0..n_features {
+            for j in 0..nfeatures {
                 let value = array_f64[[i, j]];
                 let feature_idx = if axis == 0 { j } else { i };
 
@@ -577,6 +689,7 @@ where
 /// * `Result<Array2<f64>>` - The transformed array
 ///
 /// # Examples
+///
 /// ```
 /// use ndarray::array;
 /// use scirs2_transform::features::power_transform;
@@ -587,6 +700,7 @@ where
 ///                   
 /// let transformed = power_transform(&data, "yeo-johnson", true).unwrap();
 /// ```
+#[allow(dead_code)]
 pub fn power_transform<S>(
     array: &ArrayBase<S, Ix2>,
     method: &str,
@@ -604,65 +718,67 @@ where
         ));
     }
 
-    if method != "yeo-johnson" && method != "box-cox" {
-        return Err(TransformError::InvalidInput(
-            "method must be 'yeo-johnson' or 'box-cox'".to_string(),
-        ));
-    }
-
-    if method == "box-cox" {
-        // Box-Cox requires strictly positive data
-        if array_f64.iter().any(|&x| x <= 0.0) {
-            return Err(TransformError::InvalidInput(
-                "Box-Cox transformation requires strictly positive data".to_string(),
-            ));
-        }
+    if method != "box-cox" && method != "yeo-johnson" {
+        return Err(TransformError::InvalidInput(format!(
+            "Unknown method: {method}. Supported methods are 'box-cox' and 'yeo-johnson'"
+        )));
     }
 
     let shape = array_f64.shape();
     let n_samples = shape[0];
-    let n_features = shape[1];
+    let nfeatures = shape[1];
 
-    let mut transformed = Array2::zeros((n_samples, n_features));
+    let mut transformed = Array2::zeros((n_samples, nfeatures));
 
     // For each feature, find the optimal lambda and apply the transformation
-    for j in 0..n_features {
-        // Feature data (unused in this simplified implementation)
-        let _feature = array_f64.column(j).to_vec();
+    for j in 0..nfeatures {
+        let feature = array_f64.column(j).to_vec();
 
-        // Simplified estimation of lambda
-        // In practice, you would use maximum likelihood estimation
-        let lambda = if method == "yeo-johnson" {
-            // For Yeo-Johnson, lambda = 1 is a reasonable default
-            1.0
-        } else {
-            // For Box-Cox, lambda = 0 (log transform) is a reasonable default
-            0.0
-        };
+        // Maximum likelihood estimation of lambda
+        let lambda = estimate_optimal_lambda(&feature, method)?;
 
         // Apply the transformation
         for i in 0..n_samples {
             let x = array_f64[[i, j]];
 
-            transformed[[i, j]] = if method == "yeo-johnson" {
-                yeo_johnson_transform(x, lambda)
-            } else {
-                box_cox_transform(x, lambda)
+            let transformed_value = match method {
+                "box-cox" => {
+                    if lambda.abs() < 1e-10 {
+                        x.ln()
+                    } else {
+                        (x.powf(lambda) - 1.0) / lambda
+                    }
+                }
+                "yeo-johnson" => {
+                    if x >= 0.0 {
+                        if lambda.abs() < 1e-10 {
+                            x.ln_1p()
+                        } else {
+                            ((1.0 + x).powf(lambda) - 1.0) / lambda
+                        }
+                    } else if (2.0 - lambda).abs() < 1e-10 {
+                        -((-x + 1.0).ln())
+                    } else {
+                        -((-x + 1.0).powf(2.0 - lambda) - 1.0) / (2.0 - lambda)
+                    }
+                }
+                _ => unreachable!(), // Already validated above
             };
-        }
 
-        // Standardize if requested
-        if standardize {
-            let mean = transformed.column(j).sum() / n_samples as f64;
-            let variance = transformed
-                .column(j)
-                .iter()
-                .map(|&x| (x - mean).powi(2))
-                .sum::<f64>()
-                / n_samples as f64;
+            transformed[[i, j]] = transformed_value;
+        }
+    }
+
+    // Optionally standardize the transformed data
+    if standardize {
+        for j in 0..nfeatures {
+            let column_data: Vec<f64> = transformed.column(j).to_vec();
+            let mean = column_data.iter().sum::<f64>() / column_data.len() as f64;
+            let variance = column_data.iter().map(|x| (x - mean).powi(2)).sum::<f64>()
+                / column_data.len() as f64;
             let std_dev = variance.sqrt();
 
-            if std_dev > EPSILON {
+            if std_dev > 1e-10 {
                 for i in 0..n_samples {
                     transformed[[i, j]] = (transformed[[i, j]] - mean) / std_dev;
                 }
@@ -673,7 +789,174 @@ where
     Ok(transformed)
 }
 
+/// Estimate optimal lambda parameter using maximum likelihood estimation
+#[allow(dead_code)]
+fn estimate_optimal_lambda(data: &[f64], method: &str) -> Result<f64> {
+    if data.is_empty() {
+        return Err(TransformError::InvalidInput(
+            "Empty data for lambda estimation".to_string(),
+        ));
+    }
+
+    // Check data constraints based on transformation method
+    if method == "box-cox" {
+        // Box-Cox requires all positive values
+        if data.iter().any(|&x| x <= 0.0) {
+            return Err(TransformError::InvalidInput(
+                "Box-Cox transformation requires all positive values".to_string(),
+            ));
+        }
+    }
+
+    // Define search range for lambda (same for both box-cox and yeo-johnson)
+    let lambda_range = vec![-2.0, -1.5, -1.0, -0.5, 0.0, 0.5, 1.0, 1.5, 2.0];
+
+    let mut best_lambda = 0.0;
+    let mut best_log_likelihood = f64::NEG_INFINITY;
+
+    // Grid search for optimal lambda
+    for &lambda in &lambda_range {
+        let log_likelihood = compute_log_likelihood(data, lambda, method)?;
+
+        if log_likelihood > best_log_likelihood {
+            best_log_likelihood = log_likelihood;
+            best_lambda = lambda;
+        }
+    }
+
+    // Refine with golden section search around the best point
+    let tolerance = 1e-6;
+    let refined_lambda = golden_section_search(
+        data,
+        method,
+        best_lambda - 0.5,
+        best_lambda + 0.5,
+        tolerance,
+    )?;
+
+    Ok(refined_lambda)
+}
+
+/// Compute log-likelihood for given lambda parameter
+#[allow(dead_code)]
+fn compute_log_likelihood(data: &[f64], lambda: f64, method: &str) -> Result<f64> {
+    let n = data.len() as f64;
+    let mut transformed_data = Vec::with_capacity(data.len());
+    let mut jacobian_sum = 0.0;
+
+    // Apply transformation and compute Jacobian
+    for &x in data {
+        let (y, jacobian) = match method {
+            "box-cox" => {
+                if x <= 0.0 {
+                    return Ok(f64::NEG_INFINITY); // Invalid for Box-Cox
+                }
+                let y = if lambda.abs() < 1e-10 {
+                    x.ln()
+                } else {
+                    (x.powf(lambda) - 1.0) / lambda
+                };
+                let jacobian = x.ln();
+                (y, jacobian)
+            }
+            "yeo-johnson" => {
+                let (y, jacobian) = if x >= 0.0 {
+                    if lambda.abs() < 1e-10 {
+                        (x.ln_1p(), (1.0 + x).ln())
+                    } else {
+                        let y = ((1.0 + x).powf(lambda) - 1.0) / lambda;
+                        let jacobian = (1.0 + x).ln();
+                        (y, jacobian)
+                    }
+                } else if (2.0 - lambda).abs() < 1e-10 {
+                    (-((-x + 1.0).ln()), -(1.0 - x).ln())
+                } else {
+                    let y = -((-x + 1.0).powf(2.0 - lambda) - 1.0) / (2.0 - lambda);
+                    let jacobian = -(1.0 - x).ln();
+                    (y, jacobian)
+                };
+                (y, jacobian)
+            }
+            _ => {
+                return Err(TransformError::InvalidInput(format!(
+                    "Unknown method: {method}"
+                )))
+            }
+        };
+
+        if !y.is_finite() {
+            return Ok(f64::NEG_INFINITY);
+        }
+
+        transformed_data.push(y);
+        jacobian_sum += jacobian;
+    }
+
+    // Compute sample variance of transformed data
+    let mean = transformed_data.iter().sum::<f64>() / n;
+    let variance = transformed_data
+        .iter()
+        .map(|y| (y - mean).powi(2))
+        .sum::<f64>()
+        / n;
+
+    if variance <= 0.0 {
+        return Ok(f64::NEG_INFINITY);
+    }
+
+    // Log-likelihood calculation
+    let log_likelihood =
+        -0.5 * n * (2.0 * std::f64::consts::PI).ln() - 0.5 * n * variance.ln() - 0.5 * n
+            + (lambda - 1.0) * jacobian_sum;
+
+    Ok(log_likelihood)
+}
+
+/// Golden section search for optimal lambda
+#[allow(dead_code)]
+fn golden_section_search(
+    data: &[f64],
+    method: &str,
+    mut a: f64,
+    mut b: f64,
+    tolerance: f64,
+) -> Result<f64> {
+    let phi = (1.0 + 5.0_f64.sqrt()) / 2.0; // Golden ratio
+    let resphi = 2.0 - phi;
+
+    // Initial points
+    let mut x1 = a + resphi * (b - a);
+    let mut x2 = a + (1.0 - resphi) * (b - a);
+
+    let mut f1 = compute_log_likelihood(data, x1, method)?;
+    let mut f2 = compute_log_likelihood(data, x2, method)?;
+
+    for _ in 0..100 {
+        // Maximum iterations
+        if (b - a).abs() < tolerance {
+            break;
+        }
+
+        if f1 > f2 {
+            b = x2;
+            x2 = x1;
+            f2 = f1;
+            x1 = a + resphi * (b - a);
+            f1 = compute_log_likelihood(data, x1, method)?;
+        } else {
+            a = x1;
+            x1 = x2;
+            f1 = f2;
+            x2 = a + (1.0 - resphi) * (b - a);
+            f2 = compute_log_likelihood(data, x2, method)?;
+        }
+    }
+
+    Ok((a + b) / 2.0)
+}
+
 /// Apply Yeo-Johnson transformation to a single value
+#[allow(dead_code)]
 fn yeo_johnson_transform(x: f64, lambda: f64) -> f64 {
     if x >= 0.0 {
         if (lambda - 0.0).abs() < EPSILON {
@@ -689,6 +972,7 @@ fn yeo_johnson_transform(x: f64, lambda: f64) -> f64 {
 }
 
 /// Apply Box-Cox transformation to a single value
+#[allow(dead_code)]
 fn box_cox_transform(x: f64, lambda: f64) -> f64 {
     if (lambda - 0.0).abs() < EPSILON {
         x.ln()
@@ -749,6 +1033,7 @@ impl PowerTransformer {
     }
 
     /// Creates a new PowerTransformer with Yeo-Johnson method
+    #[allow(dead_code)]
     pub fn yeo_johnson(standardize: bool) -> Self {
         PowerTransformer {
             method: "yeo-johnson".to_string(),
@@ -761,6 +1046,7 @@ impl PowerTransformer {
     }
 
     /// Creates a new PowerTransformer with Box-Cox method
+    #[allow(dead_code)]
     pub fn box_cox(standardize: bool) -> Self {
         PowerTransformer {
             method: "box-cox".to_string(),
@@ -777,7 +1063,7 @@ impl PowerTransformer {
     /// This computes the optimal lambda parameters for each feature using maximum likelihood estimation
     ///
     /// # Arguments
-    /// * `x` - The input data, shape (n_samples, n_features)
+    /// * `x` - The input data, shape (n_samples, nfeatures)
     ///
     /// # Returns
     /// * `Result<()>` - Ok if successful, Err otherwise
@@ -796,9 +1082,9 @@ impl PowerTransformer {
 
         let shape = x_f64.shape();
         let n_samples = shape[0];
-        let n_features = shape[1];
+        let nfeatures = shape[1];
 
-        if n_samples == 0 || n_features == 0 {
+        if n_samples == 0 || nfeatures == 0 {
             return Err(TransformError::InvalidInput("Empty input data".to_string()));
         }
 
@@ -812,7 +1098,7 @@ impl PowerTransformer {
         }
 
         // Compute optimal lambda for each feature in parallel
-        let lambdas: Vec<f64> = (0..n_features)
+        let lambdas: Vec<f64> = (0..nfeatures)
             .into_par_iter()
             .map(|j| {
                 let feature = x_f64.column(j).to_vec();
@@ -824,11 +1110,11 @@ impl PowerTransformer {
 
         // If standardization is requested, we need to compute means and stds after transformation
         if self.standardize {
-            let mut means = Array1::zeros(n_features);
-            let mut stds = Array1::zeros(n_features);
+            let mut means = Array1::zeros(nfeatures);
+            let mut stds = Array1::zeros(nfeatures);
 
             // Transform data with optimal lambdas and compute statistics
-            for j in 0..n_features {
+            for j in 0..nfeatures {
                 let lambda = self.lambdas_.as_ref().unwrap()[j];
                 let mut transformed_feature = Array1::zeros(n_samples);
 
@@ -891,20 +1177,20 @@ impl PowerTransformer {
 
         let shape = x_f64.shape();
         let n_samples = shape[0];
-        let n_features = shape[1];
+        let nfeatures = shape[1];
 
         let lambdas = self.lambdas_.as_ref().unwrap();
 
-        if n_features != lambdas.len() {
+        if nfeatures != lambdas.len() {
             return Err(TransformError::InvalidInput(
                 "Number of features in transform data does not match fitted data".to_string(),
             ));
         }
 
-        let mut transformed = Array2::zeros((n_samples, n_features));
+        let mut transformed = Array2::zeros((n_samples, nfeatures));
 
         // Apply transformation in parallel for each feature
-        let transformed_data: Vec<Vec<f64>> = (0..n_features)
+        let transformed_data: Vec<Vec<f64>> = (0..nfeatures)
             .into_par_iter()
             .map(|j| {
                 let lambda = lambdas[j];
@@ -923,7 +1209,7 @@ impl PowerTransformer {
             .collect();
 
         // Copy results back to the array
-        for j in 0..n_features {
+        for j in 0..nfeatures {
             for i in 0..n_samples {
                 transformed[[i, j]] = transformed_data[j][i];
             }
@@ -934,7 +1220,7 @@ impl PowerTransformer {
             let means = self.means_.as_ref().unwrap();
             let stds = self.stds_.as_ref().unwrap();
 
-            for j in 0..n_features {
+            for j in 0..nfeatures {
                 let mean = means[j];
                 let std = stds[j];
 
@@ -991,11 +1277,11 @@ impl PowerTransformer {
 
         let shape = x_f64.shape();
         let n_samples = shape[0];
-        let n_features = shape[1];
+        let nfeatures = shape[1];
 
         let lambdas = self.lambdas_.as_ref().unwrap();
 
-        if n_features != lambdas.len() {
+        if nfeatures != lambdas.len() {
             return Err(TransformError::InvalidInput(
                 "Number of features in inverse transform data does not match fitted data"
                     .to_string(),
@@ -1009,7 +1295,7 @@ impl PowerTransformer {
             let means = self.means_.as_ref().unwrap();
             let stds = self.stds_.as_ref().unwrap();
 
-            for j in 0..n_features {
+            for j in 0..nfeatures {
                 let mean = means[j];
                 let std = stds[j];
 
@@ -1019,10 +1305,10 @@ impl PowerTransformer {
             }
         }
 
-        let mut original = Array2::zeros((n_samples, n_features));
+        let mut original = Array2::zeros((n_samples, nfeatures));
 
         // Apply inverse transformation in parallel for each feature
-        let original_data: Vec<Vec<f64>> = (0..n_features)
+        let original_data: Vec<Vec<f64>> = (0..nfeatures)
             .into_par_iter()
             .map(|j| {
                 let lambda = lambdas[j];
@@ -1041,7 +1327,7 @@ impl PowerTransformer {
             .collect();
 
         // Copy results back to the array
-        for j in 0..n_features {
+        for j in 0..nfeatures {
             for i in 0..n_samples {
                 original[[i, j]] = original_data[j][i];
             }
@@ -1136,17 +1422,33 @@ impl PowerTransformer {
     }
 
     /// Returns the fitted lambda parameters
+    #[allow(dead_code)]
     pub fn lambdas(&self) -> Option<&Array1<f64>> {
         self.lambdas_.as_ref()
     }
 
     /// Returns whether the transformer has been fitted
+    #[allow(dead_code)]
     pub fn is_fitted(&self) -> bool {
         self.is_fitted
     }
 }
 
+impl Default for PowerTransformer {
+    fn default() -> Self {
+        PowerTransformer {
+            method: "yeo-johnson".to_string(),
+            standardize: false,
+            lambdas_: None,
+            means_: None,
+            stds_: None,
+            is_fitted: false,
+        }
+    }
+}
+
 /// Apply Yeo-Johnson inverse transformation to a single value
+#[allow(dead_code)]
 fn yeo_johnson_inverse_transform(y: f64, lambda: f64) -> f64 {
     if y >= 0.0 {
         if (lambda - 0.0).abs() < EPSILON {
@@ -1162,6 +1464,7 @@ fn yeo_johnson_inverse_transform(y: f64, lambda: f64) -> f64 {
 }
 
 /// Apply Box-Cox inverse transformation to a single value
+#[allow(dead_code)]
 fn box_cox_inverse_transform(y: f64, lambda: f64) -> f64 {
     if (lambda - 0.0).abs() < EPSILON {
         y.exp()
@@ -1171,6 +1474,7 @@ fn box_cox_inverse_transform(y: f64, lambda: f64) -> f64 {
 }
 
 /// Compute the log of the Jacobian for Yeo-Johnson transformation
+#[allow(dead_code)]
 fn yeo_johnson_log_jacobian(x: f64, lambda: f64) -> f64 {
     if x >= 0.0 {
         (lambda - 1.0) * (x + 1.0).ln()
@@ -1180,6 +1484,7 @@ fn yeo_johnson_log_jacobian(x: f64, lambda: f64) -> f64 {
 }
 
 /// Compute the log of the Jacobian for Box-Cox transformation
+#[allow(dead_code)]
 fn box_cox_log_jacobian(x: f64, lambda: f64) -> f64 {
     (lambda - 1.0) * x.ln()
 }
@@ -1193,6 +1498,7 @@ fn box_cox_log_jacobian(x: f64, lambda: f64) -> f64 {
 ///
 /// # Returns
 /// * `Result<Array2<f64>>` - The log-transformed array
+#[allow(dead_code)]
 pub fn log_transform<S>(array: &ArrayBase<S, Ix2>, epsilon: f64) -> Result<Array2<f64>>
 where
     S: Data,
@@ -1202,7 +1508,7 @@ where
 
     if !array_f64.is_standard_layout() {
         return Err(TransformError::InvalidInput(
-            "Input array must be in standard memory layout".to_string(),
+            "Input _array must be in standard memory layout".to_string(),
         ));
     }
 
@@ -1233,7 +1539,7 @@ mod tests {
     fn test_polynomial_features() {
         let data = Array::from_shape_vec((2, 2), vec![1.0, 2.0, 3.0, 4.0]).unwrap();
 
-        // Test with degree=2, interaction_only=false, include_bias=true
+        // Test with degree=2, interaction_only=false, includebias=true
         let poly = PolynomialFeatures::new(2, false, true);
         let transformed = poly.transform(&data).unwrap();
 

@@ -10,6 +10,7 @@ use std::f64::consts::PI;
 
 /// Test solving an ODE with a constant mass matrix
 #[test]
+#[allow(dead_code)]
 fn test_constant_mass_matrix() -> IntegrateResult<()> {
     // Simple 2D oscillator with a mass matrix
     // M·[x', v']^T = [v, -x]^T
@@ -67,6 +68,7 @@ fn test_constant_mass_matrix() -> IntegrateResult<()> {
 
 /// Test solving an ODE with a time-dependent mass matrix
 #[test]
+#[allow(dead_code)]
 fn test_time_dependent_mass_matrix() -> IntegrateResult<()> {
     // Simple time-dependent system
     // M(t)·x'' + x = 0
@@ -131,8 +133,7 @@ fn test_time_dependent_mass_matrix() -> IntegrateResult<()> {
     let rel_energy_change = (final_energy - initial_energy).abs() / initial_energy;
     assert!(
         rel_energy_change < 0.15, // Allow up to 15% energy change for a 10% mass variation
-        "Energy changed too much: {}",
-        rel_energy_change
+        "Energy changed too much: {rel_energy_change}"
     );
 
     Ok(())
@@ -141,6 +142,7 @@ fn test_time_dependent_mass_matrix() -> IntegrateResult<()> {
 /// Test solving an ODE with an identity mass matrix
 /// (should be equivalent to standard ODE)
 #[test]
+#[allow(dead_code)]
 fn test_identity_mass_matrix() -> IntegrateResult<()> {
     // Simple harmonic oscillator
     // x'' + x = 0
@@ -196,6 +198,7 @@ fn test_identity_mass_matrix() -> IntegrateResult<()> {
 
 /// Test creating different types of mass matrices
 #[test]
+#[allow(dead_code)]
 fn test_mass_matrix_creation() {
     // Identity matrix
     let identity = MassMatrix::<f64>::identity();
@@ -217,7 +220,7 @@ fn test_mass_matrix_creation() {
     assert!(time_dependent.constant_matrix.is_none());
 
     // State-dependent matrix
-    let state_func = |_t: f64, _y: ArrayView1<f64>| Array2::<f64>::eye(2);
+    let state_func = |_t: f64, y: ArrayView1<f64>| Array2::<f64>::eye(2);
     let state_dependent = MassMatrix::state_dependent(state_func);
     assert_eq!(state_dependent.matrix_type, MassMatrixType::StateDependent);
     assert!(state_dependent.state_function.is_some());
@@ -225,7 +228,8 @@ fn test_mass_matrix_creation() {
     assert!(state_dependent.time_function.is_none());
 
     // Bandwidth specification
-    let banded = MassMatrix::constant(m).with_bandwidth(1, 2);
+    let mut mass_matrix = MassMatrix::constant(m);
+    let banded = mass_matrix.with_bandwidth(1, 2);
     assert!(banded.is_banded);
     assert_eq!(banded.lower_bandwidth, Some(1));
     assert_eq!(banded.upper_bandwidth, Some(2));
@@ -233,6 +237,7 @@ fn test_mass_matrix_creation() {
 
 /// Test mass matrix evaluation
 #[test]
+#[allow(dead_code)]
 fn test_mass_matrix_evaluation() {
     // Constant matrix
     let mut m = Array2::<f64>::eye(2);

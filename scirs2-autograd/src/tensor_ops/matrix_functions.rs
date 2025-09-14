@@ -156,6 +156,7 @@ impl<F: Float + ndarray::ScalarOperand + FromPrimitive> Op<F> for MatrixPowOp {
 // Helper functions
 
 /// Compute matrix square root using eigendecomposition
+#[allow(dead_code)]
 fn compute_matrix_sqrt<F: Float + ndarray::ScalarOperand + FromPrimitive>(
     matrix: &ndarray::ArrayView2<F>,
 ) -> Result<Array2<F>, OpError> {
@@ -232,6 +233,7 @@ fn compute_matrix_sqrt<F: Float + ndarray::ScalarOperand + FromPrimitive>(
 }
 
 /// Compute matrix logarithm using eigendecomposition
+#[allow(dead_code)]
 fn compute_matrix_log<F: Float + ndarray::ScalarOperand + FromPrimitive>(
     matrix: &ndarray::ArrayView2<F>,
 ) -> Result<Array2<F>, OpError> {
@@ -274,6 +276,7 @@ fn compute_matrix_log<F: Float + ndarray::ScalarOperand + FromPrimitive>(
 }
 
 /// Compute matrix power using eigendecomposition or repeated squaring
+#[allow(dead_code)]
 fn compute_matrix_pow<F: Float + ndarray::ScalarOperand + FromPrimitive>(
     matrix: &ndarray::ArrayView2<F>,
     power: f64,
@@ -341,6 +344,7 @@ fn compute_matrix_pow<F: Float + ndarray::ScalarOperand + FromPrimitive>(
 }
 
 /// Denman-Beavers iteration for matrix square root
+#[allow(dead_code)]
 fn compute_matrix_sqrt_denman_beavers<F: Float + ndarray::ScalarOperand>(
     matrix: &ndarray::ArrayView2<F>,
 ) -> Result<Array2<F>, OpError> {
@@ -373,6 +377,7 @@ fn compute_matrix_sqrt_denman_beavers<F: Float + ndarray::ScalarOperand>(
 }
 
 /// Inverse scaling and squaring method for matrix logarithm
+#[allow(dead_code)]
 fn compute_matrix_log_inverse_scaling<F: Float + ndarray::ScalarOperand + FromPrimitive>(
     matrix: &ndarray::ArrayView2<F>,
 ) -> Result<Array2<F>, OpError> {
@@ -406,6 +411,7 @@ fn compute_matrix_log_inverse_scaling<F: Float + ndarray::ScalarOperand + FromPr
 }
 
 /// Padé approximation for log(I + X)
+#[allow(dead_code)]
 fn compute_log_pade<F: Float + ndarray::ScalarOperand>(
     x: &Array2<F>,
 ) -> Result<Array2<F>, OpError> {
@@ -428,6 +434,7 @@ fn compute_log_pade<F: Float + ndarray::ScalarOperand>(
 }
 
 /// Integer matrix power using repeated squaring
+#[allow(dead_code)]
 fn compute_matrix_pow_integer<F: Float + ndarray::ScalarOperand>(
     matrix: &ndarray::ArrayView2<F>,
     power: i32,
@@ -460,6 +467,7 @@ fn compute_matrix_pow_integer<F: Float + ndarray::ScalarOperand>(
 
 // Utility functions (reuse from other modules or implement here)
 
+#[allow(dead_code)]
 fn is_symmetric_matrix<F: Float>(matrix: &ndarray::ArrayView2<F>) -> bool {
     let n = matrix.shape()[0];
     for i in 0..n {
@@ -472,6 +480,7 @@ fn is_symmetric_matrix<F: Float>(matrix: &ndarray::ArrayView2<F>) -> bool {
     true
 }
 
+#[allow(dead_code)]
 fn is_positive_semidefinite<F: Float + ndarray::ScalarOperand + FromPrimitive>(
     matrix: &ndarray::ArrayView2<F>,
 ) -> Result<bool, OpError> {
@@ -480,7 +489,7 @@ fn is_positive_semidefinite<F: Float + ndarray::ScalarOperand + FromPrimitive>(
     }
 
     // Check eigenvalues
-    let (eigenvalues, _) = compute_symmetric_eigen(matrix)?;
+    let (eigenvalues, _eigenvectors) = compute_symmetric_eigen(matrix)?;
     for &lambda in eigenvalues.iter() {
         if lambda < -F::epsilon() * F::from(10.0).unwrap() {
             return Ok(false);
@@ -489,6 +498,7 @@ fn is_positive_semidefinite<F: Float + ndarray::ScalarOperand + FromPrimitive>(
     Ok(true)
 }
 
+#[allow(dead_code)]
 fn compute_symmetric_eigen<F: Float + ndarray::ScalarOperand + FromPrimitive>(
     matrix: &ndarray::ArrayView2<F>,
 ) -> Result<(Array1<F>, Array2<F>), OpError> {
@@ -557,6 +567,7 @@ fn compute_symmetric_eigen<F: Float + ndarray::ScalarOperand + FromPrimitive>(
     Ok((eigenvalues, eigenvectors))
 }
 
+#[allow(dead_code)]
 fn compute_matrix_inverse<F: Float>(matrix: &ndarray::ArrayView2<F>) -> Result<Array2<F>, OpError> {
     let n = matrix.shape()[0];
     let mut a = matrix.to_owned();
@@ -608,6 +619,7 @@ fn compute_matrix_inverse<F: Float>(matrix: &ndarray::ArrayView2<F>) -> Result<A
     Ok(inv)
 }
 
+#[allow(dead_code)]
 fn solve_matrix_equation<F: Float>(
     a: &ndarray::ArrayView2<F>,
     b: &ndarray::ArrayView2<F>,
@@ -617,6 +629,7 @@ fn solve_matrix_equation<F: Float>(
     Ok(a_inv.dot(b))
 }
 
+#[allow(dead_code)]
 fn compute_matrix_exp_pade<F: Float + ndarray::ScalarOperand + FromPrimitive>(
     matrix: &ndarray::ArrayView2<F>,
 ) -> Result<Array2<F>, OpError> {
@@ -683,42 +696,45 @@ fn compute_matrix_exp_pade<F: Float + ndarray::ScalarOperand + FromPrimitive>(
 // Public API functions
 
 /// Compute matrix square root
+#[allow(dead_code)]
 pub fn matrix_sqrt<'g, F: Float + ndarray::ScalarOperand + FromPrimitive>(
     matrix: &Tensor<'g, F>,
 ) -> Tensor<'g, F> {
     let g = matrix.graph();
-    let matrix_shape = crate::tensor_ops::shape(matrix);
+    let matrixshape = crate::tensor_ops::shape(matrix);
 
     Tensor::builder(g)
         .append_input(matrix, false)
-        .set_shape(&matrix_shape)
+        .setshape(&matrixshape)
         .build(MatrixSqrtOp)
 }
 
 /// Compute matrix logarithm
+#[allow(dead_code)]
 pub fn matrix_log<'g, F: Float + ndarray::ScalarOperand + FromPrimitive>(
     matrix: &Tensor<'g, F>,
 ) -> Tensor<'g, F> {
     let g = matrix.graph();
-    let matrix_shape = crate::tensor_ops::shape(matrix);
+    let matrixshape = crate::tensor_ops::shape(matrix);
 
     Tensor::builder(g)
         .append_input(matrix, false)
-        .set_shape(&matrix_shape)
+        .setshape(&matrixshape)
         .build(MatrixLogOp)
 }
 
 /// Compute matrix power
+#[allow(dead_code)]
 pub fn matrix_power<'g, F: Float + ndarray::ScalarOperand + FromPrimitive>(
     matrix: &Tensor<'g, F>,
     power: f64,
 ) -> Tensor<'g, F> {
     let g = matrix.graph();
-    let matrix_shape = crate::tensor_ops::shape(matrix);
+    let matrixshape = crate::tensor_ops::shape(matrix);
 
     Tensor::builder(g)
         .append_input(matrix, false)
-        .set_shape(&matrix_shape)
+        .setshape(&matrixshape)
         .build(MatrixPowOp { power })
 }
 

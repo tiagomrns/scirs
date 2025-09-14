@@ -24,6 +24,7 @@ use ndarray::{Array1, ArrayView1};
 /// # Returns
 ///
 /// The solution as an ODEResult or an error
+#[allow(dead_code)]
 pub fn rk45_method<F, Func>(
     f: Func,
     t_span: [F; 2],
@@ -41,14 +42,14 @@ where
     // Determine initial step size if not provided
     let h0 = opts.h0.unwrap_or_else(|| {
         // Simple heuristic for initial step size
-        let span = t_end - t_start;
-        span / F::from_usize(100).unwrap()
+        let _span = t_end - t_start;
+        _span / F::from_usize(100).unwrap()
     });
 
     // Determine minimum and maximum step sizes
     let min_step = opts.min_step.unwrap_or_else(|| {
-        let span = t_end - t_start;
-        span * F::from_f64(1e-8).unwrap() // Minimal step size
+        let _span = t_end - t_start;
+        _span * F::from_f64(1e-8).unwrap() // Minimal step size
     });
 
     let max_step = opts.max_step.unwrap_or_else(|| {
@@ -220,8 +221,7 @@ where
             // If step size is too small, return error
             if h < min_step {
                 return Err(crate::error::IntegrateError::StepSizeTooSmall(format!(
-                    "Step size {} too small at t {}",
-                    h, t
+                    "Step size {h} too small at t {t}"
                 )));
             }
         }
@@ -269,6 +269,7 @@ where
 /// # Returns
 ///
 /// The solution as an ODEResult or an error
+#[allow(dead_code)]
 pub fn rk23_method<F, Func>(
     f: Func,
     t_span: [F; 2],
@@ -285,14 +286,14 @@ where
     // Determine initial step size if not provided
     let h0 = opts.h0.unwrap_or_else(|| {
         // Simple heuristic for initial step size
-        let span = t_end - t_start;
-        span / F::from_usize(100).unwrap()
+        let _span = t_end - t_start;
+        _span / F::from_usize(100).unwrap()
     });
 
     // Determine minimum and maximum step sizes
     let min_step = opts.min_step.unwrap_or_else(|| {
-        let span = t_end - t_start;
-        span * F::from_f64(1e-8).unwrap() // Minimal step size
+        let _span = t_end - t_start;
+        _span * F::from_f64(1e-8).unwrap() // Minimal step size
     });
 
     let max_step = opts.max_step.unwrap_or_else(|| {
@@ -386,6 +387,7 @@ where
 /// # Returns
 ///
 /// The solution as an ODEResult or an error
+#[allow(dead_code)]
 pub fn dop853_method<F, Func>(
     f: Func,
     t_span: [F; 2],
@@ -402,14 +404,14 @@ where
     // Determine initial step size if not provided
     let h0 = opts.h0.unwrap_or_else(|| {
         // Simple heuristic for initial step size
-        let span = t_end - t_start;
-        span / F::from_usize(100).unwrap()
+        let _span = t_end - t_start;
+        _span / F::from_usize(100).unwrap()
     });
 
     // Determine minimum and maximum step sizes
     let min_step = opts.min_step.unwrap_or_else(|| {
-        let span = t_end - t_start;
-        span * F::from_f64(1e-8).unwrap() // Minimal step size
+        let _span = t_end - t_start;
+        _span * F::from_f64(1e-8).unwrap() // Minimal step size
     });
 
     let max_step = opts.max_step.unwrap_or_else(|| {

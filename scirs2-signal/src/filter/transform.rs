@@ -1,15 +1,17 @@
-//! Filter transformation functions
-//!
-//! This module provides comprehensive transformation functions for converting between
-//! different filter representations including analog-to-digital transforms, frequency
-//! transformations, and conversions between zeros-poles-gain and transfer function forms.
+// Filter transformation functions
+//
+// This module provides comprehensive transformation functions for converting between
+// different filter representations including analog-to-digital transforms, frequency
+// transformations, and conversions between zeros-poles-gain and transfer function forms.
 
+use super::common::FilterCoefficients;
 use crate::error::{SignalError, SignalResult};
+use crate::lti::design::tf;
+use crate::lti::TransferFunction;
 use num_complex::Complex64;
 use num_traits::Zero;
 
-use super::common::FilterCoefficients;
-
+#[allow(unused_imports)]
 /// Apply bilinear transform to convert analog filter to digital
 ///
 /// The bilinear transform is a method for converting analog filter designs to digital
@@ -31,13 +33,13 @@ use super::common::FilterCoefficients;
 ///
 /// ```
 /// use scirs2_signal::filter::transform::bilinear_transform;
-/// use num_complex::Complex64;
 ///
 /// // Convert simple analog integrator to digital
 /// let analog_poles = vec![Complex64::new(0.0, 0.0)];
 /// let analog_zeros = vec![];
 /// let (z, p, k) = bilinear_transform(&analog_zeros, &analog_poles, 1.0, 1000.0).unwrap();
 /// ```
+#[allow(dead_code)]
 pub fn bilinear_transform(
     zeros: &[Complex64],
     poles: &[Complex64],
@@ -46,7 +48,7 @@ pub fn bilinear_transform(
 ) -> SignalResult<(Vec<Complex64>, Vec<Complex64>, f64)> {
     if sample_rate <= 0.0 {
         return Err(SignalError::ValueError(
-            "Sample rate must be positive".to_string(),
+            "Sample _rate must be positive".to_string(),
         ));
     }
 
@@ -94,13 +96,13 @@ pub fn bilinear_transform(
 ///
 /// ```
 /// use scirs2_signal::filter::transform::zpk_to_tf;
-/// use num_complex::Complex64;
 ///
 /// // Convert simple first-order system
 /// let zeros = vec![];
 /// let poles = vec![Complex64::new(-1.0, 0.0)];
 /// let (b, a) = zpk_to_tf(&zeros, &poles, 1.0).unwrap();
 /// ```
+#[allow(dead_code)]
 pub fn zpk_to_tf(
     zeros: &[Complex64],
     poles: &[Complex64],
@@ -214,6 +216,7 @@ pub fn zpk_to_tf(
 /// let a = vec![1.0, 1.0]; // H(z) = 1 / (z + 1)
 /// let (zeros, poles, gain) = tf_to_zpk(&b, &a).unwrap();
 /// ```
+#[allow(dead_code)]
 pub fn tf_to_zpk(b: &[f64], a: &[f64]) -> SignalResult<(Vec<Complex64>, Vec<Complex64>, f64)> {
     if a.is_empty() || a[0].abs() < 1e-15 {
         return Err(SignalError::ValueError(
@@ -222,7 +225,7 @@ pub fn tf_to_zpk(b: &[f64], a: &[f64]) -> SignalResult<(Vec<Complex64>, Vec<Comp
     }
 
     // Find zeros (roots of numerator)
-    let zeros = if b.is_empty() || b.iter().all(|&x| x.abs() < 1e-15) {
+    let zeros = if b.is_empty() || b.iter().all(|&x: &f64| x.abs() < 1e-15) {
         Vec::new()
     } else {
         find_polynomial_roots(b)?
@@ -252,6 +255,7 @@ pub fn tf_to_zpk(b: &[f64], a: &[f64]) -> SignalResult<(Vec<Complex64>, Vec<Comp
 /// # Returns
 ///
 /// * Transformed (zeros, poles, gain)
+#[allow(dead_code)]
 pub fn lp_to_lp_transform(
     zeros: &[Complex64],
     poles: &[Complex64],
@@ -293,6 +297,7 @@ pub fn lp_to_lp_transform(
 /// # Returns
 ///
 /// * Transformed (zeros, poles, gain)
+#[allow(dead_code)]
 pub fn lp_to_hp_transform(
     zeros: &[Complex64],
     poles: &[Complex64],
@@ -352,6 +357,7 @@ pub fn lp_to_hp_transform(
 /// # Returns
 ///
 /// * Transformed (zeros, poles, gain)
+#[allow(dead_code)]
 pub fn lp_to_bp_transform(
     zeros: &[Complex64],
     poles: &[Complex64],
@@ -440,6 +446,7 @@ pub fn lp_to_bp_transform(
 /// # Returns
 ///
 /// * Transformed (zeros, poles, gain)
+#[allow(dead_code)]
 pub fn lp_to_bs_transform(
     zeros: &[Complex64],
     poles: &[Complex64],
@@ -526,6 +533,7 @@ pub fn lp_to_bs_transform(
 /// # Returns
 ///
 /// * Normalized (numerator, denominator) coefficients
+#[allow(dead_code)]
 pub fn normalize_coefficients(b: &[f64], a: &[f64]) -> SignalResult<FilterCoefficients> {
     if a.is_empty() || a[0].abs() < 1e-15 {
         return Err(SignalError::ValueError(
@@ -541,6 +549,7 @@ pub fn normalize_coefficients(b: &[f64], a: &[f64]) -> SignalResult<FilterCoeffi
 }
 
 // Helper function for polynomial root finding
+#[allow(dead_code)]
 fn find_polynomial_roots(coeffs: &[f64]) -> SignalResult<Vec<Complex64>> {
     if coeffs.is_empty() {
         return Ok(Vec::new());
@@ -622,7 +631,7 @@ fn find_polynomial_roots(coeffs: &[f64]) -> SignalResult<Vec<Complex64>> {
     }
 
     for estimate in estimates {
-        let (p_val, _) = evaluate_polynomial_and_derivative(&trimmed_coeffs, estimate);
+        let (p_val, p_deriv) = evaluate_polynomial_and_derivative(&trimmed_coeffs, estimate);
         if p_val.norm() < 1e-6 {
             roots.push(estimate);
         }
@@ -632,6 +641,7 @@ fn find_polynomial_roots(coeffs: &[f64]) -> SignalResult<Vec<Complex64>> {
 }
 
 /// Evaluate polynomial and its derivative at a complex point
+#[allow(dead_code)]
 fn evaluate_polynomial_and_derivative(coeffs: &[f64], z: Complex64) -> (Complex64, Complex64) {
     if coeffs.is_empty() {
         return (Complex64::zero(), Complex64::zero());

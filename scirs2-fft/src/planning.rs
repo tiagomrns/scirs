@@ -215,7 +215,7 @@ impl AdvancedFftPlanner {
 
         let auto_tuner = if config.strategy == PlanningStrategy::AutoTuned {
             let tuner = AutoTuner::new();
-            if let Some(_auto_config) = &config.auto_tune_config {
+            if let Some(_autoconfig) = &config.auto_tune_config {
                 // Configure the auto-tuner here if needed
                 // This is a simplified implementation
             }
@@ -367,12 +367,12 @@ impl AdvancedFftPlanner {
         // If still over capacity, remove least recently used
         let max_entries = self.config.max_cached_plans;
         while cache.len() >= max_entries {
-            if let Some((key_to_remove, _)) = cache
+            if let Some((key_to_remove_, _)) = cache
                 .iter()
                 .min_by_key(|(_, v)| (v.last_used, v.usage_count))
-                .map(|(k, _)| (k.clone(), ()))
+                .map(|(k_, _)| (k_.clone(), ()))
             {
-                cache.remove(&key_to_remove);
+                cache.remove(&key_to_remove_);
             } else {
                 break;
             }
@@ -428,7 +428,7 @@ impl AdvancedFftPlanner {
     }
 
     /// Pre-compute plans for common sizes
-    pub fn precompute_common_sizes(&mut self, sizes: &[&[usize]]) -> FFTResult<()> {
+    pub fn precompute_commonsizes(&mut self, sizes: &[&[usize]]) -> FFTResult<()> {
         for &shape in sizes {
             // Create both forward and inverse plans
             let _ = self.plan_fft(shape, true, PlannerBackend::default())?;
@@ -459,11 +459,13 @@ static GLOBAL_FFT_PLANNER: std::sync::OnceLock<Mutex<AdvancedFftPlanner>> =
     std::sync::OnceLock::new();
 
 /// Get the global FFT planner instance
+#[allow(dead_code)]
 pub fn get_global_planner() -> &'static Mutex<AdvancedFftPlanner> {
     GLOBAL_FFT_PLANNER.get_or_init(|| Mutex::new(AdvancedFftPlanner::new()))
 }
 
 /// Initialize the global FFT planner with custom configuration
+#[allow(dead_code)]
 pub fn init_global_planner(config: PlanningConfig) -> Result<(), &'static str> {
     GLOBAL_FFT_PLANNER
         .set(Mutex::new(AdvancedFftPlanner::with_config(config)))
@@ -668,10 +670,11 @@ impl Default for PlanBuilder {
 /// # Returns
 ///
 /// Result indicating success or failure
-pub fn plan_ahead_of_time(sizes: &[usize], db_path: Option<&str>) -> FFTResult<()> {
+#[allow(dead_code)]
+pub fn plan_ahead_of_time(sizes: &[usize], dbpath: Option<&str>) -> FFTResult<()> {
     let mut config = PlanningConfig::default();
-    if let Some(path) = db_path {
-        config.serialized_db_path = Some(path.to_string());
+    if let Some(_path) = dbpath {
+        config.serialized_db_path = Some(_path.to_string());
         config.strategy = PlanningStrategy::SerializedFirst;
     }
 

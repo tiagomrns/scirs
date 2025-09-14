@@ -15,6 +15,7 @@ use scirs2_fft::{
 };
 use std::time::Instant;
 
+#[allow(dead_code)]
 fn main() -> FFTResult<()> {
     println!("Multi-GPU Backend Example");
     println!("=========================");
@@ -32,6 +33,7 @@ fn main() -> FFTResult<()> {
 }
 
 /// Test GPU backend detection and initialization
+#[allow(dead_code)]
 fn test_gpu_backend_detection() -> FFTResult<()> {
     println!("\n--- GPU Backend Detection ---");
 
@@ -69,6 +71,7 @@ fn test_gpu_backend_detection() -> FFTResult<()> {
 }
 
 /// Test memory management across different backends
+#[allow(dead_code)]
 fn test_memory_management() -> FFTResult<()> {
     println!("\n--- Memory Management Test ---");
 
@@ -82,13 +85,13 @@ fn test_memory_management() -> FFTResult<()> {
     for (name, backend) in backends {
         println!("\nTesting {} backend:", name);
 
-        let buffer_size = 1024;
-        let element_size = std::mem::size_of::<Complex64>();
+        let buffersize = 1024;
+        let elementsize = std::mem::size_of::<Complex64>();
 
         // Test buffer creation
         match BufferDescriptor::new(
-            buffer_size,
-            element_size,
+            buffersize,
+            elementsize,
             BufferLocation::Device,
             BufferType::Input,
             0,
@@ -106,13 +109,13 @@ fn test_memory_management() -> FFTResult<()> {
                 println!("  Has device memory: {}", buffer.has_device_memory());
 
                 // Test memory transfers
-                let test_data = vec![0u8; buffer_size * element_size];
+                let test_data = vec![0u8; buffersize * elementsize];
                 match buffer.copy_host_to_device(&test_data) {
                     Ok(_) => println!("✓ Host-to-device transfer successful"),
                     Err(e) => println!("⚠ Host-to-device transfer failed: {}", e),
                 }
 
-                let mut result_data = vec![0u8; buffer_size * element_size];
+                let mut result_data = vec![0u8; buffersize * elementsize];
                 match buffer.copy_device_to_host(&mut result_data) {
                     Ok(_) => println!("✓ Device-to-host transfer successful"),
                     Err(e) => println!("⚠ Device-to-host transfer failed: {}", e),
@@ -128,10 +131,11 @@ fn test_memory_management() -> FFTResult<()> {
 }
 
 /// Test performance comparison between backends
+#[allow(dead_code)]
 fn test_performance_comparison() -> FFTResult<()> {
     println!("\n--- Performance Comparison ---");
 
-    let signal_sizes = vec![256, 512, 1024, 2048];
+    let signalsizes = vec![256, 512, 1024, 2048];
     let backends = vec![
         GPUBackend::CUDA,
         GPUBackend::HIP,
@@ -139,7 +143,7 @@ fn test_performance_comparison() -> FFTResult<()> {
         GPUBackend::CPUFallback,
     ];
 
-    for &size in &signal_sizes {
+    for &size in &signalsizes {
         println!("\nSignal size: {} elements", size);
 
         for backend in &backends {
@@ -171,6 +175,7 @@ fn test_performance_comparison() -> FFTResult<()> {
 }
 
 /// Helper function to create and test a buffer
+#[allow(dead_code)]
 fn create_and_test_buffer(size: usize, backend: GPUBackend) -> FFTResult<std::time::Duration> {
     let start = Instant::now();
 

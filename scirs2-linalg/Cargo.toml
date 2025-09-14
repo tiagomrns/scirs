@@ -1,13 +1,16 @@
 [package]
 name = "scirs2-linalg"
 version.workspace = true
-edition = "2021"
-authors = ["SciRS2 Team"]
-description = "Linear algebra module for SciRS2"
-license = "MIT OR Apache-2.0"
-repository = "https://github.com/cool-japan/scirs"
+edition.workspace = true
+authors.workspace = true
+description = "Linear algebra module for SciRS2 (scirs2-linalg)"
+license.workspace = true
+repository.workspace = true
 keywords = ["linear-algebra", "matrix", "scientific", "scipy", "numerical"]
 categories = ["science", "mathematics", "algorithms"]
+
+[lints]
+workspace = true
 
 [dependencies]
 # Core dependencies
@@ -24,10 +27,19 @@ ndarray-rand = { workspace = true }
 approx = { workspace = true }
 half = { workspace = true }
 scirs2-autograd = { workspace = true, optional = true }
+# Dependencies for distributed computing
+serde = { workspace = true, features = ["derive"] }
+bincode = { workspace = true }
+num_cpus = { workspace = true }
 
 [[example]]
 name = "test_precision"
 path = "examples/test_precision.rs"
+
+[[example]]
+name = "hardware_optimization_showcase"
+path = "examples/hardware_optimization_showcase.rs"
+required-features = ["simd"]
 
 [dev-dependencies]
 approx = { workspace = true }
@@ -40,7 +52,7 @@ default = ["linalg", "simd"]
 # BLAS backend features - these delegate to workspace-level platform configuration
 accelerate = ["scirs2-core/accelerate"]  # macOS Accelerate framework
 openblas-backend = ["scirs2-core/openblas"]  # OpenBLAS (Linux/Windows)
-intel-mkl = ["scirs2-core/intel-mkl"]  # Intel MKL
+# intel-mkl = ["scirs2-core/intel-mkl"]  # Intel MKL - removed from scirs2-core
 netlib = ["scirs2-core/netlib"]  # Reference Netlib
 
 # Core functionality features
@@ -51,6 +63,13 @@ autograd = ["dep:scirs2-autograd"] # Automatic differentiation support
 parallel = ["scirs2-core/parallel"] # Parallel processing support
 extended-test = [] # For extended precision tests
 
+# GPU acceleration features (experimental)
+cuda = [] # NVIDIA CUDA support
+opencl = [] # OpenCL support
+rocm = [] # AMD ROCm support
+metal = [] # Apple Metal support
+gpu = ["cuda"] # Default GPU feature uses CUDA
+
 [[bench]]
 name = "linalg_bench"
 harness = false
@@ -60,4 +79,66 @@ path = "benches/linalg_bench.rs"
 name = "simd_bench"
 harness = false
 path = "benches/simd_bench.rs"
+
+[[bench]]
+name = "tensor_operations_bench"
+harness = false
+path = "benches/tensor_operations_bench.rs"
+required-features = ["tensor_contraction"]
+
+[[bench]]
+name = "structured_matrices_bench"
+harness = false
+path = "benches/structured_matrices_bench.rs"
+
+[[bench]]
+name = "tensor_operations_bench_simple"
+harness = false
+path = "benches/tensor_operations_bench_simple.rs"
+required-features = ["tensor_contraction"]
+
+[[bench]]
+name = "attention_bench"
+harness = false
+path = "benches/attention_bench.rs"
+
+[[bench]]
+name = "comprehensive_decomposition_bench"
+harness = false
+path = "benches/comprehensive_decomposition_bench.rs"
+
+[[bench]]
+name = "comprehensive_solvers_bench"
+harness = false
+path = "benches/comprehensive_solvers_bench.rs"
+
+[[bench]]
+name = "matrix_functions_bench"
+harness = false
+path = "benches/matrix_functions_bench.rs"
+
+[[bench]]
+name = "matrix_operations"
+harness = false
+path = "benches/matrix_operations.rs"
+
+[[bench]]
+name = "perf_opt_bench"
+harness = false
+path = "benches/perf_opt_bench.rs"
+
+[[bench]]
+name = "quantization_bench"
+harness = false
+path = "benches/quantization_bench.rs"
+
+[[bench]]
+name = "quantized_solvers_bench"
+harness = false
+path = "benches/quantized_solvers_bench.rs"
+
+[[bench]]
+name = "scipy_compat_benchmarks"
+harness = false
+path = "benches/scipy_compat_benchmarks.rs"
 

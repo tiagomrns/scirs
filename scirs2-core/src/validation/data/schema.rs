@@ -6,12 +6,10 @@
 use super::constraints::Constraint;
 use std::collections::HashMap;
 
-#[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
 
 /// Data types supported by the validation system
-#[derive(Debug, Clone, PartialEq, Eq)]
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub enum DataType {
     /// Boolean value
     Boolean,
@@ -56,11 +54,10 @@ pub enum DataType {
 }
 
 /// Field definition in a validation schema
-#[derive(Debug, Clone)]
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct FieldDefinition {
     /// Field data type
-    pub data_type: DataType,
+    pub datatype: DataType,
     /// Whether field is required
     pub required: bool,
     /// Constraints applied to this field
@@ -68,20 +65,20 @@ pub struct FieldDefinition {
     /// Field description
     pub description: Option<String>,
     /// Default value if not provided
-    pub default_value: Option<String>,
+    pub defaultvalue: Option<String>,
     /// Validation rule references
     pub validation_rules: Vec<String>,
 }
 
 impl FieldDefinition {
     /// Create a new field definition
-    pub fn new(data_type: DataType) -> Self {
+    pub fn new(datatype: DataType) -> Self {
         Self {
-            data_type,
+            datatype,
             required: false,
             constraints: Vec::new(),
             description: None,
-            default_value: None,
+            defaultvalue: None,
             validation_rules: Vec::new(),
         }
     }
@@ -106,7 +103,7 @@ impl FieldDefinition {
 
     /// Set default value
     pub fn with_default(mut self, default: &str) -> Self {
-        self.default_value = Some(default.to_string());
+        self.defaultvalue = Some(default.to_string());
         self
     }
 
@@ -118,8 +115,7 @@ impl FieldDefinition {
 }
 
 /// Validation schema definition
-#[derive(Debug, Clone)]
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ValidationSchema {
     /// Schema name
     pub name: String,
@@ -161,15 +157,15 @@ impl ValidationSchema {
     }
 
     /// Add a required field
-    pub fn require_field(mut self, name: &str, data_type: DataType) -> Self {
-        let field = FieldDefinition::new(data_type).required();
+    pub fn require_field(mut self, name: &str, datatype: DataType) -> Self {
+        let field = FieldDefinition::new(datatype).required();
         self.fields.insert(name.to_string(), field);
         self
     }
 
     /// Add an optional field
-    pub fn optional_field(mut self, name: &str, data_type: DataType) -> Self {
-        let field = FieldDefinition::new(data_type);
+    pub fn optional_field(mut self, name: &str, datatype: DataType) -> Self {
+        let field = FieldDefinition::new(datatype);
         self.fields.insert(name.to_string(), field);
         self
     }
@@ -181,8 +177,8 @@ impl ValidationSchema {
     }
 
     /// Add a constraint to a field
-    pub fn add_constraint(mut self, field_name: &str, constraint: Constraint) -> Self {
-        if let Some(field) = self.fields.get_mut(field_name) {
+    pub fn add_constraint(mut self, fieldname: &str, constraint: Constraint) -> Self {
+        if let Some(field) = self.fields.get_mut(fieldname) {
             field.constraints.push(constraint);
         }
         self
@@ -238,8 +234,8 @@ impl ValidationSchema {
         }
 
         // Check for circular references in array/matrix types
-        for (field_name, field) in &self.fields {
-            self.check_circular_references(&field.data_type, field_name)?;
+        for (fieldname, field) in &self.fields {
+            self.check_circular_references(&field.datatype, fieldname)?;
         }
 
         Ok(())
@@ -249,18 +245,18 @@ impl ValidationSchema {
     #[allow(clippy::only_used_in_recursion)]
     fn check_circular_references(
         &self,
-        data_type: &DataType,
-        field_name: &str,
+        datatype: &DataType,
+        fieldname: &str,
     ) -> Result<(), String> {
-        match data_type {
-            DataType::Array(inner) => self.check_circular_references(inner, field_name),
-            DataType::Matrix(inner) => self.check_circular_references(inner, field_name),
+        match datatype {
+            DataType::Array(inner) => self.check_circular_references(inner, fieldname),
+            DataType::Matrix(inner) => self.check_circular_references(inner, fieldname),
             DataType::Tensor { element_type, .. } => {
-                self.check_circular_references(element_type, field_name)
+                self.check_circular_references(element_type, fieldname)
             }
-            DataType::TimeSeries(inner) => self.check_circular_references(inner, field_name),
+            DataType::TimeSeries(inner) => self.check_circular_references(inner, fieldname),
             DataType::SparseMatrix { element_type, .. } => {
-                self.check_circular_references(element_type, field_name)
+                self.check_circular_references(element_type, fieldname)
             }
             _ => Ok(()),
         }
@@ -283,14 +279,14 @@ mod tests {
         let field = FieldDefinition::new(DataType::String)
             .required()
             .with_description("Test field")
-            .with_default("default_value")
+            .with_default("defaultvalue")
             .with_constraint(Constraint::NotNull)
             .with_validation_rule("custom_rule");
 
-        assert_eq!(field.data_type, DataType::String);
+        assert_eq!(field.datatype, DataType::String);
         assert!(field.required);
         assert_eq!(field.description, Some("Test field".to_string()));
-        assert_eq!(field.default_value, Some("default_value".to_string()));
+        assert_eq!(field.defaultvalue, Some("defaultvalue".to_string()));
         assert_eq!(field.constraints.len(), 1);
         assert_eq!(field.validation_rules.len(), 1);
     }
@@ -331,7 +327,7 @@ mod tests {
     }
 
     #[test]
-    fn test_complex_data_types() {
+    fn test_complex_datatypes() {
         // Test array type
         let array_type = DataType::Array(Box::new(DataType::Float64));
         match array_type {
@@ -388,7 +384,7 @@ mod tests {
     }
 
     #[test]
-    fn test_data_type_equality() {
+    fn test_datatype_equality() {
         assert_eq!(DataType::String, DataType::String);
         assert_eq!(DataType::Float64, DataType::Float64);
         assert_ne!(DataType::Float32, DataType::Float64);

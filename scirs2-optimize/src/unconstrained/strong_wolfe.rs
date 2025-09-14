@@ -72,6 +72,7 @@ pub struct StrongWolfeResult {
 
 /// Enhanced Strong Wolfe line search with robust implementation
 #[allow(clippy::too_many_arguments)]
+#[allow(dead_code)]
 pub fn strong_wolfe_line_search<F, G, S>(
     fun: &mut F,
     grad_fun: &mut G,
@@ -170,6 +171,7 @@ enum IntervalResult {
 
 /// Phase 1: Find an interval containing acceptable points
 #[allow(clippy::too_many_arguments)]
+#[allow(dead_code)]
 fn find_interval<F, G, S>(
     fun: &mut F,
     grad_fun: &mut G,
@@ -267,6 +269,7 @@ where
 
 /// Phase 2: Zoom search within bracket to find exact step
 #[allow(clippy::too_many_arguments)]
+#[allow(dead_code)]
 fn zoom_search<F, G, S>(
     fun: &mut F,
     grad_fun: &mut G,
@@ -280,7 +283,7 @@ fn zoom_search<F, G, S>(
     mut f_hi: f64,
     mut derphi_lo: f64,
     options: &StrongWolfeOptions,
-    _bounds: Option<&Bounds>,
+    bounds: Option<&Bounds>,
 ) -> Result<ZoomSearchResult, OptimizeError>
 where
     F: FnMut(&ArrayView1<f64>) -> S,
@@ -349,6 +352,7 @@ where
 }
 
 /// Safeguarded cubic/quadratic interpolation for zoom phase
+#[allow(dead_code)]
 fn safeguarded_interpolation(
     alpha_lo: f64,
     alpha_hi: f64,
@@ -396,6 +400,7 @@ fn safeguarded_interpolation(
 }
 
 /// Create Strong Wolfe options optimized for specific optimization methods
+#[allow(dead_code)]
 pub fn create_strong_wolfe_options_for_method(method: &str) -> StrongWolfeOptions {
     match method.to_lowercase().as_str() {
         "bfgs" | "lbfgs" | "sr1" | "dfp" => StrongWolfeOptions {

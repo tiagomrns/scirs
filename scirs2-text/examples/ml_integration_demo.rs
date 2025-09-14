@@ -4,6 +4,7 @@ use scirs2_text::{
     BatchTextProcessor, FeatureExtractionMode, MLTextPreprocessor, TextDataset, TextMLPipeline,
 };
 
+#[allow(dead_code)]
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("Machine Learning Integration Demo");
     println!("================================\n");
@@ -119,14 +120,14 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let (train_dataset, test_dataset) = dataset.train_test_split(0.25, Some(42))?;
 
     // Extract features
-    let train_texts: Vec<&str> = train_dataset.texts.iter().map(|s| s.as_ref()).collect();
-    let test_texts: Vec<&str> = test_dataset.texts.iter().map(|s| s.as_ref()).collect();
+    let traintexts: Vec<&str> = train_dataset.texts.iter().map(|s| s.as_ref()).collect();
+    let testtexts: Vec<&str> = test_dataset.texts.iter().map(|s| s.as_ref()).collect();
 
     let mut feature_extractor = MLTextPreprocessor::new(FeatureExtractionMode::TfIdf);
-    feature_extractor.fit(&train_texts)?;
+    feature_extractor.fit(&traintexts)?;
 
-    let train_features = feature_extractor.transform(&train_texts)?;
-    let test_features = feature_extractor.transform(&test_texts)?;
+    let train_features = feature_extractor.transform(&traintexts)?;
+    let test_features = feature_extractor.transform(&testtexts)?;
 
     println!("Training features: {:?}", train_features.features.shape());
     println!("Test features: {:?}", test_features.features.shape());

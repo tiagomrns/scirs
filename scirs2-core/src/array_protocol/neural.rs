@@ -15,8 +15,6 @@
 //! This module provides neural network layers and models that work with
 //! any array type implementing the ArrayProtocol trait.
 
-use std::any::Any;
-
 use ndarray::{Array, Ix1};
 use rand::Rng;
 
@@ -25,13 +23,29 @@ use crate::array_protocol::operations::OperationError;
 use crate::array_protocol::{ArrayProtocol, NdarrayWrapper};
 
 /// Trait for neural network layers.
-pub trait Layer: Any + Send + Sync {
+pub trait Layer: Send + Sync {
     /// Forward pass through the layer.
+    /// Get the layer type name for serialization.
+    fn layer_type(&self) -> &str;
+
     fn forward(&self, inputs: &dyn ArrayProtocol)
         -> Result<Box<dyn ArrayProtocol>, OperationError>;
 
     /// Get the layer's parameters.
     fn parameters(&self) -> Vec<Box<dyn ArrayProtocol>>;
+
+    /// Get mutable references to the layer's parameters.
+    fn parameters_mut(&mut self) -> Vec<&mut Box<dyn ArrayProtocol>>;
+
+    /// Update a specific parameter by name
+    fn update_parameter(
+        &mut self,
+        name: &str,
+        value: Box<dyn ArrayProtocol>,
+    ) -> Result<(), OperationError>;
+
+    /// Get parameter names
+    fn parameter_names(&self) -> Vec<String>;
 
     /// Set the layer to training mode.
     fn train(&mut self);
@@ -44,9 +58,6 @@ pub trait Layer: Any + Send + Sync {
 
     /// Get the layer's name.
     fn name(&self) -> &str;
-
-    /// Downcast the layer to Any for type-specific operations.
-    fn as_any(&self) -> &dyn Any;
 }
 
 /// Linear (dense/fully-connected) layer.
@@ -85,24 +96,24 @@ impl Linear {
     }
 
     /// Create a new linear layer with randomly initialized weights.
-    pub fn with_shape(
+    pub fn new_random(
         name: &str,
         in_features: usize,
         out_features: usize,
-        with_bias: bool,
+        withbias: bool,
         activation: Option<ActivationFunc>,
     ) -> Self {
         // Create random weights using Xavier/Glorot initialization
         let scale = (6.0 / (in_features + out_features) as f64).sqrt();
         let mut rng = rand::rng();
         let weights = Array::from_shape_fn((out_features, in_features), |_| {
-            (rng.random::<f64>() * 2.0 - 1.0) * scale
+            (rng.random::<f64>() * 2.0_f64 - 1.0) * scale
         });
 
         // Create bias if needed
-        let bias = if with_bias {
-            let bias: Array<f64, Ix1> = Array::zeros(out_features);
-            Some(Box::new(NdarrayWrapper::new(bias)) as Box<dyn ArrayProtocol>)
+        let bias = if withbias {
+            let bias_array: Array<f64, Ix1> = Array::zeros(out_features);
+            Some(Box::new(NdarrayWrapper::new(bias_array)) as Box<dyn ArrayProtocol>)
         } else {
             None
         };
@@ -118,6 +129,10 @@ impl Linear {
 }
 
 impl Layer for Linear {
+    fn layer_type(&self) -> &str {
+        "Linear"
+    }
+
     fn forward(
         &self,
         inputs: &dyn ArrayProtocol,
@@ -150,6 +165,40 @@ impl Layer for Linear {
         params
     }
 
+    fn parameters_mut(&mut self) -> Vec<&mut Box<dyn ArrayProtocol>> {
+        let mut params = vec![&mut self.weights];
+        if let Some(bias) = &mut self.bias {
+            params.push(bias);
+        }
+        params
+    }
+
+    fn update_parameter(
+        &mut self,
+        name: &str,
+        value: Box<dyn ArrayProtocol>,
+    ) -> Result<(), OperationError> {
+        match name {
+            "weights" => {
+                self.weights = value;
+                Ok(())
+            }
+            "bias" => {
+                self.bias = Some(value);
+                Ok(())
+            }
+            _ => Err(OperationError::Other(format!("Unknown parameter: {name}"))),
+        }
+    }
+
+    fn parameter_names(&self) -> Vec<String> {
+        let mut names = vec!["weights".to_string()];
+        if self.bias.is_some() {
+            names.push("bias".to_string());
+        }
+        names
+    }
+
     fn train(&mut self) {
         self.training = true;
     }
@@ -164,10 +213,6 @@ impl Layer for Linear {
 
     fn name(&self) -> &str {
         &self.name
-    }
-
-    fn as_any(&self) -> &dyn Any {
-        self
     }
 }
 
@@ -218,7 +263,7 @@ impl Conv2D {
 
     /// Create a new convolutional layer with randomly initialized weights.
     #[allow(clippy::too_many_arguments)]
-    pub fn with_shape(
+    pub fn withshape(
         name: &str,
         filter_height: usize,
         filter_width: usize,
@@ -226,7 +271,7 @@ impl Conv2D {
         out_channels: usize,
         stride: (usize, usize),
         padding: (usize, usize),
-        with_bias: bool,
+        withbias: bool,
         activation: Option<ActivationFunc>,
     ) -> Self {
         // Create random filters using Kaiming initialization
@@ -235,13 +280,13 @@ impl Conv2D {
         let mut rng = rand::rng();
         let filters = Array::from_shape_fn(
             (filter_height, filter_width, in_channels, out_channels),
-            |_| (rng.random::<f64>() * 2.0 - 1.0) * scale,
+            |_| (rng.random::<f64>() * 2.0_f64 - 1.0) * scale,
         );
 
         // Create bias if needed
-        let bias = if with_bias {
-            let bias: Array<f64, Ix1> = Array::zeros(out_channels);
-            Some(Box::new(NdarrayWrapper::new(bias)) as Box<dyn ArrayProtocol>)
+        let bias = if withbias {
+            let bias_array: Array<f64, Ix1> = Array::zeros(out_channels);
+            Some(Box::new(NdarrayWrapper::new(bias_array)) as Box<dyn ArrayProtocol>)
         } else {
             None
         };
@@ -259,6 +304,10 @@ impl Conv2D {
 }
 
 impl Layer for Conv2D {
+    fn layer_type(&self) -> &str {
+        "Conv2D"
+    }
+
     fn forward(
         &self,
         inputs: &dyn ArrayProtocol,
@@ -292,6 +341,40 @@ impl Layer for Conv2D {
         params
     }
 
+    fn parameters_mut(&mut self) -> Vec<&mut Box<dyn ArrayProtocol>> {
+        let mut params = vec![&mut self.filters];
+        if let Some(bias) = &mut self.bias {
+            params.push(bias);
+        }
+        params
+    }
+
+    fn update_parameter(
+        &mut self,
+        name: &str,
+        value: Box<dyn ArrayProtocol>,
+    ) -> Result<(), OperationError> {
+        match name {
+            "filters" => {
+                self.filters = value;
+                Ok(())
+            }
+            "bias" => {
+                self.bias = Some(value);
+                Ok(())
+            }
+            _ => Err(OperationError::Other(format!("Unknown parameter: {name}"))),
+        }
+    }
+
+    fn parameter_names(&self) -> Vec<String> {
+        let mut names = vec!["filters".to_string()];
+        if self.bias.is_some() {
+            names.push("bias".to_string());
+        }
+        names
+    }
+
     fn train(&mut self) {
         self.training = true;
     }
@@ -307,10 +390,6 @@ impl Layer for Conv2D {
     fn name(&self) -> &str {
         &self.name
     }
-
-    fn as_any(&self) -> &dyn Any {
-        self
-    }
 }
 
 /// Builder for creating Conv2D layers
@@ -322,7 +401,7 @@ pub struct Conv2DBuilder {
     out_channels: usize,
     stride: (usize, usize),
     padding: (usize, usize),
-    with_bias: bool,
+    withbias: bool,
     activation: Option<ActivationFunc>,
 }
 
@@ -337,7 +416,7 @@ impl Conv2DBuilder {
             out_channels: 1,
             stride: (1, 1),
             padding: (0, 0),
-            with_bias: true,
+            withbias: true,
             activation: None,
         }
     }
@@ -369,8 +448,8 @@ impl Conv2DBuilder {
     }
 
     /// Set whether to include bias
-    pub fn with_bias(mut self, with_bias: bool) -> Self {
-        self.with_bias = with_bias;
+    pub fn withbias(mut self, withbias: bool) -> Self {
+        self.withbias = withbias;
         self
     }
 
@@ -382,7 +461,7 @@ impl Conv2DBuilder {
 
     /// Build the Conv2D layer
     pub fn build(self) -> Conv2D {
-        Conv2D::with_shape(
+        Conv2D::withshape(
             &self.name,
             self.filter_height,
             self.filter_width,
@@ -390,13 +469,14 @@ impl Conv2DBuilder {
             self.out_channels,
             self.stride,
             self.padding,
-            self.with_bias,
+            self.withbias,
             self.activation,
         )
     }
 }
 
 /// Max pooling layer.
+#[allow(dead_code)]
 pub struct MaxPool2D {
     /// The layer's name.
     name: String,
@@ -435,19 +515,41 @@ impl MaxPool2D {
 }
 
 impl Layer for MaxPool2D {
+    fn layer_type(&self) -> &str {
+        "MaxPool2D"
+    }
+
     fn forward(
         &self,
-        inputs: &dyn ArrayProtocol,
+        _inputs: &dyn ArrayProtocol,
     ) -> Result<Box<dyn ArrayProtocol>, OperationError> {
-        crate::array_protocol::ml_ops::max_pool2d(
-            inputs,
-            self.kernel_size,
-            self.stride,
-            self.padding,
-        )
+        // TODO: Implement max_pool2d in ml_ops module
+        Err(OperationError::NotImplemented(
+            "max_pool2d not yet implemented".to_string(),
+        ))
     }
 
     fn parameters(&self) -> Vec<Box<dyn ArrayProtocol>> {
+        // Pooling layers have no parameters
+        Vec::new()
+    }
+
+    fn parameters_mut(&mut self) -> Vec<&mut Box<dyn ArrayProtocol>> {
+        // Pooling layers have no parameters
+        Vec::new()
+    }
+
+    fn update_parameter(
+        &mut self,
+        name: &str,
+        _value: Box<dyn ArrayProtocol>,
+    ) -> Result<(), OperationError> {
+        Err(OperationError::Other(format!(
+            "MaxPool2D has no parameter: {name}"
+        )))
+    }
+
+    fn parameter_names(&self) -> Vec<String> {
         // Pooling layers have no parameters
         Vec::new()
     }
@@ -466,10 +568,6 @@ impl Layer for MaxPool2D {
 
     fn name(&self) -> &str {
         &self.name
-    }
-
-    fn as_any(&self) -> &dyn Any {
-        self
     }
 }
 
@@ -506,7 +604,6 @@ impl BatchNorm {
         running_mean: Box<dyn ArrayProtocol>,
         running_var: Box<dyn ArrayProtocol>,
         epsilon: f64,
-        _momentum: f64, // Kept as parameter for API compatibility but not used
     ) -> Self {
         Self {
             name: name.to_string(),
@@ -520,7 +617,7 @@ impl BatchNorm {
     }
 
     /// Create a new batch normalization layer with initialized parameters.
-    pub fn with_shape(
+    pub fn withshape(
         name: &str,
         num_features: usize,
         epsilon: Option<f64>,
@@ -545,6 +642,10 @@ impl BatchNorm {
 }
 
 impl Layer for BatchNorm {
+    fn layer_type(&self) -> &str {
+        "BatchNorm"
+    }
+
     fn forward(
         &self,
         inputs: &dyn ArrayProtocol,
@@ -563,6 +664,32 @@ impl Layer for BatchNorm {
         vec![self.scale.clone(), self.offset.clone()]
     }
 
+    fn parameters_mut(&mut self) -> Vec<&mut Box<dyn ArrayProtocol>> {
+        vec![&mut self.scale, &mut self.offset]
+    }
+
+    fn update_parameter(
+        &mut self,
+        name: &str,
+        value: Box<dyn ArrayProtocol>,
+    ) -> Result<(), OperationError> {
+        match name {
+            "scale" => {
+                self.scale = value;
+                Ok(())
+            }
+            "offset" => {
+                self.offset = value;
+                Ok(())
+            }
+            _ => Err(OperationError::Other(format!("Unknown parameter: {name}"))),
+        }
+    }
+
+    fn parameter_names(&self) -> Vec<String> {
+        vec!["scale".to_string(), "offset".to_string()]
+    }
+
     fn train(&mut self) {
         self.training = true;
     }
@@ -577,10 +704,6 @@ impl Layer for BatchNorm {
 
     fn name(&self) -> &str {
         &self.name
-    }
-
-    fn as_any(&self) -> &dyn Any {
-        self
     }
 }
 
@@ -612,6 +735,10 @@ impl Dropout {
 }
 
 impl Layer for Dropout {
+    fn layer_type(&self) -> &str {
+        "Dropout"
+    }
+
     fn forward(
         &self,
         inputs: &dyn ArrayProtocol,
@@ -620,6 +747,26 @@ impl Layer for Dropout {
     }
 
     fn parameters(&self) -> Vec<Box<dyn ArrayProtocol>> {
+        // Dropout layers have no parameters
+        Vec::new()
+    }
+
+    fn parameters_mut(&mut self) -> Vec<&mut Box<dyn ArrayProtocol>> {
+        // Dropout layers have no parameters
+        Vec::new()
+    }
+
+    fn update_parameter(
+        &mut self,
+        name: &str,
+        _value: Box<dyn ArrayProtocol>,
+    ) -> Result<(), OperationError> {
+        Err(OperationError::Other(format!(
+            "Dropout has no parameter: {name}"
+        )))
+    }
+
+    fn parameter_names(&self) -> Vec<String> {
         // Dropout layers have no parameters
         Vec::new()
     }
@@ -638,10 +785,6 @@ impl Layer for Dropout {
 
     fn name(&self) -> &str {
         &self.name
-    }
-
-    fn as_any(&self) -> &dyn Any {
-        self
     }
 }
 
@@ -666,7 +809,7 @@ pub struct MultiHeadAttention {
     num_heads: usize,
 
     /// Model dimension.
-    d_model: usize,
+    dmodel: usize,
 
     /// Training mode flag.
     training: bool,
@@ -681,7 +824,7 @@ impl MultiHeadAttention {
         wv: Box<dyn ArrayProtocol>,
         wo: Box<dyn ArrayProtocol>,
         num_heads: usize,
-        d_model: usize,
+        dmodel: usize,
     ) -> Self {
         Self {
             name: name.to_string(),
@@ -690,37 +833,37 @@ impl MultiHeadAttention {
             wv,
             wo,
             num_heads,
-            d_model,
+            dmodel,
             training: true,
         }
     }
 
     /// Create a new multi-head attention layer with randomly initialized weights.
-    pub fn with_shape(name: &str, d_model: usize, num_heads: usize) -> Self {
-        // Check if d_model is divisible by num_heads
+    pub fn with_params(name: &str, num_heads: usize, dmodel: usize) -> Self {
+        // Check if dmodel is divisible by num_heads
         assert!(
-            d_model % num_heads == 0,
-            "d_model must be divisible by num_heads"
+            dmodel % num_heads == 0,
+            "dmodel must be divisible by num_heads"
         );
 
         // Initialize parameters
-        let scale = (1.0 / d_model as f64).sqrt();
+        let scale = (1.0_f64 / dmodel as f64).sqrt();
         let mut rng = rand::rng();
 
-        let wq = Array::from_shape_fn((d_model, d_model), |_| {
-            (rng.random::<f64>() * 2.0 - 1.0) * scale
+        let wq = Array::from_shape_fn((dmodel, dmodel), |_| {
+            (rng.random::<f64>() * 2.0_f64 - 1.0) * scale
         });
 
-        let wk = Array::from_shape_fn((d_model, d_model), |_| {
-            (rng.random::<f64>() * 2.0 - 1.0) * scale
+        let wk = Array::from_shape_fn((dmodel, dmodel), |_| {
+            (rng.random::<f64>() * 2.0_f64 - 1.0) * scale
         });
 
-        let wv = Array::from_shape_fn((d_model, d_model), |_| {
-            (rng.random::<f64>() * 2.0 - 1.0) * scale
+        let wv = Array::from_shape_fn((dmodel, dmodel), |_| {
+            (rng.random::<f64>() * 2.0_f64 - 1.0) * scale
         });
 
-        let wo = Array::from_shape_fn((d_model, d_model), |_| {
-            (rng.random::<f64>() * 2.0 - 1.0) * scale
+        let wo = Array::from_shape_fn((dmodel, dmodel), |_| {
+            (rng.random::<f64>() * 2.0_f64 - 1.0) * scale
         });
 
         Self {
@@ -730,13 +873,17 @@ impl MultiHeadAttention {
             wv: Box::new(NdarrayWrapper::new(wv)),
             wo: Box::new(NdarrayWrapper::new(wo)),
             num_heads,
-            d_model,
+            dmodel,
             training: true,
         }
     }
 }
 
 impl Layer for MultiHeadAttention {
+    fn layer_type(&self) -> &str {
+        "MultiHeadAttention"
+    }
+
     fn forward(
         &self,
         inputs: &dyn ArrayProtocol,
@@ -758,7 +905,7 @@ impl Layer for MultiHeadAttention {
             keys.as_ref(),
             values.as_ref(),
             None,
-            Some((self.d_model / self.num_heads) as f64),
+            Some((self.dmodel / self.num_heads) as f64),
         )?;
 
         // Project back to output space
@@ -776,6 +923,45 @@ impl Layer for MultiHeadAttention {
         ]
     }
 
+    fn parameters_mut(&mut self) -> Vec<&mut Box<dyn ArrayProtocol>> {
+        vec![&mut self.wq, &mut self.wk, &mut self.wv, &mut self.wo]
+    }
+
+    fn update_parameter(
+        &mut self,
+        name: &str,
+        value: Box<dyn ArrayProtocol>,
+    ) -> Result<(), OperationError> {
+        match name {
+            "wq" => {
+                self.wq = value;
+                Ok(())
+            }
+            "wk" => {
+                self.wk = value;
+                Ok(())
+            }
+            "wv" => {
+                self.wv = value;
+                Ok(())
+            }
+            "wo" => {
+                self.wo = value;
+                Ok(())
+            }
+            _ => Err(OperationError::Other(format!("Unknown parameter: {name}"))),
+        }
+    }
+
+    fn parameter_names(&self) -> Vec<String> {
+        vec![
+            "wq".to_string(),
+            "wk".to_string(),
+            "wv".to_string(),
+            "wo".to_string(),
+        ]
+    }
+
     fn train(&mut self) {
         self.training = true;
     }
@@ -790,10 +976,6 @@ impl Layer for MultiHeadAttention {
 
     fn name(&self) -> &str {
         &self.name
-    }
-
-    fn as_any(&self) -> &dyn Any {
-        self
     }
 }
 
@@ -880,16 +1062,134 @@ impl Sequential {
     pub fn layers(&self) -> &[Box<dyn Layer>] {
         &self.layers
     }
+
+    /// Backward pass through the model to compute gradients
+    pub fn backward(
+        &self,
+        _output: &dyn ArrayProtocol,
+        _target: &dyn ArrayProtocol,
+    ) -> Result<crate::array_protocol::grad::GradientDict, crate::error::CoreError> {
+        // For now, return an empty gradient dictionary
+        // In a full implementation, this would compute gradients via backpropagation
+        Ok(crate::array_protocol::grad::GradientDict::new())
+    }
+
+    /// Update a parameter in the model
+    pub fn update_parameter(
+        &mut self,
+        param_name: &str,
+        gradient: &dyn ArrayProtocol,
+        learningrate: f64,
+    ) -> Result<(), crate::error::CoreError> {
+        // Parse parameter name: layer_index.parameter_name (e.g., "0.weights", "1.bias")
+        let parts: Vec<&str> = param_name.split('.').collect();
+        if parts.len() != 2 {
+            return Err(crate::error::CoreError::ValueError(
+                crate::error::ErrorContext::new(format!(
+                    "Invalid parameter name format. Expected 'layer_index.param_name', got: {param_name}"
+                )),
+            ));
+        }
+
+        let layer_index: usize = parts[0].parse().map_err(|_| {
+            crate::error::CoreError::ValueError(crate::error::ErrorContext::new(format!(
+                "Invalid layer index: {layer_idx}",
+                layer_idx = parts[0]
+            )))
+        })?;
+
+        let param_name = parts[1];
+
+        if layer_index >= self.layers.len() {
+            return Err(crate::error::CoreError::ValueError(
+                crate::error::ErrorContext::new(format!(
+                    "Layer index {layer_index} out of bounds (model has {num_layers} layers)",
+                    num_layers = self.layers.len()
+                )),
+            ));
+        }
+
+        // Get the current parameter value
+        let layer = &mut self.layers[layer_index];
+        let current_params = layer.parameters();
+        let param_names = layer.parameter_names();
+
+        // Find the parameter by name
+        let param_idx = param_names
+            .iter()
+            .position(|name| name == param_name)
+            .ok_or_else(|| {
+                crate::error::CoreError::ValueError(crate::error::ErrorContext::new(format!(
+                    "Parameter '{param_name}' not found in layer {layer_index}"
+                )))
+            })?;
+
+        // Perform gradient descent update: param = param - learningrate * gradient
+        let current_param = &current_params[param_idx];
+
+        // Multiply gradient by learning _rate
+        let scaled_gradient =
+            crate::array_protocol::operations::multiply_by_scalar_f64(gradient, learningrate)
+                .map_err(|e| {
+                    crate::error::CoreError::ComputationError(crate::error::ErrorContext::new(
+                        format!("Failed to scale gradient: {e}"),
+                    ))
+                })?;
+
+        // Subtract scaled gradient from current parameter
+        let updated_param = crate::array_protocol::operations::subtract(
+            current_param.as_ref(),
+            scaled_gradient.as_ref(),
+        )
+        .map_err(|e| {
+            crate::error::CoreError::ComputationError(crate::error::ErrorContext::new(format!(
+                "Failed to update parameter: {e}"
+            )))
+        })?;
+
+        // Update the parameter in the layer
+        layer
+            .update_parameter(param_name, updated_param)
+            .map_err(|e| {
+                crate::error::CoreError::ComputationError(crate::error::ErrorContext::new(format!(
+                    "Failed to set parameter in layer: {e}"
+                )))
+            })?;
+
+        Ok(())
+    }
+
+    /// Get all parameter names in the model with layer prefixes
+    pub fn all_parameter_names(&self) -> Vec<String> {
+        let mut all_names = Vec::new();
+        for (layer_idx, layer) in self.layers.iter().enumerate() {
+            let layer_param_names = layer.parameter_names();
+            for param_name in layer_param_names {
+                all_names.push(format!("{layer_idx}.{param_name}"));
+            }
+        }
+        all_names
+    }
+
+    /// Get all parameters in the model
+    pub fn all_parameters(&self) -> Vec<Box<dyn ArrayProtocol>> {
+        let mut all_params = Vec::new();
+        for layer in &self.layers {
+            all_params.extend(layer.parameters());
+        }
+        all_params
+    }
 }
 
 /// Example function to create a simple CNN model.
-pub fn create_simple_cnn(input_shape: (usize, usize, usize), num_classes: usize) -> Sequential {
-    let (height, width, channels) = input_shape;
+#[allow(dead_code)]
+pub fn create_simple_cnn(inputshape: (usize, usize, usize), num_classes: usize) -> Sequential {
+    let (height, width, channels) = inputshape;
 
     let mut model = Sequential::new("SimpleCNN", Vec::new());
 
     // First convolutional block
-    model.add_layer(Box::new(Conv2D::with_shape(
+    model.add_layer(Box::new(Conv2D::withshape(
         "conv1",
         3,
         3, // Filter size
@@ -909,7 +1209,7 @@ pub fn create_simple_cnn(input_shape: (usize, usize, usize), num_classes: usize)
     )));
 
     // Second convolutional block
-    model.add_layer(Box::new(Conv2D::with_shape(
+    model.add_layer(Box::new(Conv2D::withshape(
         "conv2",
         3,
         3, // Filter size
@@ -931,7 +1231,7 @@ pub fn create_simple_cnn(input_shape: (usize, usize, usize), num_classes: usize)
     // Flatten layer (implemented as a Linear layer with reshape)
 
     // Fully connected layers
-    model.add_layer(Box::new(Linear::with_shape(
+    model.add_layer(Box::new(Linear::new_random(
         "fc1",
         64 * (height / 4) * (width / 4), // Input features
         128,                             // Output features
@@ -944,7 +1244,7 @@ pub fn create_simple_cnn(input_shape: (usize, usize, usize), num_classes: usize)
         None, // No fixed seed
     )));
 
-    model.add_layer(Box::new(Linear::with_shape(
+    model.add_layer(Box::new(Linear::new_random(
         "fc2",
         128,         // Input features
         num_classes, // Output features
@@ -959,7 +1259,7 @@ pub fn create_simple_cnn(input_shape: (usize, usize, usize), num_classes: usize)
 mod tests {
     use super::*;
     use crate::array_protocol::{self, NdarrayWrapper};
-    use ndarray::Array2;
+    use ndarray::{Array1, Array2};
 
     #[test]
     fn test_linear_layer() {
@@ -968,7 +1268,7 @@ mod tests {
 
         // Create a linear layer
         let weights = Array2::<f64>::eye(3);
-        let bias = Array::<f64, _>::ones(3);
+        let bias = Array1::<f64>::ones(3);
 
         let layer = Linear::new(
             "linear",
@@ -1000,7 +1300,7 @@ mod tests {
         let mut model = Sequential::new("test_model", Vec::new());
 
         // Add linear layers
-        model.add_layer(Box::new(Linear::with_shape(
+        model.add_layer(Box::new(Linear::new_random(
             "fc1",
             3,    // Input features
             2,    // Output features
@@ -1008,7 +1308,7 @@ mod tests {
             Some(ActivationFunc::ReLU),
         )));
 
-        model.add_layer(Box::new(Linear::with_shape(
+        model.add_layer(Box::new(Linear::new_random(
             "fc2",
             2,    // Input features
             1,    // Output features

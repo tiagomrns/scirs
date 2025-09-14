@@ -17,6 +17,7 @@ use scirs2_linalg::{
 };
 use std::time::Instant;
 
+#[allow(dead_code)]
 fn main() -> LinalgResult<()> {
     println!("=== Advanced Features Showcase ===\n");
 
@@ -43,6 +44,7 @@ fn main() -> LinalgResult<()> {
 }
 
 /// Demonstrates performance optimization techniques
+#[allow(dead_code)]
 fn performance_optimization_demo() -> LinalgResult<()> {
     println!("🚀 Performance Optimization Techniques");
     println!("{}", "=".repeat(50));
@@ -89,9 +91,9 @@ fn performance_optimization_demo() -> LinalgResult<()> {
 fn simd_operations_demo() -> LinalgResult<()> {
     // SIMD demonstration commented out for compilation simplicity
     // In a real implementation, you would use:
-    // - scirs2_linalg::simd_ops::gemm::simd_gemm_f64 for matrix multiplication
-    // - scirs2_linalg::simd_ops::transpose::simd_transpose_f64 for transpose
-    // - scirs2_linalg::simd_ops::norms::simd_frobenius_norm_f64 for norms
+    // - scirs2_linalg::simd, _ops::gemm::simd_gemm_f64 for matrix multiplication
+    // - scirs2_linalg::simd, _ops::transpose::simd_transpose_f64 for transpose
+    // - scirs2_linalg::simd, _ops::norms::simd_frobenius_norm_f64 for norms
 
     println!("⚡ SIMD-Accelerated Operations");
     println!("{}", "=".repeat(50));
@@ -107,6 +109,7 @@ fn simd_operations_demo() -> LinalgResult<()> {
 }
 
 /// Demonstrates memory-efficient algorithms
+#[allow(dead_code)]
 fn memory_efficiency_demo() -> LinalgResult<()> {
     println!("💾 Memory-Efficient Algorithms");
     println!("{}", "=".repeat(50));
@@ -144,7 +147,7 @@ fn memory_efficiency_demo() -> LinalgResult<()> {
     // Memory-efficient SVD with rank estimation
     println!("\n🔹 Memory-Efficient SVD");
     let start = Instant::now();
-    let (_u, s, _vt) = svd(&a.view(), false, None)?;
+    let (_u, s, vt) = svd(&a.view(), false, None)?;
     let svd_time = start.elapsed();
 
     println!("  SVD time: {:?}", svd_time);
@@ -158,13 +161,13 @@ fn memory_efficiency_demo() -> LinalgResult<()> {
 
     // Block-wise processing demonstration
     println!("\n🔹 Block-wise Processing");
-    let block_size = 32;
+    let blocksize = 32;
     let mut norm_accumulator = 0.0;
 
-    for i in (0..size).step_by(block_size) {
-        for j in (0..size).step_by(block_size) {
-            let i_end = std::cmp::min(i + block_size, size);
-            let j_end = std::cmp::min(j + block_size, size);
+    for i in (0..size).step_by(blocksize) {
+        for j in (0..size).step_by(blocksize) {
+            let i_end = std::cmp::min(i + blocksize, size);
+            let j_end = std::cmp::min(j + blocksize, size);
 
             let block = a.slice(ndarray::s![i..i_end, j..j_end]);
             let block_norm = matrix_norm(&block, "fro", None)?;
@@ -184,6 +187,7 @@ fn memory_efficiency_demo() -> LinalgResult<()> {
 }
 
 /// Demonstrates numerical stability features
+#[allow(dead_code)]
 fn numerical_stability_demo() -> LinalgResult<()> {
     println!("🔧 Numerical Stability Features");
     println!("{}", "=".repeat(50));
@@ -272,6 +276,7 @@ fn numerical_stability_demo() -> LinalgResult<()> {
 }
 
 /// Demonstrates specialized algorithms
+#[allow(dead_code)]
 fn specialized_algorithms_demo() -> LinalgResult<()> {
     println!("🎯 Specialized Algorithms");
     println!("{}", "=".repeat(50));
@@ -284,7 +289,7 @@ fn specialized_algorithms_demo() -> LinalgResult<()> {
     println!("  {:?}", spd);
 
     // Specialized algorithms benefit from SPD structure
-    let (_eigenvals, _eigenvecs) = scirs2_linalg::eigh(&spd.view(), None)?;
+    let (_eigenvals, eigenvecs) = scirs2_linalg::eigh(&spd.view(), None)?;
     println!("  ✅ Symmetric eigenvalue decomposition successful");
 
     // Cholesky decomposition is more efficient for SPD matrices
@@ -317,7 +322,7 @@ fn specialized_algorithms_demo() -> LinalgResult<()> {
     println!("  Sparsity: {:.1}%", sparsity * 100.0);
 
     // Specialized algorithms can exploit banded structure
-    let (_q, _r) = qr(&banded.view(), None)?;
+    let (_q, r) = qr(&banded.view(), None)?;
     println!("  ✅ QR decomposition on banded matrix successful");
 
     // Tridiagonal matrices (special case of banded)
@@ -335,7 +340,7 @@ fn specialized_algorithms_demo() -> LinalgResult<()> {
     println!("  Symmetric tridiagonal matrix (discrete Laplacian)");
 
     // Eigenvalues of symmetric tridiagonal matrices can be computed very efficiently
-    let (tridiag_eigenvals, _) = scirs2_linalg::eigh(&tridiag.view(), None)?;
+    let (tridiag_eigenvals, eigenvecs) = scirs2_linalg::eigh(&tridiag.view(), None)?;
     println!(
         "  Eigenvalue range: [{:.6}, {:.6}]",
         tridiag_eigenvals[0],
@@ -347,6 +352,7 @@ fn specialized_algorithms_demo() -> LinalgResult<()> {
 }
 
 /// Demonstrates adaptive algorithm selection
+#[allow(dead_code)]
 fn adaptive_algorithms_demo() -> LinalgResult<()> {
     println!("🤖 Adaptive Algorithm Selection");
     println!("{}", "=".repeat(50));
@@ -370,14 +376,14 @@ fn adaptive_algorithms_demo() -> LinalgResult<()> {
             .with_threshold(threshold)
             .with_workers(4);
 
-        let data_size = size * size;
-        let strategy = adaptive::choose_strategy(data_size, &config);
+        let datasize = size * size;
+        let strategy = adaptive::choose_strategy(datasize, &config);
 
-        println!("  Data size: {} elements", data_size);
+        println!("  Data size: {} elements", datasize);
         println!("  Recommended strategy: {:?}", strategy);
 
         // Demonstrate adaptive matrix-vector multiplication
-        let should_parallelize = adaptive::should_use_parallel(data_size, &config);
+        let should_parallelize = adaptive::should_use_parallel(datasize, &config);
         println!("  Use parallel processing: {}", should_parallelize);
 
         let start = Instant::now();
@@ -402,7 +408,7 @@ fn adaptive_algorithms_demo() -> LinalgResult<()> {
     println!("\n🔹 Work-Stealing Effectiveness Demo");
 
     // Create an unbalanced workload
-    let unbalanced_matrix = Array2::from_shape_fn((100, 100), |(i, j)| {
+    let unbalancedmatrix = Array2::from_shape_fn((100, 100), |(i, j)| {
         if i < 50 {
             // Light computation for first half
             (i + j) as f64
@@ -419,12 +425,12 @@ fn adaptive_algorithms_demo() -> LinalgResult<()> {
     let config_balanced = WorkerConfig::new()
         .with_workers(4)
         .with_threshold(1000)
-        .with_chunk_size(25); // Balanced chunks
+        .with_chunksize(25); // Balanced chunks
 
     let config_imbalanced = WorkerConfig::new()
         .with_workers(4)
         .with_threshold(1000)
-        .with_chunk_size(50); // Larger chunks that may cause imbalance
+        .with_chunksize(50); // Larger chunks that may cause imbalance
 
     let vector = Array1::ones(100);
 
@@ -432,15 +438,12 @@ fn adaptive_algorithms_demo() -> LinalgResult<()> {
 
     let start = Instant::now();
     let _result1 =
-        algorithms::parallel_matvec(&unbalanced_matrix.view(), &vector.view(), &config_balanced)?;
+        algorithms::parallel_matvec(&unbalancedmatrix.view(), &vector.view(), &config_balanced)?;
     let balanced_time = start.elapsed();
 
     let start = Instant::now();
-    let _result2 = algorithms::parallel_matvec(
-        &unbalanced_matrix.view(),
-        &vector.view(),
-        &config_imbalanced,
-    )?;
+    let _result2 =
+        algorithms::parallel_matvec(&unbalancedmatrix.view(), &vector.view(), &config_imbalanced)?;
     let imbalanced_time = start.elapsed();
 
     println!("  Balanced chunks time:   {:?}", balanced_time);

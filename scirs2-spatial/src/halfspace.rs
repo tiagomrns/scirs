@@ -45,6 +45,7 @@
 use crate::convex_hull::ConvexHull;
 use crate::error::{SpatialError, SpatialResult};
 use ndarray::{arr1, Array1, Array2, ArrayView1};
+use statrs::statistics::Statistics;
 
 /// Representation of a halfspace: a·x ≤ b
 #[derive(Debug, Clone, PartialEq)]
@@ -789,7 +790,7 @@ impl HalfspaceIntersection {
     }
 
     /// Check if a polytope is bounded by examining vertices
-    fn check_boundedness(vertices: &Array2<f64>, _halfspaces: &[Halfspace]) -> SpatialResult<bool> {
+    fn check_boundedness(vertices: &Array2<f64>, halfspaces: &[Halfspace]) -> SpatialResult<bool> {
         if vertices.nrows() == 0 {
             return Ok(false);
         }
@@ -806,7 +807,7 @@ impl HalfspaceIntersection {
     /// Extract face structure from convex hull
     fn extract_faces_from_hull(hull: &ConvexHull) -> SpatialResult<Vec<Vec<usize>>> {
         // For now, create a simple face structure
-        // A complete implementation would extract actual facets from the hull
+        // A complete implementation would extract actual facets from the _hull
         let vertices = hull.vertex_indices();
         if vertices.len() < 3 {
             Ok(vec![vertices.to_vec()])
@@ -875,9 +876,7 @@ impl HalfspaceIntersection {
         match self.dim {
             2 => self.compute_polygon_area(),
             3 => self.compute_polyhedron_volume(),
-            _ => Err(SpatialError::NotImplementedError(
-                "Volume computation only supports 2D and 3D".to_string(),
-            )),
+            _ => self.compute_high_dim_volume(),
         }
     }
 
@@ -891,8 +890,8 @@ impl HalfspaceIntersection {
         }
 
         // Order vertices counter-clockwise
-        let center_x = vertices.column(0).mean().unwrap();
-        let center_y = vertices.column(1).mean().unwrap();
+        let center_x = vertices.column(0).to_owned().mean();
+        let center_y = vertices.column(1).to_owned().mean();
 
         let mut vertex_angles: Vec<(usize, f64)> = (0..n)
             .map(|i| {
@@ -970,13 +969,30 @@ impl HalfspaceIntersection {
 
         Ok(total_volume)
     }
+
+    /// Compute volume for high-dimensional halfspace intersection
+    fn compute_high_dim_volume(&self) -> SpatialResult<f64> {
+        // For high-dimensional halfspace intersections, we can compute the volume
+        // by treating the vertices as a convex polytope and using convex hull algorithms
+
+        if self.vertices.nrows() < self.dim + 1 {
+            // Not enough vertices to form a polytope
+            return Ok(0.0);
+        }
+
+        // Create a convex hull from the vertices
+        // The vertices of the halfspace intersection already form a convex polytope
+        let hull = ConvexHull::new(&self.vertices.view())?;
+
+        // Compute and return the volume of this convex polytope
+        hull.volume()
+    }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
     use approx::assert_relative_eq;
-    use ndarray::arr1;
 
     #[test]
     fn test_halfspace_creation() {
@@ -1062,10 +1078,10 @@ mod tests {
         // These halfspaces have no intersection
         let result = HalfspaceIntersection::new(&halfspaces, None);
         // This should either fail or return empty intersection
-        match result {
-            Ok(intersection) => assert!(!intersection.is_feasible()),
-            Err(_) => {} // Also acceptable
+        if let Ok(intersection) = result {
+            assert!(!intersection.is_feasible())
         }
+        // Also acceptable if Err
     }
 
     #[test]

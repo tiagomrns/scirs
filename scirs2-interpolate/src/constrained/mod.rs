@@ -48,6 +48,7 @@ pub use convenience::{
 pub use types::{
     BoundaryCondition, ConstrainedSpline, Constraint, ConstraintRegion, ConstraintType,
 };
+pub use utils::{ConstraintSatisfactionSummary, ConstraintViolationInfo};
 
 // Re-export the main methods from ConstrainedSpline
 impl<T> ConstrainedSpline<T>

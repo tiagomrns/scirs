@@ -7,6 +7,7 @@ use crate::error::{Result, VisionError};
 use image::{DynamicImage, GenericImageView, GrayImage, Rgb, RgbImage};
 use ndarray::{s, Array2};
 use scirs2_core::parallel_ops::*;
+use statrs::statistics::Statistics;
 
 /// Template matching method
 #[derive(Debug, Clone, Copy)]
@@ -61,6 +62,7 @@ pub struct MatchResult {
 /// # Ok(())
 /// # }
 /// ```
+#[allow(dead_code)]
 pub fn template_match(
     img: &DynamicImage,
     template: &DynamicImage,
@@ -82,6 +84,7 @@ pub fn template_match(
 }
 
 /// Sum of Squared Differences matching
+#[allow(dead_code)]
 fn match_ssd(img: &GrayImage, template: &GrayImage) -> Result<Array2<f32>> {
     let (img_width, img_height) = img.dimensions();
     let (tmpl_width, tmpl_height) = template.dimensions();
@@ -133,6 +136,7 @@ fn match_ssd(img: &GrayImage, template: &GrayImage) -> Result<Array2<f32>> {
 }
 
 /// Normalized Sum of Squared Differences
+#[allow(dead_code)]
 fn match_normalized_ssd(img: &GrayImage, template: &GrayImage) -> Result<Array2<f32>> {
     let ssd_result = match_ssd(img, template)?;
     let (height, width) = ssd_result.dim();
@@ -155,6 +159,7 @@ fn match_normalized_ssd(img: &GrayImage, template: &GrayImage) -> Result<Array2<
 }
 
 /// Cross-correlation matching
+#[allow(dead_code)]
 fn match_cross_correlation(img: &GrayImage, template: &GrayImage) -> Result<Array2<f32>> {
     let (img_width, img_height) = img.dimensions();
     let (tmpl_width, tmpl_height) = template.dimensions();
@@ -201,6 +206,7 @@ fn match_cross_correlation(img: &GrayImage, template: &GrayImage) -> Result<Arra
 }
 
 /// Normalized Cross-Correlation
+#[allow(dead_code)]
 fn match_ncc(img: &GrayImage, template: &GrayImage) -> Result<Array2<f32>> {
     let (img_width, img_height) = img.dimensions();
     let (tmpl_width, tmpl_height) = template.dimensions();
@@ -277,11 +283,13 @@ fn match_ncc(img: &GrayImage, template: &GrayImage) -> Result<Array2<f32>> {
 }
 
 /// Correlation coefficient matching
+#[allow(dead_code)]
 fn match_correlation_coeff(img: &GrayImage, template: &GrayImage) -> Result<Array2<f32>> {
     match_ncc(img, template)
 }
 
 /// Normalized correlation coefficient
+#[allow(dead_code)]
 fn match_normalized_correlation_coeff(
     img: &GrayImage,
     template: &GrayImage,
@@ -306,6 +314,7 @@ fn match_normalized_correlation_coeff(
 /// # Returns
 ///
 /// * Best match result
+#[allow(dead_code)]
 pub fn find_best_match(scores: &Array2<f32>, method: MatchMethod) -> MatchResult {
     let (height, width) = scores.dim();
     let mut best_score = match method {
@@ -352,6 +361,7 @@ pub fn find_best_match(scores: &Array2<f32>, method: MatchMethod) -> MatchResult
 /// # Returns
 ///
 /// * Vector of match results
+#[allow(dead_code)]
 pub fn find_matches(
     scores: &Array2<f32>,
     method: MatchMethod,
@@ -403,6 +413,7 @@ pub fn find_matches(
 }
 
 /// Draw match result on image
+#[allow(dead_code)]
 pub fn draw_match(
     img: &DynamicImage,
     template: &DynamicImage,
@@ -426,6 +437,7 @@ pub fn draw_match(
 }
 
 /// Draw rectangle on image
+#[allow(dead_code)]
 fn draw_rectangle(img: &mut RgbImage, x: u32, y: u32, width: u32, height: u32, color: Rgb<u8>) {
     let (img_width, img_height) = img.dimensions();
 
@@ -457,6 +469,7 @@ fn draw_rectangle(img: &mut RgbImage, x: u32, y: u32, width: u32, height: u32, c
 }
 
 /// Convert grayscale image to normalized array
+#[allow(dead_code)]
 fn image_to_array(img: &GrayImage) -> Array2<f32> {
     let (width, height) = img.dimensions();
     let mut array = Array2::zeros((height as usize, width as usize));

@@ -3,6 +3,7 @@
 use ndarray::Array1;
 use scirs2_optim::optimizers::{Optimizer, LBFGS};
 
+#[allow(dead_code)]
 fn main() {
     let mut optimizer: LBFGS<f64> = LBFGS::new(0.01);
 

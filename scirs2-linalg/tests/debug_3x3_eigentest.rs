@@ -3,6 +3,7 @@ use num_traits::Float;
 use scirs2_linalg::eigh;
 
 #[test]
+#[allow(dead_code)]
 fn debug_3x3_eigenvalue_computation() {
     let a = array![[4.0, 1.0, 0.0], [1.0, 3.0, 1.0], [0.0, 1.0, 2.0]];
 

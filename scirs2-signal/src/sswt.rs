@@ -1,3 +1,11 @@
+use crate::dwt::Wavelet;
+use crate::error::{SignalError, SignalResult};
+use crate::wavelets;
+use ndarray::s;
+use ndarray::{Array1, Array2};
+use num_complex::Complex64;
+use num_traits::Float;
+
 // Synchrosqueezed Wavelet Transform Implementation
 //
 // This module provides an implementation of the synchrosqueezed wavelet transform (SSWT),
@@ -7,14 +15,7 @@
 // Reference: Daubechies, I., Lu, J., & Wu, H. T. (2011). Synchrosqueezed wavelet transforms:
 // An empirical mode decomposition-like tool. Applied and computational harmonic analysis, 30(2), 243-261.
 
-use ndarray::{s, Array1, Array2};
-use num_complex::Complex64;
-use num_traits::Float;
-use std::f64::consts::PI;
-
-use crate::error::{SignalError, SignalResult};
-use crate::wavelets;
-
+#[allow(unused_imports)]
 /// Configuration parameters for the synchrosqueezed wavelet transform
 #[derive(Debug, Clone)]
 pub struct SynchroCwtConfig {
@@ -103,6 +104,7 @@ pub struct SynchroCwtResult {
 ///
 /// // The result.sst contains the synchrosqueezed transform
 /// ```
+#[allow(dead_code)]
 pub fn synchrosqueezed_cwt<F, W>(
     signal: &Array1<f64>,
     scales: &Array1<f64>,
@@ -165,6 +167,7 @@ where
 ///
 /// This function calculates the instantaneous frequency at each time-scale point
 /// by computing the derivative of the phase of the CWT coefficients.
+#[allow(dead_code)]
 fn compute_instantaneous_frequencies(
     cwt: &Array2<Complex64>,
     scales: &Array1<f64>,
@@ -203,7 +206,7 @@ fn compute_instantaneous_frequencies(
                 phase_diff_unwrapped += 2.0 * PI;
             }
 
-            // Convert to instantaneous frequency using the center frequency of the wavelet
+            // Convert to instantaneous _frequency using the center _frequency of the wavelet
             omega[[i, t]] = if phase_diff_unwrapped.abs() > 1e-10 {
                 center_frequency / scale / 2.0 / PI + phase_diff_unwrapped / 2.0 / PI
             } else {
@@ -250,6 +253,7 @@ fn compute_instantaneous_frequencies(
 }
 
 /// Perform the synchrosqueezing operation to reassign energy in the time-frequency plane
+#[allow(dead_code)]
 fn perform_synchrosqueezing(
     cwt: &Array2<Complex64>,
     omega: &Array2<f64>,
@@ -264,10 +268,10 @@ fn perform_synchrosqueezing(
     // Create the output array
     let mut sst = Array2::zeros((n_freqs, n_samples));
 
-    // Check if frequency vector is empty
+    // Check if _frequency vector is empty
     if frequencies.is_empty() {
         return Err(SignalError::ValueError(
-            "Empty frequency vector for synchrosqueezing".to_string(),
+            "Empty _frequency vector for synchrosqueezing".to_string(),
         ));
     }
 
@@ -278,12 +282,12 @@ fn perform_synchrosqueezing(
             let cwt_val = cwt[[i, t]];
             let inst_freq = omega[[i, t]];
 
-            // Skip if coefficient magnitude is below threshold or frequency is invalid
+            // Skip if coefficient magnitude is below threshold or _frequency is invalid
             if cwt_val.norm() <= gamma || inst_freq <= 0.0 {
                 continue;
             }
 
-            // Find the closest frequency bin
+            // Find the closest _frequency bin
             let freq_idx = find_closest_freq_bin(inst_freq, frequencies);
 
             if freq_idx < n_freqs {
@@ -298,12 +302,13 @@ fn perform_synchrosqueezing(
 }
 
 /// Find the index of the closest frequency bin
+#[allow(dead_code)]
 fn find_closest_freq_bin(freq: f64, frequencies: &Array1<f64>) -> usize {
     let mut closest_idx = 0;
     let mut min_diff = f64::INFINITY;
 
     for (i, &bin_freq) in frequencies.iter().enumerate() {
-        let diff = (freq - bin_freq).abs();
+        let diff = (_freq - bin_freq).abs();
         if diff < min_diff {
             min_diff = diff;
             closest_idx = i;
@@ -335,7 +340,8 @@ fn find_closest_freq_bin(freq: f64, frequencies: &Array1<f64>) -> usize {
 /// assert!(scales[0] >= 1.0 && scales[0] <= scales[1]);
 /// assert!(scales[31] <= 64.0 && scales[31] >= scales[30]);
 /// ```
-pub fn log_scales(min_scale: f64, max_scale: f64, n_scales: usize) -> Array1<f64> {
+#[allow(dead_code)]
+pub fn log_scales(min_scale: f64, max_scale: f64, nscales: usize) -> Array1<f64> {
     if min_scale <= 0.0 || max_scale <= 0.0 || min_scale >= max_scale {
         panic!("Scales must be positive with min_scale < max_scale");
     }
@@ -369,7 +375,8 @@ pub fn log_scales(min_scale: f64, max_scale: f64, n_scales: usize) -> Array1<f64
 /// assert!(freqs[0] >= 1.0 && freqs[0] <= freqs[1]);
 /// assert!(freqs[63] <= 64.0 && freqs[63] >= freqs[62]);
 /// ```
-pub fn frequency_bins(min_freq: f64, max_freq: f64, n_freqs: usize) -> Array1<f64> {
+#[allow(dead_code)]
+pub fn frequency_bins(min_freq: f64, max_freq: f64, nfreqs: usize) -> Array1<f64> {
     if min_freq < 0.0 || max_freq <= 0.0 || min_freq >= max_freq {
         panic!("Frequencies must be non-negative with min_freq < max_freq");
     }
@@ -391,6 +398,7 @@ pub fn frequency_bins(min_freq: f64, max_freq: f64, n_freqs: usize) -> Array1<f6
 /// # Returns
 ///
 /// A vector of ridges, where each ridge is a vector of (time_index, frequency) pairs
+#[allow(dead_code)]
 pub fn extract_ridges(
     sst: &Array2<Complex64>,
     frequencies: &Array1<f64>,
@@ -400,7 +408,7 @@ pub fn extract_ridges(
     let n_times = sst.shape()[1];
 
     let max_ridges = max_ridges.max(1);
-    let mut ridges = Vec::with_capacity(max_ridges);
+    let mut _ridges = Vec::with_capacity(max_ridges);
 
     // For each time point, find the frequencies with the highest energy
     for t in 0..n_times {
@@ -441,7 +449,7 @@ pub fn extract_ridges(
         }
     }
 
-    // Sort ridges by total energy
+    // Sort _ridges by total energy
     ridges.sort_by(|a, b| {
         // Calculate total energy for each ridge
         let energy_a: f64 = a
@@ -466,7 +474,7 @@ pub fn extract_ridges(
             .unwrap_or(std::cmp::Ordering::Equal)
     });
 
-    ridges
+    _ridges
 }
 
 /// Calculate the ridge-based reconstruction of a signal from its synchrosqueezed transform
@@ -480,6 +488,7 @@ pub fn extract_ridges(
 /// # Returns
 ///
 /// A reconstructed signal following the time-frequency ridge
+#[allow(dead_code)]
 pub fn reconstruct_from_ridge(
     sst: &Array2<Complex64>,
     ridge: &[(usize, f64)],
@@ -518,7 +527,6 @@ pub fn reconstruct_from_ridge(
 mod tests {
     use super::*;
     use approx::assert_relative_eq;
-
     #[test]
     fn test_log_scales() {
         let scales = log_scales(1.0, 64.0, 4);
@@ -537,6 +545,8 @@ mod tests {
 
     #[test]
     fn test_synchrosqueezed_cwt_chirp() {
+        let a = vec![1.0, 2.0, 3.0, 4.0, 5.0];
+        let b = vec![0.5, 0.5];
         // Create a chirp signal
         let n_samples = 500;
         let t = Array1::linspace(0.0, 10.0, n_samples);

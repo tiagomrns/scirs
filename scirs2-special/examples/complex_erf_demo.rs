@@ -6,6 +6,7 @@
 use num_complex::Complex64;
 use scirs2_special::{erf_complex, erfc_complex, erfcx_complex, faddeeva_complex};
 
+#[allow(dead_code)]
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("=== SCIRS2-SPECIAL Complex Error Functions Demo ===\n");
 
@@ -31,6 +32,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     Ok(())
 }
 
+#[allow(dead_code)]
 fn demo_basic_error_functions() -> Result<(), Box<dyn std::error::Error>> {
     println!("1. Complex Error Function erf(z)");
     println!("=================================");
@@ -57,6 +59,7 @@ fn demo_basic_error_functions() -> Result<(), Box<dyn std::error::Error>> {
     Ok(())
 }
 
+#[allow(dead_code)]
 fn demo_complementary_error_function() -> Result<(), Box<dyn std::error::Error>> {
     println!("2. Complex Complementary Error Function erfc(z)");
     println!("===============================================");
@@ -83,6 +86,7 @@ fn demo_complementary_error_function() -> Result<(), Box<dyn std::error::Error>>
     Ok(())
 }
 
+#[allow(dead_code)]
 fn demo_scaled_error_function() -> Result<(), Box<dyn std::error::Error>> {
     println!("3. Complex Scaled Complementary Error Function erfcx(z)");
     println!("=======================================================");
@@ -116,6 +120,7 @@ fn demo_scaled_error_function() -> Result<(), Box<dyn std::error::Error>> {
     Ok(())
 }
 
+#[allow(dead_code)]
 fn demo_faddeeva_function() -> Result<(), Box<dyn std::error::Error>> {
     println!("4. Complex Faddeeva Function w(z)");
     println!("==================================");
@@ -144,6 +149,7 @@ fn demo_faddeeva_function() -> Result<(), Box<dyn std::error::Error>> {
     Ok(())
 }
 
+#[allow(dead_code)]
 fn demo_mathematical_properties() -> Result<(), Box<dyn std::error::Error>> {
     println!("5. Mathematical Properties Verification");
     println!("======================================");
@@ -172,8 +178,8 @@ fn demo_mathematical_properties() -> Result<(), Box<dyn std::error::Error>> {
     println!("Property: erf(-z) = -erf(z) (odd function)");
     for &z in &test_values {
         let erf_z = erf_complex(z);
-        let erf_minus_z = erf_complex(-z);
-        let error = (erf_minus_z + erf_z).norm();
+        let erfminus_z = erf_complex(-z);
+        let error = (erfminus_z + erf_z).norm();
 
         println!("  z = {:.1} + {:.1}i: error = {:.2e}", z.re, z.im, error);
     }
@@ -202,6 +208,7 @@ fn demo_mathematical_properties() -> Result<(), Box<dyn std::error::Error>> {
     Ok(())
 }
 
+#[allow(dead_code)]
 fn demo_special_cases() -> Result<(), Box<dyn std::error::Error>> {
     println!("6. Special Cases and Applications");
     println!("================================");

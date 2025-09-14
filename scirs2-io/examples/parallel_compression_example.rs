@@ -10,6 +10,7 @@ use scirs2_io::compression::{
 use std::time::Instant;
 use tempfile::tempdir;
 
+#[allow(dead_code)]
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("⚡ Parallel Compression and Decompression Example");
     println!("==============================================");
@@ -20,20 +21,20 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // Generate large test data
     println!("\n🏗️  Generating test data...");
-    let test_data = generate_test_data(10_000_000); // 10MB of data
-    println!("📊 Generated {} bytes of test data", test_data.len());
+    let testdata = generate_testdata(10_000_000); // 10MB of data
+    println!("📊 Generated {} bytes of test data", testdata.len());
 
     // Demonstrate basic parallel compression
-    demonstrate_basic_parallel_compression(&test_data)?;
+    demonstrate_basic_parallel_compression(&testdata)?;
 
     // Compare sequential vs parallel performance
-    demonstrate_performance_comparison(&test_data)?;
+    demonstrate_performance_comparison(&testdata)?;
 
     // Demonstrate file operations
-    demonstrate_parallel_file_operations(&test_data, &temp_dir)?;
+    demonstrate_parallel_file_operations(&testdata, &temp_dir)?;
 
     // Benchmark different algorithms and configurations
-    demonstrate_algorithm_benchmarking(&test_data)?;
+    demonstrate_algorithm_benchmarking(&testdata)?;
 
     println!("\n✅ All parallel compression demonstrations completed successfully!");
     println!("💡 Parallel compression provides significant speedups for large datasets");
@@ -41,7 +42,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     Ok(())
 }
 
-fn generate_test_data(size: usize) -> Vec<u8> {
+#[allow(dead_code)]
+fn generate_testdata(size: usize) -> Vec<u8> {
     // Generate semi-random data that compresses well
     let mut data = Vec::with_capacity(size);
 
@@ -66,6 +68,7 @@ fn generate_test_data(size: usize) -> Vec<u8> {
     data
 }
 
+#[allow(dead_code)]
 fn demonstrate_basic_parallel_compression(data: &[u8]) -> Result<(), Box<dyn std::error::Error>> {
     println!("\n🔧 Demonstrating Basic Parallel Compression...");
 
@@ -81,7 +84,7 @@ fn demonstrate_basic_parallel_compression(data: &[u8]) -> Result<(), Box<dyn std
     );
 
     let start_time = Instant::now();
-    let (compressed_data, compression_stats) =
+    let (compresseddata, compression_stats) =
         compress_data_parallel(data, algorithm, level, config.clone())?;
     let _compression_time = start_time.elapsed();
 
@@ -111,8 +114,8 @@ fn demonstrate_basic_parallel_compression(data: &[u8]) -> Result<(), Box<dyn std
 
     println!("  📖 Decompressing data...");
     let start_time = Instant::now();
-    let (decompressed_data, decompression_stats) =
-        decompress_data_parallel(&compressed_data, algorithm, config)?;
+    let (decompresseddata, decompression_stats) =
+        decompress_data_parallel(&compresseddata, algorithm, config)?;
     let _decompression_time = start_time.elapsed();
 
     println!("  📊 Decompression Results:");
@@ -136,12 +139,13 @@ fn demonstrate_basic_parallel_compression(data: &[u8]) -> Result<(), Box<dyn std
     );
 
     // Verify data integrity
-    assert_eq!(data, &decompressed_data, "Data integrity check failed!");
+    assert_eq!(data, &decompresseddata, "Data integrity check failed!");
     println!("  ✅ Data integrity verified - perfect round-trip!");
 
     Ok(())
 }
 
+#[allow(dead_code)]
 fn demonstrate_performance_comparison(data: &[u8]) -> Result<(), Box<dyn std::error::Error>> {
     println!("\n⚖️  Comparing Sequential vs Parallel Performance...");
 
@@ -217,15 +221,16 @@ fn demonstrate_performance_comparison(data: &[u8]) -> Result<(), Box<dyn std::er
     Ok(())
 }
 
+#[allow(dead_code)]
 fn demonstrate_parallel_file_operations(
     data: &[u8],
     temp_dir: &tempfile::TempDir,
 ) -> Result<(), Box<dyn std::error::Error>> {
     println!("\n💾 Demonstrating Parallel File Operations...");
 
-    let input_file = temp_dir.path().join("test_data.bin");
-    let compressed_file = temp_dir.path().join("test_data.bin.zst");
-    let decompressed_file = temp_dir.path().join("test_data_restored.bin");
+    let input_file = temp_dir.path().join("testdata.bin");
+    let compressed_file = temp_dir.path().join("testdata.bin.zst");
+    let decompressed_file = temp_dir.path().join("testdata_restored.bin");
 
     // Write original data to file
     std::fs::write(&input_file, data)?;
@@ -285,9 +290,9 @@ fn demonstrate_parallel_file_operations(
     );
 
     // Verify file integrity
-    let restored_data = std::fs::read(&decompressed_file)?;
+    let restoreddata = std::fs::read(&decompressed_file)?;
     assert_eq!(
-        data, &restored_data,
+        data, &restoreddata,
         "File round-trip integrity check failed!"
     );
     println!("  ✅ File integrity verified - perfect round-trip!");
@@ -295,11 +300,12 @@ fn demonstrate_parallel_file_operations(
     Ok(())
 }
 
+#[allow(dead_code)]
 fn demonstrate_algorithm_benchmarking(data: &[u8]) -> Result<(), Box<dyn std::error::Error>> {
     println!("\n🏁 Benchmarking Different Algorithms and Configurations...");
 
     // Use a smaller dataset for benchmarking to keep runtime reasonable
-    let benchmark_data = &data[0..(data.len() / 4).min(2_500_000)]; // Max 2.5MB for benchmarking
+    let benchmarkdata = &data[0..(data.len() / 4).min(2_500_000)]; // Max 2.5MB for benchmarking
 
     let algorithms = vec![
         CompressionAlgorithm::Lz4,
@@ -326,7 +332,7 @@ fn demonstrate_algorithm_benchmarking(data: &[u8]) -> Result<(), Box<dyn std::er
 
     println!(
         "  🔬 Running benchmark with {} bytes of data...",
-        benchmark_data.len()
+        benchmarkdata.len()
     );
     println!(
         "  📏 Testing {} algorithms × {} levels × {} configurations = {} combinations",
@@ -336,7 +342,7 @@ fn demonstrate_algorithm_benchmarking(data: &[u8]) -> Result<(), Box<dyn std::er
         algorithms.len() * levels.len() * configs.len()
     );
 
-    let results = benchmark_compression_algorithms(benchmark_data, &algorithms, &levels, &configs)?;
+    let results = benchmark_compression_algorithms(benchmarkdata, &algorithms, &levels, &configs)?;
 
     println!("  📊 Benchmark Results:");
     println!(

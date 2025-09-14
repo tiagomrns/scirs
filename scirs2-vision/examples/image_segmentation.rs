@@ -13,12 +13,13 @@ use scirs2_vision::segmentation::{
 };
 use std::path::PathBuf;
 
+#[allow(dead_code)]
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("SciRS2 Vision - Image Segmentation Example");
 
     // In a real application, you would provide your own image file path
     let image_path = "examples/input/input.jpg"; // Change this to your image path
-    println!("Attempting to load image from: {}", image_path);
+    println!("Attempting to load image from: {image_path}");
 
     // Check if the image file exists
     let path = PathBuf::from(image_path);
@@ -74,6 +75,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     Ok(())
 }
 
+#[allow(dead_code)]
 fn process_image(img: &DynamicImage) -> Result<(), Box<dyn std::error::Error>> {
     // 1. Preprocess the image
     println!("Preprocessing image...");
@@ -88,7 +90,7 @@ fn process_image(img: &DynamicImage) -> Result<(), Box<dyn std::error::Error>> {
     // 3. Apply Otsu's thresholding
     println!("Applying Otsu's thresholding...");
     let (otsu_binary, otsu_threshold) = otsu_threshold(&blurred)?;
-    println!("Otsu's threshold value: {:.3}", otsu_threshold);
+    println!("Otsu's threshold value: {otsu_threshold:.3}");
     println!("Otsu's thresholding complete");
 
     // 4. Apply adaptive thresholding
@@ -103,7 +105,7 @@ fn process_image(img: &DynamicImage) -> Result<(), Box<dyn std::error::Error>> {
     // 5. Apply connected components labeling
     println!("Performing connected component labeling...");
     let (labeled, num_components) = connected_components(&binary)?;
-    println!("Found {} distinct components", num_components);
+    println!("Found {num_components} distinct components");
     println!("Connected component labeling complete");
 
     // Print some information about the results

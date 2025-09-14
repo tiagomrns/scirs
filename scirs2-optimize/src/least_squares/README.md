@@ -88,10 +88,20 @@ use scirs2_optimize::least_squares::{
     Method, HuberLoss
 };
 
-// Define residual function
+// Define residual function for exponential model: y = a * exp(b * x)
 fn residual(params: &[f64], data: &[f64]) -> Array1<f64> {
-    // Your model here
-    todo!()
+    let a = params[0];
+    let b = params[1];
+    let n = data.len() / 2;
+    let x_vals = &data[0..n];
+    let y_vals = &data[n..];
+    
+    let mut residuals = Array1::zeros(n);
+    for i in 0..n {
+        let predicted = a * (b * x_vals[i]).exp();
+        residuals[i] = y_vals[i] - predicted;
+    }
+    residuals
 }
 
 // Standard least squares

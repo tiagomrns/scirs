@@ -71,6 +71,7 @@ impl<F: Float + FromPrimitive> Default for ParallelKMeansOptions<F> {
 ///
 /// let (centroids, labels) = parallel_kmeans(data.view(), 5, None).unwrap();
 /// ```
+#[allow(dead_code)]
 pub fn parallel_kmeans<F>(
     data: ArrayView2<F>,
     k: usize,
@@ -107,7 +108,7 @@ where
         // The n_threads parameter is noted but core handles optimal thread allocation
     }
 
-    let mut best_centroids = None;
+    let mut bestcentroids = None;
     let mut best_labels = None;
     let mut best_inertia = F::infinity();
 
@@ -120,19 +121,20 @@ where
         let (centroids, labels, inertia) = parallel_kmeans_single(data, centroids.view(), &opts)?;
 
         if inertia < best_inertia {
-            best_centroids = Some(centroids);
+            bestcentroids = Some(centroids);
             best_labels = Some(labels);
             best_inertia = inertia;
         }
     }
 
-    Ok((best_centroids.unwrap(), best_labels.unwrap()))
+    Ok((bestcentroids.unwrap(), best_labels.unwrap()))
 }
 
 /// Run a single parallel k-means clustering iteration
+#[allow(dead_code)]
 fn parallel_kmeans_single<F>(
     data: ArrayView2<F>,
-    init_centroids: ArrayView2<F>,
+    initcentroids: ArrayView2<F>,
     opts: &ParallelKMeansOptions<F>,
 ) -> Result<(Array2<F>, Array1<usize>, F)>
 where
@@ -140,9 +142,9 @@ where
 {
     let n_samples = data.shape()[0];
     let _n_features = data.shape()[1];
-    let k = init_centroids.shape()[0];
+    let k = initcentroids.shape()[0];
 
-    let mut centroids = init_centroids.to_owned();
+    let mut centroids = initcentroids.to_owned();
     let mut labels = Array1::zeros(n_samples);
     let mut prev_inertia = F::infinity();
 
@@ -152,13 +154,13 @@ where
         labels = new_labels;
 
         // Parallel centroid update
-        let new_centroids = parallel_update_centroids(data, &labels, k)?;
+        let newcentroids = parallel_updatecentroids(data, &labels, k)?;
 
         // Check for empty clusters
         let cluster_counts = count_clusters(&labels, k);
 
         // Handle empty clusters
-        let mut final_centroids = new_centroids;
+        let mut finalcentroids = newcentroids;
         for (i, &count) in cluster_counts.iter().enumerate() {
             if count == 0 {
                 // Find the point furthest from its centroid
@@ -169,21 +171,21 @@ where
                     .unwrap();
 
                 // Move this point to the empty cluster
-                final_centroids
+                finalcentroids
                     .slice_mut(s![i, ..])
                     .assign(&data.slice(s![far_idx, ..]));
             }
         }
 
         // Calculate inertia
-        let inertia = parallel_compute_inertia(data, &labels, final_centroids.view())?;
+        let inertia = parallel_compute_inertia(data, &labels, finalcentroids.view())?;
 
         // Check for convergence
         if (prev_inertia - inertia).abs() <= opts.tol {
-            return Ok((final_centroids, labels, inertia));
+            return Ok((finalcentroids, labels, inertia));
         }
 
-        centroids = final_centroids;
+        centroids = finalcentroids;
         prev_inertia = inertia;
     }
 
@@ -194,6 +196,7 @@ where
 }
 
 /// Parallel assignment of samples to nearest centroids
+#[allow(dead_code)]
 fn parallel_assign_labels<F>(
     data: ArrayView2<F>,
     centroids: ArrayView2<F>,
@@ -239,7 +242,8 @@ where
 }
 
 /// Parallel update of centroids based on assigned labels
-fn parallel_update_centroids<F>(
+#[allow(dead_code)]
+fn parallel_updatecentroids<F>(
     data: ArrayView2<F>,
     labels: &Array1<usize>,
     k: usize,
@@ -271,7 +275,7 @@ where
         });
 
     // Compute new centroids
-    let mut new_centroids = Array2::zeros((k, n_features));
+    let mut newcentroids = Array2::zeros((k, n_features));
 
     for i in 0..k {
         let sum = sums[i].lock().unwrap();
@@ -279,15 +283,16 @@ where
 
         if count > 0 {
             for j in 0..n_features {
-                new_centroids[[i, j]] = sum[j] / F::from(count).unwrap();
+                newcentroids[[i, j]] = sum[j] / F::from(count).unwrap();
             }
         }
     }
 
-    Ok(new_centroids)
+    Ok(newcentroids)
 }
 
 /// Count number of points in each cluster
+#[allow(dead_code)]
 fn count_clusters(labels: &Array1<usize>, k: usize) -> Vec<usize> {
     let mut counts = vec![0; k];
     for &label in labels.iter() {
@@ -297,6 +302,7 @@ fn count_clusters(labels: &Array1<usize>, k: usize) -> Vec<usize> {
 }
 
 /// Parallel computation of inertia (sum of squared distances to centroids)
+#[allow(dead_code)]
 fn parallel_compute_inertia<F>(
     data: ArrayView2<F>,
     labels: &Array1<usize>,
@@ -386,7 +392,7 @@ mod tests {
         let (centroids, labels) = parallel_kmeans(data.view(), 3, Some(options)).unwrap();
         let duration = start_time.elapsed();
 
-        println!("Parallel K-means took: {:?}", duration);
+        println!("Parallel K-means took: {duration:?}");
 
         // Check results
         assert_eq!(centroids.shape(), &[3, n_features]);

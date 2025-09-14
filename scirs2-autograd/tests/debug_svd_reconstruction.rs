@@ -3,6 +3,7 @@ use ndarray::array;
 use scirs2_autograd as ag;
 
 #[test]
+#[allow(dead_code)]
 fn debug_svd_reconstruction() {
     ag::run(|g| {
         let a = convert_to_tensor(array![[1.0_f64, 2.0], [3.0, 4.0], [5.0, 6.0]], g);

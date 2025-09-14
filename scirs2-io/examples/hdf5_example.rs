@@ -10,6 +10,7 @@ use scirs2_io::hdf5::{
 };
 use std::collections::HashMap;
 
+#[allow(dead_code)]
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("=== HDF5 File Format Example ===\n");
 
@@ -28,6 +29,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     Ok(())
 }
 
+#[allow(dead_code)]
 fn simple_dataset_example() -> Result<(), Box<dyn std::error::Error>> {
     println!("1. Simple Dataset Example");
     println!("-------------------------");
@@ -60,6 +62,7 @@ fn simple_dataset_example() -> Result<(), Box<dyn std::error::Error>> {
     Ok(())
 }
 
+#[allow(dead_code)]
 fn structured_file_example() -> Result<(), Box<dyn std::error::Error>> {
     println!("2. Structured File Example");
     println!("--------------------------");
@@ -137,6 +140,7 @@ fn structured_file_example() -> Result<(), Box<dyn std::error::Error>> {
     Ok(())
 }
 
+#[allow(dead_code)]
 fn compression_example() -> Result<(), Box<dyn std::error::Error>> {
     println!("3. Compression Example");
     println!("----------------------");
@@ -191,6 +195,7 @@ fn compression_example() -> Result<(), Box<dyn std::error::Error>> {
     Ok(())
 }
 
+#[allow(dead_code)]
 fn scientific_data_example() -> Result<(), Box<dyn std::error::Error>> {
     println!("4. Scientific Data Example");
     println!("--------------------------");
@@ -281,7 +286,7 @@ fn scientific_data_example() -> Result<(), Box<dyn std::error::Error>> {
         let qc_flags: Array2<i64> =
             Array2::from_shape_fn(
                 (12, 10),
-                |(_, _)| if rand::random::<f64>() > 0.95 { 1 } else { 0 },
+                |(__)| if rand::random::<f64>() > 0.95 { 1 } else { 0 },
             );
 
         // Convert to ArrayD<f64> for our API
@@ -315,3 +320,4 @@ fn scientific_data_example() -> Result<(), Box<dyn std::error::Error>> {
 
 // Add dependency on rand for example data generation
 use rand;
+use statrs::statistics::Statistics;

@@ -1,19 +1,22 @@
-//! Short-Time Fourier Transform (STFT) implementation.
-//!
-//! This module provides a parametrized discrete Short-time Fourier transform (STFT)
-//! and its inverse (ISTFT), similar to SciPy's ShortTimeFFT class.
-//!
-//! Features:
-//! - Memory-efficient processing for large signals
-//! - Streaming STFT with configurable chunk sizes
-//! - Zero-copy processing where possible
-//! - Parallel processing support
+use ndarray::s;
+// Short-Time Fourier Transform (STFT) implementation.
+//
+// This module provides a parametrized discrete Short-time Fourier transform (STFT)
+// and its inverse (ISTFT), similar to SciPy's ShortTimeFFT class.
+//
+// Features:
+// - Memory-efficient processing for large signals
+// - Streaming STFT with configurable chunk sizes
+// - Zero-copy processing where possible
+// - Parallel processing support
 
 use crate::error::{SignalError, SignalResult};
+use crate::lti::design::tf;
 use crate::window;
-use ndarray::{s, Array1, Array2};
+use ndarray::{Array1, Array2};
 use num_complex::Complex64;
 use num_traits::{Float, NumCast};
+use scirs2_core::parallel_ops::*;
 use std::fmt::Debug;
 
 /// Configuration options for STFT
@@ -102,7 +105,7 @@ impl std::str::FromStr for ScalingMode {
 /// use scirs2_signal::stft::{ShortTimeFft, StftConfig};
 /// use scirs2_signal::window;
 /// use ndarray::Array1;
-/// use std::f64::consts::PI;
+///
 ///
 /// // Create a signal with varying frequency
 /// let fs = 1000.0; // 1 kHz sampling rate
@@ -193,7 +196,12 @@ impl ShortTimeFft {
     /// # Returns
     ///
     /// * Result containing a new ShortTimeFft instance
-    pub fn new(win: &[f64], hop: usize, fs: f64, config: Option<StftConfig>) -> SignalResult<Self> {
+    pub fn new(
+        _win: &[f64],
+        hop: usize,
+        fs: f64,
+        config: Option<StftConfig>,
+    ) -> SignalResult<Self> {
         // Use default config if none provided
         let config = config.unwrap_or_default();
         // Validate input parameters
@@ -222,7 +230,7 @@ impl ShortTimeFft {
         };
 
         // Default mfft to window length
-        let mfft_val = config.mfft.unwrap_or(win.len());
+        let mfft_val = config.mfft.unwrap_or(_win.len());
 
         // Validate mfft
         if mfft_val < win.len() {
@@ -238,7 +246,7 @@ impl ShortTimeFft {
         };
 
         // Convert window to Array1
-        let win_array = Array1::from_vec(win.to_vec());
+        let win_array = Array1::from_vec(_win.to_vec());
 
         // Convert dual window to Array1 if provided
         let dual_win_array = if let Some(ref dw) = config.dual_win {
@@ -257,7 +265,7 @@ impl ShortTimeFft {
         let m_num_mid = m_num / 2;
 
         Ok(ShortTimeFft {
-            win: win_array,
+            _win: win_array,
             hop,
             fs,
             fft_mode: fft_mode_val,
@@ -402,7 +410,7 @@ impl ShortTimeFft {
         config: Option<StftConfig>,
     ) -> SignalResult<Self> {
         // Create canonical window from dual
-        let win = calc_dual_window_internal(dual_win, hop)?;
+        let _win = calc_dual_window_internal(dual_win, hop)?;
 
         // Create a config with the dual window
         let mut new_config = config.unwrap_or_default();
@@ -984,7 +992,7 @@ impl ShortTimeFft {
                 for k in 1..(n / 2 + 1) {
                     let mut sum = Complex64::new(0.0, 0.0);
                     for (j, &frame_val) in complex_frame.iter().enumerate().take(n) {
-                        let angle = -2.0 * std::f64::consts::PI * (j * k) as f64 / n as f64;
+                        let angle = -2.0 * PI * (j * k) as f64 / n as f64;
                         let c = Complex64::new(angle.cos(), angle.sin());
                         sum += frame_val * c;
                     }
@@ -1001,7 +1009,7 @@ impl ShortTimeFft {
                 for k in 0..n {
                     let mut sum = Complex64::new(0.0, 0.0);
                     for (j, &frame_val) in complex_frame.iter().enumerate().take(n) {
-                        let angle = -2.0 * std::f64::consts::PI * (j * k) as f64 / n as f64;
+                        let angle = -2.0 * PI * (j * k) as f64 / n as f64;
                         let c = Complex64::new(angle.cos(), angle.sin());
                         sum += frame_val * c;
                     }
@@ -1018,7 +1026,7 @@ impl ShortTimeFft {
                 for k in 0..n {
                     let mut sum = Complex64::new(0.0, 0.0);
                     for (j, &frame_val) in complex_frame.iter().enumerate().take(n) {
-                        let angle = -2.0 * std::f64::consts::PI * (j * k) as f64 / n as f64;
+                        let angle = -2.0 * PI * (j * k) as f64 / n as f64;
                         let c = Complex64::new(angle.cos(), angle.sin());
                         sum += frame_val * c;
                     }
@@ -1046,7 +1054,7 @@ impl ShortTimeFft {
             let phase_factor = phase_shift as f64 / self.mfft as f64;
 
             for (i, val) in result.iter_mut().enumerate() {
-                let angle = 2.0 * std::f64::consts::PI * i as f64 * phase_factor;
+                let angle = 2.0 * PI * i as f64 * phase_factor;
                 let phase = Complex64::new(angle.cos(), angle.sin());
                 *val *= phase;
             }
@@ -1082,7 +1090,7 @@ impl ShortTimeFft {
 
                     // Positive frequencies
                     for k in 1..(n / 2 + 1).min(spectrum.len()) {
-                        let angle = 2.0 * std::f64::consts::PI * (i * k) as f64 / n as f64;
+                        let angle = 2.0 * PI * (i * k) as f64 / n as f64;
                         let c = Complex64::new(angle.cos(), angle.sin());
                         sum += spectrum[k] * c;
                     }
@@ -1105,7 +1113,7 @@ impl ShortTimeFft {
                     let mut sum = Complex64::new(0.0, 0.0);
 
                     for (k, &spec_k) in spectrum.iter().enumerate().take(n.min(spectrum.len())) {
-                        let angle = 2.0 * std::f64::consts::PI * (i * k) as f64 / n as f64;
+                        let angle = 2.0 * PI * (i * k) as f64 / n as f64;
                         let c = Complex64::new(angle.cos(), angle.sin());
                         sum += spec_k * c;
                     }
@@ -1141,7 +1149,7 @@ impl ShortTimeFft {
                     let mut sum = Complex64::new(0.0, 0.0);
 
                     for (k, &unshifted_k) in unshifted.iter().enumerate().take(n) {
-                        let angle = 2.0 * std::f64::consts::PI * (i * k) as f64 / n as f64;
+                        let angle = 2.0 * PI * (i * k) as f64 / n as f64;
                         let c = Complex64::new(angle.cos(), angle.sin());
                         sum += unshifted_k * c;
                     }
@@ -1211,6 +1219,7 @@ impl ShortTimeFft {
 /// # Returns
 ///
 /// * Dual window as Array1<f64>
+#[allow(dead_code)]
 fn calc_dual_window_internal(win: &[f64], hop: usize) -> SignalResult<Array1<f64>> {
     if hop > win.len() {
         return Err(SignalError::ValueError(format!(
@@ -1225,11 +1234,11 @@ fn calc_dual_window_internal(win: &[f64], hop: usize) -> SignalResult<Array1<f64
     let mut dd = w2.clone();
 
     // Calculate sum of shifted windows
-    for k in (hop..win.len()).step_by(hop) {
-        for i in k..win.len() {
+    for k in (hop.._win.len()).step_by(hop) {
+        for i in k.._win.len() {
             dd[i] += w2[i - k];
         }
-        for i in 0..(win.len() - k) {
+        for i in 0..(_win.len() - k) {
             dd[i] += w2[i + k];
         }
     }
@@ -1243,7 +1252,7 @@ fn calc_dual_window_internal(win: &[f64], hop: usize) -> SignalResult<Array1<f64
     }
 
     // Calculate dual window
-    let dual_win = Array1::from_vec(win.iter().zip(dd.iter()).map(|(&w, &d)| w / d).collect());
+    let dual_win = Array1::from_vec(_win.iter().zip(dd.iter()).map(|(&w, &d)| w / d).collect());
 
     Ok(dual_win)
 }
@@ -1260,6 +1269,7 @@ fn calc_dual_window_internal(win: &[f64], hop: usize) -> SignalResult<Array1<f64
 /// # Returns
 ///
 /// * Tuple of (dual window, scaling factor)
+#[allow(dead_code)]
 pub fn closest_stft_dual_window(
     win: &[f64],
     hop: usize,
@@ -1276,7 +1286,7 @@ pub fn closest_stft_dual_window(
     let desired = if let Some(d) = desired_dual {
         if d.len() != win.len() {
             return Err(SignalError::ValueError(
-                "Desired dual window must have the same length as window".to_string(),
+                "Desired _dual window must have the same length as window".to_string(),
             ));
         }
         Array1::from_vec(d.to_vec())
@@ -1293,7 +1303,7 @@ pub fn closest_stft_dual_window(
         )));
     }
 
-    // Calculate the canonical dual window
+    // Calculate the canonical _dual window
     let w_d = calc_dual_window_internal(win, hop)?;
 
     // Calculate correlations
@@ -1323,7 +1333,7 @@ pub fn closest_stft_dual_window(
 
     if !(numerator > 0.0 && denominator > f64::EPSILON) {
         return Err(SignalError::ValueError(
-            "Unable to calculate scaled closest dual window due to numerically unstable scaling factor!".to_string(),
+            "Unable to calculate scaled closest _dual window due to numerically unstable scaling factor!".to_string(),
         ));
     }
 
@@ -1343,12 +1353,13 @@ pub fn closest_stft_dual_window(
 /// # Returns
 ///
 /// * COLA window
+#[allow(dead_code)]
 pub fn create_cola_window(m: usize, hop: usize) -> SignalResult<Vec<f64>> {
     // Create initial rectangular window
     let rect_win = vec![1.0; m];
 
     // Find closest STFT dual window
-    let (cola_win, _) = closest_stft_dual_window(&rect_win, hop, None, true)?;
+    let (cola_win) = closest_stft_dual_window(&rect_win, hop, None, true)?;
 
     Ok(cola_win)
 }
@@ -1357,11 +1368,10 @@ pub fn create_cola_window(m: usize, hop: usize) -> SignalResult<Vec<f64>> {
 mod tests {
     use super::*;
     #[allow(unused_imports)]
-    use approx::assert_relative_eq;
-    use std::f64::consts::PI;
-
     #[test]
     fn test_stft_creation() {
+        let a = vec![1.0, 2.0, 3.0, 4.0, 5.0];
+        let b = vec![0.5, 0.5];
         // Create a Hann window
         let window = window::hann(256, true).unwrap();
 
@@ -1387,6 +1397,8 @@ mod tests {
 
     #[test]
     fn test_stft_from_window() {
+        let a = vec![1.0, 2.0, 3.0, 4.0, 5.0];
+        let b = vec![0.5, 0.5];
         // Create ShortTimeFft from a named window
         let config = StftConfig {
             fft_mode: None,
@@ -1408,6 +1420,8 @@ mod tests {
 
     #[test]
     fn test_simple_signal_stft() {
+        let a = vec![1.0, 2.0, 3.0, 4.0, 5.0];
+        let b = vec![0.5, 0.5];
         // Create a simple sine wave
         let fs = 1000.0;
         let duration = 1.0;
@@ -1451,6 +1465,8 @@ mod tests {
 
     #[test]
     fn test_stft_istft_reconstruction() {
+        let a = vec![1.0, 2.0, 3.0, 4.0, 5.0];
+        let b = vec![0.5, 0.5];
         // Create a simple signal
         let fs = 1000.0;
         let duration = 0.2; // Shorter duration
@@ -1505,6 +1521,8 @@ mod tests {
 
     #[test]
     fn test_spectrogram() {
+        let a = vec![1.0, 2.0, 3.0, 4.0, 5.0];
+        let b = vec![0.5, 0.5];
         // Create a simple signal
         let fs = 1000.0;
         let duration = 0.3;
@@ -1601,13 +1619,12 @@ impl MemoryEfficientStft {
         let stft = ShortTimeFft::new(window, hop_size, fs, stft_config)?;
 
         Ok(Self {
-            stft,
-            config: memory_config,
+            stft_config: memory_config,
         })
     }
 
     /// Calculate optimal chunk size based on memory constraints
-    fn calculate_chunk_size(&self, signal_length: usize) -> usize {
+    fn calculate_chunk_size(&self, signallength: usize) -> usize {
         if let Some(chunk_size) = self.config.chunk_size {
             return chunk_size;
         }
@@ -1766,7 +1783,7 @@ impl MemoryEfficientStft {
     }
 
     /// Get memory usage estimate in MB
-    pub fn memory_estimate(&self, signal_length: usize) -> f64 {
+    pub fn memory_estimate(&self, signallength: usize) -> f64 {
         let chunk_size = self.calculate_chunk_size(signal_length);
         let frames_in_chunk = chunk_size / self.stft.hop + 1;
         let memory_per_chunk = if self.config.magnitude_only {
@@ -1817,8 +1834,6 @@ impl MemoryEfficientStft {
     where
         T: Float + NumCast + Debug + Send + Sync,
     {
-        use scirs2_core::parallel_ops::*;
-
         let chunk_size = self.calculate_chunk_size(signal.len());
         let window_length = self.stft.win.len();
         let hop_size = self.stft.hop;
@@ -1841,7 +1856,7 @@ impl MemoryEfficientStft {
         // Process chunks in parallel
         let chunk_results: Result<Vec<_>, _> = chunks
             .par_iter()
-            .map(|(start, end, _)| {
+            .map(|(start, end)| {
                 let chunk = &signal[*start..*end];
                 self.stft.stft(chunk)
             })
@@ -1880,7 +1895,7 @@ impl MemoryEfficientStft {
     }
 
     /// Get detailed memory usage information
-    pub fn memory_info(&self, signal_length: usize) -> MemoryInfo {
+    pub fn memory_info(&self, signallength: usize) -> MemoryInfo {
         let chunk_size = self.calculate_chunk_size(signal_length);
         let _window_length = self.stft.win.len();
         let hop_size = self.stft.hop;
@@ -1935,13 +1950,11 @@ pub struct MemoryInfo {
     pub memory_reduction_factor: f64,
 }
 
-#[cfg(test)]
 mod memory_efficient_tests {
-    use super::*;
-    use std::f64::consts::PI;
-
     #[test]
     fn test_memory_efficient_stft() {
+        let a = vec![1.0, 2.0, 3.0, 4.0, 5.0];
+        let b = vec![0.5, 0.5];
         // Create a longer signal
         let fs = 1000.0;
         let duration = 2.0;
@@ -2135,6 +2148,8 @@ mod memory_efficient_tests {
 
     #[test]
     fn test_large_signal_processing() {
+        let a = vec![1.0, 2.0, 3.0, 4.0, 5.0];
+        let b = vec![0.5, 0.5];
         // Test with a very large signal that would consume too much memory if processed all at once
         let fs = 8000.0;
         let duration = 10.0; // 10 seconds

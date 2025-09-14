@@ -4,6 +4,7 @@ use scirs2_sparse::{
 };
 
 #[test]
+#[allow(dead_code)]
 fn test_bicgstab_with_preconditioner() {
     // Create a non-symmetric sparse matrix
     let rows = vec![0, 0, 1, 1, 1, 2, 2, 2, 3, 3, 3, 3];
@@ -53,6 +54,7 @@ fn test_bicgstab_with_preconditioner() {
 }
 
 #[test]
+#[allow(dead_code)]
 fn test_bicgstab_complex_system() {
     // Test BiCGSTAB on a more complex non-symmetric system
     // This matrix is based on a simple convection-diffusion problem
@@ -114,6 +116,7 @@ fn test_bicgstab_complex_system() {
 }
 
 #[test]
+#[allow(dead_code)]
 fn test_bicgstab_breakdown_detection() {
     // Test BiCGSTAB behavior when it encounters breakdown conditions
     // Create a singular matrix (not invertible)

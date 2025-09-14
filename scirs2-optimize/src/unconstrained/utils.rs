@@ -4,6 +4,7 @@ use crate::error::OptimizeError;
 use ndarray::{Array1, Array2, ArrayView1};
 
 /// Computes finite difference gradient
+#[allow(dead_code)]
 pub fn finite_difference_gradient<F, S>(
     fun: &mut F,
     x: &ArrayView1<f64>,
@@ -43,6 +44,7 @@ where
 }
 
 /// Computes finite difference Hessian
+#[allow(dead_code)]
 pub fn finite_difference_hessian<F, S>(
     fun: &mut F,
     x: &ArrayView1<f64>,
@@ -103,6 +105,7 @@ where
 }
 
 /// Check convergence criteria
+#[allow(dead_code)]
 pub fn check_convergence(
     f_delta: f64,
     x_delta: f64,
@@ -115,11 +118,13 @@ pub fn check_convergence(
 }
 
 /// Compute the norm of the difference between two arrays
+#[allow(dead_code)]
 pub fn array_diff_norm(x1: &ArrayView1<f64>, x2: &ArrayView1<f64>) -> f64 {
     (x1 - x2).mapv(|x| x.powi(2)).sum().sqrt()
 }
 
 /// Clip step size to satisfy bounds
+#[allow(dead_code)]
 pub fn clip_step(
     x: &ArrayView1<f64>,
     direction: &ArrayView1<f64>,
@@ -157,14 +162,16 @@ pub fn clip_step(
 }
 
 /// Convert between Array1 and ArrayView1 consistently
+#[allow(dead_code)]
 pub fn to_array_view<T>(arr: &Array1<T>) -> ArrayView1<T> {
     arr.view()
 }
 
 /// Initialize step size for line search
-pub fn initial_step_size(grad_norm: f64, max_step: Option<f64>) -> f64 {
-    let default_step = if grad_norm > 0.0 {
-        1.0 / grad_norm
+#[allow(dead_code)]
+pub fn initial_step_size(_grad_norm: f64, max_step: Option<f64>) -> f64 {
+    let default_step = if _grad_norm > 0.0 {
+        1.0 / _grad_norm
     } else {
         1.0
     };

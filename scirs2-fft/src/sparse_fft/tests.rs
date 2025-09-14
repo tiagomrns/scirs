@@ -6,6 +6,7 @@ use super::*;
 use std::f64::consts::PI;
 
 // Helper function to create a sparse signal
+#[allow(dead_code)]
 fn create_sparse_signal(n: usize, frequencies: &[(usize, f64)]) -> Vec<f64> {
     let mut signal = vec![0.0; n];
 
@@ -20,6 +21,7 @@ fn create_sparse_signal(n: usize, frequencies: &[(usize, f64)]) -> Vec<f64> {
 }
 
 #[test]
+#[allow(dead_code)]
 fn test_sparse_fft_basic() {
     // Create a signal with 3 frequency components
     let n = 256;
@@ -34,6 +36,7 @@ fn test_sparse_fft_basic() {
 }
 
 #[test]
+#[allow(dead_code)]
 fn test_sparsity_estimation() {
     // Create a signal with 3 frequency components
     let n = 256;
@@ -57,6 +60,7 @@ fn test_sparsity_estimation() {
 }
 
 #[test]
+#[allow(dead_code)]
 fn test_frequency_pruning() {
     // Create a signal with 3 frequency components
     let n = 256;
@@ -85,6 +89,7 @@ fn test_frequency_pruning() {
 }
 
 #[test]
+#[allow(dead_code)]
 fn test_spectral_flatness() {
     // Create a signal with 3 frequency components
     let n = 256;
@@ -120,6 +125,7 @@ fn test_spectral_flatness() {
 }
 
 #[test]
+#[allow(dead_code)]
 fn test_windowing_functions() {
     let signal = vec![1.0, 2.0, 3.0, 4.0];
 
@@ -145,6 +151,7 @@ fn test_windowing_functions() {
 }
 
 #[test]
+#[allow(dead_code)]
 fn test_reconstruction() {
     let n = 64;
     let frequencies = vec![(3, 1.0), (7, 0.5)];
@@ -167,6 +174,7 @@ fn test_reconstruction() {
 }
 
 #[test]
+#[allow(dead_code)]
 fn test_adaptive_sparse_fft() {
     let n = 128;
     let frequencies = vec![(5, 1.0), (10, 0.5), (20, 0.25)];
@@ -181,6 +189,7 @@ fn test_adaptive_sparse_fft() {
 }
 
 #[test]
+#[allow(dead_code)]
 fn test_algorithm_variants() {
     let n = 64;
     let frequencies = vec![(3, 1.0), (7, 0.5)];
@@ -204,6 +213,7 @@ fn test_algorithm_variants() {
 }
 
 #[test]
+#[allow(dead_code)]
 fn test_performance_measurement() {
     let n = 64;
     let frequencies = vec![(3, 1.0), (7, 0.5)];
@@ -216,6 +226,7 @@ fn test_performance_measurement() {
 }
 
 #[test]
+#[allow(dead_code)]
 fn test_edge_cases() {
     // Test empty signal
     let empty_signal: Vec<f64> = vec![];
@@ -234,6 +245,7 @@ fn test_edge_cases() {
 }
 
 #[test]
+#[allow(dead_code)]
 fn test_sparsity_estimation_methods() {
     let n = 64;
     let frequencies = vec![(3, 1.0), (7, 0.5)];
@@ -257,6 +269,7 @@ fn test_sparsity_estimation_methods() {
 }
 
 #[test]
+#[allow(dead_code)]
 fn test_configuration() {
     // Test default configuration
     let config = config::SparseFFTConfig::default();
@@ -277,6 +290,7 @@ fn test_configuration() {
 }
 
 #[test]
+#[allow(dead_code)]
 fn test_signal_size_limit() {
     // Create a large signal
     let n = 2048;
@@ -297,6 +311,7 @@ fn test_signal_size_limit() {
 }
 
 #[test]
+#[allow(dead_code)]
 fn test_complex_input_conversion() {
     // Test try_as_complex function
     let complex_val = num_complex::Complex64::new(1.0, 2.0);
@@ -310,6 +325,7 @@ fn test_complex_input_conversion() {
 }
 
 #[test]
+#[allow(dead_code)]
 fn test_filtered_reconstruction() {
     let n = 64;
     let frequencies = vec![(3, 1.0), (7, 0.5), (15, 0.25)];
@@ -331,6 +347,7 @@ fn test_filtered_reconstruction() {
 }
 
 #[test]
+#[allow(dead_code)]
 fn test_multidimensional_placeholders() {
     // Test 2D sparse FFT placeholder
     let signal_2d = vec![vec![1.0, 2.0], vec![3.0, 4.0]];

@@ -8,6 +8,7 @@
 //! Many of the solver functions used here are not yet implemented or have
 //! different signatures than expected.
 
+#[allow(dead_code)]
 fn main() {
     println!("Comprehensive solvers benchmark is currently disabled.");
     println!("The benchmark uses solver functions that are not yet implemented.");

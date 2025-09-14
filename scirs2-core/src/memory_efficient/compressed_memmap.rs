@@ -117,7 +117,7 @@ impl CompressedMemMapBuilder {
     /// Set the block size in elements.
     ///
     /// Larger blocks provide better compression but slower random access.
-    pub fn with_block_size(mut self, block_size: usize) -> Self {
+    pub fn with_block_size(mut self, blocksize: usize) -> Self {
         self.block_size = block_size;
         self
     }
@@ -144,7 +144,7 @@ impl CompressedMemMapBuilder {
     ///
     /// Larger cache sizes allow for more decompressed blocks to be held in memory,
     /// potentially improving performance for repeated access patterns.
-    pub fn with_cache_size(mut self, cache_size: usize) -> Self {
+    pub fn with_cache_size(mut self, cachesize: usize) -> Self {
         self.cache_size = cache_size;
         self
     }
@@ -330,7 +330,7 @@ impl CompressedMemMapBuilder {
     {
         // Create ndarray from raw data
         let array = Array::from_shape_vec(IxDyn(shape), data.to_vec())
-            .map_err(|e| CoreError::ShapeError(ErrorContext::new(format!("{}", e))))?;
+            .map_err(|e| CoreError::ShapeError(ErrorContext::new(format!("{e}"))))?;
 
         // Create compressed memory-mapped array
         self.create(&array, path)
@@ -353,7 +353,7 @@ pub struct CompressedMemMappedArray<A: Clone + Copy + 'static + Send + Sync> {
     block_cache: Arc<BlockCache<A>>,
 
     /// Phantom data for type parameter
-    _phantom: std::marker::PhantomData<A>,
+    phantom: std::marker::PhantomData<A>,
 }
 
 impl<A: Clone + Copy + 'static + Send + Sync> CompressedMemMappedArray<A> {
@@ -366,7 +366,7 @@ impl<A: Clone + Copy + 'static + Send + Sync> CompressedMemMappedArray<A> {
     /// # Returns
     ///
     /// A compressed memory-mapped array
-    pub fn open(path: impl AsRef<Path>) -> CoreResult<Self> {
+    pub fn open<P: AsRef<Path>>(path: P) -> CoreResult<Self> {
         // Use default cache settings
         let cache_size = 32;
         let cache_ttl = Some(Duration::from_secs(300));
@@ -385,8 +385,8 @@ impl<A: Clone + Copy + 'static + Send + Sync> CompressedMemMappedArray<A> {
     /// # Returns
     ///
     /// A compressed memory-mapped array
-    pub fn open_with_cache(
-        path: impl AsRef<Path>,
+    pub fn open_with_cache<P: AsRef<Path>>(
+        path: P,
         cache_size: usize,
         cache_ttl: Option<Duration>,
     ) -> CoreResult<Self> {
@@ -419,11 +419,11 @@ impl<A: Clone + Copy + 'static + Send + Sync> CompressedMemMappedArray<A> {
                 )))
             })?;
 
-        // Check that the element size matches
+        // Check that the element _size matches
         let expected_element_size = std::mem::size_of::<A>();
         if metadata.element_size != expected_element_size {
             return Err(CoreError::ValueError(ErrorContext::new(format!(
-                "Element size mismatch: expected {}, got {}",
+                "Element _size mismatch: expected {}, got {}",
                 expected_element_size, metadata.element_size
             ))));
         }
@@ -436,7 +436,7 @@ impl<A: Clone + Copy + 'static + Send + Sync> CompressedMemMappedArray<A> {
             path,
             metadata,
             block_cache,
-            _phantom: std::marker::PhantomData,
+            phantom: std::marker::PhantomData,
         })
     }
 
@@ -481,7 +481,7 @@ impl<A: Clone + Copy + 'static + Send + Sync> CompressedMemMappedArray<A> {
     /// # Returns
     ///
     /// `Ok(())` if successful, or an error
-    pub fn preload_block(&self, block_idx: usize) -> CoreResult<()> {
+    pub fn preload_block(&self, blockidx: usize) -> CoreResult<()> {
         if block_idx >= self.metadata.num_blocks {
             return Err(CoreError::IndexError(ErrorContext::new(format!(
                 "Block index {} out of bounds (max {})",
@@ -505,7 +505,7 @@ impl<A: Clone + Copy + 'static + Send + Sync> CompressedMemMappedArray<A> {
     }
 
     /// Load a block from the compressed file.
-    fn load_block(&self, block_idx: usize) -> CoreResult<Vec<A>> {
+    fn load_block(&self, blockidx: usize) -> CoreResult<Vec<A>> {
         // Open the file
         let mut file = File::open(&self.path)?;
 
@@ -621,13 +621,13 @@ impl<A: Clone + Copy + 'static + Send + Sync> CompressedMemMappedArray<A> {
             ))));
         }
 
-        for (i, &idx) in indices.iter().enumerate() {
-            if idx >= self.metadata.shape[i] {
+        for (dim, &idx) in indices.iter().enumerate() {
+            if idx >= self.metadata.shape[dim] {
                 return Err(CoreError::IndexError(ErrorContext::new(format!(
                     "Index {} out of bounds for dimension {} (max {})",
                     idx,
-                    i,
-                    self.metadata.shape[i] - 1
+                    dim,
+                    self.metadata.shape[dim] - 1
                 ))));
             }
         }
@@ -691,28 +691,28 @@ impl<A: Clone + Copy + 'static + Send + Sync> CompressedMemMappedArray<A> {
         }
 
         // Calculate the shape of the result
-        let mut result_shape = Vec::with_capacity(ranges.len());
-        for (i, &(start, end)) in ranges.iter().enumerate() {
+        let mut resultshape = Vec::with_capacity(ranges.len());
+        for (dim, &(start, end)) in ranges.iter().enumerate() {
             if start >= end {
                 return Err(CoreError::ValueError(ErrorContext::new(format!(
                     "Invalid range for dimension {}: {}..{}",
-                    i, start, end
+                    dim, start, end
                 ))));
             }
-            if end > self.metadata.shape[i] {
+            if end > self.metadata.shape[dim] {
                 return Err(CoreError::IndexError(ErrorContext::new(format!(
                     "Range {}..{} out of bounds for dimension {} (max {})",
-                    start, end, i, self.metadata.shape[i]
+                    start, end, dim, self.metadata.shape[dim]
                 ))));
             }
-            result_shape.push(end - start);
+            resultshape.push(end - start);
         }
 
         // Allocate an array for the result
-        let mut result = Array::from_elem(IxDyn(&result_shape), unsafe { std::mem::zeroed::<A>() });
+        let mut result = Array::from_elem(IxDyn(&resultshape), unsafe { std::mem::zeroed::<A>() });
 
         // Calculate the total number of elements in the result
-        let result_size = result_shape.iter().product::<usize>();
+        let result_size = resultshape.iter().product::<usize>();
 
         // Create iterators for the result indices
         let mut result_indices = vec![0; ranges.len()];
@@ -755,7 +755,7 @@ impl<A: Clone + Copy + 'static + Send + Sync> CompressedMemMappedArray<A> {
                 for i in (0..result_indices.len()).rev() {
                     result_flat_idx += result_indices[i] * result_stride;
                     if i > 0 {
-                        result_stride *= result_shape[i];
+                        result_stride *= resultshape[i];
                     }
                 }
 
@@ -768,7 +768,7 @@ impl<A: Clone + Copy + 'static + Send + Sync> CompressedMemMappedArray<A> {
             for i in (0..ranges.len()).rev() {
                 result_indices[i] += 1;
                 source_indices[i] += 1;
-                if result_indices[i] < result_shape[i] {
+                if result_indices[i] < resultshape[i] {
                     break;
                 }
                 result_indices[i] = 0;
@@ -808,7 +808,7 @@ impl<A: Clone + Copy + 'static + Send + Sync> CompressedMemMappedArray<A> {
     /// # Returns
     ///
     /// A vector of results, one for each block
-    pub fn process_blocks_with_size<F, R>(&self, block_size: usize, f: F) -> CoreResult<Vec<R>>
+    pub fn process_blocks_with_size<F, R>(&self, blocksize: usize, f: F) -> CoreResult<Vec<R>>
     where
         F: Fn(&[A], usize) -> R + Send + Sync + 'static,
         R: Send + 'static,
@@ -908,7 +908,7 @@ impl<A: Clone + Copy + 'static + Send + Sync> CompressedMemMappedArray<A> {
 
         // Process blocks
         if parallel {
-            use rayon::prelude::*;
+            use crate::parallel_ops::*;
 
             return (0..num_blocks)
                 .into_par_iter()
@@ -1059,7 +1059,7 @@ impl<A: Clone + Copy + 'static + Send + Sync> BlockCache<A> {
     /// # Returns
     ///
     /// `true` if the block is in the cache, `false` otherwise
-    fn has_block(&self, block_idx: usize) -> bool {
+    fn has_block(&self, blockidx: usize) -> bool {
         let cache = self.cache.read().unwrap();
 
         // Check if the block is in the cache
@@ -1086,7 +1086,7 @@ impl<A: Clone + Copy + 'static + Send + Sync> BlockCache<A> {
     /// # Returns
     ///
     /// The block if it is in the cache, `None` otherwise
-    fn get_block(&self, block_idx: usize) -> Option<Vec<A>> {
+    fn get_block(&self, blockidx: usize) -> Option<Vec<A>> {
         let mut cache = self.cache.write().unwrap();
 
         // Check if the block is in the cache
@@ -1117,7 +1117,7 @@ impl<A: Clone + Copy + 'static + Send + Sync> BlockCache<A> {
     ///
     /// * `block_idx` - The index of the block to put
     /// * `block` - The block data
-    fn put_block(&self, block_idx: usize, block: Vec<A>) {
+    fn put_block(&self, blockidx: usize, block: Vec<A>) {
         let mut cache = self.cache.write().unwrap();
 
         // Check if we need to evict a block

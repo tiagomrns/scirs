@@ -3,14 +3,18 @@
 //! This module provides implementations of second-order optimization methods
 //! that use curvature information (Hessian matrix) to improve convergence.
 
+pub mod kfac;
+
 use crate::error::{OptimError, Result};
 use ndarray::{Array, Array1, Array2, Dimension, ScalarOperand};
 use num_traits::Float;
 use std::collections::VecDeque;
 use std::fmt::Debug;
 
+pub use self::kfac::{KFACConfig, KFACLayerState, KFACStats, LayerInfo, LayerType, KFAC};
+
 /// Trait for second-order optimization methods
-pub trait SecondOrderOptimizer<A: Float + ScalarOperand + Debug, D: Dimension> {
+pub trait SecondOrderOptimizer<A: Float + ScalarOperand + Debug + Send + Sync, D: Dimension> {
     /// Update parameters using second-order information
     fn step_second_order(
         &mut self,
@@ -89,11 +93,11 @@ pub mod hessian_approximation {
         A: Float + ScalarOperand + Debug,
         D: Dimension,
     {
-        // Add new differences to history
+        // Add new differences to _history
         s_history.push_back(param_diff);
         y_history.push_back(grad_diff);
 
-        // Maintain maximum history size
+        // Maintain maximum _history size
         if s_history.len() > max_history {
             s_history.pop_front();
             y_history.pop_front();
@@ -220,7 +224,7 @@ pub struct Newton<A: Float> {
     regularization: A, // For numerical stability
 }
 
-impl<A: Float + ScalarOperand + Debug> Newton<A> {
+impl<A: Float + ScalarOperand + Debug + Send + Sync> Newton<A> {
     /// Create a new Newton optimizer
     pub fn new(learning_rate: A) -> Self {
         Self {
@@ -236,7 +240,9 @@ impl<A: Float + ScalarOperand + Debug> Newton<A> {
     }
 }
 
-impl<A: Float + ScalarOperand + Debug> SecondOrderOptimizer<A, ndarray::Ix1> for Newton<A> {
+impl<A: Float + ScalarOperand + Debug + Send + Sync> SecondOrderOptimizer<A, ndarray::Ix1>
+    for Newton<A>
+{
     fn step_second_order(
         &mut self,
         params: &Array1<A>,
@@ -300,7 +306,7 @@ pub struct LBFGS<A: Float, D: Dimension> {
     previous_grad: Option<Array<A, D>>,
 }
 
-impl<A: Float + ScalarOperand + Debug, D: Dimension> LBFGS<A, D> {
+impl<A: Float + ScalarOperand + Debug + Send + Sync, D: Dimension> LBFGS<A, D> {
     /// Create a new L-BFGS optimizer
     pub fn new(learning_rate: A) -> Self {
         Self {
@@ -359,7 +365,9 @@ impl<A: Float + ScalarOperand + Debug, D: Dimension> LBFGS<A, D> {
     }
 }
 
-impl<A: Float + ScalarOperand + Debug, D: Dimension> SecondOrderOptimizer<A, D> for LBFGS<A, D> {
+impl<A: Float + ScalarOperand + Debug + Send + Sync, D: Dimension> SecondOrderOptimizer<A, D>
+    for LBFGS<A, D>
+{
     fn step_second_order(
         &mut self,
         params: &Array<A, D>,

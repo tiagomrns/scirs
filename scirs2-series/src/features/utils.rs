@@ -70,6 +70,7 @@ pub struct ScaleSpectralFeatures<F> {
 // ============================================================================
 
 /// Find minimum and maximum values in a time series
+#[allow(dead_code)]
 pub fn find_min_max<F>(ts: &Array1<F>) -> (F, F)
 where
     F: Float + FromPrimitive,
@@ -90,6 +91,7 @@ where
 }
 
 /// Calculate median of a time series
+#[allow(dead_code)]
 pub fn calculate_median<F>(ts: &Array1<F>) -> F
 where
     F: Float + FromPrimitive + Clone,
@@ -105,6 +107,7 @@ where
 }
 
 /// Calculate standard deviation of a time series
+#[allow(dead_code)]
 pub fn calculate_std_dev<F>(ts: &Array1<F>) -> F
 where
     F: Float + FromPrimitive,
@@ -116,6 +119,7 @@ where
 }
 
 /// Calculate percentile from sorted data
+#[allow(dead_code)]
 pub fn calculate_percentile<F>(sorted: &[F], percentile: f64) -> F
 where
     F: Float + FromPrimitive,
@@ -142,6 +146,7 @@ where
 // ============================================================================
 
 /// Simple linear fit for two variables
+#[allow(dead_code)]
 pub fn linear_fit<F>(x: &[F], y: &[F]) -> (F, F)
 where
     F: Float + FromPrimitive,
@@ -172,6 +177,7 @@ where
 }
 
 /// Calculate Pearson correlation coefficient between two arrays
+#[allow(dead_code)]
 pub fn calculate_pearson_correlation<F>(x: &Array1<F>, y: &Array1<F>) -> Result<F>
 where
     F: Float + FromPrimitive + Debug + std::iter::Sum,
@@ -221,22 +227,23 @@ where
 // ============================================================================
 
 /// Discretize and get probability distribution
-pub fn discretize_and_get_probabilities<F>(ts: &Array1<F>, n_bins: usize) -> Result<Vec<F>>
+#[allow(dead_code)]
+pub fn discretize_and_get_probabilities<F>(_ts: &Array1<F>, nbins: usize) -> Result<Vec<F>>
 where
     F: Float + FromPrimitive + Debug + Clone,
 {
-    let (min_val, max_val) = find_min_max(ts);
+    let (min_val, max_val) = find_min_max(_ts);
     if min_val == max_val {
-        return Ok(vec![F::one(); n_bins]);
+        return Ok(vec![F::one(); nbins]);
     }
 
-    let mut counts = vec![0; n_bins];
-    for &value in ts.iter() {
-        let bin = discretize_value(value, min_val, max_val, n_bins);
+    let mut counts = vec![0; nbins];
+    for &value in _ts.iter() {
+        let bin = discretize_value(value, min_val, max_val, nbins);
         counts[bin] += 1;
     }
 
-    let n_f = F::from(ts.len()).unwrap();
+    let n_f = F::from(_ts.len()).unwrap();
     let probabilities = counts
         .into_iter()
         .map(|count| F::from(count).unwrap() / n_f)
@@ -246,7 +253,8 @@ where
 }
 
 /// Discretize a single value into a bin
-pub fn discretize_value<F>(value: F, min_val: F, max_val: F, n_bins: usize) -> usize
+#[allow(dead_code)]
+pub fn discretize_value<F>(_value: F, min_val: F, max_val: F, nbins: usize) -> usize
 where
     F: Float + FromPrimitive,
 {
@@ -255,14 +263,15 @@ where
         return 0;
     }
 
-    let normalized = (value - min_val) / range;
-    let bin = (normalized * F::from(n_bins).unwrap())
+    let normalized = (_value - min_val) / range;
+    let bin = (normalized * F::from(nbins).unwrap())
         .to_usize()
         .unwrap_or(0);
-    bin.min(n_bins - 1)
+    bin.min(nbins - 1)
 }
 
 /// Coarse grain time series for multiscale analysis
+#[allow(dead_code)]
 pub fn coarse_grain_series<F>(ts: &Array1<F>, scale: usize) -> Result<Array1<F>>
 where
     F: Float + FromPrimitive + Debug + Clone,
@@ -285,6 +294,7 @@ where
 }
 
 /// Refined coarse grain series with offset
+#[allow(dead_code)]
 pub fn refined_coarse_grain_series<F>(
     ts: &Array1<F>,
     scale: usize,
@@ -314,6 +324,7 @@ where
 // ============================================================================
 
 /// Downsample signal by taking every nth sample
+#[allow(dead_code)]
 pub fn downsample_signal<F>(ts: &Array1<F>, factor: usize) -> Result<Array1<F>>
 where
     F: Float + Clone,
@@ -328,6 +339,7 @@ where
 }
 
 /// Downsample time series
+#[allow(dead_code)]
 pub fn downsample_series<F>(ts: &Array1<F>, factor: usize) -> Result<Array1<F>>
 where
     F: Float + FromPrimitive + Debug + Clone,
@@ -345,6 +357,7 @@ where
 // ============================================================================
 
 /// Get ordinal pattern from a window
+#[allow(dead_code)]
 pub fn get_ordinal_pattern<F>(window: &ArrayView1<F>) -> Vec<usize>
 where
     F: Float + FromPrimitive,
@@ -355,11 +368,12 @@ where
 }
 
 /// Find local extrema in a signal
-pub fn find_local_extrema<F>(signal: &Array1<F>, find_maxima: bool) -> Result<(Vec<usize>, Vec<F>)>
+#[allow(dead_code)]
+pub fn find_local_extrema<F>(_signal: &Array1<F>, findmaxima: bool) -> Result<(Vec<usize>, Vec<F>)>
 where
     F: Float + FromPrimitive + Debug + Clone,
 {
-    let n = signal.len();
+    let n = _signal.len();
     let mut indices = Vec::new();
     let mut values = Vec::new();
 
@@ -370,15 +384,15 @@ where
 
     // Check for extrema in the interior
     for i in 1..(n - 1) {
-        let is_extremum = if find_maxima {
-            signal[i] > signal[i - 1] && signal[i] > signal[i + 1]
+        let is_extremum = if findmaxima {
+            _signal[i] > _signal[i - 1] && _signal[i] > _signal[i + 1]
         } else {
-            signal[i] < signal[i - 1] && signal[i] < signal[i + 1]
+            _signal[i] < _signal[i - 1] && _signal[i] < _signal[i + 1]
         };
 
         if is_extremum {
             indices.push(i);
-            values.push(signal[i]);
+            values.push(_signal[i]);
         }
     }
 
@@ -386,6 +400,7 @@ where
 }
 
 /// Detect turning points in time series
+#[allow(dead_code)]
 pub fn detect_turning_points<F>(
     ts: &Array1<F>,
     config: &TurningPointsConfig,
@@ -444,6 +459,7 @@ where
 // ============================================================================
 
 /// Calculate Euclidean distance between two subsequences
+#[allow(dead_code)]
 pub fn euclidean_distance_subsequence<F>(
     ts: &Array1<F>,
     start1: usize,
@@ -468,6 +484,7 @@ where
 // ============================================================================
 
 /// Linear interpolation between points
+#[allow(dead_code)]
 pub fn linear_interpolate<F>(x: usize, indices: &[usize], values: &[F]) -> Result<F>
 where
     F: Float + FromPrimitive + Debug + Clone,
@@ -508,6 +525,7 @@ where
 }
 
 /// Cubic interpolation (fallback to linear for now)
+#[allow(dead_code)]
 pub fn cubic_interpolate<F>(x: usize, indices: &[usize], values: &[F]) -> Result<F>
 where
     F: Float + FromPrimitive + Debug + Clone,
@@ -522,8 +540,9 @@ where
 // ============================================================================
 
 /// Get Gaussian breakpoints for SAX conversion
-pub fn gaussian_breakpoints(alphabet_size: usize) -> Vec<f64> {
-    match alphabet_size {
+#[allow(dead_code)]
+pub fn gaussian_breakpoints(_alphabetsize: usize) -> Vec<f64> {
+    match _alphabetsize {
         2 => vec![0.0],
         3 => vec![-0.43, 0.43],
         4 => vec![-0.67, 0.0, 0.67],
@@ -534,8 +553,8 @@ pub fn gaussian_breakpoints(alphabet_size: usize) -> Vec<f64> {
         _ => {
             // For larger alphabets, use normal distribution inverse CDF
             let mut breakpoints = Vec::new();
-            for i in 1..alphabet_size {
-                let p = i as f64 / alphabet_size as f64;
+            for i in 1.._alphabetsize {
+                let p = i as f64 / _alphabetsize as f64;
                 // Calculate the z-score for cumulative probability p
                 let z = standard_normal_quantile(p);
                 breakpoints.push(z);
@@ -546,6 +565,7 @@ pub fn gaussian_breakpoints(alphabet_size: usize) -> Vec<f64> {
 }
 
 /// Standard normal quantile function (inverse CDF)
+#[allow(dead_code)]
 pub fn standard_normal_quantile(p: f64) -> f64 {
     if p <= 0.0 {
         return f64::NEG_INFINITY;
@@ -606,14 +626,15 @@ pub fn standard_normal_quantile(p: f64) -> f64 {
 }
 
 /// Calculate entropy from class counts
-pub fn calculate_entropy(class1_count: usize, class2_count: usize) -> f64 {
-    let total = class1_count + class2_count;
+#[allow(dead_code)]
+pub fn calculate_entropy(_class1_count: usize, class2count: usize) -> f64 {
+    let total = _class1_count + class2count;
     if total == 0 {
         return 0.0;
     }
 
-    let p1 = class1_count as f64 / total as f64;
-    let p2 = class2_count as f64 / total as f64;
+    let p1 = _class1_count as f64 / total as f64;
+    let p2 = class2count as f64 / total as f64;
 
     let mut entropy = 0.0;
     if p1 > 0.0 {
@@ -631,6 +652,7 @@ pub fn calculate_entropy(class1_count: usize, class2_count: usize) -> f64 {
 // ============================================================================
 
 /// Calculate median absolute deviation
+#[allow(dead_code)]
 pub fn calculate_mad<F>(ts: &Array1<F>, median: F) -> Result<F>
 where
     F: Float + FromPrimitive,
@@ -651,19 +673,20 @@ where
 }
 
 /// Calculate trimmed mean
-pub fn calculate_trimmed_mean<F>(ts: &Array1<F>, trim_fraction: f64) -> Result<F>
+#[allow(dead_code)]
+pub fn calculate_trimmed_mean<F>(_ts: &Array1<F>, trimfraction: f64) -> Result<F>
 where
     F: Float + FromPrimitive,
 {
-    let n = ts.len();
+    let n = _ts.len();
     if n == 0 {
         return Ok(F::zero());
     }
 
-    let mut sorted = ts.to_vec();
+    let mut sorted = _ts.to_vec();
     sorted.sort_by(|a, b| a.partial_cmp(b).unwrap());
 
-    let trim_count = (n as f64 * trim_fraction).floor() as usize;
+    let trim_count = (n as f64 * trimfraction).floor() as usize;
     let start = trim_count;
     let end = n - trim_count;
 
@@ -678,25 +701,26 @@ where
 }
 
 /// Calculate winsorized mean
-pub fn calculate_winsorized_mean<F>(ts: &Array1<F>, winsor_fraction: f64) -> Result<F>
+#[allow(dead_code)]
+pub fn calculate_winsorized_mean<F>(_ts: &Array1<F>, winsorfraction: f64) -> Result<F>
 where
     F: Float + FromPrimitive,
 {
-    let n = ts.len();
+    let n = _ts.len();
     if n == 0 {
         return Ok(F::zero());
     }
 
-    let mut sorted = ts.to_vec();
+    let mut sorted = _ts.to_vec();
     sorted.sort_by(|a, b| a.partial_cmp(b).unwrap());
 
-    let winsor_count = (n as f64 * winsor_fraction).floor() as usize;
+    let winsor_count = (n as f64 * winsorfraction).floor() as usize;
 
     // Winsorize: replace extreme values
     let lower_bound = sorted[winsor_count];
     let upper_bound = sorted[n - winsor_count - 1];
 
-    let winsorized: Vec<F> = ts
+    let winsorized: Vec<F> = _ts
         .iter()
         .map(|&x| {
             if x < lower_bound {
@@ -720,6 +744,7 @@ where
 // ============================================================================
 
 /// Compute power spectrum from autocorrelation
+#[allow(dead_code)]
 pub fn compute_power_spectrum<F>(acf: &Array1<F>) -> Array1<F>
 where
     F: Float + FromPrimitive + Clone,

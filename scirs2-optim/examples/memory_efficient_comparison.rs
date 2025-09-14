@@ -7,11 +7,13 @@ use std::error::Error;
 use std::time::Instant;
 
 // Function to measure memory usage (approximation)
+#[allow(dead_code)]
 fn estimate_memory_usage<T>(arrays: &[&T]) -> usize {
     std::mem::size_of_val(arrays)
 }
 
 // Simple quadratic loss function: f(x) = (x - target)^2
+#[allow(dead_code)]
 fn compute_loss_and_gradient(params: &Array2<f64>, target: &Array2<f64>) -> (f64, Array2<f64>) {
     let diff = params - target;
     let loss = diff.mapv(|x| x * x).sum() / (params.nrows() * params.ncols()) as f64;
@@ -19,6 +21,7 @@ fn compute_loss_and_gradient(params: &Array2<f64>, target: &Array2<f64>) -> (f64
     (loss, grad)
 }
 
+#[allow(dead_code)]
 fn main() -> Result<(), Box<dyn Error>> {
     // Create large parameter array for memory testing
     let size = 1000;

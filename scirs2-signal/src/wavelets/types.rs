@@ -1,8 +1,10 @@
-//! Wavelet type definitions and common traits
+// Wavelet type definitions and common traits
 
+use crate::dwt::Wavelet;
 use num_complex::Complex64;
 use std::fmt::Debug;
 
+#[allow(unused_imports)]
 /// Trait for wavelet functions
 pub trait WaveletType: Clone + Debug {
     /// Returns the central frequency of the wavelet

@@ -1,6 +1,7 @@
 // The time_frequency module is currently gated behind a feature flag
 // This example is temporarily disabled until the module is available
 
+#[allow(dead_code)]
 fn main() {
     println!("Advanced Time-Frequency Analysis Example");
     println!("---------------------------------------");

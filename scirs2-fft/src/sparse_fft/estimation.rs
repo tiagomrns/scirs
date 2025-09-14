@@ -7,11 +7,13 @@ use crate::error::FFTResult;
 use crate::fft::fft;
 // Complex64 is used through the FFT functions
 use num_traits::NumCast;
+use std::f64::consts::PI;
 use std::fmt::Debug;
 
 use super::config::{SparseFFTConfig, SparsityEstimationMethod};
 
 /// Estimate sparsity of a signal using various methods
+#[allow(dead_code)]
 pub fn estimate_sparsity<T>(signal: &[T], config: &SparseFFTConfig) -> FFTResult<usize>
 where
     T: NumCast + Copy + Debug + 'static,
@@ -40,6 +42,7 @@ where
 }
 
 /// Estimate sparsity using magnitude thresholding
+#[allow(dead_code)]
 pub fn estimate_sparsity_threshold<T>(signal: &[T], threshold: f64) -> FFTResult<usize>
 where
     T: NumCast + Copy + Debug + 'static,
@@ -61,6 +64,7 @@ where
 }
 
 /// Estimate sparsity using adaptive energy-based method
+#[allow(dead_code)]
 pub fn estimate_sparsity_adaptive<T>(
     signal: &[T],
     adaptivity_factor: f64,
@@ -81,7 +85,7 @@ where
 
     magnitudes.sort_by(|a, b| b.1.partial_cmp(&a.1).unwrap_or(std::cmp::Ordering::Equal));
 
-    // Find "elbow" in the magnitude curve using adaptivity factor
+    // Find "elbow" in the magnitude curve using adaptivity _factor
     let signal_energy: f64 = magnitudes.iter().map(|(_, m)| m * m).sum();
     let mut cumulative_energy = 0.0;
     let energy_threshold = signal_energy * (1.0 - adaptivity_factor);
@@ -93,11 +97,12 @@ where
         }
     }
 
-    // Fallback: return a default small value if we couldn't determine sparsity
+    // Fallback: return a default small value if we couldn't determine _sparsity
     Ok(fallback_sparsity)
 }
 
 /// Estimate sparsity using frequency pruning method
+#[allow(dead_code)]
 pub fn estimate_sparsity_frequency_pruning<T>(
     signal: &[T],
     pruning_sensitivity: f64,
@@ -117,11 +122,7 @@ where
     let window_size = (n / 16).max(3).min(n);
 
     for i in 0..n {
-        let start = if i >= window_size / 2 {
-            i - window_size / 2
-        } else {
-            0
-        };
+        let start = i.saturating_sub(window_size / 2);
         let end = (i + window_size / 2 + 1).min(n);
 
         let window_mags = &magnitudes[start..end];
@@ -146,6 +147,7 @@ where
 }
 
 /// Estimate sparsity using spectral flatness measure
+#[allow(dead_code)]
 pub fn estimate_sparsity_spectral_flatness<T>(
     signal: &[T],
     flatness_threshold: f64,
@@ -199,7 +201,7 @@ where
             0.0
         };
 
-        // Count as significant if flatness is below threshold (indicating peaks)
+        // Count as significant if flatness is below _threshold (indicating peaks)
         if spectral_flatness < flatness_threshold {
             significant_components += window_power
                 .iter()
@@ -214,7 +216,6 @@ where
 #[cfg(test)]
 mod tests {
     use super::*;
-    use std::f64::consts::PI;
 
     fn create_sparse_signal(n: usize, frequencies: &[(usize, f64)]) -> Vec<f64> {
         let mut signal = vec![0.0; n];

@@ -7,6 +7,7 @@ use scirs2_vision::transform::{
 use std::env;
 use std::path::Path;
 
+#[allow(dead_code)]
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Get command line arguments
     let args: Vec<String> = env::args().collect();
@@ -103,20 +104,21 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 }
 
 /// Create a transform that tilts the image (simulating a perspective viewing angle)
-fn create_tilt_transform(width: u32, height: u32, tilt_factor: f64) -> PerspectiveTransform {
+#[allow(dead_code)]
+fn create_tilt_transform(_width: u32, height: u32, tiltfactor: f64) -> PerspectiveTransform {
     // Create a transform that makes the bottom of the image wider than the top
     let src_points = [
-        (0.0, 0.0),                    // Top-left
-        (width as f64, 0.0),           // Top-right
-        (width as f64, height as f64), // Bottom-right
-        (0.0, height as f64),          // Bottom-left
+        (0.0, 0.0),                     // Top-left
+        (_width as f64, 0.0),           // Top-right
+        (_width as f64, height as f64), // Bottom-right
+        (0.0, height as f64),           // Bottom-left
     ];
 
     let dst_points = [
-        (width as f64 * tilt_factor, 0.0),                   // Top-left
-        (width as f64 * (1.0 - tilt_factor), 0.0),           // Top-right
-        (width as f64 * (1.0 + tilt_factor), height as f64), // Bottom-right
-        (width as f64 * -tilt_factor, height as f64),        // Bottom-left
+        (_width as f64 * tiltfactor, 0.0),                   // Top-left
+        (_width as f64 * (1.0 - tiltfactor), 0.0),           // Top-right
+        (_width as f64 * (1.0 + tiltfactor), height as f64), // Bottom-right
+        (_width as f64 * -tiltfactor, height as f64),        // Bottom-left
     ];
 
     PerspectiveTransform::from_points(&src_points, &dst_points)
@@ -124,6 +126,7 @@ fn create_tilt_transform(width: u32, height: u32, tilt_factor: f64) -> Perspecti
 }
 
 /// Create a transform that simulates a bird's-eye view
+#[allow(dead_code)]
 fn create_birds_eye_transform(width: u32, height: u32) -> PerspectiveTransform {
     // Create a transform that makes the image appear as if viewed from above
     let src_points = [
@@ -145,6 +148,7 @@ fn create_birds_eye_transform(width: u32, height: u32) -> PerspectiveTransform {
 }
 
 /// Create a comparison grid showing different border modes
+#[allow(dead_code)]
 fn create_border_mode_comparison(
     img: &image::DynamicImage,
 ) -> Result<(), Box<dyn std::error::Error>> {
@@ -207,7 +211,7 @@ fn create_border_mode_comparison(
         }
 
         // Draw label
-        draw_text(&mut grid, label, x_offset + 10, y_offset + 20);
+        drawtext(&mut grid, label, x_offset + 10, y_offset + 20);
     }
 
     // Save grid
@@ -217,7 +221,8 @@ fn create_border_mode_comparison(
 }
 
 /// Draw simple text on an image
-fn draw_text(img: &mut RgbaImage, text: &str, x: u32, y: u32) {
+#[allow(dead_code)]
+fn drawtext(img: &mut RgbaImage, text: &str, x: u32, y: u32) {
     let color = image::Rgba([255, 255, 255, 255]);
     let shadow_color = image::Rgba([0, 0, 0, 192]);
 
@@ -237,6 +242,7 @@ fn draw_text(img: &mut RgbaImage, text: &str, x: u32, y: u32) {
 }
 
 /// Draw a single character (simple bitmap font)
+#[allow(dead_code)]
 fn draw_char(img: &mut RgbaImage, c: char, x: u32, y: u32, color: image::Rgba<u8>) {
     let (width, height) = img.dimensions();
 

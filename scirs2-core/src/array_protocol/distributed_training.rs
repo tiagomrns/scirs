@@ -58,7 +58,7 @@ pub struct DistributedTrainingConfig {
     pub strategy: DistributedStrategy,
 
     /// Number of workers.
-    pub num_workers: usize,
+    pub numworkers: usize,
 
     /// Rank of the current worker.
     pub rank: usize,
@@ -67,7 +67,7 @@ pub struct DistributedTrainingConfig {
     pub is_master: bool,
 
     /// Synchronization interval (in batches).
-    pub sync_interval: usize,
+    pub syncinterval: usize,
 
     /// Communication backend.
     pub backend: String,
@@ -83,10 +83,10 @@ impl Default for DistributedTrainingConfig {
     fn default() -> Self {
         Self {
             strategy: DistributedStrategy::DataParallel,
-            num_workers: 1,
+            numworkers: 1,
             rank: 0,
             is_master: true,
-            sync_interval: 1,
+            syncinterval: 1,
             backend: "threaded".to_string(),
             mixed_precision: false,
             gradient_accumulation_steps: 1,
@@ -95,6 +95,7 @@ impl Default for DistributedTrainingConfig {
 }
 
 /// A node in a distributed training cluster.
+#[allow(dead_code)]
 pub struct DistributedNode {
     /// Configuration for the node.
     config: DistributedTrainingConfig,
@@ -103,7 +104,7 @@ pub struct DistributedNode {
     model: Sequential,
 
     /// Communication channel to other nodes (kept private to avoid warning).
-    _channel: CommunicationChannel,
+    channel: CommunicationChannel,
 }
 
 impl DistributedNode {
@@ -116,7 +117,7 @@ impl DistributedNode {
         Self {
             config,
             model,
-            _channel: CommunicationChannel::new(channel),
+            channel: CommunicationChannel::new(channel),
         }
     }
 
@@ -271,7 +272,7 @@ impl Clone for Box<dyn DistributedCommunication> {
 /// A mock implementation of distributed communication for testing.
 pub struct MockDistributedCommunication {
     /// Number of workers.
-    num_workers: usize,
+    numworkers: usize,
 
     /// Rank of the current worker.
     rank: usize,
@@ -279,19 +280,19 @@ pub struct MockDistributedCommunication {
 
 impl MockDistributedCommunication {
     /// Create a new mock distributed communication channel.
-    pub fn new(num_workers: usize, rank: usize) -> Self {
-        Self { num_workers, rank }
+    pub fn new(numworkers: usize, rank: usize) -> Self {
+        Self { numworkers, rank }
     }
 }
 
 impl DistributedCommunication for MockDistributedCommunication {
-    fn send(&self, _tensor: Box<dyn ArrayProtocol>, _destination: usize) -> CoreResult<()> {
-        // In a real implementation, this would send the tensor to the destination worker
+    fn send(&self, _tensor: Box<dyn ArrayProtocol>, destination: usize) -> CoreResult<()> {
+        // In a real implementation, this would send the _tensor to the _destination worker
         Ok(())
     }
 
-    fn recv(&self, _source: usize) -> CoreResult<Box<dyn ArrayProtocol>> {
-        // In a real implementation, this would receive a tensor from the source worker
+    fn recv(&self, source: usize) -> CoreResult<Box<dyn ArrayProtocol>> {
+        // In a real implementation, this would receive a tensor from the _source worker
         Err(CoreError::NotImplementedError(ErrorContext::new(
             "recv not implemented for MockDistributedCommunication".to_string(),
         )))
@@ -327,8 +328,7 @@ impl DistributedCommunication for MockDistributedCommunication {
         match op {
             "sum" | "mean" => Ok(tensor),
             _ => Err(CoreError::InvalidArgument(ErrorContext::new(format!(
-                "Unknown reduction operation: {}",
-                op
+                "Unknown reduction operation: {op}"
             )))),
         }
     }
@@ -342,8 +342,7 @@ impl DistributedCommunication for MockDistributedCommunication {
         match op {
             "sum" | "mean" => Ok(tensor),
             _ => Err(CoreError::InvalidArgument(ErrorContext::new(format!(
-                "Unknown reduction operation: {}",
-                op
+                "Unknown reduction operation: {op}"
             )))),
         }
     }
@@ -363,22 +362,23 @@ impl DistributedCommunication for MockDistributedCommunication {
 
     fn box_clone(&self) -> Box<dyn DistributedCommunication> {
         Box::new(MockDistributedCommunication {
-            num_workers: self.num_workers,
+            numworkers: self.numworkers,
             rank: self.rank,
         })
     }
 }
 
 /// Distributed Dataset that partitions data across workers.
+#[allow(dead_code)]
 pub struct DistributedDataset {
     /// The underlying dataset.
     dataset: Box<dyn Dataset>,
 
     /// Number of workers (kept private to avoid warning).
-    _num_workers: usize,
+    numworkers: usize,
 
     /// Rank of the current worker (kept private to avoid warning).
-    _rank: usize,
+    rank: usize,
 
     /// Indices of samples assigned to this worker.
     indices: Vec<usize>,
@@ -386,10 +386,10 @@ pub struct DistributedDataset {
 
 impl DistributedDataset {
     /// Create a new distributed dataset.
-    pub fn new(dataset: Box<dyn Dataset>, num_workers: usize, rank: usize) -> Self {
+    pub fn new(dataset: Box<dyn Dataset>, numworkers: usize, rank: usize) -> Self {
         let num_samples = dataset.len();
-        let samples_per_worker = num_samples / num_workers;
-        let remainder = num_samples % num_workers;
+        let samples_per_worker = num_samples / numworkers;
+        let remainder = num_samples % numworkers;
 
         let start = if rank < remainder {
             rank * (samples_per_worker + 1)
@@ -407,8 +407,8 @@ impl DistributedDataset {
 
         Self {
             dataset,
-            _num_workers: num_workers,
-            _rank: rank,
+            numworkers,
+            rank,
             indices,
         }
     }
@@ -428,16 +428,17 @@ impl Dataset for DistributedDataset {
         self.dataset.get(global_index)
     }
 
-    fn input_shape(&self) -> Vec<usize> {
-        self.dataset.input_shape()
+    fn inputshape(&self) -> Vec<usize> {
+        self.dataset.inputshape()
     }
 
-    fn output_shape(&self) -> Vec<usize> {
-        self.dataset.output_shape()
+    fn outputshape(&self) -> Vec<usize> {
+        self.dataset.outputshape()
     }
 }
 
 /// Distributed Trainer for handling distributed training.
+#[allow(dead_code)]
 pub struct DistributedTrainer {
     /// The underlying trainer.
     trainer: Trainer,
@@ -449,7 +450,7 @@ pub struct DistributedTrainer {
     channel: CommunicationChannel,
 
     /// Batch counter for synchronization (kept private to avoid warning).
-    _batch_counter: usize,
+    batch_counter: usize,
 }
 
 impl DistributedTrainer {
@@ -463,16 +464,16 @@ impl DistributedTrainer {
             trainer,
             config,
             channel: CommunicationChannel::new(channel),
-            _batch_counter: 0,
+            batch_counter: 0,
         }
     }
 
     /// Train the model in a distributed setting.
     pub fn train(
         &mut self,
-        train_loader: DataLoader,
+        train_loader: &mut DataLoader,
         num_epochs: usize,
-        val_loader: Option<DataLoader>,
+        val_loader: Option<&mut DataLoader>,
     ) -> CoreResult<()> {
         // Synchronize initial model parameters
         self.synchronize_parameters()?;
@@ -518,13 +519,13 @@ impl DistributedTrainer {
     /// Train the model using data parallelism.
     fn train_data_parallel(
         &mut self,
-        train_loader: DataLoader,
+        train_loader: &mut DataLoader,
         num_epochs: usize,
-        val_loader: Option<DataLoader>,
+        val_loader: Option<&mut DataLoader>,
     ) -> CoreResult<()> {
         // Create a callback for parameter synchronization
         let _sync_callback = ParameterSyncCallback::new(
-            self.config.sync_interval,
+            self.config.syncinterval,
             self.channel.0.clone().box_clone(),
         );
 
@@ -539,10 +540,10 @@ impl DistributedTrainer {
 
     /// Train the model using model parallelism.
     fn train_model_parallel(
-        &self,
-        _train_loader: DataLoader,
+        &mut self,
+        _train_loader: &mut DataLoader,
         _num_epochs: usize,
-        _val_loader: Option<DataLoader>,
+        _val_loader: Option<&mut DataLoader>,
     ) -> CoreResult<()> {
         // This is a simplified implementation for demonstration purposes.
         // In a real implementation, this would implement a custom training loop
@@ -553,10 +554,10 @@ impl DistributedTrainer {
 
     /// Train the model using hybrid parallelism.
     fn train_hybrid_parallel(
-        &self,
-        _train_loader: DataLoader,
+        &mut self,
+        _train_loader: &mut DataLoader,
         _num_epochs: usize,
-        _val_loader: Option<DataLoader>,
+        _val_loader: Option<&mut DataLoader>,
     ) -> CoreResult<()> {
         // This is a simplified implementation for demonstration purposes.
         // In a real implementation, this would implement a custom training loop
@@ -567,10 +568,10 @@ impl DistributedTrainer {
 
     /// Train the model using pipeline parallelism.
     fn train_pipeline_parallel(
-        &self,
-        _train_loader: DataLoader,
+        &mut self,
+        _train_loader: &mut DataLoader,
         _num_epochs: usize,
-        _val_loader: Option<DataLoader>,
+        _val_loader: Option<&mut DataLoader>,
     ) -> CoreResult<()> {
         // This is a simplified implementation for demonstration purposes.
         // In a real implementation, this would implement a custom training loop
@@ -583,7 +584,7 @@ impl DistributedTrainer {
 /// Callback for synchronizing parameters between workers.
 pub struct ParameterSyncCallback {
     /// Synchronization interval (in batches).
-    sync_interval: usize,
+    syncinterval: usize,
 
     /// Batch counter.
     batch_counter: usize,
@@ -594,9 +595,9 @@ pub struct ParameterSyncCallback {
 
 impl ParameterSyncCallback {
     /// Create a new parameter synchronization callback.
-    pub fn new(sync_interval: usize, channel: Box<dyn DistributedCommunication>) -> Self {
+    pub fn new(syncinterval: usize, channel: Box<dyn DistributedCommunication>) -> Self {
         Self {
-            sync_interval,
+            syncinterval,
             batch_counter: 0,
             channel: CommunicationChannel::new(channel),
         }
@@ -604,55 +605,55 @@ impl ParameterSyncCallback {
 }
 
 impl TrainingCallback for ParameterSyncCallback {
-    fn on_epoch_start(&mut self, _epoch: usize, _num_epochs: usize) {
-        // Reset batch counter at the start of each epoch
+    fn on_epoch_start(&mut self, _epoch: usize, _numepochs: usize) {
+        // Reset batch counter at the start of each _epoch
         self.batch_counter = 0;
     }
 
-    fn on_epoch_end(&mut self, _epoch: usize, _num_epochs: usize, _metrics: &Metrics) {
-        // Synchronize parameters at the end of each epoch
+    fn on_epoch_end(&mut self, _epoch: usize, _num_epochs: usize, metrics: &Metrics) {
+        // Synchronize parameters at the end of each _epoch
         // This is a simplified implementation for demonstration purposes.
         // In a real implementation, this would call channel.all_reduce() for each parameter.
 
         match self.channel.inner().barrier() {
             Ok(()) => {}
-            Err(e) => eprintln!("Error in barrier synchronization: {}", e),
+            Err(e) => eprintln!("Error in barrier synchronization: {e}"),
         }
     }
 
-    fn on_batch_start(&mut self, _batch: usize, _num_batches: usize) {
+    fn on_batch_start(&mut self, _batch: usize, _numbatches: usize) {
         // No-op for this callback
     }
 
-    fn on_batch_end(&mut self, _batch: usize, _num_batches: usize, _loss: f64) {
-        // Increment batch counter
+    fn on_batch_end(&mut self, _batch: usize, _numbatches: usize, loss: f64) {
+        // Increment _batch counter
         self.batch_counter += 1;
 
         // Synchronize parameters if needed
-        if self.batch_counter % self.sync_interval == 0 {
+        if self.batch_counter % self.syncinterval == 0 {
             // This is a simplified implementation for demonstration purposes.
             // In a real implementation, this would call channel.all_reduce() for each parameter.
 
             match self.channel.inner().barrier() {
                 Ok(()) => {}
-                Err(e) => eprintln!("Error in barrier synchronization: {}", e),
+                Err(e) => eprintln!("Error in barrier synchronization: {e}"),
             }
         }
     }
 
-    fn on_train_start(&mut self, _num_epochs: usize) {
+    fn on_train_start(&mut self, _numepochs: usize) {
         // Synchronize initial parameters
         match self.channel.inner().barrier() {
             Ok(()) => {}
-            Err(e) => eprintln!("Error in barrier synchronization: {}", e),
+            Err(e) => eprintln!("Error in barrier synchronization: {e}"),
         }
     }
 
-    fn on_train_end(&mut self, _metrics: &Metrics) {
+    fn on_train_end(&mut self, metrics: &Metrics) {
         // Final synchronization
         match self.channel.inner().barrier() {
             Ok(()) => {}
-            Err(e) => eprintln!("Error in barrier synchronization: {}", e),
+            Err(e) => eprintln!("Error in barrier synchronization: {e}"),
         }
     }
 }
@@ -668,7 +669,7 @@ impl DistributedTrainingFactory {
     ) -> Box<dyn Dataset> {
         Box::new(DistributedDataset::new(
             dataset,
-            config.num_workers,
+            config.numworkers,
             config.rank,
         ))
     }
@@ -681,12 +682,12 @@ impl DistributedTrainingFactory {
         // Create communication channel
         let channel: Box<dyn DistributedCommunication> = match config.backend.as_str() {
             "threaded" => Box::new(MockDistributedCommunication::new(
-                config.num_workers,
+                config.numworkers,
                 config.rank,
             )),
             // Other backends would be added here
             _ => Box::new(MockDistributedCommunication::new(
-                config.num_workers,
+                config.numworkers,
                 config.rank,
             )),
         };
@@ -714,8 +715,8 @@ mod tests {
 
         // Check properties
         assert_eq!(dist_dataset.len(), 5);
-        assert_eq!(dist_dataset.input_shape(), vec![5]);
-        assert_eq!(dist_dataset.output_shape(), vec![2]);
+        assert_eq!(dist_dataset.inputshape(), vec![5]);
+        assert_eq!(dist_dataset.outputshape(), vec![2]);
 
         // Get a sample
         let (input, target) = dist_dataset.get(0).unwrap();

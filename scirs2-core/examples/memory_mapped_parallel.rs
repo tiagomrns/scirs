@@ -10,6 +10,7 @@
 //! ```
 
 #[cfg(all(feature = "memory_efficient", feature = "parallel"))]
+#[allow(dead_code)]
 fn main() {
     use ndarray::Array1;
     use scirs2_core::memory_efficient::{
@@ -114,7 +115,7 @@ fn main() {
     // Verify that the mutation worked by computing the sum
     println!("\nVerifying the mutation worked...");
     let sum_after_mutation: f64 = mmap
-        .process_chunks(ChunkingStrategy::Fixed(chunk_size), |chunk, _| {
+        .process_chunks(ChunkingStrategy::Fixed(chunk_size), |chunk, _chunk_idx| {
             chunk.iter().sum::<f64>()
         })
         .iter()
@@ -132,6 +133,7 @@ fn main() {
 }
 
 #[cfg(not(all(feature = "memory_efficient", feature = "parallel")))]
+#[allow(dead_code)]
 fn main() {
     println!("This example requires the 'memory_efficient' and 'parallel' features.");
     println!("Please run with:");

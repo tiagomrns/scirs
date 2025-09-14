@@ -339,7 +339,7 @@ impl<A: Float + ScalarOperand + Debug> SparseAdam<A> {
 
 impl<A> Optimizer<A, Ix1> for SparseAdam<A>
 where
-    A: Float + ScalarOperand + Debug,
+    A: Float + ScalarOperand + Debug + Send + Sync,
 {
     fn step(&mut self, params: &Array<A, Ix1>, gradients: &Array<A, Ix1>) -> Result<Array<A, Ix1>> {
         // Convert dense gradient to sparse

@@ -59,12 +59,10 @@ use std::collections::{HashMap, VecDeque};
 use std::sync::{Arc, Mutex, RwLock};
 use std::time::{Duration, Instant, SystemTime};
 
-#[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
 
 /// Dashboard configuration
-#[derive(Debug, Clone)]
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct DashboardConfig {
     /// Dashboard title
     pub title: String,
@@ -148,8 +146,7 @@ impl DashboardConfig {
 }
 
 /// Dashboard theme options
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub enum DashboardTheme {
     /// Light theme
     Light,
@@ -162,8 +159,7 @@ pub enum DashboardTheme {
 }
 
 /// Chart types for dashboard widgets
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub enum ChartType {
     /// Line chart for time series data
     LineChart,
@@ -184,8 +180,7 @@ pub enum ChartType {
 }
 
 /// Metric data sources
-#[derive(Debug, Clone, PartialEq, Eq)]
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub enum MetricSource {
     /// System CPU usage
     SystemCpu,
@@ -206,8 +201,7 @@ pub enum MetricSource {
 }
 
 /// Dashboard widget configuration
-#[derive(Debug, Clone)]
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Widget {
     /// Widget ID
     pub id: String,
@@ -230,8 +224,7 @@ pub struct Widget {
 }
 
 /// Widget layout and positioning
-#[derive(Debug, Clone)]
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct WidgetLayout {
     /// X position (grid units)
     pub x: u32,
@@ -255,8 +248,7 @@ impl Default for WidgetLayout {
 }
 
 /// Alert configuration for widgets
-#[derive(Debug, Clone)]
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct AlertConfig {
     /// Alert threshold value
     pub threshold: f64,
@@ -271,8 +263,7 @@ pub struct AlertConfig {
 }
 
 /// Alert conditions
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub enum AlertCondition {
     /// Greater than threshold
     GreaterThan,
@@ -287,8 +278,7 @@ pub enum AlertCondition {
 }
 
 /// Alert severity levels
-#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
 pub enum AlertSeverity {
     /// Informational alert
     Info,
@@ -301,8 +291,7 @@ pub enum AlertSeverity {
 }
 
 /// Notification channels for alerts
-#[derive(Debug, Clone)]
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum NotificationChannel {
     /// Email notification
     Email(String),
@@ -317,8 +306,7 @@ pub enum NotificationChannel {
 }
 
 /// Display options for widgets
-#[derive(Debug, Clone)]
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct DisplayOptions {
     /// Show data labels
     pub show_labels: bool,
@@ -348,8 +336,7 @@ impl Default for DisplayOptions {
 }
 
 /// Number formatting options
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub enum NumberFormat {
     /// Automatic formatting
     Auto,
@@ -394,8 +381,8 @@ impl Widget {
     }
 
     /// Set chart type
-    pub fn with_chart_type(mut self, chart_type: ChartType) -> Self {
-        self.chart_type = chart_type;
+    pub fn with_chart_type(mut self, charttype: ChartType) -> Self {
+        self.chart_type = charttype;
         self
     }
 
@@ -448,8 +435,7 @@ impl Default for Widget {
 }
 
 /// Metric data point
-#[derive(Debug, Clone)]
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct MetricDataPoint {
     /// Timestamp
     pub timestamp: SystemTime,
@@ -460,8 +446,7 @@ pub struct MetricDataPoint {
 }
 
 /// Time series data for a metric
-#[derive(Debug, Clone)]
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct MetricTimeSeries {
     /// Metric name
     pub name: String,
@@ -516,7 +501,7 @@ impl MetricTimeSeries {
     }
 
     /// Clean old data points
-    pub fn cleanup(&mut self, retention_period: Duration, max_points: usize) {
+    pub fn cleanup(&mut self, retention_period: Duration, maxpoints: usize) {
         let cutoff = SystemTime::now() - retention_period;
 
         // Remove old data points
@@ -529,15 +514,14 @@ impl MetricTimeSeries {
         }
 
         // Limit maximum number of points
-        while self.data_points.len() > max_points {
+        while self.data_points.len() > maxpoints {
             self.data_points.pop_front();
         }
     }
 }
 
 /// Dashboard alert
-#[derive(Debug, Clone)]
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct DashboardAlert {
     /// Alert ID
     pub id: String,
@@ -558,8 +542,7 @@ pub struct DashboardAlert {
 }
 
 /// Alert status
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub enum AlertStatus {
     /// Alert is active
     Active,
@@ -588,8 +571,7 @@ pub struct PerformanceDashboard {
 }
 
 /// Dashboard state
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub enum DashboardState {
     /// Dashboard is stopped
     Stopped,
@@ -631,7 +613,7 @@ impl PerformanceDashboard {
         self.widgets.insert(widget_id.clone(), widget);
 
         // Initialize metric time series for this widget
-        let metrics_name = format!("widget_{}", widget_id);
+        let metrics_name = format!("widget_{widget_id}");
         if let Ok(mut metrics) = self.metrics.write() {
             metrics.insert(metrics_name, MetricTimeSeries::new(&widget_id));
         }
@@ -640,11 +622,11 @@ impl PerformanceDashboard {
     }
 
     /// Remove a widget from the dashboard
-    pub fn remove_widget(&mut self, widget_id: &str) -> CoreResult<()> {
-        self.widgets.remove(widget_id);
+    pub fn remove_widget(&mut self, widgetid: &str) -> CoreResult<()> {
+        self.widgets.remove(widgetid);
 
         // Remove associated metric data
-        let metrics_name = format!("widget_{}", widget_id);
+        let metrics_name = format!("widget_{widgetid}");
         if let Ok(mut metrics) = self.metrics.write() {
             metrics.remove(&metrics_name);
         }
@@ -684,12 +666,12 @@ impl PerformanceDashboard {
 
     /// Update dashboard with new metric data
     pub fn update_metric(&mut self, source: &MetricSource, value: f64) -> CoreResult<()> {
-        let metric_name = self.metric_source_to_name(source);
+        let metricname = self.metric_source_to_name(source);
 
         if let Ok(mut metrics) = self.metrics.write() {
             let time_series = metrics
-                .entry(metric_name.clone())
-                .or_insert_with(|| MetricTimeSeries::new(&metric_name));
+                .entry(metricname.clone())
+                .or_insert_with(|| MetricTimeSeries::new(&metricname));
 
             time_series.add_point(value, None);
 
@@ -698,7 +680,7 @@ impl PerformanceDashboard {
         }
 
         // Check for alerts
-        self.check_alerts(&metric_name, value)?;
+        self.check_alerts(&metricname, value)?;
 
         self.last_update = Instant::now();
         Ok(())
@@ -709,12 +691,7 @@ impl PerformanceDashboard {
         self.metrics
             .read()
             .map(|metrics| metrics.clone())
-            .map_err(|_| {
-                CoreError::from(std::io::Error::new(
-                    std::io::ErrorKind::Other,
-                    "Failed to read metrics",
-                ))
-            })
+            .map_err(|_| CoreError::from(std::io::Error::other("Failed to read metrics")))
     }
 
     /// Get dashboard statistics
@@ -737,7 +714,6 @@ impl PerformanceDashboard {
 
     /// Export dashboard configuration
     pub fn export_config(&self) -> CoreResult<String> {
-        #[cfg(feature = "serde")]
         {
             let export_data = DashboardExport {
                 config: self.config.clone(),
@@ -746,27 +722,24 @@ impl PerformanceDashboard {
             };
 
             serde_json::to_string_pretty(&export_data).map_err(|e| {
-                CoreError::from(std::io::Error::new(
-                    std::io::ErrorKind::Other,
-                    format!("Failed to serialize dashboard config: {}", e),
-                ))
+                CoreError::from(std::io::Error::other(format!(
+                    "Failed to serialize dashboard config: {e}"
+                )))
             })
         }
         #[cfg(not(feature = "serde"))]
         {
-            Ok(format!("Dashboard: {}", self.config.title))
+            Ok(format!("title: {}", self.config.title))
         }
     }
 
     /// Import dashboard configuration
-    pub fn import_config(&mut self, config_json: &str) -> CoreResult<()> {
-        #[cfg(feature = "serde")]
+    pub fn import_configuration(&mut self, configjson: &str) -> CoreResult<()> {
         {
-            let import_data: DashboardExport = serde_json::from_str(config_json).map_err(|e| {
-                CoreError::from(std::io::Error::new(
-                    std::io::ErrorKind::Other,
-                    format!("Failed to parse dashboard config: {}", e),
-                ))
+            let import_data: DashboardExport = serde_json::from_str(configjson).map_err(|e| {
+                CoreError::from(std::io::Error::other(format!(
+                    "Failed to parse dashboard config: {e}"
+                )))
             })?;
 
             self.config = import_data.config;
@@ -781,20 +754,19 @@ impl PerformanceDashboard {
         #[cfg(not(feature = "serde"))]
         {
             let _ = config_json; // Suppress unused variable warning
-            Err(CoreError::from(std::io::Error::new(
-                std::io::ErrorKind::Other,
+            Err(CoreError::from(std::io::Error::other(
                 "Serde feature not enabled for configuration import",
             )))
         }
     }
 
     /// Check for alert conditions
-    fn check_alerts(&mut self, metric_name: &str, value: f64) -> CoreResult<()> {
+    fn check_alerts(&self, metricname: &str, value: f64) -> CoreResult<()> {
         for widget in self.widgets.values() {
             if let Some(ref alert_config) = widget.alert_config {
                 let widget_metric = self.metric_source_to_name(&widget.metric_source);
 
-                if widget_metric == metric_name {
+                if widget_metric == metricname {
                     let triggered = match alert_config.condition {
                         AlertCondition::GreaterThan => value > alert_config.threshold,
                         AlertCondition::LessThan => value < alert_config.threshold,
@@ -855,7 +827,7 @@ impl PerformanceDashboard {
         for channel in &config.notification_channels {
             match channel {
                 NotificationChannel::Console => {
-                    println!("[DASHBOARD ALERT] {}", alert.message);
+                    println!("[DASHBOARD ALERT] {message}", message = alert.message);
                 }
                 NotificationChannel::File(path) => {
                     use std::fs::OpenOptions;
@@ -896,10 +868,10 @@ impl PerformanceDashboard {
             MetricSource::SystemMemory => "system.memory".to_string(),
             MetricSource::NetworkIO => "system.network_io".to_string(),
             MetricSource::DiskIO => "system.disk_io".to_string(),
-            MetricSource::Application(name) => format!("app.{}", name),
-            MetricSource::Custom(name) => format!("custom.{}", name),
-            MetricSource::Database(name) => format!("db.{}", name),
-            MetricSource::Cache(name) => format!("cache.{}", name),
+            MetricSource::Application(name) => format!("app.{name}"),
+            MetricSource::Custom(name) => format!("custom.{name}"),
+            MetricSource::Database(name) => format!("db.{name}"),
+            MetricSource::Cache(name) => format!("cache.{name}"),
         }
     }
 
@@ -926,8 +898,7 @@ impl PerformanceDashboard {
 }
 
 /// Dashboard export/import structure
-#[derive(Debug, Clone)]
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct DashboardExport {
     /// Dashboard configuration
     pub config: DashboardConfig,
@@ -1063,7 +1034,7 @@ mod tests {
 
         // Add some widgets
         for i in 0..3 {
-            let widget = Widget::new().with_title(&format!("Widget {}", i));
+            let widget = Widget::new().with_title(&format!("Widget {i}"));
             dashboard.add_widget(widget).unwrap();
         }
 

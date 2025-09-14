@@ -1,10 +1,12 @@
-//! Example demonstrating various digital filter design methods
-//!
-//! This example shows how to use various filter design functions
-//! to create different types of digital filters.
+// Example demonstrating various digital filter design methods
+//
+// This example shows how to use various filter design functions
+// to create different types of digital filters.
 
+use num_complex::Complex64;
 use scirs2_signal::filter::{butter_bandpass_bandstop, cheby1, FilterType};
 
+#[allow(dead_code)]
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("Digital Filter Design Examples");
     println!("===============================\n");
@@ -102,11 +104,11 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("5. Filter Response Evaluation");
     let test_freq = 0.25; // Normalized frequency
     let omega = std::f64::consts::PI * test_freq;
-    let z = num_complex::Complex64::new(omega.cos(), omega.sin());
+    let z = Complex64::new(omega.cos(), omega.sin());
 
     // Evaluate Chebyshev filter response
-    let mut h_num = num_complex::Complex64::new(0.0, 0.0);
-    let mut h_den = num_complex::Complex64::new(0.0, 0.0);
+    let mut h_num = Complex64::new(0.0, 0.0);
+    let mut h_den = Complex64::new(0.0, 0.0);
 
     for (i, &coeff) in b_cheby.iter().enumerate() {
         h_num += coeff * z.powf(-(i as f64));

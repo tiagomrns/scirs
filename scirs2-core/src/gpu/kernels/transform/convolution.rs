@@ -21,7 +21,7 @@ impl Conv1dKernel {
             workgroup_size: [256, 1, 1],
             local_memory_usage: 2048, // Kernel data cache
             supports_tensor_cores: false,
-            operation_type: OperationType::ComputeIntensive,
+            operationtype: OperationType::ComputeIntensive,
             backend_metadata: HashMap::new(),
         };
 
@@ -92,6 +92,7 @@ struct Uniforms {
 @group(0) @binding(3) var<storage, write> output: array<f32>;
 
 @compute @workgroup_size(256)
+#[allow(dead_code)]
 fn conv1d(@builtin(global_invocation_id) global_id: vec3<u32>) {
     let out_idx = global_id.x;
     
@@ -152,9 +153,7 @@ kernel void conv1d(
         // OpenCL kernel for 1D convolution
         let opencl_source = r#"
 __kernel void conv1d(
-    __global const float* input,
-    __global const float* kernel_data,
-    __global float* output,
+    __global const float* input__global const float* kernel_data__global float* output,
     const int input_length,
     const int kernel_length,
     const int output_length,
@@ -209,7 +208,7 @@ impl GpuKernel for Conv1dKernel {
     }
 
     fn can_specialize(&self, params: &KernelParams) -> bool {
-        matches!(params.data_type, DataType::Float32 | DataType::Float64)
+        matches!(params.datatype, DataType::Float32 | DataType::Float64)
     }
 
     fn specialize(&self, params: &KernelParams) -> Result<Box<dyn GpuKernel>, GpuError> {
@@ -239,7 +238,7 @@ impl Conv2dKernel {
             workgroup_size: [16, 16, 1],
             local_memory_usage: 4096,    // Kernel and input tile cache
             supports_tensor_cores: true, // 2D convolutions can use tensor cores
-            operation_type: OperationType::ComputeIntensive,
+            operationtype: OperationType::ComputeIntensive,
             backend_metadata: HashMap::new(),
         };
 
@@ -354,6 +353,7 @@ struct Uniforms {
 @group(0) @binding(3) var<storage, write> output: array<f32>;
 
 @compute @workgroup_size(16, 16)
+#[allow(dead_code)]
 fn conv2d(@builtin(global_invocation_id) global_id: vec3<u32>) {
     let batch_idx = global_id.z;
     let out_channel = global_id.y % uniforms.out_channels;
@@ -432,9 +432,7 @@ kernel void conv2d(
         let opencl_source = r#"
 // OpenCL 2D convolution implementation (simplified)
 __kernel void conv2d(
-    __global const float* input,
-    __global const float* kernel_data,
-    __global float* output,
+    __global const float* input__global const float* kernel_data__global float* output,
     const int batch_size,
     const int in_channels,
     const int out_channels,
@@ -482,7 +480,7 @@ impl GpuKernel for Conv2dKernel {
 
     fn can_specialize(&self, params: &KernelParams) -> bool {
         matches!(
-            params.data_type,
+            params.datatype,
             DataType::Float32 | DataType::Float64 | DataType::Float16 | DataType::BFloat16
         )
     }

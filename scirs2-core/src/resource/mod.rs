@@ -9,6 +9,7 @@
 //! - Network and storage resource detection
 //! - Dynamic optimization parameter adjustment
 
+pub mod auto_tuning;
 pub mod cpu;
 pub mod gpu;
 pub mod memory;
@@ -231,7 +232,7 @@ pub struct DiscoveryConfig {
     /// Enable network detection
     pub detect_network: bool,
     /// Enable storage detection
-    pub detect_storage: bool,
+    pub detectstorage: bool,
     /// Cache discovery results
     pub cache_results: bool,
     /// Cache duration
@@ -247,7 +248,7 @@ impl Default for DiscoveryConfig {
             detect_memory: true,
             detect_gpu: true,
             detect_network: true,
-            detect_storage: true,
+            detectstorage: true,
             cache_results: true,
             cache_duration: Duration::from_secs(300), // 5 minutes
             detailed_detection: false,
@@ -267,7 +268,7 @@ impl DiscoveryConfig {
         self.detect_memory = true;
         self.detect_gpu = true;
         self.detect_network = true;
-        self.detect_storage = true;
+        self.detectstorage = true;
         self
     }
 
@@ -277,7 +278,7 @@ impl DiscoveryConfig {
         self.detect_memory = false;
         self.detect_gpu = false;
         self.detect_network = false;
-        self.detect_storage = false;
+        self.detectstorage = false;
         self
     }
 
@@ -287,7 +288,7 @@ impl DiscoveryConfig {
         self.detect_memory = true;
         self.detect_gpu = false;
         self.detect_network = false;
-        self.detect_storage = false;
+        self.detectstorage = false;
         self
     }
 
@@ -379,7 +380,7 @@ impl ResourceDiscovery {
             network::NetworkInfo::default()
         };
 
-        let storage = if self.config.detect_storage {
+        let storage = if self.config.detectstorage {
             storage::StorageInfo::detect()?
         } else {
             storage::StorageInfo::default()
@@ -436,47 +437,56 @@ static GLOBAL_RESOURCE_DISCOVERY: std::sync::LazyLock<ResourceDiscovery> =
     std::sync::LazyLock::new(ResourceDiscovery::default);
 
 /// Get the global resource discovery instance
+#[allow(dead_code)]
 pub fn global_resource_discovery() -> &'static ResourceDiscovery {
     &GLOBAL_RESOURCE_DISCOVERY
 }
 
 /// Quick access functions for common operations
 /// Get system resources using global discovery
+#[allow(dead_code)]
 pub fn get_system_resources() -> CoreResult<SystemResources> {
     global_resource_discovery().discover()
 }
 
 /// Get recommended thread count
+#[allow(dead_code)]
 pub fn get_recommended_thread_count() -> CoreResult<usize> {
     Ok(get_system_resources()?.recommended_thread_count())
 }
 
 /// Get recommended chunk size
+#[allow(dead_code)]
 pub fn get_recommended_chunk_size() -> CoreResult<usize> {
     Ok(get_system_resources()?.recommended_chunk_size())
 }
 
 /// Check if SIMD is supported
+#[allow(dead_code)]
 pub fn is_simd_supported() -> CoreResult<bool> {
     Ok(get_system_resources()?.supports_simd())
 }
 
 /// Check if GPU is available
+#[allow(dead_code)]
 pub fn is_gpu_available() -> CoreResult<bool> {
     Ok(get_system_resources()?.supports_gpu())
 }
 
 /// Get total system memory
+#[allow(dead_code)]
 pub fn get_total_memory() -> CoreResult<usize> {
     Ok(get_system_resources()?.total_memory())
 }
 
 /// Get available system memory
+#[allow(dead_code)]
 pub fn get_available_memory() -> CoreResult<usize> {
     Ok(get_system_resources()?.available_memory())
 }
 
 /// Get performance tier
+#[allow(dead_code)]
 pub fn get_performance_tier() -> CoreResult<PerformanceTier> {
     Ok(get_system_resources()?.performance_tier())
 }
@@ -491,12 +501,12 @@ pub struct ResourceMonitor {
 
 impl ResourceMonitor {
     /// Create a new resource monitor
-    pub fn new(config: DiscoveryConfig, monitoring_interval: Duration) -> Self {
+    pub fn new(config: DiscoveryConfig, monitoringinterval: Duration) -> Self {
         let discovery = ResourceDiscovery::new(config);
 
         Self {
             discovery,
-            monitoring_interval,
+            monitoring_interval: monitoringinterval,
             last_update: std::sync::Mutex::new(std::time::Instant::now()),
             adaptive_params: std::sync::Mutex::new(optimization::OptimizationParams::default()),
         }
@@ -597,7 +607,7 @@ mod tests {
     }
 
     #[test]
-    fn test_resource_monitor() {
+    fn test_resourcemonitor() {
         let config = DiscoveryConfig::new().detect_essential();
         let monitor = ResourceMonitor::new(config, Duration::from_secs(1));
 

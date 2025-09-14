@@ -3,6 +3,7 @@ use scirs2_special::{hyp1f1, hyp2f1, pochhammer};
 use std::f64::consts::PI;
 use std::time::Instant;
 
+#[allow(dead_code)]
 fn main() -> SpecialResult<()> {
     println!("Hypergeometric Functions Example");
     println!("===============================\n");

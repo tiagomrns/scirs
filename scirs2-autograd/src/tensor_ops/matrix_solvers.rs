@@ -17,24 +17,24 @@ impl<F: Float + ndarray::ScalarOperand> Op<F> for SylvesterSolveOp {
         let b = ctx.input(1);
         let c = ctx.input(2);
 
-        let a_shape = a.shape();
-        let b_shape = b.shape();
-        let c_shape = c.shape();
+        let ashape = a.shape();
+        let bshape = b.shape();
+        let cshape = c.shape();
 
         // Check shapes
-        if a_shape.len() != 2 || a_shape[0] != a_shape[1] {
+        if ashape.len() != 2 || ashape[0] != ashape[1] {
             return Err(OpError::IncompatibleShape(
                 "Sylvester equation requires square matrix A".into(),
             ));
         }
 
-        if b_shape.len() != 2 || b_shape[0] != b_shape[1] {
+        if bshape.len() != 2 || bshape[0] != bshape[1] {
             return Err(OpError::IncompatibleShape(
                 "Sylvester equation requires square matrix B".into(),
             ));
         }
 
-        if c_shape.len() != 2 || c_shape[0] != a_shape[0] || c_shape[1] != b_shape[0] {
+        if cshape.len() != 2 || cshape[0] != ashape[0] || cshape[1] != bshape[0] {
             return Err(OpError::IncompatibleShape(
                 "Matrix C must have shape (m, n) where A is (m, m) and B is (n, n)".into(),
             ));
@@ -187,17 +187,17 @@ impl<F: Float + ndarray::ScalarOperand> Op<F> for LyapunovSolveOp {
         let a = ctx.input(0);
         let q = ctx.input(1);
 
-        let a_shape = a.shape();
-        let q_shape = q.shape();
+        let ashape = a.shape();
+        let qshape = q.shape();
 
         // Check shapes
-        if a_shape.len() != 2 || a_shape[0] != a_shape[1] {
+        if ashape.len() != 2 || ashape[0] != ashape[1] {
             return Err(OpError::IncompatibleShape(
                 "Lyapunov equation requires square matrix A".into(),
             ));
         }
 
-        if q_shape.len() != 2 || q_shape[0] != q_shape[1] || q_shape[0] != a_shape[0] {
+        if qshape.len() != 2 || qshape[0] != qshape[1] || qshape[0] != ashape[0] {
             return Err(OpError::IncompatibleShape(
                 "Matrix Q must be square with same size as A".into(),
             ));
@@ -312,16 +312,16 @@ impl<F: Float> Op<F> for CholeskySolveOp {
         let a = ctx.input(0);
         let b = ctx.input(1);
 
-        let a_shape = a.shape();
-        let b_shape = b.shape();
+        let ashape = a.shape();
+        let bshape = b.shape();
 
-        if a_shape.len() != 2 || a_shape[0] != a_shape[1] {
+        if ashape.len() != 2 || ashape[0] != ashape[1] {
             return Err(OpError::IncompatibleShape(
                 "Cholesky solve requires square matrix A".into(),
             ));
         }
 
-        if b_shape[0] != a_shape[0] {
+        if bshape[0] != ashape[0] {
             return Err(OpError::IncompatibleShape(
                 "Dimension mismatch in AX = B".into(),
             ));
@@ -336,7 +336,7 @@ impl<F: Float> Op<F> for CholeskySolveOp {
         let l = compute_cholesky(&a_2d)?;
 
         // Solve using forward and backward substitution
-        let x = if b_shape.len() == 1 {
+        let x = if bshape.len() == 1 {
             let b_1d = b
                 .view()
                 .into_dimensionality::<ndarray::Ix1>()
@@ -483,6 +483,7 @@ impl<F: Float> Op<F> for CholeskySolveOp {
 // Helper functions
 
 /// Solve Sylvester equation AX + XB = C using Bartels-Stewart algorithm
+#[allow(dead_code)]
 fn solve_sylvester_internal<F: Float + ndarray::ScalarOperand>(
     a: &ArrayView2<F>,
     b: &ArrayView2<F>,
@@ -566,6 +567,7 @@ fn solve_sylvester_internal<F: Float + ndarray::ScalarOperand>(
 }
 
 /// Solve Lyapunov equation AX + XA^T = Q
+#[allow(dead_code)]
 fn solve_lyapunov_internal<F: Float + ndarray::ScalarOperand>(
     a: &ArrayView2<F>,
     q: &ArrayView2<F>,
@@ -577,6 +579,7 @@ fn solve_lyapunov_internal<F: Float + ndarray::ScalarOperand>(
 }
 
 /// Helper to solve linear system
+#[allow(dead_code)]
 fn solve_linear_system<F: Float>(
     a: &ArrayView2<F>,
     b: &ndarray::ArrayView1<F>,
@@ -637,6 +640,7 @@ fn solve_linear_system<F: Float>(
 }
 
 /// Solve AX = B for matrix B
+#[allow(dead_code)]
 fn solve_matrix_equation_right<F: Float>(
     a: &ArrayView2<F>,
     b: &ArrayView2<F>,
@@ -659,6 +663,7 @@ fn solve_matrix_equation_right<F: Float>(
 }
 
 /// Compute Cholesky decomposition
+#[allow(dead_code)]
 fn compute_cholesky<F: Float>(matrix: &ArrayView2<F>) -> Result<Array2<F>, OpError> {
     let n = matrix.shape()[0];
     let mut l = Array2::<F>::zeros((n, n));
@@ -691,6 +696,7 @@ fn compute_cholesky<F: Float>(matrix: &ArrayView2<F>) -> Result<Array2<F>, OpErr
 }
 
 /// Solve LLᵀx = b using Cholesky decomposition (1D case)
+#[allow(dead_code)]
 fn solve_cholesky_1d<F: Float>(
     l: &ArrayView2<F>,
     b: &ndarray::ArrayView1<F>,
@@ -723,6 +729,7 @@ fn solve_cholesky_1d<F: Float>(
 }
 
 /// Solve LLᵀX = B using Cholesky decomposition (2D case)
+#[allow(dead_code)]
 fn solve_cholesky_2d<F: Float>(l: &ArrayView2<F>, b: &ArrayView2<F>) -> Result<Array2<F>, OpError> {
     let n = l.shape()[0];
     let m = b.shape()[1];
@@ -742,6 +749,7 @@ fn solve_cholesky_2d<F: Float>(l: &ArrayView2<F>, b: &ArrayView2<F>) -> Result<A
 }
 
 /// Compute outer product gradient
+#[allow(dead_code)]
 fn compute_outer_product_gradient<F: Float>(
     a: &ndarray::ArrayViewD<F>,
     b: &ndarray::ArrayViewD<F>,
@@ -816,45 +824,48 @@ fn compute_outer_product_gradient<F: Float>(
 // Public API functions
 
 /// Solve Sylvester equation AX + XB = C
+#[allow(dead_code)]
 pub fn solve_sylvester<'g, F: Float + ndarray::ScalarOperand>(
     a: &Tensor<'g, F>,
     b: &Tensor<'g, F>,
     c: &Tensor<'g, F>,
 ) -> Tensor<'g, F> {
     let g = a.graph();
-    let c_shape = crate::tensor_ops::shape(c);
+    let cshape = crate::tensor_ops::shape(c);
 
     Tensor::builder(g)
         .append_input(a, false)
         .append_input(b, false)
         .append_input(c, false)
-        .set_shape(&c_shape)
+        .setshape(&cshape)
         .build(SylvesterSolveOp)
 }
 
 /// Solve Lyapunov equation AX + XA^T = Q
+#[allow(dead_code)]
 pub fn solve_lyapunov<'g, F: Float + ndarray::ScalarOperand>(
     a: &Tensor<'g, F>,
     q: &Tensor<'g, F>,
 ) -> Tensor<'g, F> {
     let g = a.graph();
-    let q_shape = crate::tensor_ops::shape(q);
+    let qshape = crate::tensor_ops::shape(q);
 
     Tensor::builder(g)
         .append_input(a, false)
         .append_input(q, false)
-        .set_shape(&q_shape)
+        .setshape(&qshape)
         .build(LyapunovSolveOp)
 }
 
 /// Solve linear system AX = B using Cholesky decomposition for positive definite A
+#[allow(dead_code)]
 pub fn cholesky_solve<'g, F: Float>(a: &Tensor<'g, F>, b: &Tensor<'g, F>) -> Tensor<'g, F> {
     let g = a.graph();
-    let b_shape = crate::tensor_ops::shape(b);
+    let bshape = crate::tensor_ops::shape(b);
 
     Tensor::builder(g)
         .append_input(a, false)
         .append_input(b, false)
-        .set_shape(&b_shape)
+        .setshape(&bshape)
         .build(CholeskySolveOp)
 }

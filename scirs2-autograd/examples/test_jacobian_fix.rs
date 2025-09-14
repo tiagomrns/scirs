@@ -2,6 +2,7 @@ use ag::prelude::*;
 use ag::tensor_ops::*;
 use scirs2_autograd as ag;
 
+#[allow(dead_code)]
 fn main() {
     let mut env = ag::VariableEnvironment::new();
 

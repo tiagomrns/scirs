@@ -8,6 +8,7 @@ use scirs2_vision::preprocessing::{
     nlm_denoise_color, nlm_denoise_parallel,
 };
 
+#[allow(dead_code)]
 fn main() -> Result<()> {
     // Load input image
     let img_path = "examples/input/input.jpg";
@@ -25,6 +26,7 @@ fn main() -> Result<()> {
     Ok(())
 }
 
+#[allow(dead_code)]
 fn demonstrate_nlm_denoising(img: &DynamicImage) -> Result<()> {
     println!("\n1. Non-Local Means Denoising:");
 
@@ -51,7 +53,7 @@ fn demonstrate_nlm_denoising(img: &DynamicImage) -> Result<()> {
     let h_values = vec![0.05, 0.1, 0.15];
 
     for h in h_values {
-        println!("    Denoising with h={}", h);
+        println!("    Denoising with h={h}");
         let denoised = nlm_denoise(&array, h, 7, 21)?;
 
         // Convert back to image
@@ -63,9 +65,9 @@ fn demonstrate_nlm_denoising(img: &DynamicImage) -> Result<()> {
             }
         }
 
-        let output_path = format!("examples/output/nlm_denoised_h{}.png", h);
+        let output_path = format!("examples/output/nlm_denoised_h{h}.png");
         output_img.save(&output_path).expect("Failed to save image");
-        println!("      Saved: {}", output_path);
+        println!("      Saved: {output_path}");
     }
 
     // Test parallel version
@@ -78,10 +80,7 @@ fn demonstrate_nlm_denoising(img: &DynamicImage) -> Result<()> {
     let denoised_parallel = nlm_denoise_parallel(&array, 0.1, 7, 21)?;
     let parallel_time = start.elapsed();
 
-    println!(
-        "    Serial time: {:?}, Parallel time: {:?}",
-        serial_time, parallel_time
-    );
+    println!("    Serial time: {serial_time:?}, Parallel time: {parallel_time:?}");
 
     // Save parallel result
     let mut parallel_output = ImageBuffer::new(width, height);
@@ -133,6 +132,7 @@ fn demonstrate_nlm_denoising(img: &DynamicImage) -> Result<()> {
     Ok(())
 }
 
+#[allow(dead_code)]
 fn demonstrate_gamma_correction(img: &DynamicImage) -> Result<()> {
     println!("\n2. Gamma Correction Examples:");
 
@@ -142,7 +142,7 @@ fn demonstrate_gamma_correction(img: &DynamicImage) -> Result<()> {
 
     for gamma in gamma_values {
         let corrected = gamma_correction(img, gamma)?;
-        let output_path = format!("examples/output/gamma_{}.png", gamma);
+        let output_path = format!("examples/output/gamma_{gamma}.png");
 
         match corrected {
             DynamicImage::ImageLuma8(gray) => gray.save(&output_path),
@@ -151,7 +151,7 @@ fn demonstrate_gamma_correction(img: &DynamicImage) -> Result<()> {
         }
         .expect("Failed to save gamma corrected image");
 
-        println!("    Gamma {}: saved to {}", gamma, output_path);
+        println!("    Gamma {gamma}: saved to {output_path}");
     }
 
     // Auto gamma correction
@@ -160,7 +160,7 @@ fn demonstrate_gamma_correction(img: &DynamicImage) -> Result<()> {
 
     for target in target_brightnesses {
         let auto_corrected = auto_gamma_correction(img, target)?;
-        let output_path = format!("examples/output/auto_gamma_target_{}.png", target);
+        let output_path = format!("examples/output/auto_gamma_target_{target}.png");
 
         match auto_corrected {
             DynamicImage::ImageLuma8(gray) => gray.save(&output_path),
@@ -169,7 +169,7 @@ fn demonstrate_gamma_correction(img: &DynamicImage) -> Result<()> {
         }
         .expect("Failed to save auto gamma corrected image");
 
-        println!("    Target brightness {}: saved to {}", target, output_path);
+        println!("    Target brightness {target}: saved to {output_path}");
     }
 
     // Adaptive gamma correction
@@ -178,7 +178,7 @@ fn demonstrate_gamma_correction(img: &DynamicImage) -> Result<()> {
 
     for window_size in window_sizes {
         let adaptive = adaptive_gamma_correction(img, window_size, (0.5, 2.0))?;
-        let output_path = format!("examples/output/adaptive_gamma_window_{}.png", window_size);
+        let output_path = format!("examples/output/adaptive_gamma_window_{window_size}.png");
 
         match adaptive {
             DynamicImage::ImageLuma8(gray) => gray.save(&output_path),
@@ -187,18 +187,19 @@ fn demonstrate_gamma_correction(img: &DynamicImage) -> Result<()> {
         }
         .expect("Failed to save adaptive gamma corrected image");
 
-        println!("    Window size {}: saved to {}", window_size, output_path);
+        println!("    Window size {window_size}: saved to {output_path}");
     }
 
     Ok(())
 }
 
 /// Add Gaussian noise to an image
-fn add_gaussian_noise(img: &DynamicImage, noise_level: f32) -> DynamicImage {
+#[allow(dead_code)]
+fn add_gaussian_noise(img: &DynamicImage, noiselevel: f32) -> DynamicImage {
     use rand_distr::{Distribution, Normal};
 
     let mut rng = rand::rng();
-    let normal = Normal::new(0.0, noise_level).unwrap();
+    let normal = Normal::new(0.0, noiselevel).unwrap();
 
     match img {
         DynamicImage::ImageLuma8(gray) => {

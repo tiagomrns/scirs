@@ -98,6 +98,13 @@ This guide helps you choose the right clustering algorithm for your data and use
 - **Time complexity**: O(n)
 - **Example use case**: Large-scale customer data, streaming applications
 
+#### Leader Algorithm
+- **When to use**: Real-time/streaming data, need fast single-pass clustering
+- **Pros**: Very fast O(n·k), single pass, supports hierarchical structure
+- **Cons**: Order-dependent results, threshold parameter sensitive
+- **Time complexity**: O(n·k) where k=number of leaders
+- **Example use case**: Real-time anomaly detection, streaming sensor data
+
 ## Decision Tree
 
 ```
@@ -117,7 +124,8 @@ Start
 │  │     ├─ Need hierarchy? → Agglomerative
 │  │     ├─ Density-based? → DBSCAN/HDBSCAN
 │  │     ├─ Need exemplars? → Affinity Propagation
-│  │     └─ Very large data? → BIRCH
+│  │     ├─ Very large data? → BIRCH
+│  │     └─ Streaming/real-time? → Leader Algorithm
 ```
 
 ## Performance Comparison
@@ -134,6 +142,7 @@ Start
 | Spectral | O(n³) | O(n²) | Poor | Fair | Any |
 | Affinity Prop | O(n²i) | O(n²) | Poor | Good | Any |
 | BIRCH | O(n) | O(B) | Excellent | Fair | Spherical |
+| Leader | O(nk) | O(k) | Excellent | Fair | Spherical |
 
 *With spatial index, otherwise O(n²)
 
@@ -157,6 +166,10 @@ Start
 ### Spectral Clustering
 - **n_clusters**: Like K-means
 - **affinity**: 'rbf' for most cases, 'nearest_neighbors' for large datasets
+
+### Leader Algorithm
+- **threshold**: Start with average pairwise distance / 4, adjust based on desired granularity
+- **distance metric**: Euclidean for most cases, Manhattan for high-dimensional sparse data
 
 ## Code Examples
 
@@ -201,6 +214,29 @@ if n_samples > 100_000 {
 }
 ```
 
+### Streaming/Real-time clustering
+
+```rust
+use scirs2_cluster::leader::{LeaderClustering, leader_clustering};
+
+// For streaming data where you can't hold all data in memory
+let mut leader = LeaderClustering::new(0.5)?;
+
+// Process data as it arrives
+for chunk in data_stream {
+    leader.fit(&chunk)?;
+}
+
+// Get current clusters
+let leaders = leader.get_leaders();
+let n_clusters = leader.n_clusters();
+
+// For hierarchical leader clustering
+use scirs2_cluster::leader::LeaderTree;
+let thresholds = vec![2.0, 1.0, 0.5]; // Multiple granularity levels
+let tree = LeaderTree::build_hierarchical(data.view(), &thresholds)?;
+```
+
 ## Best Practices
 
 1. **Always visualize your data first** if possible (2D/3D projection)
@@ -220,3 +256,4 @@ if n_samples > 100_000 {
 - Spectral: Ng et al. (2001). "On spectral clustering: Analysis and an algorithm"
 - Affinity Propagation: Frey & Dueck (2007). "Clustering by passing messages between data points"
 - BIRCH: Zhang et al. (1996). "BIRCH: An efficient data clustering method for very large databases"
+- Leader Algorithm: Hartigan (1975). "Clustering Algorithms", Chapter 3

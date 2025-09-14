@@ -87,6 +87,7 @@ impl std::fmt::Display for QuantizationStabilityReport {
 /// # Returns
 ///
 /// * A detailed stability report with error metrics and suggestions
+#[allow(dead_code)]
 pub fn analyze_quantization_stability<F>(
     matrix: &ArrayView2<F>,
     bits: u8,
@@ -200,8 +201,7 @@ where
 
     if bits < recommended_min_bits {
         suggestions.push(format!(
-            "Increase bit width to at least {} bits to better capture the dynamic range",
-            recommended_min_bits
+            "Increase bit width to at least {recommended_min_bits} bits to better capture the dynamic range"
         ));
     }
 
@@ -288,6 +288,7 @@ where
 /// # Returns
 ///
 /// * Ok(()) if the configuration is valid, or an error with suggestions
+#[allow(dead_code)]
 pub fn validate_quantization_config<F>(
     matrix: &ArrayView2<F>,
     bits: u8,
@@ -343,6 +344,7 @@ where
 /// # Returns
 ///
 /// * Recommended bit width and quantization method
+#[allow(dead_code)]
 pub fn recommend_quantization_params<F>(
     matrix: &ArrayView2<F>,
     target_sqnr_db: Option<f32>,
@@ -440,6 +442,7 @@ where
 /// Estimate the variability across columns in a matrix
 ///
 /// This helps determine if per-channel quantization would be beneficial
+#[allow(dead_code)]
 fn estimate_column_variability(matrix: &Array2<f32>) -> f32 {
     let (_, cols) = matrix.dim();
 
@@ -469,6 +472,7 @@ fn estimate_column_variability(matrix: &Array2<f32>) -> f32 {
 }
 
 /// Count the number of values in a matrix that are close to zero
+#[allow(dead_code)]
 fn count_near_zero_values(matrix: &Array2<f32>, threshold: f32) -> usize {
     let mut count = 0;
 
@@ -545,10 +549,10 @@ mod tests {
         // Test with different matrices
 
         // Symmetric matrix with moderate range
-        let symmetric_matrix = array![[1.0f32, -1.0, 2.0, -2.0], [3.0, -3.0, 4.0, -4.0]];
+        let symmetricmatrix = array![[1.0f32, -1.0, 2.0, -2.0], [3.0, -3.0, 4.0, -4.0]];
 
         let (_sym_bits, sym_method) = recommend_quantization_params(
-            &symmetric_matrix.view(),
+            &symmetricmatrix.view(),
             Some(25.0), // Lower target SQNR for the test
         )
         .unwrap();
@@ -561,10 +565,10 @@ mod tests {
         );
 
         // Asymmetric matrix with positive values
-        let asymmetric_matrix = array![[10.0f32, 11.0, 12.0, 13.0], [14.0, 15.0, 16.0, 17.0]];
+        let asymmetricmatrix = array![[10.0f32, 11.0, 12.0, 13.0], [14.0, 15.0, 16.0, 17.0]];
 
         let (_asym_bits, asym_method) = recommend_quantization_params(
-            &asymmetric_matrix.view(),
+            &asymmetricmatrix.view(),
             Some(25.0), // Lower target SQNR for the test
         )
         .unwrap();
@@ -577,10 +581,10 @@ mod tests {
         );
 
         // Test with high column variability
-        let variable_columns_matrix = array![[0.1f32, 10.0, 100.0], [0.2, 20.0, 200.0]];
+        let variable_columnsmatrix = array![[0.1f32, 10.0, 100.0], [0.2, 20.0, 200.0]];
 
         let (_var_bits, var_method) = recommend_quantization_params(
-            &variable_columns_matrix.view(),
+            &variable_columnsmatrix.view(),
             Some(25.0), // Lower target SQNR for the test
         )
         .unwrap();

@@ -3,11 +3,12 @@
 //! This example demonstrates the high-performance batch type conversion capabilities
 //! in SciRS2 Core, including SIMD acceleration and parallel processing.
 
-use num_complex::Complex64;
+use num__complex::Complex64;
 use scirs2_core::batch_conversions::{utils::*, BatchConversionConfig, BatchConverter};
 use scirs2_core::error::CoreResult;
 use std::time::Instant;
 
+#[allow(dead_code)]
 fn main() -> CoreResult<()> {
     println!("=== SciRS2 Core Batch Type Conversions Example ===\n");
 
@@ -15,7 +16,7 @@ fn main() -> CoreResult<()> {
     demo_basic_conversion()?;
 
     // Error handling in batch conversions
-    demo_error_handling()?;
+    demoerror_handling()?;
 
     // SIMD-accelerated conversions
     demo_simd_conversions()?;
@@ -41,6 +42,7 @@ fn main() -> CoreResult<()> {
 }
 
 /// Demonstrate basic batch type conversions
+#[allow(dead_code)]
 fn demo_basic_conversion() -> CoreResult<()> {
     println!("1. Basic Batch Type Conversions");
     println!("================================");
@@ -74,7 +76,8 @@ fn demo_basic_conversion() -> CoreResult<()> {
 }
 
 /// Demonstrate error handling in batch conversions
-fn demo_error_handling() -> CoreResult<()> {
+#[allow(dead_code)]
+fn demoerror_handling() -> CoreResult<()> {
     println!("2. Error Handling in Batch Conversions");
     println!("======================================");
 
@@ -91,7 +94,7 @@ fn demo_error_handling() -> CoreResult<()> {
     ];
 
     // Convert with error reporting
-    let (converted, errors) = converter.convert_slice_with_errors::<f64, f32>(&problematic_data);
+    let (converted, errors) = converter.convert_slice_witherrors::<f64, f32>(&problematic_data);
 
     println!("Input data: {} elements", problematic_data.len());
     println!("Successfully converted: {} elements", converted.len());
@@ -108,6 +111,7 @@ fn demo_error_handling() -> CoreResult<()> {
 }
 
 /// Demonstrate SIMD-accelerated conversions
+#[allow(dead_code)]
 fn demo_simd_conversions() -> CoreResult<()> {
     println!("3. SIMD-Accelerated Conversions");
     println!("===============================");
@@ -167,6 +171,7 @@ fn demo_simd_conversions() -> CoreResult<()> {
 }
 
 /// Demonstrate parallel processing for large datasets
+#[allow(dead_code)]
 fn demo_parallel_conversions() -> CoreResult<()> {
     println!("4. Parallel Processing for Large Datasets");
     println!("=========================================");
@@ -219,6 +224,7 @@ fn demo_parallel_conversions() -> CoreResult<()> {
 }
 
 /// Demonstrate complex number conversions
+#[allow(dead_code)]
 fn demo_complex_conversions() -> CoreResult<()> {
     println!("5. Complex Number Conversions");
     println!("=============================");
@@ -254,6 +260,7 @@ fn demo_complex_conversions() -> CoreResult<()> {
 }
 
 /// Demonstrate configuration options
+#[allow(dead_code)]
 fn demo_configuration_options() -> CoreResult<()> {
     println!("6. Configuration Options");
     println!("=======================");
@@ -287,6 +294,7 @@ fn demo_configuration_options() -> CoreResult<()> {
 }
 
 /// Demonstrate performance benchmarking
+#[allow(dead_code)]
 fn demo_performance_benchmarks() -> CoreResult<()> {
     println!("7. Performance Benchmarking");
     println!("===========================");
@@ -314,6 +322,7 @@ fn demo_performance_benchmarks() -> CoreResult<()> {
 
 /// Demonstrate integration with ndarray
 #[cfg(feature = "array")]
+#[allow(dead_code)]
 fn demo_ndarray_integration() -> CoreResult<()> {
     println!("8. Integration with ndarray");
     println!("===========================");
@@ -358,6 +367,7 @@ fn demo_ndarray_integration() -> CoreResult<()> {
 }
 
 #[cfg(not(feature = "array"))]
+#[allow(dead_code)]
 fn demo_ndarray_integration() -> CoreResult<()> {
     println!("8. Integration with ndarray");
     println!("===========================");

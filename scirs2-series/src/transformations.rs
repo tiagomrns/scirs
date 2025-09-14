@@ -99,11 +99,12 @@ pub enum StationarityTestType {
 ///
 /// ```
 /// use ndarray::Array1;
-/// use scirs2_series::transformations::box_cox_transform;
+/// use scirs2__series::transformations::box_cox_transform;
 ///
 /// let ts = Array1::from_vec(vec![1.0, 2.0, 3.0, 4.0, 5.0]);
 /// let (transformed, params) = box_cox_transform(&ts, Some(0.5)).unwrap();
 /// ```
+#[allow(dead_code)]
 pub fn box_cox_transform<F, S>(
     ts: &ArrayBase<S, Ix1>,
     lambda: Option<F>,
@@ -159,6 +160,7 @@ where
 }
 
 /// Estimate optimal Box-Cox lambda parameter using maximum likelihood
+#[allow(dead_code)]
 fn estimate_box_cox_lambda<F>(ts: &Array1<F>) -> Result<F>
 where
     F: Float + FromPrimitive + Debug + Display,
@@ -217,6 +219,7 @@ where
 /// # Returns
 ///
 /// Original time series (approximately)
+#[allow(dead_code)]
 pub fn inverse_box_cox_transform<F, S>(
     transformed_ts: &ArrayBase<S, Ix1>,
     params: &BoxCoxTransform<F>,
@@ -261,12 +264,13 @@ where
 ///
 /// ```
 /// use ndarray::Array1;
-/// use scirs2_series::transformations::difference_transform;
+/// use scirs2__series::transformations::difference_transform;
 ///
 /// let ts = Array1::from_vec(vec![1.0, 3.0, 6.0, 10.0, 15.0]);
 /// let (differenced, params) = difference_transform(&ts, 1, None).unwrap();
 /// // Result: [2.0, 3.0, 4.0, 5.0] (first differences)
 /// ```
+#[allow(dead_code)]
 pub fn difference_transform<F, S>(
     ts: &ArrayBase<S, Ix1>,
     order: usize,
@@ -289,27 +293,27 @@ where
     let mut result = ts.to_owned();
 
     // Apply seasonal differencing first if specified
-    if let Some(lag) = seasonal_lag {
-        if lag == 0 {
+    if let Some(_lag) = seasonal_lag {
+        if _lag == 0 {
             return Err(TimeSeriesError::InvalidInput(
-                "Seasonal lag must be positive".to_string(),
+                "Seasonal _lag must be positive".to_string(),
             ));
         }
 
-        if result.len() <= lag {
+        if result.len() <= _lag {
             return Err(TimeSeriesError::InsufficientData {
                 message: format!(
-                    "Time series length {} is not sufficient for seasonal lag {}",
+                    "Time series length {} is not sufficient for seasonal _lag {}",
                     result.len(),
-                    lag
+                    _lag
                 ),
-                required: lag + 1,
+                required: _lag + 1,
                 actual: result.len(),
             });
         }
 
         let seasonal_diff =
-            Array1::from_shape_fn(result.len() - lag, |i| result[i + lag] - result[i]);
+            Array1::from_shape_fn(result.len() - _lag, |i| result[i + _lag] - result[i]);
         result = seasonal_diff;
     }
 
@@ -345,6 +349,7 @@ where
 /// # Returns
 ///
 /// Integrated (original level) time series
+#[allow(dead_code)]
 pub fn integrate_transform<F, S>(
     differenced_ts: &ArrayBase<S, Ix1>,
     params: &DifferencingTransform,
@@ -364,7 +369,7 @@ where
         let init_idx = params.order - 1;
         if init_idx >= initial_values.len() {
             return Err(TimeSeriesError::InvalidInput(
-                "Insufficient initial values for integration".to_string(),
+                "Insufficient initial _values for integration".to_string(),
             ));
         }
         integrated[0] = initial_values[init_idx];
@@ -380,11 +385,11 @@ where
     if let Some(lag) = params.seasonal_lag {
         let mut seasonal_integrated = Array1::zeros(result.len() + lag);
 
-        // Set initial seasonal values
+        // Set initial seasonal _values
         for i in 0..lag {
             if i >= initial_values.len() {
                 return Err(TimeSeriesError::InvalidInput(
-                    "Insufficient initial values for seasonal integration".to_string(),
+                    "Insufficient initial _values for seasonal integration".to_string(),
                 ));
             }
             seasonal_integrated[i] = initial_values[i];
@@ -415,11 +420,12 @@ where
 ///
 /// ```
 /// use ndarray::Array1;
-/// use scirs2_series::transformations::{normalize_transform, NormalizationMethod};
+/// use scirs2__series::transformations::{normalize_transform, NormalizationMethod};
 ///
 /// let ts = Array1::from_vec(vec![1.0, 2.0, 3.0, 4.0, 5.0]);
 /// let (normalized, params) = normalize_transform(&ts, NormalizationMethod::ZScore).unwrap();
 /// ```
+#[allow(dead_code)]
 pub fn normalize_transform<F, S>(
     ts: &ArrayBase<S, Ix1>,
     method: NormalizationMethod,
@@ -538,6 +544,7 @@ where
 /// # Returns
 ///
 /// Original scale time series
+#[allow(dead_code)]
 pub fn inverse_normalize_transform<F, S>(
     normalized_ts: &ArrayBase<S, Ix1>,
     params: &NormalizationParams<F>,
@@ -591,6 +598,7 @@ where
 /// # Returns
 ///
 /// Stationarity test results
+#[allow(dead_code)]
 pub fn adf_test<F, S>(
     ts: &ArrayBase<S, Ix1>,
     max_lags: Option<usize>,
@@ -609,8 +617,8 @@ where
         });
     }
 
-    // Determine optimal number of lags using information criteria
-    let lags = max_lags
+    // Determine optimal number of _lags using information criteria
+    let _lags = max_lags
         .unwrap_or_else(|| {
             // Rule of thumb: 12 * (n/100)^(1/4)
             let lag_estimate = 12.0 * (n as f64 / 100.0).powf(0.25);
@@ -622,12 +630,12 @@ where
     let y_diff = Array1::from_shape_fn(n - 1, |i| ts[i + 1] - ts[i]);
     let y_lag = Array1::from_shape_fn(n - 1, |i| ts[i]);
 
-    let start_idx = lags;
+    let start_idx = _lags;
     let regression_length = n - 1 - start_idx;
 
     if regression_length < 5 {
         return Err(TimeSeriesError::InsufficientData {
-            message: "Insufficient data for ADF regression after accounting for lags".to_string(),
+            message: "Insufficient data for ADF regression after accounting for _lags".to_string(),
             required: start_idx + 5,
             actual: n,
         });
@@ -641,7 +649,7 @@ where
     if regression_type.contains('t') {
         n_regressors += 1;
     } // trend
-    n_regressors += lags; // lagged differences
+    n_regressors += _lags; // lagged differences
 
     let mut x_matrix = Array2::zeros((regression_length, n_regressors));
     let mut y_vector = Array1::zeros(regression_length);
@@ -672,7 +680,7 @@ where
     col_idx += 1;
 
     // Lagged difference terms
-    for lag in 1..=lags {
+    for lag in 1..=_lags {
         for i in 0..regression_length {
             let diff_idx = start_idx + i - lag;
             x_matrix[[i, col_idx]] = y_diff[diff_idx];
@@ -725,6 +733,7 @@ where
 }
 
 /// Simple OLS solver for small matrices
+#[allow(dead_code)]
 fn solve_ols_simple<F>(xtx: &Array2<F>, xty: &Array1<F>) -> Result<Array1<F>>
 where
     F: Float + FromPrimitive + Debug + Display + Clone,
@@ -796,6 +805,7 @@ where
 }
 
 /// Get diagonal element of pseudo-inverse (simplified)
+#[allow(dead_code)]
 fn pseudo_inverse_diag<F>(matrix: &Array2<F>, idx: usize) -> Result<F>
 where
     F: Float + FromPrimitive + Debug,
@@ -810,12 +820,13 @@ where
 }
 
 /// Get ADF critical values (approximated)
-fn get_adf_critical_values<F>(regression_type: &str) -> Vec<(F, F)>
+#[allow(dead_code)]
+fn get_adf_critical_values<F>(_regressiontype: &str) -> Vec<(F, F)>
 where
     F: Float + FromPrimitive,
 {
     // Simplified critical values - in practice these would be more sophisticated
-    match regression_type {
+    match _regressiontype {
         "nc" => vec![
             (F::from(0.01).unwrap(), F::from(-2.58).unwrap()),
             (F::from(0.05).unwrap(), F::from(-1.95).unwrap()),
@@ -840,16 +851,17 @@ where
 }
 
 /// Approximate p-value for ADF test (simplified)
-fn approximate_adf_p_value<F>(t_stat: F, _regression_type: &str) -> F
+#[allow(dead_code)]
+fn approximate_adf_p_value<F>(_t_stat: F, test_type: &str) -> F
 where
     F: Float + FromPrimitive,
 {
     // Very simplified p-value approximation
-    if t_stat < F::from(-3.0).unwrap() {
+    if _t_stat < F::from(-3.0).unwrap() {
         F::from(0.01).unwrap()
-    } else if t_stat < F::from(-2.5).unwrap() {
+    } else if _t_stat < F::from(-2.5).unwrap() {
         F::from(0.05).unwrap()
-    } else if t_stat < F::from(-2.0).unwrap() {
+    } else if _t_stat < F::from(-2.0).unwrap() {
         F::from(0.10).unwrap()
     } else {
         F::from(0.20).unwrap()
@@ -870,12 +882,13 @@ where
 /// # Returns
 ///
 /// Stationarity test results
-pub fn kpss_test<F, S>(ts: &ArrayBase<S, Ix1>, regression_type: &str) -> Result<StationarityTest<F>>
+#[allow(dead_code)]
+pub fn kpss_test<F, S>(_ts: &ArrayBase<S, Ix1>, regressiontype: &str) -> Result<StationarityTest<F>>
 where
     S: Data<Elem = F>,
     F: Float + FromPrimitive + Debug + Display + Clone,
 {
-    let n = ts.len();
+    let n = _ts.len();
     if n < 10 {
         return Err(TimeSeriesError::InsufficientData {
             message: "KPSS test requires at least 10 observations".to_string(),
@@ -884,17 +897,17 @@ where
         });
     }
 
-    // Determine regression type
-    let include_trend = regression_type.contains('t');
+    // Determine regression _type
+    let include_trend = regressiontype.contains('t');
 
     // Detrend the series
     let detrended = if include_trend {
         // Remove linear trend
-        detrend_linear(ts)?
+        detrend_linear(_ts)?
     } else {
         // Remove mean (level)
-        let mean = ts.sum() / F::from(n).unwrap();
-        ts.mapv(|x| x - mean)
+        let mean = _ts.sum() / F::from(n).unwrap();
+        _ts.mapv(|x| x - mean)
     };
 
     // Calculate partial sums
@@ -932,6 +945,7 @@ where
 }
 
 /// Remove linear trend from time series
+#[allow(dead_code)]
 fn detrend_linear<F, S>(ts: &ArrayBase<S, Ix1>) -> Result<Array1<F>>
 where
     S: Data<Elem = F>,
@@ -977,6 +991,7 @@ where
 }
 
 /// Estimate long-run variance using Newey-West estimator
+#[allow(dead_code)]
 fn estimate_long_run_variance<F>(residuals: &Array1<F>) -> Result<F>
 where
     F: Float + FromPrimitive + Debug,
@@ -1006,11 +1021,12 @@ where
 }
 
 /// Get KPSS critical values
-fn get_kpss_critical_values<F>(include_trend: bool) -> Vec<(F, F)>
+#[allow(dead_code)]
+fn get_kpss_critical_values<F>(_includetrend: bool) -> Vec<(F, F)>
 where
     F: Float + FromPrimitive,
 {
-    if include_trend {
+    if _includetrend {
         vec![
             (F::from(0.01).unwrap(), F::from(0.216).unwrap()),
             (F::from(0.05).unwrap(), F::from(0.146).unwrap()),
@@ -1026,17 +1042,18 @@ where
 }
 
 /// Approximate p-value for KPSS test
-fn approximate_kpss_p_value<F>(lm_stat: F, include_trend: bool) -> F
+#[allow(dead_code)]
+fn approximate_kpss_p_value<F>(_lm_stat: F, includetrend: bool) -> F
 where
     F: Float + FromPrimitive,
 {
-    let critical_vals = get_kpss_critical_values::<F>(include_trend);
+    let critical_vals = get_kpss_critical_values::<F>(includetrend);
 
-    if lm_stat > critical_vals[0].1 {
+    if _lm_stat > critical_vals[0].1 {
         F::from(0.01).unwrap()
-    } else if lm_stat > critical_vals[1].1 {
+    } else if _lm_stat > critical_vals[1].1 {
         F::from(0.05).unwrap()
-    } else if lm_stat > critical_vals[2].1 {
+    } else if _lm_stat > critical_vals[2].1 {
         F::from(0.10).unwrap()
     } else {
         F::from(0.20).unwrap()

@@ -1,10 +1,11 @@
-//! Complex-valued wavelets (Morlet, Paul, etc.)
+// Complex-valued wavelets (Morlet, Paul, etc.)
 
 use super::utils::factorial;
 use crate::error::{SignalError, SignalResult};
 use num_complex::Complex64;
 use std::f64::consts::PI;
 
+#[allow(unused_imports)]
 /// Generate a Morlet wavelet
 ///
 /// The standard Morlet wavelet is defined as a complex exponential modulated by a Gaussian.
@@ -27,6 +28,7 @@ use std::f64::consts::PI;
 /// // Generate a Morlet wavelet with 100 points, central frequency 5.0, and scaling 1.0
 /// let wavelet = morlet(100, 5.0, 1.0).unwrap();
 /// ```
+#[allow(dead_code)]
 pub fn morlet(points: usize, w: f64, s: f64) -> SignalResult<Vec<Complex64>> {
     if points == 0 {
         return Err(SignalError::ValueError(
@@ -88,6 +90,7 @@ pub fn morlet(points: usize, w: f64, s: f64) -> SignalResult<Vec<Complex64>> {
 /// // bandwidth 1.0, symmetry 0.0 (symmetric), and scaling 1.0
 /// let wavelet = complex_morlet(100, 5.0, 1.0, 0.0, 1.0).unwrap();
 /// ```
+#[allow(dead_code)]
 pub fn complex_morlet(
     points: usize,
     center_frequency: f64,
@@ -175,6 +178,7 @@ pub fn complex_morlet(
 /// // Generate a Paul wavelet with 100 points, order 4, and scaling 1.0
 /// let wavelet = paul(100, 4, 1.0).unwrap();
 /// ```
+#[allow(dead_code)]
 pub fn paul(points: usize, order: usize, scale: f64) -> SignalResult<Vec<Complex64>> {
     if points == 0 {
         return Err(SignalError::ValueError(
@@ -247,6 +251,7 @@ pub fn paul(points: usize, order: usize, scale: f64) -> SignalResult<Vec<Complex
 /// // Generate a Complex Gaussian wavelet with 100 points, order 1, and scaling 1.0
 /// let wavelet = complex_gaussian(100, 1, 1.0).unwrap();
 /// ```
+#[allow(dead_code)]
 pub fn complex_gaussian(points: usize, order: usize, scale: f64) -> SignalResult<Vec<Complex64>> {
     if points == 0 {
         return Err(SignalError::ValueError(
@@ -333,6 +338,7 @@ pub fn complex_gaussian(points: usize, order: usize, scale: f64) -> SignalResult
 /// // Generate a Shannon wavelet with 100 points, center frequency 1.0, bandwidth 0.5, and scaling 1.0
 /// let wavelet = shannon(100, 1.0, 0.5, 1.0).unwrap();
 /// ```
+#[allow(dead_code)]
 pub fn shannon(
     points: usize,
     center_frequency: f64,
@@ -364,7 +370,7 @@ pub fn shannon(
     }
 
     // Normalization factor for unit energy
-    let norm = scale.sqrt().recip() * (2.0 * bandwidth).sqrt();
+    let norm = scale.sqrt().recip() * ((2.0 * bandwidth) as f64).sqrt();
 
     // Generate position vector
     let mid_point = (points - 1) as f64 / 2.0;
@@ -381,7 +387,7 @@ pub fn shannon(
             (bandwidth * PI * t).sin() / (bandwidth * PI * t)
         };
 
-        // Modulate by complex exponential to shift to the center frequency
+        // Modulate by complex exponential to shift to the center _frequency
         let modulation = Complex64::new(0.0, 2.0 * PI * center_frequency * t).exp();
 
         // Final wavelet value
@@ -420,6 +426,7 @@ pub fn shannon(
 /// // bandwidth 0.5, order 3, and scaling 1.0
 /// let wavelet = fbsp(100, 1.0, 0.5, 3, 1.0).unwrap();
 /// ```
+#[allow(dead_code)]
 pub fn fbsp(
     points: usize,
     center_frequency: f64,
@@ -469,7 +476,7 @@ pub fn fbsp(
         let t = (i as f64 - mid_point) / scale;
 
         // Compute the Fourier transform of a cardinal B-spline of order 'order'
-        // This is the frequency response of the B-spline
+        // This is the _frequency response of the B-spline
         let bspline_ft = |omega: f64| -> f64 {
             if omega.abs() < 1e-10 {
                 return 1.0; // Prevent division by zero
@@ -480,12 +487,12 @@ pub fn fbsp(
             sinc_term.powi(order as i32)
         };
 
-        // Calculate the B-spline wavelet in frequency domain
-        // We apply a frequency shift by the center frequency
+        // Calculate the B-spline wavelet in _frequency domain
+        // We apply a _frequency shift by the center _frequency
         let omega = 2.0 * PI * t * bandwidth;
         let bspline_value = bspline_ft(omega);
 
-        // Modulate by complex exponential to shift to the center frequency
+        // Modulate by complex exponential to shift to the center _frequency
         let modulation = Complex64::new(0.0, 2.0 * PI * center_frequency * t).exp();
 
         // Final wavelet value: B-spline modulated by complex exponential

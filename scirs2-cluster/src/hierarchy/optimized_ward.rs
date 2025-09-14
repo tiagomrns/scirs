@@ -144,6 +144,7 @@ impl<F: Float + FromPrimitive + ScalarOperand + 'static> WardCluster<F> {
 ///
 /// let linkage_matrix = optimized_ward_linkage(data.view(), Metric::Euclidean).unwrap();
 /// ```
+#[allow(dead_code)]
 pub fn optimized_ward_linkage<F>(
     data: ArrayView2<F>,
     _metric: Metric, // Ward's method always uses Euclidean distance
@@ -276,6 +277,7 @@ where
 /// # Returns
 ///
 /// * Distance from merged cluster (i∪j) to cluster k
+#[allow(dead_code)]
 pub fn lance_williams_ward_update<F: Float + FromPrimitive>(
     dist_ik: F,
     dist_jk: F,
@@ -314,6 +316,7 @@ pub fn lance_williams_ward_update<F: Float + FromPrimitive>(
 /// # Returns
 ///
 /// * Linkage matrix or an error if the dataset is too large
+#[allow(dead_code)]
 pub fn memory_efficient_ward_linkage<F>(
     data: ArrayView2<F>,
     max_memory_mb: usize,

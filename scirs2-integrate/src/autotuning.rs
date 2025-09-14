@@ -16,7 +16,7 @@
 //! # Examples
 //!
 //! ```
-//! use scirs2_integrate::autotuning::{HardwareDetector, AutoTuner, TuningProfile};
+//! use scirs2__integrate::autotuning::{HardwareDetector, AutoTuner, TuningProfile};
 //!
 //! // Detect hardware automatically
 //! let hardware = HardwareDetector::detect();
@@ -24,7 +24,7 @@
 //!
 //! // Create auto-tuner with detected hardware
 //! let tuner = AutoTuner::new(hardware);
-//! let profile = tuner.tune_for_problem_size(1000);
+//! let profile = tuner.tune_for_problemsize(1000);
 //! ```
 
 use crate::common::IntegrateFloat;
@@ -85,7 +85,7 @@ pub struct HardwareDetector;
 
 impl HardwareDetector {
     /// Detect hardware characteristics
-    pub fn detect() -> HardwareInfo {
+    pub fn detect(&self) -> HardwareInfo {
         // Use cached detection result
         static HARDWARE_INFO: OnceLock<HardwareInfo> = OnceLock::new();
 
@@ -242,9 +242,27 @@ impl HardwareDetector {
 
     /// Detect GPU information
     fn detect_gpu() -> Option<GpuInfo> {
-        // Placeholder for GPU detection
-        // In practice, would use CUDA, OpenCL, or other GPU APIs
-        None
+        // Use scirs2-core's GPU detection functionality
+        let detection_result = scirs2_core::gpu::backends::detect_gpu_backends();
+
+        // Find the first non-CPU device
+        detection_result
+            .devices
+            .into_iter()
+            .find(|device| device.backend != scirs2_core::gpu::GpuBackend::Cpu)
+            .map(|device| GpuInfo {
+                vendor: match device.backend {
+                    scirs2_core::gpu::GpuBackend::Cuda => "NVIDIA".to_string(),
+                    scirs2_core::gpu::GpuBackend::Rocm => "AMD".to_string(),
+                    scirs2_core::gpu::GpuBackend::Metal => "Apple".to_string(),
+                    scirs2_core::gpu::GpuBackend::OpenCL => "Unknown".to_string(),
+                    scirs2_core::gpu::GpuBackend::Wgpu => "WebGPU".to_string(),
+                    scirs2_core::gpu::GpuBackend::Cpu => "CPU".to_string(),
+                },
+                model: device.device_name,
+                memory_size: device.memory_bytes.unwrap_or(0) as usize,
+                compute_units: if device.supports_tensors { 1 } else { 0 }, // Simplified
+            })
     }
 }
 
@@ -285,43 +303,43 @@ impl AutoTuner {
     }
 
     /// Create auto-tuner with automatic hardware detection
-    pub fn auto() -> Self {
-        Self::new(HardwareDetector::detect())
+    pub fn auto(&self) -> Self {
+        Self::new(HardwareDetector.detect())
     }
 
     /// Tune parameters for specific problem size
-    pub fn tune_for_problem_size(&self, problem_size: usize) -> TuningProfile {
-        let cache_key = format!("size_{}", problem_size);
+    pub fn tune_for_problemsize(&self, problemsize: usize) -> TuningProfile {
+        let cache_key = format!("size_{problemsize}");
 
         if let Some(cached) = self.cache.get(&cache_key) {
             return cached.clone();
         }
 
-        self.compute_tuning_profile(problem_size)
+        self.compute_tuning_profile(problemsize)
     }
 
     /// Compute optimal tuning profile for given problem size
-    fn compute_tuning_profile(&self, problem_size: usize) -> TuningProfile {
+    fn compute_tuning_profile(&self, problemsize: usize) -> TuningProfile {
         // Determine optimal thread count
-        let num_threads = self.optimal_thread_count(problem_size);
+        let num_threads = self.optimal_thread_count(problemsize);
 
-        // Determine optimal block size based on cache
-        let block_size = self.optimal_block_size(problem_size);
+        // Determine optimal block _size based on cache
+        let block_size = self.optimal_block_size(problemsize);
 
-        // Determine chunk size for parallel distribution
-        let chunk_size = self.optimal_chunk_size(problem_size, num_threads);
+        // Determine chunk _size for parallel distribution
+        let chunk_size = Self::optimal_chunk_size(problemsize, num_threads);
 
         // Determine if SIMD should be used
-        let use_simd = !self.hardware.simd_features.is_empty() && problem_size >= 64;
+        let use_simd = !self.hardware.simd_features.is_empty() && problemsize >= 64;
 
-        // Determine memory pool size
-        let memory_pool_size = self.optimal_memory_pool_size(problem_size);
+        // Determine memory pool _size
+        let memory_pool_size = self.optimal_memory_pool_size(problemsize);
 
-        // Determine tolerances based on problem size
-        let (default_tolerance, max_iterations) = self.optimal_tolerances(problem_size);
+        // Determine tolerances based on problem _size
+        let (default_tolerance, max_iterations) = Self::optimal_tolerances(problemsize);
 
         // Determine GPU usage
-        let use_gpu = self.hardware.gpu_info.is_some() && problem_size >= 10000;
+        let use_gpu = self.hardware.gpu_info.is_some() && problemsize >= 10000;
 
         TuningProfile {
             num_threads,
@@ -336,30 +354,30 @@ impl AutoTuner {
     }
 
     /// Determine optimal thread count
-    fn optimal_thread_count(&self, problem_size: usize) -> usize {
+    fn optimal_thread_count(&self, problemsize: usize) -> usize {
         let max_threads = self.hardware.cpu_threads;
 
-        if problem_size < 1000 {
+        if problemsize < 1000 {
             // Small problems don't benefit from parallelization
             1
-        } else if problem_size < 10000 {
+        } else if problemsize < 10000 {
             // Medium problems use moderate parallelization
             (max_threads / 2).clamp(1, 4)
         } else {
             // Large problems can use all available threads
-            max_threads.min(problem_size / 1000)
+            max_threads.min(problemsize / 1000)
         }
     }
 
     /// Determine optimal block size for cache efficiency
-    fn optimal_block_size(&self, problem_size: usize) -> usize {
+    fn optimal_block_size(&self, problemsize: usize) -> usize {
         let l1_elements = self.hardware.l1_cache_size / 8; // Assume f64
         let l2_elements = self.hardware.l2_cache_size / 8;
 
-        if problem_size <= l1_elements {
+        if problemsize <= l1_elements {
             // Fits in L1 cache
-            problem_size
-        } else if problem_size <= l2_elements {
+            problemsize
+        } else if problemsize <= l2_elements {
             // Use L1-sized blocks
             l1_elements / 4
         } else {
@@ -369,31 +387,31 @@ impl AutoTuner {
     }
 
     /// Determine optimal chunk size for parallel distribution
-    fn optimal_chunk_size(&self, problem_size: usize, num_threads: usize) -> usize {
-        if num_threads <= 1 {
-            problem_size
+    fn optimal_chunk_size(_problemsize: usize, numthreads: usize) -> usize {
+        if numthreads <= 1 {
+            _problemsize
         } else {
             // Balance between parallelization overhead and load balancing
             let min_chunk = 100; // Minimum chunk to avoid excessive overhead
-            let ideal_chunk = problem_size / (num_threads * 4); // 4x oversubscription
+            let ideal_chunk = _problemsize / (numthreads * 4); // 4x oversubscription
             ideal_chunk.max(min_chunk)
         }
     }
 
     /// Determine optimal memory pool size
-    fn optimal_memory_pool_size(&self, problem_size: usize) -> usize {
-        // Use a fraction of available memory based on problem size
-        let base_size = problem_size * 8 * 4; // 4x problem size in bytes
+    fn optimal_memory_pool_size(&self, problemsize: usize) -> usize {
+        // Use a fraction of available memory based on problem _size
+        let base_size = problemsize * 8 * 4; // 4x problem _size in bytes
         let max_pool = self.hardware.memory_size / 8; // Use up to 1/8 of system memory
 
         base_size.min(max_pool).max(1024 * 1024) // At least 1MB
     }
 
     /// Determine optimal tolerances and iteration limits
-    fn optimal_tolerances(&self, problem_size: usize) -> (f64, usize) {
-        if problem_size < 1000 {
+    fn optimal_tolerances(_problemsize: usize) -> (f64, usize) {
+        if _problemsize < 1000 {
             (1e-12, 100) // High accuracy for small problems
-        } else if problem_size < 100000 {
+        } else if _problemsize < 100000 {
             (1e-10, 500) // Moderate accuracy for medium problems
         } else {
             (1e-8, 1000) // Lower accuracy for large problems
@@ -405,9 +423,9 @@ impl AutoTuner {
         &mut self,
         algorithm_name: &str,
         benchmark_fn: impl Fn(&TuningProfile) -> Duration,
-        problem_size: usize,
+        problemsize: usize,
     ) -> TuningProfile {
-        let base_profile = self.tune_for_problem_size(problem_size);
+        let base_profile = self.tune_for_problemsize(problemsize);
 
         // Try different parameter variations
         let mut best_profile = base_profile.clone();
@@ -418,7 +436,7 @@ impl AutoTuner {
             if threads <= self.hardware.cpu_threads {
                 let mut profile = base_profile.clone();
                 profile.num_threads = threads;
-                profile.chunk_size = self.optimal_chunk_size(problem_size, threads);
+                profile.chunk_size = Self::optimal_chunk_size(problemsize, threads);
 
                 let time = benchmark_fn(&profile);
                 if time < best_time {
@@ -432,7 +450,7 @@ impl AutoTuner {
         for &factor in &[0.5, 1.0, 2.0, 4.0] {
             let mut profile = best_profile.clone();
             profile.block_size = ((base_profile.block_size as f64) * factor) as usize;
-            profile.block_size = profile.block_size.max(32).min(problem_size);
+            profile.block_size = profile.block_size.max(32).min(problemsize);
 
             let time = benchmark_fn(&profile);
             if time < best_time {
@@ -442,7 +460,7 @@ impl AutoTuner {
         }
 
         // Cache the result
-        let cache_key = format!("{}_{}", algorithm_name, problem_size);
+        let cache_key = format!("{algorithm_name}_{problemsize}");
         self.cache.insert(cache_key, best_profile.clone());
 
         best_profile
@@ -459,14 +477,14 @@ pub struct AlgorithmTuner;
 
 impl AlgorithmTuner {
     /// Tune parameters for matrix operations
-    pub fn tune_matrix_operations(hardware: &HardwareInfo, matrix_size: usize) -> TuningProfile {
-        let tuner = AutoTuner::new(hardware.clone());
+    pub fn tune_matrix_operations(_hardware: &HardwareInfo, matrixsize: usize) -> TuningProfile {
+        let tuner = AutoTuner::new(_hardware.clone());
 
-        let mut profile = tuner.tune_for_problem_size(matrix_size * matrix_size);
+        let mut profile = tuner.tune_for_problemsize(matrixsize * matrixsize);
 
         // Matrix-specific adjustments
-        if matrix_size >= 1000 {
-            profile.block_size = 64; // Good block size for matrix multiplication
+        if matrixsize >= 1000 {
+            profile.block_size = 64; // Good block _size for matrix multiplication
             profile.use_simd = true;
         }
 
@@ -480,9 +498,9 @@ impl AlgorithmTuner {
         time_steps: usize,
     ) -> TuningProfile {
         let tuner = AutoTuner::new(hardware.clone());
-        let problem_size = system_size * time_steps;
+        let problemsize = system_size * time_steps;
 
-        let mut profile = tuner.tune_for_problem_size(problem_size);
+        let mut profile = tuner.tune_for_problemsize(problemsize);
 
         // ODE-specific adjustments
         if system_size > 100 {
@@ -502,7 +520,7 @@ impl AlgorithmTuner {
     ) -> TuningProfile {
         let tuner = AutoTuner::new(hardware.clone());
 
-        let mut profile = tuner.tune_for_problem_size(samples);
+        let mut profile = tuner.tune_for_problemsize(samples);
 
         // Monte Carlo specific adjustments
         profile.num_threads = hardware.cpu_threads; // MC benefits from all threads
@@ -522,7 +540,8 @@ mod tests {
 
     #[test]
     fn test_hardware_detection() {
-        let hardware = HardwareDetector::detect();
+        let detector = HardwareDetector;
+        let hardware = detector.detect();
 
         assert!(hardware.cpu_cores > 0);
         assert!(hardware.cpu_threads >= hardware.cpu_cores);
@@ -534,15 +553,16 @@ mod tests {
 
     #[test]
     fn test_auto_tuner() {
-        let hardware = HardwareDetector::detect();
+        let detector = HardwareDetector;
+        let hardware = detector.detect();
         let tuner = AutoTuner::new(hardware);
 
         // Test small problem
-        let small_profile = tuner.tune_for_problem_size(100);
+        let small_profile = tuner.tune_for_problemsize(100);
         assert_eq!(small_profile.num_threads, 1);
 
         // Test large problem
-        let large_profile = tuner.tune_for_problem_size(100000);
+        let large_profile = tuner.tune_for_problemsize(100000);
         assert!(large_profile.num_threads > 1);
         assert!(large_profile.block_size > 0);
         assert!(large_profile.chunk_size > 0);
@@ -550,7 +570,8 @@ mod tests {
 
     #[test]
     fn test_algorithm_specific_tuning() {
-        let hardware = HardwareDetector::detect();
+        let detector = HardwareDetector;
+        let hardware = detector.detect();
 
         // Test matrix operations tuning
         let matrix_profile = AlgorithmTuner::tune_matrix_operations(&hardware, 1000);

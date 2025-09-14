@@ -13,6 +13,7 @@ use crate::error::{FFTError, FFTResult};
 use crate::plan_cache::get_global_cache;
 
 /// Execute FFT on strided data with optimal memory access
+#[allow(dead_code)]
 pub fn fft_strided<S, D>(
     input: &ArrayBase<S, D>,
     axis: usize,
@@ -46,6 +47,7 @@ where
 }
 
 /// Process data with arbitrary striding
+#[allow(dead_code)]
 fn process_strided_fft<S, D>(
     input: &ArrayBase<S, D>,
     output: &mut ndarray::Array<Complex64, D>,
@@ -71,7 +73,7 @@ where
         // Copy data to input buffer with proper conversion
         for (i, &val) in i_lane.iter().enumerate() {
             let val_f64 = NumCast::from(val).ok_or_else(|| {
-                FFTError::ValueError(format!("Failed to convert value at index {} to f64", i))
+                FFTError::ValueError(format!("Failed to convert value at index {i} to f64"))
             })?;
             buffer[i] = Complex64::new(val_f64, 0.0);
         }
@@ -89,6 +91,7 @@ where
 }
 
 /// Execute FFT on strided data with optimal memory access for complex input
+#[allow(dead_code)]
 pub fn fft_strided_complex<S, D>(
     input: &ArrayBase<S, D>,
     axis: usize,
@@ -122,6 +125,7 @@ where
 }
 
 /// Process complex data with arbitrary striding
+#[allow(dead_code)]
 fn process_strided_complex_fft<S, D>(
     input: &ArrayBase<S, D>,
     output: &mut ndarray::Array<Complex64, D>,
@@ -162,6 +166,7 @@ where
 }
 
 /// Execute inverse FFT on strided data
+#[allow(dead_code)]
 pub fn ifft_strided<S, D>(
     input: &ArrayBase<S, D>,
     axis: usize,
@@ -199,6 +204,7 @@ where
 }
 
 /// Process data with arbitrary striding for inverse FFT
+#[allow(dead_code)]
 fn process_strided_inverse_fft<S, D>(
     input: &ArrayBase<S, D>,
     output: &mut ndarray::Array<Complex64, D>,

@@ -24,7 +24,7 @@
 //!
 //! ```rust
 //! use ndarray::{Array1, Array2};
-//! use scirs2_interpolate::cache_aware::{
+//! use scirs2__interpolate::cache_aware::{
 //!     CacheAwareRBF, CacheOptimizedConfig
 //! };
 //!
@@ -111,7 +111,7 @@ where
     /// Precomputed coefficients (if available)
     coefficients: Option<Array1<F>>,
     /// Configuration
-    config: CacheOptimizedConfig,
+    _config: CacheOptimizedConfig,
     /// Performance statistics
     stats: CacheOptimizedStats,
 }
@@ -152,7 +152,7 @@ where
         config: CacheOptimizedConfig,
     ) -> InterpolateResult<Self> {
         if points.nrows() != values.len() {
-            return Err(InterpolateError::ValueError(
+            return Err(InterpolateError::invalid_input(
                 "Number of points must match number of values".to_string(),
             ));
         }
@@ -166,7 +166,7 @@ where
             kernel,
             epsilon,
             coefficients: None,
-            config,
+            _config: config,
             stats: CacheOptimizedStats::default(),
         })
     }
@@ -191,7 +191,7 @@ where
         let start_time = std::time::Instant::now();
 
         let n_points = self.points.nrows();
-        let block_size = self.config.block_size.min(n_points);
+        let block_size = self._config.block_size.min(n_points);
 
         // Create distance matrix using blocked computation
         let distance_matrix = self.compute_blocked_distance_matrix()?;
@@ -213,7 +213,7 @@ where
     fn compute_blocked_distance_matrix(&self) -> InterpolateResult<Array2<F>> {
         let n_points = self.points.nrows();
         let n_dims = self.points.ncols();
-        let block_size = self.config.block_size;
+        let block_size = self._config.block_size;
 
         let mut distance_matrix = Array2::zeros((n_points, n_points));
 
@@ -241,14 +241,14 @@ where
     }
 
     /// Compute distance between two points with optimized memory access
-    fn compute_distance_optimized(&self, i: usize, j: usize, n_dims: usize) -> F {
+    fn compute_distance_optimized(&self, i: usize, j: usize, ndims: usize) -> F {
         let mut sum_sq = F::zero();
 
         // Process dimensions in chunks for better cache utilization
         let chunk_size = 4; // Process 4 dimensions at a time
 
-        for dim_chunk in (0..n_dims).step_by(chunk_size) {
-            let end_dim = (dim_chunk + chunk_size).min(n_dims);
+        for dim_chunk in (0..ndims).step_by(chunk_size) {
+            let end_dim = (dim_chunk + chunk_size).min(ndims);
 
             for dim in dim_chunk..end_dim {
                 let diff = self.points[[i, dim]] - self.points[[j, dim]];
@@ -262,7 +262,7 @@ where
     /// Apply RBF kernel to distance matrix using blocked operations
     fn apply_kernel_blocked(&self, distance_matrix: &Array2<F>) -> InterpolateResult<Array2<F>> {
         let n_points = distance_matrix.nrows();
-        let block_size = self.config.block_size;
+        let block_size = self._config.block_size;
         let mut kernel_matrix = Array2::zeros((n_points, n_points));
 
         for i_block in (0..n_points).step_by(block_size) {
@@ -396,7 +396,7 @@ where
         let coefficients = self.coefficients.as_ref().unwrap();
         let n_queries = query_points.nrows();
         let n_points = self.points.nrows();
-        let block_size = self.config.block_size;
+        let block_size = self._config.block_size;
 
         let mut results = Array1::zeros(n_queries);
 
@@ -480,7 +480,7 @@ where
         config: CacheOptimizedConfig,
     ) -> InterpolateResult<Self> {
         if knots.len() < coefficients.len() + degree + 1 {
-            return Err(InterpolateError::ValueError(
+            return Err(InterpolateError::invalid_input(
                 "Invalid knot vector length for given coefficients and degree".to_string(),
             ));
         }
@@ -607,6 +607,7 @@ where
 /// # Returns
 ///
 /// A cache-optimized RBF interpolator
+#[allow(dead_code)]
 pub fn make_cache_aware_rbf<F>(
     points: Array2<F>,
     values: Array1<F>,

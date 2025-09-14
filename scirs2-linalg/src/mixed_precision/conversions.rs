@@ -30,6 +30,7 @@ use std::fmt::Debug;
 ///
 /// assert_eq!(arr_f32[0], 1.0f32);
 /// ```
+#[allow(dead_code)]
 pub fn convert<A, B>(arr: &ArrayView1<A>) -> Array1<B>
 where
     A: Clone + Debug + ToPrimitive + Copy,
@@ -70,6 +71,7 @@ where
 ///
 /// assert_eq!(arr_f32[[0, 0]], 1.0f32);
 /// ```
+#[allow(dead_code)]
 pub fn convert_2d<A, B>(arr: &ArrayView2<A>) -> Array2<B>
 where
     A: Clone + Debug + ToPrimitive + Copy,
@@ -144,7 +146,7 @@ mod tests {
     }
 
     #[test]
-    fn test_convert_empty_arrays() {
+    fn test_convert_emptyarrays() {
         let arr_f64 = Array1::<f64>::zeros(0);
         let arr_f32 = convert::<f64, f32>(&arr_f64.view());
         assert_eq!(arr_f32.len(), 0);

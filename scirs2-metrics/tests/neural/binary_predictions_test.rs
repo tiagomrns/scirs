@@ -4,6 +4,7 @@ use std::error::Error;
 // Test module to verify the fix for the binary_predictions array in neural_integration.rs
 
 #[test]
+#[allow(dead_code)]
 fn test_binary_predictions_accuracy() -> Result<(), Box<dyn Error>> {
     // Binary predictions - this mirrors the fix we made in the neural_integration.rs example
     // The original array was [0.0, 1.0, 0.0, 0.0, 1.0] - giving 3/5 correct (0.6 accuracy)

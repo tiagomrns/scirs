@@ -53,7 +53,8 @@ pub enum DCTType {
 ///
 /// Returns an error if the input values cannot be converted to `f64`, or if other
 /// computation errors occur (e.g., invalid array dimensions).
-pub fn dct<T>(x: &[T], dct_type: Option<DCTType>, norm: Option<&str>) -> FFTResult<Vec<f64>>
+#[allow(dead_code)]
+pub fn dct<T>(x: &[T], dcttype: Option<DCTType>, norm: Option<&str>) -> FFTResult<Vec<f64>>
 where
     T: NumCast + Copy + Debug,
 {
@@ -67,7 +68,7 @@ where
         .collect::<FFTResult<Vec<_>>>()?;
 
     let _n = input.len();
-    let type_val = dct_type.unwrap_or(DCTType::Type2);
+    let type_val = dcttype.unwrap_or(DCTType::Type2);
 
     match type_val {
         DCTType::Type1 => dct1(&input, norm),
@@ -112,7 +113,8 @@ where
 ///
 /// Returns an error if the input values cannot be converted to `f64`, or if other
 /// computation errors occur (e.g., invalid array dimensions).
-pub fn idct<T>(x: &[T], dct_type: Option<DCTType>, norm: Option<&str>) -> FFTResult<Vec<f64>>
+#[allow(dead_code)]
+pub fn idct<T>(x: &[T], dcttype: Option<DCTType>, norm: Option<&str>) -> FFTResult<Vec<f64>>
 where
     T: NumCast + Copy + Debug,
 {
@@ -126,9 +128,9 @@ where
         .collect::<FFTResult<Vec<_>>>()?;
 
     let _n = input.len();
-    let type_val = dct_type.unwrap_or(DCTType::Type2);
+    let type_val = dcttype.unwrap_or(DCTType::Type2);
 
-    // Inverse DCT is computed by using a different DCT type
+    // Inverse DCT is computed by using a different DCT _type
     match type_val {
         DCTType::Type1 => idct1(&input, norm),
         DCTType::Type2 => idct2_impl(&input, norm),
@@ -165,6 +167,7 @@ where
 ///
 /// Returns an error if the input values cannot be converted to `f64`, or if other
 /// computation errors occur (e.g., invalid array dimensions).
+#[allow(dead_code)]
 pub fn dct2<T>(
     x: &ArrayView2<T>,
     dct_type: Option<DCTType>,
@@ -239,6 +242,7 @@ where
 ///
 /// Returns an error if the input values cannot be converted to `f64`, or if other
 /// computation errors occur (e.g., invalid array dimensions).
+#[allow(dead_code)]
 pub fn idct2<T>(
     x: &ArrayView2<T>,
     dct_type: Option<DCTType>,
@@ -299,6 +303,7 @@ where
 ///
 /// Returns an error if the input values cannot be converted to `f64`, or if other
 /// computation errors occur (e.g., invalid array dimensions).
+#[allow(dead_code)]
 pub fn dctn<T>(
     x: &ArrayView<T, IxDyn>,
     dct_type: Option<DCTType>,
@@ -308,14 +313,14 @@ pub fn dctn<T>(
 where
     T: NumCast + Copy + Debug,
 {
-    let x_shape = x.shape().to_vec();
-    let n_dims = x_shape.len();
+    let xshape = x.shape().to_vec();
+    let n_dims = xshape.len();
 
     // Determine which axes to transform
     let axes_to_transform = axes.map_or_else(|| (0..n_dims).collect(), |ax| ax);
 
     // Create an initial copy of the input array as float
-    let mut result = Array::from_shape_fn(IxDyn(&x_shape), |idx| {
+    let mut result = Array::from_shape_fn(IxDyn(&xshape), |idx| {
         let val = x[idx];
         num_traits::cast::cast::<T, f64>(val).unwrap_or(0.0)
     });
@@ -370,6 +375,7 @@ where
 ///
 /// Returns an error if the input values cannot be converted to `f64`, or if other
 /// computation errors occur (e.g., invalid array dimensions).
+#[allow(dead_code)]
 pub fn idctn<T>(
     x: &ArrayView<T, IxDyn>,
     dct_type: Option<DCTType>,
@@ -379,14 +385,14 @@ pub fn idctn<T>(
 where
     T: NumCast + Copy + Debug,
 {
-    let x_shape = x.shape().to_vec();
-    let n_dims = x_shape.len();
+    let xshape = x.shape().to_vec();
+    let n_dims = xshape.len();
 
     // Determine which axes to transform
     let axes_to_transform = axes.map_or_else(|| (0..n_dims).collect(), |ax| ax);
 
     // Create an initial copy of the input array as float
-    let mut result = Array::from_shape_fn(IxDyn(&x_shape), |idx| {
+    let mut result = Array::from_shape_fn(IxDyn(&xshape), |idx| {
         let val = x[idx];
         num_traits::cast::cast::<T, f64>(val).unwrap_or(0.0)
     });
@@ -422,6 +428,7 @@ where
 // ---------------------- Implementation Functions ----------------------
 
 /// Compute the Type-I discrete cosine transform (DCT-I).
+#[allow(dead_code)]
 fn dct1(x: &[f64], norm: Option<&str>) -> FFTResult<Vec<f64>> {
     let n = x.len();
 
@@ -470,6 +477,7 @@ fn dct1(x: &[f64], norm: Option<&str>) -> FFTResult<Vec<f64>> {
 }
 
 /// Inverse of Type-I DCT
+#[allow(dead_code)]
 fn idct1(x: &[f64], norm: Option<&str>) -> FFTResult<Vec<f64>> {
     let n = x.len();
 
@@ -520,6 +528,7 @@ fn idct1(x: &[f64], norm: Option<&str>) -> FFTResult<Vec<f64>> {
 }
 
 /// Compute the Type-II discrete cosine transform (DCT-II).
+#[allow(dead_code)]
 fn dct2_impl(x: &[f64], norm: Option<&str>) -> FFTResult<Vec<f64>> {
     let n = x.len();
 
@@ -560,6 +569,7 @@ fn dct2_impl(x: &[f64], norm: Option<&str>) -> FFTResult<Vec<f64>> {
 }
 
 /// Inverse of Type-II DCT (which is Type-III DCT)
+#[allow(dead_code)]
 fn idct2_impl(x: &[f64], norm: Option<&str>) -> FFTResult<Vec<f64>> {
     let n = x.len();
 
@@ -602,6 +612,7 @@ fn idct2_impl(x: &[f64], norm: Option<&str>) -> FFTResult<Vec<f64>> {
 }
 
 /// Compute the Type-III discrete cosine transform (DCT-III).
+#[allow(dead_code)]
 fn dct3(x: &[f64], norm: Option<&str>) -> FFTResult<Vec<f64>> {
     let n = x.len();
 
@@ -644,6 +655,7 @@ fn dct3(x: &[f64], norm: Option<&str>) -> FFTResult<Vec<f64>> {
 }
 
 /// Inverse of Type-III DCT (which is Type-II DCT)
+#[allow(dead_code)]
 fn idct3(x: &[f64], norm: Option<&str>) -> FFTResult<Vec<f64>> {
     let n = x.len();
 
@@ -685,6 +697,7 @@ fn idct3(x: &[f64], norm: Option<&str>) -> FFTResult<Vec<f64>> {
 }
 
 /// Compute the Type-IV discrete cosine transform (DCT-IV).
+#[allow(dead_code)]
 fn dct4(x: &[f64], norm: Option<&str>) -> FFTResult<Vec<f64>> {
     let n = x.len();
 
@@ -721,6 +734,7 @@ fn dct4(x: &[f64], norm: Option<&str>) -> FFTResult<Vec<f64>> {
 }
 
 /// Inverse of Type-IV DCT (Type-IV is its own inverse with proper scaling)
+#[allow(dead_code)]
 fn idct4(x: &[f64], norm: Option<&str>) -> FFTResult<Vec<f64>> {
     let n = x.len();
 

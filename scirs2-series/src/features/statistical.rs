@@ -302,6 +302,7 @@ where
 }
 
 /// Calculate trend and seasonality strength
+#[allow(dead_code)]
 pub fn calculate_trend_seasonality_strength<F>(
     ts: &Array1<F>,
     seasonal_period: Option<usize>,
@@ -339,7 +340,7 @@ where
     // Trend strength
     let trend_strength = F::one() - (diff_var / ts_var);
 
-    // Seasonality strength (if seasonal period is provided)
+    // Seasonality strength (if seasonal _period is provided)
     let seasonality_strength = if let Some(period) = seasonal_period {
         if n <= period {
             return Err(TimeSeriesError::FeatureExtractionError(
@@ -377,6 +378,7 @@ where
 }
 
 /// Calculate expanded statistical features
+#[allow(dead_code)]
 pub fn calculate_expanded_statistical_features<F>(
     ts: &Array1<F>,
     basic_mean: F,
@@ -664,6 +666,7 @@ where
 // =============================================================================
 
 /// Calculate higher-order moments (5th and 6th)
+#[allow(dead_code)]
 fn calculate_higher_order_moments<F>(ts: &Array1<F>, mean: F) -> Result<(F, F)>
 where
     F: Float + FromPrimitive + Debug,
@@ -689,6 +692,7 @@ where
 }
 
 /// Calculate excess kurtosis
+#[allow(dead_code)]
 fn calculate_excess_kurtosis<F>(ts: &Array1<F>, mean: F, std: F) -> Result<F>
 where
     F: Float + FromPrimitive + Debug,
@@ -711,6 +715,7 @@ where
 }
 
 /// Calculate interquartile mean
+#[allow(dead_code)]
 fn calculate_interquartile_mean<F>(ts: &Array1<F>, q1: F, q3: F) -> Result<F>
 where
     F: Float + FromPrimitive,
@@ -731,6 +736,7 @@ where
 }
 
 /// Calculate mean absolute deviation
+#[allow(dead_code)]
 fn calculate_mean_absolute_deviation<F>(ts: &Array1<F>, center: F) -> Result<F>
 where
     F: Float + FromPrimitive,
@@ -745,6 +751,7 @@ where
 }
 
 /// Calculate Gini coefficient
+#[allow(dead_code)]
 fn calculate_gini_coefficient<F>(ts: &Array1<F>) -> Result<F>
 where
     F: Float + FromPrimitive + Debug,
@@ -770,6 +777,7 @@ where
 }
 
 /// Calculate outlier counts using IQR method
+#[allow(dead_code)]
 fn calculate_outlier_counts<F>(ts: &Array1<F>, q1: F, q3: F) -> Result<(usize, usize)>
 where
     F: Float + FromPrimitive,
@@ -787,139 +795,162 @@ where
 // Add placeholder implementations for remaining helper functions
 // These would need to be fully implemented in a production system
 
-fn calculate_harmonic_mean<F>(_ts: &Array1<F>) -> Result<F>
+#[allow(dead_code)]
+fn calculate_harmonic_mean<F>(ts: &Array1<F>) -> Result<F>
 where
     F: Float + FromPrimitive,
 {
     Ok(F::zero())
 }
-fn calculate_geometric_mean<F>(_ts: &Array1<F>) -> Result<F>
+#[allow(dead_code)]
+fn calculate_geometric_mean<F>(ts: &Array1<F>) -> Result<F>
 where
     F: Float + FromPrimitive,
 {
     Ok(F::zero())
 }
-fn calculate_quadratic_mean<F>(_ts: &Array1<F>) -> Result<F>
+#[allow(dead_code)]
+fn calculate_quadratic_mean<F>(ts: &Array1<F>) -> Result<F>
 where
     F: Float + FromPrimitive,
 {
     Ok(F::zero())
 }
-fn calculate_cubic_mean<F>(_ts: &Array1<F>) -> Result<F>
+#[allow(dead_code)]
+fn calculate_cubic_mean<F>(ts: &Array1<F>) -> Result<F>
 where
     F: Float + FromPrimitive,
 {
     Ok(F::zero())
 }
-fn calculate_mode_approximation<F>(_ts: &Array1<F>) -> Result<F>
+#[allow(dead_code)]
+fn calculate_mode_approximation<F>(ts: &Array1<F>) -> Result<F>
 where
     F: Float + FromPrimitive,
 {
     Ok(F::zero())
 }
-fn calculate_l_moments<F>(_ts: &Array1<F>) -> Result<(F, F, F)>
+#[allow(dead_code)]
+fn calculate_l_moments<F>(ts: &Array1<F>) -> Result<(F, F, F)>
 where
     F: Float + FromPrimitive,
 {
     Ok((F::zero(), F::zero(), F::zero()))
 }
-fn p75_minus_p25<F>(_sorted: &[F]) -> F
+#[allow(dead_code)]
+fn p75_minus_p25<F>(sorted: &[F]) -> F
 where
     F: Float + FromPrimitive,
 {
     F::zero()
 }
-fn p87_5_minus_p12_5<F>(_sorted: &[F]) -> F
+#[allow(dead_code)]
+fn p87_5_minus_p12_5<F>(sorted: &[F]) -> F
 where
     F: Float + FromPrimitive,
 {
     F::zero()
 }
-fn calculate_jarque_bera_statistic<F>(_ts: &Array1<F>, _mean: F, _std: F) -> Result<F>
+#[allow(dead_code)]
+fn calculate_jarque_bera_statistic<F>(_ts: &Array1<F>, mean: F, std: F) -> Result<F>
 where
     F: Float + FromPrimitive,
 {
     Ok(F::zero())
 }
-fn calculate_anderson_darling_approximation<F>(_ts: &Array1<F>) -> Result<F>
+#[allow(dead_code)]
+fn calculate_anderson_darling_approximation<F>(ts: &Array1<F>) -> Result<F>
 where
     F: Float + FromPrimitive,
 {
     Ok(F::zero())
 }
-fn calculate_ks_statistic_approximation<F>(_ts: &Array1<F>) -> Result<F>
+#[allow(dead_code)]
+fn calculate_ks_statistic_approximation<F>(ts: &Array1<F>) -> Result<F>
 where
     F: Float + FromPrimitive,
 {
     Ok(F::zero())
 }
-fn calculate_shapiro_wilk_approximation<F>(_ts: &Array1<F>) -> Result<F>
+#[allow(dead_code)]
+fn calculate_shapiro_wilk_approximation<F>(ts: &Array1<F>) -> Result<F>
 where
     F: Float + FromPrimitive,
 {
     Ok(F::zero())
 }
-fn calculate_dagostino_statistic<F>(_ts: &Array1<F>, _mean: F, _std: F) -> Result<F>
+#[allow(dead_code)]
+fn calculate_dagostino_statistic<F>(_ts: &Array1<F>, mean: F, std: F) -> Result<F>
 where
     F: Float + FromPrimitive,
 {
     Ok(F::zero())
 }
-fn calculate_normality_composite_score<F>(_jb: F, _ad: F, _ks: F) -> F
+#[allow(dead_code)]
+fn calculate_normality_composite_score<F>(_jb: F, ad: F, ks: F) -> F
 where
     F: Float,
 {
     F::zero()
 }
-fn calculate_biweight_midvariance<F>(_ts: &Array1<F>, _median: F) -> Result<F>
+#[allow(dead_code)]
+fn calculate_biweight_midvariance<F>(_ts: &Array1<F>, median: F) -> Result<F>
 where
     F: Float + FromPrimitive,
 {
     Ok(F::zero())
 }
-fn calculate_qn_estimator<F>(_ts: &Array1<F>) -> Result<F>
+#[allow(dead_code)]
+fn calculate_qn_estimator<F>(ts: &Array1<F>) -> Result<F>
 where
     F: Float + FromPrimitive,
 {
     Ok(F::zero())
 }
-fn calculate_sn_estimator<F>(_ts: &Array1<F>) -> Result<F>
+#[allow(dead_code)]
+fn calculate_sn_estimator<F>(ts: &Array1<F>) -> Result<F>
 where
     F: Float + FromPrimitive,
 {
     Ok(F::zero())
 }
-fn calculate_zero_crossings<F>(_ts: &Array1<F>, _mean: F) -> usize
+#[allow(dead_code)]
+fn calculate_zero_crossings<F>(_ts: &Array1<F>, mean: F) -> usize
 where
     F: Float,
 {
     0
 }
-fn calculate_local_extrema_counts<F>(_ts: &Array1<F>) -> (usize, usize)
+#[allow(dead_code)]
+fn calculate_local_extrema_counts<F>(ts: &Array1<F>) -> (usize, usize)
 where
     F: Float,
 {
     (0, 0)
 }
-fn calculate_concentration_coefficient<F>(_ts: &Array1<F>) -> Result<F>
+#[allow(dead_code)]
+fn calculate_concentration_coefficient<F>(ts: &Array1<F>) -> Result<F>
 where
     F: Float + FromPrimitive,
 {
     Ok(F::zero())
 }
-fn calculate_herfindahl_index<F>(_ts: &Array1<F>) -> Result<F>
+#[allow(dead_code)]
+fn calculate_herfindahl_index<F>(ts: &Array1<F>) -> Result<F>
 where
     F: Float + FromPrimitive,
 {
     Ok(F::zero())
 }
-fn calculate_shannon_diversity<F>(_ts: &Array1<F>) -> Result<F>
+#[allow(dead_code)]
+fn calculate_shannon_diversity<F>(ts: &Array1<F>) -> Result<F>
 where
     F: Float + FromPrimitive,
 {
     Ok(F::zero())
 }
-fn calculate_simpson_diversity<F>(_ts: &Array1<F>) -> Result<F>
+#[allow(dead_code)]
+fn calculate_simpson_diversity<F>(ts: &Array1<F>) -> Result<F>
 where
     F: Float + FromPrimitive,
 {

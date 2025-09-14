@@ -22,12 +22,12 @@ pub struct AdaptiveController {
 
 impl AdaptiveController {
     /// Create a new adaptive controller
-    pub fn new(min_interval: Duration, max_interval: Duration) -> Self {
+    pub fn new(min_interval: Duration, maxinterval: Duration) -> Self {
         Self {
             update_intervals: VecDeque::with_capacity(20),
             processing_speeds: VecDeque::with_capacity(20),
             min_interval,
-            max_interval,
+            max_interval: maxinterval,
             target_frequency: 2.0, // 2 updates per second by default
         }
     }
@@ -38,9 +38,9 @@ impl AdaptiveController {
     }
 
     /// Record an update interval
-    pub fn record_update(&mut self, interval: Duration, processing_speed: f64) {
+    pub fn record_update(&mut self, interval: Duration, processingspeed: f64) {
         self.update_intervals.push_back(interval);
-        self.processing_speeds.push_back(processing_speed);
+        self.processing_speeds.push_back(processingspeed);
 
         // Keep only recent measurements
         if self.update_intervals.len() > 20 {
@@ -50,12 +50,12 @@ impl AdaptiveController {
     }
 
     /// Calculate the next optimal update interval
-    pub fn next_interval(&self, current_progress: f64) -> Duration {
+    pub fn calculate_interval(&self, currentprogress: f64) -> Duration {
         // Base interval from target frequency
         let base_interval = Duration::from_secs_f64(1.0 / self.target_frequency);
 
         // Adjust based on progress position
-        let position_factor = self.calculate_position_factor(current_progress);
+        let position_factor = self.calculate_position_factor(currentprogress);
 
         // Adjust based on processing speed stability
         let stability_factor = self.calculate_stability_factor();
@@ -192,12 +192,12 @@ impl PredictiveETA {
     }
 
     /// Calculate predictive ETA using multiple methods
-    pub fn calculate_eta(&self, current_processed: u64, total: u64) -> Duration {
-        if current_processed >= total || self.progress_history.len() < 2 {
+    pub fn calculate_eta(&self, currentprocessed: u64, total: u64) -> Duration {
+        if currentprocessed >= total || self.progress_history.len() < 2 {
             return Duration::from_secs(0);
         }
 
-        let remaining = total - current_processed;
+        let remaining = total - currentprocessed;
 
         // Method 1: Linear regression on recent progress
         let linear_eta = self.linear_regression_eta(remaining);

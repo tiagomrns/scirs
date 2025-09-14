@@ -3,6 +3,7 @@ use scirs2_io::csv::{read_csv_numeric, write_csv, CsvReaderConfig};
 use std::error::Error;
 
 /// This example demonstrates using CSV functionality for scientific data conversion
+#[allow(dead_code)]
 fn main() -> Result<(), Box<dyn Error>> {
     println!("=== Scientific CSV Basic Example ===\n");
 
@@ -119,6 +120,7 @@ struct Stats {
 }
 
 /// Calculate basic statistics on a 1D array
+#[allow(dead_code)]
 fn calculate_stats(data: &Array1<f64>) -> Stats {
     let n = data.len() as f64;
 

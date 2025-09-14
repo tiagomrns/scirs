@@ -6,9 +6,11 @@
 //! 2. Different function types (first kind, modified, etc.)
 //! 3. Integer vs. non-integer orders
 
-use criterion::{black_box, criterion_group, criterion_main, BenchmarkId, Criterion};
+use criterion::{criterion_group, criterion_main, BenchmarkId, Criterion};
 use scirs2_special::bessel::{i0, j0, j1, jn, jv, spherical_jn};
+use std::hint::black_box;
 
+#[allow(dead_code)]
 fn bench_j0(c: &mut Criterion) {
     let mut group = c.benchmark_group("j0");
 
@@ -45,6 +47,7 @@ fn bench_j0(c: &mut Criterion) {
     group.finish();
 }
 
+#[allow(dead_code)]
 fn bench_j1(c: &mut Criterion) {
     let mut group = c.benchmark_group("j1");
 
@@ -81,6 +84,7 @@ fn bench_j1(c: &mut Criterion) {
     group.finish();
 }
 
+#[allow(dead_code)]
 fn bench_jn(c: &mut Criterion) {
     let mut group = c.benchmark_group("jn");
 
@@ -99,6 +103,7 @@ fn bench_jn(c: &mut Criterion) {
     group.finish();
 }
 
+#[allow(dead_code)]
 fn bench_jv(c: &mut Criterion) {
     let mut group = c.benchmark_group("jv");
 
@@ -119,6 +124,7 @@ fn bench_jv(c: &mut Criterion) {
     group.finish();
 }
 
+#[allow(dead_code)]
 fn bench_i0(c: &mut Criterion) {
     let mut group = c.benchmark_group("i0");
 
@@ -145,6 +151,7 @@ fn bench_i0(c: &mut Criterion) {
     group.finish();
 }
 
+#[allow(dead_code)]
 fn bench_spherical(c: &mut Criterion) {
     let mut group = c.benchmark_group("spherical");
 

@@ -154,10 +154,10 @@ impl IntegrationRegistry {
         module2: &str,
     ) -> Result<bool, IntegrationError> {
         let mod1 = self.modules.get(module1).ok_or_else(|| {
-            IntegrationError::ModuleCompatibility(format!("Module {} not found", module1))
+            IntegrationError::ModuleCompatibility(format!("Module {module1} not found"))
         })?;
         let mod2 = self.modules.get(module2).ok_or_else(|| {
-            IntegrationError::ModuleCompatibility(format!("Module {} not found", module2))
+            IntegrationError::ModuleCompatibility(format!("Module {module2} not found"))
         })?;
 
         // Simple version compatibility check
@@ -246,13 +246,14 @@ static GLOBAL_REGISTRY: std::sync::OnceLock<std::sync::Mutex<IntegrationRegistry
     std::sync::OnceLock::new();
 
 /// Initialize the global integration registry
+#[allow(dead_code)]
 pub fn init_integration_registry() -> &'static std::sync::Mutex<IntegrationRegistry> {
     GLOBAL_REGISTRY.get_or_init(|| {
         let mut registry = IntegrationRegistry::new();
 
         // Register autograd module
         let autograd_info =
-            ModuleInfo::new("scirs2-autograd".to_string(), "0.1.0-alpha.6".to_string())
+            ModuleInfo::new("scirs2-autograd".to_string(), "0.1.0-beta.1".to_string())
                 .with_feature("automatic_differentiation".to_string())
                 .with_feature("computation_graphs".to_string())
                 .with_feature("gradient_computation".to_string())
@@ -267,6 +268,7 @@ pub fn init_integration_registry() -> &'static std::sync::Mutex<IntegrationRegis
 }
 
 /// Register a module with the global registry
+#[allow(dead_code)]
 pub fn register_module(info: ModuleInfo) -> Result<(), IntegrationError> {
     let registry = init_integration_registry();
     let mut registry_guard = registry.lock().map_err(|_| {
@@ -276,6 +278,7 @@ pub fn register_module(info: ModuleInfo) -> Result<(), IntegrationError> {
 }
 
 /// Get module information from the global registry
+#[allow(dead_code)]
 pub fn get_module_info(name: &str) -> Result<Option<ModuleInfo>, IntegrationError> {
     let registry = init_integration_registry();
     let registry_guard = registry.lock().map_err(|_| {
@@ -285,6 +288,7 @@ pub fn get_module_info(name: &str) -> Result<Option<ModuleInfo>, IntegrationErro
 }
 
 /// Check compatibility between two modules
+#[allow(dead_code)]
 pub fn check_compatibility(module1: &str, module2: &str) -> Result<bool, IntegrationError> {
     let registry = init_integration_registry();
     let registry_guard = registry.lock().map_err(|_| {
@@ -294,6 +298,7 @@ pub fn check_compatibility(module1: &str, module2: &str) -> Result<bool, Integra
 }
 
 /// Update global integration configuration
+#[allow(dead_code)]
 pub fn update_global_config(config: IntegrationConfig) -> Result<(), IntegrationError> {
     let registry = init_integration_registry();
     let mut registry_guard = registry.lock().map_err(|_| {
@@ -304,6 +309,7 @@ pub fn update_global_config(config: IntegrationConfig) -> Result<(), Integration
 }
 
 /// Get current global integration configuration
+#[allow(dead_code)]
 pub fn get_global_config() -> Result<IntegrationConfig, IntegrationError> {
     let registry = init_integration_registry();
     let registry_guard = registry.lock().map_err(|_| {
@@ -313,6 +319,7 @@ pub fn get_global_config() -> Result<IntegrationConfig, IntegrationError> {
 }
 
 /// List all registered modules
+#[allow(dead_code)]
 pub fn list_registered_modules() -> Result<Vec<ModuleInfo>, IntegrationError> {
     let registry = init_integration_registry();
     let registry_guard = registry.lock().map_err(|_| {

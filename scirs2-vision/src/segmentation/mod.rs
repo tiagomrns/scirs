@@ -41,6 +41,7 @@ pub enum AdaptiveMethod {
 /// # Returns
 ///
 /// * Result containing a binary image
+#[allow(dead_code)]
 pub fn threshold_binary(img: &DynamicImage, threshold: f32) -> Result<GrayImage> {
     let array = image_to_array(img)?;
     let (height, width) = array.dim();
@@ -66,6 +67,7 @@ pub fn threshold_binary(img: &DynamicImage, threshold: f32) -> Result<GrayImage>
 /// # Returns
 ///
 /// * Result containing a binary image and the computed threshold
+#[allow(dead_code)]
 pub fn otsu_threshold(img: &DynamicImage) -> Result<(GrayImage, f32)> {
     let gray = img.to_luma8();
     let (width, height) = gray.dimensions();
@@ -138,13 +140,14 @@ pub fn otsu_threshold(img: &DynamicImage) -> Result<(GrayImage, f32)> {
 /// # Returns
 ///
 /// * Result containing a binary image
+#[allow(dead_code)]
 pub fn adaptive_threshold(
     img: &DynamicImage,
     block_size: usize,
     c: f32,
     method: AdaptiveMethod,
 ) -> Result<GrayImage> {
-    // Check if block size is valid
+    // Check if block _size is valid
     if block_size % 2 == 0 || block_size < 3 {
         return Err(VisionError::InvalidParameter(
             "block_size must be odd and at least 3".to_string(),
@@ -242,6 +245,7 @@ pub type LabeledImage = ImageBuffer<Luma<u16>, Vec<u16>>;
 /// * Result containing a tuple with:
 ///   - Labeled image where each pixel value is the label of its component
 ///   - Number of labels found (counting from 1)
+#[allow(dead_code)]
 pub fn connected_components(binary: &GrayImage) -> Result<(LabeledImage, u16)> {
     let (width, height) = binary.dimensions();
     let mut labels: ImageBuffer<Luma<u16>, Vec<u16>> = ImageBuffer::new(width, height);
@@ -325,6 +329,7 @@ pub fn connected_components(binary: &GrayImage) -> Result<(LabeledImage, u16)> {
 }
 
 // Union-find helper functions
+#[allow(dead_code)]
 fn find(labels: &[u16], x: u16) -> u16 {
     let mut y = x;
     while y != labels[y as usize] {
@@ -333,6 +338,7 @@ fn find(labels: &[u16], x: u16) -> u16 {
     y
 }
 
+#[allow(dead_code)]
 fn union(labels: &mut [u16], x: u16, y: u16) {
     let root_x = find(labels, x);
     let root_y = find(labels, y);

@@ -5,7 +5,23 @@ use num_traits::{Float, FromPrimitive};
 use std::fmt::Debug;
 
 use super::BoundaryMode;
-use crate::error::{NdimageError, Result};
+use crate::error::{NdimageError, NdimageResult};
+
+/// Helper function for safe conversion from usize to float
+#[allow(dead_code)]
+fn safe_usize_to_float<T: Float + FromPrimitive>(value: usize) -> NdimageResult<T> {
+    T::from_usize(value).ok_or_else(|| {
+        NdimageError::ComputationError(format!("Failed to convert usize {} to float type", value))
+    })
+}
+
+/// Helper function for safe conversion from float to usize
+#[allow(dead_code)]
+fn safe_float_to_usize<T: Float>(value: T) -> NdimageResult<usize> {
+    value.to_usize().ok_or_else(|| {
+        NdimageError::ComputationError("Failed to convert float to usize".to_string())
+    })
+}
 
 /// Handle out-of-bounds coordinates according to the boundary mode
 ///
@@ -18,12 +34,13 @@ use crate::error::{NdimageError, Result};
 /// # Returns
 ///
 /// * `Result<T>` - Processed coordinate
-pub fn handle_boundary<T>(coord: T, size: usize, mode: BoundaryMode) -> Result<T>
+#[allow(dead_code)]
+pub fn handle_boundary<T>(coord: T, size: usize, mode: BoundaryMode) -> NdimageResult<T>
 where
-    T: Float + FromPrimitive + Debug,
+    T: Float + FromPrimitive + Debug + std::ops::AddAssign + std::ops::DivAssign + 'static,
 {
     // Convert size to T for calculations
-    let size_t = T::from_usize(size).unwrap();
+    let size_t = safe_usize_to_float(size)?;
 
     // Handle within-bounds case
     if coord >= T::zero() && coord < size_t {
@@ -74,12 +91,13 @@ where
 /// # Returns
 ///
 /// * `(usize, usize, T)` - (left index, right index, right weight)
+#[allow(dead_code)]
 pub fn linear_weights<T>(x: T) -> (usize, usize, T)
 where
-    T: Float + FromPrimitive + Debug,
+    T: Float + FromPrimitive + Debug + std::ops::AddAssign + std::ops::DivAssign + 'static,
 {
     let x_floor = x.floor();
-    let x_int = x_floor.to_usize().unwrap();
+    let x_int = safe_float_to_usize(x_floor).unwrap_or(0); // Use 0 as fallback for interpolation
     let t = x - x_floor;
 
     (x_int, x_int + 1, t)
@@ -94,23 +112,25 @@ where
 /// # Returns
 ///
 /// * `(usize, [T; 4])` - (starting index, weights for 4 points)
+#[allow(dead_code)]
 pub fn cubic_weights<T>(x: T) -> (usize, [T; 4])
 where
-    T: Float + FromPrimitive + Debug,
+    T: Float + FromPrimitive + Debug + std::ops::AddAssign + std::ops::DivAssign + 'static,
 {
     let x_floor = x.floor();
-    let x_int = x_floor.to_usize().unwrap();
+    let x_int = safe_float_to_usize(x_floor).unwrap_or(0); // Use 0 as fallback for interpolation
     let t = x - x_floor;
 
     // Catmull-Rom cubic interpolation weights
     let t2 = t * t;
     let t3 = t2 * t;
 
-    let half = T::from_f64(0.5).unwrap();
-    let two = T::from_f64(2.0).unwrap();
-    let three = T::from_f64(3.0).unwrap();
-    let four = T::from_f64(4.0).unwrap();
-    let five = T::from_f64(5.0).unwrap();
+    // Pre-calculate constants with safe conversions
+    let half = T::from_f64(0.5).unwrap_or_else(|| T::one() / (T::one() + T::one()));
+    let two = T::from_f64(2.0).unwrap_or_else(|| T::one() + T::one());
+    let three = T::from_f64(3.0).unwrap_or_else(|| two + T::one());
+    let four = T::from_f64(4.0).unwrap_or_else(|| two + two);
+    let five = T::from_f64(5.0).unwrap_or_else(|| four + T::one());
 
     let w0 = half * (-t3 + two * t2 - t);
     let w1 = half * (three * t3 - five * t2 + two);
@@ -131,16 +151,19 @@ mod tests {
 
     #[test]
     fn test_handle_boundary_within_bounds() {
-        let result = handle_boundary(1.5, 10, BoundaryMode::Nearest).unwrap();
+        let result = handle_boundary(1.5, 10, BoundaryMode::Nearest)
+            .expect("handle_boundary should succeed for test");
         assert_eq!(result, 1.5);
     }
 
     #[test]
     fn test_handle_boundary_nearest() {
-        let result = handle_boundary(-2.0, 10, BoundaryMode::Nearest).unwrap();
+        let result = handle_boundary(-2.0, 10, BoundaryMode::Nearest)
+            .expect("handle_boundary should succeed for test");
         assert_eq!(result, 0.0);
 
-        let result = handle_boundary(15.0, 10, BoundaryMode::Nearest).unwrap();
+        let result = handle_boundary(15.0, 10, BoundaryMode::Nearest)
+            .expect("handle_boundary should succeed for test");
         assert_eq!(result, 9.0);
     }
 
@@ -165,6 +188,7 @@ mod tests {
 }
 
 /// Helper function for nearest neighbor interpolation
+#[allow(dead_code)]
 pub fn interpolate_nearest<T>(
     input: &Array<T, ndarray::IxDyn>,
     coords: &[T],
@@ -172,7 +196,7 @@ pub fn interpolate_nearest<T>(
     const_val: T,
 ) -> T
 where
-    T: Float + FromPrimitive + Debug,
+    T: Float + FromPrimitive + Debug + std::ops::AddAssign + std::ops::DivAssign + 'static,
 {
     // Round coordinates to nearest integers
     let int_coords: Vec<isize> = coords
@@ -181,19 +205,19 @@ where
         .collect();
 
     // Apply boundary conditions and check bounds
-    let input_shape = input.shape();
+    let inputshape = input.shape();
     let bounded_coords: Vec<usize> = int_coords
         .iter()
         .enumerate()
         .map(|(i, &coord)| {
-            let dim_size = input_shape[i] as isize;
+            let dim_size = inputshape[i] as isize;
             apply_boundary_condition(coord, dim_size, boundary)
         })
         .collect();
 
     // Check if coordinates are valid (within bounds after boundary handling)
     for (i, &coord) in bounded_coords.iter().enumerate() {
-        if coord >= input_shape[i] {
+        if coord >= inputshape[i] {
             return const_val; // Out of bounds, return constant value
         }
     }
@@ -206,6 +230,7 @@ where
 }
 
 /// Helper function for linear interpolation  
+#[allow(dead_code)]
 pub fn interpolate_linear<T>(
     input: &Array<T, ndarray::IxDyn>,
     coords: &[T],
@@ -213,7 +238,7 @@ pub fn interpolate_linear<T>(
     const_val: T,
 ) -> T
 where
-    T: Float + FromPrimitive + Debug,
+    T: Float + FromPrimitive + Debug + std::ops::AddAssign + std::ops::DivAssign + 'static,
 {
     let ndim = coords.len();
     if ndim == 0 {
@@ -304,60 +329,61 @@ where
 }
 
 /// Apply boundary condition to a coordinate
-pub fn apply_boundary_condition(coord: isize, dim_size: isize, mode: &BoundaryMode) -> usize {
+#[allow(dead_code)]
+pub fn apply_boundary_condition(_coord: isize, dimsize: isize, mode: &BoundaryMode) -> usize {
     match mode {
         BoundaryMode::Constant => {
-            if coord < 0 || coord >= dim_size {
+            if _coord < 0 || _coord >= dimsize {
                 // Return a value that will be caught as out of bounds
-                dim_size as usize
+                dimsize as usize
             } else {
-                coord as usize
+                _coord as usize
             }
         }
         BoundaryMode::Nearest => {
-            if coord < 0 {
+            if _coord < 0 {
                 0
-            } else if coord >= dim_size {
-                (dim_size - 1) as usize
+            } else if _coord >= dimsize {
+                (dimsize - 1) as usize
             } else {
-                coord as usize
+                _coord as usize
             }
         }
         BoundaryMode::Wrap => {
-            if dim_size == 0 {
+            if dimsize == 0 {
                 0
             } else {
-                let wrapped = ((coord % dim_size) + dim_size) % dim_size;
+                let wrapped = ((_coord % dimsize) + dimsize) % dimsize;
                 wrapped as usize
             }
         }
         BoundaryMode::Reflect => {
-            if dim_size <= 1 {
+            if dimsize <= 1 {
                 0
             } else {
-                let reflected = if coord < 0 {
-                    (-coord - 1) % dim_size
-                } else if coord >= dim_size {
-                    (2 * dim_size - coord - 1) % dim_size
+                let reflected = if _coord < 0 {
+                    (-_coord - 1) % dimsize
+                } else if _coord >= dimsize {
+                    (2 * dimsize - _coord - 1) % dimsize
                 } else {
-                    coord
+                    _coord
                 };
                 reflected as usize
             }
         }
         BoundaryMode::Mirror => {
-            if dim_size <= 1 {
+            if dimsize <= 1 {
                 0
             } else {
-                let period = 2 * (dim_size - 1);
-                let mirrored = if coord < 0 {
-                    (-coord) % period
-                } else if coord >= dim_size {
-                    period - ((coord - dim_size + 1) % period) - 1
+                let period = 2 * (dimsize - 1);
+                let mirrored = if _coord < 0 {
+                    (-_coord) % period
+                } else if _coord >= dimsize {
+                    period - ((_coord - dimsize + 1) % period) - 1
                 } else {
-                    coord
+                    _coord
                 };
-                (mirrored.min(dim_size - 1)) as usize
+                (mirrored.min(dimsize - 1)) as usize
             }
         }
     }

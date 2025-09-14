@@ -1,6 +1,7 @@
 use ndarray::array;
 use scirs2_stats::icc;
 
+#[allow(dead_code)]
 fn main() {
     // Create sample data
     // Each row is a subject, each column is a rater/measurement

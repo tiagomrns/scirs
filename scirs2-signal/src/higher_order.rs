@@ -1,54 +1,54 @@
-//! Higher-order spectral analysis module
-//!
-//! This module implements higher-order spectral analysis methods, including:
-//! - Bispectrum: third-order spectrum for detecting quadratic phase coupling
-//! - Bicoherence: normalized bispectrum for phase coupling detection
-//! - Trispectrum: fourth-order spectrum for cubic phase coupling detection
-//! - Various estimators and windowing techniques
-//!
-//! Higher-order spectra can reveal non-linear coupling between frequency components
-//! that are not visible in traditional power spectral density estimates.
-//!
-//! # Example
-//! ```
-//! use ndarray::Array1;
-//! use scirs2_signal::higher_order::{bispectrum, bicoherence};
-//! use std::f64::consts::PI;
-//!
-//! // Create a signal with quadratic phase coupling
-//! let n = 1024;
-//! let fs = 1000.0;
-//! let t = Array1::linspace(0.0, (n as f64 - 1.0) / fs, n);
-//!
-//! let f1 = 50.0;
-//! let f2 = 120.0;
-//! let f3 = f1 + f2; // Sum frequency - will show phase coupling
-//!
-//! // Signal with phase coupling: sin(2πf₁t) + sin(2πf₂t) + sin(2π(f₁+f₂)t + θ)
-//! // When θ = 0, there is perfect phase coupling
-//! let phase_coupling = 0.0;
-//! let signal = t.mapv(|ti| (2.0 * PI * f1 * ti).sin() +
-//!                          (2.0 * PI * f2 * ti).sin() +
-//!                          0.5 * (2.0 * PI * f3 * ti + phase_coupling).sin());
-//!
-//! // Compute bispectrum
-//! let nfft = 256;
-//! let (bispec, f1_axis, f2_axis) = bispectrum(&signal, nfft, Some("hann"), None, fs).unwrap();
-//!
-//! // Compute bicoherence (normalized bispectrum)
-//! let (bicoh, _) = bicoherence(&signal, nfft, Some("hann"), None, fs).unwrap();
-//!
-//! // Look for peaks in bicoherence to detect phase coupling
-//! // Strong peaks at (f1, f2) indicate quadratic phase coupling between f1, f2, and f1+f2
-//! ```
-
-use ndarray::{s, Array1, Array2};
-use num_complex::{Complex64, ComplexFloat};
+use ndarray::s;
+// Higher-order spectral analysis module
+//
+// This module implements higher-order spectral analysis methods, including:
+// - Bispectrum: third-order spectrum for detecting quadratic phase coupling
+// - Bicoherence: normalized bispectrum for phase coupling detection
+// - Trispectrum: fourth-order spectrum for cubic phase coupling detection
+// - Various estimators and windowing techniques
+//
+// Higher-order spectra can reveal non-linear coupling between frequency components
+// that are not visible in traditional power spectral density estimates.
+//
+// # Example
+// ```
+// use ndarray::Array1;
+// use scirs2_signal::higher_order::{bispectrum, bicoherence};
+//
+// // Create a signal with quadratic phase coupling
+// let n = 1024;
+// let fs = 1000.0;
+// let t = Array1::linspace(0.0, (n as f64 - 1.0) / fs, n);
+//
+// let f1 = 50.0;
+// let f2 = 120.0;
+// let f3 = f1 + f2; // Sum frequency - will show phase coupling
+//
+// // Signal with phase coupling: sin(2πf₁t) + sin(2πf₂t) + sin(2π(f₁+f₂)t + θ)
+// // When θ = 0, there is perfect phase coupling
+// let phase_coupling = 0.0;
+// let signal = t.mapv(|ti| (2.0 * PI * f1 * ti).sin() +
+//                          (2.0 * PI * f2 * ti).sin() +
+//                          0.5 * (2.0 * PI * f3 * ti + phase_coupling).sin());
+//
+// // Compute bispectrum
+// let nfft = 256;
+// let (bispec, f1_axis, f2_axis) = bispectrum(&signal, nfft, Some("hann"), None, fs).unwrap();
+//
+// // Compute bicoherence (normalized bispectrum)
+// let (bicoh_) = bicoherence(&signal, nfft, Some("hann"), None, fs).unwrap();
+//
+// // Look for peaks in bicoherence to detect phase coupling
+// // Strong peaks at (f1, f2) indicate quadratic phase coupling between f1, f2, and f1+f2
+// ```
 
 use crate::error::{SignalError, SignalResult};
 use crate::window;
+use ndarray::{Array1, Array2};
+use num_complex::{Complex64, ComplexFloat};
 use scirs2_fft;
 
+#[allow(unused_imports)]
 // Type aliases for complex return types
 /// Result type for bicoherence and biamplitude functions containing 2D array and frequency axes
 pub type BicoherenceResult = (Array2<f64>, (Array1<f64>, Array1<f64>));
@@ -139,6 +139,7 @@ impl Default for HigherOrderConfig {
 /// let signal = Array1::from_vec(vec![1.0, 2.0, 1.0, 0.0, -1.0, -2.0, -1.0, 0.0]);
 /// let (bis, f1, f2) = bispectrum(&signal, 16, Some("hann"), None, 1.0).unwrap();
 /// ```
+#[allow(dead_code)]
 pub fn bispectrum(
     signal: &Array1<f64>,
     nfft: usize,
@@ -189,6 +190,7 @@ pub fn bispectrum(
 /// let signal = Array1::from_vec(vec![1.0, 2.0, 1.0, 0.0, -1.0, -2.0, -1.0, 0.0]);
 /// let (bic, (f1, f2)) = bicoherence(&signal, 16, Some("hann"), None, 1.0).unwrap();
 /// ```
+#[allow(dead_code)]
 pub fn bicoherence(
     signal: &Array1<f64>,
     nfft: usize,
@@ -207,7 +209,7 @@ pub fn bicoherence(
 
     // Compute bispectrum and power spectrum for normalization
     let (bis_complex, f1_axis, f2_axis) = compute_bispectrum(signal, &config)?;
-    let (power_spectrum, _f_axis) = compute_power_spectrum(signal, &config)?;
+    let power_spectrum = compute_power_spectrum(signal, &config)?;
 
     // Create the bicoherence
     let mut bicoherence = Array2::zeros(bis_complex.raw_dim());
@@ -247,6 +249,7 @@ pub fn bicoherence(
 }
 
 /// Internal function to compute the bispectrum
+#[allow(dead_code)]
 fn compute_bispectrum(
     signal: &Array1<f64>,
     config: &HigherOrderConfig,
@@ -286,6 +289,7 @@ fn compute_bispectrum(
 }
 
 /// Computes the bispectrum using the direct FFT-based method
+#[allow(dead_code)]
 fn compute_direct_bispectrum(
     signal: &Array1<f64>,
     nfft: usize,
@@ -331,6 +335,7 @@ fn compute_direct_bispectrum(
 }
 
 /// Computes the bispectrum using the indirect method via triple correlation
+#[allow(dead_code)]
 fn compute_indirect_bispectrum(
     signal: &Array1<f64>,
     nfft: usize,
@@ -356,6 +361,7 @@ fn compute_indirect_bispectrum(
 }
 
 /// Computes the bispectrum using the Welch-like method (segment averaging)
+#[allow(dead_code)]
 fn compute_welch_bispectrum(
     signal: &Array1<f64>,
     nfft: usize,
@@ -430,7 +436,8 @@ fn compute_welch_bispectrum(
 }
 
 /// Apply a window function to a signal
-fn apply_window(signal: &Array1<f64>, window_name: &str) -> SignalResult<Array1<f64>> {
+#[allow(dead_code)]
+fn apply_window(_signal: &Array1<f64>, windowname: &str) -> SignalResult<Array1<f64>> {
     let n = signal.len();
 
     // Get the window function
@@ -438,12 +445,13 @@ fn apply_window(signal: &Array1<f64>, window_name: &str) -> SignalResult<Array1<
 
     // Apply the window
     let win_arr = Array1::from(win);
-    let windowed = signal * &win_arr;
+    let windowed = _signal * &win_arr;
 
     Ok(windowed)
 }
 
 /// Compute the Fast Fourier Transform of a signal
+#[allow(dead_code)]
 fn compute_fft(signal: &Array1<f64>, nfft: usize) -> SignalResult<Vec<Complex64>> {
     let signal_vec = signal.to_vec();
 
@@ -461,6 +469,7 @@ fn compute_fft(signal: &Array1<f64>, nfft: usize) -> SignalResult<Vec<Complex64>
 }
 
 /// Compute the power spectrum of a signal
+#[allow(dead_code)]
 fn compute_power_spectrum(
     signal: &Array1<f64>,
     config: &HigherOrderConfig,
@@ -508,10 +517,11 @@ fn compute_power_spectrum(
 }
 
 /// Compute the triple correlation (third-order cumulant) of a signal
+#[allow(dead_code)]
 fn compute_triple_correlation(signal: &Array1<f64>, size: usize) -> SignalResult<Array2<f64>> {
     let n = signal.len();
 
-    // Center the signal
+    // Center the _signal
     let mean = signal.sum() / n as f64;
     let centered = signal.mapv(|x| x - mean);
 
@@ -556,6 +566,7 @@ fn compute_triple_correlation(signal: &Array1<f64>, size: usize) -> SignalResult
 }
 
 /// Compute 2D FFT of a matrix
+#[allow(dead_code)]
 fn compute_2d_fft(matrix: &Array2<f64>, nfft: usize) -> SignalResult<Array2<Complex64>> {
     let (rows, cols) = matrix.dim();
 
@@ -563,7 +574,7 @@ fn compute_2d_fft(matrix: &Array2<f64>, nfft: usize) -> SignalResult<Array2<Comp
     let mut complex_matrix = Array2::zeros((rows, cols));
     for i in 0..rows {
         for j in 0..cols {
-            complex_matrix[[i, j]] = Complex64::new(matrix[[i, j]], 0.0);
+            complex_matrix[[i, j]] = Complex64::new(_matrix[[i, j]], 0.0);
         }
     }
 
@@ -635,6 +646,7 @@ fn compute_2d_fft(matrix: &Array2<f64>, nfft: usize) -> SignalResult<Array2<Comp
 ///
 /// # Returns
 /// * A structure containing the trispectrum values (partial implementation)
+#[allow(dead_code)]
 pub fn trispectrum(
     signal: &Array1<f64>,
     nfft: usize,
@@ -695,6 +707,7 @@ pub fn trispectrum(
 /// # Returns
 /// * `biamplitude` - 2D array containing the biamplitude values
 /// * `frequency_axes` - (f1_axis, f2_axis) frequency axes
+#[allow(dead_code)]
 pub fn biamplitude(
     signal: &Array1<f64>,
     nfft: usize,
@@ -759,6 +772,7 @@ pub fn biamplitude(
 /// # Returns
 /// * `cumulative_bispectrum` - Array containing the cumulative bispectrum values
 /// * `bandwidth` - Array of bandwidth values used for integration
+#[allow(dead_code)]
 pub fn cumulative_bispectrum(
     signal: &Array1<f64>,
     nfft: usize,
@@ -766,7 +780,7 @@ pub fn cumulative_bispectrum(
     fs: f64,
 ) -> SignalResult<(Array1<f64>, Array1<f64>)> {
     // Compute bispectrum
-    let (bis_mag, _, _) = bispectrum(signal, nfft, window, None, fs)?;
+    let (bis_mag) = bispectrum(signal, nfft, window, None, fs)?;
 
     // Number of frequency bins
     let n_bins = bis_mag.dim().0;
@@ -815,6 +829,7 @@ pub fn cumulative_bispectrum(
 /// # Returns
 /// * `skewness_spectrum` - Array containing the skewness spectrum values
 /// * `frequency` - Frequency axis
+#[allow(dead_code)]
 pub fn skewness_spectrum(
     signal: &Array1<f64>,
     nfft: usize,
@@ -830,10 +845,10 @@ pub fn skewness_spectrum(
     };
 
     // Compute bispectrum for diagonal slice (f1 = f2)
-    let (bis_complex, f1_axis, _) = compute_bispectrum(signal, &config)?;
+    let (bis_complex, f1_axis) = compute_bispectrum(signal, &config)?;
 
     // Compute power spectrum for normalization
-    let (power_spectrum, _) = compute_power_spectrum(signal, &config)?;
+    let (power_spectrum) = compute_power_spectrum(signal, &config)?;
 
     // Number of frequency bins
     let n_bins = (nfft / 2) + 1;
@@ -865,6 +880,7 @@ pub fn skewness_spectrum(
 ///
 /// # Returns
 /// * Vector of (f1, f2, bicoherence_value) tuples for detected peaks
+#[allow(dead_code)]
 pub fn detect_phase_coupling(
     signal: &Array1<f64>,
     nfft: usize,

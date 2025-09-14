@@ -12,7 +12,7 @@ mod tests {
         let data = Array1::from_vec(vec![1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0]);
 
         // Test with auto strategy
-        let _chunked_auto = ChunkedArray::new(data.clone(), ChunkingStrategy::Auto);
+        let chunked_auto = ChunkedArray::new(data.clone(), ChunkingStrategy::Auto);
 
         // Test with fixed size strategy
         let chunk_size = 3;

@@ -51,9 +51,11 @@ impl AttributeValue {
 
     /// Create a JSON attribute from any serializable type
     pub fn json<T: Serialize>(value: &T) -> Result<Self> {
-        let json_value = serde_json::to_value(value).map_err(|_| {
-            GraphError::SerializationError("Failed to serialize to JSON".to_string())
-        })?;
+        let json_value =
+            serde_json::to_value(value).map_err(|_| GraphError::SerializationError {
+                format: "JSON".to_string(),
+                details: "Failed to serialize to JSON".to_string(),
+            })?;
         Ok(AttributeValue::Json(json_value))
     }
 
@@ -92,12 +94,17 @@ impl AttributeValue {
     /// Get the attribute as a typed value from JSON
     pub fn as_json<T: DeserializeOwned>(&self) -> Result<T> {
         match self {
-            AttributeValue::Json(json) => serde_json::from_value(json.clone()).map_err(|_| {
-                GraphError::SerializationError("Failed to deserialize from JSON".to_string())
+            AttributeValue::Json(json) => {
+                serde_json::from_value(json.clone()).map_err(|_| GraphError::SerializationError {
+                    format: "JSON".to_string(),
+                    details: "Failed to deserialize from JSON".to_string(),
+                })
+            }
+            _ => Err(GraphError::InvalidAttribute {
+                attribute: "value".to_string(),
+                target_type: "JSON".to_string(),
+                details: "Attribute is not JSON".to_string(),
             }),
-            _ => Err(GraphError::InvalidAttribute(
-                "Attribute is not JSON".to_string(),
-            )),
         }
     }
 
@@ -171,13 +178,17 @@ pub struct AttributedDiGraph<N: Node, E: EdgeWeight, Ix: IndexType = u32> {
     graph_attributes: Attributes,
 }
 
-impl<N: Node, E: EdgeWeight, Ix: IndexType> Default for AttributedGraph<N, E, Ix> {
+impl<N: Node + std::fmt::Debug + std::fmt::Display, E: EdgeWeight, Ix: IndexType> Default
+    for AttributedGraph<N, E, Ix>
+{
     fn default() -> Self {
         Self::new()
     }
 }
 
-impl<N: Node, E: EdgeWeight, Ix: IndexType> AttributedGraph<N, E, Ix> {
+impl<N: Node + std::fmt::Debug + std::fmt::Display, E: EdgeWeight, Ix: IndexType>
+    AttributedGraph<N, E, Ix>
+{
     /// Create a new empty attributed graph
     pub fn new() -> Self {
         AttributedGraph {
@@ -269,7 +280,7 @@ impl<N: Node, E: EdgeWeight, Ix: IndexType> AttributedGraph<N, E, Ix> {
         value: AttributeValue,
     ) -> Result<()> {
         if !self.graph.has_edge(source, target) {
-            return Err(GraphError::EdgeNotFound);
+            return Err(GraphError::edge_not_found(source, target));
         }
         self.edge_attributes
             .entry((source.clone(), target.clone()))
@@ -489,13 +500,17 @@ impl<N: Node, E: EdgeWeight, Ix: IndexType> AttributedGraph<N, E, Ix> {
     }
 }
 
-impl<N: Node, E: EdgeWeight, Ix: IndexType> Default for AttributedDiGraph<N, E, Ix> {
+impl<N: Node + std::fmt::Debug + std::fmt::Display, E: EdgeWeight, Ix: IndexType> Default
+    for AttributedDiGraph<N, E, Ix>
+{
     fn default() -> Self {
         Self::new()
     }
 }
 
-impl<N: Node, E: EdgeWeight, Ix: IndexType> AttributedDiGraph<N, E, Ix> {
+impl<N: Node + std::fmt::Debug + std::fmt::Display, E: EdgeWeight, Ix: IndexType>
+    AttributedDiGraph<N, E, Ix>
+{
     /// Create a new empty attributed directed graph
     pub fn new() -> Self {
         AttributedDiGraph {
@@ -572,7 +587,7 @@ impl<N: Node, E: EdgeWeight, Ix: IndexType> AttributedDiGraph<N, E, Ix> {
         value: AttributeValue,
     ) -> Result<()> {
         if !self.graph.has_edge(source, target) {
-            return Err(GraphError::EdgeNotFound);
+            return Err(GraphError::edge_not_found(source, target));
         }
         self.edge_attributes
             .entry((source.clone(), target.clone()))
@@ -650,8 +665,9 @@ pub struct AttributeSummary {
 }
 
 /// Helper function to compare attribute values with flexible type matching
-fn matches_attribute_value(attr_value: &AttributeValue, target_value: &AttributeValue) -> bool {
-    match (attr_value, target_value) {
+#[allow(dead_code)]
+fn matches_attribute_value(_attr_value: &AttributeValue, targetvalue: &AttributeValue) -> bool {
+    match (_attr_value, targetvalue) {
         (AttributeValue::String(a), AttributeValue::String(b)) => a == b,
         (AttributeValue::Integer(a), AttributeValue::Integer(b)) => a == b,
         (AttributeValue::Float(a), AttributeValue::Float(b)) => (a - b).abs() < f64::EPSILON,

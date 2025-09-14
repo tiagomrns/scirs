@@ -6,7 +6,7 @@
 use crate::bspline::{BSpline, ExtrapolateMode};
 use crate::error::{InterpolateError, InterpolateResult};
 #[cfg(feature = "linalg")]
-use crate::numerical_stability::{
+use crate::numerical__stability::{
     assess_matrix_condition, solve_with_stability_monitoring, StabilityLevel,
 };
 use ndarray::{s, Array1, Array2, ArrayView1, ArrayView2};
@@ -18,6 +18,7 @@ use super::types::{Constraint, ConstraintType};
 /// Solve the constrained interpolation problem
 ///
 /// Solves A*c = y subject to G*c >= h
+#[allow(dead_code)]
 fn solve_constrained_interpolation<T>(
     design_matrix: &ArrayView2<T>,
     y: &ArrayView1<T>,
@@ -57,6 +58,7 @@ where
 /// Solve the constrained least squares problem
 ///
 /// Solves min ||A*c - y||^2 subject to G*c >= h
+#[allow(dead_code)]
 fn solve_constrained_least_squares<T>(
     design_matrix: &ArrayView2<T>,
     y: &ArrayView1<T>,
@@ -90,20 +92,20 @@ where
     if constraint_matrix.shape()[0] == 0 {
         #[cfg(feature = "linalg")]
         {
-            // Assess matrix condition before solving
+            // Assess _matrix condition before solving
             let condition_report = assess_matrix_condition(&ata.view());
             if let Ok(report) = condition_report {
                 match report.stability_level {
                     StabilityLevel::Poor => {
                         eprintln!(
-                            "Warning: Normal equations matrix is poorly conditioned \
+                            "Warning: Normal equations _matrix is poorly conditioned \
                              (condition number: {:.2e}). Results may be unreliable.",
                             report.condition_number
                         );
                     }
                     StabilityLevel::Marginal => {
                         eprintln!(
-                            "Info: Normal equations matrix has marginal conditioning \
+                            "Info: Normal equations _matrix has marginal conditioning \
                              (condition number: {:.2e}). Monitoring solution quality.",
                             report.condition_number
                         );
@@ -114,7 +116,7 @@ where
 
             // Use stability-monitored solver
             match solve_with_stability_monitoring(&ata, &aty) {
-                Ok((solution, _solve_report)) => return Ok(solution),
+                Ok((solution_solve_report)) => return Ok(solution),
                 Err(_) => {
                     return Err(InterpolateError::ComputationError(
                         "Failed to solve the unconstrained least squares problem with stability monitoring".to_string(),
@@ -141,7 +143,7 @@ where
                 if !solve_report.is_well_conditioned {
                     eprintln!(
                         "Warning: Initial solution for constrained problem computed with \
-                         poorly conditioned matrix (condition number: {:.2e})",
+                         poorly conditioned _matrix (condition number: {:.2e})",
                         solve_report.condition_number
                     );
                 }
@@ -273,6 +275,7 @@ where
 /// Solve the constrained penalized problem
 ///
 /// Solves min ||A*c - y||^2 + λ*c'P*c subject to G*c >= h
+#[allow(dead_code)]
 fn solve_constrained_penalized<T>(
     design_matrix: &ArrayView2<T>,
     y: &ArrayView1<T>,
@@ -312,10 +315,10 @@ where
     if constraint_matrix.shape()[0] == 0 {
         #[cfg(feature = "linalg")]
         {
-            use ndarray_linalg::Solve;
+            use scirs2_linalg::solve;
             let ata_f64 = ata.mapv(|x| x.to_f64().unwrap());
             let aty_f64 = aty.mapv(|x| x.to_f64().unwrap());
-            match ata_f64.solve(&aty_f64) {
+            match solve(&ata_f64.view(), &aty_f64.view(), None) {
                 Ok(solution) => return Ok(solution.mapv(|x| T::from_f64(x).unwrap())),
                 Err(_) => {
                     return Err(InterpolateError::ComputationError(
@@ -334,10 +337,10 @@ where
     // Use a similar approach as the non-penalized case
     #[cfg(feature = "linalg")]
     let mut c = {
-        use ndarray_linalg::Solve;
+        use scirs2_linalg::solve;
         let ata_f64 = ata.mapv(|x| x.to_f64().unwrap());
         let aty_f64 = aty.mapv(|x| x.to_f64().unwrap());
-        match ata_f64.solve(&aty_f64) {
+        match solve(&ata_f64.view(), &aty_f64.view(), None) {
             Ok(solution) => solution.mapv(|x| T::from_f64(x).unwrap()),
             Err(_) => {
                 // If direct solve fails, try a simpler approach
@@ -407,6 +410,7 @@ where
 }
 
 /// Main entry point for solving constrained systems
+#[allow(dead_code)]
 pub fn solve_constrained_system<T>(
     x: &ArrayView1<T>,
     y: &ArrayView1<T>,
@@ -452,6 +456,7 @@ where
 }
 
 /// Main entry point for solving penalized systems
+#[allow(dead_code)]
 pub fn solve_penalized_system<T>(
     x: &ArrayView1<T>,
     y: &ArrayView1<T>,
@@ -503,6 +508,7 @@ where
 }
 
 /// Create a standard second derivative penalty matrix
+#[allow(dead_code)]
 fn create_penalty_matrix<T>(n: usize, degree: usize) -> InterpolateResult<Array2<T>>
 where
     T: Float + FromPrimitive + std::ops::AddAssign + std::ops::SubAssign,
@@ -539,6 +545,7 @@ where
 }
 
 /// Generate constraint matrices from constraint specifications
+#[allow(dead_code)]
 pub fn generate_constraint_matrices<T>(
     x: &ArrayView1<T>,
     knots: &ArrayView1<T>,

@@ -21,12 +21,14 @@ pub enum NormMode {
 }
 
 /// Check if SIMD support is available
+#[allow(dead_code)]
 pub fn simd_support_available() -> bool {
     let caps = PlatformCapabilities::detect();
     caps.simd_available
 }
 
 /// Apply SIMD normalization (stub - not used in current implementation)
+#[allow(dead_code)]
 pub fn apply_simd_normalization(data: &mut [Complex64], scale: f64) {
     for c in data.iter_mut() {
         *c *= scale;
@@ -34,6 +36,7 @@ pub fn apply_simd_normalization(data: &mut [Complex64], scale: f64) {
 }
 
 /// SIMD-accelerated 1D FFT
+#[allow(dead_code)]
 pub fn fft_simd<T>(x: &[T], _norm: Option<&str>) -> FFTResult<Vec<Complex64>>
 where
     T: NumCast + Copy + Debug + 'static,
@@ -42,6 +45,7 @@ where
 }
 
 /// SIMD-accelerated 1D inverse FFT
+#[allow(dead_code)]
 pub fn ifft_simd<T>(x: &[T], _norm: Option<&str>) -> FFTResult<Vec<Complex64>>
 where
     T: NumCast + Copy + Debug + 'static,
@@ -50,6 +54,7 @@ where
 }
 
 /// SIMD-accelerated 2D FFT
+#[allow(dead_code)]
 pub fn fft2_simd<T>(
     x: &[T],
     shape: Option<(usize, usize)>,
@@ -96,6 +101,7 @@ where
 }
 
 /// SIMD-accelerated 2D inverse FFT
+#[allow(dead_code)]
 pub fn ifft2_simd<T>(
     _x: &[T],
     _shape: Option<(usize, usize)>,
@@ -111,6 +117,7 @@ where
 }
 
 /// SIMD-accelerated N-dimensional FFT
+#[allow(dead_code)]
 pub fn fftn_simd<T>(
     x: &[T],
     shape: Option<&[usize]>,
@@ -153,6 +160,7 @@ where
 }
 
 /// SIMD-accelerated N-dimensional inverse FFT
+#[allow(dead_code)]
 pub fn ifftn_simd<T>(
     _x: &[T],
     _shape: Option<&[usize]>,
@@ -169,6 +177,7 @@ where
 }
 
 /// Adaptive FFT
+#[allow(dead_code)]
 pub fn fft_adaptive<T>(x: &[T], norm: Option<&str>) -> FFTResult<Vec<Complex64>>
 where
     T: NumCast + Copy + Debug + 'static,
@@ -177,6 +186,7 @@ where
 }
 
 /// Adaptive inverse FFT
+#[allow(dead_code)]
 pub fn ifft_adaptive<T>(x: &[T], norm: Option<&str>) -> FFTResult<Vec<Complex64>>
 where
     T: NumCast + Copy + Debug + 'static,
@@ -185,6 +195,7 @@ where
 }
 
 /// Adaptive 2D FFT
+#[allow(dead_code)]
 pub fn fft2_adaptive<T>(
     _x: &[T],
     shape: Option<(usize, usize)>,
@@ -197,6 +208,7 @@ where
 }
 
 /// Adaptive 2D inverse FFT
+#[allow(dead_code)]
 pub fn ifft2_adaptive<T>(
     _x: &[T],
     shape: Option<(usize, usize)>,
@@ -209,6 +221,7 @@ where
 }
 
 /// Adaptive N-dimensional FFT
+#[allow(dead_code)]
 pub fn fftn_adaptive<T>(
     _x: &[T],
     shape: Option<&[usize]>,
@@ -222,6 +235,7 @@ where
 }
 
 /// Adaptive N-dimensional inverse FFT
+#[allow(dead_code)]
 pub fn ifftn_adaptive<T>(
     _x: &[T],
     shape: Option<&[usize]>,

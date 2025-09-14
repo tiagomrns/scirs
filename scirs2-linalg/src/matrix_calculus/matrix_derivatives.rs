@@ -38,6 +38,7 @@ use crate::norm::matrix_norm;
 /// // For this matrix: det(X) = 3, X^{-1} = [[2/3, -1/3], [-1/3, 2/3]]
 /// // So d(det)/dX = 3 * [[2/3, -1/3], [-1/3, 2/3]]^T = [[2, -1], [-1, 2]]
 /// ```
+#[allow(dead_code)]
 pub fn det_derivative<F>(x: &ArrayView2<F>) -> LinalgResult<Array2<F>>
 where
     F: Float
@@ -47,7 +48,10 @@ where
         + Debug
         + ndarray::ScalarOperand
         + num_traits::NumAssign
-        + std::iter::Sum,
+        + std::iter::Sum
+        + Send
+        + Sync
+        + 'static,
 {
     if x.nrows() != x.ncols() {
         return Err(LinalgError::ShapeError(format!(
@@ -102,6 +106,7 @@ where
 /// assert!((d_trace[[2, 2]] - 1.0).abs() < 1e-10);
 /// assert!(d_trace[[0, 1]].abs() < 1e-10);
 /// ```
+#[allow(dead_code)]
 pub fn trace_derivative<F>(
     a: Option<&ArrayView2<F>>,
     shape: (usize, usize),
@@ -153,6 +158,7 @@ where
 ///
 /// // For X = 2*I, X^{-1} = 0.5*I, so derivative should be -0.5*I * E_{1,1} * 0.5*I
 /// ```
+#[allow(dead_code)]
 pub fn inv_directional_derivative<F>(
     x: &ArrayView2<F>,
     direction: &ArrayView2<F>,
@@ -165,7 +171,10 @@ where
         + Debug
         + ndarray::ScalarOperand
         + num_traits::NumAssign
-        + std::iter::Sum,
+        + std::iter::Sum
+        + Send
+        + Sync
+        + 'static,
 {
     if x.nrows() != x.ncols() {
         return Err(LinalgError::ShapeError(format!(
@@ -218,6 +227,7 @@ where
 ///
 /// let d_exp = exp_directional_derivative(&x.view(), &v.view(), 10).unwrap();
 /// ```
+#[allow(dead_code)]
 pub fn exp_directional_derivative<F>(
     x: &ArrayView2<F>,
     direction: &ArrayView2<F>,
@@ -231,7 +241,10 @@ where
         + Debug
         + ndarray::ScalarOperand
         + num_traits::NumAssign
-        + std::iter::Sum,
+        + std::iter::Sum
+        + Send
+        + Sync
+        + 'static,
 {
     if x.nrows() != x.ncols() {
         return Err(LinalgError::ShapeError(format!(
@@ -313,6 +326,7 @@ where
 ///
 /// let d_eigs = eigenvalue_derivatives(&x.view(), &v.view()).unwrap();
 /// ```
+#[allow(dead_code)]
 pub fn eigenvalue_derivatives<F>(
     x: &ArrayView2<F>,
     direction: &ArrayView2<F>,
@@ -325,7 +339,10 @@ where
         + Debug
         + ndarray::ScalarOperand
         + num_traits::NumAssign
-        + std::iter::Sum,
+        + std::iter::Sum
+        + Send
+        + Sync
+        + 'static,
 {
     if x.nrows() != x.ncols() {
         return Err(LinalgError::ShapeError(format!(
@@ -399,7 +416,8 @@ where
 /// // For Frobenius norm ||X||_F = sqrt(sum(X_ij^2)),
 /// // derivative is X / ||X||_F
 /// ```
-pub fn norm_derivative<F>(x: &ArrayView2<F>, norm_type: &str) -> LinalgResult<Array2<F>>
+#[allow(dead_code)]
+pub fn norm_derivative<F>(x: &ArrayView2<F>, normtype: &str) -> LinalgResult<Array2<F>>
 where
     F: Float
         + Zero
@@ -408,12 +426,15 @@ where
         + Debug
         + ndarray::ScalarOperand
         + num_traits::NumAssign
-        + std::iter::Sum,
+        + std::iter::Sum
+        + Send
+        + Sync
+        + 'static,
 {
-    match norm_type {
+    match normtype {
         "fro" | "frobenius" => {
             // d(||X||_F)/dX = X / ||X||_F
-            let norm_val = matrix_norm(x, norm_type, None)?;
+            let norm_val = matrix_norm(x, normtype, None)?;
 
             if norm_val < F::epsilon() {
                 return Err(LinalgError::InvalidInputError(
@@ -449,8 +470,7 @@ where
             Ok(result)
         }
         _ => Err(LinalgError::InvalidInputError(format!(
-            "Unsupported norm type: {}. Supported: 'fro', 'frobenius', '2', 'spectral'",
-            norm_type
+            "Unsupported norm type: {normtype}. Supported: 'fro', 'frobenius', '2', 'spectral'"
         ))),
     }
 }
@@ -484,6 +504,7 @@ where
 /// let d_ab = matmul_derivative(&a.view(), &b.view(), Some(&va.view()), None).unwrap();
 /// // Should equal va.dot(&b) = [[5, 6], [0, 0]]
 /// ```
+#[allow(dead_code)]
 pub fn matmul_derivative<F>(
     a: &ArrayView2<F>,
     b: &ArrayView2<F>,
@@ -498,7 +519,10 @@ where
         + Debug
         + ndarray::ScalarOperand
         + num_traits::NumAssign
-        + std::iter::Sum,
+        + std::iter::Sum
+        + Send
+        + Sync
+        + 'static,
 {
     if a.ncols() != b.nrows() {
         return Err(LinalgError::ShapeError(format!(
@@ -539,6 +563,7 @@ where
 
 /// Simple eigenvalue computation for symmetric matrices (using power iteration for largest)
 /// This is a simplified version for demonstration purposes
+#[allow(dead_code)]
 fn simple_symmetric_eigenvalues<F>(x: &ArrayView2<F>) -> LinalgResult<Array1<F>>
 where
     F: Float
@@ -548,7 +573,10 @@ where
         + Debug
         + ndarray::ScalarOperand
         + num_traits::NumAssign
-        + std::iter::Sum,
+        + std::iter::Sum
+        + Send
+        + Sync
+        + 'static,
 {
     // For now, return the diagonal elements as a rough approximation
     // In practice, you'd use a proper eigenvalue solver
@@ -567,8 +595,8 @@ where
         .collect();
     pairs.sort_by(|a, b| b.0.partial_cmp(&a.0).unwrap_or(std::cmp::Ordering::Equal));
 
-    for (i, (val, _)) in pairs.iter().enumerate() {
-        eigenvals[i] = *val;
+    for (i, (val_, _)) in pairs.iter().enumerate() {
+        eigenvals[i] = *val_;
     }
 
     Ok(eigenvals)
@@ -846,7 +874,7 @@ pub mod differential_operators {
         use approx::assert_abs_diff_eq;
 
         #[test]
-        fn test_matrix_divergence() {
+        fn testmatrix_divergence() {
             // Create a simple 2x2 matrix field with 5 spatial points
             let mut field = Array3::zeros((2, 2, 5));
 
@@ -867,7 +895,7 @@ pub mod differential_operators {
         }
 
         #[test]
-        fn test_matrix_laplacian() {
+        fn testmatrix_laplacian() {
             // Create a quadratic field
             let mut field = Array3::zeros((2, 2, 5));
 
@@ -885,7 +913,7 @@ pub mod differential_operators {
         }
 
         #[test]
-        fn test_matrix_gradient() {
+        fn testmatrix_gradient() {
             // Create a linear field
             let mut field = Array3::zeros((2, 2, 5));
 

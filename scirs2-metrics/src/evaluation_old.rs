@@ -32,7 +32,7 @@ pub type TrainTestSplitResult<T> = (Vec<Array1<T>>, Vec<Array1<T>>);
 /// use ndarray::{Array, Ix1};
 /// use scirs2_metrics::evaluation::train_test_split;
 ///
-/// let x = Array::<f64, _>::linspace(0., 9., 10).into_shape(Ix1(10)).unwrap();
+/// let x = Array::<f64>::linspace(0., 9., 10).into_shape(Ix1(10)).unwrap();
 /// let y = &x * 2.;
 ///
 /// let (train_arrays, test_arrays) = train_test_split(&[&x, &y], 0.3, Some(42)).unwrap();
@@ -46,6 +46,7 @@ pub type TrainTestSplitResult<T> = (Vec<Array1<T>>, Vec<Array1<T>>);
 /// assert_eq!(x_train.len(), 7);  // 70% of the data
 /// assert_eq!(x_test.len(), 3);   // 30% of the data
 /// ```
+#[allow(dead_code)]
 pub fn train_test_split<T>(
     arrays: &[&ArrayBase<impl Data<Elem = T>, impl Dimension>],
     test_size: f64,
@@ -81,11 +82,11 @@ where
         )));
     }
 
-    // Calculate the size of the test set
+    // Calculate the _size of the test set
     let n_test = (n_samples as f64 * test_size).round() as usize;
     if n_test == 0 || n_test >= n_samples {
         return Err(MetricsError::InvalidInput(format!(
-            "test_size={} resulted in an invalid test set size: {}",
+            "test_size={} resulted in an invalid test set _size: {}",
             test_size, n_test
         )));
     }
@@ -93,14 +94,14 @@ where
     // Generate shuffled indices
     let mut indices: Vec<usize> = (0..n_samples).collect();
 
-    // Initialize random number generator with provided seed
-    // In rand 0.9.0 we need to use rng() instead of thread_rng()
+    // Initialize random number generator with provided _seed
+    // In rand 0.9.0 we need to use rand::rng() instead of rand::rng()
     let mut rng = match random_seed {
-        Some(seed) => StdRng::seed_from_u64(seed),
+        Some(_seed) => StdRng::seed_from_u64(_seed),
         None => {
             // In rand 0.9.0, from_rng returns the RNG directly, not a Result
-            let mut r = rand::rng();
-            StdRng::from_rng(&mut r)
+            let r = rand::rng();
+            StdRng::from_rng(r)?
         }
     };
 
@@ -184,6 +185,7 @@ where
 /// assert_eq!(train_indices.len(), 7); // 7 samples in training
 /// assert_eq!(test_indices.len(), 3);  // 3 samples in testing
 /// ```
+#[allow(dead_code)]
 pub fn k_fold_cross_validation(
     n: usize,
     n_folds: usize,
@@ -198,13 +200,13 @@ pub fn k_fold_cross_validation(
 
     if n_folds < 2 {
         return Err(MetricsError::InvalidInput(
-            "Number of folds must be at least 2".to_string(),
+            "Number of _folds must be at least 2".to_string(),
         ));
     }
 
     if n_folds > n {
         return Err(MetricsError::InvalidInput(format!(
-            "Number of folds ({}) cannot be greater than number of samples ({})",
+            "Number of _folds ({}) cannot be greater than number of samples ({})",
             n_folds, n
         )));
     }
@@ -215,10 +217,10 @@ pub fn k_fold_cross_validation(
     // Shuffle if requested
     if shuffle {
         let mut rng = match random_seed {
-            Some(seed) => StdRng::seed_from_u64(seed),
+            Some(_seed) => StdRng::seed_from_u64(_seed),
             None => {
-                let mut r = rand::rng();
-                StdRng::from_rng(&mut r)
+                let r = rand::rng();
+                StdRng::from_rng(r)?
             }
         };
 
@@ -231,9 +233,9 @@ pub fn k_fold_cross_validation(
         .collect::<Vec<_>>();
 
     let mut current = 0;
-    let mut folds = Vec::with_capacity(n_folds);
+    let mut _folds = Vec::with_capacity(n_folds);
 
-    // Create folds
+    // Create _folds
     for fold_size in fold_sizes {
         // Extract test indices for this fold
         let test_indices = indices[current..(current + fold_size)].to_vec();
@@ -247,7 +249,7 @@ pub fn k_fold_cross_validation(
         current += fold_size;
     }
 
-    Ok(folds)
+    Ok(_folds)
 }
 
 /// Leave-one-out cross-validation (LOOCV)
@@ -277,6 +279,7 @@ pub fn k_fold_cross_validation(
 /// assert_eq!(test_indices.len(), 1);  // 1 sample in testing
 /// assert_eq!(test_indices[0], 0);     // First sample in test set
 /// ```
+#[allow(dead_code)]
 pub fn leave_one_out_cv(n: usize) -> Result<Vec<(Vec<usize>, Vec<usize>)>> {
     if n <= 1 {
         return Err(MetricsError::InvalidInput(
@@ -329,6 +332,7 @@ pub fn leave_one_out_cv(n: usize) -> Result<Vec<(Vec<usize>, Vec<usize>)>> {
 /// let splits = stratified_k_fold(&y, 3, true, Some(42)).unwrap();
 /// assert_eq!(splits.len(), 3); // 3 folds
 /// ```
+#[allow(dead_code)]
 pub fn stratified_k_fold<T>(
     y: &ArrayBase<impl Data<Elem = T>, impl Dimension>,
     n_folds: usize,
@@ -348,13 +352,13 @@ where
 
     if n_folds < 2 {
         return Err(MetricsError::InvalidInput(
-            "Number of folds must be at least 2".to_string(),
+            "Number of _folds must be at least 2".to_string(),
         ));
     }
 
     if n_folds > n_samples {
         return Err(MetricsError::InvalidInput(format!(
-            "Number of folds ({}) cannot be greater than number of samples ({})",
+            "Number of _folds ({}) cannot be greater than number of samples ({})",
             n_folds, n_samples
         )));
     }
@@ -382,10 +386,10 @@ where
 
     // Initialize random number generator if needed
     let mut rng = match random_seed {
-        Some(seed) => Some(StdRng::seed_from_u64(seed)),
+        Some(_seed) => Some(StdRng::seed_from_u64(_seed)),
         None if shuffle => {
-            let mut r = rand::rng();
-            Some(StdRng::from_rng(&mut r))
+            let r = rand::rng();
+            Some(StdRng::from_rng(r)?)
         }
         None => None,
     };
@@ -400,7 +404,7 @@ where
     }
 
     // Allocate samples to folds, respecting the class distribution
-    let mut folds = vec![Vec::new(); n_folds];
+    let mut _folds = vec![Vec::new(); n_folds];
 
     for indices in class_counts.values() {
         for (i, &idx) in indices.iter().enumerate() {

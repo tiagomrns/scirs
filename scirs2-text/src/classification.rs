@@ -7,6 +7,7 @@ use crate::error::{Result, TextError};
 use crate::vectorize::{TfidfVectorizer, Vectorizer};
 use ndarray::{Array2, Axis};
 use rand::prelude::*;
+use rand::seq::SliceRandom;
 use rand::SeedableRng;
 
 /// Text feature selector
@@ -43,35 +44,35 @@ impl TextFeatureSelector {
     }
 
     /// Set minimum document frequency
-    pub fn set_min_df(mut self, min_df: f64) -> Result<Self> {
-        if min_df < 0.0 {
+    pub fn set_min_df(mut self, mindf: f64) -> Result<Self> {
+        if mindf < 0.0 {
             return Err(TextError::InvalidInput(
                 "min_df must be non-negative".to_string(),
             ));
         }
-        self.min_df = min_df;
+        self.min_df = mindf;
         Ok(self)
     }
 
     /// Set maximum document frequency
-    pub fn set_max_df(mut self, max_df: f64) -> Result<Self> {
-        if !(0.0..=1.0).contains(&max_df) {
+    pub fn set_max_df(mut self, maxdf: f64) -> Result<Self> {
+        if !(0.0..=1.0).contains(&maxdf) {
             return Err(TextError::InvalidInput(
                 "max_df must be between 0 and 1 for fractions".to_string(),
             ));
         }
-        self.max_df = max_df;
+        self.max_df = maxdf;
         Ok(self)
     }
 
     /// Set maximum document frequency (alias for set_max_df)
-    pub fn set_max_features(self, max_features: f64) -> Result<Self> {
-        self.set_max_df(max_features)
+    pub fn set_max_features(self, maxfeatures: f64) -> Result<Self> {
+        self.set_max_df(maxfeatures)
     }
 
     /// Set to use absolute counts instead of fractions
-    pub fn use_counts(mut self, use_counts: bool) -> Self {
-        self.use_counts = use_counts;
+    pub fn use_counts(mut self, usecounts: bool) -> Self {
+        self.use_counts = usecounts;
         self
     }
 
@@ -186,7 +187,7 @@ impl TextClassificationMetrics {
 
         if predictions.len() != true_labels.len() {
             return Err(TextError::InvalidInput(
-                "Predictions and labels must have the same length".to_string(),
+                "Predictions and _labels must have the same length".to_string(),
             ));
         }
 
@@ -223,7 +224,7 @@ impl TextClassificationMetrics {
 
         if predictions.len() != true_labels.len() {
             return Err(TextError::InvalidInput(
-                "Predictions and labels must have the same length".to_string(),
+                "Predictions and _labels must have the same length".to_string(),
             ));
         }
 
@@ -267,13 +268,13 @@ impl TextClassificationMetrics {
     }
 
     /// Calculate accuracy from predictions and true labels
-    pub fn accuracy<T>(&self, predictions: &[T], true_labels: &[T]) -> Result<f64>
+    pub fn accuracy<T>(&self, predictions: &[T], truelabels: &[T]) -> Result<f64>
     where
         T: PartialEq,
     {
-        if predictions.len() != true_labels.len() {
+        if predictions.len() != truelabels.len() {
             return Err(TextError::InvalidInput(
-                "Predictions and labels must have the same length".to_string(),
+                "Predictions and _labels must have the same length".to_string(),
             ));
         }
 
@@ -285,7 +286,7 @@ impl TextClassificationMetrics {
 
         let correct = predictions
             .iter()
-            .zip(true_labels.iter())
+            .zip(truelabels.iter())
             .filter(|(pred, true_label)| pred == true_label)
             .count();
 
@@ -293,13 +294,13 @@ impl TextClassificationMetrics {
     }
 
     /// Calculate precision, recall, and F1 score for binary classification
-    pub fn binary_metrics<T>(&self, predictions: &[T], true_labels: &[T]) -> Result<(f64, f64, f64)>
+    pub fn binary_metrics<T>(&self, predictions: &[T], truelabels: &[T]) -> Result<(f64, f64, f64)>
     where
         T: PartialEq + Copy + Default + PartialEq<usize>,
     {
-        if predictions.len() != true_labels.len() {
+        if predictions.len() != truelabels.len() {
             return Err(TextError::InvalidInput(
-                "Predictions and labels must have the same length".to_string(),
+                "Predictions and _labels must have the same length".to_string(),
             ));
         }
 
@@ -308,7 +309,7 @@ impl TextClassificationMetrics {
         let mut fp = 0;
         let mut fn_ = 0;
 
-        for (pred, true_label) in predictions.iter().zip(true_labels.iter()) {
+        for (pred, true_label) in predictions.iter().zip(truelabels.iter()) {
             if *pred == 1 && *true_label == 1 {
                 tp += 1;
             } else if *pred == 1 && *true_label == 0 {
@@ -413,7 +414,7 @@ impl TextDataset {
                 index
                     .get(label)
                     .copied()
-                    .ok_or_else(|| TextError::InvalidInput(format!("Unknown label: {}", label)))
+                    .ok_or_else(|| TextError::InvalidInput(format!("Unknown label: {label}")))
             })
             .collect()
     }
@@ -438,12 +439,12 @@ impl TextDataset {
         let mut indices: Vec<usize> = (0..self.len()).collect();
 
         // Shuffle indices
-        if let Some(seed) = random_seed {
-            // Use deterministic RNG with seed
-            let mut rng = rand::rngs::StdRng::seed_from_u64(seed);
+        if let Some(_seed) = random_seed {
+            // Use deterministic RNG with _seed
+            let mut rng = rand::rngs::StdRng::seed_from_u64(_seed);
             indices.shuffle(&mut rng);
         } else {
-            // Use standard thread_rng
+            // Use standard rng
             let mut rng = rand::rng();
             indices.shuffle(&mut rng);
         }
@@ -454,7 +455,7 @@ impl TextDataset {
         let train_indices = indices[test_size..].to_vec();
 
         // Create datasets
-        let train_texts = train_indices
+        let traintexts = train_indices
             .iter()
             .map(|&i| self.texts[i].clone())
             .collect();
@@ -463,7 +464,7 @@ impl TextDataset {
             .map(|&i| self.labels[i].clone())
             .collect();
 
-        let test_texts = test_indices
+        let testtexts = test_indices
             .iter()
             .map(|&i| self.texts[i].clone())
             .collect();
@@ -472,8 +473,8 @@ impl TextDataset {
             .map(|&i| self.labels[i].clone())
             .collect();
 
-        let mut train_dataset = Self::new(train_texts, train_labels)?;
-        let mut test_dataset = Self::new(test_texts, test_labels)?;
+        let mut train_dataset = Self::new(traintexts, train_labels)?;
+        let mut test_dataset = Self::new(testtexts, test_labels)?;
 
         // If we have a label index, build it for the split datasets
         if self.label_index.is_some() {
@@ -545,7 +546,7 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_text_dataset() {
+    fn testtext_dataset() {
         let texts = vec![
             "This is document 1".to_string(),
             "Another document".to_string(),
@@ -576,7 +577,7 @@ mod tests {
 
     #[test]
     fn test_train_test_split() {
-        let texts = (0..10).map(|i| format!("Text {}", i)).collect();
+        let texts = (0..10).map(|i| format!("Text {i}")).collect();
         let labels = (0..10).map(|_| "A".to_string()).collect();
 
         let dataset = TextDataset::new(texts, labels).unwrap();

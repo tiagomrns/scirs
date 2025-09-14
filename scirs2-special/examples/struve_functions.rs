@@ -1,5 +1,6 @@
 use scirs2_special::{it2_struve0, it_mod_struve0, it_struve0, mod_struve, struve};
 
+#[allow(dead_code)]
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("Struve Functions Example");
     println!("=======================\n");

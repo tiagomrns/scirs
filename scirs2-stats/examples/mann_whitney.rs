@@ -1,6 +1,7 @@
 use ndarray::array;
 use scirs2_stats::mann_whitney;
 
+#[allow(dead_code)]
 fn main() {
     println!("Mann-Whitney U Test Example");
     println!("==========================\n");

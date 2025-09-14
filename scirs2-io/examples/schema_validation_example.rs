@@ -8,6 +8,7 @@ use serde_json::json;
 use std::collections::HashMap;
 use tempfile::tempdir;
 
+#[allow(dead_code)]
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("📋 Schema-based Validation Example");
     println!("==================================");
@@ -36,6 +37,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     Ok(())
 }
 
+#[allow(dead_code)]
 fn demonstrate_basic_schema_validation() -> Result<(), Box<dyn std::error::Error>> {
     println!("\n🔧 Demonstrating Basic Schema Validation...");
 
@@ -128,6 +130,7 @@ fn demonstrate_basic_schema_validation() -> Result<(), Box<dyn std::error::Error
     Ok(())
 }
 
+#[allow(dead_code)]
 fn demonstrate_nested_schema_validation() -> Result<(), Box<dyn std::error::Error>> {
     println!("\n🏗️  Demonstrating Nested Schema Validation...");
 
@@ -308,6 +311,7 @@ fn demonstrate_nested_schema_validation() -> Result<(), Box<dyn std::error::Erro
     Ok(())
 }
 
+#[allow(dead_code)]
 fn demonstrate_custom_validators() -> Result<(), Box<dyn std::error::Error>> {
     println!("\n🔧 Demonstrating Custom Validators...");
 
@@ -393,6 +397,7 @@ fn demonstrate_custom_validators() -> Result<(), Box<dyn std::error::Error>> {
     Ok(())
 }
 
+#[allow(dead_code)]
 fn demonstrate_format_validators() -> Result<(), Box<dyn std::error::Error>> {
     println!("\n📧 Demonstrating Format Validators...");
 
@@ -492,6 +497,7 @@ fn demonstrate_format_validators() -> Result<(), Box<dyn std::error::Error>> {
     Ok(())
 }
 
+#[allow(dead_code)]
 fn demonstrate_file_validation() -> Result<(), Box<dyn std::error::Error>> {
     println!("\n📁 Demonstrating File Validation...");
 
@@ -594,6 +600,7 @@ fn demonstrate_file_validation() -> Result<(), Box<dyn std::error::Error>> {
     Ok(())
 }
 
+#[allow(dead_code)]
 fn demonstrate_json_schema_compatibility() -> Result<(), Box<dyn std::error::Error>> {
     println!("\n🔄 Demonstrating JSON Schema Compatibility...");
 

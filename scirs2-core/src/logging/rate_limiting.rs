@@ -31,8 +31,8 @@ pub enum RateLimitStrategy {
     },
     /// Exponential backoff: increasing delays for repeated events
     ExponentialBackoff {
-        initial_delay: Duration,
-        max_delay: Duration,
+        initialdelay: Duration,
+        maxdelay: Duration,
         multiplier: f64,
     },
     /// Adaptive: automatically adjust based on event frequency and system load
@@ -170,7 +170,7 @@ struct RateLimiterState {
     /// Exponential backoff state
     next_allowed_time: Instant,
     /// Current backoff delay
-    current_delay: Duration,
+    currentdelay: Duration,
     /// Suppressed event count
     suppressed_count: u32,
     /// Last time we logged a suppression summary
@@ -192,7 +192,7 @@ impl RateLimiterState {
             tokens,
             last_refill: now,
             next_allowed_time: now,
-            current_delay: Duration::from_secs(0),
+            currentdelay: Duration::from_secs(0),
             suppressed_count: 0,
             last_summary_time: now,
         }
@@ -221,12 +221,10 @@ impl RateLimiterState {
                 refill_rate,
             } => self.should_allow_token_bucket(*capacity, *refill_rate, now),
             RateLimitStrategy::ExponentialBackoff {
-                initial_delay,
-                max_delay,
+                initialdelay,
+                maxdelay,
                 multiplier,
-            } => {
-                self.should_allow_exponential_backoff(*initial_delay, *max_delay, *multiplier, now)
-            }
+            } => self.should_allow_exponential_backoff(*initialdelay, *maxdelay, *multiplier, now),
             RateLimitStrategy::Adaptive {
                 base_max_events,
                 base_window,
@@ -252,8 +250,7 @@ impl RateLimiterState {
             self.suppressed_count += 1;
             RateLimitDecision::Suppress {
                 reason: format!(
-                    "Fixed window limit exceeded ({} events in {:?})",
-                    max_events, window_duration
+                    "Fixed window limit exceeded ({max_events} events in {window_duration:?})"
                 ),
                 retry_after: Some(window_start + window_duration),
             }
@@ -282,8 +279,7 @@ impl RateLimiterState {
                 .map(|&oldest| oldest + window_duration);
             RateLimitDecision::Suppress {
                 reason: format!(
-                    "Sliding window limit exceeded ({} events in {:?})",
-                    max_events, window_duration
+                    "Sliding window limit exceeded ({max_events} events in {window_duration:?})"
                 ),
                 retry_after,
             }
@@ -309,7 +305,7 @@ impl RateLimiterState {
             // Calculate when next token will be available
             let time_to_token = Duration::from_secs_f64((1.0 - self.tokens) / refill_rate);
             RateLimitDecision::Suppress {
-                reason: format!("Token bucket empty (refill rate: {:.2}/sec)", refill_rate),
+                reason: format!("Token bucket empty (refill rate: {refill_rate:.2}/sec)"),
                 retry_after: Some(now + time_to_token),
             }
         }
@@ -317,28 +313,28 @@ impl RateLimiterState {
 
     fn should_allow_exponential_backoff(
         &mut self,
-        initial_delay: Duration,
-        max_delay: Duration,
+        initialdelay: Duration,
+        maxdelay: Duration,
         multiplier: f64,
         now: Instant,
     ) -> RateLimitDecision {
         if now >= self.next_allowed_time {
             // Reset delay after successful allowance
-            self.current_delay = initial_delay;
-            self.next_allowed_time = now + self.current_delay;
+            self.currentdelay = initialdelay;
+            self.next_allowed_time = now + self.currentdelay;
             RateLimitDecision::Allow
         } else {
             self.suppressed_count += 1;
             // Increase delay for next time
-            self.current_delay = Duration::from_secs_f64(
-                (self.current_delay.as_secs_f64() * multiplier).min(max_delay.as_secs_f64()),
+            self.currentdelay = Duration::from_secs_f64(
+                (self.currentdelay.as_secs_f64() * multiplier).min(maxdelay.as_secs_f64()),
             );
-            self.next_allowed_time = now + self.current_delay;
+            self.next_allowed_time = now + self.currentdelay;
 
             RateLimitDecision::Suppress {
                 reason: format!(
                     "Exponential backoff (current delay: {:?})",
-                    self.current_delay
+                    self.currentdelay
                 ),
                 retry_after: Some(self.next_allowed_time),
             }
@@ -374,8 +370,7 @@ impl RateLimiterState {
             self.suppressed_count += 1;
             RateLimitDecision::Suppress {
                 reason: format!(
-                    "Adaptive limit exceeded (load: {:.2}, limit: {})",
-                    current_load, adjusted_max_events
+                    "Adaptive limit exceeded (load: {current_load:.2}, limit: {adjusted_max_events})"
                 ),
                 retry_after: self.event_times.first().map(|&oldest| oldest + base_window),
             }
@@ -391,10 +386,10 @@ impl RateLimiterState {
     }
 
     /// Check if we should log a suppression summary
-    fn should_log_summary(&mut self, summary_interval: Duration) -> Option<SuppressionSummary> {
+    fn shouldlog_summary(&mut self, summaryinterval: Duration) -> Option<SuppressionSummary> {
         let now = Instant::now();
         if self.suppressed_count > 0
-            && now.duration_since(self.last_summary_time) >= summary_interval
+            && now.duration_since(self.last_summary_time) >= summaryinterval
         {
             let summary = SuppressionSummary {
                 suppressed_count: self.suppressed_count,
@@ -524,8 +519,8 @@ impl Default for RateLimiterConfig {
         class_strategies.insert(
             EventClass::Trace,
             RateLimitStrategy::ExponentialBackoff {
-                initial_delay: Duration::from_secs(1),
-                max_delay: Duration::from_secs(300), // 5 minutes max
+                initialdelay: Duration::from_secs(1),
+                maxdelay: Duration::from_secs(300), // 5 minutes max
                 multiplier: 2.0,
             },
         );
@@ -643,7 +638,7 @@ impl SmartRateLimiter {
         })?;
 
         for (&fingerprint, limiter) in limiters.iter_mut() {
-            if let Some(summary) = limiter.should_log_summary(self.config.summary_interval) {
+            if let Some(summary) = limiter.shouldlog_summary(self.config.summary_interval) {
                 summaries.push((fingerprint, summary));
             }
         }
@@ -695,6 +690,7 @@ impl Default for SmartRateLimiter {
 static GLOBAL_RATE_LIMITER: Lazy<SmartRateLimiter> = Lazy::new(SmartRateLimiter::default);
 
 /// Get the global rate limiter
+#[allow(dead_code)]
 pub fn global_rate_limiter() -> &'static SmartRateLimiter {
     &GLOBAL_RATE_LIMITER
 }
@@ -724,7 +720,7 @@ pub mod utils {
     }
 
     /// Check if an event should be logged using the global rate limiter
-    pub fn should_log(event: &LogEvent) -> bool {
+    pub fn shouldlog(event: &LogEvent) -> bool {
         match global_rate_limiter().should_allow(event) {
             Ok(RateLimitDecision::Allow) => true,
             Ok(RateLimitDecision::Suppress { .. }) => false,
@@ -868,7 +864,7 @@ mod tests {
             strategy: "TokenBucket".to_string(),
         };
 
-        let display_str = format!("{}", summary);
+        let display_str = format!("{summary}");
         assert!(display_str.contains("10 events"));
         assert!(display_str.contains("TokenBucket"));
     }
@@ -895,8 +891,8 @@ mod tests {
         let warning_event = utils::warning_event("Test warning".to_string());
         assert_eq!(warning_event.class, EventClass::Warning);
 
-        // Test the should_log utility
+        // Test the shouldlog utility
         let info_event = utils::info_event("Test info".to_string());
-        assert!(utils::should_log(&info_event)); // First call should be allowed
+        assert!(utils::shouldlog(&info_event)); // First call should be allowed
     }
 }

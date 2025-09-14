@@ -10,6 +10,7 @@ use std::fmt::{Debug, Display};
 use crate::error::{Result, TimeSeriesError};
 use crate::optimization::{LBFGSOptimizer, OptimizationOptions};
 use crate::utils::autocorrelation;
+use statrs::statistics::Statistics;
 
 /// Enhanced AR model with robust estimation capabilities
 #[derive(Debug, Clone)]
@@ -221,7 +222,7 @@ where
     where
         S: Data<Elem = F>,
     {
-        scirs2_core::validation::check_array_finite(data, "data")?;
+        scirs2_core::validation::checkarray_finite(data, "data")?;
 
         let min_required = self.p * 3 + 10; // Need more data for robust estimation
         if data.len() < min_required {
@@ -804,7 +805,7 @@ where
         // For larger matrices, use Gaussian elimination with partial pivoting
         let mut augmented = Array2::zeros((n, 2 * n));
 
-        // Create augmented matrix [A | I]
+        // Create augmented _matrix [A | I]
         for i in 0..n {
             for j in 0..n {
                 augmented[[i, j]] = matrix[[i, j]];
@@ -831,7 +832,7 @@ where
                 }
             }
 
-            // Check for singular matrix with better tolerance
+            // Check for singular _matrix with better tolerance
             let eps = F::from(1e-12).unwrap_or(F::epsilon());
             if augmented[[i, i]].abs() < eps {
                 return Err(TimeSeriesError::ComputationError(
@@ -856,7 +857,7 @@ where
             }
         }
 
-        // Extract inverse from right half of augmented matrix
+        // Extract inverse from right half of augmented _matrix
         let mut inv = Array2::zeros((n, n));
         for i in 0..n {
             for j in 0..n {

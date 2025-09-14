@@ -1,16 +1,18 @@
-//! Advanced adaptive filtering algorithms
-//!
-//! This module provides comprehensive adaptive filter implementations including classical
-//! algorithms (LMS, RLS, NLMS) and advanced variants (Variable Step-Size LMS, Affine
-//! Projection Algorithm, Frequency Domain LMS, robust adaptive filters). These filters
-//! are used for applications such as noise cancellation, system identification, echo
-//! cancellation, equalization, beamforming, and channel estimation.
+// Advanced adaptive filtering algorithms
+//
+// This module provides comprehensive adaptive filter implementations including classical
+// algorithms (LMS, RLS, NLMS) and advanced variants (Variable Step-Size LMS, Affine
+// Projection Algorithm, Frequency Domain LMS, robust adaptive filters). These filters
+// are used for applications such as noise cancellation, system identification, echo
+// cancellation, equalization, beamforming, and channel estimation.
 
+use super::*;
 use crate::error::{SignalError, SignalResult};
 use rustfft::{num_complex::Complex, FftPlanner};
 use std::collections::VecDeque;
 use std::fmt::Debug;
 
+#[allow(unused_imports)]
 /// Least Mean Squares (LMS) adaptive filter
 ///
 /// The LMS algorithm is a simple and robust adaptive filter that minimizes
@@ -49,7 +51,7 @@ impl LmsFilter {
     /// # Returns
     ///
     /// * A new LMS filter instance
-    pub fn new(num_taps: usize, step_size: f64, initial_weight: f64) -> SignalResult<Self> {
+    pub fn new(num_taps: usize, step_size: f64, initialweight: f64) -> SignalResult<Self> {
         if num_taps == 0 {
             return Err(SignalError::ValueError(
                 "Number of taps must be positive".to_string(),
@@ -153,14 +155,14 @@ impl LmsFilter {
     }
 
     /// Reset the filter to initial state
-    pub fn reset(&mut self, initial_weight: f64) {
+    pub fn reset(&mut self, initialweight: f64) {
         self.weights.fill(initial_weight);
         self.buffer.fill(0.0);
         self.buffer_index = 0;
     }
 
     /// Set step size (learning rate)
-    pub fn set_step_size(&mut self, step_size: f64) -> SignalResult<()> {
+    pub fn set_step_size(&mut self, stepsize: f64) -> SignalResult<()> {
         if step_size <= 0.0 {
             return Err(SignalError::ValueError(
                 "Step size must be positive".to_string(),
@@ -211,7 +213,7 @@ impl RlsFilter {
     /// # Returns
     ///
     /// * A new RLS filter instance
-    pub fn new(num_taps: usize, lambda: f64, delta: f64) -> SignalResult<Self> {
+    pub fn new(numtaps: usize, lambda: f64, delta: f64) -> SignalResult<Self> {
         if num_taps == 0 {
             return Err(SignalError::ValueError(
                 "Number of taps must be positive".to_string(),
@@ -310,6 +312,11 @@ impl RlsFilter {
         for (p_row, kx_row) in self.p_matrix.iter_mut().zip(kx_outer.iter()) {
             for (j, p_elem) in p_row.iter_mut().enumerate() {
                 let kxp = dot_product(kx_row, &get_column(&p_matrix_copy, j));
+                if self.lambda.abs() < f64::EPSILON {
+                    return Err(SignalError::ValueError(
+                        "Forgetting factor lambda is too close to zero".to_string(),
+                    ));
+                }
                 *p_elem = (*p_elem - kxp) / self.lambda;
             }
         }
@@ -413,10 +420,10 @@ impl NlmsFilter {
     /// # Returns
     ///
     /// * A new NLMS filter instance
-    pub fn new(num_taps: usize, step_size: f64, epsilon: f64) -> SignalResult<Self> {
+    pub fn new(num_taps: usize, stepsize: f64, epsilon: f64) -> SignalResult<Self> {
         if num_taps == 0 {
             return Err(SignalError::ValueError(
-                "Number of taps must be positive".to_string(),
+                "Number of _taps must be positive".to_string(),
             ));
         }
 
@@ -530,16 +537,16 @@ impl VsLmsFilter {
     /// # Returns
     ///
     /// * A new VS-LMS filter instance
-    pub fn new(num_taps: usize, initial_step_size: f64, alpha: f64) -> SignalResult<Self> {
+    pub fn new(num_taps: usize, initial_stepsize: f64, alpha: f64) -> SignalResult<Self> {
         if num_taps == 0 {
             return Err(SignalError::ValueError(
-                "Number of taps must be positive".to_string(),
+                "Number of _taps must be positive".to_string(),
             ));
         }
 
         if initial_step_size <= 0.0 {
             return Err(SignalError::ValueError(
-                "Initial step size must be positive".to_string(),
+                "Initial step _size must be positive".to_string(),
             ));
         }
 
@@ -672,13 +679,13 @@ impl ApaFilter {
     ) -> SignalResult<Self> {
         if num_taps == 0 {
             return Err(SignalError::ValueError(
-                "Number of taps must be positive".to_string(),
+                "Number of _taps must be positive".to_string(),
             ));
         }
 
         if projection_order == 0 {
             return Err(SignalError::ValueError(
-                "Projection order must be positive".to_string(),
+                "Projection _order must be positive".to_string(),
             ));
         }
 
@@ -813,7 +820,7 @@ impl FdlmsFilter {
     /// # Returns
     ///
     /// * A new FDLMS filter instance
-    pub fn new(filter_length: usize, step_size: f64, leakage: f64) -> SignalResult<Self> {
+    pub fn new(filter_length: usize, stepsize: f64, leakage: f64) -> SignalResult<Self> {
         if filter_length == 0 {
             return Err(SignalError::ValueError(
                 "Filter length must be positive".to_string(),
@@ -898,7 +905,7 @@ impl FdlmsFilter {
         // Frequency domain filtering
         let mut freq_output: Vec<Complex<f64>> = input_vec
             .iter()
-            .zip(self.freq_weights.iter())
+            .zip(self.freqweights.iter())
             .map(|(&x, &w)| x * w)
             .collect();
 
@@ -926,7 +933,7 @@ impl FdlmsFilter {
         Ok((outputs, errors))
     }
 
-    fn update_weights(&mut self, freq_input: &[Complex<f64>], errors: &[f64]) -> SignalResult<()> {
+    fn update_weights(&mut self, freqinput: &[Complex<f64>], errors: &[f64]) -> SignalResult<()> {
         // Create error signal in frequency domain
         let mut error_padded = vec![Complex::new(0.0, 0.0); self.block_size];
         for (i, &err) in errors.iter().enumerate() {
@@ -952,7 +959,7 @@ impl FdlmsFilter {
     /// Get current filter weights (time domain)
     pub fn weights(&self) -> Vec<f64> {
         // Convert frequency domain weights to time domain
-        let mut time_weights = self.freq_weights.clone();
+        let mut time_weights = self.freqweights.clone();
         let mut planner = FftPlanner::new();
         let ifft = planner.plan_fft_inverse(self.block_size);
         ifft.process(&mut time_weights);
@@ -965,7 +972,7 @@ impl FdlmsFilter {
 
     /// Reset the filter
     pub fn reset(&mut self) {
-        self.freq_weights.fill(Complex::new(0.0, 0.0));
+        self.freqweights.fill(Complex::new(0.0, 0.0));
         self.input_buffer.clear();
         self.error_buffer.clear();
     }
@@ -989,10 +996,10 @@ pub struct LmfFilter {
 
 impl LmfFilter {
     /// Create a new LMF filter
-    pub fn new(num_taps: usize, step_size: f64) -> SignalResult<Self> {
+    pub fn new(num_taps: usize, stepsize: f64) -> SignalResult<Self> {
         if num_taps == 0 {
             return Err(SignalError::ValueError(
-                "Number of taps must be positive".to_string(),
+                "Number of _taps must be positive".to_string(),
             ));
         }
 
@@ -1084,10 +1091,10 @@ impl SmLmsFilter {
     /// # Returns
     ///
     /// * A new SM-LMS filter instance
-    pub fn new(num_taps: usize, step_size: f64, error_bound: f64) -> SignalResult<Self> {
+    pub fn new(num_taps: usize, step_size: f64, errorbound: f64) -> SignalResult<Self> {
         if num_taps == 0 {
             return Err(SignalError::ValueError(
-                "Number of taps must be positive".to_string(),
+                "Number of _taps must be positive".to_string(),
             ));
         }
 
@@ -1099,7 +1106,7 @@ impl SmLmsFilter {
 
         if error_bound <= 0.0 {
             return Err(SignalError::ValueError(
-                "Error bound must be positive".to_string(),
+                "Error _bound must be positive".to_string(),
             ));
         }
 
@@ -1142,7 +1149,13 @@ impl SmLmsFilter {
             };
 
             // Normalized update
-            let normalized_step = self.step_size / normalization;
+            // Ensure normalization is not too small to avoid numerical instability
+            let safe_normalization = if normalization.abs() < 1e-12 {
+                1e-12
+            } else {
+                normalization
+            };
+            let normalized_step = self.step_size / safe_normalization;
 
             for i in 0..self.weights.len() {
                 let buffer_idx =
@@ -1185,25 +1198,29 @@ impl SmLmsFilter {
 // Helper functions for matrix operations
 
 /// Compute dot product of two vectors
+#[allow(dead_code)]
 fn dot_product(a: &[f64], b: &[f64]) -> f64 {
     a.iter().zip(b.iter()).map(|(&x, &y)| x * y).sum()
 }
 
 /// Multiply matrix by vector
+#[allow(dead_code)]
 fn matrix_vector_multiply(matrix: &[Vec<f64>], vector: &[f64]) -> Vec<f64> {
     let mut result = vec![0.0; matrix.len()];
-    for i in 0..matrix.len() {
-        result[i] = dot_product(&matrix[i], vector);
+    for i in 0.._matrix.len() {
+        result[i] = dot_product(&_matrix[i], vector);
     }
     result
 }
 
 /// Get column from matrix
+#[allow(dead_code)]
 fn get_column(matrix: &[Vec<f64>], col: usize) -> Vec<f64> {
     matrix.iter().map(|row| row[col]).collect()
 }
 
 /// Solve small linear system using Gaussian elimination (for APA)
+#[allow(dead_code)]
 fn solve_linear_system_small(matrix: &[Vec<f64>], rhs: &[f64]) -> SignalResult<Vec<f64>> {
     let n = matrix.len();
     if n != rhs.len() {
@@ -1212,8 +1229,8 @@ fn solve_linear_system_small(matrix: &[Vec<f64>], rhs: &[f64]) -> SignalResult<V
         ));
     }
 
-    // Create augmented matrix
-    let mut aug_matrix = matrix
+    // Create augmented _matrix
+    let mut aug_matrix = _matrix
         .iter()
         .zip(rhs.iter())
         .map(|(row, &b)| {
@@ -1236,15 +1253,22 @@ fn solve_linear_system_small(matrix: &[Vec<f64>], rhs: &[f64]) -> SignalResult<V
         // Swap rows
         aug_matrix.swap(i, max_row);
 
-        // Check for singular matrix
+        // Check for singular _matrix
         if aug_matrix[i][i].abs() < 1e-12 {
-            return Err(SignalError::Compute(
+            return Err(SignalError::ComputationError(
                 "Matrix is singular or near-singular".to_string(),
             ));
         }
 
         // Eliminate column
         for k in (i + 1)..n {
+            // Check for singular _matrix (diagonal element near zero)
+            if aug_matrix[i][i].abs() < f64::EPSILON {
+                return Err(SignalError::ValueError(format!(
+                    "Singular _matrix detected at row {}",
+                    i
+                )));
+            }
             let factor = aug_matrix[k][i] / aug_matrix[i][i];
             for j in i..=n {
                 aug_matrix[k][j] -= factor * aug_matrix[i][j];
@@ -1269,10 +1293,10 @@ fn solve_linear_system_small(matrix: &[Vec<f64>], rhs: &[f64]) -> SignalResult<V
 mod tests {
     use super::*;
     use approx::assert_relative_eq;
-
     #[test]
     fn test_lms_creation() {
-        let lms = LmsFilter::new(4, 0.01, 0.0).unwrap();
+        let lms = LmsFilter::new(4, 0.01, 0.0)
+            .expect("LMS filter creation should succeed with valid parameters");
         assert_eq!(lms.weights().len(), 4);
         assert_eq!(lms.buffer().len(), 4);
 
@@ -1283,10 +1307,11 @@ mod tests {
 
     #[test]
     fn test_lms_adapt() {
-        let mut lms = LmsFilter::new(2, 0.1, 0.0).unwrap();
+        let mut lms = LmsFilter::new(2, 0.1, 0.0)
+            .expect("LMS filter creation should succeed with valid parameters");
 
         // Test single adaptation
-        let (output, error, _mse) = lms.adapt(1.0, 0.5).unwrap();
+        let (output, error_mse) = lms.adapt(1.0, 0.5).unwrap();
 
         // Initially weights are zero, so output should be zero
         assert_relative_eq!(output, 0.0, epsilon = 1e-10);
@@ -1298,19 +1323,21 @@ mod tests {
 
     #[test]
     fn test_lms_batch() {
+        let a = vec![1.0, 2.0, 3.0, 4.0, 5.0];
+        let b = vec![0.5, 0.5];
         let mut lms = LmsFilter::new(2, 0.05, 0.0).unwrap();
 
         let inputs = vec![1.0, 0.5, -0.3, 0.8];
         let desired = vec![0.1, 0.2, 0.3, 0.4];
 
-        let (outputs, errors, _mse) = lms.adapt_batch(&inputs, &desired).unwrap();
+        let (outputs, errors_mse) = lms.adapt_batch(&inputs, &desired).unwrap();
 
         assert_eq!(outputs.len(), 4);
         assert_eq!(errors.len(), 4);
 
         // Error should generally decrease over time for a learnable system
         // Note: LMS adaptation is gradual, so we just check that it's reasonable
-        assert!(errors.iter().all(|&e| e.abs() < 10.0)); // Errors should be bounded
+        assert!(errors.iter().all(|&e: &f64| e.abs() < 10.0)); // Errors should be bounded
     }
 
     #[test]
@@ -1340,7 +1367,7 @@ mod tests {
             desired.push(output);
         }
 
-        let (_outputs, _errors, _mse) = lms.adapt_batch(&inputs, &desired).unwrap();
+        let (_outputs_errors_mse) = lms.adapt_batch(&inputs, &desired).unwrap();
 
         // Check if weights converged towards target (approximately)
         // Note: LMS convergence depends on step size, signal properties, and training length
@@ -1372,7 +1399,7 @@ mod tests {
     fn test_rls_adapt() {
         let mut rls = RlsFilter::new(2, 0.99, 100.0).unwrap();
 
-        let (output, error, _mse) = rls.adapt(1.0, 0.5).unwrap();
+        let (output, error_mse) = rls.adapt(1.0, 0.5).unwrap();
 
         // Initially weights are zero, so output should be zero
         assert_relative_eq!(output, 0.0, epsilon = 1e-10);
@@ -1394,7 +1421,7 @@ mod tests {
     fn test_nlms_adapt() {
         let mut nlms = NlmsFilter::new(2, 0.5, 1e-6).unwrap();
 
-        let (output, error, _mse) = nlms.adapt(1.0, 0.3).unwrap();
+        let (output, error_mse) = nlms.adapt(1.0, 0.3).unwrap();
 
         assert_relative_eq!(output, 0.0, epsilon = 1e-10);
         assert_relative_eq!(error, 0.3, epsilon = 1e-10);
@@ -1441,8 +1468,8 @@ mod tests {
                 target_system[0] * input
             };
 
-            let (_out_lms, err_lms, _) = lms.adapt(input, desired).unwrap();
-            let (_out_rls, err_rls, _) = rls.adapt(input, desired).unwrap();
+            let (_out_lms, err_lms_) = lms.adapt(input, desired).unwrap();
+            let (_out_rls, err_rls_) = rls.adapt(input, desired).unwrap();
 
             lms_errors.push(err_lms.abs());
             rls_errors.push(err_rls.abs());
@@ -1483,7 +1510,7 @@ mod tests {
     fn test_vs_lms_adapt() {
         let mut vs_lms = VsLmsFilter::new(2, 0.1, 0.01).unwrap();
 
-        let (output, error, _mse) = vs_lms.adapt(1.0, 0.5).unwrap();
+        let (output, error_mse) = vs_lms.adapt(1.0, 0.5).unwrap();
 
         // Initially weights are zero, so output should be zero
         assert_relative_eq!(output, 0.0, epsilon = 1e-10);
@@ -1516,7 +1543,7 @@ mod tests {
         let mut apa = ApaFilter::new(2, 2, 0.1, 0.01).unwrap();
         let input = vec![1.0, 0.5];
 
-        let (output, error, _mse) = apa.adapt(&input, 0.3).unwrap();
+        let (output, error_mse) = apa.adapt(&input, 0.3).unwrap();
 
         // Initially weights are zero, so output should be zero
         assert_relative_eq!(output, 0.0, epsilon = 1e-10);
@@ -1569,7 +1596,7 @@ mod tests {
     fn test_lmf_adapt() {
         let mut lmf = LmfFilter::new(2, 0.01).unwrap();
 
-        let (output, error, _mse) = lmf.adapt(1.0, 0.5).unwrap();
+        let (output, error_mse) = lmf.adapt(1.0, 0.5).unwrap();
 
         // Initially weights are zero, so output should be zero
         assert_relative_eq!(output, 0.0, epsilon = 1e-10);
@@ -1581,7 +1608,7 @@ mod tests {
         }
 
         // After many iterations, there should be some learning
-        let (final_output, _, _) = lmf.adapt(1.0, 0.5).unwrap();
+        let (final_output__) = lmf.adapt(1.0, 0.5).unwrap();
         assert!(final_output.abs() > 1e-6); // Some non-zero output expected
     }
 
@@ -1601,11 +1628,11 @@ mod tests {
         let mut sm_lms = SmLmsFilter::new(2, 0.1, 0.05).unwrap();
 
         // Small error - should not trigger update
-        let (output, error, _mse) = sm_lms.adapt(1.0, 0.01).unwrap();
+        let (output, error_mse) = sm_lms.adapt(1.0, 0.01).unwrap();
         assert_relative_eq!(output, 0.0, epsilon = 1e-10);
         assert_relative_eq!(error, 0.01, epsilon = 1e-10);
 
-        let (update_count, sample_count, _) = sm_lms.update_statistics();
+        let (update_count, sample_count_) = sm_lms.update_statistics();
         assert_eq!(update_count, 0); // No update for small error
         assert_eq!(sample_count, 1);
 
@@ -1630,7 +1657,7 @@ mod tests {
             sm_lms.adapt(input, target_error).unwrap();
         }
 
-        let (update_count, sample_count, _) = sm_lms.update_statistics();
+        let (update_count, sample_count_) = sm_lms.update_statistics();
         assert_eq!(sample_count, 5);
         assert!(update_count < sample_count); // Not all samples triggered updates
         assert!(update_count > 0); // Some updates occurred
@@ -1664,10 +1691,10 @@ mod tests {
                 target_system[0] * input
             };
 
-            let (_, err_lms, _) = lms.adapt(input, desired).unwrap();
-            let (_, err_vs_lms, _) = vs_lms.adapt(input, desired).unwrap();
-            let (_, err_nlms, _) = nlms.adapt(input, desired).unwrap();
-            let (_, err_lmf, _) = lmf.adapt(input, desired).unwrap();
+            let (_, err_lms_) = lms.adapt(input, desired).unwrap();
+            let (_, err_vs_lms_) = vs_lms.adapt(input, desired).unwrap();
+            let (_, err_nlms_) = nlms.adapt(input, desired).unwrap();
+            let (_, err_lmf_) = lmf.adapt(input, desired).unwrap();
 
             lms_errors.push(err_lms.abs());
             vs_lms_errors.push(err_vs_lms.abs());
@@ -1772,7 +1799,7 @@ mod tests {
         assert!(sm_lms.weights().iter().all(|&w| w == 0.0));
 
         // Verify SM-LMS statistics are reset
-        let (update_count, sample_count, _) = sm_lms.update_statistics();
+        let (update_count, sample_count_) = sm_lms.update_statistics();
         assert_eq!(update_count, 0);
         assert_eq!(sample_count, 0);
     }

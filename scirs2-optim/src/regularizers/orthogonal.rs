@@ -3,7 +3,7 @@
 //! Orthogonal regularization encourages weight matrices to be orthogonal,
 //! which helps with gradient flow and prevents vanishing/exploding gradients.
 
-use ndarray::{Array, ArrayBase, Data, Dimension, Ix2, ScalarOperand};
+use ndarray::{Array, Array3, ArrayBase, Data, Dimension, Ix2, ScalarOperand};
 use num_traits::{Float, FromPrimitive};
 use std::fmt::Debug;
 
@@ -223,13 +223,13 @@ mod tests {
         let ortho = OrthogonalRegularization::new(0.01);
 
         // 3D array - should return zero penalty
-        let params = Array::<f64, _>::zeros((2, 2, 2));
-        let mut gradient = Array::<f64, _>::zeros((2, 2, 2));
+        let params = Array3::<f64>::zeros((2, 2, 2));
+        let mut gradient = Array3::<f64>::zeros((2, 2, 2));
 
         let penalty = ortho.apply(&params, &mut gradient).unwrap();
         assert_eq!(penalty, 0.0);
 
         // Gradient should be unchanged
-        assert_eq!(gradient, Array::<f64, _>::zeros((2, 2, 2)));
+        assert_eq!(gradient, Array3::<f64>::zeros((2, 2, 2)));
     }
 }

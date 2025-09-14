@@ -1,25 +1,25 @@
 #[cfg(feature = "autograd")]
+#[allow(unused_imports)]
 mod example {
-    use ndarray::{array, IxDyn};
-    use scirs2_autograd::error::Result as AutogradResult;
-    use scirs2_autograd::tensor::Tensor;
-    use scirs2_autograd::variable::Variable;
+    use ndarray::array;
+    use scirs2__autograd::error::Result as AutogradResult;
+    use scirs2__autograd::variable::Variable;
+    // Import the implemented autograd transformations
     use scirs2_linalg::autograd::transformations::variable::{
-        project, reflection_matrix, rotation_matrix_2d, scaling_matrix, shear_matrix,
+        project, reflectionmatrix, rotationmatrix_2d, scalingmatrix, shearmatrix,
     };
 
     pub fn run() -> AutogradResult<()> {
         println!("Matrix Transformations with Autograd Example");
         println!("--------------------------------------------\n");
-
         // Example 1: 2D Rotation Matrix
         println!("Example 1: 2D Rotation Matrix");
 
         // Create scalar tensor for angle (45 degrees)
         let angle_data = array![std::f64::consts::PI / 4.0].into_dyn();
-        let angle = Variable::from_array(angle_data, true);
+        let angle = Variable::fromarray(angle_data, true);
 
-        let rotation = rotation_matrix_2d(&angle)?;
+        let rotation = rotationmatrix_2d(&angle)?;
 
         println!("Rotation matrix for 45 degrees:");
         println!("{:?}\n", rotation.tensor.data());
@@ -27,7 +27,7 @@ mod example {
         // Apply the rotation to a vector and calculate gradient
         // Create unit vector along x-axis
         let v_data = array![1.0, 0.0].into_dyn();
-        let v = Variable::from_array(v_data, false);
+        let v = Variable::fromarray(v_data, false);
 
         // Apply rotation to vector (using matmul)
         let rotated_v = rotation.matmul(&v)?;
@@ -36,7 +36,7 @@ mod example {
 
         // Compute the gradient of the y-coordinate with respect to the angle
         let y_axis_data = array![0.0, 1.0].into_dyn();
-        let y_axis = Variable::from_array(y_axis_data, false);
+        let y_axis = Variable::fromarray(y_axis_data, false);
 
         let y_coord = rotated_v.dot(&y_axis)?;
 
@@ -50,15 +50,15 @@ mod example {
         // Example 2: Scaling Matrix
         println!("Example 2: Scaling Matrix");
         let scales_data = array![2.0, 0.5].into_dyn(); // Scale x by 2, y by 0.5
-        let scales = Variable::from_array(scales_data, true);
-        let scaling = scaling_matrix(&scales)?;
+        let scales = Variable::fromarray(scales_data, true);
+        let scaling = scalingmatrix(&scales)?;
 
         println!("Scaling matrix for [2.0, 0.5]:");
         println!("{:?}\n", scaling.tensor.data());
 
         // Apply scaling to a vector and calculate gradient
         let v_data = array![1.0, 1.0].into_dyn(); // Vector [1, 1]
-        let v = Variable::from_array(v_data, false);
+        let v = Variable::fromarray(v_data, false);
         let scaled_v = scaling.matmul(&v)?;
         println!("Scaled vector [1, 1]:");
         println!("{:?}\n", scaled_v.tensor.data());
@@ -66,15 +66,15 @@ mod example {
         // Example 3: Reflection Matrix
         println!("Example 3: Reflection Matrix");
         let normal_data = array![1.0, 1.0].into_dyn(); // Normal vector for reflection plane
-        let normal = Variable::from_array(normal_data, true);
-        let reflection = reflection_matrix(&normal)?;
+        let normal = Variable::fromarray(normal_data, true);
+        let reflection = reflectionmatrix(&normal)?;
 
         println!("Reflection matrix for normal [1, 1]:");
         println!("{:?}\n", reflection.tensor.data());
 
         // Apply reflection to a vector
         let v_data = array![1.0, 0.0].into_dyn(); // Vector [1, 0]
-        let v = Variable::from_array(v_data, false);
+        let v = Variable::fromarray(v_data, false);
         let reflected_v = reflection.matmul(&v)?;
         println!("Reflected vector [1, 0]:");
         println!("{:?}\n", reflected_v.tensor.data());
@@ -82,15 +82,15 @@ mod example {
         // Example 4: Shear Matrix
         println!("Example 4: Shear Matrix");
         let shear_factor_data = array![0.5].into_dyn();
-        let shear_factor = Variable::from_array(shear_factor_data, true);
-        let shear = shear_matrix(&shear_factor, 0, 1, 2)?; // Shear in x direction
+        let shear_factor = Variable::fromarray(shear_factor_data, true);
+        let shear = shearmatrix(&shear_factor, 0, 1, 2)?; // Shear in x direction
 
         println!("Shear matrix for factor 0.5:");
         println!("{:?}\n", shear.tensor.data());
 
         // Apply shear to a vector
         let v_data = array![1.0, 1.0].into_dyn(); // Vector [1, 1]
-        let v = Variable::from_array(v_data, false);
+        let v = Variable::fromarray(v_data, false);
         let sheared_v = shear.matmul(&v)?;
         println!("Sheared vector [1, 1]:");
         println!("{:?}\n", sheared_v.tensor.data());
@@ -99,11 +99,11 @@ mod example {
         println!("Example 5: Orthogonal Projection");
         // Create a matrix whose columns span a subspace
         let a_data = array![[1.0, 0.0], [1.0, 1.0]].into_dyn();
-        let a = Variable::from_array(a_data, true);
+        let a = Variable::fromarray(a_data, true);
 
         // Create a vector to project
         let x_data = array![2.0, 3.0].into_dyn();
-        let x = Variable::from_array(x_data, false);
+        let x = Variable::fromarray(x_data, false);
 
         // Project the vector onto the column space of A
         let projected = project(&a, &x)?;
@@ -130,6 +130,7 @@ mod example {
     }
 }
 
+#[allow(dead_code)]
 fn main() {
     #[cfg(feature = "autograd")]
     {

@@ -10,6 +10,7 @@ use scirs2_linalg::quantization::{
     dequantize_matrix, quantize_matrix, quantize_matrix_per_channel, QuantizationMethod,
 };
 
+#[allow(dead_code)]
 fn main() {
     println!("Per-Channel Quantization Example");
     println!("===============================\n");

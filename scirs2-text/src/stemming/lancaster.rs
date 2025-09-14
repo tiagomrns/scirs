@@ -374,7 +374,7 @@ mod tests {
 
         for (word, expected) in test_cases {
             let stemmed = stemmer.stem(word).unwrap();
-            assert_eq!(stemmed, expected, "Failed for word: {}", word);
+            assert_eq!(stemmed, expected, "Failed for word: {word}");
         }
     }
 
@@ -392,7 +392,7 @@ mod tests {
 
         for (word, expected) in test_cases {
             let stemmed = stemmer.stem(word).unwrap();
-            assert_eq!(stemmed, expected, "Failed for word: {}", word);
+            assert_eq!(stemmed, expected, "Failed for word: {word}");
         }
     }
 
@@ -408,7 +408,7 @@ mod tests {
 
         for (word, expected) in test_cases {
             let stemmed = stemmer.stem(word).unwrap();
-            assert_eq!(stemmed, expected, "Failed for word: {}", word);
+            assert_eq!(stemmed, expected, "Failed for word: {word}");
         }
     }
 }

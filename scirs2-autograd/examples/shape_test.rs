@@ -1,9 +1,10 @@
 use scirs2_autograd as ag;
 
+#[allow(dead_code)]
 fn main() {
     println!("Testing tensor shape handling (DEBUGGING):");
 
-    ag::run::<f64, _, _>(|g| {
+    ag::run(|g| {
         // 1. Create a tensor with simple constructor
         println!("\n=== 1. Testing zeros tensor creation ===");
         let z = ag::tensor_ops::zeros(&[2, 2], g);

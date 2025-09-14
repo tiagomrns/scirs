@@ -11,6 +11,9 @@ use std::time::{Duration, Instant};
 #[cfg(feature = "regex")]
 use regex;
 
+/// Maximum number of dimensions allowed for arrays
+const MAX_DIMENSIONS: usize = 5;
+
 /// Validation severity levels for different environments
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
 pub enum ValidationLevel {
@@ -150,7 +153,7 @@ pub struct ValidationSummary {
     /// Success rate (0.0 to 1.0)
     pub success_rate: f64,
     /// Most common error codes
-    pub common_errors: HashMap<String, usize>,
+    pub commonerrors: HashMap<String, usize>,
 }
 
 impl ProductionValidator {
@@ -221,9 +224,9 @@ impl ProductionValidator {
                 result.is_valid = false;
                 result.errors.push(ValidationError {
                     code: "VALUE_TOO_SMALL".to_string(),
-                    message: format!("Value {} is less than minimum {}", value, min),
-                    field: constraints.field_name.clone(),
-                    suggestion: Some(format!("Use a value >= {}", min)),
+                    message: format!("Value {value} is below minimum {min}"),
+                    field: constraints.fieldname.clone(),
+                    suggestion: Some(format!("{min}")),
                     severity: ValidationSeverity::Error,
                 });
             }
@@ -235,9 +238,9 @@ impl ProductionValidator {
                 result.is_valid = false;
                 result.errors.push(ValidationError {
                     code: "VALUE_TOO_LARGE".to_string(),
-                    message: format!("Value {} is greater than maximum {}", value, max),
-                    field: constraints.field_name.clone(),
-                    suggestion: Some(format!("Use a value <= {}", max)),
+                    message: format!("Value {value} exceeds maximum {max}"),
+                    field: constraints.fieldname.clone(),
+                    suggestion: Some(format!("{max}")),
                     severity: ValidationSeverity::Error,
                 });
             }
@@ -254,7 +257,7 @@ impl ProductionValidator {
                         result.errors.push(ValidationError {
                             code: "CUSTOM_RULE_FAILED".to_string(),
                             message: error,
-                            field: constraints.field_name.clone(),
+                            field: constraints.fieldname.clone(),
                             suggestion: Some("Check custom validation rules".to_string()),
                             severity: ValidationSeverity::Error,
                         });
@@ -311,29 +314,29 @@ impl ProductionValidator {
         let mut values_validated = 0;
 
         // Size validation
-        if let Some(min_size) = constraints.min_size {
+        if let Some(minsize) = constraints.minsize {
             rules_checked += 1;
-            if size < min_size {
+            if size < minsize {
                 result.is_valid = false;
                 result.errors.push(ValidationError {
                     code: "COLLECTION_TOO_SMALL".to_string(),
-                    message: format!("Collection size {} is less than minimum {}", size, min_size),
-                    field: constraints.field_name.clone(),
-                    suggestion: Some(format!("Provide at least {} elements", min_size)),
+                    message: format!("Size {size} is below minimum {minsize}"),
+                    field: constraints.fieldname.clone(),
+                    suggestion: Some(format!("Provide at least {minsize} elements")),
                     severity: ValidationSeverity::Error,
                 });
             }
         }
 
-        if let Some(max_size) = constraints.max_size {
+        if let Some(maxsize) = constraints.maxsize {
             rules_checked += 1;
-            if size > max_size {
+            if size > maxsize {
                 result.is_valid = false;
                 result.errors.push(ValidationError {
                     code: "COLLECTION_TOO_LARGE".to_string(),
-                    message: format!("Collection size {} exceeds maximum {}", size, max_size),
-                    field: constraints.field_name.clone(),
-                    suggestion: Some(format!("Limit collection to {} elements", max_size)),
+                    message: format!("Size {size} exceeds maximum {maxsize}"),
+                    field: constraints.fieldname.clone(),
+                    suggestion: Some(format!("Limit collection to {maxsize} elements")),
                     severity: ValidationSeverity::Error,
                 });
             }
@@ -346,8 +349,7 @@ impl ProductionValidator {
                 if start_time.elapsed() > self.context.timeout {
                     result.metrics.timed_out = true;
                     result.warnings.push(format!(
-                        "Validation timed out after checking {} elements",
-                        index
+                        "Validation timed out after checking {index} elements"
                     ));
                     break;
                 }
@@ -359,8 +361,8 @@ impl ProductionValidator {
                     result.is_valid = false;
                     result.errors.push(ValidationError {
                         code: "ELEMENT_VALIDATION_FAILED".to_string(),
-                        message: format!("Element at index {} failed validation: {}", index, error),
-                        field: constraints.field_name.clone(),
+                        message: format!("Index {index}: {error}"),
+                        field: constraints.fieldname.clone(),
                         suggestion: Some("Check element constraints".to_string()),
                         severity: ValidationSeverity::Error,
                     });
@@ -412,8 +414,8 @@ impl ProductionValidator {
                         value.len(),
                         min_length
                     ),
-                    field: constraints.field_name.clone(),
-                    suggestion: Some(format!("Provide at least {} characters", min_length)),
+                    field: constraints.fieldname.clone(),
+                    suggestion: Some(format!("Provide at least {min_length} characters")),
                     severity: ValidationSeverity::Error,
                 });
             }
@@ -430,8 +432,8 @@ impl ProductionValidator {
                         value.len(),
                         max_length
                     ),
-                    field: constraints.field_name.clone(),
-                    suggestion: Some(format!("Limit string to {} characters", max_length)),
+                    field: constraints.fieldname.clone(),
+                    suggestion: Some(format!("Limit string to {max_length} characters")),
                     severity: ValidationSeverity::Error,
                 });
             }
@@ -445,7 +447,7 @@ impl ProductionValidator {
                 result.errors.push(ValidationError {
                     code: "POTENTIAL_INJECTION_ATTACK".to_string(),
                     message: "String contains potential injection attack patterns".to_string(),
-                    field: constraints.field_name.clone(),
+                    field: constraints.fieldname.clone(),
                     suggestion: Some("Sanitize input or use parameterized queries".to_string()),
                     severity: ValidationSeverity::Critical,
                 });
@@ -460,8 +462,8 @@ impl ProductionValidator {
                     result.is_valid = false;
                     result.errors.push(ValidationError {
                         code: "INVALID_CHARACTER".to_string(),
-                        message: format!("Character '{}' is not allowed", ch),
-                        field: constraints.field_name.clone(),
+                        message: format!("Character '{ch}' is not allowed"),
+                        field: constraints.fieldname.clone(),
                         suggestion: Some("Use only allowed characters".to_string()),
                         severity: ValidationSeverity::Error,
                     });
@@ -479,7 +481,7 @@ impl ProductionValidator {
                 result.errors.push(ValidationError {
                     code: "PATTERN_MISMATCH".to_string(),
                     message: "String does not match required pattern".to_string(),
-                    field: constraints.field_name.clone(),
+                    field: constraints.fieldname.clone(),
                     suggestion: Some("Check string format requirements".to_string()),
                     severity: ValidationSeverity::Error,
                 });
@@ -560,7 +562,7 @@ pub struct NumericConstraints<T> {
     /// Maximum allowed value
     pub max: Option<T>,
     /// Field name for error reporting
-    pub field_name: Option<String>,
+    pub fieldname: Option<String>,
     /// Custom validation rules
     pub custom_rules: Vec<Box<dyn NumericRule<T>>>,
     /// Whether to allow custom rule failures as warnings
@@ -572,7 +574,7 @@ impl<T: Clone> Clone for NumericConstraints<T> {
         Self {
             min: self.min.clone(),
             max: self.max.clone(),
-            field_name: self.field_name.clone(),
+            fieldname: self.fieldname.clone(),
             custom_rules: Vec::new(), // Cannot clone trait objects, start with empty vec
             allow_custom_rule_failures: self.allow_custom_rule_failures,
         }
@@ -589,13 +591,13 @@ pub trait NumericRule<T>: std::fmt::Debug {
 #[derive(Debug)]
 pub struct CollectionConstraints<T> {
     /// Minimum collection size
-    pub min_size: Option<usize>,
+    pub minsize: Option<usize>,
     /// Maximum collection size
-    pub max_size: Option<usize>,
+    pub maxsize: Option<usize>,
     /// Element validator
     pub element_validator: Option<Box<dyn ElementValidator<T>>>,
     /// Field name for error reporting
-    pub field_name: Option<String>,
+    pub fieldname: Option<String>,
 }
 
 /// Trait for validating collection elements
@@ -619,7 +621,7 @@ pub struct StringConstraints {
     /// Whether to check for injection attacks
     pub check_injection_attacks: bool,
     /// Field name for error reporting
-    pub field_name: Option<String>,
+    pub fieldname: Option<String>,
 }
 
 /// Default metrics collector implementation
@@ -651,7 +653,7 @@ impl ValidationMetricsCollector for DefaultMetricsCollector {
                 total_duration: Duration::ZERO,
                 average_duration: Duration::ZERO,
                 success_rate: 0.0,
-                common_errors: HashMap::new(),
+                commonerrors: HashMap::new(),
             };
         }
 
@@ -663,10 +665,10 @@ impl ValidationMetricsCollector for DefaultMetricsCollector {
 
         let success_rate = successful_validations as f64 / total_validations as f64;
 
-        let mut common_errors = HashMap::new();
+        let mut commonerrors = HashMap::new();
         for result in &self.results {
             for error in &result.errors {
-                *common_errors.entry(error.code.clone()).or_insert(0) += 1;
+                *commonerrors.entry(error.code.clone()).or_insert(0) += 1;
             }
         }
 
@@ -675,7 +677,7 @@ impl ValidationMetricsCollector for DefaultMetricsCollector {
             total_duration,
             average_duration,
             success_rate,
-            common_errors,
+            commonerrors,
         }
     }
 
@@ -692,7 +694,8 @@ impl Default for DefaultMetricsCollector {
 
 /// Convenience functions for common validation scenarios
 /// Validate a positive number
-pub fn validate_positive<T>(value: T, field_name: Option<String>) -> CoreResult<T>
+#[allow(dead_code)]
+pub fn validate_positive<T>(value: T, fieldname: Option<String>) -> CoreResult<T>
 where
     T: PartialOrd + Copy + fmt::Debug + fmt::Display + Default,
 {
@@ -700,7 +703,7 @@ where
     let constraints = NumericConstraints {
         min: Some(T::default()), // Zero or equivalent
         max: None,
-        field_name,
+        fieldname,
         custom_rules: Vec::new(),
         allow_custom_rule_failures: false,
     };
@@ -717,34 +720,33 @@ where
 }
 
 /// Validate array dimensions
-pub fn validate_array_dimensions(dims: &[usize], max_dimensions: usize) -> CoreResult<()> {
+#[allow(dead_code)]
+pub fn validate_dimensions(dims: &[usize]) -> CoreResult<()> {
     if dims.is_empty() {
         return Err(CoreError::ValidationError(ErrorContext::new(
             "Array must have at least one dimension",
         )));
     }
 
-    if dims.len() > max_dimensions {
+    if dims.len() > MAX_DIMENSIONS {
         return Err(CoreError::ValidationError(ErrorContext::new(format!(
             "Array has {} dimensions, maximum allowed is {}",
             dims.len(),
-            max_dimensions
+            MAX_DIMENSIONS
         ))));
     }
 
     for (i, &dim) in dims.iter().enumerate() {
         if dim == 0 {
             return Err(CoreError::ValidationError(ErrorContext::new(format!(
-                "Dimension {} has size 0, which is not allowed",
-                i
+                "Dimension {i} has size 0, which is not allowed"
             ))));
         }
 
         // Prevent integer overflow in total size calculation
         if dim > usize::MAX / 1024 {
             return Err(CoreError::ValidationError(ErrorContext::new(format!(
-                "Dimension {} size {} is too large",
-                i, dim
+                "Dimension {i} size {dim} is too large"
             ))));
         }
     }
@@ -760,8 +762,7 @@ pub fn validate_array_dimensions(dims: &[usize], max_dimensions: usize) -> CoreR
     const MAX_TOTAL_SIZE: usize = 1024 * 1024 * 1024 / 8;
     if total_size > MAX_TOTAL_SIZE {
         return Err(CoreError::ValidationError(ErrorContext::new(format!(
-            "Array total size {} exceeds maximum allowed size {}",
-            total_size, MAX_TOTAL_SIZE
+            "Array total size {total_size} exceeds maximum allowed size {MAX_TOTAL_SIZE}"
         ))));
     }
 
@@ -769,6 +770,7 @@ pub fn validate_array_dimensions(dims: &[usize], max_dimensions: usize) -> CoreR
 }
 
 /// Validate file path for security
+#[allow(dead_code)]
 pub fn validate_file_path(path: &str) -> CoreResult<()> {
     // Check for path traversal attempts
     if path.contains("..") {
@@ -796,8 +798,7 @@ pub fn validate_file_path(path: &str) -> CoreResult<()> {
     for pattern in &dangerous_patterns {
         if path.contains(pattern) {
             return Err(CoreError::ValidationError(ErrorContext::new(format!(
-                "Dangerous pattern '{}' detected in file path",
-                pattern
+                "Dangerous pattern '{pattern}' detected in file path"
             ))));
         }
     }
@@ -816,7 +817,7 @@ mod tests {
         let constraints = NumericConstraints {
             min: Some(0.0),
             max: Some(100.0),
-            field_name: Some("test_value".to_string()),
+            fieldname: Some("test_value".to_string()),
             custom_rules: Vec::new(),
             allow_custom_rule_failures: false,
         };
@@ -850,7 +851,7 @@ mod tests {
             #[cfg(feature = "regex")]
             pattern: None,
             check_injection_attacks: true,
-            field_name: Some("username".to_string()),
+            fieldname: Some("username".to_string()),
         };
 
         // Valid string
@@ -877,16 +878,16 @@ mod tests {
     #[test]
     fn test_array_dimensions_validation() {
         // Valid dimensions
-        assert!(validate_array_dimensions(&[10, 20, 30], 5).is_ok());
+        assert!(validate_dimensions(&[10, 20, 30]).is_ok());
 
         // Empty dimensions
-        assert!(validate_array_dimensions(&[], 5).is_err());
+        assert!(validate_dimensions(&[]).is_err());
 
         // Zero dimension
-        assert!(validate_array_dimensions(&[10, 0, 30], 5).is_err());
+        assert!(validate_dimensions(&[10, 0, 30]).is_err());
 
         // Too many dimensions
-        assert!(validate_array_dimensions(&[1, 2, 3, 4, 5, 6], 5).is_err());
+        assert!(validate_dimensions(&[1, 2, 3, 4, 5, 6]).is_err());
     }
 
     #[test]
@@ -912,7 +913,7 @@ mod tests {
         let constraints = NumericConstraints {
             min: Some(0),
             max: Some(100),
-            field_name: None,
+            fieldname: None,
             custom_rules: Vec::new(),
             allow_custom_rule_failures: false,
         };
@@ -925,6 +926,6 @@ mod tests {
         let metrics = validator.get_metrics().unwrap();
         assert_eq!(metrics.total_validations, 3);
         assert_eq!(metrics.success_rate, 2.0 / 3.0);
-        assert!(metrics.common_errors.contains_key("VALUE_TOO_LARGE"));
+        assert!(metrics.commonerrors.contains_key("VALUE_TOO_LARGE"));
     }
 }

@@ -182,11 +182,11 @@ impl AutoTuner {
         }
 
         let file = File::open(path)
-            .map_err(|e| FFTError::IOError(format!("Failed to open tuning database: {}", e)))?;
+            .map_err(|e| FFTError::IOError(format!("Failed to open tuning database: {e}")))?;
 
         let reader = BufReader::new(file);
         let database: TuningDatabase = serde_json::from_reader(reader)
-            .map_err(|e| FFTError::ValueError(format!("Failed to parse tuning database: {}", e)))?;
+            .map_err(|e| FFTError::ValueError(format!("Failed to parse tuning database: {e}")))?;
 
         Ok(database)
     }
@@ -197,20 +197,18 @@ impl AutoTuner {
         if let Some(parent) = self.config.database_path.parent() {
             fs::create_dir_all(parent).map_err(|e| {
                 FFTError::IOError(format!(
-                    "Failed to create directory for tuning database: {}",
-                    e
+                    "Failed to create directory for tuning database: {e}"
                 ))
             })?;
         }
 
         let file = File::create(&self.config.database_path).map_err(|e| {
-            FFTError::IOError(format!("Failed to create tuning database file: {}", e))
+            FFTError::IOError(format!("Failed to create tuning database file: {e}"))
         })?;
 
         let writer = BufWriter::new(file);
-        serde_json::to_writer_pretty(writer, &self.database).map_err(|e| {
-            FFTError::IOError(format!("Failed to serialize tuning database: {}", e))
-        })?;
+        serde_json::to_writer_pretty(writer, &self.database)
+            .map_err(|e| FFTError::IOError(format!("Failed to serialize tuning database: {e}")))?;
 
         Ok(())
     }
@@ -491,7 +489,7 @@ impl AutoTuner {
 
         for &(s, f) in self.database.best_algorithms.keys() {
             if f == forward {
-                let diff = if s > size { s - size } else { size - s };
+                let diff = s.abs_diff(size);
                 if diff < min_diff {
                     min_diff = diff;
                     closest_size = s;
@@ -552,9 +550,9 @@ impl AutoTuner {
             FftVariant::Cached => {
                 // Use the plan cache via PlanSerializationManager
                 // Create a plan directly - manager is not needed here
-                let (plan, _) =
+                let (plan_, _) =
                     crate::plan_serialization::create_and_time_plan(actual_size, forward);
-                plan.process(&mut buffer);
+                plan_.process(&mut buffer);
             }
             FftVariant::SplitRadix => {
                 // Placeholder for split-radix FFT
@@ -581,6 +579,7 @@ impl AutoTuner {
 }
 
 /// Detect CPU features for result matching
+#[allow(dead_code)]
 fn detect_cpu_features() -> Vec<String> {
     let mut features = Vec::new();
 
@@ -720,7 +719,7 @@ mod tests {
             }
             Err(e) => {
                 // Benchmark may fail in some environments, just log and continue
-                println!("Benchmark failed: {}", e);
+                println!("Benchmark failed: {e}");
             }
         }
     }

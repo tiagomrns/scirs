@@ -41,7 +41,7 @@ impl<F: Float + FromPrimitive + Debug> BarycentricInterpolator<F> {
     ///
     /// ```
     /// use ndarray::array;
-    /// use scirs2_interpolate::advanced::barycentric::BarycentricInterpolator;
+    /// use scirs2__interpolate::advanced::barycentric::BarycentricInterpolator;
     ///
     /// let x = array![0.0f64, 1.0, 2.0, 3.0, 4.0];
     /// let y = array![0.0f64, 1.0, 4.0, 9.0, 16.0];
@@ -56,13 +56,13 @@ impl<F: Float + FromPrimitive + Debug> BarycentricInterpolator<F> {
     pub fn new(x: &ArrayView1<F>, y: &ArrayView1<F>, order: usize) -> InterpolateResult<Self> {
         // Check inputs
         if x.len() != y.len() {
-            return Err(InterpolateError::ValueError(
+            return Err(InterpolateError::invalid_input(
                 "x and y arrays must have the same length".to_string(),
             ));
         }
 
         if x.len() <= order {
-            return Err(InterpolateError::ValueError(format!(
+            return Err(InterpolateError::invalid_input(format!(
                 "at least {} points are required for order {} interpolation",
                 order + 1,
                 order
@@ -85,52 +85,22 @@ impl<F: Float + FromPrimitive + Debug> BarycentricInterpolator<F> {
         let n = x.len();
         let mut weights = Array1::ones(n);
 
-        // For each point, compute the weight as 1/∏(x_i - x_j) for j ≠ i
-        // We use a local approach for numerical stability, considering
-        // only the nearest `order + 1` points for each weight
+        // For proper barycentric interpolation, we need to use all data points
+        // to compute weights: w_i = 1 / ∏(x_i - x_j) for all j ≠ i
         for i in 0..n {
-            let mut indices = Vec::new();
-
-            // If we have enough points, consider only neighboring points
-            if n > order + 1 {
-                // Determine the range of indices to use for this weight
-                // Center around i with `order + 1` total points
-                let half_window = order / 2;
-                let start = i.saturating_sub(half_window);
-
-                let end = if start + order + 1 > n {
-                    n
-                } else {
-                    start + order + 1
-                };
-
-                for j in start..end {
-                    if j != i {
-                        indices.push(j);
-                    }
-                }
-            } else {
-                // If we have fewer points, use all available
-                for j in 0..n {
-                    if j != i {
-                        indices.push(j);
-                    }
-                }
-            }
-
-            // Compute weight
             let mut w = F::one();
-            for &j in &indices {
-                w = w / (x[i] - x[j]);
+            for j in 0..n {
+                if j != i {
+                    let diff = x[i] - x[j];
+                    if diff.abs() < F::from_f64(1e-14).unwrap() {
+                        // Handle nearly identical points to avoid division by zero
+                        w = F::from_f64(1e14).unwrap();
+                        break;
+                    }
+                    w = w / diff;
+                }
             }
             weights[i] = w;
-        }
-
-        // Apply the alternating sign pattern: (-1)^i
-        for i in 0..n {
-            if i % 2 == 1 {
-                weights[i] = -weights[i];
-            }
         }
 
         weights
@@ -140,33 +110,43 @@ impl<F: Float + FromPrimitive + Debug> BarycentricInterpolator<F> {
     ///
     /// # Arguments
     ///
-    /// * `x_new` - The point at which to evaluate the interpolant
+    /// * `xnew` - The point at which to evaluate the interpolant
     ///
     /// # Returns
     ///
-    /// The interpolated value at `x_new`
-    pub fn evaluate(&self, x_new: F) -> InterpolateResult<F> {
-        // Check if x_new is exactly one of the data points
+    /// The interpolated value at `xnew`
+    pub fn evaluate(&self, xnew: F) -> InterpolateResult<F> {
+        // Check if xnew is exactly one of the data points
+        let eps = F::from_f64(1e-14).unwrap();
         for i in 0..self.x.len() {
-            if x_new == self.x[i] {
+            if (xnew - self.x[i]).abs() < eps {
                 return Ok(self.y[i]);
             }
         }
 
         // Find the nearest neighbors to use
-        let indices = self.find_nearest_indices(x_new);
+        let indices = self.find_nearest_indices(xnew);
+
+        // Compute local barycentric weights for numerical stability
+        let local_weights = self.compute_local_weights(&indices);
 
         // Use barycentric formula for interpolation
         let mut numerator = F::zero();
         let mut denominator = F::zero();
 
-        for &idx in &indices {
-            let weight = self.weights[idx] / (x_new - self.x[idx]);
+        for (i, &idx) in indices.iter().enumerate() {
+            let diff = xnew - self.x[idx];
+            if diff.abs() < eps {
+                // If we're very close to a data point, return that value
+                return Ok(self.y[idx]);
+            }
+
+            let weight = local_weights[i] / diff;
             numerator = numerator + weight * self.y[idx];
             denominator = denominator + weight;
         }
 
-        if denominator == F::zero() {
+        if denominator.abs() < eps {
             return Err(InterpolateError::ComputationError(
                 "division by zero in barycentric interpolation".to_string(),
             ));
@@ -175,8 +155,32 @@ impl<F: Float + FromPrimitive + Debug> BarycentricInterpolator<F> {
         Ok(numerator / denominator)
     }
 
+    /// Compute local barycentric weights for a subset of points
+    fn compute_local_weights(&self, indices: &[usize]) -> Array1<F> {
+        let n = indices.len();
+        let mut weights = Array1::ones(n);
+
+        for i in 0..n {
+            let mut w = F::one();
+            for j in 0..n {
+                if j != i {
+                    let diff = self.x[indices[i]] - self.x[indices[j]];
+                    if diff.abs() < F::from_f64(1e-14).unwrap() {
+                        // Handle nearly identical points
+                        w = F::from_f64(1e14).unwrap();
+                        break;
+                    }
+                    w = w / diff;
+                }
+            }
+            weights[i] = w;
+        }
+
+        weights
+    }
+
     /// Find the nearest `order + 1` indices to the given point
-    fn find_nearest_indices(&self, x_new: F) -> Vec<usize> {
+    fn find_nearest_indices(&self, xnew: F) -> Vec<usize> {
         let n = self.x.len();
         let order_plus_one = self.order + 1;
 
@@ -185,42 +189,35 @@ impl<F: Float + FromPrimitive + Debug> BarycentricInterpolator<F> {
             return (0..n).collect();
         }
 
-        // Find the index of the closest point
-        let mut closest_idx = 0;
-        let mut min_dist = (x_new - self.x[0]).abs();
-
-        for i in 1..n {
-            let dist = (x_new - self.x[i]).abs();
-            if dist < min_dist {
-                min_dist = dist;
-                closest_idx = i;
-            }
+        // Create a vector of (distance, index) pairs
+        let mut distances: Vec<(F, usize)> = Vec::with_capacity(n);
+        for i in 0..n {
+            let dist = (xnew - self.x[i]).abs();
+            distances.push((dist, i));
         }
 
-        // Determine the range of indices to use
-        let start = if closest_idx < order_plus_one / 2 {
-            0
-        } else if closest_idx + order_plus_one / 2 >= n {
-            n - order_plus_one
-        } else {
-            closest_idx - order_plus_one / 2
-        };
+        // Sort by distance and take the nearest order + 1 points
+        distances.sort_by(|a, b| a.0.partial_cmp(&b.0).unwrap_or(std::cmp::Ordering::Equal));
 
-        (start..start + order_plus_one).collect()
+        distances
+            .into_iter()
+            .take(order_plus_one)
+            .map(|(_, idx)| idx)
+            .collect()
     }
 
     /// Evaluate the interpolant at multiple points
     ///
     /// # Arguments
     ///
-    /// * `x_new` - The points at which to evaluate the interpolant
+    /// * `xnew` - The points at which to evaluate the interpolant
     ///
     /// # Returns
     ///
-    /// The interpolated values at `x_new`
-    pub fn evaluate_array(&self, x_new: &ArrayView1<F>) -> InterpolateResult<Array1<F>> {
-        let mut result = Array1::zeros(x_new.len());
-        for (i, &x) in x_new.iter().enumerate() {
+    /// The interpolated values at `xnew`
+    pub fn evaluate_array(&self, xnew: &ArrayView1<F>) -> InterpolateResult<Array1<F>> {
+        let mut result = Array1::zeros(xnew.len());
+        for (i, &x) in xnew.iter().enumerate() {
             result[i] = self.evaluate(x)?;
         }
         Ok(result)
@@ -268,7 +265,7 @@ impl<F: Float + FromPrimitive + Debug> BarycentricTriangulation<F> {
     ///
     /// ```
     /// use ndarray::array;
-    /// use scirs2_interpolate::advanced::barycentric::BarycentricTriangulation;
+    /// use scirs2__interpolate::advanced::barycentric::BarycentricTriangulation;
     ///
     /// // Create 2D points (x, y coordinates flattened)
     /// let points = array![
@@ -298,20 +295,20 @@ impl<F: Float + FromPrimitive + Debug> BarycentricTriangulation<F> {
     ) -> InterpolateResult<Self> {
         // Check inputs
         if points.len() % 2 != 0 {
-            return Err(InterpolateError::ValueError(
+            return Err(InterpolateError::invalid_input(
                 "points array length must be even (x, y pairs)".to_string(),
             ));
         }
 
         let n_points = points.len() / 2;
         if n_points != values.len() {
-            return Err(InterpolateError::ValueError(
+            return Err(InterpolateError::invalid_input(
                 "number of points must match number of values".to_string(),
             ));
         }
 
         if triangles.is_empty() {
-            return Err(InterpolateError::ValueError(
+            return Err(InterpolateError::invalid_input(
                 "at least one triangle is required".to_string(),
             ));
         }
@@ -320,7 +317,7 @@ impl<F: Float + FromPrimitive + Debug> BarycentricTriangulation<F> {
         for triangle in &triangles {
             for &idx in triangle {
                 if idx >= n_points {
-                    return Err(InterpolateError::ValueError(format!(
+                    return Err(InterpolateError::invalid_input(format!(
                         "triangle index {} is out of bounds (max allowed: {})",
                         idx,
                         n_points - 1
@@ -413,7 +410,7 @@ impl<F: Float + FromPrimitive + Debug> BarycentricTriangulation<F> {
 
             Ok(value)
         } else {
-            Err(InterpolateError::DomainError(
+            Err(InterpolateError::OutOfBounds(
                 "point is outside the triangulation".to_string(),
             ))
         }
@@ -430,7 +427,7 @@ impl<F: Float + FromPrimitive + Debug> BarycentricTriangulation<F> {
     /// The interpolated values at each point
     pub fn interpolate_many(&self, points: &ArrayView1<F>) -> InterpolateResult<Array1<F>> {
         if points.len() % 2 != 0 {
-            return Err(InterpolateError::ValueError(
+            return Err(InterpolateError::invalid_input(
                 "points array length must be even (x, y pairs)".to_string(),
             ));
         }
@@ -464,7 +461,7 @@ impl<F: Float + FromPrimitive + Debug> BarycentricTriangulation<F> {
 ///
 /// ```
 /// use ndarray::array;
-/// use scirs2_interpolate::advanced::barycentric::make_barycentric_interpolator;
+/// use scirs2__interpolate::advanced::barycentric::make_barycentric_interpolator;
 ///
 /// let x = array![0.0f64, 1.0, 2.0, 3.0, 4.0];
 /// let y = array![0.0f64, 1.0, 4.0, 9.0, 16.0];
@@ -476,7 +473,8 @@ impl<F: Float + FromPrimitive + Debug> BarycentricTriangulation<F> {
 /// let y_interp = interp.evaluate(2.5).unwrap();
 /// println!("Interpolated value at x=2.5: {}", y_interp);
 /// ```
-pub fn make_barycentric_interpolator<F: Float + FromPrimitive + Debug>(
+#[allow(dead_code)]
+pub fn make_barycentric_interpolator<F: crate::traits::InterpolationFloat>(
     x: &ArrayView1<F>,
     y: &ArrayView1<F>,
     order: usize,
@@ -543,13 +541,13 @@ mod tests {
         let interp = BarycentricInterpolator::new(&x.view(), &y.view(), 1).unwrap();
 
         // Evaluate at multiple points
-        let x_new = array![0.5, 1.5, 2.5, 3.5];
-        let y_new = interp.evaluate_array(&x_new.view()).unwrap();
+        let xnew = array![0.5, 1.5, 2.5, 3.5];
+        let y_new = interp.evaluate_array(&xnew.view()).unwrap();
 
         // Expected values: y = 2x + 1
         let expected = array![2.0, 4.0, 6.0, 8.0];
 
-        for i in 0..x_new.len() {
+        for i in 0..xnew.len() {
             assert_abs_diff_eq!(y_new[i], expected[i], epsilon = 1e-10);
         }
     }
@@ -605,16 +603,18 @@ mod tests {
         // Create a barycentric interpolator with order 3 (cubic)
         let interp = make_barycentric_interpolator(&x.view(), &y.view(), 3).unwrap();
 
-        // Test at intermediate points (should be close to x³)
-        // Using a larger epsilon for our simplified algorithm
-        assert!((interp.evaluate(1.5).unwrap() - 3.375).abs() < 5.0);
-        // Using a larger epsilon for our simplified algorithm
-        assert!((interp.evaluate(2.5).unwrap() - 15.625).abs() < 20.0); // Increased tolerance
-                                                                        // Use a tolerance that's large enough to make the test pass
-                                                                        // For cubic x³ interpolation, the exact value at x=3.5 should be 3.5³ = 42.875
-                                                                        // Our algorithm must be introducing significant numerical error
-                                                                        // TODO: Fix numerical precision issue with cubic interpolation
-                                                                        // Expected: 42.875, Actual: ~30.71
-                                                                        // This test is temporarily disabled until the issue is resolved
+        // Test at data points (should be exact)
+        for i in 0..x.len() {
+            assert!((interp.evaluate(x[i]).unwrap() - y[i]).abs() < 1e-10);
+        }
+
+        // Test at intermediate points (should be accurate for cubic interpolation)
+        assert!((interp.evaluate(1.5).unwrap() - 3.375).abs() < 1e-10);
+        assert!((interp.evaluate(2.5).unwrap() - 15.625).abs() < 1e-10);
+        assert!((interp.evaluate(3.5).unwrap() - 42.875).abs() < 1e-10);
+
+        // Test edge interpolation
+        assert!((interp.evaluate(0.5).unwrap() - 0.125).abs() < 1e-10);
+        assert!((interp.evaluate(4.5).unwrap() - 91.125).abs() < 1e-10);
     }
 }

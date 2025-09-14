@@ -80,7 +80,7 @@ pub enum ImportanceWeightingStrategy {
     /// Age-based weighting (older samples get higher weight)
     AgeBased {
         /// Decay factor for age
-        decay_factor: f64,
+        decayfactor: f64,
     },
 }
 
@@ -249,13 +249,13 @@ impl<A: Float + ScalarOperand + Debug, D: Dimension> CurriculumManager<A, D> {
     }
 
     /// Set difficulty score for a sample
-    pub fn set_sample_difficulty(&mut self, sample_id: usize, difficulty: f64) {
-        self.sample_difficulties.insert(sample_id, difficulty);
+    pub fn set_sample_difficulty(&mut self, sampleid: usize, difficulty: f64) {
+        self.sample_difficulties.insert(sampleid, difficulty);
     }
 
     /// Check if sample should be included based on current difficulty
-    pub fn should_include_sample(&self, sample_id: usize) -> bool {
-        if let Some(&sample_difficulty) = self.sample_difficulties.get(&sample_id) {
+    pub fn should_include_sample(&self, sampleid: usize) -> bool {
+        if let Some(&sample_difficulty) = self.sample_difficulties.get(&sampleid) {
             sample_difficulty <= self.current_difficulty
         } else {
             true // Include unknown samples
@@ -270,12 +270,12 @@ impl<A: Float + ScalarOperand + Debug, D: Dimension> CurriculumManager<A, D> {
     /// Compute importance weights for samples
     pub fn compute_sample_weights(
         &mut self,
-        sample_ids: &[usize],
+        sampleids: &[usize],
         losses: &[A],
         gradient_norms: Option<&[A]>,
         uncertainties: Option<&[A]>,
     ) -> Result<()> {
-        if sample_ids.len() != losses.len() {
+        if sampleids.len() != losses.len() {
             return Err(OptimError::DimensionMismatch(
                 "Sample IDs and losses must have same length".to_string(),
             ));
@@ -284,15 +284,15 @@ impl<A: Float + ScalarOperand + Debug, D: Dimension> CurriculumManager<A, D> {
         match &self.importance_strategy {
             ImportanceWeightingStrategy::Uniform => {
                 let uniform_weight = A::one();
-                for &sample_id in sample_ids {
-                    self.sample_weights.insert(sample_id, uniform_weight);
+                for &sampleid in sampleids {
+                    self.sample_weights.insert(sampleid, uniform_weight);
                 }
             }
             ImportanceWeightingStrategy::LossBased {
                 temperature,
                 min_weight,
             } => {
-                self.compute_loss_based_weights(sample_ids, losses, *temperature, *min_weight)?;
+                self.compute_loss_based_weights(sampleids, losses, *temperature, *min_weight)?;
             }
             ImportanceWeightingStrategy::GradientNormBased {
                 temperature,
@@ -300,15 +300,15 @@ impl<A: Float + ScalarOperand + Debug, D: Dimension> CurriculumManager<A, D> {
             } => {
                 if let Some(grad_norms) = gradient_norms {
                     self.compute_gradient_norm_weights(
-                        sample_ids,
+                        sampleids,
                         grad_norms,
                         *temperature,
                         *min_weight,
                     )?;
                 } else {
                     // Fall back to uniform weights
-                    for &sample_id in sample_ids {
-                        self.sample_weights.insert(sample_id, A::one());
+                    for &sampleid in sampleids {
+                        self.sample_weights.insert(sampleid, A::one());
                     }
                 }
             }
@@ -318,20 +318,20 @@ impl<A: Float + ScalarOperand + Debug, D: Dimension> CurriculumManager<A, D> {
             } => {
                 if let Some(uncertainties_array) = uncertainties {
                     self.compute_uncertainty_weights(
-                        sample_ids,
+                        sampleids,
                         uncertainties_array,
                         *temperature,
                         *min_weight,
                     )?;
                 } else {
                     // Fall back to uniform weights
-                    for &sample_id in sample_ids {
-                        self.sample_weights.insert(sample_id, A::one());
+                    for &sampleid in sampleids {
+                        self.sample_weights.insert(sampleid, A::one());
                     }
                 }
             }
-            ImportanceWeightingStrategy::AgeBased { decay_factor } => {
-                self.compute_age_based_weights(sample_ids, *decay_factor)?;
+            ImportanceWeightingStrategy::AgeBased { decayfactor } => {
+                self.compute_age_based_weights(sampleids, *decayfactor)?;
             }
         }
 
@@ -341,7 +341,7 @@ impl<A: Float + ScalarOperand + Debug, D: Dimension> CurriculumManager<A, D> {
     /// Compute loss-based importance weights
     fn compute_loss_based_weights(
         &mut self,
-        sample_ids: &[usize],
+        sampleids: &[usize],
         losses: &[A],
         temperature: f64,
         min_weight: f64,
@@ -365,9 +365,9 @@ impl<A: Float + ScalarOperand + Debug, D: Dimension> CurriculumManager<A, D> {
             .iter()
             .fold(A::zero(), |acc, &w| acc + w);
 
-        for (i, &sample_id) in sample_ids.iter().enumerate() {
+        for (i, &sampleid) in sampleids.iter().enumerate() {
             let weight = A::max(min_w, unnormalized_weights[i] / sum_weights);
-            self.sample_weights.insert(sample_id, weight);
+            self.sample_weights.insert(sampleid, weight);
         }
 
         Ok(())
@@ -376,7 +376,7 @@ impl<A: Float + ScalarOperand + Debug, D: Dimension> CurriculumManager<A, D> {
     /// Compute gradient norm based weights
     fn compute_gradient_norm_weights(
         &mut self,
-        sample_ids: &[usize],
+        sampleids: &[usize],
         gradient_norms: &[A],
         temperature: f64,
         min_weight: f64,
@@ -400,9 +400,9 @@ impl<A: Float + ScalarOperand + Debug, D: Dimension> CurriculumManager<A, D> {
             .iter()
             .fold(A::zero(), |acc, &w| acc + w);
 
-        for (i, &sample_id) in sample_ids.iter().enumerate() {
+        for (i, &sampleid) in sampleids.iter().enumerate() {
             let weight = A::max(min_w, unnormalized_weights[i] / sum_weights);
-            self.sample_weights.insert(sample_id, weight);
+            self.sample_weights.insert(sampleid, weight);
         }
 
         Ok(())
@@ -411,7 +411,7 @@ impl<A: Float + ScalarOperand + Debug, D: Dimension> CurriculumManager<A, D> {
     /// Compute uncertainty-based weights
     fn compute_uncertainty_weights(
         &mut self,
-        sample_ids: &[usize],
+        sampleids: &[usize],
         uncertainties: &[A],
         temperature: f64,
         min_weight: f64,
@@ -435,32 +435,32 @@ impl<A: Float + ScalarOperand + Debug, D: Dimension> CurriculumManager<A, D> {
             .iter()
             .fold(A::zero(), |acc, &w| acc + w);
 
-        for (i, &sample_id) in sample_ids.iter().enumerate() {
+        for (i, &sampleid) in sampleids.iter().enumerate() {
             let weight = A::max(min_w, unnormalized_weights[i] / sum_weights);
-            self.sample_weights.insert(sample_id, weight);
+            self.sample_weights.insert(sampleid, weight);
         }
 
         Ok(())
     }
 
     /// Compute age-based weights
-    fn compute_age_based_weights(&mut self, sample_ids: &[usize], decay_factor: f64) -> Result<()> {
-        let decay = A::from(decay_factor).unwrap();
+    fn compute_age_based_weights(&mut self, sampleids: &[usize], decayfactor: f64) -> Result<()> {
+        let decay = A::from(decayfactor).unwrap();
 
-        for &sample_id in sample_ids {
+        for &sampleid in sampleids {
             // Simple age-based weighting (older samples get exponentially higher weight)
-            let age = A::from(self.step_count.saturating_sub(sample_id)).unwrap();
+            let age = A::from(self.step_count.saturating_sub(sampleid)).unwrap();
             let weight = A::exp(decay * age);
-            self.sample_weights.insert(sample_id, weight);
+            self.sample_weights.insert(sampleid, weight);
         }
 
         Ok(())
     }
 
     /// Get importance weight for a sample
-    pub fn get_sample_weight(&self, sample_id: usize) -> A {
+    pub fn get_sample_weight(&self, sampleid: usize) -> A {
         self.sample_weights
-            .get(&sample_id)
+            .get(&sampleid)
             .copied()
             .unwrap_or_else(|| A::one())
     }
@@ -562,7 +562,7 @@ impl<A: Float + ScalarOperand + Debug, D: Dimension> CurriculumManager<A, D> {
     ) -> Result<Array<A, D>> {
         let mut adversarial = inputs.clone();
         let mut momentum = Array::zeros(inputs.raw_dim());
-        let decay_factor = A::from(1.0).unwrap(); // Momentum decay factor
+        let decayfactor = A::from(1.0).unwrap(); // Momentum decay factor
 
         for _ in 0..config.num_steps {
             // Update momentum
@@ -576,7 +576,7 @@ impl<A: Float + ScalarOperand + Debug, D: Dimension> CurriculumManager<A, D> {
             Zip::from(&mut momentum)
                 .and(&normalized_gradients)
                 .for_each(|m, &g| {
-                    *m = decay_factor * *m + g;
+                    *m = decayfactor * *m + g;
                 });
 
             // Apply momentum-based update
@@ -603,8 +603,8 @@ impl<A: Float + ScalarOperand + Debug, D: Dimension> CurriculumManager<A, D> {
     }
 
     /// Get filtered samples based on current curriculum
-    pub fn filter_samples(&self, sample_ids: &[usize]) -> Vec<usize> {
-        sample_ids
+    pub fn filter_samples(&self, sampleids: &[usize]) -> Vec<usize> {
+        sampleids
             .iter()
             .copied()
             .filter(|&id| self.should_include_sample(id))
@@ -677,7 +677,7 @@ pub struct AdaptiveCurriculum<A: Float, D: Dimension> {
     /// Performance tracking for each curriculum
     curriculum_performance: Vec<VecDeque<A>>,
     /// Switch threshold for changing curriculum
-    switch_threshold: A,
+    switchthreshold: A,
     /// Minimum steps before switching
     min_steps_before_switch: usize,
     /// Steps since last switch
@@ -688,13 +688,13 @@ pub struct AdaptiveCurriculum<A: Float, D: Dimension> {
 
 impl<A: Float + ScalarOperand + Debug, D: Dimension> AdaptiveCurriculum<A, D> {
     /// Create a new adaptive curriculum
-    pub fn new(curricula: Vec<CurriculumManager<A, D>>, switch_threshold: A) -> Self {
+    pub fn new(curricula: Vec<CurriculumManager<A, D>>, switchthreshold: A) -> Self {
         let num_curricula = curricula.len();
         Self {
             curricula,
             active_curriculum: 0,
             curriculum_performance: vec![VecDeque::new(); num_curricula],
-            switch_threshold,
+            switchthreshold,
             min_steps_before_switch: 100,
             steps_since_switch: 0,
             _phantom: PhantomData,
@@ -726,7 +726,7 @@ impl<A: Float + ScalarOperand + Debug, D: Dimension> AdaptiveCurriculum<A, D> {
         for (i, _) in self.curricula.iter().enumerate() {
             if i != self.active_curriculum {
                 let perf = self.get_average_performance(i);
-                if perf > best_performance + self.switch_threshold {
+                if perf > best_performance + self.switchthreshold {
                     best_performance = perf;
                     best_curriculum = i;
                 }
@@ -743,8 +743,8 @@ impl<A: Float + ScalarOperand + Debug, D: Dimension> AdaptiveCurriculum<A, D> {
     }
 
     /// Get average performance for a curriculum
-    fn get_average_performance(&self, curriculum_idx: usize) -> A {
-        let perf_history = &self.curriculum_performance[curriculum_idx];
+    fn get_average_performance(&self, curriculumidx: usize) -> A {
+        let perf_history = &self.curriculum_performance[curriculumidx];
         if perf_history.is_empty() {
             A::zero()
         } else {
@@ -847,8 +847,8 @@ mod tests {
         curriculum.set_sample_difficulty(2, 0.7); // Hard
         curriculum.set_sample_difficulty(3, 0.5); // Medium
 
-        let sample_ids = vec![1, 2, 3, 4]; // 4 has no difficulty set
-        let filtered = curriculum.filter_samples(&sample_ids);
+        let sampleids = vec![1, 2, 3, 4]; // 4 has no difficulty set
+        let filtered = curriculum.filter_samples(&sampleids);
 
         // Should include samples 1, 3, 4 (difficulty <= 0.5 or unknown)
         assert_eq!(filtered.len(), 3);
@@ -874,11 +874,11 @@ mod tests {
         let mut curriculum =
             CurriculumManager::<f64, ndarray::Ix1>::new(strategy, importance_strategy);
 
-        let sample_ids = vec![1, 2, 3];
+        let sampleids = vec![1, 2, 3];
         let losses = vec![0.1, 1.0, 0.5]; // Low, high, medium loss
 
         curriculum
-            .compute_sample_weights(&sample_ids, &losses, None, None)
+            .compute_sample_weights(&sampleids, &losses, None, None)
             .unwrap();
 
         // Sample with highest loss should have highest weight

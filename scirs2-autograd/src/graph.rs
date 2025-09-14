@@ -108,8 +108,7 @@ impl<'graph, F: Float> Graph<F> {
                     continue;
                 } else {
                     let err = OpError::RuntimeError(format!(
-                        "Variable with ID {} not found in VariableEnvironment",
-                        variable_id
+                        "Variable with ID {variable_id} not found in VariableEnvironment"
                     ));
 
                     // If this is one of our target tensors, add an error to the result
@@ -126,8 +125,7 @@ impl<'graph, F: Float> Graph<F> {
             if node.placeholder_name.is_some() && !computed_values.contains_key(&node_id) {
                 let placeholder_name = node.placeholder_name.unwrap_or("<unnamed>");
                 let err = OpError::RuntimeError(format!(
-                    "No feed value provided for placeholder '{}'",
-                    placeholder_name
+                    "No feed value provided for placeholder '{placeholder_name}'"
                 ));
 
                 // If this is one of our target tensors, add an error to the result
@@ -243,16 +241,14 @@ impl<'graph, F: Float> Graph<F> {
         let id = inner.len();
         if id == NUM_NODES_WARN {
             eprintln!(
-                "Too many tensors in this graph: {}. \
-            Use Graph::clear, or move the training loop out of the `run` block",
-                NUM_NODES_WARN
+                "Too many tensors in this graph: {NUM_NODES_WARN}. \
+            Use Graph::clear, or move the training loop out of the `run` block"
             )
         }
         if id > NUM_NODES_CRITICAL {
             panic!(
-                "Maximum graph size exceeded: {}. \
-            Use Graph::clear, or move the training loop out of the `run` block",
-                NUM_NODES_CRITICAL
+                "Maximum graph size exceeded: {NUM_NODES_CRITICAL}. \
+            Use Graph::clear, or move the training loop out of the `run` block"
             )
         }
         node.id = id;
@@ -308,15 +304,16 @@ impl<T: Float> fmt::Debug for Graph<T> {
         let set = &*self.node_set.borrow();
         let mut buf = format!("graph size: {}\n", set.len());
         for node in set {
-            buf += format!("{}\n", node).as_str();
+            buf += format!("{node}\n").as_str();
         }
-        write!(f, "{}", buf)
+        write!(f, "{buf}")
     }
 }
 
 /// Creates and runs a computation graph.
 ///
 /// See [Context].
+#[allow(dead_code)]
 pub fn run<F, FN, R>(f: FN) -> R
 where
     F: Float,
@@ -443,7 +440,7 @@ impl<'graph, 'env, F: Float> Context<'env, F> {
         // Create a new placeholder tensor with the given name and shape
         Tensor::builder(self)
             .set_placeholder_name(name)
-            .set_known_shape(shape)
+            .set_knownshape(shape)
             .build(T::basic_source_ops::Placeholder)
     }
 }
@@ -527,6 +524,7 @@ pub(crate) fn assert_same_graph<F: Float>(a: &impl AsGraph<F>, b: &impl AsGraph<
 
 #[test]
 #[should_panic]
+#[allow(dead_code)]
 fn test_mixed_graph() {
     VariableEnvironment::<f32>::new().run(|g| {
         let a = T::zeros(&[1], g);

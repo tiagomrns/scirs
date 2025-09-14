@@ -36,6 +36,7 @@ const GMRES_TOL: f64 = 1e-8;
 /// The semi-explicit form is:
 /// x' = f(x, y, t)
 /// 0 = g(x, y, t)
+#[allow(dead_code)]
 pub fn krylov_bdf_semi_explicit_dae<F, FFunc, GFunc>(
     f: FFunc,
     g: GFunc,
@@ -66,19 +67,19 @@ where
 
     // Initial step size
     let mut h = options.h0.unwrap_or_else(|| {
-        let span = t_span[1] - t_span[0];
-        span * F::from_f64(0.01).unwrap() // 1% of interval
+        let _span = t_span[1] - t_span[0];
+        _span * F::from_f64(0.01).unwrap() // 1% of interval
     });
 
     // Step limits
     let min_step = options.min_step.unwrap_or_else(|| {
-        let span = t_span[1] - t_span[0];
-        span * F::from_f64(1e-6).unwrap() // Very small relative to interval
+        let _span = t_span[1] - t_span[0];
+        _span * F::from_f64(1e-6).unwrap() // Very small relative to interval
     });
 
     let max_step = options.max_step.unwrap_or_else(|| {
-        let span = t_span[1] - t_span[0];
-        span * F::from_f64(0.1).unwrap() // 10% of interval
+        let _span = t_span[1] - t_span[0];
+        _span * F::from_f64(0.1).unwrap() // 10% of interval
     });
 
     // Maximum BDF order
@@ -445,8 +446,7 @@ where
             // If step size gets too small, the problem might be too stiff
             if h < min_step {
                 return Err(IntegrateError::ComputationError(format!(
-                    "Failed to converge at t = {}. Step size too small.",
-                    t_current
+                    "Failed to converge at t = {t_current}. Step size too small."
                 )));
             }
 
@@ -532,13 +532,11 @@ where
         success,
         message: if success {
             Some(format!(
-                "Successful integration. {} steps taken, {} GMRES iterations.",
-                n_steps, n_krylov_iters
+                "Successful integration. {n_steps} steps taken, {n_krylov_iters} GMRES iterations."
             ))
         } else {
             Some(format!(
-                "Integration did not reach end time. {} steps taken, {} GMRES iterations.",
-                n_steps, n_krylov_iters
+                "Integration did not reach end time. {n_steps} steps taken, {n_krylov_iters} GMRES iterations."
             ))
         },
         n_eval: n_f_evals,
@@ -565,6 +563,7 @@ where
 ///
 /// The fully implicit form is:
 /// F(t, y, y') = 0
+#[allow(dead_code)]
 pub fn krylov_bdf_implicit_dae<F, FFunc>(
     f: FFunc,
     t_span: [F; 2],
@@ -591,19 +590,19 @@ where
 
     // Initial step size
     let mut h = options.h0.unwrap_or_else(|| {
-        let span = t_span[1] - t_span[0];
-        span * F::from_f64(0.01).unwrap() // 1% of interval
+        let _span = t_span[1] - t_span[0];
+        _span * F::from_f64(0.01).unwrap() // 1% of interval
     });
 
     // Step limits
     let min_step = options.min_step.unwrap_or_else(|| {
-        let span = t_span[1] - t_span[0];
-        span * F::from_f64(1e-6).unwrap() // Very small relative to interval
+        let _span = t_span[1] - t_span[0];
+        _span * F::from_f64(1e-6).unwrap() // Very small relative to interval
     });
 
     let max_step = options.max_step.unwrap_or_else(|| {
-        let span = t_span[1] - t_span[0];
-        span * F::from_f64(0.1).unwrap() // 10% of interval
+        let _span = t_span[1] - t_span[0];
+        _span * F::from_f64(0.1).unwrap() // 10% of interval
     });
 
     // Maximum BDF order
@@ -687,10 +686,10 @@ where
             0
         };
 
-        let y_history = &y_values[history_start..];
+        let _yhistory = &y_values[history_start..];
 
         // Predict step using extrapolation
-        let y_pred = predict_fully_implicit(y_history, order);
+        let y_pred = predict_fully_implicit(_yhistory, order);
 
         // For the predictor's derivative, we use the BDF formula
         let y_prime_pred = if order == 1 {
@@ -867,8 +866,8 @@ where
 
                     // Historical terms: + Σ α_j * y_{n-j}
                     for j in 0..order {
-                        if j < y_history.len() {
-                            y_prime_new[i] += alpha[j] * y_history[y_history.len() - 1 - j][i];
+                        if j < _yhistory.len() {
+                            y_prime_new[i] += alpha[j] * _yhistory[_yhistory.len() - 1 - j][i];
                         }
                     }
 
@@ -913,8 +912,7 @@ where
             // If step size gets too small, the problem might be too stiff
             if h < min_step {
                 return Err(IntegrateError::ComputationError(format!(
-                    "Failed to converge at t = {}. Step size too small.",
-                    t_current
+                    "Failed to converge at t = {t_current}. Step size too small."
                 )));
             }
 
@@ -994,13 +992,11 @@ where
         success,
         message: if success {
             Some(format!(
-                "Successful integration. {} steps taken, {} GMRES iterations.",
-                n_steps, n_krylov_iters
+                "Successful integration. {n_steps} steps taken, {n_krylov_iters} GMRES iterations."
             ))
         } else {
             Some(format!(
-                "Integration did not reach end time. {} steps taken, {} GMRES iterations.",
-                n_steps, n_krylov_iters
+                "Integration did not reach end time. {n_steps} steps taken, {n_krylov_iters} GMRES iterations."
             ))
         },
         n_eval: n_f_evals,
@@ -1030,6 +1026,7 @@ where
 ///
 /// # Returns
 /// * The solution vector and the number of iterations taken
+#[allow(dead_code)]
 fn gmres_solver<F>(
     matvec: impl Fn(&Array1<F>) -> Array1<F>,
     b: &Array1<F>,
@@ -1131,6 +1128,7 @@ where
 ///
 /// # Returns
 /// * Upper Hessenberg matrix, Krylov vectors, residual norm, iteration count
+#[allow(dead_code)]
 fn arnoldi_process<F>(
     matvec: &impl Fn(&Array1<F>) -> Array1<F>,
     preconditioner: &Option<impl Fn(&Array1<F>) -> Array1<F>>,
@@ -1177,7 +1175,7 @@ where
             }
         }
 
-        // Compute the norm of the new vector
+        // Compute the _norm of the new vector
         let w_norm = w.iter().fold(F::zero(), |acc, &val| acc + val * val).sqrt();
         h[[j + 1, j]] = w_norm;
 
@@ -1222,6 +1220,7 @@ where
 }
 
 /// Compute the dot product of two vectors
+#[allow(dead_code)]
 fn dot<F>(a: &Array1<F>, b: &Array1<F>) -> F
 where
     F: IntegrateFloat,
@@ -1232,6 +1231,7 @@ where
 }
 
 /// Compute a Givens rotation matrix that zeros out an entry
+#[allow(dead_code)]
 fn givens_rotation<F>(a: F, b: F) -> (F, F)
 where
     F: IntegrateFloat,
@@ -1252,6 +1252,7 @@ where
 }
 
 /// Solve an upper triangular system Rx = b
+#[allow(dead_code)]
 fn solve_upper_triangular<F>(r: &Array2<F>, g: &F, n: usize) -> Array1<F>
 where
     F: IntegrateFloat,
@@ -1272,17 +1273,18 @@ where
 }
 
 /// Predict the next state for semi-explicit DAE using extrapolation
+#[allow(dead_code)]
 fn predict_step<F>(
     x_history: &[Array1<F>],
-    y_history: &[Array1<F>],
+    _yhistory: &[Array1<F>],
     order: usize,
-    _h: F,
+    h: F,
 ) -> (Array1<F>, Array1<F>)
 where
     F: IntegrateFloat,
 {
     let n_x = x_history[0].len();
-    let n_y = y_history[0].len();
+    let n_y = _yhistory[0].len();
 
     let history_len = x_history.len();
 
@@ -1290,7 +1292,7 @@ where
         // For first step or first-order method, just use constant extrapolation
         return (
             x_history[history_len - 1].clone(),
-            y_history[history_len - 1].clone(),
+            _yhistory[history_len - 1].clone(),
         );
     }
 
@@ -1299,7 +1301,7 @@ where
 
     // Start with the most recent point
     let mut x_pred = x_history[history_len - 1].clone();
-    let mut y_pred = y_history[history_len - 1].clone();
+    let mut y_pred = _yhistory[history_len - 1].clone();
 
     // Simple linear extrapolation for order 2
     if order_to_use == 1 {
@@ -1310,8 +1312,8 @@ where
         }
 
         for i in 0..n_y {
-            y_pred[i] = y_history[history_len - 1][i]
-                + (y_history[history_len - 1][i] - y_history[history_len - 2][i]);
+            y_pred[i] = _yhistory[history_len - 1][i]
+                + (_yhistory[history_len - 1][i] - _yhistory[history_len - 2][i]);
         }
 
         return (x_pred, y_pred);
@@ -1328,42 +1330,44 @@ where
     }
 
     for i in 0..n_y {
-        y_pred[i] = y_history[history_len - 1][i]
-            + (y_history[history_len - 1][i] - y_history[history_len - 2][i]) * scaling;
+        y_pred[i] = _yhistory[history_len - 1][i]
+            + (_yhistory[history_len - 1][i] - _yhistory[history_len - 2][i]) * scaling;
     }
 
     (x_pred, y_pred)
 }
 
 /// Predict the next state for fully implicit DAE
-fn predict_fully_implicit<F>(y_history: &[Array1<F>], order: usize) -> Array1<F>
+#[allow(dead_code)]
+fn predict_fully_implicit<F>(_yhistory: &[Array1<F>], order: usize) -> Array1<F>
 where
     F: IntegrateFloat,
 {
-    let n = y_history[0].len();
-    let history_len = y_history.len();
+    let n = _yhistory[0].len();
+    let history_len = _yhistory.len();
 
     if history_len < 2 || order == 1 {
         // For first step or first-order method, just use constant extrapolation
-        return y_history[history_len - 1].clone();
+        return _yhistory[history_len - 1].clone();
     }
 
     // For higher-order extrapolation, we'll use a simple polynomial predictor
     // For simplicity, we'll just use linear extrapolation here
     // In a full implementation, higher-order predictors would be used
 
-    let mut y_pred = y_history[history_len - 1].clone();
+    let mut y_pred = _yhistory[history_len - 1].clone();
 
     // Simple linear extrapolation
     for i in 0..n {
-        y_pred[i] = y_history[history_len - 1][i]
-            + (y_history[history_len - 1][i] - y_history[history_len - 2][i]);
+        y_pred[i] = _yhistory[history_len - 1][i]
+            + (_yhistory[history_len - 1][i] - _yhistory[history_len - 2][i]);
     }
 
     y_pred
 }
 
 /// Compute the Jacobian of a function with respect to x variables
+#[allow(dead_code)]
 fn compute_jacobian_x<F, Func>(
     f: &Func,
     t: F,
@@ -1411,6 +1415,7 @@ where
 }
 
 /// Compute the Jacobian of a function with respect to y variables
+#[allow(dead_code)]
 fn compute_jacobian_y<F, Func>(
     f: &Func,
     t: F,
@@ -1458,6 +1463,7 @@ where
 }
 
 /// Compute the Jacobian of a function with respect to y for implicit DAE
+#[allow(dead_code)]
 fn compute_jacobian_y_implicit<F, Func>(
     f: &Func,
     t: F,
@@ -1505,6 +1511,7 @@ where
 }
 
 /// Compute the Jacobian of a function with respect to y' for implicit DAE
+#[allow(dead_code)]
 fn compute_jacobian_yprime_implicit<F, Func>(
     f: &Func,
     t: F,

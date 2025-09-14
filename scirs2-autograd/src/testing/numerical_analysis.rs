@@ -257,7 +257,7 @@ impl<F: Float> NumericalAnalyzer<F> {
 
     fn compute_singular_values(
         &self,
-        _matrix: &Array<F, IxDyn>,
+        matrix: &Array<F, IxDyn>,
     ) -> Result<Vec<f64>, StabilityError> {
         // Simplified - would use actual SVD computation
         Ok(vec![10.0, 5.0, 1.0, 0.1])
@@ -313,20 +313,20 @@ impl<F: Float> NumericalAnalyzer<F> {
 
     fn estimate_inverse_frobenius_norm(
         &self,
-        _matrix: &Array<F, IxDyn>,
+        self_matrix: &Array<F, IxDyn>,
     ) -> Result<f64, StabilityError> {
         // Simplified estimation
         Ok(0.1)
     }
 
-    fn estimate_inverse_one_norm(&self, _matrix: &Array<F, IxDyn>) -> Result<f64, StabilityError> {
+    fn estimate_inverse_one_norm(&self, matrix: &Array<F, IxDyn>) -> Result<f64, StabilityError> {
         // Simplified estimation
         Ok(0.1)
     }
 
     fn estimate_inverse_infinity_norm(
         &self,
-        _matrix: &Array<F, IxDyn>,
+        matrix: &Array<F, IxDyn>,
     ) -> Result<f64, StabilityError> {
         // Simplified estimation
         Ok(0.1)
@@ -549,7 +549,7 @@ impl<F: Float> NumericalAnalyzer<F> {
         let mut cases = Vec::new();
 
         // Test for NaN production
-        if self.test_nan_production(function, input)? {
+        if NumericalAnalyzer::<F>::test_nan_production(function, input)? {
             cases.push(PathologicalCase {
                 case_type: PathologyType::NaNProduction,
                 description: "Function produces NaN values under perturbation".to_string(),
@@ -558,7 +558,7 @@ impl<F: Float> NumericalAnalyzer<F> {
         }
 
         // Test for infinite output
-        if self.test_infinite_output(function, input)? {
+        if NumericalAnalyzer::<F>::test_infinite_output(function, input)? {
             cases.push(PathologicalCase {
                 case_type: PathologyType::InfiniteOutput,
                 description: "Function produces infinite values".to_string(),
@@ -567,7 +567,7 @@ impl<F: Float> NumericalAnalyzer<F> {
         }
 
         // Test for extreme sensitivity
-        if self.test_extreme_sensitivity(function, input)? {
+        if NumericalAnalyzer::<F>::test_extreme_sensitivity(function, input)? {
             cases.push(PathologicalCase {
                 case_type: PathologyType::ExtremeSensitivity,
                 description: "Function exhibits extreme sensitivity to input changes".to_string(),
@@ -582,7 +582,7 @@ impl<F: Float> NumericalAnalyzer<F> {
 
     fn analyze_machine_epsilon_effects<Func>(
         &self,
-        _function: &Func,
+        function: &Func,
         _input: &Tensor<F>,
     ) -> Result<f64, StabilityError>
     where
@@ -594,7 +594,7 @@ impl<F: Float> NumericalAnalyzer<F> {
 
     fn analyze_catastrophic_cancellation<Func>(
         &self,
-        _function: &Func,
+        function: &Func,
         _input: &Tensor<F>,
     ) -> Result<CancellationAnalysis, StabilityError>
     where
@@ -609,7 +609,7 @@ impl<F: Float> NumericalAnalyzer<F> {
 
     fn estimate_total_roundoff_error<Func>(
         &self,
-        _function: &Func,
+        function: &Func,
         _input: &Tensor<F>,
     ) -> Result<f64, StabilityError>
     where
@@ -621,7 +621,7 @@ impl<F: Float> NumericalAnalyzer<F> {
 
     fn analyze_precision_sensitivity<Func>(
         &self,
-        _function: &Func,
+        function: &Func,
         _input: &Tensor<F>,
     ) -> Result<PrecisionSensitivityAnalysis, StabilityError>
     where
@@ -686,23 +686,23 @@ impl<F: Float> NumericalAnalyzer<F> {
 
     fn compute_std_tensor<'a>(
         &self,
-        _tensors: &[Tensor<F>],
-        _mean: &Tensor<'a, F>,
+        tensors: &[Tensor<F>],
+        mean: &Tensor<'a, F>,
     ) -> Result<Tensor<'a, F>, StabilityError> {
         // Simplified - would compute actual standard deviation
-        let shape = _mean.shape();
-        let std_data = vec![F::from(0.1).unwrap(); _mean.data().len()];
-        Ok(Tensor::from_vec(std_data, shape.to_vec(), _mean.graph()))
+        let shape = mean.shape();
+        let std_data = vec![F::from(0.1).unwrap(); mean.data().len()];
+        Ok(Tensor::from_vec(std_data, shape.to_vec(), mean.graph()))
     }
 
     fn compute_confidence_interval<'a>(
         &self,
-        _tensors: &[Tensor<'a, F>],
+        tensors: &[Tensor<'a, F>],
         _confidence: f64,
     ) -> Result<(Tensor<'a, F>, Tensor<'a, F>), StabilityError> {
-        // Simplified - would compute actual confidence interval
-        let lower = _tensors[0];
-        let upper = _tensors[0];
+        // Simplified - would compute actual _confidence interval
+        let lower = tensors[0];
+        let upper = tensors[0];
         Ok((lower, upper))
     }
 
@@ -723,15 +723,14 @@ impl<F: Float> NumericalAnalyzer<F> {
 
     fn estimate_critical_perturbation_size(
         &self,
-        _sensitivities: &[f64],
+        sensitivities: &[f64],
     ) -> Result<f64, StabilityError> {
         // Simplified estimation
         Ok(1e-8)
     }
 
     fn test_nan_production<Func>(
-        &self,
-        _function: &Func,
+        self_function: &Func,
         _input: &Tensor<F>,
     ) -> Result<bool, StabilityError>
     where
@@ -741,8 +740,7 @@ impl<F: Float> NumericalAnalyzer<F> {
     }
 
     fn test_infinite_output<Func>(
-        &self,
-        _function: &Func,
+        self_function: &Func,
         _input: &Tensor<F>,
     ) -> Result<bool, StabilityError>
     where
@@ -752,8 +750,7 @@ impl<F: Float> NumericalAnalyzer<F> {
     }
 
     fn test_extreme_sensitivity<Func>(
-        &self,
-        _function: &Func,
+        self_function: &Func,
         _input: &Tensor<F>,
     ) -> Result<bool, StabilityError>
     where
@@ -915,6 +912,7 @@ pub struct PrecisionSensitivityAnalysis {
 
 /// Public API functions
 /// Analyze the condition number of a computation
+#[allow(dead_code)]
 pub fn analyze_conditioning<F: Float, Func>(
     function: Func,
     input: &Tensor<F>,
@@ -927,17 +925,18 @@ where
 }
 
 /// Analyze error propagation through a computation
+#[allow(dead_code)]
 pub fn analyze_error_propagation<'a, F: Float, Func>(
     _function: Func,
-    _input: &'a Tensor<'a, F>,
+    input: &'a Tensor<'a, F>,
     _uncertainty: &'a Tensor<'a, F>,
 ) -> Result<ErrorPropagationAnalysis<'a, F>, StabilityError>
 where
     Func: for<'b> Fn(&Tensor<'b, F>) -> Result<Tensor<'b, F>, StabilityError>,
 {
     // Simplified implementation to avoid borrowing local variable
-    let graph = _input.graph();
-    let shape = _input.shape();
+    let graph = input.graph();
+    let shape = input.shape();
     let temp_data = vec![F::zero(); shape.iter().product()];
     let temp_tensor = Tensor::from_vec(temp_data, shape, graph);
 
@@ -955,6 +954,7 @@ where
 }
 
 /// Quick stability check
+#[allow(dead_code)]
 pub fn quick_stability_check<F: Float, Func>(
     function: Func,
     input: &Tensor<F>,

@@ -375,6 +375,7 @@ where
 /// # Returns
 ///
 /// WindowBasedFeatures containing comprehensive windowed analysis
+#[allow(dead_code)]
 pub fn calculate_window_based_features<F>(
     ts: &Array1<F>,
     config: &WindowConfig,
@@ -440,16 +441,17 @@ where
 // =============================================================================
 
 /// Calculate features for a specific window size
-fn calculate_window_features<F>(ts: &Array1<F>, window_size: usize) -> Result<WindowFeatures<F>>
+#[allow(dead_code)]
+fn calculate_window_features<F>(_ts: &Array1<F>, windowsize: usize) -> Result<WindowFeatures<F>>
 where
     F: Float + FromPrimitive + Debug + Clone,
 {
-    let n = ts.len();
-    if n < window_size {
+    let n = _ts.len();
+    if n < windowsize {
         return Ok(WindowFeatures::default());
     }
 
-    let num_windows = n - window_size + 1;
+    let num_windows = n - windowsize + 1;
     let mut rolling_means = Vec::with_capacity(num_windows);
     let mut rolling_stds = Vec::with_capacity(num_windows);
     let mut rolling_mins = Vec::with_capacity(num_windows);
@@ -463,13 +465,13 @@ where
 
     // Calculate rolling statistics
     for i in 0..num_windows {
-        let window = ts.slice(s![i..i + window_size]);
+        let window = _ts.slice(s![i..i + windowsize]);
 
         // Basic statistics
-        let mean = window.sum() / F::from(window_size).unwrap();
+        let mean = window.sum() / F::from(windowsize).unwrap();
         rolling_means.push(mean);
 
-        let variance = window.mapv(|x| (x - mean).powi(2)).sum() / F::from(window_size).unwrap();
+        let variance = window.mapv(|x| (x - mean).powi(2)).sum() / F::from(windowsize).unwrap();
         let std = variance.sqrt();
         rolling_stds.push(std);
 
@@ -491,18 +493,18 @@ where
         let mut sorted_window: Vec<F> = window.iter().cloned().collect();
         sorted_window.sort_by(|a, b| a.partial_cmp(b).unwrap_or(std::cmp::Ordering::Equal));
 
-        let median_idx = window_size / 2;
-        let median = if window_size % 2 == 0 {
+        let median_idx = windowsize / 2;
+        let median = if windowsize % 2 == 0 {
             (sorted_window[median_idx - 1] + sorted_window[median_idx]) / F::from(2.0).unwrap()
         } else {
             sorted_window[median_idx]
         };
         rolling_medians.push(median);
 
-        let q1_idx = window_size / 4;
-        let q3_idx = 3 * window_size / 4;
+        let q1_idx = windowsize / 4;
+        let q3_idx = 3 * windowsize / 4;
         let q1 = sorted_window[q1_idx];
-        let q3 = sorted_window[q3_idx.min(window_size - 1)];
+        let q3 = sorted_window[q3_idx.min(windowsize - 1)];
         rolling_quantiles.push((q1, q3));
 
         // Higher-order moments (skewness and kurtosis)
@@ -510,8 +512,8 @@ where
             let sum_cube = window.mapv(|x| ((x - mean) / std).powi(3)).sum();
             let sum_quad = window.mapv(|x| ((x - mean) / std).powi(4)).sum();
 
-            let skewness = sum_cube / F::from(window_size).unwrap();
-            let kurtosis = sum_quad / F::from(window_size).unwrap() - F::from(3.0).unwrap();
+            let skewness = sum_cube / F::from(windowsize).unwrap();
+            let kurtosis = sum_quad / F::from(windowsize).unwrap() - F::from(3.0).unwrap();
 
             rolling_skewness.push(skewness);
             rolling_kurtosis.push(kurtosis);
@@ -530,7 +532,7 @@ where
     )?;
 
     Ok(WindowFeatures {
-        window_size,
+        window_size: windowsize,
         rolling_means,
         rolling_stds,
         rolling_mins,
@@ -546,6 +548,7 @@ where
 }
 
 /// Calculate summary statistics for window features
+#[allow(dead_code)]
 fn calculate_window_summary_stats<F>(
     rolling_means: &[F],
     rolling_stds: &[F],
@@ -562,7 +565,7 @@ where
 
     let n_f = F::from(n).unwrap();
 
-    // Mean and std of rolling means
+    // Mean and std of rolling _means
     let mean_of_means = rolling_means.iter().fold(F::zero(), |acc, &x| acc + x) / n_f;
     let std_of_means = if n > 1 {
         let variance = rolling_means.iter().fold(F::zero(), |acc, &x| {
@@ -573,7 +576,7 @@ where
         F::zero()
     };
 
-    // Mean and std of rolling stds
+    // Mean and std of rolling _stds
     let mean_of_stds = rolling_stds.iter().fold(F::zero(), |acc, &x| acc + x) / n_f;
     let std_of_stds = if n > 1 {
         let variance = rolling_stds.iter().fold(F::zero(), |acc, &x| {
@@ -593,8 +596,8 @@ where
 
     // Trend calculations (linear regression slope)
     let indices: Vec<F> = (0..n).map(|i| F::from(i).unwrap()).collect();
-    let (trend_in_means, _) = linear_fit(&indices, rolling_means);
-    let (trend_in_stds, _) = linear_fit(&indices, rolling_stds);
+    let (trend_in_means_, _) = linear_fit(&indices, rolling_means);
+    let (trend_in_stds_, _) = linear_fit(&indices, rolling_stds);
 
     // Variability index (CV of CVs)
     let mean_cv = rolling_cv.iter().fold(F::zero(), |acc, &x| acc + x) / n_f;
@@ -616,8 +619,8 @@ where
         max_range,
         min_range,
         mean_range,
-        trend_in_means,
-        trend_in_stds,
+        trend_in_means: trend_in_means_,
+        trend_in_stds: trend_in_stds_,
         variability_index,
     })
 }
@@ -627,18 +630,19 @@ where
 // =============================================================================
 
 /// Calculate multi-scale variance features
-fn calculate_multi_scale_variance<F>(ts: &Array1<F>, window_sizes: &[usize]) -> Result<Vec<F>>
+#[allow(dead_code)]
+fn calculate_multi_scale_variance<F>(_ts: &Array1<F>, windowsizes: &[usize]) -> Result<Vec<F>>
 where
     F: Float + FromPrimitive + Debug,
 {
-    let mut variances = Vec::with_capacity(window_sizes.len());
+    let mut variances = Vec::with_capacity(windowsizes.len());
 
-    for &window_size in window_sizes {
+    for &window_size in windowsizes {
         let mut scale_variances = Vec::new();
-        let num_windows = ts.len().saturating_sub(window_size).saturating_add(1);
+        let num_windows = _ts.len().saturating_sub(window_size).saturating_add(1);
 
         for i in 0..num_windows {
-            let window = ts.slice(s![i..i + window_size]);
+            let window = _ts.slice(s![i..i + window_size]);
             let mean = window.sum() / F::from(window_size).unwrap();
             let variance =
                 window.mapv(|x| (x - mean) * (x - mean)).sum() / F::from(window_size).unwrap();
@@ -659,22 +663,23 @@ where
 }
 
 /// Calculate multi-scale trend features
-fn calculate_multi_scale_trends<F>(ts: &Array1<F>, window_sizes: &[usize]) -> Result<Vec<F>>
+#[allow(dead_code)]
+fn calculate_multi_scale_trends<F>(_ts: &Array1<F>, windowsizes: &[usize]) -> Result<Vec<F>>
 where
     F: Float + FromPrimitive + Debug,
 {
-    let mut trends = Vec::with_capacity(window_sizes.len());
+    let mut trends = Vec::with_capacity(windowsizes.len());
 
-    for &window_size in window_sizes {
+    for &window_size in windowsizes {
         let mut scale_trends = Vec::new();
-        let num_windows = ts.len().saturating_sub(window_size).saturating_add(1);
+        let num_windows = _ts.len().saturating_sub(window_size).saturating_add(1);
 
         for i in 0..num_windows {
-            let window = ts.slice(s![i..i + window_size]);
+            let window = _ts.slice(s![i..i + window_size]);
             let indices: Vec<F> = (0..window_size).map(|j| F::from(j).unwrap()).collect();
             let values: Vec<F> = window.iter().cloned().collect();
-            let (slope, _) = linear_fit(&indices, &values);
-            scale_trends.push(slope);
+            let (slope_, _) = linear_fit(&indices, &values);
+            scale_trends.push(slope_);
         }
 
         let mean_trend = if !scale_trends.is_empty() {
@@ -695,6 +700,7 @@ where
 // =============================================================================
 
 /// Calculate cross-window correlations
+#[allow(dead_code)]
 fn calculate_cross_window_correlations<F>(
     small: &WindowFeatures<F>,
     medium: &WindowFeatures<F>,
@@ -765,6 +771,7 @@ where
 // =============================================================================
 
 /// Calculate change detection features
+#[allow(dead_code)]
 fn calculate_change_detection_features<F>(
     ts: &Array1<F>,
     window_features: &WindowFeatures<F>,
@@ -855,6 +862,7 @@ where
 // =============================================================================
 
 /// Calculate rolling statistics including technical indicators
+#[allow(dead_code)]
 fn calculate_rolling_statistics<F>(
     ts: &Array1<F>,
     config: &WindowConfig,
@@ -891,6 +899,7 @@ where
 }
 
 /// Calculate Exponentially Weighted Moving Average
+#[allow(dead_code)]
 fn calculate_ewma<F>(ts: &Array1<F>, alpha: f64) -> Result<Vec<F>>
 where
     F: Float + FromPrimitive + Clone,
@@ -914,6 +923,7 @@ where
 }
 
 /// Calculate Exponentially Weighted Moving Variance
+#[allow(dead_code)]
 fn calculate_ewmv<F>(ts: &Array1<F>, ewma: &[F], alpha: f64) -> Result<Vec<F>>
 where
     F: Float + FromPrimitive + Clone,
@@ -938,6 +948,7 @@ where
 }
 
 /// Calculate Bollinger Bands
+#[allow(dead_code)]
 fn calculate_bollinger_bands<F>(
     ts: &Array1<F>,
     config: &WindowConfig,
@@ -1018,6 +1029,7 @@ where
 }
 
 /// Calculate MACD features
+#[allow(dead_code)]
 fn calculate_macd_features<F>(ts: &Array1<F>, config: &WindowConfig) -> Result<MACDFeatures<F>>
 where
     F: Float + FromPrimitive + Debug + Clone,
@@ -1086,6 +1098,7 @@ where
 }
 
 /// Calculate Relative Strength Index (RSI)
+#[allow(dead_code)]
 fn calculate_rsi<F>(ts: &Array1<F>, period: usize) -> Result<Vec<F>>
 where
     F: Float + FromPrimitive + Debug,
@@ -1137,6 +1150,7 @@ where
 }
 
 /// Calculate normalized features
+#[allow(dead_code)]
 fn calculate_normalized_features<F>(
     ts: &Array1<F>,
     config: &WindowConfig,

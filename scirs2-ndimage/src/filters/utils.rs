@@ -1,11 +1,299 @@
 //! Utility functions for filter operations
 
-use ndarray::{Array, ArrayBase, Dimension};
-use num_traits::{Float, FromPrimitive};
+use ndarray::{Array, ArrayBase, ArrayView2, Dimension, Ix1, Ix2};
+use num_traits::{Float, FromPrimitive, Zero};
 use std::fmt::Debug;
 
+#[cfg(feature = "parallel")]
+use scirs2_core::parallel_ops::*;
+
 use super::BorderMode;
-use crate::error::{NdimageError, Result};
+use crate::error::{NdimageError, NdimageResult};
+use crate::utils::safe_f64_to_float;
+
+/// Helper function for safe usize conversion
+#[allow(dead_code)]
+fn safe_usize_to_float<T: Float + FromPrimitive>(value: usize) -> NdimageResult<T> {
+    T::from_usize(value).ok_or_else(|| {
+        NdimageError::ComputationError(format!("Failed to convert usize {} to float type", value))
+    })
+}
+
+/// Calculate optimal kernel size for a given sigma
+#[allow(dead_code)]
+pub fn calculate_kernel_size<T: Float + FromPrimitive>(
+    sigma: T,
+    truncate: Option<T>,
+) -> NdimageResult<usize> {
+    let truncate_val = truncate.unwrap_or_else(|| T::from_f64(4.0).unwrap_or_else(|| T::zero()));
+    let size = (T::from_usize(1).unwrap_or(T::one())
+        + (sigma * truncate_val * T::from_f64(2.0).unwrap_or(T::one() + T::one())))
+    .ceil()
+    .to_usize()
+    .ok_or_else(|| {
+        NdimageError::ComputationError("Failed to convert kernel size to usize".into())
+    })?;
+
+    // Ensure odd size
+    if size % 2 == 0 {
+        Ok(size + 1)
+    } else {
+        Ok(size)
+    }
+}
+
+/// Generate a Gaussian kernel with specified sigma
+#[allow(dead_code)]
+pub fn generate_gaussian_kernel<T: Float + FromPrimitive>(
+    sigma: T,
+    size: Option<usize>,
+) -> NdimageResult<Array<T, Ix1>> {
+    let kernel_size = match size {
+        Some(s) => s,
+        None => calculate_kernel_size(sigma, None)?,
+    };
+
+    if kernel_size % 2 == 0 {
+        return Err(NdimageError::InvalidInput("Kernel size must be odd".into()));
+    }
+
+    let half = kernel_size / 2;
+    let mut kernel = Array::zeros(kernel_size);
+    let sigma_sq = sigma * sigma;
+    let norm_factor = T::from_f64(1.0).unwrap_or(T::one())
+        / (sigma * T::from_f64(std::f64::consts::TAU.sqrt()).unwrap_or(T::one()));
+    let exp_factor = T::from_f64(-0.5).unwrap_or(-T::one() / (T::one() + T::one())) / sigma_sq;
+
+    let mut sum = T::zero();
+    for (i, k) in kernel.iter_mut().enumerate() {
+        let x = T::from_usize(i).unwrap_or(T::zero()) - T::from_usize(half).unwrap_or(T::zero());
+        *k = norm_factor * (exp_factor * x * x).exp();
+        sum = sum + *k;
+    }
+
+    // Normalize the kernel to sum to 1
+    for k in kernel.iter_mut() {
+        *k = *k / sum;
+    }
+
+    Ok(kernel)
+}
+
+/// Fast separable Gaussian blur implementation
+#[allow(dead_code)]
+pub fn separable_gaussian_blur<T>(
+    input: ArrayView2<T>,
+    sigma_x: T,
+    sigma_y: T,
+) -> NdimageResult<Array<T, Ix2>>
+where
+    T: Float + FromPrimitive + Debug + Clone + Send + Sync + Zero,
+{
+    let (height, width) = input.dim();
+
+    // Generate kernels
+    let kernel_x = generate_gaussian_kernel(sigma_x, None)?;
+    let kernel_y = generate_gaussian_kernel(sigma_y, None)?;
+
+    // Horizontal pass
+    let mut temp = Array::zeros((height, width));
+
+    #[cfg(feature = "parallel")]
+    {
+        temp.axis_iter_mut(ndarray::Axis(0))
+            .into_par_iter()
+            .enumerate()
+            .for_each(|(_y, mut row)| {
+                for _x in 0..width {
+                    let mut sum = T::zero();
+                    let kernel_half = kernel_x.len() / 2;
+
+                    for (k_idx, &k_val) in kernel_x.iter().enumerate() {
+                        let src_x = (_x as isize + k_idx as isize - kernel_half as isize)
+                            .clamp(0, width as isize - 1)
+                            as usize;
+                        sum = sum + input[(_y, src_x)] * k_val;
+                    }
+                    row[_x] = sum;
+                }
+            });
+    }
+
+    #[cfg(not(feature = "parallel"))]
+    {
+        for _y in 0..height {
+            for _x in 0..width {
+                let mut sum = T::zero();
+                let kernel_half = kernel_x.len() / 2;
+
+                for (k_idx, &k_val) in kernel_x.iter().enumerate() {
+                    let src_x = (_x as isize + k_idx as isize - kernel_half as isize)
+                        .clamp(0, width as isize - 1) as usize;
+                    sum = sum + input[(_y, src_x)] * k_val;
+                }
+                temp[(_y, _x)] = sum;
+            }
+        }
+    }
+
+    // Vertical pass
+    let mut output = Array::zeros((height, width));
+
+    #[cfg(feature = "parallel")]
+    {
+        output
+            .axis_chunks_iter_mut(ndarray::Axis(1), 1)
+            .into_par_iter()
+            .enumerate()
+            .for_each(|(_x, mut col)| {
+                for _y in 0..height {
+                    let mut sum = T::zero();
+                    let kernel_half = kernel_y.len() / 2;
+
+                    for (k_idx, &k_val) in kernel_y.iter().enumerate() {
+                        let src_y = (_y as isize + k_idx as isize - kernel_half as isize)
+                            .clamp(0, height as isize - 1)
+                            as usize;
+                        sum = sum + temp[(src_y, _x)] * k_val;
+                    }
+                    col[[_y, 0]] = sum;
+                }
+            });
+    }
+
+    #[cfg(not(feature = "parallel"))]
+    {
+        for _x in 0..width {
+            for _y in 0..height {
+                let mut sum = T::zero();
+                let kernel_half = kernel_y.len() / 2;
+
+                for (k_idx, &k_val) in kernel_y.iter().enumerate() {
+                    let src_y = (_y as isize + k_idx as isize - kernel_half as isize)
+                        .clamp(0, height as isize - 1) as usize;
+                    sum = sum + temp[(src_y, _x)] * k_val;
+                }
+                output[(_y, _x)] = sum;
+            }
+        }
+    }
+
+    Ok(output)
+}
+
+/// Memory-efficient convolution implementation
+#[allow(dead_code)]
+pub fn memory_efficient_convolution<T>(
+    input: ArrayView2<T>,
+    kernel: ArrayView2<T>,
+    mode: BorderMode,
+) -> NdimageResult<Array<T, Ix2>>
+where
+    T: Float + FromPrimitive + Debug + Clone + Zero,
+{
+    let (input_h, input_w) = input.dim();
+    let (kernel_h, kernel_w) = kernel.dim();
+
+    if kernel_h == 0 || kernel_w == 0 {
+        return Err(NdimageError::InvalidInput("Kernel cannot be empty".into()));
+    }
+
+    let kernel_half_h = kernel_h / 2;
+    let kernel_half_w = kernel_w / 2;
+
+    let mut output = Array::zeros((input_h, input_w));
+
+    for y in 0..input_h {
+        for x in 0..input_w {
+            let mut sum = T::zero();
+
+            for ky in 0..kernel_h {
+                for kx in 0..kernel_w {
+                    let src_y = y as isize + ky as isize - kernel_half_h as isize;
+                    let src_x = x as isize + kx as isize - kernel_half_w as isize;
+
+                    let pixel_value = match mode {
+                        BorderMode::Constant => {
+                            if src_y >= 0
+                                && src_y < input_h as isize
+                                && src_x >= 0
+                                && src_x < input_w as isize
+                            {
+                                input[(src_y as usize, src_x as usize)]
+                            } else {
+                                T::zero()
+                            }
+                        }
+                        BorderMode::Reflect => {
+                            let reflect_y = if src_y < 0 {
+                                (-src_y) as usize
+                            } else if src_y >= input_h as isize {
+                                input_h - 2 - (src_y - input_h as isize) as usize
+                            } else {
+                                src_y as usize
+                            }
+                            .min(input_h - 1);
+
+                            let reflect_x = if src_x < 0 {
+                                (-src_x) as usize
+                            } else if src_x >= input_w as isize {
+                                input_w - 2 - (src_x - input_w as isize) as usize
+                            } else {
+                                src_x as usize
+                            }
+                            .min(input_w - 1);
+
+                            input[(reflect_y, reflect_x)]
+                        }
+                        BorderMode::Nearest => {
+                            let clamp_y = src_y.clamp(0, input_h as isize - 1) as usize;
+                            let clamp_x = src_x.clamp(0, input_w as isize - 1) as usize;
+                            input[(clamp_y, clamp_x)]
+                        }
+                        BorderMode::Wrap => {
+                            let wrap_y = ((src_y % input_h as isize + input_h as isize)
+                                % input_h as isize)
+                                as usize;
+                            let wrap_x = ((src_x % input_w as isize + input_w as isize)
+                                % input_w as isize)
+                                as usize;
+                            input[(wrap_y, wrap_x)]
+                        }
+                        BorderMode::Mirror => {
+                            let mirror_y = if src_y < 0 {
+                                ((-src_y - 1) % (2 * input_h as isize)) as usize
+                            } else if src_y >= input_h as isize {
+                                ((2 * input_h as isize - src_y - 1) % (2 * input_h as isize))
+                                    as usize
+                            } else {
+                                src_y as usize
+                            }
+                            .min(input_h - 1);
+
+                            let mirror_x = if src_x < 0 {
+                                ((-src_x - 1) % (2 * input_w as isize)) as usize
+                            } else if src_x >= input_w as isize {
+                                ((2 * input_w as isize - src_x - 1) % (2 * input_w as isize))
+                                    as usize
+                            } else {
+                                src_x as usize
+                            }
+                            .min(input_w - 1);
+
+                            input[(mirror_y, mirror_x)]
+                        }
+                    };
+
+                    sum = sum + pixel_value * kernel[(ky, kx)];
+                }
+            }
+
+            output[(y, x)] = sum;
+        }
+    }
+
+    Ok(output)
+}
 
 /// Apply padding to an array based on the specified border mode
 ///
@@ -19,12 +307,13 @@ use crate::error::{NdimageError, Result};
 /// # Returns
 ///
 /// * `Result<Array<T, D>>` - Padded array
+#[allow(dead_code)]
 pub fn pad_array<T, D>(
     input: &Array<T, D>,
     pad_width: &[(usize, usize)],
     mode: &BorderMode,
     constant_value: Option<T>,
-) -> Result<Array<T, D>>
+) -> NdimageResult<Array<T, D>>
 where
     T: Float + FromPrimitive + Debug + Clone,
     D: Dimension,
@@ -38,7 +327,7 @@ where
 
     if pad_width.len() != input.ndim() {
         return Err(NdimageError::DimensionError(format!(
-            "Pad width must have same length as input dimensions (got {} expected {})",
+            "Pad _width must have same length as input dimensions (got {} expected {})",
             pad_width.len(),
             input.ndim()
         )));
@@ -50,18 +339,17 @@ where
     }
 
     // Calculate new shape
-    let mut new_shape = Vec::with_capacity(input.ndim());
+    let mut newshape = Vec::with_capacity(input.ndim());
     for (dim, &(pad_before, pad_after)) in pad_width.iter().enumerate().take(input.ndim()) {
-        new_shape.push(input.shape()[dim] + pad_before + pad_after);
+        newshape.push(input.shape()[dim] + pad_before + pad_after);
     }
 
-    // Create output array with default constant value
+    // Create output array with default constant _value
     let const_val = constant_value.unwrap_or_else(|| T::zero());
-    let mut output = Array::<T, D>::from_elem(
-        D::from_dimension(&ndarray::IxDyn(&new_shape))
-            .expect("Could not create dimension from shape"),
-        const_val,
-    );
+    let dimension = D::from_dimension(&ndarray::IxDyn(&newshape)).ok_or_else(|| {
+        NdimageError::DimensionError("Could not create dimension from shape".into())
+    })?;
+    let mut output = Array::<T, D>::from_elem(dimension, const_val);
 
     // For 1D arrays
     if input.ndim() == 1 {
@@ -88,7 +376,7 @@ where
         // Then pad the borders based on the mode
         match mode {
             BorderMode::Constant => {
-                // Already filled with constant value
+                // Already filled with constant _value
             }
             BorderMode::Reflect => {
                 // Pad left side
@@ -184,7 +472,7 @@ where
         // Handle border padding based on mode
         match mode {
             BorderMode::Constant => {
-                // Already filled with constant value
+                // Already filled with constant _value
             }
             BorderMode::Reflect => {
                 // Pad top and bottom (rows)
@@ -198,11 +486,29 @@ where
                 }
 
                 for i in 0..pad_width[0].1 {
-                    let src_i = input_rows - 2 - i;
-                    if src_i < input_rows {
-                        for j in 0..input_cols {
-                            output_array2[[start_i + input_rows + i, start_j + j]] =
-                                input_array2[[src_i, j]];
+                    // Handle reflection for bottom padding
+                    // For small inputs, need to check bounds to avoid underflow
+                    if input_rows >= 2 && input_rows > 2 + i {
+                        let src_i = input_rows - 2 - i;
+                        if src_i < input_rows {
+                            for j in 0..input_cols {
+                                output_array2[[start_i + input_rows + i, start_j + j]] =
+                                    input_array2[[src_i, j]];
+                            }
+                        }
+                    } else {
+                        // For small inputs or when reflection would go out of bounds,
+                        // use the closest available row
+                        let src_i = if input_rows > 0 {
+                            (input_rows - 1).saturating_sub(i % input_rows)
+                        } else {
+                            0
+                        };
+                        if src_i < input_rows {
+                            for j in 0..input_cols {
+                                output_array2[[start_i + input_rows + i, start_j + j]] =
+                                    input_array2[[src_i, j]];
+                            }
                         }
                     }
                 }
@@ -218,11 +524,29 @@ where
                 }
 
                 for j in 0..pad_width[1].1 {
-                    let src_j = input_cols - 2 - j;
-                    if src_j < input_cols {
-                        for i in 0..input_rows {
-                            output_array2[[start_i + i, start_j + input_cols + j]] =
-                                input_array2[[i, src_j]];
+                    // Handle reflection for right padding
+                    // For small inputs, need to check bounds to avoid underflow
+                    if input_cols >= 2 && input_cols > 2 + j {
+                        let src_j = input_cols - 2 - j;
+                        if src_j < input_cols {
+                            for i in 0..input_rows {
+                                output_array2[[start_i + i, start_j + input_cols + j]] =
+                                    input_array2[[i, src_j]];
+                            }
+                        }
+                    } else {
+                        // For small inputs or when reflection would go out of bounds,
+                        // use the closest available column
+                        let src_j = if input_cols > 0 {
+                            (input_cols - 1).saturating_sub(j % input_cols)
+                        } else {
+                            0
+                        };
+                        if src_j < input_cols {
+                            for i in 0..input_rows {
+                                output_array2[[start_i + i, start_j + input_cols + j]] =
+                                    input_array2[[i, src_j]];
+                            }
                         }
                     }
                 }
@@ -401,11 +725,17 @@ where
     let input_dyn = input
         .clone()
         .into_dimensionality::<ndarray::IxDyn>()
-        .unwrap();
+        .map_err(|_| {
+            NdimageError::DimensionError("Failed to convert input to dynamic dimensionality".into())
+        })?;
     let mut output_dyn = output
         .clone()
         .into_dimensionality::<ndarray::IxDyn>()
-        .unwrap();
+        .map_err(|_| {
+            NdimageError::DimensionError(
+                "Failed to convert output to dynamic dimensionality".into(),
+            )
+        })?;
 
     // Calculate starts for center region
     let center_starts: Vec<usize> = pad_width.iter().map(|(before, _)| *before).collect();
@@ -415,7 +745,7 @@ where
 
     match mode {
         BorderMode::Constant => {
-            // Already filled with constant value
+            // Already filled with constant _value
         }
         BorderMode::Reflect => {
             pad_nd_array_reflect(&mut output_dyn, &input_dyn, pad_width)?;
@@ -451,7 +781,7 @@ fn pad_along_axis<T, D>(
     _axis: usize,
     _dest_idx: usize,
     _src_idx: usize,
-) -> Result<()>
+) -> NdimageResult<()>
 where
     T: Float + FromPrimitive + Debug + Clone,
     D: Dimension,
@@ -474,13 +804,14 @@ where
 /// # Returns
 ///
 /// * `Result<Array<T, D>>` - Window array
+#[allow(dead_code)]
 pub fn get_window<T, D>(
     input: &Array<T, D>,
     center: &[usize],
     window_size: &[usize],
     _mode: &BorderMode,
-    _constant_value: Option<T>,
-) -> Result<Array<T, D>>
+    value: Option<T>,
+) -> NdimageResult<Array<T, D>>
 where
     T: Float + FromPrimitive + Debug + Clone,
     D: Dimension,
@@ -502,7 +833,7 @@ where
 
     if window_size.len() != input.ndim() {
         return Err(NdimageError::DimensionError(format!(
-            "Window size must have same length as input dimensions (got {} expected {})",
+            "Window _size must have same length as input dimensions (got {} expected {})",
             window_size.len(),
             input.ndim()
         )));
@@ -558,11 +889,12 @@ where
 /// # Returns
 ///
 /// * `Result<()>` - Success or error
+#[allow(dead_code)]
 fn copy_nd_array<T, S1, S2>(
     output: &mut ArrayBase<S1, ndarray::IxDyn>,
     input: &ArrayBase<S2, ndarray::IxDyn>,
     start_indices: &[usize],
-) -> Result<()>
+) -> NdimageResult<()>
 where
     T: Clone + Debug,
     S1: ndarray::DataMut<Elem = T>,
@@ -571,7 +903,7 @@ where
     // Validate inputs
     if start_indices.len() != input.ndim() || start_indices.len() != output.ndim() {
         return Err(NdimageError::DimensionError(format!(
-            "Start indices must have same length as input dimensions (got {} expected {})",
+            "Start _indices must have same length as input dimensions (got {} expected {})",
             start_indices.len(),
             input.ndim()
         )));
@@ -599,7 +931,7 @@ where
         in_indices: &mut Vec<usize>,
         dim: usize,
         start_indices: &[usize],
-    ) -> Result<()> {
+    ) -> NdimageResult<()> {
         if dim == input.ndim() {
             // We have full indices, copy the value
             let out_idx = ndarray::IxDyn(out_indices);
@@ -625,7 +957,7 @@ where
         Ok(())
     }
 
-    // Initialize temporary vectors for indices
+    // Initialize temporary vectors for _indices
     let mut out_indices = vec![0; input.ndim()];
     let mut in_indices = vec![0; input.ndim()];
 
@@ -651,11 +983,12 @@ where
 /// # Returns
 ///
 /// * `Result<()>` - Success or error
+#[allow(dead_code)]
 fn pad_nd_array_reflect<T, S1, S2>(
     output: &mut ArrayBase<S1, ndarray::IxDyn>,
     input: &ArrayBase<S2, ndarray::IxDyn>,
     pad_width: &[(usize, usize)],
-) -> Result<()>
+) -> NdimageResult<()>
 where
     T: Clone + Debug,
     S1: ndarray::DataMut<Elem = T>,
@@ -694,7 +1027,7 @@ where
         dim: usize,
         center_starts: &[usize],
         _pad_width: &[(usize, usize)],
-    ) -> Result<()> {
+    ) -> NdimageResult<()> {
         if dim == input.ndim() {
             // We have full indices, copy the value
             let out_idx = ndarray::IxDyn(out_indices);
@@ -755,9 +1088,9 @@ where
         dim: usize,
         center_starts: &[usize],
         pad_width: &[(usize, usize)],
-    ) -> Result<()> {
+    ) -> NdimageResult<()> {
         if dim == output.ndim() {
-            // Check if current indices are in the center region
+            // Check if current _indices are in the center region
             let mut is_center = true;
             for d in 0..output.ndim() {
                 is_center &= (out_indices[d] >= center_starts[d])
@@ -838,11 +1171,12 @@ where
 /// # Returns
 ///
 /// * `Result<()>` - Success or error
+#[allow(dead_code)]
 fn pad_nd_array_mirror<T, S1, S2>(
     output: &mut ArrayBase<S1, ndarray::IxDyn>,
     input: &ArrayBase<S2, ndarray::IxDyn>,
     pad_width: &[(usize, usize)],
-) -> Result<()>
+) -> NdimageResult<()>
 where
     T: Clone + Debug,
     S1: ndarray::DataMut<Elem = T>,
@@ -881,7 +1215,7 @@ where
         dim: usize,
         center_starts: &[usize],
         _pad_width: &[(usize, usize)],
-    ) -> Result<()> {
+    ) -> NdimageResult<()> {
         if dim == input.ndim() {
             // We have full indices, copy the value
             let out_idx = ndarray::IxDyn(out_indices);
@@ -942,9 +1276,9 @@ where
         dim: usize,
         center_starts: &[usize],
         pad_width: &[(usize, usize)],
-    ) -> Result<()> {
+    ) -> NdimageResult<()> {
         if dim == output.ndim() {
-            // Check if current indices are in the center region
+            // Check if current _indices are in the center region
             let mut is_center = true;
             for d in 0..output.ndim() {
                 is_center &= (out_indices[d] >= center_starts[d])
@@ -1006,11 +1340,12 @@ where
 /// # Returns
 ///
 /// * `Result<()>` - Success or error
+#[allow(dead_code)]
 fn pad_nd_array_wrap<T, S1, S2>(
     output: &mut ArrayBase<S1, ndarray::IxDyn>,
     input: &ArrayBase<S2, ndarray::IxDyn>,
     pad_width: &[(usize, usize)],
-) -> Result<()>
+) -> NdimageResult<()>
 where
     T: Clone + Debug,
     S1: ndarray::DataMut<Elem = T>,
@@ -1041,7 +1376,7 @@ where
         dim: usize,
         center_starts: &[usize],
         _pad_width: &[(usize, usize)],
-    ) -> Result<()> {
+    ) -> NdimageResult<()> {
         if dim == input.ndim() {
             // We have full indices, copy the value
             let out_idx = ndarray::IxDyn(out_indices);
@@ -1102,9 +1437,9 @@ where
         dim: usize,
         center_starts: &[usize],
         pad_width: &[(usize, usize)],
-    ) -> Result<()> {
+    ) -> NdimageResult<()> {
         if dim == output.ndim() {
-            // Check if current indices are in the center region
+            // Check if current _indices are in the center region
             let mut is_center = true;
             for d in 0..output.ndim() {
                 is_center &= (out_indices[d] >= center_starts[d])
@@ -1185,11 +1520,12 @@ where
 /// # Returns
 ///
 /// * `Result<()>` - Success or error
+#[allow(dead_code)]
 fn pad_nd_array_nearest<T, S1, S2>(
     output: &mut ArrayBase<S1, ndarray::IxDyn>,
     input: &ArrayBase<S2, ndarray::IxDyn>,
     pad_width: &[(usize, usize)],
-) -> Result<()>
+) -> NdimageResult<()>
 where
     T: Clone + Debug,
     S1: ndarray::DataMut<Elem = T>,
@@ -1228,7 +1564,7 @@ where
         dim: usize,
         center_starts: &[usize],
         _pad_width: &[(usize, usize)],
-    ) -> Result<()> {
+    ) -> NdimageResult<()> {
         if dim == input.ndim() {
             // We have full indices, copy the value
             let out_idx = ndarray::IxDyn(out_indices);
@@ -1289,9 +1625,9 @@ where
         dim: usize,
         center_starts: &[usize],
         pad_width: &[(usize, usize)],
-    ) -> Result<()> {
+    ) -> NdimageResult<()> {
         if dim == output.ndim() {
-            // Check if current indices are in the center region
+            // Check if current _indices are in the center region
             let mut is_center = true;
             for d in 0..output.ndim() {
                 is_center &= (out_indices[d] >= center_starts[d])
@@ -1374,13 +1710,14 @@ where
 /// # Returns
 ///
 /// * `Result<Array<T, D>>` - Result array
+#[allow(dead_code)]
 pub fn apply_window_function<T, D, F>(
     input: &Array<T, D>,
     window_size: &[usize],
     _mode: &BorderMode,
-    _constant_value: Option<T>,
+    value: Option<T>,
     _func: F,
-) -> Result<Array<T, D>>
+) -> NdimageResult<Array<T, D>>
 where
     T: Float + FromPrimitive + Debug + Clone,
     D: Dimension,
@@ -1395,7 +1732,7 @@ where
 
     if window_size.len() != input.ndim() {
         return Err(NdimageError::DimensionError(format!(
-            "Window size must have same length as input dimensions (got {} expected {})",
+            "Window _size must have same length as input dimensions (got {} expected {})",
             window_size.len(),
             input.ndim()
         )));
@@ -1418,7 +1755,8 @@ mod tests {
 
         // Apply padding with zero width
         let pad_width = vec![(0, 0), (0, 0)];
-        let result = pad_array(&array, &pad_width, &BorderMode::Constant, None).unwrap();
+        let result = pad_array(&array, &pad_width, &BorderMode::Constant, None)
+            .expect("pad_array should succeed for no padding test");
 
         // Check that result has the same shape (no padding)
         assert_eq!(result.shape(), array.shape());
@@ -1431,7 +1769,8 @@ mod tests {
 
         // Apply constant padding
         let pad_width = vec![(2, 1)];
-        let result = pad_array(&array, &pad_width, &BorderMode::Constant, Some(0.0)).unwrap();
+        let result = pad_array(&array, &pad_width, &BorderMode::Constant, Some(0.0))
+            .expect("pad_array should succeed for 1D constant mode test");
 
         // Expected: [0, 0, 1, 2, 3, 0]
         assert_eq!(result.len(), 6);
@@ -1450,7 +1789,8 @@ mod tests {
 
         // Apply reflect padding
         let pad_width = vec![(2, 2)];
-        let result = pad_array(&array, &pad_width, &BorderMode::Reflect, None).unwrap();
+        let result = pad_array(&array, &pad_width, &BorderMode::Reflect, None)
+            .expect("pad_array should succeed for 1D reflect mode test");
 
         // Expected: [3, 2, 1, 2, 3, 2, 1]
         assert_eq!(result.len(), 7);
@@ -1473,7 +1813,8 @@ mod tests {
 
         // Apply wrap padding
         let pad_width = vec![(2, 2)];
-        let result = pad_array(&array, &pad_width, &BorderMode::Wrap, None).unwrap();
+        let result = pad_array(&array, &pad_width, &BorderMode::Wrap, None)
+            .expect("pad_array should succeed for 1D wrap mode test");
 
         // Expected: [2, 3, 1, 2, 3, 1, 2]
         assert_eq!(result.len(), 7);
@@ -1493,7 +1834,8 @@ mod tests {
 
         // Apply nearest padding
         let pad_width = vec![(2, 2)];
-        let result = pad_array(&array, &pad_width, &BorderMode::Nearest, None).unwrap();
+        let result = pad_array(&array, &pad_width, &BorderMode::Nearest, None)
+            .expect("pad_array should succeed for 1D nearest mode test");
 
         // Expected: [1, 1, 1, 2, 3, 3, 3]
         assert_eq!(result.len(), 7);
@@ -1509,11 +1851,13 @@ mod tests {
     #[test]
     fn test_pad_array_constant_mode_2d() {
         // Create a simple 2D array
-        let array = Array2::from_shape_vec((2, 2), vec![1.0, 2.0, 3.0, 4.0]).unwrap();
+        let array = Array2::from_shape_vec((2, 2), vec![1.0, 2.0, 3.0, 4.0])
+            .expect("Array2 creation should succeed for 2D test");
 
         // Apply constant padding
         let pad_width = vec![(1, 1), (1, 1)];
-        let result = pad_array(&array, &pad_width, &BorderMode::Constant, Some(0.0)).unwrap();
+        let result = pad_array(&array, &pad_width, &BorderMode::Constant, Some(0.0))
+            .expect("pad_array should succeed for 2D constant mode test");
 
         // Expected:
         // [0, 0, 0, 0]
@@ -1543,15 +1887,24 @@ mod tests {
         let dest = Array3::<f64>::zeros((4, 4, 4));
 
         // Convert to dynamic dimensionality
-        let source_dyn = source.clone().into_dimensionality::<IxDyn>().unwrap();
-        let mut dest_dyn = dest.clone().into_dimensionality::<IxDyn>().unwrap();
+        let source_dyn = source
+            .clone()
+            .into_dimensionality::<IxDyn>()
+            .expect("source conversion to dynamic dimensionality should succeed");
+        let mut dest_dyn = dest
+            .clone()
+            .into_dimensionality::<IxDyn>()
+            .expect("dest conversion to dynamic dimensionality should succeed");
 
         // Copy source to position (1,1,1) in destination
         let start_indices = vec![1, 1, 1];
-        copy_nd_array(&mut dest_dyn, &source_dyn, &start_indices).unwrap();
+        copy_nd_array(&mut dest_dyn, &source_dyn, &start_indices)
+            .expect("copy_nd_array should succeed for test");
 
         // Convert back for easier testing
-        let dest = dest_dyn.into_dimensionality::<ndarray::Ix3>().unwrap();
+        let dest = dest_dyn
+            .into_dimensionality::<ndarray::Ix3>()
+            .expect("dest conversion back to 3D should succeed");
 
         // Check that source values are correctly copied to destination
         for i in 0..2 {
@@ -1574,7 +1927,8 @@ mod tests {
 
         // Test padding with constant mode
         let pad_width = vec![(1, 1), (1, 1), (1, 1)];
-        let result = pad_array(&array, &pad_width, &BorderMode::Constant, Some(0.0)).unwrap();
+        let result = pad_array(&array, &pad_width, &BorderMode::Constant, Some(0.0))
+            .expect("pad_array should succeed for 3D constant mode test");
 
         // Check shape
         assert_eq!(result.shape(), &[4, 4, 4]);
@@ -1613,7 +1967,8 @@ mod tests {
 
         // Test padding with reflect mode
         let pad_width = vec![(1, 1), (1, 1), (1, 1)];
-        let result = pad_array(&array, &pad_width, &BorderMode::Reflect, None).unwrap();
+        let result = pad_array(&array, &pad_width, &BorderMode::Reflect, None)
+            .expect("pad_array should succeed for 3D reflect mode test");
 
         // Check shape
         assert_eq!(result.shape(), &[4, 4, 4]);
@@ -1666,7 +2021,8 @@ mod tests {
 
         // Test padding with wrap mode
         let pad_width = vec![(1, 1), (1, 1), (1, 1)];
-        let result = pad_array(&array, &pad_width, &BorderMode::Wrap, None).unwrap();
+        let result = pad_array(&array, &pad_width, &BorderMode::Wrap, None)
+            .expect("pad_array should succeed for 3D wrap mode test");
 
         // Check shape
         assert_eq!(result.shape(), &[4, 4, 4]);
@@ -1719,7 +2075,8 @@ mod tests {
 
         // Test padding with nearest mode
         let pad_width = vec![(1, 1), (1, 1), (1, 1)];
-        let result = pad_array(&array, &pad_width, &BorderMode::Nearest, None).unwrap();
+        let result = pad_array(&array, &pad_width, &BorderMode::Nearest, None)
+            .expect("pad_array should succeed for 3D nearest mode test");
 
         // Check shape
         assert_eq!(result.shape(), &[4, 4, 4]);

@@ -1,0 +1,577 @@
+//! Advanced Benchmarking and Performance Profiling Demo
+//!
+//! This example demonstrates the cutting-edge benchmarking capabilities in scirs2-cluster 0.1.0-beta.1,
+//! showcasing comprehensive performance analysis, memory profiling, regression detection,
+//! and automated optimization suggestions.
+
+use ndarray::Array2;
+use scirs2_cluster::advanced_benchmarking::{
+    create_comprehensive_report, AdvancedBenchmark, BenchmarkConfig, OptimizationPriority,
+    RegressionSeverity,
+};
+use scirs2_cluster::preprocess::standardize;
+use std::time::Duration;
+
+#[allow(dead_code)]
+fn main() -> Result<(), Box<dyn std::error::Error>> {
+    println!("Advanced Benchmarking Demo for scirs2-cluster 0.1.0-beta.1");
+    println!("==========================================================");
+    println!();
+
+    // Create various datasets for comprehensive testing
+    let test_datasets = create_test_datasets();
+
+    for (dataset_name, data) in test_datasets {
+        println!("📊 Benchmarking dataset: {dataset_name}");
+        println!(
+            "   Shape: {} samples × {} features",
+            data.nrows(),
+            data.ncols()
+        );
+
+        // Standardize the data for consistent benchmarking
+        let standardized = standardize(data.view(), true)?;
+
+        // Configure comprehensive benchmarking
+        let benchmark_config = create_benchmark_config(&dataset_name);
+
+        println!(
+            "   Configuration: {} warmup + {} measurement iterations",
+            benchmark_config.warmup_iterations, benchmark_config.measurement_iterations
+        );
+
+        // Create the advanced benchmark
+        let benchmark = AdvancedBenchmark::new(benchmark_config);
+
+        // Run comprehensive analysis
+        println!("   🔬 Running comprehensive performance analysis...");
+        let start_time = std::time::Instant::now();
+
+        match benchmark.comprehensive_analysis(&standardized.view()) {
+            Ok(results) => {
+                let analysis_duration = start_time.elapsed();
+                println!("   ✅ Analysis completed in {analysis_duration:.2?}");
+
+                // Display key results
+                display_benchmark_summary(&results);
+
+                // Generate detailed HTML report
+                let report_filename = format!(
+                    "benchmark_report_{}.html",
+                    dataset_name.replace(" ", "_").to_lowercase()
+                );
+
+                match create_comprehensive_report(&results, &report_filename) {
+                    Ok(_) => println!("   📄 Detailed report saved: {report_filename}"),
+                    Err(e) => println!("   ⚠️  Failed to create report: {e}"),
+                }
+
+                // Demonstrate advanced analytics
+                demonstrate_advanced_analytics(&results, &dataset_name);
+
+                println!();
+            }
+            Err(e) => {
+                println!("   ❌ Benchmark failed: {e}");
+                println!();
+                continue;
+            }
+        }
+    }
+
+    println!("🎯 Advanced benchmarking demonstration completed!");
+    println!();
+    println!("Key Features Demonstrated:");
+    println!("• Comprehensive performance statistics with confidence intervals");
+    println!("• Memory usage profiling and leak detection");
+    println!("• Scalability analysis and complexity estimation");
+    println!("• Performance regression detection");
+    println!("• AI-powered optimization suggestions");
+    println!("• Interactive HTML reporting");
+    println!("• Cross-algorithm comparisons");
+
+    Ok(())
+}
+
+/// Create various test datasets with different characteristics
+#[allow(dead_code)]
+fn create_test_datasets() -> Vec<(String, Array2<f64>)> {
+    vec![
+        ("Small Dense".to_string(), create_dense_dataset(300, 4)),
+        ("Medium Sparse".to_string(), create_sparse_dataset(1000, 8)),
+        ("Large Multi-Dimensional".to_string(), create_high_dim_dataset(2000, 25)),
+        ("Noisy Real-World".to_string(), create_noisy_dataset(800, 6)),
+    ]
+}
+
+/// Create benchmark configuration optimized for each dataset type
+#[allow(dead_code)]
+fn create_benchmark_config(_datasetname: &str) -> BenchmarkConfig {
+    match _datasetname {
+        name if name.contains("Small") => BenchmarkConfig {
+            warmup_iterations: 10,
+            measurement_iterations: 100,
+            statistical_significance: 0.01,
+            memory_profiling: true,
+            stress_testing: true,
+            regression_detection: true,
+            max_test_duration: Duration::from_secs(60),
+            advanced_statistics: true,
+            cross_platform: true,
+            ..Default::default()
+        },
+        name if name.contains("Large") => BenchmarkConfig {
+            warmup_iterations: 3,
+            measurement_iterations: 20,
+            statistical_significance: 0.05,
+            memory_profiling: true,
+            stress_testing: false, // Skip for large datasets to save time
+            regression_detection: true,
+            max_test_duration: Duration::from_secs(300),
+            advanced_statistics: true,
+            cross_platform: false,
+            ..Default::default()
+        },
+        _ => BenchmarkConfig {
+            warmup_iterations: 5,
+            measurement_iterations: 50,
+            statistical_significance: 0.05,
+            memory_profiling: true,
+            stress_testing: true,
+            regression_detection: true,
+            max_test_duration: Duration::from_secs(120),
+            advanced_statistics: true,
+            cross_platform: true,
+            ..Default::default()
+        },
+    }
+}
+
+/// Display a concise summary of benchmark results
+#[allow(dead_code)]
+fn display_benchmark_summary(results: &scirs2_cluster::advanced_benchmarking::BenchmarkResults) {
+    println!("   📈 Performance Summary:");
+
+    // Find fastest and slowest algorithms
+    let mut algorithm_times: Vec<_> = results
+        .algorithm_results
+        .iter()
+        .map(|(name, result)| (name, result.performance.mean))
+        .collect();
+    algorithm_times.sort_by(|a, b| a.1.cmp(&b.1));
+
+    if let Some((fastest, fastest_time)) = algorithm_times.first() {
+        println!("      🚀 Fastest: {fastest} ({fastest_time:.2?})");
+    }
+
+    if let Some((slowest, slowest_time)) = algorithm_times.last() {
+        println!("      🐌 Slowest: {slowest} ({slowest_time:.2?})");
+    }
+
+    // Show memory usage summary
+    let memory_users: Vec<_> = results
+        .algorithm_results
+        .iter()
+        .filter_map(|(name, result)| result.memory.as_ref().map(|mem| (name, mem.peak_memory_mb)))
+        .collect();
+
+    if !memory_users.is_empty() {
+        let avg_memory: f64 =
+            memory_users.iter().map(|(_, mem)| mem).sum::<f64>() / memory_users.len() as f64;
+        println!("      💾 Average peak memory: {avg_memory:.1} MB");
+    }
+
+    // Show quality metrics summary
+    let quality_scores: Vec<_> = results
+        .algorithm_results
+        .iter()
+        .filter_map(|(name, result)| {
+            result
+                .quality_metrics
+                .silhouette_score
+                .map(|score| (name, score))
+        })
+        .collect();
+
+    if !quality_scores.is_empty() {
+        let best_quality = quality_scores
+            .iter()
+            .max_by(|a, b| a.1.partial_cmp(&b.1).unwrap())
+            .unwrap();
+        let (best_name, best_score) = best_quality;
+        println!("      🎯 Best quality: {best_name} (silhouette: {best_score:.3})");
+    }
+
+    // Show regression alerts
+    match results.regression_alerts.len() {
+        0 => println!("      ✅ No performance regressions detected"),
+        1 => println!("      ⚠️  1 performance regression detected"),
+        n => println!("      🚨 {n} performance regressions detected"),
+    }
+
+    // Show critical optimization suggestions
+    let critical_suggestions = results
+        .algorithm_results
+        .values()
+        .flat_map(|result| &result.optimization_suggestions)
+        .filter(|suggestion| suggestion.priority == OptimizationPriority::Critical)
+        .count();
+
+    if critical_suggestions > 0 {
+        println!("      🔧 {critical_suggestions} critical optimization suggestions available");
+    }
+}
+
+/// Demonstrate advanced analytics capabilities
+#[allow(dead_code)]
+fn demonstrate_advanced_analytics(
+    results: &scirs2_cluster::advanced_benchmarking::BenchmarkResults,
+    dataset_name: &str,
+) {
+    println!("   🧠 Advanced Analytics for {dataset_name}:");
+
+    // Analyze performance patterns
+    analyze_performance_patterns(results);
+
+    // Check for optimization opportunities
+    analyze_optimization_opportunities(results);
+
+    // Examine scalability insights
+    analyze_scalability_insights(results);
+
+    // Review regression analysis
+    analyze_regression_patterns(results);
+}
+
+/// Analyze performance patterns across algorithms
+#[allow(dead_code)]
+fn analyze_performance_patterns(
+    results: &scirs2_cluster::advanced_benchmarking::BenchmarkResults,
+) {
+    println!("      📊 Performance Pattern Analysis:");
+
+    // Calculate performance variance
+    let performance_values: Vec<f64> = results
+        .algorithm_results
+        .values()
+        .map(|result| result.performance.mean.as_secs_f64())
+        .collect();
+
+    if performance_values.len() > 1 {
+        let mean_perf = performance_values.iter().sum::<f64>() / performance_values.len() as f64;
+        let variance = performance_values
+            .iter()
+            .map(|&x| (x - mean_perf).powi(2))
+            .sum::<f64>()
+            / performance_values.len() as f64;
+        let std_dev = variance.sqrt();
+        let cv = std_dev / mean_perf;
+
+        if cv > 0.5 {
+            println!("         • High performance variance detected (CV: {cv:.2})");
+            println!("         • Consider dataset-specific algorithm selection");
+        } else {
+            println!("         • Consistent performance across algorithms (CV: {cv:.2})");
+        }
+    }
+
+    // Identify stable vs unstable algorithms
+    let unstable_algos: Vec<&str> = results
+        .algorithm_results
+        .iter()
+        .filter(|(_, result)| !result.performance.is_stable)
+        .map(|(name_, _)| name_.as_str())
+        .collect();
+
+    if !unstable_algos.is_empty() {
+        println!("         • Unstable performance: {unstable_algos:?}");
+        println!("         • Recommendation: Increase measurement iterations");
+    }
+}
+
+/// Analyze optimization opportunities
+#[allow(dead_code)]
+fn analyze_optimization_opportunities(
+    results: &scirs2_cluster::advanced_benchmarking::BenchmarkResults,
+) {
+    println!("      🔧 Optimization Opportunity Analysis:");
+
+    // Count suggestions by category
+    let mut category_counts = std::collections::HashMap::new();
+    let mut total_expected_improvement = 0.0;
+    let mut suggestion_count = 0;
+
+    for result in results.algorithmresults.values() {
+        for suggestion in &result.optimization_suggestions {
+            *category_counts.entry(&suggestion.category).or_insert(0) += 1;
+            total_expected_improvement += suggestion.expected_improvement;
+            suggestion_count += 1;
+        }
+    }
+
+    if suggestion_count > 0 {
+        let avg_improvement = total_expected_improvement / suggestion_count as f64;
+        println!("         • {suggestion_count} optimization suggestions found");
+        println!("         • Average expected improvement: {avg_improvement:.1}%");
+
+        // Show most common optimization categories
+        let mut sorted_categories: Vec<_> = category_counts.into_iter().collect();
+        sorted_categories.sort_by(|a, b| b.1.cmp(&a.1));
+
+        if let Some((top_category, count)) = sorted_categories.first() {
+            println!("         • Most common opportunity: {top_category:?} ({count} suggestions)");
+        }
+    } else {
+        println!("         • No significant optimization opportunities identified");
+        println!("         • Algorithms are performing optimally for this dataset");
+    }
+}
+
+/// Analyze scalability insights
+#[allow(dead_code)]
+fn analyze_scalability_insights(
+    results: &scirs2_cluster::advanced_benchmarking::BenchmarkResults,
+) {
+    println!("      📈 Scalability Analysis:");
+
+    let scalabilityresults: Vec<_> = results
+        .algorithm_results
+        .iter()
+        .filter_map(|(name, result)| result.scalability.as_ref().map(|s| (name, s)))
+        .collect();
+
+    if !scalabilityresults.is_empty() {
+        // Analyze complexity classes
+        let mut complexity_distribution = std::collections::HashMap::new();
+        for (_, scalability) in &scalabilityresults {
+            *complexity_distribution
+                .entry(&scalability.complexity_estimate)
+                .or_insert(0) += 1;
+        }
+
+        println!("         • Complexity distribution:");
+        for (complexity, count) in complexity_distribution {
+            println!("           - {complexity:?}: {count} algorithms");
+        }
+
+        // Find best scaling algorithms
+        let linear_algos: Vec<&str> = scalabilityresults
+            .iter()
+            .filter(|(_, s)| {
+                s.complexity_estimate
+                    == scirs2_cluster::advanced_benchmarking::ComplexityClass::Linear
+            })
+            .map(|(name_, _)| name_.as_str())
+            .collect();
+
+        if !linear_algos.is_empty() {
+            println!("         • Linear scaling algorithms: {linear_algos:?}");
+            println!("         • Recommended for large datasets");
+        }
+    } else {
+        println!("         • Scalability analysis not performed for this dataset");
+    }
+}
+
+/// Analyze regression patterns
+#[allow(dead_code)]
+fn analyze_regression_patterns(results: &scirs2_cluster::advanced_benchmarking::BenchmarkResults) {
+    if results.regression_alerts.is_empty() {
+        println!(
+            "      ✅ Regression Analysis: All algorithms performing within expected parameters"
+        );
+        return;
+    }
+
+    println!("      🚨 Regression Analysis:");
+
+    // Categorize by severity
+    let mut severity_counts = std::collections::HashMap::new();
+    for alert in &results.regression_alerts {
+        *severity_counts.entry(&alert.severity).or_insert(0) += 1;
+    }
+
+    for (severity, count) in severity_counts {
+        let icon = match severity {
+            RegressionSeverity::Critical => "🔴",
+            RegressionSeverity::Major => "🟠",
+            RegressionSeverity::Moderate => "🟡",
+            RegressionSeverity::Minor => "🟢",
+        };
+        println!("         {icon} {severity:?}: {count} alerts");
+    }
+
+    // Show most problematic algorithm
+    if let Some(worst_alert) = results.regression_alerts.iter().max_by(|a, b| {
+        a.degradation_percent
+            .partial_cmp(&b.degradation_percent)
+            .unwrap()
+    }) {
+        println!(
+            "         • Most affected: {} ({:.1}% degradation)",
+            worst_alert.algorithm, worst_alert.degradation_percent
+        );
+    }
+}
+
+/// Create dense dataset with well-separated clusters
+#[allow(dead_code)]
+fn create_dense_dataset(n_samples: usize, nfeatures: usize) -> Array2<f64> {
+    use rand::prelude::*;
+    use rand_distr::Normal;
+
+    let mut rng = StdRng::seed_from_u64(12345);
+    let mut data = Vec::with_capacity(n_samples * nfeatures);
+
+    let n_clusters = 4;
+    let samples_per_cluster = n_samples / n_clusters;
+
+    // Create distinct cluster centers
+    let cluster_centers = vec![
+        vec![2.0, 2.0, 1.0, 1.0],
+        vec![-2.0, 2.0, -1.0, 1.0],
+        vec![2.0, -2.0, 1.0, -1.0],
+        vec![-2.0, -2.0, -1.0, -1.0],
+    ];
+
+    for (i, center) in cluster_centers.iter().enumerate() {
+        let cluster_samples = if i == cluster_centers.len() - 1 {
+            n_samples - i * samples_per_cluster
+        } else {
+            samples_per_cluster
+        };
+
+        for _ in 0..cluster_samples {
+            for j in 0..nfeatures {
+                let center_val = if j < center.len() { center[j] } else { 0.0 };
+                let normal = Normal::new(center_val, 0.5).unwrap();
+                data.push(rng.sample(normal));
+            }
+        }
+    }
+
+    Array2::from_shape_vec((n_samples, nfeatures), data).unwrap()
+}
+
+/// Create sparse dataset with noise
+#[allow(dead_code)]
+fn create_sparse_dataset(n_samples: usize, nfeatures: usize) -> Array2<f64> {
+    use rand::prelude::*;
+
+    let mut rng = StdRng::seed_from_u64(54321);
+    let mut data = Vec::with_capacity(n_samples * nfeatures);
+
+    for _ in 0..n_samples {
+        for _ in 0..nfeatures {
+            // 20% chance of non-zero value
+            if rng.random::<f64>() < 0.2 {
+                data.push(rng.random_range(-5.0..5.0));
+            } else {
+                data.push(0.0);
+            }
+        }
+    }
+
+    Array2::from_shape_vec((n_samples, nfeatures), data).unwrap()
+}
+
+/// Create high-dimensional dataset
+#[allow(dead_code)]
+fn create_high_dim_dataset(n_samples: usize, nfeatures: usize) -> Array2<f64> {
+    use rand::prelude::*;
+    use rand_distr::Normal;
+
+    let mut rng = StdRng::seed_from_u64(98765);
+    let mut data = Vec::with_capacity(n_samples * nfeatures);
+
+    // Only first few dimensions contain signal
+    let signal_dims = 5;
+
+    for i in 0..n_samples {
+        let cluster_id = i % 3;
+
+        for dim in 0..nfeatures {
+            if dim < signal_dims {
+                // Signal dimensions
+                let center = cluster_id as f64 * 2.0;
+                let normal = Normal::new(center, 0.8).unwrap();
+                data.push(rng.sample(normal));
+            } else {
+                // Noise dimensions
+                data.push(rng.random_range(-0.5..0.5));
+            }
+        }
+    }
+
+    Array2::from_shape_vec((n_samples, nfeatures), data).unwrap()
+}
+
+/// Create noisy dataset simulating real-world conditions
+#[allow(dead_code)]
+fn create_noisy_dataset(n_samples: usize, nfeatures: usize) -> Array2<f64> {
+    use rand::prelude::*;
+    use rand_distr::Normal;
+
+    let mut rng = StdRng::seed_from_u64(13579);
+    let mut data = Vec::with_capacity(n_samples * nfeatures);
+
+    let n_clusters = 3;
+    let noise_level = 1.5;
+    let outlier_probability = 0.05; // 5% outliers
+
+    for i in 0..n_samples {
+        let cluster_id = i % n_clusters;
+
+        for j in 0..nfeatures {
+            let base_value = match cluster_id {
+                0 => 1.0 + j as f64 * 0.5,
+                1 => -1.0 + j as f64 * 0.3,
+                _ => 0.0 + j as f64 * 0.1,
+            };
+
+            let value = if rng.random::<f64>() < outlier_probability {
+                // Generate outlier
+                rng.random_range(-10.0..10.0)
+            } else {
+                // Normal cluster member with noise
+                let normal = Normal::new(base_value..noise_level).unwrap();
+                rng.sample(normal)
+            };
+
+            data.push(value);
+        }
+    }
+
+    Array2::from_shape_vec((n_samples, nfeatures), data).unwrap()
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_dataset_creation() {
+        let dense = create_dense_dataset(100, 4);
+        assert_eq!(dense.shape(), &[100, 4]);
+
+        let sparse = create_sparse_dataset(200, 8);
+        assert_eq!(sparse.shape(), &[200, 8]);
+
+        let high_dim = create_high_dim_dataset(150, 25);
+        assert_eq!(high_dim.shape(), &[150, 25]);
+
+        let noisy = create_noisy_dataset(120, 6);
+        assert_eq!(noisy.shape(), &[120, 6]);
+    }
+
+    #[test]
+    fn test_benchmark_config_creation() {
+        let config_small = create_benchmark_config("Small Dense");
+        assert_eq!(config_small.warmup_iterations, 10);
+        assert_eq!(config_small.measurement_iterations, 100);
+
+        let config_large = create_benchmark_config("Large Multi-Dimensional");
+        assert_eq!(config_large.warmup_iterations, 3);
+        assert_eq!(config_large.measurement_iterations, 20);
+    }
+}

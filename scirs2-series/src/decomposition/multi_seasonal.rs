@@ -80,13 +80,14 @@ impl Default for MultiSeasonalConfig {
 ///
 /// ```
 /// use ndarray::array;
-/// use scirs2_series::decomposition::{decompose_multi_seasonal, MultiSeasonalConfig};
+/// use scirs2__series::decomposition::{decompose_multi_seasonal, MultiSeasonalConfig};
 ///
 /// let ts = array![1.0, 2.0, 3.0, 2.0, 1.0, 2.0, 3.0, 2.0, 1.0, 2.0, 3.0, 2.0,
 ///                 2.0, 3.0, 4.0, 3.0, 2.0, 3.0, 4.0, 3.0, 2.0, 3.0, 4.0, 3.0];
 /// let config = MultiSeasonalConfig::default();
 /// let result = decompose_multi_seasonal(&ts, &config).unwrap();
 /// ```
+#[allow(dead_code)]
 pub fn decompose_multi_seasonal<F>(
     ts: &Array1<F>,
     config: &MultiSeasonalConfig,
@@ -204,6 +205,7 @@ where
 }
 
 /// Detects seasonal periods automatically using multiple methods
+#[allow(dead_code)]
 fn detect_seasonal_periods<F>(ts: &Array1<F>, config: &MultiSeasonalConfig) -> Result<Vec<usize>>
 where
     F: Float + FromPrimitive + Debug,
@@ -232,7 +234,7 @@ where
         let strength = calculate_seasonal_strength(ts, period, &config.model)?;
         if strength > config.seasonal_strength_threshold {
             // Check if already detected
-            if !period_scores.iter().any(|(p, _)| *p == period) {
+            if !period_scores.iter().any(|(p_, _)| *p_ == period) {
                 period_scores.push((period, strength));
             }
         }
@@ -243,7 +245,7 @@ where
     for period in multi_acf_periods {
         let strength = calculate_seasonal_strength(ts, period, &config.model)?;
         if strength > config.seasonal_strength_threshold
-            && !period_scores.iter().any(|(p, _)| *p == period)
+            && !period_scores.iter().any(|(p_, _)| *p_ == period)
         {
             period_scores.push((period, strength));
         }
@@ -254,14 +256,14 @@ where
 
     // Extract periods and filter out harmonics
     let mut periods = Vec::new();
-    for (period, _) in period_scores {
+    for (period_, _strength) in period_scores {
         // Check if this period is not a harmonic of an existing period
         let is_harmonic = periods
             .iter()
-            .any(|&existing| period % existing == 0 || existing % period == 0);
+            .any(|&existing| period_ % existing == 0 || existing % period_ == 0);
 
         if !is_harmonic {
-            periods.push(period);
+            periods.push(period_);
         }
     }
 
@@ -269,15 +271,16 @@ where
 }
 
 /// Detects periods using autocorrelation function
-fn detect_periods_acf<F>(ts: &Array1<F>, min_period: usize, max_period: usize) -> Result<Vec<usize>>
+#[allow(dead_code)]
+fn detect_periods_acf<F>(ts: &Array1<F>, min_period: usize, maxperiod: usize) -> Result<Vec<usize>>
 where
     F: Float + FromPrimitive + Debug,
 {
-    let acf = autocorrelation(ts, Some(max_period))?;
+    let acf = autocorrelation(ts, Some(maxperiod))?;
     let mut periods = Vec::new();
 
     // Find local maxima in ACF
-    for i in min_period..max_period.min(acf.len() - 1) {
+    for i in min_period..maxperiod.min(acf.len() - 1) {
         if acf[i] > acf[i - 1] && acf[i] > acf[i + 1] {
             let threshold = F::from_f64(0.1).unwrap(); // 10% threshold
             if acf[i] > threshold {
@@ -290,6 +293,7 @@ where
 }
 
 /// Detects periods using periodogram analysis
+#[allow(dead_code)]
 fn detect_periods_periodogram<F>(
     ts: &Array1<F>,
     min_period: usize,
@@ -302,14 +306,14 @@ where
     let mut periods = Vec::new();
 
     // Simple periodogram computation
-    for period in min_period..=max_period.min(n / 2) {
+    for _period in min_period..=max_period.min(n / 2) {
         let mut sum_cos = F::zero();
         let mut sum_sin = F::zero();
 
         for i in 0..n {
             let angle = F::from_f64(2.0 * std::f64::consts::PI).unwrap()
                 * F::from_usize(i).unwrap()
-                / F::from_usize(period).unwrap();
+                / F::from_usize(_period).unwrap();
             sum_cos = sum_cos + ts[i] * angle.cos();
             sum_sin = sum_sin + ts[i] * angle.sin();
         }
@@ -318,7 +322,7 @@ where
         let threshold = F::from_f64(0.1).unwrap() * F::from_usize(n).unwrap().powi(2);
 
         if power > threshold {
-            periods.push(period);
+            periods.push(_period);
         }
     }
 
@@ -326,6 +330,7 @@ where
 }
 
 /// Detects multiple peaks in autocorrelation function
+#[allow(dead_code)]
 fn detect_multiple_acf_peaks<F>(
     ts: &Array1<F>,
     min_period: usize,
@@ -341,7 +346,7 @@ where
     let window = 5;
     let mut smoothed_acf = Vec::new();
     for i in 0..acf.len() {
-        let start = if i >= window / 2 { i - window / 2 } else { 0 };
+        let start = i.saturating_sub(window / 2);
         let end = (i + window / 2 + 1).min(acf.len());
         let slice = acf.slice(ndarray::s![start..end]);
         let sum: F = slice.iter().fold(F::zero(), |acc, &x| acc + x);
@@ -377,10 +382,11 @@ where
 }
 
 /// Calculates seasonal strength for a given period
+#[allow(dead_code)]
 fn calculate_seasonal_strength<F>(
     ts: &Array1<F>,
     period: usize,
-    _model: &DecompositionModel,
+    model: &DecompositionModel,
 ) -> Result<f64>
 where
     F: Float + FromPrimitive + Debug,
@@ -441,6 +447,7 @@ where
 }
 
 /// Extracts trend component considering multiple seasonal patterns
+#[allow(dead_code)]
 fn extract_multi_seasonal_trend<F>(
     ts: &Array1<F>,
     periods: &[usize],
@@ -456,11 +463,7 @@ where
     let window_size = periods.iter().max().unwrap_or(&12) * 2 + 1;
 
     for i in 0..n {
-        let start = if i >= window_size / 2 {
-            i - window_size / 2
-        } else {
-            0
-        };
+        let start = i.saturating_sub(window_size / 2);
         let end = if i + window_size / 2 < n {
             i + window_size / 2 + 1
         } else {
@@ -475,6 +478,7 @@ where
 }
 
 /// Extracts seasonal components for each period
+#[allow(dead_code)]
 fn extract_seasonal_components<F>(
     detrended: &Array1<F>,
     periods: &[usize],
@@ -548,6 +552,7 @@ where
 }
 
 /// Combines multiple seasonal components into a single seasonal component
+#[allow(dead_code)]
 fn combine_seasonal_components<F>(
     seasonal_components: &[Array1<F>],
     model: DecompositionModel,
@@ -557,7 +562,7 @@ where
 {
     if seasonal_components.is_empty() {
         return Err(TimeSeriesError::DecompositionError(
-            "No seasonal components to combine".to_string(),
+            "No seasonal _components to combine".to_string(),
         ));
     }
 
@@ -580,6 +585,7 @@ where
 }
 
 /// Calculates robust mean using median
+#[allow(dead_code)]
 fn robust_mean<F>(values: &[F]) -> F
 where
     F: Float + FromPrimitive + Debug,
@@ -601,6 +607,7 @@ where
     }
 }
 
+#[allow(dead_code)]
 fn calculate_l2_norm<F>(arr: &Array1<F>) -> Result<F>
 where
     F: Float + FromPrimitive + Debug,

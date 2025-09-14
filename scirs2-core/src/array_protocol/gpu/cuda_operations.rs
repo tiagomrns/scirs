@@ -26,6 +26,7 @@ use crate::array_protocol::{
 };
 
 /// Registers CUDA-specific optimized functions with the array protocol system.
+#[allow(dead_code)]
 pub fn register_cuda_operations() {
     // This would register the CUDA-specific implementations with the
     // global ArrayFunctionRegistry. For this implementation, we're
@@ -36,6 +37,7 @@ pub fn register_cuda_operations() {
 /// Implements matrix multiplication for CUDA-accelerated arrays.
 ///
 /// This function would use CUBLAS for efficient matrix multiplication.
+#[allow(dead_code)]
 pub fn cuda_matmul<D1, D2>(
     a: &GPUNdarray<f64, D1>,
     b: &GPUNdarray<f64, D2>,
@@ -53,11 +55,11 @@ where
     }
 
     // Get dimensions
-    let a_shape = a.shape();
-    let b_shape = b.shape();
+    let ashape = a.shape();
+    let bshape = b.shape();
 
     // Verify matrix dimensions
-    if a_shape.len() != 2 || b_shape.len() != 2 || a_shape[1] != b_shape[0] {
+    if ashape.len() != 2 || bshape.len() != 2 || ashape[1] != bshape[0] {
         return Err(NotImplemented);
     }
 
@@ -65,8 +67,8 @@ where
     let a_cpu = a.to_cpu().unwrap();
     let b_cpu = b.to_cpu().unwrap();
 
-    let a_array = a_cpu.downcast_ref::<NdarrayWrapper<f64, _>>().unwrap().as_array();
-    let b_array = b_cpu.downcast_ref::<NdarrayWrapper<f64, _>>().unwrap().as_array();
+    let a_array = a_cpu.downcast_ref::<NdarrayWrapper<f64_>>().unwrap().as_array();
+    let b_array = b_cpu.downcast_ref::<NdarrayWrapper<f64_>>().unwrap().as_array();
 
     let result = a_array.dot(b_array);
 
@@ -79,6 +81,7 @@ where
 /// Implements element-wise addition for CUDA-accelerated arrays.
 ///
 /// This function would use a CUDA kernel for element-wise addition.
+#[allow(dead_code)]
 pub fn cuda_add<D1, D2>(
     a: &GPUNdarray<f64, D1>,
     b: &GPUNdarray<f64, D2>,
@@ -96,15 +99,15 @@ where
     }
 
     // Check if shapes are compatible for broadcasting
-    let a_shape = a.shape();
-    let b_shape = b.shape();
+    let ashape = a.shape();
+    let bshape = b.shape();
 
     // Transfer to CPU, perform operation, and transfer back to GPU
     let a_cpu = a.to_cpu().unwrap();
     let b_cpu = b.to_cpu().unwrap();
 
-    let a_array = a_cpu.downcast_ref::<NdarrayWrapper<f64, _>>().unwrap().as_array();
-    let b_array = b_cpu.downcast_ref::<NdarrayWrapper<f64, _>>().unwrap().as_array();
+    let a_array = a_cpu.downcast_ref::<NdarrayWrapper<f64_>>().unwrap().as_array();
+    let b_array = b_cpu.downcast_ref::<NdarrayWrapper<f64_>>().unwrap().as_array();
 
     let result = a_array + b_array;
 
@@ -115,6 +118,7 @@ where
 }
 
 /// Implements element-wise multiplication for CUDA-accelerated arrays.
+#[allow(dead_code)]
 pub fn cuda_multiply<D1, D2>(
     a: &GPUNdarray<f64, D1>,
     b: &GPUNdarray<f64, D2>,
@@ -134,8 +138,8 @@ where
     let a_cpu = a.to_cpu().unwrap();
     let b_cpu = b.to_cpu().unwrap();
 
-    let a_array = a_cpu.downcast_ref::<NdarrayWrapper<f64, _>>().unwrap().as_array();
-    let b_array = b_cpu.downcast_ref::<NdarrayWrapper<f64, _>>().unwrap().as_array();
+    let a_array = a_cpu.downcast_ref::<NdarrayWrapper<f64_>>().unwrap().as_array();
+    let b_array = b_cpu.downcast_ref::<NdarrayWrapper<f64_>>().unwrap().as_array();
 
     let result = a_array * b_array;
 
@@ -146,6 +150,7 @@ where
 }
 
 /// Implements array transpose for CUDA-accelerated arrays.
+#[allow(dead_code)]
 pub fn cuda_transpose<D>(
     a: &GPUNdarray<f64, D>,
 ) -> Result<GPUNdarray<f64, Ix2>, NotImplemented>
@@ -160,7 +165,7 @@ where
 
     // Transfer to CPU, perform operation, and transfer back to GPU
     let a_cpu = a.to_cpu().unwrap();
-    let a_array = a_cpu.downcast_ref::<NdarrayWrapper<f64, _>>().unwrap().as_array();
+    let a_array = a_cpu.downcast_ref::<NdarrayWrapper<f64_>>().unwrap().as_array();
 
     let result = a_array.t().to_owned();
 
@@ -171,6 +176,7 @@ where
 }
 
 /// Implements array sum for CUDA-accelerated arrays.
+#[allow(dead_code)]
 pub fn cuda_sum<D>(
     a: &GPUNdarray<f64, D>,
     axis: Option<usize>,
@@ -180,7 +186,7 @@ where
 {
     // Transfer to CPU, perform operation
     let a_cpu = a.to_cpu().unwrap();
-    let a_array = a_cpu.downcast_ref::<NdarrayWrapper<f64, _>>().unwrap().as_array();
+    let a_array = a_cpu.downcast_ref::<NdarrayWrapper<f64_>>().unwrap().as_array();
 
     match axis {
         Some(ax) => {
@@ -196,6 +202,7 @@ where
 }
 
 /// Implements array reshape for CUDA-accelerated arrays.
+#[allow(dead_code)]
 pub fn cuda_reshape<D>(
     a: &GPUNdarray<f64, D>,
     shape: &[usize],
@@ -205,9 +212,9 @@ where
 {
     // Transfer to CPU, perform operation, and transfer back to GPU
     let a_cpu = a.to_cpu().unwrap();
-    let a_array = a_cpu.downcast_ref::<NdarrayWrapper<f64, _>>().unwrap().as_array();
+    let a_array = a_cpu.downcast_ref::<NdarrayWrapper<f64_>>().unwrap().as_array();
 
-    match a_array.clone().into_shape(shape) {
+    match a_array.clone().intoshape(shape) {
         Ok(result) => {
             // Create a new GPU array with the result
             let result_gpu = GPUNdarray::new(result, a.config().clone());
@@ -218,6 +225,7 @@ where
 }
 
 /// Implements 2D convolution for CUDA-accelerated arrays.
+#[allow(dead_code)]
 pub fn cuda_conv2d<D1, D2>(
     input: &GPUNdarray<f64, D1>,
     kernel: &GPUNdarray<f64, D2>,
@@ -236,17 +244,17 @@ where
     // In a real implementation, this would use cuDNN for convolution.
     // For now, we'll return a placeholder result.
 
-    let input_shape = input.shape();
-    if input_shape.len() != 2 {
+    let inputshape = input.shape();
+    if inputshape.len() != 2 {
         return Err(NotImplemented);
     }
 
     // Calculate output dimensions (simplified)
-    let h_out = (input_shape[0] - kernel.shape()[0] + 2 * padding.0) / stride.0 + 1;
-    let w_out = (input_shape[1] - kernel.shape()[1] + 2 * padding.1) / stride.1 + 1;
+    let h_out = (inputshape[0] - kernel.shape()[0] + 2 * padding.0) / stride.0 + 1;
+    let w_out = (inputshape[1] - kernel.shape()[1] + 2 * padding.1) / stride.1 + 1;
 
     // Create a placeholder result array
-    let result = Array::<f64, _>::zeros((h_out, w_out));
+    let result = Array::<f64>::zeros((h_out, w_out));
 
     // Create a new GPU array with the result
     let result_gpu = GPUNdarray::new(result, input.config().clone());
@@ -255,6 +263,7 @@ where
 }
 
 /// Implements SVD decomposition for CUDA-accelerated arrays.
+#[allow(dead_code)]
 pub fn cuda_svd<D>(
     a: &GPUNdarray<f64, D>,
 ) -> Result<(GPUNdarray<f64, Ix2>, GPUNdarray<f64, IxDyn>, GPUNdarray<f64, Ix2>), NotImplemented>
@@ -271,9 +280,9 @@ where
     // For now, we'll create placeholder arrays.
 
     let (m, n) = (shape[0], shape[1]);
-    let u = Array::<f64, _>::eye(m);
-    let s = Array::<f64, _>::ones(m.min(n));
-    let vt = Array::<f64, _>::eye(n);
+    let u = Array::<f64>::eye(m);
+    let s = Array::<f64>::ones(m.min(n));
+    let vt = Array::<f64>::eye(n);
 
     // Create new GPU arrays with the results
     let u_gpu = GPUNdarray::new(u, a.config().clone());
@@ -284,6 +293,7 @@ where
 }
 
 /// Implements matrix inverse for CUDA-accelerated arrays.
+#[allow(dead_code)]
 pub fn cuda_inverse<D>(
     a: &GPUNdarray<f64, D>,
 ) -> Result<GPUNdarray<f64, Ix2>, NotImplemented>
@@ -300,7 +310,7 @@ where
     // For now, we'll create a placeholder identity matrix.
 
     let n = shape[0];
-    let result = Array::<f64, _>::eye(n);
+    let result = Array::<f64>::eye(n);
 
     // Create a new GPU array with the result
     let result_gpu = GPUNdarray::new(result, a.config().clone());

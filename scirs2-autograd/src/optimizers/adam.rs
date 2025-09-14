@@ -82,18 +82,18 @@ impl<F: Float> Adam<F> {
         adam_namespace_id: &'static str,
     ) -> Adam<F> {
         for vid in var_id_list.into_iter() {
-            let m_name = format!("{}m", vid);
-            let v_name = format!("{}v", vid);
-            let t_name = format!("{}t", vid);
+            let m_name = format!("{vid}m");
+            let v_name = format!("{vid}v");
+            let t_name = format!("{vid}t");
             let (m, v, t) = {
                 let target_var = env
                     .get_array_by_id(vid)
                     .expect("variable array not found")
                     .borrow();
-                let var_shape = target_var.shape();
+                let varshape = target_var.shape();
                 (
-                    crate::ndarray_ext::zeros(var_shape),
-                    crate::ndarray_ext::zeros(var_shape),
+                    crate::ndarray_ext::zeros(varshape),
+                    crate::ndarray_ext::zeros(varshape),
                     crate::ndarray_ext::from_scalar(F::one()),
                 )
             };
@@ -130,9 +130,9 @@ impl<F: Float> Optimizer<F> for Adam<F> {
             let param = params[i].as_ref();
             let namespace = g.namespace(self.adam_namespace_id);
             let var_id = param.get_variable_id().expect("Got non-variable tensor");
-            let m = g.variable_by_name(format!("{}m", var_id), &namespace);
-            let v = g.variable_by_name(format!("{}v", var_id), &namespace);
-            let t = g.variable_by_name(format!("{}t", var_id), &namespace);
+            let m = g.variable_by_name(format!("{var_id}m"), &namespace);
+            let v = g.variable_by_name(format!("{var_id}v"), &namespace);
+            let t = g.variable_by_name(format!("{var_id}t"), &namespace);
 
             // Create the Adam operation, which will return multiple outputs
             // Only the first output (updated parameter) is what we need to return

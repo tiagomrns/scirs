@@ -4,15 +4,18 @@ use crate::constrained::*;
 use crate::error::OptimizeError;
 use ndarray::array;
 
+#[allow(dead_code)]
 fn objective(x: &[f64]) -> f64 {
     (x[0] - 1.0).powi(2) + (x[1] - 2.5).powi(2)
 }
 
+#[allow(dead_code)]
 fn constraint(x: &[f64]) -> f64 {
     3.0 - x[0] - x[1] // Should be >= 0
 }
 
 #[test]
+#[allow(dead_code)]
 fn test_minimize_constrained_placeholder() {
     // We're now using the real implementation, so this test needs to be adjusted
     let x0 = array![0.0, 0.0];
@@ -44,6 +47,7 @@ fn test_minimize_constrained_placeholder() {
 
 // Test the SLSQP algorithm on a simple constrained problem
 #[test]
+#[allow(dead_code)]
 fn test_minimize_slsqp() {
     // Problem:
     // Minimize (x-1)^2 + (y-2.5)^2
@@ -92,6 +96,7 @@ fn test_minimize_slsqp() {
 
 // Test the Trust Region Constrained algorithm
 #[test]
+#[allow(dead_code)]
 fn test_minimize_trust_constr() {
     // Problem:
     // Minimize (x-1)^2 + (y-2.5)^2
@@ -137,6 +142,7 @@ fn test_minimize_trust_constr() {
 
 // Test both constrained optimization methods on a more complex problem
 #[test]
+#[allow(dead_code)]
 fn test_constrained_rosenbrock() {
     // Rosenbrock function with a constraint
     fn rosenbrock(x: &[f64]) -> f64 {
@@ -206,6 +212,7 @@ fn test_constrained_rosenbrock() {
 }
 
 #[test]
+#[allow(dead_code)]
 fn test_cobyla_not_implemented() {
     // Test that COBYLA returns a NotImplementedError
     let x0 = array![0.0, 0.0];
@@ -213,14 +220,8 @@ fn test_cobyla_not_implemented() {
 
     let result = minimize_constrained(objective, &x0.view(), &constraints, Method::COBYLA, None);
 
-    // Should return an error
-    assert!(result.is_err());
-
-    // Check that it's specifically a NotImplementedError
-    match result {
-        Err(OptimizeError::NotImplementedError(msg)) => {
-            assert!(msg.contains("COBYLA"));
-        }
-        _ => panic!("Expected NotImplementedError for COBYLA"),
-    }
+    // COBYLA is now implemented, so it should succeed
+    assert!(result.is_ok());
+    let opt_result = result.unwrap();
+    assert!(opt_result.success || opt_result.nit > 0); // Should make progress or succeed
 }

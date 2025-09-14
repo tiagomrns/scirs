@@ -3,6 +3,17 @@
 //! This module provides a generic RANSAC implementation that can be used
 //! for robust estimation of model parameters in the presence of outliers,
 //! with specific applications to homography estimation and feature matching.
+//!
+//! # Performance Characteristics
+//!
+//! - Time complexity: O(n × k) where n is the number of iterations and k is the cost of evaluating each model
+//! - Space complexity: O(p) where p is the number of data points
+//! - The algorithm uses early termination based on confidence level to reduce unnecessary iterations
+//! - Parallel evaluation of inliers when enabled via the `parallel` feature
+//!
+//! # References
+//!
+//! - Fischler, M.A. and Bolles, R.C., 1981. Random sample consensus: a paradigm for model fitting with applications to image analysis and automated cartography. Communications of the ACM, 24(6), pp.381-395.
 
 use crate::error::Result;
 use ndarray::{Array1, Array2};
@@ -66,7 +77,7 @@ pub trait RansacModel: Sized + Clone {
     fn min_samples() -> usize;
 
     /// Refine model using all inliers (optional)
-    fn refine(&self, _inliers: &[Self::DataPoint]) -> Result<Self> {
+    fn refine(&self, selfinliers: &[Self::DataPoint]) -> Result<Self> {
         // Default implementation returns the same model
         Ok(self.clone())
     }
@@ -82,6 +93,7 @@ pub trait RansacModel: Sized + Clone {
 /// # Returns
 ///
 /// * Result containing RANSAC estimation results
+#[allow(dead_code)]
 pub fn run_ransac<M: RansacModel>(
     data: &[M::DataPoint],
     config: &RansacConfig,
@@ -118,7 +130,7 @@ pub fn run_ransac<M: RansacModel>(
 
         // Fisher-Yates shuffle
         for i in (1..n_points).rev() {
-            let j = rng.random_range(0..=i);
+            let j = rng.gen_range(0..i + 1);
             sample_indices.swap(i, j);
         }
 
@@ -166,7 +178,7 @@ pub fn run_ransac<M: RansacModel>(
 
     // No model found with enough inliers
     if best_model.is_none() {
-        return Err(crate::error::VisionError::OperationFailed(
+        return Err(crate::error::VisionError::OperationError(
             "RANSAC failed to find a model with enough inliers".to_string(),
         ));
     }
@@ -213,8 +225,8 @@ pub struct Homography {
 
 impl Homography {
     /// Create a new homography matrix from raw data
-    pub fn new(matrix_data: &[f64; 9]) -> Self {
-        let matrix = Array2::from_shape_vec((3, 3), matrix_data.to_vec()).unwrap();
+    pub fn new(_matrixdata: &[f64; 9]) -> Self {
+        let matrix = Array2::from_shape_vec((3, 3), _matrixdata.to_vec()).unwrap();
         let inverse = match Self::invert_matrix(&matrix) {
             Ok(inv) => inv,
             Err(_) => Array2::eye(3),
@@ -286,7 +298,7 @@ impl Homography {
             + matrix[[0, 2]] * (matrix[[1, 0]] * matrix[[2, 1]] - matrix[[1, 1]] * matrix[[2, 0]]);
 
         if det.abs() < 1e-10 {
-            return Err(crate::error::VisionError::OperationFailed(
+            return Err(crate::error::VisionError::OperationError(
                 "Matrix is singular, cannot compute inverse".to_string(),
             ));
         }
@@ -359,9 +371,9 @@ impl RansacModel for Homography {
         let h = Array1::from_iter(svd.into_iter().skip(8 * 9).take(9));
 
         // Reshape to 3x3 matrix
-        let matrix_data = [h[0], h[1], h[2], h[3], h[4], h[5], h[6], h[7], h[8]];
+        let _matrixdata = [h[0], h[1], h[2], h[3], h[4], h[5], h[6], h[7], h[8]];
 
-        let homography = Self::new(&matrix_data);
+        let homography = Self::new(&_matrixdata);
 
         Ok(homography)
     }

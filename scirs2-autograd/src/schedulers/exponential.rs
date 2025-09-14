@@ -13,7 +13,7 @@ use crate::Float;
 ///
 /// # Example
 /// ```
-/// use scirs2_autograd::schedulers::{ExponentialLR, LRScheduler};
+/// use scirs2__autograd::schedulers::{ExponentialLR, LRScheduler};
 ///
 /// let scheduler = ExponentialLR::new(0.1f32, 0.95f32);
 ///

@@ -17,13 +17,14 @@ use num_traits::Float;
 use plotters::prelude::*;
 use scirs2_integrate::{bdf_semi_explicit_dae, DAEIndex, DAEOptions, DAEType};
 
+#[allow(dead_code)]
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Constants
     let g = 9.81f64; // Gravitational acceleration (m/s²)
     let length = 1.0; // Pendulum length (m)
     let period = 2.0 * std::f64::consts::PI * (length / g).sqrt();
 
-    println!("Pendulum period (theoretical): {:.6} seconds", period);
+    println!("Pendulum period (theoretical): {period:.6} seconds");
 
     // Initial conditions (pendulum released from 45 degrees)
     let theta0 = std::f64::consts::PI / 4.0;
@@ -98,7 +99,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("  Success: {}", result.success);
 
     if let Some(msg) = &result.message {
-        println!("  Message: {}", msg);
+        println!("  Message: {msg}");
     }
 
     // Calculate the energy at each time point
@@ -126,7 +127,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         .map(|&e| (e - initial_energy).abs() / initial_energy)
         .fold(0.0, |max, dev| max.max(dev));
 
-    println!("Maximum energy deviation: {:.6e}", max_deviation);
+    println!("Maximum energy deviation: {max_deviation:.6e}");
 
     // Create a plot of the pendulum trajectory
     let root = BitMapBackend::new("pendulum_trajectory_bdf.png", (800, 600)).into_drawing_area();

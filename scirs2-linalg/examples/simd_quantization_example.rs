@@ -8,6 +8,7 @@ use scirs2_linalg::quantization::simd::{simd_quantized_matmul, simd_quantized_ma
 use scirs2_linalg::quantization::{quantize_matrix, quantize_vector, QuantizationMethod};
 use std::time::Instant;
 
+#[allow(dead_code)]
 fn main() {
     println!("SIMD-Accelerated Quantized Matrix Operations Example");
     println!("===================================================\n");
@@ -19,8 +20,8 @@ fn main() {
 
     // Generate random matrices for testing
     println!("Generating random matrices...");
-    let a = generate_random_matrix(m, k);
-    let b = generate_random_matrix(k, n);
+    let a = generate_randommatrix(m, k);
+    let b = generate_randommatrix(k, n);
     let v = generate_random_vector(k);
 
     println!("\nPerforming matrix-matrix multiplication tests...");
@@ -61,7 +62,7 @@ fn main() {
     println!("Reference matvec time: {:?}", ref_time);
 
     // Test with 8-bit symmetric quantization for matrix and vector
-    let (_v_q, _v_params) = quantize_vector(&v.view(), 8, QuantizationMethod::Symmetric);
+    let _v_q_v_params = quantize_vector(&v.view(), 8, QuantizationMethod::Symmetric);
 
     let start = Instant::now();
     let r_q_simd = simd_quantized_matvec(&a_q, &a_params, &v.view()).unwrap();
@@ -85,7 +86,8 @@ fn main() {
     benchmark_quantization_methods(&a, &b);
 }
 
-fn generate_random_matrix(rows: usize, cols: usize) -> Array2<f32> {
+#[allow(dead_code)]
+fn generate_randommatrix(rows: usize, cols: usize) -> Array2<f32> {
     let mut matrix = Array2::zeros((rows, cols));
 
     for i in 0..rows {
@@ -97,6 +99,7 @@ fn generate_random_matrix(rows: usize, cols: usize) -> Array2<f32> {
     matrix
 }
 
+#[allow(dead_code)]
 fn generate_random_vector(length: usize) -> Array1<f32> {
     let mut vector = Array1::zeros(length);
 
@@ -107,6 +110,7 @@ fn generate_random_vector(length: usize) -> Array1<f32> {
     vector
 }
 
+#[allow(dead_code)]
 fn benchmark_quantization_methods(a: &Array2<f32>, b: &Array2<f32>) {
     // Define quantization methods to test
     let methods = [

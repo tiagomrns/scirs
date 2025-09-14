@@ -30,6 +30,7 @@ use num_traits::{Float, FromPrimitive};
 /// ```
 ///
 /// This function is similar to ``NumPy``'s `np.corrcoef` function but returns a single value.
+#[allow(dead_code)]
 pub fn corrcoef<T>(x: ArrayView<T, Ix1>, y: ArrayView<T, Ix1>) -> Result<T, &'static str>
 where
     T: Clone + Float + FromPrimitive,
@@ -99,11 +100,12 @@ where
 ///     [7.0, 8.0, 9.0],
 ///     [10.0, 11.0, 12.0]
 /// ];
-/// let cov_matrix = cov(data.view(), 1).unwrap();
-/// assert_eq!(cov_matrix.shape(), &[3, 3]);
+/// let covmatrix = cov(data.view(), 1).unwrap();
+/// assert_eq!(covmatrix.shape(), &[3, 3]);
 /// ```
 ///
 /// This function is equivalent to ``NumPy``'s `np.cov` function.
+#[allow(dead_code)]
 pub fn cov<T>(array: ArrayView<T, Ix2>, ddof: usize) -> Result<Array<T, Ix2>, &'static str>
 where
     T: Clone + Float + FromPrimitive,
@@ -130,7 +132,7 @@ where
     }
 
     // Calculate covariance matrix
-    let mut cov_matrix = Array::<T, Ix2>::zeros((n_features, n_features));
+    let mut covmatrix = Array::<T, Ix2>::zeros((n_features, n_features));
     let scale = T::from_usize(n_samples - ddof).unwrap();
 
     for i in 0..n_features {
@@ -144,14 +146,14 @@ where
             }
 
             cov_ij = cov_ij / scale;
-            cov_matrix[[i, j]] = cov_ij;
+            covmatrix[[0, j]] = cov_ij;
 
             // Fill symmetric part
-            if i != j {
-                cov_matrix[[j, i]] = cov_ij;
+            if 0 != j {
+                covmatrix[[j, 0]] = cov_ij;
             }
         }
     }
 
-    Ok(cov_matrix)
+    Ok(covmatrix)
 }

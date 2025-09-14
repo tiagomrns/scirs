@@ -142,7 +142,7 @@ impl MemorySnapshot {
 
     /// Save the snapshot to a file - stub when memory_metrics is disabled
     #[cfg(not(feature = "memory_metrics"))]
-    pub fn save_to_file(&self, _path: impl AsRef<Path>) -> io::Result<()> {
+    pub fn save_to_file(&self, path: impl AsRef<Path>) -> io::Result<()> {
         Ok(())
     }
 
@@ -158,7 +158,7 @@ impl MemorySnapshot {
 
     /// Load a snapshot from a file - stub when memory_metrics is disabled
     #[cfg(not(feature = "memory_metrics"))]
-    pub fn load_from_file(_path: impl AsRef<Path>) -> io::Result<Self> {
+    pub fn load_from_file(path: impl AsRef<Path>) -> io::Result<Self> {
         Ok(Self::new("stub_id", "stub_description"))
     }
 
@@ -264,11 +264,7 @@ pub struct ComponentStatsDiff {
 impl SnapshotDiff {
     /// Create a new snapshot diff by comparing two snapshots
     pub fn new(first: &MemorySnapshot, second: &MemorySnapshot) -> Self {
-        let elapsed_ms = if second.timestamp > first.timestamp {
-            second.timestamp - first.timestamp
-        } else {
-            0
-        } * 1000;
+        let elapsed_ms = second.timestamp.saturating_sub(first.timestamp) * 1000;
 
         let current_usage_delta =
             second.report.total_current_usage as isize - first.report.total_current_usage as isize;
@@ -347,7 +343,10 @@ impl SnapshotDiff {
             "Memory Snapshot Diff: {} -> {}\n",
             self.first_id, self.second_id
         ));
-        output.push_str(&format!("Time elapsed: {}ms\n\n", self.elapsed_ms));
+        output.push_str(&format!(
+            "Time elapsed: {elapsed}ms\n\n",
+            elapsed = self.elapsed_ms
+        ));
 
         // Overall changes
         let current_delta_prefix = if self.current_usage_delta >= 0 {
@@ -385,7 +384,7 @@ impl SnapshotDiff {
         if !self.new_components.is_empty() {
             output.push_str("New Components:\n");
             for component in &self.new_components {
-                output.push_str(&format!("  + {}\n", component));
+                output.push_str(&format!("  + {component}\n"));
             }
             output.push('\n');
         }
@@ -394,7 +393,7 @@ impl SnapshotDiff {
         if !self.removed_components.is_empty() {
             output.push_str("Removed Components:\n");
             for component in &self.removed_components {
-                output.push_str(&format!("  - {}\n", component));
+                output.push_str(&format!("  - {component}\n"));
             }
             output.push('\n');
         }
@@ -425,7 +424,7 @@ impl SnapshotDiff {
                     ""
                 };
 
-                output.push_str(&format!("  {}", component));
+                output.push_str(&format!("  {component}"));
 
                 if diff.potential_leak {
                     output.push_str(" [POTENTIAL LEAK]");
@@ -556,7 +555,11 @@ impl SnapshotDiff {
                     peak_prefix,
                     format_bytes(diff.peak_usage_delta.unsigned_abs())
                 ),
-                format!("{}{}", alloc_prefix, diff.allocation_count_delta)
+                format!(
+                    "{}{}",
+                    alloc_prefix,
+                    diff.allocation_count_delta.unsigned_abs()
+                )
             ));
         }
 
@@ -599,9 +602,9 @@ impl SnapshotManager {
     }
 
     /// Compare two snapshots
-    pub fn compare_snapshots(&self, first_id: &str, second_id: &str) -> Option<SnapshotDiff> {
+    pub fn compare_snapshots(&self, first_id: &str, secondid: &str) -> Option<SnapshotDiff> {
         let first = self.get_snapshot(first_id)?;
-        let second = self.get_snapshot(second_id)?;
+        let second = self.get_snapshot(secondid)?;
         Some(first.compare(second))
     }
 
@@ -614,7 +617,7 @@ impl SnapshotManager {
         }
 
         for snapshot in &self.snapshots {
-            let filename = format!("snapshot_{}.json", snapshot.id);
+            let filename = format!("snapshot_{id}.json", id = snapshot.id);
             let path = dir.join(filename);
             snapshot.save_to_file(path)?;
         }
@@ -666,11 +669,13 @@ static GLOBAL_SNAPSHOT_MANAGER: once_cell::sync::Lazy<std::sync::Mutex<SnapshotM
     once_cell::sync::Lazy::new(|| std::sync::Mutex::new(SnapshotManager::new()));
 
 /// Get the global snapshot manager instance
+#[allow(dead_code)]
 pub fn global_snapshot_manager() -> &'static std::sync::Mutex<SnapshotManager> {
     &GLOBAL_SNAPSHOT_MANAGER
 }
 
 /// Take a snapshot using the global snapshot manager
+#[allow(dead_code)]
 pub fn take_snapshot(id: impl Into<String>, description: impl Into<String>) -> MemorySnapshot {
     let mut manager = match global_snapshot_manager().lock() {
         Ok(guard) => guard,
@@ -684,7 +689,8 @@ pub fn take_snapshot(id: impl Into<String>, description: impl Into<String>) -> M
 }
 
 /// Compare two snapshots using the global snapshot manager
-pub fn compare_snapshots(first_id: &str, second_id: &str) -> Option<SnapshotDiff> {
+#[allow(dead_code)]
+pub fn compare_snapshots(first_id: &str, secondid: &str) -> Option<SnapshotDiff> {
     let manager = match global_snapshot_manager().lock() {
         Ok(guard) => guard,
         Err(poisoned) => {
@@ -692,11 +698,12 @@ pub fn compare_snapshots(first_id: &str, second_id: &str) -> Option<SnapshotDiff
             poisoned.into_inner()
         }
     };
-    manager.compare_snapshots(first_id, second_id)
+    manager.compare_snapshots(first_id, secondid)
 }
 
 /// Save all snapshots to a directory using the global snapshot manager
-pub fn save_snapshots(dir: impl AsRef<Path>) -> io::Result<()> {
+#[allow(dead_code)]
+pub fn save_all_snapshots(dir: impl AsRef<Path>) -> io::Result<()> {
     let manager = match global_snapshot_manager().lock() {
         Ok(guard) => guard,
         Err(poisoned) => {
@@ -708,7 +715,8 @@ pub fn save_snapshots(dir: impl AsRef<Path>) -> io::Result<()> {
 }
 
 /// Load all snapshots from a directory using the global snapshot manager
-pub fn load_snapshots(dir: impl AsRef<Path>) -> io::Result<()> {
+#[allow(dead_code)]
+pub fn load_all_snapshots(dir: impl AsRef<Path>) -> io::Result<()> {
     let mut manager = match global_snapshot_manager().lock() {
         Ok(guard) => guard,
         Err(poisoned) => {
@@ -720,6 +728,7 @@ pub fn load_snapshots(dir: impl AsRef<Path>) -> io::Result<()> {
 }
 
 /// Clear all snapshots using the global snapshot manager
+#[allow(dead_code)]
 pub fn clear_snapshots() {
     let mut manager = match global_snapshot_manager().lock() {
         Ok(guard) => guard,
@@ -744,7 +753,7 @@ mod tests {
     #[test]
     fn test_snapshot_creation() {
         // Use unwrap_or_else to make sure we can continue even with a poisoned mutex
-        let _lock = TEST_MUTEX
+        let lock = TEST_MUTEX
             .lock()
             .unwrap_or_else(|poisoned| poisoned.into_inner());
         println!("test_snapshot_creation started");
@@ -817,13 +826,13 @@ mod tests {
         reset_memory_metrics();
 
         // Create a new baseline snapshot
-        let snapshot_base = MemorySnapshot::new("base", "Base for deallocation test");
+        let snapshotbase = MemorySnapshot::new("base", "Base for deallocation test");
 
         // Verify that it starts with zero
         assert_eq!(
-            snapshot_base.report.total_current_usage, 0,
+            snapshotbase.report.total_current_usage, 0,
             "Baseline snapshot after reset should have 0 memory usage but had {} bytes",
-            snapshot_base.report.total_current_usage
+            snapshotbase.report.total_current_usage
         );
 
         // Allocate and then deallocate
@@ -845,7 +854,7 @@ mod tests {
     #[test]
     fn test_snapshot_manager() {
         // Use unwrap_or_else for better error handling
-        let _lock = TEST_MUTEX
+        let lock = TEST_MUTEX
             .lock()
             .unwrap_or_else(|poisoned| poisoned.into_inner());
         println!("test_snapshot_manager started");
@@ -955,7 +964,7 @@ mod tests {
     #[test]
     fn test_global_snapshot_manager() {
         // Lock to prevent concurrent access to global state
-        let _lock = match TEST_MUTEX.lock() {
+        let lock = match TEST_MUTEX.lock() {
             Ok(guard) => guard,
             Err(poisoned) => {
                 // Still use the poisoned lock by recovering the guard
@@ -1048,15 +1057,11 @@ mod tests {
     }
 
     #[test]
-    #[ignore] // This test has inherent thread safety issues due to global state - use test_thread_safety_isolated instead
     fn test_thread_safety() {
-        // Reset metrics
-        reset_memory_metrics();
-
-        // Clear existing snapshots
-        clear_snapshots();
-
-        // Take snapshots from multiple threads
+        // Test thread safety using separate collectors per thread to avoid global state interference
+        use crate::memory::metrics::{
+            MemoryEvent, MemoryEventType, MemoryMetricsCollector, MemoryMetricsConfig,
+        };
         use std::sync::{Arc, Barrier};
         use std::thread;
 
@@ -1064,62 +1069,73 @@ mod tests {
         let barrier1 = Arc::clone(&barrier);
         let barrier2 = Arc::clone(&barrier);
 
-        // Thread 1: Take a snapshot and allocate memory
+        // Thread 1: Use separate collector to avoid global state interference
         let thread1 = thread::spawn(move || {
-            // Reset metrics at the start of thread
-            reset_memory_metrics();
+            // Create a dedicated collector for this thread
+            let collector = Arc::new(MemoryMetricsCollector::new(MemoryMetricsConfig::default()));
 
-            // Take a snapshot
-            let snapshot = MemorySnapshot::new("thread1", "Snapshot from thread 1");
+            // Take initial snapshot from this collector
+            let initial_report = collector.generate_report();
+            let snapshot =
+                MemorySnapshot::from_report("thread1", "Initial snapshot", initial_report);
 
             // Wait for all threads to reach this point
             barrier1.wait();
 
-            // Allocate some memory
-            track_allocation("Thread1Component", 2048, 0x1000);
+            // Record allocation in this thread's collector
+            collector.record_event(MemoryEvent::new(
+                MemoryEventType::Allocation,
+                "Thread1Component",
+                2048,
+                0x1000,
+            ));
 
-            // Take another snapshot directly (not using global manager)
-            let snapshot2 = MemorySnapshot::new("thread1_after", "After allocation in thread 1");
+            // Take snapshot after allocation
+            let after_report = collector.generate_report();
+            let snapshot2 =
+                MemorySnapshot::from_report("thread1_after", "After allocation", after_report);
 
-            // Get the diff directly in this thread to verify
+            // Verify the diff shows the expected allocation
             let diff = snapshot.compare(&snapshot2);
             assert_eq!(diff.current_usage_delta, 2048);
         });
 
-        // Thread 2: Take a snapshot and allocate different memory
+        // Thread 2: Use separate collector to avoid global state interference
         let thread2 = thread::spawn(move || {
-            // Reset metrics at the start of thread
-            reset_memory_metrics();
+            // Create a dedicated collector for this thread
+            let collector = Arc::new(MemoryMetricsCollector::new(MemoryMetricsConfig::default()));
 
-            // Take a snapshot directly
-            let snapshot = MemorySnapshot::new("thread2", "Snapshot from thread 2");
+            // Take initial snapshot from this collector
+            let initial_report = collector.generate_report();
+            let snapshot =
+                MemorySnapshot::from_report("thread2", "Initial snapshot", initial_report);
 
             // Wait for all threads to reach this point
             barrier2.wait();
 
-            // Allocate some memory
-            track_allocation("Thread2Component", 4096, 0x2000);
+            // Record allocation in this thread's collector
+            collector.record_event(MemoryEvent::new(
+                MemoryEventType::Allocation,
+                "Thread2Component",
+                4096,
+                0x2000,
+            ));
 
-            // Take another snapshot directly
-            let snapshot2 = MemorySnapshot::new("thread2_after", "After allocation in thread 2");
+            // Take snapshot after allocation
+            let after_report = collector.generate_report();
+            let snapshot2 =
+                MemorySnapshot::from_report("thread2_after", "After allocation", after_report);
 
-            // Get the diff directly in this thread to verify
+            // Verify the diff shows the expected allocation
             let diff = snapshot.compare(&snapshot2);
             assert_eq!(diff.current_usage_delta, 4096);
         });
 
-        // Main thread: Wait for other threads to take snapshots
+        // Main thread: Wait for other threads to complete
         barrier.wait();
 
-        // Join threads
         thread1.join().unwrap();
         thread2.join().unwrap();
-
-        // In our test implementation, we don't need to verify global snapshots
-        // since we're doing direct snapshot comparison in each thread
-
-        // Clear snapshots
-        clear_snapshots();
     }
 
     #[test]
@@ -1227,7 +1243,7 @@ mod tests {
     #[test]
     fn test_leak_detection() {
         // Use unwrap_or_else for better error handling
-        let _lock = TEST_MUTEX
+        let lock = TEST_MUTEX
             .lock()
             .unwrap_or_else(|poisoned| poisoned.into_inner());
         println!("test_leak_detection started");

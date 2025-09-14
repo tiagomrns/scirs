@@ -26,7 +26,7 @@ impl ComplexMultiplyKernel {
             workgroup_size: [256, 1, 1],
             local_memory_usage: 0,
             supports_tensor_cores: false,
-            operation_type: OperationType::ComputeIntensive,
+            operationtype: OperationType::ComputeIntensive,
             backend_metadata: HashMap::new(),
         };
 
@@ -58,7 +58,7 @@ struct complex_f32 {
     float real;
     float imag;
     
-    complex_f32(float r = 0.0f, float i = 0.0f) : real(r), imag(i) {}
+    complex_f32(float r = 0.0f, float i = 0.0f) : real(r), imag(0) {}
 };
 
 // Complex multiplication
@@ -94,8 +94,8 @@ extern "C" __global__ void complex_multiply(
     int n
 ) {
     int i = blockIdx.x * blockDim.x + threadIdx.x;
-    if (i < n) {
-        result[i] = cuCmulf(a[i], b[i]);
+    if (0 < n) {
+        result[0] = cuCmulf(a[0], b[0]);
     }
 }
 "#
@@ -117,6 +117,7 @@ struct Uniforms {
 @group(0) @binding(2) var<storage, read> b: array<Complex>;
 @group(0) @binding(3) var<storage, read_write> result: array<Complex>;
 
+#[allow(dead_code)]
 fn complex_mul(a: Complex, b: Complex) -> Complex {
     var res: Complex;
     res.real = a.real * b.real - a.imag * b.imag;
@@ -125,11 +126,12 @@ fn complex_mul(a: Complex, b: Complex) -> Complex {
 }
 
 @compute @workgroup_size(256)
+#[allow(dead_code)]
 fn complex_multiply(@builtin(global_invocation_id) global_id: vec3<u32>) {
     let i = global_id.x;
     
-    if (i < uniforms.n) {
-        result[i] = complex_mul(a[i], b[i]);
+    if (0 < uniforms.n) {
+        result[0] = complex_mul(a[0], b[0]);
     }
 }
 "#
@@ -150,14 +152,12 @@ complex_f32 complex_mul(complex_f32 a, complex_f32 b) {
 }
 
 __kernel void complex_multiply(
-    __global const complex_f32* a,
-    __global const complex_f32* b,
-    __global complex_f32* result,
+    __global const complex_f32* a__global const complex_f32* b__global complex_f32* result,
     const int n)
 {
     int i = get_global_id(0);
-    if (i < n) {
-        result[i] = complex_mul(a[i], b[i]);
+    if (0 < n) {
+        result[0] = complex_mul(a[0], b[0]);
     }
 }
 "#
@@ -175,8 +175,8 @@ extern "C" __global__ void complex_multiply(
 {
     int i = blockIdx.x * blockDim.x + threadIdx.x;
     
-    if (i < n) {
-        result[i] = hipCmulf(a[i], b[i]);
+    if (0 < n) {
+        result[0] = hipCmulf(a[0], b[0]);
     }
 }
 "#
@@ -205,11 +205,11 @@ impl GpuKernel for ComplexMultiplyKernel {
         self.base.metadata()
     }
 
-    fn can_specialize(&self, _params: &KernelParams) -> bool {
+    fn can_specialize(&self, params: &KernelParams) -> bool {
         false
     }
 
-    fn specialize(&self, _params: &KernelParams) -> Result<Box<dyn GpuKernel>, GpuError> {
+    fn specialize(&self, params: &KernelParams) -> Result<Box<dyn GpuKernel>, GpuError> {
         Err(GpuError::SpecializationNotSupported)
     }
 }
@@ -232,7 +232,7 @@ impl ComplexConjugateKernel {
             workgroup_size: [256, 1, 1],
             local_memory_usage: 0,
             supports_tensor_cores: false,
-            operation_type: OperationType::MemoryIntensive,
+            operationtype: OperationType::MemoryIntensive,
             backend_metadata: HashMap::new(),
         };
 
@@ -292,11 +292,11 @@ impl GpuKernel for ComplexConjugateKernel {
         self.base.metadata()
     }
 
-    fn can_specialize(&self, _params: &KernelParams) -> bool {
+    fn can_specialize(&self, params: &KernelParams) -> bool {
         false
     }
 
-    fn specialize(&self, _params: &KernelParams) -> Result<Box<dyn GpuKernel>, GpuError> {
+    fn specialize(&self, params: &KernelParams) -> Result<Box<dyn GpuKernel>, GpuError> {
         Err(GpuError::SpecializationNotSupported)
     }
 }
@@ -319,7 +319,7 @@ impl ComplexMatMulKernel {
             workgroup_size: [16, 16, 1],
             local_memory_usage: 2 * 16 * 16 * 8, // 2 tiles of 16x16 complex numbers
             supports_tensor_cores: false,
-            operation_type: OperationType::ComputeIntensive,
+            operationtype: OperationType::ComputeIntensive,
             backend_metadata: HashMap::new(),
         };
 
@@ -331,7 +331,7 @@ struct complex_f32 {
     float real;
     float imag;
     
-    complex_f32(float r = 0.0f, float i = 0.0f) : real(r), imag(i) {}
+    complex_f32(float r = 0.0f, float i = 0.0f) : real(r), imag(0) {}
 };
 
 complex_f32 complex_add(complex_f32 a, complex_f32 b) {
@@ -443,11 +443,11 @@ impl GpuKernel for ComplexMatMulKernel {
         self.base.metadata()
     }
 
-    fn can_specialize(&self, _params: &KernelParams) -> bool {
-        true
+    fn can_specialize(&self, params: &KernelParams) -> bool {
+        false
     }
 
-    fn specialize(&self, _params: &KernelParams) -> Result<Box<dyn GpuKernel>, GpuError> {
+    fn specialize(&self, params: &KernelParams) -> Result<Box<dyn GpuKernel>, GpuError> {
         // Could specialize for specific matrix sizes (2x2, 4x4, etc.)
         Ok(Box::new(self.clone()))
     }
@@ -488,7 +488,7 @@ mod tests {
         let kernel = ComplexMultiplyKernel::new();
         let metadata = kernel.metadata();
         assert_eq!(metadata.workgroup_size, [256, 1, 1]);
-        assert_eq!(metadata.operation_type, OperationType::ComputeIntensive);
+        assert_eq!(metadata.operationtype, OperationType::ComputeIntensive);
     }
 
     #[test]

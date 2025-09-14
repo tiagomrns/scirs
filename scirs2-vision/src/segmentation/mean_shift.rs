@@ -15,7 +15,7 @@ pub struct MeanShiftParams {
     /// Spatial bandwidth (radius in pixels)
     pub spatial_bandwidth: f32,
     /// Color bandwidth (radius in color space)
-    pub color_bandwidth: f32,
+    pub colorbandwidth: f32,
     /// Minimum region size (pixels)
     pub min_region_size: usize,
     /// Maximum iterations
@@ -28,7 +28,7 @@ impl Default for MeanShiftParams {
     fn default() -> Self {
         Self {
             spatial_bandwidth: 7.0,
-            color_bandwidth: 10.0,
+            colorbandwidth: 10.0,
             min_region_size: 20,
             max_iterations: 20,
             convergence_threshold: 0.1,
@@ -45,7 +45,7 @@ impl Default for MeanShiftParams {
 ///
 /// # Returns
 ///
-/// * Result containing segmented label map
+/// * Result containing segmented label_ map
 ///
 /// # Example
 ///
@@ -70,7 +70,7 @@ impl Default for MeanShiftParams {
 ///
 /// let params = MeanShiftParams {
 ///     spatial_bandwidth: 5.0,
-///     color_bandwidth: 10.0,
+///     colorbandwidth: 10.0,
 ///     min_region_size: 10,
 ///     max_iterations: 5,
 ///     convergence_threshold: 0.5,
@@ -79,6 +79,7 @@ impl Default for MeanShiftParams {
 /// let labels = mean_shift(&DynamicImage::ImageRgb8(img), &params).unwrap();
 /// assert_eq!(labels.dim(), (10, 10));
 /// ```
+#[allow(dead_code)]
 pub fn mean_shift(img: &DynamicImage, params: &MeanShiftParams) -> Result<Array2<u32>> {
     let rgb = img.to_rgb8();
     let (width, height) = rgb.dimensions();
@@ -103,7 +104,7 @@ pub fn mean_shift(img: &DynamicImage, params: &MeanShiftParams) -> Result<Array2
                     &features,
                     &current_mode,
                     params.spatial_bandwidth,
-                    params.color_bandwidth,
+                    params.colorbandwidth,
                 )
             })
             .collect();
@@ -131,7 +132,7 @@ pub fn mean_shift(img: &DynamicImage, params: &MeanShiftParams) -> Result<Array2
     }
 
     // Cluster modes and assign labels
-    let labels = cluster_modes(&modes, params.spatial_bandwidth, params.color_bandwidth);
+    let labels = cluster_modes(&modes, params.spatial_bandwidth, params.colorbandwidth);
 
     // Reshape to image dimensions
     let label_map = Array2::from_shape_vec((height as usize, width as usize), labels)?;
@@ -143,6 +144,7 @@ pub fn mean_shift(img: &DynamicImage, params: &MeanShiftParams) -> Result<Array2
 }
 
 /// Convert image to feature space (x, y, L, a, b)
+#[allow(dead_code)]
 fn image_to_feature_space(img: &RgbImage) -> Array2<f32> {
     let (width, height) = img.dimensions();
     let n_pixels = (width * height) as usize;
@@ -168,11 +170,12 @@ fn image_to_feature_space(img: &RgbImage) -> Array2<f32> {
 }
 
 /// Compute mean shift update for a point
+#[allow(dead_code)]
 fn compute_mean_shift(
     features: &Array2<f32>,
     point: &Array1<f32>,
     spatial_bandwidth: f32,
-    color_bandwidth: f32,
+    colorbandwidth: f32,
 ) -> Array1<f32> {
     let n_points = features.nrows();
     let mut weighted_sum = Array1::zeros(5);
@@ -191,11 +194,11 @@ fn compute_mean_shift(
             + (feature[4] - point[4]).powi(2))
         .sqrt();
 
-        // Check if within bandwidth
-        if spatial_dist <= spatial_bandwidth && color_dist <= color_bandwidth {
+        // Check if within _bandwidth
+        if spatial_dist <= spatial_bandwidth && color_dist <= colorbandwidth {
             // Gaussian kernel weights
-            let spatial_weight = (-0.5 * (spatial_dist / spatial_bandwidth).powi(2)).exp();
-            let color_weight = (-0.5 * (color_dist / color_bandwidth).powi(2)).exp();
+            let spatial_weight = (-0.5f32 * (spatial_dist / spatial_bandwidth).powi(2)).exp();
+            let color_weight = (-0.5f32 * (color_dist / colorbandwidth).powi(2)).exp();
             let weight = spatial_weight * color_weight;
 
             weighted_sum += &(feature.to_owned() * weight);
@@ -211,7 +214,8 @@ fn compute_mean_shift(
 }
 
 /// Cluster modes and assign labels
-fn cluster_modes(modes: &Array2<f32>, spatial_bandwidth: f32, color_bandwidth: f32) -> Vec<u32> {
+#[allow(dead_code)]
+fn cluster_modes(modes: &Array2<f32>, spatial_bandwidth: f32, colorbandwidth: f32) -> Vec<u32> {
     let n_points = modes.nrows();
     let mut labels = vec![u32::MAX; n_points];
     let mut current_label = 0u32;
@@ -225,15 +229,15 @@ fn cluster_modes(modes: &Array2<f32>, spatial_bandwidth: f32, color_bandwidth: f
         labels[i] = current_label;
 
         // Find all points belonging to this cluster
-        for (j, label) in labels.iter_mut().enumerate().take(n_points).skip(i + 1) {
-            if *label != u32::MAX {
+        for (j, label_) in labels.iter_mut().enumerate().take(n_points).skip(i + 1) {
+            if *label_ != u32::MAX {
                 continue;
             }
 
             let mode_i = modes.slice(ndarray::s![i, ..]);
             let mode_j = modes.slice(ndarray::s![j, ..]);
 
-            // Check if modes are close enough
+            // Check if _modes are close enough
             let spatial_dist =
                 ((mode_i[0] - mode_j[0]).powi(2) + (mode_i[1] - mode_j[1]).powi(2)).sqrt();
             let color_dist = ((mode_i[2] - mode_j[2]).powi(2)
@@ -241,8 +245,8 @@ fn cluster_modes(modes: &Array2<f32>, spatial_bandwidth: f32, color_bandwidth: f
                 + (mode_i[4] - mode_j[4]).powi(2))
             .sqrt();
 
-            if spatial_dist <= spatial_bandwidth && color_dist <= color_bandwidth {
-                *label = current_label;
+            if spatial_dist <= spatial_bandwidth && color_dist <= colorbandwidth {
+                *label_ = current_label;
             }
         }
 
@@ -253,34 +257,36 @@ fn cluster_modes(modes: &Array2<f32>, spatial_bandwidth: f32, color_bandwidth: f
 }
 
 /// Euclidean distance between two points
+#[allow(dead_code)]
 fn euclidean_distance(a: &Array1<f32>, b: &Array1<f32>) -> f32 {
     let diff = a - b;
     diff.mapv(|x| x * x).sum().sqrt()
 }
 
 /// Merge small regions with neighbors
-fn merge_small_regions(labels: &Array2<u32>, min_size: usize) -> Array2<u32> {
+#[allow(dead_code)]
+fn merge_small_regions(labels: &Array2<u32>, minsize: usize) -> Array2<u32> {
     let (height, width) = labels.dim();
     let mut result = labels.clone();
 
     // Count region sizes
     let mut region_sizes = HashMap::new();
-    for &label in labels.iter() {
-        *region_sizes.entry(label).or_insert(0) += 1;
+    for &label_ in labels.iter() {
+        *region_sizes.entry(label_).or_insert(0) += 1;
     }
 
     // Find small regions
     let small_regions: Vec<_> = region_sizes
         .iter()
-        .filter(|(_, &size)| size < min_size)
-        .map(|(&label, _)| label)
+        .filter(|(_, &_size)| _size < minsize)
+        .map(|(&label_, _)| label_)
         .collect();
 
     // Merge each small region with its largest neighbor
     for small_label in small_regions {
         let mut neighbor_counts = HashMap::new();
 
-        // Count neighboring labels
+        // Count neighboring _labels
         for y in 0..height {
             for x in 0..width {
                 if result[[y, x]] == small_label {
@@ -301,12 +307,12 @@ fn merge_small_regions(labels: &Array2<u32>, min_size: usize) -> Array2<u32> {
         }
 
         // Find most common neighbor
-        if let Some((&new_label, _)) = neighbor_counts.iter().max_by_key(|(_, &count)| count) {
-            // Replace small region with neighbor label
+        if let Some((&new_label_, _)) = neighbor_counts.iter().max_by_key(|(_, &count)| count) {
+            // Replace small region with neighbor label_
             for y in 0..height {
                 for x in 0..width {
                     if result[[y, x]] == small_label {
-                        result[[y, x]] = new_label;
+                        result[[y, x]] = new_label_;
                     }
                 }
             }
@@ -317,6 +323,7 @@ fn merge_small_regions(labels: &Array2<u32>, min_size: usize) -> Array2<u32> {
 }
 
 /// Convert RGB to Lab color space (simplified)
+#[allow(dead_code)]
 fn rgb_to_lab(r: u8, g: u8, b: u8) -> (f32, f32, f32) {
     // Normalize RGB
     let r = r as f32 / 255.0;
@@ -358,29 +365,30 @@ fn rgb_to_lab(r: u8, g: u8, b: u8) -> (f32, f32, f32) {
 }
 
 /// Convert mean shift segmentation labels to color image
+#[allow(dead_code)]
 pub fn mean_shift_labels_to_color(labels: &Array2<u32>) -> RgbImage {
     let (height, width) = labels.dim();
     let mut result = RgbImage::new(width as u32, height as u32);
 
-    // Find unique labels
+    // Find unique _labels
     let mut unique_labels = std::collections::HashSet::new();
-    for &label in labels.iter() {
-        unique_labels.insert(label);
+    for &label_ in labels.iter() {
+        unique_labels.insert(label_);
     }
 
-    // Generate colors for each label
+    // Generate colors for each label_
     let mut label_colors = HashMap::new();
     let golden_ratio = 0.618_034;
     let mut hue = 0.0;
 
-    for &label in &unique_labels {
+    for &label_ in &unique_labels {
         hue += golden_ratio;
         hue %= 1.0;
 
         // Convert HSV to RGB
         let (r, g, b) = hsv_to_rgb(hue, 0.8, 0.9);
         label_colors.insert(
-            label,
+            label_,
             [(r * 255.0) as u8, (g * 255.0) as u8, (b * 255.0) as u8],
         );
     }
@@ -388,8 +396,8 @@ pub fn mean_shift_labels_to_color(labels: &Array2<u32>) -> RgbImage {
     // Apply colors
     for y in 0..height {
         for x in 0..width {
-            let label = labels[[y, x]];
-            let color = label_colors.get(&label).copied().unwrap_or([0, 0, 0]);
+            let label_ = labels[[y, x]];
+            let color = label_colors.get(&label_).copied().unwrap_or([0, 0, 0]);
             result.put_pixel(x as u32, y as u32, Rgb(color));
         }
     }
@@ -398,6 +406,7 @@ pub fn mean_shift_labels_to_color(labels: &Array2<u32>) -> RgbImage {
 }
 
 /// Convert HSV to RGB
+#[allow(dead_code)]
 fn hsv_to_rgb(h: f32, s: f32, v: f32) -> (f32, f32, f32) {
     let c = v * s;
     let x = c * (1.0 - ((h * 6.0) % 2.0 - 1.0).abs());
@@ -424,7 +433,7 @@ mod tests {
         let img = DynamicImage::new_rgb8(20, 20);
         let params = MeanShiftParams {
             spatial_bandwidth: 5.0,
-            color_bandwidth: 10.0,
+            colorbandwidth: 10.0,
             min_region_size: 5,
             max_iterations: 5,
             convergence_threshold: 0.5,
@@ -446,7 +455,7 @@ mod tests {
         assert!(b.abs() < 5.0);
 
         // Test black
-        let (l, _a, _b) = rgb_to_lab(0, 0, 0);
+        let (l, a, b) = rgb_to_lab(0, 0, 0);
         assert!(l < 5.0);
     }
 

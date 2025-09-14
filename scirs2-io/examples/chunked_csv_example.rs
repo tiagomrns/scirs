@@ -5,6 +5,7 @@ use std::time::{Duration, Instant};
 
 /// This example demonstrates memory-efficient processing of large CSV files
 /// using the chunked reading functionality.
+#[allow(dead_code)]
 fn main() -> Result<(), Box<dyn Error>> {
     println!("=== Chunked CSV Processing Example ===\n");
 

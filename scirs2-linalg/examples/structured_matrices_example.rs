@@ -5,6 +5,7 @@ use scirs2_linalg::structured::{
 };
 use scirs2_linalg::MatrixFreeOp;
 
+#[allow(dead_code)]
 fn main() {
     println!("Structured Matrices Example\n");
 

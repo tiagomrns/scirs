@@ -4,9 +4,7 @@
 //! - Spatial Dropout: drops entire feature maps (useful for CNNs)
 //! - Feature Dropout: drops specific features across all spatial locations
 
-use ndarray::{Array, Axis, Dimension, ScalarOperand};
-use ndarray_rand::rand::thread_rng;
-use ndarray_rand::rand_distr::{Bernoulli, Distribution};
+use ndarray::{Array, Axis, Dimension, Ix3, ScalarOperand};
 use num_traits::Float;
 use std::fmt::Debug;
 
@@ -35,7 +33,7 @@ use crate::regularizers::Regularizer;
 #[derive(Debug, Clone)]
 pub struct SpatialDropout<A: Float> {
     /// Probability of dropping a channel/feature map
-    drop_prob: A,
+    dropprob: A,
     /// Dimension along which to drop (default is 1 for channels)
     feature_dim: Axis,
 }
@@ -45,16 +43,16 @@ impl<A: Float + Debug + ScalarOperand> SpatialDropout<A> {
     ///
     /// # Arguments
     ///
-    /// * `drop_prob` - Probability of dropping each feature map (0.0 to 1.0)
-    pub fn new(drop_prob: A) -> Result<Self> {
-        if drop_prob < A::zero() || drop_prob > A::one() {
+    /// * `dropprob` - Probability of dropping each feature map (0.0 to 1.0)
+    pub fn new(dropprob: A) -> Result<Self> {
+        if dropprob < A::zero() || dropprob > A::one() {
             return Err(OptimError::InvalidConfig(
                 "Drop probability must be between 0.0 and 1.0".to_string(),
             ));
         }
 
         Ok(Self {
-            drop_prob,
+            dropprob,
             feature_dim: Axis(1), // Default to channel dimension
         })
     }
@@ -70,19 +68,21 @@ impl<A: Float + Debug + ScalarOperand> SpatialDropout<A> {
     where
         D: Dimension + ndarray::RemoveAxis,
     {
-        if !training || self.drop_prob == A::zero() {
+        if !training || self.dropprob == A::zero() {
             return features.clone();
         }
 
-        let keep_prob = A::one() - self.drop_prob;
+        let keep_prob = A::one() - self.dropprob;
 
         // Get the size of the feature dimension
         let feature_size = features.shape()[self.feature_dim.0];
 
         // Create a mask for each feature map
-        let dist = Bernoulli::new(keep_prob.to_f64().unwrap()).unwrap();
-        let mut rng = thread_rng();
-        let feature_mask: Vec<bool> = (0..feature_size).map(|_| dist.sample(&mut rng)).collect();
+        let keep_prob_f64 = keep_prob.to_f64().unwrap();
+        let mut rng = scirs2_core::random::rng();
+        let feature_mask: Vec<bool> = (0..feature_size)
+            .map(|_| rng.random_bool_with_chance(keep_prob_f64))
+            .collect();
 
         // Apply mask to each feature map
         let mut result = features.clone();
@@ -124,7 +124,7 @@ impl<A: Float + Debug + ScalarOperand> SpatialDropout<A> {
 #[derive(Debug, Clone)]
 pub struct FeatureDropout<A: Float> {
     /// Probability of dropping each feature
-    drop_prob: A,
+    dropprob: A,
     /// Dimension along which features are located (default is 1)
     feature_dim: Axis,
 }
@@ -134,16 +134,16 @@ impl<A: Float + Debug + ScalarOperand> FeatureDropout<A> {
     ///
     /// # Arguments
     ///
-    /// * `drop_prob` - Probability of dropping each feature (0.0 to 1.0)
-    pub fn new(drop_prob: A) -> Result<Self> {
-        if drop_prob < A::zero() || drop_prob > A::one() {
+    /// * `dropprob` - Probability of dropping each feature (0.0 to 1.0)
+    pub fn new(dropprob: A) -> Result<Self> {
+        if dropprob < A::zero() || dropprob > A::one() {
             return Err(OptimError::InvalidConfig(
                 "Drop probability must be between 0.0 and 1.0".to_string(),
             ));
         }
 
         Ok(Self {
-            drop_prob,
+            dropprob,
             feature_dim: Axis(1), // Default to feature dimension
         })
     }
@@ -159,19 +159,21 @@ impl<A: Float + Debug + ScalarOperand> FeatureDropout<A> {
     where
         D: Dimension + ndarray::RemoveAxis,
     {
-        if !training || self.drop_prob == A::zero() {
+        if !training || self.dropprob == A::zero() {
             return features.clone();
         }
 
-        let keep_prob = A::one() - self.drop_prob;
+        let keep_prob = A::one() - self.dropprob;
 
         // Get the size of the feature dimension
         let feature_size = features.shape()[self.feature_dim.0];
 
         // Create a consistent mask for each feature
-        let dist = Bernoulli::new(keep_prob.to_f64().unwrap()).unwrap();
-        let mut rng = thread_rng();
-        let feature_mask: Vec<bool> = (0..feature_size).map(|_| dist.sample(&mut rng)).collect();
+        let keep_prob_f64 = keep_prob.to_f64().unwrap();
+        let mut rng = scirs2_core::random::rng();
+        let feature_mask: Vec<bool> = (0..feature_size)
+            .map(|_| rng.random_bool_with_chance(keep_prob_f64))
+            .collect();
 
         // Apply the same mask across all spatial/temporal locations
         let mut result = features.clone();
@@ -195,14 +197,14 @@ impl<A: Float + Debug + ScalarOperand> FeatureDropout<A> {
 impl<A: Float + Debug + ScalarOperand, D: Dimension + ndarray::RemoveAxis> Regularizer<A, D>
     for SpatialDropout<A>
 {
-    fn apply(&self, _params: &Array<A, D>, gradients: &mut Array<A, D>) -> Result<A> {
+    fn apply(&self, params: &Array<A, D>, gradients: &mut Array<A, D>) -> Result<A> {
         // Apply spatial dropout to gradients during training
         let masked_gradients = self.apply(gradients, true);
         gradients.assign(&masked_gradients);
         Ok(A::zero())
     }
 
-    fn penalty(&self, _params: &Array<A, D>) -> Result<A> {
+    fn penalty(&self, params: &Array<A, D>) -> Result<A> {
         // Spatial dropout doesn't add a penalty term
         Ok(A::zero())
     }
@@ -212,14 +214,14 @@ impl<A: Float + Debug + ScalarOperand, D: Dimension + ndarray::RemoveAxis> Regul
 impl<A: Float + Debug + ScalarOperand, D: Dimension + ndarray::RemoveAxis> Regularizer<A, D>
     for FeatureDropout<A>
 {
-    fn apply(&self, _params: &Array<A, D>, gradients: &mut Array<A, D>) -> Result<A> {
+    fn apply(&self, params: &Array<A, D>, gradients: &mut Array<A, D>) -> Result<A> {
         // Apply feature dropout to gradients during training
         let masked_gradients = self.apply(gradients, true);
         gradients.assign(&masked_gradients);
         Ok(A::zero())
     }
 
-    fn penalty(&self, _params: &Array<A, D>) -> Result<A> {
+    fn penalty(&self, params: &Array<A, D>) -> Result<A> {
         // Feature dropout doesn't add a penalty term
         Ok(A::zero())
     }
@@ -235,7 +237,7 @@ mod tests {
     fn test_spatial_dropout_creation() {
         // Valid creation
         let sd = SpatialDropout::<f64>::new(0.3).unwrap();
-        assert_eq!(sd.drop_prob, 0.3);
+        assert_eq!(sd.dropprob, 0.3);
 
         // Invalid probabilities
         assert!(SpatialDropout::<f64>::new(-0.1).is_err());
@@ -279,9 +281,9 @@ mod tests {
                     }
                 } else {
                     // Mixed values - this shouldn't happen
-                    println!("Channel {} in batch {} has mixed values:", c, b);
+                    println!("Channel {c} in batch {b} has mixed values:");
                     for val in channel_clone.iter() {
-                        println!("  Value: {}", val);
+                        println!("  Value: {val}");
                     }
                     panic!("Channel should be entirely dropped or kept");
                 }
@@ -293,7 +295,7 @@ mod tests {
     fn test_feature_dropout_creation() {
         // Valid creation
         let fd = FeatureDropout::<f64>::new(0.4).unwrap();
-        assert_eq!(fd.drop_prob, 0.4);
+        assert_eq!(fd.dropprob, 0.4);
 
         // Invalid probabilities
         assert!(FeatureDropout::<f64>::new(-0.1).is_err());
@@ -367,7 +369,7 @@ mod tests {
 
         let _penalty_apply = sd.apply(&params, true);
         let penalty_reg =
-            <SpatialDropout<f64> as Regularizer<f64, _>>::apply(&sd, &params, &mut gradient)
+            <SpatialDropout<f64> as Regularizer<f64, Ix3>>::apply(&sd, &params, &mut gradient)
                 .unwrap();
         assert_eq!(penalty_reg, 0.0);
 

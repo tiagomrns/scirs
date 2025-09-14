@@ -56,7 +56,7 @@ impl BoundingBox {
             )));
         }
 
-        // Check that min <= max for all dimensions
+        // Check that _min <= max for all dimensions
         for i in 0..3 {
             if min[i] > max[i] {
                 return Err(SpatialError::ValueError(format!(
@@ -85,7 +85,7 @@ impl BoundingBox {
     /// # Errors
     ///
     /// Returns an error if the points array is empty or if points don't have 3 dimensions
-    pub fn from_points(points: &ArrayView2<f64>) -> SpatialResult<Self> {
+    pub fn from_points(points: &ArrayView2<'_, f64>) -> SpatialResult<Self> {
         if points.is_empty() {
             return Err(SpatialError::ValueError(
                 "Cannot create bounding box from empty point set".into(),
@@ -399,7 +399,7 @@ impl Octree {
     /// # Errors
     ///
     /// Returns an error if the points array is empty or if points don't have 3 dimensions
-    pub fn new(points: &ArrayView2<f64>) -> SpatialResult<Self> {
+    pub fn new(points: &ArrayView2<'_, f64>) -> SpatialResult<Self> {
         if points.is_empty() {
             return Err(SpatialError::ValueError(
                 "Cannot create octree from empty point set".into(),
@@ -733,7 +733,7 @@ impl Octree {
     /// Returns an error if other_points doesn't have 3 dimensions or if collision_threshold is negative
     pub fn check_collision(
         &self,
-        other_points: &ArrayView2<f64>,
+        other_points: &ArrayView2<'_, f64>,
         collision_threshold: f64,
     ) -> SpatialResult<bool> {
         if other_points.ncols() != 3 {
@@ -745,7 +745,7 @@ impl Octree {
 
         if collision_threshold < 0.0 {
             return Err(SpatialError::ValueError(
-                "Collision threshold must be non-negative".into(),
+                "Collision _threshold must be non-negative".into(),
             ));
         }
 
@@ -790,19 +790,19 @@ impl Octree {
     ///
     /// The maximum depth of the tree
     pub fn max_depth(&self) -> usize {
-        self.compute_max_depth(self.root.as_ref())
+        Octree::compute_max_depth(self.root.as_ref())
     }
 
     /// Helper method to compute the maximum depth
     #[allow(clippy::only_used_in_recursion)]
-    fn compute_max_depth(&self, node: Option<&OctreeNode>) -> usize {
+    fn compute_max_depth(node: Option<&OctreeNode>) -> usize {
         match node {
             None => 0,
             Some(OctreeNode::Leaf { .. }) => 1,
             Some(OctreeNode::Internal { children, .. }) => {
                 let mut max_child_depth = 0;
                 for child in children.iter().flatten() {
-                    let child_depth = self.compute_max_depth(Some(child));
+                    let child_depth = Self::compute_max_depth(Some(child));
                     max_child_depth = max_child_depth.max(child_depth);
                 }
                 1 + max_child_depth
@@ -821,6 +821,7 @@ impl Octree {
 /// # Returns
 ///
 /// The squared Euclidean distance
+#[allow(dead_code)]
 fn squared_distance(p1: &ArrayView1<f64>, p2: &ArrayView1<f64>) -> f64 {
     let mut sum_sq = 0.0;
     for i in 0..p1.len().min(p2.len()) {
@@ -834,7 +835,7 @@ fn squared_distance(p1: &ArrayView1<f64>, p2: &ArrayView1<f64>) -> f64 {
 mod tests {
     use super::*;
     use ndarray::array;
-    use rand::prelude::*;
+    use rand::Rng;
 
     #[test]
     fn test_bounding_box_creation() {
@@ -994,25 +995,25 @@ mod tests {
         // Test radius search with small radius
         let query = array![0.0, 0.0, 0.0];
         let radius = 0.5;
-        let (indices, _distances) = octree.query_radius(&query.view(), radius).unwrap();
+        let (indices, distances) = octree.query_radius(&query.view(), radius).unwrap();
 
         assert_eq!(indices.len(), 1);
         assert_eq!(indices[0], 0); // Only origin is within 0.5 units
 
         // Test with larger radius
         let radius = 1.5;
-        let (indices, _distances) = octree.query_radius(&query.view(), radius).unwrap();
+        let (indices, distances) = octree.query_radius(&query.view(), radius).unwrap();
 
         assert!(indices.len() >= 4); // Should find at least origin, (1,0,0), (0,1,0), (0,0,1)
 
         // Check all distances are within radius
-        for &dist in &_distances {
+        for &dist in &distances {
             assert!(dist <= radius * radius);
         }
 
         // Test with radius covering all points
         let radius = 4.0;
-        let (indices, _) = octree.query_radius(&query.view(), radius).unwrap();
+        let (indices, distances) = octree.query_radius(&query.view(), radius).unwrap();
 
         assert_eq!(indices.len(), 6); // Should find all points
     }
@@ -1065,7 +1066,7 @@ mod tests {
             let mut points = Array2::zeros((n_points, 3));
             for i in 0..n_points {
                 for j in 0..3 {
-                    points[[i, j]] = rng.random_range(-100.0..100.0);
+                    points[[i, j]] = rng.gen_range(-100.0..100.0);
                 }
             }
 
@@ -1074,20 +1075,20 @@ mod tests {
             let octree = Octree::new(&points.view()).unwrap();
             let build_time = start.elapsed();
 
-            println!("Built octree with {} points in {:?}", n_points, build_time);
+            println!("Built octree with {n_points} points in {build_time:?}");
 
             // Measure query time
             let query = array![0.0, 0.0, 0.0];
             let start = std::time::Instant::now();
-            let (indices, _) = octree.query_nearest(&query.view(), 10).unwrap();
+            let (indices, _distances) = octree.query_nearest(&query.view(), 10).unwrap();
             let query_time = start.elapsed();
 
-            println!("Found 10 nearest neighbors in {:?}", query_time);
+            println!("Found 10 nearest neighbors in {query_time:?}");
             assert_eq!(indices.len(), 10);
 
             // Measure radius search time
             let start = std::time::Instant::now();
-            let (indices, _) = octree.query_radius(&query.view(), 10.0).unwrap();
+            let (indices, _distances) = octree.query_radius(&query.view(), 10.0).unwrap();
             let radius_time = start.elapsed();
 
             println!(

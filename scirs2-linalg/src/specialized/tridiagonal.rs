@@ -110,7 +110,7 @@ where
     ///
     /// * `TridiagonalMatrix` representation of the input matrix
     /// * `LinalgError` if the input matrix is not square
-    pub fn from_matrix(a: &ArrayView2<A>) -> LinalgResult<Self> {
+    pub fn frommatrix(a: &ArrayView2<A>) -> LinalgResult<Self> {
         if a.nrows() != a.ncols() {
             return Err(LinalgError::ShapeError(format!(
                 "Matrix must be square to convert to tridiagonal, got shape {:?}",
@@ -380,7 +380,7 @@ mod tests {
     }
 
     #[test]
-    fn test_from_matrix() {
+    fn test_frommatrix() {
         let a = array![
             [1.0, 5.0, 0.0, 0.0],
             [8.0, 2.0, 6.0, 0.0],
@@ -388,7 +388,7 @@ mod tests {
             [0.0, 0.0, 10.0, 4.0]
         ];
 
-        let tri = TridiagonalMatrix::from_matrix(&a.view()).unwrap();
+        let tri = TridiagonalMatrix::frommatrix(&a.view()).unwrap();
 
         assert_eq!(tri.nrows(), 4);
         assert_eq!(tri.ncols(), 4);

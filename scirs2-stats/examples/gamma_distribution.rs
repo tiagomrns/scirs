@@ -1,7 +1,9 @@
 use scirs2_stats::distributions::gamma::Gamma;
-use scirs2_stats::traits::distribution::{ContinuousDistribution, Distribution};
+use scirs2_stats::traits::{ContinuousCDF, ContinuousDistribution, Distribution};
+use statrs::statistics::Statistics;
 use std::f64;
 
+#[allow(dead_code)]
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("Gamma Distribution Example");
     println!("==========================\n");
@@ -34,13 +36,14 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("   CDF(1.0) = {:.6}", dist.cdf(1.0));
     println!("   CDF(2.0) = {:.6}\n", dist.cdf(2.0));
 
-    // Survival function and hazard function
-    println!("4. Additional functions available through the trait:");
-    println!("   Survival function SF(1.0) = {:.6}", dist.sf(1.0));
-    println!("   Hazard function h(1.0) = {:.6}", dist.hazard(1.0));
+    // Survival function and hazard function (using ContinuousCDF trait)
+    let dist_cdf: &dyn ContinuousCDF<f64> = &gamma;
+    println!("4. Additional functions available through the ContinuousCDF trait:");
+    println!("   Survival function SF(1.0) = {:.6}", dist_cdf.sf(1.0));
+    println!("   Hazard function h(1.0) = {:.6}", dist_cdf.hazard(1.0));
     println!(
         "   Cumulative hazard function H(1.0) = {:.6}\n",
-        dist.cumhazard(1.0)
+        dist_cdf.cumhazard(1.0)
     );
 
     // Quantile function (inverse CDF)
@@ -50,7 +53,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("   Quantile (p=0.75) = {:.6}", dist.ppf(0.75)?);
     println!(
         "   Inverse survival function (p=0.75) = {:.6}\n",
-        dist.isf(0.75)?
+        dist_cdf.isf(0.75)?
     );
 
     // Random sampling

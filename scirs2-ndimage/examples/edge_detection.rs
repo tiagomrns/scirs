@@ -9,6 +9,7 @@
 use ndarray::{array, Array2};
 use scirs2_ndimage::filters::{gradient_magnitude, laplace, prewitt, roberts, scharr, sobel};
 
+#[allow(dead_code)]
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("=== scirs2-ndimage Edge Detection Example ===\n");
 
@@ -125,6 +126,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 }
 
 // Helper function to print an array in a grid format
+#[allow(dead_code)]
 fn print_array(array: &Array2<f64>) {
     let (rows, cols) = array.dim();
 

@@ -5,20 +5,20 @@
 //! The example models a 2D heat equation on a grid with constraints.
 
 use ndarray::{Array1, ArrayView1};
+use std::f64::consts::PI;
 // use plotters::prelude::*;
 use scirs2_integrate::{
     bdf_semi_explicit_dae, krylov_bdf_semi_explicit_dae, DAEIndex, DAEOptions, DAEType, ODEMethod,
 };
-use std::f64::consts::PI;
 use std::time::Instant;
 
 const N: usize = 30; // Grid size (NxN)
 const TOTAL_VARS: usize = N * N; // Total number of variables
 
+#[allow(dead_code)]
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!(
-        "Solving a large sparse DAE system ({} variables) using Krylov-enhanced BDF methods",
-        TOTAL_VARS
+        "Solving a large sparse DAE system ({TOTAL_VARS} variables) using Krylov-enhanced BDF methods"
     );
 
     // Grid spacing
@@ -32,8 +32,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let y0 = Array1::zeros(n_constraints);
 
     println!(
-        "System size: {} differential variables, {} algebraic constraints",
-        TOTAL_VARS, n_constraints
+        "System size: {TOTAL_VARS} differential variables, {n_constraints} algebraic constraints"
     );
 
     // Time span
@@ -119,7 +118,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // Calculate the speedup
     let speedup = elapsed_bdf.as_secs_f64() / elapsed_krylov.as_secs_f64();
-    println!("\nSpeedup: {:.2}x", speedup);
+    println!("\nSpeedup: {speedup:.2}x");
 
     // Visualize results at the final time point
     // create_solution_plot(&result_bdf, "heat_equation_bdf.png", "Standard BDF")?;
@@ -131,6 +130,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 }
 
 /// Initial condition setup
+#[allow(dead_code)]
 fn setup_initial_conditions() -> Array1<f64> {
     let mut x0 = Array1::zeros(TOTAL_VARS);
 
@@ -152,6 +152,7 @@ fn setup_initial_conditions() -> Array1<f64> {
 
 /// Right-hand side of the heat equation (semi-discretized using finite differences)
 /// u_t = k * (u_xx + u_yy) + f(x,y,t)
+#[allow(dead_code)]
 fn heat_equation_rhs(t: f64, u: ArrayView1<f64>, lambda: ArrayView1<f64>) -> Array1<f64> {
     let mut du_dt = Array1::zeros(TOTAL_VARS);
     let h = 1.0 / (N as f64 - 1.0);
@@ -206,7 +207,8 @@ fn heat_equation_rhs(t: f64, u: ArrayView1<f64>, lambda: ArrayView1<f64>) -> Arr
 }
 
 /// Constraint equation: constrain every 5th point to remain at its initial value
-fn constraint_equation(_t: f64, u: ArrayView1<f64>, _lambda: ArrayView1<f64>) -> Array1<f64> {
+#[allow(dead_code)]
+fn constraint_equation(_t: f64, u: ArrayView1<f64>, lambda: ArrayView1<f64>) -> Array1<f64> {
     let initial_conditions = setup_initial_conditions();
     let n_constraints = N / 5; // Every 5th point is constrained
     let mut constraints = Array1::zeros(n_constraints);
@@ -227,6 +229,7 @@ fn constraint_equation(_t: f64, u: ArrayView1<f64>, _lambda: ArrayView1<f64>) ->
 
 // Create a heatmap visualization of the solution (disabled due to missing dependencies)
 /*
+#[allow(dead_code)]
 fn create_solution_plot(
     result: &DAEResult<f64>,
     filename: &str,
@@ -317,13 +320,13 @@ fn create_solution_plot(
     }
 
     // Add color bar labels
-    root.draw_text(
+    root.drawtext(
         &format!("{:.3}", max_val),
         &("sans-serif", 15),
         (color_bar_x + 30, color_bar_y),
     )?;
 
-    root.draw_text(
+    root.drawtext(
         &format!("{:.3}", min_val),
         &("sans-serif", 15),
         (color_bar_x + 30, color_bar_y + color_bar_height),

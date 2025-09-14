@@ -8,6 +8,7 @@ use ndarray::Array1;
 use scirs2_special::*;
 use std::f64::consts::PI;
 
+#[allow(dead_code)]
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("=== SCIRS2-SPECIAL Comprehensive Demo ===\n");
 
@@ -33,6 +34,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     Ok(())
 }
 
+#[allow(dead_code)]
 fn demo_basic_functions() -> Result<(), Box<dyn std::error::Error>> {
     println!("1. Basic Special Functions");
     println!("=========================");
@@ -65,6 +67,7 @@ fn demo_basic_functions() -> Result<(), Box<dyn std::error::Error>> {
     Ok(())
 }
 
+#[allow(dead_code)]
 fn demo_combinatorial_functions() -> Result<(), Box<dyn std::error::Error>> {
     println!("2. Combinatorial Functions");
     println!("==========================");
@@ -88,6 +91,7 @@ fn demo_combinatorial_functions() -> Result<(), Box<dyn std::error::Error>> {
     Ok(())
 }
 
+#[allow(dead_code)]
 fn demo_statistical_functions() -> Result<(), Box<dyn std::error::Error>> {
     println!("3. Statistical Functions");
     println!("========================");
@@ -118,6 +122,7 @@ fn demo_statistical_functions() -> Result<(), Box<dyn std::error::Error>> {
     Ok(())
 }
 
+#[allow(dead_code)]
 fn demo_mathematical_properties() -> Result<(), Box<dyn std::error::Error>> {
     println!("4. Mathematical Properties and Precision");
     println!("========================================");
@@ -161,6 +166,7 @@ fn demo_mathematical_properties() -> Result<(), Box<dyn std::error::Error>> {
     Ok(())
 }
 
+#[allow(dead_code)]
 fn demo_performance_features() -> Result<(), Box<dyn std::error::Error>> {
     println!("5. Performance Features");
     println!("=======================");
@@ -198,6 +204,7 @@ fn demo_performance_features() -> Result<(), Box<dyn std::error::Error>> {
     Ok(())
 }
 
+#[allow(dead_code)]
 fn demo_edge_cases() -> Result<(), Box<dyn std::error::Error>> {
     println!("6. Edge Cases and Numerical Stability");
     println!("=====================================");

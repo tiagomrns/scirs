@@ -9,7 +9,10 @@
 //! All SIMD operations are delegated to scirs2-core's unified SIMD abstraction layer
 //! in compliance with the project-wide SIMD policy.
 
-use crate::bspline::{BSpline, BSplineWorkspace, ExtrapolateMode};
+use crate::bspline::{BSpline, BSplineWorkspace};
+
+#[cfg(test)]
+use crate::bspline::ExtrapolateMode;
 use crate::error::InterpolateResult;
 use ndarray::{Array1, ArrayView1};
 use num_traits::{Float, FromPrimitive, Zero};
@@ -57,7 +60,7 @@ where
 {
     /// Create a new SIMD B-spline evaluator
     pub fn new(spline: BSpline<T>) -> Self {
-        let workspace = BSplineWorkspace::new(spline.degree());
+        let workspace = BSplineWorkspace::new(_spline.degree());
         Self { spline, workspace }
     }
 
@@ -153,7 +156,7 @@ where
         for p in 1..=degree {
             let mut saved = T::zero();
             for r in 0..p {
-                let left = self.knots[k + 1 - r] - self.knots[k + 1 - p - r];
+                let _left = self.knots[k + 1 - r] - self.knots[k + 1 - p - r];
                 let right = self.knots[k + 1 + p - r] - self.knots[k + 1 - r];
                 if right != T::zero() {
                     let temp = basis[r] / right;
@@ -205,13 +208,13 @@ impl SimdBSplineOps {
         T: Float + SimdUnifiedOps,
     {
         if T::simd_available() {
-            // Compute (points - centers)^2 using SIMD
-            let diff = T::simd_sub(points, centers);
+            // Compute (_points - centers)^2 using SIMD
+            let diff = T::simd_sub(_points, centers);
             T::simd_mul(&diff.view(), &diff.view())
         } else {
             // Fallback to scalar computation
-            let mut result = Array1::zeros(points.len());
-            for i in 0..points.len() {
+            let mut result = Array1::zeros(_points.len());
+            for i in 0.._points.len() {
                 let diff = points[i] - centers[i];
                 result[i] = diff * diff;
             }
@@ -226,11 +229,11 @@ impl SimdBSplineOps {
         T: Float + SimdUnifiedOps,
     {
         if T::simd_available() {
-            let products = T::simd_mul(values, weights);
+            let products = T::simd_mul(_values, weights);
             T::simd_sum(&products.view())
         } else {
             // Fallback to scalar computation
-            values
+            _values
                 .iter()
                 .zip(weights.iter())
                 .map(|(&v, &w)| v * w)

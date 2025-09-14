@@ -2,6 +2,7 @@ use ndarray::ArrayView1;
 use scirs2_integrate::gaussian::{gauss_legendre, multi_gauss_legendre, GaussLegendreQuadrature};
 use std::f64::consts::PI;
 
+#[allow(dead_code)]
 fn main() {
     println!("Gaussian Quadrature Integration Examples\n");
 
@@ -12,7 +13,7 @@ fn main() {
 
     // Using 5-point Gauss-Legendre quadrature
     let result = gauss_legendre(|x: f64| x * x, 0.0, 1.0, 5).unwrap();
-    println!("5-point Gauss-Legendre: {:.10}", result);
+    println!("5-point Gauss-Legendre: {result:.10}");
     println!("Absolute error: {:.1e}\n", (result - 1.0 / 3.0).abs());
 
     // Example 2: Integrate sin(x) over [0, π] using Gauss-Legendre method
@@ -23,7 +24,7 @@ fn main() {
     // Showing progression of accuracy with increasing points
     for n_points in [2, 3, 5, 10] {
         let result = gauss_legendre(|x: f64| x.sin(), 0.0, PI, n_points).unwrap();
-        println!("{}-point Gauss-Legendre: {:.10}", n_points, result);
+        println!("{n_points}-point Gauss-Legendre: {result:.10}");
         println!("Absolute error: {:.1e}", (result - 2.0).abs());
     }
     println!();
@@ -33,11 +34,11 @@ fn main() {
     println!("Example 3: Integrate sin(x^2) from 0 to 10");
     // Reference value computed with high precision
     let reference_value = 0.544_083_001_724_177;
-    println!("Reference value: {:.15}", reference_value);
+    println!("Reference value: {reference_value:.15}");
 
     for n_points in [10, 20, 50] {
         let result = gauss_legendre(|x: f64| (x * x).sin(), 0.0, 10.0, n_points).unwrap();
-        println!("{}-point Gauss-Legendre: {:.15}", n_points, result);
+        println!("{n_points}-point Gauss-Legendre: {result:.15}");
         println!("Absolute error: {:.1e}", (result - reference_value).abs());
     }
     println!();
@@ -50,7 +51,7 @@ fn main() {
 
     println!("Nodes: {:?}", quad.nodes);
     println!("Weights: {:?}", quad.weights);
-    println!("Result of ∫e^(x²)cos(x) dx from -1 to 1: {:.10}", result);
+    println!("Result of ∫e^(x²)cos(x) dx from -1 to 1: {result:.10}");
     println!();
 
     // Example 5: Multi-dimensional integration
@@ -66,7 +67,7 @@ fn main() {
     .unwrap();
 
     println!("∫∫xy dxdy over [0,1]²:");
-    println!("  Calculated: {:.10}", result_2d);
+    println!("  Calculated: {result_2d:.10}");
     println!("  Exact:      {:.10}", 0.25);
     println!("  Error:      {:.1e}", (result_2d - 0.25).abs());
     println!();
@@ -81,7 +82,7 @@ fn main() {
     .unwrap();
 
     println!("∫∫∫xyz dxdydz over [0,1]³:");
-    println!("  Calculated: {:.10}", result_3d);
+    println!("  Calculated: {result_3d:.10}");
     println!("  Exact:      {:.10}", 0.125);
     println!("  Error:      {:.1e}", (result_3d - 0.125).abs());
 }

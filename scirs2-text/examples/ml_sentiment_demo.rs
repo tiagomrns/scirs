@@ -2,6 +2,7 @@
 
 use scirs2_text::{MLSentimentAnalyzer, MLSentimentConfig, TextDataset};
 
+#[allow(dead_code)]
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("ML-based Sentiment Analysis Demo");
     println!("================================\n");
@@ -15,7 +16,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("Test examples: {}", test_dataset.texts.len());
 
     let labels_train: std::collections::HashSet<_> = train_dataset.labels.iter().cloned().collect();
-    println!("Labels: {:?}\n", labels_train);
+    println!("Labels: {labels_train:?}\n");
 
     // Configure and train ML sentiment analyzer
     println!("2. Training ML Sentiment Analyzer");
@@ -82,7 +83,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("\n4. Sentiment Predictions");
     println!("----------------------");
 
-    let test_texts = vec![
+    let testtexts = vec![
         "This product is amazing! I absolutely love it and would recommend it to everyone.",
         "Terrible experience. The customer service was awful and the product doesn't work.",
         "It's okay. Not great, not terrible, just average.",
@@ -91,7 +92,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     ];
 
     println!("Sample text predictions:");
-    for text in test_texts {
+    for text in testtexts {
         let result = analyzer.predict(text)?;
         println!(
             "\"{}...\"\n  → {} (Score: {:.2}, Confidence: {:.2})\n",
@@ -106,13 +107,13 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("5. Batch Prediction");
     println!("----------------");
 
-    let batch_texts = vec![
+    let batchtexts = vec![
         "Excellent quality product",
         "Poor performance for the price",
         "Somewhat satisfied with purchase",
     ];
 
-    let batch_results = analyzer.predict_batch(&batch_texts)?;
+    let batch_results = analyzer.predict_batch(&batchtexts)?;
 
     for (i, result) in batch_results.iter().enumerate() {
         println!(
@@ -156,9 +157,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     Ok(())
 }
 
+#[allow(dead_code)]
 fn create_sentiment_dataset() -> Result<(TextDataset, TextDataset), Box<dyn std::error::Error>> {
     // Training data
-    let train_texts = vec![
+    let traintexts = vec![
         "I absolutely loved this movie! The acting was superb.",
         "Terrible experience, would not recommend to anyone.",
         "The product was okay, nothing special but it works.",
@@ -200,7 +202,7 @@ fn create_sentiment_dataset() -> Result<(TextDataset, TextDataset), Box<dyn std:
     ];
 
     // Test data (different examples)
-    let test_texts = [
+    let testtexts = [
         "Loved every minute of it. Highly recommended!",
         "Terrible product. Complete waste of money.",
         "It's okay, nothing special but gets the job done.",
@@ -219,14 +221,14 @@ fn create_sentiment_dataset() -> Result<(TextDataset, TextDataset), Box<dyn std:
     ];
 
     // Convert to strings
-    let train_texts = train_texts.iter().map(|t| t.to_string()).collect();
+    let traintexts = traintexts.iter().map(|t| t.to_string()).collect();
     let train_labels = train_labels.iter().map(|l| l.to_string()).collect();
-    let test_texts = test_texts.iter().map(|t| t.to_string()).collect();
+    let testtexts = testtexts.iter().map(|t| t.to_string()).collect();
     let test_labels = test_labels.iter().map(|l| l.to_string()).collect();
 
     // Create datasets
-    let train_dataset = TextDataset::new(train_texts, train_labels)?;
-    let test_dataset = TextDataset::new(test_texts, test_labels)?;
+    let train_dataset = TextDataset::new(traintexts, train_labels)?;
+    let test_dataset = TextDataset::new(testtexts, test_labels)?;
 
     Ok((train_dataset, test_dataset))
 }

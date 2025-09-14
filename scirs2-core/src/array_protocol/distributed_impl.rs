@@ -94,7 +94,7 @@ where
     pub global_index: Vec<usize>,
 
     /// The node ID that holds this chunk
-    pub node_id: usize,
+    pub nodeid: usize,
 }
 
 /// A distributed array implementation
@@ -143,7 +143,8 @@ where
         shape: Vec<usize>,
         config: DistributedConfig,
     ) -> Self {
-        let id = format!("dist_array_{}", uuid::Uuid::new_v4());
+        let uuid = uuid::Uuid::new_v4();
+        let id = format!("uuid_{uuid}");
         Self {
             config,
             chunks,
@@ -177,8 +178,8 @@ where
 
             chunks.push(ArrayChunk {
                 data: chunk_data,
-                global_index: vec![i],
-                node_id: i % 3, // Simulate distribution across 3 nodes
+                global_index: vec![0],
+                nodeid: i % 3, // Simulate distribution across 3 nodes
             });
         }
 
@@ -243,7 +244,7 @@ where
     ///
     /// Panics if the chunks collection is empty and no initial value can be reduced.
     #[must_use]
-    pub fn map_reduce<F, R, G>(&self, map_fn: F, reduce_fn: G) -> R
+    pub fn map_reduce<F, R, G>(&self, map_fn: F, reducefn: G) -> R
     where
         F: Fn(&ArrayChunk<T, D>) -> R + Send + Sync,
         G: Fn(R, R) -> R + Send + Sync,
@@ -254,7 +255,7 @@ where
 
         // Reduce phase
         // In a real distributed system, this might happen on a single node
-        results.into_iter().reduce(reduce_fn).unwrap()
+        results.into_iter().reduce(reducefn).unwrap()
     }
 }
 
@@ -334,7 +335,7 @@ where
                         new_chunks.push(ArrayChunk {
                             data: result_data,
                             global_index: self_chunk.global_index.clone(),
-                            node_id: self_chunk.node_id,
+                            nodeid: self_chunk.nodeid,
                         });
                     }
 
@@ -368,7 +369,7 @@ where
                         new_chunks.push(ArrayChunk {
                             data: result_data,
                             global_index: self_chunk.global_index.clone(),
-                            node_id: self_chunk.node_id,
+                            nodeid: self_chunk.nodeid,
                         });
                     }
 
@@ -403,22 +404,22 @@ where
                     // In a real implementation, we would perform a distributed matrix multiplication
                     // For this simplified version, we'll return a dummy result with the correct shape
 
-                    let result_shape = vec![self.shape[0], other.shape[1]];
+                    let resultshape = vec![self.shape[0], other.shape[1]];
 
                     // Create a dummy result array
                     // Using a simpler approach with IxDyn directly
-                    let dummy_shape = ndarray::IxDyn(&result_shape);
-                    let dummy_array = Array::<T, ndarray::IxDyn>::zeros(dummy_shape);
+                    let dummyshape = ndarray::IxDyn(&resultshape);
+                    let dummy_array = Array::<T, ndarray::IxDyn>::zeros(dummyshape);
 
                     // Create a new distributed array with the dummy result
                     let chunk = ArrayChunk {
                         data: dummy_array,
                         global_index: vec![0],
-                        node_id: 0,
+                        nodeid: 0,
                     };
 
                     let result =
-                        DistributedNdarray::new(vec![chunk], result_shape, self.config.clone());
+                        DistributedNdarray::new(vec![chunk], resultshape, self.config.clone());
 
                     return Ok(Box::new(result));
                 }
@@ -432,7 +433,7 @@ where
                 }
 
                 // Create a new shape for the transposed array
-                let transposed_shape = vec![self.shape[1], self.shape[0]];
+                let transposedshape = vec![self.shape[1], self.shape[0]];
 
                 // In a real implementation, we would transpose each chunk and reconstruct
                 // the distributed array with the correct chunk distribution
@@ -440,18 +441,18 @@ where
 
                 // Create a dummy result array
                 // Using a simpler approach with IxDyn directly
-                let dummy_shape = ndarray::IxDyn(&transposed_shape);
-                let dummy_array = Array::<T, ndarray::IxDyn>::zeros(dummy_shape);
+                let dummyshape = ndarray::IxDyn(&transposedshape);
+                let dummy_array = Array::<T, ndarray::IxDyn>::zeros(dummyshape);
 
                 // Create a new distributed array with the dummy result
                 let chunk = ArrayChunk {
                     data: dummy_array,
                     global_index: vec![0],
-                    node_id: 0,
+                    nodeid: 0,
                 };
 
                 let result =
-                    DistributedNdarray::new(vec![chunk], transposed_shape, self.config.clone());
+                    DistributedNdarray::new(vec![chunk], transposedshape, self.config.clone());
 
                 Ok(Box::new(result))
             }
@@ -474,14 +475,14 @@ where
 
                     // Create a dummy result array
                     // Using a simpler approach with IxDyn directly
-                    let dummy_shape = ndarray::IxDyn(shape);
-                    let dummy_array = Array::<T, ndarray::IxDyn>::zeros(dummy_shape);
+                    let dummyshape = ndarray::IxDyn(shape);
+                    let dummy_array = Array::<T, ndarray::IxDyn>::zeros(dummyshape);
 
                     // Create a new distributed array with the dummy result
                     let chunk = ArrayChunk {
                         data: dummy_array,
                         global_index: vec![0],
-                        node_id: 0,
+                        nodeid: 0,
                     };
 
                     let result =
@@ -530,19 +531,13 @@ where
         let mut info = HashMap::new();
         info.insert("type".to_string(), "distributed_ndarray".to_string());
         info.insert("chunks".to_string(), self.chunks.len().to_string());
-        info.insert(
-            "shape".to_string(),
-            format!("{shape:?}", shape = self.shape),
-        );
+        info.insert("shape".to_string(), format!("{:?}", self.shape));
         info.insert("id".to_string(), self.id.clone());
         info.insert(
             "strategy".to_string(),
-            format!("{strategy:?}", strategy = self.config.strategy),
+            format!("{:?}", self.config.strategy),
         );
-        info.insert(
-            "backend".to_string(),
-            format!("{backend:?}", backend = self.config.backend),
-        );
+        info.insert("backend".to_string(), format!("{:?}", self.config.backend));
         info
     }
 
@@ -577,7 +572,10 @@ where
             config,
             chunks: self.chunks.clone(),
             shape: self.shape.clone(),
-            id: format!("dist_array_{}", uuid::Uuid::new_v4()),
+            id: {
+                let uuid = uuid::Uuid::new_v4();
+                format!("uuid_{uuid}")
+            },
         };
 
         Ok(Box::new(new_dist_array))

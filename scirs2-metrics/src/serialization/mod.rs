@@ -146,7 +146,7 @@ impl MetricCollection {
             }
         };
 
-        save_text(path, &serialized)
+        savetext(path, &serialized)
     }
 
     /// Load a collection from a file
@@ -162,17 +162,17 @@ impl MetricCollection {
     pub fn load<P: AsRef<Path>>(path: P, format: SerializationFormat) -> Result<Self> {
         match format {
             SerializationFormat::Json => {
-                let text = load_text(path)?;
+                let text = loadtext(path)?;
                 serde_json::from_str(&text)
                     .map_err(|e| MetricsError::SerializationError(e.to_string()))
             }
             SerializationFormat::Yaml => {
-                let text = load_text(path)?;
+                let text = loadtext(path)?;
                 serde_yaml::from_str(&text)
                     .map_err(|e| MetricsError::SerializationError(e.to_string()))
             }
             SerializationFormat::Toml => {
-                let text = load_text(path)?;
+                let text = loadtext(path)?;
                 toml::from_str(&text).map_err(|e| MetricsError::SerializationError(e.to_string()))
             }
             SerializationFormat::Cbor => {
@@ -196,6 +196,7 @@ impl MetricCollection {
 /// # Returns
 ///
 /// * A new MetricResult
+#[allow(dead_code)]
 pub fn create_metric_result(
     name: &str,
     value: f64,
@@ -234,7 +235,8 @@ pub enum SerializationFormat {
 /// # Returns
 ///
 /// * Result indicating success or error
-fn save_text<P: AsRef<Path>>(path: P, text: &str) -> Result<()> {
+#[allow(dead_code)]
+fn savetext<P: AsRef<Path>>(path: P, text: &str) -> Result<()> {
     let mut file = File::create(path).map_err(|e| MetricsError::IOError(e.to_string()))?;
 
     file.write_all(text.as_bytes())
@@ -252,7 +254,8 @@ fn save_text<P: AsRef<Path>>(path: P, text: &str) -> Result<()> {
 /// # Returns
 ///
 /// * Result containing the loaded text
-fn load_text<P: AsRef<Path>>(path: P) -> Result<String> {
+#[allow(dead_code)]
+fn loadtext<P: AsRef<Path>>(path: P) -> Result<String> {
     let mut file = File::open(path).map_err(|e| MetricsError::IOError(e.to_string()))?;
 
     let mut contents = String::new();
@@ -272,6 +275,7 @@ fn load_text<P: AsRef<Path>>(path: P) -> Result<String> {
 /// # Returns
 ///
 /// * Result indicating success or error
+#[allow(dead_code)]
 fn save_binary<P: AsRef<Path>>(path: P, data: &[u8]) -> Result<()> {
     let mut file = File::create(path).map_err(|e| MetricsError::IOError(e.to_string()))?;
 
@@ -290,6 +294,7 @@ fn save_binary<P: AsRef<Path>>(path: P, data: &[u8]) -> Result<()> {
 /// # Returns
 ///
 /// * Result containing the loaded data
+#[allow(dead_code)]
 fn load_binary<P: AsRef<Path>>(path: P) -> Result<Vec<u8>> {
     let mut file = File::open(path).map_err(|e| MetricsError::IOError(e.to_string()))?;
 

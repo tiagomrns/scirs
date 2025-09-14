@@ -4,6 +4,7 @@ use scirs2_io::csv::{
 };
 use std::error::Error;
 
+#[allow(dead_code)]
 fn main() -> Result<(), Box<dyn Error>> {
     // Path to example data file
     let data_path = "/media/kitasan/Backup/scirs/scirs2-io/examples/data.csv";

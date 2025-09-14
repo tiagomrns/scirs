@@ -8,6 +8,7 @@ use crate::unconstrained::Options;
 use ndarray::{Array1, Array2, ArrayView1, Axis};
 
 /// Implements the BFGS algorithm with optional bounds support
+#[allow(dead_code)]
 pub fn minimize_bfgs<F, S>(
     mut fun: F,
     x0: Array1<f64>,
@@ -175,7 +176,6 @@ where
     Ok(OptimizeResult {
         x,
         fun: final_fun,
-        iterations: iter,
         nit: iter,
         func_evals: nfev,
         nfev,

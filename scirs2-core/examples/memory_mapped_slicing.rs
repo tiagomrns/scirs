@@ -5,13 +5,14 @@ use std::io::Write;
 use std::path::Path;
 use tempfile::tempdir;
 
+#[allow(dead_code)]
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("Memory-Mapped Array Slicing Example");
     println!("=====================================\n");
 
     // Create a temporary directory for our example files
     let dir = tempdir()?;
-    let file_path = dir.path().join("large_matrix.bin");
+    let file_path = dir.path().join("largematrix.bin");
     println!("Creating a test file at: {}", file_path.display());
 
     // Create a large test matrix (100x100)
@@ -35,7 +36,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     );
 
     // Open as memory-mapped array
-    let mmap = MemoryMappedArray::<f64>::open(&file_path, &[rows, cols])?;
+    let mmap = MemoryMappedArray::<f64>::path(&file_path, &[rows, cols])?;
     println!("\nOpened as memory-mapped array");
     println!("Full array shape: {:?}", mmap.shape);
 
@@ -50,6 +51,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     Ok(())
 }
 
+#[allow(dead_code)]
 fn demo_basic_slicing(mmap: &MemoryMappedArray<f64>) -> Result<(), Box<dyn std::error::Error>> {
     println!("\n1. Basic Slicing Example");
     println!("------------------------");
@@ -86,6 +88,7 @@ fn demo_basic_slicing(mmap: &MemoryMappedArray<f64>) -> Result<(), Box<dyn std::
     Ok(())
 }
 
+#[allow(dead_code)]
 fn demo_complex_slicing(mmap: &MemoryMappedArray<f64>) -> Result<(), Box<dyn std::error::Error>> {
     println!("\n2. Complex Slicing Example");
     println!("--------------------------");
@@ -131,6 +134,7 @@ fn demo_complex_slicing(mmap: &MemoryMappedArray<f64>) -> Result<(), Box<dyn std
     Ok(())
 }
 
+#[allow(dead_code)]
 fn demo_ndarray_syntax(mmap: &MemoryMappedArray<f64>) -> Result<(), Box<dyn std::error::Error>> {
     println!("\n3. Using ndarray Slice Syntax");
     println!("-----------------------------");
@@ -166,9 +170,10 @@ fn demo_ndarray_syntax(mmap: &MemoryMappedArray<f64>) -> Result<(), Box<dyn std:
     Ok(())
 }
 
+#[allow(dead_code)]
 fn demo_slice_chaining(
     mmap: &MemoryMappedArray<f64>,
-    base_path: &Path,
+    file_path: &Path,
 ) -> Result<(), Box<dyn std::error::Error>> {
     println!("\n4. Slice Chaining Example");
     println!("-------------------------");
@@ -179,7 +184,7 @@ fn demo_slice_chaining(
     println!("First slice shape: {:?}", slice1.shape());
 
     // Save the first slice to a file to demonstrate memory mapping it
-    let slice1_path = base_path.with_file_name("slice1.bin");
+    let slice1_path = file_path.with_file_name("slice1.bin");
     let slice1_data = slice1.load()?;
 
     let mut file = File::create(&slice1_path)?;
@@ -190,11 +195,11 @@ fn demo_slice_chaining(
     println!("First slice saved to: {}", slice1_path.display());
 
     // Memory map the first slice
-    let slice1_mmap = MemoryMappedArray::<f64>::open(&slice1_path, &[50, 50])?;
+    let slice1mmap = MemoryMappedArray::<f64>::path(&slice1_path, &[50, 50])?;
 
     // Create a further slice from the first slice
     println!("\nSecond slice: rows 10..20, columns 10..20 (from the first slice)");
-    let slice2 = slice1_mmap.slice_2d(10..20, 10..20)?;
+    let slice2 = slice1mmap.slice_2d(10..20, 10..20)?;
     println!("Second slice shape: {:?}", slice2.shape());
 
     // Load and display the second slice
@@ -213,7 +218,7 @@ fn demo_slice_chaining(
     println!("Second slice coordinates (0,0) -> Original coordinates (20,20)");
     println!(
         "Value at original[20,20]: {:.0}",
-        mmap.readonly_array()?[(20, 20)]
+        mmap.readonlyarray()?[(20, 20)]
     );
     println!("Value at slice2[0,0]: {:.0}", array2[(0, 0)]);
 

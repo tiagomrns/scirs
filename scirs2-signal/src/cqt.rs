@@ -1,3 +1,11 @@
+use crate::error::{SignalError, SignalResult};
+use crate::lombscargle_enhanced::WindowType;
+use crate::window;
+use ndarray::s;
+use ndarray::{Array, Array1, Array2};
+use num_complex::{Complex64, ComplexFloat};
+use scirs2_fft;
+
 // Constant-Q Transform Implementation
 //
 // This module provides an implementation of the Constant-Q Transform (CQT),
@@ -11,14 +19,7 @@
 // - Schörkhuber, C., & Klapuri, A. (2010). Constant-Q transform toolbox for music processing.
 //   7th Sound and Music Computing Conference.
 
-use ndarray::{s, Array1, Array2};
-use num_complex::{Complex64, ComplexFloat};
-use std::f64::consts::PI;
-
-use crate::error::{SignalError, SignalResult};
-use crate::window;
-use scirs2_fft;
-
+#[allow(unused_imports)]
 /// Configuration parameters for Constant-Q Transform
 #[derive(Debug, Clone)]
 pub struct CqtConfig {
@@ -57,7 +58,7 @@ impl Default for CqtConfig {
             f_max: 8000.0,
             bins_per_octave: 12, // Semitone resolution
             q_factor: None,      // Will be computed based on bins_per_octave
-            window_type: "hann".to_string(),
+            window_type: WindowType::Hann.to_string(),
             fs: 44100.0,
             use_sparse: true,
             window_scaling: None,
@@ -172,6 +173,7 @@ pub struct SparseKernel {
 /// // result.cqt contains the CQT coefficients
 /// // result.frequencies contains the center frequencies of each bin
 /// ```
+#[allow(dead_code)]
 pub fn constant_q_transform(signal: &Array1<f64>, config: &CqtConfig) -> SignalResult<CqtResult> {
     // Calculate the Q factor if not provided
     let q = config.q_factor.unwrap_or_else(|| {
@@ -201,13 +203,13 @@ pub fn constant_q_transform(signal: &Array1<f64>, config: &CqtConfig) -> SignalR
         config.use_sparse,
     )?;
 
-    // If signal is a single time frame, calculate the CQT directly
+    // If _signal is a single time frame, calculate the CQT directly
     if let Some(hop_size) = config.hop_size {
         // Compute CQT spectrogram
-        compute_cqt_spectrogram(signal, &kernel, hop_size)
+        compute_cqt_spectrogram(_signal, &kernel, hop_size)
     } else {
         // Compute single frame CQT
-        let cqt = compute_cqt_frame(signal, &kernel)?;
+        let cqt = compute_cqt_frame(_signal, &kernel)?;
 
         // Reshape to 2D array (single time frame)
         let mut cqt_2d = Array2::<Complex64>::zeros((n_bins, 1));
@@ -226,6 +228,7 @@ pub fn constant_q_transform(signal: &Array1<f64>, config: &CqtConfig) -> SignalR
 
 /// Compute the CQT kernel for efficient CQT calculation
 #[allow(clippy::too_many_arguments)]
+#[allow(dead_code)]
 fn compute_cqt_kernel(
     f_min: f64,
     f_max: f64,
@@ -306,7 +309,7 @@ fn compute_cqt_kernel(
         // Compute FFT
         let kernel_fft = scirs2_fft::fft(&padded_kernel, None).expect("FFT computation failed");
 
-        // Create sparse representation if requested
+        // Create _sparse representation if requested
         if use_sparse {
             let threshold = 1e-6; // Sparsity threshold
             let mut indices = Vec::new();
@@ -325,7 +328,7 @@ fn compute_cqt_kernel(
                 normalization: 1.0, // Already normalized above
             });
         } else {
-            // For non-sparse, store all indices and values
+            // For non-_sparse, store all indices and values
             let indices: Vec<usize> = (0..n_fft).collect();
             kernels.push(SparseKernel {
                 indices,
@@ -348,19 +351,20 @@ fn compute_cqt_kernel(
 }
 
 /// Compute the CQT of a single frame
+#[allow(dead_code)]
 fn compute_cqt_frame(signal: &Array1<f64>, kernel: &CqtKernel) -> SignalResult<Vec<Complex64>> {
     let n_signal = signal.len();
     let n_fft = kernel.n_fft;
 
-    // Check if signal is long enough
+    // Check if _signal is long enough
     if n_signal < n_fft {
-        // Zero-pad the signal to n_fft
+        // Zero-pad the _signal to n_fft
         let mut padded_signal = vec![Complex64::new(0.0, 0.0); n_fft];
         for i in 0..n_signal {
-            padded_signal[i] = Complex64::new(signal[i], 0.0);
+            padded_signal[i] = Complex64::new(_signal[i], 0.0);
         }
 
-        // Compute FFT of padded signal
+        // Compute FFT of padded _signal
         let signal_fft = scirs2_fft::fft(&padded_signal, None).expect("FFT computation failed");
 
         // Multiply with the kernels in the frequency domain
@@ -394,7 +398,7 @@ fn compute_cqt_frame(signal: &Array1<f64>, kernel: &CqtKernel) -> SignalResult<V
             // Extract chunk and zero-pad if needed
             let mut padded_chunk = vec![Complex64::new(0.0, 0.0); n_fft];
             for i in start..end {
-                padded_chunk[i - start] = Complex64::new(signal[i], 0.0);
+                padded_chunk[i - start] = Complex64::new(_signal[i], 0.0);
             }
 
             // Compute FFT
@@ -427,6 +431,7 @@ fn compute_cqt_frame(signal: &Array1<f64>, kernel: &CqtKernel) -> SignalResult<V
 }
 
 /// Compute the CQT spectrogram (time-frequency representation)
+#[allow(dead_code)]
 fn compute_cqt_spectrogram(
     signal: &Array1<f64>,
     kernel: &CqtKernel,
@@ -478,7 +483,8 @@ fn compute_cqt_spectrogram(
 }
 
 /// Create window function of specified type and length
-fn create_window(window_type: &str, length: usize) -> SignalResult<Vec<f64>> {
+#[allow(dead_code)]
+fn create_window(windowtype: &str, length: usize) -> SignalResult<Vec<f64>> {
     match window_type.to_lowercase().as_str() {
         "hann" | "hanning" => Ok(window::hann(length, true)?),
         "hamming" => Ok(window::hamming(length, true)?),
@@ -493,6 +499,7 @@ fn create_window(window_type: &str, length: usize) -> SignalResult<Vec<f64>> {
 }
 
 /// Find the next power of two greater than or equal to n
+#[allow(dead_code)]
 fn next_power_of_two(n: usize) -> usize {
     let mut power = 1;
     while power < n {
@@ -512,18 +519,19 @@ fn next_power_of_two(n: usize) -> usize {
 /// # Returns
 ///
 /// A 2D array containing the magnitude (or log magnitude) of the CQT coefficients
-pub fn cqt_magnitude(cqt: &CqtResult, log_scale: bool, ref_value: Option<f64>) -> Array2<f64> {
-    let mut magnitude = Array2::<f64>::zeros(cqt.cqt.raw_dim());
+#[allow(dead_code)]
+pub fn cqt_magnitude(_cqt: &CqtResult, log_scale: bool, refvalue: Option<f64>) -> Array2<f64> {
+    let mut magnitude = Array2::<f64>::zeros(_cqt.cqt.raw_dim());
 
     // Compute magnitude (absolute value) of complex coefficients
-    for i in 0..cqt.cqt.shape()[0] {
-        for j in 0..cqt.cqt.shape()[1] {
+    for i in 0.._cqt.cqt.shape()[0] {
+        for j in 0.._cqt.cqt.shape()[1] {
             magnitude[[i, j]] = cqt.cqt[[i, j]].norm();
         }
     }
 
     if log_scale {
-        // Find reference value (maximum if not specified)
+        // Find reference _value (maximum if not specified)
         let reference = ref_value.unwrap_or_else(|| magnitude.iter().cloned().fold(0.0, f64::max));
 
         // Convert to dB
@@ -548,12 +556,13 @@ pub fn cqt_magnitude(cqt: &CqtResult, log_scale: bool, ref_value: Option<f64>) -
 /// # Returns
 ///
 /// A 2D array containing the phase of the CQT coefficients (in radians)
+#[allow(dead_code)]
 pub fn cqt_phase(cqt: &CqtResult) -> Array2<f64> {
-    let mut phase = Array2::<f64>::zeros(cqt.cqt.raw_dim());
+    let mut phase = Array2::<f64>::zeros(_cqt.cqt.raw_dim());
 
     // Compute phase (argument) of complex coefficients
-    for i in 0..cqt.cqt.shape()[0] {
-        for j in 0..cqt.cqt.shape()[1] {
+    for i in 0.._cqt.cqt.shape()[0] {
+        for j in 0.._cqt.cqt.shape()[1] {
             phase[[i, j]] = cqt.cqt[[i, j]].arg();
         }
     }
@@ -606,6 +615,7 @@ pub fn cqt_phase(cqt: &CqtResult) -> Array2<f64> {
 /// // CQT reconstruction can have significant energy loss, just check it's not empty
 /// assert!(rec_energy > 0.0);
 /// ```
+#[allow(dead_code)]
 pub fn inverse_constant_q_transform(
     cqt: &CqtResult,
     target_length: Option<usize>,
@@ -687,7 +697,7 @@ pub fn inverse_constant_q_transform(
     // Normalize the output
     let max_abs = output
         .iter()
-        .map(|&x| x.abs())
+        .map(|&x: &f64| x.abs())
         .fold(0.0, |a: f64, b: f64| f64::max(a, b));
     if max_abs > 0.0 {
         output.iter_mut().for_each(|x| *x /= max_abs);
@@ -710,6 +720,7 @@ pub fn inverse_constant_q_transform(
 /// # Returns
 ///
 /// A 2D array containing the chromagram (pitch class vs. time)
+#[allow(dead_code)]
 pub fn chromagram(
     cqt: &CqtResult,
     n_chroma: Option<usize>,
@@ -722,15 +733,15 @@ pub fn chromagram(
     let n_chroma_bins = n_chroma.unwrap_or(12);
     let reference = ref_note.unwrap_or(0) % n_chroma_bins;
 
-    // Calculate center frequencies in MIDI note numbers
+    // Calculate center frequencies in MIDI _note numbers
     let midi_frequencies = cqt.frequencies.mapv(|freq| {
         69.0 + 12.0 * (freq / 440.0).log2() // A4 = 69, freq = 440Hz
     });
 
     // Initialize chromagram
-    let mut chroma = Array2::<f64>::zeros((n_chroma_bins, n_frames));
+    let mut _chroma = Array2::<f64>::zeros((n_chroma_bins, n_frames));
 
-    // Map CQT bins to chroma bins
+    // Map CQT bins to _chroma bins
     for i in 0..n_bins {
         let midi_note = midi_frequencies[i];
         let chroma_bin = ((midi_note as isize) % n_chroma_bins as isize + n_chroma_bins as isize
@@ -755,15 +766,13 @@ pub fn chromagram(
         }
     }
 
-    Ok(chroma)
+    Ok(_chroma)
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
     use approx::assert_relative_eq;
-    use ndarray::Array;
-
     #[test]
     fn test_create_window() {
         // Test window creation
@@ -825,6 +834,8 @@ mod tests {
 
     #[test]
     fn test_constant_q_transform() {
+        let a = vec![1.0, 2.0, 3.0, 4.0, 5.0];
+        let b = vec![0.5, 0.5];
         // Generate a simple sine wave
         let fs = 22050.0;
         let duration = 0.5;
@@ -841,7 +852,7 @@ mod tests {
             f_max: 2000.0, // Cover up to A6
             bins_per_octave: 12,
             q_factor: None,
-            window_type: "hann".to_string(),
+            window_type: WindowType::Hann.to_string(),
             fs,
             use_sparse: true,
             window_scaling: None,
@@ -874,7 +885,7 @@ mod tests {
                     .partial_cmp(&(b - frequency).abs())
                     .unwrap()
             })
-            .map(|(idx, _)| idx)
+            .map(|(idx_)| idx)
             .unwrap();
 
         // Should be at or very close to the expected bin
@@ -883,6 +894,8 @@ mod tests {
 
     #[test]
     fn test_cqt_spectrogram() {
+        let a = vec![1.0, 2.0, 3.0, 4.0, 5.0];
+        let b = vec![0.5, 0.5];
         // Generate a chirp signal
         let fs = 22050.0;
         let duration = 1.0;
@@ -901,7 +914,7 @@ mod tests {
             f_max: 2000.0, // Cover up to A6
             bins_per_octave: 12,
             q_factor: None,
-            window_type: "hann".to_string(),
+            window_type: WindowType::Hann.to_string(),
             fs,
             use_sparse: true,
             window_scaling: None,
@@ -926,6 +939,8 @@ mod tests {
 
     #[test]
     fn test_chromagram() {
+        let a = vec![1.0, 2.0, 3.0, 4.0, 5.0];
+        let b = vec![0.5, 0.5];
         // Generate a simple test signal
         let fs = 22050.0;
         let duration = 0.5; // Shorter duration for faster test
@@ -941,7 +956,7 @@ mod tests {
             f_max: 880.0, // A5
             bins_per_octave: 12,
             q_factor: None,
-            window_type: "hann".to_string(),
+            window_type: WindowType::Hann.to_string(),
             fs,
             use_sparse: true,
             window_scaling: None,

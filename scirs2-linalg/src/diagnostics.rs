@@ -53,15 +53,15 @@ impl<F: Float + fmt::Display> fmt::Display for MatrixDiagnostics<F> {
         writeln!(f, "  Symmetric: {}", self.is_symmetric)?;
 
         if let Some(cond) = self.condition_number {
-            writeln!(f, "  Condition number: {}", cond)?;
+            writeln!(f, "  Condition number: {cond}")?;
         }
 
         if let Some(rank) = self.rank {
-            writeln!(f, "  Rank: {}", rank)?;
+            writeln!(f, "  Rank: {rank}")?;
         }
 
         if let Some(pd) = self.is_positive_definite {
-            writeln!(f, "  Positive definite: {}", pd)?;
+            writeln!(f, "  Positive definite: {pd}")?;
         }
 
         writeln!(f, "  Sparsity ratio: {:.3}", self.sparsity_ratio)?;
@@ -69,31 +69,30 @@ impl<F: Float + fmt::Display> fmt::Display for MatrixDiagnostics<F> {
         if let Some(precision_loss) = self.precision_loss_estimate {
             writeln!(
                 f,
-                "  Estimated precision loss: {:.1} decimal digits",
-                precision_loss
+                "  Estimated precision loss: {precision_loss:.1} decimal digits"
             )?;
         }
 
         if let Some(max_diag) = self.max_diagonal {
-            writeln!(f, "  Max diagonal element: {}", max_diag)?;
+            writeln!(f, "  Max diagonal element: {max_diag}")?;
         }
 
         if let Some(min_diag) = self.min_diagonal {
-            writeln!(f, "  Min diagonal element: {}", min_diag)?;
+            writeln!(f, "  Min diagonal element: {min_diag}")?;
         }
 
         if let Some(gershgorin) = self.gershgorin_radius {
-            writeln!(f, "  Gershgorin circle radius: {}", gershgorin)?;
+            writeln!(f, "  Gershgorin circle radius: {gershgorin}")?;
         }
 
         if let Some(near_zero) = self.near_zero_eigenvalues {
-            writeln!(f, "  Estimated near-zero eigenvalues: {}", near_zero)?;
+            writeln!(f, "  Estimated near-zero eigenvalues: {near_zero}")?;
         }
 
         if !self.suggestions.is_empty() {
             writeln!(f, "\nSuggestions:")?;
             for suggestion in &self.suggestions {
-                writeln!(f, "  - {}", suggestion)?;
+                writeln!(f, "  - {suggestion}")?;
             }
         }
 
@@ -103,9 +102,9 @@ impl<F: Float + fmt::Display> fmt::Display for MatrixDiagnostics<F> {
 
 /// Analyze a matrix and provide diagnostic information
 #[allow(dead_code)]
-pub fn analyze_matrix<F>(a: &ArrayView2<F>) -> MatrixDiagnostics<F>
+pub fn analyzematrix<F>(a: &ArrayView2<F>) -> MatrixDiagnostics<F>
 where
-    F: Float + NumAssign + std::iter::Sum + fmt::Display + ndarray::ScalarOperand,
+    F: Float + NumAssign + std::iter::Sum + fmt::Display + ndarray::ScalarOperand + Send + Sync,
 {
     let shape = (a.nrows(), a.ncols());
     let mut diagnostics = MatrixDiagnostics {
@@ -297,7 +296,7 @@ fn is_symmetric<F: Float>(a: &ArrayView2<F>) -> bool {
 #[allow(dead_code)]
 fn estimate_condition_number<F>(a: &ArrayView2<F>) -> LinalgResult<F>
 where
-    F: Float + NumAssign + std::iter::Sum + fmt::Display + ndarray::ScalarOperand,
+    F: Float + NumAssign + std::iter::Sum + fmt::Display + ndarray::ScalarOperand + Send + Sync,
 {
     // Simple estimation using determinant and norm
     use crate::basic::det;
@@ -353,14 +352,11 @@ pub fn enhanced_error<F>(
     operation: &str,
 ) -> LinalgError
 where
-    F: Float + NumAssign + std::iter::Sum + fmt::Display + ndarray::ScalarOperand,
+    F: Float + NumAssign + std::iter::Sum + fmt::Display + ndarray::ScalarOperand + Send + Sync,
 {
     if let Some(a) = matrix {
-        let diagnostics = analyze_matrix(a);
-        let message = format!(
-            "{}\n\nOperation: {}\n{}",
-            base_error, operation, diagnostics
-        );
+        let diagnostics = analyzematrix(a);
+        let message = format!("{base_error}\n\nOperation: {operation}\n{diagnostics}");
         LinalgError::ComputationError(message)
     } else {
         base_error
@@ -371,9 +367,9 @@ where
 #[allow(dead_code)]
 pub fn regularization_suggestions<F>(matrix: &ArrayView2<F>, operation: &str) -> LinalgError
 where
-    F: Float + NumAssign + std::iter::Sum + fmt::Display + ndarray::ScalarOperand,
+    F: Float + NumAssign + std::iter::Sum + fmt::Display + ndarray::ScalarOperand + Send + Sync,
 {
-    let mut diagnostics = analyze_matrix(matrix);
+    let mut diagnostics = analyzematrix(matrix);
 
     // Add specific regularization suggestions
     diagnostics.suggestions.push(
@@ -387,16 +383,15 @@ where
         .suggestions
         .push("Consider using the pseudoinverse for least-squares solutions.".to_string());
 
-    let message = format!(
-        "Matrix is singular or nearly singular\n\nOperation: {}\n{}",
-        operation, diagnostics
-    );
+    let message =
+        format!("Matrix is singular or nearly singular\n\nOperation: {operation}\n{diagnostics}");
 
     LinalgError::SingularMatrixError(message)
 }
 
 /// Compute the maximum Gershgorin circle radius
 /// This gives an estimate of how far eigenvalues can be from diagonal elements
+#[allow(dead_code)]
 fn compute_gershgorin_radius<F: Float + NumAssign>(a: &ArrayView2<F>) -> Option<F> {
     if a.nrows() != a.ncols() {
         return None;
@@ -420,7 +415,10 @@ fn compute_gershgorin_radius<F: Float + NumAssign>(a: &ArrayView2<F>) -> Option<
 
 /// Estimate the number of near-zero eigenvalues using Sylvester's criterion
 /// This is an approximation for symmetric matrices
-fn estimate_near_zero_eigenvalues<F: Float + NumAssign + std::iter::Sum>(
+#[allow(dead_code)]
+fn estimate_near_zero_eigenvalues<
+    F: Float + NumAssign + std::iter::Sum + Send + Sync + ndarray::ScalarOperand,
+>(
     a: &ArrayView2<F>,
 ) -> Option<usize> {
     if a.nrows() != a.ncols() || a.nrows() == 0 {
@@ -455,7 +453,14 @@ fn estimate_near_zero_eigenvalues<F: Float + NumAssign + std::iter::Sum>(
 #[allow(dead_code)]
 pub fn advanced_stability_check<F>(a: &ArrayView2<F>) -> StabilityReport<F>
 where
-    F: Float + NumAssign + std::iter::Sum + fmt::Display + ToPrimitive + ndarray::ScalarOperand,
+    F: Float
+        + NumAssign
+        + std::iter::Sum
+        + fmt::Display
+        + ToPrimitive
+        + ndarray::ScalarOperand
+        + Send
+        + Sync,
 {
     let mut report = StabilityReport {
         is_stable: true,
@@ -466,7 +471,7 @@ where
         _phantom: std::marker::PhantomData,
     };
 
-    let diagnostics = analyze_matrix(a);
+    let diagnostics = analyzematrix(a);
 
     // Check condition number
     if let Some(cond) = diagnostics.condition_number {
@@ -521,7 +526,7 @@ where
             if rank < a.nrows() {
                 report
                     .warnings
-                    .push(format!("Matrix appears rank deficient (rank ≈ {})", rank));
+                    .push(format!("Matrix appears rank deficient (rank ≈ {rank})"));
                 report
                     .recommendations
                     .push("Consider using rank-revealing decompositions".to_string());
@@ -534,7 +539,9 @@ where
 
 /// Estimate the numerical rank of a matrix
 #[allow(dead_code)]
-fn estimate_numerical_rank<F: Float + NumAssign + std::iter::Sum>(
+fn estimate_numerical_rank<
+    F: Float + NumAssign + std::iter::Sum + Send + Sync + ndarray::ScalarOperand,
+>(
     a: &ArrayView2<F>,
 ) -> Option<usize> {
     if a.nrows() != a.ncols() {
@@ -585,24 +592,24 @@ impl<F: Float + fmt::Display> fmt::Display for StabilityReport<F> {
         )?;
 
         if let Some(cond) = self.effective_condition_number {
-            writeln!(f, "  Effective condition number: {:.2e}", cond)?;
+            writeln!(f, "  Effective condition number: {cond:.2e}")?;
         }
 
         if let Some(rank) = self.numerical_rank_estimate {
-            writeln!(f, "  Estimated numerical rank: {}", rank)?;
+            writeln!(f, "  Estimated numerical rank: {rank}")?;
         }
 
         if !self.warnings.is_empty() {
             writeln!(f, "\nWarnings:")?;
             for warning in &self.warnings {
-                writeln!(f, "  ⚠ {}", warning)?;
+                writeln!(f, "  ⚠ {warning}")?;
             }
         }
 
         if !self.recommendations.is_empty() {
             writeln!(f, "\nRecommendations:")?;
             for rec in &self.recommendations {
-                writeln!(f, "  → {}", rec)?;
+                writeln!(f, "  → {rec}")?;
             }
         }
 
@@ -616,9 +623,9 @@ mod tests {
     use ndarray::array;
 
     #[test]
-    fn test_analyze_matrix() {
+    fn test_analyzematrix() {
         let a = array![[1.0, 2.0], [2.0, 4.0]];
-        let diagnostics = analyze_matrix(&a.view());
+        let diagnostics = analyzematrix(&a.view());
 
         assert_eq!(diagnostics.shape, (2, 2));
         assert!(diagnostics.is_symmetric);
@@ -626,9 +633,9 @@ mod tests {
     }
 
     #[test]
-    fn test_ill_conditioned_matrix() {
+    fn test_ill_conditionedmatrix() {
         let a = array![[1.0, 1.0], [1.0, 1.0 + 1e-10]];
-        let diagnostics = analyze_matrix(&a.view());
+        let diagnostics = analyzematrix(&a.view());
 
         // Debug print
         println!("Condition number: {:?}", diagnostics.condition_number);

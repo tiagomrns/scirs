@@ -36,6 +36,7 @@ use ndarray::{Array1, ArrayBase, Data, Dimension};
 /// Type alias for learning curve result
 pub type LearningCurveResult = (Array1<usize>, Array1<f64>, Array1<f64>);
 
+#[allow(dead_code)]
 pub fn learning_curve<S1, S2, S3, D1, D2, D3>(
     train_sizes: &ArrayBase<S1, D1>,
     train_scores: &ArrayBase<S2, D2>,

@@ -27,6 +27,7 @@ pub enum LinearSolverType {
 ///
 /// # Returns
 /// * `Result<Array1<F>, IntegrateError>` - The solution vector x
+#[allow(dead_code)]
 pub fn solve_linear_system<F>(a: &ArrayView2<F>, b: &ArrayView1<F>) -> IntegrateResult<Array1<F>>
 where
     F: Float
@@ -134,6 +135,7 @@ where
 ///
 /// # Returns
 /// * The L2 norm of the vector
+#[allow(dead_code)]
 pub fn vector_norm<F>(v: &ArrayView1<F>) -> F
 where
     F: Float,
@@ -152,6 +154,7 @@ where
 ///
 /// # Returns
 /// * The Frobenius norm of the matrix
+#[allow(dead_code)]
 pub fn matrix_norm<F>(m: &ArrayView2<F>) -> F
 where
     F: Float,
@@ -164,6 +167,7 @@ where
 }
 
 /// Solve a linear system using automatic method selection
+#[allow(dead_code)]
 pub fn auto_solve_linear_system<F>(
     a: &ArrayView2<F>,
     b: &ArrayView1<F>,
@@ -175,13 +179,17 @@ where
         + Debug
         + std::ops::AddAssign
         + std::ops::SubAssign
-        + std::ops::MulAssign,
+        + std::ops::MulAssign
+        + std::default::Default
+        + std::iter::Sum
+        + ndarray::ScalarOperand
+        + std::ops::DivAssign,
 {
     match solver_type {
         LinearSolverType::Direct => solve_linear_system(a, b),
         LinearSolverType::Iterative => {
-            // For now, use direct solver as iterative is not implemented
-            solve_linear_system(a, b)
+            // Use GMRES iterative solver
+            solve_gmres(a, b, None, None, None)
         }
         LinearSolverType::Auto => {
             // Use direct solver for small problems, iterative for large
@@ -189,14 +197,15 @@ where
             if n < 100 {
                 solve_linear_system(a, b)
             } else {
-                // For now, use direct solver until iterative is implemented
-                solve_linear_system(a, b)
+                // Use GMRES for large systems
+                solve_gmres(a, b, None, None, None)
             }
         }
     }
 }
 
 /// Solve a linear system using LU decomposition (alias for compatibility)
+#[allow(dead_code)]
 pub fn solve_lu<F>(a: &ArrayView2<F>, b: &ArrayView1<F>) -> IntegrateResult<Array1<F>>
 where
     F: Float
@@ -207,4 +216,193 @@ where
         + std::ops::MulAssign,
 {
     solve_linear_system(a, b)
+}
+
+/// Solve a linear system using GMRES (Generalized Minimal Residual) method
+///
+/// GMRES is a robust iterative method for solving general linear systems.
+///
+/// # Arguments
+/// * `a` - The coefficient matrix A
+/// * `b` - The right-hand side vector b
+/// * `max_iter` - Maximum number of iterations (default: min(n, 50))
+/// * `tol` - Convergence tolerance (default: 1e-10)
+/// * `restart` - Restart parameter for GMRES(m) (default: min(n, 20))
+///
+/// # Returns
+/// * `Result<Array1<F>, IntegrateError>` - The solution vector x
+#[allow(dead_code)]
+pub fn solve_gmres<F>(
+    a: &ArrayView2<F>,
+    b: &ArrayView1<F>,
+    max_iter: Option<usize>,
+    tol: Option<F>,
+    restart: Option<usize>,
+) -> IntegrateResult<Array1<F>>
+where
+    F: Float
+        + FromPrimitive
+        + Debug
+        + std::ops::AddAssign
+        + std::ops::SubAssign
+        + std::ops::MulAssign
+        + Default
+        + std::iter::Sum
+        + ndarray::ScalarOperand
+        + std::ops::DivAssign,
+{
+    let n = a.nrows();
+    if n != a.ncols() {
+        return Err(IntegrateError::ValueError(
+            "Matrix must be square".to_string(),
+        ));
+    }
+    if n != b.len() {
+        return Err(IntegrateError::ValueError(
+            "Matrix and vector dimensions must match".to_string(),
+        ));
+    }
+
+    let max_iter = max_iter.unwrap_or(std::cmp::min(n, 50));
+    let tol = tol.unwrap_or_else(|| F::from_f64(1e-10).unwrap());
+    let restart = restart.unwrap_or(std::cmp::min(n, 20));
+
+    // Initial guess: zero vector
+    let mut x = Array1::<F>::zeros(n);
+
+    // Compute initial residual: r0 = b - A*x0
+    let mut r = b.to_owned();
+    for i in 0..n {
+        let mut ax_i = F::zero();
+        for j in 0..n {
+            ax_i += a[[i, j]] * x[j];
+        }
+        r[i] -= ax_i;
+    }
+
+    let initial_norm = (r.iter().map(|&x| x * x).sum::<F>()).sqrt();
+    if initial_norm < tol {
+        return Ok(x); // Already converged
+    }
+
+    let mut outer_iter = 0;
+    while outer_iter < max_iter {
+        // GMRES restart cycle
+        let m = std::cmp::min(restart, max_iter - outer_iter);
+
+        // Normalize r to get v1
+        let beta = (r.iter().map(|&x| x * x).sum::<F>()).sqrt();
+        if beta < tol {
+            break; // Converged
+        }
+
+        let mut v = vec![Array1::<F>::zeros(n); m + 1];
+        v[0] = &r / beta;
+
+        let mut h = vec![vec![F::zero(); m]; m + 1];
+        let mut g = vec![F::zero(); m + 1];
+        g[0] = beta;
+
+        let mut j = 0;
+        while j < m {
+            // Compute w = A * v[j]
+            let mut w = Array1::<F>::zeros(n);
+            for i in 0..n {
+                for k in 0..n {
+                    w[i] += a[[i, k]] * v[j][k];
+                }
+            }
+
+            // Modified Gram-Schmidt orthogonalization
+            for i in 0..=j {
+                h[i][j] = v[i].dot(&w);
+                for k in 0..n {
+                    w[k] -= h[i][j] * v[i][k];
+                }
+            }
+
+            h[j + 1][j] = (w.iter().map(|&x| x * x).sum::<F>()).sqrt();
+
+            if h[j + 1][j] < F::from_f64(1e-14).unwrap() {
+                // Linear dependence, stop early
+                break;
+            }
+
+            v[j + 1] = &w / h[j + 1][j];
+
+            // Apply previous Givens rotations to new column of H
+            for i in 0..j {
+                let c = if i < g.len() - 1 {
+                    h[i][j] / (h[i][j] * h[i][j] + h[i + 1][j] * h[i + 1][j]).sqrt()
+                } else {
+                    F::one()
+                };
+                let s = if i < g.len() - 1 {
+                    h[i + 1][j] / (h[i][j] * h[i][j] + h[i + 1][j] * h[i + 1][j]).sqrt()
+                } else {
+                    F::zero()
+                };
+
+                let temp = c * h[i][j] + s * h[i + 1][j];
+                h[i + 1][j] = -s * h[i][j] + c * h[i + 1][j];
+                h[i][j] = temp;
+            }
+
+            // Compute new Givens rotation
+            let c = h[j][j] / (h[j][j] * h[j][j] + h[j + 1][j] * h[j + 1][j]).sqrt();
+            let s = h[j + 1][j] / (h[j][j] * h[j][j] + h[j + 1][j] * h[j + 1][j]).sqrt();
+
+            // Apply new Givens rotation
+            h[j][j] = c * h[j][j] + s * h[j + 1][j];
+            h[j + 1][j] = F::zero();
+
+            let temp = c * g[j];
+            g[j + 1] = -s * g[j];
+            g[j] = temp;
+
+            // Check convergence
+            if g[j + 1].abs() < tol * initial_norm {
+                j += 1;
+                break;
+            }
+
+            j += 1;
+        }
+
+        // Solve upper triangular system H*y = g
+        let mut y = vec![F::zero(); j];
+        for i in (0..j).rev() {
+            let mut sum = g[i];
+            for k in (i + 1)..j {
+                sum -= h[i][k] * y[k];
+            }
+            y[i] = sum / h[i][i];
+        }
+
+        // Update solution: x = x + V*y
+        for i in 0..n {
+            for k in 0..j {
+                x[i] += y[k] * v[k][i];
+            }
+        }
+
+        // Compute new residual
+        r = b.to_owned();
+        for i in 0..n {
+            let mut ax_i = F::zero();
+            for k in 0..n {
+                ax_i += a[[i, k]] * x[k];
+            }
+            r[i] -= ax_i;
+        }
+
+        let residual_norm = (r.iter().map(|&x| x * x).sum::<F>()).sqrt();
+        if residual_norm < tol * initial_norm {
+            break; // Converged
+        }
+
+        outer_iter += m;
+    }
+
+    Ok(x)
 }

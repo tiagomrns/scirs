@@ -4,6 +4,7 @@ use scirs2_linalg::{
     matrix_free_gmres, matrix_free_preconditioned_conjugate_gradient, LinearOperator, MatrixFreeOp,
 };
 
+#[allow(dead_code)]
 fn main() {
     // Example 1: Using LinearOperator to represent a matrix without storing it
     println!("Example 1: Matrix-free operator representation");
@@ -125,6 +126,7 @@ fn main() {
 }
 
 // Helper function to compute the norm of the difference vector
+#[allow(dead_code)]
 fn vector_norm(a: &Array1<f64>, b: &Array1<f64>) -> f64 {
     assert_eq!(a.len(), b.len());
     let mut sum = 0.0;

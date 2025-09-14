@@ -8,6 +8,7 @@ use scirs2_special::bessel::spherical::spherical_jn;
 use std::f64;
 
 #[test]
+#[allow(dead_code)]
 fn test_small_arguments_series() {
     // Test series expansions for small x
     let small_x: f64 = 0.01;

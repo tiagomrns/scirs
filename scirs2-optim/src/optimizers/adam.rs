@@ -190,7 +190,7 @@ impl<A: Float + ScalarOperand + Debug> Adam<A> {
 
 impl<A, D> Optimizer<A, D> for Adam<A>
 where
-    A: Float + ScalarOperand + Debug,
+    A: Float + ScalarOperand + Debug + Send + Sync,
     D: Dimension,
 {
     fn step(&mut self, params: &Array<A, D>, gradients: &Array<A, D>) -> Result<Array<A, D>> {
@@ -225,8 +225,12 @@ where
             v[0] = Array::zeros(params_dyn.raw_dim());
         }
 
-        // Increment timestep
-        self.t += 1;
+        // Increment timestep with overflow protection
+        self.t = self.t.checked_add(1).ok_or_else(|| {
+            crate::error::OptimError::InvalidConfig(
+                "Timestep counter overflow - too many optimization steps".to_string(),
+            )
+        })?;
 
         // Update biased first moment estimate
         m[0] = &m[0] * self.beta1 + &(&adjusted_gradients * (A::one() - self.beta1));
@@ -235,11 +239,21 @@ where
         v[0] = &v[0] * self.beta2
             + &(&adjusted_gradients * &adjusted_gradients * (A::one() - self.beta2));
 
-        // Compute bias-corrected first moment estimate
-        let m_hat = &m[0] / (A::one() - self.beta1.powi(self.t as i32));
+        // Compute bias-corrected first moment estimate with safe integer conversion
+        let exp_beta1 = i32::try_from(self.t).map_err(|_| {
+            crate::error::OptimError::InvalidConfig(
+                "Timestep too large for bias correction calculation".to_string(),
+            )
+        })?;
+        let m_hat = &m[0] / (A::one() - self.beta1.powi(exp_beta1));
 
-        // Compute bias-corrected second raw moment estimate
-        let v_hat = &v[0] / (A::one() - self.beta2.powi(self.t as i32));
+        // Compute bias-corrected second raw moment estimate with safe integer conversion
+        let exp_beta2 = i32::try_from(self.t).map_err(|_| {
+            crate::error::OptimError::InvalidConfig(
+                "Timestep too large for bias correction calculation".to_string(),
+            )
+        })?;
+        let v_hat = &v[0] / (A::one() - self.beta2.powi(exp_beta2));
 
         // Compute square root of v_hat
         let v_hat_sqrt = v_hat.mapv(|x| x.sqrt());

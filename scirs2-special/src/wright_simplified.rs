@@ -39,6 +39,7 @@ use std::f64::consts::PI;
 /// assert_relative_eq!(omega.re, 0.567143, epsilon = 1e-6);
 /// assert!(omega.im.abs() < 1e-10);
 /// ```
+#[allow(dead_code)]
 pub fn wright_omega(z: Complex64, tol: f64) -> SpecialResult<Complex64> {
     // Handle NaN inputs
     if z.re.is_nan() || z.im.is_nan() {
@@ -166,6 +167,7 @@ pub fn wright_omega(z: Complex64, tol: f64) -> SpecialResult<Complex64> {
 /// let check = omega + omega.ln();
 /// assert_relative_eq!(check, x, epsilon = 1e-10);
 /// ```
+#[allow(dead_code)]
 pub fn wright_omega_real(x: f64, tol: f64) -> SpecialResult<f64> {
     // Handle NaN input
     if x.is_nan() {

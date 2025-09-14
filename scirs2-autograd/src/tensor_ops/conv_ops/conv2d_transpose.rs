@@ -27,6 +27,7 @@ struct Conv2DTransposeParams {
 
 // Panics for invalid inputs
 #[allow(clippy::too_many_arguments)]
+#[allow(dead_code)]
 fn conv2d_transpose_extract_params<F: Float>(
     gy: &NdArrayView<F>,
     w: &NdArrayView<F>,
@@ -42,36 +43,34 @@ fn conv2d_transpose_extract_params<F: Float>(
             "conv2d_transpose: only f32 and f64 are supported.".to_string(),
         ));
     }
-    let gy_shape = gy.shape();
-    let f_shape = w.shape();
+    let gyshape = gy.shape();
+    let fshape = w.shape();
 
-    let batch_size = gy_shape[0];
-    let ych = gy_shape[1];
-    let yh = gy_shape[2];
-    let yw = gy_shape[3];
+    let batch_size = gyshape[0];
+    let ych = gyshape[1];
+    let yh = gyshape[2];
+    let yw = gyshape[3];
 
-    let xch = f_shape[1];
-    let kh = f_shape[2];
-    let kw = f_shape[3];
+    let xch = fshape[1];
+    let kh = fshape[2];
+    let kw = fshape[3];
     let xh = stride_h * (yh - 1) - 2 * pad_h + (dilation_h * (kh - 1) + 1);
     let xw = stride_w * (yw - 1) - 2 * pad_w + (dilation_w * (kw - 1) + 1);
 
-    if gy_shape.len() != 4 {
+    if gyshape.len() != 4 {
         return Err(op::OpError::IncompatibleShape(format!(
-            "conv2d_transpose: Input must be 4D (got {:?})",
-            gy_shape
+            "conv2d_transpose: Input must be 4D (got {gyshape:?})"
         )));
     }
-    if f_shape.len() != 4 {
+    if fshape.len() != 4 {
         return Err(op::OpError::IncompatibleShape(format!(
-            "conv2d_transpose: Filter must be 4D (got {:?})",
-            f_shape
+            "conv2d_transpose: Filter must be 4D (got {fshape:?})"
         )));
     }
-    if ych != f_shape[0] {
+    if ych != fshape[0] {
         return Err(op::OpError::IncompatibleShape(format!(
             "conv2d_transpose: Number of input channels ({:?}) must match second filter dim ({:?})",
-            ych, f_shape[0]
+            ych, fshape[0]
         )));
     }
     Ok(Conv2DTransposeParams {
@@ -88,6 +87,7 @@ fn conv2d_transpose_extract_params<F: Float>(
 }
 
 #[allow(clippy::too_many_arguments)]
+#[allow(dead_code)]
 fn conv2d_transpose_impl<F: Float>(
     gy: &NdArrayView<F>,
     w: &NdArrayView<F>,
@@ -131,8 +131,8 @@ fn conv2d_transpose_impl<F: Float>(
         }
     }
 
-    if let Some(w) = w.as_slice() {
-        w_slice = w;
+    if let Some(_w) = w.as_slice() {
+        w_slice = _w;
     } else {
         copied_w = ndarray_ext::deep_copy(w);
         unsafe {
@@ -298,6 +298,7 @@ impl<T: Float> crate::op::Op<T> for Conv2DTranspose {
 }
 
 #[allow(clippy::too_many_arguments)]
+#[allow(dead_code)]
 fn conv2d_transpose_filter_grad_impl<F: Float>(
     x: &NdArrayView<F>,
     w: &NdArrayView<F>,
@@ -309,18 +310,18 @@ fn conv2d_transpose_filter_grad_impl<F: Float>(
     stride_h: usize,
     stride_w: usize,
 ) -> NdArray<F> {
-    let k_shape = w.shape();
-    let x_shape = x.shape();
-    let gy_shape = gy.shape();
+    let kshape = w.shape();
+    let xshape = x.shape();
+    let gyshape = gy.shape();
 
-    let batch_size = x_shape[0];
-    let (kh, kw) = (k_shape[2], k_shape[3]);
-    let (xh, xw) = (gy_shape[2], gy_shape[3]);
+    let batch_size = xshape[0];
+    let (kh, kw) = (kshape[2], kshape[3]);
+    let (xh, xw) = (gyshape[2], gyshape[3]);
     let yh = (xh + 2 * pad_h - (dilation_h * (kh - 1) + 1)) / stride_h + 1;
     let yw = (xw + 2 * pad_w - (dilation_w * (kw - 1) + 1)) / stride_w + 1;
-    let (ych, xch) = (x_shape[1], gy_shape[1]);
-    let size_per_batch_cols = yh * yh * kh * kw * gy_shape[1];
-    let size_per_batch_x = x_shape[1] * x_shape[2] * x_shape[3];
+    let (ych, xch) = (xshape[1], gyshape[1]);
+    let size_per_batch_cols = yh * yh * kh * kw * gyshape[1];
+    let size_per_batch_x = xshape[1] * xshape[2] * xshape[3];
 
     let x = unsafe { slice::from_raw_parts(x.as_ptr(), x.len()) };
     let gy = unsafe { slice::from_raw_parts(gy.as_ptr(), gy.len()) };
@@ -329,9 +330,9 @@ fn conv2d_transpose_filter_grad_impl<F: Float>(
     let gy_cols = im2col_batch(
         gy,
         batch_size,
-        gy_shape[1] as i32,
-        gy_shape[2] as i32,
-        gy_shape[3] as i32,
+        gyshape[1] as i32,
+        gyshape[2] as i32,
+        gyshape[3] as i32,
         kh as i32,
         kw as i32,
         pad_h as i32,
@@ -342,7 +343,7 @@ fn conv2d_transpose_filter_grad_impl<F: Float>(
         dilation_w as i32,
     );
 
-    let gw_size = k_shape[0] * k_shape[1] * k_shape[2] * k_shape[3];
+    let gw_size = kshape[0] * kshape[1] * kshape[2] * kshape[3];
     let mut gw = Vec::with_capacity(gw_size);
     let gw_head = gw.as_mut_ptr();
 
@@ -424,7 +425,7 @@ fn conv2d_transpose_filter_grad_impl<F: Float>(
     }
     unsafe {
         gw.set_len(gw_size);
-        NdArray::from_shape_vec_unchecked(k_shape, gw)
+        NdArray::from_shape_vec_unchecked(kshape, gw)
     }
 }
 
@@ -478,6 +479,7 @@ impl<T: Float> crate::op::Op<T> for Conv2DTransposeFilterGrad {
 }
 
 #[test]
+#[allow(dead_code)]
 fn test_deconv() {
     use crate::tensor_ops as T;
 

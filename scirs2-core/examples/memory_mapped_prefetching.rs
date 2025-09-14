@@ -15,6 +15,7 @@ use scirs2_core::memory_efficient::{
 use std::time::{Duration, Instant};
 use tempfile::tempdir;
 
+#[allow(dead_code)]
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("Memory-Mapped Array Smart Prefetching Example");
     println!("=============================================\n");

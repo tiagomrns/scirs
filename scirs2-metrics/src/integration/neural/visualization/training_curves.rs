@@ -41,20 +41,20 @@ impl TrainingHistoryVisualizer {
     }
 
     /// Add validation history
-    pub fn with_validation(mut self, val_history: Vec<HashMap<String, f64>>) -> Self {
-        self.val_history = Some(val_history);
+    pub fn with_validation(mut self, valhistory: Vec<HashMap<String, f64>>) -> Self {
+        self.val_history = Some(valhistory);
         self
     }
 
     /// Set x-axis label
-    pub fn with_x_label(mut self, x_label: impl Into<String>) -> Self {
-        self.x_label = x_label.into();
+    pub fn with_x_label(mut self, xlabel: impl Into<String>) -> Self {
+        self.x_label = xlabel.into();
         self
     }
 
     /// Set y-axis label
-    pub fn with_y_label(mut self, y_label: impl Into<String>) -> Self {
-        self.y_label = Some(y_label.into());
+    pub fn with_y_label(mut self, ylabel: impl Into<String>) -> Self {
+        self.y_label = Some(ylabel.into());
         self
     }
 }
@@ -108,6 +108,7 @@ impl MetricVisualizer for TrainingHistoryVisualizer {
 }
 
 /// Create a training history visualizer from a neural network's training history
+#[allow(dead_code)]
 pub fn training_history_visualization(
     metric_names: Vec<String>,
     history: Vec<HashMap<String, f64>>,

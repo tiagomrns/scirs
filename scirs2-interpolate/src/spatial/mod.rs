@@ -34,7 +34,7 @@
 //!
 //! ```rust
 //! use ndarray::Array2;
-//! use scirs2_interpolate::spatial::kdtree::KdTree;
+//! use scirs2__interpolate::spatial::kdtree::KdTree;
 //!
 //! // Create sample 2D points
 //! let points = Array2::from_shape_vec((5, 2), vec![
@@ -63,6 +63,7 @@ pub mod balltree;
 pub mod enhanced_search;
 pub mod kdtree;
 pub mod optimized_search;
+pub mod simd_enhancements;
 
 pub use balltree::BallTree;
 pub use enhanced_search::{
@@ -73,3 +74,4 @@ pub use kdtree::KdTree;
 #[cfg(feature = "parallel")]
 pub use optimized_search::ParallelQueryProcessor;
 pub use optimized_search::{CacheFriendlyKNN, OptimizedSpatialSearch, SimdDistanceOps};
+pub use simd_enhancements::{AdvancedSimdOps, SimdBenchmark};

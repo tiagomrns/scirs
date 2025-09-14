@@ -19,6 +19,7 @@ use std::f64::consts::PI;
 use std::time::Instant;
 
 /// Create a sparse signal with known frequencies in the spectrum
+#[allow(dead_code)]
 fn create_sparse_signal(n: usize, frequencies: &[(usize, f64)], noise_level: f64) -> Vec<f64> {
     // Create deterministic RNG for reproducible results
     let mut rng = StdRng::seed_from_u64(42);
@@ -45,12 +46,13 @@ fn create_sparse_signal(n: usize, frequencies: &[(usize, f64)], noise_level: f64
 }
 
 /// Evaluate the accuracy of sparse FFT results given the ground truth frequencies
+#[allow(dead_code)]
 fn evaluate_accuracy(
     result: &SparseFFTResult,
     true_frequencies: &[(usize, f64)],
     n: usize,
 ) -> (f64, f64, usize) {
-    // Calculate true positive rate (how many true frequencies were found)
+    // Calculate true positive rate (how many true _frequencies were found)
     let mut true_positives = 0;
     let mut _false_positives = 0;
     let mut found_indices = vec![false; true_frequencies.len()];
@@ -58,10 +60,10 @@ fn evaluate_accuracy(
     // For each found frequency, check if it corresponds to a true frequency
     for &idx in &result.indices {
         let mut found = false;
-        for (i, &(freq, _)) in true_frequencies.iter().enumerate() {
-            // Consider frequencies within a small tolerance window as matches
+        for (i, &(freq_, _)) in true_frequencies.iter().enumerate() {
+            // Consider _frequencies within a small tolerance window as matches
             let tolerance = std::cmp::max(1, n / 1000);
-            if (idx as i64 - freq as i64).abs() <= tolerance as i64 {
+            if (idx as i64 - freq_ as i64).abs() <= tolerance as i64 {
                 found = true;
                 found_indices[i] = true;
                 break;
@@ -82,11 +84,12 @@ fn evaluate_accuracy(
 }
 
 /// Run sparse FFT with multiple algorithms and compare results
+#[allow(dead_code)]
 fn run_algorithm_comparison(n: usize, sparsity: usize, noise_level: f64) {
     println!("\nRunning algorithm comparison:");
-    println!("  Signal size: {}", n);
-    println!("  Expected sparsity: {}", sparsity);
-    println!("  Noise level: {:.3}", noise_level);
+    println!("  Signal size: {n}");
+    println!("  Expected sparsity: {sparsity}");
+    println!("  Noise level: {noise_level:.3}");
 
     // Create a sparse signal with known frequencies
     let frequencies = vec![
@@ -206,7 +209,7 @@ fn run_algorithm_comparison(n: usize, sparsity: usize, noise_level: f64) {
 
         let freq_trace = Scatter::new(indices, amplitudes)
             .mode(Mode::Markers)
-            .name(format!("{:?} Algorithm", algorithm));
+            .name(format!("{algorithm:?} Algorithm"));
 
         frequency_domain_plot.add_trace(freq_trace);
 
@@ -260,7 +263,8 @@ fn run_algorithm_comparison(n: usize, sparsity: usize, noise_level: f64) {
 }
 
 /// Run benchmark for different signal sizes
-fn run_size_benchmark() {
+#[allow(dead_code)]
+fn runsize_benchmark() {
     println!("\nRunning size benchmark:");
 
     if !is_cuda_available() {
@@ -327,6 +331,7 @@ fn run_size_benchmark() {
 }
 
 /// Run noise tolerance benchmark
+#[allow(dead_code)]
 fn run_noise_benchmark() {
     println!("\nRunning noise tolerance benchmark:");
 
@@ -378,8 +383,8 @@ fn run_noise_benchmark() {
             )
             .unwrap();
 
-            let (_, recall, _) = evaluate_accuracy(&result, &frequencies, n);
-            accuracies.push(recall);
+            let (_, recall_, _) = evaluate_accuracy(&result, &frequencies, n);
+            accuracies.push(recall_);
         }
 
         println!(
@@ -390,6 +395,7 @@ fn run_noise_benchmark() {
 }
 
 /// Demonstrate the impact of iterations on iterative sparse FFT accuracy
+#[allow(dead_code)]
 fn run_iteration_comparison() {
     println!("\nDemonstrating impact of iterations on Iterative Sparse FFT:");
 
@@ -447,10 +453,7 @@ fn run_iteration_comparison() {
         // Evaluate accuracy
         let (_, recall, true_positives) = evaluate_accuracy(&result, &frequencies, n);
 
-        println!(
-            "{:<15} {:<15} {:<15.3} {:<20}",
-            iterations, true_positives, recall, elapsed
-        );
+        println!("{iterations:<15} {true_positives:<15} {recall:<15.3} {elapsed:<20}");
 
         // Calculate reconstruction error
         let reconstructed = reconstruct_time_domain(&result, n).unwrap();
@@ -468,13 +471,13 @@ fn run_iteration_comparison() {
         )
         .mode(Mode::Markers)
         .marker(plotly::common::Marker::new().size(10 + 2 * iterations))
-        .name(format!("{} iterations (RMSE: {:.5})", iterations, error));
+        .name(format!("{iterations} iterations (RMSE: {error:.5})"));
 
         plot.add_trace(trace);
 
         // Print found components (top 10)
         if iterations == 1 || iterations == *iterations_to_test.last().unwrap() {
-            println!("\n  With {} iterations, found components:", iterations);
+            println!("\n  With {iterations} iterations, found components:");
 
             // Sort by magnitude
             let mut components: Vec<(usize, Complex64)> = result
@@ -489,9 +492,9 @@ fn run_iteration_comparison() {
             for (i, (idx, val)) in components.iter().take(10).enumerate() {
                 // Check if this is a true component
                 let mut is_true = false;
-                for &(freq, _) in &frequencies {
+                for &(freq_, _) in &frequencies {
                     let tolerance = std::cmp::max(1, n / 1000);
-                    if (*idx as i64 - freq as i64).abs() <= tolerance as i64 {
+                    if (*idx as i64 - freq_ as i64).abs() <= tolerance as i64 {
                         is_true = true;
                         break;
                     }
@@ -555,7 +558,7 @@ fn run_iteration_comparison() {
         error += sample_error * sample_error;
     }
     error = (error / n as f64).sqrt();
-    println!("Sublinear reconstruction RMSE: {:.6}", error);
+    println!("Sublinear reconstruction RMSE: {error:.6}");
 
     // Print found components (top 10)
     println!("\n  Sublinear algorithm found components:");
@@ -573,9 +576,9 @@ fn run_iteration_comparison() {
     for (i, (idx, val)) in components.iter().take(10).enumerate() {
         // Check if this is a true component
         let mut is_true = false;
-        for &(freq, _) in &frequencies {
+        for &(freq_, _) in &frequencies {
             let tolerance = std::cmp::max(1, n / 1000);
-            if (*idx as i64 - freq as i64).abs() <= tolerance as i64 {
+            if (*idx as i64 - freq_ as i64).abs() <= tolerance as i64 {
                 is_true = true;
                 break;
             }
@@ -595,6 +598,7 @@ fn run_iteration_comparison() {
     }
 }
 
+#[allow(dead_code)]
 fn main() {
     println!("GPU-Accelerated Iterative Sparse FFT Example");
     println!("============================================");
@@ -618,7 +622,7 @@ fn main() {
     run_algorithm_comparison(16 * 1024, 6, 0.05);
 
     // Run benchmarks
-    run_size_benchmark();
+    runsize_benchmark();
     run_noise_benchmark();
 
     println!("\nExample completed successfully!");

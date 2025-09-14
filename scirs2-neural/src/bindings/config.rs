@@ -4,8 +4,6 @@
 //! needed to customize the C/C++ binding generation process.
 
 use std::collections::HashMap;
-use std::path::PathBuf;
-
 /// C/C++ binding generation configuration
 #[derive(Debug, Clone)]
 pub struct BindingConfig {
@@ -26,7 +24,6 @@ pub struct BindingConfig {
     /// Build system configuration
     pub build_system: BuildSystemConfig,
 }
-
 /// Target binding language
 #[derive(Debug, Clone, PartialEq)]
 pub enum BindingLanguage {
@@ -36,10 +33,7 @@ pub enum BindingLanguage {
     Cpp,
     /// C bindings with C++ wrapper
     CWithCppWrapper,
-}
-
 /// API style for bindings
-#[derive(Debug, Clone, PartialEq)]
 pub enum ApiStyle {
     /// Procedural API (function-based)
     Procedural,
@@ -47,10 +41,7 @@ pub enum ApiStyle {
     ObjectOriented,
     /// Hybrid approach
     Hybrid,
-}
-
 /// Type mapping configuration
-#[derive(Debug, Clone)]
 pub struct TypeMappings {
     /// Primitive type mappings
     pub primitives: HashMap<String, String>,
@@ -60,10 +51,7 @@ pub struct TypeMappings {
     pub strings: StringMapping,
     /// Custom type definitions
     pub custom_types: Vec<CustomType>,
-}
-
 /// Array type mapping strategy
-#[derive(Debug, Clone, PartialEq)]
 pub enum ArrayMapping {
     /// Use plain C arrays with separate size parameter
     PlainArrays,
@@ -71,10 +59,7 @@ pub enum ArrayMapping {
     StructuredArrays,
     /// Use custom array type
     CustomArrayType(String),
-}
-
 /// String handling strategy
-#[derive(Debug, Clone, PartialEq)]
 pub enum StringMapping {
     /// Use null-terminated C strings
     CString,
@@ -82,10 +67,7 @@ pub enum StringMapping {
     LengthPrefixed,
     /// Use custom string type
     CustomString(String),
-}
-
 /// Custom type definition
-#[derive(Debug, Clone)]
 pub struct CustomType {
     /// Type name in Rust
     pub rust_name: String,
@@ -95,10 +77,7 @@ pub struct CustomType {
     pub definition: String,
     /// Include dependencies
     pub includes: Vec<String>,
-}
-
 /// Memory management strategy
-#[derive(Debug, Clone, PartialEq)]
 pub enum MemoryStrategy {
     /// Manual memory management
     Manual,
@@ -108,10 +87,7 @@ pub enum MemoryStrategy {
     RAII,
     /// Custom allocator
     CustomAllocator(String),
-}
-
 /// Error handling approach
-#[derive(Debug, Clone, PartialEq)]
 pub enum ErrorHandling {
     /// Return error codes
     ErrorCodes,
@@ -121,10 +97,7 @@ pub enum ErrorHandling {
     Exceptions,
     /// Callback-based error handling
     Callbacks,
-}
-
 /// Threading configuration
-#[derive(Debug, Clone)]
 pub struct ThreadingConfig {
     /// Thread safety level
     pub safety_level: ThreadSafety,
@@ -132,10 +105,7 @@ pub struct ThreadingConfig {
     pub sync_primitives: Vec<SyncPrimitive>,
     /// Thread pool configuration
     pub thread_pool: Option<ThreadPoolConfig>,
-}
-
 /// Thread safety level
-#[derive(Debug, Clone, PartialEq)]
 pub enum ThreadSafety {
     /// Not thread-safe
     None,
@@ -145,10 +115,7 @@ pub enum ThreadSafety {
     Full,
     /// Thread-local storage
     ThreadLocal,
-}
-
 /// Synchronization primitive
-#[derive(Debug, Clone, PartialEq)]
 pub enum SyncPrimitive {
     /// Mutex
     Mutex,
@@ -158,10 +125,7 @@ pub enum SyncPrimitive {
     Atomic,
     /// Condition variables
     CondVar,
-}
-
 /// Thread pool configuration
-#[derive(Debug, Clone)]
 pub struct ThreadPoolConfig {
     /// Default thread count
     pub default_threads: Option<usize>,
@@ -171,10 +135,7 @@ pub struct ThreadPoolConfig {
     pub max_threads: usize,
     /// Thread naming pattern
     pub thread_name_pattern: String,
-}
-
 /// Build system configuration
-#[derive(Debug, Clone)]
 pub struct BuildSystemConfig {
     /// Target build system
     pub system: BuildSystem,
@@ -186,10 +147,7 @@ pub struct BuildSystemConfig {
     pub dependencies: Vec<Dependency>,
     /// Install configuration
     pub install_config: InstallConfig,
-}
-
 /// Build system type
-#[derive(Debug, Clone, PartialEq)]
 pub enum BuildSystem {
     /// CMake
     CMake,
@@ -201,10 +159,7 @@ pub enum BuildSystem {
     Bazel,
     /// Custom build system
     Custom(String),
-}
-
 /// External dependency
-#[derive(Debug, Clone)]
 pub struct Dependency {
     /// Dependency name
     pub name: String,
@@ -216,10 +171,7 @@ pub struct Dependency {
     pub libraries: Vec<String>,
     /// Package manager (pkg-config, vcpkg, etc.)
     pub package_manager: Option<String>,
-}
-
 /// Installation configuration
-#[derive(Debug, Clone)]
 pub struct InstallConfig {
     /// Installation prefix
     pub prefix: String,
@@ -229,12 +181,9 @@ pub struct InstallConfig {
     pub lib_dir: String,
     /// Include directory
     pub include_dir: String,
-    /// Generate pkg-config file
+    /// Generate pkg-_config file
     pub generate_pkgconfig: bool,
-}
-
 /// Generated binding result
-#[derive(Debug, Clone)]
 pub struct BindingResult {
     /// Generated header files
     pub headers: Vec<PathBuf>,
@@ -246,8 +195,6 @@ pub struct BindingResult {
     pub examples: Vec<PathBuf>,
     /// Documentation files
     pub documentation: Vec<PathBuf>,
-}
-
 impl Default for BindingConfig {
     fn default() -> Self {
         let mut primitives = HashMap::new();
@@ -255,7 +202,6 @@ impl Default for BindingConfig {
         primitives.insert("f64".to_string(), "double".to_string());
         primitives.insert("i32".to_string(), "int32_t".to_string());
         primitives.insert("u32".to_string(), "uint32_t".to_string());
-
         Self {
             library_name: "scirs2_model".to_string(),
             language: BindingLanguage::C,
@@ -272,7 +218,6 @@ impl Default for BindingConfig {
                 safety_level: ThreadSafety::ReadOnly,
                 sync_primitives: vec![SyncPrimitive::Mutex],
                 thread_pool: None,
-            },
             build_system: BuildSystemConfig {
                 system: BuildSystem::CMake,
                 compiler_flags: vec!["-Wall".to_string(), "-Wextra".to_string()],
@@ -285,31 +230,20 @@ impl Default for BindingConfig {
                     include_dir: "include".to_string(),
                     generate_pkgconfig: true,
                 },
-            },
         }
     }
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
-
     #[test]
     fn test_binding_config_default() {
         let config = BindingConfig::default();
         assert_eq!(config.library_name, "scirs2_model");
         assert_eq!(config.language, BindingLanguage::C);
         assert_eq!(config.api_style, ApiStyle::Procedural);
-    }
-
-    #[test]
     fn test_type_mappings() {
-        let config = BindingConfig::default();
         assert!(config.type_mappings.primitives.contains_key("f32"));
-        assert_eq!(config.type_mappings.primitives["f32"], "float");
-    }
-
-    #[test]
+        assert_eq!(_config.type_mappings.primitives["f32"], "float");
     fn test_custom_type() {
         let custom_type = CustomType {
             rust_name: "MyStruct".to_string(),
@@ -317,30 +251,18 @@ mod tests {
             definition: "typedef struct { int x; float y; } my_struct_t;".to_string(),
             includes: vec!["stdint.h".to_string()],
         };
-
         assert_eq!(custom_type.rust_name, "MyStruct");
         assert_eq!(custom_type.c_name, "my_struct_t");
-    }
-
-    #[test]
     fn test_threading_config() {
-        let config = BindingConfig::default();
         assert_eq!(config.threading.safety_level, ThreadSafety::ReadOnly);
         assert!(config
             .threading
             .sync_primitives
             .contains(&SyncPrimitive::Mutex));
         assert!(config.threading.thread_pool.is_none());
-    }
-
-    #[test]
     fn test_build_system_config() {
-        let config = BindingConfig::default();
         assert_eq!(config.build_system.system, BuildSystem::CMake);
-        assert!(config
             .build_system
             .compiler_flags
             .contains(&"-Wall".to_string()));
         assert!(config.build_system.install_config.generate_pkgconfig);
-    }
-}

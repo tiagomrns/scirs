@@ -1,6 +1,7 @@
-use scirs2_special::{coulomb_f, coulomb_g, coulomb_h_minus, coulomb_h_plus, coulomb_phase_shift};
+use scirs2_special::{coulomb_f, coulomb_g, coulomb_h_plus, coulomb_hminus, coulomb_phase_shift};
 use std::error::Error;
 
+#[allow(dead_code)]
 fn main() -> Result<(), Box<dyn Error>> {
     println!("Coulomb Wave Functions Example");
     println!("=============================\n");
@@ -87,7 +88,7 @@ fn main() -> Result<(), Box<dyn Error>> {
 
     println!("Incoming Coulomb Wave Function H⁻_L(η,ρ):");
     for &rho in &rho_values {
-        match coulomb_h_minus(l, eta, rho) {
+        match coulomb_hminus(l, eta, rho) {
             Ok(h) => println!(
                 "  H⁻_{{{}}}({}, {}) = {:.6} + {:.6}i",
                 l, eta, rho, h.re, h.im

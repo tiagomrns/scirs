@@ -1,5 +1,6 @@
 use ndarray::{Array1, Array2};
 
+#[allow(dead_code)]
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("Testing scirs2-interpolate linalg feature configuration");
 
@@ -14,7 +15,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         println!("This build can use OpenBLAS for advanced linear algebra operations");
 
         // Import the Solve trait only when linalg feature is enabled
-        use ndarray_linalg::Solve;
+        use ndarray__linalg::Solve;
 
         // Demonstrate solving a system using ndarray-linalg
         match a.solve(&b) {

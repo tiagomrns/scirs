@@ -4,6 +4,7 @@ use scirs2_text::{
     TextClassificationMetrics, TextClassificationPipeline, TextDataset, TextFeatureSelector,
 };
 
+#[allow(dead_code)]
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("Text Classification Demo");
     println!("=======================\n");
@@ -80,11 +81,11 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let _unique_labels = train_dataset.unique_labels();
 
     // Create binary labels (0 for negative, 1 for positive) for this demo
-    let mut _train_labels = Vec::new();
+    let mut train_labels = Vec::new();
     let mut test_labels = Vec::new();
 
     for label in &train_dataset.labels {
-        _train_labels.push(if label == "positive" { 1 } else { 0 });
+        train_labels.push(if label == "positive" { 1 } else { 0 });
     }
 
     for label in &test_dataset.labels {
@@ -123,8 +124,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     }
 
     println!("Confusion Matrix:");
-    println!("[ {} {} ]", true_negative, false_positive);
-    println!("[ {} {} ]", false_negative, true_positive);
+    println!("[ {true_negative} {false_positive} ]");
+    println!("[ {false_negative} {true_positive} ]");
 
     Ok(())
 }

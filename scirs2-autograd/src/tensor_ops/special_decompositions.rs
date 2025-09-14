@@ -195,6 +195,7 @@ impl<F: Float + ndarray::ScalarOperand> Op<F> for SchurExtractOp {
 // Helper functions
 
 /// Compute polar decomposition A = UP
+#[allow(dead_code)]
 fn compute_polar_decomposition<F: Float + ndarray::ScalarOperand>(
     matrix: &ArrayView2<F>,
 ) -> Result<(Array2<F>, Array2<F>), OpError> {
@@ -204,7 +205,7 @@ fn compute_polar_decomposition<F: Float + ndarray::ScalarOperand>(
     // A = UΣV^T => polar decomposition: A = (UV^T)(VΣV^T)
 
     // For simplicity, use power iteration to get dominant singular vectors
-    let (_u_vec, _sigma) = power_iteration_svd(matrix, 20, F::epsilon() * F::from(100.0).unwrap());
+    let _u_vec_sigma = power_iteration_svd(matrix, 20, F::epsilon() * F::from(100.0).unwrap());
 
     if m == n && n <= 3 {
         // For small square matrices, use simplified approach
@@ -249,6 +250,7 @@ fn compute_polar_decomposition<F: Float + ndarray::ScalarOperand>(
 }
 
 /// Compute Schur decomposition A = QTQ^T
+#[allow(dead_code)]
 fn compute_schur_decomposition<F: Float + ndarray::ScalarOperand>(
     matrix: &ArrayView2<F>,
 ) -> Result<(Array2<F>, Array2<F>), OpError> {
@@ -295,6 +297,7 @@ fn compute_schur_decomposition<F: Float + ndarray::ScalarOperand>(
 }
 
 /// Simple QR decomposition using Gram-Schmidt
+#[allow(dead_code)]
 fn compute_qr<F: Float>(matrix: &ArrayView2<F>) -> Result<(Array2<F>, Array2<F>), OpError> {
     let (m, n) = matrix.dim();
     let k = m.min(n);
@@ -303,7 +306,7 @@ fn compute_qr<F: Float>(matrix: &ArrayView2<F>) -> Result<(Array2<F>, Array2<F>)
     let mut r = Array2::<F>::zeros((k, n));
 
     for j in 0..k {
-        // Copy column j of matrix to column j of Q
+        // Copy column j of _matrix to column j of Q
         for i in 0..m {
             q[[i, j]] = matrix[[i, j]];
         }
@@ -349,6 +352,7 @@ fn compute_qr<F: Float>(matrix: &ArrayView2<F>) -> Result<(Array2<F>, Array2<F>)
 }
 
 /// Matrix square root using eigendecomposition (simplified)
+#[allow(dead_code)]
 fn matrix_sqrt<F: Float + ndarray::ScalarOperand>(
     matrix: &ArrayView2<F>,
 ) -> Result<Array2<F>, OpError> {
@@ -406,6 +410,7 @@ fn matrix_sqrt<F: Float + ndarray::ScalarOperand>(
 }
 
 /// Simple matrix inverse for small matrices
+#[allow(dead_code)]
 fn matrix_inverse_simple<F: Float>(matrix: &ArrayView2<F>) -> Result<Array2<F>, OpError> {
     let n = matrix.shape()[0];
 
@@ -485,6 +490,7 @@ fn matrix_inverse_simple<F: Float>(matrix: &ArrayView2<F>) -> Result<Array2<F>, 
 }
 
 /// Check if matrix is diagonal
+#[allow(dead_code)]
 fn is_diagonal<F: Float>(matrix: &ArrayView2<F>) -> bool {
     let (m, n) = matrix.dim();
     for i in 0..m {
@@ -498,6 +504,7 @@ fn is_diagonal<F: Float>(matrix: &ArrayView2<F>) -> bool {
 }
 
 /// Check if matrix is invertible (simplified)
+#[allow(dead_code)]
 fn is_invertible<F: Float>(matrix: &ArrayView2<F>) -> bool {
     let n = matrix.shape()[0];
 
@@ -512,12 +519,13 @@ fn is_invertible<F: Float>(matrix: &ArrayView2<F>) -> bool {
 }
 
 /// Power iteration for dominant singular value
+#[allow(dead_code)]
 fn power_iteration_svd<F: Float + ndarray::ScalarOperand>(
     matrix: &ArrayView2<F>,
     max_iter: usize,
     tol: F,
 ) -> (ndarray::Array1<F>, F) {
-    let (m, _n) = matrix.dim();
+    let (m, n) = matrix.dim();
 
     // Initialize with random unit vector
     let mut u = ndarray::Array1::<F>::zeros(m);
@@ -575,6 +583,7 @@ fn power_iteration_svd<F: Float + ndarray::ScalarOperand>(
 
 /// Compute polar decomposition A = UP
 /// where U is unitary and P is positive semidefinite
+#[allow(dead_code)]
 pub fn polar<'g, F: Float + ndarray::ScalarOperand>(
     matrix: &Tensor<'g, F>,
 ) -> (Tensor<'g, F>, Tensor<'g, F>) {
@@ -593,6 +602,7 @@ pub fn polar<'g, F: Float + ndarray::ScalarOperand>(
 
 /// Compute Schur decomposition A = QTQ^T
 /// where Q is orthogonal and T is quasi-upper triangular
+#[allow(dead_code)]
 pub fn schur<'g, F: Float + ndarray::ScalarOperand>(
     matrix: &Tensor<'g, F>,
 ) -> (Tensor<'g, F>, Tensor<'g, F>) {

@@ -51,9 +51,9 @@ impl<F: Float + fmt::Debug + fmt::Display + FromPrimitive> MetricOptimizer<F> {
     ///
     /// * `metric_name` - Name of the metric to optimize
     /// * `maximize` - Whether to maximize (true) or minimize (false) the metric
-    pub fn new<S: Into<String>>(metric_name: S, maximize: bool) -> Self {
+    pub fn new<S: Into<String>>(name: S, maximize: bool) -> Self {
         Self {
-            metric_name: metric_name.into(),
+            metric_name: name.into(),
             mode: if maximize {
                 OptimizationMode::Maximize
             } else {
@@ -100,17 +100,17 @@ impl<F: Float + fmt::Debug + fmt::Display + FromPrimitive> MetricOptimizer<F> {
     }
 
     /// Add a value for an additional metric to track
-    pub fn add_additional_value(&mut self, metric_name: &str, value: F) {
+    pub fn add_additional_value(&mut self, metricname: &str, value: F) {
         self.additional_metrics
-            .entry(metric_name.to_string())
+            .entry(metricname.to_string())
             .or_default()
             .push(value);
     }
 
     /// Get the history of an additional metric
-    pub fn additional_metric_history(&self, metric_name: &str) -> Option<&[F]> {
+    pub fn additional_metric_history(&self, metricname: &str) -> Option<&[F]> {
         self.additional_metrics
-            .get(metric_name)
+            .get(metricname)
             .map(|v| v.as_slice())
     }
 

@@ -4,6 +4,7 @@
 
 use scirs2_special::bessel::spherical::{spherical_jn, spherical_jn_scaled, spherical_yn};
 
+#[allow(dead_code)]
 fn main() {
     // Test small arguments
     println!("\nSmall Arguments (x = 0.1):");

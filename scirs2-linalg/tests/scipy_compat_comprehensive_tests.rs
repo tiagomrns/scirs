@@ -7,12 +7,12 @@
 use ndarray::{array, Array1, Array2, ArrayView2};
 use scirs2_linalg::compat;
 // use scirs2_linalg::error::{LinalgError, LinalgResult};
-// use std::f64::consts::PI;
 
 /// Test tolerance for floating point comparisons
 const TEST_TOL: f64 = 1e-10;
 
 /// Helper function to check if two arrays are approximately equal
+#[allow(dead_code)]
 fn arrays_close(a: &Array2<f64>, b: &Array2<f64>, tol: f64) -> bool {
     if a.shape() != b.shape() {
         return false;
@@ -24,6 +24,7 @@ fn arrays_close(a: &Array2<f64>, b: &Array2<f64>, tol: f64) -> bool {
 }
 
 /// Helper function to check if two vectors are approximately equal
+#[allow(dead_code)]
 fn vectors_close(a: &Array1<f64>, b: &Array1<f64>, tol: f64) -> bool {
     if a.len() != b.len() {
         return false;
@@ -35,6 +36,7 @@ fn vectors_close(a: &Array1<f64>, b: &Array1<f64>, tol: f64) -> bool {
 }
 
 /// Helper function to check if two scalars are approximately equal
+#[allow(dead_code)]
 fn scalars_close(a: f64, b: f64, tol: f64) -> bool {
     (a - b).abs() < tol || (a.is_nan() && b.is_nan())
 }
@@ -75,7 +77,7 @@ mod basic_operations_tests {
     }
 
     #[test]
-    fn test_matrix_inverse_comprehensive() {
+    fn testmatrix_inverse_comprehensive() {
         // Test inverse of various matrices
 
         // 2x2 matrix
@@ -100,19 +102,19 @@ mod basic_operations_tests {
     }
 
     #[test]
-    fn test_matrix_norms_comprehensive() {
-        let test_matrix = array![[3.0, 4.0], [1.0, 2.0]];
+    fn testmatrix_norms_comprehensive() {
+        let testmatrix = array![[3.0, 4.0], [1.0, 2.0]];
 
         // Frobenius norm: sqrt(3^2 + 4^2 + 1^2 + 2^2) = sqrt(30)
-        let fro_norm = compat::norm(&test_matrix.view(), Some("fro"), None, false, true).unwrap();
+        let fro_norm = compat::norm(&testmatrix.view(), Some("fro"), None, false, true).unwrap();
         assert!(scalars_close(fro_norm, 30.0_f64.sqrt(), TEST_TOL));
 
         // 1-norm (maximum absolute column sum): max(|3|+|1|, |4|+|2|) = max(4, 6) = 6
-        let norm_1 = compat::norm(&test_matrix.view(), Some("1"), None, false, true).unwrap();
+        let norm_1 = compat::norm(&testmatrix.view(), Some("1"), None, false, true).unwrap();
         assert!(scalars_close(norm_1, 6.0, TEST_TOL));
 
         // Infinity norm (maximum absolute row sum): max(|3|+|4|, |1|+|2|) = max(7, 3) = 7
-        let norm_inf = compat::norm(&test_matrix.view(), Some("inf"), None, false, true).unwrap();
+        let norm_inf = compat::norm(&testmatrix.view(), Some("inf"), None, false, true).unwrap();
         assert!(scalars_close(norm_inf, 7.0, TEST_TOL));
 
         // Test edge cases
@@ -161,20 +163,20 @@ mod basic_operations_tests {
         assert!(arrays_close(&pinv_result, &inv_result, TEST_TOL));
 
         // Tall matrix (overdetermined)
-        let tall_matrix = array![[1.0, 0.0], [0.0, 1.0], [1.0, 1.0]];
-        let pinv_tall = compat::pinv(&tall_matrix.view(), None, false, true).unwrap();
+        let tallmatrix = array![[1.0, 0.0], [0.0, 1.0], [1.0, 1.0]];
+        let pinv_tall = compat::pinv(&tallmatrix.view(), None, false, true).unwrap();
 
         // Verify that A^+ * A = I for full column rank
-        let product = pinv_tall.dot(&tall_matrix);
+        let product = pinv_tall.dot(&tallmatrix);
         let identity_2x2 = Array2::eye(2);
         assert!(arrays_close(&product, &identity_2x2, 1e-8));
 
         // Wide matrix (underdetermined)
-        let wide_matrix = array![[1.0, 0.0, 1.0], [0.0, 1.0, 1.0]];
-        let pinv_wide = compat::pinv(&wide_matrix.view(), None, false, true).unwrap();
+        let widematrix = array![[1.0, 0.0, 1.0], [0.0, 1.0, 1.0]];
+        let pinv_wide = compat::pinv(&widematrix.view(), None, false, true).unwrap();
 
         // Verify that A * A^+ = I for full row rank
-        let product = wide_matrix.dot(&pinv_wide);
+        let product = widematrix.dot(&pinv_wide);
         let identity_2x2 = Array2::eye(2);
         assert!(arrays_close(&product, &identity_2x2, 1e-8));
 
@@ -201,11 +203,11 @@ mod basic_operations_tests {
         assert!(cond_result > 1.0 && cond_result < 10.0); // Should be reasonably conditioned
 
         // Test different norm types
-        let test_matrix = array![[4.0, 2.0], [2.0, 3.0]];
+        let testmatrix = array![[4.0, 2.0], [2.0, 3.0]];
 
-        let cond_1 = compat::cond(&test_matrix.view(), Some("1")).unwrap();
-        let cond_inf = compat::cond(&test_matrix.view(), Some("inf")).unwrap();
-        let cond_fro = compat::cond(&test_matrix.view(), Some("fro")).unwrap();
+        let cond_1 = compat::cond(&testmatrix.view(), Some("1")).unwrap();
+        let cond_inf = compat::cond(&testmatrix.view(), Some("inf")).unwrap();
+        let cond_fro = compat::cond(&testmatrix.view(), Some("fro")).unwrap();
 
         // All condition numbers should be positive
         assert!(cond_1 > 0.0);
@@ -214,7 +216,7 @@ mod basic_operations_tests {
     }
 
     #[test]
-    fn test_matrix_rank_comprehensive() {
+    fn testmatrix_rank_comprehensive() {
         // Full rank matrices
         let full_rank_2x2 = array![[1.0, 2.0], [3.0, 4.0]];
         let rank = compat::matrix_rank(&full_rank_2x2.view(), None, false, true).unwrap();
@@ -230,8 +232,8 @@ mod basic_operations_tests {
         assert_eq!(rank, 1);
 
         // Zero matrix
-        let zero_matrix = Array2::<f64>::zeros((3, 3));
-        let rank = compat::matrix_rank(&zero_matrix.view(), None, false, true).unwrap();
+        let zeromatrix = Array2::<f64>::zeros((3, 3));
+        let rank = compat::matrix_rank(&zeromatrix.view(), None, false, true).unwrap();
         assert_eq!(rank, 0);
 
         // Rectangular matrices
@@ -755,18 +757,18 @@ mod matrix_function_tests {
     use super::*;
 
     #[test]
-    fn test_matrix_exponential_comprehensive() {
+    fn testmatrix_exponential_comprehensive() {
         // Test matrix exponential properties
 
         // Zero matrix: exp(0) = I
-        let zero_matrix = Array2::zeros((2, 2));
-        let exp_zero = compat::expm(&zero_matrix.view(), None).unwrap();
+        let zeromatrix = Array2::zeros((2, 2));
+        let exp_zero = compat::expm(&zeromatrix.view(), None).unwrap();
         let identity = Array2::eye(2);
         assert!(arrays_close(&exp_zero, &identity, TEST_TOL));
 
         // Diagonal matrix: exp(diag(a,b)) = diag(exp(a), exp(b))
-        let diag_matrix = array![[1.0, 0.0], [0.0, 2.0]];
-        let exp_diag = compat::expm(&diag_matrix.view(), None).unwrap();
+        let diagmatrix = array![[1.0, 0.0], [0.0, 2.0]];
+        let exp_diag = compat::expm(&diagmatrix.view(), None).unwrap();
         let expected = array![[1.0_f64.exp(), 0.0], [0.0, 2.0_f64.exp()]];
         assert!(arrays_close(&exp_diag, &expected, 1e-8));
 
@@ -790,14 +792,14 @@ mod matrix_function_tests {
     }
 
     #[test]
-    fn test_matrix_logarithm_comprehensive() {
+    fn testmatrix_logarithm_comprehensive() {
         // Test matrix logarithm properties
 
         // Identity matrix: log(I) should be close to zero matrix
         let identity = Array2::eye(2);
         let log_identity = compat::logm(&identity.view()).unwrap();
-        let zero_matrix = Array2::zeros((2, 2));
-        assert!(arrays_close(&log_identity, &zero_matrix, 1e-8));
+        let zeromatrix = Array2::zeros((2, 2));
+        assert!(arrays_close(&log_identity, &zeromatrix, 1e-8));
 
         // Positive definite matrix
         let pos_def = array![[2.0, 1.0], [1.0, 2.0]];
@@ -808,14 +810,14 @@ mod matrix_function_tests {
         assert!(arrays_close(&exp_log, &pos_def, 1e-3));
 
         // Diagonal matrix: log(diag(a,b)) = diag(log(a), log(b))
-        let diag_matrix = array![[2.0, 0.0], [0.0, 3.0]];
-        let log_diag = compat::logm(&diag_matrix.view()).unwrap();
+        let diagmatrix = array![[2.0, 0.0], [0.0, 3.0]];
+        let log_diag = compat::logm(&diagmatrix.view()).unwrap();
         let expected = array![[2.0_f64.ln(), 0.0], [0.0, 3.0_f64.ln()]];
         assert!(arrays_close(&log_diag, &expected, 1e-8));
     }
 
     #[test]
-    fn test_matrix_square_root_comprehensive() {
+    fn testmatrix_square_root_comprehensive() {
         // Test matrix square root properties
 
         // Identity matrix: sqrt(I) = I
@@ -832,52 +834,52 @@ mod matrix_function_tests {
         assert!(arrays_close(&sqrt_squared, &pos_def, 1e-8));
 
         // Diagonal matrix: sqrt(diag(a,b)) = diag(sqrt(a), sqrt(b))
-        let diag_matrix = array![[4.0, 0.0], [0.0, 9.0]];
-        let sqrt_diag = compat::sqrtm(&diag_matrix.view(), None).unwrap();
+        let diagmatrix = array![[4.0, 0.0], [0.0, 9.0]];
+        let sqrt_diag = compat::sqrtm(&diagmatrix.view(), None).unwrap();
         let expected = array![[2.0, 0.0], [0.0, 3.0]];
         assert!(arrays_close(&sqrt_diag, &expected, 1e-8));
 
         // Zero matrix: sqrt(0) = 0
-        let zero_matrix = Array2::<f64>::zeros((2, 2));
-        let sqrt_zero = compat::sqrtm(&zero_matrix.view(), None).unwrap();
-        assert!(arrays_close(&sqrt_zero, &zero_matrix, 1e-8));
+        let zeromatrix = Array2::<f64>::zeros((2, 2));
+        let sqrt_zero = compat::sqrtm(&zeromatrix.view(), None).unwrap();
+        assert!(arrays_close(&sqrt_zero, &zeromatrix, 1e-8));
     }
 
     #[test]
-    fn test_general_matrix_function() {
+    fn test_generalmatrix_function() {
         // Test general matrix function interface
-        let test_matrix = array![[1.0, 0.5], [0.5, 1.0]];
+        let testmatrix = array![[1.0, 0.5], [0.5, 1.0]];
 
         // Test exp via funm
-        let exp_via_funm = compat::funm(&test_matrix.view(), "exp", false).unwrap();
-        let exp_direct = compat::expm(&test_matrix.view(), None).unwrap();
+        let exp_via_funm = compat::funm(&testmatrix.view(), "exp", false).unwrap();
+        let exp_direct = compat::expm(&testmatrix.view(), None).unwrap();
         assert!(arrays_close(&exp_via_funm, &exp_direct, 1e-8));
 
         // Test log via funm
-        let log_via_funm = compat::funm(&test_matrix.view(), "log", false).unwrap();
-        let log_direct = compat::logm(&test_matrix.view()).unwrap();
+        let log_via_funm = compat::funm(&testmatrix.view(), "log", false).unwrap();
+        let log_direct = compat::logm(&testmatrix.view()).unwrap();
         assert!(arrays_close(&log_via_funm, &log_direct, 1e-8));
 
         // Test sqrt via funm
-        let sqrt_via_funm = compat::funm(&test_matrix.view(), "sqrt", false).unwrap();
-        let sqrt_direct = compat::sqrtm(&test_matrix.view(), None).unwrap();
+        let sqrt_via_funm = compat::funm(&testmatrix.view(), "sqrt", false).unwrap();
+        let sqrt_direct = compat::sqrtm(&testmatrix.view(), None).unwrap();
         assert!(arrays_close(&sqrt_via_funm, &sqrt_direct, 1e-8));
 
         // Test trigonometric functions via funm
-        let cos_via_funm = compat::funm(&test_matrix.view(), "cos", false).unwrap();
-        let cos_direct = compat::cosm(&test_matrix.view()).unwrap();
+        let cos_via_funm = compat::funm(&testmatrix.view(), "cos", false).unwrap();
+        let cos_direct = compat::cosm(&testmatrix.view()).unwrap();
         assert!(arrays_close(&cos_via_funm, &cos_direct, 1e-8));
 
-        let sin_via_funm = compat::funm(&test_matrix.view(), "sin", false).unwrap();
-        let sin_direct = compat::sinm(&test_matrix.view()).unwrap();
+        let sin_via_funm = compat::funm(&testmatrix.view(), "sin", false).unwrap();
+        let sin_direct = compat::sinm(&testmatrix.view()).unwrap();
         assert!(arrays_close(&sin_via_funm, &sin_direct, 1e-8));
 
-        let tan_via_funm = compat::funm(&test_matrix.view(), "tan", false).unwrap();
-        let tan_direct = compat::tanm(&test_matrix.view()).unwrap();
+        let tan_via_funm = compat::funm(&testmatrix.view(), "tan", false).unwrap();
+        let tan_direct = compat::tanm(&testmatrix.view()).unwrap();
         assert!(arrays_close(&tan_via_funm, &tan_direct, 1e-8));
 
         // Test unimplemented functions return errors
-        assert!(compat::funm(&test_matrix.view(), "invalid", false).is_err());
+        assert!(compat::funm(&testmatrix.view(), "invalid", false).is_err());
     }
 }
 
@@ -935,14 +937,14 @@ mod error_handling_tests {
     #[test]
     fn test_finite_checking() {
         // Test matrices with non-finite values
-        let inf_matrix = array![[1.0, f64::INFINITY], [2.0, 3.0]];
-        let nan_matrix = array![[1.0, 2.0], [f64::NAN, 3.0]];
+        let infmatrix = array![[1.0, f64::INFINITY], [2.0, 3.0]];
+        let nanmatrix = array![[1.0, 2.0], [f64::NAN, 3.0]];
 
         // These should fail when check_finite=true
-        assert!(compat::det(&inf_matrix.view(), false, true).is_err());
-        assert!(compat::det(&nan_matrix.view(), false, true).is_err());
-        assert!(compat::inv(&inf_matrix.view(), false, true).is_err());
-        assert!(compat::norm(&inf_matrix.view(), Some("fro"), None, false, true).is_err());
+        assert!(compat::det(&infmatrix.view(), false, true).is_err());
+        assert!(compat::det(&nanmatrix.view(), false, true).is_err());
+        assert!(compat::inv(&infmatrix.view(), false, true).is_err());
+        assert!(compat::norm(&infmatrix.view(), Some("fro"), None, false, true).is_err());
 
         // Vector with non-finite values
         let inf_vector = array![1.0, f64::INFINITY, 3.0];
@@ -974,12 +976,12 @@ mod error_handling_tests {
 
     #[test]
     fn test_unimplemented_features() {
-        let test_matrix = array![[1.0, 2.0], [3.0, 4.0]];
+        let testmatrix = array![[1.0, 2.0], [3.0, 4.0]];
         let _test_vector = array![1.0, 2.0];
 
         // Test that schur is implemented (it should work, not return NotImplemented)
         // schur is implemented with a simple QR iteration algorithm
-        let schur_result = compat::schur(&test_matrix.view(), "real", None, false, None, true);
+        let schur_result = compat::schur(&testmatrix.view(), "real", None, false, None, true);
         assert!(
             schur_result.is_ok(),
             "Schur decomposition should be implemented"
@@ -987,15 +989,15 @@ mod error_handling_tests {
 
         // Test that trigonometric matrix functions are implemented
         assert!(
-            compat::cosm(&test_matrix.view()).is_ok(),
+            compat::cosm(&testmatrix.view()).is_ok(),
             "cosm should be implemented"
         );
         assert!(
-            compat::sinm(&test_matrix.view()).is_ok(),
+            compat::sinm(&testmatrix.view()).is_ok(),
             "sinm should be implemented"
         );
         assert!(
-            compat::tanm(&test_matrix.view()).is_ok(),
+            compat::tanm(&testmatrix.view()).is_ok(),
             "tanm should be implemented"
         );
 
@@ -1007,27 +1009,27 @@ mod error_handling_tests {
         );
 
         // Unsupported norm types
-        assert!(compat::norm(&test_matrix.view(), Some("nuc"), None, false, true).is_err());
+        assert!(compat::norm(&testmatrix.view(), Some("nuc"), None, false, true).is_err());
 
         // Unimplemented matrix function
-        assert!(compat::funm(&test_matrix.view(), "sinh", false).is_err());
+        assert!(compat::funm(&testmatrix.view(), "sinh", false).is_err());
     }
 
     #[test]
     fn test_invalid_parameters() {
-        let test_matrix = array![[1.0, 2.0], [3.0, 4.0]];
+        let testmatrix = array![[1.0, 2.0], [3.0, 4.0]];
 
         // Invalid mode for QR
-        assert!(compat::qr(&test_matrix.view(), false, None, "invalid", false, true).is_err());
+        assert!(compat::qr(&testmatrix.view(), false, None, "invalid", false, true).is_err());
 
         // Invalid side for polar decomposition
-        assert!(compat::polar(&test_matrix.view(), "invalid").is_err());
+        assert!(compat::polar(&testmatrix.view(), "invalid").is_err());
 
         // Invalid output type for Schur
-        assert!(compat::schur(&test_matrix.view(), "invalid", None, false, None, true).is_err());
+        assert!(compat::schur(&testmatrix.view(), "invalid", None, false, None, true).is_err());
 
         // Invalid RQ mode
-        assert!(compat::rq(&test_matrix.view(), false, None, "invalid", true).is_err());
+        assert!(compat::rq(&testmatrix.view(), false, None, "invalid", true).is_err());
     }
 }
 
@@ -1065,7 +1067,7 @@ mod integration_tests {
         // 5. Decompose the matrix
         let (p, l, u) = compat::lu(&a.view(), false, false, true, false).unwrap();
         let (q_opt, r) = compat::qr(&a.view(), false, None, "full", false, true).unwrap();
-        let (_eigenvals, _eigenvecs_opt) = compat::eigh(
+        let _eigenvals_eigenvecs_opt = compat::eigh(
             &a.view(),
             None,
             false,
@@ -1085,8 +1087,8 @@ mod integration_tests {
         let lu_product = l.dot(&u);
         assert!(arrays_close(&pa, &lu_product, 1e-8));
 
-        if let Some(q_matrix) = q_opt {
-            let qr_product = q_matrix.dot(&r);
+        if let Some(qmatrix) = q_opt {
+            let qr_product = qmatrix.dot(&r);
             assert!(arrays_close(&qr_product, &a, 1e-8));
         }
 

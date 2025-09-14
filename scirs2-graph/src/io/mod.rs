@@ -69,6 +69,7 @@ pub enum GraphFormat {
 /// # Returns
 /// * `Ok(Graph)` - The graph read from the file
 /// * `Err(GraphError)` - If there was an error reading the file
+#[allow(dead_code)]
 pub fn read_graph<N, E, P>(path: P, format: GraphFormat, weighted: bool) -> Result<Graph<N, E>>
 where
     N: Node + std::fmt::Debug + FromStr + Clone,
@@ -96,6 +97,7 @@ where
 /// # Returns
 /// * `Ok(DiGraph)` - The directed graph read from the file
 /// * `Err(GraphError)` - If there was an error reading the file
+#[allow(dead_code)]
 pub fn read_digraph<N, E, P>(path: P, format: GraphFormat, weighted: bool) -> Result<DiGraph<N, E>>
 where
     N: Node + std::fmt::Debug + FromStr + Clone,
@@ -124,6 +126,7 @@ where
 /// # Returns
 /// * `Ok(())` - If the graph was written successfully
 /// * `Err(GraphError)` - If there was an error writing the file
+#[allow(dead_code)]
 pub fn write_graph<N, E, Ix, P>(
     graph: &Graph<N, E, Ix>,
     path: P,
@@ -163,6 +166,7 @@ where
 /// # Returns
 /// * `Ok(())` - If the graph was written successfully
 /// * `Err(GraphError)` - If there was an error writing the file
+#[allow(dead_code)]
 pub fn write_digraph<N, E, Ix, P>(
     graph: &DiGraph<N, E, Ix>,
     path: P,

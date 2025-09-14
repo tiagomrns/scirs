@@ -8,12 +8,13 @@ use scirs2_interpolate::{
 };
 
 // Helper to run extrapolation for example points and display results
-fn demonstrate_extrapolation<F>(name: &str, extrap_values: &[(f64, f64)], f: F)
+#[allow(dead_code)]
+fn demonstrate_extrapolation<F>(name: &str, extrapvalues: &[(f64, f64)], f: F)
 where
     F: Fn(f64) -> Result<f64, String>,
 {
     println!("--- {} Extrapolation ---", name);
-    for &(x, expected) in extrap_values {
+    for &(x, expected) in extrapvalues {
         match f(x) {
             Ok(value) => println!(
                 "  f({:.2}) = {:.6} {}",
@@ -31,6 +32,7 @@ where
     println!();
 }
 
+#[allow(dead_code)]
 fn main() {
     println!("Advanced Extrapolation and Boundary Handling Examples");
     println!("====================================================\n");
@@ -289,7 +291,7 @@ fn main() {
                         let diff_b = f64::abs(mapped_x - *b);
                         diff_a.partial_cmp(&diff_b).unwrap()
                     })
-                    .map(|(idx, _)| idx)
+                    .map(|(idx_, _)| idx_)
                     .unwrap();
                 println!(
                     "  f({:.2}) → mapped to: f({:.2}) ≈ {:.6}",
@@ -314,7 +316,7 @@ fn main() {
                         let diff_b = f64::abs(mapped_x - *b);
                         diff_a.partial_cmp(&diff_b).unwrap()
                     })
-                    .map(|(idx, _)| idx)
+                    .map(|(idx_, _)| idx_)
                     .unwrap();
                 println!(
                     "  f({:.2}) → mapped to: f({:.2}) ≈ {:.6}",

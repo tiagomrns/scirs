@@ -4,8 +4,8 @@
 //! using various approximation methods to improve computational efficiency.
 //! Universal kriging allows for trend modeling using basis functions.
 
-use crate::advanced::enhanced_kriging::{AnisotropicCovariance, TrendFunction};
-use crate::advanced::fast_kriging::{
+use crate::advanced::enhanced__kriging::{AnisotropicCovariance, TrendFunction};
+use crate::advanced::fast__kriging::{
     FastKriging, FastKrigingBuilder, FastKrigingMethod, FastPredictionResult,
 };
 use crate::error::{InterpolateError, InterpolateResult};
@@ -16,11 +16,13 @@ use std::ops::{Add, Div, Mul, Sub};
 
 // Import shared utility functions from parent module
 use super::covariance::{
+use statrs::statistics::Statistics;
     compute_anisotropic_distance, compute_covariance, compute_low_rank_approximation,
     compute_tapered_covariance, find_nearest_neighbors, project_to_feature,
 };
 
 /// Create basis functions for the trend model
+#[allow(dead_code)]
 pub fn create_basis_functions<F: Float + FromPrimitive>(
     points: &ArrayView2<F>,
     trend_fn: TrendFunction,
@@ -110,11 +112,11 @@ pub fn create_basis_functions<F: Float + FromPrimitive>(
 }
 
 /// Compute trend coefficients using least squares
+#[allow(dead_code)]
 pub fn compute_trend_coefficients<F: Float + FromPrimitive + 'static>(
     _points: &Array2<F>,
     values: &Array1<F>,
-    basis_functions: &Array2<F>,
-    _trend_fn: TrendFunction,
+    basis_functions: &Array2<F>, _trend_fn: TrendFunction,
 ) -> InterpolateResult<Array1<F>> {
     // Basic least squares: β = (X'X)^(-1) X'y
     // Compute matrix products for least squares
@@ -125,7 +127,7 @@ pub fn compute_trend_coefficients<F: Float + FromPrimitive + 'static>(
 
     #[cfg(feature = "linalg")]
     {
-        use ndarray_linalg::Solve;
+        use ndarray__linalg::Solve;
         // Convert to f64 for linear algebra
         let xtx_f64 = xtx.mapv(|x| x.to_f64().unwrap());
         let xty_f64 = xty.mapv(|x| x.to_f64().unwrap());
@@ -175,7 +177,7 @@ where
         let mut values = Array1::zeros(n_query);
         let mut variances = Array1::zeros(n_query);
 
-        // Compute basis functions for query points
+        // Compute basis functions for query _points
         let query_basis = create_basis_functions(query_points, self.trend_fn)?;
 
         // For each query point
@@ -183,9 +185,9 @@ where
             let query_point = query_points.slice(ndarray::s![i, ..]);
 
             // Find nearest neighbors
-            let (indices, _distances) = find_nearest_neighbors(
+            let (indices_distances) = find_nearest_neighbors(
                 &query_point,
-                &self.points,
+                &self._points,
                 self.max_neighbors,
                 self.radius_multiplier,
             )?;
@@ -206,7 +208,7 @@ where
             for (j, &idx) in indices.iter().enumerate() {
                 local_points
                     .slice_mut(ndarray::s![j, ..])
-                    .assign(&self.points.slice(ndarray::s![idx, ..]));
+                    .assign(&self._points.slice(ndarray::s![idx, ..]));
                 local_values[j] = self.values[idx];
             }
 
@@ -278,7 +280,7 @@ where
             // Only gets here if linalg is enabled
             #[cfg(feature = "linalg")]
             {
-                use ndarray_linalg::Solve;
+                use ndarray__linalg::Solve;
                 // Convert to f64 for linear algebra
                 let aug_matrix_f64 = aug_matrix.mapv(|x| x.to_f64().unwrap());
                 let rhs_f64 = rhs.mapv(|x| x.to_f64().unwrap());
@@ -364,8 +366,7 @@ where
     ) -> InterpolateResult<FastPredictionResult<F>> {
         // Extract leaf size from method
         let leaf_size = match self.approx_method {
-            FastKrigingMethod::HODLR(size) => size,
-            _ => {
+            FastKrigingMethod::HODLR(size) => size_ => {
                 return Err(InterpolateError::InvalidOperation(
                     "Invalid method type for HODLR prediction".to_string(),
                 ));
@@ -379,7 +380,7 @@ where
         let mut values = Array1::zeros(n_query);
         let mut variances = Array1::zeros(n_query);
 
-        // Compute basis functions for query points if needed for universal kriging
+        // Compute basis functions for query _points if needed for universal kriging
         let query_basis = create_basis_functions(query_points, self.trend_fn)?;
 
         // Create temporary trend coefficients if not pre-computed
@@ -391,12 +392,12 @@ where
                     Some(basis) => basis,
                     None => {
                         // Create basis functions first
-                        &create_basis_functions(&self.points.view(), self.trend_fn)?
+                        &create_basis_functions(&self._points.view(), self.trend_fn)?
                     }
                 };
 
                 compute_trend_coefficients(
-                    &self.points,
+                    &self._points,
                     &self.values,
                     basis_functions,
                     self.trend_fn,
@@ -405,7 +406,7 @@ where
         };
 
         // Recursion helper: Start with the full dataset
-        let n_train = self.points.shape()[0];
+        let n_train = self._points.shape()[0];
         let train_indices: Vec<usize> = (0..n_train).collect();
 
         // For each query point
@@ -494,7 +495,7 @@ where
             // Solve the system for weights
             #[cfg(feature = "linalg")]
             let weights = {
-                use ndarray_linalg::Solve;
+                use ndarray__linalg::Solve;
                 // Convert to f64 for linear algebra
                 let cov_matrix_f64 = cov_matrix.mapv(|x| x.to_f64().unwrap());
                 let block_values_f64 = block_values.mapv(|x| x.to_f64().unwrap());
@@ -633,7 +634,7 @@ where
         + std::ops::RemAssign
         + 'static,
 {
-    /// Build a universal fast kriging model 
+    /// Build a universal fast kriging model
     pub fn build_universal(self) -> InterpolateResult<FastKriging<F>> {
         FastKriging::from_builder(self)
     }

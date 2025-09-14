@@ -5,6 +5,7 @@ use std::f64::consts::PI;
 use scirs2_spatial::transform::{Rotation, RotationSpline, Slerp};
 
 #[test]
+#[allow(dead_code)]
 fn test_rotation_basic() {
     // Create a rotation from various representations
     let rot_identity = Rotation::identity();
@@ -12,7 +13,7 @@ fn test_rotation_basic() {
     // Apply to a test point
     let point_arr = array![1.0, 2.0, 3.0];
     let point = point_arr.view();
-    let rotated = rot_identity.apply(&point);
+    let rotated = rot_identity.apply(&point).unwrap();
 
     // Identity rotation should return the same point
     assert_relative_eq!(rotated[0], point[0], epsilon = 1e-10);
@@ -25,7 +26,7 @@ fn test_rotation_basic() {
     let rot_z = Rotation::from_euler(&euler_z, "xyz").unwrap();
     let p_x_arr = array![1.0, 0.0, 0.0];
     let p_x = p_x_arr.view();
-    let rotated_z = rot_z.apply(&p_x);
+    let rotated_z = rot_z.apply(&p_x).unwrap();
 
     // Should map [1, 0, 0] to approximately [0, 1, 0]
     assert_relative_eq!(rotated_z[0], 0.0, epsilon = 1e-10);
@@ -35,7 +36,7 @@ fn test_rotation_basic() {
     // Test inverse rotation
     let rot_z_inv = rot_z.inv();
     let rotated_z_view = rotated_z.view();
-    let point_back = rot_z_inv.apply(&rotated_z_view);
+    let point_back = rot_z_inv.apply(&rotated_z_view).unwrap();
 
     // Should get back original point [1, 0, 0]
     assert_relative_eq!(point_back[0], 1.0, epsilon = 1e-10);
@@ -44,6 +45,7 @@ fn test_rotation_basic() {
 }
 
 #[test]
+#[allow(dead_code)]
 fn test_rotation_euler_conventions() {
     let test_conventions = ["xyz", "zyx", "xyx", "xzx", "yxy", "yzy", "zxz", "zyz"];
 
@@ -69,10 +71,10 @@ fn test_rotation_euler_conventions() {
         // (allowing for different but equivalent representations)
         let point_arr = array![1.0, 1.0, 1.0];
         let point = point_arr.view();
-        let rotated1 = rotation.apply(&point);
+        let rotated1 = rotation.apply(&point).unwrap();
 
         let rotation2 = Rotation::from_euler(&angles_back_view, convention).unwrap();
-        let rotated2 = rotation2.apply(&point);
+        let rotated2 = rotation2.apply(&point).unwrap();
 
         // Both rotations should produce the same result
         assert_relative_eq!(rotated1[0], rotated2[0], epsilon = 1e-10);
@@ -82,6 +84,7 @@ fn test_rotation_euler_conventions() {
 }
 
 #[test]
+#[allow(dead_code)]
 fn test_slerp_basic() {
     // Create two rotations
     let rot1 = Rotation::identity();
@@ -100,8 +103,8 @@ fn test_slerp_basic() {
     let rot_0 = slerp.interpolate(0.0);
     let rot_1 = slerp.interpolate(1.0);
 
-    let rotated_0 = rot_0.apply(&test_point);
-    let rotated_1 = rot_1.apply(&test_point);
+    let rotated_0 = rot_0.apply(&test_point).unwrap();
+    let rotated_1 = rot_1.apply(&test_point).unwrap();
 
     // Should match the original rotations
     assert_relative_eq!(rotated_0[0], 1.0, epsilon = 1e-10);
@@ -114,7 +117,7 @@ fn test_slerp_basic() {
 
     // Test midpoint (should be 90 degrees around Z)
     let rot_half = slerp.interpolate(0.5);
-    let rotated_half = rot_half.apply(&test_point);
+    let rotated_half = rot_half.apply(&test_point).unwrap();
 
     assert_relative_eq!(rotated_half[0], 0.0, epsilon = 1e-10);
     assert_relative_eq!(rotated_half[1], 1.0, epsilon = 1e-10);
@@ -122,6 +125,7 @@ fn test_slerp_basic() {
 }
 
 #[test]
+#[allow(dead_code)]
 fn test_rotation_spline_slerp() {
     // Create a rotation spline
     let rotations = vec![
@@ -152,9 +156,9 @@ fn test_rotation_spline_slerp() {
     let rot_1 = spline.interpolate(1.0);
     let rot_2 = spline.interpolate(2.0);
 
-    let rotated_0 = rot_0.apply(&test_point);
-    let rotated_1 = rot_1.apply(&test_point);
-    let rotated_2 = rot_2.apply(&test_point);
+    let rotated_0 = rot_0.apply(&test_point).unwrap();
+    let rotated_1 = rot_1.apply(&test_point).unwrap();
+    let rotated_2 = rot_2.apply(&test_point).unwrap();
 
     // Check that they match the original rotations
     assert_relative_eq!(rotated_0[0], 1.0, epsilon = 1e-10);
@@ -173,8 +177,8 @@ fn test_rotation_spline_slerp() {
     let rot_05 = spline.interpolate(0.5);
     let rot_15 = spline.interpolate(1.5);
 
-    let rotated_05 = rot_05.apply(&test_point);
-    let rotated_15 = rot_15.apply(&test_point);
+    let rotated_05 = rot_05.apply(&test_point).unwrap();
+    let rotated_15 = rot_15.apply(&test_point).unwrap();
 
     // Check that they produce expected intermediate rotations
     // t=0.5 should be 45 degrees around Z
@@ -205,7 +209,7 @@ fn test_rotation_spline_slerp() {
 }
 
 #[test]
-#[ignore] // The implementation has precision issues
+#[allow(dead_code)]
 fn test_rotation_spline_cubic() {
     // Create a rotation spline
     let rotations = vec![
@@ -240,9 +244,9 @@ fn test_rotation_spline_cubic() {
     let rot_1 = spline.interpolate(1.0);
     let rot_2 = spline.interpolate(2.0);
 
-    let rotated_0 = rot_0.apply(&test_point);
-    let rotated_1 = rot_1.apply(&test_point);
-    let rotated_2 = rot_2.apply(&test_point);
+    let rotated_0 = rot_0.apply(&test_point).unwrap();
+    let rotated_1 = rot_1.apply(&test_point).unwrap();
+    let rotated_2 = rot_2.apply(&test_point).unwrap();
 
     // Check that they match the original rotations
     assert_relative_eq!(rotated_0[0], 1.0, epsilon = 1e-10);
@@ -264,8 +268,8 @@ fn test_rotation_spline_cubic() {
     let rot_05 = spline.interpolate(0.5);
     let rot_15 = spline.interpolate(1.5);
 
-    let rotated_05 = rot_05.apply(&test_point);
-    let rotated_15 = rot_15.apply(&test_point);
+    let rotated_05 = rot_05.apply(&test_point).unwrap();
+    let rotated_15 = rot_15.apply(&test_point).unwrap();
 
     // Check that the results are unit vectors (valid rotations)
     let norm_05 = (rotated_05[0] * rotated_05[0]
@@ -282,6 +286,7 @@ fn test_rotation_spline_cubic() {
 }
 
 #[test]
+#[allow(dead_code)]
 fn test_rotation_spline_angular_velocity() {
     // Create a simple rotation spline (rotation around Z-axis)
     let rotations = vec![
@@ -297,31 +302,42 @@ fn test_rotation_spline_angular_velocity() {
     let spline = RotationSpline::new(&rotations, &times).unwrap();
 
     // Test angular velocity at midpoint
-    let _velocity = spline.angular_velocity(0.5);
+    let velocity = spline.angular_velocity(0.5).unwrap();
 
-    // Current implementation gives [2.221441469079183, 0.0, 0.0] instead of [0, 0, PI]
-    // TODO: Fix the angular_velocity implementation later
-    // For now, just check that the velocity exists
+    // For 180-degree rotation around Z-axis in 1 second, angular velocity should be [0, 0, PI]
+    assert_relative_eq!(velocity[0], 0.0, epsilon = 1e-3);
+    assert_relative_eq!(velocity[1], 0.0, epsilon = 1e-3);
+    assert_relative_eq!(velocity[2], PI, epsilon = 1e-3);
 
-    // Test at the endpoints (should be zero or close to velocity at nearby points)
-    let _velocity_start = spline.angular_velocity(0.0);
-    let _velocity_end = spline.angular_velocity(1.0);
+    // Test at the endpoints (should be zero)
+    let velocity_start = spline.angular_velocity(0.0).unwrap();
+    let velocity_end = spline.angular_velocity(1.0).unwrap();
 
-    // Current implementation doesn't match expectations
-    // TODO: Fix the angular_velocity implementation later
+    assert_relative_eq!(
+        (velocity_start.dot(&velocity_start)).sqrt(),
+        0.0,
+        epsilon = 1e-10
+    );
+    assert_relative_eq!(
+        (velocity_end.dot(&velocity_end)).sqrt(),
+        0.0,
+        epsilon = 1e-10
+    );
 
     // Test with cubic interpolation
     let mut cubic_spline = RotationSpline::new(&rotations, &times).unwrap();
     cubic_spline.set_interpolation_type("cubic").unwrap();
 
     // Velocity with cubic interpolation
-    let _cubic_velocity = cubic_spline.angular_velocity(0.5);
+    let cubic_velocity = cubic_spline.angular_velocity(0.5).unwrap();
 
-    // Current implementation doesn't match expectations
-    // TODO: Fix the cubic angular_velocity implementation later
+    // Cubic interpolation should also produce valid angular velocities
+    let cubic_magnitude = (cubic_velocity.dot(&cubic_velocity)).sqrt();
+    assert!(cubic_magnitude > 0.0); // Should have non-zero velocity at midpoint
 }
 
 #[test]
+#[allow(dead_code)]
 fn test_rotation_spline_angular_acceleration() {
     // Create a rotation spline
     let rotations = vec![

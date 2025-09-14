@@ -6,6 +6,7 @@ use scirs2_fft::sparse_fft_gpu::{gpu_batch_sparse_fft, gpu_sparse_fft, GPUBacken
 use std::f64::consts::PI;
 
 // Helper function to create a sparse signal with specified frequencies
+#[allow(dead_code)]
 fn create_sparse_signal(n: usize, frequencies: &[(usize, f64)]) -> Vec<f64> {
     let mut signal = vec![0.0; n];
     for i in 0..n {
@@ -18,15 +19,17 @@ fn create_sparse_signal(n: usize, frequencies: &[(usize, f64)]) -> Vec<f64> {
 }
 
 // Helper to add noise to signals
-fn add_noise(signal: &[f64], noise_level: f64) -> Vec<f64> {
+#[allow(dead_code)]
+fn add_noise(_signal: &[f64], noise_level: f64) -> Vec<f64> {
     let mut rng = rand::rng();
-    signal
+    _signal
         .iter()
-        .map(|&x| x + rng.random_range(-noise_level..noise_level))
+        .map(|&x| x + rng.gen_range(-noise_level..noise_level))
         .collect()
 }
 
 // Helper to create a batch of similar signals with different noise
+#[allow(dead_code)]
 fn create_signal_batch(
     count: usize,
     n: usize,
@@ -39,6 +42,7 @@ fn create_signal_batch(
         .collect()
 }
 
+#[allow(dead_code)]
 fn sequential_processing_small(c: &mut Criterion) {
     let n = 1024;
     let frequencies = vec![(30, 1.0), (70, 0.5), (150, 0.25)];
@@ -62,6 +66,7 @@ fn sequential_processing_small(c: &mut Criterion) {
     });
 }
 
+#[allow(dead_code)]
 fn sequential_processing_medium(c: &mut Criterion) {
     let n = 4096;
     let frequencies = vec![(30, 1.0), (70, 0.5), (150, 0.25)];
@@ -85,6 +90,7 @@ fn sequential_processing_medium(c: &mut Criterion) {
     });
 }
 
+#[allow(dead_code)]
 fn sequential_processing_large(c: &mut Criterion) {
     let n = 16384;
     let frequencies = vec![(30, 1.0), (70, 0.5), (150, 0.25)];
@@ -108,6 +114,7 @@ fn sequential_processing_large(c: &mut Criterion) {
     });
 }
 
+#[allow(dead_code)]
 fn batch_processing_cpu_small(c: &mut Criterion) {
     let n = 1024;
     let frequencies = vec![(30, 1.0), (70, 0.5), (150, 0.25)];
@@ -136,6 +143,7 @@ fn batch_processing_cpu_small(c: &mut Criterion) {
     });
 }
 
+#[allow(dead_code)]
 fn batch_processing_cpu_medium(c: &mut Criterion) {
     let n = 4096;
     let frequencies = vec![(30, 1.0), (70, 0.5), (150, 0.25)];
@@ -164,6 +172,7 @@ fn batch_processing_cpu_medium(c: &mut Criterion) {
     });
 }
 
+#[allow(dead_code)]
 fn batch_processing_gpu_small(c: &mut Criterion) {
     if !cfg!(feature = "cuda") {
         // Skip GPU benchmarks if CUDA is not available
@@ -188,6 +197,7 @@ fn batch_processing_gpu_small(c: &mut Criterion) {
     });
 }
 
+#[allow(dead_code)]
 fn batch_processing_gpu_medium(c: &mut Criterion) {
     if !cfg!(feature = "cuda") {
         // Skip GPU benchmarks if CUDA is not available
@@ -212,6 +222,7 @@ fn batch_processing_gpu_medium(c: &mut Criterion) {
     });
 }
 
+#[allow(dead_code)]
 fn gpu_vs_cpu_single_signal(c: &mut Criterion) {
     if !cfg!(feature = "cuda") {
         // Skip GPU benchmarks if CUDA is not available
@@ -249,6 +260,7 @@ fn gpu_vs_cpu_single_signal(c: &mut Criterion) {
     });
 }
 
+#[allow(dead_code)]
 fn batch_size_comparison(c: &mut Criterion) {
     if !cfg!(feature = "cuda") {
         // Skip GPU benchmarks if CUDA is not available
@@ -281,6 +293,7 @@ fn batch_size_comparison(c: &mut Criterion) {
     }
 }
 
+#[allow(dead_code)]
 fn memory_optimization_comparison(c: &mut Criterion) {
     if !cfg!(feature = "cuda") {
         // Skip GPU benchmarks if CUDA is not available

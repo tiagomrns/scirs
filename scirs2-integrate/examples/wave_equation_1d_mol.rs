@@ -5,6 +5,7 @@ use scirs2_integrate::{
 use std::f64::consts::PI;
 use std::time::Instant;
 
+#[allow(dead_code)]
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("Method of Lines example: 1D Wave equation solver");
     println!("Solving: ∂²u/∂t² = c² ∂²u/∂x²");
@@ -87,7 +88,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let u = &result.u; // Solution values [time, space]
     let u_t = &result.u_t; // Velocity values [time, space]
 
-    println!("Solution computed in {:.4} seconds", solve_time);
+    println!("Solution computed in {solve_time:.4} seconds");
     println!("ODE solver info: {:?}", result.ode_info);
 
     // Print solution at selected time points
@@ -123,10 +124,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             let exact = (PI * x).sin() * (PI * wave_speed * time).cos();
             let error = (numerical - exact).abs();
 
-            println!(
-                "{:<10.4} {:<10.4} {:<15.8e} {:<15.8e} {:<10.2e}",
-                time, x, numerical, exact, error
-            );
+            println!("{time:<10.4} {x:<10.4} {numerical:<15.8e} {exact:<15.8e} {error:<10.2e}");
         }
         println!(); // Empty line between time points
     }
@@ -152,10 +150,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         }
     }
 
-    println!(
-        "Maximum error: {:.2e} at t = {:.4}, x = {:.4}",
-        max_error, max_error_time, max_error_pos
-    );
+    println!("Maximum error: {max_error:.2e} at t = {max_error_time:.4}, x = {max_error_pos:.4}");
 
     // Analyze energy conservation
     println!("\nEnergy conservation analysis:");
@@ -196,9 +191,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
         // For t=0, store the initial energy
         if ti == 0 {
-            println!("Initial energy: {:.8}", total_energy);
-            println!("  - Kinetic energy: {:.8}", kinetic_energy);
-            println!("  - Potential energy: {:.8}", potential_energy);
+            println!("Initial energy: {total_energy:.8}");
+            println!("  - Kinetic energy: {kinetic_energy:.8}");
+            println!("  - Potential energy: {potential_energy:.8}");
             println!("\nTime      Total Energy  Relative Error");
         }
 
@@ -206,10 +201,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         let initial_energy = (PI * PI) / 4.0; // Analytical value for sin(πx)
         let energy_error = (total_energy - initial_energy).abs() / initial_energy;
 
-        println!(
-            "{:<10.4} {:<15.8e} {:<15.2e}",
-            time, total_energy, energy_error
-        );
+        println!("{time:<10.4} {total_energy:<15.8e} {energy_error:<15.2e}");
     }
 
     // Analyze wave propagation
@@ -222,10 +214,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         let amplitude = u[[ti, midpoint_index]];
         let exact_amplitude = (PI * 0.5).sin() * (PI * wave_speed * time).cos();
 
-        println!(
-            "{:<10.4} {:<15.8e} (exact: {:<15.8e})",
-            time, amplitude, exact_amplitude
-        );
+        println!("{time:<10.4} {amplitude:<15.8e} (exact: {exact_amplitude:<15.8e})");
     }
 
     Ok(())

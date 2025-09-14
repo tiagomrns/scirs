@@ -33,6 +33,7 @@ impl Default for ForwardADOptions {
 }
 
 /// Compute gradient using forward-mode automatic differentiation
+#[allow(dead_code)]
 pub fn forward_gradient<F>(func: F, x: &ArrayView1<f64>) -> Result<Array1<f64>, OptimizeError>
 where
     F: Fn(&ArrayView1<f64>) -> f64,
@@ -74,6 +75,7 @@ where
 }
 
 /// Compute Hessian diagonal using forward-mode automatic differentiation
+#[allow(dead_code)]
 pub fn forward_hessian_diagonal<F>(
     func: F,
     x: &ArrayView1<f64>,
@@ -289,6 +291,7 @@ impl std::ops::Div for SecondOrderDual {
 }
 
 /// Compute exact Hessian diagonal using second-order dual numbers
+#[allow(dead_code)]
 pub fn forward_hessian_diagonal_exact<F>(
     func: F,
     x: &ArrayView1<f64>,
@@ -319,6 +322,7 @@ where
 }
 
 /// Multi-variable forward-mode gradient computation using MultiDual
+#[allow(dead_code)]
 pub fn forward_gradient_multi<F>(func: F, x: &ArrayView1<f64>) -> Result<Array1<f64>, OptimizeError>
 where
     F: Fn(&[MultiDual]) -> MultiDual,
@@ -337,6 +341,7 @@ where
 }
 
 /// Forward-mode Jacobian computation for vector-valued functions
+#[allow(dead_code)]
 pub fn forward_jacobian<F>(
     func: F,
     x: &ArrayView1<f64>,
@@ -368,6 +373,7 @@ where
 }
 
 /// Check if forward mode is preferred for the given problem dimensions
+#[allow(dead_code)]
 pub fn is_forward_mode_efficient(input_dim: usize, output_dim: usize) -> bool {
     // Forward mode is efficient when input dimension is small
     // Cost is O(input_dim * cost_of_function)

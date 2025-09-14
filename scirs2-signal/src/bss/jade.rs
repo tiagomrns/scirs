@@ -1,13 +1,14 @@
-//! JADE (Joint Approximate Diagonalization of Eigenmatrices) for ICA
-//!
-//! This module implements the JADE algorithm for blind source separation.
+use ndarray::s;
+// JADE (Joint Approximate Diagonalization of Eigenmatrices) for ICA
+//
+// This module implements the JADE algorithm for blind source separation.
 
 use super::{pca, BssConfig};
-use crate::error::SignalResult;
-use ndarray::{s, Array2};
+use crate::error::{SignalError, SignalResult};
+use ndarray::Array2;
 use scirs2_linalg::solve_multiple;
-use std::f64::consts::PI;
 
+#[allow(unused_imports)]
 /// Implement JADE algorithm for ICA
 ///
 /// JADE uses Joint Approximate Diagonalization of Eigenmatrices.
@@ -21,6 +22,7 @@ use std::f64::consts::PI;
 /// # Returns
 ///
 /// * Tuple containing (extracted sources, unmixing matrix)
+#[allow(dead_code)]
 pub fn jade_ica(
     signals: &Array2<f64>,
     n_components: usize,
@@ -40,7 +42,7 @@ pub fn jade_ica(
     ) {
         Ok(inv) => inv.slice(s![0..n_components, ..]).to_owned(),
         Err(_) => {
-            return Err(crate::error::SignalError::Compute(
+            return Err(crate::error::SignalError::ComputationError(
                 "Failed to compute PCA unmixing matrix".to_string(),
             ));
         }
@@ -148,7 +150,7 @@ pub fn jade_ica(
     // Unmixing matrix is V * Wpca
     let w = v.dot(&pca_unmixing);
 
-    // Extract the independent components
+    // Extract the independent _components
     let sources = w.dot(signals);
 
     Ok((sources, w))

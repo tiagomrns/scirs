@@ -41,11 +41,11 @@ impl<F: Float> AdaGrad<F> {
                     .get_array_by_id(vid)
                     .expect("variable array not found")
                     .borrow();
-                let var_shape = target_var.shape();
-                crate::ndarray_ext::zeros(var_shape)
+                let varshape = target_var.shape();
+                crate::ndarray_ext::zeros(varshape)
             };
             let mut ns = env.namespace_mut(adagrad_namespace_id);
-            ns.slot().name(format!("{}", vid)).set(h);
+            ns.slot().name(format!("{vid}")).set(h);
         }
         AdaGrad {
             lr,
@@ -72,7 +72,7 @@ impl<F: Float> Optimizer<F> for AdaGrad<F> {
             let param = params[i].as_ref();
             let param_id = param.get_variable_id().expect("Got non-variable tensor");
             let ns = g.namespace(self.adagrad_namespace_id);
-            let h = g.variable_by_name(format!("{}", param_id), &ns);
+            let h = g.variable_by_name(format!("{param_id}"), &ns);
 
             ret.push(
                 Tensor::builder(g)

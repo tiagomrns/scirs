@@ -49,13 +49,13 @@ pub struct Edge<N: Node, E: EdgeWeight> {
     pub weight: E,
 }
 
-impl<N: Node, E: EdgeWeight, Ix: IndexType> Default for Graph<N, E, Ix> {
+impl<N: Node + std::fmt::Debug, E: EdgeWeight, Ix: IndexType> Default for Graph<N, E, Ix> {
     fn default() -> Self {
         Self::new()
     }
 }
 
-impl<N: Node, E: EdgeWeight, Ix: IndexType> Graph<N, E, Ix> {
+impl<N: Node + std::fmt::Debug, E: EdgeWeight, Ix: IndexType> Graph<N, E, Ix> {
     /// Create a new empty undirected graph
     pub fn new() -> Self {
         Graph {
@@ -174,7 +174,11 @@ impl<N: Node, E: EdgeWeight, Ix: IndexType> Graph<N, E, Ix> {
                 .collect();
             Ok(neighbors)
         } else {
-            Err(GraphError::NodeNotFound)
+            Err(GraphError::node_not_found_with_context(
+                format!("{node:?}"),
+                self.node_count(),
+                "neighbors",
+            ))
         }
     }
 
@@ -200,10 +204,10 @@ impl<N: Node, E: EdgeWeight, Ix: IndexType> Graph<N, E, Ix> {
             if let Some(edge_ref) = self.graph.find_edge(src_idx, tgt_idx) {
                 Ok(self.graph[edge_ref].clone())
             } else {
-                Err(GraphError::EdgeNotFound)
+                Err(GraphError::edge_not_found("unknown", "unknown"))
             }
         } else {
-            Err(GraphError::NodeNotFound)
+            Err(GraphError::node_not_found("unknown node"))
         }
     }
 
@@ -221,6 +225,11 @@ impl<N: Node, E: EdgeWeight, Ix: IndexType> Graph<N, E, Ix> {
         self.node_indices.contains_key(node)
     }
 
+    /// Get the node index for a specific node
+    pub fn node_index(&self, node: &N) -> Option<NodeIndex<Ix>> {
+        self.node_indices.get(node).copied()
+    }
+
     /// Get the internal petgraph structure for more advanced operations
     pub fn inner(&self) -> &PetGraph<N, E, Undirected, Ix> {
         &self.graph
@@ -232,13 +241,13 @@ impl<N: Node, E: EdgeWeight, Ix: IndexType> Graph<N, E, Ix> {
     }
 }
 
-impl<N: Node, E: EdgeWeight, Ix: IndexType> Default for DiGraph<N, E, Ix> {
+impl<N: Node + std::fmt::Debug, E: EdgeWeight, Ix: IndexType> Default for DiGraph<N, E, Ix> {
     fn default() -> Self {
         Self::new()
     }
 }
 
-impl<N: Node, E: EdgeWeight, Ix: IndexType> DiGraph<N, E, Ix> {
+impl<N: Node + std::fmt::Debug, E: EdgeWeight, Ix: IndexType> DiGraph<N, E, Ix> {
     /// Create a new empty directed graph
     pub fn new() -> Self {
         DiGraph {
@@ -374,7 +383,7 @@ impl<N: Node, E: EdgeWeight, Ix: IndexType> DiGraph<N, E, Ix> {
                 .collect();
             Ok(successors)
         } else {
-            Err(GraphError::NodeNotFound)
+            Err(GraphError::node_not_found("unknown node"))
         }
     }
 
@@ -391,7 +400,7 @@ impl<N: Node, E: EdgeWeight, Ix: IndexType> DiGraph<N, E, Ix> {
                 .collect();
             Ok(predecessors)
         } else {
-            Err(GraphError::NodeNotFound)
+            Err(GraphError::node_not_found("unknown node"))
         }
     }
 
@@ -417,10 +426,10 @@ impl<N: Node, E: EdgeWeight, Ix: IndexType> DiGraph<N, E, Ix> {
             if let Some(edge_ref) = self.graph.find_edge(src_idx, tgt_idx) {
                 Ok(self.graph[edge_ref].clone())
             } else {
-                Err(GraphError::EdgeNotFound)
+                Err(GraphError::edge_not_found("unknown", "unknown"))
             }
         } else {
-            Err(GraphError::NodeNotFound)
+            Err(GraphError::node_not_found("unknown node"))
         }
     }
 
@@ -474,13 +483,13 @@ pub struct MultiDiGraph<N: Node, E: EdgeWeight, Ix: IndexType = u32> {
     _phantom: std::marker::PhantomData<Ix>,
 }
 
-impl<N: Node, E: EdgeWeight, Ix: IndexType> Default for MultiGraph<N, E, Ix> {
+impl<N: Node + std::fmt::Debug, E: EdgeWeight, Ix: IndexType> Default for MultiGraph<N, E, Ix> {
     fn default() -> Self {
         Self::new()
     }
 }
 
-impl<N: Node, E: EdgeWeight, Ix: IndexType> MultiGraph<N, E, Ix> {
+impl<N: Node + std::fmt::Debug, E: EdgeWeight, Ix: IndexType> MultiGraph<N, E, Ix> {
     /// Create a new empty multi-graph
     pub fn new() -> Self {
         MultiGraph {
@@ -560,26 +569,26 @@ impl<N: Node, E: EdgeWeight, Ix: IndexType> MultiGraph<N, E, Ix> {
     }
 
     /// Remove an edge by its ID
-    pub fn remove_edge(&mut self, edge_id: usize) -> Result<Edge<N, E>>
+    pub fn remove_edge(&mut self, edgeid: usize) -> Result<Edge<N, E>>
     where
         N: Clone,
         E: Clone,
     {
-        if let Some(edge) = self.edges.remove(&edge_id) {
+        if let Some(edge) = self.edges.remove(&edgeid) {
             // Remove from adjacency lists
             if let Some(neighbors) = self.adjacency.get_mut(&edge.source) {
-                neighbors.retain(|(_, _, id)| *id != edge_id);
+                neighbors.retain(|(_, _, id)| *id != edgeid);
             }
 
             if edge.source != edge.target {
                 if let Some(neighbors) = self.adjacency.get_mut(&edge.target) {
-                    neighbors.retain(|(_, _, id)| *id != edge_id);
+                    neighbors.retain(|(_, _, id)| *id != edgeid);
                 }
             }
 
             Ok(edge)
         } else {
-            Err(GraphError::EdgeNotFound)
+            Err(GraphError::edge_not_found("unknown", "unknown"))
         }
     }
 
@@ -630,13 +639,13 @@ impl<N: Node, E: EdgeWeight, Ix: IndexType> MultiGraph<N, E, Ix> {
     }
 }
 
-impl<N: Node, E: EdgeWeight, Ix: IndexType> Default for MultiDiGraph<N, E, Ix> {
+impl<N: Node + std::fmt::Debug, E: EdgeWeight, Ix: IndexType> Default for MultiDiGraph<N, E, Ix> {
     fn default() -> Self {
         Self::new()
     }
 }
 
-impl<N: Node, E: EdgeWeight, Ix: IndexType> MultiDiGraph<N, E, Ix> {
+impl<N: Node + std::fmt::Debug, E: EdgeWeight, Ix: IndexType> MultiDiGraph<N, E, Ix> {
     /// Create a new empty directed multi-graph
     pub fn new() -> Self {
         MultiDiGraph {
@@ -714,25 +723,25 @@ impl<N: Node, E: EdgeWeight, Ix: IndexType> MultiDiGraph<N, E, Ix> {
     }
 
     /// Remove an edge by its ID
-    pub fn remove_edge(&mut self, edge_id: usize) -> Result<Edge<N, E>>
+    pub fn remove_edge(&mut self, edgeid: usize) -> Result<Edge<N, E>>
     where
         N: Clone,
         E: Clone,
     {
-        if let Some(edge) = self.edges.remove(&edge_id) {
+        if let Some(edge) = self.edges.remove(&edgeid) {
             // Remove from outgoing adjacency list
             if let Some(neighbors) = self.out_adjacency.get_mut(&edge.source) {
-                neighbors.retain(|(_, _, id)| *id != edge_id);
+                neighbors.retain(|(_, _, id)| *id != edgeid);
             }
 
             // Remove from incoming adjacency list
             if let Some(neighbors) = self.in_adjacency.get_mut(&edge.target) {
-                neighbors.retain(|(_, _, id)| *id != edge_id);
+                neighbors.retain(|(_, _, id)| *id != edgeid);
             }
 
             Ok(edge)
         } else {
-            Err(GraphError::EdgeNotFound)
+            Err(GraphError::edge_not_found("unknown", "unknown"))
         }
     }
 
@@ -823,13 +832,13 @@ pub struct BipartiteGraph<N: Node, E: EdgeWeight, Ix: IndexType = u32> {
     set_b: std::collections::HashSet<N>,
 }
 
-impl<N: Node, E: EdgeWeight, Ix: IndexType> Default for BipartiteGraph<N, E, Ix> {
+impl<N: Node + std::fmt::Debug, E: EdgeWeight, Ix: IndexType> Default for BipartiteGraph<N, E, Ix> {
     fn default() -> Self {
         Self::new()
     }
 }
 
-impl<N: Node, E: EdgeWeight, Ix: IndexType> BipartiteGraph<N, E, Ix> {
+impl<N: Node + std::fmt::Debug, E: EdgeWeight, Ix: IndexType> BipartiteGraph<N, E, Ix> {
     /// Create a new empty bipartite graph
     pub fn new() -> Self {
         BipartiteGraph {
@@ -916,7 +925,7 @@ impl<N: Node, E: EdgeWeight, Ix: IndexType> BipartiteGraph<N, E, Ix> {
 
         // Check if both nodes exist in the graph
         if (!source_in_a && !source_in_b) || (!target_in_a && !target_in_b) {
-            return Err(GraphError::NodeNotFound);
+            return Err(GraphError::node_not_found("unknown node"));
         }
 
         // Check bipartite constraint: nodes must be in different sets
@@ -1151,13 +1160,13 @@ pub struct Hyperedge<N: Node, E: EdgeWeight> {
     pub weight: E,
 }
 
-impl<N: Node, E: EdgeWeight, Ix: IndexType> Default for Hypergraph<N, E, Ix> {
+impl<N: Node + std::fmt::Debug, E: EdgeWeight, Ix: IndexType> Default for Hypergraph<N, E, Ix> {
     fn default() -> Self {
         Self::new()
     }
 }
 
-impl<N: Node, E: EdgeWeight, Ix: IndexType> Hypergraph<N, E, Ix> {
+impl<N: Node + std::fmt::Debug, E: EdgeWeight, Ix: IndexType> Hypergraph<N, E, Ix> {
     /// Create a new empty hypergraph
     pub fn new() -> Self {
         Hypergraph {
@@ -1227,26 +1236,26 @@ impl<N: Node, E: EdgeWeight, Ix: IndexType> Hypergraph<N, E, Ix> {
     }
 
     /// Remove a hyperedge by its ID
-    pub fn remove_hyperedge(&mut self, hyperedge_id: usize) -> Result<Hyperedge<N, E>>
+    pub fn remove_hyperedge(&mut self, hyperedgeid: usize) -> Result<Hyperedge<N, E>>
     where
         N: Clone,
         E: Clone,
     {
-        if let Some((nodes, weight)) = self.hyperedges.remove(&hyperedge_id) {
+        if let Some((nodes, weight)) = self.hyperedges.remove(&hyperedgeid) {
             // Remove from node-to-hyperedges mapping
             for node in &nodes {
                 if let Some(hyperedge_set) = self.node_to_hyperedges.get_mut(node) {
-                    hyperedge_set.remove(&hyperedge_id);
+                    hyperedge_set.remove(&hyperedgeid);
                 }
             }
 
             Ok(Hyperedge {
-                id: hyperedge_id,
+                id: hyperedgeid,
                 nodes,
                 weight,
             })
         } else {
-            Err(GraphError::EdgeNotFound)
+            Err(GraphError::edge_not_found("unknown", "unknown"))
         }
     }
 
@@ -1272,15 +1281,15 @@ impl<N: Node, E: EdgeWeight, Ix: IndexType> Hypergraph<N, E, Ix> {
     }
 
     /// Get a specific hyperedge by its ID
-    pub fn get_hyperedge(&self, hyperedge_id: usize) -> Option<Hyperedge<N, E>>
+    pub fn get_hyperedge(&self, hyperedgeid: usize) -> Option<Hyperedge<N, E>>
     where
         N: Clone,
         E: Clone,
     {
         self.hyperedges
-            .get(&hyperedge_id)
+            .get(&hyperedgeid)
             .map(|(nodes, weight)| Hyperedge {
-                id: hyperedge_id,
+                id: hyperedgeid,
                 nodes: nodes.clone(),
                 weight: weight.clone(),
             })
@@ -1345,8 +1354,8 @@ impl<N: Node, E: EdgeWeight, Ix: IndexType> Hypergraph<N, E, Ix> {
     }
 
     /// Check if the hypergraph contains a specific hyperedge
-    pub fn has_hyperedge(&self, hyperedge_id: usize) -> bool {
-        self.hyperedges.contains_key(&hyperedge_id)
+    pub fn has_hyperedge(&self, hyperedgeid: usize) -> bool {
+        self.hyperedges.contains_key(&hyperedgeid)
     }
 
     /// Get the degree of a node (number of hyperedges it participates in)
@@ -1357,9 +1366,9 @@ impl<N: Node, E: EdgeWeight, Ix: IndexType> Hypergraph<N, E, Ix> {
     }
 
     /// Get the size of a hyperedge (number of nodes it connects)
-    pub fn hyperedge_size(&self, hyperedge_id: usize) -> Option<usize> {
+    pub fn hyperedge_size(&self, hyperedgeid: usize) -> Option<usize> {
         self.hyperedges
-            .get(&hyperedge_id)
+            .get(&hyperedgeid)
             .map(|(nodes, _)| nodes.len())
     }
 

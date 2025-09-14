@@ -95,6 +95,7 @@ pub type SciRS2Result<T> = Result<T, SciRS2Error>;
 ///
 /// * `Ok(())` if the condition is true
 /// * `Err(SciRS2Error::DomainError)` if the condition is false
+#[allow(dead_code)]
 pub fn check_domain<S: AsRef<str>>(condition: bool, message: S) -> SciRS2Result<()> {
     if condition {
         Ok(())
@@ -114,6 +115,7 @@ pub fn check_domain<S: AsRef<str>>(condition: bool, message: S) -> SciRS2Result<
 ///
 /// * `Ok(())` if the condition is true
 /// * `Err(SciRS2Error::DimensionError)` if the condition is false
+#[allow(dead_code)]
 pub fn check_dimensions<S: AsRef<str>>(condition: bool, message: S) -> SciRS2Result<()> {
     if condition {
         Ok(())
@@ -133,6 +135,7 @@ pub fn check_dimensions<S: AsRef<str>>(condition: bool, message: S) -> SciRS2Res
 ///
 /// * `Ok(())` if the condition is true
 /// * `Err(SciRS2Error::ValueError)` if the condition is false
+#[allow(dead_code)]
 pub fn check_value<S: AsRef<str>>(condition: bool, message: S) -> SciRS2Result<()> {
     if condition {
         Ok(())
@@ -152,6 +155,7 @@ pub fn check_value<S: AsRef<str>>(condition: bool, message: S) -> SciRS2Result<(
 ///
 /// * `Ok(())` if the condition is true
 /// * `Err(SciRS2Error::IndexError)` if the condition is false
+#[allow(dead_code)]
 pub fn check_index<S: AsRef<str>>(condition: bool, message: S) -> SciRS2Result<()> {
     if condition {
         Ok(())

@@ -11,12 +11,13 @@ use scirs2_vision::color::{
 };
 use std::path::PathBuf;
 
+#[allow(dead_code)]
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("SciRS2 Vision - Color Transformations Example");
 
     // In a real application, you would provide your own image file path
     let image_path = "examples/input/input.jpg"; // Change this to your image path
-    println!("Attempting to load image from: {}", image_path);
+    println!("Attempting to load image from: {image_path}");
 
     // Check if the image file exists
     let path = PathBuf::from(image_path);
@@ -55,6 +56,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     Ok(())
 }
 
+#[allow(dead_code)]
 fn process_image(img: &image::DynamicImage) -> Result<(), Box<dyn std::error::Error>> {
     // 1. RGB to Grayscale conversion
     println!("Converting to grayscale...");

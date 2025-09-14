@@ -17,26 +17,30 @@ const DATASET_BASE_URL: &str = "https://raw.githubusercontent.com/cool-japan/sci
 
 /// Load the California Housing dataset
 #[cfg(feature = "download")]
-pub fn load_california_housing(force_download: bool) -> Result<Dataset> {
-    let url = format!("{}/california_housing.csv", DATASET_BASE_URL);
+#[allow(dead_code)]
+pub fn load_california_housing(_forcedownload: bool) -> Result<Dataset> {
+    let url = format!("{DATASET_BASE_URL}/california_housing.csv");
 
     // Download or load from cache
     let data = download_data(&url, force_download)?;
 
     // Create a temporary file
     use std::io::Write;
-    let temp_dir = std::env::temp_dir();
-    let temp_path = temp_dir.join("scirs2_california_housing.csv");
+    let tempdir = std::env::tempdir();
+    let temppath = tempdir.join("scirs2_california_housing.csv");
 
-    let mut temp_file = std::fs::File::create(&temp_path).map_err(DatasetsError::IoError)?;
+    let mut temp_file = std::fs::File::create(&temppath).map_err(DatasetsError::IoError)?;
 
     temp_file.write_all(&data).map_err(DatasetsError::IoError)?;
 
     // Load from the temporary file (using CSV loader)
-    let mut dataset = loaders::load_csv(&temp_path, true, Some(8))?;
+    let config = loaders::CsvConfig::new()
+        .with_header(true)
+        .with_target_column(Some(8));
+    let mut dataset = loaders::load_csv(&temppath, config)?;
 
     // Add metadata
-    let feature_names = vec![
+    let featurenames = vec![
         "MedInc".to_string(),
         "HouseAge".to_string(),
         "AveRooms".to_string(),
@@ -69,11 +73,11 @@ This dataset is useful for regression tasks."
         .to_string();
 
     dataset = dataset
-        .with_feature_names(feature_names)
+        .with_featurenames(featurenames)
         .with_description(description);
 
     // Remove the temporary file
-    std::fs::remove_file(temp_path).ok();
+    std::fs::remove_file(temppath).ok();
 
     Ok(dataset)
 }
@@ -92,34 +96,36 @@ This dataset is useful for regression tasks."
 /// # Returns
 ///
 /// * An error indicating that the download feature is not enabled
-pub fn load_california_housing(_force_download: bool) -> Result<Dataset> {
+#[allow(dead_code)]
+pub fn load_california_housing(_forcedownload: bool) -> Result<Dataset> {
     Err(DatasetsError::Other(
-        "Download feature is not enabled. Recompile with --features download".to_string(),
+        "Download feature is not enabled. Recompile with --features _download".to_string(),
     ))
 }
 
 /// Load the Wine dataset
 #[cfg(feature = "download")]
-pub fn load_wine(force_download: bool) -> Result<Dataset> {
-    let url = format!("{}/wine.csv", DATASET_BASE_URL);
+#[allow(dead_code)]
+pub fn load_wine(_forcedownload: bool) -> Result<Dataset> {
+    let url = format!("{DATASET_BASE_URL}/wine.csv");
 
     // Download or load from cache
     let data = download_data(&url, force_download)?;
 
     // Create a temporary file
     use std::io::Write;
-    let temp_dir = std::env::temp_dir();
-    let temp_path = temp_dir.join("scirs2_wine.csv");
+    let tempdir = std::env::tempdir();
+    let temppath = tempdir.join("scirs2_wine.csv");
 
-    let mut temp_file = std::fs::File::create(&temp_path).map_err(DatasetsError::IoError)?;
+    let mut temp_file = std::fs::File::create(&temppath).map_err(DatasetsError::IoError)?;
 
     temp_file.write_all(&data).map_err(DatasetsError::IoError)?;
 
     // Load from the temporary file (using CSV loader)
-    let mut dataset = loaders::load_csv(&temp_path, true, Some(0))?;
+    let mut dataset = loaders::load_csv_legacy(&temppath, true, Some(0))?;
 
     // Add metadata
-    let feature_names = vec![
+    let featurenames = vec![
         "alcohol".to_string(),
         "malic_acid".to_string(),
         "ash".to_string(),
@@ -135,7 +141,7 @@ pub fn load_wine(force_download: bool) -> Result<Dataset> {
         "proline".to_string(),
     ];
 
-    let target_names = vec![
+    let targetnames = vec![
         "class_0".to_string(),
         "class_1".to_string(),
         "class_2".to_string(),
@@ -155,12 +161,12 @@ This dataset is useful for classification tasks."
         .to_string();
 
     dataset = dataset
-        .with_feature_names(feature_names)
-        .with_target_names(target_names)
+        .with_featurenames(featurenames)
+        .with_targetnames(targetnames)
         .with_description(description);
 
     // Remove the temporary file
-    std::fs::remove_file(temp_path).ok();
+    std::fs::remove_file(temppath).ok();
 
     Ok(dataset)
 }
@@ -179,23 +185,25 @@ This dataset is useful for classification tasks."
 /// # Returns
 ///
 /// * An error indicating that the download feature is not enabled
-pub fn load_wine(_force_download: bool) -> Result<Dataset> {
+#[allow(dead_code)]
+pub fn load_wine(_forcedownload: bool) -> Result<Dataset> {
     Err(DatasetsError::Other(
-        "Download feature is not enabled. Recompile with --features download".to_string(),
+        "Download feature is not enabled. Recompile with --features _download".to_string(),
     ))
 }
 
 /// Sample data fetcher - retrieves a list of available datasets
 #[cfg(feature = "download")]
+#[allow(dead_code)]
 pub fn get_available_datasets() -> Result<Vec<String>> {
-    let url = format!("{}/datasets_index.txt", DATASET_BASE_URL);
+    let url = format!("{DATASET_BASE_URL}/datasets_index.txt");
 
     // Download or load from cache
     let data = download_data(&url, true)?;
 
     // Parse the list of datasets
     let content = String::from_utf8(data).map_err(|e| {
-        DatasetsError::InvalidFormat(format!("Failed to parse datasets index: {}", e))
+        DatasetsError::InvalidFormat(format!("Failed to parse datasets index: {e}"))
     })?;
 
     let datasets = content
@@ -217,6 +225,7 @@ pub fn get_available_datasets() -> Result<Vec<String>> {
 /// # Returns
 ///
 /// * An error indicating that the download feature is not enabled
+#[allow(dead_code)]
 pub fn get_available_datasets() -> Result<Vec<String>> {
     Err(DatasetsError::Other(
         "Download feature is not enabled. Recompile with --features download".to_string(),

@@ -2,6 +2,7 @@ use ag::tensor_ops::*;
 use ndarray::array;
 use scirs2_autograd as ag;
 
+#[allow(dead_code)]
 fn main() {
     ag::run(|ctx| {
         let a_data = array![[3.0f32, 4.0], [0.0, 1.0]];

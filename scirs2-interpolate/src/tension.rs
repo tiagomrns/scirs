@@ -1,5 +1,5 @@
 use ndarray::{Array1, Array2, ArrayView1};
-use num_traits::Float;
+use num_traits::{Float, FromPrimitive};
 
 use crate::error::{InterpolateError, InterpolateResult};
 use crate::ExtrapolateMode;
@@ -27,7 +27,7 @@ pub struct TensionSpline<T: Float> {
     extrapolate: ExtrapolateMode,
 }
 
-impl<T: Float + std::fmt::Display> TensionSpline<T> {
+impl<T: Float + std::fmt::Display + FromPrimitive> TensionSpline<T> {
     /// Creates a new tension spline interpolator.
     ///
     /// # Arguments
@@ -251,16 +251,16 @@ impl<T: Float + std::fmt::Display> TensionSpline<T> {
     ///
     /// # Arguments
     ///
-    /// * `x_new` - The points at which to evaluate the spline
+    /// * `xnew` - The points at which to evaluate the spline
     ///
     /// # Returns
     ///
     /// A `Result` containing the interpolated values at the given points.
-    pub fn evaluate(&self, x_new: &ArrayView1<T>) -> InterpolateResult<Array1<T>> {
-        let n = x_new.len();
+    pub fn evaluate(&self, xnew: &ArrayView1<T>) -> InterpolateResult<Array1<T>> {
+        let n = xnew.len();
         let mut result = Array1::zeros(n);
 
-        for (i, &xi) in x_new.iter().enumerate() {
+        for (i, &xi) in xnew.iter().enumerate() {
             result[i] = self.evaluate_single(xi)?;
         }
 
@@ -268,21 +268,21 @@ impl<T: Float + std::fmt::Display> TensionSpline<T> {
     }
 
     /// Evaluate the tension spline at a single point.
-    fn evaluate_single(&self, x_val: T) -> InterpolateResult<T> {
+    fn evaluate_single(&self, xval: T) -> InterpolateResult<T> {
         let n = self.x.len();
 
         // Handle extrapolation
-        if x_val < self.x[0] || x_val > self.x[n - 1] {
+        if xval < self.x[0] || xval > self.x[n - 1] {
             match self.extrapolate {
                 ExtrapolateMode::Extrapolate => {
                     // Allow extrapolation - use nearest segment
-                    let idx = if x_val < self.x[0] { 0 } else { n - 2 };
-                    return self.evaluate_segment(idx, x_val);
+                    let idx = if xval < self.x[0] { 0 } else { n - 2 };
+                    return self.evaluate_segment(idx, xval);
                 }
                 ExtrapolateMode::Error => {
                     return Err(InterpolateError::OutOfBounds(format!(
                         "x value {} is outside the interpolation range [{}, {}]",
-                        x_val,
+                        xval,
                         self.x[0],
                         self.x[n - 1]
                     )));
@@ -294,21 +294,21 @@ impl<T: Float + std::fmt::Display> TensionSpline<T> {
             }
         }
 
-        // Find the segment containing x_val
+        // Find the segment containing xval
         let mut idx = 0;
         for i in 0..n - 1 {
-            if x_val >= self.x[i] && x_val <= self.x[i + 1] {
+            if xval >= self.x[i] && xval <= self.x[i + 1] {
                 idx = i;
                 break;
             }
         }
 
-        self.evaluate_segment(idx, x_val)
+        self.evaluate_segment(idx, xval)
     }
 
     /// Evaluate the spline on a specific segment.
-    fn evaluate_segment(&self, idx: usize, x_val: T) -> InterpolateResult<T> {
-        let dx = x_val - self.x[idx];
+    fn evaluate_segment(&self, idx: usize, xval: T) -> InterpolateResult<T> {
+        let dx = xval - self.x[idx];
 
         // If tension is essentially zero, use cubic formula
         if self.tension == T::zero() {
@@ -337,7 +337,7 @@ impl<T: Float + std::fmt::Display> TensionSpline<T> {
     /// # Arguments
     ///
     /// * `deriv_order` - The order of the derivative (1 for first derivative, 2 for second, etc.)
-    /// * `x_new` - The points at which to evaluate the derivative
+    /// * `xnew` - The points at which to evaluate the derivative
     ///
     /// # Returns
     ///
@@ -345,23 +345,23 @@ impl<T: Float + std::fmt::Display> TensionSpline<T> {
     pub fn derivative(
         &self,
         deriv_order: usize,
-        x_new: &ArrayView1<T>,
+        xnew: &ArrayView1<T>,
     ) -> InterpolateResult<Array1<T>> {
         if deriv_order == 0 {
-            return self.evaluate(x_new);
+            return self.evaluate(xnew);
         }
 
         if deriv_order > 3 {
             return Err(InterpolateError::InvalidValue(format!(
-                "Derivative order must be ≤ 3, got {}",
+                "Derivative _order must be ≤ 3, got {}",
                 deriv_order
             )));
         }
 
-        let n = x_new.len();
+        let n = xnew.len();
         let mut result = Array1::zeros(n);
 
-        for (i, &xi) in x_new.iter().enumerate() {
+        for (i, &xi) in xnew.iter().enumerate() {
             result[i] = self.derivative_single(deriv_order, xi)?;
         }
 
@@ -369,21 +369,21 @@ impl<T: Float + std::fmt::Display> TensionSpline<T> {
     }
 
     /// Calculate derivative of the tension spline at a single point.
-    fn derivative_single(&self, deriv_order: usize, x_val: T) -> InterpolateResult<T> {
+    fn derivative_single(&self, deriv_order: usize, xval: T) -> InterpolateResult<T> {
         let n = self.x.len();
 
         // Handle extrapolation
-        if x_val < self.x[0] || x_val > self.x[n - 1] {
+        if xval < self.x[0] || xval > self.x[n - 1] {
             match self.extrapolate {
                 ExtrapolateMode::Extrapolate => {
                     // Allow extrapolation - use nearest segment
-                    let idx = if x_val < self.x[0] { 0 } else { n - 2 };
-                    return self.derivative_segment(deriv_order, idx, x_val);
+                    let idx = if xval < self.x[0] { 0 } else { n - 2 };
+                    return self.derivative_segment(deriv_order, idx, xval);
                 }
                 ExtrapolateMode::Error => {
                     return Err(InterpolateError::OutOfBounds(format!(
                         "x value {} is outside the interpolation range [{}, {}]",
-                        x_val,
+                        xval,
                         self.x[0],
                         self.x[n - 1]
                     )));
@@ -395,21 +395,21 @@ impl<T: Float + std::fmt::Display> TensionSpline<T> {
             }
         }
 
-        // Find the segment containing x_val
+        // Find the segment containing xval
         let mut idx = 0;
         for i in 0..n - 1 {
-            if x_val >= self.x[i] && x_val <= self.x[i + 1] {
+            if xval >= self.x[i] && xval <= self.x[i + 1] {
                 idx = i;
                 break;
             }
         }
 
-        self.derivative_segment(deriv_order, idx, x_val)
+        self.derivative_segment(deriv_order, idx, xval)
     }
 
     /// Calculate derivative of the spline on a specific segment.
-    fn derivative_segment(&self, deriv_order: usize, idx: usize, x_val: T) -> InterpolateResult<T> {
-        let dx = x_val - self.x[idx];
+    fn derivative_segment(&self, deriv_order: usize, idx: usize, xval: T) -> InterpolateResult<T> {
+        let dx = xval - self.x[idx];
 
         // If tension is essentially zero, use cubic formula derivatives
         if self.tension == T::zero() {
@@ -424,7 +424,7 @@ impl<T: Float + std::fmt::Display> TensionSpline<T> {
                 2 => Ok(T::from(2.0).unwrap() * c + T::from(6.0).unwrap() * dx * d),
                 3 => Ok(T::from(6.0).unwrap() * d),
                 _ => Err(InterpolateError::InvalidValue(
-                    "Derivative order must be ≤ 3".to_string(),
+                    "Derivative _order must be ≤ 3".to_string(),
                 )),
             };
         }
@@ -442,7 +442,7 @@ impl<T: Float + std::fmt::Display> TensionSpline<T> {
             2 => Ok(c * p * p * (p * dx).sinh() + d * p * p * (p * dx).cosh()),
             3 => Ok(c * p * p * p * (p * dx).cosh() + d * p * p * p * (p * dx).sinh()),
             _ => Err(InterpolateError::InvalidValue(
-                "Derivative order must be ≤ 3".to_string(),
+                "Derivative _order must be ≤ 3".to_string(),
             )),
         }
     }
@@ -450,6 +450,514 @@ impl<T: Float + std::fmt::Display> TensionSpline<T> {
     /// Returns the tension parameter used for this spline
     pub fn tension(&self) -> T {
         self.tension
+    }
+
+    /// Evaluate derivatives at a single point for all orders up to max_order
+    ///
+    /// This method efficiently computes derivatives of multiple orders at the same
+    /// x coordinate, which is useful for Taylor series expansions or detailed
+    /// local analysis of the tension spline behavior.
+    ///
+    /// # Arguments
+    ///
+    /// * `xval` - The x coordinate at which to evaluate derivatives
+    /// * `max_order` - Maximum order of derivative to compute (inclusive)
+    ///
+    /// # Returns
+    ///
+    /// Vector containing derivatives from order 0 (function value) to max_order
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use ndarray::array;
+    /// use scirs2__interpolate::tension::make_tension_spline;
+    /// use scirs2__interpolate::ExtrapolateMode;
+    ///
+    /// let x = array![0.0, 1.0, 2.0, 3.0, 4.0];
+    /// let y = array![0.0, 1.0, 4.0, 9.0, 16.0]; // x^2
+    ///
+    /// let spline = make_tension_spline(&x.view(), &y.view(), 1.0, ExtrapolateMode::Error).unwrap();
+    ///
+    /// // Get function value, first derivative, and second derivative at x=2.5  
+    /// let derivatives = spline.derivatives_all(2.5, 2).unwrap();
+    /// let function_value = derivatives[0];
+    /// let first_deriv = derivatives[1];
+    /// let second_deriv = derivatives[2];
+    /// ```
+    pub fn derivatives_all(&self, xval: T, maxorder: usize) -> InterpolateResult<Vec<T>> {
+        let mut derivatives = Vec::with_capacity(maxorder + 1);
+
+        for _order in 0..=maxorder {
+            derivatives.push(self.derivative_single(_order, xval)?);
+        }
+
+        Ok(derivatives)
+    }
+
+    /// Evaluate derivatives at multiple points for a specific order
+    ///
+    /// This is a convenience method that provides the same functionality as the
+    /// existing `derivative` method but with a more consistent API signature
+    /// matching other spline types.
+    ///
+    /// # Arguments
+    ///
+    /// * `xnew` - Array of x coordinates at which to evaluate the derivative
+    /// * `order` - The order of the derivative (1 = first derivative, 2 = second derivative, etc.)
+    ///
+    /// # Returns
+    ///
+    /// Array of derivative values at the given x coordinates
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use ndarray::array;
+    /// use scirs2__interpolate::tension::make_tension_spline;
+    /// use scirs2__interpolate::ExtrapolateMode;
+    ///
+    /// let x = array![0.0, 1.0, 2.0, 3.0, 4.0];
+    /// let y = array![0.0, 1.0, 4.0, 9.0, 16.0]; // x^2
+    ///
+    /// let spline = make_tension_spline(&x.view(), &y.view(), 1.0, ExtrapolateMode::Error).unwrap();
+    ///
+    /// let x_eval = array![1.5, 2.5, 3.5];
+    /// let derivatives = spline.derivative_array(&x_eval.view(), 1).unwrap();
+    /// ```
+    pub fn derivative_array(
+        &self,
+        xnew: &ArrayView1<T>,
+        order: usize,
+    ) -> InterpolateResult<Array1<T>> {
+        self.derivative(order, xnew)
+    }
+
+    /// Compute the definite integral of the tension spline over an interval
+    ///
+    /// This method computes the definite integral of the spline from point a to point b.
+    /// For tension splines, the integration involves both polynomial and hyperbolic terms.
+    /// When tension = 0, this reduces to standard cubic spline integration.
+    ///
+    /// # Arguments
+    ///
+    /// * `a` - Lower bound of integration
+    /// * `b` - Upper bound of integration
+    ///
+    /// # Returns
+    ///
+    /// The value of the definite integral from a to b
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use ndarray::array;
+    /// use scirs2__interpolate::tension::make_tension_spline;
+    /// use scirs2__interpolate::ExtrapolateMode;
+    ///
+    /// let x = array![0.0, 1.0, 2.0, 3.0, 4.0];
+    /// let y = array![1.0, 1.0, 1.0, 1.0, 1.0]; // Constant function
+    ///
+    /// let spline = make_tension_spline(&x.view(), &y.view(), 1.0, ExtrapolateMode::Error).unwrap();
+    ///
+    /// // Integrate from 0 to 3 (should be approximately 3.0 for constant function)
+    /// let integral = spline.integrate(0.0, 3.0).unwrap();
+    /// ```
+    pub fn integrate(&self, a: T, b: T) -> InterpolateResult<T> {
+        if a == b {
+            return Ok(T::zero());
+        }
+
+        // Determine integration direction
+        let (start, end, sign) = if a < b {
+            (a, b, T::one())
+        } else {
+            (b, a, -T::one())
+        };
+
+        let mut integral = T::zero();
+
+        // Find all segments that overlap with [start, end]
+        let n = self.x.len();
+
+        for i in 0..n - 1 {
+            let seg_start = self.x[i];
+            let seg_end = self.x[i + 1];
+
+            // Check if this segment overlaps with integration interval
+            if seg_end <= start || seg_start >= end {
+                continue;
+            }
+
+            // Find the actual integration bounds for this segment
+            let int_start = start.max(seg_start);
+            let int_end = end.min(seg_end);
+
+            // Integrate over this segment
+            integral = integral + self.integrate_segment(i, int_start, int_end)?;
+        }
+
+        Ok(sign * integral)
+    }
+
+    /// Integrate over a specific segment of the tension spline
+    fn integrate_segment(&self, idx: usize, a: T, b: T) -> InterpolateResult<T> {
+        let x_i = self.x[idx];
+        let dx_a = a - x_i;
+        let dx_b = b - x_i;
+
+        // If tension is essentially zero, use cubic integration formulas
+        if self.tension == T::zero() {
+            let coeff_a = self.coeffs[[idx, 0]];
+            let coeff_b = self.coeffs[[idx, 1]];
+            let coeff_c = self.coeffs[[idx, 2]];
+            let coeff_d = self.coeffs[[idx, 3]];
+
+            // Integral of cubic: a*(x-x_i) + b*(x-x_i)^2/2 + c*(x-x_i)^3/3 + d*(x-x_i)^4/4
+            let eval_at = |dx: T| -> T {
+                coeff_a * dx
+                    + coeff_b * dx * dx / T::from(2.0).unwrap()
+                    + coeff_c * dx * dx * dx / T::from(3.0).unwrap()
+                    + coeff_d * dx * dx * dx * dx / T::from(4.0).unwrap()
+            };
+
+            return Ok(eval_at(dx_b) - eval_at(dx_a));
+        }
+
+        // For tension spline, integrate hyperbolic terms
+        let coeff_a = self.coeffs[[idx, 0]];
+        let coeff_b = self.coeffs[[idx, 1]];
+        let coeff_c = self.coeffs[[idx, 2]];
+        let coeff_d = self.coeffs[[idx, 3]];
+        let p = self.tension;
+
+        // Integral of tension spline:
+        // ∫[a + b*(x-x_i) + c*sinh(p*(x-x_i)) + d*cosh(p*(x-x_i))] dx
+        // = a*(x-x_i) + b*(x-x_i)^2/2 + c*cosh(p*(x-x_i))/p + d*sinh(p*(x-x_i))/p
+        let eval_at = |dx: T| -> T {
+            coeff_a * dx
+                + coeff_b * dx * dx / T::from(2.0).unwrap()
+                + coeff_c * (p * dx).cosh() / p
+                + coeff_d * (p * dx).sinh() / p
+        };
+
+        Ok(eval_at(dx_b) - eval_at(dx_a))
+    }
+
+    /// Compute arc length of the tension spline over an interval
+    ///
+    /// This method computes the arc length of the parametric curve (x, f(x))
+    /// from point a to point b using numerical integration of sqrt(1 + f'(x)^2).
+    ///
+    /// # Arguments
+    ///
+    /// * `a` - Lower bound
+    /// * `b` - Upper bound  
+    /// * `tolerance` - Tolerance for numerical integration (default: 1e-8)
+    ///
+    /// # Returns
+    ///
+    /// The arc length of the curve from a to b
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use ndarray::array;
+    /// use scirs2__interpolate::tension::make_tension_spline;
+    /// use scirs2__interpolate::ExtrapolateMode;
+    ///
+    /// let x = array![0.0, 1.0, 2.0, 3.0, 4.0];
+    /// let y = array![0.0, 1.0, 4.0, 9.0, 16.0]; // x^2
+    ///
+    /// let spline = make_tension_spline(&x.view(), &y.view(), 1.0, ExtrapolateMode::Error).unwrap();
+    ///
+    /// // Compute arc length from 0 to 2
+    /// let arc_length = spline.arc_length(0.0, 2.0, Some(1e-6)).unwrap();
+    /// ```
+    pub fn arc_length(&self, a: T, b: T, tolerance: Option<T>) -> InterpolateResult<T> {
+        let tol = tolerance.unwrap_or_else(|| T::from(1e-8).unwrap());
+
+        if a == b {
+            return Ok(T::zero());
+        }
+
+        // Use adaptive Simpson's rule for numerical integration
+        let (start, end, sign) = if a < b {
+            (a, b, T::one())
+        } else {
+            (b, a, -T::one())
+        };
+
+        let integrand = |x: T| -> InterpolateResult<T> {
+            let deriv = self.derivative_single(1, x)?;
+            Ok((T::one() + deriv * deriv).sqrt())
+        };
+
+        let length = self.adaptive_simpson_integration(integrand, start, end, tol)?;
+        Ok(sign * length)
+    }
+
+    /// Adaptive Simpson's rule for numerical integration
+    fn adaptive_simpson_integration<F>(
+        &self,
+        f: F,
+        a: T,
+        b: T,
+        tolerance: T,
+    ) -> InterpolateResult<T>
+    where
+        F: Fn(T) -> InterpolateResult<T>,
+    {
+        let h = b - a;
+        let c = (a + b) / T::from(2.0).unwrap();
+
+        let fa = f(a)?;
+        let fb = f(b)?;
+        let fc = f(c)?;
+
+        // Simpson's rule approximation
+        let s = h * (fa + T::from(4.0).unwrap() * fc + fb) / T::from(6.0).unwrap();
+
+        // Recursive adaptive refinement
+        self.adaptive_simpson_recursive(f, a, b, tolerance, s, fa, fb, fc, 15)
+    }
+
+    fn adaptive_simpson_recursive<F>(
+        &self,
+        f: F,
+        a: T,
+        b: T,
+        tolerance: T,
+        s: T,
+        fa: T,
+        fb: T,
+        fc: T,
+        depth: usize,
+    ) -> InterpolateResult<T>
+    where
+        F: Fn(T) -> InterpolateResult<T>,
+    {
+        if depth == 0 {
+            return Ok(s);
+        }
+
+        let c = (a + b) / T::from(2.0).unwrap();
+        let h = b - a;
+        let d = (a + c) / T::from(2.0).unwrap();
+        let e = (c + b) / T::from(2.0).unwrap();
+
+        let fd = f(d)?;
+        let fe = f(e)?;
+
+        let s_left = h * (fa + T::from(4.0).unwrap() * fd + fc) / T::from(12.0).unwrap();
+        let s_right = h * (fc + T::from(4.0).unwrap() * fe + fb) / T::from(12.0).unwrap();
+        let s_new = s_left + s_right;
+
+        if (s - s_new).abs() <= T::from(15.0).unwrap() * tolerance {
+            return Ok(s_new + (s_new - s) / T::from(15.0).unwrap());
+        }
+
+        let left = self.adaptive_simpson_recursive(
+            &f,
+            a,
+            c,
+            tolerance / T::from(2.0).unwrap(),
+            s_left,
+            fa,
+            fc,
+            fd,
+            depth - 1,
+        )?;
+
+        let right = self.adaptive_simpson_recursive(
+            &f,
+            c,
+            b,
+            tolerance / T::from(2.0).unwrap(),
+            s_right,
+            fc,
+            fb,
+            fe,
+            depth - 1,
+        )?;
+
+        Ok(left + right)
+    }
+
+    /// Find roots of the tension spline using Newton-Raphson method
+    ///
+    /// This method finds x values where the spline equals zero, using the
+    /// derivative information available from the tension spline.
+    ///
+    /// # Arguments
+    ///
+    /// * `initial_guess` - Starting point for root finding
+    /// * `tolerance` - Convergence tolerance (default: 1e-10)
+    /// * `max_iterations` - Maximum number of iterations (default: 100)
+    ///
+    /// # Returns
+    ///
+    /// The x coordinate where f(x) ≈ 0, or error if not converged
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use ndarray::array;
+    /// use scirs2__interpolate::tension::make_tension_spline;
+    /// use scirs2__interpolate::ExtrapolateMode;
+    ///
+    /// let x = array![0.0, 1.0, 2.0, 3.0, 4.0];
+    /// let y = array![-1.0, 1.0, -1.0, 1.0, -1.0]; // Oscillating function
+    ///
+    /// let spline = make_tension_spline(&x.view(), &y.view(), 1.0, ExtrapolateMode::Error).unwrap();
+    ///
+    /// // Find root near x=0.5
+    /// let root = spline.find_root(0.5, Some(1e-8), Some(50)).unwrap();
+    /// ```
+    pub fn find_root(
+        &self,
+        initial_guess: T,
+        tolerance: Option<T>,
+        max_iterations: Option<usize>,
+    ) -> InterpolateResult<T> {
+        let tol = tolerance.unwrap_or_else(|| T::from(1e-10).unwrap());
+        let max_iter = max_iterations.unwrap_or(100);
+
+        let mut x = initial_guess;
+
+        for _iteration in 0..max_iter {
+            let f_val = self.evaluate_single(x)?;
+            let f_prime = self.derivative_single(1, x)?;
+
+            if f_prime.abs() < T::epsilon() {
+                return Err(InterpolateError::ComputationError(
+                    "Derivative too small for Newton-Raphson iteration".to_string(),
+                ));
+            }
+
+            let xnew = x - f_val / f_prime;
+
+            if (xnew - x).abs() < tol {
+                return Ok(xnew);
+            }
+
+            x = xnew;
+        }
+
+        Err(InterpolateError::ComputationError(format!(
+            "Root finding did not converge after {} _iterations",
+            max_iter
+        )))
+    }
+
+    /// Find local extrema (minima and maxima) of the tension spline
+    ///
+    /// This method finds points where the first derivative equals zero,
+    /// indicating local minima or maxima.
+    ///
+    /// # Arguments
+    ///
+    /// * `search_range` - Tuple (start, end) defining search interval
+    /// * `tolerance` - Convergence tolerance (default: 1e-10)
+    /// * `max_iterations` - Maximum iterations per extremum search (default: 100)
+    ///
+    /// # Returns
+    ///
+    /// Vector of x coordinates where extrema occur
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use ndarray::array;
+    /// use scirs2__interpolate::tension::make_tension_spline;
+    /// use scirs2__interpolate::ExtrapolateMode;
+    ///
+    /// let x = array![0.0, 1.0, 2.0, 3.0, 4.0];
+    /// let y = array![0.0, 1.0, 0.0, 1.0, 0.0]; // Wave-like function
+    ///
+    /// let spline = make_tension_spline(&x.view(), &y.view(), 1.0, ExtrapolateMode::Error).unwrap();
+    ///
+    /// // Find extrema between x=0 and x=4
+    /// let extrema = spline.find_extrema((0.0, 4.0), Some(1e-8), Some(50)).unwrap();
+    /// ```
+    pub fn find_extrema(
+        &self,
+        search_range: (T, T),
+        tolerance: Option<T>,
+        max_iterations: Option<usize>,
+    ) -> InterpolateResult<Vec<T>> {
+        let tol = tolerance.unwrap_or_else(|| T::from(1e-10).unwrap());
+        let max_iter = max_iterations.unwrap_or(100);
+        let (start, end) = search_range;
+
+        let mut extrema = Vec::new();
+
+        // Sample the derivative to find sign changes (indicating extrema)
+        let num_samples = 100;
+        let step = (end - start) / T::from_usize(num_samples).unwrap();
+
+        let mut prev_deriv_sign: Option<bool> = None;
+
+        for i in 0..=num_samples {
+            let x = start + T::from_usize(i).unwrap() * step;
+
+            if x < self.x[0] || x > self.x[self.x.len() - 1] {
+                continue;
+            }
+
+            let deriv = self.derivative_single(1, x)?;
+            let current_sign = deriv > T::zero();
+
+            if let Some(prev_sign) = prev_deriv_sign {
+                if prev_sign != current_sign {
+                    // Sign change detected, refine the extremum location
+                    let prev_x = start + T::from_usize(i - 1).unwrap() * step;
+
+                    // Use bisection to refine the extremum location
+                    if let Ok(extremum) = self.refine_extremum(prev_x, x, tol, max_iter) {
+                        extrema.push(extremum);
+                    }
+                }
+            }
+
+            prev_deriv_sign = Some(current_sign);
+        }
+
+        Ok(extrema)
+    }
+
+    /// Refine extremum location using bisection method
+    fn refine_extremum(
+        &self,
+        mut a: T,
+        mut b: T,
+        tolerance: T,
+        max_iterations: usize,
+    ) -> InterpolateResult<T> {
+        for _iteration in 0..max_iterations {
+            let c = (a + b) / T::from(2.0).unwrap();
+            let deriv_c = self.derivative_single(1, c)?;
+
+            if deriv_c.abs() < tolerance {
+                return Ok(c);
+            }
+
+            let deriv_a = self.derivative_single(1, a)?;
+
+            if (deriv_a > T::zero()) == (deriv_c > T::zero()) {
+                a = c;
+            } else {
+                b = c;
+            }
+
+            if (b - a).abs() < tolerance {
+                return Ok((a + b) / T::from(2.0).unwrap());
+            }
+        }
+
+        Err(InterpolateError::ComputationError(
+            "Extremum refinement did not converge".to_string(),
+        ))
     }
 }
 
@@ -465,7 +973,8 @@ impl<T: Float + std::fmt::Display> TensionSpline<T> {
 /// # Returns
 ///
 /// A `Result` containing the tension spline interpolator.
-pub fn make_tension_spline<T: Float + std::fmt::Display>(
+#[allow(dead_code)]
+pub fn make_tension_spline<T: Float + std::fmt::Display + num_traits::FromPrimitive>(
     x: &ArrayView1<T>,
     y: &ArrayView1<T>,
     tension: T,
@@ -517,12 +1026,12 @@ mod tests {
         }
 
         // Test interpolation between data points
-        let x_new = Array::linspace(0.5, 9.5, 10);
-        let y_exact = x_new.mapv(|v| v.powi(2));
+        let xnew = Array::linspace(0.5, 9.5, 10);
+        let y_exact = xnew.mapv(|v| v.powi(2));
 
-        let y_low = spline_low.evaluate(&x_new.view()).unwrap();
-        let y_med = spline_med.evaluate(&x_new.view()).unwrap();
-        let y_high = spline_high.evaluate(&x_new.view()).unwrap();
+        let y_low = spline_low.evaluate(&xnew.view()).unwrap();
+        let y_med = spline_med.evaluate(&xnew.view()).unwrap();
+        let y_high = spline_high.evaluate(&xnew.view()).unwrap();
 
         // Compare MSE for different tension values
         let mse_low = y_low
@@ -640,7 +1149,7 @@ mod tests {
                 assert!(amp_10.is_finite());
 
                 // Print the values for debugging
-                println!("Amplitudes at point {}: {} {} {}", i, amp_0, amp_1, amp_10);
+                println!("Amplitudes at point {i}: {amp_0} {amp_1} {amp_10}");
             }
         }
     }

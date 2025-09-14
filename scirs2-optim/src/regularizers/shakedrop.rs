@@ -1,6 +1,6 @@
 use ndarray::{Array, ArrayBase, Data, Dimension, ScalarOperand};
 use num_traits::{Float, FromPrimitive};
-use rand::prelude::*;
+use rand::Rng;
 use std::fmt::Debug;
 
 use crate::error::{OptimError, Result};
@@ -33,7 +33,7 @@ pub struct ShakeDrop<A: Float + FromPrimitive + Debug> {
     /// Range for the beta parameter
     pub beta_range: (A, A),
     /// Random number generator
-    rng: ThreadRng,
+    rng: scirs2_core::random::Random<rand::rngs::StdRng>,
 }
 
 impl<A: Float + FromPrimitive + Debug> ShakeDrop<A> {
@@ -57,7 +57,7 @@ impl<A: Float + FromPrimitive + Debug> ShakeDrop<A> {
             p,
             alpha_range: (neg_one, one),
             beta_range: (zero, one),
-            rng: rand::rng(),
+            rng: scirs2_core::random::Random::seed(42),
         }
     }
 
@@ -72,12 +72,12 @@ impl<A: Float + FromPrimitive + Debug> ShakeDrop<A> {
     /// # Returns
     ///
     /// A ShakeDrop regularizer
-    pub fn new_with_ranges(p: A, alpha_range: (A, A), beta_range: (A, A)) -> Self {
+    pub fn new_with_ranges(p: A, alpharange: (A, A), beta_range: (A, A)) -> Self {
         Self {
             p,
-            alpha_range,
+            alpha_range: alpharange,
             beta_range,
-            rng: rand::rng(),
+            rng: scirs2_core::random::Random::seed(42),
         }
     }
 
@@ -92,7 +92,7 @@ impl<A: Float + FromPrimitive + Debug> ShakeDrop<A> {
             return min;
         }
 
-        let random_val = self.rng.random_range(min_f..max_f);
+        let random_val = self.rng.gen_range(min_f..max_f);
         A::from_f64(random_val).unwrap()
     }
 
@@ -109,14 +109,14 @@ impl<A: Float + FromPrimitive + Debug> ShakeDrop<A> {
         let one = A::one();
 
         // Determine if the gate is active
-        let u: f64 = self.rng.random();
+        let u: f64 = self.rng.gen_range(0.0..1.0);
         let b = if u < self.p.to_f64().unwrap() {
             one
         } else {
             zero
         };
 
-        // Get random alpha if gate is active, otherwise 0
+        // Get random alpha if gate is active..otherwise 0
         let alpha = if b > zero {
             self.random_in_range(self.alpha_range)
         } else {
@@ -173,7 +173,7 @@ impl<A: Float + FromPrimitive + Debug> ShakeDrop<A> {
         S: Data<Elem = A>,
         D: Dimension,
     {
-        let (b, _alpha, beta) = gate_params;
+        let (b, alpha, beta) = gate_params;
 
         // During backward pass: grad_x = grad_output * (b + beta - b*beta)
         let factor = b + beta - b * beta;
@@ -184,7 +184,7 @@ impl<A: Float + FromPrimitive + Debug> ShakeDrop<A> {
 impl<A: Float + FromPrimitive + Debug + ScalarOperand, D: Dimension> Regularizer<A, D>
     for ShakeDrop<A>
 {
-    fn apply(&self, _params: &Array<A, D>, _gradients: &mut Array<A, D>) -> Result<A> {
+    fn apply(&self, _params: &Array<A, D>, gradients: &mut Array<A, D>) -> Result<A> {
         // ShakeDrop is typically applied to activations, not parameters
         // In this implementation, apply() isn't the primary usage pattern
         // Instead, users would call forward() during the forward pass
@@ -196,7 +196,7 @@ impl<A: Float + FromPrimitive + Debug + ScalarOperand, D: Dimension> Regularizer
         ))
     }
 
-    fn penalty(&self, _params: &Array<A, D>) -> Result<A> {
+    fn penalty(&self, params: &Array<A, D>) -> Result<A> {
         // ShakeDrop doesn't add a penalty term to the loss function
         Ok(A::zero())
     }
@@ -280,7 +280,7 @@ mod tests {
     }
 
     #[test]
-    fn test_shakedrop_random_range() {
+    fn test_shakedrop_gen_range() {
         let mut sd = ShakeDrop::new(0.5f64);
 
         // Test random value generation within range

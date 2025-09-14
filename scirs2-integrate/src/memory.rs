@@ -14,7 +14,7 @@
 //! # Examples
 //!
 //! ```
-//! use scirs2_integrate::memory::{MemoryPool, CacheFriendlyMatrix, BlockingStrategy, MatrixLayout};
+//! use scirs2__integrate::memory::{MemoryPool, CacheFriendlyMatrix, BlockingStrategy, MatrixLayout};
 //!
 //! // Use memory pool for frequent allocations
 //! let mut pool = MemoryPool::<f64>::new(1024);
@@ -44,12 +44,12 @@ pub struct MemoryPool<F: IntegrateFloat> {
 
 impl<F: IntegrateFloat> MemoryPool<F> {
     /// Create a new memory pool
-    pub fn new(max_total_memory: usize) -> Self {
+    pub fn new(_max_totalmemory: usize) -> Self {
         Self {
             buffers: std::collections::HashMap::new(),
-            max_buffer_size: max_total_memory / 4, // Quarter of total for single buffer
+            max_buffer_size: _max_totalmemory / 4, // Quarter of total for single buffer
             total_allocated: 0,
-            max_total_memory,
+            max_total_memory: _max_totalmemory,
         }
     }
 
@@ -126,15 +126,15 @@ pub struct PooledBuffer<F: IntegrateFloat> {
 }
 
 impl<F: IntegrateFloat> PooledBuffer<F> {
-    fn new(buffer: Vec<F>, pool_size: Option<usize>) -> Self {
+    fn new(buffer: Vec<F>, poolsize: Option<usize>) -> Self {
         Self {
             buffer: Some(buffer),
-            pool_size,
+            pool_size: poolsize,
         }
     }
 
     /// Get reference to the buffer
-    pub fn as_slice(&self) -> &[F] {
+    pub fn as_slice(&mut self) -> &[F] {
         self.buffer.as_ref().unwrap()
     }
 
@@ -144,7 +144,7 @@ impl<F: IntegrateFloat> PooledBuffer<F> {
     }
 
     /// Convert to owned Vec (consumes the buffer)
-    pub fn into_vec(mut self) -> Vec<F> {
+    pub fn into_vec(&mut self) -> Vec<F> {
         self.buffer.take().unwrap()
     }
 
@@ -278,16 +278,16 @@ impl<F: IntegrateFloat> CacheFriendlyMatrix<F> {
     }
 
     /// Blocked matrix-vector multiplication for better cache performance
-    fn blocked_matvec(&self, x: ArrayView1<F>, mut y: ArrayViewMut1<F>, block_size: usize) {
-        let rows_blocks = self.rows.div_ceil(block_size);
-        let cols_blocks = self.cols.div_ceil(block_size);
+    fn blocked_matvec(&self, x: ArrayView1<F>, mut y: ArrayViewMut1<F>, blocksize: usize) {
+        let rows_blocks = self.rows.div_ceil(blocksize);
+        let cols_blocks = self.cols.div_ceil(blocksize);
 
         for i_block in 0..rows_blocks {
             for j_block in 0..cols_blocks {
-                let i_start = i_block * block_size;
-                let i_end = (i_start + block_size).min(self.rows);
-                let j_start = j_block * block_size;
-                let j_end = (j_start + block_size).min(self.cols);
+                let i_start = i_block * blocksize;
+                let i_end = (i_start + blocksize).min(self.rows);
+                let j_start = j_block * blocksize;
+                let j_end = (j_start + blocksize).min(self.cols);
 
                 for i in i_start..i_end {
                     let mut sum = F::zero();
@@ -314,24 +314,24 @@ pub struct BlockingStrategy {
 
 impl BlockingStrategy {
     /// Create blocking strategy with specified L1 block size
-    pub fn new(l1_block_size: usize) -> Self {
+    pub fn new(_l1_blocksize: usize) -> Self {
         Self {
-            l1_block_size,
-            l2_block_size: l1_block_size * 4,
-            l3_block_size: l1_block_size * 16,
+            l1_block_size: _l1_blocksize,
+            l2_block_size: _l1_blocksize * 4,
+            l3_block_size: _l1_blocksize * 16,
         }
     }
 
     /// Get optimal block size for given matrix dimension and cache level
-    pub fn optimal_block_size(&self, matrix_size: usize, cache_level: CacheLevel) -> usize {
-        let block_size = match cache_level {
+    pub fn optimal_block_size(&self, _matrix_size: usize, cachelevel: CacheLevel) -> usize {
+        let block_size = match cachelevel {
             CacheLevel::L1 => self.l1_block_size,
             CacheLevel::L2 => self.l2_block_size,
             CacheLevel::L3 => self.l3_block_size,
         };
 
         // Adjust for small matrices
-        block_size.min(matrix_size)
+        block_size.min(_matrix_size)
     }
 }
 
@@ -387,13 +387,13 @@ impl CacheAwareAlgorithms {
     }
 
     /// Memory-efficient reduction with minimal cache misses
-    pub fn reduction_blocked<F: IntegrateFloat>(data: ArrayView1<F>, block_size: usize) -> F {
+    pub fn reduction_blocked<F: IntegrateFloat>(data: ArrayView1<F>, blocksize: usize) -> F {
         let n = data.len();
         let mut partial_sums = Vec::new();
 
         // Compute partial sums for each block
-        for start in (0..n).step_by(block_size) {
-            let end = (start + block_size).min(n);
+        for start in (0..n).step_by(blocksize) {
+            let end = (start + blocksize).min(n);
             let mut sum = F::zero();
 
             for i in start..end {
@@ -514,7 +514,7 @@ mod tests {
         let mut pool = MemoryPool::<f64>::new(1024 * 1024); // 1MB
 
         // Allocate buffer
-        let buffer = pool.allocate(100);
+        let mut buffer = pool.allocate(100);
         assert_eq!(buffer.len(), 100);
 
         // Check memory usage

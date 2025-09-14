@@ -10,6 +10,7 @@ use scirs2_fft::{
 use std::f64::consts::PI;
 use std::time::Instant;
 
+#[allow(dead_code)]
 fn main() -> FFTResult<()> {
     println!("Multi-GPU Device Enumeration and Management Example");
     println!("===================================================");
@@ -30,6 +31,7 @@ fn main() -> FFTResult<()> {
 }
 
 /// Test device enumeration and selection
+#[allow(dead_code)]
 fn test_device_enumeration() -> FFTResult<()> {
     println!("\n--- Device Enumeration Test ---");
 
@@ -70,6 +72,7 @@ fn test_device_enumeration() -> FFTResult<()> {
 }
 
 /// Test different workload distribution strategies
+#[allow(dead_code)]
 fn test_workload_distribution_strategies() -> FFTResult<()> {
     println!("\n--- Workload Distribution Strategies Test ---");
 
@@ -131,6 +134,7 @@ fn test_workload_distribution_strategies() -> FFTResult<()> {
 }
 
 /// Test strategy helper function
+#[allow(dead_code)]
 fn test_strategy(
     config: MultiGPUConfig,
     signal: &[f64],
@@ -155,15 +159,16 @@ fn test_strategy(
 }
 
 /// Test performance scaling with different numbers of devices
+#[allow(dead_code)]
 fn test_performance_scaling() -> FFTResult<()> {
     println!("\n--- Performance Scaling Test ---");
 
-    let signal_sizes = vec![2048, 4096, 8192, 16384];
+    let signalsizes = vec![2048, 4096, 8192, 16384];
     let max_devices_configs = vec![1, 2, 4];
 
-    for signal_size in signal_sizes {
-        println!("\nSignal size: {} elements", signal_size);
-        let signal = create_test_signal(signal_size);
+    for signalsize in signalsizes {
+        println!("\nSignal size: {} elements", signalsize);
+        let signal = create_test_signal(signalsize);
 
         for max_devices in &max_devices_configs {
             let config = MultiGPUConfig {
@@ -177,16 +182,16 @@ fn test_performance_scaling() -> FFTResult<()> {
             let start = Instant::now();
 
             match test_strategy(config, &signal, 10) {
-                Ok((result, _)) => {
+                Ok((result_, _)) => {
                     let elapsed = start.elapsed();
-                    let throughput = signal_size as f64 / elapsed.as_secs_f64();
+                    let throughput = signalsize as f64 / elapsed.as_secs_f64();
 
                     println!(
                         "  {} device(s): {:?} ({:.0} samples/sec, {} components)",
                         *max_devices,
                         elapsed,
                         throughput,
-                        result.indices.len()
+                        result_.indices.len()
                     );
                 }
                 Err(e) => {
@@ -200,6 +205,7 @@ fn test_performance_scaling() -> FFTResult<()> {
 }
 
 /// Test adaptive load balancing
+#[allow(dead_code)]
 fn test_adaptive_load_balancing() -> FFTResult<()> {
     println!("\n--- Adaptive Load Balancing Test ---");
 
@@ -266,6 +272,7 @@ fn test_adaptive_load_balancing() -> FFTResult<()> {
 }
 
 /// Create a test signal with sparse frequency components
+#[allow(dead_code)]
 fn create_test_signal(n: usize) -> Vec<f64> {
     let mut signal = vec![0.0; n];
 

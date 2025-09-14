@@ -130,21 +130,21 @@ impl MOLParabolicSolver1D {
             ));
         }
 
-        // Validate time range
+        // Validate time _range
         if time_range[0] >= time_range[1] {
             return Err(PDEError::DomainError(
-                "Invalid time range: start must be less than end".to_string(),
+                "Invalid time _range: start must be less than end".to_string(),
             ));
         }
 
-        // Validate boundary conditions
+        // Validate boundary _conditions
         if boundary_conditions.len() != 2 {
             return Err(PDEError::BoundaryConditions(
-                "1D parabolic PDE requires exactly 2 boundary conditions".to_string(),
+                "1D parabolic PDE requires exactly 2 boundary _conditions".to_string(),
             ));
         }
 
-        // Ensure we have both lower and upper boundary conditions
+        // Ensure we have both lower and upper boundary _conditions
         let has_lower = boundary_conditions
             .iter()
             .any(|bc| bc.location == crate::pde::BoundaryLocation::Lower);
@@ -154,7 +154,7 @@ impl MOLParabolicSolver1D {
 
         if !has_lower || !has_upper {
             return Err(PDEError::BoundaryConditions(
-                "1D parabolic PDE requires both lower and upper boundary conditions".to_string(),
+                "1D parabolic PDE requires both lower and upper boundary _conditions".to_string(),
             ));
         }
 
@@ -196,7 +196,7 @@ impl MOLParabolicSolver1D {
     }
 
     /// Solve the PDE
-    pub fn solve(self) -> PDEResult<MOLResult> {
+    pub fn solve(&self) -> PDEResult<MOLResult> {
         let start_time = Instant::now();
 
         // Generate spatial grid
@@ -217,7 +217,7 @@ impl MOLParabolicSolver1D {
         let boundary_conditions = self.boundary_conditions.clone();
 
         // Extract options before moving self
-        let _ode_options = ODEOptions {
+        let ode_options = ODEOptions {
             method: self.options.ode_method,
             rtol: self.options.rtol,
             atol: self.options.atol,
@@ -469,7 +469,7 @@ impl MOLParabolicSolver1D {
         };
 
         // Set up ODE solver options
-        let ode_options = _ode_options;
+        let ode_options = ode_options;
 
         // Apply Dirichlet boundary conditions to initial condition
         for bc in &boundary_conditions {
@@ -494,7 +494,7 @@ impl MOLParabolicSolver1D {
         // Create a single 2D array with dimensions [time, space]
         let u_2d =
             Array2::from_shape_vec((t.len(), nx), ode_result.y.into_iter().flatten().collect())
-                .map_err(|e| PDEError::Other(format!("Error reshaping result: {}", e)))?;
+                .map_err(|e| PDEError::Other(format!("Error reshaping result: {e}")))?;
 
         u.push(u_2d);
 

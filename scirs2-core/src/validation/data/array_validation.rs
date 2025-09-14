@@ -12,11 +12,13 @@ use ndarray::{ArrayBase, Data, Dimension, ScalarOperand};
 use num_traits::{Float, FromPrimitive, ToPrimitive, Zero};
 
 #[cfg(feature = "parallel")]
-use rayon::prelude::*;
+use crate::parallel_ops::*;
 
 use super::config::{ErrorSeverity, ValidationErrorType};
 use super::constraints::{ArrayValidationConstraints, StatisticalConstraints};
 use super::errors::{ValidationError, ValidationResult, ValidationStats};
+#[cfg(feature = "validation")]
+use statrs::statistics::Statistics;
 
 /// Array validator with comprehensive validation capabilities
 pub struct ArrayValidator;
@@ -32,7 +34,7 @@ impl ArrayValidator {
         &self,
         array: &ArrayBase<S, D>,
         constraints: &ArrayValidationConstraints,
-        _config: &super::config::ValidationConfig,
+        config: &super::config::ValidationConfig,
     ) -> Result<ValidationResult, CoreError>
     where
         S: Data,
@@ -45,22 +47,19 @@ impl ArrayValidator {
         let mut stats = ValidationStats::default();
 
         // Basic shape validation
-        if let Some(expected_shape) = &constraints.expected_shape {
-            if !self.validate_array_shape(array, expected_shape)? {
+        if let Some(expectedshape) = &constraints.expectedshape {
+            if !self.validate_arrayshape(array, expectedshape)? {
                 errors.push(ValidationError {
-                    error_type: ValidationErrorType::ShapeError,
-                    field_path: constraints
-                        .field_name
-                        .clone()
-                        .unwrap_or("array".to_string()),
+                    errortype: ValidationErrorType::ShapeError,
+                    field_path: constraints.fieldname.clone().unwrap_or(array.to_string()),
                     message: format!(
                         "Array shape {:?} does not match expected {:?}",
                         array.shape(),
-                        expected_shape
+                        expectedshape
                     ),
-                    expected: Some(format!("{:?}", expected_shape)),
+                    expected: Some(format!("{expectedshape:?}")),
                     actual: Some(format!("{:?}", array.shape())),
-                    constraint: Some("shape".to_string()),
+                    constraint: Some(shape.to_string()),
                     severity: ErrorSeverity::Error,
                     context: HashMap::new(),
                 });
@@ -108,17 +107,17 @@ impl ArrayValidator {
     }
 
     /// Validate array shape against constraints
-    fn validate_array_shape<S, D>(
+    fn validate_arrayshape<S, D>(
         &self,
         array: &ArrayBase<S, D>,
-        expected_shape: &[usize],
+        expectedshape: &[usize],
     ) -> Result<bool, CoreError>
     where
         S: Data,
         D: Dimension,
     {
-        let actual_shape = array.shape();
-        Ok(actual_shape == expected_shape)
+        let actualshape = array.shape();
+        Ok(actualshape == expectedshape)
     }
 
     /// Validate numeric quality (NaN, infinity, precision)
@@ -126,7 +125,7 @@ impl ArrayValidator {
     fn validate_numeric_quality<S, D>(
         &self,
         array: &ArrayBase<S, D>,
-        _errors: &mut Vec<ValidationError>,
+        errors: &mut Vec<ValidationError>,
         warnings: &mut Vec<ValidationError>,
         stats: &mut ValidationStats,
     ) -> Result<(), CoreError>
@@ -205,15 +204,15 @@ impl ArrayValidator {
 
         if nan_count > 0 {
             warnings.push(ValidationError {
-                error_type: ValidationErrorType::InvalidNumeric,
-                field_path: "array".to_string(),
+                errortype: ValidationErrorType::InvalidNumeric,
+                field_path: array.to_string(),
                 message: format!(
                     "Found {} NaN values out of {} total",
                     nan_count, total_count
                 ),
                 expected: Some("finite values".to_string()),
                 actual: Some(format!("{} NaN values", nan_count)),
-                constraint: Some("numeric_quality".to_string()),
+                constraint: Some(numeric_quality.to_string()),
                 severity: ErrorSeverity::Warning,
                 context: HashMap::new(),
             });
@@ -221,15 +220,15 @@ impl ArrayValidator {
 
         if inf_count > 0 {
             warnings.push(ValidationError {
-                error_type: ValidationErrorType::InvalidNumeric,
-                field_path: "array".to_string(),
+                errortype: ValidationErrorType::InvalidNumeric,
+                field_path: array.to_string(),
                 message: format!(
                     "Found {} infinite values out of {} total",
                     inf_count, total_count
                 ),
                 expected: Some("finite values".to_string()),
                 actual: Some(format!("{} infinite values", inf_count)),
-                constraint: Some("numeric_quality".to_string()),
+                constraint: Some(numeric_quality.to_string()),
                 severity: ErrorSeverity::Warning,
                 context: HashMap::new(),
             });
@@ -264,11 +263,11 @@ impl ArrayValidator {
             let min_mean_typed: S::Elem = num_traits::cast(min_mean).unwrap_or(S::Elem::zero());
             if mean < min_mean_typed {
                 errors.push(ValidationError {
-                    error_type: ValidationErrorType::ConstraintViolation,
+                    errortype: ValidationErrorType::ConstraintViolation,
                     field_path: "array.mean".to_string(),
-                    message: format!("Array mean {:?} is below minimum {:?}", mean, min_mean),
-                    expected: Some(format!("mean >= {}", min_mean)),
-                    actual: Some(format!("{:?}", mean)),
+                    message: format!("Mean {:?} is less than minimum {:?}", mean, min_mean),
+                    expected: Some(format!("{min_mean}")),
+                    actual: Some(format!("{mean:?}")),
                     constraint: Some("statistical.min_mean".to_string()),
                     severity: ErrorSeverity::Error,
                     context: HashMap::new(),
@@ -280,11 +279,11 @@ impl ArrayValidator {
             let max_mean_typed: S::Elem = num_traits::cast(max_mean).unwrap_or(S::Elem::zero());
             if mean > max_mean_typed {
                 errors.push(ValidationError {
-                    error_type: ValidationErrorType::ConstraintViolation,
+                    errortype: ValidationErrorType::ConstraintViolation,
                     field_path: "array.mean".to_string(),
-                    message: format!("Array mean {:?} exceeds maximum {:?}", mean, max_mean),
-                    expected: Some(format!("mean <= {}", max_mean)),
-                    actual: Some(format!("{:?}", mean)),
+                    message: format!("Mean {:?} is greater than maximum {:?}", mean, max_mean),
+                    expected: Some(format!("{max_mean}")),
+                    actual: Some(format!("{mean:?}")),
                     constraint: Some("statistical.max_mean".to_string()),
                     severity: ErrorSeverity::Error,
                     context: HashMap::new(),
@@ -297,14 +296,14 @@ impl ArrayValidator {
             let min_std_typed: S::Elem = num_traits::cast(min_std).unwrap_or(S::Elem::zero());
             if std_dev < min_std_typed {
                 warnings.push(ValidationError {
-                    error_type: ValidationErrorType::ConstraintViolation,
+                    errortype: ValidationErrorType::ConstraintViolation,
                     field_path: "array.std".to_string(),
                     message: format!(
                         "Array standard deviation {:?} is below minimum {:?}",
                         std_dev, min_std
                     ),
-                    expected: Some(format!("std >= {}", min_std)),
-                    actual: Some(format!("{:?}", std_dev)),
+                    expected: Some(format!("{min_std}")),
+                    actual: Some(format!("{std_dev:?}")),
                     constraint: Some("statistical.min_std".to_string()),
                     severity: ErrorSeverity::Warning,
                     context: HashMap::new(),
@@ -316,14 +315,14 @@ impl ArrayValidator {
             let max_std_typed: S::Elem = num_traits::cast(max_std).unwrap_or(S::Elem::zero());
             if std_dev > max_std_typed {
                 warnings.push(ValidationError {
-                    error_type: ValidationErrorType::ConstraintViolation,
+                    errortype: ValidationErrorType::ConstraintViolation,
                     field_path: "array.std".to_string(),
                     message: format!(
                         "Array standard deviation {:?} exceeds maximum {:?}",
                         std_dev, max_std
                     ),
-                    expected: Some(format!("std <= {}", max_std)),
-                    actual: Some(format!("{:?}", std_dev)),
+                    expected: Some(format!("{max_std}")),
+                    actual: Some(format!("{std_dev:?}")),
                     constraint: Some("statistical.max_std".to_string()),
                     severity: ErrorSeverity::Warning,
                     context: HashMap::new(),
@@ -353,7 +352,7 @@ impl ArrayValidator {
         const LARGE_ARRAY_THRESHOLD: usize = 100_000_000; // 100M elements
         if element_count > LARGE_ARRAY_THRESHOLD {
             warnings.push(ValidationError {
-                error_type: ValidationErrorType::Performance,
+                errortype: ValidationErrorType::Performance,
                 field_path: "array.size".to_string(),
                 message: format!(
                     "Large array detected: {} elements ({} bytes). Consider chunking for better performance.",
@@ -371,7 +370,7 @@ impl ArrayValidator {
         const LARGE_MEMORY_THRESHOLD: usize = 1_000_000_000; // 1GB
         if total_size > LARGE_MEMORY_THRESHOLD {
             warnings.push(ValidationError {
-                error_type: ValidationErrorType::Performance,
+                errortype: ValidationErrorType::Performance,
                 field_path: "array.memory".to_string(),
                 message: format!(
                     "High memory usage: {} bytes. Consider memory-efficient operations.",
@@ -395,7 +394,7 @@ impl ArrayValidator {
         array: &ArrayBase<S, D>,
         validator: &super::constraints::ElementValidatorFn<f64>,
         errors: &mut Vec<ValidationError>,
-        _warnings: &mut Vec<ValidationError>,
+        warnings: &mut Vec<ValidationError>,
     ) -> Result<(), CoreError>
     where
         S: Data,
@@ -411,12 +410,12 @@ impl ArrayValidator {
                     if invalid_count <= 10 {
                         // Limit error reports to first 10
                         errors.push(ValidationError {
-                            error_type: ValidationErrorType::CustomRuleFailure,
+                            errortype: ValidationErrorType::CustomRuleFailure,
                             field_path: format!("array[{}]", index),
                             message: format!("Element {:?} failed custom validation", element),
                             expected: Some("valid element".to_string()),
-                            actual: Some(format!("{:?}", element)),
-                            constraint: Some("custom_element_validator".to_string()),
+                            actual: Some(format!("{element:?}")),
+                            constraint: Some(custom_element_validator.to_string()),
                             severity: ErrorSeverity::Error,
                             context: HashMap::new(),
                         });
@@ -428,15 +427,15 @@ impl ArrayValidator {
         // Report summary if too many errors
         if invalid_count > 10 {
             errors.push(ValidationError {
-                error_type: ValidationErrorType::CustomRuleFailure,
-                field_path: "array".to_string(),
+                errortype: ValidationErrorType::CustomRuleFailure,
+                field_path: array.to_string(),
                 message: format!(
                     "Total of {} elements failed custom validation (showing first 10)",
                     invalid_count
                 ),
                 expected: Some("all elements to pass validation".to_string()),
                 actual: Some(format!("{} failed elements", invalid_count)),
-                constraint: Some("custom_element_validator".to_string()),
+                constraint: Some(custom_element_validator.to_string()),
                 severity: ErrorSeverity::Error,
                 context: HashMap::new(),
             });
@@ -464,8 +463,8 @@ mod tests {
         let config = super::super::config::ValidationConfig::default();
 
         let constraints = ArrayValidationConstraints::new()
-            .with_shape(vec![5])
-            .with_field_name("test_array")
+            .withshape(vec![5])
+            .with_fieldname("test_array")
             .check_numeric_quality();
 
         let result = validator
@@ -475,27 +474,27 @@ mod tests {
     }
 
     #[test]
-    fn test_shape_validation() {
+    fn testshape_validation() {
         let validator = ArrayValidator::new();
         let array = Array1::from_vec(vec![1.0, 2.0, 3.0]);
         let config = super::super::config::ValidationConfig::default();
 
         // Test correct shape
-        let constraints = ArrayValidationConstraints::new().with_shape(vec![3]);
+        let constraints = ArrayValidationConstraints::new().withshape(vec![3]);
         let result = validator
             .validate_ndarray(&array, &constraints, &config)
             .unwrap();
         assert!(result.is_valid());
 
         // Test incorrect shape
-        let constraints = ArrayValidationConstraints::new().with_shape(vec![5]);
+        let constraints = ArrayValidationConstraints::new().withshape(vec![5]);
         let result = validator
             .validate_ndarray(&array, &constraints, &config)
             .unwrap();
         assert!(!result.is_valid());
         assert_eq!(result.errors().len(), 1);
         assert_eq!(
-            result.errors()[0].error_type,
+            result.errors()[0].errortype,
             ValidationErrorType::ShapeError
         );
     }
@@ -516,7 +515,7 @@ mod tests {
         assert!(result.has_warnings());
         assert_eq!(result.warnings().len(), 1);
         assert_eq!(
-            result.warnings()[0].error_type,
+            result.warnings()[0].errortype,
             ValidationErrorType::InvalidNumeric
         );
     }

@@ -169,6 +169,7 @@ impl SimdOdeOps {
 /// Computes: y = a0 * y0 + a1 * y1 + a2 * y2 + ... + an * yn
 ///
 /// This is a common operation in multistage ODE methods like Runge-Kutta.
+#[allow(dead_code)]
 pub fn simd_dense_update<F: IntegrateFloat + SimdUnifiedOps>(
     coefficients: &[F],
     states: &[ArrayView1<F>],
@@ -209,6 +210,7 @@ pub fn simd_dense_update<F: IntegrateFloat + SimdUnifiedOps>(
 /// SIMD-optimized Runge-Kutta step evaluation
 ///
 /// Evaluates: k_new = f(t + c*dt, y + sum(a_ij * k_j * dt))
+#[allow(dead_code)]
 pub fn simd_rk_step<F: IntegrateFloat + SimdUnifiedOps>(
     y: &ArrayView1<F>,
     k_stages: &[Array1<F>],
@@ -239,6 +241,7 @@ pub fn simd_rk_step<F: IntegrateFloat + SimdUnifiedOps>(
 /// SIMD-optimized function evaluation for systems of ODEs
 ///
 /// Evaluates multiple ODE functions in parallel when possible.
+#[allow(dead_code)]
 pub fn simd_ode_function_eval<F, Func>(
     t: F,
     y: &ArrayView1<F>,

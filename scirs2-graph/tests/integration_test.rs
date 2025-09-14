@@ -6,6 +6,7 @@ use scirs2_graph::algorithms::*;
 use scirs2_graph::generators::create_graph;
 
 #[test]
+#[allow(dead_code)]
 fn test_basic_graph_operations() {
     let mut graph = create_graph::<i32, f64>();
 
@@ -20,6 +21,7 @@ fn test_basic_graph_operations() {
 }
 
 #[test]
+#[allow(dead_code)]
 fn test_shortest_path_algorithm() {
     let mut graph = create_graph::<i32, f64>();
 
@@ -27,7 +29,7 @@ fn test_shortest_path_algorithm() {
     graph.add_edge(2, 3, 2.0).unwrap();
     graph.add_edge(1, 3, 5.0).unwrap();
 
-    if let Ok(Some(path)) = shortest_path(&graph, &1, &3) {
+    if let Ok(Some(path)) = dijkstra_path(&graph, &1, &3) {
         // Should find path 1->2->3 with total weight 3.0, not direct path 1->3 with weight 5.0
         assert_eq!(path.total_weight, 3.0);
         assert_eq!(path.nodes, vec![1, 2, 3]);
@@ -37,6 +39,7 @@ fn test_shortest_path_algorithm() {
 }
 
 #[test]
+#[allow(dead_code)]
 fn test_connectivity_algorithms() {
     let mut graph = create_graph::<i32, f64>();
 
@@ -50,6 +53,7 @@ fn test_connectivity_algorithms() {
 }
 
 #[test]
+#[allow(dead_code)]
 fn test_minimum_spanning_tree() {
     let mut graph = create_graph::<i32, f64>();
 
@@ -69,6 +73,7 @@ fn test_minimum_spanning_tree() {
 }
 
 #[test]
+#[allow(dead_code)]
 fn test_pagerank() {
     // Create a simple directed graph for PageRank
     use scirs2_graph::generators::create_digraph;

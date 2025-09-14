@@ -101,15 +101,13 @@ impl Domain {
         for (i, range) in ranges.iter().enumerate() {
             if range.start >= range.end {
                 return Err(PDEError::DomainError(format!(
-                    "Invalid range for dimension {}: start must be less than end",
-                    i
+                    "Invalid range for dimension {i}: start must be less than end"
                 )));
             }
 
             if grid_points[i] < 3 {
                 return Err(PDEError::DomainError(format!(
-                    "At least 3 grid points required for dimension {}",
-                    i
+                    "At least 3 grid points required for dimension {i}"
                 )));
             }
         }
@@ -129,8 +127,7 @@ impl Domain {
     pub fn grid_spacing(&self, dimension: usize) -> PDEResult<f64> {
         if dimension >= self.dimensions() {
             return Err(PDEError::DomainError(format!(
-                "Invalid dimension: {}",
-                dimension
+                "Invalid dimension: {dimension}"
             )));
         }
 
@@ -144,8 +141,7 @@ impl Domain {
     pub fn grid(&self, dimension: usize) -> PDEResult<Array1<f64>> {
         if dimension >= self.dimensions() {
             return Err(PDEError::DomainError(format!(
-                "Invalid dimension: {}",
-                dimension
+                "Invalid dimension: {dimension}"
             )));
         }
 
@@ -176,16 +172,16 @@ pub trait PDEProblem<F: 'static + std::fmt::Debug + Copy + PartialOrd> {
     fn boundary_conditions(&self) -> &[BoundaryCondition<F>];
 
     /// Get the number of dependent variables in the PDE
-    fn num_variables(&self) -> usize;
+    fn num_variables() -> usize;
 
     /// Get the PDE terms (implementation depends on the specific PDE type)
-    fn pde_terms(&self) -> PDEResult<()>;
+    fn pde_terms() -> PDEResult<()>;
 }
 
 /// Trait for PDE solvers
 pub trait PDESolver<F: 'static + std::fmt::Debug + Copy + PartialOrd> {
     /// Solve the PDE problem
-    fn solve(&self) -> PDEResult<PDESolution<F>>;
+    fn solve() -> PDEResult<PDESolution<F>>;
 }
 
 /// Solution to a PDE problem

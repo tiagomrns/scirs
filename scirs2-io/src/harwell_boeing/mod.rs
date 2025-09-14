@@ -71,7 +71,7 @@ impl FromStr for HBMatrixType {
             ('C', 'H', 'A') => Ok(HBMatrixType::ComplexHermitian),
             ('C', 'S', 'S') => Ok(HBMatrixType::ComplexSkewSymmetric),
             ('P', _, _) => Ok(HBMatrixType::Pattern),
-            _ => Err(IoError::FormatError(format!("Unknown matrix type: {}", s))),
+            _ => Err(IoError::FormatError(format!("Unknown matrix type: {s}"))),
         }
     }
 }
@@ -312,6 +312,7 @@ impl HBHeader {
 /// let matrix = read_harwell_boeing("matrix.hb").unwrap();
 /// println!("Matrix: {}x{} with {} non-zeros", matrix.header.nrow, matrix.header.ncol, matrix.header.nnzero);
 /// ```
+#[allow(dead_code)]
 pub fn read_harwell_boeing<P: AsRef<Path>>(path: P) -> Result<HBSparseMatrix<f64>> {
     let file = File::open(path).map_err(|e| IoError::FileError(e.to_string()))?;
     let mut reader = BufReader::new(file);
@@ -369,8 +370,42 @@ pub fn read_harwell_boeing<P: AsRef<Path>>(path: P) -> Result<HBSparseMatrix<f64
         Some(vals)
     };
 
-    // TODO: Read right-hand side vectors if present
-    let rhs = None;
+    // Read right-hand side vectors if present
+    let rhs = if header.rhscrd > 0 {
+        // Check if we need to read RHS type information
+        if !header.rhsfmt.is_empty() {
+            let mut rhs_data = Vec::new();
+            read_real_data(&mut reader, header.rhscrd, &mut rhs_data)?;
+
+            // For simplicity, assume single RHS vector
+            // In full implementation, would parse rhstyp, nrhs, nrhsix from line 5
+            let nrhs = 1; // Number of RHS vectors (should be parsed from header)
+
+            if rhs_data.len() >= header.nrow * nrhs {
+                // Reshape into matrix: each column is an RHS vector
+                let mut rhsmatrix = Array2::zeros((header.nrow, nrhs));
+                for i in 0..header.nrow {
+                    for j in 0..nrhs {
+                        let idx = j * header.nrow + i; // Column-major ordering
+                        if idx < rhs_data.len() {
+                            rhsmatrix[[i, j]] = rhs_data[idx];
+                        }
+                    }
+                }
+                Some(rhsmatrix)
+            } else {
+                return Err(IoError::FormatError(format!(
+                    "Insufficient RHS data: expected at least {}, got {}",
+                    header.nrow * nrhs,
+                    rhs_data.len()
+                )));
+            }
+        } else {
+            None
+        }
+    } else {
+        None
+    };
 
     Ok(HBSparseMatrix {
         header,
@@ -412,6 +447,7 @@ pub fn read_harwell_boeing<P: AsRef<Path>>(path: P) -> Result<HBSparseMatrix<f64
 /// # };
 /// write_harwell_boeing("output.hb", &matrix).unwrap();
 /// ```
+#[allow(dead_code)]
 pub fn write_harwell_boeing<P: AsRef<Path>>(path: P, matrix: &HBSparseMatrix<f64>) -> Result<()> {
     let file = File::create(path).map_err(|e| IoError::FileError(e.to_string()))?;
     let mut writer = BufWriter::new(file);
@@ -432,7 +468,22 @@ pub fn write_harwell_boeing<P: AsRef<Path>>(path: P, matrix: &HBSparseMatrix<f64
         write_real_data(&mut writer, values, 16)?;
     }
 
-    // TODO: Write right-hand side vectors if present
+    // Write right-hand side vectors if present
+    if let Some(ref rhsmatrix) = matrix.rhs {
+        if matrix.header.rhscrd > 0 && !matrix.header.rhsfmt.is_empty() {
+            // Convert RHS matrix to column-major vector format
+            let mut rhs_data = Vec::new();
+
+            for j in 0..rhsmatrix.ncols() {
+                for i in 0..rhsmatrix.nrows() {
+                    rhs_data.push(rhsmatrix[[i, j]]);
+                }
+            }
+
+            // Write RHS data using specified format
+            write_real_data(&mut writer, &rhs_data, 20)?; // 20-character field width
+        }
+    }
 
     writer
         .flush()
@@ -450,6 +501,7 @@ pub fn write_harwell_boeing<P: AsRef<Path>>(path: P, matrix: &HBSparseMatrix<f64
 /// # Returns
 ///
 /// * `(Array1<usize>, Array1<usize>, Array1<f64>)` - Column pointers, row indices, and values
+#[allow(dead_code)]
 pub fn hb_to_ccs(matrix: &HBSparseMatrix<f64>) -> (Array1<usize>, Array1<usize>, Array1<f64>) {
     let colptr = Array1::from(matrix.colptr.clone());
     let rowind = Array1::from(matrix.rowind.clone());
@@ -477,6 +529,7 @@ pub fn hb_to_ccs(matrix: &HBSparseMatrix<f64>) -> (Array1<usize>, Array1<usize>,
 /// # Returns
 ///
 /// * `HBSparseMatrix<f64>` - The Harwell-Boeing matrix
+#[allow(dead_code)]
 pub fn ccs_to_hb(
     colptr: &Array1<usize>,
     rowind: &Array1<usize>,
@@ -486,8 +539,46 @@ pub fn ccs_to_hb(
     key: String,
     mxtype: HBMatrixType,
 ) -> HBSparseMatrix<f64> {
+    ccs_to_hb_with_rhs(colptr, rowind, values, shape, title, key, mxtype, None)
+}
+
+/// Create a Harwell-Boeing matrix from CCS format with optional RHS vectors
+///
+/// # Arguments
+///
+/// * `colptr` - Column pointers
+/// * `rowind` - Row indices
+/// * `values` - Values
+/// * `shape` - Matrix shape (rows, cols)
+/// * `title` - Matrix title
+/// * `key` - Matrix key
+/// * `mxtype` - Matrix type
+/// * `rhs` - Optional right-hand side vectors
+///
+/// # Returns
+///
+/// * `HBSparseMatrix<f64>` - The Harwell-Boeing matrix
+#[allow(dead_code)]
+pub fn ccs_to_hb_with_rhs(
+    colptr: &Array1<usize>,
+    rowind: &Array1<usize>,
+    values: &Array1<f64>,
+    shape: (usize, usize),
+    title: String,
+    key: String,
+    mxtype: HBMatrixType,
+    rhs: Option<Array2<f64>>,
+) -> HBSparseMatrix<f64> {
     let (nrow, ncol) = shape;
     let nnzero = rowind.len();
+
+    // Calculate RHS card count if RHS vectors are present
+    let rhscrd = if let Some(ref rhsmatrix) = rhs {
+        let total_rhs_elements = rhsmatrix.nrows() * rhsmatrix.ncols();
+        (total_rhs_elements + 3) / 4 // 4 reals per line
+    } else {
+        0
+    };
 
     // Calculate header card counts (rough estimates)
     let ptrcrd = ((ncol + 1) + 7) / 8; // 8 integers per line
@@ -497,7 +588,8 @@ pub fn ccs_to_hb(
     } else {
         (nnzero + 3) / 4 // 4 reals per line
     };
-    let totcrd = 4 + ptrcrd + indcrd + valcrd; // 4 header lines + data
+    let header_lines = if rhscrd > 0 { 5 } else { 4 }; // Include line 5 for RHS info if needed
+    let totcrd = header_lines + ptrcrd + indcrd + valcrd + rhscrd;
 
     let header = HBHeader {
         title,
@@ -506,7 +598,7 @@ pub fn ccs_to_hb(
         ptrcrd,
         indcrd,
         valcrd,
-        rhscrd: 0,
+        rhscrd,
         mxtype,
         nrow,
         ncol,
@@ -519,7 +611,11 @@ pub fn ccs_to_hb(
         } else {
             "(4E20.12)".to_string()
         },
-        rhsfmt: String::new(),
+        rhsfmt: if rhscrd > 0 {
+            "(4E20.12)".to_string()
+        } else {
+            String::new()
+        },
     };
 
     HBSparseMatrix {
@@ -531,11 +627,12 @@ pub fn ccs_to_hb(
         } else {
             Some(values.to_vec())
         },
-        rhs: None,
+        rhs,
     }
 }
 
 /// Read integer data from file
+#[allow(dead_code)]
 fn read_integer_data<R: BufRead>(
     reader: &mut R,
     num_lines: usize,
@@ -558,6 +655,7 @@ fn read_integer_data<R: BufRead>(
 }
 
 /// Read real data from file
+#[allow(dead_code)]
 fn read_real_data<R: BufRead>(reader: &mut R, num_lines: usize, data: &mut Vec<f64>) -> Result<()> {
     for _ in 0..num_lines {
         let mut line = String::new();
@@ -576,7 +674,8 @@ fn read_real_data<R: BufRead>(reader: &mut R, num_lines: usize, data: &mut Vec<f
 }
 
 /// Write integer data to file
-fn write_integer_data<W: Write>(writer: &mut W, data: &[usize], field_width: usize) -> Result<()> {
+#[allow(dead_code)]
+fn write_integer_data<W: Write>(writer: &mut W, data: &[usize], fieldwidth: usize) -> Result<()> {
     const INTS_PER_LINE: usize = 8;
 
     for chunk in data.chunks(INTS_PER_LINE) {
@@ -584,8 +683,7 @@ fn write_integer_data<W: Write>(writer: &mut W, data: &[usize], field_width: usi
             if i > 0 {
                 write!(writer, " ").map_err(|e| IoError::FileError(e.to_string()))?;
             }
-            write!(writer, "{:width$}", value, width = field_width)
-                .map_err(|e| IoError::FileError(e.to_string()))?;
+            write!(writer, "{value:fieldwidth$}").map_err(|e| IoError::FileError(e.to_string()))?;
         }
         writeln!(writer).map_err(|e| IoError::FileError(e.to_string()))?;
     }
@@ -593,7 +691,8 @@ fn write_integer_data<W: Write>(writer: &mut W, data: &[usize], field_width: usi
 }
 
 /// Write real data to file
-fn write_real_data<W: Write>(writer: &mut W, data: &[f64], field_width: usize) -> Result<()> {
+#[allow(dead_code)]
+fn write_real_data<W: Write>(writer: &mut W, data: &[f64], fieldwidth: usize) -> Result<()> {
     const REALS_PER_LINE: usize = 4;
 
     for chunk in data.chunks(REALS_PER_LINE) {
@@ -601,7 +700,7 @@ fn write_real_data<W: Write>(writer: &mut W, data: &[f64], field_width: usize) -
             if i > 0 {
                 write!(writer, " ").map_err(|e| IoError::FileError(e.to_string()))?;
             }
-            write!(writer, "{:width$.6E}", value, width = field_width)
+            write!(writer, "{value:fieldwidth$.6E}")
                 .map_err(|e| IoError::FileError(e.to_string()))?;
         }
         writeln!(writer).map_err(|e| IoError::FileError(e.to_string()))?;
@@ -614,7 +713,7 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_matrix_type_parsing() {
+    fn testmatrix_type_parsing() {
         assert_eq!(
             HBMatrixType::from_str("RUA").unwrap(),
             HBMatrixType::RealUnsymmetric
@@ -634,7 +733,7 @@ mod tests {
     }
 
     #[test]
-    fn test_matrix_type_display() {
+    fn testmatrix_type_display() {
         assert_eq!(HBMatrixType::RealUnsymmetric.to_string(), "RUA");
         assert_eq!(HBMatrixType::ComplexHermitian.to_string(), "CHA");
         assert_eq!(HBMatrixType::Pattern.to_string(), "PUA");
@@ -648,7 +747,7 @@ mod tests {
         let values = Array1::from(vec![1.0, 2.0, 3.0, 4.0]);
 
         // Convert to HB format
-        let hb_matrix = ccs_to_hb(
+        let hbmatrix = ccs_to_hb(
             &colptr,
             &rowind,
             &values,
@@ -659,18 +758,15 @@ mod tests {
         );
 
         // Verify
-        assert_eq!(hb_matrix.header.nrow, 2);
-        assert_eq!(hb_matrix.header.ncol, 2);
-        assert_eq!(hb_matrix.header.nnzero, 4);
-        assert_eq!(hb_matrix.colptr, vec![0, 2, 4]);
-        assert_eq!(hb_matrix.rowind, vec![0, 1, 0, 1]);
-        assert_eq!(
-            hb_matrix.values.as_ref().unwrap(),
-            &vec![1.0, 2.0, 3.0, 4.0]
-        );
+        assert_eq!(hbmatrix.header.nrow, 2);
+        assert_eq!(hbmatrix.header.ncol, 2);
+        assert_eq!(hbmatrix.header.nnzero, 4);
+        assert_eq!(hbmatrix.colptr, vec![0, 2, 4]);
+        assert_eq!(hbmatrix.rowind, vec![0, 1, 0, 1]);
+        assert_eq!(hbmatrix.values.as_ref().unwrap(), &vec![1.0, 2.0, 3.0, 4.0]);
 
         // Convert back to CCS
-        let (new_colptr, new_rowind, new_values) = hb_to_ccs(&hb_matrix);
+        let (new_colptr, new_rowind, new_values) = hb_to_ccs(&hbmatrix);
 
         assert_eq!(new_colptr, colptr);
         assert_eq!(new_rowind, rowind);
@@ -678,12 +774,12 @@ mod tests {
     }
 
     #[test]
-    fn test_pattern_matrix() {
+    fn test_patternmatrix() {
         let colptr = Array1::from(vec![0, 1, 2]);
         let rowind = Array1::from(vec![0, 1]);
         let values = Array1::from(vec![1.0, 1.0]); // Will be ignored for pattern matrix
 
-        let hb_matrix = ccs_to_hb(
+        let hbmatrix = ccs_to_hb(
             &colptr,
             &rowind,
             &values,
@@ -693,9 +789,9 @@ mod tests {
             HBMatrixType::Pattern,
         );
 
-        assert_eq!(hb_matrix.header.mxtype, HBMatrixType::Pattern);
-        assert!(hb_matrix.values.is_none());
-        assert_eq!(hb_matrix.header.valcrd, 0);
+        assert_eq!(hbmatrix.header.mxtype, HBMatrixType::Pattern);
+        assert!(hbmatrix.values.is_none());
+        assert_eq!(hbmatrix.header.valcrd, 0);
     }
 
     #[test]

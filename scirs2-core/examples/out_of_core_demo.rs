@@ -5,6 +5,7 @@
 //! and persistence.
 
 #[cfg(not(feature = "memory_management"))]
+#[allow(dead_code)]
 fn main() {
     println!("This example requires the 'memory_management' feature to be enabled.");
     println!("Run with: cargo run --example out_of_core_demo --features memory_management");
@@ -22,6 +23,7 @@ use std::sync::Arc;
 use tempfile::TempDir;
 
 #[cfg(feature = "memory_management")]
+#[allow(dead_code)]
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("=== Out-of-Core Memory Management Demo ===\n");
 
@@ -30,11 +32,11 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("1. Created temporary storage at: {:?}", temp_dir.path());
 
     // Create storage backend
-    let storage = Arc::new(FileStorageBackend::new(temp_dir.path())?);
+    let storage = Arc::new(FileStorageBackend::new(temp_dir.path(), temp_dir.path())?);
 
     // Configure out-of-core processing
     let config = OutOfCoreConfig {
-        chunk_shape: vec![100, 100],    // 100x100 chunks
+        chunkshape: vec![100, 100],     // 100x100 chunks
         max_cached_chunks: 4,           // Keep up to 4 chunks in memory
         max_cache_memory: 10_000_000,   // 10MB cache limit
         cache_policy: CachePolicy::Lru, // Least Recently Used eviction
@@ -44,15 +46,15 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     };
 
     println!("\n2. Configuration:");
-    println!("   - Chunk shape: {:?}", config.chunk_shape);
+    println!("   - Chunk shape: {:?}", config.chunkshape);
     println!("   - Max cached chunks: {}", config.max_cached_chunks);
     println!("   - Cache policy: {:?}", config.cache_policy);
 
     // Create an out-of-core array
-    let array_shape = vec![1000, 1000]; // 1M elements
+    let arrayshape = vec![1000, 1000]; // 1M elements
     let array = OutOfCoreArray::<f64>::new(
         "large_dataset".to_string(),
-        array_shape.clone(),
+        arrayshape.clone(),
         storage,
         config.clone(),
     );
@@ -70,7 +72,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Note: Chunks are created on-demand, not upfront
     println!("\n5. Chunk processing would create chunks on-demand");
     println!("   - Total array shape: {:?}", array.shape());
-    println!("   - Chunk shape: {:?}", config.chunk_shape);
+    println!("   - Chunk shape: {:?}", config.chunkshape);
     println!("   - Would create 10x10 = 100 chunks total");
 
     // Demonstrate the manager API
@@ -78,10 +80,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let manager = OutOfCoreManager::default();
 
     // Create an array through the manager
-    let managed_array: Arc<OutOfCoreArray<f64>> =
+    let managedarray: Arc<OutOfCoreArray<f64>> =
         manager.create_array("managed_dataset".to_string(), vec![500, 500], None, None)?;
 
-    println!("   - Created managed array: {:?}", managed_array.shape());
+    println!("   - Created managed array: {:?}", managedarray.shape());
 
     // List all arrays
     let arrays = manager.list_arrays();

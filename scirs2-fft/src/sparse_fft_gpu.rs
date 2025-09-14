@@ -64,7 +64,7 @@ impl Default for GPUSparseFFTConfig {
 /// GPU-accelerated sparse FFT processor
 pub struct GPUSparseFFT {
     /// Configuration
-    config: GPUSparseFFTConfig,
+    _config: GPUSparseFFTConfig,
     /// GPU resources initialized
     gpu_initialized: bool,
     /// GPU device information
@@ -75,7 +75,7 @@ impl GPUSparseFFT {
     /// Create a new GPU-accelerated sparse FFT processor with the given configuration
     pub fn new(config: GPUSparseFFTConfig) -> Self {
         Self {
-            config,
+            _config: config,
             gpu_initialized: false,
             device_info: None,
         }
@@ -91,7 +91,7 @@ impl GPUSparseFFT {
         // Placeholder for actual GPU initialization code
         // In a real implementation, this would set up CUDA/HIP/SYCL context and resources
 
-        match self.config.backend {
+        match self._config.backend {
             GPUBackend::CUDA => {
                 // Initialize CUDA resources
                 self.device_info = Some("CUDA GPU device (simulated)".to_string());
@@ -143,7 +143,7 @@ impl GPUSparseFFT {
             .iter()
             .map(|&val| {
                 let val_f64 = NumCast::from(val).ok_or_else(|| {
-                    FFTError::ValueError(format!("Could not convert {:?} to f64", val))
+                    FFTError::ValueError(format!("Could not convert {val:?} to f64"))
                 })?;
                 Ok(Complex64::new(val_f64, 0.0))
             })
@@ -151,7 +151,7 @@ impl GPUSparseFFT {
 
         // Create a CPU sparse FFT processor to handle computation for now
         // This is a temporary solution until actual GPU implementation is provided
-        let mut cpu_processor = crate::sparse_fft::SparseFFT::new(self.config.base_config.clone());
+        let mut cpu_processor = crate::sparse_fft::SparseFFT::new(self._config.base_config.clone());
         let result = cpu_processor.sparse_fft(&signal_complex)?;
 
         // Record computation time including any data transfers
@@ -163,7 +163,7 @@ impl GPUSparseFFT {
             indices: result.indices,
             estimated_sparsity: result.estimated_sparsity,
             computation_time,
-            algorithm: self.config.base_config.algorithm,
+            algorithm: self._config.base_config.algorithm,
         })
     }
 
@@ -200,6 +200,7 @@ impl GPUSparseFFT {
 /// # Returns
 ///
 /// * Sparse FFT result containing frequency components, indices, and timing information
+#[allow(dead_code)]
 pub fn gpu_sparse_fft<T>(
     signal: &[T],
     k: usize,
@@ -244,6 +245,7 @@ where
 /// # Returns
 ///
 /// * List of sparse FFT results for each input signal
+#[allow(dead_code)]
 pub fn gpu_batch_sparse_fft<T>(
     signals: &[Vec<T>],
     k: usize,
@@ -296,7 +298,6 @@ mod tests {
     }
 
     #[test]
-    #[ignore = "Ignored for alpha-4 release - GPU-dependent test"]
     fn test_gpu_sparse_fft_cpu_fallback() {
         // Create a signal with 3 frequency components
         let n = 256;
@@ -319,7 +320,6 @@ mod tests {
     }
 
     #[test]
-    #[ignore = "Ignored for alpha-4 release - GPU-dependent test"]
     fn test_gpu_batch_processing() {
         // Create multiple signals
         let n = 128;

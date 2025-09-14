@@ -7,7 +7,7 @@
 
 use super::chunked::ChunkingStrategy;
 use super::memmap::{AccessMode, MemoryMappedArray};
-use crate::error::{CoreError, CoreResult, ErrorContext};
+use crate::error::{CoreError, CoreResult, ErrorContext, ErrorLocation};
 use ndarray;
 use num_traits::Zero;
 use std::ops::{Add, Div, Mul, Sub};
@@ -197,7 +197,7 @@ pub trait ZeroCopyOps<A: Clone + Copy + 'static + Send + Sync> {
     ///
     /// # Example
     ///
-    /// ```no_run
+    /// ```ignore
     /// # use scirs2_core::memory_efficient::{MemoryMappedArray, ZeroCopyOps};
     /// # let mmap: MemoryMappedArray<f64> = unimplemented!();
     /// let avg = mmap.mean_zero_copy();
@@ -219,7 +219,7 @@ impl<A: Clone + Copy + 'static + Send + Sync + Send + Sync + Zero> ZeroCopyOps<A
         let temp_path = temp_file.path().to_path_buf();
 
         // Create an output memory-mapped array with the same shape
-        let _shape = &self.shape;
+        let shape = &self.shape;
         let element_size = std::mem::size_of::<A>();
         let file_size = self.size * element_size;
 
@@ -268,13 +268,25 @@ impl<A: Clone + Copy + 'static + Send + Sync + Send + Sync + Zero> ZeroCopyOps<A
                 let end = (start + chunk_size).min(self.size);
 
                 // Get the data for this chunk
-                let chunk = &array.as_slice().unwrap()[start..end];
+                let slice = array.as_slice().ok_or_else(|| {
+                    CoreError::ValidationError(
+                        ErrorContext::new("Array is not contiguous in memory".to_string())
+                            .with_location(ErrorLocation::new(file!(), line!())),
+                    )
+                })?;
+                let chunk = &slice[start..end];
 
                 // Apply the mapping function to each element in the chunk
                 let mapped_chunk: Vec<A> = chunk.iter().map(|&x| f(x)).collect();
 
                 // Copy the mapped chunk to the output at the same position
-                let out_slice = &mut out_array.as_slice_mut().unwrap()[start..end];
+                let out_slice_full = out_array.as_slice_mut().ok_or_else(|| {
+                    CoreError::ValidationError(
+                        ErrorContext::new("Output array is not contiguous in memory".to_string())
+                            .with_location(ErrorLocation::new(file!(), line!())),
+                    )
+                })?;
+                let out_slice = &mut out_slice_full[start..end];
 
                 // Copy the mapped chunk to the output
                 out_slice.copy_from_slice(&mapped_chunk);
@@ -286,7 +298,7 @@ impl<A: Clone + Copy + 'static + Send + Sync + Send + Sync + Zero> ZeroCopyOps<A
             // Use sequential processing
 
             let chunk_size = 1024 * 1024; // 1M elements
-            let _strategy = ChunkingStrategy::Fixed(chunk_size);
+            let strategy = ChunkingStrategy::Fixed(chunk_size);
 
             // Manually process chunks instead of using process_chunks_mut
             for chunk_idx in 0..self.size.div_ceil(chunk_size) {
@@ -296,7 +308,13 @@ impl<A: Clone + Copy + 'static + Send + Sync + Send + Sync + Zero> ZeroCopyOps<A
 
                 // Get the data for this chunk
                 let array = self.as_array::<ndarray::IxDyn>()?;
-                let chunk = &array.as_slice().unwrap()[start..end];
+                let slice = array.as_slice().ok_or_else(|| {
+                    CoreError::ValidationError(
+                        ErrorContext::new("Array is not contiguous in memory".to_string())
+                            .with_location(ErrorLocation::new(file!(), line!())),
+                    )
+                })?;
+                let chunk = &slice[start..end];
 
                 // Apply the mapping function to each element in the chunk
                 let mapped_chunk: Vec<A> = chunk.iter().map(|&x| f(x)).collect();
@@ -304,7 +322,13 @@ impl<A: Clone + Copy + 'static + Send + Sync + Send + Sync + Zero> ZeroCopyOps<A
                 // Copy the mapped chunk to the output at the same position
                 // Get a mutable view of the output array
                 let mut out_array = output.as_array_mut::<ndarray::IxDyn>()?;
-                let out_slice = &mut out_array.as_slice_mut().unwrap()[start..end];
+                let out_slice_full = out_array.as_slice_mut().ok_or_else(|| {
+                    CoreError::ValidationError(
+                        ErrorContext::new("Output array is not contiguous in memory".to_string())
+                            .with_location(ErrorLocation::new(file!(), line!())),
+                    )
+                })?;
+                let out_slice = &mut out_slice_full[start..end];
 
                 // Copy the mapped chunk to the output
                 out_slice.copy_from_slice(&mapped_chunk);
@@ -320,7 +344,7 @@ impl<A: Clone + Copy + 'static + Send + Sync + Send + Sync + Zero> ZeroCopyOps<A
     {
         // Process the input array in chunks
         let chunk_size = 1024 * 1024; // 1M elements
-        let _strategy = ChunkingStrategy::Fixed(chunk_size);
+        let strategy = ChunkingStrategy::Fixed(chunk_size);
 
         // Since we can't use process_chunks directly, we'll implement manually
         let num_chunks = self.size.div_ceil(chunk_size);
@@ -334,7 +358,13 @@ impl<A: Clone + Copy + 'static + Send + Sync + Send + Sync + Zero> ZeroCopyOps<A
 
             // Load the array
             let array = self.as_array::<ndarray::IxDyn>()?;
-            let chunk = &array.as_slice().unwrap()[start..end];
+            let slice = array.as_slice().ok_or_else(|| {
+                CoreError::ValidationError(
+                    ErrorContext::new("Array is not contiguous in memory".to_string())
+                        .with_location(ErrorLocation::new(file!(), line!())),
+                )
+            })?;
+            let chunk = &slice[start..end];
 
             // Reduce the chunk
             let chunk_result = chunk.iter().fold(init, |acc, &x| f(acc, x));
@@ -364,7 +394,7 @@ impl<A: Clone + Copy + 'static + Send + Sync + Send + Sync + Zero> ZeroCopyOps<A
         let temp_path = temp_file.path().to_path_buf();
 
         // Create an output memory-mapped array with the same shape
-        let _shape = &self.shape;
+        let shape = &self.shape;
         let element_size = std::mem::size_of::<A>();
         let file_size = self.size * element_size;
 
@@ -394,7 +424,7 @@ impl<A: Clone + Copy + 'static + Send + Sync + Send + Sync + Zero> ZeroCopyOps<A
 
         // Process the arrays in chunks
         let chunk_size = 1024 * 1024; // 1M elements
-        let _strategy = ChunkingStrategy::Fixed(chunk_size);
+        let strategy = ChunkingStrategy::Fixed(chunk_size);
 
         // Calculate the number of chunks
         let num_chunks = self.size.div_ceil(chunk_size);
@@ -410,8 +440,20 @@ impl<A: Clone + Copy + 'static + Send + Sync + Send + Sync + Zero> ZeroCopyOps<A
             let self_array = self.as_array::<ndarray::IxDyn>()?;
             let other_array = other.as_array::<ndarray::IxDyn>()?;
 
-            let self_chunk = &self_array.as_slice().unwrap()[start..end];
-            let other_chunk = &other_array.as_slice().unwrap()[start..end];
+            let self_slice = self_array.as_slice().ok_or_else(|| {
+                CoreError::ValidationError(
+                    ErrorContext::new("Self array is not contiguous in memory".to_string())
+                        .with_location(ErrorLocation::new(file!(), line!())),
+                )
+            })?;
+            let other_slice = other_array.as_slice().ok_or_else(|| {
+                CoreError::ValidationError(
+                    ErrorContext::new("Other array is not contiguous in memory".to_string())
+                        .with_location(ErrorLocation::new(file!(), line!())),
+                )
+            })?;
+            let self_chunk = &self_slice[start..end];
+            let other_chunk = &other_slice[start..end];
 
             // Apply the binary operation
             let mut result_chunk = Vec::with_capacity(len);
@@ -421,7 +463,13 @@ impl<A: Clone + Copy + 'static + Send + Sync + Send + Sync + Zero> ZeroCopyOps<A
 
             // Write the result to the output array
             let mut out_array = output.as_array_mut::<ndarray::IxDyn>()?;
-            let out_slice = &mut out_array.as_slice_mut().unwrap()[start..end];
+            let out_slice_full = out_array.as_slice_mut().ok_or_else(|| {
+                CoreError::ValidationError(
+                    ErrorContext::new("Output array is not contiguous in memory".to_string())
+                        .with_location(ErrorLocation::new(file!(), line!())),
+                )
+            })?;
+            let out_slice = &mut out_slice_full[start..end];
             out_slice.copy_from_slice(&result_chunk);
         }
 
@@ -445,7 +493,13 @@ impl<A: Clone + Copy + 'static + Send + Sync + Send + Sync + Zero> ZeroCopyOps<A
 
             // Load the array
             let array = self.as_array::<ndarray::IxDyn>()?;
-            let slice = &array.as_slice().unwrap()[start..end];
+            let array_slice = array.as_slice().ok_or_else(|| {
+                CoreError::ValidationError(
+                    ErrorContext::new("Array is not contiguous in memory".to_string())
+                        .with_location(ErrorLocation::new(file!(), line!())),
+                )
+            })?;
+            let slice = &array_slice[start..end];
 
             // Filter the chunk
             let filtered_chunk = slice
@@ -475,7 +529,13 @@ impl<A: Clone + Copy + 'static + Send + Sync + Send + Sync + Zero> ZeroCopyOps<A
         // Read the first element to initialize
         let first_element = {
             let array = self.as_array::<ndarray::IxDyn>()?;
-            array.as_slice().unwrap()[0]
+            let slice = array.as_slice().ok_or_else(|| {
+                CoreError::ValidationError(
+                    ErrorContext::new("Array is not contiguous in memory".to_string())
+                        .with_location(ErrorLocation::new(file!(), line!())),
+                )
+            })?;
+            slice[0]
         };
 
         // Reduce the array to find the maximum
@@ -496,7 +556,13 @@ impl<A: Clone + Copy + 'static + Send + Sync + Send + Sync + Zero> ZeroCopyOps<A
         // Read the first element to initialize
         let first_element = {
             let array = self.as_array::<ndarray::IxDyn>()?;
-            array.as_slice().unwrap()[0]
+            let slice = array.as_slice().ok_or_else(|| {
+                CoreError::ValidationError(
+                    ErrorContext::new("Array is not contiguous in memory".to_string())
+                        .with_location(ErrorLocation::new(file!(), line!())),
+                )
+            })?;
+            slice[0]
         };
 
         // Reduce the array to find the minimum
@@ -597,12 +663,12 @@ impl<A: Clone + Copy + 'static + Send + Sync + Send + Sync + Zero> BroadcastOps<
         F: Fn(A, A) -> A + Send + Sync,
     {
         // Check shape compatibility for broadcasting
-        let self_shape = &self.shape;
-        let other_shape = &other.shape;
+        let selfshape = &self.shape;
+        let othershape = &other.shape;
 
         // Get the dimensions
-        let self_ndim = self_shape.len();
-        let other_ndim = other_shape.len();
+        let self_ndim = selfshape.len();
+        let other_ndim = othershape.len();
         let output_ndim = std::cmp::max(self_ndim, other_ndim);
 
         // Convert shapes to vectors with leading 1s as needed
@@ -611,29 +677,28 @@ impl<A: Clone + Copy + 'static + Send + Sync + Send + Sync + Zero> BroadcastOps<
 
         // Prepend 1s to the shape with fewer dimensions
         self_dims.resize(output_ndim - self_ndim, 1);
-        for dim in self_shape.iter() {
+        for dim in selfshape.iter() {
             self_dims.push(*dim);
         }
 
         other_dims.resize(output_ndim - other_ndim, 1);
-        for dim in other_shape.iter() {
+        for dim in othershape.iter() {
             other_dims.push(*dim);
         }
 
         // Determine the output shape
-        let mut output_shape = Vec::with_capacity(output_ndim);
+        let mut outputshape = Vec::with_capacity(output_ndim);
         for i in 0..output_ndim {
             #[allow(clippy::if_same_then_else)]
             if self_dims[i] == 1 {
-                output_shape.push(other_dims[i]);
+                outputshape.push(other_dims[i]);
             } else if other_dims[i] == 1 {
-                output_shape.push(self_dims[i]);
+                outputshape.push(self_dims[i]);
             } else if self_dims[i] == other_dims[i] {
-                output_shape.push(self_dims[i]);
+                outputshape.push(self_dims[i]);
             } else {
                 return Err(CoreError::ValueError(ErrorContext::new(format!(
-                    "Arrays cannot be broadcast together with shapes {:?} and {:?}",
-                    self_shape, other_shape
+                    "Arrays cannot be broadcast together with shapes {selfshape:?} and {othershape:?}"
                 ))));
             }
         }
@@ -643,7 +708,7 @@ impl<A: Clone + Copy + 'static + Send + Sync + Send + Sync + Zero> BroadcastOps<
         let temp_path = temp_file.path().to_path_buf();
 
         // Calculate the output array size
-        let output_size = output_shape.iter().product::<usize>();
+        let output_size = outputshape.iter().product::<usize>();
         let element_size = std::mem::size_of::<A>();
         let file_size = output_size * element_size;
 
@@ -652,8 +717,8 @@ impl<A: Clone + Copy + 'static + Send + Sync + Send + Sync + Zero> BroadcastOps<
         drop(temp_file); // Close the file before memory-mapping it
 
         // Create the output memory-mapped array with zeros to initialize the header
-        // First create with Write mode to initialize
-        let zeros = ndarray::ArrayD::zeros(ndarray::IxDyn(&self.shape));
+        // Use the calculated output shape instead of self.shape
+        let zeros = ndarray::ArrayD::zeros(ndarray::IxDyn(&outputshape));
         {
             let _ = MemoryMappedArray::<A>::new::<ndarray::OwnedRepr<A>, ndarray::IxDyn>(
                 Some(&zeros),
@@ -811,7 +876,7 @@ mod tests {
         let result = mmap.map_zero_copy(|x| x * 2.0).unwrap();
 
         // Verify the result
-        let result_array = result.readonly_array::<ndarray::Ix1>().unwrap();
+        let result_array = result.readonlyarray::<ndarray::Ix1>().unwrap();
         for i in 0..1000 {
             assert_eq!(result_array[i], (i as f64) * 2.0);
         }
@@ -832,7 +897,7 @@ mod tests {
         drop(file);
 
         // Create a memory-mapped array
-        let mmap = MemoryMappedArray::<f64>::open(&file_path, &[1000]).unwrap();
+        let mmap = MemoryMappedArray::<f64>::path(&file_path, &[1000]).unwrap();
 
         // Reduce operation: sum all elements
         let sum = mmap.reduce_zero_copy(0.0, |acc, x| acc + x).unwrap();
@@ -865,7 +930,7 @@ mod tests {
         let result = mmap1.combine_zero_copy(&mmap2, |a, b| a + b).unwrap();
 
         // Verify the result (each element should be 3*i)
-        let result_array = result.readonly_array::<ndarray::Ix1>().unwrap();
+        let result_array = result.readonlyarray::<ndarray::Ix1>().unwrap();
         for i in 0..1000 {
             assert_eq!(result_array[i], (i as f64) * 3.0);
         }
@@ -886,7 +951,7 @@ mod tests {
         drop(file);
 
         // Create a memory-mapped array
-        let mmap = MemoryMappedArray::<f64>::open(&file_path, &[1000]).unwrap();
+        let mmap = MemoryMappedArray::<f64>::path(&file_path, &[1000]).unwrap();
 
         // Filter operation: keep only even numbers
         let even_numbers = mmap.filter_zero_copy(|&x| (x as usize) % 2 == 0).unwrap();
@@ -920,21 +985,21 @@ mod tests {
 
         // Test addition
         let add_result = mmap1.add(&mmap2).unwrap();
-        let add_array = add_result.readonly_array::<ndarray::Ix1>().unwrap();
+        let add_array = add_result.readonlyarray::<ndarray::Ix1>().unwrap();
         for i in 0..100 {
             assert_eq!(add_array[i], (i as f64) + ((i + 5) as f64));
         }
 
         // Test subtraction
         let sub_result = mmap1.sub(&mmap2).unwrap();
-        let sub_array = sub_result.readonly_array::<ndarray::Ix1>().unwrap();
+        let sub_array = sub_result.readonlyarray::<ndarray::Ix1>().unwrap();
         for i in 0..100 {
             assert_eq!(sub_array[i], (i as f64) - ((i + 5) as f64));
         }
 
         // Test multiplication
         let mul_result = mmap1.mul(&mmap2).unwrap();
-        let mul_array = mul_result.readonly_array::<ndarray::Ix1>().unwrap();
+        let mul_array = mul_result.readonlyarray::<ndarray::Ix1>().unwrap();
         for i in 0..100 {
             assert_eq!(mul_array[i], (i as f64) * ((i + 5) as f64));
         }
@@ -943,7 +1008,7 @@ mod tests {
         let div_result = mmap2
             .div(&mmap1.map_zero_copy(|x| x + 1.0).unwrap())
             .unwrap();
-        let div_array = div_result.readonly_array::<ndarray::Ix1>().unwrap();
+        let div_array = div_result.readonlyarray::<ndarray::Ix1>().unwrap();
         for i in 0..100 {
             assert_eq!(div_array[i], ((i + 5) as f64) / ((i + 1) as f64));
         }
@@ -974,7 +1039,7 @@ mod tests {
         let result = mmap1.broadcast_op(&mmap2, |a, b| a * b).unwrap();
 
         // Verify the result
-        let result_array = result.readonly_array::<ndarray::Ix2>().unwrap();
+        let result_array = result.readonlyarray::<ndarray::Ix2>().unwrap();
         assert_eq!(result_array.shape(), &[3, 4]);
 
         for i in 0..3 {

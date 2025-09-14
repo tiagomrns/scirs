@@ -1,16 +1,17 @@
-//! Core LTI system representations and implementations
-//!
-//! This module provides the fundamental types for representing Linear Time-Invariant (LTI) systems:
-//! - Transfer function representation (numerator/denominator polynomials)
-//! - Zero-pole-gain representation (zeros, poles, and gain)
-//! - State-space representation (A, B, C, D matrices)
-//!
-//! All system representations implement the `LtiSystem` trait for common operations.
+// Core LTI system representations and implementations
+//
+// This module provides the fundamental types for representing Linear Time-Invariant (LTI) systems:
+// - Transfer function representation (numerator/denominator polynomials)
+// - Zero-pole-gain representation (zeros, poles, and gain)
+// - State-space representation (A, B, C, D matrices)
+//
+// All system representations implement the `LtiSystem` trait for common operations.
 
 use crate::error::{SignalError, SignalResult};
 use num_complex::Complex64;
 use num_traits::Zero;
 
+#[allow(unused_imports)]
 /// A trait for all LTI system representations
 ///
 /// This trait provides a common interface for different LTI system representations,
@@ -134,7 +135,7 @@ impl TransferFunction {
         }
 
         // Check if denominator is all zeros
-        if den.iter().all(|&x| x.abs() < 1e-10) {
+        if den.iter().all(|&x: &f64| x.abs() < 1e-10) {
             return Err(SignalError::ValueError(
                 "Denominator polynomial cannot be zero".to_string(),
             ));
@@ -229,21 +230,97 @@ impl LtiSystem for TransferFunction {
     }
 
     fn to_ss(&self) -> SignalResult<StateSpace> {
-        // Convert transfer function to state-space form
-        // For a SISO system, this involves creating a controllable canonical form
+        // Convert transfer function to state-space form using controllable canonical form
+        // For a transfer function H(s) = N(s)/D(s) = (b[0]*s^n + ... + b[n])/(s^n + a[1]*s^(n-1) + ... + a[n])
 
-        // This is a placeholder implementation - a full implementation would
-        // properly handle the controllable canonical form construction
+        if self.den.is_empty() {
+            return Err(SignalError::ValueError(
+                "Denominator cannot be empty".to_string(),
+            ));
+        }
 
-        // For now, return an empty state-space system
+        // Get the order of the system (highest power of denominator)
+        let n = self.den.len() - 1; // degree of denominator
+
+        if n == 0 {
+            // Zero-order system: just a constant gain
+            let d_val = if !self.num.is_empty() {
+                self.num[0] / self.den[0]
+            } else {
+                0.0
+            };
+            return Ok(StateSpace {
+                a: Vec::new(),
+                b: Vec::new(),
+                c: Vec::new(),
+                d: vec![d_val],
+                n_inputs: 1,
+                n_outputs: 1,
+                n_states: 0,
+                dt: self.dt,
+            });
+        }
+
+        // Normalize denominator (ensure leading coefficient is 1)
+        let mut den_norm = self.den.clone();
+        let leading_coeff = den_norm[0];
+        for coeff in &mut den_norm {
+            *coeff /= leading_coeff;
+        }
+
+        let mut num_norm = self.num.clone();
+        for coeff in &mut num_norm {
+            *coeff /= leading_coeff;
+        }
+
+        // Pad numerator with zeros if necessary
+        while num_norm.len() < den_norm.len() {
+            num_norm.insert(0, 0.0);
+        }
+
+        // Controllable canonical form
+        // A matrix (companion form)
+        let mut a = vec![0.0; n * n];
+
+        // Fill A matrix
+        for i in 0..n {
+            if i < n - 1 {
+                // Super-diagonal of 1s
+                a[i * n + (i + 1)] = 1.0;
+            }
+            // Bottom row contains -a_i coefficients
+            a[(n - 1) * n + i] = -den_norm[n - i];
+        }
+
+        // B matrix (all zeros except last element = 1)
+        let mut b = vec![0.0; n];
+        if n > 0 {
+            b[n - 1] = 1.0;
+        }
+
+        // C matrix contains numerator coefficients (after removing D term)
+        let mut c = vec![0.0; n];
+        for i in 0..n.min(num_norm.len()) {
+            if i + 1 < num_norm.len() {
+                c[i] = num_norm[i + 1];
+            }
+        }
+
+        // D matrix (direct feedthrough)
+        let d = if num_norm.len() > n {
+            vec![num_norm[0]]
+        } else {
+            vec![0.0]
+        };
+
         Ok(StateSpace {
-            a: Vec::new(),
-            b: Vec::new(),
-            c: Vec::new(),
-            d: Vec::new(),
+            a,
+            b,
+            c,
+            d,
             n_inputs: 1,
             n_outputs: 1,
-            n_states: 0,
+            n_states: n,
             dt: self.dt,
         })
     }
@@ -271,78 +348,20 @@ impl LtiSystem for TransferFunction {
             return Ok(Vec::new());
         }
 
-        // For continuous-time systems, we use numerical simulation by
-        // converting to state-space form and then simulating the response.
+        // For continuous-time systems, create an impulse input and use lsim
         if !self.dt {
-            // Convert to state-space form if it's not already available
-            let ss = self.to_ss()?;
-
-            // Get time step (assume uniform sampling)
+            // Create impulse input: very short, high amplitude pulse
             let dt = if t.len() > 1 { t[1] - t[0] } else { 0.001 };
-
-            // Simulate impulse response
-            let mut response = vec![0.0; t.len()];
-
-            if !ss.b.is_empty() && !ss.c.is_empty() {
-                // Initial state is zero
-                let mut x = vec![0.0; ss.n_states];
-
-                // For an impulse, the input at t[0] is 1/dt, and 0 otherwise
-                // Inject impulse: u[0] = 1/dt, which approximates a continuous impulse
-                for (j, _) in (0..ss.n_inputs).enumerate() {
-                    for (i, x_i) in x.iter_mut().enumerate().take(ss.n_states) {
-                        *x_i += ss.b[i * ss.n_inputs + j] * (1.0 / dt);
-                    }
-                }
-
-                // Record initial output
-                for i in 0..ss.n_outputs {
-                    let mut y = 0.0;
-                    for (j, &x_j) in x.iter().enumerate().take(ss.n_states) {
-                        y += ss.c[i * ss.n_states + j] * x_j;
-                    }
-                    if i == 0 {
-                        // For SISO systems
-                        response[0] = y;
-                    }
-                }
-
-                // Simulate the system response for the rest of the time points
-                for (_k, response_k) in response.iter_mut().enumerate().skip(1).take(t.len() - 1) {
-                    // Update state: dx/dt = Ax + Bu, use forward Euler for simplicity
-                    let mut x_new = vec![0.0; ss.n_states];
-
-                    for (i, x_new_val) in x_new.iter_mut().enumerate().take(ss.n_states) {
-                        for (j, &x_val) in x.iter().enumerate().take(ss.n_states) {
-                            *x_new_val += ss.a[i * ss.n_states + j] * x_val * dt;
-                        }
-                        // No input term (Bu) after initial impulse
-                    }
-
-                    // Copy updated state
-                    x = x_new;
-
-                    // Calculate output: y = Cx + Du (u is zero after initial impulse)
-                    for i in 0..ss.n_outputs {
-                        let mut y = 0.0;
-                        for (j, &x_j) in x.iter().enumerate().take(ss.n_states) {
-                            y += ss.c[i * ss.n_states + j] * x_j;
-                        }
-                        if i == 0 {
-                            // For SISO systems
-                            *response_k = y;
-                        }
-                    }
-                }
+            let impulse_amplitude = 1.0 / dt;
+            let mut u = vec![0.0; t.len()];
+            if !u.is_empty() {
+                u[0] = impulse_amplitude;
             }
 
-            Ok(response)
+            // Use the improved lsim function with RK4 integration
+            crate::lti::response::lsim(self, &u, t)
         } else {
-            // For discrete-time systems, impulse response h[n] is equivalent to
-            // the inverse Z-transform of the transfer function H(z)
-            // For a DT system H(z) = B(z)/A(z), the impulse response is given by
-            // the coefficients of the series expansion of H(z)
-
+            // For discrete-time systems, use difference equation
             let n = t.len();
             let mut response = vec![0.0; n];
 
@@ -359,7 +378,7 @@ impl LtiSystem for TransferFunction {
                 self.num[0]
             };
 
-            // For later samples, we use the recurrence relation:
+            // For later samples, use the recurrence relation:
             // h[n] = (b[n] - sum_{k=1}^n a[k]*h[n-k])/a[0]
             for n in 1..response.len() {
                 // Add numerator contribution
@@ -387,47 +406,11 @@ impl LtiSystem for TransferFunction {
             return Ok(Vec::new());
         }
 
-        if !self.dt {
-            // For continuous-time systems:
-            // 1. Get impulse response
-            let impulse = self.impulse_response(t)?;
+        // For both continuous and discrete-time systems, create a step input and use lsim
+        let u = vec![1.0; t.len()]; // Unit step input
 
-            // 2. Integrate the impulse response to get the step response
-            // Using the trapezoidal rule for integration
-            let mut step = vec![0.0; t.len()];
-
-            if t.len() > 1 {
-                let dt = t[1] - t[0];
-
-                // Initialize with the first value
-                step[0] = impulse[0] * dt / 2.0;
-
-                // Accumulate the integral
-                for i in 1..t.len() {
-                    step[i] = step[i - 1] + (impulse[i - 1] + impulse[i]) * dt / 2.0;
-                }
-            }
-
-            Ok(step)
-        } else {
-            // For discrete-time systems:
-            // The step response can be calculated either by:
-            // 1. Convolving the impulse response with a step input
-            // 2. Directly simulating with a step input
-            // We'll use approach 1 for simplicity
-
-            let impulse = self.impulse_response(t)?;
-            let mut step = vec![0.0; t.len()];
-
-            // Convolve with a unit step (running sum of impulse response)
-            for (i, step_val) in step.iter_mut().enumerate().take(t.len()) {
-                for &impulse_val in impulse.iter().take(i + 1) {
-                    *step_val += impulse_val;
-                }
-            }
-
-            Ok(step)
-        }
+        // Use the improved lsim function
+        crate::lti::response::lsim(self, &u, t)
     }
 
     fn is_stable(&self) -> SignalResult<bool> {
@@ -449,7 +432,6 @@ impl LtiSystem for TransferFunction {
 ///
 /// ```rust
 /// use scirs2_signal::lti::systems::ZerosPoleGain;
-/// use num_complex::Complex64;
 ///
 /// // Create H(s) = 2 * (s + 1) / (s + 2)
 /// let zpk = ZerosPoleGain::new(
@@ -492,7 +474,6 @@ impl ZerosPoleGain {
     ///
     /// ```rust
     /// use scirs2_signal::lti::systems::ZerosPoleGain;
-    /// use num_complex::Complex64;
     ///
     /// // Create a simple first-order continuous-time system: H(s) = 1 / (s + 1)
     /// let zpk = ZerosPoleGain::new(
@@ -925,10 +906,13 @@ impl LtiSystem for StateSpace {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::lti::design::tf;
+    use crate::TransferFunction;
     use approx::assert_relative_eq;
-
     #[test]
     fn test_transfer_function_creation() {
+        let a = vec![1.0, 2.0, 3.0, 4.0, 5.0];
+        let b = vec![0.5, 0.5];
         // Test creating a simple transfer function
         let tf = TransferFunction::new(vec![1.0], vec![1.0, 1.0], None).unwrap();
         assert_eq!(tf.num.len(), 1);
@@ -1003,6 +987,8 @@ mod tests {
 
     #[test]
     fn test_state_space_matrix_access() {
+        let a = vec![1.0, 2.0, 3.0, 4.0, 5.0];
+        let b = vec![0.5, 0.5];
         let ss = StateSpace::new(
             vec![-1.0, 0.0, 1.0, -2.0], // 2x2 A matrix
             vec![1.0, 0.0],             // 2x1 B matrix
@@ -1034,6 +1020,8 @@ mod tests {
 
     #[test]
     fn test_inconsistent_state_space_dimensions() {
+        let a = vec![1.0, 2.0, 3.0, 4.0, 5.0];
+        let b = vec![0.5, 0.5];
         // Invalid A matrix (not square)
         let result = StateSpace::new(
             vec![1.0, 2.0, 3.0], // 3 elements, not a perfect square
@@ -1044,4 +1032,9 @@ mod tests {
         );
         assert!(result.is_err());
     }
+}
+
+#[allow(dead_code)]
+fn tf(num: Vec<f64>, den: Vec<f64>) -> TransferFunction {
+    TransferFunction::new(num, den, None).unwrap()
 }

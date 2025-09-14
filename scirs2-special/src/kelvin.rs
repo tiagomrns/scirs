@@ -67,6 +67,7 @@ const SQRT_2_2: f64 = SQRT_2 / 2.0;
 /// println!("berp(2.0) + i·beip(2.0) = {} + {}i", bep.re, bep.im);
 /// println!("kerp(2.0) + i·keip(2.0) = {} + {}i", kep.re, kep.im);
 /// ```
+#[allow(dead_code)]
 pub fn kelvin(x: f64) -> SpecialResult<(Complex64, Complex64, Complex64, Complex64)> {
     if x.is_nan() {
         return Err(SpecialError::DomainError("NaN input to kelvin".to_string()));
@@ -120,6 +121,7 @@ pub fn kelvin(x: f64) -> SpecialResult<(Complex64, Complex64, Complex64, Complex
 /// The relationships between Kelvin functions and Bessel functions are:
 /// - ber(x) + i·bei(x) = J₀(x·e^(3πi/4))
 /// - ker(x) + i·kei(x) = K₀(x·e^(π/4))
+#[allow(dead_code)]
 fn compute_kelvin_bessel(x: f64) -> SpecialResult<(Complex64, Complex64, Complex64, Complex64)> {
     // The argument for Bessel functions
     let z = Complex64::new(x * SQRT_2_2, x * SQRT_2_2); // x·e^(iπ/4)
@@ -153,6 +155,7 @@ fn compute_kelvin_bessel(x: f64) -> SpecialResult<(Complex64, Complex64, Complex
 }
 
 /// Compute Kelvin functions using series approximations.
+#[allow(dead_code)]
 fn compute_kelvin_series(x: f64) -> SpecialResult<(Complex64, Complex64, Complex64, Complex64)> {
     let x_2 = x / 2.0;
     let x_2_sq = x_2 * x_2;
@@ -247,6 +250,7 @@ fn compute_kelvin_series(x: f64) -> SpecialResult<(Complex64, Complex64, Complex
 }
 
 /// Compute ker and kei functions using series approximation
+#[allow(dead_code)]
 fn compute_ker_kei_series(x: f64) -> SpecialResult<(f64, f64)> {
     if x == 0.0 {
         return Ok((f64::INFINITY, -PI / 2.0));
@@ -298,6 +302,7 @@ fn compute_ker_kei_series(x: f64) -> SpecialResult<(f64, f64)> {
 }
 
 /// Compute the derivatives of ker and kei functions using series approximation
+#[allow(dead_code)]
 fn compute_kerp_keip_series(x: f64) -> SpecialResult<(f64, f64)> {
     if x == 0.0 {
         return Ok((f64::NEG_INFINITY, 0.0));
@@ -365,6 +370,7 @@ fn compute_kerp_keip_series(x: f64) -> SpecialResult<(f64, f64)> {
 }
 
 /// Compute the Bessel function J₀ for complex argument
+#[allow(dead_code)]
 fn compute_j0_complex(z: Complex64) -> SpecialResult<Complex64> {
     // For complex arguments, we can use the identity:
     // J₀(z) = (H₀⁽¹⁾(z) + H₀⁽²⁾(z))/2
@@ -455,6 +461,7 @@ fn compute_j0_complex(z: Complex64) -> SpecialResult<Complex64> {
 }
 
 /// Compute the Bessel function J₁ for complex argument
+#[allow(dead_code)]
 fn compute_j1_complex(z: Complex64) -> SpecialResult<Complex64> {
     if z.is_zero() {
         return Ok(Complex64::new(0.0, 0.0));
@@ -539,6 +546,7 @@ fn compute_j1_complex(z: Complex64) -> SpecialResult<Complex64> {
 }
 
 /// Compute the modified Bessel function K₀ for complex argument
+#[allow(dead_code)]
 fn compute_k0_complex(z: Complex64) -> SpecialResult<Complex64> {
     if z.is_zero() {
         return Err(SpecialError::DomainError("K₀(0) is infinite".to_string()));
@@ -585,6 +593,7 @@ fn compute_k0_complex(z: Complex64) -> SpecialResult<Complex64> {
 }
 
 /// Compute the modified Bessel function K₁ for complex argument
+#[allow(dead_code)]
 fn compute_k1_complex(z: Complex64) -> SpecialResult<Complex64> {
     if z.is_zero() {
         return Err(SpecialError::DomainError("K₁(0) is infinite".to_string()));
@@ -631,6 +640,7 @@ fn compute_k1_complex(z: Complex64) -> SpecialResult<Complex64> {
 }
 
 /// Compute the digamma function (psi) - approximation for positive integers
+#[allow(dead_code)]
 fn psi(n: usize) -> f64 {
     let mut result = -0.5772156649015329; // -Euler's constant
 
@@ -659,6 +669,7 @@ fn psi(n: usize) -> f64 {
 /// let value = ber(1.5).unwrap();
 /// println!("ber(1.5) = {}", value);
 /// ```
+#[allow(dead_code)]
 pub fn ber(x: f64) -> SpecialResult<f64> {
     Ok(kelvin(x)?.0.re)
 }
@@ -681,6 +692,7 @@ pub fn ber(x: f64) -> SpecialResult<f64> {
 /// let value = bei(1.5).unwrap();
 /// println!("bei(1.5) = {}", value);
 /// ```
+#[allow(dead_code)]
 pub fn bei(x: f64) -> SpecialResult<f64> {
     Ok(kelvin(x)?.0.im)
 }
@@ -703,6 +715,7 @@ pub fn bei(x: f64) -> SpecialResult<f64> {
 /// let value = ker(1.5).unwrap();
 /// println!("ker(1.5) = {}", value);
 /// ```
+#[allow(dead_code)]
 pub fn ker(x: f64) -> SpecialResult<f64> {
     Ok(kelvin(x)?.1.re)
 }
@@ -725,6 +738,7 @@ pub fn ker(x: f64) -> SpecialResult<f64> {
 /// let value = kei(1.5).unwrap();
 /// println!("kei(1.5) = {}", value);
 /// ```
+#[allow(dead_code)]
 pub fn kei(x: f64) -> SpecialResult<f64> {
     Ok(kelvin(x)?.1.im)
 }
@@ -747,6 +761,7 @@ pub fn kei(x: f64) -> SpecialResult<f64> {
 /// let value = berp(1.5).unwrap();
 /// println!("berp(1.5) = {}", value);
 /// ```
+#[allow(dead_code)]
 pub fn berp(x: f64) -> SpecialResult<f64> {
     Ok(kelvin(x)?.2.re)
 }
@@ -769,6 +784,7 @@ pub fn berp(x: f64) -> SpecialResult<f64> {
 /// let value = beip(1.5).unwrap();
 /// println!("beip(1.5) = {}", value);
 /// ```
+#[allow(dead_code)]
 pub fn beip(x: f64) -> SpecialResult<f64> {
     Ok(kelvin(x)?.2.im)
 }
@@ -791,6 +807,7 @@ pub fn beip(x: f64) -> SpecialResult<f64> {
 /// let value = kerp(1.5).unwrap();
 /// println!("kerp(1.5) = {}", value);
 /// ```
+#[allow(dead_code)]
 pub fn kerp(x: f64) -> SpecialResult<f64> {
     Ok(kelvin(x)?.3.re)
 }
@@ -813,6 +830,7 @@ pub fn kerp(x: f64) -> SpecialResult<f64> {
 /// let value = keip(1.5).unwrap();
 /// println!("keip(1.5) = {}", value);
 /// ```
+#[allow(dead_code)]
 pub fn keip(x: f64) -> SpecialResult<f64> {
     Ok(kelvin(x)?.3.im)
 }

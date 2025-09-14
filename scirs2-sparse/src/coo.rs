@@ -78,7 +78,7 @@ where
 
         let (rows, cols) = shape;
 
-        // Check indices are within bounds
+        // Check _indices are within bounds
         if row_indices.iter().any(|&i| i >= rows) {
             return Err(SparseError::ValueError(
                 "Row index out of bounds".to_string(),

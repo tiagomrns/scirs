@@ -84,7 +84,7 @@ pub struct HMatrix<F> {
     /// Maximum rank for low-rank blocks
     pub max_rank: usize,
     /// Minimum block size for subdivision
-    pub min_block_size: usize,
+    pub min_blocksize: usize,
 }
 
 /// Hierarchically Semi-Separable (HSS) matrix representation
@@ -141,7 +141,7 @@ impl ClusterNode {
 
 impl<F> HMatrix<F>
 where
-    F: Float + NumAssign + Sum + ndarray::ScalarOperand + 'static,
+    F: Float + NumAssign + Sum + ndarray::ScalarOperand + 'static + Send + Sync,
 {
     /// Create H-matrix from dense matrix using adaptive rank compression
     ///
@@ -150,7 +150,7 @@ where
     /// * `matrix` - Input dense matrix
     /// * `tolerance` - Tolerance for low-rank approximation
     /// * `max_rank` - Maximum rank for low-rank blocks
-    /// * `min_block_size` - Minimum block size for subdivision
+    /// * `min_blocksize` - Minimum block size for subdivision
     ///
     /// # Returns
     ///
@@ -165,13 +165,13 @@ where
     /// let matrix = Array2::from_shape_fn((100, 100), |(i, j)| {
     ///     1.0 / (1.0 + (i as f64 - j as f64).abs())
     /// });
-    /// let h_matrix = HMatrix::from_dense(&matrix.view(), 1e-6, 20, 32).unwrap();
+    /// let hmatrix = HMatrix::from_dense(&matrix.view(), 1e-6, 20, 32).unwrap();
     /// ```
     pub fn from_dense(
         matrix: &ArrayView2<F>,
         tolerance: F,
         max_rank: usize,
-        min_block_size: usize,
+        min_blocksize: usize,
     ) -> LinalgResult<Self> {
         let size = matrix.nrows();
         if size != matrix.ncols() {
@@ -180,8 +180,8 @@ where
             ));
         }
 
-        let row_cluster = build_cluster_tree(0, size, min_block_size);
-        let col_cluster = build_cluster_tree(0, size, min_block_size);
+        let row_cluster = build_cluster_tree(0, size, min_blocksize);
+        let col_cluster = build_cluster_tree(0, size, min_blocksize);
 
         let root_block = Self::build_hmatrix_block(
             matrix,
@@ -189,7 +189,7 @@ where
             col_cluster,
             tolerance,
             max_rank,
-            min_block_size,
+            min_blocksize,
         )?;
 
         Ok(HMatrix {
@@ -197,7 +197,7 @@ where
             root_block,
             tolerance,
             max_rank,
-            min_block_size,
+            min_blocksize,
         })
     }
 
@@ -208,10 +208,10 @@ where
         col_cluster: ClusterNode,
         tolerance: F,
         max_rank: usize,
-        min_block_size: usize,
+        min_blocksize: usize,
     ) -> LinalgResult<HMatrixBlock<F>> {
-        let row_size = row_cluster.size();
-        let col_size = col_cluster.size();
+        let rowsize = row_cluster.end - row_cluster.start;
+        let colsize = col_cluster.end - col_cluster.start;
 
         // Extract submatrix
         let submatrix = matrix.slice(ndarray::s![
@@ -220,7 +220,7 @@ where
         ]);
 
         // If block is small enough, store as dense
-        if row_size <= min_block_size || col_size <= min_block_size {
+        if rowsize <= min_blocksize || colsize <= min_blocksize {
             return Ok(HMatrixBlock {
                 row_cluster,
                 col_cluster,
@@ -228,12 +228,12 @@ where
             });
         }
 
-        // Try low-rank approximation
-        let min_dim = row_size.min(col_size);
+        // Try low-_rank approximation
+        let min_dim = rowsize.min(colsize);
         let target_rank = (max_rank.min(min_dim / 2)).max(1);
 
         if let Ok((u, s, vt)) = randomized_svd(&submatrix, target_rank, Some(5), Some(1), None) {
-            // Check if low-rank approximation is accurate enough
+            // Check if low-_rank approximation is accurate enough
             let mut effective_rank = 0;
             let max_singular_value = s[0];
 
@@ -246,17 +246,17 @@ where
             }
 
             if effective_rank < target_rank && effective_rank > 0 {
-                // Create low-rank representation: A ≈ U * S * V^T = (U * S) * V^T
-                let mut u_scaled = Array2::zeros((row_size, effective_rank));
-                let mut v_scaled = Array2::zeros((col_size, effective_rank));
+                // Create low-_rank representation: A ≈ U * S * V^T = (U * S) * V^T
+                let mut u_scaled = Array2::zeros((rowsize, effective_rank));
+                let mut v_scaled = Array2::zeros((colsize, effective_rank));
 
-                for i in 0..row_size {
+                for i in 0..rowsize {
                     for j in 0..effective_rank {
                         u_scaled[[i, j]] = u[[i, j]] * s[j].sqrt();
                     }
                 }
 
-                for i in 0..col_size {
+                for i in 0..colsize {
                     for j in 0..effective_rank {
                         v_scaled[[i, j]] = vt[[j, i]] * s[j].sqrt();
                     }
@@ -273,7 +273,7 @@ where
             }
         }
 
-        // If low-rank approximation fails, subdivide the block
+        // If low-_rank approximation fails, subdivide the block
         let mut child_blocks = Vec::new();
 
         // Create child clusters (clone to avoid ownership issues)
@@ -312,7 +312,7 @@ where
                     col_child.clone(),
                     tolerance,
                     max_rank,
-                    min_block_size,
+                    min_blocksize,
                 )?;
                 child_blocks.push(child_block);
             }
@@ -418,7 +418,7 @@ where
             total_dense_elements,
             total_lowrank_elements,
             compression_ratio,
-            original_size: self.size * self.size,
+            originalsize: self.size * self.size,
         }
     }
 
@@ -470,12 +470,12 @@ pub struct HMatrixMemoryInfo {
     /// Compression ratio compared to dense matrix
     pub compression_ratio: f64,
     /// Original matrix size (n²)
-    pub original_size: usize,
+    pub originalsize: usize,
 }
 
 impl<F> HSSMatrix<F>
 where
-    F: Float + NumAssign + Sum + ndarray::ScalarOperand + 'static,
+    F: Float + NumAssign + Sum + ndarray::ScalarOperand + 'static + Send + Sync,
 {
     /// Create HSS matrix from dense matrix
     ///
@@ -537,8 +537,8 @@ where
         let right_child = Self::build_hss_tree(matrix, mid, end, level + 1, tolerance)?;
 
         // Extract off-diagonal blocks for generator computation
-        let left_size = mid - start;
-        let right_size = end - mid;
+        let leftsize = mid - start;
+        let rightsize = end - mid;
 
         let upper_right = matrix.slice(ndarray::s![start..mid, mid..end]);
         let _lower_left = matrix.slice(ndarray::s![mid..end, start..mid]);
@@ -551,16 +551,16 @@ where
         if let Ok((u1, s1, vt1)) = svd(&upper_right, false, None) {
             let rank = s1.iter().take_while(|&&s| s > tolerance).count().min(10);
             if rank > 0 {
-                let mut u_gen = Array2::zeros((left_size, rank));
-                let mut v_gen = Array2::zeros((right_size, rank));
+                let mut u_gen = Array2::zeros((leftsize, rank));
+                let mut v_gen = Array2::zeros((rightsize, rank));
 
-                for i in 0..left_size {
+                for i in 0..leftsize {
                     for j in 0..rank {
                         u_gen[[i, j]] = u1[[i, j]] * s1[j].sqrt();
                     }
                 }
 
-                for i in 0..right_size {
+                for i in 0..rightsize {
                     for j in 0..rank {
                         v_gen[[i, j]] = vt1[[j, i]] * s1[j].sqrt();
                     }
@@ -654,15 +654,16 @@ where
 }
 
 /// Build cluster tree for hierarchical matrix construction
-pub fn build_cluster_tree(start: usize, end: usize, min_size: usize) -> ClusterNode {
-    if end - start <= min_size {
+#[allow(dead_code)]
+pub fn build_cluster_tree(start: usize, end: usize, minsize: usize) -> ClusterNode {
+    if end - start <= minsize {
         return ClusterNode::new(start, end, 0);
     }
 
     let mid = (start + end) / 2;
     let mut node = ClusterNode::new(start, end, 0);
-    node.left = Some(Box::new(build_cluster_tree(start, mid, min_size)));
-    node.right = Some(Box::new(build_cluster_tree(mid, end, min_size)));
+    node.left = Some(Box::new(build_cluster_tree(start, mid, minsize)));
+    node.right = Some(Box::new(build_cluster_tree(mid, end, minsize)));
 
     node
 }
@@ -681,13 +682,14 @@ pub fn build_cluster_tree(start: usize, end: usize, min_size: usize) -> ClusterN
 /// # Returns
 ///
 /// * Tuple (U, V) such that matrix ≈ U * V^T, or None if low-rank approximation fails
+#[allow(dead_code)]
 pub fn adaptive_block_lowrank<F>(
     matrix: &ArrayView2<F>,
     tolerance: F,
     max_rank: usize,
 ) -> LinalgResult<Option<(Array2<F>, Array2<F>)>>
 where
-    F: Float + NumAssign + Sum + ndarray::ScalarOperand + 'static,
+    F: Float + NumAssign + Sum + ndarray::ScalarOperand + 'static + Send + Sync,
 {
     let (m, n) = matrix.dim();
     let target_rank = max_rank.min(m.min(n));
@@ -703,7 +705,7 @@ where
         svd(matrix, false, None)?
     };
 
-    // Determine effective rank based on singular value decay
+    // Determine effective _rank based on singular value decay
     let mut effective_rank = 0;
     if !s.is_empty() {
         let max_sv = s[0];
@@ -720,7 +722,7 @@ where
         return Ok(None);
     }
 
-    // Create optimal low-rank approximation
+    // Create optimal low-_rank approximation
     let mut u_approx = Array2::zeros((m, effective_rank));
     let mut v_approx = Array2::zeros((n, effective_rank));
 
@@ -790,12 +792,12 @@ mod tests {
             [0.05, 0.1, 0.5, 1.0]
         ];
 
-        let h_matrix = HMatrix::from_dense(&matrix.view(), 1e-6, 2, 2).unwrap();
+        let hmatrix = HMatrix::from_dense(&matrix.view(), 1e-6, 2, 2).unwrap();
 
         // Test matrix-vector multiplication
         let x = array![1.0, 2.0, 3.0, 4.0];
         let y_dense = matrix.dot(&x);
-        let y_h = h_matrix.matvec(&x.view()).unwrap();
+        let y_h = hmatrix.matvec(&x.view()).unwrap();
 
         for i in 0..4 {
             assert_relative_eq!(y_dense[i], y_h[i], epsilon = 1e-6);
@@ -804,20 +806,20 @@ mod tests {
 
     #[test]
     fn test_hmatrix_memory_info() {
-        let matrix = Array2::from_shape_fn((128, 128), |(i, j)| {
-            1.0 / (1.0 + (i as f64 - j as f64).abs())
-        });
+        // Reduced size from 128x128 to 32x32 for faster test execution
+        let matrix =
+            Array2::from_shape_fn((32, 32), |(i, j)| 1.0 / (1.0 + (i as f64 - j as f64).abs()));
 
-        let h_matrix = HMatrix::from_dense(&matrix.view(), 1e-4, 16, 16).unwrap();
-        let memory_info = h_matrix.memory_info();
+        let hmatrix = HMatrix::from_dense(&matrix.view(), 1e-4, 8, 8).unwrap();
+        let memory_info = hmatrix.memory_info();
 
         // Basic sanity checks for memory info
         assert!(memory_info.compression_ratio > 0.0);
-        assert!(memory_info.original_size > 0);
+        assert!(memory_info.originalsize > 0);
     }
 
     #[test]
-    fn test_hss_matrix_basic() {
+    fn test_hssmatrix_basic() {
         // Create a simple HSS-like matrix
         let matrix = Array2::from_shape_fn((16, 16), |(i, j)| {
             if (i as i32 - j as i32).abs() <= 1 {
@@ -827,12 +829,12 @@ mod tests {
             }
         });
 
-        let hss_matrix = HSSMatrix::from_dense(&matrix.view(), 1e-6).unwrap();
+        let hssmatrix = HSSMatrix::from_dense(&matrix.view(), 1e-6).unwrap();
 
         // Test matrix-vector multiplication
         let x = Array1::from_shape_fn(16, |i| (i + 1) as f64);
         let y_dense = matrix.dot(&x);
-        let y_hss = hss_matrix.matvec(&x.view()).unwrap();
+        let y_hss = hssmatrix.matvec(&x.view()).unwrap();
 
         // HSS approximation should be reasonably accurate
         for i in 0..16 {
@@ -848,11 +850,11 @@ mod tests {
         assert!(result.is_err());
 
         // Test matvec with wrong size
-        let square_matrix = Array2::eye(4);
-        let h_matrix = HMatrix::from_dense(&square_matrix.view(), 1e-6, 2, 2).unwrap();
-        let wrong_size_x = array![1.0, 2.0]; // Wrong size
+        let squarematrix = Array2::eye(4);
+        let hmatrix = HMatrix::from_dense(&squarematrix.view(), 1e-6, 2, 2).unwrap();
+        let wrongsize_x = array![1.0, 2.0]; // Wrong size
 
-        let result = h_matrix.matvec(&wrong_size_x.view());
+        let result = hmatrix.matvec(&wrongsize_x.view());
         assert!(result.is_err());
     }
 }

@@ -36,13 +36,19 @@
 //! }
 //! ```
 
+#![allow(dead_code)]
+#![allow(clippy::too_many_arguments)]
+
 use std::future::Future;
 use std::path::Path;
 use std::pin::Pin;
 use std::task::{Context, Poll};
 
+#[cfg(feature = "async")]
 use futures::{Stream, StreamExt};
+#[cfg(feature = "async")]
 use tokio::fs::File;
+#[cfg(feature = "async")]
 use tokio::io::{AsyncBufReadExt, AsyncReadExt, BufReader};
 
 use crate::error::{IoError, Result};
@@ -111,7 +117,7 @@ impl AsyncStreamingConfig {
     }
 
     /// Set operation timeout
-    pub fn timeout(mut self, timeout_ms: u64) -> Self {
+    pub fn timeout(mut self, timeoutms: u64) -> Self {
         self.operation_timeout_ms = Some(timeout_ms);
         self
     }

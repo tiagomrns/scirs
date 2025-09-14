@@ -7,7 +7,9 @@
 use ndarray::{Array1, Array2};
 use scirs2_metrics::bayesian::*;
 use scirs2_metrics::error::Result;
+use statrs::statistics::Statistics;
 
+#[allow(dead_code)]
 fn main() -> Result<()> {
     println!("Bayesian Evaluation Metrics Example");
     println!("==================================");
@@ -53,6 +55,7 @@ fn main() -> Result<()> {
 }
 
 /// Example of Bayesian model comparison using Bayes factors
+#[allow(dead_code)]
 fn bayesian_model_comparison_example() -> Result<()> {
     let comparison = BayesianModelComparison::new()
         .with_evidence_method(EvidenceMethod::HarmonicMean)
@@ -116,6 +119,7 @@ fn bayesian_model_comparison_example() -> Result<()> {
 }
 
 /// Example of Bayesian information criteria calculation
+#[allow(dead_code)]
 fn bayesian_information_criteria_example() -> Result<()> {
     let bic_calc = BayesianInformationCriteria::new().with_num_samples(1000);
 
@@ -166,6 +170,7 @@ fn bayesian_information_criteria_example() -> Result<()> {
 }
 
 /// Example of posterior predictive checks
+#[allow(dead_code)]
 fn posterior_predictive_check_example() -> Result<()> {
     // Create observed data
     let observed_data = Array1::from_vec(vec![
@@ -197,7 +202,7 @@ fn posterior_predictive_check_example() -> Result<()> {
 
         let results = ppc.check_model_adequacy(&observed_data, &posterior_predictive_samples)?;
 
-        println!("Posterior Predictive Check ({}):", name);
+        println!("Posterior Predictive Check ({name}):");
         println!("  Bayesian p-value: {:.4}", results.bayesian_p_value);
         println!("  Observed statistic: {:.4}", results.observed_statistic);
         println!(
@@ -213,6 +218,7 @@ fn posterior_predictive_check_example() -> Result<()> {
 }
 
 /// Example of credible interval calculation
+#[allow(dead_code)]
 fn credible_interval_example() -> Result<()> {
     // Simulate posterior samples for a parameter (e.g., treatment effect)
     let posterior_samples = Array1::from_vec(vec![
@@ -227,7 +233,7 @@ fn credible_interval_example() -> Result<()> {
 
     for &level in &credible_levels {
         let ci_calc = CredibleIntervalCalculator::new()
-            .with_credible_level(level)
+            .with_credible_level(level)?
             .with_null_value(0.0); // Test if effect is significantly different from 0
 
         let results = ci_calc.calculate_intervals(&posterior_samples)?;
@@ -251,6 +257,7 @@ fn credible_interval_example() -> Result<()> {
 }
 
 /// Example of Bayesian model averaging
+#[allow(dead_code)]
 fn bayesian_model_averaging_example() -> Result<()> {
     // Simulate predictions from 4 different models for 10 test cases
     let predictions = Array2::from_shape_vec(
@@ -291,7 +298,7 @@ fn bayesian_model_averaging_example() -> Result<()> {
 
         let results = bma.average_models(&predictions, &scores)?;
 
-        println!("Bayesian Model Averaging ({}):", name);
+        println!("Bayesian Model Averaging ({name}):");
         println!("  Model weights: {:?}", results.model_weights.to_vec());
         println!(
             "  Averaged predictions: {:?}",
@@ -308,6 +315,7 @@ fn bayesian_model_averaging_example() -> Result<()> {
 }
 
 /// Comprehensive Bayesian evaluation workflow
+#[allow(dead_code)]
 fn comprehensive_bayesian_workflow() -> Result<()> {
     println!("This example demonstrates a complete Bayesian evaluation workflow");
     println!("for comparing two regression models on a synthetic dataset.");
@@ -406,7 +414,7 @@ fn comprehensive_bayesian_workflow() -> Result<()> {
     );
     println!(
         "  Average model uncertainty: {:.4}",
-        bma_result.model_uncertainty.mean().unwrap_or(0.0)
+        bma_result.model_uncertainty.mean()
     );
 
     // Step 6: Summary and recommendations
@@ -419,17 +427,14 @@ fn comprehensive_bayesian_workflow() -> Result<()> {
     };
     let waic_diff = (model1_info.waic - model2_info.waic).abs();
 
-    println!(
-        "  Best model by WAIC: {} (difference: {:.2})",
-        best_model, waic_diff
-    );
+    println!("  Best model by WAIC: {best_model} (difference: {waic_diff:.2})");
 
     if waic_diff < 2.0 {
         println!("  Models are very similar - consider model averaging");
     } else if waic_diff < 6.0 {
-        println!("  Moderate evidence favoring {}", best_model);
+        println!("  Moderate evidence favoring {best_model}");
     } else {
-        println!("  Strong evidence favoring {}", best_model);
+        println!("  Strong evidence favoring {best_model}");
     }
 
     if ppc_result.model_adequate {

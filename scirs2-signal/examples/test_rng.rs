@@ -1,5 +1,6 @@
 use rand::{rngs::StdRng, Rng, SeedableRng};
 
+#[allow(dead_code)]
 fn main() {
     // Test from_rng
     let mut system_rng = rand::rng();
@@ -7,10 +8,10 @@ fn main() {
     println!("Random number from system rng: {}", rng1.random::<u64>());
 
     // Test from_seed
-    let mut rng2 = StdRng::from_seed([0u8; 32]);
+    let mut rng2 = StdRng::seed_from_u64(0u64);
     println!("Random number from seed: {}", rng2.random::<u64>());
 
-    // Test rng (renamed from thread_rng)
+    // Test rng (renamed from rng)
     let mut rng3 = rand::rng();
     println!("Random number from rng: {}", rng3.random::<u64>());
 

@@ -6,7 +6,7 @@
 
 use crate::error::{LinalgError, LinalgResult};
 use crate::quantization::{
-    dequantize_matrix, get_quantized_matrix_2d_i8, QuantizationMethod, QuantizationParams,
+    dequantize_matrix, get_quantizedmatrix_2d_i8, QuantizationMethod, QuantizationParams,
     QuantizedData2D, QuantizedMatrix,
 };
 use ndarray::{Array1, Array2, ArrayView1};
@@ -26,6 +26,7 @@ use std::fmt::Debug;
 /// # Returns
 ///
 /// * The result of the matrix multiplication chain
+#[allow(dead_code)]
 pub fn fused_quantized_matmul_chain(
     matrices: &[&QuantizedMatrix],
     params: &[&QuantizationParams],
@@ -89,6 +90,7 @@ pub fn fused_quantized_matmul_chain(
 }
 
 /// Optimized implementation for Int8 symmetric quantized matrices
+#[allow(dead_code)]
 fn fused_quantized_matmul_chain_int8_symmetric(
     matrices: &[&QuantizedMatrix],
     params: &[&QuantizationParams],
@@ -96,24 +98,24 @@ fn fused_quantized_matmul_chain_int8_symmetric(
     // Extract Int8 data from matrices
     let int8_matrices: Vec<&Array2<i8>> = matrices
         .iter()
-        .map(|m| get_quantized_matrix_2d_i8(m).unwrap())
+        .map(|m| get_quantizedmatrix_2d_i8(m).unwrap())
         .collect();
 
     // Scales from the quantization parameters
     let scales: Vec<f32> = params.iter().map(|p| p.scale).collect();
 
     // Result dimensions
-    let (rows, _) = matrices[0].shape;
-    let (_, cols) = matrices.last().unwrap().shape;
-    let mut result = Array2::zeros((rows, cols));
+    let rows_ = matrices[0].shape.0;
+    let cols = matrices.last().unwrap().shape.1;
+    let mut result = Array2::zeros((rows_, cols));
 
     // Compute the fused scale factor - product of all scales
     let fused_scale: f32 = scales.iter().product();
 
     // Use block multiplication for better cache efficiency
     const BLOCK_SIZE: usize = 32;
-    for i0 in (0..rows).step_by(BLOCK_SIZE) {
-        let i_end = (i0 + BLOCK_SIZE).min(rows);
+    for i0 in (0..rows_).step_by(BLOCK_SIZE) {
+        let i_end = (i0 + BLOCK_SIZE).min(rows_);
 
         for j0 in (0..cols).step_by(BLOCK_SIZE) {
             let j_end = (j0 + BLOCK_SIZE).min(cols);
@@ -186,6 +188,7 @@ fn fused_quantized_matmul_chain_int8_symmetric(
 /// # Returns
 ///
 /// * The result of the matrix-vector multiplication sequence
+#[allow(dead_code)]
 pub fn fused_quantized_matvec_sequence<F>(
     matrices: &[&QuantizedMatrix],
     matrix_params: &[&QuantizationParams],
@@ -254,7 +257,7 @@ where
 
         // Convert back to the original type
         if output_quantize {
-            // In a complete implementation, we would quantize the result to the same bit depth
+            // In a complete implementation, we would _quantize the result to the same bit depth
             // But for simplicity, just convert back to the original type
             Ok(result_f32.mapv(|x| num_traits::FromPrimitive::from_f32(x).unwrap()))
         } else {
@@ -291,6 +294,7 @@ where
 }
 
 /// Optimized implementation for Int8 quantized matrices in a matvec sequence
+#[allow(dead_code)]
 fn fused_quantized_matvec_sequence_int8(
     matrices: &[&QuantizedMatrix],
     params: &[&QuantizationParams],
@@ -299,7 +303,7 @@ fn fused_quantized_matvec_sequence_int8(
     // Extract Int8 data
     let int8_matrices: Vec<&Array2<i8>> = matrices
         .iter()
-        .map(|m| get_quantized_matrix_2d_i8(m).unwrap())
+        .map(|m| get_quantizedmatrix_2d_i8(m).unwrap())
         .collect();
 
     // Get scales from the parameters

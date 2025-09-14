@@ -1,6 +1,7 @@
 use ndarray::array;
 use scirs2_optim::optimizers::{Adam, Optimizer};
 
+#[allow(dead_code)]
 fn main() {
     let mut adam = Adam::new(0.001);
     adam.set_beta1(0.9);

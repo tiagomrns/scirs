@@ -28,16 +28,16 @@ impl Vocabulary {
     }
 
     /// Create a new vocabulary with a maximum size
-    pub fn with_max_size(max_size: usize) -> Self {
+    pub fn with_maxsize(_maxsize: usize) -> Self {
         Self {
             token_to_id: HashMap::new(),
             id_to_token: HashMap::new(),
-            max_size: Some(max_size),
+            max_size: Some(_maxsize),
         }
     }
 
     /// Create a vocabulary from a list of tokens
-    pub fn from_tokens(tokens: &[String]) -> Self {
+    pub fn fromtokens(tokens: &[String]) -> Self {
         let mut vocab = Self::new();
         for token in tokens {
             vocab.add_token(token);
@@ -108,11 +108,11 @@ impl Vocabulary {
             .map(|(id, token)| (*id, token))
             .collect();
 
-        tokens.sort_by_key(|(id, _)| *id);
+        tokens.sort_by_key(|(id_, _)| *id_);
 
         // Write each token on a new line
         for (_, token) in tokens {
-            writeln!(&mut file, "{}", token).map_err(|e| TextError::IoError(e.to_string()))?;
+            writeln!(&mut file, "{token}").map_err(|e| TextError::IoError(e.to_string()))?;
         }
 
         Ok(())
@@ -135,14 +135,14 @@ impl Vocabulary {
     }
 
     /// Prune the vocabulary to only include the most common tokens
-    pub fn prune(&mut self, token_counts: &HashMap<String, usize>, min_count: usize) {
-        // Create a new vocabulary with only tokens that meet the minimum count
+    pub fn prune(&mut self, token_counts: &HashMap<String, usize>, mincount: usize) {
+        // Create a new vocabulary with only tokens that meet the minimum _count
         let mut new_token_to_id = HashMap::new();
         let mut new_id_to_token = HashMap::new();
 
         let mut new_id = 0;
         for (token, count) in token_counts {
-            if *count >= min_count && self.contains(token) {
+            if *count >= mincount && self.contains(token) {
                 new_token_to_id.insert(token.clone(), new_id);
                 new_id_to_token.insert(new_id, token.clone());
                 new_id += 1;
@@ -195,7 +195,7 @@ mod tests {
     }
 
     #[test]
-    fn test_vocabulary_from_tokens() {
+    fn test_vocabulary_fromtokens() {
         let tokens = vec![
             "hello".to_string(),
             "world".to_string(),
@@ -203,7 +203,7 @@ mod tests {
             "test".to_string(),
         ];
 
-        let vocab = Vocabulary::from_tokens(&tokens);
+        let vocab = Vocabulary::fromtokens(&tokens);
 
         // Check size (duplicates are removed)
         assert_eq!(vocab.len(), 3);
@@ -215,8 +215,8 @@ mod tests {
     }
 
     #[test]
-    fn test_vocabulary_max_size() {
-        let mut vocab = Vocabulary::with_max_size(2);
+    fn test_vocabulary_maxsize() {
+        let mut vocab = Vocabulary::with_maxsize(2);
 
         // Add tokens
         vocab.add_token("hello");

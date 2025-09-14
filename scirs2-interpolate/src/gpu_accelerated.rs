@@ -20,7 +20,7 @@
 //! # #[cfg(feature = "gpu")]
 //! # {
 //! use ndarray::Array1;
-//! use scirs2_interpolate::gpu_accelerated::{
+//! use scirs2__interpolate::gpu_accelerated::{
 //!     GpuRBFInterpolator, GpuConfig, GpuRBFKernel
 //! };
 //!
@@ -39,8 +39,8 @@
 //! interpolator.fit(&x.view(), &y.view()).unwrap();
 //!
 //! // Evaluate at many points using GPU acceleration
-//! let x_eval = Array1::linspace(0.0, 10.0, 10000);
-//! let y_eval = interpolator.evaluate(&x_eval.view()).unwrap();
+//! let xeval = Array1::linspace(0.0, 10.0, 10000);
+//! let y_eval = interpolator.evaluate(&xeval.view()).unwrap();
 //!
 //! println!("Evaluated {} points using GPU acceleration", y_eval.len());
 //! # }
@@ -239,8 +239,8 @@ where
     }
 
     /// Set batch size for GPU operations
-    pub fn with_batch_size(mut self, batch_size: usize) -> Self {
-        self.batch_size = batch_size;
+    pub fn with_batch_size(mut self, batchsize: usize) -> Self {
+        self.batch_size = batchsize;
         self
     }
 
@@ -315,12 +315,12 @@ where
     ///
     /// # Arguments
     ///
-    /// * `x_eval` - Points to evaluate at
+    /// * `xeval` - Points to evaluate at
     ///
     /// # Returns
     ///
     /// Interpolated values
-    pub fn evaluate(&self, x_eval: &ArrayView1<T>) -> InterpolateResult<Array1<T>> {
+    pub fn evaluate(&self, xeval: &ArrayView1<T>) -> InterpolateResult<Array1<T>> {
         if !self.is_trained {
             return Err(InterpolateError::InvalidState(
                 "Interpolator must be trained before evaluation".to_string(),
@@ -331,7 +331,7 @@ where
 
         // Try GPU evaluation first
         if Self::is_gpu_available() && self.gpu_config.prefer_gpu && self.cpu_fallback.is_none() {
-            match self.evaluate_gpu(x_eval) {
+            match self.evaluate_gpu(xeval) {
                 Ok(result) => {
                     self.update_evaluation_stats(start_time.elapsed().as_millis() as f64, true);
                     return Ok(result);
@@ -343,7 +343,7 @@ where
         }
 
         // CPU fallback
-        let result = self.evaluate_cpu(x_eval)?;
+        let result = self.evaluate_cpu(xeval)?;
         self.update_evaluation_stats(start_time.elapsed().as_millis() as f64, false);
         Ok(result)
     }
@@ -380,7 +380,7 @@ where
     }
 
     /// Evaluate using GPU acceleration (placeholder implementation)
-    fn evaluate_gpu(&self, x_eval: &ArrayView1<T>) -> InterpolateResult<Array1<T>> {
+    fn evaluate_gpu(&self, xeval: &ArrayView1<T>) -> InterpolateResult<Array1<T>> {
         if !Self::is_gpu_available() {
             return Err(InterpolateError::NotImplemented(
                 "GPU acceleration not available".to_string(),
@@ -394,7 +394,7 @@ where
         // 4. Transfer results back to CPU
 
         // For now, use CPU implementation
-        self.evaluate_cpu(x_eval)
+        self.evaluate_cpu(xeval)
     }
 
     /// CPU fallback implementation
@@ -427,13 +427,13 @@ where
     }
 
     /// CPU evaluation implementation
-    fn evaluate_cpu(&self, x_eval: &ArrayView1<T>) -> InterpolateResult<Array1<T>> {
+    fn evaluate_cpu(&self, xeval: &ArrayView1<T>) -> InterpolateResult<Array1<T>> {
         if let Some(ref cpu_interpolator) = self.cpu_fallback {
             // Convert 1D evaluation points to 2D format
-            let eval_points_2d = Array2::from_shape_vec((x_eval.len(), 1), x_eval.to_vec())
-                .map_err(|e| {
+            let eval_points_2d =
+                Array2::from_shape_vec((xeval.len(), 1), xeval.to_vec()).map_err(|e| {
                     InterpolateError::ComputationError(format!(
-                        "Failed to reshape eval points: {}",
+                        "Failed to reshape _eval points: {}",
                         e
                     ))
                 })?;
@@ -444,12 +444,12 @@ where
             // For a simple implementation, just return linear interpolation
             // In a real GPU implementation, this would use properly computed RBF coefficients
             let n = self.x_data.len();
-            let m = x_eval.len();
+            let m = xeval.len();
             let mut result = Array1::zeros(m);
 
             // Simple linear interpolation as fallback
             for i in 0..m {
-                let x_i = x_eval[i];
+                let x_i = xeval[i];
 
                 // Find the two closest points
                 if n >= 2 {
@@ -500,7 +500,7 @@ where
     }
 
     /// Update evaluation statistics
-    fn update_evaluation_stats(&self, _compute_time: f64, _used_gpu: bool) {
+    fn update_evaluation_stats(&self, compute_time: f64, _usedgpu: bool) {
         // Update internal statistics
         // In a real implementation, this would update the stats structure
     }
@@ -544,8 +544,8 @@ where
     }
 
     /// Set batch size
-    pub fn with_batch_size(mut self, batch_size: usize) -> Self {
-        self.batch_size = batch_size;
+    pub fn with_batch_size(mut self, batchsize: usize) -> Self {
+        self.batch_size = batchsize;
         self
     }
 
@@ -555,17 +555,17 @@ where
     ///
     /// * `coefficients` - Spline coefficients for each spline
     /// * `knots` - Knot vectors for each spline
-    /// * `x_eval` - Evaluation points
+    /// * `xeval` - Evaluation points
     ///
     /// # Returns
     ///
     /// Evaluated values for all splines
     #[allow(dead_code)]
     pub fn batch_evaluate(
-        &mut self,
-        _coefficients: &Array2<T>,
+        &self,
+        coefficients: &Array2<T>,
         _knots: &Array2<T>,
-        _x_eval: &ArrayView1<T>,
+        _xeval: &ArrayView1<T>,
     ) -> InterpolateResult<Array2<T>> {
         // Placeholder implementation
         Err(InterpolateError::NotImplemented(
@@ -595,6 +595,7 @@ where
 /// # Returns
 ///
 /// A trained GPU RBF interpolator
+#[allow(dead_code)]
 pub fn make_gpu_rbf_interpolator<T>(
     x: &ArrayView1<T>,
     y: &ArrayView1<T>,
@@ -628,11 +629,13 @@ where
 }
 
 /// Check if GPU acceleration features are available
+#[allow(dead_code)]
 pub fn is_gpu_acceleration_available() -> bool {
     GpuRBFInterpolator::<f64>::is_gpu_available()
 }
 
 /// Get GPU device information
+#[allow(dead_code)]
 pub fn get_gpu_device_info() -> Option<GpuDeviceInfo> {
     // In a real implementation, this would query CUDA/OpenCL devices
     // For now, return None since GPU acceleration is not implemented
@@ -656,6 +659,175 @@ pub struct GpuDeviceInfo {
     pub max_threads_per_block: usize,
     /// Maximum blocks per grid dimension
     pub max_blocks_per_grid: usize,
+}
+
+/// Memory management utilities for GPU operations
+pub struct GpuMemoryManager {
+    /// Maximum memory usage threshold (bytes)
+    max_memory_usage: u64,
+    /// Current memory usage tracking
+    current_usage: u64,
+    /// Memory pool for reusing allocations
+    #[allow(dead_code)]
+    memory_pool: Vec<u64>, // Placeholder for actual GPU memory handles
+}
+
+impl GpuMemoryManager {
+    /// Create a new GPU memory manager
+    pub fn new(_max_memorybytes: u64) -> Self {
+        Self {
+            max_memory_usage: _max_memorybytes,
+            current_usage: 0,
+            memory_pool: Vec::new(),
+        }
+    }
+
+    /// Check if allocation would exceed memory limits
+    pub fn can_allocate(&self, sizebytes: u64) -> bool {
+        self.current_usage + sizebytes <= self.max_memory_usage
+    }
+
+    /// Estimate optimal batch size based on available memory
+    pub fn optimal_batch_size(&self, item_sizebytes: u64) -> usize {
+        let available = self.max_memory_usage - self.current_usage;
+        let safety_factor = 0.8; // Leave 20% safety margin
+        let usable = (available as f64 * safety_factor) as u64;
+
+        if item_sizebytes > 0 {
+            (usable / item_sizebytes) as usize
+        } else {
+            1024 // Default fallback
+        }
+    }
+
+    /// Get memory usage statistics
+    pub fn get_usage_stats(&self) -> (u64, u64, f32) {
+        let usage_fraction = if self.max_memory_usage > 0 {
+            self.current_usage as f32 / self.max_memory_usage as f32
+        } else {
+            0.0
+        };
+        (self.current_usage, self.max_memory_usage, usage_fraction)
+    }
+}
+
+/// Kernel launch configuration for GPU operations
+#[derive(Debug, Clone)]
+pub struct GpuKernelConfig {
+    /// Block size for GPU kernels
+    pub block_size: usize,
+    /// Grid size for GPU kernels
+    pub grid_size: usize,
+    /// Shared memory size per block (bytes)
+    pub shared_memory_size: usize,
+    /// Stream ID for asynchronous execution
+    pub stream_id: usize,
+}
+
+impl Default for GpuKernelConfig {
+    fn default() -> Self {
+        Self {
+            block_size: 256,
+            grid_size: 1,
+            shared_memory_size: 0,
+            stream_id: 0,
+        }
+    }
+}
+
+impl GpuKernelConfig {
+    /// Calculate optimal kernel configuration for a given problem size
+    pub fn optimal_for_size(_problemsize: usize) -> Self {
+        // Basic heuristic for kernel configuration
+        let block_size = 256.min(_problemsize);
+        let grid_size = (_problemsize + block_size - 1) / block_size;
+
+        Self {
+            block_size,
+            grid_size,
+            shared_memory_size: block_size * 8, // 8 bytes per thread
+            stream_id: 0,
+        }
+    }
+
+    /// Update configuration for specific GPU architecture
+    pub fn tune_for_architecture(mut self, computecapability: &str) -> Self {
+        // Placeholder for architecture-specific tuning
+        match computecapability {
+            cap if cap.starts_with("8.") => {
+                // Ampere architecture tuning
+                self.block_size = 512;
+                self.shared_memory_size = self.block_size * 16;
+            }
+            cap if cap.starts_with("7.") => {
+                // Turing/Volta architecture tuning
+                self.block_size = 256;
+                self.shared_memory_size = self.block_size * 12;
+            }
+            _ => {
+                // Default/older architecture
+                self.block_size = 128;
+                self.shared_memory_size = self.block_size * 8;
+            }
+        }
+        self
+    }
+}
+
+/// Utility functions for GPU operations
+pub mod gpu_utils {
+    use super::*;
+
+    /// Estimate memory requirements for RBF interpolation
+    pub fn estimate_rbf_memory_requirements(n_points: usize, neval: usize) -> u64 {
+        let float_size = std::mem::size_of::<f64>() as u64;
+
+        // RBF matrix: _n_points x _n_points
+        let matrix_size = (n_points * n_points) as u64 * float_size;
+
+        // Input _points and values
+        let data_size = (n_points * 2) as u64 * float_size;
+
+        // Evaluation _points and results
+        let eval_size = (neval * 2) as u64 * float_size;
+
+        // Temporary buffers (estimated at 50% overhead)
+        let overhead = (matrix_size + data_size + eval_size) / 2;
+
+        matrix_size + data_size + eval_size + overhead
+    }
+
+    /// Check if problem size is suitable for GPU acceleration
+    pub fn is_gpu_worthwhile(_n_points: usize, neval: usize) -> bool {
+        // Heuristic: GPU acceleration typically worthwhile for larger problems
+        let total_operations = _n_points * neval;
+        total_operations > 10000 // Threshold for GPU benefit
+    }
+
+    /// Get recommended GPU configuration for interpolation problem
+    pub fn recommend_gpu_config(_n_points: usize, neval: usize) -> GpuConfig {
+        let mut config = GpuConfig::default();
+
+        // Adjust memory fraction based on problem size
+        let memory_req = estimate_rbf_memory_requirements(_n_points, neval);
+        if memory_req > 1_000_000_000 {
+            // > 1GB
+            config.max_memory_fraction = 0.9;
+        } else if memory_req > 100_000_000 {
+            // > 100MB
+            config.max_memory_fraction = 0.7;
+        } else {
+            config.max_memory_fraction = 0.5;
+        }
+
+        // Enable mixed precision for large problems
+        config.use_mixed_precision = _n_points > 50000;
+
+        // Adjust stream count based on problem complexity
+        config.num_streams = if neval > 100000 { 8 } else { 4 };
+
+        config
+    }
 }
 
 #[cfg(test)]
@@ -708,8 +880,8 @@ mod tests {
 
         interpolator.fit(&x.view(), &y.view()).unwrap();
 
-        let x_eval = Array1::from_vec(vec![0.5, 1.5, 2.5]);
-        let result = interpolator.evaluate(&x_eval.view());
+        let xeval = Array1::from_vec(vec![0.5, 1.5, 2.5]);
+        let result = interpolator.evaluate(&xeval.view());
 
         assert!(result.is_ok());
         let y_eval = result.unwrap();
@@ -788,8 +960,8 @@ mod tests {
             assert!(fit_result.is_ok(), "Failed to fit with kernel {:?}", kernel);
 
             if interpolator.is_trained {
-                let x_eval = Array1::from_vec(vec![0.5, 1.5]);
-                let eval_result = interpolator.evaluate(&x_eval.view());
+                let xeval = Array1::from_vec(vec![0.5, 1.5]);
+                let eval_result = interpolator.evaluate(&xeval.view());
                 assert!(
                     eval_result.is_ok(),
                     "Failed to evaluate with kernel {:?}",

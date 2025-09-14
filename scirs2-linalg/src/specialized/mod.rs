@@ -15,14 +15,19 @@
 //! for large matrices with special structure.
 
 mod banded;
+mod block_diagonal;
 mod block_tridiagonal;
 mod symmetric;
 mod tridiagonal;
 
 pub use self::banded::*;
+pub use self::block_diagonal::*;
 pub use self::block_tridiagonal::*;
 pub use self::symmetric::*;
 pub use self::tridiagonal::*;
+
+// Export specific functions from block_tridiagonal for benchmark compatibility
+pub use self::block_tridiagonal::block_tridiagonal_lu;
 
 use ndarray::{Array1, Array2, ArrayView1, ScalarOperand};
 use num_traits::{Float, NumAssign, One, Zero};
@@ -65,6 +70,7 @@ where
 }
 
 /// Convert a specialized matrix to a matrix-free operator
+#[allow(dead_code)]
 pub fn specialized_to_operator<A, S>(matrix: &S) -> LinalgResult<LinearOperator<A>>
 where
     A: Float + NumAssign + Zero + Sum + One + ScalarOperand + Send + Sync + Debug + 'static,

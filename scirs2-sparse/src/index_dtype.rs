@@ -37,17 +37,18 @@ use crate::error::{SparseError, SparseResult};
 /// assert_eq!(dtype, "i32");
 ///
 /// // Larger array, might need i64
-/// let large_shape = (2_000_000_000, 2_000_000_000);
-/// let dtype_large = get_index_dtype(large_shape, &[]);
+/// let largeshape = (2_000_000_000, 2_000_000_000);
+/// let dtype_large = get_index_dtype(largeshape, &[]);
 /// assert_eq!(dtype_large, "i64");
 /// ```
+#[allow(dead_code)]
 pub fn get_index_dtype(shape: (usize, usize), idx_arrays: &[ArrayView1<usize>]) -> &'static str {
     let (rows, cols) = shape;
 
     // Maximum index value that could be needed (product of dimensions)
     let theoretical_max = rows.saturating_mul(cols);
 
-    // Find the maximum value in any of the index arrays
+    // Find the maximum value in any of the index _arrays
     let observed_max = if idx_arrays.is_empty() {
         0
     } else {
@@ -106,6 +107,7 @@ pub fn get_index_dtype(shape: (usize, usize), idx_arrays: &[ArrayView1<usize>]) 
 /// let result = safely_cast_index_arrays::<i8>(&[large_array.view()]);
 /// assert!(result.is_err());
 /// ```
+#[allow(dead_code)]
 pub fn safely_cast_index_arrays<T>(arrays: &[ArrayView1<usize>]) -> SparseResult<Vec<Array1<T>>>
 where
     T: PrimInt + 'static + TryFrom<usize>,
@@ -156,6 +158,7 @@ where
 ///
 /// `true` if all values in the array can be represented in the target type,
 /// `false` otherwise.
+#[allow(dead_code)]
 pub fn can_cast_safely<T>(array: ArrayView1<usize>) -> bool
 where
     T: PrimInt + 'static + TryFrom<usize>,

@@ -10,7 +10,7 @@ use crate::error::{ClusteringError, Result};
 /// Cuts the dendrogram to produce a specific number of clusters
 pub(crate) fn cut_tree<F: Float + FromPrimitive + PartialOrd>(
     z: &Array2<F>,
-    n_clusters: usize,
+    nclusters: usize,
 ) -> Result<Array1<usize>> {
     let n_samples = z.shape()[0] + 1;
 
@@ -21,10 +21,10 @@ pub(crate) fn cut_tree<F: Float + FromPrimitive + PartialOrd>(
     let mut clusters: Vec<Vec<usize>> = (0..n_samples).map(|i| vec![i]).collect();
 
     // Track which clusters are active
-    let mut active_clusters: Vec<usize> = (0..n_samples).collect();
+    let mut activeclusters: Vec<usize> = (0..n_samples).collect();
 
     // Number of merges needed
-    let n_merges = n_samples - n_clusters;
+    let n_merges = n_samples - nclusters;
 
     // Perform merges
     for i in 0..n_merges {
@@ -45,17 +45,17 @@ pub(crate) fn cut_tree<F: Float + FromPrimitive + PartialOrd>(
         clusters.push(new_members);
 
         // Update active clusters
-        if let Some(pos) = active_clusters.iter().position(|&x| x == cluster1) {
-            active_clusters.remove(pos);
+        if let Some(pos) = activeclusters.iter().position(|&x| x == cluster1) {
+            activeclusters.remove(pos);
         }
-        if let Some(pos) = active_clusters.iter().position(|&x| x == cluster2) {
-            active_clusters.remove(pos);
+        if let Some(pos) = activeclusters.iter().position(|&x| x == cluster2) {
+            activeclusters.remove(pos);
         }
-        active_clusters.push(new_cluster_id);
+        activeclusters.push(new_cluster_id);
     }
 
     // Assign cluster labels
-    for (i, &cluster_id) in active_clusters.iter().enumerate() {
+    for (i, &cluster_id) in activeclusters.iter().enumerate() {
         for &sample in &clusters[cluster_id] {
             if sample < n_samples {
                 labels[sample] = i;
@@ -67,6 +67,7 @@ pub(crate) fn cut_tree<F: Float + FromPrimitive + PartialOrd>(
 }
 
 /// Cuts the dendrogram at a specific distance threshold
+#[allow(dead_code)]
 pub fn cut_tree_by_distance<F: Float + FromPrimitive + PartialOrd>(
     z: &Array2<F>,
     threshold: F,
@@ -125,6 +126,7 @@ pub fn cut_tree_by_distance<F: Float + FromPrimitive + PartialOrd>(
 /// # Returns
 ///
 /// * `Result<Array1<usize>>` - Cluster assignments (0-indexed)
+#[allow(dead_code)]
 pub fn cut_tree_by_inconsistency<F: Float + FromPrimitive + PartialOrd>(
     z: &Array2<F>,
     threshold: F,

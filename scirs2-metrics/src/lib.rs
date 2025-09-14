@@ -1,4 +1,11 @@
+#![allow(deprecated)]
 //! Machine Learning evaluation metrics module for SciRS2
+
+#![allow(clippy::uninlined_format_args)]
+#![allow(clippy::new_without_default)]
+#![allow(clippy::useless_vec)]
+#![allow(clippy::too_many_arguments)]
+#![allow(dead_code)]
 //!
 //! This module provides functions for evaluating machine learning models
 //! including classification, regression, clustering, and ranking metrics, as well as
@@ -345,7 +352,7 @@
 //! use ndarray::{Array, Ix1};
 //! use scirs2_metrics::evaluation::train_test_split;
 //!
-//! let x = Array::<f64, _>::linspace(0., 9., 10).into_shape(Ix1(10)).unwrap();
+//! let x = Array::<f64>::linspace(0., 9., 10).intoshape(Ix1(10)).unwrap();
 //! let y = &x * 2.;
 //!
 //! let (train_arrays, test_arrays) = train_test_split(&[&x, &y], 0.3, Some(42)).unwrap();
@@ -398,7 +405,7 @@
 //!         (0.0, 0)
 //!     }
 //!     
-//!     fn update_state(&self, state: &mut Self::State, batch_true: &[f64], batch_pred: &[f64]) -> Result<()> {
+//!     fn update_state(&self, state: &mut Self::State, batch_true: &[f64], batchpred: &[f64]) -> Result<()> {
 //!         for (y_t, y_p) in batch_true.iter().zip(batch_pred.iter()) {
 //!             state.0 += (y_t - y_p).abs();
 //!             state.1 += 1;
@@ -628,7 +635,6 @@
 
 #![allow(
     unused_imports,
-    dead_code,
     unexpected_cfgs,
     clippy::clone_on_copy,
     clippy::needless_range_loop,
@@ -646,6 +652,7 @@ pub mod dashboard;
 pub mod domains;
 pub mod error;
 pub mod evaluation;
+pub mod explainability;
 pub mod fairness;
 
 // Integration modules with conditional compilation

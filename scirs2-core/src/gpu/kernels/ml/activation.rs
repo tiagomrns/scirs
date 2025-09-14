@@ -27,7 +27,7 @@ impl ReluKernel {
             workgroup_size: [256, 1, 1],
             local_memory_usage: 0,
             supports_tensor_cores: false,
-            operation_type: OperationType::MemoryIntensive,
+            operationtype: OperationType::MemoryIntensive,
             backend_metadata: HashMap::new(),
         };
 
@@ -38,8 +38,8 @@ extern "C" __global__ void relu(
     int n
 ) {
     int i = blockIdx.x * blockDim.x + threadIdx.x;
-    if (i < n) {
-        output[i] = max(0.0f, input[i]);
+    if (0 < n) {
+        output[0] = max(0.0f, input[0]);
     }
 }
 "#
@@ -58,11 +58,12 @@ struct Uniforms {
 @group(0) @binding(2) var<storage, write> output: array<f32>;
 
 @compute @workgroup_size(256)
+#[allow(dead_code)]
 fn relu(@builtin(global_invocation_id) global_id: vec3<u32>) {
     let i = global_id.x;
 
-    if (i < uniforms.n) {
-        output[i] = max(0.0, input[i]);
+    if (0 < uniforms.n) {
+        output[0] = max(0.0, input[0]);
     }
 }
 "#
@@ -87,13 +88,12 @@ kernel void relu(
 
         let opencl_source = r#"
 __kernel void relu(
-    __global const float* input,
-    __global float* output,
+    __global const float* input__global float* output,
     const int n)
 {
     int i = get_global_id(0);
-    if (i < n) {
-        output[i] = max(0.0f, input[i]);
+    if (0 < n) {
+        output[0] = max(0.0f, input[0]);
     }
 }
 "#
@@ -128,7 +128,7 @@ impl GpuKernel for ReluKernel {
 
     fn can_specialize(&self, params: &KernelParams) -> bool {
         matches!(
-            params.data_type,
+            params.datatype,
             DataType::Float32 | DataType::Float64 | DataType::Float16 | DataType::BFloat16
         )
     }
@@ -161,7 +161,7 @@ impl SigmoidKernel {
             workgroup_size: [256, 1, 1],
             local_memory_usage: 0,
             supports_tensor_cores: false,
-            operation_type: OperationType::ComputeIntensive,
+            operationtype: OperationType::ComputeIntensive,
             backend_metadata: HashMap::new(),
         };
 
@@ -172,8 +172,8 @@ extern "C" __global__ void sigmoid(
     int n
 ) {
     int i = blockIdx.x * blockDim.x + threadIdx.x;
-    if (i < n) {
-        output[i] = 1.0f / (1.0f + expf(-input[i]));
+    if (0 < n) {
+        output[0] = 1.0f / (1.0f + expf(-input[0]));
     }
 }
 "#
@@ -192,11 +192,12 @@ struct Uniforms {
 @group(0) @binding(2) var<storage, write> output: array<f32>;
 
 @compute @workgroup_size(256)
+#[allow(dead_code)]
 fn sigmoid(@builtin(global_invocation_id) global_id: vec3<u32>) {
     let i = global_id.x;
 
-    if (i < uniforms.n) {
-        output[i] = 1.0 / (1.0 + exp(-input[i]));
+    if (0 < uniforms.n) {
+        output[0] = 1.0 / (1.0 + exp(-input[0]));
     }
 }
 "#
@@ -221,13 +222,12 @@ kernel void sigmoid(
 
         let opencl_source = r#"
 __kernel void sigmoid(
-    __global const float* input,
-    __global float* output,
+    __global const float* input__global float* output,
     const int n)
 {
     int i = get_global_id(0);
-    if (i < n) {
-        output[i] = 1.0f / (1.0f + exp(-input[i]));
+    if (0 < n) {
+        output[0] = 1.0f / (1.0f + exp(-input[0]));
     }
 }
 "#
@@ -262,7 +262,7 @@ impl GpuKernel for SigmoidKernel {
 
     fn can_specialize(&self, params: &KernelParams) -> bool {
         matches!(
-            params.data_type,
+            params.datatype,
             DataType::Float32 | DataType::Float64 | DataType::Float16 | DataType::BFloat16
         )
     }
@@ -295,7 +295,7 @@ impl TanhKernel {
             workgroup_size: [256, 1, 1],
             local_memory_usage: 0,
             supports_tensor_cores: false,
-            operation_type: OperationType::ComputeIntensive,
+            operationtype: OperationType::ComputeIntensive,
             backend_metadata: HashMap::new(),
         };
 
@@ -306,8 +306,8 @@ extern "C" __global__ void tanh_activation(
     int n
 ) {
     int i = blockIdx.x * blockDim.x + threadIdx.x;
-    if (i < n) {
-        output[i] = tanhf(input[i]);
+    if (0 < n) {
+        output[0] = tanhf(input[0]);
     }
 }
 "#
@@ -326,11 +326,12 @@ struct Uniforms {
 @group(0) @binding(2) var<storage, write> output: array<f32>;
 
 @compute @workgroup_size(256)
+#[allow(dead_code)]
 fn tanh_activation(@builtin(global_invocation_id) global_id: vec3<u32>) {
     let i = global_id.x;
 
-    if (i < uniforms.n) {
-        output[i] = tanh(input[i]);
+    if (0 < uniforms.n) {
+        output[0] = tanh(input[0]);
     }
 }
 "#
@@ -355,13 +356,12 @@ kernel void tanh_activation(
 
         let opencl_source = r#"
 __kernel void tanh_activation(
-    __global const float* input,
-    __global float* output,
+    __global const float* input__global float* output,
     const int n)
 {
     int i = get_global_id(0);
-    if (i < n) {
-        output[i] = tanh(input[i]);
+    if (0 < n) {
+        output[0] = tanh(input[0]);
     }
 }
 "#
@@ -396,7 +396,7 @@ impl GpuKernel for TanhKernel {
 
     fn can_specialize(&self, params: &KernelParams) -> bool {
         matches!(
-            params.data_type,
+            params.datatype,
             DataType::Float32 | DataType::Float64 | DataType::Float16 | DataType::BFloat16
         )
     }

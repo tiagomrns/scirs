@@ -2,6 +2,7 @@
 
 use scirs2_core::parallel_ops::{par_range, IntoParallelIterator, ParallelIterator};
 
+#[allow(dead_code)]
 fn main() {
     println!("Parallel operations example");
 

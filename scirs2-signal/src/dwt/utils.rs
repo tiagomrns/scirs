@@ -1,12 +1,15 @@
-//! Utility functions for wavelet transforms
-//!
-//! This module provides various utilities for working with wavelets,
-//! such as calculating filter norms, checking properties, and other
-//! common operations used across the wavelet transform modules.
+// Utility functions for wavelet transforms
+//
+// This module provides various utilities for working with wavelets,
+// such as calculating filter norms, checking properties, and other
+// common operations used across the wavelet transform modules.
 
-use super::filters::WaveletFilters;
 use crate::error::SignalResult;
+use crate::dwt::Wavelet;
+use crate::error::SignalResult;
+use super::filters::WaveletFilters;
 
+#[allow(unused_imports)]
 /// Calculate the squared norm (energy) of a filter
 ///
 /// # Arguments
@@ -24,8 +27,9 @@ use crate::error::SignalResult;
 ///
 /// let filter = vec![0.7071067811865475, 0.7071067811865475];
 /// let energy = filter_energy(&filter);
-/// assert!((energy - 1.0).abs() < 1e-10);
+/// assert!(((energy - 1.0) as f64).abs() < 1e-10);
 /// ```
+#[allow(dead_code)]
 pub fn filter_energy(filter: &[f64]) -> f64 {
     filter.iter().map(|&x| x * x).sum()
 }
@@ -56,6 +60,7 @@ pub fn filter_energy(filter: &[f64]) -> f64 {
 /// let is_perfect = check_perfect_reconstruction(&filters, Some(1e-10)).unwrap();
 /// assert!(is_perfect);
 /// ```
+#[allow(dead_code)]
 pub fn check_perfect_reconstruction(
     filters: &WaveletFilters,
     tol: Option<f64>,
@@ -87,7 +92,7 @@ pub fn check_perfect_reconstruction(
     let energy_dec_lo = filter_energy(&filters.dec_lo);
     let energy_dec_hi = filter_energy(&filters.dec_hi);
     
-    if (energy_dec_lo - 1.0).abs() > tolerance || (energy_dec_hi - 1.0).abs() > tolerance {
+    if ((energy_dec_lo - 1.0) as f64).abs() > tolerance || ((energy_dec_hi - 1.0) as f64).abs() > tolerance {
         return Ok(false);
     }
     
@@ -131,8 +136,9 @@ pub fn check_perfect_reconstruction(
 /// let filters = wavelet.filters().unwrap();
 /// let center_freq = center_frequency(&filters.dec_hi);
 /// // Haar wavelet highpass filter has center frequency close to 0.25
-/// assert!((center_freq - 0.25).abs() < 0.1);
+/// assert!(((center_freq - 0.25) as f64).abs() < 0.1);
 /// ```
+#[allow(dead_code)]
 pub fn center_frequency(filter: &[f64]) -> f64 {
     let pi = std::f64::consts::PI;
     let n = filter.len();
@@ -194,15 +200,16 @@ pub fn center_frequency(filter: &[f64]) -> f64 {
 /// let moments = estimate_vanishing_moments(&filters.dec_hi, None);
 /// assert_eq!(moments, 4); // DB4 has 4 vanishing moments
 /// ```
-pub fn estimate_vanishing_moments(highpass_filter: &[f64], tol: Option<f64>) -> usize {
+#[allow(dead_code)]
+pub fn estimate_vanishing_moments(_highpassfilter: &[f64], tol: Option<f64>) -> usize {
     let tolerance = tol.unwrap_or(1e-10);
     let mut n_moments = 0;
     
     // Calculate moments until one is non-zero
-    for k in 0..highpass_filter.len() {
+    for k in 0.._highpass_filter.len() {
         let mut moment = 0.0;
         
-        // Calculate the k-th moment of the highpass filter
+        // Calculate the k-th moment of the highpass _filter
         for (i, &coef) in highpass_filter.iter().enumerate() {
             moment += coef * (i as f64).powi(k as i32);
         }
@@ -237,6 +244,7 @@ pub fn estimate_vanishing_moments(highpass_filter: &[f64], tol: Option<f64>) -> 
 /// let length = effective_filter_length(&filter, None);
 /// assert_eq!(length, 3); // Effective length is 3, not 6
 /// ```
+#[allow(dead_code)]
 pub fn effective_filter_length(filter: &[f64], tol: Option<f64>) -> usize {
     let tolerance = tol.unwrap_or(1e-10);
     let n = filter.len();

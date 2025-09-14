@@ -24,8 +24,7 @@ pub struct SimpleLBFGS<A: Float + ScalarOperand + Debug> {
     /// Previous parameters
     prev_params: Option<Array1<A>>,
     /// Previous gradient
-    prev_grad: Option<Array1<A>>,
-}
+    prev_grad: Option<Array1<A>>}
 
 impl<A: Float + ScalarOperand + Debug> SimpleLBFGS<A> {
     pub fn new(learning_rate: A) -> Self {
@@ -94,7 +93,7 @@ impl<A: Float + ScalarOperand + Debug> SimpleLBFGS<A> {
 
 impl<A, D> Optimizer<A, D> for SimpleLBFGS<A>
 where
-    A: Float + ScalarOperand + Debug,
+    A: Float + ScalarOperand + Debug + Send + Sync,
     D: Dimension,
 {
     fn step(&mut self, params: &Array<A, D>, gradients: &Array<A, D>) -> Result<Array<A, D>> {

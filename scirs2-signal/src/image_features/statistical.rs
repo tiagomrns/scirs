@@ -1,11 +1,13 @@
-//! Statistical image feature extraction functions
+// Statistical image feature extraction functions
 
 use super::utils::{calculate_kurtosis, calculate_skewness};
 use crate::error::SignalResult;
 use ndarray::Array2;
 use std::collections::HashMap;
 
+#[allow(unused_imports)]
 /// Extract basic intensity features from an image
+#[allow(dead_code)]
 pub fn extract_intensity_features(
     image: &Array2<f64>,
     features: &mut HashMap<String, f64>,

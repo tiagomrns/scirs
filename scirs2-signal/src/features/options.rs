@@ -1,5 +1,6 @@
 use std::fmt::Debug;
 
+#[allow(unused_imports)]
 /// Time series feature extraction options
 #[derive(Debug, Clone)]
 pub struct FeatureOptions {

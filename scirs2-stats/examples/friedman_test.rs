@@ -1,6 +1,7 @@
 use ndarray::array;
 use scirs2_stats::friedman;
 
+#[allow(dead_code)]
 fn main() {
     println!("Friedman Test Example");
     println!("====================\n");

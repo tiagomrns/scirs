@@ -8,7 +8,8 @@
 
 use crate::error::TimeSeriesError;
 use ndarray::{s, Array1, Array2};
-use scirs2_core::validation::check_array_finite;
+use scirs2_core::validation::checkarray_finite;
+use statrs::statistics::Statistics;
 use std::f64::consts::PI;
 
 /// Result type for correlation analysis
@@ -325,8 +326,8 @@ impl CorrelationAnalyzer {
         y: &Array1<f64>,
         config: &CrossCorrelationConfig,
     ) -> CorrelationResult<CrossCorrelationResult> {
-        check_array_finite(x, "x")?;
-        check_array_finite(y, "y")?;
+        checkarray_finite(x, "x")?;
+        checkarray_finite(y, "y")?;
 
         if x.len() != y.len() {
             return Err(TimeSeriesError::InvalidInput(
@@ -378,7 +379,7 @@ impl CorrelationAnalyzer {
             .iter()
             .enumerate()
             .max_by(|(_, a), (_, b)| a.abs().partial_cmp(&b.abs()).unwrap())
-            .map(|(idx, _)| idx)
+            .map(|(idx_, _)| idx_)
             .unwrap_or(0);
 
         let max_correlation = correlations[max_idx];
@@ -421,8 +422,8 @@ impl CorrelationAnalyzer {
         y: &Array1<f64>,
         config: &DTWConfig,
     ) -> CorrelationResult<DTWResult> {
-        check_array_finite(x, "x")?;
-        check_array_finite(y, "y")?;
+        checkarray_finite(x, "x")?;
+        checkarray_finite(y, "y")?;
 
         let n = x.len();
         let m = y.len();
@@ -524,7 +525,7 @@ impl CorrelationAnalyzer {
         x: &Array1<f64>,
         config: &TimeFrequencyConfig,
     ) -> CorrelationResult<TimeFrequencyResult> {
-        check_array_finite(x, "x")?;
+        checkarray_finite(x, "x")?;
 
         if x.len() < config.window.window_size {
             return Err(TimeSeriesError::InvalidInput(
@@ -557,8 +558,8 @@ impl CorrelationAnalyzer {
         y: &Array1<f64>,
         config: &CoherenceConfig,
     ) -> CorrelationResult<CoherenceResult> {
-        check_array_finite(x, "x")?;
-        check_array_finite(y, "y")?;
+        checkarray_finite(x, "x")?;
+        checkarray_finite(y, "y")?;
 
         if x.len() != y.len() {
             return Err(TimeSeriesError::InvalidInput(
@@ -913,8 +914,8 @@ impl CorrelationAnalyzer {
         }
     }
 
-    fn compute_local_cost(&self, x: f64, y: f64, cost_function: DTWCostFunction) -> f64 {
-        match cost_function {
+    fn compute_local_cost(&self, x: f64, y: f64, costfunction: DTWCostFunction) -> f64 {
+        match costfunction {
             DTWCostFunction::Euclidean => (x - y).abs(),
             DTWCostFunction::Manhattan => (x - y).abs(),
             DTWCostFunction::SquaredEuclidean => (x - y).powi(2),
@@ -1017,14 +1018,14 @@ impl CorrelationAnalyzer {
                 ],
             };
 
-            let (next_i, next_j, _) = candidates
+            let (next_i, next_j_, _) = candidates
                 .into_iter()
-                .filter(|(ni, nj, _)| *ni > 0 && *nj > 0)
+                .filter(|(ni, nj_, _)| *ni > 0 && *nj_ > 0)
                 .min_by(|a, b| a.2.partial_cmp(&b.2).unwrap())
                 .unwrap_or((1, 1, 0.0));
 
             i = next_i;
-            j = next_j;
+            j = next_j_;
             path.push((i - 1, j - 1)); // Convert to 0-indexed
         }
 
@@ -1098,7 +1099,7 @@ impl CorrelationAnalyzer {
         let max_scale = n_times as f64 / 4.0;
         let scale_factor = (max_scale / min_scale).powf(1.0 / (n_scales - 1) as f64);
 
-        for (scale_idx, _scale) in (0..n_scales).enumerate() {
+        for scale_idx in 0..n_scales {
             let current_scale = min_scale * scale_factor.powi(scale_idx as i32);
             frequencies[scale_idx] = config.sampling_freq / (2.0 * PI * current_scale);
 
@@ -1240,10 +1241,10 @@ impl CorrelationAnalyzer {
         Ok(result)
     }
 
-    fn coherence_confidence_threshold(&self, confidence_level: f64, n_segments: usize) -> f64 {
+    fn coherence_confidence_threshold(&self, confidence_level: f64, nsegments: usize) -> f64 {
         // Approximation for coherence confidence threshold
         let alpha = 1.0 - confidence_level;
-        let dof = 2 * n_segments;
+        let dof = 2 * nsegments;
 
         // For large DOF, use chi-squared approximation
         if dof > 30 {

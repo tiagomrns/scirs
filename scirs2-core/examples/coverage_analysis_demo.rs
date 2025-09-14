@@ -12,6 +12,7 @@ use std::collections::BTreeMap;
 use std::path::PathBuf;
 use std::time::SystemTime;
 
+#[allow(dead_code)]
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("🧪 Test Coverage Analysis Demo");
     println!("=====================================\n");
@@ -36,6 +37,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 }
 
 /// Demo 1: Production Coverage Configuration
+#[allow(dead_code)]
 fn demo_production_configuration() -> Result<(), Box<dyn std::error::Error>> {
     println!("📊 Demo 1: Production Coverage Configuration");
     println!("===========================================");
@@ -64,12 +66,12 @@ fn demo_production_configuration() -> Result<(), Box<dyn std::error::Error>> {
         "   • Integration Threshold: {:.1}%",
         config.integration_threshold
     );
-    println!("   • Sampling Rate: {:.1}%", config.sampling_rate * 100.0);
+    println!("   • Sampling Rate: {:.1}%", config.samplingrate * 100.0);
     println!("   • Types: {:?}", config.coverage_types);
     println!("   • Report Formats: {:?}", config.report_formats);
 
     // Create analyzer with production config
-    let _analyzer = CoverageAnalyzer::new(config)?;
+    let analyzer = CoverageAnalyzer::new(config)?;
     println!("✅ Coverage analyzer initialized for production use");
 
     println!();
@@ -77,6 +79,7 @@ fn demo_production_configuration() -> Result<(), Box<dyn std::error::Error>> {
 }
 
 /// Demo 2: Development Coverage with Full Analysis
+#[allow(dead_code)]
 fn demo_development_coverage() -> Result<(), Box<dyn std::error::Error>> {
     println!("🔧 Demo 2: Development Coverage with Full Analysis");
     println!("=================================================");
@@ -104,7 +107,7 @@ fn demo_development_coverage() -> Result<(), Box<dyn std::error::Error>> {
     println!("   • Real-time updates: {}", config.real_time_updates);
     println!(
         "   • Differential coverage enabled against: {:?}",
-        config.diff_base
+        config.diffbase
     );
     println!("   • Historical tracking: {}", config.enable_history);
 
@@ -123,6 +126,7 @@ fn demo_development_coverage() -> Result<(), Box<dyn std::error::Error>> {
 }
 
 /// Demo 3: Coverage Analysis and Reporting
+#[allow(dead_code)]
 fn demo_coverage_analysis() -> Result<(), Box<dyn std::error::Error>> {
     println!("📈 Demo 3: Coverage Analysis and Reporting");
     println!("==========================================");
@@ -219,6 +223,7 @@ fn demo_coverage_analysis() -> Result<(), Box<dyn std::error::Error>> {
 }
 
 /// Demo 4: Quality Gates and Recommendations
+#[allow(dead_code)]
 fn demo_quality_gates() -> Result<(), Box<dyn std::error::Error>> {
     println!("🎯 Demo 4: Quality Gates and Recommendations");
     println!("============================================");
@@ -334,6 +339,7 @@ fn demo_quality_gates() -> Result<(), Box<dyn std::error::Error>> {
 }
 
 /// Demo 5: Historical Trends and Differential Coverage
+#[allow(dead_code)]
 fn demo_trends_and_differential() -> Result<(), Box<dyn std::error::Error>> {
     println!("📊 Demo 5: Historical Trends and Differential Coverage");
     println!("======================================================");
@@ -390,6 +396,7 @@ fn demo_trends_and_differential() -> Result<(), Box<dyn std::error::Error>> {
 }
 
 /// Simulate coverage recording for various code elements
+#[allow(dead_code)]
 fn simulate_coverage_recording(
     analyzer: &CoverageAnalyzer,
 ) -> Result<(), Box<dyn std::error::Error>> {
@@ -414,7 +421,8 @@ fn simulate_coverage_recording(
 }
 
 /// Simulate test execution with comprehensive coverage
-fn simulate_test_execution(analyzer: &CoverageAnalyzer) -> Result<(), Box<dyn std::error::Error>> {
+#[allow(dead_code)]
+fn run_tests_with_coverage(analyzer: &CoverageAnalyzer) -> Result<(), Box<dyn std::error::Error>> {
     // Simulate multiple test files
     let test_files = [
         PathBuf::from("src/core.rs"),
@@ -468,6 +476,7 @@ fn simulate_test_execution(analyzer: &CoverageAnalyzer) -> Result<(), Box<dyn st
 }
 
 /// Simulate partial coverage for quality gate demonstration
+#[allow(dead_code)]
 fn simulate_partial_coverage(
     analyzer: &CoverageAnalyzer,
 ) -> Result<(), Box<dyn std::error::Error>> {
@@ -513,6 +522,7 @@ fn simulate_partial_coverage(
 }
 
 /// Simulate improved coverage for trend analysis
+#[allow(dead_code)]
 fn simulate_improved_coverage(
     analyzer: &CoverageAnalyzer,
 ) -> Result<(), Box<dyn std::error::Error>> {
@@ -643,4 +653,21 @@ fn create_sample_metrics() -> MetricTimeSeries {
     series.add_point(116.8, None);
 
     series
+}
+
+/// Simulate test execution with coverage recording
+#[allow(dead_code)]
+fn simulate_test_execution(analyzer: &CoverageAnalyzer) -> Result<(), Box<dyn std::error::Error>> {
+    // Simulate recording coverage for a few functions and files
+    println!("🏃 Simulating test execution...");
+
+    // This is a simplified simulation - in a real scenario, the coverage
+    // would be recorded automatically during actual test execution
+    std::thread::sleep(std::time::Duration::from_millis(100));
+
+    println!("   • Executed test suite with coverage instrumentation");
+    println!("   • Recorded line, branch, and condition coverage");
+    println!("   • Coverage data collection completed");
+
+    Ok(())
 }

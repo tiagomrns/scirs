@@ -260,7 +260,7 @@ impl StochasticGradientFunction for LogisticRegressionData {
 }
 
 fn generate_classification_data(n_samples: usize, n_features: usize) -> (Array2<f64>, Array1<f64>) {
-    let mut rng = thread_rng();
+    let mut rng = rng();
     
     // Generate features
     let mut features = Array2::zeros((n_samples, n_features + 1)); // +1 for bias term
@@ -304,7 +304,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let mut logreg = LogisticRegressionData::new(train_features, train_labels);
     
     // Initial parameters (random initialization)
-    let mut rng = thread_rng();
+    let mut rng = rng();
     let x0: Array1<f64> = (0..features.ncols())
         .map(|_| rng.gen_range(-0.1..0.1))
         .collect();
@@ -530,7 +530,7 @@ impl StochasticGradientFunction for NeuralNetwork {
 
 // Generate synthetic regression data
 fn generate_regression_data(n_samples: usize, noise_level: f64) -> (Array2<f64>, Array1<f64>) {
-    let mut rng = thread_rng();
+    let mut rng = rng();
     
     // Features: x1, x2
     let features = Array2::from_shape_fn((n_samples, 2), |(i, j)| {
@@ -562,7 +562,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("Total parameters: {}", nn.total_parameters());
     
     // Random initialization
-    let mut rng = thread_rng();
+    let mut rng = rng();
     let x0: Array1<f64> = (0..nn.total_parameters())
         .map(|_| rng.gen_range(-0.1..0.1))
         .collect();
@@ -682,7 +682,7 @@ fn generate_oscillator_data(
     noise_level: f64
 ) -> (Vec<f64>, Vec<f64>) {
     use rand::prelude::*;
-    let mut rng = thread_rng();
+    let mut rng = rng();
     
     let dt = t_max / (n_points - 1) as f64;
     let time_data: Vec<f64> = (0..n_points).map(|i| i as f64 * dt).collect();
@@ -1433,7 +1433,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             "BH" => {
                 // Start from random point
                 use rand::prelude::*;
-                let mut rng = thread_rng();
+                let mut rng = rng();
                 let x0: Array1<f64> = (0..n_angles)
                     .map(|_| rng.gen_range(-PI..PI))
                     .collect();

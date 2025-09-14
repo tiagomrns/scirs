@@ -4,6 +4,7 @@ use scirs2_optim::memory_efficient::{clip_inplace, normalize_inplace, scale_inpl
 use scirs2_optim::memory_efficient::{InPlaceAdam, InPlaceOptimizer, InPlaceSGD};
 use std::error::Error;
 
+#[allow(dead_code)]
 fn main() -> Result<(), Box<dyn Error>> {
     println!("Memory-Efficient Optimizer Demo");
     println!("==============================");

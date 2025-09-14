@@ -20,6 +20,7 @@ use scirs2_core::array_protocol::{
     GPUBackend, GPUConfig, GPUNdarray, NdarrayWrapper,
 };
 
+#[allow(dead_code)]
 fn main() {
     // Initialize the array protocol system
     array_protocol::init();
@@ -33,10 +34,10 @@ fn main() {
 
     // Create a linear layer
     let weights = Array2::<f64>::eye(3);
-    println!("Weights: {:?}", weights);
+    println!("Weights: {weights:?}");
 
     let bias = Array1::<f64>::ones(3);
-    println!("Bias: {:?}", bias);
+    println!("Bias: {bias:?}");
 
     let linear = Linear::new(
         "linear1",
@@ -49,7 +50,7 @@ fn main() {
 
     // Create a random input
     let input = Array2::<f64>::ones((1, 3));
-    println!("Input: {:?}", input);
+    println!("Input: {input:?}");
 
     // Forward pass through linear layer
     let input_wrapped = NdarrayWrapper::new(input.clone());
@@ -61,13 +62,13 @@ fn main() {
                 println!("Output is not of expected type");
             }
         }
-        Err(e) => println!("Error in forward pass: {}", e),
+        Err(e) => println!("Error in forward pass: {e}"),
     }
 
     // Create a convolutional layer
     println!("\nCreating and using a convolutional layer:");
 
-    let filters = Array::<f64, _>::ones((3, 3, 1, 6));
+    let filters = Array::<f64, ndarray::Ix4>::ones((3, 3, 1, 6));
     println!("Filters shape: {:?}", filters.shape());
 
     let conv = Conv2D::new(
@@ -82,7 +83,7 @@ fn main() {
     println!("Created convolutional layer: {}", conv.name());
 
     // Create a 4D input (batch_size, height, width, channels)
-    let input_4d = Array::<f64, _>::ones((1, 28, 28, 1));
+    let input_4d = Array::<f64, ndarray::Ix4>::ones((1, 28, 28, 1));
     println!("Input shape: {:?}", input_4d.shape());
 
     // Forward pass through convolutional layer
@@ -98,7 +99,7 @@ fn main() {
                 println!("Output is not of expected type");
             }
         }
-        Err(e) => println!("Error in convolutional forward pass: {}", e),
+        Err(e) => println!("Error in convolutional forward pass: {e}"),
     }
 
     // Part 2: Creating and Using a Sequential Model
@@ -109,7 +110,7 @@ fn main() {
     let mut model = Sequential::new("SimpleCNN", Vec::new());
 
     // Add layers to the model
-    model.add_layer(Box::new(Conv2D::with_shape(
+    model.add_layer(Box::new(Conv2D::withshape(
         "conv1",
         3,
         3, // Filter size
@@ -128,7 +129,7 @@ fn main() {
         (0, 0), // Padding
     )));
 
-    model.add_layer(Box::new(Conv2D::with_shape(
+    model.add_layer(Box::new(Conv2D::withshape(
         "conv2",
         3,
         3, // Filter size
@@ -150,7 +151,7 @@ fn main() {
     // Add fully connected layers
     let feature_size = 32 * 6 * 6; // 32 channels, 6x6 spatial dimensions
 
-    model.add_layer(Box::new(Linear::with_shape(
+    model.add_layer(Box::new(Linear::new_random(
         "fc1",
         feature_size, // Input features
         120,          // Output features
@@ -164,7 +165,7 @@ fn main() {
         Some(42), // Fixed seed for reproducibility
     )));
 
-    model.add_layer(Box::new(Linear::with_shape(
+    model.add_layer(Box::new(Linear::new_random(
         "fc2",
         120,  // Input features
         84,   // Output features
@@ -172,7 +173,7 @@ fn main() {
         Some(ActivationFunc::ReLU),
     )));
 
-    model.add_layer(Box::new(Linear::with_shape(
+    model.add_layer(Box::new(Linear::new_random(
         "fc3", 84,   // Input features
         10,   // Output features (10 classes)
         true, // With bias
@@ -198,7 +199,7 @@ fn main() {
                 println!("Model output is not of expected type");
             }
         }
-        Err(e) => println!("Error in model forward pass: {}", e),
+        Err(e) => println!("Error in model forward pass: {e}"),
     }
 
     // Part 3: Using the model builder function
@@ -239,7 +240,7 @@ fn main() {
     // Forward pass with GPU array
     match model.forward(&gpu_input) {
         Ok(_) => println!("Successfully ran forward pass with GPU array"),
-        Err(e) => println!("Error in GPU forward pass: {}", e),
+        Err(e) => println!("Error in GPU forward pass: {e}"),
     }
 
     // Part 5: Evaluation mode
@@ -260,6 +261,6 @@ fn main() {
     let input_wrapped = NdarrayWrapper::new(input_4d.clone());
     match model.forward(&input_wrapped) {
         Ok(_) => println!("Successfully ran forward pass in evaluation mode"),
-        Err(e) => println!("Error in evaluation mode forward pass: {}", e),
+        Err(e) => println!("Error in evaluation mode forward pass: {e}"),
     }
 }

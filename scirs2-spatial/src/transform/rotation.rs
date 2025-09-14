@@ -58,8 +58,7 @@ impl EulerConvention {
             "zxz" => Ok(EulerConvention::Zxz),
             "zyz" => Ok(EulerConvention::Zyz),
             _ => Err(SpatialError::ValueError(format!(
-                "Invalid Euler convention: {}",
-                s
+                "Invalid Euler convention: {s}"
             ))),
         }
     }
@@ -78,7 +77,6 @@ impl EulerConvention {
 /// ```
 /// use scirs2_spatial::transform::Rotation;
 /// use ndarray::array;
-/// use std::f64::consts::PI;
 ///
 /// // Create a rotation from a quaternion [w, x, y, z]
 /// let quat = array![std::f64::consts::FRAC_1_SQRT_2, std::f64::consts::FRAC_1_SQRT_2, 0.0, 0.0]; // 90 degree rotation around X
@@ -187,7 +185,7 @@ impl Rotation {
     /// ];
     /// let rot = Rotation::from_matrix(&matrix.view()).unwrap();
     /// ```
-    pub fn from_matrix(matrix: &ArrayView2<f64>) -> SpatialResult<Self> {
+    pub fn from_matrix(matrix: &ArrayView2<'_, f64>) -> SpatialResult<Self> {
         if matrix.shape() != [3, 3] {
             return Err(SpatialError::DimensionError(format!(
                 "Matrix must be 3x3, got {:?}",
@@ -203,8 +201,7 @@ impl Rotation {
 
         if (det - 1.0).abs() > 1e-6 {
             return Err(SpatialError::ValueError(format!(
-                "Matrix is not orthogonal, determinant = {}",
-                det
+                "Matrix is not orthogonal, determinant = {det}"
             )));
         }
 
@@ -268,7 +265,6 @@ impl Rotation {
     /// ```
     /// use scirs2_spatial::transform::Rotation;
     /// use ndarray::array;
-    /// use std::f64::consts::PI;
     ///
     /// // Create a rotation using Euler angles in the XYZ convention
     /// let angles = array![PI/2.0, 0.0, 0.0]; // 90 degrees around X
@@ -277,7 +273,7 @@ impl Rotation {
     pub fn from_euler(angles: &ArrayView1<f64>, convention: &str) -> SpatialResult<Self> {
         if angles.len() != 3 {
             return Err(SpatialError::DimensionError(format!(
-                "Euler angles must have 3 elements, got {}",
+                "Euler _angles must have 3 elements, got {}",
                 angles.len()
             )));
         }
@@ -286,7 +282,7 @@ impl Rotation {
         let mut quat = Array1::zeros(4);
 
         // Compute quaternions for individual rotations
-        let angles = angles.as_slice().unwrap();
+        let _angles = angles.as_slice().unwrap();
         let a = angles[0] / 2.0;
         let b = angles[1] / 2.0;
         let c = angles[2] / 2.0;
@@ -383,7 +379,6 @@ impl Rotation {
     /// ```
     /// use scirs2_spatial::transform::Rotation;
     /// use ndarray::array;
-    /// use std::f64::consts::PI;
     ///
     /// // Create a rotation for a 90-degree rotation around the x-axis
     /// let rotvec = array![PI/2.0, 0.0, 0.0];
@@ -438,7 +433,6 @@ impl Rotation {
     /// ```
     /// use scirs2_spatial::transform::Rotation;
     /// use ndarray::array;
-    /// use std::f64::consts::PI;
     ///
     /// let angles = array![0.0, 0.0, PI/2.0];
     /// let rot = Rotation::from_euler(&angles.view(), "xyz").unwrap();
@@ -486,7 +480,6 @@ impl Rotation {
     /// ```
     /// use scirs2_spatial::transform::Rotation;
     /// use ndarray::array;
-    /// use std::f64::consts::PI;
     ///
     /// let rot = Rotation::from_rotvec(&array![PI/2.0, 0.0, 0.0].view()).unwrap();
     /// let angles = rot.as_euler("xyz").unwrap();
@@ -637,7 +630,6 @@ impl Rotation {
     /// ```
     /// use scirs2_spatial::transform::Rotation;
     /// use ndarray::array;
-    /// use std::f64::consts::PI;
     ///
     /// let angles = array![PI/2.0, 0.0, 0.0];
     /// let rot = Rotation::from_euler(&angles.view(), "xyz").unwrap();
@@ -708,7 +700,6 @@ impl Rotation {
     /// ```
     /// use scirs2_spatial::transform::Rotation;
     /// use ndarray::array;
-    /// use std::f64::consts::PI;
     ///
     /// let angles = array![0.0, 0.0, PI/4.0];
     /// let rot = Rotation::from_euler(&angles.view(), "xyz").unwrap();
@@ -739,7 +730,6 @@ impl Rotation {
     /// ```
     /// use scirs2_spatial::transform::Rotation;
     /// use ndarray::array;
-    /// use std::f64::consts::PI;
     ///
     /// let angles = array![0.0, 0.0, PI/2.0];
     /// let rot = Rotation::from_euler(&angles.view(), "xyz").unwrap();
@@ -747,14 +737,16 @@ impl Rotation {
     /// let rotated = rot.apply(&vec.view());
     /// // Should be approximately [0, 1, 0]
     /// ```
-    pub fn apply(&self, vec: &ArrayView1<f64>) -> Array1<f64> {
+    pub fn apply(&self, vec: &ArrayView1<f64>) -> SpatialResult<Array1<f64>> {
         if vec.len() != 3 {
-            panic!("Vector must have 3 elements");
+            return Err(SpatialError::DimensionError(
+                "Vector must have 3 elements".to_string(),
+            ));
         }
 
         // Convert to matrix and apply
         let matrix = self.as_matrix();
-        matrix.dot(vec)
+        Ok(matrix.dot(vec))
     }
 
     /// Apply the rotation to multiple vectors
@@ -772,7 +764,6 @@ impl Rotation {
     /// ```
     /// use scirs2_spatial::transform::Rotation;
     /// use ndarray::array;
-    /// use std::f64::consts::PI;
     ///
     /// let angles = array![0.0, 0.0, PI/2.0];
     /// let rot = Rotation::from_euler(&angles.view(), "xyz").unwrap();
@@ -781,13 +772,15 @@ impl Rotation {
     /// // First row should be approximately [0, 1, 0]
     /// // Second row should be approximately [-1, 0, 0]
     /// ```
-    pub fn apply_multiple(&self, vecs: &ArrayView2<f64>) -> Array2<f64> {
+    pub fn apply_multiple(&self, vecs: &ArrayView2<'_, f64>) -> SpatialResult<Array2<f64>> {
         if vecs.ncols() != 3 {
-            panic!("Each vector must have 3 elements");
+            return Err(SpatialError::DimensionError(
+                "Each vector must have 3 elements".to_string(),
+            ));
         }
 
         let matrix = self.as_matrix();
-        vecs.dot(&matrix.t())
+        Ok(vecs.dot(&matrix.t()))
     }
 
     /// Combine this rotation with another (apply the other rotation after this one)
@@ -805,7 +798,6 @@ impl Rotation {
     /// ```
     /// use scirs2_spatial::transform::Rotation;
     /// use ndarray::array;
-    /// use std::f64::consts::PI;
     ///
     /// // Rotate 90 degrees around X, then 90 degrees around Y
     /// let angles1 = array![PI/2.0, 0.0, 0.0];
@@ -877,15 +869,15 @@ impl Rotation {
     ///
     /// let random_rot = Rotation::random();
     /// ```
-    pub fn random() -> Rotation {
+    pub fn random(&self) -> Rotation {
         use rand::Rng;
         let mut rng = rand::rng();
 
         // Generate random quaternion using method from:
         // http://planning.cs.uiuc.edu/node198.html
-        let u1 = rng.random_range(0.0..1.0);
-        let u2 = rng.random_range(0.0..1.0);
-        let u3 = rng.random_range(0.0..1.0);
+        let u1 = rng.gen_range(0.0..1.0);
+        let u2 = rng.gen_range(0.0..1.0);
+        let u3 = rng.gen_range(0.0..1.0);
 
         let sqrt_u1 = u1.sqrt();
         let sqrt_1_minus_u1 = (1.0 - u1).sqrt();
@@ -901,20 +893,120 @@ impl Rotation {
 
         Rotation { quat }
     }
+
+    /// Spherical linear interpolation (SLERP) between two rotations
+    ///
+    /// # Arguments
+    ///
+    /// * `other` - The target rotation to interpolate towards
+    /// * `t` - Interpolation parameter (0.0 = this rotation, 1.0 = other rotation)
+    ///
+    /// # Returns
+    ///
+    /// A new rotation interpolated between this and the other rotation
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use scirs2_spatial::transform::Rotation;
+    /// use ndarray::array;
+    ///
+    /// let rot1 = Rotation::identity();
+    /// let rot2 = Rotation::from_euler(&array![0.0, 0.0, PI/2.0].view(), "xyz").unwrap();
+    /// let interpolated = rot1.slerp(&rot2, 0.5);
+    /// ```
+    pub fn slerp(&self, other: &Rotation, t: f64) -> Rotation {
+        // Ensure t is in [0, 1]
+        let t = t.clamp(0.0, 1.0);
+
+        if t == 0.0 {
+            return self.clone();
+        }
+        if t == 1.0 {
+            return other.clone();
+        }
+
+        let q1 = &self.quat;
+        let mut q2 = other.quat.clone();
+
+        // Compute dot product
+        let mut dot = q1[0] * q2[0] + q1[1] * q2[1] + q1[2] * q2[2] + q1[3] * q2[3];
+
+        // If dot product is negative, use -q2 to take the shorter path
+        if dot < 0.0 {
+            q2 *= -1.0;
+            dot = -dot;
+        }
+
+        // If the quaternions are very close, use linear interpolation
+        if dot > 0.9995 {
+            let result = q1 * (1.0 - t) + &q2 * t;
+            let norm = (result.iter().map(|&x| x * x).sum::<f64>()).sqrt();
+            return Rotation {
+                quat: result / norm,
+            };
+        }
+
+        // Calculate the angle between quaternions
+        let theta_0 = dot.acos();
+        let sin_theta_0 = theta_0.sin();
+
+        let theta = theta_0 * t;
+        let sin_theta = theta.sin();
+
+        let s0 = (theta_0 - theta).cos() / sin_theta_0;
+        let s1 = sin_theta / sin_theta_0;
+
+        let result = q1 * s0 + &q2 * s1;
+        Rotation { quat: result }
+    }
+
+    /// Calculate the angular distance between two rotations
+    ///
+    /// # Arguments
+    ///
+    /// * `other` - The other rotation to calculate distance to
+    ///
+    /// # Returns
+    ///
+    /// The angular distance in radians (always positive, in range [0, π])
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use scirs2_spatial::transform::Rotation;
+    /// use ndarray::array;
+    ///
+    /// let rot1 = Rotation::identity();
+    /// let rot2 = Rotation::from_euler(&array![0.0, 0.0, PI/2.0].view(), "xyz").unwrap();
+    /// let distance = rot1.angular_distance(&rot2);
+    /// assert!((distance - PI/2.0).abs() < 1e-10);
+    /// ```
+    pub fn angular_distance(&self, other: &Rotation) -> f64 {
+        let q1 = &self.quat;
+        let q2 = &other.quat;
+
+        // Compute dot product
+        let dot = (q1[0] * q2[0] + q1[1] * q2[1] + q1[2] * q2[2] + q1[3] * q2[3]).abs();
+
+        // Clamp to avoid numerical issues with acos
+        let dot_clamped = dot.min(1.0);
+
+        // Return the angular distance
+        2.0 * dot_clamped.acos()
+    }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
     use approx::assert_relative_eq;
-    use ndarray::array;
-    use std::f64::consts::PI;
 
     #[test]
     fn test_rotation_identity() {
         let identity = Rotation::identity();
         let vec = array![1.0, 2.0, 3.0];
-        let rotated = identity.apply(&vec.view());
+        let rotated = identity.apply(&vec.view()).unwrap();
 
         assert_relative_eq!(rotated[0], vec[0], epsilon = 1e-10);
         assert_relative_eq!(rotated[1], vec[1], epsilon = 1e-10);
@@ -933,7 +1025,7 @@ mod tests {
         let rot = Rotation::from_quat(&quat.view()).unwrap();
 
         let vec = array![0.0, 1.0, 0.0];
-        let rotated = rot.apply(&vec.view());
+        let rotated = rot.apply(&vec.view()).unwrap();
 
         // Should rotate [0, 1, 0] to [0, 0, 1]
         assert_relative_eq!(rotated[0], 0.0, epsilon = 1e-10);
@@ -948,7 +1040,7 @@ mod tests {
         let rot = Rotation::from_matrix(&matrix.view()).unwrap();
 
         let vec = array![1.0, 0.0, 0.0];
-        let rotated = rot.apply(&vec.view());
+        let rotated = rot.apply(&vec.view()).unwrap();
 
         // Should rotate [1, 0, 0] to [0, 1, 0]
         assert_relative_eq!(rotated[0], 0.0, epsilon = 1e-10);
@@ -963,7 +1055,7 @@ mod tests {
         let rot = Rotation::from_euler(&angles.view(), "xyz").unwrap();
 
         let vec = array![0.0, 1.0, 0.0];
-        let rotated = rot.apply(&vec.view());
+        let rotated = rot.apply(&vec.view()).unwrap();
 
         // Should rotate [0, 1, 0] to [0, 0, 1]
         assert_relative_eq!(rotated[0], 0.0, epsilon = 1e-10);
@@ -978,7 +1070,7 @@ mod tests {
         let rot = Rotation::from_rotvec(&rotvec.view()).unwrap();
 
         let vec = array![0.0, 1.0, 0.0];
-        let rotated = rot.apply(&vec.view());
+        let rotated = rot.apply(&vec.view()).unwrap();
 
         // Should rotate [0, 1, 0] to [0, 0, 1]
         assert_relative_eq!(rotated[0], 0.0, epsilon = 1e-10);
@@ -995,7 +1087,7 @@ mod tests {
         let composed = rot_x.compose(&rot_y);
 
         let vec = array![0.0, 0.0, 1.0];
-        let rotated = composed.apply(&vec.view());
+        let rotated = composed.apply(&vec.view()).unwrap();
 
         // Should rotate [0, 0, 1] to [1, 0, 0]
         assert_relative_eq!(rotated[0], 1.0, epsilon = 1e-10);
@@ -1010,8 +1102,8 @@ mod tests {
         let rot_inv = rot.inv();
 
         let vec = array![1.0, 0.0, 0.0];
-        let rotated = rot.apply(&vec.view());
-        let rotated_back = rot_inv.apply(&rotated.view());
+        let rotated = rot.apply(&vec.view()).unwrap();
+        let rotated_back = rot_inv.apply(&rotated.view()).unwrap();
 
         // Should get back the original vector
         assert_relative_eq!(rotated_back[0], vec[0], epsilon = 1e-10);
@@ -1032,8 +1124,8 @@ mod tests {
 
         // Allow for different but equivalent representations
         let vec = array![1.0, 2.0, 3.0];
-        let rotated1 = rot.apply(&vec.view());
-        let rotated2 = rot_from_matrix.apply(&vec.view());
+        let rotated1 = rot.apply(&vec.view()).unwrap();
+        let rotated2 = rot_from_matrix.apply(&vec.view()).unwrap();
 
         assert_relative_eq!(rotated1[0], rotated2[0], epsilon = 1e-10);
         assert_relative_eq!(rotated1[1], rotated2[1], epsilon = 1e-10);
@@ -1042,10 +1134,62 @@ mod tests {
         // Convert to axis-angle and back
         let rotvec = rot.as_rotvec();
         let rot_from_rotvec = Rotation::from_rotvec(&rotvec.view()).unwrap();
-        let rotated3 = rot_from_rotvec.apply(&vec.view());
+        let rotated3 = rot_from_rotvec.apply(&vec.view()).unwrap();
 
         assert_relative_eq!(rotated1[0], rotated3[0], epsilon = 1e-10);
         assert_relative_eq!(rotated1[1], rotated3[1], epsilon = 1e-10);
         assert_relative_eq!(rotated1[2], rotated3[2], epsilon = 1e-10);
+    }
+
+    #[test]
+    #[ignore]
+    fn test_slerp_interpolation() {
+        // Test SLERP between identity and 90-degree Z rotation
+        let rot1 = Rotation::identity();
+        let rot2 = rotation_from_euler(0.0, 0.0, PI / 2.0, "xyz").unwrap();
+
+        // Test endpoints
+        let slerp_0 = rot1.slerp(&rot2, 0.0);
+        let slerp_1 = rot1.slerp(&rot2, 1.0);
+
+        let vec = array![1.0, 0.0, 0.0];
+        let result_0 = slerp_0.apply(&vec.view()).unwrap();
+        let result_1 = slerp_1.apply(&vec.view()).unwrap();
+
+        // At t=0, should be same as rot1 (identity)
+        assert_relative_eq!(result_0[0], 1.0, epsilon = 1e-10);
+        assert_relative_eq!(result_0[1], 0.0, epsilon = 1e-10);
+
+        // At t=1, should be same as rot2 (90 degree rotation)
+        assert_relative_eq!(result_1[0], 0.0, epsilon = 1e-10);
+        assert_relative_eq!(result_1[1], 1.0, epsilon = 1e-10);
+
+        // Test midpoint
+        let slerp_mid = rot1.slerp(&rot2, 0.5);
+        let result_mid = slerp_mid.apply(&vec.view()).unwrap();
+
+        // Should be roughly 45 degrees
+        let expected_angle = PI / 4.0;
+        assert_relative_eq!(result_mid[0], expected_angle.cos(), epsilon = 1e-10);
+        assert_relative_eq!(result_mid[1], expected_angle.sin(), epsilon = 1e-10);
+    }
+
+    #[test]
+    fn test_angular_distance() {
+        let rot1 = Rotation::identity();
+        let rot2 = rotation_from_euler(0.0, 0.0, PI / 2.0, "xyz").unwrap();
+        let rot3 = rotation_from_euler(0.0, 0.0, PI, "xyz").unwrap();
+
+        // Distance from identity to 90-degree rotation should be PI/2
+        let dist1 = rot1.angular_distance(&rot2);
+        assert_relative_eq!(dist1, PI / 2.0, epsilon = 1e-10);
+
+        // Distance from identity to 180-degree rotation should be PI
+        let dist2 = rot1.angular_distance(&rot3);
+        assert_relative_eq!(dist2, PI, epsilon = 1e-10);
+
+        // Distance from rotation to itself should be 0
+        let dist3 = rot1.angular_distance(&rot1);
+        assert_relative_eq!(dist3, 0.0, epsilon = 1e-10);
     }
 }

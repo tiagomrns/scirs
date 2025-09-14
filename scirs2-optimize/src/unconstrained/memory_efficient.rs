@@ -133,6 +133,7 @@ impl StreamingGradient {
 }
 
 /// Memory-efficient L-BFGS implementation with bounded history
+#[allow(dead_code)]
 pub fn minimize_memory_efficient_lbfgs<F, S>(
     mut fun: F,
     x0: Array1<f64>,
@@ -196,7 +197,7 @@ where
         // Compute search direction using L-BFGS two-loop recursion
         let mut p = if s_history.is_empty() {
             // Use steepest descent if no history
-            get_array_from_pool(&mut memory_pool, n, |_size| -&g)
+            get_array_from_pool(&mut memory_pool, n, |_| -&g)
         } else {
             compute_lbfgs_direction_memory_efficient(&g, &s_history, &y_history, &mut memory_pool)?
         };
@@ -334,7 +335,6 @@ where
     Ok(OptimizeResult {
         x,
         fun: final_fun,
-        iterations: iter,
         nit: iter,
         func_evals: nfev,
         nfev,
@@ -350,6 +350,7 @@ where
 }
 
 /// Memory-efficient L-BFGS direction computation
+#[allow(dead_code)]
 fn compute_lbfgs_direction_memory_efficient(
     g: &Array1<f64>,
     s_history: &VecDeque<Array1<f64>>,
@@ -365,7 +366,7 @@ fn compute_lbfgs_direction_memory_efficient(
     let mut q = get_array_from_pool(memory_pool, n, |_| g.clone());
     let mut alpha = vec![0.0; m];
 
-    // First loop: backward through history
+    // First loop: backward through _history
     for i in (0..m).rev() {
         let rho_i = 1.0 / y_history[i].dot(&s_history[i]);
         alpha[i] = rho_i * s_history[i].dot(&q);
@@ -384,7 +385,7 @@ fn compute_lbfgs_direction_memory_efficient(
     let mut r = get_array_from_pool(memory_pool, n, |_| gamma * &q);
     return_array_to_pool(memory_pool, q);
 
-    // Second loop: forward through history
+    // Second loop: forward through _history
     for i in 0..m {
         let rho_i = 1.0 / y_history[i].dot(&s_history[i]);
         let beta = rho_i * y_history[i].dot(&r);
@@ -400,6 +401,7 @@ fn compute_lbfgs_direction_memory_efficient(
 }
 
 /// Get array from memory pool or create new one
+#[allow(dead_code)]
 fn get_array_from_pool<F>(
     memory_pool: &mut Option<MemoryPool>,
     size: usize,
@@ -423,14 +425,16 @@ where
 }
 
 /// Return array to memory pool
-fn return_array_to_pool(memory_pool: &mut Option<MemoryPool>, array: Array1<f64>) {
-    if let Some(pool) = memory_pool {
+#[allow(dead_code)]
+fn return_array_to_pool(_memory_pool: &mut Option<MemoryPool>, array: Array1<f64>) {
+    if let Some(pool) = _memory_pool {
         pool.return_array(array);
     }
     // If no pool, array will be dropped normally
 }
 
 /// Compute dot product in chunks to reduce memory usage
+#[allow(dead_code)]
 fn chunked_dot_product(a: &Array1<f64>, b: &Array1<f64>, chunk_size: usize) -> f64 {
     let n = a.len();
     let mut result = 0.0;
@@ -446,9 +450,10 @@ fn chunked_dot_product(a: &Array1<f64>, b: &Array1<f64>, chunk_size: usize) -> f
 }
 
 /// Compute array norm in chunks to reduce memory usage
+#[allow(dead_code)]
 fn array_norm_chunked(array: &Array1<f64>, chunk_size: usize) -> f64 {
     let n = array.len();
-    let mut sum_sq = 0.0;
+    let mut sum_sq: f64 = 0.0;
 
     for chunk_start in (0..n).step_by(chunk_size) {
         let chunk_end = std::cmp::min(chunk_start + chunk_size, n);
@@ -460,15 +465,16 @@ fn array_norm_chunked(array: &Array1<f64>, chunk_size: usize) -> f64 {
 }
 
 /// Estimate memory usage for given problem size and history
-fn estimate_memory_usage(n: usize, max_history: usize) -> usize {
+#[allow(dead_code)]
+fn estimate_memory_usage(n: usize, maxhistory: usize) -> usize {
     // Size of f64 in bytes
     const F64_SIZE: usize = std::mem::size_of::<f64>();
 
     // Current point and gradient
     let current_vars = 2 * n * F64_SIZE;
 
-    // L-BFGS history (s and y vectors)
-    let history_size = 2 * max_history * n * F64_SIZE;
+    // L-BFGS _history (s and y vectors)
+    let history_size = 2 * maxhistory * n * F64_SIZE;
 
     // Temporary arrays for computation
     let temp_arrays = 4 * n * F64_SIZE;
@@ -477,6 +483,7 @@ fn estimate_memory_usage(n: usize, max_history: usize) -> usize {
 }
 
 /// Create a memory-efficient optimizer with automatic parameter selection
+#[allow(dead_code)]
 pub fn create_memory_efficient_optimizer(
     problem_size: usize,
     available_memory_mb: usize,

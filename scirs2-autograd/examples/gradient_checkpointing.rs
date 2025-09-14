@@ -3,6 +3,7 @@ use ndarray::Array2;
 use scirs2_autograd as ag;
 use std::time::Instant;
 
+#[allow(dead_code)]
 fn main() {
     println!("Gradient Checkpointing Example");
     println!("==============================");
@@ -38,7 +39,7 @@ fn main() {
     let start = Instant::now();
     let mut non_ckpt_memory_estimate = 0;
 
-    ag::run::<f32, _, _>(|ctx| {
+    ag::run(|ctx| {
         // Convert weights to tensors
         let weight_tensors: Vec<_> = weights
             .iter()
@@ -86,7 +87,7 @@ fn main() {
     let start = Instant::now();
     let mut ckpt_memory_estimate = 0;
 
-    ag::run::<f32, _, _>(|ctx| {
+    ag::run(|ctx| {
         // Convert weights to tensors
         let weight_tensors: Vec<_> = weights
             .iter()
@@ -152,7 +153,7 @@ fn main() {
     println!("\nCheckpoint Segment Example");
     println!("-------------------------");
 
-    ag::run::<f32, _, _>(|ctx| {
+    ag::run(|ctx| {
         // Create two matrices for a segment computation
         let a = T::convert_to_tensor(Array2::<f32>::eye(feature_size).into_dyn(), ctx);
         let b = T::convert_to_tensor(

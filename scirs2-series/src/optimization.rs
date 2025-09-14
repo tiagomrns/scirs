@@ -317,6 +317,7 @@ where
 }
 
 /// Armijo line search (standalone)
+#[allow(dead_code)]
 fn line_search_armijo<F, Func, Grad>(
     x: &Array1<F>,
     d: &Array1<F>,

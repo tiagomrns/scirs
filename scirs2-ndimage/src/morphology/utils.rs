@@ -5,7 +5,7 @@ use num_traits::{Float, FromPrimitive};
 use std::fmt::Debug;
 
 use super::MorphBorderMode;
-use crate::error::{NdimageError, Result};
+use crate::error::{NdimageError, NdimageResult};
 
 /// Apply padding to an array based on the specified border mode for morphological operations
 ///
@@ -19,15 +19,16 @@ use crate::error::{NdimageError, Result};
 /// # Returns
 ///
 /// * `Result<Array<T, D>>` - Padded array
+#[allow(dead_code)]
 pub fn pad_array<T, D>(
     input: &Array<T, D>,
     pad_width: &[(usize, usize)],
     _mode: &MorphBorderMode,
-    _constant_value: T,
-) -> Result<Array<T, D>>
+    value: T,
+) -> NdimageResult<Array<T, D>>
 where
-    T: Float + FromPrimitive + Debug + Clone,
-    D: Dimension,
+    T: Float + FromPrimitive + Debug + Clone + std::ops::AddAssign + std::ops::DivAssign + 'static,
+    D: Dimension + 'static,
 {
     // Validate inputs
     if input.ndim() == 0 {
@@ -38,7 +39,7 @@ where
 
     if pad_width.len() != input.ndim() {
         return Err(NdimageError::DimensionError(format!(
-            "Pad width must have same length as input dimensions (got {} expected {})",
+            "Pad _width must have same length as input dimensions (got {} expected {})",
             pad_width.len(),
             input.ndim()
         )));
@@ -63,7 +64,8 @@ where
 /// # Returns
 ///
 /// * `Result<()>` - Ok if valid, Error otherwise
-pub fn validate_structure<D>(structure: &Array<bool, D>) -> Result<()>
+#[allow(dead_code)]
+pub fn validate_structure<D>(structure: &Array<bool, D>) -> NdimageResult<()>
 where
     D: Dimension,
 {
@@ -83,7 +85,7 @@ where
 
     // For proper validation we would also check:
     // - All dimensions are odd (so there's a clear center)
-    // - The structure has a center element that is True
+    // - The _structure has a center element that is True
 
     Ok(())
 }
@@ -98,10 +100,11 @@ where
 /// # Returns
 ///
 /// * `Result<Vec<isize>>` - Center indices
+#[allow(dead_code)]
 pub fn get_structure_center<D>(
     structure: &Array<bool, D>,
     origin: Option<&[isize]>,
-) -> Result<Vec<isize>>
+) -> NdimageResult<Vec<isize>>
 where
     D: Dimension,
 {
@@ -158,7 +161,7 @@ where
 pub(crate) fn get_structure_center_dyn(
     structure: &Array<bool, ndarray::IxDyn>,
     origin: Option<&[isize]>,
-) -> Result<Vec<isize>> {
+) -> NdimageResult<Vec<isize>> {
     get_structure_center(structure, origin)
 }
 

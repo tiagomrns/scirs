@@ -242,7 +242,8 @@ pub enum QuantizedData1D {
 /// Helper function to get the i8 data from a QuantizedMatrix if available
 ///
 /// Returns None if the matrix does not use Int8 storage
-pub fn get_quantized_matrix_2d_i8(matrix: &QuantizedMatrix) -> Option<&Array2<i8>> {
+#[allow(dead_code)]
+pub fn get_quantizedmatrix_2d_i8(matrix: &QuantizedMatrix) -> Option<&Array2<i8>> {
     match &matrix.data {
         QuantizedData2D::Int8(data) => Some(data),
         _ => None,
@@ -252,6 +253,7 @@ pub fn get_quantized_matrix_2d_i8(matrix: &QuantizedMatrix) -> Option<&Array2<i8
 /// Helper function to get the i8 data from a QuantizedVector if available
 ///
 /// Returns None if the vector does not use Int8 storage
+#[allow(dead_code)]
 pub fn get_quantized_vector_1d_i8(vector: &QuantizedVector) -> Option<&Array1<i8>> {
     match &vector.data {
         QuantizedData1D::Int8(data) => Some(data),
@@ -368,10 +370,12 @@ impl QuantizedMatrix {
                             byte & 0x0F
                         }
                     }
-                    _ => panic!("Cannot convert floating-point quantization to i8"),
+                    _ => unreachable!(
+                        "Invalid quantization type for Int8 storage: expected Int8, Int4, or UInt4"
+                    ),
                 }
             }
-            _ => panic!("Cannot get i8 value from floating-point quantized matrix"),
+            _ => unreachable!("Cannot get i8 value from floating-point quantized matrix"),
         }
     }
 
@@ -382,7 +386,9 @@ impl QuantizedMatrix {
                 QuantizedDataType::Int8 => arr[[row, col]] as f32,
                 QuantizedDataType::Int4 => self.get_i8(row, col) as f32,
                 QuantizedDataType::UInt4 => self.get_i8(row, col) as f32,
-                _ => panic!("Invalid data type for Int8 storage"),
+                _ => unreachable!(
+                    "Invalid data type for Int8 storage: expected Int8, Int4, or UInt4"
+                ),
             },
             QuantizedData2D::Float16(arr) => arr[[row, col]].to_f32(),
             QuantizedData2D::BFloat16(arr) => arr[[row, col]].to_f32(),
@@ -392,11 +398,11 @@ impl QuantizedMatrix {
 
 impl QuantizedVector {
     /// Creates a new quantized vector with int8 storage
-    pub fn new_i8(data: Array1<i8>, length: usize, data_type: QuantizedDataType) -> Self {
+    pub fn new_i8(data: Array1<i8>, length: usize, datatype: QuantizedDataType) -> Self {
         Self {
             data: QuantizedData1D::Int8(data),
             length,
-            data_type,
+            data_type: datatype,
         }
     }
 
@@ -476,10 +482,12 @@ impl QuantizedVector {
                             byte & 0x0F
                         }
                     }
-                    _ => panic!("Cannot convert floating-point quantization to i8"),
+                    _ => unreachable!(
+                        "Invalid quantization type for Int8 storage: expected Int8, Int4, or UInt4"
+                    ),
                 }
             }
-            _ => panic!("Cannot get i8 value from floating-point quantized vector"),
+            _ => unreachable!("Cannot get i8 value from floating-point quantized vector"),
         }
     }
 
@@ -490,7 +498,9 @@ impl QuantizedVector {
                 QuantizedDataType::Int8 => arr[idx] as f32,
                 QuantizedDataType::Int4 => self.get_i8(idx) as f32,
                 QuantizedDataType::UInt4 => self.get_i8(idx) as f32,
-                _ => panic!("Invalid data type for Int8 storage"),
+                _ => unreachable!(
+                    "Invalid data type for Int8 storage: expected Int8, Int4, or UInt4"
+                ),
             },
             QuantizedData1D::Float16(arr) => arr[idx].to_f32(),
             QuantizedData1D::BFloat16(arr) => arr[idx].to_f32(),
@@ -513,6 +523,7 @@ impl QuantizedVector {
 /// # Notes
 ///
 /// For per-channel quantization, use `quantize_matrix_per_channel` instead.
+#[allow(dead_code)]
 pub fn quantize_matrix<F>(
     matrix: &ArrayView2<F>,
     bits: u8,
@@ -682,10 +693,10 @@ where
             }
 
             // Calculate the shape for the packed data
-            let packed_shape = (shape.0, shape.1.div_ceil(2));
+            let packedshape = (shape.0, shape.1.div_ceil(2));
 
-            // Use to_shape instead of into_shape (deprecated)
-            let packed_reshaped = packed_data.into_shape_with_order(packed_shape).unwrap();
+            // Use toshape instead of intoshape (deprecated)
+            let packed_reshaped = packed_data.into_shape_with_order(packedshape).unwrap();
             (
                 QuantizedMatrix::new_i8(packed_reshaped, shape, QuantizedDataType::Int4),
                 params,
@@ -714,10 +725,10 @@ where
             }
 
             // Calculate the shape for the packed data
-            let packed_shape = (shape.0, shape.1.div_ceil(2));
+            let packedshape = (shape.0, shape.1.div_ceil(2));
 
-            // Use to_shape instead of into_shape (deprecated)
-            let packed_reshaped = packed_data.into_shape_with_order(packed_shape).unwrap();
+            // Use toshape instead of intoshape (deprecated)
+            let packed_reshaped = packed_data.into_shape_with_order(packedshape).unwrap();
             (
                 QuantizedMatrix::new_i8(packed_reshaped, shape, QuantizedDataType::UInt4),
                 params,
@@ -792,6 +803,7 @@ where
 /// # Panics
 ///
 /// This function will panic if the method is not PerChannelSymmetric or PerChannelAffine
+#[allow(dead_code)]
 pub fn quantize_matrix_per_channel<F>(
     matrix: &ArrayView2<F>,
     bits: u8,
@@ -802,13 +814,11 @@ where
     f32: AsPrimitive<F>,
 {
     // Verify method is per-channel
-    if method != QuantizationMethod::PerChannelSymmetric
-        && method != QuantizationMethod::PerChannelAffine
-    {
-        panic!(
-            "quantize_matrix_per_channel requires PerChannelSymmetric or PerChannelAffine method"
-        );
-    }
+    assert!(
+        method == QuantizationMethod::PerChannelSymmetric
+            || method == QuantizationMethod::PerChannelAffine,
+        "quantize_matrix_per_channel requires PerChannelSymmetric or PerChannelAffine method, got {method:?}"
+    );
 
     let shape = (matrix.nrows(), matrix.ncols());
     let num_channels = shape.1;
@@ -938,6 +948,7 @@ where
 /// # Returns
 ///
 /// The dequantized matrix
+#[allow(dead_code)]
 pub fn dequantize_matrix(quantized: &QuantizedMatrix, params: &QuantizationParams) -> Array2<f32> {
     let shape = quantized.shape();
     let mut dequantized = Array2::zeros(shape);
@@ -1074,6 +1085,7 @@ pub fn dequantize_matrix(quantized: &QuantizedMatrix, params: &QuantizationParam
 /// # Returns
 ///
 /// A tuple containing the quantized vector and the quantization parameters
+#[allow(dead_code)]
 pub fn quantize_vector<F>(
     vector: &ArrayView1<F>,
     bits: u8,
@@ -1223,8 +1235,8 @@ where
     match method {
         QuantizationMethod::Int4 => {
             // For 4-bit signed integers, we need to handle the packing
-            let packed_size = length.div_ceil(2); // Round up division
-            let mut packed_data = Array1::zeros(packed_size);
+            let packedsize = length.div_ceil(2); // Round up division
+            let mut packed_data = Array1::zeros(packedsize);
 
             for i in 0..length {
                 let val_f32: f32 = vector[i].as_();
@@ -1248,8 +1260,8 @@ where
         }
         QuantizationMethod::UInt4 => {
             // For 4-bit unsigned integers, similar packing approach
-            let packed_size = length.div_ceil(2); // Round up division
-            let mut packed_data = Array1::zeros(packed_size);
+            let packedsize = length.div_ceil(2); // Round up division
+            let mut packed_data = Array1::zeros(packedsize);
 
             for i in 0..length {
                 let val_f32: f32 = vector[i].as_();
@@ -1332,6 +1344,7 @@ where
 /// # Returns
 ///
 /// The dequantized vector
+#[allow(dead_code)]
 pub fn dequantize_vector(quantized: &QuantizedVector, params: &QuantizationParams) -> Array1<f32> {
     let length = quantized.len();
     let mut dequantized = Array1::zeros(length);
@@ -1423,6 +1436,7 @@ pub fn dequantize_vector(quantized: &QuantizedVector, params: &QuantizationParam
 /// # Returns
 ///
 /// The result of the matrix multiplication in floating-point
+#[allow(dead_code)]
 pub fn quantized_matmul(
     a: &QuantizedMatrix,
     a_params: &QuantizationParams,
@@ -1544,6 +1558,7 @@ pub fn quantized_matmul(
 /// # Returns
 ///
 /// The result of the matrix-vector multiplication in floating-point
+#[allow(dead_code)]
 pub fn quantized_matvec(
     a: &QuantizedMatrix,
     a_params: &QuantizationParams,
@@ -1655,6 +1670,7 @@ pub fn quantized_matvec(
 /// # Returns
 ///
 /// The dot product as a floating-point value
+#[allow(dead_code)]
 pub fn quantized_dot(
     a: &QuantizedVector,
     a_params: &QuantizationParams,
@@ -1760,6 +1776,7 @@ pub fn quantized_dot(
 /// # Returns
 ///
 /// The matrix after applying fake quantization
+#[allow(dead_code)]
 pub fn fake_quantize<F>(matrix: &ArrayView2<F>, bits: u8, method: QuantizationMethod) -> Array2<F>
 where
     F: Float + Debug + AsPrimitive<f32> + FromPrimitive,
@@ -1789,6 +1806,7 @@ where
 /// # Returns
 ///
 /// The vector after applying fake quantization
+#[allow(dead_code)]
 pub fn fake_quantize_vector<F>(
     vector: &ArrayView1<F>,
     bits: u8,
@@ -2198,26 +2216,26 @@ mod tests {
         let matrix = Array2::from_shape_vec((rows, cols), data).unwrap();
 
         // Test different quantization methods
-        let (int8_matrix, _) = quantize_matrix(&matrix.view(), 8, QuantizationMethod::Symmetric);
-        let (int4_matrix, _) = quantize_matrix(&matrix.view(), 4, QuantizationMethod::Int4);
-        let (f16_matrix, _) = quantize_matrix(&matrix.view(), 16, QuantizationMethod::Float16);
-        let (bf16_matrix, _) = quantize_matrix(&matrix.view(), 16, QuantizationMethod::BFloat16);
+        let (int8matrix, _) = quantize_matrix(&matrix.view(), 8, QuantizationMethod::Symmetric);
+        let (int4matrix, _) = quantize_matrix(&matrix.view(), 4, QuantizationMethod::Int4);
+        let (f16matrix, _) = quantize_matrix(&matrix.view(), 16, QuantizationMethod::Float16);
+        let (bf16matrix, _) = quantize_matrix(&matrix.view(), 16, QuantizationMethod::BFloat16);
 
         // Calculate storage sizes (in bytes)
-        let original_size = matrix.len() * std::mem::size_of::<f32>();
+        let originalsize = matrix.len() * std::mem::size_of::<f32>();
 
         // Check actual memory footprint ratios
-        println!("Original f32 size: {} bytes", original_size);
-        println!("Int8 storage: {} bytes", int8_matrix.data.len());
-        println!("Int4 storage: {} bytes", int4_matrix.data.len());
-        println!("Float16 storage: {} bytes", f16_matrix.data.len() * 2); // f16 is 2 bytes each
-        println!("BFloat16 storage: {} bytes", bf16_matrix.data.len() * 2); // bf16 is 2 bytes each
+        println!("Original f32 size: {} bytes", originalsize);
+        println!("Int8 storage: {} bytes", int8matrix.data.len());
+        println!("Int4 storage: {} bytes", int4matrix.data.len());
+        println!("Float16 storage: {} bytes", f16matrix.data.len() * 2); // f16 is 2 bytes each
+        println!("BFloat16 storage: {} bytes", bf16matrix.data.len() * 2); // bf16 is 2 bytes each
 
         // Verify expected ratios
-        assert!(int8_matrix.data.len() * 4 <= original_size); // 8-bit should be 25% of original (32-bit) size
-        assert!(int4_matrix.data.len() * 8 <= original_size); // 4-bit should be 12.5% of original size
-        assert!(f16_matrix.data.len() * 2 <= original_size); // 16-bit should be 50% of original size
-        assert!(bf16_matrix.data.len() * 2 <= original_size); // 16-bit should be 50% of original size
+        assert!(int8matrix.data.len() * 4 <= originalsize); // 8-bit should be 25% of original (32-bit) size
+        assert!(int4matrix.data.len() * 8 <= originalsize); // 4-bit should be 12.5% of original size
+        assert!(f16matrix.data.len() * 2 <= originalsize); // 16-bit should be 50% of original size
+        assert!(bf16matrix.data.len() * 2 <= originalsize); // 16-bit should be 50% of original size
     }
 
     #[test]
@@ -2453,7 +2471,7 @@ mod tests {
     }
 
     #[test]
-    fn test_float16_matrix_operations() {
+    fn test_float16matrix_operations() {
         let a = array![[1.0_f32, 2.0], [3.0, 4.0]];
         let b = array![[5.0_f32, 6.0], [7.0, 8.0]];
         let x = array![5.0_f32, 6.0];

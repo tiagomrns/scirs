@@ -4,7 +4,7 @@
 //! event-based synchronization, enabling efficient overlapping of computation and
 //! memory transfers.
 
-use crate::gpu::{GpuBuffer, GpuError, GpuKernelHandle};
+use crate::gpu::{GpuBuffer, GpuError};
 use std::collections::HashMap;
 use std::sync::atomic::{AtomicU64, Ordering};
 use std::sync::{Arc, Mutex, Weak};
@@ -428,8 +428,8 @@ impl AsyncGpuManager {
     }
 
     /// Wait for multiple events
-    pub fn wait_for_events(&self, event_ids: &[EventId]) -> AsyncResult<()> {
-        for &event_id in event_ids {
+    pub fn wait_for_events(&self, eventids: &[EventId]) -> AsyncResult<()> {
+        for &event_id in eventids {
             if let Some(event) = self.events.lock().unwrap().get(&event_id).cloned() {
                 event.wait()?;
             } else {
@@ -561,12 +561,7 @@ pub struct AsyncGpuStatistics {
 /// Extension trait for adding async capabilities to GPU operations
 pub trait AsyncGpuOps {
     /// Launch a kernel asynchronously
-    fn launch_async(
-        &self,
-        kernel: &GpuKernelHandle,
-        work_groups: [u32; 3],
-        stream: &Arc<GpuStream>,
-    ) -> Arc<GpuEvent>;
+    fn launch_async(&self, workgroups: [u32; 3], stream: &Arc<GpuStream>) -> Arc<GpuEvent>;
 
     /// Copy data asynchronously
     fn copy_async<T: crate::gpu::GpuDataType>(

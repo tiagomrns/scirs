@@ -7,6 +7,7 @@ use ndarray::Array1;
 use scirs2_optim::optimizers::{Adam, Lion, Optimizer, SGD};
 use std::collections::HashMap;
 
+#[allow(dead_code)]
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("Lion Optimizer Example");
     println!("=====================");
@@ -87,6 +88,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 }
 
 #[test]
+#[allow(dead_code)]
 fn test_lion_convergence() {
     // Test that Lion converges on a simple problem
     let mut optimizer = Lion::new(0.05); // Adjusted learning rate

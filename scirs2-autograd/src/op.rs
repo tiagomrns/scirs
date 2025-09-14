@@ -115,7 +115,7 @@ pub struct ComputeContext<F: Float> {
 
 impl<F: Float> ComputeContext<F> {
     /// Creates new ComputeContext.
-    pub fn new(inputs: &[NdArray<F>], _outputs: &mut [NdArray<F>]) -> Self {
+    pub fn new(inputs: &[NdArray<F>], outputs: &mut [NdArray<F>]) -> Self {
         // Clone all inputs to own the data
         let input_arrays = inputs.to_vec();
         Self {
@@ -172,7 +172,8 @@ impl<F: Float> ComputeContext<F> {
 
     /// Note: This method is deprecated and will panic.
     /// With the new architecture, inputs are immutable.
-    pub fn input_mut(&mut self, _i: usize) -> NdArrayViewMut<F> {
+    pub fn input_mut(&mut self, i: usize) -> NdArrayViewMut<'_, F> {
+        let _ = i; // Suppress unused parameter warning
         panic!("input_mut is not supported in the new ComputeContext implementation");
     }
 

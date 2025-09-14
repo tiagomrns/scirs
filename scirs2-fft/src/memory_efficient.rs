@@ -13,6 +13,7 @@ use std::fmt::Debug;
 use std::num::NonZeroUsize;
 
 // Helper function to attempt downcast to Complex64
+#[allow(dead_code)]
 fn downcast_to_complex<T: 'static>(value: &T) -> Option<Complex64> {
     // Check if T is Complex64
     if let Some(complex) = (value as &dyn Any).downcast_ref::<Complex64>() {
@@ -86,6 +87,7 @@ pub enum FftMode {
 /// let sum: f64 = (1.0 + 2.0 + 3.0 + 4.0);
 /// assert!((input_buffer[0].re - sum).abs() < 1e-10);
 /// ```
+#[allow(dead_code)]
 pub fn fft_inplace(
     input: &mut [Complex64],
     output: &mut [Complex64],
@@ -191,6 +193,7 @@ pub fn fft_inplace(
 /// # Errors
 ///
 /// Returns an error if the computation fails.
+#[allow(dead_code)]
 pub fn process_in_chunks<T, F>(
     input: &[T],
     chunk_size: usize,
@@ -240,6 +243,7 @@ where
 /// # Errors
 ///
 /// Returns an error if the computation fails.
+#[allow(dead_code)]
 pub fn fft2_efficient<T>(
     input: &ArrayView2<T>,
     shape: Option<(usize, usize)>,
@@ -398,6 +402,7 @@ where
 /// # Errors
 ///
 /// Returns an error if the computation fails.
+#[allow(dead_code)]
 pub fn fft_streaming<T>(
     input: &[T],
     n: Option<usize>,
@@ -410,7 +415,7 @@ where
     let input_length = input.len();
     let n_val = n.unwrap_or(input_length);
     let chunk_size_val = chunk_size.unwrap_or(
-        // Default chunk size based on array size
+        // Default chunk _size based on array _size
         if input_length > 1_000_000 {
             // For arrays > 1M, use 1024 * 1024
             1_048_576

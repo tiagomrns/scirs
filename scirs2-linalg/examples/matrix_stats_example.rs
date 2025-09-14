@@ -6,8 +6,9 @@
 use ndarray::array;
 use scirs2_linalg::error::LinalgResult;
 use scirs2_linalg::stats::covariance::mahalanobis_distance;
-use scirs2_linalg::stats::{correlation_matrix, covariance_matrix};
+use scirs2_linalg::stats::{correlationmatrix, covariancematrix};
 
+#[allow(dead_code)]
 fn main() -> LinalgResult<()> {
     println!("Matrix Statistical Functions Example");
     println!("==================================\n");
@@ -29,7 +30,7 @@ fn main() -> LinalgResult<()> {
     println!();
 
     // Compute covariance matrix
-    let cov = covariance_matrix(&data.view(), None)?;
+    let cov = covariancematrix(&data.view(), None)?;
 
     println!("Covariance matrix:");
     for i in 0..cov.nrows() {
@@ -41,7 +42,7 @@ fn main() -> LinalgResult<()> {
     println!();
 
     // Compute correlation matrix
-    let corr = correlation_matrix(&data.view(), None)?;
+    let corr = correlationmatrix(&data.view(), None)?;
 
     println!("Correlation matrix:");
     for i in 0..corr.nrows() {

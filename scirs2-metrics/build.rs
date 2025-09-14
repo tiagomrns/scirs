@@ -1,3 +1,4 @@
+#[allow(dead_code)]
 fn main() {
     // Link pthread library for OpenBLAS static linking
     // This must be BEFORE openblas is linked

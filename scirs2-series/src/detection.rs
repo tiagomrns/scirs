@@ -85,7 +85,7 @@ impl Default for PeriodDetectionOptions {
 ///
 /// ```
 /// use ndarray::array;
-/// use scirs2_series::detection::{detect_periods, PeriodDetectionOptions};
+/// use scirs2__series::detection::{detect_periods, PeriodDetectionOptions};
 ///
 /// let ts = array![1.0, 2.0, 3.0, 2.0, 1.0, 2.0, 3.0, 2.0, 1.0, 2.0, 3.0, 2.0,
 ///                 1.0, 2.0, 3.0, 2.0, 1.0, 2.0, 3.0, 2.0, 1.0, 2.0, 3.0, 2.0];
@@ -98,6 +98,7 @@ impl Default for PeriodDetectionOptions {
 ///     println!("Period: {}, Strength: {}", period, strength);
 /// }
 /// ```
+#[allow(dead_code)]
 pub fn detect_periods<F>(
     ts: &Array1<F>,
     options: &PeriodDetectionOptions,
@@ -168,6 +169,7 @@ where
 }
 
 /// Detects seasonal periods using the autocorrelation function (ACF)
+#[allow(dead_code)]
 fn detect_periods_acf<F>(
     ts: &Array1<F>,
     options: &PeriodDetectionOptions,
@@ -234,7 +236,8 @@ where
     })
 }
 
-/// Detects seasonal periods using the Fast Fourier Transform (FFT)
+/// Detects seasonal periods using spectral analysis (DFT-based periodogram)
+#[allow(dead_code)]
 fn detect_periods_fft<F>(
     ts: &Array1<F>,
     options: &PeriodDetectionOptions,
@@ -244,27 +247,33 @@ where
 {
     let n = ts.len();
 
-    // FFT implementation would normally go here
-    // For now, we'll use a simplified approach with the ACF
-    // In a real implementation, we would use a package like rustfft
-
-    // Calculate ACF as a placeholder for spectral analysis
-    let acf = autocorrelation(ts, Some(n / 2))?;
-
-    // Generate a simple periodogram from ACF for demonstration purposes
+    // Calculate the periodogram using Discrete Fourier Transform (DFT)
+    // This is a more robust approach than the previous simplified version
     let mut periodogram = Array1::zeros(n / 2 + 1);
-    for i in 0..=n / 2 {
-        // This is a very simplified approximation
-        let _freq = F::from_f64(i as f64 / n as f64).unwrap();
-        let mut power = F::zero();
-        for j in 1..acf.len() {
-            let cos_term = F::from_f64(2.0 * std::f64::consts::PI * j as f64 * i as f64 / n as f64)
-                .unwrap()
-                .cos();
-            power = power + acf[j] * cos_term;
+
+    // Remove the mean to center the data
+    let mean = ts.iter().fold(F::zero(), |acc, &x| acc + x) / F::from_usize(n).unwrap();
+    let centered_ts = Array1::from_shape_fn(n, |i| ts[i] - mean);
+
+    // Compute the periodogram using DFT
+    for k in 0..=n / 2 {
+        let mut real_part = F::zero();
+        let mut imag_part = F::zero();
+
+        for (j, &x) in centered_ts.iter().enumerate() {
+            let angle =
+                F::from_f64(-2.0 * std::f64::consts::PI * k as f64 * j as f64 / n as f64).unwrap();
+            real_part = real_part + x * angle.cos();
+            imag_part = imag_part + x * angle.sin();
         }
-        periodogram[i] = power.abs();
+
+        // Power spectral density
+        let power = (real_part * real_part + imag_part * imag_part) / F::from_usize(n).unwrap();
+        periodogram[k] = power;
     }
+
+    // For autocorrelation fallback (used in combined method)
+    let acf = autocorrelation(&centered_ts, Some(n / 2))?;
 
     // Find peaks in the periodogram
     let mut peaks = Vec::new();
@@ -326,6 +335,7 @@ where
 }
 
 /// Detects seasonal periods using a combination of ACF and FFT
+#[allow(dead_code)]
 fn detect_periods_combined<F>(
     ts: &Array1<F>,
     options: &PeriodDetectionOptions,
@@ -348,7 +358,7 @@ where
     // Add periods from FFT
     for &(period, strength) in &fft_result.periods {
         // Check if period already exists in the combined list
-        let exists = all_periods.iter().any(|&(p, _)| p == period);
+        let exists = all_periods.iter().any(|&(p_, _)| p_ == period);
         if !exists {
             all_periods.push((period, strength));
         }
@@ -369,6 +379,7 @@ where
 }
 
 /// Filters out harmonic periods from a list of candidate periods
+#[allow(dead_code)]
 fn filter_harmonics<F>(periods: Vec<(usize, F)>, _threshold_factor: f64) -> Vec<(usize, F)>
 where
     F: Float + FromPrimitive + Debug,
@@ -396,10 +407,10 @@ where
         // Mark harmonics as used
         for j in 0..sorted_periods.len() {
             if i != j && !used[j] {
-                let (other_period, _) = sorted_periods[j];
+                let (other_period_, _) = sorted_periods[j];
 
                 // Check if other_period is a harmonic (multiple or factor) of period
-                if other_period % period == 0 || period % other_period == 0 {
+                if other_period_ % period == 0 || period % other_period_ == 0 {
                     used[j] = true;
                 }
             }
@@ -428,7 +439,7 @@ where
 ///
 /// ```
 /// use ndarray::array;
-/// use scirs2_series::detection::{detect_and_decompose, PeriodDetectionOptions, DecompositionType, AutoDecomposition};
+/// use scirs2__series::detection::{detect_and_decompose, PeriodDetectionOptions, DecompositionType, AutoDecomposition};
 ///
 /// let ts = array![1.0, 2.0, 3.0, 2.0, 1.0, 2.0, 3.0, 2.0, 1.0, 2.0, 3.0, 2.0,
 ///                 1.0, 2.0, 3.0, 2.0, 1.0, 2.0, 3.0, 2.0, 1.0, 2.0, 3.0, 2.0];
@@ -500,6 +511,7 @@ pub enum AutoDecomposition<F> {
 }
 
 /// Detects seasonal periods and performs decomposition in one step
+#[allow(dead_code)]
 pub fn detect_and_decompose<F>(
     ts: &Array1<F>,
     detection_options: &PeriodDetectionOptions,
@@ -510,7 +522,6 @@ where
         + FromPrimitive
         + Debug
         + std::iter::Sum
-        // + ndarray_linalg::Lapack  // TODO: Replace with scirs2-core linear algebra trait when available
         + ndarray::ScalarOperand
         + num_traits::NumCast,
 {
@@ -530,12 +541,12 @@ where
     // Perform decomposition based on the specified method
     match method {
         DecompositionType::MSTL => {
-            let options = crate::decomposition::MSTLOptions {
-                seasonal_periods: periods.iter().map(|&(p, _)| p).collect(),
+            let _options = crate::decomposition::MSTLOptions {
+                seasonal_periods: periods.iter().map(|&(p_, _)| p_).collect(),
                 ..Default::default()
             };
 
-            let mstl_result = crate::decomposition::mstl_decomposition(ts, &options)?;
+            let mstl_result = crate::decomposition::mstl_decomposition(ts, &_options)?;
 
             Ok(AutoDecompositionResult {
                 periods,
@@ -543,12 +554,12 @@ where
             })
         }
         DecompositionType::TBATS => {
-            let options = crate::decomposition::TBATSOptions {
-                seasonal_periods: periods.iter().map(|&(p, _)| p as f64).collect(),
+            let _options = crate::decomposition::TBATSOptions {
+                seasonal_periods: periods.iter().map(|&(p_, _)| p_ as f64).collect(),
                 ..Default::default()
             };
 
-            let tbats_result = crate::decomposition::tbats_decomposition(ts, &options)?;
+            let tbats_result = crate::decomposition::tbats_decomposition(ts, &_options)?;
 
             Ok(AutoDecompositionResult {
                 periods,
@@ -556,12 +567,12 @@ where
             })
         }
         DecompositionType::STR => {
-            let options = crate::decomposition::STROptions {
-                seasonal_periods: periods.iter().map(|&(p, _)| p as f64).collect(),
+            let _options = crate::decomposition::STROptions {
+                seasonal_periods: periods.iter().map(|&(p_, _)| p_ as f64).collect(),
                 ..Default::default()
             };
 
-            let str_result = crate::decomposition::str_decomposition(ts, &options)?;
+            let str_result = crate::decomposition::str_decomposition(ts, &_options)?;
 
             Ok(AutoDecompositionResult {
                 periods,
@@ -607,9 +618,7 @@ mod tests {
 
         assert!(
             lag7 > 0.5 || lag14 > 0.5,
-            "Neither lag 7 nor lag 14 has high autocorrelation: lag7={}, lag14={}",
-            lag7,
-            lag14
+            "Neither lag 7 nor lag 14 has high autocorrelation: lag7={lag7}, lag14={lag14}"
         );
     }
 
@@ -664,8 +673,7 @@ mod tests {
                 || 4 % detected_period == 0
                 || detected_period == 2
                 || detected_period == 8, // Allow harmonics
-            "Detected period {} is not related to expected period 4",
-            detected_period
+            "Detected period {detected_period} is not related to expected period 4"
         );
     }
 

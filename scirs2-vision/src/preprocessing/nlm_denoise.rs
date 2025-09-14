@@ -35,6 +35,7 @@ use std::sync::Mutex;
 /// # Ok(())
 /// # }
 /// ```
+#[allow(dead_code)]
 pub fn nlm_denoise(
     input: &Array2<f32>,
     h: f32,
@@ -60,8 +61,8 @@ pub fn nlm_denoise(
     let search_radius = search_size / 2;
 
     // Pad the input image
-    let pad_size = search_radius + template_radius;
-    let padded = pad_reflect(input, pad_size);
+    let padsize = search_radius + template_radius;
+    let padded = pad_reflect(input, padsize);
 
     // Create output array
     let mut output = Array2::zeros((height, width));
@@ -72,8 +73,8 @@ pub fn nlm_denoise(
     // Process each pixel
     for y in 0..height {
         for x in 0..width {
-            let py = y + pad_size;
-            let px = x + pad_size;
+            let py = y + padsize;
+            let px = x + padsize;
 
             // Get the template patch around current pixel
             let template_patch = padded.slice(s![
@@ -145,6 +146,7 @@ pub fn nlm_denoise(
 /// # Returns
 ///
 /// * Result containing the denoised color image
+#[allow(dead_code)]
 pub fn nlm_denoise_color(
     input: &Array3<f32>,
     h: f32,
@@ -185,6 +187,7 @@ pub fn nlm_denoise_color(
 /// # Returns
 ///
 /// * Result containing the denoised image
+#[allow(dead_code)]
 pub fn nlm_denoise_parallel(
     input: &Array2<f32>,
     h: f32,
@@ -210,8 +213,8 @@ pub fn nlm_denoise_parallel(
     let search_radius = search_size / 2;
 
     // Pad the input image
-    let pad_size = search_radius + template_radius;
-    let padded = pad_reflect(input, pad_size);
+    let padsize = search_radius + template_radius;
+    let padded = pad_reflect(input, padsize);
 
     // Create output array wrapped in Mutex for thread-safe access
     let output = Mutex::new(Array2::zeros((height, width)));
@@ -226,8 +229,8 @@ pub fn nlm_denoise_parallel(
 
     // Process pixels in parallel
     pixels.par_iter().for_each(|&(y, x)| {
-        let py = y + pad_size;
-        let px = x + pad_size;
+        let py = y + padsize;
+        let px = x + padsize;
 
         // Get the template patch around current pixel
         let template_patch = padded.slice(s![
@@ -290,47 +293,48 @@ pub fn nlm_denoise_parallel(
 }
 
 /// Pad an array with reflected boundary conditions
-fn pad_reflect(array: &Array2<f32>, pad_size: usize) -> Array2<f32> {
+#[allow(dead_code)]
+fn pad_reflect(array: &Array2<f32>, padsize: usize) -> Array2<f32> {
     let (height, width) = array.dim();
-    let new_height = height + 2 * pad_size;
-    let new_width = width + 2 * pad_size;
+    let new_height = height + 2 * padsize;
+    let new_width = width + 2 * padsize;
 
     let mut padded = Array2::zeros((new_height, new_width));
 
     // Copy original data
     padded
-        .slice_mut(s![pad_size..pad_size + height, pad_size..pad_size + width])
+        .slice_mut(s![padsize..padsize + height, padsize..padsize + width])
         .assign(array);
 
     // Pad top and bottom
-    for i in 0..pad_size {
+    for i in 0..padsize {
         // Top
-        let src_row = pad_size + i;
-        let dst_row = pad_size - i - 1;
-        for col in pad_size..pad_size + width {
+        let src_row = padsize + i;
+        let dst_row = padsize - i - 1;
+        for col in padsize..padsize + width {
             padded[[dst_row, col]] = padded[[src_row, col]];
         }
 
         // Bottom
-        let src_row = pad_size + height - i - 1;
-        let dst_row = pad_size + height + i;
-        for col in pad_size..pad_size + width {
+        let src_row = padsize + height - i - 1;
+        let dst_row = padsize + height + i;
+        for col in padsize..padsize + width {
             padded[[dst_row, col]] = padded[[src_row, col]];
         }
     }
 
     // Pad left and right (including corners)
-    for j in 0..pad_size {
+    for j in 0..padsize {
         // Left
-        let src_col = pad_size + j;
-        let dst_col = pad_size - j - 1;
+        let src_col = padsize + j;
+        let dst_col = padsize - j - 1;
         for row in 0..new_height {
             padded[[row, dst_col]] = padded[[row, src_col]];
         }
 
         // Right
-        let src_col = pad_size + width - j - 1;
-        let dst_col = pad_size + width + j;
+        let src_col = padsize + width - j - 1;
+        let dst_col = padsize + width + j;
         for row in 0..new_height {
             padded[[row, dst_col]] = padded[[row, src_col]];
         }

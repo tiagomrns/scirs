@@ -6,13 +6,14 @@ use scirs2_text::{
 };
 use std::time::Instant;
 
+#[allow(dead_code)]
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("Parallel Text Processing Demo");
     println!("============================\n");
 
     // Create test data with larger size to demonstrate parallelism
     println!("Creating test data...");
-    let texts = create_test_texts(1000);
+    let texts = create_testtexts(1000);
 
     // Create references to handle &[&str] requirements
     let text_refs: Vec<&str> = texts.iter().map(|s| s.as_str()).collect();
@@ -47,7 +48,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         .collect();
     let seq_duration = start.elapsed();
 
-    println!("Sequential processing took {:.2?}", seq_duration);
+    println!("Sequential processing took {seq_duration:.2?}");
     println!(
         "Speedup factor: {:.2}x",
         seq_duration.as_secs_f64() / duration.as_secs_f64()
@@ -88,10 +89,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     })?;
     let duration = start.elapsed();
 
-    println!("Processed token statistics in {:.2?}", duration);
+    println!("Processed token statistics in {duration:.2?}");
     println!(
         "Average tokens per document: {:.2}",
-        token_stats.iter().map(|(count, _)| *count).sum::<usize>() as f64
+        token_stats.iter().map(|(count_, _)| *count_).sum::<usize>() as f64
             / token_stats.len() as f64
     );
     println!(
@@ -112,7 +113,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     vectorizer.fit(&text_refs)?;
     let fit_duration = start.elapsed();
 
-    println!("Fitted vectorizer in {:.2?}", fit_duration);
+    println!("Fitted vectorizer in {fit_duration:.2?}");
 
     // Now transform in parallel
     let parallel_vectorizer = ParallelVectorizer::new(vectorizer).with_chunk_size(100);
@@ -161,7 +162,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             let percent = current * 100 / total;
             let mut last = last_progress.lock().unwrap();
             if percent / 10 > *last / 10 {
-                println!("  Progress: {}/{}  ({}%)", current, total, percent);
+                println!("  Progress: {current}/{total}  ({percent}%)");
                 *last = percent;
             }
         },
@@ -172,7 +173,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("Processed {} documents in {:.2?}", texts.len(), duration);
     println!(
         "Average words per document: {:.2}",
-        result.iter().map(|(words, _)| words).sum::<usize>() as f64 / result.len() as f64
+        result.iter().map(|(words_, _)| *words_).sum::<usize>() as f64 / result.len() as f64
     );
     println!(
         "Average characters per document: {:.2}",
@@ -184,13 +185,13 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("------------------------------------------");
 
     println!("Simulating processing of a large corpus...");
-    let large_texts: Vec<&str> = text_refs.iter().cycle().take(5000).copied().collect();
-    println!("Large corpus size: {} documents", large_texts.len());
+    let largetexts: Vec<&str> = text_refs.iter().cycle().take(5000).copied().collect();
+    println!("Large corpus size: {} documents", largetexts.len());
 
     let processor = ParallelCorpusProcessor::new(250).with_max_memory(1024 * 1024 * 1024); // 1 GB limit
 
     let start = Instant::now();
-    let summary = processor.process(&large_texts, |batch| {
+    let summary = processor.process(&largetexts, |batch| {
         // Compute simple statistics for the batch
         let batch_size = batch.len();
         let total_words: usize = batch
@@ -203,21 +204,22 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     })?;
     let duration = start.elapsed();
 
-    let total_words: usize = summary.iter().map(|(_, words, _)| words).sum();
-    let total_chars: usize = summary.iter().map(|(_, _, chars)| chars).sum();
+    let total_words: usize = summary.iter().map(|(_, words_, _)| *words_).sum();
+    let total_chars: usize = summary.iter().map(|(_, _, chars)| *chars).sum();
 
-    println!("Processed large corpus in {:.2?}", duration);
-    println!("Total words: {}", total_words);
-    println!("Total chars: {}", total_chars);
+    println!("Processed large corpus in {duration:.2?}");
+    println!("Total words: {total_words}");
+    println!("Total chars: {total_chars}");
     println!(
         "Average processing speed: {:.2} documents/second",
-        large_texts.len() as f64 / duration.as_secs_f64()
+        largetexts.len() as f64 / duration.as_secs_f64()
     );
 
     Ok(())
 }
 
-fn create_test_texts(size: usize) -> Vec<String> {
+#[allow(dead_code)]
+fn create_testtexts(size: usize) -> Vec<String> {
     // Sample text fragments to combine randomly
     let subjects = [
         "Machine learning",
@@ -294,12 +296,11 @@ fn create_test_texts(size: usize) -> Vec<String> {
         let mut sentences = Vec::with_capacity(num_sentences);
 
         // First sentence
-        sentences.push(format!("{} {} {} {}.", subject, adverb, verb, object));
+        sentences.push(format!("{subject} {adverb} {verb} {object}."));
 
         // Second sentence
         sentences.push(format!(
-            "This {} approach enables {} applications in various domains.",
-            adjective, adjective
+            "This {adjective} approach enables {adjective} applications in various domains."
         ));
 
         // Optional third sentence
@@ -307,8 +308,7 @@ fn create_test_texts(size: usize) -> Vec<String> {
             let subject2 = subjects[rng.next_u32() as usize % subjects.len()];
             let adverb2 = adverbs[rng.next_u32() as usize % adverbs.len()];
             sentences.push(format!(
-                "{} is {} improving with recent technological advances.",
-                subject2, adverb2
+                "{subject2} is {adverb2} improving with recent technological advances."
             ));
         }
 

@@ -20,9 +20,10 @@ use crate::error::{LinalgError, LinalgResult};
 /// # Returns
 ///
 /// * Covariance matrix with shape (n_features, n_features)
-pub fn covariance_matrix<F>(data: &ArrayView2<F>, ddof: Option<usize>) -> LinalgResult<Array2<F>>
+#[allow(dead_code)]
+pub fn covariancematrix<F>(data: &ArrayView2<F>, ddof: Option<usize>) -> LinalgResult<Array2<F>>
 where
-    F: Float + Zero + num_traits::FromPrimitive,
+    F: Float + Zero + num_traits::FromPrimitive + Send + Sync + ndarray::ScalarOperand + 'static,
 {
     let n_samples = data.nrows();
     let n_features = data.ncols();
@@ -37,15 +38,14 @@ where
     let ddof = ddof.unwrap_or(1);
     if ddof >= n_samples {
         return Err(LinalgError::InvalidInputError(format!(
-            "Delta degrees of freedom ({}) must be less than sample count ({})",
-            ddof, n_samples
+            "Delta degrees of freedom ({ddof}) must be less than sample count ({n_samples})"
         )));
     }
 
     // Compute mean for each feature
     let mean = data.mean_axis(Axis(0)).unwrap();
 
-    // Center the data
+    // Center the _data
     let centered = data.to_owned() - &mean;
 
     // Compute covariance matrix: X^T * X / (n - ddof)
@@ -81,12 +81,13 @@ where
 /// # Returns
 ///
 /// * Correlation matrix with shape (n_features, n_features)
-pub fn correlation_matrix<F>(data: &ArrayView2<F>, ddof: Option<usize>) -> LinalgResult<Array2<F>>
+#[allow(dead_code)]
+pub fn correlationmatrix<F>(data: &ArrayView2<F>, ddof: Option<usize>) -> LinalgResult<Array2<F>>
 where
-    F: Float + Zero + num_traits::FromPrimitive,
+    F: Float + Zero + num_traits::FromPrimitive + Send + Sync + ndarray::ScalarOperand + 'static,
 {
     // Compute covariance matrix
-    let cov = covariance_matrix(data, ddof)?;
+    let cov = covariancematrix(data, ddof)?;
     let n_features = cov.nrows();
 
     // Extract standard deviations (sqrt of diagonal elements)
@@ -132,13 +133,22 @@ where
 /// # Returns
 ///
 /// * Mahalanobis distance (scalar)
+#[allow(dead_code)]
 pub fn mahalanobis_distance<F>(
     x: &ArrayView1<F>,
     mean: &ArrayView1<F>,
     cov: &ArrayView2<F>,
 ) -> LinalgResult<F>
 where
-    F: Float + Zero + num_traits::One + num_traits::NumAssign + std::iter::Sum + 'static,
+    F: Float
+        + Zero
+        + num_traits::One
+        + num_traits::NumAssign
+        + std::iter::Sum
+        + Send
+        + Sync
+        + ndarray::ScalarOperand
+        + 'static,
 {
     if x.len() != mean.len() || x.len() != cov.nrows() || x.len() != cov.ncols() {
         return Err(LinalgError::ShapeError(format!(

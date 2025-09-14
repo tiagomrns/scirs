@@ -10,6 +10,7 @@ use scirs2_linalg::LinalgResult;
 
 type C64 = Complex<f64>;
 
+#[allow(dead_code)]
 fn main() -> LinalgResult<()> {
     println!("Complex Matrix Decompositions Example");
     println!("====================================\n");
@@ -35,6 +36,7 @@ fn main() -> LinalgResult<()> {
     Ok(())
 }
 
+#[allow(dead_code)]
 fn demo_complex_lu() -> LinalgResult<()> {
     println!("Complex LU Decomposition");
     println!("----------------------");
@@ -46,7 +48,7 @@ fn demo_complex_lu() -> LinalgResult<()> {
     ];
 
     println!("Matrix A:");
-    print_complex_matrix(&a);
+    print_complexmatrix(&a);
 
     let lu_result = complex_lu(&a.view())?;
 
@@ -66,20 +68,21 @@ fn demo_complex_lu() -> LinalgResult<()> {
     }
 
     println!("\nLower triangular L:");
-    print_complex_matrix(&l);
+    print_complexmatrix(&l);
 
     println!("\nUpper triangular U:");
-    print_complex_matrix(&u);
+    print_complexmatrix(&u);
 
     // Verify: L * U = P * A
     let lu_product = complex_matmul(&l.view(), &u.view())?;
     println!("\nL * U:");
-    print_complex_matrix(&lu_product);
+    print_complexmatrix(&lu_product);
 
     println!();
     Ok(())
 }
 
+#[allow(dead_code)]
 fn demo_complex_qr() -> LinalgResult<()> {
     println!("Complex QR Decomposition");
     println!("----------------------");
@@ -91,31 +94,32 @@ fn demo_complex_qr() -> LinalgResult<()> {
     ];
 
     println!("Matrix A:");
-    print_complex_matrix(&a);
+    print_complexmatrix(&a);
 
     let qr_result = complex_qr(&a.view())?;
 
     println!("\nUnitary matrix Q:");
-    print_complex_matrix(&qr_result.q);
+    print_complexmatrix(&qr_result.q);
 
     println!("\nUpper triangular R:");
-    print_complex_matrix(&qr_result.r);
+    print_complexmatrix(&qr_result.r);
 
     // Verify: Q * R = A
     let qr_product = complex_matmul(&qr_result.q.view(), &qr_result.r.view())?;
     println!("\nQ * R:");
-    print_complex_matrix(&qr_product);
+    print_complexmatrix(&qr_product);
 
     // Verify Q is unitary: Q^H * Q = I
     let qh = hermitian_transpose(&qr_result.q.view());
     let qhq = complex_matmul(&qh.view(), &qr_result.q.view())?;
     println!("\nQ^H * Q (should be identity):");
-    print_complex_matrix(&qhq);
+    print_complexmatrix(&qhq);
 
     println!();
     Ok(())
 }
 
+#[allow(dead_code)]
 fn demo_complex_svd() -> LinalgResult<()> {
     println!("Complex SVD");
     println!("----------");
@@ -127,40 +131,41 @@ fn demo_complex_svd() -> LinalgResult<()> {
     ];
 
     println!("Matrix A (3x2):");
-    print_complex_matrix(&a);
+    print_complexmatrix(&a);
 
     let svd_result = complex_svd(&a.view(), false)?;
 
     println!("\nLeft singular vectors U:");
-    print_complex_matrix(&svd_result.u);
+    print_complexmatrix(&svd_result.u);
 
     println!("\nSingular values S:");
     println!("{:?}", svd_result.s);
 
     println!("\nRight singular vectors V^H:");
-    print_complex_matrix(&svd_result.vh);
+    print_complexmatrix(&svd_result.vh);
 
     // Reconstruct: U * S * V^H
     // The correct shape for S should be (U.ncols, Vh.nrows) for multiplication
     let u_cols = svd_result.u.ncols();
     let vh_rows = svd_result.vh.nrows();
-    let mut s_matrix = Array2::zeros((u_cols, vh_rows));
+    let mut smatrix = Array2::zeros((u_cols, vh_rows));
 
     // Fill diagonal with singular values
     for i in 0..svd_result.s.len().min(u_cols).min(vh_rows) {
-        s_matrix[[i, i]] = C64::new(svd_result.s[i], 0.0);
+        smatrix[[i, i]] = C64::new(svd_result.s[i], 0.0);
     }
 
-    let us = complex_matmul(&svd_result.u.view(), &s_matrix.view())?;
+    let us = complex_matmul(&svd_result.u.view(), &smatrix.view())?;
     let reconstructed = complex_matmul(&us.view(), &svd_result.vh.view())?;
 
     println!("\nReconstructed U * S * V^H:");
-    print_complex_matrix(&reconstructed);
+    print_complexmatrix(&reconstructed);
 
     println!();
     Ok(())
 }
 
+#[allow(dead_code)]
 fn demo_complex_cholesky() -> LinalgResult<()> {
     println!("Complex Cholesky Decomposition");
     println!("----------------------------");
@@ -181,24 +186,25 @@ fn demo_complex_cholesky() -> LinalgResult<()> {
     }
 
     println!("Positive-definite Hermitian matrix A:");
-    print_complex_matrix(&a);
+    print_complexmatrix(&a);
 
     let l = complex_cholesky(&a.view())?;
 
     println!("\nLower triangular L:");
-    print_complex_matrix(&l);
+    print_complexmatrix(&l);
 
     // Verify: L * L^H = A
     let lh = hermitian_transpose(&l.view());
     let llh = complex_matmul(&l.view(), &lh.view())?;
 
     println!("\nL * L^H:");
-    print_complex_matrix(&llh);
+    print_complexmatrix(&llh);
 
     println!();
     Ok(())
 }
 
+#[allow(dead_code)]
 fn demo_complex_eig() -> LinalgResult<()> {
     println!("Complex Eigenvalue Decomposition");
     println!("-------------------------------");
@@ -212,7 +218,7 @@ fn demo_complex_eig() -> LinalgResult<()> {
     ];
 
     println!("Matrix A:");
-    print_complex_matrix(&a);
+    print_complexmatrix(&a);
 
     match complex_eig(&a.view()) {
         Ok(eig_result) => {
@@ -222,7 +228,7 @@ fn demo_complex_eig() -> LinalgResult<()> {
             }
 
             println!("\nEigenvectors:");
-            print_complex_matrix(&eig_result.eigenvectors);
+            print_complexmatrix(&eig_result.eigenvectors);
         }
         Err(e) => {
             println!("\nComplex eigendecomposition not fully implemented: {}", e);
@@ -233,6 +239,7 @@ fn demo_complex_eig() -> LinalgResult<()> {
     Ok(())
 }
 
+#[allow(dead_code)]
 fn demo_complex_eigh() -> LinalgResult<()> {
     println!("Hermitian Eigenvalue Decomposition");
     println!("---------------------------------");
@@ -245,7 +252,7 @@ fn demo_complex_eigh() -> LinalgResult<()> {
     ];
 
     println!("Hermitian matrix A:");
-    print_complex_matrix(&a);
+    print_complexmatrix(&a);
 
     // Verify it's Hermitian
     let ah = hermitian_transpose(&a.view());
@@ -263,13 +270,13 @@ fn demo_complex_eigh() -> LinalgResult<()> {
             }
 
             println!("\nEigenvectors:");
-            print_complex_matrix(&eig_result.eigenvectors);
+            print_complexmatrix(&eig_result.eigenvectors);
 
             // Verify eigenvectors are orthogonal
             let vh = hermitian_transpose(&eig_result.eigenvectors.view());
             let vhv = complex_matmul(&vh.view(), &eig_result.eigenvectors.view())?;
             println!("\nV^H * V (should be identity):");
-            print_complex_matrix(&vhv);
+            print_complexmatrix(&vhv);
 
             // --- Hermitian eigenvalue decomposition check: A ≈ QΛQ^H ---
             use ndarray::Array2;
@@ -290,9 +297,9 @@ fn demo_complex_eigh() -> LinalgResult<()> {
             if max_diff > 1e-8 {
                 println!("WARNING: A and QΛQ^H differ by more than 1e-8");
                 println!("A:");
-                print_complex_matrix(&a);
+                print_complexmatrix(&a);
                 println!("QΛQ^H:");
-                print_complex_matrix(&recon);
+                print_complexmatrix(&recon);
             }
         }
         Err(e) => {
@@ -304,7 +311,8 @@ fn demo_complex_eigh() -> LinalgResult<()> {
     Ok(())
 }
 
-fn print_complex_matrix(a: &Array2<C64>) {
+#[allow(dead_code)]
+fn print_complexmatrix(a: &Array2<C64>) {
     for i in 0..a.nrows() {
         for j in 0..a.ncols() {
             let c = a[[i, j]];

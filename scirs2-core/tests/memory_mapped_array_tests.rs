@@ -16,7 +16,13 @@ mod tests {
         let data = Array1::<f64>::linspace(0., 99., 100);
 
         // Create memory-mapped array
-        let mmap = create_mmap::<f64, _, _>(&data, &file_path, AccessMode::Write, 0).unwrap();
+        let mmap = create_mmap::<f64, ndarray::OwnedRepr<f64>, Ix1>(
+            &data,
+            &file_path,
+            AccessMode::Write,
+            0,
+        )
+        .unwrap();
 
         // Check properties
         assert_eq!(mmap.shape, vec![100]);
@@ -36,7 +42,13 @@ mod tests {
         let data = Array2::<f32>::from_shape_fn((10, 5), |(i, j)| (i * 5 + j) as f32);
 
         // Create memory-mapped array in write mode
-        let mut mmap = create_mmap::<f32, _, _>(&data, &file_path, AccessMode::Write, 0).unwrap();
+        let mut mmap = create_mmap::<f32, ndarray::OwnedRepr<f32>, Ix2>(
+            &data,
+            &file_path,
+            AccessMode::Write,
+            0,
+        )
+        .unwrap();
 
         // Flush changes to disk
         mmap.flush().unwrap();
@@ -128,7 +140,9 @@ mod tests {
         let data = Array1::<f64>::linspace(0., 9., 10);
 
         // Create temporary memory-mapped array
-        let mmap = create_temp_mmap::<f64, _, _>(&data, AccessMode::ReadWrite, 0).unwrap();
+        let mmap =
+            create_temp_mmap::<f64, ndarray::OwnedRepr<f64>, Ix1>(&data, AccessMode::ReadWrite, 0)
+                .unwrap();
 
         // Check that it's marked as temporary
         assert!(mmap.is_temp());

@@ -171,12 +171,12 @@ impl ThreadPool {
     }
 
     /// Submit a task to the thread pool
-    pub fn submit<F>(&self, work_type: WorkType, task: F) -> Result<()>
+    pub fn submit<F>(&self, worktype: WorkType, task: F) -> Result<()>
     where
         F: FnOnce() -> Result<()> + Send + 'static,
     {
         let work_item = WorkItem {
-            work_type,
+            work_type: worktype,
             task: Box::new(task),
             task_id: None,
         };
@@ -188,7 +188,7 @@ impl ThreadPool {
         }
 
         // Send to appropriate queue
-        match work_type {
+        match worktype {
             WorkType::IO => {
                 self.io_sender.send(work_item).map_err(|_| {
                     IoError::Other("Failed to submit I/O task: thread pool shut down".to_string())
@@ -205,12 +205,12 @@ impl ThreadPool {
     }
 
     /// Submit a batch of tasks efficiently
-    pub fn submit_batch<F>(&self, work_type: WorkType, tasks: Vec<F>) -> Result<()>
+    pub fn submit_batch<F>(&self, worktype: WorkType, tasks: Vec<F>) -> Result<()>
     where
         F: FnOnce() -> Result<()> + Send + 'static,
     {
         for task in tasks {
-            self.submit(work_type, task)?;
+            self.submit(worktype, task)?;
         }
         Ok(())
     }
@@ -227,25 +227,41 @@ impl ThreadPool {
         F: Fn(T) -> R + Send + Sync + 'static,
         R: Send + 'static + std::fmt::Debug,
     {
+        use std::sync::mpsc;
+
         let func = Arc::new(func);
-        let results = Arc::new(Mutex::new(Vec::with_capacity(items.len())));
+        let (sender, receiver) = mpsc::channel();
         let mut handles = Vec::new();
+        let num_items = items.len();
 
         for (index, item) in items.into_iter().enumerate() {
             let func_clone = Arc::clone(&func);
-            let results_clone = Arc::clone(&results);
+            let sender_clone = sender.clone();
 
             let handle = thread::spawn(move || {
-                let _result = func_clone(item);
-                let mut results_guard = results_clone.lock().unwrap();
-                if results_guard.len() <= index {
-                    results_guard.resize_with(index + 1, || unreachable!());
-                }
-                // Note: This is a simplified implementation
-                // In practice, you'd want to handle ordering properly
+                let result = func_clone(item);
+                let _ = sender_clone.send((index, result));
             });
 
             handles.push(handle);
+        }
+
+        // Drop the original sender to close the channel
+        drop(sender);
+
+        // Collect results maintaining order
+        let mut results: Vec<Option<R>> = (0..num_items).map(|_| None).collect();
+        for _ in 0..num_items {
+            match receiver.recv() {
+                Ok((index, result)) => {
+                    results[index] = Some(result);
+                }
+                Err(_) => {
+                    return Err(IoError::Other(
+                        "Failed to receive result from worker thread".to_string(),
+                    ))
+                }
+            }
         }
 
         // Wait for all tasks to complete
@@ -255,8 +271,16 @@ impl ThreadPool {
                 .map_err(|_| IoError::Other("Thread panicked".to_string()))?;
         }
 
-        let results = Arc::try_unwrap(results).unwrap().into_inner().unwrap();
-        Ok(results)
+        // Convert Option<R> to R, ensuring all results were received
+        let final_results: Result<Vec<R>> = results
+            .into_iter()
+            .enumerate()
+            .map(|(i, opt)| {
+                opt.ok_or_else(|| IoError::Other(format!("Missing result for item {}", i)))
+            })
+            .collect();
+
+        final_results
     }
 
     /// Get current thread pool statistics
@@ -373,7 +397,7 @@ impl ThreadPool {
             }
         }
 
-        println!("Worker {} ({:?}) shutting down", id, worker_type);
+        println!("Worker {id} ({worker_type:?}) shutting down");
     }
 }
 
@@ -381,16 +405,19 @@ impl ThreadPool {
 static GLOBAL_THREAD_POOL: std::sync::OnceLock<ThreadPool> = std::sync::OnceLock::new();
 
 /// Initialize the global thread pool
+#[allow(dead_code)]
 pub fn init_global_thread_pool(config: ThreadPoolConfig) {
     let _ = GLOBAL_THREAD_POOL.set(ThreadPool::new(config));
 }
 
 /// Get a reference to the global thread pool
+#[allow(dead_code)]
 pub fn global_thread_pool() -> &'static ThreadPool {
     GLOBAL_THREAD_POOL.get_or_init(|| ThreadPool::new(ThreadPoolConfig::default()))
 }
 
 /// Execute a task on the global thread pool
+#[allow(dead_code)]
 pub fn execute<F>(work_type: WorkType, task: F) -> Result<()>
 where
     F: FnOnce() -> Result<()> + Send + 'static,
@@ -399,6 +426,7 @@ where
 }
 
 /// Utility function to determine optimal thread pool configuration based on system
+#[allow(dead_code)]
 pub fn optimal_config() -> ThreadPoolConfig {
     let available_cores = thread::available_parallelism()
         .map(|n| n.get())

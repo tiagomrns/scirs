@@ -89,9 +89,9 @@ impl MemoryPool {
     }
 
     /// Configure the memory pool
-    fn configure(&mut self, max_buffers_per_size: usize, max_pool_memory: usize) {
+    fn configure(&mut self, max_buffers_per_size: usize, max_poolmemory: usize) {
         self.max_buffers_per_size = max_buffers_per_size;
-        self.max_pool_memory = max_pool_memory;
+        self.max_pool_memory = max_poolmemory;
     }
 
     /// Enable or disable the memory pool
@@ -155,17 +155,17 @@ impl MemoryTracker {
         }
     }
 
-    fn record_allocation(&mut self, op_name: &str, size: usize) {
+    fn record_allocation(&mut self, opname: &str, size: usize) {
         if !self.enabled {
             return;
         }
 
         // Update current usage
-        let current = self.current_usage.entry(op_name.to_string()).or_insert(0);
+        let current = self.current_usage.entry(opname.to_string()).or_insert(0);
         *current += size;
 
         // Update peak usage
-        let peak = self.peak_usage.entry(op_name.to_string()).or_insert(0);
+        let peak = self.peak_usage.entry(opname.to_string()).or_insert(0);
         if *current > *peak {
             *peak = *current;
         }
@@ -173,18 +173,18 @@ impl MemoryTracker {
         // Update total allocations
         let total = self
             .total_allocations
-            .entry(op_name.to_string())
+            .entry(opname.to_string())
             .or_insert(0);
         *total += size;
     }
 
     #[allow(dead_code)]
-    fn record_deallocation(&mut self, op_name: &str, size: usize) {
+    fn record_deallocation(&mut self, opname: &str, size: usize) {
         if !self.enabled {
             return;
         }
 
-        let current = self.current_usage.entry(op_name.to_string()).or_insert(0);
+        let current = self.current_usage.entry(opname.to_string()).or_insert(0);
         *current = current.saturating_sub(size);
     }
 
@@ -228,7 +228,7 @@ pub struct MemoryTrackerStats {
 /// Memory-efficient in-place operation that reuses tensor storage when possible
 pub struct InPlaceOp<F: Float> {
     operation: InPlaceOperation,
-    _phantom: std::marker::PhantomData<F>,
+    phantom: std::marker::PhantomData<F>,
 }
 
 #[derive(Debug, Clone, Copy)]
@@ -257,7 +257,7 @@ impl<F: Float> InPlaceOp<F> {
     pub fn new(operation: InPlaceOperation) -> Self {
         Self {
             operation,
-            _phantom: std::marker::PhantomData,
+            phantom: std::marker::PhantomData,
         }
     }
 }
@@ -280,12 +280,12 @@ impl<F: Float> Op<F> for InPlaceOp<F> {
         let mut target = ctx.input(0).to_owned();
 
         // Record memory allocation for tracking
-        let op_name = self.name();
+        let opname = self.name();
         let size = target.len() * std::mem::size_of::<F>();
         MEMORY_TRACKER
             .lock()
             .unwrap()
-            .record_allocation(op_name, size);
+            .record_allocation(opname, size);
 
         match self.operation {
             InPlaceOperation::AddAssign => {
@@ -401,7 +401,7 @@ impl<F: Float> Op<F> for InPlaceOp<F> {
 
 /// Memory-efficient view operation that creates zero-copy views when possible
 pub struct ViewOp {
-    pub new_shape: Vec<usize>,
+    pub newshape: Vec<usize>,
 }
 
 impl<F: Float> Op<F> for ViewOp {
@@ -413,21 +413,21 @@ impl<F: Float> Op<F> for ViewOp {
         let input = ctx.input(0);
 
         // Try to create a view with the new shape
-        let input_shape = input.shape();
-        let input_size: usize = input_shape.iter().product();
-        let new_size: usize = self.new_shape.iter().product();
+        let inputshape = input.shape();
+        let input_size: usize = inputshape.iter().product();
+        let new_size: usize = self.newshape.iter().product();
 
         if input_size != new_size {
             return Err(OpError::IncompatibleShape(format!(
                 "Cannot reshape array of size {} into shape {:?} (size {})",
-                input_size, self.new_shape, new_size
+                input_size, self.newshape, new_size
             )));
         }
 
         // Create a reshaped view - this is zero-copy when possible
         let reshaped = input
             .view()
-            .into_shape_with_order(IxDyn(&self.new_shape))
+            .into_shape_with_order(IxDyn(&self.newshape))
             .map_err(|_| OpError::IncompatibleShape("Cannot create view with new shape".into()))?;
 
         ctx.append_output(reshaped.to_owned());
@@ -439,8 +439,8 @@ impl<F: Float> Op<F> for ViewOp {
         let input = ctx.input(0);
 
         // Gradient needs to be reshaped back to input shape
-        let input_shape = crate::tensor_ops::shape(input);
-        let reshaped_grad = crate::tensor_ops::reshape(gy, &input_shape);
+        let inputshape = crate::tensor_ops::shape(input);
+        let reshaped_grad = crate::tensor_ops::reshape(gy, &inputshape);
         ctx.append_input_grad(0, Some(reshaped_grad));
     }
 }
@@ -448,69 +448,81 @@ impl<F: Float> Op<F> for ViewOp {
 /// Public API functions for memory optimization
 ///
 /// Get a buffer from the memory pool
+#[allow(dead_code)]
 pub fn get_pooled_buffer(size: usize) -> Vec<u8> {
     MEMORY_POOL.lock().unwrap().get_buffer(size)
 }
 
 /// Return a buffer to the memory pool  
+#[allow(dead_code)]
 pub fn return_pooled_buffer(buffer: Vec<u8>) {
     MEMORY_POOL.lock().unwrap().return_buffer(buffer);
 }
 
 /// Configure the memory pool
-pub fn configure_memory_pool(max_buffers_per_size: usize, max_pool_memory: usize) {
+#[allow(dead_code)]
+pub fn configure_memory_pool(_max_buffers_per_size: usize, max_poolmemory: usize) {
     MEMORY_POOL
         .lock()
         .unwrap()
-        .configure(max_buffers_per_size, max_pool_memory);
+        .configure(_max_buffers_per_size, max_poolmemory);
 }
 
 /// Enable or disable the memory pool
+#[allow(dead_code)]
 pub fn set_memory_pool_enabled(enabled: bool) {
     MEMORY_POOL.lock().unwrap().set_enabled(enabled);
 }
 
 /// Clear all buffers from the memory pool
+#[allow(dead_code)]
 pub fn clear_memory_pool() {
     MEMORY_POOL.lock().unwrap().clear();
 }
 
 /// Get memory pool statistics
+#[allow(dead_code)]
 pub fn get_memory_pool_stats() -> MemoryPoolStats {
     MEMORY_POOL.lock().unwrap().stats()
 }
 
 /// Enable memory usage tracking
+#[allow(dead_code)]
 pub fn enable_memory_tracking() {
     MEMORY_TRACKER.lock().unwrap().enable();
 }
 
 /// Disable memory usage tracking
+#[allow(dead_code)]
 pub fn disable_memory_tracking() {
     MEMORY_TRACKER.lock().unwrap().disable();
 }
 
 /// Reset memory tracking statistics
+#[allow(dead_code)]
 pub fn reset_memory_tracking() {
     MEMORY_TRACKER.lock().unwrap().reset();
 }
 
 /// Get memory tracking statistics
+#[allow(dead_code)]
 pub fn get_memory_tracking_stats() -> MemoryTrackerStats {
     MEMORY_TRACKER.lock().unwrap().get_stats()
 }
 
 /// Create a memory-efficient view of a tensor with a new shape
-pub fn efficient_view<'g, F: Float>(tensor: &Tensor<'g, F>, new_shape: &[usize]) -> Tensor<'g, F> {
+#[allow(dead_code)]
+pub fn efficient_view<'g, F: Float>(tensor: &Tensor<'g, F>, newshape: &[usize]) -> Tensor<'g, F> {
     let g = tensor.graph();
     Tensor::builder(g)
         .append_input(tensor, false)
         .build(ViewOp {
-            new_shape: new_shape.to_vec(),
+            newshape: newshape.to_vec(),
         })
 }
 
 /// Perform in-place addition to reduce memory allocations
+#[allow(dead_code)]
 pub fn inplace_add<'g, F: Float>(lhs: &Tensor<'g, F>, rhs: &Tensor<'g, F>) -> Tensor<'g, F> {
     let g = lhs.graph();
     Tensor::builder(g)
@@ -520,6 +532,7 @@ pub fn inplace_add<'g, F: Float>(lhs: &Tensor<'g, F>, rhs: &Tensor<'g, F>) -> Te
 }
 
 /// Perform in-place subtraction to reduce memory allocations
+#[allow(dead_code)]
 pub fn inplace_sub<'g, F: Float>(lhs: &Tensor<'g, F>, rhs: &Tensor<'g, F>) -> Tensor<'g, F> {
     let g = lhs.graph();
     Tensor::builder(g)
@@ -529,6 +542,7 @@ pub fn inplace_sub<'g, F: Float>(lhs: &Tensor<'g, F>, rhs: &Tensor<'g, F>) -> Te
 }
 
 /// Perform in-place multiplication to reduce memory allocations
+#[allow(dead_code)]
 pub fn inplace_mul<'g, F: Float>(lhs: &Tensor<'g, F>, rhs: &Tensor<'g, F>) -> Tensor<'g, F> {
     let g = lhs.graph();
     Tensor::builder(g)
@@ -538,6 +552,7 @@ pub fn inplace_mul<'g, F: Float>(lhs: &Tensor<'g, F>, rhs: &Tensor<'g, F>) -> Te
 }
 
 /// Perform in-place division to reduce memory allocations
+#[allow(dead_code)]
 pub fn inplace_div<'g, F: Float>(lhs: &Tensor<'g, F>, rhs: &Tensor<'g, F>) -> Tensor<'g, F> {
     let g = lhs.graph();
     Tensor::builder(g)
@@ -547,6 +562,7 @@ pub fn inplace_div<'g, F: Float>(lhs: &Tensor<'g, F>, rhs: &Tensor<'g, F>) -> Te
 }
 
 /// Perform in-place negation to reduce memory allocations
+#[allow(dead_code)]
 pub fn inplace_neg<'g, F: Float>(tensor: &Tensor<'g, F>) -> Tensor<'g, F> {
     let g = tensor.graph();
     Tensor::builder(g)
@@ -555,6 +571,7 @@ pub fn inplace_neg<'g, F: Float>(tensor: &Tensor<'g, F>) -> Tensor<'g, F> {
 }
 
 /// Perform in-place absolute value to reduce memory allocations
+#[allow(dead_code)]
 pub fn inplace_abs<'g, F: Float>(tensor: &Tensor<'g, F>) -> Tensor<'g, F> {
     let g = tensor.graph();
     Tensor::builder(g)
@@ -563,6 +580,7 @@ pub fn inplace_abs<'g, F: Float>(tensor: &Tensor<'g, F>) -> Tensor<'g, F> {
 }
 
 /// Perform in-place scalar multiplication to reduce memory allocations
+#[allow(dead_code)]
 pub fn inplace_scalar_mul<'g, F: Float>(
     tensor: &Tensor<'g, F>,
     scalar: &Tensor<'g, F>,
@@ -575,6 +593,7 @@ pub fn inplace_scalar_mul<'g, F: Float>(
 }
 
 /// Memory-efficient tensor creation using the memory pool
+#[allow(dead_code)]
 pub fn efficient_zeros<'g, F: Float>(shape: &[usize], graph: &'g crate::Graph<F>) -> Tensor<'g, F> {
     // For now, use the standard zeros implementation
     // In a full implementation, this would use the memory pool
@@ -595,6 +614,7 @@ pub fn efficient_zeros<'g, F: Float>(shape: &[usize], graph: &'g crate::Graph<F>
 }
 
 /// Memory-efficient tensor creation using the memory pool
+#[allow(dead_code)]
 pub fn efficient_ones<'g, F: Float>(shape: &[usize], graph: &'g crate::Graph<F>) -> Tensor<'g, F> {
     // For now, use the standard ones implementation
     // In a full implementation, this would use the memory pool
@@ -647,21 +667,21 @@ impl MemoryOptimizer {
         if !tracking_stats.current_usage.is_empty() {
             println!("Current Memory Usage by Operation:");
             for (op, usage) in &tracking_stats.current_usage {
-                println!("  {}: {} bytes", op, usage);
+                println!("  {op}: {usage} bytes");
             }
         }
 
         if !tracking_stats.peak_usage.is_empty() {
             println!("Peak Memory Usage by Operation:");
             for (op, usage) in &tracking_stats.peak_usage {
-                println!("  {}: {} bytes", op, usage);
+                println!("  {op}: {usage} bytes");
             }
         }
 
         if !tracking_stats.total_allocations.is_empty() {
             println!("Total Allocations by Operation:");
             for (op, total) in &tracking_stats.total_allocations {
-                println!("  {}: {} bytes", op, total);
+                println!("  {op}: {total} bytes");
             }
         }
     }
@@ -720,13 +740,13 @@ mod tests {
     #[test]
     fn test_view_op() {
         let view_op = ViewOp {
-            new_shape: vec![2, 3],
+            newshape: vec![2, 3],
         };
         assert_eq!(
             <ViewOp as crate::op::Op<f32>>::name(&view_op),
             "MemoryEfficientView"
         );
-        assert_eq!(view_op.new_shape, vec![2, 3]);
+        assert_eq!(view_op.newshape, vec![2, 3]);
     }
 
     #[test]

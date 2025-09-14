@@ -8,7 +8,8 @@
 
 use crate::error::TimeSeriesError;
 use ndarray::{s, Array1, Array2};
-use scirs2_core::validation::check_array_finite;
+use scirs2_core::validation::checkarray_finite;
+use statrs::statistics::Statistics;
 use std::collections::HashMap;
 
 /// Result type for causality testing
@@ -204,8 +205,8 @@ impl CausalityTester {
         y: &Array1<f64>,
         config: &GrangerConfig,
     ) -> CausalityResult<GrangerCausalityResult> {
-        check_array_finite(x, "x")?;
-        check_array_finite(y, "y")?;
+        checkarray_finite(x, "x")?;
+        checkarray_finite(y, "y")?;
 
         if x.len() != y.len() {
             return Err(TimeSeriesError::InvalidInput(
@@ -305,8 +306,8 @@ impl CausalityTester {
         y: &Array1<f64>,
         config: &TransferEntropyConfig,
     ) -> CausalityResult<TransferEntropyResult> {
-        check_array_finite(x, "x")?;
-        check_array_finite(y, "y")?;
+        checkarray_finite(x, "x")?;
+        checkarray_finite(y, "y")?;
 
         if x.len() != y.len() {
             return Err(TimeSeriesError::InvalidInput(
@@ -368,8 +369,8 @@ impl CausalityTester {
         y: &Array1<f64>,
         config: &CCMConfig,
     ) -> CausalityResult<CCMResult> {
-        check_array_finite(x, "x")?;
-        check_array_finite(y, "y")?;
+        checkarray_finite(x, "x")?;
+        checkarray_finite(y, "y")?;
 
         if x.len() != y.len() {
             return Err(TimeSeriesError::InvalidInput(
@@ -448,11 +449,11 @@ impl CausalityTester {
         intervention_point: usize,
         confidence_level: f64,
     ) -> CausalityResult<CausalImpactResult> {
-        check_array_finite(y, "y")?;
+        checkarray_finite(y, "y")?;
 
         if intervention_point >= y.len() {
             return Err(TimeSeriesError::InvalidInput(
-                "Intervention point must be within the time series".to_string(),
+                "Intervention _point must be within the time series".to_string(),
             ));
         }
 
@@ -480,7 +481,7 @@ impl CausalityTester {
 
         // Calculate p-value using standardized effect
         let prediction_std = (&predicted_upper - &predicted_lower) / (2.0 * 1.96); // Approximate standard error
-        let standardized_effect = average_effect / (prediction_std.mean().unwrap_or(1.0));
+        let standardized_effect = average_effect / prediction_std.mean();
         let p_value = 2.0 * (1.0 - self.normal_cdf(standardized_effect.abs()));
 
         Ok(CausalImpactResult {
@@ -565,15 +566,15 @@ impl CausalityTester {
         Ok(x)
     }
 
-    fn f_distribution_p_value(&self, f_stat: f64, df1: usize, df2: usize) -> f64 {
+    fn f_distribution_p_value(&self, fstat: f64, df1: usize, df2: usize) -> f64 {
         // Approximation for F-distribution p-value
         // This is a simplified implementation
-        if f_stat <= 0.0 {
+        if fstat <= 0.0 {
             return 1.0;
         }
 
         // Transform to beta distribution
-        let x = (df1 as f64 * f_stat) / (df1 as f64 * f_stat + df2 as f64);
+        let x = (df1 as f64 * fstat) / (df1 as f64 * fstat + df2 as f64);
         let alpha = df1 as f64 / 2.0;
         let beta = df2 as f64 / 2.0;
 
@@ -779,8 +780,8 @@ impl CausalityTester {
             te_values.push(te_result.transfer_entropy);
         }
 
-        // Calculate p-value as proportion of bootstrap samples >= observed value
-        let count = te_values.iter().filter(|&&te| te >= observed_te).count();
+        // Calculate p-value as proportion of _bootstrap samples >= observed value
+        let count = te_values.iter().filter(|&&_te| _te >= observed_te).count();
         Ok(count as f64 / n_bootstrap as f64)
     }
 
@@ -834,7 +835,7 @@ impl CausalityTester {
     ) -> CausalityResult<f64> {
         if library_size >= x_manifold.nrows() {
             return Err(TimeSeriesError::InvalidInput(
-                "Library size too large".to_string(),
+                "Library _size too large".to_string(),
             ));
         }
 
@@ -845,7 +846,7 @@ impl CausalityTester {
         for i in 0..n_pred {
             let query_point = x_manifold.row(library_size + i);
 
-            // Find nearest neighbors in the library
+            // Find nearest _neighbors in the library
             let mut distances = Vec::new();
             for j in 0..library_size {
                 let library_point = x_manifold.row(j);
@@ -855,7 +856,7 @@ impl CausalityTester {
 
             distances.sort_by(|a, b| a.0.partial_cmp(&b.0).unwrap());
 
-            // Use nearest neighbors to predict y value
+            // Use nearest _neighbors to predict y value
             let mut weighted_sum = 0.0;
             let mut weight_sum = 0.0;
 
@@ -962,12 +963,12 @@ impl CausalityTester {
         // Prepare design matrix with lag terms
         let n = pre_y.len();
         let p = pre_x.ncols();
-        let mut design_matrix = Array2::zeros((n - 1, p + 1)); // +1 for lagged y
+        let mut design_matrix = Array2::zeros((n - 1, p + 1)); // +1 for lagged _y
         let mut response = Array1::zeros(n - 1);
 
         for i in 1..n {
             response[i - 1] = pre_y[i];
-            design_matrix[[i - 1, 0]] = pre_y[i - 1]; // Lagged y
+            design_matrix[[i - 1, 0]] = pre_y[i - 1]; // Lagged _y
             for j in 0..p {
                 design_matrix[[i - 1, j + 1]] = pre_x[[i - 1, j]];
             }
@@ -996,7 +997,7 @@ impl CausalityTester {
         for i in 0..n_post {
             let mut x_new = Array1::zeros(p + 1);
 
-            // Use last observed value or previous prediction as lagged y
+            // Use last observed value or previous prediction as lagged _y
             if i == 0 {
                 x_new[0] = pre_y[pre_y.len() - 1];
             } else {

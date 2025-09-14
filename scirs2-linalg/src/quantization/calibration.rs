@@ -57,7 +57,7 @@ pub struct CalibrationConfig {
     pub percentile: f32,
 
     /// Moving average window size for min-max methods
-    pub window_size: usize,
+    pub windowsize: usize,
 
     /// Whether to use per-channel calibration
     pub per_channel: bool,
@@ -82,7 +82,7 @@ impl Default for CalibrationConfig {
             method: CalibrationMethod::MinMax,
             num_bins: 2048,
             percentile: 0.999,
-            window_size: 10,
+            windowsize: 10,
             per_channel: false,
             symmetric: true,
             ema_factor: 0.1,
@@ -103,6 +103,7 @@ impl Default for CalibrationConfig {
 /// # Returns
 ///
 /// * Calibrated quantization parameters
+#[allow(dead_code)]
 pub fn calibrate_matrix<F>(
     matrix: &ArrayView2<F>,
     bits: u8,
@@ -125,11 +126,11 @@ where
                 calibrate_matrix_per_channel_moving_average(
                     matrix,
                     bits,
-                    config.window_size,
+                    config.windowsize,
                     config.symmetric,
                 )
             } else {
-                calibrate_matrix_moving_average(matrix, bits, config.window_size, config.symmetric)
+                calibrate_matrix_moving_average(matrix, bits, config.windowsize, config.symmetric)
             }
         }
         CalibrationMethod::PercentileCalibration => {
@@ -198,6 +199,7 @@ where
 /// # Returns
 ///
 /// * Calibrated quantization parameters
+#[allow(dead_code)]
 pub fn calibrate_vector<F>(
     vector: &ArrayView1<F>,
     bits: u8,
@@ -214,7 +216,7 @@ where
     match config.method {
         CalibrationMethod::MinMax => calibrate_vector_minmax(vector, bits, config.symmetric),
         CalibrationMethod::MovingAverageMinMax => {
-            calibrate_vector_moving_average(vector, bits, config.window_size, config.symmetric)
+            calibrate_vector_moving_average(vector, bits, config.windowsize, config.symmetric)
         }
         CalibrationMethod::PercentileCalibration => {
             calibrate_vector_percentile(vector, bits, config.percentile, config.symmetric)
@@ -247,7 +249,8 @@ where
 /// # Returns
 ///
 /// Calibration configuration optimized for neural network weights
-pub fn get_weight_calibration_config(_bits: u8, aggressive: bool) -> CalibrationConfig {
+#[allow(dead_code)]
+pub fn get_weight_calibration_config(bits: u8, aggressive: bool) -> CalibrationConfig {
     if aggressive {
         // More aggressive calibration - clips outliers more
         CalibrationConfig {
@@ -283,13 +286,14 @@ pub fn get_weight_calibration_config(_bits: u8, aggressive: bool) -> Calibration
 /// # Returns
 ///
 /// Calibration configuration optimized for neural network activations
+#[allow(dead_code)]
 pub fn get_activation_calibration_config(
     _bits: u8,
     non_negative: bool,
     outlier_sensitive: bool,
 ) -> CalibrationConfig {
     let mut config = if outlier_sensitive {
-        // Outlier-sensitive activations benefit from MSE optimization
+        // Outlier-_sensitive activations benefit from MSE optimization
         CalibrationConfig {
             method: CalibrationMethod::MSEOptimization,
             num_bins: 1024,
@@ -307,7 +311,7 @@ pub fn get_activation_calibration_config(
     };
 
     // For activations like ReLU outputs, asymmetric is better
-    // For activations with both positive and negative values, symmetric may be better
+    // For activations with both positive and _negative values, symmetric may be better
     config.symmetric = !non_negative;
 
     config
@@ -318,6 +322,7 @@ pub fn get_activation_calibration_config(
 // -------------------------------------------------------------------------
 
 /// Simple min-max calibration for matrices
+#[allow(dead_code)]
 fn calibrate_matrix_minmax<F>(
     matrix: &ArrayView2<F>,
     bits: u8,
@@ -355,10 +360,11 @@ where
 }
 
 /// Moving average min-max calibration for matrices
+#[allow(dead_code)]
 fn calibrate_matrix_moving_average<F>(
     matrix: &ArrayView2<F>,
     bits: u8,
-    window_size: usize,
+    windowsize: usize,
     symmetric: bool,
 ) -> LinalgResult<QuantizationParams>
 where
@@ -388,21 +394,22 @@ where
     values.sort_by(|a, b| a.partial_cmp(b).unwrap_or(std::cmp::Ordering::Equal));
 
     // Calculate moving averages to find stable min/max
-    if values.len() <= window_size {
+    if values.len() <= windowsize {
         // Not enough data for moving average, fall back to min-max
         let min_val = *values.first().unwrap();
         let max_val = *values.last().unwrap();
         create_params_from_range(bits, min_val, max_val, symmetric)
     } else {
         // Calculate moving averages
-        let min_val = values.iter().take(window_size).sum::<f32>() / window_size as f32;
-        let max_val = values.iter().rev().take(window_size).sum::<f32>() / window_size as f32;
+        let min_val = values.iter().take(windowsize).sum::<f32>() / windowsize as f32;
+        let max_val = values.iter().rev().take(windowsize).sum::<f32>() / windowsize as f32;
 
         create_params_from_range(bits, min_val, max_val, symmetric)
     }
 }
 
 /// Percentile-based calibration for matrices
+#[allow(dead_code)]
 fn calibrate_matrix_percentile<F>(
     matrix: &ArrayView2<F>,
     bits: u8,
@@ -453,6 +460,7 @@ where
 }
 
 /// Entropy-based calibration for matrices
+#[allow(dead_code)]
 fn calibrate_matrix_entropy<F>(
     matrix: &ArrayView2<F>,
     bits: u8,
@@ -477,6 +485,7 @@ where
 }
 
 /// MSE-based calibration for matrices
+#[allow(dead_code)]
 fn calibrate_matrix_mse<F>(
     matrix: &ArrayView2<F>,
     bits: u8,
@@ -512,6 +521,7 @@ where
 // -------------------------------------------------------------------------
 
 /// Per-channel min-max calibration for matrices
+#[allow(dead_code)]
 fn calibrate_matrix_per_channel_minmax<F>(
     matrix: &ArrayView2<F>,
     bits: u8,
@@ -599,10 +609,11 @@ where
 }
 
 /// Per-channel moving average calibration for matrices
+#[allow(dead_code)]
 fn calibrate_matrix_per_channel_moving_average<F>(
     matrix: &ArrayView2<F>,
     bits: u8,
-    window_size: usize,
+    windowsize: usize,
     symmetric: bool,
 ) -> LinalgResult<QuantizationParams>
 where
@@ -648,13 +659,13 @@ where
         values.sort_by(|a, b| a.partial_cmp(b).unwrap_or(std::cmp::Ordering::Equal));
 
         // Calculate moving averages to find stable min/max
-        let (col_min, col_max) = if values.len() <= window_size {
+        let (col_min, col_max) = if values.len() <= windowsize {
             // Not enough data for moving average, fall back to min-max
             (*values.first().unwrap(), *values.last().unwrap())
         } else {
             // Calculate moving averages
-            let min_val = values.iter().take(window_size).sum::<f32>() / window_size as f32;
-            let max_val = values.iter().rev().take(window_size).sum::<f32>() / window_size as f32;
+            let min_val = values.iter().take(windowsize).sum::<f32>() / windowsize as f32;
+            let max_val = values.iter().rev().take(windowsize).sum::<f32>() / windowsize as f32;
             (min_val, max_val)
         };
 
@@ -700,6 +711,7 @@ where
 }
 
 /// Per-channel percentile calibration for matrices
+#[allow(dead_code)]
 fn calibrate_matrix_per_channel_percentile<F>(
     matrix: &ArrayView2<F>,
     bits: u8,
@@ -804,6 +816,7 @@ where
 }
 
 /// Per-channel entropy calibration for matrices
+#[allow(dead_code)]
 fn calibrate_matrix_per_channel_entropy<F>(
     matrix: &ArrayView2<F>,
     bits: u8,
@@ -879,6 +892,7 @@ where
 }
 
 /// Per-channel MSE calibration for matrices
+#[allow(dead_code)]
 fn calibrate_matrix_per_channel_mse<F>(
     matrix: &ArrayView2<F>,
     bits: u8,
@@ -958,6 +972,7 @@ where
 // -------------------------------------------------------------------------
 
 /// Simple min-max calibration for vectors
+#[allow(dead_code)]
 fn calibrate_vector_minmax<F>(
     vector: &ArrayView1<F>,
     bits: u8,
@@ -995,10 +1010,11 @@ where
 }
 
 /// Moving average min-max calibration for vectors
+#[allow(dead_code)]
 fn calibrate_vector_moving_average<F>(
     vector: &ArrayView1<F>,
     bits: u8,
-    window_size: usize,
+    windowsize: usize,
     symmetric: bool,
 ) -> LinalgResult<QuantizationParams>
 where
@@ -1028,21 +1044,22 @@ where
     values.sort_by(|a, b| a.partial_cmp(b).unwrap_or(std::cmp::Ordering::Equal));
 
     // Calculate moving averages to find stable min/max
-    if values.len() <= window_size {
+    if values.len() <= windowsize {
         // Not enough data for moving average, fall back to min-max
         let min_val = *values.first().unwrap();
         let max_val = *values.last().unwrap();
         create_params_from_range(bits, min_val, max_val, symmetric)
     } else {
         // Calculate moving averages
-        let min_val = values.iter().take(window_size).sum::<f32>() / window_size as f32;
-        let max_val = values.iter().rev().take(window_size).sum::<f32>() / window_size as f32;
+        let min_val = values.iter().take(windowsize).sum::<f32>() / windowsize as f32;
+        let max_val = values.iter().rev().take(windowsize).sum::<f32>() / windowsize as f32;
 
         create_params_from_range(bits, min_val, max_val, symmetric)
     }
 }
 
 /// Percentile-based calibration for vectors
+#[allow(dead_code)]
 fn calibrate_vector_percentile<F>(
     vector: &ArrayView1<F>,
     bits: u8,
@@ -1093,6 +1110,7 @@ where
 }
 
 /// Entropy-based calibration for vectors
+#[allow(dead_code)]
 fn calibrate_vector_entropy<F>(
     vector: &ArrayView1<F>,
     bits: u8,
@@ -1117,6 +1135,7 @@ where
 }
 
 /// MSE-based calibration for vectors
+#[allow(dead_code)]
 fn calibrate_vector_mse<F>(
     vector: &ArrayView1<F>,
     bits: u8,
@@ -1152,6 +1171,7 @@ where
 // -------------------------------------------------------------------------
 
 /// Find the minimum and maximum values in a matrix
+#[allow(dead_code)]
 pub fn find_min_max<F>(matrix: &ArrayView2<F>) -> (f32, f32)
 where
     F: num_traits::Float + num_traits::AsPrimitive<f32>,
@@ -1182,6 +1202,7 @@ where
 }
 
 /// Find the minimum and maximum values in a vector
+#[allow(dead_code)]
 pub fn find_min_max_vec<F>(vector: &ArrayView1<F>) -> (f32, f32)
 where
     F: num_traits::Float + num_traits::AsPrimitive<f32>,
@@ -1212,6 +1233,7 @@ where
 }
 
 /// Create a histogram of values from a matrix
+#[allow(dead_code)]
 fn create_histogram<F>(
     matrix: &ArrayView2<F>,
     min_val: f32,
@@ -1230,8 +1252,8 @@ where
         return histogram;
     }
 
-    for &val in matrix.iter() {
-        let val_f32 = val.as_();
+    for &_val in matrix.iter() {
+        let val_f32 = _val.as_();
         if val_f32.is_finite() {
             let bin_idx = ((val_f32 - min_val) / bin_width).floor() as usize;
             let bin_idx = bin_idx.min(num_bins - 1); // Ensure we don't go out of bounds
@@ -1243,6 +1265,7 @@ where
 }
 
 /// Create a histogram of values from a vector
+#[allow(dead_code)]
 fn create_histogram_vec<F>(
     vector: &ArrayView1<F>,
     min_val: f32,
@@ -1261,8 +1284,8 @@ where
         return histogram;
     }
 
-    for &val in vector.iter() {
-        let val_f32 = val.as_();
+    for &_val in vector.iter() {
+        let val_f32 = _val.as_();
         if val_f32.is_finite() {
             let bin_idx = ((val_f32 - min_val) / bin_width).floor() as usize;
             let bin_idx = bin_idx.min(num_bins - 1); // Ensure we don't go out of bounds
@@ -1274,6 +1297,7 @@ where
 }
 
 /// Optimize thresholds using KL divergence
+#[allow(dead_code)]
 fn optimize_thresholds_kl_divergence(
     histogram: &[usize],
     min_val: f32,
@@ -1380,6 +1404,7 @@ fn optimize_thresholds_kl_divergence(
 }
 
 /// Calculate KL divergence for symmetric quantization
+#[allow(dead_code)]
 fn calculate_kl_divergence_symmetric(
     distribution: &[f32],
     min_val: f32,
@@ -1403,7 +1428,7 @@ fn calculate_kl_divergence_symmetric(
         } else if orig_val < -abs_max {
             -abs_max
         } else {
-            // Round to nearest quantization step
+            // Round to nearest quantization _step
             (orig_val / quantization_step).round() * quantization_step
         };
 
@@ -1428,6 +1453,7 @@ fn calculate_kl_divergence_symmetric(
 }
 
 /// Calculate KL divergence for asymmetric quantization
+#[allow(dead_code)]
 fn calculate_kl_divergence_asymmetric(
     distribution: &[f32],
     min_val: f32,
@@ -1452,7 +1478,7 @@ fn calculate_kl_divergence_asymmetric(
         } else if orig_val < quant_min {
             quant_min
         } else {
-            // Round to nearest quantization step
+            // Round to nearest quantization _step
             let steps = ((orig_val - quant_min) / quantization_step).round();
             quant_min + steps * quantization_step
         };
@@ -1478,7 +1504,8 @@ fn calculate_kl_divergence_asymmetric(
 }
 
 /// Optimize symmetric scale factor using MSE
-fn optimize_symmetric_scale<F>(matrix: &ArrayView2<F>, bits: u8, base_scale: f32) -> f32
+#[allow(dead_code)]
+fn optimize_symmetric_scale<F>(matrix: &ArrayView2<F>, bits: u8, basescale: f32) -> f32
 where
     F: num_traits::Float + Debug + num_traits::AsPrimitive<f32> + num_traits::FromPrimitive,
     f32: num_traits::AsPrimitive<F>,
@@ -1487,11 +1514,11 @@ where
     let scales: Vec<f32> = (0..num_trials)
         .map(|i| {
             let factor = 0.5 + 1.5 * (i as f32 / (num_trials - 1) as f32);
-            base_scale * factor
+            basescale * factor
         })
         .collect();
 
-    let mut best_scale = base_scale;
+    let mut best_scale = basescale;
     let mut min_mse = f32::MAX;
 
     // Test each scale factor
@@ -1518,12 +1545,12 @@ where
 
         // Manually simulate quantization and dequantization for F type
         let matrix_f32 = matrix.mapv(|x| x.as_());
-        let scale = params.scale;
+        let current_scale = params.scale;
         let dequantized = matrix_f32.mapv(|x| {
             let quantized = (x / scale)
                 .round()
                 .clamp(-(1 << (bits - 1)) as f32, ((1 << (bits - 1)) - 1) as f32);
-            quantized * scale
+            quantized * current_scale
         });
 
         // Calculate MSE
@@ -1539,7 +1566,8 @@ where
 }
 
 /// Optimize symmetric scale factor for vectors using MSE
-fn optimize_symmetric_scale_vec<F>(vector: &ArrayView1<F>, bits: u8, base_scale: f32) -> f32
+#[allow(dead_code)]
+fn optimize_symmetric_scale_vec<F>(_vector: &ArrayView1<F>, bits: u8, basescale: f32) -> f32
 where
     F: num_traits::Float + Debug + num_traits::AsPrimitive<f32> + num_traits::FromPrimitive,
     f32: num_traits::AsPrimitive<F>,
@@ -1548,17 +1576,17 @@ where
     let scales: Vec<f32> = (0..num_trials)
         .map(|i| {
             let factor = 0.5 + 1.5 * (i as f32 / (num_trials - 1) as f32);
-            base_scale * factor
+            basescale * factor
         })
         .collect();
 
-    let mut best_scale = base_scale;
+    let mut best_scale = basescale;
     let mut min_mse = f32::MAX;
 
     // Test each scale factor
     for &scale in &scales {
         // Create temporary QuantizationParams
-        let abs_max = vector
+        let abs_max = _vector
             .mapv(|x| x.as_().abs())
             .fold(0.0, |a: f32, &b| a.max(b));
         let params = QuantizationParams {
@@ -1578,17 +1606,17 @@ where
         };
 
         // Manually simulate quantization and dequantization for F type
-        let vector_f32 = vector.mapv(|x| x.as_());
-        let scale = params.scale;
+        let vector_f32 = _vector.mapv(|x| x.as_());
+        let current_scale = params.scale;
         let dequantized = vector_f32.mapv(|x| {
             let quantized = (x / scale)
                 .round()
                 .clamp(-(1 << (bits - 1)) as f32, ((1 << (bits - 1)) - 1) as f32);
-            quantized * scale
+            quantized * current_scale
         });
 
         // Calculate MSE
-        let mse = (&vector_f32 - &dequantized).mapv(|x| x * x).sum() / vector.len() as f32;
+        let mse = (&vector_f32 - &dequantized).mapv(|x| x * x).sum() / _vector.len() as f32;
 
         if mse < min_mse {
             min_mse = mse;
@@ -1600,6 +1628,7 @@ where
 }
 
 /// Optimize affine quantization parameters (scale and zero point) using MSE
+#[allow(dead_code)]
 fn optimize_affine_params<F>(
     matrix: &ArrayView2<F>,
     bits: u8,
@@ -1631,13 +1660,13 @@ where
     let mut best_zero_point = base_zero_point;
     let mut min_mse = f32::MAX;
 
-    // Test each combination of scale and zero point
-    for &scale in &scales {
+    // Test each combination of _scale and zero _point
+    for &_scale in &scales {
         for &zero_point in &zero_points {
             // Create temporary QuantizationParams
             let mut params = QuantizationParams {
                 bits,
-                scale,
+                scale: _scale,
                 zero_point,
                 min_val: 0.0, // Will be set by quantize_matrix
                 max_val: 0.0, // Will be set by quantize_matrix
@@ -1686,6 +1715,7 @@ where
 }
 
 /// Optimize affine quantization parameters for vectors using MSE
+#[allow(dead_code)]
 fn optimize_affine_params_vec<F>(
     vector: &ArrayView1<F>,
     bits: u8,
@@ -1717,13 +1747,13 @@ where
     let mut best_zero_point = base_zero_point;
     let mut min_mse = f32::MAX;
 
-    // Test each combination of scale and zero point
-    for &scale in &scales {
+    // Test each combination of _scale and zero _point
+    for &_scale in &scales {
         for &zero_point in &zero_points {
             // Create temporary QuantizationParams
             let mut params = QuantizationParams {
                 bits,
-                scale,
+                scale: _scale,
                 zero_point,
                 min_val: 0.0, // Will be set by quantize_vector
                 max_val: 0.0, // Will be set by quantize_vector
@@ -1772,6 +1802,7 @@ where
 }
 
 /// Create QuantizationParams from a min-max range
+#[allow(dead_code)]
 pub fn create_params_from_range(
     bits: u8,
     min_val: f32,
@@ -1803,6 +1834,7 @@ pub fn create_params_from_range(
 }
 
 /// Determine the appropriate data type based on bit width
+#[allow(dead_code)]
 pub fn determine_data_type(bits: u8) -> super::QuantizedDataType {
     use super::QuantizedDataType;
 

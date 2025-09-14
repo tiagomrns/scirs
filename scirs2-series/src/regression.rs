@@ -8,7 +8,7 @@
 
 use crate::error::TimeSeriesError;
 use ndarray::{s, Array1, Array2};
-use scirs2_core::validation::check_array_finite;
+use scirs2_core::validation::checkarray_finite;
 
 /// Result type for regression models
 pub type RegressionResult<T> = Result<T, TimeSeriesError>;
@@ -260,8 +260,8 @@ impl TimeSeriesRegression {
         x: &Array1<f64>,
         config: &DistributedLagConfig,
     ) -> RegressionResult<DistributedLagResult> {
-        check_array_finite(y, "y")?;
-        check_array_finite(x, "x")?;
+        checkarray_finite(y, "y")?;
+        checkarray_finite(x, "x")?;
 
         if y.len() != x.len() {
             return Err(TimeSeriesError::InvalidInput(
@@ -337,8 +337,8 @@ impl TimeSeriesRegression {
         x: &Array1<f64>,
         config: &ARDLConfig,
     ) -> RegressionResult<ARDLResult> {
-        check_array_finite(y, "y")?;
-        check_array_finite(x, "x")?;
+        checkarray_finite(y, "y")?;
+        checkarray_finite(x, "x")?;
 
         if y.len() != x.len() {
             return Err(TimeSeriesError::InvalidInput(
@@ -460,8 +460,8 @@ impl TimeSeriesRegression {
         x: &Array1<f64>,
         config: &ErrorCorrectionConfig,
     ) -> RegressionResult<ErrorCorrectionResult> {
-        check_array_finite(y, "y")?;
-        check_array_finite(x, "x")?;
+        checkarray_finite(y, "y")?;
+        checkarray_finite(x, "x")?;
 
         if y.len() != x.len() {
             return Err(TimeSeriesError::InvalidInput(
@@ -522,7 +522,7 @@ impl TimeSeriesRegression {
         x: &Array2<f64>,
         config: &ARIMAErrorsConfig,
     ) -> RegressionResult<ARIMAErrorsResult> {
-        check_array_finite(y, "y")?;
+        checkarray_finite(y, "y")?;
 
         if y.len() != x.nrows() {
             return Err(TimeSeriesError::InvalidInput(

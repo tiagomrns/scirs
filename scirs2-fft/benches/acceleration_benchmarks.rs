@@ -3,7 +3,7 @@
 //! This benchmark suite provides formal performance measurement for all acceleration
 //! features including multi-GPU processing and specialized hardware support.
 
-use criterion::{black_box, criterion_group, criterion_main, BenchmarkId, Criterion};
+use criterion::{criterion_group, criterion_main, BenchmarkId, Criterion};
 use scirs2_fft::{
     // GPU backends
     gpu_sparse_fft,
@@ -24,9 +24,10 @@ use scirs2_fft::{
 
     GPUBackend,
 };
-use std::f64::consts::PI;
+use std::hint::black_box;
 
 /// Create a test signal with specified sparse frequency components
+#[allow(dead_code)]
 fn create_sparse_signal(n: usize, sparsity: usize) -> Vec<f64> {
     let mut signal = vec![0.0; n];
 
@@ -54,6 +55,7 @@ fn create_sparse_signal(n: usize, sparsity: usize) -> Vec<f64> {
 }
 
 /// Benchmark CPU sparse FFT implementation
+#[allow(dead_code)]
 fn bench_cpu_sparse_fft(c: &mut Criterion) {
     let mut group = c.benchmark_group("cpu_sparse_fft");
 
@@ -98,6 +100,7 @@ fn bench_cpu_sparse_fft(c: &mut Criterion) {
 }
 
 /// Benchmark GPU sparse FFT implementations
+#[allow(dead_code)]
 fn bench_gpu_sparse_fft(c: &mut Criterion) {
     let mut group = c.benchmark_group("gpu_sparse_fft");
 
@@ -114,7 +117,7 @@ fn bench_gpu_sparse_fft(c: &mut Criterion) {
         for (backend_name, backend, available) in &backends {
             if *available {
                 group.bench_with_input(
-                    BenchmarkId::new(format!("{}_sublinear", backend_name), signal_size),
+                    BenchmarkId::new(format!("{backend_name}_sublinear"), signal_size),
                     &signal,
                     |b, signal| {
                         b.iter(|| {
@@ -131,7 +134,7 @@ fn bench_gpu_sparse_fft(c: &mut Criterion) {
                 );
 
                 group.bench_with_input(
-                    BenchmarkId::new(format!("{}_compressed_sensing", backend_name), signal_size),
+                    BenchmarkId::new(format!("{backend_name}_compressed_sensing"), signal_size),
                     &signal,
                     |b, signal| {
                         b.iter(|| {
@@ -154,6 +157,7 @@ fn bench_gpu_sparse_fft(c: &mut Criterion) {
 }
 
 /// Benchmark multi-GPU sparse FFT processing
+#[allow(dead_code)]
 fn bench_multi_gpu_sparse_fft(c: &mut Criterion) {
     let mut group = c.benchmark_group("multi_gpu_sparse_fft");
 
@@ -183,6 +187,7 @@ fn bench_multi_gpu_sparse_fft(c: &mut Criterion) {
 }
 
 /// Benchmark specialized hardware acceleration
+#[allow(dead_code)]
 fn bench_specialized_hardware(c: &mut Criterion) {
     let mut group = c.benchmark_group("specialized_hardware");
 
@@ -213,6 +218,7 @@ fn bench_specialized_hardware(c: &mut Criterion) {
 }
 
 /// Benchmark scaling behavior across different sparsity levels
+#[allow(dead_code)]
 fn bench_sparsity_scaling(c: &mut Criterion) {
     let mut group = c.benchmark_group("sparsity_scaling");
 
@@ -275,6 +281,7 @@ fn bench_sparsity_scaling(c: &mut Criterion) {
 }
 
 /// Benchmark algorithm comparison across acceleration methods
+#[allow(dead_code)]
 fn bench_algorithm_comparison(c: &mut Criterion) {
     let mut group = c.benchmark_group("algorithm_comparison");
 
@@ -292,7 +299,7 @@ fn bench_algorithm_comparison(c: &mut Criterion) {
     for algorithm in &algorithms {
         // CPU implementation
         group.bench_with_input(
-            BenchmarkId::new("cpu", format!("{:?}", algorithm)),
+            BenchmarkId::new("cpu", format!("{algorithm:?}")),
             &signal,
             |b, signal| {
                 b.iter(|| {
@@ -309,7 +316,7 @@ fn bench_algorithm_comparison(c: &mut Criterion) {
 
         // Multi-GPU implementation
         group.bench_with_input(
-            BenchmarkId::new("multi_gpu", format!("{:?}", algorithm)),
+            BenchmarkId::new("multi_gpu", format!("{algorithm:?}")),
             &signal,
             |b, signal| {
                 b.iter(|| {
@@ -333,7 +340,7 @@ fn bench_algorithm_comparison(c: &mut Criterion) {
         };
 
         group.bench_with_input(
-            BenchmarkId::new("specialized_hardware", format!("{:?}", algorithm)),
+            BenchmarkId::new("specialized_hardware", format!("{algorithm:?}")),
             &signal,
             |b, signal| {
                 b.iter(|| {
@@ -348,6 +355,7 @@ fn bench_algorithm_comparison(c: &mut Criterion) {
 }
 
 /// Benchmark memory efficiency across different acceleration methods
+#[allow(dead_code)]
 fn bench_memory_efficiency(c: &mut Criterion) {
     let mut group = c.benchmark_group("memory_efficiency");
 

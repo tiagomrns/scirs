@@ -1,14 +1,14 @@
-//! Filter analysis and characterization functions
-//!
-//! This module provides comprehensive analysis capabilities for digital filters
-//! including frequency response analysis, stability checking, and filter
-//! characterization for design validation and performance evaluation.
+// Filter analysis and characterization functions
+//
+// This module provides comprehensive analysis capabilities for digital filters
+// including frequency response analysis, stability checking, and filter
+// characterization for design validation and performance evaluation.
 
+use super::application::{evaluate_transfer_function, find_polynomial_roots, group_delay};
 use crate::error::{SignalError, SignalResult};
 use num_complex::Complex64;
 
-use super::application::{evaluate_transfer_function, find_polynomial_roots, group_delay};
-
+#[allow(unused_imports)]
 /// Comprehensive filter analysis results
 ///
 /// Contains frequency response characteristics, stability information,
@@ -110,6 +110,7 @@ impl Default for FilterStability {
 /// println!("3dB cutoff: {:.3}", analysis.cutoff_3db);
 /// println!("Stopband attenuation: {:.1} dB", analysis.stopband_attenuation);
 /// ```
+#[allow(dead_code)]
 pub fn analyze_filter(
     b: &[f64],
     a: &[f64],
@@ -117,7 +118,7 @@ pub fn analyze_filter(
 ) -> SignalResult<FilterAnalysis> {
     let n_points = num_points.unwrap_or(512);
 
-    // Generate frequency points from 0 to π (normalized 0 to 1)
+    // Generate frequency _points from 0 to π (normalized 0 to 1)
     let frequencies: Vec<f64> = (0..n_points)
         .map(|i| i as f64 / (n_points - 1) as f64)
         .collect();
@@ -163,14 +164,14 @@ pub fn analyze_filter(
         .iter()
         .enumerate()
         .filter(|(_, &f)| f <= passband_end)
-        .map(|(i, _)| i)
+        .map(|(i_, _)| i_)
         .collect();
 
     let stopband_indices: Vec<usize> = frequencies
         .iter()
         .enumerate()
         .filter(|(_, &f)| f >= stopband_start)
-        .map(|(i, _)| i)
+        .map(|(i_, _)| i_)
         .collect();
 
     let passband_ripple = if !passband_indices.is_empty() {
@@ -239,6 +240,7 @@ pub fn analyze_filter(
 /// println!("Filter is stable: {}", stability.is_stable);
 /// println!("Stability margin: {:.6}", stability.stability_margin);
 /// ```
+#[allow(dead_code)]
 pub fn check_filter_stability(a: &[f64]) -> SignalResult<FilterStability> {
     if a.is_empty() || a[0].abs() < 1e-15 {
         return Err(SignalError::ValueError(
@@ -299,6 +301,7 @@ pub fn check_filter_stability(a: &[f64]) -> SignalResult<FilterStability> {
 /// let freqs = vec![0.0, 0.1, 0.2, 0.3, 0.4, 0.5];
 /// let (mag, phase) = frequency_response(&b, &a, &freqs).unwrap();
 /// ```
+#[allow(dead_code)]
 pub fn frequency_response(
     b: &[f64],
     a: &[f64],
@@ -355,6 +358,7 @@ pub fn frequency_response(
 /// println!("Number of zeros: {}", zeros.len());
 /// println!("Number of poles: {}", poles.len());
 /// ```
+#[allow(dead_code)]
 pub fn find_poles_zeros(b: &[f64], a: &[f64]) -> SignalResult<(Vec<Complex64>, Vec<Complex64>)> {
     if a.is_empty() || a[0].abs() < 1e-15 {
         return Err(SignalError::ValueError(
@@ -398,8 +402,9 @@ pub fn find_poles_zeros(b: &[f64], a: &[f64]) -> SignalResult<(Vec<Complex64>, V
 /// let q = compute_q_factor(&b, &a, 512).unwrap();
 /// println!("Q factor: {:.2}", q);
 /// ```
-pub fn compute_q_factor(b: &[f64], a: &[f64], num_points: usize) -> SignalResult<f64> {
-    let analysis = analyze_filter(b, a, Some(num_points))?;
+#[allow(dead_code)]
+pub fn compute_q_factor(b: &[f64], a: &[f64], numpoints: usize) -> SignalResult<f64> {
+    let analysis = analyze_filter(b, a, Some(numpoints))?;
 
     // Find the peak frequency
     let max_mag = analysis.magnitude.iter().fold(0.0f64, |a, &b| a.max(b));
@@ -411,7 +416,7 @@ pub fn compute_q_factor(b: &[f64], a: &[f64], num_points: usize) -> SignalResult
 
     let peak_freq = analysis.frequencies[peak_idx];
 
-    // Find -3dB points around the peak
+    // Find -3dB _points around the peak
     let target_mag = max_mag / std::f64::consts::SQRT_2; // -3dB point
 
     let mut lower_freq = 0.0;
@@ -445,10 +450,11 @@ pub fn compute_q_factor(b: &[f64], a: &[f64], num_points: usize) -> SignalResult
 // Helper functions
 
 /// Find the frequency where magnitude drops to a specific dB level
-fn find_cutoff_frequency(frequencies: &[f64], magnitude_db: &[f64], target_db: f64) -> f64 {
+#[allow(dead_code)]
+fn find_cutoff_frequency(frequencies: &[f64], magnitude_db: &[f64], targetdb: f64) -> f64 {
     // Find the index where magnitude first drops below target
     for (i, &mag_db) in magnitude_db.iter().enumerate() {
-        if mag_db <= target_db {
+        if mag_db <= targetdb {
             if i == 0 {
                 return frequencies[0];
             }
@@ -462,7 +468,7 @@ fn find_cutoff_frequency(frequencies: &[f64], magnitude_db: &[f64], target_db: f
                 return f1;
             }
 
-            let t = (target_db - m1) / (m2 - m1);
+            let t = (targetdb - m1) / (m2 - m1);
             return f1 + t * (f2 - f1);
         }
     }

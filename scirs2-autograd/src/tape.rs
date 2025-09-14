@@ -111,7 +111,7 @@ impl<F: Float + Debug + Send + Sync + 'static> GradientTape<F> {
     ///
     /// * `node` - The operation node
     /// * `result_tensor` - The tensor produced by the operation
-    pub fn record_operation(&self, node: Arc<Node<F>>, result_tensor: &Tensor<F>) {
+    pub fn record_operation(&self, node: Arc<Node<F>>, resulttensor: &Tensor<F>) {
         if !self.is_recording() {
             return;
         }
@@ -208,7 +208,7 @@ impl<F: Float + Debug + Send + Sync + 'static> GradientContext<F> {
     /// A new GradientContext instance
     pub fn new(persistent: bool) -> Self {
         Self {
-            tape: Arc::new(GradientTape::new(persistent)),
+            tape: Arc::new(GradientTape::new(_persistent)),
         }
     }
 

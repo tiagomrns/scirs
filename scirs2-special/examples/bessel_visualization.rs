@@ -10,6 +10,7 @@ use scirs2_special::bessel::{i0, i1, j0, j1, jn, k0, k1, y0, y1};
 use std::fs::File;
 use std::io::{self, Write};
 
+#[allow(dead_code)]
 fn main() -> io::Result<()> {
     // Create output file
     let mut file = File::create("bessel_functions.csv")?;

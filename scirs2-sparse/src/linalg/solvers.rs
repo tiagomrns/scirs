@@ -13,6 +13,7 @@ use std::iter::Sum;
 // The actual implementations should be copied from linalg.rs
 
 /// Solve a sparse linear system Ax = b
+#[allow(dead_code)]
 pub fn spsolve<F>(a: &CsrMatrix<F>, b: &[F]) -> SparseResult<Vec<F>>
 where
     F: Float + NumAssign + Sum + 'static + std::fmt::Debug,
@@ -25,6 +26,7 @@ where
 }
 
 /// Solve a sparse linear system using direct methods
+#[allow(dead_code)]
 pub fn sparse_direct_solve<F>(
     a: &CsrMatrix<F>,
     b: &[F],
@@ -56,6 +58,7 @@ where
 }
 
 /// Solve a least squares problem
+#[allow(dead_code)]
 pub fn sparse_lstsq<F>(a: &CsrMatrix<F>, b: &[F]) -> SparseResult<Vec<F>>
 where
     F: Float + NumAssign + Sum + 'static + std::fmt::Debug,
@@ -80,6 +83,7 @@ where
 }
 
 /// Compute matrix norm
+#[allow(dead_code)]
 pub fn norm<F>(a: &CsrMatrix<F>, ord: &str) -> SparseResult<F>
 where
     F: Float + NumAssign + Sum + 'static + std::fmt::Debug,
@@ -124,11 +128,12 @@ where
             let sum_squares: F = a.data.iter().map(|v| *v * *v).sum();
             Ok(sum_squares.sqrt())
         }
-        _ => Err(SparseError::ValueError(format!("Unknown norm: {}", ord))),
+        _ => Err(SparseError::ValueError(format!("Unknown norm: {ord}"))),
     }
 }
 
 /// Matrix multiplication
+#[allow(dead_code)]
 pub fn matmul<F>(a: &CsrMatrix<F>, b: &CsrMatrix<F>) -> SparseResult<CsrMatrix<F>>
 where
     F: Float + NumAssign + Sum + 'static + std::fmt::Debug,
@@ -156,6 +161,7 @@ where
 }
 
 /// Matrix addition
+#[allow(dead_code)]
 pub fn add<F>(a: &CsrMatrix<F>, b: &CsrMatrix<F>) -> SparseResult<CsrMatrix<F>>
 where
     F: Float + NumAssign + Sum + 'static + std::fmt::Debug,
@@ -197,6 +203,7 @@ where
 }
 
 /// Element-wise multiplication (Hadamard product)
+#[allow(dead_code)]
 pub fn multiply<F>(a: &CsrMatrix<F>, b: &CsrMatrix<F>) -> SparseResult<CsrMatrix<F>>
 where
     F: Float + NumAssign + Sum + 'static + std::fmt::Debug,
@@ -229,6 +236,7 @@ where
 }
 
 /// Create a diagonal matrix
+#[allow(dead_code)]
 pub fn diag_matrix<F>(diag: &[F], n: Option<usize>) -> SparseResult<CsrMatrix<F>>
 where
     F: Float + NumAssign + Sum + 'static + std::fmt::Debug,
@@ -256,6 +264,7 @@ where
 }
 
 /// Create an identity matrix
+#[allow(dead_code)]
 pub fn eye<F>(n: usize) -> SparseResult<CsrMatrix<F>>
 where
     F: Float + NumAssign + Sum + 'static + std::fmt::Debug,
@@ -265,6 +274,7 @@ where
 }
 
 /// Matrix inverse
+#[allow(dead_code)]
 pub fn inv<F>(a: &CsrMatrix<F>) -> SparseResult<CsrMatrix<F>>
 where
     F: Float + NumAssign + Sum + 'static + std::fmt::Debug,
@@ -309,6 +319,7 @@ where
 // Matrix exponential functionality is now available in linalg/expm.rs module
 
 /// Matrix power
+#[allow(dead_code)]
 pub fn matrix_power<F>(a: &CsrMatrix<F>, power: i32) -> SparseResult<CsrMatrix<F>>
 where
     F: Float + NumAssign + Sum + 'static + std::fmt::Debug,
@@ -339,6 +350,7 @@ where
 
 // Helper functions
 
+#[allow(dead_code)]
 fn gaussian_elimination<F>(a: &[Vec<F>], b: &[F]) -> SparseResult<Vec<F>>
 where
     F: Float + NumAssign,

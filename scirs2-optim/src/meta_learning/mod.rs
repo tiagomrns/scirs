@@ -131,9 +131,9 @@ impl<A: Float + ScalarOperand + Debug, D: Dimension> MetaOptimizer<A, D> {
         &mut self,
         input_size: usize,
         hidden_size: usize,
-        output_size: usize,
+        outputsize: usize,
     ) {
-        let predictor = HyperparameterPredictor::new(input_size, hidden_size, output_size);
+        let predictor = HyperparameterPredictor::new(input_size, hidden_size, outputsize);
         self.predictor_network = Some(predictor);
     }
 
@@ -227,20 +227,20 @@ impl<A: Float + ScalarOperand + Debug, D: Dimension> MetaOptimizer<A, D> {
 
 impl<A: Float + ScalarOperand + Debug> HyperparameterPredictor<A> {
     /// Create a new hyperparameter predictor
-    pub fn new(input_size: usize, hidden_size: usize, output_size: usize) -> Self {
+    pub fn new(_input_size: usize, hidden_size: usize, outputsize: usize) -> Self {
         // Initialize with small random weights
-        let input_weights = Array2::from_shape_fn((hidden_size, input_size), |_| {
+        let input_weights = Array2::from_shape_fn((hidden_size, _input_size), |_| {
             A::from(0.01).unwrap()
                 * (A::from(rand::random::<f64>()).unwrap() - A::from(0.5).unwrap())
         });
 
-        let output_weights = Array2::from_shape_fn((output_size, hidden_size), |_| {
+        let output_weights = Array2::from_shape_fn((outputsize, hidden_size), |_| {
             A::from(0.01).unwrap()
                 * (A::from(rand::random::<f64>()).unwrap() - A::from(0.5).unwrap())
         });
 
         let input_bias = Array1::zeros(hidden_size);
-        let output_bias = Array1::zeros(output_size);
+        let output_bias = Array1::zeros(outputsize);
 
         Self {
             input_weights,
@@ -295,8 +295,8 @@ impl<A: Float + ScalarOperand + Debug> HyperparameterPredictor<A> {
 
     /// Forward pass through output layer
     fn forward_output(&self, hidden: &Array1<A>) -> Result<Array1<A>> {
-        let output_size = self.output_weights.nrows();
-        let mut output = Array1::zeros(output_size);
+        let outputsize = self.output_weights.nrows();
+        let mut output = Array1::zeros(outputsize);
 
         // Linear transformation: output = W * hidden + b
         for (i, out) in output.iter_mut().enumerate() {
@@ -679,7 +679,7 @@ pub struct NeuralOptimizer<A: Float, D: Dimension> {
 /// Trait for meta-optimizers
 pub trait MetaOptimizerTrait<A: Float> {
     /// Update meta-parameters
-    fn meta_step(&mut self, meta_gradients: &Array1<A>) -> Result<()>;
+    fn meta_step(&mut self, metagradients: &Array1<A>) -> Result<()>;
 
     /// Get current meta-parameters
     fn get_meta_parameters(&self) -> &Array1<A>;
@@ -691,31 +691,31 @@ pub struct SGDMetaOptimizer<A: Float> {
     /// Meta-parameters
     meta_params: Array1<A>,
     /// Meta learning rate
-    meta_lr: A,
+    metalr: A,
 }
 
 impl<A: Float> SGDMetaOptimizer<A> {
     /// Create a new SGD meta-optimizer
-    pub fn new(meta_params: Array1<A>, meta_lr: A) -> Self {
+    pub fn new(_meta_params: Array1<A>, metalr: A) -> Self {
         Self {
-            meta_params,
-            meta_lr,
+            meta_params: _meta_params,
+            metalr,
         }
     }
 }
 
 impl<A: Float + ScalarOperand> MetaOptimizerTrait<A> for SGDMetaOptimizer<A> {
-    fn meta_step(&mut self, meta_gradients: &Array1<A>) -> Result<()> {
-        if meta_gradients.len() != self.meta_params.len() {
+    fn meta_step(&mut self, metagradients: &Array1<A>) -> Result<()> {
+        if metagradients.len() != self.meta_params.len() {
             return Err(OptimError::DimensionMismatch(
                 "Meta-gradient dimension mismatch".to_string(),
             ));
         }
 
         Zip::from(&mut self.meta_params)
-            .and(meta_gradients)
+            .and(metagradients)
             .for_each(|param, &grad| {
-                *param = *param - self.meta_lr * grad;
+                *param = *param - self.metalr * grad;
             });
 
         Ok(())
@@ -737,33 +737,33 @@ pub struct UpdateNetwork<A: Float> {
     input_size: usize,
     /// Output size (update features)
     #[allow(dead_code)]
-    output_size: usize,
+    outputsize: usize,
 }
 
 impl<A: Float + ScalarOperand + Debug> UpdateNetwork<A> {
     /// Create a new update network
-    pub fn new(input_size: usize, output_size: usize) -> Self {
-        let weights = Array2::from_shape_fn((output_size, input_size), |_| {
+    pub fn new(input_size: usize, outputsize: usize) -> Self {
+        let weights = Array2::from_shape_fn((outputsize, input_size), |_| {
             A::from(0.01).unwrap()
                 * (A::from(rand::random::<f64>()).unwrap() - A::from(0.5).unwrap())
         });
-        let biases = Array1::zeros(output_size);
+        let biases = Array1::zeros(outputsize);
 
         Self {
             weights,
             biases,
             input_size,
-            output_size,
+            outputsize,
         }
     }
 
     /// Compute parameter update given gradient features
-    pub fn compute_update(&self, gradient_features: &Array1<A>) -> Result<Array1<A>> {
-        if gradient_features.len() != self.input_size {
+    pub fn compute_update(&self, gradientfeatures: &Array1<A>) -> Result<Array1<A>> {
+        if gradientfeatures.len() != self.input_size {
             return Err(OptimError::DimensionMismatch(format!(
                 "Expected input size {}, got {}",
                 self.input_size,
-                gradient_features.len()
+                gradientfeatures.len()
             )));
         }
 
@@ -771,7 +771,7 @@ impl<A: Float + ScalarOperand + Debug> UpdateNetwork<A> {
 
         // Linear transformation
         for (i, u) in update.iter_mut().enumerate() {
-            for (j, &feat) in gradient_features.iter().enumerate() {
+            for (j, &feat) in gradientfeatures.iter().enumerate() {
                 *u = *u + self.weights[(i, j)] * feat;
             }
             // Apply tanh activation for bounded updates
@@ -831,11 +831,11 @@ impl<A: Float + ScalarOperand + Debug + 'static, D: Dimension> NeuralOptimizer<A
     /// Create a new neural optimizer
     pub fn new(
         input_size: usize,
-        output_size: usize,
+        outputsize: usize,
         meta_optimizer: Box<dyn MetaOptimizerTrait<A>>,
     ) -> Self {
         Self {
-            update_network: UpdateNetwork::new(input_size, output_size),
+            update_network: UpdateNetwork::new(input_size, outputsize),
             meta_optimizer,
             update_history: Vec::new(),
             gradient_history: Vec::new(),
@@ -846,10 +846,10 @@ impl<A: Float + ScalarOperand + Debug + 'static, D: Dimension> NeuralOptimizer<A
     /// Compute parameter update using the neural network
     pub fn compute_update(&mut self, gradients: &Array<A, D>) -> Result<Array<A, D>> {
         // Extract features from gradients
-        let gradient_features = self.extract_gradient_features(gradients)?;
+        let gradientfeatures = self.extract_gradient_features(gradients)?;
 
         // Compute update using the neural network
-        let update_features = self.update_network.compute_update(&gradient_features)?;
+        let update_features = self.update_network.compute_update(&gradientfeatures)?;
 
         // Convert update features back to parameter space
         let update = self.features_to_update(gradients, &update_features)?;
@@ -898,7 +898,7 @@ impl<A: Float + ScalarOperand + Debug + 'static, D: Dimension> NeuralOptimizer<A
         gradients: &Array<A, D>,
         update_features: &Array1<A>,
     ) -> Result<Array<A, D>> {
-        // Simple approach: scale gradients by the update features
+        // Simple approach: scale gradients by the update _features
         let mut update = gradients.clone();
 
         if !update_features.is_empty() {
@@ -910,11 +910,11 @@ impl<A: Float + ScalarOperand + Debug + 'static, D: Dimension> NeuralOptimizer<A
     }
 
     /// Meta-learning step to update the neural network
-    pub fn meta_step(&mut self, meta_loss: A) -> Result<()> {
+    pub fn meta_step(&mut self, metaloss: A) -> Result<()> {
         // Compute meta-gradients using finite differences
         let current_params = self.update_network.get_parameters();
         let epsilon = A::from(1e-6).unwrap();
-        let mut meta_gradients = Array1::zeros(current_params.len());
+        let mut metagradients = Array1::zeros(current_params.len());
 
         // This is a simplified meta-gradient computation
         // In practice, you'd use proper automatic differentiation
@@ -923,12 +923,12 @@ impl<A: Float + ScalarOperand + Debug + 'static, D: Dimension> NeuralOptimizer<A
             perturbed_params[i] = perturbed_params[i] + epsilon;
 
             // The meta-gradient would be computed based on how this perturbation
-            // affects the final performance. For simplicity, we'll use the meta_loss
-            meta_gradients[i] = meta_loss / epsilon;
+            // affects the final performance. For simplicity, we'll use the metaloss
+            metagradients[i] = metaloss / epsilon;
         }
 
         // Update the neural network parameters
-        self.meta_optimizer.meta_step(&meta_gradients)?;
+        self.meta_optimizer.meta_step(&metagradients)?;
 
         // Set the updated parameters
         let updated_params = self.meta_optimizer.get_meta_parameters();
@@ -1046,8 +1046,8 @@ mod tests {
         let meta_params = Array1::from_vec(vec![0.01, 0.001]);
         let mut meta_opt = SGDMetaOptimizer::new(meta_params, 0.1);
 
-        let meta_gradients = Array1::from_vec(vec![0.1, -0.05]);
-        meta_opt.meta_step(&meta_gradients).unwrap();
+        let metagradients = Array1::from_vec(vec![0.1, -0.05]);
+        meta_opt.meta_step(&metagradients).unwrap();
 
         // Check parameter updates
         assert_relative_eq!(meta_opt.get_meta_parameters()[0], 0.0, epsilon = 1e-6); // 0.01 - 0.1 * 0.1
@@ -1058,9 +1058,9 @@ mod tests {
     #[test]
     fn test_update_network() {
         let network = UpdateNetwork::<f64>::new(3, 2);
-        let gradient_features = Array1::from_vec(vec![1.0, -0.5, 0.2]);
+        let gradientfeatures = Array1::from_vec(vec![1.0, -0.5, 0.2]);
 
-        let update = network.compute_update(&gradient_features).unwrap();
+        let update = network.compute_update(&gradientfeatures).unwrap();
         assert_eq!(update.len(), 2);
 
         // Check that outputs are bounded (due to tanh activation)

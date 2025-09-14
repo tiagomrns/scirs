@@ -2,13 +2,14 @@ use num_complex::Complex64;
 use scirs2_fft::auto_tuning::{AutoTuneConfig, AutoTuner, FftVariant, SizeRange, SizeStep};
 use std::time::Instant;
 
+#[allow(dead_code)]
 fn main() {
     println!("FFT Auto-Tuning Example");
     println!("-----------------------");
 
     // Use a temporary file for tuning database
     let db_path = std::env::temp_dir().join("fft_tuning_db.json");
-    println!("Using tuning database at: {:?}", db_path);
+    println!("Using tuning database at: {db_path:?}");
 
     // Configure auto-tuner with a smaller set of sizes for a quick demonstration
     let config = AutoTuneConfig {
@@ -37,7 +38,7 @@ fn main() {
     match tuner.run_benchmarks() {
         Ok(_) => println!("Benchmarks completed successfully."),
         Err(e) => {
-            eprintln!("Error running benchmarks: {}", e);
+            eprintln!("Error running benchmarks: {e}");
             return;
         }
     }
@@ -51,10 +52,7 @@ fn main() {
         let forward_variant = tuner.get_best_variant(*size, true);
         let inverse_variant = tuner.get_best_variant(*size, false);
 
-        println!(
-            "{:>8} | {:>20?} | {:>20?}",
-            size, forward_variant, inverse_variant
-        );
+        println!("{size:>8} | {forward_variant:>20?} | {inverse_variant:>20?}");
     }
 
     // Benchmark standard FFT vs auto-tuned FFT
@@ -62,7 +60,7 @@ fn main() {
 
     // Test all sizes
     for size in [64, 128, 256, 512, 1024] {
-        println!("\nSize: {}", size);
+        println!("\nSize: {size}");
 
         // Create test data
         let mut input = Vec::with_capacity(size);
@@ -96,15 +94,15 @@ fn main() {
         let tuned_avg = tuned_total / iterations;
 
         // Print comparison
-        println!("Standard FFT: {:>10} ns", standard_avg);
-        println!("Auto-tuned:   {:>10} ns", tuned_avg);
+        println!("Standard FFT: {standard_avg:>10} ns");
+        println!("Auto-tuned:   {tuned_avg:>10} ns");
 
         if tuned_avg < standard_avg {
             let improvement = (standard_avg as f64 / tuned_avg as f64 - 1.0) * 100.0;
-            println!("Improvement:  {:>9.2}%", improvement);
+            println!("Improvement:  {improvement:>9.2}%");
         } else {
             let overhead = (tuned_avg as f64 / standard_avg as f64 - 1.0) * 100.0;
-            println!("Overhead:     {:>9.2}%", overhead);
+            println!("Overhead:     {overhead:>9.2}%");
         }
     }
 }

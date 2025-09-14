@@ -5,7 +5,7 @@
 //!
 //! ag::run(|ctx| {
 //!    let a: ag::Tensor<f32> = T::zeros(&[4, 2], ctx).show();
-//!    let b: ag::Tensor<f32> = T::ones(&[2, 3], ctx).show_shape();
+//!    let b: ag::Tensor<f32> = T::ones(&[2, 3], ctx).showshape();
 //!    let c = T::matmul(a, b).show_prefixed("MatMul:");
 //!
 //!    c.eval( ctx);
@@ -62,14 +62,14 @@ impl<T: Float, FUN: Fn(&NdArrayView<T>) + Send + Sync> Hook<T> for Raw<T, FUN> {
 }
 
 impl<T: Float> Hook<T> for Print {
-    fn call(&self, _: &crate::ndarray_ext::NdArrayView<T>) {
+    fn call(&self, arr: &crate::ndarray_ext::NdArrayView<T>) {
         println!("{}", self.0);
     }
 }
 
 impl<T: Float> Hook<T> for Show {
     fn call(&self, arr: &crate::ndarray_ext::NdArrayView<T>) {
-        println!("{:?}", arr);
+        println!("{arr:?}");
     }
 }
 

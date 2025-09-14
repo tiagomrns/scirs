@@ -41,7 +41,7 @@ impl<F: Float + FromPrimitive + Debug + std::fmt::Display> BezierCurve<F> {
     ///
     /// ```
     /// use ndarray::array;
-    /// use scirs2_interpolate::bezier::BezierCurve;
+    /// use scirs2__interpolate::bezier::BezierCurve;
     ///
     /// // Create a 2D cubic Bezier curve (degree 3) with 4 control points
     /// let control_points = array![
@@ -56,16 +56,16 @@ impl<F: Float + FromPrimitive + Debug + std::fmt::Display> BezierCurve<F> {
     /// // Evaluate the curve at parameter t = 0.5 (midpoint)
     /// let point = curve.evaluate(0.5).unwrap();
     /// ```
-    pub fn new(control_points: &ArrayView2<F>) -> InterpolateResult<Self> {
-        if control_points.is_empty() {
-            return Err(InterpolateError::ValueError(
-                "Control points array cannot be empty".to_string(),
+    pub fn new(controlpoints: &ArrayView2<F>) -> InterpolateResult<Self> {
+        if controlpoints.is_empty() {
+            return Err(InterpolateError::invalid_input(
+                "Control _points array cannot be empty".to_string(),
             ));
         }
 
-        let degree = control_points.shape()[0] - 1;
+        let degree = controlpoints.shape()[0] - 1;
         Ok(BezierCurve {
-            control_points: control_points.to_owned(),
+            control_points: controlpoints.to_owned(),
             degree,
         })
     }
@@ -91,7 +91,7 @@ impl<F: Float + FromPrimitive + Debug + std::fmt::Display> BezierCurve<F> {
     /// A point on the Bezier curve at parameter t
     pub fn evaluate(&self, t: F) -> InterpolateResult<Array1<F>> {
         if t < F::zero() || t > F::one() {
-            return Err(InterpolateError::DomainError(format!(
+            return Err(InterpolateError::OutOfBounds(format!(
                 "Parameter t must be in [0, 1], got {}",
                 t
             )));
@@ -130,12 +130,12 @@ impl<F: Float + FromPrimitive + Debug + std::fmt::Display> BezierCurve<F> {
     /// # Returns
     ///
     /// Array of points on the Bezier curve at the given parameter values
-    pub fn evaluate_array(&self, t_values: &ArrayView1<F>) -> InterpolateResult<Array2<F>> {
-        let n_points = t_values.len();
+    pub fn evaluate_array(&self, tvalues: &ArrayView1<F>) -> InterpolateResult<Array2<F>> {
+        let n_points = tvalues.len();
         let dim = self.control_points.shape()[1];
         let mut result = Array2::zeros((n_points, dim));
 
-        for (i, &t) in t_values.iter().enumerate() {
+        for (i, &t) in tvalues.iter().enumerate() {
             let point = self.evaluate(t)?;
             for d in 0..dim {
                 result[[i, d]] = point[d];
@@ -184,7 +184,7 @@ impl<F: Float + FromPrimitive + Debug + std::fmt::Display> BezierCurve<F> {
     /// A tuple of two Bezier curves: (left part, right part)
     pub fn split(&self, t: F) -> InterpolateResult<(Self, Self)> {
         if t < F::zero() || t > F::one() {
-            return Err(InterpolateError::DomainError(format!(
+            return Err(InterpolateError::OutOfBounds(format!(
                 "Parameter t must be in [0, 1], got {}",
                 t
             )));
@@ -283,7 +283,7 @@ impl<F: Float + FromPrimitive + Debug + std::fmt::Display> BezierSurface<F> {
     ///
     /// ```
     /// use ndarray::array;
-    /// use scirs2_interpolate::bezier::BezierSurface;
+    /// use scirs2__interpolate::bezier::BezierSurface;
     ///
     /// // Create a 3x3 grid of control points for a 3D Bezier surface
     /// let control_points = array![
@@ -303,33 +303,33 @@ impl<F: Float + FromPrimitive + Debug + std::fmt::Display> BezierSurface<F> {
     /// // Evaluate the surface at parameters (u,v) = (0.5, 0.5)
     /// let point = surface.evaluate(0.5, 0.5).unwrap();
     /// ```
-    pub fn new(control_points: &ArrayView2<F>, nu: usize, nv: usize) -> InterpolateResult<Self> {
-        if control_points.is_empty() {
-            return Err(InterpolateError::ValueError(
-                "Control points array cannot be empty".to_string(),
+    pub fn new(controlpoints: &ArrayView2<F>, nu: usize, nv: usize) -> InterpolateResult<Self> {
+        if controlpoints.is_empty() {
+            return Err(InterpolateError::invalid_input(
+                "Control _points array cannot be empty".to_string(),
             ));
         }
 
         if nu == 0 || nv == 0 {
-            return Err(InterpolateError::ValueError(
-                "Number of control points in each direction must be positive".to_string(),
+            return Err(InterpolateError::invalid_input(
+                "Number of control _points in each direction must be positive".to_string(),
             ));
         }
 
-        if control_points.shape()[0] != nu * nv {
-            return Err(InterpolateError::ValueError(format!(
-                "Expected {} control points for a {}x{} grid, got {}",
+        if controlpoints.shape()[0] != nu * nv {
+            return Err(InterpolateError::invalid_input(format!(
+                "Expected {} control _points for a {}x{} grid, got {}",
                 nu * nv,
                 nu,
                 nv,
-                control_points.shape()[0]
+                controlpoints.shape()[0]
             )));
         }
 
-        let dim = control_points.shape()[1];
+        let dim = controlpoints.shape()[1];
 
         Ok(BezierSurface {
-            control_points: control_points.to_owned(),
+            control_points: controlpoints.to_owned(),
             nu,
             nv,
             dim,
@@ -358,7 +358,7 @@ impl<F: Float + FromPrimitive + Debug + std::fmt::Display> BezierSurface<F> {
     /// A point on the Bezier surface at parameters (u, v)
     pub fn evaluate(&self, u: F, v: F) -> InterpolateResult<Array1<F>> {
         if u < F::zero() || u > F::one() || v < F::zero() || v > F::one() {
-            return Err(InterpolateError::DomainError(format!(
+            return Err(InterpolateError::OutOfBounds(format!(
                 "Parameters (u,v) must be in [0, 1]x[0, 1], got ({}, {})",
                 u, v
             )));
@@ -423,7 +423,7 @@ impl<F: Float + FromPrimitive + Debug + std::fmt::Display> BezierSurface<F> {
         } else {
             // Evaluate at pairs (u[i], v[i])
             if u_values.len() != v_values.len() {
-                return Err(InterpolateError::ValueError(
+                return Err(InterpolateError::invalid_input(
                     "When grid=false, u_values and v_values must have the same length".to_string(),
                 ));
             }
@@ -521,20 +521,21 @@ impl<F: Float + FromPrimitive + Debug + std::fmt::Display> BezierSurface<F> {
 /// # Returns
 ///
 /// The value of the Bernstein polynomial at parameter t
+#[allow(dead_code)]
 pub fn bernstein<F: Float + FromPrimitive + std::fmt::Display>(
     t: F,
     i: usize,
     n: usize,
 ) -> InterpolateResult<F> {
     if i > n {
-        return Err(InterpolateError::ValueError(format!(
+        return Err(InterpolateError::invalid_input(format!(
             "Index i={} must be <= degree n={}",
             i, n
         )));
     }
 
     if t < F::zero() || t > F::one() {
-        return Err(InterpolateError::DomainError(format!(
+        return Err(InterpolateError::OutOfBounds(format!(
             "Parameter t must be in [0, 1], got {}",
             t
         )));
@@ -572,6 +573,7 @@ pub fn bernstein<F: Float + FromPrimitive + std::fmt::Display>(
 /// # Returns
 ///
 /// An array containing all n+1 Bernstein polynomials of degree n at parameter t
+#[allow(dead_code)]
 pub fn compute_bernstein_all<F: Float + FromPrimitive>(
     t: F,
     n: usize,
@@ -766,8 +768,6 @@ mod tests {
     }
 
     #[test]
-    // FIXME: The derivatives are not computed correctly due to PartialOrd changes
-    // This test currently returns all zeros for the derivatives
     fn test_bezier_surface_derivatives() {
         // Create a biquadratic Bezier surface
         let control_points = array![
@@ -795,17 +795,23 @@ mod tests {
         let du = deriv_u.evaluate(0.5, 0.5).unwrap();
         let dv = deriv_v.evaluate(0.5, 0.5).unwrap();
 
-        // The partial derivatives should reflect the change in each direction
-        // For this surface, the derivative with respect to u at the center
-        // should be approximately [0, 2, 0]
-        // FIXME: Currently returns all zeros due to PartialOrd issues
-        // assert_relative_eq!(du[1], 2.0, epsilon = 0.1);
-        assert!(!du.is_empty()); // At least check we get some result
+        // The partial derivatives should be non-zero for this non-flat surface
+        assert_eq!(du.len(), 3); // 3D point
+        assert_eq!(dv.len(), 3);
 
-        // The derivative with respect to v at the center
-        // should be approximately [0, 2, 0]
-        // FIXME: Currently returns all zeros due to PartialOrd issues
-        // assert_relative_eq!(dv[1], 2.0, epsilon = 0.1);
-        assert!(!dv.is_empty()); // At least check we get some result
+        // Check that the derivatives have reasonable magnitudes
+        let du_magnitude = (du[0] * du[0] + du[1] * du[1] + du[2] * du[2]).sqrt();
+        let dv_magnitude = (dv[0] * dv[0] + dv[1] * dv[1] + dv[2] * dv[2]).sqrt();
+
+        assert!(du_magnitude > 0.1); // Should be non-zero
+        assert!(dv_magnitude > 0.1); // Should be non-zero
+
+        // Verify the surface itself evaluates correctly at the center
+        let center = surface.evaluate(0.5, 0.5).unwrap();
+        assert_eq!(center.len(), 3);
+
+        // The center point should be approximately at (1, 1, z) for some z value
+        assert_relative_eq!(center[0], 1.0, epsilon = 0.1);
+        assert_relative_eq!(center[1], 1.0, epsilon = 0.1);
     }
 }

@@ -21,52 +21,62 @@ use std::collections::{HashMap, HashSet};
 /// # Returns
 ///
 /// * The Levenshtein distance between the two strings
+#[allow(dead_code)]
 pub fn levenshtein_distance(s1: &str, s2: &str) -> usize {
-    if s1.is_empty() {
-        return s2.chars().count();
+    // Use SIMD-accelerated version when available
+    #[cfg(feature = "simd")]
+    {
+        crate::simd_ops::SimdEditDistance::levenshtein(s1, s2)
     }
-    if s2.is_empty() {
-        return s1.chars().count();
-    }
 
-    let s1_chars: Vec<char> = s1.chars().collect();
-    let s2_chars: Vec<char> = s2.chars().collect();
-
-    let m = s1_chars.len();
-    let n = s2_chars.len();
-
-    // Create distance matrix
-    let mut matrix = vec![vec![0; n + 1]; m + 1];
-
-    // Initialize first row and column
-    for (i, row) in matrix.iter_mut().enumerate().take(m + 1) {
-        row[0] = i;
-    }
-    if let Some(first_row) = matrix.first_mut() {
-        for (j, cell) in first_row.iter_mut().enumerate().take(n + 1) {
-            *cell = j;
+    #[cfg(not(feature = "simd"))]
+    {
+        if s1.is_empty() {
+            return s2.chars().count();
         }
-    }
-
-    // Fill the matrix
-    for i in 1..=m {
-        for j in 1..=n {
-            let cost = if s1_chars[i - 1] == s2_chars[j - 1] {
-                0
-            } else {
-                1
-            };
-            matrix[i][j] = std::cmp::min(
-                std::cmp::min(
-                    matrix[i - 1][j] + 1, // deletion
-                    matrix[i][j - 1] + 1, // insertion
-                ),
-                matrix[i - 1][j - 1] + cost, // substitution
-            );
+        if s2.is_empty() {
+            return s1.chars().count();
         }
-    }
 
-    matrix[m][n]
+        let s1_chars: Vec<char> = s1.chars().collect();
+        let s2_chars: Vec<char> = s2.chars().collect();
+
+        let m = s1_chars.len();
+        let n = s2_chars.len();
+
+        // Create distance matrix
+        let mut matrix = vec![vec![0; n + 1]; m + 1];
+
+        // Initialize first row and column
+        for (i, row) in matrix.iter_mut().enumerate().take(m + 1) {
+            row[0] = i;
+        }
+        if let Some(first_row) = matrix.first_mut() {
+            for (j, cell) in first_row.iter_mut().enumerate().take(n + 1) {
+                *cell = j;
+            }
+        }
+
+        // Fill the matrix
+        for i in 1..=m {
+            for j in 1..=n {
+                let cost = if s1_chars[i - 1] == s2_chars[j - 1] {
+                    0
+                } else {
+                    1
+                };
+                matrix[i][j] = std::cmp::min(
+                    std::cmp::min(
+                        matrix[i - 1][j] + 1, // deletion
+                        matrix[i][j - 1] + 1, // insertion
+                    ),
+                    matrix[i - 1][j - 1] + cost, // substitution
+                );
+            }
+        }
+
+        matrix[m][n]
+    }
 }
 
 /// Compute the normalized Levenshtein distance between two strings
@@ -82,6 +92,7 @@ pub fn levenshtein_distance(s1: &str, s2: &str) -> usize {
 /// # Returns
 ///
 /// * The normalized Levenshtein distance between the two strings
+#[allow(dead_code)]
 pub fn normalized_levenshtein_distance(s1: &str, s2: &str) -> f64 {
     let distance = levenshtein_distance(s1, s2) as f64;
     let max_length = std::cmp::max(s1.chars().count(), s2.chars().count()) as f64;
@@ -107,6 +118,7 @@ pub fn normalized_levenshtein_distance(s1: &str, s2: &str) -> f64 {
 /// # Returns
 ///
 /// * Result containing the Jaccard similarity between the two strings
+#[allow(dead_code)]
 pub fn jaccard_similarity(s1: &str, s2: &str, tokenizer: Option<&dyn Tokenizer>) -> Result<f64> {
     // Use the provided tokenizer or default to word tokenizer
     let tokenizer = match tokenizer {
@@ -145,6 +157,7 @@ pub fn jaccard_similarity(s1: &str, s2: &str, tokenizer: Option<&dyn Tokenizer>)
 /// # Returns
 ///
 /// * Result containing the cosine similarity between the two vectors
+#[allow(dead_code)]
 pub fn cosine_similarity(v1: ArrayView1<f64>, v2: ArrayView1<f64>) -> Result<f64> {
     if v1.len() != v2.len() {
         return Err(TextError::DistanceError(format!(
@@ -154,18 +167,37 @@ pub fn cosine_similarity(v1: ArrayView1<f64>, v2: ArrayView1<f64>) -> Result<f64
         )));
     }
 
-    // Calculate dot product manually since direct multiplication isn't implemented for ArrayView1
-    let dot_product: f64 = v1.iter().zip(v2.iter()).map(|(&a, &b)| a * b).sum();
+    #[cfg(feature = "simd")]
+    {
+        use scirs2_core::simd_ops::SimdUnifiedOps;
 
-    // Calculate norms manually
-    let norm1 = v1.iter().map(|&x| x * x).sum::<f64>().sqrt();
-    let norm2 = v2.iter().map(|&x| x * x).sum::<f64>().sqrt();
+        // Use SIMD operations for dot product and norms
+        let dot_product = f64::simd_dot(&_v1, &v2);
+        let norm1 = f64::simd_norm(&_v1);
+        let norm2 = f64::simd_norm(&v2);
 
-    if norm1 == 0.0 || norm2 == 0.0 {
-        return Ok(if norm1 == norm2 { 1.0 } else { 0.0 });
+        if norm1 == 0.0 || norm2 == 0.0 {
+            return Ok(if norm1 == norm2 { 1.0 } else { 0.0 });
+        }
+
+        Ok(dot_product / (norm1 * norm2))
     }
 
-    Ok(dot_product / (norm1 * norm2))
+    #[cfg(not(feature = "simd"))]
+    {
+        // Calculate dot product manually since direct multiplication isn't implemented for ArrayView1
+        let dot_product: f64 = v1.iter().zip(v2.iter()).map(|(&a, &b)| a * b).sum();
+
+        // Calculate norms manually
+        let norm1 = v1.iter().map(|&x| x * x).sum::<f64>().sqrt();
+        let norm2 = v2.iter().map(|&x| x * x).sum::<f64>().sqrt();
+
+        if norm1 == 0.0 || norm2 == 0.0 {
+            return Ok(if norm1 == norm2 { 1.0 } else { 0.0 });
+        }
+
+        Ok(dot_product / (norm1 * norm2))
+    }
 }
 
 /// Compute the cosine similarity between two texts based on bag-of-words vectors
@@ -179,6 +211,7 @@ pub fn cosine_similarity(v1: ArrayView1<f64>, v2: ArrayView1<f64>) -> Result<f64
 /// # Returns
 ///
 /// * Result containing the cosine similarity between the two texts
+#[allow(dead_code)]
 pub fn text_cosine_similarity(
     s1: &str,
     s2: &str,
@@ -246,6 +279,7 @@ pub fn text_cosine_similarity(
 /// # Returns
 ///
 /// * The Jaro-Winkler similarity between the two strings (0.0 to 1.0)
+#[allow(dead_code)]
 pub fn jaro_winkler_similarity(s1: &str, s2: &str) -> f64 {
     // Compute Jaro similarity first
     let jaro_sim = jaro_similarity(s1, s2);
@@ -283,6 +317,7 @@ pub fn jaro_winkler_similarity(s1: &str, s2: &str) -> f64 {
 /// # Returns
 ///
 /// * The Jaro similarity between the two strings (0.0 to 1.0)
+#[allow(dead_code)]
 fn jaro_similarity(s1: &str, s2: &str) -> f64 {
     if s1.is_empty() && s2.is_empty() {
         return 1.0;
@@ -409,7 +444,7 @@ mod tests {
     }
 
     #[test]
-    fn test_text_cosine_similarity() {
+    fn testtext_cosine_similarity() {
         let result =
             text_cosine_similarity("this is a test", "this is another test", None).unwrap();
         assert!(result > 0.5 && result < 1.0);

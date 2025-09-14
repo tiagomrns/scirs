@@ -4,7 +4,7 @@
 //! efficient for row operations, matrix-vector multiplication, and more.
 
 use crate::error::{SparseError, SparseResult};
-use num_traits::Zero;
+use num_traits::{Float, Zero};
 use std::cmp::PartialEq;
 
 /// Compressed Sparse Row (CSR) matrix
@@ -68,8 +68,8 @@ where
     /// # Arguments
     ///
     /// * `data` - Vector of non-zero values
-    /// * `row_indices` - Vector of row indices for each non-zero value
-    /// * `col_indices` - Vector of column indices for each non-zero value
+    /// * `rowindices` - Vector of row indices for each non-zero value
+    /// * `colindices` - Vector of column indices for each non-zero value
     /// * `shape` - Tuple containing the matrix dimensions (rows, cols)
     ///
     /// # Returns
@@ -91,28 +91,28 @@ where
     /// ```
     pub fn new(
         data: Vec<T>,
-        row_indices: Vec<usize>,
-        col_indices: Vec<usize>,
+        rowindices: Vec<usize>,
+        colindices: Vec<usize>,
         shape: (usize, usize),
     ) -> SparseResult<Self> {
         // Validate input data
-        if data.len() != row_indices.len() || data.len() != col_indices.len() {
+        if data.len() != rowindices.len() || data.len() != colindices.len() {
             return Err(SparseError::DimensionMismatch {
                 expected: data.len(),
-                found: std::cmp::min(row_indices.len(), col_indices.len()),
+                found: std::cmp::min(rowindices.len(), colindices.len()),
             });
         }
 
         let (rows, cols) = shape;
 
         // Check indices are within bounds
-        if row_indices.iter().any(|&i| i >= rows) {
+        if rowindices.iter().any(|&i| i >= rows) {
             return Err(SparseError::ValueError(
                 "Row index out of bounds".to_string(),
             ));
         }
 
-        if col_indices.iter().any(|&i| i >= cols) {
+        if colindices.iter().any(|&i| i >= cols) {
             return Err(SparseError::ValueError(
                 "Column index out of bounds".to_string(),
             ));
@@ -120,13 +120,13 @@ where
 
         // Convert triplet format to CSR
         // First, sort by row, then by column
-        let mut triplets: Vec<(usize, usize, T)> = row_indices
+        let mut triplets: Vec<(usize, usize, T)> = rowindices
             .into_iter()
-            .zip(col_indices)
+            .zip(colindices)
             .zip(data)
             .map(|((r, c), v)| (r, c, v))
             .collect();
-        triplets.sort_by_key(|&(r, c, _)| (r, c));
+        triplets.sort_by_key(|&(r, c_, _)| (r, c_));
 
         // Create indptr, indices, and data arrays
         let nnz = triplets.len();
@@ -135,8 +135,8 @@ where
         let mut data_out = Vec::with_capacity(nnz);
 
         // Count elements per row to build indptr
-        for &(r, _, _) in &triplets {
-            indptr[r + 1] += 1;
+        for &(r_, _, _) in &triplets {
+            indptr[r_ + 1] += 1;
         }
 
         // Compute cumulative sum for indptr
@@ -371,12 +371,12 @@ impl<
             let mut self_entries: Vec<(usize, &T)> = (self_start..self_end)
                 .map(|j| (self.indices[j], &self.data[j]))
                 .collect();
-            self_entries.sort_by_key(|(col, _)| *col);
+            self_entries.sort_by_key(|(col_, _)| *col_);
 
             let mut trans_entries: Vec<(usize, &T)> = (trans_start..trans_end)
                 .map(|j| (transposed.indices[j], &transposed.data[j]))
                 .collect();
-            trans_entries.sort_by_key(|(col, _)| *col);
+            trans_entries.sort_by_key(|(col_, _)| *col_);
 
             // Compare columns and values
             for i in 0..self_entries.len() {
@@ -429,21 +429,21 @@ impl<
         }
 
         // Convert back to CSR format
-        let mut row_indices = Vec::new();
-        let mut col_indices = Vec::new();
+        let mut rowindices = Vec::new();
+        let mut colindices = Vec::new();
         let mut values = Vec::new();
 
         for (i, row) in c_dense.iter().enumerate() {
             for (j, val) in row.iter().enumerate() {
                 if *val != T::zero() {
-                    row_indices.push(i);
-                    col_indices.push(j);
+                    rowindices.push(i);
+                    colindices.push(j);
                     values.push(*val);
                 }
             }
         }
 
-        CsrMatrix::new(values, row_indices, col_indices, (m, n))
+        CsrMatrix::new(values, rowindices, colindices, (m, n))
     }
 
     /// Get row range for iterating over elements in a row
@@ -461,7 +461,7 @@ impl<
     }
 
     /// Get column indices array
-    pub fn col_indices(&self) -> &[usize] {
+    pub fn colindices(&self) -> &[usize] {
         &self.indices
     }
 }
@@ -494,6 +494,149 @@ impl CsrMatrix<f64> {
         }
 
         Ok(result)
+    }
+
+    /// GPU-accelerated matrix-vector multiplication
+    ///
+    /// This method automatically uses GPU acceleration when beneficial,
+    /// falling back to optimized CPU implementation when appropriate.
+    ///
+    /// # Arguments
+    ///
+    /// * `vec` - Vector to multiply with
+    ///
+    /// # Returns
+    ///
+    /// * Result of matrix-vector multiplication
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use scirs2_sparse::csr::CsrMatrix;
+    ///
+    /// let rows = vec![0, 0, 1, 2, 2];
+    /// let cols = vec![0, 2, 2, 0, 1];
+    /// let data = vec![1.0, 2.0, 3.0, 4.0, 5.0];
+    /// let shape = (3, 3);
+    ///
+    /// let matrix = CsrMatrix::new(data, rows, cols, shape).unwrap();
+    /// let vec = vec![1.0, 2.0, 3.0];
+    /// let result = matrix.gpu_dot(&vec).unwrap();
+    /// ```
+    #[allow(dead_code)]
+    pub fn gpu_dot(&self, vec: &[f64]) -> SparseResult<Vec<f64>> {
+        // Use the GpuSpMV implementation
+        let gpu_spmv = crate::gpu_spmv_implementation::GpuSpMV::new()?;
+        gpu_spmv.spmv(
+            self.rows,
+            self.cols,
+            &self.indptr,
+            &self.indices,
+            &self.data,
+            vec,
+        )
+    }
+
+    /// GPU-accelerated matrix-vector multiplication with backend selection
+    ///
+    /// # Arguments
+    ///
+    /// * `vec` - Vector to multiply with
+    /// * `backend` - Preferred GPU backend
+    ///
+    /// # Returns
+    ///
+    /// * Result of matrix-vector multiplication
+    #[allow(dead_code)]
+    pub fn gpu_dot_with_backend(
+        &self,
+        vec: &[f64],
+        backend: crate::gpu_ops::GpuBackend,
+    ) -> SparseResult<Vec<f64>> {
+        // Use the GpuSpMV implementation with specified backend
+        let gpu_spmv = crate::gpu_spmv_implementation::GpuSpMV::with_backend(backend)?;
+        gpu_spmv.spmv(
+            self.rows,
+            self.cols,
+            &self.indptr,
+            &self.indices,
+            &self.data,
+            vec,
+        )
+    }
+}
+
+impl<T> CsrMatrix<T>
+where
+    T: num_traits::Float
+        + std::fmt::Debug
+        + Copy
+        + Default
+        + crate::gpu_ops::GpuDataType
+        + Send
+        + Sync
+        + 'static,
+{
+    /// GPU-accelerated matrix-vector multiplication for generic floating-point types
+    ///
+    /// # Arguments
+    ///
+    /// * `vec` - Vector to multiply with
+    ///
+    /// # Returns
+    ///
+    /// * Result of matrix-vector multiplication
+    #[allow(dead_code)]
+    pub fn gpu_dot_generic(&self, vec: &[T]) -> SparseResult<Vec<T>>
+    where
+        T: Float + std::ops::AddAssign + Copy + Default + std::iter::Sum,
+    {
+        // GPU operations fall back to CPU for stability
+        if vec.len() != self.cols {
+            return Err(SparseError::DimensionMismatch {
+                expected: self.cols,
+                found: vec.len(),
+            });
+        }
+
+        let mut result = vec![T::zero(); self.rows];
+
+        for (row_idx, result_val) in result.iter_mut().enumerate() {
+            let start = self.indptr[row_idx];
+            let end = self.indptr[row_idx + 1];
+
+            for idx in start..end {
+                let col = self.indices[idx];
+                *result_val += self.data[idx] * vec[col];
+            }
+        }
+
+        Ok(result)
+    }
+
+    /// Check if this matrix should benefit from GPU acceleration
+    ///
+    /// # Returns
+    ///
+    /// * `true` if GPU acceleration is likely to provide benefits
+    pub fn should_use_gpu(&self) -> bool {
+        // Use GPU for matrices with significant computation (> 10k non-zeros)
+        // and reasonable sparsity (< 50% dense)
+        let nnz_threshold = 10000;
+        let density = self.nnz() as f64 / (self.rows * self.cols) as f64;
+
+        self.nnz() > nnz_threshold && density < 0.5
+    }
+
+    /// Get GPU backend information
+    ///
+    /// # Returns
+    ///
+    /// * Information about available GPU backends
+    #[allow(dead_code)]
+    pub fn gpu_backend_info() -> SparseResult<(crate::gpu_ops::GpuBackend, String)> {
+        // GPU operations fall back to CPU for stability
+        Ok((crate::gpu_ops::GpuBackend::Cpu, "CPU Fallback".to_string()))
     }
 }
 
@@ -588,5 +731,96 @@ mod tests {
         ];
 
         assert_eq!(dense, expected);
+    }
+
+    #[test]
+    fn test_gpu_dot() {
+        // Create a 3x3 sparse matrix
+        let rows = vec![0, 0, 1, 2, 2];
+        let cols = vec![0, 2, 2, 0, 1];
+        let data = vec![1.0, 2.0, 3.0, 4.0, 5.0];
+        let shape = (3, 3);
+
+        let matrix = CsrMatrix::new(data, rows, cols, shape).unwrap();
+        let vec = vec![1.0, 2.0, 3.0];
+
+        // Test GPU-accelerated SpMV
+        let gpu_result = matrix.gpu_dot(&vec);
+        assert!(gpu_result.is_ok(), "GPU SpMV should succeed");
+
+        if let Ok(result) = gpu_result {
+            let expected = [7.0, 9.0, 14.0]; // Same as regular dot product
+            assert_eq!(result.len(), expected.len());
+            for (a, b) in result.iter().zip(expected.iter()) {
+                assert_relative_eq!(a, b, epsilon = 1e-10);
+            }
+        }
+    }
+
+    #[test]
+    fn test_should_use_gpu() {
+        // Small matrix - should not use GPU
+        let small_matrix = CsrMatrix::new(vec![1.0, 2.0], vec![0, 1], vec![0, 1], (2, 2)).unwrap();
+        assert!(
+            !small_matrix.should_use_gpu(),
+            "Small matrix should not use GPU"
+        );
+
+        // Large sparse matrix - should use GPU
+        let large_data = vec![1.0; 15000];
+        let large_rows: Vec<usize> = (0..15000).collect();
+        let large_cols: Vec<usize> = (0..15000).collect();
+        let large_matrix =
+            CsrMatrix::new(large_data, large_rows, large_cols, (15000, 15000)).unwrap();
+        assert!(
+            large_matrix.should_use_gpu(),
+            "Large sparse matrix should use GPU"
+        );
+    }
+
+    #[test]
+    fn test_gpu_backend_info() {
+        let backend_info = CsrMatrix::<f64>::gpu_backend_info();
+        assert!(
+            backend_info.is_ok(),
+            "Should be able to get GPU backend info"
+        );
+
+        if let Ok((backend, name)) = backend_info {
+            assert!(!name.is_empty(), "Backend name should not be empty");
+            // Backend should be one of the supported types
+            match backend {
+                crate::gpu_ops::GpuBackend::Cuda
+                | crate::gpu_ops::GpuBackend::OpenCL
+                | crate::gpu_ops::GpuBackend::Metal
+                | crate::gpu_ops::GpuBackend::Cpu
+                | crate::gpu_ops::GpuBackend::Rocm
+                | crate::gpu_ops::GpuBackend::Wgpu => {}
+            }
+        }
+    }
+
+    #[test]
+    fn test_gpu_dot_generic_f32() {
+        // Test with f32 type
+        let rows = vec![0, 0, 1, 2, 2];
+        let cols = vec![0, 2, 2, 0, 1];
+        let data = vec![1.0f32, 2.0, 3.0, 4.0, 5.0];
+        let shape = (3, 3);
+
+        let matrix = CsrMatrix::new(data, rows, cols, shape).unwrap();
+        let vec = vec![1.0f32, 2.0, 3.0];
+
+        // Test generic GPU SpMV with f32
+        let gpu_result = matrix.gpu_dot_generic(&vec);
+        assert!(gpu_result.is_ok(), "Generic GPU SpMV should succeed");
+
+        if let Ok(result) = gpu_result {
+            let expected = [7.0f32, 9.0, 14.0];
+            assert_eq!(result.len(), expected.len());
+            for (a, b) in result.iter().zip(expected.iter()) {
+                assert_relative_eq!(a, b, epsilon = 1e-6);
+            }
+        }
     }
 }

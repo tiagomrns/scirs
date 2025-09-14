@@ -4,6 +4,7 @@ use scirs2_interpolate::interpnd::{
     ScatteredInterpolationMethod, ScatteredInterpolatorParams,
 };
 
+#[allow(dead_code)]
 fn main() {
     println!("N-dimensional Interpolation Examples");
     println!("===================================");
@@ -21,6 +22,7 @@ fn main() {
     map_coordinates_example();
 }
 
+#[allow(dead_code)]
 fn regular_grid_example() {
     // Create a 2D grid
     let x = Array1::from_vec(vec![0.0, 1.0, 2.0]);
@@ -82,6 +84,7 @@ fn regular_grid_example() {
     }
 }
 
+#[allow(dead_code)]
 fn scattered_data_example() {
     // Create scattered points in 2D
     let points = Array2::from_shape_vec(
@@ -165,6 +168,7 @@ fn scattered_data_example() {
     }
 }
 
+#[allow(dead_code)]
 fn map_coordinates_example() {
     // Create a 2D grid (3x3)
     let x_old = Array1::from_vec(vec![0.0, 1.0, 2.0]);

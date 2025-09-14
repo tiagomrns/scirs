@@ -51,8 +51,7 @@ where
     if a_size % b_size != 0 && b_size % a_size != 0 {
         return Err(CoreError::ValidationError(
             ErrorContext::new(format!(
-                "Type sizes are not compatible: {} is not divisible by or a divisor of {}",
-                a_size, b_size
+                "Type sizes are not compatible: {a_size} is not divisible by or a divisor of {b_size}"
             ))
             .with_location(ErrorLocation::new(file!(), line!())),
         ));
@@ -104,8 +103,7 @@ where
     if a_size % b_size != 0 && b_size % a_size != 0 {
         return Err(CoreError::ValidationError(
             ErrorContext::new(format!(
-                "Type sizes are not compatible: {} is not divisible by or a divisor of {}",
-                a_size, b_size
+                "Type sizes are not compatible: {a_size} is not divisible by or a divisor of {b_size}"
             ))
             .with_location(ErrorLocation::new(file!(), line!())),
         ));
@@ -128,6 +126,7 @@ where
 /// # Returns
 ///
 /// A transposed copy of the array
+#[allow(dead_code)]
 pub fn transpose_view<A, S>(array: &ArrayBase<S, Ix2>) -> Result<Array<A, Ix2>, CoreError>
 where
     A: Clone,
@@ -148,6 +147,7 @@ where
 /// # Returns
 ///
 /// A copy of the diagonal of the array
+#[allow(dead_code)]
 pub fn diagonal_view<A, S>(array: &ArrayBase<S, Ix2>) -> Result<Array<A, Ix1>, CoreError>
 where
     A: Clone,

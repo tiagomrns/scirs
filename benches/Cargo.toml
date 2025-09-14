@@ -1,11 +1,11 @@
 [package]
 name = "scirs2-benchmarks"
 version.workspace = true
-edition = "2021"
-authors = ["SciRS2 Contributors"]
+edition.workspace = true
+authors.workspace = true
 description = "Comprehensive performance benchmarks for SciRS2 against SciPy"
-repository = "https://github.com/cool-japan/scirs"
-license = "MIT OR Apache-2.0"
+repository.workspace = true
+license.workspace = true
 
 [[bench]]
 name = "linalg_benchmarks"
@@ -27,39 +27,42 @@ name = "numerical_stability"
 path = "numerical_stability.rs"
 harness = false
 
+[lints]
+workspace = true
+
 [dependencies]
 # SciRS2 modules
-scirs2-core = { path = "../scirs2-core", features = ["parallel", "simd", "profiling", "memory_management"] }
-scirs2-linalg = { path = "../scirs2-linalg", features = ["simd", "parallel"] }
-scirs2-stats = { path = "../scirs2-stats" }
-scirs2-fft = { path = "../scirs2-fft" }
-scirs2-optimize = { path = "../scirs2-optimize" }
-scirs2-integrate = { path = "../scirs2-integrate" }
-scirs2-cluster = { path = "../scirs2-cluster" }
-scirs2-interpolate = { path = "../scirs2-interpolate" }
+scirs2-core = { workspace = true, features = ["parallel", "simd", "profiling", "memory_management"] }
+scirs2-linalg = { workspace = true, features = ["simd", "parallel"] }
+# scirs2-stats = { path = "../scirs2-stats" } # Temporarily disabled
+scirs2-fft = { workspace = true }
+# scirs2-optimize = { path = "../scirs2-optimize" } # Temporarily disabled
+scirs2-integrate = { workspace = true }
+# scirs2-cluster = { path = "../scirs2-cluster" } # Temporarily disabled
+# scirs2-interpolate = { path = "../scirs2-interpolate" } # Temporarily disabled
 
 # Benchmarking framework
-criterion = { version = "0.5", features = ["html_reports"] }
-plotters = "0.3"
+criterion = { workspace = true, features = ["html_reports"] }
+plotters = { workspace = true }
 
 # Array operations
-ndarray = { version = "0.16.1", features = ["rayon"] }
-ndarray-rand = "0.15"
+ndarray = { workspace = true }
+ndarray-rand = { workspace = true }
 
 # Random number generation
-rand = "0.8"
-rand_chacha = "0.3"
+rand = { workspace = true }
+rand_chacha = { workspace = true }
 
 # Scientific computing utilities
-num-traits = "0.2"
-approx = "0.5"
+num-traits = { workspace = true }
+approx = { workspace = true }
 
 # Profiling and timing
-instant = "0.1"
+instant = { workspace = true }
 
 # Serialization for results
-serde = { version = "1.0", features = ["derive"] }
-serde_json = "1.0"
+serde = { workspace = true }
+serde_json = { workspace = true }
 
 # Optional Python integration for comparison
 pyo3 = { workspace = true, optional = true }
@@ -69,4 +72,4 @@ default = []
 python-comparison = ["pyo3"]
 
 [dev-dependencies]
-tempfile = "3.0"
+tempfile = { workspace = true }

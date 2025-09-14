@@ -48,15 +48,14 @@ impl WordTokenizer {
     }
 
     /// Create a new word tokenizer with a custom pattern
-    pub fn with_pattern(lowercase: bool, pattern: &str) -> Result<Self> {
+    pub fn withpattern(lowercase: bool, pattern: &str) -> Result<Self> {
         match Regex::new(pattern) {
             Ok(regex) => Ok(Self {
                 lowercase,
                 pattern: Some(regex),
             }),
             Err(e) => Err(TextError::TokenizationError(format!(
-                "Invalid regex pattern: {}",
-                e
+                "Invalid regex pattern: {e}"
             ))),
         }
     }
@@ -112,14 +111,13 @@ impl SentenceTokenizer {
     }
 
     /// Create a new sentence tokenizer with a custom pattern
-    pub fn with_pattern(pattern: &str) -> Result<Self> {
+    pub fn withpattern(pattern: &str) -> Result<Self> {
         match Regex::new(pattern) {
             Ok(regex) => Ok(Self {
                 pattern: Some(regex),
             }),
             Err(e) => Err(TextError::TokenizationError(format!(
-                "Invalid regex pattern: {}",
-                e
+                "Invalid regex pattern: {e}"
             ))),
         }
     }
@@ -159,14 +157,14 @@ impl Tokenizer for SentenceTokenizer {
 /// Tokenizer for splitting text into characters or grapheme clusters
 #[derive(Debug, Clone)]
 pub struct CharacterTokenizer {
-    use_grapheme_clusters: bool,
+    _use_graphemeclusters: bool,
 }
 
 impl CharacterTokenizer {
     /// Create a new character tokenizer
-    pub fn new(use_grapheme_clusters: bool) -> Self {
+    pub fn new(_use_graphemeclusters: bool) -> Self {
         Self {
-            use_grapheme_clusters,
+            _use_graphemeclusters,
         }
     }
 }
@@ -183,7 +181,7 @@ impl Tokenizer for CharacterTokenizer {
             return Ok(Vec::new());
         }
 
-        let tokens = if self.use_grapheme_clusters {
+        let tokens = if self._use_graphemeclusters {
             text.graphemes(true).map(|g| g.to_string()).collect()
         } else {
             text.chars().map(|c| c.to_string()).collect()
@@ -224,16 +222,16 @@ impl NgramTokenizer {
     }
 
     /// Create an n-gram tokenizer with a range of n values
-    pub fn with_range(min_n: usize, max_n: usize) -> Result<Self> {
-        if min_n == 0 || max_n < min_n {
+    pub fn with_range(_min_n: usize, maxn: usize) -> Result<Self> {
+        if _min_n == 0 || maxn < _min_n {
             return Err(TextError::TokenizationError(
-                "Invalid n-gram range".to_string(),
+                "Invalid _n-gram range".to_string(),
             ));
         }
 
         Ok(Self {
-            n: max_n,
-            min_n,
+            n: maxn,
+            min_n: _min_n,
             only_alphanumeric: false,
             separator: " ".to_string(),
         })
@@ -318,8 +316,7 @@ impl RegexTokenizer {
                 gaps,
             }),
             Err(e) => Err(TextError::TokenizationError(format!(
-                "Invalid regex pattern: {}",
-                e
+                "Invalid regex pattern: {e}"
             ))),
         }
     }
@@ -398,8 +395,8 @@ mod tests {
     }
 
     #[test]
-    fn test_word_tokenizer_custom_pattern() {
-        let tokenizer = WordTokenizer::with_pattern(false, r"\w+").unwrap();
+    fn test_word_tokenizer_custompattern() {
+        let tokenizer = WordTokenizer::withpattern(false, r"\w+").unwrap();
         let text = "Hello, world! This is a test.";
         let tokens = tokenizer.tokenize(text).unwrap();
         assert_eq!(tokens, vec!["Hello", "world", "This", "is", "a", "test"]);

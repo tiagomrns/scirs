@@ -84,7 +84,7 @@ impl AffineTransform {
         let det = a * e - b * d;
 
         if det.abs() < 1e-10 {
-            return Err(crate::error::VisionError::OperationFailed(
+            return Err(crate::error::VisionError::OperationError(
                 "Affine transformation is singular, cannot compute inverse".to_string(),
             ));
         }
@@ -123,6 +123,7 @@ impl AffineTransform {
 /// # Returns
 ///
 /// * Result containing warped image
+#[allow(dead_code)]
 pub fn warp_affine(
     src: &DynamicImage,
     transform: &AffineTransform,
@@ -170,12 +171,13 @@ pub enum BorderMode {
 }
 
 /// Sample a pixel from an image using bilinear interpolation
-fn sample_pixel(src: &DynamicImage, x: f64, y: f64, border_mode: BorderMode) -> Option<Rgba<u8>> {
+#[allow(dead_code)]
+fn sample_pixel(src: &DynamicImage, x: f64, y: f64, bordermode: BorderMode) -> Option<Rgba<u8>> {
     let width = src.width() as f64;
     let height = src.height() as f64;
 
     // Handle border cases
-    let (x_adj, y_adj) = match border_mode {
+    let (x_adj, y_adj) = match bordermode {
         BorderMode::Transparent => {
             // Return None for out-of-bounds pixels
             if x < 0.0 || x >= width || y < 0.0 || y >= height {
@@ -263,6 +265,7 @@ fn sample_pixel(src: &DynamicImage, x: f64, y: f64, border_mode: BorderMode) -> 
 /// # Returns
 ///
 /// * Result containing estimated affine transformation
+#[allow(dead_code)]
 pub fn estimate_affine_transform(
     src_points: &[(f64, f64)],
     dst_points: &[(f64, f64)],
@@ -318,6 +321,7 @@ pub fn estimate_affine_transform(
 }
 
 /// Solve linear least squares problem using normal equations
+#[allow(dead_code)]
 fn solve_least_squares(a: &Array2<f64>, b: &Array1<f64>) -> Result<Array1<f64>> {
     let (m, n) = a.dim();
 
@@ -361,6 +365,7 @@ fn solve_least_squares(a: &Array2<f64>, b: &Array1<f64>) -> Result<Array1<f64>> 
 }
 
 /// Solve linear system Ax = b
+#[allow(dead_code)]
 fn solve_linear_system(a: &Array2<f64>, b: &Array1<f64>) -> Result<Array1<f64>> {
     let (n, m) = a.dim();
     if n != m {
@@ -393,7 +398,7 @@ fn solve_linear_system(a: &Array2<f64>, b: &Array1<f64>) -> Result<Array1<f64>> 
         }
 
         if max_val < 1e-10 {
-            return Err(crate::error::VisionError::OperationFailed(
+            return Err(crate::error::VisionError::OperationError(
                 "Matrix is singular or nearly singular".to_string(),
             ));
         }

@@ -5,6 +5,7 @@ use scirs2_cluster::metrics::{
 };
 use scirs2_cluster::vq::{kmeans2, MinitMethod, MissingMethod};
 
+#[allow(dead_code)]
 fn main() {
     println!("Clustering Evaluation Metrics Demo");
     println!("{}", "=".repeat(50));
@@ -147,6 +148,7 @@ fn main() {
     }
 }
 
+#[allow(dead_code)]
 fn generate_data_with_ground_truth() -> (Array2<f64>, Array1<i32>) {
     let mut data = Vec::new();
     let mut labels = Vec::new();

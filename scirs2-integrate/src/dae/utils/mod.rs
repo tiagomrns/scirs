@@ -13,6 +13,7 @@ pub mod linear_solvers;
 pub use linear_solvers::{matrix_norm, solve_linear_system, solve_lu, vector_norm};
 
 /// Compute the constraint Jacobian for a constraint function
+#[allow(dead_code)]
 pub fn compute_constraint_jacobian<F: IntegrateFloat>(
     g: &impl Fn(F, &[F], &[F]) -> Vec<F>,
     t: F,
@@ -55,6 +56,7 @@ pub fn compute_constraint_jacobian<F: IntegrateFloat>(
 }
 
 /// Check if a matrix is singular
+#[allow(dead_code)]
 pub fn is_singular_matrix<F: IntegrateFloat>(matrix: ArrayView2<F>) -> bool {
     let n = matrix.nrows();
     if n != matrix.ncols() {

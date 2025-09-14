@@ -10,6 +10,7 @@ use crate::unconstrained::{Bounds, Options};
 use ndarray::{Array1, Array2, ArrayView1};
 
 /// Implements the Newton-Conjugate-Gradient algorithm for unconstrained optimization
+#[allow(dead_code)]
 pub fn minimize_newton_cg<F, S>(
     mut fun: F,
     x0: Array1<f64>,
@@ -131,7 +132,6 @@ where
     Ok(OptimizeResult {
         x,
         fun: final_fun,
-        iterations: iter,
         nit: iter,
         func_evals: nfev,
         nfev,
@@ -147,6 +147,7 @@ where
 }
 
 /// Solve the Newton-CG system Hx = -g using the conjugate gradient method
+#[allow(dead_code)]
 fn solve_newton_cg_system(g: &Array1<f64>, hess: &Array2<f64>, tol: f64) -> Array1<f64> {
     let n = g.len();
 
@@ -214,6 +215,7 @@ fn solve_newton_cg_system(g: &Array1<f64>, hess: &Array2<f64>, tol: f64) -> Arra
 }
 
 /// Line search for Newton method with bounds support
+#[allow(dead_code)]
 fn line_search_newton<F, S>(
     fun: &mut F,
     x: &Array1<f64>,
@@ -288,6 +290,7 @@ where
 
 /// Projects the search direction to ensure we don't move in a direction that
 /// immediately violates the bounds.
+#[allow(dead_code)]
 fn project_direction(direction: &mut Array1<f64>, x: &Array1<f64>, bounds: Option<&Bounds>) {
     if bounds.is_none() {
         return;
@@ -301,14 +304,14 @@ fn project_direction(direction: &mut Array1<f64>, x: &Array1<f64>, bounds: Optio
         // Check if we're at a bound
         if let Some(lb) = bounds.lower[i] {
             if (xi - lb).abs() < 1e-10 && direction[i] < 0.0 {
-                // At lower bound and moving in negative direction
+                // At lower bound and moving in negative _direction
                 direction[i] = 0.0;
             }
         }
 
         if let Some(ub) = bounds.upper[i] {
             if (xi - ub).abs() < 1e-10 && direction[i] > 0.0 {
-                // At upper bound and moving in positive direction
+                // At upper bound and moving in positive _direction
                 direction[i] = 0.0;
             }
         }

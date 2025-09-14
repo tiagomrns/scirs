@@ -1,16 +1,19 @@
-//! Dual-Tree Complex Wavelet Transform (DTCWT)
-//!
-//! The Dual-Tree Complex Wavelet Transform provides:
-//! - Shift invariance (unlike standard DWT)
-//! - Directional selectivity for 2D signals
-//! - Perfect reconstruction
-//! - Complex coefficients with magnitude and phase information
-//! - 2x redundancy for improved analysis
+use ndarray::s;
+// Dual-Tree Complex Wavelet Transform (DTCWT)
+//
+// The Dual-Tree Complex Wavelet Transform provides:
+// - Shift invariance (unlike standard DWT)
+// - Directional selectivity for 2D signals
+// - Perfect reconstruction
+// - Complex coefficients with magnitude and phase information
+// - 2x redundancy for improved analysis
 
+use crate::dwt::Wavelet;
 use crate::error::{SignalError, SignalResult};
-use ndarray::{s, Array1, Array2, Array3};
+use ndarray::{Array1, Array2, Array3};
 use num_complex::Complex64;
 
+#[allow(unused_imports)]
 /// Configuration for Dual-Tree Complex Wavelet Transform
 #[derive(Debug, Clone)]
 pub struct DtcwtConfig {
@@ -187,25 +190,25 @@ impl DtcwtProcessor {
     ///
     /// # Arguments
     ///
-    /// * `dtcwt_result` - DTCWT coefficients from forward transform
+    /// * `dtcwtresult` - DTCWT coefficients from forward transform
     ///
     /// # Returns
     ///
     /// * Reconstructed signal
-    pub fn dtcwt_1d_inverse(&self, dtcwt_result: &Dtcwt1dResult) -> SignalResult<Array1<f64>> {
-        if dtcwt_result.coefficients.is_empty() {
+    pub fn dtcwt_1d_inverse(&self, dtcwtresult: &Dtcwt1dResult) -> SignalResult<Array1<f64>> {
+        if dtcwtresult.coefficients.is_empty() {
             return Err(SignalError::ValueError(
                 "No coefficients provided for reconstruction".to_string(),
             ));
         }
 
         // Start with lowpass coefficients
-        let mut ya: Array1<f64> = dtcwt_result.lowpass.iter().map(|c| c.re).collect();
-        let mut yb: Array1<f64> = dtcwt_result.lowpass.iter().map(|c| c.im).collect();
+        let mut ya: Array1<f64> = dtcwtresult.lowpass.iter().map(|c| c.re).collect();
+        let mut yb: Array1<f64> = dtcwtresult.lowpass.iter().map(|c| c.im).collect();
 
         // Reconstruct level by level (in reverse order)
-        for level in (0..dtcwt_result.levels).rev() {
-            let complex_coeffs = &dtcwt_result.coefficients[level];
+        for level in (0..dtcwtresult.levels).rev() {
+            let complex_coeffs = &dtcwtresult.coefficients[level];
 
             // Extract real and imaginary parts
             let ya_high: Array1<f64> = complex_coeffs.iter().map(|c| c.re).collect();
@@ -290,25 +293,25 @@ impl DtcwtProcessor {
     ///
     /// # Arguments
     ///
-    /// * `dtcwt_result` - DTCWT coefficients from forward transform
+    /// * `dtcwtresult` - DTCWT coefficients from forward transform
     ///
     /// # Returns
     ///
     /// * Reconstructed 2D signal/image
-    pub fn dtcwt_2d_inverse(&self, dtcwt_result: &Dtcwt2dResult) -> SignalResult<Array2<f64>> {
-        if dtcwt_result.coefficients.is_empty() {
+    pub fn dtcwt_2d_inverse(&self, dtcwtresult: &Dtcwt2dResult) -> SignalResult<Array2<f64>> {
+        if dtcwtresult.coefficients.is_empty() {
             return Err(SignalError::ValueError(
                 "No coefficients provided for reconstruction".to_string(),
             ));
         }
 
         // Start with lowpass coefficients
-        let mut ya: Array2<f64> = dtcwt_result.lowpass.mapv(|c| c.re);
-        let mut yb: Array2<f64> = dtcwt_result.lowpass.mapv(|c| c.im);
+        let mut ya: Array2<f64> = dtcwtresult.lowpass.mapv(|c| c.re);
+        let mut yb: Array2<f64> = dtcwtresult.lowpass.mapv(|c| c.im);
 
         // Reconstruct level by level (in reverse order)
-        for level in (0..dtcwt_result.levels).rev() {
-            let complex_subbands = &dtcwt_result.coefficients[level];
+        for level in (0..dtcwtresult.levels).rev() {
+            let complex_subbands = &dtcwtresult.coefficients[level];
 
             // Decompose complex subbands back to tree A and B subbands
             let (ya_subbands, yb_subbands) =
@@ -465,7 +468,7 @@ impl DtcwtProcessor {
         let (rows, cols, _) = ya_subbands.dim();
         let mut complex_subbands = Array3::zeros((rows, cols, 6));
 
-        // Form 6 complex orientations from the 4 real subbands of each tree
+        // Form 6 complex orientations from the 4 real _subbands of each tree
         // Using specific combinations to get directional selectivity
 
         // Orientation 1: +15° (approximately)
@@ -535,7 +538,7 @@ impl DtcwtProcessor {
         let mut ya_subbands = Array3::zeros((rows, cols, 4));
         let mut yb_subbands = Array3::zeros((rows, cols, 4));
 
-        // Set LL subbands
+        // Set LL _subbands
         for i in 0..rows {
             for j in 0..cols {
                 ya_subbands[[i, j, 0]] = ya_ll[[i, j]];
@@ -543,7 +546,7 @@ impl DtcwtProcessor {
             }
         }
 
-        // Reconstruct real subbands from complex orientations
+        // Reconstruct real _subbands from complex orientations
         // This is the inverse of form_complex_subbands_2d
 
         for i in 0..rows {
@@ -562,12 +565,12 @@ impl DtcwtProcessor {
                 let _o6_real = complex_subbands[[i, j, 5]].re;
                 let _o6_imag = complex_subbands[[i, j, 5]].im;
 
-                // Reconstruct Tree A subbands
+                // Reconstruct Tree A _subbands
                 ya_subbands[[i, j, 1]] = o3_real; // Direct from orientation 3
                 ya_subbands[[i, j, 2]] = o1_real + o2_real; // From orientations 1 and 2
                 ya_subbands[[i, j, 3]] = o4_real; // Direct from orientation 4
 
-                // Reconstruct Tree B subbands
+                // Reconstruct Tree B _subbands
                 yb_subbands[[i, j, 1]] = o4_imag; // From orientation 4 imaginary
                 yb_subbands[[i, j, 2]] = o1_imag + o2_imag; // From orientations 1 and 2
                 yb_subbands[[i, j, 3]] = o3_imag; // From orientation 3 imaginary
@@ -632,9 +635,9 @@ impl DtcwtProcessor {
         Ok(Array1::from_vec(result))
     }
 
-    fn extend_signal(&self, signal: &Array1<f64>, filter_len: usize) -> SignalResult<Array1<f64>> {
+    fn extend_signal(&self, signal: &Array1<f64>, filterlen: usize) -> SignalResult<Array1<f64>> {
         let n = signal.len();
-        let ext_len = filter_len - 1;
+        let ext_len = filterlen - 1;
 
         match self.config.boundary_mode {
             BoundaryMode::Symmetric => {
@@ -690,8 +693,9 @@ impl DtcwtProcessor {
 }
 
 /// Create DTCWT filter banks
-fn create_dtcwt_filters(filter_set: FilterSet) -> SignalResult<DtcwtFilters> {
-    match filter_set {
+#[allow(dead_code)]
+fn create_dtcwt_filters(_filterset: FilterSet) -> SignalResult<DtcwtFilters> {
+    match _filterset {
         FilterSet::Kingsbury => {
             // Kingsbury Q-shift filters (length 10/18)
             // These provide excellent shift-invariance properties
@@ -813,9 +817,93 @@ fn create_dtcwt_filters(filter_set: FilterSet) -> SignalResult<DtcwtFilters> {
                 g1b,
             })
         }
-        _ => Err(SignalError::NotImplementedError(
-            "Filter set not yet implemented".to_string(),
-        )),
+        FilterSet::Daubechies97 => {
+            // Daubechies 9/7 filters (used in JPEG 2000)
+            // Analysis filters
+            let h0a = Array1::from_vec(vec![
+                0.0378284555,
+                -0.0238494650,
+                -0.1106244044,
+                0.3774028556,
+                0.8526986790,
+                0.3774028556,
+                -0.1106244044,
+                -0.0238494650,
+                0.0378284555,
+            ]);
+
+            let h1a = Array1::from_vec(vec![
+                -0.0645388826,
+                0.0406894251,
+                0.4180922732,
+                -0.7884856164,
+                0.4180922732,
+                0.0406894251,
+                -0.0645388826,
+            ]);
+
+            // For dual-tree implementation, create shifted versions
+            let h0b = Array1::from_vec(vec![
+                0.0189142278,
+                -0.0119247325,
+                -0.0553122022,
+                0.1887014278,
+                0.4263493395,
+                0.4263493395,
+                0.1887014278,
+                -0.0553122022,
+                -0.0119247325,
+                0.0189142278,
+            ]);
+
+            let h1b = Array1::from_vec(vec![
+                -0.0322694413,
+                0.0203447126,
+                0.2090461366,
+                -0.3942428082,
+                0.2090461366,
+                0.0203447126,
+                -0.0322694413,
+                0.0,
+            ]);
+
+            // Synthesis filters (time-reversed and possibly sign-flipped)
+            let g0a: Array1<f64> = h0a.iter().rev().cloned().collect();
+            let mut g1a: Array1<f64> = h1a.iter().rev().cloned().collect();
+            // Alternate signs for g1
+            for (i, val) in g1a.iter_mut().enumerate() {
+                if i % 2 == 1 {
+                    *val = -*val;
+                }
+            }
+
+            let g0b: Array1<f64> = h0b.iter().rev().cloned().collect();
+            let mut g1b: Array1<f64> = h1b.iter().rev().cloned().collect();
+            // Alternate signs for g1
+            for (i, val) in g1b.iter_mut().enumerate() {
+                if i % 2 == 1 {
+                    *val = -*val;
+                }
+            }
+
+            Ok(DtcwtFilters {
+                h0a,
+                h1a,
+                h0b,
+                h1b,
+                g0a,
+                g1a,
+                g0b,
+                g1b,
+            })
+        }
+        FilterSet::Custom => {
+            // For custom filters, return a simple default implementation
+            // In practice, this would accept user-provided filter coefficients
+            Err(SignalError::ValueError(
+                "Custom filter sets require user-provided coefficients".to_string(),
+            ))
+        }
     }
 }
 
@@ -823,8 +911,8 @@ fn create_dtcwt_filters(filter_set: FilterSet) -> SignalResult<DtcwtFilters> {
 mod tests {
     use super::*;
     use approx::assert_relative_eq;
+    use ndarray::{Array1, Array2};
     use std::f64::consts::PI;
-
     #[test]
     fn test_dtcwt_processor_creation() {
         let config = DtcwtConfig::default();
@@ -847,12 +935,12 @@ mod tests {
             .collect();
 
         // Forward transform
-        let dtcwt_result = processor.dtcwt_1d_forward(&signal).unwrap();
-        assert_eq!(dtcwt_result.levels, 3);
-        assert_eq!(dtcwt_result.coefficients.len(), 3);
+        let dtcwtresult = processor.dtcwt_1d_forward(&signal).unwrap();
+        assert_eq!(dtcwtresult.levels, 3);
+        assert_eq!(dtcwtresult.coefficients.len(), 3);
 
         // Inverse transform
-        let reconstructed = processor.dtcwt_1d_inverse(&dtcwt_result).unwrap();
+        let reconstructed = processor.dtcwt_1d_inverse(&dtcwtresult).unwrap();
 
         // Check reconstruction quality
         let mse: f64 = signal
@@ -879,13 +967,13 @@ mod tests {
             Array2::from_shape_fn((rows, cols), |(i, j)| ((i as f64 + j as f64) / 8.0).sin());
 
         // Forward transform
-        let dtcwt_result = processor.dtcwt_2d_forward(&image).unwrap();
-        assert_eq!(dtcwt_result.levels, 2);
-        assert_eq!(dtcwt_result.orientations, 6);
-        assert_eq!(dtcwt_result.coefficients.len(), 2);
+        let dtcwtresult = processor.dtcwt_2d_forward(&image).unwrap();
+        assert_eq!(dtcwtresult.levels, 2);
+        assert_eq!(dtcwtresult.orientations, 6);
+        assert_eq!(dtcwtresult.coefficients.len(), 2);
 
         // Check coefficient dimensions
-        for level_coeffs in &dtcwt_result.coefficients {
+        for level_coeffs in &dtcwtresult.coefficients {
             assert_eq!(level_coeffs.shape()[2], 6); // 6 orientations
         }
     }

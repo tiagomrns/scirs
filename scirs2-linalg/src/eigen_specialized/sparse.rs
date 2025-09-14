@@ -5,7 +5,7 @@
 
 use ndarray::{Array1, Array2, ArrayView2};
 use num_traits::{Float, NumAssign};
-use rand::Rng;
+use rand::{self, Rng};
 use std::iter::Sum;
 
 use crate::error::{LinalgError, LinalgResult};
@@ -42,6 +42,7 @@ use crate::norm::vector_norm;
 /// assert!((eigenvalues[0] - 4.618).abs() < 1e-1);
 /// assert!((eigenvalues[1] - 2.382).abs() < 1e-1);
 /// ```
+#[allow(dead_code)]
 pub fn largest_k_eigh<F>(
     a: &ArrayView2<F>,
     k: usize,
@@ -49,7 +50,7 @@ pub fn largest_k_eigh<F>(
     tol: F,
 ) -> LinalgResult<(Array1<F>, Array2<F>)>
 where
-    F: Float + NumAssign + Sum + 'static,
+    F: Float + NumAssign + Sum + Send + Sync + ScalarOperand + 'static,
 {
     // Check if matrix is square
     if a.nrows() != a.ncols() {
@@ -152,6 +153,7 @@ where
 /// assert!((eigenvalues[0] - 2.0).abs() < 1e-1);
 /// assert!((eigenvalues[1] - 2.382).abs() < 1e-1);
 /// ```
+#[allow(dead_code)]
 pub fn smallest_k_eigh<F>(
     a: &ArrayView2<F>,
     k: usize,
@@ -159,7 +161,7 @@ pub fn smallest_k_eigh<F>(
     tol: F,
 ) -> LinalgResult<(Array1<F>, Array2<F>)>
 where
-    F: Float + NumAssign + Sum + 'static,
+    F: Float + NumAssign + Sum + Send + Sync + ScalarOperand + 'static,
 {
     // Check if matrix is square
     if a.nrows() != a.ncols() {
@@ -194,7 +196,7 @@ where
     }
 
     // Estimate the largest eigenvalue for shift-and-invert (unused in current implementation)
-    let (_largest_eigenvalue, _) = match power_iteration_with_convergence(a, max_iter, tol) {
+    let (_largest_eigenvalue_) = match power_iteration_with_convergence(a, max_iter, tol) {
         Ok((lambda, v)) => (lambda, v),
         Err(e) => return Err(e),
     };
@@ -249,13 +251,14 @@ where
 /// # Returns
 ///
 /// * Tuple (eigenvalue, eigenvector)
+#[allow(dead_code)]
 fn power_iteration_with_convergence<F>(
     a: &ArrayView2<F>,
     max_iter: usize,
     tol: F,
 ) -> LinalgResult<(F, Array1<F>)>
 where
-    F: Float + NumAssign + Sum + 'static,
+    F: Float + NumAssign + Sum + Send + Sync + ScalarOperand + 'static,
 {
     let n = a.nrows();
 
@@ -263,7 +266,7 @@ where
     let mut rng = rand::rng();
     let mut b = Array1::zeros(n);
     for i in 0..n {
-        b[i] = F::from(rng.random_range(-1.0..=1.0)).unwrap_or(F::zero());
+        b[i] = F::from(rng.random_range(-1.0..1.0)).unwrap_or(F::zero());
     }
 
     // Normalize the vector

@@ -75,8 +75,7 @@ impl<T: Float + Send + Sync + 'static, D: crate::distance::Distance<T> + 'static
 
         if tree_dims != points_dims {
             return Err(crate::error::SpatialError::DimensionError(format!(
-                "Point dimensions ({}) do not match tree dimensions ({})",
-                points_dims, tree_dims
+                "Point dimensions ({points_dims}) do not match tree dimensions ({tree_dims})"
             )));
         }
 
@@ -91,8 +90,8 @@ impl<T: Float + Send + Sync + 'static, D: crate::distance::Distance<T> + 'static
         // For each point in the query set, find the nearest point in the tree
         // We then use the maximum of these minimum distances
         let mut max_dist = T::zero();
-        let mut max_i = 0; // Index in the tree points
-        let mut max_j = 0; // Index in the query points
+        let mut max_i = 0; // Index in the tree _points
+        let mut max_j = 0; // Index in the query _points
 
         for j in 0..n_points {
             let query_point = points.row(j).to_vec();
@@ -119,22 +118,23 @@ impl<T: Float + Send + Sync + 'static, D: crate::distance::Distance<T> + 'static
 
     fn hausdorff_distance(&self, points: &ArrayView2<T>, seed: Option<u64>) -> SpatialResult<T> {
         // First get the forward directed Hausdorff distance
-        let (dist_forward, _, _) = self.directed_hausdorff_distance(points, seed)?;
+        let (dist_forward__, _, _) = self.directed_hausdorff_distance(points, seed)?;
 
         // For the backward direction, we need to create a new KDTree on the points
         let points_owned = points.to_owned();
         let points_tree = KDTree::new(&points_owned)?;
 
         // Get the backward directed Hausdorff distance using the points_tree
-        // We perform the backward direction by simply reversing the query
-        let (dist_backward, _, _) =
-            points_tree.directed_hausdorff_distance(&points_owned.view(), seed)?;
+        // Note: This is a simplified implementation - ideally we'd query from self's points
+        // to the new tree, but we don't have access to self's points directly
+        // For now, we'll use the same points for both directions as a workaround
+        let (dist_backward__, _, _) = points_tree.directed_hausdorff_distance(points, seed)?;
 
         // Return the maximum of the two directed distances
-        Ok(if dist_forward > dist_backward {
-            dist_forward
+        Ok(if dist_forward__ > dist_backward__ {
+            dist_forward__
         } else {
-            dist_backward
+            dist_backward__
         })
     }
 
@@ -148,8 +148,7 @@ impl<T: Float + Send + Sync + 'static, D: crate::distance::Distance<T> + 'static
 
         if tree_dims != points_dims {
             return Err(crate::error::SpatialError::DimensionError(format!(
-                "Point dimensions ({}) do not match tree dimensions ({})",
-                points_dims, tree_dims
+                "Point dimensions ({points_dims}) do not match tree dimensions ({tree_dims})"
             )));
         }
 
@@ -157,7 +156,7 @@ impl<T: Float + Send + Sync + 'static, D: crate::distance::Distance<T> + 'static
         let mut indices = Array1::<usize>::zeros(n_points);
         let mut distances = Array1::<T>::zeros(n_points);
 
-        // Process points in batches for better cache locality
+        // Process _points in batches for better cache locality
         const BATCH_SIZE: usize = 32;
 
         for batch_start in (0..n_points).step_by(BATCH_SIZE) {
@@ -202,6 +201,7 @@ impl<T: Float + Send + Sync + 'static, D: crate::distance::Distance<T> + 'static
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::kdtree::KDTree;
     use ndarray::array;
 
     #[test]

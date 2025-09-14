@@ -1,6 +1,7 @@
 use scirs2_io::csv::{read_csv_typed, write_csv_typed, ColumnType, CsvWriterConfig};
 use std::error::Error;
 
+#[allow(dead_code)]
 fn main() -> Result<(), Box<dyn Error>> {
     println!("Reading CSV file with advanced data types...");
 

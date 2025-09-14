@@ -8,6 +8,7 @@ use std::time::{Duration, Instant};
 
 use crate::memory::metrics::event::{MemoryEvent, MemoryEventType};
 use rand::prelude::*;
+use rand::Rng;
 #[cfg(feature = "memory_metrics")]
 use serde::{Deserialize, Serialize};
 
@@ -19,14 +20,14 @@ struct Random {
 impl Default for Random {
     fn default() -> Self {
         Self {
-            rng: StdRng::from_seed([0; 32]), // Use a fixed seed for simplicity
+            rng: StdRng::seed_from_u64(0), // Use a fixed seed for simplicity
         }
     }
 }
 
 impl Random {
-    fn random_range(&mut self, range: std::ops::Range<f64>) -> f64 {
-        self.rng.random_range(range.start..range.end)
+    fn gen_range(&mut self, range: std::ops::Range<f64>) -> f64 {
+        self.rng.gen_range(range)
     }
 }
 
@@ -42,7 +43,7 @@ pub struct MemoryMetricsConfig {
     /// Whether to aggregate events in real-time
     pub real_time_aggregation: bool,
     /// Event sampling rate (1.0 = all events, 0.1 = 10% of events)
-    pub sampling_rate: f64,
+    pub samplingrate: f64,
 }
 
 impl Default for MemoryMetricsConfig {
@@ -52,7 +53,7 @@ impl Default for MemoryMetricsConfig {
             capture_call_stacks: cfg!(feature = "memory_call_stack"),
             max_events: 10000,
             real_time_aggregation: true,
-            sampling_rate: 1.0,
+            samplingrate: 1.0,
         }
     }
 }
@@ -152,9 +153,9 @@ impl MemoryMetricsCollector {
         }
 
         // Sample events if sampling rate < 1.0
-        if self.config.sampling_rate < 1.0 {
+        if self.config.samplingrate < 1.0 {
             let mut rng = self.rng.lock().unwrap();
-            if rng.random_range(0.0..1.0) > self.config.sampling_rate {
+            if rng.gen_range(0.0..1.0) > self.config.samplingrate {
                 return;
             }
         }
@@ -426,7 +427,7 @@ mod tests {
             capture_call_stacks: false,
             max_events: 100,
             real_time_aggregation: true,
-            sampling_rate: 1.0,
+            samplingrate: 1.0,
         };
 
         let collector = MemoryMetricsCollector::new(config);

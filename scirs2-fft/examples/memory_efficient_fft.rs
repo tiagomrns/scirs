@@ -12,6 +12,7 @@ use scirs2_fft::{
 use std::f64::consts::PI;
 use std::time::Instant;
 
+#[allow(dead_code)]
 fn main() {
     println!("=== Memory-Efficient FFT Examples ===\n");
 
@@ -31,12 +32,13 @@ fn main() {
 }
 
 /// Basic in-place FFT example
+#[allow(dead_code)]
 fn basic_inplace_example() {
     println!("\n--- Basic In-Place FFT ---");
 
     // Create a simple signal
     let signal = vec![1.0, 2.0, 3.0, 4.0];
-    println!("Input signal: {:?}", signal);
+    println!("Input signal: {signal:?}");
 
     // Create complex input and output buffers
     let mut input_buffer: Vec<Complex64> = signal.iter().map(|&x| Complex64::new(x, 0.0)).collect();
@@ -102,12 +104,13 @@ fn basic_inplace_example() {
 }
 
 /// Processing large arrays in chunks
+#[allow(dead_code)]
 fn large_array_processing() {
     println!("\n--- Processing Large Arrays in Chunks ---");
 
     // Create a large signal (1 million points)
     let n: usize = 1_000_000;
-    println!("Creating a large signal with {} points...", n);
+    println!("Creating a large signal with {n} points...");
 
     // Use a simple function to generate the signal
     let signal: Vec<f64> = (0..n)
@@ -119,30 +122,30 @@ fn large_array_processing() {
 
     // Process the signal in chunks
     println!("Processing signal in chunks...");
-    let chunk_size = 1024;
-    let num_chunks = n.div_ceil(chunk_size);
-    println!("  Chunk size: {}", chunk_size);
-    println!("  Number of chunks: {}", num_chunks);
+    let chunksize = 1024;
+    let num_chunks = n.div_ceil(chunksize);
+    println!("  Chunk size: {chunksize}");
+    println!("  Number of chunks: {num_chunks}");
 
     let start_time = Instant::now();
-    let _result = fft_streaming(&signal, None, FftMode::Forward, Some(chunk_size)).unwrap();
+    let _result = fft_streaming(&signal, None, FftMode::Forward, Some(chunksize)).unwrap();
     let streaming_time = start_time.elapsed();
 
-    println!("Streaming FFT completed in {:.2?}", streaming_time);
+    println!("Streaming FFT completed in {streaming_time:.2?}");
     println!("Memory usage is much lower than processing the entire signal at once");
 
     // Process chunks with custom operation
     println!("\nProcessing with custom operation (finding peaks in each chunk):");
 
     let start_time = Instant::now();
-    let chunks_result = process_in_chunks(&signal, chunk_size, |chunk| {
+    let chunks_result = process_in_chunks(&signal, chunksize, |chunk| {
         // Just compute FFT of each chunk
         fft(chunk, None)
     })
     .unwrap();
     let chunks_time = start_time.elapsed();
 
-    println!("Chunk processing completed in {:.2?}", chunks_time);
+    println!("Chunk processing completed in {chunks_time:.2?}");
     println!(
         "Processed {} chunks with {} total output elements",
         num_chunks,
@@ -150,13 +153,10 @@ fn large_array_processing() {
     );
 
     // Compare with standard FFT (on a smaller subset to avoid memory issues)
-    let subset_size = 10_000; // Use only a small subset for comparison
-    println!(
-        "\nComparing with standard FFT (on a {} point subset)...",
-        subset_size
-    );
+    let subsetsize = 10_000; // Use only a small subset for comparison
+    println!("\nComparing with standard FFT (on a {subsetsize} point subset)...");
 
-    let subset = &signal[0..subset_size];
+    let subset = &signal[0..subsetsize];
     let start_time = Instant::now();
     let standard_result = fft(subset, None).unwrap();
     let standard_time = start_time.elapsed();
@@ -165,25 +165,23 @@ fn large_array_processing() {
     let streaming_subset = fft_streaming(subset, None, FftMode::Forward, None).unwrap();
     let streaming_subset_time = start_time.elapsed();
 
-    println!("Standard FFT: {:.2?}", standard_time);
-    println!(
-        "Streaming FFT on same subset: {:.2?}",
-        streaming_subset_time
-    );
+    println!("Standard FFT: {standard_time:.2?}");
+    println!("Streaming FFT on same subset: {streaming_subset_time:.2?}");
 
     // Verify results match
     let mut max_diff: f64 = 0.0;
-    for i in 0..subset_size.min(standard_result.len()) {
+    for i in 0..subsetsize.min(standard_result.len()) {
         let diff = (standard_result[i] - streaming_subset[i]).norm();
         if diff > max_diff {
             max_diff = diff;
         }
     }
 
-    println!("Maximum difference between methods: {:.6}", max_diff);
+    println!("Maximum difference between methods: {max_diff:.6}");
 }
 
 /// Memory-efficient 2D FFT example
+#[allow(dead_code)]
 fn memory_efficient_2d_fft() {
     println!("\n--- Memory-Efficient 2D FFT ---");
 
@@ -197,7 +195,7 @@ fn memory_efficient_2d_fft() {
 
     println!("Input 2D array ({}x{}):", data.shape()[0], data.shape()[1]);
     for row in data.rows() {
-        println!("  {:?}", row);
+        println!("  {row:?}");
     }
 
     // Perform efficient 2D FFT
@@ -209,7 +207,7 @@ fn memory_efficient_2d_fft() {
         let row: Vec<f64> = (0..spectrum_2d.shape()[1])
             .map(|j| spectrum_2d[[i, j]].norm())
             .collect();
-        println!("  [{:2}]: {:?}", i, row);
+        println!("  [{i:2}]: {row:?}");
     }
 
     // Verify against standard FFT
@@ -221,7 +219,7 @@ fn memory_efficient_2d_fft() {
         let row: Vec<f64> = (0..standard_2d.shape()[1])
             .map(|j| standard_2d[[i, j]].norm())
             .collect();
-        println!("  [{:2}]: {:?}", i, row);
+        println!("  [{i:2}]: {row:?}");
     }
 
     let mut max_diff: f64 = 0.0;
@@ -244,7 +242,7 @@ fn memory_efficient_2d_fft() {
         }
     }
 
-    println!("Maximum relative difference: {:.6}", max_diff);
+    println!("Maximum relative difference: {max_diff:.6}");
 
     if max_diff < 1e-2 {
         println!("Results match with standard 2D FFT (within relative tolerance)!");
@@ -267,7 +265,7 @@ fn memory_efficient_2d_fft() {
         }
     }
 
-    println!("Maximum recovery error: {:.6}", max_recovery_error);
+    println!("Maximum recovery error: {max_recovery_error:.6}");
 
     if max_recovery_error < 1e-10 {
         println!("Original array successfully recovered!");
@@ -275,6 +273,7 @@ fn memory_efficient_2d_fft() {
 }
 
 /// Performance comparison for different FFT methods
+#[allow(dead_code)]
 fn performance_comparison() {
     println!("\n--- Performance Comparison ---");
 
@@ -287,7 +286,7 @@ fn performance_comparison() {
     for &size in &sizes {
         // Skip very large sizes for standard FFT to avoid memory issues
         if size > 262144 {
-            println!("{:7} | (skipped)     | ", size);
+            println!("{size:7} | (skipped)     | ");
             continue;
         }
 
@@ -322,8 +321,7 @@ fn performance_comparison() {
         let inplace_time = start.elapsed();
 
         println!(
-            "{:7} | {:12.2?} | {:13.2?} | {:13.2?}",
-            size, standard_time, streaming_time, inplace_time
+            "{size:7} | {standard_time:12.2?} | {streaming_time:13.2?} | {inplace_time:13.2?}"
         );
     }
 

@@ -31,7 +31,7 @@ struct SparseArray {
 impl SparseArray {
     /// Create a new sparse array.
     #[allow(dead_code)]
-    fn new(indices: Vec<(usize, usize)>, values: Vec<f64>, shape: (usize, usize)) -> Self {
+    fn indices(indices: Vec<(usize, usize)>, values: Vec<f64>, shape: (usize, usize)) -> Self {
         assert_eq!(
             indices.len(),
             values.len(),
@@ -45,7 +45,7 @@ impl SparseArray {
     }
 
     /// Create a sparse array from a dense array by keeping only non-zero elements.
-    fn from_dense(array: &Array2<f64>) -> Self {
+    fn array(array: &Array2<f64>) -> Self {
         let shape = array.dim();
         let mut indices = Vec::new();
         let mut values = Vec::new();
@@ -89,7 +89,7 @@ impl SparseArray {
 
 impl fmt::Debug for SparseArray {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        f.debug_struct("SparseArray")
+        f.debug_struct(SparseArray)
             .field("shape", &self.shape)
             .field("nnz", &self.nnz())
             .field("sparsity", &self.sparsity())
@@ -107,10 +107,8 @@ impl ArrayProtocol for SparseArray {
         })
     }
 
-    fn array_function(
-        &self,
-        func: &ArrayFunction,
-        _types: &[TypeId],
+    fn types(
+        _type_ids: &[TypeId],
         args: &[Box<dyn Any>],
         kwargs: &HashMap<String, Box<dyn Any>>,
     ) -> Result<Box<dyn Any>, NotImplemented> {
@@ -126,7 +124,7 @@ impl ArrayProtocol for SparseArray {
                     if let Some(sparse_array) = sparse.as_any().downcast_ref::<SparseArray>() {
                         sparse_array
                     } else if let Some(ndarray_wrapper) =
-                        sparse.as_any().downcast_ref::<NdarrayWrapper<f64, _>>()
+                        sparse.as_any().downcast_ref::<NdarrayWrapper<f64_>>()
                     {
                         // Convert ndarray to sparse array (simplified for example)
                         return Ok(Box::new(SparseArray::from_dense(
@@ -188,7 +186,7 @@ impl ArrayProtocol for SparseArray {
                 let result: f64 = self.values.iter().sum();
 
                 // Check if summing along an axis
-                if let Some(axis_box) = kwargs.get("axis") {
+                if let Some(axis_box) = kwargs.get(axis) {
                     if let Some(axis) = axis_box.downcast_ref::<usize>() {
                         // For the example, we'll just convert to dense and use ndarray's sum
                         let dense = self.to_dense();
@@ -226,6 +224,7 @@ impl ArrayProtocol for SparseArray {
     }
 }
 
+#[allow(dead_code)]
 fn main() {
     // Initialize the array protocol system
     array_protocol::init();

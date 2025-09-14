@@ -6,6 +6,7 @@
 use ndarray::Array1;
 use scirs2_optim::optimizers::{Adam, Optimizer, LBFGS, SGD};
 
+#[allow(dead_code)]
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("L-BFGS Optimizer Example");
     println!("=======================");
@@ -104,6 +105,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 }
 
 #[test]
+#[allow(dead_code)]
 fn test_lbfgs_on_rosenbrock() {
     // Test that L-BFGS converges on the Rosenbrock function
     // Use a higher learning rate for better convergence

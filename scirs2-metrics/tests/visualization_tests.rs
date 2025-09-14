@@ -13,6 +13,7 @@ use scirs2_metrics::{
 };
 
 #[test]
+#[allow(dead_code)]
 fn test_visualization_data() {
     // Test creating a new VisualizationData
     let mut data = VisualizationData::new();
@@ -74,6 +75,7 @@ fn test_visualization_data() {
 }
 
 #[test]
+#[allow(dead_code)]
 fn test_visualization_metadata() {
     // Test creating a new VisualizationMetadata
     let metadata = VisualizationMetadata::new("Test Title");
@@ -116,6 +118,7 @@ fn test_visualization_metadata() {
 }
 
 #[test]
+#[allow(dead_code)]
 fn test_visualization_options() {
     // Test default options
     let options = VisualizationOptions::default();
@@ -163,13 +166,14 @@ fn test_visualization_options() {
 }
 
 #[test]
+#[allow(dead_code)]
 fn test_confusion_matrix_visualizer() {
     // Create a confusion matrix
     let y_true = array![0, 1, 2, 0, 1, 2];
     let y_pred = array![0, 2, 1, 0, 0, 2];
 
-    let (cm, _) = confusion_matrix(&y_true, &y_pred, None).unwrap();
-    let cm_f64 = cm.mapv(|x| x as f64);
+    let (cm_, _labels) = confusion_matrix(&y_true, &y_pred, None).unwrap();
+    let cm_f64 = cm_.mapv(|x| x as f64);
 
     // Test creating a visualizer
     let visualizer = helpers::visualize_confusion_matrix(
@@ -193,6 +197,7 @@ fn test_confusion_matrix_visualizer() {
 }
 
 #[test]
+#[allow(dead_code)]
 fn test_roc_curve_visualizer() {
     // Create binary classification data
     let y_true = array![0, 1, 1, 0, 1, 0];
@@ -218,6 +223,7 @@ fn test_roc_curve_visualizer() {
 }
 
 #[test]
+#[allow(dead_code)]
 fn test_precision_recall_visualizer() {
     // Create binary classification data
     let y_true = array![0, 1, 1, 0, 1, 0];
@@ -247,17 +253,18 @@ fn test_precision_recall_visualizer() {
 }
 
 #[test]
+#[allow(dead_code)]
 fn test_calibration_visualizer() {
     // Create binary classification data
     let y_true = array![0, 1, 1, 0, 1, 0];
     let y_score = array![0.1, 0.8, 0.7, 0.3, 0.9, 0.2];
 
     // Compute calibration curve
-    let (prob_true, prob_pred, _) = calibration_curve(&y_true, &y_score, Some(3)).unwrap();
+    let (prob_true, prob_pred_, _counts) = calibration_curve(&y_true, &y_score, Some(3)).unwrap();
 
     // Test creating a visualizer
     let visualizer =
-        helpers::visualize_calibration_curve(prob_true.view(), prob_pred.view(), 3, "uniform");
+        helpers::visualize_calibration_curve(prob_true.view(), prob_pred_.view(), 3, "uniform");
 
     // Test preparing data
     let data = visualizer.prepare_data().unwrap();
@@ -272,6 +279,7 @@ fn test_calibration_visualizer() {
 }
 
 #[test]
+#[allow(dead_code)]
 fn test_generic_metric_visualizer() {
     // Create data
     let x = array![1.0, 2.0, 3.0, 4.0, 5.0];
@@ -301,6 +309,7 @@ fn test_generic_metric_visualizer() {
 }
 
 #[test]
+#[allow(dead_code)]
 fn test_multi_curve_visualizer() {
     // Create data for multiple curves
     let x = array![1.0, 2.0, 3.0, 4.0, 5.0];
@@ -340,6 +349,7 @@ fn test_multi_curve_visualizer() {
 }
 
 #[test]
+#[allow(dead_code)]
 fn test_heatmap_visualizer() {
     // Create a matrix
     let matrix =
@@ -375,6 +385,7 @@ fn test_heatmap_visualizer() {
 }
 
 #[test]
+#[allow(dead_code)]
 fn test_histogram_visualizer() {
     // Create data for a histogram
     let values = array![
@@ -403,6 +414,7 @@ fn test_histogram_visualizer() {
 }
 
 #[test]
+#[allow(dead_code)]
 fn test_backend_default() {
     // Test that the default backend can be created
     let backend = backends::default_backend();

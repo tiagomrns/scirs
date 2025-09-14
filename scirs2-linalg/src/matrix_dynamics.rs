@@ -186,6 +186,7 @@ pub struct ODEResult<F> {
 ///
 /// let result = matrix_exp_action(&a.view(), &b.view(), t, &DynamicsConfig::default()).unwrap();
 /// ```
+#[allow(dead_code)]
 pub fn matrix_exp_action<F>(
     a: &ArrayView2<F>,
     b: &ArrayView2<F>,
@@ -195,7 +196,7 @@ pub fn matrix_exp_action<F>(
 where
     F: Float + NumAssign + Sum + Send + Sync + 'static + ndarray::ScalarOperand,
 {
-    let (n, _k) = b.dim();
+    let (n, k) = b.dim();
     if a.nrows() != n || a.ncols() != n {
         return Err(LinalgError::DimensionError(
             "Matrix A must be square and compatible with B".to_string(),
@@ -212,6 +213,7 @@ where
 }
 
 /// High-precision matrix exponential action for small matrices
+#[allow(dead_code)]
 fn high_precision_exp_action<F>(
     a: &ArrayView2<F>,
     b: &ArrayView2<F>,
@@ -258,7 +260,7 @@ where
     // Use multiple precision matrix exponential algorithm
     let exp_at = if n <= 4 {
         // Use Padé approximation with scaling and squaring for better precision
-        pade_matrix_exp(&scaled_a.view())?
+        padematrix_exp(&scaled_a.view())?
     } else {
         expm(&scaled_a.view(), None)?
     };
@@ -267,7 +269,8 @@ where
 }
 
 /// High-precision Padé approximation for matrix exponential
-fn pade_matrix_exp<F>(a: &ArrayView2<F>) -> LinalgResult<Array2<F>>
+#[allow(dead_code)]
+fn padematrix_exp<F>(a: &ArrayView2<F>) -> LinalgResult<Array2<F>>
 where
     F: Float + NumAssign + Sum + Send + Sync + 'static + ndarray::ScalarOperand,
 {
@@ -307,6 +310,7 @@ where
 }
 
 /// Krylov subspace approximation for matrix exponential action
+#[allow(dead_code)]
 fn krylov_exp_action<F>(
     a: &ArrayView2<F>,
     b: &ArrayView2<F>,
@@ -335,8 +339,8 @@ where
 
         // Build Krylov subspace using Arnoldi iteration
         let mut h = Array2::<F>::zeros((m + 1, m));
-        let mut v_matrix = Array2::<F>::zeros((n, m + 1));
-        v_matrix.column_mut(0).assign(&v);
+        let mut vmatrix = Array2::<F>::zeros((n, m + 1));
+        vmatrix.column_mut(0).assign(&v);
 
         for j_krylov in 0..m {
             // Compute A*v_j
@@ -345,7 +349,7 @@ where
             // Orthogonalize against previous vectors (modified Gram-Schmidt)
             let mut w = av;
             for i in 0..=j_krylov {
-                let v_i = v_matrix.column(i);
+                let v_i = vmatrix.column(i);
                 let hij = w.dot(&v_i);
                 h[[i, j_krylov]] = hij;
                 let scaled_vi = v_i.mapv(|x| x * hij);
@@ -356,7 +360,7 @@ where
             if j_krylov < m - 1 && norm_w > F::from(config.atol).unwrap() {
                 h[[j_krylov + 1, j_krylov]] = norm_w;
                 v = w / norm_w;
-                v_matrix.column_mut(j_krylov + 1).assign(&v);
+                vmatrix.column_mut(j_krylov + 1).assign(&v);
             } else {
                 break;
             }
@@ -373,7 +377,7 @@ where
         // Compute approximation: V_m * (beta * e_1^T * exp(H))
         let mut result_col = Array1::zeros(n);
         for i in 0..m {
-            let scaled_column = v_matrix.column(i).mapv(|x| x * coeffs[i] * beta);
+            let scaled_column = vmatrix.column(i).mapv(|x| x * coeffs[i] * beta);
             result_col = result_col + scaled_column;
         }
 
@@ -413,6 +417,7 @@ where
 ///
 /// let x = lyapunov_solve(&a.view(), &c.view(), &DynamicsConfig::default()).unwrap();
 /// ```
+#[allow(dead_code)]
 pub fn lyapunov_solve<F>(
     a: &ArrayView2<F>,
     c: &ArrayView2<F>,
@@ -448,6 +453,7 @@ where
 }
 
 /// Direct solution of Lyapunov equation using Kronecker products
+#[allow(dead_code)]
 fn lyapunov_direct<F>(
     a: &ArrayView2<F>,
     c: &ArrayView2<F>,
@@ -501,6 +507,7 @@ where
 }
 
 /// Iterative solution of Lyapunov equation using conjugate gradient
+#[allow(dead_code)]
 fn lyapunov_iterative<F>(
     a: &ArrayView2<F>,
     c: &ArrayView2<F>,
@@ -562,6 +569,7 @@ where
 ///
 /// let x = riccati_solve(&a.view(), &b.view(), &q.view(), &r.view(), &DynamicsConfig::default()).unwrap();
 /// ```
+#[allow(dead_code)]
 pub fn riccati_solve<F>(
     a: &ArrayView2<F>,
     b: &ArrayView2<F>,
@@ -592,6 +600,7 @@ where
 }
 
 /// Solve Riccati equation using Hamiltonian matrix approach
+#[allow(dead_code)]
 fn riccati_hamiltonian<F>(
     a: &ArrayView2<F>,
     b: &ArrayView2<F>,
@@ -705,6 +714,7 @@ where
 ///
 /// let result = matrix_ode_solve(f, &x0.view(), [0.0, 1.0], &DynamicsConfig::default()).unwrap();
 /// ```
+#[allow(dead_code)]
 pub fn matrix_ode_solve<F, E>(
     f: impl Fn(F, &ArrayView2<F>) -> Result<Array2<F>, E>,
     x0: &ArrayView2<F>,
@@ -778,8 +788,8 @@ where
                 + &k3.mapv(|x| x * F::from(3.0).unwrap());
             let embedded_factor = dt / F::from(8.0).unwrap();
             let x_embedded = &x + &k_embedded_sum.mapv(|x| x * embedded_factor);
-            let error_matrix = &x_new - &x_embedded;
-            let error = matrix_norm(&error_matrix.view(), "fro", None).unwrap_or(F::zero());
+            let errormatrix = &x_new - &x_embedded;
+            let error = matrix_norm(&errormatrix.view(), "fro", None).unwrap_or(F::zero());
             let tolerance = atol + rtol * matrix_norm(&x.view(), "fro", None).unwrap_or(F::zero());
 
             if let Some(ref mut errors) = error_estimates {
@@ -799,8 +809,8 @@ where
         // Quantum mode: ensure unitarity preservation
         if config.quantum_mode {
             // Project onto unitary group (simplified approach)
-            let (u, _s, vt) = svd(&x_new.view(), false, None)?;
-            x = u.dot(&vt);
+            let (u_s, _, vt) = svd(&x_new.view(), false, None)?;
+            x = u_s.dot(&vt);
         } else {
             x = x_new;
         }
@@ -857,6 +867,7 @@ where
 ///
 /// let psi_t = quantum_evolution(&h.view(), &psi.view(), t, &DynamicsConfig::quantum()).unwrap();
 /// ```
+#[allow(dead_code)]
 pub fn quantum_evolution<F>(
     hamiltonian: &ArrayView2<F>,
     psi: &ArrayView2<F>,
@@ -949,6 +960,7 @@ where
 /// assert!(stable);
 /// assert!(margin < 0.0);
 /// ```
+#[allow(dead_code)]
 pub fn stability_analysis<F>(a: &ArrayView2<F>) -> LinalgResult<(bool, Array1<Complex<F>>, F)>
 where
     F: Float + NumAssign + Sum + Send + Sync + 'static + ndarray::ScalarOperand,
@@ -982,7 +994,7 @@ mod tests {
     use std::f64::consts::PI;
 
     #[test]
-    fn test_matrix_exp_action_simple() {
+    fn testmatrix_exp_action_simple() {
         // Test with simple 2x2 rotation matrix
         let a = array![[0.0, -1.0], [1.0, 0.0]]; // 90-degree rotation generator
         let b = array![[1.0], [0.0]]; // Unit vector along x-axis
@@ -1057,19 +1069,19 @@ mod tests {
     fn test_stability_analysis() {
         // Test stable system
         let a_stable = array![[-1.0, 1.0], [0.0, -2.0]]; // Upper triangular, stable
-        let (stable, _eigs, margin) = stability_analysis(&a_stable.view()).unwrap();
+        let (stable, eigenvalues, margin) = stability_analysis(&a_stable.view()).unwrap();
         assert!(stable);
         assert!(margin < 0.0);
 
         // Test unstable system
         let a_unstable = array![[1.0, 0.0], [0.0, -1.0]]; // One positive eigenvalue
-        let (stable, _eigs, margin) = stability_analysis(&a_unstable.view()).unwrap();
+        let (stable, eigenvalues, margin) = stability_analysis(&a_unstable.view()).unwrap();
         assert!(!stable);
         assert!(margin > 0.0);
     }
 
     #[test]
-    fn test_matrix_ode_solve_linear() {
+    fn testmatrix_ode_solve_linear() {
         // Test linear ODE: dX/dt = AX
         let a = array![[-1.0, 0.0], [0.0, -2.0]]; // Stable diagonal
         let x0 = array![[1.0, 0.0], [0.0, 1.0]]; // Identity initial condition

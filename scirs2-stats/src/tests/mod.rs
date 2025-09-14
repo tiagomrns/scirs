@@ -3,7 +3,7 @@
 //! This module provides functions for statistical hypothesis testing,
 //! following SciPy's `stats` module.
 
-use crate::distributions::t;
+use crate::distributions;
 use crate::error::{StatsError, StatsResult};
 use crate::tests::ttest::{Alternative, TTestResult};
 use crate::{mean, std};
@@ -67,6 +67,7 @@ pub use ttest::{
 /// // For a significance level of 0.05, we would reject the null hypothesis if p < 0.05
 /// let significant = p_value < 0.05;
 /// ```
+#[allow(dead_code)]
 pub fn ttest_1samp<F>(
     x: &ArrayView1<F>,
     popmean: F,
@@ -81,7 +82,8 @@ where
         + std::marker::Send
         + std::marker::Sync
         + std::fmt::Display
-        + 'static,
+        + 'static
+        + scirs2_core::simd_ops::SimdUnifiedOps,
 {
     // Delegate to the enhanced implementation
     crate::tests::ttest::ttest_1samp(x, popmean, alternative, nan_policy)
@@ -123,12 +125,13 @@ where
 ///
 /// println!("Welch's t-test: t-statistic: {}, p-value: {}", welch_t, welch_p);
 /// ```
+#[allow(dead_code)]
 pub fn ttest_ind<F>(
     x: &ArrayView1<F>,
     y: &ArrayView1<F>,
     equal_var: bool,
     _alternative: Alternative,
-    _nan_policy: &str,
+    nan_policy: &str,
 ) -> StatsResult<TTestResult<F>>
 where
     F: Float
@@ -138,7 +141,8 @@ where
         + std::marker::Send
         + std::marker::Sync
         + std::fmt::Display
-        + 'static,
+        + 'static
+        + scirs2_core::simd_ops::SimdUnifiedOps,
 {
     // Check if the input arrays are empty
     if x.is_empty() || y.is_empty() {
@@ -156,8 +160,8 @@ where
     let n_y = F::from(y.len()).unwrap();
 
     // Calculate sample standard deviations (with ddof=1 for unbiased estimator)
-    let std_x = std(x, 1)?;
-    let std_y = std(y, 1)?;
+    let std_x = std(x, 1, None)?;
+    let std_y = std(y, 1, None)?;
 
     // Calculate t-statistic and degrees of freedom
     let t_stat: F;
@@ -196,7 +200,7 @@ where
     }
 
     // Create a Student's t-distribution with df degrees of freedom
-    let t_dist = t(df, F::zero(), F::one())?;
+    let t_dist = distributions::t(df, F::zero(), F::one())?;
 
     // Calculate the p-value (two-tailed test)
     let abs_t = t_stat.abs();
@@ -242,11 +246,12 @@ where
 /// // For a significance level of 0.05, we would reject the null hypothesis if p < 0.05
 /// let significant = p_value < 0.05;
 /// ```
+#[allow(dead_code)]
 pub fn ttest_rel<F>(
     x: &ArrayView1<F>,
     y: &ArrayView1<F>,
     _alternative: Alternative,
-    _nan_policy: &str,
+    nan_policy: &str,
 ) -> StatsResult<TTestResult<F>>
 where
     F: Float
@@ -256,7 +261,8 @@ where
         + std::marker::Send
         + std::marker::Sync
         + std::fmt::Display
-        + 'static,
+        + 'static
+        + scirs2_core::simd_ops::SimdUnifiedOps,
 {
     // Check if the input arrays are empty
     if x.is_empty() || y.is_empty() {
@@ -322,10 +328,11 @@ where
 /// // For a significance level of 0.05, we would reject the null hypothesis if p < 0.05
 /// let is_normal = p_value >= 0.05;
 /// ```
+#[allow(dead_code)]
 pub fn kstest<F, G>(x: &ArrayView1<F>, cdf: G) -> StatsResult<(F, F)>
 where
     F: Float + std::iter::Sum<F> + std::ops::Div<Output = F> + NumCast,
-    G: Fn(F) -> F,
+    G: Fn(F) -> F + std::fmt::Display,
 {
     // Check if the input array is empty
     if x.is_empty() {
@@ -381,7 +388,8 @@ where
 }
 
 /// Calculate the p-value for the Kolmogorov-Smirnov test
-fn calculate_ks_p_value<F: Float + NumCast>(ks_stat: F, n: F) -> F {
+#[allow(dead_code)]
+fn calculate_ks_p_value<F: Float + NumCast>(_ksstat: F, n: F) -> F {
     // Use the asymptotic distribution approximation
     // valid for large n (typically n > 35)
 
@@ -392,7 +400,7 @@ fn calculate_ks_p_value<F: Float + NumCast>(ks_stat: F, n: F) -> F {
     let n_effective = n;
 
     // Calculate the test statistic
-    let z = ks_stat * n_effective.sqrt();
+    let z = _ksstat * n_effective.sqrt();
 
     // Approximate p-value calculation
     // Using the formula from Marsaglia et al. (2003)
@@ -454,9 +462,10 @@ fn calculate_ks_p_value<F: Float + NumCast>(ks_stat: F, n: F) -> F {
 /// // For a significance level of 0.05, we would reject the null hypothesis if p < 0.05
 /// let is_normal = p_value >= 0.05;
 /// ```
+#[allow(dead_code)]
 pub fn shapiro<F>(x: &ArrayView1<F>) -> StatsResult<(F, F)>
 where
-    F: Float + std::iter::Sum<F> + std::ops::Div<Output = F> + NumCast,
+    F: Float + std::iter::Sum<F> + std::ops::Div<Output = F> + NumCast + std::fmt::Display,
 {
     // Check if the input array is empty
     if x.is_empty() {
@@ -514,6 +523,7 @@ where
 }
 
 /// Returns the coefficients for the Shapiro-Wilk test
+#[allow(dead_code)]
 fn get_shapiro_coefficients(n: usize) -> StatsResult<Vec<f64>> {
     // Simplified implementation of the Shapiro-Wilk coefficients
     // These coefficients are normally derived from expected values of order statistics
@@ -565,6 +575,7 @@ fn get_shapiro_coefficients(n: usize) -> StatsResult<Vec<f64>> {
 }
 
 /// Calculate the p-value for the Shapiro-Wilk test
+#[allow(dead_code)]
 fn calculate_shapiro_p_value<F: Float + NumCast>(w: F, n: usize) -> F {
     // Royston's approximation for p-value calculation
 
@@ -616,122 +627,8 @@ fn calculate_shapiro_p_value<F: Float + NumCast>(w: F, n: usize) -> F {
     p_value.min(F::one()).max(F::zero())
 }
 
-/// Perform a Mann-Whitney U test.
-///
-/// # Arguments
-///
-/// * `x` - First input data
-/// * `y` - Second input data
-///
-/// # Returns
-///
-/// * A tuple containing (statistic, p-value)
-///
-/// # Examples
-///
-/// ```
-/// use ndarray::array;
-/// use scirs2_stats::mannwhitneyu;
-///
-/// // Two independent samples that may not be normally distributed
-/// let group1 = array![2.5, 3.1, 4.8, 2.2, 5.1, 3.7, 2.9];
-/// let group2 = array![4.5, 5.3, 6.1, 5.8, 4.9, 6.2];
-///
-/// // Test if one group tends to have higher values than the other
-/// let (u_stat, p_value) = mannwhitneyu(&group1.view(), &group2.view(), "two-sided", true).unwrap();
-///
-/// println!("Mann-Whitney U test: U statistic: {}, p-value: {}", u_stat, p_value);
-///
-/// // For a significance level of 0.05, we would reject the null hypothesis if p < 0.05
-/// let significant_difference = p_value < 0.05;
-/// ```
-pub fn mannwhitneyu<F>(
-    x: &ArrayView1<F>,
-    y: &ArrayView1<F>,
-    _alternative: &str,
-    _use_continuity: bool,
-) -> StatsResult<(F, F)>
-where
-    F: Float + std::iter::Sum<F> + std::ops::Div<Output = F> + NumCast,
-{
-    // Check if the input arrays are empty
-    if x.is_empty() || y.is_empty() {
-        return Err(StatsError::InvalidArgument(
-            "Input arrays cannot be empty".to_string(),
-        ));
-    }
-
-    // Store the sample sizes
-    let n1 = x.len();
-    let n2 = y.len();
-
-    // Combine the data from both samples and keep track of which sample each value came from
-    let mut combined_data = Vec::with_capacity(n1 + n2);
-
-    for (i, &value) in x.iter().enumerate() {
-        combined_data.push((value, 0, i)); // 0 indicates x sample
-    }
-
-    for (i, &value) in y.iter().enumerate() {
-        combined_data.push((value, 1, i)); // 1 indicates y sample
-    }
-
-    // Sort the combined data by value
-    combined_data.sort_by(|a, b| a.0.partial_cmp(&b.0).unwrap_or(std::cmp::Ordering::Equal));
-
-    // Assign ranks, handling ties appropriately
-    let mut ranks = vec![F::zero(); n1 + n2];
-
-    let mut i = 0;
-    while i < combined_data.len() {
-        let mut j = i;
-        // Find the end of the tie group
-        while j < combined_data.len() - 1 && combined_data[j].0 == combined_data[j + 1].0 {
-            j += 1;
-        }
-
-        // Calculate the average rank for this tie group
-        let avg_rank = F::from(i + j).unwrap() / F::from(2.0).unwrap() + F::one();
-
-        // Assign average rank to all tied values
-        for item in combined_data.iter().skip(i).take(j - i + 1) {
-            let (_, sample, orig_idx) = *item;
-            if sample == 0 {
-                ranks[orig_idx] = avg_rank;
-            } else {
-                ranks[n1 + orig_idx] = avg_rank;
-            }
-        }
-
-        i = j + 1;
-    }
-
-    // Calculate rank sums for each sample
-    let mut rank_sum_x = F::zero();
-    for rank in ranks.iter().take(n1) {
-        rank_sum_x = rank_sum_x + *rank;
-    }
-
-    // Calculate the U statistic
-    let n1_f = F::from(n1).unwrap();
-    let n2_f = F::from(n2).unwrap();
-
-    // U = R1 - n1 * (n1 + 1) / 2, where R1 is the sum of ranks for sample x
-    let u_x = rank_sum_x - n1_f * (n1_f + F::one()) / F::from(2.0).unwrap();
-
-    // Alternate U = n1 * n2 - U_x
-    let u_y = n1_f * n2_f - u_x;
-
-    // The smaller of U_x and U_y is the test statistic
-    let u = if u_x < u_y { u_x } else { u_y };
-
-    // Calculate the p-value
-    let p_value = calculate_mann_whitney_p_value(u, n1, n2);
-
-    Ok((u, p_value))
-}
-
 /// Calculate the p-value for the Mann-Whitney U test
+#[allow(dead_code)]
 fn calculate_mann_whitney_p_value<F: Float + NumCast>(u: F, n1: usize, n2: usize) -> F {
     // For large samples (n1, n2 > 20), we can approximate the distribution with a normal distribution
 

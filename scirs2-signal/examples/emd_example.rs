@@ -1,12 +1,13 @@
-//! Example demonstrating Empirical Mode Decomposition (EMD) for signal analysis
-//!
-//! This example shows how to use EMD and EEMD to decompose a signal into
-//! Intrinsic Mode Functions (IMFs), as well as computing the Hilbert-Huang
-//! spectrum for time-frequency analysis.
+// Example demonstrating Empirical Mode Decomposition (EMD) for signal analysis
+//
+// This example shows how to use EMD and EEMD to decompose a signal into
+// Intrinsic Mode Functions (IMFs), as well as computing the Hilbert-Huang
+// spectrum for time-frequency analysis.
 
 use scirs2_signal::emd::{eemd, emd, hilbert_huang_spectrum, EmdConfig};
 use std::f64::consts::PI;
 
+#[allow(dead_code)]
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("Empirical Mode Decomposition (EMD) Example");
     println!("===========================================");

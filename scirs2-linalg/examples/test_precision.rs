@@ -1,18 +1,19 @@
 use ndarray::array;
 use scirs2_linalg::eigh;
 
+#[allow(dead_code)]
 fn main() {
-    let symmetric_matrix = array![[4.0, 1.0, 0.0], [1.0, 3.0, 1.0], [0.0, 1.0, 2.0]];
+    let symmetricmatrix = array![[4.0, 1.0, 0.0], [1.0, 3.0, 1.0], [0.0, 1.0, 2.0]];
 
     println!("Testing 3x3 matrix eigenvalue precision:");
-    println!("Matrix: {:?}", symmetric_matrix);
+    println!("Matrix: {:?}", symmetricmatrix);
 
-    match eigh(&symmetric_matrix.view(), None) {
+    match eigh(&symmetricmatrix.view(), None) {
         Ok((eigenvals, eigenvecs)) => {
             println!("Eigenvalues: {:?}", eigenvals);
 
             // Check A * V = V * Λ with high precision
-            let av = symmetric_matrix.dot(&eigenvecs);
+            let av = symmetricmatrix.dot(&eigenvecs);
             let vl = eigenvecs.dot(&ndarray::Array2::from_diag(&eigenvals));
 
             let mut max_error = 0.0f64;
@@ -45,20 +46,20 @@ fn main() {
 
             println!("Maximum orthogonality error: {:.2e}", max_ortho_error);
 
-            // Check if we meet the 1e-10 precision requirement
-            if max_error < 1e-10 && max_ortho_error < 1e-10 {
+            // Check if we meet the 1e-12 precision requirement (advanced mode)
+            if max_error < 1e-12 && max_ortho_error < 1e-12 {
                 println!("✅ SUCCESS: All precision requirements met!");
             } else {
                 println!("❌ PRECISION ISSUE:");
-                if max_error >= 1e-10 {
+                if max_error >= 1e-12 {
                     println!(
-                        "   A*V = V*Λ error {:.2e} exceeds 1e-10 tolerance",
+                        "   A*V = V*Λ error {:.2e} exceeds 1e-12 tolerance",
                         max_error
                     );
                 }
-                if max_ortho_error >= 1e-10 {
+                if max_ortho_error >= 1e-12 {
                     println!(
-                        "   Orthogonality error {:.2e} exceeds 1e-10 tolerance",
+                        "   Orthogonality error {:.2e} exceeds 1e-12 tolerance",
                         max_ortho_error
                     );
                 }

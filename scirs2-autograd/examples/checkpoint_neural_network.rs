@@ -4,6 +4,7 @@ use ag::tensor_ops::*;
 use scirs2_autograd as ag;
 use std::time::Instant;
 
+#[allow(dead_code)]
 fn main() {
     println!("Neural Network with Gradient Checkpointing Example");
     println!("================================================");
@@ -423,6 +424,7 @@ fn main() {
 }
 
 // Helper function to calculate binary cross-entropy using a simpler approach
+#[allow(dead_code)]
 fn binary_cross_entropy<'graph, F: ag::Float>(
     y: ag::Tensor<'graph, F>,
     pred: ag::Tensor<'graph, F>,

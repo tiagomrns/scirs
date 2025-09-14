@@ -32,16 +32,16 @@ pub struct DistributedComputationEngine {
 impl DistributedComputationEngine {
     /// Create a new distributed computation engine
     pub fn new(config: super::DistributedConfig) -> LinalgResult<Self> {
-        let communicator = Arc::new(DistributedCommunicator::new(&config)?);
-        let coordinator = Arc::new(DistributedCoordinator::new(&config)?);
-        let load_balancer = Arc::new(std::sync::Mutex::new(LoadBalancer::new(&config)?));
+        let communicator = Arc::new(DistributedCommunicator::new(&_config)?);
+        let coordinator = Arc::new(DistributedCoordinator::new(&_config)?);
+        let load_balancer = Arc::new(std::sync::Mutex::new(LoadBalancer::new(&_config)?));
         let metrics = Arc::new(std::sync::Mutex::new(ComputationMetrics::new()));
         
         Ok(Self {
             communicator,
             coordinator,
             load_balancer,
-            config,
+            config: config,
             metrics,
         })
     }
@@ -53,7 +53,7 @@ impl DistributedComputationEngine {
         b: &DistributedMatrix<T>,
     ) -> LinalgResult<DistributedMatrix<T>>
     where
-        T: Float + Send + Sync + serde::Serialize + for<'de> serde::Deserialize<'de> + 'static,
+        T: Float + Send + Sync + serde::Serialize + for<'de>, serde::Deserialize<'de> + 'static,
     {
         let start_time = Instant::now();
         
@@ -81,7 +81,7 @@ impl DistributedComputationEngine {
         inputs: &[&DistributedMatrix<T>],
     ) -> LinalgResult<R>
     where
-        T: Float + Send + Sync + serde::Serialize + for<'de> serde::Deserialize<'de> + 'static,
+        T: Float + Send + Sync + serde::Serialize + for<'de>, serde::Deserialize<'de> + 'static,
         F: Fn(&[&DistributedMatrix<T>]) -> LinalgResult<R> + Send + Sync,
         R: Send + Sync,
     {
@@ -118,13 +118,13 @@ impl DistributedComputationEngine {
         F: Fn() -> LinalgResult<R> + Send + Sync,
         R: Send + Sync,
     {
-        let mut retries = 0;
+        let mut _retries = 0;
         
         loop {
             match operation() {
                 Ok(result) => return Ok(result),
                 Err(e) => {
-                    if retries >= max_retries {
+                    if _retries >= max_retries {
                         return Err(e);
                     }
                     
@@ -133,8 +133,8 @@ impl DistributedComputationEngine {
                         self.handle_communication_failure()?;
                     }
                     
-                    retries += 1;
-                    std::thread::sleep(Duration::from_millis(100 * retries as u64));
+                    _retries += 1;
+                    std::thread::sleep(Duration::from_millis(100 * _retries as u64));
                 }
             }
         }
@@ -152,11 +152,11 @@ impl DistributedComputationEngine {
     {
         use scirs2_core::parallel_ops::*;
         
-        // Execute operations in parallel using rayon
-        let results: Result<Vec<R>, LinalgError> = operations
-            .into_par_iter()
-            .map(|op| op())
-            .collect();
+        // Execute operations in parallel using scirs2-core parallel operations
+        let results: Result<Vec<R>, LinalgError> = 
+            parallel_map(&operations, |op| op())
+                .into_iter()
+                .collect();
         
         results
     }
@@ -170,7 +170,7 @@ impl DistributedComputationEngine {
         let total_memory: usize = matrices
             .iter()
             .map(|m| {
-                let (rows, cols) = m.local_shape();
+                let (rows, cols) = m.localshape();
                 rows * cols * std::mem::size_of::<T>()
             })
             .sum();
@@ -213,8 +213,8 @@ impl DistributedComputationEngine {
         T: Float,
     {
         // Analyze matrix shapes and distributions for optimization opportunities
-        let (m, k) = a.global_shape();
-        let (k2, n) = b.global_shape();
+        let (m, k) = a.globalshape();
+        let (k2, n) = b.globalshape();
         
         // Check if redistribution would be beneficial
         let computation_cost = m * k * n;
@@ -234,17 +234,16 @@ impl DistributedComputationEngine {
         b: &DistributedMatrix<T>,
     ) -> LinalgResult<DistributedMatrix<T>>
     where
-        T: Float + Send + Sync + serde::Serialize + for<'de> serde::Deserialize<'de> + 'static,
+        T: Float + Send + Sync + serde::Serialize + for<'de>, serde::Deserialize<'de> + 'static,
     {
         // Use SIMD-accelerated GEMM for local computations
         a.gemm_simd(b, T::one(), T::zero())
     }
     
     fn implement_redistribution(
-        &self,
-        _plan: super::distribution::RedistributionPlan,
+        &self_plan: super::distribution::RedistributionPlan,
     ) -> LinalgResult<()> {
-        // Implement data redistribution based on the plan
+        // Implement data redistribution based on the _plan
         // This would involve:
         // 1. Coordinating with other nodes
         // 2. Transferring data
@@ -263,8 +262,8 @@ impl DistributedComputationEngine {
         self.coordinator.barrier()
     }
     
-    fn implement_memory_optimization(&self, total_memory: usize) -> LinalgResult<()> {
-        // Implement memory optimization strategies:
+    fn implement_memory_optimization(&self, totalmemory: usize) -> LinalgResult<()> {
+        // Implement _memory optimization strategies:
         // 1. Data compression
         // 2. Out-of-core computation
         // 3. Memory-efficient algorithms
@@ -422,7 +421,7 @@ impl ComputationScheduler {
     }
     
     /// Update node capability
-    pub fn update_capability(&mut self, node_rank: usize, capability: f64) {
+    pub fn update_capability(&mut self, noderank: usize, capability: f64) {
         self.node_capabilities.insert(node_rank, capability);
     }
 }

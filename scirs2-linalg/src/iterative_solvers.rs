@@ -1,6 +1,6 @@
 //! Iterative solvers for linear systems
 
-use ndarray::{Array1, Array2, ArrayView1, ArrayView2};
+use ndarray::{Array1, Array2, ArrayView1, ArrayView2, ScalarOperand};
 use num_traits::{Float, NumAssign, One};
 use std::iter::Sum;
 
@@ -42,6 +42,7 @@ use crate::validation::validate_linear_system;
 /// assert!((ax[0] - b[0]).abs() < 1e-8);
 /// assert!((ax[1] - b[1]).abs() < 1e-8);
 /// ```
+#[allow(dead_code)]
 pub fn conjugate_gradient<F>(
     a: &ArrayView2<F>,
     b: &ArrayView1<F>,
@@ -50,7 +51,7 @@ pub fn conjugate_gradient<F>(
     workers: Option<usize>,
 ) -> LinalgResult<Array1<F>>
 where
-    F: Float + NumAssign + Sum + One,
+    F: Float + NumAssign + Sum + One + ScalarOperand + Send + Sync,
 {
     use crate::parallel;
 
@@ -201,6 +202,7 @@ where
 /// assert!((ax[0] - b[0]).abs() < 1e-8);
 /// assert!((ax[1] - b[1]).abs() < 1e-8);
 /// ```
+#[allow(dead_code)]
 pub fn jacobi_method<F>(
     a: &ArrayView2<F>,
     b: &ArrayView1<F>,
@@ -209,7 +211,7 @@ pub fn jacobi_method<F>(
     workers: Option<usize>,
 ) -> LinalgResult<Array1<F>>
 where
-    F: Float + NumAssign + Sum + One,
+    F: Float + NumAssign + Sum + One + ScalarOperand + Send + Sync,
 {
     use crate::parallel;
 
@@ -317,6 +319,7 @@ where
 /// assert!((ax[0] - b[0]).abs() < 1e-8);
 /// assert!((ax[1] - b[1]).abs() < 1e-8);
 /// ```
+#[allow(dead_code)]
 pub fn gauss_seidel<F>(
     a: &ArrayView2<F>,
     b: &ArrayView1<F>,
@@ -325,7 +328,7 @@ pub fn gauss_seidel<F>(
     workers: Option<usize>,
 ) -> LinalgResult<Array1<F>>
 where
-    F: Float + NumAssign + Sum + One,
+    F: Float + NumAssign + Sum + One + ScalarOperand + Send + Sync,
 {
     use crate::parallel;
 
@@ -438,6 +441,7 @@ where
 /// assert!((ax[0] - b[0]).abs() < 1e-8);
 /// assert!((ax[1] - b[1]).abs() < 1e-8);
 /// ```
+#[allow(dead_code)]
 pub fn successive_over_relaxation<F>(
     a: &ArrayView2<F>,
     b: &ArrayView1<F>,
@@ -447,7 +451,7 @@ pub fn successive_over_relaxation<F>(
     workers: Option<usize>,
 ) -> LinalgResult<Array1<F>>
 where
-    F: Float + NumAssign + Sum + One,
+    F: Float + NumAssign + Sum + One + ScalarOperand + Send + Sync,
 {
     use crate::parallel;
 
@@ -573,6 +577,7 @@ where
 /// // Solve using multigrid method
 /// let x = geometric_multigrid(&a.view(), &b.view(), 3, 10, 2, 2, 1e-6, None).unwrap();
 /// ```
+#[allow(dead_code)]
 pub fn geometric_multigrid<F>(
     a: &ArrayView2<F>,
     b: &ArrayView1<F>,
@@ -584,7 +589,7 @@ pub fn geometric_multigrid<F>(
     workers: Option<usize>,
 ) -> LinalgResult<Array1<F>>
 where
-    F: Float + NumAssign + Sum + One + 'static,
+    F: Float + NumAssign + Sum + One + 'static + ScalarOperand + Send + Sync,
 {
     use crate::parallel;
 
@@ -597,9 +602,9 @@ where
     let n = a.nrows();
 
     // Check if number of levels is appropriate
-    let min_size: usize = 2; // Minimum size for the coarsest grid
-    let max_levels = if n > min_size {
-        (n as f64).log2().floor() as usize - (min_size as f64).log2().floor() as usize
+    let minsize: usize = 2; // Minimum size for the coarsest grid
+    let max_levels = if n > minsize {
+        (n as f64).log2().floor() as usize - (minsize as f64).log2().floor() as usize
     } else {
         0
     };
@@ -612,39 +617,38 @@ where
     }
 
     // Calculate minimum size needed for the given levels
-    let min_size_needed = min_size << levels; // 2^levels
+    let minsize_needed = minsize << levels; // 2^levels
 
-    if n < min_size_needed {
+    if n < minsize_needed {
         return Err(LinalgError::InvalidInputError(format!(
-            "Matrix size too small for {} levels. Need at least size {}",
-            levels, min_size_needed
+            "Matrix size too small for {levels} levels. Need at least size {minsize_needed}"
         )));
     }
 
     // Initialize grid hierarchy
-    let mut grid_sizes = Vec::with_capacity(levels + 1);
+    let mut gridsizes = Vec::with_capacity(levels + 1);
     let mut grid_matrices = Vec::with_capacity(levels + 1);
     let mut restriction_operators = Vec::with_capacity(levels);
     let mut prolongation_operators = Vec::with_capacity(levels);
 
     // Set up grid hierarchy
-    grid_sizes.push(n);
+    gridsizes.push(n);
     grid_matrices.push(a.to_owned());
 
     // Build grid hierarchy
     for l in 1..=levels {
         let n_coarse = if l == levels {
             // Coarsest level
-            min_size
+            minsize
         } else {
             // Intermediate level - divide by 2^l
             n >> l // equivalent to n / 2^l
         };
 
-        grid_sizes.push(n_coarse);
+        gridsizes.push(n_coarse);
 
         // Build restriction operator (half-weighting)
-        let mut r = Array2::zeros((n_coarse, grid_sizes[l - 1]));
+        let mut r = Array2::zeros((n_coarse, gridsizes[l - 1]));
         for i in 0..n_coarse {
             let i_fine = 2 * i;
 
@@ -658,14 +662,14 @@ where
 
             r[[i, i_fine]] = half;
 
-            if i_fine + 1 < grid_sizes[l - 1] {
+            if i_fine + 1 < gridsizes[l - 1] {
                 r[[i, i_fine + 1]] = quarter;
             }
         }
         restriction_operators.push(r);
 
         // Build prolongation operator (linear interpolation)
-        let mut p = Array2::zeros((grid_sizes[l - 1], n_coarse));
+        let mut p = Array2::zeros((gridsizes[l - 1], n_coarse));
         for i in 0..n_coarse {
             let i_fine = 2 * i;
 
@@ -673,10 +677,10 @@ where
             p[[i_fine, i]] = F::one();
 
             // Set interpolated points
-            if i_fine + 1 < grid_sizes[l - 1] && i + 1 < n_coarse {
+            if i_fine + 1 < gridsizes[l - 1] && i + 1 < n_coarse {
                 p[[i_fine + 1, i]] = F::from(0.5).unwrap();
                 p[[i_fine + 1, i + 1]] = F::from(0.5).unwrap();
-            } else if i_fine + 1 < grid_sizes[l - 1] {
+            } else if i_fine + 1 < gridsizes[l - 1] {
                 p[[i_fine + 1, i]] = F::one();
             }
         }
@@ -703,7 +707,7 @@ where
         return Ok(x);
     }
 
-    // Perform V-cycles
+    // Perform V-_cycles
     for _ in 0..v_cycles {
         // Perform a single V-cycle
         x = v_cycle(
@@ -732,6 +736,7 @@ where
 
 /// Performs a single V-cycle of the multigrid method.
 #[allow(clippy::too_many_arguments)]
+#[allow(dead_code)]
 fn v_cycle<F>(
     grid_matrices: &[Array2<F>],
     b: &ArrayView1<F>,
@@ -743,7 +748,7 @@ fn v_cycle<F>(
     post_smooth: usize,
 ) -> LinalgResult<Array1<F>>
 where
-    F: Float + NumAssign + Sum + One + 'static,
+    F: Float + NumAssign + Sum + One + 'static + ScalarOperand + Send + Sync,
 {
     // V-cycle solves Ax = b starting from initial guess x
     // At each level, we solve for the error: A*e = r where r = b - A*x
@@ -868,6 +873,7 @@ where
 /// assert!((ax[0] - b[0]).abs() < 1e-8);
 /// assert!((ax[1] - b[1]).abs() < 1e-8);
 /// ```
+#[allow(dead_code)]
 pub fn bicgstab<F>(
     a: &ArrayView2<F>,
     b: &ArrayView1<F>,
@@ -876,7 +882,7 @@ pub fn bicgstab<F>(
     workers: Option<usize>,
 ) -> LinalgResult<Array1<F>>
 where
-    F: Float + NumAssign + Sum + One + 'static,
+    F: Float + NumAssign + Sum + One + 'static + ScalarOperand + Send + Sync,
 {
     use crate::parallel;
 
@@ -1068,6 +1074,7 @@ where
 /// assert!((ax[0] - b[0]).abs() < 1e-6);
 /// assert!((ax[1] - b[1]).abs() < 1e-6);
 /// ```
+#[allow(dead_code)]
 pub fn minres<F>(
     a: &ArrayView2<F>,
     b: &ArrayView1<F>,
@@ -1076,7 +1083,7 @@ pub fn minres<F>(
     workers: Option<usize>,
 ) -> LinalgResult<Array1<F>>
 where
-    F: Float + NumAssign + Sum + One + 'static,
+    F: Float + NumAssign + Sum + One + 'static + ScalarOperand + Send + Sync,
 {
     use crate::parallel;
 
@@ -1244,9 +1251,10 @@ where
 }
 
 /// Compute residual r = b - Ax
+#[allow(dead_code)]
 fn compute_residual<F>(a: &ArrayView2<F>, x: &ArrayView1<F>, b: &ArrayView1<F>) -> Array1<F>
 where
-    F: Float + NumAssign + Sum + One + 'static,
+    F: Float + NumAssign + Sum + One + 'static + ScalarOperand + Send + Sync,
 {
     let ax = a.dot(x);
     let mut r = Array1::zeros(b.len());
@@ -1259,13 +1267,14 @@ where
 }
 
 /// Perform a single Gauss-Seidel smoothing step
+#[allow(dead_code)]
 fn gauss_seidel_step<F>(
     a: &ArrayView2<F>,
     b: &ArrayView1<F>,
     x: &ArrayView1<F>,
 ) -> LinalgResult<Array1<F>>
 where
-    F: Float + NumAssign + Sum + One + 'static,
+    F: Float + NumAssign + Sum + One + 'static + ScalarOperand + Send + Sync,
 {
     let n = a.nrows();
     let mut x_new = x.to_owned();
@@ -1300,6 +1309,7 @@ where
 ///
 /// This is a convenience function that calls `conjugate_gradient` with `workers = None`.
 /// For new code, prefer using `conjugate_gradient` directly with explicit workers parameter.
+#[allow(dead_code)]
 pub fn conjugate_gradient_default<F>(
     a: &ArrayView2<F>,
     b: &ArrayView1<F>,
@@ -1307,7 +1317,7 @@ pub fn conjugate_gradient_default<F>(
     tol: F,
 ) -> LinalgResult<Array1<F>>
 where
-    F: Float + NumAssign + Sum + One,
+    F: Float + NumAssign + Sum + One + ScalarOperand + Send + Sync,
 {
     conjugate_gradient(a, b, max_iter, tol, None)
 }
@@ -1322,7 +1332,7 @@ mod tests {
     // Helper function to check solution
     fn check_solution<F>(a: &ArrayView2<F>, x: &ArrayView1<F>, b: &ArrayView1<F>, tol: F) -> bool
     where
-        F: Float + NumAssign + Sum + One,
+        F: Float + NumAssign + Sum + One + Send + Sync + ndarray::ScalarOperand,
     {
         let n = a.nrows();
         let mut ax = Array1::<F>::zeros(n);

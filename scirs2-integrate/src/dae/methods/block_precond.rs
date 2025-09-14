@@ -78,14 +78,14 @@ impl<F: IntegrateFloat> BlockILUPreconditioner<F> {
         // Compute the blocks of the Jacobian matrix
         let mut a_block = Array2::<F>::eye(n_x); // Identity matrix
 
-        // Subtract h*β*∂f/∂x from the identity
+        // Subtract h*β*∂f/∂_x from the identity
         for i in 0..n_x {
             for j in 0..n_x {
                 a_block[[i, j]] -= h * beta * f_x[[i, j]];
             }
         }
 
-        // Compute -h*β*∂f/∂y
+        // Compute -h*β*∂f/∂_y
         let b_block = f_y.mapv(|x| -h * beta * x);
 
         // Direct copies of the constraint Jacobians
@@ -290,22 +290,22 @@ impl<F: IntegrateFloat> BlockJacobiPreconditioner<F> {
     /// # Arguments
     /// * `jacobian` - The full Jacobian matrix to be preconditioned
     /// * `block_size` - Size of the diagonal blocks (typically related to the physics of the problem)
-    pub fn new(jacobian: &Array2<F>, block_size: usize) -> Self {
+    pub fn new(jacobian: &Array2<F>, blocksize: usize) -> Self {
         let n = jacobian.shape()[0];
 
-        // Ensure block size divides the matrix size evenly
+        // Ensure block _size divides the matrix _size evenly
         assert!(
-            n % block_size == 0,
-            "Matrix size must be divisible by block size"
+            n % blocksize == 0,
+            "Matrix _size must be divisible by block _size"
         );
 
-        let n_blocks = n / block_size;
+        let n_blocks = n / blocksize;
         let mut block_inverses = Vec::with_capacity(n_blocks);
 
         // Extract and invert each diagonal block
         for i in 0..n_blocks {
-            let start = i * block_size;
-            let end = start + block_size;
+            let start = i * blocksize;
+            let end = start + blocksize;
 
             // Extract the diagonal block
             let block = jacobian
@@ -320,7 +320,7 @@ impl<F: IntegrateFloat> BlockJacobiPreconditioner<F> {
 
         BlockJacobiPreconditioner {
             n,
-            block_size,
+            block_size: blocksize,
             n_blocks,
             block_inverses,
         }
@@ -371,7 +371,7 @@ impl<F: IntegrateFloat> BlockJacobiPreconditioner<F> {
 
         // For 3x3 blocks, still use the analytic formula
         if n == 3 {
-            // Extract the block elements
+            // Extract the _block elements
             let a = block[[0, 0]];
             let b = block[[0, 1]];
             let c = block[[0, 2]];
@@ -539,6 +539,7 @@ impl<F: IntegrateFloat> BlockJacobiPreconditioner<F> {
 ///
 /// # Returns
 /// * A function that applies the preconditioner to a vector
+#[allow(dead_code)]
 pub fn create_block_ilu_preconditioner<F>(
     f_x: &Array2<F>,
     f_y: &Array2<F>,
@@ -568,6 +569,7 @@ where
 ///
 /// # Returns
 /// * A function that applies the preconditioner to a vector
+#[allow(dead_code)]
 pub fn create_block_jacobi_preconditioner<F>(
     jacobian: &Array2<F>,
     block_size: usize,

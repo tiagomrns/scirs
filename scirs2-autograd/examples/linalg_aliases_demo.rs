@@ -7,10 +7,11 @@ use ag::tensor_ops::*;
 use ndarray::array;
 use scirs2_autograd as ag;
 
+#[allow(dead_code)]
 fn main() {
     println!("=== Linear Algebra Aliases Demo ===\n");
 
-    ag::run::<f64, _, _>(|g| {
+    ag::run(|g| {
         println!("1. Matrix Inverse and Determinant Aliases");
 
         let a = variable(array![[3.0, 1.0], [1.0, 2.0]], g);

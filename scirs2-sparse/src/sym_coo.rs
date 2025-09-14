@@ -158,12 +158,12 @@ where
         let mut row_indices = Vec::new();
         let mut col_indices = Vec::new();
 
-        let rows_vec = matrix.row_indices();
+        let rowsvec = matrix.row_indices();
         let cols_vec = matrix.col_indices();
         let data_vec = matrix.data();
 
         for i in 0..data_vec.len() {
-            let row = rows_vec[i];
+            let row = rowsvec[i];
             let col = cols_vec[i];
 
             // Only include elements in lower triangular part (including diagonal)
@@ -427,7 +427,7 @@ where
                 dense[row][col] = data[i];
             }
 
-            // Check if the matrix is symmetric
+            // Check if the matrix is _symmetric
             for i in 0..n {
                 for j in 0..i {
                     if (dense[i][j] - dense[j][i]).abs() > T::epsilon() {
@@ -454,12 +454,12 @@ where
                 }
             }
 
-            // Create the symmetric matrix
+            // Create the _symmetric matrix
             let sym_coo = SymCooMatrix::new(sym_data, sym_rows, sym_cols, shape)?;
             return Ok(Self { inner: sym_coo });
         }
 
-        // Create a symmetric matrix by averaging corresponding elements
+        // Create a _symmetric matrix by averaging corresponding elements
         let n = shape.0;
 
         // First, build a dense matrix with all input elements
@@ -487,7 +487,7 @@ where
             dense[row][col] = data[i];
         }
 
-        // Make symmetric by averaging a_ij and a_ji
+        // Make _symmetric by averaging a_ij and a_ji
         for i in 0..n {
             for j in 0..i {
                 let avg = (dense[i][j] + dense[j][i]) / (T::one() + T::one());
@@ -536,7 +536,7 @@ where
         }
 
         // Create a temporary COO matrix to check symmetry
-        let coo_matrix = CooMatrix::new(
+        let coomatrix = CooMatrix::new(
             array.get_data().to_vec(),
             array.get_rows().to_vec(),
             array.get_cols().to_vec(),
@@ -544,7 +544,7 @@ where
         )?;
 
         // Convert to symmetric COO
-        let sym_coo = SymCooMatrix::from_coo(&coo_matrix)?;
+        let sym_coo = SymCooMatrix::from_coo(&coomatrix)?;
 
         Ok(Self { inner: sym_coo })
     }
@@ -687,8 +687,8 @@ mod tests {
         let rows = vec![0, 1, 1, 2, 2];
         let cols = vec![0, 0, 1, 1, 2];
 
-        let sym_matrix = SymCooMatrix::new(data, rows, cols, (3, 3)).unwrap();
-        let sym_array = SymCooArray::new(sym_matrix);
+        let symmatrix = SymCooMatrix::new(data, rows, cols, (3, 3)).unwrap();
+        let sym_array = SymCooArray::new(symmatrix);
 
         assert_eq!(sym_array.inner().shape(), (3, 3));
 

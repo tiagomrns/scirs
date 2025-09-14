@@ -13,11 +13,12 @@ use scirs2_integrate::ode::{
 
 /// Test basic event detection with a linear ODE
 #[test]
+#[allow(dead_code)]
 fn test_basic_event_detection() -> IntegrateResult<()> {
     // Simple ODE: dy/dt = 1.0 (meaning y = t + y0)
     // Event: y crosses y = 2.0
 
-    let f = |_t: f64, _y: ArrayView1<f64>| array![1.0];
+    let f = |_t: f64, y: ArrayView1<f64>| array![1.0];
 
     let event_funcs = vec![
         |_t: f64, y: ArrayView1<f64>| y[0] - 2.0, // Event when y = 2.0
@@ -70,6 +71,7 @@ fn test_basic_event_detection() -> IntegrateResult<()> {
 
 /// Test terminal event stopping integration
 #[test]
+#[allow(dead_code)]
 fn test_terminal_event() -> IntegrateResult<()> {
     // Simple harmonic oscillator: d²y/dt² = -y
     // Implemented as a system:
@@ -143,11 +145,12 @@ fn test_terminal_event() -> IntegrateResult<()> {
 
 /// Test event detection with precise time location
 #[test]
+#[allow(dead_code)]
 fn test_precise_event_location() -> IntegrateResult<()> {
     // Cubic function that crosses zero with steep gradient
     // dy/dt = 3t² (solution: y = t³ + y0)
 
-    let f = |t: f64, _y: ArrayView1<f64>| array![3.0 * t * t];
+    let f = |t: f64, y: ArrayView1<f64>| array![3.0 * t * t];
 
     let event_funcs = vec![
         |_t: f64, y: ArrayView1<f64>| y[0], // Event when y = 0
@@ -204,6 +207,7 @@ fn test_precise_event_location() -> IntegrateResult<()> {
 
 /// Test multiple events in both directions
 #[test]
+#[allow(dead_code)]
 fn test_multiple_events() -> IntegrateResult<()> {
     // Simple harmonic oscillator: d²y/dt² = -y
     // Solution: y(t) = cos(t) for y(0) = 1, y'(0) = 0
@@ -266,6 +270,7 @@ fn test_multiple_events() -> IntegrateResult<()> {
 
 /// Test max_count feature to limit number of detected events
 #[test]
+#[allow(dead_code)]
 fn test_max_count() -> IntegrateResult<()> {
     // Simple oscillator to generate many events
     let f = |_t: f64, y: ArrayView1<f64>| array![y[1], -y[0]];
@@ -314,6 +319,7 @@ fn test_max_count() -> IntegrateResult<()> {
 
 /// Test event handling with multiple event functions
 #[test]
+#[allow(dead_code)]
 fn test_multiple_event_functions() -> IntegrateResult<()> {
     // Simple harmonic oscillator
     let f = |_t: f64, y: ArrayView1<f64>| array![y[1], -y[0]];
@@ -406,6 +412,7 @@ fn test_multiple_event_functions() -> IntegrateResult<()> {
 
 /// Test that dense output evaluation works correctly at event times
 #[test]
+#[allow(dead_code)]
 fn test_dense_output_at_event() -> IntegrateResult<()> {
     // Simple harmonic oscillator: solution y(t) = cos(t), y'(t) = -sin(t)
     let f = |_t: f64, y: ArrayView1<f64>| array![y[1], -y[0]];

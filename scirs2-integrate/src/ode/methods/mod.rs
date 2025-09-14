@@ -7,7 +7,7 @@ mod explicit;
 mod implicit;
 mod local_extrapolation;
 mod lsoda;
-mod radau_mass;
+pub mod radau_mass;
 // Temporarily disabled SIMD module due to implementation complexity
 // #[cfg(feature = "simd")]
 // mod simd_explicit;

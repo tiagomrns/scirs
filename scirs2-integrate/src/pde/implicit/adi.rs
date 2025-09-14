@@ -97,21 +97,21 @@ impl ADI2D {
             ));
         }
 
-        // Validate time range
+        // Validate time _range
         if time_range[0] >= time_range[1] {
             return Err(PDEError::DomainError(
-                "Invalid time range: start must be less than end".to_string(),
+                "Invalid time _range: start must be less than end".to_string(),
             ));
         }
 
-        // Validate boundary conditions
+        // Validate boundary _conditions
         if boundary_conditions.len() != 4 {
             return Err(PDEError::BoundaryConditions(
-                "2D parabolic PDE requires exactly 4 boundary conditions".to_string(),
+                "2D parabolic PDE requires exactly 4 boundary _conditions".to_string(),
             ));
         }
 
-        // Ensure we have boundary conditions for all four boundaries
+        // Ensure we have boundary _conditions for all four boundaries
         let has_lower_x = boundary_conditions
             .iter()
             .any(|bc| bc.location == BoundaryLocation::Lower && bc.dimension == 0);
@@ -127,7 +127,7 @@ impl ADI2D {
 
         if !has_lower_x || !has_upper_x || !has_lower_y || !has_upper_y {
             return Err(PDEError::BoundaryConditions(
-                "2D parabolic PDE requires boundary conditions for all four sides".to_string(),
+                "2D parabolic PDE requires boundary _conditions for all four sides".to_string(),
             ));
         }
 
@@ -269,7 +269,7 @@ impl ADI2D {
                 let rhs_x = b_x.dot(&u_row);
 
                 // 1.4 Solve the linear system for x-direction
-                let u_x_next = self.solve_tridiagonal(&a_x, &rhs_x)?;
+                let u_x_next = ADI2D::solve_tridiagonal(&a_x, &rhs_x)?;
                 num_linear_solves += 1;
 
                 // 1.5 Update intermediate solution row
@@ -305,7 +305,7 @@ impl ADI2D {
                 let rhs_y = b_y.dot(&u_col);
 
                 // 2.4 Solve the linear system for y-direction
-                let u_y_next = self.solve_tridiagonal(&a_y, &rhs_y)?;
+                let u_y_next = ADI2D::solve_tridiagonal(&a_y, &rhs_y)?;
                 num_linear_solves += 1;
 
                 // 2.5 Update solution column
@@ -350,8 +350,7 @@ impl ADI2D {
 
         // Create result
         let info = Some(format!(
-            "Time steps: {}, Linear system solves: {}",
-            num_steps, num_linear_solves
+            "Time steps: {num_steps}, Linear system solves: {num_linear_solves}"
         ));
 
         Ok(ADIResult {
@@ -818,7 +817,7 @@ impl ADI2D {
     }
 
     /// Solve a tridiagonal linear system using the Thomas algorithm
-    fn solve_tridiagonal(&self, a: &Array2<f64>, b: &Array1<f64>) -> PDEResult<Array1<f64>> {
+    fn solve_tridiagonal(a: &Array2<f64>, b: &Array1<f64>) -> PDEResult<Array1<f64>> {
         let n = b.len();
 
         // Extract the tridiagonal elements

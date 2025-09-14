@@ -1,12 +1,14 @@
-//! Non-negative Matrix Factorization (NMF) for blind source separation
-//!
-//! This module implements NMF techniques for signal processing.
+use ndarray::s;
+// Non-negative Matrix Factorization (NMF) for blind source separation
+//
+// This module implements NMF techniques for signal processing.
 
 use super::BssConfig;
 use crate::error::{SignalError, SignalResult};
-use ndarray::{s, Array2};
+use ndarray::Array2;
 use rand::{Rng, SeedableRng};
 
+#[allow(unused_imports)]
 /// Apply Non-negative Matrix Factorization (NMF) to separate mixed signals
 ///
 /// NMF decomposes non-negative data into non-negative factors.
@@ -20,6 +22,7 @@ use rand::{Rng, SeedableRng};
 /// # Returns
 ///
 /// * Tuple containing (sources matrix H, mixing matrix W)
+#[allow(dead_code)]
 pub fn nmf(
     signals: &Array2<f64>,
     n_components: usize,
@@ -36,7 +39,7 @@ pub fn nmf(
 
     // Initialize random W and H matrices
     let mut rng = if let Some(seed) = config.random_seed {
-        rand::rngs::StdRng::from_seed([seed as u8; 32])
+        rand::rngs::StdRng::seed_from_u64([seed as u8; 32])
     } else {
         {
             // In rand 0.9, from_rng doesn't return Result but directly returns the PRNG
@@ -49,13 +52,13 @@ pub fn nmf(
 
     for i in 0..n_signals {
         for j in 0..n_components {
-            w[[i, j]] = rng.random_range(0.0..1.0);
+            w[[i, j]] = rng.gen_range(0.0..1.0);
         }
     }
 
     for i in 0..n_components {
         for j in 0..n_samples {
-            h[[i, j]] = rng.random_range(0.0..1.0);
+            h[[i, j]] = rng.gen_range(0.0..1.0);
         }
     }
 

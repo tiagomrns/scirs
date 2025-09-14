@@ -5,6 +5,7 @@ use scirs2_integrate::pde::method_of_lines::{MOLOptions, MOLParabolicSolver1D};
 use scirs2_integrate::pde::{BoundaryCondition, BoundaryConditionType, BoundaryLocation, Domain};
 use std::f64::consts::PI;
 
+#[allow(dead_code)]
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Define domain: x ∈ [0, 1]
     let domain = Domain::new(vec![0.0..1.0], vec![101])?;
@@ -69,7 +70,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         .with_advection(advection_coeff)
         .with_reaction(reaction_term);
 
-        println!("\nWith dt = {}", dt_exp);
+        println!("\nWith dt = {dt_exp}");
         match mol_solver.solve() {
             Ok(result) => {
                 println!("MOL solution successful.");
@@ -84,7 +85,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 );
             }
             Err(e) => {
-                println!("MOL solution failed: {}", e);
+                println!("MOL solution failed: {e}");
             }
         }
     }
@@ -109,10 +110,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     };
 
     // Solve using Crank-Nicolson method
-    println!(
-        "\nSolving with Crank-Nicolson method (dt = {})...",
-        dt_implicit
-    );
+    println!("\nSolving with Crank-Nicolson method (dt = {dt_implicit})...");
     let cn_solver = CrankNicolson1D::new(
         domain.clone(),
         time_range,
@@ -127,10 +125,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let cn_result = cn_solver.solve()?;
 
     // Solve using Backward Euler method
-    println!(
-        "\nSolving with Backward Euler method (dt = {})...",
-        dt_implicit
-    );
+    println!("\nSolving with Backward Euler method (dt = {dt_implicit})...");
     let be_solver = BackwardEuler1D::new(
         domain.clone(),
         time_range,
@@ -150,7 +145,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let be_info = be_result.info.as_ref().unwrap_or(&default_string);
 
     println!("\nResults summary:");
-    println!("Crank-Nicolson: {}", cn_info);
+    println!("Crank-Nicolson: {cn_info}");
     println!(
         "  Computation time: {:.4} seconds",
         cn_result.computation_time
@@ -171,7 +166,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             .fold(f64::NEG_INFINITY, |a, &b| a.max(b))
     );
 
-    println!("Backward Euler: {}", be_info);
+    println!("Backward Euler: {be_info}");
     println!(
         "  Computation time: {:.4} seconds",
         be_result.computation_time
@@ -195,9 +190,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Stability analysis
     println!("\nStability Analysis:");
     println!("Grid spacing (dx): {:.6}", 1.0 / 100.0);
-    println!("Diffusion coefficient (ε): {:.6}", epsilon);
-    println!("Advection velocity (v): {:.6}", velocity);
-    println!("Reaction rate (k): {:.6}", reaction);
+    println!("Diffusion coefficient (ε): {epsilon:.6}");
+    println!("Advection velocity (v): {velocity:.6}");
+    println!("Reaction rate (k): {reaction:.6}");
 
     // Calculate stability parameters
     let dx = 1.0 / 100.0;
@@ -206,15 +201,15 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let reaction_limit = 1.0 / reaction; // dt < 1/k for reaction terms
 
     println!("Stability limits for explicit methods:");
-    println!("  Diffusion limit: dt < {:.6}", diffusion_limit);
-    println!("  Advection limit (CFL): dt < {:.6}", advection_limit);
-    println!("  Reaction limit: dt < {:.6}", reaction_limit);
+    println!("  Diffusion limit: dt < {diffusion_limit:.6}");
+    println!("  Advection limit (CFL): dt < {advection_limit:.6}");
+    println!("  Reaction limit: dt < {reaction_limit:.6}");
     println!(
         "  Combined limit: dt < {:.6}",
         diffusion_limit.min(advection_limit).min(reaction_limit)
     );
 
-    println!("\nImplicit methods used dt = {}, which is:", dt_implicit);
+    println!("\nImplicit methods used dt = {dt_implicit}, which is:");
     println!(
         "  {:.1}x larger than diffusion limit",
         dt_implicit / diffusion_limit

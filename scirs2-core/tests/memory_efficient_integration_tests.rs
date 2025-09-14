@@ -138,20 +138,19 @@ mod tests {
         let loaded = disk_array.load().unwrap();
 
         // Verify the results
-        // NOTE: Due to incomplete lazy evaluation implementation, the multiply by 2 operation
-        // is not currently applied. The diagonal should have values (1+10), (2+10), etc.
-        // and other elements should be 10 (not multiplied by 2).
-        // This is a temporary adjustment until proper lazy evaluation is implemented.
+        // NOTE: Lazy evaluation is now working properly and applies the multiply by 2 operation
+        // The diagonal should have values ((1+10)*2), ((2+10)*2), etc.
+        // and other elements should be 10*2 = 20.0.
         for i in 0..n {
             for j in 0..n {
                 if i == j {
                     assert_relative_eq!(
                         loaded[[i, j]],
-                        ((i + 1) + 10) as f64, // Removed the *2.0 multiplication
+                        ((i + 1) + 10) as f64 * 2.0, // Now properly applies multiplication
                         epsilon = 1e-10
                     );
                 } else {
-                    assert_relative_eq!(loaded[[i, j]], 10.0, epsilon = 1e-10); // Changed from 20.0 to 10.0
+                    assert_relative_eq!(loaded[[i, j]], 20.0, epsilon = 1e-10); // Changed back to 20.0
                 }
             }
         }

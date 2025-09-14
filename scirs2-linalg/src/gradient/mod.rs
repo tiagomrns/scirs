@@ -43,6 +43,7 @@ use crate::error::{LinalgError, LinalgResult};
 /// assert_relative_eq!(gradient[1], 1.0/3.0, epsilon = 1e-10);
 /// assert_relative_eq!(gradient[2], 0.0, epsilon = 1e-10);
 /// ```
+#[allow(dead_code)]
 pub fn mse_gradient<F>(
     predictions: &ArrayView1<F>,
     targets: &ArrayView1<F>,
@@ -106,6 +107,7 @@ where
 /// assert_relative_eq!(gradient[1], 1.428571, epsilon = 1e-6);
 /// assert_relative_eq!(gradient[2], -1.111111, epsilon = 1e-6);
 /// ```
+#[allow(dead_code)]
 pub fn binary_crossentropy_gradient<F>(
     predictions: &ArrayView1<F>,
     targets: &ArrayView1<F>,
@@ -193,7 +195,7 @@ where
 ///
 /// let gradient = softmax_crossentropy_gradient(&softmax_output.view(), &targets.view()).unwrap();
 ///
-/// // For each example, gradient = (softmax_output - targets) / batch_size
+/// // For each example, gradient = (softmax_output - targets) / batchsize
 /// // = ([0.7, 0.2, 0.1] - [1.0, 0.0, 0.0]) / 2
 /// // = [-0.15, 0.1, 0.05]
 /// // For the second example:
@@ -207,6 +209,7 @@ where
 /// assert_relative_eq!(gradient[[1, 1]], -0.2, epsilon = 1e-10);
 /// assert_relative_eq!(gradient[[1, 2]], 0.05, epsilon = 1e-10);
 /// ```
+#[allow(dead_code)]
 pub fn softmax_crossentropy_gradient<F>(
     softmax_output: &ArrayView2<F>,
     targets: &ArrayView2<F>,
@@ -224,63 +227,58 @@ where
     }
 
     // Check that softmax outputs sum to 1 for each example
-    let (batch_size, _num_classes) = softmax_output.dim();
-    for i in 0..batch_size {
+    let (batchsize, _num_classes) = softmax_output.dim();
+    for i in 0..batchsize {
         let row_sum = softmax_output.slice(s![i, ..]).sum();
         if (row_sum - F::one()).abs() > F::from(1e-5).unwrap() {
             return Err(LinalgError::InvalidInputError(format!(
-                "softmax_output row {} does not sum to 1: sum is {}",
-                i, row_sum
+                "softmax_output row {i} does not sum to 1: sum is {row_sum}"
             )));
         }
     }
 
     // Check that targets are valid one-hot vectors
-    for i in 0..batch_size {
+    for i in 0..batchsize {
         let row_sum = targets.slice(s![i, ..]).sum();
         if (row_sum - F::one()).abs() > F::from(1e-6).unwrap() {
             return Err(LinalgError::InvalidInputError(format!(
-                "targets row {} is not a valid one-hot vector: sum is {}",
-                i, row_sum
+                "targets row {i} is not a valid one-hot vector: sum is {row_sum}"
             )));
         }
 
-        // Check that only one element is (close to) 1, rest are (close to) 0
+        // Check that only one element is (close to) 1, rest are 0
         let mut has_one = false;
-        for &val in targets.slice(s![i, ..]).iter() {
-            if (val - F::one()).abs() < F::from(1e-6).unwrap() {
+        for val in targets.slice(s![i, ..]).iter() {
+            if (*val - F::one()).abs() < F::from(1e-6).unwrap() {
                 if has_one {
                     // More than one value close to 1
                     return Err(LinalgError::InvalidInputError(format!(
-                        "targets row {} is not a valid one-hot vector: multiple entries close to 1",
-                        i
+                        "targets row {i} is not a valid one-hot vector: multiple entries close to 1"
                     )));
                 }
                 has_one = true;
-            } else if val > F::from(1e-6).unwrap() {
+            } else if *val > F::from(1e-6).unwrap() {
                 // Value is not close to 0 or 1
                 return Err(LinalgError::InvalidInputError(format!(
-                    "targets row {} is not a valid one-hot vector: contains value {} not close to 0 or 1",
-                    i, val
+                    "targets row {i} is not a valid one-hot vector: contains value {} not close to 0 or 1", *val
                 )));
             }
         }
 
         if !has_one {
             return Err(LinalgError::InvalidInputError(format!(
-                "targets row {} is not a valid one-hot vector: no entry close to 1",
-                i
+                "targets row {i} is not a valid one-hot vector: no entry close to 1"
             )));
         }
     }
 
-    let batch_size_f = F::from(batch_size).unwrap();
+    let batchsize_f = F::from(batchsize).unwrap();
 
     // Compute softmax_output - targets
     let mut gradient = softmax_output.to_owned() - targets;
 
-    // Scale by 1/batch_size
-    gradient /= batch_size_f;
+    // Scale by 1/batchsize
+    gradient /= batchsize_f;
 
     Ok(gradient)
 }
@@ -331,6 +329,7 @@ where
 /// assert!((jac[[2, 0]] - 3.0).abs() < 1e-4);
 /// assert!((jac[[2, 1]] - 2.0).abs() < 1e-4);
 /// ```
+#[allow(dead_code)]
 pub fn jacobian<F, G>(f: &G, x: &Array1<F>, epsilon: F) -> LinalgResult<Array2<F>>
 where
     F: Float + NumAssign + Sum + ScalarOperand,
@@ -411,6 +410,7 @@ where
 /// assert!((hess[[1, 0]] - 1.0).abs() < 1e-4);
 /// assert!((hess[[1, 1]] - 4.0).abs() < 1e-4);
 /// ```
+#[allow(dead_code)]
 pub fn hessian<F, G>(f: &G, x: &Array1<F>, epsilon: F) -> LinalgResult<Array2<F>>
 where
     F: Float + NumAssign + Sum + ScalarOperand,
@@ -537,7 +537,7 @@ mod tests {
         let gradient =
             softmax_crossentropy_gradient(&softmax_output.view(), &targets.view()).unwrap();
 
-        // For each example, gradient = (softmax_output - targets) / batch_size
+        // For each example, gradient = (softmax_output - targets) / batchsize
         // = ([0.7, 0.2, 0.1] - [1.0, 0.0, 0.0]) / 2
         // = [-0.15, 0.1, 0.05]
         // For the second example:

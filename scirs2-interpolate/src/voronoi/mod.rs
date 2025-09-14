@@ -20,7 +20,7 @@
 //!
 //! ```rust
 //! use ndarray::{Array1, Array2};
-//! use scirs2_interpolate::voronoi::{
+//! use scirs2__interpolate::voronoi::{
 //!     NaturalNeighborInterpolator, InterpolationMethod
 //! };
 //!

@@ -5,6 +5,7 @@
 
 use criterion::{criterion_group, criterion_main, BenchmarkId, Criterion};
 use ndarray::{array, Array1, ArrayView1};
+use rand::{rng, Rng};
 use scirs2_optimize::global::{differential_evolution, DifferentialEvolutionOptions};
 use scirs2_optimize::least_squares::least_squares;
 use scirs2_optimize::unconstrained::{minimize, Method, Options};
@@ -129,6 +130,7 @@ struct BenchmarkConfig {
 }
 
 /// Get standard benchmark problems
+#[allow(dead_code)]
 fn get_benchmark_problems() -> Vec<BenchmarkConfig> {
     vec![
         BenchmarkConfig {
@@ -177,6 +179,7 @@ fn get_benchmark_problems() -> Vec<BenchmarkConfig> {
 }
 
 /// Benchmark unconstrained optimization methods
+#[allow(dead_code)]
 fn bench_unconstrained_methods(c: &mut Criterion) {
     let mut group = c.benchmark_group("unconstrained");
     group.sample_size(50);
@@ -221,6 +224,7 @@ fn bench_unconstrained_methods(c: &mut Criterion) {
 }
 
 /// Benchmark different problem dimensions
+#[allow(dead_code)]
 fn bench_dimensions(c: &mut Criterion) {
     let mut group = c.benchmark_group("dimensions");
     group.sample_size(30);
@@ -262,6 +266,7 @@ fn bench_dimensions(c: &mut Criterion) {
 type TestFunction = fn(&ArrayView1<f64>) -> f64;
 
 /// Benchmark global optimization methods
+#[allow(dead_code)]
 fn bench_global_methods(c: &mut Criterion) {
     let mut group = c.benchmark_group("global");
     group.sample_size(20);
@@ -296,6 +301,7 @@ fn bench_global_methods(c: &mut Criterion) {
 }
 
 /// Benchmark least squares problems
+#[allow(dead_code)]
 fn bench_least_squares(c: &mut Criterion) {
     let mut group = c.benchmark_group("least_squares");
     group.sample_size(50);
@@ -320,7 +326,7 @@ fn bench_least_squares(c: &mut Criterion) {
         let x_data: Vec<f64> = (0..n).map(|i| i as f64 / n as f64).collect();
         let y_data: Vec<f64> = x_data
             .iter()
-            .map(|&x| 2.0 + 3.0 * x + 0.1 * rand::random::<f64>())
+            .map(|&x| 2.0 + 3.0 * x + 0.1 * rand::rng().random::<f64>())
             .collect();
         let mut data_vec = x_data;
         data_vec.extend(y_data);
@@ -429,7 +435,7 @@ mod report {
                             problem.name,
                             method,
                             elapsed.as_secs_f64() * 1000.0,
-                            res.iterations,
+                            res.nit,
                             res.success,
                             res.fun,
                         )?;

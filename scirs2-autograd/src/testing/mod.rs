@@ -6,6 +6,7 @@
 use crate::graph::Graph;
 use crate::tensor::Tensor;
 use crate::Float;
+use scirs2_core::ScientificNumber;
 use std::collections::HashMap;
 use std::fmt;
 
@@ -51,7 +52,7 @@ impl Default for StabilityTestConfig {
 /// Main numerical stability tester
 pub struct NumericalStabilityTester<F: Float> {
     config: StabilityTestConfig,
-    _phantom: std::marker::PhantomData<F>,
+    phantom: std::marker::PhantomData<F>,
 }
 
 impl<F: Float> NumericalStabilityTester<F> {
@@ -59,7 +60,7 @@ impl<F: Float> NumericalStabilityTester<F> {
     pub fn new() -> Self {
         Self {
             config: StabilityTestConfig::default(),
-            _phantom: std::marker::PhantomData,
+            phantom: std::marker::PhantomData,
         }
     }
 
@@ -67,7 +68,7 @@ impl<F: Float> NumericalStabilityTester<F> {
     pub fn with_config(config: StabilityTestConfig) -> Self {
         Self {
             config,
-            _phantom: std::marker::PhantomData,
+            phantom: std::marker::PhantomData,
         }
     }
 
@@ -100,7 +101,7 @@ impl<F: Float> NumericalStabilityTester<F> {
     /// Test gradient accuracy using finite differences
     fn test_gradient_accuracy(
         &self,
-        _graph: &Graph<F>,
+        selfgraph: &Graph<F>,
     ) -> Result<GradientTestResults, StabilityError> {
         let mut results = GradientTestResults {
             tests_performed: 0,
@@ -118,7 +119,7 @@ impl<F: Float> NumericalStabilityTester<F> {
         for _test_point in 0..self.config.num_test_points {
             results.tests_performed += 1;
 
-            // Simulate gradient test (would use actual graph operations)
+            // Simulate gradient test (would use actual _graph operations)
             let analytical_grad = self.compute_analytical_gradient()?;
             let finite_diff_grad = self.compute_finite_difference_gradient()?;
 
@@ -149,7 +150,7 @@ impl<F: Float> NumericalStabilityTester<F> {
     /// Test numerical conditioning of operations
     fn test_numerical_conditioning(
         &self,
-        _graph: &Graph<F>,
+        selfgraph: &Graph<F>,
     ) -> Result<ConditioningTestResults, StabilityError> {
         let mut results = ConditioningTestResults {
             condition_numbers: HashMap::new(),
@@ -200,7 +201,7 @@ impl<F: Float> NumericalStabilityTester<F> {
     /// Test stability under input perturbations
     fn test_perturbation_stability(
         &self,
-        _graph: &Graph<F>,
+        selfgraph: &Graph<F>,
     ) -> Result<PerturbationTestResults, StabilityError> {
         let mut results = PerturbationTestResults {
             perturbation_tests: Vec::new(),
@@ -209,13 +210,19 @@ impl<F: Float> NumericalStabilityTester<F> {
         };
 
         // Test sensitivity to small input perturbations
-        for perturbation_magnitude in [1e-8, 1e-6, 1e-4, 1e-2] {
-            let sensitivity = self.measure_perturbation_sensitivity(perturbation_magnitude)?;
+        for perturbation_magnitude in [
+            F::from(1e-8).unwrap(),
+            F::from(1e-6).unwrap(),
+            F::from(1e-4).unwrap(),
+            F::from(1e-2).unwrap(),
+        ] {
+            let sensitivity = self
+                .measure_perturbation_sensitivity(perturbation_magnitude.to_f64().unwrap_or(0.0))?;
 
             results.perturbation_tests.push(PerturbationTest {
-                perturbation_magnitude,
+                perturbation_magnitude: perturbation_magnitude.to_f64().unwrap_or(0.0),
                 output_change: sensitivity,
-                sensitivity_ratio: sensitivity / perturbation_magnitude,
+                sensitivity_ratio: sensitivity / perturbation_magnitude.to_f64().unwrap_or(1.0),
             });
 
             results.max_sensitivity = results.max_sensitivity.max(sensitivity);
@@ -232,7 +239,7 @@ impl<F: Float> NumericalStabilityTester<F> {
     /// Test for overflow and underflow susceptibility
     fn test_overflow_underflow(
         &self,
-        _graph: &Graph<F>,
+        selfgraph: &Graph<F>,
     ) -> Result<OverflowTestResults<F>, StabilityError> {
         let mut results = OverflowTestResults {
             overflow_risks: Vec::new(),
@@ -282,25 +289,25 @@ impl<F: Float> NumericalStabilityTester<F> {
         Ok(vec![1.0001, 1.9999, 3.0001])
     }
 
-    fn compute_gradient_error(&self, analytical: &[f64], finite_diff: &[f64]) -> f64 {
+    fn compute_gradient_error(&self, analytical: &[f64], finitediff: &[f64]) -> f64 {
         analytical
             .iter()
-            .zip(finite_diff.iter())
+            .zip(finitediff.iter())
             .map(|(&a, &f)| (a - f).abs())
             .fold(0.0, f64::max)
     }
 
-    fn estimate_condition_number(&self, _operation: &str) -> Result<f64, StabilityError> {
+    fn estimate_condition_number(&self, operation: &str) -> Result<f64, StabilityError> {
         // Simplified - would compute actual condition number
         Ok(1e6)
     }
 
-    fn measure_perturbation_sensitivity(&self, _perturbation: f64) -> Result<f64, StabilityError> {
+    fn measure_perturbation_sensitivity(&self, perturbation: f64) -> Result<f64, StabilityError> {
         // Simplified - would measure actual sensitivity
-        Ok(_perturbation * 1.5) // Example: amplification factor of 1.5
+        Ok(perturbation * 1.5) // Example: amplification factor of 1.5
     }
 
-    fn assess_overflow_risk(&self, _input: F) -> Result<OverflowRiskAssessment, StabilityError> {
+    fn assess_overflow_risk(&self, input: F) -> Result<OverflowRiskAssessment, StabilityError> {
         Ok(OverflowRiskAssessment {
             risky_operation: "exponential".to_string(),
             overflow_probability: 0.05,
@@ -573,6 +580,7 @@ pub enum StabilityError {
 
 /// Public API functions
 /// Test the numerical stability of a computation graph
+#[allow(dead_code)]
 pub fn test_numerical_stability<F: Float>(
     graph: &Graph<F>,
 ) -> Result<StabilityReport<F>, StabilityError> {
@@ -581,6 +589,7 @@ pub fn test_numerical_stability<F: Float>(
 }
 
 /// Test with custom configuration
+#[allow(dead_code)]
 pub fn test_numerical_stability_with_config<F: Float>(
     graph: &Graph<F>,
     config: StabilityTestConfig,
@@ -590,6 +599,7 @@ pub fn test_numerical_stability_with_config<F: Float>(
 }
 
 /// Quick gradient check for a specific computation
+#[allow(dead_code)]
 pub fn quick_gradient_check<F: Float>(
     _inputs: &[Tensor<F>],
     _output: &Tensor<F>,
@@ -599,6 +609,7 @@ pub fn quick_gradient_check<F: Float>(
 }
 
 /// Assess numerical conditioning of an operation
+#[allow(dead_code)]
 pub fn assess_conditioning<F: Float>(
     _operation_name: &str,
     _inputs: &[Tensor<F>],

@@ -17,6 +17,7 @@ struct ExperimentResult {
     success: bool,
 }
 
+#[allow(dead_code)]
 fn main() -> Result<(), Box<dyn Error>> {
     println!("=== Data Serialization Example ===\n");
 

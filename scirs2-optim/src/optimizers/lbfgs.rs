@@ -196,7 +196,7 @@ impl<A: Float + ScalarOperand + Debug> LBFGS<A> {
 
 impl<A, D> Optimizer<A, D> for LBFGS<A>
 where
-    A: Float + ScalarOperand + Debug,
+    A: Float + ScalarOperand + Debug + Send + Sync,
     D: Dimension,
 {
     fn step(&mut self, params: &Array<A, D>, gradients: &Array<A, D>) -> Result<Array<A, D>> {

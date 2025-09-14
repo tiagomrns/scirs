@@ -1,19 +1,27 @@
 [package]
 name = "scirs2-transform"
 version.workspace = true
-edition = "2021"
-authors = ["SciRS2 Team"]
-license = "MIT OR Apache-2.0"
-description = "Data transformation module for SciRS2"
-repository = "https://github.com/cool-japan/scirs"
+edition.workspace = true
+authors.workspace = true
+description = "Data transformation module for SciRS2 (scirs2-transform)"
+license.workspace = true
+repository.workspace = true
 keywords = ["transform", "feature-engineering", "scientific", "ai", "machine-learning"]
 categories = ["science", "mathematics", "algorithms"]
 
+[[bench]]
+name = "transform_bench"
+harness = false
+
+[lints]
+workspace = true
+
 [dependencies]
 # Core dependencies
-scirs2-core = { workspace = true, features = ["validation", "parallel"] }
+scirs2-core = { workspace = true, features = ["validation", "parallel", "simd"] }
 scirs2-linalg = { workspace = true }
-scirs2-stats = { workspace = true }
+# scirs2-stats = { workspace = true }  # Temporarily disabled due to compilation errors
+scirs2-fft = { workspace = true }
 ndarray = { workspace = true }
 ndarray-rand = { workspace = true }
 ndarray-stats = { workspace = true }
@@ -21,17 +29,36 @@ num-traits = { workspace = true }
 num-complex = { workspace = true }
 thiserror = { workspace = true }
 approx = { workspace = true }
-# rayon = { workspace = true }  # Now use scirs2-core parallel abstractions
 rand = { workspace = true }
+num_cpus = { workspace = true }
+regex = { workspace = true }
+ahash = { workspace = true }
+statrs = { workspace = true }
+
+# Optional dependencies for new features
+tokio = { workspace = true, optional = true, features = ["full"] }
+serde = { workspace = true, optional = true, features = ["derive"] }
+bincode = { workspace = true, optional = true }
+tch = { workspace = true, optional = true }
+prometheus = { workspace = true, optional = true }
+serde_json = { workspace = true, optional = true }
 
 # Future dependency for PandRS with appropriate abstractions
 # pandrs_wrapper = { path = "../wrappers/pandrs_wrapper", optional = true }
 
 [features]
 default = []
+simd = ["scirs2-core/simd"]
+gpu = ["scirs2-core/gpu"]
+distributed = ["dep:tokio", "dep:serde", "dep:bincode"]
+auto-feature-engineering = ["dep:tch"]
+monitoring = ["dep:prometheus", "dep:serde_json"]
 # Enable external ML library wrappers
 # pandrs = ["dep:pandrs_wrapper"]
 
 [dev-dependencies]
 scirs2-datasets = { workspace = true }
 plotters = { workspace = true }
+criterion = { workspace = true }
+rand = { workspace = true }
+ndarray-rand = { workspace = true }

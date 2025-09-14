@@ -7,9 +7,64 @@
 use crate::error::OptimizeError;
 use crate::unconstrained::{minimize, Bounds, Method, OptimizeResult, Options};
 use ndarray::{Array1, ArrayView1};
-use rand::distr::Uniform;
-use rand::prelude::*;
 use rand::rngs::StdRng;
+use rand::{Rng, SeedableRng};
+
+/// Enforce bounds using reflection method for better exploration
+#[allow(dead_code)]
+fn enforce_bounds_with_reflection<R: Rng>(rng: &mut R, val: f64, lb: f64, ub: f64) -> f64 {
+    if val >= lb && val <= ub {
+        // Value is within bounds
+        val
+    } else if val < lb {
+        // Reflect around lower bound
+        let excess = lb - val;
+        let range = ub - lb;
+        if excess <= range {
+            lb + excess
+        } else {
+            // If reflection goes beyond upper bound, use random value in range
+            rng.gen_range(lb..=ub)
+        }
+    } else {
+        // val > ub..reflect around upper bound
+        let excess = val - ub;
+        let range = ub - lb;
+        if excess <= range {
+            ub - excess
+        } else {
+            // If reflection goes beyond lower bound, use random value in range
+            rng.gen_range(lb..=ub)
+        }
+    }
+}
+
+/// Validate bounds to ensure they are properly specified
+#[allow(dead_code)]
+fn validate_bounds(bounds: &[(f64, f64)]) -> Result<(), OptimizeError> {
+    for (i, &(lb, ub)) in bounds.iter().enumerate() {
+        if !lb.is_finite() || !ub.is_finite() {
+            return Err(OptimizeError::InvalidInput(format!(
+                "Bounds must be finite values. Variable {}: _bounds = ({}, {})",
+                i, lb, ub
+            )));
+        }
+        if lb >= ub {
+            return Err(OptimizeError::InvalidInput(format!(
+                "Lower bound must be less than upper bound. Variable {}: lb = {}, ub = {}",
+                i, lb, ub
+            )));
+        }
+        if (ub - lb) < 1e-12 {
+            return Err(OptimizeError::InvalidInput(format!(
+                "Bounds range is too small. Variable {}: range = {}",
+                i,
+                ub - lb
+            )));
+        }
+    }
+    Ok(())
+}
 
 /// Options for Basin-hopping algorithm
 #[derive(Debug, Clone)]
@@ -104,38 +159,42 @@ where
         take_step: Option<TakeStep>,
     ) -> Self {
         let ndim = x0.len();
-        let seed = options.seed.unwrap_or_else(rand::random);
-        let rng = StdRng::seed_from_u64(seed);
+        let seed = options
+            .seed
+            .unwrap_or_else(|| rand::rng().random_range(0..u64::MAX));
+        let mut rng = StdRng::seed_from_u64(seed);
 
-        // Default accept test is Metropolis criterion
+        // Default accept _test is Metropolis criterion
         let accept_test = accept_test.unwrap_or_else(|| {
-            let temp = options.temperature;
-            Box::new(move |f_new: f64, f_old: f64, _: f64| {
+            Box::new(move |f_new: f64, f_old: f64, temp: f64| {
                 if f_new < f_old {
                     true
                 } else {
                     let delta = (f_old - f_new) / temp;
-                    delta > 0.0 && rand::random::<f64>() < delta.exp()
+                    delta > 0.0 && rand::rng().random_range(0.0..1.0) < delta.exp()
                 }
             })
         });
 
-        // Default take step is random displacement
+        // Default take _step is random displacement with reflection-based bounds enforcement
         let take_step = take_step.unwrap_or_else(|| {
             let stepsize = options.stepsize;
             let bounds = options.bounds.clone();
-            let mut rng = rng.clone();
+            let seed = options
+                .seed
+                .unwrap_or_else(|| rand::rng().random_range(0..u64::MAX));
             Box::new(move |x: &Array1<f64>| {
+                let mut local_rng = StdRng::seed_from_u64(seed + x.len() as u64);
                 let mut x_new = x.clone();
                 for i in 0..x.len() {
-                    let uniform = Uniform::new(-stepsize, stepsize).unwrap();
-                    x_new[i] += rng.sample(uniform);
+                    x_new[i] += local_rng.gen_range(-stepsize..stepsize);
 
-                    // Apply bounds if specified
+                    // Apply bounds if specified using reflection method
                     if let Some(ref bounds) = bounds {
                         if i < bounds.len() {
                             let (lb, ub) = bounds[i];
-                            x_new[i] = x_new[i].max(lb).min(ub);
+                            x_new[i] =
+                                enforce_bounds_with_reflection(&mut local_rng, x_new[i], lb, ub);
                         }
                     }
                 }
@@ -143,10 +202,20 @@ where
             })
         });
 
+        // Apply bounds to initial x0 if specified using reflection method
+        let mut x0_bounded = x0.clone();
+        if let Some(ref bounds) = options.bounds {
+            for (i, &(lb, ub)) in bounds.iter().enumerate() {
+                if i < x0_bounded.len() {
+                    x0_bounded[i] = enforce_bounds_with_reflection(&mut rng, x0_bounded[i], lb, ub);
+                }
+            }
+        }
+
         // Perform initial minimization to get starting point
         let initial_result = minimize(
             func.clone(),
-            &x0.to_vec(),
+            &x0_bounded.to_vec(),
             options.minimizer_method,
             Some(Options {
                 bounds: options.bounds.clone().map(|b| {
@@ -252,7 +321,6 @@ where
             nfev: self.nfev,
             func_evals: self.nfev,
             nit,
-            iterations: nit,
             success: self.storage.success,
             message,
             ..Default::default()
@@ -261,6 +329,7 @@ where
 }
 
 /// Perform global optimization using basin-hopping
+#[allow(dead_code)]
 pub fn basinhopping<F>(
     func: F,
     x0: Array1<f64>,
@@ -272,6 +341,11 @@ where
     F: Fn(&ArrayView1<f64>) -> f64 + Clone,
 {
     let options = options.unwrap_or_default();
+
+    // Validate bounds if provided
+    if let Some(ref bounds) = options.bounds {
+        validate_bounds(bounds)?;
+    }
 
     let mut solver = BasinHopping::new(func, x0, options, accept_test, take_step);
     Ok(solver.run())

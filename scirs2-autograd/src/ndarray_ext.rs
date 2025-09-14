@@ -22,7 +22,7 @@ pub type NdArrayViewMut<'a, T> = ndarray::ArrayViewMut<'a, T, ndarray::IxDyn>;
 
 #[inline]
 /// This works well only for small arrays
-pub(crate) fn as_shape<T: Float>(x: &NdArrayView<T>) -> Vec<usize> {
+pub(crate) fn asshape<T: Float>(x: &NdArrayView<T>) -> Vec<usize> {
     x.iter().map(|a| a.to_usize().unwrap()).collect()
 }
 
@@ -101,18 +101,21 @@ pub(crate) fn is_fully_transposed(strides: &[ndarray::Ixs]) -> bool {
 
 /// Creates a zero array in the specified shape.
 #[inline]
+#[allow(dead_code)]
 pub fn zeros<T: Float>(shape: &[usize]) -> NdArray<T> {
     NdArray::<T>::zeros(shape)
 }
 
 /// Creates a one array in the specified shape.
 #[inline]
+#[allow(dead_code)]
 pub fn ones<T: Float>(shape: &[usize]) -> NdArray<T> {
     NdArray::<T>::ones(shape)
 }
 
 /// Creates a constant array in the specified shape.
 #[inline]
+#[allow(dead_code)]
 pub fn constant<T: Float>(value: T, shape: &[usize]) -> NdArray<T> {
     NdArray::<T>::from_elem(shape, value)
 }
@@ -322,48 +325,56 @@ impl<A: Float> Default for ArrayRng<A> {
 
 /// Check if a shape represents a scalar value (empty or [1] shape)
 #[inline]
-pub fn is_scalar_shape(shape: &[usize]) -> bool {
+#[allow(dead_code)]
+pub fn is_scalarshape(shape: &[usize]) -> bool {
     shape.is_empty() || (shape.len() == 1 && shape[0] == 1)
 }
 
 /// Create a scalar shape (empty shape)
 #[inline]
-pub fn scalar_shape() -> Vec<usize> {
+#[allow(dead_code)]
+pub fn scalarshape() -> Vec<usize> {
     vec![]
 }
 
 /// Create an array from a scalar value
 #[inline]
+#[allow(dead_code)]
 pub fn from_scalar<T: Float>(value: T) -> NdArray<T> {
     NdArray::<T>::from_elem(ndarray::IxDyn(&[1]), value)
 }
 
 /// Get shape of an ndarray view
 #[inline]
+#[allow(dead_code)]
 pub fn shape_of_view<T>(view: &NdArrayView<'_, T>) -> Vec<usize> {
     view.shape().to_vec()
 }
 
 /// Get shape of an ndarray
 #[inline]
+#[allow(dead_code)]
 pub fn shape_of<T>(array: &NdArray<T>) -> Vec<usize> {
     array.shape().to_vec()
 }
 
 /// Get default random number generator
 #[inline]
+#[allow(dead_code)]
 pub fn get_default_rng<A: Float>() -> ArrayRng<A> {
     ArrayRng::<A>::default()
 }
 
 /// Create a deep copy of an ndarray
 #[inline]
+#[allow(dead_code)]
 pub fn deep_copy<T: Float + Clone>(array: &NdArrayView<'_, T>) -> NdArray<T> {
     array.to_owned()
 }
 
 /// Select elements from an array along an axis
 #[inline]
+#[allow(dead_code)]
 pub fn select<T: Float + Clone>(
     array: &NdArrayView<'_, T>,
     axis: ndarray::Axis,
@@ -384,6 +395,7 @@ pub fn select<T: Float + Clone>(
 
 /// Check if two shapes are compatible for broadcasting
 #[inline]
+#[allow(dead_code)]
 pub fn are_broadcast_compatible(shape1: &[usize], shape2: &[usize]) -> bool {
     let len1 = shape1.len();
     let len2 = shape2.len();
@@ -401,7 +413,8 @@ pub fn are_broadcast_compatible(shape1: &[usize], shape2: &[usize]) -> bool {
 
 /// Compute the shape resulting from broadcasting two shapes together
 #[inline]
-pub fn broadcast_shape(shape1: &[usize], shape2: &[usize]) -> Option<Vec<usize>> {
+#[allow(dead_code)]
+pub fn broadcastshape(shape1: &[usize], shape2: &[usize]) -> Option<Vec<usize>> {
     if !are_broadcast_compatible(shape1, shape2) {
         return None;
     }

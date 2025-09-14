@@ -4,9 +4,17 @@
 //! which is useful for visualization, feature extraction, and reducing
 //! computational complexity.
 
+mod isomap;
+mod lle;
+mod spectral_embedding;
 mod tsne;
+mod umap;
 
+pub use crate::reduction::isomap::Isomap;
+pub use crate::reduction::lle::LLE;
+pub use crate::reduction::spectral_embedding::{AffinityMethod, SpectralEmbedding};
 pub use crate::reduction::tsne::{trustworthiness, TSNE};
+pub use crate::reduction::umap::UMAP;
 
 use ndarray::{Array1, Array2, ArrayBase, Axis, Data, Ix1, Ix2};
 use num_traits::{Float, NumCast};
@@ -51,9 +59,9 @@ impl PCA {
     ///
     /// # Returns
     /// * A new PCA instance
-    pub fn new(n_components: usize, center: bool, scale: bool) -> Self {
+    pub fn new(ncomponents: usize, center: bool, scale: bool) -> Self {
         PCA {
-            n_components,
+            n_components: ncomponents,
             center,
             scale,
             components: None,
@@ -282,9 +290,9 @@ impl TruncatedSVD {
     ///
     /// # Returns
     /// * A new TruncatedSVD instance
-    pub fn new(n_components: usize) -> Self {
+    pub fn new(ncomponents: usize) -> Self {
         TruncatedSVD {
-            n_components,
+            n_components: ncomponents,
             singular_values: None,
             components: None,
             explained_variance_ratio: None,
@@ -465,7 +473,7 @@ impl LDA {
     ///
     /// # Returns
     /// * A new LDA instance
-    pub fn new(n_components: usize, solver: &str) -> Result<Self> {
+    pub fn new(ncomponents: usize, solver: &str) -> Result<Self> {
         if solver != "svd" && solver != "eigen" {
             return Err(TransformError::InvalidInput(
                 "solver must be 'svd' or 'eigen'".to_string(),
@@ -473,7 +481,7 @@ impl LDA {
         }
 
         Ok(LDA {
-            n_components,
+            n_components: ncomponents,
             solver: solver.to_string(),
             components: None,
             means: None,
@@ -537,11 +545,11 @@ impl LDA {
             ));
         }
 
-        let max_n_components = n_classes - 1;
-        if self.n_components > max_n_components {
+        let maxn_components = n_classes - 1;
+        if self.n_components > maxn_components {
             return Err(TransformError::InvalidInput(format!(
                 "n_components={} must be <= n_classes-1={}",
-                self.n_components, max_n_components
+                self.n_components, maxn_components
             )));
         }
 
@@ -647,7 +655,7 @@ impl LDA {
             }
 
             // Perform SVD on the transformed between-class scatter matrix
-            let (u_sb, s_sb, _vt_sb) = match svd::<f64>(&sb_transformed.view(), true, None) {
+            let (u_sb, s_sb, vt_sb) = match svd::<f64>(&sb_transformed.view(), true, None) {
                 Ok(result) => result,
                 Err(e) => return Err(TransformError::LinalgError(e)),
             };
@@ -663,55 +671,92 @@ impl LDA {
                 }
             }
         } else {
-            // Eigen-based solver
-            // TODO: Implement proper generalized eigenvalue solver
-            // For now, we'll use the SVD-based approach for all solvers
+            // Eigen-based solver - proper generalized eigenvalue problem
+            // Solve: Sb * v = λ * Sw * v
 
-            // Decompose the within-class scatter matrix
-            let (u_sw, s_sw, vt_sw) = match svd::<f64>(&sw.view(), true, None) {
+            // Step 1: Regularize Sw to ensure it's invertible
+            let mut sw_reg = sw.clone();
+            for i in 0..n_features {
+                sw_reg[[i, i]] += EPSILON; // Add small regularization to diagonal
+            }
+
+            // Step 2: Compute Cholesky decomposition of regularized Sw
+            // We'll use a simpler approach: Sw^(-1) * Sb
+            let (u_sw, s_sw, vt_sw) = match svd::<f64>(&sw_reg.view(), true, None) {
                 Ok(result) => result,
                 Err(e) => return Err(TransformError::LinalgError(e)),
             };
 
-            // Compute the pseudoinverse of sw^(1/2)
-            let mut sw_sqrt_inv = Array2::<f64>::zeros((n_features, n_features));
+            // Compute pseudoinverse of Sw
+            let mut sw_inv = Array2::<f64>::zeros((n_features, n_features));
             for i in 0..n_features {
                 if s_sw[i] > EPSILON {
                     for j in 0..n_features {
                         for k in 0..n_features {
-                            let s_inv_sqrt = 1.0 / s_sw[i].sqrt();
-                            sw_sqrt_inv[[j, k]] += u_sw[[j, i]] * s_inv_sqrt * vt_sw[[i, k]];
+                            sw_inv[[j, k]] += u_sw[[j, i]] * (1.0 / s_sw[i]) * vt_sw[[i, k]];
                         }
                     }
                 }
             }
 
-            // Transform the between-class scatter matrix
-            let mut sb_transformed = Array2::<f64>::zeros((n_features, n_features));
+            // Step 3: Compute Sw^(-1) * Sb
+            let mut sw_inv_sb = Array2::<f64>::zeros((n_features, n_features));
             for i in 0..n_features {
                 for j in 0..n_features {
                     for k in 0..n_features {
-                        for l in 0..n_features {
-                            sb_transformed[[i, j]] +=
-                                sw_sqrt_inv[[i, k]] * sb[[k, l]] * sw_sqrt_inv[[l, j]];
-                        }
+                        sw_inv_sb[[i, j]] += sw_inv[[i, k]] * sb[[k, j]];
                     }
                 }
             }
 
-            // Perform SVD on the transformed between-class scatter matrix
-            let (u_sb, s_sb, _vt_sb) = match svd::<f64>(&sb_transformed.view(), true, None) {
+            // Step 4: Compute eigendecomposition of Sw^(-1) * Sb
+            // Since this matrix may not be symmetric, we use the approach where we
+            // symmetrize it by computing (Sw^(-1) * Sb + (Sw^(-1) * Sb)^T) / 2
+            let mut sym_matrix = Array2::<f64>::zeros((n_features, n_features));
+            for i in 0..n_features {
+                for j in 0..n_features {
+                    sym_matrix[[i, j]] = (sw_inv_sb[[i, j]] + sw_inv_sb[[j, i]]) / 2.0;
+                }
+            }
+
+            // Perform eigendecomposition on the symmetrized matrix
+            let (eig_vals, eig_vecs) = match scirs2_linalg::eigh::<f64>(&sym_matrix.view(), None) {
                 Ok(result) => result,
-                Err(e) => return Err(TransformError::LinalgError(e)),
+                Err(_) => {
+                    // Fallback to SVD if eigendecomposition fails
+                    let (u, s, vt) = match svd::<f64>(&sw_inv_sb.view(), true, None) {
+                        Ok(result) => result,
+                        Err(e) => return Err(TransformError::LinalgError(e)),
+                    };
+                    (s, u)
+                }
             };
 
-            // Compute the LDA components
+            // Sort eigenvalues and eigenvectors in descending order
+            let mut indices: Vec<usize> = (0..n_features).collect();
+            indices.sort_by(|&i, &j| eig_vals[j].partial_cmp(&eig_vals[i]).unwrap());
+
+            // Select top n_components eigenvectors
             for i in 0..self.n_components {
-                eigenvalues[i] = s_sb[i];
+                let idx = indices[i];
+                eigenvalues[i] = eig_vals[idx].max(0.0); // Ensure non-negative
 
                 for j in 0..n_features {
-                    for k in 0..n_features {
-                        components[[i, j]] += sw_sqrt_inv[[k, j]] * u_sb[[k, i]];
+                    components[[i, j]] = eig_vecs[[j, idx]];
+                }
+            }
+
+            // Normalize components
+            for i in 0..self.n_components {
+                let mut norm = 0.0;
+                for j in 0..n_features {
+                    norm += components[[i, j]] * components[[i, j]];
+                }
+                norm = norm.sqrt();
+
+                if norm > EPSILON {
+                    for j in 0..n_features {
+                        components[[i, j]] /= norm;
                     }
                 }
             }
@@ -896,5 +941,62 @@ mod tests {
         // Check that the explained variance ratio is 1.0 for a single component
         let explained_variance = lda.explained_variance_ratio().unwrap();
         assert_abs_diff_eq!(explained_variance[0], 1.0, epsilon = 1e-10);
+    }
+
+    #[test]
+    fn test_lda_eigen_solver() {
+        // Create a simple dataset with 3 classes
+        let x = Array::from_shape_vec(
+            (9, 2),
+            vec![
+                1.0, 2.0, 2.0, 3.0, 3.0, 3.0, // Class 0
+                5.0, 4.0, 6.0, 5.0, 7.0, 4.0, // Class 1
+                9.0, 8.0, 10.0, 9.0, 11.0, 10.0, // Class 2
+            ],
+        )
+        .unwrap();
+
+        let y = Array::from_vec(vec![0, 0, 0, 1, 1, 1, 2, 2, 2]);
+
+        // Test eigen solver
+        let mut lda_eigen = LDA::new(2, "eigen").unwrap(); // 2 components for 3 classes
+        let x_transformed_eigen = lda_eigen.fit_transform(&x, &y).unwrap();
+
+        // Test SVD solver for comparison
+        let mut lda_svd = LDA::new(2, "svd").unwrap();
+        let x_transformed_svd = lda_svd.fit_transform(&x, &y).unwrap();
+
+        // Check that both transformations have correct shape
+        assert_eq!(x_transformed_eigen.shape(), &[9, 2]);
+        assert_eq!(x_transformed_svd.shape(), &[9, 2]);
+
+        // Check that both produce valid results
+        assert!(x_transformed_eigen.iter().all(|&x| x.is_finite()));
+        assert!(x_transformed_svd.iter().all(|&x| x.is_finite()));
+
+        // Check that explained variance ratios are valid for both solvers
+        let explained_variance_eigen = lda_eigen.explained_variance_ratio().unwrap();
+        let explained_variance_svd = lda_svd.explained_variance_ratio().unwrap();
+
+        assert_eq!(explained_variance_eigen.len(), 2);
+        assert_eq!(explained_variance_svd.len(), 2);
+
+        // Both should sum to approximately 1.0
+        assert_abs_diff_eq!(explained_variance_eigen.sum(), 1.0, epsilon = 1e-10);
+        assert_abs_diff_eq!(explained_variance_svd.sum(), 1.0, epsilon = 1e-10);
+
+        // Eigenvalues should be non-negative
+        assert!(explained_variance_eigen.iter().all(|&x| x >= 0.0));
+        assert!(explained_variance_svd.iter().all(|&x| x >= 0.0));
+    }
+
+    #[test]
+    fn test_lda_invalid_solver() {
+        let result = LDA::new(1, "invalid");
+        assert!(result.is_err());
+        assert!(result
+            .unwrap_err()
+            .to_string()
+            .contains("solver must be 'svd' or 'eigen'"));
     }
 }

@@ -9,6 +9,7 @@
 use scirs2_io::error::Result;
 use scirs2_io::netcdf::{NetCDFDataType, NetCDFFile};
 
+#[allow(dead_code)]
 fn main() -> Result<()> {
     println!("=== Enhanced NetCDF Example ===");
 
@@ -27,6 +28,7 @@ fn main() -> Result<()> {
     Ok(())
 }
 
+#[allow(dead_code)]
 fn create_climate_dataset_structure() -> Result<()> {
     println!("\n1. Creating climate dataset structure...");
 
@@ -103,6 +105,7 @@ fn create_climate_dataset_structure() -> Result<()> {
     Ok(())
 }
 
+#[allow(dead_code)]
 fn create_scientific_dataset_structure() -> Result<()> {
     println!("\n2. Creating scientific measurement dataset structure...");
 
@@ -216,6 +219,7 @@ fn create_scientific_dataset_structure() -> Result<()> {
     Ok(())
 }
 
+#[allow(dead_code)]
 fn demonstrate_metadata_features() -> Result<()> {
     println!("\n3. Demonstrating metadata and attribute features...");
 

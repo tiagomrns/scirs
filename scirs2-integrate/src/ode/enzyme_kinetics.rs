@@ -452,12 +452,12 @@ impl EnzymeParameters {
 
 impl MetabolicPathway {
     /// Create a new empty metabolic pathway
-    pub fn new(name: String, num_metabolites: usize, num_enzymes: usize) -> Self {
+    pub fn new(_name: String, num_metabolites: usize, numenzymes: usize) -> Self {
         Self {
-            name,
+            name: _name,
             enzymes: Vec::new(),
-            metabolites: (0..num_metabolites).map(|i| format!("M{}", i)).collect(),
-            stoichiometry_matrix: Array2::zeros((num_enzymes, num_metabolites)),
+            metabolites: (0..num_metabolites).map(|i| format!("M{i}")).collect(),
+            stoichiometry_matrix: Array2::zeros((numenzymes, num_metabolites)),
             regulations: Vec::new(),
             external_metabolites: HashMap::new(),
         }
@@ -474,9 +474,9 @@ impl MetabolicPathway {
     }
 
     /// Set external metabolite concentration
-    pub fn set_external_metabolite(&mut self, metabolite_idx: usize, concentration: f64) {
+    pub fn set_external_metabolite(&mut self, _metaboliteidx: usize, concentration: f64) {
         self.external_metabolites
-            .insert(metabolite_idx, concentration);
+            .insert(_metaboliteidx, concentration);
     }
 
     /// Calculate reaction rates for all enzymes
@@ -484,21 +484,21 @@ impl MetabolicPathway {
         let mut rates = Array1::zeros(self.enzymes.len());
 
         for (i, enzyme) in self.enzymes.iter().enumerate() {
-            // Get substrate concentrations
+            // Get substrate _concentrations
             let substrate_concentrations: Vec<f64> = enzyme
                 .substrates
                 .iter()
                 .map(|&idx| concentrations.get(idx).copied().unwrap_or(0.0))
                 .collect();
 
-            // Get effector concentrations for allosteric enzymes
+            // Get effector _concentrations for allosteric enzymes
             let effector_concentrations: Vec<f64> = enzyme
                 .effectors
                 .iter()
                 .map(|&idx| concentrations.get(idx).copied().unwrap_or(0.0))
                 .collect();
 
-            // Combine substrate and effector concentrations
+            // Combine substrate and effector _concentrations
             let mut all_concentrations = substrate_concentrations;
             all_concentrations.extend(effector_concentrations);
 
@@ -586,30 +586,30 @@ impl MetabolicPathway {
     }
 
     /// Perform metabolic control analysis
-    pub fn control_analysis(&self, steady_state_concentrations: &Array1<f64>) -> PathwayAnalysis {
+    pub fn control_analysis(&self, _steady_stateconcentrations: &Array1<f64>) -> PathwayAnalysis {
         let num_enzymes = self.enzymes.len();
-        let num_metabolites = steady_state_concentrations.len();
+        let num_metabolites = _steady_stateconcentrations.len();
 
         // Calculate flux control coefficients
         let flux_control_coefficients =
-            self.calculate_flux_control_coefficients(steady_state_concentrations);
+            self.calculate_flux_control_coefficients(_steady_stateconcentrations);
 
         // Calculate concentration control coefficients
         let concentration_control_coefficients = Array2::zeros((num_enzymes, num_metabolites));
 
         // Calculate elasticity coefficients
         let elasticity_coefficients =
-            self.calculate_elasticity_coefficients(steady_state_concentrations);
+            self.calculate_elasticity_coefficients(_steady_stateconcentrations);
 
         // Calculate steady-state fluxes
-        let steady_state_fluxes = self.calculate_reaction_rates(steady_state_concentrations);
+        let steady_state_fluxes = self.calculate_reaction_rates(_steady_stateconcentrations);
 
         PathwayAnalysis {
             flux_control_coefficients,
             concentration_control_coefficients,
             elasticity_coefficients,
             steady_state_fluxes,
-            steady_state_concentrations: steady_state_concentrations.clone(),
+            steady_state_concentrations: _steady_stateconcentrations.clone(),
         }
     }
 
@@ -700,7 +700,6 @@ pub mod pathways {
             effectors: vec![],
             enzyme_concentration: 50.0, // 50 nM
         });
-
         // Enzyme 2: Phosphofructokinase (F6P -> FBP) - allosteric
         pathway.add_enzyme(EnzymeDefinition {
             name: "Phosphofructokinase".to_string(),
@@ -717,7 +716,6 @@ pub mod pathways {
             effectors: vec![],   // AMP, ATP (would be separate metabolites)
             enzyme_concentration: 30.0,
         });
-
         // Enzyme 3: Pyruvate kinase (PEP -> Pyruvate)
         pathway.add_enzyme(EnzymeDefinition {
             name: "Pyruvate Kinase".to_string(),
@@ -727,14 +725,12 @@ pub mod pathways {
             effectors: vec![],
             enzyme_concentration: 100.0,
         });
-
         // Set stoichiometry matrix (enzymes × metabolites)
         pathway.stoichiometry_matrix = arr2(&[
             [-1.0, 1.0, 0.0, 0.0, 0.0, 0.0], // Hexokinase: Glucose -> G6P
             [0.0, 0.0, -1.0, 1.0, 0.0, 0.0], // PFK: F6P -> FBP
             [0.0, 0.0, 0.0, 0.0, -1.0, 1.0], // Pyruvate kinase: PEP -> Pyruvate
         ]);
-
         // Add feedback inhibition: G6P inhibits Hexokinase
         pathway.add_regulation(Regulation {
             target_enzyme: 0,
@@ -893,8 +889,9 @@ pub mod pathways {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
+    use crate::ode::{enzyme_kinetics::pathways, EnzymeParameters};
     use approx::assert_abs_diff_eq;
+    use ndarray::Array1;
 
     #[test]
     fn test_michaelis_menten_kinetics() {

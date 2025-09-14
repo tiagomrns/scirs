@@ -5,6 +5,7 @@ use scirs2_integrate::pde::implicit::{
 use scirs2_integrate::pde::{BoundaryCondition, BoundaryConditionType, BoundaryLocation, Domain};
 use std::f64::consts::PI;
 
+#[allow(dead_code)]
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Define domain: x ∈ [0, 1]
     let domain = Domain::new(vec![0.0..1.0], vec![101])?;
@@ -87,17 +88,19 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 }
 
 /// Analytical solution for the heat equation with given initial and boundary conditions
+#[allow(dead_code)]
 fn analytical_solution(x: f64, t: f64) -> f64 {
     (PI * x).sin() * (-PI * PI * t).exp()
 }
 
 /// Compare numerical solutions with the analytical solution
+#[allow(dead_code)]
 fn compare_solutions(
     cn_result: &ImplicitResult,
     be_result: &ImplicitResult,
     final_time: f64,
 ) -> Result<(), Box<dyn std::error::Error>> {
-    // Extract solution at final time
+    // Extract solution at final _time
     let cn_final = &cn_result.u.last().unwrap();
     let be_final = &be_result.u.last().unwrap();
 
@@ -105,7 +108,7 @@ fn compare_solutions(
     let nx = cn_final.shape()[0];
     let x_grid = Array1::linspace(0.0, 1.0, nx);
 
-    // Calculate analytical solution at final time
+    // Calculate analytical solution at final _time
     let mut exact = Array1::zeros(nx);
     for i in 0..nx {
         exact[i] = analytical_solution(x_grid[i], final_time);
@@ -122,8 +125,8 @@ fn compare_solutions(
         / nx as f64;
 
     println!("\nError analysis:");
-    println!("Crank-Nicolson mean absolute error: {:.6e}", cn_error);
-    println!("Backward Euler mean absolute error: {:.6e}", be_error);
+    println!("Crank-Nicolson mean absolute error: {cn_error:.6e}");
+    println!("Backward Euler mean absolute error: {be_error:.6e}");
     println!("Ratio (BE error / CN error): {:.2}", be_error / cn_error);
 
     // Output some solution values for verification

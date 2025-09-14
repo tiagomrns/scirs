@@ -1,32 +1,57 @@
 [package]
 name = "scirs2-ndimage"
 version.workspace = true
-edition = "2021"
-authors = ["SciRS2 Team"]
-license = "MIT OR Apache-2.0"
-description = "N-dimensional image processing module for SciRS2"
-repository = "https://github.com/cool-japan/scirs"
+edition.workspace = true
+authors.workspace = true
+description = "N-dimensional image processing module for SciRS2 (scirs2-ndimage)"
+license.workspace = true
+repository.workspace = true
 keywords = ["image", "processing", "scientific", "scipy", "numerical"]
 categories = ["science", "mathematics", "algorithms"]
 
+[lints]
+workspace = true
+
 [dependencies]
 # Core dependencies
-scirs2-core = { workspace = true, features = ["validation", "parallel"] }
-scirs2-interpolate = { workspace = true }
+scirs2-core = { workspace = true, features = ["validation", "memory_efficient"] }
+# scirs2-interpolate = { workspace = true }
+scirs2-fft = { workspace = true }
 ndarray = { workspace = true }
 num-traits = { workspace = true }
+num-complex = { workspace = true }
 thiserror = { workspace = true }
 ndarray-rand = { workspace = true }
 approx = { workspace = true }
 cached = { workspace = true }
+tempfile = { workspace = true }
+lazy_static = { workspace = true }
+rayon = { workspace = true }
+num_cpus = { workspace = true }
+rand = { workspace = true }
+regex = { workspace = true }
+serde = { workspace = true, features = ["derive"] }
+serde_json = { workspace = true }
+
+# Compression dependencies
+flate2 = { workspace = true, optional = true }
+zstd = { workspace = true, optional = true }
+lz4 = { workspace = true, optional = true }
+statrs.workspace = true
 
 [features]
 default = []
 simd = ["scirs2-core/simd"]
 parallel = ["scirs2-core/parallel"]
+cuda = []
+opencl = []
+metal = []
+gpu = ["cuda"]
+compression = ["flate2", "zstd", "lz4"]
 
 [dev-dependencies]
 criterion = { workspace = true }
+rand = { workspace = true }
 
 [[bench]]
 name = "filters_bench"
@@ -43,3 +68,12 @@ harness = false
 [[bench]]
 name = "distance_transform_bench"
 harness = false
+
+[[example]]
+name = "streaming_processing"
+
+[[example]]
+name = "gpu_backend"
+
+# [[example]]
+# name = "ndimage_comprehensive_analysis"

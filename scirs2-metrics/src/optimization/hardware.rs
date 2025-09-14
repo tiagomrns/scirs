@@ -6,8 +6,10 @@
 
 use crate::error::{MetricsError, Result};
 use ndarray::{Array1, Array2, ArrayView1, ArrayView2, Axis};
+use num_traits::{Float, One, Zero};
 use scirs2_core::parallel_ops::*;
 use scirs2_core::simd_ops::{AutoOptimizer, PlatformCapabilities, SimdUnifiedOps};
+use statrs::statistics::Statistics;
 
 /// Configuration for hardware acceleration
 #[derive(Debug, Clone)]
@@ -174,7 +176,10 @@ impl SimdDistanceMetrics {
     }
 
     /// Compute Euclidean distance using SIMD
-    pub fn euclidean_distance_simd(&self, a: &Array1<f64>, b: &Array1<f64>) -> Result<f64> {
+    pub fn euclidean_distance_simd<F>(&self, a: &Array1<F>, b: &Array1<F>) -> Result<F>
+    where
+        F: Float + SimdUnifiedOps + std::fmt::Debug + 'static,
+    {
         if a.len() != b.len() {
             return Err(MetricsError::InvalidInput(
                 "Arrays must have the same length".to_string(),
@@ -190,13 +195,17 @@ impl SimdDistanceMetrics {
         }
 
         // Use unified SIMD operations for distance calculation
-        let diff = f64::simd_sub(&a.view(), &b.view());
-        let distance = f64::simd_norm(&diff.view());
+        let diff = F::simd_sub(&a.view(), &b.view());
+        let squared_diff = F::simd_mul(&diff.view(), &diff.view());
+        let distance = F::simd_sum(&squared_diff.view()).sqrt();
         Ok(distance)
     }
 
     /// Compute Manhattan distance using SIMD
-    pub fn manhattan_distance_simd(&self, a: &Array1<f64>, b: &Array1<f64>) -> Result<f64> {
+    pub fn manhattan_distance_simd<F>(&self, a: &Array1<F>, b: &Array1<F>) -> Result<F>
+    where
+        F: Float + SimdUnifiedOps + std::fmt::Debug + 'static + std::iter::Sum,
+    {
         if a.len() != b.len() {
             return Err(MetricsError::InvalidInput(
                 "Arrays must have the same length".to_string(),
@@ -211,14 +220,17 @@ impl SimdDistanceMetrics {
         }
 
         // Use unified SIMD operations for Manhattan distance
-        let diff = f64::simd_sub(&a.view(), &b.view());
-        let abs_diff = f64::simd_abs(&diff.view());
-        let distance = f64::simd_sum(&abs_diff.view());
+        let diff = F::simd_sub(&a.view(), &b.view());
+        let abs_diff = F::simd_abs(&diff.view());
+        let distance = F::simd_sum(&abs_diff.view());
         Ok(distance)
     }
 
     /// Compute cosine distance using SIMD
-    pub fn cosine_distance_simd(&self, a: &Array1<f64>, b: &Array1<f64>) -> Result<f64> {
+    pub fn cosine_distance_simd<F>(&self, a: &Array1<F>, b: &Array1<F>) -> Result<F>
+    where
+        F: Float + SimdUnifiedOps + std::fmt::Debug + PartialEq + 'static,
+    {
         if a.len() != b.len() {
             return Err(MetricsError::InvalidInput(
                 "Arrays must have the same length".to_string(),
@@ -237,16 +249,19 @@ impl SimdDistanceMetrics {
         let norm_a = self.euclidean_norm_simd(a)?;
         let norm_b = self.euclidean_norm_simd(b)?;
 
-        if norm_a == 0.0 || norm_b == 0.0 {
-            return Ok(1.0); // Maximum distance
+        if norm_a == F::zero() || norm_b == F::zero() {
+            return Ok(F::one()); // Maximum distance
         }
 
         let cosine_similarity = dot_product / (norm_a * norm_b);
-        Ok(1.0 - cosine_similarity)
+        Ok(F::one() - cosine_similarity)
     }
 
     /// Compute dot product using SIMD
-    pub fn dot_product_simd(&self, a: &Array1<f64>, b: &Array1<f64>) -> Result<f64> {
+    pub fn dot_product_simd<F>(&self, a: &Array1<F>, b: &Array1<F>) -> Result<F>
+    where
+        F: Float + SimdUnifiedOps + std::fmt::Debug + 'static,
+    {
         if a.len() != b.len() {
             return Err(MetricsError::InvalidInput(
                 "Arrays must have the same length".to_string(),
@@ -261,12 +276,15 @@ impl SimdDistanceMetrics {
         }
 
         // Use unified SIMD operations for dot product
-        let dot_product = f64::simd_dot(&a.view(), &b.view());
+        let dot_product = F::simd_dot(&a.view(), &b.view());
         Ok(dot_product)
     }
 
     /// Compute Euclidean norm using SIMD
-    pub fn euclidean_norm_simd(&self, a: &Array1<f64>) -> Result<f64> {
+    pub fn euclidean_norm_simd<F>(&self, a: &Array1<F>) -> Result<F>
+    where
+        F: Float + SimdUnifiedOps + std::fmt::Debug + 'static,
+    {
         if !self.config.enable_simd
             || !self.capabilities.simd_available()
             || a.len() < self.config.min_data_size
@@ -280,27 +298,36 @@ impl SimdDistanceMetrics {
 
     // Private implementation methods
 
-    fn euclidean_distance_standard(&self, a: &Array1<f64>, b: &Array1<f64>) -> Result<f64> {
+    fn euclidean_distance_standard<F>(&self, a: &Array1<F>, b: &Array1<F>) -> Result<F>
+    where
+        F: Float + std::fmt::Debug + 'static,
+    {
         let diff = a - b;
         Ok(diff.dot(&diff).sqrt())
     }
 
-    fn manhattan_distance_standard(&self, a: &Array1<f64>, b: &Array1<f64>) -> Result<f64> {
-        let sum: f64 = a.iter().zip(b.iter()).map(|(x, y)| (x - y).abs()).sum();
+    fn manhattan_distance_standard<F>(&self, a: &Array1<F>, b: &Array1<F>) -> Result<F>
+    where
+        F: Float + std::fmt::Debug + std::iter::Sum,
+    {
+        let sum: F = a.iter().zip(b.iter()).map(|(x, y)| (*x - *y).abs()).sum();
         Ok(sum)
     }
 
-    fn cosine_distance_standard(&self, a: &Array1<f64>, b: &Array1<f64>) -> Result<f64> {
+    fn cosine_distance_standard<F>(&self, a: &Array1<F>, b: &Array1<F>) -> Result<F>
+    where
+        F: Float + std::fmt::Debug + Zero + One + 'static,
+    {
         let dot_product = a.dot(b);
         let norm_a = a.dot(a).sqrt();
         let norm_b = b.dot(b).sqrt();
 
-        if norm_a == 0.0 || norm_b == 0.0 {
-            return Ok(1.0);
+        if norm_a == F::zero() || norm_b == F::zero() {
+            return Ok(F::one());
         }
 
         let cosine_similarity = dot_product / (norm_a * norm_b);
-        Ok(1.0 - cosine_similarity)
+        Ok(F::one() - cosine_similarity)
     }
 }
 

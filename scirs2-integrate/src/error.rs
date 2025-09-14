@@ -17,6 +17,10 @@ pub enum IntegrateError {
     #[error("Value error: {0}")]
     ValueError(String),
 
+    /// Invalid input error
+    #[error("Invalid input: {0}")]
+    InvalidInput(String),
+
     /// Not implemented error
     #[error("Not implemented: {0}")]
     NotImplementedError(String),
@@ -36,7 +40,14 @@ pub enum IntegrateError {
     /// Step size too small error
     #[error("Step size too small: {0}")]
     StepSizeTooSmall(String),
+
+    /// Index error
+    #[error("Index error: {0}")]
+    IndexError(String),
 }
 
 /// Result type for integration operations
-pub type IntegrateResult<T> = Result<T, IntegrateError>;
+pub type IntegrateResult<T> = std::result::Result<T, IntegrateError>;
+
+/// Convenient alias for Result with IntegrateError
+pub type Result<T> = std::result::Result<T, IntegrateError>;

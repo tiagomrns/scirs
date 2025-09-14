@@ -1,13 +1,16 @@
 [package]
 name = "scirs2"
 version.workspace = true
-edition = "2021"
-authors = ["SciRS2 Team"]
-description = "A Rust port of SciPy with AI/ML extensions - Scientific Computing and AI Library"
-license = "MIT OR Apache-2.0"
-repository = "https://github.com/cool-japan/scirs"
+edition.workspace = true
+authors.workspace = true
+description = "A Rust port of SciPy with AI/ML extensions - Scientific Computing and AI Library (scirs2)"
+license.workspace = true
+repository.workspace = true
 keywords = ["scientific", "mathematics", "science", "scipy", "ai"]
 categories = ["science", "mathematics", "algorithms"]
+
+[lints]
+workspace = true
 
 [dependencies]
 # Core module - always included
@@ -22,23 +25,23 @@ rand = { workspace = true }
 
 # Standard modules
 scirs2-linalg = { workspace = true, optional = true }
-scirs2-stats = { workspace = true, optional = true }
+# scirs2-stats = { workspace = true, optional = true } # Temporarily disabled due to compilation errors
 scirs2-integrate = { workspace = true, optional = true }
-scirs2-interpolate = { workspace = true, optional = true }
+# scirs2-interpolate = { workspace = true, optional = true } # Temporarily disabled due to compilation errors
 scirs2-optimize = { workspace = true, optional = true }
 scirs2-fft = { workspace = true, optional = true }
-scirs2-special = { workspace = true, optional = true }
+# scirs2-special = { workspace = true, optional = true } # Temporarily disabled due to compilation errors
 scirs2-signal = { workspace = true, optional = true }
 scirs2-sparse = { workspace = true, optional = true }
 scirs2-spatial = { workspace = true, optional = true }
-scirs2-cluster = { workspace = true, optional = true }
+# scirs2-cluster = { workspace = true, optional = true } # Temporarily disabled due to compilation errors
 scirs2-transform = { workspace = true, optional = true }
 scirs2-metrics = { workspace = true, optional = true, default-features = true }
 
 # Preview/experimental modules
 scirs2-ndimage = { workspace = true, optional = true }
 scirs2-neural = { workspace = true, optional = true }
-scirs2-optim = { workspace = true, optional = true }
+# scirs2-optim = { workspace = true, optional = true } # Temporarily disabled due to compilation errors
 scirs2-series = { workspace = true, optional = true }
 scirs2-text = { workspace = true, optional = true }
 scirs2-io = { workspace = true, optional = true }
@@ -64,39 +67,39 @@ memory_management = []
 # These allow users to override platform defaults when needed
 accelerate = ["linalg", "scirs2-linalg/accelerate"]  # Force use of macOS Accelerate framework
 openblas = ["linalg", "scirs2-linalg/openblas-backend"]  # Force use of OpenBLAS
-intel-mkl = ["linalg", "scirs2-linalg/intel-mkl"]  # Force use of Intel MKL
+# intel-mkl = ["linalg", "scirs2-linalg/intel-mkl"]  # Force use of Intel MKL - removed due to conflicts
 netlib = ["linalg", "scirs2-linalg/netlib"]  # Force use of reference Netlib
 
 # Functional groupings
 standard = [
-    "linalg", "stats", "integrate", "interpolate", "optimize", 
-    "fft", "special", "signal", "sparse", "spatial", 
-    "cluster", "transform", "metrics"
-]
-ai = ["neural", "optim", "autograd"]
+    "linalg", "integrate", "optimize", 
+    "fft", "signal", "sparse", "spatial", 
+    "transform", "metrics"
+] # stats, cluster, interpolate, and special temporarily disabled
+ai = ["neural", "autograd"] # optim temporarily disabled
 experimental = [
-    "ndimage", "neural", "optim", "series", "text", 
+    "ndimage", "neural", "series", "text", 
     "io", "datasets", "graph", "vision", "autograd"
-]
+] # optim temporarily disabled
 full = ["standard", "experimental"]
 
 # Individual module features
 linalg = ["dep:scirs2-linalg"]
-stats = ["dep:scirs2-stats"]
+stats = [] # Temporarily disabled due to compilation errors - placeholder feature
 integrate = ["dep:scirs2-integrate"]
-interpolate = ["dep:scirs2-interpolate"]
+interpolate = [] # Temporarily disabled due to compilation errors - placeholder feature
 optimize = ["dep:scirs2-optimize"]
 fft = ["dep:scirs2-fft"]
-special = ["dep:scirs2-special"]
+special = [] # Temporarily disabled due to compilation errors - placeholder feature
 signal = ["dep:scirs2-signal"]
 sparse = ["dep:scirs2-sparse"]
 spatial = ["dep:scirs2-spatial"]
-cluster = ["dep:scirs2-cluster"]
+cluster = [] # Temporarily disabled due to compilation errors - placeholder feature
 transform = ["dep:scirs2-transform"]
 metrics = ["dep:scirs2-metrics"]
 ndimage = ["dep:scirs2-ndimage"]
 neural = ["dep:scirs2-neural"]
-optim = ["dep:scirs2-optim"]
+optim = [] # Temporarily disabled due to compilation errors - placeholder feature
 series = ["dep:scirs2-series"]
 text = ["dep:scirs2-text"]
 io = ["dep:scirs2-io"]

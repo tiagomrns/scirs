@@ -78,6 +78,7 @@ pub mod optimization;
 /// # Returns
 ///
 /// * Jacobian matrix of size m×n
+#[allow(dead_code)]
 pub fn jacobian<F>(
     f: impl Fn(&ArrayView1<F>) -> LinalgResult<Array1<F>>,
     x: &ArrayView1<F>,
@@ -124,6 +125,7 @@ where
 /// # Returns
 ///
 /// * Gradient vector of size n
+#[allow(dead_code)]
 pub fn gradient<F>(
     f: impl Fn(&ArrayView1<F>) -> LinalgResult<F>,
     x: &ArrayView1<F>,
@@ -167,6 +169,7 @@ where
 /// # Returns
 ///
 /// * Hessian matrix of size n×n
+#[allow(dead_code)]
 pub fn hessian<F>(
     f: impl Fn(&ArrayView1<F>) -> LinalgResult<F>,
     x: &ArrayView1<F>,
@@ -230,6 +233,7 @@ where
 /// # Returns
 ///
 /// * Directional derivative (scalar)
+#[allow(dead_code)]
 pub fn directional_derivative<F>(
     f: impl Fn(&ArrayView1<F>) -> LinalgResult<F>,
     x: &ArrayView1<F>,

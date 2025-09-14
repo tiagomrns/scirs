@@ -14,6 +14,7 @@ use scirs2_special::{
 
 use scirs2_special::{gamma, j0};
 
+#[allow(dead_code)]
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("SciRS2 Special Functions - SIMD Performance Demo");
     println!("{}", "=".repeat(60));
@@ -58,6 +59,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     Ok(())
 }
 
+#[allow(dead_code)]
 fn benchmark_gamma_performance(size: usize) -> Result<(), Box<dyn std::error::Error>> {
     // Create test data
     let data_f32: Array1<f32> =
@@ -107,6 +109,7 @@ fn benchmark_gamma_performance(size: usize) -> Result<(), Box<dyn std::error::Er
     Ok(())
 }
 
+#[allow(dead_code)]
 fn benchmark_j0_performance(size: usize) -> Result<(), Box<dyn std::error::Error>> {
     // Create test data
     let data_f32: Array1<f32> = Array1::from_vec((0..size).map(|i| (i as f32) * 0.1).collect());
@@ -140,6 +143,7 @@ fn benchmark_j0_performance(size: usize) -> Result<(), Box<dyn std::error::Error
     Ok(())
 }
 
+#[allow(dead_code)]
 fn demonstrate_precision_comparison() -> Result<(), Box<dyn std::error::Error>> {
     println!("Precision Comparison:");
     println!("{}", "-".repeat(40));

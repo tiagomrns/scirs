@@ -13,6 +13,7 @@ use scirs2_sparse::{
     sym_ops::{sym_csr_matvec, sym_csr_quadratic_form, sym_csr_rank1_update, sym_csr_trace},
 };
 
+#[allow(dead_code)]
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("# Symmetric Sparse Matrix Operations");
     println!("Demonstrating optimized operations on symmetric sparse matrices\n");

@@ -43,6 +43,7 @@ use crate::error::{ClusteringError, Result};
 /// // Whiten the data
 /// let whitened = whiten(data.view(), true).unwrap();
 /// ```
+#[allow(dead_code)]
 pub fn whiten<F: Float + FromPrimitive + Debug>(
     data: ArrayView2<F>,
     check_finite: bool,
@@ -116,6 +117,7 @@ pub fn whiten<F: Float + FromPrimitive + Debug>(
 /// // Standardize the data
 /// let standardized = standardize(data.view(), true).unwrap();
 /// ```
+#[allow(dead_code)]
 pub fn standardize<F: Float + FromPrimitive + Debug>(
     data: ArrayView2<F>,
     check_finite: bool,
@@ -195,6 +197,7 @@ pub fn standardize<F: Float + FromPrimitive + Debug>(
 /// // Normalize the data using L2 norm
 /// let normalized = normalize(data.view(), NormType::L2, true).unwrap();
 /// ```
+#[allow(dead_code)]
 pub fn normalize<F: Float + FromPrimitive + Debug>(
     data: ArrayView2<F>,
     norm: NormType,
@@ -301,6 +304,7 @@ pub fn normalize<F: Float + FromPrimitive + Debug>(
 /// // Scale the data to the range [0, 1]
 /// let scaled = min_max_scale(data.view(), (0.0, 1.0), true).unwrap();
 /// ```
+#[allow(dead_code)]
 pub fn min_max_scale<F: Float + FromPrimitive + Debug>(
     data: ArrayView2<F>,
     feature_range: (f64, f64),
@@ -388,6 +392,7 @@ pub enum NormType {
 }
 
 /// Calculate the standard deviation along the specified axis
+#[allow(dead_code)]
 fn standard_deviation<F: Float + FromPrimitive + Debug>(
     data: ArrayView2<F>,
     axis: Axis,

@@ -1,6 +1,7 @@
-use num_complex::Complex64;
+use num__complex::Complex64;
 use scirs2_core::types::{ComplexExt, ComplexOps, NumericConversion};
 
+#[allow(dead_code)]
 fn main() {
     println!("Type Conversion Example");
 
@@ -11,7 +12,7 @@ fn main() {
         numeric_conversion_example();
 
         println!("\n--- Numeric Conversion with Error Handling ---");
-        numeric_conversion_error_example();
+        numeric_conversionerror_example();
 
         println!("\n--- Clamping and Rounding Example ---");
         clamping_rounding_example();
@@ -31,6 +32,7 @@ fn main() {
 }
 
 #[cfg(feature = "types")]
+#[allow(dead_code)]
 fn numeric_conversion_example() {
     // Convert between numeric types
     let float_value: f64 = 42.5;
@@ -51,10 +53,11 @@ fn numeric_conversion_example() {
 }
 
 #[cfg(feature = "types")]
-fn numeric_conversion_error_example() {
+#[allow(dead_code)]
+fn numeric_conversionerror_example() {
     // Try to convert a value that's too large for the target type
     let large_value: f64 = 1e20;
-    let result: Result<i32, _> = large_value.to_numeric();
+    let result: Result<i32_> = large_value.to_numeric();
 
     match result {
         Ok(value) => println!("Conversion succeeded: {}", value),
@@ -63,7 +66,7 @@ fn numeric_conversion_error_example() {
 
     // Try to convert a negative value to an unsigned type
     let negative_value: i32 = -5;
-    let result: Result<u32, _> = negative_value.to_numeric();
+    let result: Result<u32_> = negative_value.to_numeric();
 
     match result {
         Ok(value) => println!("Conversion succeeded: {}", value),
@@ -72,7 +75,7 @@ fn numeric_conversion_error_example() {
 
     // Try to convert a float with fractional part to an integer
     let fraction_value: f64 = 42.75;
-    let result: Result<i32, _> = fraction_value.to_numeric();
+    let result: Result<i32_> = fraction_value.to_numeric();
 
     match result {
         Ok(value) => println!("Conversion succeeded: {}", value),
@@ -84,6 +87,7 @@ fn numeric_conversion_error_example() {
 }
 
 #[cfg(feature = "types")]
+#[allow(dead_code)]
 fn clamping_rounding_example() {
     // Demonstrate clamping for out-of-range values
     let too_large: f64 = 1e10;
@@ -105,6 +109,7 @@ fn clamping_rounding_example() {
 }
 
 #[cfg(feature = "types")]
+#[allow(dead_code)]
 fn complex_operations_example() {
     // Create complex numbers
     let z1 = Complex64::new(3.0, 4.0);
@@ -140,6 +145,7 @@ fn complex_operations_example() {
 }
 
 #[cfg(feature = "types")]
+#[allow(dead_code)]
 fn complex_conversion_example() {
     // Create a complex number with f64 components
     let z64 = Complex64::new(123.456, 789.012);
@@ -170,6 +176,7 @@ fn complex_conversion_example() {
 }
 
 #[cfg(feature = "types")]
+#[allow(dead_code)]
 fn batch_conversion_example() {
     use scirs2_core::types::convert;
 

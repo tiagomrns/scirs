@@ -17,7 +17,7 @@
 //!
 //! ```rust
 //! use ndarray::Array2;
-//! use scirs2_series::dimensionality_reduction::{PCAConfig, apply_pca};
+//! use scirs2__series::dimensionality_reduction::{PCAConfig, apply_pca};
 //!
 //! // Create sample time series data matrix (n_series × n_timepoints)
 //! let data = Array2::from_shape_vec((5, 100), (0..500).map(|x| x as f64).collect()).unwrap();
@@ -40,6 +40,7 @@ use num_traits::{Float, FromPrimitive};
 use std::fmt::Debug;
 
 use crate::error::{Result, TimeSeriesError};
+use statrs::statistics::Statistics;
 
 /// Type alias for PCA computation results: (components, explained_variance, mean)
 type PCAResultData<F> = (Array2<F>, Array1<F>, Option<Array1<F>>);
@@ -88,7 +89,7 @@ pub struct FunctionalPCAConfig {
     /// Smoothing parameter for functional data
     pub smoothing_parameter: f64,
     /// Number of basis functions (e.g., B-splines)
-    pub n_basis_functions: usize,
+    pub nbasis_functions: usize,
     /// Type of basis functions
     pub basis_type: BasisType,
     /// Whether to center functional data
@@ -106,7 +107,7 @@ impl Default for FunctionalPCAConfig {
         Self {
             n_components: None,
             smoothing_parameter: 0.01,
-            n_basis_functions: 20,
+            nbasis_functions: 20,
             basis_type: BasisType::BSpline,
             center_functions: true,
             estimate_derivatives: false,
@@ -196,7 +197,7 @@ pub struct SymbolicApproximationConfig {
     /// Window size for segmentation
     pub window_size: usize,
     /// Number of segments for PAA
-    pub n_segments: usize,
+    pub nsegments: usize,
     /// Whether to normalize data before approximation
     pub normalize_data: bool,
     /// Breakpoints for SAX (None = automatic)
@@ -211,7 +212,7 @@ impl Default for SymbolicApproximationConfig {
             method: SymbolicMethod::SAX,
             alphabet_size: 8,
             window_size: 16,
-            n_segments: 10,
+            nsegments: 10,
             normalize_data: true,
             breakpoints: None,
             distance_metric: SymbolicDistance::MINDIST,
@@ -312,7 +313,7 @@ pub struct SymbolicApproximationResult {
     /// Breakpoints used for discretization
     pub breakpoints: Array1<f64>,
     /// Piecewise Aggregate Approximation values
-    pub paa_values: Array1<f64>,
+    pub _paavalues: Array1<f64>,
     /// Reconstruction error
     pub reconstruction_error: f64,
     /// Compression ratio achieved
@@ -336,12 +337,13 @@ pub struct SymbolicApproximationResult {
 ///
 /// ```rust
 /// use ndarray::Array2;
-/// use scirs2_series::dimensionality_reduction::{PCAConfig, apply_pca};
+/// use scirs2__series::dimensionality_reduction::{PCAConfig, apply_pca};
 ///
 /// let data = Array2::from_shape_vec((10, 50), (0..500).map(|x| x as f64).collect()).unwrap();
 /// let config = PCAConfig::default();
 /// let result = apply_pca(&data, &config).unwrap();
 /// ```
+#[allow(dead_code)]
 pub fn apply_pca<F>(data: &Array2<F>, config: &PCAConfig) -> Result<PCAResult<F>>
 where
     F: Float + FromPrimitive + Debug + Clone + ScalarOperand + 'static,
@@ -354,7 +356,7 @@ where
         ));
     }
 
-    // Step 1: Center and scale the data
+    // Step 1: Center and scale the _data
     let mut processed_data = data.clone();
     let mean = if config.center_data {
         let mean = data.mean_axis(Axis(0)).unwrap();
@@ -407,7 +409,7 @@ where
         cumulative_variance_ratio[i] = cumsum;
     }
 
-    // Step 5: Transform the data
+    // Step 5: Transform the _data
     let transformed_data = processed_data.dot(&selected_components);
 
     Ok(PCAResult {
@@ -433,6 +435,7 @@ where
 /// # Returns
 ///
 /// Functional PCA result including functional components and scores
+#[allow(dead_code)]
 pub fn apply_functional_pca<F>(
     functional_data: &Array2<F>,
     config: &FunctionalPCAConfig,
@@ -444,16 +447,16 @@ where
 
     if n_functions == 0 || n_points == 0 {
         return Err(TimeSeriesError::InvalidInput(
-            "Functional data matrix cannot be empty".to_string(),
+            "Functional _data matrix cannot be empty".to_string(),
         ));
     }
 
     // Step 1: Create basis functions
-    let basis_evaluation = create_basis_functions(n_points, config)?;
-    let n_basis = basis_evaluation.ncols();
+    let basis_evaluation = createbasis_functions(n_points, config)?;
+    let nbasis = basis_evaluation.ncols();
 
-    // Step 2: Project data onto basis functions
-    let basis_coefficients = project_onto_basis(functional_data, &basis_evaluation)?;
+    // Step 2: Project _data onto basis functions
+    let basis_coefficients = project_ontobasis(functional_data, &basis_evaluation)?;
 
     // Step 3: Center the coefficients if requested
     let centered_coefficients = if config.center_functions {
@@ -466,7 +469,7 @@ where
         }
         (centered, mean_function)
     } else {
-        let mean_function = Array1::zeros(n_basis);
+        let mean_function = Array1::zeros(nbasis);
         (basis_coefficients, mean_function)
     };
 
@@ -483,7 +486,7 @@ where
     // Step 6: Select number of components
     let n_components = config
         .n_components
-        .unwrap_or(std::cmp::min(n_functions.saturating_sub(1), n_basis));
+        .unwrap_or(std::cmp::min(n_functions.saturating_sub(1), nbasis));
     let n_components = std::cmp::min(n_components, eigenvalues.len());
 
     // Step 7: Extract functional components and compute scores
@@ -520,26 +523,27 @@ where
 ///
 /// # Arguments
 ///
-/// * `time_series` - Vector of time series to average
+/// * `_timeseries` - Vector of time series to average
 /// * `config` - DTW barycenter configuration
 ///
 /// # Returns
 ///
 /// DTW barycenter result including the computed barycenter and alignment information
+#[allow(dead_code)]
 pub fn compute_dtw_barycenter<F>(
-    time_series: &[Array1<F>],
+    _timeseries: &[Array1<F>],
     config: &DTWBarycenterConfig,
 ) -> Result<DTWBarycenterResult<F>>
 where
     F: Float + FromPrimitive + Debug + Clone + 'static,
 {
-    if time_series.is_empty() {
+    if _timeseries.is_empty() {
         return Err(TimeSeriesError::InvalidInput(
-            "Cannot compute barycenter of empty time series collection".to_string(),
+            "Cannot compute barycenter of empty time _series collection".to_string(),
         ));
     }
 
-    let n_series = time_series.len();
+    let n_series = _timeseries.len();
 
     // Initialize weights
     let weights = config
@@ -549,12 +553,12 @@ where
 
     if weights.len() != n_series {
         return Err(TimeSeriesError::InvalidInput(
-            "Weights length must match number of time series".to_string(),
+            "Weights length must match number of time _series".to_string(),
         ));
     }
 
     // Initialize barycenter
-    let mut barycenter = initialize_barycenter(time_series, &config.initialization_method)?;
+    let mut barycenter = initialize_barycenter(_timeseries, &config.initialization_method)?;
     let mut prev_barycenter = barycenter.clone();
 
     let mut convergence_error = F::infinity();
@@ -569,15 +573,15 @@ where
     {
         alignment_paths.clear();
 
-        // Compute alignments for all series to current barycenter
-        for (i, series) in time_series.iter().enumerate() {
+        // Compute alignments for all _series to current barycenter
+        for (i, series) in _timeseries.iter().enumerate() {
             let (cost, path) = compute_dtw_alignment(&barycenter, series, config)?;
             alignment_paths.push(path);
             warping_costs[i] = cost;
         }
 
         // Update barycenter based on alignments
-        barycenter = update_barycenter_from_alignments(time_series, &alignment_paths, &weights)?;
+        barycenter = update_barycenter_from_alignments(_timeseries, &alignment_paths, &weights)?;
 
         // Check convergence
         convergence_error = compute_barycenter_difference(&barycenter, &prev_barycenter);
@@ -587,7 +591,7 @@ where
 
     // Compute final distances
     let mut distances = Array1::zeros(n_series);
-    for (i, series) in time_series.iter().enumerate() {
+    for (i, series) in _timeseries.iter().enumerate() {
         let (distance, _) = compute_dtw_alignment(&barycenter, series, config)?;
         distances[i] = distance;
     }
@@ -606,32 +610,34 @@ where
 ///
 /// # Arguments
 ///
-/// * `time_series` - Input time series
+/// * `_timeseries` - Input time series
 /// * `config` - Symbolic approximation configuration
 ///
 /// # Returns
 ///
 /// Symbolic approximation result including symbolic sequence and reconstruction information
+#[allow(dead_code)]
 pub fn apply_symbolic_approximation(
-    time_series: &Array1<f64>,
+    _timeseries: &Array1<f64>,
     config: &SymbolicApproximationConfig,
 ) -> Result<SymbolicApproximationResult> {
-    if time_series.is_empty() {
+    if _timeseries.is_empty() {
         return Err(TimeSeriesError::InvalidInput(
-            "Time series cannot be empty".to_string(),
+            "Time _series cannot be empty".to_string(),
         ));
     }
 
     match config.method {
-        SymbolicMethod::SAX => apply_sax(time_series, config),
-        SymbolicMethod::APCA => apply_apca(time_series, config),
-        SymbolicMethod::PLA => apply_pla(time_series, config),
-        SymbolicMethod::Persist => apply_persist(time_series, config),
+        SymbolicMethod::SAX => apply_sax(_timeseries, config),
+        SymbolicMethod::APCA => apply_apca(_timeseries, config),
+        SymbolicMethod::PLA => apply_pla(_timeseries, config),
+        SymbolicMethod::Persist => apply_persist(_timeseries, config),
     }
 }
 
 // Helper functions for PCA computation
 
+#[allow(dead_code)]
 fn compute_pca_svd<F>(data: &Array2<F>, config: &PCAConfig) -> Result<PCAResultData<F>>
 where
     F: Float + FromPrimitive + Debug + Clone + ScalarOperand + 'static,
@@ -639,13 +645,14 @@ where
     // For SVD approach: X = U * S * V^T
     // Components are columns of V, explained variance is S^2 / (n-1)
 
-    let (_n_samples, _n_features) = data.dim();
+    let _n_samples_n_features = data.dim();
 
     // Simplified SVD computation (in practice, would use LAPACK)
     // For now, we'll compute the covariance matrix approach as a fallback
     compute_pca_eigendecomposition(data, config)
 }
 
+#[allow(dead_code)]
 fn compute_pca_eigendecomposition<F>(
     data: &Array2<F>,
     config: &PCAConfig,
@@ -653,7 +660,7 @@ fn compute_pca_eigendecomposition<F>(
 where
     F: Float + FromPrimitive + Debug + Clone + ScalarOperand + 'static,
 {
-    let (_n_samples, _n_features) = data.dim();
+    let _n_samples_n_features = data.dim();
 
     // Compute covariance matrix
     let covariance = compute_covariance_matrix(data)?;
@@ -687,6 +694,7 @@ where
     Ok((final_eigenvectors, final_eigenvalues, None))
 }
 
+#[allow(dead_code)]
 fn compute_covariance_matrix<F>(data: &Array2<F>) -> Result<Array2<F>>
 where
     F: Float + FromPrimitive + Debug + Clone + ScalarOperand + 'static,
@@ -700,6 +708,7 @@ where
     Ok(covariance)
 }
 
+#[allow(dead_code)]
 fn compute_eigendecomposition<F>(matrix: &Array2<F>) -> Result<(Array1<F>, Array2<F>)>
 where
     F: Float + FromPrimitive + Debug + Clone + 'static,
@@ -720,6 +729,7 @@ where
     Ok((eigenvalues, eigenvectors))
 }
 
+#[allow(dead_code)]
 fn sort_eigen_pairs<F>(
     eigenvalues: Array1<F>,
     eigenvectors: Array2<F>,
@@ -745,66 +755,69 @@ where
     Ok((sorted_eigenvalues, sorted_eigenvectors))
 }
 
-fn determine_n_components<F>(explained_variance: &Array1<F>, config: &PCAConfig) -> usize
+#[allow(dead_code)]
+fn determine_n_components<F>(_explainedvariance: &Array1<F>, config: &PCAConfig) -> usize
 where
     F: Float + FromPrimitive + Debug + Clone + 'static,
 {
-    let total_variance = explained_variance.sum();
+    let total_variance = _explainedvariance.sum();
     let min_variance_ratio = F::from(config.min_variance_ratio).unwrap();
     let max_cumulative_variance = F::from(config.max_cumulative_variance).unwrap();
 
     if let Some(n) = config.n_components {
-        return std::cmp::min(n, explained_variance.len());
+        return std::cmp::min(n, _explainedvariance.len());
     }
 
     let mut cumulative_variance = F::zero();
-    for (i, &variance) in explained_variance.iter().enumerate() {
-        let variance_ratio = variance / total_variance;
+    for (i, &_variance) in _explainedvariance.iter().enumerate() {
+        let variance_ratio = _variance / total_variance;
 
-        // Skip components with too little explained variance
+        // Skip components with too little explained _variance
         if variance_ratio < min_variance_ratio {
             return i;
         }
 
         cumulative_variance = cumulative_variance + variance_ratio;
 
-        // Stop when we reach the maximum cumulative variance
+        // Stop when we reach the maximum cumulative _variance
         if cumulative_variance >= max_cumulative_variance {
             return i + 1;
         }
     }
 
-    explained_variance.len()
+    _explainedvariance.len()
 }
 
 // Helper functions for Functional PCA
 
-fn create_basis_functions<F>(n_points: usize, config: &FunctionalPCAConfig) -> Result<Array2<F>>
+#[allow(dead_code)]
+fn createbasis_functions<F>(_npoints: usize, config: &FunctionalPCAConfig) -> Result<Array2<F>>
 where
     F: Float + FromPrimitive + Debug + Clone + 'static,
 {
     match config.basis_type {
-        BasisType::BSpline => create_bspline_basis(n_points, config.n_basis_functions),
-        BasisType::Fourier => create_fourier_basis(n_points, config.n_basis_functions),
-        BasisType::Polynomial => create_polynomial_basis(n_points, config.n_basis_functions),
-        BasisType::Wavelet => create_wavelet_basis(n_points, config.n_basis_functions),
+        BasisType::BSpline => create_bsplinebasis(_npoints, config.nbasis_functions),
+        BasisType::Fourier => create_fourierbasis(_npoints, config.nbasis_functions),
+        BasisType::Polynomial => create_polynomialbasis(_npoints, config.nbasis_functions),
+        BasisType::Wavelet => create_waveletbasis(_npoints, config.nbasis_functions),
     }
 }
 
-fn create_bspline_basis<F>(n_points: usize, n_basis: usize) -> Result<Array2<F>>
+#[allow(dead_code)]
+fn create_bsplinebasis<F>(_n_points: usize, nbasis: usize) -> Result<Array2<F>>
 where
     F: Float + FromPrimitive + Debug + Clone + 'static,
 {
     // Simplified B-spline basis creation
     // In practice, this would use proper spline libraries
 
-    let mut basis = Array2::zeros((n_points, n_basis));
+    let mut basis = Array2::zeros((_n_points, nbasis));
 
-    for j in 0..n_basis {
-        for i in 0..n_points {
-            let t = F::from(i).unwrap() / F::from(n_points - 1).unwrap();
-            let center = F::from(j).unwrap() / F::from(n_basis - 1).unwrap();
-            let width = F::one() / F::from(n_basis).unwrap();
+    for j in 0..nbasis {
+        for i in 0.._n_points {
+            let t = F::from(i).unwrap() / F::from(_n_points - 1).unwrap();
+            let center = F::from(j).unwrap() / F::from(nbasis - 1).unwrap();
+            let width = F::one() / F::from(nbasis).unwrap();
 
             // Simple Gaussian-like basis function
             let diff = (t - center) / width;
@@ -815,16 +828,17 @@ where
     Ok(basis)
 }
 
-fn create_fourier_basis<F>(n_points: usize, n_basis: usize) -> Result<Array2<F>>
+#[allow(dead_code)]
+fn create_fourierbasis<F>(_n_points: usize, nbasis: usize) -> Result<Array2<F>>
 where
     F: Float + FromPrimitive + Debug + Clone + 'static,
 {
-    let mut basis = Array2::zeros((n_points, n_basis));
+    let mut basis = Array2::zeros((_n_points, nbasis));
     let pi = F::from(std::f64::consts::PI).unwrap();
 
-    for j in 0..n_basis {
-        for i in 0..n_points {
-            let t = F::from(i).unwrap() / F::from(n_points - 1).unwrap();
+    for j in 0..nbasis {
+        for i in 0.._n_points {
+            let t = F::from(i).unwrap() / F::from(_n_points - 1).unwrap();
             let freq = F::from(j + 1).unwrap();
 
             if j % 2 == 0 {
@@ -840,15 +854,16 @@ where
     Ok(basis)
 }
 
-fn create_polynomial_basis<F>(n_points: usize, n_basis: usize) -> Result<Array2<F>>
+#[allow(dead_code)]
+fn create_polynomialbasis<F>(_n_points: usize, nbasis: usize) -> Result<Array2<F>>
 where
     F: Float + FromPrimitive + Debug + Clone + 'static,
 {
-    let mut basis = Array2::zeros((n_points, n_basis));
+    let mut basis = Array2::zeros((_n_points, nbasis));
 
-    for j in 0..n_basis {
-        for i in 0..n_points {
-            let t = F::from(i).unwrap() / F::from(n_points - 1).unwrap();
+    for j in 0..nbasis {
+        for i in 0.._n_points {
+            let t = F::from(i).unwrap() / F::from(_n_points - 1).unwrap();
 
             // Polynomial basis: t^j
             basis[(i, j)] = t.powf(F::from(j).unwrap());
@@ -858,12 +873,13 @@ where
     Ok(basis)
 }
 
-fn create_wavelet_basis<F>(n_points: usize, n_basis: usize) -> Result<Array2<F>>
+#[allow(dead_code)]
+fn create_waveletbasis<F>(n_points: usize, nbasis: usize) -> Result<Array2<F>>
 where
     F: Float + FromPrimitive + Debug + Clone + 'static,
 {
     // Simplified wavelet basis (Haar wavelets)
-    let mut basis = Array2::zeros((n_points, n_basis));
+    let mut basis = Array2::zeros((n_points, nbasis));
 
     // First basis function is constant
     for i in 0..n_points {
@@ -871,7 +887,7 @@ where
     }
 
     // Additional basis functions are Haar wavelets at different scales
-    for j in 1..n_basis {
+    for j in 1..nbasis {
         let scale = 1 << (j / 2); // Powers of 2
         let shift = j % scale;
 
@@ -893,24 +909,26 @@ where
     Ok(basis)
 }
 
-fn project_onto_basis<F>(
+#[allow(dead_code)]
+fn project_ontobasis<F>(
     functional_data: &Array2<F>,
     basis_evaluation: &Array2<F>,
 ) -> Result<Array2<F>>
 where
     F: Float + FromPrimitive + Debug + Clone + 'static,
 {
-    // Project functional data onto basis functions
+    // Project functional _data onto basis functions
     // Coefficients = Data * Basis (assuming orthonormal basis)
 
     let coefficients = functional_data.dot(basis_evaluation);
     Ok(coefficients)
 }
 
+#[allow(dead_code)]
 fn apply_smoothness_regularization<F>(
     coefficients: &Array2<F>,
     lambda: f64,
-    _basis_evaluation: &Array2<F>,
+    basis_evaluation: &Array2<F>,
 ) -> Result<Array2<F>>
 where
     F: Float + FromPrimitive + Debug + Clone + ScalarOperand + 'static,
@@ -928,9 +946,10 @@ where
     Ok(regularized)
 }
 
+#[allow(dead_code)]
 fn compute_smoothness_measures<F>(
     components: &Array2<F>,
-    _basis_evaluation: &Array2<F>,
+    basis_evaluation: &Array2<F>,
 ) -> Result<Array1<F>>
 where
     F: Float + FromPrimitive + Debug + Clone + 'static,
@@ -958,27 +977,29 @@ where
 
 // Helper functions for DTW barycenter
 
-fn initialize_barycenter<F>(time_series: &[Array1<F>], method: &BarycenterInit) -> Result<Array1<F>>
+#[allow(dead_code)]
+fn initialize_barycenter<F>(_timeseries: &[Array1<F>], method: &BarycenterInit) -> Result<Array1<F>>
 where
     F: Float + FromPrimitive + Debug + Clone + 'static,
 {
     match method {
         BarycenterInit::Random => {
-            let median_length = time_series.len() / 2;
-            let length = time_series[median_length].len();
+            let median_length = _timeseries.len() / 2;
+            let length = _timeseries[median_length].len();
             Ok(Array1::zeros(length))
         }
-        BarycenterInit::First => Ok(time_series[0].clone()),
-        BarycenterInit::Medoid => compute_medoid(time_series),
-        BarycenterInit::Mean => compute_mean_series(time_series),
+        BarycenterInit::First => Ok(_timeseries[0].clone()),
+        BarycenterInit::Medoid => compute_medoid(_timeseries),
+        BarycenterInit::Mean => compute_mean_series(_timeseries),
     }
 }
 
-fn compute_medoid<F>(time_series: &[Array1<F>]) -> Result<Array1<F>>
+#[allow(dead_code)]
+fn compute_medoid<F>(_timeseries: &[Array1<F>]) -> Result<Array1<F>>
 where
     F: Float + FromPrimitive + Debug + Clone + 'static,
 {
-    let n = time_series.len();
+    let n = _timeseries.len();
     let mut min_total_distance = F::infinity();
     let mut medoid_idx = 0;
 
@@ -986,7 +1007,7 @@ where
         let mut total_distance = F::zero();
         for j in 0..n {
             if i != j {
-                let distance = compute_euclidean_distance(&time_series[i], &time_series[j]);
+                let distance = compute_euclidean_distance(&_timeseries[i], &_timeseries[j]);
                 total_distance = total_distance + distance;
             }
         }
@@ -997,19 +1018,20 @@ where
         }
     }
 
-    Ok(time_series[medoid_idx].clone())
+    Ok(_timeseries[medoid_idx].clone())
 }
 
-fn compute_mean_series<F>(time_series: &[Array1<F>]) -> Result<Array1<F>>
+#[allow(dead_code)]
+fn compute_mean_series<F>(_timeseries: &[Array1<F>]) -> Result<Array1<F>>
 where
     F: Float + FromPrimitive + Debug + Clone + 'static,
 {
     // Simple mean ignoring alignment issues
-    let max_length = time_series.iter().map(|ts| ts.len()).max().unwrap_or(0);
+    let max_length = _timeseries.iter().map(|ts| ts.len()).max().unwrap_or(0);
     let mut mean_series = Array1::zeros(max_length);
     let mut counts = Array1::zeros(max_length);
 
-    for ts in time_series {
+    for ts in _timeseries {
         for (i, &val) in ts.iter().enumerate() {
             mean_series[i] = mean_series[i] + val;
             counts[i] = counts[i] + F::one();
@@ -1025,6 +1047,7 @@ where
     Ok(mean_series)
 }
 
+#[allow(dead_code)]
 fn compute_dtw_alignment<F>(
     series1: &Array1<F>,
     series2: &Array1<F>,
@@ -1037,8 +1060,8 @@ where
     let n2 = series2.len();
 
     // Initialize DTW matrix
-    let mut dtw_matrix = Array2::from_elem((n1 + 1, n2 + 1), F::infinity());
-    dtw_matrix[(0, 0)] = F::zero();
+    let mut _dtwmatrix = Array2::from_elem((n1 + 1, n2 + 1), F::infinity());
+    _dtwmatrix[(0, 0)] = F::zero();
 
     // Fill DTW matrix
     for i in 1..=n1 {
@@ -1055,22 +1078,23 @@ where
 
             let cost =
                 compute_point_distance(series1[i - 1], series2[j - 1], &config.distance_metric);
-            let min_prev = dtw_matrix[(i - 1, j)]
-                .min(dtw_matrix[(i, j - 1)])
-                .min(dtw_matrix[(i - 1, j - 1)]);
+            let min_prev = _dtwmatrix[(i - 1, j)]
+                .min(_dtwmatrix[(i, j - 1)])
+                .min(_dtwmatrix[(i - 1, j - 1)]);
 
-            dtw_matrix[(i, j)] = cost + min_prev;
+            _dtwmatrix[(i, j)] = cost + min_prev;
         }
     }
 
-    let total_cost = dtw_matrix[(n1, n2)];
+    let total_cost = _dtwmatrix[(n1, n2)];
 
     // Backtrack to find optimal path
-    let path = backtrack_dtw_path(&dtw_matrix, n1, n2);
+    let path = backtrack_dtw_path(&_dtwmatrix, n1, n2);
 
     Ok((total_cost, path))
 }
 
+#[allow(dead_code)]
 fn compute_point_distance<F>(point1: F, point2: F, metric: &DTWDistance) -> F
 where
     F: Float + FromPrimitive + Debug + Clone + 'static,
@@ -1084,7 +1108,8 @@ where
     }
 }
 
-fn backtrack_dtw_path<F>(dtw_matrix: &Array2<F>, n1: usize, n2: usize) -> Vec<(usize, usize)>
+#[allow(dead_code)]
+fn backtrack_dtw_path<F>(_dtwmatrix: &Array2<F>, n1: usize, n2: usize) -> Vec<(usize, usize)>
 where
     F: Float + FromPrimitive + Debug + Clone + 'static,
 {
@@ -1096,9 +1121,9 @@ where
         path.push((i - 1, j - 1));
 
         // Find minimum of three predecessors
-        let diag = dtw_matrix[(i - 1, j - 1)];
-        let up = dtw_matrix[(i - 1, j)];
-        let left = dtw_matrix[(i, j - 1)];
+        let diag = _dtwmatrix[(i - 1, j - 1)];
+        let up = _dtwmatrix[(i - 1, j)];
+        let left = _dtwmatrix[(i, j - 1)];
 
         if diag <= up && diag <= left {
             i -= 1;
@@ -1114,8 +1139,9 @@ where
     path
 }
 
+#[allow(dead_code)]
 fn update_barycenter_from_alignments<F>(
-    time_series: &[Array1<F>],
+    _timeseries: &[Array1<F>],
     alignment_paths: &[Vec<(usize, usize)>],
     weights: &Array1<f64>,
 ) -> Result<Array1<F>>
@@ -1125,7 +1151,7 @@ where
     // Find the maximum barycenter length needed
     let max_barycenter_length = alignment_paths
         .iter()
-        .map(|path| path.iter().map(|(i, _)| *i).max().unwrap_or(0) + 1)
+        .map(|path| path.iter().map(|(i_, _)| *i_).max().unwrap_or(0) + 1)
         .max()
         .unwrap_or(0);
 
@@ -1135,7 +1161,7 @@ where
     // Accumulate weighted contributions
     for (series_idx, path) in alignment_paths.iter().enumerate() {
         let weight = F::from(weights[series_idx]).unwrap();
-        let series = &time_series[series_idx];
+        let series = &_timeseries[series_idx];
 
         for &(barycenter_idx, series_idx_in_path) in path {
             if barycenter_idx < max_barycenter_length && series_idx_in_path < series.len() {
@@ -1156,6 +1182,7 @@ where
     Ok(new_barycenter)
 }
 
+#[allow(dead_code)]
 fn compute_barycenter_difference<F>(barycenter1: &Array1<F>, barycenter2: &Array1<F>) -> F
 where
     F: Float + FromPrimitive + Debug + Clone + 'static,
@@ -1171,6 +1198,7 @@ where
     sum_sq_diff.sqrt()
 }
 
+#[allow(dead_code)]
 fn compute_euclidean_distance<F>(series1: &Array1<F>, series2: &Array1<F>) -> F
 where
     F: Float + FromPrimitive + Debug + Clone + 'static,
@@ -1188,19 +1216,20 @@ where
 
 // Helper functions for symbolic approximation
 
+#[allow(dead_code)]
 fn apply_sax(
-    time_series: &Array1<f64>,
+    _timeseries: &Array1<f64>,
     config: &SymbolicApproximationConfig,
 ) -> Result<SymbolicApproximationResult> {
     // Step 1: Normalize data if requested
     let normalized_data = if config.normalize_data {
-        normalize_time_series(time_series)?
+        normalize_timeseries(_timeseries)?
     } else {
-        time_series.clone()
+        _timeseries.clone()
     };
 
     // Step 2: Piecewise Aggregate Approximation (PAA)
-    let paa_values = compute_paa(&normalized_data, config.n_segments)?;
+    let _paavalues = compute_paa(&normalized_data, config.nsegments)?;
 
     // Step 3: Determine breakpoints
     let breakpoints = config
@@ -1209,26 +1238,27 @@ fn apply_sax(
         .unwrap_or_else(|| compute_gaussian_breakpoints(config.alphabet_size));
 
     // Step 4: Convert PAA to symbols
-    let symbolic_sequence = paa_to_symbols(&paa_values, &breakpoints)?;
+    let symbolic_sequence = paa_to_symbols(&_paavalues, &breakpoints)?;
 
     // Step 5: Compute reconstruction error (placeholder for now)
     let reconstruction_error = 0.0; // Would compute actual reconstruction error in full implementation
 
     // Step 6: Compute compression ratio
-    let compression_ratio = time_series.len() as f64 / symbolic_sequence.len() as f64;
+    let compression_ratio = _timeseries.len() as f64 / symbolic_sequence.len() as f64;
 
     Ok(SymbolicApproximationResult {
         symbolic_sequence,
         breakpoints,
-        paa_values,
+        _paavalues,
         reconstruction_error,
         compression_ratio,
         distance_matrix: None,
     })
 }
 
+#[allow(dead_code)]
 fn apply_apca(
-    _time_series: &Array1<f64>,
+    _timeseries: &Array1<f64>,
     _config: &SymbolicApproximationConfig,
 ) -> Result<SymbolicApproximationResult> {
     // Placeholder for APCA implementation
@@ -1237,8 +1267,9 @@ fn apply_apca(
     ))
 }
 
+#[allow(dead_code)]
 fn apply_pla(
-    _time_series: &Array1<f64>,
+    _timeseries: &Array1<f64>,
     _config: &SymbolicApproximationConfig,
 ) -> Result<SymbolicApproximationResult> {
     // Placeholder for PLA implementation
@@ -1247,8 +1278,9 @@ fn apply_pla(
     ))
 }
 
+#[allow(dead_code)]
 fn apply_persist(
-    _time_series: &Array1<f64>,
+    _timeseries: &Array1<f64>,
     _config: &SymbolicApproximationConfig,
 ) -> Result<SymbolicApproximationResult> {
     // Placeholder for Persist implementation
@@ -1257,46 +1289,49 @@ fn apply_persist(
     ))
 }
 
-fn normalize_time_series(time_series: &Array1<f64>) -> Result<Array1<f64>> {
-    let mean = time_series.mean().unwrap_or(0.0);
-    let std = time_series.std(0.0);
+#[allow(dead_code)]
+fn normalize_timeseries(_timeseries: &Array1<f64>) -> Result<Array1<f64>> {
+    let mean = _timeseries.mean().unwrap_or(0.0);
+    let std = _timeseries.std(0.0);
 
     if std == 0.0 {
-        return Ok(Array1::zeros(time_series.len()));
+        return Ok(Array1::zeros(_timeseries.len()));
     }
 
-    let normalized = time_series.mapv(|x| (x - mean) / std);
+    let normalized = _timeseries.mapv(|x| (x - mean) / std);
     Ok(normalized)
 }
 
-fn compute_paa(time_series: &Array1<f64>, n_segments: usize) -> Result<Array1<f64>> {
-    let n = time_series.len();
-    let segment_size = n as f64 / n_segments as f64;
+#[allow(dead_code)]
+fn compute_paa(_timeseries: &Array1<f64>, nsegments: usize) -> Result<Array1<f64>> {
+    let n = _timeseries.len();
+    let segment_size = n as f64 / nsegments as f64;
 
-    let mut paa_values = Array1::zeros(n_segments);
+    let mut _paavalues = Array1::zeros(nsegments);
 
-    for i in 0..n_segments {
+    for i in 0..nsegments {
         let start = (i as f64 * segment_size) as usize;
         let end = ((i + 1) as f64 * segment_size) as usize;
         let end = std::cmp::min(end, n);
 
         if start < end {
-            let segment_mean = time_series.slice(s![start..end]).mean().unwrap_or(0.0);
-            paa_values[i] = segment_mean;
+            let segment_mean = _timeseries.slice(s![start..end]).mean();
+            _paavalues[i] = segment_mean;
         }
     }
 
-    Ok(paa_values)
+    Ok(_paavalues)
 }
 
-fn compute_gaussian_breakpoints(alphabet_size: usize) -> Array1<f64> {
+#[allow(dead_code)]
+fn compute_gaussian_breakpoints(_alphabetsize: usize) -> Array1<f64> {
     // Compute breakpoints based on Gaussian distribution
     // This is a simplified version - would use proper quantile function
 
-    let mut breakpoints = Array1::zeros(alphabet_size - 1);
+    let mut breakpoints = Array1::zeros(_alphabetsize - 1);
 
-    for i in 0..alphabet_size - 1 {
-        let quantile = (i + 1) as f64 / alphabet_size as f64;
+    for i in 0.._alphabetsize - 1 {
+        let quantile = (i + 1) as f64 / _alphabetsize as f64;
         // Simplified inverse normal - in practice would use proper implementation
         let breakpoint = if quantile < 0.5 {
             -(1.0 - 2.0 * quantile).sqrt()
@@ -1309,11 +1344,12 @@ fn compute_gaussian_breakpoints(alphabet_size: usize) -> Array1<f64> {
     breakpoints
 }
 
-fn paa_to_symbols(paa_values: &Array1<f64>, breakpoints: &Array1<f64>) -> Result<Vec<char>> {
+#[allow(dead_code)]
+fn paa_to_symbols(_paavalues: &Array1<f64>, breakpoints: &Array1<f64>) -> Result<Vec<char>> {
     let alphabet_chars: Vec<char> = "abcdefghijklmnopqrstuvwxyz".chars().collect();
     let mut symbols = Vec::new();
 
-    for &value in paa_values.iter() {
+    for &value in _paavalues.iter() {
         let mut symbol_idx = 0;
 
         for &breakpoint in breakpoints.iter() {
@@ -1336,7 +1372,7 @@ fn reconstruct_from_sax(
     _symbolic_sequence: &[char],
     _breakpoints: &Array1<f64>,
     _original_length: usize,
-    _n_segments: usize,
+    _nsegments: usize,
 ) -> Result<Array1<f64>> {
     // Placeholder for SAX reconstruction
     Err(TimeSeriesError::NotImplemented(
@@ -1345,7 +1381,7 @@ fn reconstruct_from_sax(
 }
 
 #[allow(dead_code)]
-fn compute_reconstruction_error(_original: &Array1<f64>, _reconstructed: &Array1<f64>) -> f64 {
+fn compute_reconstruction_error(_original: &Array1<f64>, reconstructed: &Array1<f64>) -> f64 {
     // Placeholder for reconstruction error computation
     0.0
 }
@@ -1402,10 +1438,10 @@ mod tests {
     fn test_dtw_barycenter_basic() {
         let ts1 = Array1::from_vec(vec![1.0, 2.0, 3.0, 2.0, 1.0]);
         let ts2 = Array1::from_vec(vec![0.5, 1.5, 2.5, 1.5, 0.5]);
-        let time_series = vec![ts1, ts2];
+        let _timeseries = vec![ts1, ts2];
 
         let config = DTWBarycenterConfig::default();
-        let result = compute_dtw_barycenter(&time_series, &config).unwrap();
+        let result = compute_dtw_barycenter(&_timeseries, &config).unwrap();
 
         assert!(!result.barycenter.is_empty());
         assert_eq!(result.distances.len(), 2);
@@ -1414,10 +1450,10 @@ mod tests {
 
     #[test]
     fn test_symbolic_approximation_sax() {
-        let time_series = Array1::from_shape_fn(100, |i| (i as f64 * 0.1).sin());
+        let _timeseries = Array1::from_shape_fn(100, |i| (i as f64 * 0.1).sin());
         let config = SymbolicApproximationConfig::default();
 
-        let result = apply_symbolic_approximation(&time_series, &config).unwrap();
+        let result = apply_symbolic_approximation(&_timeseries, &config).unwrap();
 
         assert!(!result.symbolic_sequence.is_empty());
         assert!(result.compression_ratio > 1.0);
@@ -1436,10 +1472,10 @@ mod tests {
     #[test]
     fn test_dtw_single_series() {
         let ts = Array1::from_vec(vec![1.0, 2.0, 3.0]);
-        let time_series = vec![ts];
+        let _timeseries = vec![ts];
 
         let config = DTWBarycenterConfig::default();
-        let result = compute_dtw_barycenter(&time_series, &config).unwrap();
+        let result = compute_dtw_barycenter(&_timeseries, &config).unwrap();
 
         assert_eq!(result.barycenter.len(), 3);
         assert_eq!(result.distances.len(), 1);

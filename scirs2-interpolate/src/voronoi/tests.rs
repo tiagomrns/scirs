@@ -28,6 +28,7 @@ use crate::voronoi::parallel::{
 
 // Test helper functions
 #[cfg(test)]
+#[allow(dead_code)]
 fn create_3d_test_data() -> (Array2<f64>, Array1<f64>) {
     // Create a simple 3D test dataset
     let points = Array2::from_shape_vec(
@@ -57,6 +58,7 @@ fn create_3d_test_data() -> (Array2<f64>, Array1<f64>) {
 }
 
 #[test]
+#[allow(dead_code)]
 fn test_natural_neighbor_exact_points() {
     // Test that the interpolator returns exact values at data points
     let points = Array2::from_shape_vec(
@@ -96,6 +98,7 @@ fn test_natural_neighbor_exact_points() {
 }
 
 #[test]
+#[allow(dead_code)]
 fn test_natural_neighbor_helpers() {
     // Test the helper functions for creating interpolators
     let points = Array2::from_shape_vec(
@@ -126,6 +129,7 @@ fn test_natural_neighbor_helpers() {
 }
 
 #[test]
+#[allow(dead_code)]
 fn test_interpolate_multi() {
     // Test that the interpolator can handle multiple query points
     let points = Array2::from_shape_vec(
@@ -162,6 +166,7 @@ fn test_interpolate_multi() {
 }
 
 #[test]
+#[allow(dead_code)]
 fn test_linear_function_reproduction() {
     // Test that natural neighbor interpolation can exactly reproduce a linear function
     // since it should have linear precision
@@ -210,6 +215,7 @@ fn test_linear_function_reproduction() {
 }
 
 #[test]
+#[allow(dead_code)]
 fn test_3d_natural_neighbor_exact_points() {
     // Test that the interpolator returns exact values at data points for 3D
     let (points, values) = create_3d_test_data();
@@ -243,6 +249,7 @@ fn test_3d_natural_neighbor_exact_points() {
 }
 
 #[test]
+#[allow(dead_code)]
 fn test_3d_linear_function_reproduction() {
     // Test that natural neighbor interpolation can exactly reproduce a linear function in 3D
     // Create a grid of 3D points
@@ -282,6 +289,7 @@ fn test_3d_linear_function_reproduction() {
 }
 
 #[test]
+#[allow(dead_code)]
 fn test_voronoi_diagram_access() {
     // Test that we can access the underlying Voronoi diagram
     let points = Array2::from_shape_vec(
@@ -309,6 +317,7 @@ fn test_voronoi_diagram_access() {
 }
 
 #[test]
+#[allow(dead_code)]
 fn test_method_setting() {
     // Test that we can change the interpolation method
     let points = Array2::from_shape_vec(
@@ -336,6 +345,7 @@ fn test_method_setting() {
 }
 
 #[test]
+#[allow(dead_code)]
 fn test_parallel_interpolation() {
     // Test that parallel interpolation gives the same results as sequential
     let points = Array2::from_shape_vec(
@@ -379,6 +389,7 @@ fn test_parallel_interpolation() {
 }
 
 #[test]
+#[allow(dead_code)]
 fn test_parallel_3d_interpolation() {
     // Test that parallel interpolation works for 3D data
     let (points, values) = create_3d_test_data();
@@ -424,6 +435,7 @@ fn test_parallel_3d_interpolation() {
 }
 
 #[test]
+#[allow(dead_code)]
 fn test_parallel_config() {
     // Test that we can change the parallel configuration
     let points = Array2::from_shape_vec(
@@ -460,6 +472,7 @@ fn test_parallel_config() {
 }
 
 #[test]
+#[allow(dead_code)]
 fn test_gradient_linear_function() {
     // Test that gradient estimation works correctly for a linear function
     let mut points_vec = Vec::new();
@@ -502,6 +515,7 @@ fn test_gradient_linear_function() {
 }
 
 #[test]
+#[allow(dead_code)]
 fn test_gradient_quadratic_function() {
     // Test that gradient estimation works correctly for a quadratic function
     let mut points_vec = Vec::new();
@@ -543,6 +557,7 @@ fn test_gradient_quadratic_function() {
 }
 
 #[test]
+#[allow(dead_code)]
 fn test_interpolate_with_gradient() {
     // Test the combined interpolate_with_gradient method
     let points = Array2::from_shape_vec(
@@ -576,6 +591,7 @@ fn test_interpolate_with_gradient() {
 }
 
 #[test]
+#[allow(dead_code)]
 fn test_3d_gradient() {
     // Test gradient estimation in 3D
     let (points, values) = create_3d_test_data();
@@ -601,6 +617,7 @@ fn test_3d_gradient() {
 }
 
 #[test]
+#[allow(dead_code)]
 fn test_extrapolation_nearest_neighbor() {
     // Test nearest neighbor extrapolation
     let points =
@@ -632,6 +649,7 @@ fn test_extrapolation_nearest_neighbor() {
 }
 
 #[test]
+#[allow(dead_code)]
 fn test_extrapolation_inverse_distance() {
     // Test inverse distance weighting extrapolation
     let points =
@@ -661,6 +679,7 @@ fn test_extrapolation_inverse_distance() {
 }
 
 #[test]
+#[allow(dead_code)]
 fn test_extrapolation_linear_gradient() {
     // Test linear gradient extrapolation
     let points = Array2::from_shape_vec(
@@ -689,6 +708,7 @@ fn test_extrapolation_linear_gradient() {
 }
 
 #[test]
+#[allow(dead_code)]
 fn test_extrapolation_constant_value() {
     // Test constant value extrapolation
     let points =
@@ -719,6 +739,7 @@ fn test_extrapolation_constant_value() {
 }
 
 #[test]
+#[allow(dead_code)]
 fn test_interpolate_or_extrapolate() {
     // Test the combined interpolate_or_extrapolate method
     let points =

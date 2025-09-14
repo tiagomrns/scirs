@@ -107,6 +107,7 @@ use crate::error::{MetricsError, Result};
 /// let acc = accuracy_score(&y_true, &y_pred).unwrap();
 /// assert!((acc - 0.5).abs() < 1e-10); // 2 out of 4 are correct
 /// ```
+#[allow(dead_code)]
 pub fn accuracy_score<T, S1, S2, D1, D2>(
     y_true: &ArrayBase<S1, D1>,
     y_pred: &ArrayBase<S2, D2>,
@@ -181,6 +182,7 @@ where
 /// assert_eq!(cm[[2, 1]], 1); // True 2, predicted 1
 /// assert_eq!(cm[[2, 2]], 1); // True 2, predicted 2
 /// ```
+#[allow(dead_code)]
 pub fn confusion_matrix<T, S1, S2, D1, D2>(
     y_true: &ArrayBase<S1, D1>,
     y_pred: &ArrayBase<S2, D2>,
@@ -316,6 +318,7 @@ where
 /// // There are 2 true positives and 1 false positive
 /// assert!((precision - 2.0/3.0).abs() < 1e-10);
 /// ```
+#[allow(dead_code)]
 pub fn precision_score<T, S1, S2, D1, D2>(
     y_true: &ArrayBase<S1, D1>,
     y_pred: &ArrayBase<S2, D2>,
@@ -344,7 +347,7 @@ where
         ));
     }
 
-    // Count true positives and false positives
+    // Count _true positives and false positives
     let mut true_positives = 0;
     let mut false_positives = 0;
 
@@ -442,6 +445,7 @@ where
 /// // There are 2 true positives and 1 false negative
 /// assert!((recall - 2.0/3.0).abs() < 1e-10);
 /// ```
+#[allow(dead_code)]
 pub fn recall_score<T, S1, S2, D1, D2>(
     y_true: &ArrayBase<S1, D1>,
     y_pred: &ArrayBase<S2, D2>,
@@ -470,7 +474,7 @@ where
         ));
     }
 
-    // Count true positives and false negatives
+    // Count _true positives and false negatives
     let mut true_positives = 0;
     let mut false_negatives = 0;
 
@@ -578,6 +582,7 @@ where
 ///
 /// let f1 = f1_score(&y_true, &y_pred, 1).unwrap();
 /// ```
+#[allow(dead_code)]
 pub fn f1_score<T, S1, S2, D1, D2>(
     y_true: &ArrayBase<S1, D1>,
     y_pred: &ArrayBase<S2, D2>,
@@ -630,6 +635,7 @@ where
 /// // F2 score (weighs recall higher than precision)
 /// let f_two = fbeta_score(&y_true, &y_pred, 1, 2.0).unwrap();
 /// ```
+#[allow(dead_code)]
 pub fn fbeta_score<T, S1, S2, D1, D2>(
     y_true: &ArrayBase<S1, D1>,
     y_pred: &ArrayBase<S2, D2>,
@@ -645,8 +651,7 @@ where
 {
     if beta <= 0.0 {
         return Err(MetricsError::InvalidInput(format!(
-            "beta must be positive, got {}",
-            beta
+            "beta must be positive, got {beta}"
         )));
     }
 
@@ -687,6 +692,7 @@ where
 ///
 /// let loss = binary_log_loss(&y_true, &y_prob, 1e-15).unwrap();
 /// ```
+#[allow(dead_code)]
 pub fn binary_log_loss<S1, S2, D1, D2>(
     y_true: &ArrayBase<S1, D1>,
     y_prob: &ArrayBase<S2, D2>,
@@ -755,6 +761,7 @@ where
 ///
 /// let auc = roc_auc_score(&y_true, &y_score).unwrap();
 /// ```
+#[allow(dead_code)]
 pub fn roc_auc_score<S1, S2, D1, D2>(
     y_true: &ArrayBase<S1, D1>,
     y_score: &ArrayBase<S2, D2>,
@@ -794,11 +801,11 @@ where
 
     if n_pos == 0 || n_neg == 0 {
         return Err(MetricsError::InvalidInput(
-            "ROC AUC score is not defined when only one class is present".to_string(),
+            "ROC AUC _score is not defined when only one class is present".to_string(),
         ));
     }
 
-    // Collect scores and true labels
+    // Collect scores and _true labels
     let mut scores_and_labels = Vec::with_capacity(n_samples);
     for (yt, ys) in y_true.iter().zip(y_score.iter()) {
         scores_and_labels.push((*ys, *yt));
@@ -871,6 +878,7 @@ where
 ///
 /// let (percentiles, lift_values, cum_gains) = lift_chart(&y_true, &y_score, 10).unwrap();
 /// ```
+#[allow(dead_code)]
 pub fn lift_chart<S1, S2, D1, D2>(
     y_true: &ArrayBase<S1, D1>,
     y_score: &ArrayBase<S2, D2>,
@@ -923,11 +931,11 @@ where
     }
     let baseline_rate = n_positives as f64 / n_samples as f64;
 
-    // Pair scores with true labels and sort by scores in descending order
+    // Pair scores with _true labels and sort by scores in descending order
     let mut paired_data: Vec<(f64, u32)> = y_score
         .iter()
         .zip(y_true.iter())
-        .map(|(&score, &label)| (score, label))
+        .map(|(&_score, &label)| (_score, label))
         .collect();
     paired_data.sort_by(|a, b| b.0.partial_cmp(&a.0).unwrap_or(std::cmp::Ordering::Equal));
 
@@ -1000,6 +1008,7 @@ where
 ///
 /// let (percentiles, cum_gains) = gain_chart(&y_true, &y_score, 10).unwrap();
 /// ```
+#[allow(dead_code)]
 pub fn gain_chart<S1, S2, D1, D2>(
     y_true: &ArrayBase<S1, D1>,
     y_score: &ArrayBase<S2, D2>,
@@ -1012,7 +1021,7 @@ where
     D2: Dimension,
 {
     // Reuse lift_chart function to get the data
-    let (percentiles, _, cum_gains) = lift_chart(y_true, y_score, n_bins)?;
+    let (percentiles, _lift_values, cum_gains) = lift_chart(y_true, y_score, n_bins)?;
     Ok((percentiles, cum_gains))
 }
 
@@ -1040,6 +1049,7 @@ where
 /// let report = classification_report(&y_true, &y_pred, None).unwrap();
 /// println!("{}", report);
 /// ```
+#[allow(dead_code)]
 pub fn classification_report<T, S1, S2, D1, D2>(
     y_true: &ArrayBase<S1, D1>,
     y_pred: &ArrayBase<S2, D2>,
@@ -1100,8 +1110,7 @@ where
 
         // Add line to report
         report.push_str(&format!(
-            "{:>14} {:9.2} {:9.2} {:9.2} {:9}\n",
-            class_label, precision, recall, f1, support
+            "{class_label:>14} {precision:9.2} {recall:9.2} {f1:9.2} {support:9}\n"
         ));
     }
 
@@ -1114,8 +1123,7 @@ where
 
     // Add averages to report
     report.push_str(&format!(
-        "    avg / total {:9.2} {:9.2} {:9.2} {:9}\n",
-        avg_precision, avg_recall, avg_f1, total_support
+        "    avg / total {avg_precision:9.2} {avg_recall:9.2} {avg_f1:9.2} {total_support:9}\n"
     ));
 
     Ok(report)

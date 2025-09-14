@@ -33,16 +33,13 @@ impl<F: Float + Debug + Display> ROCCurve<F> {
     /// Compute ROC curve and AUC from binary classification scores
     ///
     /// # Arguments
-    ///
     /// * `y_true` - True binary labels (0 or 1)
     /// * `y_score` - Predicted probabilities or decision function
     ///
     /// # Returns
-    ///
     /// * `Result<ROCCurve<F>>` - ROC curve data
     ///
     /// # Example
-    ///
     /// ```
     /// use ndarray::{Array1, ArrayView1};
     /// use scirs2_neural::utils::evaluation::ROCCurve;
@@ -57,8 +54,8 @@ impl<F: Float + Debug + Display> ROCCurve<F> {
     /// // AUC should be > 0.5 for a model better than random guessing
     /// assert!(roc.auc > 0.5);
     /// ```
-    pub fn new(y_true: &ArrayView1<usize>, y_score: &ArrayView1<F>) -> Result<Self> {
-        if y_true.len() != y_score.len() {
+    pub fn new(y_true: &ArrayView1<usize>, yscore: &ArrayView1<F>) -> Result<Self> {
+        if y_true.len() != yscore.len() {
             return Err(NeuralError::ValidationError(
                 "Labels and scores must have the same length".to_string(),
             ));
@@ -74,19 +71,17 @@ impl<F: Float + Debug + Display> ROCCurve<F> {
         }
 
         // Sort scores and corresponding labels in descending order
-        let mut score_label_pairs: Vec<(F, usize)> = y_score
+        let mut score_label_pairs: Vec<(F, usize)> = yscore
             .iter()
             .zip(y_true.iter())
-            .map(|(&score, &label)| (score, label))
+            .map(|(&_score, &label)| (_score, label))
             .collect();
-
         score_label_pairs
             .sort_by(|a, b| b.0.partial_cmp(&a.0).unwrap_or(std::cmp::Ordering::Equal));
 
         // Count positives and negatives
         let n_pos = y_true.iter().filter(|&&label| label == 1).count();
         let n_neg = y_true.len() - n_pos;
-
         if n_pos == 0 || n_neg == 0 {
             return Err(NeuralError::ValidationError(
                 "Both positive and negative samples are required".to_string(),
@@ -105,10 +100,8 @@ impl<F: Float + Debug + Display> ROCCurve<F> {
         // Compute ROC curve
         let mut tp = 0;
         let mut fp = 0;
-
         for i in 0..score_label_pairs.len() {
             let (score, label) = score_label_pairs[i];
-
             // Update counts
             if label == 1 {
                 tp += 1;
@@ -118,7 +111,6 @@ impl<F: Float + Debug + Display> ROCCurve<F> {
 
             // Set threshold for this point
             thresholds[i + 1] = score;
-
             // Compute rates
             tpr[i + 1] = F::from(tp).unwrap() / F::from(n_pos).unwrap();
             fpr[i + 1] = F::from(fp).unwrap() / F::from(n_neg).unwrap();
@@ -141,47 +133,39 @@ impl<F: Float + Debug + Display> ROCCurve<F> {
     /// Create an ASCII line plot of the ROC curve
     ///
     /// # Arguments
-    ///
     /// * `title` - Optional title for the plot
     /// * `width` - Width of the plot
     /// * `height` - Height of the plot
     ///
     /// # Returns
-    ///
     /// * `String` - ASCII line plot
     pub fn to_ascii(&self, title: Option<&str>, width: usize, height: usize) -> String {
         self.to_ascii_with_options(title, width, height, &ColorOptions::default())
     }
 
     /// Create an ASCII line plot of the ROC curve with color options
-    ///
     /// This method provides a customizable visualization of the ROC curve
     /// with controls for colors and styling.
     ///
     /// # Arguments
-    ///
     /// * `title` - Optional title for the plot
     /// * `width` - Width of the plot
     /// * `height` - Height of the plot
     /// * `color_options` - Color options for visualization
     ///
     /// # Returns
-    ///
     /// * `String` - ASCII line plot with colors
     ///
     /// # Example
-    ///
     /// ```
-    /// use ndarray::{Array1, ArrayView1};
-    /// use scirs2_neural::utils::evaluation::ROCCurve;
     /// use scirs2_neural::utils::colors::ColorOptions;
+    /// use scirs2_neural::utils::ROCCurve;
+    /// use ndarray::Array1;
     ///
     /// // Create test data
-    /// let y_true = Array1::from_vec(vec![0, 1, 1, 0, 1, 0, 1, 0, 1, 0]);
-    /// let y_score = Array1::from_vec(vec![0.1, 0.9, 0.8, 0.3, 0.7, 0.2, 0.6, 0.4, 0.8, 0.3]);
-    ///
-    /// // Compute ROC curve
-    /// let roc = ROCCurve::<f64>::new(&y_true.view(), &y_score.view()).unwrap();
+    /// let y_true = Array1::from_vec(vec![0, 0, 1, 1]);
+    /// let y_scores = Array1::from_vec(vec![0.1, 0.4, 0.35, 0.8]);
+    /// let roc = ROCCurve::new(&y_true.view(), &y_scores.view()).unwrap();
     ///
     /// // Create ROC curve visualization
     /// let options = ColorOptions::default();
@@ -201,22 +185,22 @@ impl<F: Float + Debug + Display> ROCCurve<F> {
         let mut result = String::with_capacity(width * height * 2);
 
         // Add title and AUC with coloring if enabled
-        if let Some(title_text) = title {
+        if let Some(titletext) = title {
             if color_options.enabled {
-                let styled_title = stylize(title_text, Style::Bold);
+                let styled_title = stylize(titletext, Style::Bold);
                 let auc_value = self.auc.to_f64().unwrap_or(0.0);
                 let colored_auc =
                     colored_metric_cell(format!("{:.3}", self.auc), auc_value, color_options);
-                result.push_str(&format!("{} (AUC = {})\n\n", styled_title, colored_auc));
+                result.push_str(&format!("{styled_title} (AUC = {colored_auc})\n\n"));
             } else {
-                result.push_str(&format!("{} (AUC = {:.3})\n\n", title_text, self.auc));
+                result.push_str(&format!("{} (AUC = {:.3})\n\n", titletext, self.auc));
             }
         } else if color_options.enabled {
             let styled_title = stylize("ROC Curve", Style::Bold);
             let auc_value = self.auc.to_f64().unwrap_or(0.0);
             let colored_auc =
                 colored_metric_cell(format!("{:.3}", self.auc), auc_value, color_options);
-            result.push_str(&format!("{} (AUC = {})\n\n", styled_title, colored_auc));
+            result.push_str(&format!("{styled_title} (AUC = {colored_auc})\n\n"));
         } else {
             result.push_str(&format!("ROC Curve (AUC = {:.3})\n\n", self.auc));
         }
@@ -236,7 +220,6 @@ impl<F: Float + Debug + Display> ROCCurve<F> {
         // Convert ROC curve points to line segments
         let mut prev_x = 0;
         let mut prev_y = height - 1; // Start at (0,0) in ROC space
-
         for i in 1..self.fpr.len() {
             let x = (self.fpr[i].to_f64().unwrap() * (width - 1) as f64).round() as usize;
             let y =
@@ -249,7 +232,6 @@ impl<F: Float + Debug + Display> ROCCurve<F> {
                 {
                     grid[line_y][line_x] = '●';
                 }
-
                 prev_x = x;
                 prev_y = y;
             }
@@ -260,19 +242,22 @@ impl<F: Float + Debug + Display> ROCCurve<F> {
             // Y-axis labels with styling
             if y == height - 1 {
                 if color_options.enabled {
-                    result.push_str(&format!("{}0.0{} |", Color::BrightCyan.fg_code(), RESET));
+                    let fg_code = Color::BrightCyan.fg_code();
+                    result.push_str(&format!("{fg_code}0.0{RESET} |"));
                 } else {
                     result.push_str("0.0 |");
                 }
             } else if y == 0 {
                 if color_options.enabled {
-                    result.push_str(&format!("{}1.0{} |", Color::BrightCyan.fg_code(), RESET));
+                    let fg_code = Color::BrightCyan.fg_code();
+                    result.push_str(&format!("{fg_code}1.0{RESET} |"));
                 } else {
                     result.push_str("1.0 |");
                 }
             } else if y == height / 2 {
                 if color_options.enabled {
-                    result.push_str(&format!("{}0.5{} |", Color::BrightCyan.fg_code(), RESET));
+                    let fg_code = Color::BrightCyan.fg_code();
+                    result.push_str(&format!("{fg_code}0.5{RESET} |"));
                 } else {
                     result.push_str("0.5 |");
                 }
@@ -298,7 +283,6 @@ impl<F: Float + Debug + Display> ROCCurve<F> {
                     result.push(*char);
                 }
             }
-
             result.push('\n');
         }
 
@@ -332,7 +316,6 @@ impl<F: Float + Debug + Display> ROCCurve<F> {
 
         // Add legend if colors are enabled
         if color_options.enabled {
-            result.push('\n');
             result.push_str(&format!(
                 "     {} ROC curve     {} Random classifier\n",
                 colorize("●", Color::BrightGreen),

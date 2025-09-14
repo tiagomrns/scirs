@@ -5,6 +5,7 @@ use scirs2_sparse::linalg::{
 };
 
 #[test]
+#[allow(dead_code)]
 fn test_cg_with_jacobi_preconditioner() {
     // Create a positive definite matrix with diagonal dominance:
     // [[4, -1, 0], [-1, 4, -1], [0, -1, 4]]
@@ -42,6 +43,7 @@ fn test_cg_with_jacobi_preconditioner() {
 }
 
 #[test]
+#[allow(dead_code)]
 fn test_jacobi_preconditioner_simple() {
     // Create a simple diagonal matrix for testing
     let rows = vec![0, 1, 2];

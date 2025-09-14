@@ -10,7 +10,7 @@
 //! use scirs2_optimize::least_squares::{least_squares, Method};
 //!
 //! // Define a function that returns the residuals
-//! fn residual(x: &[f64], _: &[f64]) -> Array1<f64> {
+//! fn residual(x: &[f64]_: &[f64]) -> Array1<f64> {
 //!     let y = array![
 //!         x[0] + 2.0 * x[1] - 2.0,
 //!         x[0] + x[1] - 1.0
@@ -19,7 +19,7 @@
 //! }
 //!
 //! // Define the Jacobian (optional)
-//! fn jacobian(x: &[f64], _: &[f64]) -> Array2<f64> {
+//! fn jacobian(x: &[f64]_: &[f64]) -> Array2<f64> {
 //!     array![[1.0, 2.0], [1.0, 1.0]]
 //! }
 //!
@@ -37,7 +37,7 @@
 //! # }
 //! ```
 
-use crate::error::{OptimizeError, OptimizeResult};
+use crate::error::OptimizeResult;
 use crate::result::OptimizeResults;
 use ndarray::{Array1, Array2, ArrayBase, Data, Ix1};
 use std::fmt;
@@ -155,6 +155,7 @@ impl Default for Options {
 /// # Ok(())
 /// # }
 /// ```
+#[allow(dead_code)]
 pub fn least_squares<F, J, D, S1, S2>(
     residuals: F,
     x0: &ArrayBase<S1, Ix1>,
@@ -176,14 +177,12 @@ where
     match method {
         Method::LevenbergMarquardt => least_squares_lm(residuals, x0, jacobian, data, &options),
         Method::TrustRegionReflective => least_squares_trf(residuals, x0, jacobian, data, &options),
-        _ => Err(OptimizeError::NotImplementedError(format!(
-            "Method {:?} is not yet implemented",
-            method
-        ))),
+        Method::Dogbox => least_squares_dogbox(residuals, x0, jacobian, data, &options),
     }
 }
 
 /// Implements the Levenberg-Marquardt algorithm for least squares problems
+#[allow(dead_code)]
 fn least_squares_lm<F, J, D, S1, S2>(
     residuals: F,
     x0: &ArrayBase<S1, Ix1>,
@@ -240,7 +239,7 @@ where
     };
 
     // Compute initial Jacobian
-    let (mut jac, _jac_evals) = match &jacobian {
+    let (mut jac, jac_evals) = match &jacobian {
         Some(jac_fn) => {
             let j = jac_fn(x.as_slice().unwrap(), data.as_slice().unwrap());
             njev += 1;
@@ -280,7 +279,7 @@ where
         let neg_g = -&g;
 
         // Simple matrix inversion for the step
-        let step = match solve_linear_system(&jt_j, &neg_g) {
+        let step = match solve(&jt_j, &neg_g) {
             Some(s) => s,
             None => {
                 // Matrix is singular, increase lambda and try again
@@ -333,7 +332,7 @@ where
             }
 
             // Compute new Jacobian for next iteration
-            let (new_jac, _jac_evals) = match &jacobian {
+            let (new_jac, jac_evals) = match &jacobian {
                 Some(jac_fn) => {
                     let j = jac_fn(x.as_slice().unwrap(), data.as_slice().unwrap());
                     njev += 1;
@@ -387,78 +386,15 @@ where
 
 /// Simple linear system solver using Gaussian elimination
 /// For a real implementation, use a more robust approach
-fn solve_linear_system(a: &Array2<f64>, b: &Array1<f64>) -> Option<Array1<f64>> {
-    let n = a.shape()[0];
-    if n != a.shape()[1] || n != b.len() {
-        return None;
-    }
+#[allow(dead_code)]
+fn solve(a: &Array2<f64>, b: &Array1<f64>) -> Option<Array1<f64>> {
+    use scirs2_linalg::solve;
 
-    // Create augmented matrix [A|b]
-    let mut aug = Array2::zeros((n, n + 1));
-    for i in 0..n {
-        for j in 0..n {
-            aug[[i, j]] = a[[i, j]];
-        }
-        aug[[i, n]] = b[i];
-    }
-
-    // Gaussian elimination with partial pivoting
-    for i in 0..n {
-        // Find pivot
-        let mut max_row = i;
-        let mut max_val = aug[[i, i]].abs();
-
-        for j in i + 1..n {
-            if aug[[j, i]].abs() > max_val {
-                max_row = j;
-                max_val = aug[[j, i]].abs();
-            }
-        }
-
-        // Check for singularity
-        if max_val < 1e-10 {
-            return None;
-        }
-
-        // Swap rows if needed
-        if max_row != i {
-            for j in 0..=n {
-                let temp = aug[[i, j]];
-                aug[[i, j]] = aug[[max_row, j]];
-                aug[[max_row, j]] = temp;
-            }
-        }
-
-        // Eliminate below
-        for j in i + 1..n {
-            let c = aug[[j, i]] / aug[[i, i]];
-            aug[[j, i]] = 0.0;
-
-            for k in i + 1..=n {
-                aug[[j, k]] -= c * aug[[i, k]];
-            }
-        }
-    }
-
-    // Back substitution
-    let mut x = Array1::zeros(n);
-    for i in (0..n).rev() {
-        let mut sum = aug[[i, n]];
-        for j in i + 1..n {
-            sum -= aug[[i, j]] * x[j];
-        }
-
-        if aug[[i, i]].abs() < 1e-10 {
-            return None;
-        }
-
-        x[i] = sum / aug[[i, i]];
-    }
-
-    Some(x)
+    solve(&a.view(), &b.view(), None).ok()
 }
 
 /// Implements the Trust Region Reflective algorithm for least squares problems
+#[allow(dead_code)]
 fn least_squares_trf<F, J, D, S1, S2>(
     residuals: F,
     x0: &ArrayBase<S1, Ix1>,
@@ -515,7 +451,7 @@ where
     };
 
     // Compute initial Jacobian
-    let (mut jac, _jac_evals) = match &jacobian {
+    let (mut jac, jac_evals) = match &jacobian {
         Some(jac_fn) => {
             let j = jac_fn(x.as_slice().unwrap(), data.as_slice().unwrap());
             njev += 1;
@@ -593,7 +529,7 @@ where
             }
 
             // Compute new Jacobian for next iteration
-            let (new_jac, _jac_evals) = match &jacobian {
+            let (new_jac, jac_evals) = match &jacobian {
                 Some(jac_fn) => {
                     let j = jac_fn(x.as_slice().unwrap(), data.as_slice().unwrap());
                     njev += 1;
@@ -643,6 +579,7 @@ where
 }
 
 /// Compute a trust-region step using the dogleg method
+#[allow(dead_code)]
 fn compute_trust_region_step(
     jt_j: &Array2<f64>,
     g: &Array1<f64>,
@@ -665,7 +602,7 @@ fn compute_trust_region_step(
     let sd_step = &sd_dir * (delta / sd_norm);
 
     // Try to compute the Gauss-Newton step by solving J^T*J * step = -g
-    let gn_step = match solve_linear_system(jt_j, &sd_dir) {
+    let gn_step = match solve(jt_j, &sd_dir) {
         Some(step) => step,
         None => {
             // If the system is singular, just return the steepest descent step
@@ -729,6 +666,373 @@ fn compute_trust_region_step(
     (step, predicted_reduction)
 }
 
+/// Implements the Dogbox algorithm for bound-constrained least squares problems
+#[allow(dead_code)]
+fn least_squares_dogbox<F, J, D, S1, S2>(
+    residuals: F,
+    x0: &ArrayBase<S1, Ix1>,
+    jacobian: Option<J>,
+    data: &ArrayBase<S2, Ix1>,
+    options: &Options,
+) -> OptimizeResult<OptimizeResults<f64>>
+where
+    F: Fn(&[f64], &[D]) -> Array1<f64>,
+    J: Fn(&[f64], &[D]) -> Array2<f64>,
+    D: Clone,
+    S1: Data<Elem = f64>,
+    S2: Data<Elem = D>,
+{
+    // Get options or use defaults
+    let ftol = options.ftol.unwrap_or(1e-8);
+    let xtol = options.xtol.unwrap_or(1e-8);
+    let gtol = options.gtol.unwrap_or(1e-8);
+    let max_nfev = options.max_nfev.unwrap_or(100 * x0.len());
+    let eps = options.diff_step.unwrap_or(1e-8);
+
+    // Initialize variables
+    let m = x0.len();
+    let mut x = x0.to_owned();
+    let mut res = residuals(x.as_slice().unwrap(), data.as_slice().unwrap());
+    let n = res.len();
+
+    // Compute sum of squares of residuals
+    let mut f = res.iter().map(|&r| r.powi(2)).sum::<f64>() / 2.0;
+
+    // Initialize counters
+    let mut nfev = 1;
+    let mut njev = 0;
+    let mut iter = 0;
+
+    // Default bounds (unbounded problem)
+    let lb = Array1::from_elem(m, f64::NEG_INFINITY);
+    let ub = Array1::from_elem(m, f64::INFINITY);
+
+    // Initialize trust region radius
+    let mut delta = 1.0;
+    let max_delta = 1e3;
+    let min_delta = 1e-12;
+
+    // Function to project point onto bounds
+    let project_bounds = |x_vals: &mut Array1<f64>| {
+        for i in 0..m {
+            x_vals[i] = x_vals[i].max(lb[i]).min(ub[i]);
+        }
+    };
+
+    // Function to compute active set
+    let compute_active_set = |x_vals: &Array1<f64>, g_vals: &Array1<f64>| -> Vec<bool> {
+        let mut active = vec![false; m];
+        let boundary_tol = 1e-10;
+
+        for i in 0..m {
+            let at_lower = (x_vals[i] - lb[i]).abs() < boundary_tol && g_vals[i] > 0.0;
+            let at_upper = (ub[i] - x_vals[i]).abs() < boundary_tol && g_vals[i] < 0.0;
+            active[i] = at_lower || at_upper;
+        }
+        active
+    };
+
+    // Simple function to compute Jacobian via finite differences
+    let compute_jac = |x_params: &[f64], curr_res_vals: &Array1<f64>| -> (Array2<f64>, usize) {
+        let mut jac = Array2::zeros((n, m));
+        let mut count = 0;
+
+        // Compute Jacobian using finite differences
+        for j in 0..m {
+            let mut x_h = Vec::from(x_params);
+            x_h[j] += eps;
+            let res_h = residuals(&x_h, data.as_slice().unwrap());
+            count += 1;
+
+            for i in 0..n {
+                jac[[i, j]] = (res_h[i] - curr_res_vals[i]) / eps;
+            }
+        }
+
+        (jac, count)
+    };
+
+    // Compute initial Jacobian
+    let mut jac = match &jacobian {
+        Some(jac_fn) => {
+            let j = jac_fn(x.as_slice().unwrap(), data.as_slice().unwrap());
+            njev += 1;
+            j
+        }
+        None => {
+            let (j, count) = compute_jac(x.as_slice().unwrap(), &res);
+            nfev += count;
+            j
+        }
+    };
+
+    // Compute initial gradient
+    let mut g = jac.t().dot(&res);
+
+    // Check initial convergence
+    if g.iter().map(|&gi| gi.abs()).fold(0.0, f64::max) < gtol {
+        let mut result = OptimizeResults::default();
+        result.x = x.clone();
+        result.fun = f;
+        result.nfev = nfev;
+        result.njev = njev;
+        result.nit = iter;
+        result.success = true;
+        result.message = "Initial point satisfies convergence criteria.".to_string();
+        return Ok(result);
+    }
+
+    // Main optimization loop
+    while iter < max_nfev {
+        // Compute J^T * J
+        let jt_j = jac.t().dot(&jac);
+
+        // Compute active set
+        let active = compute_active_set(&x, &g);
+
+        // Compute dogleg step considering bounds
+        let step = compute_dogbox_step(&jt_j, &g, &active, &lb, &ub, &x, delta);
+
+        // Compute trial point
+        let mut x_new = &x + &step;
+        project_bounds(&mut x_new);
+
+        // Evaluate residuals at trial point
+        let res_new = residuals(x_new.as_slice().unwrap(), data.as_slice().unwrap());
+        nfev += 1;
+
+        // Compute new objective value
+        let f_new = res_new.iter().map(|&r| r.powi(2)).sum::<f64>() / 2.0;
+
+        // Compute predicted reduction (linear model)
+        let predicted_reduction = -g.dot(&step) - 0.5 * step.dot(&jt_j.dot(&step));
+
+        // Compute actual reduction
+        let actual_reduction = f - f_new;
+
+        // Compute ratio of actual to predicted reduction
+        let rho = if predicted_reduction > 0.0 {
+            actual_reduction / predicted_reduction
+        } else {
+            0.0
+        };
+
+        // Update trust region radius based on the quality of the step
+        if rho < 0.25 {
+            delta *= 0.5;
+        } else if rho > 0.75 && step.iter().map(|&s| s * s).sum::<f64>().sqrt() >= 0.9 * delta {
+            delta = (2.0 * delta).min(max_delta);
+        }
+
+        // Accept or reject the step
+        if rho > 0.1 {
+            // Accept the step
+            x = x_new;
+            res = res_new;
+            f = f_new;
+
+            // Check convergence on function value
+            if actual_reduction < ftol * f.abs() {
+                break;
+            }
+
+            // Check convergence on step size
+            if step.iter().map(|&s| s * s).sum::<f64>().sqrt() < xtol {
+                break;
+            }
+
+            // Compute new Jacobian for next iteration
+            let new_jac = match &jacobian {
+                Some(jac_fn) => {
+                    let j = jac_fn(x.as_slice().unwrap(), data.as_slice().unwrap());
+                    njev += 1;
+                    j
+                }
+                None => {
+                    let (j, count) = compute_jac(x.as_slice().unwrap(), &res);
+                    nfev += count;
+                    j
+                }
+            };
+
+            jac = new_jac;
+
+            // Compute new gradient
+            g = jac.t().dot(&res);
+
+            // Check convergence on gradient
+            if g.iter().map(|&gi| gi.abs()).fold(0.0, f64::max) < gtol {
+                break;
+            }
+        }
+
+        // Check if trust region became too small
+        if delta < min_delta {
+            break;
+        }
+
+        iter += 1;
+    }
+
+    // Create and return result
+    let mut result = OptimizeResults::default();
+    result.x = x.clone();
+    result.fun = f;
+    result.jac = if let Some(jac_fn) = &jacobian {
+        let jac_array = jac_fn(x.as_slice().unwrap(), data.as_slice().unwrap());
+        njev += 1;
+        let (vec, _) = jac_array.into_raw_vec_and_offset();
+        Some(vec)
+    } else {
+        let (vec, _) = jac.into_raw_vec_and_offset();
+        Some(vec)
+    };
+    result.nfev = nfev;
+    result.njev = njev;
+    result.nit = iter;
+    result.success = iter < max_nfev && delta >= min_delta;
+
+    if result.success {
+        result.message = "Optimization terminated successfully.".to_string();
+    } else if iter >= max_nfev {
+        result.message = "Maximum number of evaluations reached.".to_string();
+    } else {
+        result.message = "Trust region became too small.".to_string();
+    }
+
+    Ok(result)
+}
+
+/// Compute dogbox step considering bounds and active constraints
+#[allow(clippy::too_many_arguments)]
+#[allow(dead_code)]
+fn compute_dogbox_step(
+    jt_j: &Array2<f64>,
+    g: &Array1<f64>,
+    active: &[bool],
+    lb: &Array1<f64>,
+    ub: &Array1<f64>,
+    x: &Array1<f64>,
+    delta: f64,
+) -> Array1<f64> {
+    let n = g.len();
+
+    // Identify free variables (not at bounds)
+    let free_vars: Vec<usize> = (0..n).filter(|&i| !active[i]).collect();
+
+    if free_vars.is_empty() {
+        // All variables are at bounds
+        return Array1::zeros(n);
+    }
+
+    // Extract subproblem for free variables
+    let g_free = Array1::from_vec(free_vars.iter().map(|&i| g[i]).collect());
+    let mut jt_j_free = Array2::zeros((free_vars.len(), free_vars.len()));
+
+    for (i, &fi) in free_vars.iter().enumerate() {
+        for (j, &fj) in free_vars.iter().enumerate() {
+            jt_j_free[[i, j]] = jt_j[[fi, fj]];
+        }
+    }
+
+    // Compute steepest descent direction for free variables
+    let sd_dir_free = -&g_free;
+    let sd_norm_sq = g_free.iter().map(|&gi| gi * gi).sum::<f64>();
+
+    if sd_norm_sq < 1e-15 {
+        return Array1::zeros(n);
+    }
+
+    let sd_norm = sd_norm_sq.sqrt();
+
+    // Try to compute Gauss-Newton step for free variables
+    let gn_step_free = match solve(&jt_j_free, &sd_dir_free) {
+        Some(step) => step,
+        None => {
+            // If singular, use steepest descent
+            let step_free = &sd_dir_free * (delta / sd_norm);
+            let mut step = Array1::zeros(n);
+            for (i, &fi) in free_vars.iter().enumerate() {
+                step[fi] = step_free[i];
+            }
+            return bound_step(&step, x, lb, ub, delta);
+        }
+    };
+
+    // Check if GN step for free variables is within trust region
+    let gn_norm_sq = gn_step_free.iter().map(|&s| s * s).sum::<f64>();
+
+    if gn_norm_sq <= delta * delta {
+        let mut step = Array1::zeros(n);
+        for (i, &fi) in free_vars.iter().enumerate() {
+            step[fi] = gn_step_free[i];
+        }
+        return bound_step(&step, x, lb, ub, delta);
+    }
+
+    // Use dogleg interpolation for free variables
+    let gn_norm = gn_norm_sq.sqrt();
+    let sd_step_free = &sd_dir_free * (delta / sd_norm);
+
+    // Compute tau for dogleg step
+    let sd_gn_dot = sd_dir_free.dot(&gn_step_free);
+    let a = sd_norm_sq;
+    let b = 3.0 * sd_gn_dot;
+    let c = gn_norm_sq - delta * delta;
+
+    let tau = if a > 1e-15 && b * b - 4.0 * a * c > 0.0 {
+        (-b + (b * b - 4.0 * a * c).sqrt()) / (2.0 * a)
+    } else {
+        delta / sd_norm
+    };
+
+    let tau = tau.clamp(0.0, 1.0);
+
+    let step_free = if tau < 1.0 {
+        &sd_step_free * tau + &gn_step_free * (1.0 - tau)
+    } else {
+        &gn_step_free * (delta / gn_norm)
+    };
+
+    // Map back to full space
+    let mut step = Array1::zeros(n);
+    for (i, &fi) in free_vars.iter().enumerate() {
+        step[fi] = step_free[i];
+    }
+
+    bound_step(&step, x, lb, ub, delta)
+}
+
+/// Ensure step respects bounds and trust region
+#[allow(dead_code)]
+fn bound_step(
+    step: &Array1<f64>,
+    x: &Array1<f64>,
+    lb: &Array1<f64>,
+    ub: &Array1<f64>,
+    delta: f64,
+) -> Array1<f64> {
+    let mut bounded_step = step.clone();
+
+    // Project onto bounds
+    for i in 0..step.len() {
+        let x_new = x[i] + bounded_step[i];
+        if x_new < lb[i] {
+            bounded_step[i] = lb[i] - x[i];
+        } else if x_new > ub[i] {
+            bounded_step[i] = ub[i] - x[i];
+        }
+    }
+
+    // Scale to trust region if necessary
+    let step_norm = bounded_step.iter().map(|&s| s * s).sum::<f64>().sqrt();
+    if step_norm > delta {
+        bounded_step *= delta / step_norm;
+    }
+
+    bounded_step
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -739,7 +1043,7 @@ mod tests {
         y
     }
 
-    fn jacobian(_x: &[f64], _: &[f64]) -> Array2<f64> {
+    fn jacobian(x: &[f64], _: &[f64]) -> Array2<f64> {
         array![[1.0, 2.0], [1.0, 1.0]]
     }
 

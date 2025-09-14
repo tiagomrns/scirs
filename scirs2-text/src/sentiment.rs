@@ -95,7 +95,7 @@ impl SentimentLexicon {
     }
 
     /// Create a basic sentiment lexicon with common words
-    pub fn with_basic_lexicon() -> Self {
+    pub fn with_basiclexicon() -> Self {
         let mut lexicon = HashMap::new();
 
         // Positive words
@@ -232,8 +232,8 @@ impl LexiconSentimentAnalyzer {
     }
 
     /// Create an analyzer with a basic lexicon
-    pub fn with_basic_lexicon() -> Self {
-        Self::new(SentimentLexicon::with_basic_lexicon())
+    pub fn with_basiclexicon() -> Self {
+        Self::new(SentimentLexicon::with_basiclexicon())
     }
 
     /// Set a custom tokenizer
@@ -357,8 +357,8 @@ impl Default for SentimentRules {
 
 impl SentimentRules {
     /// Apply rules to modify a sentiment score
-    pub fn apply(&self, tokens: &[String], base_scores: &[f64]) -> Vec<f64> {
-        let mut modified_scores = base_scores.to_vec();
+    pub fn apply(&self, tokens: &[String], basescores: &[f64]) -> Vec<f64> {
+        let mut modified_scores = basescores.to_vec();
 
         for (i, score) in modified_scores.iter_mut().enumerate() {
             if *score == 0.0 {
@@ -401,8 +401,8 @@ impl RuleBasedSentimentAnalyzer {
     }
 
     /// Create an analyzer with a basic lexicon
-    pub fn with_basic_lexicon() -> Self {
-        Self::new(SentimentLexicon::with_basic_lexicon())
+    pub fn with_basiclexicon() -> Self {
+        Self::new(SentimentLexicon::with_basiclexicon())
     }
 
     /// Analyze sentiment with rule modifications
@@ -414,13 +414,13 @@ impl RuleBasedSentimentAnalyzer {
         }
 
         // Get base scores for each token
-        let base_scores: Vec<f64> = tokens
+        let basescores: Vec<f64> = tokens
             .iter()
             .map(|token| self.base_analyzer.lexicon.get_score(token))
             .collect();
 
         // Apply rules to modify scores
-        let modified_scores = self.rules.apply(&tokens, &base_scores);
+        let modified_scores = self.rules.apply(&tokens, &basescores);
 
         // Calculate final sentiment
         let total_score: f64 = modified_scores.iter().sum();
@@ -468,7 +468,7 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_sentiment_lexicon() {
+    fn test_sentimentlexicon() {
         let mut lexicon = SentimentLexicon::new();
         lexicon.add_word("happy".to_string(), 2.0);
         lexicon.add_word("sad".to_string(), -2.0);
@@ -480,7 +480,7 @@ mod tests {
 
     #[test]
     fn test_basic_sentiment_analysis() {
-        let analyzer = LexiconSentimentAnalyzer::with_basic_lexicon();
+        let analyzer = LexiconSentimentAnalyzer::with_basiclexicon();
 
         let positive_result = analyzer.analyze("This is a wonderful day!").unwrap();
         assert_eq!(positive_result.sentiment, Sentiment::Positive);
@@ -497,7 +497,7 @@ mod tests {
 
     #[test]
     fn test_negation_handling() {
-        let analyzer = LexiconSentimentAnalyzer::with_basic_lexicon();
+        let analyzer = LexiconSentimentAnalyzer::with_basiclexicon();
 
         let negated_result = analyzer.analyze("This is not good").unwrap();
         assert_eq!(negated_result.sentiment, Sentiment::Negative);
@@ -506,7 +506,7 @@ mod tests {
 
     #[test]
     fn test_rule_based_sentiment() {
-        let analyzer = RuleBasedSentimentAnalyzer::with_basic_lexicon();
+        let analyzer = RuleBasedSentimentAnalyzer::with_basiclexicon();
 
         let intensified_result = analyzer.analyze("This is very good").unwrap();
         let normal_result = analyzer.analyze("This is good").unwrap();
@@ -516,7 +516,7 @@ mod tests {
 
     #[test]
     fn test_sentiment_batch_analysis() {
-        let analyzer = LexiconSentimentAnalyzer::with_basic_lexicon();
+        let analyzer = LexiconSentimentAnalyzer::with_basiclexicon();
         let texts = vec!["I love this", "I hate this", "This is okay"];
 
         let results = analyzer.analyze_batch(&texts).unwrap();

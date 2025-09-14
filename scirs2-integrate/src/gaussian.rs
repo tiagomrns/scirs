@@ -7,7 +7,8 @@
 
 use crate::error::{IntegrateError, IntegrateResult};
 use crate::IntegrateFloat;
-use ndarray::{Array1, ArrayView1};
+use ndarray::{Array1, Array2, ArrayView1};
+use std::f64::consts::PI;
 use std::fmt::Debug;
 
 /// Gauss-Legendre quadrature nodes and weights
@@ -20,6 +21,15 @@ pub struct GaussLegendreQuadrature<F: IntegrateFloat> {
 }
 
 impl<F: IntegrateFloat> GaussLegendreQuadrature<F> {
+    /// Safe conversion from f64 to F type
+    #[allow(dead_code)]
+    fn safe_from_f64(value: f64) -> IntegrateResult<F> {
+        F::from_f64(value).ok_or_else(|| {
+            IntegrateError::ComputationError(format!(
+                "Failed to convert f64 constant {value} to target type"
+            ))
+        })
+    }
     /// Create a new Gauss-Legendre quadrature with the given number of points
     ///
     /// # Arguments
@@ -33,7 +43,7 @@ impl<F: IntegrateFloat> GaussLegendreQuadrature<F> {
     /// # Examples
     ///
     /// ```
-    /// use scirs2_integrate::gaussian::GaussLegendreQuadrature;
+    /// use scirs2__integrate::gaussian::GaussLegendreQuadrature;
     ///
     /// let quad = GaussLegendreQuadrature::<f64>::new(5).unwrap();
     /// assert_eq!(quad.nodes.len(), 5);
@@ -53,14 +63,9 @@ impl<F: IntegrateFloat> GaussLegendreQuadrature<F> {
             3 => Ok(Self::gauss_legendre_3()),
             4 => Ok(Self::gauss_legendre_4()),
             5 => Ok(Self::gauss_legendre_5()),
-            // Add more pre-computed cases as needed
             10 => Ok(Self::gauss_legendre_10()),
-            // For larger n, we could implement a more general algorithm
-            // but for this implementation we'll restrict to known cases
-            _ => Err(IntegrateError::NotImplementedError(format!(
-                "Gauss-Legendre quadrature with {} points is not implemented",
-                n
-            ))),
+            // For arbitrary n, use general algorithm
+            _ => Self::gauss_legendre_general(n),
         }
     }
 
@@ -192,6 +197,165 @@ impl<F: IntegrateFloat> GaussLegendreQuadrature<F> {
         }
     }
 
+    /// General Gauss-Legendre quadrature computation for arbitrary number of points
+    /// Uses the Golub-Welsch algorithm based on eigenvalue decomposition
+    fn gauss_legendre_general(n: usize) -> IntegrateResult<Self> {
+        // Create companion matrix for Legendre polynomials
+        // The companion matrix is tridiagonal with zeros on diagonal
+        // and beta coefficients on super/sub-diagonals
+        let alpha = vec![F::zero(); n]; // diagonal elements (all zero for Legendre)
+        let mut beta = Vec::with_capacity(n - 1); // off-diagonal elements
+
+        // Compute beta coefficients: beta[k] = k+1 / sqrt(4*(k+1)^2 - 1)
+        for k in 0..n - 1 {
+            let k_plus_1 = (k + 1) as f64;
+            let beta_k = k_plus_1 / (4.0 * k_plus_1 * k_plus_1 - 1.0).sqrt();
+            beta.push(F::from_f64(beta_k).ok_or_else(|| {
+                IntegrateError::ComputationError(format!(
+                    "Failed to convert beta coefficient {beta_k} to target type"
+                ))
+            })?);
+        }
+
+        // Use symmetric tridiagonal eigenvalue solver
+        let (nodes, eigenvecs) = Self::symmetric_tridiagonal_eigenvalues(&alpha, &beta)?;
+
+        // Compute weights from first components of normalized eigenvectors
+        // Weight[i] = 2 * (first component of eigenvector[i])^2
+        let mut weights = Vec::with_capacity(n);
+        let two = F::from_f64(2.0).ok_or_else(|| {
+            IntegrateError::ComputationError("Failed to convert constant 2.0".to_string())
+        })?;
+
+        for i in 0..n {
+            let first_component = eigenvecs[[0, i]];
+            let weight = two * first_component * first_component;
+            weights.push(weight);
+        }
+
+        // Sort nodes and weights by increasing node values
+        let mut node_weight_pairs: Vec<(F, F)> = nodes.into_iter().zip(weights).collect();
+        node_weight_pairs.sort_by(|a, b| {
+            a.0.to_f64()
+                .unwrap_or(0.0)
+                .partial_cmp(&b.0.to_f64().unwrap_or(0.0))
+                .unwrap_or(std::cmp::Ordering::Equal)
+        });
+
+        let (sorted_nodes, sorted_weights): (Vec<F>, Vec<F>) =
+            node_weight_pairs.into_iter().unzip();
+
+        Ok(GaussLegendreQuadrature {
+            nodes: Array1::from_vec(sorted_nodes),
+            weights: Array1::from_vec(sorted_weights),
+        })
+    }
+
+    /// Solve symmetric tridiagonal eigenvalue problem
+    /// Uses the QL algorithm with implicit shifts
+    fn symmetric_tridiagonal_eigenvalues(
+        alpha: &[F],
+        beta: &[F],
+    ) -> IntegrateResult<(Vec<F>, Array2<F>)> {
+        let n = alpha.len();
+        let mut d = alpha.to_vec(); // diagonal elements
+        let mut e = Vec::with_capacity(n);
+        e.push(F::zero()); // e[0] = 0
+        e.extend_from_slice(beta); // e[1..n] = beta
+
+        // Initialize eigenvector matrix to identity
+        let mut z = Array2::<F>::zeros((n, n));
+        for i in 0..n {
+            z[[i, i]] = F::one();
+        }
+
+        // QL algorithm with implicit shifts
+        let max_iterations = 100;
+        let eps = F::from_f64(1e-15).unwrap_or_else(|| F::from_f64(1e-10).unwrap());
+
+        for _ in 0..max_iterations {
+            let mut converged = true;
+
+            for i in 0..n - 1 {
+                if e[i + 1].abs() > eps * (d[i].abs() + d[i + 1].abs()) {
+                    converged = false;
+                    break;
+                }
+            }
+
+            if converged {
+                break;
+            }
+
+            // Apply QL step
+            Self::ql_step(&mut d, &mut e, &mut z)?;
+        }
+
+        Ok((d, z))
+    }
+
+    /// Single QL iteration step
+    fn ql_step(d: &mut [F], e: &mut [F], z: &mut Array2<F>) -> IntegrateResult<()> {
+        let n = d.len();
+
+        for i in 0..n - 1 {
+            if e[i + 1].abs() > F::from_f64(1e-15).unwrap_or_else(|| F::from_f64(1e-10).unwrap()) {
+                // Compute shift
+                let shift = d[n - 1];
+
+                // Apply shift
+                for j in 0..n {
+                    d[j] -= shift;
+                }
+
+                // Perform QL decomposition step
+                let mut p = d[0];
+                let mut q = e[1];
+
+                for j in 0..n - 1 {
+                    let r = (p * p + q * q).sqrt();
+                    if r.abs() < F::from_f64(1e-15).unwrap_or_else(|| F::from_f64(1e-10).unwrap()) {
+                        continue;
+                    }
+
+                    let c = p / r;
+                    let s = q / r;
+
+                    // Update diagonal and off-diagonal elements
+                    if j > 0 {
+                        e[j] = r;
+                    }
+
+                    p = c * d[j] + s * e[j + 1];
+                    e[j + 1] = s * d[j] - c * e[j + 1];
+                    q = s * d[j + 1];
+                    d[j + 1] = c * d[j + 1];
+
+                    // Update eigenvectors
+                    for k in 0..n {
+                        let temp = z[[k, j]];
+                        z[[k, j]] = c * temp + s * z[[k, j + 1]];
+                        z[[k, j + 1]] = s * temp - c * z[[k, j + 1]];
+                    }
+
+                    if j < n - 2 {
+                        p = d[j + 1];
+                        q = e[j + 2];
+                    }
+                }
+
+                d[n - 1] = p;
+
+                // Remove shift
+                for j in 0..n {
+                    d[j] += shift;
+                }
+            }
+        }
+
+        Ok(())
+    }
+
     /// Apply the quadrature rule to integrate a function over [a, b]
     ///
     /// # Arguments
@@ -207,7 +371,7 @@ impl<F: IntegrateFloat> GaussLegendreQuadrature<F> {
     /// # Examples
     ///
     /// ```
-    /// use scirs2_integrate::gaussian::GaussLegendreQuadrature;
+    /// use scirs2__integrate::gaussian::GaussLegendreQuadrature;
     ///
     /// // Integrate f(x) = x² from 0 to 1 (exact result: 1/3)
     /// let quad = GaussLegendreQuadrature::<f64>::new(5).unwrap();
@@ -250,12 +414,13 @@ impl<F: IntegrateFloat> GaussLegendreQuadrature<F> {
 /// # Examples
 ///
 /// ```
-/// use scirs2_integrate::gaussian::gauss_legendre;
+/// use scirs2__integrate::gaussian::gauss_legendre;
 ///
 /// // Integrate f(x) = x² from 0 to 1 (exact result: 1/3)
 /// let result = gauss_legendre(|x: f64| x * x, 0.0, 1.0, 5).unwrap();
 /// assert!((result - 1.0/3.0).abs() < 1e-10);
 /// ```
+#[allow(dead_code)]
 pub fn gauss_legendre<F, Func>(f: Func, a: F, b: F, n: usize) -> IntegrateResult<F>
 where
     F: IntegrateFloat,
@@ -280,7 +445,7 @@ where
 /// # Examples
 ///
 /// ```
-/// use scirs2_integrate::gaussian::multi_gauss_legendre;
+/// use scirs2__integrate::gaussian::multi_gauss_legendre;
 /// use ndarray::{Array1, ArrayView1};
 ///
 /// // Integrate f(x,y) = x²+y² over [0,1]×[0,1] (exact result: 2/3)
@@ -291,6 +456,7 @@ where
 /// ).unwrap();
 /// assert!((result - 2.0/3.0).abs() < 1e-10);
 /// ```
+#[allow(dead_code)]
 pub fn multi_gauss_legendre<F, Func>(
     f: Func,
     ranges: &[(F, F)],
@@ -367,6 +533,7 @@ where
 /// - Integral estimate
 /// - Error estimate
 /// - Number of function evaluations
+#[allow(dead_code)]
 pub fn gauss_kronrod15<F, Func>(f: Func, a: F, b: F) -> (F, F, usize)
 where
     F: IntegrateFloat,
@@ -476,6 +643,7 @@ where
 /// - Integral estimate
 /// - Error estimate
 /// - Number of function evaluations
+#[allow(dead_code)]
 pub fn gauss_kronrod21<F, Func>(f: Func, a: F, b: F) -> (F, F, usize)
 where
     F: IntegrateFloat,
@@ -589,8 +757,6 @@ where
 mod tests {
     use super::*;
     use approx::assert_relative_eq;
-
-    use std::f64::consts::PI;
 
     #[test]
     fn test_gauss_legendre_quadrature() {

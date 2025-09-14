@@ -1,22 +1,23 @@
-//! Parallel spectral analysis algorithms using Rayon for high-performance processing
-//!
-//! This module provides parallel implementations of spectral analysis algorithms
-//! that can significantly improve performance on multi-core systems when processing
-//! large datasets or multiple signals simultaneously.
+// Parallel spectral analysis algorithms using Rayon for high-performance processing
+//
+// This module provides parallel implementations of spectral analysis algorithms
+// that can significantly improve performance on multi-core systems when processing
+// large datasets or multiple signals simultaneously.
 
 use crate::error::{SignalError, SignalResult};
+use crate::filter::butter;
+use crate::hilbert::hilbert;
 use crate::window;
 use ndarray::Array2;
-
-type SpectrogramResult = (Vec<f64>, Vec<f64>, Array2<f64>);
-type TimeFrequencyCoherenceResult = (Vec<f64>, Vec<f64>, Array2<f64>);
 use num_complex::Complex64;
 use rustfft::{num_complex::Complex, FftPlanner};
+use scirs2_core::parallel_ops::*;
 use std::sync::Arc;
 
+#[allow(unused_imports)]
+type SpectrogramResult = (Vec<f64>, Vec<f64>, Array2<f64>);
+type TimeFrequencyCoherenceResult = (Vec<f64>, Vec<f64>, Array2<f64>);
 #[cfg(feature = "parallel")]
-use scirs2_core::parallel_ops::*;
-
 /// Configuration for parallel spectral processing
 #[derive(Debug, Clone)]
 pub struct ParallelSpectralConfig {
@@ -279,11 +280,11 @@ impl ParallelSpectralProcessor {
     ) -> SignalResult<Vec<(Vec<f64>, Vec<f64>)>> {
         if signal_pairs.is_empty() {
             return Err(SignalError::ValueError(
-                "No signal pairs provided".to_string(),
+                "No signal _pairs provided".to_string(),
             ));
         }
 
-        // Process signal pairs in parallel (if feature enabled) or sequentially
+        // Process signal _pairs in parallel (if feature enabled) or sequentially
         #[cfg(feature = "parallel")]
         let results: Result<Vec<_>, SignalError> = signal_pairs
             .par_iter()
@@ -443,7 +444,7 @@ impl ParallelSpectralProcessor {
         let n_samples = signal.len();
         if n_samples < window_size {
             return Err(SignalError::ValueError(
-                "Signal length must be at least window size".to_string(),
+                "Signal length must be at least window _size".to_string(),
             ));
         }
 
@@ -639,7 +640,7 @@ impl ParallelSpectralProcessor {
 
         for taper_idx in 0..k {
             let mut taper = vec![0.0; n];
-            let beta = 2.0 * std::f64::consts::PI * nw * taper_idx as f64 / n as f64;
+            let beta = 2.0 * PI * nw * taper_idx as f64 / n as f64;
 
             for (i, tap) in taper.iter_mut().enumerate().take(n) {
                 let t = (i as f64 - n as f64 / 2.0) / n as f64;
@@ -649,7 +650,7 @@ impl ParallelSpectralProcessor {
                 *tap = if (beta * t).abs() < 1e-10 {
                     1.0
                 } else {
-                    (w * std::f64::consts::PI * t).sin() / (std::f64::consts::PI * t)
+                    (w * PI * t).sin() / (PI * t)
                 } * (1.0 - 2.0 * taper_idx as f64 / k as f64).max(0.0);
             }
 
@@ -739,6 +740,7 @@ impl ParallelSpectralProcessor {
 /// # Returns
 ///
 /// * Vector of (frequencies, power_spectrum) pairs for each signal
+#[allow(dead_code)]
 pub fn parallel_welch(
     signals: &[&[f64]],
     fs: f64,
@@ -765,6 +767,7 @@ pub fn parallel_welch(
 }
 
 /// Single signal Welch periodogram (helper function)
+#[allow(dead_code)]
 fn single_welch(
     signal: &[f64],
     fs: f64,
@@ -775,7 +778,7 @@ fn single_welch(
     let n = signal.len();
     if n < window_size {
         return Err(SignalError::ValueError(
-            "Signal length must be at least window size".to_string(),
+            "Signal length must be at least window _size".to_string(),
         ));
     }
 
@@ -872,11 +875,11 @@ impl ParallelSpectralProcessor {
     ) -> SignalResult<Vec<(Vec<f64>, Vec<Complex64>)>> {
         if signal_pairs.is_empty() {
             return Err(SignalError::ValueError(
-                "No signal pairs provided".to_string(),
+                "No signal _pairs provided".to_string(),
             ));
         }
 
-        // Process signal pairs in parallel
+        // Process signal _pairs in parallel
         #[cfg(feature = "parallel")]
         let results: Result<Vec<_>, SignalError> = signal_pairs
             .par_iter()
@@ -956,11 +959,11 @@ impl ParallelSpectralProcessor {
     ) -> SignalResult<Vec<TimeFrequencyCoherenceResult>> {
         if signal_pairs.is_empty() {
             return Err(SignalError::ValueError(
-                "No signal pairs provided".to_string(),
+                "No signal _pairs provided".to_string(),
             ));
         }
 
-        // Process signal pairs in parallel
+        // Process signal _pairs in parallel
         #[cfg(feature = "parallel")]
         let results: Result<Vec<_>, SignalError> = signal_pairs
             .par_iter()
@@ -1092,7 +1095,7 @@ impl ParallelSpectralProcessor {
         let n = signal1.len();
         if n < window_size {
             return Err(SignalError::ValueError(
-                "Signal length must be at least window size".to_string(),
+                "Signal length must be at least window _size".to_string(),
             ));
         }
 
@@ -1158,9 +1161,6 @@ impl ParallelSpectralProcessor {
         amplitude_band: (f64, f64),
         fs: f64,
     ) -> SignalResult<f64> {
-        use crate::filter::butter;
-        use crate::hilbert::hilbert;
-
         // Design filters for phase and amplitude bands
         let (b_phase, a_phase) = butter(
             4,
@@ -1309,7 +1309,7 @@ impl ParallelSpectralProcessor {
                 .map(|&p| p * p.ln())
                 .sum::<f64>(),
             "renyi" => {
-                if (q - 1.0).abs() < 1e-10 {
+                if ((q - 1.0) as f64).abs() < 1e-10 {
                     // Limit case q -> 1 gives Shannon entropy
                     -probabilities
                         .iter()
@@ -1358,7 +1358,7 @@ impl ParallelSpectralProcessor {
             let power = frequencies
                 .iter()
                 .zip(psd.iter())
-                .filter(|(&freq, _)| freq >= low_freq && freq <= high_freq)
+                .filter(|(&freq_)| freq_ >= low_freq && freq_ <= high_freq)
                 .map(|(_, &power)| power)
                 .sum::<f64>();
 
@@ -1374,11 +1374,7 @@ impl ParallelSpectralProcessor {
     }
 }
 
-#[cfg(test)]
 mod tests {
-    use super::*;
-    use rand::Rng;
-    use std::f64::consts::PI;
 
     #[test]
     fn test_parallel_periodogram() {
@@ -1466,7 +1462,7 @@ mod tests {
         // Coherence should be high at 50 Hz
         let freq_50hz_idx = frequencies
             .iter()
-            .position(|&f| (f - 50.0).abs() < 5.0)
+            .position((|&f| (f - 50.0) as f64).abs() < 5.0)
             .unwrap();
         assert!(coherence[freq_50hz_idx] > 0.5);
     }

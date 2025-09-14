@@ -30,10 +30,10 @@ impl CheckpointRegistry {
         }
     }
 
-    fn register_checkpoint(&mut self, tensor_id: usize, estimated_size: usize) {
+    fn register_checkpoint(&mut self, tensor_id: usize, estimatedsize: usize) {
         self.checkpoint_ops.insert(tensor_id);
         if self.tracking_enabled {
-            self.estimated_memory_saved += estimated_size;
+            self.estimated_memory_saved += estimatedsize;
         }
     }
 
@@ -105,12 +105,12 @@ impl<F: Float> Op<F> for CheckpointOp {
         // Attempt to evaluate the input to understand its shape
         if let Ok(input_array) = input.eval(g) {
             // Create a gradient with the right shape
-            let input_shape = input_array.shape();
+            let inputshape = input_array.shape();
 
             // Create output gradient with the correct shape
             if let Ok(grad_output_array) = grad_output.eval(g) {
                 // If shapes match, pass through the gradient directly
-                if grad_output_array.shape() == input_shape {
+                if grad_output_array.shape() == inputshape {
                     ctx.append_input_grad(0, Some(*grad_output));
                 } else {
                     // If shapes don't match, we need to reshape or broadcast
@@ -118,8 +118,8 @@ impl<F: Float> Op<F> for CheckpointOp {
                     // with the same shape as the input
                     let shape_tensor = crate::tensor_ops::convert_to_tensor(
                         ndarray::Array::from_shape_vec(
-                            ndarray::IxDyn(&[input_shape.len()]),
-                            input_shape
+                            ndarray::IxDyn(&[inputshape.len()]),
+                            inputshape
                                 .iter()
                                 .map(|&x| F::from(x).unwrap())
                                 .collect::<Vec<_>>(),
@@ -171,7 +171,7 @@ impl<F: Float> Op<F> for CheckpointOp {
 /// ```
 /// # use scirs2_autograd as ag;
 /// # use ag::tensor_ops as T;
-/// # ag::run::<f32, _, _>(|ctx| {
+/// # ag::run::<f32_>(|ctx| {
 /// let input = T::ones(&[2, 2], ctx);
 /// let w1 = T::ones(&[2, 2], ctx);
 /// let layer1 = T::matmul(&input, &w1);
@@ -189,6 +189,7 @@ impl<F: Float> Op<F> for CheckpointOp {
 ///
 /// # Returns
 /// A new tensor with the same value but with gradient checkpointing enabled
+#[allow(dead_code)]
 pub fn checkpoint<'g, F: Float>(tensor: &Tensor<'g, F>) -> Tensor<'g, F> {
     let g = tensor.graph();
 
@@ -208,6 +209,7 @@ pub fn checkpoint<'g, F: Float>(tensor: &Tensor<'g, F>) -> Tensor<'g, F> {
 ///
 /// # Returns
 /// A new tensor with the same value but detached from the gradient computation
+#[allow(dead_code)]
 pub fn detach<'g, F: Float>(tensor: &Tensor<'g, F>) -> Tensor<'g, F> {
     let g = tensor.graph();
 
@@ -232,6 +234,7 @@ pub fn detach<'g, F: Float>(tensor: &Tensor<'g, F>) -> Tensor<'g, F> {
 ///
 /// # Returns
 /// The checkpointed output tensors
+#[allow(dead_code)]
 pub fn checkpoint_segment<'g, F: Float, Func, const N: usize>(
     _ctx: &'g crate::graph::Context<'g, F>,
     input_tensors: [&Tensor<'g, F>; N],
@@ -240,7 +243,7 @@ pub fn checkpoint_segment<'g, F: Float, Func, const N: usize>(
 where
     Func: FnOnce([&Tensor<'g, F>; N]) -> Tensor<'g, F>,
 {
-    // First, detach all input tensors to prevent gradient computation
+    // First, detach all input _tensors to prevent gradient computation
     // through the input paths during the segment recomputation
     let detached_inputs: Vec<Tensor<'g, F>> = input_tensors.iter().map(|t| detach(t)).collect();
 
@@ -271,6 +274,7 @@ where
 ///
 /// # Returns
 /// The checkpointed output tensor
+#[allow(dead_code)]
 pub fn checkpoint_segment_flex<'g, F: Float, Func>(
     _ctx: &'g crate::graph::Context<'g, F>,
     input_tensors: &[&Tensor<'g, F>],
@@ -279,7 +283,7 @@ pub fn checkpoint_segment_flex<'g, F: Float, Func>(
 where
     Func: FnOnce(&[&Tensor<'g, F>]) -> Tensor<'g, F>,
 {
-    // First, detach all input tensors to prevent gradient computation
+    // First, detach all input _tensors to prevent gradient computation
     // through the input paths during the segment recomputation
     let detached_inputs: Vec<Tensor<'g, F>> = input_tensors.iter().map(|t| detach(t)).collect();
 
@@ -328,14 +332,14 @@ impl<'g, F: Float> CheckpointGroup<'g, F> {
     ///
     /// # Returns
     /// The checkpointed output tensors
-    pub fn checkpoint_fn<Inputs, Outputs, Func>(&self, inputs: Inputs, segment_fn: Func) -> Outputs
+    pub fn checkpoint_fn<Inputs, Outputs, Func>(&self, inputs: Inputs, segmentfn: Func) -> Outputs
     where
         Inputs: Clone,
         Func: FnOnce(Inputs) -> Outputs,
         Outputs: CheckpointOutput<'g, F>,
     {
         // Apply the function to get outputs
-        let outputs = segment_fn(inputs);
+        let outputs = segmentfn(inputs);
 
         // Checkpoint all outputs
         outputs.checkpoint()
@@ -489,7 +493,7 @@ impl<'g, F: Float> CheckpointOutput<'g, F> for Vec<Tensor<'g, F>> {
 /// ```
 /// # use scirs2_autograd as ag;
 /// # use ag::tensor_ops as T;
-/// # ag::run::<f32, _, _>(|ctx| {
+/// # ag::run::<f32_>(|ctx| {
 /// let input = T::ones(&[1024, 1024], ctx); // A large tensor
 /// let w = T::ones(&[1024, 1024], ctx);
 ///
@@ -510,6 +514,7 @@ impl<'g, F: Float> CheckpointOutput<'g, F> for Vec<Tensor<'g, F>> {
 ///
 /// # Returns
 /// Either the original tensor or a checkpointed version depending on the memory usage
+#[allow(dead_code)]
 pub fn adaptive_checkpoint<'g, F: Float>(
     tensor: &Tensor<'g, F>,
     mut memory_threshold_bytes: usize,
@@ -574,7 +579,7 @@ pub fn adaptive_checkpoint<'g, F: Float>(
 /// ```
 /// # use scirs2_autograd as ag;
 /// # use ag::tensor_ops as T;
-/// # ag::run::<f32, _, _>(|ctx| {
+/// # ag::run::<f32_>(|ctx| {
 /// // Start tracking memory usage
 /// T::CheckpointProfiler::start_tracking();
 ///

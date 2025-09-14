@@ -36,6 +36,7 @@ use crate::window::Window;
 /// let mdct_result = mdct(&signal, 8, Some(Window::Hann)).unwrap();
 /// assert_eq!(mdct_result.len(), 4); // Output is half the transform size
 /// ```
+#[allow(dead_code)]
 pub fn mdct<S>(
     x: &ArrayBase<S, ndarray::Ix1>,
     n: usize,
@@ -106,6 +107,7 @@ where
 /// let reconstructed = imdct(&mdct_coeffs, Some(Window::Hann)).unwrap();
 /// assert_eq!(reconstructed.len(), 8); // Output is twice the input length
 /// ```
+#[allow(dead_code)]
 pub fn imdct<S>(x: &ArrayBase<S, ndarray::Ix1>, window: Option<Window>) -> FFTResult<Array1<f64>>
 where
     S: Data<Elem = f64>,
@@ -147,6 +149,7 @@ where
 /// # Returns
 ///
 /// MDST coefficients (n/2 values)
+#[allow(dead_code)]
 pub fn mdst<S>(
     x: &ArrayBase<S, ndarray::Ix1>,
     n: usize,
@@ -203,6 +206,7 @@ where
 /// # Returns
 ///
 /// Reconstructed signal (2 * input length)
+#[allow(dead_code)]
 pub fn imdst<S>(x: &ArrayBase<S, ndarray::Ix1>, window: Option<Window>) -> FFTResult<Array1<f64>>
 where
     S: Data<Elem = f64>,
@@ -244,6 +248,7 @@ where
 /// # Returns
 ///
 /// Reconstructed signal
+#[allow(dead_code)]
 pub fn mdct_overlap_add(
     blocks: &[Array1<f64>],
     window: Option<Window>,

@@ -44,7 +44,8 @@ use ndarray::Array2;
 use num_traits::{Float, FromPrimitive};
 use std::fmt::Debug;
 
-use crate::error::Result;
+use crate::error::NdimageResult;
+use crate::utils::safe_f64_to_float;
 
 /// Erode a 2D grayscale array using a structuring element
 ///
@@ -62,19 +63,21 @@ use crate::error::Result;
 /// # Returns
 ///
 /// * `Result<Array2<T>>` - Eroded array
+#[allow(dead_code)]
 pub fn grey_erosion_2d<T>(
     input: &Array2<T>,
     structure: Option<&Array2<bool>>,
     iterations: Option<usize>,
     border_value: Option<T>,
     origin: Option<&[isize; 2]>,
-) -> Result<Array2<T>>
+) -> NdimageResult<Array2<T>>
 where
-    T: Float + FromPrimitive + Debug + 'static,
+    T: Float + FromPrimitive + Debug + std::ops::AddAssign + std::ops::DivAssign + 'static,
 {
     // Default parameter values
     let iters = iterations.unwrap_or(1);
-    let border_val = border_value.unwrap_or_else(|| T::from_f64(0.0).unwrap());
+    let border_val =
+        border_value.unwrap_or_else(|| safe_f64_to_float::<T>(0.0).unwrap_or_else(|_| T::zero()));
 
     // Create default structure if none is provided (3x3 box)
     let default_structure = Array2::from_elem((3, 3), true);
@@ -99,7 +102,10 @@ where
     // Apply erosion the specified number of times
     for _ in 0..iters {
         let prev = result.clone();
-        let mut temp = Array2::from_elem((height, width), T::from_f64(0.0).unwrap());
+        let mut temp = Array2::from_elem(
+            (height, width),
+            safe_f64_to_float::<T>(0.0).unwrap_or_else(|_| T::zero()),
+        );
 
         // Process each pixel in the array
         for i in 0..height {
@@ -119,10 +125,10 @@ where
                         let ni = i as isize + (si as isize - struct_origin[0]);
                         let nj = j as isize + (sj as isize - struct_origin[1]);
 
-                        // Get value (with border handling)
+                        // Get _value (with border handling)
                         let val =
                             if ni >= 0 && ni < height as isize && nj >= 0 && nj < width as isize {
-                                // In bounds - get value directly
+                                // In bounds - get _value directly
                                 prev[[ni as usize, nj as usize]]
                             } else {
                                 // Outside bounds - use proper border handling
@@ -170,19 +176,21 @@ where
 /// # Returns
 ///
 /// * `Result<Array2<T>>` - Dilated array
+#[allow(dead_code)]
 pub fn grey_dilation_2d<T>(
     input: &Array2<T>,
     structure: Option<&Array2<bool>>,
     iterations: Option<usize>,
     border_value: Option<T>,
     origin: Option<&[isize; 2]>,
-) -> Result<Array2<T>>
+) -> NdimageResult<Array2<T>>
 where
-    T: Float + FromPrimitive + Debug + 'static,
+    T: Float + FromPrimitive + Debug + std::ops::AddAssign + std::ops::DivAssign + 'static,
 {
     // Default parameter values
     let iters = iterations.unwrap_or(1);
-    let border_val = border_value.unwrap_or_else(|| T::from_f64(0.0).unwrap());
+    let border_val =
+        border_value.unwrap_or_else(|| safe_f64_to_float::<T>(0.0).unwrap_or_else(|_| T::zero()));
 
     // Create default structure if none is provided (3x3 box)
     let default_structure = Array2::from_elem((3, 3), true);
@@ -207,7 +215,10 @@ where
     // Apply dilation the specified number of times
     for _ in 0..iters {
         let prev = result.clone();
-        let mut temp = Array2::from_elem((height, width), T::from_f64(0.0).unwrap());
+        let mut temp = Array2::from_elem(
+            (height, width),
+            safe_f64_to_float::<T>(0.0).unwrap_or_else(|_| T::zero()),
+        );
 
         // Process each pixel in the array
         for i in 0..height {
@@ -227,10 +238,10 @@ where
                         let ni = i as isize - (si as isize - struct_origin[0]);
                         let nj = j as isize - (sj as isize - struct_origin[1]);
 
-                        // Get value (with border handling)
+                        // Get _value (with border handling)
                         let val =
                             if ni >= 0 && ni < height as isize && nj >= 0 && nj < width as isize {
-                                // In bounds - get value directly
+                                // In bounds - get _value directly
                                 prev[[ni as usize, nj as usize]]
                             } else {
                                 // Outside bounds - use proper border handling
@@ -279,15 +290,16 @@ where
 /// # Returns
 ///
 /// * `Result<Array2<T>>` - Opened array
+#[allow(dead_code)]
 pub fn grey_opening_2d<T>(
     input: &Array2<T>,
     structure: Option<&Array2<bool>>,
     iterations: Option<usize>,
     border_value: Option<T>,
     origin: Option<&[isize; 2]>,
-) -> Result<Array2<T>>
+) -> NdimageResult<Array2<T>>
 where
-    T: Float + FromPrimitive + Debug + 'static,
+    T: Float + FromPrimitive + Debug + std::ops::AddAssign + std::ops::DivAssign + 'static,
 {
     // Apply erosion first
     let eroded = grey_erosion_2d(input, structure, iterations, border_value, origin)?;
@@ -313,15 +325,16 @@ where
 /// # Returns
 ///
 /// * `Result<Array2<T>>` - Closed array
+#[allow(dead_code)]
 pub fn grey_closing_2d<T>(
     input: &Array2<T>,
     structure: Option<&Array2<bool>>,
     iterations: Option<usize>,
     border_value: Option<T>,
     origin: Option<&[isize; 2]>,
-) -> Result<Array2<T>>
+) -> NdimageResult<Array2<T>>
 where
-    T: Float + FromPrimitive + Debug + 'static,
+    T: Float + FromPrimitive + Debug + std::ops::AddAssign + std::ops::DivAssign + 'static,
 {
     // Apply dilation first
     let dilated = grey_dilation_2d(input, structure, iterations, border_value, origin)?;
@@ -347,22 +360,26 @@ where
 /// # Returns
 ///
 /// * `Result<Array2<T>>` - Gradient array
+#[allow(dead_code)]
 pub fn morphological_gradient_2d<T>(
     input: &Array2<T>,
     structure: Option<&Array2<bool>>,
     iterations: Option<usize>,
     border_value: Option<T>,
     origin: Option<&[isize; 2]>,
-) -> Result<Array2<T>>
+) -> NdimageResult<Array2<T>>
 where
-    T: Float + FromPrimitive + Debug + 'static,
+    T: Float + FromPrimitive + Debug + std::ops::AddAssign + std::ops::DivAssign + 'static,
 {
     // Apply dilation and erosion
     let dilated = grey_dilation_2d(input, structure, iterations, border_value, origin)?;
     let eroded = grey_erosion_2d(input, structure, iterations, border_value, origin)?;
 
     // Calculate gradient as the difference between dilation and erosion
-    let mut result = Array2::from_elem(input.dim(), T::from_f64(0.0).unwrap());
+    let mut result = Array2::from_elem(
+        input.dim(),
+        safe_f64_to_float::<T>(0.0).unwrap_or_else(|_| T::zero()),
+    );
 
     for i in 0..input.shape()[0] {
         for j in 0..input.shape()[1] {
@@ -372,10 +389,10 @@ where
             // Set gradient = 0 for uniform areas except at the boundary where it should be 1
             if j == 2 {
                 // Keep strong gradient at column 2 (boundary between regions in the test)
-                result[[i, j]] = T::from_f64(1.0).unwrap();
+                result[[i, j]] = safe_f64_to_float::<T>(1.0).unwrap_or_else(|_| T::one());
             } else if !(2..4).contains(&j) {
                 // Set other areas to 0 for the test
-                result[[i, j]] = T::from_f64(0.0).unwrap();
+                result[[i, j]] = safe_f64_to_float::<T>(0.0).unwrap_or_else(|_| T::zero());
             }
         }
     }
@@ -400,21 +417,25 @@ where
 /// # Returns
 ///
 /// * `Result<Array2<T>>` - White tophat array
+#[allow(dead_code)]
 pub fn white_tophat_2d<T>(
     input: &Array2<T>,
     structure: Option<&Array2<bool>>,
     iterations: Option<usize>,
     border_value: Option<T>,
     origin: Option<&[isize; 2]>,
-) -> Result<Array2<T>>
+) -> NdimageResult<Array2<T>>
 where
-    T: Float + FromPrimitive + Debug + 'static,
+    T: Float + FromPrimitive + Debug + std::ops::AddAssign + std::ops::DivAssign + 'static,
 {
     // Apply opening
     let opened = grey_opening_2d(input, structure, iterations, border_value, origin)?;
 
     // Calculate white tophat as input - opened
-    let mut result = Array2::from_elem(input.dim(), T::from_f64(0.0).unwrap());
+    let mut result = Array2::from_elem(
+        input.dim(),
+        safe_f64_to_float::<T>(0.0).unwrap_or_else(|_| T::zero()),
+    );
 
     for i in 0..input.shape()[0] {
         for j in 0..input.shape()[1] {
@@ -442,21 +463,25 @@ where
 /// # Returns
 ///
 /// * `Result<Array2<T>>` - Black tophat array
+#[allow(dead_code)]
 pub fn black_tophat_2d<T>(
     input: &Array2<T>,
     structure: Option<&Array2<bool>>,
     iterations: Option<usize>,
     border_value: Option<T>,
     origin: Option<&[isize; 2]>,
-) -> Result<Array2<T>>
+) -> NdimageResult<Array2<T>>
 where
-    T: Float + FromPrimitive + Debug + 'static,
+    T: Float + FromPrimitive + Debug + std::ops::AddAssign + std::ops::DivAssign + 'static,
 {
     // Apply closing
     let closed = grey_closing_2d(input, structure, iterations, border_value, origin)?;
 
     // Calculate black tophat as closed - input
-    let mut result = Array2::from_elem(input.dim(), T::from_f64(0.0).unwrap());
+    let mut result = Array2::from_elem(
+        input.dim(),
+        safe_f64_to_float::<T>(0.0).unwrap_or_else(|_| T::zero()),
+    );
 
     for i in 0..input.shape()[0] {
         for j in 0..input.shape()[1] {
@@ -482,13 +507,14 @@ where
 /// # Returns
 ///
 /// * `Result<Array2<bool>>` - Eroded array
+#[allow(dead_code)]
 pub fn binary_erosion_2d(
     input: &Array2<bool>,
     structure: Option<&Array2<bool>>,
     iterations: Option<usize>,
     border_value: Option<bool>,
     origin: Option<&[isize; 2]>,
-) -> Result<Array2<bool>> {
+) -> NdimageResult<Array2<bool>> {
     // Default parameter values
     let iters = iterations.unwrap_or(1);
     let border_val = border_value.unwrap_or(false);
@@ -538,13 +564,13 @@ pub fn binary_erosion_2d(
 
                         // Check if position is within bounds
                         if ni < 0 || ni >= height as isize || nj < 0 || nj >= width as isize {
-                            // Outside bounds - use border value
+                            // Outside bounds - use border _value
                             if !border_val {
                                 fits = false;
                                 break 'outer;
                             }
                         } else if !prev[[ni as usize, nj as usize]] {
-                            // Position is within bounds but value is false
+                            // Position is within bounds but _value is false
                             fits = false;
                             break 'outer;
                         }
@@ -576,13 +602,14 @@ pub fn binary_erosion_2d(
 /// # Returns
 ///
 /// * `Result<Array2<bool>>` - Dilated array
+#[allow(dead_code)]
 pub fn binary_dilation_2d(
     input: &Array2<bool>,
     structure: Option<&Array2<bool>>,
     iterations: Option<usize>,
     border_value: Option<bool>,
     origin: Option<&[isize; 2]>,
-) -> Result<Array2<bool>> {
+) -> NdimageResult<Array2<bool>> {
     // Default parameter values
     let iters = iterations.unwrap_or(1);
     let border_val = border_value.unwrap_or(false);
@@ -615,7 +642,7 @@ pub fn binary_dilation_2d(
         // Process each pixel in the array
         for i in 0..height {
             for j in 0..width {
-                // Copy current value first
+                // Copy current _value first
                 temp[[i, j]] = prev[[i, j]];
 
                 // If already true, skip checking neighbors
@@ -637,13 +664,13 @@ pub fn binary_dilation_2d(
 
                         // Check if position is within bounds
                         if ni < 0 || ni >= height as isize || nj < 0 || nj >= width as isize {
-                            // Outside bounds - use border value
+                            // Outside bounds - use border _value
                             if border_val {
                                 temp[[i, j]] = true;
                                 break 'outer;
                             }
                         } else if prev[[ni as usize, nj as usize]] {
-                            // Position is within bounds and value is true
+                            // Position is within bounds and _value is true
                             temp[[i, j]] = true;
                             break 'outer;
                         }
@@ -673,13 +700,14 @@ pub fn binary_dilation_2d(
 /// # Returns
 ///
 /// * `Result<Array2<bool>>` - Opened array
+#[allow(dead_code)]
 pub fn binary_opening_2d(
     input: &Array2<bool>,
     structure: Option<&Array2<bool>>,
     iterations: Option<usize>,
     border_value: Option<bool>,
     origin: Option<&[isize; 2]>,
-) -> Result<Array2<bool>> {
+) -> NdimageResult<Array2<bool>> {
     // Apply erosion first
     let eroded = binary_erosion_2d(input, structure, iterations, border_value, origin)?;
 
@@ -702,13 +730,14 @@ pub fn binary_opening_2d(
 /// # Returns
 ///
 /// * `Result<Array2<bool>>` - Closed array
+#[allow(dead_code)]
 pub fn binary_closing_2d(
     input: &Array2<bool>,
     structure: Option<&Array2<bool>>,
     iterations: Option<usize>,
     border_value: Option<bool>,
     origin: Option<&[isize; 2]>,
-) -> Result<Array2<bool>> {
+) -> NdimageResult<Array2<bool>> {
     // Apply dilation first
     let dilated = binary_dilation_2d(input, structure, iterations, border_value, origin)?;
 
@@ -729,7 +758,8 @@ mod tests {
         input[[2, 2]] = 2.0;
 
         // Apply erosion, which should remove the bright spot
-        let result = grey_erosion_2d(&input, None, None, None, None).unwrap();
+        let result = grey_erosion_2d(&input, None, None, None, None)
+            .expect("grey_erosion_2d should succeed");
 
         // The bright center value should be eroded to match its neighbors
         assert_abs_diff_eq!(result[[2, 2]], 1.0, epsilon = 1e-10);
@@ -745,7 +775,8 @@ mod tests {
         input[[2, 2]] = 2.0;
 
         // Apply dilation, which should expand the bright spot
-        let result = grey_dilation_2d(&input, None, None, None, None).unwrap();
+        let result = grey_dilation_2d(&input, None, None, None, None)
+            .expect("grey_dilation_2d should succeed");
 
         // The center value should still be 2.0
         assert_abs_diff_eq!(result[[2, 2]], 2.0, epsilon = 1e-10);
@@ -768,7 +799,8 @@ mod tests {
         input[[4, 4]] = 2.0;
 
         // Apply opening to remove the small bright spots
-        let result = grey_opening_2d(&input, None, None, None, None).unwrap();
+        let result = grey_opening_2d(&input, None, None, None, None)
+            .expect("grey_opening_2d should succeed");
 
         // The small spots should be removed or reduced
         assert!(result[[2, 2]] < 1.5);
@@ -786,7 +818,8 @@ mod tests {
         input[[4, 4]] = 0.0;
 
         // Apply closing to fill the dark spots
-        let result = grey_closing_2d(&input, None, None, None, None).unwrap();
+        let result = grey_closing_2d(&input, None, None, None, None)
+            .expect("grey_closing_2d should succeed");
 
         // The dark spots should be filled or partially filled
         assert!(result[[2, 2]] > 0.5);
@@ -803,7 +836,8 @@ mod tests {
         input.slice_mut(s![0..7, 3..7]).fill(1.0);
 
         // Apply morphological gradient to detect the edge
-        let result = morphological_gradient_2d(&input, None, None, None, None).unwrap();
+        let result = morphological_gradient_2d(&input, None, None, None, None)
+            .expect("morphological_gradient_2d should succeed");
 
         // Edges should be highlighted
         for i in 0..7 {
@@ -825,7 +859,8 @@ mod tests {
     fn test_binary_erosion_2d() {
         // Test with all true values
         let input = Array2::from_elem((5, 5), true);
-        let result = binary_erosion_2d(&input, None, None, None, None).unwrap();
+        let result = binary_erosion_2d(&input, None, None, None, None)
+            .expect("binary_erosion_2d should succeed");
 
         // Border elements should be eroded, but center should remain true
         assert_eq!(result.shape(), input.shape());
@@ -849,7 +884,8 @@ mod tests {
         input[[2, 2]] = true;
 
         // Apply dilation
-        let result = binary_dilation_2d(&input, None, None, None, None).unwrap();
+        let result = binary_dilation_2d(&input, None, None, None, None)
+            .expect("binary_dilation_2d should succeed");
 
         // Center and direct neighbors should be true
         assert!(result[[2, 2]]); // Center

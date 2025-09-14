@@ -1,29 +1,28 @@
-//! Signal Separation Module
-//!
-//! This module implements various signal separation techniques including:
-//! - Multi-band signal separation using filter banks
-//! - Harmonic/percussive separation for audio signals
-//! - Spectral source separation methods
-//!
-//! # Example
-//! ```
-//! use ndarray::Array1;
-//! use scirs2_signal::separation::{multiband_separation, harmonic_percussive_separation};
-//!
-//! // Multi-band separation
-//! let signal = Array1::from_vec(vec![1.0, 0.5, -0.3, 0.8, -0.2]);
-//! let bands = multiband_separation(&signal, &[0.1, 0.3, 0.5], 1000.0, None).unwrap();
-//!
-//! // Harmonic/percussive separation
-//! let (harmonic, percussive) = harmonic_percussive_separation(&signal, 1000.0, None).unwrap();
-//! ```
+// Signal Separation Module
+//
+// This module implements various signal separation techniques including:
+// - Multi-band signal separation using filter banks
+// - Harmonic/percussive separation for audio signals
+// - Spectral source separation methods
+//
+// # Example
+// ```
+// use ndarray::Array1;
+// use scirs2_signal::separation::{multiband_separation, harmonic_percussive_separation};
+//
+// // Multi-band separation
+// let signal = Array1::from_vec(vec![1.0, 0.5, -0.3, 0.8, -0.2]);
+// let bands = multiband_separation(&signal, &[0.1, 0.3, 0.5], 1000.0, None).unwrap();
+//
+// // Harmonic/percussive separation
+// let (harmonic, percussive) = harmonic_percussive_separation(&signal, 1000.0, None).unwrap();
+// ```
 
 use crate::error::{SignalError, SignalResult};
 use crate::filter::{butter, lfilter, FilterType};
 use ndarray::Array1;
-#[cfg(test)]
-use std::f64::consts::PI;
 
+#[allow(unused_imports)]
 /// Configuration for multi-band separation
 #[derive(Debug, Clone)]
 pub struct MultibandConfig {
@@ -99,6 +98,7 @@ impl Default for HarmonicPercussiveConfig {
 /// let bands = multiband_separation(&signal, &cutoffs, 1000.0, None).unwrap();
 /// assert_eq!(bands.len(), 4); // Number of bands = cutoffs.len() + 1
 /// ```
+#[allow(dead_code)]
 pub fn multiband_separation(
     signal: &Array1<f64>,
     cutoff_freqs: &[f64],
@@ -197,6 +197,7 @@ pub fn multiband_separation(
 /// assert_eq!(harmonic.len(), signal.len());
 /// assert_eq!(percussive.len(), signal.len());
 /// ```
+#[allow(dead_code)]
 pub fn harmonic_percussive_separation(
     signal: &Array1<f64>,
     _sample_rate: f64,
@@ -229,7 +230,11 @@ pub fn harmonic_percussive_separation(
 
     let percussive_adjusted: Vec<f64> = percussive_vec
         .iter()
-        .map(|&x| x * (2.0 - config.separation_power).sqrt().max(0.1))
+        .map(
+            (|&x| x * (2.0 - config.separation_power) as f64)
+                .sqrt()
+                .max(0.1),
+        )
         .collect();
 
     Ok((
@@ -238,12 +243,12 @@ pub fn harmonic_percussive_separation(
     ))
 }
 
-#[cfg(test)]
 mod tests {
-    use super::*;
 
     #[test]
     fn test_multiband_separation() {
+        let a = vec![1.0, 2.0, 3.0, 4.0, 5.0];
+        let b = vec![0.5, 0.5];
         // Create a test signal with multiple frequency components
         let sample_rate = 1000.0;
         let duration = 1.0;
@@ -293,6 +298,8 @@ mod tests {
 
     #[test]
     fn test_harmonic_percussive_separation() {
+        let a = vec![1.0, 2.0, 3.0, 4.0, 5.0];
+        let b = vec![0.5, 0.5];
         // Create a simple test signal
         let sample_rate = 1000.0;
         let duration = 0.5;

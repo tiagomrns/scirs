@@ -1,14 +1,16 @@
+use crate::convolve;
+use crate::error::{SignalError, SignalResult};
+use ndarray::s;
+use ndarray::{Array1, Array2, Array3};
+use rustfft::{num_complex::Complex, FftPlanner};
+
 // Signal deconvolution module
 //
 // This module implements various deconvolution techniques for signal processing,
 // including Wiener deconvolution, Richardson-Lucy deconvolution, regularized deconvolution,
 // and blind deconvolution.
 
-use crate::convolve;
-use crate::error::{SignalError, SignalResult};
-use ndarray::{s, Array1, Array2, Array3};
-use rustfft::{num_complex::Complex, FftPlanner};
-
+#[allow(unused_imports)]
 /// Deconvolution configuration
 #[derive(Debug, Clone)]
 pub struct DeconvolutionConfig {
@@ -66,6 +68,7 @@ impl Default for DeconvolutionConfig {
 /// # Returns
 ///
 /// * The deconvolved signal
+#[allow(dead_code)]
 pub fn wiener_deconvolution_1d(
     signal: &Array1<f64>,
     psf: &Array1<f64>,
@@ -195,6 +198,7 @@ pub fn wiener_deconvolution_1d(
 /// # Returns
 ///
 /// * The deconvolved signal
+#[allow(dead_code)]
 pub fn tikhonov_deconvolution_1d(
     signal: &Array1<f64>,
     psf: &Array1<f64>,
@@ -337,6 +341,7 @@ pub fn tikhonov_deconvolution_1d(
 /// # Returns
 ///
 /// * The deconvolved signal
+#[allow(dead_code)]
 pub fn richardson_lucy_deconvolution_1d(
     signal: &Array1<f64>,
     psf: &Array1<f64>,
@@ -470,6 +475,7 @@ pub fn richardson_lucy_deconvolution_1d(
 /// # Returns
 ///
 /// * The deconvolved signal
+#[allow(dead_code)]
 pub fn clean_deconvolution_1d(
     signal: &Array1<f64>,
     psf: &Array1<f64>,
@@ -608,6 +614,7 @@ pub fn clean_deconvolution_1d(
 /// # Returns
 ///
 /// * The deconvolved signal
+#[allow(dead_code)]
 pub fn mem_deconvolution_1d(
     signal: &Array1<f64>,
     psf: &Array1<f64>,
@@ -753,6 +760,7 @@ pub fn mem_deconvolution_1d(
 /// # Returns
 ///
 /// * Tuple containing (deconvolved signal, estimated PSF)
+#[allow(dead_code)]
 pub fn blind_deconvolution_1d(
     signal: &Array1<f64>,
     psf_size: usize,
@@ -763,7 +771,7 @@ pub fn blind_deconvolution_1d(
     // Check inputs
     if psf_size >= n {
         return Err(SignalError::ValueError(
-            "PSF size must be smaller than signal length".to_string(),
+            "PSF _size must be smaller than signal length".to_string(),
         ));
     }
 
@@ -818,7 +826,7 @@ pub fn blind_deconvolution_1d(
         let temp_psf =
             richardson_lucy_deconvolution_1d(&padded_signal, &estimated_signal, Some(5), config)?;
 
-        // Constrain PSF to its expected size
+        // Constrain PSF to its expected _size
         let _centered_psf = Array1::<f64>::zeros(pad_len);
         let start = (pad_len - psf_size) / 2;
         let mut psf_cropped = temp_psf.slice(s![start..start + psf_size]).to_owned();
@@ -879,6 +887,7 @@ pub fn blind_deconvolution_1d(
 /// # Returns
 ///
 /// * The deconvolved image
+#[allow(dead_code)]
 pub fn wiener_deconvolution_2d(
     image: &Array2<f64>,
     psf: &Array2<f64>,
@@ -1012,6 +1021,7 @@ pub fn wiener_deconvolution_2d(
 /// # Returns
 ///
 /// * The deconvolved image
+#[allow(dead_code)]
 pub fn richardson_lucy_deconvolution_2d(
     image: &Array2<f64>,
     psf: &Array2<f64>,
@@ -1146,6 +1156,7 @@ pub fn richardson_lucy_deconvolution_2d(
 /// # Returns
 ///
 /// * The deconvolved image
+#[allow(dead_code)]
 pub fn tv_deconvolution_2d(
     image: &Array2<f64>,
     psf: &Array2<f64>,
@@ -1309,6 +1320,7 @@ pub fn tv_deconvolution_2d(
 /// # Returns
 ///
 /// * Tuple containing (deconvolved image, estimated PSF)
+#[allow(dead_code)]
 pub fn blind_deconvolution_2d(
     image: &Array2<f64>,
     psf_size_h: usize,
@@ -1441,14 +1453,15 @@ pub fn blind_deconvolution_2d(
 }
 
 /// Helper function to create a Gaussian kernel for a PSF
+#[allow(dead_code)]
 fn create_gaussian_kernel(size: usize) -> Array1<f64> {
-    let half_size = size as isize / 2;
-    let mut kernel = Array1::<f64>::zeros(size);
+    let half_size = _size as isize / 2;
+    let mut kernel = Array1::<f64>::zeros(_size);
 
-    let sigma = size as f64 / 6.0; // Standard deviation
+    let sigma = _size as f64 / 6.0; // Standard deviation
     let two_sigma_sq = 2.0 * sigma * sigma;
 
-    for i in 0..size {
+    for i in 0.._size {
         let x = (i as isize - half_size) as f64;
         kernel[i] = (-x * x / two_sigma_sq).exp();
     }
@@ -1463,17 +1476,18 @@ fn create_gaussian_kernel(size: usize) -> Array1<f64> {
 }
 
 /// Helper function to create a 2D Gaussian kernel for a PSF
+#[allow(dead_code)]
 fn create_gaussian_kernel_2d(height: usize, width: usize) -> Array2<f64> {
-    let half_h = height as isize / 2;
+    let half_h = _height as isize / 2;
     let half_w = width as isize / 2;
-    let mut kernel = Array2::<f64>::zeros((height, width));
+    let mut kernel = Array2::<f64>::zeros((_height, width));
 
-    let sigma_h = height as f64 / 6.0; // Standard deviation for height
+    let sigma_h = _height as f64 / 6.0; // Standard deviation for _height
     let sigma_w = width as f64 / 6.0; // Standard deviation for width
     let two_sigma_h_sq = 2.0 * sigma_h * sigma_h;
     let two_sigma_w_sq = 2.0 * sigma_w * sigma_w;
 
-    for i in 0..height {
+    for i in 0.._height {
         let y = (i as isize - half_h) as f64;
         for j in 0..width {
             let x = (j as isize - half_w) as f64;
@@ -1491,6 +1505,7 @@ fn create_gaussian_kernel_2d(height: usize, width: usize) -> Array2<f64> {
 }
 
 /// Helper function to apply Gaussian filtering to a 1D signal
+#[allow(dead_code)]
 fn gaussian_filter_1d(signal: &Array1<f64>, sigma: f64) -> Array1<f64> {
     let _n = signal.len();
     let kernel_size = (6.0 * sigma).ceil() as usize;
@@ -1509,14 +1524,15 @@ fn gaussian_filter_1d(signal: &Array1<f64>, sigma: f64) -> Array1<f64> {
 }
 
 /// Helper function to apply Gaussian filtering to a 2D image
+#[allow(dead_code)]
 fn gaussian_filter_2d(image: &Array2<f64>, sigma: f64) -> Array2<f64> {
-    let (_height, _width) = image.dim();
+    let (_height_width) = image.dim();
     let kernel_size = (6.0 * sigma).ceil() as usize;
     let kernel_size = kernel_size + (1 - kernel_size % 2); // Ensure odd size
 
     let kernel = create_gaussian_kernel_2d(kernel_size, kernel_size);
 
-    match convolve::convolve2d(image, &kernel, "same") {
+    match convolve::convolve2d(_image, &kernel, "same") {
         Ok(filtered) => filtered,
         Err(_) => image.clone(),
     }
@@ -1534,6 +1550,7 @@ fn gaussian_filter_2d(image: &Array2<f64>, sigma: f64) -> Array2<f64> {
 /// # Returns
 ///
 /// * The deconvolved color image
+#[allow(dead_code)]
 pub fn wiener_deconvolution_color(
     image: &Array3<f64>,
     psf: &Array2<f64>,
@@ -1572,6 +1589,7 @@ pub fn wiener_deconvolution_color(
 /// # Returns
 ///
 /// * The deconvolved color image
+#[allow(dead_code)]
 pub fn richardson_lucy_deconvolution_color(
     image: &Array3<f64>,
     psf: &Array2<f64>,
@@ -1612,6 +1630,7 @@ pub fn richardson_lucy_deconvolution_color(
 /// # Returns
 ///
 /// * The optimal regularization parameter based on GCV
+#[allow(dead_code)]
 pub fn estimate_regularization_param(
     signal: &Array1<f64>,
     psf: &Array1<f64>,
@@ -1621,7 +1640,7 @@ pub fn estimate_regularization_param(
 ) -> SignalResult<f64> {
     let n = signal.len();
 
-    // Generate logarithmically spaced parameter values
+    // Generate logarithmically spaced parameter _values
     let log_min = min_param.ln();
     let log_max = max_param.ln();
     let step = (log_max - log_min) / (num_values - 1) as f64;
@@ -1663,7 +1682,7 @@ pub fn estimate_regularization_param(
     let mut best_param = min_param;
     let mut min_gcv = f64::INFINITY;
 
-    for &param in &param_values {
+    for &_param in &param_values {
         let mut result_complex = vec![Complex::new(0.0, 0.0); n];
         let mut filter_diag = vec![0.0; n];
 
@@ -1740,6 +1759,7 @@ pub fn estimate_regularization_param(
 /// # Returns
 ///
 /// * The deconvolved signal
+#[allow(dead_code)]
 pub fn optimal_deconvolution_1d(
     signal: &Array1<f64>,
     psf: &Array1<f64>,

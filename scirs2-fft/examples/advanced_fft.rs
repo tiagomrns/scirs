@@ -7,6 +7,7 @@ use num_complex::Complex64;
 use scirs2_fft::nufft::InterpolationType;
 use scirs2_fft::{fft, frft, frft_complex, hilbert, nufft, rfft};
 use std::f64::consts::PI;
+#[allow(dead_code)]
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("Advanced FFT Examples");
     println!("===================\n");
@@ -27,8 +28,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         .collect();
 
     println!("Created a test signal with {} samples", signal.len());
-    println!("Sampling rate: {} Hz", fs);
-    println!("Signal duration: {} seconds", duration);
+    println!("Sampling rate: {fs} Hz");
+    println!("Signal duration: {duration} seconds");
 
     // Example 1: Hilbert Transform
     println!("\n1. Hilbert Transform");
@@ -114,10 +115,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         // Calculate energy of the transform
         let energy = frft_result.iter().map(|c| c.norm_sqr()).sum::<f64>();
 
-        println!(
-            "    Order = {:.2} (α = {:.2}π): Energy = {:.2e}",
-            order, order, energy
-        );
+        println!("    Order = {order:.2} (α = {order:.2}π): Energy = {energy:.2e}");
 
         // For order = 0.5, the FrFT is halfway between time and frequency domain
         if (order - 0.5).abs() < 1e-6 {
@@ -132,7 +130,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 .zip(fft_result.iter())
                 .map(|(a, b)| (a - b).norm())
                 .fold(0.0, f64::max);
-            println!("      Max difference from regular FFT: {:.2e}", max_diff);
+            println!("      Max difference from regular FFT: {max_diff:.2e}");
         }
     }
 
@@ -191,8 +189,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     )?;
 
     println!(
-        "  Computed Type 1 NUFFT from {} non-uniform samples to {} frequency modes",
-        n_nonuniform, n_modes
+        "  Computed Type 1 NUFFT from {n_nonuniform} non-uniform samples to {n_modes} frequency modes"
     );
 
     // Find the dominant frequencies

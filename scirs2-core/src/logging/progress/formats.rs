@@ -27,7 +27,7 @@ impl ProgressTemplate {
 
     /// Compact template for minimal display
     pub fn compact() -> Self {
-        Self::new("{description}: {percentage:.1}% ({processed}/{total}) ETA: {eta}")
+        Self::new("{description}: {percentage:.1}% ({processed}/{total}), ETA: {eta}")
     }
 
     /// Template suitable for log files
@@ -93,8 +93,9 @@ struct FormatSpec {
 }
 
 /// Extract format specification from a placeholder
+#[allow(dead_code)]
 fn extract_format_spec(text: &str, field: &str) -> Option<FormatSpec> {
-    let pattern = format!("{{{}", field);
+    let pattern = field.to_string();
     if let Some(start) = text.find(&pattern) {
         if let Some(end) = text[start..].find('}') {
             let spec_str = &text[start..start + end + 1];
@@ -257,8 +258,8 @@ impl ColorScheme {
     }
 
     /// Apply color to text
-    pub fn apply_color(&self, text: &str, color_type: ColorType) -> String {
-        let color = match color_type {
+    pub fn format_with_color(&self, text: &str, colortype: ColorType) -> String {
+        let color = match colortype {
             ColorType::Fill => &self.fill_color,
             ColorType::Empty => &self.empty_color,
             ColorType::Text => &self.text_color,
@@ -266,11 +267,27 @@ impl ColorScheme {
             ColorType::ETA => &self.eta_color,
         };
 
-        if let Some(color_code) = color {
-            format!("{}{}\x1b[0m", color_code, text)
+        if let Some(colorcode) = color {
+            format!("{colorcode}{text}\x1b[0m")
         } else {
             text.to_string()
         }
+    }
+
+    /// Apply color to text (alias for format_with_color)
+    ///
+    /// This method applies ANSI color codes to text based on the specified color type.
+    ///
+    /// # Arguments
+    ///
+    /// * `text` - The text to colorize
+    /// * `color_type` - The type of color to apply
+    ///
+    /// # Returns
+    ///
+    /// Colored text with ANSI escape sequences
+    pub fn apply_color(&self, text: &str, color_type: ColorType) -> String {
+        self.format_with_color(text, color_type)
     }
 }
 
@@ -333,9 +350,9 @@ pub struct ProgressFormatter;
 
 impl ProgressFormatter {
     /// Format for JSON output
-    pub fn json(description: &str, stats: &ProgressStats) -> String {
+    pub fn format_json(description: &str, stats: &ProgressStats) -> String {
         serde_json::json!({
-            "description": description,
+            "_description": description,
             "processed": stats.processed,
             "total": stats.total,
             "percentage": stats.percentage,
@@ -347,7 +364,7 @@ impl ProgressFormatter {
     }
 
     /// Format for CSV output
-    pub fn csv(description: &str, stats: &ProgressStats) -> String {
+    pub fn format_csv(description: &str, stats: &ProgressStats) -> String {
         format!(
             "{},{},{},{:.2},{:.2},{},{}",
             description,
@@ -361,7 +378,7 @@ impl ProgressFormatter {
     }
 
     /// Format for machine-readable output
-    pub fn machine(description: &str, stats: &ProgressStats) -> String {
+    pub fn format_machine(description: &str, stats: &ProgressStats) -> String {
         format!(
             "PROGRESS|{}|{}|{}|{:.2}|{:.2}|{}|{}",
             description,
@@ -372,6 +389,38 @@ impl ProgressFormatter {
             stats.eta.as_secs(),
             stats.elapsed.as_secs()
         )
+    }
+
+    /// JSON output (alias for format_json)
+    ///
+    /// Returns progress information formatted as JSON string.
+    ///
+    /// # Arguments
+    ///
+    /// * `description` - Description of the progress task
+    /// * `stats` - Progress statistics
+    ///
+    /// # Returns
+    ///
+    /// JSON formatted string containing progress data
+    pub fn json(description: &str, stats: &ProgressStats) -> String {
+        Self::format_json(description, stats)
+    }
+
+    /// CSV output (alias for format_csv)
+    ///
+    /// Returns progress information formatted as CSV string.
+    ///
+    /// # Arguments
+    ///
+    /// * `description` - Description of the progress task  
+    /// * `stats` - Progress statistics
+    ///
+    /// # Returns
+    ///
+    /// CSV formatted string containing progress data
+    pub fn csv(description: &str, stats: &ProgressStats) -> String {
+        Self::format_csv(description, stats)
     }
 }
 
@@ -406,14 +455,16 @@ mod tests {
         let colored = colors.apply_color("test", ColorType::Fill);
         assert!(colored.contains("\x1b[32m")); // Green
         assert!(colored.contains("\x1b[0m")); // Reset
+        assert!(colors.fill_color.is_some());
     }
 
     #[test]
     fn test_progress_formatter_json() {
         let stats = ProgressStats::new(100);
         let json_output = ProgressFormatter::json("Test", &stats);
-        assert!(json_output.contains("\"description\":\"Test\""));
+        assert!(json_output.contains("\"_description\":\"Test\""));
         assert!(json_output.contains("\"total\":100"));
+        assert_eq!(stats.total, 100);
     }
 
     #[test]
@@ -422,5 +473,6 @@ mod tests {
         let csv_output = ProgressFormatter::csv("Test", &stats);
         assert!(csv_output.starts_with("Test,"));
         assert!(csv_output.contains(",100,"));
+        assert_eq!(stats.total, 100);
     }
 }

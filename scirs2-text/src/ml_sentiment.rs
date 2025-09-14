@@ -146,12 +146,12 @@ impl MLSentimentAnalyzer {
     }
 
     /// Evaluate on test dataset
-    pub fn evaluate(&self, test_dataset: &TextDataset) -> Result<EvaluationMetrics> {
-        let texts: Vec<&str> = test_dataset.texts.iter().map(|s| s.as_str()).collect();
+    pub fn evaluate(&self, testdataset: &TextDataset) -> Result<EvaluationMetrics> {
+        let texts: Vec<&str> = testdataset.texts.iter().map(|s| s.as_str()).collect();
         let features = self.vectorizer.transform_batch(&texts)?;
 
         let predictions = self.predict_numeric(&features)?;
-        let true_labels = self.labels_to_numeric(&test_dataset.labels)?;
+        let true_labels = self.labels_to_numeric(&testdataset.labels)?;
 
         // Calculate metrics
         let metrics = TextClassificationMetrics::new();
@@ -208,7 +208,7 @@ impl MLSentimentAnalyzer {
                 self.label_map
                     .get(label)
                     .copied()
-                    .ok_or_else(|| TextError::InvalidInput(format!("Unknown label: {}", label)))
+                    .ok_or_else(|| TextError::InvalidInput(format!("Unknown label: {label}")))
             })
             .collect()
     }
@@ -356,21 +356,21 @@ impl MLSentimentAnalyzer {
         Ok(probabilities)
     }
 
-    fn calculate_accuracy(&self, predictions: &[i32], true_labels: &[i32]) -> f64 {
+    fn calculate_accuracy(&self, predictions: &[i32], truelabels: &[i32]) -> f64 {
         let correct = predictions
             .iter()
-            .zip(true_labels.iter())
+            .zip(truelabels.iter())
             .filter(|(&pred, &true_label)| pred == true_label)
             .count();
 
         correct as f64 / predictions.len() as f64
     }
 
-    fn confusion_matrix(&self, predictions: &[i32], true_labels: &[i32]) -> Array2<i32> {
+    fn confusion_matrix(&self, predictions: &[i32], truelabels: &[i32]) -> Array2<i32> {
         let n_classes = self.label_map.len();
         let mut matrix = Array2::zeros((n_classes, n_classes));
 
-        for (&pred, &true_label) in predictions.iter().zip(true_labels.iter()) {
+        for (&pred, &true_label) in predictions.iter().zip(truelabels.iter()) {
             if pred >= 0
                 && pred < n_classes as i32
                 && true_label >= 0
@@ -477,13 +477,13 @@ mod tests {
         analyzer.train(&dataset).unwrap();
 
         // Test multiple positive examples to avoid test flakiness
-        for positive_text in &[
+        for positivetext in &[
             "This is amazing!",
             "Absolutely wonderful experience",
             "Great product, loved it",
             "Fantastic results, highly recommend",
         ] {
-            let _result = analyzer.predict(positive_text).unwrap();
+            let _result = analyzer.predict(positivetext).unwrap();
             // Don't assert on the specific sentiment, as these simple models
             // can be unpredictable with limited training data
             // Just ensure no error is thrown

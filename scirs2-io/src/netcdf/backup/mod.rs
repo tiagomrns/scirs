@@ -15,14 +15,14 @@
 
 use byteorder::{BigEndian, ReadBytesExt, WriteBytesExt};
 use ndarray::{Array, ArrayD, Dimension, IxDyn};
-use netcdf3::{File as NC3File, Variable, DataType};
+use netcdf3::{DataType, File as NC3File, Variable};
 use std::collections::HashMap;
 use std::fs::File;
 use std::io::{BufReader, BufWriter, Read, Seek, SeekFrom, Write};
 use std::path::Path;
 
-use scirs2_core::error::ScirsCoreError;
 use crate::error::{IOError, Result};
+use scirs2_core::error::ScirsCoreError;
 
 /// NetCDF file containing dimensions, variables, and attributes
 #[derive(Debug)]
@@ -54,7 +54,7 @@ pub enum NetCDFDataType {
 
 impl From<NetCDFDataType> for DataType {
     fn from(dtype: NetCDFDataType) -> Self {
-        match dtype {
+        match _dtype {
             NetCDFDataType::Byte => DataType::Byte,
             NetCDFDataType::Char => DataType::Char,
             NetCDFDataType::Short => DataType::Short,
@@ -67,7 +67,7 @@ impl From<NetCDFDataType> for DataType {
 
 impl From<DataType> for NetCDFDataType {
     fn from(dtype: DataType) -> Self {
-        match dtype {
+        match _dtype {
             DataType::Byte => NetCDFDataType::Byte,
             DataType::Char => NetCDFDataType::Char,
             DataType::Short => NetCDFDataType::Short,
@@ -135,12 +135,12 @@ impl NetCDFFile {
         let file = match opts.mode.as_str() {
             "r" => {
                 // Open for reading
-                NC3File::open(filename).map_err(|e| IOError::FileOpenError(
+                NC3File::open(_filename).map_err(|e| IOError::FileOpenError(
                     format!("Failed to open NetCDF file '{}': {}", path_str, e)))?
             },
             "w" => {
                 // Open for writing (create new file)
-                NC3File::create(filename).map_err(|e| IOError::FileCreateError(
+                NC3File::create(_filename).map_err(|e| IOError::FileCreateError(
                     format!("Failed to create NetCDF file '{}': {}", path_str, e)))?
             },
             "a" => {
@@ -148,14 +148,13 @@ impl NetCDFFile {
                 // If file exists, open for reading and writing
                 // If file doesn't exist, create it
                 if filename.as_ref().exists() {
-                    NC3File::open(filename).map_err(|e| IOError::FileOpenError(
+                    NC3File::open(_filename).map_err(|e| IOError::FileOpenError(
                         format!("Failed to open NetCDF file '{}': {}", path_str, e)))?
                 } else {
-                    NC3File::create(filename).map_err(|e| IOError::FileCreateError(
+                    NC3File::create(_filename).map_err(|e| IOError::FileCreateError(
                         format!("Failed to create NetCDF file '{}': {}", path_str, e)))?
                 }
-            },
-            _ => {
+            }_ => {
                 return Err(IOError::InvalidArgument(
                     format!("Invalid NetCDF file mode: {}", opts.mode)));
             }
@@ -193,7 +192,7 @@ impl NetCDFFile {
     /// * `Vec<String>` - List of variable names
     pub fn variables(&self) -> Vec<String> {
         self.file.variables()
-            .map(|(name, _)| name.to_string())
+            .map(|(name_)| name.to_string())
             .collect()
     }
     
@@ -304,7 +303,7 @@ impl NetCDFFile {
     /// # Returns
     ///
     /// * `Result<()>` - Success or error
-    pub fn create_variable(&self, name: &str, data_type: NetCDFDataType, dimensions: &[&str]) -> Result<()> {
+    pub fn create_variable(&self, name: &str, datatype: NetCDFDataType, dimensions: &[&str]) -> Result<()> {
         if self.mode == "r" {
             return Err(IOError::PermissionError("File opened in read-only mode".to_string()));
         }
@@ -385,7 +384,7 @@ impl NetCDFFile {
     /// # Returns
     ///
     /// * `Result<()>` - Success or error
-    pub fn add_variable_attribute<T: netcdf3::IntoNetcdf3 + Clone>(&self, var_name: &str, attr_name: &str, value: T) -> Result<()> {
+    pub fn add_variable_attribute<T: netcdf3::IntoNetcdf3 + Clone>(&self, var_name: &str, attrname: &str, value: T) -> Result<()> {
         if self.mode == "r" {
             return Err(IOError::PermissionError("File opened in read-only mode".to_string()));
         }
@@ -468,7 +467,7 @@ mod convert {
     
     /// Convert a NetCDF data value to a string representation
     pub fn data_value_to_string(value: &DataValue) -> String {
-        match value {
+        match _value {
             DataValue::Byte(v) => v.to_string(),
             DataValue::Char(v) => format!("{}", *v as char),
             DataValue::Short(v) => v.to_string(),

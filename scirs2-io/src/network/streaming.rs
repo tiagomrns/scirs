@@ -75,7 +75,7 @@ pub struct ProgressReader<R: Read> {
     inner: R,
     bytes_read: u64,
     total_bytes: Option<u64>,
-    progress_callback: Option<ProgressCallback>,
+    progresscallback: Option<ProgressCallback>,
     progress_interval: u64,
     last_progress_report: u64,
     start_time: std::time::Instant,
@@ -88,7 +88,7 @@ impl<R: Read> ProgressReader<R> {
             inner,
             bytes_read: 0,
             total_bytes: None,
-            progress_callback: None,
+            progresscallback: None,
             progress_interval: 1024 * 1024, // 1MB
             last_progress_report: 0,
             start_time: std::time::Instant::now(),
@@ -102,8 +102,8 @@ impl<R: Read> ProgressReader<R> {
     }
 
     /// Set progress callback
-    pub fn with_progress_callback(mut self, callback: ProgressCallback) -> Self {
-        self.progress_callback = Some(callback);
+    pub fn with_progresscallback(mut self, callback: ProgressCallback) -> Self {
+        self.progresscallback = Some(callback);
         self
     }
 
@@ -141,7 +141,7 @@ impl<R: Read> ProgressReader<R> {
     }
 
     fn report_progress(&mut self) {
-        if let Some(ref callback) = self.progress_callback {
+        if let Some(ref callback) = self.progresscallback {
             let progress = self.progress();
             callback(progress);
             self.last_progress_report = self.bytes_read;
@@ -168,7 +168,7 @@ pub struct ProgressWriter<W: Write> {
     inner: W,
     bytes_written: u64,
     total_bytes: Option<u64>,
-    progress_callback: Option<ProgressCallback>,
+    progresscallback: Option<ProgressCallback>,
     progress_interval: u64,
     last_progress_report: u64,
     start_time: std::time::Instant,
@@ -181,7 +181,7 @@ impl<W: Write> ProgressWriter<W> {
             inner,
             bytes_written: 0,
             total_bytes: None,
-            progress_callback: None,
+            progresscallback: None,
             progress_interval: 1024 * 1024, // 1MB
             last_progress_report: 0,
             start_time: std::time::Instant::now(),
@@ -195,8 +195,8 @@ impl<W: Write> ProgressWriter<W> {
     }
 
     /// Set progress callback
-    pub fn with_progress_callback(mut self, callback: ProgressCallback) -> Self {
-        self.progress_callback = Some(callback);
+    pub fn with_progresscallback(mut self, callback: ProgressCallback) -> Self {
+        self.progresscallback = Some(callback);
         self
     }
 
@@ -234,7 +234,7 @@ impl<W: Write> ProgressWriter<W> {
     }
 
     fn report_progress(&mut self) {
-        if let Some(ref callback) = self.progress_callback {
+        if let Some(ref callback) = self.progresscallback {
             let progress = self.progress();
             callback(progress);
             self.last_progress_report = self.bytes_written;
@@ -353,15 +353,15 @@ pub struct ChunkedWriter {
 
 impl ChunkedWriter {
     /// Create a new chunked writer
-    pub fn new<P: AsRef<Path>>(path: P, buffer_size: usize) -> Result<Self> {
+    pub fn new<P: AsRef<Path>>(path: P, buffersize: usize) -> Result<Self> {
         let file = std::fs::File::create(path.as_ref())
             .map_err(|e| IoError::FileError(format!("Failed to create file: {}", e)))?;
 
         Ok(Self {
             file,
             bytes_written: 0,
-            buffer: Vec::with_capacity(buffer_size),
-            buffer_size,
+            buffer: Vec::with_capacity(buffersize),
+            buffer_size: buffersize,
         })
     }
 
@@ -406,11 +406,12 @@ impl ChunkedWriter {
 }
 
 /// Stream copy with progress tracking
+#[allow(dead_code)]
 pub fn copy_with_progress<R: Read, W: Write>(
     mut reader: R,
     mut writer: W,
     total_size: Option<u64>,
-    progress_callback: Option<ProgressCallback>,
+    progresscallback: Option<ProgressCallback>,
 ) -> Result<u64> {
     let mut buffer = vec![0u8; 64 * 1024]; // 64KB buffer
     let mut total_copied = 0u64;
@@ -434,7 +435,7 @@ pub fn copy_with_progress<R: Read, W: Write>(
         total_copied += bytes_read as u64;
 
         // Report progress if needed
-        if let Some(ref callback) = progress_callback {
+        if let Some(ref callback) = progresscallback {
             if total_copied - last_progress_report >= progress_interval {
                 let elapsed = start_time.elapsed().as_secs_f64();
                 let rate = if elapsed > 0.0 {
@@ -467,7 +468,7 @@ pub fn copy_with_progress<R: Read, W: Write>(
     }
 
     // Final progress report
-    if let Some(ref callback) = progress_callback {
+    if let Some(ref callback) = progresscallback {
         let elapsed = start_time.elapsed().as_secs_f64();
         let rate = if elapsed > 0.0 {
             total_copied as f64 / elapsed
@@ -494,7 +495,7 @@ pub async fn async_copy_with_progress<R, W>(
     mut reader: R,
     mut writer: W,
     total_size: Option<u64>,
-    progress_callback: Option<ProgressCallback>,
+    progresscallback: Option<ProgressCallback>,
 ) -> Result<u64>
 where
     R: tokio::io::AsyncRead + Unpin,
@@ -526,7 +527,7 @@ where
         total_copied += bytes_read as u64;
 
         // Report progress if needed
-        if let Some(ref callback) = progress_callback {
+        if let Some(ref callback) = progresscallback {
             if total_copied - last_progress_report >= progress_interval {
                 let elapsed = start_time.elapsed().as_secs_f64();
                 let rate = if elapsed > 0.0 {

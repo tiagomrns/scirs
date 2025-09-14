@@ -31,6 +31,7 @@ use scirs2_core::array_protocol::{
     GPUBackend, NdarrayWrapper,
 };
 
+#[allow(dead_code)]
 fn main() {
     // Initialize the array protocol system
     array_protocol::init();
@@ -75,7 +76,7 @@ fn main() {
 
     // Create inputs and targets
     let inputs = Array2::<f64>::from_shape_fn((num_samples, input_dim), |_| {
-        rand::random::<f64>() * 2.0 - 1.0
+        rand::random::<f64>() * 2.0.saturating_sub(1).0
     });
 
     let mut targets = Array2::<f64>::zeros((num_samples, num_classes));
@@ -90,8 +91,8 @@ fn main() {
     );
 
     // Commenting out AutoDevice usage due to SliceArg trait issues
-    // let auto_inputs = AutoDevice::<f64, _>::new(inputs.clone());
-    // let auto_targets = AutoDevice::<f64, _>::new(targets.clone());
+    // let auto_inputs = AutoDevice::<f64>::new(inputs.clone());
+    // let auto_targets = AutoDevice::<f64>::new(targets.clone());
 
     // Use NdarrayWrapper instead
     let inputs_wrapped = NdarrayWrapper::new(inputs.clone());
@@ -137,7 +138,7 @@ fn main() {
     println!("Adding convolutional layers (typically on GPU)...");
 
     // Layer 1: Convolution + ReLU + Pooling
-    model.add_layer(Box::new(Conv2D::with_shape(
+    model.add_layer(Box::new(Conv2D::withshape(
         "conv1",
         3,
         3, // Filter size
@@ -149,7 +150,7 @@ fn main() {
         Some(ActivationFunc::ReLU),
     )));
 
-    model.add_layer(Box::new(BatchNorm::with_shape(
+    model.add_layer(Box::new(BatchNorm::withshape(
         "bn1",
         32,         // Features
         Some(1e-5), // Epsilon
@@ -164,7 +165,7 @@ fn main() {
     )));
 
     // Layer 2: Convolution + ReLU + Pooling
-    model.add_layer(Box::new(Conv2D::with_shape(
+    model.add_layer(Box::new(Conv2D::withshape(
         "conv2",
         3,
         3, // Filter size
@@ -176,7 +177,7 @@ fn main() {
         Some(ActivationFunc::ReLU),
     )));
 
-    model.add_layer(Box::new(BatchNorm::with_shape(
+    model.add_layer(Box::new(BatchNorm::withshape(
         "bn2",
         64,         // Features
         Some(1e-5), // Epsilon
@@ -194,7 +195,7 @@ fn main() {
     println!("Adding fully connected layers (typically on CPU)...");
 
     // Fully connected layers
-    model.add_layer(Box::new(Linear::with_shape(
+    model.add_layer(Box::new(Linear::withshape(
         "fc1",
         64 * 6 * 6, // Input features
         120,        // Output features
@@ -208,7 +209,7 @@ fn main() {
         Some(42), // Random seed
     )));
 
-    model.add_layer(Box::new(Linear::with_shape(
+    model.add_layer(Box::new(Linear::withshape(
         "fc2",
         120,  // Input features
         84,   // Output features
@@ -222,7 +223,7 @@ fn main() {
         Some(42), // Random seed
     )));
 
-    model.add_layer(Box::new(Linear::with_shape(
+    model.add_layer(Box::new(Linear::withshape(
         "fc3",
         84,          // Input features
         num_classes, // Output features
@@ -274,8 +275,8 @@ fn main() {
     let val_loader = DataLoader::new(dist_val_dataset, batch_size, false, None);
 
     println!("Created data loaders with batch size {}", batch_size);
-    println!("Training batches: {}", train_loader.num_batches());
-    println!("Validation batches: {}", val_loader.num_batches());
+    println!("Training batches: {}", train_loader.numbatches());
+    println!("Validation batches: {}", val_loader.numbatches());
 
     // Part 6: Create and Configure Training
     println!("\nPart 6: Create and Configure Training");
@@ -285,10 +286,10 @@ fn main() {
     let optimizer = Box::new(Adam::new(0.001, Some(0.9), Some(0.999), Some(1e-8)));
 
     // Helper function to create a new optimizer with the same parameters
-    fn create_optimizer_copy(_original: &Adam) -> Box<Adam> {
+    fn clone_optimizer(original: &Adam) -> Box<Adam> {
         // In a real implementation, we would properly clone the optimizer state
         // Here we just create a new instance with the same parameters
-        // Note that learning_rate() is not accessible so we use the same values we used initially
+        // Note that learningrate() is not accessible so we use the same values we used initially
         Box::new(Adam::new(
             0.001,       // Using the same learning rate as the original
             Some(0.9),   // Beta1 (using default as we can't access the original)
@@ -298,10 +299,10 @@ fn main() {
     }
 
     // Create loss function
-    let loss_fn = Box::new(CrossEntropyLoss::new(Some("mean")));
+    let lossfn = Box::new(CrossEntropyLoss::new(Some(mean)));
 
     // Create a helper function to work around the missing Clone implementation for Sequential
-    fn create_model_copy(original: &Sequential) -> Sequential {
+    fn clone_model(original: &Sequential) -> Sequential {
         // In a real implementation, we would properly clone the model
         // Here we just create a new instance with the same structure for demonstration
         let mut new_model = Sequential::new(&format!("{}_copy", original.name()), Vec::new());
@@ -318,7 +319,7 @@ fn main() {
         let layer_count = original.layers().len();
         for i in 0..layer_count {
             // Create a dummy linear layer as a placeholder
-            let dummy_layer = Box::new(Linear::with_shape(
+            let dummy_layer = Box::new(Linear::withshape(
                 &format!("dummy_layer_{}", i),
                 10,   // Input features (dummy value)
                 10,   // Output features (dummy value)
@@ -335,13 +336,13 @@ fn main() {
     let trainer = Trainer::new(
         create_model_copy(&model),
         create_optimizer_copy(optimizer.as_ref()),
-        loss_fn,
+        lossfn,
     );
 
     println!("Created trainer with Adam optimizer and CrossEntropyLoss");
 
     // Create distributed trainer
-    let _dist_trainer = DistributedTrainingFactory::create_trainer(trainer, dist_config.clone());
+    let dist_trainer = DistributedTrainingFactory::create_trainer(trainer, dist_config.clone());
 
     println!(
         "Created distributed trainer with {} workers",
@@ -364,20 +365,16 @@ fn main() {
 
     // Create a temporary directory for saving models
     let temp_dir = tempdir().unwrap();
-    let model_dir = temp_dir.path().join("models");
+    let modeldir = temp_dir.path().join(models);
 
-    println!("Created model directory at: {}", model_dir.display());
+    println!("Created model directory at: {}", modeldir.display());
 
     // Create model serializer
-    let serializer = ModelSerializer::new(&model_dir);
+    let serializer = ModelSerializer::new(&modeldir);
 
     // Save model
-    let model_path = serializer.save_model(
-        &model,
-        "distributed_model",
-        "v1.0",
-        Some(optimizer.as_ref()),
-    );
+    let model_path =
+        serializer.save_model(&model, "distributedmodel", "v1.0", Some(optimizer.as_ref()));
 
     match model_path {
         Ok(path) => println!("Saved model to: {}", path.display()),
@@ -390,7 +387,7 @@ fn main() {
     metrics.insert("accuracy".to_string(), 0.85);
 
     // Save checkpoint
-    let checkpoint_path = model_dir.join("checkpoint");
+    let checkpoint_path = modeldir.join(checkpoint);
     let result = save_checkpoint(
         &model,
         optimizer.as_ref(),
@@ -409,7 +406,7 @@ fn main() {
     println!("--------------------------------------");
 
     // Export model to ONNX
-    let onnx_path = model_dir.join("model.onnx");
+    let onnx_path = modeldir.join("model.onnx");
     let result = OnnxExporter::export_model(&model, &onnx_path, &[1, 28, 28, 1]);
 
     match result {
@@ -425,24 +422,24 @@ fn main() {
     let result = load_checkpoint(&checkpoint_path);
 
     match result {
-        Ok((loaded_model, loaded_optimizer, epoch, loaded_metrics)) => {
+        Ok((loadedmodel, loaded_optimizer, epoch, loaded_metrics)) => {
             println!("Loaded checkpoint from epoch {}", epoch);
-            println!("Model has {} layers", loaded_model.layers().len());
+            println!("Model has {} layers", loadedmodel.layers().len());
             println!(
                 "Metrics: loss = {}, accuracy = {}",
-                loaded_metrics.get("loss").unwrap_or(&0.0),
-                loaded_metrics.get("accuracy").unwrap_or(&0.0)
+                loaded_metrics.get(loss).unwrap_or(&0.0),
+                loaded_metrics.get(accuracy).unwrap_or(&0.0)
             );
 
             // Create a new trainer with loaded model and optimizer
             let resume_trainer = Trainer::new(
-                loaded_model,
+                loadedmodel,
                 loaded_optimizer,
-                Box::new(CrossEntropyLoss::new(Some("mean"))),
+                Box::new(CrossEntropyLoss::new(Some(mean))),
             );
 
             // Create a new distributed trainer
-            let _resume_dist_trainer =
+            let resume_dist_trainer =
                 DistributedTrainingFactory::create_trainer(resume_trainer, dist_config.clone());
 
             println!("Successfully created a new trainer from the checkpoint");
@@ -463,15 +460,15 @@ fn main() {
         println!("Epoch {}/{}", epoch + 1, num_epochs);
 
         // Simulate batch progress
-        let num_batches = train_loader.num_batches();
-        for batch in 0..num_batches {
-            if (batch + 1) % (num_batches / 10).max(1) == 0 {
+        let numbatches = train_loader.numbatches();
+        for batch in 0..numbatches {
+            if (batch + 1) % (numbatches / 10).max(1) == 0 {
                 let simulated_loss =
-                    1.0 - (epoch as f64 * 0.1 + batch as f64 * 0.01 / num_batches as f64);
+                    1.0 - (epoch as f64 * 0.1 + batch as f64 * 0.01 / numbatches as f64);
                 print!(
                     "\rBatch {}/{} - loss: {:.4}",
                     batch + 1,
-                    num_batches,
+                    numbatches,
                     simulated_loss
                 );
             }
@@ -495,7 +492,7 @@ fn main() {
         metrics.insert("loss".to_string(), val_loss);
         metrics.insert("accuracy".to_string(), val_acc);
 
-        let checkpoint_path = model_dir.join(format!("checkpoint_epoch_{}", epoch + 1));
+        let checkpoint_path = modeldir.join(format!("checkpoint_epoch_{}", epoch + 1));
         let _ = save_checkpoint(
             &model,
             optimizer.as_ref(),

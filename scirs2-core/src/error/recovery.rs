@@ -21,8 +21,8 @@ pub enum RecoveryStrategy {
     /// Retry with exponential backoff
     ExponentialBackoff {
         max_attempts: usize,
-        initial_delay: Duration,
-        max_delay: Duration,
+        initialdelay: Duration,
+        maxdelay: Duration,
         multiplier: f64,
     },
     /// Retry with linear backoff
@@ -39,7 +39,7 @@ pub enum RecoveryStrategy {
     CircuitBreaker {
         failure_threshold: usize,
         timeout: Duration,
-        recovery_timeout: Duration,
+        recoverytimeout: Duration,
     },
     /// Fallback to alternative implementation
     Fallback,
@@ -51,8 +51,8 @@ impl Default for RecoveryStrategy {
     fn default() -> Self {
         Self::ExponentialBackoff {
             max_attempts: 3,
-            initial_delay: Duration::from_millis(100),
-            max_delay: Duration::from_secs(5),
+            initialdelay: Duration::from_millis(100),
+            maxdelay: Duration::from_secs(5),
             multiplier: 2.0,
         }
     }
@@ -166,8 +166,8 @@ impl fmt::Display for ErrorSeverity {
 
 impl RecoverableError {
     /// Create a new recoverable error
-    pub fn new(error: CoreError) -> Self {
-        let (strategy, hints, retryable, severity) = Self::analyze_error(&error);
+    pub fn error(error: CoreError) -> Self {
+        let (strategy, hints, retryable, severity) = Self::analyzeerror(&error);
 
         Self {
             error,
@@ -208,7 +208,7 @@ impl RecoverableError {
     }
 
     /// Analyze an error and suggest recovery strategies
-    fn analyze_error(
+    fn analyzeerror(
         error: &CoreError,
     ) -> (RecoveryStrategy, Vec<RecoveryHint>, bool, ErrorSeverity) {
         match error {
@@ -232,8 +232,8 @@ impl RecoverableError {
             CoreError::ConvergenceError(_) => (
                 RecoveryStrategy::ExponentialBackoff {
                     max_attempts: 5,
-                    initial_delay: Duration::from_millis(500),
-                    max_delay: Duration::from_secs(10),
+                    initialdelay: Duration::from_millis(500),
+                    maxdelay: Duration::from_secs(10),
                     multiplier: 1.5,
                 },
                 vec![
@@ -346,8 +346,8 @@ impl RecoverableError {
             CoreError::IoError(_) => (
                 RecoveryStrategy::ExponentialBackoff {
                     max_attempts: 3,
-                    initial_delay: Duration::from_millis(200),
-                    max_delay: Duration::from_secs(2),
+                    initialdelay: Duration::from_millis(200),
+                    maxdelay: Duration::from_secs(2),
                     multiplier: 2.0,
                 },
                 vec![
@@ -364,9 +364,7 @@ impl RecoverableError {
                 ],
                 true,
                 ErrorSeverity::Warning,
-            ),
-
-            _ => (
+            ), _ => (
                 RecoveryStrategy::default(),
                 vec![
                     RecoveryHint::new(
@@ -405,7 +403,7 @@ impl RecoverableError {
         if !self.metadata.is_empty() {
             report.push_str("\n📋 Additional information:\n");
             for (key, value) in &self.metadata {
-                report.push_str(&format!("   {}: {}\n", key, value));
+                report.push_str(&format!("   {key}: {value}\n"));
             }
         }
 
@@ -431,7 +429,7 @@ pub struct CircuitBreaker {
     failure_threshold: usize,
     #[allow(dead_code)]
     timeout: Duration,
-    recovery_timeout: Duration,
+    recoverytimeout: Duration,
     state: Arc<Mutex<CircuitBreakerState>>,
 }
 
@@ -451,17 +449,22 @@ pub enum CircuitState {
 
 impl CircuitBreaker {
     /// Create a new circuit breaker
-    pub fn new(failure_threshold: usize, timeout: Duration, recovery_timeout: Duration) -> Self {
+    pub fn timeout(failure_threshold: usize, timeout: Duration, recoverytimeout: Duration) -> Self {
         Self {
             failure_threshold,
             timeout,
-            recovery_timeout,
+            recoverytimeout,
             state: Arc::new(Mutex::new(CircuitBreakerState {
                 failure_count: 0,
                 last_failure_time: None,
                 state: CircuitState::Closed,
             })),
         }
+    }
+
+    /// Create a new circuit breaker (alias for timeout method)
+    pub fn new(failure_threshold: usize, timeout: Duration, recoverytimeout: Duration) -> Self {
+        Self::timeout(failure_threshold, timeout, recoverytimeout)
     }
 
     /// Execute a function with circuit breaker protection
@@ -496,7 +499,7 @@ impl CircuitBreaker {
             CircuitState::Closed => true,
             CircuitState::Open => {
                 if let Some(last_failure) = state.last_failure_time {
-                    if last_failure.elapsed() >= self.recovery_timeout {
+                    if last_failure.elapsed() >= self.recoverytimeout {
                         state.state = CircuitState::HalfOpen;
                         true
                     } else {
@@ -549,8 +552,10 @@ impl fmt::Display for CircuitBreakerStatus {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(
             f,
-            "Circuit breaker: {:?} ({}/{} failures)",
-            self.state, self.failure_count, self.failure_threshold
+            "Circuit breaker: {state:?} ({failure_count}/{failure_threshold} failures)",
+            state = self.state,
+            failure_count = self.failure_count,
+            failure_threshold = self.failure_threshold
         )
     }
 }
@@ -563,8 +568,13 @@ pub struct RetryExecutor {
 
 impl RetryExecutor {
     /// Create a new retry executor with the given strategy
-    pub fn new(strategy: RecoveryStrategy) -> Self {
+    pub fn strategy(strategy: RecoveryStrategy) -> Self {
         Self { strategy }
+    }
+
+    /// Create a new retry executor (alias for strategy method)
+    pub fn new(strategy: RecoveryStrategy) -> Self {
+        Self::strategy(strategy)
     }
 
     /// Execute a function with retry logic
@@ -577,18 +587,18 @@ impl RetryExecutor {
 
             RecoveryStrategy::ExponentialBackoff {
                 max_attempts,
-                initial_delay,
-                max_delay,
+                initialdelay,
+                maxdelay,
                 multiplier,
             } => {
-                let mut delay = *initial_delay;
-                let mut last_error = None;
+                let mut delay = *initialdelay;
+                let mut lasterror = None;
 
                 for attempt in 0..*max_attempts {
                     match f() {
                         Ok(result) => return Ok(result),
                         Err(err) => {
-                            last_error = Some(err);
+                            lasterror = Some(err);
 
                             if attempt < max_attempts - 1 {
                                 std::thread::sleep(delay);
@@ -596,27 +606,27 @@ impl RetryExecutor {
                                     Duration::from_nanos(
                                         (delay.as_nanos() as f64 * multiplier) as u64,
                                     ),
-                                    *max_delay,
+                                    *maxdelay,
                                 );
                             }
                         }
                     }
                 }
 
-                Err(last_error.unwrap())
+                Err(lasterror.unwrap())
             }
 
             RecoveryStrategy::LinearBackoff {
                 max_attempts,
                 delay,
             } => {
-                let mut last_error = None;
+                let mut lasterror = None;
 
                 for attempt in 0..*max_attempts {
                     match f() {
                         Ok(result) => return Ok(result),
                         Err(err) => {
-                            last_error = Some(err);
+                            lasterror = Some(err);
 
                             if attempt < max_attempts - 1 {
                                 std::thread::sleep(*delay);
@@ -625,20 +635,20 @@ impl RetryExecutor {
                     }
                 }
 
-                Err(last_error.unwrap())
+                Err(lasterror.unwrap())
             }
 
             RecoveryStrategy::CustomBackoff {
                 max_attempts,
                 delays,
             } => {
-                let mut last_error = None;
+                let mut lasterror = None;
 
                 for attempt in 0..*max_attempts {
                     match f() {
                         Ok(result) => return Ok(result),
                         Err(err) => {
-                            last_error = Some(err);
+                            lasterror = Some(err);
 
                             if attempt < max_attempts - 1 {
                                 if let Some(&delay) = delays.get(attempt) {
@@ -649,7 +659,7 @@ impl RetryExecutor {
                     }
                 }
 
-                Err(last_error.unwrap())
+                Err(lasterror.unwrap())
             }
 
             _ => f(), // Other strategies not applicable for retry
@@ -661,7 +671,7 @@ impl RetryExecutor {
 #[derive(Debug, Default)]
 pub struct ErrorAggregator {
     errors: Vec<RecoverableError>,
-    max_errors: Option<usize>,
+    maxerrors: Option<usize>,
 }
 
 impl ErrorAggregator {
@@ -671,16 +681,16 @@ impl ErrorAggregator {
     }
 
     /// Create a new error aggregator with maximum error limit
-    pub fn with_max_errors(max_errors: usize) -> Self {
+    pub fn errors(maxerrors: usize) -> Self {
         Self {
             errors: Vec::new(),
-            max_errors: Some(max_errors),
+            maxerrors: Some(maxerrors),
         }
     }
 
     /// Add an error to the aggregator
-    pub fn add_error(&mut self, error: RecoverableError) {
-        if let Some(max) = self.max_errors {
+    pub fn adderror(&mut self, error: RecoverableError) {
+        if let Some(max) = self.maxerrors {
             if self.errors.len() >= max {
                 return; // Ignore additional errors
             }
@@ -690,12 +700,12 @@ impl ErrorAggregator {
     }
 
     /// Add a simple error to the aggregator
-    pub fn add_simple_error(&mut self, error: CoreError) {
-        self.add_error(RecoverableError::new(error));
+    pub fn add_simpleerror(&mut self, error: CoreError) {
+        self.adderror(RecoverableError::error(error));
     }
 
     /// Check if there are any errors
-    pub fn has_errors(&self) -> bool {
+    pub fn haserrors(&self) -> bool {
         !self.errors.is_empty()
     }
 
@@ -705,12 +715,12 @@ impl ErrorAggregator {
     }
 
     /// Get all errors
-    pub fn errors(&self) -> &[RecoverableError] {
+    pub fn errors_2(&self) -> &[RecoverableError] {
         &self.errors
     }
 
     /// Get the most severe error
-    pub fn most_severe_error(&self) -> Option<&RecoverableError> {
+    pub fn most_severeerror(&self) -> Option<&RecoverableError> {
         self.errors.iter().max_by_key(|err| err.severity)
     }
 
@@ -720,30 +730,33 @@ impl ErrorAggregator {
             return "No errors".to_string();
         }
 
-        let mut summary = format!("Collected {} error(s):\n", self.errors.len());
+        let mut summary = format!("Collected {count} error(s):\n", count = self.errors.len());
 
         for (i, error) in self.errors.iter().enumerate() {
             summary.push_str(&format!(
-                "{}. [{}] {}\n",
-                i + 1,
-                error.severity,
-                error.error
+                "{num}. [{severity}] {error}\n",
+                num = i + 1,
+                severity = error.severity,
+                error = error.error
             ));
         }
 
-        if let Some(most_severe) = self.most_severe_error() {
-            summary.push_str(&format!("\nMost severe: {}\n", most_severe.error));
+        if let Some(most_severe) = self.most_severeerror() {
+            summary.push_str(&format!(
+                "\nMost severe: {error}\n",
+                error = most_severe.error
+            ));
         }
 
         summary
     }
 
     /// Convert to a single error if there are any errors
-    pub fn into_result<T>(self, success_value: T) -> Result<T, RecoverableError> {
+    pub fn into_result<T>(self, successvalue: T) -> Result<T, Box<RecoverableError>> {
         if let Some(most_severe) = self.errors.into_iter().max_by_key(|err| err.severity) {
-            Err(most_severe)
+            Err(Box::new(most_severe))
         } else {
-            Ok(success_value)
+            Ok(successvalue)
         }
     }
 
@@ -837,9 +850,9 @@ mod tests {
     }
 
     #[test]
-    fn test_recoverable_error_analysis() {
-        let domain_error = CoreError::DomainError(ErrorContext::new("Test domain error"));
-        let recoverable = RecoverableError::new(domain_error);
+    fn test_recoverableerror_analysis() {
+        let domainerror = CoreError::DomainError(ErrorContext::new("Test domain error"));
+        let recoverable = RecoverableError::error(domainerror);
 
         assert!(!recoverable.retryable);
         assert_eq!(recoverable.severity, ErrorSeverity::Error);
@@ -847,16 +860,16 @@ mod tests {
     }
 
     #[test]
-    fn test_circuit_breaker() {
+    fn test_circuitbreaker() {
         let cb = CircuitBreaker::new(2, Duration::from_millis(100), Duration::from_millis(500));
 
         // First failure
-        let result: std::result::Result<(), _> =
+        let result: std::result::Result<(), CoreError> =
             cb.execute(|| Err(CoreError::ComputationError(ErrorContext::new("Test error"))));
         assert!(result.is_err());
 
         // Second failure - should trigger circuit open
-        let result: std::result::Result<(), _> =
+        let result: std::result::Result<(), CoreError> =
             cb.execute(|| Err(CoreError::ComputationError(ErrorContext::new("Test error"))));
         assert!(result.is_err());
 
@@ -890,14 +903,14 @@ mod tests {
     }
 
     #[test]
-    fn test_error_aggregator() {
+    fn testerror_aggregator() {
         let mut aggregator = ErrorAggregator::new();
 
-        aggregator.add_simple_error(CoreError::ValueError(ErrorContext::new("Error 1")));
-        aggregator.add_simple_error(CoreError::DomainError(ErrorContext::new("Error 2")));
+        aggregator.add_simpleerror(CoreError::ValueError(ErrorContext::new("Error 1")));
+        aggregator.add_simpleerror(CoreError::DomainError(ErrorContext::new("Error 2")));
 
         assert_eq!(aggregator.error_count(), 2);
-        assert!(aggregator.has_errors());
+        assert!(aggregator.haserrors());
 
         let summary = aggregator.summary();
         assert!(summary.contains("Collected 2 error(s)"));

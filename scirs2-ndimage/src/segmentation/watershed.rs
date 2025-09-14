@@ -2,7 +2,7 @@
 //!
 //! This module provides the watershed segmentation algorithm for image segmentation.
 
-use crate::error::{NdimageError, Result};
+use crate::error::{NdimageError, NdimageResult};
 use ndarray::{Array, Ix2};
 use num_traits::{Float, NumAssign};
 use std::cmp::{Ordering, Reverse};
@@ -86,9 +86,13 @@ impl<T: PartialOrd> Ord for PriorityPoint<T> {
 ///
 /// let segmented = watershed(&image, &markers).unwrap();
 /// ```
-pub fn watershed<T>(image: &Array<T, Ix2>, markers: &Array<i32, Ix2>) -> Result<Array<i32, Ix2>>
+#[allow(dead_code)]
+pub fn watershed<T>(
+    image: &Array<T, Ix2>,
+    markers: &Array<i32, Ix2>,
+) -> NdimageResult<Array<i32, Ix2>>
 where
-    T: Float + NumAssign + std::fmt::Debug,
+    T: Float + NumAssign + std::fmt::Debug + std::ops::DivAssign + 'static,
 {
     // Check shapes match
     if image.shape() != markers.shape() {
@@ -152,9 +156,10 @@ where
         }
 
         // Determine the label for this point
-        if let Some((most_common_label, _)) = neighbor_labels.iter().max_by_key(|&(_, count)| count)
+        if let Some((most_common_label_, _)) =
+            neighbor_labels.iter().max_by_key(|&(_, count)| count)
         {
-            output[[r, c]] = *most_common_label;
+            output[[r, c]] = *most_common_label_;
 
             // Add new neighbors to the queue
             for neighbor in get_neighbors_2d(image, r, c) {
@@ -182,9 +187,10 @@ where
 }
 
 /// Get the neighbors of a point in a 2D array
+#[allow(dead_code)]
 fn get_neighbors_2d<T>(array: &Array<T, Ix2>, row: usize, col: usize) -> Vec<PriorityPoint<T>>
 where
-    T: Float + std::fmt::Debug + Copy,
+    T: Float + std::fmt::Debug + Copy + std::ops::AddAssign + std::ops::DivAssign + 'static,
 {
     let mut neighbors = Vec::new();
     let shape = array.shape();
@@ -224,9 +230,10 @@ where
 }
 
 /// Get the face-connected neighbors of a point in a 2D array (4-connectivity)
+#[allow(dead_code)]
 fn get_face_neighbors_2d<T>(array: &Array<T, Ix2>, row: usize, col: usize) -> Vec<PriorityPoint<T>>
 where
-    T: Float + std::fmt::Debug + Copy,
+    T: Float + std::fmt::Debug + Copy + std::ops::AddAssign + std::ops::DivAssign + 'static,
 {
     let mut neighbors = Vec::new();
     let shape = array.shape();
@@ -292,13 +299,14 @@ where
 ///
 /// let segmented = marker_watershed(&image, &markers, 1).unwrap();
 /// ```
+#[allow(dead_code)]
 pub fn marker_watershed<T>(
     image: &Array<T, Ix2>,
     markers: &Array<i32, Ix2>,
     connectivity: usize,
-) -> Result<Array<i32, Ix2>>
+) -> NdimageResult<Array<i32, Ix2>>
 where
-    T: Float + NumAssign + std::fmt::Debug + Copy,
+    T: Float + NumAssign + std::fmt::Debug + Copy + 'static,
 {
     // Check shapes match
     if image.shape() != markers.shape() {
@@ -377,9 +385,9 @@ where
 
         // If we have labeled neighbors, assign this pixel to the most frequent label
         if !labels.is_empty() {
-            let (most_common_label, _) = labels.iter().max_by_key(|&(_, count)| count).unwrap();
+            let (most_common_label_, _) = labels.iter().max_by_key(|&(_, count)| count).unwrap();
 
-            output[[r, c]] = *most_common_label;
+            output[[r, c]] = *most_common_label_;
 
             // Add unlabeled neighbors to the queue
             let new_neighbors = if connectivity == 1 {

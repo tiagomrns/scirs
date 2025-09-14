@@ -1,4 +1,3 @@
-// FIXME: This example has compilation errors - missing imports and API changes
 #![allow(dead_code)]
 
 use ndarray::{Array1, Array2};
@@ -8,6 +7,7 @@ use scirs2_integrate::ode::utils::linear_solvers::{solve_linear_system, LinearSo
 use std::time::Instant;
 
 // Creates a banded test matrix with specified bandwidth
+#[allow(dead_code)]
 fn create_banded_matrix(n: usize, lower: usize, upper: usize) -> Array2<f64> {
     let mut a = Array2::<f64>::zeros((n, n));
 
@@ -28,6 +28,7 @@ fn create_banded_matrix(n: usize, lower: usize, upper: usize) -> Array2<f64> {
 }
 
 // Creates a dense test matrix
+#[allow(dead_code)]
 fn create_dense_matrix(n: usize) -> Array2<f64> {
     let mut a = Array2::<f64>::zeros((n, n));
 
@@ -48,6 +49,7 @@ fn create_dense_matrix(n: usize) -> Array2<f64> {
 }
 
 // Creates a structured test matrix (Toeplitz)
+#[allow(dead_code)]
 fn create_structured_matrix(n: usize) -> Array2<f64> {
     let mut a = Array2::<f64>::zeros((n, n));
 
@@ -69,6 +71,7 @@ fn create_structured_matrix(n: usize) -> Array2<f64> {
 }
 
 // Compare performance of different linear solvers
+#[allow(dead_code)]
 fn benchmark_solvers(
     matrix_type: &str,
     n: usize,
@@ -76,17 +79,14 @@ fn benchmark_solvers(
     upper: Option<usize>,
     num_trials: usize,
 ) -> IntegrateResult<()> {
-    println!(
-        "\n=== Benchmarking {} matrix (size {}x{}) ===",
-        matrix_type, n, n
-    );
+    println!("\n=== Benchmarking {matrix_type} matrix (size {n}x{n}) ===");
 
-    // Create test matrix based on type
+    // Create test matrix based on _type
     let a = match matrix_type {
         "banded" => {
             let l = lower.unwrap_or(1);
             let u = upper.unwrap_or(1);
-            println!("  (bandwidths: lower={}, upper={})", l, u);
+            println!("  (bandwidths: lower={l}, upper={u})");
             create_banded_matrix(n, l, u)
         }
         "structured" => create_structured_matrix(n),
@@ -183,6 +183,7 @@ fn benchmark_solvers(
     Ok(())
 }
 
+#[allow(dead_code)]
 fn main() -> IntegrateResult<()> {
     println!("Linear Solver Performance Comparison");
     println!("====================================");

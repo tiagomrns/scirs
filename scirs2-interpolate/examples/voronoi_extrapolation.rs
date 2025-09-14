@@ -12,6 +12,7 @@ use scirs2_interpolate::voronoi::{
 use scirs2_interpolate::Extrapolation;
 use std::error::Error;
 
+#[allow(dead_code)]
 fn main() -> Result<(), Box<dyn Error>> {
     // Generate scattered data points in a unit square
     let n_points = 50;

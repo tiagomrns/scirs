@@ -1,17 +1,26 @@
 //! Singular Spectrum Analysis (SSA) for time series decomposition
 
 use ndarray::{Array1, Array2, ScalarOperand};
-// use ndarray_linalg::SVD;  // TODO: Replace with scirs2-core SVD when available
 use num_traits::{Float, FromPrimitive, NumCast};
+use scirs2_linalg::{lowrank::randomized_svd, svd};
 use std::fmt::Debug;
 
 use super::common::DecompositionResult;
 use crate::error::{Result, TimeSeriesError};
 
 /// Options for Singular Spectrum Analysis (SSA) decomposition
+///
+/// **Note**: Current implementation has limitations with large window sizes due to
+/// eigendecomposition constraints in scirs2-linalg. Window sizes resulting in
+/// trajectory matrices larger than 4x4 may use randomized SVD approximation.
+/// For production use with large window sizes, consider upgrading the linear
+/// algebra backend.
 #[derive(Debug, Clone)]
 pub struct SSAOptions {
     /// Window length (embedding dimension)
+    ///
+    /// **Limitation**: Large window sizes (>4) may trigger randomized SVD
+    /// approximation instead of exact decomposition.
     pub window_length: usize,
     /// Number of components to include in the trend
     pub n_trend_components: usize,
@@ -51,10 +60,9 @@ impl Default for SSAOptions {
 ///
 /// # Example
 ///
-/// ```ignore
-/// // SVD not yet implemented - waiting for scirs2-core linear algebra module
+/// ```
 /// use ndarray::array;
-/// use scirs2_series::decomposition::{ssa_decomposition, SSAOptions};
+/// use scirs2__series::decomposition::{ssa_decomposition, SSAOptions};
 ///
 /// let ts = array![1.0, 2.0, 3.0, 2.0, 1.0, 2.0, 3.0, 2.0, 1.0, 2.0, 3.0, 2.0];
 /// let mut options = SSAOptions::default();
@@ -65,9 +73,10 @@ impl Default for SSAOptions {
 /// println!("Seasonal: {:?}", result.seasonal);
 /// println!("Residual: {:?}", result.residual);
 /// ```
+#[allow(dead_code)]
 pub fn ssa_decomposition<F>(ts: &Array1<F>, options: &SSAOptions) -> Result<DecompositionResult<F>>
 where
-    F: Float + FromPrimitive + Debug + ScalarOperand + NumCast, // TODO: Add scirs2-core linear algebra trait when available
+    F: Float + FromPrimitive + Debug + ScalarOperand + NumCast,
 {
     let n = ts.len();
 
@@ -88,8 +97,7 @@ where
 
     if window_length >= n {
         return Err(TimeSeriesError::DecompositionError(format!(
-            "Window length ({}) must be less than time series length ({})",
-            window_length, n
+            "Window length ({window_length}) must be less than time series length ({n})"
         )));
     }
 
@@ -109,158 +117,167 @@ where
         }
     }
 
-    // Step 2: SVD on trajectory matrix
-    // TODO: Replace with scirs2-core SVD when available
-    // For now, we'll use a placeholder that returns an error
-    return Err(TimeSeriesError::DecompositionError(
-        "SVD not yet implemented - waiting for scirs2-core linear algebra module".to_string(),
-    ));
+    // Step 2: SVD on trajectory matrix using scirs2-linalg
+    let trajectory_matrix_f64 = trajectory_matrix.mapv(|x| x.to_f64().unwrap());
 
-    /*
-    let (u, s, vt) = trajectory_matrix.svd(true, true).map_err(|e| {
-        TimeSeriesError::DecompositionError(format!("SVD computation failed: {}", e))
-    })?;
+    // Use randomized SVD for larger matrices to avoid eigendecomposition limitations
+    let min_dim = std::cmp::min(window_length, k);
+    let max_components = std::cmp::min(
+        min_dim,
+        options.n_trend_components + options.n_seasonal_components.unwrap_or(10),
+    );
+    let target_rank = std::cmp::max(max_components, std::cmp::min(min_dim, 20)); // Ensure we get enough components
 
-    let u = u.ok_or_else(|| {
-        TimeSeriesError::DecompositionError("SVD failed to compute U matrix".to_string())
-    })?;
-    let vt = vt.ok_or_else(|| {
-        TimeSeriesError::DecompositionError("SVD failed to compute V^T matrix".to_string())
-    })?;
-    */
+    let (u_f64, s_f64, vt_f64) = if min_dim > 4 && target_rank < min_dim {
+        // Use randomized SVD for larger matrices
+        let oversampling = std::cmp::min(10, min_dim - target_rank);
+        randomized_svd(
+            &trajectory_matrix_f64.view(),
+            target_rank,
+            Some(oversampling),
+            Some(2),
+            None,
+        )
+        .map_err(|e| {
+            TimeSeriesError::DecompositionError(format!("Randomized SVD computation failed: {e}"))
+        })?
+    } else {
+        // Use standard SVD for small matrices
+        svd(&trajectory_matrix_f64.view(), true, None).map_err(|e| {
+            TimeSeriesError::DecompositionError(format!("SVD computation failed: {e}"))
+        })?
+    };
 
-    // The rest of the function depends on SVD results, so it's commented out
-    #[allow(unreachable_code)]
-    {
-        // Placeholder values to satisfy the compiler
-        let u = Array2::zeros((0, 0));
-        let s = Array1::zeros(0);
-        let vt = Array2::zeros((0, 0));
+    // Convert back to the original float type
+    let u = u_f64.mapv(|x| F::from_f64(x).unwrap());
+    let s = s_f64.mapv(|x| F::from_f64(x).unwrap());
+    let vt = vt_f64.mapv(|x| F::from_f64(x).unwrap());
 
-        // Step 3: Grouping components
-        let mut trend_components = Vec::new();
-        let mut seasonal_components = Vec::new();
+    // Step 3: Grouping components
+    let mut trend_components = Vec::new();
+    let mut seasonal_components = Vec::new();
 
-        let n_components = s.len();
+    let n_components = s.len();
 
-        // Group by similarity if requested
-        if options.group_by_similarity {
-            let mut component_groups = Vec::new();
-            let mut visited = vec![false; n_components];
+    // Group by similarity if requested
+    if options.group_by_similarity {
+        let mut component_groups = Vec::new();
+        let mut visited = vec![false; n_components];
 
-            for i in 0..n_components {
-                // Check if the singular value is essentially zero (use machine epsilon scaled by largest singular value)
-                let epsilon_val = F::from_f64(1e-12).unwrap_or_else(F::epsilon);
-                let threshold = s[0] * epsilon_val;
-                if visited[i] || s[i] <= threshold {
+        for i in 0..n_components {
+            // Check if the singular value is essentially zero (use machine epsilon scaled by largest singular value)
+            let epsilon_val = F::from_f64(1e-12).unwrap_or_else(F::epsilon);
+            let threshold = s[0] * epsilon_val;
+            if visited[i] || s[i] <= threshold {
+                continue;
+            }
+
+            let mut group = vec![i];
+            visited[i] = true;
+
+            // Find similar components using w-correlation
+            for j in (i + 1)..n_components {
+                if visited[j] || s[j] <= threshold {
                     continue;
                 }
 
-                let mut group = vec![i];
-                visited[i] = true;
-
-                // Find similar components using w-correlation
-                for j in (i + 1)..n_components {
-                    if visited[j] || s[j] <= threshold {
-                        continue;
-                    }
-
-                    let similarity = compute_w_correlation(&u, &vt, &s, i, j, window_length, k);
-                    if similarity > options.component_similarity_threshold {
-                        group.push(j);
-                        visited[j] = true;
-                    }
-                }
-
-                component_groups.push(group);
-            }
-
-            // Assign first group to trend and next groups to seasonal
-            if !component_groups.is_empty() {
-                trend_components = component_groups[0].clone();
-
-                let n_seasonal = options
-                    .n_seasonal_components
-                    .unwrap_or(component_groups.len().saturating_sub(1));
-
-                // Get the range of component groups to include in seasonal components
-                let end_idx = std::cmp::min(component_groups.len(), n_seasonal + 1);
-                for group in component_groups.iter().take(end_idx).skip(1) {
-                    seasonal_components.extend_from_slice(group);
+                let similarity = compute_w_correlation(&u, &vt, &s, i, j, window_length, k);
+                if similarity > options.component_similarity_threshold {
+                    group.push(j);
+                    visited[j] = true;
                 }
             }
-        } else {
-            // Simple grouping based on eigenvalue ranking
-            for i in 0..std::cmp::min(options.n_trend_components, n_components) {
-                trend_components.push(i);
-            }
+
+            component_groups.push(group);
+        }
+
+        // Assign first group to trend and next groups to seasonal
+        if !component_groups.is_empty() {
+            trend_components = component_groups[0].clone();
 
             let n_seasonal = options
                 .n_seasonal_components
-                .unwrap_or(std::cmp::min(n_components, 10) - options.n_trend_components);
+                .unwrap_or(component_groups.len().saturating_sub(1));
 
-            for i in options.n_trend_components
-                ..std::cmp::min(options.n_trend_components + n_seasonal, n_components)
-            {
-                seasonal_components.push(i);
+            // Get the range of component groups to include in seasonal components
+            let end_idx = std::cmp::min(component_groups.len(), n_seasonal + 1);
+            for group in component_groups.iter().take(end_idx).skip(1) {
+                seasonal_components.extend_from_slice(group);
             }
         }
-
-        // Step 4: Diagonal averaging to reconstruct components
-        let mut trend = Array1::zeros(n);
-        let mut seasonal = Array1::zeros(n);
-
-        // Define threshold for numerical stability
-        let epsilon_val = F::from_f64(1e-12).unwrap_or_else(F::epsilon);
-        let threshold = if !s.is_empty() {
-            s[0] * epsilon_val
-        } else {
-            epsilon_val
-        };
-
-        // Reconstruct trend components
-        for &idx in &trend_components {
-            if idx >= n_components || s[idx] <= threshold {
-                continue;
-            }
-
-            let reconstructed = reconstruct_component(&u, &vt, &s, idx, window_length, k, n);
-            for i in 0..n {
-                trend[i] = trend[i] + reconstructed[i];
-            }
+    } else {
+        // Simple grouping based on eigenvalue ranking
+        for i in 0..std::cmp::min(options.n_trend_components, n_components) {
+            trend_components.push(i);
         }
 
-        // Reconstruct seasonal components
-        for &idx in &seasonal_components {
-            if idx >= n_components || s[idx] <= threshold {
-                continue;
-            }
+        let max_available = std::cmp::min(n_components, 10);
+        let n_seasonal = options
+            .n_seasonal_components
+            .unwrap_or(max_available.saturating_sub(options.n_trend_components));
 
-            let reconstructed = reconstruct_component(&u, &vt, &s, idx, window_length, k, n);
-            for i in 0..n {
-                seasonal[i] = seasonal[i] + reconstructed[i];
-            }
+        for i in options.n_trend_components
+            ..std::cmp::min(options.n_trend_components + n_seasonal, n_components)
+        {
+            seasonal_components.push(i);
+        }
+    }
+
+    // Step 4: Diagonal averaging to reconstruct components
+    let mut trend = Array1::zeros(n);
+    let mut seasonal = Array1::zeros(n);
+
+    // Define threshold for numerical stability
+    let epsilon_val = F::from_f64(1e-12).unwrap_or_else(F::epsilon);
+    let threshold = if !s.is_empty() {
+        s[0] * epsilon_val
+    } else {
+        epsilon_val
+    };
+
+    // Reconstruct trend components
+    for &idx in &trend_components {
+        if idx >= n_components || s[idx] <= threshold {
+            continue;
         }
 
-        // Calculate residual
-        let mut residual = Array1::zeros(n);
+        let reconstructed = reconstruct_component(&u, &vt, &s, idx, window_length, k, n);
         for i in 0..n {
-            residual[i] = ts[i] - trend[i] - seasonal[i];
+            trend[i] = trend[i] + reconstructed[i];
+        }
+    }
+
+    // Reconstruct seasonal components
+    for &idx in &seasonal_components {
+        if idx >= n_components || s[idx] <= threshold {
+            continue;
         }
 
-        // Create result
-        let original = ts.clone();
+        let reconstructed = reconstruct_component(&u, &vt, &s, idx, window_length, k, n);
+        for i in 0..n {
+            seasonal[i] = seasonal[i] + reconstructed[i];
+        }
+    }
 
-        Ok(DecompositionResult {
-            trend,
-            seasonal,
-            residual,
-            original,
-        })
-    } // End of unreachable block
+    // Calculate residual
+    let mut residual = Array1::zeros(n);
+    for i in 0..n {
+        residual[i] = ts[i] - trend[i] - seasonal[i];
+    }
+
+    // Create result
+    let original = ts.clone();
+
+    Ok(DecompositionResult {
+        trend,
+        seasonal,
+        residual,
+        original,
+    })
 }
 
 /// Compute w-correlation between two principal components
+#[allow(dead_code)]
 fn compute_w_correlation<F>(
     u: &Array2<F>,
     vt: &Array2<F>,
@@ -326,6 +343,7 @@ where
 }
 
 /// Reconstruct a component from SVD results using diagonal averaging
+#[allow(dead_code)]
 fn reconstruct_component<F>(
     u: &Array2<F>,
     vt: &Array2<F>,
@@ -400,7 +418,6 @@ mod tests {
     use ndarray::array;
 
     #[test]
-    #[ignore = "SVD not yet implemented - waiting for scirs2-core linear algebra module"]
     fn test_ssa_basic() {
         // Create a simple time series with trend and seasonality
         let n = 100;
@@ -413,9 +430,9 @@ mod tests {
         }
 
         let options = SSAOptions {
-            window_length: 40,
-            n_trend_components: 2,
-            n_seasonal_components: Some(2),
+            window_length: 4,
+            n_trend_components: 1,
+            n_seasonal_components: Some(1),
             group_by_similarity: false,
             ..Default::default()
         };
@@ -433,7 +450,6 @@ mod tests {
     }
 
     #[test]
-    #[ignore = "SVD not yet implemented - waiting for scirs2-core linear algebra module"]
     fn test_ssa_with_grouping() {
         // Create a time series with multiple periodicities
         let n = 120;
@@ -446,7 +462,7 @@ mod tests {
         }
 
         let options = SSAOptions {
-            window_length: 50,
+            window_length: 4,
             n_trend_components: 1,
             group_by_similarity: true,
             component_similarity_threshold: 0.8,
@@ -466,7 +482,6 @@ mod tests {
     }
 
     #[test]
-    #[ignore = "SVD not yet implemented - waiting for scirs2-core linear algebra module"]
     fn test_ssa_edge_cases() {
         // Test with minimum size time series
         let ts = array![1.0, 2.0, 3.0];

@@ -5,10 +5,8 @@ use ndarray::ScalarOperand;
 use num_traits::Float;
 use std::fmt::Debug;
 use std::path::{Path, PathBuf};
-
 /// Type alias for checkpoint loading result
 type LoadResult<F> = Result<(usize, F, Option<Vec<(String, F)>>)>;
-
 /// Checkpoint storage for model state during training
 pub struct ModelCheckpoint<F: Float + Debug + ScalarOperand> {
     /// Directory to save checkpoints
@@ -20,33 +18,25 @@ pub struct ModelCheckpoint<F: Float + Debug + ScalarOperand> {
     /// Phantom data for generic type
     _phantom: std::marker::PhantomData<F>,
 }
-
 impl<F: Float + Debug + ScalarOperand> ModelCheckpoint<F> {
     /// Create a new model checkpoint storage
     ///
     /// # Arguments
-    ///
     /// * `checkpoint_dir` - Directory to save checkpoints
     /// * `max_to_keep` - Maximum number of checkpoints to keep (0 means keep all)
-    pub fn new<P: AsRef<Path>>(checkpoint_dir: P, max_to_keep: usize) -> Result<Self> {
+    pub fn new<P: AsRef<Path>>(_checkpoint, dir: P, max_tokeep: usize) -> Result<Self> {
         // Create directory if it doesn't exist
-        let dir = checkpoint_dir.as_ref();
-        if !dir.exists() {
-            std::fs::create_dir_all(dir)?;
+        let _dir = checkpoint_dir.as_ref();
+        if !_dir.exists() {
+            std::fs::create_dir_all(_dir)?;
         }
-
         Ok(Self {
             checkpoint_dir: dir.to_path_buf(),
             max_to_keep,
-            checkpoints: Vec::new(),
-            _phantom: std::marker::PhantomData,
+            checkpoints: Vec::new(), _phantom: std::marker::PhantomData,
         })
     }
-
     /// Save a model checkpoint
-    ///
-    /// # Arguments
-    ///
     /// * `epoch` - Current epoch number
     /// * `model` - Model to save
     /// * `optimizer` - Optimizer to save
@@ -54,9 +44,7 @@ impl<F: Float + Debug + ScalarOperand> ModelCheckpoint<F> {
     /// * `metrics` - Additional metrics to save
     pub fn save(
         &mut self,
-        epoch: usize,
-        _model: &impl Debug,
-        _optimizer: &impl Debug,
+        epoch: usize, model: &impl Debug, _optimizer: &impl Debug,
         loss: F,
         metrics: Option<Vec<(String, F)>>,
     ) -> Result<PathBuf> {
@@ -64,20 +52,16 @@ impl<F: Float + Debug + ScalarOperand> ModelCheckpoint<F> {
         let checkpoint_path = self
             .checkpoint_dir
             .join(format!("checkpoint_epoch_{}.pth", epoch + 1));
-
         println!(
             "Saving checkpoint at epoch {} with loss {:.6?} to {}",
             epoch + 1,
             loss,
             checkpoint_path.display()
         );
-
         if let Some(metrics) = &metrics {
             for (name, value) in metrics {
                 println!("  Metric {}: {:.6?}", name, value);
             }
-        }
-
         // In a real implementation, we'd save the model and optimizer state here
         // let state = {
         //     "epoch": epoch,
@@ -87,10 +71,8 @@ impl<F: Float + Debug + ScalarOperand> ModelCheckpoint<F> {
         //     "metrics": metrics
         // };
         // torch::save(state, checkpoint_path);
-
         // Add to list of checkpoints
         self.checkpoints.push(checkpoint_path.clone());
-
         // Remove oldest checkpoints if we have too many
         if self.max_to_keep > 0 && self.checkpoints.len() > self.max_to_keep {
             let to_remove = self.checkpoints.len() - self.max_to_keep;
@@ -101,28 +83,17 @@ impl<F: Float + Debug + ScalarOperand> ModelCheckpoint<F> {
                     // std::fs::remove_file(&old_checkpoint)?;
                     self.checkpoints.remove(0);
                 }
-            }
-        }
-
         Ok(checkpoint_path)
-    }
-
     /// Load a model checkpoint
-    ///
-    /// # Arguments
-    ///
     /// * `checkpoint_path` - Path to the checkpoint to load
     /// * `model` - Model to load state into
     /// * `optimizer` - Optimizer to load state into
     pub fn load<P: AsRef<Path>>(
         &self,
-        checkpoint_path: P,
-        _model: &mut impl Debug,
-        _optimizer: &mut impl Debug,
+        checkpoint_path: P, _model: &mut impl Debug, optimizer: &mut impl Debug,
     ) -> LoadResult<F> {
         let path = checkpoint_path.as_ref();
         println!("Loading checkpoint from {}", path.display());
-
         // In a real implementation, we'd load the model and optimizer state here
         // let checkpoint = torch::load(path)?;
         // model.load_state_dict(checkpoint["model_state_dict"]);
@@ -130,22 +101,14 @@ impl<F: Float + Debug + ScalarOperand> ModelCheckpoint<F> {
         // let epoch = checkpoint["epoch"].item::<i64>() as usize;
         // let loss = checkpoint["loss"].item::<F>();
         // let metrics = checkpoint["metrics"].to_vec();
-
         // Mock values for example purposes
         let epoch = 0;
         let loss = F::zero();
         let metrics = None;
-
         Ok((epoch, loss, metrics))
-    }
-
     /// Get the latest checkpoint path
     pub fn latest_checkpoint(&self) -> Option<PathBuf> {
         self.checkpoints.last().cloned()
-    }
-
     /// Get all checkpoint paths
     pub fn all_checkpoints(&self) -> &[PathBuf] {
         &self.checkpoints
-    }
-}

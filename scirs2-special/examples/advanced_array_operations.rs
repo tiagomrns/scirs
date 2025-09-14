@@ -3,12 +3,17 @@
 //! This example demonstrates the enhanced array operations in scirs2-special,
 //! including lazy evaluation, GPU acceleration, and multidimensional support.
 
+#[cfg(feature = "gpu")]
 use ndarray::{Array, Array1};
+#[cfg(feature = "gpu")]
 use scirs2_special::array_ops::{
     convenience::{self, ConfigBuilder},
     ArrayConfig, Backend,
 };
+#[cfg(feature = "gpu")]
+use statrs::statistics::Statistics;
 
+#[cfg(feature = "gpu")]
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("=== SCIRS2-SPECIAL Advanced Array Operations Demo ===\n");
@@ -40,6 +45,13 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     Ok(())
 }
 
+#[cfg(not(feature = "gpu"))]
+fn main() {
+    println!("This example requires the 'gpu' feature to be enabled.");
+    println!("Please run with: cargo run --features gpu --example advanced_array_operations");
+}
+
+#[cfg(feature = "gpu")]
 async fn demo_basic_operations() -> Result<(), Box<dyn std::error::Error>> {
     println!("1. Basic Array Operations");
     println!("========================");
@@ -59,34 +71,35 @@ async fn demo_basic_operations() -> Result<(), Box<dyn std::error::Error>> {
     println!("Gamma(input) 2D:\n{:?}", result_2d);
 
     // Bessel J0 function
-    let bessel_input = Array1::linspace(0.0, 5.0, 6);
-    let bessel_result = convenience::j0_1d(&bessel_input)?;
-    println!("\nBessel J0({:?}) = {:?}", bessel_input, bessel_result);
+    let besselinput = Array1::linspace(0.0, 5.0, 6);
+    let bessel_result = convenience::j0_1d(&besselinput)?;
+    println!("\nBessel J0({:?}) = {:?}", besselinput, bessel_result);
 
     // Error function
-    let erf_input = Array1::linspace(-2.0, 2.0, 5);
-    let erf_result = convenience::erf_1d(&erf_input)?;
-    println!("erf({:?}) = {:?}", erf_input, erf_result);
+    let erfinput = Array1::linspace(-2.0, 2.0, 5);
+    let erf_result = convenience::erf_1d(&erfinput)?;
+    println!("erf({:?}) = {:?}", erfinput, erf_result);
 
     println!();
     Ok(())
 }
 
+#[cfg(feature = "gpu")]
 async fn demo_configuration_options() -> Result<(), Box<dyn std::error::Error>> {
     println!("2. Configuration Options and Backend Selection");
     println!("=============================================");
 
     // Using configuration builder
     let custom_config = ConfigBuilder::new()
-        .chunk_size(512)
+        .chunksize(512)
         .parallel(true)
         .memory_limit(512 * 1024 * 1024) // 512MB
         .lazy_threshold(1000)
         .build();
 
     println!(
-        "Custom config: chunk_size={}, parallel={}, memory_limit={}MB",
-        custom_config.chunk_size,
+        "Custom config: chunksize={}, parallel={}, memory_limit={}MB",
+        custom_config.chunksize,
         custom_config.parallel,
         custom_config.memory_limit / (1024 * 1024)
     );
@@ -99,14 +112,14 @@ async fn demo_configuration_options() -> Result<(), Box<dyn std::error::Error>> 
     // Predefined configurations
     let large_config = convenience::large_array_config();
     println!(
-        "\nLarge array config: chunk_size={}, lazy_threshold={}",
-        large_config.chunk_size, large_config.lazy_threshold
+        "\nLarge array config: chunksize={}, lazy_threshold={}",
+        large_config.chunksize, large_config.lazy_threshold
     );
 
     let small_config = convenience::small_array_config();
     println!(
-        "Small array config: chunk_size={}, lazy_threshold={}",
-        small_config.chunk_size, small_config.lazy_threshold
+        "Small array config: chunksize={}, lazy_threshold={}",
+        small_config.chunksize, small_config.lazy_threshold
     );
 
     // Test different backends
@@ -133,8 +146,8 @@ async fn demo_configuration_options() -> Result<(), Box<dyn std::error::Error>> 
         };
         println!("Testing backend: {:?}", backend);
 
-        let test_input = Array1::from_vec(vec![1.0, 2.0, 3.0]);
-        let result = convenience::gamma_1d_with_config(&test_input, &config).await?;
+        let testinput = Array1::from_vec(vec![1.0, 2.0, 3.0]);
+        let result = convenience::gamma_1d_with_config(&testinput, &config).await?;
         println!("  Result: {:?}", result);
     }
 
@@ -148,11 +161,11 @@ async fn demo_lazy_evaluation() -> Result<(), Box<dyn std::error::Error>> {
     println!("==================");
 
     // Create a large array that would benefit from lazy evaluation
-    let large_input = Array::linspace(1.0, 100.0, 10000);
-    println!("Created large array with {} elements", large_input.len());
+    let largeinput = Array::linspace(1.0, 100.0, 10000);
+    println!("Created large array with {} elements", largeinput.len());
 
     // Create lazy computation
-    let lazy_gamma = convenience::gamma_lazy(&large_input, None)?;
+    let lazy_gamma = convenience::gamma_lazy(&largeinput, None)?;
     println!("Lazy computation created: {}", lazy_gamma.description());
     println!("Cost estimate: {} units", lazy_gamma.cost_estimate());
     println!("Is computed: {}", lazy_gamma.is_computed());
@@ -169,7 +182,7 @@ async fn demo_lazy_evaluation() -> Result<(), Box<dyn std::error::Error>> {
 
     // Demonstrate caching
     println!("\nTesting computation caching...");
-    let lazy_gamma2 = convenience::gamma_lazy(&large_input, None)?;
+    let lazy_gamma2 = convenience::gamma_lazy(&largeinput, None)?;
     let start_time2 = std::time::Instant::now();
     let _result2 = lazy_gamma2.compute()?;
     let _result2_cached = lazy_gamma2.compute()?; // Should be cached
@@ -185,10 +198,10 @@ async fn demo_gpu_acceleration() -> Result<(), Box<dyn std::error::Error>> {
     println!("4. GPU Acceleration");
     println!("==================");
 
-    let gpu_input = Array1::linspace(1.0, 10.0, 1000);
-    println!("Processing array of {} elements on GPU", gpu_input.len());
+    let gpuinput = Array1::linspace(1.0, 10.0, 1000);
+    println!("Processing array of {} elements on GPU", gpuinput.len());
 
-    match convenience::gamma_gpu(&gpu_input).await {
+    match convenience::gamma_gpu(&gpuinput).await {
         Ok(gpu_result) => {
             println!("GPU computation successful!");
             println!("Result shape: {:?}", gpu_result.shape());
@@ -198,7 +211,7 @@ async fn demo_gpu_acceleration() -> Result<(), Box<dyn std::error::Error>> {
             );
 
             // Compare with CPU result
-            let cpu_result = convenience::gamma_1d(&gpu_input).await?;
+            let cpu_result = convenience::gamma_1d(&gpuinput).await?;
             let max_diff = gpu_result
                 .iter()
                 .zip(cpu_result.iter())
@@ -208,7 +221,7 @@ async fn demo_gpu_acceleration() -> Result<(), Box<dyn std::error::Error>> {
         }
         Err(e) => {
             println!("GPU computation failed (falling back to CPU): {}", e);
-            let cpu_result = convenience::gamma_1d(&gpu_input).await?;
+            let cpu_result = convenience::gamma_1d(&gpuinput).await?;
             println!("CPU fallback result computed successfully");
             println!("Result shape: {:?}", cpu_result.shape());
         }
@@ -218,6 +231,7 @@ async fn demo_gpu_acceleration() -> Result<(), Box<dyn std::error::Error>> {
     Ok(())
 }
 
+#[cfg(feature = "gpu")]
 async fn demo_large_array_processing() -> Result<(), Box<dyn std::error::Error>> {
     println!("5. Large Array Processing");
     println!("=========================");
@@ -257,6 +271,7 @@ async fn demo_large_array_processing() -> Result<(), Box<dyn std::error::Error>>
     Ok(())
 }
 
+#[cfg(feature = "gpu")]
 async fn demo_batch_processing() -> Result<(), Box<dyn std::error::Error>> {
     println!("6. Batch Processing");
     println!("==================");
@@ -287,6 +302,7 @@ async fn demo_batch_processing() -> Result<(), Box<dyn std::error::Error>> {
     Ok(())
 }
 
+#[cfg(feature = "gpu")]
 async fn demo_memory_efficient_operations() -> Result<(), Box<dyn std::error::Error>> {
     println!("7. Memory-Efficient Operations");
     println!("==============================");
@@ -325,18 +341,18 @@ async fn demo_memory_efficient_operations() -> Result<(), Box<dyn std::error::Er
     // Parallel processing comparison
     #[cfg(feature = "parallel")]
     {
-        let parallel_input = Array1::linspace(-1.0, 1.0, 10000);
+        let parallelinput = Array1::linspace(-1.0, 1.0, 10000);
 
         println!("\nParallel vs Sequential processing comparison:");
 
         // Sequential
         let start_time = std::time::Instant::now();
-        let _seq_result = convenience::erf_1d(&parallel_input)?;
+        let _seq_result = convenience::erf_1d(&parallelinput)?;
         let seq_duration = start_time.elapsed();
 
         // Parallel
         let start_time = std::time::Instant::now();
-        let _par_result = convenience::erf_parallel(&parallel_input)?;
+        let _par_result = convenience::erf_parallel(&parallelinput)?;
         let par_duration = start_time.elapsed();
 
         println!("  Sequential: {:?}", seq_duration);

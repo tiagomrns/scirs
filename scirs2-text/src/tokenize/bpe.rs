@@ -72,7 +72,7 @@ impl BpeVocabulary {
 
         // Write the tokens and their IDs
         for (token, id) in &self.token_to_id {
-            writeln!(writer, "{}\t{}", token, id).map_err(|e| TextError::IoError(e.to_string()))?;
+            writeln!(writer, "{token}\t{id}").map_err(|e| TextError::IoError(e.to_string()))?;
         }
 
         // Write the number of merges
@@ -80,7 +80,7 @@ impl BpeVocabulary {
 
         // Write the merge rules
         for ((first, second), merged) in &self.merges {
-            writeln!(writer, "{}\t{}\t{}", first, second, merged)
+            writeln!(writer, "{first}\t{second}\t{merged}")
                 .map_err(|e| TextError::IoError(e.to_string()))?;
         }
 
@@ -103,7 +103,7 @@ impl BpeVocabulary {
             .next()
             .ok_or_else(|| TextError::IoError("Unexpected end of file".to_string()))?
             .parse()
-            .map_err(|e| TextError::IoError(format!("Invalid vocabulary size: {}", e)))?;
+            .map_err(|e| TextError::IoError(format!("Invalid vocabulary size: {e}")))?;
 
         let mut vocabulary = Self::new();
 
@@ -116,15 +116,14 @@ impl BpeVocabulary {
 
             if parts.len() != 2 {
                 return Err(TextError::IoError(format!(
-                    "Invalid vocabulary entry: {}",
-                    line
+                    "Invalid vocabulary entry: {line}"
                 )));
             }
 
             let token = parts[0].to_string();
             let id: usize = parts[1]
                 .parse()
-                .map_err(|e| TextError::IoError(format!("Invalid token ID: {}", e)))?;
+                .map_err(|e| TextError::IoError(format!("Invalid token ID: {e}")))?;
 
             vocabulary.token_to_id.insert(token.clone(), id);
             vocabulary.id_to_token.insert(id, token);
@@ -135,7 +134,7 @@ impl BpeVocabulary {
             .next()
             .ok_or_else(|| TextError::IoError("Unexpected end of file".to_string()))?
             .parse()
-            .map_err(|e| TextError::IoError(format!("Invalid number of merges: {}", e)))?;
+            .map_err(|e| TextError::IoError(format!("Invalid number of merges: {e}")))?;
 
         // Read the merge rules
         for _ in 0..num_merges {
@@ -145,7 +144,7 @@ impl BpeVocabulary {
             let parts: Vec<&str> = line.split('\t').collect();
 
             if parts.len() != 3 {
-                return Err(TextError::IoError(format!("Invalid merge rule: {}", line)));
+                return Err(TextError::IoError(format!("Invalid merge rule: {line}")));
             }
 
             let first = parts[0].to_string();
@@ -277,7 +276,7 @@ impl BpeTokenizer {
         let mut all_tokens = Vec::new();
 
         for text in corpus {
-            let processed_text = if self.config.lowercase {
+            let processedtext = if self.config.lowercase {
                 text.to_lowercase()
             } else {
                 text.to_string()
@@ -288,7 +287,7 @@ impl BpeTokenizer {
             if self.config.character_level {
                 // Character-level tokenization
                 let initial_tokens: Vec<String> =
-                    processed_text.chars().map(|c| c.to_string()).collect();
+                    processedtext.chars().map(|c| c.to_string()).collect();
                 // Add character sequence directly
                 for token in &initial_tokens {
                     *token_counts.entry(token.clone()).or_insert(0) += 1;
@@ -296,7 +295,7 @@ impl BpeTokenizer {
                 all_tokens.push(initial_tokens);
             } else {
                 // Word-level tokenization with characters as base tokens
-                for word in processed_text.split_whitespace() {
+                for word in processedtext.split_whitespace() {
                     let chars: Vec<String> = word.chars().map(|c| c.to_string()).collect();
                     // Count individual characters
                     for token in &chars {
@@ -332,7 +331,9 @@ impl BpeTokenizer {
                     }
 
                     let pair = (window[0].clone(), window[1].clone());
-                    let merged = format!("{}{}", pair.0, pair.1);
+                    let pair_0 = &pair.0;
+                    let pair_1 = &pair.1;
+                    let merged = format!("{pair_0}{pair_1}");
                     *pair_counts.entry(pair.clone()).or_insert(0) += 1;
                     pair_to_merged.insert(pair, merged);
                 }
@@ -342,7 +343,7 @@ impl BpeTokenizer {
             let best_pair = pair_counts
                 .iter()
                 .max_by_key(|&(_, count)| count)
-                .map(|(pair, _)| pair.clone());
+                .map(|(pair_, _)| pair_.clone());
 
             if let Some(pair) = best_pair {
                 let merged = pair_to_merged[&pair].clone();
@@ -424,7 +425,7 @@ impl Tokenizer for BpeTokenizer {
             ));
         }
 
-        let processed_text = if self.config.lowercase {
+        let processedtext = if self.config.lowercase {
             text.to_lowercase()
         } else {
             text.to_string()
@@ -434,10 +435,10 @@ impl Tokenizer for BpeTokenizer {
 
         if self.config.character_level {
             // Tokenize as a single sequence
-            tokens = self.tokenize_word(&processed_text)?;
+            tokens = self.tokenize_word(&processedtext)?;
         } else {
             // Tokenize each word separately
-            for word in processed_text.split_whitespace() {
+            for word in processedtext.split_whitespace() {
                 let word_tokens = self.tokenize_word(word)?;
                 tokens.extend(word_tokens);
             }
@@ -542,7 +543,7 @@ mod tests {
     }
 
     #[test]
-    fn test_bpe_tokenizer_empty_text() {
+    fn test_bpe_tokenizer_emptytext() {
         let corpus = ["this is a test"];
         let mut tokenizer = BpeTokenizer::with_defaults();
         tokenizer.train(&corpus).unwrap();

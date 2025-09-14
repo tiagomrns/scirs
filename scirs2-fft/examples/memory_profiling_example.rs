@@ -15,12 +15,13 @@ use std::time::{Duration, Instant};
 #[derive(Debug, Clone)]
 pub struct MemoryProfile {
     pub operation: String,
-    pub input_size: usize,
+    pub inputsize: usize,
     pub elapsed_time: Duration,
     pub estimated_memory_mb: f64,
 }
 
 /// Profile memory usage of an operation using peak memory estimation
+#[allow(dead_code)]
 fn profile_memory<F: FnOnce() -> R, R>(operation: &str, size: usize, f: F) -> MemoryProfile {
     // Use before/after memory estimation instead of custom allocator
     let start = Instant::now();
@@ -70,13 +71,14 @@ fn profile_memory<F: FnOnce() -> R, R>(operation: &str, size: usize, f: F) -> Me
 
     MemoryProfile {
         operation: operation.to_string(),
-        input_size: size,
+        inputsize: size,
         elapsed_time: elapsed,
         estimated_memory_mb,
     }
 }
 
 /// Benchmark memory usage for 1D FFT operations
+#[allow(dead_code)]
 pub fn profile_fft_1d() -> Vec<MemoryProfile> {
     let mut results = Vec::new();
     let _plan_cache = PlanCache::new();
@@ -122,6 +124,7 @@ pub fn profile_fft_1d() -> Vec<MemoryProfile> {
 }
 
 /// Benchmark memory usage for 2D FFT operations
+#[allow(dead_code)]
 pub fn profile_fft_2d() -> Vec<MemoryProfile> {
     let mut results = Vec::new();
     let _plan_cache = PlanCache::new();
@@ -160,6 +163,7 @@ pub fn profile_fft_2d() -> Vec<MemoryProfile> {
 }
 
 /// Generate memory usage report
+#[allow(dead_code)]
 pub fn generate_memory_report(profiles: &[MemoryProfile]) {
     println!("=== Memory Usage Report ===");
     println!("Operation | Size | Est. Memory (MB) | Time (ms)");
@@ -169,7 +173,7 @@ pub fn generate_memory_report(profiles: &[MemoryProfile]) {
         println!(
             "{:9} | {:6} | {:16.2} | {:9.2}",
             profile.operation,
-            profile.input_size,
+            profile.inputsize,
             profile.estimated_memory_mb,
             profile.elapsed_time.as_secs_f64() * 1000.0
         );
@@ -188,11 +192,11 @@ mod tests {
         // Just test smaller sizes to keep test time reasonable
         let small_1d: Vec<_> = profiles_1d
             .into_iter()
-            .filter(|p| p.input_size <= 1024)
+            .filter(|p| p.inputsize <= 1024)
             .collect();
         let small_2d: Vec<_> = profiles_2d
             .into_iter()
-            .filter(|p| p.input_size <= 64 * 64)
+            .filter(|p| p.inputsize <= 64 * 64)
             .collect();
 
         println!("\n1D FFT Memory Profiling:");
@@ -213,6 +217,7 @@ mod tests {
     }
 }
 
+#[allow(dead_code)]
 fn main() {
     let profiles_1d = profile_fft_1d();
     let profiles_2d = profile_fft_2d();

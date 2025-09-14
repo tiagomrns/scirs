@@ -17,6 +17,7 @@ use std::collections::HashMap;
 use std::time::Instant;
 use tempfile::tempdir;
 
+#[allow(dead_code)]
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("🧮 Enhanced MATLAB Format Support Example");
     println!("=========================================");
@@ -50,6 +51,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     Ok(())
 }
 
+#[allow(dead_code)]
 fn demonstrate_basic_mat_v5() -> Result<(), Box<dyn std::error::Error>> {
     println!("\n📊 Demonstrating Basic MAT v5 Format...");
 
@@ -122,6 +124,7 @@ fn demonstrate_basic_mat_v5() -> Result<(), Box<dyn std::error::Error>> {
     Ok(())
 }
 
+#[allow(dead_code)]
 fn demonstrate_enhanced_features() -> Result<(), Box<dyn std::error::Error>> {
     println!("\n🚀 Demonstrating Enhanced Format Features...");
 
@@ -194,6 +197,7 @@ fn demonstrate_enhanced_features() -> Result<(), Box<dyn std::error::Error>> {
     Ok(())
 }
 
+#[allow(dead_code)]
 fn demonstrate_cell_arrays() -> Result<(), Box<dyn std::error::Error>> {
     println!("\n📦 Demonstrating Cell Arrays...");
 
@@ -255,6 +259,7 @@ fn demonstrate_cell_arrays() -> Result<(), Box<dyn std::error::Error>> {
     Ok(())
 }
 
+#[allow(dead_code)]
 fn demonstrate_structures() -> Result<(), Box<dyn std::error::Error>> {
     println!("\n🏗️  Demonstrating Structures...");
 
@@ -333,6 +338,7 @@ fn demonstrate_structures() -> Result<(), Box<dyn std::error::Error>> {
     Ok(())
 }
 
+#[allow(dead_code)]
 fn demonstrate_format_detection() -> Result<(), Box<dyn std::error::Error>> {
     println!("\n🔍 Demonstrating Format Detection...");
 
@@ -369,7 +375,7 @@ fn demonstrate_format_detection() -> Result<(), Box<dyn std::error::Error>> {
     // Read and detect formats
     println!("  🔹 Reading and detecting formats:");
 
-    let v5_detected = auto_enhanced.is_v73_file(&v5_file)?;
+    let v5_detected = v5_enhanced.is_v73_file(&v5_file)?;
     println!("    v5 file detected as v7.3: {}", v5_detected);
 
     let auto_detected = auto_enhanced.is_v73_file(&auto_file)?;
@@ -383,6 +389,7 @@ fn demonstrate_format_detection() -> Result<(), Box<dyn std::error::Error>> {
     Ok(())
 }
 
+#[allow(dead_code)]
 fn demonstrate_performance_and_errors() -> Result<(), Box<dyn std::error::Error>> {
     println!("\n📈 Demonstrating Performance and Error Handling...");
 

@@ -18,7 +18,7 @@
 //!
 //! ```rust
 //! use ndarray::Array1;
-//! use scirs2_interpolate::optimization::{
+//! use scirs2__interpolate::optimization::{
 //!     CrossValidator, ModelSelector, OptimizationConfig, ValidationMetric
 //! };
 //!
@@ -511,7 +511,7 @@ where
                     let train_indices: Vec<usize> = indices
                         .iter()
                         .enumerate()
-                        .filter(|(i, _)| *i < start || *i >= end)
+                        .filter(|(i_, _)| *i_ < start || *i_ >= end)
                         .map(|(_, &idx)| idx)
                         .collect();
 
@@ -529,9 +529,52 @@ where
                 }
                 Ok(folds)
             }
-            _ => Err(InterpolateError::NotImplemented(
-                "Cross-validation strategy not yet implemented".to_string(),
-            )),
+            CrossValidationStrategy::MonteCarlo {
+                n_splits,
+                test_fraction,
+            } => {
+                let mut folds = Vec::new();
+                let test_size = (n as f64 * test_fraction).max(1.0) as usize;
+
+                // Use a simple pseudo-random approach for demonstration
+                // In production, this should use proper random number generation
+                for split in 0..n_splits {
+                    let mut indices: Vec<usize> = (0..n).collect();
+
+                    // Simple deterministic shuffle based on split number for reproducibility
+                    for i in 0..n {
+                        let j = (i + split * 17) % n; // Simple pseudo-random permutation
+                        indices.swap(i, j);
+                    }
+
+                    let test_indices = indices[0..test_size].to_vec();
+                    let train_indices = indices[test_size..].to_vec();
+                    folds.push((train_indices, test_indices));
+                }
+                Ok(folds)
+            }
+            CrossValidationStrategy::TimeSeries { n_splits, gap: _ } => {
+                // Time series cross-validation: progressively larger training sets
+                let mut folds = Vec::new();
+                let min_train_size = n / (n_splits + 1);
+                let test_size = n / (n_splits + 1);
+
+                for i in 0..n_splits {
+                    let train_end = min_train_size + i * test_size;
+                    let test_start = train_end;
+                    let test_end = (test_start + test_size).min(n);
+
+                    if test_end <= test_start {
+                        break;
+                    }
+
+                    let train_indices: Vec<usize> = (0..train_end).collect();
+                    let test_indices: Vec<usize> = (test_start..test_end).collect();
+
+                    folds.push((train_indices, test_indices));
+                }
+                Ok(folds)
+            }
         }
     }
 
@@ -909,7 +952,8 @@ where
 /// # Returns
 ///
 /// Configured cross-validator
-pub fn make_cross_validator<T>(k_folds: usize, metric: ValidationMetric) -> CrossValidator<T>
+#[allow(dead_code)]
+pub fn make_cross_validator<T>(_kfolds: usize, metric: ValidationMetric) -> CrossValidator<T>
 where
     T: Float
         + FromPrimitive
@@ -929,7 +973,7 @@ where
         + 'static,
 {
     CrossValidator::new()
-        .with_k_folds(k_folds)
+        .with_k_folds(_kfolds)
         .with_metric(metric)
 }
 
@@ -1121,7 +1165,7 @@ mod tests {
                     "Cross-validation encountered numerical issues (expected): {:?}",
                     e
                 );
-                assert!(matches!(e, InterpolateError::ValueError(_)));
+                assert!(matches!(e, InterpolateError::InvalidInput { .. }));
             }
         }
     }

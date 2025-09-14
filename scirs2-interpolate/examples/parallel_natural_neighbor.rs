@@ -10,6 +10,7 @@ use scirs2_interpolate::voronoi::{make_parallel_sibson_interpolator, make_sibson
 use std::error::Error;
 use std::time::Instant;
 
+#[allow(dead_code)]
 fn main() -> Result<(), Box<dyn Error>> {
     // Generate scattered data points
     let n_points = 500;

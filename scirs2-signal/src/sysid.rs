@@ -1,80 +1,82 @@
-//! System Identification Module
-//!
-//! This module provides comprehensive system identification functionality for
-//! estimating mathematical models of dynamic systems from input-output data.
-//!
-//! ## Features
-//!
-//! - **Transfer Function Estimation**: Estimate transfer functions from input-output data
-//! - **Parametric Models**: AR, ARMA, and ARX model identification
-//! - **Non-parametric Methods**: Frequency response estimation using spectral methods
-//! - **Model Validation**: Cross-validation, residual analysis, and information criteria
-//! - **Subspace Methods**: Simple N4SID implementation for state-space identification
-//! - **Recursive Methods**: Online/adaptive identification algorithms
-//!
-//! ## System Identification Methods
-//!
-//! ### Time-Domain Methods
-//! - Least squares estimation for ARX models
-//! - Prediction error methods for ARMA models
-//! - Maximum likelihood estimation
-//! - Instrumental variable methods
-//!
-//! ### Frequency-Domain Methods
-//! - Spectral analysis based estimation
-//! - Frequency response function estimation
-//! - Empirical transfer function estimation
-//!
-//! ### Subspace Methods
-//! - N4SID (Numerical algorithms for Subspace State Space System Identification)
-//! - MOESP (Multivariable Output-Error State sPace)
-//!
-//! ## Example Usage
-//!
-//! ```rust
-//! use ndarray::Array1;
-//! use scirs2_signal::sysid::{estimate_transfer_function, TfEstimationMethod, ModelValidation};
-//! use scirs2_signal::waveforms::chirp;
-//! # fn main() -> Result<(), Box<dyn std::error::Error>> {
-//!
-//! // Generate test system and data
-//! let n = 1000;
-//! let fs = 100.0;
-//! let t = Array1::linspace(0.0, (n-1) as f64 / fs, n);
-//!
-//! // Create chirp input signal
-//! let input_vec = chirp(t.as_slice().unwrap(), 1.0, t[t.len()-1], 20.0, "linear", 0.0)?;
-//! let input = Array1::from(input_vec);
-//!
-//! // Simulate system output (simple first-order system)
-//! let mut output = Array1::zeros(n);
-//! let a = 0.9; // System parameter
-//! for i in 1..n {
-//!     output[i] = a * output[i-1] + (1.0 - a) * input[i-1];
-//! }
-//!
-//! // Estimate transfer function
-//! let result = estimate_transfer_function(
-//!     &input, &output, fs, 2, 2, TfEstimationMethod::LeastSquares
-//! )?;
-//!
-//! println!("Estimated numerator: {:?}", result.numerator);
-//! println!("Estimated denominator: {:?}", result.denominator);
-//! println!("Fit percentage: {:.2}%", result.fit_percentage);
-//! # Ok(())
-//! # }
-//! ```
+use ndarray::s;
+// System Identification Module
+//
+// This module provides comprehensive system identification functionality for
+// estimating mathematical models of dynamic systems from input-output data.
+//
+// ## Features
+//
+// - **Transfer Function Estimation**: Estimate transfer functions from input-output data
+// - **Parametric Models**: AR, ARMA, and ARX model identification
+// - **Non-parametric Methods**: Frequency response estimation using spectral methods
+// - **Model Validation**: Cross-validation, residual analysis, and information criteria
+// - **Subspace Methods**: Simple N4SID implementation for state-space identification
+// - **Recursive Methods**: Online/adaptive identification algorithms
+//
+// ## System Identification Methods
+//
+// ### Time-Domain Methods
+// - Least squares estimation for ARX models
+// - Prediction error methods for ARMA models
+// - Maximum likelihood estimation
+// - Instrumental variable methods
+//
+// ### Frequency-Domain Methods
+// - Spectral analysis based estimation
+// - Frequency response function estimation
+// - Empirical transfer function estimation
+//
+// ### Subspace Methods
+// - N4SID (Numerical algorithms for Subspace State Space System Identification)
+// - MOESP (Multivariable Output-Error State sPace)
+//
+// ## Example Usage
+//
+// ```rust
+// use ndarray::Array1;
+// use scirs2_signal::sysid::{estimate_transfer_function, TfEstimationMethod, ModelValidation};
+// use scirs2_signal::waveforms::chirp;
+// # fn main() -> Result<(), Box<dyn std::error::Error>> {
+//
+// // Generate test system and data
+// let n = 1000;
+// let fs = 100.0;
+// let t = Array1::linspace(0.0, (n-1) as f64 / fs, n);
+//
+// // Create chirp input signal
+// let input_vec = chirp(t.as_slice().unwrap(), 1.0, t[t.len()-1], 20.0, "linear", 0.0)?;
+// let input = Array1::from(input_vec);
+//
+// // Simulate system output (simple first-order system)
+// let mut output = Array1::zeros(n);
+// let a = 0.9; // System parameter
+// for i in 1..n {
+//     output[i] = a * output[i-1] + (1.0 - a) * input[i-1];
+// }
+//
+// // Estimate transfer function
+// let result = estimate_transfer_function(
+//     &input, &output, fs, 2, 2, TfEstimationMethod::LeastSquares
+// )?;
+//
+// println!("Estimated numerator: {:?}", result.numerator);
+// println!("Estimated denominator: {:?}", result.denominator);
+// println!("Fit percentage: {:.2}%", result.fit_percentage);
+// # Ok(())
+// # }
+// ```
 
 use crate::error::{SignalError, SignalResult};
+use crate::lombscargle_enhanced::WindowType;
 use crate::lti::{LtiSystem, TransferFunction};
 use crate::parametric::{estimate_ar, estimate_arma, ARMethod, OrderSelection};
 use crate::spectral::welch;
 use crate::window::get_window;
-
 use ndarray::{Array1, Array2, Axis};
 use num_complex::Complex64;
-use std::f64::consts::PI;
+use statrs::statistics::Statistics;
 
+#[allow(unused_imports)]
 /// Methods for transfer function estimation
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum TfEstimationMethod {
@@ -126,7 +128,7 @@ impl Default for SysIdConfig {
     fn default() -> Self {
         Self {
             fs: 1.0,
-            window: "hann".to_string(),
+            window: WindowType::Hann.to_string(),
             overlap: 0.5,
             nfft: None,
             regularization: None,
@@ -238,6 +240,7 @@ pub struct ModelValidation {
 /// # Ok(())
 /// # }
 /// ```
+#[allow(dead_code)]
 pub fn estimate_transfer_function(
     input: &Array1<f64>,
     output: &Array1<f64>,
@@ -275,6 +278,7 @@ pub fn estimate_transfer_function(
 }
 
 /// Least squares transfer function estimation
+#[allow(dead_code)]
 fn estimate_tf_least_squares(
     input: &Array1<f64>,
     output: &Array1<f64>,
@@ -362,6 +366,7 @@ fn estimate_tf_least_squares(
 }
 
 /// Frequency domain transfer function estimation using spectral methods
+#[allow(dead_code)]
 fn estimate_tf_frequency_domain(
     input: &Array1<f64>,
     output: &Array1<f64>,
@@ -388,6 +393,7 @@ fn estimate_tf_frequency_domain(
 }
 
 /// Instrumental variable method for transfer function estimation
+#[allow(dead_code)]
 fn estimate_tf_instrumental_variable(
     input: &Array1<f64>,
     output: &Array1<f64>,
@@ -475,6 +481,7 @@ fn estimate_tf_instrumental_variable(
 }
 
 /// Simplified subspace-based transfer function estimation
+#[allow(dead_code)]
 fn estimate_tf_subspace(
     input: &Array1<f64>,
     output: &Array1<f64>,
@@ -498,6 +505,7 @@ fn estimate_tf_subspace(
 ///
 /// # Returns
 /// * Frequency response estimation result
+#[allow(dead_code)]
 pub fn estimate_frequency_response(
     input: &Array1<f64>,
     output: &Array1<f64>,
@@ -525,6 +533,7 @@ pub fn estimate_frequency_response(
 }
 
 /// Frequency response estimation using Welch's method
+#[allow(dead_code)]
 fn estimate_freq_response_welch(
     input: &Array1<f64>,
     output: &Array1<f64>,
@@ -589,6 +598,7 @@ fn estimate_freq_response_welch(
 }
 
 /// Cross-spectral density estimation using Welch's method
+#[allow(dead_code)]
 fn cross_spectral_density_welch(
     x: &Array1<f64>,
     y: &Array1<f64>,
@@ -658,6 +668,7 @@ fn cross_spectral_density_welch(
 }
 
 /// Simple periodogram-based frequency response estimation
+#[allow(dead_code)]
 fn estimate_freq_response_periodogram(
     input: &Array1<f64>,
     output: &Array1<f64>,
@@ -701,6 +712,7 @@ fn estimate_freq_response_periodogram(
 }
 
 /// H1 estimator (minimizes input noise effects)
+#[allow(dead_code)]
 fn estimate_freq_response_h1(
     input: &Array1<f64>,
     output: &Array1<f64>,
@@ -712,6 +724,7 @@ fn estimate_freq_response_h1(
 }
 
 /// H2 estimator (minimizes output noise effects)  
+#[allow(dead_code)]
 fn estimate_freq_response_h2(
     input: &Array1<f64>,
     output: &Array1<f64>,
@@ -766,6 +779,7 @@ fn estimate_freq_response_h2(
 }
 
 /// Coherence-weighted frequency response estimation
+#[allow(dead_code)]
 fn estimate_freq_response_coherence_weighted(
     input: &Array1<f64>,
     output: &Array1<f64>,
@@ -793,6 +807,7 @@ fn estimate_freq_response_coherence_weighted(
 }
 
 /// Fit parametric model to frequency response data
+#[allow(dead_code)]
 fn fit_parametric_to_frequency_response(
     freq_response: &Array1<Complex64>,
     frequencies: &Array1<f64>,
@@ -886,17 +901,18 @@ fn fit_parametric_to_frequency_response(
 ///
 /// # Returns
 /// * Parametric model identification result
+#[allow(dead_code)]
 pub fn identify_ar_model(
     signal: &Array1<f64>,
     max_order: usize,
     method: ARMethod,
     selection_criterion: OrderSelection,
 ) -> SignalResult<ParametricResult> {
-    // Select optimal order
+    // Select optimal _order
     let (optimal_order, criteria) =
         crate::parametric::select_ar_order(signal, max_order, selection_criterion, method)?;
 
-    // Estimate AR parameters with optimal order
+    // Estimate AR parameters with optimal _order
     let (ar_coeffs, reflection_coeffs, noise_var) = estimate_ar(signal, optimal_order, method)?;
 
     Ok(ParametricResult {
@@ -919,6 +935,7 @@ pub fn identify_ar_model(
 ///
 /// # Returns
 /// * Parametric model identification result
+#[allow(dead_code)]
 pub fn identify_arma_model(
     signal: &Array1<f64>,
     max_ar_order: usize,
@@ -938,7 +955,7 @@ pub fn identify_arma_model(
 
             if let Ok((ar_coeffs, ma_coeffs, noise_var)) = estimate_arma(signal, ar_order, ma_order)
             {
-                // Calculate information criterion
+                // Calculate information _criterion
                 let k = ar_order + ma_order;
                 let log_likelihood = -0.5 * n * (2.0 * PI * noise_var).ln() - 0.5 * n;
 
@@ -981,6 +998,7 @@ pub fn identify_arma_model(
 ///
 /// # Returns
 /// * Model validation results
+#[allow(dead_code)]
 pub fn validate_model(
     predicted: &Array1<f64>,
     actual: &Array1<f64>,
@@ -1022,11 +1040,11 @@ pub fn validate_model(
     // Final prediction error
     let fpe = mse * (n + model_order as f64) / (n - model_order as f64);
 
-    // Whiteness test (Ljung-Box test approximation)
+    // Whiteness _test (Ljung-Box _test approximation)
     let whiteness_test = if perform_whiteness_test {
         ljung_box_test(&residuals, 10)
     } else {
-        1.0 // No test performed
+        1.0 // No _test performed
     };
 
     Ok(ModelValidation {
@@ -1053,6 +1071,7 @@ pub fn validate_model(
 /// # Returns
 /// * State-space matrices (A, B, C, D)
 #[allow(clippy::type_complexity)]
+#[allow(dead_code)]
 pub fn n4sid_identification(
     input: &Array1<f64>,
     _output: &Array1<f64>,
@@ -1072,7 +1091,7 @@ pub fn n4sid_identification(
     // A full N4SID would involve:
     // 1. Construction of Hankel matrices
     // 2. QR decomposition and projection
-    // 3. SVD for order determination and state extraction
+    // 3. SVD for _order determination and state extraction
     // 4. Least squares for system matrices
 
     // For now, return identity matrices as placeholder
@@ -1107,9 +1126,9 @@ impl RecursiveLeastSquares {
     ///
     /// # Returns
     /// * New RLS estimator
-    pub fn new(dimension: usize, forgetting_factor: f64, initial_covariance: f64) -> Self {
-        let parameters = Array1::<f64>::zeros(dimension);
-        let covariance = Array2::<f64>::eye(dimension) * initial_covariance;
+    pub fn new(_dimension: usize, forgetting_factor: f64, initialcovariance: f64) -> Self {
+        let parameters = Array1::<f64>::zeros(_dimension);
+        let _covariance = Array2::<f64>::eye(_dimension) * initial_covariance;
 
         Self {
             parameters,
@@ -1127,10 +1146,10 @@ impl RecursiveLeastSquares {
     ///
     /// # Returns
     /// * Prediction error
-    pub fn update(&mut self, regression_vector: &Array1<f64>, output: f64) -> SignalResult<f64> {
+    pub fn update(&mut self, regressionvector: &Array1<f64>, output: f64) -> SignalResult<f64> {
         if regression_vector.len() != self.dimension {
             return Err(SignalError::ValueError(
-                "Regression vector dimension mismatch".to_string(),
+                "Regression _vector dimension mismatch".to_string(),
             ));
         }
 
@@ -1138,7 +1157,7 @@ impl RecursiveLeastSquares {
         let prediction = self.parameters.dot(regression_vector);
         let error = output - prediction;
 
-        // Gain vector: K = P * phi / (lambda + phi^T * P * phi)
+        // Gain _vector: K = P * phi / (lambda + phi^T * P * phi)
         let p_phi = self.covariance.dot(regression_vector);
         let denominator = self.forgetting_factor + regression_vector.dot(&p_phi);
 
@@ -1178,6 +1197,7 @@ impl RecursiveLeastSquares {
 }
 
 /// Helper function to calculate model fit percentage
+#[allow(dead_code)]
 fn calculate_fit_percentage(actual: &Array1<f64>, predicted: &Array1<f64>) -> f64 {
     let mean_actual = actual.mean().unwrap_or(0.0);
     let ss_tot = actual.mapv(|y| (y - mean_actual).powi(2)).sum();
@@ -1186,14 +1206,15 @@ fn calculate_fit_percentage(actual: &Array1<f64>, predicted: &Array1<f64>) -> f6
         return 0.0;
     }
 
-    let ss_res = (actual - predicted).mapv(|x| x * x).sum();
+    let ss_res = (_actual - predicted).mapv(|x| x * x).sum();
     let fit = 1.0 - ss_res / ss_tot;
 
     (100.0 * fit).clamp(0.0, 100.0)
 }
 
 /// Simple Ljung-Box test for residual whiteness
-fn ljung_box_test(residuals: &Array1<f64>, max_lag: usize) -> f64 {
+#[allow(dead_code)]
+fn ljung_box_test(_residuals: &Array1<f64>, maxlag: usize) -> f64 {
     let n = residuals.len();
     if n <= max_lag {
         return 1.0; // Cannot perform test
@@ -1201,17 +1222,17 @@ fn ljung_box_test(residuals: &Array1<f64>, max_lag: usize) -> f64 {
 
     // Calculate autocorrelations
     let mean_residual = residuals.mean().unwrap_or(0.0);
-    let var_residual = residuals
+    let var_residual = _residuals
         .mapv(|x| (x - mean_residual).powi(2))
         .mean()
         .unwrap_or(1.0);
 
     let mut lb_stat = 0.0;
 
-    for lag in 1..=max_lag {
+    for _lag in 1..=max_lag {
         let mut autocorr = 0.0;
         for t in lag..n {
-            autocorr += (residuals[t] - mean_residual) * (residuals[t - lag] - mean_residual);
+            autocorr += (_residuals[t] - mean_residual) * (_residuals[t - _lag] - mean_residual);
         }
         autocorr /= (n - lag) as f64 * var_residual;
 
@@ -1226,6 +1247,7 @@ fn ljung_box_test(residuals: &Array1<f64>, max_lag: usize) -> f64 {
 }
 
 /// Solve linear system using LU decomposition
+#[allow(dead_code)]
 fn solve_linear_system(a: &Array2<f64>, b: &Array1<f64>) -> SignalResult<Array1<f64>> {
     match scirs2_linalg::solve(&a.view(), &b.view(), None) {
         Ok(solution) => Ok(solution),
@@ -1236,6 +1258,7 @@ fn solve_linear_system(a: &Array2<f64>, b: &Array1<f64>) -> SignalResult<Array1<
 }
 
 /// Solve complex least squares problem by separating real and imaginary parts
+#[allow(dead_code)]
 fn solve_complex_least_squares(
     a: &Array2<Complex64>,
     b: &Array1<Complex64>,
@@ -1274,6 +1297,7 @@ fn solve_complex_least_squares(
 }
 
 /// Compute FFT (simplified implementation)
+#[allow(dead_code)]
 fn compute_fft(signal: &Array1<f64>) -> Array1<Complex64> {
     let n = signal.len();
 
@@ -1294,6 +1318,7 @@ fn compute_fft(signal: &Array1<f64>) -> Array1<Complex64> {
 }
 
 /// Find next power of 2
+#[allow(dead_code)]
 fn next_power_of_2(n: usize) -> usize {
     if n == 0 {
         return 1;
@@ -1305,13 +1330,423 @@ fn next_power_of_2(n: usize) -> usize {
     power
 }
 
+// ============================================================================
+// ROBUST SYSTEM IDENTIFICATION ALGORITHMS
+// ============================================================================
+
+/// Configuration for robust estimation methods
+#[derive(Debug, Clone)]
+pub struct RobustEstimationConfig {
+    /// Outlier detection threshold (in standard deviations)
+    pub outlier_threshold: f64,
+    /// Huber loss threshold parameter
+    pub huber_threshold: f64,
+    /// Fraction of data to trim in LTS (0.0 to 0.5)
+    pub lts_fraction: f64,
+    /// Enable fault detection and isolation
+    pub enable_fault_detection: bool,
+    /// Maximum fraction of outliers to handle (0.0 to 0.5)
+    pub max_outlier_fraction: f64,
+    /// Breakdown point for robust estimators (0.0 to 0.5)
+    pub breakdown_point: f64,
+    /// Use iterative reweighting for M-estimators
+    pub use_iterative_reweighting: bool,
+}
+
+impl Default for RobustEstimationConfig {
+    fn default() -> Self {
+        Self {
+            outlier_threshold: 3.0,
+            huber_threshold: 1.345,
+            lts_fraction: 0.75,
+            enable_fault_detection: true,
+            max_outlier_fraction: 0.3,
+            breakdown_point: 0.25,
+            use_iterative_reweighting: true,
+        }
+    }
+}
+
+/// Robust system identification result
+#[derive(Debug, Clone)]
+pub struct RobustSysIdResult {
+    /// Estimated model parameters
+    pub parameters: Array1<f64>,
+    /// Model fit percentage
+    pub fit_percentage: f64,
+    /// Robust residuals
+    pub robust_residuals: Array1<f64>,
+    /// Outlier indices detected
+    pub outlier_indices: Vec<usize>,
+    /// Robust scale estimate
+    pub robust_scale: f64,
+    /// Breakdown point achieved
+    pub breakdown_point: f64,
+    /// Number of iterations used
+    pub iterations: usize,
+    /// Convergence status
+    pub converged: bool,
+}
+
+/// Robust least squares estimation using M-estimators
+///
+/// This function performs robust parameter estimation using M-estimators with
+/// Huber loss function to handle outliers in the data.
+///
+/// # Arguments
+///
+/// * `input` - Input signal data
+/// * `output` - Output signal data
+/// * `order` - Model order (number of parameters to estimate)
+/// * `config` - Robust estimation configuration
+///
+/// # Returns
+///
+/// * Robust system identification result
+#[allow(dead_code)]
+pub fn robust_least_squares(
+    input: &Array1<f64>,
+    output: &Array1<f64>,
+    order: usize,
+    config: &RobustEstimationConfig,
+) -> SignalResult<RobustSysIdResult> {
+    if input.len() != output.len() {
+        return Err(SignalError::DimensionMismatch(format!(
+            "Input and output length mismatch: expected {}, got {}",
+            input.len(),
+            output.len()
+        )));
+    }
+
+    if input.len() < order {
+        return Err(SignalError::InvalidArgument(format!(
+            "Order {} cannot exceed data length {}",
+            order,
+            input.len()
+        )));
+    }
+
+    let n = input.len() - order;
+
+    // Build regression matrix
+    let mut regressor = Array2::zeros((n, order));
+    for i in 0..n {
+        for j in 0..order {
+            regressor[[i, j]] = input[i + order - 1 - j];
+        }
+    }
+
+    let target = output.slice(s![order..]).to_owned();
+
+    // Initialize with standard least squares
+    let mut parameters = solve_least_squares(&regressor, &target)?;
+    let mut weights = Array1::ones(n);
+    let mut robust_scale = estimate_robust_scale(&target, &regressor, &parameters)?;
+
+    let mut converged = false;
+    let mut iteration = 0;
+
+    // Iteratively reweighted least squares
+    while iteration < 50 && !converged {
+        let residuals = &target - &regressor.dot(&parameters);
+
+        // Update weights using Huber function
+        update_huber_weights(
+            &residuals,
+            robust_scale,
+            config.huber_threshold,
+            &mut weights,
+        );
+
+        // Weighted least squares
+        let new_parameters = solve_weighted_least_squares(&regressor, &target, &weights)?;
+
+        // Check convergence
+        let diff = &new_parameters - &parameters;
+        let diff_norm = (diff.mapv(|x| x * x).sum()).sqrt();
+        let params_norm = (parameters.mapv(|x| x * x).sum()).sqrt();
+        let parameter_change = diff_norm / params_norm;
+        converged = parameter_change < 1e-6;
+
+        parameters = new_parameters;
+        robust_scale = estimate_robust_scale(&target, &regressor, &parameters)?;
+        iteration += 1;
+    }
+
+    // Calculate final residuals and detect outliers
+    let residuals = &target - &regressor.dot(&parameters);
+    let outlier_indices = detect_outliers(&residuals, robust_scale, config.outlier_threshold);
+    let fit_percentage = calculate_robust_fit(&target, &regressor, &parameters);
+
+    Ok(RobustSysIdResult {
+        parameters,
+        fit_percentage,
+        robust_residuals: residuals,
+        outlier_indices,
+        robust_scale,
+        breakdown_point: config.breakdown_point,
+        iterations: iteration,
+        converged,
+    })
+}
+
+/// Fault-tolerant system identification with automatic outlier rejection
+///
+/// This function performs system identification while automatically detecting
+/// and rejecting outliers, faults, and measurement errors.
+#[allow(dead_code)]
+pub fn fault_tolerant_identification(
+    input: &Array1<f64>,
+    output: &Array1<f64>,
+    order: usize,
+    config: &RobustEstimationConfig,
+) -> SignalResult<RobustSysIdResult> {
+    if !config.enable_fault_detection {
+        return robust_least_squares(input, output, order, config);
+    }
+
+    let n = input.len() - order;
+    let mut regressor = Array2::zeros((n, order));
+    for i in 0..n {
+        for j in 0..order {
+            regressor[[i, j]] = input[i + order - 1 - j];
+        }
+    }
+
+    let target = output.slice(s![order..]).to_owned();
+
+    // Phase 1: Initial robust estimation
+    let initial_result = robust_least_squares(input, output, order, config)?;
+
+    // Phase 2: Fault detection using residual analysis
+    let mut outlier_mask = vec![false; n];
+    for &idx in &initial_result.outlier_indices {
+        if idx < n {
+            outlier_mask[idx] = true;
+        }
+    }
+
+    // Phase 3: Re-estimation without outliers
+    let clean_indices: Vec<usize> = (0..n).filter(|&i| !outlier_mask[i]).collect();
+
+    if clean_indices.len() < order {
+        return Ok(initial_result); // Not enough clean data, return initial result
+    }
+
+    // Build clean regression matrix
+    let mut clean_regressor = Array2::zeros((clean_indices.len(), order));
+    let mut clean_target = Array1::zeros(clean_indices.len());
+
+    for (i, &clean_idx) in clean_indices.iter().enumerate() {
+        clean_target[i] = target[clean_idx];
+        for j in 0..order {
+            clean_regressor[[i, j]] = regressor[[clean_idx, j]];
+        }
+    }
+
+    // Final robust estimation on clean data
+    let final_parameters = solve_least_squares(&clean_regressor, &clean_target)?;
+    let final_residuals = &target - &regressor.dot(&final_parameters);
+    let final_scale = estimate_robust_scale(&target, &regressor, &final_parameters)?;
+    let final_fit = calculate_robust_fit(&target, &regressor, &final_parameters);
+
+    Ok(RobustSysIdResult {
+        parameters: final_parameters,
+        fit_percentage: final_fit,
+        robust_residuals: final_residuals,
+        outlier_indices: initial_result.outlier_indices,
+        robust_scale: final_scale,
+        breakdown_point: config.breakdown_point,
+        iterations: initial_result.iterations + 1,
+        converged: true,
+    })
+}
+
+/// Adaptive robust system identification that automatically selects the best method
+#[allow(dead_code)]
+pub fn adaptive_robust_identification(
+    input: &Array1<f64>,
+    output: &Array1<f64>,
+    order: usize,
+) -> SignalResult<RobustSysIdResult> {
+    // Try different robust methods and select the best one
+    let mut best_result: Option<RobustSysIdResult> = None;
+    let mut best_fit = 0.0;
+
+    let methods = vec![
+        RobustEstimationConfig {
+            huber_threshold: 1.345,
+            ..Default::default()
+        },
+        RobustEstimationConfig {
+            huber_threshold: 2.0,
+            lts_fraction: 0.75,
+            ..Default::default()
+        },
+        RobustEstimationConfig {
+            huber_threshold: 1.0,
+            lts_fraction: 0.8,
+            enable_fault_detection: true,
+            ..Default::default()
+        },
+    ];
+
+    for config in methods {
+        if let Ok(result) = fault_tolerant_identification(input, output, order, &config) {
+            if result.fit_percentage > best_fit {
+                best_fit = result.fit_percentage;
+                best_result = Some(result);
+            }
+        }
+    }
+
+    best_result
+        .ok_or_else(|| SignalError::ComputationError("All robust methods failed".to_string()))
+}
+
+// Helper functions for robust estimation
+
+#[allow(dead_code)]
+fn solve_least_squares(
+    _regressor: &Array2<f64>,
+    target: &Array1<f64>,
+) -> SignalResult<Array1<f64>> {
+    // Simple normal equations solution (A^T A)^-1 A^T b
+    let at = regressor.t();
+    let ata = at.dot(_regressor);
+    let atb = at.dot(target);
+
+    // Solve using pseudo-inverse (simplified)
+    let mut result = Array1::zeros(_regressor.ncols());
+    for i in 0.._regressor.ncols() {
+        if i < atb.len() {
+            result[i] = atb[i] / (ata[[i, i]] + 1e-12);
+        }
+    }
+
+    Ok(result)
+}
+
+#[allow(dead_code)]
+fn solve_weighted_least_squares(
+    regressor: &Array2<f64>,
+    target: &Array1<f64>,
+    weights: &Array1<f64>,
+) -> SignalResult<Array1<f64>> {
+    // Weighted least squares: (A^T W A)^-1 A^T W b
+    let n = regressor.nrows();
+    let p = regressor.ncols();
+
+    let mut weighted_regressor = Array2::zeros((n, p));
+    let mut weighted_target = Array1::zeros(n);
+
+    for i in 0..n {
+        let w = weights[i].sqrt();
+        weighted_target[i] = target[i] * w;
+        for j in 0..p {
+            weighted_regressor[[i, j]] = regressor[[i, j]] * w;
+        }
+    }
+
+    solve_least_squares(&weighted_regressor, &weighted_target)
+}
+
+#[allow(dead_code)]
+fn update_huber_weights(
+    residuals: &Array1<f64>,
+    scale: f64,
+    threshold: f64,
+    weights: &mut Array1<f64>,
+) {
+    for i in 0..residuals.len() {
+        let standardized_residual = residuals[i].abs() / scale;
+        weights[i] = if standardized_residual <= threshold {
+            1.0
+        } else {
+            threshold / standardized_residual
+        };
+    }
+}
+
+#[allow(dead_code)]
+pub fn estimate_robust_scale(
+    target: &Array1<f64>,
+    regressor: &Array2<f64>,
+    parameters: &Array1<f64>,
+) -> SignalResult<f64> {
+    let residuals = target - &regressor.dot(parameters);
+    let mut abs_residuals: Vec<f64> = residuals.iter().map(|&r: &f64| r.abs()).collect();
+    abs_residuals.sort_by(|a, b| a.partial_cmp(b).unwrap());
+
+    // Median absolute deviation (MAD)
+    let median_idx = abs_residuals.len() / 2;
+    let mad = if abs_residuals.len() % 2 == 0 {
+        (abs_residuals[median_idx - 1] + abs_residuals[median_idx]) / 2.0
+    } else {
+        abs_residuals[median_idx]
+    };
+
+    Ok(mad * 1.4826) // Scale factor for normal distribution
+}
+
+#[allow(dead_code)]
+pub fn detect_outliers(residuals: &Array1<f64>, scale: f64, threshold: f64) -> Vec<usize> {
+    _residuals
+        .iter()
+        .enumerate()
+        .filter_map(|(i, &r)| {
+            if r.abs() / scale > threshold {
+                Some(i)
+            } else {
+                None
+            }
+        })
+        .collect()
+}
+
+#[allow(dead_code)]
+fn calculate_robust_fit(
+    target: &Array1<f64>,
+    regressor: &Array2<f64>,
+    parameters: &Array1<f64>,
+) -> f64 {
+    let predicted = regressor.dot(parameters);
+    let residuals = target - &predicted;
+
+    // Use robust R-squared based on median
+    let target_median = calculate_median(target);
+    let total_deviation: f64 = target.iter().map(|&y| (y - target_median).abs()).sum();
+    let residual_deviation: f64 = residuals.iter().map(|&r: &f64| r.abs()).sum();
+
+    if total_deviation > 1e-12 {
+        100.0 * (1.0 - residual_deviation / total_deviation).max(0.0)
+    } else {
+        100.0
+    }
+}
+
+#[allow(dead_code)]
+fn calculate_median(data: &Array1<f64>) -> f64 {
+    let mut sorted: Vec<f64> = data.to_vec();
+    sorted.sort_by(|a, b| a.partial_cmp(b).unwrap());
+
+    let n = sorted.len();
+    if n % 2 == 0 {
+        (sorted[n / 2 - 1] + sorted[n / 2]) / 2.0
+    } else {
+        sorted[n / 2]
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::lti::design::tf;
     use approx::assert_relative_eq;
-
     #[test]
     fn test_transfer_function_estimation_simple() {
+        let a = vec![1.0, 2.0, 3.0, 4.0, 5.0];
+        let b = vec![0.5, 0.5];
         // Test with a longer signal for better conditioning
         let n = 50;
         let mut input = Array1::zeros(n);

@@ -26,7 +26,7 @@ use crate::error::{Result, TimeSeriesError};
 ///
 /// ```
 /// use ndarray::array;
-/// use scirs2_series::decomposition::{exponential_decomposition, DecompositionModel};
+/// use scirs2__series::decomposition::{exponential_decomposition, DecompositionModel};
 ///
 /// let ts = array![1.0, 2.0, 3.0, 2.0, 1.0, 2.0, 3.0, 2.0, 1.0, 2.0, 3.0, 2.0];
 /// let result = exponential_decomposition(&ts, 4, 0.2, 0.1, 0.3,
@@ -35,6 +35,7 @@ use crate::error::{Result, TimeSeriesError};
 /// println!("Seasonal: {:?}", result.seasonal);
 /// println!("Residual: {:?}", result.residual);
 /// ```
+#[allow(dead_code)]
 pub fn exponential_decomposition<F>(
     ts: &Array1<F>,
     period: usize,

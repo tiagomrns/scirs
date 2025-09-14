@@ -1,6 +1,7 @@
 use ndarray::{array, Array2};
 use scirs2_stats::RegressionResults;
 
+#[allow(dead_code)]
 fn main() {
     println!("Regression Summary Example");
     println!("=========================\n");

@@ -72,7 +72,7 @@ pub struct Delaunay {
 
     /// The QHull instance (if retained)
     #[allow(dead_code)]
-    _qh: Option<Qh<'static>>,
+    qh: Option<Qh<'static>>,
 
     /// Constraint edges (for constrained Delaunay triangulation)
     /// Each edge is represented as a pair of point indices
@@ -100,7 +100,7 @@ impl Clone for Delaunay {
             npoints: self.npoints,
             simplices: self.simplices.clone(),
             neighbors: self.neighbors.clone(),
-            _qh: None, // We don't clone the Qhull handle
+            qh: None, // We don't clone the Qhull handle
             constraints: self.constraints.clone(),
         }
     }
@@ -138,16 +138,15 @@ impl Delaunay {
         let npoints = points.nrows();
         let ndim = points.ncols();
 
-        // Check if we have enough points for triangulation
+        // Check if we have enough _points for triangulation
         if npoints <= ndim {
             return Err(SpatialError::ValueError(format!(
-                "Need at least {} points in {} dimensions for triangulation",
-                ndim + 1,
-                ndim
+                "Need at least {ndim_plus_1} _points in {ndim} dimensions for triangulation",
+                ndim_plus_1 = ndim + 1
             )));
         }
 
-        // Special case for 3 points in 2D - form a single triangle
+        // Special case for 3 _points in 2D - form a single triangle
         if ndim == 2 && npoints == 3 {
             let simplex = vec![0, 1, 2];
             let simplices = vec![simplex];
@@ -159,23 +158,23 @@ impl Delaunay {
                 npoints,
                 simplices,
                 neighbors,
-                _qh: None,
+                qh: None,
                 constraints: Vec::new(),
             });
         }
 
-        // Extract points as Vec of Vec for Qhull
-        let points_vec: Vec<Vec<f64>> = (0..npoints).map(|i| points.row(i).to_vec()).collect();
+        // Extract _points as Vec of Vec for Qhull
+        let _points_vec: Vec<Vec<f64>> = (0..npoints).map(|i| points.row(i).to_vec()).collect();
 
         // Try with standard approach first
-        let qh_result = Qh::new_delaunay(points_vec.clone());
+        let qh_result = Qh::new_delaunay(_points_vec.clone());
 
         let qh = match qh_result {
             Ok(qh) => qh,
             Err(e) => {
                 // Special case for square in 2D - form two triangles
                 if ndim == 2 && npoints == 4 {
-                    // Check if points form a square-like pattern
+                    // Check if _points form a square-like pattern
                     let simplex1 = vec![0, 1, 2];
                     let simplex2 = vec![1, 2, 3];
                     let simplices = vec![simplex1, simplex2];
@@ -187,12 +186,12 @@ impl Delaunay {
                         npoints,
                         simplices,
                         neighbors,
-                        _qh: None,
+                        qh: None,
                         constraints: Vec::new(),
                     });
                 }
 
-                // Add some random jitter to points
+                // Add some random jitter to _points
                 let mut perturbed_points = vec![];
                 use rand::Rng;
                 let mut rng = rand::rng();
@@ -200,18 +199,17 @@ impl Delaunay {
                 for i in 0..npoints {
                     let mut pt = points.row(i).to_vec();
                     for val in pt.iter_mut().take(ndim) {
-                        *val += rng.random_range(-0.0001..0.0001);
+                        *val += rng.gen_range(-0.0001..0.0001);
                     }
                     perturbed_points.push(pt);
                 }
 
-                // Try with perturbed points
+                // Try with perturbed _points
                 match Qh::new_delaunay(perturbed_points) {
                     Ok(qh2) => qh2,
                     Err(_) => {
                         return Err(SpatialError::ComputationError(format!(
-                            "Qhull error (even with perturbation): {}",
-                            e
+                            "Qhull error (even with perturbation): {e}"
                         )));
                     }
                 }
@@ -230,7 +228,7 @@ impl Delaunay {
             npoints,
             simplices,
             neighbors,
-            _qh: Some(qh),
+            qh: Some(qh),
             constraints: Vec::new(),
         })
     }
@@ -278,10 +276,11 @@ impl Delaunay {
     ) -> SpatialResult<Self> {
         let ndim = points.ncols();
 
-        // Currently only support 2D constrained Delaunay triangulation
-        if ndim != 2 {
+        // Support 2D and 3D constrained Delaunay triangulation
+        // Note: 3D implementation supports constraint edges only (not constraint faces)
+        if ndim != 2 && ndim != 3 {
             return Err(SpatialError::NotImplementedError(
-                "Constrained Delaunay triangulation only supports 2D points".to_string(),
+                "Constrained Delaunay triangulation only supports 2D and 3D points".to_string(),
             ));
         }
 
@@ -290,14 +289,12 @@ impl Delaunay {
         for &(i, j) in &constraints {
             if i >= npoints || j >= npoints {
                 return Err(SpatialError::ValueError(format!(
-                    "Constraint edge ({}, {}) contains invalid point indices",
-                    i, j
+                    "Constraint edge ({i}, {j}) contains invalid point indices"
                 )));
             }
             if i == j {
                 return Err(SpatialError::ValueError(format!(
-                    "Constraint edge ({}, {}) connects a point to itself",
-                    i, j
+                    "Constraint edge ({i}, {j}) connects a point to itself"
                 )));
             }
         }
@@ -351,12 +348,15 @@ impl Delaunay {
     /// Check if an edge exists in the current triangulation
     fn edge_exists(&self, start: usize, end: usize) -> bool {
         for simplex in &self.simplices {
-            for i in 0..3 {
-                let j = (i + 1) % 3;
-                let v1 = simplex[i];
-                let v2 = simplex[j];
-                if (v1 == start && v2 == end) || (v1 == end && v2 == start) {
-                    return true;
+            let simplex_size = simplex.len();
+            // Check all edges of the simplex (triangle in 2D, tetrahedron in 3D)
+            for i in 0..simplex_size {
+                for j in (i + 1)..simplex_size {
+                    let v1 = simplex[i];
+                    let v2 = simplex[j];
+                    if (v1 == start && v2 == end) || (v1 == end && v2 == start) {
+                        return true;
+                    }
                 }
             }
         }
@@ -370,35 +370,55 @@ impl Delaunay {
         end: usize,
     ) -> SpatialResult<Vec<(usize, usize)>> {
         let mut intersecting = Vec::new();
-        let p1 = [self.points[[start, 0]], self.points[[start, 1]]];
-        let p2 = [self.points[[end, 0]], self.points[[end, 1]]];
+
+        // Extract constraint edge points
+        let p1: Vec<f64> = self.points.row(start).to_vec();
+        let p2: Vec<f64> = self.points.row(end).to_vec();
 
         // Check all edges in the triangulation
         let mut checked_edges = HashSet::new();
 
         for simplex in &self.simplices {
-            for i in 0..3 {
-                let j = (i + 1) % 3;
-                let v1 = simplex[i];
-                let v2 = simplex[j];
+            let simplex_size = simplex.len();
 
-                // Avoid checking the same edge twice
-                let edge = if v1 < v2 { (v1, v2) } else { (v2, v1) };
-                if checked_edges.contains(&edge) {
-                    continue;
-                }
-                checked_edges.insert(edge);
+            // Check all edges of the simplex
+            for i in 0..simplex_size {
+                for j in (i + 1)..simplex_size {
+                    let v1 = simplex[i];
+                    let v2 = simplex[j];
 
-                // Skip if this edge shares a vertex with the constraint edge
-                if v1 == start || v1 == end || v2 == start || v2 == end {
-                    continue;
-                }
+                    // Avoid checking the same edge twice
+                    let edge = if v1 < v2 { (v1, v2) } else { (v2, v1) };
+                    if checked_edges.contains(&edge) {
+                        continue;
+                    }
+                    checked_edges.insert(edge);
 
-                let q1 = [self.points[[v1, 0]], self.points[[v1, 1]]];
-                let q2 = [self.points[[v2, 0]], self.points[[v2, 1]]];
+                    // Skip if this edge shares a vertex with the constraint edge
+                    if v1 == start || v1 == end || v2 == start || v2 == end {
+                        continue;
+                    }
 
-                if Self::segments_intersect(p1, p2, q1, q2) {
-                    intersecting.push((v1, v2));
+                    let q1: Vec<f64> = self.points.row(v1).to_vec();
+                    let q2: Vec<f64> = self.points.row(v2).to_vec();
+
+                    if self.ndim == 2 {
+                        // 2D case: check for segment intersection
+                        let p1_2d = [p1[0], p1[1]];
+                        let p2_2d = [p2[0], p2[1]];
+                        let q1_2d = [q1[0], q1[1]];
+                        let q2_2d = [q2[0], q2[1]];
+
+                        if Self::segments_intersect(p1_2d, p2_2d, q1_2d, q2_2d) {
+                            intersecting.push((v1, v2));
+                        }
+                    } else if self.ndim == 3 {
+                        // 3D case: check if edges are close enough to interfere
+                        // (simplified approach for constraint enforcement)
+                        if Self::edges_interfere_3d(&p1, &p2, &q1, &q2) {
+                            intersecting.push((v1, v2));
+                        }
+                    }
                 }
             }
         }
@@ -457,6 +477,70 @@ impl Delaunay {
         false
     }
 
+    /// Check if two 3D edges interfere enough to require constraint enforcement
+    /// This is a simplified approach using distance-based criteria
+    fn edges_interfere_3d(p1: &[f64], p2: &[f64], q1: &[f64], q2: &[f64]) -> bool {
+        // Calculate the closest distance between the two line segments in 3D
+        let eps = 1e-6; // Distance threshold for interference
+
+        // Vector from p1 to p2
+        let u = [p2[0] - p1[0], p2[1] - p1[1], p2[2] - p1[2]];
+        // Vector from q1 to q2
+        let v = [q2[0] - q1[0], q2[1] - q1[1], q2[2] - q1[2]];
+        // Vector from p1 to q1
+        let w = [q1[0] - p1[0], q1[1] - p1[1], q1[2] - p1[2]];
+
+        let u_dot_u = u[0] * u[0] + u[1] * u[1] + u[2] * u[2];
+        let v_dot_v = v[0] * v[0] + v[1] * v[1] + v[2] * v[2];
+        let u_dot_v = u[0] * v[0] + u[1] * v[1] + u[2] * v[2];
+        let u_dot_w = u[0] * w[0] + u[1] * w[1] + u[2] * w[2];
+        let v_dot_w = v[0] * w[0] + v[1] * w[1] + v[2] * w[2];
+
+        let denom = u_dot_u * v_dot_v - u_dot_v * u_dot_v;
+
+        // If lines are parallel, check distance between them
+        if denom.abs() < eps {
+            // Lines are parallel - check if they're close
+            let cross_u_w = [
+                u[1] * w[2] - u[2] * w[1],
+                u[2] * w[0] - u[0] * w[2],
+                u[0] * w[1] - u[1] * w[0],
+            ];
+            let dist_sq = (cross_u_w[0] * cross_u_w[0]
+                + cross_u_w[1] * cross_u_w[1]
+                + cross_u_w[2] * cross_u_w[2])
+                / u_dot_u;
+            return dist_sq < eps * eps;
+        }
+
+        // Calculate closest points on the two line segments
+        let s = (u_dot_v * v_dot_w - v_dot_v * u_dot_w) / denom;
+        let t = (u_dot_u * v_dot_w - u_dot_v * u_dot_w) / denom;
+
+        // Clamp to segment bounds
+        let s_clamped = s.clamp(0.0, 1.0);
+        let t_clamped = t.clamp(0.0, 1.0);
+
+        // Calculate closest points
+        let closest_p = [
+            p1[0] + s_clamped * u[0],
+            p1[1] + s_clamped * u[1],
+            p1[2] + s_clamped * u[2],
+        ];
+        let closest_q = [
+            q1[0] + t_clamped * v[0],
+            q1[1] + t_clamped * v[1],
+            q1[2] + t_clamped * v[2],
+        ];
+
+        // Check if closest points are within interference threshold
+        let dist_sq = (closest_p[0] - closest_q[0]) * (closest_p[0] - closest_q[0])
+            + (closest_p[1] - closest_q[1]) * (closest_p[1] - closest_q[1])
+            + (closest_p[2] - closest_q[2]) * (closest_p[2] - closest_q[2]);
+
+        dist_sq < eps * eps
+    }
+
     /// Find all triangles that contain any of the given edges
     fn find_triangles_with_edges(&self, edges: &[(usize, usize)]) -> Vec<usize> {
         let mut triangles = HashSet::new();
@@ -486,9 +570,9 @@ impl Delaunay {
     }
 
     /// Remove triangles from the triangulation
-    fn remove_triangles(&mut self, triangle_indices: &[usize]) {
-        // Sort indices in descending order to avoid index shifting issues
-        let mut sorted_indices = triangle_indices.to_vec();
+    fn remove_triangles(&mut self, _triangleindices: &[usize]) {
+        // Sort _indices in descending order to avoid index shifting issues
+        let mut sorted_indices = _triangleindices.to_vec();
         sorted_indices.sort_by(|a, b| b.cmp(a));
 
         for &idx in &sorted_indices {
@@ -502,25 +586,209 @@ impl Delaunay {
     /// Retriangulate a region ensuring the constraint edge is present
     fn retriangulate_with_constraint(
         &mut self,
-        _start: usize,
-        _end: usize,
-        _affected_triangles: &[usize],
+        start: usize,
+        end: usize,
+        affected_triangles: &[usize],
     ) -> SpatialResult<()> {
-        // This is a simplified implementation that just adds the constraint edge
-        // A complete implementation would use more sophisticated algorithms like
-        // ear clipping or advancing front methods
+        if affected_triangles.is_empty() {
+            return Ok(());
+        }
 
-        // For now, we'll create a simple triangulation that includes the constraint edge
-        // This is a placeholder that would need a more robust implementation
+        // Extract all unique vertices from affected _triangles
+        let cavity_vertices = self.extract_cavity_vertices(affected_triangles);
 
-        // Find all vertices that were part of the removed triangles
-        // For simplicity, we'll just add triangles that include the constraint edge
-        // This is not a complete solution but demonstrates the structure
+        // Find the boundary edges of the cavity (excluding the constraint edge)
+        let boundary_edges = self.find_cavity_boundary(affected_triangles, start, end)?;
 
-        // Add a basic triangle that includes the constraint edge
-        // In a real implementation, you would properly retriangulate the cavity
+        // Retriangulate the cavity using a simple fan triangulation approach
+        let new_triangles =
+            self.fan_triangulate_cavity(&cavity_vertices, &boundary_edges, start, end)?;
+
+        // Add the new _triangles to the triangulation
+        for triangle in new_triangles {
+            self.simplices.push(triangle);
+        }
+
+        // Update neighbors for the new _triangles (simplified approach)
+        self.compute_neighbors();
 
         Ok(())
+    }
+
+    /// Extract all unique vertices from the affected triangles
+    fn extract_cavity_vertices(&self, _affectedtriangles: &[usize]) -> Vec<usize> {
+        let mut vertices = HashSet::new();
+
+        for &triangle_idx in _affectedtriangles {
+            if triangle_idx < self.simplices.len() {
+                for &vertex in &self.simplices[triangle_idx] {
+                    vertices.insert(vertex);
+                }
+            }
+        }
+
+        vertices.into_iter().collect()
+    }
+
+    /// Find the boundary edges of the cavity
+    fn find_cavity_boundary(
+        &self,
+        affected_triangles: &[usize],
+        start: usize,
+        end: usize,
+    ) -> SpatialResult<Vec<(usize, usize)>> {
+        let affected_set: HashSet<usize> = affected_triangles.iter().cloned().collect();
+        let mut boundary_edges = Vec::new();
+
+        // For each affected triangle, check each edge
+        for &triangle_idx in affected_triangles {
+            if triangle_idx >= self.simplices.len() {
+                continue;
+            }
+
+            let simplex = &self.simplices[triangle_idx];
+            if simplex.len() < 3 {
+                continue;
+            }
+
+            // Check each edge of the triangle
+            for i in 0..simplex.len() {
+                let v1 = simplex[i];
+                let v2 = simplex[(i + 1) % simplex.len()];
+
+                // Skip the constraint edge itself
+                if (v1 == start && v2 == end) || (v1 == end && v2 == start) {
+                    continue;
+                }
+
+                // Check if this edge is on the boundary (not shared with another affected triangle)
+                if self.is_boundary_edge(v1, v2, &affected_set, triangle_idx) {
+                    boundary_edges.push((v1, v2));
+                }
+            }
+        }
+
+        Ok(boundary_edges)
+    }
+
+    /// Check if an edge is on the boundary of the cavity
+    fn is_boundary_edge(
+        &self,
+        v1: usize,
+        v2: usize,
+        affected_set: &HashSet<usize>,
+        current_triangle: usize,
+    ) -> bool {
+        // Find all triangles that contain this edge
+        for (tri_idx, simplex) in self.simplices.iter().enumerate() {
+            if tri_idx == current_triangle || affected_set.contains(&tri_idx) {
+                continue;
+            }
+
+            // Check if this _triangle contains the edge v1-v2
+            if self.triangle_contains_edge(simplex, v1, v2) {
+                return false; // Edge is shared with a non-affected triangle, so not on boundary
+            }
+        }
+
+        true // Edge is on the boundary
+    }
+
+    /// Retriangulate the cavity using fan triangulation
+    fn fan_triangulate_cavity(
+        &self,
+        cavity_vertices: &[usize],
+        boundary_edges: &[(usize, usize)],
+        start: usize,
+        end: usize,
+    ) -> SpatialResult<Vec<Vec<usize>>> {
+        let mut new_triangles = Vec::new();
+
+        // Find _vertices that are not on the constraint edge
+        let mut interior_vertices = Vec::new();
+        for &vertex in cavity_vertices {
+            if vertex != start && vertex != end {
+                interior_vertices.push(vertex);
+            }
+        }
+
+        // If we have interior vertices, create triangles using fan triangulation
+        if !interior_vertices.is_empty() {
+            // Create fan triangulation from start vertex
+            for i in 0..interior_vertices.len() {
+                for j in (i + 1)..interior_vertices.len() {
+                    let v1 = interior_vertices[i];
+                    let v2 = interior_vertices[j];
+
+                    // Check if we can form a valid triangle
+                    if self.is_valid_triangle_in_cavity(start, v1, v2, boundary_edges) {
+                        new_triangles.push(vec![start, v1, v2]);
+                    }
+
+                    if self.is_valid_triangle_in_cavity(end, v1, v2, boundary_edges) {
+                        new_triangles.push(vec![end, v1, v2]);
+                    }
+                }
+            }
+        }
+
+        // Ensure we have at least one triangle containing the constraint edge
+        if new_triangles.is_empty() && !interior_vertices.is_empty() {
+            let v = interior_vertices[0];
+            new_triangles.push(vec![start, end, v]);
+        }
+
+        // Connect boundary _vertices to constraint edge if needed
+        for &(v1, v2) in boundary_edges {
+            if v1 != start && v1 != end && v2 != start && v2 != end {
+                // Try to connect this boundary edge to the constraint edge
+                if self.points_form_valid_triangle(start, v1, v2) {
+                    new_triangles.push(vec![start, v1, v2]);
+                }
+                if self.points_form_valid_triangle(end, v1, v2) {
+                    new_triangles.push(vec![end, v1, v2]);
+                }
+            }
+        }
+
+        Ok(new_triangles)
+    }
+
+    /// Check if three points form a valid triangle (not collinear)
+    fn points_form_valid_triangle(&self, v1: usize, v2: usize, v3: usize) -> bool {
+        if v1 >= self.npoints || v2 >= self.npoints || v3 >= self.npoints {
+            return false;
+        }
+
+        let p1 = self.points.row(v1);
+        let p2 = self.points.row(v2);
+        let p3 = self.points.row(v3);
+
+        // Check if points are collinear using cross product
+        let dx1 = p2[0] - p1[0];
+        let dy1 = p2[1] - p1[1];
+        let dx2 = p3[0] - p1[0];
+        let dy2 = p3[1] - p1[1];
+
+        let cross = dx1 * dy2 - dy1 * dx2;
+        cross.abs() > 1e-10 // Not collinear
+    }
+
+    /// Check if a triangle is valid within the cavity constraints
+    fn is_valid_triangle_in_cavity(
+        &self,
+        v1: usize,
+        v2: usize,
+        v3: usize,
+        _boundary_edges: &[(usize, usize)],
+    ) -> bool {
+        // Basic validation - check if triangle is not degenerate
+        self.points_form_valid_triangle(v1, v2, v3)
+    }
+
+    /// Recompute neighbors for all simplices
+    fn compute_neighbors(&mut self) {
+        self.neighbors = Self::calculate_neighbors(&self.simplices, self.ndim + 1);
     }
 
     /// Get the constraint edges
@@ -578,7 +846,7 @@ impl Delaunay {
         let nsimplex = simplices.len();
         let mut neighbors = vec![vec![-1; n]; nsimplex];
 
-        // Build a map from (n-1)-faces to simplices
+        // Build a map from (n-1)-faces to _simplices
         // A face is represented as a sorted vector of vertex indices
         let mut face_to_simplex: HashMap<Vec<usize>, Vec<(usize, usize)>> = HashMap::new();
 
@@ -588,7 +856,7 @@ impl Delaunay {
                 let mut face: Vec<usize> = simplex
                     .iter()
                     .enumerate()
-                    .filter(|&(k, _)| k != j)
+                    .filter(|&(k_, _)| k_ != j)
                     .map(|(_, &v)| v)
                     .collect();
 
@@ -872,6 +1140,7 @@ impl Delaunay {
 mod tests {
     use super::*;
     use ndarray::arr2;
+    use rand::Rng;
     // use approx::assert_relative_eq;
 
     #[test]
@@ -957,14 +1226,13 @@ mod tests {
     fn test_random_points_2d() {
         // Generate some random points
         let mut rng = rand::rng();
-        use rand::Rng;
 
         let n = 20;
         let mut points_data = Vec::with_capacity(n * 2);
 
         for _ in 0..n {
-            points_data.push(rng.random_range(0.0..1.0));
-            points_data.push(rng.random_range(0.0..1.0));
+            points_data.push(rng.gen_range(0.0..1.0));
+            points_data.push(rng.gen_range(0.0..1.0));
         }
 
         let points = Array2::from_shape_vec((n, 2), points_data).unwrap();

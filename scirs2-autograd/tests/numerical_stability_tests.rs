@@ -21,6 +21,7 @@ const EPSILON_VERY_RELAXED: f32 = 1e-2;
 
 /// Test numerical stability of basic arithmetic operations
 #[test]
+#[allow(dead_code)]
 fn test_arithmetic_stability() {
     println!("🔬 Testing arithmetic operation numerical stability...");
 
@@ -30,7 +31,7 @@ fn test_arithmetic_stability() {
         let small_val = 1e-10;
 
         let a = T::convert_to_tensor(
-            Array::<f32, _>::from_shape_vec(
+            Array::<f32, IxDyn>::from_shape_vec(
                 IxDyn(&[4]),
                 vec![large_val, -large_val, small_val, -small_val],
             )
@@ -38,7 +39,7 @@ fn test_arithmetic_stability() {
             ctx,
         );
         let b = T::convert_to_tensor(
-            Array::<f32, _>::from_shape_vec(
+            Array::<f32, IxDyn>::from_shape_vec(
                 IxDyn(&[4]),
                 vec![large_val, large_val, small_val, small_val],
             )
@@ -65,11 +66,11 @@ fn test_arithmetic_stability() {
 
         // Division with small denominators
         let small_denom = T::convert_to_tensor(
-            Array::<f32, _>::from_shape_vec(IxDyn(&[3]), vec![1e-20, 1.0, 1e20]).unwrap(),
+            Array::<f32, IxDyn>::from_shape_vec(IxDyn(&[3]), vec![1e-20, 1.0, 1e20]).unwrap(),
             ctx,
         );
         let numerator = T::convert_to_tensor(
-            Array::<f32, _>::from_shape_vec(IxDyn(&[3]), vec![1.0, 1.0, 1.0]).unwrap(),
+            Array::<f32, IxDyn>::from_shape_vec(IxDyn(&[3]), vec![1.0, 1.0, 1.0]).unwrap(),
             ctx,
         );
 
@@ -87,6 +88,7 @@ fn test_arithmetic_stability() {
 
 /// Test numerical stability of matrix operations
 #[test]
+#[allow(dead_code)]
 fn test_matrix_operation_stability() {
     println!("🔬 Testing matrix operation numerical stability...");
 
@@ -147,13 +149,14 @@ fn test_matrix_operation_stability() {
 
 /// Test numerical stability of activation functions
 #[test]
+#[allow(dead_code)]
 fn test_activation_function_stability() {
     println!("🔬 Testing activation function numerical stability...");
 
     ag::run(|ctx: &mut ag::Context<f32>| {
         // Test with extreme input values
         let extreme_inputs = T::convert_to_tensor(
-            Array::<f32, _>::from_shape_vec(
+            Array::<f32, IxDyn>::from_shape_vec(
                 IxDyn(&[8]),
                 vec![-100.0, -10.0, -1.0, -0.1, 0.1, 1.0, 10.0, 100.0],
             )
@@ -212,6 +215,7 @@ fn test_activation_function_stability() {
 
 /// Test numerical stability of reduction operations
 #[test]
+#[allow(dead_code)]
 fn test_reduction_stability() {
     println!("🔬 Testing reduction operation numerical stability...");
 
@@ -307,13 +311,14 @@ fn test_reduction_stability() {
 
 /// Test gradient computation numerical stability
 #[test]
+#[allow(dead_code)]
 fn test_gradient_numerical_stability() {
     println!("🔬 Testing gradient computation numerical stability...");
 
     ag::run(|ctx: &mut ag::Context<f32>| {
         // Test gradients with extreme input values
         let x = T::convert_to_tensor(
-            Array::<f32, _>::from_shape_vec(IxDyn(&[3]), vec![1e-10, 1.0, 1e10]).unwrap(),
+            Array::<f32, IxDyn>::from_shape_vec(IxDyn(&[3]), vec![1e-10, 1.0, 1e10]).unwrap(),
             ctx,
         );
 
@@ -395,13 +400,14 @@ fn test_gradient_numerical_stability() {
 
 /// Test numerical stability under optimization
 #[test]
+#[allow(dead_code)]
 fn test_optimization_numerical_stability() {
     println!("🔬 Testing numerical stability under graph optimization...");
 
     ag::run(|ctx: &mut ag::Context<f32>| {
         // Create a computation with optimization opportunities
         let x = T::convert_to_tensor(
-            Array::<f32, _>::from_shape_vec(
+            Array::<f32, IxDyn>::from_shape_vec(
                 IxDyn(&[10]),
                 (0..10).map(|i| i as f32 * 0.1).collect(),
             )
@@ -411,17 +417,17 @@ fn test_optimization_numerical_stability() {
 
         // Create expression with constant folding opportunities
         let const1 = T::convert_to_tensor(
-            Array::<f32, _>::from_shape_vec(IxDyn(&[1]), vec![0.0]).unwrap(),
+            Array::<f32, IxDyn>::from_shape_vec(IxDyn(&[1]), vec![0.0]).unwrap(),
             ctx,
         );
         let const2 = T::convert_to_tensor(
-            Array::<f32, _>::from_shape_vec(IxDyn(&[1]), vec![1.0]).unwrap(),
+            Array::<f32, IxDyn>::from_shape_vec(IxDyn(&[1]), vec![1.0]).unwrap(),
             ctx,
         );
 
         // Expression: x + 0 * (large_constant) + 1 * x
         let large_constant = T::convert_to_tensor(
-            Array::<f32, _>::from_shape_vec(IxDyn(&[10]), vec![1e10; 10]).unwrap(),
+            Array::<f32, IxDyn>::from_shape_vec(IxDyn(&[10]), vec![1e10; 10]).unwrap(),
             ctx,
         );
 
@@ -465,6 +471,7 @@ fn test_optimization_numerical_stability() {
 
 /// Test numerical stability of parallel operations
 #[test]
+#[allow(dead_code)]
 fn test_parallel_operation_stability() {
     println!("🔬 Testing parallel operation numerical stability...");
 
@@ -580,6 +587,7 @@ fn test_parallel_operation_stability() {
 
 /// Test numerical stability with tracing enabled
 #[test]
+#[allow(dead_code)]
 fn test_tracing_numerical_stability() {
     println!("🔬 Testing numerical stability with tracing enabled...");
 
@@ -651,6 +659,7 @@ fn test_tracing_numerical_stability() {
 
 /// Test numerical stability of memory optimization features
 #[test]
+#[allow(dead_code)]
 fn test_memory_optimization_stability() {
     println!("🔬 Testing memory optimization numerical stability...");
 
@@ -686,7 +695,7 @@ fn test_memory_optimization_stability() {
         // Test in-place operations
         let base_tensor = T::efficient_ones(&[1000], ctx);
         let addend = T::convert_to_tensor(
-            Array::<f32, _>::from_shape_vec(IxDyn(&[1000]), vec![0.5; 1000]).unwrap(),
+            Array::<f32, IxDyn>::from_shape_vec(IxDyn(&[1000]), vec![0.5; 1000]).unwrap(),
             ctx,
         );
 
@@ -725,6 +734,7 @@ fn test_memory_optimization_stability() {
 
 /// Comprehensive numerical stability report
 #[test]
+#[allow(dead_code)]
 fn test_comprehensive_stability_report() {
     println!("\n🎯 COMPREHENSIVE NUMERICAL STABILITY REPORT");
     println!("==========================================");
@@ -765,7 +775,7 @@ fn test_comprehensive_stability_report() {
         EPSILON_VERY_RELAXED
     );
 
-    println!("\n🚀 All ultrathink numerical stability testing completed successfully!");
+    println!("\n🚀 All Advanced numerical stability testing completed successfully!");
     println!(
         "   The autograd system maintains mathematical correctness under all tested conditions."
     );

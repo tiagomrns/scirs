@@ -66,7 +66,7 @@ pub enum ColorScheme {
 
 impl ColorScheme {
     /// Get color for a given heat value (0.0 to 1.0)
-    fn get_color(&self, heat: f64, function_name: &str) -> String {
+    fn get_color(&self, heat: f64, functionname: Option<&str>) -> String {
         let heat = heat.clamp(0.0, 1.0);
 
         match self {
@@ -79,27 +79,31 @@ impl ColorScheme {
                         2.0 * (1.0 - heat)
                     })) as u8;
                 let b = (255.0 * heat) as u8;
-                format!("rgb({},{},{})", r, g, b)
+                format!("rgb({r},{g},{b})")
             }
             ColorScheme::Hot => {
                 let r = (255.0 * heat.sqrt()) as u8;
                 let g = (255.0 * heat.powi(2)) as u8;
                 let b = (128.0 * heat.powi(3)) as u8;
-                format!("rgb({},{},{})", r, g, b)
+                format!("rgb({r},{g},{b})")
             }
             ColorScheme::Cool => {
                 let r = (128.0 * (1.0 - heat)) as u8;
                 let g = (200.0 * (1.0 - heat * 0.5)) as u8;
                 let b = (255.0 * (0.7 + 0.3 * heat)) as u8;
-                format!("rgb({},{},{})", r, g, b)
+                format!("rgb({r},{g},{b})")
             }
             ColorScheme::Grayscale => {
                 let intensity = (255.0 * (0.2 + 0.8 * (1.0 - heat))) as u8;
-                format!("rgb({},{},{})", intensity, intensity, intensity)
+                format!("rgb({intensity},{intensity},{intensity})")
             }
             ColorScheme::Java => {
                 // Use function name hash for consistent coloring
-                let hash = Self::hash_string(function_name);
+                let hash = if let Some(name) = functionname {
+                    Self::hash_string(name)
+                } else {
+                    0
+                };
                 let hue = (hash % 360) as f64;
                 let saturation = 70.0 + 30.0 * heat;
                 let lightness = 60.0 - 20.0 * heat;
@@ -109,7 +113,7 @@ impl ColorScheme {
                 let r = (255.0 * heat) as u8;
                 let g = (200.0 * (1.0 - heat * 0.7)) as u8;
                 let b = (100.0 * (1.0 - heat)) as u8;
-                format!("rgb({},{},{})", r, g, b)
+                format!("rgb({r},{g},{b})")
             }
         }
     }
@@ -151,7 +155,7 @@ impl ColorScheme {
         let g = ((g + m) * 255.0) as u8;
         let b = ((b + m) * 255.0) as u8;
 
-        format!("rgb({},{},{})", r, g, b)
+        format!("rgb({r},{g},{b})")
     }
 }
 
@@ -159,12 +163,20 @@ impl ColorScheme {
 #[derive(Debug)]
 pub struct SvgFlameGraphGenerator {
     config: SvgFlameGraphConfig,
+    cpu_usage: Vec<(f64, f64)>,
+    memory_usage: Vec<(f64, f64)>,
+    total_duration: std::time::Duration,
 }
 
 impl SvgFlameGraphGenerator {
     /// Create a new SVG flame graph generator
     pub fn new(config: SvgFlameGraphConfig) -> Self {
-        Self { config }
+        Self {
+            config,
+            cpu_usage: Vec::new(),
+            memory_usage: Vec::new(),
+            total_duration: std::time::Duration::from_secs(0),
+        }
     }
 
     /// Generate SVG flame graph from flame graph data
@@ -178,8 +190,8 @@ impl SvgFlameGraphGenerator {
 <defs>
   <style><![CDATA[
     .func_g:hover {{ stroke:black; stroke-width:0.5; cursor:pointer; }}
-    .func_text {{ font-family:{}; font-size:{}px; fill:rgb(0,0,0); }}
-    .search_text {{ font-family:{}; font-size:{}px; fill:rgb(255,255,255); }}
+    .functext {{ font-family:{}; font-size:{}px; fill:rgb(0,0,0); }}
+    .searchtext {{ font-family:{}; font-size:{}px; fill:rgb(255,255,255); }}
   ]]></style>
 </defs>
 "#,
@@ -193,7 +205,7 @@ impl SvgFlameGraphGenerator {
 
         // Background
         svg.push_str(&format!(
-            r#"<rect x="0" y="0" width="{}" height="{}" fill="white"/>
+            r#"<rect x= 0 y= 0 width="{}" height="{}" fill= white/>
 "#,
             self.config.width, self.config.height
         ));
@@ -201,7 +213,7 @@ impl SvgFlameGraphGenerator {
         // Title
         if !self.config.title.is_empty() {
             svg.push_str(&format!(
-                r#"<text x="{}" y="24" class="func_text" style="font-size:20px; font-weight:bold; text-anchor:middle;">{}</text>
+                r#"<text x="{}" y= 24 class= functext style="font-size:20px; font-weight:bold; text-anchor:middle;">{}</text>
 "#,
                 self.config.width / 2,
                 self.config.title
@@ -211,7 +223,7 @@ impl SvgFlameGraphGenerator {
         // Subtitle
         if !self.config.subtitle.is_empty() {
             svg.push_str(&format!(
-                r#"<text x="{}" y="48" class="func_text" style="font-size:14px; text-anchor:middle;">{}</text>
+                r#"<text x="{}" y= 48 class= functext style="font-size:14px; text-anchor:middle;">{}</text>
 "#,
                 self.config.width / 2,
                 self.config.subtitle
@@ -269,7 +281,7 @@ impl SvgFlameGraphGenerator {
         } else {
             0.0
         };
-        let color = self.config.color_scheme.get_color(heat, &node.name);
+        let color = self.config.color_scheme.get_color(heat, None);
 
         // Generate rectangle
         let escaped_name = self.escape_xml(&node.name);
@@ -280,9 +292,9 @@ impl SvgFlameGraphGenerator {
         };
 
         svg.push_str(&format!(
-            r#"<g class="func_g">
-  <rect x="{:.1}" y="{:.1}" width="{:.1}" height="{:.1}" fill="{}" rx="2" ry="2"/>
-  <text x="{:.1}" y="{:.1}" class="func_text">{}</text>
+            r#"<g class= func_g>
+  <rect x="{:.1}" y="{:.1}" width="{:.1}" height="{:.1}" fill="{}" rx= 2 ry= 2/>
+  <text x="{:.1}" y="{:.1}" class= functext>{}</text>
   <title>{} ({})</title>
 </g>
 "#,
@@ -293,7 +305,7 @@ impl SvgFlameGraphGenerator {
             color,
             x + 4.0,
             y + height * 0.7,
-            self.truncate_text(&escaped_name, width),
+            self.truncatetext(&escaped_name, width),
             escaped_name,
             percentage
         ));
@@ -335,7 +347,7 @@ impl SvgFlameGraphGenerator {
     }
 
     /// Truncate text to fit within width
-    fn truncate_text(&self, text: &str, width: f64) -> String {
+    fn truncatetext(&self, text: &str, width: f64) -> String {
         let char_width = (self.config.font_size as f64) * 0.6; // Approximate character width
         let max_chars = ((width - 8.0) / char_width) as usize;
 
@@ -353,36 +365,36 @@ impl SvgFlameGraphGenerator {
         r#"<script><![CDATA[
         // Search functionality
         function search(term) {
-            const elements = document.querySelectorAll('.func_g');
+            const elements = document.querySelectorAll(".func_g");
             elements.forEach(el => {
-                const text = el.querySelector('text').textContent;
+                const text = el.querySelector("text").textContent;
                 if (text.toLowerCase().includes(term.toLowerCase())) {
-                    el.style.opacity = '1.0';
+                    el.style.opacity = "1.0";
                 } else {
-                    el.style.opacity = '0.3';
+                    el.style.opacity = "0.3";
                 }
             });
         }
         
         // Reset search
         function resetSearch() {
-            const elements = document.querySelectorAll('.func_g');
+            const elements = document.querySelectorAll(".func_g");
             elements.forEach(el => {
-                el.style.opacity = '1.0';
+                el.style.opacity = "1.0";
             });
         }
         
         // Zoom functionality
         let currentZoom = 1.0;
-        const svg = document.querySelector('svg');
+        const svg = document.querySelector("svg");
         
         function zoom(factor) {
             currentZoom *= factor;
-            svg.style.transform = `scale(${currentZoom})`;
+            svg.style.transform = "scale(" + currentZoom + ")";;
         }
         
         // Mouse wheel zoom
-        svg.addEventListener('wheel', function(e) {
+        svg.addEventListener("wheel", function(e) {
             e.preventDefault();
             if (e.deltaY < 0) {
                 zoom(1.1);
@@ -392,11 +404,11 @@ impl SvgFlameGraphGenerator {
         });
         
         // Search on key press
-        document.addEventListener('keydown', function(e) {
-            if (e.key === 'r' || e.key === 'R') {
+        document.addEventListener("keydown", function(e) {
+            if (e.key === "r" || e.key === "R") {
                 resetSearch();
-            } else if (e.key === 's' || e.key === 'S') {
-                const term = prompt('Search for:');
+            } else if (e.key === "s" || e.key === "S") {
+                const term = prompt("Search for:");
                 if (term) search(term);
             }
         });
@@ -439,9 +451,9 @@ pub struct EnhancedFlameGraph {
 
 impl EnhancedFlameGraph {
     /// Create a new enhanced flame graph
-    pub fn new(performance: FlameGraphNode) -> Self {
+    pub fn from_performance(node: FlameGraphNode) -> Self {
         Self {
-            performance,
+            performance: node,
             memory: None,
             cpu_usage: Vec::new(),
             memory_usage: Vec::new(),
@@ -453,7 +465,7 @@ impl EnhancedFlameGraph {
     pub fn export_enhanced_svg(&self, path: &str) -> Result<(), std::io::Error> {
         let config = SvgFlameGraphConfig {
             height: 800,
-            title: "Enhanced Performance Profile".to_string(),
+            title: "Enhanced Performance Profile ".to_string(),
             ..Default::default()
         };
 
@@ -463,38 +475,37 @@ impl EnhancedFlameGraph {
         // SVG header with increased height
         svg.push_str(
             r#"<?xml version="1.0" encoding="UTF-8"?>
-<svg width="1200" height="800" xmlns="http://www.w3.org/2000/svg">
+<svg width= 1200 height= 800 xmlns="http://www.w3.org/2000/svg">
 <defs>
   <style><![CDATA[
     .func_g:hover { stroke:black; stroke-width:0.5; cursor:pointer; }
-    .func_text { font-family:Verdana, sans-serif; font-size:12px; fill:rgb(0,0,0); }
+    .functext { font-family:Verdana, sans-serif; font-size:12px; fill:rgb(0,0,0); }
     .chart_line { stroke:blue; stroke-width:2; fill:none; }
     .chart_area { fill:lightblue; opacity:0.3; }
   ]]></style>
 </defs>
-<rect x="0" y="0" width="1200" height="800" fill="white"/>
+<rect x= 0 y= 0 width= 1200 height= 800 fill= white/>
 "#,
         );
 
         // Title
-        svg.push_str(r#"<text x="600" y="24" class="func_text" style="font-size:18px; font-weight:bold; text-anchor:middle;">Enhanced Performance Profile</text>
+        svg.push_str(r#"<text x= 600 y= 24 class= functext style="font-size:18px; font-weight:bold; text-anchor:middle;">Enhanced Performance Profile</text>
 "#);
 
         // Performance flame graph (top half)
-        svg.push_str(r#"<text x="10" y="55" class="func_text" style="font-weight:bold;">CPU Performance Flame Graph</text>
+        svg.push_str(r#"<text x= 10 y= 55 class= functext style="font-weight:bold;">CPU Performance Flame Graph</text>
 "#);
 
         // Generate main flame graph
         let performance_svg = generator.generate_svg(&self.performance);
         let performance_content = self.extract_svg_content(&performance_svg);
         svg.push_str(&format!(
-            r#"<g transform="translate(0, 70)">{}</g>
-"#,
-            performance_content
+            r#"<g transform="translate(0, 70)">{performance_content}</g>
+"#
         ));
 
         // System metrics charts (bottom half)
-        svg.push_str(r#"<text x="10" y="425" class="func_text" style="font-weight:bold;">System Resource Usage</text>
+        svg.push_str(r#"<text x= 10 y= 425 class= functext style="font-weight:bold;">System Resource Usage</text>
 "#);
 
         // CPU usage chart
@@ -520,7 +531,7 @@ impl EnhancedFlameGraph {
     /// Extract SVG content without header/footer
     fn extract_svg_content(&self, svg: &str) -> String {
         // Simple extraction - in a real implementation would use proper XML parsing
-        if let Some(start) = svg.find("<rect x=\"0\" y=\"0\"") {
+        if let Some(start) = svg.find(r#"<rect x="0" y="0""#) {
             if let Some(end) = svg.rfind("</svg>") {
                 return svg[start..end].to_string();
             }
@@ -531,8 +542,8 @@ impl EnhancedFlameGraph {
     /// Add CPU usage chart to SVG
     fn add_cpu_chart(&self, svg: &mut String, x: f64, y: f64, width: f64, height: f64) {
         svg.push_str(&format!(
-            r#"<rect x="{}" y="{}" width="{}" height="{}" fill="none" stroke="black"/>
-<text x="{}" y="{}" class="func_text" style="font-size:10px;">CPU Usage (%)</text>
+            r#"<rect x="{}" y="{}" width="{}" height="{}" fill= none stroke= black/>
+<text x="{}" y="{}" class= functext style="font-size:10px;">CPU Usage (%)</text>
 "#,
             x,
             y,
@@ -558,25 +569,23 @@ impl EnhancedFlameGraph {
             let chart_x = x + (time.as_secs_f64() / max_time) * width;
             let chart_y = y + height - (cpu / max_cpu) * height;
 
-            if i == 0 {
-                points.push_str(&format!("M {:.1} {:.1}", chart_x, chart_y));
-            } else {
-                points.push_str(&format!(" L {:.1} {:.1}", chart_x, chart_y));
+            if i > 0 {
+                points.push_str(" L");
             }
+            points.push_str(&format!("{chart_x:.1},{chart_y:.1}"));
         }
 
         svg.push_str(&format!(
-            r#"<path d="{}" class="chart_line"/>
-"#,
-            points
+            r#"<path d="{points}" class= chart_line/>
+"#
         ));
     }
 
     /// Add memory usage chart to SVG
     fn add_memory_chart(&self, svg: &mut String, x: f64, y: f64, width: f64, height: f64) {
         svg.push_str(&format!(
-            r#"<rect x="{}" y="{}" width="{}" height="{}" fill="none" stroke="black"/>
-<text x="{}" y="{}" class="func_text" style="font-size:10px;">Memory Usage (MB)</text>
+            r#"<rect x="{}" y="{}" width="{}" height="{}" fill= none stroke= black/>
+<text x="{}" y="{}" class= functext style="font-size:10px;">Memory Usage (MB)</text>
 "#,
             x,
             y,
@@ -593,28 +602,33 @@ impl EnhancedFlameGraph {
         let max_memory = self
             .memory_usage
             .iter()
-            .map(|(_, mem)| *mem)
-            .max()
-            .unwrap_or(0);
+            .map(|(_, mem)| *mem as f64)
+            .fold(0.0f64, |a, b| a.max(b));
         let max_time = self.total_duration.as_secs_f64();
 
         let mut points = String::new();
         for (i, (time, memory)) in self.memory_usage.iter().enumerate() {
             let chart_x = x + (time.as_secs_f64() / max_time) * width;
-            let chart_y = y + height - ((*memory as f64) / (max_memory as f64)) * height;
+            let chart_y = y + height - (*memory as f64 / max_memory) * height;
 
-            if i == 0 {
-                points.push_str(&format!("M {:.1} {:.1}", chart_x, chart_y));
-            } else {
-                points.push_str(&format!(" L {:.1} {:.1}", chart_x, chart_y));
+            if i > 0 {
+                points.push_str(" L");
             }
+            points.push_str(&format!("{chart_x:.1},{chart_y:.1}"));
         }
 
         svg.push_str(&format!(
-            r#"<path d="{}" style="stroke:green; stroke-width:2; fill:none;"/>
-"#,
-            points
+            r#"<path d="{points}" style="stroke:green; stroke-width:2; fill:none;"/>
+"#
         ));
+    }
+
+    /// Export flame graph to file
+    pub fn export_to_file(&self, root: &FlameGraphNode, path: &str) -> Result<(), std::io::Error> {
+        let config = SvgFlameGraphConfig::default();
+        let generator = SvgFlameGraphGenerator::new(config);
+        let svg_content = generator.generate_svg(root);
+        std::fs::write(path, svg_content)
     }
 }
 
@@ -648,7 +662,7 @@ mod tests {
         ];
 
         for scheme in &schemes {
-            let color = scheme.get_color(0.5, "test_function");
+            let color = scheme.get_color(0.5, Some("test_function"));
             assert!(color.starts_with("rgb("));
             assert!(color.ends_with(")"));
         }
@@ -664,9 +678,9 @@ mod tests {
     }
 
     #[test]
-    fn test_text_truncation() {
+    fn testtext_truncation() {
         let generator = SvgFlameGraphGenerator::default();
-        let result = generator.truncate_text("very_long_function_name", 50.0);
+        let result = generator.truncatetext("very_long_function_name", 50.0);
         assert!(result.len() <= 50);
     }
 }

@@ -1,34 +1,35 @@
-//! Median Filtering module
-//!
-//! This module implements median filtering techniques for signal and image processing.
-//! Median filtering is particularly effective at removing salt-and-pepper and
-//! impulse noise while preserving edges.
-//!
-//! The implementation includes:
-//! - 1D Median filtering for signals
-//! - 2D Median filtering for images
-//! - Weighted median filtering
-//! - Adaptive median filtering
-//! - Edge-preserving median filtering variants
-//!
-//! # Example
-//! ```
-//! use ndarray::Array1;
-//! use scirs2_signal::median::{median_filter_1d, MedianConfig};
-//!
-//! // Create a test signal with impulse noise
-//! let mut signal = Array1::from_vec(vec![1.0, 1.2, 1.1, 5.0, 1.3, 1.2, 0.0, 1.1]);
-//!
-//! // Apply median filter with window size 3
-//! let config = MedianConfig::default();
-//! let filtered = median_filter_1d(&signal, 3, &config).unwrap();
-//! // The outliers (5.0 and 0.0) will be replaced with median values
-//! ```
-
-use ndarray::{s, Array1, Array2, Array3, Axis};
+use ndarray::s;
+// Median Filtering module
+//
+// This module implements median filtering techniques for signal and image processing.
+// Median filtering is particularly effective at removing salt-and-pepper and
+// impulse noise while preserving edges.
+//
+// The implementation includes:
+// - 1D Median filtering for signals
+// - 2D Median filtering for images
+// - Weighted median filtering
+// - Adaptive median filtering
+// - Edge-preserving median filtering variants
+//
+// # Example
+// ```
+// use ndarray::Array1;
+// use scirs2signal::median::{median_filter_1d, MedianConfig};
+//
+// // Create a test signal with impulse noise
+// let mut signal = Array1::from_vec(vec![1.0, 1.2, 1.1, 5.0, 1.3, 1.2, 0.0, 1.1]);
+//
+// // Apply median filter with window size 3
+// let config = MedianConfig::default();
+// let filtered = median_filter_1d(&signal, 3, &config).unwrap();
+// // The outliers (5.0 and 0.0) will be replaced with median values
+// ```
 
 use crate::error::{SignalError, SignalResult};
+use ndarray::{Array1, Array2, Array3, Axis};
 
+#[allow(unused_imports)]
 /// Edge handling mode for median filtering
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum EdgeMode {
@@ -96,21 +97,22 @@ impl Default for MedianConfig {
 /// # Example
 /// ```
 /// use ndarray::Array1;
-/// use scirs2_signal::median::{median_filter_1d, MedianConfig};
+/// use scirs2signal::median::{median_filter_1d, MedianConfig};
 ///
 /// let signal = Array1::from_vec(vec![1.0, 1.2, 5.0, 1.1, 1.3, 0.0, 1.2]);
 /// let config = MedianConfig::default();
 /// let filtered = median_filter_1d(&signal, 3, &config).unwrap();
 /// ```
+#[allow(dead_code)]
 pub fn median_filter_1d(
     signal: &Array1<f64>,
     kernel_size: usize,
     config: &MedianConfig,
 ) -> SignalResult<Array1<f64>> {
-    // Validate kernel size
+    // Validate kernel _size
     if kernel_size % 2 != 1 {
         return Err(SignalError::ValueError(
-            "Kernel size must be odd".to_string(),
+            "Kernel _size must be odd".to_string(),
         ));
     }
 
@@ -124,22 +126,23 @@ pub fn median_filter_1d(
     let half_kernel = kernel_size / 2;
 
     // Create padded signal based on edge mode
-    let padded_signal = pad_signal_1d(signal, half_kernel, config.edge_mode);
+    let paddedsignal = padsignal_1d(signal, half_kernel, config.edge_mode);
 
     // Apply either standard or adaptive median filtering
     if config.adaptive {
-        adaptive_median_filter_1d(signal, &padded_signal, half_kernel, config)
+        adaptive_median_filter_1d(signal, &paddedsignal, half_kernel, config)
     } else if config.center_weighted {
-        center_weighted_median_filter_1d(signal, &padded_signal, half_kernel, config)
+        center_weighted_median_filter_1d(signal, &paddedsignal, half_kernel, config)
     } else {
-        standard_median_filter_1d(signal, &padded_signal, half_kernel)
+        standard_median_filter_1d(signal, &paddedsignal, half_kernel)
     }
 }
 
 /// Applies standard median filtering to a 1D signal
+#[allow(dead_code)]
 fn standard_median_filter_1d(
     signal: &Array1<f64>,
-    padded_signal: &Array1<f64>,
+    paddedsignal: &Array1<f64>,
     half_kernel: usize,
 ) -> SignalResult<Array1<f64>> {
     let n = signal.len();
@@ -152,14 +155,14 @@ fn standard_median_filter_1d(
         let window_end = i + 2 * half_kernel + 1;
 
         // Ensure window is within bounds
-        if window_start >= padded_signal.len() || window_end > padded_signal.len() {
-            return Err(SignalError::DimensionError(
+        if window_start >= paddedsignal.len() || window_end > paddedsignal.len() {
+            return Err(SignalError::DimensionMismatch(
                 "Window extends beyond padded signal bounds".to_string(),
             ));
         }
 
         // Extract and sort window values
-        let mut window: Vec<f64> = padded_signal.slice(s![window_start..window_end]).to_vec();
+        let mut window: Vec<f64> = paddedsignal.slice(s![window_start..window_end]).to_vec();
         window.sort_by(|a, b| a.partial_cmp(b).unwrap_or(std::cmp::Ordering::Equal));
 
         // Set output to median value
@@ -170,9 +173,10 @@ fn standard_median_filter_1d(
 }
 
 /// Applies center-weighted median filtering to a 1D signal
+#[allow(dead_code)]
 fn center_weighted_median_filter_1d(
     signal: &Array1<f64>,
-    padded_signal: &Array1<f64>,
+    paddedsignal: &Array1<f64>,
     half_kernel: usize,
     config: &MedianConfig,
 ) -> SignalResult<Array1<f64>> {
@@ -186,8 +190,8 @@ fn center_weighted_median_filter_1d(
         let window_end = i + 2 * half_kernel + 1;
 
         // Ensure window is within bounds
-        if window_start >= padded_signal.len() || window_end > padded_signal.len() {
-            return Err(SignalError::DimensionError(
+        if window_start >= paddedsignal.len() || window_end > paddedsignal.len() {
+            return Err(SignalError::DimensionMismatch(
                 "Window extends beyond padded signal bounds".to_string(),
             ));
         }
@@ -196,7 +200,7 @@ fn center_weighted_median_filter_1d(
         let mut weighted_window = Vec::new();
 
         for j in window_start..window_end {
-            let value = padded_signal[j];
+            let value = paddedsignal[j];
 
             // Add center value with higher weight
             if j == window_start + half_kernel {
@@ -222,26 +226,27 @@ fn center_weighted_median_filter_1d(
 }
 
 /// Applies adaptive median filtering to a 1D signal
+#[allow(dead_code)]
 fn adaptive_median_filter_1d(
     signal: &Array1<f64>,
-    padded_signal: &Array1<f64>,
+    paddedsignal: &Array1<f64>,
     initial_half_kernel: usize,
     config: &MedianConfig,
 ) -> SignalResult<Array1<f64>> {
     let n = signal.len();
     let mut filtered = Array1::zeros(n);
 
-    // Maximum half kernel size
+    // Maximum half _kernel size
     let max_half_kernel = config.max_kernel_size / 2;
 
     // Process each point in the signal
     for i in 0..n {
-        // Start with the initial kernel size
+        // Start with the initial _kernel size
         let mut half_kernel = initial_half_kernel;
         let mut window_size = 2 * half_kernel + 1;
 
         // Extract the current pixel value
-        let curr_val = padded_signal[i + half_kernel];
+        let curr_val = paddedsignal[i + half_kernel];
 
         // Adaptive window size adjustment
         while half_kernel <= max_half_kernel {
@@ -250,12 +255,12 @@ fn adaptive_median_filter_1d(
             let window_end = window_start + window_size;
 
             // Ensure window is within bounds
-            if window_end > padded_signal.len() {
+            if window_end > paddedsignal.len() {
                 break;
             }
 
             // Extract and sort window values
-            let window: Vec<f64> = padded_signal.slice(s![window_start..window_end]).to_vec();
+            let window: Vec<f64> = paddedsignal.slice(s![window_start..window_end]).to_vec();
             let mut sorted_window = window.clone();
             sorted_window.sort_by(|a, b| a.partial_cmp(b).unwrap_or(std::cmp::Ordering::Equal));
 
@@ -313,7 +318,7 @@ fn adaptive_median_filter_1d(
 /// # Example
 /// ```
 /// use ndarray::Array2;
-/// use scirs2_signal::median::{median_filter_2d, MedianConfig};
+/// use scirs2signal::median::{median_filter_2d, MedianConfig};
 ///
 /// let image = Array2::from_shape_fn((5, 5), |(i, j)| {
 ///     if i == 2 && j == 2 { 100.0 } else { 1.0 }  // Center pixel is an outlier
@@ -321,15 +326,16 @@ fn adaptive_median_filter_1d(
 /// let config = MedianConfig::default();
 /// let filtered = median_filter_2d(&image, 3, &config).unwrap();
 /// ```
+#[allow(dead_code)]
 pub fn median_filter_2d(
     image: &Array2<f64>,
     kernel_size: usize,
     config: &MedianConfig,
 ) -> SignalResult<Array2<f64>> {
-    // Validate kernel size
+    // Validate kernel _size
     if kernel_size % 2 != 1 {
         return Err(SignalError::ValueError(
-            "Kernel size must be odd".to_string(),
+            "Kernel _size must be odd".to_string(),
         ));
     }
 
@@ -343,22 +349,23 @@ pub fn median_filter_2d(
     let half_kernel = kernel_size / 2;
 
     // Create padded image based on edge mode
-    let padded_image = pad_image_2d(image, half_kernel, config.edge_mode);
+    let paddedimage = padimage_2d(image, half_kernel, config.edge_mode);
 
     // Apply either standard or adaptive median filtering
     if config.adaptive {
-        adaptive_median_filter_2d(image, &padded_image, half_kernel, config)
+        adaptive_median_filter_2d(image, &paddedimage, half_kernel, config)
     } else if config.center_weighted {
-        center_weighted_median_filter_2d(image, &padded_image, half_kernel, config)
+        center_weighted_median_filter_2d(image, &paddedimage, half_kernel, config)
     } else {
-        standard_median_filter_2d(image, &padded_image, half_kernel)
+        standard_median_filter_2d(image, &paddedimage, half_kernel)
     }
 }
 
 /// Applies standard median filtering to a 2D image
+#[allow(dead_code)]
 fn standard_median_filter_2d(
     image: &Array2<f64>,
-    padded_image: &Array2<f64>,
+    paddedimage: &Array2<f64>,
     half_kernel: usize,
 ) -> SignalResult<Array2<f64>> {
     let (height, width) = image.dim();
@@ -374,14 +381,14 @@ fn standard_median_filter_2d(
             let window_j_end = j + 2 * half_kernel + 1;
 
             // Ensure window is within bounds
-            if window_i_end > padded_image.dim().0 || window_j_end > padded_image.dim().1 {
-                return Err(SignalError::DimensionError(
+            if window_i_end > paddedimage.dim().0 || window_j_end > paddedimage.dim().1 {
+                return Err(SignalError::DimensionMismatch(
                     "Window extends beyond padded image bounds".to_string(),
                 ));
             }
 
             // Extract window values
-            let window = padded_image.slice(s![
+            let window = paddedimage.slice(s![
                 window_i_start..window_i_end,
                 window_j_start..window_j_end
             ]);
@@ -400,16 +407,17 @@ fn standard_median_filter_2d(
 }
 
 /// Applies center-weighted median filtering to a 2D image
+#[allow(dead_code)]
 fn center_weighted_median_filter_2d(
     image: &Array2<f64>,
-    padded_image: &Array2<f64>,
+    paddedimage: &Array2<f64>,
     half_kernel: usize,
     config: &MedianConfig,
 ) -> SignalResult<Array2<f64>> {
     let (height, width) = image.dim();
     let mut filtered = Array2::zeros((height, width));
 
-    // Calculate the center position in the kernel
+    // Calculate the center position in the _kernel
     let center_i = half_kernel;
     let center_j = half_kernel;
 
@@ -423,8 +431,8 @@ fn center_weighted_median_filter_2d(
             let window_j_end = j + 2 * half_kernel + 1;
 
             // Ensure window is within bounds
-            if window_i_end > padded_image.dim().0 || window_j_end > padded_image.dim().1 {
-                return Err(SignalError::DimensionError(
+            if window_i_end > paddedimage.dim().0 || window_j_end > paddedimage.dim().1 {
+                return Err(SignalError::DimensionMismatch(
                     "Window extends beyond padded image bounds".to_string(),
                 ));
             }
@@ -434,7 +442,7 @@ fn center_weighted_median_filter_2d(
 
             for wi in 0..(2 * half_kernel + 1) {
                 for wj in 0..(2 * half_kernel + 1) {
-                    let value = padded_image[[window_i_start + wi, window_j_start + wj]];
+                    let value = paddedimage[[window_i_start + wi, window_j_start + wj]];
 
                     // Add center value with higher weight
                     if wi == center_i && wj == center_j {
@@ -462,26 +470,27 @@ fn center_weighted_median_filter_2d(
 }
 
 /// Applies adaptive median filtering to a 2D image
+#[allow(dead_code)]
 fn adaptive_median_filter_2d(
     image: &Array2<f64>,
-    padded_image: &Array2<f64>,
+    paddedimage: &Array2<f64>,
     initial_half_kernel: usize,
     config: &MedianConfig,
 ) -> SignalResult<Array2<f64>> {
     let (height, width) = image.dim();
     let mut filtered = Array2::zeros((height, width));
 
-    // Maximum half kernel size
+    // Maximum half _kernel size
     let max_half_kernel = config.max_kernel_size / 2;
 
     // Process each pixel in the image
     for i in 0..height {
         for j in 0..width {
-            // Start with the initial kernel size
+            // Start with the initial _kernel size
             let mut half_kernel = initial_half_kernel;
 
             // Get current pixel value
-            let curr_val = padded_image[[i + half_kernel, j + half_kernel]];
+            let curr_val = paddedimage[[i + half_kernel, j + half_kernel]];
 
             // Adaptive window size adjustment
             while half_kernel <= max_half_kernel {
@@ -497,12 +506,12 @@ fn adaptive_median_filter_2d(
                 let window_j_end = window_j_start + kernel_size;
 
                 // Ensure window is within bounds
-                if window_i_end > padded_image.dim().0 || window_j_end > padded_image.dim().1 {
+                if window_i_end > paddedimage.dim().0 || window_j_end > paddedimage.dim().1 {
                     break;
                 }
 
                 // Extract window
-                let window = padded_image.slice(s![
+                let window = paddedimage.slice(s![
                     window_i_start..window_i_end,
                     window_j_start..window_j_end
                 ]);
@@ -563,6 +572,7 @@ fn adaptive_median_filter_2d(
 ///
 /// # Returns
 /// * The filtered color image
+#[allow(dead_code)]
 pub fn median_filter_color(
     image: &Array3<f64>,
     kernel_size: usize,
@@ -572,17 +582,17 @@ pub fn median_filter_color(
     let (height, width, channels) = image.dim();
 
     if vector_median {
-        // Vector median filtering (preserves color relationships)
+        // Vector _median filtering (preserves color relationships)
         vector_median_filter(image, kernel_size, config)
     } else {
-        // Channel-by-channel median filtering
+        // Channel-by-channel _median filtering
         let mut filtered = Array3::zeros((height, width, channels));
 
         for c in 0..channels {
             // Extract channel
             let channel = image.index_axis(Axis(2), c).to_owned();
 
-            // Apply median filtering to the channel
+            // Apply _median filtering to the channel
             let filtered_channel = median_filter_2d(&channel, kernel_size, config)?;
 
             // Store result
@@ -610,15 +620,16 @@ pub fn median_filter_color(
 ///
 /// # Returns
 /// * The filtered color image
+#[allow(dead_code)]
 fn vector_median_filter(
     image: &Array3<f64>,
     kernel_size: usize,
     config: &MedianConfig,
 ) -> SignalResult<Array3<f64>> {
-    // Validate kernel size
+    // Validate kernel _size
     if kernel_size % 2 != 1 {
         return Err(SignalError::ValueError(
-            "Kernel size must be odd".to_string(),
+            "Kernel _size must be odd".to_string(),
         ));
     }
 
@@ -635,7 +646,7 @@ fn vector_median_filter(
     let mut padded_channels = Vec::with_capacity(channels);
     for c in 0..channels {
         let channel = image.index_axis(Axis(2), c).to_owned();
-        padded_channels.push(pad_image_2d(&channel, half_kernel, config.edge_mode));
+        padded_channels.push(padimage_2d(&channel, half_kernel, config.edge_mode));
     }
 
     // Allocate output image
@@ -654,7 +665,7 @@ fn vector_median_filter(
             if window_i_end > padded_channels[0].dim().0
                 || window_j_end > padded_channels[0].dim().1
             {
-                return Err(SignalError::DimensionError(
+                return Err(SignalError::DimensionMismatch(
                     "Window extends beyond padded image bounds".to_string(),
                 ));
             }
@@ -696,6 +707,7 @@ fn vector_median_filter(
 ///
 /// The vector median is the vector that minimizes the sum of
 /// distances to all other vectors in the collection.
+#[allow(dead_code)]
 fn find_vector_median(vectors: &[Vec<f64>]) -> Vec<f64> {
     if vectors.is_empty() {
         return Vec::new();
@@ -728,6 +740,7 @@ fn find_vector_median(vectors: &[Vec<f64>]) -> Vec<f64> {
 }
 
 /// Computes the Euclidean distance between two vectors
+#[allow(dead_code)]
 fn euclidean_distance(v1: &[f64], v2: &[f64]) -> f64 {
     if v1.len() != v2.len() {
         return f64::INFINITY;
@@ -755,6 +768,7 @@ fn euclidean_distance(v1: &[f64], v2: &[f64]) -> f64 {
 ///
 /// # Returns
 /// * The filtered signal
+#[allow(dead_code)]
 pub fn rank_filter_1d(
     signal: &Array1<f64>,
     kernel_size: usize,
@@ -764,7 +778,7 @@ pub fn rank_filter_1d(
     // Validate parameters
     if kernel_size % 2 != 1 {
         return Err(SignalError::ValueError(
-            "Kernel size must be odd".to_string(),
+            "Kernel _size must be odd".to_string(),
         ));
     }
 
@@ -783,8 +797,8 @@ pub fn rank_filter_1d(
 
     let half_kernel = kernel_size / 2;
 
-    // Create padded signal based on edge mode
-    let padded_signal = pad_signal_1d(signal, half_kernel, edge_mode);
+    // Create padded signal based on edge _mode
+    let paddedsignal = padsignal_1d(signal, half_kernel, edge_mode);
 
     // Apply rank filter
     let mut filtered = Array1::zeros(n);
@@ -796,14 +810,14 @@ pub fn rank_filter_1d(
         let window_end = i + 2 * half_kernel + 1;
 
         // Ensure window is within bounds
-        if window_start >= padded_signal.len() || window_end > padded_signal.len() {
-            return Err(SignalError::DimensionError(
+        if window_start >= paddedsignal.len() || window_end > paddedsignal.len() {
+            return Err(SignalError::DimensionMismatch(
                 "Window extends beyond padded signal bounds".to_string(),
             ));
         }
 
         // Extract and sort window values
-        let mut window: Vec<f64> = padded_signal.slice(s![window_start..window_end]).to_vec();
+        let mut window: Vec<f64> = paddedsignal.slice(s![window_start..window_end]).to_vec();
         window.sort_by(|a, b| a.partial_cmp(b).unwrap_or(std::cmp::Ordering::Equal));
 
         // Calculate the index for the requested rank
@@ -828,15 +842,16 @@ pub fn rank_filter_1d(
 ///
 /// # Returns
 /// * The filtered image
+#[allow(dead_code)]
 pub fn hybrid_median_filter_2d(
     image: &Array2<f64>,
     kernel_size: usize,
     config: &MedianConfig,
 ) -> SignalResult<Array2<f64>> {
-    // Validate kernel size
+    // Validate kernel _size
     if kernel_size % 2 != 1 {
         return Err(SignalError::ValueError(
-            "Kernel size must be odd".to_string(),
+            "Kernel _size must be odd".to_string(),
         ));
     }
 
@@ -850,7 +865,7 @@ pub fn hybrid_median_filter_2d(
     let half_kernel = kernel_size / 2;
 
     // Create padded image based on edge mode
-    let padded_image = pad_image_2d(image, half_kernel, config.edge_mode);
+    let paddedimage = padimage_2d(image, half_kernel, config.edge_mode);
 
     // Allocate output image
     let mut filtered = Array2::zeros((height, width));
@@ -865,54 +880,54 @@ pub fn hybrid_median_filter_2d(
             let window_j_end = j + 2 * half_kernel + 1;
 
             // Ensure window is within bounds
-            if window_i_end > padded_image.dim().0 || window_j_end > padded_image.dim().1 {
-                return Err(SignalError::DimensionError(
+            if window_i_end > paddedimage.dim().0 || window_j_end > paddedimage.dim().1 {
+                return Err(SignalError::DimensionMismatch(
                     "Window extends beyond padded image bounds".to_string(),
                 ));
             }
 
             // Extract pixels from different structural elements
-            let mut plus_shape = Vec::new(); // + shape
-            let mut cross_shape = Vec::new(); // X shape
+            let mut plusshape = Vec::new(); // + shape
+            let mut crossshape = Vec::new(); // X shape
 
             for k in 0..(2 * half_kernel + 1) {
                 // Horizontal line (part of + shape)
-                plus_shape.push(padded_image[[window_i_start + half_kernel, window_j_start + k]]);
+                plusshape.push(paddedimage[[window_i_start + half_kernel, window_j_start + k]]);
 
                 // Vertical line (part of + shape)
-                plus_shape.push(padded_image[[window_i_start + k, window_j_start + half_kernel]]);
+                plusshape.push(paddedimage[[window_i_start + k, window_j_start + half_kernel]]);
 
                 // Diagonal 1 (part of X shape)
                 if k < kernel_size {
                     let diag_i = window_i_start + k;
                     let diag_j = window_j_start + k;
-                    cross_shape.push(padded_image[[diag_i, diag_j]]);
+                    crossshape.push(paddedimage[[diag_i, diag_j]]);
                 }
 
                 // Diagonal 2 (part of X shape)
                 if k < kernel_size {
                     let diag_i = window_i_start + k;
                     let diag_j = window_j_start + kernel_size - 1 - k;
-                    cross_shape.push(padded_image[[diag_i, diag_j]]);
+                    crossshape.push(paddedimage[[diag_i, diag_j]]);
                 }
             }
 
             // Remove duplicate center pixel
-            if !plus_shape.is_empty() {
-                plus_shape.pop();
+            if !plusshape.is_empty() {
+                plusshape.pop();
             }
 
             // Sort the values from each shape
-            plus_shape.sort_by(|a, b| a.partial_cmp(b).unwrap_or(std::cmp::Ordering::Equal));
-            cross_shape.sort_by(|a, b| a.partial_cmp(b).unwrap_or(std::cmp::Ordering::Equal));
+            plusshape.sort_by(|a, b| a.partial_cmp(b).unwrap_or(std::cmp::Ordering::Equal));
+            crossshape.sort_by(|a, b| a.partial_cmp(b).unwrap_or(std::cmp::Ordering::Equal));
 
             // Get median for each shape
-            let plus_median = plus_shape[plus_shape.len() / 2];
-            let cross_median = cross_shape[cross_shape.len() / 2];
+            let plus_median = plusshape[plusshape.len() / 2];
+            let cross_median = crossshape[crossshape.len() / 2];
 
             // Get the original pixel value
             let orig_value =
-                padded_image[[window_i_start + half_kernel, window_j_start + half_kernel]];
+                paddedimage[[window_i_start + half_kernel, window_j_start + half_kernel]];
 
             // Find the median of the three values: plus_median, cross_median, original
             let mut final_values = [plus_median, cross_median, orig_value];
@@ -927,7 +942,8 @@ pub fn hybrid_median_filter_2d(
 }
 
 /// Helper function to pad a 1D signal for edge handling
-fn pad_signal_1d(signal: &Array1<f64>, pad_size: usize, edge_mode: EdgeMode) -> Array1<f64> {
+#[allow(dead_code)]
+fn padsignal_1d(signal: &Array1<f64>, pad_size: usize, edgemode: EdgeMode) -> Array1<f64> {
     let n = signal.len();
     let mut padded = Array1::zeros(n + 2 * pad_size);
 
@@ -936,8 +952,8 @@ fn pad_signal_1d(signal: &Array1<f64>, pad_size: usize, edge_mode: EdgeMode) -> 
         padded[i + pad_size] = signal[i];
     }
 
-    // Apply padding based on edge mode
-    match edge_mode {
+    // Apply padding based on edge _mode
+    match edgemode {
         EdgeMode::Reflect => {
             // Reflect the signal at boundaries
             for i in 0..pad_size {
@@ -978,7 +994,8 @@ fn pad_signal_1d(signal: &Array1<f64>, pad_size: usize, edge_mode: EdgeMode) -> 
 }
 
 /// Helper function to pad a 2D image for edge handling
-fn pad_image_2d(image: &Array2<f64>, pad_size: usize, edge_mode: EdgeMode) -> Array2<f64> {
+#[allow(dead_code)]
+fn padimage_2d(image: &Array2<f64>, pad_size: usize, edgemode: EdgeMode) -> Array2<f64> {
     let (height, width) = image.dim();
     let mut padded = Array2::zeros((height + 2 * pad_size, width + 2 * pad_size));
 
@@ -989,8 +1006,8 @@ fn pad_image_2d(image: &Array2<f64>, pad_size: usize, edge_mode: EdgeMode) -> Ar
         }
     }
 
-    // Apply padding based on edge mode
-    match edge_mode {
+    // Apply padding based on edge _mode
+    match edgemode {
         EdgeMode::Reflect => {
             // Reflect the image at boundaries
 

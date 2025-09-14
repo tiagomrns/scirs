@@ -318,8 +318,9 @@ impl<
 }
 
 /// Creates extrapolation parameters for nearest neighbor extrapolation
-pub fn nearest_neighbor_extrapolation<F: Float + FromPrimitive + Debug>() -> ExtrapolationParams<F>
-{
+#[allow(dead_code)]
+pub fn nearest_neighbor_extrapolation<F: crate::traits::InterpolationFloat>(
+) -> ExtrapolationParams<F> {
     ExtrapolationParams {
         method: ExtrapolationMethod::NearestNeighbor,
         ..Default::default()
@@ -331,7 +332,8 @@ pub fn nearest_neighbor_extrapolation<F: Float + FromPrimitive + Debug>() -> Ext
 /// # Arguments
 /// * `n_neighbors` - The number of nearest neighbors to use
 /// * `power` - The power parameter for inverse distance weighting
-pub fn inverse_distance_extrapolation<F: Float + FromPrimitive + Debug>(
+#[allow(dead_code)]
+pub fn inverse_distance_extrapolation<F: crate::traits::InterpolationFloat>(
     n_neighbors: usize,
     power: F,
 ) -> ExtrapolationParams<F> {
@@ -344,7 +346,9 @@ pub fn inverse_distance_extrapolation<F: Float + FromPrimitive + Debug>(
 }
 
 /// Creates extrapolation parameters for linear gradient extrapolation
-pub fn linear_gradient_extrapolation<F: Float + FromPrimitive + Debug>() -> ExtrapolationParams<F> {
+#[allow(dead_code)]
+pub fn linear_gradient_extrapolation<F: crate::traits::InterpolationFloat>(
+) -> ExtrapolationParams<F> {
     ExtrapolationParams {
         method: ExtrapolationMethod::LinearGradient,
         ..Default::default()
@@ -355,7 +359,8 @@ pub fn linear_gradient_extrapolation<F: Float + FromPrimitive + Debug>() -> Extr
 ///
 /// # Arguments
 /// * `value` - The constant value to use for extrapolation
-pub fn constant_value_extrapolation<F: Float + FromPrimitive + Debug>(
+#[allow(dead_code)]
+pub fn constant_value_extrapolation<F: crate::traits::InterpolationFloat>(
     value: F,
 ) -> ExtrapolationParams<F> {
     ExtrapolationParams {

@@ -1,13 +1,16 @@
 [package]
 name = "scirs2-spatial"
 version.workspace = true
-edition = "2021"
-authors = ["SciRS2 Team"]
-description = "Spatial algorithms module for SciRS2"
-license = "MIT OR Apache-2.0"
-repository = "https://github.com/cool-japan/scirs"
+edition.workspace = true
+authors.workspace = true
+description = "Spatial algorithms module for SciRS2 (scirs2-spatial)"
+license.workspace = true
+repository.workspace = true
 keywords = ["spatial", "distance", "scientific", "scipy", "numerical"]
 categories = ["science", "mathematics", "algorithms"]
+
+[lints]
+workspace = true
 
 [dependencies]
 # Core dependencies
@@ -17,19 +20,32 @@ num-traits = { workspace = true }
 num-complex = { workspace = true }
 thiserror = { workspace = true }
 num = { workspace = true }
+statrs = { workspace = true }
 approx = { workspace = true }
 
 # Computational geometry
 qhull = { workspace = true }
 rand = { workspace = true }
 
+# System dependencies for NUMA
+libc = { workspace = true }
+
+# Async runtime for tensor core operations
+tokio = { workspace = true, features = ["rt", "rt-multi-thread"] }
+
+# CPU detection for adaptive selection
+num_cpus = { workspace = true }
+
 # Linear algebra dependencies handled through scirs2-core
 # scirs2-linalg = { workspace = true }  # Temporarily disabled due to compilation errors
 # ndarray-linalg = { workspace = true } # Removed - use scirs2-core BLAS abstractions
 
 [features]
-default = []
+default = ["parallel"]
 parallel = []
+cuda = []
+rocm = []
+vulkan = []
 
 [dev-dependencies]
 approx = { workspace = true }
@@ -37,6 +53,7 @@ criterion = { workspace = true }
 rand_chacha = { workspace = true }
 plotters = { workspace = true }
 num_cpus = { workspace = true }
+tokio-test = { workspace = true }
 
 [[bench]]
 name = "spatial_benchmarks"
@@ -57,3 +74,11 @@ harness = false
 [[bench]]
 name = "simd_bench"
 harness = false
+
+[[bench]]
+name = "advanced_modules_performance"
+harness = false
+
+# [[test]]
+# name = "integration_tests"
+# path = "tests/integration_tests.rs"

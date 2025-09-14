@@ -85,19 +85,17 @@ impl TensorConverter {
             converter.convert(&data, &metadata)
         } else {
             Err(IntegrationError::TensorConversion(format!(
-                "No converter found for format: {}",
-                target_format
+                "No converter found for format: {target_format}"
             )))
         }
     }
 
     /// Convert from a specific format to autograd tensor
-    pub fn convert_from<F: Float>(
-        &self,
-        _data: &[u8],
-        _metadata: &TensorMetadata,
-        _source_format: &str,
-    ) -> Result<Tensor<F>, IntegrationError> {
+    pub fn convert_from<'a, F: Float>(
+        _data: &'a [u8],
+        _metadata: &'a TensorMetadata,
+        _source_format: &'a str,
+    ) -> Result<Tensor<'a, F>, IntegrationError> {
         // For now, implement basic conversion
         // In practice, this would use the registered converters
         // Direct tensor creation not supported without graph context
@@ -161,7 +159,7 @@ impl TensorConverter {
             .collect();
 
         Array::from_shape_vec(IxDyn(&shape), data).map_err(|e| {
-            IntegrationError::TensorConversion(format!("Failed to create ndarray: {}", e))
+            IntegrationError::TensorConversion(format!("Failed to create ndarray: {e}"))
         })
     }
 
@@ -185,7 +183,7 @@ impl TensorConverter {
         // Register ndarray converter
         self.converters.insert(
             "ndarray".to_string(),
-            Box::new(|data: &[u8], _metadata: &TensorMetadata| {
+            Box::new(|data: &[u8], metadata: &TensorMetadata| {
                 // Convert to ndarray format
                 Ok(data.to_vec())
             }),
@@ -194,7 +192,7 @@ impl TensorConverter {
         // Register numpy-compatible converter
         self.converters.insert(
             "numpy".to_string(),
-            Box::new(|data: &[u8], _metadata: &TensorMetadata| {
+            Box::new(|data: &[u8], metadata: &TensorMetadata| {
                 // Convert to numpy-compatible format
                 Ok(data.to_vec())
             }),
@@ -212,7 +210,7 @@ impl TensorConverter {
                 });
 
                 serde_json::to_vec(&json_repr).map_err(|e| {
-                    IntegrationError::TensorConversion(format!("JSON serialization failed: {}", e))
+                    IntegrationError::TensorConversion(format!("JSON serialization failed: {e}"))
                 })
             }),
         );
@@ -223,10 +221,10 @@ impl TensorConverter {
         &self,
         tensor: &Tensor<F>,
     ) -> Result<TensorMetadata, IntegrationError> {
-        let final_shape = tensor.shape();
+        let shape = tensor.shape();
 
         Ok(TensorMetadata {
-            shape: final_shape,
+            shape,
             dtype: std::any::type_name::<F>().to_string(),
             memory_layout: MemoryLayout::RowMajor, // Simplified
             requires_grad: tensor.requires_grad(),
@@ -363,11 +361,13 @@ static GLOBAL_CONVERTER: std::sync::OnceLock<std::sync::Mutex<TensorConverter>> 
     std::sync::OnceLock::new();
 
 /// Initialize global tensor converter
+#[allow(dead_code)]
 pub fn init_tensor_converter() -> &'static std::sync::Mutex<TensorConverter> {
     GLOBAL_CONVERTER.get_or_init(|| std::sync::Mutex::new(TensorConverter::new()))
 }
 
 /// Convert tensor using global converter
+#[allow(dead_code)]
 pub fn convert_tensor_to<F: Float>(
     tensor: &Tensor<F>,
     target_format: &str,
@@ -380,6 +380,7 @@ pub fn convert_tensor_to<F: Float>(
 }
 
 /// Convert from format using global converter
+#[allow(dead_code)]
 pub fn convert_tensor_from<F: Float>(
     _data: &[u8],
     _metadata: &TensorMetadata,
@@ -394,6 +395,7 @@ pub fn convert_tensor_from<F: Float>(
 }
 
 /// Convert precision using global converter
+#[allow(dead_code)]
 pub fn convert_tensor_precision<F1: Float, F2: Float>(
     _tensor: &Tensor<F1>,
 ) -> Result<(), IntegrationError> {
@@ -407,7 +409,8 @@ pub fn convert_tensor_precision<F1: Float, F2: Float>(
 }
 
 /// Quick conversion from ndarray
-pub fn from_ndarray<F: Float>(_array: ArrayD<F>) -> Result<(), IntegrationError> {
+#[allow(dead_code)]
+pub fn from_ndarray<F: Float>(array: ArrayD<F>) -> Result<(), IntegrationError> {
     let _converter = init_tensor_converter();
     let _converter_guard = _converter.lock().map_err(|_| {
         IntegrationError::TensorConversion("Failed to acquire converter lock".to_string())
@@ -418,6 +421,7 @@ pub fn from_ndarray<F: Float>(_array: ArrayD<F>) -> Result<(), IntegrationError>
 }
 
 /// Quick conversion to ndarray
+#[allow(dead_code)]
 pub fn to_ndarray<F: Float>(tensor: &Tensor<F>) -> Result<ArrayD<F>, IntegrationError> {
     let converter = init_tensor_converter();
     let converter_guard = converter.lock().map_err(|_| {
@@ -449,10 +453,10 @@ mod tests {
             );
 
             // Get shape from evaluated tensor
-            let actual_shape = tensor.eval(g).unwrap().shape().to_vec();
+            let actualshape = tensor.eval(g).unwrap().shape().to_vec();
 
             let metadata = converter.extract_metadata(&tensor).unwrap();
-            assert_eq!(metadata.shape, actual_shape);
+            assert_eq!(metadata.shape, actualshape);
             assert!(metadata.dtype.contains("f32"));
             assert_eq!(metadata.memory_layout, MemoryLayout::RowMajor);
             // Tensors created with convert_to_tensor may require gradients by default
@@ -497,7 +501,7 @@ mod tests {
     fn test_ndarray_conversion() {
         crate::run(|g| {
             let data = vec![1.0f32, 2.0, 3.0, 4.0];
-            let _shape = [2, 2];
+            let shape = [2, 2];
             let tensor = convert_to_tensor(
                 ndarray::Array::from_shape_vec((2, 2), data.clone()).unwrap(),
                 g,

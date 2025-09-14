@@ -175,7 +175,7 @@ impl<F: IntegrateFloat> MassMatrix<F> {
     }
 
     /// Set the matrix as banded with specified bandwidths
-    pub fn with_bandwidth(mut self, lower: usize, upper: usize) -> Self {
+    pub fn with_bandwidth(&mut self, lower: usize, upper: usize) -> &mut Self {
         self.is_banded = true;
         self.lower_bandwidth = Some(lower);
         self.upper_bandwidth = Some(upper);

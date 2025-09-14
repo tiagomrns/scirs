@@ -97,6 +97,7 @@ where
 // =============================================================================
 
 /// Calculate temporal pattern features
+#[allow(dead_code)]
 pub fn calculate_temporal_pattern_features<F>(
     ts: &Array1<F>,
     motif_length: Option<usize>,
@@ -115,7 +116,7 @@ where
 
     let actual_motif_length = motif_length.unwrap_or(ts.len() / 10).max(3);
 
-    // Discover motifs
+    // Discover _motifs
     let motifs = discover_motifs(ts, actual_motif_length, max_motifs)?;
 
     // Calculate discord scores
@@ -154,6 +155,7 @@ where
 /// # Returns
 ///
 /// * Vector of discovered motifs with their locations and frequencies
+#[allow(dead_code)]
 pub fn discover_motifs<F>(
     ts: &Array1<F>,
     motif_length: usize,
@@ -279,6 +281,7 @@ where
 /// # Returns
 ///
 /// * Array of discord scores for each position
+#[allow(dead_code)]
 pub fn calculate_discord_scores<F>(
     ts: &Array1<F>,
     discord_length: usize,
@@ -310,7 +313,7 @@ where
             distances.push(dist);
         }
 
-        // Sort distances and take k nearest neighbors
+        // Sort distances and take k nearest _neighbors
         distances.sort_by(|a, b| a.partial_cmp(b).unwrap_or(std::cmp::Ordering::Equal));
 
         if distances.len() >= k_neighbors {
@@ -342,6 +345,7 @@ where
 /// # Returns
 ///
 /// * Vector of SAX symbols
+#[allow(dead_code)]
 pub fn time_series_to_sax<F>(
     ts: &Array1<F>,
     word_length: usize,
@@ -359,7 +363,7 @@ where
 
     if !(2..=26).contains(&alphabet_size) {
         return Err(TimeSeriesError::FeatureExtractionError(
-            "Alphabet size must be between 2 and 26".to_string(),
+            "Alphabet _size must be between 2 and 26".to_string(),
         ));
     }
 
@@ -423,17 +427,18 @@ where
 /// * `ts_class2` - Time series from class 2  
 /// * `min_length` - Minimum shapelet length
 /// * `max_length` - Maximum shapelet length
-/// * `max_shapelets` - Maximum number of shapelets to return
+/// * `maxshapelets` - Maximum number of shapelets to return
 ///
 /// # Returns
 ///
 /// * Vector of discovered shapelets
-pub fn extract_shapelets<F>(
+#[allow(dead_code)]
+pub fn extractshapelets<F>(
     ts_class1: &[Array1<F>],
     ts_class2: &[Array1<F>],
     min_length: usize,
     max_length: usize,
-    max_shapelets: usize,
+    maxshapelets: usize,
 ) -> Result<Vec<ShapeletInfo<F>>>
 where
     F: Float + FromPrimitive + Debug + Clone,
@@ -454,7 +459,7 @@ where
 
                 // Calculate information gain
                 let info_gain =
-                    calculate_shapelet_information_gain(&shapelet, ts_class1, ts_class2)?;
+                    calculateshapelet_information_gain(&shapelet, ts_class1, ts_class2)?;
 
                 all_candidates.push(ShapeletInfo {
                     pattern: shapelet,
@@ -473,7 +478,7 @@ where
             .unwrap_or(std::cmp::Ordering::Equal)
     });
 
-    all_candidates.truncate(max_shapelets);
+    all_candidates.truncate(maxshapelets);
     Ok(all_candidates)
 }
 
@@ -482,7 +487,8 @@ where
 // =============================================================================
 
 /// Calculate information gain for a shapelet candidate
-fn calculate_shapelet_information_gain<F>(
+#[allow(dead_code)]
+fn calculateshapelet_information_gain<F>(
     shapelet: &Array1<F>,
     ts_class1: &[Array1<F>],
     ts_class2: &[Array1<F>],
@@ -512,12 +518,12 @@ where
     let mut distances_class2 = Vec::new();
 
     for ts in ts_class1 {
-        let min_dist = find_min_distance_to_shapelet(ts, shapelet);
+        let min_dist = find_min_distance_toshapelet(ts, shapelet);
         distances_class1.push(min_dist);
     }
 
     for ts in ts_class2 {
-        let min_dist = find_min_distance_to_shapelet(ts, shapelet);
+        let min_dist = find_min_distance_toshapelet(ts, shapelet);
         distances_class2.push(min_dist);
     }
 
@@ -563,7 +569,8 @@ where
 }
 
 /// Find minimum distance from a time series to a shapelet
-fn find_min_distance_to_shapelet<F>(ts: &Array1<F>, shapelet: &Array1<F>) -> F
+#[allow(dead_code)]
+fn find_min_distance_toshapelet<F>(ts: &Array1<F>, shapelet: &Array1<F>) -> F
 where
     F: Float + FromPrimitive,
 {
@@ -593,6 +600,7 @@ where
 }
 
 /// Calculate distance matrix for time series subsequences
+#[allow(dead_code)]
 pub fn calculate_distance_matrix<F>(ts: &Array1<F>, subsequence_length: usize) -> Result<Array2<F>>
 where
     F: Float + FromPrimitive + Debug + Clone,
@@ -619,6 +627,7 @@ where
 }
 
 /// Find nearest neighbors for each subsequence
+#[allow(dead_code)]
 pub fn find_nearest_neighbors<F>(distance_matrix: &Array2<F>, k: usize) -> Result<Vec<Vec<usize>>>
 where
     F: Float + FromPrimitive + Debug + Clone,
@@ -648,6 +657,7 @@ where
 }
 
 /// Calculate local intrinsic dimensionality for each subsequence
+#[allow(dead_code)]
 pub fn calculate_local_intrinsic_dimensionality<F>(
     distance_matrix: &Array2<F>,
     k: usize,

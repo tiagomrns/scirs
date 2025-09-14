@@ -30,7 +30,7 @@ pub struct SimpleImputer {
     /// Strategy for imputation
     strategy: ImputeStrategy,
     /// Missing value indicator (what value is considered missing)
-    missing_values: f64,
+    missingvalues: f64,
     /// Values used for imputation (computed during fit)
     statistics_: Option<Array1<f64>>,
 }
@@ -40,14 +40,14 @@ impl SimpleImputer {
     ///
     /// # Arguments
     /// * `strategy` - The imputation strategy to use
-    /// * `missing_values` - The value that represents missing data (default: NaN)
+    /// * `missingvalues` - The value that represents missing data (default: NaN)
     ///
     /// # Returns
     /// * A new SimpleImputer instance
-    pub fn new(strategy: ImputeStrategy, missing_values: f64) -> Self {
+    pub fn new(strategy: ImputeStrategy, missingvalues: f64) -> Self {
         SimpleImputer {
             strategy,
-            missing_values,
+            missingvalues,
             statistics_: None,
         }
     }
@@ -59,6 +59,7 @@ impl SimpleImputer {
     ///
     /// # Returns
     /// * A new SimpleImputer instance
+    #[allow(dead_code)]
     pub fn with_strategy(strategy: ImputeStrategy) -> Self {
         Self::new(strategy, f64::NAN)
     }
@@ -97,8 +98,7 @@ impl SimpleImputer {
 
             if feature_data.is_empty() {
                 return Err(TransformError::InvalidInput(format!(
-                    "All values are missing in feature {}",
-                    j
+                    "All values are missing in feature {j}"
                 )));
             }
 
@@ -128,7 +128,7 @@ impl SimpleImputer {
                     let most_frequent_bits = counts
                         .into_iter()
                         .max_by_key(|(_, count)| *count)
-                        .map(|(bits, _)| bits)
+                        .map(|(bits_, _)| bits_)
                         .unwrap_or(0);
 
                     f64::from_bits(most_frequent_bits)
@@ -210,6 +210,7 @@ impl SimpleImputer {
     ///
     /// # Returns
     /// * `Option<&Array1<f64>>` - The statistics for each feature
+    #[allow(dead_code)]
     pub fn statistics(&self) -> Option<&Array1<f64>> {
         self.statistics_.as_ref()
     }
@@ -222,10 +223,10 @@ impl SimpleImputer {
     /// # Returns
     /// * `bool` - True if the value is missing, false otherwise
     fn is_missing(&self, value: f64) -> bool {
-        if self.missing_values.is_nan() {
+        if self.missingvalues.is_nan() {
             value.is_nan()
         } else {
-            (value - self.missing_values).abs() < f64::EPSILON
+            (value - self.missingvalues).abs() < f64::EPSILON
         }
     }
 }
@@ -236,7 +237,7 @@ impl SimpleImputer {
 /// missing values were located in the original data.
 pub struct MissingIndicator {
     /// Missing value indicator (what value is considered missing)
-    missing_values: f64,
+    missingvalues: f64,
     /// Features that have missing values (computed during fit)
     features_: Option<Vec<usize>>,
 }
@@ -245,13 +246,13 @@ impl MissingIndicator {
     /// Creates a new MissingIndicator
     ///
     /// # Arguments
-    /// * `missing_values` - The value that represents missing data (default: NaN)
+    /// * `missingvalues` - The value that represents missing data (default: NaN)
     ///
     /// # Returns
     /// * A new MissingIndicator instance
-    pub fn new(missing_values: f64) -> Self {
+    pub fn new(missingvalues: f64) -> Self {
         MissingIndicator {
-            missing_values,
+            missingvalues,
             features_: None,
         }
     }
@@ -359,10 +360,10 @@ impl MissingIndicator {
     /// # Returns
     /// * `bool` - True if the value is missing, false otherwise
     fn is_missing(&self, value: f64) -> bool {
-        if self.missing_values.is_nan() {
+        if self.missingvalues.is_nan() {
             value.is_nan()
         } else {
-            (value - self.missing_values).abs() < f64::EPSILON
+            (value - self.missingvalues).abs() < f64::EPSILON
         }
     }
 }
@@ -392,13 +393,13 @@ pub enum WeightingScheme {
 /// neighbors that have a value for that feature.
 pub struct KNNImputer {
     /// Number of nearest neighbors to use
-    n_neighbors: usize,
+    _nneighbors: usize,
     /// Distance metric to use for finding neighbors
     metric: DistanceMetric,
     /// Weighting scheme for aggregating neighbor values
     weights: WeightingScheme,
     /// Missing value indicator (what value is considered missing)
-    missing_values: f64,
+    missingvalues: f64,
     /// Training data (stored to find neighbors during transform)
     x_train_: Option<Array2<f64>>,
 }
@@ -407,24 +408,24 @@ impl KNNImputer {
     /// Creates a new KNNImputer
     ///
     /// # Arguments
-    /// * `n_neighbors` - Number of neighboring samples to use for imputation
+    /// * `_nneighbors` - Number of neighboring samples to use for imputation
     /// * `metric` - Distance metric for finding neighbors
     /// * `weights` - Weight function used in imputation
-    /// * `missing_values` - The value that represents missing data (default: NaN)
+    /// * `missingvalues` - The value that represents missing data (default: NaN)
     ///
     /// # Returns
     /// * A new KNNImputer instance
     pub fn new(
-        n_neighbors: usize,
+        _nneighbors: usize,
         metric: DistanceMetric,
         weights: WeightingScheme,
-        missing_values: f64,
+        missingvalues: f64,
     ) -> Self {
         KNNImputer {
-            n_neighbors,
+            _nneighbors,
             metric,
             weights,
-            missing_values,
+            missingvalues,
             x_train_: None,
         }
     }
@@ -442,9 +443,9 @@ impl KNNImputer {
     }
 
     /// Creates a KNNImputer with specified number of neighbors and defaults for other parameters
-    pub fn with_n_neighbors(n_neighbors: usize) -> Self {
+    pub fn with_n_neighbors(_nneighbors: usize) -> Self {
         Self::new(
-            n_neighbors,
+            _nneighbors,
             DistanceMetric::Euclidean,
             WeightingScheme::Uniform,
             f64::NAN,
@@ -452,9 +453,9 @@ impl KNNImputer {
     }
 
     /// Creates a KNNImputer with distance weighting
-    pub fn with_distance_weighting(n_neighbors: usize) -> Self {
+    pub fn with_distance_weighting(_nneighbors: usize) -> Self {
         Self::new(
-            n_neighbors,
+            _nneighbors,
             DistanceMetric::Euclidean,
             WeightingScheme::Distance,
             f64::NAN,
@@ -477,10 +478,10 @@ impl KNNImputer {
 
         // Validate that we have enough samples for k-nearest neighbors
         let n_samples = x_f64.shape()[0];
-        if n_samples < self.n_neighbors {
+        if n_samples < self._nneighbors {
             return Err(TransformError::InvalidInput(format!(
-                "Number of samples ({}) must be >= n_neighbors ({})",
-                n_samples, self.n_neighbors
+                "Number of samples ({}) must be >= _nneighbors ({})",
+                n_samples, self._nneighbors
             )));
         }
 
@@ -591,8 +592,8 @@ impl KNNImputer {
 
         let neighbors: Vec<usize> = sorted_distances
             .into_iter()
-            .take(self.n_neighbors)
-            .map(|(idx, _)| idx)
+            .take(self._nneighbors)
+            .map(|(idx_, _)| idx_)
             .collect();
 
         Ok(neighbors)
@@ -672,8 +673,7 @@ impl KNNImputer {
 
         if values.is_empty() {
             return Err(TransformError::TransformationError(format!(
-                "No valid neighbors found for feature {} imputation",
-                feature_idx
+                "No valid neighbors found for feature {feature_idx} imputation"
             )));
         }
 
@@ -696,16 +696,16 @@ impl KNNImputer {
 
     /// Checks if a value is considered missing
     fn is_missing(&self, value: f64) -> bool {
-        if self.missing_values.is_nan() {
+        if self.missingvalues.is_nan() {
             value.is_nan()
         } else {
-            (value - self.missing_values).abs() < f64::EPSILON
+            (value - self.missingvalues).abs() < f64::EPSILON
         }
     }
 
     /// Returns the number of neighbors used for imputation
-    pub fn n_neighbors(&self) -> usize {
-        self.n_neighbors
+    pub fn _nneighbors(&self) -> usize {
+        self._nneighbors
     }
 
     /// Returns the distance metric used
@@ -728,17 +728,17 @@ struct SimpleRegressor {
     /// Regression coefficients (including intercept as first element)
     coefficients: Option<Array1<f64>>,
     /// Whether to include an intercept term
-    include_intercept: bool,
+    includeintercept: bool,
     /// Regularization parameter (ridge regression)
     alpha: f64,
 }
 
 impl SimpleRegressor {
     /// Create a new simple regressor
-    fn new(include_intercept: bool, alpha: f64) -> Self {
+    fn new(includeintercept: bool, alpha: f64) -> Self {
         Self {
             coefficients: None,
-            include_intercept,
+            includeintercept,
             alpha,
         }
     }
@@ -754,7 +754,7 @@ impl SimpleRegressor {
         }
 
         // Add intercept column if needed
-        let x_design = if self.include_intercept {
+        let x_design = if self.includeintercept {
             let mut x_with_intercept = Array2::ones((n_samples, n_features + 1));
             x_with_intercept.slice_mut(ndarray::s![.., 1..]).assign(x);
             x_with_intercept
@@ -787,7 +787,7 @@ impl SimpleRegressor {
             )
         })?;
 
-        let x_design = if self.include_intercept {
+        let x_design = if self.includeintercept {
             let (n_samples, n_features) = x.dim();
             let mut x_with_intercept = Array2::ones((n_samples, n_features + 1));
             x_with_intercept.slice_mut(ndarray::s![.., 1..]).assign(x);
@@ -881,7 +881,7 @@ pub struct IterativeImputer {
     /// Random seed for reproducibility
     random_seed: Option<u64>,
     /// Missing value indicator
-    missing_values: f64,
+    missingvalues: f64,
     /// Regularization parameter for regression
     alpha: f64,
     /// Minimum improvement to continue iterating
@@ -905,7 +905,7 @@ impl IterativeImputer {
     /// * `max_iter` - Maximum number of iterations
     /// * `tolerance` - Convergence tolerance
     /// * `initial_strategy` - Strategy for initial imputation
-    /// * `missing_values` - Value representing missing data
+    /// * `missingvalues` - Value representing missing data
     /// * `alpha` - Regularization parameter for regression
     ///
     /// # Returns
@@ -914,7 +914,7 @@ impl IterativeImputer {
         max_iter: usize,
         tolerance: f64,
         initial_strategy: ImputeStrategy,
-        missing_values: f64,
+        missingvalues: f64,
         alpha: f64,
     ) -> Self {
         IterativeImputer {
@@ -922,7 +922,7 @@ impl IterativeImputer {
             tolerance,
             initial_strategy,
             random_seed: None,
-            missing_values,
+            missingvalues,
             alpha,
             min_improvement: 1e-6,
             x_train_: None,
@@ -941,8 +941,8 @@ impl IterativeImputer {
     }
 
     /// Creates an IterativeImputer with specified max iterations and defaults for other parameters
-    pub fn with_max_iter(max_iter: usize) -> Self {
-        Self::new(max_iter, 1e-3, ImputeStrategy::Mean, f64::NAN, 1e-6)
+    pub fn with_max_iter(_maxiter: usize) -> Self {
+        Self::new(_maxiter, 1e-3, ImputeStrategy::Mean, f64::NAN, 1e-6)
     }
 
     /// Set the random seed for reproducible results
@@ -958,8 +958,8 @@ impl IterativeImputer {
     }
 
     /// Set the minimum improvement threshold
-    pub fn with_min_improvement(mut self, min_improvement: f64) -> Self {
-        self.min_improvement = min_improvement;
+    pub fn with_min_improvement(mut self, minimprovement: f64) -> Self {
+        self.min_improvement = minimprovement;
         self
     }
 
@@ -1008,8 +1008,7 @@ impl IterativeImputer {
 
             if feature_data.is_empty() {
                 return Err(TransformError::InvalidInput(format!(
-                    "All values are missing in feature {}",
-                    feature_idx
+                    "All values are missing in feature {feature_idx}"
                 )));
             }
 
@@ -1215,7 +1214,7 @@ impl IterativeImputer {
                 for (pred_j, &orig_j) in predictor_indices.iter().enumerate() {
                     train_x[[train_idx, pred_j]] = data[[i, orig_j]];
                 }
-                // Copy target feature
+                // Copy target _feature
                 train_y[train_idx] = data[[i, target_feature]];
                 train_idx += 1;
             }
@@ -1258,17 +1257,17 @@ impl IterativeImputer {
     }
 
     /// Compute total change between two imputation iterations
-    fn compute_total_change(&self, old_data: &Array2<f64>, new_data: &Array2<f64>) -> f64 {
-        let diff = new_data - old_data;
+    fn compute_total_change(&self, old_data: &Array2<f64>, newdata: &Array2<f64>) -> f64 {
+        let diff = newdata - old_data;
         diff.iter().map(|&x| x * x).sum::<f64>().sqrt()
     }
 
     /// Check if a value is considered missing
     fn is_missing(&self, value: f64) -> bool {
-        if self.missing_values.is_nan() {
+        if self.missingvalues.is_nan() {
             value.is_nan()
         } else {
-            (value - self.missing_values).abs() < f64::EPSILON
+            (value - self.missingvalues).abs() < f64::EPSILON
         }
     }
 }
@@ -1551,7 +1550,7 @@ mod tests {
             -999.0,
         );
 
-        assert_eq!(imputer.n_neighbors(), 3);
+        assert_eq!(imputer._nneighbors(), 3);
         assert_eq!(imputer.metric(), &DistanceMetric::Manhattan);
         assert_eq!(imputer.weights(), &WeightingScheme::Distance);
     }

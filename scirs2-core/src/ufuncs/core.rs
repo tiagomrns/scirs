@@ -56,6 +56,7 @@ static UFUNC_REGISTRY: Lazy<RwLock<HashMap<String, Box<dyn UFunc>>>> =
     Lazy::new(|| RwLock::new(HashMap::new()));
 
 /// Register a universal function in the global registry
+#[allow(dead_code)]
 pub fn register_ufunc(ufunc: Box<dyn UFunc>) -> Result<(), &'static str> {
     let name = ufunc.name().to_string();
 
@@ -70,6 +71,7 @@ pub fn register_ufunc(ufunc: Box<dyn UFunc>) -> Result<(), &'static str> {
 }
 
 /// Get a universal function from the registry by name
+#[allow(dead_code)]
 pub fn get_ufunc(name: &str) -> Option<Box<dyn UFunc>> {
     let registry = UFUNC_REGISTRY.read().unwrap();
 
@@ -116,6 +118,7 @@ impl UFunc for UFuncWrapper {
 }
 
 /// Helper function to apply a unary operation element-wise
+#[allow(dead_code)]
 pub fn apply_unary<T, F, O, D>(
     input: &ArrayBase<Data, D>,
     output: &mut ArrayBase<Data, D>,
@@ -135,7 +138,7 @@ where
     // Apply the operation element-wise
     #[cfg(feature = "parallel")]
     {
-        use rayon::prelude::*;
+        use crate::parallel_ops::*;
         // For simplicity, we convert to vectors, process in parallel, then convert back
         // A more efficient implementation would operate directly on array iterators
         let input_slice = input.as_slice().unwrap();
@@ -158,6 +161,7 @@ where
 }
 
 /// Helper function to apply a binary operation element-wise with broadcasting
+#[allow(dead_code)]
 pub fn apply_binary<T, F, O, D>(
     input1: &ArrayBase<Data, D>,
     input2: &ArrayBase<Data, D>,
@@ -181,7 +185,7 @@ where
     // Apply the operation element-wise
     #[cfg(feature = "parallel")]
     {
-        use rayon::prelude::*;
+        use crate::parallel_ops::*;
 
         let input1_slice = input1.as_slice().unwrap();
         let input2_slice = input2.as_slice().unwrap();
@@ -205,6 +209,7 @@ where
 }
 
 /// Helper function to apply a reduction operation along an axis
+#[allow(dead_code)]
 pub fn apply_reduction<T, F, O, D>(
     input: &ArrayBase<Data, D>,
     output: &mut ArrayBase<Data, Ix1>,
@@ -229,12 +234,12 @@ where
             }
 
             let axis_size = input.len_of(ndarray::Axis(ax));
-            let other_shape = input.shape().iter().enumerate()
+            let othershape = input.shape().iter().enumerate()
                 .filter_map(|(i, &s)| if i != ax { Some(s) } else { None })
                 .collect::<Vec<_>>();
 
             // Check that the output shape matches the expected shape
-            if output.shape() != other_shape.as_slice() {
+            if output.shape() != othershape.as_slice() {
                 return Err("Output shape does not match the expected shape for reduction");
             }
 
@@ -275,8 +280,8 @@ where
             let mut iter = input.iter();
             let mut acc = initial.clone().unwrap_or_else(|| iter.next().unwrap().clone());
 
-            for &val in iter {
-                acc = op(acc, &val);
+            for val in iter {
+                acc = op(acc, val);
             }
 
             output[0] = acc;

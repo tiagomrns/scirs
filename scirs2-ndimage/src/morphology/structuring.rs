@@ -3,7 +3,7 @@
 use ndarray::{Array, Dimension, IxDyn};
 
 use super::Connectivity;
-use crate::error::{NdimageError, Result};
+use crate::error::{NdimageError, NdimageResult};
 
 /// Generate a binary structure for morphological operations
 ///
@@ -36,10 +36,11 @@ use crate::error::{NdimageError, Result};
 /// assert!(!structure[[2, 0]]);  // Bottom-left
 /// assert!(!structure[[2, 2]]);  // Bottom-right
 /// ```
+#[allow(dead_code)]
 pub fn generate_binary_structure(
     rank: usize,
     connectivity: Connectivity,
-) -> Result<Array<bool, IxDyn>> {
+) -> NdimageResult<Array<bool, IxDyn>> {
     // Validate inputs
     if rank == 0 {
         return Err(NdimageError::InvalidInput(
@@ -49,7 +50,7 @@ pub fn generate_binary_structure(
 
     // Create a structure of shape (3, 3, ..., 3) with rank dimensions
     let shape = vec![3; rank];
-    let mut structure = Array::<bool, _>::from_elem(IxDyn(&shape), false);
+    let mut structure = Array::<bool, IxDyn>::from_elem(IxDyn(&shape), false);
 
     // Center indices (1, 1, ..., 1)
     let center = vec![1; rank];
@@ -82,6 +83,7 @@ pub fn generate_binary_structure(
 }
 
 /// Recursively add connected indices to the structure
+#[allow(dead_code)]
 fn add_connected_indices(
     structure: &mut Array<bool, IxDyn>,
     indices: &mut Vec<usize>,
@@ -151,7 +153,11 @@ fn add_connected_indices(
 /// # Returns
 ///
 /// * `Result<Array<bool, D>>` - Iterated structuring element
-pub fn iterate_structure<D>(structure: &Array<bool, D>, iterations: usize) -> Result<Array<bool, D>>
+#[allow(dead_code)]
+pub fn iterate_structure<D>(
+    structure: &Array<bool, D>,
+    iterations: usize,
+) -> NdimageResult<Array<bool, D>>
 where
     D: Dimension,
 {
@@ -180,7 +186,8 @@ where
 /// # Returns
 ///
 /// * `Result<Array<bool, IxDyn>>` - Box structuring element
-pub fn box_structure(shape: &[usize]) -> Result<Array<bool, IxDyn>> {
+#[allow(dead_code)]
+pub fn box_structure(shape: &[usize]) -> NdimageResult<Array<bool, IxDyn>> {
     // Validate inputs
     if shape.is_empty() {
         return Err(NdimageError::InvalidInput("Shape cannot be empty".into()));
@@ -195,7 +202,7 @@ pub fn box_structure(shape: &[usize]) -> Result<Array<bool, IxDyn>> {
     }
 
     // Create a box of ones
-    let structure = Array::<bool, _>::from_elem(IxDyn(shape), true);
+    let structure = Array::<bool, IxDyn>::from_elem(IxDyn(shape), true);
     Ok(structure)
 }
 
@@ -209,7 +216,8 @@ pub fn box_structure(shape: &[usize]) -> Result<Array<bool, IxDyn>> {
 /// # Returns
 ///
 /// * `Result<Array<bool, IxDyn>>` - Disk structuring element
-pub fn disk_structure(radius: f64, dimension: Option<usize>) -> Result<Array<bool, IxDyn>> {
+#[allow(dead_code)]
+pub fn disk_structure(radius: f64, dimension: Option<usize>) -> NdimageResult<Array<bool, IxDyn>> {
     // Validate inputs
     if radius <= 0.0 {
         return Err(NdimageError::InvalidInput(
@@ -224,7 +232,7 @@ pub fn disk_structure(radius: f64, dimension: Option<usize>) -> Result<Array<boo
         ));
     }
 
-    // Create a disk structure by checking if each position is within the radius
+    // Create a disk structure by checking if each position is within the _radius
     let size = (2.0 * radius).round() as usize;
     if size % 2 == 0 {
         // Make it odd for symmetry
@@ -232,7 +240,7 @@ pub fn disk_structure(radius: f64, dimension: Option<usize>) -> Result<Array<boo
         let shape = vec![size; dim];
         let center = (size - 1) as f64 / 2.0;
 
-        let mut structure = Array::<bool, _>::from_elem(IxDyn(&shape), false);
+        let mut structure = Array::<bool, IxDyn>::from_elem(IxDyn(&shape), false);
 
         // For 2D case
         if dim == 2 {
@@ -258,7 +266,7 @@ pub fn disk_structure(radius: f64, dimension: Option<usize>) -> Result<Array<boo
         let shape = vec![size; dim];
         let center = (size - 1) as f64 / 2.0;
 
-        let mut structure = Array::<bool, _>::from_elem(IxDyn(&shape), false);
+        let mut structure = Array::<bool, IxDyn>::from_elem(IxDyn(&shape), false);
 
         // For 2D case
         if dim == 2 {
@@ -286,7 +294,7 @@ pub fn disk_structure(radius: f64, dimension: Option<usize>) -> Result<Array<boo
 /// Generate a binary structure for morphological operations (dynamic dimension version)
 ///
 /// Creates a default cross-shaped structure for each rank
-pub(crate) fn generate_binary_structure_dyn(rank: usize) -> Result<Array<bool, IxDyn>> {
+pub(crate) fn generate_binary_structure_dyn(rank: usize) -> NdimageResult<Array<bool, IxDyn>> {
     generate_binary_structure(rank, Connectivity::Face)
 }
 

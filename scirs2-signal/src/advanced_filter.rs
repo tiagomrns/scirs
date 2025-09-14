@@ -1,14 +1,16 @@
-//! Advanced filter design algorithms
-//!
-//! This module implements sophisticated filter design methods including Parks-McClellan
-//! optimal equiripple design, arbitrary magnitude response approximation, and advanced
-//! filter optimization techniques.
+use ndarray::s;
+// Advanced filter design algorithms
+//
+// This module implements sophisticated filter design methods including Parks-McClellan
+// optimal equiripple design, arbitrary magnitude response approximation, and advanced
+// filter optimization techniques.
 
 use crate::error::{SignalError, SignalResult};
-use ndarray::{s, Array1, Array2};
+use ndarray::{Array1, Array2};
 use num_complex::Complex64;
-use std::f64::consts::PI;
+use scirs2_linalg::solve;
 
+#[allow(unused_imports)]
 /// Filter design specifications
 #[derive(Debug, Clone)]
 pub struct FilterSpec {
@@ -111,6 +113,7 @@ pub struct FilterDesignResult {
 /// # Returns
 ///
 /// * Optimal FIR filter coefficients
+#[allow(dead_code)]
 pub fn parks_mcclellan(
     spec: &FilterSpec,
     config: &ParksMcClellanConfig,
@@ -154,7 +157,7 @@ pub fn parks_mcclellan(
         // Check convergence
         let max_error = error_function
             .iter()
-            .map(|&x| x.abs())
+            .map(|&x: &f64| x.abs())
             .fold(0.0f64, |a, b| a.max(b));
 
         if (max_error - best_error).abs() < config.tolerance {
@@ -195,6 +198,7 @@ pub fn parks_mcclellan(
 /// # Returns
 ///
 /// * Filter coefficients approximating the arbitrary response
+#[allow(dead_code)]
 pub fn arbitrary_magnitude_design(
     response: &ArbitraryResponse,
     order: usize,
@@ -248,7 +252,7 @@ pub fn arbitrary_magnitude_design(
         // Check convergence
         let max_error = error_function
             .iter()
-            .map(|&x| x.abs())
+            .map(|&x: &f64| x.abs())
             .fold(0.0f64, |a, b| a.max(b));
 
         if (max_error - best_error).abs() < config.tolerance {
@@ -287,6 +291,7 @@ pub fn arbitrary_magnitude_design(
 /// # Returns
 ///
 /// * Least squares optimal filter coefficients
+#[allow(dead_code)]
 pub fn least_squares_design(
     response: &ArbitraryResponse,
     order: usize,
@@ -310,7 +315,14 @@ pub fn least_squares_design(
 
     // Weight the equations
     for i in 0..n_freqs {
-        let weight = response.weights[i].sqrt();
+        let weight = if response.weights[i] >= 0.0 {
+            response.weights[i].sqrt()
+        } else {
+            return Err(SignalError::ValueError(format!(
+                "Negative weight at index {}",
+                i
+            )));
+        };
         for j in 0..n_coeffs {
             design_matrix[[i, j]] *= weight;
         }
@@ -321,13 +333,17 @@ pub fn least_squares_design(
         .magnitude
         .iter()
         .zip(response.weights.iter())
-        .map(|(&mag, &weight)| mag * weight.sqrt())
+        .map(|(&mag, &weight)| {
+            if weight >= 0.0 {
+                mag * weight.sqrt()
+            } else {
+                0.0 // Handle negative weights gracefully
+            }
+        })
         .collect();
 
     // Solve least squares problem: A * h = b
     // For small problems, we can use the normal equations approach: A^T A x = A^T b
-    use scirs2_linalg::solve;
-
     let at = design_matrix.t();
     let ata = at.dot(&design_matrix);
     let atb = at.dot(&weighted_desired);
@@ -340,7 +356,7 @@ pub fn least_squares_design(
     }
 
     let coefficients = solve(&ata_reg.view(), &atb.view(), None).map_err(|e| {
-        SignalError::Compute(format!("Failed to solve least squares problem: {}", e))
+        SignalError::ComputationError(format!("Failed to solve least squares problem: {}", e))
     })?;
 
     // Compute design error
@@ -349,8 +365,13 @@ pub fn least_squares_design(
         .iter()
         .zip(weighted_desired.iter())
         .map(|(&est, &des)| (est - des).powi(2))
-        .sum::<f64>()
-        .sqrt();
+        .sum::<f64>();
+
+    let error = if error >= 0.0 {
+        error.sqrt()
+    } else {
+        0.0 // Should not happen for sum of squares, but handle gracefully
+    };
 
     let freq_response = compute_frequency_response(&coefficients, 512)?;
 
@@ -375,6 +396,7 @@ pub fn least_squares_design(
 /// # Returns
 ///
 /// * Constrained optimal filter coefficients
+#[allow(dead_code)]
 pub fn constrained_least_squares_design(
     response: &ArbitraryResponse,
     order: usize,
@@ -390,7 +412,14 @@ pub fn constrained_least_squares_design(
 
     // Fill magnitude equations
     for (i, &freq) in response.frequencies.iter().enumerate() {
-        let weight = response.weights[i].sqrt();
+        let weight = if response.weights[i] >= 0.0 {
+            response.weights[i].sqrt()
+        } else {
+            return Err(SignalError::ValueError(format!(
+                "Negative weight at index {}",
+                i
+            )));
+        };
         for j in 0..n_coeffs {
             let omega = PI * freq;
             if j == 0 {
@@ -413,7 +442,6 @@ pub fn constrained_least_squares_design(
     }
 
     // Solve constrained least squares using normal equations
-    use scirs2_linalg::solve;
 
     let at = augmented_matrix.t();
     let ata = at.dot(&augmented_matrix);
@@ -427,7 +455,7 @@ pub fn constrained_least_squares_design(
     }
 
     let coefficients = solve(&ata_reg.view(), &atb.view(), None).map_err(|e| {
-        SignalError::Compute(format!("Failed to solve constrained least squares: {}", e))
+        SignalError::ComputationError(format!("Failed to solve constrained least squares: {}", e))
     })?;
 
     // Compute error on magnitude response only
@@ -439,7 +467,11 @@ pub fn constrained_least_squares_design(
         }
         error += response.weights[i] * (magnitude - response.magnitude[i]).powi(2);
     }
-    error = error.sqrt();
+    error = if error >= 0.0 {
+        error.sqrt()
+    } else {
+        0.0 // Should not happen for sum of squares, but handle gracefully
+    };
 
     let freq_response = compute_frequency_response(&coefficients, 512)?;
 
@@ -464,6 +496,7 @@ pub fn constrained_least_squares_design(
 /// # Returns
 ///
 /// * Minimax optimal filter coefficients
+#[allow(dead_code)]
 pub fn minimax_design(
     response: &ArbitraryResponse,
     order: usize,
@@ -476,6 +509,7 @@ pub fn minimax_design(
 // Helper functions
 
 /// Estimate required filter order from specifications
+#[allow(dead_code)]
 fn estimate_filter_order(spec: &FilterSpec) -> SignalResult<usize> {
     if spec.passband_freqs.is_empty() || spec.stopband_freqs.is_empty() {
         return Err(SignalError::ValueError(
@@ -484,18 +518,18 @@ fn estimate_filter_order(spec: &FilterSpec) -> SignalResult<usize> {
     }
 
     // Kaiser's formula for order estimation
-    let delta_p = (10.0_f64.powf(spec.passband_ripple / 20.0) - 1.0)
-        / (10.0_f64.powf(spec.passband_ripple / 20.0) + 1.0);
-    let delta_s = 10.0_f64.powf(-spec.stopband_attenuation / 20.0);
+    let delta_p = (10.0_f64.powf(_spec.passband_ripple / 20.0) - 1.0)
+        / (10.0_f64.powf(_spec.passband_ripple / 20.0) + 1.0);
+    let delta_s = 10.0_f64.powf(-_spec.stopband_attenuation / 20.0);
     let delta = delta_p.min(delta_s);
 
     let transition_width = match spec.filter_type {
         FilterType::Lowpass | FilterType::Highpass => {
-            (spec.stopband_freqs[0] - spec.passband_freqs[0]).abs()
+            (_spec.stopband_freqs[0] - spec.passband_freqs[0]).abs()
         }
         FilterType::Bandpass | FilterType::Bandstop => {
-            let width1 = (spec.passband_freqs[0] - spec.stopband_freqs[0]).abs();
-            let width2 = (spec.stopband_freqs[1] - spec.passband_freqs[1]).abs();
+            let width1 = (_spec.passband_freqs[0] - spec.stopband_freqs[0]).abs();
+            let width2 = (_spec.stopband_freqs[1] - spec.passband_freqs[1]).abs();
             width1.min(width2)
         }
         _ => spec.sample_rate * 0.1, // Default 10% of sample rate
@@ -517,6 +551,7 @@ fn estimate_filter_order(spec: &FilterSpec) -> SignalResult<usize> {
 }
 
 /// Create frequency grid for filter design
+#[allow(dead_code)]
 fn create_design_grid(
     spec: &FilterSpec,
     config: &ParksMcClellanConfig,
@@ -609,20 +644,22 @@ fn create_design_grid(
 }
 
 /// Initialize extremal frequencies for Parks-McClellan algorithm
-fn initialize_extremal_frequencies(freq_grid: &Array1<f64>, num_extremal: usize) -> Array1<f64> {
+#[allow(dead_code)]
+fn initialize_extremal_frequencies(_freq_grid: &Array1<f64>, numextremal: usize) -> Array1<f64> {
     let grid_len = freq_grid.len();
-    let mut extremal = Array1::zeros(num_extremal);
+    let mut _extremal = Array1::zeros(num_extremal);
 
-    // Evenly space extremal frequencies across the grid
+    // Evenly space _extremal frequencies across the _grid
     for i in 0..num_extremal {
         let idx = (i * (grid_len - 1)) / (num_extremal - 1);
         extremal[i] = freq_grid[idx];
     }
 
-    extremal
+    _extremal
 }
 
 /// Solve interpolation problem at extremal frequencies
+#[allow(dead_code)]
 fn solve_interpolation_problem(
     extremal_freqs: &Array1<f64>,
     desired_response: &Array1<f64>,
@@ -632,12 +669,12 @@ fn solve_interpolation_problem(
 ) -> SignalResult<Array1<f64>> {
     let num_extremal = extremal_freqs.len();
 
-    // Find desired response and weights at extremal frequencies
+    // Find desired _response and weights at extremal frequencies
     let mut extremal_desired = Array1::zeros(num_extremal);
     let mut extremal_weights = Array1::zeros(num_extremal);
 
     for (i, &freq) in extremal_freqs.iter().enumerate() {
-        // Find closest frequency in grid
+        // Find closest frequency in _grid
         let closest_idx = freq_grid
             .iter()
             .enumerate()
@@ -669,9 +706,8 @@ fn solve_interpolation_problem(
     }
 
     // Solve the system
-    use scirs2_linalg::solve;
     let solution = solve(&interpolation_matrix.view(), &rhs.view(), None).map_err(|e| {
-        SignalError::Compute(format!("Failed to solve interpolation system: {}", e))
+        SignalError::ComputationError(format!("Failed to solve interpolation system: {}", e))
     })?;
 
     // Extract filter coefficients (excluding error term)
@@ -679,6 +715,7 @@ fn solve_interpolation_problem(
 }
 
 /// Compute error function on frequency grid
+#[allow(dead_code)]
 fn compute_error_function(
     coefficients: &Array1<f64>,
     freq_grid: &Array1<f64>,
@@ -688,20 +725,21 @@ fn compute_error_function(
     let mut error = Array1::zeros(freq_grid.len());
 
     for (i, &freq) in freq_grid.iter().enumerate() {
-        // Compute filter response at this frequency
-        let mut response = coefficients[0];
+        // Compute filter _response at this frequency
+        let mut _response = coefficients[0];
         for (j, &coeff) in coefficients.iter().enumerate().skip(1) {
-            response += coeff * (PI * freq * j as f64).cos();
+            _response += coeff * (PI * freq * j as f64).cos();
         }
 
         // Weighted error
-        error[i] = weights[i] * (response - desired_response[i]);
+        error[i] = weights[i] * (_response - desired_response[i]);
     }
 
     Ok(error)
 }
 
 /// Find extremal frequencies (peaks) in error function
+#[allow(dead_code)]
 fn find_extremal_frequencies(
     error_function: &Array1<f64>,
     freq_grid: &Array1<f64>,
@@ -736,7 +774,7 @@ fn find_extremal_frequencies(
             .unwrap()
     });
 
-    // Take the required number of extremal points
+    // Take the required number of _extremal points
     extremal_indices.truncate(num_extremal);
     extremal_indices.sort();
 
@@ -750,6 +788,7 @@ fn find_extremal_frequencies(
 }
 
 /// Interpolate response values at new frequency points
+#[allow(dead_code)]
 fn interpolate_response(
     freq_points: &Array1<f64>,
     response_values: &Array1<f64>,
@@ -758,13 +797,13 @@ fn interpolate_response(
     let mut interpolated = Array1::zeros(new_freq_points.len());
 
     for (i, &new_freq) in new_freq_points.iter().enumerate() {
-        // Find surrounding points for linear interpolation
+        // Find surrounding _points for linear interpolation
         if new_freq <= freq_points[0] {
             interpolated[i] = response_values[0];
         } else if new_freq >= freq_points[freq_points.len() - 1] {
             interpolated[i] = response_values[response_values.len() - 1];
         } else {
-            // Find interpolation points
+            // Find interpolation _points
             let mut lower_idx = 0;
             for j in 0..freq_points.len() - 1 {
                 if freq_points[j] <= new_freq && new_freq <= freq_points[j + 1] {
@@ -786,6 +825,7 @@ fn interpolate_response(
 }
 
 /// Compute frequency response of FIR filter
+#[allow(dead_code)]
 fn compute_frequency_response(
     coefficients: &Array1<f64>,
     num_points: usize,
@@ -813,7 +853,6 @@ fn compute_frequency_response(
 mod tests {
     use super::*;
     use approx::assert_relative_eq;
-
     #[test]
     fn test_filter_order_estimation() {
         let spec = FilterSpec {

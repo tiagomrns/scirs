@@ -46,7 +46,7 @@ use std::f64::consts::PI;
 /// # Examples
 ///
 /// ```
-/// use scirs2_fft::spectrogram_stft;
+/// use scirs2_fft::spectrogram::stft;
 /// use scirs2_fft::window::Window;
 /// use std::f64::consts::PI;
 ///
@@ -56,7 +56,7 @@ use std::f64::consts::PI;
 /// let chirp = time.iter().map(|&ti| (2.0 * PI * (10.0 + 10.0 * ti) * ti).sin()).collect::<Vec<_>>();
 ///
 /// // Compute STFT
-/// let (f, t, zxx) = spectrogram_stft(
+/// let (f, t, zxx) = stft(
 ///     &chirp,
 ///     Window::Hann,
 ///     256,
@@ -73,6 +73,7 @@ use std::f64::consts::PI;
 /// assert_eq!(t.len(), zxx.shape()[1]);
 /// ```
 #[allow(clippy::too_many_arguments)]
+#[allow(dead_code)]
 pub fn stft<T>(
     x: &[T],
     window: Window,
@@ -128,7 +129,7 @@ where
         .iter()
         .map(|&val| {
             num_traits::cast::<T, f64>(val).ok_or_else(|| {
-                FFTError::ValueError(format!("Could not convert value to f64: {:?}", val))
+                FFTError::ValueError(format!("Could not convert value to f64: {val:?}"))
             })
         })
         .collect::<Result<Vec<_>, _>>()?;
@@ -309,6 +310,7 @@ where
 /// assert_eq!(t.len(), sxx.shape()[1]);
 /// ```
 #[allow(clippy::too_many_arguments)]
+#[allow(dead_code)]
 pub fn spectrogram<T>(
     x: &[T],
     fs: Option<f64>,
@@ -351,8 +353,7 @@ where
         "spectrum" => 1.0 / win_sum_sq,
         _ => {
             return Err(FFTError::ValueError(format!(
-                "Unknown scaling mode: {}. Use 'density' or 'spectrum'.",
-                scaling
+                "Unknown scaling mode: {scaling}. Use 'density' or 'spectrum'."
             )));
         }
     };
@@ -396,8 +397,7 @@ where
         }
         _ => {
             return Err(FFTError::ValueError(format!(
-                "Unknown mode: {}. Use 'psd', 'magnitude', 'angle', or 'phase'.",
-                mode
+                "Unknown mode: {mode}. Use 'psd', 'magnitude', 'angle', or 'phase'."
             )));
         }
     };
@@ -457,6 +457,7 @@ where
 ///     }
 /// }
 /// ```
+#[allow(dead_code)]
 pub fn spectrogram_normalized<T>(
     x: &[T],
     fs: Option<f64>,
@@ -508,7 +509,7 @@ where
         }
     }
 
-    // Normalize to [0, 1] range
+    // Normalize to [0, 1] _range
     let mut spec_norm = Array2::zeros(spec_db.dim());
     for (i, row) in spec_db.axis_iter(Axis(0)).enumerate() {
         for (j, &val) in row.iter().enumerate() {
@@ -522,12 +523,11 @@ where
 #[cfg(test)]
 mod tests {
     use super::*;
-    use std::f64::consts::PI;
 
     // Generate a test signal (sine wave)
-    fn generate_sine_wave(freq: f64, fs: f64, n_samples: usize) -> Vec<f64> {
+    fn generate_sine_wave(_freq: f64, fs: f64, n_samples: usize) -> Vec<f64> {
         (0..n_samples)
-            .map(|i| (2.0 * PI * freq * (i as f64 / fs)).sin())
+            .map(|i| (2.0 * PI * _freq * (i as f64 / fs)).sin())
             .collect()
     }
 
@@ -551,7 +551,7 @@ mod tests {
             Some(true),
             None,
         )
-        .unwrap();
+        .expect("STFT computation should succeed for test data");
 
         // Check dimensions
         let expected_num_freqs = nperseg / 2 + 1;
@@ -571,7 +571,7 @@ mod tests {
 
         // Compute STFT
         let nperseg = 256;
-        let (f, _t, zxx) = stft(
+        let (f_freq, f_t, zxx) = stft(
             &signal,
             Window::Hann,
             nperseg,
@@ -582,14 +582,19 @@ mod tests {
             Some(true),
             None,
         )
-        .unwrap();
+        .expect("STFT computation should succeed for frequency test");
 
         // Find the frequency bin closest to our signal frequency
-        let freq_idx = f
+        let freq_idx = f_freq
             .iter()
             .enumerate()
-            .min_by(|(_, &a), (_, &b)| (a - freq).abs().partial_cmp(&(b - freq).abs()).unwrap())
-            .unwrap()
+            .min_by(|(_, &a), (_, &b)| {
+                (a - freq)
+                    .abs()
+                    .partial_cmp(&(b - freq).abs())
+                    .expect("Frequency comparison should succeed")
+            })
+            .expect("Should find minimum frequency difference")
             .0;
 
         // Check that the power at this frequency is higher than at other frequencies
@@ -629,7 +634,7 @@ mod tests {
             Some("density"),
             Some("psd"),
         )
-        .unwrap();
+        .expect("Spectrogram computation should succeed for test data");
 
         // Verify basic properties
         assert!(!f.is_empty());
@@ -663,7 +668,7 @@ mod tests {
                 Some("density"),
                 Some(mode),
             )
-            .unwrap();
+            .expect("Spectrogram mode computation should succeed");
 
             // Check dimensions
             assert!(!f.is_empty());
@@ -691,7 +696,8 @@ mod tests {
 
         // Compute normalized spectrogram
         let (f, t, sxx) =
-            spectrogram_normalized(&signal, Some(fs), Some(128), Some(64), Some(80.0)).unwrap();
+            spectrogram_normalized(&signal, Some(fs), Some(128), Some(64), Some(80.0))
+                .expect("Normalized spectrogram should succeed");
 
         // Check dimensions
         assert!(!f.is_empty());

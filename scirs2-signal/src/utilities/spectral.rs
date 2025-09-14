@@ -1,14 +1,15 @@
-//! Utilities for spectral analysis
-//!
-//! This module provides utility functions for spectral analysis,
-//! including spectral descriptors, normalized spectral representations,
-//! and advanced spectral processing techniques for signal characterization.
+// Utilities for spectral analysis
+//
+// This module provides utility functions for spectral analysis,
+// including spectral descriptors, normalized spectral representations,
+// and advanced spectral processing techniques for signal characterization.
 
 use crate::error::{SignalError, SignalResult};
 use ndarray::Array1;
 use num_traits::{Float, NumCast};
 use std::fmt::Debug;
 
+#[allow(unused_imports)]
 /// Calculate the energy spectral density (ESD) of a signal.
 ///
 /// The energy spectral density describes how the energy of a signal
@@ -37,6 +38,7 @@ use std::fmt::Debug;
 ///
 /// // ESD is proportional to PSD but scaled by the sample interval
 /// ```
+#[allow(dead_code)]
 pub fn energy_spectral_density<T>(psd: &[T], fs: f64) -> SignalResult<Vec<f64>>
 where
     T: Float + NumCast + Debug,
@@ -52,7 +54,7 @@ where
     }
 
     // Convert to f64 for internal processing
-    let psd_f64: Vec<f64> = psd
+    let psd_f64: Vec<f64> = _psd
         .iter()
         .map(|&val| {
             num_traits::cast::cast::<T, f64>(val).ok_or_else(|| {
@@ -92,8 +94,9 @@ where
 ///
 /// // Sum of normalized PSD should be approximately 1.0
 /// let sum: f64 = norm_psd.iter().sum();
-/// assert!((sum - 1.0).abs() < 1e-10);
+/// assert!(((sum - 1.0) as f64).abs() < 1e-10);
 /// ```
+#[allow(dead_code)]
 pub fn normalized_psd<T>(psd: &[T]) -> SignalResult<Vec<f64>>
 where
     T: Float + NumCast + Debug,
@@ -103,7 +106,7 @@ where
     }
 
     // Convert to f64 for internal processing
-    let psd_f64: Vec<f64> = psd
+    let psd_f64: Vec<f64> = _psd
         .iter()
         .map(|&val| {
             num_traits::cast::cast::<T, f64>(val).ok_or_else(|| {
@@ -156,6 +159,7 @@ where
 /// // Basic sanity check - centroid should be finite
 /// assert!(centroid.is_finite());
 /// ```
+#[allow(dead_code)]
 pub fn spectral_centroid<T, U>(psd: &[T], freqs: &[U]) -> SignalResult<f64>
 where
     T: Float + NumCast + Debug,
@@ -174,7 +178,7 @@ where
     }
 
     // Convert to f64 for internal processing
-    let psd_f64: Vec<f64> = psd
+    let psd_f64: Vec<f64> = _psd
         .iter()
         .map(|&val| {
             num_traits::cast::cast::<T, f64>(val).ok_or_else(|| {
@@ -244,6 +248,7 @@ where
 /// // Spread should be non-negative
 /// assert!(spread >= 0.0);
 /// ```
+#[allow(dead_code)]
 pub fn spectral_spread<T, U>(psd: &[T], freqs: &[U], centroid: Option<f64>) -> SignalResult<f64>
 where
     T: Float + NumCast + Debug,
@@ -262,7 +267,7 @@ where
     }
 
     // Convert to f64 for internal processing
-    let psd_f64: Vec<f64> = psd
+    let psd_f64: Vec<f64> = _psd
         .iter()
         .map(|&val| {
             num_traits::cast::cast::<T, f64>(val).ok_or_else(|| {
@@ -292,7 +297,7 @@ where
     // Calculate or use provided centroid
     let centroid_val = match centroid {
         Some(c) => c,
-        None => spectral_centroid(psd, freqs)?,
+        None => spectral_centroid(_psd, freqs)?,
     };
 
     // Calculate weighted sum of squared differences from centroid
@@ -337,6 +342,7 @@ where
 /// let (psd, freqs) = periodogram(&signal, Some(fs), Some("hamming"), Some(16), None, None).unwrap();
 /// let skewness = spectral_skewness(&psd, &freqs, None, None).unwrap();
 /// ```
+#[allow(dead_code)]
 pub fn spectral_skewness<T, U>(
     psd: &[T],
     freqs: &[U],
@@ -450,6 +456,7 @@ where
 /// // Kurtosis should be greater than or equal to -2.0 (theoretical lower bound)
 /// assert!(kurtosis >= -2.0);
 /// ```
+#[allow(dead_code)]
 pub fn spectral_kurtosis<T, U>(
     psd: &[T],
     freqs: &[U],
@@ -556,12 +563,13 @@ where
 /// let signal = vec![1.0, 2.0, 3.0, 4.0, 3.0, 2.0, 1.0, 0.0];
 /// let fs = 8.0; // Sample rate in Hz
 ///
-/// let (psd, _) = periodogram(&signal, Some(fs), Some("hamming"), Some(16), None, None).unwrap();
+/// let (psd_) = periodogram(&signal, Some(fs), Some("hamming"), Some(16), None, None).unwrap();
 /// let flatness = spectral_flatness(&psd).unwrap();
 ///
 /// // Flatness should be between 0 and 1
 /// assert!(flatness >= 0.0 && flatness <= 1.0);
 /// ```
+#[allow(dead_code)]
 pub fn spectral_flatness<T>(psd: &[T]) -> SignalResult<f64>
 where
     T: Float + NumCast + Debug,
@@ -571,7 +579,7 @@ where
     }
 
     // Convert to f64 for internal processing
-    let psd_f64: Vec<f64> = psd
+    let psd_f64: Vec<f64> = _psd
         .iter()
         .map(|&val| {
             num_traits::cast::cast::<T, f64>(val).ok_or_else(|| {
@@ -633,14 +641,15 @@ where
 /// let signal2 = vec![0.0, 1.0, 2.0, 3.0, 4.0, 3.0, 2.0, 1.0];
 /// let fs = 8.0; // Sample rate in Hz
 ///
-/// let (psd1, _) = periodogram(&signal1, Some(fs), Some("hamming"), Some(16), None, None).unwrap();
-/// let (psd2, _) = periodogram(&signal2, Some(fs), Some("hamming"), Some(16), None, None).unwrap();
+/// let (psd1_) = periodogram(&signal1, Some(fs), Some("hamming"), Some(16), None, None).unwrap();
+/// let (psd2_) = periodogram(&signal2, Some(fs), Some("hamming"), Some(16), None, None).unwrap();
 ///
 /// let flux = spectral_flux(&psd1, &psd2, "l2").unwrap();
 ///
 /// // Flux should be non-negative
 /// assert!(flux >= 0.0);
 /// ```
+#[allow(dead_code)]
 pub fn spectral_flux<T, U>(psd1: &[T], psd2: &[U], norm: &str) -> SignalResult<f64>
 where
     T: Float + NumCast + Debug,
@@ -659,7 +668,7 @@ where
     }
 
     // Convert to f64 for internal processing
-    let psd1_f64: Vec<f64> = psd1
+    let psd1_f64: Vec<f64> = _psd1
         .iter()
         .map(|&val| {
             num_traits::cast::cast::<T, f64>(val).ok_or_else(|| {
@@ -688,7 +697,7 @@ where
     match norm.to_lowercase().as_str() {
         "l1" => {
             // Manhattan distance (L1 norm)
-            let flux = diff.iter().map(|&d| d.abs()).sum();
+            let flux = diff.iter().map(|&d: &f64| d.abs()).sum();
             Ok(flux)
         }
         "l2" => {
@@ -738,6 +747,7 @@ where
 /// // Basic sanity check - rolloff should be finite
 /// assert!(rolloff.is_finite());
 /// ```
+#[allow(dead_code)]
 pub fn spectral_rolloff<T, U>(psd: &[T], freqs: &[U], percentage: f64) -> SignalResult<f64>
 where
     T: Float + NumCast + Debug,
@@ -762,7 +772,7 @@ where
     }
 
     // Convert to f64 for internal processing
-    let psd_f64: Vec<f64> = psd
+    let psd_f64: Vec<f64> = _psd
         .iter()
         .map(|&val| {
             num_traits::cast::cast::<T, f64>(val).ok_or_else(|| {
@@ -828,12 +838,13 @@ where
 /// let signal = vec![1.0, 2.0, 3.0, 4.0, 3.0, 2.0, 1.0, 0.0];
 /// let fs = 8.0; // Sample rate in Hz
 ///
-/// let (psd, _) = periodogram(&signal, Some(fs), Some("hamming"), Some(16), None, None).unwrap();
+/// let (psd_) = periodogram(&signal, Some(fs), Some("hamming"), Some(16), None, None).unwrap();
 /// let crest = spectral_crest(&psd).unwrap();
 ///
 /// // Crest factor should be greater than or equal to 1.0
 /// assert!(crest >= 1.0);
 /// ```
+#[allow(dead_code)]
 pub fn spectral_crest<T>(psd: &[T]) -> SignalResult<f64>
 where
     T: Float + NumCast + Debug,
@@ -843,7 +854,7 @@ where
     }
 
     // Convert to f64 for internal processing
-    let psd_f64: Vec<f64> = psd
+    let psd_f64: Vec<f64> = _psd
         .iter()
         .map(|&val| {
             num_traits::cast::cast::<T, f64>(val).ok_or_else(|| {
@@ -896,6 +907,7 @@ where
 /// let (psd, freqs) = periodogram(&signal, Some(fs), Some("hamming"), Some(16), None, None).unwrap();
 /// let decrease = spectral_decrease(&psd, &freqs).unwrap();
 /// ```
+#[allow(dead_code)]
 pub fn spectral_decrease<T, U>(psd: &[T], freqs: &[U]) -> SignalResult<f64>
 where
     T: Float + NumCast + Debug,
@@ -914,7 +926,7 @@ where
     }
 
     // Convert to f64 for internal processing
-    let psd_f64: Vec<f64> = psd
+    let psd_f64: Vec<f64> = _psd
         .iter()
         .map(|&val| {
             num_traits::cast::cast::<T, f64>(val).ok_or_else(|| {
@@ -985,6 +997,7 @@ where
 /// let (psd, freqs) = periodogram(&signal, Some(fs), Some("hamming"), Some(16), None, None).unwrap();
 /// let slope = spectral_slope(&psd, &freqs).unwrap();
 /// ```
+#[allow(dead_code)]
 pub fn spectral_slope<T, U>(psd: &[T], freqs: &[U]) -> SignalResult<f64>
 where
     T: Float + NumCast + Debug,
@@ -1003,7 +1016,7 @@ where
     }
 
     // Convert to f64 for internal processing
-    let psd_f64: Vec<f64> = psd
+    let psd_f64: Vec<f64> = _psd
         .iter()
         .map(|&val| {
             num_traits::cast::cast::<T, f64>(val).ok_or_else(|| {
@@ -1079,7 +1092,8 @@ where
 ///
 /// assert_eq!(contrast.len(), 4);
 /// ```
-pub fn spectral_contrast<T, U>(psd: &[T], freqs: &[U], n_bands: usize) -> SignalResult<Vec<f64>>
+#[allow(dead_code)]
+pub fn spectral_contrast<T, U>(_psd: &[T], freqs: &[U], nbands: usize) -> SignalResult<Vec<f64>>
 where
     T: Float + NumCast + Debug,
     U: Float + NumCast + Debug,
@@ -1098,18 +1112,18 @@ where
 
     if n_bands < 1 {
         return Err(SignalError::ValueError(
-            "Number of bands must be positive".to_string(),
+            "Number of _bands must be positive".to_string(),
         ));
     }
 
     if psd.len() < n_bands * 2 {
         return Err(SignalError::ValueError(
-            "Not enough PSD points for requested number of bands".to_string(),
+            "Not enough PSD points for requested number of _bands".to_string(),
         ));
     }
 
     // Convert to f64 for internal processing
-    let psd_f64: Vec<f64> = psd
+    let psd_f64: Vec<f64> = _psd
         .iter()
         .map(|&val| {
             num_traits::cast::cast::<T, f64>(val).ok_or_else(|| {
@@ -1216,7 +1230,8 @@ where
 /// // Basic sanity check - bandwidth should be finite
 /// assert!(bandwidth.is_finite());
 /// ```
-pub fn spectral_bandwidth<T, U>(psd: &[T], freqs: &[U], threshold_db: f64) -> SignalResult<f64>
+#[allow(dead_code)]
+pub fn spectral_bandwidth<T, U>(_psd: &[T], freqs: &[U], thresholddb: f64) -> SignalResult<f64>
 where
     T: Float + NumCast + Debug,
     U: Float + NumCast + Debug,
@@ -1234,7 +1249,7 @@ where
     }
 
     // Convert to f64 for internal processing
-    let psd_f64: Vec<f64> = psd
+    let psd_f64: Vec<f64> = _psd
         .iter()
         .map(|&val| {
             num_traits::cast::cast::<T, f64>(val).ok_or_else(|| {
@@ -1322,6 +1337,7 @@ where
 /// assert!(dominant_freq.is_finite());
 /// assert!(magnitude >= 0.0);
 /// ```
+#[allow(dead_code)]
 pub fn dominant_frequency<T, U>(psd: &[T], freqs: &[U]) -> SignalResult<(f64, f64)>
 where
     T: Float + NumCast + Debug,
@@ -1340,7 +1356,7 @@ where
     }
 
     // Convert to f64 for internal processing
-    let psd_f64: Vec<f64> = psd
+    let psd_f64: Vec<f64> = _psd
         .iter()
         .map(|&val| {
             num_traits::cast::cast::<T, f64>(val).ok_or_else(|| {
@@ -1398,6 +1414,7 @@ where
 /// // There might be fewer than n peaks if not enough can be found
 /// assert!(peaks.len() <= 3);
 /// ```
+#[allow(dead_code)]
 pub fn dominant_frequencies<T, U>(
     psd: &[T],
     freqs: &[U],
@@ -1428,7 +1445,7 @@ where
 
     if min_separation < 0.0 {
         return Err(SignalError::ValueError(
-            "Minimum separation must be non-negative".to_string(),
+            "Minimum _separation must be non-negative".to_string(),
         ));
     }
 
@@ -1476,7 +1493,7 @@ where
     // Sort by magnitude (descending)
     peaks.sort_by(|a, b| b.1.partial_cmp(&a.1).unwrap());
 
-    // Select the top n peaks with the given minimum separation
+    // Select the top n peaks with the given minimum _separation
     let mut selected_peaks = Vec::new();
     let mut selected_indices = Vec::new();
 
@@ -1510,10 +1527,14 @@ where
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::utilities::spectral::spectral_centroid;
+    use crate::utilities::spectral::spectral_flux;
+    use crate::utilities::spectral::spectral_rolloff;
     use approx::assert_relative_eq;
-
     #[test]
     fn test_energy_spectral_density() {
+        let a = vec![1.0, 2.0, 3.0, 4.0, 5.0];
+        let b = vec![0.5, 0.5];
         // Create a simple PSD
         let psd = vec![1.0, 2.0, 3.0, 4.0, 3.0, 2.0, 1.0];
         let fs = 100.0; // Sample rate in Hz
@@ -1528,6 +1549,8 @@ mod tests {
 
     #[test]
     fn test_normalized_psd() {
+        let a = vec![1.0, 2.0, 3.0, 4.0, 5.0];
+        let b = vec![0.5, 0.5];
         // Create a simple PSD
         let psd = vec![1.0, 2.0, 3.0, 4.0, 3.0, 2.0, 1.0];
 
@@ -1547,6 +1570,8 @@ mod tests {
 
     #[test]
     fn test_spectral_centroid() {
+        let a = vec![1.0, 2.0, 3.0, 4.0, 5.0];
+        let b = vec![0.5, 0.5];
         // Create a symmetric PSD with peak in the middle
         let psd = vec![1.0, 2.0, 3.0, 4.0, 3.0, 2.0, 1.0];
         let freqs = vec![0.0, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0];
@@ -1568,6 +1593,8 @@ mod tests {
 
     #[test]
     fn test_spectral_spread() {
+        let a = vec![1.0, 2.0, 3.0, 4.0, 5.0];
+        let b = vec![0.5, 0.5];
         // Create a symmetric PSD with peak in the middle
         let psd = vec![1.0, 2.0, 3.0, 4.0, 3.0, 2.0, 1.0];
         let freqs = vec![0.0, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0];
@@ -1589,6 +1616,8 @@ mod tests {
 
     #[test]
     fn test_spectral_flatness() {
+        let a = vec![1.0, 2.0, 3.0, 4.0, 5.0];
+        let b = vec![0.5, 0.5];
         // Create a flat PSD (white noise-like)
         let psd = vec![1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0];
 
@@ -1637,6 +1666,8 @@ mod tests {
 
     #[test]
     fn test_spectral_rolloff() {
+        let a = vec![1.0, 2.0, 3.0, 4.0, 5.0];
+        let b = vec![0.5, 0.5];
         // Create a PSD with energy concentrated in first half
         let psd = vec![1.0, 2.0, 3.0, 4.0, 0.1, 0.1, 0.1];
         let freqs = vec![0.0, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0];

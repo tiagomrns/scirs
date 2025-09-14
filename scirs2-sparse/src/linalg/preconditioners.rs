@@ -30,8 +30,7 @@ impl<F: Float> JacobiPreconditioner<F> {
             let diag_val = matrix.get(i, i);
             if diag_val.abs() < F::epsilon() {
                 return Err(SparseError::ValueError(format!(
-                    "Zero diagonal element at position {}",
-                    i
+                    "Zero diagonal element at position {i}"
                 )));
             }
             *diag_inv = F::one() / diag_val;
@@ -51,8 +50,7 @@ impl<F: Float> JacobiPreconditioner<F> {
         for (i, &d) in diagonal.iter().enumerate() {
             if d.abs() < F::epsilon() {
                 return Err(SparseError::ValueError(format!(
-                    "Zero diagonal element at position {}",
-                    i
+                    "Zero _diagonal element at position {i}"
                 )));
             }
             inv_diagonal[i] = F::one() / d;
@@ -118,8 +116,7 @@ impl<F: Float + NumAssign + Sum + Debug + 'static> SSORPreconditioner<F> {
             *diag = matrix.get(i, i);
             if diag.abs() < F::epsilon() {
                 return Err(SparseError::ValueError(format!(
-                    "Zero diagonal element at position {}",
-                    i
+                    "Zero diagonal element at position {i}"
                 )));
             }
         }
@@ -211,7 +208,7 @@ impl<F: Float + NumAssign + Sum + Debug + 'static> ILU0Preconditioner<F> {
     pub fn new(matrix: &CsrMatrix<F>) -> SparseResult<Self> {
         let n = matrix.rows();
 
-        // Copy the matrix data for modification
+        // Copy the _matrix data for modification
         let mut data = matrix.data.clone();
         let indices = matrix.indices.clone();
         let indptr = matrix.indptr.clone();
@@ -223,8 +220,7 @@ impl<F: Float + NumAssign + Sum + Debug + 'static> ILU0Preconditioner<F> {
 
             if k_diag.abs() < F::epsilon() {
                 return Err(SparseError::ValueError(format!(
-                    "Zero pivot at position {}",
-                    k
+                    "Zero pivot at position {k}"
                 )));
             }
 
@@ -378,6 +374,7 @@ impl<F: Float + NumAssign + Sum + Debug + 'static> LinearOperator<F> for ILU0Pre
 }
 
 // Helper function to find diagonal index in CSR format
+#[allow(dead_code)]
 fn find_diagonal_index(indices: &[usize], indptr: &[usize], row: usize) -> SparseResult<usize> {
     let row_start = indptr[row];
     let row_end = indptr[row + 1];
@@ -393,8 +390,7 @@ fn find_diagonal_index(indices: &[usize], indptr: &[usize], row: usize) -> Spars
     }
 
     Err(SparseError::ValueError(format!(
-        "Missing diagonal element at row {}",
-        row
+        "Missing diagonal element at row {row}"
     )))
 }
 

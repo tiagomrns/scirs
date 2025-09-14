@@ -3,8 +3,9 @@ use ndarray::array;
 use scirs2_autograd as ag;
 
 #[test]
+#[allow(dead_code)]
 fn test_checkpoint_basic() {
-    ag::run::<f64, _, _>(|ctx| {
+    ag::run(|ctx| {
         // Create a simple computation graph
         let a = T::convert_to_tensor(array![[1.0, 2.0], [3.0, 4.0]], ctx);
         let b = T::convert_to_tensor(array![[5.0, 6.0], [7.0, 8.0]], ctx);
@@ -44,8 +45,9 @@ fn test_checkpoint_basic() {
 }
 
 #[test]
+#[allow(dead_code)]
 fn test_detach() {
-    ag::run::<f64, _, _>(|ctx| {
+    ag::run(|ctx| {
         // Create a tensor
         let a = T::convert_to_tensor(array![[1.0, 2.0], [3.0, 4.0]], ctx);
 
@@ -75,8 +77,9 @@ fn test_detach() {
 }
 
 #[test]
+#[allow(dead_code)]
 fn test_checkpoint_segment() {
-    ag::run::<f64, _, _>(|ctx| {
+    ag::run(|ctx| {
         // Create input tensors
         let a = T::convert_to_tensor(array![[1.0, 2.0], [3.0, 4.0]], ctx);
         let b = T::convert_to_tensor(array![[5.0, 6.0], [7.0, 8.0]], ctx);
@@ -95,7 +98,7 @@ fn test_checkpoint_segment() {
         let val1 = result1.eval(ctx).unwrap();
         let val2 = result2.eval(ctx).unwrap();
 
-        assert!((val1[[]] - val2[[]]).abs() < 1e-10);
+        assert!((val1[[]] - val2[[]] as f64).abs() < 1e-10_f64);
 
         // Test gradients
         let grad1 = T::grad(&[result1], &[&a])[0];
@@ -118,8 +121,9 @@ fn test_checkpoint_segment() {
 }
 
 #[test]
+#[allow(dead_code)]
 fn test_checkpoint_deep_network() {
-    ag::run::<f64, _, _>(|ctx| {
+    ag::run(|ctx| {
         // Create a simple "deep network" with multiple layers
         let input = T::convert_to_tensor(array![[0.1, 0.2, 0.3], [0.4, 0.5, 0.6]], ctx);
         let w1 = T::convert_to_tensor(array![[0.1, 0.2], [0.3, 0.4], [0.5, 0.6]], ctx);
@@ -146,7 +150,7 @@ fn test_checkpoint_deep_network() {
         let result = loss.eval(ctx).unwrap();
         let result_ckpt = loss_ckpt.eval(ctx).unwrap();
 
-        assert!((result[[]] - result_ckpt[[]]).abs() < 1e-10);
+        assert!((result[[]] - result_ckpt[[]] as f64).abs() < 1e-10_f64);
 
         // Test gradients for all weights
         let grads = T::grad(&[loss], &[&w1, &w2, &w3]);
@@ -173,8 +177,9 @@ fn test_checkpoint_deep_network() {
 }
 
 #[test]
+#[allow(dead_code)]
 fn test_adaptive_checkpoint() {
-    ag::run::<f64, _, _>(|ctx| {
+    ag::run(|ctx| {
         // Create input tensors
         let a = T::convert_to_tensor(array![[1.0, 2.0], [3.0, 4.0]], ctx);
         let b = T::convert_to_tensor(array![[5.0, 6.0], [7.0, 8.0]], ctx);
@@ -223,8 +228,9 @@ fn test_adaptive_checkpoint() {
 }
 
 #[test]
+#[allow(dead_code)]
 fn test_checkpoint_group() {
-    ag::run::<f64, _, _>(|ctx| {
+    ag::run(|ctx| {
         // Create input tensors
         let a = T::convert_to_tensor(array![[1.0, 2.0], [3.0, 4.0]], ctx);
         let b = T::convert_to_tensor(array![[5.0, 6.0], [7.0, 8.0]], ctx);
@@ -257,7 +263,7 @@ fn test_checkpoint_group() {
 
         for i in 0..2 {
             for j in 0..2 {
-                assert!((c1_2d[[i, j]] - c2_2d[[i, j]]).abs() < 1e-10);
+                assert!((c1_2d[[i, j]] - c2_2d[[i, j]] as f64).abs() < 1e-10_f64);
             }
         }
 
@@ -267,7 +273,7 @@ fn test_checkpoint_group() {
 
         for i in 0..2 {
             for j in 0..2 {
-                assert!((d1_2d[[i, j]] - d2_2d[[i, j]]).abs() < 1e-10);
+                assert!((d1_2d[[i, j]] - d2_2d[[i, j]] as f64).abs() < 1e-10_f64);
             }
         }
 
@@ -295,8 +301,9 @@ fn test_checkpoint_group() {
 }
 
 #[test]
+#[allow(dead_code)]
 fn test_stop_gradient() {
-    ag::run::<f64, _, _>(|ctx| {
+    ag::run(|ctx| {
         // Create a tensor
         let a = T::convert_to_tensor(array![[1.0, 2.0], [3.0, 4.0]], ctx);
 
@@ -326,8 +333,9 @@ fn test_stop_gradient() {
 }
 
 #[test]
+#[allow(dead_code)]
 fn test_checkpoint_profiler() {
-    ag::run::<f64, _, _>(|ctx| {
+    ag::run(|ctx| {
         // Reset statistics
         T::CheckpointProfiler::reset_statistics();
 

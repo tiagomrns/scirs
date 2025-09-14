@@ -39,6 +39,7 @@ use crate::error::{ClusteringError, Result};
 /// let condensed = square_to_condensed(square.view()).unwrap();
 /// assert_eq!(condensed.to_vec(), vec![1.0, 2.0, 3.0]);
 /// ```
+#[allow(dead_code)]
 pub fn square_to_condensed<F: Float + Zero + Copy>(
     square_matrix: ArrayView2<F>,
 ) -> Result<Array1<F>> {
@@ -47,14 +48,14 @@ pub fn square_to_condensed<F: Float + Zero + Copy>(
 
     if n != m {
         return Err(ClusteringError::InvalidInput(format!(
-            "Distance matrix must be square, got {}x{}",
+            "Distance _matrix must be square, got {}x{}",
             n, m
         )));
     }
 
     if n < 2 {
         return Err(ClusteringError::InvalidInput(
-            "Distance matrix must be at least 2x2".to_string(),
+            "Distance _matrix must be at least 2x2".to_string(),
         ));
     }
 
@@ -101,6 +102,7 @@ pub fn square_to_condensed<F: Float + Zero + Copy>(
 /// assert_eq!(square[[1, 2]], 3.0);
 /// assert_eq!(square[[2, 1]], 3.0);
 /// ```
+#[allow(dead_code)]
 pub fn condensed_to_square<F: Float + Zero + Copy>(
     condensed_matrix: ArrayView1<F>,
 ) -> Result<Array2<F>> {
@@ -112,7 +114,7 @@ pub fn condensed_to_square<F: Float + Zero + Copy>(
 
     if n * (n - 1) / 2 != condensed_len {
         return Err(ClusteringError::InvalidInput(format!(
-            "Invalid condensed matrix size: {} elements doesn't correspond to n*(n-1)/2 for any integer n",
+            "Invalid condensed _matrix size: {} elements doesn't correspond to n*(n-1)/2 for any integer n",
             condensed_len
         )));
     }
@@ -158,6 +160,7 @@ pub fn condensed_to_square<F: Float + Zero + Copy>(
 /// let distance = get_distance(condensed.view(), 0, 2, 3).unwrap();
 /// assert_eq!(distance, 2.0);
 /// ```
+#[allow(dead_code)]
 pub fn get_distance<F: Float + Zero + Copy>(
     condensed_matrix: ArrayView1<F>,
     i: usize,
@@ -178,7 +181,7 @@ pub fn get_distance<F: Float + Zero + Copy>(
     let expected_len = n * (n - 1) / 2;
     if condensed_matrix.len() != expected_len {
         return Err(ClusteringError::InvalidInput(format!(
-            "Condensed matrix length {} doesn't match expected {} for n={}",
+            "Condensed _matrix length {} doesn't match expected {} for n={}",
             condensed_matrix.len(),
             expected_len,
             n
@@ -188,12 +191,12 @@ pub fn get_distance<F: Float + Zero + Copy>(
     // Ensure i < j for indexing
     let (min_idx, max_idx) = if i < j { (i, j) } else { (j, i) };
 
-    // Calculate the index in the condensed matrix
+    // Calculate the index in the condensed _matrix
     let condensed_idx = n * min_idx - (min_idx * (min_idx + 1)) / 2 + (max_idx - min_idx - 1);
 
     if condensed_idx >= condensed_matrix.len() {
         return Err(ClusteringError::InvalidInput(format!(
-            "Computed index {} is out of bounds for condensed matrix of length {}",
+            "Computed index {} is out of bounds for condensed _matrix of length {}",
             condensed_idx,
             condensed_matrix.len()
         )));
@@ -218,6 +221,7 @@ pub fn get_distance<F: Float + Zero + Copy>(
 /// # Returns
 ///
 /// * `Result<()>` - Ok if successful, error otherwise
+#[allow(dead_code)]
 pub fn set_distance<F: Float + Zero + Copy>(
     condensed_matrix: ArrayView1<F>,
     i: usize,
@@ -244,7 +248,7 @@ pub fn set_distance<F: Float + Zero + Copy>(
     let expected_len = n * (n - 1) / 2;
     if condensed_matrix.len() != expected_len {
         return Err(ClusteringError::InvalidInput(format!(
-            "Condensed matrix length {} doesn't match expected {} for n={}",
+            "Condensed _matrix length {} doesn't match expected {} for n={}",
             condensed_matrix.len(),
             expected_len,
             n
@@ -254,12 +258,12 @@ pub fn set_distance<F: Float + Zero + Copy>(
     // Ensure i < j for indexing
     let (min_idx, max_idx) = if i < j { (i, j) } else { (j, i) };
 
-    // Calculate the index in the condensed matrix
+    // Calculate the index in the condensed _matrix
     let condensed_idx = n * min_idx - (min_idx * (min_idx + 1)) / 2 + (max_idx - min_idx - 1);
 
     if condensed_idx >= condensed_matrix.len() {
         return Err(ClusteringError::InvalidInput(format!(
-            "Computed index {} is out of bounds for condensed matrix of length {}",
+            "Computed index {} is out of bounds for condensed _matrix of length {}",
             condensed_idx,
             condensed_matrix.len()
         )));
@@ -284,6 +288,7 @@ pub fn set_distance<F: Float + Zero + Copy>(
 /// # Returns
 ///
 /// * `usize` - Size of condensed matrix (n*(n-1)/2)
+#[allow(dead_code)]
 pub fn condensed_size(n: usize) -> usize {
     n * (n - 1) / 2
 }
@@ -300,14 +305,15 @@ pub fn condensed_size(n: usize) -> usize {
 /// # Returns
 ///
 /// * `Result<usize>` - Number of points, or error if size is invalid
-pub fn points_from_condensed_size(condensed_len: usize) -> Result<usize> {
-    let n_float = (1.0 + (1.0 + 8.0 * condensed_len as f64).sqrt()) / 2.0;
+#[allow(dead_code)]
+pub fn points_from_condensed_size(_condensedlen: usize) -> Result<usize> {
+    let n_float = (1.0 + (1.0 + 8.0 * _condensedlen as f64).sqrt()) / 2.0;
     let n = n_float as usize;
 
-    if n * (n - 1) / 2 != condensed_len {
+    if n * (n - 1) / 2 != _condensedlen {
         return Err(ClusteringError::InvalidInput(format!(
             "Invalid condensed matrix size: {} elements doesn't correspond to n*(n-1)/2 for any integer n",
-            condensed_len
+            _condensedlen
         )));
     }
 
@@ -326,6 +332,7 @@ pub fn points_from_condensed_size(condensed_len: usize) -> Result<usize> {
 /// # Returns
 ///
 /// * `Result<usize>` - Number of points if valid, error otherwise
+#[allow(dead_code)]
 pub fn validate_condensed_matrix<F: Float + FromPrimitive + Debug + PartialOrd>(
     condensed_matrix: ArrayView1<F>,
 ) -> Result<usize> {
@@ -333,7 +340,7 @@ pub fn validate_condensed_matrix<F: Float + FromPrimitive + Debug + PartialOrd>(
 
     if condensed_len == 0 {
         return Err(ClusteringError::InvalidInput(
-            "Condensed matrix cannot be empty".to_string(),
+            "Condensed _matrix cannot be empty".to_string(),
         ));
     }
 
@@ -342,7 +349,7 @@ pub fn validate_condensed_matrix<F: Float + FromPrimitive + Debug + PartialOrd>(
 
     if n < 2 {
         return Err(ClusteringError::InvalidInput(
-            "Condensed matrix must represent at least 2 points".to_string(),
+            "Condensed _matrix must represent at least 2 points".to_string(),
         ));
     }
 

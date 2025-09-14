@@ -22,6 +22,7 @@ use crate::specialized::BandedMatrix;
 /// # Returns
 ///
 /// * Tuple containing eigenvalues and eigenvectors
+#[allow(dead_code)]
 pub fn banded_eigh<F>(a: &ArrayView2<F>, bandwidth: usize) -> LinalgResult<(Array1<F>, Array2<F>)>
 where
     F: Float
@@ -58,7 +59,7 @@ where
     }
 
     // Convert to BandedMatrix structure for efficient operations
-    let _banded = BandedMatrix::from_matrix(a, bandwidth, bandwidth)?;
+    let _banded = BandedMatrix::frommatrix(a, bandwidth, bandwidth)?;
 
     // If bandwidth is 1, the matrix is already tridiagonal
     if bandwidth == 1 {
@@ -156,6 +157,7 @@ where
 /// # Returns
 ///
 /// * Vector of eigenvalues
+#[allow(dead_code)]
 pub fn banded_eigvalsh<F>(a: &ArrayView2<F>, bandwidth: usize) -> LinalgResult<Array1<F>>
 where
     F: Float
@@ -184,6 +186,6 @@ where
     }
 
     // Otherwise, use the full solution and discard eigenvectors
-    let (eigenvalues, _) = banded_eigh(a, bandwidth)?;
+    let (eigenvalues_) = banded_eigh(a, bandwidth)?;
     Ok(eigenvalues)
 }

@@ -4,6 +4,7 @@ use ndarray::Array1;
 use num_complex::Complex;
 use scirs2_fft::{auto_pad_complex, AutoPadConfig, PaddingMode};
 
+#[allow(dead_code)]
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("Testing automatic padding");
 
@@ -14,13 +15,13 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         Complex::new(3.0, 0.0),
     ]);
 
-    println!("Original signal: {:?}", signal);
+    println!("Original signal: {signal:?}");
     println!("Length: {}", signal.len());
 
     // Test zero padding
     let config = AutoPadConfig::new(PaddingMode::Zero);
     let padded = auto_pad_complex(&signal, &config)?;
-    println!("\nZero padded: {:?}", padded);
+    println!("\nZero padded: {padded:?}");
     println!("Padded length: {}", padded.len());
 
     // Test power of 2 padding
@@ -31,7 +32,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Test edge padding
     let config_edge = AutoPadConfig::new(PaddingMode::Edge);
     let padded_edge = auto_pad_complex(&signal, &config_edge)?;
-    println!("\nEdge padded: {:?}", padded_edge);
+    println!("\nEdge padded: {padded_edge:?}");
 
     Ok(())
 }

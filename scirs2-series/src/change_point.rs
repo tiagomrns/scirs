@@ -9,6 +9,7 @@ use num_traits::{Float, FromPrimitive, NumCast};
 use std::fmt::Debug;
 
 use crate::error::{Result, TimeSeriesError};
+use statrs::statistics::Statistics;
 
 /// Method for change point detection
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -109,7 +110,7 @@ pub struct ChangePointResult {
 ///
 /// ```
 /// use ndarray::Array1;
-/// use scirs2_series::change_point::{detect_change_points, ChangePointOptions, ChangePointMethod};
+/// use scirs2__series::change_point::{detect_change_points, ChangePointOptions, ChangePointMethod};
 ///
 /// // Create a time series with a change point at index 50
 /// let mut ts = Array1::zeros(100);
@@ -130,6 +131,7 @@ pub struct ChangePointResult {
 /// let result = detect_change_points(&ts, &options).unwrap();
 /// println!("Change points detected at: {:?}", result.change_points);
 /// ```
+#[allow(dead_code)]
 pub fn detect_change_points<F>(
     ts: &Array1<F>,
     options: &ChangePointOptions,
@@ -168,6 +170,7 @@ where
 }
 
 /// PELT (Pruned Exact Linear Time) algorithm for change point detection
+#[allow(dead_code)]
 fn detect_change_points_pelt<F>(
     ts: &Array1<F>,
     options: &ChangePointOptions,
@@ -240,6 +243,7 @@ where
 }
 
 /// Binary segmentation algorithm for change point detection
+#[allow(dead_code)]
 fn detect_change_points_binary<F>(
     ts: &Array1<F>,
     options: &ChangePointOptions,
@@ -300,6 +304,7 @@ where
 }
 
 /// CUSUM method for change point detection
+#[allow(dead_code)]
 fn detect_change_points_cusum<F>(
     ts: &Array1<F>,
     options: &ChangePointOptions,
@@ -371,6 +376,7 @@ where
 }
 
 /// Bayesian online change point detection (simplified version)
+#[allow(dead_code)]
 fn detect_change_points_bayesian<F>(
     ts: &Array1<F>,
     options: &ChangePointOptions,
@@ -455,6 +461,7 @@ where
 }
 
 /// Kernel-based change point detection (simplified version)
+#[allow(dead_code)]
 fn detect_change_points_kernel<F>(
     ts: &Array1<F>,
     options: &ChangePointOptions,
@@ -519,6 +526,7 @@ where
 }
 
 /// Calculate the cost of a segment using the specified cost function
+#[allow(dead_code)]
 fn calculate_segment_cost<F>(
     ts: &Array1<F>,
     start: usize,
@@ -584,6 +592,7 @@ where
 }
 
 /// Calculate the score for splitting a segment at a given point
+#[allow(dead_code)]
 fn calculate_split_score<F>(
     ts: &Array1<F>,
     start: usize,
@@ -603,6 +612,7 @@ where
 }
 
 /// Calculate variance of a segment
+#[allow(dead_code)]
 fn calculate_variance<F>(segment: &Array1<F>, mean: F) -> F
 where
     F: Float + FromPrimitive + Debug + NumCast + std::iter::Sum,
@@ -651,8 +661,7 @@ mod tests {
             let detected = result.change_points[0];
             assert!(
                 detected > 40 && detected < 60,
-                "Detected change point {} should be near 50",
-                detected
+                "Detected change point {detected} should be near 50"
             );
         }
     }
@@ -718,34 +727,27 @@ mod tests {
 
         // Test normal cost function
         let cost = calculate_segment_cost(&segment, 0, 5, CostFunction::Normal).unwrap();
-        assert!(
-            cost.is_finite(),
-            "Normal cost should be finite, got {}",
-            cost
-        );
+        assert!(cost.is_finite(), "Normal cost should be finite, got {cost}");
 
         // Test Poisson cost function
         let cost = calculate_segment_cost(&segment, 0, 5, CostFunction::Poisson).unwrap();
         assert!(
             cost.is_finite(),
-            "Poisson cost should be finite, got {}",
-            cost
+            "Poisson cost should be finite, got {cost}"
         );
 
         // Test exponential cost function
         let cost = calculate_segment_cost(&segment, 0, 5, CostFunction::Exponential).unwrap();
         assert!(
             cost.is_finite(),
-            "Exponential cost should be finite, got {}",
-            cost
+            "Exponential cost should be finite, got {cost}"
         );
 
         // Test non-parametric cost function
         let cost = calculate_segment_cost(&segment, 0, 5, CostFunction::NonParametric).unwrap();
         assert!(
             cost >= 0.0,
-            "Non-parametric cost should be non-negative, got {}",
-            cost
+            "Non-parametric cost should be non-negative, got {cost}"
         );
     }
 

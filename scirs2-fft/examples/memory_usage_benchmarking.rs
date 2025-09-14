@@ -6,6 +6,7 @@ use scirs2_fft::PlanCache;
 use std::f64::consts::PI;
 use std::time::{Duration, Instant};
 
+#[allow(dead_code)]
 fn main() {
     println!("Memory Usage Benchmarking for FFT Operations");
     println!("=============================================\n");
@@ -24,6 +25,7 @@ fn main() {
 }
 
 /// Benchmark 1D FFT operations
+#[allow(dead_code)]
 fn benchmark_1d_ffts(sizes: &[usize], iterations: usize) {
     println!("\n1D FFT Memory Usage Benchmarking");
     println!("--------------------------------");
@@ -117,6 +119,7 @@ fn benchmark_1d_ffts(sizes: &[usize], iterations: usize) {
 }
 
 /// Benchmark 2D FFT operations
+#[allow(dead_code)]
 fn benchmark_2d_ffts(sizes: &[(usize, usize)], iterations: usize) {
     println!("\n2D FFT Memory Usage Benchmarking");
     println!("--------------------------------");
@@ -229,6 +232,7 @@ fn benchmark_2d_ffts(sizes: &[(usize, usize)], iterations: usize) {
 }
 
 /// Create a test signal with sine waves for 1D FFT
+#[allow(dead_code)]
 fn create_test_signal(size: usize) -> Vec<f64> {
     let mut signal = Vec::with_capacity(size);
     for i in 0..size {
@@ -240,6 +244,7 @@ fn create_test_signal(size: usize) -> Vec<f64> {
 }
 
 /// Create a test array with 2D patterns for 2D FFT
+#[allow(dead_code)]
 fn create_test_array(rows: usize, cols: usize) -> Array2<Complex64> {
     let mut array = Array2::zeros((rows, cols));
     for i in 0..rows {
@@ -254,6 +259,7 @@ fn create_test_array(rows: usize, cols: usize) -> Array2<Complex64> {
 }
 
 /// Memory-optimized FFT implementation using memory-efficient algorithms
+#[allow(dead_code)]
 fn optimized_fft(input: &[Complex64]) -> scirs2_fft::error::FFTResult<Vec<Complex64>> {
     // Use the in-place implementation with appropriate buffer sizing
     let mut input_clone = input.to_vec();
@@ -263,12 +269,13 @@ fn optimized_fft(input: &[Complex64]) -> scirs2_fft::error::FFTResult<Vec<Comple
 }
 
 /// Memory-optimized FFT2 implementation
+#[allow(dead_code)]
 fn optimized_fft2(
     input: &Array2<Complex64>,
     shape: Option<(usize, usize)>,
 ) -> scirs2_fft::error::FFTResult<Array2<Complex64>> {
     // Get shape
-    let (_rows, _cols) = match shape {
+    let rows_cols = match shape {
         Some(s) => s,
         None => {
             let shape = input.shape();
@@ -354,7 +361,7 @@ mod memory_tracking {
     impl MemoryStats {
         /// Format memory size in human-readable form
         #[allow(dead_code)]
-        pub fn format_size(size: usize) -> String {
+        pub fn formatsize(size: usize) -> String {
             if size < 1024 {
                 format!("{} B", size)
             } else if size < 1024 * 1024 {
@@ -369,7 +376,7 @@ mod memory_tracking {
         /// Get peak memory usage in human-readable form
         #[allow(dead_code)]
         pub fn peak_memory_str(&self) -> String {
-            Self::format_size(self.peak_allocated)
+            Self::formatsize(self.peak_allocated)
         }
     }
 }

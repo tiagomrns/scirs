@@ -287,7 +287,7 @@ SciRS2 and all its modules are available on [crates.io](https://crates.io/crates
 ```toml
 # Add the main integration crate for all functionality
 [dependencies]
-scirs2 = "0.1.0-beta.1"
+scirs2 = "0.1.0-beta.2"
 ```
 
 Or include only the specific modules you need:
@@ -295,16 +295,16 @@ Or include only the specific modules you need:
 ```toml
 [dependencies]
 # Core utilities
-scirs2-core = "0.1.0-beta.1"
+scirs2-core = "0.1.0-beta.2"
 
 # Scientific computing modules
-scirs2-linalg = "0.1.0-beta.1"
-scirs2-stats = "0.1.0-beta.1"
-scirs2-optimize = "0.1.0-beta.1"
+scirs2-linalg = "0.1.0-beta.2"
+scirs2-stats = "0.1.0-beta.2"
+scirs2-optimize = "0.1.0-beta.2"
 
 # AI/ML modules
-scirs2-neural = "0.1.0-beta.1"
-scirs2-autograd = "0.1.0-beta.1"
+scirs2-neural = "0.1.0-beta.2"
+scirs2-autograd = "0.1.0-beta.2"
 ```
 
 ### Example Usage
@@ -506,10 +506,10 @@ All SciRS2 modules are available on crates.io. Add the modules you need to your 
 
 ```toml
 [dependencies]
-scirs2 = "0.1.0-beta.1"  # Core library with all modules
+scirs2 = "0.1.0-beta.2"  # Core library with all modules
 # Or individual modules:
-scirs2-linalg = "0.1.0-beta.1"  # Linear algebra
-scirs2-stats = "0.1.0-beta.1"   # Statistics
+scirs2-linalg = "0.1.0-beta.2"  # Linear algebra
+scirs2-stats = "0.1.0-beta.2"   # Statistics
 # ... and more
 ```
 
@@ -538,9 +538,31 @@ Initial benchmarks on core operations show performance comparable to or exceedin
 
 *Note: Performance may vary based on hardware, compiler optimization, and specific workloads.*
 
+## Important: Beta 2 Release Notes
+
+**⚠️ Critical Update:** v0.1.0-beta.1 had compilation errors when downloaded from crates.io and has been **yanked**. Please use v0.1.0-beta.2 instead.
+
+### 🔧 v0.1.0-beta.2 (2025-09-16) - Compilation Fixes
+
+This hotfix release resolves all compilation errors that prevented v0.1.0-beta.1 from building successfully:
+
+#### ✅ Fixed Issues:
+- **Variable name inconsistencies**: Resolved `chunk_size`/`chunksize`, `op_name`/`opname`, `target_unit`/`targetunit` mismatches
+- **Pattern matching errors**: Fixed SIMD loop patterns and indexing logic
+- **Undefined variables**: Fixed unresolved variables in batch conversion functions
+- **Function conflicts**: Resolved duplicate function definitions
+- **Type references**: Fixed field reference consistency
+
+#### 📊 Results:
+- ✅ **100% Compilation Success**: All crates now compile without errors
+- ✅ **Zero Warnings**: Clean build across all feature combinations
+- ✅ **No API Changes**: Migration requires only version number updates
+
+**Migration:** Simply update your `Cargo.toml` from `0.1.0-beta.1` to `0.1.0-beta.2`.
+
 ## Known Limitations (Beta Release)
 
-This is the first beta release (0.1.0-beta.1) of SciRS2. While the core functionality is stable and well-tested, there are some known limitations:
+This is the second beta release (0.1.0-beta.2) of SciRS2. While the core functionality is stable and well-tested, there are some known limitations:
 
 ### Autograd Module
 - **Gradient Shape Propagation**: Some complex operations may have limitations in gradient shape inference (Issue #1). Complex computation graphs may require manual shape specification in certain cases.

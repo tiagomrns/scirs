@@ -1,6 +1,6 @@
 [package]
 name = "scirs2-cluster"
-version = "0.1.0-beta.1"
+version.workspace = true
 edition = "2021"
 authors = ["SciRS2 Team"]
 description = "Clustering algorithms module for SciRS2 (scirs2-cluster)"

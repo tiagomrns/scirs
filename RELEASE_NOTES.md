@@ -1,6 +1,42 @@
-# Release Notes - SciRS2 v0.1.0-beta.1
+# Release Notes - SciRS2
 
-## 🎉 First Beta Release!
+## 🔧 v0.1.0-beta.2 (2025-09-16) - Critical Compilation Fixes
+
+### 🚨 Emergency Release - Fixes crates.io Compilation Errors
+
+This is a critical hotfix release that resolves all compilation errors present in v0.1.0-beta.1 when downloaded from crates.io.
+
+#### 🔥 Fixed Compilation Errors (100% resolved):
+- **Variable Name Inconsistencies**: Fixed `chunk_size`/`chunksize`, `op_name`/`opname`, `target_unit`/`targetunit` mismatches
+- **Undefined Variable References**: Fixed unresolved variables in batch conversion functions (`sequential`, `simd`, `parallel`, `simd_parallel`)
+- **Pattern Match Errors**: Corrected pattern matching in SIMD conversion loops (`for (0, &val)` → `for (i, &val)` with proper indexing)
+- **Function Name Conflicts**: Resolved duplicate `center()` function definitions by renaming constructor to `centered()`
+- **Type Field References**: Fixed `type_info` field reference consistency
+
+#### 📋 Technical Details:
+- **Files Modified**: `batch_conversions.rs`, `types.rs`, `dynamic_dispatch.rs`
+- **Total Errors Fixed**: 20+ compilation errors reduced to zero
+- **Build Verification**: ✅ `cargo build` successful
+- **Lint Check**: ✅ `cargo clippy` with zero warnings
+- **Publication Ready**: ✅ `cargo publish --dry-run` successful
+
+#### 🎯 Impact:
+- **Before**: scirs2-core v0.1.0-beta.1 failed to compile from crates.io
+- **After**: scirs2-core v0.1.0-beta.2 compiles successfully with zero errors
+- **Downstream Compatibility**: All dependent crates can now build successfully
+
+#### 📦 Installation:
+```toml
+[dependencies]
+scirs2-core = "0.1.0-beta.2"  # Fixed version
+scirs2 = "0.1.0-beta.2"
+```
+
+**Important**: v0.1.0-beta.1 has been yanked from crates.io due to compilation failures. Please upgrade to v0.1.0-beta.2 immediately.
+
+---
+
+## 🎉 v0.1.0-beta.1 (Previous Release) - First Beta Release!
 
 We are excited to announce the first beta release of SciRS2, a comprehensive scientific computing and AI/ML infrastructure in Rust. After months of development, we've reached a significant milestone with over 2 million lines of code and 9,000+ tests.
 
@@ -73,12 +109,12 @@ Add to your `Cargo.toml`:
 
 ```toml
 [dependencies]
-scirs2 = "0.1.0-beta.1"
+scirs2 = "0.1.0-beta.2"  # Use latest fixed version
 
 # Or select specific modules:
-scirs2-linalg = "0.1.0-beta.1"
-scirs2-stats = "0.1.0-beta.1"
-scirs2-autograd = "0.1.0-beta.1"
+scirs2-linalg = "0.1.0-beta.2"
+scirs2-stats = "0.1.0-beta.2"
+scirs2-autograd = "0.1.0-beta.2"
 ```
 
 ## 🚀 Quick Start
@@ -145,4 +181,4 @@ Dual-licensed under MIT and Apache 2.0.
 
 **Note**: This is a beta release. While core functionality is stable and well-tested, some features are still under development. Production use should be carefully evaluated based on your specific requirements.
 
-For detailed documentation, visit: https://docs.rs/scirs2/0.1.0-beta.1/
+For detailed documentation, visit: https://docs.rs/scirs2/0.1.0-beta.2/

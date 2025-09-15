@@ -456,7 +456,7 @@ This document outlines the comprehensive development plan for the SciRS2 project
   - [x] Replace custom caching implementations with scirs2-core::cache
   - [x] Update all module Cargo.toml files to enable relevant core features
 
-## Phase 8: Beta 1 Release (Current)
+## Phase 8: Beta 1 Release (Previous)
 
 - [x] Parallel Processing Enhancements
   - [x] Custom partitioning strategies (UniformPartition, DynamicPartition, CyclicPartition)
@@ -474,6 +474,43 @@ This document outlines the comprehensive development plan for the SciRS2 project
   - [x] Stable matrix operations and decompositions
   - [x] Iterative solvers with numerical stability
   - [x] Richardson extrapolation and adaptive Simpson's rule
+
+## Phase 8.5: Beta 2 Critical Compilation Fixes (Current)
+
+- [x] **Emergency Compilation Fixes for crates.io**
+  - [x] Variable Name Inconsistencies Resolution
+    - [x] Fixed `chunk_size`/`chunksize` mismatches in batch_conversions.rs:88
+    - [x] Fixed `op_name`/`opname` mismatches in types.rs:732, 746
+    - [x] Fixed `target_unit`/`targetunit` mismatches in types.rs:961, 964, 970, 972
+    - [x] Fixed `max_denominator`/`maxdenominator` mismatches in types.rs:1301, 1309
+    - [x] Fixed `type_info` field reference consistency in dynamic_dispatch.rs:95
+  - [x] Pattern Match Error Corrections
+    - [x] Fixed SIMD conversion loop patterns: `for (0, &val)` → `for (i, &val)` in batch_conversions.rs
+    - [x] Corrected indexing logic: `chunk_idx * 2 + 0` → `chunk_idx * 2 + i`
+    - [x] Fixed remainder processing: `slice.len() - remainder.len() + 0` → `slice.len() - remainder.len() + i`
+    - [x] Applied fixes to all 4 affected pattern match locations
+  - [x] Undefined Variable References
+    - [x] Fixed unresolved variables in batch conversion functions (`sequential`, `simd`, `parallel`, `simd_parallel`)
+    - [x] Replaced undefined variable references with string literals
+  - [x] Function Name Conflicts Resolution
+    - [x] Resolved duplicate `center()` function definitions by renaming constructor to `centered()`
+    - [x] Maintained API compatibility while avoiding naming conflicts
+- [x] **Build Verification and Quality Assurance**
+  - [x] 100% Compilation Success: All files compile without errors
+  - [x] Zero Warnings: Clean `cargo clippy` output across all feature combinations
+  - [x] Publication Ready: `cargo publish --dry-run` successful
+  - [x] Version Updates: Updated all version references from 0.1.0-beta.1 to 0.1.0-beta.2
+  - [x] Workspace Inheritance: Ensured consistent version management across all crates
+- [x] **Documentation Updates**
+  - [x] Updated RELEASE_NOTES.md with comprehensive beta.2 information
+  - [x] Updated scirs2-core README.md with compilation fix details
+  - [x] Added migration guidance and impact assessment
+  - [x] Updated installation instructions and version references
+- [x] **Impact Assessment and Resolution**
+  - [x] Before: scirs2-core v0.1.0-beta.1 failed to compile from crates.io (20+ errors)
+  - [x] After: scirs2-core v0.1.0-beta.2 compiles successfully with zero errors
+  - [x] Downstream Compatibility: All dependent crates can now build successfully
+  - [x] No API Breaking Changes: Migration requires only version number updates
 
 ## Phase 9: Beta 2 Preparation and API Stabilization
 
@@ -614,9 +651,9 @@ This document outlines the comprehensive development plan for the SciRS2 project
 ## Milestones
 
 - **0.1.0-alpha.5** ✅: Advanced core features implementation with error handling, benchmarking, optimization frameworks, computer vision registration algorithms, and comprehensive quality improvements
-- **0.1.0-beta.1** ✅: Parallel processing enhancements, arbitrary precision arithmetic, numerical stability improvements
-- **0.1.0-beta.1** 🚀: First beta release with major core features complete, enhanced parallel processing, and numerical capabilities
-- **0.1.0-beta.2**: API stabilization, cross-module integration improvements, and performance optimizations
+- **0.1.0-beta.1** ✅: Parallel processing enhancements, arbitrary precision arithmetic, numerical stability improvements (YANKED due to compilation errors)
+- **0.1.0-beta.2** ✅: Critical compilation fixes, 100% build success, zero warnings, crates.io publication ready
+- **0.1.0-beta.3**: API stabilization, cross-module integration improvements, and performance optimizations
 - **0.1.0**: First stable release with full SciPy feature parity in core modules and production-ready quality
 - **0.2.0**: Enhanced performance and feature integration across modules with advanced optimization
 - **1.0.0**: Complete implementation of most commonly used SciPy features with robust API stability

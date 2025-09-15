@@ -729,7 +729,7 @@ pub mod precision {
             let result = op(self.value);
 
             // Estimate precision loss for common operations
-            let precision_multiplier = match op_name {
+            let precision_multiplier = match opname {
                 "add" | "sub" => 1.1,
                 "mul" => 1.2,
                 "div" => 1.5,
@@ -743,7 +743,7 @@ pub mod precision {
                 value: result,
                 precision: self.precision * precision_multiplier,
                 error_bound: self.error_bound * precision_multiplier,
-                source_type: format!("{src}({op_name})", src = self.source_type),
+                source_type: format!("{src}({opname})", src = self.source_type),
                 operations_count: self.operations_count + 1,
             }
         }
@@ -958,18 +958,18 @@ pub mod units {
 
         /// Convert to another unit
         pub fn convert_to(&self, targetunit: &Unit) -> Result<Quantity, UnitConversionError> {
-            if !self.unit.dimensions.is_compatible(&target_unit.dimensions) {
+            if !self.unit.dimensions.is_compatible(&targetunit.dimensions) {
                 return Err(UnitConversionError::IncompatibleDimensions {
                     from: self.unit.name.clone(),
-                    to: target_unit.name.clone(),
+                    to: targetunit.name.clone(),
                 });
             }
 
             // Convert to base units, then to target units
             let base_value = self.unit.tobase(self.value);
-            let target_value = target_unit.frombase(base_value);
+            let target_value = targetunit.frombase(base_value);
 
-            Ok(Quantity::new(target_value, target_unit.clone()))
+            Ok(Quantity::new(target_value, targetunit.clone()))
         }
 
         /// Add quantities (must have compatible dimensions)
@@ -1298,7 +1298,7 @@ pub mod scientific {
             let mut p_curr = a;
             let mut q_curr = 1;
 
-            while q_curr <= max_denominator && remainder.abs() > f64::EPSILON {
+            while q_curr <= maxdenominator && remainder.abs() > f64::EPSILON {
                 remainder = 1.0 / remainder;
                 a = remainder.floor() as i64;
                 remainder -= a as f64;
@@ -1306,7 +1306,7 @@ pub mod scientific {
                 let p_next = a * p_curr + p_prev;
                 let q_next = a * q_curr + q_prev;
 
-                if q_next > max_denominator {
+                if q_next > maxdenominator {
                     break;
                 }
 
@@ -1419,7 +1419,7 @@ pub mod scientific {
         }
 
         /// Create symmetric interval around center
-        pub fn center(center: f64, radius: f64) -> Self {
+        pub fn centered(center: f64, radius: f64) -> Self {
             Self::new(center - radius, center + radius)
         }
 

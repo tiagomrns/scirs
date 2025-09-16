@@ -120,7 +120,7 @@ fn run_integrated_example() {
                 Ok(_) => success_count += 1,
                 Err(_) => {
                     // If normal conversion fails, use clamping
-                    let _ = value.to_numeric__clamped::<i16>();
+                    let _ = value.to_numeric_clamped::<i16>();
                     clamped_count += 1;
                     error_count += 1;
                 }

@@ -507,7 +507,7 @@ where
     rand_distr::StandardNormal: Distribution<F>,
 {
     // Convert to regular MonteCarloOptions and use sequential implementation
-    let regular_opts = options.map(|opts| crate::monte__carlo::MonteCarloOptions {
+    let regular_opts = options.map(|opts| crate::monte_carlo::MonteCarloOptions {
         n_samples: opts.n_samples,
         seed: opts.seed,
         error_method: opts.error_method,

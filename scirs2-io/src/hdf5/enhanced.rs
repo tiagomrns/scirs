@@ -578,7 +578,7 @@ impl EnhancedHDF5File {
                 // Note: The original read_slice_1d API has changed in the hdf5 crate
                 // For now, we'll read the entire dataset and slice it in memory
                 // In a production implementation, you would use proper HDF5 hyperslab selection
-                match dataset_clone.read__raw::<f64>() {
+                match dataset_clone.read_raw::<f64>() {
                     Ok(full_data) => {
                         let slice_end = (start_element + slice_size).min(full_data.len());
                         data.copy_from_slice(&full_data[start_element..slice_end]);

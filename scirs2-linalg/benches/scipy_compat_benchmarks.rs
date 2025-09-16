@@ -343,8 +343,8 @@ fn bench_linear_solvers(c: &mut Criterion) {
 
         // Least squares (overdetermined system)
         if size >= 20 {
-            let overdetermined = matrix.slice(ndarray::s![..size + 10, ..]).to_owned();
-            let overdetermined_rhs = create_test_vector(size + 10).insert_axis(Axis(1));
+            let overdetermined = matrix.slice(ndarray::s![.., ..]).to_owned(); // Use full matrix
+            let overdetermined_rhs = create_test_vector(size).insert_axis(Axis(1));
 
             group.bench_with_input(
                 BenchmarkId::new("lstsq_compat", size),

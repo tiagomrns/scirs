@@ -283,7 +283,10 @@ fn bench_memmap_operations(c: &mut Criterion) {
         );
 
         // Benchmark memory-mapped neighbor access (simplified to avoid mutable borrow issues)
-        group.bench_function("memmap_neighbor_access", |b| {
+        group.bench_with_input(
+            BenchmarkId::new("memmap_neighbor_access", size),
+            &size,
+            |b, &size| {
             b.iter(|| {
                 let mut total = 0;
                 // Simplified benchmark without actual memmap access due to borrowing constraints

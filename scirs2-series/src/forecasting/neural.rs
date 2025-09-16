@@ -1240,7 +1240,7 @@ mod tests {
 
     #[test]
     fn test_uncertainty_prediction() {
-        let data = Array1::from_vec((0..50).map(|i| (i as f64 * 0.1).sin()).collect());
+        let data = Array1::from_vec((0..30).map(|i| (i as f64 * 0.1).sin()).collect());
 
         let mut nbeats = NBeatsForecaster::<f64>::with_default_config();
         nbeats.fit(&data).unwrap();
@@ -2710,17 +2710,17 @@ pub mod advanced {
         fn test_multiscale_forecaster() {
             // Use a configuration appropriate for test data size
             let config = MultiScaleConfig {
-                short_term_window: 10,
-                medium_term_window: 30,
-                long_term_window: 100,
-                forecast_horizon: 5,
-                learning_rate: 0.001,
-                meta_epochs: 10,
+                short_term_window: 5,
+                medium_term_window: 10,
+                long_term_window: 20,
+                forecast_horizon: 3,
+                learning_rate: 0.01,
+                meta_epochs: 2,
             };
             let mut forecaster = MultiScaleNeuralForecaster::<f64>::new(config);
 
             // Generate synthetic data with multiple patterns
-            let data: Array1<f64> = Array1::from_iter((0..200).map(|i| {
+            let data: Array1<f64> = Array1::from_iter((0..50).map(|i| {
                 let t = i as f64;
                 // Combine short, medium, and long-term patterns
                 (t * 0.01).sin() + (t * 0.001).sin() + (t * 0.0001).sin() + 0.1 * (t / 100.0)

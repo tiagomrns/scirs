@@ -345,7 +345,7 @@ fn benchmark_scalability(c: &mut Criterion) {
 #[allow(dead_code)]
 fn benchmark_gpu_acceleration(c: &mut Criterion) {
     if !is_gpu_acceleration_available() {
-        println!("GPU acceleration not available, skipping GPU benchmarks");
+        // println!("GPU acceleration not available, skipping GPU benchmarks");
         return;
     }
 

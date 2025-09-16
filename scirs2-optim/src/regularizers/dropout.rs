@@ -24,7 +24,7 @@ use crate::regularizers::Regularizer;
 /// use rand::rngs::SmallRng;
 ///
 /// // Create a dropout regularizer with 0.5 dropout rate
-/// let seed = 42;
+/// let seed = [0u8; 32];
 /// let mut rng = SmallRng::from_seed(seed);
 /// let mut dropout = Dropout::new(0.5f64, &mut rng);
 ///

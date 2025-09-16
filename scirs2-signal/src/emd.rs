@@ -79,6 +79,7 @@ pub struct EmdResult {
 ///
 /// ```
 /// use scirs2_signal::emd::{emd, EmdConfig};
+/// use std::f64::consts::PI;
 ///
 /// // Generate a test signal (sum of two sinusoids)
 /// let n = 1000;
@@ -694,6 +695,7 @@ fn interpolate_envelope(
 ///
 /// ```
 /// use scirs2_signal::emd::{eemd, EmdConfig};
+/// use std::f64::consts::PI;
 ///
 /// // Generate a test signal (sum of two sinusoids)
 /// let n = 1000;

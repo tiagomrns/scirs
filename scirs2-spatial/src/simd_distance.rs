@@ -23,17 +23,20 @@
 //! use scirs2_spatial::simd_distance::{simd_euclidean_distance_batch, parallel_pdist};
 //! use ndarray::array;
 //!
+//! # fn example() -> Result<(), Box<dyn std::error::Error>> {
 //! // SIMD batch distance calculation
 //! let points1 = array![[0.0, 0.0], [1.0, 1.0], [2.0, 2.0]];
 //! let points2 = array![[1.0, 0.0], [2.0, 1.0], [3.0, 2.0]];
 //!
-//! let distances = simd_euclidean_distance_batch(&points1.view(), &points2.view()).unwrap();
+//! let distances = simd_euclidean_distance_batch(&points1.view(), &points2.view())?;
 //! println!("Batch distances: {:?}", distances);
 //!
 //! // Parallel distance matrix
 //! let points = array![[0.0, 0.0], [1.0, 0.0], [0.0, 1.0], [1.0, 1.0]];
-//! let dist_matrix = parallel_pdist(&points.view(), "euclidean").unwrap();
+//! let dist_matrix = parallel_pdist(&points.view(), "euclidean")?;
 //! println!("Distance matrix shape: {:?}", dist_matrix.shape());
+//! # Ok(())
+//! # }
 //! ```
 
 use crate::error::{SpatialError, SpatialResult};

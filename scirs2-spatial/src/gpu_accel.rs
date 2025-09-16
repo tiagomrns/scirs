@@ -28,6 +28,7 @@
 //! use scirs2_spatial::gpu_accel::{GpuDistanceMatrix, GpuKMeans};
 //! use ndarray::array;
 //!
+//! # async fn example() -> Result<(), Box<dyn std::error::Error>> {
 //! // GPU distance matrix computation
 //! let points = array![[0.0, 0.0], [1.0, 0.0], [0.0, 1.0], [1.0, 1.0]];
 //!
@@ -39,6 +40,8 @@
 //! let gpu_kmeans = GpuKMeans::new(2)?;
 //! let (centroids, assignments) = gpu_kmeans.fit(&points.view()).await?;
 //! println!("GPU centroids: {:?}", centroids);
+//! # Ok(())
+//! # }
 //! ```
 
 use crate::error::SpatialResult;

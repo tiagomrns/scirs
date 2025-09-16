@@ -38,7 +38,7 @@ use scirs2_core::simd_ops::SimdUnifiedOps;
 ///     let x_f32 = array![0.5f32, 0.5f32];
 ///
 ///     // Compute result with SIMD-accelerated mixed precision
-///     let y = simd_mixed_precision_matvec_f32_f64: <f32>(
+///     let y = simd_mixed_precision_matvec_f32_f64::<f32>(
 ///         &a_f32.view(),
 ///         &x_f32.view()
 ///     ).unwrap();
@@ -163,7 +163,7 @@ where
 ///     let b_f32 = array![[5.0f32, 6.0f32], [7.0f32, 8.0f32]];
 ///
 ///     // Compute result with SIMD-accelerated mixed precision
-///     let c = simd_mixed_precision_matmul_f32_f64: <f32>(
+///     let c = simd_mixed_precision_matmul_f32_f64::<f32>(
 ///         &a_f32.view(),
 ///         &b_f32.view()
 ///     ).unwrap();
@@ -348,7 +348,7 @@ where
 ///     let b_f32 = array![4.0f32, 5.0f32, 6.0f32];
 ///
 ///     // Compute dot product with SIMD-accelerated mixed precision
-///     let result = simd_mixed_precision_dot_f32_f64: <f32>(
+///     let result = simd_mixed_precision_dot_f32_f64::<f32>(
 ///         &a_f32.view(),
 ///         &b_f32.view()
 ///     ).unwrap();

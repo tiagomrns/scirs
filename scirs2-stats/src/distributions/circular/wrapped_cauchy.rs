@@ -31,7 +31,7 @@ use std::marker::PhantomData;
 ///
 /// ```
 /// use scirs2_stats::distributions::circular::WrappedCauchy;
-/// use scirs2_stats::traits::CircularDistribution;
+/// use scirs2_stats::traits::{CircularDistribution, Distribution};
 ///
 /// // Create a wrapped Cauchy distribution with mean direction 0.0 and concentration 0.5
 /// let wc = WrappedCauchy::new(0.0f64, 0.5).unwrap();

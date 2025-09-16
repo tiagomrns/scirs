@@ -31,7 +31,7 @@ use crate::error::{LinalgError, LinalgResult};
 /// # Examples
 /// ```
 /// use ndarray::{array, ArrayView1, ArrayView2};
-/// use scirs2_linalg::mixed_precision:: f32_ops: mixed_precision_matvec_f32;
+/// use scirs2_linalg::mixed_precision::f32_ops::mixed_precision_matvec_f32;
 ///
 /// let a_f32 = array![[1.0f32, 2.0f32], [3.0f32, 4.0f32]];
 /// let x_f32 = array![0.5f32, 0.5f32];

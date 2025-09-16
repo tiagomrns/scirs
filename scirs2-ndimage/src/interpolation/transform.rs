@@ -39,6 +39,7 @@ use crate::error::{NdimageError, NdimageResult};
 /// ```
 /// use ndarray::{Array2, array};
 /// use scirs2_ndimage::interpolation::{affine_transform, InterpolationOrder};
+/// use std::f64::consts::PI;
 ///
 /// // Create a simple test image
 /// let image = array![

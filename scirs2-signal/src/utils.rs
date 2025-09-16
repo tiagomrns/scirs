@@ -354,6 +354,7 @@ where
 ///
 /// ```
 /// use scirs2_signal::utils::is_real;
+/// use num_complex::Complex64;
 ///
 /// // Create a real-valued complex signal
 /// let signal = vec![

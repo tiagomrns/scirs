@@ -37,6 +37,7 @@ use std::fmt::Debug;
 /// use scirs2_signal::lombscargle::{lombscargle, AutoFreqMethod};
 /// use ndarray::Array1;
 /// use rand::prelude::*;
+/// use std::f64::consts::PI;
 ///
 /// // Generate unevenly sampled data with a 1 Hz sinusoid
 /// let n = 100;
@@ -44,7 +45,7 @@ use std::fmt::Debug;
 /// let mut t = Array1::linspace(0.0, 10.0, n);
 /// // Add some random noise to make sampling uneven
 /// for i in 0..n {
-///     t[i] += 0.1 * rng.gen_range(0.0..1.0);
+///     t[i] += 0.1 * rng.random_range(0.0..1.0);
 /// }
 /// let y: Vec<f64> = t.iter().map(|&ti| (2.0 * PI * 1.0 * ti).sin()).collect();
 ///

@@ -22,6 +22,7 @@
 //! use scirs2_spatial::advanced_parallel::{AdvancedParallelDistanceMatrix, WorkStealingConfig};
 //! use ndarray::array;
 //!
+//! # fn example() -> Result<(), Box<dyn std::error::Error>> {
 //! // Configure work-stealing parallel processing
 //! let config = WorkStealingConfig::new()
 //!     .with_numa_aware(true)
@@ -33,6 +34,8 @@
 //! let processor = AdvancedParallelDistanceMatrix::new(config)?;
 //! let distances = processor.compute_parallel(&points.view())?;
 //! println!("Advanced-parallel distance matrix: {:?}", distances.shape());
+//! # Ok(())
+//! # }
 //! ```
 
 use crate::error::SpatialResult;

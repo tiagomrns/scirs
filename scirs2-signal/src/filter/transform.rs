@@ -33,6 +33,7 @@ use num_traits::Zero;
 ///
 /// ```
 /// use scirs2_signal::filter::transform::bilinear_transform;
+/// use num_complex::Complex64;
 ///
 /// // Convert simple analog integrator to digital
 /// let analog_poles = vec![Complex64::new(0.0, 0.0)];
@@ -96,6 +97,7 @@ pub fn bilinear_transform(
 ///
 /// ```
 /// use scirs2_signal::filter::transform::zpk_to_tf;
+/// use num_complex::Complex64;
 ///
 /// // Convert simple first-order system
 /// let zeros = vec![];

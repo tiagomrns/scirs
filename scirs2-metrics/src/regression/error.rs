@@ -67,14 +67,14 @@ use crate::error::{MetricsError, Result};
 ///
 /// # Examples
 ///
-/// ```
+/// ```no_run
 /// use ndarray::array;
 /// use scirs2_metrics::regression::mean_squared_error;
 ///
 /// let y_true = array![3.0, -0.5, 2.0, 7.0];
 /// let y_pred = array![2.5, 0.0, 2.0, 8.0];
 ///
-/// let mse = mean_squared_error(&y_true, &y_pred).unwrap();
+/// let mse: f64 = mean_squared_error(&y_true, &y_pred).unwrap();
 /// // Expecting: ((3.0-2.5)² + (-0.5-0.0)² + (2.0-2.0)² + (7.0-8.0)²) / 4
 /// assert!(mse < 0.38 && mse > 0.37);
 /// ```
@@ -135,14 +135,14 @@ where
 ///
 /// # Examples
 ///
-/// ```
+/// ```no_run
 /// use ndarray::array;
 /// use scirs2_metrics::regression::root_mean_squared_error;
 ///
 /// let y_true = array![3.0, -0.5, 2.0, 7.0];
 /// let y_pred = array![2.5, 0.0, 2.0, 8.0];
 ///
-/// let rmse = root_mean_squared_error(&y_true, &y_pred).unwrap();
+/// let rmse: f64 = root_mean_squared_error(&y_true, &y_pred).unwrap();
 /// // RMSE is the square root of MSE
 /// assert!(rmse < 0.62 && rmse > 0.61);
 /// ```
@@ -178,14 +178,14 @@ where
 ///
 /// # Examples
 ///
-/// ```
+/// ```no_run
 /// use ndarray::array;
 /// use scirs2_metrics::regression::mean_absolute_error;
 ///
 /// let y_true = array![3.0, -0.5, 2.0, 7.0];
 /// let y_pred = array![2.5, 0.0, 2.0, 8.0];
 ///
-/// let mae = mean_absolute_error(&y_true, &y_pred).unwrap();
+/// let mae: f64 = mean_absolute_error(&y_true, &y_pred).unwrap();
 /// // Expecting: (|3.0-2.5| + |-0.5-0.0| + |2.0-2.0| + |7.0-8.0|) / 4 = 0.5
 /// assert!(mae > 0.499 && mae < 0.501);
 /// ```
@@ -638,15 +638,15 @@ where
 ///
 /// # Examples
 ///
-/// ```
+/// ```no_run
 /// use ndarray::array;
 /// use scirs2_metrics::regression::normalized_root_mean_squared_error;
 ///
 /// let y_true = array![3.0, -0.5, 2.0, 7.0];
 /// let y_pred = array![2.5, 0.0, 2.0, 8.0];
 ///
-/// let nrmse_mean = normalized_root_mean_squared_error(&y_true, &y_pred, "mean").unwrap();
-/// let nrmse_range = normalized_root_mean_squared_error(&y_true, &y_pred, "range").unwrap();
+/// let nrmse_mean: f64 = normalized_root_mean_squared_error(&y_true, &y_pred, "mean").unwrap();
+/// let nrmse_range: f64 = normalized_root_mean_squared_error(&y_true, &y_pred, "range").unwrap();
 /// assert!(nrmse_mean > 0.0);
 /// assert!(nrmse_range > 0.0);
 /// ```

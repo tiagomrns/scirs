@@ -83,23 +83,23 @@ mod constants;
 pub mod convenience;
 mod coulomb;
 pub mod cross_validation;
-mod distributions;
+pub mod distributions;
 pub mod edge_case_tests;
 mod ellipsoidal;
 mod elliptic;
-mod erf;
+pub mod erf;
 #[cfg(test)]
 mod extended_property_tests;
 pub mod extended_scipy_validation;
 mod fresnel;
-mod gamma;
+pub mod gamma;
 #[cfg(feature = "gpu")]
 pub mod gpu_context_manager;
 #[cfg(feature = "gpu")]
 pub mod gpu_ops;
 mod hypergeometric;
-mod incomplete_gamma;
-mod information_theory;
+pub mod incomplete_gamma;
+pub mod information_theory;
 mod kelvin;
 mod lambert;
 mod logint;
@@ -121,7 +121,7 @@ mod spheroidal;
 pub mod stability_analysis;
 mod statistical;
 mod struve;
-mod utility;
+pub mod utility;
 mod validation;
 #[cfg(feature = "plotting")]
 pub mod visualization;

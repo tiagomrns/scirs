@@ -88,7 +88,7 @@ fn bessel_i1(x: f64) -> f64 {
 ///
 /// ```
 /// use scirs2_stats::distributions::circular::VonMises;
-/// use scirs2_stats::traits::CircularDistribution;
+/// use scirs2_stats::traits::{CircularDistribution, Distribution};
 ///
 /// // Create a von Mises distribution with mean direction 0.0 and concentration 1.0
 /// let vm = VonMises::new(0.0f64, 1.0).unwrap();

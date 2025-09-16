@@ -35,6 +35,7 @@
 //! use scirs2_spatial::extreme_performance_optimization::{ExtremeOptimizer, AdvancedfastDistanceMatrix};
 //! use ndarray::array;
 //!
+//! # async fn example() -> Result<(), Box<dyn std::error::Error>> {
 //! // Extreme performance distance matrix computation
 //! let points = array![[0.0, 0.0], [1.0, 0.0], [0.0, 1.0], [1.0, 1.0]];
 //! let optimizer = ExtremeOptimizer::new()
@@ -58,6 +59,8 @@
 //!     .with_adaptive_memory_patterns(true);
 //!
 //! let optimized_clusters = self_optimizer.auto_optimize_and_execute(&points.view()).await?;
+//! # Ok(())
+//! # }
 //! ```
 
 use crate::error::{SpatialError, SpatialResult};

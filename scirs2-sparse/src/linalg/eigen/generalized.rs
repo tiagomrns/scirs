@@ -37,12 +37,12 @@ use std::ops::{Add, Div, Mul, Sub};
 /// // Create matrices A and B
 /// let a_data = vec![4.0, 2.0, 3.0];
 /// let a_indices = vec![0, 1, 1];
-/// let a_indptr = vec![0, 2, 3];
+/// let a_indptr = vec![0, 1, 3];
 /// let amatrix = SymCsrMatrix::new(a_data, a_indices, a_indptr, (2, 2)).unwrap();
 ///
 /// let b_data = vec![2.0, 1.0, 2.0];
 /// let b_indices = vec![0, 1, 1];
-/// let b_indptr = vec![0, 2, 3];
+/// let b_indptr = vec![0, 1, 3];
 /// let bmatrix = SymCsrMatrix::new(b_data, b_indices, b_indptr, (2, 2)).unwrap();
 ///
 /// // Solve Ax = λBx
@@ -122,12 +122,12 @@ where
 ///
 /// let a_data = vec![5.0, 1.0, 4.0];
 /// let a_indices = vec![0, 1, 1];
-/// let a_indptr = vec![0, 2, 3];
+/// let a_indptr = vec![0, 1, 3];
 /// let amatrix = SymCsrMatrix::new(a_data, a_indices, a_indptr, (2, 2)).unwrap();
 ///
 /// let b_data = vec![2.0, 0.5, 1.5];
 /// let b_indices = vec![0, 1, 1];
-/// let b_indptr = vec![0, 2, 3];
+/// let b_indptr = vec![0, 1, 3];
 /// let bmatrix = SymCsrMatrix::new(b_data, b_indices, b_indptr, (2, 2)).unwrap();
 ///
 /// let result = eigsh_generalized_enhanced(

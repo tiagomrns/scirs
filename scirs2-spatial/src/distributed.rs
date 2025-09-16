@@ -30,6 +30,7 @@
 //! use scirs2_spatial::distributed::{DistributedSpatialCluster, NodeConfig};
 //! use ndarray::array;
 //!
+//! # async fn example() -> Result<(), Box<dyn std::error::Error>> {
 //! // Create distributed spatial cluster
 //! let clusterconfig = NodeConfig::new()
 //!     .with_node_count(4)
@@ -40,7 +41,7 @@
 //! let mut cluster = DistributedSpatialCluster::new(clusterconfig)?;
 //!
 //! // Distribute large spatial dataset
-//! let large_dataset = array![[0.0, 0.0], [1.0, 0.0], /* ... millions of points ... */];
+//! let large_dataset = array![[0.0, 0.0], [1.0, 0.0]];
 //! cluster.distribute_data(&large_dataset.view()).await?;
 //!
 //! // Run distributed k-means clustering
@@ -51,6 +52,8 @@
 //! let query_point = array![0.5, 0.5];
 //! let nearest_neighbors = cluster.distributed_knn_search(&query_point.view(), 10).await?;
 //! println!("Found {} nearest neighbors across cluster", nearest_neighbors.len());
+//! # Ok(())
+//! # }
 //! ```
 
 use crate::error::{SpatialError, SpatialResult};

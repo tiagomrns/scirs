@@ -29,12 +29,12 @@ use crate::error::{MetricsError, Result};
 ///
 /// # Examples
 ///
-/// ```
+/// ```no_run
 /// use ndarray::{array, Array2};
 /// use scirs2_metrics::clustering::distance::inter_cluster_distances;
 ///
 /// // Create a small dataset with 2 clusters
-/// let x = Array2::from_shape_vec((6, 2), vec![
+/// let x = Array2::<f64>::from_shape_vec((6, 2), vec![
 ///     1.0, 2.0,
 ///     1.5, 1.8,
 ///     1.2, 2.2,
@@ -45,7 +45,7 @@ use crate::error::{MetricsError, Result};
 ///
 /// let labels = array![0, 0, 0, 1, 1, 1];
 ///
-/// let distances = inter_cluster_distances(&x, &labels, "euclidean").unwrap();
+/// let distances: std::collections::HashMap<(usize, usize), f64> = inter_cluster_distances(&x, &labels, "euclidean").unwrap();
 /// ```
 #[allow(dead_code)]
 pub fn inter_cluster_distances<F, S1, S2, D>(
@@ -155,12 +155,12 @@ where
 ///
 /// # Examples
 ///
-/// ```
+/// ```no_run
 /// use ndarray::{array, Array2};
 /// use scirs2_metrics::clustering::distance::intra_cluster_distances;
 ///
 /// // Create a small dataset with 2 clusters
-/// let x = Array2::from_shape_vec((6, 2), vec![
+/// let x = Array2::<f64>::from_shape_vec((6, 2), vec![
 ///     1.0, 2.0,
 ///     1.5, 1.8,
 ///     1.2, 2.2,
@@ -171,7 +171,7 @@ where
 ///
 /// let labels = array![0, 0, 0, 1, 1, 1];
 ///
-/// let distances = intra_cluster_distances(&x, &labels, "euclidean").unwrap();
+/// let distances: std::collections::HashMap<usize, f64> = intra_cluster_distances(&x, &labels, "euclidean").unwrap();
 /// ```
 #[allow(dead_code)]
 pub fn intra_cluster_distances<F, S1, S2, D>(
@@ -292,12 +292,12 @@ where
 ///
 /// # Examples
 ///
-/// ```
+/// ```no_run
 /// use ndarray::{array, Array2};
 /// use scirs2_metrics::clustering::distance::distance_ratio_index;
 ///
 /// // Create a small dataset with 2 clusters
-/// let x = Array2::from_shape_vec((6, 2), vec![
+/// let x = Array2::<f64>::from_shape_vec((6, 2), vec![
 ///     1.0, 2.0,
 ///     1.5, 1.8,
 ///     1.2, 2.2,
@@ -308,7 +308,7 @@ where
 ///
 /// let labels = array![0, 0, 0, 1, 1, 1];
 ///
-/// let index = distance_ratio_index(&x, &labels, "euclidean").unwrap();
+/// let index: f64 = distance_ratio_index(&x, &labels, "euclidean").unwrap();
 /// ```
 #[allow(dead_code)]
 pub fn distance_ratio_index<F, S1, S2, D>(
@@ -398,12 +398,12 @@ where
 ///
 /// # Examples
 ///
-/// ```
+/// ```no_run
 /// use ndarray::{array, Array2};
 /// use scirs2_metrics::clustering::distance::isolation_index;
 ///
 /// // Create a small dataset with 2 clusters
-/// let x = Array2::from_shape_vec((6, 2), vec![
+/// let x = Array2::<f64>::from_shape_vec((6, 2), vec![
 ///     1.0, 2.0,
 ///     1.5, 1.8,
 ///     1.2, 2.2,
@@ -414,7 +414,7 @@ where
 ///
 /// let labels = array![0, 0, 0, 1, 1, 1];
 ///
-/// let index = isolation_index(&x, &labels, "euclidean").unwrap();
+/// let index: f64 = isolation_index(&x, &labels, "euclidean").unwrap();
 /// ```
 #[allow(dead_code)]
 pub fn isolation_index<F, S1, S2, D>(

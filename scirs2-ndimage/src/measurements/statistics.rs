@@ -275,7 +275,7 @@ where
 /// let bright_segments: Vec<usize> = segmentfeatures.iter()
 ///     .enumerate()
 ///     .filter(|(_, &mean)| mean > 10.0)
-///     .map(|(i_)| i + 1)  // Convert to 1-based labeling
+///     .map(|(i_, _)| i_ + 1)  // Convert to 1-based labeling
 ///     .collect();
 /// ```
 ///
@@ -553,7 +553,7 @@ where
 /// let large_objects: Vec<usize> = object_sizes.iter()
 ///     .enumerate()
 ///     .filter(|(_, &size)| size >= min_size)
-///     .map(|(i_)| i + 1)  // Convert to 1-based label
+///     .map(|(i_, _)| i_ + 1)  // Convert to 1-based label
 ///     .collect();
 ///
 /// println!("Large objects (>= {} pixels): {:?}", min_size, large_objects);
@@ -826,9 +826,9 @@ where
 ///
 /// // Analyze histogram characteristics of each texture region
 /// for region_id in 1..=4 {
-///     let (hist_) = histogram(&textureimage, 0.0, 1.0, 10,
+///     let hist = histogram(&textureimage, 0.0, 1.0, 10,
 ///                               Some(&texture_labels), Some(&[region_id])).unwrap();
-///     
+///
 ///     // Calculate histogram statistics
 ///     let total_pixels: usize = hist.iter().sum();
 ///     let entropy = -hist.iter()
@@ -854,16 +854,16 @@ where
 /// // Simulate medical image with different tissue types
 /// let medicalimage = Array2::from_shape_fn((100, 100), |(i, j)| {
 ///     match (i / 33, j / 33) {
-///         (0_) => 50.0 + (i % 10) as f64,   // Tissue A: 50-60 range
-///         (1_) => 150.0 + (j % 15) as f64,  // Tissue B: 150-165 range
+///         (0, _) => 50.0 + (i % 10) as f64,   // Tissue A: 50-60 range
+///         (1, _) => 150.0 + (j % 15) as f64,  // Tissue B: 150-165 range
 ///         _ => 100.0 + ((i + j) % 20) as f64, // Tissue C: 100-120 range
 ///     }
 /// });
 ///
 /// let tissue_segmentation = Array2::from_shape_fn((100, 100), |(i, j)| {
 ///     match (i / 33, j / 33) {
-///         (0_) => 1,  // Tissue A
-///         (1_) => 2,  // Tissue B  
+///         (0, _) => 1,  // Tissue A
+///         (1, _) => 2,  // Tissue B
 ///         _ => 3,       // Tissue C
 ///     }
 /// });
@@ -878,7 +878,7 @@ where
 ///     let peak_bin = tissue_hist.iter()
 ///         .enumerate()
 ///         .max_by_key(|(_, &count)| count)
-///         .map(|(i_)| i)
+///         .map(|(i_, _)| i_)
 ///         .unwrap_or(0);
 ///     
 ///     let peak_intensity = (bin_edges[peak_bin] + bin_edges[peak_bin + 1]) / 2.0;
@@ -892,7 +892,9 @@ where
 /// use scirs2_ndimage::measurements::histogram;
 ///
 /// let image = Array2::from_shape_fn((50, 50), |(i, j)| {
-///     if (i - 25).pow(2) + (j - 25).pow(2) < 400 {
+///     let di = i as i32 - 25;
+///     let dj = j as i32 - 25;
+///     if di * di + dj * dj < 400 {
 ///         200.0  // Bright circular object
 ///     } else {
 ///         50.0   // Dark background

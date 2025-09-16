@@ -86,9 +86,9 @@ where
 /// };
 ///
 /// // Create a symmetric matrix
-/// let data = vec![2.0, 1.0, 2.0, 3.0, 1.0];
-/// let indices = vec![0, 0, 1, 1, 2];
-/// let indptr = vec![0, 1, 3, 5];
+/// let data = vec![2.0, 1.0, 2.0, 3.0];
+/// let indices = vec![0, 0, 1, 2];
+/// let indptr = vec![0, 1, 3, 4];
 /// let matrix = SymCsrMatrix::new(data, indices, indptr, (3, 3)).unwrap();
 ///
 /// // Configure options

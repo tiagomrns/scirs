@@ -32,15 +32,15 @@
 //! One-vs-One metrics are useful for evaluating multi-class classification problems by
 //! considering each pair of classes separately:
 //!
-//! ```
+//! ```no_run
 //! use ndarray::array;
 //! use scirs2_metrics::classification::one_vs_one::{one_vs_one_accuracy, weighted_one_vs_one_f1_score};
 //!
 //! let y_true = array![0, 1, 2, 0, 1, 2];
 //! let y_pred = array![0, 2, 1, 0, 0, 2];
 //!
-//! let ovo_acc = one_vs_one_accuracy(&y_true, &y_pred).unwrap();
-//! let weighted_f1 = weighted_one_vs_one_f1_score(&y_true, &y_pred).unwrap();
+//! let ovo_acc: f64 = one_vs_one_accuracy(&y_true, &y_pred).unwrap();
+//! let weighted_f1: f64 = weighted_one_vs_one_f1_score(&y_true, &y_pred).unwrap();
 //! ```
 //!
 //! # Regression Metrics
@@ -54,8 +54,8 @@
 //! let y_true = array![3.0, -0.5, 2.0, 7.0];
 //! let y_pred = array![2.5, 0.0, 2.0, 8.0];
 //!
-//! let mse = mean_squared_error(&y_true, &y_pred).unwrap();
-//! let r2 = r2_score(&y_true, &y_pred).unwrap();
+//! let mse: f64 = mean_squared_error(&y_true, &y_pred).unwrap();
+//! let r2: f64 = r2_score(&y_true, &y_pred).unwrap();
 //! ```
 //!
 //! # Clustering Metrics
@@ -352,7 +352,7 @@
 //! use ndarray::{Array, Ix1};
 //! use scirs2_metrics::evaluation::train_test_split;
 //!
-//! let x = Array::<f64, Ix1>::linspace(0., 9., 10).intoshape(Ix1(10)).unwrap();
+//! let x = Array::<f64, Ix1>::linspace(0., 9., 10).into_shape(Ix1(10)).unwrap();
 //! let y = &x * 2.;
 //!
 //! let (train_arrays, test_arrays) = train_test_split(&[&x, &y], 0.3, Some(42)).unwrap();

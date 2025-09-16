@@ -15,22 +15,22 @@
 //! # Examples
 //!
 //! ```
-//! use scirs2_spatial::generic_traits::{SpatialPoint, SpatialArray};
+//! use scirs2_spatial::generic_traits::{SpatialScalar};
 //! use ndarray::array;
 //!
-//! // Generic distance calculation
-//! fn calculate_distance<T, P>(p1: &P, p2: &P) -> T
+//! // Generic distance calculation (simplified example)
+//! fn calculate_distance<T>(p1: &[T], p2: &[T]) -> T
 //! where
 //!     T: SpatialScalar,
-//!     P: SpatialPoint<T>,
 //! {
-//!     // Generic implementation
-//!     // ...
+//!     // Generic implementation (simplified)
+//!     T::zero()
 //! }
 //!
 //! // Works with different array types
 //! let point1 = array![1.0f32, 2.0f32, 3.0f32];
 //! let point2 = array![4.0f32, 5.0f32, 6.0f32];
+//! let _result = calculate_distance(point1.as_slice().unwrap(), point2.as_slice().unwrap());
 //! ```
 
 use ndarray::Array1;

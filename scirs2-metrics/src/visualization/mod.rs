@@ -48,7 +48,7 @@
 //! let y_pred = array![0, 2, 1, 0, 0, 2];
 //!
 //! // Create confusion matrix
-//! let cm = confusion_matrix(&y_true, &y_pred, None).unwrap();
+//! let (cm, _classes) = confusion_matrix(&y_true, &y_pred, None).unwrap();
 //! let cm_f64 = cm.mapv(|x| x as f64);
 //!
 //! // Create visualizer
@@ -64,7 +64,7 @@
 //!
 //! // Save the visualization
 //! let backend = backends::default_backend();
-//! backend.save_to_file(&viz_data, &viz_metadata, &Default::default(), "confusion_matrix.png").unwrap();
+//! backend.save_to_file(&viz_data, &viz_metadata, &Default::default(), "confusion_matrix.html").unwrap();
 //! ```
 
 // Re-export submodules

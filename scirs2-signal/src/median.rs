@@ -97,7 +97,7 @@ impl Default for MedianConfig {
 /// # Example
 /// ```
 /// use ndarray::Array1;
-/// use scirs2signal::median::{median_filter_1d, MedianConfig};
+/// use scirs2_signal::median::{median_filter_1d, MedianConfig};
 ///
 /// let signal = Array1::from_vec(vec![1.0, 1.2, 5.0, 1.1, 1.3, 0.0, 1.2]);
 /// let config = MedianConfig::default();
@@ -318,7 +318,7 @@ fn adaptive_median_filter_1d(
 /// # Example
 /// ```
 /// use ndarray::Array2;
-/// use scirs2signal::median::{median_filter_2d, MedianConfig};
+/// use scirs2_signal::median::{median_filter_2d, MedianConfig};
 ///
 /// let image = Array2::from_shape_fn((5, 5), |(i, j)| {
 ///     if i == 2 && j == 2 { 100.0 } else { 1.0 }  // Center pixel is an outlier

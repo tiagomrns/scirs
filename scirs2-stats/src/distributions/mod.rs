@@ -799,6 +799,7 @@ where
 ///
 /// ```
 /// use scirs2_stats::distributions;
+/// use scirs2_stats::traits::CircularDistribution;
 ///
 /// let vm = distributions::vonmises(0.0f64, 1.0).unwrap();
 /// let pdf_at_zero = vm.pdf(0.0);
@@ -834,6 +835,7 @@ where
 ///
 /// ```
 /// use scirs2_stats::distributions;
+/// use scirs2_stats::traits::CircularDistribution;
 ///
 /// let wc = distributions::wrapcauchy(0.0f64, 0.5).unwrap();
 /// let pdf_at_zero = wc.pdf(0.0);

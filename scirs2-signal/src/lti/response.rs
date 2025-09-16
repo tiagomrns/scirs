@@ -24,7 +24,7 @@ use crate::lti::{LtiSystem, TransferFunction};
 ///
 /// ```
 /// use scirs2_signal::lti::TransferFunction;
-/// use scirs2_signal::lti_response::impulse_response;
+/// use scirs2_signal::lti::response::impulse_response;
 ///
 /// // Create a simple first-order system: H(s) = 1 / (s + 1)
 /// let system = TransferFunction::new(
@@ -66,7 +66,7 @@ pub fn impulse_response<T: LtiSystem>(system: &T, t: &[f64]) -> SignalResult<Vec
 ///
 /// ```
 /// use scirs2_signal::lti::TransferFunction;
-/// use scirs2_signal::lti_response::step_response;
+/// use scirs2_signal::lti::response::step_response;
 ///
 /// // Create a simple first-order system: H(s) = 1 / (s + 1)
 /// let system = TransferFunction::new(
@@ -109,7 +109,7 @@ pub fn step_response<T: LtiSystem>(system: &T, t: &[f64]) -> SignalResult<Vec<f6
 ///
 /// ```
 /// use scirs2_signal::lti::TransferFunction;
-/// use scirs2_signal::lti_response::lsim;
+/// use scirs2_signal::lti::response::lsim;
 ///
 /// // Create a simple first-order system: H(s) = 1 / (s + 1)
 /// let system = TransferFunction::new(

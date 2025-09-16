@@ -116,7 +116,7 @@ pub fn random_sample(
 /// use ndarray::Array1;
 /// use scirs2_datasets::utils::stratified_sample;
 ///
-/// let targets = Array1::from(vec![0.0..0.0, 1.0, 1.0, 1.0, 2.0, 2.0, 2.0]);
+/// let targets = Array1::from(vec![0.0, 0.0, 1.0, 1.0, 1.0, 2.0, 2.0, 2.0]);
 /// let indices = stratified_sample(&targets, 6, Some(42)).unwrap();
 /// assert_eq!(indices.len(), 6);
 ///

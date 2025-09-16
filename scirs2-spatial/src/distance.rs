@@ -922,16 +922,20 @@ where
 /// ```
 /// use scirs2_spatial::distance::{cdist, euclidean};
 /// use ndarray::array;
+/// use std::f64::consts::SQRT_2;
 ///
+/// # fn example() -> Result<(), Box<dyn std::error::Error>> {
 /// let x_a = array![[0.0, 0.0], [1.0, 0.0]];
 /// let xb = array![[0.0, 1.0], [1.0, 1.0]];
-/// let dist_matrix = cdist(&x_a, &xb, euclidean);
+/// let dist_matrix = cdist(&x_a, &xb, euclidean)?;
 ///
 /// assert_eq!(dist_matrix.shape(), &[2, 2]);
 /// assert!((dist_matrix[(0, 0)] - 1.0f64).abs() < 1e-6);
-/// assert!((dist_matrix[(0, 1)] - std::f64::consts::SQRT_2).abs() < 1e-6);
+/// assert!((dist_matrix[(0, 1)] - SQRT_2).abs() < 1e-6);
 /// assert!((dist_matrix[(1, 0)] - 1.0f64).abs() < 1e-6);
 /// assert!((dist_matrix[(1, 1)] - 1.0f64).abs() < 1e-6);
+/// # Ok(())
+/// # }
 /// ```
 #[allow(dead_code)]
 pub fn cdist<T, F>(x_a: &Array2<T>, xb: &Array2<T>, metric: F) -> SpatialResult<Array2<T>>

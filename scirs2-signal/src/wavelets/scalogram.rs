@@ -27,6 +27,7 @@ use std::fmt::Debug;
 ///
 /// ```
 /// use scirs2_signal::wavelets::{scalogram, morlet};
+/// use std::f64::consts::PI;
 ///
 /// // Generate a chirp signal
 /// let n = 1024;
@@ -118,6 +119,7 @@ where
 ///
 /// ```
 /// use scirs2_signal::wavelets::{cwt_magnitude, morlet};
+/// use std::f64::consts::PI;
 ///
 /// // Generate a simple signal
 /// let n = 1024;
@@ -204,6 +206,7 @@ where
 ///
 /// ```
 /// use scirs2_signal::wavelets::{cwt_phase, morlet};
+/// use std::f64::consts::PI;
 ///
 /// // Generate a simple signal
 /// let n = 1024;

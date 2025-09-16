@@ -30,6 +30,7 @@ fn rotation_from_euler(x: f64, y: f64, z: f64, convention: &str) -> SpatialResul
 /// ```
 /// use scirs2_spatial::transform::{Rotation, Slerp};
 /// use ndarray::array;
+/// use std::f64::consts::PI;
 ///
 /// // Create two rotations to interpolate between
 /// let rot1 = Rotation::from_euler(&array![0.0, 0.0, 0.0].view(), "xyz").unwrap();
@@ -77,6 +78,7 @@ impl Slerp {
     /// ```
     /// use scirs2_spatial::transform::{Rotation, Slerp};
     /// use ndarray::array;
+    /// use std::f64::consts::PI;
     ///
     /// let rot1 = Rotation::identity();
     /// let rot2 = Rotation::from_euler(&array![0.0, 0.0, PI/2.0].view(), "xyz").unwrap();
@@ -134,6 +136,7 @@ impl Slerp {
     /// ```
     /// use scirs2_spatial::transform::{Rotation, Slerp};
     /// use ndarray::array;
+    /// use std::f64::consts::PI;
     ///
     /// let rot1 = Rotation::identity();
     /// let rot2 = Rotation::from_euler(&array![0.0, 0.0, PI].view(), "xyz").unwrap();
@@ -196,13 +199,14 @@ impl Slerp {
     /// ```
     /// use scirs2_spatial::transform::{Rotation, Slerp};
     /// use ndarray::array;
+    /// use std::f64::consts::PI;
     ///
     /// let rot1 = Rotation::identity();
     /// let rot2 = Rotation::from_euler(&array![0.0, 0.0, PI].view(), "xyz").unwrap();
     /// let slerp = Slerp::new(rot1, rot2).unwrap();
     ///
     /// // Get 5 times for constant angular velocity
-    /// let times = slerp.times(5);
+    /// let times = Slerp::times(5);
     /// // Should be [0.0, 0.25, 0.5, 0.75, 1.0]
     /// ```
     pub fn times(n: usize) -> Vec<f64> {

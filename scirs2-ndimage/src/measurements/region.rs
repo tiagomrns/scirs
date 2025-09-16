@@ -85,7 +85,7 @@ fn pattern_to_coords<D: Dimension>(pattern: &D::Pattern, shape: &[usize]) -> Vec
 ///     match ((i / 10), (j / 10)) {
 ///         (1, 1) => 80.0 + ((i + j) % 5) as f64,   // Cell 1
 ///         (1, 3) => 120.0 + ((i * j) % 8) as f64,  // Cell 2
-///         (3, 1) => 90.0 + ((i - j).abs() % 6) as f64, // Cell 3
+///         (3, 1) => 90.0 + ((i as i32 - j as i32).abs() % 6) as f64, // Cell 3
 ///         _ => 30.0,  // Background
 ///     }
 /// });

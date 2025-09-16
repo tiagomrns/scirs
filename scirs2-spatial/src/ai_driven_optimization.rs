@@ -32,6 +32,7 @@
 //! use scirs2_spatial::ai_driven_optimization::{AIAlgorithmSelector, MetaLearningOptimizer};
 //! use ndarray::array;
 //!
+//! # async fn example() -> Result<(), Box<dyn std::error::Error>> {
 //! // AI-driven algorithm selection
 //! let points = array![[0.0, 0.0], [1.0, 0.0], [0.0, 1.0], [1.0, 1.0]];
 //! let mut ai_selector = AIAlgorithmSelector::new()
@@ -54,6 +55,8 @@
 //!     .with_graph_neural_networks(true);
 //!
 //! let optimized_result = meta_optimizer.optimize_spatial_task(&points.view()).await?;
+//! # Ok(())
+//! # }
 //! ```
 
 use crate::error::{SpatialError, SpatialResult};

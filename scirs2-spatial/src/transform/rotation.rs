@@ -976,11 +976,15 @@ impl Rotation {
     /// ```
     /// use scirs2_spatial::transform::Rotation;
     /// use ndarray::array;
+    /// use std::f64::consts::PI;
     ///
+    /// # fn example() -> Result<(), Box<dyn std::error::Error>> {
     /// let rot1 = Rotation::identity();
-    /// let rot2 = Rotation::from_euler(&array![0.0, 0.0, PI/2.0].view(), "xyz").unwrap();
+    /// let rot2 = Rotation::from_euler(&array![0.0, 0.0, PI/2.0].view(), "xyz")?;
     /// let distance = rot1.angular_distance(&rot2);
     /// assert!((distance - PI/2.0).abs() < 1e-10);
+    /// # Ok(())
+    /// # }
     /// ```
     pub fn angular_distance(&self, other: &Rotation) -> f64 {
         let q1 = &self.quat;

@@ -35,8 +35,8 @@ use std::ops::{Add, Div, Mul, Sub};
 ///
 /// let data = vec![4.0, 2.0, 3.0, 5.0];
 /// let indices = vec![0, 1, 1, 2];
-/// let indptr = vec![0, 1, 3, 4];
-/// let matrix = SymCsrMatrix::new(data, indices, indptr, (3, 3)).unwrap();
+/// let indptr = vec![0, 2, 4];
+/// let matrix = SymCsrMatrix::new(data, indices, indptr, (2, 2)).unwrap();
 ///
 /// // Find the 2 largest eigenvalues
 /// let result = eigsh(&matrix, Some(2), Some("LA"), None).unwrap();
@@ -104,8 +104,8 @@ where
 ///
 /// let data = vec![4.0, 2.0, 3.0, 5.0];
 /// let indices = vec![0, 1, 1, 2];
-/// let indptr = vec![0, 1, 3, 4];
-/// let matrix = SymCsrMatrix::new(data, indices, indptr, (3, 3)).unwrap();
+/// let indptr = vec![0, 2, 4];
+/// let matrix = SymCsrMatrix::new(data, indices, indptr, (2, 2)).unwrap();
 ///
 /// // Find eigenvalues near 2.5
 /// let result = eigsh_shift_invert(&matrix, 2.5, Some(2), None, None).unwrap();

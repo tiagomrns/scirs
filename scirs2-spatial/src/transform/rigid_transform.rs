@@ -31,13 +31,15 @@ fn rotation_from_euler(x: f64, y: f64, z: f64, convention: &str) -> SpatialResul
 /// ```
 /// use scirs2_spatial::transform::{Rotation, RigidTransform};
 /// use ndarray::array;
+/// use std::f64::consts::PI;
 ///
+/// # fn example() -> Result<(), Box<dyn std::error::Error>> {
 /// // Create a rotation around Z and a translation
-/// let rotation = Rotation::from_euler(&array![0.0, 0.0, PI/2.0].view(), "xyz").unwrap();
+/// let rotation = Rotation::from_euler(&array![0.0, 0.0, PI/2.0].view(), "xyz")?;
 /// let translation = array![1.0, 2.0, 3.0];
 ///
 /// // Create a rigid transform from rotation and translation
-/// let transform = RigidTransform::from_rotation_and_translation(rotation, &translation.view()).unwrap();
+/// let transform = RigidTransform::from_rotation_and_translation(rotation, &translation.view())?;
 ///
 /// // Apply the transform to a point
 /// let point = array![0.0, 0.0, 0.0];
@@ -48,6 +50,8 @@ fn rotation_from_euler(x: f64, y: f64, z: f64, convention: &str) -> SpatialResul
 /// let point2 = array![1.0, 0.0, 0.0];
 /// let transformed2 = transform.apply(&point2.view());
 /// // Should be [1.0, 3.0, 3.0] (rotated then translated)
+/// # Ok(())
+/// # }
 /// ```
 #[derive(Clone, Debug)]
 pub struct RigidTransform {
@@ -263,13 +267,17 @@ impl RigidTransform {
     /// ```
     /// use scirs2_spatial::transform::{Rotation, RigidTransform};
     /// use ndarray::array;
+    /// use std::f64::consts::PI;
     ///
-    /// let rotation = Rotation::from_euler(&array![0.0, 0.0, PI/2.0].view(), "xyz").unwrap();
+    /// # fn example() -> Result<(), Box<dyn std::error::Error>> {
+    /// let rotation = Rotation::from_euler(&array![0.0, 0.0, PI/2.0].view(), "xyz")?;
     /// let translation = array![1.0, 2.0, 3.0];
-    /// let transform = RigidTransform::from_rotation_and_translation(rotation, &translation.view()).unwrap();
+    /// let transform = RigidTransform::from_rotation_and_translation(rotation, &translation.view())?;
     /// let point = array![1.0, 0.0, 0.0];
-    /// let transformed = transform.apply(&point.view());
+    /// let transformed = transform.apply(&point.view())?;
     /// // Should be [1.0, 3.0, 3.0] (rotated then translated)
+    /// # Ok(())
+    /// # }
     /// ```
     pub fn apply(&self, point: &ArrayView1<f64>) -> SpatialResult<Array1<f64>> {
         if point.len() != 3 {
@@ -469,12 +477,16 @@ impl RigidTransform {
     /// ```
     /// use scirs2_spatial::transform::{Rotation, RigidTransform};
     /// use ndarray::array;
+    /// use std::f64::consts::PI;
     ///
-    /// let rotation = Rotation::from_euler(&array![0.0, 0.0, PI/2.0].view(), "xyz").unwrap();
+    /// # fn example() -> Result<(), Box<dyn std::error::Error>> {
+    /// let rotation = Rotation::from_euler(&array![0.0, 0.0, PI/2.0].view(), "xyz")?;
     /// let transform = RigidTransform::from_rotation(rotation);
     /// let point = array![1.0, 0.0, 0.0];
-    /// let transformed = transform.apply(&point.view());
+    /// let transformed = transform.apply(&point.view())?;
     /// // Should be [0.0, 1.0, 0.0]
+    /// # Ok(())
+    /// # }
     /// ```
     pub fn from_rotation(rotation: Rotation) -> RigidTransform {
         RigidTransform {

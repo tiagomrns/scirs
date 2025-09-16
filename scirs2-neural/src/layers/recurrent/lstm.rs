@@ -29,8 +29,8 @@ pub struct LSTMConfig {
 /// ```
 /// use scirs2_neural::layers::{Layer, recurrent::LSTM};
 /// use ndarray::{Array, Array3};
-/// use rand::rngs::StdRng;
-/// use rand::SeedableRng;
+/// use ndarray_rand::rand::rngs::StdRng;
+/// use ndarray_rand::rand::SeedableRng;
 /// // Create an LSTM layer with 10 input features and 20 hidden units
 /// let mut rng = StdRng::seed_from_u64(42);
 /// let lstm = LSTM::new(10, 20, &mut rng).unwrap();

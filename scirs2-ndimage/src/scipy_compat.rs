@@ -102,7 +102,7 @@ impl Mode {
 /// use scirs2_ndimage::scipy_compat::gaussian_filter;
 ///
 /// let input = array![[1.0, 2.0], [3.0, 4.0]];
-/// let filtered = gaussian_filter(&input, 1.0, None, None, None, None).unwrap();
+/// let filtered = gaussian_filter(&input, vec![1.0, 1.0], None, None, None, None).unwrap();
 /// ```
 #[allow(dead_code)]
 pub fn gaussian_filter<T, D>(

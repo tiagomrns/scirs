@@ -161,9 +161,9 @@ impl CacheBuilder {
 
 /// Example of how to use the cached attribute
 ///
-/// ```no_run
+/// ```ignore
 /// // Example disabled due to missing cached dependency
-/// use cached::cached;
+/// use cached::proc_macro::cached;
 ///
 /// #[cached(size = 100)]
 /// pub fn expensive_calculation(x: u64) -> u64 {
@@ -194,6 +194,21 @@ impl CacheBuilder {
 ///
 /// This function demonstrates the use of memoization for computing
 /// Fibonacci numbers efficiently.
+///
+/// # Example
+///
+/// ```ignore
+/// use cached::proc_macro::cached;
+///
+/// #[cached(size = 100)]
+/// pub fn fibonacci_prime_cache(n: u64) -> u64 {
+///     match n {
+///         0 => 0,
+///         1 => 1,
+///         n => fibonacci_prime_cache(n - 1) + fibonacci_prime_cache(n - 2),
+///     }
+/// }
+/// ```
 ///
 /// # Arguments
 ///

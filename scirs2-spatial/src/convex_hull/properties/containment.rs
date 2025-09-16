@@ -410,14 +410,17 @@ pub fn check_multiple_containment(
 /// use scirs2_spatial::convex_hull::properties::containment::distance_to_hull;
 /// use ndarray::array;
 ///
+/// # fn example() -> Result<(), Box<dyn std::error::Error>> {
 /// let points = array![[0.0, 0.0], [1.0, 0.0], [0.0, 1.0]];
-/// let hull = ConvexHull::new(&points.view()).unwrap();
+/// let hull = ConvexHull::new(&points.view())?;
 ///
-/// let dist = distance_to_hull(&hull, &[0.5, 0.5]).unwrap();
+/// let dist = distance_to_hull(&hull, &[0.5, 0.5])?;
 /// assert!(dist < 0.0); // Inside the hull
 ///
-/// let dist = distance_to_hull(&hull, &[2.0, 2.0]).unwrap();
+/// let dist = distance_to_hull(&hull, &[2.0, 2.0])?;
 /// assert!(dist > 0.0); // Outside the hull
+/// # Ok(())
+/// # }
 /// ```
 pub fn distance_to_hull<T: AsRef<[f64]>>(hull: &ConvexHull, point: T) -> SpatialResult<f64> {
     let point_slice = point.as_ref();

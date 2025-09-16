@@ -113,6 +113,7 @@ pub fn cart_to_spherical(cart: &ArrayView1<f64>) -> SpatialResult<Array1<f64>> {
 /// ```
 /// use ndarray::array;
 /// use scirs2_spatial::transform::spherical::spherical_to_cart;
+/// use std::f64::consts::PI;
 ///
 /// // Point at r=2, theta=π/4 (45°), phi=π/3 (60°)
 /// let spherical = array![2.0, PI/4.0, PI/3.0];
@@ -219,6 +220,7 @@ pub fn cart_to_spherical_batch(cart: &ArrayView2<'_, f64>) -> SpatialResult<Arra
 /// ```
 /// use ndarray::array;
 /// use scirs2_spatial::transform::spherical::spherical_to_cart_batch;
+/// use std::f64::consts::PI;
 ///
 /// let spherical = array![
 ///     [1.0, PI/2.0, 0.0],      // Point on x-axis
@@ -267,6 +269,7 @@ pub fn spherical_to_cart_batch(spherical: &ArrayView2<'_, f64>) -> SpatialResult
 /// ```
 /// use ndarray::array;
 /// use scirs2_spatial::transform::spherical::geodesic_distance;
+/// use std::f64::consts::PI;
 ///
 /// // North pole and a point on the equator
 /// let point1 = array![1.0, 0.0, 0.0];         // North pole
@@ -348,6 +351,7 @@ pub fn geodesic_distance(
 /// ```
 /// use ndarray::array;
 /// use scirs2_spatial::transform::spherical::spherical_triangle_area;
+/// use std::f64::consts::PI;
 ///
 /// // Three points on a unit sphere
 /// let p1 = array![1.0, 0.0, 0.0];         // North pole

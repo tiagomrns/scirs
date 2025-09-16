@@ -38,7 +38,8 @@ use std::fmt::Debug;
 /// # Examples
 ///
 /// ```
-/// use scirs2_signal::hilbert;
+/// use scirs2_signal::hilbert::hilbert;
+/// use std::f64::consts::PI;
 ///
 /// // Generate a cosine signal
 /// let n = 100;
@@ -181,7 +182,8 @@ where
 /// # Examples
 ///
 /// ```
-/// use scirs2_signal::envelope;
+/// use scirs2_signal::hilbert::envelope;
+/// use std::f64::consts::PI;
 ///
 /// // Generate a windowed sine wave
 /// let n = 100;
@@ -236,7 +238,8 @@ where
 /// # Examples
 ///
 /// ```
-/// use scirs2_signal::instantaneous_frequency;
+/// use scirs2_signal::hilbert::instantaneous_frequency;
+/// use std::f64::consts::PI;
 ///
 /// // Generate a chirp signal (increasing frequency)
 /// let n = 100;
@@ -334,7 +337,8 @@ where
 /// # Examples
 ///
 /// ```
-/// use scirs2_signal::instantaneous_phase;
+/// use scirs2_signal::hilbert::instantaneous_phase;
+/// use std::f64::consts::PI;
 ///
 /// // Generate a sine wave
 /// let n = 100;

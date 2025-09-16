@@ -37,7 +37,7 @@ use crate::error::{NdimageError, NdimageResult};
 /// // Remove impulse noise from a 1D signal
 /// let noisy_signal = Array1::from_vec(vec![1.0, 2.0, 100.0, 4.0, 5.0]);
 /// let filtered = median_filter(&noisy_signal, &[3], None).unwrap();
-/// assert_eq!(filtered[2], 2.0); // Outlier replaced by median
+/// assert_eq!(filtered[2], 4.0); // Outlier replaced by median
 /// ```
 ///
 /// ## 2D image denoising

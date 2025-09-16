@@ -190,7 +190,7 @@ where
 /// use scirs2_ndimage::local_extrema;
 ///
 /// // Signal with peaks and valleys
-/// let signal = array![1.0, 3.0, 2.0, 5.0, 1.0, 4.0, 0.5];
+/// let signal = array![1.0, 3.0, 2.0, 5.0, 1.0, 4.0, 0.5].into_dyn();
 /// let (minima, maxima) = local_extrema(&signal, Some(&[3]), Some("both")).unwrap();
 ///
 /// // maxima[1] and maxima[3] should be true (peaks at indices 1 and 3)
@@ -199,12 +199,12 @@ where
 ///
 /// ## 2D Array - Finding Local Extrema in Images
 /// ```rust
-/// use ndarray::array;  
+/// use ndarray::array;
 /// use scirs2_ndimage::local_extrema;
 ///
 /// let image = array![[1.0, 2.0, 1.0],
 ///                    [2.0, 5.0, 2.0],  // Peak at center
-///                    [1.0, 2.0, 1.0]];
+///                    [1.0, 2.0, 1.0]].into_dyn();
 ///
 /// let (minima, maxima) = local_extrema(&image, Some(&[3, 3]), Some("max")).unwrap();
 ///
@@ -216,7 +216,7 @@ where
 /// use ndarray::Array2;
 /// use scirs2_ndimage::local_extrema;
 ///
-/// let data = Array2::<f64>::from_shape_vec((5, 5), (0..25).map(|x| x as f64).collect()).unwrap();
+/// let data = Array2::<f64>::from_shape_vec((5, 5), (0..25).map(|x| x as f64).collect()).unwrap().into_dyn();
 ///
 /// // Use 5x5 neighborhood
 /// let (minima, maxima) = local_extrema(&data, Some(&[5, 5]), Some("both")).unwrap();
@@ -434,7 +434,7 @@ where
 /// let significant_peaks: Vec<usize> = peaks.iter()
 ///     .zip(prominences.iter())
 ///     .filter(|(_, &prom)| prom > 2.0)
-///     .map(|(&peak_)| peak)
+///     .map(|(&peak_, _)| peak_)
 ///     .collect();
 /// ```
 ///
@@ -443,7 +443,7 @@ where
 /// use ndarray::array;
 /// use scirs2_ndimage::{local_extrema, peak_prominences};
 ///
-/// let signal = array![0.0, 2.0, 1.0, 4.0, 0.5, 3.0, 0.2];
+/// let signal = array![0.0, 2.0, 1.0, 4.0, 0.5, 3.0, 0.2].into_dyn();
 ///
 /// // First find peaks using local_extrema
 /// let (_, maxima) = local_extrema(&signal, Some(&[3]), Some("max")).unwrap();
@@ -577,7 +577,7 @@ pub type PeakWidthsResult<T> = (Vec<T>, Vec<T>, Vec<T>, Vec<T>);
 /// let signal = array![0.0, 0.2, 1.0, 0.2, 0.0, 0.1, 0.3, 0.8, 0.3, 0.1, 0.0];
 /// let peaks = vec![2, 7]; // Peaks at indices 2 and 7
 ///
-/// let (widths___) = peak_widths(&signal, &peaks, Some(0.5)).unwrap();
+/// let widths = peak_widths(&signal, &peaks, Some(0.5)).unwrap();
 ///
 /// // Compare peak widths
 /// println!("Peak 1 width: {}", widths[0]); // Narrow peak
@@ -593,10 +593,10 @@ pub type PeakWidthsResult<T> = (Vec<T>, Vec<T>, Vec<T>, Vec<T>);
 /// let peaks = vec![3];
 ///
 /// // Measure width at 25% of peak height
-/// let (widths_25___) = peak_widths(&signal, &peaks, Some(0.25)).unwrap();
+/// let widths_25 = peak_widths(&signal, &peaks, Some(0.25)).unwrap();
 ///
-/// // Measure width at 75% of peak height  
-/// let (widths_75___) = peak_widths(&signal, &peaks, Some(0.75)).unwrap();
+/// // Measure width at 75% of peak height
+/// let widths_75 = peak_widths(&signal, &peaks, Some(0.75)).unwrap();
 ///
 /// // Width at 25% should be larger than width at 75%
 /// assert!(widths_25[0] > widths_75[0]);
@@ -614,14 +614,15 @@ pub type PeakWidthsResult<T> = (Vec<T>, Vec<T>, Vec<T>, Vec<T>);
 /// });
 ///
 /// // Find peaks
-/// let (_, maxima) = local_extrema(&signal, Some(&[5]), Some("max")).unwrap();
+/// let signal_dyn = signal.view().into_dyn();
+/// let (_, maxima) = local_extrema(&signal_dyn, Some(&[5]), Some("max")).unwrap();
 /// let peaks: Vec<usize> = maxima.indexed_iter()
 ///     .filter_map(|(i, &is_peak)| if is_peak { Some(i) } else { None })
 ///     .collect();
 ///
 /// // Characterize peaks
 /// let prominences = peak_prominences(&signal, &peaks, None).unwrap();
-/// let (widths___) = peak_widths(&signal, &peaks, Some(0.5)).unwrap();
+/// let widths = peak_widths(&signal, &peaks, Some(0.5)).unwrap();
 ///
 /// // Analyze peak properties
 /// for (i, &peak) in peaks.iter().enumerate() {

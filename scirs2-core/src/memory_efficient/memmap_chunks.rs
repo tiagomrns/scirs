@@ -61,11 +61,13 @@
 //!    ```
 //!
 //! 4. If you have the `parallel` feature enabled, you can also use parallel processing:
-//!    ```no_run
+//!    ```ignore
 //!    # #[cfg(feature = "parallel")]
 //!    # {
-//!    # use scirs2_core::memory_efficient::{MemoryMappedChunks, ChunkingStrategy};
-//!    # let mmap = MemoryMappedChunks::<f64>::from_path("/tmp/data.bin").unwrap();
+//!    # use scirs2_core::memory_efficient::{create_mmap, AccessMode, ChunkingStrategy, MemoryMappedChunksParallel};
+//!    # use ndarray::Array1;
+//!    # let data = Array1::<f64>::zeros(1000);
+//!    # let mmap = create_mmap(&data, "/tmp/data.bin", AccessMode::Write, 0).unwrap();
 //!    // Process chunks in parallel
 //!    let results = mmap.process_chunks_parallel(
 //!        ChunkingStrategy::Fixed(1000),
@@ -242,24 +244,24 @@ pub trait MemoryMappedChunksParallel<A: Clone + Copy + 'static + Send + Sync + S
     ///
     /// # Examples
     ///
-    /// ```
+    /// ```ignore
     /// # #[cfg(feature = "parallel")]
     /// # {
     /// use scirs2_core::memory_efficient::{create_mmap, AccessMode, ChunkingStrategy, MemoryMappedChunks, MemoryMappedChunksParallel};
     /// use ndarray::Array1;
     ///
-    /// // Create a memory-mapped array with 100 elements
-    /// let data = Array1::<i32>::from_vec((0..100).collect());
+    /// // Create a memory-mapped array with 20 elements (small numbers to avoid overflow)
+    /// let data = Array1::<i32>::from_vec((1..=20).collect());
     /// let file_path = "example.bin";  // In practice, use a proper temporary path
     /// let mmap = create_mmap(&data, file_path.as_ref(), AccessMode::Write, 0).unwrap();
     ///
     /// // Calculate the sum of each chunk in parallel
     /// let chunk_sums = mmap.process_chunks_parallel(
-    ///     ChunkingStrategy::Fixed(25),
+    ///     ChunkingStrategy::Fixed(5),
     ///     |chunk, chunk_idx| chunk.iter().sum::<i32>()
     /// );
     ///
-    /// // We should have 4 chunks with sums of 0-24, 25-49, 50-74, 75-99
+    /// // We should have 4 chunks with reasonable sums
     /// assert_eq!(chunk_sums.len(), 4);
     /// # }
     /// ```

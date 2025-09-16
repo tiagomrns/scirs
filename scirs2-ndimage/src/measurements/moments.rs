@@ -31,10 +31,10 @@ use crate::utils::safe_usize_to_float;
 ///
 /// // Simple 1D signal with peak at position 2
 /// let signal = Array1::from_vec(vec![0.0, 1.0, 5.0, 1.0, 0.0]);
-/// let centroid = center_of_mass(&signal)?;
+/// let centroid = center_of_mass(&signal).unwrap();
 ///
 /// // Center of mass should be close to position 2 (where the peak is)
-/// assert!((centroid[0] - 2.0).abs() < 0.1);
+/// assert!((centroid[0] - 2.0_f64).abs() < 0.1);
 /// ```
 ///
 /// ## 2D object localization
@@ -50,10 +50,10 @@ use crate::utils::safe_usize_to_float;
 ///     }
 /// }
 ///
-/// let centroid = center_of_mass(&image)?;
+/// let centroid = center_of_mass(&image).unwrap();
 /// // Centroid should be approximately at (3, 3) - center of the bright square
-/// assert!((centroid[0] - 3.0).abs() < 0.1);
-/// assert!((centroid[1] - 3.0).abs() < 0.1);
+/// assert!((centroid[0] - 3.0_f64).abs() < 0.1);
+/// assert!((centroid[1] - 3.0_f64).abs() < 0.1);
 /// ```
 ///
 /// ## Intensity-weighted centroid
@@ -69,7 +69,7 @@ use crate::utils::safe_usize_to_float;
 ///     [0.0, 0.0, 0.0, 0.0]
 /// ];
 ///
-/// let centroid = center_of_mass(&image)?;
+/// let centroid = center_of_mass(&image).unwrap();
 /// // Centroid will be shifted toward higher intensity pixels
 /// // Should be closer to (2, 2) than (1.5, 1.5) due to intensity weighting
 /// ```
@@ -89,7 +89,7 @@ use crate::utils::safe_usize_to_float;
 ///     }
 /// }
 ///
-/// let centroid = center_of_mass(&volume)?;
+/// let centroid = center_of_mass(&volume).unwrap();
 /// // Centroid should be at approximately (7.5, 7.5, 7.5)
 /// assert_eq!(centroid.len(), 3); // 3D coordinates
 /// ```
@@ -108,10 +108,10 @@ use crate::utils::safe_usize_to_float;
 ///     }
 /// });
 ///
-/// let centroid = center_of_mass(&binary)?;
+/// let centroid = center_of_mass(&binary).unwrap();
 /// // For a circular object centered at (25, 25), centroid should be near center
-/// assert!((centroid[0] - 25.0).abs() < 1.0);
-/// assert!((centroid[1] - 25.0).abs() < 1.0);
+/// assert!((centroid[0] - 25.0_f64).abs() < 1.0);
+/// assert!((centroid[1] - 25.0_f64).abs() < 1.0);
 /// ```
 ///
 /// # Special Cases

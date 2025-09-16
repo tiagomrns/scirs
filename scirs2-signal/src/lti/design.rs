@@ -62,6 +62,7 @@ pub fn tf(num: Vec<f64>, den: Vec<f64>, dt: Option<bool>) -> SignalResult<Transf
 ///
 /// ```rust
 /// use scirs2_signal::lti::design::zpk;
+/// use num_complex::Complex64;
 ///
 /// // Create H(s) = 2 * (s + 1) / (s + 2)(s + 3)
 /// let sys = zpk(

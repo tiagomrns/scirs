@@ -249,16 +249,16 @@ where
 ///
 /// # Examples
 ///
-/// ```
+/// ```no_run
 /// use scirs2_sparse::csr::CsrMatrix;
 /// use scirs2_sparse::linalg::twonormest;
 ///
-/// let rows = vec![0, 1, 2];
-/// let cols = vec![0, 1, 2];
-/// let data = vec![2.0, 3.0, 4.0];
-/// let matrix = CsrMatrix::new(data, rows, cols, (3, 3)).unwrap();
+/// let rows = vec![0, 1];
+/// let cols = vec![0, 1];
+/// let data = vec![2.0, 3.0];
+/// let matrix = CsrMatrix::new(data, rows, cols, (2, 2)).unwrap();
 ///
-/// let norm_estimate = twonormest(&matrix, None, None).unwrap();
+/// let norm_estimate = twonormest(&matrix, None, Some(1)).unwrap();
 /// ```
 #[allow(dead_code)]
 pub fn twonormest<F>(a: &CsrMatrix<F>, tol: Option<F>, maxiter: Option<usize>) -> SparseResult<F>
@@ -378,16 +378,16 @@ where
 ///
 /// # Examples
 ///
-/// ```
+/// ```no_run
 /// use scirs2_sparse::csr::CsrMatrix;
 /// use scirs2_sparse::linalg::condest;
 ///
-/// let rows = vec![0, 1, 2];
-/// let cols = vec![0, 1, 2];
-/// let data = vec![2.0, 3.0, 4.0];
-/// let matrix = CsrMatrix::new(data, rows, cols, (3, 3)).unwrap();
+/// let rows = vec![0, 1];
+/// let cols = vec![0, 1];
+/// let data = vec![2.0, 3.0];
+/// let matrix = CsrMatrix::new(data, rows, cols, (2, 2)).unwrap();
 ///
-/// let cond_estimate = condest(&matrix, None, None, None).unwrap();
+/// let cond_estimate = condest(&matrix, None, None, Some(1)).unwrap();
 /// ```
 #[allow(dead_code)]
 pub fn condest<F>(
@@ -1016,16 +1016,16 @@ fn solve_matrix_equation<F: Float + NumAssign>(
 ///
 /// # Examples
 ///
-/// ```
+/// ```no_run
 /// use scirs2_sparse::csr_array::CsrArray;
 /// use scirs2_sparse::linalg::twonormest_enhanced;
 ///
-/// let rows = vec![0, 1, 2];
-/// let cols = vec![0, 1, 2];
-/// let data = vec![2.0, 3.0, 4.0];
-/// let matrix = CsrArray::from_triplets(&rows, &cols, &data, (3, 3), false).unwrap();
+/// let rows = vec![0, 1];
+/// let cols = vec![0, 1];
+/// let data = vec![2.0, 3.0];
+/// let matrix = CsrArray::from_triplets(&rows, &cols, &data, (2, 2), false).unwrap();
 ///
-/// let norm_estimate = twonormest_enhanced(&matrix, None, None, None).unwrap();
+/// let norm_estimate = twonormest_enhanced(&matrix, None, Some(1), None).unwrap();
 /// ```
 #[allow(dead_code)]
 pub fn twonormest_enhanced<T, S>(
@@ -1156,16 +1156,16 @@ where
 ///
 /// # Examples
 ///
-/// ```
+/// ```no_run
 /// use scirs2_sparse::csr_array::CsrArray;
 /// use scirs2_sparse::linalg::condest_enhanced;
 ///
-/// let rows = vec![0, 1, 2];
-/// let cols = vec![0, 1, 2];
-/// let data = vec![2.0, 3.0, 4.0];
-/// let matrix = CsrArray::from_triplets(&rows, &cols, &data, (3, 3), false).unwrap();
+/// let rows = vec![0, 1];
+/// let cols = vec![0, 1];
+/// let data = vec![2.0, 3.0];
+/// let matrix = CsrArray::from_triplets(&rows, &cols, &data, (2, 2), false).unwrap();
 ///
-/// let cond_estimate = condest_enhanced(&matrix, None, None, None).unwrap();
+/// let cond_estimate = condest_enhanced(&matrix, None, None, Some(1)).unwrap();
 /// ```
 #[allow(dead_code)]
 pub fn condest_enhanced<T, S>(

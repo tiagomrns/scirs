@@ -27,8 +27,8 @@ pub struct GRUConfig {
 /// ```
 /// use scirs2_neural::layers::{Layer, recurrent::GRU};
 /// use ndarray::{Array, Array3};
-/// use rand::rngs::StdRng;
-/// use rand::SeedableRng;
+/// use ndarray_rand::rand::rngs::StdRng;
+/// use ndarray_rand::rand::SeedableRng;
 /// // Create a GRU layer with 10 input features and 20 hidden units
 /// let mut rng = StdRng::seed_from_u64(42);
 /// let gru = GRU::new(10, 20, &mut rng).unwrap();

@@ -630,12 +630,15 @@ impl<T: Float + Send + Sync + 'static, D: Distance<T> + 'static> KDTree<T, D> {
     /// use scirs2_spatial::KDTree;
     /// use ndarray::array;
     ///
+    /// # fn example() -> Result<(), Box<dyn std::error::Error>> {
     /// let points = array![[0.0, 0.0], [1.0, 0.0], [0.0, 1.0], [1.0, 1.0]];
-    /// let kdtree = KDTree::new(&points).unwrap();
+    /// let kdtree = KDTree::new(&points)?;
     ///
     /// // Find all points within radius 0.7 of [0.5, 0.5]
-    /// let (indices, distances) = kdtree.query_radius(&[0.5, 0.5], 0.7).unwrap();
+    /// let (indices, distances) = kdtree.query_radius(&[0.5, 0.5], 0.7)?;
     /// assert_eq!(indices.len(), 4); // All points are within 0.7 units of [0.5, 0.5]
+    /// # Ok(())
+    /// # }
     /// ```
     pub fn query_radius(&self, point: &[T], radius: T) -> SpatialResult<(Vec<usize>, Vec<T>)> {
         if point.len() != self.ndim {
@@ -745,12 +748,15 @@ impl<T: Float + Send + Sync + 'static, D: Distance<T> + 'static> KDTree<T, D> {
     /// use scirs2_spatial::KDTree;
     /// use ndarray::array;
     ///
+    /// # fn example() -> Result<(), Box<dyn std::error::Error>> {
     /// let points = array![[0.0, 0.0], [1.0, 0.0], [0.0, 1.0], [1.0, 1.0]];
-    /// let kdtree = KDTree::new(&points).unwrap();
+    /// let kdtree = KDTree::new(&points)?;
     ///
     /// // Count points within radius 0.7 of [0.5, 0.5]
-    /// let count = kdtree.count_neighbors(&[0.5, 0.5], 0.7).unwrap();
+    /// let count = kdtree.count_neighbors(&[0.5, 0.5], 0.7)?;
     /// assert_eq!(count, 4); // All points are within 0.7 units of [0.5, 0.5]
+    /// # Ok(())
+    /// # }
     /// ```
     pub fn count_neighbors(&self, point: &[T], radius: T) -> SpatialResult<usize> {
         if point.len() != self.ndim {

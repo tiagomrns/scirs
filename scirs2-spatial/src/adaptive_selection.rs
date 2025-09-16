@@ -31,6 +31,7 @@
 //! use scirs2_spatial::adaptive_selection::{AdaptiveAlgorithmSelector, SelectionContext};
 //! use ndarray::array;
 //!
+//! # async fn example() -> Result<(), Box<dyn std::error::Error>> {
 //! // Create adaptive selector with multiple strategies
 //! let mut selector = AdaptiveAlgorithmSelector::new()
 //!     .with_performance_learning(true)
@@ -56,6 +57,8 @@
 //! // Execute with selected algorithm and provide feedback
 //! let execution_result = selector.execute_with_feedback(&selection, &points.view()).await?;
 //! println!("Actual performance: {:?}", execution_result.actual_performance);
+//! # Ok(())
+//! # }
 //! ```
 
 use crate::error::{SpatialError, SpatialResult};

@@ -194,6 +194,15 @@ where
     D: Dimension,
 {
     fn step(&mut self, params: &Array<A, D>, gradients: &Array<A, D>) -> Result<Array<A, D>> {
+        // Validate that parameters and gradients have compatible shapes
+        if params.shape() != gradients.shape() {
+            return Err(crate::error::OptimError::DimensionMismatch(format!(
+                "Incompatible shapes: parameters have shape {:?}, gradients have shape {:?}",
+                params.shape(),
+                gradients.shape()
+            )));
+        }
+
         // Convert to dynamic dimension for storage in state vectors
         let params_dyn = params.to_owned().into_dyn();
         let gradients_dyn = gradients.to_owned().into_dyn();

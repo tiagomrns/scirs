@@ -472,7 +472,7 @@ mod tests {
             state = result.state;
         }
 
-        let (relative_drift_max_drift_current_energy) = integrator.energy_statistics();
+        let (relative_drift, _max_drift, _current_energy) = integrator.energy_statistics();
 
         // Energy should be well conserved for undamped system
         assert!(

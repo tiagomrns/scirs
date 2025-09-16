@@ -292,6 +292,6 @@ mod tests {
     fn test_mean_basic_validation() {
         let testdata = Array1::from_vec(vec![1.0, 2.0, 3.0, 4.0, 5.0]);
         let result = mean(&testdata.view()).unwrap();
-        assert!((result - 3.0).abs() < 1e-10);
+        assert!((result - 3.0f64).abs() < 1e-10);
     }
 }

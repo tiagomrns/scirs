@@ -93,7 +93,7 @@ fn bench_fast_bspline_vs_standard(c: &mut Criterion) {
 fn bench_cached_bspline(c: &mut Criterion) {
     let mut group = c.benchmark_group("cached_bspline");
 
-    let knots = Array1::linspace(0.0, 10.0, 100);
+    let knots = Array1::linspace(0.0, 10.0, 99); // For degree 3 with 95 coeffs: 95+3+1=99 knots
     let coeffs = Array1::linspace(-1.0, 1.0, 95);
 
     // Test different cache configurations

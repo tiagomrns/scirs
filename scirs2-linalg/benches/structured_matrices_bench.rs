@@ -34,10 +34,10 @@ fn create_generalmatrix(n: usize) -> Array2<f64> {
 
 /// Create block matrices for testing
 #[allow(dead_code)]
-fn create_block_matrices(_blocksize: usize, numblocks: usize) -> Vec<Array2<f64>> {
-    (0..num_blocks)
+fn create_block_matrices(blocksize: usize, numblocks: usize) -> Vec<Array2<f64>> {
+    (0..numblocks)
         .map(|k| {
-            Array2::from_shape_fn((_blocksize, blocksize), |(i, j)| {
+            Array2::from_shape_fn((blocksize, blocksize), |(i, j)| {
                 ((i + j + k + 1) as f64 * 0.1).sin()
             })
         })
@@ -48,7 +48,7 @@ fn create_block_matrices(_blocksize: usize, numblocks: usize) -> Vec<Array2<f64>
 #[allow(dead_code)]
 fn bench_toeplitz_operations(c: &mut Criterion) {
     let mut group = c.benchmark_group("toeplitz_operations");
-    group.samplesize(20);
+    group.sample_size(20);
 
     for &size in &[100, 500, 1000, 2000] {
         let first_row = create_test_vector(size);
@@ -159,7 +159,7 @@ fn bench_toeplitz_operations(c: &mut Criterion) {
 #[allow(dead_code)]
 fn bench_circulant_operations(c: &mut Criterion) {
     let mut group = c.benchmark_group("circulant_operations");
-    group.samplesize(25);
+    group.sample_size(25);
 
     for &size in &[100, 500, 1000, 2000] {
         let first_row = create_test_vector(size);
@@ -257,7 +257,7 @@ fn bench_circulant_operations(c: &mut Criterion) {
 #[allow(dead_code)]
 fn bench_hankel_operations(c: &mut Criterion) {
     let mut group = c.benchmark_group("hankel_operations");
-    group.samplesize(20);
+    group.sample_size(20);
 
     for &size in &[100, 500, 1000] {
         let first_row = create_test_vector(size);
@@ -339,7 +339,7 @@ fn bench_hankel_operations(c: &mut Criterion) {
 #[allow(dead_code)]
 fn bench_tridiagonal_operations(c: &mut Criterion) {
     let mut group = c.benchmark_group("tridiagonal_operations");
-    group.samplesize(30);
+    group.sample_size(30);
 
     for &size in &[1000, 5000, 10000, 20000] {
         let diagonal = create_test_vector(size);
@@ -480,7 +480,7 @@ fn bench_tridiagonal_operations(c: &mut Criterion) {
 #[allow(dead_code)]
 fn bench_banded_operations(c: &mut Criterion) {
     let mut group = c.benchmark_group("banded_operations");
-    group.samplesize(25);
+    group.sample_size(25);
 
     for &size in &[500, 1000, 2000] {
         for &bandwidth in &[5, 10, 20, 50] {
@@ -582,7 +582,7 @@ fn bench_banded_operations(c: &mut Criterion) {
 #[allow(dead_code)]
 fn bench_block_diagonal_operations(c: &mut Criterion) {
     let mut group = c.benchmark_group("block_diagonal_operations");
-    group.samplesize(20);
+    group.sample_size(20);
 
     for &blocksize in &[10, 20, 50] {
         for &num_blocks in &[5, 10, 20, 50] {
@@ -689,7 +689,7 @@ fn bench_block_diagonal_operations(c: &mut Criterion) {
 #[allow(dead_code)]
 fn bench_block_tridiagonal_operations(c: &mut Criterion) {
     let mut group = c.benchmark_group("block_tridiagonal_operations");
-    group.samplesize(20);
+    group.sample_size(20);
 
     for &blocksize in &[10, 20, 50] {
         for &num_blocks in &[5, 10, 20] {
@@ -752,10 +752,10 @@ fn bench_block_tridiagonal_operations(c: &mut Criterion) {
                     totalsize,
                 ),
                 &(&diagonal_blocks, &off_diagonal_blocks, &rhs),
-                |b, (diag, off_diag_rhs)| {
+                |b, (diag, off_diag_blocks, _rhs)| {
                     b.iter(|| {
                         let diag_cloned: Vec<_> = diag.to_vec();
-                        let off_diag_cloned: Vec<_> = off_diag.to_vec();
+                        let off_diag_cloned: Vec<_> = off_diag_blocks.to_vec();
 
                         // solve_block_tridiagonal function not implemented yet
                         // Just return the matrix creation for benchmarking
@@ -802,7 +802,7 @@ fn bench_block_tridiagonal_operations(c: &mut Criterion) {
 #[allow(dead_code)]
 fn bench_structured_vs_general_comparison(c: &mut Criterion) {
     let mut group = c.benchmark_group("structured_vs_general_comparison");
-    group.samplesize(20);
+    group.sample_size(20);
 
     for &size in &[500, 1000, 2000] {
         let first_row = create_test_vector(size);
@@ -880,7 +880,7 @@ fn bench_structured_vs_general_comparison(c: &mut Criterion) {
 #[allow(dead_code)]
 fn bench_specialized_algorithms(c: &mut Criterion) {
     let mut group = c.benchmark_group("specialized_algorithms");
-    group.samplesize(15);
+    group.sample_size(15);
 
     for &size in &[100, 500, 1000] {
         let first_row = create_test_vector(size);

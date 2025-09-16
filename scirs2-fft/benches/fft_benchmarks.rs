@@ -7,6 +7,7 @@ use criterion::{criterion_group, criterion_main, BenchmarkId, Criterion};
 use ndarray::Array1;
 use num_complex::Complex64;
 use scirs2_fft::{fft, fft2, fftn, frft, ifft, irfft, rfft};
+use std::f64::consts::PI;
 use std::hint::black_box;
 
 /// Benchmark basic 1D FFT operations
@@ -73,7 +74,7 @@ fn bench_fft_2d(c: &mut Criterion) {
         });
 
         // Reshape to 2D
-        let data_2d = data.intoshape_with_order((size, size)).unwrap();
+        let data_2d = data.into_shape_with_order((size, size)).unwrap();
 
         // Benchmark 2D FFT
         group.bench_with_input(BenchmarkId::new("fft2", size), &data_2d, |b, data| {
@@ -81,7 +82,7 @@ fn bench_fft_2d(c: &mut Criterion) {
         });
 
         // Benchmark N-dimensional FFT
-        group.bench_with_input(BenchmarkId::new("fftn", size), &data_2d, |b, data| {
+        group.bench_with_input(BenchmarkId::new("fftn", size), &data_2d, |b, data: &ndarray::Array2<f64>| {
             b.iter(|| {
                 fftn(
                     black_box(&data.clone().into_dyn()),
@@ -175,12 +176,12 @@ fn bench_memory_efficient(c: &mut Criterion) {
             (2.0 * PI * (5.0 * x + 3.0 * y)).sin()
         });
 
-        let data_2d = data.intoshape_with_order((size, size)).unwrap();
+        let data_2d = data.into_shape_with_order((size, size)).unwrap();
 
         group.bench_with_input(
             BenchmarkId::new("fft2_efficient", size),
             &data_2d,
-            |b, data| {
+            |b, data: &ndarray::Array2<f64>| {
                 b.iter(|| {
                     use scirs2_fft::memory_efficient::{fft2_efficient, FftMode};
                     fft2_efficient(black_box(&data.view()), None, FftMode::Forward, false)

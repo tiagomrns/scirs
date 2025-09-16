@@ -174,7 +174,7 @@ fn bench_vector_norms(c: &mut Criterion) {
 #[allow(dead_code)]
 fn bench_decompositions(c: &mut Criterion) {
     let mut group = c.benchmark_group("decompositions");
-    group.samplesize(10); // Reduce sample size for expensive operations
+    group.sample_size(10); // Reduce sample size for expensive operations
     group.measurement_time(Duration::from_secs(30));
 
     for &size in &[20, 50, 100] {
@@ -233,7 +233,7 @@ fn bench_decompositions(c: &mut Criterion) {
 #[allow(dead_code)]
 fn bench_eigenvalues(c: &mut Criterion) {
     let mut group = c.benchmark_group("eigenvalues");
-    group.samplesize(10);
+    group.sample_size(10);
     group.measurement_time(Duration::from_secs(20));
 
     for &size in &[20, 50, 100] {
@@ -305,7 +305,7 @@ fn bench_eigenvalues(c: &mut Criterion) {
 #[allow(dead_code)]
 fn bench_linear_solvers(c: &mut Criterion) {
     let mut group = c.benchmark_group("linear_solvers");
-    group.samplesize(20);
+    group.sample_size(20);
 
     for &size in &[20, 50, 100] {
         let matrix = create_testmatrix(size);
@@ -371,7 +371,7 @@ fn bench_linear_solvers(c: &mut Criterion) {
 #[allow(dead_code)]
 fn benchmatrix_functions(c: &mut Criterion) {
     let mut group = c.benchmark_group("matrix_functions");
-    group.samplesize(10);
+    group.sample_size(10);
     group.measurement_time(Duration::from_secs(30));
 
     for &size in &[10, 20, 30] {
@@ -457,7 +457,7 @@ fn benchmatrix_properties(c: &mut Criterion) {
 #[allow(dead_code)]
 fn bench_advanced_decompositions(c: &mut Criterion) {
     let mut group = c.benchmark_group("advanced_decompositions");
-    group.samplesize(10);
+    group.sample_size(10);
 
     for &size in &[10, 20, 30] {
         let matrix = create_spdmatrix(size);
@@ -541,7 +541,7 @@ fn bench_memory_allocation(c: &mut Criterion) {
 #[allow(dead_code)]
 fn bench_scalability(c: &mut Criterion) {
     let mut group = c.benchmark_group("scalability");
-    group.samplesize(15);
+    group.sample_size(15);
 
     let sizes = [10, 20, 50, 100, 150];
 

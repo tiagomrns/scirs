@@ -495,6 +495,7 @@ fn print_summary_and_recommendations() {
 
 #[cfg(test)]
 mod tests {
+    use super::*;
 
     #[test]
     fn test_comprehensive_demonstration() {

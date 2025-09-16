@@ -24,6 +24,7 @@ use scirs2_fft::{
 
     GPUBackend,
 };
+use std::f64::consts::PI;
 use std::hint::black_box;
 
 /// Create a test signal with specified sparse frequency components

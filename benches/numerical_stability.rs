@@ -442,15 +442,16 @@ fn save_stability_results(results: &[StabilityTestResult]) {
         eprintln!("Failed to save stability test results: {}", e);
     });
 
-    // Print summary
+    // Print summary only when not in test listing mode
     let total_tests = results.len();
     let successful_tests = results.iter().filter(|r| r.success).count();
     let success_rate = (successful_tests as f64 / total_tests as f64) * 100.0;
 
-    println!("\n=== Numerical Stability Summary ===");
-    println!("Total tests: {}", total_tests);
-    println!("Successful tests: {}", successful_tests);
-    println!("Success rate: {:.1}%", success_rate);
+    // Comment out problematic println statements that interfere with cargo nextest parsing
+    // println!("\n=== Numerical Stability Summary ===");
+    // println!("Total tests: {}", total_tests);
+    // println!("Successful tests: {}", successful_tests);
+    // println!("Success rate: {:.1}%", success_rate);
 
     // Identify problematic condition numbers
     let mut failed_high_cond = 0;
@@ -460,12 +461,12 @@ fn save_stability_results(results: &[StabilityTestResult]) {
         }
     }
 
-    if failed_high_cond > 0 {
-        println!(
-            "Failed tests with high condition numbers (>1e10): {}",
-            failed_high_cond
-        );
-    }
+    // if failed_high_cond > 0 {
+    //     println!(
+    //         "Failed tests with high condition numbers (>1e10): {}",
+    //         failed_high_cond
+    //     );
+    // }
 }
 
 criterion_group!(

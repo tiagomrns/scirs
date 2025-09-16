@@ -58,7 +58,7 @@ fn create_complexmatrix(n: usize) -> Array2<num_complex::Complex64> {
 #[allow(dead_code)]
 fn bench_lu_decomposition(c: &mut Criterion) {
     let mut group = c.benchmark_group("lu_decomposition");
-    group.samplesize(20);
+    group.sample_size(20);
     group.measurement_time(Duration::from_secs(30));
 
     for &size in &[20, 50, 100, 200] {
@@ -104,7 +104,7 @@ fn bench_lu_decomposition(c: &mut Criterion) {
 #[allow(dead_code)]
 fn bench_qr_decomposition(c: &mut Criterion) {
     let mut group = c.benchmark_group("qr_decomposition");
-    group.samplesize(20);
+    group.sample_size(20);
     group.measurement_time(Duration::from_secs(30));
 
     for &size in &[20, 50, 100, 200] {
@@ -151,7 +151,7 @@ fn bench_qr_decomposition(c: &mut Criterion) {
 #[allow(dead_code)]
 fn bench_svd_decomposition(c: &mut Criterion) {
     let mut group = c.benchmark_group("svd_decomposition");
-    group.samplesize(10); // SVD is expensive
+    group.sample_size(10); // SVD is expensive
     group.measurement_time(Duration::from_secs(45));
 
     for &size in &[20, 50, 100] {
@@ -201,7 +201,7 @@ fn bench_svd_decomposition(c: &mut Criterion) {
 #[allow(dead_code)]
 fn bench_cholesky_decomposition(c: &mut Criterion) {
     let mut group = c.benchmark_group("cholesky_decomposition");
-    group.samplesize(25);
+    group.sample_size(25);
 
     for &size in &[20, 50, 100, 200, 500] {
         let spdmatrix = create_spdmatrix(size);
@@ -251,7 +251,7 @@ fn bench_cholesky_decomposition(c: &mut Criterion) {
 #[allow(dead_code)]
 fn bench_eigenvalue_decomposition(c: &mut Criterion) {
     let mut group = c.benchmark_group("eigenvalue_decomposition");
-    group.samplesize(10); // Eigenvalue problems are expensive
+    group.sample_size(10); // Eigenvalue problems are expensive
     group.measurement_time(Duration::from_secs(40));
 
     for &size in &[20, 50, 100] {
@@ -310,7 +310,7 @@ fn bench_eigenvalue_decomposition(c: &mut Criterion) {
 #[allow(dead_code)]
 fn bench_schur_decomposition(c: &mut Criterion) {
     let mut group = c.benchmark_group("schur_decomposition");
-    group.samplesize(10);
+    group.sample_size(10);
     group.measurement_time(Duration::from_secs(40));
 
     for &size in &[20, 50, 100] {
@@ -347,7 +347,7 @@ fn bench_schur_decomposition(c: &mut Criterion) {
 #[allow(dead_code)]
 fn bench_polar_decomposition(c: &mut Criterion) {
     let mut group = c.benchmark_group("polar_decomposition");
-    group.samplesize(15);
+    group.sample_size(15);
 
     for &size in &[20, 50, 100] {
         let matrix = create_testmatrix(size);
@@ -377,7 +377,7 @@ fn bench_polar_decomposition(c: &mut Criterion) {
             b.iter(|| {
                 // polar_unitary not available, use polar_decomposition and extract unitary part
                 let (u_) = advanced_polar_decomposition(black_box(&m.view()), true).unwrap();
-                u
+                u_
             })
         });
     }
@@ -389,7 +389,7 @@ fn bench_polar_decomposition(c: &mut Criterion) {
 #[allow(dead_code)]
 fn bench_qz_decomposition(c: &mut Criterion) {
     let mut group = c.benchmark_group("qz_decomposition");
-    group.samplesize(10);
+    group.sample_size(10);
     group.measurement_time(Duration::from_secs(40));
 
     for &size in &[20, 50, 100] {
@@ -443,7 +443,7 @@ fn bench_qz_decomposition(c: &mut Criterion) {
 #[allow(dead_code)]
 fn bench_complex_decompositions(c: &mut Criterion) {
     let mut group = c.benchmark_group("complex_decompositions");
-    group.samplesize(15);
+    group.sample_size(15);
 
     for &size in &[20, 50, 100] {
         let complexmatrix = create_complexmatrix(size);
@@ -488,7 +488,7 @@ fn bench_complex_decompositions(c: &mut Criterion) {
 #[allow(dead_code)]
 fn bench_specialized_factorizations(c: &mut Criterion) {
     let mut group = c.benchmark_group("specialized_factorizations");
-    group.samplesize(15);
+    group.sample_size(15);
 
     for &size in &[20, 50, 100] {
         let matrix = create_testmatrix(size);
@@ -535,7 +535,7 @@ fn bench_specialized_factorizations(c: &mut Criterion) {
 #[allow(dead_code)]
 fn bench_decomposition_memory_efficiency(c: &mut Criterion) {
     let mut group = c.benchmark_group("decomposition_memory_efficiency");
-    group.samplesize(20);
+    group.sample_size(20);
 
     for &size in &[50, 100, 200] {
         let matrix = create_testmatrix(size);

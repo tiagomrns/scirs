@@ -6,6 +6,7 @@
 use std::hint::black_box;
 
 use criterion::{criterion_group, criterion_main, BenchmarkId, Criterion};
+use rand::Rng;
 use ndarray::{Array1, Array2, ArrayView1};
 use scirs2_linalg::matrixfree::{conjugate_gradient, gmres, LinearOperator};
 use scirs2_linalg::quantization::{
@@ -22,26 +23,26 @@ use scirs2_linalg::quantization::{
 #[allow(dead_code)]
 fn create_randomarray2_f32(rows: usize, cols: usize) -> Array2<f32> {
     let mut rng = rand::rng();
-    let mut matrix = Array2::zeros((_rows, cols));
+    let mut matrix = Array2::zeros((rows, cols));
 
-    for i in 0.._rows {
+    for i in 0..rows {
         for j in 0..cols {
             matrix[[i, j]] = rng.random_range(-1.0..1.0);
         }
     }
 
     // For SPD matrices (used in CG)..we need to ensure positive definiteness
-    if _rows == cols {
+    if rows == cols {
         // Make the matrix symmetric
-        for i in 0.._rows {
+        for i in 0..rows {
             for j in i + 1..cols {
                 matrix[[j, i]] = matrix[[i, j]];
             }
         }
 
         // Add a diagonal dominance to ensure positive definiteness
-        for i in 0.._rows {
-            matrix[[i, i]] += _rows as f32;
+        for i in 0..rows {
+            matrix[[i, i]] += rows as f32;
         }
     }
 
@@ -100,7 +101,7 @@ fn bench_conjugate_gradient(c: &mut Criterion) {
                     .positive_definite();
 
                     // Convert to standard LinearOperator
-                    let quantized_linear_op = quantized_to_linear_operator(&quantizedop);
+                    let quantized_linear_op = quantized_to_linear_operator(&quantized_op);
 
                     bench.iter(|| {
                         black_box(conjugate_gradient(&quantized_linear_op, &b, 100, 1e-6).unwrap())
@@ -196,7 +197,7 @@ fn bench_conjugate_gradient(c: &mut Criterion) {
                     .positive_definite();
 
                     // Create a preconditioner
-                    let precond = quantized_jacobi_preconditioner(&quantizedop).unwrap();
+                    let precond = quantized_jacobi_preconditioner(&quantized_op).unwrap();
 
                     bench.iter(|| {
                         black_box(
@@ -267,7 +268,7 @@ fn bench_gmres(c: &mut Criterion) {
                     .unwrap();
 
                     // Convert to standard LinearOperator
-                    let quantized_linear_op = quantized_to_linear_operator(&quantizedop);
+                    let quantized_linear_op = quantized_to_linear_operator(&quantized_op);
 
                     bench.iter(|| {
                         black_box(gmres(&quantized_linear_op, &b, 100, 1e-6, Some(20)).unwrap())
@@ -437,7 +438,7 @@ fn bench_large_bandedmatrix(c: &mut Criterion) {
                     .positive_definite();
 
             // Create a preconditioner
-            let precond = quantized_jacobi_preconditioner(&quantizedop).unwrap();
+            let precond = quantized_jacobi_preconditioner(&quantized_op).unwrap();
 
             bench.iter(|| {
                 black_box(

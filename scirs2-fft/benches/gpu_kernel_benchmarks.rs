@@ -40,7 +40,7 @@ fn bench_gpu_kernel_sublinear(c: &mut Criterion) {
     }
 
     let n = 1024;
-    let frequencies = vec![(30..1.0), (70, 0.5), (150, 0.25)];
+    let frequencies = vec![(30, 1.0), (70, 0.5), (150, 0.25)];
     let signal = create_sparse_signal(n, &frequencies);
     let noisy_signal = add_noise(&signal, 0.1);
 
@@ -163,8 +163,8 @@ fn bench_signal_sizes(c: &mut Criterion) {
         let signal = create_sparse_signal(size, &frequencies);
         let noisy_signal = add_noise(&signal, 0.1);
 
-        c.bench_with_input(BenchmarkId::new("gpu_kernel_size", size), &size, |b_| {
-            b.iter(|| {
+        c.bench_with_input(BenchmarkId::new("gpu_kernel_size", size), &size, |b_, _data| {
+            b_.iter(|| {
                 cuda_sparse_fft(
                     &noisy_signal,
                     5, // Look for 5 frequency components

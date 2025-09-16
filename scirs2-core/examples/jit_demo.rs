@@ -838,23 +838,23 @@ mod tests {
 
     #[test]
     fn test_jit_demo_creation() {
-        let demo = advancedJitDemo::new();
+        let demo = AdvancedJitDemo::new();
         assert!(demo.is_ok());
     }
 
     #[test]
     fn testmatrix_kernel_generation() {
-        let demo = advancedJitDemo::new().unwrap();
+        let demo = AdvancedJitDemo::new().unwrap();
         let kernel = demo.generatematrix_kernel(64);
-        assert!(kernel.contains(matmul_64x64));
+        assert!(kernel.contains("matmul_64x64"));
         assert!(kernel.contains("define void"));
     }
 
     #[test]
     fn test_signal_kernel_generation() {
-        let demo = advancedJitDemo::new().unwrap();
-        let kernel = demo.generate_signal_kernel(convolution_1d);
-        assert!(kernel.contains(convolution_1d));
+        let demo = AdvancedJitDemo::new().unwrap();
+        let kernel = AdvancedJitDemo::generate_signal_kernel("convolution_1d");
+        assert!(kernel.contains("convolution_1d"));
         assert!(kernel.contains("define void"));
     }
 

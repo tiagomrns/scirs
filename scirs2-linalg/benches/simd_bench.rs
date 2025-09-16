@@ -59,7 +59,7 @@ fn create_randomarray1_f32(size: usize) -> Array1<f32> {
 
 #[allow(dead_code)]
 fn create_randomarray2_f32(rows: usize, cols: usize) -> Array2<f32> {
-    Array2::from_shape_fn((_rows, cols), |(i, j)| {
+    Array2::from_shape_fn((rows, cols), |(i, j)| {
         ((i * cols + j) % 100) as f32 / 100.0
     })
 }
@@ -72,8 +72,8 @@ fn bench_matvec(c: &mut Criterion) {
         let matrix = create_randomarray2_f32(*size, *size);
         let vector = create_randomarray1_f32(*size);
 
-        group.bench_with_input(BenchmarkId::new("Regular", size), &size, |b_| {
-            b.iter(|| {
+        group.bench_with_input(BenchmarkId::new("Regular", size), &size, |b_, _data| {
+            b_.iter(|| {
                 black_box(regular_matvec_f32(
                     &black_box(matrix.view()),
                     &black_box(vector.view()),
@@ -82,8 +82,8 @@ fn bench_matvec(c: &mut Criterion) {
         });
 
         #[cfg(feature = "simd")]
-        group.bench_with_input(BenchmarkId::new("SIMD", size), &size, |b_| {
-            b.iter(|| {
+        group.bench_with_input(BenchmarkId::new("SIMD", size), &size, |b_, _data| {
+            b_.iter(|| {
                 black_box(
                     simd_matvec_f32(&black_box(matrix.view()), &black_box(vector.view())).unwrap(),
                 )
@@ -112,8 +112,8 @@ fn bench_matmul(c: &mut Criterion) {
         let matrix_a = create_randomarray2_f32(*size, *size);
         let matrix_b = create_randomarray2_f32(*size, *size);
 
-        group.bench_with_input(BenchmarkId::new("Regular", size), &size, |b_| {
-            b.iter(|| {
+        group.bench_with_input(BenchmarkId::new("Regular", size), &size, |b_, _data| {
+            b_.iter(|| {
                 black_box(regular_matmul_f32(
                     &black_box(matrix_a.view()),
                     &black_box(matrix_b.view()),
@@ -122,8 +122,8 @@ fn bench_matmul(c: &mut Criterion) {
         });
 
         #[cfg(feature = "simd")]
-        group.bench_with_input(BenchmarkId::new("SIMD", size), &size, |b_| {
-            b.iter(|| {
+        group.bench_with_input(BenchmarkId::new("SIMD", size), &size, |b_, _data| {
+            b_.iter(|| {
                 black_box(
                     simd_matmul_f32(&black_box(matrix_a.view()), &black_box(matrix_b.view()))
                         .unwrap(),
@@ -131,8 +131,8 @@ fn bench_matmul(c: &mut Criterion) {
             })
         });
 
-        group.bench_with_input(BenchmarkId::new("BLAS", size), &size, |b_| {
-            b.iter(|| {
+        group.bench_with_input(BenchmarkId::new("BLAS", size), &size, |b_, _data| {
+            b_.iter(|| {
                 black_box(
                     blas_accelerated::matmul(
                         &black_box(matrix_a.view()),
@@ -155,8 +155,8 @@ fn bench_dot(c: &mut Criterion) {
         let vec_a = create_randomarray1_f32(*size);
         let vec_b = create_randomarray1_f32(*size);
 
-        group.bench_with_input(BenchmarkId::new("Regular", size), &size, |b_| {
-            b.iter(|| {
+        group.bench_with_input(BenchmarkId::new("Regular", size), &size, |b_, _data| {
+            b_.iter(|| {
                 black_box(regular_dot_f32(
                     &black_box(vec_a.view()),
                     &black_box(vec_b.view()),
@@ -165,14 +165,14 @@ fn bench_dot(c: &mut Criterion) {
         });
 
         #[cfg(feature = "simd")]
-        group.bench_with_input(BenchmarkId::new("SIMD", size), &size, |b_| {
-            b.iter(|| {
+        group.bench_with_input(BenchmarkId::new("SIMD", size), &size, |b_, _data| {
+            b_.iter(|| {
                 black_box(simd_dot_f32(&black_box(vec_a.view()), &black_box(vec_b.view())).unwrap())
             })
         });
 
-        group.bench_with_input(BenchmarkId::new("BLAS", size), &size, |b_| {
-            b.iter(|| {
+        group.bench_with_input(BenchmarkId::new("BLAS", size), &size, |b_, _data| {
+            b_.iter(|| {
                 black_box(
                     blas_accelerated::dot(&black_box(vec_a.view()), &black_box(vec_b.view()))
                         .unwrap(),

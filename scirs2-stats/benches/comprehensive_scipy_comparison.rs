@@ -440,9 +440,8 @@ fn bench_random_sampling(c: &mut Criterion) {
         // Permutation
         group.bench_with_input(BenchmarkId::new("permutation", n), &n, |b, &n| {
             b.iter(|| {
-                let mut rng = rand::rng();
                 let arr = Array1::from_iter(0..n);
-                black_box(random::permutation(&arr.view(), &mut rng))
+                black_box(random::permutation(&arr.view(), Some(42)))
             })
         });
     }

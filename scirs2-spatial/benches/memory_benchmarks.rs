@@ -254,7 +254,7 @@ impl MemoryBenchmark {
             // Random access pattern (simulate worst-case cache behavior)
             let mut rng = StdRng::seed_from_u64(self.seed);
             let indices: Vec<(usize, usize)> = (0..size * 10)
-                .map(|_| (rng.gen_range(0..size)..rng.gen_range(0..10)))
+                .map(|_| (rng.gen_range(0..size), rng.gen_range(0..10)))
                 .collect();
 
             let start = Instant::now();

@@ -690,6 +690,5 @@ mod tests {
 }
 
 fn main() {
-    println!("Benchmark runner utility");
-    println!("Use 'cargo bench' to run benchmarks");
+    // Silent main function to avoid cargo nextest parsing issues
 }

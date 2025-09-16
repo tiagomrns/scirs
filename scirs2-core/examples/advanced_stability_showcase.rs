@@ -493,7 +493,7 @@ mod tests {
 
     #[test]
     fn test_performance_modeling_workflow() {
-        let manager = StabilityGuaranteeManager::new();
+        let mut manager = StabilityGuaranteeManager::new();
 
         // Record some measurements
         for size in [100, 200, 300] {
@@ -507,7 +507,14 @@ mod tests {
             };
             let system_state = SystemState::current();
 
-            manager.record_performance("test_api", input_chars, performance, system_state);
+            let perf_metrics = scirs2_core::performance_optimization::PerformanceMetrics {
+                operation_times: std::collections::HashMap::new(),
+                strategy_success_rates: std::collections::HashMap::new(),
+                memorybandwidth_utilization: 50.0,
+                cache_hit_rate: 0.8,
+                parallel_efficiency: 0.9
+            };
+            manager.record_performance("test_api", "test_module", system_state, input_chars, perf_metrics);
         }
 
         // Check data points were recorded
@@ -517,20 +524,20 @@ mod tests {
 
     #[test]
     fn test_chaos_engineering_controls() {
-        let manager = StabilityGuaranteeManager::new();
+        let mut manager = StabilityGuaranteeManager::new();
 
         // Initially disabled
-        if let Some((enabled__)) = manager.get_chaos_status() {
-            assert!(!enabled);
+        if let Some((enabled_, _probability, _count)) = manager.get_chaos_status() {
+            assert!(!enabled_);
         }
 
         // Enable chaos engineering
         manager.enable_chaos_engineering(0.1);
 
         // Should now be enabled
-        if let Some((enabled, probability_)) = manager.get_chaos_status() {
-            assert!(enabled);
-            assert!((probability - 0.1).abs() < f64::EPSILON);
+        if let Some((enabled_, probability_, _count)) = manager.get_chaos_status() {
+            assert!(enabled_);
+            assert!((probability_ - 0.1).abs() < f64::EPSILON);
         }
     }
 

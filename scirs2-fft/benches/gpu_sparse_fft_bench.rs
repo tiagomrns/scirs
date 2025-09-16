@@ -46,7 +46,7 @@ fn create_noisy_sparse_signal(
 #[allow(dead_code)]
 fn bench_cpu_sparse_fft_small(b: &mut Bencher) {
     let n = 1024;
-    let frequencies = vec![(10..1.0), (50, 0.5), (100, 0.3)];
+    let frequencies = vec![(10, 1.0), (50, 0.5), (100, 0.3)];
     let signal = create_sparse_signal(n, &frequencies);
     let sparsity = 10;
 

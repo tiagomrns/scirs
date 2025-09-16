@@ -135,6 +135,7 @@ fn demonstrate_advanced_gpu_optimization() -> Result<(), Box<dyn std::error::Err
     println!("🔧 Initializing GPU context...");
     let gpu_config = GpuConfig {
         backend: GpuBackend::Cpu,
+        threads_per_block: 1, // CPU backend only supports 1 thread per block
         ..Default::default()
     };
     let gpu_context = GpuContext::new(gpu_config)?; // Using CPU backend for demo
@@ -324,6 +325,10 @@ mod tests {
     #[test]
     fn test_gpu_optimization_integration() {
         let result = demonstrate_advanced_gpu_optimization();
+        match &result {
+            Ok(_) => println!("GPU optimization test passed"),
+            Err(e) => println!("GPU optimization test failed with error: {}", e),
+        }
         assert!(result.is_ok());
     }
 

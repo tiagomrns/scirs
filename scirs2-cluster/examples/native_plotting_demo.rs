@@ -5,7 +5,7 @@
 
 use ndarray::Array2;
 use scirs2_cluster::preprocess::standardize;
-use scirs2_cluster::vq::{kmeans, vq};
+use scirs2_cluster::vq::{kmeans, kmeans2, vq};
 
 #[cfg(feature = "plotters")]
 use scirs2_cluster::{save_clustering_plot, PlotFormat, PlotOutput};
@@ -201,13 +201,15 @@ mod tests {
     fn test_clustering_pipeline() {
         let data = Array2::from_shape_vec((300, 2), generate_sample_data()).unwrap();
         let standardized = standardize(data.view(), true).unwrap();
-        let (centroids, labels) = kmeans(
+        let (centroids, labels) = kmeans2(
             standardized.view(),
             3,
             Some(10), // fewer iterations for test
             Some(1e-4),
-            Some(42),
-            None,
+            None, // minit method
+            None, // missing method
+            None, // check_finite
+            Some(42), // random seed
         )
         .unwrap();
 

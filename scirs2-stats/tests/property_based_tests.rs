@@ -857,7 +857,10 @@ mod multivariate_properties {
     #[ignore = "timeout"]
     fn correlation_matrix_properties(data: Vec<Vec<f64>>) -> TestResult {
         // Limit matrix size to prevent timeout - max 50x50 matrix
-        if data.len() < 2 || data.len() > 50 || data.iter().any(|row| row.len() < 3 || row.len() > 50) {
+        if data.len() < 2
+            || data.len() > 50
+            || data.iter().any(|row| row.len() < 3 || row.len() > 50)
+        {
             return TestResult::discard();
         }
 

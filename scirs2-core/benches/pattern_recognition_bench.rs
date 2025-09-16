@@ -60,11 +60,11 @@ fn block_pattern(rows: usize, cols: usize, blocksize: usize) -> Vec<usize> {
     let mut pattern = Vec::new();
 
     // Access in blocks
-    for block_row in (0..rows).step_by(block_size) {
-        for block_col in (0..cols).step_by(block_size) {
+    for block_row in (0..rows).step_by(blocksize) {
+        for block_col in (0..cols).step_by(blocksize) {
             // Access all elements within a block
-            for i in 0..block_size.min(rows - block_row) {
-                for j in 0..block_size.min(cols - block_col) {
+            for i in 0..blocksize.min(rows - block_row) {
+                for j in 0..blocksize.min(cols - block_col) {
                     pattern.push((block_row + i) * cols + (block_col + j));
                 }
             }
@@ -105,7 +105,7 @@ fn stencil_pattern(rows: usize, cols: usize) -> Vec<usize> {
 /// Benchmark pattern detection speed
 #[allow(dead_code)]
 fn bench_pattern_detection(c: &mut Criterion) {
-    let mut group = c.benchmark_group(pattern_detection);
+    let mut group = c.benchmark_group("pattern_detection");
 
     // Test different matrix sizes
     let sizes = vec![(32, 32), (64, 64), (128, 128), (256, 256)];
@@ -118,7 +118,7 @@ fn bench_pattern_detection(c: &mut Criterion) {
             BenchmarkId::new("row_major", &size_id),
             &(rows, cols),
             |b, &(rows, cols)| {
-                let pattern = generate_row_major_pattern(rows, cols);
+                let pattern = row_major_pattern(rows, cols);
                 b.iter(|| {
                     let mut recognizer =
                         PatternRecognizer::new(PatternRecognitionConfig::default());
@@ -138,7 +138,7 @@ fn bench_pattern_detection(c: &mut Criterion) {
             BenchmarkId::new("column_major", &size_id),
             &(rows, cols),
             |b, &(rows, cols)| {
-                let pattern = generate_column_major_pattern(rows, cols);
+                let pattern = column_major_pattern(rows, cols);
                 b.iter(|| {
                     let mut recognizer =
                         PatternRecognizer::new(PatternRecognitionConfig::default());
@@ -158,7 +158,7 @@ fn bench_pattern_detection(c: &mut Criterion) {
             BenchmarkId::new("zigzag", &size_id),
             &(rows, cols),
             |b, &(rows, cols)| {
-                let pattern = generate_zigzag_pattern(rows, cols);
+                let pattern = zigzag_pattern(rows, cols);
                 b.iter(|| {
                     let mut recognizer =
                         PatternRecognizer::new(PatternRecognitionConfig::default());
@@ -178,7 +178,7 @@ fn bench_pattern_detection(c: &mut Criterion) {
             BenchmarkId::new("block_4x4", &size_id),
             &(rows, cols),
             |b, &(rows, cols)| {
-                let pattern = generate_block_pattern(rows, cols, 4);
+                let pattern = block_pattern(rows, cols, 4);
                 b.iter(|| {
                     let mut recognizer =
                         PatternRecognizer::new(PatternRecognitionConfig::default());
@@ -200,7 +200,7 @@ fn bench_pattern_detection(c: &mut Criterion) {
 /// Benchmark recognition accuracy with mixed patterns
 #[allow(dead_code)]
 fn bench_mixed_patterns(c: &mut Criterion) {
-    let mut group = c.benchmark_group(mixed_patterns);
+    let mut group = c.benchmark_group("mixed_patterns");
 
     group.bench_function("transition_detection", |b| {
         let rows = 64;
@@ -237,7 +237,7 @@ fn bench_mixed_patterns(c: &mut Criterion) {
 /// Benchmark memory overhead of pattern recognition
 #[allow(dead_code)]
 fn bench_memory_overhead(c: &mut Criterion) {
-    let mut group = c.benchmark_group(memory_overhead);
+    let mut group = c.benchmark_group("memory_overhead");
 
     // Test with different history sizes
     let history_sizes = vec![100, 500, 1000, 5000];
@@ -269,7 +269,7 @@ fn bench_memory_overhead(c: &mut Criterion) {
 /// Benchmark pattern-specific optimizations
 #[allow(dead_code)]
 fn bench_pattern_optimizations(c: &mut Criterion) {
-    let mut group = c.benchmark_group(pattern_optimizations);
+    let mut group = c.benchmark_group("pattern_optimizations");
 
     // Test with different configurations
     let configs = vec![
@@ -316,7 +316,7 @@ fn bench_pattern_optimizations(c: &mut Criterion) {
             BenchmarkId::new("config", name),
             &config,
             |b, config: &PatternRecognitionConfig| {
-                let pattern = generate_stencil_pattern(64, 64);
+                let pattern = stencil_pattern(64, 64);
                 b.iter(|| {
                     let mut recognizer = PatternRecognizer::new(config.clone());
                     recognizer.set_dimensions(vec![64, 64]);
@@ -337,7 +337,7 @@ fn bench_pattern_optimizations(c: &mut Criterion) {
 /// Benchmark real-world scenarios
 #[allow(dead_code)]
 fn bench_real_world_scenarios(c: &mut Criterion) {
-    let mut group = c.benchmark_group(real_world);
+    let mut group = c.benchmark_group("real_world");
 
     // Matrix multiplication access pattern
     group.bench_function("matrix_multiply", |b| {
@@ -403,7 +403,7 @@ fn bench_real_world_scenarios(c: &mut Criterion) {
             recognizer.set_dimensions(vec![rows, cols]);
 
             // Simulate sparse matrix access
-            let pattern = generate_random_pattern(rows, cols, nnz);
+            let pattern = random_pattern(rows, cols, nnz);
             for &idx in &pattern {
                 recognizer.record_access(black_box(idx));
             }

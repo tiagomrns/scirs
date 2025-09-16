@@ -27,13 +27,13 @@ use scirs2_core::simd_ops::{AutoOptimizer, SimdUnifiedOps};
 ///
 /// ```
 /// use ndarray::array;
-/// use scirs2_stats::correlation_simd::pearson_r_simd;
+/// use scirs2_stats::pearson_r_simd;
 ///
 /// let x = array![1.0, 2.0, 3.0, 4.0, 5.0];
 /// let y = array![5.0, 4.0, 3.0, 2.0, 1.0];
 ///
 /// let corr = pearson_r_simd(&x.view(), &y.view()).unwrap();
-/// assert!((corr - (-1.0)).abs() < 1e-10);
+/// assert!((corr - (-1.0_f64)).abs() < 1e-10);
 /// ```
 #[allow(dead_code)]
 pub fn pearson_r_simd<F, D>(x: &ArrayBase<D, Ix1>, y: &ArrayBase<D, Ix1>) -> StatsResult<F>

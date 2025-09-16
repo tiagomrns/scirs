@@ -1,4 +1,4 @@
-use num__complex::Complex64;
+use num_complex::Complex64;
 use scirs2_core::types::{ComplexExt, ComplexOps, NumericConversion};
 
 #[allow(dead_code)]

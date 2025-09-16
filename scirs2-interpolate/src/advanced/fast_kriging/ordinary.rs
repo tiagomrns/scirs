@@ -110,7 +110,7 @@ where
             // Only gets here if linalg is enabled
             #[cfg(feature = "linalg")]
             {
-                use ndarray__linalg::Solve;
+                use ndarray_linalg::Solve;
 
                 // Assess local covariance matrix condition before solving
                 let condition_report = assess_matrix_condition(&cov_matrix.view());
@@ -130,7 +130,7 @@ where
 
                             #[cfg(feature = "linalg")]
                             {
-                                use ndarray__linalg::Solve;
+                                use ndarray_linalg::Solve;
                                 if let Ok(weights_f64) = cov_matrix_f64.solve(&local_values_f64) {
                                     let weights = weights_f64.mapv(|x| F::from_f64(x).unwrap());
                                     let mut prediction = F::zero();
@@ -178,7 +178,7 @@ where
 
                         #[cfg(feature = "linalg")]
                         {
-                            use ndarray__linalg::Solve;
+                            use ndarray_linalg::Solve;
                             if let Ok(weights_f64) = cov_matrix_f64.solve(&local_values_f64) {
                                 let weights = weights_f64.mapv(|x| F::from_f64(x).unwrap());
                                 let mut prediction = F::zero();
@@ -579,7 +579,7 @@ where
         // Solve for weights
         #[cfg(feature = "linalg")]
         {
-            use ndarray__linalg::Solve;
+            use ndarray_linalg::Solve;
 
             let cov_matrix_f64 = cov_matrix.mapv(|x| x.to_f64().unwrap());
             let block_values_f64 = block_values.mapv(|x| x.to_f64().unwrap());

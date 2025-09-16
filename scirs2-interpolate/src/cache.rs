@@ -31,7 +31,10 @@
 //!     3, // degree
 //!     ExtrapolateMode::Extrapolate,
 //!     BSplineCache::default(),
-//! ).unwrap10.0, 1000.iter() {
+//! ).unwrap();
+//!
+//! // Use cached evaluation for fast performance
+//! for x in Array1::linspace(0.0, 10.0, 1000).iter() {
 //!     let y = cached_spline.evaluate_cached(*x).unwrap();
 //! }
 //! ```

@@ -45,7 +45,7 @@ fn create_rectmatrix(m: usize, n: usize) -> Array2<f64> {
 /// Create a complex matrix for complex decomposition benchmarks
 #[allow(dead_code)]
 fn create_complexmatrix(n: usize) -> Array2<num_complex::Complex64> {
-    use num__complex::Complex64;
+    use num_complex::Complex64;
     Array2::from_shape_fn((n, n), |(i, j)| {
         Complex64::new(
             ((i + j) as f64 * 0.1).sin(),

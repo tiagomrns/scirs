@@ -28,11 +28,11 @@ use scirs2_core::simd_ops::{AutoOptimizer, PlatformCapabilities, SimdUnifiedOps}
 ///
 /// ```
 /// use ndarray::array;
-/// use scirs2_stats::descriptive_simd::mean_simd;
+/// use scirs2_stats::mean_simd;
 ///
 /// let data = array![1.0, 2.0, 3.0, 4.0, 5.0];
 /// let mean = mean_simd(&data.view()).unwrap();
-/// assert!((mean - 3.0).abs() < 1e-10);
+/// assert!((mean - 3.0_f64).abs() < 1e-10);
 /// ```
 #[allow(dead_code)]
 pub fn mean_simd<F, D>(x: &ArrayBase<D, Ix1>) -> StatsResult<F>

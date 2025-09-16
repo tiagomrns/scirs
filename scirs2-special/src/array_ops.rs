@@ -375,7 +375,7 @@ pub mod gpu {
         /// Create a new advanced GPU pipeline with comprehensive functionality
         #[cfg(feature = "gpu")]
         pub fn new() -> SpecialResult<Self> {
-            use crate::gpu_context__manager::get_best_gpu_context;
+            use crate::gpu_context_manager::get_best_gpu_context;
 
             let context = get_best_gpu_context().map_err(|e| {
                 SpecialError::ComputationError(format!("Failed to create GPU context: {}", e))

@@ -49,16 +49,20 @@
 //!
 //! ```rust
 //! use ndarray::array;
-//! use scirs2_interpolate::spline::{CubicSpline, SplineBoundaryCondition};
+//! use scirs2_interpolate::spline::CubicSpline;
+//! # use scirs2_interpolate::error::InterpolateResult;
 //!
+//! # fn main() -> InterpolateResult<()> {
 //! let x = array![0.0, 1.0, 2.0, 3.0];
 //! let y = array![0.0, 1.0, 4.0, 9.0];
 //!
-//! // Create natural spline
-//! let spline = CubicSpline::new(&x.view(), &y.view(), SplineBoundaryCondition::Natural)?;
+//! // Create natural spline (default boundary condition)
+//! let spline = CubicSpline::new(&x.view(), &y.view())?;
 //!
 //! // Evaluate at intermediate points
 //! let result = spline.evaluate(1.5)?;
+//! # Ok(())
+//! # }
 //! ```
 
 use crate::error::{InterpolateError, InterpolateResult};
@@ -1203,7 +1207,7 @@ impl<F: crate::traits::InterpolationFloat + ToString> CubicSpline<F> {
     /// #
     /// let x = Array1::from(vec![0.0, 1.0, 2.0, 3.0]);
     /// let y = Array1::from(vec![0.0, 1.0, 4.0, 9.0]);
-    /// let spline = CubicSpline::natural(&x.view(), &y.view()).unwrap();
+    /// let spline = CubicSpline::new(&x.view(), &y.view()).unwrap();
     ///
     /// // Integrate within domain
     /// let integral1 = spline.integrate_with_extrapolation(0.5, 2.5, None).unwrap();

@@ -81,7 +81,7 @@ impl<F: Float + Debug + ScalarOperand + Send + Sync> Callback<F> for FunctionCal
         &mut self_timing: CallbackTiming, _context: &mut CallbackContext<F>,
     ) -> Result<()> {
         (self.func)()
-pub use callback__manager::CallbackManager;
+pub use callback_manager::CallbackManager;
 pub use checkpoint::ModelCheckpoint;
 pub use early__stopping::EarlyStopping;
 pub use gradient__clipping::{GradientClipping, GradientClippingMethod};

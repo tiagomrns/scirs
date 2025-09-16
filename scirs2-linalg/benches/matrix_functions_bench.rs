@@ -124,7 +124,7 @@ fn benchmatrix_exponential(c: &mut Criterion) {
             |b, m| {
                 b.iter(|| {
                     // expm_pade not available, use standard expm
-                    matrix__functions::expm(black_box(&m.view()), None).unwrap()
+                    matrix_functions::expm(black_box(&m.view()), None).unwrap()
                 })
             },
         );
@@ -136,7 +136,7 @@ fn benchmatrix_exponential(c: &mut Criterion) {
             |b, m| {
                 b.iter(|| {
                     // expm_scaling_squaring not available, use standard expm
-                    matrix__functions::expm(black_box(&m.view()), None).unwrap()
+                    matrix_functions::expm(black_box(&m.view()), None).unwrap()
                 })
             },
         );
@@ -175,7 +175,7 @@ fn benchmatrix_logarithm(c: &mut Criterion) {
         group.bench_with_input(BenchmarkId::new("logm_schur", size), &spdmatrix, |b, m| {
             b.iter(|| {
                 // logm_schur not available, use standard logm
-                matrix__functions::logm(black_box(&m.view())).unwrap()
+                matrix_functions::logm(black_box(&m.view())).unwrap()
             })
         });
 
@@ -186,7 +186,7 @@ fn benchmatrix_logarithm(c: &mut Criterion) {
             |b, m| {
                 b.iter(|| {
                     // logm_inverse_scaling_squaring not available, use standard logm
-                    matrix__functions::logm(black_box(&m.view())).unwrap()
+                    matrix_functions::logm(black_box(&m.view())).unwrap()
                 })
             },
         );
@@ -351,7 +351,7 @@ fn benchmatrix_sign(c: &mut Criterion) {
         group.bench_with_input(BenchmarkId::new("sign_function", size), &matrix, |b, m| {
             b.iter(|| {
                 // matrix_sign not available, use signm
-                matrix__functions::signm(black_box(&m.view())).unwrap()
+                matrix_functions::signm(black_box(&m.view())).unwrap()
             })
         });
 
@@ -366,7 +366,7 @@ fn benchmatrix_sign(c: &mut Criterion) {
         group.bench_with_input(BenchmarkId::new("sign_newton", size), &matrix, |b, m| {
             b.iter(|| {
                 // matrix_sign_newton not available, use signm
-                matrix__functions::signm(black_box(&m.view())).unwrap()
+                matrix_functions::signm(black_box(&m.view())).unwrap()
             })
         });
 
@@ -374,7 +374,7 @@ fn benchmatrix_sign(c: &mut Criterion) {
         group.bench_with_input(BenchmarkId::new("sign_schur", size), &matrix, |b, m| {
             b.iter(|| {
                 // matrix_sign_schur not available, use signm
-                matrix__functions::signm(black_box(&m.view())).unwrap()
+                matrix_functions::signm(black_box(&m.view())).unwrap()
             })
         });
     }
@@ -444,7 +444,7 @@ fn benchmatrix_inverse_trigonometric(c: &mut Criterion) {
         group.bench_with_input(BenchmarkId::new("arcsinm", size), &smallmatrix, |b, m| {
             b.iter(|| {
                 // arcsinm not available, use asinm
-                matrix__functions::asinm(black_box(&m.view())).unwrap()
+                matrix_functions::asinm(black_box(&m.view())).unwrap()
             })
         });
 
@@ -452,7 +452,7 @@ fn benchmatrix_inverse_trigonometric(c: &mut Criterion) {
         group.bench_with_input(BenchmarkId::new("arccosm", size), &smallmatrix, |b, m| {
             b.iter(|| {
                 // arccosm not available, use acosm
-                matrix__functions::acosm(black_box(&m.view())).unwrap()
+                matrix_functions::acosm(black_box(&m.view())).unwrap()
             })
         });
 
@@ -463,7 +463,7 @@ fn benchmatrix_inverse_trigonometric(c: &mut Criterion) {
             |b, m| {
                 b.iter(|| {
                     // arctanm not available, use atanm
-                    matrix__functions::atanm(black_box(&m.view())).unwrap()
+                    matrix_functions::atanm(black_box(&m.view())).unwrap()
                 })
             },
         );
@@ -519,7 +519,7 @@ fn bench_generalmatrix_function(c: &mut Criterion) {
             |b, m| {
                 b.iter(|| {
                     // funm not available, use expm as placeholder
-                    matrix__functions::expm(black_box(&m.view()), None).unwrap()
+                    matrix_functions::expm(black_box(&m.view()), None).unwrap()
                 })
             },
         );
@@ -528,7 +528,7 @@ fn bench_generalmatrix_function(c: &mut Criterion) {
         group.bench_with_input(BenchmarkId::new("funm_exp", size), &matrix, |b, m| {
             b.iter(|| {
                 // funm not available, use expm directly
-                matrix__functions::expm(black_box(&m.view()), None).unwrap()
+                matrix_functions::expm(black_box(&m.view()), None).unwrap()
             })
         });
 
@@ -575,7 +575,7 @@ fn bench_accuracy_performance_tradeoffs(c: &mut Criterion) {
             |b, (m_tol)| {
                 b.iter(|| {
                     // expm_with_tolerance not available, use standard expm
-                    matrix__functions::expm(black_box(&m.view()), None).unwrap()
+                    matrix_functions::expm(black_box(&m.view()), None).unwrap()
                 })
             },
         );

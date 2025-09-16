@@ -26,7 +26,7 @@ pub use advanced__environments::{
 pub use algorithms::{RLAlgorithm, TrainingConfig};
 pub use curiosity::{EpisodicCuriosity, NoveltyExploration, ICM, RND};
 pub use environments::{Action, Environment, Observation, Reward};
-pub use model__based::{Dyna, DynamicsModel, WorldModel, MPC};
+pub use model_based::{Dyna, DynamicsModel, WorldModel, MPC};
 pub use policy::{Policy, PolicyGradient, PolicyNetwork};
 pub use policy__optimization::{
     CuriosityConfig, CuriosityDrivenAgent, MAMLAgent, MAMLConfig, NPGConfig, NaturalPolicyGradient,

@@ -15,7 +15,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         println!("This build can use OpenBLAS for advanced linear algebra operations");
 
         // Import the Solve trait only when linalg feature is enabled
-        use ndarray__linalg::Solve;
+        use ndarray_linalg::Solve;
 
         // Demonstrate solving a system using ndarray-linalg
         match a.solve(&b) {

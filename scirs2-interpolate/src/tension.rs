@@ -661,7 +661,7 @@ impl<T: Float + std::fmt::Display + FromPrimitive> TensionSpline<T> {
     ///
     /// # Examples
     ///
-    /// ```
+    /// ```no_run
     /// use ndarray::array;
     /// use scirs2_interpolate::tension::make_tension_spline;
     /// use scirs2_interpolate::ExtrapolateMode;

@@ -741,7 +741,7 @@ fn select_arx_orders(
 /// Solve regularized least squares with enhanced numerical stability
 #[allow(dead_code)]
 fn solve_regularized_ls(a: &Array2<f64>, b: &Array1<f64>) -> SignalResult<Array1<f64>> {
-    // use ndarray__linalg::{Norm, Solve, SVD}; // TODO: Add ndarray-linalg dependency
+    // use ndarray_linalg::{Norm, Solve, SVD}; // TODO: Add ndarray-linalg dependency
 
     // Check condition number
     let cond = compute_matrix_condition_number(a)?;
@@ -764,7 +764,7 @@ fn solve_regularized_ls(a: &Array2<f64>, b: &Array1<f64>) -> SignalResult<Array1
 /// Solve using SVD decomposition for numerical stability
 #[allow(dead_code)]
 fn solve_using_svd(a: &Array2<f64>, b: &Array1<f64>) -> SignalResult<Array1<f64>> {
-    // use ndarray__linalg::SVD; // TODO: Add ndarray-linalg dependency
+    // use ndarray_linalg::SVD; // TODO: Add ndarray-linalg dependency
 
     let (u, s, vt) = a
         .svd(true, true)
@@ -794,7 +794,7 @@ fn solve_using_svd(a: &Array2<f64>, b: &Array1<f64>) -> SignalResult<Array1<f64>
 /// Compute matrix condition number
 #[allow(dead_code)]
 fn compute_matrix_condition_number(matrix: &Array2<f64>) -> SignalResult<f64> {
-    // use ndarray__linalg::{Norm, SVD}; // TODO: Add ndarray-linalg dependency
+    // use ndarray_linalg::{Norm, SVD}; // TODO: Add ndarray-linalg dependency
 
     let (_, s_) = matrix.svd(false, false).map_err(|e| {
         SignalError::ComputationError(format!("SVD for condition number failed: {}", e))
@@ -1209,7 +1209,7 @@ fn compute_stability_margin(model: &SystemModel) -> SignalResult<f64> {
         }
         SystemModel::StateSpace(ss) => {
             // Check eigenvalues of A matrix
-            // use ndarray__linalg::Eig; // TODO: Add ndarray-linalg dependency
+            // use ndarray_linalg::Eig; // TODO: Add ndarray-linalg dependency
             let eigenvalues = ss.a.eig().map_err(|e| {
                 SignalError::ComputationError(format!("Eigenvalue computation failed: {}", e))
             })?;
@@ -1251,7 +1251,7 @@ fn compute_polynomial_roots(coeffs: &Array1<f64>) -> SignalResult<Vec<Complex64>
     }
 
     // Compute eigenvalues (roots)
-    // use ndarray__linalg::Eig; // TODO: Add ndarray-linalg dependency
+    // use ndarray_linalg::Eig; // TODO: Add ndarray-linalg dependency
     match companion.eig() {
         Ok((eigenvals, _)) => Ok(eigenvals.to_vec()),
         Err(_) => {
@@ -1973,7 +1973,7 @@ impl AdaptiveIdentifier {
 /// Compute condition number
 #[allow(dead_code)]
 fn compute_condition_number(params: &ParameterEstimate) -> f64 {
-    // use ndarray__linalg::Norm; // TODO: Add ndarray-linalg dependency
+    // use ndarray_linalg::Norm; // TODO: Add ndarray-linalg dependency
 
     if let Ok(inv) = params.covariance.inv() {
         params.covariance.norm() * inv.norm()

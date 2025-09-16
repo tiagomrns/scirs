@@ -427,7 +427,7 @@ pub use memory_monitor::{
     PerformanceSummary,
 };
 pub use multiscale::{make_adaptive_bspline, MultiscaleBSpline, RefinementCriterion};
-// pub use neural__enhanced::{
+// pub use neural_enhanced::{
 //     make_neural_enhanced_interpolator, ActivationType, EnhancementStrategy, NeuralArchitecture,
 //     NeuralEnhancedInterpolator, NeuralTrainingConfig, TrainingStats,
 // };
@@ -570,7 +570,7 @@ pub use voronoi::{
 };
 
 // Enhanced performance validation exports
-// pub use performance_validation__enhanced::{
+// pub use performance_validation_enhanced::{
 //     quick_validation, validate_stable_release_readiness, validate_with_config,
 //     AccuracyMetrics as EnhancedAccuracyMetrics, AllocationStats, CpuCapabilities,
 //     CrossPlatformConfig, ImpactAssessment, IssueCategory, IssueSeverity, LeakAnalysis,
@@ -582,7 +582,7 @@ pub use voronoi::{
 // };
 
 // Enhanced production hardening exports
-// pub use production_hardening__enhanced::{
+// pub use production_hardening_enhanced::{
 //     quick_production_hardening, run_production_hardening, run_production_hardening_with_config,
 //     AlertSeverity, ConcurrentAccessConfig, CpuIntensiveConfig, DataDistribution,
 //     ErrorMessageAssessment, ErrorMessageQuality, ErrorQualityConfig, HardeningCategory,
@@ -595,7 +595,7 @@ pub use voronoi::{
 // };
 
 // Enhanced documentation polish exports
-// pub use documentation_polish__enhanced::{
+// pub use documentation_polish_enhanced::{
 //     polish_documentation_for_stable_release, polish_documentation_with_config,
 //     quick_documentation_review, ApiStabilityDocumentation, AudienceLevel as PolishAudienceLevel,
 //     BenchmarkComparison, BenchmarkResult as DocBenchmarkResult, BestPracticesGuide,
@@ -626,7 +626,7 @@ pub use voronoi::{
 // };
 
 // API stabilization exports for 0.1.0 stable release
-// pub use api_stabilization__enhanced::{
+// pub use api_stabilization_enhanced::{
 //     analyze_api_for_stable_release, analyze_api_with_config, quick_api_analysis, ApiAnalysisResult,
 //     ApiIssue, ApiStabilizationAnalyzer, ApiStabilizationReport, BreakingChangeAssessment,
 //     DeprecationItem, IssueCategory as ApiIssueCategory, IssueSeverity as ApiIssueSeverity,
@@ -651,7 +651,7 @@ pub use documentation_enhancement::{
 };
 
 // SciPy parity enhancement exports for stable release
-// pub use scipy_parity__enhanced::{
+// pub use scipy_parity_enhanced::{
 //     enhance_scipy_parity_for_stable_release, enhance_scipy_parity_with_config,
 //     quick_scipy_parity_analysis, CompatibilityTestResult, FeatureGapAnalysis,
 //     FeaturePriority as EnhancedFeaturePriority, FocusArea, ImplementationLevel,

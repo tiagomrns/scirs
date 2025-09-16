@@ -133,19 +133,19 @@ pub use selection::{MutualInfoSelector, RecursiveFeatureElimination, VarianceThr
 pub use time_series::{FourierFeatures, LagFeatures, TimeSeriesFeatures, WaveletFeatures};
 
 #[cfg(feature = "simd")]
-pub use normalize__simd::{
+pub use normalize_simd::{
     simd_l2_normalize_1d, simd_maxabs_normalize_1d, simd_minmax_normalize_1d,
     simd_normalize_adaptive, simd_normalize_array, simd_normalize_batch, simd_zscore_normalize_1d,
     AdaptiveBlockSizer,
 };
 
 #[cfg(feature = "simd")]
-pub use features__simd::{
+pub use features_simd::{
     simd_binarize, simd_polynomial_features_optimized, simd_power_transform, SimdPolynomialFeatures,
 };
 
 #[cfg(feature = "simd")]
-pub use scaling__simd::{SimdMaxAbsScaler, SimdRobustScaler, SimdStandardScaler};
+pub use scaling_simd::{SimdMaxAbsScaler, SimdRobustScaler, SimdStandardScaler};
 
 pub use graph::{
     adjacency_to_edge_list, edge_list_to_adjacency, ActivationType, DeepWalk, GraphAutoencoder,

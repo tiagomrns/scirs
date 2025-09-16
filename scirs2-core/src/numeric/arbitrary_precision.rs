@@ -19,7 +19,7 @@ use crate::{
     numeric::precision_tracking::PrecisionContext,
     validation::check_positive,
 };
-use num__bigint::BigInt;
+use num_bigint::BigInt;
 use rug::{
     float::Round, ops::Pow, Complex as RugComplex, Float as RugFloat, Integer as RugInteger,
     Rational as RugRational,

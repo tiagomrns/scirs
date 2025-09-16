@@ -63,7 +63,7 @@ fn basic_validation_example() -> Result<(), Box<dyn std::error::Error>> {
     // Valid data
 
     {
-        use serde__json::json;
+        use serde_json::json;
 
         let valid_data = json!({
             "username": "john_doe",
@@ -133,7 +133,7 @@ fn temporal_validation_example() -> Result<(), Box<dyn std::error::Error>> {
         .add_constraint("timestamps", Constraint::Temporal(time_constraints));
 
     {
-        use serde__json::json;
+        use serde_json::json;
 
         // Valid time series data
         let valid_data = json!({
@@ -193,7 +193,7 @@ fn statistical_validation_example() -> Result<(), Box<dyn std::error::Error>> {
         .add_constraint("measurements", Constraint::Statistical(stats_constraints));
 
     {
-        use serde__json::json;
+        use serde_json::json;
 
         // Valid measurements (mean ~25, std ~2)
         let valid_data = json!({
@@ -253,7 +253,7 @@ fn shape_validation_example() -> Result<(), Box<dyn std::error::Error>> {
         .add_constraint("matrix", Constraint::Shape(shape_constraints));
 
     {
-        use serde__json::json;
+        use serde_json::json;
 
         // Valid 3x3 matrix (smaller for example)
         let shape_3x3 = ShapeConstraints::new()
@@ -348,7 +348,7 @@ fn complex_schema_example() -> Result<(), Box<dyn std::error::Error>> {
         );
 
     {
-        use serde__json::json;
+        use serde_json::json;
 
         let experiment_data = json!({
             "experiment_id": "EXP-2025-001",
@@ -491,7 +491,7 @@ fn custom_validation_example() -> Result<(), Box<dyn std::error::Error>> {
     schema.fields.insert("email".to_string(), email_field);
 
     {
-        use serde__json::json;
+        use serde_json::json;
 
         // Valid email
         let valid_data = json!({

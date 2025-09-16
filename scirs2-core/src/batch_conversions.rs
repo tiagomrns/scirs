@@ -797,7 +797,7 @@ pub mod utils {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use num__complex::Complex64;
+    use num_complex::Complex64;
 
     #[test]
     fn test_batch_conversion_config() {

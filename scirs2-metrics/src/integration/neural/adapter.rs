@@ -132,8 +132,8 @@ impl<F: Float + Debug + Display + FromPrimitive> NeuralMetricAdapter<F> {
 /// let metric = NeuralMetricAdapter::<F>::accuracy();
 ///
 /// // Use with scirs2-neural's Metric trait
-/// let predictions = Array::<F>::zeros([10, 5].into_dyn());
-/// let targets = Array::<F>::zeros([10, 5].into_dyn());
+/// let predictions = Array::<F, IxDyn>::zeros([10, 5].into_dyn());
+/// let targets = Array::<F, IxDyn>::zeros([10, 5].into_dyn());
 ///
 /// let result = metric.update(&predictions, &targets, None);
 /// # }

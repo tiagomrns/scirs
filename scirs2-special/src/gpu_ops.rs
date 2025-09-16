@@ -67,7 +67,7 @@ where
         + Sync
         + 'static,
 {
-    use crate::gpu_context__manager::{get_gpu_pool, record_gpu_performance};
+    use crate::gpu_context_manager::{get_gpu_pool, record_gpu_performance};
     use scirs2_core::gpu::GpuBackend;
 
     // Validate input dimensions
@@ -501,7 +501,7 @@ fn try_gamma_gpu_execution_enhanced<F>(
 where
     F: num_traits::Float + num_traits::FromPrimitive + std::fmt::Debug + Send + Sync + 'static,
 {
-    use crate::gpu_context__manager::get_best_gpu_context;
+    use crate::gpu_context_manager::get_best_gpu_context;
     use scirs2_core::gpu::GpuBackend;
 
     // Get the best available GPU context with intelligent selection
@@ -748,7 +748,7 @@ where
 #[cfg(feature = "gpu")]
 #[allow(dead_code)]
 fn create_gpu_context() -> Result<Arc<GpuContext>, GpuError> {
-    use crate::gpu_context__manager::get_best_gpu_context;
+    use crate::gpu_context_manager::get_best_gpu_context;
 
     match get_best_gpu_context() {
         Ok(context) => Ok(context),

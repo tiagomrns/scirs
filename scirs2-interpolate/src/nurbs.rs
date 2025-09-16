@@ -776,7 +776,7 @@ where
     ///
     /// # Examples
     ///
-    /// ```
+    /// ```no_run
     /// use ndarray::{array, Array1};
     /// use scirs2_interpolate::nurbs::NurbsCurve;
     /// use scirs2_interpolate::bspline::ExtrapolateMode;

@@ -33,7 +33,7 @@
 //!
 //! // Create interpolator with dimension reduction
 //! let interpolator = HighDimensionalInterpolator::builder()
-//!     .with_dimension_reduction(DimensionReductionMethod::PCA { targetdims: 10 })
+//!     .with_dimension_reduction(DimensionReductionMethod::PCA { target_dims: 10 })
 //!     .build(&points.view(), &values.view())
 //!     .unwrap();
 //!
@@ -267,7 +267,7 @@ where
     /// use scirs2_interpolate::high_dimensional::{HighDimensionalInterpolatorBuilder, DimensionReductionMethod};
     ///
     /// let builder = HighDimensionalInterpolatorBuilder::<f64>::new()
-    ///     .with_dimension_reduction(DimensionReductionMethod::PCA { targetdims: 5 });
+    ///     .with_dimension_reduction(DimensionReductionMethod::PCA { target_dims: 5 });
     /// ```
     pub fn with_dimension_reduction(mut self, method: DimensionReductionMethod) -> Self {
         self.dimension_reduction = method;
@@ -282,7 +282,7 @@ where
     /// use scirs2_interpolate::high_dimensional::{HighDimensionalInterpolatorBuilder, LocalMethod};
     ///
     /// let builder = HighDimensionalInterpolatorBuilder::<f64>::new()
-    ///     .with_local_method(LocalMethod::KNearestNeighbors { k: 8, weightpower: 1.5 });
+    ///     .with_local_method(LocalMethod::KNearestNeighbors { k: 8, weight_power: 1.5 });
     /// ```
     pub fn with_local_method(mut self, method: LocalMethod) -> Self {
         self.local_method = method;
@@ -604,7 +604,7 @@ where
     /// let values = Array1::from_vec(vec![0.0, 1.0, 2.0, 3.0]);
     ///
     /// let interpolator = HighDimensionalInterpolator::builder()
-    ///     .with_dimension_reduction(DimensionReductionMethod::PCA { targetdims: 3 })
+    ///     .with_dimension_reduction(DimensionReductionMethod::PCA { target_dims: 3 })
     ///     .build(&points.view(), &values.view())
     ///     .unwrap();
     ///

@@ -8,7 +8,7 @@
 
 use crate::gpu::{GpuBufferImpl, GpuError};
 use metal::{Buffer, CommandQueue, Device};
-use objc2_metal_performance__shaders::{
+use objc2_metal_performance_shaders::{
     MPSCNNConvolution, MPSCNNPoolingAverage, MPSCNNPoolingMax, MPSImageGaussianBlur, MPSMatrix,
     MPSMatrixDescriptor, MPSMatrixFindTopK, MPSMatrixMultiplication, MPSMatrixSoftMax,
     MPSMatrixSum,
@@ -37,7 +37,7 @@ impl MPSContext {
         beta: f32,
     ) -> Result<MPSMatrixMultiplication, GpuError> {
         use objc2::rc::Retained;
-        use objc2_metal_performance__shaders::MPSMatrixMultiplication;
+        use objc2_metal_performance_shaders::MPSMatrixMultiplication;
 
         // Create matrix multiplication operation using proper objc2 patterns
         let matmul = unsafe {
@@ -66,7 +66,7 @@ impl MPSContext {
     /// Create a matrix descriptor
     pub fn creatematrix_descriptor(datatype: MPSDataType) -> Result<MPSMatrixDescriptor, GpuError> {
         use objc2::rc::Retained;
-        use objc2_metal_performance__shaders::MPSMatrixDescriptor;
+        use objc2_metal_performance_shaders::MPSMatrixDescriptor;
 
         // Create matrix descriptor using proper objc2 patterns
         let descriptor = unsafe {
@@ -92,7 +92,7 @@ impl MPSContext {
         buffer: &Buffer,
         descriptor: &MPSMatrixDescriptor,
     ) -> Result<MPSMatrix, GpuError> {
-        use objc2_metal_performance__shaders::MPSMatrix;
+        use objc2_metal_performance_shaders::MPSMatrix;
 
         // Create MPS matrix using proper objc2 initialization
         let matrix =
@@ -141,7 +141,7 @@ impl MPSContext {
 
     /// Create a softmax operation
     pub fn create_softmax(&self, axis: i32) -> Result<MPSMatrixSoftMax, GpuError> {
-        use objc2_metal_performance__shaders::MPSMatrixSoftMax;
+        use objc2_metal_performance_shaders::MPSMatrixSoftMax;
 
         // Create softmax operation using proper objc2 patterns
         let softmax = unsafe {
@@ -164,7 +164,7 @@ impl MPSContext {
 
     /// Create a sum reduction operation
     pub fn create_sum(&self) -> Result<MPSMatrixSum, GpuError> {
-        use objc2_metal_performance__shaders::MPSMatrixSum;
+        use objc2_metal_performance_shaders::MPSMatrixSum;
 
         // Create sum operation using proper objc2 patterns
         let sum_op = unsafe {
@@ -192,7 +192,7 @@ impl MPSContext {
 
     /// Create a top-k operation
     pub fn create_find_top_k(&self, k: usize) -> Result<MPSMatrixFindTopK, GpuError> {
-        use objc2_metal_performance__shaders::MPSMatrixFindTopK;
+        use objc2_metal_performance_shaders::MPSMatrixFindTopK;
 
         // Create top-k operation using proper objc2 patterns
         let top_k = unsafe {
@@ -210,7 +210,7 @@ impl MPSContext {
 
     /// Create a 2D convolution operation
     pub fn channels(usize: usize) -> Result<MPSCNNConvolution, GpuError> {
-        use objc2_metal_performance__shaders::{MPSCNNConvolution, MPSCNNConvolutionDescriptor};
+        use objc2_metal_performance_shaders::{MPSCNNConvolution, MPSCNNConvolutionDescriptor};
 
         // Create convolution descriptor
         let conv_desc = unsafe {
@@ -262,7 +262,7 @@ impl MPSContext {
 
     /// Create a max pooling operation
     pub fn y(usize: usize) -> Result<MPSCNNPoolingMax, GpuError> {
-        use objc2_metal_performance__shaders::MPSCNNPoolingMax;
+        use objc2_metal_performance_shaders::MPSCNNPoolingMax;
 
         // Create max pooling operation using proper objc2 patterns
         let max_pool = unsafe {
@@ -287,7 +287,7 @@ impl MPSContext {
 
     /// Create an average pooling operation
     pub fn y_2(usize: usize) -> Result<MPSCNNPoolingAverage, GpuError> {
-        use objc2_metal_performance__shaders::MPSCNNPoolingAverage;
+        use objc2_metal_performance_shaders::MPSCNNPoolingAverage;
 
         // Create average pooling operation using proper objc2 patterns
         let avg_pool = unsafe {
@@ -312,7 +312,7 @@ impl MPSContext {
 
     /// Create a Gaussian blur operation
     pub fn create_gaussian_blur(&self, sigma: f32) -> Result<MPSImageGaussianBlur, GpuError> {
-        use objc2_metal_performance__shaders::MPSImageGaussianBlur;
+        use objc2_metal_performance_shaders::MPSImageGaussianBlur;
 
         // Create Gaussian blur operation using proper objc2 patterns
         let blur = unsafe {

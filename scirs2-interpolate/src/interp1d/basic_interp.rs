@@ -60,17 +60,16 @@ use num_traits::{Float, FromPrimitive};
 ///
 /// ```rust
 /// # use ndarray::array;
-/// # use scirs2_interpolate::interp1d::basic_interp::nearest_interp;
+/// # use scirs2_interpolate::interp1d::nearest_interpolate;
 /// let x = array![1.0, 2.0, 3.0];
 /// let y = array![10.0, 20.0, 30.0];
+/// let x_new = array![1.3, 1.7];
 ///
+/// let result = nearest_interpolate(&x.view(), &y.view(), &x_new.view()).unwrap();
 /// // Interpolate at x=1.3 (closer to x[0]=1.0)
-/// let result = nearest_interp(&x.view(), &y.view(), 0, 1.3).unwrap();
-/// assert_eq!(result, 10.0);
-///
-/// // Interpolate at x=1.7 (closer to x[1]=2.0)  
-/// let result = nearest_interp(&x.view(), &y.view(), 0, 1.7).unwrap();
-/// assert_eq!(result, 20.0);
+/// assert_eq!(result[0], 10.0);
+/// // Interpolate at x=1.7 (closer to x[1]=2.0)
+/// assert_eq!(result[1], 20.0);
 /// ```
 ///
 /// # Performance Notes
@@ -129,17 +128,16 @@ pub(crate) fn nearest_interp<F: Float>(
 ///
 /// ```rust
 /// # use ndarray::array;
-/// # use scirs2_interpolate::interp1d::basic_interp::linear_interp;
+/// # use scirs2_interpolate::interp1d::linear_interpolate;
 /// let x = array![1.0, 2.0, 3.0];
 /// let y = array![10.0, 20.0, 30.0];
+/// let x_new = array![1.5, 1.25];
 ///
+/// let result = linear_interpolate(&x.view(), &y.view(), &x_new.view()).unwrap();
 /// // Interpolate at x=1.5 (midpoint between x[0] and x[1])
-/// let result = linear_interp(&x.view(), &y.view(), 0, 1.5).unwrap();
-/// assert_eq!(result, 15.0); // Exactly halfway between y[0]=10 and y[1]=20
-///
+/// assert_eq!(result[0], 15.0); // Exactly halfway between y[0]=10 and y[1]=20
 /// // Interpolate at x=1.25 (25% of the way from x[0] to x[1])
-/// let result = linear_interp(&x.view(), &y.view(), 0, 1.25).unwrap();
-/// assert_eq!(result, 12.5);
+/// assert_eq!(result[1], 12.5);
 /// ```
 ///
 /// # Performance Notes
@@ -218,14 +216,14 @@ pub(crate) fn linear_interp<F: Float>(
 ///
 /// ```rust
 /// # use ndarray::array;
-/// # use scirs2_interpolate::interp1d::basic_interp::cubic_interp;
-/// let x = array![0.0, 1.0, 2.0, 3.0, 4.0];
-/// let y = array![0.0, 1.0, 8.0, 27.0, 64.0]; // y = x³
+/// # use scirs2_interpolate::interp1d::cubic_interpolate;
+/// let x = array![0.0f64, 1.0, 2.0, 3.0, 4.0];
+/// let y = array![0.0f64, 1.0, 8.0, 27.0, 64.0]; // y = x³
+/// let x_new = array![1.5f64];
 ///
-/// // Interpolate at x=1.5
-/// let result = cubic_interp(&x.view(), &y.view(), 1, 1.5).unwrap();
+/// let result = cubic_interpolate(&x.view(), &y.view(), &x_new.view()).unwrap();
 /// // Should be close to 1.5³ = 3.375
-/// assert!((result - 3.375).abs() < 0.1);
+/// assert!((result[0] - 3.375_f64).abs() < 0.1);
 /// ```
 ///
 /// # Performance Notes

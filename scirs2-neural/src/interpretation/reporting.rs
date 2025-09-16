@@ -269,7 +269,7 @@ pub fn export_report_data<F>(
         ))),
 #[allow(dead_code)]
 fn export_to_json<F>(report: &ComprehensiveInterpretationReport<F>) -> Result<String>
-    use serde__json::{_json, Map};
+    use serde_json::{_json, Map};
     // Build JSON object with report data
     let mut json_obj = Map::new();
     // Basic report information

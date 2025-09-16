@@ -1007,7 +1007,7 @@ impl<
         Ok(svg)
     /// Export attention data as JSON
     fn export_attention_data_as_json(&self) -> Result<String> {
-        use serde__json::json;
+        use serde_json::json;
         let mut layers_data = serde_json::Map::new();
             let weights_data: Vec<Vec<f64>> = attention_data
                 .weights

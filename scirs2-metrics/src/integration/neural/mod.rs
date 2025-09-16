@@ -31,8 +31,8 @@
 //! let f1_score = NeuralMetricAdapter::<f64>::f1_score();
 //!
 //! // Use with neural network predictions and targets
-//! let predictions = Array::<f64>::zeros(IxDyn(&[10, 1]));
-//! let targets = Array::<f64>::zeros(IxDyn(&[10, 1]));
+//! let predictions = Array::<f64, IxDyn>::zeros(IxDyn(&[10, 1]));
+//! let targets = Array::<f64, IxDyn>::zeros(IxDyn(&[10, 1]));
 //!
 //! // Compute metrics
 //! let acc = accuracy.compute(&predictions, &targets).unwrap();
@@ -82,8 +82,8 @@
 //! use std::collections::HashMap;
 //!
 //! // Example data
-//! let y_true = Array::<f64>::zeros(IxDyn(&[100]));
-//! let y_score = Array::<f64>::zeros(IxDyn(&[100]));
+//! let y_true = Array::<f64, IxDyn>::zeros(IxDyn(&[100]));
+//! let y_score = Array::<f64, IxDyn>::zeros(IxDyn(&[100]));
 //! let history = vec![HashMap::from([
 //!     ("loss".to_string(), 0.5),
 //!     ("accuracy".to_string(), 0.85),

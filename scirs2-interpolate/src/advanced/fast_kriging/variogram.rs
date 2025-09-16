@@ -267,7 +267,7 @@ where
 
     #[cfg(feature = "linalg")]
     {
-        use ndarray__linalg::LeastSquaresSvd;
+        use ndarray_linalg::LeastSquaresSvd;
 
         // Initial guess for parameters
         let max_semivariance = bins

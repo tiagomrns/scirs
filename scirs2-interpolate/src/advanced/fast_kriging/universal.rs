@@ -127,7 +127,7 @@ pub fn compute_trend_coefficients<F: Float + FromPrimitive + 'static>(
 
     #[cfg(feature = "linalg")]
     {
-        use ndarray__linalg::Solve;
+        use ndarray_linalg::Solve;
         // Convert to f64 for linear algebra
         let xtx_f64 = xtx.mapv(|x| x.to_f64().unwrap());
         let xty_f64 = xty.mapv(|x| x.to_f64().unwrap());
@@ -280,7 +280,7 @@ where
             // Only gets here if linalg is enabled
             #[cfg(feature = "linalg")]
             {
-                use ndarray__linalg::Solve;
+                use ndarray_linalg::Solve;
                 // Convert to f64 for linear algebra
                 let aug_matrix_f64 = aug_matrix.mapv(|x| x.to_f64().unwrap());
                 let rhs_f64 = rhs.mapv(|x| x.to_f64().unwrap());
@@ -495,7 +495,7 @@ where
             // Solve the system for weights
             #[cfg(feature = "linalg")]
             let weights = {
-                use ndarray__linalg::Solve;
+                use ndarray_linalg::Solve;
                 // Convert to f64 for linear algebra
                 let cov_matrix_f64 = cov_matrix.mapv(|x| x.to_f64().unwrap());
                 let block_values_f64 = block_values.mapv(|x| x.to_f64().unwrap());

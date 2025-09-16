@@ -11,7 +11,7 @@
 use ndarray::{Array, Array1, Array2, Array3, IxDyn};
 use scirs2_core::error::{CoreError, CoreResult, ErrorContext, ErrorLocation};
 use scirs2_core::memory_efficient::{AccessMode, MemoryMappedArray, ZeroCopySerializable};
-use serde__json::json;
+use serde_json::json;
 use std::fs::File;
 use std::io::Write;
 use std::mem;

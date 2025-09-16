@@ -6,7 +6,7 @@
 
 use ndarray::{Array, ArrayView, Dimension, IxDyn, ShapeBuilder};
 use crate::ufuncs::core::{UFunc, UFuncKind, apply_binary, register_ufunc};
-use crate::ndarray__ext::broadcasting::{broadcast_arrays, broadcast_apply};
+use crate::ndarray_ext::broadcasting::{broadcast_arrays, broadcast_apply};
 use std::sync::Once;
 
 static INIT: Once = Once::new();

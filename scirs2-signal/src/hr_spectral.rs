@@ -15,7 +15,7 @@ use scirs2_linalg::complex::decompositions::{complex_eig, complex_eigh};
 use scirs2_linalg::solve as compute_solve;
 
 #[allow(unused_imports)]
-// use ndarray__linalg::{Eig, Inverse};
+// use ndarray_linalg::{Eig, Inverse};
 /// Configuration for high-resolution spectral estimation
 #[derive(Debug, Clone)]
 pub struct HrSpectralConfig {

@@ -9,7 +9,7 @@ use scirs2_core::validation::data::{
 use std::time::Duration;
 
 #[cfg(all(feature = "data_validation", feature = "serde"))]
-use serde__json::json;
+use serde_json::json;
 
 #[cfg(all(feature = "data_validation", feature = "serde"))]
 #[test]

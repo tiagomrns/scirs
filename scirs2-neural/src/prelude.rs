@@ -35,7 +35,7 @@ pub use crate::augmentation::{
     AudioAugmentation, AugmentationManager, AugmentationPipelineBuilder, FillMode,
     ImageAugmentation, MixAugmentation, TextAugmentation,
 // Enhanced evaluation tools
-pub use crate::model__evaluation::{
+pub use crate::model_evaluation::{
     AveragingMethod, ClassificationMetric, CrossValidationStrategy, EvaluationBuilder,
     EvaluationMetric, ModelEvaluator, RegressionMetric,
 // Model compression

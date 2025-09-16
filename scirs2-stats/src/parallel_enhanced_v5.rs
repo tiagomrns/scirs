@@ -613,13 +613,13 @@ where
         
         if total_elements < 1_000_000 {
             // Small matrices - use static partitioning
-            self.static_parallel_matrix_multiply(a, b, num__cpus::get)
+            self.static_parallel_matrix_multiply(a, b, num_cpus::get)
         } else if memory_required > 100_000_000 {
             // Large memory requirement - use work stealing for better cache usage
-            self.work_stealing_matrix_multiply(a, b, num__cpus::get)
+            self.work_stealing_matrix_multiply(a, b, num_cpus::get)
         } else {
             // Medium size - use dynamic load balancing
-            self.dynamic_parallel_matrix_multiply(a, b, num__cpus::get)
+            self.dynamic_parallel_matrix_multiply(a, b, num_cpus::get)
         }
     }
 

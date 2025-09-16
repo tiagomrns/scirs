@@ -3,7 +3,7 @@
 //! This example demonstrates the high-performance batch type conversion capabilities
 //! in SciRS2 Core, including SIMD acceleration and parallel processing.
 
-use num__complex::Complex64;
+use num_complex::Complex64;
 use scirs2_core::batch_conversions::{utils::*, BatchConversionConfig, BatchConverter};
 use scirs2_core::error::CoreResult;
 use std::time::Instant;

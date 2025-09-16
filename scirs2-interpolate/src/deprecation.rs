@@ -14,14 +14,15 @@
 //! # Usage
 //!
 //! ```rust
-//! use scirs2_interpolate::deprecation::{deprecated_function, DeprecationLevel};
+//! use scirs2_interpolate::{deprecated_function, deprecation::DeprecationLevel};
 //!
-//! #[deprecated_function(
-//!     since = "0.1.0",
-//!     note = "Use make_enhanced_rbf_interpolator instead",
-//!     alternative = "enhanced_rbf::make_enhanced_rbf_interpolator"
-//! )]
 //! pub fn old_rbf_function() {
+//!     deprecated_function!(
+//!         name = "old_rbf_function",
+//!         since = "0.1.0",
+//!         reason = "Use make_enhanced_rbf_interpolator instead",
+//!         alternative = "enhanced_rbf::make_enhanced_rbf_interpolator"
+//!     );
 //!     // Implementation
 //! }
 //! ```

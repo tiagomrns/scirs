@@ -23,9 +23,11 @@
 //!     AdvancedBenchmark, BenchmarkConfig, create_comprehensive_report
 //! };
 //! use ndarray::Array2;
+//! use std::time::Duration;
 //!
 //! # fn main() -> Result<(), Box<dyn std::error::Error>> {
-//! let data = Array2::random((1000, 10), ndarray_rand::rand, _distr::Uniform::new(-1.0, 1.0));
+//! // Create test data using simple initialization instead of ndarray_rand
+//! let data = Array2::from_elem((100, 5), 0.5f64);
 //!
 //! let config = BenchmarkConfig {
 //!     warmup_iterations: 10,
@@ -35,6 +37,9 @@
 //!     gpu_comparison: true,
 //!     stress_testing: true,
 //!     regression_detection: true,
+//!     max_test_duration: Duration::from_secs(300),
+//!     advanced_statistics: true,
+//!     cross_platform: true,
 //! };
 //!
 //! let benchmark = AdvancedBenchmark::new(config);

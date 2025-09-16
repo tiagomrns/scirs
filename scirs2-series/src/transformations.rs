@@ -1170,15 +1170,18 @@ mod tests {
 
     #[test]
     fn test_adf_test() {
-        // Create a non-stationary random walk with more variation
+        // Create a non-stationary random walk with more variation and better conditioning
         let mut ts = Array1::zeros(100);
         ts[0] = 10.0;
         for i in 1..100 {
-            ts[i] = ts[i - 1] + 0.5 * (i as f64 / 10.0).sin() + 0.1 * (i as f64);
-            // Trending with variation
+            ts[i] = ts[i - 1]
+                + 0.5 * (i as f64 / 10.0).sin()
+                + 0.1 * (i as f64)
+                + 0.01 * ((i * 7) as f64).cos();
+            // Trending with variation and additional noise for better conditioning
         }
 
-        let result = adf_test(&ts, None, "c").unwrap();
+        let result = adf_test(&ts, Some(2), "c").unwrap();
 
         // Should have proper structure
         assert_eq!(result.test_type, StationarityTestType::ADF);

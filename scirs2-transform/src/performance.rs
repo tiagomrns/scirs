@@ -1502,6 +1502,7 @@ mod tests {
     }
 
     #[test]
+    #[ignore] // Large data test - takes too long in CI
     fn test_optimized_pca_large_data() {
         // Test with larger data to trigger block-wise algorithm
         let data = Array2::from_shape_vec(

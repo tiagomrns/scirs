@@ -28,9 +28,11 @@
 //! # Examples
 //!
 //! ```
-//! use scirs2_cluster::advanced_clustering::{AdvancedClusterer, QuantumNeuromorphicCluster};
+//! use scirs2_cluster::advanced_clustering::{AdvancedClusterer, QuantumNeuromorphicMetrics};
 //! use ndarray::array;
+//! use scirs2_cluster::error::Result;
 //!
+//! # fn main() -> Result<()> {
 //! // AI-driven Advanced clustering
 //! let data = array![[0.0, 0.0], [1.0, 0.0], [0.0, 1.0], [1.0, 1.0], [5.0, 5.0], [6.0, 5.0]];
 //! let mut advanced = AdvancedClusterer::new()
@@ -44,6 +46,8 @@
 //! println!("Advanced clusters: {:?}", result.clusters);
 //! println!("AI advantage: {:.2}x speedup", result.ai_speedup);
 //! println!("Quantum advantage: {:.2}x optimization", result.quantum_advantage);
+//! # Ok(())
+//! # }
 //! ```
 
 use crate::error::{ClusteringError, Result};

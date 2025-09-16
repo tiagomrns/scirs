@@ -161,8 +161,9 @@ impl CacheBuilder {
 
 /// Example of how to use the cached attribute
 ///
-/// ```rust
-/// use cached::proc__macro::cached;
+/// ```no_run
+/// // Example disabled due to missing cached dependency
+/// use cached::cached;
 ///
 /// #[cached(size = 100)]
 /// pub fn expensive_calculation(x: u64) -> u64 {
@@ -182,10 +183,12 @@ impl CacheBuilder {
 /// let mut cache = TTLSizedCache::<String, String>::new(100, 60);
 ///
 /// // Cache a value
+/// let key = "example_key";
+/// let value = "example_value";
 /// cache.insert(key.to_string(), value.to_string());
 ///
 /// // Retrieve a value
-/// let value = cache.get(&key.to_string());
+/// let retrieved_value = cache.get(&key.to_string());
 /// ```
 /// Compute Fibonacci numbers with memoization
 ///

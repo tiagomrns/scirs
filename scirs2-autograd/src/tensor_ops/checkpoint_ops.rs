@@ -171,7 +171,7 @@ impl<F: Float> Op<F> for CheckpointOp {
 /// ```
 /// # use scirs2_autograd as ag;
 /// # use ag::tensor_ops as T;
-/// # ag::run::<f32_>(|ctx| {
+/// # ag::run::<f32, _, _>(|ctx| {
 /// let input = T::ones(&[2, 2], ctx);
 /// let w1 = T::ones(&[2, 2], ctx);
 /// let layer1 = T::matmul(&input, &w1);
@@ -493,7 +493,7 @@ impl<'g, F: Float> CheckpointOutput<'g, F> for Vec<Tensor<'g, F>> {
 /// ```
 /// # use scirs2_autograd as ag;
 /// # use ag::tensor_ops as T;
-/// # ag::run::<f32_>(|ctx| {
+/// # ag::run::<f32, _, _>(|ctx| {
 /// let input = T::ones(&[1024, 1024], ctx); // A large tensor
 /// let w = T::ones(&[1024, 1024], ctx);
 ///
@@ -579,7 +579,7 @@ pub fn adaptive_checkpoint<'g, F: Float>(
 /// ```
 /// # use scirs2_autograd as ag;
 /// # use ag::tensor_ops as T;
-/// # ag::run::<f32_>(|ctx| {
+/// # ag::run::<f32, _, _>(|ctx| {
 /// // Start tracking memory usage
 /// T::CheckpointProfiler::start_tracking();
 ///

@@ -47,7 +47,7 @@ use std::ops::{Add, Div, Mul, Sub};
 ///     // Evaluating multiple tensors at once.
 ///     // Note that although `random` node is required two times in this computation graph,
 ///     // it's evaluated only once since `Evaluator` is smart enough to avoid duplicated computations.
-///     let pair: Vec<Result<NdArray>> = ctx.evaluator().extend(&[mul, reshaped]).run();
+///     let pair: Vec<Result<NdArray, ag::EvalError>> = ctx.evaluator().extend(&[mul, reshaped]).run();
 /// });
 ///    ```
 #[derive(Clone, Copy)]
@@ -681,8 +681,8 @@ impl<'graph> IncomingTensor {
 /// }
 ///
 /// impl Op<f32> for DummyOp {
-///     fn compute(self_: &mut ComputeContext<f32>) -> Result<(), OpError> { Ok(()) }
-///     fn grad(self_: &mut GradientContext<f32>) {}
+///     fn compute(&self, ctx: &mut ComputeContext<f32>) -> Result<(), OpError> { Ok(()) }
+///     fn grad(&self, ctx: &mut GradientContext<f32>) {}
 /// }
 ///
 /// ag::run(|g: &mut ag::Context<f32>| {

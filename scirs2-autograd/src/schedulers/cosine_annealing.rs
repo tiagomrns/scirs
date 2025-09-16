@@ -25,7 +25,7 @@ use std::f64::consts::PI;
 ///
 /// # Example
 /// ```
-/// use scirs2__autograd::schedulers::{CosineAnnealingLR, LRScheduler};
+/// use scirs2_autograd::schedulers::{CosineAnnealingLR, LRScheduler};
 ///
 /// let scheduler = CosineAnnealingLR::new(0.1f32, 0.001f32, 100);
 ///

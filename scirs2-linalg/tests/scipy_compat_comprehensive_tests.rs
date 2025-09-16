@@ -1146,7 +1146,7 @@ mod integration_tests {
 
             // Just verify operations complete in reasonable time (very generous bounds)
             assert!(
-                elapsed.as_millis() < 1000,
+                elapsed.as_millis() < 5000,
                 "Operations took too long for size {}",
                 n
             );

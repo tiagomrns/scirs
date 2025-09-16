@@ -25,23 +25,23 @@ rand = { workspace = true }
 
 # Standard modules
 scirs2-linalg = { workspace = true, optional = true }
-# scirs2-stats = { workspace = true, optional = true } # Temporarily disabled due to compilation errors
+scirs2-stats = { workspace = true, optional = true }
 scirs2-integrate = { workspace = true, optional = true }
-# scirs2-interpolate = { workspace = true, optional = true } # Temporarily disabled due to compilation errors
+scirs2-interpolate = { workspace = true, optional = true }
 scirs2-optimize = { workspace = true, optional = true }
 scirs2-fft = { workspace = true, optional = true }
-# scirs2-special = { workspace = true, optional = true } # Temporarily disabled due to compilation errors
+scirs2-special = { workspace = true, optional = true }
 scirs2-signal = { workspace = true, optional = true }
 scirs2-sparse = { workspace = true, optional = true }
 scirs2-spatial = { workspace = true, optional = true }
-# scirs2-cluster = { workspace = true, optional = true } # Temporarily disabled due to compilation errors
+scirs2-cluster = { workspace = true, optional = true }
 scirs2-transform = { workspace = true, optional = true }
 scirs2-metrics = { workspace = true, optional = true, default-features = true }
 
 # Preview/experimental modules
 scirs2-ndimage = { workspace = true, optional = true }
 scirs2-neural = { workspace = true, optional = true }
-# scirs2-optim = { workspace = true, optional = true } # Temporarily disabled due to compilation errors
+scirs2-optim = { workspace = true, optional = true }
 scirs2-series = { workspace = true, optional = true }
 scirs2-text = { workspace = true, optional = true }
 scirs2-io = { workspace = true, optional = true }
@@ -72,34 +72,34 @@ netlib = ["linalg", "scirs2-linalg/netlib"]  # Force use of reference Netlib
 
 # Functional groupings
 standard = [
-    "linalg", "integrate", "optimize", 
-    "fft", "signal", "sparse", "spatial", 
+    "linalg", "stats", "integrate", "interpolate", "optimize",
+    "fft", "special", "signal", "sparse", "spatial", "cluster",
     "transform", "metrics"
-] # stats, cluster, interpolate, and special temporarily disabled
-ai = ["neural", "autograd"] # optim temporarily disabled
+]
+ai = ["neural", "optim", "autograd"]
 experimental = [
-    "ndimage", "neural", "series", "text", 
+    "ndimage", "neural", "optim", "series", "text",
     "io", "datasets", "graph", "vision", "autograd"
-] # optim temporarily disabled
+]
 full = ["standard", "experimental"]
 
 # Individual module features
 linalg = ["dep:scirs2-linalg"]
-stats = [] # Temporarily disabled due to compilation errors - placeholder feature
+stats = ["dep:scirs2-stats"]
 integrate = ["dep:scirs2-integrate"]
-interpolate = [] # Temporarily disabled due to compilation errors - placeholder feature
+interpolate = ["dep:scirs2-interpolate"]
 optimize = ["dep:scirs2-optimize"]
 fft = ["dep:scirs2-fft"]
-special = [] # Temporarily disabled due to compilation errors - placeholder feature
+special = ["dep:scirs2-special"]
 signal = ["dep:scirs2-signal"]
 sparse = ["dep:scirs2-sparse"]
 spatial = ["dep:scirs2-spatial"]
-cluster = [] # Temporarily disabled due to compilation errors - placeholder feature
+cluster = ["dep:scirs2-cluster"]
 transform = ["dep:scirs2-transform"]
 metrics = ["dep:scirs2-metrics"]
 ndimage = ["dep:scirs2-ndimage"]
 neural = ["dep:scirs2-neural"]
-optim = [] # Temporarily disabled due to compilation errors - placeholder feature
+optim = ["dep:scirs2-optim"]
 series = ["dep:scirs2-series"]
 text = ["dep:scirs2-text"]
 io = ["dep:scirs2-io"]

@@ -35,7 +35,7 @@ use std::fmt::Debug;
 ///
 /// ```
 /// use ndarray::array;
-/// use scirs2_cluster::leader::leader_clustering;
+/// use scirs2_cluster::leader::{leader_clustering, euclidean_distance};
 ///
 /// let data = array![
 ///     [1.0, 2.0],

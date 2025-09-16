@@ -1271,7 +1271,7 @@ fn validate_lombscargle(
     results: &mut HashMap<String, ValidationTestResult>,
     config: &ValidationConfig,
 ) -> SignalResult<()> {
-    // use crate::lombscargle_enhanced__validation::run_enhanced_validation;
+    // use crate::lombscargle_enhanced_validation::run_enhanced_validation;
 
     let start_time = std::time::Instant::now();
     let test_name = "lombscargle".to_string();

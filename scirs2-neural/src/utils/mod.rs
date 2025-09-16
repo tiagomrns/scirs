@@ -29,7 +29,7 @@ pub use evaluation::{ConfusionMatrix, FeatureImportance, LearningCurve, ROCCurve
 pub use initializers::*;
 pub use metrics::*;
 pub use model_viz::{sequential_model_dataflow, sequential_model_summary, ModelVizOptions};
-// pub use positional__encoding::{
+// pub use positional_encoding::{
 //     LearnedPositionalEncoding, PositionalEncoding, PositionalEncodingFactory,
 //     PositionalEncodingType, RelativePositionalEncoding, SinusoidalPositionalEncoding,
 // }; // Disabled - module is broken

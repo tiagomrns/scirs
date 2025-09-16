@@ -614,11 +614,11 @@ pub use voronoi::{
 // };
 
 // SciPy parity completion exports
-// pub use scipy_complete__parity::{
+// pub use scipy_complete_parity::{
 //     create_scipy_interface, validate_scipy_parity as validate_complete_scipy_parity, PPoly,
 //     SciPyBSpline, SciPyCompatInterface, SciPyCubicSpline, SciPyInterpolate,
 // };
-// pub use scipy_parity__completion::{
+// pub use scipy_parity_completion::{
 //     create_scipy_parity_checker, quick_scipy_parity_check, validate_scipy_parity, FeatureAnalysis,
 //     MissingFeature as ParityMissingFeature, ParityCompletionConfig, PartialFeature,
 //     PerformanceComparison as ParityPerformanceComparison, SciPyFeature, SciPyParityCompletion,

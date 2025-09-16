@@ -355,7 +355,7 @@ pub use crate::quantum_optimization::{
 };
 
 // Advanced JIT Compilation re-exports
-// pub use crate::advanced_jit__compilation::{
+// pub use crate::advanced_jit_compilation::{
 //     AdaptiveCodeGenerator, CompilationStatistics, JitAnalytics, JitCompilerConfig, JitProfiler,
 //     KernelCache, KernelMetadata, KernelPerformance, LlvmCompilationEngine, OptimizationResults,
 //     PerformanceImprovement, RuntimeOptimizer, advancedJitCompiler,

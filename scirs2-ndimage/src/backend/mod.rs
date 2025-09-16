@@ -26,7 +26,7 @@ pub use concrete_gpu_backends::CudaContext;
 pub use concrete_gpu_backends::OpenCLContext;
 // TODO: Implement MetalContext in concrete_gpu_backends.rs
 // #[cfg(all(target_os = "macos", feature = "metal"))]
-// pub use concrete_gpu__backends::MetalContext;
+// pub use concrete_gpu_backends::MetalContext;
 
 use crate::error::{NdimageError, NdimageResult};
 use ndarray::{Array, ArrayView, Dimension};

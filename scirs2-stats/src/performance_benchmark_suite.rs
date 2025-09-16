@@ -8,7 +8,7 @@
 
 use crate::benchmark_suite::{BenchmarkConfig, BenchmarkMetrics};
 use crate::error::StatsResult;
-// use crate::advanced_error_enhancements__v2::CompatibilityImpact; // Commented out temporarily
+// use crate::advanced_error_enhancements_v2::CompatibilityImpact; // Commented out temporarily
 use ndarray::Array1;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;

@@ -22,7 +22,7 @@ pub use crate::training::{
     GradientAccumulationConfig, GradientAccumulator, GradientStats, MixedPrecisionConfig,
     MixedPrecisionManager, Trainer, TrainingConfig, TrainingSession, ValidationSettings,
 pub use crate::transformer::{TransformerDecoderLayer, TransformerEncoderLayer};
-// pub use crate::utils::positional__encoding::{PositionalEncoding, SinusoidalPositionalEncoding}; // Disabled - module is broken
+// pub use crate::utils::positional_encoding::{PositionalEncoding, SinusoidalPositionalEncoding}; // Disabled - module is broken
 // Performance optimizations
 pub use crate::performance::{
     OptimizationCapabilities, PerformanceOptimizer, PerformanceProfiler, ThreadPoolManager,

@@ -10,7 +10,7 @@ use crate::error::Result;
 use crate::layers::{Dense, Layer, LayerNorm, Sequential};
 use crate::models::architectures::{ViTConfig, VisionTransformer};
 use crate::transformer::TransformerEncoderLayer;
-// use crate::utils::positional__encoding::{PositionalEncoding, SinusoidalPositionalEncoding}; // Disabled - module is broken
+// use crate::utils::positional_encoding::{PositionalEncoding, SinusoidalPositionalEncoding}; // Disabled - module is broken
 use ndarray::{Array, Axis, IxDyn, ScalarOperand};
 use num_traits::Float;
 use rand::{rngs::SmallRng,  SeedableRng};

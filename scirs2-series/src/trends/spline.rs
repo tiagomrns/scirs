@@ -32,7 +32,7 @@ use crate::error::{Result, TimeSeriesError};
 ///
 /// ```
 /// use ndarray::Array1;
-/// use scirs2__series::trends::{estimate_spline_trend, SplineTrendOptions, SplineType, KnotPlacementStrategy};
+/// use scirs2_series::trends::{estimate_spline_trend, SplineTrendOptions, SplineType, KnotPlacementStrategy};
 ///
 /// // Create a sample time series with a trend and noise
 /// let n = 100;

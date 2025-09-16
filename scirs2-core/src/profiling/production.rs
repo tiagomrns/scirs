@@ -31,7 +31,8 @@
 //! let mut profiler = ProductionProfiler::new(config)?;
 //!
 //! // Profile a real workload
-//! profiler.start_workload_analysis("matrix_operations", WorkloadType::ComputeIntensive)?;
+//! let start_time = std::time::SystemTime::now();
+//! let session_id = profiler.start_profiling_workload("matrix_operations", WorkloadType::ComputeIntensive)?;
 //!
 //! // Your production code here
 //! fn expensivematrix_computation() -> f64 {
@@ -46,7 +47,7 @@
 //! }
 //! let result = expensivematrix_computation();
 //!
-//! let report = profiler.finish_workload_analysis()?;
+//! let report = profiler.finish_workload_analysis("matrix_operations", WorkloadType::ComputeIntensive, start_time)?;
 //!
 //! // Analyze bottlenecks
 //! if report.has_bottlenecks() {

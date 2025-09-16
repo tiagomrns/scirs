@@ -5,7 +5,7 @@
 
 use criterion::{criterion_group, criterion_main, BenchmarkId, Criterion, Throughput};
 use ndarray::{Array1, Array2, Array3, Array4, Axis};
-use scirs2__linalg::prelude::*;
+use scirs2_linalg::prelude::*;
 use std::hint::black_box;
 use std::time::Duration;
 

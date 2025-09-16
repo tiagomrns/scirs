@@ -20,7 +20,7 @@
 //!
 //! ```rust
 //! use ndarray::Array1;
-//! use scirs2__interpolate::adaptive_singularity::{SingularityDetector, SingularityType};
+//! use scirs2_interpolate::adaptive_singularity::{SingularityDetector, SingularityType};
 //!
 //! // Create sample data with a singularity (jump discontinuity)
 //! let x = Array1::linspace(0.0, 2.0, 100);

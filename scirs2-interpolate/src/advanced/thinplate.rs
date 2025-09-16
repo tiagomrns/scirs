@@ -68,7 +68,7 @@ where
     /// # #[cfg(feature = "linalg")]
     /// # {
     /// use ndarray::{array, Array2};
-    /// use scirs2__interpolate::advanced::thinplate::ThinPlateSpline;
+    /// use scirs2_interpolate::advanced::thinplate::ThinPlateSpline;
     ///
     /// // Create 2D scattered data
     /// let points = Array2::from_shape_vec((4, 2), vec![

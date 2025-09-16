@@ -49,7 +49,7 @@
 //!
 //! ```rust
 //! use ndarray::array;
-//! use scirs2__interpolate::spline::{CubicSpline, SplineBoundaryCondition};
+//! use scirs2_interpolate::spline::{CubicSpline, SplineBoundaryCondition};
 //!
 //! let x = array![0.0, 1.0, 2.0, 3.0];
 //! let y = array![0.0, 1.0, 4.0, 9.0];
@@ -142,6 +142,7 @@ pub enum SplineBoundaryCondition {
     ///
     /// **Example:**
     /// ```rust
+    /// use scirs2_interpolate::spline::SplineBoundaryCondition;
     /// // Specify horizontal tangents at both ends
     /// let bc = SplineBoundaryCondition::Clamped(0.0, 0.0);
     /// ```
@@ -170,8 +171,10 @@ pub enum SplineBoundaryCondition {
     ///
     /// **Example:**
     /// ```rust
+    /// use ndarray::array;
+    /// use scirs2_interpolate::spline::SplineBoundaryCondition;
     /// // For angular data from 0 to 2π
-    /// let x = array![0.0, π/2.0, π, 3.0*π/2.0, 2.0*π];
+    /// let x = array![0.0, 1.57, 3.14, 4.71, 6.28]; // π/2, π, 3π/2, 2π
     /// let y = array![0.0, 1.0, 0.0, -1.0, 0.0]; // sine-like data
     /// let bc = SplineBoundaryCondition::Periodic;
     /// ```
@@ -199,6 +202,7 @@ pub enum SplineBoundaryCondition {
     ///
     /// **Example:**
     /// ```rust
+    /// use scirs2_interpolate::spline::SplineBoundaryCondition;
     /// // Specify positive curvature (concave up) at left, negative at right
     /// let bc = SplineBoundaryCondition::SecondDerivative(1.0, -1.0);
     /// ```
@@ -360,7 +364,7 @@ impl<F: crate::traits::InterpolationFloat + ToString> CubicSpline<F> {
     ///
     /// ```
     /// use ndarray::array;
-    /// use scirs2__interpolate::spline::CubicSpline;
+    /// use scirs2_interpolate::spline::CubicSpline;
     ///
     /// let x = array![0.0, 1.0, 2.0, 3.0];
     /// let y = array![0.0, 1.0, 4.0, 9.0];
@@ -1193,8 +1197,8 @@ impl<F: crate::traits::InterpolationFloat + ToString> CubicSpline<F> {
     /// # Examples
     ///
     /// ```rust
-    /// # use scirs2__interpolate::spline::CubicSpline;
-    /// # use scirs2__interpolate::interp1d::ExtrapolateMode;
+    /// # use scirs2_interpolate::spline::CubicSpline;
+    /// # use scirs2_interpolate::interp1d::ExtrapolateMode;
     /// # use ndarray::{Array1, ArrayView1};
     /// #
     /// let x = Array1::from(vec![0.0, 1.0, 2.0, 3.0]);
@@ -1785,7 +1789,7 @@ impl<F: crate::traits::InterpolationFloat + ToString> CubicSpline<F> {
     ///
     /// ```
     /// use ndarray::array;
-    /// use scirs2__interpolate::spline::CubicSpline;
+    /// use scirs2_interpolate::spline::CubicSpline;
     ///
     /// let x = array![0.0, 1.0, 2.0, 3.0];
     /// let y = array![0.0, 1.0, 4.0, 9.0];
@@ -1871,7 +1875,7 @@ impl<F: crate::traits::InterpolationFloat + ToString> CubicSpline<F> {
     ///
     /// ```
     /// use ndarray::array;
-    /// use scirs2__interpolate::spline::CubicSpline;
+    /// use scirs2_interpolate::spline::CubicSpline;
     ///
     /// let x = array![0.0, 1.0, 2.0, 3.0];
     /// let y = array![0.0, 1.0, 4.0, 9.0];
@@ -3263,7 +3267,7 @@ fn root_far_enough<F: Float>(roots: &[F], candidate: F, tolerance: F) -> bool {
 ///
 /// ```
 /// use ndarray::array;
-/// use scirs2__interpolate::spline::make_interp_spline;
+/// use scirs2_interpolate::spline::make_interp_spline;
 ///
 /// let x = array![0.0, 1.0, 2.0, 3.0];
 /// let y = array![0.0, 1.0, 4.0, 9.0];
@@ -3494,7 +3498,7 @@ where
 ///
 /// ```rust
 /// use ndarray::array;
-/// use scirs2__interpolate::spline::cubic_spline_scipy;
+/// use scirs2_interpolate::spline::cubic_spline_scipy;
 ///
 /// let x = array![0.0, 1.0, 2.0, 3.0];
 /// let y = array![0.0, 1.0, 4.0, 9.0];

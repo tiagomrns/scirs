@@ -18,7 +18,7 @@ fn main() {
 }
 #[allow(dead_code)]
 fn main() -> Result<(), Box<dyn std::error::Error>> {
-    use scirs2__metrics::integration::neural::NeuralMetricAdapter;
+    use scirs2_metrics::integration::neural::NeuralMetricAdapter;
     use scirs2_neural::activations::relu::ReLU;
     use scirs2_neural::activations::sigmoid::Sigmoid;
     use scirs2_neural::callbacks::{

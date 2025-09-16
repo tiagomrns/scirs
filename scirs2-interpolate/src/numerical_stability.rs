@@ -22,7 +22,7 @@
 //!
 //! ```rust
 //! use ndarray::Array2;
-//! use scirs2__interpolate::numerical_stability::{assess_matrix_condition, StabilityLevel};
+//! use scirs2_interpolate::numerical_stability::{assess_matrix_condition, StabilityLevel};
 //!
 //! // Assess the condition of a matrix
 //! let matrix = Array2::<f64>::eye(3);

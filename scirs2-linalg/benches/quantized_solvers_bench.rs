@@ -7,8 +7,8 @@ use std::hint::black_box;
 
 use criterion::{criterion_group, criterion_main, BenchmarkId, Criterion};
 use ndarray::{Array1, Array2, ArrayView1};
-use scirs2__linalg::matrixfree::{conjugate_gradient, gmres, LinearOperator};
-use scirs2__linalg::quantization::{
+use scirs2_linalg::matrixfree::{conjugate_gradient, gmres, LinearOperator};
+use scirs2_linalg::quantization::{
     quantized_matrixfree::quantized_to_linear_operator,
     quantized_matrixfree::QuantizedMatrixFreeOp,
     solvers::{

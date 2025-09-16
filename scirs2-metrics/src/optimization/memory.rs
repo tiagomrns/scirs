@@ -100,7 +100,7 @@ impl ChunkedMetrics {
     ///         (0.0, 0)
     ///     }
     ///
-    ///     fn update_state(&self, state: &mut Self::State, batch_true: &[f64], batchpred: &[f64]) -> Result<()> {
+    ///     fn update_state(&self, state: &mut Self::State, batch_true: &[f64], batch_pred: &[f64]) -> Result<()> {
     ///         for (y_t, y_p) in batch_true.iter().zip(batch_pred.iter()) {
     ///             state.0 += (y_t - y_p).abs();
     ///             state.1 += 1;

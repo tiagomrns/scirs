@@ -17,7 +17,7 @@
 //!
 //! ```rust
 //! use ndarray::Array2;
-//! use scirs2__series::dimensionality_reduction::{PCAConfig, apply_pca};
+//! use scirs2_series::dimensionality_reduction::{PCAConfig, apply_pca};
 //!
 //! // Create sample time series data matrix (n_series × n_timepoints)
 //! let data = Array2::from_shape_vec((5, 100), (0..500).map(|x| x as f64).collect()).unwrap();
@@ -337,7 +337,7 @@ pub struct SymbolicApproximationResult {
 ///
 /// ```rust
 /// use ndarray::Array2;
-/// use scirs2__series::dimensionality_reduction::{PCAConfig, apply_pca};
+/// use scirs2_series::dimensionality_reduction::{PCAConfig, apply_pca};
 ///
 /// let data = Array2::from_shape_vec((10, 50), (0..500).map(|x| x as f64).collect()).unwrap();
 /// let config = PCAConfig::default();

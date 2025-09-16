@@ -62,7 +62,7 @@ impl Default for SSAOptions {
 ///
 /// ```
 /// use ndarray::array;
-/// use scirs2__series::decomposition::{ssa_decomposition, SSAOptions};
+/// use scirs2_series::decomposition::{ssa_decomposition, SSAOptions};
 ///
 /// let ts = array![1.0, 2.0, 3.0, 2.0, 1.0, 2.0, 3.0, 2.0, 1.0, 2.0, 3.0, 2.0];
 /// let mut options = SSAOptions::default();

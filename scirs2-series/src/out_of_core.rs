@@ -15,7 +15,7 @@
 //! # Examples
 //!
 //! ```rust
-//! use scirs2__series::out_of_core::{ChunkedProcessor, ProcessingConfig};
+//! use scirs2_series::out_of_core::{ChunkedProcessor, ProcessingConfig};
 //!
 //! // Process a large dataset in chunks
 //! let config = ProcessingConfig::new()

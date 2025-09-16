@@ -41,7 +41,7 @@ impl<F: Float + FromPrimitive + Debug + std::fmt::Display> BezierCurve<F> {
     ///
     /// ```
     /// use ndarray::array;
-    /// use scirs2__interpolate::bezier::BezierCurve;
+    /// use scirs2_interpolate::bezier::BezierCurve;
     ///
     /// // Create a 2D cubic Bezier curve (degree 3) with 4 control points
     /// let control_points = array![
@@ -283,7 +283,7 @@ impl<F: Float + FromPrimitive + Debug + std::fmt::Display> BezierSurface<F> {
     ///
     /// ```
     /// use ndarray::array;
-    /// use scirs2__interpolate::bezier::BezierSurface;
+    /// use scirs2_interpolate::bezier::BezierSurface;
     ///
     /// // Create a 3x3 grid of control points for a 3D Bezier surface
     /// let control_points = array![

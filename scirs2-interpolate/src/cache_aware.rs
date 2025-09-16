@@ -24,7 +24,7 @@
 //!
 //! ```rust
 //! use ndarray::{Array1, Array2};
-//! use scirs2__interpolate::cache_aware::{
+//! use scirs2_interpolate::cache_aware::{
 //!     CacheAwareRBF, CacheOptimizedConfig
 //! };
 //!

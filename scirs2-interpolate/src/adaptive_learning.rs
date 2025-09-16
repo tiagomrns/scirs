@@ -18,8 +18,8 @@
 //!
 //! ```rust
 //! use ndarray::Array1;
-//! use scirs2__interpolate::adaptive_learning::{ActiveLearner, SamplingStrategy};
-//! use scirs2__interpolate::multiscale::MultiscaleBSpline;
+//! use scirs2_interpolate::adaptive_learning::{ActiveLearner, SamplingStrategy};
+//! use scirs2_interpolate::multiscale::MultiscaleBSpline;
 //!
 //! // Create sample data
 //! let x = Array1::linspace(0.0_f64, 10.0_f64, 20);

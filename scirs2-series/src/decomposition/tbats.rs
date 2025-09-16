@@ -123,7 +123,7 @@ pub struct TBATSParameters {
 ///
 /// ```
 /// use ndarray::array;
-/// use scirs2__series::decomposition::{tbats_decomposition, TBATSOptions};
+/// use scirs2_series::decomposition::{tbats_decomposition, TBATSOptions};
 ///
 /// let ts = array![1.0, 2.0, 3.0, 2.0, 1.0, 2.0, 3.0, 2.0, 1.0, 2.0, 3.0, 2.0,
 ///                 1.5, 2.5, 3.5, 2.5, 1.5, 2.5, 3.5, 2.5, 1.5, 2.5, 3.5, 2.5];

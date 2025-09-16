@@ -80,7 +80,7 @@ impl Default for MultiSeasonalConfig {
 ///
 /// ```
 /// use ndarray::array;
-/// use scirs2__series::decomposition::{decompose_multi_seasonal, MultiSeasonalConfig};
+/// use scirs2_series::decomposition::{decompose_multi_seasonal, MultiSeasonalConfig};
 ///
 /// let ts = array![1.0, 2.0, 3.0, 2.0, 1.0, 2.0, 3.0, 2.0, 1.0, 2.0, 3.0, 2.0,
 ///                 2.0, 3.0, 4.0, 3.0, 2.0, 3.0, 4.0, 3.0, 2.0, 3.0, 4.0, 3.0];

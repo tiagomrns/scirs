@@ -96,7 +96,7 @@ pub struct STRResult<F> {
 ///
 /// ```
 /// use ndarray::array;
-/// use scirs2__series::decomposition::{str_decomposition, STROptions};
+/// use scirs2_series::decomposition::{str_decomposition, STROptions};
 ///
 /// let ts = array![1.0, 2.0, 3.0, 2.0, 1.0, 2.0, 3.0, 2.0, 1.0, 2.0, 3.0, 2.0,
 ///                 1.5, 2.5, 3.5, 2.5, 1.5, 2.5, 3.5, 2.5, 1.5, 2.5, 3.5, 2.5];

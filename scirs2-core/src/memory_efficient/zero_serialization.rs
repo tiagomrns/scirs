@@ -30,7 +30,7 @@
 //! ```no_run
 //! use ndarray::Array2;
 //! use scirs2_core::memory_efficient::{MemoryMappedArray, ZeroCopySerialization};
-//! use serde__json::json;
+//! use serde_json::json;
 //! use std::path::Path;
 //!
 //! # fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -76,7 +76,7 @@
 //!
 //! ```no_run
 //! use scirs2_core::memory_efficient::{MemoryMappedArray, ZeroCopySerialization};
-//! use serde__json::json;
+//! use serde_json::json;
 //! use std::path::Path;
 //!
 //! # fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -224,7 +224,7 @@
 //! ```no_run
 //! use ndarray::Array2;
 //! use scirs2_core::memory_efficient::{AccessMode, MemoryMappedArray, ZeroCopySerialization};
-//! use serde__json::json;
+//! use serde_json::json;
 //! use std::path::Path;
 //!
 //! # #[repr(C)]
@@ -517,7 +517,7 @@ pub trait ZeroCopySerialization<A: ZeroCopySerializable> {
     ///
     /// ```no_run
     /// # use scirs2_core::memory_efficient::{MemoryMappedArray, ZeroCopySerialization};
-    /// # use serde__json::json;
+    /// # use serde_json::json;
     /// # fn example() -> Result<(), Box<dyn std::error::Error>> {
     /// # let mmap: MemoryMappedArray<f64> = unimplemented!();
     /// let metadata = json!({"description": "Example array", "created": "2023-05-20"});
@@ -818,7 +818,7 @@ impl<A: ZeroCopySerializable> MemoryMappedArray<A> {
     /// ```no_run
     /// # use ndarray::Array2;
     /// # use scirs2_core::memory_efficient::MemoryMappedArray;
-    /// # use serde__json::json;
+    /// # use serde_json::json;
     /// # fn example() -> Result<(), Box<dyn std::error::Error>> {
     /// // Create an ndarray
     /// let data = Array2::<f64>::from_shape_fn((100, 100), |(i, j)| (i * 100 + j) as f64);
@@ -1013,7 +1013,7 @@ impl<A: ZeroCopySerializable> MemoryMappedArray<A> {
     ///
     /// ```no_run
     /// # use scirs2_core::memory_efficient::MemoryMappedArray;
-    /// # use serde__json::json;
+    /// # use serde_json::json;
     /// # fn example() -> Result<(), Box<dyn std::error::Error>> {
     /// // Add processing information to the metadata
     /// let updated_metadata = json!({

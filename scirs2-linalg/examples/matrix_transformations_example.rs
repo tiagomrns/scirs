@@ -2,8 +2,8 @@
 #[allow(unused_imports)]
 mod example {
     use ndarray::array;
-    use scirs2__autograd::error::Result as AutogradResult;
-    use scirs2__autograd::variable::Variable;
+    use scirs2_autograd::error::Result as AutogradResult;
+    use scirs2_autograd::variable::Variable;
     // Import the implemented autograd transformations
     use scirs2_linalg::autograd::transformations::variable::{
         project, reflectionmatrix, rotationmatrix_2d, scalingmatrix, shearmatrix,

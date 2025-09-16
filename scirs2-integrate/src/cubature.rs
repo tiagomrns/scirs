@@ -151,7 +151,7 @@ fn transform_for_infinite_bounds<F: IntegrateFloat>(x: F, a: &Bound<F>, b: &Boun
 /// # Examples
 ///
 /// ```
-/// use scirs2__integrate::cubature::{cubature, Bound};
+/// use scirs2_integrate::cubature::{cubature, Bound};
 /// use ndarray::Array1;
 ///
 /// // Define a 2D integrand: f(x,y) = x * y
@@ -553,7 +553,7 @@ where
 /// # Examples
 ///
 /// ```
-/// use scirs2__integrate::cubature::nquad;
+/// use scirs2_integrate::cubature::nquad;
 ///
 /// // Integrate x*y over [0,1]×[0,1]
 /// let f = |args: &[f64]| args[0] * args[1];

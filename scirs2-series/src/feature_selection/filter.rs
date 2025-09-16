@@ -28,7 +28,7 @@ impl FilterMethods {
     ///
     /// ```
     /// use ndarray::Array2;
-    /// use scirs2__series::feature_selection::FilterMethods;
+    /// use scirs2_series::feature_selection::FilterMethods;
     ///
     /// let features = Array2::from_shape_vec((100, 5), (0..500).map(|x| x as f64).collect()).unwrap();
     /// let result = FilterMethods::variance_threshold(&features, 0.1).unwrap();

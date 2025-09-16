@@ -82,7 +82,7 @@ where
 /// use ndarray::Array1;
 /// use scirs2_sparse::{
 ///     sym_csr::SymCsrMatrix,
-///     linalg::eigen::{lanczos, LanczosOptions},
+///     linalg::{lanczos, LanczosOptions},
 /// };
 ///
 /// // Create a symmetric matrix

@@ -938,7 +938,7 @@ scirs2-interpolate = "0.1.0""#
                     instructions: "Create some sample data points to interpolate".to_string(),
                     code: Some(
                         r#"use ndarray::Array1;
-use scirs2__interpolate::*;
+use scirs2_interpolate::*;
 
 let x = Array1::from_vec(vec![0.0, 1.0, 2.0, 3.0, 4.0]);
 let y = Array1::from_vec(vec![0.0, 1.0, 4.0, 9.0, 16.0]);"#
@@ -1106,7 +1106,7 @@ println!("Interpolated values: {:?}", y_new);"#
     fn create_basic_example(&self) -> CodeExample {
         CodeExample {
             title: "Basic Linear Interpolation".to_string(),
-            code: r#"use scirs2__interpolate::*;
+            code: r#"use scirs2_interpolate::*;
 use ndarray::Array1;
 
 let x = Array1::from_vec(vec![0.0, 1.0, 2.0]);
@@ -1293,7 +1293,7 @@ println!("Throughput: {} points/sec", x_new.len() as f64 / duration.as_secs_f64(
 // result = f(x_new)
 
 // SciRS2 (Rust):
-use scirs2__interpolate::*;
+use scirs2_interpolate::*;
 let result = linear_interpolate(&x.view(), &y.view(), &x_new.view())?;
 
 // Key differences:

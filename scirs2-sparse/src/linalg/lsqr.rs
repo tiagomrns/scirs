@@ -87,7 +87,7 @@ pub struct LSQRResult<T> {
 ///
 /// ```rust
 /// use scirs2_sparse::csr_array::CsrArray;
-/// use scirs2_sparse::linalg::lsqr::{lsqr, LSQROptions};
+/// use scirs2_sparse::linalg::{lsqr, LSQROptions};
 /// use ndarray::Array1;
 ///
 /// // Create an overdetermined system

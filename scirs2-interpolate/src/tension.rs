@@ -471,8 +471,8 @@ impl<T: Float + std::fmt::Display + FromPrimitive> TensionSpline<T> {
     ///
     /// ```
     /// use ndarray::array;
-    /// use scirs2__interpolate::tension::make_tension_spline;
-    /// use scirs2__interpolate::ExtrapolateMode;
+    /// use scirs2_interpolate::tension::make_tension_spline;
+    /// use scirs2_interpolate::ExtrapolateMode;
     ///
     /// let x = array![0.0, 1.0, 2.0, 3.0, 4.0];
     /// let y = array![0.0, 1.0, 4.0, 9.0, 16.0]; // x^2
@@ -514,8 +514,8 @@ impl<T: Float + std::fmt::Display + FromPrimitive> TensionSpline<T> {
     ///
     /// ```
     /// use ndarray::array;
-    /// use scirs2__interpolate::tension::make_tension_spline;
-    /// use scirs2__interpolate::ExtrapolateMode;
+    /// use scirs2_interpolate::tension::make_tension_spline;
+    /// use scirs2_interpolate::ExtrapolateMode;
     ///
     /// let x = array![0.0, 1.0, 2.0, 3.0, 4.0];
     /// let y = array![0.0, 1.0, 4.0, 9.0, 16.0]; // x^2
@@ -552,8 +552,8 @@ impl<T: Float + std::fmt::Display + FromPrimitive> TensionSpline<T> {
     ///
     /// ```
     /// use ndarray::array;
-    /// use scirs2__interpolate::tension::make_tension_spline;
-    /// use scirs2__interpolate::ExtrapolateMode;
+    /// use scirs2_interpolate::tension::make_tension_spline;
+    /// use scirs2_interpolate::ExtrapolateMode;
     ///
     /// let x = array![0.0, 1.0, 2.0, 3.0, 4.0];
     /// let y = array![1.0, 1.0, 1.0, 1.0, 1.0]; // Constant function
@@ -663,16 +663,16 @@ impl<T: Float + std::fmt::Display + FromPrimitive> TensionSpline<T> {
     ///
     /// ```
     /// use ndarray::array;
-    /// use scirs2__interpolate::tension::make_tension_spline;
-    /// use scirs2__interpolate::ExtrapolateMode;
+    /// use scirs2_interpolate::tension::make_tension_spline;
+    /// use scirs2_interpolate::ExtrapolateMode;
     ///
     /// let x = array![0.0, 1.0, 2.0, 3.0, 4.0];
     /// let y = array![0.0, 1.0, 4.0, 9.0, 16.0]; // x^2
     ///
     /// let spline = make_tension_spline(&x.view(), &y.view(), 1.0, ExtrapolateMode::Error).unwrap();
     ///
-    /// // Compute arc length from 0 to 2
-    /// let arc_length = spline.arc_length(0.0, 2.0, Some(1e-6)).unwrap();
+    /// // Compute arc length from 0 to 2 with relaxed tolerance
+    /// let arc_length = spline.arc_length(0.0, 2.0, Some(1e-4)).unwrap();
     /// ```
     pub fn arc_length(&self, a: T, b: T, tolerance: Option<T>) -> InterpolateResult<T> {
         let tol = tolerance.unwrap_or_else(|| T::from(1e-8).unwrap());
@@ -803,8 +803,8 @@ impl<T: Float + std::fmt::Display + FromPrimitive> TensionSpline<T> {
     ///
     /// ```
     /// use ndarray::array;
-    /// use scirs2__interpolate::tension::make_tension_spline;
-    /// use scirs2__interpolate::ExtrapolateMode;
+    /// use scirs2_interpolate::tension::make_tension_spline;
+    /// use scirs2_interpolate::ExtrapolateMode;
     ///
     /// let x = array![0.0, 1.0, 2.0, 3.0, 4.0];
     /// let y = array![-1.0, 1.0, -1.0, 1.0, -1.0]; // Oscillating function
@@ -869,8 +869,8 @@ impl<T: Float + std::fmt::Display + FromPrimitive> TensionSpline<T> {
     ///
     /// ```
     /// use ndarray::array;
-    /// use scirs2__interpolate::tension::make_tension_spline;
-    /// use scirs2__interpolate::ExtrapolateMode;
+    /// use scirs2_interpolate::tension::make_tension_spline;
+    /// use scirs2_interpolate::ExtrapolateMode;
     ///
     /// let x = array![0.0, 1.0, 2.0, 3.0, 4.0];
     /// let y = array![0.0, 1.0, 0.0, 1.0, 0.0]; // Wave-like function

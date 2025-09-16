@@ -46,8 +46,8 @@ where
     /// # #[cfg(feature = "linalg")]
     /// # {
     /// use ndarray::array;
-    /// use scirs2__interpolate::constrained::{ConstrainedSpline, Constraint};
-    /// use scirs2__interpolate::bspline::ExtrapolateMode;
+    /// use scirs2_interpolate::constrained::{ConstrainedSpline, Constraint};
+    /// use scirs2_interpolate::bspline::ExtrapolateMode;
     ///
     /// let x = array![0.0, 1.0, 2.0, 3.0, 4.0, 5.0];
     /// let y = array![0.0, 0.8, 1.5, 1.9, 2.3, 2.5];
@@ -184,8 +184,8 @@ where
     /// # #[cfg(feature = "linalg")]
     /// # {
     /// use ndarray::array;
-    /// use scirs2__interpolate::constrained::{ConstrainedSpline, Constraint};
-    /// use scirs2__interpolate::bspline::ExtrapolateMode;
+    /// use scirs2_interpolate::constrained::{ConstrainedSpline, Constraint};
+    /// use scirs2_interpolate::bspline::ExtrapolateMode;
     ///
     /// let x = array![0.0, 1.0, 2.0, 3.0, 4.0, 5.0];
     /// let y = array![0.0, 0.8, 1.5, 1.9, 2.3, 2.5];
@@ -236,8 +236,8 @@ where
     /// # #[cfg(feature = "linalg")]
     /// # {
     /// use ndarray::array;
-    /// use scirs2__interpolate::constrained::{ConstrainedSpline, Constraint};
-    /// use scirs2__interpolate::bspline::ExtrapolateMode;
+    /// use scirs2_interpolate::constrained::{ConstrainedSpline, Constraint};
+    /// use scirs2_interpolate::bspline::ExtrapolateMode;
     ///
     /// let x = array![0.0, 1.0, 2.0, 3.0, 4.0, 5.0];
     /// let y = array![0.0, 0.8, 1.5, 1.9, 2.3, 2.5];
@@ -292,8 +292,8 @@ where
     /// # #[cfg(feature = "linalg")]
     /// # {
     /// use ndarray::array;
-    /// use scirs2__interpolate::constrained::{ConstrainedSpline, Constraint};
-    /// use scirs2__interpolate::bspline::ExtrapolateMode;
+    /// use scirs2_interpolate::constrained::{ConstrainedSpline, Constraint};
+    /// use scirs2_interpolate::bspline::ExtrapolateMode;
     ///
     /// let x = array![0.0, 1.0, 2.0, 3.0, 4.0, 5.0];
     /// let y = array![0.0, 0.8, 1.5, 1.9, 2.3, 2.5];
@@ -338,8 +338,8 @@ where
     /// # #[cfg(feature = "linalg")]
     /// # {
     /// use ndarray::array;
-    /// use scirs2__interpolate::constrained::{ConstrainedSpline, Constraint};
-    /// use scirs2__interpolate::bspline::ExtrapolateMode;
+    /// use scirs2_interpolate::constrained::{ConstrainedSpline, Constraint};
+    /// use scirs2_interpolate::bspline::ExtrapolateMode;
     ///
     /// let x = array![0.0, 1.0, 2.0, 3.0, 4.0, 5.0];
     /// let y = array![1.0, 1.0, 1.0, 1.0, 1.0, 1.0]; // Constant function
@@ -383,8 +383,8 @@ where
     /// # #[cfg(feature = "linalg")]
     /// # {
     /// use ndarray::array;
-    /// use scirs2__interpolate::constrained::{ConstrainedSpline, Constraint};
-    /// use scirs2__interpolate::bspline::ExtrapolateMode;
+    /// use scirs2_interpolate::constrained::{ConstrainedSpline, Constraint};
+    /// use scirs2_interpolate::bspline::ExtrapolateMode;
     ///
     /// let x = array![0.0, 1.0, 2.0, 3.0, 4.0, 5.0];
     /// let y = array![0.0, 1.0, 4.0, 9.0, 16.0, 25.0]; // Approximately x^2
@@ -427,8 +427,8 @@ where
     /// # #[cfg(feature = "linalg")]
     /// # {
     /// use ndarray::array;
-    /// use scirs2__interpolate::constrained::{ConstrainedSpline, Constraint};
-    /// use scirs2__interpolate::bspline::ExtrapolateMode;
+    /// use scirs2_interpolate::constrained::{ConstrainedSpline, Constraint};
+    /// use scirs2_interpolate::bspline::ExtrapolateMode;
     ///
     /// let x = array![0.0, 1.0, 2.0, 3.0, 4.0, 5.0];
     /// let y = array![0.0, 0.8, 1.5, 1.9, 2.3, 2.5];

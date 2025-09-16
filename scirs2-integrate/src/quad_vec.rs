@@ -182,7 +182,7 @@ fn compute_norm(array: &Array1<f64>, normtype: NormType) -> f64 {
 ///
 /// ```
 /// use ndarray::{Array1, arr1};
-/// use scirs2__integrate::quad_vec::{quad_vec, QuadVecOptions};
+/// use scirs2_integrate::quad_vec::{quad_vec, QuadVecOptions};
 ///
 /// // Integrate a function that returns a 2D vector
 /// let f = |x: f64| arr1(&[x.sin(), x.cos()]);

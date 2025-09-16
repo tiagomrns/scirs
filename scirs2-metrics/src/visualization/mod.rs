@@ -28,7 +28,7 @@
 //! let backend = backends::default_backend();
 //!
 //! // Save the visualization to a file
-//! backend.save_to_file(&data, &metadata, &Default::default(), "plot.png").unwrap();
+//! backend.save_to_file(&data, &metadata, &Default::default(), "plot.html").unwrap();
 //! ```
 //!
 //! # Using Specific Visualizers
@@ -48,7 +48,7 @@
 //! let y_pred = array![0, 2, 1, 0, 0, 2];
 //!
 //! // Create confusion matrix
-//! let (cm_) = confusion_matrix(&y_true, &y_pred, None).unwrap();
+//! let cm = confusion_matrix(&y_true, &y_pred, None).unwrap();
 //! let cm_f64 = cm.mapv(|x| x as f64);
 //!
 //! // Create visualizer

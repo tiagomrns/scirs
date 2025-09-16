@@ -82,7 +82,7 @@ impl<F: Float + FromPrimitive + Debug + std::fmt::Display> KrigingInterpolator<F
     ///
     /// ```
     /// use ndarray::{array, Array2};
-    /// use scirs2__interpolate::advanced::kriging::{KrigingInterpolator, CovarianceFunction};
+    /// use scirs2_interpolate::advanced::kriging::{KrigingInterpolator, CovarianceFunction};
     ///
     /// // Create 2D points
     /// let points = Array2::from_shape_vec((5, 2), vec![
@@ -437,7 +437,7 @@ impl<F: Float + FromPrimitive + Debug + std::fmt::Display> KrigingInterpolator<F
 ///
 /// ```
 /// use ndarray::{array, Array2};
-/// use scirs2__interpolate::advanced::kriging::{make_kriging_interpolator, CovarianceFunction};
+/// use scirs2_interpolate::advanced::kriging::{make_kriging_interpolator, CovarianceFunction};
 ///
 /// // Create 2D points
 /// let points = Array2::from_shape_vec((5, 2), vec![

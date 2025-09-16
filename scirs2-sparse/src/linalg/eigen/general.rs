@@ -42,9 +42,9 @@ use std::ops::{Add, Div, Mul, Sub};
 /// use ndarray::Array1;
 ///
 /// // Create a general sparse matrix
-/// let data = vec![1.0, 2.0, 3.0, 4.0];
-/// let indices = vec![0, 1, 0, 1];
-/// let indptr = vec![0, 2, 4];
+/// let data = Array1::from(vec![1.0, 2.0, 3.0, 4.0]);
+/// let indices = Array1::from(vec![0, 1, 0, 1]);
+/// let indptr = Array1::from(vec![0, 2, 4]);
 /// let matrix = CsrArray::new(data, indices, indptr, (2, 2)).unwrap();
 ///
 /// // Find the 2 largest eigenvalues in magnitude

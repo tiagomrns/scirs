@@ -90,7 +90,7 @@ pub struct LSMRResult<T> {
 ///
 /// ```rust
 /// use scirs2_sparse::csr_array::CsrArray;
-/// use scirs2_sparse::linalg::lsmr::{lsmr, LSMROptions};
+/// use scirs2_sparse::linalg::{lsmr, LSMROptions};
 /// use ndarray::Array1;
 ///
 /// // Create an overdetermined system

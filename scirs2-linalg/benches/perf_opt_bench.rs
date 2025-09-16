@@ -2,7 +2,7 @@ use criterion::{criterion_group, criterion_main, BenchmarkId, Criterion};
 use ndarray::{Array2, ShapeBuilder};
 use ndarray_rand::rand_distr::Uniform;
 use ndarray_rand::RandomExt;
-use scirs2__linalg::prelude::*;
+use scirs2_linalg::prelude::*;
 use std::hint::black_box;
 
 #[allow(dead_code)]

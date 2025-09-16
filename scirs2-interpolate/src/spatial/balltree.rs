@@ -50,7 +50,7 @@ struct BallNode<F: Float> {
 ///
 /// ```rust
 /// use ndarray::Array2;
-/// use scirs2__interpolate::spatial::balltree::BallTree;
+/// use scirs2_interpolate::spatial::balltree::BallTree;
 ///
 /// // Create sample 3D points
 /// let points = Array2::from_shape_vec((5, 3), vec![

@@ -31,7 +31,7 @@ use crate::error::{Result, TimeSeriesError};
 ///
 /// ```
 /// use ndarray::Array1;
-/// use scirs2__series::trends::{estimate_piecewise_trend, PiecewiseTrendOptions, BreakpointMethod, SegmentModelType};
+/// use scirs2_series::trends::{estimate_piecewise_trend, PiecewiseTrendOptions, BreakpointMethod, SegmentModelType};
 ///
 /// // Create a sample time series with a piecewise trend and noise
 /// let n = 100;

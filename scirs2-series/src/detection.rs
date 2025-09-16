@@ -85,7 +85,7 @@ impl Default for PeriodDetectionOptions {
 ///
 /// ```
 /// use ndarray::array;
-/// use scirs2__series::detection::{detect_periods, PeriodDetectionOptions};
+/// use scirs2_series::detection::{detect_periods, PeriodDetectionOptions};
 ///
 /// let ts = array![1.0, 2.0, 3.0, 2.0, 1.0, 2.0, 3.0, 2.0, 1.0, 2.0, 3.0, 2.0,
 ///                 1.0, 2.0, 3.0, 2.0, 1.0, 2.0, 3.0, 2.0, 1.0, 2.0, 3.0, 2.0];
@@ -439,7 +439,7 @@ where
 ///
 /// ```
 /// use ndarray::array;
-/// use scirs2__series::detection::{detect_and_decompose, PeriodDetectionOptions, DecompositionType, AutoDecomposition};
+/// use scirs2_series::detection::{detect_and_decompose, PeriodDetectionOptions, DecompositionType, AutoDecomposition};
 ///
 /// let ts = array![1.0, 2.0, 3.0, 2.0, 1.0, 2.0, 3.0, 2.0, 1.0, 2.0, 3.0, 2.0,
 ///                 1.0, 2.0, 3.0, 2.0, 1.0, 2.0, 3.0, 2.0, 1.0, 2.0, 3.0, 2.0];

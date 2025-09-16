@@ -147,10 +147,10 @@ impl MSTAlgorithm {
 /// use scirs2_sparse::csgraph::minimum_spanning_tree;
 /// use scirs2_sparse::csr_array::CsrArray;
 ///
-/// // Create a weighted graph
-/// let rows = vec![0, 0, 1, 1, 2];
-/// let cols = vec![1, 2, 0, 2, 1];
-/// let data = vec![2.0, 3.0, 2.0, 1.0, 1.0];
+/// // Create a weighted symmetric graph
+/// let rows = vec![0, 0, 1, 1, 2, 2];
+/// let cols = vec![1, 2, 0, 2, 0, 1];
+/// let data = vec![2.0, 3.0, 2.0, 1.0, 3.0, 1.0];
 /// let graph = CsrArray::from_triplets(&rows, &cols, &data, (3, 3), false).unwrap();
 ///
 /// let (total_weight, mst, parents) = minimum_spanning_tree(&graph, "kruskal", true).unwrap();

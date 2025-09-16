@@ -27,8 +27,8 @@ use crate::spatial::kdtree::KdTree;
 ///
 /// ```
 /// use ndarray::{Array1, Array2};
-/// use scirs2__interpolate::parallel::{ParallelMovingLeastSquares, ParallelConfig, ParallelEvaluate};
-/// use scirs2__interpolate::local::mls::{WeightFunction, PolynomialBasis};
+/// use scirs2_interpolate::parallel::{ParallelMovingLeastSquares, ParallelConfig, ParallelEvaluate};
+/// use scirs2_interpolate::local::mls::{WeightFunction, PolynomialBasis};
 ///
 /// // Create some 2D scattered data
 /// let points = Array2::from_shape_vec((5, 2), vec![

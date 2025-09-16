@@ -539,7 +539,7 @@ pub fn scale<T: Float + FromPrimitive>(
 ///
 /// ```
 /// use ndarray::{Array1, ArrayView1};
-/// use scirs2__integrate::qmc::{qmc_quad, Halton};
+/// use scirs2_integrate::qmc::{qmc_quad, Halton};
 ///
 /// let f = |x: ArrayView1<f64>| x[0].powi(2) * x[1].exp();
 /// let a = Array1::from_vec(vec![0.0, 0.0]);
@@ -748,7 +748,7 @@ where
 /// # Examples
 ///
 /// ```
-/// use scirs2__integrate::qmc::{qmc_quad_parallel, Halton};
+/// use scirs2_integrate::qmc::{qmc_quad_parallel, Halton};
 /// use ndarray::{Array1, ArrayView1};
 ///
 /// let f = |x: ArrayView1<f64>| x[0].powi(2) * x[1].exp();

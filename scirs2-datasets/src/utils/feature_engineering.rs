@@ -37,7 +37,7 @@ pub enum BinningStrategy {
 ///
 /// ```rust
 /// use ndarray::Array2;
-/// use scirs2__datasets::utils::polynomial_features;
+/// use scirs2_datasets::utils::polynomial_features;
 ///
 /// let data = Array2::from_shape_vec((2, 2), vec![1.0, 2.0, 3.0, 4.0]).unwrap();
 /// let poly_features = polynomial_features(&data, 2, true).unwrap();
@@ -166,7 +166,7 @@ fn generate_polynomial_combinations(
 ///
 /// ```rust
 /// use ndarray::Array2;
-/// use scirs2__datasets::utils::statistical_features;
+/// use scirs2_datasets::utils::statistical_features;
 ///
 /// let data = Array2::from_shape_vec((5, 2), vec![1.0, 10.0, 2.0, 20.0, 3.0, 30.0, 4.0, 40.0, 5.0, 50.0]).unwrap();
 /// let stats_features = statistical_features(&data).unwrap();
@@ -301,7 +301,7 @@ fn calculate_kurtosis(data: &ndarray::ArrayView1<f64>, mean: f64, std: f64) -> f
 ///
 /// ```rust
 /// use ndarray::Array2;
-/// use scirs2__datasets::utils::{create_binned_features, BinningStrategy};
+/// use scirs2_datasets::utils::{create_binned_features, BinningStrategy};
 ///
 /// let data = Array2::from_shape_vec((5, 2), vec![1.0, 10.0, 2.0, 20.0, 3.0, 30.0, 4.0, 40.0, 5.0, 50.0]).unwrap();
 /// let binned = create_binned_features(&data, 3, BinningStrategy::Uniform).unwrap();

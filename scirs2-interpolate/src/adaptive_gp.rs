@@ -19,7 +19,7 @@
 //!
 //! ```rust
 //! use ndarray::Array1;
-//! use scirs2__interpolate::adaptive_gp::{AdaptiveGaussianProcess, KernelType};
+//! use scirs2_interpolate::adaptive_gp::{AdaptiveGaussianProcess, KernelType};
 //!
 //! // Create sample data with noise
 //! let x = Array1::linspace(0.0_f64, 10.0_f64, 20);

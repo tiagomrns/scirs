@@ -46,7 +46,7 @@ pub enum BalancingStrategy {
 ///
 /// ```rust
 /// use ndarray::{Array1, Array2};
-/// use scirs2__datasets::utils::random_oversample;
+/// use scirs2_datasets::utils::random_oversample;
 ///
 /// let data = Array2::from_shape_vec((6, 2), vec![1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0, 11.0, 12.0]).unwrap();
 /// let targets = Array1::from(vec![0.0, 0.0, 1.0, 1.0, 1.0, 1.0]); // Imbalanced: 2 vs 4
@@ -134,7 +134,7 @@ pub fn random_oversample(
 ///
 /// ```rust
 /// use ndarray::{Array1, Array2};
-/// use scirs2__datasets::utils::random_undersample;
+/// use scirs2_datasets::utils::random_undersample;
 ///
 /// let data = Array2::from_shape_vec((6, 2), vec![1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0, 11.0, 12.0]).unwrap();
 /// let targets = Array1::from(vec![0.0, 0.0, 1.0, 1.0, 1.0, 1.0]); // Imbalanced: 2 vs 4
@@ -220,7 +220,7 @@ pub fn random_undersample(
 ///
 /// ```rust
 /// use ndarray::{Array1, Array2};
-/// use scirs2__datasets::utils::generate_synthetic_samples;
+/// use scirs2_datasets::utils::generate_synthetic_samples;
 ///
 /// let data = Array2::from_shape_vec((4, 2), vec![1.0, 1.0, 2.0, 2.0, 1.5, 1.5, 2.5, 2.5]).unwrap();
 /// let targets = Array1::from(vec![0.0, 0.0, 0.0, 1.0]);
@@ -345,7 +345,7 @@ pub fn generate_synthetic_samples(
 ///
 /// ```rust
 /// use ndarray::{Array1, Array2};
-/// use scirs2__datasets::utils::{create_balanced_dataset, BalancingStrategy};
+/// use scirs2_datasets::utils::{create_balanced_dataset, BalancingStrategy};
 ///
 /// let data = Array2::from_shape_vec((6, 2), vec![1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0, 11.0, 12.0]).unwrap();
 /// let targets = Array1::from(vec![0.0, 0.0, 1.0, 1.0, 1.0, 1.0]);

@@ -14,7 +14,7 @@
 //! # Examples
 //!
 //! ```
-//! use scirs2__integrate::acceleration::{AndersonAccelerator, AcceleratorOptions};
+//! use scirs2_integrate::acceleration::{AndersonAccelerator, AcceleratorOptions};
 //! use ndarray::Array1;
 //!
 //! // Create accelerator for 3D problem with memory depth 5

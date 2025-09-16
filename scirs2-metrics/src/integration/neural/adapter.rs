@@ -126,7 +126,7 @@ impl<F: Float + Debug + Display + FromPrimitive> NeuralMetricAdapter<F> {
 /// ```rust
 /// # use scirs2_metrics::integration::neural::NeuralMetricAdapter;
 /// # use ndarray::Array;
-/// # use scirs2__neural::evaluation::Metric;
+/// # use scirs2_neural::evaluation::Metric;
 ///
 /// # fn example<F: num_traits:: Float + std::fmt::Debug + std::fmt::Display + num_traits::FromPrimitive>() {
 /// let metric = NeuralMetricAdapter::<F>::accuracy();

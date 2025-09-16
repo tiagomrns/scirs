@@ -5,9 +5,9 @@
 
 use criterion::{criterion_group, criterion_main, BenchmarkId, Criterion, Throughput};
 use ndarray::{Array1, Array2, Axis};
-use scirs2__linalg::matrix_functions::{expm, logm, sqrtm};
-use scirs2__linalg::{cholesky, eigen, lstsq, lu, qr, solve, svd};
-use scirs2__linalg::{compat, cond, det, inv, matrix_norm, matrix_rank, vector_norm};
+use scirs2_linalg::matrix_functions::{expm, logm, sqrtm};
+use scirs2_linalg::{cholesky, eigen, lstsq, lu, qr, solve, svd};
+use scirs2_linalg::{compat, cond, det, inv, matrix_norm, matrix_rank, vector_norm};
 use std::time::Duration;
 
 /// Generate a well-conditioned test matrix of given size

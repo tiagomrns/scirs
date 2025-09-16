@@ -227,7 +227,7 @@ where
     ///
     /// ```rust
     /// use ndarray::Array2;
-    /// use scirs2__interpolate::spatial::enhanced_search::{
+    /// use scirs2_interpolate::spatial::enhanced_search::{
     ///     EnhancedNearestNeighborSearcher, IndexType, SearchConfig
     /// };
     ///
@@ -333,7 +333,7 @@ where
     ///
     /// ```rust
     /// use ndarray::{Array1, Array2};
-    /// use scirs2__interpolate::spatial::enhanced_search::{
+    /// use scirs2_interpolate::spatial::enhanced_search::{
     ///     EnhancedNearestNeighborSearcher, IndexType, SearchConfig
     /// };
     ///
@@ -1484,7 +1484,7 @@ impl<F: Float + FromPrimitive> LSHIndex<F> {
 ///
 /// ```rust
 /// use ndarray::Array2;
-/// use scirs2__interpolate::spatial::enhanced_search::{
+/// use scirs2_interpolate::spatial::enhanced_search::{
 ///     make_enhanced_searcher, SearchConfig
 /// };
 ///

@@ -42,17 +42,17 @@
 //! use scirs2_metrics::error::Result;
 //! use ndarray::Array1;
 //!
-//! fn compute_multiple_metrics(_y_true: &Array1<f64>, ypred: &Array1<f64>) -> Result<Vec<f64>> {
+//! fn compute_multiple_metrics(y_true: &Array1<f64>, y_pred: &Array1<f64>) -> Result<Vec<f64>> {
 //!     let config = ParallelConfig {
 //!         parallel_enabled: true,
 //!         min_chunk_size: 1000,
 //!         num_threads: None,
 //!     };
-//!     
+//!
 //!     let metrics: Vec<Box<dyn Fn(&Array1<f64>, &Array1<f64>) -> Result<f64> + Send + Sync>> = vec![
 //!         // Define your metric functions here
 //!     ];
-//!     
+//!
 //!     compute_metrics_batch(y_true, y_pred, &metrics, &config)
 //! }
 //! ```
@@ -72,7 +72,7 @@
 //!         (0.0, 0)
 //!     }
 //!     
-//!     fn update_state(&self, state: &mut Self::State, batch_true: &[f64], batchpred: &[f64]) -> Result<()> {
+//!     fn update_state(&self, state: &mut Self::State, batch_true: &[f64], batch_pred: &[f64]) -> Result<()> {
 //!         for (y_t, y_p) in batch_true.iter().zip(batch_pred.iter()) {
 //!             state.0 += (y_t - y_p).abs();
 //!             state.1 += 1;

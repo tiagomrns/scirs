@@ -18,7 +18,7 @@
 //!
 //! ```rust
 //! use ndarray::Array1;
-//! use scirs2__interpolate::geospatial::{
+//! use scirs2_interpolate::geospatial::{
 //!     GeospatialInterpolator, CoordinateSystem, InterpolationModel
 //! };
 //!

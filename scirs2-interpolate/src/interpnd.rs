@@ -81,7 +81,7 @@ impl<F: crate::traits::InterpolationFloat> RegularGridInterpolator<F> {
     ///
     /// ```rust
     /// use ndarray::{Array, Array1, Dim, IxDyn};
-    /// use scirs2__interpolate::interpnd::{
+    /// use scirs2_interpolate::interpnd::{
     ///     RegularGridInterpolator, InterpolationMethod, ExtrapolateMode
     /// };
     ///
@@ -181,7 +181,7 @@ impl<F: crate::traits::InterpolationFloat> RegularGridInterpolator<F> {
     ///
     /// ```rust
     /// use ndarray::{Array, Array1, Array2, IxDyn};
-    /// use scirs2__interpolate::interpnd::{
+    /// use scirs2_interpolate::interpnd::{
     ///     RegularGridInterpolator, InterpolationMethod, ExtrapolateMode
     /// };
     ///
@@ -611,7 +611,7 @@ impl<
     ///
     /// ```rust
     /// use ndarray::{Array1, Array2};
-    /// use scirs2__interpolate::interpnd::{
+    /// use scirs2_interpolate::interpnd::{
     ///     ScatteredInterpolator, ScatteredInterpolationMethod,
     ///     ExtrapolateMode, ScatteredInterpolatorParams
     /// };
@@ -880,7 +880,7 @@ impl<
 /// ```
 /// use ndarray::{Array, Array1, Dim, IxDyn};
 /// use num_traits::Float;
-/// use scirs2__interpolate::interpnd::{
+/// use scirs2_interpolate::interpnd::{
 ///     make_interp_nd, InterpolationMethod, ExtrapolateMode
 /// };
 ///

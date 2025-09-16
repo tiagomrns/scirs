@@ -617,8 +617,9 @@ where
 /// assert_eq!(c.shape(), (4, 4));
 ///
 /// // Verify there is a non-zero element by checking the number of non-zeros
-/// let (rows, data) = c.find();
+/// let (rows, cols, data) = c.find();
 /// assert!(rows.len() > 0);
+/// assert!(cols.len() > 0);
 /// assert!(data.len() > 0);
 /// ```
 #[allow(dead_code)]

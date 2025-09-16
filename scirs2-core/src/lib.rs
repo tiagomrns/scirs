@@ -591,7 +591,7 @@ pub mod alpha6_api {
         /// # #[cfg(feature = "memory_efficient")]
         /// fn memory_efficient_processing() -> Result<(), Box<dyn std::error::Error>> {
         ///     // Create optimized chunking parameters
-        ///     let params = AdaptiveChunkingParams::for_workload_type(WorkloadType::ComputeIntensive);
+        ///     let params = AdaptiveChunkingParams::for_workload(WorkloadType::ComputeIntensive);
         ///     
         ///     // Create a temporary file for demonstration
         ///     let temp_file = NamedTempFile::new()?;

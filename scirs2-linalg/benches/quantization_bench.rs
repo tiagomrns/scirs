@@ -1,12 +1,12 @@
 use criterion::{criterion_group, criterion_main, BenchmarkId, Criterion};
 use ndarray::{Array1, Array2, ArrayView2};
-use scirs2__linalg::quantization::{
+use scirs2_linalg::quantization::{
     calibration::{calibrate_matrix, CalibrationConfig, CalibrationMethod},
     quantize_matrix, quantize_vector, QuantizationMethod,
 };
 
 #[cfg(feature = "simd")]
-use scirs2__linalg::quantization::simd::{simd_quantized_matmul, simd_quantized_matvec};
+use scirs2_linalg::quantization::simd::{simd_quantized_matmul, simd_quantized_matvec};
 use std::hint::black_box;
 
 // Helper functions to generate test data

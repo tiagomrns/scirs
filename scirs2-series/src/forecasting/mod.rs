@@ -113,7 +113,7 @@ impl Default for ExpSmoothingParams {
 ///
 /// ```
 /// use ndarray::array;
-/// use scirs2__series::forecasting::moving_average_forecast;
+/// use scirs2_series::forecasting::moving_average_forecast;
 ///
 /// let ts = array![1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0];
 /// let result = moving_average_forecast(&ts, 3, 5, 0.95).unwrap();
@@ -225,7 +225,7 @@ where
 ///
 /// ```
 /// use ndarray::array;
-/// use scirs2__series::forecasting::exponential_smoothing_forecast;
+/// use scirs2_series::forecasting::exponential_smoothing_forecast;
 ///
 /// let ts = array![1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0];
 /// let result = exponential_smoothing_forecast(&ts, 0.3, 5, 0.95).unwrap();
@@ -337,7 +337,7 @@ where
 ///
 /// ```
 /// use ndarray::array;
-/// use scirs2__series::forecasting::{holt_winters_forecast, ExpSmoothingParams};
+/// use scirs2_series::forecasting::{holt_winters_forecast, ExpSmoothingParams};
 ///
 /// let ts = array![1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0, 9.0, 8.0];
 ///
@@ -629,7 +629,7 @@ where
 ///
 /// ```
 /// use ndarray::array;
-/// use scirs2__series::forecasting::{arima_forecast, ArimaParams};
+/// use scirs2_series::forecasting::{arima_forecast, ArimaParams};
 ///
 /// let ts = array![1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0];
 ///
@@ -879,7 +879,7 @@ struct ModelFitMetrics<F> {
 ///
 /// ```
 /// use ndarray::array;
-/// use scirs2__series::forecasting::auto_arima;
+/// use scirs2_series::forecasting::auto_arima;
 ///
 /// let ts = array![1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0];
 /// let params = auto_arima(&ts, 2, 1, 2, false, None).unwrap();
@@ -929,7 +929,7 @@ where
 ///
 /// ```
 /// use ndarray::array;
-/// use scirs2__series::forecasting::{auto_arima_with_options, AutoArimaOptions};
+/// use scirs2_series::forecasting::{auto_arima_with_options, AutoArimaOptions};
 ///
 /// let ts = array![1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0];
 ///
@@ -1337,7 +1337,7 @@ where
 ///
 /// ```
 /// use ndarray::array;
-/// use scirs2__series::forecasting::auto_ets;
+/// use scirs2_series::forecasting::auto_ets;
 ///
 /// let ts = array![1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0];
 /// let params = auto_ets(&ts, None).unwrap();

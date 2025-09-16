@@ -24,20 +24,20 @@
 //!
 //! ### For Scattered 2D/3D Data
 //! ```rust
-//! use scirs2__interpolate::advanced::rbf::{RBFInterpolator, RBFKernel};
+//! use scirs2_interpolate::advanced::rbf::{RBFInterpolator, RBFKernel};
 //! // Use RBF with Gaussian kernel for smooth functions
 //! // Use Thin Plate Spline for natural-looking surfaces
 //! ```
 //!
 //! ### When You Need Uncertainty Estimates
 //! ```rust
-//! use scirs2__interpolate::advanced::kriging::KrigingInterpolator;
+//! use scirs2_interpolate::advanced::kriging::KrigingInterpolator;
 //! // Kriging provides both interpolated values and confidence intervals
 //! ```
 //!
 //! ### For Noisy or Outlier-Prone Data
 //! ```rust
-//! use scirs2__interpolate::advanced::akima::AkimaSpline;
+//! use scirs2_interpolate::advanced::akima::AkimaSpline;
 //! // Akima splines are less sensitive to outliers than cubic splines
 //! ```
 //!

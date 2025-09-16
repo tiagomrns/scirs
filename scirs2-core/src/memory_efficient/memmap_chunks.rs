@@ -65,7 +65,7 @@
 //!    # #[cfg(feature = "parallel")]
 //!    # {
 //!    # use scirs2_core::memory_efficient::{MemoryMappedChunks, ChunkingStrategy};
-//!    # let mmap: MemoryMappedChunks<f64> = unimplemented!();
+//!    # let mmap = MemoryMappedChunks::<f64>::from_path("/tmp/data.bin").unwrap();
 //!    // Process chunks in parallel
 //!    let results = mmap.process_chunks_parallel(
 //!        ChunkingStrategy::Fixed(1000),

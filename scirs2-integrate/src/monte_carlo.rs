@@ -75,7 +75,7 @@ pub struct MonteCarloResult<F: IntegrateFloat> {
 /// # Examples
 ///
 /// ```
-/// use scirs2__integrate::monte_carlo::{monte_carlo, MonteCarloOptions};
+/// use scirs2_integrate::monte_carlo::{monte_carlo, MonteCarloOptions};
 /// use ndarray::ArrayView1;
 /// use std::marker::PhantomData;
 ///
@@ -243,7 +243,7 @@ where
 /// # Examples
 ///
 /// ```
-/// use scirs2__integrate::monte_carlo::{importance_sampling, MonteCarloOptions};
+/// use scirs2_integrate::monte_carlo::{importance_sampling, MonteCarloOptions};
 /// use ndarray::{Array1, ArrayView1};
 /// use rand::prelude::*;
 ///
@@ -418,7 +418,7 @@ where
 /// # Examples
 ///
 /// ```rust
-/// use scirs2__integrate::monte_carlo::{monte_carlo_parallel, MonteCarloOptions};
+/// use scirs2_integrate::monte_carlo::{monte_carlo_parallel, MonteCarloOptions};
 /// use ndarray::ArrayView1;
 /// use std::marker::PhantomData;
 ///

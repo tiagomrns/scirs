@@ -25,7 +25,7 @@ pub use warping::*;
 
 use crate::error::{Result, VisionError};
 use ndarray::{Array1, Array2, ArrayView1, ArrayView2};
-// use scirs2__linalg::{lstsq, solve};
+// use scirs2_linalg::{lstsq, solve};
 use rand::seq::SliceRandom;
 use scirs2_core::rng;
 use std::fmt::Debug;

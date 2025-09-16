@@ -155,10 +155,10 @@ pub enum FastKrigingMethod {
 /// # #[cfg(feature = "linalg")]
 /// # {
 /// use ndarray::{Array1, Array2};
-/// use scirs2__interpolate::advanced::fast_kriging::{
+/// use scirs2_interpolate::advanced::fast_kriging::{
 ///     FastKriging, FastKrigingMethod, FastKrigingBuilder
 /// };
-/// use scirs2__interpolate::advanced::kriging::CovarianceFunction;
+/// use scirs2_interpolate::advanced::kriging::CovarianceFunction;
 ///
 /// // Create sample data
 /// let n_points = 100; // Reduced for testing
@@ -266,10 +266,10 @@ where
 /// # #[cfg(feature = "linalg")]
 /// # {
 /// use ndarray::{Array1, Array2};
-/// use scirs2__interpolate::advanced::fast_kriging::{
+/// use scirs2_interpolate::advanced::fast_kriging::{
 ///     FastKrigingBuilder, FastKrigingMethod
 /// };
-/// use scirs2__interpolate::advanced::kriging::CovarianceFunction;
+/// use scirs2_interpolate::advanced::kriging::CovarianceFunction;
 ///
 /// // Create sample data
 /// let points = Array2::<f64>::zeros((100, 2));

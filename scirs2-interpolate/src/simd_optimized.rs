@@ -28,7 +28,7 @@
 //!
 //! ```rust
 //! use ndarray::Array2;
-//! use scirs2__interpolate::simd_optimized::{
+//! use scirs2_interpolate::simd_optimized::{
 //!     simd_rbf_evaluate, simd_distance_matrix, RBFKernel
 //! };
 //!

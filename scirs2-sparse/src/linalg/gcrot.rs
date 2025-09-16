@@ -73,7 +73,7 @@ pub struct GCROTResult<T> {
 ///
 /// ```rust
 /// use scirs2_sparse::csr_array::CsrArray;
-/// use scirs2_sparse::linalg::gcrot::{gcrot, GCROTOptions};
+/// use scirs2_sparse::linalg::{gcrot, GCROTOptions};
 /// use ndarray::Array1;
 ///
 /// // Create a simple matrix

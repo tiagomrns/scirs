@@ -7,7 +7,7 @@ use crate::callbacks::{Callback, CallbackContext, CallbackTiming};
 use crate::error::Result;
 use ndarray::{Array, IxDyn, ScalarOperand};
 use num_traits::{Float, FromPrimitive};
-use scirs2__metrics::integration::traits::MetricComputation;
+use scirs2_metrics::integration::traits::MetricComputation;
 use std::collections::HashMap;
 use std::fmt::{Debug, Display};
 /// Callback for using scirs2-metrics with neural network training
@@ -18,7 +18,7 @@ use std::fmt::{Debug, Display};
 /// ```no_run
 /// # #[cfg(feature = "metrics_integration")]
 /// # {
-/// use scirs2__metrics::integration::neural::NeuralMetricAdapter;
+/// use scirs2_metrics::integration::neural::NeuralMetricAdapter;
 /// use scirs2_neural::callbacks::metrics::ScirsMetricsCallback;
 /// let metrics = vec![
 ///     NeuralMetricAdapter::<f32>::accuracy(),

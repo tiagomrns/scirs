@@ -144,7 +144,7 @@ impl<T: InterpolationFloat + Debug + Display + std::ops::AddAssign + FromPrimiti
     /// # Example
     /// ```rust
     /// use ndarray::array;
-    /// use scirs2__interpolate::scipy_spline_derivatives::{SciPyCompatibleCubicSpline, SciPyBoundaryType};
+    /// use scirs2_interpolate::scipy_spline_derivatives::{SciPyCompatibleCubicSpline, SciPyBoundaryType};
     ///
     /// let x = array![0.0, 1.0, 2.0, 3.0];
     /// let y = array![0.0, 1.0, 4.0, 9.0];
@@ -180,7 +180,7 @@ impl<T: InterpolationFloat + Debug + Display + std::ops::AddAssign + FromPrimiti
     /// # Example
     /// ```rust
     /// use ndarray::array;
-    /// use scirs2__interpolate::scipy_spline_derivatives::{SciPyCompatibleCubicSpline, SciPyBoundaryType};
+    /// use scirs2_interpolate::scipy_spline_derivatives::{SciPyCompatibleCubicSpline, SciPyBoundaryType};
     ///
     /// let x = array![0.0, 1.0, 2.0, 3.0];
     /// let y = array![0.0, 1.0, 4.0, 9.0];
@@ -218,7 +218,7 @@ impl<T: InterpolationFloat + Debug + Display + std::ops::AddAssign + FromPrimiti
     /// # Example
     /// ```rust
     /// use ndarray::array;
-    /// use scirs2__interpolate::scipy_spline_derivatives::{SciPyCompatibleCubicSpline, SciPyBoundaryType};
+    /// use scirs2_interpolate::scipy_spline_derivatives::{SciPyCompatibleCubicSpline, SciPyBoundaryType};
     ///
     /// let x = array![0.0, 1.0, 2.0, 3.0];
     /// let y = array![0.0, 1.0, 4.0, 9.0];

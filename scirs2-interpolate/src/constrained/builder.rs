@@ -64,8 +64,8 @@ where
     /// # #[cfg(feature = "linalg")]
     /// # {
     /// use ndarray::array;
-    /// use scirs2__interpolate::constrained::{ConstrainedSpline, Constraint};
-    /// use scirs2__interpolate::bspline::ExtrapolateMode;
+    /// use scirs2_interpolate::constrained::{ConstrainedSpline, Constraint};
+    /// use scirs2_interpolate::bspline::ExtrapolateMode;
     ///
     /// // Create monotonically increasing data
     /// let x = array![0.0, 1.0, 2.0, 3.0, 4.0, 5.0];

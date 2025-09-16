@@ -16,7 +16,7 @@
 //! # Examples
 //!
 //! ```
-//! use scirs2__integrate::autotuning::{HardwareDetector, AutoTuner, TuningProfile};
+//! use scirs2_integrate::autotuning::{HardwareDetector, AutoTuner, TuningProfile};
 //!
 //! // Detect hardware automatically
 //! let hardware = HardwareDetector::detect();

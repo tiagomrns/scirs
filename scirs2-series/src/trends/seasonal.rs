@@ -94,7 +94,7 @@ impl Default for SeasonalDecompositionOptions {
 ///
 /// ```
 /// use ndarray::Array1;
-/// use scirs2__series::trends::{
+/// use scirs2_series::trends::{
 ///     seasonal_decomposition, SeasonalDecompositionOptions,
 ///     DecompositionType, DecompositionMethod
 /// };

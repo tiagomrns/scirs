@@ -33,7 +33,7 @@ use std::collections::HashMap;
 /// # Examples
 ///
 /// ```rust
-/// use scirs2__datasets::utils::random_sample;
+/// use scirs2_datasets::utils::random_sample;
 ///
 /// // Sample 5 indices from 10 total samples without replacement
 /// let indices = random_sample(10, 5, false, Some(42)).unwrap();
@@ -114,7 +114,7 @@ pub fn random_sample(
 ///
 /// ```rust
 /// use ndarray::Array1;
-/// use scirs2__datasets::utils::stratified_sample;
+/// use scirs2_datasets::utils::stratified_sample;
 ///
 /// let targets = Array1::from(vec![0.0..0.0, 1.0, 1.0, 1.0, 2.0, 2.0, 2.0]);
 /// let indices = stratified_sample(&targets, 6, Some(42)).unwrap();
@@ -231,7 +231,7 @@ pub fn stratified_sample(
 ///
 /// ```rust
 /// use ndarray::Array1;
-/// use scirs2__datasets::utils::importance_sample;
+/// use scirs2_datasets::utils::importance_sample;
 ///
 /// // Give higher weights to the last few samples
 /// let weights = Array1::from(vec![0.1, 0.1, 0.1, 0.8, 0.9, 1.0]);
@@ -362,7 +362,7 @@ pub fn importance_sample(
 /// # Examples
 ///
 /// ```rust
-/// use scirs2__datasets::utils::bootstrap_sample;
+/// use scirs2_datasets::utils::bootstrap_sample;
 ///
 /// let bootstrap_indices = bootstrap_sample(100, 100, Some(42)).unwrap();
 /// assert_eq!(bootstrap_indices.len(), 100);
@@ -401,7 +401,7 @@ pub fn bootstrap_sample(
 /// # Examples
 ///
 /// ```rust
-/// use scirs2__datasets::utils::multiple_bootstrap_samples;
+/// use scirs2_datasets::utils::multiple_bootstrap_samples;
 ///
 /// let bootstrap_samples = multiple_bootstrap_samples(50, 50, 10, Some(42)).unwrap();
 /// assert_eq!(bootstrap_samples.len(), 10);

@@ -352,7 +352,7 @@
 //! use ndarray::{Array, Ix1};
 //! use scirs2_metrics::evaluation::train_test_split;
 //!
-//! let x = Array::<f64>::linspace(0., 9., 10).intoshape(Ix1(10)).unwrap();
+//! let x = Array::<f64, Ix1>::linspace(0., 9., 10).intoshape(Ix1(10)).unwrap();
 //! let y = &x * 2.;
 //!
 //! let (train_arrays, test_arrays) = train_test_split(&[&x, &y], 0.3, Some(42)).unwrap();
@@ -405,7 +405,7 @@
 //!         (0.0, 0)
 //!     }
 //!     
-//!     fn update_state(&self, state: &mut Self::State, batch_true: &[f64], batchpred: &[f64]) -> Result<()> {
+//!     fn update_state(&self, state: &mut Self::State, batch_true: &[f64], batch_pred: &[f64]) -> Result<()> {
 //!         for (y_t, y_p) in batch_true.iter().zip(batch_pred.iter()) {
 //!             state.0 += (y_t - y_p).abs();
 //!             state.1 += 1;

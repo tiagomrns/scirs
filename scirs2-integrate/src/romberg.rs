@@ -71,7 +71,7 @@ pub struct RombergResult<F: IntegrateFloat> {
 /// # Examples
 ///
 /// ```
-/// use scirs2__integrate::romberg::romberg;
+/// use scirs2_integrate::romberg::romberg;
 ///
 /// // Integrate f(x) = x² from 0 to 1 (exact result: 1/3)
 /// let result = romberg(|x: f64| x * x, 0.0, 1.0, None).unwrap();
@@ -174,7 +174,7 @@ where
 /// # Examples
 ///
 /// ```
-/// use scirs2__integrate::romberg::{MultiRombergResult, IntegrationMethod};
+/// use scirs2_integrate::romberg::{MultiRombergResult, IntegrationMethod};
 ///
 /// // This struct holds the result of a multi-dimensional Romberg integration
 /// let result = MultiRombergResult {

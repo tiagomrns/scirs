@@ -91,8 +91,8 @@ where
     ///
     /// ```
     /// use ndarray::{array, Array1, Array2};
-    /// use scirs2__interpolate::nurbs::{NurbsCurve};
-    /// use scirs2__interpolate::bspline::ExtrapolateMode;
+    /// use scirs2_interpolate::nurbs::{NurbsCurve};
+    /// use scirs2_interpolate::bspline::ExtrapolateMode;
     ///
     /// // Create a NURBS circle (quadratic with 9 control points)
     /// let control_points = array![
@@ -666,8 +666,8 @@ where
     ///
     /// ```
     /// use ndarray::{array, Array1};
-    /// use scirs2__interpolate::nurbs::NurbsCurve;
-    /// use scirs2__interpolate::bspline::ExtrapolateMode;
+    /// use scirs2_interpolate::nurbs::NurbsCurve;
+    /// use scirs2_interpolate::bspline::ExtrapolateMode;
     ///
     /// // Create a simple NURBS curve
     /// let control_points = array![[0.0, 0.0], [1.0, 1.0], [2.0, 0.0]];
@@ -723,8 +723,8 @@ where
     ///
     /// ```
     /// use ndarray::{array, Array1};
-    /// use scirs2__interpolate::nurbs::NurbsCurve;
-    /// use scirs2__interpolate::bspline::ExtrapolateMode;
+    /// use scirs2_interpolate::nurbs::NurbsCurve;
+    /// use scirs2_interpolate::bspline::ExtrapolateMode;
     ///
     /// // Create a simple NURBS curve
     /// let control_points = array![[0.0, 0.0], [1.0, 1.0], [2.0, 0.0]];
@@ -778,8 +778,8 @@ where
     ///
     /// ```
     /// use ndarray::{array, Array1};
-    /// use scirs2__interpolate::nurbs::NurbsCurve;
-    /// use scirs2__interpolate::bspline::ExtrapolateMode;
+    /// use scirs2_interpolate::nurbs::NurbsCurve;
+    /// use scirs2_interpolate::bspline::ExtrapolateMode;
     ///
     /// // Create a simple NURBS curve
     /// let control_points = array![[0.0, 0.0], [1.0, 1.0], [2.0, 0.0]];
@@ -845,8 +845,8 @@ where
     ///
     /// ```
     /// use ndarray::{array, Array1};
-    /// use scirs2__interpolate::nurbs::NurbsCurve;
-    /// use scirs2__interpolate::bspline::ExtrapolateMode;
+    /// use scirs2_interpolate::nurbs::NurbsCurve;
+    /// use scirs2_interpolate::bspline::ExtrapolateMode;
     ///
     /// // Create a simple NURBS curve
     /// let control_points = array![[0.0, 0.0], [1.0, 1.0], [2.0, 0.0]];
@@ -932,8 +932,8 @@ where
     ///
     /// ```
     /// use ndarray::{array, Array1};
-    /// use scirs2__interpolate::nurbs::NurbsCurve;
-    /// use scirs2__interpolate::bspline::ExtrapolateMode;
+    /// use scirs2_interpolate::nurbs::NurbsCurve;
+    /// use scirs2_interpolate::bspline::ExtrapolateMode;
     ///
     /// // Create a simple NURBS curve
     /// let control_points = array![[0.0, 0.0], [1.0, 1.0], [2.0, 0.0]];
@@ -1220,8 +1220,8 @@ where
     ///
     /// ```
     /// use ndarray::{array, Array1, Array2};
-    /// use scirs2__interpolate::nurbs::{NurbsSurface};
-    /// use scirs2__interpolate::bspline::ExtrapolateMode;
+    /// use scirs2_interpolate::nurbs::{NurbsSurface};
+    /// use scirs2_interpolate::bspline::ExtrapolateMode;
     ///
     /// // Create a simple NURBS surface (3x3 grid of control points)
     /// let control_points = array![
@@ -1717,8 +1717,8 @@ where
     ///
     /// ```
     /// use ndarray::{array, Array1};
-    /// use scirs2__interpolate::nurbs::NurbsSurface;
-    /// use scirs2__interpolate::bspline::ExtrapolateMode;
+    /// use scirs2_interpolate::nurbs::NurbsSurface;
+    /// use scirs2_interpolate::bspline::ExtrapolateMode;
     ///
     /// // Create a simple NURBS surface
     /// let control_points = array![
@@ -1825,8 +1825,8 @@ where
     ///
     /// ```
     /// use ndarray::{array, Array1};
-    /// use scirs2__interpolate::nurbs::NurbsSurface;
-    /// use scirs2__interpolate::bspline::ExtrapolateMode;
+    /// use scirs2_interpolate::nurbs::NurbsSurface;
+    /// use scirs2_interpolate::bspline::ExtrapolateMode;
     ///
     /// // Create a simple NURBS surface
     /// let control_points = array![
@@ -1918,8 +1918,8 @@ where
     ///
     /// ```
     /// use ndarray::{array, Array1};
-    /// use scirs2__interpolate::nurbs::NurbsSurface;
-    /// use scirs2__interpolate::bspline::ExtrapolateMode;
+    /// use scirs2_interpolate::nurbs::NurbsSurface;
+    /// use scirs2_interpolate::bspline::ExtrapolateMode;
     ///
     /// // Create a simple NURBS surface
     /// let control_points = array![
@@ -2057,8 +2057,8 @@ where
     ///
     /// ```
     /// use ndarray::{array, Array1};
-    /// use scirs2__interpolate::nurbs::NurbsSurface;
-    /// use scirs2__interpolate::bspline::ExtrapolateMode;
+    /// use scirs2_interpolate::nurbs::NurbsSurface;
+    /// use scirs2_interpolate::bspline::ExtrapolateMode;
     ///
     /// // Create a simple NURBS surface
     /// let control_points = array![

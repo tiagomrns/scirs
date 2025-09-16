@@ -29,8 +29,8 @@ use std::fmt::{Debug, Display};
 ///
 /// ```rust
 /// use ndarray::{Array1, ArrayView1};
-/// use scirs2__interpolate::utils::error_estimate;
-/// use scirs2__interpolate::error::InterpolateResult;
+/// use scirs2_interpolate::utils::error_estimate;
+/// use scirs2_interpolate::error::InterpolateResult;
 ///
 /// // Sample data with some noise
 /// let x = Array1::from_vec(vec![0.0, 1.0, 2.0, 3.0, 4.0]);
@@ -188,8 +188,8 @@ where
 /// # Examples
 ///
 /// ```rust
-/// use scirs2__interpolate::utils::differentiate;
-/// use scirs2__interpolate::error::InterpolateResult;
+/// use scirs2_interpolate::utils::differentiate;
+/// use scirs2_interpolate::error::InterpolateResult;
 ///
 /// // Example: differentiate f(x) = x^3 at x = 2
 /// // Expected derivative: f'(2) = 3 * 2^2 = 12
@@ -255,8 +255,8 @@ where
 /// # Examples
 ///
 /// ```rust
-/// use scirs2__interpolate::utils::integrate;
-/// use scirs2__interpolate::error::InterpolateResult;
+/// use scirs2_interpolate::utils::integrate;
+/// use scirs2_interpolate::error::InterpolateResult;
 ///
 /// // Example: integrate f(x) = x^2 from 0 to 2
 /// // Expected result: ∫₀² x² dx = [x³/3]₀² = 8/3 ≈ 2.667

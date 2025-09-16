@@ -21,7 +21,7 @@
 //!
 //! ```rust
 //! use ndarray::{Array1, Array2};
-//! use scirs2__interpolate::structured_matrix::{BandMatrix, solve_band_system};
+//! use scirs2_interpolate::structured_matrix::{BandMatrix, solve_band_system};
 //!
 //! // Create a tridiagonal matrix for cubic spline interpolation
 //! let n = 100;
@@ -86,7 +86,7 @@ where
     /// # Examples
     ///
     /// ```rust
-    /// use scirs2__interpolate::structured_matrix::BandMatrix;
+    /// use scirs2_interpolate::structured_matrix::BandMatrix;
     ///
     /// // Create a tridiagonal matrix (1 sub, 1 super diagonal)
     /// let band_matrix = BandMatrix::<f64>::new(5, 1, 1);
@@ -473,7 +473,7 @@ where
 ///
 /// ```rust
 /// use ndarray::Array1;
-/// use scirs2__interpolate::structured_matrix::{BandMatrix, solve_band_system};
+/// use scirs2_interpolate::structured_matrix::{BandMatrix, solve_band_system};
 ///
 /// // Create a simple tridiagonal system
 /// let mut matrix = BandMatrix::new(3, 1, 1);

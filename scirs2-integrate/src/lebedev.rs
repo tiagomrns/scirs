@@ -115,7 +115,7 @@ impl LebedevOrder {
 /// # Examples
 ///
 /// ```
-/// use scirs2__integrate::lebedev::{lebedev_rule, LebedevOrder};
+/// use scirs2_integrate::lebedev::{lebedev_rule, LebedevOrder};
 ///
 /// // Generate a 14th-order Lebedev rule
 /// let rule = lebedev_rule(LebedevOrder::Order14).unwrap();
@@ -160,7 +160,7 @@ pub fn lebedev_rule<F: IntegrateFloat>(order: LebedevOrder) -> IntegrateResult<L
 /// # Examples
 ///
 /// ```
-/// use scirs2__integrate::lebedev::{lebedev_integrate, LebedevOrder};
+/// use scirs2_integrate::lebedev::{lebedev_integrate, LebedevOrder};
 ///
 /// // Integrate f(x,y,z) = 1 over the unit sphere (should equal 4π)
 /// let result: f64 = lebedev_integrate(|_x_y_z| 1.0, LebedevOrder::Order14).unwrap();

@@ -162,7 +162,7 @@ pub enum MethodInfo {
 ///
 /// ```
 /// use ndarray::Array1;
-/// use scirs2__series::anomaly::{detect_anomalies, AnomalyOptions, AnomalyMethod};
+/// use scirs2_series::anomaly::{detect_anomalies, AnomalyOptions, AnomalyMethod};
 ///
 /// // Create a time series with some anomalies
 /// let mut ts = Array1::from_vec((0..100).map(|i| (i as f64 / 10.0).sin()).collect());

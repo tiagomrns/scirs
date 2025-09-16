@@ -32,7 +32,7 @@ use crate::error::{Result, TimeSeriesError};
 ///
 /// ```
 /// use ndarray::Array1;
-/// use scirs2__series::trends::{robust_trend_filter, RobustFilterOptions, RobustFilterMethod, WeightFunction};
+/// use scirs2_series::trends::{robust_trend_filter, RobustFilterOptions, RobustFilterMethod, WeightFunction};
 ///
 /// // Create a sample time series with a trend, noise, and outliers
 /// let n = 100;

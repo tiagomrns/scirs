@@ -317,11 +317,11 @@ where
 /// use scirs2_sparse::csgraph::largest_component;
 /// use scirs2_sparse::csr_array::CsrArray;
 ///
-/// // Create a graph with components of different sizes
-/// let rows = vec![0, 1, 2, 3, 4];
-/// let cols = vec![1, 0, 3, 2, 5];
-/// let data = vec![1.0, 1.0, 1.0, 1.0, 1.0];
-/// let graph = CsrArray::from_triplets(&rows, &cols, &data, (6, 6), false).unwrap();
+/// // Create a graph with components of different sizes (symmetric for undirected)
+/// let rows = vec![0, 1, 1, 0, 2, 3, 3, 2];
+/// let cols = vec![1, 0, 2, 2, 1, 2, 4, 4];
+/// let data = vec![1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0];
+/// let graph = CsrArray::from_triplets(&rows, &cols, &data, (5, 5), false).unwrap();
 ///
 /// let (size, indices) = largest_component(&graph, false, "weak").unwrap();
 /// ```

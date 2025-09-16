@@ -69,7 +69,7 @@ where
 /// use ndarray::Array1;
 /// use scirs2_sparse::{
 ///     sym_csr::SymCsrMatrix,
-///     linalg::eigen::{power_iteration, PowerIterationOptions},
+///     linalg::{power_iteration, PowerIterationOptions},
 /// };
 ///
 /// // Create a symmetric matrix

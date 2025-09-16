@@ -43,6 +43,7 @@ use crate::sparray::{SparseArray, SparseSum};
 /// ## Basic Construction and Access
 /// ```
 /// use scirs2_sparse::csr_array::CsrArray;
+/// use scirs2_sparse::SparseArray;
 ///
 /// // Create a 3x3 matrix:
 /// // [1.0, 0.0, 2.0]
@@ -66,6 +67,7 @@ use crate::sparray::{SparseArray, SparseSum};
 /// ## Matrix Operations
 /// ```
 /// use scirs2_sparse::csr_array::CsrArray;
+/// use scirs2_sparse::SparseArray;
 /// use ndarray::Array1;
 ///
 /// let rows = vec![0, 1, 2];
@@ -84,6 +86,7 @@ use crate::sparray::{SparseArray, SparseSum};
 /// ## Format Conversion
 /// ```
 /// use scirs2_sparse::csr_array::CsrArray;
+/// use scirs2_sparse::SparseArray;
 ///
 /// let rows = vec![0, 1];
 /// let cols = vec![0, 1];
@@ -234,6 +237,7 @@ where
     /// Create a simple 3x3 sparse matrix:
     /// ```
     /// use scirs2_sparse::csr_array::CsrArray;
+    /// use scirs2_sparse::SparseArray;
     ///
     /// // Create a 3x3 matrix with the following structure:
     /// // [1.0, 0.0, 2.0]
@@ -253,6 +257,7 @@ where
     /// Create an empty sparse matrix:
     /// ```
     /// use scirs2_sparse::csr_array::CsrArray;
+    /// use scirs2_sparse::SparseArray;
     ///
     /// let rows: Vec<usize> = vec![];
     /// let cols: Vec<usize> = vec![];
@@ -267,6 +272,7 @@ where
     /// Handle duplicate entries (they will be preserved):
     /// ```
     /// use scirs2_sparse::csr_array::CsrArray;
+    /// use scirs2_sparse::SparseArray;
     ///
     /// // Multiple entries at the same position
     /// let rows = vec![0, 0];

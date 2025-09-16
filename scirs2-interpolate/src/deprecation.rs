@@ -14,7 +14,7 @@
 //! # Usage
 //!
 //! ```rust
-//! use scirs2__interpolate::deprecation::{deprecated_function, DeprecationLevel};
+//! use scirs2_interpolate::deprecation::{deprecated_function, DeprecationLevel};
 //!
 //! #[deprecated_function(
 //!     since = "0.1.0",

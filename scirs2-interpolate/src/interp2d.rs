@@ -63,7 +63,7 @@ where
     ///
     /// ```
     /// use ndarray::{array, Array2};
-    /// use scirs2__interpolate::interp2d::{Interp2d, Interp2dKind};
+    /// use scirs2_interpolate::interp2d::{Interp2d, Interp2dKind};
     ///
     /// // Define grid
     /// let x = array![0.0, 1.0, 2.0];
@@ -139,7 +139,7 @@ where
     ///
     /// ```
     /// use ndarray::{array, Array2};
-    /// use scirs2__interpolate::interp2d::{Interp2d, Interp2dKind};
+    /// use scirs2_interpolate::interp2d::{Interp2d, Interp2dKind};
     ///
     /// let x = array![0.0, 1.0, 2.0];
     /// let y = array![0.0, 1.0];
@@ -335,7 +335,7 @@ fn find_interval<F: PartialOrd>(arr: &ArrayView1<F>, value: F) -> usize {
 ///
 /// ```
 /// use ndarray::{array, Array2};
-/// use scirs2__interpolate::interp2d::{interp2d, Interp2dKind};
+/// use scirs2_interpolate::interp2d::{interp2d, Interp2dKind};
 ///
 /// let x = array![0.0, 1.0, 2.0];
 /// let y = array![0.0, 1.0];

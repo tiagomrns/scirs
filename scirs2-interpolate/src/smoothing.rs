@@ -22,7 +22,7 @@
 //!
 //! ```rust
 //! use ndarray::array;
-//! use scirs2__interpolate::smoothing::{VariableKnotSpline, KnotStrategy};
+//! use scirs2_interpolate::smoothing::{VariableKnotSpline, KnotStrategy};
 //!
 //! // Create some data with varying complexity
 //! let x = array![0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0];

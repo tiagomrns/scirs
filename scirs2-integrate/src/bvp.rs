@@ -75,7 +75,7 @@ pub struct BVPResult<F: IntegrateFloat> {
 ///
 /// ```
 /// use ndarray::{array, Array1, ArrayView1};
-/// use scirs2__integrate::bvp::{solve_bvp, BVPOptions};
+/// use scirs2_integrate::bvp::{solve_bvp, BVPOptions};
 ///
 /// // Solve a simple linear ODE: y' = -y with boundary conditions
 /// // y(0) = 1, y(1) = exp(-1)

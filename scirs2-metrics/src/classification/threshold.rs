@@ -223,7 +223,7 @@ where
 /// let y_true = array![0.0, 0.0, 1.0, 1.0];
 /// let y_prob = array![0.1, 0.4, 0.35, 0.8];
 ///
-/// let (precision, recall_) = precision_recall_curve(&y_true, &y_prob, None, None).unwrap();
+/// let (precision, recall, _thresholds) = precision_recall_curve(&y_true, &y_prob, None, None).unwrap();
 /// let average_precision = average_precision_score_from_curve(&precision, &recall);
 /// ```
 #[allow(dead_code)]

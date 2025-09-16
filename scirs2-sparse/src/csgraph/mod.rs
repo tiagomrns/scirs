@@ -27,7 +27,7 @@
 //! let graph = CsrArray::from_triplets(&rows, &cols, &data, (3, 3), false).unwrap();
 //!
 //! // Find shortest paths from vertex 0
-//! let distances = shortest_path(&graph, Some(0), None, "dijkstra").unwrap();
+//! let distances = shortest_path(&graph, Some(0), None, "dijkstra", true, false).unwrap();
 //! ```
 //!
 //! ### Connected Components
@@ -43,7 +43,7 @@
 //! let graph = CsrArray::from_triplets(&rows, &cols, &data, (4, 4), false).unwrap();
 //!
 //! // Find connected components
-//! let (n_components, labels) = connected_components(&graph, false).unwrap();
+//! let (n_components, labels) = connected_components(&graph, false, "weak", true).unwrap();
 //! ```
 
 use crate::error::{SparseError, SparseResult};

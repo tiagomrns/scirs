@@ -60,7 +60,7 @@ use num_traits::{Float, FromPrimitive};
 ///
 /// ```rust
 /// # use ndarray::array;
-/// # use scirs2__interpolate::interp1d::basic_interp::nearest_interp;
+/// # use scirs2_interpolate::interp1d::basic_interp::nearest_interp;
 /// let x = array![1.0, 2.0, 3.0];
 /// let y = array![10.0, 20.0, 30.0];
 ///
@@ -129,7 +129,7 @@ pub(crate) fn nearest_interp<F: Float>(
 ///
 /// ```rust
 /// # use ndarray::array;
-/// # use scirs2__interpolate::interp1d::basic_interp::linear_interp;
+/// # use scirs2_interpolate::interp1d::basic_interp::linear_interp;
 /// let x = array![1.0, 2.0, 3.0];
 /// let y = array![10.0, 20.0, 30.0];
 ///
@@ -218,7 +218,7 @@ pub(crate) fn linear_interp<F: Float>(
 ///
 /// ```rust
 /// # use ndarray::array;
-/// # use scirs2__interpolate::interp1d::basic_interp::cubic_interp;
+/// # use scirs2_interpolate::interp1d::basic_interp::cubic_interp;
 /// let x = array![0.0, 1.0, 2.0, 3.0, 4.0];
 /// let y = array![0.0, 1.0, 8.0, 27.0, 64.0]; // y = x³
 ///
@@ -323,7 +323,7 @@ pub(crate) fn cubic_interp<F: Float + FromPrimitive>(
 ///
 /// ```
 /// use ndarray::array;
-/// use scirs2__interpolate::nearest_interpolate;
+/// use scirs2_interpolate::nearest_interpolate;
 ///
 /// let x = array![0.0f64, 1.0, 2.0, 3.0];
 /// let y = array![0.0f64, 1.0, 4.0, 9.0];
@@ -365,7 +365,7 @@ pub fn nearest_interpolate<F: crate::traits::InterpolationFloat>(
 ///
 /// ```
 /// use ndarray::array;
-/// use scirs2__interpolate::linear_interpolate;
+/// use scirs2_interpolate::linear_interpolate;
 ///
 /// let x = array![0.0f64, 1.0, 2.0, 3.0];
 /// let y = array![0.0f64, 1.0, 4.0, 9.0];
@@ -407,7 +407,7 @@ pub fn linear_interpolate<F: crate::traits::InterpolationFloat>(
 ///
 /// ```
 /// use ndarray::array;
-/// use scirs2__interpolate::cubic_interpolate;
+/// use scirs2_interpolate::cubic_interpolate;
 ///
 /// let x = array![0.0f64, 1.0, 2.0, 3.0];
 /// let y = array![0.0f64, 1.0, 4.0, 9.0];

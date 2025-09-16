@@ -12,7 +12,7 @@ use rand::rngs::StdRng;
 use rand::{Rng, SeedableRng};
 use scirs2_core::rng;
 use std::f64::consts::PI;
-// use scirs2__linalg::solve;
+// use scirs2_linalg::solve;
 
 /// Non-rigid transformation interface
 pub trait NonRigidTransform {

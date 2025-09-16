@@ -251,7 +251,7 @@ where
 ///
 /// ```
 /// use scirs2_sparse::csr::CsrMatrix;
-/// use scirs2_sparse::linalg::matfuncs::twonormest;
+/// use scirs2_sparse::linalg::twonormest;
 ///
 /// let rows = vec![0, 1, 2];
 /// let cols = vec![0, 1, 2];
@@ -380,7 +380,7 @@ where
 ///
 /// ```
 /// use scirs2_sparse::csr::CsrMatrix;
-/// use scirs2_sparse::linalg::matfuncs::condest;
+/// use scirs2_sparse::linalg::condest;
 ///
 /// let rows = vec![0, 1, 2];
 /// let cols = vec![0, 1, 2];
@@ -1018,7 +1018,7 @@ fn solve_matrix_equation<F: Float + NumAssign>(
 ///
 /// ```
 /// use scirs2_sparse::csr_array::CsrArray;
-/// use scirs2_sparse::linalg::matfuncs::twonormest_enhanced;
+/// use scirs2_sparse::linalg::twonormest_enhanced;
 ///
 /// let rows = vec![0, 1, 2];
 /// let cols = vec![0, 1, 2];
@@ -1158,7 +1158,7 @@ where
 ///
 /// ```
 /// use scirs2_sparse::csr_array::CsrArray;
-/// use scirs2_sparse::linalg::matfuncs::condest_enhanced;
+/// use scirs2_sparse::linalg::condest_enhanced;
 ///
 /// let rows = vec![0, 1, 2];
 /// let cols = vec![0, 1, 2];

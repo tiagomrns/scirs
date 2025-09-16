@@ -21,7 +21,7 @@ use statrs::statistics::Statistics;
 ///
 /// ```rust
 /// use ndarray::Array2;
-/// use scirs2__datasets::utils::normalize;
+/// use scirs2_datasets::utils::normalize;
 ///
 /// let mut data = Array2::from_shape_vec((3, 2), vec![1.0, 2.0, 3.0, 4.0, 5.0, 6.0]).unwrap();
 /// normalize(&mut data);
@@ -66,7 +66,7 @@ pub fn normalize(data: &mut Array2<f64>) {
 ///
 /// ```rust
 /// use ndarray::Array2;
-/// use scirs2__datasets::utils::min_max_scale;
+/// use scirs2_datasets::utils::min_max_scale;
 ///
 /// let mut data = Array2::from_shape_vec((3, 2), vec![1.0, 10.0, 2.0, 20.0, 3.0, 30.0]).unwrap();
 /// min_max_scale(&mut data, (0.0, 1.0));
@@ -108,7 +108,7 @@ pub fn min_max_scale(_data: &mut Array2<f64>, featurerange: (f64, f64)) {
 ///
 /// ```rust
 /// use ndarray::Array2;
-/// use scirs2__datasets::utils::robust_scale;
+/// use scirs2_datasets::utils::robust_scale;
 ///
 /// let mut data = Array2::from_shape_vec((5, 2), vec![1.0, 10.0, 2.0, 20.0, 3.0, 30.0, 4.0, 40.0, 100.0, 500.0]).unwrap();
 /// robust_scale(&mut data);

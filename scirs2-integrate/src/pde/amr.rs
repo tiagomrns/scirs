@@ -15,7 +15,7 @@
 //! # Examples
 //!
 //! ```
-//! use scirs2__integrate::pde::amr::{AMRGrid, RefinementCriteria, AMRSolver};
+//! use scirs2_integrate::pde::amr::{AMRGrid, RefinementCriteria, AMRSolver};
 //!
 //! // Create AMR grid with initial coarse mesh
 //! let mut grid = AMRGrid::new(64, 64, [0.0, 1.0], [0.0, 1.0]);

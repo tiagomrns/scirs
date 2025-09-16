@@ -18,7 +18,7 @@
 //!
 //! ```rust
 //! use ndarray::Array1;
-//! use scirs2__interpolate::optimization::{
+//! use scirs2_interpolate::optimization::{
 //!     CrossValidator, ModelSelector, OptimizationConfig, ValidationMetric
 //! };
 //!

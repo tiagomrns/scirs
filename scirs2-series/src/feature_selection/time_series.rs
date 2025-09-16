@@ -31,7 +31,7 @@ impl TimeSeriesMethods {
     ///
     /// ```
     /// use ndarray::{Array1, Array2};
-    /// use scirs2__series::feature_selection::TimeSeriesMethods;
+    /// use scirs2_series::feature_selection::TimeSeriesMethods;
     ///
     /// let features = Array2::from_shape_vec((100, 5), (0..500).map(|x| x as f64).collect()).unwrap();
     /// let target = Array1::from_vec((0..100).map(|x| x as f64).collect());

@@ -686,7 +686,7 @@ impl<F: Float + FromPrimitive + Debug + crate::traits::InterpolationFloat>
 ///
 /// ```
 /// use ndarray::array;
-/// use scirs2__interpolate::interp1d::monotonic::{monotonic_interpolate, MonotonicMethod};
+/// use scirs2_interpolate::interp1d::monotonic::{monotonic_interpolate, MonotonicMethod};
 ///
 /// let x = array![0.0f64, 1.0, 2.0, 3.0];
 /// let y = array![0.0f64, 1.0, 4.0, 9.0];
@@ -731,7 +731,7 @@ pub fn monotonic_interpolate<
 ///
 /// ```
 /// use ndarray::array;
-/// use scirs2__interpolate::interp1d::monotonic::hyman_interpolate;
+/// use scirs2_interpolate::interp1d::monotonic::hyman_interpolate;
 ///
 /// let x = array![0.0f64, 1.0, 2.0, 3.0];
 /// let y = array![0.0f64, 1.0, 4.0, 9.0];
@@ -766,7 +766,7 @@ pub fn hyman_interpolate<F: Float + FromPrimitive + Debug + crate::traits::Inter
 ///
 /// ```
 /// use ndarray::array;
-/// use scirs2__interpolate::interp1d::monotonic::steffen_interpolate;
+/// use scirs2_interpolate::interp1d::monotonic::steffen_interpolate;
 ///
 /// let x = array![0.0f64, 1.0, 2.0, 3.0];
 /// let y = array![0.0f64, 1.0, 4.0, 9.0];
@@ -801,7 +801,7 @@ pub fn steffen_interpolate<F: Float + FromPrimitive + Debug + crate::traits::Int
 ///
 /// ```
 /// use ndarray::array;
-/// use scirs2__interpolate::interp1d::monotonic::modified_akima_interpolate;
+/// use scirs2_interpolate::interp1d::monotonic::modified_akima_interpolate;
 ///
 /// let x = array![0.0f64, 1.0, 2.0, 3.0];
 /// let y = array![0.0f64, 1.0, 4.0, 9.0];

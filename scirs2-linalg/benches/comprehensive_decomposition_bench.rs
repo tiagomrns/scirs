@@ -7,8 +7,8 @@ use std::hint::black_box;
 
 use criterion::{criterion_group, criterion_main, BenchmarkId, Criterion, Throughput};
 use ndarray::{Array1, Array2};
-use scirs2__linalg::complex::decompositions::{complex_eig, complex_lu, complex_qr, complex_svd};
-use scirs2__linalg::*;
+use scirs2_linalg::complex::decompositions::{complex_eig, complex_lu, complex_qr, complex_svd};
+use scirs2_linalg::*;
 use std::time::Duration;
 
 /// Create a well-conditioned test matrix

@@ -11,7 +11,7 @@
 //!
 //! ```rust
 //! use ndarray::Array1;
-//! use scirs2__series::features::complexity::*;
+//! use scirs2_series::features::complexity::*;
 //!
 //! let ts = Array1::from_vec(vec![1.0, 2.0, 1.5, 3.0, 2.5, 4.0, 3.5, 5.0]);
 //! let approx_entropy = calculate_approximate_entropy(&ts, 2, 0.1).unwrap();

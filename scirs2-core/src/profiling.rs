@@ -33,13 +33,13 @@
 //! });
 //!
 //! // Time a code block with more control
-//! let timer = Timer::start(data_processing);
+//! let timer = Timer::start("data_processing");
 //! // Perform data processing
 //! // ...
 //! timer.stop();
 //!
 //! // Track memory allocations
-//! let tracker = MemoryTracker::start(large_array_operation);
+//! let tracker = MemoryTracker::start("large_array_operation");
 //! let large_array = vec![0; 1_000_000];
 //! // ...
 //! tracker.stop();

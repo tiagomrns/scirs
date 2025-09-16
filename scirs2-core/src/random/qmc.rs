@@ -19,7 +19,7 @@
 //!
 //! fn example() -> Result<(), Box<dyn std::error::Error>> {
 //!     // Generate Sobol sequence in 2D
-//!     let mut sobol = SobolGenerator::new(2)?;
+//!     let mut sobol = SobolGenerator::dimension(2)?;
 //!     let points = sobol.generate(1000);
 //!
 //!     // Generate Halton sequence

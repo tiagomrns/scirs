@@ -32,7 +32,7 @@
 //!
 //! ```rust
 //! use ndarray::{Array1, Array2};
-//! use scirs2__interpolate::sparse_grid::{SparseGridInterpolator, SparseGridBuilder};
+//! use scirs2_interpolate::sparse_grid::{SparseGridInterpolator, SparseGridBuilder};
 //!
 //! // Create a 5D test function
 //! let bounds = vec![(0.0, 1.0); 5]; // Unit hypercube

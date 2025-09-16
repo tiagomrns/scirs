@@ -19,7 +19,7 @@
 //! ## Loading toy datasets
 //!
 //! ```rust
-//! use scirs2__datasets::{load_iris, load_boston};
+//! use scirs2_datasets::{load_iris, load_boston};
 //!
 //! // Load the classic Iris dataset
 //! let iris = load_iris().unwrap();
@@ -33,7 +33,7 @@
 //! ## Generating synthetic datasets
 //!
 //! ```rust
-//! use scirs2__datasets::{make_classification, make_regression, make_blobs, make_spirals, make_moons};
+//! use scirs2_datasets::{make_classification, make_regression, make_blobs, make_spirals, make_moons};
 //!
 //! // Generate a classification dataset
 //! let classification = make_classification(100, 5, 3, 2, 4, Some(42)).unwrap();
@@ -58,7 +58,7 @@
 //! ## Cross-validation
 //!
 //! ```rust
-//! use scirs2__datasets::{load_iris, k_fold_split, stratified_k_fold_split};
+//! use scirs2_datasets::{load_iris, k_fold_split, stratified_k_fold_split};
 //!
 //! let iris = load_iris().unwrap();
 //!
@@ -76,7 +76,7 @@
 //! ## Dataset manipulation
 //!
 //! ```rust
-//! use scirs2__datasets::{load_iris, Dataset};
+//! use scirs2_datasets::{load_iris, Dataset};
 //!
 //! let iris = load_iris().unwrap();
 //!

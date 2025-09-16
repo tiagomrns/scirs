@@ -98,10 +98,10 @@ impl<F: Float + FromPrimitive> Default for LocalPolynomialConfig<F> {
 /// # #[cfg(feature = "linalg")]
 /// # {
 /// use ndarray::{Array1, Array2, Axis};
-/// use scirs2__interpolate::local::polynomial::{
+/// use scirs2_interpolate::local::polynomial::{
 ///     LocalPolynomialRegression, LocalPolynomialConfig
 /// };
-/// use scirs2__interpolate::local::mls::{WeightFunction, PolynomialBasis};
+/// use scirs2_interpolate::local::mls::{WeightFunction, PolynomialBasis};
 ///
 /// // Create some 1D data with noise
 /// let x = Array1::<f64>::linspace(0.0, 10.0, 50);

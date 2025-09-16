@@ -83,7 +83,7 @@ impl<
     ///
     /// ```
     /// use ndarray::{array, Array2};
-    /// use scirs2__interpolate::advanced::rbf::{RBFInterpolator, RBFKernel};
+    /// use scirs2_interpolate::advanced::rbf::{RBFInterpolator, RBFKernel};
     ///
     /// // Create 2D points
     /// let points = Array2::from_shape_vec((5, 2), vec![
@@ -141,7 +141,7 @@ impl<
     ///
     /// ```
     /// use ndarray::{array, Array2};
-    /// use scirs2__interpolate::advanced::rbf::{RBFInterpolator, RBFKernel};
+    /// use scirs2_interpolate::advanced::rbf::{RBFInterpolator, RBFKernel};
     ///
     /// // Create 2D points
     /// let points = Array2::from_shape_vec((5, 2), vec![
@@ -410,7 +410,7 @@ impl<
     ///
     /// ```
     /// use ndarray::array;
-    /// use scirs2__interpolate::advanced::rbf::{RBFInterpolator, RBFKernel};
+    /// use scirs2_interpolate::advanced::rbf::{RBFInterpolator, RBFKernel};
     ///
     /// // Training data: function z = x² + y²
     /// let points = array![[0.0, 0.0], [1.0, 0.0], [0.0, 1.0], [1.0, 1.0]];
@@ -491,8 +491,8 @@ impl<
     ///
     /// ```
     /// use ndarray::Array2;
-    /// use scirs2__interpolate::advanced::rbf::{RBFInterpolator, RBFKernel};
-    /// use scirs2__interpolate::numerical_stability::StabilityLevel;
+    /// use scirs2_interpolate::advanced::rbf::{RBFInterpolator, RBFKernel};
+    /// use scirs2_interpolate::numerical_stability::StabilityLevel;
     ///
     /// // Create interpolator (example data)
     /// let points = Array2::from_shape_vec((3, 2), vec![0.0, 0.0, 1.0, 0.0, 0.0, 1.0]).unwrap();
@@ -547,7 +547,7 @@ impl<
     /// # Examples
     ///
     /// ```
-    /// use scirs2__interpolate::advanced::rbf::{RBFInterpolator, RBFKernel};
+    /// use scirs2_interpolate::advanced::rbf::{RBFInterpolator, RBFKernel};
     /// let mut rbf = RBFInterpolator::new_unfitted(RBFKernel::Gaussian, 1.0f64);
     /// // Use rbf.fit() to train the interpolator before prediction
     /// ```
@@ -579,7 +579,7 @@ impl<
     ///
     /// ```
     /// use ndarray::{array, Array2};
-    /// use scirs2__interpolate::advanced::rbf::{RBFInterpolator, RBFKernel};
+    /// use scirs2_interpolate::advanced::rbf::{RBFInterpolator, RBFKernel};
     ///
     /// let mut rbf = RBFInterpolator::new_unfitted(RBFKernel::Gaussian, 1.0f64);
     ///
@@ -617,7 +617,7 @@ impl<
     ///
     /// ```
     /// use ndarray::{array, Array2};
-    /// use scirs2__interpolate::advanced::rbf::{RBFInterpolator, RBFKernel};
+    /// use scirs2_interpolate::advanced::rbf::{RBFInterpolator, RBFKernel};
     ///
     /// let mut rbf = RBFInterpolator::new_unfitted(RBFKernel::Gaussian, 1.0f64);
     ///

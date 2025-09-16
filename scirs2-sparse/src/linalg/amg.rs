@@ -118,7 +118,7 @@ where
     ///
     /// ```rust
     /// use scirs2_sparse::csr_array::CsrArray;
-    /// use scirs2_sparse::linalg::amg::{AMGPreconditioner, AMGOptions};
+    /// use scirs2_sparse::linalg::{AMGPreconditioner, AMGOptions};
     ///
     /// // Create a simple matrix
     /// let rows = vec![0, 0, 1, 1, 2, 2];

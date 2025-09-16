@@ -91,7 +91,7 @@ impl<F: IntegrateFloat> From<MonteCarloOptions<F>> for ParallelMonteCarloOptions
 /// # Examples
 ///
 /// ```
-/// use scirs2__integrate::monte_carlo_parallel::{parallel_monte_carlo, ParallelMonteCarloOptions};
+/// use scirs2_integrate::monte_carlo_parallel::{parallel_monte_carlo, ParallelMonteCarloOptions};
 /// use ndarray::ArrayView1;
 /// use std::marker::PhantomData;
 ///

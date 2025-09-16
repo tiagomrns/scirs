@@ -110,7 +110,7 @@ pub struct ChangePointResult {
 ///
 /// ```
 /// use ndarray::Array1;
-/// use scirs2__series::change_point::{detect_change_points, ChangePointOptions, ChangePointMethod};
+/// use scirs2_series::change_point::{detect_change_points, ChangePointOptions, ChangePointMethod};
 ///
 /// // Create a time series with a change point at index 50
 /// let mut ts = Array1::zeros(100);

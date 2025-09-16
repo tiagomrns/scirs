@@ -74,7 +74,7 @@ pub struct TFQMRResult<T> {
 ///
 /// ```rust
 /// use scirs2_sparse::csr_array::CsrArray;
-/// use scirs2_sparse::linalg::tfqmr::{tfqmr, TFQMROptions};
+/// use scirs2_sparse::linalg::{tfqmr, TFQMROptions};
 /// use ndarray::Array1;
 ///
 /// // Create a simple matrix

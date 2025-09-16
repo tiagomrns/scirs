@@ -20,7 +20,7 @@
 //! # #[cfg(feature = "gpu")]
 //! # {
 //! use ndarray::Array1;
-//! use scirs2__interpolate::gpu_accelerated::{
+//! use scirs2_interpolate::gpu_accelerated::{
 //!     GpuRBFInterpolator, GpuConfig, GpuRBFKernel
 //! };
 //!

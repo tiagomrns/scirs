@@ -31,7 +31,7 @@ use crate::error::{Result, TimeSeriesError};
 ///
 /// ```
 /// use ndarray::Array1;
-/// use scirs2__series::trends::{compute_trend_confidence_interval, ConfidenceIntervalOptions, ConfidenceIntervalMethod};
+/// use scirs2_series::trends::{compute_trend_confidence_interval, ConfidenceIntervalOptions, ConfidenceIntervalMethod};
 ///
 /// // Create a sample time series with a trend and noise
 /// let n = 100;
@@ -387,7 +387,7 @@ fn normal_quantile(p: f64) -> Result<f64> {
 ///
 /// ```
 /// use ndarray::Array1;
-/// use scirs2__series::trends::{
+/// use scirs2_series::trends::{
 ///     create_trend_with_ci, SplineTrendOptions, ConfidenceIntervalOptions,
 ///     SplineType, KnotPlacementStrategy, ConfidenceIntervalMethod,
 ///     estimate_spline_trend

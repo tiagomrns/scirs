@@ -48,7 +48,7 @@ struct KdNode<F: Float> {
 ///
 /// ```rust
 /// use ndarray::Array2;
-/// use scirs2__interpolate::spatial::kdtree::KdTree;
+/// use scirs2_interpolate::spatial::kdtree::KdTree;
 ///
 /// // Create sample 2D points
 /// let points = Array2::from_shape_vec((5, 2), vec![

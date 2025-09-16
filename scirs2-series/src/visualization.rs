@@ -18,7 +18,7 @@
 //! # Examples
 //!
 //! ```rust
-//! use scirs2__series::visualization::{TimeSeriesPlot, PlotStyle, ExportFormat};
+//! use scirs2_series::visualization::{TimeSeriesPlot, PlotStyle, ExportFormat};
 //! use ndarray::Array1;
 //!
 //! let data = Array1::linspace(0.0, 10.0, 100);

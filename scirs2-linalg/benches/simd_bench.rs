@@ -1,9 +1,9 @@
 use criterion::{criterion_group, criterion_main, BenchmarkId, Criterion};
 use ndarray::{Array1, Array2, ArrayView1, ArrayView2};
-use scirs2__linalg::blas_accelerated;
+use scirs2_linalg::blas_accelerated;
 
 #[cfg(feature = "simd")]
-use scirs2__linalg::simd_ops::{simd_dot_f32, simd_matmul_f32, simd_matvec_f32};
+use scirs2_linalg::simd_ops::{simd_dot_f32, simd_matmul_f32, simd_matvec_f32};
 use std::hint::black_box;
 
 #[allow(dead_code)]

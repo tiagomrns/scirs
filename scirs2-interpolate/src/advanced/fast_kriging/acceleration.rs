@@ -37,8 +37,8 @@ use std::ops::{Add, Div, Mul, Sub};
 /// # #[cfg(feature = "linalg")]
 /// # {
 /// use ndarray::{Array1, Array2};
-/// use scirs2__interpolate::advanced::fast_kriging::make_local_kriging;
-/// use scirs2__interpolate::advanced::kriging::CovarianceFunction;
+/// use scirs2_interpolate::advanced::fast_kriging::make_local_kriging;
+/// use scirs2_interpolate::advanced::kriging::CovarianceFunction;
 ///
 /// // Create sample data
 /// let points = Array2::<f64>::zeros((100, 2));
@@ -119,8 +119,8 @@ pub fn make_local_kriging<
 /// # #[cfg(feature = "linalg")]
 /// # {
 /// use ndarray::{Array1, Array2};
-/// use scirs2__interpolate::advanced::fast_kriging::make_fixed_rank_kriging;
-/// use scirs2__interpolate::advanced::kriging::CovarianceFunction;
+/// use scirs2_interpolate::advanced::fast_kriging::make_fixed_rank_kriging;
+/// use scirs2_interpolate::advanced::kriging::CovarianceFunction;
 ///
 /// // Create sample data
 /// let points = Array2::<f64>::zeros((100, 2));
@@ -200,8 +200,8 @@ pub fn make_fixed_rank_kriging<
 /// # #[cfg(feature = "linalg")]
 /// # {
 /// use ndarray::{Array1, Array2};
-/// use scirs2__interpolate::advanced::fast_kriging::make_tapered_kriging;
-/// use scirs2__interpolate::advanced::kriging::CovarianceFunction;
+/// use scirs2_interpolate::advanced::fast_kriging::make_tapered_kriging;
+/// use scirs2_interpolate::advanced::kriging::CovarianceFunction;
 ///
 /// // Create sample data
 /// let points = Array2::<f64>::zeros((100, 2));
@@ -281,8 +281,8 @@ pub fn make_tapered_kriging<
 /// # #[cfg(feature = "linalg")]
 /// # {
 /// use ndarray::{Array1, Array2};
-/// use scirs2__interpolate::advanced::fast_kriging::make_hodlr_kriging;
-/// use scirs2__interpolate::advanced::kriging::CovarianceFunction;
+/// use scirs2_interpolate::advanced::fast_kriging::make_hodlr_kriging;
+/// use scirs2_interpolate::advanced::kriging::CovarianceFunction;
 ///
 /// // Create sample data
 /// let points = Array2::<f64>::zeros((100, 2));
@@ -361,8 +361,8 @@ pub fn make_hodlr_kriging<
 /// # Example
 ///
 /// ```
-/// use scirs2__interpolate::advanced::fast_kriging::select_approximation_method;
-/// use scirs2__interpolate::advanced::fast_kriging::FastKrigingMethod;
+/// use scirs2_interpolate::advanced::fast_kriging::select_approximation_method;
+/// use scirs2_interpolate::advanced::fast_kriging::FastKrigingMethod;
 ///
 /// // Get recommended method for different dataset sizes
 /// let small_method = select_approximation_method(100);     // Local
@@ -434,8 +434,8 @@ pub struct KrigingPerformanceStats {
 /// # #[cfg(feature = "linalg")]
 /// # {
 /// use ndarray::{Array1, Array2};
-/// use scirs2__interpolate::advanced::fast_kriging::benchmark_methods;
-/// use scirs2__interpolate::advanced::kriging::CovarianceFunction;
+/// use scirs2_interpolate::advanced::fast_kriging::benchmark_methods;
+/// use scirs2_interpolate::advanced::kriging::CovarianceFunction;
 ///
 /// // Create sample data
 /// let points = Array2::<f64>::zeros((100, 2));

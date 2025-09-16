@@ -18,7 +18,7 @@
 //!
 //! ```rust
 //! use ndarray::Array1;
-//! use scirs2__interpolate::timeseries::{
+//! use scirs2_interpolate::timeseries::{
 //!     TimeSeriesInterpolator, TemporalPattern, SeasonalityType
 //! };
 //!

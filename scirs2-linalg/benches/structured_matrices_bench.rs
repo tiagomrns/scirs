@@ -6,11 +6,11 @@
 
 use criterion::{criterion_group, criterion_main, BenchmarkId, Criterion, Throughput};
 use ndarray::{Array1, Array2};
-use scirs2__linalg::prelude::*;
-use scirs2__linalg::specialized::{
+use scirs2_linalg::prelude::*;
+use scirs2_linalg::specialized::{
     block_diagonal_determinant, block_tridiagonal_lu, solve_block_diagonal, BlockDiagonalMatrix,
 };
-use scirs2__linalg::structured::{
+use scirs2_linalg::structured::{
     circulant_determinant, circulant_eigenvalues, circulant_inverse_fft, circulant_matvec_direct,
     circulant_matvec_fft, dftmatrix_multiply, fast_toeplitz_inverse, gohberg_semencul_inverse,
     hadamard_transform, hankel_determinant, hankel_matvec, hankel_matvec_fft, hankel_svd,

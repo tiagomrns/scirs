@@ -41,7 +41,7 @@ impl<F: Float + FromPrimitive + Debug> BarycentricInterpolator<F> {
     ///
     /// ```
     /// use ndarray::array;
-    /// use scirs2__interpolate::advanced::barycentric::BarycentricInterpolator;
+    /// use scirs2_interpolate::advanced::barycentric::BarycentricInterpolator;
     ///
     /// let x = array![0.0f64, 1.0, 2.0, 3.0, 4.0];
     /// let y = array![0.0f64, 1.0, 4.0, 9.0, 16.0];
@@ -265,7 +265,7 @@ impl<F: Float + FromPrimitive + Debug> BarycentricTriangulation<F> {
     ///
     /// ```
     /// use ndarray::array;
-    /// use scirs2__interpolate::advanced::barycentric::BarycentricTriangulation;
+    /// use scirs2_interpolate::advanced::barycentric::BarycentricTriangulation;
     ///
     /// // Create 2D points (x, y coordinates flattened)
     /// let points = array![
@@ -461,7 +461,7 @@ impl<F: Float + FromPrimitive + Debug> BarycentricTriangulation<F> {
 ///
 /// ```
 /// use ndarray::array;
-/// use scirs2__interpolate::advanced::barycentric::make_barycentric_interpolator;
+/// use scirs2_interpolate::advanced::barycentric::make_barycentric_interpolator;
 ///
 /// let x = array![0.0f64, 1.0, 2.0, 3.0, 4.0];
 /// let y = array![0.0f64, 1.0, 4.0, 9.0, 16.0];

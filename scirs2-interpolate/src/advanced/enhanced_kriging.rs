@@ -1408,8 +1408,8 @@ where
 ///
 /// ```rust,no_run
 /// use ndarray::{Array1, Array2};
-/// use scirs2__interpolate::advanced::enhanced_kriging::make_enhanced_kriging;
-/// use scirs2__interpolate::advanced::kriging::CovarianceFunction;
+/// use scirs2_interpolate::advanced::enhanced_kriging::make_enhanced_kriging;
+/// use scirs2_interpolate::advanced::kriging::CovarianceFunction;
 ///
 /// // Create sample 2D spatial data
 /// let points = Array2::from_shape_vec((4, 2), vec![
@@ -1484,8 +1484,8 @@ where
 ///
 /// ```rust,no_run
 /// use ndarray::{Array1, Array2};
-/// use scirs2__interpolate::advanced::enhanced_kriging::{make_universal_kriging, TrendFunction};
-/// use scirs2__interpolate::advanced::kriging::CovarianceFunction;
+/// use scirs2_interpolate::advanced::enhanced_kriging::{make_universal_kriging, TrendFunction};
+/// use scirs2_interpolate::advanced::kriging::CovarianceFunction;
 ///
 /// // Create data with a linear trend: z = x + y + noise
 /// let points = Array2::from_shape_vec((6, 2), vec![
@@ -1562,8 +1562,8 @@ where
 ///
 /// ```rust,no_run
 /// use ndarray::{Array1, Array2};
-/// use scirs2__interpolate::advanced::enhanced_kriging::{make_bayesian_kriging, KrigingPriors, ParameterPrior};
-/// use scirs2__interpolate::advanced::kriging::CovarianceFunction;
+/// use scirs2_interpolate::advanced::enhanced_kriging::{make_bayesian_kriging, KrigingPriors, ParameterPrior};
+/// use scirs2_interpolate::advanced::kriging::CovarianceFunction;
 ///
 /// // Create noisy observational data
 /// let points = Array2::from_shape_vec((8, 1), vec![

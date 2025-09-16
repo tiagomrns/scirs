@@ -38,7 +38,7 @@ pub type CrossValidationFolds = Vec<(Vec<usize>, Vec<usize>)>;
 ///
 /// ```rust
 /// use ndarray::Array2;
-/// use scirs2__datasets::utils::{Dataset, train_test_split};
+/// use scirs2_datasets::utils::{Dataset, train_test_split};
 ///
 /// let data = Array2::from_shape_vec((10, 3), (0..30).map(|x| x as f64).collect()).unwrap();
 /// let dataset = Dataset::new(data, None);
@@ -134,7 +134,7 @@ pub fn train_test_split(
 /// # Examples
 ///
 /// ```rust
-/// use scirs2__datasets::utils::k_fold_split;
+/// use scirs2_datasets::utils::k_fold_split;
 ///
 /// let folds = k_fold_split(10, 3, true, Some(42)).unwrap();
 /// assert_eq!(folds.len(), 3);
@@ -217,7 +217,7 @@ pub fn k_fold_split(
 ///
 /// ```rust
 /// use ndarray::Array1;
-/// use scirs2__datasets::utils::stratified_k_fold_split;
+/// use scirs2_datasets::utils::stratified_k_fold_split;
 ///
 /// let targets = Array1::from(vec![0.0, 0.0, 1.0, 1.0, 0.0, 1.0]);
 /// let folds = stratified_k_fold_split(&targets, 2, true, Some(42)).unwrap();
@@ -324,7 +324,7 @@ pub fn stratified_k_fold_split(
 /// # Examples
 ///
 /// ```rust
-/// use scirs2__datasets::utils::time_series_split;
+/// use scirs2_datasets::utils::time_series_split;
 ///
 /// let folds = time_series_split(100, 5, 10, 0).unwrap();
 /// assert_eq!(folds.len(), 5);

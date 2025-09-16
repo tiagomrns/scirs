@@ -58,7 +58,7 @@ lazy_static::lazy_static! {
 /// # Examples
 ///
 /// ```
-/// use scirs2__datasets::time_series::electrocardiogram;
+/// use scirs2_datasets::time_series::electrocardiogram;
 ///
 /// let ecg = electrocardiogram().unwrap();
 /// println!("ECG data shape: ({}, {})", ecg.n_samples(), ecg.n_features());
@@ -158,7 +158,7 @@ struct StockPrice {
 /// # Examples
 ///
 /// ```ignore
-/// use scirs2__datasets::time_series::stock_market;
+/// use scirs2_datasets::time_series::stock_market;
 ///
 /// let stock_data = stock_market(true).unwrap(); // Get price changes
 /// println!("Stock data shape: ({}, {})", stock_data.n_samples(), stock_data.n_features());
@@ -291,7 +291,7 @@ struct WeatherObservation {
 /// # Examples
 ///
 /// ```ignore
-/// use scirs2__datasets::time_series::weather;
+/// use scirs2_datasets::time_series::weather;
 ///
 /// // Get temperature data for all locations
 /// let temp_data = weather(Some("temperature")).unwrap();

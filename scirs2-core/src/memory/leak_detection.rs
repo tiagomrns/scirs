@@ -28,7 +28,7 @@
 //! let mut detector = LeakDetector::new(config)?;
 //!
 //! // Start monitoring a function
-//! let checkpoint = detector.create_checkpoint(matrix_operations)?;
+//! let checkpoint = detector.create_checkpoint("matrix_operations")?;
 //!
 //! // Perform operations that might leak memory
 //! fn performmatrix_calculations() {

@@ -34,7 +34,7 @@ use std::ops::{Add, Div, Mul, Sub};
 /// use scirs2_sparse::sym_csr::SymCsrMatrix;
 ///
 /// let data = vec![4.0, 2.0, 3.0, 5.0];
-/// let indices = vec![0, 0, 1, 1];
+/// let indices = vec![0, 1, 1, 2];
 /// let indptr = vec![0, 1, 3, 4];
 /// let matrix = SymCsrMatrix::new(data, indices, indptr, (3, 3)).unwrap();
 ///
@@ -103,7 +103,7 @@ where
 /// use scirs2_sparse::sym_csr::SymCsrMatrix;
 ///
 /// let data = vec![4.0, 2.0, 3.0, 5.0];
-/// let indices = vec![0, 0, 1, 1];
+/// let indices = vec![0, 1, 1, 2];
 /// let indptr = vec![0, 1, 3, 4];
 /// let matrix = SymCsrMatrix::new(data, indices, indptr, (3, 3)).unwrap();
 ///

@@ -20,7 +20,7 @@
 //!
 //! ```rust
 //! use ndarray::Array1;
-//! use scirs2__interpolate::physics_informed::{
+//! use scirs2_interpolate::physics_informed::{
 //!     PhysicsInformedInterpolator, PhysicalConstraint, ConservationLaw
 //! };
 //!

@@ -31,7 +31,7 @@ use crate::error::{Result, TimeSeriesError};
 ///
 /// ```
 /// use ndarray::array;
-/// use scirs2__series::decomposition::{decompose_robust_seasonal, DecompositionModel};
+/// use scirs2_series::decomposition::{decompose_robust_seasonal, DecompositionModel};
 ///
 /// let ts = array![1.0, 2.0, 3.0, 2.0, 1.0, 2.0, 3.0, 2.0, 1.0, 2.0, 3.0, 2.0];
 /// let result = decompose_robust_seasonal(&ts, 4, DecompositionModel::Additive, 50, 1e-6).unwrap();

@@ -99,7 +99,7 @@ pub enum StationarityTestType {
 ///
 /// ```
 /// use ndarray::Array1;
-/// use scirs2__series::transformations::box_cox_transform;
+/// use scirs2_series::transformations::box_cox_transform;
 ///
 /// let ts = Array1::from_vec(vec![1.0, 2.0, 3.0, 4.0, 5.0]);
 /// let (transformed, params) = box_cox_transform(&ts, Some(0.5)).unwrap();
@@ -264,7 +264,7 @@ where
 ///
 /// ```
 /// use ndarray::Array1;
-/// use scirs2__series::transformations::difference_transform;
+/// use scirs2_series::transformations::difference_transform;
 ///
 /// let ts = Array1::from_vec(vec![1.0, 3.0, 6.0, 10.0, 15.0]);
 /// let (differenced, params) = difference_transform(&ts, 1, None).unwrap();
@@ -420,7 +420,7 @@ where
 ///
 /// ```
 /// use ndarray::Array1;
-/// use scirs2__series::transformations::{normalize_transform, NormalizationMethod};
+/// use scirs2_series::transformations::{normalize_transform, NormalizationMethod};
 ///
 /// let ts = Array1::from_vec(vec![1.0, 2.0, 3.0, 4.0, 5.0]);
 /// let (normalized, params) = normalize_transform(&ts, NormalizationMethod::ZScore).unwrap();

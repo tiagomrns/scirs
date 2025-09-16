@@ -36,7 +36,7 @@
 //! let normal_array = Normal::new(0.0_f64, 1.0_f64).unwrap().random_array(&mut rng, shape);
 //!
 //! // Create a seeded random generator for reproducible results
-//! let mut seeded_rng = Random::with_seed(42);
+//! let mut seeded_rng = Random::seed(42);
 //! let reproducible_value = seeded_rng.sample(Uniform::new(0.0_f64, 1.0_f64).unwrap());
 //! ```
 

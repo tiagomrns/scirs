@@ -24,7 +24,7 @@ use crate::utils::moving_average;
 ///
 /// ```
 /// use ndarray::array;
-/// use scirs2__series::decomposition::{decompose_seasonal, DecompositionModel};
+/// use scirs2_series::decomposition::{decompose_seasonal, DecompositionModel};
 ///
 /// let ts = array![1.0, 2.0, 3.0, 2.0, 1.0, 2.0, 3.0, 2.0, 1.0, 2.0, 3.0, 2.0];
 /// let result = decompose_seasonal(&ts, 4, DecompositionModel::Additive).unwrap();

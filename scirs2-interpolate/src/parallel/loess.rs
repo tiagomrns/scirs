@@ -32,9 +32,9 @@ use crate::spatial::kdtree::KdTree;
 /// # #[cfg(feature = "linalg")]
 /// # {
 /// use ndarray::{Array1, Array2};
-/// use scirs2__interpolate::parallel::{ParallelLocalPolynomialRegression, ParallelConfig};
-/// use scirs2__interpolate::local::polynomial::LocalPolynomialConfig;
-/// use scirs2__interpolate::local::mls::{WeightFunction, PolynomialBasis};
+/// use scirs2_interpolate::parallel::{ParallelLocalPolynomialRegression, ParallelConfig};
+/// use scirs2_interpolate::local::polynomial::LocalPolynomialConfig;
+/// use scirs2_interpolate::local::mls::{WeightFunction, PolynomialBasis};
 ///
 /// // Create sample 1D data
 /// let x = Array1::<f64>::linspace(0.0, 10.0, 100);

@@ -190,7 +190,7 @@ impl RuleCache {
 /// # Examples
 ///
 /// ```
-/// use scirs2__integrate::tanhsinh::{tanhsinh, TanhSinhOptions};
+/// use scirs2_integrate::tanhsinh::{tanhsinh, TanhSinhOptions};
 ///
 /// // Integrate x^2 from 0 to 1 (exact result: 1/3)
 /// let result = tanhsinh(|x| x * x, 0.0, 1.0, None).unwrap();
@@ -697,7 +697,7 @@ where
 /// # Examples
 ///
 /// ```
-/// use scirs2__integrate::tanhsinh::{nsum, TanhSinhOptions};
+/// use scirs2_integrate::tanhsinh::{nsum, TanhSinhOptions};
 ///
 /// // Compute sum of 1/n² from n=1 to infinity (equals π²/6)
 /// let result = nsum(|n| 1.0/(n*n), 1.0, f64::INFINITY, 1.0, None, None).unwrap();

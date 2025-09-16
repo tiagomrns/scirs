@@ -59,7 +59,7 @@ impl<F: Float + FromPrimitive + Debug> PchipInterpolator<F> {
     ///
     /// ```
     /// use ndarray::array;
-    /// use scirs2__interpolate::interp1d::pchip::PchipInterpolator;
+    /// use scirs2_interpolate::interp1d::pchip::PchipInterpolator;
     ///
     /// let x = array![0.0f64, 1.0, 2.0, 3.0];
     /// let y = array![0.0f64, 1.0, 4.0, 9.0];
@@ -371,7 +371,7 @@ impl<F: Float + FromPrimitive + Debug> PchipInterpolator<F> {
 ///
 /// ```
 /// use ndarray::array;
-/// use scirs2__interpolate::pchip_interpolate;
+/// use scirs2_interpolate::pchip_interpolate;
 ///
 /// let x = array![0.0f64, 1.0, 2.0, 3.0];
 /// let y = array![0.0f64, 1.0, 4.0, 9.0];

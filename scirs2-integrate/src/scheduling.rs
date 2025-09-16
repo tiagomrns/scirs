@@ -16,7 +16,7 @@
 //! # Examples
 //!
 //! ```
-//! use scirs2__integrate::scheduling::{WorkStealingPool, Task};
+//! use scirs2_integrate::scheduling::{WorkStealingPool, Task};
 //!
 //! // Create work-stealing pool with 4 threads
 //! let pool = WorkStealingPool::new(4);

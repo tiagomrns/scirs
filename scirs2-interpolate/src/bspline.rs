@@ -379,7 +379,7 @@ where
     ///
     /// ```
     /// use ndarray::array;
-    /// use scirs2__interpolate::bspline::{BSpline, ExtrapolateMode};
+    /// use scirs2_interpolate::bspline::{BSpline, ExtrapolateMode};
     ///
     /// // Create a quadratic B-spline
     /// let knots = array![0.0, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0];
@@ -1168,7 +1168,7 @@ where
     ///
     /// ```
     /// use ndarray::array;
-    /// use scirs2__interpolate::bspline::{BSpline, ExtrapolateMode};
+    /// use scirs2_interpolate::bspline::{BSpline, ExtrapolateMode};
     ///
     /// let knots = array![0.0, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0];
     /// let coeffs = array![-1.0, 2.0, 0.0, -1.0];
@@ -1212,7 +1212,7 @@ where
     ///
     /// ```
     /// use ndarray::array;
-    /// use scirs2__interpolate::bspline::{BSpline, ExtrapolateMode};
+    /// use scirs2_interpolate::bspline::{BSpline, ExtrapolateMode};
     ///
     /// let knots = array![0.0, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0];
     /// let coeffs = array![-1.0, 2.0, 0.0, -1.0];

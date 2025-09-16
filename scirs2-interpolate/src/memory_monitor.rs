@@ -16,7 +16,7 @@
 //! # Usage
 //!
 //! ```rust
-//! use scirs2__interpolate::memory_monitor::{MemoryMonitor, start_monitoring};
+//! use scirs2_interpolate::memory_monitor::{MemoryMonitor, start_monitoring};
 //!
 //! // Start global memory monitoring
 //! start_monitoring();

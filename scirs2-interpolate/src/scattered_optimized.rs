@@ -22,7 +22,7 @@
 //!
 //! ```rust
 //! use ndarray::{Array1, Array2};
-//! use scirs2__interpolate::scattered_optimized::{
+//! use scirs2_interpolate::scattered_optimized::{
 //!     OptimizedScatteredInterpolator, ScatteredConfig
 //! };
 //!

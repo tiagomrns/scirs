@@ -49,7 +49,7 @@ where
 ///
 /// ```
 /// use ndarray::array;
-/// use scirs2__series::utils::is_stationary;
+/// use scirs2_series::utils::is_stationary;
 ///
 /// let ts = array![1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0];
 /// let (adf_stat, p_value) = is_stationary(&ts, None).unwrap();
@@ -136,7 +136,7 @@ where
 ///
 /// ```
 /// use ndarray::array;
-/// use scirs2__series::utils::transform_to_stationary;
+/// use scirs2_series::utils::transform_to_stationary;
 ///
 /// let ts = array![1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0];
 ///
@@ -232,7 +232,7 @@ where
 ///
 /// ```
 /// use ndarray::array;
-/// use scirs2__series::utils::moving_average;
+/// use scirs2_series::utils::moving_average;
 ///
 /// let ts = array![1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0];
 /// let ma = moving_average(&ts, 3).unwrap();
@@ -309,7 +309,7 @@ where
 ///
 /// ```
 /// use ndarray::array;
-/// use scirs2__series::utils::autocorrelation;
+/// use scirs2_series::utils::autocorrelation;
 ///
 /// let ts = array![1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0];
 /// let acf = autocorrelation(&ts, None).unwrap();
@@ -373,7 +373,7 @@ where
 ///
 /// ```
 /// use ndarray::array;
-/// use scirs2__series::utils::cross_correlation;
+/// use scirs2_series::utils::cross_correlation;
 ///
 /// let x = array![1.0, 2.0, 3.0, 4.0, 5.0];
 /// let y = array![2.0, 3.0, 4.0, 5.0, 6.0];
@@ -436,7 +436,7 @@ where
 ///
 /// ```
 /// use ndarray::array;
-/// use scirs2__series::utils::partial_autocorrelation;
+/// use scirs2_series::utils::partial_autocorrelation;
 ///
 /// let ts = array![1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0];
 /// let pacf = partial_autocorrelation(&ts, None).unwrap();
@@ -525,7 +525,7 @@ where
 ///
 /// ```
 /// use ndarray::array;
-/// use scirs2__series::utils::detrend;
+/// use scirs2_series::utils::detrend;
 ///
 /// let x = array![1.0, 2.0, 3.0, 4.0, 5.0];
 /// let detrended = detrend(&x.view(), 0, "constant", None).unwrap();
@@ -693,7 +693,7 @@ where
 ///
 /// ```
 /// use ndarray::array;
-/// use scirs2__series::utils::resample;
+/// use scirs2_series::utils::resample;
 ///
 /// let x = array![1.0, 2.0, 3.0, 4.0, 5.0];
 /// let resampled = resample(&x.view(), 10, 0, None).unwrap();
@@ -762,7 +762,7 @@ where
 ///
 /// ```
 /// use ndarray::array;
-/// use scirs2__series::utils::decimate;
+/// use scirs2_series::utils::decimate;
 ///
 /// let x = array![1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0];
 /// let decimated = decimate(&x.view(), 2, Some(4), Some("iir"), 0).unwrap();
@@ -934,7 +934,7 @@ where
 ///
 /// ```
 /// use ndarray::array;
-/// use scirs2__series::utils::create_time_series;
+/// use scirs2_series::utils::create_time_series;
 ///
 /// let values = array![1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0];
 /// let (dates, ts) = create_time_series("2023-01-01", "2023-01-07", &values).unwrap();

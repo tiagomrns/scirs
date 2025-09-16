@@ -312,10 +312,16 @@ impl KernelRegistry {
 /// use scirs2_core::gpu::GpuBackend;
 ///
 /// fn register_fft_kernels() {
+///     let fft_kernel_source = r#"
+///         extern "C" __global__ void fft2d_c32(float2* data, int n) {
+///             // FFT kernel implementation
+///         }
+///     "#;
+///
 ///     register_module_kernel(
 ///         KernelId::new("fft", "fft2d", "c32"),
 ///         KernelSource {
-///             source: FFT_KERNEL_SOURCE.to_string(),
+///             source: fft_kernel_source.to_string(),
 ///             backend: GpuBackend::Cuda,
 ///             entry_point: "fft2d_c32".to_string(),
 ///             workgroup_size: (32, 8, 1),

@@ -79,7 +79,7 @@ impl<F: Float + FromPrimitive + Debug + std::fmt::Display> Interp1d<F> {
     ///
     /// ```
     /// use ndarray::array;
-    /// use scirs2__interpolate::interp1d::{Interp1d, InterpolationMethod, ExtrapolateMode};
+    /// use scirs2_interpolate::interp1d::{Interp1d, InterpolationMethod, ExtrapolateMode};
     ///
     /// let x = array![0.0f64, 1.0, 2.0, 3.0];
     /// let y = array![0.0f64, 1.0, 4.0, 9.0];

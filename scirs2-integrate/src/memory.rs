@@ -14,7 +14,7 @@
 //! # Examples
 //!
 //! ```
-//! use scirs2__integrate::memory::{MemoryPool, CacheFriendlyMatrix, BlockingStrategy, MatrixLayout};
+//! use scirs2_integrate::memory::{MemoryPool, CacheFriendlyMatrix, BlockingStrategy, MatrixLayout};
 //!
 //! // Use memory pool for frequent allocations
 //! let mut pool = MemoryPool::<f64>::new(1024);

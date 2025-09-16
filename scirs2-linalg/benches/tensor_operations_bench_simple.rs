@@ -5,7 +5,7 @@
 
 use criterion::{criterion_group, criterion_main, BenchmarkId, Criterion, Throughput};
 use ndarray::{Array1, Array2, Array3};
-use scirs2__linalg::tensor_contraction::{batch_matmul, contract, einsum, hosvd, mode_n_product};
+use scirs2_linalg::tensor_contraction::{batch_matmul, contract, einsum, hosvd, mode_n_product};
 use std::hint::black_box;
 use std::time::Duration;
 

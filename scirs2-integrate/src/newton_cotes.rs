@@ -59,7 +59,7 @@ pub struct NewtonCotesResult<F: IntegrateFloat> {
 /// # Examples
 ///
 /// ```
-/// use scirs2__integrate::newton_cotes::{newton_cotes, NewtonCotesType, NewtonCotesResult};
+/// use scirs2_integrate::newton_cotes::{newton_cotes, NewtonCotesType, NewtonCotesResult};
 ///
 /// // Generate a 5-point closed Newton-Cotes formula (Boole's rule)
 /// let result: NewtonCotesResult<f64> = newton_cotes(5, NewtonCotesType::Closed, None, None).unwrap();

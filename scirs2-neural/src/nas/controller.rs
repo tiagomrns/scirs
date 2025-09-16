@@ -535,7 +535,7 @@ impl NASController {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::nas::search__space::Architecture;
+    use crate::nas::search_space::Architecture;
     #[test]
     fn test_controller_creation() {
         let search_space = SearchSpaceConfig::default();

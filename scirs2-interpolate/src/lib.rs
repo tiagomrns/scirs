@@ -246,7 +246,7 @@ pub mod scipy_compatibility;
 // Re-exports for convenience
 
 // Advanced mode coordinator for advanced AI-driven optimization
-// pub use advanced__coordinator::{
+// pub use num_coordinator::{
 //     create_advanced_interpolation_coordinator,
 //     create_advanced_interpolation_coordinator_with_config, AdvancedInterpolationConfig,
 //     AdvancedInterpolationCoordinator, InterpolationPerformanceMetrics, InterpolationRecommendation,

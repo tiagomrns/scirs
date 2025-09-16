@@ -6,8 +6,8 @@
 //! are maintained across the entire ecosystem.
 
 use crate::error::StatsResult;
-use crate::numerical_stability__enhancements::create_exhaustive_numerical_stability_tester;
-use crate::unified__processor::{
+use crate::numerical_stability_enhancements::create_exhaustive_numerical_stability_tester;
+use crate::unified_processor:{
     create_advanced_processor, OptimizationMode, AdvancedProcessorConfig,
 };
 use ndarray::{Array1, ArrayView1};

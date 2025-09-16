@@ -253,7 +253,7 @@ where
 
 /// Compute the inner product of two complex vectors
 ///
-/// Computes <x, y> = ∑ x[i]* y[i], where x[i]* is the complex conjugate.
+/// Computes <x, y> = ∑ x\[i\]* y\[i\], where x\[i\]* is the complex conjugate.
 ///
 /// # Arguments
 ///

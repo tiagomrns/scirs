@@ -4,8 +4,8 @@
 //! with large datasets, including spatial indexing, approximation techniques,
 //! and parallel processing.
 
-use crate::advanced::enhanced__kriging::AnisotropicCovariance;
-use crate::advanced::fast__kriging::{FastKriging, FastKrigingBuilder, FastKrigingMethod};
+use crate::advanced::enhanced_kriging::AnisotropicCovariance;
+use crate::advanced::fast_kriging::{FastKriging, FastKrigingBuilder, FastKrigingMethod};
 use crate::advanced::kriging::CovarianceFunction;
 use crate::error::InterpolateResult;
 use ndarray::{Array1, Array2, ArrayView1, ArrayView2};

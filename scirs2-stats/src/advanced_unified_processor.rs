@@ -8,9 +8,9 @@
 #![allow(dead_code)]
 
 use crate::error::{StatsError, StatsResult};
-use crate::error_handling__enhancements::{AdvancedContextBuilder, AdvancedErrorMessages};
+use crate::error_handling_enhancements::{AdvancedContextBuilder, AdvancedErrorMessages};
 use crate::error_standardization::ErrorMessages;
-use crate::advanced__stubs::{
+use crate::num_stubs::{
     BatchOperation, BatchResults, AdvancedSimdConfig, AdvancedSimdOptimizer,
     create_exhaustive_numerical_stability_tester,
     ComprehensiveStabilityResult as StabilityAnalysisReport,

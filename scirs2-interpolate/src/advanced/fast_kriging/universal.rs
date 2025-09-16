@@ -4,8 +4,8 @@
 //! using various approximation methods to improve computational efficiency.
 //! Universal kriging allows for trend modeling using basis functions.
 
-use crate::advanced::enhanced__kriging::{AnisotropicCovariance, TrendFunction};
-use crate::advanced::fast__kriging::{
+use crate::advanced::enhanced_kriging::{AnisotropicCovariance, TrendFunction};
+use crate::advanced::fast_kriging::{
     FastKriging, FastKrigingBuilder, FastKrigingMethod, FastPredictionResult,
 };
 use crate::error::{InterpolateError, InterpolateResult};

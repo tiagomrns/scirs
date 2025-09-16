@@ -5,7 +5,7 @@
 
 use crate::error::Result;
 use crate::reinforcement::policy::PolicyNetwork;
-use crate::reinforcement::replay__buffer::{PrioritizedReplayBuffer, ReplayBuffer};
+use crate::reinforcement::replay_buffer::{PrioritizedReplayBuffer, ReplayBuffer};
 use crate::reinforcement::value::{QNetwork, ValueNetwork};
 use crate::reinforcement::{ExperienceBatch, LossInfo, RLAgent};
 use ndarray::prelude::*;

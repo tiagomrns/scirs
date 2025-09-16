@@ -14,23 +14,23 @@ pub mod performance_estimation;
 pub mod progressive_search;
 pub mod search_algorithms;
 pub mod search_space;
-pub use architecture__encoding::{ArchitectureEncoding, GraphEncoding, SequentialEncoding};
+pub use architecture_encoding::{ArchitectureEncoding, GraphEncoding, SequentialEncoding};
 pub use controller::{ControllerConfig, NASController};
 pub use enas::{ENASController, ENASTrainer, SuperNetwork};
 pub use evaluator::{ArchitectureEvaluator, EvaluationMetrics};
-pub use hardware__aware::{HardwareAwareSearch, HardwareConstraints, LatencyPredictor};
-pub use multi__objective::{
+pub use hardware_aware::{HardwareAwareSearch, HardwareConstraints, LatencyPredictor};
+pub use multi_objective::{
     MultiObjectiveAlgorithm, MultiObjectiveConfig, MultiObjectiveOptimizer, MultiObjectiveSolution,
     Objective,
 };
-pub use performance__estimation::{
+pub use performance_estimation::{
     EarlyStoppingEstimator, LearningCurveEstimator, MultiFidelityEstimator, PerformanceEstimator,
     SuperNetEstimator, ZeroCostEstimator,
-pub use progressive__search::{ProgressiveConfig, ProgressiveSearch};
-pub use search__algorithms::{
+pub use progressive_search::{ProgressiveConfig, ProgressiveSearch};
+pub use search_algorithms::{
     BayesianOptimization, DifferentiableSearch, EvolutionarySearch, RandomSearch,
     ReinforcementSearch, SearchAlgorithm,
-pub use search__space::{SearchSpace, SearchSpaceConfig};
+pub use search_space::{SearchSpace, SearchSpaceConfig};
 use crate::error::Result;
 use crate::models::sequential::Sequential;
 use ndarray::prelude::*;

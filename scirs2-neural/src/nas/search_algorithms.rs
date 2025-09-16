@@ -1,7 +1,7 @@
 //! Search algorithms for Neural Architecture Search
 
 use crate::error::Result;
-use crate::nas::architecture__encoding::ArchitectureEncoding;
+use crate::nas::architecture_encoding::ArchitectureEncoding;
 use crate::nas::SearchResult;
 use ndarray::prelude::*;
 use ndarray::{s, Array1, Array2};

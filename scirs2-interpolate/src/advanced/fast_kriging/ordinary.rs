@@ -4,12 +4,12 @@
 //! using various approximation methods to improve computational efficiency.
 //! Ordinary kriging assumes a constant but unknown mean.
 
-use crate::advanced::enhanced__kriging::AnisotropicCovariance;
-use crate::advanced::fast__kriging::{
+use crate::advanced::enhanced_kriging::AnisotropicCovariance;
+use crate::advanced::fast_kriging::{
     FastKriging, FastKrigingBuilder, FastKrigingMethod, FastPredictionResult, SparseComponents,
 };
 use crate::error::{InterpolateError, InterpolateResult};
-use crate::numerical__stability::{assess_matrix_condition, safe_reciprocal, StabilityLevel};
+use crate::numerical_stability::{assess_matrix_condition, safe_reciprocal, StabilityLevel};
 use ndarray::{Array1, Array2, ArrayView1, ArrayView2};
 use num_traits::{Float, FromPrimitive};
 use std::fmt::{Debug, Display};

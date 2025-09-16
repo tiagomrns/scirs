@@ -116,7 +116,7 @@ impl ExternalClient {
         let mut buffer = Vec::new();
         let mut stream = response.bytes_stream();
 
-        use futures__util::StreamExt;
+        use futures_util::StreamExt;
         while let Some(chunk) = stream.next().await {
             let chunk = chunk.map_err(|e| DatasetsError::IoError(std::io::Error::other(e)))?;
             downloaded += chunk.len() as u64;

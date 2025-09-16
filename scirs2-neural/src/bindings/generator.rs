@@ -9,11 +9,11 @@ use crate::serving::PackageMetadata;
 use num_traits::Float;
 use std::fmt::Debug;
 use std::fs;
-use super::build__system::BuildSystemGenerator;
+use super::build_system::BuildSystemGenerator;
 use super::config::{BindingConfig, BindingResult};
-use super::examples__docs::ExamplesDocsGenerator;
-use super::header__generation::HeaderGenerator;
-use super::source__generation::SourceGenerator;
+use super::examples_docs::ExamplesDocsGenerator;
+use super::header_generation::HeaderGenerator;
+use super::source_generation::SourceGenerator;
 /// C/C++ binding generator
 pub struct BindingGenerator<F: Float + Debug + ndarray::ScalarOperand> {
     /// Model to generate bindings for

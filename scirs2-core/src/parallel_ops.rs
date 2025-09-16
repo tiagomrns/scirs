@@ -187,7 +187,7 @@ mod sequential_fallbacks {
 
 // Re-export sequential fallbacks when parallel is disabled
 #[cfg(not(feature = "parallel"))]
-pub use sequential__fallbacks::*;
+pub use sequential_fallbacks::*;
 
 /// Helper function to create a parallel iterator from a range
 #[allow(dead_code)]
@@ -322,7 +322,7 @@ pub use rayon::scope as par_scope;
 
 /// Sequential fallback for par_scope
 #[cfg(not(feature = "parallel"))]
-pub use sequential__fallbacks::scope as par_scope;
+pub use sequential_fallbacks::scope as par_scope;
 
 /// Parallel join helper
 #[cfg(feature = "parallel")]
@@ -330,7 +330,7 @@ pub use rayon::join as par_join;
 
 /// Sequential fallback for par_join
 #[cfg(not(feature = "parallel"))]
-pub use sequential__fallbacks::join as par_join;
+pub use sequential_fallbacks::join as par_join;
 
 /// Parallel map operation on array data with chunking
 ///

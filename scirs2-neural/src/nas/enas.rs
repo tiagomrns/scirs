@@ -6,7 +6,7 @@
 use crate::activations::Activation;
 use crate::error::{NeuralError, Result};
 use crate::layers::{Dense, Layer};
-use crate::nas::search__space::{Architecture, LayerType};
+use crate::nas::search_space::{Architecture, LayerType};
 use crate::nas::SearchSpace;
 use ndarray::concatenate;
 use ndarray::prelude::*;

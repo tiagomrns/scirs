@@ -7,13 +7,13 @@ pub mod memory_efficient_training;
 pub mod gradient_checkpointing;
 pub mod quantization_aware_training;
 pub mod sparse_training;
-pub mod adaptive_computation;
+// pub mod adaptive_computation; // Module not implemented
 pub mod model_compression;
 pub use memory_efficient_training::{MemoryEfficientTrainer, GradientAccumulation};
-pub use gradient__checkpointing::{CheckpointStrategy, GradientCheckpointing};
+pub use gradient_checkpointing::{CheckpointStrategy, GradientCheckpointing};
 pub use quantization_aware_training::{QATConfig, QuantizationAwareTraining};
 pub use sparse_training::{SparseTrainer, SparsitySchedule};
-pub use adaptive__computation::{AdaptiveCompute, EarlyExitStrategy};
+// pub use adaptive_computation::{AdaptiveCompute, EarlyExitStrategy}; // Module not implemented
 pub use model_compression::{CompressionStrategy, ModelCompressor};
 use crate::error::Result;
 use crate::models::sequential::Sequential;

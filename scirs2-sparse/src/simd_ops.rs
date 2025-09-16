@@ -974,7 +974,7 @@ where
 ///
 /// # Returns
 ///
-/// Result of coefficient[0] * matrices[0] + coefficient[1] * matrices[1] + ...
+/// Result of coefficient\[0\] * matrices\[0\] + coefficient\[1\] * matrices\[1\] + ...
 #[allow(dead_code)]
 pub fn simd_sparse_linear_combination<T, S>(
     matrices: &[&S],

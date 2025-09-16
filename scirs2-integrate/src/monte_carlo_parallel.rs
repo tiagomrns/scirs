@@ -6,7 +6,7 @@
 //! multiple CPU cores.
 
 use crate::error::{IntegrateError, IntegrateResult};
-use crate::monte__carlo::{ErrorEstimationMethod, MonteCarloOptions, MonteCarloResult};
+use crate::monte_carlo::{ErrorEstimationMethod, MonteCarloOptions, MonteCarloResult};
 use crate::IntegrateFloat;
 use ndarray::{Array1, ArrayView1};
 use rand::prelude::*;

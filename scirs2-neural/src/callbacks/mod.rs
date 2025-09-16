@@ -83,11 +83,11 @@ impl<F: Float + Debug + ScalarOperand + Send + Sync> Callback<F> for FunctionCal
         (self.func)()
 pub use callback_manager::CallbackManager;
 pub use checkpoint::ModelCheckpoint;
-pub use early__stopping::EarlyStopping;
-pub use gradient__clipping::{GradientClipping, GradientClippingMethod};
-pub use learning_rate__scheduler::{CosineAnnealingLR, ReduceOnPlateau, ScheduleMethod, StepDecay};
-pub use learning_rate_scheduler__trait::LearningRateScheduler;
+pub use early_stopping::EarlyStopping;
+pub use gradient_clipping::{GradientClipping, GradientClippingMethod};
+pub use learning_rate_scheduler::{CosineAnnealingLR, ReduceOnPlateau, ScheduleMethod, StepDecay};
+pub use learning_rate_scheduler_trait::LearningRateScheduler;
 #[cfg(feature = "metrics_integration")]
 pub use metrics::*;
 pub use tensorboard::TensorBoardLogger;
-pub use visualization__callback::VisualizationCallback;
+pub use visualization_callback::VisualizationCallback;

@@ -12,7 +12,7 @@
 //! These methods trade some accuracy for substantial performance improvements,
 //! making kriging feasible for datasets with thousands to millions of points.
 
-use crate::advanced::enhanced__kriging::{AnisotropicCovariance, TrendFunction};
+use crate::advanced::enhanced_kriging::{AnisotropicCovariance, TrendFunction};
 use crate::advanced::kriging::CovarianceFunction;
 use crate::error::{InterpolateError, InterpolateResult};
 use ndarray::{Array1, Array2, ArrayView1, ArrayView2};

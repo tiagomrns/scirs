@@ -2,4 +2,4 @@
 
 // Enable batch operations module
 mod batch_operations;
-pub use batch__operations::*;
+pub use batch_operations::*;

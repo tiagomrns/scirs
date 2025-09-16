@@ -167,7 +167,7 @@
 //!     
 //!     let mut res = Array1::zeros(n);
 //!     for i in 0..n {
-//!         res[i] = y_vals[i] - (_params[0] + params[1] * x_vals[i]);
+//!         res[i] = y_vals[i] - (params[0] + params[1] * x_vals[i]);
 //!     }
 //!     res
 //! }

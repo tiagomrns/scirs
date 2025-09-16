@@ -40,10 +40,10 @@ pub use config::{
     StringMapping, SyncPrimitive, ThreadPoolConfig, ThreadSafety, ThreadingConfig, TypeMappings,
 };
 pub use generator::BindingGenerator;
-pub use build__system::BuildSystemGenerator;
-pub use examples__docs::ExamplesDocsGenerator;
-pub use header__generation::HeaderGenerator;
-pub use source__generation::SourceGenerator;
+pub use build_system::BuildSystemGenerator;
+pub use examples_docs::ExamplesDocsGenerator;
+pub use header_generation::HeaderGenerator;
+pub use source_generation::SourceGenerator;
 #[cfg(test)]
 mod tests {
     use super::*;

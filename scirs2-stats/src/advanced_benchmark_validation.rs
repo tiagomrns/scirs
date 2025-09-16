@@ -8,7 +8,7 @@
 #![allow(dead_code)]
 
 use crate::error::{StatsError, StatsResult};
-use crate::unified__processor::{
+use crate::unified_processor::{
     OptimizationMode, AdvancedProcessorConfig, AdvancedUnifiedProcessor,
 };
 use ndarray::{Array1, Array2, ArrayView1, ArrayView2};

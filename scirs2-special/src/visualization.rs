@@ -249,7 +249,7 @@ pub mod bessel_plots {
 
     /// Plot zeros of Bessel functions
     pub fn plot_bessel_zeros<P: AsRef<Path>>(path: P) -> Result<(), Box<dyn Error>> {
-        use crate::bessel__zeros::j0_zeros;
+        use crate::bessel_zeros::j0_zeros;
 
         #[cfg(feature = "plotting")]
         {

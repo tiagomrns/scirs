@@ -6,7 +6,7 @@
 //! performance on large-scale statistical computations.
 
 use crate::error::StatsResult;
-use crate::error_handling__enhancements::{AdvancedContextBuilder, AdvancedErrorMessages};
+use crate::error_handling_enhancements::{AdvancedContextBuilder, AdvancedErrorMessages};
 use crate::error_standardization::ErrorMessages;
 use ndarray::{Array1, Array2, ArrayBase, Data, Ix1, Ix2};
 use num_traits::{Float, NumCast, Zero};

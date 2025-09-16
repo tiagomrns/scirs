@@ -1,7 +1,7 @@
 //! Architecture encoding schemes for Neural Architecture Search
 
 use crate::error::Result;
-use crate::nas::search__space::{Architecture, LayerType};
+use crate::nas::search_space::{Architecture, LayerType};
 use std::fmt;
 use std::collections::HashMap;
 /// Padding type for convolution layers

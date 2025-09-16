@@ -10,7 +10,7 @@
 //! use scirs2_optimize::least_squares::{least_squares, Method};
 //!
 //! // Define a function that returns the residuals
-//! fn residual(x: &[f64]_: &[f64]) -> Array1<f64> {
+//! fn residual(x: &[f64], _data: &[f64]) -> Array1<f64> {
 //!     let y = array![
 //!         x[0] + 2.0 * x[1] - 2.0,
 //!         x[0] + x[1] - 1.0
@@ -19,7 +19,7 @@
 //! }
 //!
 //! // Define the Jacobian (optional)
-//! fn jacobian(x: &[f64]_: &[f64]) -> Array2<f64> {
+//! fn jacobian(x: &[f64], _data: &[f64]) -> Array2<f64> {
 //!     array![[1.0, 2.0], [1.0, 1.0]]
 //! }
 //!

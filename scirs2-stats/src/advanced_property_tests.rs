@@ -4,8 +4,8 @@
 //! featuring comprehensive mathematical invariant testing, numerical stability
 //! verification, SIMD consistency checks, and performance regression detection.
 
-use crate::advanced_simd__stats::{BatchOperation, AdvancedSimdConfig, AdvancedSimdOptimizer};
-use crate::parallel__enhancements::AdvancedParallelConfig;
+use crate::advanced_simd_stats::{BatchOperation, AdvancedSimdConfig, AdvancedSimdOptimizer};
+use crate::parallel_enhancements::AdvancedParallelConfig;
 use crate::{kurtosis, mean, pearson_r, skew, std, var};
 use ndarray::{Array1, ArrayView1};
 use num_traits::{Float, NumCast};

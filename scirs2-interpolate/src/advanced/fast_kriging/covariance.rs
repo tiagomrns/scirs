@@ -3,7 +3,7 @@
 //! This module provides implementations of covariance functions and related
 //! utilities for fast kriging interpolation.
 
-use crate::advanced::enhanced__kriging::AnisotropicCovariance;
+use crate::advanced::enhanced_kriging::AnisotropicCovariance;
 use crate::advanced::kriging::CovarianceFunction;
 use crate::error::InterpolateResult;
 use ndarray::{Array1, Array2, ArrayView1};

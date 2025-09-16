@@ -6,7 +6,7 @@
 use crate::bspline::{BSpline, ExtrapolateMode};
 use crate::error::{InterpolateError, InterpolateResult};
 #[cfg(feature = "linalg")]
-use crate::numerical__stability::{
+use crate::numerical_stability::{
     assess_matrix_condition, solve_with_stability_monitoring, StabilityLevel,
 };
 use ndarray::{s, Array1, Array2, ArrayView1, ArrayView2};

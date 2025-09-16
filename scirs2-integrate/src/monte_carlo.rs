@@ -451,7 +451,7 @@ where
     #[cfg(feature = "parallel")]
     {
         if workers.is_some() {
-            use crate::monte_carlo__parallel::{parallel_monte_carlo, ParallelMonteCarloOptions};
+            use crate::monte_carlo_parallel::{parallel_monte_carlo, ParallelMonteCarloOptions};
 
             let opts = options.unwrap_or_default();
             let parallel_opts = ParallelMonteCarloOptions {

@@ -7,7 +7,7 @@ mod cross_validation;
 mod metrics;
 mod test;
 mod validation;
-pub use cross__validation::*;
+pub use cross_validation::*;
 pub use metrics::*;
 pub use test::*;
 pub use validation::*;

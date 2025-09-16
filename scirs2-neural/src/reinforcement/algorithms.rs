@@ -2,7 +2,7 @@
 
 use crate::error::Result;
 use crate::reinforcement::environments::Environment;
-use crate::reinforcement::replay__buffer::{PrioritizedReplayBuffer, ReplayBuffer, ReplayBufferTrait};
+use crate::reinforcement::replay_buffer::{PrioritizedReplayBuffer, ReplayBuffer, ReplayBufferTrait};
 use crate::reinforcement::{ExperienceBatch, LossInfo, RLAgent};
 use ndarray::prelude::*;
 use rand::Rng;

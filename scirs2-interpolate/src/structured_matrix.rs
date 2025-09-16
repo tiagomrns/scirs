@@ -818,7 +818,7 @@ pub fn vectorized_matvec<T>(
 where
     T: Float + Copy + Zero + AddAssign + 'static,
 {
-    use crate::simd__optimized::is_simd_available;
+    use crate::simd_optimized::is_simd_available;
 
     let (m, n) = matrix.dim();
     if vector.len() != n {

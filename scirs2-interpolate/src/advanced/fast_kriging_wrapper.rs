@@ -2,7 +2,7 @@
 //!
 //! This module provides computationally efficient kriging algorithms for large spatial datasets.
 
-use crate::advanced::enhanced__kriging::{AnisotropicCovariance, TrendFunction};
+use crate::advanced::enhanced_kriging::{AnisotropicCovariance, TrendFunction};
 use crate::advanced::kriging::CovarianceFunction;
 use crate::error::{InterpolateError, InterpolateResult};
 use ndarray::{Array1, Array2, ArrayView1, ArrayView2};
@@ -177,4 +177,4 @@ where
 
 // Re-export everything from the original module
 // through the fast_kriging_reexports module
-pub use super::fast_kriging__reexports::*;
+pub use super::fast_kriging_reexports::*;

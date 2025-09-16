@@ -12,15 +12,15 @@ pub mod memory_mapping;
 pub mod model_partitioning;
 pub mod partial_reconfiguration;
 pub use accelerator::{Accelerator, AcceleratorCapabilities, AcceleratorType};
-pub use custom__asic::{ASICConfig, ASICOperation, CustomASIC, DataType, NativeOperation};
+pub use custom_asic::{ASICConfig, ASICOperation, CustomASIC, DataType, NativeOperation};
 pub use device_manager::{DeviceInfo, DeviceManager, DeviceSelector};
 pub use fpga::{FPGAConfig, FPGADevice, FPGAKernel};
-pub use kernel__compiler::{CompilationTarget, KernelCompiler, OptimizationLevel};
-pub use memory__mapping::{BufferAllocation, MemoryLayout, MemoryMapRequirements, MemoryMapper};
+pub use kernel_compiler::{CompilationTarget, KernelCompiler, OptimizationLevel};
+pub use memory_mapping::{BufferAllocation, MemoryLayout, MemoryMapRequirements, MemoryMapper};
 pub use model_partitioning::{
     LayerProfile, ModelPartition, ModelPartitioner, PartitioningStrategy,
 };
-pub use partial__reconfiguration::{
+pub use partial_reconfiguration::{
     DPRManager, PartialBitstream, PartialRegion, ReconfigurationState,
 use crate::error::Result;
 use ndarray::prelude::*;

@@ -15,22 +15,22 @@ pub mod policy_optimization;
 pub mod replay_buffer;
 pub mod trpo;
 pub mod value;
-pub use actor__critic::{ActorCritic, A2C, A3C, PPO, SAC as ActorCriticSAC};
-pub use advanced__algorithms::{
+pub use actor_critic::{ActorCritic, A2C, A3C, PPO, SAC as ActorCriticSAC};
+pub use num_algorithms::{
     IMPALAConfig, RainbowConfig, RainbowDQN, TD3Config, IMPALA, TD3,
     SAC, SACConfig, ExplorationStrategy, ExplorationStrategyType, ExplorationConfig,
     MADDPG, MADDPGConfig, EnhancedQNetwork,
 };
-pub use advanced__environments::{
+pub use num_environments::{
     MultiAgentEnvironment, MultiAgentGridWorld, MultiAgentWrapper, PursuitEvasion,
 pub use algorithms::{RLAlgorithm, TrainingConfig};
 pub use curiosity::{EpisodicCuriosity, NoveltyExploration, ICM, RND};
 pub use environments::{Action, Environment, Observation, Reward};
 pub use model_based::{Dyna, DynamicsModel, WorldModel, MPC};
 pub use policy::{Policy, PolicyGradient, PolicyNetwork};
-pub use policy__optimization::{
+pub use policy_optimization::{
     CuriosityConfig, CuriosityDrivenAgent, MAMLAgent, MAMLConfig, NPGConfig, NaturalPolicyGradient,
-pub use replay__buffer::{PrioritizedReplayBuffer, ReplayBuffer, ReplayBufferTrait};
+pub use replay_buffer::{PrioritizedReplayBuffer, ReplayBuffer, ReplayBufferTrait};
 pub use trpo::{TRPOConfig, TRPO};
 pub use value::{DoubleDQN, QNetwork, ValueNetwork, DQN};
 use crate::error::Result;

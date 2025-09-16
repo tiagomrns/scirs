@@ -3,7 +3,7 @@
 //! This module provides functionality for estimating and modeling variograms,
 //! which describe the spatial correlation structure of a dataset.
 
-use crate::advanced::enhanced__kriging::AnisotropicCovariance;
+use crate::advanced::enhanced_kriging::AnisotropicCovariance;
 use crate::error::InterpolateResult;
 use ndarray::{Array1, Array2, ArrayView1, ArrayView2};
 use num_traits::{Float, FromPrimitive};

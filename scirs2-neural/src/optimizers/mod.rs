@@ -70,7 +70,7 @@ pub mod sgd;
 pub use adagrad::Adagrad;
 pub use adam::Adam;
 pub use adamw::AdamW;
-pub use lr_scheduler__wrapper::{with_cosine_annealing, with_step_decay, LRSchedulerOptimizer};
+pub use lr_scheduler_wrapper::{with_cosine_annealing, with_step_decay, LRSchedulerOptimizer};
 pub use momentum::MomentumOptimizer;
 pub use radam::RAdam;
 pub use rmsprop::RMSprop;

@@ -334,7 +334,7 @@ mod tests {
     #[cfg(feature = "async")]
     #[tokio::test]
     async fn test_asyncerror_handling() {
-        use super::async__handling::*;
+        use super::async_handling::*;
 
         // Test timeout
         let result = with_timeout(

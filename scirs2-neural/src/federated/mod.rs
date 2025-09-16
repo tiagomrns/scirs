@@ -12,7 +12,7 @@ pub mod personalized;
 pub mod privacy;
 pub mod server;
 pub mod strategies;
-pub use advanced__algorithms::{AggregatorFactory, FedAdagrad, FedAdam, FedAvgM, FedLAG, SCAFFOLD};
+pub use num_algorithms::{AggregatorFactory, FedAdagrad, FedAdam, FedAvgM, FedLAG, SCAFFOLD};
 pub use aggregation::{AggregationStrategy, FedAvg, FedProx, FedYogi, Krum, Median, TrimmedMean};
 pub use client::{ClientConfig, FederatedClient};
 pub use communication::{

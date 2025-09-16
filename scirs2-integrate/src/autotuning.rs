@@ -19,7 +19,8 @@
 //! use scirs2_integrate::autotuning::{HardwareDetector, AutoTuner, TuningProfile};
 //!
 //! // Detect hardware automatically
-//! let hardware = HardwareDetector::detect();
+//! let detector = HardwareDetector;
+//! let hardware = detector.detect();
 //! println!("Detected {} CPU cores", hardware.cpu_cores);
 //!
 //! // Create auto-tuner with detected hardware

@@ -3,7 +3,7 @@
 //! This module implements state-of-the-art continual learning methods including
 //! Progressive Neural Networks, PackNet, Meta-Learning approaches, and more.
 
-use crate::continual::shared__backbone::{MultiTaskArchitecture, TaskType};
+use crate::continual::shared_backbone::{MultiTaskArchitecture, TaskType};
 use crate::error::{NeuralError, Result};
 use crate::layers::{Dense, Layer};
 use ndarray::prelude::*;

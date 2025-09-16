@@ -24,7 +24,7 @@ use thiserror::Error;
 use tokio::io::{AsyncRead, AsyncWrite};
 
 #[cfg(feature = "async")]
-use async__trait::async_trait;
+use async_trait::async_trait;
 
 // AWS environment variable constants
 const AWS_ACCESS_KEY_ID: &str = "AWS_ACCESS_KEY_ID";

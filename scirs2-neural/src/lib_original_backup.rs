@@ -95,7 +95,7 @@ pub mod prelude {
         AutoOptimizationStrategy, OptimizationChoice, UnifiedPerformanceManager,
     };
     // Advanced Mode Coordinator
-    pub use crate::advanced__coordinator::{
+    pub use crate::num_coordinator::{
         AdaptiveConfig, DeviceType, MemoryStrategy, OptimizationConfig, PerformanceReport,
         AdvancedCoordinator,
     };

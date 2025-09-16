@@ -45,7 +45,7 @@ pub use crate::compression::{
 // Knowledge distillation
 pub use crate::distillation::{DistillationMethod, DistillationTrainer, FeatureAdaptation};
 // Transfer learning
-pub use crate::transfer__learning::{LayerState, TransferLearningManager, TransferStrategy};
+pub use crate::transfer_learning::{LayerState, TransferLearningManager, TransferStrategy};
 // Model interpretation
 pub use crate::interpretation::{
     AttributionMethod, BaselineMethod, ModelInterpreter, VisualizationMethod,

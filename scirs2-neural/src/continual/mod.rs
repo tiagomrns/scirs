@@ -7,12 +7,12 @@
 pub mod advanced_continual_learning;
 pub mod elastic_weight_consolidation;
 pub mod shared_backbone;
-pub use advanced_continual__learning::{
+pub use advanced_continual_learning::{
     LateralConnection, LearningWithoutForgetting, LwFConfig, PackNet, PackNetConfig,
     ProgressiveConfig, ProgressiveNeuralNetwork, TaskColumn, TaskMask,
 };
-pub use elastic_weight__consolidation::{EWCConfig, EWC};
-pub use shared__backbone::{MultiTaskArchitecture, SharedBackbone, TaskSpecificHead, TaskType};
+pub use elastic_weight_consolidation::{EWCConfig, EWC};
+pub use shared_backbone::{MultiTaskArchitecture, SharedBackbone, TaskSpecificHead, TaskType};
 use crate::error::Result;
 use crate::models::sequential::Sequential;
 use ndarray::concatenate;

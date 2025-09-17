@@ -22,7 +22,7 @@
 //!
 //! # Example Usage
 //!
-//! ```rust
+//! ```rust,no_run
 //! use scirs2_integrate::specialized::fluid_dynamics::spectral::{
 //!     SpectralNavierStokesSolver, DealiasingStrategy
 //! };

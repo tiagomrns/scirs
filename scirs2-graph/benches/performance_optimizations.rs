@@ -298,34 +298,42 @@ fn bench_memmap_operations(c: &mut Criterion) {
         });
 
         // Benchmark batch neighbor access (simplified)
-        group.bench_function("memmap_batch_neighbors", |b| {
-            let nodes: Vec<usize> = (0..size.min(100)).collect();
-            b.iter(|| {
-                let result: Vec<Vec<usize>> = nodes.iter().map(|&n| vec![n + 1, n + 2]).collect();
-                black_box(result)
-            });
-        });
+        group.bench_with_input(
+            BenchmarkId::new("memmap_batch_neighbors", size),
+            &size,
+            |b, &size| {
+                let nodes: Vec<usize> = (0..size.min(100)).collect();
+                b.iter(|| {
+                    let result: Vec<Vec<usize>> = nodes.iter().map(|&n| vec![n + 1, n + 2]).collect();
+                    black_box(result)
+                });
+            },
+        );
 
         // Benchmark streaming edge iteration (simplified)
-        group.bench_function("memmap_stream_edges", |b| {
-            b.iter(|| {
-                let mut edge_count = 0;
-                // Simulate edge streaming
-                for u in 0..size.min(1000) {
-                    for v in 0..3 {
-                        // Simulate ~3 edges per node
-                        edge_count += 1;
+        group.bench_with_input(
+            BenchmarkId::new("memmap_stream_edges", size),
+            &size,
+            |b, &size| {
+                b.iter(|| {
+                    let mut edge_count = 0;
+                    // Simulate edge streaming
+                    for u in 0..size.min(1000) {
+                        for v in 0..3 {
+                            // Simulate ~3 edges per node
+                            edge_count += 1;
+                            if edge_count >= 10000 {
+                                break;
+                            }
+                        }
                         if edge_count >= 10000 {
                             break;
                         }
                     }
-                    if edge_count >= 10000 {
-                        break;
-                    }
-                }
-                black_box(edge_count)
-            });
-        });
+                    black_box(edge_count)
+                });
+            },
+        );
     }
 
     group.finish();

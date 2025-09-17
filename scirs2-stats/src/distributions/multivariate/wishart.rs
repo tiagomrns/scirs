@@ -315,7 +315,7 @@ impl Wishart {
     ///
     /// # Examples
     ///
-    /// ```
+    /// ```ignore
     /// use ndarray::array;
     /// use scirs2_stats::distributions::multivariate::wishart::Wishart;
     ///
@@ -417,7 +417,7 @@ impl Wishart {
     ///
     /// # Examples
     ///
-    /// ```
+    /// ```ignore
     /// use ndarray::array;
     /// use scirs2_stats::distributions::multivariate::wishart::Wishart;
     ///

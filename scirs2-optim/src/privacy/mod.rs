@@ -147,6 +147,20 @@ pub struct PrivacyBudget {
     pub estimated_steps_remaining: usize,
 }
 
+impl Default for PrivacyBudget {
+    fn default() -> Self {
+        Self {
+            epsilon_consumed: 0.0,
+            delta_consumed: 0.0,
+            epsilon_remaining: 1.0,
+            delta_remaining: 1e-5,
+            steps_taken: 0,
+            accounting_method: AccountingMethod::MomentsAccountant,
+            estimated_steps_remaining: 1000,
+        }
+    }
+}
+
 /// Privacy accounting methods
 #[derive(Debug, Clone, Copy)]
 pub enum AccountingMethod {

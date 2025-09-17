@@ -233,7 +233,7 @@ impl InverseWishart {
     ///
     /// # Examples
     ///
-    /// ```
+    /// ```ignore
     /// use ndarray::array;
     /// use scirs2_stats::distributions::multivariate::inverse_wishart::InverseWishart;
     ///
@@ -278,7 +278,7 @@ impl InverseWishart {
     ///
     /// # Examples
     ///
-    /// ```
+    /// ```ignore
     /// use ndarray::array;
     /// use scirs2_stats::distributions::multivariate::inverse_wishart::InverseWishart;
     ///

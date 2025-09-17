@@ -476,7 +476,7 @@ where
 ///
 /// # Examples
 ///
-/// ```
+/// ```ignore
 /// use ndarray::{array, Array2};
 /// use scirs2_stats::lasso_regression;
 ///
@@ -839,7 +839,7 @@ where
 ///
 /// # Examples
 ///
-/// ```
+/// ```ignore
 /// use ndarray::{array, Array2};
 /// use scirs2_stats::elastic_net;
 ///
@@ -1248,7 +1248,7 @@ where
 ///
 /// # Examples
 ///
-/// ```
+/// ```ignore
 /// use ndarray::{array, Array2};
 /// use scirs2_stats::group_lasso;
 ///

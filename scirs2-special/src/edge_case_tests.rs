@@ -8,8 +8,8 @@
 
 use crate::{bessel, erf, gamma, SpecialResult};
 use ndarray::Array1;
-use std::f64;
 use num_traits::Float;
+use std::f64;
 
 /// Test configuration for edge cases
 #[derive(Debug, Clone)]
@@ -576,13 +576,7 @@ pub fn test_array_edge_cases() -> SpecialResult<()> {
     println!("===========================");
 
     // Test with arrays containing edge case values (reduced for faster testing)
-    let edge_values = vec![
-        0.1,
-        0.5,
-        1.0,
-        2.0,
-        10.0,
-    ];
+    let edge_values = vec![0.1, 0.5, 1.0, 2.0, 10.0];
 
     let input_array = Array1::from_vec(edge_values.clone());
 

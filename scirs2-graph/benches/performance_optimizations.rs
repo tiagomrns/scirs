@@ -287,15 +287,16 @@ fn bench_memmap_operations(c: &mut Criterion) {
             BenchmarkId::new("memmap_neighbor_access", size),
             &size,
             |b, &size| {
-            b.iter(|| {
-                let mut total = 0;
-                // Simplified benchmark without actual memmap access due to borrowing constraints
-                for node in 0..size.min(1000) {
-                    total += node;
-                }
-                black_box(total)
-            });
-        });
+                b.iter(|| {
+                    let mut total = 0;
+                    // Simplified benchmark without actual memmap access due to borrowing constraints
+                    for node in 0..size.min(1000) {
+                        total += node;
+                    }
+                    black_box(total)
+                });
+            },
+        );
 
         // Benchmark batch neighbor access (simplified)
         group.bench_with_input(
@@ -304,7 +305,8 @@ fn bench_memmap_operations(c: &mut Criterion) {
             |b, &size| {
                 let nodes: Vec<usize> = (0..size.min(100)).collect();
                 b.iter(|| {
-                    let result: Vec<Vec<usize>> = nodes.iter().map(|&n| vec![n + 1, n + 2]).collect();
+                    let result: Vec<Vec<usize>> =
+                        nodes.iter().map(|&n| vec![n + 1, n + 2]).collect();
                     black_box(result)
                 });
             },

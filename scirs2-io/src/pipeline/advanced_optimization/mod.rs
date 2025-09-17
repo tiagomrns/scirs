@@ -6,31 +6,29 @@
 
 pub mod config;
 pub mod monitoring;
+pub mod neuromorphic;
 pub mod performance;
 pub mod quantum;
-pub mod neuromorphic;
 
 // Re-export commonly used types
 pub use config::{
-    OptimizedPipelineConfig, MemoryStrategy, CacheConfiguration, CacheReplacementPolicy,
-    PrefetchStrategy, BatchProcessingMode, ExecutionRecord, PipelinePerformanceMetrics,
-    SystemMetrics, MemoryUsage, CachePerformance, NumaTopology, NumaNode,
-    AutoTuningParameters, RegressionDetector, QuantumOptimizationConfig,
-    NeuromorphicConfig, ConsciousnessConfig,
+    AutoTuningParameters, BatchProcessingMode, CacheConfiguration, CachePerformance,
+    CacheReplacementPolicy, ConsciousnessConfig, ExecutionRecord, MemoryStrategy, MemoryUsage,
+    NeuromorphicConfig, NumaNode, NumaTopology, OptimizedPipelineConfig,
+    PipelinePerformanceMetrics, PrefetchStrategy, QuantumOptimizationConfig, RegressionDetector,
+    SystemMetrics,
 };
 
-pub use monitoring::{ResourceMonitor};
+pub use monitoring::ResourceMonitor;
 
 pub use performance::{
-    PerformanceHistory, PipelineProfile, PerformanceTrend, TrendDirection,
-    AutoTuner, PerformancePredictor,
+    AutoTuner, PerformanceHistory, PerformancePredictor, PerformanceTrend, PipelineProfile,
+    TrendDirection,
 };
 
-pub use quantum::{
-    QuantumOptimizer, QuantumState, QuantumAnnealer,
-};
+pub use quantum::{QuantumAnnealer, QuantumOptimizer, QuantumState};
 
 pub use neuromorphic::{
-    NeuromorphicOptimizer, SpikingNeuralNetwork, SpikingNeuron, SynapticConnection,
-    PlasticityRule, NeuromorphicMemory, SpikePattern, AdaptationEvent,
+    AdaptationEvent, NeuromorphicMemory, NeuromorphicOptimizer, PlasticityRule, SpikePattern,
+    SpikingNeuralNetwork, SpikingNeuron, SynapticConnection,
 };

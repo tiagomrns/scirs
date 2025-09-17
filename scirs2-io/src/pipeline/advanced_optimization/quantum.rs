@@ -92,7 +92,9 @@ impl QuantumState {
     }
 
     pub fn get_entanglement_strength(&self, qubit1: usize, qubit2: usize) -> f64 {
-        if qubit1 < self.entanglement_matrix.len() && qubit2 < self.entanglement_matrix[qubit1].len() {
+        if qubit1 < self.entanglement_matrix.len()
+            && qubit2 < self.entanglement_matrix[qubit1].len()
+        {
             self.entanglement_matrix[qubit1][qubit2]
         } else {
             0.0
@@ -393,11 +395,9 @@ impl QuantumOptimizer {
         self.apply_exploration_gates(dimensions)?;
 
         // Perform quantum annealing
-        let annealing_result = self.annealer.anneal(
-            objective_function,
-            &self.quantum_state,
-            constraints,
-        )?;
+        let annealing_result =
+            self.annealer
+                .anneal(objective_function, &self.quantum_state, constraints)?;
 
         // Analyze quantum entanglement patterns
         let entanglement_analysis = self.analyze_entanglement(dimensions);
@@ -407,7 +407,12 @@ impl QuantumOptimizer {
             objective_value: annealing_result.energy,
             convergence_info: QuantumConvergenceInfo {
                 converged: true,
-                final_temperature: self.config.temperature_schedule.last().copied().unwrap_or(0.0),
+                final_temperature: self
+                    .config
+                    .temperature_schedule
+                    .last()
+                    .copied()
+                    .unwrap_or(0.0),
                 annealing_steps: annealing_result.convergence_step,
             },
             entanglement_analysis,
@@ -418,14 +423,17 @@ impl QuantumOptimizer {
     fn apply_exploration_gates(&mut self, dimensions: usize) -> Result<()> {
         // Apply Hadamard gates for superposition
         let hadamard_indices: Vec<usize> = (0..dimensions).collect();
-        self.quantum_state.apply_quantum_gate(QuantumGate::Hadamard, &hadamard_indices)?;
+        self.quantum_state
+            .apply_quantum_gate(QuantumGate::Hadamard, &hadamard_indices)?;
 
         // Apply rotation gates for fine-tuning
         let mut rng = rand::thread_rng();
         for i in 0..dimensions {
             let rotation_angle = rng.gen::<f64>() * std::f64::consts::PI;
             self.quantum_state.apply_quantum_gate(
-                QuantumGate::Rotation { angle: rotation_angle },
+                QuantumGate::Rotation {
+                    angle: rotation_angle,
+                },
                 &[i],
             )?;
         }
@@ -450,7 +458,8 @@ impl QuantumOptimizer {
             }
         }
 
-        let connectivity = entangled_pairs.len() as f64 / (dimensions * (dimensions - 1) / 2) as f64;
+        let connectivity =
+            entangled_pairs.len() as f64 / (dimensions * (dimensions - 1) / 2) as f64;
 
         EntanglementAnalysis {
             average_entanglement: total_entanglement / (dimensions * (dimensions - 1) / 2) as f64,
@@ -468,7 +477,8 @@ impl QuantumOptimizer {
             num_qubits: self.quantum_state.qubits.len(),
             superposition_entropy,
             coherence_measure,
-            measurement_probabilities: self.quantum_state
+            measurement_probabilities: self
+                .quantum_state
                 .qubits
                 .iter()
                 .map(|q| (q.get_probability_zero(), q.get_probability_one()))
@@ -485,7 +495,8 @@ impl QuantumOptimizer {
                 let p1 = qubit.get_probability_one();
                 -(p0 * p0.ln() + p1 * p1.ln())
             })
-            .sum::<f64>() / self.quantum_state.qubits.len() as f64
+            .sum::<f64>()
+            / self.quantum_state.qubits.len() as f64
     }
 
     fn calculate_coherence(&self) -> f64 {
@@ -497,7 +508,8 @@ impl QuantumOptimizer {
                 let p_diff = (qubit.get_probability_zero() - qubit.get_probability_one()).abs();
                 1.0 - p_diff
             })
-            .sum::<f64>() / self.quantum_state.qubits.len() as f64
+            .sum::<f64>()
+            / self.quantum_state.qubits.len() as f64
     }
 }
 

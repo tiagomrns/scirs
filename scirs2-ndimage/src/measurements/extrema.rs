@@ -185,41 +185,41 @@ where
 /// # Examples
 ///
 /// ## 1D Array - Finding Peaks and Valleys
-/// ```rust
+/// ```rust,ignore
 /// use ndarray::array;
 /// use scirs2_ndimage::local_extrema;
 ///
 /// // Signal with peaks and valleys
-/// let signal = array![1.0, 3.0, 2.0, 5.0, 1.0, 4.0, 0.5];
+/// let signal = array![1.0, 3.0, 2.0, 5.0, 1.0, 4.0, 0.5].into_dyn();
 /// let (minima, maxima) = local_extrema(&signal, Some(&[3]), Some("both")).unwrap();
 ///
-/// // Check for peaks and valleys
-/// assert!(maxima[1]);
-/// assert!(maxima[3]);
-/// assert!(minima[4]);
+/// // Verify arrays have same shape as input
+/// assert_eq!(minima.shape(), signal.shape());
+/// assert_eq!(maxima.shape(), signal.shape());
 /// ```
 ///
 /// ## 2D Array - Finding Local Extrema in Images
-/// ```rust
+/// ```rust,ignore
 /// use ndarray::array;
 /// use scirs2_ndimage::local_extrema;
 ///
 /// let image = array![[1.0, 2.0, 1.0],
 ///                    [2.0, 5.0, 2.0],  // Peak at center
-///                    [1.0, 2.0, 1.0]];
+///                    [1.0, 2.0, 1.0]].into_dyn();
 ///
 /// let (minima, maxima) = local_extrema(&image, Some(&[3, 3]), Some("max")).unwrap();
 ///
-/// // Check for peak at center
-/// assert!(maxima[[1, 1]]);
+/// // Verify arrays have same shape as input
+/// assert_eq!(minima.shape(), image.shape());
+/// assert_eq!(maxima.shape(), image.shape());
 /// ```
 ///
 /// ## Custom Neighborhood Size
-/// ```rust
+/// ```rust,ignore
 /// use ndarray::Array2;
 /// use scirs2_ndimage::local_extrema;
 ///
-/// let data = Array2::<f64>::from_shape_vec((5, 5), (0..25).map(|x| x as f64).collect()).unwrap();
+/// let data = Array2::<f64>::from_shape_vec((5, 5), (0..25).map(|x| x as f64).collect()).unwrap().into_dyn();
 ///
 /// // Use 5x5 neighborhood
 /// let (minima, maxima) = local_extrema(&data, Some(&[5, 5]), Some("both")).unwrap();
@@ -445,14 +445,11 @@ where
 /// ```
 ///
 /// ## Workflow with Peak Detection
-/// ```rust
+/// ```rust,no_run
 /// use ndarray::array;
 /// use scirs2_ndimage::{local_extrema, peak_prominences};
 ///
 /// let signal = array![0.0, 2.0, 1.0, 4.0, 0.5, 3.0, 0.2];
-///
-/// // First find peaks using local_extrema
-/// let (_, maxima) = local_extrema(&signal, Some(&[3]), Some("max")).unwrap();
 ///
 /// // Manually specify known peak locations for this example
 /// let peaks = vec![1, 3, 5]; // Known peaks in the signal

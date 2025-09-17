@@ -8,7 +8,10 @@ use num_traits::{Float, FromPrimitive};
 use std::collections::HashMap;
 use std::fmt::Debug;
 
-use crate::advanced::{adaptive_online_clustering, quantum_kmeans, rl_clustering, AdaptiveOnlineConfig, QuantumConfig, RLClusteringConfig};
+use crate::advanced::{
+    adaptive_online_clustering, quantum_kmeans, rl_clustering, AdaptiveOnlineConfig, QuantumConfig,
+    RLClusteringConfig,
+};
 use crate::affinity::{affinity_propagation, AffinityPropagationOptions};
 use crate::birch::{birch, BirchOptions};
 use crate::density::{dbscan, optics};
@@ -21,7 +24,7 @@ use crate::spectral::{spectral_clustering, AffinityMode, SpectralClusteringOptio
 use crate::stability::OptimalKSelector;
 use crate::vq::{kmeans, kmeans2};
 
-use super::config::{TuningConfig, CVStrategy, EvaluationMetric};
+use super::config::{CVStrategy, EvaluationMetric, TuningConfig};
 
 /// Cross-validation evaluator for clustering algorithms
 pub struct ClusteringEvaluator<F: Float> {

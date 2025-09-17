@@ -59,9 +59,7 @@ fn create_randomarray1_f32(size: usize) -> Array1<f32> {
 
 #[allow(dead_code)]
 fn create_randomarray2_f32(rows: usize, cols: usize) -> Array2<f32> {
-    Array2::from_shape_fn((rows, cols), |(i, j)| {
-        ((i * cols + j) % 100) as f32 / 100.0
-    })
+    Array2::from_shape_fn((rows, cols), |(i, j)| ((i * cols + j) % 100) as f32 / 100.0)
 }
 
 #[allow(dead_code)]

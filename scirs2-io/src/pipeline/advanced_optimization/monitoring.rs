@@ -46,9 +46,9 @@ impl ResourceMonitor {
         let now = Instant::now();
 
         // Check if we need to update cached metrics
-        if self.cached_metrics.is_none() ||
-           now.duration_since(self.last_update) >= self.update_frequency {
-
+        if self.cached_metrics.is_none()
+            || now.duration_since(self.last_update) >= self.update_frequency
+        {
             let metrics = self.collect_system_metrics()?;
             self.cached_metrics = Some(metrics.clone());
             self.last_update = now;
@@ -296,9 +296,9 @@ impl ResourceMonitor {
     /// Check if system is under high load
     pub fn is_high_load(&self) -> bool {
         if let Some(metrics) = &self.cached_metrics {
-            metrics.cpu_usage > 0.8 ||
-            metrics.memory_usage.utilization > 0.9 ||
-            metrics.io_utilization > 0.8
+            metrics.cpu_usage > 0.8
+                || metrics.memory_usage.utilization > 0.9
+                || metrics.io_utilization > 0.8
         } else {
             false
         }
@@ -307,9 +307,7 @@ impl ResourceMonitor {
     /// Get resource utilization score (0.0 to 1.0)
     pub fn get_utilization_score(&self) -> f64 {
         if let Some(metrics) = &self.cached_metrics {
-            (metrics.cpu_usage +
-             metrics.memory_usage.utilization +
-             metrics.io_utilization) / 3.0
+            (metrics.cpu_usage + metrics.memory_usage.utilization + metrics.io_utilization) / 3.0
         } else {
             0.5
         }
@@ -322,7 +320,8 @@ impl ResourceMonitor {
             return self.get_utilization_score();
         }
 
-        let recent_scores: Vec<f64> = self.metrics_history
+        let recent_scores: Vec<f64> = self
+            .metrics_history
             .iter()
             .rev()
             .take(10)

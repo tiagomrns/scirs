@@ -12,8 +12,8 @@ use std::fmt::Debug;
 use crate::error::{ClusteringError, Result};
 
 use super::config::{
-    AcquisitionFunction, BayesianState, GpHyperparameters, HyperParameter, KernelType,
-    SearchSpace, SearchStrategy, TuningConfig,
+    AcquisitionFunction, BayesianState, GpHyperparameters, HyperParameter, KernelType, SearchSpace,
+    SearchStrategy, TuningConfig,
 };
 
 /// Search strategy generator for hyperparameter optimization
@@ -211,7 +211,9 @@ where
                 let value = match param {
                     HyperParameter::Integer { min, max } => rng.gen_range(*min..=*max) as f64,
                     HyperParameter::Float { min, max } => rng.gen_range(*min..=*max),
-                    HyperParameter::Categorical { choices } => rng.gen_range(0..choices.len()) as f64,
+                    HyperParameter::Categorical { choices } => {
+                        rng.gen_range(0..choices.len()) as f64
+                    }
                     HyperParameter::Boolean => {
                         if rng.gen_range(0.0..1.0) < 0.5 {
                             1.0
@@ -475,11 +477,7 @@ where
     }
 
     /// Sample a value from a parameter specification
-    fn sample_parameter(
-        &self,
-        param_spec: &HyperParameter,
-        rng: &mut rand::rngs::StdRng,
-    ) -> f64 {
+    fn sample_parameter(&self, param_spec: &HyperParameter, rng: &mut rand::rngs::StdRng) -> f64 {
         match param_spec {
             HyperParameter::Integer { min, max } => rng.gen_range(*min..=*max) as f64,
             HyperParameter::Float { min, max } => rng.gen_range(*min..=*max),

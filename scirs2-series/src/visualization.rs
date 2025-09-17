@@ -25,7 +25,7 @@
 //! let ts_data = data.mapv(|x| (x * 2.0 * std::f64::consts::PI).sin());
 //!
 //! let mut plot = TimeSeriesPlot::new("Sample Time Series");
-//! plot.add_series("sine_wave", &data, &ts_data, PlotStyle::Line);
+//! plot.add_series("sine_wave", &data, &ts_data, PlotStyle::default());
 //! plot.show();
 //! ```
 

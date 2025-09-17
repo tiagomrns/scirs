@@ -37,7 +37,9 @@
 //! use ndarray::array;
 //!
 //! let mut model = EgarchModel::egarch_11();
-//! let data = array![0.01, -0.02, 0.015, -0.008, 0.012]; // Returns
+//! let data = array![0.01, -0.02, 0.015, -0.008, 0.012, 0.005, -0.015, 0.02, -0.01, 0.008,
+//!                   0.003, -0.012, 0.018, -0.006, 0.009, 0.002, -0.008, 0.014, -0.004, 0.011,
+//!                   0.007, -0.009, 0.013, -0.003, 0.006]; // Returns
 //!
 //! let result = model.fit(&data).unwrap();
 //! println!("EGARCH Parameters: {:?}", result.parameters);
@@ -64,7 +66,9 @@
 //! use ndarray::array;
 //!
 //! let mut model = EgarchModel::egarch_11();
-//! let data = array![0.01, -0.02, 0.015, -0.008, 0.012];
+//! let data = array![0.01, -0.02, 0.015, -0.008, 0.012, 0.005, -0.015, 0.02, -0.01, 0.008,
+//!                   0.003, -0.012, 0.018, -0.006, 0.009, 0.002, -0.008, 0.014, -0.004, 0.011,
+//!                   0.007, -0.009, 0.013, -0.003, 0.006];
 //!
 //! // Fit model
 //! let result = model.fit(&data).unwrap();

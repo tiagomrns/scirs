@@ -35,7 +35,7 @@ impl WrapperMethods {
     /// let config = FeatureSelectionConfig::default();
     ///
     /// let result = WrapperMethods::forward_selection(&features, &target, &config).unwrap();
-    /// println!("Selected {} features", result.selectedfeatures.len());
+    /// println!("Selected {} features", result.selected_features.len());
     /// ```
     pub fn forward_selection(
         features: &Array2<f64>,

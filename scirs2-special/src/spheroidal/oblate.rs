@@ -936,4 +936,3 @@ pub fn obl_rad2(m: i32, n: i32, c: f64, x: f64) -> SpecialResult<(f64, f64)> {
 
     Ok((radial_value, radial_derivative))
 }
-

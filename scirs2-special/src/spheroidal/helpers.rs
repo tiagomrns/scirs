@@ -290,4 +290,3 @@ fn solve_eigenvalue_matrix_method(m: i32, n: i32, c: f64, matrixsize: usize) -> 
 
     Ok(approximate_lambda)
 }
-

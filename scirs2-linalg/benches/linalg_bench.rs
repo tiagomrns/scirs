@@ -262,7 +262,10 @@ fn bench_complex_operations(c: &mut Criterion) {
     for &size in &[50, 100, 200] {
         use num_complex::Complex64;
         let matrix = Array2::from_shape_fn((size, size), |(i, j)| {
-            Complex64::new(((i + j) as f64 * 0.1).sin(), ((i as f64 - j as f64) * 0.1).cos())
+            Complex64::new(
+                ((i + j) as f64 * 0.1).sin(),
+                ((i as f64 - j as f64) * 0.1).cos(),
+            )
         });
 
         group.throughput(Throughput::Elements(size as u64 * size as u64));

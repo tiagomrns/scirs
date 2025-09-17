@@ -11,7 +11,7 @@ use std::fmt::Debug;
 use crate::error::Result;
 
 use super::config::{
-    AcquisitionFunction, CrossValidationConfig, CVStrategy, EarlyStoppingConfig, EvaluationMetric,
+    AcquisitionFunction, CVStrategy, CrossValidationConfig, EarlyStoppingConfig, EvaluationMetric,
     HyperParameter, LoadBalancingStrategy, ParallelConfig, ResourceConstraints, SearchSpace,
     SearchStrategy, TuningConfig, TuningResult,
 };
@@ -185,7 +185,10 @@ where
 
     /// Create a default tuning result for demonstration
     /// In practice, this would call the actual algorithm tuning methods
-    fn create_default_tuning_result(&self, algorithm: &ClusteringAlgorithm) -> Result<TuningResult> {
+    fn create_default_tuning_result(
+        &self,
+        algorithm: &ClusteringAlgorithm,
+    ) -> Result<TuningResult> {
         use super::config::{ConvergenceInfo, EvaluationResult, ExplorationStats, StoppingReason};
 
         // Generate a mock result with reasonable scores

@@ -318,7 +318,11 @@ mod tests {
 
         // For a beta library, we expect reasonable compatibility
         println!("Actual compatibility score: {:.1}%", score * 100.0);
-        assert!(score > 0.4, "Compatibility score should be at least 40%, got {:.1}%", score * 100.0);
+        assert!(
+            score > 0.4,
+            "Compatibility score should be at least 40%, got {:.1}%",
+            score * 100.0
+        );
     }
 
     #[test]

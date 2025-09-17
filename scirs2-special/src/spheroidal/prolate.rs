@@ -4,8 +4,11 @@
 //! of the Helmholtz equation in prolate spheroidal coordinates. These functions are particularly
 //! important in electromagnetic scattering by prolate spheroids (cigar-shaped objects).
 
+use super::helpers::{
+    compute_legendre_assoc_derivative, legendre_associated_second_kind,
+    solve_spheroidal_eigenvalue_improved,
+};
 use crate::error::{SpecialError, SpecialResult};
-use super::helpers::{compute_legendre_assoc_derivative, legendre_associated_second_kind, solve_spheroidal_eigenvalue_improved};
 
 /// Computes characteristic values using continued fractions for moderate c values
 ///
@@ -1008,4 +1011,3 @@ fn compute_prolate_angular_series(m: i32, n: i32, c: f64, x: f64) -> SpecialResu
 
     Ok((sum, sum_prime))
 }
-

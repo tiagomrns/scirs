@@ -82,18 +82,22 @@ fn bench_fft_2d(c: &mut Criterion) {
         });
 
         // Benchmark N-dimensional FFT
-        group.bench_with_input(BenchmarkId::new("fftn", size), &data_2d, |b, data: &ndarray::Array2<f64>| {
-            b.iter(|| {
-                fftn(
-                    black_box(&data.clone().into_dyn()),
-                    None,
-                    None,
-                    None,
-                    None,
-                    None,
-                )
-            })
-        });
+        group.bench_with_input(
+            BenchmarkId::new("fftn", size),
+            &data_2d,
+            |b, data: &ndarray::Array2<f64>| {
+                b.iter(|| {
+                    fftn(
+                        black_box(&data.clone().into_dyn()),
+                        None,
+                        None,
+                        None,
+                        None,
+                        None,
+                    )
+                })
+            },
+        );
     }
 
     group.finish();

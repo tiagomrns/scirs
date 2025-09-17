@@ -69,10 +69,8 @@ impl NeuromorphicOptimizer {
                 best_fitness = candidate_fitness;
 
                 // Store successful pattern in memory
-                self.neuromorphic_memory.store_pattern(
-                    spike_pattern.clone(),
-                    best_fitness,
-                )?;
+                self.neuromorphic_memory
+                    .store_pattern(spike_pattern.clone(), best_fitness)?;
             }
 
             // Apply synaptic plasticity
@@ -149,8 +147,8 @@ impl NeuromorphicOptimizer {
 
             // Convert spike count to variable value
             let normalized_value = (spike_count as f64 / 20.0).clamp(0.0, 1.0);
-            let scaled_value = var_template.bounds.0 +
-                normalized_value * (var_template.bounds.1 - var_template.bounds.0);
+            let scaled_value = var_template.bounds.0
+                + normalized_value * (var_template.bounds.1 - var_template.bounds.0);
 
             variables.push(OptimizationVariable {
                 id: var_template.id,
@@ -270,7 +268,12 @@ impl SpikingNeuralNetwork {
     pub fn get_state(&self) -> NetworkState {
         NetworkState {
             neuron_states: self.neurons.iter().map(|n| n.get_state()).collect(),
-            synapse_weights: self.connections.iter().flatten().map(|c| c.weight as usize).collect(),
+            synapse_weights: self
+                .connections
+                .iter()
+                .flatten()
+                .map(|c| c.weight as usize)
+                .collect(),
         }
     }
 }

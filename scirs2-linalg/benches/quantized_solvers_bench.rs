@@ -6,8 +6,8 @@
 use std::hint::black_box;
 
 use criterion::{criterion_group, criterion_main, BenchmarkId, Criterion};
-use rand::Rng;
 use ndarray::{Array1, Array2, ArrayView1};
+use rand::Rng;
 use scirs2_linalg::matrixfree::{conjugate_gradient, gmres, LinearOperator};
 use scirs2_linalg::quantization::{
     quantized_matrixfree::quantized_to_linear_operator,

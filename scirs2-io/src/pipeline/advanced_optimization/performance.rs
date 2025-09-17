@@ -97,7 +97,11 @@ impl PerformanceHistory {
         self.pipeline_profiles.get(pipeline_id)
     }
 
-    pub fn get_best_configurations(&self, pipeline_id: &str, limit: usize) -> Vec<&ExecutionRecord> {
+    pub fn get_best_configurations(
+        &self,
+        pipeline_id: &str,
+        limit: usize,
+    ) -> Vec<&ExecutionRecord> {
         let mut records: Vec<&ExecutionRecord> = self
             .executions
             .iter()
@@ -105,7 +109,10 @@ impl PerformanceHistory {
             .collect();
 
         records.sort_by(|a, b| {
-            b.metrics.throughput.partial_cmp(&a.metrics.throughput).unwrap()
+            b.metrics
+                .throughput
+                .partial_cmp(&a.metrics.throughput)
+                .unwrap()
         });
 
         records.into_iter().take(limit).collect()
@@ -297,7 +304,8 @@ impl AutoTuner {
             let avg_throughput: f64 = historical_data
                 .iter()
                 .map(|record| record.metrics.throughput)
-                .sum::<f64>() / historical_data.len() as f64;
+                .sum::<f64>()
+                / historical_data.len() as f64;
             features.push(avg_throughput / 1000.0); // Normalize
         } else {
             features.push(0.0);
@@ -332,7 +340,8 @@ impl AutoTuner {
             gpu_enabled,
             prefetch_strategy: super::config::PrefetchStrategy::Sequential { distance: 64 },
             compression_level: (prediction_score * 9.0).abs() as u8,
-            io_buffer_size: ((prediction_score * 64.0 * 1024.0).abs() as usize).clamp(4096, 1024 * 1024),
+            io_buffer_size: ((prediction_score * 64.0 * 1024.0).abs() as usize)
+                .clamp(4096, 1024 * 1024),
             batch_processing: super::config::BatchProcessingMode::Disabled,
         })
     }
@@ -404,10 +413,12 @@ impl AutoTuner {
         }
 
         let mean_error = total_error / self.training_data.len() as f64;
-        let mean_performance: f64 = self.training_data
+        let mean_performance: f64 = self
+            .training_data
             .iter()
             .map(|e| e.performance_score)
-            .sum::<f64>() / self.training_data.len() as f64;
+            .sum::<f64>()
+            / self.training_data.len() as f64;
 
         if mean_performance > 0.0 {
             1.0 - (mean_error / mean_performance)
@@ -464,7 +475,11 @@ impl PerformancePredictor {
         }
     }
 
-    fn extract_prediction_features(&self, config: &OptimizedPipelineConfig, data_size: usize) -> Vec<f64> {
+    fn extract_prediction_features(
+        &self,
+        config: &OptimizedPipelineConfig,
+        data_size: usize,
+    ) -> Vec<f64> {
         vec![
             config.thread_count as f64,
             (config.chunk_size as f64).ln(),

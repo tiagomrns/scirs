@@ -24,7 +24,7 @@
 //!     .with_parallel_processing(true);
 //!
 //! let mut processor = ChunkedProcessor::new(config);
-//! let results = processor.process_file("large_timeseries.csv")?;
+//! let results = processor.process_csv_file("large_timeseries.csv", 0, true)?;
 //! # Ok::<(), Box<dyn std::error::Error>>(())
 //! ```
 

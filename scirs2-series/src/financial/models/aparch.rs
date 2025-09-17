@@ -46,7 +46,9 @@
 //! use ndarray::array;
 //!
 //! let mut model = AparchModel::new();
-//! let returns = array![0.01, -0.02, 0.015, -0.008, 0.012]; // Return series
+//! let returns = array![0.01, -0.02, 0.015, -0.008, 0.012, 0.005, -0.015, 0.02, -0.01, 0.008,
+//!                      0.003, -0.012, 0.018, -0.006, 0.009, 0.002, -0.008, 0.014, -0.004, 0.011,
+//!                      0.007, -0.009, 0.013, -0.003, 0.006]; // Return series
 //!
 //! let result = model.fit(&returns).unwrap();
 //! println!("APARCH Parameters: {:?}", result.parameters);
@@ -59,7 +61,9 @@
 //! use ndarray::array;
 //!
 //! let mut model = AparchModel::new();
-//! let returns = array![0.01, -0.02, 0.015, -0.008, 0.012];
+//! let returns = array![0.01, -0.02, 0.015, -0.008, 0.012, 0.005, -0.015, 0.02, -0.01, 0.008,
+//!                      0.003, -0.012, 0.018, -0.006, 0.009, 0.002, -0.008, 0.014, -0.004, 0.011,
+//!                      0.007, -0.009, 0.013, -0.003, 0.006];
 //!
 //! let result = model.fit(&returns).unwrap();
 //!

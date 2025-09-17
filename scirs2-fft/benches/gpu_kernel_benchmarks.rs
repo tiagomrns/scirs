@@ -163,18 +163,22 @@ fn bench_signal_sizes(c: &mut Criterion) {
         let signal = create_sparse_signal(size, &frequencies);
         let noisy_signal = add_noise(&signal, 0.1);
 
-        c.bench_with_input(BenchmarkId::new("gpu_kernel_size", size), &size, |b_, _data| {
-            b_.iter(|| {
-                cuda_sparse_fft(
-                    &noisy_signal,
-                    5, // Look for 5 frequency components
-                    0, // Use first CUDA device
-                    Some(SparseFFTAlgorithm::Sublinear),
-                    Some(WindowFunction::Hann),
-                )
-                .unwrap()
-            })
-        });
+        c.bench_with_input(
+            BenchmarkId::new("gpu_kernel_size", size),
+            &size,
+            |b_, _data| {
+                b_.iter(|| {
+                    cuda_sparse_fft(
+                        &noisy_signal,
+                        5, // Look for 5 frequency components
+                        0, // Use first CUDA device
+                        Some(SparseFFTAlgorithm::Sublinear),
+                        Some(WindowFunction::Hann),
+                    )
+                    .unwrap()
+                })
+            },
+        );
     }
 }
 

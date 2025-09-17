@@ -12,9 +12,7 @@ use std::hint::black_box;
 // Helper functions to generate test data
 #[allow(dead_code)]
 fn create_randomarray2_f32(rows: usize, cols: usize) -> Array2<f32> {
-    Array2::from_shape_fn((rows, cols), |(i, j)| {
-        ((i * cols + j) % 100) as f32 / 100.0
-    })
+    Array2::from_shape_fn((rows, cols), |(i, j)| ((i * cols + j) % 100) as f32 / 100.0)
 }
 
 #[allow(dead_code)]
@@ -43,15 +41,19 @@ fn bench_quantization(c: &mut Criterion) {
             let id_string = format!("{}x{}_{}bit", size, size, bits);
 
             // Benchmark quantization with int8 method
-            group.bench_with_input(BenchmarkId::new("Quantize_Int8", &id_string), &size, |b_, _data| {
-                b_.iter(|| {
-                    black_box(quantize_matrix(
-                        &black_box(matrix.view()),
-                        bits,
-                        QuantizationMethod::Symmetric,
-                    ))
-                })
-            });
+            group.bench_with_input(
+                BenchmarkId::new("Quantize_Int8", &id_string),
+                &size,
+                |b_, _data| {
+                    b_.iter(|| {
+                        black_box(quantize_matrix(
+                            &black_box(matrix.view()),
+                            bits,
+                            QuantizationMethod::Symmetric,
+                        ))
+                    })
+                },
+            );
 
             // Benchmark quantization with per-channel method
             group.bench_with_input(
@@ -98,14 +100,18 @@ fn bench_quantized_ops(c: &mut Criterion) {
             let _ = quantize_vector(&vector.view(), bits, QuantizationMethod::Symmetric);
 
             // Benchmark regular vs. quantized matrix multiplication
-            group.bench_with_input(BenchmarkId::new("RegularMatMul", &id_string), &size, |b_, _data| {
-                b_.iter(|| {
-                    black_box(regular_matmul_f32(
-                        &black_box(matrix_a.view()),
-                        &black_box(matrix_b.view()),
-                    ))
-                })
-            });
+            group.bench_with_input(
+                BenchmarkId::new("RegularMatMul", &id_string),
+                &size,
+                |b_, _data| {
+                    b_.iter(|| {
+                        black_box(regular_matmul_f32(
+                            &black_box(matrix_a.view()),
+                            &black_box(matrix_b.view()),
+                        ))
+                    })
+                },
+            );
 
             // Clone qa and qb to avoid ownership issues
             let qa_clone = qa.clone();
@@ -195,7 +201,9 @@ fn bench_calibration(c: &mut Criterion) {
 
         // Benchmark different calibration methods
         group.bench_with_input(BenchmarkId::new("MinMax", size), &size, |b_, _data| {
-            b_.iter(|| black_box(calibrate_matrix(&matrix.view(), 8, &minmax_config_clone).unwrap()))
+            b_.iter(|| {
+                black_box(calibrate_matrix(&matrix.view(), 8, &minmax_config_clone).unwrap())
+            })
         });
 
         group.bench_with_input(BenchmarkId::new("Percentile", size), &size, |b_, _data| {

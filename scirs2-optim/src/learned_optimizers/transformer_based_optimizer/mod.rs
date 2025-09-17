@@ -44,6 +44,9 @@ use super::{
     TaskContext, OptimizerState, NeuralOptimizerMetrics, TaskPerformance
 };
 
+// Import for external compatibility
+use crate::error::OptimError;
+
 /// Transformer-based meta-learning optimizer
 pub struct TransformerOptimizer<T: Float> {
     /// Core transformer architecture

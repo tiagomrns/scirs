@@ -89,7 +89,8 @@ where
 
         // Generate parameter combinations based on search strategy
         let strategy_generator = StrategyGenerator::new(self.config.clone());
-        let parameter_combinations = strategy_generator.generate_parameter_combinations(&search_space)?;
+        let parameter_combinations =
+            strategy_generator.generate_parameter_combinations(&search_space)?;
 
         let evaluator = ClusteringEvaluator::new(self.config.clone());
 
@@ -113,7 +114,8 @@ where
             let tol = params.get("tolerance").copied();
 
             // Cross-validate K-means
-            let scores = evaluator.cross_validate_kmeans(data, k, max_iter, tol, self.config.random_seed)?;
+            let scores =
+                evaluator.cross_validate_kmeans(data, k, max_iter, tol, self.config.random_seed)?;
             let mean_score = scores.iter().sum::<f64>() / scores.len() as f64;
 
             let eval_time = eval_start.elapsed().as_secs_f64();
@@ -172,7 +174,8 @@ where
         let mut best_parameters = HashMap::new();
 
         let strategy_generator = StrategyGenerator::new(self.config.clone());
-        let parameter_combinations = strategy_generator.generate_parameter_combinations(&search_space)?;
+        let parameter_combinations =
+            strategy_generator.generate_parameter_combinations(&search_space)?;
 
         let evaluator = ClusteringEvaluator::new(self.config.clone());
 
@@ -231,43 +234,83 @@ where
     /// Stub implementations for other clustering algorithms
     /// These would be implemented similar to tune_kmeans and tune_dbscan
 
-    pub fn tune_optics(&self, _data: ArrayView2<F>, _search_space: SearchSpace) -> Result<TuningResult> {
+    pub fn tune_optics(
+        &self,
+        _data: ArrayView2<F>,
+        _search_space: SearchSpace,
+    ) -> Result<TuningResult> {
         self.create_stub_result()
     }
 
-    pub fn tune_gmm(&self, _data: ArrayView2<F>, _search_space: SearchSpace) -> Result<TuningResult> {
+    pub fn tune_gmm(
+        &self,
+        _data: ArrayView2<F>,
+        _search_space: SearchSpace,
+    ) -> Result<TuningResult> {
         self.create_stub_result()
     }
 
-    pub fn tune_spectral(&self, _data: ArrayView2<F>, _search_space: SearchSpace) -> Result<TuningResult> {
+    pub fn tune_spectral(
+        &self,
+        _data: ArrayView2<F>,
+        _search_space: SearchSpace,
+    ) -> Result<TuningResult> {
         self.create_stub_result()
     }
 
-    pub fn tune_mean_shift(&self, _data: ArrayView2<F>, _search_space: SearchSpace) -> Result<TuningResult> {
+    pub fn tune_mean_shift(
+        &self,
+        _data: ArrayView2<F>,
+        _search_space: SearchSpace,
+    ) -> Result<TuningResult> {
         self.create_stub_result()
     }
 
-    pub fn tune_hierarchical(&self, _data: ArrayView2<F>, _search_space: SearchSpace) -> Result<TuningResult> {
+    pub fn tune_hierarchical(
+        &self,
+        _data: ArrayView2<F>,
+        _search_space: SearchSpace,
+    ) -> Result<TuningResult> {
         self.create_stub_result()
     }
 
-    pub fn tune_birch(&self, _data: ArrayView2<F>, _search_space: SearchSpace) -> Result<TuningResult> {
+    pub fn tune_birch(
+        &self,
+        _data: ArrayView2<F>,
+        _search_space: SearchSpace,
+    ) -> Result<TuningResult> {
         self.create_stub_result()
     }
 
-    pub fn tune_affinity_propagation(&self, _data: ArrayView2<F>, _search_space: SearchSpace) -> Result<TuningResult> {
+    pub fn tune_affinity_propagation(
+        &self,
+        _data: ArrayView2<F>,
+        _search_space: SearchSpace,
+    ) -> Result<TuningResult> {
         self.create_stub_result()
     }
 
-    pub fn tune_quantum_kmeans(&self, _data: ArrayView2<F>, _search_space: SearchSpace) -> Result<TuningResult> {
+    pub fn tune_quantum_kmeans(
+        &self,
+        _data: ArrayView2<F>,
+        _search_space: SearchSpace,
+    ) -> Result<TuningResult> {
         self.create_stub_result()
     }
 
-    pub fn tune_rl_clustering(&self, _data: ArrayView2<F>, _search_space: SearchSpace) -> Result<TuningResult> {
+    pub fn tune_rl_clustering(
+        &self,
+        _data: ArrayView2<F>,
+        _search_space: SearchSpace,
+    ) -> Result<TuningResult> {
         self.create_stub_result()
     }
 
-    pub fn tune_adaptive_online(&self, _data: ArrayView2<F>, _search_space: SearchSpace) -> Result<TuningResult> {
+    pub fn tune_adaptive_online(
+        &self,
+        _data: ArrayView2<F>,
+        _search_space: SearchSpace,
+    ) -> Result<TuningResult> {
         self.create_stub_result()
     }
 

@@ -57,8 +57,8 @@ pub struct CacheConfiguration {
 impl Default for CacheConfiguration {
     fn default() -> Self {
         Self {
-            l1_cache_size: 32 * 1024,      // 32KB
-            l2_cache_size: 256 * 1024,     // 256KB
+            l1_cache_size: 32 * 1024,  // 32KB
+            l2_cache_size: 256 * 1024, // 256KB
             prefetch_distance: 64,
             cache_line_size: 64,
             temporal_locality_weight: 0.7,
@@ -285,13 +285,15 @@ impl RegressionDetector {
 
         // Update baseline if we have enough data
         if self.recent_metrics.len() >= self.detection_window {
-            let avg_recent: f64 = self.recent_metrics.iter().sum::<f64>() / self.recent_metrics.len() as f64;
+            let avg_recent: f64 =
+                self.recent_metrics.iter().sum::<f64>() / self.recent_metrics.len() as f64;
 
             if self.baseline_performance == 0.0 {
                 self.baseline_performance = avg_recent;
             } else {
                 // Check for regression
-                let relative_change = (avg_recent - self.baseline_performance) / self.baseline_performance;
+                let relative_change =
+                    (avg_recent - self.baseline_performance) / self.baseline_performance;
                 if relative_change < -self.regression_threshold {
                     // Performance regression detected
                     eprintln!(

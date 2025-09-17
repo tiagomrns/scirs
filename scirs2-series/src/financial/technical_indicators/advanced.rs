@@ -136,7 +136,7 @@ pub struct BollingerBands<F: Float> {
 /// use scirs2_series::financial::technical_indicators::advanced::{BollingerBandsConfig, bollinger_bands};
 /// use ndarray::array;
 ///
-/// let prices = array![20.0, 21.0, 19.5, 22.0, 21.5, 20.0, 19.0];
+/// let prices = array![20.0, 21.0, 19.5, 22.0, 21.5, 20.0, 19.0, 23.0, 22.5, 21.0, 20.5, 22.5, 23.0, 21.5, 20.0, 22.0, 21.0, 19.5, 21.5, 22.0, 20.5];
 /// let config = BollingerBandsConfig::default();
 /// let bands = bollinger_bands(&prices, &config).unwrap();
 /// ```

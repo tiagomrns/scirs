@@ -206,9 +206,9 @@ mod tests {
             3,
             Some(10), // fewer iterations for test
             Some(1e-4),
-            None, // minit method
-            None, // missing method
-            None, // check_finite
+            None,     // minit method
+            None,     // missing method
+            None,     // check_finite
             Some(42), // random seed
         )
         .unwrap();

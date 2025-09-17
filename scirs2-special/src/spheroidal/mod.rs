@@ -81,11 +81,11 @@
 //! - Adaptive algorithms based on parameter ranges
 //! - Memory-efficient implementations for large-scale computations
 
-pub mod prolate;
-pub mod oblate;
 pub mod helpers;
+pub mod oblate;
+pub mod prolate;
 
 // Re-export all public functions
-pub use prolate::*;
-pub use oblate::*;
 pub use helpers::*;
+pub use oblate::*;
+pub use prolate::*;

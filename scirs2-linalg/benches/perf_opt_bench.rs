@@ -61,35 +61,51 @@ fn bench_inplace_operations(c: &mut Criterion) {
         let b = Array2::<f64>::random((*size, *size).f(), Uniform::new(-1.0, 1.0));
 
         // Standard addition (creates new array)
-        group.bench_with_input(BenchmarkId::new("standard_add", size), size, |bench_, _data| {
-            bench_.iter(|| {
-                let _result = black_box(&a + &b);
-            });
-        });
+        group.bench_with_input(
+            BenchmarkId::new("standard_add", size),
+            size,
+            |bench_, _data| {
+                bench_.iter(|| {
+                    let _result = black_box(&a + &b);
+                });
+            },
+        );
 
         // In-place addition
-        group.bench_with_input(BenchmarkId::new("inplace_add", size), size, |bench_, _data| {
-            bench_.iter(|| {
-                let mut a_copy = a.clone();
-                inplace_add(&mut a_copy.view_mut(), &b.view()).unwrap();
-                black_box(&a_copy);
-            });
-        });
+        group.bench_with_input(
+            BenchmarkId::new("inplace_add", size),
+            size,
+            |bench_, _data| {
+                bench_.iter(|| {
+                    let mut a_copy = a.clone();
+                    inplace_add(&mut a_copy.view_mut(), &b.view()).unwrap();
+                    black_box(&a_copy);
+                });
+            },
+        );
 
         // Standard scaling (creates new array)
-        group.bench_with_input(BenchmarkId::new("standard_scale", size), size, |bench_, _data| {
-            bench_.iter(|| {
-                let _result = black_box(&a * 2.5);
-            });
-        });
+        group.bench_with_input(
+            BenchmarkId::new("standard_scale", size),
+            size,
+            |bench_, _data| {
+                bench_.iter(|| {
+                    let _result = black_box(&a * 2.5);
+                });
+            },
+        );
 
         // In-place scaling
-        group.bench_with_input(BenchmarkId::new("inplace_scale", size), size, |bench_, _data| {
-            bench_.iter(|| {
-                let mut a_copy = a.clone();
-                let _ = black_box(inplace_scale(&mut a_copy.view_mut(), 2.5));
-            });
-        });
+        group.bench_with_input(
+            BenchmarkId::new("inplace_scale", size),
+            size,
+            |bench_, _data| {
+                bench_.iter(|| {
+                    let mut a_copy = a.clone();
+                    let _ = black_box(inplace_scale(&mut a_copy.view_mut(), 2.5));
+                });
+            },
+        );
     }
 
     group.finish();
@@ -111,11 +127,15 @@ fn bench_transpose_optimizations(c: &mut Criterion) {
         });
 
         // Optimized transpose
-        group.bench_with_input(BenchmarkId::new("optimized", size), size, |bench_, _data| {
-            bench_.iter(|| {
-                let _result = black_box(optimized_transpose(&a.view()).unwrap());
-            });
-        });
+        group.bench_with_input(
+            BenchmarkId::new("optimized", size),
+            size,
+            |bench_, _data| {
+                bench_.iter(|| {
+                    let _result = black_box(optimized_transpose(&a.view()).unwrap());
+                });
+            },
+        );
     }
 
     group.finish();

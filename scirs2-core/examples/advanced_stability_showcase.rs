@@ -512,9 +512,15 @@ mod tests {
                 strategy_success_rates: std::collections::HashMap::new(),
                 memorybandwidth_utilization: 50.0,
                 cache_hit_rate: 0.8,
-                parallel_efficiency: 0.9
+                parallel_efficiency: 0.9,
             };
-            manager.record_performance("test_api", "test_module", system_state, input_chars, perf_metrics);
+            manager.record_performance(
+                "test_api",
+                "test_module",
+                system_state,
+                input_chars,
+                perf_metrics,
+            );
         }
 
         // Check data points were recorded

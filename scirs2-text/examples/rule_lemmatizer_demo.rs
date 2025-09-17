@@ -22,6 +22,7 @@ const TEXTS: &[&str] = &[
     "He walked slowly through the forest, listening to the birds singing. The leaves rustled beneath his feet as he went deeper into the woods. Shadows grew longer as the sun began setting beyond the hills.",
 ];
 
+#[allow(dead_code)]
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("Rule-based Lemmatization Demo\n");
 
@@ -70,10 +71,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         };
         let porter_result = porter_stemmer.stem(word)?;
 
-        println!(
-            "{:<15} {:<15} {:<15} {:<15}",
-            word, simple_result, rule_result, porter_result
-        );
+        println!("{word:<15} {simple_result:<15} {rule_result:<15} {porter_result:<15}");
     }
 
     // POS tagging demonstration
@@ -89,7 +87,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     ];
 
     for (word, pos_tags) in &ambiguous_words {
-        println!("Word: \"{}\"", word);
+        println!("Word: \"{word}\"");
 
         for pos in pos_tags {
             let pos_name = match pos {
@@ -164,10 +162,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let porter_time = start.elapsed();
 
     println!("Processing {} tokens:\n", all_tokens.len());
-    println!("- SimpleLemmatizer: {:.2?}", simple_time);
-    println!("- RuleLemmatizer (without POS): {:.2?}", rule_time);
-    println!("- RuleLemmatizer (with POS): {:.2?}", pos_rule_time);
-    println!("- PorterStemmer: {:.2?}", porter_time);
+    println!("- SimpleLemmatizer: {simple_time:.2?}");
+    println!("- RuleLemmatizer (without POS): {rule_time:.2?}");
+    println!("- RuleLemmatizer (with POS): {pos_rule_time:.2?}");
+    println!("- PorterStemmer: {porter_time:.2?}");
 
     // Example using RuleLemmatizer on real text
     println!("\n=== Text Processing Example ===\n");
@@ -175,7 +173,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 The children went to the museum, where they saw the fossils of prehistoric animals. \
                 Universities are studying better methods to address these issues quickly.";
 
-    println!("Original text:\n{}\n", text);
+    println!("Original text:\n{text}\n");
 
     // Simple tokenization and lemmatization with POS tags
     let tokens: Vec<&str> = text
@@ -227,10 +225,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         };
         let porter_result = porter_stemmer.stem(token)?;
 
-        println!(
-            "{:<15} {:<15} {:<15} {:<15}",
-            token, rule_result, pos_result, porter_result
-        );
+        println!("{token:<15} {rule_result:<15} {pos_result:<15} {porter_result:<15}");
     }
 
     // Custom rules example

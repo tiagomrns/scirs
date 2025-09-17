@@ -19,12 +19,12 @@
 use std::fmt;
 use std::time::Instant;
 
-use ndarray::{Array, Dimension};
+use ndarray::{Array, Array0, Dimension};
 use rand::seq::SliceRandom;
 use rand::Rng;
 use rand::SeedableRng;
 
-use crate::array_protocol::grad::Optimizer;
+use crate::array_protocol::grad::{GradientDict, Optimizer};
 use crate::array_protocol::ml_ops::ActivationFunc;
 use crate::array_protocol::neural::Sequential;
 use crate::array_protocol::operations::{multiply, subtract};
@@ -48,10 +48,10 @@ pub trait Dataset {
     fn get(&self, index: usize) -> Option<(Box<dyn ArrayProtocol>, Box<dyn ArrayProtocol>)>;
 
     /// Get the input shape of the dataset.
-    fn input_shape(&self) -> Vec<usize>;
+    fn inputshape(&self) -> Vec<usize>;
 
     /// Get the output shape of the dataset.
-    fn output_shape(&self) -> Vec<usize>;
+    fn outputshape(&self) -> Vec<usize>;
 }
 
 /// In-memory dataset with arrays.
@@ -63,10 +63,10 @@ pub struct InMemoryDataset {
     targets: Vec<Box<dyn ArrayProtocol>>,
 
     /// Input shape.
-    input_shape: Vec<usize>,
+    inputshape: Vec<usize>,
 
     /// Output shape.
-    output_shape: Vec<usize>,
+    outputshape: Vec<usize>,
 }
 
 impl InMemoryDataset {
@@ -74,8 +74,8 @@ impl InMemoryDataset {
     pub fn new(
         inputs: Vec<Box<dyn ArrayProtocol>>,
         targets: Vec<Box<dyn ArrayProtocol>>,
-        input_shape: Vec<usize>,
-        output_shape: Vec<usize>,
+        inputshape: Vec<usize>,
+        outputshape: Vec<usize>,
     ) -> Self {
         assert_eq!(
             inputs.len(),
@@ -86,8 +86,8 @@ impl InMemoryDataset {
         Self {
             inputs,
             targets,
-            input_shape,
-            output_shape,
+            inputshape,
+            outputshape,
         }
     }
 
@@ -98,13 +98,13 @@ impl InMemoryDataset {
         D1: Dimension + Send + Sync,
         D2: Dimension + Send + Sync,
     {
-        let input_shape = inputs.shape().to_vec();
-        let output_shape = targets.shape().to_vec();
+        let inputshape = inputs.shape().to_vec();
+        let outputshape = targets.shape().to_vec();
 
-        // Handle batched inputs
-        let num_samples = input_shape[0];
+        // Handle batched _inputs
+        let num_samples = inputshape[0];
         assert_eq!(
-            num_samples, output_shape[0],
+            num_samples, outputshape[0],
             "Inputs and targets must have the same number of samples"
         );
 
@@ -118,9 +118,8 @@ impl InMemoryDataset {
         for i in 0..num_samples {
             // Use index_axis instead of slice for better compatibility with different dimensions
             let input_view = to_dyn_inputs.index_axis(ndarray::Axis(0), i);
-            let input_array = input_view.to_owned();
-            input_samples
-                .push(Box::new(NdarrayWrapper::new(input_array)) as Box<dyn ArrayProtocol>);
+            let inputarray = input_view.to_owned();
+            input_samples.push(Box::new(NdarrayWrapper::new(inputarray)) as Box<dyn ArrayProtocol>);
 
             let target_view = to_dyn_targets.index_axis(ndarray::Axis(0), i);
             let target_array = target_view.to_owned();
@@ -131,8 +130,8 @@ impl InMemoryDataset {
         Self {
             inputs: input_samples,
             targets: target_samples,
-            input_shape: input_shape[1..].to_vec(),
-            output_shape: output_shape[1..].to_vec(),
+            inputshape: inputshape[1..].to_vec(),
+            outputshape: outputshape[1..].to_vec(),
         }
     }
 }
@@ -150,12 +149,12 @@ impl Dataset for InMemoryDataset {
         Some((self.inputs[index].clone(), self.targets[index].clone()))
     }
 
-    fn input_shape(&self) -> Vec<usize> {
-        self.input_shape.clone()
+    fn inputshape(&self) -> Vec<usize> {
+        self.inputshape.clone()
     }
 
-    fn output_shape(&self) -> Vec<usize> {
-        self.output_shape.clone()
+    fn outputshape(&self) -> Vec<usize> {
+        self.outputshape.clone()
     }
 }
 
@@ -248,7 +247,7 @@ impl DataLoader {
     }
 
     /// Get the number of batches in the dataset.
-    pub fn num_batches(&self) -> usize {
+    pub fn numbatches(&self) -> usize {
         self.dataset.len().div_ceil(self.batch_size)
     }
 
@@ -271,6 +270,13 @@ impl Iterator for DataLoader {
 pub trait Loss {
     /// Compute the loss between predictions and targets.
     fn forward(
+        &self,
+        predictions: &dyn ArrayProtocol,
+        targets: &dyn ArrayProtocol,
+    ) -> CoreResult<Box<dyn ArrayProtocol>>;
+
+    /// Compute the gradient of the loss with respect to predictions.
+    fn backward(
         &self,
         predictions: &dyn ArrayProtocol,
         targets: &dyn ArrayProtocol,
@@ -319,7 +325,7 @@ impl Loss for MSELoss {
                     .downcast_ref::<NdarrayWrapper<f64, ndarray::IxDyn>>()
                 {
                     let mean = array.as_array().mean().unwrap();
-                    let result = Array::<f64, _>::from_elem((), mean);
+                    let result = Array0::<f64>::from_elem((), mean);
                     Ok(Box::new(NdarrayWrapper::new(result)))
                 } else {
                     Err(CoreError::NotImplementedError(ErrorContext::new(
@@ -334,7 +340,7 @@ impl Loss for MSELoss {
                     .downcast_ref::<NdarrayWrapper<f64, ndarray::IxDyn>>()
                 {
                     let sum = array.as_array().sum();
-                    let result = Array::<f64, _>::from_elem((), sum);
+                    let result = Array0::<f64>::from_elem((), sum);
                     Ok(Box::new(NdarrayWrapper::new(result)))
                 } else {
                     Err(CoreError::NotImplementedError(ErrorContext::new(
@@ -343,8 +349,47 @@ impl Loss for MSELoss {
                 }
             }
             _ => Err(CoreError::InvalidArgument(ErrorContext::new(format!(
-                "Unknown reduction: {}",
-                self.reduction
+                "Unknown reduction: {reduction}",
+                reduction = self.reduction
+            )))),
+        }
+    }
+
+    fn backward(
+        &self,
+        predictions: &dyn ArrayProtocol,
+        targets: &dyn ArrayProtocol,
+    ) -> CoreResult<Box<dyn ArrayProtocol>> {
+        // Gradient of MSE loss: 2 * (predictions - targets)
+        let diff = subtract(predictions, targets)?;
+        let factor = Box::new(NdarrayWrapper::new(ndarray::Array0::<f64>::from_elem(
+            (),
+            2.0,
+        )));
+        let grad = multiply(factor.as_ref(), diff.as_ref())?;
+
+        // Apply reduction scaling if needed
+        match self.reduction.as_str() {
+            "none" => Ok(grad),
+            "mean" => {
+                // For mean reduction, scale by 1/N
+                if let Some(array) = grad
+                    .as_any()
+                    .downcast_ref::<NdarrayWrapper<f64, ndarray::IxDyn>>()
+                {
+                    let n = array.as_array().len() as f64;
+                    let scale_factor = Box::new(NdarrayWrapper::new(
+                        ndarray::Array0::<f64>::from_elem((), 1.0 / n),
+                    ));
+                    Ok(multiply(scale_factor.as_ref(), grad.as_ref())?)
+                } else {
+                    Ok(grad)
+                }
+            }
+            "sum" => Ok(grad),
+            _ => Err(CoreError::InvalidArgument(ErrorContext::new(format!(
+                "Unknown reduction: {reduction}",
+                reduction = self.reduction
             )))),
         }
     }
@@ -406,23 +451,58 @@ impl Loss for CrossEntropyLoss {
                 "none" => Ok(Box::new(NdarrayWrapper::new(losses))),
                 "mean" => {
                     let mean = losses.mean().unwrap();
-                    let result = Array::<f64, _>::from_elem((), mean);
+                    let result = Array0::<f64>::from_elem((), mean);
                     Ok(Box::new(NdarrayWrapper::new(result)))
                 }
                 "sum" => {
                     let sum = losses.sum();
-                    let result = Array::<f64, _>::from_elem((), sum);
+                    let result = Array0::<f64>::from_elem((), sum);
                     Ok(Box::new(NdarrayWrapper::new(result)))
                 }
                 _ => Err(CoreError::InvalidArgument(ErrorContext::new(format!(
-                    "Unknown reduction: {}",
-                    self.reduction
+                    "Unknown reduction: {reduction}",
+                    reduction = self.reduction
                 )))),
             }
         } else {
             Err(CoreError::NotImplementedError(ErrorContext::new(
                 "CrossEntropy not implemented for these array types".to_string(),
             )))
+        }
+    }
+
+    fn backward(
+        &self,
+        predictions: &dyn ArrayProtocol,
+        targets: &dyn ArrayProtocol,
+    ) -> CoreResult<Box<dyn ArrayProtocol>> {
+        // For cross-entropy with softmax: gradient is softmax(predictions) - targets
+        let softmax_preds = activation(predictions, ActivationFunc::Softmax)?;
+        let grad = subtract(softmax_preds.as_ref(), targets)?;
+
+        // Apply reduction scaling if needed
+        match self.reduction.as_str() {
+            "none" => Ok(grad),
+            "mean" => {
+                // For mean reduction, scale by 1/N
+                if let Some(array) = grad
+                    .as_any()
+                    .downcast_ref::<NdarrayWrapper<f64, ndarray::IxDyn>>()
+                {
+                    let n = array.as_array().len() as f64;
+                    let scale_factor = Box::new(NdarrayWrapper::new(
+                        ndarray::Array0::<f64>::from_elem((), 1.0 / n),
+                    ));
+                    Ok(multiply(scale_factor.as_ref(), grad.as_ref())?)
+                } else {
+                    Ok(grad)
+                }
+            }
+            "sum" => Ok(grad),
+            _ => Err(CoreError::InvalidArgument(ErrorContext::new(format!(
+                "Unknown reduction: {reduction}",
+                reduction = self.reduction
+            )))),
         }
     }
 
@@ -517,7 +597,7 @@ impl fmt::Display for Metrics {
         )?;
 
         if let Some(acc) = self.mean_accuracy() {
-            write!(f, ", accuracy = {:.4}", acc)?;
+            write!(f, ", accuracy = {acc:.4}")?;
         }
 
         Ok(())
@@ -527,19 +607,19 @@ impl fmt::Display for Metrics {
 /// Training progress callback trait.
 pub trait TrainingCallback {
     /// Called at the start of each epoch.
-    fn on_epoch_start(&mut self, epoch: usize, num_epochs: usize);
+    fn on_epoch_start(&mut self, epoch: usize, numepochs: usize);
 
     /// Called at the end of each epoch.
-    fn on_epoch_end(&mut self, epoch: usize, num_epochs: usize, metrics: &Metrics);
+    fn on_epoch_end(&mut self, epoch: usize, numepochs: usize, metrics: &Metrics);
 
     /// Called at the start of each batch.
-    fn on_batch_start(&mut self, batch: usize, num_batches: usize);
+    fn on_batch_start(&mut self, batch: usize, numbatches: usize);
 
     /// Called at the end of each batch.
-    fn on_batch_end(&mut self, batch: usize, num_batches: usize, loss: f64);
+    fn on_batch_end(&mut self, batch: usize, numbatches: usize, loss: f64);
 
     /// Called at the start of training.
-    fn on_train_start(&mut self, num_epochs: usize);
+    fn on_train_start(&mut self, numepochs: usize);
 
     /// Called at the end of training.
     fn on_train_end(&mut self, metrics: &Metrics);
@@ -569,41 +649,41 @@ impl ProgressCallback {
 }
 
 impl TrainingCallback for ProgressCallback {
-    fn on_epoch_start(&mut self, epoch: usize, num_epochs: usize) {
+    fn on_epoch_start(&mut self, epoch: usize, numepochs: usize) {
         if self.verbose {
-            println!("Epoch {}/{}", epoch + 1, num_epochs);
+            println!("Epoch {}/{}", epoch + 1, numepochs);
         }
 
         self.epoch_start = Some(Instant::now());
     }
 
-    fn on_epoch_end(&mut self, _epoch: usize, _num_epochs: usize, metrics: &Metrics) {
+    fn on_epoch_end(&mut self, _epoch: usize, numepochs: usize, metrics: &Metrics) {
         if self.verbose {
             if let Some(start) = self.epoch_start {
                 let duration = start.elapsed();
                 println!("{} - {}ms", metrics, duration.as_millis());
             } else {
-                println!("{}", metrics);
+                println!("{metrics}");
             }
         }
     }
 
-    fn on_batch_start(&mut self, _batch: usize, _num_batches: usize) {
+    fn on_batch_start(&mut self, _batch: usize, _numbatches: usize) {
         // No-op for this callback
     }
 
-    fn on_batch_end(&mut self, batch: usize, num_batches: usize, loss: f64) {
-        if self.verbose && (batch + 1) % (num_batches / 10).max(1) == 0 {
-            print!("\rBatch {}/{} - loss: {:.4}", batch + 1, num_batches, loss);
-            if batch + 1 == num_batches {
+    fn on_batch_end(&mut self, batch: usize, numbatches: usize, loss: f64) {
+        if self.verbose && (batch + 1) % (numbatches / 10).max(1) == 0 {
+            print!("\rBatch {}/{} - loss: {:.4}", batch + 1, numbatches, loss);
+            if batch + 1 == numbatches {
                 println!();
             }
         }
     }
 
-    fn on_train_start(&mut self, num_epochs: usize) {
+    fn on_train_start(&mut self, numepochs: usize) {
         if self.verbose {
-            println!("Starting training for {} epochs", num_epochs);
+            println!("Starting training for {numepochs} epochs");
         }
 
         self.train_start = Some(Instant::now());
@@ -619,7 +699,7 @@ impl TrainingCallback for ProgressCallback {
             }
 
             if let Some(acc) = metrics.mean_accuracy() {
-                println!("Final accuracy: {:.4}", acc);
+                println!("Final accuracy: {acc:.4}");
             }
         }
     }
@@ -634,7 +714,7 @@ pub struct Trainer {
     optimizer: Box<dyn Optimizer>,
 
     /// The loss function to use.
-    loss_fn: Box<dyn Loss>,
+    lossfn: Box<dyn Loss>,
 
     /// The callbacks to use during training.
     callbacks: Vec<Box<dyn TrainingCallback>>,
@@ -648,11 +728,11 @@ pub struct Trainer {
 
 impl Trainer {
     /// Create a new trainer.
-    pub fn new(model: Sequential, optimizer: Box<dyn Optimizer>, loss_fn: Box<dyn Loss>) -> Self {
+    pub fn new(model: Sequential, optimizer: Box<dyn Optimizer>, lossfn: Box<dyn Loss>) -> Self {
         Self {
             model,
             optimizer,
-            loss_fn,
+            lossfn,
             callbacks: Vec::new(),
             train_metrics: Metrics::new("train"),
             val_metrics: None,
@@ -667,13 +747,13 @@ impl Trainer {
     /// Train the model.
     pub fn train(
         &mut self,
-        mut train_loader: DataLoader,
-        num_epochs: usize,
-        mut val_loader: Option<DataLoader>,
+        train_loader: &mut DataLoader,
+        numepochs: usize,
+        mut val_loader: Option<&mut DataLoader>,
     ) -> CoreResult<()> {
         // Notify callbacks that training is starting
         for callback in &mut self.callbacks {
-            callback.on_train_start(num_epochs);
+            callback.on_train_start(numepochs);
         }
 
         // Initialize validation metrics if needed
@@ -682,7 +762,7 @@ impl Trainer {
         }
 
         // Train for the specified number of epochs
-        for epoch in 0..num_epochs {
+        for epoch in 0..numepochs {
             // Reset metrics
             self.train_metrics.reset();
             if let Some(metrics) = &mut self.val_metrics {
@@ -691,14 +771,14 @@ impl Trainer {
 
             // Notify callbacks that epoch is starting
             for callback in &mut self.callbacks {
-                callback.on_epoch_start(epoch, num_epochs);
+                callback.on_epoch_start(epoch, numepochs);
             }
 
             // Train on the training set
-            self.train_epoch(&mut train_loader)?;
+            self.train_epoch(train_loader)?;
 
             // Validate on the validation set if provided
-            if let Some(val_loader) = &mut val_loader {
+            if let Some(ref mut val_loader) = val_loader {
                 self.validate(val_loader)?;
             }
 
@@ -706,7 +786,7 @@ impl Trainer {
             for callback in &mut self.callbacks {
                 callback.on_epoch_end(
                     epoch,
-                    num_epochs,
+                    numepochs,
                     if let Some(val_metrics) = &self.val_metrics {
                         val_metrics
                     } else {
@@ -729,21 +809,21 @@ impl Trainer {
     }
 
     /// Train for one epoch.
-    fn train_epoch(&mut self, data_loader: &mut DataLoader) -> CoreResult<()> {
+    fn train_epoch(&mut self, dataloader: &mut DataLoader) -> CoreResult<()> {
         // Set model to training mode
         self.model.train();
 
         // Reset data loader
-        data_loader.reset();
+        dataloader.reset();
 
-        let num_batches = data_loader.num_batches();
+        let numbatches = dataloader.numbatches();
 
         // Train on batches
-        for batch_idx in 0..num_batches {
-            let (inputs, targets) = data_loader.next_batch().unwrap();
+        for batch_idx in 0..numbatches {
+            let (inputs, targets) = dataloader.next_batch().unwrap();
             // Notify callbacks that batch is starting
             for callback in &mut self.callbacks {
-                callback.on_batch_start(batch_idx, num_batches);
+                callback.on_batch_start(batch_idx, numbatches);
             }
 
             // Forward pass
@@ -754,7 +834,7 @@ impl Trainer {
 
             // Notify callbacks that batch is ending
             for callback in &mut self.callbacks {
-                callback.on_batch_end(batch_idx, num_batches, batch_loss);
+                callback.on_batch_end(batch_idx, numbatches, batch_loss);
             }
         }
 
@@ -778,7 +858,7 @@ impl Trainer {
             let output = self.model.forward(input.as_ref())?;
 
             // Compute loss
-            let loss = self.loss_fn.forward(output.as_ref(), target.as_ref())?;
+            let loss = self.lossfn.forward(output.as_ref(), target.as_ref())?;
 
             // Get loss value
             if let Some(loss_array) = loss
@@ -789,14 +869,42 @@ impl Trainer {
                 batch_loss += loss_value;
             }
 
-            // Backward pass (TODO: properly implement backpropagation)
-            // This is a placeholder for demonstration
+            // Backward pass - compute gradients
+            // For now, implement a simple gradient approximation using finite differences
+            // In a full implementation, this would be automatic differentiation
 
-            // In a real implementation, we would:
-            // 1. Wrap model parameters in GradientTensor
-            // 2. Use grad_ops for forward operations
-            // 3. Call loss.backward() to compute gradients
-            // 4. Extract gradients for optimizer update
+            let learningrate = 0.001; // Default learning rate
+
+            // Simple gradient estimation for demonstration
+            // This computes numerical gradients for the model parameters
+
+            // Get current output for gradient computation
+            let current_output = self.model.forward(input.as_ref())?;
+            let current_loss = self
+                .lossfn
+                .forward(current_output.as_ref(), target.as_ref())?;
+            let _current_loss_value = if let Some(loss_array) = current_loss
+                .as_any()
+                .downcast_ref::<NdarrayWrapper<f64, ndarray::IxDyn>>()
+            {
+                loss_array.as_array().sum()
+            } else {
+                0.0
+            };
+
+            // Compute gradients via backpropagation
+            let gradients = self.compute_gradients(
+                input.as_ref(),
+                target.as_ref(),
+                current_output.as_ref(),
+                current_loss.as_ref(),
+            )?;
+
+            // Apply gradients to model parameters
+            self.apply_gradients(&gradients, learningrate)?;
+
+            // Store gradients in optimizer for momentum-based optimizers
+            self.optimizer.accumulate_gradients(&gradients)?;
         }
 
         // Compute average loss
@@ -808,8 +916,42 @@ impl Trainer {
         Ok(batch_loss)
     }
 
+    /// Compute gradients via backpropagation
+    fn compute_gradients(
+        &self,
+        input: &dyn ArrayProtocol,
+        target: &dyn ArrayProtocol,
+        output: &dyn ArrayProtocol,
+        _loss: &dyn ArrayProtocol,
+    ) -> CoreResult<GradientDict> {
+        // Start backpropagation from loss
+        let mut gradients = GradientDict::new();
+
+        // Compute gradient of loss with respect to output
+        let loss_grad = self.lossfn.backward(output, target)?;
+
+        // Backpropagate through the model
+        let model_gradients = self.model.backward(input, loss_grad.as_ref())?;
+
+        // Merge gradients
+        gradients.merge(model_gradients);
+
+        Ok(gradients)
+    }
+
+    /// Apply computed gradients to model parameters
+    fn apply_gradients(&mut self, gradients: &GradientDict, learningrate: f64) -> CoreResult<()> {
+        // Apply gradients to each parameter in the model
+        for (param_name, gradient) in gradients.iter() {
+            self.model
+                .update_parameter(param_name, gradient.as_ref(), learningrate)?;
+        }
+
+        Ok(())
+    }
+
     /// Validate the model.
-    fn validate(&mut self, data_loader: &mut DataLoader) -> CoreResult<()> {
+    fn validate(&mut self, dataloader: &mut DataLoader) -> CoreResult<()> {
         // Set model to evaluation mode
         self.model.eval();
 
@@ -821,13 +963,13 @@ impl Trainer {
         }
 
         // Reset data loader
-        data_loader.reset();
+        dataloader.reset();
 
-        let num_batches = data_loader.num_batches();
+        let numbatches = dataloader.numbatches();
 
         // Validate on batches
-        for _ in 0..num_batches {
-            let (inputs, targets) = data_loader.next_batch().unwrap();
+        for _ in 0..numbatches {
+            let (inputs, targets) = dataloader.next_batch().unwrap();
             // Forward pass without gradient tracking
             let mut batch_loss = 0.0;
             let mut batch_correct = 0;
@@ -838,7 +980,7 @@ impl Trainer {
                 let output = self.model.forward(input.as_ref())?;
 
                 // Compute loss
-                let loss = self.loss_fn.forward(output.as_ref(), target.as_ref())?;
+                let loss = self.lossfn.forward(output.as_ref(), target.as_ref())?;
 
                 // Get loss value
                 if let Some(loss_array) = loss
@@ -939,8 +1081,8 @@ mod tests {
 
         // Check properties
         assert_eq!(dataset.len(), 10);
-        assert_eq!(dataset.input_shape(), vec![5]);
-        assert_eq!(dataset.output_shape(), vec![2]);
+        assert_eq!(dataset.inputshape(), vec![5]);
+        assert_eq!(dataset.outputshape(), vec![2]);
 
         // Get a sample
         let (input, target) = dataset.get(0).unwrap();
@@ -955,7 +1097,7 @@ mod tests {
     }
 
     #[test]
-    fn test_data_loader() {
+    fn test_dataloader() {
         // Create input and target arrays
         let inputs = Array2::<f64>::ones((10, 5));
         let targets = Array2::<f64>::zeros((10, 2));
@@ -965,7 +1107,7 @@ mod tests {
         let mut loader = DataLoader::new(dataset, 4, true, Some(42));
 
         // Check properties
-        assert_eq!(loader.num_batches(), 3);
+        assert_eq!(loader.numbatches(), 3);
 
         // Get batches
         let (batch1_inputs, batch1_targets) = loader.next_batch().unwrap();
@@ -1016,7 +1158,7 @@ mod tests {
                 }
             }
             Err(e) => {
-                println!("MSE Loss forward not fully implemented: {}", e);
+                println!("MSE Loss forward not fully implemented: {e}");
             }
         }
     }

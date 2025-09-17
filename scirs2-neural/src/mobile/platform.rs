@@ -8,7 +8,6 @@
 //! - Mobile optimization parameters (quantization, compression, power, thermal)
 
 use std::fmt::Debug;
-
 /// Mobile platform specification
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum MobilePlatform {
@@ -25,18 +24,14 @@ pub enum MobilePlatform {
         min_api_level: u32,
         /// Target architectures
         architectures: Vec<AndroidArchitecture>,
-    },
     /// Universal mobile package
     Universal {
         /// iOS configuration
         ios_config: Box<Option<IOSConfig>>,
         /// Android configuration
         android_config: Box<Option<AndroidConfig>>,
-    },
 }
-
 /// iOS device types
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum IOSDevice {
     /// iPhone devices
     IPhone,
@@ -48,10 +43,7 @@ pub enum IOSDevice {
     AppleWatch,
     /// Mac with Apple Silicon
     MacAppleSilicon,
-}
-
 /// Android architecture support
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum AndroidArchitecture {
     /// ARM64-v8a (64-bit ARM)
     ARM64,
@@ -61,10 +53,7 @@ pub enum AndroidArchitecture {
     X86_64,
     /// x86 (Intel/AMD 32-bit)
     X86,
-}
-
 /// iOS-specific configuration
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct IOSConfig {
     /// Framework bundle identifier
     pub bundle_identifier: String,
@@ -78,10 +67,7 @@ pub struct IOSConfig {
     pub core_ml: CoreMLConfig,
     /// Privacy configuration
     pub privacy_config: PrivacyConfig,
-}
-
 /// Code signing configuration for iOS
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct CodeSigningConfig {
     /// Development team ID
     pub team_id: Option<String>,
@@ -91,10 +77,7 @@ pub struct CodeSigningConfig {
     pub provisioning_profile: Option<String>,
     /// Automatic signing
     pub automatic_signing: bool,
-}
-
 /// Metal Performance Shaders configuration
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct MetalConfig {
     /// Enable Metal acceleration
     pub enable: bool,
@@ -104,10 +87,7 @@ pub struct MetalConfig {
     pub custom_kernels: Vec<MetalKernel>,
     /// Memory optimization
     pub memory_optimization: MetalMemoryOptimization,
-}
-
 /// Metal kernel specification
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct MetalKernel {
     /// Kernel name
     pub name: String,
@@ -117,10 +97,7 @@ pub struct MetalKernel {
     pub function_name: String,
     /// Thread group size
     pub thread_group_size: (u32, u32, u32),
-}
-
 /// Metal memory optimization settings
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct MetalMemoryOptimization {
     /// Use unified memory
     pub unified_memory: bool,
@@ -130,23 +107,16 @@ pub struct MetalMemoryOptimization {
     pub texture_compression: bool,
     /// Memory warnings handling
     pub memory_warnings: bool,
-}
-
 /// Core ML integration configuration
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct CoreMLConfig {
     /// Enable Core ML integration
-    pub enable: bool,
     /// Core ML model format version
     pub model_version: CoreMLVersion,
     /// Compute units preference
     pub compute_units: CoreMLComputeUnits,
     /// Model compilation options
     pub compilation_options: CoreMLCompilationOptions,
-}
-
 /// Core ML model format version
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum CoreMLVersion {
     /// Core ML 1.0
     V1_0,
@@ -160,10 +130,7 @@ pub enum CoreMLVersion {
     V5_0,
     /// Core ML 6.0
     V6_0,
-}
-
 /// Core ML compute units preference
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum CoreMLComputeUnits {
     /// CPU only
     CPUOnly,
@@ -173,10 +140,7 @@ pub enum CoreMLComputeUnits {
     All,
     /// CPU and Neural Engine
     CPUAndNeuralEngine,
-}
-
 /// Core ML compilation options
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct CoreMLCompilationOptions {
     /// Optimization level
     pub optimization_level: OptimizationLevel,
@@ -184,10 +148,7 @@ pub struct CoreMLCompilationOptions {
     pub precision: PrecisionMode,
     /// Specialization
     pub specialization: SpecializationMode,
-}
-
 /// Privacy configuration for iOS
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct PrivacyConfig {
     /// Privacy manifest requirements
     pub privacy_manifest: bool,
@@ -195,10 +156,7 @@ pub struct PrivacyConfig {
     pub data_collection: Vec<DataCollection>,
     /// Required permissions
     pub permissions: Vec<Permission>,
-}
-
 /// Data collection description
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct DataCollection {
     /// Data type
     pub data_type: String,
@@ -206,10 +164,7 @@ pub struct DataCollection {
     pub purpose: String,
     /// Is tracking
     pub is_tracking: bool,
-}
-
 /// iOS permission requirement
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum Permission {
     /// Camera access
     Camera,
@@ -223,10 +178,7 @@ pub enum Permission {
     NeuralEngine,
     /// Background processing
     BackgroundProcessing,
-}
-
 /// Android-specific configuration
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct AndroidConfig {
     /// Package name
     pub package_name: String,
@@ -242,23 +194,16 @@ pub struct AndroidConfig {
     pub obfuscation: ObfuscationConfig,
     /// Permissions configuration
     pub permissions: AndroidPermissionsConfig,
-}
-
 /// Android Neural Networks API configuration
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct NNAPIConfig {
     /// Enable NNAPI acceleration
-    pub enable: bool,
     /// Minimum NNAPI version
     pub min_version: u32,
     /// Preferred execution providers
     pub execution_providers: Vec<NNAPIProvider>,
     /// Fallback strategy
     pub fallback_strategy: NNAPIFallback,
-}
-
 /// NNAPI execution provider
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum NNAPIProvider {
     /// CPU execution
     CPU,
@@ -270,10 +215,7 @@ pub enum NNAPIProvider {
     NPU,
     /// Vendor-specific
     Vendor(String),
-}
-
 /// NNAPI fallback strategy
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum NNAPIFallback {
     /// Fast fallback to CPU
     Fast,
@@ -281,23 +223,16 @@ pub enum NNAPIFallback {
     Comprehensive,
     /// Custom fallback order
     Custom(Vec<NNAPIProvider>),
-}
-
 /// Android GPU delegate configuration
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct AndroidGPUConfig {
     /// Enable GPU acceleration
-    pub enable: bool,
     /// OpenGL ES version
     pub opengl_version: OpenGLVersion,
     /// Vulkan support
     pub vulkan_support: bool,
     /// GPU memory management
     pub memory_management: GPUMemoryManagement,
-}
-
 /// OpenGL ES version
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum OpenGLVersion {
     /// OpenGL ES 2.0
     ES2_0,
@@ -307,36 +242,23 @@ pub enum OpenGLVersion {
     ES3_1,
     /// OpenGL ES 3.2
     ES3_2,
-}
-
 /// GPU memory management strategy
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct GPUMemoryManagement {
-    /// Buffer pooling
-    pub buffer_pooling: bool,
     /// Texture caching
     pub texture_caching: bool,
     /// Memory pressure handling
     pub memory_pressure_handling: bool,
     /// Maximum memory usage (MB)
     pub max_memory_mb: Option<u32>,
-}
-
 /// Code obfuscation configuration
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct ObfuscationConfig {
     /// Enable obfuscation
-    pub enable: bool,
     /// Obfuscation tool
     pub tool: ObfuscationTool,
     /// Keep rules for model classes
     pub keep_rules: Vec<String>,
-    /// Optimization level
     pub optimization_level: u8,
-}
-
 /// Obfuscation tool selection
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum ObfuscationTool {
     /// ProGuard
     ProGuard,
@@ -344,27 +266,17 @@ pub enum ObfuscationTool {
     R8,
     /// DexGuard
     DexGuard,
-}
-
 /// Android permissions configuration
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct AndroidPermissionsConfig {
-    /// Required permissions
     pub required: Vec<AndroidPermission>,
     /// Optional permissions
     pub optional: Vec<AndroidPermission>,
     /// Runtime permissions
     pub runtime: Vec<AndroidPermission>,
-}
-
 /// Android permission types
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum AndroidPermission {
     /// Internet access
     Internet,
-    /// Camera access
-    Camera,
-    /// Microphone access
     RecordAudio,
     /// External storage
     WriteExternalStorage,
@@ -376,8 +288,6 @@ pub enum AndroidPermission {
     ForegroundService,
     /// Custom permission
     Custom(String),
-}
-
 /// Mobile optimization configuration
 #[derive(Debug, Clone, PartialEq)]
 pub struct MobileOptimizationConfig {
@@ -385,16 +295,12 @@ pub struct MobileOptimizationConfig {
     pub compression: MobileCompressionConfig,
     /// Quantization settings
     pub quantization: MobileQuantizationConfig,
-    /// Memory optimization
     pub memory: MobileMemoryConfig,
     /// Power management
     pub power: PowerManagementConfig,
     /// Thermal management
     pub thermal: ThermalManagementConfig,
-}
-
 /// Mobile-specific compression configuration
-#[derive(Debug, Clone, PartialEq)]
 pub struct MobileCompressionConfig {
     /// Pruning strategy
     pub pruning: MobilePruningStrategy,
@@ -404,10 +310,7 @@ pub struct MobileCompressionConfig {
     pub weight_sharing: bool,
     /// Layer fusion
     pub layer_fusion: bool,
-}
-
 /// Mobile pruning strategy
-#[derive(Debug, Clone, PartialEq)]
 pub struct MobilePruningStrategy {
     /// Pruning type
     pub pruning_type: PruningType,
@@ -417,10 +320,7 @@ pub struct MobilePruningStrategy {
     pub structured: bool,
     /// Hardware-aware pruning
     pub hardware_aware: bool,
-}
-
 /// Pruning type for mobile deployment
-#[derive(Debug, Clone, PartialEq)]
 pub enum PruningType {
     /// Magnitude-based pruning
     Magnitude,
@@ -430,23 +330,16 @@ pub enum PruningType {
     Fisher,
     /// Lottery ticket hypothesis
     LotteryTicket,
-}
-
 /// Mobile distillation configuration
-#[derive(Debug, Clone, PartialEq)]
 pub struct MobileDistillationConfig {
     /// Enable distillation
-    pub enable: bool,
     /// Teacher model complexity
     pub teacher_complexity: TeacherComplexity,
     /// Distillation temperature
     pub temperature: f64,
     /// Loss weighting
     pub loss_weighting: DistillationWeighting,
-}
-
 /// Teacher model complexity for distillation
-#[derive(Debug, Clone, PartialEq)]
 pub enum TeacherComplexity {
     /// Use desktop model as teacher
     Desktop,
@@ -456,10 +349,7 @@ pub enum TeacherComplexity {
     Ensemble,
     /// Progressive distillation
     Progressive,
-}
-
 /// Distillation loss weighting
-#[derive(Debug, Clone, PartialEq)]
 pub struct DistillationWeighting {
     /// Knowledge distillation weight
     pub knowledge_weight: f64,
@@ -467,10 +357,7 @@ pub struct DistillationWeighting {
     pub ground_truth_weight: f64,
     /// Feature distillation weight
     pub feature_weight: f64,
-}
-
 /// Mobile quantization configuration
-#[derive(Debug, Clone, PartialEq)]
 pub struct MobileQuantizationConfig {
     /// Quantization strategy
     pub strategy: QuantizationStrategy,
@@ -480,10 +367,7 @@ pub struct MobileQuantizationConfig {
     pub calibration: CalibrationMethod,
     /// Hardware acceleration
     pub hardware_acceleration: bool,
-}
-
 /// Quantization strategy for mobile
-#[derive(Debug, Clone, PartialEq)]
 pub enum QuantizationStrategy {
     /// Post-training quantization
     PostTraining,
@@ -493,10 +377,7 @@ pub enum QuantizationStrategy {
     Dynamic,
     /// Mixed precision
     MixedPrecision,
-}
-
 /// Quantization precision levels
-#[derive(Debug, Clone, PartialEq)]
 pub struct QuantizationPrecision {
     /// Weight precision (bits)
     pub weights: u8,
@@ -504,10 +385,7 @@ pub struct QuantizationPrecision {
     pub activations: u8,
     /// Bias precision (bits)
     pub bias: Option<u8>,
-}
-
 /// Calibration method for quantization
-#[derive(Debug, Clone, PartialEq)]
 pub enum CalibrationMethod {
     /// Entropy-based calibration
     Entropy,
@@ -517,10 +395,7 @@ pub enum CalibrationMethod {
     MSE,
     /// KL-divergence calibration
     KLDivergence,
-}
-
 /// Mobile memory optimization configuration
-#[derive(Debug, Clone, PartialEq)]
 pub struct MobileMemoryConfig {
     /// Memory pool strategy
     pub pool_strategy: MemoryPoolStrategy,
@@ -530,25 +405,17 @@ pub struct MobileMemoryConfig {
     pub memory_mapping: MemoryMappingConfig,
     /// Garbage collection optimization
     pub gc_optimization: GCOptimizationConfig,
-}
-
 /// Memory pool strategy for mobile
-#[derive(Debug, Clone, PartialEq)]
 pub enum MemoryPoolStrategy {
     /// Fixed-size pools
     Fixed,
     /// Dynamic pools
-    Dynamic,
     /// Buddy allocator
     Buddy,
     /// Slab allocator
     Slab,
-}
-
 /// Buffer management configuration
-#[derive(Debug, Clone, PartialEq)]
 pub struct BufferManagementConfig {
-    /// Buffer pooling
     pub pooling: bool,
     /// Buffer alignment
     pub alignment: u32,
@@ -556,10 +423,7 @@ pub struct BufferManagementConfig {
     pub prefault: bool,
     /// Memory advice
     pub memory_advice: MemoryAdvice,
-}
-
 /// Memory advice for buffer management
-#[derive(Debug, Clone, PartialEq)]
 pub enum MemoryAdvice {
     /// Normal access pattern
     Normal,
@@ -571,23 +435,16 @@ pub enum MemoryAdvice {
     WillNeed,
     /// Don't need anymore
     DontNeed,
-}
-
 /// Memory mapping configuration
-#[derive(Debug, Clone, PartialEq)]
 pub struct MemoryMappingConfig {
     /// Use memory mapping for model weights
-    pub enable: bool,
     /// Map private or shared
     pub map_private: bool,
     /// Lock pages in memory
     pub lock_pages: bool,
     /// Huge pages support
     pub huge_pages: bool,
-}
-
 /// Garbage collection optimization
-#[derive(Debug, Clone, PartialEq)]
 pub struct GCOptimizationConfig {
     /// Minimize allocations
     pub minimize_allocations: bool,
@@ -597,10 +454,7 @@ pub struct GCOptimizationConfig {
     pub weak_references: bool,
     /// Manual memory management
     pub manual_management: bool,
-}
-
 /// Power management configuration
-#[derive(Debug, Clone, PartialEq)]
 pub struct PowerManagementConfig {
     /// Power mode selection
     pub power_mode: PowerMode,
@@ -610,10 +464,7 @@ pub struct PowerManagementConfig {
     pub gpu_power: GPUPowerConfig,
     /// Battery optimization
     pub battery_optimization: BatteryOptimizationConfig,
-}
-
 /// Power mode for inference
-#[derive(Debug, Clone, PartialEq)]
 pub enum PowerMode {
     /// Maximum performance
     Performance,
@@ -623,10 +474,7 @@ pub enum PowerMode {
     PowerSave,
     /// Adaptive mode
     Adaptive,
-}
-
 /// CPU frequency scaling configuration
-#[derive(Debug, Clone, PartialEq)]
 pub struct CPUScalingConfig {
     /// Governor type
     pub governor: CPUGovernor,
@@ -636,13 +484,9 @@ pub struct CPUScalingConfig {
     pub max_frequency: Option<u32>,
     /// Performance cores preference
     pub performance_cores: bool,
-}
-
 /// CPU governor type
-#[derive(Debug, Clone, PartialEq)]
 pub enum CPUGovernor {
     /// Performance governor
-    Performance,
     /// Powersave governor
     Powersave,
     /// OnDemand governor
@@ -653,10 +497,7 @@ pub enum CPUGovernor {
     Interactive,
     /// Schedutil governor
     Schedutil,
-}
-
 /// GPU power management configuration
-#[derive(Debug, Clone, PartialEq)]
 pub struct GPUPowerConfig {
     /// GPU frequency scaling
     pub frequency_scaling: bool,
@@ -666,10 +507,7 @@ pub struct GPUPowerConfig {
     pub idle_timeout_ms: u32,
     /// Power gating
     pub power_gating: bool,
-}
-
 /// Battery optimization configuration
-#[derive(Debug, Clone, PartialEq)]
 pub struct BatteryOptimizationConfig {
     /// Battery level monitoring
     pub level_monitoring: bool,
@@ -679,10 +517,7 @@ pub struct BatteryOptimizationConfig {
     pub low_battery_mode: LowBatteryMode,
     /// Charging state awareness
     pub charging_awareness: bool,
-}
-
 /// Low battery mode configuration
-#[derive(Debug, Clone, PartialEq)]
 pub struct LowBatteryMode {
     /// Battery threshold percentage
     pub threshold_percentage: u8,
@@ -692,10 +527,7 @@ pub struct LowBatteryMode {
     pub skip_non_critical: bool,
     /// Suspend background processing
     pub suspend_background: bool,
-}
-
 /// Thermal management configuration
-#[derive(Debug, Clone, PartialEq)]
 pub struct ThermalManagementConfig {
     /// Thermal monitoring
     pub monitoring: ThermalMonitoringConfig,
@@ -703,38 +535,25 @@ pub struct ThermalManagementConfig {
     pub throttling: ThermalThrottlingConfig,
     /// Cooling strategies
     pub cooling: CoolingConfig,
-}
-
 /// Thermal monitoring configuration
-#[derive(Debug, Clone, PartialEq)]
 pub struct ThermalMonitoringConfig {
     /// Enable thermal monitoring
-    pub enable: bool,
     /// Temperature sensors
     pub sensors: Vec<ThermalSensor>,
     /// Monitoring frequency
     pub frequency_ms: u32,
     /// Temperature thresholds
     pub thresholds: ThermalThresholds,
-}
-
 /// Thermal sensor types
-#[derive(Debug, Clone, PartialEq)]
 pub enum ThermalSensor {
     /// CPU temperature
-    CPU,
     /// GPU temperature
-    GPU,
     /// Battery temperature
     Battery,
     /// System temperature
     System,
     /// Custom sensor
-    Custom(String),
-}
-
 /// Temperature thresholds for thermal management
-#[derive(Debug, Clone, PartialEq)]
 pub struct ThermalThresholds {
     /// Warning temperature (°C)
     pub warning: f32,
@@ -742,21 +561,13 @@ pub struct ThermalThresholds {
     pub critical: f32,
     /// Emergency temperature (°C)
     pub emergency: f32,
-}
-
 /// Thermal throttling configuration
-#[derive(Debug, Clone, PartialEq)]
 pub struct ThermalThrottlingConfig {
     /// Enable throttling
-    pub enable: bool,
-    /// Throttling strategy
     pub strategy: ThrottlingStrategy,
     /// Performance degradation steps
     pub degradation_steps: Vec<PerformanceDegradation>,
-}
-
 /// Thermal throttling strategy
-#[derive(Debug, Clone, PartialEq)]
 pub enum ThrottlingStrategy {
     /// Linear throttling
     Linear,
@@ -765,11 +576,7 @@ pub enum ThrottlingStrategy {
     /// Step-wise throttling
     StepWise,
     /// Adaptive throttling
-    Adaptive,
-}
-
 /// Performance degradation configuration
-#[derive(Debug, Clone, PartialEq)]
 pub struct PerformanceDegradation {
     /// Temperature threshold for this step
     pub temperature_threshold: f32,
@@ -781,10 +588,7 @@ pub struct PerformanceDegradation {
     pub precision_reduction: Option<u8>,
     /// Inference frequency reduction
     pub inference_reduction: f32,
-}
-
 /// Cooling strategies configuration
-#[derive(Debug, Clone, PartialEq)]
 pub struct CoolingConfig {
     /// Active cooling methods
     pub active_cooling: Vec<ActiveCooling>,
@@ -792,10 +596,7 @@ pub struct CoolingConfig {
     pub passive_cooling: Vec<PassiveCooling>,
     /// Workload distribution
     pub workload_distribution: WorkloadDistributionConfig,
-}
-
 /// Active cooling methods
-#[derive(Debug, Clone, PartialEq)]
 pub enum ActiveCooling {
     /// Fan control
     Fan,
@@ -803,10 +604,7 @@ pub enum ActiveCooling {
     Liquid,
     /// Thermal pads
     ThermalPads,
-}
-
 /// Passive cooling methods
-#[derive(Debug, Clone, PartialEq)]
 pub enum PassiveCooling {
     /// Heat spreaders
     HeatSpreaders,
@@ -816,10 +614,7 @@ pub enum PassiveCooling {
     DutyCycling,
     /// Clock gating
     ClockGating,
-}
-
 /// Workload distribution for thermal management
-#[derive(Debug, Clone, PartialEq)]
 pub struct WorkloadDistributionConfig {
     /// Distribute across cores
     pub distribute_cores: bool,
@@ -829,10 +624,7 @@ pub struct WorkloadDistributionConfig {
     pub load_balancing: bool,
     /// Thermal-aware scheduling
     pub thermal_scheduling: bool,
-}
-
 /// Optimization level for mobile deployment
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum OptimizationLevel {
     /// No optimization
     None,
@@ -842,10 +634,7 @@ pub enum OptimizationLevel {
     Aggressive,
     /// Custom optimization
     Custom(Vec<OptimizationPass>),
-}
-
 /// Individual optimization pass
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum OptimizationPass {
     /// Dead code elimination
     DeadCodeElimination,
@@ -859,34 +648,23 @@ pub enum OptimizationPass {
     InstructionScheduling,
     /// Register allocation
     RegisterAllocation,
-}
-
 /// Precision mode for mobile inference
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum PrecisionMode {
     /// Full precision (FP32)
     Full,
     /// Half precision (FP16)
     Half,
-    /// Mixed precision
     Mixed,
     /// Integer quantization
     Integer(u8),
-}
-
 /// Specialization mode for mobile optimization
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum SpecializationMode {
     /// No specialization
-    None,
     /// Hardware specialization
     Hardware,
     /// Input shape specialization
     InputShape,
     /// Full specialization
-    Full,
-}
-
 impl Default for MobileOptimizationConfig {
     fn default() -> Self {
         Self {
@@ -906,7 +684,6 @@ impl Default for MobileOptimizationConfig {
                         ground_truth_weight: 0.3,
                         feature_weight: 0.1,
                     },
-                },
                 weight_sharing: true,
                 layer_fusion: true,
             },
@@ -916,10 +693,8 @@ impl Default for MobileOptimizationConfig {
                     weights: 8,
                     activations: 8,
                     bias: Some(32),
-                },
                 calibration: CalibrationMethod::Entropy,
                 hardware_acceleration: true,
-            },
             memory: MobileMemoryConfig {
                 pool_strategy: MemoryPoolStrategy::Dynamic,
                 buffer_management: BufferManagementConfig {
@@ -927,20 +702,15 @@ impl Default for MobileOptimizationConfig {
                     alignment: 16,
                     prefault: false,
                     memory_advice: MemoryAdvice::Sequential,
-                },
                 memory_mapping: MemoryMappingConfig {
-                    enable: true,
                     map_private: true,
                     lock_pages: false,
                     huge_pages: false,
-                },
                 gc_optimization: GCOptimizationConfig {
                     minimize_allocations: true,
                     object_pooling: true,
                     weak_references: true,
                     manual_management: false,
-                },
-            },
             power: PowerManagementConfig {
                 power_mode: PowerMode::Balanced,
                 cpu_scaling: CPUScalingConfig {
@@ -948,13 +718,11 @@ impl Default for MobileOptimizationConfig {
                     min_frequency: None,
                     max_frequency: None,
                     performance_cores: true,
-                },
                 gpu_power: GPUPowerConfig {
                     frequency_scaling: true,
                     voltage_scaling: true,
                     idle_timeout_ms: 100,
                     power_gating: true,
-                },
                 battery_optimization: BatteryOptimizationConfig {
                     level_monitoring: true,
                     adaptive_frequency: true,
@@ -963,23 +731,16 @@ impl Default for MobileOptimizationConfig {
                         reduced_precision: true,
                         skip_non_critical: true,
                         suspend_background: true,
-                    },
                     charging_awareness: true,
-                },
-            },
             thermal: ThermalManagementConfig {
                 monitoring: ThermalMonitoringConfig {
-                    enable: true,
                     sensors: vec![ThermalSensor::CPU, ThermalSensor::GPU],
                     frequency_ms: 1000,
                     thresholds: ThermalThresholds {
                         warning: 70.0,
                         critical: 80.0,
                         emergency: 90.0,
-                    },
-                },
                 throttling: ThermalThrottlingConfig {
-                    enable: true,
                     strategy: ThrottlingStrategy::Adaptive,
                     degradation_steps: vec![
                         PerformanceDegradation {
@@ -989,29 +750,21 @@ impl Default for MobileOptimizationConfig {
                             precision_reduction: None,
                             inference_reduction: 5.0,
                         },
-                        PerformanceDegradation {
                             temperature_threshold: 80.0,
                             cpu_reduction: 25.0,
                             gpu_reduction: 25.0,
                             precision_reduction: Some(4),
                             inference_reduction: 15.0,
-                        },
                     ],
-                },
                 cooling: CoolingConfig {
                     active_cooling: vec![],
                     passive_cooling: vec![
                         PassiveCooling::ThermalThrottling,
                         PassiveCooling::DutyCycling,
-                    ],
                     workload_distribution: WorkloadDistributionConfig {
                         distribute_cores: true,
                         migrate_hot_tasks: true,
                         load_balancing: true,
                         thermal_scheduling: true,
-                    },
-                },
-            },
         }
     }
-}

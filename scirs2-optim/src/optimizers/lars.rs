@@ -107,7 +107,7 @@ impl<A: Float + ScalarOperand + Debug> LARS<A> {
     }
 }
 
-impl<A: Float + ScalarOperand + Debug, D: Dimension> Optimizer<A, D> for LARS<A> {
+impl<A: Float + ScalarOperand + Debug + Send + Sync, D: Dimension> Optimizer<A, D> for LARS<A> {
     fn step(&mut self, params: &Array<A, D>, gradients: &Array<A, D>) -> Result<Array<A, D>> {
         // Initialize velocity if not already created
         let n_params = gradients.len();

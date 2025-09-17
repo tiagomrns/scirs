@@ -103,6 +103,7 @@ pub struct InvarianceResult {
 /// # Returns
 ///
 /// * A result containing group-specific performance metrics and an overall invariance score
+#[allow(dead_code)]
 pub fn performance_invariance<T, S1, S2, S3, F>(
     y_true: &ArrayBase<S1, Ix1>,
     y_pred: &ArrayBase<S2, Ix1>,
@@ -137,7 +138,7 @@ where
     let n_groups = protected_groups.ncols();
     if n_groups != group_names.len() {
         return Err(MetricsError::InvalidInput(format!(
-            "Number of group columns ({}) doesn't match number of group names ({})",
+            "Number of group columns ({}) doesn't match number of group _names ({})",
             n_groups,
             group_names.len()
         )));
@@ -253,6 +254,7 @@ where
 ///     println!("Sample {}: influence = {:.4}", i, score);
 /// }
 /// ```
+#[allow(dead_code)]
 pub fn influence_function<T, F>(
     y_true: &Array1<T>,
     y_pred: &Array1<T>,
@@ -281,16 +283,16 @@ where
         ));
     }
 
-    // Determine number of samples to use
+    // Determine number of _samples to use
     let n_samples_to_use = n_samples.unwrap_or(n_total_samples);
     if n_samples_to_use > n_total_samples {
         return Err(MetricsError::InvalidInput(format!(
-            "Requested number of samples ({}) exceeds available samples ({})",
+            "Requested number of _samples ({}) exceeds available _samples ({})",
             n_samples_to_use, n_total_samples
         )));
     }
 
-    // Calculate baseline fairness metric
+    // Calculate baseline fairness _metric
     let baseline_fairness = fairness_metric(y_pred, protected_group);
 
     // Calculate influence for each sample (leave-one-out approximation)
@@ -312,7 +314,7 @@ where
         let y_pred_temp = Array1::from_vec(y_pred_modified);
         let protected_group_temp = Array1::from_vec(protected_group_modified);
 
-        // Calculate fairness metric without this sample
+        // Calculate fairness _metric without this sample
         let modified_fairness = fairness_metric(&y_pred_temp, &protected_group_temp);
 
         // Influence is the difference removing this sample makes
@@ -428,6 +430,7 @@ pub struct SensitivityResult {
 ///
 /// * Information about fairness metric sensitivity to perturbations
 #[allow(clippy::too_many_arguments)]
+#[allow(dead_code)]
 pub fn perturbation_sensitivity<T, F>(
     y_true: &Array1<T>,
     y_pred: &Array1<T>,
@@ -459,22 +462,22 @@ where
         ));
     }
 
-    // Validate perturbation level
+    // Validate perturbation _level
     if perturbation_level <= 0.0 || perturbation_level >= 1.0 {
         return Err(MetricsError::InvalidInput(
-            "Perturbation level must be between 0 and 1 exclusive".to_string(),
+            "Perturbation _level must be between 0 and 1 exclusive".to_string(),
         ));
     }
 
     if n_iterations == 0 {
         return Err(MetricsError::InvalidInput(
-            "Number of iterations must be positive".to_string(),
+            "Number of _iterations must be positive".to_string(),
         ));
     }
 
     // Initialize random number generator
     let mut rng = match random_seed {
-        Some(seed) => StdRng::seed_from_u64(seed),
+        Some(_seed) => StdRng::seed_from_u64(_seed),
         None => StdRng::seed_from_u64(random()),
     };
 
@@ -485,7 +488,7 @@ where
     let mut perturbed_values = Vec::with_capacity(n_iterations);
 
     for _ in 0..n_iterations {
-        // Create perturbed predictions based on the specified type
+        // Create perturbed predictions based on the specified _type
         let perturbed_y_pred = match perturbation_type {
             PerturbationType::LabelFlip => {
                 perturb_by_label_flip(y_pred, perturbation_level, &mut rng)?
@@ -512,7 +515,7 @@ where
 
     let std_deviation = variance.sqrt();
 
-    // Sensitivity score is the ratio of standard deviation to perturbation level
+    // Sensitivity score is the ratio of standard deviation to perturbation _level
     let sensitivity_score = std_deviation / perturbation_level;
 
     Ok(SensitivityResult {
@@ -527,6 +530,7 @@ where
 }
 
 // Helper function to perturb by flipping labels randomly
+#[allow(dead_code)]
 fn perturb_by_label_flip<T>(
     y_pred: &Array1<T>,
     flip_prob: f64,
@@ -539,7 +543,7 @@ where
     let n_flips = (n_samples as f64 * flip_prob).round() as usize;
 
     // Convert to vector for easier manipulation
-    let (mut perturbed, _) = y_pred.to_owned().into_raw_vec_and_offset();
+    let mut perturbed = y_pred.to_owned().into_raw_vec_and_offset().0;
 
     // Create indices to flip
     let mut indices: Vec<usize> = (0..n_samples).collect();
@@ -563,6 +567,7 @@ where
 }
 
 // Helper function to perturb by subsampling
+#[allow(dead_code)]
 fn perturb_by_subsample<T>(
     y_pred: &Array1<T>,
     protected_group: &Array1<T>,
@@ -576,8 +581,8 @@ where
     let n_subsample = (n_samples as f64 * sample_fraction).round() as usize;
 
     // Convert to vectors
-    let (y_pred_vec, _) = y_pred.to_owned().into_raw_vec_and_offset();
-    let (protected_vec, _) = protected_group.to_owned().into_raw_vec_and_offset();
+    let y_pred_vec = y_pred.to_owned().into_raw_vec_and_offset().0;
+    let protected_vec = protected_group.to_owned().into_raw_vec_and_offset().0;
 
     // Create sample of indices
     let mut indices: Vec<usize> = (0..n_samples).collect();
@@ -591,12 +596,12 @@ where
             // Keep original prediction
             perturbed.push(y_pred_vec[i].clone());
         } else {
-            // For non-sampled points, use the average prediction from their group
+            // For non-sampled points, use the average prediction from their _group
             let group_val = &protected_vec[i];
             let zero = T::zero();
             let is_protected = group_val > &zero;
 
-            // Find average prediction for the group
+            // Find average prediction for the _group
             let mut group_sum = T::zero();
             let mut group_count = 0;
 
@@ -611,7 +616,7 @@ where
             }
 
             if group_count > 0 {
-                // Use group average
+                // Use _group average
                 let group_avg = group_sum / T::from(group_count).unwrap();
                 perturbed.push(group_avg);
             } else {
@@ -626,6 +631,7 @@ where
 }
 
 // Helper function to perturb by adding noise
+#[allow(dead_code)]
 fn perturb_by_noise<T>(
     y_pred: &Array1<T>,
     noise_level: f64,
@@ -637,7 +643,7 @@ where
     let n_samples = y_pred.len();
 
     // Get the values from the array
-    let (y_pred_vec, _) = y_pred.to_owned().into_raw_vec_and_offset();
+    let y_pred_vec = y_pred.to_owned().into_raw_vec_and_offset().0;
     let mut perturbed = Vec::with_capacity(n_samples);
 
     for i in 0..n_samples {

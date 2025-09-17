@@ -1,7 +1,9 @@
 use ndarray::IxDyn;
+use rand::seq::SliceRandom;
 use rand_distr::{Bernoulli, Normal, Uniform};
-use scirs2_core::random::{get_thread_rng, sampling, DistributionExt, Random};
+use scirs2_core::random::{get_rng, sampling, DistributionExt, Random};
 
+#[allow(dead_code)]
 fn main() {
     println!("Random Number Generation Example");
 
@@ -32,17 +34,18 @@ fn main() {
 }
 
 #[cfg(feature = "random")]
+#[allow(dead_code)]
 fn basic_random_example() {
     // Create a random number generator
     let mut rng = Random::default();
 
     // Generate random values
-    let value1 = rng.random_range(1, 100);
-    let value2 = rng.random_range(0.0, 1.0);
+    let value1 = rng.gen_range(1..100);
+    let value2 = rng.gen_range(0.0..1.0);
     let coin_flip = rng.random_bool();
 
     println!("Random integer (1-99): {}", value1);
-    println!("Random float (0-1): {:.6}", value2);
+    println!("Random float (0.saturating_sub(1)): {:.6}", value2);
     println!("Random boolean: {}", coin_flip);
 
     // Generate a random boolean with a specific probability
@@ -57,6 +60,7 @@ fn basic_random_example() {
 }
 
 #[cfg(feature = "random")]
+#[allow(dead_code)]
 fn distribution_examples() {
     let mut rng = Random::default();
 
@@ -81,6 +85,7 @@ fn distribution_examples() {
 }
 
 #[cfg(feature = "random")]
+#[allow(dead_code)]
 fn random_array_example() {
     let mut rng = Random::default();
 
@@ -103,38 +108,40 @@ fn random_array_example() {
 }
 
 #[cfg(feature = "random")]
+#[allow(dead_code)]
 fn seeded_random_example() {
     // Create two random generators with the same seed
-    let mut rng1 = Random::with_seed(42);
-    let mut rng2 = Random::with_seed(42);
+    let mut rng1 = Random::seed(42);
+    let mut rng2 = Random::seed(42);
 
     // They should produce the same sequence
     println!("Seeded RNG 1:");
     for _ in 0..3 {
-        println!("  {:.6}", rng1.random_range(0.0, 1.0));
+        println!("  {:.6}", rng1.gen_range(0.0..1.0));
     }
 
     println!("Seeded RNG 2 (same seed):");
     for _ in 0..3 {
-        println!("  {:.6}", rng2.random_range(0.0, 1.0));
+        println!("  {:.6}", rng2.gen_range(0.0..1.0));
     }
 
     // Different seed produces different sequence
-    let mut rng3 = Random::with_seed(43);
+    let mut rng3 = Random::seed(43);
     println!("Seeded RNG 3 (different seed):");
     for _ in 0..3 {
-        println!("  {:.6}", rng3.random_range(0.0, 1.0));
+        println!("  {:.6}", rng3.gen_range(0.0..1.0));
     }
 }
 
 #[cfg(feature = "random")]
+#[allow(dead_code)]
 fn thread_local_random_example() {
     // Access the thread-local random generator
-    let values = get_thread_rng(|rng| {
+    let values = get_rng(|rng| {
         // Generate 5 random values
         let mut values = Vec::with_capacity(5);
         for _ in 0..5 {
-            values.push(rng.random_range(0, 100));
+            values.push(rng.gen_range(0..100));
         }
         values
     });
@@ -143,6 +150,7 @@ fn thread_local_random_example() {
 }
 
 #[cfg(feature = "random")]
+#[allow(dead_code)]
 fn sampling_functions_example() {
     let mut rng = Random::default();
 
@@ -150,7 +158,7 @@ fn sampling_functions_example() {
     let uniform01 = sampling::random_uniform01(&mut rng);
     let standard_normal = sampling::random_standard_normal(&mut rng);
     let custom_normal = sampling::random_normal(&mut rng, 10.0, 2.0);
-    let lognormal = sampling::random_lognormal(&mut rng, 0.0, 1.0);
+    let lognormal = sampling::randomlognormal(&mut rng, 0.0, 1.0);
     let exponential = sampling::random_exponential(&mut rng, 2.0);
 
     println!("Uniform[0,1): {:.6}", uniform01);

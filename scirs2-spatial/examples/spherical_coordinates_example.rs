@@ -6,6 +6,7 @@ use scirs2_spatial::transform::spherical::{
 use scirs2_spatial::SpatialResult;
 use std::f64::consts::PI;
 
+#[allow(dead_code)]
 fn main() -> SpatialResult<()> {
     println!("Spherical Coordinate Transformations Example");
     println!("===========================================\n");
@@ -150,7 +151,7 @@ fn main() -> SpatialResult<()> {
 
     let area = spherical_triangle_area(&p1.view(), &p2.view(), &p3.view())?;
     println!("\nTriangle: North pole and two points on the equator 90° apart");
-    println!("  Area: {:.4} steradians", area);
+    println!("  Area: {area:.4} steradians");
 
     // Error cases
     println!("\n\nError Handling Examples");
@@ -165,8 +166,8 @@ fn main() -> SpatialResult<()> {
     println!("  p2: (r=2, θ=0°, φ=0°)");
 
     match geodesic_distance(&p1.view(), &p2.view()) {
-        Ok(distance) => println!("  Distance: {:.4}", distance),
-        Err(e) => println!("  Error: {}", e),
+        Ok(distance) => println!("  Distance: {distance:.4}"),
+        Err(e) => println!("  Error: {e}"),
     }
 
     // Try with invalid spherical coordinates
@@ -176,8 +177,8 @@ fn main() -> SpatialResult<()> {
     println!("  (r=1, θ=-0.1, φ=0°)");
 
     match spherical_to_cart(&invalid.view()) {
-        Ok(cart) => println!("  Converted to: {:?}", cart),
-        Err(e) => println!("  Error: {}", e),
+        Ok(cart) => println!("  Converted to: {cart:?}"),
+        Err(e) => println!("  Error: {e}"),
     }
 
     Ok(())

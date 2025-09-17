@@ -64,7 +64,7 @@ where
 /// Huber loss function and constants for robust regression
 pub struct HuberT<F>
 where
-    F: Float + 'static,
+    F: Float + 'static + std::fmt::Display,
 {
     /// The parameter that controls the transition between squared and absolute error
     pub t: F,
@@ -75,7 +75,7 @@ where
 
 impl<F> HuberT<F>
 where
-    F: Float + 'static,
+    F: Float + 'static + std::fmt::Display,
 {
     /// Create a new Huber T object with default parameters
     ///
@@ -128,7 +128,7 @@ where
 
 impl<F> Default for HuberT<F>
 where
-    F: Float + 'static,
+    F: Float + 'static + std::fmt::Display,
 {
     fn default() -> Self {
         Self::new()
@@ -149,9 +149,10 @@ where
 /// # Returns
 ///
 /// The weight to apply to this residual in the next IRLS iteration
+#[allow(dead_code)]
 fn huber_weight<F>(r: F, t: F) -> F
 where
-    F: Float + 'static,
+    F: Float + 'static + std::fmt::Display,
 {
     let abs_r = crate::regression::utils::float_abs(r);
     if abs_r <= t {
@@ -194,6 +195,7 @@ where
 /// assert!(result.slope > 0.0f64);  // Slope should be positive
 /// assert!(result.intercept > -100.0f64);  // Intercept should exist
 /// ```
+#[allow(dead_code)]
 pub fn theilslopes<F>(
     x: &ArrayView1<F>,
     y: &ArrayView1<F>,
@@ -206,7 +208,9 @@ where
         + std::ops::Div<Output = F>
         + std::fmt::Debug
         + std::fmt::Display
-        + 'static,
+        + 'static
+        + Send
+        + Sync,
 {
     // Check input dimensions
     if x.len() != y.len() {
@@ -323,9 +327,10 @@ where
 }
 
 /// Compute the median of an array
+#[allow(dead_code)]
 fn compute_median<F>(x: &ArrayView1<F>) -> F
 where
-    F: Float + 'static,
+    F: Float + 'static + std::fmt::Display,
 {
     let n = x.len();
     if n == 0 {
@@ -357,7 +362,7 @@ where
 ///
 /// # Algorithm
 ///
-/// 1. Randomly select a subset of data points (min_samples)
+/// 1. Randomly select a subset of data points (min_samples_)
 /// 2. Fit a model to this subset
 /// 3. Determine which points are inliers (residual < threshold)
 /// 4. If the model has more inliers than the current best model, keep it
@@ -368,7 +373,7 @@ where
 ///
 /// * `x` - Independent variable data (can be 1D or multi-dimensional)
 /// * `y` - Dependent variable data (must be same length as x)
-/// * `min_samples` - Minimum number of samples required to fit the model (default: 2)
+/// * `min_samples_` - Minimum number of samples required to fit the model (default: 2)
 /// * `residual_threshold` - Maximum residual for a data point to be considered an inlier
 ///   (default: calculated from median absolute deviation of residuals)
 /// * `max_trials` - Maximum number of iterations/trials (default: 100)
@@ -390,8 +395,7 @@ where
 /// # Examples
 ///
 /// Simple example with an obvious outlier:
-/// ```ignore
-/// # FIXME: This doc test requires LAPACK/BLAS to be linked properly
+/// ```
 /// use ndarray::{array, Array2};
 /// use scirs2_stats::ransac;
 ///
@@ -412,8 +416,7 @@ where
 /// ```
 ///
 /// Simpler example with fewer dimensions:
-/// ```ignore
-/// # FIXME: This doc test requires LAPACK/BLAS to be linked properly
+/// ```
 /// use ndarray::{array, Array2};
 /// use scirs2_stats::ransac;
 ///
@@ -443,10 +446,11 @@ where
 /// // Check that we got coefficients
 /// assert!(result.coefficients.len() > 0);
 /// ```
+#[allow(dead_code)]
 pub fn ransac<F>(
     x: &ArrayView2<F>,
     y: &ArrayView1<F>,
-    min_samples: Option<usize>,
+    min_samples_: Option<usize>,
     residual_threshold: Option<F>,
     max_trials: Option<usize>,
     stop_probability: Option<F>,
@@ -461,10 +465,10 @@ where
         + 'static
         + num_traits::NumAssign
         + num_traits::One
-        + ndarray::ScalarOperand,
+        + ndarray::ScalarOperand
+        + Send
+        + Sync,
 {
-    use rand::prelude::*;
-    use rand::rngs::StdRng;
     use rand::seq::SliceRandom;
 
     // Check input dimensions
@@ -479,15 +483,15 @@ where
     let n = x.len();
 
     // Set default parameters
-    let min_samples = min_samples.unwrap_or(2);
+    let min_samples_ = min_samples_.unwrap_or(2);
     let max_trials = max_trials.unwrap_or(100);
     let stop_probability = stop_probability.unwrap_or_else(|| F::from(0.99).unwrap());
 
-    // We need at least min_samples data points
-    if n < min_samples {
+    // We need at least min_samples_ data points
+    if n < min_samples_ {
         return Err(StatsError::InvalidArgument(format!(
-            "Number of data points ({}) must be at least min_samples ({})",
-            n, min_samples
+            "Number of data points ({}) must be at least min_samples_ ({})",
+            n, min_samples_
         )));
     }
 
@@ -495,32 +499,35 @@ where
     let _x_design =
         Array2::from_shape_fn((n, 2), |(i, j)| if j == 0 { F::one() } else { x[[i, 0]] });
 
-    // If residual threshold not provided, estimate it from the data
+    // If residual _threshold not provided, estimate it from the data
     let residual_threshold = if let Some(rt) = residual_threshold {
         rt
     } else {
-        // Estimate threshold from median absolute deviation of residuals from initial fit
+        // Estimate _threshold from median absolute deviation of residuals from initial fit
         let x_vec = Array1::from_shape_fn(n, |i| x[[i, 0]]);
-        let (slope, intercept, _, _, _) = linregress(&x_vec.view(), y)?;
+        let (slope, intercept___, _, _, _) = linregress(&x_vec.view(), y)?;
         let residuals = y
             .iter()
             .enumerate()
-            .map(|(i, &yi)| yi - (intercept + slope * x[[i, 0]]))
+            .map(|(i, &yi)| yi - (intercept___ + slope * x[[i, 0]]))
             .collect::<Vec<F>>();
 
         let residuals_array = Array1::from(residuals);
 
-        // Use median absolute deviation as basis for threshold
+        // Use median absolute deviation as basis for _threshold
         let mad = crate::regression::utils::median_abs_deviation_from_zero(&residuals_array.view());
         mad * F::from(2.5).unwrap() // Typically 2.0-3.0 times MAD
     };
 
     // Initialize random number generator
-    let mut rng = if let Some(seed) = random_seed {
-        StdRng::seed_from_u64(seed)
+    use scirs2_core::random::Random;
+    let mut rng = if let Some(_seed) = random_seed {
+        Random::seed(_seed)
     } else {
-        // Use a random seed
-        StdRng::seed_from_u64(rand::random())
+        // Use a random _seed
+        use rand::Rng;
+        let mut temp_rng = rand::rng();
+        Random::seed(temp_rng.random())
     };
 
     // Keep track of best model
@@ -532,13 +539,13 @@ where
     let mut n_trials = max_trials;
 
     for trial in 0..max_trials {
-        // Randomly select min_samples data points
+        // Randomly select min_samples_ data points
         let mut indices: Vec<usize> = (0..n).collect();
         indices.shuffle(&mut rng);
-        let sample_indices = indices[0..min_samples].to_vec();
+        let sample_indices = indices[0..min_samples_].to_vec();
 
         // Fit model to the selected points
-        let sample_x = Array2::from_shape_fn((min_samples, 2), |(i, j)| {
+        let sample_x = Array2::from_shape_fn((min_samples_, 2), |(i, j)| {
             if j == 0 {
                 F::one()
             } else {
@@ -546,7 +553,7 @@ where
             }
         });
 
-        let sample_y = Array1::from_shape_fn(min_samples, |i| y[sample_indices[i]]);
+        let sample_y = Array1::from_shape_fn(min_samples_, |i| y[sample_indices[i]]);
 
         // Skip this iteration if the sample is degenerate
         // Use explicit computation to avoid Float trait method ambiguity
@@ -605,10 +612,10 @@ where
             best_inlier_mask = inlier_mask;
 
             // Update stopping criterion
-            if inlier_count > min_samples {
+            if inlier_count > min_samples_ {
                 let inlier_ratio = F::from(inlier_count).unwrap() / F::from(n).unwrap();
                 let power_term =
-                    crate::regression::utils::float_powi(inlier_ratio, min_samples as i32);
+                    crate::regression::utils::float_powi(inlier_ratio, min_samples_ as i32);
                 let denom = F::one() - power_term;
 
                 // Only update if new value is smaller (and valid)
@@ -626,7 +633,7 @@ where
             }
         }
 
-        // Check if we've done enough trials
+        // Check if we've done enough _trials
         if trial >= n_trials - 1 {
             break;
         }
@@ -676,6 +683,7 @@ where
 }
 
 /// Helper function to fit a simple linear model for RANSAC
+#[allow(dead_code)]
 fn fit_linear_model<F>(x: &ArrayView2<F>, y: &ArrayView1<F>) -> StatsResult<Array1<F>>
 where
     F: Float
@@ -684,7 +692,10 @@ where
         + 'static
         + num_traits::NumAssign
         + num_traits::One
-        + ndarray::ScalarOperand,
+        + ndarray::ScalarOperand
+        + std::fmt::Display
+        + Send
+        + Sync,
 {
     match lstsq(x, y, None) {
         Ok(result) => Ok(result.x),
@@ -696,6 +707,7 @@ where
 }
 
 /// Helper function for simple linear regression with detailed statistics
+#[allow(dead_code)]
 fn simple_linear_regression<F>(
     x: &ArrayView2<F>,
     y: &ArrayView1<F>,
@@ -709,7 +721,9 @@ where
         + 'static
         + num_traits::NumAssign
         + num_traits::One
-        + ndarray::ScalarOperand,
+        + ndarray::ScalarOperand
+        + Send
+        + Sync,
 {
     let n = x.nrows();
     let p = x.ncols();
@@ -850,8 +864,7 @@ where
 /// # Examples
 ///
 /// Basic example with an outlier:
-/// ```ignore
-/// # FIXME: This doc test requires LAPACK/BLAS to be linked properly
+/// ```
 /// use ndarray::{array, Array2};
 /// use scirs2_stats::huber_regression;
 ///
@@ -872,8 +885,7 @@ where
 /// ```
 ///
 /// Using custom epsilon and regularization:
-/// ```ignore
-/// # FIXME: This doc test requires LAPACK/BLAS to be linked properly
+/// ```
 /// use ndarray::{array, Array2};
 /// use scirs2_stats::huber_regression;
 ///
@@ -910,6 +922,7 @@ where
 /// assert!(result.r_squared >= 0.0 && result.r_squared <= 1.0);
 /// ```
 #[allow(clippy::too_many_arguments)]
+#[allow(dead_code)]
 pub fn huber_regression<F>(
     x: &ArrayView2<F>,
     y: &ArrayView1<F>,
@@ -929,6 +942,8 @@ where
         + 'static
         + num_traits::NumAssign
         + num_traits::One
+        + Send
+        + Sync
         + ndarray::ScalarOperand,
 {
     // Check input dimensions
@@ -950,7 +965,7 @@ where
     let tol = tol.unwrap_or_else(|| F::from(1e-5).unwrap());
     let conf_level = conf_level.unwrap_or_else(|| F::from(0.95).unwrap());
 
-    // Create design matrix (add intercept if requested)
+    // Create design matrix (add _intercept if requested)
     let x_design = if fit_intercept {
         add_intercept(x)
     } else {
@@ -1135,6 +1150,7 @@ where
 }
 
 /// Fit OLS model
+#[allow(dead_code)]
 fn fit_ols<F>(x: &ArrayView2<F>, y: &ArrayView1<F>) -> StatsResult<Array1<F>>
 where
     F: Float
@@ -1143,7 +1159,10 @@ where
         + 'static
         + num_traits::NumAssign
         + num_traits::One
-        + ndarray::ScalarOperand,
+        + ndarray::ScalarOperand
+        + std::fmt::Display
+        + Send
+        + Sync,
 {
     match lstsq(x, y, None) {
         Ok(result) => Ok(result.x),
@@ -1155,6 +1174,7 @@ where
 }
 
 /// Calculate robust standard errors for Huber regression
+#[allow(dead_code)]
 fn calculate_huber_std_errors<F>(
     x: &ArrayView2<F>,
     _residuals: &ArrayView1<F>,
@@ -1169,7 +1189,10 @@ where
         + 'static
         + num_traits::NumAssign
         + num_traits::One
-        + ndarray::ScalarOperand,
+        + ndarray::ScalarOperand
+        + std::fmt::Display
+        + Send
+        + Sync,
 {
     // Calculate weighted X'X
     let mut xtx = Array2::<F>::zeros((x.ncols(), x.ncols()));

@@ -21,6 +21,7 @@ use crate::error::{MetricsError, Result};
 /// # Returns
 ///
 /// * Result containing the converted data
+#[allow(dead_code)]
 pub fn convert_format<T>(
     data: &T,
     from_format: SerializationFormat,
@@ -34,7 +35,7 @@ where
         return serialize(data, to_format);
     }
 
-    // Serialize the data to a JSON representation regardless of source format
+    // Serialize the data to a JSON representation regardless of source _format
     let json_value = match from_format {
         SerializationFormat::Json => {
             // If source is JSON, just serialize to a JSON value
@@ -83,7 +84,7 @@ where
         }
     };
 
-    // Serialize to the target format
+    // Serialize to the target _format
     match to_format {
         SerializationFormat::Json => serde_json::to_vec_pretty(&json_value)
             .map_err(|e| MetricsError::SerializationError(e.to_string())),
@@ -123,6 +124,7 @@ where
 /// # Returns
 ///
 /// * Result indicating success or error
+#[allow(dead_code)]
 pub fn convert_file<T, P1, P2>(
     input_path: P1,
     output_path: P2,
@@ -135,7 +137,7 @@ where
     P2: AsRef<Path>,
 {
     // Read the input file
-    let data = deserialize_from_file::<T, _>(input_path, from_format)?;
+    let data = deserialize_from_file::<T, P1>(input_path, from_format)?;
 
     // Convert and write to the output file
     serialize_to_file(&data, output_path, to_format)
@@ -151,6 +153,7 @@ where
 /// # Returns
 ///
 /// * Result containing the serialized data
+#[allow(dead_code)]
 pub fn serialize<T>(data: &T, format: SerializationFormat) -> Result<Vec<u8>>
 where
     T: Serialize,
@@ -187,6 +190,7 @@ where
 /// # Returns
 ///
 /// * Result containing the deserialized data
+#[allow(dead_code)]
 pub fn deserialize<T>(data: &[u8], format: SerializationFormat) -> Result<T>
 where
     T: for<'de> Deserialize<'de>,
@@ -221,6 +225,7 @@ where
 /// # Returns
 ///
 /// * Result indicating success or error
+#[allow(dead_code)]
 pub fn serialize_to_file<T, P>(data: &T, path: P, format: SerializationFormat) -> Result<()>
 where
     T: Serialize,
@@ -246,6 +251,7 @@ where
 /// # Returns
 ///
 /// * Result containing the deserialized data
+#[allow(dead_code)]
 pub fn deserialize_from_file<T, P>(path: P, format: SerializationFormat) -> Result<T>
 where
     T: for<'de> Deserialize<'de>,

@@ -126,9 +126,9 @@ impl MemoryBenchmark {
         Self { seed }
     }
 
-    fn generate_points(&self, n_points: usize, dimensions: usize) -> Array2<f64> {
+    fn generate_points(&self, npoints: usize, dimensions: usize) -> Array2<f64> {
         let mut rng = StdRng::seed_from_u64(self.seed);
-        Array2::from_shape_fn((n_points, dimensions), |_| rng.random_range(-10.0..10.0))
+        Array2::from_shape_fn((npoints, dimensions), |_| rng.gen_range(-10.0..10.0))
     }
 
     /// Analyze memory usage for different data sizes
@@ -254,7 +254,7 @@ impl MemoryBenchmark {
             // Random access pattern (simulate worst-case cache behavior)
             let mut rng = StdRng::seed_from_u64(self.seed);
             let indices: Vec<(usize, usize)> = (0..size * 10)
-                .map(|_| (rng.random_range(0..size), rng.random_range(0..10)))
+                .map(|_| (rng.gen_range(0..size), rng.gen_range(0..10)))
                 .collect();
 
             let start = Instant::now();
@@ -422,6 +422,7 @@ impl MemoryBenchmark {
 }
 
 /// Benchmark memory usage for distance calculations
+#[allow(dead_code)]
 fn bench_memory_distance_calculations(c: &mut Criterion) {
     let mut group = c.benchmark_group("memory_distance_calculations");
 
@@ -450,6 +451,7 @@ fn bench_memory_distance_calculations(c: &mut Criterion) {
 }
 
 /// Benchmark memory usage for different data structures
+#[allow(dead_code)]
 fn bench_memory_data_structures(c: &mut Criterion) {
     let mut group = c.benchmark_group("memory_data_structures");
 
@@ -460,8 +462,8 @@ fn bench_memory_data_structures(c: &mut Criterion) {
 
         group.throughput(Throughput::Elements(size as u64));
 
-        group.bench_with_input(BenchmarkId::new("kdtree_memory", size), &size, |b, _| {
-            b.iter(|| {
+        group.bench_with_input(BenchmarkId::new("kdtree_memory", size), &size, |b_, _| {
+            b_.iter(|| {
                 MEMORY_TRACKER.reset();
                 let kdtree = KDTree::new(&points).unwrap();
                 let stats = MEMORY_TRACKER.get_stats();

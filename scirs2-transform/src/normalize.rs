@@ -8,8 +8,8 @@ use num_traits::{Float, NumCast};
 
 use crate::error::{Result, TransformError};
 
-// Define a small value to use for comparison with zero
-const EPSILON: f64 = 1e-10;
+/// Small value to use for comparison with zero and numerical stability
+pub const EPSILON: f64 = 1e-10;
 
 /// Method of normalization to apply
 #[derive(Debug, Clone, Copy, PartialEq)]
@@ -52,6 +52,7 @@ pub enum NormalizationMethod {
 /// // Normalize columns (axis 0) using min-max normalization
 /// let normalized = normalize_array(&data, NormalizationMethod::MinMax, 0).unwrap();
 /// ```
+#[allow(dead_code)]
 pub fn normalize_array<S>(
     array: &ArrayBase<S, Ix2>,
     method: NormalizationMethod,
@@ -294,6 +295,7 @@ where
 /// // Normalize vector using min-max normalization
 /// let normalized = normalize_vector(&data, NormalizationMethod::MinMax).unwrap();
 /// ```
+#[allow(dead_code)]
 pub fn normalize_vector<S>(
     array: &ArrayBase<S, Ix1>,
     method: NormalizationMethod,
@@ -439,10 +441,8 @@ where
 }
 
 /// Represents a fitted normalization model that can transform new data
+#[derive(Clone)]
 pub struct Normalizer {
-    /// The normalization method to apply
-    #[allow(dead_code)]
-    method: NormalizationMethod,
     /// The axis along which to normalize (0 for columns, 1 for rows)
     axis: usize,
     /// Parameters from the fit (depends on method)
@@ -519,11 +519,7 @@ impl Normalizer {
             },
         };
 
-        Normalizer {
-            method,
-            axis,
-            params,
-        }
+        Normalizer { axis, params }
     }
 
     /// Fits the normalizer to the input data
@@ -559,12 +555,6 @@ impl Normalizer {
                 array_f64.ndim()
             )));
         }
-
-        let _size = if self.axis == 0 {
-            array_f64.shape()[1]
-        } else {
-            array_f64.shape()[0]
-        };
 
         match &mut self.params {
             NormalizerParams::MinMax {
@@ -700,8 +690,7 @@ impl Normalizer {
 
         if expected_size != actual_size {
             return Err(TransformError::InvalidInput(format!(
-                "Expected {} features, got {}",
-                expected_size, actual_size
+                "Expected {expected_size} features, got {actual_size}"
             )));
         }
 

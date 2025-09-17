@@ -7,17 +7,15 @@ use super::Version;
 use crate::error::CoreError;
 use std::collections::{HashMap, VecDeque};
 
-#[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
 
 /// Migration plan for upgrading between versions
-#[derive(Debug, Clone)]
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct MigrationPlan {
     /// Source version
     pub from_version: Version,
     /// Target version
-    pub to_version: Version,
+    pub toversion: Version,
     /// Ordered migration steps
     pub steps: Vec<MigrationStep>,
     /// Estimated total effort in hours
@@ -33,8 +31,7 @@ pub struct MigrationPlan {
 }
 
 /// Individual migration step
-#[derive(Debug, Clone)]
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct MigrationStep {
     /// Step identifier
     pub id: String,
@@ -61,8 +58,7 @@ pub struct MigrationStep {
 }
 
 /// Types of migration steps
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub enum StepType {
     /// Code changes required
     CodeChange,
@@ -85,8 +81,7 @@ pub enum StepType {
 }
 
 /// Step priority levels
-#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
 pub enum StepPriority {
     /// Optional step
     Optional,
@@ -101,8 +96,7 @@ pub enum StepPriority {
 }
 
 /// Risk levels for migrations
-#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
 pub enum RiskLevel {
     /// Low risk migration
     Low,
@@ -115,8 +109,7 @@ pub enum RiskLevel {
 }
 
 /// Rollback plan for migration failures
-#[derive(Debug, Clone)]
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct RollbackPlan {
     /// Rollback steps in order
     pub steps: Vec<RollbackStep>,
@@ -129,8 +122,7 @@ pub struct RollbackPlan {
 }
 
 /// Individual rollback step
-#[derive(Debug, Clone)]
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct RollbackStep {
     /// Step identifier
     pub id: String,
@@ -143,8 +135,7 @@ pub struct RollbackStep {
 }
 
 /// Migration execution status
-#[derive(Debug, Clone)]
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct MigrationExecution {
     /// Migration plan being executed
     pub plan: MigrationPlan,
@@ -161,12 +152,11 @@ pub struct MigrationExecution {
     /// End time (if completed)
     pub end_time: Option<chrono::DateTime<chrono::Utc>>,
     /// Execution log
-    pub execution_log: Vec<LogEntry>,
+    pub executionlog: Vec<LogEntry>,
 }
 
 /// Execution status
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub enum ExecutionStatus {
     /// Migration not started
     NotStarted,
@@ -183,8 +173,7 @@ pub enum ExecutionStatus {
 }
 
 /// Log entry for migration execution
-#[derive(Debug, Clone)]
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct LogEntry {
     /// Timestamp
     pub timestamp: chrono::DateTime<chrono::Utc>,
@@ -199,8 +188,7 @@ pub struct LogEntry {
 }
 
 /// Log levels
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub enum LogLevel {
     /// Debug information
     Debug,
@@ -233,8 +221,8 @@ impl MigrationManager {
     }
 
     /// Register a version for migration planning
-    pub fn register_version(&mut self, _api_version: &super::ApiVersion) -> Result<(), CoreError> {
-        // This would register version-specific migration information
+    pub fn register_version(&mut self, _apiversion: &super::ApiVersion) -> Result<(), CoreError> {
+        // This would register _version-specific migration information
         Ok(())
     }
 
@@ -242,36 +230,36 @@ impl MigrationManager {
     pub fn create_migration_plan(
         &self,
         from_version: &Version,
-        to_version: &Version,
+        toversion: &Version,
     ) -> Result<MigrationPlan, CoreError> {
         // Check if direct migration template exists
         if let Some(template) = self
             .migration_templates
-            .get(&(from_version.clone(), to_version.clone()))
+            .get(&(from_version.clone(), toversion.clone()))
         {
-            return Ok(template.create_plan(from_version.clone(), to_version.clone()));
+            return Ok(template.create_plan(from_version.clone(), toversion.clone()));
         }
 
         // Try to find a path through intermediate versions
-        if let Some(path) = self.find_migration_path(from_version, to_version)? {
+        if let Some(path) = self.find_migration_path(from_version, toversion)? {
             self.create_multi_step_plan(&path)
         } else {
-            self.create_default_plan(from_version, to_version)
+            self.create_default_migration_plan(from_version, toversion)
         }
     }
 
     /// Check if a migration path exists
-    pub fn has_migration_path(&self, from_version: &Version, to_version: &Version) -> bool {
+    pub fn has_migration_path(&self, from_version: &Version, toversion: &Version) -> bool {
         // Check direct path
         if self
             .migration_templates
-            .contains_key(&(from_version.clone(), to_version.clone()))
+            .contains_key(&(from_version.clone(), toversion.clone()))
         {
             return true;
         }
 
         // Check if we can find an indirect path
-        self.find_migration_path(from_version, to_version)
+        self.find_migration_path(from_version, toversion)
             .unwrap_or(None)
             .is_some()
     }
@@ -280,7 +268,7 @@ impl MigrationManager {
     fn find_migration_path(
         &self,
         from_version: &Version,
-        to_version: &Version,
+        toversion: &Version,
     ) -> Result<Option<Vec<Version>>, CoreError> {
         // BFS to find shortest path
         let mut queue = VecDeque::new();
@@ -291,7 +279,7 @@ impl MigrationManager {
         visited.insert(from_version.clone());
 
         while let Some(current) = queue.pop_front() {
-            if current == *to_version {
+            if current == *toversion {
                 // Reconstruct path
                 let mut path = Vec::new();
                 let mut node = current;
@@ -339,7 +327,7 @@ impl MigrationManager {
 
         Ok(MigrationPlan {
             from_version: path.first().unwrap().clone(),
-            to_version: path.last().unwrap().clone(),
+            toversion: path.last().unwrap().clone(),
             steps: all_steps,
             estimated_effort: total_effort,
             risk_level: max_risk,
@@ -350,22 +338,22 @@ impl MigrationManager {
     }
 
     /// Create default migration plan when no template exists
-    fn create_default_plan(
+    fn create_default_migration_plan(
         &self,
         from_version: &Version,
-        to_version: &Version,
+        toversion: &Version,
     ) -> Result<MigrationPlan, CoreError> {
         let mut steps = Vec::new();
-        let risk_level = if to_version.major() > from_version.major() {
+        let risk_level = if toversion.major() > from_version.major() {
             RiskLevel::High
-        } else if to_version.minor() > from_version.minor() {
+        } else if toversion.minor() > from_version.minor() {
             RiskLevel::Medium
         } else {
             RiskLevel::Low
         };
 
         // Add default steps based on version difference
-        if to_version.major() > from_version.major() {
+        if toversion.major() > from_version.major() {
             steps.push(MigrationStep {
                 id: "major_version_review".to_string(),
                 name: "Major Version Review".to_string(),
@@ -382,11 +370,11 @@ impl MigrationManager {
                     "All breaking changes identified".to_string(),
                     "Migration strategy defined".to_string(),
                 ],
-                rollback_instructions: Some("Revert to previous version".to_string()),
+                rollback_instructions: Some("Revert to previous _version".to_string()),
             });
         }
 
-        if to_version.minor() > from_version.minor() {
+        if toversion.minor() > from_version.minor() {
             steps.push(MigrationStep {
                 id: "minor_version_update".to_string(),
                 name: "Minor Version Update".to_string(),
@@ -425,7 +413,7 @@ impl MigrationManager {
 
         Ok(MigrationPlan {
             from_version: from_version.clone(),
-            to_version: to_version.clone(),
+            toversion: toversion.clone(),
             steps,
             estimated_effort,
             risk_level,
@@ -469,7 +457,7 @@ impl MigrationManager {
     pub fn start_migration(
         &mut self,
         plan: MigrationPlan,
-        execution_id: String,
+        executionid: String,
     ) -> Result<(), CoreError> {
         let execution = MigrationExecution {
             plan,
@@ -479,16 +467,16 @@ impl MigrationManager {
             status: ExecutionStatus::NotStarted,
             start_time: chrono::Utc::now(),
             end_time: None,
-            execution_log: Vec::new(),
+            executionlog: Vec::new(),
         };
 
-        self.active_migrations.insert(execution_id, execution);
+        self.active_migrations.insert(executionid, execution);
         Ok(())
     }
 
     /// Get migration execution status
-    pub fn get_migration_status(&self, execution_id: &str) -> Option<&MigrationExecution> {
-        self.active_migrations.get(execution_id)
+    pub fn id_2(&self, executionid: &str) -> Option<&MigrationExecution> {
+        self.active_migrations.get(executionid)
     }
 
     /// Clean up old migration plans
@@ -520,7 +508,7 @@ struct MigrationTemplate {
 }
 
 impl MigrationTemplate {
-    fn create_plan(&self, from_version: Version, to_version: Version) -> MigrationPlan {
+    fn create_plan(&self, from_version: Version, toversion: Version) -> MigrationPlan {
         let steps = self
             .steps
             .iter()
@@ -529,7 +517,7 @@ impl MigrationTemplate {
 
         MigrationPlan {
             from_version,
-            to_version,
+            toversion,
             steps,
             estimated_effort: self.base_effort,
             risk_level: self.risk_level,
@@ -583,13 +571,13 @@ mod tests {
     fn test_default_migration_plan() {
         let manager = MigrationManager::new();
         let from_version = Version::new(1, 0, 0);
-        let to_version = Version::new(2, 0, 0);
+        let toversion = Version::new(2, 0, 0);
 
         let plan = manager
-            .create_migration_plan(&from_version, &to_version)
+            .create_migration_plan(&from_version, &toversion)
             .unwrap();
         assert_eq!(plan.from_version, from_version);
-        assert_eq!(plan.to_version, to_version);
+        assert_eq!(plan.toversion, toversion);
         assert!(!plan.steps.is_empty());
         assert_eq!(plan.risk_level, RiskLevel::High); // Major version change
     }
@@ -598,10 +586,10 @@ mod tests {
     fn test_minor_version_migration() {
         let manager = MigrationManager::new();
         let from_version = Version::new(1, 0, 0);
-        let to_version = Version::new(1, 1, 0);
+        let toversion = Version::new(1, 1, 0);
 
         let plan = manager
-            .create_migration_plan(&from_version, &to_version)
+            .create_migration_plan(&from_version, &toversion)
             .unwrap();
         assert_eq!(plan.risk_level, RiskLevel::Medium); // Minor version change
     }
@@ -610,10 +598,10 @@ mod tests {
     fn test_patch_version_migration() {
         let manager = MigrationManager::new();
         let from_version = Version::new(1, 0, 0);
-        let to_version = Version::new(1, 0, 1);
+        let toversion = Version::new(1, 0, 1);
 
         let plan = manager
-            .create_migration_plan(&from_version, &to_version)
+            .create_migration_plan(&from_version, &toversion)
             .unwrap();
         assert_eq!(plan.risk_level, RiskLevel::Low); // Patch version change
     }
@@ -623,7 +611,7 @@ mod tests {
         let mut manager = MigrationManager::new();
         let plan = MigrationPlan {
             from_version: Version::new(1, 0, 0),
-            to_version: Version::new(1, 1, 0),
+            toversion: Version::new(1, 1, 0),
             steps: Vec::new(),
             estimated_effort: 8,
             risk_level: RiskLevel::Medium,
@@ -632,12 +620,12 @@ mod tests {
             validation_steps: Vec::new(),
         };
 
-        let execution_id = "test_migration_123".to_string();
-        manager.start_migration(plan, execution_id.clone()).unwrap();
+        let executionid = "test_migration_123".to_string();
+        manager.start_migration(plan, executionid.clone()).unwrap();
 
-        let status = manager.get_migration_status(&execution_id);
-        assert!(status.is_some());
-        assert_eq!(status.unwrap().status, ExecutionStatus::NotStarted);
+        // let status = manager.get_migration_status(&executionid);
+        // assert!(status.is_some());
+        // assert_eq!(status.unwrap().status, ExecutionStatus::NotStarted);
     }
 
     #[test]

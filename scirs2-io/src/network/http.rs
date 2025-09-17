@@ -68,11 +68,19 @@ pub struct HttpClient {
 impl HttpClient {
     /// Create a new HTTP client with the given configuration
     pub fn new(config: NetworkConfig) -> Self {
-        Self {
+        let client = Self {
             config,
             #[cfg(feature = "reqwest")]
             client: None,
+        };
+
+        // Auto-initialize if reqwest feature is enabled
+        #[cfg(feature = "reqwest")]
+        {
+            let _ = client.init();
         }
+
+        client
     }
 
     /// Initialize the HTTP client (creates underlying reqwest client)
@@ -87,7 +95,7 @@ impl HttpClient {
         let mut headers = reqwest::header::HeaderMap::new();
         for (key, value) in &self.config.headers {
             if let (Ok(header_name), Ok(header_value)) = (
-                reqwest::header::HeaderName::from_bytes(key.as_bytes()),
+                reqwest::header::HeaderName::frombytes(key.asbytes()),
                 reqwest::header::HeaderValue::from_str(value),
             ) {
                 headers.insert(header_name, header_value);
@@ -104,10 +112,10 @@ impl HttpClient {
     }
 
     /// Download a file from URL to local path
-    #[cfg(feature = "reqwest")]
-    pub async fn download<P: AsRef<Path>>(&self, url: &str, local_path: P) -> Result<()> {
+    #[cfg(all(feature = "reqwest", feature = "async"))]
+    pub async fn download<P: AsRef<Path>>(&self, url: &str, localpath: P) -> Result<()> {
         let client = self.get_client()?;
-        let local_path = local_path.as_ref();
+        let local_path = localpath.as_ref();
 
         // Create parent directories if they don't exist
         if let Some(parent) = local_path.parent() {
@@ -137,13 +145,14 @@ impl HttpClient {
                         delay.as_millis(),
                         e
                     );
+                    #[cfg(feature = "async")]
                     tokio::time::sleep(delay).await;
                 }
             }
         }
     }
 
-    #[cfg(feature = "reqwest")]
+    #[cfg(all(feature = "reqwest", feature = "async"))]
     async fn download_with_retry(
         &self,
         client: &reqwest::Client,
@@ -194,10 +203,10 @@ impl HttpClient {
     }
 
     /// Upload a file from local path to URL
-    #[cfg(feature = "reqwest")]
-    pub async fn upload<P: AsRef<Path>>(&self, local_path: P, url: &str) -> Result<()> {
+    #[cfg(all(feature = "reqwest", feature = "async"))]
+    pub async fn upload<P: AsRef<Path>>(&self, localpath: P, url: &str) -> Result<()> {
         let client = self.get_client()?;
-        let local_path = local_path.as_ref();
+        let local_path = localpath.as_ref();
 
         if !local_path.exists() {
             return Err(IoError::FileError(format!(
@@ -231,13 +240,14 @@ impl HttpClient {
 
                     let delay = Duration::from_millis(100 * 2_u64.pow(retries - 1));
                     log::warn!("Upload failed, retrying in {}ms: {}", delay.as_millis(), e);
+                    #[cfg(feature = "async")]
                     tokio::time::sleep(delay).await;
                 }
             }
         }
     }
 
-    #[cfg(feature = "reqwest")]
+    #[cfg(all(feature = "reqwest", feature = "async"))]
     async fn upload_with_retry(
         &self,
         client: &reqwest::Client,
@@ -266,7 +276,7 @@ impl HttpClient {
     }
 
     /// Make a custom HTTP request
-    #[cfg(feature = "reqwest")]
+    #[cfg(all(feature = "reqwest", feature = "async"))]
     pub async fn request(
         &self,
         method: HttpMethod,
@@ -322,7 +332,7 @@ impl HttpClient {
     }
 
     /// Check if a URL is accessible (HEAD request)
-    #[cfg(feature = "reqwest")]
+    #[cfg(all(feature = "reqwest", feature = "async"))]
     pub async fn check_url(&self, url: &str) -> Result<bool> {
         match self.request(HttpMethod::HEAD, url, None).await {
             Ok(response) => Ok(response.status >= 200 && response.status < 300),
@@ -331,7 +341,7 @@ impl HttpClient {
     }
 
     /// Get file size from URL without downloading (HEAD request)
-    #[cfg(feature = "reqwest")]
+    #[cfg(all(feature = "reqwest", feature = "async"))]
     pub async fn get_remote_file_size(&self, url: &str) -> Result<Option<u64>> {
         let response = self.request(HttpMethod::HEAD, url, None).await?;
         Ok(response.content_length)
@@ -347,7 +357,7 @@ impl HttpClient {
     // Fallback implementations when reqwest feature is not enabled
     #[cfg(not(feature = "reqwest"))]
     /// Download a file (fallback implementation when reqwest feature is disabled)
-    pub async fn download<P: AsRef<Path>>(&self, _url: &str, _local_path: P) -> Result<()> {
+    pub async fn download<P: AsRef<Path>>(url: &str, _localpath: P) -> Result<()> {
         Err(IoError::ConfigError(
             "HTTP support requires 'reqwest' feature".to_string(),
         ))
@@ -355,7 +365,7 @@ impl HttpClient {
 
     #[cfg(not(feature = "reqwest"))]
     /// Upload a file (fallback implementation when reqwest feature is disabled)
-    pub async fn upload<P: AsRef<Path>>(&self, _local_path: P, _url: &str) -> Result<()> {
+    pub async fn upload<P: AsRef<Path>>(_local_path: P, path: P, url: &str) -> Result<()> {
         Err(IoError::ConfigError(
             "HTTP support requires 'reqwest' feature".to_string(),
         ))
@@ -376,7 +386,7 @@ impl HttpClient {
 
     #[cfg(not(feature = "reqwest"))]
     /// Check if URL is reachable (fallback implementation when reqwest feature is disabled)
-    pub async fn check_url(&self, _url: &str) -> Result<bool> {
+    pub async fn check_url(url: &str) -> Result<bool> {
         Err(IoError::ConfigError(
             "HTTP support requires 'reqwest' feature".to_string(),
         ))
@@ -384,7 +394,7 @@ impl HttpClient {
 
     #[cfg(not(feature = "reqwest"))]
     /// Get remote file size (fallback implementation when reqwest feature is disabled)
-    pub async fn get_remote_file_size(&self, _url: &str) -> Result<Option<u64>> {
+    pub async fn get_remote_file_size(url: &str) -> Result<Option<u64>> {
         Err(IoError::ConfigError(
             "HTTP support requires 'reqwest' feature".to_string(),
         ))
@@ -393,7 +403,7 @@ impl HttpClient {
 
 /// Utility functions
 /// Download multiple files concurrently
-#[cfg(feature = "reqwest")]
+#[cfg(all(feature = "reqwest", feature = "async"))]
 pub async fn download_concurrent(
     downloads: Vec<(String, String)>,
     max_concurrent: usize,
@@ -402,6 +412,7 @@ pub async fn download_concurrent(
 
     let client = HttpClient::new(NetworkConfig::default());
 
+    #[cfg(feature = "async")]
     let semaphore = std::sync::Arc::new(tokio::sync::Semaphore::new(max_concurrent));
     let mut futures = FuturesUnordered::new();
 
@@ -410,6 +421,7 @@ pub async fn download_concurrent(
         let semaphore_clone = semaphore.clone();
 
         futures.push(async move {
+            #[cfg(feature = "async")]
             let _permit = semaphore_clone.acquire().await.unwrap();
             client_clone.download(&url, &local_path).await
         });
@@ -424,6 +436,7 @@ pub async fn download_concurrent(
 }
 
 /// Calculate download speed
+#[allow(dead_code)]
 pub fn calculate_speed(bytes: u64, duration: Duration) -> f64 {
     if duration.as_secs_f64() > 0.0 {
         bytes as f64 / duration.as_secs_f64()
@@ -433,6 +446,7 @@ pub fn calculate_speed(bytes: u64, duration: Duration) -> f64 {
 }
 
 /// Format file size in human-readable format
+#[allow(dead_code)]
 pub fn format_file_size(bytes: u64) -> String {
     const UNITS: &[&str] = &["B", "KB", "MB", "GB", "TB"];
     let mut size = bytes as f64;
@@ -447,6 +461,7 @@ pub fn format_file_size(bytes: u64) -> String {
 }
 
 /// Format download speed in human-readable format
+#[allow(dead_code)]
 pub fn format_speed(bytes_per_second: f64) -> String {
     format!("{}/s", format_file_size(bytes_per_second as u64))
 }
@@ -489,7 +504,7 @@ mod tests {
         let _client = HttpClient::new(config);
 
         // Client should be created successfully
-        assert!(true); // Basic creation test
+        // Test passes if no panic occurs during creation
     }
 
     #[test]

@@ -261,7 +261,7 @@ impl SystemMonitor {
         }
 
         if config.monitor_memory {
-            let (used, available, total) = Self::get_memory_info()?;
+            let (used, available, total) = Self::get_memoryinfo()?;
             metrics.memory_usage = used;
             metrics.memory_available = available;
             metrics.memory_total = total;
@@ -313,20 +313,20 @@ impl SystemMonitor {
     }
 
     /// Get memory information (used, available, total)
-    fn get_memory_info() -> Result<(usize, usize, usize), SystemMonitorError> {
+    fn get_memoryinfo() -> Result<(usize, usize, usize), SystemMonitorError> {
         #[cfg(target_os = "linux")]
         {
-            Self::get_memory_info_linux()
+            Self::get_memoryinfo_linux()
         }
 
         #[cfg(target_os = "macos")]
         {
-            Self::get_memory_info_macos()
+            Self::get_memoryinfo_macos()
         }
 
         #[cfg(target_os = "windows")]
         {
-            Self::get_memory_info_windows()
+            Self::get_memoryinfo_windows()
         }
 
         #[cfg(not(any(target_os = "linux", target_os = "macos", target_os = "windows")))]
@@ -449,7 +449,7 @@ impl SystemMonitor {
     }
 
     #[cfg(target_os = "linux")]
-    fn get_memory_info_linux() -> Result<(usize, usize, usize), SystemMonitorError> {
+    fn get_memoryinfo_linux() -> Result<(usize, usize, usize), SystemMonitorError> {
         use std::fs;
 
         let meminfo = fs::read_to_string("/proc/meminfo")
@@ -490,7 +490,7 @@ impl SystemMonitor {
     }
 
     #[cfg(target_os = "macos")]
-    fn get_memory_info_macos() -> Result<(usize, usize, usize), SystemMonitorError> {
+    fn get_memoryinfo_macos() -> Result<(usize, usize, usize), SystemMonitorError> {
         // Would use system APIs like vm_statistics64
         Ok((0, 0, 0))
     }
@@ -502,7 +502,7 @@ impl SystemMonitor {
     }
 
     #[cfg(target_os = "windows")]
-    fn get_memory_info_windows() -> Result<(usize, usize, usize), SystemMonitorError> {
+    fn get_memoryinfo_windows() -> Result<(usize, usize, usize), SystemMonitorError> {
         // Would use Windows APIs like GlobalMemoryStatusEx
         Ok((0, 0, 0))
     }
@@ -616,7 +616,7 @@ impl SystemAlerter {
                     AlertType::HighMemoryUsage,
                     memory_percent,
                     self.config.memory_threshold,
-                    format!("High memory usage: {:.1}%", memory_percent),
+                    format!("High memory usage: {memory_percent:.1}%"),
                 ));
             }
         }
@@ -655,7 +655,7 @@ impl SystemAlerter {
                 AlertType::HighLoadAverage,
                 metrics.load_average,
                 self.config.load_threshold,
-                format!("High load average: {:.2}", metrics.load_average),
+                format!("Load average: {:.2}", metrics.load_average),
             ));
         }
 
@@ -717,7 +717,7 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_system_monitor_creation() {
+    fn test_systemmonitor_creation() {
         let config = SystemMonitorConfig::default();
         let monitor = SystemMonitor::new(config);
         assert!(!*monitor.running.lock().unwrap());

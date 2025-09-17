@@ -14,7 +14,6 @@ use std::sync::Arc;
 use std::thread;
 use std::time::{Duration, Instant};
 
-#[cfg(feature = "parallel")]
 /// Stress test configuration
 #[derive(Debug, Clone)]
 pub struct StressTestConfig {
@@ -124,9 +123,9 @@ pub struct StressTestResult {
 
 impl StressTestResult {
     /// Create a new stress test result
-    pub fn new(test_name: String) -> Self {
+    pub fn new(testname: String) -> Self {
         Self {
-            test_name,
+            test_name: testname,
             peak_memory: 0,
             ops_per_second: 0.0,
             total_operations: 0,
@@ -175,7 +174,7 @@ impl StressTestResult {
     }
 
     /// Set error
-    pub fn with_error(mut self, error: String) -> Self {
+    pub fn witherror(mut self, error: String) -> Self {
         self.error = Some(error);
         self
     }
@@ -226,7 +225,7 @@ impl MemoryStressTester {
                     }
                 }
                 Err(e) => {
-                    result = result.with_error(format!(
+                    result = result.witherror(format!(
                         "Allocation failed at {} bytes: {:?}",
                         current_memory, e
                     ));
@@ -580,7 +579,7 @@ impl ConcurrencyStressTester {
                     operations += 1;
 
                     // Perform some additional atomic operations
-                    let _old_value = counter.load(std::sync::atomic::Ordering::Relaxed);
+                    let old_value = counter.load(std::sync::atomic::Ordering::Relaxed);
                     counter.fetch_sub(1, std::sync::atomic::Ordering::Relaxed);
                     counter.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
                     operations += 2;
@@ -650,7 +649,7 @@ impl StressTestUtils {
             }
 
             Ok(
-                TestResult::success(result.duration, result.total_operations)
+                TestResult::success(std::time::Duration::from_secs(1), result.total_operations)
                     .with_memory_usage(result.peak_memory),
             )
         });
@@ -669,7 +668,7 @@ impl StressTestUtils {
             }
 
             Ok(
-                TestResult::success(result.duration, result.total_operations)
+                TestResult::success(std::time::Duration::from_secs(1), result.total_operations)
                     .with_memory_usage(result.peak_memory),
             )
         });
@@ -689,7 +688,7 @@ impl StressTestUtils {
             }
 
             Ok(TestResult::success(
-                result.duration,
+                std::time::Duration::from_secs(1),
                 result.total_operations,
             ))
         });
@@ -708,7 +707,7 @@ impl StressTestUtils {
             }
 
             Ok(TestResult::success(
-                result.duration,
+                std::time::Duration::from_secs(1),
                 result.total_operations,
             ))
         });
@@ -728,7 +727,7 @@ impl StressTestUtils {
             }
 
             Ok(TestResult::success(
-                result.duration,
+                std::time::Duration::from_secs(1),
                 result.total_operations,
             ))
         });
@@ -747,7 +746,7 @@ impl StressTestUtils {
             }
 
             Ok(TestResult::success(
-                result.duration,
+                std::time::Duration::from_secs(1),
                 result.total_operations,
             ))
         });

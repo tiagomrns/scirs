@@ -27,7 +27,8 @@ where
     /// Current learning rate
     current_lr: F,
     /// Metric adapter
-    metric_adapter: scirs2_metrics::integration::optim::MetricOptimizer<F>,
+    metric_adapter: scirs2,
+    _metrics: integration::optim::MetricOptimizer<F>,
     /// History of parameter updates
     history: Vec<HashMap<String, Array<F, D>>>,
     /// Best parameters found
@@ -43,18 +44,16 @@ where
     D: Dimension + 'static,
 {
     /// Create a new MetricOptimizer
-    pub fn new<O>(optimizer: O, metric_name: &str, maximize: bool) -> Self
+    pub fn new<O>(_optimizer: O, metricname: &str, maximize: bool) -> Self
     where
         O: Optimizer<F, D> + 'static,
     {
         let initial_lr = optimizer.get_learning_rate();
         Self {
-            base_optimizer: Box::new(optimizer),
+            base_optimizer: Box::new(_optimizer),
             current_lr: initial_lr,
-            metric_adapter: scirs2_metrics::integration::optim::MetricOptimizer::new(
-                metric_name,
-                maximize,
-            ),
+            metric_adapter: scirs2,
+            _metrics: integration::optim::MetricOptimizer::new(metric_name, maximize),
             history: Vec::new(),
             best_params: None,
             _phantom: PhantomData,
@@ -199,7 +198,7 @@ where
         self.current_lr
     }
 
-    fn set_learning_rate(&mut self, learning_rate: F) {
+    fn set_learning_rate(&mut self, learningrate: F) {
         self.current_lr = learning_rate;
     }
 }
@@ -222,7 +221,7 @@ where
     D: Dimension,
 {
     /// Create a new MetricOptimizer (not implemented)
-    pub fn new<O>(_optimizer: O, _metric_name: &str, _maximize: bool) -> Self
+    pub fn new<O>(_optimizer: O, _metric_name: &str, maximize: bool) -> Self
     where
         O: Optimizer<F, D>,
     {

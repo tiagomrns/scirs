@@ -165,7 +165,7 @@ impl MultiProgress {
 
         // Show overall progress
         let overall = self.overall_progress();
-        print!("Overall: {:.1}% | ", overall);
+        print!("Overall: {overall:.1}% | ");
 
         // Show active trackers
         let active_trackers: Vec<_> = self
@@ -251,11 +251,11 @@ impl ProgressGroup {
         self.multi.finish_all();
 
         if let Some(started) = self.started_at {
-            let duration = started.elapsed();
+            let elapsed = started.elapsed();
             println!(
                 "Group '{}' completed in {:.2}s",
                 self.name,
-                duration.as_secs_f64()
+                elapsed.as_secs_f64()
             );
         }
     }
@@ -320,7 +320,7 @@ mod tests {
         let mut group = ProgressGroup::new("Test Group");
 
         let tracker = ProgressBuilder::new("Task", 100).build();
-        let _id = group.add_tracker(tracker);
+        let id = group.add_tracker(tracker);
 
         assert_eq!(group.overall_progress(), 0.0);
         assert!(!group.is_complete());

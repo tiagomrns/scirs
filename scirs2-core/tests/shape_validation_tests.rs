@@ -10,7 +10,8 @@ use serde_json::json;
 
 #[cfg(all(feature = "data_validation", feature = "serde"))]
 #[test]
-fn test_shape_constraint_1d_array() {
+#[allow(dead_code)]
+fn testshape_constraint_1d_array() {
     let config = ValidationConfig::default();
     let validator = Validator::new(config).unwrap();
 
@@ -35,7 +36,8 @@ fn test_shape_constraint_1d_array() {
 
 #[cfg(all(feature = "data_validation", feature = "serde"))]
 #[test]
-fn test_shape_constraint_1d_wrong_size() {
+#[allow(dead_code)]
+fn testshape_constraint_1d_wrong_size() {
     let config = ValidationConfig::default();
     let validator = Validator::new(config).unwrap();
 
@@ -65,7 +67,8 @@ fn test_shape_constraint_1d_wrong_size() {
 
 #[cfg(all(feature = "data_validation", feature = "serde"))]
 #[test]
-fn test_shape_constraint_2d_array() {
+#[allow(dead_code)]
+fn testshape_constraint_2d_array() {
     let config = ValidationConfig::default();
     let validator = Validator::new(config).unwrap();
 
@@ -97,7 +100,8 @@ fn test_shape_constraint_2d_array() {
 
 #[cfg(all(feature = "data_validation", feature = "serde"))]
 #[test]
-fn test_shape_constraint_jagged_array() {
+#[allow(dead_code)]
+fn testshape_constraint_jagged_array() {
     let config = ValidationConfig::default();
     let validator = Validator::new(config).unwrap();
 
@@ -131,7 +135,8 @@ fn test_shape_constraint_jagged_array() {
 
 #[cfg(all(feature = "data_validation", feature = "serde"))]
 #[test]
-fn test_shape_constraint_square_matrix() {
+#[allow(dead_code)]
+fn testshape_constraint_squarematrix() {
     let config = ValidationConfig::default();
     let validator = Validator::new(config).unwrap();
 
@@ -165,7 +170,8 @@ fn test_shape_constraint_square_matrix() {
 
 #[cfg(all(feature = "data_validation", feature = "serde"))]
 #[test]
-fn test_shape_constraint_non_square_fails() {
+#[allow(dead_code)]
+fn testshape_constraint_non_square_fails() {
     let config = ValidationConfig::default();
     let validator = Validator::new(config).unwrap();
 
@@ -201,7 +207,8 @@ fn test_shape_constraint_non_square_fails() {
 
 #[cfg(all(feature = "data_validation", feature = "serde"))]
 #[test]
-fn test_shape_constraint_element_count() {
+#[allow(dead_code)]
+fn testshape_constraint_element_count() {
     let config = ValidationConfig::default();
     let validator = Validator::new(config).unwrap();
 
@@ -226,7 +233,8 @@ fn test_shape_constraint_element_count() {
 
 #[cfg(all(feature = "data_validation", feature = "serde"))]
 #[test]
-fn test_shape_constraint_too_few_elements() {
+#[allow(dead_code)]
+fn testshape_constraint_too_few_elements() {
     let config = ValidationConfig::default();
     let validator = Validator::new(config).unwrap();
 
@@ -256,7 +264,8 @@ fn test_shape_constraint_too_few_elements() {
 
 #[cfg(all(feature = "data_validation", feature = "serde"))]
 #[test]
-fn test_shape_constraint_too_many_elements() {
+#[allow(dead_code)]
+fn testshape_constraint_too_many_elements() {
     let config = ValidationConfig::default();
     let validator = Validator::new(config).unwrap();
 
@@ -286,7 +295,8 @@ fn test_shape_constraint_too_many_elements() {
 
 #[cfg(all(feature = "data_validation", feature = "serde"))]
 #[test]
-fn test_shape_constraint_flexible_dimensions() {
+#[allow(dead_code)]
+fn testshape_constraint_flexible_dimensions() {
     let config = ValidationConfig::default();
     let validator = Validator::new(config).unwrap();
 

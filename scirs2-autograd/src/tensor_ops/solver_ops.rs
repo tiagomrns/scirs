@@ -11,21 +11,18 @@ impl<F: Float + ndarray::ScalarOperand> Op<F> for LinearSolveOp {
         let a = ctx.input(0);
         let b = ctx.input(1);
 
-        let a_shape = a.shape();
-        let b_shape = b.shape();
+        let ashape = a.shape();
+        let bshape = b.shape();
 
-        println!(
-            "Solving linear system: A({:?}) * x = b({:?})",
-            a_shape, b_shape
-        );
+        println!("Solving linear system: A({ashape:?}) * x = b({bshape:?})");
 
-        if a_shape.len() != 2 || a_shape[0] != a_shape[1] {
+        if ashape.len() != 2 || ashape[0] != ashape[1] {
             return Err(OpError::IncompatibleShape(
                 "Linear solve requires square matrix A".into(),
             ));
         }
 
-        if b_shape[0] != a_shape[0] {
+        if bshape[0] != ashape[0] {
             return Err(OpError::IncompatibleShape(
                 "Dimension mismatch in Ax = b".into(),
             ));
@@ -36,7 +33,7 @@ impl<F: Float + ndarray::ScalarOperand> Op<F> for LinearSolveOp {
             .into_dimensionality::<Ix2>()
             .map_err(|_| OpError::IncompatibleShape("Failed to convert A to 2D".into()))?;
 
-        let x = if b_shape.len() == 1 {
+        let x = if bshape.len() == 1 {
             let b_1d = b
                 .view()
                 .into_dimensionality::<Ix1>()
@@ -159,7 +156,7 @@ impl<F: Float + ndarray::ScalarOperand> Op<F> for LinearSolveOp {
             match solve_transpose_system(&a_2d, &grad_x_1d) {
                 Ok(result) => result.into_dyn(),
                 Err(e) => {
-                    println!("Error solving transpose system (1D): {:?}", e);
+                    println!("Error solving transpose system (1D): {e:?}");
                     // Use regularized system instead
                     let n = a_2d.shape()[0];
                     let eps = F::epsilon() * F::from(10.0).unwrap();
@@ -168,7 +165,7 @@ impl<F: Float + ndarray::ScalarOperand> Op<F> for LinearSolveOp {
                     match solve_transpose_system(&regularized.view(), &grad_x_1d) {
                         Ok(result) => result.into_dyn(),
                         Err(e2) => {
-                            println!("Error solving regularized system: {:?}", e2);
+                            println!("Error solving regularized system: {e2:?}");
                             // Return zero gradient as fallback
                             Array1::<F>::zeros(grad_x_1d.len()).into_dyn()
                         }
@@ -191,7 +188,7 @@ impl<F: Float + ndarray::ScalarOperand> Op<F> for LinearSolveOp {
             match solve_transpose_system_2d(&a_2d, &grad_x_2d) {
                 Ok(result) => result.into_dyn(),
                 Err(e) => {
-                    println!("Error solving transpose system (2D): {:?}", e);
+                    println!("Error solving transpose system (2D): {e:?}");
                     // Use regularized system instead
                     let n = a_2d.shape()[0];
                     let eps = F::epsilon() * F::from(10.0).unwrap();
@@ -200,7 +197,7 @@ impl<F: Float + ndarray::ScalarOperand> Op<F> for LinearSolveOp {
                     match solve_transpose_system_2d(&regularized.view(), &grad_x_2d) {
                         Ok(result) => result.into_dyn(),
                         Err(e2) => {
-                            println!("Error solving regularized system: {:?}", e2);
+                            println!("Error solving regularized system: {e2:?}");
                             // Return zero gradient as fallback
                             Array2::<F>::zeros(grad_x_2d.raw_dim()).into_dyn()
                         }
@@ -226,7 +223,7 @@ impl<F: Float + ndarray::ScalarOperand> Op<F> for LinearSolveOp {
                 arr.mapv(|v| -v)
             }
             Err(e) => {
-                println!("Error computing outer product: {:?}", e);
+                println!("Error computing outer product: {e:?}");
                 // Return zero gradient as fallback
                 Array2::<F>::zeros((a_2d.shape()[0], a_2d.shape()[1])).into_dyn()
             }
@@ -247,6 +244,7 @@ impl<F: Float + ndarray::ScalarOperand> Op<F> for LinearSolveOp {
 }
 
 // Enhanced version of solve_transpose_system with better error handling
+#[allow(dead_code)]
 fn solve_transpose_system<F: Float>(
     a: &ndarray::ArrayView2<F>,
     b: &ndarray::ArrayView1<F>,
@@ -256,6 +254,7 @@ fn solve_transpose_system<F: Float>(
 }
 
 // Enhanced version of solve_transpose_system_2d with better error handling
+#[allow(dead_code)]
 fn solve_transpose_system_2d<F: Float>(
     a: &ndarray::ArrayView2<F>,
     b: &ndarray::ArrayView2<F>,
@@ -483,6 +482,7 @@ impl<F: Float> Op<F> for LeastSquaresSolveOp {
 }
 
 // Helper functions
+#[allow(dead_code)]
 fn solve_linear_system_1d<F: Float>(
     a: &ndarray::ArrayView2<F>,
     b: &ndarray::ArrayView1<F>,
@@ -542,6 +542,7 @@ fn solve_linear_system_1d<F: Float>(
     Ok(x.into_dyn())
 }
 
+#[allow(dead_code)]
 fn solve_linear_system_2d<F: Float>(
     a: &ndarray::ArrayView2<F>,
     b: &ndarray::ArrayView2<F>,
@@ -564,6 +565,7 @@ fn solve_linear_system_2d<F: Float>(
     Ok(x.into_dyn())
 }
 
+#[allow(dead_code)]
 fn solve_symmetric_system<F: Float>(
     a: &ndarray::ArrayView2<F>,
     b: &ndarray::ArrayViewD<F>,
@@ -663,6 +665,7 @@ fn solve_symmetric_system<F: Float>(
     }
 }
 
+#[allow(dead_code)]
 fn compute_outer_product_gradient<F: Float>(
     a: &ndarray::ArrayViewD<F>,
     b: &ndarray::ArrayViewD<F>,
@@ -735,6 +738,7 @@ fn compute_outer_product_gradient<F: Float>(
 }
 
 // Public API functions
+#[allow(dead_code)]
 pub fn solve<'g, F: Float + ndarray::ScalarOperand>(
     a: &Tensor<'g, F>,
     b: &Tensor<'g, F>,
@@ -742,15 +746,16 @@ pub fn solve<'g, F: Float + ndarray::ScalarOperand>(
     let g = a.graph();
 
     // Use the shape of b for the result shape - the solution x should match b's shape
-    let b_shape = crate::tensor_ops::shape(b);
+    let bshape = crate::tensor_ops::shape(b);
 
     Tensor::builder(g)
         .append_input(a, false)
         .append_input(b, false)
-        .set_shape(&b_shape)  // Preserve shape information
+        .setshape(&bshape)  // Preserve shape information
         .build(LinearSolveOp)
 }
 
+#[allow(dead_code)]
 pub fn lstsq<'g, F: Float + ndarray::ScalarOperand>(
     a: &Tensor<'g, F>,
     b: &Tensor<'g, F>,
@@ -758,11 +763,11 @@ pub fn lstsq<'g, F: Float + ndarray::ScalarOperand>(
     let g = a.graph();
 
     // Use the shape of b for the result shape - the solution x should match b's shape
-    let b_shape = crate::tensor_ops::shape(b);
+    let bshape = crate::tensor_ops::shape(b);
 
     Tensor::builder(g)
         .append_input(a, false)
         .append_input(b, false)
-        .set_shape(&b_shape)  // Preserve shape information
+        .setshape(&bshape)  // Preserve shape information
         .build(LeastSquaresSolveOp)
 }

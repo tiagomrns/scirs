@@ -11,21 +11,22 @@ use scirs2_linalg::quantization::calibration::{
 };
 use scirs2_linalg::quantization::{dequantize_matrix, quantize_matrix};
 
+#[allow(dead_code)]
 fn main() {
     println!("Dynamic Quantization Calibration Example");
     println!("=======================================\n");
 
     // Create a sequence of data distributions with drift
     println!("Creating sequence of data with distribution drift...");
-    let data_sequence = create_drifting_data_sequence(10, 0.3);
+    let datasequence = create_drifting_data_sequence(10, 0.3);
 
     // Demonstrate static vs dynamic calibration
     println!("\nComparing static vs dynamic calibration:");
-    compare_static_vs_dynamic_calibration(&data_sequence, 8);
+    compare_static_vs_dynamic_calibration(&datasequence, 8);
 
     // Demonstrate effect of EMA factor
     println!("\nComparing different EMA factors:");
-    compare_ema_factors(&data_sequence, 8);
+    compare_ema_factors(&datasequence, 8);
 
     // Real-world example: streaming data scenario
     println!("\nSimulating streaming data scenario:");
@@ -33,15 +34,16 @@ fn main() {
 }
 
 /// Create a sequence of data matrices with drifting distribution
-fn create_drifting_data_sequence(num_matrices: usize, drift_factor: f32) -> Vec<Array2<f32>> {
-    let mut rng = rng();
-    let mut result = Vec::with_capacity(num_matrices);
+#[allow(dead_code)]
+fn create_drifting_data_sequence(_num_matrices: usize, driftfactor: f32) -> Vec<Array2<f32>> {
+    let mut rng = rand::rng();
+    let mut result = Vec::with_capacity(_num_matrices);
 
     // Start with a base distribution
     let mut mean = 0.0;
     let mut std_dev = 1.0;
 
-    for i in 0..num_matrices {
+    for i in 0.._num_matrices {
         // Create matrix with current distribution
         let mut matrix = Array2::zeros((10, 10));
         let normal = Normal::new(mean, std_dev).unwrap();
@@ -66,15 +68,16 @@ fn create_drifting_data_sequence(num_matrices: usize, drift_factor: f32) -> Vec<
         result.push(matrix);
 
         // Drift the distribution parameters
-        mean += drift_factor * rng.random_range(-1.0..1.0);
-        std_dev = (std_dev + drift_factor * rng.random_range(-0.1..0.3)).clamp(0.5, 3.0);
+        mean += driftfactor * rng.random_range(-1.0..1.0);
+        std_dev = (std_dev + driftfactor * rng.random_range(-0.1..0.3)).clamp(0.5f32, 3.0f32);
     }
 
     result
 }
 
 /// Compare static (one-time) vs dynamic (EMA) calibration
-fn compare_static_vs_dynamic_calibration(data_sequence: &[Array2<f32>], bits: u8) {
+#[allow(dead_code)]
+fn compare_static_vs_dynamic_calibration(datasequence: &[Array2<f32>], bits: u8) {
     println!(
         "{:^10} | {:^15} | {:^15} | {:^15}",
         "Batch", "Static MSE", "Dynamic MSE", "Improvement (%)"
@@ -87,7 +90,7 @@ fn compare_static_vs_dynamic_calibration(data_sequence: &[Array2<f32>], bits: u8
         symmetric: true,
         ..Default::default()
     };
-    let static_params = calibrate_matrix(&data_sequence[0].view(), bits, &static_config).unwrap();
+    let static_params = calibrate_matrix(&datasequence[0].view(), bits, &static_config).unwrap();
 
     // Dynamic calibration using EMA
     let dynamic_config = CalibrationConfig {
@@ -97,16 +100,16 @@ fn compare_static_vs_dynamic_calibration(data_sequence: &[Array2<f32>], bits: u8
         ..Default::default()
     };
     let mut dynamic_params =
-        calibrate_matrix(&data_sequence[0].view(), bits, &dynamic_config).unwrap();
+        calibrate_matrix(&datasequence[0].view(), bits, &dynamic_config).unwrap();
 
     let mut total_static_mse = 0.0;
     let mut total_dynamic_mse = 0.0;
 
     // Process each data batch
-    for (i, data) in data_sequence.iter().enumerate() {
+    for (i, data) in datasequence.iter().enumerate() {
         // Static calibration always uses the same parameters
-        let (static_quantized, _) = quantize_matrix(&data.view(), bits, static_params.method);
-        let static_dequantized = dequantize_matrix(&static_quantized, &static_params);
+        let (static_quantized_, _) = quantize_matrix(&data.view(), bits, static_params.method);
+        let static_dequantized = dequantize_matrix(&static_quantized_, &static_params);
         let static_mse = (data - &static_dequantized).mapv(|x| x * x).sum() / data.len() as f32;
 
         // Update dynamic calibration for each batch
@@ -115,8 +118,8 @@ fn compare_static_vs_dynamic_calibration(data_sequence: &[Array2<f32>], bits: u8
             dynamic_params = calibrate_matrix(&data.view(), bits, &dynamic_config).unwrap();
         }
 
-        let (dynamic_quantized, _) = quantize_matrix(&data.view(), bits, dynamic_params.method);
-        let dynamic_dequantized = dequantize_matrix(&dynamic_quantized, &dynamic_params);
+        let (dynamic_quantized_, _) = quantize_matrix(&data.view(), bits, dynamic_params.method);
+        let dynamic_dequantized = dequantize_matrix(&dynamic_quantized_, &dynamic_params);
         let dynamic_mse = (data - &dynamic_dequantized).mapv(|x| x * x).sum() / data.len() as f32;
 
         // Calculate improvement
@@ -136,8 +139,8 @@ fn compare_static_vs_dynamic_calibration(data_sequence: &[Array2<f32>], bits: u8
     }
 
     // Print overall summary
-    let avg_static_mse = total_static_mse / data_sequence.len() as f32;
-    let avg_dynamic_mse = total_dynamic_mse / data_sequence.len() as f32;
+    let avg_static_mse = total_static_mse / datasequence.len() as f32;
+    let avg_dynamic_mse = total_dynamic_mse / datasequence.len() as f32;
     let overall_improvement = ((avg_static_mse - avg_dynamic_mse) / avg_static_mse) * 100.0;
 
     println!("\nOverall Results:");
@@ -147,7 +150,8 @@ fn compare_static_vs_dynamic_calibration(data_sequence: &[Array2<f32>], bits: u8
 }
 
 /// Compare different EMA factors for dynamic calibration
-fn compare_ema_factors(data_sequence: &[Array2<f32>], bits: u8) {
+#[allow(dead_code)]
+fn compare_ema_factors(datasequence: &[Array2<f32>], bits: u8) {
     let ema_factors = [0.05, 0.1, 0.3, 0.5, 0.9];
 
     println!(
@@ -174,12 +178,12 @@ fn compare_ema_factors(data_sequence: &[Array2<f32>], bits: u8) {
 
         // Initialize with first batch
         let params =
-            calibrate_matrix(&data_sequence[0].view(), bits, configs.last().unwrap()).unwrap();
+            calibrate_matrix(&datasequence[0].view(), bits, configs.last().unwrap()).unwrap();
         params_list.push(params);
     }
 
     // Process each data batch
-    for (i, data) in data_sequence.iter().enumerate().skip(1) {
+    for (i, data) in datasequence.iter().enumerate().skip(1) {
         let mut mse_values = Vec::new();
 
         // Test each EMA factor
@@ -210,9 +214,10 @@ fn compare_ema_factors(data_sequence: &[Array2<f32>], bits: u8) {
 }
 
 /// Simulate a streaming data scenario with dynamic calibration
+#[allow(dead_code)]
 fn simulate_streaming_data() {
     let bits = 8;
-    let mut rng = rng();
+    let mut rng = rand::rng();
 
     // Setup for a streaming scenario where data distribution changes over time
     println!("Simulating a streaming sensor with changing data distribution...");
@@ -249,7 +254,7 @@ fn simulate_streaming_data() {
         // Update data distribution parameters (simulating real-world drift)
         drift += rng.random_range(-0.2..0.2);
 
-        // Every few time steps, introduce a significant change
+        // Every few time steps..introduce a significant change
         if t % 3 == 0 {
             amplitude *= rng.random_range(0.8..1.3);
         }
@@ -286,6 +291,7 @@ fn simulate_streaming_data() {
 }
 
 /// Generate a batch of simulated sensor data with specified drift and amplitude
+#[allow(dead_code)]
 fn generate_sensor_batch(
     size: usize,
     drift: f32,

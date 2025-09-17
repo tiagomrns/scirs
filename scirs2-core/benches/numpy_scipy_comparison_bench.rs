@@ -7,6 +7,7 @@ use criterion::{criterion_group, criterion_main, BenchmarkId, Criterion, Through
 use ndarray::{Array1, Array2, Axis};
 use ndarray_rand::rand_distr::Uniform;
 use ndarray_rand::RandomExt;
+// use statrs::statistics::Statistics; // Not available in dev-dependencies
 use std::hint::black_box;
 use std::time::Duration;
 
@@ -14,6 +15,7 @@ const SIZES: &[usize] = &[100, 1000, 10000, 100000];
 const MATRIX_SIZES: &[usize] = &[10, 50, 100, 500, 1000];
 
 /// Benchmark array creation and initialization
+#[allow(dead_code)]
 fn bench_array_creation(c: &mut Criterion) {
     let mut group = c.benchmark_group("array_creation");
     group.measurement_time(Duration::from_secs(10));
@@ -57,6 +59,7 @@ fn bench_array_creation(c: &mut Criterion) {
 }
 
 /// Benchmark element-wise operations (ufuncs)
+#[allow(dead_code)]
 fn bench_element_wise_ops(c: &mut Criterion) {
     let mut group = c.benchmark_group("element_wise_ops");
     group.measurement_time(Duration::from_secs(10));
@@ -119,6 +122,7 @@ fn bench_element_wise_ops(c: &mut Criterion) {
 }
 
 /// Benchmark reduction operations
+#[allow(dead_code)]
 fn bench_reduction_ops(c: &mut Criterion) {
     let mut group = c.benchmark_group("reduction_ops");
     group.measurement_time(Duration::from_secs(10));
@@ -167,7 +171,8 @@ fn bench_reduction_ops(c: &mut Criterion) {
 }
 
 /// Benchmark matrix operations
-fn bench_matrix_ops(c: &mut Criterion) {
+#[allow(dead_code)]
+fn benchmatrix_ops(c: &mut Criterion) {
     let mut group = c.benchmark_group("matrix_ops");
     group.measurement_time(Duration::from_secs(20));
 
@@ -222,6 +227,7 @@ fn bench_matrix_ops(c: &mut Criterion) {
 }
 
 /// Benchmark array manipulation operations
+#[allow(dead_code)]
 fn bench_array_manipulation(c: &mut Criterion) {
     let mut group = c.benchmark_group("array_manipulation");
     group.measurement_time(Duration::from_secs(10));
@@ -282,6 +288,7 @@ fn bench_array_manipulation(c: &mut Criterion) {
 }
 
 /// Benchmark statistical operations
+#[allow(dead_code)]
 fn bench_statistical_ops(c: &mut Criterion) {
     let mut group = c.benchmark_group("statistical_ops");
     group.measurement_time(Duration::from_secs(10));
@@ -338,6 +345,7 @@ fn bench_statistical_ops(c: &mut Criterion) {
 }
 
 /// Benchmark memory-intensive operations
+#[allow(dead_code)]
 fn bench_memory_ops(c: &mut Criterion) {
     let mut group = c.benchmark_group("memory_ops");
     group.measurement_time(Duration::from_secs(15));
@@ -383,7 +391,7 @@ criterion_group!(
     bench_array_creation,
     bench_element_wise_ops,
     bench_reduction_ops,
-    bench_matrix_ops,
+    benchmatrix_ops,
     bench_array_manipulation,
     bench_statistical_ops,
     bench_memory_ops

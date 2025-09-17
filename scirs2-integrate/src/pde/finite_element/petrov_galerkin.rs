@@ -134,14 +134,35 @@ impl<F: IntegrateFloat> PetrovGalerkinSolver<F> {
             )?;
         }
         
-        // Apply boundary conditions
+        // Apply boundary _conditions
         self.apply_boundary_conditions(boundary_conditions, &mut stiffness, &mut rhs)?;
         
         // Solve linear system
         let solution = self.solve_linear_system(stiffness.view(), rhs.view())?;
         
+        // Generate grid information from nodes
+        let mut x_coords = Array1::<f64>::zeros(n_nodes);
+        let mut y_coords = Array1::<f64>::zeros(n_nodes);
+        
+        for i in 0..n_nodes {
+            x_coords[i] = self.nodes[[i, 0]].to_f64().unwrap();
+            y_coords[i] = self.nodes[[i, 1]].to_f64().unwrap();
+        }
+        
+        // Get unique sorted coordinates for structured grid
+        let mut unique_x: Vec<f64> = x_coords.to_vec();
+        unique_x.sort_by(|a, b| a.partial_cmp(b).unwrap());
+        unique_x.dedup();
+        
+        let mut unique_y: Vec<f64> = y_coords.to_vec();
+        unique_y.sort_by(|a, b| a.partial_cmp(b).unwrap());
+        unique_y.dedup();
+        
         Ok(PDESolution {
-            grids: vec![], // TODO: Add grid information
+            grids: vec![
+                Array1::from_vec(unique_x),
+                Array1::from_vec(unique_y),
+            ],
             values: vec![Array2::from_shape_vec((solution.len(), 1), solution.to_vec()).map_err(|_| IntegrateError::ComputationError("Shape error".to_string()))?],
             error_estimate: None,
             info: PDESolverInfo {
@@ -180,16 +201,16 @@ impl<F: IntegrateFloat> PetrovGalerkinSolver<F> {
         let gauss_points = self.get_gauss_points();
         let gauss_weights = self.get_gauss_weights();
         
-        for (gp, &weight) in gauss_points.iter().zip(gauss_weights.iter()) {
+        for (gp, &weight) in gauss_points.iter().zip(gaussweights.iter()) {
             let (xi, eta) = (gp[0], gp[1]);
             
             // Trial shape functions and derivatives
-            let trial_shapes = self.trial_shape_functions(xi, eta);
-            let trial_grads = self.trial_shape_gradients(xi, eta, inv_j.view())?;
+            let trialshapes = self.trialshape_functions(xi, eta);
+            let trial_grads = self.trialshape_gradients(xi, eta, inv_j.view())?;
             
             // Test functions (SUPG-modified)
-            let test_shapes = self.supg_test_functions(xi, eta, convection, tau_supg, inv_j.view())?;
-            let test_grads = self.test_shape_gradients(xi, eta, inv_j.view())?;
+            let testshapes = self.supg_test_functions(xi, eta, convection, tau_supg, inv_j.view())?;
+            let test_grads = self.testshape_gradients(xi, eta, inv_j.view())?;
             
             // Physical coordinates for source evaluation
             let (x, y) = self.map_to_physical(xi, eta, &node_coords);
@@ -200,7 +221,7 @@ impl<F: IntegrateFloat> PetrovGalerkinSolver<F> {
                 let global_i = element[i];
                 
                 // RHS contribution
-                rhs[global_i] = rhs[global_i] + test_shapes[i] * source_val * weight * area;
+                rhs[global_i] = rhs[global_i] + testshapes[i] * source_val * weight * area;
                 
                 for j in 0..element.len() {
                     let global_j = element[j];
@@ -212,7 +233,7 @@ impl<F: IntegrateFloat> PetrovGalerkinSolver<F> {
                     );
                     
                     // Convection term: ∫ ψᵢ (b·∇φⱼ) dx
-                    let convection_term = test_shapes[i] * (
+                    let convection_term = testshapes[i] * (
                         convection.0 * trial_grads[[j, 0]] +
                         convection.1 * trial_grads[[j, 1]]
                     );
@@ -263,8 +284,8 @@ impl<F: IntegrateFloat> PetrovGalerkinSolver<F> {
         tau: F,
         inv_j: ArrayView2<F>,
     ) -> IntegrateResult<Array1<F>> {
-        let standard_test = self.test_shape_functions(xi, eta);
-        let test_grads = self.test_shape_gradients(xi, eta, inv_j)?;
+        let standard_test = self.testshape_functions(xi, eta);
+        let test_grads = self.testshape_gradients(xi, eta, inv_j)?;
         
         let mut supg_test = standard_test.clone();
         
@@ -278,21 +299,21 @@ impl<F: IntegrateFloat> PetrovGalerkinSolver<F> {
     }
     
     /// Trial shape functions (standard linear for now)
-    fn trial_shape_functions(&self, xi: F, eta: F) -> Array1<F> {
+    fn trialshape_functions(xi: F, eta: F) -> Array1<F> {
         // Linear triangular shape functions
-        let zeta = F::one() - xi - eta;
+        let zeta = F::one() - _xi - eta;
         Array1::from_vec(vec![zeta, xi, eta])
     }
     
     /// Test shape functions (can be different from trial)
-    fn test_shape_functions(&self, xi: F, eta: F) -> Array1<F> {
+    fn testshape_functions(xi: F, eta: F) -> Array1<F> {
         // For standard Galerkin, same as trial functions
         // For Petrov-Galerkin, these could be different
-        self.trial_shape_functions(xi, eta)
+        self.trialshape_functions(_xi, eta)
     }
     
     /// Trial shape function gradients
-    fn trial_shape_gradients(&self, _xi: F, _eta: F, inv_j: ArrayView2<F>) -> IntegrateResult<Array2<F>> {
+    fn trialshape_gradients(_xi: F, eta: F, invj: ArrayView2<F>) -> IntegrateResult<Array2<F>> {
         // Linear triangular gradients in reference element
         let ref_grads = Array2::from_shape_vec((3, 2), vec![
             -F::one(), -F::one(),  // ∇N₁
@@ -303,9 +324,9 @@ impl<F: IntegrateFloat> PetrovGalerkinSolver<F> {
         // Transform to physical element
         let mut phys_grads = Array2::zeros((3, 2));
         for i in 0..3 {
-            for j in 0..2 {
+            for _j in 0..2 {
                 for k in 0..2 {
-                    phys_grads[[i, j]] = phys_grads[[i, j]] + ref_grads[[i, k]] * inv_j[[k, j]];
+                    phys_grads[[i_j]] = phys_grads[[i_j]] + ref_grads[[i, k]] * inv_j[[k_j]];
                 }
             }
         }
@@ -314,14 +335,14 @@ impl<F: IntegrateFloat> PetrovGalerkinSolver<F> {
     }
     
     /// Test shape function gradients
-    fn test_shape_gradients(&self, xi: F, eta: F, inv_j: ArrayView2<F>) -> IntegrateResult<Array2<F>> {
+    fn testshape_gradients(_xi: F, eta: F, invj: ArrayView2<F>) -> IntegrateResult<Array2<F>> {
         // For standard formulation, same as trial gradients
-        self.trial_shape_gradients(xi, eta, inv_j)
+        self.trialshape_gradients(_xi, eta, inv_j)
     }
     
     /// Get element coordinates
-    fn get_element_coordinates(&self, element: ArrayView1<usize>) -> IntegrateResult<Array2<F>> {
-        let mut coords = Array2::zeros((element.len(), 2));
+    fn get_element_coordinates(element: ArrayView1<usize>) -> IntegrateResult<Array2<F>> {
+        let mut coords = Array2::zeros((_element.len(), 2));
         
         for (i, &node_id) in element.iter().enumerate() {
             if node_id >= self.nodes.nrows() {
@@ -337,7 +358,7 @@ impl<F: IntegrateFloat> PetrovGalerkinSolver<F> {
     }
     
     /// Compute Jacobian matrix and its inverse
-    fn compute_jacobian(&self, node_coords: &Array2<F>) -> IntegrateResult<(F, Array2<F>)> {
+    fn compute_jacobian(_nodecoords: &Array2<F>) -> IntegrateResult<(F, Array2<F>)> {
         // For linear triangular elements
         let x1 = node_coords[[0, 0]]; let y1 = node_coords[[0, 1]];
         let x2 = node_coords[[1, 0]]; let y2 = node_coords[[1, 1]];
@@ -363,12 +384,12 @@ impl<F: IntegrateFloat> PetrovGalerkinSolver<F> {
     }
     
     /// Compute element characteristic size
-    fn compute_element_size(&self, node_coords: &Array2<F>) -> F {
+    fn compute_element_size(_nodecoords: &Array2<F>) -> F {
         // Diameter of element (max distance between nodes)
         let mut max_dist = F::zero();
         
-        for i in 0..node_coords.nrows() {
-            for j in (i + 1)..node_coords.nrows() {
+        for i in 0.._node_coords.nrows() {
+            for j in (i + 1).._node_coords.nrows() {
                 let dx = node_coords[[i, 0]] - node_coords[[j, 0]];
                 let dy = node_coords[[i, 1]] - node_coords[[j, 1]];
                 let dist = (dx * dx + dy * dy).sqrt();
@@ -383,8 +404,8 @@ impl<F: IntegrateFloat> PetrovGalerkinSolver<F> {
     }
     
     /// Map reference coordinates to physical coordinates
-    fn map_to_physical(&self, xi: F, eta: F, node_coords: &Array2<F>) -> (F, F) {
-        let shapes = self.trial_shape_functions(xi, eta);
+    fn map_to_physical(_xi: F, eta: F, nodecoords: &Array2<F>) -> (F, F) {
+        let shapes = self.trialshape_functions(_xi, eta);
         
         let mut x = F::zero();
         let mut y = F::zero();
@@ -398,7 +419,7 @@ impl<F: IntegrateFloat> PetrovGalerkinSolver<F> {
     }
     
     /// Gauss integration points for triangular elements
-    fn get_gauss_points(&self) -> Vec<[F; 2]> {
+    fn get_gauss_points() -> Vec<[F; 2]> {
         // 3-point Gauss rule for triangles
         vec![
             [F::from(1.0/6.0).unwrap(), F::from(1.0/6.0).unwrap()],
@@ -408,7 +429,7 @@ impl<F: IntegrateFloat> PetrovGalerkinSolver<F> {
     }
     
     /// Gauss integration weights for triangular elements
-    fn get_gauss_weights(&self) -> Vec<F> {
+    fn get_gauss_weights() -> Vec<F> {
         vec![
             F::from(1.0/6.0).unwrap(),
             F::from(1.0/6.0).unwrap(),
@@ -428,7 +449,7 @@ impl<F: IntegrateFloat> PetrovGalerkinSolver<F> {
         for bc in boundary_conditions {
             match &bc.condition_type {
                 BoundaryConditionType::Dirichlet => {
-                    // For Dirichlet boundary conditions: u = g on boundary
+                    // For Dirichlet boundary _conditions: u = g on boundary
                     // Modify system: set A[i,i] = 1, A[i,j] = 0 for j≠i, b[i] = g
                     for &node_idx in &bc.nodes {
                         if node_idx < stiffness.nrows() {
@@ -448,7 +469,7 @@ impl<F: IntegrateFloat> PetrovGalerkinSolver<F> {
                     }
                 },
                 BoundaryConditionType::Neumann => {
-                    // For Neumann boundary conditions: ∂u/∂n = g on boundary
+                    // For Neumann boundary _conditions: ∂u/∂n = g on boundary
                     // Add flux terms to RHS: ∫ g ψᵢ ds
                     for &node_idx in &bc.nodes {
                         if node_idx < rhs.len() {
@@ -460,7 +481,7 @@ impl<F: IntegrateFloat> PetrovGalerkinSolver<F> {
                     }
                 },
                 BoundaryConditionType::Robin => {
-                    // For Robin boundary conditions: α u + β ∂u/∂n = g on boundary
+                    // For Robin boundary _conditions: α u + β ∂u/∂n = g on boundary
                     // This modifies both stiffness matrix and RHS
                     for &node_idx in &bc.nodes {
                         if node_idx < stiffness.nrows() {
@@ -502,14 +523,14 @@ impl<F: IntegrateFloat> PetrovGalerkinSolver<F> {
     }
     
     /// Estimate boundary length contribution at a node (simplified)
-    fn estimate_boundary_length_at_node(&self, _node_idx: usize) -> F {
+    fn estimate_boundary_length_at_node(_nodeidx: usize) -> F {
         // Simplified estimate - in a complete implementation this would
         // compute the actual boundary segment length associated with the node
         F::from(0.1).unwrap() // Default boundary segment length
     }
     
     /// Solve linear system Ax = b
-    fn solve_linear_system(&self, a: ArrayView2<F>, b: ArrayView1<F>) -> IntegrateResult<Array1<F>> {
+    fn solve_linear_system(a: ArrayView2<F>, b: ArrayView1<F>) -> IntegrateResult<Array1<F>> {
         // Simple Gaussian elimination (for demonstration)
         let n = a.nrows();
         let mut aug = Array2::zeros((n, n + 1));
@@ -589,12 +610,12 @@ impl StabilizedFormulations {
     
     /// Create GLS formulation for general stability
     pub fn gls<F: IntegrateFloat>(tau: F) -> PetrovGalerkinType<F> {
-        PetrovGalerkinType::GLS { tau }
+        PetrovGalerkinType::GLS { _tau }
     }
     
     /// Create discontinuous Galerkin formulation
     pub fn discontinuous_galerkin<F: IntegrateFloat>(penalty: F) -> PetrovGalerkinType<F> {
-        PetrovGalerkinType::DiscontinuousGalerkin { penalty }
+        PetrovGalerkinType::DiscontinuousGalerkin { _penalty }
     }
 }
 
@@ -614,12 +635,12 @@ mod tests {
                 assert_abs_diff_eq!(diffusion, 0.1);
                 assert!(tau.is_none()); // Auto-compute
             }
-            _ => panic!("Wrong formulation type"),
+            _ => panic!("Expected SUPG formulation type, got {:?}", formulation),
         }
     }
     
     #[test]
-    fn test_shape_functions() {
+    fn testshape_functions() {
         // Create simple triangular mesh
         let nodes = Array2::from_shape_vec((3, 2), vec![
             0.0, 0.0,
@@ -633,7 +654,7 @@ mod tests {
         let solver = PetrovGalerkinSolver::new(formulation, nodes, elements, 1, 1);
         
         // Test shape functions at element center
-        let shapes = solver.trial_shape_functions(1.0/3.0, 1.0/3.0);
+        let shapes = solver.trialshape_functions(1.0/3.0, 1.0/3.0);
         
         // At center of reference triangle, all shape functions should be 1/3
         assert_abs_diff_eq!(shapes[0], 1.0/3.0, epsilon = 1e-10);
@@ -658,7 +679,7 @@ mod tests {
         let solver = PetrovGalerkinSolver::new(formulation, nodes, elements, 1, 1);
         
         let element_coords = solver.get_element_coordinates(elements.row(0)).unwrap();
-        let (det_j, _inv_j) = solver.compute_jacobian(&element_coords).unwrap();
+        let (det_j_inv_j) = solver.compute_jacobian(&element_coords).unwrap();
         
         // For unit right triangle, Jacobian determinant should be 1
         assert_abs_diff_eq!(det_j, 1.0, epsilon = 1e-10);

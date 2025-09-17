@@ -140,7 +140,7 @@ impl FeatureSelector {
             combined_scores[i] = vote_counts[i] + combined_scores[i] / results.len() as f64;
         }
 
-        // Select features based on combined scores
+        // Select _features based on combined scores
         let target_features = n_features.unwrap_or(n_feat / 3).min(n_feat);
         let mut indexed_scores: Vec<(usize, f64)> = combined_scores
             .iter()
@@ -153,7 +153,7 @@ impl FeatureSelector {
         let selected_features: Vec<usize> = indexed_scores
             .into_iter()
             .take(target_features)
-            .map(|(idx, _)| idx)
+            .map(|(idx_, _)| idx_)
             .collect();
 
         let mut metadata = HashMap::new();

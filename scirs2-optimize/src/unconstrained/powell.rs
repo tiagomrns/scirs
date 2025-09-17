@@ -6,6 +6,7 @@ use crate::unconstrained::{Bounds, Options};
 use ndarray::{Array1, ArrayView1};
 
 /// Implements Powell's method for unconstrained optimization with optional bounds support
+#[allow(dead_code)]
 pub fn minimize_powell<F, S>(
     mut fun: F,
     x0: Array1<f64>,
@@ -114,7 +115,6 @@ where
     Ok(OptimizeResult {
         x,
         fun: final_fun,
-        iterations: iter,
         nit: iter,
         func_evals: nfev,
         nfev,
@@ -133,6 +133,7 @@ where
 ///
 /// For a point x and direction p, find a_min and a_max such that:
 /// x + a * p stays within the bounds for all a in [a_min, a_max].
+#[allow(dead_code)]
 fn line_bounds(x: &Array1<f64>, direction: &Array1<f64>, bounds: Option<&Bounds>) -> (f64, f64) {
     // If no bounds are provided, use unbounded line search
     if bounds.is_none() {
@@ -187,6 +188,7 @@ fn line_bounds(x: &Array1<f64>, direction: &Array1<f64>, bounds: Option<&Bounds>
 
 /// Helper function for line search in Powell's method with bounds support
 /// One-dimensional minimization along `x + α·direction`.
+#[allow(dead_code)]
 fn line_search_powell<F, S>(
     fun: &mut F,
     x: &Array1<f64>,

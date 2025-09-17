@@ -148,7 +148,7 @@ impl RuleLemmatizer {
             },
             // Double consonant + ing (running -> run)
             LemmaRule {
-                pattern: "([bcdfghjklmnpqrstvwxyz])\\1ing$".to_string(),
+                pattern: r"([bcdfghjklmnpqrstvwxyz])\1ing$".to_string(),
                 replacement: "$1".to_string(),
                 conditions: RuleCondition {
                     min_length: 6,
@@ -240,7 +240,7 @@ impl RuleLemmatizer {
                     requires_vowel: true,
                 },
             },
-            // General 's' rule (cats -> cat)
+            // General 's' rule (cats -> cat), but not for words ending in 'ness'
             LemmaRule {
                 pattern: "s$".to_string(),
                 replacement: "".to_string(),
@@ -266,7 +266,7 @@ impl RuleLemmatizer {
             },
             // Double consonant + er (bigger -> big)
             LemmaRule {
-                pattern: "([bcdfghjklmnpqrstvwxyz])\\1er$".to_string(),
+                pattern: r"([bcdfghjklmnpqrstvwxyz])\1er$".to_string(),
                 replacement: "$1".to_string(),
                 conditions: RuleCondition {
                     min_length: 5,
@@ -286,7 +286,7 @@ impl RuleLemmatizer {
             },
             // Double consonant + est (biggest -> big)
             LemmaRule {
-                pattern: "([bcdfghjklmnpqrstvwxyz])\\1est$".to_string(),
+                pattern: r"([bcdfghjklmnpqrstvwxyz])\1est$".to_string(),
                 replacement: "$1".to_string(),
                 conditions: RuleCondition {
                     min_length: 6,
@@ -631,11 +631,52 @@ impl RuleLemmatizer {
         }
     }
 
-    /// Load lemmatization dictionary from a file (stub implementation)
-    pub fn from_dict_file(_path: &str) -> Result<Self> {
-        // In a real implementation, this would load from a file
-        // For now, we return the default lemmatizer
-        Ok(Self::new())
+    /// Load lemmatization dictionary from a file
+    /// File format: one entry per line, format: "word_form lemma" (tab or space separated)
+    pub fn from_dict_file(path: &str) -> Result<Self> {
+        use crate::error::TextError;
+        use std::fs::File;
+        use std::io::{BufRead, BufReader};
+
+        let mut lemmatizer = Self::new();
+
+        let file = File::open(path).map_err(|e| {
+            TextError::IoError(format!("Failed to open dictionary file '{path}': {e}"))
+        })?;
+
+        let reader = BufReader::new(file);
+
+        for (line_num, line_result) in reader.lines().enumerate() {
+            let line = line_result.map_err(|e| {
+                TextError::IoError(format!(
+                    "Error reading line {} from '{}': {}",
+                    line_num + 1,
+                    path,
+                    e
+                ))
+            })?;
+
+            // Skip empty lines and comments
+            let line = line.trim();
+            if line.is_empty() || line.starts_with('#') {
+                continue;
+            }
+
+            // Parse the line: "word_form lemma" (separated by tab or spaces)
+            let parts: Vec<&str> = line.split_whitespace().collect();
+            if parts.len() >= 2 {
+                let word_form = parts[0];
+                let lemma = parts[1];
+                lemmatizer.add_lemma(word_form, lemma);
+            } else if parts.len() == 1 {
+                // If only one word, assume it's already a lemma (maps to itself)
+                let word = parts[0];
+                lemmatizer.add_lemma(word, word);
+            }
+            // Lines with 0 parts are ignored (whitespace-only lines after trim)
+        }
+
+        Ok(lemmatizer)
     }
 
     /// Apply all lemmatization rules for the given part of speech
@@ -676,6 +717,11 @@ impl RuleLemmatizer {
 
         // Check if word contains vowels if required
         if rule.conditions.requires_vowel && !VOWELS.is_match(word) {
+            return false;
+        }
+
+        // Special check for 's' removal rule: don't apply to words ending in 'ness'
+        if rule.pattern == "s$" && word.ends_with("ness") {
             return false;
         }
 
@@ -785,16 +831,16 @@ impl RuleLemmatizer {
     }
 
     /// Batch lemmatize a list of words with their POS tags
-    pub fn lemmatize_with_pos(&self, words: &[&str], pos_tags: &[PosTag]) -> Vec<String> {
+    pub fn lemmatize_with_pos(&self, words: &[&str], postags: &[PosTag]) -> Vec<String> {
         assert_eq!(
             words.len(),
-            pos_tags.len(),
-            "Number of words and POS tags must match"
+            postags.len(),
+            "Number of words and POS _tags must match"
         );
 
         words
             .iter()
-            .zip(pos_tags.iter())
+            .zip(postags.iter())
             .map(|(word, pos)| self.lemmatize(word, Some(pos.clone())))
             .collect()
     }
@@ -1081,5 +1127,44 @@ mod tests {
         let words = vec!["running", "played", "children", "better"];
         let expected = vec!["run", "play", "child", "good"];
         assert_eq!(lemmatizer.stem_batch(&words).unwrap(), expected);
+    }
+
+    #[test]
+    fn test_from_dict_file() {
+        use std::fs;
+
+        // Create a temporary dictionary file
+        let dict_content = r#"# This is a comment
+word1 lemma1
+word2 lemma2
+word3 lemma3
+
+# Another comment
+word4 lemma4
+single_word
+"#;
+
+        let temp_file = "test_dict.txt";
+        fs::write(temp_file, dict_content).unwrap();
+
+        // Test loading from dictionary file
+        let lemmatizer = RuleLemmatizer::from_dict_file(temp_file).unwrap();
+
+        // Test loaded entries
+        assert_eq!(lemmatizer.lemmatize("word1", None), "lemma1");
+        assert_eq!(lemmatizer.lemmatize("word2", None), "lemma2");
+        assert_eq!(lemmatizer.lemmatize("word3", None), "lemma3");
+        assert_eq!(lemmatizer.lemmatize("word4", None), "lemma4");
+        assert_eq!(lemmatizer.lemmatize("single_word", None), "single_word");
+
+        // Clean up
+        let _ = fs::remove_file(temp_file);
+    }
+
+    #[test]
+    fn test_from_dict_file_error() {
+        // Test with non-existent file
+        let result = RuleLemmatizer::from_dict_file("non_existent_file.txt");
+        assert!(result.is_err());
     }
 }

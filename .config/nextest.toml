@@ -1,0 +1,18 @@
+# .config/nextest.toml
+[profile.default]
+# Mark as SLOW after 30 seconds; force-terminate after 2 minutes (use grace-period=0s for immediate SIGKILL)
+slow-timeout = { period = "30s", terminate-after = 4, grace-period = "5s" }
+
+# Global upper limit (safety)
+# global-timeout = "2h"
+
+# Stop at the first failure (to identify the cause quickly)
+fail-fast = true
+
+# Show SLOW during the run / also show SLOW in the final summary
+status-level = "slow"
+final-status-level = "slow"
+
+# Output JUnit so it can be reviewed later
+[profile.default.junit]
+path = "target/nextest/junit.xml"

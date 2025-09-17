@@ -1,6 +1,7 @@
 // The distributed module is currently gated behind a feature flag
 // This example is temporarily disabled until the module is available
 
+#[allow(dead_code)]
 fn main() {
     println!("Distributed FFT Example");
     println!("----------------------");

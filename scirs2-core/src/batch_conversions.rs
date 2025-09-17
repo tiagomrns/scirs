@@ -27,7 +27,7 @@
 //!
 //! // Convert with error handling for individual elements
 //! let large_data: Vec<f64> = vec![1e10, 2.5, f64::NAN, 3.7];
-//! let (converted, errors) = converter.convert_slice_with_errors::<f64, f32>(&large_data);
+//! let (converted, errors) = converter.convert_slice_witherrors::<f64, f32>(&large_data);
 //! assert_eq!(converted.len(), 2); // Only 2.5 and 3.7 convert successfully
 //! assert_eq!(errors.len(), 2);    // NAN and overflow errors
 //! ```
@@ -41,7 +41,7 @@ use std::fmt;
 use wide::{f32x4, f64x2, i32x4};
 
 #[cfg(feature = "parallel")]
-use rayon::prelude::*;
+use crate::parallel_ops::*;
 
 /// Configuration for batch conversions
 #[derive(Debug, Clone)]
@@ -84,8 +84,8 @@ impl BatchConversionConfig {
     }
 
     /// Set the chunk size for parallel processing
-    pub fn with_chunk_size(mut self, chunk_size: usize) -> Self {
-        self.parallel_chunk_size = chunk_size;
+    pub fn size(mut self, chunksize: usize) -> Self {
+        self.parallel_chunk_size = chunksize;
         self
     }
 
@@ -131,7 +131,7 @@ impl BatchConverter {
     }
 
     /// Convert a slice of values to another type, returning errors for failed conversions
-    pub fn convert_slice_with_errors<S, T>(
+    pub fn convert_slice_witherrors<S, T>(
         &self,
         slice: &[S],
     ) -> (Vec<T>, Vec<ElementConversionError>)
@@ -145,11 +145,11 @@ impl BatchConverter {
 
         // Use parallel processing for large datasets
         if self.config.use_parallel && slice.len() >= self.config.parallel_threshold {
-            self.convert_slice_parallel_with_errors(slice)
+            self.convert_slice_parallel_witherrors(slice)
         } else if self.config.use_simd {
-            self.convert_slice_simd_with_errors(slice)
+            self.convert_slice_simd_witherrors(slice)
         } else {
-            self.convert_slice_sequential_with_errors(slice)
+            self.convert_slice_sequential_witherrors(slice)
         }
     }
 
@@ -159,11 +159,14 @@ impl BatchConverter {
         S: Copy + NumCast + PartialOrd + fmt::Display + Send + Sync + 'static,
         T: Bounded + NumCast + PartialOrd + fmt::Display + Send + Sync + Copy + 'static,
     {
-        let (converted, errors) = self.convert_slice_with_errors(slice);
+        let (converted, errors) = self.convert_slice_witherrors(slice);
 
         if !errors.is_empty() {
             return Err(CoreError::InvalidArgument(crate::error::ErrorContext::new(
-                format!("Batch conversion failed for {} elements", errors.len()),
+                {
+                    let numerrors = errors.len();
+                    format!("Batch conversion failed for {numerrors} elements")
+                },
             )));
         }
 
@@ -188,7 +191,7 @@ impl BatchConverter {
     }
 
     /// Sequential conversion with error handling
-    fn convert_slice_sequential_with_errors<S, T>(
+    fn convert_slice_sequential_witherrors<S, T>(
         &self,
         slice: &[S],
     ) -> (Vec<T>, Vec<ElementConversionError>)
@@ -211,7 +214,7 @@ impl BatchConverter {
 
     /// SIMD-accelerated conversion for supported types
     #[cfg(feature = "simd")]
-    fn convert_slice_simd_with_errors<S, T>(
+    fn convert_slice_simd_witherrors<S, T>(
         &self,
         slice: &[S],
     ) -> (Vec<T>, Vec<ElementConversionError>)
@@ -223,12 +226,12 @@ impl BatchConverter {
         if self.can_use_simd_for_conversion::<S, T>() {
             self.convert_slice_simd_optimized(slice)
         } else {
-            self.convert_slice_sequential_with_errors(slice)
+            self.convert_slice_sequential_witherrors(slice)
         }
     }
 
     #[cfg(not(feature = "simd"))]
-    fn convert_slice_simd_with_errors<S, T>(
+    fn convert_slice_simd_witherrors<S, T>(
         &self,
         slice: &[S],
     ) -> (Vec<T>, Vec<ElementConversionError>)
@@ -236,12 +239,12 @@ impl BatchConverter {
         S: Copy + NumCast + PartialOrd + fmt::Display + 'static,
         T: Bounded + NumCast + PartialOrd + fmt::Display + Copy + 'static,
     {
-        self.convert_slice_sequential_with_errors(slice)
+        self.convert_slice_sequential_witherrors(slice)
     }
 
     /// Parallel conversion with error handling
     #[cfg(feature = "parallel")]
-    fn convert_slice_parallel_with_errors<S, T>(
+    fn convert_slice_parallel_witherrors<S, T>(
         &self,
         slice: &[S],
     ) -> (Vec<T>, Vec<ElementConversionError>)
@@ -276,18 +279,18 @@ impl BatchConverter {
 
         // Combine results from all chunks
         let mut all_converted = Vec::new();
-        let mut all_errors = Vec::new();
+        let mut allerrors = Vec::new();
 
         for (converted, errors) in results {
             all_converted.extend(converted);
-            all_errors.extend(errors);
+            allerrors.extend(errors);
         }
 
-        (all_converted, all_errors)
+        (all_converted, allerrors)
     }
 
     #[cfg(not(feature = "parallel"))]
-    fn convert_slice_parallel_with_errors<S, T>(
+    fn convert_slice_parallel_witherrors<S, T>(
         &self,
         slice: &[S],
     ) -> (Vec<T>, Vec<ElementConversionError>)
@@ -295,7 +298,7 @@ impl BatchConverter {
         S: Copy + NumCast + PartialOrd + fmt::Display + Send + Sync + 'static,
         T: Bounded + NumCast + PartialOrd + fmt::Display + Send + Sync + Copy + 'static,
     {
-        self.convert_slice_sequential_with_errors(slice)
+        self.convert_slice_sequential_witherrors(slice)
     }
 
     /// Parallel conversion with clamping
@@ -425,7 +428,7 @@ impl BatchConverter {
         }
 
         // Fallback to sequential conversion
-        self.convert_slice_sequential_with_errors(slice)
+        self.convert_slice_sequential_witherrors(slice)
     }
 
     /// SIMD conversion from f64 to f32 (typed version)
@@ -442,7 +445,7 @@ impl BatchConverter {
         let remainder = chunks.remainder();
 
         for (chunk_idx, chunk) in chunks.enumerate() {
-            let _vec = f64x2::new([chunk[0], chunk[1]]);
+            let vec = f64x2::new([chunk[0], chunk[1]]);
 
             // Convert each element individually with proper checking
             for (i, &val) in chunk.iter().enumerate() {
@@ -510,7 +513,7 @@ impl BatchConverter {
         let remainder = chunks.remainder();
 
         for (chunk_idx, chunk) in chunks.enumerate() {
-            let _vec = f32x4::new([chunk[0], chunk[1], chunk[2], chunk[3]]);
+            let vec = f32x4::new([chunk[0], chunk[1], chunk[2], chunk[3]]);
 
             for (i, &val) in chunk.iter().enumerate() {
                 let index = chunk_idx * 4 + i;
@@ -555,7 +558,7 @@ impl BatchConverter {
         let remainder = chunks.remainder();
 
         for chunk in chunks {
-            let _vec = i32x4::new([chunk[0], chunk[1], chunk[2], chunk[3]]);
+            let vec = i32x4::new([chunk[0], chunk[1], chunk[2], chunk[3]]);
 
             for &val in chunk {
                 converted.push(val as f32);
@@ -825,11 +828,11 @@ mod tests {
     }
 
     #[test]
-    fn test_conversion_with_errors() {
+    fn test_conversion_witherrors() {
         let data: Vec<f64> = vec![1.0, f64::NAN, 3.0, f64::INFINITY];
         let converter = BatchConverter::with_default_config();
 
-        let (converted, errors) = converter.convert_slice_with_errors::<f64, f32>(&data);
+        let (converted, errors) = converter.convert_slice_witherrors::<f64, f32>(&data);
         assert_eq!(converted.len(), 2); // Only 1.0 and 3.0 should convert
         assert_eq!(errors.len(), 2); // NAN and INFINITY should error
     }
@@ -871,7 +874,7 @@ mod tests {
         let result: Vec<f32> = converter.convert_slice(&data).unwrap();
         assert_eq!(result.len(), 0);
 
-        let (converted, errors) = converter.convert_slice_with_errors::<f64, f32>(&data);
+        let (converted, errors) = converter.convert_slice_witherrors::<f64, f32>(&data);
         assert_eq!(converted.len(), 0);
         assert_eq!(errors.len(), 0);
     }
@@ -892,7 +895,7 @@ mod tests {
 
     #[test]
     fn test_large_dataset_threshold() {
-        let data: Vec<f64> = (0..20000).map(|i| i as f64 * 0.1).collect();
+        let data: Vec<f64> = (0..20000).map(|0| 0 as f64 * 0.1).collect();
         let config = BatchConversionConfig::default().with_parallel_threshold(10000);
         let converter = BatchConverter::new(config);
 

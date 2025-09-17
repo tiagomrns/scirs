@@ -7,9 +7,11 @@ use crate::error::Result;
 use crate::utils::Dataset;
 use ndarray::{Array1, Array2};
 use rand::prelude::*;
-use rand::rng;
+use rand::rngs::StdRng;
+use scirs2_core::rng;
 
 /// Generate the classic Iris dataset
+#[allow(dead_code)]
 pub fn load_iris() -> Result<Dataset> {
     // Define the data
     #[rustfmt::skip]
@@ -64,14 +66,14 @@ pub fn load_iris() -> Result<Dataset> {
     let mut dataset = Dataset::new(data, Some(target));
 
     // Add metadata
-    let feature_names = vec![
+    let featurenames = vec![
         "sepal_length".to_string(),
         "sepal_width".to_string(),
         "petal_length".to_string(),
         "petal_width".to_string(),
     ];
 
-    let target_names = vec![
+    let targetnames = vec![
         "setosa".to_string(),
         "versicolor".to_string(),
         "virginica".to_string(),
@@ -94,14 +96,15 @@ Target:
 - Iris Virginica".to_string();
 
     dataset = dataset
-        .with_feature_names(feature_names)
-        .with_target_names(target_names)
+        .with_featurenames(featurenames)
+        .with_targetnames(targetnames)
         .with_description(description);
 
     Ok(dataset)
 }
 
 /// Generate the breast cancer dataset
+#[allow(dead_code)]
 pub fn load_breast_cancer() -> Result<Dataset> {
     // This is a simplified version with only 30 samples
     // In a real implementation, include the full dataset
@@ -150,15 +153,15 @@ pub fn load_breast_cancer() -> Result<Dataset> {
     let mut dataset = Dataset::new(data, Some(target));
 
     // Add metadata
-    let feature_names = vec![
+    let featurenames = vec![
         "mean_radius".to_string(),
-        "mean_texture".to_string(),
+        "meantexture".to_string(),
         "mean_perimeter".to_string(),
         "mean_area".to_string(),
         "mean_smoothness".to_string(),
     ];
 
-    let target_names = vec!["malignant".to_string(), "benign".to_string()];
+    let targetnames = vec!["malignant".to_string(), "benign".to_string()];
 
     let description = "Breast Cancer Wisconsin (Diagnostic) Database
     
@@ -173,14 +176,15 @@ Target:
         .to_string();
 
     dataset = dataset
-        .with_feature_names(feature_names)
-        .with_target_names(target_names)
+        .with_featurenames(featurenames)
+        .with_targetnames(targetnames)
         .with_description(description);
 
     Ok(dataset)
 }
 
 /// Generate the digits dataset
+#[allow(dead_code)]
 pub fn load_digits() -> Result<Dataset> {
     // Use a simplified version with fewer samples and features
     // Each digit is represented as a 4x4 image flattened to 16 features
@@ -272,9 +276,9 @@ pub fn load_digits() -> Result<Dataset> {
     let mut dataset = Dataset::new(data, Some(target));
 
     // Create feature names
-    let feature_names: Vec<String> = (0..n_features).map(|i| format!("pixel_{}", i)).collect();
+    let featurenames: Vec<String> = (0..n_features).map(|i| format!("pixel_{i}")).collect();
 
-    let target_names: Vec<String> = (0..10).map(|i| format!("{}", i)).collect();
+    let targetnames: Vec<String> = (0..10).map(|i| format!("{i}")).collect();
 
     let description = "Optical recognition of handwritten digits dataset
     
@@ -285,14 +289,15 @@ Target: Digit identity (0-9)"
         .to_string();
 
     dataset = dataset
-        .with_feature_names(feature_names)
-        .with_target_names(target_names)
+        .with_featurenames(featurenames)
+        .with_targetnames(targetnames)
         .with_description(description);
 
     Ok(dataset)
 }
 
 /// Generate the Boston housing dataset
+#[allow(dead_code)]
 pub fn load_boston() -> Result<Dataset> {
     // Simplified version with fewer samples and features
     let n_samples = 30;
@@ -342,7 +347,7 @@ pub fn load_boston() -> Result<Dataset> {
     let mut dataset = Dataset::new(data, Some(target));
 
     // Add metadata
-    let feature_names = vec![
+    let featurenames = vec![
         "CRIM".to_string(),
         "ZN".to_string(),
         "INDUS".to_string(),
@@ -367,7 +372,91 @@ This is a regression dataset."
         .to_string();
 
     dataset = dataset
-        .with_feature_names(feature_names)
+        .with_featurenames(featurenames)
+        .with_feature_descriptions(feature_descriptions)
+        .with_description(description);
+
+    Ok(dataset)
+}
+
+/// Generate a synthetic diabetes dataset for regression
+///
+/// This is a simplified version of the classic diabetes dataset with 442 samples
+/// and 10 features, suitable for regression tasks.
+#[allow(dead_code)]
+pub fn load_diabetes() -> Result<Dataset> {
+    // Use a fixed seed for reproducibility
+    let mut rng = StdRng::seed_from_u64(42);
+
+    let n_samples = 442;
+    let n_features = 10;
+
+    // Generate synthetic data that resembles the diabetes dataset structure
+    let mut data = Vec::with_capacity(n_samples * n_features);
+    let mut targets = Vec::with_capacity(n_samples);
+
+    for _ in 0..n_samples {
+        // Generate correlated features (representing biomarkers)
+        let age = rng.random::<f64>() * 0.1 - 0.05;
+        let sex = if rng.random::<f64>() < 0.5 {
+            -0.05
+        } else {
+            0.05
+        };
+        let bmi = (rng.random::<f64>() * 0.12 - 0.06) + age * 0.3;
+        let bp = (rng.random::<f64>() * 0.1 - 0.05) + bmi * 0.4;
+        let s1 = (rng.random::<f64>() * 0.14 - 0.07) + bmi * 0.2;
+        let s2 = (rng.random::<f64>() * 0.16 - 0.08) + s1 * 0.5;
+        let s3 = (rng.random::<f64>() * 0.12 - 0.06) + age * 0.2;
+        let s4 = (rng.random::<f64>() * 0.12 - 0.06) + s1 * 0.3;
+        let s5 = (rng.random::<f64>() * 0.14 - 0.07) + bmi * 0.25;
+        let s6 = (rng.random::<f64>() * 0.1 - 0.05) + s5 * 0.4;
+
+        data.extend_from_slice(&[age, sex, bmi, bp, s1, s2, s3, s4, s5, s6]);
+
+        // Generate target as a linear combination with noise
+        let target = 152.0
+            + 938.0 * bmi
+            + 519.0 * bp
+            + 324.0 * s1
+            + 217.0 * s5
+            + (rng.random::<f64>() * 40.0 - 20.0);
+        targets.push(target);
+    }
+
+    let data_array = Array2::from_shape_vec((n_samples, n_features), data).unwrap();
+    let target_array = Array1::from_vec(targets);
+
+    let featurenames = vec![
+        "age".to_string(),
+        "sex".to_string(),
+        "bmi".to_string(),
+        "bp".to_string(),
+        "s1".to_string(),
+        "s2".to_string(),
+        "s3".to_string(),
+        "s4".to_string(),
+        "s5".to_string(),
+        "s6".to_string(),
+    ];
+
+    let feature_descriptions = vec![
+        "Age".to_string(),
+        "Sex".to_string(),
+        "Body mass index".to_string(),
+        "Average blood pressure".to_string(),
+        "Total serum cholesterol".to_string(),
+        "Low-density lipoproteins".to_string(),
+        "High-density lipoproteins".to_string(),
+        "Total cholesterol / HDL".to_string(),
+        "Log of serum triglycerides level".to_string(),
+        "Blood sugar level".to_string(),
+    ];
+
+    let description = "Diabetes dataset for regression. A synthetic version of the classic diabetes dataset with 442 samples and 10 physiological features.".to_string();
+
+    let dataset = Dataset::new(data_array, Some(target_array))
+        .with_featurenames(featurenames)
         .with_feature_descriptions(feature_descriptions)
         .with_description(description);
 
@@ -386,19 +475,19 @@ mod tests {
         assert_eq!(dataset.n_features(), 4);
         assert!(dataset.target.is_some());
         assert!(dataset.description.is_some());
-        assert!(dataset.feature_names.is_some());
-        assert!(dataset.target_names.is_some());
+        assert!(dataset.featurenames.is_some());
+        assert!(dataset.targetnames.is_some());
 
-        let feature_names = dataset.feature_names.as_ref().unwrap();
-        assert_eq!(feature_names.len(), 4);
-        assert_eq!(feature_names[0], "sepal_length");
-        assert_eq!(feature_names[3], "petal_width");
+        let featurenames = dataset.featurenames.as_ref().unwrap();
+        assert_eq!(featurenames.len(), 4);
+        assert_eq!(featurenames[0], "sepal_length");
+        assert_eq!(featurenames[3], "petal_width");
 
-        let target_names = dataset.target_names.as_ref().unwrap();
-        assert_eq!(target_names.len(), 3);
-        assert!(target_names.contains(&"setosa".to_string()));
-        assert!(target_names.contains(&"versicolor".to_string()));
-        assert!(target_names.contains(&"virginica".to_string()));
+        let targetnames = dataset.targetnames.as_ref().unwrap();
+        assert_eq!(targetnames.len(), 3);
+        assert!(targetnames.contains(&"setosa".to_string()));
+        assert!(targetnames.contains(&"versicolor".to_string()));
+        assert!(targetnames.contains(&"virginica".to_string()));
 
         // Check target values are in valid range (0, 1, 2)
         let target = dataset.target.as_ref().unwrap();
@@ -415,18 +504,18 @@ mod tests {
         assert_eq!(dataset.n_features(), 5);
         assert!(dataset.target.is_some());
         assert!(dataset.description.is_some());
-        assert!(dataset.feature_names.is_some());
-        assert!(dataset.target_names.is_some());
+        assert!(dataset.featurenames.is_some());
+        assert!(dataset.targetnames.is_some());
 
-        let feature_names = dataset.feature_names.as_ref().unwrap();
-        assert_eq!(feature_names.len(), 5);
-        assert_eq!(feature_names[0], "mean_radius");
-        assert_eq!(feature_names[4], "mean_smoothness");
+        let featurenames = dataset.featurenames.as_ref().unwrap();
+        assert_eq!(featurenames.len(), 5);
+        assert_eq!(featurenames[0], "mean_radius");
+        assert_eq!(featurenames[4], "mean_smoothness");
 
-        let target_names = dataset.target_names.as_ref().unwrap();
-        assert_eq!(target_names.len(), 2);
-        assert!(target_names.contains(&"malignant".to_string()));
-        assert!(target_names.contains(&"benign".to_string()));
+        let targetnames = dataset.targetnames.as_ref().unwrap();
+        assert_eq!(targetnames.len(), 2);
+        assert!(targetnames.contains(&"malignant".to_string()));
+        assert!(targetnames.contains(&"benign".to_string()));
 
         // Check target values are binary (0 or 1)
         let target = dataset.target.as_ref().unwrap();
@@ -443,18 +532,18 @@ mod tests {
         assert_eq!(dataset.n_features(), 16);
         assert!(dataset.target.is_some());
         assert!(dataset.description.is_some());
-        assert!(dataset.feature_names.is_some());
-        assert!(dataset.target_names.is_some());
+        assert!(dataset.featurenames.is_some());
+        assert!(dataset.targetnames.is_some());
 
-        let feature_names = dataset.feature_names.as_ref().unwrap();
-        assert_eq!(feature_names.len(), 16);
-        assert_eq!(feature_names[0], "pixel_0");
-        assert_eq!(feature_names[15], "pixel_15");
+        let featurenames = dataset.featurenames.as_ref().unwrap();
+        assert_eq!(featurenames.len(), 16);
+        assert_eq!(featurenames[0], "pixel_0");
+        assert_eq!(featurenames[15], "pixel_15");
 
-        let target_names = dataset.target_names.as_ref().unwrap();
-        assert_eq!(target_names.len(), 10);
+        let targetnames = dataset.targetnames.as_ref().unwrap();
+        assert_eq!(targetnames.len(), 10);
         for i in 0..10 {
-            assert!(target_names.contains(&i.to_string()));
+            assert!(targetnames.contains(&i.to_string()));
         }
 
         // Check target values are digits (0-9)
@@ -479,13 +568,13 @@ mod tests {
         assert_eq!(dataset.n_features(), 5);
         assert!(dataset.target.is_some());
         assert!(dataset.description.is_some());
-        assert!(dataset.feature_names.is_some());
+        assert!(dataset.featurenames.is_some());
         assert!(dataset.feature_descriptions.is_some());
 
-        let feature_names = dataset.feature_names.as_ref().unwrap();
-        assert_eq!(feature_names.len(), 5);
-        assert_eq!(feature_names[0], "CRIM");
-        assert_eq!(feature_names[4], "NOX");
+        let featurenames = dataset.featurenames.as_ref().unwrap();
+        assert_eq!(featurenames.len(), 5);
+        assert_eq!(featurenames[0], "CRIM");
+        assert_eq!(featurenames[4], "NOX");
 
         let feature_descriptions = dataset.feature_descriptions.as_ref().unwrap();
         assert_eq!(feature_descriptions.len(), 5);
@@ -499,12 +588,13 @@ mod tests {
     }
 
     #[test]
-    fn test_all_datasets_have_consistent_shapes() {
+    fn test_all_datasets_have_consistentshapes() {
         let datasets = vec![
             ("iris", load_iris().unwrap()),
             ("breast_cancer", load_breast_cancer().unwrap()),
             ("digits", load_digits().unwrap()),
             ("boston", load_boston().unwrap()),
+            ("diabetes", load_diabetes().unwrap()),
         ];
 
         for (name, dataset) in datasets {
@@ -513,18 +603,16 @@ mod tests {
                 assert_eq!(
                     dataset.data.nrows(),
                     target.len(),
-                    "Dataset '{}' has inconsistent sample counts",
-                    name
+                    "Dataset '{name}' has inconsistent sample counts"
                 );
             }
 
             // Check that feature names match feature count (if present)
-            if let Some(ref feature_names) = dataset.feature_names {
+            if let Some(ref featurenames) = dataset.featurenames {
                 assert_eq!(
                     dataset.data.ncols(),
-                    feature_names.len(),
-                    "Dataset '{}' has inconsistent feature count",
-                    name
+                    featurenames.len(),
+                    "Dataset '{name}' has inconsistent feature count"
                 );
             }
 
@@ -533,16 +621,14 @@ mod tests {
                 assert_eq!(
                     dataset.data.ncols(),
                     feature_descriptions.len(),
-                    "Dataset '{}' has inconsistent feature description count",
-                    name
+                    "Dataset '{name}' has inconsistent feature description count"
                 );
             }
 
             // Check that dataset has a description
             assert!(
                 dataset.description.is_some(),
-                "Dataset '{}' missing description",
-                name
+                "Dataset '{name}' missing description"
             );
         }
     }

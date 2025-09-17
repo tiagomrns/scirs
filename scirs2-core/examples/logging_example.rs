@@ -1,10 +1,11 @@
 use scirs2_core::logging::{
-    configure_logger, ConsoleLogHandler, LogLevel, Logger, LoggerConfig, ProgressTracker,
+    configurelogger, ConsoleLogHandler, LogLevel, Logger, LoggerConfig, ProgressTracker,
 };
 use std::sync::Arc;
 use std::thread;
 use std::time::Duration;
 
+#[allow(dead_code)]
 fn main() {
     println!("Logging and Diagnostics Example");
 
@@ -12,7 +13,7 @@ fn main() {
     #[cfg(feature = "logging")]
     {
         // Configure the logger
-        configure_logger(LoggerConfig {
+        configurelogger(LoggerConfig {
             min_level: LogLevel::Debug,
             show_timestamps: true,
             show_modules: true,
@@ -23,19 +24,19 @@ fn main() {
         let console_handler = Arc::new(ConsoleLogHandler {
             format: "[{timestamp}] {level} [{module}] {message}".to_string(),
         });
-        scirs2_core::logging::register_log_handler(console_handler);
+        scirs2_core::logging::set_handler(console_handler);
 
         // Create loggers for different modules
-        let math_logger = Logger::new("math").with_field("precision", "double");
+        let mathlogger = Logger::new("math").with_field("precision", "double");
 
-        let io_logger = Logger::new("io").with_field("mode", "async");
+        let iologger = Logger::new("io").with_field("mode", "async");
 
         // Log some messages at different levels
-        math_logger.info("Starting calculation");
-        math_logger.debug("Using algorithm: Fast Fourier Transform");
+        mathlogger.info("Starting calculation");
+        mathlogger.debug("Using algorithm: Fast Fourier Transform");
 
-        io_logger.info("Opening data file");
-        io_logger.warn("File size is large, this may take some time");
+        iologger.info("Opening data file");
+        iologger.warn("File size is large, this may take some time");
 
         // Simulate a long-running operation with progress tracking
         simulate_long_operation();
@@ -46,6 +47,7 @@ fn main() {
 }
 
 #[cfg(feature = "logging")]
+#[allow(dead_code)]
 fn simulate_long_operation() {
     println!("\n--- Progress Tracking Example ---");
 

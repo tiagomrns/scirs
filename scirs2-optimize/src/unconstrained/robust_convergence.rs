@@ -179,7 +179,7 @@ impl RobustConvergenceState {
         gradient_norm: f64,
         step_norm: f64,
         iteration: usize,
-        _x: Option<&ArrayView1<f64>>,
+        x: Option<&ArrayView1<f64>>,
     ) -> Result<RobustConvergenceResult, OptimizeError> {
         // Update adaptive tolerance state
         self.adaptive_state
@@ -210,7 +210,7 @@ impl RobustConvergenceState {
     }
 
     /// Update early stopping state
-    fn update_early_stopping(&mut self, function_value: f64, _iteration: usize) {
+    fn update_early_stopping(&mut self, function_value: f64, iteration: usize) {
         let improvement = self.early_stop_state.best_value - function_value;
 
         if improvement > self.options.early_stopping_min_delta {
@@ -313,7 +313,7 @@ impl RobustConvergenceState {
     /// Check all convergence criteria
     fn check_all_convergence_criteria(
         &self,
-        _function_value: f64,
+        function_value: f64,
         gradient_norm: f64,
         step_norm: f64,
         _iteration: usize,
@@ -409,7 +409,7 @@ impl RobustConvergenceState {
         }
 
         if gradient_norm > 1e3 {
-            warning_flags.push("Large gradient norm".to_string());
+            warning_flags.push("Large gradient _norm".to_string());
         }
 
         if self.plateau_state.plateau_detected {
@@ -422,7 +422,7 @@ impl RobustConvergenceState {
             warning_flags,
             adaptive_status,
             criteria_met,
-            early_stopping_iterations: self.early_stop_state.iterations_without_improvement,
+            early_stopping_nit: self.early_stop_state.iterations_without_improvement,
             progress_rate: self.progress_state.progress_rate,
             time_elapsed: self.start_time.map(|t| t.elapsed()),
             plateau_detected: self.plateau_state.plateau_detected,
@@ -502,7 +502,7 @@ pub struct RobustConvergenceResult {
     /// Number of criteria that were met
     pub criteria_met: usize,
     /// Early stopping iterations count
-    pub early_stopping_iterations: usize,
+    pub early_stopping_nit: usize,
     /// Current progress rate
     pub progress_rate: f64,
     /// Time elapsed since start
@@ -589,6 +589,7 @@ impl RobustConvergenceResult {
 }
 
 /// Create robust convergence options for specific problem types
+#[allow(dead_code)]
 pub fn create_robust_options_for_problem(
     problem_type: &str,
     problem_size: usize,

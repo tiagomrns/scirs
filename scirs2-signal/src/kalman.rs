@@ -1,14 +1,17 @@
+use crate::error::{SignalError, SignalResult};
+use ndarray::s;
+use ndarray::{Array1, Array2, Array3};
+use rand::Rng;
+use scirs2_linalg::{cholesky, inv};
+use statrs::statistics::Statistics;
+
 // Kalman filtering module
 //
 // This module implements various Kalman filtering techniques for signal processing,
 // including standard Kalman filter, extended Kalman filter, unscented Kalman filter,
 // and ensemble Kalman filter.
 
-use crate::error::{SignalError, SignalResult};
-use ndarray::{s, Array1, Array2, Array3};
-use rand::Rng;
-use scirs2_linalg::{cholesky, inv};
-
+#[allow(unused_imports)]
 /// Configuration for Kalman filter
 #[derive(Debug, Clone)]
 pub struct KalmanConfig {
@@ -82,6 +85,7 @@ impl Default for KalmanConfig {
 /// # Returns
 ///
 /// * Estimated state at each time step
+#[allow(dead_code)]
 pub fn kalman_filter(
     z: &Array1<f64>,
     f: &Array2<f64>,
@@ -106,7 +110,7 @@ pub fn kalman_filter(
     }
 
     // Initialize state estimate
-    let mut x = match initial_x {
+    let mut _x = match initial_x {
         Some(x0) => {
             if x0.len() != n_states {
                 return Err(SignalError::DimensionMismatch(
@@ -168,7 +172,7 @@ pub fn kalman_filter(
     // Run Kalman filter
     for i in 0..n_samples {
         // Predict step
-        let x_pred = f.dot(&x);
+        let x_pred = f.dot(&_x);
         let p_pred = f.dot(&p).dot(&f.t()) + &adaptive_q;
 
         // Update step
@@ -181,14 +185,14 @@ pub fn kalman_filter(
         let k = match inv(&innovation_cov.view(), None) {
             Ok(inn_cov_inv) => p_pred.dot(&h.t()).dot(&inn_cov_inv),
             Err(_) => {
-                return Err(SignalError::Compute(
+                return Err(SignalError::ComputationError(
                     "Failed to invert innovation covariance matrix".to_string(),
                 ));
             }
         };
 
         // State and covariance update
-        x = &x_pred + &k.dot(&innovation);
+        _x = &x_pred + &k.dot(&innovation);
         p = &p_pred - &k.dot(&innovation_cov).dot(&k.t());
 
         // Store state
@@ -235,7 +239,7 @@ pub fn kalman_filter(
                 // Adaptive estimation of Q
                 // This is a simplified approach - in practice, estimating Q is more complex
                 // than estimating R and might require more sophisticated techniques
-                let pred_err = &x - &x_pred;
+                let pred_err = &_x - &x_pred;
                 let pred_err_col = pred_err
                     .clone()
                     .into_shape_with_order((pred_err.len(), 1))
@@ -269,6 +273,7 @@ pub fn kalman_filter(
 /// # Returns
 ///
 /// * Estimated state at each time step
+#[allow(dead_code)]
 pub fn extended_kalman_filter<F, H, FJ, HJ>(
     z: &Array2<f64>,
     f_func: F,
@@ -289,7 +294,7 @@ where
     let n_measurements = z.shape()[1];
 
     // Initialize state estimate
-    let mut x = initial_x;
+    let mut _x = initial_x;
 
     // Initialize state covariance
     let mut p = match &config.initial_p {
@@ -336,8 +341,8 @@ where
     // Run Extended Kalman filter
     for i in 0..n_samples {
         // Predict step
-        let x_pred = f_func(&x);
-        let f_jac = f_jacobian(&x);
+        let x_pred = f_func(&_x);
+        let f_jac = f_jacobian(&_x);
         let p_pred = f_jac.dot(&p).dot(&f_jac.t()) + &q;
 
         // Update step
@@ -350,14 +355,14 @@ where
         let k = match inv(&innovation_cov.view(), None) {
             Ok(inn_cov_inv) => p_pred.dot(&h_jac.t()).dot(&inn_cov_inv),
             Err(_) => {
-                return Err(SignalError::Compute(
+                return Err(SignalError::ComputationError(
                     "Failed to invert innovation covariance matrix".to_string(),
                 ));
             }
         };
 
         // State and covariance update
-        x = &x_pred + &k.dot(&innovation);
+        _x = &x_pred + &k.dot(&innovation);
         p = &p_pred - &k.dot(&innovation_cov).dot(&k.t());
 
         // Store state
@@ -385,6 +390,7 @@ where
 /// # Returns
 ///
 /// * Estimated state at each time step
+#[allow(dead_code)]
 pub fn unscented_kalman_filter<F, H>(
     z: &Array2<f64>,
     f_func: F,
@@ -408,7 +414,7 @@ where
     let kappa = ukf_params.kappa;
 
     // Initialize state estimate
-    let mut x = initial_x;
+    let mut _x = initial_x;
 
     // Initialize state covariance
     let mut p = match &config.initial_p {
@@ -470,7 +476,7 @@ where
     // Run Unscented Kalman filter
     for i in 0..n_samples {
         // Generate sigma points
-        let sigma_points = generate_sigma_points(&x, &p, gamma)?;
+        let sigma_points = generate_sigma_points(&_x, &p, gamma)?;
 
         // Predict sigma points through state transition function
         let mut predicted_sigmas = Vec::with_capacity(2 * n_states + 1);
@@ -535,7 +541,7 @@ where
         let k = match inv(&s.view(), None) {
             Ok(s_inv) => c.dot(&s_inv),
             Err(_) => {
-                return Err(SignalError::Compute(
+                return Err(SignalError::ComputationError(
                     "Failed to invert innovation covariance matrix".to_string(),
                 ));
             }
@@ -543,7 +549,7 @@ where
 
         // Update state and covariance
         let innovation = z.slice(s![i, ..]).to_owned() - z_pred;
-        x = &x_pred + &k.dot(&innovation);
+        _x = &x_pred + &k.dot(&innovation);
         p = &p_pred - &k.dot(&s).dot(&k.t());
 
         // Store state
@@ -566,6 +572,7 @@ where
 /// # Returns
 ///
 /// * Vector of sigma points
+#[allow(dead_code)]
 fn generate_sigma_points(
     x: &Array1<f64>,
     p: &Array2<f64>,
@@ -581,7 +588,7 @@ fn generate_sigma_points(
     let sqrt_p = match cholesky(&p.view(), None) {
         Ok(l) => l,
         Err(_) => {
-            return Err(SignalError::Compute(
+            return Err(SignalError::ComputationError(
                 "Failed to compute Cholesky decomposition of covariance matrix".to_string(),
             ));
         }
@@ -617,6 +624,7 @@ fn generate_sigma_points(
 /// # Returns
 ///
 /// * Estimated state at each time step
+#[allow(dead_code)]
 pub fn ensemble_kalman_filter<F, H>(
     z: &Array2<f64>,
     f_func: F,
@@ -646,8 +654,8 @@ where
         None => Array2::<f64>::eye(n_states) * 1.0,
     };
 
-    // Initialize ensemble
-    let mut ensemble = Vec::with_capacity(n_ensemble);
+    // Initialize _ensemble
+    let mut _ensemble = Vec::with_capacity(n_ensemble);
     let mut rng = rand::rng();
 
     for _ in 0..n_ensemble {
@@ -661,7 +669,7 @@ where
         let sqrt_p = match cholesky(&initial_p.view(), None) {
             Ok(l) => l,
             Err(_) => {
-                return Err(SignalError::Compute(
+                return Err(SignalError::ComputationError(
                     "Failed to compute Cholesky decomposition of initial covariance".to_string(),
                 ));
             }
@@ -694,20 +702,20 @@ where
             *ensemble_item = f_func(ensemble_item);
         }
 
-        // Calculate ensemble mean
+        // Calculate _ensemble mean
         let mut x_mean = Array1::<f64>::zeros(n_states);
-        for e in &ensemble {
+        for e in &_ensemble {
             x_mean = &x_mean + e;
         }
         x_mean /= n_ensemble as f64;
 
-        // Calculate measured ensemble
+        // Calculate measured _ensemble
         let mut measured_ensemble = Vec::with_capacity(n_ensemble);
-        for e in &ensemble {
+        for e in &_ensemble {
             measured_ensemble.push(h_func(e));
         }
 
-        // Calculate measured ensemble mean
+        // Calculate measured _ensemble mean
         let mut z_mean = Array1::<f64>::zeros(n_measurements);
         for me in &measured_ensemble {
             z_mean = &z_mean + me;
@@ -719,7 +727,7 @@ where
         let mut pzz = Array2::<f64>::zeros((n_measurements, n_measurements));
 
         for j in 0..n_ensemble {
-            let x_diff = &ensemble[j] - &x_mean;
+            let x_diff = &_ensemble[j] - &x_mean;
             let z_diff = &measured_ensemble[j] - &z_mean;
 
             let x_diff_col = x_diff
@@ -750,13 +758,13 @@ where
         let k = match inv(&pzz.view(), None) {
             Ok(pzz_inv) => pxz.dot(&pzz_inv),
             Err(_) => {
-                return Err(SignalError::Compute(
+                return Err(SignalError::ComputationError(
                     "Failed to invert innovation covariance matrix".to_string(),
                 ));
             }
         };
 
-        // Update ensemble members
+        // Update _ensemble members
         for j in 0..n_ensemble {
             // Generate perturbed observation
             let perturbed_z = &z.slice(s![i, ..]).to_owned()
@@ -769,14 +777,14 @@ where
                     noise
                 };
 
-            // Update ensemble member
+            // Update _ensemble member
             let innovation = &perturbed_z - &measured_ensemble[j];
-            ensemble[j] = &ensemble[j] + &k.dot(&innovation);
+            ensemble[j] = &_ensemble[j] + &k.dot(&innovation);
         }
 
-        // Recalculate ensemble mean as state estimate
+        // Recalculate _ensemble mean as state estimate
         let mut x_updated = Array1::<f64>::zeros(n_states);
-        for e in &ensemble {
+        for e in &_ensemble {
             x_updated = &x_updated + e;
         }
         x_updated /= n_ensemble as f64;
@@ -801,6 +809,7 @@ where
 /// # Returns
 ///
 /// * Denoised signal
+#[allow(dead_code)]
 pub fn kalman_denoise_1d(
     signal: &Array1<f64>,
     process_variance: Option<f64>,
@@ -858,6 +867,7 @@ pub fn kalman_denoise_1d(
 /// # Returns
 ///
 /// * Denoised image
+#[allow(dead_code)]
 pub fn kalman_denoise_2d(
     image: &Array2<f64>,
     process_variance: Option<f64>,
@@ -899,6 +909,7 @@ pub fn kalman_denoise_2d(
 /// # Returns
 ///
 /// * Denoised color image
+#[allow(dead_code)]
 pub fn kalman_denoise_color(
     image: &Array3<f64>,
     process_variance: Option<f64>,
@@ -910,8 +921,8 @@ pub fn kalman_denoise_color(
 
     if joint_channels {
         // Process each pixel as a vector measurement
-        let f = Array2::<f64>::eye(channels) * 1.0;
-        let h = Array2::<f64>::eye(channels) * 1.0;
+        let f = Array2::<f64>::eye(_channels) * 1.0;
+        let h = Array2::<f64>::eye(_channels) * 1.0;
 
         let config = KalmanConfig {
             process_noise_scale: process_variance.unwrap_or(1e-5),
@@ -982,7 +993,7 @@ pub fn kalman_denoise_color(
         output = (&output + &column_output) / 2.0;
     } else {
         // Process each channel independently
-        for c in 0..channels {
+        for c in 0.._channels {
             let channel = image.slice(s![.., .., c]).to_owned();
             let denoised_channel =
                 kalman_denoise_2d(&channel, process_variance, measurement_variance)?;
@@ -1006,6 +1017,7 @@ pub fn kalman_denoise_color(
 /// # Returns
 ///
 /// * Filtered state history
+#[allow(dead_code)]
 fn kalman_filter_vector_measurement(
     z: &Array2<f64>,
     f: &Array2<f64>,
@@ -1031,7 +1043,7 @@ fn kalman_filter_vector_measurement(
     }
 
     // Initialize state estimate
-    let mut x = match initial_x {
+    let mut _x = match initial_x {
         Some(x0) => {
             if x0.len() != n_states {
                 return Err(SignalError::DimensionMismatch(
@@ -1088,7 +1100,7 @@ fn kalman_filter_vector_measurement(
     // Run Kalman filter
     for i in 0..n_samples {
         // Predict step
-        let x_pred = f.dot(&x);
+        let x_pred = f.dot(&_x);
         let p_pred = f.dot(&p).dot(&f.t()) + &q;
 
         // Update step
@@ -1100,18 +1112,18 @@ fn kalman_filter_vector_measurement(
         let k = match inv(&innovation_cov.view(), None) {
             Ok(inn_cov_inv) => p_pred.dot(&h.t()).dot(&inn_cov_inv),
             Err(_) => {
-                return Err(SignalError::Compute(
+                return Err(SignalError::ComputationError(
                     "Failed to invert innovation covariance matrix".to_string(),
                 ));
             }
         };
 
         // State and covariance update
-        x = &x_pred + &k.dot(&innovation);
+        _x = &x_pred + &k.dot(&innovation);
         p = &p_pred - &k.dot(&innovation_cov).dot(&k.t());
 
         // Store state
-        x_history.slice_mut(s![i, ..]).assign(&x);
+        x_history.slice_mut(s![i, ..]).assign(&_x);
     }
 
     Ok(x_history)
@@ -1127,6 +1139,7 @@ fn kalman_filter_vector_measurement(
 /// # Returns
 ///
 /// * (process_variance, measurement_variance)
+#[allow(dead_code)]
 pub fn estimate_noise_parameters(
     signal: &Array1<f64>,
     window_size: usize,
@@ -1135,7 +1148,7 @@ pub fn estimate_noise_parameters(
 
     if window_size >= n {
         return Err(SignalError::InvalidArgument(
-            "Window size must be smaller than signal length".to_string(),
+            "Window _size must be smaller than signal length".to_string(),
         ));
     }
 
@@ -1186,6 +1199,7 @@ pub fn estimate_noise_parameters(
 /// # Returns
 ///
 /// * Smoothed signal
+#[allow(dead_code)]
 pub fn kalman_smooth(
     signal: &Array1<f64>,
     f: &Array2<f64>,
@@ -1246,7 +1260,7 @@ pub fn kalman_smooth(
         let k = match inv(&innovation_cov.view(), None) {
             Ok(inn_cov_inv) => p_pred.dot(&h.t()).dot(&inn_cov_inv),
             Err(_) => {
-                return Err(SignalError::Compute(
+                return Err(SignalError::ComputationError(
                     "Failed to invert innovation covariance matrix".to_string(),
                 ));
             }
@@ -1266,7 +1280,7 @@ pub fn kalman_smooth(
         let g = match inv(&p_pred.view(), None) {
             Ok(p_pred_inv) => filtered_covs[i].dot(&f.t()).dot(&p_pred_inv),
             Err(_) => {
-                return Err(SignalError::Compute(
+                return Err(SignalError::ComputationError(
                     "Failed to invert predicted covariance matrix".to_string(),
                 ));
             }
@@ -1296,6 +1310,7 @@ pub fn kalman_smooth(
 /// # Returns
 ///
 /// * Filtered signal
+#[allow(dead_code)]
 pub fn adaptive_kalman_filter(
     signal: &Array1<f64>,
     adaptive_window: usize,
@@ -1332,6 +1347,7 @@ pub fn adaptive_kalman_filter(
 /// # Returns
 ///
 /// * Filtered signal
+#[allow(dead_code)]
 pub fn robust_kalman_filter(
     signal: &Array1<f64>,
     outlier_threshold: f64,
@@ -1370,7 +1386,7 @@ pub fn robust_kalman_filter(
         let s_inv = match inv(&innovation_cov.view(), None) {
             Ok(inv) => inv,
             Err(_) => {
-                return Err(SignalError::Compute(
+                return Err(SignalError::ComputationError(
                     "Failed to invert innovation covariance matrix".to_string(),
                 ));
             }

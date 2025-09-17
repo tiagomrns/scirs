@@ -47,6 +47,7 @@ const MAX_ITERATIONS: usize = 100;
 /// let w_exp_w = w * w.exp();
 /// assert!((w_exp_w - z).norm() < 1e-10);
 /// ```
+#[allow(dead_code)]
 pub fn lambert_w(z: Complex64, k: i32, tol: f64) -> SpecialResult<Complex64> {
     if z.is_nan() {
         return Ok(Complex64::new(f64::NAN, f64::NAN));
@@ -147,6 +148,7 @@ pub fn lambert_w(z: Complex64, k: i32, tol: f64) -> SpecialResult<Complex64> {
 /// 2. Asymptotic series for large |z|
 /// 3. Pade approximation around 0 for the principal branch
 /// 4. General approximation for other cases
+#[allow(dead_code)]
 fn initial_guess(z: Complex64, k: i32) -> Complex64 {
     // Near the branch point at -1/e for k=0 or k=-1
     if (z + EXPN1_INV).norm() < 0.3 && (k == 0 || k == -1) {
@@ -220,6 +222,7 @@ fn initial_guess(z: Complex64, k: i32) -> Complex64 {
 /// let w = lambert_w_real(1.0, 1e-8).unwrap();
 /// assert!((w - 0.56714329040978384).abs() < 1e-10);
 /// ```
+#[allow(dead_code)]
 pub fn lambert_w_real(x: f64, tol: f64) -> SpecialResult<f64> {
     let result = lambert_w(Complex64::new(x, 0.0), 0, tol)?;
 
@@ -228,8 +231,7 @@ pub fn lambert_w_real(x: f64, tol: f64) -> SpecialResult<f64> {
         Ok(result.re)
     } else {
         Err(SpecialError::DomainError(format!(
-            "Lambert W function gives a complex result for x={}",
-            x
+            "Lambert W function gives a complex result for x={x}"
         )))
     }
 }

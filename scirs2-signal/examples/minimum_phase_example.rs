@@ -1,12 +1,13 @@
-//! Example of minimum phase filter conversion
-//!
-//! This example demonstrates how to convert filters to minimum phase equivalents,
-//! which preserve the magnitude response while ensuring all zeros are in stable locations.
+// Example of minimum phase filter conversion
+//
+// This example demonstrates how to convert filters to minimum phase equivalents,
+// which preserve the magnitude response while ensuring all zeros are in stable locations.
 
 use num_traits::Zero;
 use scirs2_signal::filter::{group_delay, minimum_phase};
 use std::f64::consts::PI;
 
+#[allow(dead_code)]
 fn main() {
     println!("Minimum Phase Filter Conversion Example");
     println!("======================================\n");
@@ -161,6 +162,7 @@ fn main() {
 }
 
 /// Helper function to evaluate filter response at a frequency
+#[allow(dead_code)]
 fn evaluate_filter_response(b: &[f64], w: f64) -> num_complex::Complex64 {
     use num_complex::Complex64;
 

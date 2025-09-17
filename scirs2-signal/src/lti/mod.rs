@@ -1,85 +1,132 @@
-//! Linear Time-Invariant (LTI) Systems Module
-//!
-//! This module provides comprehensive support for Linear Time-Invariant systems analysis
-//! and design. It offers three different system representations and extensive analysis tools.
-//!
-//! # System Representations
-//!
-//! - **Transfer Function**: Ratio of polynomials H(s) = N(s)/D(s)
-//! - **Zero-Pole-Gain**: Factored form H(s) = K * ∏(s-zi)/∏(s-pi)
-//! - **State-Space**: Matrix form dx/dt = Ax + Bu, y = Cx + Du
-//!
-//! # Quick Start
-//!
-//! ## Creating Systems
-//!
-//! ```rust
-//! use scirs2_signal::lti::{design, systems::TransferFunction};
-//! use num_complex::Complex64;
-//!
-//! // Transfer function: H(s) = 1/(s+1)
-//! let sys1 = design::tf(vec![1.0], vec![1.0, 1.0], None).unwrap();
-//!
-//! // Zero-pole-gain: H(s) = 2(s+1)/(s+2)
-//! let sys2 = design::zpk(
-//!     vec![Complex64::new(-1.0, 0.0)], // zeros
-//!     vec![Complex64::new(-2.0, 0.0)], // poles
-//!     2.0,                             // gain
-//!     None
-//! ).unwrap();
-//!
-//! // State-space: dx/dt = -x + u, y = x
-//! let sys3 = design::ss(
-//!     vec![-1.0], vec![1.0], vec![1.0], vec![0.0], None
-//! ).unwrap();
-//! ```
-//!
-//! ## System Analysis
-//!
-//! ```rust
-//! use scirs2_signal::lti::{design::{tf, ss}, analysis::{bode, analyze_controllability}};
-//!
-//! let sys = tf(vec![1.0], vec![1.0, 1.0], None).unwrap();
-//!
-//! // Frequency response analysis
-//! let freqs = vec![0.1, 1.0, 10.0];
-//! let (w, mag, phase) = bode(&sys, Some(&freqs)).unwrap();
-//!
-//! // State-space analysis using direct state-space creation
-//! // For H(s) = 1/(s+1), state-space form: dx/dt = -x + u, y = x
-//! let ss_sys = ss(vec![-1.0], vec![1.0], vec![1.0], vec![0.0], None).unwrap();
-//! let ctrl_analysis = analyze_controllability(&ss_sys).unwrap();
-//! println!("System is controllable: {}", ctrl_analysis.is_controllable);
-//! ```
-//!
-//! ## System Interconnections
-//!
-//! ```rust
-//! use scirs2_signal::lti::design::{tf, series, parallel, feedback};
-//!
-//! let g1 = tf(vec![1.0], vec![1.0, 1.0], None).unwrap();
-//! let g2 = tf(vec![2.0], vec![1.0, 2.0], None).unwrap();
-//!
-//! // Series connection
-//! let series_sys = series(&g1, &g2).unwrap();
-//!
-//! // Parallel connection
-//! let parallel_sys = parallel(&g1, &g2).unwrap();
-//!
-//! // Feedback connection
-//! let feedback_sys = feedback(&g1, None, 1).unwrap(); // Unity feedback
-//! ```
-//!
-//! # Module Organization
-//!
-//! - [`systems`] - Core system types and trait definitions
-//! - [`analysis`] - System analysis functions (Bode plots, controllability, etc.)
-//! - [`design`] - System creation and interconnection functions
+// Linear Time-Invariant (LTI) Systems Module
+//
+// This module provides comprehensive support for Linear Time-Invariant systems analysis
+// and design. It offers three different system representations and extensive analysis tools.
+//
+// # System Representations
+//
+// - **Transfer Function**: Ratio of polynomials H(s) = N(s)/D(s)
+// - **Zero-Pole-Gain**: Factored form H(s) = K * ∏(s-zi)/∏(s-pi)
+// - **State-Space**: Matrix form dx/dt = Ax + Bu, y = Cx + Du
+//
+// # Quick Start
+//
+// ## Creating Systems
+//
+// ```rust
+// use scirs2_signal::lti::{design, systems::TransferFunction};
+//
+// // Transfer function: H(s) = 1/(s+1)
+// let sys1 = design::tf(vec![1.0], vec![1.0, 1.0], None).unwrap();
+//
+// // Zero-pole-gain: H(s) = 2(s+1)/(s+2)
+// let sys2 = design::zpk(
+//     vec![Complex64::new(-1.0, 0.0)], // zeros
+//     vec![Complex64::new(-2.0, 0.0)], // poles
+//     2.0,                             // gain
+//     None
+// ).unwrap();
+//
+// // State-space: dx/dt = -x + u, y = x
+// let sys3 = design::ss(
+//     vec![-1.0], vec![1.0], vec![1.0], vec![0.0], None
+// ).unwrap();
+// ```
+//
+// ## System Analysis
+//
+// ```rust
+// use scirs2_signal::lti::{design::{tf, ss}, analysis::{bode, analyze_controllability}};
+//
+// let sys = tf(vec![1.0], vec![1.0, 1.0], None).unwrap();
+//
+// // Frequency response analysis
+// let freqs = vec![0.1, 1.0, 10.0];
+// let (w, mag, phase) = bode(&sys, Some(&freqs)).unwrap();
+//
+// // State-space analysis using direct state-space creation
+// // For H(s) = 1/(s+1), state-space form: dx/dt = -x + u, y = x
+// let ss_sys = ss(vec![-1.0], vec![1.0], vec![1.0], vec![0.0], None).unwrap();
+// let ctrl_analysis = analyze_controllability(&ss_sys).unwrap();
+// println!("System is controllable: {}", ctrl_analysis.is_controllable);
+// ```
+//
+// ## System Interconnections
+//
+// ```rust
+// use scirs2_signal::lti::design::{tf, series, parallel, feedback};
+//
+// let g1 = tf(vec![1.0], vec![1.0, 1.0], None).unwrap();
+// let g2 = tf(vec![2.0], vec![1.0, 2.0], None).unwrap();
+//
+// // Series connection
+// let series_sys = series(&g1, &g2).unwrap();
+//
+// // Parallel connection
+// let parallel_sys = parallel(&g1, &g2).unwrap();
+//
+// // Feedback connection
+// let feedback_sys = feedback(&g1, None, 1).unwrap(); // Unity feedback
+// ```
+//
+// ## Robust Analysis
+//
+// ```rust
+// use scirs2_signal::lti::{design::ss, robust_analysis::{robust_control_observability_analysis, RobustAnalysisConfig}};
+//
+// // Create a multi-input, multi-output system
+// let sys = ss(
+//     vec![-1.0, 0.0, 1.0, -2.0], // A matrix (2x2)
+//     vec![1.0, 0.0],             // B matrix (2x1)
+//     vec![1.0, 0.0],             // C matrix (1x2)
+//     vec![0.0],                  // D matrix (1x1)
+//     None,
+// ).unwrap();
+//
+// // Perform comprehensive robust analysis
+// let config = RobustAnalysisConfig {
+//     enable_sensitivity_analysis: true,
+//     enable_structured_analysis: true,
+//     enable_monte_carlo: true,
+//     monte_carlo_samples: 1000,
+//     ..Default::default()
+// };
+//
+// let robust_analysis = robust_control_observability_analysis(&sys, &config).unwrap();
+//
+// // Check robustness metrics
+// println!("Robustness Score: {:.1}/100", robust_analysis.robustness_score);
+// println!("Controllable: {}", robust_analysis.enhanced_controllability.basic_analysis.is_controllable);
+// println!("Observable: {}", robust_analysis.enhanced_observability.basic_analysis.is_observable);
+// println!("Condition Number: {:.2e}", robust_analysis.enhanced_controllability.conditioning.condition_number_2);
+//
+// // Check for critical issues
+// if !robust_analysis.robustness_issues.is_empty() {
+//     println!("Critical Issues:");
+//     for issue in &robust_analysis.robustness_issues {
+//         println!("  - {}", issue);
+//     }
+// }
+// ```
+//
+// # Module Organization
+//
+// - [`systems`] - Core system types and trait definitions
+// - [`analysis`] - System analysis functions (Bode plots, controllability, etc.)
+// - [`robust_analysis`] - Enhanced robust controllability/observability analysis
+// - [`design`] - System creation and interconnection functions
+
+use num_complex::Complex64;
 
 // Re-export all public modules
+#[allow(unused_imports)]
 pub mod analysis;
 pub mod design;
+pub mod robust_analysis;
 pub mod systems;
+
+// Time-domain response analysis module
+pub mod response;
 
 // Re-export core system types for convenience
 pub use systems::{LtiSystem, StateSpace, TransferFunction, ZerosPoleGain};
@@ -92,12 +139,27 @@ pub use analysis::{
     KalmanDecomposition, KalmanStructure, ObservabilityAnalysis,
 };
 
+// Re-export robust analysis functions and types
+pub use robust_analysis::{
+    robust_control_observability_analysis, AdditiveRobustness, ConfidenceIntervals,
+    ControlEffortAnalysis, EnhancedControllabilityAnalysis, EnhancedObservabilityAnalysis,
+    EstimationAccuracyAnalysis, FrequencyDomainAnalysis, MinimumEnergyAnalysis,
+    MinimumVarianceAnalysis, MonteCarloRobustnessResults, MultiplcativeRobustness,
+    NumericalConditioning, ParametricUncertaintyAnalysis, PerformanceOrientedMetrics,
+    RealPerturbationBounds, RobustAnalysisConfig, RobustControlObservabilityAnalysis,
+    SensitivityAnalysisResults, StructuredPerturbationAnalysis, SvdControllabilityAnalysis,
+    SvdObservabilityAnalysis,
+};
+
 // Re-export design functions for convenience
 pub use design::{
     add_polynomials, c2d, complementary_sensitivity, divide_polynomials, evaluate_polynomial,
     feedback, multiply_polynomials, parallel, polynomial_derivative, sensitivity, series, ss,
-    subtract_polynomials, tf, zpk,
+    subtract_polynomials, tf as design_tf, zpk,
 };
+
+// Re-export response functions for convenience
+pub use response::{impulse_response, lsim, step_response};
 
 // Keep the system module for backward compatibility
 /// Functions for creating and manipulating LTI systems
@@ -124,8 +186,8 @@ pub mod system {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::lti::design::tf;
     use approx::assert_relative_eq;
-    use num_complex::Complex64;
 
     #[test]
     fn test_module_api_compatibility() {
@@ -187,6 +249,8 @@ mod tests {
 
     #[test]
     fn test_comprehensive_analysis() {
+        let a = vec![1.0, 2.0, 3.0, 4.0, 5.0];
+        let b = vec![0.5, 0.5];
         // Test a complete analysis workflow
         let ss_sys = ss(
             vec![-1.0, 0.0, 1.0, -2.0], // 2x2 A matrix
@@ -328,4 +392,9 @@ mod tests {
         assert_eq!(impulse.len(), t.len());
         assert_eq!(step.len(), t.len());
     }
+}
+
+#[allow(dead_code)]
+pub fn tf(num: Vec<f64>, den: Vec<f64>) -> TransferFunction {
+    TransferFunction::new(num, den, None).unwrap()
 }

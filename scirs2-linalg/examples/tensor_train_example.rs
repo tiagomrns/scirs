@@ -113,7 +113,7 @@ mod tensor_train_example {
         let mut diff_sum = 0.0;
         let mut orig_sum = 0.0;
 
-        // Iterate through the original tensor
+        // Iterate through the _original tensor
         for (idx, &val) in original.indexed_iter() {
             let rec_val = reconstructed[idx.clone()];
             diff_sum += (val - rec_val).powi(2);
@@ -124,6 +124,7 @@ mod tensor_train_example {
     }
 }
 
+#[allow(dead_code)]
 fn main() {
     #[cfg(feature = "tensor_contraction")]
     {

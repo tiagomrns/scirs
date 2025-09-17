@@ -6,7 +6,7 @@
 use crate::distributions::chi2;
 use crate::error::{StatsError, StatsResult};
 use ndarray::{Array1, Array2, ArrayView1, ArrayView2, Axis};
-use num_traits::{Float, NumCast};
+use num_traits::{Float, NumCast, PrimInt};
 use std::fmt::Debug;
 
 /// Result of a chi-square test
@@ -58,6 +58,7 @@ pub struct ChiSquareResult<F> {
 /// // For a significance level of 0.05, we would reject the null hypothesis if p < 0.05
 /// let significant = result.p_value < 0.05;
 /// ```
+#[allow(dead_code)]
 pub fn chi2_gof<F, I>(
     observed: &ArrayView1<I>,
     expected: Option<ArrayView1<F>>,
@@ -70,8 +71,9 @@ where
         + Debug
         + std::marker::Send
         + std::marker::Sync
-        + 'static,
-    I: num_traits::PrimInt + NumCast,
+        + 'static
+        + std::fmt::Display,
+    I: PrimInt + NumCast + std::fmt::Display,
 {
     // Check if observed is empty
     if observed.is_empty() {
@@ -163,7 +165,7 @@ where
 /// ];
 ///
 /// // Perform chi-square test of independence
-/// let result = chi2_independence::<f64, _>(&observed.view()).unwrap();
+/// let result = chi2_independence::<f64, i32>(&observed.view()).unwrap();
 ///
 /// println!("Chi-square statistic: {}", result.statistic);
 /// println!("p-value: {}", result.p_value);
@@ -172,6 +174,7 @@ where
 /// // For a significance level of 0.05, we would reject the null hypothesis if p < 0.05
 /// let significant = result.p_value < 0.05;
 /// ```
+#[allow(dead_code)]
 pub fn chi2_independence<F, I>(observed: &ArrayView2<I>) -> StatsResult<ChiSquareResult<F>>
 where
     F: Float
@@ -181,10 +184,11 @@ where
         + Debug
         + std::marker::Send
         + std::marker::Sync
-        + 'static,
-    I: num_traits::PrimInt + NumCast,
+        + 'static
+        + std::fmt::Display,
+    I: PrimInt + NumCast + std::fmt::Display,
 {
-    // Check if observed is empty
+    // Check if _observed is empty
     if observed.is_empty() {
         return Err(StatsError::InvalidArgument(
             "Observed frequencies cannot be empty".to_string(),
@@ -282,11 +286,12 @@ where
 /// ];
 ///
 /// // Perform chi-square test with Yates' correction
-/// let result = chi2_yates::<f64, _>(&observed.view()).unwrap();
+/// let result = chi2_yates::<f64, i32>(&observed.view()).unwrap();
 ///
 /// println!("Chi-square statistic (with Yates' correction): {}", result.statistic);
 /// println!("p-value: {}", result.p_value);
 /// ```
+#[allow(dead_code)]
 pub fn chi2_yates<F, I>(observed: &ArrayView2<I>) -> StatsResult<ChiSquareResult<F>>
 where
     F: Float
@@ -296,10 +301,11 @@ where
         + Debug
         + std::marker::Send
         + std::marker::Sync
-        + 'static,
-    I: num_traits::PrimInt + NumCast,
+        + 'static
+        + std::fmt::Display,
+    I: PrimInt + NumCast + std::fmt::Display,
 {
-    // Check if observed is a 2x2 table
+    // Check if _observed is a 2x2 table
     let rows = observed.shape()[0];
     let cols = observed.shape()[1];
 

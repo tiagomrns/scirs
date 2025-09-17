@@ -8,6 +8,7 @@ use std::fmt::{Debug, Display};
 
 use crate::error::{Result, TimeSeriesError};
 use crate::utils::{autocorrelation, partial_autocorrelation};
+use statrs::statistics::Statistics;
 
 /// Residual diagnostics for time series models
 #[derive(Debug, Clone)]
@@ -119,6 +120,7 @@ pub struct CrossValidationResults<F> {
 }
 
 /// Perform residual diagnostics
+#[allow(dead_code)]
 pub fn residual_diagnostics<S, F>(
     residuals: &ArrayBase<S, Ix1>,
     max_lag: Option<usize>,
@@ -126,9 +128,9 @@ pub fn residual_diagnostics<S, F>(
 ) -> Result<ResidualDiagnostics<F>>
 where
     S: Data<Elem = F>,
-    F: Float + FromPrimitive + Debug + Display + ScalarOperand, // TODO: Add scirs2-core linear algebra trait when available
+    F: Float + FromPrimitive + Debug + Display + ScalarOperand,
 {
-    scirs2_core::validation::check_array_finite(residuals, "residuals")?;
+    scirs2_core::validation::checkarray_finite(residuals, "residuals")?;
 
     if residuals.len() < 4 {
         return Err(TimeSeriesError::InvalidInput(
@@ -180,6 +182,7 @@ where
 }
 
 /// Calculate skewness and kurtosis
+#[allow(dead_code)]
 fn calculate_moments<S, F>(data: &ArrayBase<S, Ix1>) -> Result<(F, F)>
 where
     S: Data<Elem = F>,
@@ -211,6 +214,7 @@ where
 }
 
 /// Ljung-Box test for autocorrelation
+#[allow(dead_code)]
 pub fn ljung_box_test<S, F>(
     residuals: &ArrayBase<S, Ix1>,
     lags: usize,
@@ -218,9 +222,9 @@ pub fn ljung_box_test<S, F>(
 ) -> Result<LjungBoxTest<F>>
 where
     S: Data<Elem = F>,
-    F: Float + FromPrimitive + Debug + Display + ScalarOperand, // TODO: Add scirs2-core linear algebra trait when available
+    F: Float + FromPrimitive + Debug + Display + ScalarOperand,
 {
-    scirs2_core::validation::check_array_finite(residuals, "residuals")?;
+    scirs2_core::validation::checkarray_finite(residuals, "residuals")?;
 
     let n = residuals.len();
     if lags >= n {
@@ -256,6 +260,7 @@ where
 }
 
 /// Jarque-Bera test for normality
+#[allow(dead_code)]
 pub fn jarque_bera_test<S, F>(residuals: &ArrayBase<S, Ix1>, alpha: F) -> Result<JarqueBeraTest<F>>
 where
     S: Data<Elem = F>,
@@ -281,12 +286,13 @@ where
 }
 
 /// ARCH test for heteroskedasticity
+#[allow(dead_code)]
 pub fn arch_test<S, F>(residuals: &ArrayBase<S, Ix1>, lags: usize, alpha: F) -> Result<ArchTest<F>>
 where
     S: Data<Elem = F>,
-    F: Float + FromPrimitive + Debug + Display + ScalarOperand, // TODO: Add scirs2-core linear algebra trait when available
+    F: Float + FromPrimitive + Debug + Display + ScalarOperand,
 {
-    scirs2_core::validation::check_array_finite(residuals, "residuals")?;
+    scirs2_core::validation::checkarray_finite(residuals, "residuals")?;
 
     let n = residuals.len();
     if lags >= n {
@@ -295,10 +301,10 @@ where
         ));
     }
 
-    // Square the residuals
+    // Square the _residuals
     let squared_residuals = residuals.mapv(|x| x * x);
 
-    // Regress squared residuals on their lags
+    // Regress squared _residuals on their lags
     use ndarray::Array2;
 
     let y = squared_residuals.slice(ndarray::s![lags..]).to_owned();
@@ -372,6 +378,7 @@ where
 }
 
 /// Calculate fit statistics
+#[allow(dead_code)]
 pub fn calculate_fit_statistics<S, F>(
     actual: &ArrayBase<S, Ix1>,
     predicted: &ArrayBase<S, Ix1>,
@@ -381,8 +388,8 @@ where
     S: Data<Elem = F>,
     F: Float + FromPrimitive + Display,
 {
-    scirs2_core::validation::check_array_finite(actual, "actual")?;
-    scirs2_core::validation::check_array_finite(predicted, "predicted")?;
+    scirs2_core::validation::checkarray_finite(actual, "actual")?;
+    scirs2_core::validation::checkarray_finite(predicted, "predicted")?;
 
     if actual.len() != predicted.len() {
         return Err(TimeSeriesError::InvalidInput(
@@ -460,6 +467,7 @@ where
 }
 
 /// Perform time series cross-validation
+#[allow(dead_code)]
 pub fn time_series_cv<S, F, Model, Fit, Predict>(
     data: &ArrayBase<S, Ix1>,
     n_folds: usize,
@@ -476,7 +484,7 @@ where
     Fit: Fn(&mut Model, &Array1<F>) -> Result<()>,
     Predict: Fn(&Model, usize, &Array1<F>) -> Result<Array1<F>>,
 {
-    scirs2_core::validation::check_array_finite(data, "data")?;
+    scirs2_core::validation::checkarray_finite(data, "data")?;
 
     let n = data.len();
     if n < min_train_size + forecast_horizon {
@@ -488,7 +496,7 @@ where
     let fold_size = (n - min_train_size - forecast_horizon) / n_folds;
     if fold_size == 0 {
         return Err(TimeSeriesError::InvalidInput(
-            "Too many folds for available data".to_string(),
+            "Too many _folds for available data".to_string(),
         ));
     }
 
@@ -547,6 +555,7 @@ where
 }
 
 /// Simplified chi-squared p-value calculation
+#[allow(dead_code)]
 fn chi_squared_pvalue<F>(statistic: F, df: usize) -> Result<F>
 where
     F: Float + FromPrimitive + Display,
@@ -596,6 +605,7 @@ where
 }
 
 /// Simple matrix solve using Gaussian elimination
+#[allow(dead_code)]
 fn matrix_solve<F>(a: &ndarray::Array2<F>, b: &Array1<F>) -> Result<Array1<F>>
 where
     F: Float + FromPrimitive + ScalarOperand,

@@ -4,6 +4,7 @@
 //! implemented in SciRS2 Core.
 
 #[cfg(not(feature = "memory_management"))]
+#[allow(dead_code)]
 fn main() {
     println!("This example requires the 'memory_management' feature to be enabled.");
     println!("Run with: cargo run --example leak_detection_demo --features memory_management");
@@ -15,6 +16,7 @@ use scirs2_core::memory::leak_detection::{LeakCheckGuard, LeakDetectionConfig, L
 use scirs2_core::CoreResult;
 
 #[cfg(feature = "memory_management")]
+#[allow(dead_code)]
 fn main() -> CoreResult<()> {
     println!("🔍 SciRS2 Core Memory Leak Detection Demo");
     println!("==========================================\n");
@@ -23,14 +25,14 @@ fn main() -> CoreResult<()> {
     let config = LeakDetectionConfig::default()
         .development_mode()  // Enable detailed tracking
         .with_threshold_mb(10)  // Low threshold for demo
-        .with_sampling_rate(1.0); // Track all allocations
+        .with_samplingrate(1.0); // Track all allocations
 
     println!("📋 Configuration:");
     println!(
         "  - Threshold: {} MB",
         config.growth_threshold_bytes / (1024 * 1024)
     );
-    println!("  - Sampling rate: {:.1}%", config.sampling_rate * 100.0);
+    println!("  - Sampling rate: {:.1}%", config.samplingrate * 100.0);
     println!("  - Call stacks: {}", config.collect_call_stacks);
     println!("  - Production mode: {}\n", config.production_mode);
 
@@ -40,7 +42,7 @@ fn main() -> CoreResult<()> {
 
     // Demonstrate checkpoint-based leak detection
     println!("\n🎯 Creating memory checkpoint...");
-    let checkpoint = detector.create_checkpoint("demo_operation")?;
+    let checkpoint = detector.create_checkpoint(demo_operation)?;
     println!(
         "  ✅ Checkpoint '{}' created at {}",
         checkpoint.name,
@@ -87,7 +89,7 @@ fn main() -> CoreResult<()> {
     // Demonstrate RAII leak checking with guard
     println!("\n🛡️  Testing RAII leak guard...");
     {
-        let _guard = LeakCheckGuard::new(&detector, "raii_test")?;
+        let guard = LeakCheckGuard::new(&detector, "raii_test")?;
         println!("  📦 Guard created - will check on drop");
 
         // Simulate more allocations within guard scope
@@ -129,7 +131,7 @@ fn main() -> CoreResult<()> {
     println!("  📦 Production config:");
     println!(
         "    - Sampling: {:.1}%",
-        production_config.sampling_rate * 100.0
+        production_config.samplingrate * 100.0
     );
     println!(
         "    - Call stacks: {}",
@@ -140,7 +142,7 @@ fn main() -> CoreResult<()> {
     println!("  🔧 Development config:");
     println!(
         "    - Sampling: {:.1}%",
-        development_config.sampling_rate * 100.0
+        development_config.samplingrate * 100.0
     );
     println!(
         "    - Call stacks: {}",

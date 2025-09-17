@@ -15,6 +15,7 @@ use std::marker::PhantomData;
 
 use super::mls::{PolynomialBasis, WeightFunction};
 use crate::error::{InterpolateError, InterpolateResult};
+use statrs::statistics::Statistics;
 
 /// Local polynomial regression model result
 #[derive(Debug, Clone)]
@@ -267,7 +268,7 @@ where
         let (indices, distances) = self.find_relevant_points(x)?;
 
         if indices.is_empty() {
-            return Err(InterpolateError::ValueError(
+            return Err(InterpolateError::invalid_input(
                 "No points found within effective range".to_string(),
             ));
         }
@@ -560,11 +561,11 @@ where
         // Solve the system for coefficients
         #[cfg(feature = "linalg")]
         let coefficients = {
-            use ndarray_linalg::Solve;
-            let xtx_f64 = xtx.mapv(|x| x.to_f64().unwrap());
-            let xty_f64 = xty.mapv(|x| x.to_f64().unwrap());
-            match xtx_f64.solve(&xty_f64) {
-                Ok(c) => c.mapv(|x| F::from_f64(x).unwrap()),
+            use scirs2_linalg::solve;
+            let xtx_f64 = xtx.mapv(|_x| x.to_f64().unwrap());
+            let xty_f64 = xty.mapv(|_x| x.to_f64().unwrap());
+            match solve(&xtx_f64.view(), &xty_f64.view(), None) {
+                Ok(c) => c.mapv(|_x| F::from_f64(_x).unwrap()),
                 Err(_) => {
                     // Fallback: use local weighted mean for numerical stability
                     let mut mean = F::zero();
@@ -622,10 +623,10 @@ where
         // Try to compute the inverse of X'WX
         #[cfg(feature = "linalg")]
         let xtx_inv = {
-            use ndarray_linalg::Inverse;
-            let xtx_f64 = xtx.mapv(|x| x.to_f64().unwrap());
-            match xtx_f64.inv() {
-                Ok(inv) => inv.mapv(|x| F::from_f64(x).unwrap()),
+            use scirs2_linalg::inv;
+            let xtx_f64 = xtx.mapv(|_x| x.to_f64().unwrap());
+            match inv(&xtx_f64.view(), None) {
+                Ok(inv) => inv.mapv(|_x| F::from_f64(_x).unwrap()),
                 Err(_) => {
                     // If inversion fails, return a simpler result without diagnostics
                     return Ok(RegressionResult {
@@ -656,7 +657,7 @@ where
         // The following code only runs when linalg feature is enabled
         #[cfg(feature = "linalg")]
         {
-            // Compute fitted values for all local points
+            // Compute fitted _values for all local _points
             let fitted_local = basis.dot(&coefficients);
 
             // Compute residuals
@@ -687,7 +688,7 @@ where
                 F::zero()
             };
 
-            // Compute leverage values (diagonal of hat matrix)
+            // Compute leverage _values (diagonal of hat matrix)
             let mut leverage = Array1::zeros(n_points);
             for i in 0..n_points {
                 let w_row = w_basis.row(i);
@@ -865,6 +866,7 @@ where
 /// # Returns
 ///
 /// A LocalPolynomialRegression model with common default settings
+#[allow(dead_code)]
 pub fn make_loess<F>(
     points: Array2<F>,
     values: Array1<F>,
@@ -890,6 +892,7 @@ where
 /// # Returns
 ///
 /// A LocalPolynomialRegression model with robust error estimates
+#[allow(dead_code)]
 pub fn make_robust_loess<F>(
     points: Array2<F>,
     values: Array1<F>,

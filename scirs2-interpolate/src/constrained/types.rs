@@ -168,12 +168,12 @@ impl<T: Float + FromPrimitive + Debug + Display> Constraint<T> {
     /// # Returns
     ///
     /// A new upper bound constraint
-    pub fn upper_bound(x_min: Option<T>, x_max: Option<T>, upper_bound: T) -> Self {
+    pub fn upper_bound(x_min: Option<T>, x_max: Option<T>, upperbound: T) -> Self {
         Constraint {
             constraint_type: ConstraintType::UpperBound,
             x_min,
             x_max,
-            parameter: Some(upper_bound),
+            parameter: Some(upperbound),
         }
     }
 
@@ -188,12 +188,12 @@ impl<T: Float + FromPrimitive + Debug + Display> Constraint<T> {
     /// # Returns
     ///
     /// A new lower bound constraint
-    pub fn lower_bound(x_min: Option<T>, x_max: Option<T>, lower_bound: T) -> Self {
+    pub fn lower_bound(x_min: Option<T>, x_max: Option<T>, lowerbound: T) -> Self {
         Constraint {
             constraint_type: ConstraintType::LowerBound,
             x_min,
             x_max,
-            parameter: Some(lower_bound),
+            parameter: Some(lowerbound),
         }
     }
 }

@@ -8,6 +8,8 @@ use ndarray::{Array1, Array2, ArrayView1, ArrayView2, Axis, ScalarOperand};
 use num_traits::{Float, FromPrimitive};
 use std::fmt::Debug;
 
+use crate::error::Result;
+
 /// Trait for distance metric computations
 pub trait DistanceMetric<F>
 where
@@ -258,15 +260,15 @@ where
     /// # Returns
     ///
     /// * Result containing the Mahalanobis distance metric or an error
-    pub fn from_data(data: ArrayView2<F>) -> Result<Self, crate::error::ClusteringError> {
+    pub fn fromdata(data: ArrayView2<F>) -> Result<Self> {
         let cov_matrix = compute_covariance_matrix(data)?;
         let inv_cov = invert_matrix(cov_matrix)?;
         Ok(Self { inv_cov })
     }
 
     /// Create a Mahalanobis distance metric from a precomputed inverse covariance matrix
-    pub fn from_inv_cov(inv_cov: Array2<F>) -> Self {
-        Self { inv_cov }
+    pub fn from_inv_cov(_invcov: Array2<F>) -> Self {
+        Self { inv_cov: _invcov }
     }
 }
 
@@ -287,9 +289,8 @@ where
 }
 
 /// Compute the covariance matrix of the given data
-fn compute_covariance_matrix<F>(
-    data: ArrayView2<F>,
-) -> Result<Array2<F>, crate::error::ClusteringError>
+#[allow(dead_code)]
+fn compute_covariance_matrix<F>(data: ArrayView2<F>) -> Result<Array2<F>>
 where
     F: Float + FromPrimitive + Debug + ScalarOperand,
 {
@@ -306,20 +307,21 @@ where
     let means = data.mean_axis(Axis(0)).unwrap();
 
     // Center the data
-    let mut centered_data = Array2::zeros((n_samples, n_features));
+    let mut centereddata = Array2::zeros((n_samples, n_features));
     for i in 0..n_samples {
         for j in 0..n_features {
-            centered_data[[i, j]] = data[[i, j]] - means[j];
+            centereddata[[i, j]] = data[[i, j]] - means[j];
         }
     }
 
     // Compute covariance matrix: (1/(n-1)) * X^T * X
-    let cov = centered_data.t().dot(&centered_data) / F::from(n_samples - 1).unwrap();
+    let cov = centereddata.t().dot(&centereddata) / F::from(n_samples - 1).unwrap();
     Ok(cov)
 }
 
 /// Simple matrix inversion using LU decomposition
-fn invert_matrix<F>(matrix: Array2<F>) -> Result<Array2<F>, crate::error::ClusteringError>
+#[allow(dead_code)]
+fn invert_matrix<F>(matrix: Array2<F>) -> Result<Array2<F>>
 where
     F: Float + FromPrimitive + Debug + ScalarOperand,
 {
@@ -334,7 +336,7 @@ where
     // For production use, consider using ndarray-linalg for better numerical stability
     let mut aug = Array2::zeros((n, 2 * n));
 
-    // Set up augmented matrix [A | I]
+    // Set up augmented _matrix [A | I]
     for i in 0..n {
         for j in 0..n {
             aug[[i, j]] = matrix[[i, j]];
@@ -385,7 +387,7 @@ where
         }
     }
 
-    // Extract the inverse matrix
+    // Extract the inverse _matrix
     let mut inv = Array2::zeros((n, n));
     for i in 0..n {
         for j in 0..n {
@@ -416,11 +418,12 @@ pub enum MetricType {
 }
 
 /// Create a distance metric instance from the metric type
+#[allow(dead_code)]
 pub fn create_metric<F>(
     metric_type: MetricType,
     data: Option<ArrayView2<F>>,
     p: Option<F>,
-) -> Result<Box<dyn DistanceMetric<F>>, crate::error::ClusteringError>
+) -> Result<Box<dyn DistanceMetric<F>>>
 where
     F: Float + FromPrimitive + Debug + Send + Sync + ScalarOperand + 'static,
 {
@@ -440,7 +443,7 @@ where
                     "Data required for Mahalanobis distance computation".into(),
                 )
             })?;
-            let metric = MahalanobisDistance::from_data(data)?;
+            let metric = MahalanobisDistance::fromdata(data)?;
             Ok(Box::new(metric))
         }
     }
@@ -511,7 +514,7 @@ mod tests {
         )
         .unwrap();
 
-        let metric = MahalanobisDistance::from_data(data.view()).unwrap();
+        let metric = MahalanobisDistance::fromdata(data.view()).unwrap();
 
         let x = Array1::from_vec(vec![1.0, 2.0]);
         let y = Array1::from_vec(vec![2.0, 3.0]);

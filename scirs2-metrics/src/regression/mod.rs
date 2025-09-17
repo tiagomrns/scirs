@@ -19,7 +19,7 @@ use ndarray::{ArrayBase, Data, Dimension};
 use num_traits::{Float, FromPrimitive, NumCast};
 
 /// Check if two arrays have the same shape
-pub(crate) fn check_same_shape<F, S1, S2, D1, D2>(
+pub(crate) fn check_sameshape<F, S1, S2, D1, D2>(
     y_true: &ArrayBase<S1, D1>,
     y_pred: &ArrayBase<S2, D2>,
 ) -> crate::error::Result<()>

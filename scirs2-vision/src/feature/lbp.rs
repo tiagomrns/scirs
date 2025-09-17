@@ -42,7 +42,7 @@ pub enum LBPType {
 /// # Arguments
 ///
 /// * `img` - Input grayscale image
-/// * `lbp_type` - Type of LBP to compute
+/// * `lbptype` - Type of LBP to compute
 ///
 /// # Returns
 ///
@@ -60,11 +60,12 @@ pub enum LBPType {
 /// # Ok(())
 /// # }
 /// ```
-pub fn lbp(img: &DynamicImage, lbp_type: LBPType) -> Result<GrayImage> {
+#[allow(dead_code)]
+pub fn lbp(img: &DynamicImage, lbptype: LBPType) -> Result<GrayImage> {
     let gray = img.to_luma8();
-    let (_width, _height) = gray.dimensions();
+    let _width_height = gray.dimensions();
 
-    match lbp_type {
+    match lbptype {
         LBPType::Original => compute_lbp_original(&gray),
         LBPType::Extended { radius, points } => compute_lbp_extended(&gray, radius, points),
         LBPType::Uniform { radius, points } => compute_lbp_uniform(&gray, radius, points),
@@ -75,6 +76,7 @@ pub fn lbp(img: &DynamicImage, lbp_type: LBPType) -> Result<GrayImage> {
 }
 
 /// Compute original 3x3 LBP
+#[allow(dead_code)]
 fn compute_lbp_original(gray: &GrayImage) -> Result<GrayImage> {
     let (width, height) = gray.dimensions();
     let mut lbp_img = ImageBuffer::new(width, height);
@@ -125,6 +127,7 @@ fn compute_lbp_original(gray: &GrayImage) -> Result<GrayImage> {
 }
 
 /// Compute extended LBP with circular neighborhood
+#[allow(dead_code)]
 fn compute_lbp_extended(gray: &GrayImage, radius: f32, points: usize) -> Result<GrayImage> {
     let (width, height) = gray.dimensions();
     let mut lbp_img = ImageBuffer::new(width, height);
@@ -166,6 +169,7 @@ fn compute_lbp_extended(gray: &GrayImage, radius: f32, points: usize) -> Result<
 }
 
 /// Compute uniform LBP (patterns with at most 2 transitions)
+#[allow(dead_code)]
 fn compute_lbp_uniform(gray: &GrayImage, radius: f32, points: usize) -> Result<GrayImage> {
     let (width, height) = gray.dimensions();
     let mut lbp_img = ImageBuffer::new(width, height);
@@ -208,6 +212,7 @@ fn compute_lbp_uniform(gray: &GrayImage, radius: f32, points: usize) -> Result<G
 }
 
 /// Compute rotation invariant LBP
+#[allow(dead_code)]
 fn compute_lbp_rotation_invariant(
     gray: &GrayImage,
     radius: f32,
@@ -255,6 +260,7 @@ fn compute_lbp_rotation_invariant(
 }
 
 /// Compute circular neighbor positions
+#[allow(dead_code)]
 fn compute_circular_neighbors(radius: f32, points: usize) -> Vec<(f32, f32)> {
     let mut neighbors = Vec::with_capacity(points);
 
@@ -269,6 +275,7 @@ fn compute_circular_neighbors(radius: f32, points: usize) -> Vec<(f32, f32)> {
 }
 
 /// Bilinear interpolation for sub-pixel sampling
+#[allow(dead_code)]
 fn bilinear_interpolate(img: &GrayImage, x: f32, y: f32) -> f32 {
     let x0 = x.floor() as u32;
     let y0 = y.floor() as u32;
@@ -294,6 +301,7 @@ fn bilinear_interpolate(img: &GrayImage, x: f32, y: f32) -> f32 {
 }
 
 /// Build uniform pattern lookup table
+#[allow(dead_code)]
 fn build_uniform_pattern_map(points: usize) -> HashMap<u32, u8> {
     let mut map = HashMap::new();
     let mut label = 0u8;
@@ -309,6 +317,7 @@ fn build_uniform_pattern_map(points: usize) -> HashMap<u32, u8> {
 }
 
 /// Check if a pattern is uniform (at most 2 transitions)
+#[allow(dead_code)]
 fn is_uniform_pattern(pattern: u32, points: usize) -> bool {
     let mut transitions = 0;
 
@@ -325,6 +334,7 @@ fn is_uniform_pattern(pattern: u32, points: usize) -> bool {
 }
 
 /// Find minimum rotation of a pattern
+#[allow(dead_code)]
 fn find_min_rotation(pattern: u32, points: usize) -> u32 {
     let mut min_pattern = pattern;
 
@@ -339,6 +349,7 @@ fn find_min_rotation(pattern: u32, points: usize) -> u32 {
 }
 
 /// Rotate a pattern by n positions
+#[allow(dead_code)]
 fn rotate_pattern(pattern: u32, n: usize, points: usize) -> u32 {
     let mask = (1 << points) - 1;
     ((pattern >> n) | (pattern << (points - n))) & mask
@@ -349,20 +360,21 @@ fn rotate_pattern(pattern: u32, n: usize, points: usize) -> u32 {
 /// # Arguments
 ///
 /// * `lbp_img` - LBP image
-/// * `n_bins` - Number of histogram bins
+/// * `nbins` - Number of histogram bins
 /// * `normalize` - Whether to normalize the histogram
 ///
 /// # Returns
 ///
 /// * Result containing histogram
-pub fn lbp_histogram(lbp_img: &GrayImage, n_bins: usize, normalize: bool) -> Result<Array1<f32>> {
-    let mut histogram = Array1::zeros(n_bins);
-    let scale = 256.0 / n_bins as f32;
+#[allow(dead_code)]
+pub fn lbp_histogram(lbp_img: &GrayImage, nbins: usize, normalize: bool) -> Result<Array1<f32>> {
+    let mut histogram = Array1::zeros(nbins);
+    let scale = 256.0 / nbins as f32;
 
     // Count occurrences
     for pixel in lbp_img.pixels() {
         let bin = (pixel[0] as f32 / scale).floor() as usize;
-        let bin = bin.min(n_bins - 1);
+        let bin = bin.min(nbins - 1);
         histogram[bin] += 1.0;
     }
 
@@ -387,6 +399,7 @@ pub fn lbp_histogram(lbp_img: &GrayImage, n_bins: usize, normalize: bool) -> Res
 /// # Returns
 ///
 /// * Result containing concatenated histogram features
+#[allow(dead_code)]
 pub fn multi_scale_lbp(img: &DynamicImage, scales: &[(f32, usize)]) -> Result<Array1<f32>> {
     let mut features = Vec::new();
 
@@ -394,8 +407,8 @@ pub fn multi_scale_lbp(img: &DynamicImage, scales: &[(f32, usize)]) -> Result<Ar
         let lbp_img = lbp(img, LBPType::Uniform { radius, points })?;
 
         // Uniform patterns + 1 non-uniform bin
-        let n_bins = points * (points - 1) + 3;
-        let hist = lbp_histogram(&lbp_img, n_bins, true)?;
+        let nbins = points * (points - 1) + 3;
+        let hist = lbp_histogram(&lbp_img, nbins, true)?;
 
         features.extend(hist.iter());
     }

@@ -1,15 +1,23 @@
-//! Tests for utilities module
-//!
-//! This module contains unit tests for the utilities module.
+use ndarray::s;
+// Tests for utilities module
+//
+// This module contains unit tests for the utilities module.
 
+use super::super::spectral::*;
+use crate::utilities::spectral::spectral_centroid;
+use crate::utilities::spectral::spectral_flux;
+use crate::utilities::spectral::spectral_rolloff;
+use ndarray::{Array1, Array2};
+use approx::assert_relative_eq;
+
+#[allow(unused_imports)]
 #[cfg(test)]
 mod spectral_tests {
-    use super::super::spectral::*;
-    use approx::assert_relative_eq;
-    use ndarray::{Array1, Array2};
-
+    use super::*;
     #[test]
     fn test_energy_spectral_density() {
+        let a = vec![1.0, 2.0, 3.0, 4.0, 5.0];
+        let b = vec![0.5, 0.5];
         // Create a simple PSD
         let psd = vec![1.0, 2.0, 3.0, 4.0, 3.0, 2.0, 1.0];
         let fs = 100.0; // Sample rate in Hz
@@ -24,6 +32,8 @@ mod spectral_tests {
 
     #[test]
     fn test_normalized_psd() {
+        let a = vec![1.0, 2.0, 3.0, 4.0, 5.0];
+        let b = vec![0.5, 0.5];
         // Create a simple PSD
         let psd = vec![1.0, 2.0, 3.0, 4.0, 3.0, 2.0, 1.0];
 
@@ -43,6 +53,8 @@ mod spectral_tests {
 
     #[test]
     fn test_spectral_centroid() {
+        let a = vec![1.0, 2.0, 3.0, 4.0, 5.0];
+        let b = vec![0.5, 0.5];
         // Create a symmetric PSD with peak in the middle
         let psd = vec![1.0, 2.0, 3.0, 4.0, 3.0, 2.0, 1.0];
         let freqs = vec![0.0, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0];
@@ -64,6 +76,8 @@ mod spectral_tests {
 
     #[test]
     fn test_spectral_spread() {
+        let a = vec![1.0, 2.0, 3.0, 4.0, 5.0];
+        let b = vec![0.5, 0.5];
         // Create a symmetric PSD with peak in the middle
         let psd = vec![1.0, 2.0, 3.0, 4.0, 3.0, 2.0, 1.0];
         let freqs = vec![0.0, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0];
@@ -85,6 +99,8 @@ mod spectral_tests {
 
     #[test]
     fn test_spectral_skewness() {
+        let a = vec![1.0, 2.0, 3.0, 4.0, 5.0];
+        let b = vec![0.5, 0.5];
         // Create a symmetric PSD
         let psd = vec![1.0, 2.0, 3.0, 4.0, 3.0, 2.0, 1.0];
         let freqs = vec![0.0, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0];
@@ -129,6 +145,8 @@ mod spectral_tests {
 
     #[test]
     fn test_spectral_kurtosis() {
+        let a = vec![1.0, 2.0, 3.0, 4.0, 5.0];
+        let b = vec![0.5, 0.5];
         // Create a flat PSD (uniform distribution)
         let psd = vec![1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0];
         let freqs = vec![0.0, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0];
@@ -150,6 +168,8 @@ mod spectral_tests {
 
     #[test]
     fn test_spectral_flatness() {
+        let a = vec![1.0, 2.0, 3.0, 4.0, 5.0];
+        let b = vec![0.5, 0.5];
         // Create a flat PSD (white noise-like)
         let psd = vec![1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0];
 
@@ -202,6 +222,8 @@ mod spectral_tests {
 
     #[test]
     fn test_spectral_rolloff() {
+        let a = vec![1.0, 2.0, 3.0, 4.0, 5.0];
+        let b = vec![0.5, 0.5];
         // Create a PSD with energy concentrated in first half
         let psd = vec![1.0, 2.0, 3.0, 4.0, 0.1, 0.1, 0.1];
         let freqs = vec![0.0, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0];
@@ -228,6 +250,8 @@ mod spectral_tests {
     // Tests for new spectral functions
     #[test]
     fn test_spectral_crest() {
+        let a = vec![1.0, 2.0, 3.0, 4.0, 5.0];
+        let b = vec![0.5, 0.5];
         // Create a flat PSD (white noise-like)
         let psd = vec![1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0];
 
@@ -248,6 +272,8 @@ mod spectral_tests {
 
     #[test]
     fn test_spectral_decrease() {
+        let a = vec![1.0, 2.0, 3.0, 4.0, 5.0];
+        let b = vec![0.5, 0.5];
         // Create a spectrum with decreasing amplitude
         let psd = vec![5.0, 4.0, 3.0, 2.0, 1.0, 0.5, 0.2];
         let freqs = vec![0.0, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0];
@@ -269,6 +295,8 @@ mod spectral_tests {
 
     #[test]
     fn test_spectral_slope() {
+        let a = vec![1.0, 2.0, 3.0, 4.0, 5.0];
+        let b = vec![0.5, 0.5];
         // Create a spectrum with negative slope
         let psd = vec![5.0, 4.0, 3.0, 2.0, 1.0, 0.5, 0.2];
         let freqs = vec![0.0, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0];
@@ -290,6 +318,8 @@ mod spectral_tests {
 
     #[test]
     fn test_spectral_contrast() {
+        let a = vec![1.0, 2.0, 3.0, 4.0, 5.0];
+        let b = vec![0.5, 0.5];
         // Create a spectrum with clear peaks and valleys
         let psd = vec![0.1, 1.0, 0.1, 1.0, 0.1, 1.0, 0.1];
         let freqs = vec![0.0, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0];
@@ -335,6 +365,8 @@ mod spectral_tests {
 
     #[test]
     fn test_dominant_frequency() {
+        let a = vec![1.0, 2.0, 3.0, 4.0, 5.0];
+        let b = vec![0.5, 0.5];
         // Create a spectrum with a clear peak
         let psd = vec![0.1, 0.2, 0.5, 5.0, 0.5, 0.2, 0.1];
         let freqs = vec![0.0, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0];
@@ -348,6 +380,8 @@ mod spectral_tests {
 
     #[test]
     fn test_dominant_frequencies() {
+        let a = vec![1.0, 2.0, 3.0, 4.0, 5.0];
+        let b = vec![0.5, 0.5];
         // Create a spectrum with multiple peaks
         let psd = vec![0.1, 2.0, 0.1, 5.0, 0.1, 3.0, 0.1];
         let freqs = vec![0.0, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0];
@@ -401,6 +435,8 @@ mod spectral_tests {
 
     #[test]
     fn test_with_ndarray() {
+        let a = vec![1.0, 2.0, 3.0, 4.0, 5.0];
+        let b = vec![0.5, 0.5];
         // Test functions with ndarray types
         let psd = Array1::from_vec(vec![1.0, 2.0, 3.0, 4.0, 3.0, 2.0, 1.0]);
         let freqs = Array1::from_vec(vec![0.0, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0]);
@@ -421,7 +457,7 @@ mod spectral_tests {
         let crest = spectral_crest(&psd.to_vec()).unwrap();
         assert!(crest >= 1.0);
 
-        let (dominant_freq, _) = dominant_frequency(&psd.to_vec(), &freqs.to_vec()).unwrap();
+        let (dominant_freq_) = dominant_frequency(&psd.to_vec(), &freqs.to_vec()).unwrap();
         assert_relative_eq!(dominant_freq, 3.0, epsilon = 1e-10);
     }
 }

@@ -70,7 +70,7 @@ impl MLTextPreprocessor {
             word_embeddings: None,
             topic_model: None,
             language_detector: LanguageDetector::new(),
-            sentiment_analyzer: LexiconSentimentAnalyzer::with_basic_lexicon(),
+            sentiment_analyzer: LexiconSentimentAnalyzer::with_basiclexicon(),
             feature_selector: None,
         }
     }
@@ -78,9 +78,9 @@ impl MLTextPreprocessor {
     /// Configure TF-IDF parameters
     pub fn with_tfidf_params(
         mut self,
-        _min_df: f64,
-        _max_df: f64,
-        _max_features: Option<usize>,
+        min_df: f64,
+        max_df: f64,
+        max_features: Option<usize>,
     ) -> Self {
         // For now, use standard EnhancedTfidfVectorizer
         let vectorizer = EnhancedTfidfVectorizer::new();
@@ -89,8 +89,8 @@ impl MLTextPreprocessor {
     }
 
     /// Configure topic modeling
-    pub fn with_topic_modeling(mut self, n_topics: usize) -> Self {
-        self.topic_model = Some(LatentDirichletAllocation::with_n_topics(n_topics));
+    pub fn with_topic_modeling(mut self, ntopics: usize) -> Self {
+        self.topic_model = Some(LatentDirichletAllocation::with_ntopics(ntopics));
         self
     }
 
@@ -101,9 +101,9 @@ impl MLTextPreprocessor {
     }
 
     /// Configure feature selection
-    pub fn with_feature_selection(mut self, max_features: usize) -> Self {
+    pub fn with_feature_selection(mut self, maxfeatures: usize) -> Self {
         self.feature_selector = TextFeatureSelector::new()
-            .set_max_features(max_features as f64)
+            .set_max_features(maxfeatures as f64)
             .ok();
         self
     }
@@ -143,7 +143,7 @@ impl MLTextPreprocessor {
                 if let Some(ref mut topic_model) = self.topic_model {
                     topic_model.fit(&doc_term_matrix)?;
                 } else {
-                    let mut topic_model = LatentDirichletAllocation::with_n_topics(10);
+                    let mut topic_model = LatentDirichletAllocation::with_ntopics(10);
                     topic_model.fit(&doc_term_matrix)?;
                     self.topic_model = Some(topic_model);
                 }
@@ -194,7 +194,7 @@ impl MLTextPreprocessor {
         // Fit topic model
         let mut count_vectorizer = EnhancedCountVectorizer::new();
         let doc_term_matrix = count_vectorizer.fit_transform(texts)?;
-        let mut topic_model = LatentDirichletAllocation::with_n_topics(10);
+        let mut topic_model = LatentDirichletAllocation::with_ntopics(10);
         topic_model.fit(&doc_term_matrix)?;
         self.topic_model = Some(topic_model);
 
@@ -360,20 +360,20 @@ impl MLTextPreprocessor {
         Ok(features)
     }
 
-    fn concatenate_features(&self, feature_arrays: &[Array2<f64>]) -> Result<Array2<f64>> {
-        if feature_arrays.is_empty() {
+    fn concatenate_features(&self, featurearrays: &[Array2<f64>]) -> Result<Array2<f64>> {
+        if featurearrays.is_empty() {
             return Err(TextError::InvalidInput(
                 "No features to concatenate".to_string(),
             ));
         }
 
-        let n_samples = feature_arrays[0].nrows();
-        let total_features: usize = feature_arrays.iter().map(|arr| arr.ncols()).sum();
+        let n_samples = featurearrays[0].nrows();
+        let total_features: usize = featurearrays.iter().map(|arr| arr.ncols()).sum();
 
         let mut combined = Array2::zeros((n_samples, total_features));
         let mut col_offset = 0;
 
-        for array in feature_arrays {
+        for array in featurearrays {
             let n_cols = array.ncols();
             for i in 0..n_samples {
                 for j in 0..n_cols {
@@ -449,9 +449,9 @@ pub struct BatchTextProcessor {
 
 impl BatchTextProcessor {
     /// Create a new batch processor
-    pub fn new(batch_size: usize) -> Self {
+    pub fn new(batchsize: usize) -> Self {
         Self {
-            batch_size,
+            batch_size: batchsize,
             preprocessor: MLTextPreprocessor::new(FeatureExtractionMode::TfIdf),
         }
     }
@@ -501,7 +501,7 @@ mod tests {
 
         for mode in modes {
             let preprocessor = MLTextPreprocessor::new(mode);
-            assert!(matches!(preprocessor.mode, _));
+            assert!(matches!(preprocessor.mode, mode));
         }
     }
 

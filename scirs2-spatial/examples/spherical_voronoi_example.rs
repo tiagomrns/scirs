@@ -2,6 +2,7 @@ use ndarray::array;
 use scirs2_spatial::spherical_voronoi::SphericalVoronoi;
 use std::f64::consts::PI;
 
+#[allow(dead_code)]
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("Spherical Voronoi Diagram Example");
     println!("=================================\n");
@@ -30,7 +31,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let center = array![0.0, 0.0, 0.0];
 
     println!("Creating spherical Voronoi diagram with:");
-    println!("  Radius: {}", radius);
+    println!("  Radius: {radius}");
     println!("  Center: [{}, {}, {}]", center[0], center[1], center[2]);
     println!();
 
@@ -59,7 +60,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Show the regions
     println!("Voronoi regions (point index -> vertex indices):");
     for (i, region) in sv.regions().iter().enumerate() {
-        println!("  Region for point {}: {:?}", i, region);
+        println!("  Region for point {i}: {region:?}");
     }
     println!();
 
@@ -74,17 +75,14 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     println!("Region areas on the unit sphere:");
     for (i, &area) in areas.iter().enumerate() {
-        println!(
-            "  Region {}: {:.6} (expected: {:.6})",
-            i, area, expected_area_per_region
-        );
+        println!("  Region {i}: {area:.6} (expected: {expected_area_per_region:.6})");
     }
 
     println!(
         "\nTotal area of all regions: {:.6}",
         areas.iter().sum::<f64>()
     );
-    println!("Expected total area (4πr²): {:.6}", total_area);
+    println!("Expected total area (4πr²): {total_area:.6}");
     println!();
 
     // Demonstrate geodesic distance calculation
@@ -94,10 +92,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let north_pole = array![0.0, 0.0, 1.0];
     let south_pole = array![0.0, 0.0, -1.0];
     let dist = sv.geodesic_distance(&north_pole.view(), &south_pole.view())?;
-    println!(
-        "  North pole to South pole: {:.6} (expected: π = {:.6})",
-        dist, PI
-    );
+    println!("  North pole to South pole: {dist:.6} (expected: π = {PI:.6})");
 
     // North pole to equator (should be π/2 radians)
     let equator_point = array![1.0, 0.0, 0.0];
@@ -112,14 +107,14 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let query_point = array![0.5, 0.5, std::f64::consts::FRAC_1_SQRT_2]; // Approximately normalized
     let (nearest_idx, dist) = sv.nearest_generator(&query_point.view())?;
     println!("\nNearest generator to [0.5, 0.5, std::f64::consts::FRAC_1_SQRT_2]:");
-    println!("  Generator index: {}", nearest_idx);
-    println!("  Distance: {:.6}", dist);
+    println!("  Generator index: {nearest_idx}");
+    println!("  Distance: {dist:.6}");
 
     // Calculate distances to all generators
     let distances = sv.geodesic_distances_to_generators(&query_point.view())?;
     println!("\nDistances to all generators:");
     for (i, &dist) in distances.iter().enumerate() {
-        println!("  Distance to generator {}: {:.6}", i, dist);
+        println!("  Distance to generator {i}: {dist:.6}");
     }
     println!();
 
@@ -141,8 +136,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Calculate areas of the complex regions
     let complex_areas = complex_sv.areas()?;
     let total_complex_area: f64 = complex_areas.iter().sum();
-    println!("  Total area of all regions: {:.6}", total_complex_area);
-    println!("  Expected total area (4πr²): {:.6}", total_area);
+    println!("  Total area of all regions: {total_complex_area:.6}");
+    println!("  Expected total area (4πr²): {total_area:.6}");
 
     println!("\nVoronoi diagram calculation completed successfully!");
 
@@ -150,6 +145,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 }
 
 /// Generate vertices of a dodecahedron as generator points on a unit sphere
+#[allow(dead_code)]
 fn generate_dodecahedron_points() -> ndarray::Array2<f64> {
     use ndarray::Array2;
 

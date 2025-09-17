@@ -111,7 +111,7 @@ impl WorkerPool {
 
     /// Execute a function with a specific number of workers
     /// Simplified to use core parallel abstractions
-    pub fn execute_with_workers<F, R>(&self, _num_workers: usize, f: F) -> R
+    pub fn execute_with_workers<F, R>(&self, _numworkers: usize, f: F) -> R
     where
         F: FnOnce() -> R + Send,
         R: Send,
@@ -162,11 +162,13 @@ impl std::fmt::Display for WorkerPoolInfo {
 static GLOBAL_WORKER_POOL: OnceLock<WorkerPool> = OnceLock::new();
 
 /// Get the global worker pool instance
+#[allow(dead_code)]
 pub fn get_global_pool() -> &'static WorkerPool {
     GLOBAL_WORKER_POOL.get_or_init(WorkerPool::new)
 }
 
 /// Initialize the global worker pool with custom configuration
+#[allow(dead_code)]
 pub fn init_global_pool(config: WorkerConfig) -> Result<(), &'static str> {
     GLOBAL_WORKER_POOL
         .set(WorkerPool::with_config(config).map_err(|_| "Failed to create worker pool")?)
@@ -183,7 +185,7 @@ pub struct WorkerContext {
 
 impl WorkerContext {
     /// Create a new worker context with specified number of workers
-    pub fn new(_num_workers: usize) -> Self {
+    pub fn new(_numworkers: usize) -> Self {
         let pool = get_global_pool();
         let previous_workers = pool.get_workers();
 
@@ -205,6 +207,7 @@ impl Drop for WorkerContext {
 }
 
 /// Set the number of workers globally
+#[allow(dead_code)]
 pub fn set_workers(_n: usize) -> Result<(), &'static str> {
     let _pool = get_global_pool();
     // Note: This is a limitation of the current design - we can't modify a static reference
@@ -213,11 +216,13 @@ pub fn set_workers(_n: usize) -> Result<(), &'static str> {
 }
 
 /// Get the current number of workers
+#[allow(dead_code)]
 pub fn get_workers() -> usize {
     get_global_pool().get_workers()
 }
 
 /// Execute a function with a specific number of workers temporarily
+#[allow(dead_code)]
 pub fn with_workers<F, R>(num_workers: usize, f: F) -> R
 where
     F: FnOnce() -> R + Send,

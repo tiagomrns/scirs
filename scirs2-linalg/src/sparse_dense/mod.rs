@@ -121,8 +121,7 @@ where
         if let Some(&max_index) = indices.iter().max() {
             if max_index >= cols {
                 return Err(LinalgError::ValueError(format!(
-                    "Column index out of bounds: {} for a matrix with {} columns",
-                    max_index, cols
+                    "Column index out of bounds: {max_index} for a matrix with {cols} columns"
                 )));
             }
         }
@@ -186,6 +185,7 @@ where
 /// # Returns
 ///
 /// A sparse matrix view in CSR format
+#[allow(dead_code)]
 pub fn sparse_from_ndarray<T, F>(
     array: &ArrayView2<T>,
     threshold: F,
@@ -237,6 +237,7 @@ where
 /// # Returns
 ///
 /// A dense matrix containing the result
+#[allow(dead_code)]
 pub fn sparse_dense_matmul<T>(
     sparse: &SparseMatrixView<T>,
     dense: &ArrayView2<T>,
@@ -288,6 +289,7 @@ where
 /// # Returns
 ///
 /// A dense matrix containing the result
+#[allow(dead_code)]
 pub fn dense_sparse_matmul<T>(
     dense: &ArrayView2<T>,
     sparse: &SparseMatrixView<T>,
@@ -351,6 +353,7 @@ where
 /// # Returns
 ///
 /// A dense vector containing the result
+#[allow(dead_code)]
 pub fn sparse_dense_matvec<T>(
     sparse: &SparseMatrixView<T>,
     vector: &ArrayView1<T>,
@@ -396,6 +399,7 @@ where
 /// # Returns
 ///
 /// A dense vector containing the result
+#[allow(dead_code)]
 pub fn dense_sparse_matvec<T>(
     dense: &ArrayView2<T>,
     sparse: &SparseMatrixView<T>,
@@ -447,6 +451,7 @@ where
 /// # Returns
 ///
 /// A dense matrix containing the result
+#[allow(dead_code)]
 pub fn sparse_dense_add<T>(
     sparse: &SparseMatrixView<T>,
     dense: &ArrayView2<T>,
@@ -489,6 +494,7 @@ where
 /// # Returns
 ///
 /// A dense matrix containing the result (sparse - dense)
+#[allow(dead_code)]
 pub fn sparse_dense_sub<T>(
     sparse: &SparseMatrixView<T>,
     dense: &ArrayView2<T>,
@@ -531,6 +537,7 @@ where
 /// # Returns
 ///
 /// A sparse matrix containing the result
+#[allow(dead_code)]
 pub fn sparse_dense_elementwise_mul<T>(
     sparse: &SparseMatrixView<T>,
     dense: &ArrayView2<T>,
@@ -586,6 +593,7 @@ where
 /// # Returns
 ///
 /// A transposed sparse matrix
+#[allow(dead_code)]
 pub fn sparse_transpose<T>(sparse: &SparseMatrixView<T>) -> LinalgResult<SparseMatrixView<T>>
 where
     T: Clone + Copy + Debug + Zero,
@@ -645,7 +653,9 @@ pub mod advanced {
             + PartialOrd
             + std::iter::Sum
             + ndarray::ScalarOperand
-            + NumAssign,
+            + NumAssign
+            + Send
+            + Sync,
     {
         // Analyze sparsity pattern to choose optimal algorithm
         let sparsity_ratio = sparse.nnz() as f64 / (sparse.nrows() * sparse.ncols()) as f64;
@@ -850,7 +860,7 @@ pub mod advanced {
         for i in 0..sparse.nrows() {
             for j in sparse.indptr[i]..sparse.indptr[i + 1] {
                 let col = sparse.indices[j];
-                let distance = if i > col { i - col } else { col - i };
+                let distance = i.abs_diff(col);
                 bandwidth = bandwidth.max(distance);
             }
         }
@@ -978,7 +988,9 @@ where
         + PartialOrd
         + std::iter::Sum
         + ndarray::ScalarOperand
-        + NumAssign,
+        + NumAssign
+        + Send
+        + Sync,
 {
     fn shape(&self) -> (usize, usize) {
         (self.rows, self.cols)
@@ -1033,7 +1045,9 @@ pub mod utils {
             + NumCast
             + NumAssign
             + std::iter::Sum
-            + ndarray::ScalarOperand,
+            + ndarray::ScalarOperand
+            + Send
+            + Sync,
     {
         // Analyze matrix sparsity
         let total_elements = matrix.len();
@@ -1070,8 +1084,7 @@ pub mod utils {
             "csr" => Ok(sparse.clone()),
             "csc" => sparse_transpose(sparse), // CSC is essentially transposed CSR
             _ => Err(LinalgError::ValueError(format!(
-                "Unsupported sparse format: {}",
-                format
+                "Unsupported sparse format: {format}"
             ))),
         }
     }
@@ -1079,13 +1092,13 @@ pub mod utils {
     /// Estimate memory usage for sparse vs dense operations
     pub fn estimate_memory_usage<T>(shape: (usize, usize), nnz: usize) -> (usize, usize) {
         let (rows, cols) = shape;
-        let element_size = std::mem::size_of::<T>();
+        let elementsize = std::mem::size_of::<T>();
 
         // Dense matrix memory
-        let dense_memory = rows * cols * element_size;
+        let dense_memory = rows * cols * elementsize;
 
         // Sparse matrix memory (CSR format)
-        let sparse_memory = nnz * element_size + // data
+        let sparse_memory = nnz * elementsize + // data
                           nnz * std::mem::size_of::<usize>() + // indices
                           (rows + 1) * std::mem::size_of::<usize>(); // indptr
 

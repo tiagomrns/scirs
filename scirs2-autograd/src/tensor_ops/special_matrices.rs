@@ -25,7 +25,7 @@ impl<F: Float + ScalarOperand> Op<F> for CholeskyOp {
         }
 
         // Get ndarray data directly
-        let _matrix = input
+        let matrix = input
             .view()
             .into_dimensionality::<ndarray::Ix2>()
             .map_err(|_| OpError::Other("Failed to convert to 2D array".into()))?;
@@ -39,7 +39,7 @@ impl<F: Float + ScalarOperand> Op<F> for CholeskyOp {
         #[allow(unreachable_code)]
         {
             // When implemented, we'll need to create a mutable copy and process it
-            let mut matrix_data = _matrix.to_owned();
+            let mut matrix_data = matrix.to_owned();
 
             // The result is stored in-place in matrix_data (lower triangular part)
             // Zero out the upper triangular part to get a clean L matrix
@@ -100,7 +100,7 @@ impl<F: Float + ScalarOperand> Op<F> for CholeskyOp {
         };
 
         let n = l.shape()[0];
-        println!("Cholesky gradient computation for matrix of size: {}", n);
+        println!("Cholesky gradient computation for matrix of size: {n}");
 
         // Initialize gradient matrix
         let mut grad = Array2::<F>::zeros((n, n));
@@ -282,10 +282,7 @@ impl<F: Float> Op<F> for LowerTriangularOp {
         let mut lower = matrix.to_owned();
         let (rows, cols) = (lower.shape()[0], lower.shape()[1]);
 
-        println!(
-            "Processing lower triangular matrix: {} rows x {} columns",
-            rows, cols
-        );
+        println!("Processing lower triangular matrix: {rows} rows x {cols} columns");
 
         // Zero out elements above the specified diagonal
         for i in 0..rows {
@@ -378,10 +375,7 @@ impl<F: Float> Op<F> for UpperTriangularOp {
         let mut upper = matrix.to_owned();
         let (rows, cols) = (upper.shape()[0], upper.shape()[1]);
 
-        println!(
-            "Processing upper triangular matrix: {} rows x {} columns",
-            rows, cols
-        );
+        println!("Processing upper triangular matrix: {rows} rows x {cols} columns");
 
         // Zero out elements below the specified diagonal
         for i in 0..rows {
@@ -475,7 +469,7 @@ impl<F: Float> Op<F> for BandMatrixOp {
         let mut band = matrix.to_owned();
         let (rows, cols) = (band.shape()[0], band.shape()[1]);
 
-        println!("Processing band matrix: {} rows x {} columns", rows, cols);
+        println!("Processing band matrix: {rows} rows x {cols} columns");
 
         // Zero out elements outside the band
         for i in 0..rows {
@@ -538,6 +532,7 @@ impl<F: Float> Op<F> for BandMatrixOp {
 // Public API functions
 
 /// Compute Cholesky decomposition with gradient support
+#[allow(dead_code)]
 pub fn cholesky<'g, F: Float + ScalarOperand>(matrix: &Tensor<'g, F>) -> Tensor<'g, F> {
     let g = matrix.graph();
     Tensor::builder(g)
@@ -546,6 +541,7 @@ pub fn cholesky<'g, F: Float + ScalarOperand>(matrix: &Tensor<'g, F>) -> Tensor<
 }
 
 /// Make a matrix symmetric by averaging with its transpose
+#[allow(dead_code)]
 pub fn symmetrize<'g, F: Float + ScalarOperand>(matrix: &Tensor<'g, F>) -> Tensor<'g, F> {
     let g = matrix.graph();
     Tensor::builder(g)
@@ -554,40 +550,43 @@ pub fn symmetrize<'g, F: Float + ScalarOperand>(matrix: &Tensor<'g, F>) -> Tenso
 }
 
 /// Extract lower triangular part of a matrix
+#[allow(dead_code)]
 pub fn tril<'g, F: Float>(matrix: &Tensor<'g, F>, diagonal: i32) -> Tensor<'g, F> {
     let g = matrix.graph();
 
     // Get the shape of the input tensor for setting the output shape
-    let matrix_shape = crate::tensor_ops::shape(matrix);
+    let matrixshape = crate::tensor_ops::shape(matrix);
 
     Tensor::builder(g)
         .append_input(matrix, false)
-        .set_shape(&matrix_shape)  // Preserve shape information
+        .setshape(&matrixshape)  // Preserve shape information
         .build(LowerTriangularOp { diagonal })
 }
 
 /// Extract upper triangular part of a matrix
+#[allow(dead_code)]
 pub fn triu<'g, F: Float>(matrix: &Tensor<'g, F>, diagonal: i32) -> Tensor<'g, F> {
     let g = matrix.graph();
 
     // Get the shape of the input tensor for setting the output shape
-    let matrix_shape = crate::tensor_ops::shape(matrix);
+    let matrixshape = crate::tensor_ops::shape(matrix);
 
     Tensor::builder(g)
         .append_input(matrix, false)
-        .set_shape(&matrix_shape)  // Preserve shape information
+        .setshape(&matrixshape)  // Preserve shape information
         .build(UpperTriangularOp { diagonal })
 }
 
 /// Extract band from a matrix
+#[allow(dead_code)]
 pub fn band_matrix<'g, F: Float>(matrix: &Tensor<'g, F>, lower: i32, upper: i32) -> Tensor<'g, F> {
     let g = matrix.graph();
 
     // Get the shape of the input tensor for setting the output shape
-    let matrix_shape = crate::tensor_ops::shape(matrix);
+    let matrixshape = crate::tensor_ops::shape(matrix);
 
     Tensor::builder(g)
         .append_input(matrix, false)
-        .set_shape(&matrix_shape)  // Preserve shape information
+        .setshape(&matrixshape)  // Preserve shape information
         .build(BandMatrixOp { lower, upper })
 }

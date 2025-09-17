@@ -4,6 +4,7 @@
 //! across different algorithm categories.
 
 use ndarray::{Array1, ArrayView1};
+use rand::Rng;
 use scirs2_optimize::{
     stochastic::{
         minimize_adam, minimize_sgd, AdamOptions, DataProvider, InMemoryDataProvider, SGDOptions,
@@ -16,16 +17,17 @@ use scirs2_optimize::{
 struct QuadraticFunction;
 
 impl StochasticGradientFunction for QuadraticFunction {
-    fn compute_gradient(&mut self, x: &ArrayView1<f64>, _batch_data: &[f64]) -> Array1<f64> {
+    fn compute_gradient(&mut self, x: &ArrayView1<f64>, _batchdata: &[f64]) -> Array1<f64> {
         x.mapv(|xi| 2.0 * xi)
     }
 
-    fn compute_value(&mut self, x: &ArrayView1<f64>, _batch_data: &[f64]) -> f64 {
+    fn compute_value(&mut self, x: &ArrayView1<f64>, _batchdata: &[f64]) -> f64 {
         x.mapv(|xi| xi * xi).sum()
     }
 }
 
 #[test]
+#[allow(dead_code)]
 fn test_stochastic_optimization_integration() {
     // Test SGD
     let grad_func = QuadraticFunction;
@@ -47,11 +49,12 @@ fn test_stochastic_optimization_integration() {
     assert!(result.fun < 1e-2);
     println!(
         "SGD converged to f = {:.2e} in {} iterations",
-        result.fun, result.iterations
+        result.fun, result.nit
     );
 }
 
 #[test]
+#[allow(dead_code)]
 fn test_adam_optimization_integration() {
     // Test Adam optimizer
     let grad_func = QuadraticFunction;
@@ -73,11 +76,12 @@ fn test_adam_optimization_integration() {
     assert!(result.fun < 1e-3);
     println!(
         "Adam converged to f = {:.2e} in {} iterations",
-        result.fun, result.iterations
+        result.fun, result.nit
     );
 }
 
 #[test]
+#[allow(dead_code)]
 fn test_bfgs_optimization_integration() {
     // Test BFGS on a simple function
     let func = |x: &ArrayView1<f64>| -> f64 { x[0] * x[0] + x[1] * x[1] };
@@ -94,11 +98,12 @@ fn test_bfgs_optimization_integration() {
     assert!(result.fun < 1e-6);
     println!(
         "BFGS converged to f = {:.2e} in {} iterations",
-        result.fun, result.iterations
+        result.fun, result.nit
     );
 }
 
 #[test]
+#[allow(dead_code)]
 fn test_optimization_library_capabilities() {
     println!("\n🔬 scirs2-optimize Library Capabilities Test");
     println!("============================================");
@@ -135,6 +140,7 @@ fn test_optimization_library_capabilities() {
 }
 
 #[test]
+#[allow(dead_code)]
 fn test_comprehensive_optimization_workflows() {
     println!("\n🔧 Comprehensive Optimization Workflows Test");
     println!("===========================================");
@@ -154,6 +160,7 @@ fn test_comprehensive_optimization_workflows() {
     println!("✅ All optimization workflows working correctly!");
 }
 
+#[allow(dead_code)]
 fn test_unconstrained_workflow() {
     use scirs2_optimize::unconstrained::{minimize_lbfgs, minimize_powell};
 
@@ -191,6 +198,7 @@ fn test_unconstrained_workflow() {
     println!("  ✅ Unconstrained optimization algorithms working");
 }
 
+#[allow(dead_code)]
 fn test_stochastic_workflow() {
     use scirs2_optimize::stochastic::{
         minimize_adamw, minimize_rmsprop, AdamWOptions, RMSPropOptions,
@@ -199,14 +207,13 @@ fn test_stochastic_workflow() {
     // Test with a noisy quadratic function (simulating ML scenario)
     struct NoisyQuadratic;
     impl StochasticGradientFunction for NoisyQuadratic {
-        fn compute_gradient(&mut self, x: &ArrayView1<f64>, _batch_data: &[f64]) -> Array1<f64> {
+        fn compute_gradient(&mut self, x: &ArrayView1<f64>, _batchdata: &[f64]) -> Array1<f64> {
             // Add small noise to simulate stochastic gradients
-            use rand::Rng;
             let mut rng = rand::rng();
             x.mapv(|xi| 2.0 * xi + rng.random_range(-0.01..0.01))
         }
 
-        fn compute_value(&mut self, x: &ArrayView1<f64>, _batch_data: &[f64]) -> f64 {
+        fn compute_value(&mut self, x: &ArrayView1<f64>, _batchdata: &[f64]) -> f64 {
             x.mapv(|xi| xi * xi).sum()
         }
     }
@@ -243,6 +250,7 @@ fn test_stochastic_workflow() {
     println!("  ✅ Stochastic optimization algorithms working");
 }
 
+#[allow(dead_code)]
 fn test_problem_types() {
     // Test different problem characteristics
 
@@ -284,6 +292,7 @@ fn test_problem_types() {
 }
 
 #[test]
+#[allow(dead_code)]
 fn test_algorithm_robustness() {
     println!("\n🛡️  Testing Algorithm Robustness");
     println!("===============================");
@@ -295,6 +304,7 @@ fn test_algorithm_robustness() {
     println!("✅ All robustness tests passed!");
 }
 
+#[allow(dead_code)]
 fn test_challenging_problems() {
     use scirs2_optimize::unconstrained::minimize_nelder_mead;
 
@@ -322,6 +332,7 @@ fn test_challenging_problems() {
     println!("  ✅ Challenging multi-modal problems handled");
 }
 
+#[allow(dead_code)]
 fn test_edge_cases() {
     // Test with very small problems
     let simple_1d = |x: &ArrayView1<f64>| -> f64 { x[0] * x[0] };
@@ -350,6 +361,7 @@ fn test_edge_cases() {
 }
 
 #[test]
+#[allow(dead_code)]
 fn test_stochastic_integration_comprehensive() {
     println!("\n📊 Comprehensive Stochastic Integration Test");
     println!("==========================================");
@@ -361,6 +373,7 @@ fn test_stochastic_integration_comprehensive() {
     println!("✅ Comprehensive stochastic integration completed!");
 }
 
+#[allow(dead_code)]
 fn test_machine_learning_workflow() {
     use scirs2_optimize::stochastic::{minimize_sgd_momentum, MomentumOptions};
 
@@ -411,10 +424,10 @@ fn test_machine_learning_workflow() {
             grad / batch_indices.len() as f64
         }
 
-        fn compute_value(&mut self, params: &ArrayView1<f64>, batch_indices: &[f64]) -> f64 {
+        fn compute_value(&mut self, params: &ArrayView1<f64>, batchindices: &[f64]) -> f64 {
             let mut loss = 0.0;
 
-            for &idx in batch_indices {
+            for &idx in batchindices {
                 let i = idx as usize % self.features.len();
                 let x = &self.features[i];
                 let y = self.labels[i];
@@ -426,7 +439,7 @@ fn test_machine_learning_workflow() {
                 loss += -y * pred.ln() - (1.0 - y) * (1.0 - pred).ln();
             }
 
-            loss / batch_indices.len() as f64
+            loss / batchindices.len() as f64
         }
     }
 
@@ -454,6 +467,7 @@ fn test_machine_learning_workflow() {
     println!("  ✅ Machine learning workflow tested successfully");
 }
 
+#[allow(dead_code)]
 fn test_large_scale_optimization() {
     // Test with larger problem size to verify scalability
     struct LargeQuadratic {
@@ -468,7 +482,7 @@ fn test_large_scale_optimization() {
     }
 
     impl StochasticGradientFunction for LargeQuadratic {
-        fn compute_gradient(&mut self, x: &ArrayView1<f64>, _batch_data: &[f64]) -> Array1<f64> {
+        fn compute_gradient(&mut self, x: &ArrayView1<f64>, _batchdata: &[f64]) -> Array1<f64> {
             // Scaled quadratic: gradient = 2x with different scales per dimension
             x.iter()
                 .enumerate()
@@ -479,7 +493,7 @@ fn test_large_scale_optimization() {
                 .collect()
         }
 
-        fn compute_value(&mut self, x: &ArrayView1<f64>, _batch_data: &[f64]) -> f64 {
+        fn compute_value(&mut self, x: &ArrayView1<f64>, _batchdata: &[f64]) -> f64 {
             x.iter()
                 .enumerate()
                 .map(|(i, &xi)| {

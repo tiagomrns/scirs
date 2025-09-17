@@ -1,10 +1,11 @@
 use ndarray::{Array, Array1, Array2, Axis};
 use scirs2_core::array::{
-    mask_array, masked_equal, masked_invalid, record_array_from_arrays, ArrayError, FieldValue,
+    mask_array, masked_equal, masked_invalid, ArrayError, FieldValue,
     MaskedArray, Record, RecordArray,
 };
 use std::collections::HashMap;
 
+#[allow(dead_code)]
 fn main() -> Result<(), ArrayError> {
     println!("Scientific Arrays Example");
     println!("========================\n");
@@ -40,8 +41,8 @@ fn main() -> Result<(), ArrayError> {
     let masked_b = mask_array(b.clone(), Some(mask_b), Some(0.0))?;
 
     println!("\nOperations with masked arrays:");
-    println!("masked_a: {:?}", masked_a);
-    println!("masked_b: {:?}", masked_b);
+    println!("maskeda: {:?}", masked_a);
+    println!("maskedb: {:?}", masked_b);
 
     // Addition
     let sum = &masked_a + &masked_b;
@@ -88,11 +89,18 @@ fn main() -> Result<(), ArrayError> {
         FieldValue::Bool(true),
     ];
 
-    // Create a record array from the field values
-    let field_names = ["name", "age", "height", "active"];
-    let arrays = [names, ages, heights, is_active];
+    // Create records by combining the field values
+    let mut records = Vec::new();
+    for i in 0..3 {
+        let mut record = Record::new();
+        record.set_field("name", names[i].clone());
+        record.set_field("age", ages[i].clone());
+        record.set_field("height", heights[i].clone());
+        record.set_field("active", is_active[i].clone());
+        records.push(record);
+    }
 
-    let record_array = record_array_from_arrays(&field_names, &arrays)?;
+    let record_array = RecordArray::new(records)?;
     println!("Record array: {:?}", record_array);
 
     // Access records
@@ -102,10 +110,10 @@ fn main() -> Result<(), ArrayError> {
         println!("Record {}: {:?}", i, record);
 
         // Access fields directly
-        let name = record.get_field_as_string("name")?;
-        let age = record.get_field_as_int("age")?;
-        let height = record.get_field_as_float("height")?;
-        let active = record.get_field_as_bool("active")?;
+        let name = record.get_field_as_string(name)?;
+        let age = record.get_field_as_int(age)?;
+        let height = record.get_field_as_float(height)?;
+        let active = record.get_field_as_bool(active)?;
 
         println!(
             "  Name: {}, Age: {}, Height: {}, Active: {}",
@@ -115,8 +123,8 @@ fn main() -> Result<(), ArrayError> {
 
     // Access fields directly from the record array
     println!("\nAccessing fields directly:");
-    let all_names = record_array.get_field_as_string_array("name")?;
-    let all_ages = record_array.get_field_as_int_array("age")?;
+    let all_names = record_array.get_field_as_string_array(name)?;
+    let all_ages = record_array.get_field_as_int_array(age)?;
 
     println!("All names: {:?}", all_names);
     println!("All ages: {:?}", all_ages);
@@ -124,7 +132,7 @@ fn main() -> Result<(), ArrayError> {
     // Filter records
     println!("\nFiltering records:");
     let active_records =
-        record_array.filter(|rec| rec.get_field_as_bool("active").unwrap_or(false))?;
+        record_array.filter(|rec| rec.get_field_as_bool(active).unwrap_or(false))?;
 
     println!("Active records: {:?}", active_records);
 

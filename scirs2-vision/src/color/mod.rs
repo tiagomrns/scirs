@@ -35,6 +35,7 @@ pub enum ColorSpace {
 /// # Returns
 ///
 /// * Result containing an HSV image
+#[allow(dead_code)]
 pub fn rgb_to_hsv(img: &DynamicImage) -> Result<DynamicImage> {
     // Ensure input is RGB
     let rgb_img = img.to_rgb8();
@@ -102,8 +103,9 @@ pub fn rgb_to_hsv(img: &DynamicImage) -> Result<DynamicImage> {
 /// # Returns
 ///
 /// * Result containing an RGB image
-pub fn hsv_to_rgb(hsv_img: &DynamicImage) -> Result<DynamicImage> {
-    let hsv = hsv_img.to_rgb8();
+#[allow(dead_code)]
+pub fn hsv_to_rgb(_hsvimg: &DynamicImage) -> Result<DynamicImage> {
+    let hsv = _hsvimg.to_rgb8();
     let (width, height) = hsv.dimensions();
 
     let mut rgb_img = ImageBuffer::new(width, height);
@@ -158,6 +160,7 @@ pub fn hsv_to_rgb(hsv_img: &DynamicImage) -> Result<DynamicImage> {
 /// # Returns
 ///
 /// * Result containing a grayscale image
+#[allow(dead_code)]
 pub fn rgb_to_grayscale(img: &DynamicImage, weights: Option<[f32; 3]>) -> Result<DynamicImage> {
     // Default weights based on human perception of color
     let weights = weights.unwrap_or([0.2989, 0.5870, 0.1140]);
@@ -195,6 +198,7 @@ pub fn rgb_to_grayscale(img: &DynamicImage, weights: Option<[f32; 3]>) -> Result
 /// # Returns
 ///
 /// * Result containing a LAB image (represented as RGB buffer where channels are L, a, b)
+#[allow(dead_code)]
 pub fn rgb_to_lab(img: &DynamicImage) -> Result<DynamicImage> {
     let rgb_img = img.to_rgb8();
     let (width, height) = rgb_img.dimensions();
@@ -285,8 +289,9 @@ pub fn rgb_to_lab(img: &DynamicImage) -> Result<DynamicImage> {
 /// # Returns
 ///
 /// * Result containing an RGB image
-pub fn lab_to_rgb(lab_img: &DynamicImage) -> Result<DynamicImage> {
-    let lab = lab_img.to_rgb8();
+#[allow(dead_code)]
+pub fn lab_to_rgb(_labimg: &DynamicImage) -> Result<DynamicImage> {
+    let lab = _labimg.to_rgb8();
     let (width, height) = lab.dimensions();
 
     let mut rgb_img = ImageBuffer::new(width, height);
@@ -369,6 +374,7 @@ pub fn lab_to_rgb(lab_img: &DynamicImage) -> Result<DynamicImage> {
 /// # Returns
 ///
 /// * Result containing a tuple of grayscale images (r, g, b)
+#[allow(dead_code)]
 pub fn split_channels(img: &DynamicImage) -> Result<(DynamicImage, DynamicImage, DynamicImage)> {
     let rgb_img = img.to_rgb8();
     let (width, height) = rgb_img.dimensions();
@@ -405,6 +411,7 @@ pub fn split_channels(img: &DynamicImage) -> Result<(DynamicImage, DynamicImage,
 /// # Returns
 ///
 /// * Result containing an RGB image
+#[allow(dead_code)]
 pub fn merge_channels(
     r_channel: &DynamicImage,
     g_channel: &DynamicImage,

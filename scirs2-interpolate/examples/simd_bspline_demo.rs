@@ -15,6 +15,7 @@ use scirs2_interpolate::{
 #[cfg(feature = "simd")]
 use std::time::Instant;
 
+#[allow(dead_code)]
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("=== SIMD B-spline Evaluation Demo ===\n");
 

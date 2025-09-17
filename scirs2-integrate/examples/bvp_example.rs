@@ -2,6 +2,7 @@ use ndarray::{array, ArrayView1};
 use scirs2_integrate::bvp::solve_bvp;
 use std::f64::consts::PI;
 
+#[allow(dead_code)]
 fn main() {
     println!("Boundary Value Problem Solver Example");
     println!("--------------------------------------");
@@ -57,10 +58,7 @@ fn main() {
                 let sin_val = scale * x_val.sin();
                 let error = (y_val - sin_val).abs();
 
-                println!(
-                    "{:10.6} {:15.6} {:15.6} {:15.6e}",
-                    x_val, y_val, sin_val, error
-                );
+                println!("{x_val:10.6} {y_val:15.6} {sin_val:15.6} {error:15.6e}");
             }
 
             println!();
@@ -105,10 +103,7 @@ fn main() {
                         let cos_val = x_val.cos();
                         let error = (y_val - cos_val).abs();
 
-                        println!(
-                            "{:10.6} {:15.6} {:15.6} {:15.6e}",
-                            x_val, y_val, cos_val, error
-                        );
+                        println!("{x_val:10.6} {y_val:15.6} {cos_val:15.6} {error:15.6e}");
                     }
 
                     println!();
@@ -117,12 +112,12 @@ fn main() {
                     println!("Successful convergence: {}", result2.success);
                 }
                 Err(e) => {
-                    println!("Error solving second BVP: {}", e);
+                    println!("Error solving second BVP: {e}");
                 }
             }
         }
         Err(e) => {
-            println!("Error solving first BVP: {}", e);
+            println!("Error solving first BVP: {e}");
         }
     }
 }

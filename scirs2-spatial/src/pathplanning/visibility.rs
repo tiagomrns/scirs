@@ -122,7 +122,24 @@ impl Edge {
     /// Check if this edge intersects with a polygon edge
     fn intersects_segment(&self, p1: &Point2D, p2: &Point2D) -> bool {
         // Don't consider intersection if the segments share an endpoint
-        if self.start == *p1 || self.start == *p2 || self.end == *p1 || self.end == *p2 {
+        const EPSILON: f64 = 1e-10;
+
+        let shares_endpoint = (self.start.x - p1.x).abs() < EPSILON
+            && (self.start.y - p1.y).abs() < EPSILON
+            || (self.start.x - p2.x).abs() < EPSILON && (self.start.y - p2.y).abs() < EPSILON
+            || (self.end.x - p1.x).abs() < EPSILON && (self.end.y - p1.y).abs() < EPSILON
+            || (self.end.x - p2.x).abs() < EPSILON && (self.end.y - p2.y).abs() < EPSILON;
+
+        if shares_endpoint {
+            return false;
+        }
+
+        // Check for degenerate segments (zero length)
+        let seg1_length_sq =
+            (self.end.x - self.start.x).powi(2) + (self.end.y - self.start.y).powi(2);
+        let seg2_length_sq = (p2.x - p1.x).powi(2) + (p2.y - p1.y).powi(2);
+
+        if seg1_length_sq < EPSILON || seg2_length_sq < EPSILON {
             return false;
         }
 
@@ -247,11 +264,21 @@ impl VisibilityGraph {
             return true;
         }
 
+        // Early exit: if the edge is very short and both points are vertices, they're likely visible
+        let edge_length = p1.distance(p2);
+        if edge_length < 1e-10 {
+            return true;
+        }
+
         let edge = Edge::new(*p1, *p2);
 
-        // Check if the edge intersects with any obstacle edge
+        // First pass: Check if the edge intersects with any obstacle edge
         for obstacle in obstacles {
             let n = obstacle.len();
+            if n < 3 {
+                continue; // Skip degenerate obstacles
+            }
+
             for i in 0..n {
                 let j = (i + 1) % n;
                 if edge.intersects_segment(&obstacle[i], &obstacle[j]) {
@@ -260,30 +287,47 @@ impl VisibilityGraph {
             }
         }
 
-        // Check if the edge passes through any obstacle
-        // Use multiple sample points along the line to better detect intersections
+        // Second pass: Check if the edge passes through any obstacle interior
+        // Use adaptive sampling based on edge length
         for obstacle in obstacles {
+            if obstacle.len() < 3 {
+                continue; // Skip degenerate obstacles
+            }
+
             // Skip if either point is a vertex of this obstacle
             if obstacle.contains(p1) || obstacle.contains(p2) {
                 continue;
             }
 
-            // Check multiple points along the segment
-            const NUM_SAMPLES: usize = 5;
-            for i in 1..NUM_SAMPLES {
-                let t = i as f64 / NUM_SAMPLES as f64;
+            // Adaptive sampling: more samples for longer edges
+            let num_samples = (edge_length * 10.0).ceil().clamp(3.0, 50.0) as usize;
+
+            // Convert obstacle to ndarray once for efficiency
+            let mut obstacle_array = Array2::zeros((obstacle.len(), 2));
+            for (idx, p) in obstacle.iter().enumerate() {
+                obstacle_array[[idx, 0]] = p.x;
+                obstacle_array[[idx, 1]] = p.y;
+            }
+
+            // Check multiple points along the segment (excluding endpoints)
+            for i in 1..num_samples {
+                let t = i as f64 / num_samples as f64;
                 let sample_x = p1.x * (1.0 - t) + p2.x * t;
                 let sample_y = p1.y * (1.0 - t) + p2.y * t;
                 let sample_point = [sample_x, sample_y];
 
-                // Convert obstacle to ndarray for point_in_polygon check
-                let mut obstacle_array = Array2::zeros((obstacle.len(), 2));
-                for (i, p) in obstacle.iter().enumerate() {
-                    obstacle_array[[i, 0]] = p.x;
-                    obstacle_array[[i, 1]] = p.y;
+                // Skip if the sample point is very close to any obstacle vertex
+                let too_close_to_vertex = obstacle.iter().any(|vertex| {
+                    let dx = vertex.x - sample_x;
+                    let dy = vertex.y - sample_y;
+                    (dx * dx + dy * dy) < 1e-12
+                });
+
+                if too_close_to_vertex {
+                    continue;
                 }
 
-                // If any sample point is inside the obstacle, the edge passes through it
+                // If any sample point is strictly inside the obstacle, the edge passes through it
                 if polygon::point_in_polygon(&sample_point, &obstacle_array.view()) {
                     return false;
                 }
@@ -325,8 +369,8 @@ impl VisibilityGraphPlanner {
     ///
     /// When enabled, the planner first checks if there's a direct path
     /// from start to goal before building the full visibility graph.
-    pub fn with_fast_path(mut self, use_fast_path: bool) -> Self {
-        self.use_fast_path = use_fast_path;
+    pub fn with_fast_path(mut self, use_fastpath: bool) -> Self {
+        self.use_fast_path = use_fastpath;
         self
     }
 
@@ -576,7 +620,10 @@ impl VisibilityGraphPlanner {
 /// # Returns
 ///
 /// * `true` if the segments intersect, `false` otherwise
+#[allow(dead_code)]
 fn segments_intersect(a1: &[f64], a2: &[f64], b1: &[f64], b2: &[f64]) -> bool {
+    const EPSILON: f64 = 1e-10;
+
     // Function to compute orientation of triplet (p, q, r)
     // Returns:
     // 0 -> collinear
@@ -585,21 +632,23 @@ fn segments_intersect(a1: &[f64], a2: &[f64], b1: &[f64], b2: &[f64]) -> bool {
     let orientation = |p: &[f64], q: &[f64], r: &[f64]| -> i32 {
         let val = (q[1] - p[1]) * (r[0] - q[0]) - (q[0] - p[0]) * (r[1] - q[1]);
 
-        if val < 0.0 {
-            return 1; // clockwise
-        } else if val > 0.0 {
-            return 2; // counterclockwise
+        if val.abs() < EPSILON {
+            0 // collinear
+        } else if val < 0.0 {
+            1 // clockwise
+        } else {
+            2 // counterclockwise
         }
-
-        0 // collinear
     };
 
     // Function to check if point q is on segment pr
     let on_segment = |p: &[f64], q: &[f64], r: &[f64]| -> bool {
-        q[0] <= p[0].max(r[0])
-            && q[0] >= p[0].min(r[0])
-            && q[1] <= p[1].max(r[1])
-            && q[1] >= p[1].min(r[1])
+        let min_x = p[0].min(r[0]) - EPSILON;
+        let max_x = p[0].max(r[0]) + EPSILON;
+        let min_y = p[1].min(r[1]) - EPSILON;
+        let max_y = p[1].max(r[1]) + EPSILON;
+
+        q[0] >= min_x && q[0] <= max_x && q[1] >= min_y && q[1] <= max_y
     };
 
     let o1 = orientation(a1, a2, b1);
@@ -607,12 +656,12 @@ fn segments_intersect(a1: &[f64], a2: &[f64], b1: &[f64], b2: &[f64]) -> bool {
     let o3 = orientation(b1, b2, a1);
     let o4 = orientation(b1, b2, a2);
 
-    // General case
+    // General case - segments intersect if orientations are different
     if o1 != o2 && o3 != o4 {
         return true;
     }
 
-    // Special cases
+    // Special cases - collinear points that lie on the other segment
     if o1 == 0 && on_segment(a1, b1, a2) {
         return true;
     }

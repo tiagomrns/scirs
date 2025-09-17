@@ -32,7 +32,7 @@
 //! let spline = VariableKnotSpline::new(
 //!     &x.view(),
 //!     &y.view(),
-//!     KnotStrategy::Adaptive { max_knots: 20, tolerance: 1e-6 }
+//!     KnotStrategy::Adaptive { maxknots: 20, tolerance: 1e-6 }
 //! ).unwrap();
 //!
 //! // Evaluate at any point
@@ -53,21 +53,21 @@ pub enum KnotStrategy {
     /// Adaptive strategy: starts with few knots, adds more where needed
     Adaptive {
         /// Maximum number of knots allowed
-        max_knots: usize,
+        maxknots: usize,
         /// Error tolerance for knot insertion
         tolerance: f64,
     },
     /// Fixed number of knots, optimally placed
     Optimized {
         /// Number of knots to use
-        num_knots: usize,
+        numknots: usize,
         /// Number of optimization iterations
         max_iterations: usize,
     },
     /// Error-based refinement: place knots based on local interpolation error
     ErrorBased {
         /// Maximum number of knots
-        max_knots: usize,
+        maxknots: usize,
         /// Minimum error threshold for knot insertion
         error_threshold: f64,
     },
@@ -120,7 +120,8 @@ where
         + MulAssign
         + DivAssign
         + RemAssign
-        + 'static,
+        + 'static
+        + crate::traits::InterpolationFloat,
 {
     /// Create a new variable knot smoothing spline
     ///
@@ -140,13 +141,13 @@ where
     ) -> InterpolateResult<Self> {
         // Input validation
         if x.len() != y.len() {
-            return Err(InterpolateError::ValueError(
+            return Err(InterpolateError::invalid_input(
                 "x and y arrays must have the same length".to_string(),
             ));
         }
 
         if x.len() < 3 {
-            return Err(InterpolateError::ValueError(
+            return Err(InterpolateError::invalid_input(
                 "at least 3 data points are required".to_string(),
             ));
         }
@@ -154,7 +155,7 @@ where
         // Check that x is sorted
         for i in 1..x.len() {
             if x[i] <= x[i - 1] {
-                return Err(InterpolateError::ValueError(
+                return Err(InterpolateError::invalid_input(
                     "x values must be sorted in ascending order".to_string(),
                 ));
             }
@@ -163,17 +164,17 @@ where
         // Apply the selected strategy
         match strategy {
             KnotStrategy::Adaptive {
-                max_knots,
+                maxknots,
                 tolerance,
-            } => Self::fit_adaptive(x, y, max_knots, tolerance, strategy),
+            } => Self::fit_adaptive(x, y, maxknots, tolerance, strategy),
             KnotStrategy::Optimized {
-                num_knots,
+                numknots,
                 max_iterations,
-            } => Self::fit_optimized(x, y, num_knots, max_iterations, strategy),
+            } => Self::fit_optimized(x, y, numknots, max_iterations, strategy),
             KnotStrategy::ErrorBased {
-                max_knots,
+                maxknots,
                 error_threshold,
-            } => Self::fit_error_based(x, y, max_knots, error_threshold, strategy),
+            } => Self::fit_error_based(x, y, maxknots, error_threshold, strategy),
         }
     }
 
@@ -181,7 +182,7 @@ where
     fn fit_adaptive(
         x: &ArrayView1<F>,
         y: &ArrayView1<F>,
-        max_knots: usize,
+        maxknots: usize,
         tolerance: f64,
         strategy: KnotStrategy,
     ) -> InterpolateResult<Self> {
@@ -192,11 +193,11 @@ where
 
         // Add a few interior knots to start, but ensure we have enough for the degree
         let degree = 3; // Using cubic splines
-        let min_knots_needed: usize = degree + 1; // Minimum knots needed for the degree
+        let minknots_needed: usize = degree + 1; // Minimum knots needed for the degree
         let data_points = x.len();
-        let initial_interior = min_knots_needed
+        let initial_interior = minknots_needed
             .saturating_sub(2)
-            .min(max_knots.saturating_sub(2))
+            .min(maxknots.saturating_sub(2))
             .min(data_points.saturating_sub(2));
 
         if initial_interior > 0 {
@@ -211,10 +212,10 @@ where
         let mut best_error = F::infinity();
 
         // Iteratively add knots where error is highest
-        while knots.len() < max_knots {
+        while knots.len() < maxknots {
             // Create extended knot vector for cubic B-splines
-            let extended_knots = Self::create_extended_knots(&knots, 3)?;
-            let knots_array = Array1::from(extended_knots);
+            let extendedknots = Self::create_extendedknots(&knots, 3)?;
+            let knots_array = Array1::from(extendedknots);
 
             // Fit B-spline with current knots
             match crate::bspline::make_lsq_bspline(
@@ -284,34 +285,34 @@ where
     fn fit_optimized(
         x: &ArrayView1<F>,
         y: &ArrayView1<F>,
-        num_knots: usize,
+        numknots: usize,
         max_iterations: usize,
         strategy: KnotStrategy,
     ) -> InterpolateResult<Self> {
-        if num_knots < 2 {
-            return Err(InterpolateError::ValueError(
-                "num_knots must be at least 2".to_string(),
+        if numknots < 2 {
+            return Err(InterpolateError::invalid_input(
+                "numknots must be at least 2".to_string(),
             ));
         }
 
-        // For optimized strategy, num_knots represents the number of interior knots we want
+        // For optimized strategy, numknots represents the number of interior knots we want
         // Including the boundary knots. We need at least 2 (start and end).
         // Start with equally spaced knots
-        let mut knots = Vec::with_capacity(num_knots);
-        for i in 0..num_knots {
-            let t = F::from_f64(i as f64 / (num_knots - 1) as f64).unwrap();
+        let mut knots = Vec::with_capacity(numknots);
+        for i in 0..numknots {
+            let t = F::from_f64(i as f64 / (numknots - 1) as f64).unwrap();
             let knot_pos = x[0] * (F::one() - t) + x[x.len() - 1] * t;
             knots.push(knot_pos);
         }
 
-        let mut best_knots = knots.clone();
+        let mut bestknots = knots.clone();
         let mut best_error = F::infinity();
 
         // Simple iterative optimization
         for _iteration in 0..max_iterations {
             // Create extended knot vector
-            let extended_knots = Self::create_extended_knots(&knots, 3)?;
-            let knots_array = Array1::from(extended_knots);
+            let extendedknots = Self::create_extendedknots(&knots, 3)?;
+            let knots_array = Array1::from(extendedknots);
 
             // Fit B-spline with current knots
             if let Ok(spline) = crate::bspline::make_lsq_bspline(
@@ -326,7 +327,7 @@ where
 
                 if current_error < best_error {
                     best_error = current_error;
-                    best_knots = knots.clone();
+                    bestknots = knots.clone();
                 }
 
                 // Try small perturbations to interior knots
@@ -343,13 +344,13 @@ where
                         if new_pos > knots[i - 1] && new_pos < knots[i + 1] {
                             knots[i] = new_pos;
 
-                            let test_extended = Self::create_extended_knots(&knots, 3)?;
-                            let test_knots_array = Array1::from(test_extended);
+                            let test_extended = Self::create_extendedknots(&knots, 3)?;
+                            let testknots_array = Array1::from(test_extended);
 
                             if let Ok(test_spline) = crate::bspline::make_lsq_bspline(
                                 x,
                                 y,
-                                &test_knots_array.view(),
+                                &testknots_array.view(),
                                 3,
                                 None, // weights
                                 ExtrapolateMode::Extrapolate,
@@ -357,7 +358,7 @@ where
                                 let test_error = Self::calculate_rms_error(&test_spline, x, y)?;
                                 if test_error < best_error {
                                     best_error = test_error;
-                                    best_knots = knots.clone();
+                                    bestknots = knots.clone();
                                     improved = true;
                                 } else {
                                     knots[i] -= delta; // Revert
@@ -372,13 +373,13 @@ where
                 if !improved {
                     break; // Converged
                 }
-                knots = best_knots.clone();
+                knots = bestknots.clone();
             }
         }
 
         // Final fit with best knots
-        let extended_knots = Self::create_extended_knots(&best_knots, 3)?;
-        let knots_array = Array1::from(extended_knots);
+        let extendedknots = Self::create_extendedknots(&bestknots, 3)?;
+        let knots_array = Array1::from(extendedknots);
         let final_spline = crate::bspline::make_lsq_bspline(
             x,
             y,
@@ -390,7 +391,7 @@ where
 
         Ok(VariableKnotSpline {
             bspline: final_spline,
-            knots: Array1::from(best_knots),
+            knots: Array1::from(bestknots),
             strategy,
             rms_error: best_error,
         })
@@ -400,7 +401,7 @@ where
     fn fit_error_based(
         x: &ArrayView1<F>,
         y: &ArrayView1<F>,
-        max_knots: usize,
+        maxknots: usize,
         error_threshold: f64,
         strategy: KnotStrategy,
     ) -> InterpolateResult<Self> {
@@ -409,7 +410,7 @@ where
         // Start with a simple cubic spline
         let initial_spline = CubicSpline::new(x, y)?;
 
-        // Find points where error exceeds threshold
+        // Find points where error exceeds _threshold
         let mut knot_candidates = Vec::new();
 
         // Sample at intermediate points to find high-error regions
@@ -436,8 +437,8 @@ where
         // Build knot vector
         let mut knots = vec![x[0], x[x.len() - 1]];
 
-        let max_new_knots = (max_knots - 2).min(knot_candidates.len());
-        for item in knot_candidates.iter().take(max_new_knots) {
+        let max_newknots = (maxknots - 2).min(knot_candidates.len());
+        for item in knot_candidates.iter().take(max_newknots) {
             let new_knot = item.0;
 
             // Insert in sorted order
@@ -455,8 +456,8 @@ where
         }
 
         // Fit final B-spline
-        let extended_knots = Self::create_extended_knots(&knots, 3)?;
-        let knots_array = Array1::from(extended_knots);
+        let extendedknots = Self::create_extendedknots(&knots, 3)?;
+        let knots_array = Array1::from(extendedknots);
         let final_spline = crate::bspline::make_lsq_bspline(
             x,
             y,
@@ -477,9 +478,9 @@ where
     }
 
     /// Create extended knot vector for B-splines
-    fn create_extended_knots(interior_knots: &[F], degree: usize) -> InterpolateResult<Vec<F>> {
-        if interior_knots.len() < 2 {
-            return Err(InterpolateError::ValueError(
+    fn create_extendedknots(interiorknots: &[F], degree: usize) -> InterpolateResult<Vec<F>> {
+        if interiorknots.len() < 2 {
+            return Err(InterpolateError::invalid_input(
                 "At least 2 interior knots required".to_string(),
             ));
         }
@@ -487,18 +488,18 @@ where
         // Create a clamped knot vector
         // For degree k, we need k+1 repetitions at each end
         // The interior knots should only be the unique internal knots, not the boundary values
-        let start_knot = interior_knots[0];
-        let end_knot = interior_knots[interior_knots.len() - 1];
+        let start_knot = interiorknots[0];
+        let end_knot = interiorknots[interiorknots.len() - 1];
 
         // Extract only the interior knots (excluding the first and last)
-        let internal_knots = if interior_knots.len() > 2 {
-            &interior_knots[1..interior_knots.len() - 1]
+        let internalknots = if interiorknots.len() > 2 {
+            &interiorknots[1..interiorknots.len() - 1]
         } else {
             &[]
         };
 
-        // Total knots = (k+1) + internal_knots.len() + (k+1) = internal_knots.len() + 2*(k+1)
-        let mut extended = Vec::with_capacity(internal_knots.len() + 2 * (degree + 1));
+        // Total knots = (k+1) + internalknots.len() + (k+1) = internalknots.len() + 2*(k+1)
+        let mut extended = Vec::with_capacity(internalknots.len() + 2 * (degree + 1));
 
         // Add degree+1 copies of the start knot
         for _ in 0..=degree {
@@ -506,7 +507,7 @@ where
         }
 
         // Add only the internal knots (not the boundary knots)
-        extended.extend_from_slice(internal_knots);
+        extended.extend_from_slice(internalknots);
 
         // Add degree+1 copies of the end knot
         for _ in 0..=degree {
@@ -620,7 +621,7 @@ where
     }
 
     /// Get the number of knots used
-    pub fn num_knots(&self) -> usize {
+    pub fn numknots(&self) -> usize {
         self.knots.len()
     }
 }
@@ -633,16 +634,17 @@ where
 ///
 /// * `x` - The x coordinates of the data points
 /// * `y` - The y coordinates of the data points
-/// * `max_knots` - Maximum number of knots to use
+/// * `maxknots` - Maximum number of knots to use
 /// * `tolerance` - Error tolerance for knot insertion
 ///
 /// # Returns
 ///
 /// A new variable knot smoothing spline
+#[allow(dead_code)]
 pub fn make_adaptive_smoothing_spline<F>(
     x: &ArrayView1<F>,
     y: &ArrayView1<F>,
-    max_knots: usize,
+    maxknots: usize,
     tolerance: f64,
 ) -> InterpolateResult<VariableKnotSpline<F>>
 where
@@ -659,13 +661,14 @@ where
         + MulAssign
         + DivAssign
         + RemAssign
-        + 'static,
+        + 'static
+        + crate::traits::InterpolationFloat,
 {
     VariableKnotSpline::new(
         x,
         y,
         KnotStrategy::Adaptive {
-            max_knots,
+            maxknots,
             tolerance,
         },
     )
@@ -679,16 +682,17 @@ where
 ///
 /// * `x` - The x coordinates of the data points
 /// * `y` - The y coordinates of the data points
-/// * `num_knots` - Number of knots to use
+/// * `numknots` - Number of knots to use
 /// * `max_iterations` - Maximum number of optimization iterations
 ///
 /// # Returns
 ///
 /// A new variable knot smoothing spline
+#[allow(dead_code)]
 pub fn make_optimized_smoothing_spline<F>(
     x: &ArrayView1<F>,
     y: &ArrayView1<F>,
-    num_knots: usize,
+    numknots: usize,
     max_iterations: usize,
 ) -> InterpolateResult<VariableKnotSpline<F>>
 where
@@ -705,13 +709,14 @@ where
         + MulAssign
         + DivAssign
         + RemAssign
-        + 'static,
+        + 'static
+        + crate::traits::InterpolationFloat,
 {
     VariableKnotSpline::new(
         x,
         y,
         KnotStrategy::Optimized {
-            num_knots,
+            numknots,
             max_iterations,
         },
     )
@@ -725,16 +730,17 @@ where
 ///
 /// * `x` - The x coordinates of the data points
 /// * `y` - The y coordinates of the data points
-/// * `max_knots` - Maximum number of knots to use
+/// * `maxknots` - Maximum number of knots to use
 /// * `error_threshold` - Error threshold for knot insertion
 ///
 /// # Returns
 ///
 /// A new variable knot smoothing spline
+#[allow(dead_code)]
 pub fn make_error_based_smoothing_spline<F>(
     x: &ArrayView1<F>,
     y: &ArrayView1<F>,
-    max_knots: usize,
+    maxknots: usize,
     error_threshold: f64,
 ) -> InterpolateResult<VariableKnotSpline<F>>
 where
@@ -751,13 +757,14 @@ where
         + MulAssign
         + DivAssign
         + RemAssign
-        + 'static,
+        + 'static
+        + crate::traits::InterpolationFloat,
 {
     VariableKnotSpline::new(
         x,
         y,
         KnotStrategy::ErrorBased {
-            max_knots,
+            maxknots,
             error_threshold,
         },
     )
@@ -779,7 +786,7 @@ mod tests {
             &x.view(),
             &y.view(),
             KnotStrategy::Adaptive {
-                max_knots: 15,
+                maxknots: 15,
                 tolerance: 1e-3,
             },
         )
@@ -805,14 +812,14 @@ mod tests {
             &x.view(),
             &y.view(),
             KnotStrategy::Optimized {
-                num_knots: 6,
+                numknots: 6,
                 max_iterations: 10,
             },
         )
         .unwrap();
 
         // Check that we get the expected number of knots
-        assert_eq!(spline.num_knots(), 6);
+        assert_eq!(spline.numknots(), 6);
 
         // Test evaluation
         for i in 0..x.len() {
@@ -832,7 +839,7 @@ mod tests {
             &x.view(),
             &y.view(),
             KnotStrategy::ErrorBased {
-                max_knots: 6,         // Reduced from 10 to avoid over-fitting
+                maxknots: 6,          // Reduced from 10 to avoid over-fitting
                 error_threshold: 0.1, // Relaxed threshold
             },
         );
@@ -843,14 +850,11 @@ mod tests {
                 let rms_error = spline.rms_error();
                 assert!(rms_error < 1.0); // Relaxed tolerance for noisy data
             }
-            Err(InterpolateError::ValueError(msg)) if msg.contains("singular") => {
+            Err(InterpolateError::InvalidInput { message }) if message.contains("singular") => {
                 // Accept numerical issues as this can happen with error-based strategies
-                println!(
-                    "Error-based strategy encountered numerical issues (expected): {}",
-                    msg
-                );
+                println!("Error-based strategy encountered numerical issues (expected): {message}");
             }
-            Err(e) => panic!("Unexpected error: {:?}", e),
+            Err(e) => panic!("Unexpected error: {e:?}"),
         }
     }
 
@@ -881,7 +885,7 @@ mod tests {
             &x.view(),
             &y.view(),
             KnotStrategy::Adaptive {
-                max_knots: 10,
+                maxknots: 10,
                 tolerance: 1e-6,
             },
         )
@@ -901,7 +905,7 @@ mod tests {
             &x.view(),
             &y.view(),
             KnotStrategy::Adaptive {
-                max_knots: 10,
+                maxknots: 10,
                 tolerance: 1e-6,
             },
         );
@@ -914,7 +918,7 @@ mod tests {
             &x2.view(),
             &y2.view(),
             KnotStrategy::Adaptive {
-                max_knots: 10,
+                maxknots: 10,
                 tolerance: 1e-6,
             },
         );

@@ -2,6 +2,7 @@ use ndarray::{array, Array2};
 use plotters::prelude::*;
 use scirs2_stats::{huber_regression, ransac, theilslopes};
 
+#[allow(dead_code)]
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("Robust Regression Methods Comparison");
     println!("===================================\n");
@@ -56,7 +57,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // Compute ordinary least squares regression for comparison
     let ols_result = scirs2_stats::linregress(&x_values.view(), &y.view()).unwrap();
-    let (ols_slope, ols_intercept, _, _, _) = ols_result;
+    let (ols_slope, ols_intercept___, _, _, _) = ols_result;
 
     // Print results
     println!("Theil-Sen Regression Results:");
@@ -81,7 +82,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!();
 
     println!("Ordinary Least Squares Results:");
-    println!("Intercept: {:.4}", ols_intercept);
+    println!("Intercept: {:.4}", ols_intercept___);
     println!("Slope: {:.4}", ols_slope);
     println!();
 
@@ -173,7 +174,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         .draw_series(LineSeries::new(
             (0..100).map(|i| {
                 let x = min_x + (max_x - min_x) * i as f64 / 99.0;
-                let y = ols_intercept + ols_slope * x;
+                let y = ols_intercept___ + ols_slope * x;
                 (x, y)
             }),
             &CYAN,
@@ -272,7 +273,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         .draw_series(LineSeries::new(
             (0..100).map(|i| {
                 let x = min_x + (max_x - min_x) * i as f64 / 99.0;
-                let y = ols_intercept + ols_slope * x;
+                let y = ols_intercept___ + ols_slope * x;
                 (x, y)
             }),
             &CYAN,
@@ -295,7 +296,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("True Model  |  0.0000   | 2.0000  |  -");
     println!(
         "OLS         | {:8.4}  | {:7.4} | {:7.4}%",
-        ols_intercept,
+        ols_intercept___,
         ols_slope,
         (((ols_slope - 2.0) / 2.0) * 100.0).abs()
     );

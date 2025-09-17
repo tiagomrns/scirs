@@ -19,7 +19,7 @@ pub struct OptimizationConfig<F: Float> {
     /// Convergence tolerance for gradient norm
     pub gradient_tolerance: F,
     /// Step size for line search
-    pub initial_step_size: F,
+    pub initial_stepsize: F,
     /// Backtracking factor for line search
     pub backtrack_factor: F,
     /// Maximum number of backtracking steps
@@ -31,7 +31,7 @@ impl<F: Float> Default for OptimizationConfig<F> {
         Self {
             max_iterations: 1000,
             gradient_tolerance: F::from(1e-6).unwrap(),
-            initial_step_size: F::from(1.0).unwrap(),
+            initial_stepsize: F::from(1.0).unwrap(),
             backtrack_factor: F::from(0.5).unwrap(),
             max_backtrack_steps: 20,
         }
@@ -88,6 +88,7 @@ pub struct OptimizationResult<F: Float> {
 /// let result = matrix_gradient_descent(&f, &x0.view(), &config).unwrap();
 /// // Should converge to the target matrix
 /// ```
+#[allow(dead_code)]
 pub fn matrix_gradient_descent<F>(
     f: &impl Fn(&ArrayView2<F>) -> LinalgResult<F>,
     x0: &ArrayView2<F>,
@@ -125,24 +126,24 @@ where
         }
 
         // Line search with backtracking
-        let mut step_size = config.initial_step_size;
+        let mut stepsize = config.initial_stepsize;
         let mut x_new = x.clone();
 
         for _ in 0..config.max_backtrack_steps {
-            // Take step: x_new = x - step_size * grad
-            x_new = &x - &(&grad * step_size);
+            // Take step: x_new = x - stepsize * grad
+            x_new = &x - &(&grad * stepsize);
 
             let f_new = f(&x_new.view())?;
 
             // Armijo condition: sufficient decrease
             let sufficient_decrease =
-                f_val - f_new >= F::from(1e-4).unwrap() * step_size * grad_norm * grad_norm;
+                f_val - f_new >= F::from(1e-4).unwrap() * stepsize * grad_norm * grad_norm;
 
             if sufficient_decrease {
                 break;
             }
 
-            step_size = step_size * config.backtrack_factor;
+            stepsize = stepsize * config.backtrack_factor;
         }
 
         x = x_new;
@@ -200,6 +201,7 @@ where
 ///
 /// let result = matrix_newton_method(&f, &x0.view(), &config).unwrap();
 /// ```
+#[allow(dead_code)]
 pub fn matrix_newton_method<F>(
     f: &impl Fn(&ArrayView2<F>) -> LinalgResult<F>,
     x0: &ArrayView2<F>,
@@ -239,22 +241,22 @@ where
         // with BFGS approximation or just use gradient descent with adaptive step size
 
         // Adaptive step size based on function curvature
-        let step_size = if iteration == 0 {
-            config.initial_step_size
+        let stepsize = if iteration == 0 {
+            config.initial_stepsize
         } else {
             // Use previous function values to estimate curvature
             let f_prev = f_history[f_history.len() - 2];
             let f_change = (f_val - f_prev).abs();
             let adaptive_step = if f_change > F::epsilon() {
-                config.initial_step_size * F::from(0.1).unwrap() / f_change
+                config.initial_stepsize * F::from(0.1).unwrap() / f_change
             } else {
-                config.initial_step_size
+                config.initial_stepsize
             };
-            adaptive_step.min(config.initial_step_size)
+            adaptive_step.min(config.initial_stepsize)
         };
 
         // Take Newton-like step (simplified)
-        x = &x - &(&grad * step_size);
+        x = &x - &(&grad * stepsize);
     }
 
     // Did not converge
@@ -319,6 +321,7 @@ where
 ///
 /// let result = projected_gradient_descent(&f, project, &x0.view(), &config).unwrap();
 /// ```
+#[allow(dead_code)]
 pub fn projected_gradient_descent<F>(
     f: &impl Fn(&ArrayView2<F>) -> LinalgResult<F>,
     project: impl Fn(&ArrayView2<F>) -> LinalgResult<Array2<F>>,
@@ -341,13 +344,13 @@ where
         let grad = matrix_finite_difference_gradient(&f, &x.view())?;
 
         // Use backtracking line search for step size
-        let mut step_size = config.initial_step_size;
+        let mut stepsize = config.initial_stepsize;
         let mut x_new = x.clone();
         let mut found_step = false;
 
         for _ in 0..config.max_backtrack_steps {
             // Take gradient step
-            let x_unconstrained = &x - &(&grad * step_size);
+            let x_unconstrained = &x - &(&grad * stepsize);
 
             // Project back to feasible set
             let x_candidate = project(&x_unconstrained.view())?;
@@ -361,12 +364,12 @@ where
             }
 
             // Backtrack
-            step_size = step_size * config.backtrack_factor;
+            stepsize = stepsize * config.backtrack_factor;
         }
 
         if !found_step {
             // If no step was found, use the smallest step size
-            let x_unconstrained = &x - &(&grad * step_size);
+            let x_unconstrained = &x - &(&grad * stepsize);
             x_new = project(&x_unconstrained.view())?;
         }
 
@@ -426,6 +429,7 @@ where
 /// # Returns
 ///
 /// * Gradient matrix of same shape as input
+#[allow(dead_code)]
 fn matrix_finite_difference_gradient<F>(
     f: &impl Fn(&ArrayView2<F>) -> LinalgResult<F>,
     x: &ArrayView2<F>,
@@ -585,7 +589,7 @@ mod tests {
     use ndarray::array;
 
     #[test]
-    fn test_matrix_gradient_descent() {
+    fn testmatrix_gradient_descent() {
         // Minimize f(X) = ||X||_F^2 (simpler objective that doesn't capture variables)
         fn objective(x: &ArrayView2<f64>) -> LinalgResult<f64> {
             let frobenius_sq = x.iter().fold(0.0, |acc, &val| acc + val * val);
@@ -629,7 +633,7 @@ mod tests {
         let config = OptimizationConfig {
             max_iterations: 200,
             gradient_tolerance: 1e-4,
-            initial_step_size: 0.1,
+            initial_stepsize: 0.1,
             ..Default::default()
         };
 

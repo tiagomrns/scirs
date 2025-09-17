@@ -9,6 +9,7 @@ use scirs2_fft::{
 use std::f64::consts::PI;
 use std::time::Instant;
 
+#[allow(dead_code)]
 fn main() {
     println!("GPU Memory Optimization Example");
     println!("==============================\n");
@@ -33,7 +34,7 @@ fn main() {
     let mut signals = Vec::new();
 
     for &size in &sizes {
-        println!("  - Creating signal of size {}", size);
+        println!("  - Creating signal of size {size}");
         let frequencies = vec![(3, 1.0), (7, 0.5), (15, 0.25), (30, 0.1)];
         let signal = create_sparse_signal(size, &frequencies);
         signals.push(signal);
@@ -61,10 +62,7 @@ fn main() {
     }
 
     let individual_time = start.elapsed();
-    println!(
-        "  Total time for individual processing: {:?}",
-        individual_time
-    );
+    println!("  Total time for individual processing: {individual_time:?}");
 
     // 3. Process in batch (more efficient)
     println!("\nProcessing signals in batch (more efficient memory usage):");
@@ -80,7 +78,7 @@ fn main() {
     .unwrap();
 
     let batch_time = start.elapsed();
-    println!("  Total time for batch processing: {:?}", batch_time);
+    println!("  Total time for batch processing: {batch_time:?}");
     println!("  Number of results: {}", batch_results.len());
 
     for (i, result) in batch_results.iter().enumerate() {
@@ -107,10 +105,10 @@ fn main() {
 
     // 5. Process a very large signal with memory optimization
     println!("\nProcessing a very large signal with memory optimization:");
-    let large_size = 1_000_000;
-    println!("  - Creating large signal of size {}", large_size);
+    let largesize = 1_000_000;
+    println!("  - Creating large signal of size {largesize}");
     let frequencies = vec![(3, 1.0), (7, 0.5), (15, 0.25), (30, 0.1)];
-    let large_signal = create_sparse_signal(large_size, &frequencies);
+    let large_signal = create_sparse_signal(largesize, &frequencies);
 
     // Process with memory optimization
     println!("  - Processing with memory optimization...");
@@ -118,10 +116,7 @@ fn main() {
     let result = memory_efficient_gpu_sparse_fft(&large_signal, max_memory).unwrap();
     let opt_time = start.elapsed();
 
-    println!(
-        "  - Memory-efficient processing completed in {:?}",
-        opt_time
-    );
+    println!("  - Memory-efficient processing completed in {opt_time:?}");
     println!("  - Result size: {}", result.len());
 
     // 6. Future enhancements
@@ -136,6 +131,7 @@ fn main() {
 }
 
 // Helper function to create a sparse signal
+#[allow(dead_code)]
 fn create_sparse_signal(n: usize, frequencies: &[(usize, f64)]) -> Vec<f64> {
     let mut signal = vec![0.0; n];
 

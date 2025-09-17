@@ -22,6 +22,7 @@ use scirs2_autograd::variable::Variable;
 /// # Returns
 ///
 /// The projection of x onto the column space of A with gradient tracking.
+#[allow(dead_code)]
 pub fn project<F: Float + Debug + Send + Sync + 'static>(
     a: &Tensor<F>,
     x: &Tensor<F>,
@@ -39,14 +40,14 @@ pub fn project<F: Float + Debug + Send + Sync + 'static>(
         ));
     }
 
-    let a_shape = a.shape();
-    let x_shape = x.shape();
+    let ashape = a.shape();
+    let xshape = x.shape();
 
-    if a_shape[0] != x_shape[0] {
+    if ashape[0] != xshape[0] {
         return Err(scirs2_autograd::error::AutogradError::ShapeMismatch(
             format!(
                 "Number of rows in A ({}) must match length of x ({})",
-                a_shape[0], x_shape[0]
+                ashape[0], xshape[0]
             ),
         ));
     }
@@ -60,15 +61,15 @@ pub fn project<F: Float + Debug + Send + Sync + 'static>(
     let a_t_data_2d = a_t
         .data
         .clone()
-        .into_shape((a_shape[1], a_shape[0]))
+        .intoshape((ashape[1], ashape[0]))
         .unwrap();
-    let a_data_2d = a.data.clone().into_shape((a_shape[0], a_shape[1])).unwrap();
+    let a_data_2d = a.data.clone().intoshape((ashape[0], ashape[1])).unwrap();
 
-    let mut a_t_a_data = Array2::<F>::zeros((a_shape[1], a_shape[1]));
-    for i in 0..a_shape[1] {
-        for j in 0..a_shape[1] {
+    let mut a_t_a_data = Array2::<F>::zeros((ashape[1], ashape[1]));
+    for i in 0..ashape[1] {
+        for j in 0..ashape[1] {
             let mut sum = F::zero();
-            for k in 0..a_shape[0] {
+            for k in 0..ashape[0] {
                 sum = sum + a_t_data_2d[[i, k]] * a_data_2d[[k, j]];
             }
             a_t_a_data[[i, j]] = sum;
@@ -80,7 +81,7 @@ pub fn project<F: Float + Debug + Send + Sync + 'static>(
 
     // Compute (A^T A)^(-1)
     let a_t_a_inv_data = {
-        let n = a_shape[1];
+        let n = ashape[1];
         if n == 1 {
             // For 1x1 matrix, simple reciprocal
             let mut result = a_t_a.data.clone();
@@ -122,14 +123,14 @@ pub fn project<F: Float + Debug + Send + Sync + 'static>(
     let a_t_data_2d = a_t
         .data
         .clone()
-        .into_shape((a_shape[1], a_shape[0]))
+        .intoshape((ashape[1], ashape[0]))
         .unwrap();
-    let x_data_1d = x.data.clone().into_shape(a_shape[0]).unwrap();
+    let x_data_1d = x.data.clone().intoshape(ashape[0]).unwrap();
 
-    let mut a_t_x_data = Array1::<F>::zeros(a_shape[1]);
-    for i in 0..a_shape[1] {
+    let mut a_t_x_data = Array1::<F>::zeros(ashape[1]);
+    for i in 0..ashape[1] {
         let mut sum = F::zero();
-        for k in 0..a_shape[0] {
+        for k in 0..ashape[0] {
             sum = sum + a_t_data_2d[[i, k]] * x_data_1d[k];
         }
         a_t_x_data[i] = sum;
@@ -142,14 +143,14 @@ pub fn project<F: Float + Debug + Send + Sync + 'static>(
     let a_t_a_inv_data_2d = a_t_a_inv
         .data
         .clone()
-        .into_shape((a_shape[1], a_shape[1]))
+        .intoshape((ashape[1], ashape[1]))
         .unwrap();
-    let a_t_x_data_1d = a_t_x.data.clone().into_shape(a_shape[1]).unwrap();
+    let a_t_x_data_1d = a_t_x.data.clone().intoshape(ashape[1]).unwrap();
 
-    let mut temp_data = Array1::<F>::zeros(a_shape[1]);
-    for i in 0..a_shape[1] {
+    let mut temp_data = Array1::<F>::zeros(ashape[1]);
+    for i in 0..ashape[1] {
         let mut sum = F::zero();
-        for j in 0..a_shape[1] {
+        for j in 0..ashape[1] {
             sum = sum + a_t_a_inv_data_2d[[i, j]] * a_t_x_data_1d[j];
         }
         temp_data[i] = sum;
@@ -159,13 +160,13 @@ pub fn project<F: Float + Debug + Send + Sync + 'static>(
     let temp = Tensor::new(temp_data, a.requires_grad || x.requires_grad);
 
     // Compute A (A^T A)^(-1) A^T x manually
-    let a_data_2d = a.data.clone().into_shape((a_shape[0], a_shape[1])).unwrap();
-    let temp_data_1d = temp.data.clone().into_shape(a_shape[1]).unwrap();
+    let a_data_2d = a.data.clone().intoshape((ashape[0], ashape[1])).unwrap();
+    let temp_data_1d = temp.data.clone().intoshape(ashape[1]).unwrap();
 
-    let mut result_data = Array1::<F>::zeros(a_shape[0]);
-    for i in 0..a_shape[0] {
+    let mut result_data = Array1::<F>::zeros(ashape[0]);
+    for i in 0..ashape[0] {
         let mut sum = F::zero();
-        for j in 0..a_shape[1] {
+        for j in 0..ashape[1] {
             sum = sum + a_data_2d[[i, j]] * temp_data_1d[j];
         }
         result_data[i] = sum;
@@ -188,8 +189,8 @@ pub fn project<F: Float + Debug + Send + Sync + 'static>(
                     // A full implementation would require matrix calculus
 
                     // Return zeros for now - this is a placeholder
-                    let a_data_shape = a_data.shape();
-                    let mut grad_a = Array2::<F>::zeros((a_data_shape[0], a_data_shape[1]));
+                    let a_datashape = a_data.shape();
+                    let mut grad_a = Array2::<F>::zeros((a_datashape[0], a_datashape[1]));
                     Ok(grad_a.into_dyn())
                 })
                     as Box<dyn Fn(ndarray::Array<F, ndarray::IxDyn>) -> AutogradResult<ndarray::Array<F, ndarray::IxDyn>> + Send + Sync>,
@@ -240,7 +241,8 @@ pub fn project<F: Float + Debug + Send + Sync + 'static>(
 /// # Returns
 ///
 /// A 2x2 rotation matrix with gradient tracking.
-pub fn rotation_matrix_2d<F: Float + Debug + Send + Sync + 'static>(
+#[allow(dead_code)]
+pub fn rotationmatrix_2d<F: Float + Debug + Send + Sync + 'static>(
     angle: &Tensor<F>,
 ) -> AutogradResult<Tensor<F>> {
     // Ensure angle is a scalar
@@ -270,7 +272,7 @@ pub fn rotation_matrix_2d<F: Float + Debug + Send + Sync + 'static>(
             Some(
                 Box::new(move |grad: ndarray::Array<F, ndarray::IxDyn>| -> AutogradResult<ndarray::Array<F, ndarray::IxDyn>> {
                     // Convert gradient to 2x2 shape
-                    let grad_2d = grad.clone().into_shape((2, 2)).unwrap();
+                    let grad_2d = grad.clone().intoshape((2, 2)).unwrap();
 
                     // Gradient of rotation matrix with respect to angle
                     // d/dθ [cos θ, -sin θ; sin θ, cos θ] = [-sin θ, -cos θ; cos θ, -sin θ]
@@ -292,7 +294,7 @@ pub fn rotation_matrix_2d<F: Float + Debug + Send + Sync + 'static>(
         };
 
         let node = Node::new(
-            scirs2_autograd::graph::OpType::Activation("rotation_matrix_2d".to_string()),
+            scirs2_autograd::graph::OpType::Activation("rotationmatrix_2d".to_string()),
             vec![angle],
             vec![backward],
         );
@@ -315,7 +317,8 @@ pub fn rotation_matrix_2d<F: Float + Debug + Send + Sync + 'static>(
 /// # Returns
 ///
 /// A diagonal scaling matrix with gradient tracking.
-pub fn scaling_matrix<F: Float + Debug + Send + Sync + 'static>(
+#[allow(dead_code)]
+pub fn scalingmatrix<F: Float + Debug + Send + Sync + 'static>(
     scales: &Tensor<F>,
 ) -> AutogradResult<Tensor<F>> {
     // Ensure scales is a vector
@@ -342,7 +345,7 @@ pub fn scaling_matrix<F: Float + Debug + Send + Sync + 'static>(
             Some(
                 Box::new(move |grad: ndarray::Array<F, ndarray::IxDyn>| -> AutogradResult<ndarray::Array<F, ndarray::IxDyn>> {
                     // Convert gradient to nxn shape
-                    let grad_2d = grad.clone().into_shape((n, n)).unwrap();
+                    let grad_2d = grad.clone().intoshape((n, n)).unwrap();
 
                     // Gradient of scaling matrix with respect to scales
                     // is just the diagonal elements of the gradien
@@ -360,7 +363,7 @@ pub fn scaling_matrix<F: Float + Debug + Send + Sync + 'static>(
         };
 
         let node = Node::new(
-            scirs2_autograd::graph::OpType::Activation("scaling_matrix".to_string()),
+            scirs2_autograd::graph::OpType::Activation("scalingmatrix".to_string()),
             vec![scales],
             vec![backward],
         );
@@ -383,7 +386,8 @@ pub fn scaling_matrix<F: Float + Debug + Send + Sync + 'static>(
 /// # Returns
 ///
 /// A reflection matrix with gradient tracking.
-pub fn reflection_matrix<F: Float + Debug + Send + Sync + 'static>(
+#[allow(dead_code)]
+pub fn reflectionmatrix<F: Float + Debug + Send + Sync + 'static>(
     normal: &Tensor<F>,
 ) -> AutogradResult<Tensor<F>> {
     // Ensure normal is a vector
@@ -438,7 +442,7 @@ pub fn reflection_matrix<F: Float + Debug + Send + Sync + 'static>(
         };
 
         let node = Node::new(
-            scirs2_autograd::graph::OpType::Activation("reflection_matrix".to_string()),
+            scirs2_autograd::graph::OpType::Activation("reflectionmatrix".to_string()),
             vec![normal],
             vec![backward],
         );
@@ -464,7 +468,8 @@ pub fn reflection_matrix<F: Float + Debug + Send + Sync + 'static>(
 /// # Returns
 ///
 /// A shear matrix with gradient tracking.
-pub fn shear_matrix<F: Float + Debug + Send + Sync + 'static>(
+#[allow(dead_code)]
+pub fn shearmatrix<F: Float + Debug + Send + Sync + 'static>(
     shear_factor: &Tensor<F>,
     dim1: usize,
     dim2: usize,
@@ -473,7 +478,7 @@ pub fn shear_matrix<F: Float + Debug + Send + Sync + 'static>(
     // Ensure shear_factor is a scalar
     if shear_factor.data.ndim() != 1 || shear_factor.data.len() != 1 {
         return Err(scirs2_autograd::error::AutogradError::ShapeMismatch(
-            "Shear factor must be a scalar tensor".to_string(),
+            "Shear _factor must be a scalar tensor".to_string(),
         ));
     }
 
@@ -492,14 +497,14 @@ pub fn shear_matrix<F: Float + Debug + Send + Sync + 'static>(
     let requires_grad = shear_factor.requires_grad;
 
     if requires_grad {
-        // Backward function for the shear factor
+        // Backward function for the shear _factor
         let backward = if requires_grad {
             Some(
                 Box::new(move |grad: ndarray::Array<F, ndarray::IxDyn>| -> AutogradResult<ndarray::Array<F, ndarray::IxDyn>> {
                     // Convert gradient to nxn shape
-                    let grad_2d = grad.clone().into_shape((n, n)).unwrap();
+                    let grad_2d = grad.clone().intoshape((n, n)).unwrap();
 
-                    // Gradient of shear matrix with respect to shear factor
+                    // Gradient of shear matrix with respect to shear _factor
                     // is just the (dim1, dim2) element of the gradien
                     let grad_shear = grad_2d[[dim1, dim2]];
 
@@ -512,7 +517,7 @@ pub fn shear_matrix<F: Float + Debug + Send + Sync + 'static>(
         };
 
         let node = Node::new(
-            scirs2_autograd::graph::OpType::Activation("shear_matrix".to_string()),
+            scirs2_autograd::graph::OpType::Activation("shearmatrix".to_string()),
             vec![shear_factor],
             vec![backward],
         );
@@ -543,43 +548,43 @@ pub mod variable {
     }
 
     /// 2D rotation matrix for Variables
-    pub fn rotation_matrix_2d<F: Float + Debug + Send + Sync + 'static>(
+    pub fn rotationmatrix_2d<F: Float + Debug + Send + Sync + 'static>(
         angle: &Variable<F>,
     ) -> AutogradResult<Variable<F>> {
-        let result_tensor = super::rotation_matrix_2d(&angle.tensor)?;
+        let result_tensor = super::rotationmatrix_2d(&angle.tensor)?;
         Ok(Variable {
             tensor: result_tensor,
         })
     }
 
     /// Scaling matrix for Variables
-    pub fn scaling_matrix<F: Float + Debug + Send + Sync + 'static>(
+    pub fn scalingmatrix<F: Float + Debug + Send + Sync + 'static>(
         scales: &Variable<F>,
     ) -> AutogradResult<Variable<F>> {
-        let result_tensor = super::scaling_matrix(&scales.tensor)?;
+        let result_tensor = super::scalingmatrix(&scales.tensor)?;
         Ok(Variable {
             tensor: result_tensor,
         })
     }
 
     /// Reflection matrix for Variables
-    pub fn reflection_matrix<F: Float + Debug + Send + Sync + 'static>(
+    pub fn reflectionmatrix<F: Float + Debug + Send + Sync + 'static>(
         normal: &Variable<F>,
     ) -> AutogradResult<Variable<F>> {
-        let result_tensor = super::reflection_matrix(&normal.tensor)?;
+        let result_tensor = super::reflectionmatrix(&normal.tensor)?;
         Ok(Variable {
             tensor: result_tensor,
         })
     }
 
     /// Shear matrix for Variables
-    pub fn shear_matrix<F: Float + Debug + Send + Sync + 'static>(
+    pub fn shearmatrix<F: Float + Debug + Send + Sync + 'static>(
         shear_factor: &Variable<F>,
         dim1: usize,
         dim2: usize,
         n: usize,
     ) -> AutogradResult<Variable<F>> {
-        let result_tensor = super::shear_matrix(&shear_factor.tensor, dim1, dim2, n)?;
+        let result_tensor = super::shearmatrix(&shear_factor.tensor, dim1, dim2, n)?;
         Ok(Variable {
             tensor: result_tensor,
         })

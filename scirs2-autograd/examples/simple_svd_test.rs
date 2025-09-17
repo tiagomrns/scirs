@@ -2,10 +2,11 @@ use ag::tensor_ops::*;
 use ndarray::array;
 use scirs2_autograd as ag;
 
+#[allow(dead_code)]
 fn main() {
     println!("Running simple SVD gradient test...");
 
-    ag::run::<f64, _, _>(|g| {
+    ag::run(|g| {
         // Create a simple 2x2 matrix
         let matrix_data = array![[1.0, 2.0], [3.0, 4.0]];
         let matrix = variable(matrix_data.clone(), g);

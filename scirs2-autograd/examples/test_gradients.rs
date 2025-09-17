@@ -1,6 +1,7 @@
 use ag::tensor_ops as T;
 use scirs2_autograd as ag;
 
+#[allow(dead_code)]
 fn main() {
     println!("Testing gradient computation for z = 2x^2 + 3y + 1");
 

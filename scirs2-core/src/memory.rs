@@ -52,7 +52,7 @@
 //! println!("{}", format_memory_report());
 //! ```
 
-use ndarray::{ArrayBase, Data, Dimension, Ix2, ViewRepr};
+use ndarray::{ArrayBase, Data, Dimension, Ix2, IxDyn, ViewRepr};
 use std::any::TypeId;
 use std::collections::HashMap;
 use std::marker::PhantomData;
@@ -66,8 +66,7 @@ where
 {
     array: &'a ArrayBase<S, D>,
     // Chunk shape is necessary for the full implementation of chunked processing
-    #[allow(dead_code)]
-    chunk_shape: D,
+    chunkshape: D,
     // Current position needed for iterative processing
     #[allow(dead_code)]
     position: D,
@@ -79,34 +78,106 @@ where
     D: Dimension,
 {
     /// Create a new chunk processor for the given array and chunk shape
-    pub fn new(array: &'a ArrayBase<S, D>, chunk_shape: D) -> Self {
+    pub fn new(array: &'a ArrayBase<S, D>, chunkshape: D) -> Self {
         let position = D::zeros(array.ndim());
         Self {
             array,
-            chunk_shape,
+            chunkshape,
             position,
         }
     }
 
     /// Process the array in chunks, calling the provided function for each chunk
-    pub fn process_chunks<F>(&mut self, mut f: F)
+    /// The function receives a dynamic view of the chunk and the position as IxDyn
+    pub fn process_chunks_dyn<F>(&mut self, mut f: F)
     where
-        F: FnMut(&ArrayBase<ViewRepr<&A>, D>, D),
+        F: FnMut(&ArrayBase<ViewRepr<&A>, IxDyn>, IxDyn),
     {
-        // This is a simplified implementation that just iterates through chunks
-        // A real implementation would be more sophisticated and handle edge cases
-        let position = D::zeros(self.array.ndim());
+        use ndarray::{IntoDimension, Slice};
 
-        // TODO: Implement actual chunk iteration logic
-        // For now, just call the function on the entire array
-        f(&self.array.view(), position);
+        // Get array shape and chunk shape as slices
+        let arrayshape = self.array.shape();
+        let chunkshape = self.chunkshape.slice();
+
+        // Calculate number of chunks in each dimension
+        let mut num_chunks_per_dim = vec![];
+        for i in 0..arrayshape.len() {
+            let n_chunks = arrayshape[i].div_ceil(chunkshape[i]);
+            num_chunks_per_dim.push(n_chunks);
+        }
+
+        // Iterate through all possible chunk positions
+        let mut chunk_indices = vec![0; arrayshape.len()];
+        loop {
+            // Calculate the slice for current chunk
+            let mut slices = vec![];
+            let mut position_vec = vec![];
+
+            for i in 0..arrayshape.len() {
+                let start = chunk_indices[i] * chunkshape[i];
+                let end = ((chunk_indices[i] + 1) * chunkshape[i]).min(arrayshape[i]);
+                slices.push(Slice::from(start..end));
+                position_vec.push(start);
+            }
+
+            // Convert position vector to IxDyn
+            let position = position_vec.into_dimension();
+
+            // Get the chunk view and call the function
+            // First convert the array to dynamic dimension, then slice
+            let dyn_array = self.array.view().into_dyn();
+
+            // Create dynamic slice info
+            use ndarray::{SliceInfo, SliceInfoElem};
+            let slice_elems: Vec<SliceInfoElem> = slices
+                .into_iter()
+                .map(|s| SliceInfoElem::Slice {
+                    start: s.start,
+                    end: s.end,
+                    step: s.step,
+                })
+                .collect();
+
+            let slice_info = unsafe {
+                SliceInfo::<Vec<SliceInfoElem>, IxDyn, IxDyn>::new(slice_elems)
+                    .expect("Failed to create slice info")
+            };
+
+            let view = dyn_array.slice(slice_info);
+            f(&view, position);
+
+            // Increment chunk indices
+            let mut carry = true;
+            for i in 0..chunk_indices.len() {
+                if carry {
+                    chunk_indices[i] += 1;
+                    if chunk_indices[i] >= num_chunks_per_dim[i] {
+                        chunk_indices[i] = 0;
+                    } else {
+                        carry = false;
+                    }
+                }
+            }
+
+            // If we've wrapped around all dimensions, we're done
+            if carry {
+                break;
+            }
+        }
     }
 
     /// Get the total number of chunks
     pub fn num_chunks(&self) -> usize {
-        // This is a simplified placeholder
-        // A real implementation would calculate the actual number of chunks
-        1
+        let arrayshape = self.array.shape();
+        let chunkshape = self.chunkshape.slice();
+
+        let mut total_chunks = 1;
+        for i in 0..arrayshape.len() {
+            let n_chunks = arrayshape[i].div_ceil(chunkshape[i]);
+            total_chunks *= n_chunks;
+        }
+
+        total_chunks
     }
 }
 
@@ -116,7 +187,7 @@ where
     S: Data<Elem = A>,
 {
     array: &'a ArrayBase<S, Ix2>,
-    chunk_shape: (usize, usize),
+    chunkshape: (usize, usize),
     // Current position tracking for iterator implementation
     #[allow(dead_code)]
     current_row: usize,
@@ -129,10 +200,10 @@ where
     S: Data<Elem = A>,
 {
     /// Create a new 2D chunk processor
-    pub fn new(array: &'a ArrayBase<S, Ix2>, chunk_shape: (usize, usize)) -> Self {
+    pub fn new(array: &'a ArrayBase<S, Ix2>, chunkshape: (usize, usize)) -> Self {
         Self {
             array,
-            chunk_shape,
+            chunkshape,
             current_row: 0,
             current_col: 0,
         }
@@ -144,7 +215,7 @@ where
         F: FnMut(&ArrayBase<ViewRepr<&A>, Ix2>, (usize, usize)),
     {
         let (rows, cols) = self.array.dim();
-        let (chunk_rows, chunk_cols) = self.chunk_shape;
+        let (chunk_rows, chunk_cols) = self.chunkshape;
 
         for row_start in (0..rows).step_by(chunk_rows) {
             for col_start in (0..cols).step_by(chunk_cols) {
@@ -295,6 +366,7 @@ impl Default for GlobalBufferPool {
 }
 
 /// Static global buffer pool instance
+#[allow(dead_code)]
 pub fn global_buffer_pool() -> &'static GlobalBufferPool {
     use once_cell::sync::Lazy;
     static GLOBAL_POOL: Lazy<GlobalBufferPool> = Lazy::new(GlobalBufferPool::new);
@@ -306,7 +378,7 @@ pub struct ZeroCopyView<'a, T, D>
 where
     D: Dimension,
 {
-    _phantom: PhantomData<T>,
+    phantom: PhantomData<T>,
     inner: ndarray::ArrayView<'a, T, D>,
 }
 
@@ -317,7 +389,7 @@ where
     /// Create a new zero-copy view from an array
     pub fn new(array: &'a ndarray::Array<T, D>) -> Self {
         Self {
-            _phantom: PhantomData,
+            phantom: PhantomData,
             inner: array.view(),
         }
     }
@@ -392,6 +464,7 @@ impl MemoryTracker {
 }
 
 /// Static global memory tracker instance
+#[allow(dead_code)]
 pub fn global_memory_tracker() -> &'static MemoryTracker {
     use once_cell::sync::Lazy;
     static GLOBAL_TRACKER: Lazy<MemoryTracker> = Lazy::new(MemoryTracker::new);

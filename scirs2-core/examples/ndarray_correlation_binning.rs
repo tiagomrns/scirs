@@ -3,6 +3,7 @@ use scirs2_core::ndarray_ext::stats::{
     bincount, corrcoef, cov, digitize, histogram, histogram2d, quantile,
 };
 
+#[allow(dead_code)]
 fn main() {
     println!("Advanced Statistical Analysis with scirs2-core\n");
 
@@ -11,24 +12,24 @@ fn main() {
 
     // Create sample data
     let data = array![1, 2, 3, 1, 2, 1, 0, 1, 3, 2, 4, 5, 3, 2, 1, 0];
-    println!("Sample data: {:?}", data);
+    println!("Sample data: {data:?}");
 
     // Basic counting
     let counts = bincount(data.view(), None, None).unwrap();
     println!("\nValue counts:");
     for (i, &count) in counts.iter().enumerate() {
-        println!("  {}: {}", i, count);
+        println!("  {i}: {count}");
     }
 
     // Digitize values into bins
     let values = array![0.2, 1.4, 2.5, 6.2, 9.7, 2.1, 4.3, 5.5, 8.1, 3.2];
-    println!("\nValues to digitize: {:?}", values);
+    println!("\nValues to digitize: {values:?}");
 
     let bins = array![0.0, 2.0, 4.0, 6.0, 8.0, 10.0];
-    println!("Bin edges: {:?}", bins);
+    println!("Bin edges: {bins:?}");
 
     let indices = digitize(values.view(), bins.view(), true, "indices").unwrap();
-    println!("Bin indices: {:?}", indices);
+    println!("Bin indices: {indices:?}");
 
     // Create a frequency table
     println!("\nFrequency table:");
@@ -61,19 +62,19 @@ fn main() {
     // No correlation
     let y_none = array![5.5, 2.1, 8.3, 3.7, 9.2, 1.5, 6.8, 4.2, 7.9, 3.3];
 
-    println!("x: {:?}", x);
-    println!("y_pos: {:?}", y_pos);
-    println!("y_neg: {:?}", y_neg);
-    println!("y_none: {:?}", y_none);
+    println!("x: {x:?}");
+    println!("ypos: {y_pos:?}");
+    println!("yneg: {y_neg:?}");
+    println!("ynone: {y_none:?}");
 
     let corr_pos = corrcoef(x.view(), y_pos.view()).unwrap();
     let corr_neg = corrcoef(x.view(), y_neg.view()).unwrap();
     let corr_none = corrcoef(x.view(), y_none.view()).unwrap();
 
     println!("\nCorrelation coefficients:");
-    println!("  Positive correlation: {:.4}", corr_pos);
-    println!("  Negative correlation: {:.4}", corr_neg);
-    println!("  No correlation: {:.4}", corr_none);
+    println!("  Positive correlation: {corr_pos:.4}");
+    println!("  Negative correlation: {corr_neg:.4}");
+    println!("  No correlation: {corr_none:.4}");
 
     // Create a multivariate dataset and compute its covariance matrix
     let data = Array2::from_shape_vec(
@@ -87,17 +88,17 @@ fn main() {
     .unwrap();
 
     println!("\nCovariance matrix:");
-    let cov_matrix = cov(data.view(), 1).unwrap();
+    let covmatrix = cov(data.view(), 1).unwrap();
 
     println!("  Variances:");
-    println!("    Var(x): {:.2}", cov_matrix[[0, 0]]);
-    println!("    Var(y_pos): {:.2}", cov_matrix[[1, 1]]);
-    println!("    Var(y_neg): {:.2}", cov_matrix[[2, 2]]);
+    println!("    Var(x): {:.2}", covmatrix[[0, 0]]);
+    println!("    Var(y_pos): {:.2}", covmatrix[[1, 1]]);
+    println!("    Var(y_neg): {:.2}", covmatrix[[2, 2]]);
 
     println!("  Covariances:");
-    println!("    Cov(x, y_pos): {:.2}", cov_matrix[[0, 1]]);
-    println!("    Cov(x, y_neg): {:.2}", cov_matrix[[0, 2]]);
-    println!("    Cov(y_pos, y_neg): {:.2}", cov_matrix[[1, 2]]);
+    println!("    Cov(x, y_pos): {:.2}", covmatrix[[0, 1]]);
+    println!("    Cov(x, y_neg): {:.2}", covmatrix[[0, 2]]);
+    println!("    Cov(y_pos, y_neg): {:.2}", covmatrix[[1, 2]]);
 
     // Example 3: Quantile analysis
     println!("\n\n=== Quantile Analysis ===");
@@ -108,7 +109,7 @@ fn main() {
         12.5, 9.9, 10.2, 23.5, 10.8
     ];
 
-    println!("Data with outliers: {:?}", data);
+    println!("Data with outliers: {data:?}");
 
     // Calculate quartiles
     let quartiles = quantile(data.view(), array![0.25, 0.5, 0.75].view(), None).unwrap();
@@ -119,15 +120,12 @@ fn main() {
 
     // Calculate IQR (Interquartile Range)
     let iqr = quartiles[2] - quartiles[0];
-    println!("  IQR: {:.2}", iqr);
+    println!("  IQR: {iqr:.2}");
 
     // Define outlier boundaries
     let lower_bound = quartiles[0] - 1.5 * iqr;
     let upper_bound = quartiles[2] + 1.5 * iqr;
-    println!(
-        "  Outlier boundaries: ({:.2}, {:.2})",
-        lower_bound, upper_bound
-    );
+    println!("  Outlier boundaries: ({lower_bound:.2}, {upper_bound:.2})");
 
     // Count outliers
     let mut outliers = 0;
@@ -136,7 +134,7 @@ fn main() {
             outliers += 1;
         }
     }
-    println!("  Number of outliers: {}", outliers);
+    println!("  Number of outliers: {outliers}");
 
     // Create a 2D histogram for bivariate data
     println!("\n=== 2D Histogram ===");
@@ -151,8 +149,8 @@ fn main() {
         1.3, 0.8
     ];
 
-    println!("X values: {:?}", x_data);
-    println!("Y values: {:?}", y_data);
+    println!("X values: {x_data:?}");
+    println!("Y values: {y_data:?}");
 
     let (hist_2d, x_edges, y_edges) = histogram2d(
         x_data.view(),

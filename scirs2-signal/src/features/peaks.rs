@@ -2,7 +2,9 @@ use crate::error::SignalResult;
 use crate::measurements;
 use std::collections::HashMap;
 
+#[allow(unused_imports)]
 /// Extract peak-based features from a time series
+#[allow(dead_code)]
 pub fn extract_peak_features(
     signal: &[f64],
     features: &mut HashMap<String, f64>,
@@ -84,7 +86,7 @@ pub fn extract_peak_features(
     // Calculate crest factor (peak amplitude / RMS)
     if let Ok(rms) = measurements::rms(signal) {
         if rms > 0.0 {
-            let max_abs = signal.iter().map(|&x| x.abs()).fold(0.0, f64::max);
+            let max_abs = signal.iter().map(|&x: &f64| x.abs()).fold(0.0, f64::max);
             features.insert("crest_factor".to_string(), max_abs / rms);
         }
     }

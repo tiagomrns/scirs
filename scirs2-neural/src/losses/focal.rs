@@ -8,43 +8,30 @@ use std::fmt::Debug;
 
 /// Focal loss function.
 ///
-/// The focal loss is a modified version of cross-entropy that reduces the relative loss
-/// for well-classified examples, focusing more on hard, misclassified examples.
-///
-/// The focal loss is defined as:
-/// FL(p_t) = -alpha_t * (1 - p_t)^gamma * log(p_t)
-///
-/// where:
-/// * p_t is the model's estimated probability for the class with true label t
-/// * alpha_t is a weighting factor (can be per-class)
-/// * gamma is the focusing parameter (gamma > 0)
-///
-/// This is particularly useful for class imbalance problems.
+/// The focal loss is designed to address class imbalance problems by down-weighting
+/// easy examples and focusing training on hard examples. For a single class,
+/// the focal loss is defined as:
+/// FL(p_t) = -α_t * (1 - p_t)^γ * log(p_t)
+/// where p_t is the model's estimated probability for the true class.
 ///
 /// # Examples
-///
 /// ```
 /// use scirs2_neural::losses::FocalLoss;
 /// use scirs2_neural::losses::Loss;
 /// use ndarray::{Array, arr2};
 ///
-/// // Create focal loss with gamma=2.0 and alpha=0.25
 /// let focal = FocalLoss::new(2.0, Some(0.25), 1e-10);
-///
-/// // One-hot encoded targets and softmax'd predictions for a 3-class problem
+/// // Predictions and targets for a 3-class problem
 /// let predictions = arr2(&[
 ///     [0.7, 0.2, 0.1],  // First sample, class probabilities
 ///     [0.3, 0.6, 0.1]   // Second sample, class probabilities
 /// ]).into_dyn();
-///
 /// let targets = arr2(&[
 ///     [1.0, 0.0, 0.0],  // First sample, true class is 0
 ///     [0.0, 1.0, 0.0]   // Second sample, true class is 1
 /// ]).into_dyn();
-///
 /// // Forward pass to calculate loss
 /// let loss = focal.forward(&predictions, &targets).unwrap();
-///
 /// // Backward pass to calculate gradients
 /// let gradients = focal.backward(&predictions, &targets).unwrap();
 /// ```
@@ -64,7 +51,6 @@ impl FocalLoss {
     /// Create a new focal loss function with a single alpha value for all classes
     ///
     /// # Arguments
-    ///
     /// * `gamma` - Focusing parameter, gamma >= 0. Higher gamma means more focus on misclassified examples.
     /// * `alpha` - Optional weighting factor, typically between 0 and 1.
     /// * `epsilon` - Small value to add to predictions to avoid log(0)
@@ -78,17 +64,12 @@ impl FocalLoss {
     }
 
     /// Create a focal loss with class-specific alpha weights
-    ///
-    /// # Arguments
-    ///
-    /// * `gamma` - Focusing parameter, gamma >= 0. Higher gamma means more focus on misclassified examples.
     /// * `alpha_per_class` - Vector of weighting factors, one per class
-    /// * `epsilon` - Small value to add to predictions to avoid log(0)
-    pub fn with_class_weights(gamma: f64, alpha_per_class: Vec<f64>, epsilon: f64) -> Self {
+    pub fn with_class_weights(gamma: f64, alpha_perclass: Vec<f64>, epsilon: f64) -> Self {
         Self {
             gamma,
             alpha: None,
-            alpha_per_class: Some(alpha_per_class),
+            alpha_per_class: Some(alpha_perclass),
             epsilon,
         }
     }
@@ -119,11 +100,9 @@ impl<F: Float + Debug> Loss<F> for FocalLoss {
         let gamma = F::from(self.gamma).ok_or_else(|| {
             NeuralError::InferenceError("Could not convert gamma to float".to_string())
         })?;
-
         let epsilon = F::from(self.epsilon).ok_or_else(|| {
             NeuralError::InferenceError("Could not convert epsilon to float".to_string())
         })?;
-
         let n = F::from(if predictions.ndim() > 1 {
             predictions.shape()[0]
         } else {
@@ -140,7 +119,6 @@ impl<F: Float + Debug> Loss<F> for FocalLoss {
             } else {
                 predictions.len()
             };
-
             if alpha_per_class.len() != num_classes {
                 return Err(NeuralError::InferenceError(format!(
                     "Number of alpha values ({}) does not match number of classes ({})",
@@ -150,20 +128,15 @@ impl<F: Float + Debug> Loss<F> for FocalLoss {
             }
         }
 
-        // Calculate focal loss
         let mut loss = F::zero();
 
         // If we have a batch (first dimension is batch size)
         if predictions.ndim() > 1 {
-            let num_classes = predictions.shape()[1];
-
             for i in 0..predictions.shape()[0] {
                 let mut sample_loss = F::zero();
-
-                for j in 0..num_classes {
+                for j in 0..predictions.shape()[1] {
                     let y_pred = predictions[[i, j]].max(epsilon).min(F::one() - epsilon);
                     let y_true = targets[[i, j]];
-
                     // Only add to loss if target is non-zero (for sparse targets)
                     if y_true > F::zero() {
                         // Get the alpha value for this class
@@ -182,7 +155,6 @@ impl<F: Float + Debug> Loss<F> for FocalLoss {
                         } else {
                             F::one()
                         };
-
                         // Probability for the target class
                         let p_t = y_pred;
                         // Focal weight: (1 - p_t)^gamma
@@ -196,11 +168,10 @@ impl<F: Float + Debug> Loss<F> for FocalLoss {
             // Average over batch
             loss = loss / n;
         } else {
-            // Single sample case - Avoiding Zip::enumerate which doesn't exist
+            // Single sample case
             for j in 0..predictions.len() {
                 let p = predictions[j];
                 let t = targets[j];
-
                 if t > F::zero() {
                     // Get the alpha value for this class
                     let alpha = if let Some(ref alpha_per_class) = self.alpha_per_class {
@@ -210,14 +181,12 @@ impl<F: Float + Debug> Loss<F> for FocalLoss {
                     } else {
                         F::one()
                     };
-
                     let p_safe = p.max(epsilon).min(F::one() - epsilon);
                     let focal_weight = (F::one() - p_safe).powf(gamma);
                     loss = loss - alpha * focal_weight * t * p_safe.ln();
                 }
             }
         }
-
         Ok(loss)
     }
 
@@ -238,11 +207,9 @@ impl<F: Float + Debug> Loss<F> for FocalLoss {
         let gamma = F::from(self.gamma).ok_or_else(|| {
             NeuralError::InferenceError("Could not convert gamma to float".to_string())
         })?;
-
         let epsilon = F::from(self.epsilon).ok_or_else(|| {
             NeuralError::InferenceError("Could not convert epsilon to float".to_string())
         })?;
-
         let n = F::from(if predictions.ndim() > 1 {
             predictions.shape()[0]
         } else {
@@ -255,31 +222,27 @@ impl<F: Float + Debug> Loss<F> for FocalLoss {
         // Initialize gradients
         let mut gradients = Array::zeros(predictions.raw_dim());
 
-        // Calculate gradients for focal loss - avoid Zip::enumerate
+        // Calculate gradients for focal loss
         if predictions.ndim() == 1 {
             // For 1D arrays (single sample)
             for idx in 0..predictions.len() {
                 let p = predictions[idx];
                 let t = targets[idx];
-                let p_safe = p.max(epsilon).min(F::one() - epsilon);
-
-                // Get alpha for this class
-                let alpha = if let Some(ref alpha_per_class) = self.alpha_per_class {
-                    F::from(alpha_per_class[idx]).unwrap_or(F::one())
-                } else if let Some(a) = self.alpha {
-                    F::from(a).unwrap_or(F::one())
-                } else {
-                    F::one()
-                };
-
                 if t > F::zero() {
+                    let p_safe = p.max(epsilon).min(F::one() - epsilon);
+                    // Get alpha for this class
+                    let alpha = if let Some(ref alpha_per_class) = self.alpha_per_class {
+                        F::from(alpha_per_class[idx]).unwrap_or(F::one())
+                    } else if let Some(a) = self.alpha {
+                        F::from(a).unwrap_or(F::one())
+                    } else {
+                        F::one()
+                    };
                     // Term 1: -alpha * gamma * (1-p_t)^(gamma-1) * log(p_t)
                     let term1 =
                         -alpha * gamma * (F::one() - p_safe).powf(gamma - F::one()) * p_safe.ln();
-
                     // Term 2: -alpha * (1-p_t)^gamma * (1/p_t)
                     let term2 = -alpha * (F::one() - p_safe).powf(gamma) * (F::one() / p_safe);
-
                     gradients[idx] = (term1 + term2) * t / n;
                 } else {
                     gradients[idx] = F::zero();
@@ -288,33 +251,27 @@ impl<F: Float + Debug> Loss<F> for FocalLoss {
         } else {
             // For multi-dimensional arrays (batched)
             let batch_size = predictions.shape()[0];
-            let num_classes = predictions.shape()[1];
-
             for i in 0..batch_size {
-                for j in 0..num_classes {
+                for j in 0..predictions.shape()[1] {
                     let p = predictions[[i, j]];
                     let t = targets[[i, j]];
-                    let p_safe = p.max(epsilon).min(F::one() - epsilon);
-
-                    // Get alpha for this class
-                    let alpha = if let Some(ref alpha_per_class) = self.alpha_per_class {
-                        F::from(alpha_per_class[j]).unwrap_or(F::one())
-                    } else if let Some(a) = self.alpha {
-                        F::from(a).unwrap_or(F::one())
-                    } else {
-                        F::one()
-                    };
-
                     if t > F::zero() {
+                        let p_safe = p.max(epsilon).min(F::one() - epsilon);
+                        // Get alpha for this class
+                        let alpha = if let Some(ref alpha_per_class) = self.alpha_per_class {
+                            F::from(alpha_per_class[j]).unwrap_or(F::one())
+                        } else if let Some(a) = self.alpha {
+                            F::from(a).unwrap_or(F::one())
+                        } else {
+                            F::one()
+                        };
                         // Term 1: -alpha * gamma * (1-p_t)^(gamma-1) * log(p_t)
                         let term1 = -alpha
                             * gamma
                             * (F::one() - p_safe).powf(gamma - F::one())
                             * p_safe.ln();
-
                         // Term 2: -alpha * (1-p_t)^gamma * (1/p_t)
                         let term2 = -alpha * (F::one() - p_safe).powf(gamma) * (F::one() / p_safe);
-
                         gradients[[i, j]] = (term1 + term2) * t / n;
                     } else {
                         gradients[[i, j]] = F::zero();
@@ -322,7 +279,6 @@ impl<F: Float + Debug> Loss<F> for FocalLoss {
                 }
             }
         }
-
         Ok(gradients)
     }
 }

@@ -22,6 +22,7 @@ use std::f64::consts::PI;
 /// # Returns
 ///
 /// The transformed output array
+#[allow(dead_code)]
 pub fn fht(
     a: &[f64],
     dln: f64,
@@ -74,6 +75,7 @@ pub fn fht(
 /// # Returns
 ///
 /// The inverse transformed output array
+#[allow(dead_code)]
 pub fn ifht(
     a: &[f64],
     dln: f64,
@@ -101,6 +103,7 @@ pub fn ifht(
 /// # Returns
 ///
 /// The optimal logarithmic offset
+#[allow(dead_code)]
 pub fn fhtoffset(_dln: f64, _mu: f64, initial: Option<f64>, bias: Option<f64>) -> FFTResult<f64> {
     let bias = bias.unwrap_or(0.0);
     let initial = initial.unwrap_or(0.0);
@@ -116,6 +119,7 @@ pub fn fhtoffset(_dln: f64, _mu: f64, initial: Option<f64>, bias: Option<f64>) -
 }
 
 /// Compute the FFTLog coefficients
+#[allow(dead_code)]
 fn fht_coefficients(n: usize, dln: f64, mu: f64, offset: f64, bias: f64) -> FFTResult<Vec<f64>> {
     let mut coeffs = vec![0.0; n];
 
@@ -156,6 +160,7 @@ fn fht_coefficients(n: usize, dln: f64, mu: f64, offset: f64, bias: f64) -> FFTR
 /// # Returns
 ///
 /// Sample points for the transform
+#[allow(dead_code)]
 pub fn fht_sample_points(n: usize, dln: f64, offset: f64) -> Vec<f64> {
     (0..n)
         .map(|i| ((i as f64 - n as f64 / 2.0) * dln + offset).exp())

@@ -2,7 +2,7 @@
 //!
 //! This module contains algorithms for computing various properties of graphs.
 
-use crate::algorithms::shortest_path::shortest_path;
+use crate::algorithms::shortest_path::dijkstra_path;
 use crate::base::{EdgeWeight, Graph, IndexType, Node};
 use std::hash::Hash;
 
@@ -10,6 +10,7 @@ use std::hash::Hash;
 ///
 /// The diameter is the maximum shortest path distance between any two nodes in the graph.
 /// Returns None if the graph is disconnected.
+#[allow(dead_code)]
 pub fn diameter<N, E, Ix>(graph: &Graph<N, E, Ix>) -> Option<f64>
 where
     N: Node + Clone + Hash + Eq + std::fmt::Debug,
@@ -36,7 +37,7 @@ where
     // Compute all-pairs shortest paths
     for i in 0..n {
         for j in i + 1..n {
-            match shortest_path(graph, &nodes[i], &nodes[j]) {
+            match dijkstra_path(graph, &nodes[i], &nodes[j]) {
                 Ok(Some(path)) => {
                     let distance: f64 = path.total_weight.into();
                     if distance > max_distance {
@@ -57,6 +58,7 @@ where
 /// The radius is the minimum eccentricity over all nodes, where eccentricity of a node
 /// is the maximum distance from that node to any other node.
 /// Returns None if the graph is disconnected.
+#[allow(dead_code)]
 pub fn radius<N, E, Ix>(graph: &Graph<N, E, Ix>) -> Option<f64>
 where
     N: Node + Clone + Hash + Eq + std::fmt::Debug,
@@ -86,7 +88,7 @@ where
 
         for j in 0..n {
             if i != j {
-                match shortest_path(graph, &nodes[i], &nodes[j]) {
+                match dijkstra_path(graph, &nodes[i], &nodes[j]) {
                     Ok(Some(path)) => {
                         let distance: f64 = path.total_weight.into();
                         if distance > max_distance_from_i {
@@ -111,6 +113,7 @@ where
 ///
 /// Center nodes are those with minimum eccentricity (equal to the radius).
 /// Returns empty vector if the graph is disconnected.
+#[allow(dead_code)]
 pub fn center_nodes<N, E, Ix>(graph: &Graph<N, E, Ix>) -> Vec<N>
 where
     N: Node + Clone + Hash + Eq + std::fmt::Debug,
@@ -141,7 +144,7 @@ where
 
         for j in 0..n {
             if i != j {
-                match shortest_path(graph, &nodes[i], &nodes[j]) {
+                match dijkstra_path(graph, &nodes[i], &nodes[j]) {
                     Ok(Some(path)) => {
                         let distance: f64 = path.total_weight.into();
                         if distance > max_distance_from_i {
@@ -200,7 +203,7 @@ mod tests {
     }
 
     #[test]
-    fn test_star_graph() -> GraphResult<()> {
+    fn test_stargraph() -> GraphResult<()> {
         // Create a star graph with center 0
         let mut star = create_graph::<i32, f64>();
         star.add_edge(0, 1, 1.0)?;
@@ -223,7 +226,7 @@ mod tests {
     }
 
     #[test]
-    fn test_disconnected_graph() -> GraphResult<()> {
+    fn test_disconnectedgraph() -> GraphResult<()> {
         // Create a disconnected graph
         let mut graph = create_graph::<i32, f64>();
         graph.add_edge(0, 1, 1.0)?;

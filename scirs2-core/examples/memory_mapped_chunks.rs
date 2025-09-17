@@ -22,12 +22,14 @@ use std::time::Instant;
 use tempfile::tempdir;
 
 #[cfg(not(feature = "memory_efficient"))]
+#[allow(dead_code)]
 fn main() {
     println!("This example requires the memory_efficient feature.");
     println!("Run with: cargo run --example memory_mapped_chunks --features memory_efficient");
 }
 
 #[cfg(feature = "memory_efficient")]
+#[allow(dead_code)]
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("Memory-Mapped Chunked Processing Example");
     println!("========================================\n");
@@ -51,7 +53,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
 /// Basic example of chunked processing
 #[cfg(feature = "memory_efficient")]
-fn basic_chunk_example(temp_dir: &Path) -> Result<(), Box<dyn std::error::Error>> {
+#[allow(dead_code)]
+fn basic_chunk_example(tempdir: &Path) -> Result<(), Box<dyn std::error::Error>> {
     println!("\n1. Basic Chunk Processing Example");
     println!("--------------------------------");
 
@@ -61,7 +64,7 @@ fn basic_chunk_example(temp_dir: &Path) -> Result<(), Box<dyn std::error::Error>
     let data = Array1::<f64>::linspace(0., (size - 1) as f64, size);
 
     // Create a memory-mapped file
-    let file_path = temp_dir.join("chunk_example.bin");
+    let file_path = tempdir.join("chunk_example.bin");
     let mmap = create_mmap(&data, &file_path, AccessMode::Write, 0)?;
     println!("Created memory-mapped array at: {:?}", file_path);
 
@@ -98,7 +101,8 @@ fn basic_chunk_example(temp_dir: &Path) -> Result<(), Box<dyn std::error::Error>
 
 /// Example showing how to aggregate data from chunks
 #[cfg(feature = "memory_efficient")]
-fn aggregate_example(temp_dir: &Path) -> Result<(), Box<dyn std::error::Error>> {
+#[allow(dead_code)]
+fn aggregate_example(tempdir: &Path) -> Result<(), Box<dyn std::error::Error>> {
     println!("\n2. Chunk Aggregation Example");
     println!("---------------------------");
 
@@ -108,7 +112,7 @@ fn aggregate_example(temp_dir: &Path) -> Result<(), Box<dyn std::error::Error>> 
     let data = Array1::<i32>::from_shape_fn(size, |i| i as i32);
 
     // Create a memory-mapped array
-    let file_path = temp_dir.join("aggregate_example.bin");
+    let file_path = tempdir.join("aggregate_example.bin");
     let mmap = create_mmap(&data, &file_path, AccessMode::Write, 0)?;
     println!("Created memory-mapped array at: {:?}", file_path);
 
@@ -163,7 +167,8 @@ fn aggregate_example(temp_dir: &Path) -> Result<(), Box<dyn std::error::Error>> 
 
 /// Performance comparison between chunked and unchunked processing
 #[cfg(feature = "memory_efficient")]
-fn performance_comparison(temp_dir: &Path) -> Result<(), Box<dyn std::error::Error>> {
+#[allow(dead_code)]
+fn performance_comparison(tempdir: &Path) -> Result<(), Box<dyn std::error::Error>> {
     println!("\n3. Performance Comparison");
     println!("-----------------------");
 
@@ -173,7 +178,7 @@ fn performance_comparison(temp_dir: &Path) -> Result<(), Box<dyn std::error::Err
     let data = Array1::<f32>::linspace(0., (size - 1) as f32, size);
 
     // Create a memory-mapped file
-    let file_path = temp_dir.join("perf_comparison.bin");
+    let file_path = tempdir.join("perf_comparison.bin");
     let mmap = create_mmap(&data, &file_path, AccessMode::Write, 0)?;
     println!("Created memory-mapped array at: {:?}", file_path);
 
@@ -210,7 +215,7 @@ fn performance_comparison(temp_dir: &Path) -> Result<(), Box<dyn std::error::Err
     let chunk_size = 1_000_000;
     let strategy = ChunkingStrategy::Fixed(chunk_size);
 
-    let chunk_results = mmap.process_chunks(strategy, |chunk_data, _| {
+    let chunk_results = mmap.process_chunks(strategy, |chunk_data, _idx| {
         let chunk = Array1::<f32>::from_vec(chunk_data.to_vec()); // Convert to Array1 for convenience
         let sum = chunk.sum();
         let min = *chunk

@@ -1,11 +1,12 @@
 //! Trust-region algorithm for constrained optimization
 
 use crate::constrained::{Constraint, ConstraintFn, ConstraintKind, Options};
-use crate::error::{OptimizeError, OptimizeResult};
+use crate::error::OptimizeResult;
 use crate::result::OptimizeResults;
 use ndarray::{Array1, Array2, ArrayBase, Axis, Data, Ix1};
 
 #[allow(clippy::many_single_char_names)]
+#[allow(dead_code)]
 pub fn minimize_trust_constr<F, S>(
     func: F,
     x0: &ArrayBase<S, Ix1>,
@@ -53,11 +54,7 @@ where
                     c[i] = val; // g(x) >= 0 constraint
                 }
                 ConstraintKind::Equality => {
-                    // For simplicity, we don't fully support equality constraints yet
-                    return Err(OptimizeError::NotImplementedError(
-                        "Equality constraints not fully implemented in Trust-Region yet"
-                            .to_string(),
-                    ));
+                    c[i] = val; // h(x) = 0 constraint
                 }
             }
         }
@@ -90,8 +87,19 @@ where
         // Check constraint violation
         let mut max_constraint_violation = 0.0;
         for (i, &ci) in c.iter().enumerate() {
-            if constraints[i].kind == ConstraintKind::Inequality && ci < -ctol {
-                max_constraint_violation = f64::max(max_constraint_violation, -ci);
+            match constraints[i].kind {
+                ConstraintKind::Inequality => {
+                    if ci < -ctol {
+                        max_constraint_violation = f64::max(max_constraint_violation, -ci);
+                    }
+                }
+                ConstraintKind::Equality => {
+                    // For equality constraints, violation is |h(x)|
+                    let violation = ci.abs();
+                    if violation > ctol {
+                        max_constraint_violation = f64::max(max_constraint_violation, violation);
+                    }
+                }
             }
         }
 
@@ -103,10 +111,20 @@ where
         // Compute the Lagrangian gradient
         let mut lag_grad = g.clone();
         for (i, &li) in lambda.iter().enumerate() {
-            if li > 0.0 || c[i] < ctol {
-                // Active or violated constraint
+            let include_constraint = match constraints[i].kind {
+                ConstraintKind::Inequality => {
+                    // For inequality constraints: include if active (lambda > 0) or violated (c < 0)
+                    li > 0.0 || c[i] < -ctol
+                }
+                ConstraintKind::Equality => {
+                    // For equality constraints: always include (always active)
+                    true
+                }
+            };
+
+            if include_constraint {
                 for j in 0..n {
-                    // L = f - sum(lambda_i * c_i) for inequality constraints
+                    // L = f - sum(lambda_i * c_i) for constraints
                     // So gradient of L is grad(f) - sum(lambda_i * grad(c_i))
                     lag_grad[j] -= li * a[[i, j]];
                 }
@@ -142,9 +160,17 @@ where
         // Add constraint violation penalty
         let penalty = 10.0; // Simple fixed penalty parameter
         for (i, &ci) in c.iter().enumerate() {
-            if constraints[i].kind == ConstraintKind::Inequality {
-                merit += penalty * f64::max(0.0, -ci);
-                merit_new += penalty * f64::max(0.0, -c_new[i]);
+            match constraints[i].kind {
+                ConstraintKind::Inequality => {
+                    // For inequality constraints: penalize only violations (g(x) < 0)
+                    merit += penalty * f64::max(0.0, -ci);
+                    merit_new += penalty * f64::max(0.0, -c_new[i]);
+                }
+                ConstraintKind::Equality => {
+                    // For equality constraints: penalize any deviation from zero
+                    merit += penalty * ci.abs();
+                    merit_new += penalty * c_new[i].abs();
+                }
             }
         }
 
@@ -203,14 +229,25 @@ where
 
             // Update Lagrange multipliers using projected gradient method
             for (i, constraint) in constraints.iter().enumerate() {
-                if constraint.kind == ConstraintKind::Inequality {
-                    if c[i] < ctol {
-                        // Active or violated constraint
-                        // Increase multiplier if constraint is violated
-                        lambda[i] = f64::max(0.0, lambda[i] - c[i] * penalty);
-                    } else {
-                        // Decrease multiplier towards zero
-                        lambda[i] = f64::max(0.0, lambda[i] - 0.1 * lambda[i]);
+                match constraint.kind {
+                    ConstraintKind::Inequality => {
+                        if c[i] < -ctol {
+                            // Active or violated constraint
+                            // Increase multiplier if constraint is violated
+                            lambda[i] = f64::max(0.0, lambda[i] - c[i] * penalty);
+                        } else {
+                            // Decrease multiplier towards zero
+                            lambda[i] = f64::max(0.0, lambda[i] - 0.1 * lambda[i]);
+                        }
+                    }
+                    ConstraintKind::Equality => {
+                        // For equality constraints, multipliers can be positive or negative
+                        // Update based on constraint violation to drive h(x) -> 0
+                        let step_size = 0.1;
+                        lambda[i] -= step_size * c[i] * penalty;
+
+                        // Optional: add some damping to prevent oscillations
+                        lambda[i] *= 0.9;
                     }
                 }
             }
@@ -274,6 +311,7 @@ where
 
 /// Compute a trust-region step for constrained optimization
 #[allow(clippy::many_single_char_names)]
+#[allow(dead_code)]
 fn compute_trust_region_step_constrained(
     g: &Array1<f64>,
     b: &Array2<f64>,
@@ -292,11 +330,22 @@ fn compute_trust_region_step_constrained(
     // Check if unconstrained Cauchy point satisfies linearized constraints
     let mut constraint_violated = false;
     for i in 0..n_constr {
-        if constraints[i].kind == ConstraintKind::Inequality {
-            let grad_c_dot_p = (0..n).map(|j| a[[i, j]] * p_unconstrained[j]).sum::<f64>();
-            if c[i] + grad_c_dot_p < -ctol {
-                constraint_violated = true;
-                break;
+        let grad_c_dot_p = (0..n).map(|j| a[[i, j]] * p_unconstrained[j]).sum::<f64>();
+
+        match constraints[i].kind {
+            ConstraintKind::Inequality => {
+                // For inequality constraints: check if g(x) + grad_g^T p >= -ctol
+                if c[i] + grad_c_dot_p < -ctol {
+                    constraint_violated = true;
+                    break;
+                }
+            }
+            ConstraintKind::Equality => {
+                // For equality constraints: check if |h(x) + grad_h^T p| <= ctol
+                if (c[i] + grad_c_dot_p).abs() > ctol {
+                    constraint_violated = true;
+                    break;
+                }
             }
         }
     }
@@ -335,13 +384,22 @@ fn compute_trust_region_step_constrained(
 
         // Find most violated constraint
         for i in 0..n_constr {
-            if constraints[i].kind == ConstraintKind::Inequality {
-                let grad_c_dot_p = (0..n).map(|j| a[[i, j]] * p[j]).sum::<f64>();
-                let viol = -(c[i] + grad_c_dot_p);
-                if viol > max_viol {
-                    max_viol = viol;
-                    most_violated = i;
+            let grad_c_dot_p = (0..n).map(|j| a[[i, j]] * p[j]).sum::<f64>();
+
+            let viol = match constraints[i].kind {
+                ConstraintKind::Inequality => {
+                    // For inequality constraints: violation is max(0, -(g + grad_g^T p))
+                    f64::max(0.0, -(c[i] + grad_c_dot_p))
                 }
+                ConstraintKind::Equality => {
+                    // For equality constraints: violation is |h + grad_h^T p|
+                    (c[i] + grad_c_dot_p).abs()
+                }
+            };
+
+            if viol > max_viol {
+                max_viol = viol;
+                most_violated = i;
             }
         }
 
@@ -357,7 +415,21 @@ fn compute_trust_region_step_constrained(
 
         if a_norm_sq > 1e-10 {
             let grad_c_dot_p = (0..n).map(|j| a[[most_violated, j]] * p[j]).sum::<f64>();
-            let proj_dist = (c[most_violated] + grad_c_dot_p) / a_norm_sq;
+
+            let proj_dist = match constraints[most_violated].kind {
+                ConstraintKind::Inequality => {
+                    // For inequality constraints: project to boundary when violated
+                    if c[most_violated] + grad_c_dot_p < 0.0 {
+                        -(c[most_violated] + grad_c_dot_p) / a_norm_sq
+                    } else {
+                        0.0
+                    }
+                }
+                ConstraintKind::Equality => {
+                    // For equality constraints: always project to satisfy h + grad_h^T p = 0
+                    -(c[most_violated] + grad_c_dot_p) / a_norm_sq
+                }
+            };
 
             // Project p
             for j in 0..n {
@@ -382,6 +454,7 @@ fn compute_trust_region_step_constrained(
 }
 
 /// Compute the unconstrained Cauchy point (steepest descent to trust region boundary)
+#[allow(dead_code)]
 fn compute_unconstrained_cauchy_point(g: &Array1<f64>, b: &Array2<f64>, delta: f64) -> Array1<f64> {
     let n = g.len();
 

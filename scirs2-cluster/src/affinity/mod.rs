@@ -58,6 +58,7 @@ impl<F: Float + FromPrimitive> Default for AffinityPropagationOptions<F> {
 /// # Returns
 ///
 /// * A similarity matrix where similarity(i, j) = -||x_i - x_j||^2
+#[allow(dead_code)]
 fn compute_similarity<F>(data: ArrayView2<F>) -> Result<Array2<F>>
 where
     F: Float + FromPrimitive + Debug + PartialOrd,
@@ -101,6 +102,7 @@ where
 /// # Returns
 ///
 /// * Updated similarity matrix with diagonal elements set to preference
+#[allow(dead_code)]
 fn compute_preference<F>(mut similarity: Array2<F>, preference: Option<F>) -> Result<Array2<F>>
 where
     F: Float + FromPrimitive + Debug + PartialOrd,
@@ -164,6 +166,7 @@ where
 /// # Returns
 ///
 /// * Tuple of (cluster_centers_indices, labels)
+#[allow(dead_code)]
 fn run_affinity_propagation<F>(
     similarity: Array2<F>,
     options: &AffinityPropagationOptions<F>,
@@ -297,6 +300,7 @@ where
 /// # Returns
 ///
 /// * Tuple of (cluster_centers_indices, labels)
+#[allow(dead_code)]
 fn extract_clusters<F>(
     responsibility: &Array2<F>,
     availability: &Array2<F>,
@@ -367,6 +371,7 @@ where
 /// # Returns
 ///
 /// * True if the label assignments are the same, false otherwise
+#[allow(dead_code)]
 fn compare_labels(labels1: ArrayView1<i32>, labels2: ArrayView1<i32>) -> bool {
     if labels1.len() != labels2.len() {
         return false;
@@ -402,7 +407,7 @@ fn compare_labels(labels1: ArrayView1<i32>, labels2: ArrayView1<i32>) -> bool {
 /// # Examples
 ///
 /// ```
-/// use ndarray::{Array2, ArrayView2};
+/// use ndarray::{ArrayView1, Array2, ArrayView2};
 /// use scirs2_cluster::affinity::{affinity_propagation, AffinityPropagationOptions};
 ///
 /// // Example data with two clusters
@@ -427,6 +432,7 @@ fn compare_labels(labels1: ArrayView1<i32>, labels2: ArrayView1<i32>) -> bool {
 ///     println!("Cluster assignments: {:?}", labels);
 /// }
 /// ```
+#[allow(dead_code)]
 pub fn affinity_propagation<F>(
     data: ArrayView2<F>,
     precomputed: bool,

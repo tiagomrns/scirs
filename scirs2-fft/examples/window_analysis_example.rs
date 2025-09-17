@@ -6,6 +6,7 @@ use scirs2_fft::window_extended::{
     analyze_window, compare_windows, get_extended_window, ExtendedWindow,
 };
 
+#[allow(dead_code)]
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("=== Window Analysis Example ===");
     println!();
@@ -29,7 +30,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     for (name, window) in &windows {
         let props = analyze_window(window, Some(sample_rate))?;
-        println!("   {}:", name);
+        println!("   {name}:");
         println!("     Main lobe width: {:.2} Hz", props.main_lobe_width);
         println!("     Sidelobe level: {:.1} dB", props.sidelobe_level_db);
         println!("     Coherent gain: {:.4}", props.coherent_gain);
@@ -79,7 +80,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     for (name, window) in &extended_windows {
         let props = analyze_window(window, Some(sample_rate))?;
-        println!("   {}:", name);
+        println!("   {name}:");
         println!("     Main lobe width: {:.2} Hz", props.main_lobe_width);
         println!("     Sidelobe level: {:.1} dB", props.sidelobe_level_db);
         println!("     Processing gain: {:.4}", props.processing_gain);
@@ -168,7 +169,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     for &beta in &kaiser_betas {
         let window = get_window(Window::Kaiser(beta), n, true)?;
         let props = analyze_window(&window, Some(sample_rate))?;
-        kaiser_windows.push((format!("Kaiser(β={})", beta), window));
+        kaiser_windows.push((format!("Kaiser(β={beta})"), window));
         println!(
             "     β={}: main lobe {:.2} Hz, sidelobes {:.1} dB",
             beta, props.main_lobe_width, props.sidelobe_level_db

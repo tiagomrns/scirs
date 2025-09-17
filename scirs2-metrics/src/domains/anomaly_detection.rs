@@ -148,7 +148,7 @@ impl DetectionMetrics {
         }
 
         // Convert to binary predictions
-        let y_pred = y_score.mapv(|score| if score >= self.threshold { 1.0 } else { 0.0 });
+        let y_pred = y_score.mapv(|_score| if _score >= self.threshold { 1.0 } else { 0.0 });
 
         // Calculate basic metrics
         let accuracy = detection_accuracy(y_true, &y_pred)?;
@@ -212,12 +212,12 @@ impl DetectionMetrics {
     }
 
     /// Calculate Area Under Precision-Recall Curve
-    fn calculate_auc_pr(&self, y_true: &Array1<f64>, y_score: &Array1<f64>) -> Result<f64> {
-        // Create score-label pairs and sort by score (descending)
-        let mut pairs: Vec<(f64, f64)> = y_score
+    fn calculate_auc_pr(&self, y_true: &Array1<f64>, yscore: &Array1<f64>) -> Result<f64> {
+        // Create _score-label pairs and sort by _score (descending)
+        let mut pairs: Vec<(f64, f64)> = yscore
             .iter()
             .zip(y_true.iter())
-            .map(|(&score, &label)| (score, label))
+            .map(|(&_score, &label)| (_score, label))
             .collect();
         pairs.sort_by(|a, b| b.0.partial_cmp(&a.0).unwrap_or(std::cmp::Ordering::Equal));
 
@@ -673,8 +673,9 @@ impl TimeSeriesAnomalyMetrics {
             match (true_val, pred_val) {
                 (1, 1) => tp += 1,
                 (0, 1) => fp += 1,
-                (1, 0) => fn_count += 1,
-                _ => {} // TN
+                (1, 0) => fn_count += 1, // FN
+                (0, 0) => {}             // TN
+                _ => {}                  // Other cases
             }
         }
 
@@ -712,7 +713,7 @@ impl TimeSeriesAnomalyMetrics {
             .map(|(idx, _)| idx)
             .collect();
 
-        // Point-adjust recall: fraction of true anomalies detected within tolerance
+        // Point-adjust recall: fraction of _true anomalies detected within tolerance
         let mut detected_true_anomalies = 0;
         for &true_point in &true_anomaly_points {
             let detected = pred_anomaly_points.iter().any(|&pred_point| {
@@ -729,7 +730,7 @@ impl TimeSeriesAnomalyMetrics {
             1.0
         };
 
-        // Point-adjust precision: fraction of predictions that are near true anomalies
+        // Point-adjust precision: fraction of predictions that are near _true anomalies
         let mut correct_predictions = 0;
         for &pred_point in &pred_anomaly_points {
             let correct = true_anomaly_points.iter().any(|&true_point| {
@@ -758,7 +759,7 @@ impl TimeSeriesAnomalyMetrics {
         let true_ranges = self.find_anomaly_ranges(y_true);
         let pred_ranges = self.find_anomaly_ranges(y_pred);
 
-        // Range-based recall: fraction of true ranges that overlap with predicted ranges
+        // Range-based recall: fraction of _true ranges that overlap with predicted ranges
         let mut detected_ranges = 0;
         for (true_start, true_end) in &true_ranges {
             let detected = pred_ranges.iter().any(|(pred_start, pred_end)| {
@@ -776,7 +777,7 @@ impl TimeSeriesAnomalyMetrics {
             1.0
         };
 
-        // Range-based precision: fraction of predicted ranges that overlap with true ranges
+        // Range-based precision: fraction of predicted ranges that overlap with _true ranges
         let mut correct_pred_ranges = 0;
         for (pred_start, pred_end) in &pred_ranges {
             let correct = true_ranges.iter().any(|(true_start, true_end)| {
@@ -820,7 +821,7 @@ impl TimeSeriesAnomalyMetrics {
     }
 
     /// Calculate NAB (Numenta Anomaly Benchmark) score
-    fn calculate_nab_score(&self, y_true: &Array1<i32>, y_pred: &Array1<i32>) -> Result<f64> {
+    fn calculate_nab_score(&self, y_true: &Array1<i32>, ypred: &Array1<i32>) -> Result<f64> {
         let mut score = 0.0;
         let true_ranges = self.find_anomaly_ranges(y_true);
 
@@ -829,7 +830,7 @@ impl TimeSeriesAnomalyMetrics {
 
             // Check for detections in this range
             for i in true_start..=true_end {
-                if y_pred[i] == 1 && !range_detected {
+                if ypred[i] == 1 && !range_detected {
                     // First detection in this range
                     let detection_position = i;
                     let range_middle = (true_start + true_end) / 2;
@@ -854,8 +855,8 @@ impl TimeSeriesAnomalyMetrics {
             }
         }
 
-        // Count false positives (detections outside true anomaly ranges)
-        for (i, &pred_val) in y_pred.iter().enumerate() {
+        // Count false positives (detections outside _true anomaly ranges)
+        for (i, &pred_val) in ypred.iter().enumerate() {
             if pred_val == 1 && y_true[i] == 0 {
                 score += self.nab_weights.false_positive;
             }
@@ -885,7 +886,9 @@ impl TimeSeriesAnomalyMetrics {
             match (y_true[i], y_pred[i]) {
                 (1, 1) => weighted_tp += weight,
                 (0, 1) => weighted_fp += weight,
-                _ => {}
+                (1, 0) => {} // FN - not used in precision calculation
+                (0, 0) => {} // TN - not used in precision calculation
+                _ => {}      // Other cases
             }
         }
 

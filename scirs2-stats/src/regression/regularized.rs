@@ -33,8 +33,7 @@ type PreprocessingResult<F> = (Array2<F>, F, Array1<F>, Array1<F>);
 ///
 /// # Examples
 ///
-/// ```ignore
-/// # FIXME: This doc test requires LAPACK/BLAS to be linked properly
+/// ```
 /// use ndarray::{array, Array2};
 /// use scirs2_stats::ridge_regression;
 ///
@@ -57,6 +56,7 @@ type PreprocessingResult<F> = (Array2<F>, F, Array1<F>, Array1<F>);
 /// assert!(result.coefficients.len() > 0);
 /// ```
 #[allow(clippy::too_many_arguments)]
+#[allow(dead_code)]
 pub fn ridge_regression<F>(
     x: &ArrayView2<F>,
     y: &ArrayView1<F>,
@@ -76,7 +76,9 @@ where
         + 'static
         + num_traits::NumAssign
         + num_traits::One
-        + ndarray::ScalarOperand,
+        + ndarray::ScalarOperand
+        + Send
+        + Sync,
 {
     // Check input dimensions
     if x.nrows() != y.len() {
@@ -105,9 +107,9 @@ where
     }
 
     // Preprocess x and y
-    let (x_processed, y_mean, x_mean, x_std) = preprocess_data(x, y, fit_intercept, normalize)?;
+    let (x_processed, y_mean, x_mean, x_std) = preprocessdata(x, y, fit_intercept, normalize)?;
 
-    // Total number of coefficients (including intercept if fitted)
+    // Total number of coefficients (including _intercept if fitted)
     let p = if fit_intercept {
         p_features + 1
     } else {
@@ -125,8 +127,8 @@ where
     // We solve the linear system [X; sqrt(alpha)I] beta = [y; 0]
 
     // Create the regularization matrix sqrt(alpha)I
-    let ridge_size = if fit_intercept { p_features } else { p };
-    let mut x_ridge = Array2::zeros((n + ridge_size, p));
+    let ridgesize = if fit_intercept { p_features } else { p };
+    let mut x_ridge = Array2::zeros((n + ridgesize, p));
 
     // Copy X to the top part of the augmented matrix
     for i in 0..n {
@@ -137,13 +139,13 @@ where
 
     // Add sqrt(alpha)I to the bottom part
     let sqrt_alpha = num_traits::Float::sqrt(alpha);
-    for i in 0..ridge_size {
-        let j = if fit_intercept { i + 1 } else { i }; // Skip intercept if present
+    for i in 0..ridgesize {
+        let j = if fit_intercept { i + 1 } else { i }; // Skip _intercept if present
         x_ridge[[n + i, j]] = sqrt_alpha;
     }
 
     // Create the augmented target vector [y; 0]
-    let mut y_ridge = Array1::zeros(n + ridge_size);
+    let mut y_ridge = Array1::zeros(n + ridgesize);
     for i in 0..n {
         y_ridge[i] = y[i];
     }
@@ -169,7 +171,7 @@ where
     let residuals = y.to_owned() - &fitted_values;
 
     // Calculate degrees of freedom
-    let df_model = p - 1; // Subtract 1 for intercept
+    let df_model = p - 1; // Subtract 1 for _intercept
     let df_residuals = n - p;
 
     // Calculate sum of squares
@@ -248,6 +250,7 @@ where
 }
 
 /// Helper function to solve the ridge regression system
+#[allow(dead_code)]
 fn solve_ridge_system<F>(
     x_ridge: &ArrayView2<F>,
     y_ridge: &ArrayView1<F>,
@@ -261,7 +264,10 @@ where
         + 'static
         + num_traits::NumAssign
         + num_traits::One
-        + ndarray::ScalarOperand,
+        + ndarray::ScalarOperand
+        + std::fmt::Display
+        + Send
+        + Sync,
 {
     match lstsq(x_ridge, y_ridge, None) {
         Ok(result) => Ok(result.x),
@@ -273,26 +279,27 @@ where
 }
 
 /// Preprocess data for regularized regression
-fn preprocess_data<F>(
+#[allow(dead_code)]
+fn preprocessdata<F>(
     x: &ArrayView2<F>,
     y: &ArrayView1<F>,
     fit_intercept: bool,
     normalize: bool,
 ) -> StatsResult<PreprocessingResult<F>>
 where
-    F: Float + std::iter::Sum<F> + 'static,
+    F: Float + std::iter::Sum<F> + 'static + std::fmt::Display,
 {
     let n = x.nrows();
     let p = x.ncols();
 
-    // Calculate y_mean if fitting intercept
+    // Calculate y_mean if fitting _intercept
     let y_mean = if fit_intercept {
         y.iter().cloned().sum::<F>() / F::from(n).unwrap()
     } else {
         F::zero()
     };
 
-    // Calculate x_mean and x_std if normalizing or fitting intercept
+    // Calculate x_mean and x_std if normalizing or fitting _intercept
     let mut x_mean = Array1::<F>::zeros(p);
     let mut x_std = Array1::<F>::ones(p);
 
@@ -324,7 +331,7 @@ where
         Array2::<F>::zeros((n, p))
     };
 
-    // Add intercept column if needed
+    // Add _intercept column if needed
     if fit_intercept {
         for i in 0..n {
             x_processed[[i, 0]] = F::one();
@@ -348,6 +355,7 @@ where
 }
 
 /// Transform coefficients back after fitting with normalized/centered data
+#[allow(dead_code)]
 fn transform_coefficients<F>(
     coefficients: &Array1<F>,
     y_mean: F,
@@ -356,7 +364,7 @@ fn transform_coefficients<F>(
     fit_intercept: bool,
 ) -> Array1<F>
 where
-    F: Float + 'static,
+    F: Float + 'static + std::fmt::Display,
 {
     let _p = coefficients.len();
     let p_features = x_mean.len();
@@ -364,17 +372,17 @@ where
     let mut transformed = coefficients.clone();
 
     if fit_intercept {
-        let mut intercept = coefficients[0];
+        let mut _intercept = coefficients[0];
 
-        // Adjust intercept for the effect of normalizing/centering
+        // Adjust _intercept for the effect of normalizing/centering
         for j in 0..p_features {
-            intercept = intercept - coefficients[j + 1] * x_mean[j] / x_std[j];
+            _intercept = _intercept - coefficients[j + 1] * x_mean[j] / x_std[j];
         }
 
-        // Add back the mean of y
-        intercept = intercept + y_mean;
+        // Add back the _mean of y
+        _intercept = _intercept + y_mean;
 
-        transformed[0] = intercept;
+        transformed[0] = _intercept;
 
         // Adjust feature coefficients for the scaling
         for j in 0..p_features {
@@ -391,6 +399,7 @@ where
 }
 
 /// Calculate standard errors for ridge regression
+#[allow(dead_code)]
 fn calculate_ridge_std_errors<F>(
     x: &ArrayView2<F>,
     residuals: &ArrayView1<F>,
@@ -404,7 +413,10 @@ where
         + 'static
         + num_traits::NumAssign
         + num_traits::One
-        + ndarray::ScalarOperand,
+        + ndarray::ScalarOperand
+        + std::fmt::Display
+        + Send
+        + Sync,
 {
     // Calculate the mean squared error of the residuals
     let mse = residuals
@@ -465,7 +477,6 @@ where
 /// # Examples
 ///
 /// ```ignore
-/// # FIXME: This doc test requires LAPACK/BLAS to be linked properly
 /// use ndarray::{array, Array2};
 /// use scirs2_stats::lasso_regression;
 ///
@@ -495,6 +506,7 @@ where
 /// // Typically, lasso would drive coefficients of irrelevant features toward zero
 /// ```
 #[allow(clippy::too_many_arguments)]
+#[allow(dead_code)]
 pub fn lasso_regression<F>(
     x: &ArrayView2<F>,
     y: &ArrayView1<F>,
@@ -514,7 +526,9 @@ where
         + 'static
         + num_traits::NumAssign
         + num_traits::One
-        + ndarray::ScalarOperand,
+        + ndarray::ScalarOperand
+        + Send
+        + Sync,
 {
     // Check input dimensions
     if x.nrows() != y.len() {
@@ -543,9 +557,9 @@ where
     }
 
     // Preprocess x and y
-    let (x_processed, y_mean, x_mean, x_std) = preprocess_data(x, y, fit_intercept, normalize)?;
+    let (x_processed, y_mean, x_mean, x_std) = preprocessdata(x, y, fit_intercept, normalize)?;
 
-    // Total number of coefficients (including intercept if fitted)
+    // Total number of coefficients (including _intercept if fitted)
     let p = if fit_intercept {
         p_features + 1
     } else {
@@ -568,9 +582,9 @@ where
 
     // Coordinate descent algorithm for lasso
     let mut converged = false;
-    let mut iter = 0;
+    let mut _iter = 0;
 
-    while !converged && iter < max_iter {
+    while !converged && _iter < max_iter {
         converged = true;
 
         // Save old coefficients for convergence check
@@ -585,7 +599,7 @@ where
                     .iter()
                     .zip(coefficients.iter())
                     .enumerate()
-                    .filter(|&(i, _)| i != j)
+                    .filter(|&(i_, _)| i_ != j)
                     .map(|(_, (&xtx_ij, &coef_i))| xtx_ij * coef_i)
                     .sum::<F>();
 
@@ -597,7 +611,7 @@ where
             }
 
             if j == 0 && fit_intercept {
-                // No penalty for intercept
+                // No penalty for _intercept
                 coefficients[j] = r_partial / xtx_jj;
             } else {
                 // Apply soft thresholding for L1 penalty
@@ -624,7 +638,7 @@ where
             converged = true;
         }
 
-        iter += 1;
+        _iter += 1;
     }
 
     // If data was normalized/centered, transform coefficients back
@@ -729,6 +743,7 @@ where
 }
 
 /// Calculate standard errors for lasso regression
+#[allow(dead_code)]
 fn calculate_lasso_std_errors<F>(
     x: &ArrayView2<F>,
     residuals: &ArrayView1<F>,
@@ -742,7 +757,10 @@ where
         + 'static
         + num_traits::NumAssign
         + num_traits::One
-        + ndarray::ScalarOperand,
+        + ndarray::ScalarOperand
+        + std::fmt::Display
+        + Send
+        + Sync,
 {
     // Calculate the mean squared error of the residuals
     let mse = residuals
@@ -822,7 +840,6 @@ where
 /// # Examples
 ///
 /// ```ignore
-/// # FIXME: This doc test requires LAPACK/BLAS to be linked properly
 /// use ndarray::{array, Array2};
 /// use scirs2_stats::elastic_net;
 ///
@@ -850,6 +867,7 @@ where
 /// assert!(result.coefficients.len() > 0);
 /// ```
 #[allow(clippy::too_many_arguments)]
+#[allow(dead_code)]
 pub fn elastic_net<F>(
     x: &ArrayView2<F>,
     y: &ArrayView1<F>,
@@ -870,7 +888,9 @@ where
         + 'static
         + num_traits::NumAssign
         + num_traits::One
-        + ndarray::ScalarOperand,
+        + ndarray::ScalarOperand
+        + Send
+        + Sync,
 {
     // Check input dimensions
     if x.nrows() != y.len() {
@@ -934,9 +954,9 @@ where
     }
 
     // Preprocess x and y
-    let (x_processed, y_mean, x_mean, x_std) = preprocess_data(x, y, fit_intercept, normalize)?;
+    let (x_processed, y_mean, x_mean, x_std) = preprocessdata(x, y, fit_intercept, normalize)?;
 
-    // Total number of coefficients (including intercept if fitted)
+    // Total number of coefficients (including _intercept if fitted)
     let p = if fit_intercept {
         p_features + 1
     } else {
@@ -964,9 +984,9 @@ where
 
     // Coordinate descent algorithm for elastic net
     let mut converged = false;
-    let mut iter = 0;
+    let mut _iter = 0;
 
-    while !converged && iter < max_iter {
+    while !converged && _iter < max_iter {
         converged = true;
 
         // Save old coefficients for convergence check
@@ -981,7 +1001,7 @@ where
                     .iter()
                     .zip(coefficients.iter())
                     .enumerate()
-                    .filter(|&(i, _)| i != j)
+                    .filter(|&(i_, _)| i_ != j)
                     .map(|(_, (&xtx_ij, &coef_i))| xtx_ij * coef_i)
                     .sum::<F>();
 
@@ -993,7 +1013,7 @@ where
             }
 
             if j == 0 && fit_intercept {
-                // No L1 penalty for intercept
+                // No L1 penalty for _intercept
                 coefficients[j] = r_partial / xtx_jj;
             } else {
                 // Apply soft thresholding for L1 penalty
@@ -1020,7 +1040,7 @@ where
             converged = true;
         }
 
-        iter += 1;
+        _iter += 1;
     }
 
     // If data was normalized/centered, transform coefficients back
@@ -1081,8 +1101,8 @@ where
     let p_values = t_values.mapv(|t| {
         let t_abs = crate::regression::utils::float_abs(t);
         let df_f = F::from(df_residuals).unwrap();
-        let ratio = t_abs / crate::regression::utils::float_sqrt(df_f + t_abs * t_abs);
-        let one_minus_ratio = F::one() - ratio;
+        let _ratio = t_abs / crate::regression::utils::float_sqrt(df_f + t_abs * t_abs);
+        let one_minus_ratio = F::one() - _ratio;
         F::from(2.0).unwrap() * one_minus_ratio
     });
 
@@ -1126,6 +1146,7 @@ where
 }
 
 /// Calculate standard errors for elastic net regression
+#[allow(dead_code)]
 fn calculate_elastic_net_std_errors<F>(
     x: &ArrayView2<F>,
     residuals: &ArrayView1<F>,
@@ -1140,7 +1161,10 @@ where
         + 'static
         + num_traits::NumAssign
         + num_traits::One
-        + ndarray::ScalarOperand,
+        + ndarray::ScalarOperand
+        + std::fmt::Display
+        + Send
+        + Sync,
 {
     // Calculate the mean squared error of the residuals
     let mse = residuals
@@ -1225,7 +1249,6 @@ where
 /// # Examples
 ///
 /// ```ignore
-/// # FIXME: This doc test requires LAPACK/BLAS to be linked properly
 /// use ndarray::{array, Array2};
 /// use scirs2_stats::group_lasso;
 ///
@@ -1258,6 +1281,7 @@ where
 /// // Group lasso should ideally set all coefficients in group 1 to zero or near-zero
 /// ```
 #[allow(clippy::too_many_arguments)]
+#[allow(dead_code)]
 pub fn group_lasso<F>(
     x: &ArrayView2<F>,
     y: &ArrayView1<F>,
@@ -1278,7 +1302,9 @@ where
         + 'static
         + num_traits::NumAssign
         + num_traits::One
-        + ndarray::ScalarOperand,
+        + ndarray::ScalarOperand
+        + Send
+        + Sync,
 {
     // Check input dimensions
     if x.nrows() != y.len() {
@@ -1315,9 +1341,9 @@ where
     }
 
     // Preprocess x and y
-    let (x_processed, y_mean, x_mean, x_std) = preprocess_data(x, y, fit_intercept, normalize)?;
+    let (x_processed, y_mean, x_mean, x_std) = preprocessdata(x, y, fit_intercept, normalize)?;
 
-    // Total number of coefficients (including intercept if fitted)
+    // Total number of coefficients (including _intercept if fitted)
     let p = if fit_intercept {
         p_features + 1
     } else {
@@ -1353,15 +1379,15 @@ where
 
     // Block coordinate descent algorithm for group lasso
     let mut converged = false;
-    let mut iter = 0;
+    let mut _iter = 0;
 
-    while !converged && iter < max_iter {
+    while !converged && _iter < max_iter {
         converged = true;
 
         // Save old coefficients for convergence check
         let old_coefs = coefficients.clone();
 
-        // Update intercept if fitting
+        // Update _intercept if fitting
         if fit_intercept {
             let r = y - &x_processed
                 .slice(s![.., 1..])
@@ -1458,7 +1484,7 @@ where
             converged = true;
         }
 
-        iter += 1;
+        _iter += 1;
     }
 
     // If data was normalized/centered, transform coefficients back
@@ -1491,8 +1517,8 @@ where
     }
 
     for &g in &nonzero_groups {
-        let group_size = groups.iter().filter(|&&group| group == g).count();
-        nonzero_coefs += group_size;
+        let groupsize = groups.iter().filter(|&&group| group == g).count();
+        nonzero_coefs += groupsize;
     }
 
     if fit_intercept
@@ -1582,6 +1608,7 @@ where
 }
 
 /// Solve group lasso subproblem for a single group
+#[allow(dead_code)]
 fn solve_group<F>(
     xtr: Array1<F>,
     xtx: Array2<F>,
@@ -1596,7 +1623,10 @@ where
         + 'static
         + num_traits::NumAssign
         + num_traits::One
-        + ndarray::ScalarOperand,
+        + ndarray::ScalarOperand
+        + std::fmt::Display
+        + Send
+        + Sync,
 {
     let p = xtr.len();
 
@@ -1615,13 +1645,13 @@ where
     }
 
     // Iterative method: gradient descent
-    let mut iter = 0;
+    let mut _iter = 0;
     let mut converged = false;
 
     // Learning rate
     let lr = F::from(0.01).unwrap();
 
-    while !converged && iter < max_iter {
+    while !converged && _iter < max_iter {
         let old_beta = beta.clone();
 
         // Gradient of squared loss: -X'r + X'X * beta
@@ -1645,13 +1675,14 @@ where
             converged = true;
         }
 
-        iter += 1;
+        _iter += 1;
     }
 
     Ok(beta)
 }
 
 /// Calculate standard errors for group lasso regression
+#[allow(dead_code)]
 fn calculate_group_lasso_std_errors<F>(
     x: &ArrayView2<F>,
     residuals: &ArrayView1<F>,
@@ -1667,7 +1698,10 @@ where
         + 'static
         + num_traits::NumAssign
         + num_traits::One
-        + ndarray::ScalarOperand,
+        + ndarray::ScalarOperand
+        + std::fmt::Display
+        + Send
+        + Sync,
 {
     // Calculate the mean squared error of the residuals
     let mse = residuals

@@ -1,13 +1,16 @@
-//! Blind source separation module
-//!
-//! This module implements various blind source separation (BSS) techniques for signal processing,
-//! including Independent Component Analysis (ICA), Principal Component Analysis (PCA),
-//! Non-negative Matrix Factorization (NMF), and related methods.
+use ndarray::s;
+// Blind source separation module
+//
+// This module implements various blind source separation (BSS) techniques for signal processing,
+// including Independent Component Analysis (ICA), Principal Component Analysis (PCA),
+// Non-negative Matrix Factorization (NMF), and related methods.
 
 use crate::error::{SignalError, SignalResult};
-use ndarray::{s, Array1, Array2, Axis};
+use ndarray::{Array1, Array2, Axis};
 use scirs2_linalg::eigh;
+use statrs::statistics::Statistics;
 
+#[allow(unused_imports)]
 /// Type alias for multi-dataset JADE result
 pub type JadeMultiResult = (Vec<Array2<f64>>, Vec<Array2<f64>>);
 
@@ -98,17 +101,18 @@ pub enum NonlinearityFunction {
 /// # Returns
 ///
 /// * Tuple containing (whitened signals, whitening matrix)
+#[allow(dead_code)]
 pub fn whiten_signals(signals: &Array2<f64>) -> SignalResult<(Array2<f64>, Array2<f64>)> {
     let (n_signals, n_samples) = signals.dim();
 
     // Compute covariance matrix
-    let cov = signals.dot(&signals.t()) / (n_samples as f64 - 1.0);
+    let cov = signals.dot(&_signals.t()) / (n_samples as f64 - 1.0);
 
     // Perform eigendecomposition
     let (eigvals, eigvecs) = match eigh(&cov.view(), None) {
         Ok((vals, vecs)) => (vals, vecs),
         Err(_) => {
-            return Err(SignalError::Compute(
+            return Err(SignalError::ComputationError(
                 "Failed to compute eigendecomposition".to_string(),
             ));
         }
@@ -126,7 +130,7 @@ pub fn whiten_signals(signals: &Array2<f64>) -> SignalResult<(Array2<f64>, Array
     let whitening_matrix = d_inv_sqrt.dot(&eigvecs.t());
 
     // Apply whitening
-    let whitened = whitening_matrix.dot(signals);
+    let whitened = whitening_matrix.dot(_signals);
 
     Ok((whitened, whitening_matrix))
 }
@@ -141,6 +145,7 @@ pub fn whiten_signals(signals: &Array2<f64>) -> SignalResult<(Array2<f64>, Array
 /// # Returns
 ///
 /// * Tuple containing (sorted sources, sorted mixing matrix)
+#[allow(dead_code)]
 pub fn sort_components(
     sources: &Array2<f64>,
     mixing: &Array2<f64>,
@@ -152,7 +157,7 @@ pub fn sort_components(
 
     for i in 0..n_components {
         let component = sources.slice(s![i, ..]);
-        let mean = component.mean().unwrap();
+        let mean = component.mean();
         let var = component.mapv(|x: f64| (x - mean).powi(2)).sum() / (n_samples as f64 - 1.0);
         variances.push((i, var));
     }
@@ -185,20 +190,21 @@ pub fn sort_components(
 /// # Returns
 ///
 /// * Correlation matrix
+#[allow(dead_code)]
 pub fn calculate_correlation_matrix(signals: &Array2<f64>) -> SignalResult<Array2<f64>> {
     let (n_signals, n_samples) = signals.dim();
 
-    // Center and normalize signals
-    let mut normalized = Array2::<f64>::zeros(signals.dim());
+    // Center and normalize _signals
+    let mut normalized = Array2::<f64>::zeros(_signals.dim());
 
     for i in 0..n_signals {
         let signal = signals.slice(s![i, ..]);
-        let mean = signal.mean().unwrap();
+        let mean = signal.mean();
         let std_dev = (signal.mapv(|x: f64| (x - mean).powi(2)).sum() / n_samples as f64).sqrt();
 
         if std_dev > 1e-10 {
             for j in 0..n_samples {
-                normalized[[i, j]] = (signals[[i, j]] - mean) / std_dev;
+                normalized[[i, j]] = (_signals[[i, j]] - mean) / std_dev;
             }
         }
     }
@@ -219,6 +225,7 @@ pub fn calculate_correlation_matrix(signals: &Array2<f64>) -> SignalResult<Array
 /// # Returns
 ///
 /// * Matrix of pairwise mutual information values
+#[allow(dead_code)]
 pub fn calculate_mutual_information(
     signals: &Array2<f64>,
     n_bins: usize,
@@ -236,7 +243,7 @@ pub fn calculate_mutual_information(
             let x = signals.slice(s![i, ..]);
             let y = signals.slice(s![j, ..]);
 
-            // Find min and max for each signal to define histogram bins
+            // Find min and max for each signal to define histogram _bins
             let x_min = x.iter().fold(f64::INFINITY, |a: f64, &b| a.min(b));
             let x_max = x.iter().fold(f64::NEG_INFINITY, |a: f64, &b| a.max(b));
             let y_min = y.iter().fold(f64::INFINITY, |a: f64, &b| a.min(b));
@@ -298,10 +305,11 @@ pub fn calculate_mutual_information(
 /// # Returns
 ///
 /// * Estimated number of sources
+#[allow(dead_code)]
 pub fn estimate_source_count(signals: &Array2<f64>, threshold: f64) -> SignalResult<usize> {
     let (n_signals, n_samples) = signals.dim();
 
-    // Center the signals
+    // Center the _signals
     let means = signals.mean_axis(Axis(1)).unwrap();
     let mut centered = signals.clone();
 
@@ -318,7 +326,7 @@ pub fn estimate_source_count(signals: &Array2<f64>, threshold: f64) -> SignalRes
     let eigvals = match eigh(&cov.view(), None) {
         Ok((vals, _)) => vals,
         Err(_) => {
-            return Err(SignalError::Compute(
+            return Err(SignalError::ComputationError(
                 "Failed to compute eigendecomposition".to_string(),
             ));
         }

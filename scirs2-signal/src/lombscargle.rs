@@ -1,14 +1,16 @@
-//! Lomb-Scargle periodogram implementation for unevenly sampled data.
-//!
-//! This module provides functions for spectral analysis of unevenly sampled signals
-//! using the Lomb-Scargle periodogram technique.
+// Lomb-Scargle periodogram implementation for unevenly sampled data.
+//
+// This module provides functions for spectral analysis of unevenly sampled signals
+// using the Lomb-Scargle periodogram technique.
 
 use crate::error::{SignalError, SignalResult};
 use ndarray::Array1;
 use num_traits::{Float, NumCast};
+use rand::Rng;
 use std::f64::consts::PI;
 use std::fmt::Debug;
 
+#[allow(unused_imports)]
 /// Compute normalized Lomb-Scargle periodogram for unevenly sampled data.
 ///
 /// The Lomb-Scargle periodogram is a method for detecting periodic signals in
@@ -34,8 +36,8 @@ use std::fmt::Debug;
 /// ```
 /// use scirs2_signal::lombscargle::{lombscargle, AutoFreqMethod};
 /// use ndarray::Array1;
+/// use rand::prelude::*;
 /// use std::f64::consts::PI;
-/// use rand::Rng;
 ///
 /// // Generate unevenly sampled data with a 1 Hz sinusoid
 /// let n = 100;
@@ -43,7 +45,7 @@ use std::fmt::Debug;
 /// let mut t = Array1::linspace(0.0, 10.0, n);
 /// // Add some random noise to make sampling uneven
 /// for i in 0..n {
-///     t[i] += 0.1 * rng.gen_range(0.0..1.0);
+///     t[i] += 0.1 * rng.random_range(0.0..1.0);
 /// }
 /// let y: Vec<f64> = t.iter().map(|&ti| (2.0 * PI * 1.0 * ti).sin()).collect();
 ///
@@ -70,9 +72,10 @@ use std::fmt::Debug;
 /// }
 ///
 /// // The frequency with maximum power should be close to 1 Hz
-/// assert!((freqs[max_idx] - 1.0).abs() < 0.1);
+/// assert!(((freqs[max_idx] - 1.0) as f64).abs() < 0.1);
 /// ```
 #[allow(clippy::too_many_arguments)]
+#[allow(dead_code)]
 pub fn lombscargle<T, U>(
     x: &[T],
     y: &[U],
@@ -127,6 +130,7 @@ where
         })
         .collect::<SignalResult<Vec<_>>>()?;
 
+    // Enhanced input validation
     // Check that sample times are sorted
     for i in 1..x_f64.len() {
         if x_f64[i] < x_f64[i - 1] {
@@ -134,6 +138,72 @@ where
                 "Sample times must be sorted in increasing order".to_string(),
             ));
         }
+    }
+
+    // Check for finite values in both arrays
+    for (i, &x) in x_f64.iter().enumerate() {
+        if !x.is_finite() {
+            return Err(SignalError::ValueError(format!(
+                "Sample time at index {} is not finite: {}",
+                i, x
+            )));
+        }
+    }
+    for (i, &y) in y_f64.iter().enumerate() {
+        if !y.is_finite() {
+            return Err(SignalError::ValueError(format!(
+                "Signal value at index {} is not finite: {}",
+                i, y
+            )));
+        }
+    }
+
+    // Check for adequate _data length
+    if x_f64.len() < 3 {
+        return Err(SignalError::ValueError(
+            "At least 3 _data points are required for Lomb-Scargle analysis".to_string(),
+        ));
+    }
+
+    // Check for reasonable time range
+    let time_range = x_f64[x_f64.len() - 1] - x_f64[0];
+    if time_range <= 0.0 {
+        return Err(SignalError::ValueError(
+            "Sample time range must be positive".to_string(),
+        ));
+    }
+
+    // Check for minimum time resolution
+    let min_dt = x_f64
+        .windows(2)
+        .map(|w| w[1] - w[0])
+        .fold(f64::INFINITY, f64::min);
+    if min_dt <= 0.0 {
+        return Err(SignalError::ValueError(
+            "Sample times must be strictly increasing".to_string(),
+        ));
+    }
+
+    // Warn about extremely small time steps that might cause numerical issues
+    if min_dt < 1e-12 {
+        eprintln!("Warning: Very small time step detected ({:.2e}). This may cause numerical instability.", min_dt);
+    }
+
+    // Check for reasonable signal variance
+    let signal_mean = y_f64.iter().sum::<f64>() / y_f64.len() as f64;
+    let signal_variance = y_f64
+        .iter()
+        .map(|&val| (val - signal_mean).powi(2))
+        .sum::<f64>()
+        / y_f64.len() as f64;
+
+    if signal_variance == 0.0 {
+        eprintln!("Warning: Signal has zero variance (constant signal). Periodogram will be uninformative.");
+    } else if signal_variance < 1e-20 {
+        eprintln!(
+            "Warning: Signal has very low variance ({:.2e}). Results may be numerically unstable.",
+            signal_variance
+        );
     }
 
     // Default parameter values
@@ -152,13 +222,85 @@ where
         }
     };
 
-    // Determine frequencies to evaluate if not provided
+    // Enhanced frequency validation and determination
     let frequencies = if let Some(f) = freqs {
+        // Validate provided frequency array
+        if f.is_empty() {
+            return Err(SignalError::ValueError(
+                "Frequency array cannot be empty".to_string(),
+            ));
+        }
+
+        // Check for finite frequencies
+        for (i, &freq) in f.iter().enumerate() {
+            if !freq.is_finite() {
+                return Err(SignalError::ValueError(format!(
+                    "Frequency at index {} is not finite: {}",
+                    i, freq
+                )));
+            }
+            if freq < 0.0 {
+                return Err(SignalError::ValueError(format!(
+                    "Frequency at index {} is negative: {}",
+                    i, freq
+                )));
+            }
+        }
+
+        // Check frequency ordering
+        for i in 1..f.len() {
+            if f[i] < f[i - 1] {
+                eprintln!("Warning: Frequencies are not in ascending order. This may affect interpretation of results.");
+                break;
+            }
+        }
+
+        // Validate frequency range against _data
+        let nyquist_freq = 0.5 / min_dt;
+        let max_freq = f.iter().cloned().fold(0.0, f64::max);
+        if max_freq > 10.0 * nyquist_freq {
+            eprintln!("Warning: Maximum frequency ({:.3}) is much higher than effective Nyquist frequency ({:.3}). Results may be unreliable at high frequencies.", 
+                      max_freq, nyquist_freq);
+        }
+
         f.to_vec()
     } else {
-        // Auto-determine frequencies
-        autofrequency(&x_f64, nyquist_factor.unwrap_or(1.0), freq_method)?
+        // Auto-determine frequencies with enhanced validation
+        let nyquist_factor_val = nyquist_factor.unwrap_or(1.0);
+        if nyquist_factor_val <= 0.0 {
+            return Err(SignalError::ValueError(format!(
+                "nyquist_factor must be positive, got {}",
+                nyquist_factor_val
+            )));
+        }
+        if nyquist_factor_val > 10.0 {
+            eprintln!(
+                "Warning: Large nyquist_factor ({}) may lead to excessive high-frequency sampling.",
+                nyquist_factor_val
+            );
+        }
+
+        autofrequency(&x_f64, nyquist_factor_val, freq_method)?
     };
+
+    // Final validation of frequency array
+    if frequencies.is_empty() {
+        return Err(SignalError::ComputationError(
+            "Generated frequency array is empty".to_string(),
+        ));
+    }
+
+    // Check for reasonable frequency resolution
+    if frequencies.len() > 1 {
+        let freq_resolution = frequencies[1] - frequencies[0];
+        let time_range = x_f64[x_f64.len() - 1] - x_f64[0];
+        let min_resolution = 1.0 / time_range;
+
+        if freq_resolution < min_resolution / 10.0 {
+            eprintln!("Warning: Frequency resolution ({:.2e}) is much finer than _data time range allows ({:.2e}). Consider reducing frequency density.", 
+                      freq_resolution, min_resolution);
+        }
+    }
 
     // Compute periodogram
     let pgram = _lombscargle_impl(
@@ -170,7 +312,51 @@ where
         norm_method,
     )?;
 
-    Ok((frequencies, pgram.to_vec()))
+    // Enhanced validation of periodogram results
+    let pgram_vec = pgram.to_vec();
+
+    // Check for finite values in result
+    for (i, &val) in pgram_vec.iter().enumerate() {
+        if !val.is_finite() {
+            return Err(SignalError::ComputationError(format!(
+                "Periodogram value at frequency index {} is not finite: {}",
+                i, val
+            )));
+        }
+        if val < 0.0 {
+            return Err(SignalError::ComputationError(format!(
+                "Periodogram value at frequency index {} is negative: {}",
+                i, val
+            )));
+        }
+    }
+
+    // Statistical validation
+    let pgram_mean = pgram_vec.iter().sum::<f64>() / pgram_vec.len() as f64;
+    let pgram_max = pgram_vec.iter().cloned().fold(0.0, f64::max);
+    let pgram_min = pgram_vec.iter().cloned().fold(f64::INFINITY, f64::min);
+
+    // Check for reasonable dynamic range
+    if pgram_max > 0.0 {
+        let dynamic_range = pgram_max / pgram_min.max(1e-15);
+        if dynamic_range > 1e12 {
+            eprintln!("Warning: Periodogram has very large dynamic range ({:.2e}). This may indicate numerical issues or very strong periodicities.", dynamic_range);
+        }
+    }
+
+    // Check for suspiciously uniform values (might indicate numerical problems)
+    let pgram_std = (pgram_vec
+        .iter()
+        .map(|&val| (val - pgram_mean).powi(2))
+        .sum::<f64>()
+        / pgram_vec.len() as f64)
+        .sqrt();
+
+    if pgram_std / pgram_mean.max(1e-15) < 1e-6 {
+        eprintln!("Warning: Periodogram values are very uniform. This may indicate insufficient signal variability or computational issues.");
+    }
+
+    Ok((frequencies, pgram_vec))
 }
 
 /// Methods for automatically determining frequency grids
@@ -225,6 +411,7 @@ enum NormalizationMethod {
 /// # Returns
 ///
 /// * Array of frequencies
+#[allow(dead_code)]
 fn autofrequency(
     times: &[f64],
     nyquist_factor: f64,
@@ -325,6 +512,7 @@ fn autofrequency(
 }
 
 /// Compute the Lomb-Scargle periodogram (implementation)
+#[allow(dead_code)]
 fn _lombscargle_impl(
     t: &Array1<f64>,
     y: &Array1<f64>,
@@ -336,8 +524,8 @@ fn _lombscargle_impl(
     let n_samples = t.len();
     let n_freqs = frequency.len();
 
-    // Center the data if requested
-    let (y_centered, _y_mean) = if center_data {
+    // Center the _data if requested
+    let (y_centered, y_mean) = if center_data {
         let mean = y.sum() / n_samples as f64;
         (y - mean, mean)
     } else {
@@ -352,7 +540,7 @@ fn _lombscargle_impl(
 
     if y2_sum == 0.0 {
         return Err(SignalError::ValueError(
-            "All data values are identical".to_string(),
+            "All _data values are identical".to_string(),
         ));
     }
 
@@ -393,7 +581,7 @@ fn _lombscargle_impl(
             NormalizationMethod::Standard => {
                 // Compute the generalized Lomb-Scargle periodogram
                 if fit_mean {
-                    // Include a constant offset (mean) in the model
+                    // Include a constant offset (_mean) in the model
                     let y_dot_h = y_centered.iter().sum::<f64>();
                     let h_dot_h = n_samples as f64;
 
@@ -494,6 +682,7 @@ fn _lombscargle_impl(
 /// # Returns
 ///
 /// * Vector of power thresholds corresponding to the requested FAP levels
+#[allow(dead_code)]
 pub fn significance_levels(
     power: &[f64],
     fap_levels: &[f64],
@@ -506,15 +695,15 @@ pub fn significance_levels(
 
     if fap_levels.is_empty() {
         return Err(SignalError::ValueError(
-            "No FAP levels provided".to_string(),
+            "No FAP _levels provided".to_string(),
         ));
     }
 
-    // Validate FAP levels
+    // Validate FAP _levels
     for &fap in fap_levels {
         if fap <= 0.0 || fap >= 1.0 {
             return Err(SignalError::ValueError(
-                "FAP levels must be between 0 and 1 (exclusive)".to_string(),
+                "FAP _levels must be between 0 and 1 (exclusive)".to_string(),
             ));
         }
     }
@@ -536,7 +725,7 @@ pub fn significance_levels(
         }
     };
 
-    // Compute significance levels based on Chi-squared distribution
+    // Compute significance _levels based on Chi-squared distribution
     // For large N, -2*ln(FAP) follows a chi-squared distribution with 2 degrees of freedom
     let mut sig_levels = Vec::with_capacity(fap_levels.len());
 
@@ -571,6 +760,7 @@ pub fn significance_levels(
 /// # Returns
 ///
 /// * Tuple of (peak frequencies, peak powers)
+#[allow(dead_code)]
 pub fn find_peaks(
     frequency: &[f64],
     power: &[f64],
@@ -616,14 +806,14 @@ pub fn find_peaks(
     // Sort peaks by power (descending)
     peak_indices.sort_by(|&a, &b| power[b].partial_cmp(&power[a]).unwrap());
 
-    // Group peaks if a frequency window is specified
+    // Group peaks if a frequency _window is specified
     let mut result_freqs = Vec::new();
     let mut result_powers = Vec::new();
 
-    if let Some(window) = freq_window {
-        if window <= 0.0 {
+    if let Some(_window) = freq_window {
+        if _window <= 0.0 {
             return Err(SignalError::ValueError(
-                "Frequency window must be positive".to_string(),
+                "Frequency _window must be positive".to_string(),
             ));
         }
 
@@ -638,10 +828,10 @@ pub fn find_peaks(
             result_freqs.push(frequency[idx]);
             result_powers.push(power[idx]);
 
-            // Mark all peaks within the frequency window as used
+            // Mark all peaks within the frequency _window as used
             for &other_idx in &peak_indices {
                 if !used_indices[other_idx]
-                    && (frequency[other_idx] - frequency[idx]).abs() <= window
+                    && (frequency[other_idx] - frequency[idx]).abs() <= _window
                 {
                     used_indices[other_idx] = true;
                 }
@@ -662,10 +852,10 @@ pub fn find_peaks(
 mod tests {
     use super::*;
     use approx::assert_relative_eq;
-    use std::f64::consts::PI;
-
     #[test]
     fn test_lombscargle_sine_wave() {
+        let a = vec![1.0, 2.0, 3.0, 4.0, 5.0];
+        let b = vec![0.5, 0.5];
         // Create a sine wave with known frequency
         let frequency = 0.2; // 0.2 Hz
         let n = 100;
@@ -710,7 +900,7 @@ mod tests {
             .iter()
             .enumerate()
             .max_by(|(_, a), (_, b)| a.partial_cmp(b).unwrap())
-            .map(|(idx, _)| idx)
+            .map(|(idx_, _)| idx_)
             .unwrap();
 
         // The frequency with maximum power should be close to the true frequency
@@ -761,6 +951,8 @@ mod tests {
 
     #[test]
     fn test_significance_levels() {
+        let a = vec![1.0, 2.0, 3.0, 4.0, 5.0];
+        let b = vec![0.5, 0.5];
         // Create a test periodogram
         let power = vec![0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9];
         let fap_levels = vec![0.01, 0.05, 0.1];
@@ -789,6 +981,8 @@ mod tests {
 
     #[test]
     fn test_find_peaks() {
+        let a = vec![1.0, 2.0, 3.0, 4.0, 5.0];
+        let b = vec![0.5, 0.5];
         // Create a test periodogram with known peaks
         let freq = vec![0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0];
         let power = vec![0.1, 0.5, 0.3, 0.8, 0.2, 0.9, 0.4, 0.7, 0.6, 0.3];
@@ -818,6 +1012,8 @@ mod tests {
 
     #[test]
     fn test_lombscargle_multi_frequency() {
+        let a = vec![1.0, 2.0, 3.0, 4.0, 5.0];
+        let b = vec![0.5, 0.5];
         // Create a signal with two frequencies
         let freq1 = 0.1; // 0.1 Hz
         let freq2 = 0.3; // 0.3 Hz
@@ -884,13 +1080,25 @@ mod tests {
         let tolerance = 0.05; // Allow 0.05 Hz tolerance
         let mut frequencies_found = 0;
 
-        for &(freq, _) in peaks.iter().take(4) {
+        for &(freq_, _) in peaks.iter().take(4) {
             // Check top 4 peaks
-            if (freq - freq1).abs() < tolerance || (freq - freq2).abs() < tolerance {
+            if (freq_ - freq1).abs() < tolerance || (freq_ - freq2).abs() < tolerance {
                 frequencies_found += 1;
             }
         }
 
         assert!(frequencies_found >= 2);
     }
+}
+
+#[allow(dead_code)]
+fn next_power_of_two(n: usize) -> usize {
+    if n == 0 {
+        return 1;
+    }
+    let mut power = 1;
+    while power < n {
+        power <<= 1;
+    }
+    power
 }

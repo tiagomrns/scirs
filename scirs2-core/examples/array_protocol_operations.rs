@@ -18,6 +18,7 @@ use scirs2_core::array_protocol::{
     DistributedNdarray, DistributionStrategy, GPUBackend, GPUConfig, GPUNdarray, NdarrayWrapper,
 };
 
+#[allow(dead_code)]
 fn main() {
     // Initialize the array protocol system
     array_protocol::init();

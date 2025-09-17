@@ -6,6 +6,7 @@
 use crate::error::{FFTError, FFTResult};
 use crate::fft::ifft;
 use num_complex::Complex64;
+use std::f64::consts::PI;
 
 use super::algorithms::SparseFFTResult;
 
@@ -42,6 +43,7 @@ use super::algorithms::SparseFFTResult;
 /// // The reconstructed spectrum should have length n
 /// assert_eq!(full_spectrum.len(), n);
 /// ```
+#[allow(dead_code)]
 pub fn reconstruct_spectrum(
     sparse_result: &SparseFFTResult,
     n: usize,
@@ -91,6 +93,7 @@ pub fn reconstruct_spectrum(
 /// // The reconstructed signal should have the same length
 /// assert_eq!(reconstructed.len(), n);
 /// ```
+#[allow(dead_code)]
 pub fn reconstruct_time_domain(
     sparse_result: &SparseFFTResult,
     n: usize,
@@ -146,6 +149,7 @@ pub fn reconstruct_time_domain(
 /// // The high-resolution signal should have the target length
 /// assert_eq!(high_res.len(), 2 * n);
 /// ```
+#[allow(dead_code)]
 pub fn reconstruct_high_resolution(
     sparse_result: &SparseFFTResult,
     original_length: usize,
@@ -153,8 +157,7 @@ pub fn reconstruct_high_resolution(
 ) -> FFTResult<Vec<Complex64>> {
     if target_length < original_length {
         return Err(FFTError::DimensionError(format!(
-            "Target length {} must be greater than or equal to original length {}",
-            target_length, original_length
+            "Target _length {target_length} must be greater than or equal to original _length {original_length}"
         )));
     }
 
@@ -168,7 +171,7 @@ pub fn reconstruct_high_resolution(
         spectrum[index] = *value;
     }
 
-    // Scale the frequencies to the new length
+    // Scale the frequencies to the new _length
     let mut high_res_spectrum = vec![Complex64::new(0.0, 0.0); target_length];
 
     // For components below the Nyquist frequency
@@ -191,7 +194,7 @@ pub fn reconstruct_high_resolution(
 
     // Handle the negative frequencies (those above Nyquist in the original spectrum)
     if original_length % 2 == 0 {
-        // Even length case - map original negative frequencies to the new negative frequencies
+        // Even _length case - map original negative frequencies to the new negative frequencies
         #[allow(clippy::needless_range_loop)]
         for i in (original_nyquist + 1)..original_length {
             // Calculate the relative position in the negative frequency range
@@ -207,7 +210,7 @@ pub fn reconstruct_high_resolution(
             high_res_spectrum[target_nyquist] = spectrum[original_nyquist];
         }
     } else {
-        // Odd length case
+        // Odd _length case
         #[allow(clippy::needless_range_loop)]
         for i in (original_nyquist + 1)..original_length {
             // Calculate the relative position in the negative frequency range
@@ -265,6 +268,7 @@ pub fn reconstruct_high_resolution(
 ///
 /// assert_eq!(filtered.len(), n);
 /// ```
+#[allow(dead_code)]
 pub fn reconstruct_filtered<F>(
     sparse_result: &SparseFFTResult,
     n: usize,
@@ -294,7 +298,6 @@ where
 mod tests {
     use super::super::algorithms::sparse_fft;
     use super::*;
-    use std::f64::consts::PI;
 
     fn create_test_signal(n: usize) -> Vec<f64> {
         let mut signal = vec![0.0; n];
@@ -318,7 +321,7 @@ mod tests {
         assert_eq!(non_zero_count, sparse_result.values.len());
 
         // Verify that all sparse components are present in the spectrum
-        for (&index, &_value) in sparse_result
+        for (&index, &value) in sparse_result
             .indices
             .iter()
             .zip(sparse_result.values.iter())
@@ -327,8 +330,7 @@ mod tests {
             // The value should be non-zero at this index
             assert!(
                 spectrum[index].norm() > 1e-10,
-                "Expected non-zero value at index {}",
-                index
+                "Expected non-zero value at index {index}"
             );
         }
     }

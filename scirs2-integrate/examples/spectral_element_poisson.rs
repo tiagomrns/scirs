@@ -5,6 +5,7 @@ use scirs2_integrate::{
 use std::f64::consts::PI;
 use std::time::Instant;
 
+#[allow(dead_code)]
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("Spectral Element Method example for the 2D Poisson equation");
     println!("Solving: ∇²u = f(x,y) with Dirichlet boundary conditions");
@@ -87,7 +88,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let result = solver.solve()?;
     let solve_time = start_time.elapsed().as_secs_f64();
 
-    println!("Solution computed in {:.4} seconds", solve_time);
+    println!("Solution computed in {solve_time:.4} seconds");
     println!("Residual norm: {:.6e}", result.residual_norm);
     println!("Number of elements: {}", result.elements.len());
     println!("Total number of nodes: {}", result.nodes.len());
@@ -107,11 +108,11 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     }
 
     // Compute L2 error norm
-    l2_error = (l2_error / result.nodes.len() as f64).sqrt();
+    l2_error = (l2_error / result.nodes.len() as f64).sqrt() as f64;
 
     println!("\nError analysis:");
-    println!("  - Maximum error: {:.6e}", max_error);
-    println!("  - L2 error norm: {:.6e}", l2_error);
+    println!("  - Maximum error: {max_error:.6e}");
+    println!("  - L2 error norm: {l2_error:.6e}");
 
     // Print solution at selected points
     println!("\nSolution at selected points:");
@@ -146,10 +147,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         let exact = (PI * x).sin() * (PI * y).sin();
         let error = (numerical - exact).abs();
 
-        println!(
-            "{:<10.4} {:<10.4} {:<15.8e} {:<15.8e} {:<10.2e}",
-            x, y, numerical, exact, error
-        );
+        println!("{x:<10.4} {y:<10.4} {numerical:<15.8e} {exact:<15.8e} {error:<10.2e}");
     }
 
     // Test convergence with p-refinement (increasing polynomial order)
@@ -181,7 +179,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             l2_error += error * error;
         }
 
-        l2_error = (l2_error / result.nodes.len() as f64).sqrt();
+        l2_error = (l2_error / result.nodes.len() as f64).sqrt() as f64;
 
         println!(
             "  - Order p = {}: L2 error = {:.6e}, DOFs = {}",
@@ -220,7 +218,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             l2_error += error * error;
         }
 
-        l2_error = (l2_error / result.nodes.len() as f64).sqrt();
+        l2_error = (l2_error / result.nodes.len() as f64).sqrt() as f64;
 
         println!(
             "  - Grid {}x{}: L2 error = {:.6e}, DOFs = {}",
@@ -311,7 +309,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         let (x, y) = mixed_result.nodes[closest_idx];
         let value = mixed_result.u[closest_idx];
 
-        println!("{:<10.4} {:<10.4} {:<15.8e}", x, y, value);
+        println!("{x:<10.4} {y:<10.4} {value:<15.8e}");
     }
 
     // Explain key advantages of spectral element methods

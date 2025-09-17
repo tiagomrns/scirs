@@ -7,6 +7,7 @@ use ndarray::{Array1, Array2};
 use scirs2_core::utils::{linspace, maximum, minimum};
 use std::time::Instant;
 
+#[allow(dead_code)]
 fn main() {
     println!("=== Parallel Utility Functions Demo ===\n");
 

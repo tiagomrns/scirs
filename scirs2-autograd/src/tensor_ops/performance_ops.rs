@@ -150,7 +150,7 @@ impl<F: Float> Op<F> for ParallelReductionOp {
         Ok(())
     }
 
-    fn grad(&self, _ctx: &mut GradientContext<F>) {
+    fn grad<'a>(&self, _ctx: &mut GradientContext<'a, 'a, F>) {
         // Simplified gradient implementation
         // In practice, would implement proper gradient broadcasting
     }
@@ -159,26 +159,31 @@ impl<F: Float> Op<F> for ParallelReductionOp {
 // Public API functions
 
 /// Enable or disable SIMD optimizations
+#[allow(dead_code)]
 pub fn set_simd_enabled(enabled: bool) {
     SIMD_ENABLED.store(enabled, Ordering::Relaxed);
 }
 
 /// Check if SIMD optimizations are enabled
+#[allow(dead_code)]
 pub fn is_simd_enabled() -> bool {
     SIMD_ENABLED.load(Ordering::Relaxed)
 }
 
 /// Enable or disable parallel processing
+#[allow(dead_code)]
 pub fn set_parallel_enabled(enabled: bool) {
     PARALLEL_ENABLED.store(enabled, Ordering::Relaxed);
 }
 
 /// Check if parallel processing is enabled
+#[allow(dead_code)]
 pub fn is_parallel_enabled() -> bool {
     PARALLEL_ENABLED.load(Ordering::Relaxed)
 }
 
 /// SIMD-optimized element-wise addition
+#[allow(dead_code)]
 pub fn simd_add<'g, F: Float>(left: &Tensor<'g, F>, right: &Tensor<'g, F>) -> Tensor<'g, F> {
     let g = left.graph();
     Tensor::builder(g)
@@ -190,6 +195,7 @@ pub fn simd_add<'g, F: Float>(left: &Tensor<'g, F>, right: &Tensor<'g, F>) -> Te
 }
 
 /// SIMD-optimized element-wise multiplication
+#[allow(dead_code)]
 pub fn simd_mul<'g, F: Float>(left: &Tensor<'g, F>, right: &Tensor<'g, F>) -> Tensor<'g, F> {
     let g = left.graph();
     Tensor::builder(g)
@@ -201,6 +207,7 @@ pub fn simd_mul<'g, F: Float>(left: &Tensor<'g, F>, right: &Tensor<'g, F>) -> Te
 }
 
 /// SIMD-optimized ReLU activation
+#[allow(dead_code)]
 pub fn simd_relu<'g, F: Float>(tensor: &Tensor<'g, F>) -> Tensor<'g, F> {
     let g = tensor.graph();
     Tensor::builder(g)
@@ -211,6 +218,7 @@ pub fn simd_relu<'g, F: Float>(tensor: &Tensor<'g, F>) -> Tensor<'g, F> {
 }
 
 /// SIMD-optimized sigmoid activation
+#[allow(dead_code)]
 pub fn simd_sigmoid<'g, F: Float>(tensor: &Tensor<'g, F>) -> Tensor<'g, F> {
     let g = tensor.graph();
     Tensor::builder(g)
@@ -221,6 +229,7 @@ pub fn simd_sigmoid<'g, F: Float>(tensor: &Tensor<'g, F>) -> Tensor<'g, F> {
 }
 
 /// Cache-friendly matrix multiplication (simplified to regular matmul)
+#[allow(dead_code)]
 pub fn cache_friendly_matmul<'g, F: Float>(
     left: &Tensor<'g, F>,
     right: &Tensor<'g, F>,
@@ -230,6 +239,7 @@ pub fn cache_friendly_matmul<'g, F: Float>(
 }
 
 /// Parallel sum reduction
+#[allow(dead_code)]
 pub fn parallel_sum<'g, F: Float>(
     tensor: &Tensor<'g, F>,
     axes: &[usize],

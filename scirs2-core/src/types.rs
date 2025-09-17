@@ -82,6 +82,10 @@ pub enum NumericConversionError {
     #[error("NaN or infinite value cannot be converted to the target type")]
     NanOrInfinite,
 
+    /// Division by zero error
+    #[error("Division by zero is not allowed")]
+    DivisionByZero,
+
     /// Generic conversion error
     #[error("Failed to convert value: {0}")]
     Other(String),
@@ -152,22 +156,28 @@ where
 
                     if float_val > max {
                         return Err(NumericConversionError::Overflow {
-                            value: format!("{}", value),
-                            max: format!("{}", T::max_value()),
+                            value: format!("{value}"),
+                            max: {
+                                let max_val = T::max_value();
+                                format!("{max_val}")
+                            },
                         });
                     }
 
                     if float_val < min {
                         return Err(NumericConversionError::Underflow {
-                            value: format!("{}", value),
-                            min: format!("{}", T::min_value()),
+                            value: format!("{value}"),
+                            min: {
+                                let min_val = T::min_value();
+                                format!("{min_val}")
+                            },
                         });
                     }
 
                     // Check for precision loss when converting float to int
                     if float_val.fract() != 0.0 && !Self::is_float_type::<T>() {
                         return Err(NumericConversionError::PrecisionLoss {
-                            value: format!("{}", value),
+                            value: format!("{value}"),
                         });
                     }
                 }
@@ -180,8 +190,11 @@ where
                     let max_s: S = max_s;
                     if value > max_s {
                         return Err(NumericConversionError::Overflow {
-                            value: format!("{}", value),
-                            max: format!("{}", T::max_value()),
+                            value: format!("{value}"),
+                            max: {
+                                let max_val = T::max_value();
+                                format!("{max_val}")
+                            },
                         });
                     }
                 }
@@ -190,14 +203,17 @@ where
                     let min_s: S = min_s;
                     if value < min_s {
                         return Err(NumericConversionError::Underflow {
-                            value: format!("{}", value),
-                            min: format!("{}", T::min_value()),
+                            value: format!("{value}"),
+                            min: {
+                                let min_val = T::min_value();
+                                format!("{min_val}")
+                            },
                         });
                     }
                 }
 
                 Err(NumericConversionError::NotRepresentable {
-                    value: format!("{}", value),
+                    value: format!("{value}"),
                 })
             }
         }
@@ -429,17 +445,20 @@ where
 
     fn to_algebraic_string(&self) -> String {
         if self.im.is_zero() {
-            format!("{}", self.re)
+            {
+                let re_val = self.re;
+                format!("{re_val}")
+            }
         } else if self.im.is_sign_positive() {
-            format!("{}+{}i", self.re, self.im)
+            format!("{re}+{im}i", re = self.re, im = self.im)
         } else {
-            format!("{}{}i", self.re, self.im)
+            format!("{re}{im}i", re = self.re, im = self.im)
         }
     }
 
     fn to_polar_string(&self) -> String {
         let (mag, phase) = self.to_polar();
-        format!("{:.4}∠{:.4}rad", mag, phase)
+        format!("{mag:.4}∠{phase:.4}rad")
     }
 
     fn is_approx_zero(&self, epsilon: T) -> bool {
@@ -686,19 +705,23 @@ pub mod precision {
             };
 
             let new_precision = self.precision.max(type_precision);
-            let new_error_bound = self.error_bound + type_precision;
+            let newerror_bound = self.error_bound + type_precision;
 
             Ok(TrackedValue {
                 value: converted,
                 precision: new_precision,
-                error_bound: new_error_bound,
-                source_type: format!("{}→{}", self.source_type, std::any::type_name::<U>()),
+                error_bound: newerror_bound,
+                source_type: format!(
+                    "{src}→{dst}",
+                    src = self.source_type,
+                    dst = std::any::type_name::<U>()
+                ),
                 operations_count: self.operations_count + 1,
             })
         }
 
         /// Apply an operation and update precision tracking
-        pub fn apply_operation<F, U>(&self, op: F, op_name: &str) -> TrackedValue<U>
+        pub fn apply_operation<F, U>(&self, op: F, opname: &str) -> TrackedValue<U>
         where
             F: FnOnce(T) -> U,
             U: Copy + fmt::Display + PartialOrd + NumCast + 'static,
@@ -706,7 +729,7 @@ pub mod precision {
             let result = op(self.value);
 
             // Estimate precision loss for common operations
-            let precision_multiplier = match op_name {
+            let precision_multiplier = match opname {
                 "add" | "sub" => 1.1,
                 "mul" => 1.2,
                 "div" => 1.5,
@@ -720,7 +743,7 @@ pub mod precision {
                 value: result,
                 precision: self.precision * precision_multiplier,
                 error_bound: self.error_bound * precision_multiplier,
-                source_type: format!("{}({op_name})", self.source_type),
+                source_type: format!("{src}({opname})", src = self.source_type),
                 operations_count: self.operations_count + 1,
             }
         }
@@ -730,7 +753,7 @@ pub mod precision {
             &self,
             other: &TrackedValue<U>,
             op: F,
-            _op_name: &str,
+            op_name: &str,
         ) -> TrackedValue<V>
         where
             F: FnOnce(T, U) -> V,
@@ -741,13 +764,17 @@ pub mod precision {
 
             // Combine precision estimates (worst-case propagation)
             let combined_precision = self.precision.max(other.precision);
-            let combined_error = self.error_bound + other.error_bound;
+            let combinederror = self.error_bound + other.error_bound;
 
             TrackedValue {
                 value: result,
                 precision: combined_precision * 1.1, // Add small overhead for combination
-                error_bound: combined_error,
-                source_type: format!("{}⊕{}", self.source_type, other.source_type),
+                error_bound: combinederror,
+                source_type: format!(
+                    "{src}⊕{other}",
+                    src = self.source_type,
+                    other = other.source_type
+                ),
                 operations_count: self.operations_count.max(other.operations_count) + 1,
             }
         }
@@ -896,12 +923,12 @@ pub mod units {
         }
 
         /// Convert value from this unit to base units
-        pub fn to_base(&self, value: f64) -> f64 {
+        pub fn tobase(&self, value: f64) -> f64 {
             (value + self.offset) * self.scale_factor
         }
 
         /// Convert value from base units to this unit
-        pub fn from_base(&self, value: f64) -> f64 {
+        pub fn frombase(&self, value: f64) -> f64 {
             value / self.scale_factor - self.offset
         }
     }
@@ -930,19 +957,19 @@ pub mod units {
         }
 
         /// Convert to another unit
-        pub fn convert_to(&self, target_unit: &Unit) -> Result<Quantity, UnitConversionError> {
-            if !self.unit.dimensions.is_compatible(&target_unit.dimensions) {
+        pub fn convert_to(&self, targetunit: &Unit) -> Result<Quantity, UnitConversionError> {
+            if !self.unit.dimensions.is_compatible(&targetunit.dimensions) {
                 return Err(UnitConversionError::IncompatibleDimensions {
                     from: self.unit.name.clone(),
-                    to: target_unit.name.clone(),
+                    to: targetunit.name.clone(),
                 });
             }
 
             // Convert to base units, then to target units
-            let base_value = self.unit.to_base(self.value);
-            let target_value = target_unit.from_base(base_value);
+            let base_value = self.unit.tobase(self.value);
+            let target_value = targetunit.frombase(base_value);
 
-            Ok(Quantity::new(target_value, target_unit.clone()))
+            Ok(Quantity::new(target_value, targetunit.clone()))
         }
 
         /// Add quantities (must have compatible dimensions)
@@ -967,8 +994,16 @@ pub mod units {
         pub fn multiply(&self, other: &Quantity) -> Quantity {
             let new_dimensions = self.unit.dimensions.multiply(&other.unit.dimensions);
             let new_unit = Unit::new(
-                format!("{}⋅{}", self.unit.symbol, other.unit.symbol),
-                format!("{}⋅{}", self.unit.symbol, other.unit.symbol),
+                {
+                    let self_symbol = &self.unit.symbol;
+                    let other_symbol = &other.unit.symbol;
+                    format!("{self_symbol}.{other_symbol}")
+                },
+                {
+                    let self_symbol = &self.unit.symbol;
+                    let other_symbol = &other.unit.symbol;
+                    format!("{self_symbol}.{other_symbol}")
+                },
                 new_dimensions,
                 self.unit.scale_factor * other.unit.scale_factor,
             );
@@ -980,8 +1015,16 @@ pub mod units {
         pub fn divide(&self, other: &Quantity) -> Quantity {
             let new_dimensions = self.unit.dimensions.divide(&other.unit.dimensions);
             let new_unit = Unit::new(
-                format!("{}/{}", self.unit.symbol, other.unit.symbol),
-                format!("{}/{}", self.unit.symbol, other.unit.symbol),
+                {
+                    let self_symbol = &self.unit.symbol;
+                    let other_symbol = &other.unit.symbol;
+                    format!("{self_symbol}/{other_symbol}")
+                },
+                {
+                    let self_symbol = &self.unit.symbol;
+                    let other_symbol = &other.unit.symbol;
+                    format!("{self_symbol}/{other_symbol}")
+                },
                 new_dimensions,
                 self.unit.scale_factor / other.unit.scale_factor,
             );
@@ -1148,6 +1191,7 @@ pub mod dynamic_dispatch;
 
 /// Specialized numeric types for scientific computing
 pub mod scientific {
+    use crate::types::NumericConversionError;
 
     /// Fixed-point number for precise decimal arithmetic
     #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
@@ -1220,9 +1264,9 @@ pub mod scientific {
 
     impl Rational {
         /// Create new rational number
-        pub fn new(numerator: i64, denominator: i64) -> Self {
+        pub fn new(numerator: i64, denominator: i64) -> Result<Self, NumericConversionError> {
             if denominator == 0 {
-                panic!("Denominator cannot be zero");
+                return Err(NumericConversionError::DivisionByZero);
             }
 
             let mut result = Self {
@@ -1230,16 +1274,17 @@ pub mod scientific {
                 denominator,
             };
             result.simplify();
-            result
+            Ok(result)
         }
 
         /// Create from integer
         pub fn from_int(value: i64) -> Self {
-            Self::new(value, 1)
+            // We know denominator is 1, so this will never fail
+            Self::new(value, 1).unwrap()
         }
 
         /// Create approximation from float
-        pub fn from_float_approx(value: f64, max_denominator: i64) -> Self {
+        pub fn from_float(value: f64, maxdenominator: i64) -> Self {
             // Simple continued fraction approximation
             let mut a = value.floor() as i64;
             let mut remainder = value - a as f64;
@@ -1253,7 +1298,7 @@ pub mod scientific {
             let mut p_curr = a;
             let mut q_curr = 1;
 
-            while q_curr <= max_denominator && remainder.abs() > f64::EPSILON {
+            while q_curr <= maxdenominator && remainder.abs() > f64::EPSILON {
                 remainder = 1.0 / remainder;
                 a = remainder.floor() as i64;
                 remainder -= a as f64;
@@ -1261,7 +1306,7 @@ pub mod scientific {
                 let p_next = a * p_curr + p_prev;
                 let q_next = a * q_curr + q_prev;
 
-                if q_next > max_denominator {
+                if q_next > maxdenominator {
                     break;
                 }
 
@@ -1271,7 +1316,8 @@ pub mod scientific {
                 q_curr = q_next;
             }
 
-            Self::new(p_curr, q_curr)
+            // We know q_curr > 0 from the loop logic, so this should not fail
+            Self::new(p_curr, q_curr).unwrap_or_else(|_| Self::from_int(p_curr))
         }
 
         /// Simplify the rational number
@@ -1312,7 +1358,7 @@ pub mod scientific {
         }
 
         /// Add rational numbers
-        pub fn add(&self, other: &Self) -> Self {
+        pub fn add(&self, other: &Self) -> Result<Self, NumericConversionError> {
             Self::new(
                 self.numerator * other.denominator + other.numerator * self.denominator,
                 self.denominator * other.denominator,
@@ -1320,7 +1366,7 @@ pub mod scientific {
         }
 
         /// Subtract rational numbers
-        pub fn subtract(&self, other: &Self) -> Self {
+        pub fn subtract(&self, other: &Self) -> Result<Self, NumericConversionError> {
             Self::new(
                 self.numerator * other.denominator - other.numerator * self.denominator,
                 self.denominator * other.denominator,
@@ -1328,7 +1374,7 @@ pub mod scientific {
         }
 
         /// Multiply rational numbers
-        pub fn multiply(&self, other: &Self) -> Self {
+        pub fn multiply(&self, other: &Self) -> Result<Self, NumericConversionError> {
             Self::new(
                 self.numerator * other.numerator,
                 self.denominator * other.denominator,
@@ -1336,7 +1382,10 @@ pub mod scientific {
         }
 
         /// Divide rational numbers
-        pub fn divide(&self, other: &Self) -> Self {
+        pub fn divide(&self, other: &Self) -> Result<Self, NumericConversionError> {
+            if other.numerator == 0 {
+                return Err(NumericConversionError::DivisionByZero);
+            }
             Self::new(
                 self.numerator * other.denominator,
                 self.denominator * other.numerator,
@@ -1370,7 +1419,7 @@ pub mod scientific {
         }
 
         /// Create symmetric interval around center
-        pub fn symmetric(center: f64, radius: f64) -> Self {
+        pub fn centered(center: f64, radius: f64) -> Self {
             Self::new(center - radius, center + radius)
         }
 
@@ -1518,9 +1567,9 @@ mod enhanced_tests {
 
     #[test]
     fn test_rational_arithmetic() {
-        let a = scientific::Rational::new(1, 3);
-        let b = scientific::Rational::new(1, 6);
-        let sum = a.add(&b);
+        let a = scientific::Rational::new(1, 3).unwrap();
+        let b = scientific::Rational::new(1, 6).unwrap();
+        let sum = a.add(&b).unwrap();
 
         assert_eq!(sum.numerator(), 1);
         assert_eq!(sum.denominator(), 2);

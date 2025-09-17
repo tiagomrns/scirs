@@ -20,10 +20,7 @@ impl<F: Float> Op<F> for QROp {
         let n = shape[1];
         let k = m.min(n);
 
-        println!(
-            "Computing QR decomposition for matrix of shape: [{}, {}]",
-            m, n
-        );
+        println!("Computing QR decomposition for matrix of shape: [{m}, {n}]");
 
         let input_2d = input
             .view()
@@ -144,7 +141,7 @@ impl<F: Float> Op<F> for QRExtractOp {
             .into_dimensionality::<Ix2>()
             .map_err(|_| OpError::IncompatibleShape("Failed to convert to 2D array".into()))?;
 
-        println!("Input matrix for QR:\n{:?}", input_2d);
+        println!("Input matrix for QR:\n{input_2d:?}");
 
         // Re-run the QR computation
         let mut q = Array2::<F>::zeros((m, k));
@@ -194,8 +191,8 @@ impl<F: Float> Op<F> for QRExtractOp {
         }
 
         // Debug: Print final Q and R
-        println!("Final Q:\n{:?}", q);
-        println!("Final R:\n{:?}", r);
+        println!("Final Q:\n{q:?}");
+        println!("Final R:\n{r:?}");
 
         // Extract the requested component
         match self.component {
@@ -234,8 +231,7 @@ impl<F: Float + ndarray::ScalarOperand> Op<F> for SVDOp {
 
         if shape.len() != 2 {
             return Err(OpError::IncompatibleShape(format!(
-                "SVD requires 2D matrix, got shape {:?}",
-                shape
+                "SVD requires 2D matrix, got shape {shape:?}"
             )));
         }
 
@@ -243,14 +239,11 @@ impl<F: Float + ndarray::ScalarOperand> Op<F> for SVDOp {
         let n = shape[1];
         let k = m.min(n);
 
-        println!(
-            "SVD: Computing decomposition for matrix of shape [{}, {}], k={}",
-            m, n, k
-        );
+        println!("SVD: Computing decomposition for matrix of shape [{m}, {n}], k={k}");
 
         // Convert input to 2D matrix
         let input_2d = input.view().into_dimensionality::<Ix2>().map_err(|e| {
-            OpError::IncompatibleShape(format!("Failed to convert input to 2D: {:?}", e))
+            OpError::IncompatibleShape(format!("Failed to convert input to 2D: {e:?}"))
         })?;
 
         // Initialize output matrices with correct shapes
@@ -536,6 +529,7 @@ fn improved_deflation<F: Float + ndarray::ScalarOperand>(
 ///
 /// # Returns
 /// A tuple of tensors (Q, R) representing the decomposition
+#[allow(dead_code)]
 pub fn qr<'g, F: Float>(matrix: &Tensor<'g, F>) -> (Tensor<'g, F>, Tensor<'g, F>) {
     let g = matrix.graph();
 
@@ -563,6 +557,7 @@ pub fn qr<'g, F: Float>(matrix: &Tensor<'g, F>) -> (Tensor<'g, F>, Tensor<'g, F>
 ///
 /// # Returns
 /// A tuple of tensors (U, S, V) representing the decomposition
+#[allow(dead_code)]
 pub fn svd<'g, F: Float + ndarray::ScalarOperand>(
     matrix: &Tensor<'g, F>,
 ) -> (Tensor<'g, F>, Tensor<'g, F>, Tensor<'g, F>) {
@@ -606,10 +601,7 @@ impl<F: Float> Op<F> for CholeskyOp {
 
         let n = shape[0];
 
-        println!(
-            "Computing Cholesky decomposition for matrix of shape: [{}, {}]",
-            n, n
-        );
+        println!("Computing Cholesky decomposition for matrix of shape: [{n}, {n}]");
 
         let input_2d = input
             .view()
@@ -695,6 +687,7 @@ impl<F: Float> Op<F> for CholeskyOp {
 }
 
 /// Compute gradient for Cholesky decomposition
+#[allow(dead_code)]
 fn compute_cholesky_gradient<F: Float>(
     input: &ndarray::ArrayView2<F>,
     grad_output: &ndarray::ArrayView2<F>,
@@ -780,10 +773,7 @@ impl<F: Float + ndarray::ScalarOperand> Op<F> for SymmetricEigenOp {
 
         let n = shape[0];
 
-        println!(
-            "Computing symmetric eigendecomposition for matrix of shape: [{}, {}]",
-            n, n
-        );
+        println!("Computing symmetric eigendecomposition for matrix of shape: [{n}, {n}]");
 
         let input_2d = input
             .view()
@@ -891,6 +881,7 @@ impl<F: Float + ndarray::ScalarOperand> Op<F> for SymmetricEigenOp {
 }
 
 /// Compute eigenvalues for symmetric matrix using iterative method
+#[allow(dead_code)]
 fn compute_symmetric_eigenvalues<F: Float + ndarray::ScalarOperand>(
     matrix: &ndarray::ArrayView2<F>,
 ) -> Array1<F> {
@@ -911,14 +902,15 @@ fn compute_symmetric_eigenvalues<F: Float + ndarray::ScalarOperand>(
         .collect();
     pairs.sort_by(|a, b| b.0.partial_cmp(&a.0).unwrap_or(std::cmp::Ordering::Equal));
 
-    for (i, (val, _)) in pairs.iter().enumerate() {
-        eigenvalues[i] = *val;
+    for (i, (val_, _idx)) in pairs.iter().enumerate() {
+        eigenvalues[i] = *val_;
     }
 
     eigenvalues
 }
 
 /// Compute eigenvectors for symmetric matrix
+#[allow(dead_code)]
 fn compute_symmetric_eigenvectors<F: Float + ndarray::ScalarOperand>(
     matrix: &ndarray::ArrayView2<F>,
     _eigenvalues: &Array1<F>,
@@ -930,7 +922,7 @@ fn compute_symmetric_eigenvectors<F: Float + ndarray::ScalarOperand>(
     // In practice, this would use more sophisticated algorithms like Jacobi iteration
     // or QR algorithm for better accuracy
 
-    // Placeholder: return identity matrix scaled by eigenvalues
+    // Placeholder: return identity matrix scaled by _eigenvalues
     for i in 0..n {
         for j in 0..n {
             if i == j {
@@ -1091,6 +1083,7 @@ impl<F: Float + ndarray::ScalarOperand> Op<F> for MatrixPowerOp {
 }
 
 /// Compute matrix exponential using Padé approximation
+#[allow(dead_code)]
 fn compute_matrix_exp<F: Float + ndarray::ScalarOperand>(
     matrix: &ndarray::ArrayView2<F>,
 ) -> Result<Array2<F>, OpError> {
@@ -1120,6 +1113,7 @@ fn compute_matrix_exp<F: Float + ndarray::ScalarOperand>(
 }
 
 /// Compute matrix logarithm
+#[allow(dead_code)]
 fn compute_matrix_log<F: Float + ndarray::ScalarOperand>(
     matrix: &ndarray::ArrayView2<F>,
 ) -> Result<Array2<F>, OpError> {
@@ -1150,6 +1144,7 @@ fn compute_matrix_log<F: Float + ndarray::ScalarOperand>(
 }
 
 /// Compute matrix power
+#[allow(dead_code)]
 fn compute_matrix_power<F: Float + ndarray::ScalarOperand>(
     matrix: &ndarray::ArrayView2<F>,
     power: f64,
@@ -1268,8 +1263,7 @@ impl<F: Float + ndarray::ScalarOperand> Op<F> for LUOp {
 
         if shape.len() != 2 {
             return Err(OpError::IncompatibleShape(format!(
-                "LU decomposition requires 2D matrix, got shape {:?}",
-                shape
+                "LU decomposition requires 2D matrix, got shape {shape:?}"
             )));
         }
 
@@ -1428,6 +1422,7 @@ impl<F: Float + ndarray::ScalarOperand> Op<F> for LUExtractOp {
 /// - P is the permutation matrix
 /// - L is lower triangular with ones on diagonal
 /// - U is upper triangular
+#[allow(dead_code)]
 pub fn lu<'g, F: Float + ndarray::ScalarOperand>(
     matrix: &Tensor<'g, F>,
 ) -> (Tensor<'g, F>, Tensor<'g, F>, Tensor<'g, F>) {

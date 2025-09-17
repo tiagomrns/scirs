@@ -13,6 +13,9 @@ use crate::error::SparseResult;
 use crate::sym_coo::SymCooMatrix;
 use crate::sym_csr::SymCsrMatrix;
 
+// Import parallel operations from scirs2-core
+use scirs2_core::parallel_ops::*;
+
 /// Computes a matrix-vector product for symmetric CSR matrices.
 ///
 /// This function computes `y = A * x` where `A` is a symmetric matrix
@@ -53,9 +56,10 @@ use crate::sym_csr::SymCsrMatrix;
 /// assert_eq!(y[1], 14.0);
 /// assert_eq!(y[2], 9.0);
 /// ```
+#[allow(dead_code)]
 pub fn sym_csr_matvec<T>(matrix: &SymCsrMatrix<T>, x: &ArrayView1<T>) -> SparseResult<Array1<T>>
 where
-    T: Float + Debug + Copy + Add<Output = T>,
+    T: Float + Debug + Copy + Add<Output = T> + Send + Sync,
 {
     let (n, _) = matrix.shape();
     if x.len() != n {
@@ -65,9 +69,84 @@ where
         });
     }
 
+    let nnz = matrix.nnz();
+
+    // Use parallel implementation for larger matrices
+    if nnz >= 1000 {
+        sym_csr_matvec_parallel(matrix, x)
+    } else {
+        sym_csr_matvec_scalar(matrix, x)
+    }
+}
+
+/// Parallel symmetric CSR matrix-vector multiplication
+#[allow(dead_code)]
+fn sym_csr_matvec_parallel<T>(
+    matrix: &SymCsrMatrix<T>,
+    x: &ArrayView1<T>,
+) -> SparseResult<Array1<T>>
+where
+    T: Float + Debug + Copy + Add<Output = T> + Send + Sync,
+{
+    let (n, _) = matrix.shape();
     let mut y = Array1::zeros(n);
 
-    // First pass: Process the diagonal and lower triangular parts
+    // Determine optimal chunk size based on matrix size
+    let chunk_size = std::cmp::max(1, n / scirs2_core::parallel_ops::get_num_threads()).min(256);
+
+    // Use scirs2-core parallel operations for better performance
+    let chunks: Vec<_> = (0..n)
+        .collect::<Vec<_>>()
+        .chunks(chunk_size)
+        .map(|chunk| chunk.to_vec())
+        .collect();
+
+    let results: Vec<_> = parallel_map(&chunks, |row_chunk| {
+        let mut local_y = Array1::zeros(n);
+
+        for &row_i in row_chunk {
+            let row_start = matrix.indptr[row_i];
+            let row_end = matrix.indptr[row_i + 1];
+
+            // Compute the dot product for this row
+            let mut sum = T::zero();
+            for j in row_start..row_end {
+                let col = matrix.indices[j];
+                let val = matrix.data[j];
+
+                sum = sum + val * x[col];
+
+                // For symmetric matrices, also add the symmetric contribution
+                // if we're below the diagonal
+                if row_i != col {
+                    local_y[col] = local_y[col] + val * x[row_i];
+                }
+            }
+            local_y[row_i] = local_y[row_i] + sum;
+        }
+        local_y
+    });
+
+    // Combine results from all chunks (manual reduction since parallel_reduce not available)
+    for local_y in results {
+        for i in 0..n {
+            y[i] = y[i] + local_y[i];
+        }
+    }
+
+    Ok(y)
+}
+
+/// Scalar fallback version of symmetric CSR matrix-vector multiplication
+#[allow(dead_code)]
+fn sym_csr_matvec_scalar<T>(matrix: &SymCsrMatrix<T>, x: &ArrayView1<T>) -> SparseResult<Array1<T>>
+where
+    T: Float + Debug + Copy + Add<Output = T>,
+{
+    let (n, _) = matrix.shape();
+    let mut y = Array1::zeros(n);
+
+    // Standard scalar implementation
     for i in 0..n {
         for j in matrix.indptr[i]..matrix.indptr[i + 1] {
             let col = matrix.indices[j];
@@ -125,6 +204,7 @@ where
 /// assert_eq!(y[1], 14.0);
 /// assert_eq!(y[2], 9.0);
 /// ```
+#[allow(dead_code)]
 pub fn sym_coo_matvec<T>(matrix: &SymCooMatrix<T>, x: &ArrayView1<T>) -> SparseResult<Array1<T>>
 where
     T: Float + Debug + Copy + Add<Output = T>,
@@ -176,6 +256,7 @@ where
 /// This operation preserves symmetry but may change the sparsity pattern of the matrix.
 /// Currently only implemented for dense updates (all elements of x*x^T are considered).
 /// For sparse updates, additional optimizations would be possible.
+#[allow(dead_code)]
 pub fn sym_csr_rank1_update<T>(
     matrix: &mut SymCsrMatrix<T>,
     x: &ArrayView1<T>,
@@ -268,9 +349,10 @@ where
 /// // Verify: [1,2,3] * [2,1,0; 1,2,3; 0,3,1] * [1;2;3] = [1,2,3] * [4,14,9] = 4 + 28 + 27 = 59
 /// assert_eq!(result, 59.0);
 /// ```
+#[allow(dead_code)]
 pub fn sym_csr_quadratic_form<T>(matrix: &SymCsrMatrix<T>, x: &ArrayView1<T>) -> SparseResult<T>
 where
-    T: Float + Debug + Copy + Add<Output = T> + Mul<Output = T>,
+    T: Float + Debug + Copy + Add<Output = T> + Mul<Output = T> + Send + Sync,
 {
     // First compute A * x
     let ax = sym_csr_matvec(matrix, x)?;
@@ -314,6 +396,7 @@ where
 /// // Verify: 2 + 2 + 1 = 5
 /// assert_eq!(trace, 5.0);
 /// ```
+#[allow(dead_code)]
 pub fn sym_csr_trace<T>(matrix: &SymCsrMatrix<T>) -> T
 where
     T: Float + Debug + Copy + Add<Output = T>,

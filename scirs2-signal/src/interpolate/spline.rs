@@ -1,14 +1,16 @@
-//! Spline-based interpolation methods for signal processing
-//!
-//! This module provides cubic spline and cubic Hermite spline (PCHIP) interpolation
-//! algorithms for filling missing values in signals with smooth curves.
+// Spline-based interpolation methods for signal processing
+//
+// This module provides cubic spline and cubic Hermite spline (PCHIP) interpolation
+// algorithms for filling missing values in signals with smooth curves.
 
 use super::basic::linear_interpolate;
-use super::core::{enforce_monotonicity, smooth_signal, InterpolationConfig};
+use super::core::{enforce_monotonicity, smooth_signal};
 use crate::error::{SignalError, SignalResult};
+use crate::interpolate::core::InterpolationConfig;
 use ndarray::{Array1, Array2};
 use scirs2_linalg::solve;
 
+#[allow(unused_imports)]
 /// Applies cubic spline interpolation to fill missing values in a signal
 ///
 /// Cubic spline interpolation creates smooth curves using piecewise cubic polynomials
@@ -35,6 +37,7 @@ use scirs2_linalg::solve;
 /// let result = cubic_spline_interpolate(&signal, &config).unwrap();
 /// // Result will contain smoothly interpolated values
 /// ```
+#[allow(dead_code)]
 pub fn cubic_spline_interpolate(
     signal: &Array1<f64>,
     config: &InterpolationConfig,
@@ -110,7 +113,7 @@ pub fn cubic_spline_interpolate(
     let second_derivatives = match solve(&matrix.view(), &rhs.view(), None) {
         Ok(solution) => solution,
         Err(_) => {
-            return Err(SignalError::Compute(
+            return Err(SignalError::ComputationError(
                 "Failed to solve spline equation system".to_string(),
             ));
         }
@@ -211,6 +214,7 @@ pub fn cubic_spline_interpolate(
 /// let result = cubic_hermite_interpolate(&signal, &config).unwrap();
 /// // Result will preserve monotonicity and avoid overshooting
 /// ```
+#[allow(dead_code)]
 pub fn cubic_hermite_interpolate(
     signal: &Array1<f64>,
     config: &InterpolationConfig,
@@ -360,9 +364,6 @@ pub fn cubic_hermite_interpolate(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::interpolate::core::InterpolationConfig;
-    use ndarray::Array1;
-
     #[test]
     fn test_cubic_spline_interpolate_no_missing() {
         let signal = Array1::from_vec(vec![1.0, 2.0, 3.0, 4.0, 5.0]);

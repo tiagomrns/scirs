@@ -37,11 +37,77 @@ pub mod traversal;
 
 // Re-export all public items for convenience
 pub use coloring::*;
+// Modern community detection APIs - stable for 1.0
 pub use community::{
-    fluid_communities, greedy_modularity_optimization, hierarchical_communities,
-    infomap_communities, label_propagation, louvain_communities, modularity,
-    modularity_optimization, CommunityStructure, InfomapResult,
+    // Standardized community detection algorithms - stable for 1.0
+    fluid_communities_result,
+    greedy_modularity_optimization_result,
+    hierarchical_communities_result,
+    infomap_communities,
+    label_propagation_result,
+    louvain_communities_result,
+    modularity,
+    modularity_optimization_result,
+    // Standardized result types - stable for 1.0
+    CommunityResult,
+    CommunityStructure,
+    InfomapResult,
 };
+
+#[cfg(feature = "parallel")]
+pub use community::{
+    parallel_label_propagation_result, parallel_louvain_communities_result, parallel_modularity,
+};
+
+// Legacy community detection APIs - deprecated
+#[deprecated(
+    since = "0.1.0-beta.2",
+    note = "Use `louvain_communities_result` instead"
+)]
+#[allow(deprecated)]
+pub use community::louvain_communities;
+
+#[deprecated(
+    since = "0.1.0-beta.2",
+    note = "Use `label_propagation_result` instead"
+)]
+#[allow(deprecated)]
+pub use community::label_propagation;
+
+#[deprecated(
+    since = "0.1.0-beta.2",
+    note = "Use `fluid_communities_result` instead"
+)]
+#[allow(deprecated)]
+pub use community::fluid_communities;
+
+#[deprecated(
+    since = "0.1.0-beta.2",
+    note = "Use `hierarchical_communities_result` instead"
+)]
+#[allow(deprecated)]
+pub use community::hierarchical_communities;
+
+#[deprecated(
+    since = "0.1.0-beta.2",
+    note = "Use `modularity_optimization_result` instead"
+)]
+#[allow(deprecated)]
+pub use community::modularity_optimization;
+
+#[deprecated(
+    since = "0.1.0-beta.2",
+    note = "Use `greedy_modularity_optimization_result` instead"
+)]
+#[allow(deprecated)]
+pub use community::greedy_modularity_optimization;
+
+#[deprecated(
+    since = "0.1.0-beta.2",
+    note = "Use `parallel_louvain_communities_result` instead"
+)]
+#[allow(deprecated)]
+pub use community::parallel_louvain_communities;
 pub use connectivity::*;
 pub use decomposition::*;
 pub use flow::{dinic_max_flow, minimum_cut, push_relabel_max_flow};
@@ -72,11 +138,12 @@ use std::collections::{HashMap, VecDeque};
 ///
 /// Returns a vector of edges that form the minimum spanning tree.
 /// Only works on undirected graphs.
+#[allow(dead_code)]
 pub fn minimum_spanning_tree<N, E, Ix>(
     graph: &Graph<N, E, Ix>,
 ) -> Result<Vec<crate::base::Edge<N, E>>>
 where
-    N: Node,
+    N: Node + std::fmt::Debug,
     E: EdgeWeight + Into<f64> + std::cmp::PartialOrd,
     Ix: petgraph::graph::IndexType,
 {
@@ -155,9 +222,10 @@ where
 ///
 /// Returns nodes in topological order if the graph is a DAG,
 /// otherwise returns an error indicating a cycle was found.
+#[allow(dead_code)]
 pub fn topological_sort<N, E, Ix>(graph: &DiGraph<N, E, Ix>) -> Result<Vec<N>>
 where
-    N: Node,
+    N: Node + std::fmt::Debug,
     E: EdgeWeight,
     Ix: IndexType,
 {
@@ -170,13 +238,17 @@ where
                 .collect();
             Ok(sorted_nodes)
         }
-        Err(_) => Err(GraphError::CycleDetected),
+        Err(_) => Err(GraphError::CycleDetected {
+            start_node: "unknown".to_string(),
+            cycle_length: 0,
+        }),
     }
 }
 
 /// PageRank algorithm for computing node importance
 ///
 /// Returns a map from nodes to their PageRank scores.
+#[allow(dead_code)]
 pub fn pagerank<N, E, Ix>(
     graph: &DiGraph<N, E, Ix>,
     damping_factor: f64,
@@ -184,7 +256,7 @@ pub fn pagerank<N, E, Ix>(
     max_iterations: usize,
 ) -> HashMap<N, f64>
 where
-    N: Node,
+    N: Node + std::fmt::Debug,
     E: EdgeWeight,
     Ix: IndexType,
 {
@@ -259,12 +331,13 @@ where
 /// Betweenness centrality for nodes
 ///
 /// Measures the extent to which a node lies on paths between other nodes.
+#[allow(dead_code)]
 pub fn betweenness_centrality<N, E, Ix>(
     graph: &Graph<N, E, Ix>,
     normalized: bool,
 ) -> HashMap<N, f64>
 where
-    N: Node,
+    N: Node + std::fmt::Debug,
     E: EdgeWeight,
     Ix: IndexType,
 {
@@ -341,6 +414,7 @@ where
 /// Closeness centrality for nodes
 ///
 /// Measures how close a node is to all other nodes in the graph.
+#[allow(dead_code)]
 pub fn closeness_centrality<N, E, Ix>(graph: &Graph<N, E, Ix>, normalized: bool) -> HashMap<N, f64>
 where
     N: Node + std::fmt::Debug,
@@ -370,7 +444,7 @@ where
         // Calculate shortest paths to all other nodes
         for other in &nodes {
             if node != other {
-                if let Ok(Some(path)) = shortest_path(graph, node, other) {
+                if let Ok(Some(path)) = dijkstra_path(graph, node, other) {
                     let distance: f64 = path.total_weight.into();
                     total_distance += distance;
                     reachable_count += 1;
@@ -397,13 +471,14 @@ where
 /// Eigenvector centrality
 ///
 /// Computes the eigenvector centrality of nodes using power iteration.
+#[allow(dead_code)]
 pub fn eigenvector_centrality<N, E, Ix>(
     graph: &Graph<N, E, Ix>,
     max_iter: usize,
     tolerance: f64,
 ) -> Result<HashMap<N, f64>>
 where
-    N: Node,
+    N: Node + std::fmt::Debug,
     E: EdgeWeight + Into<f64>,
     Ix: IndexType,
 {

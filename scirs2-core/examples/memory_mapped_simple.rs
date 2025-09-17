@@ -11,12 +11,14 @@ use scirs2_core::memory_efficient::{create_mmap, AccessMode, MemoryMappedChunks}
 use tempfile::tempdir;
 
 #[cfg(not(feature = "memory_efficient"))]
+#[allow(dead_code)]
 fn main() {
     println!("This example requires the memory_efficient feature.");
     println!("Run with: cargo run --example memory_mapped_simple --features memory_efficient");
 }
 
 #[cfg(feature = "memory_efficient")]
+#[allow(dead_code)]
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("Memory-Mapped Array Simple Example");
     println!("=================================");

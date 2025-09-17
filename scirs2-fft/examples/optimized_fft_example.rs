@@ -1,6 +1,7 @@
 // The optimized_fft module is currently gated behind a feature flag
 // This example is temporarily disabled until the module is available
 
+#[allow(dead_code)]
 fn main() {
     println!("Optimized FFT Example");
     println!("--------------------");

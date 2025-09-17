@@ -7,6 +7,7 @@
 use ndarray::arr1;
 use scirs2_integrate::ode::chemical_equilibrium::{systems, ActivityModel, ThermoData};
 
+#[allow(dead_code)]
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("Chemical Equilibrium Calculation Demo\n");
 
@@ -56,6 +57,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 }
 
 /// Demonstrate weak acid equilibrium calculation
+#[allow(dead_code)]
 fn demonstrate_weak_acid_equilibrium() -> Result<(), Box<dyn std::error::Error>> {
     println!("   Calculating equilibrium for acetic acid (CH₃COOH)");
 
@@ -68,8 +70,8 @@ fn demonstrate_weak_acid_equilibrium() -> Result<(), Box<dyn std::error::Error>>
     let initial_conc = arr1(&[initial_acid, 1e-7, 0.0]);
 
     println!("   Initial conditions:");
-    println!("   [CH₃COOH]₀ = {:.3} M", initial_acid);
-    println!("   Ka = {:.2e}", ka);
+    println!("   [CH₃COOH]₀ = {initial_acid:.3} M");
+    println!("   Ka = {ka:.2e}");
 
     let result = calculator.calculate_equilibrium(initial_conc, None)?;
 
@@ -82,24 +84,21 @@ fn demonstrate_weak_acid_equilibrium() -> Result<(), Box<dyn std::error::Error>>
 
         println!();
         println!("   Equilibrium results:");
-        println!("   [CH₃COOH] = {:.6} M", acid_remaining);
-        println!("   [H⁺] = {:.6e} M", h_plus);
-        println!("   [CH₃COO⁻] = {:.6} M", acetate);
-        println!("   pH = {:.2}", ph);
-        println!("   Degree of dissociation = {:.2}%", degree_dissociation);
+        println!("   [CH₃COOH] = {acid_remaining:.6} M");
+        println!("   [H⁺] = {h_plus:.6e} M");
+        println!("   [CH₃COO⁻] = {acetate:.6} M");
+        println!("   pH = {ph:.2}");
+        println!("   Degree of dissociation = {degree_dissociation:.2}%");
         println!("   Iterations: {}", result.iterations);
 
         // Verify Ka calculation
         let ka_calculated = (h_plus * acetate) / acid_remaining;
-        println!(
-            "   Ka (calculated) = {:.2e} (should be {:.2e})",
-            ka_calculated, ka
-        );
+        println!("   Ka (calculated) = {ka_calculated:.2e} (should be {ka:.2e})");
 
         // Compare with analytical approximation for weak acid
         let h_analytical = (ka * initial_acid).sqrt();
         let ph_analytical = -h_analytical.log10();
-        println!("   pH (analytical approx.) = {:.2}", ph_analytical);
+        println!("   pH (analytical approx.) = {ph_analytical:.2}");
     } else {
         println!("   Equilibrium calculation did not converge!");
     }
@@ -108,6 +107,7 @@ fn demonstrate_weak_acid_equilibrium() -> Result<(), Box<dyn std::error::Error>>
 }
 
 /// Demonstrate buffer equilibrium
+#[allow(dead_code)]
 fn demonstrate_buffer_equilibrium() -> Result<(), Box<dyn std::error::Error>> {
     println!("   Acetate buffer system analysis");
 
@@ -121,9 +121,9 @@ fn demonstrate_buffer_equilibrium() -> Result<(), Box<dyn std::error::Error>> {
     let initial_conc = arr1(&[acid_conc, 1e-7, base_conc, 1e-7, 55.5]);
 
     println!("   Buffer composition:");
-    println!("   [CH₃COOH] = {:.1} M", acid_conc);
-    println!("   [CH₃COO⁻] = {:.1} M", base_conc);
-    println!("   Ka = {:.2e}", ka);
+    println!("   [CH₃COOH] = {acid_conc:.1} M");
+    println!("   [CH₃COO⁻] = {base_conc:.1} M");
+    println!("   Ka = {ka:.2e}");
 
     let result = calculator.calculate_equilibrium(initial_conc, None)?;
 
@@ -134,18 +134,18 @@ fn demonstrate_buffer_equilibrium() -> Result<(), Box<dyn std::error::Error>> {
 
         println!();
         println!("   Buffer equilibrium results:");
-        println!("   [H⁺] = {:.2e} M", h_plus);
-        println!("   pH = {:.2}", ph);
-        println!("   pKa = {:.2}", pka);
+        println!("   [H⁺] = {h_plus:.2e} M");
+        println!("   pH = {ph:.2}");
+        println!("   pKa = {pka:.2}");
 
         // Henderson-Hasselbalch equation verification
         let ph_hh = pka + (base_conc / acid_conc).log10();
-        println!("   pH (Henderson-Hasselbalch) = {:.2}", ph_hh);
+        println!("   pH (Henderson-Hasselbalch) = {ph_hh:.2}");
 
         // Buffer capacity calculation
         let buffer_capacity =
             2.303 * ka * h_plus * (acid_conc + base_conc) / (ka + h_plus).powf(2.0);
-        println!("   Buffer capacity = {:.4} mol/(L·pH)", buffer_capacity);
+        println!("   Buffer capacity = {buffer_capacity:.4} mol/(L·pH)");
     } else {
         println!("   Buffer equilibrium calculation did not converge!");
     }
@@ -175,8 +175,7 @@ fn demonstrate_buffer_equilibrium() -> Result<(), Box<dyn std::error::Error>> {
                     let delta_ph = new_ph - original_ph;
 
                     println!(
-                        "   {:8.1}  | {:7.2}   | {:6.2}   | {:6.2} |",
-                        hcl_added, original_ph, new_ph, delta_ph
+                        "   {hcl_added:8.1}  | {original_ph:7.2}   | {new_ph:6.2}   | {delta_ph:6.2} |"
                     );
                 }
             }
@@ -193,6 +192,7 @@ fn demonstrate_buffer_equilibrium() -> Result<(), Box<dyn std::error::Error>> {
 }
 
 /// Demonstrate complex formation equilibrium
+#[allow(dead_code)]
 fn demonstrate_complex_formation() -> Result<(), Box<dyn std::error::Error>> {
     println!("   Metal-ligand complex formation: Cu²⁺ + 4NH₃ ⇌ [Cu(NH₃)₄]²⁺");
 
@@ -208,7 +208,7 @@ fn demonstrate_complex_formation() -> Result<(), Box<dyn std::error::Error>> {
     println!("   Initial conditions:");
     println!("   [Cu²⁺]₀ = {:.1} mM", initial_cu * 1000.0);
     println!("   [NH₃]₀ = {:.1} mM", initial_nh3 * 1000.0);
-    println!("   K_formation = {:.2e}", k_formation);
+    println!("   K_formation = {k_formation:.2e}");
 
     let result = calculator.calculate_equilibrium(initial_conc, None)?;
 
@@ -220,7 +220,7 @@ fn demonstrate_complex_formation() -> Result<(), Box<dyn std::error::Error>> {
         println!();
         println!("   Equilibrium results:");
         println!("   [Cu²⁺] = {:.3e} M ({:.1} μM)", cu_free, cu_free * 1e6);
-        println!("   [NH₃] = {:.4} M", nh3_free);
+        println!("   [NH₃] = {nh3_free:.4} M");
         println!(
             "   [Cu(NH₃)ₙ²⁺] = {:.3e} M ({:.1} μM)",
             complex,
@@ -228,15 +228,15 @@ fn demonstrate_complex_formation() -> Result<(), Box<dyn std::error::Error>> {
         );
 
         let fraction_complexed = complex / initial_cu * 100.0;
-        println!("   Fraction of Cu complexed = {:.1}%", fraction_complexed);
+        println!("   Fraction of Cu complexed = {fraction_complexed:.1}%");
 
         // Verify formation constant
         let k_calc = complex / (cu_free * nh3_free);
-        println!("   K_formation (calculated) = {:.2e}", k_calc);
+        println!("   K_formation (calculated) = {k_calc:.2e}");
 
         // Calculate α coefficient (fraction of free Cu)
         let alpha = cu_free / initial_cu;
-        println!("   α₀ (fraction free Cu) = {:.4}", alpha);
+        println!("   α₀ (fraction free Cu) = {alpha:.4}");
     } else {
         println!("   Complex formation calculation did not converge!");
     }
@@ -260,8 +260,7 @@ fn demonstrate_complex_formation() -> Result<(), Box<dyn std::error::Error>> {
                 let percent_complexed = (complex / (initial_cu * 1e6)) * 100.0;
 
                 println!(
-                    "   {:8.3}  | {:9.1}   | {:12.1}  | {:9.1}   |",
-                    nh3_conc, cu_free, complex, percent_complexed
+                    "   {nh3_conc:8.3}  | {cu_free:9.1}   | {complex:12.1}  | {percent_complexed:9.1}   |"
                 );
             }
         }
@@ -271,6 +270,7 @@ fn demonstrate_complex_formation() -> Result<(), Box<dyn std::error::Error>> {
 }
 
 /// Demonstrate solubility equilibrium
+#[allow(dead_code)]
 fn demonstrate_solubility_equilibrium() -> Result<(), Box<dyn std::error::Error>> {
     println!("   Solubility equilibrium: AgCl(s) ⇌ Ag⁺ + Cl⁻");
 
@@ -281,7 +281,7 @@ fn demonstrate_solubility_equilibrium() -> Result<(), Box<dyn std::error::Error>
     let initial_conc = arr1(&[1.0, 0.0, 0.0]); // AgCl(s), Ag+, Cl-
 
     println!("   AgCl solubility in pure water");
-    println!("   Ksp = {:.2e}", ksp);
+    println!("   Ksp = {ksp:.2e}");
 
     let result = calculator.calculate_equilibrium(initial_conc, None)?;
 
@@ -292,8 +292,8 @@ fn demonstrate_solubility_equilibrium() -> Result<(), Box<dyn std::error::Error>
 
         println!();
         println!("   Equilibrium results:");
-        println!("   [Ag⁺] = {:.3e} M", ag_conc);
-        println!("   [Cl⁻] = {:.3e} M", cl_conc);
+        println!("   [Ag⁺] = {ag_conc:.3e} M");
+        println!("   [Cl⁻] = {cl_conc:.3e} M");
         println!(
             "   Solubility = {:.3e} M ({:.2} mg/L)",
             solubility,
@@ -301,14 +301,11 @@ fn demonstrate_solubility_equilibrium() -> Result<(), Box<dyn std::error::Error>
         );
 
         let ksp_calc = ag_conc * cl_conc;
-        println!("   Ksp (calculated) = {:.2e}", ksp_calc);
+        println!("   Ksp (calculated) = {ksp_calc:.2e}");
 
         // Compare with analytical result
         let solubility_analytical = ksp.sqrt();
-        println!(
-            "   Solubility (analytical) = {:.3e} M",
-            solubility_analytical
-        );
+        println!("   Solubility (analytical) = {solubility_analytical:.3e} M");
     } else {
         println!("   Solubility calculation did not converge!");
     }
@@ -333,8 +330,7 @@ fn demonstrate_solubility_equilibrium() -> Result<(), Box<dyn std::error::Error>
                 let reduction_factor = pure_water_solubility / ag_with_nacl;
 
                 println!(
-                    "   {:9.3}  | {:9.3e}   | {:8.3e}   | {:14.1}   |",
-                    nacl_conc, ag_with_nacl, ag_with_nacl, reduction_factor
+                    "   {nacl_conc:9.3}  | {ag_with_nacl:9.3e}   | {ag_with_nacl:8.3e}   | {reduction_factor:14.1}   |"
                 );
             }
         }
@@ -344,6 +340,7 @@ fn demonstrate_solubility_equilibrium() -> Result<(), Box<dyn std::error::Error>
 }
 
 /// Demonstrate amino acid equilibrium (multiple equilibria)
+#[allow(dead_code)]
 fn demonstrate_amino_acid_equilibrium() -> Result<(), Box<dyn std::error::Error>> {
     println!("   Amino acid equilibrium: glycine (NH₃⁺-CH₂-COO⁻)");
 
@@ -357,7 +354,7 @@ fn demonstrate_amino_acid_equilibrium() -> Result<(), Box<dyn std::error::Error>
     let initial_conc_array = arr1(&[initial_conc, 1e-7, 0.0, 0.0]);
 
     println!("   Glycine in water:");
-    println!("   Initial concentration = {:.1} M", initial_conc);
+    println!("   Initial concentration = {initial_conc:.1} M");
     println!("   pKa1 (COOH) = {:.2}", -ka1.log10());
     println!("   pKa2 (NH3+) = {:.2}", -ka2.log10());
 
@@ -373,11 +370,11 @@ fn demonstrate_amino_acid_equilibrium() -> Result<(), Box<dyn std::error::Error>
 
         println!();
         println!("   Equilibrium results:");
-        println!("   [H₃N⁺-CH₂-COOH] = {:.4e} M", h2a);
-        println!("   [H₃N⁺-CH₂-COO⁻] = {:.4e} M (zwitterion)", ha_minus);
-        println!("   [H₂N-CH₂-COO⁻] = {:.4e} M", a2_minus);
-        println!("   [H⁺] = {:.2e} M", h_plus);
-        println!("   pH = {:.2}", ph);
+        println!("   [H₃N⁺-CH₂-COOH] = {h2a:.4e} M");
+        println!("   [H₃N⁺-CH₂-COO⁻] = {ha_minus:.4e} M (zwitterion)");
+        println!("   [H₂N-CH₂-COO⁻] = {a2_minus:.4e} M");
+        println!("   [H⁺] = {h_plus:.2e} M");
+        println!("   pH = {ph:.2}");
 
         // Calculate species fractions
         let total = h2a + ha_minus + a2_minus;
@@ -396,7 +393,7 @@ fn demonstrate_amino_acid_equilibrium() -> Result<(), Box<dyn std::error::Error>
 
         // Isoelectric point (where zwitterion is maximum)
         let isoelectric_ph = 0.5 * (-ka1.log10() + -ka2.log10());
-        println!("   Isoelectric point (pI) = {:.2}", isoelectric_ph);
+        println!("   Isoelectric point (pI) = {isoelectric_ph:.2}");
     } else {
         println!("   Amino acid equilibrium calculation did not converge!");
     }
@@ -440,6 +437,7 @@ fn demonstrate_amino_acid_equilibrium() -> Result<(), Box<dyn std::error::Error>
 }
 
 /// Demonstrate activity coefficient effects
+#[allow(dead_code)]
 fn demonstrate_activity_coefficients() -> Result<(), Box<dyn std::error::Error>> {
     println!("   Activity coefficient effects in ionic solutions");
 
@@ -514,8 +512,7 @@ fn demonstrate_activity_coefficients() -> Result<(), Box<dyn std::error::Error>>
         let ph_real = -h_real.log10();
 
         println!(
-            "   {:5.3} | {:5.3} | {:10.2e}   | {:10.2e}   | {:8.2}   | {:7.2}   |",
-            ionic_strength, gamma, h_ideal, h_real, ph_ideal, ph_real
+            "   {ionic_strength:5.3} | {gamma:5.3} | {h_ideal:10.2e}   | {h_real:10.2e}   | {ph_ideal:8.2}   | {ph_real:7.2}   |"
         );
     }
 
@@ -523,6 +520,7 @@ fn demonstrate_activity_coefficients() -> Result<(), Box<dyn std::error::Error>>
 }
 
 /// Demonstrate temperature effects on equilibrium
+#[allow(dead_code)]
 fn demonstrate_temperature_effects() -> Result<(), Box<dyn std::error::Error>> {
     println!("   Temperature effects on chemical equilibrium");
 
@@ -579,8 +577,7 @@ fn demonstrate_temperature_effects() -> Result<(), Box<dyn std::error::Error>> {
                 let delta_g = result.delta_g;
 
                 println!(
-                    "   {:4.0}   | {:5.1}   | {:7.2e}   | {:5.2} | {:5.1} | {:9.1}   |",
-                    temp_c, temp_k, ka_eff, ph, alpha, delta_g
+                    "   {temp_c:4.0}   | {temp_k:5.1}   | {ka_eff:7.2e}   | {ph:5.2} | {alpha:5.1} | {delta_g:9.1}   |"
                 );
             }
         }
@@ -595,13 +592,14 @@ fn demonstrate_temperature_effects() -> Result<(), Box<dyn std::error::Error>> {
     let delta_h_diss = 1.0; // kJ/mol (enthalpy of dissociation)
     let delta_s_diss = 10.0; // J/(mol·K) (entropy of dissociation)
 
-    println!("   Estimated ΔH° = {:.1} kJ/mol", delta_h_diss);
-    println!("   Estimated ΔS° = {:.1} J/(mol·K)", delta_s_diss);
+    println!("   Estimated ΔH° = {delta_h_diss:.1} kJ/mol");
+    println!("   Estimated ΔS° = {delta_s_diss:.1} J/(mol·K)");
 
     Ok(())
 }
 
 /// Demonstrate pH titration simulation
+#[allow(dead_code)]
 fn demonstrate_titration_curve() -> Result<(), Box<dyn std::error::Error>> {
     println!("   Simulating titration of acetic acid with NaOH");
 
@@ -611,8 +609,7 @@ fn demonstrate_titration_curve() -> Result<(), Box<dyn std::error::Error>> {
     let naoh_conc = 0.1; // 0.1 M NaOH
 
     println!(
-        "   Titrating {:.1} mL of {:.2} M CH₃COOH with {:.2} M NaOH",
-        volume_acid, initial_acid, naoh_conc
+        "   Titrating {volume_acid:.1} mL of {initial_acid:.2} M CH₃COOH with {naoh_conc:.2} M NaOH"
     );
 
     println!();
@@ -669,8 +666,7 @@ fn demonstrate_titration_curve() -> Result<(), Box<dyn std::error::Error>> {
         };
 
         println!(
-            "   {:8.1}  | {:7.1}   | {:5.3}   | {:5.3}   | {:5.2} | {}",
-            v_naoh, total_volume, final_acid, final_base, ph, region
+            "   {v_naoh:8.1}  | {total_volume:7.1}   | {final_acid:5.3}   | {final_base:5.3}   | {ph:5.2} | {region}"
         );
     }
 
@@ -681,11 +677,8 @@ fn demonstrate_titration_curve() -> Result<(), Box<dyn std::error::Error>> {
 
     println!();
     println!("   Key points:");
-    println!(
-        "   Half-equivalence point: {:.1} mL, pH = {:.2} (= pKa)",
-        half_equivalence, ph_half_eq
-    );
-    println!("   Equivalence point: {:.1} mL", equivalence_volume);
+    println!("   Half-equivalence point: {half_equivalence:.1} mL, pH = {ph_half_eq:.2} (= pKa)");
+    println!("   Equivalence point: {equivalence_volume:.1} mL");
 
     Ok(())
 }

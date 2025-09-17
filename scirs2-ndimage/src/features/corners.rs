@@ -39,6 +39,7 @@ use num_traits::{Float, NumAssign};
 ///
 /// let corners = harris_corners(&image, 3, 0.04, 0.01);
 /// ```
+#[allow(dead_code)]
 pub fn harris_corners(
     image: &Array<f32, Ix2>,
     block_size: usize,
@@ -67,7 +68,7 @@ pub fn harris_corners(
     }
 
     // Step 3: Gaussian filtering to smooth the derivatives
-    let sigma = 0.5 * (block_size as f32 - 1.0) / 3.0; // scale sigmas based on block size
+    let sigma = 0.5 * (block_size as f32 - 1.0) / 3.0; // scale sigmas based on block _size
                                                        // Use specialized f32 version that doesn't require Send/Sync bounds
     ix2 =
         crate::filters::gaussian_filter_f32(&ix2, sigma, Some(BorderMode::Reflect), None).unwrap();
@@ -170,6 +171,7 @@ pub fn harris_corners(
 ///
 /// let corners = fast_corners(&image, 0.3, 9);
 /// ```
+#[allow(dead_code)]
 pub fn fast_corners<T>(image: &Array<T, Ix2>, threshold: T, n: usize) -> Array<bool, Ix2>
 where
     T: Float + NumAssign + num_traits::FromPrimitive,

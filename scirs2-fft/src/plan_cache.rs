@@ -167,12 +167,12 @@ impl PlanCache {
 
         // If still over capacity, remove least recently used
         while cache.len() >= self.max_entries {
-            if let Some((key_to_remove, _)) = cache
+            if let Some((key_to_remove_, _)) = cache
                 .iter()
                 .min_by_key(|(_, v)| (v.last_used, v.usage_count))
                 .map(|(k, v)| (k.clone(), v.clone()))
             {
-                cache.remove(&key_to_remove);
+                cache.remove(&key_to_remove_);
             } else {
                 break;
             }
@@ -223,11 +223,13 @@ impl std::fmt::Display for CacheStats {
 static GLOBAL_PLAN_CACHE: std::sync::OnceLock<PlanCache> = std::sync::OnceLock::new();
 
 /// Get the global plan cache instance
+#[allow(dead_code)]
 pub fn get_global_cache() -> &'static PlanCache {
     GLOBAL_PLAN_CACHE.get_or_init(PlanCache::new)
 }
 
 /// Initialize the global plan cache with custom settings
+#[allow(dead_code)]
 pub fn init_global_cache(max_entries: usize, max_age: Duration) -> Result<(), &'static str> {
     GLOBAL_PLAN_CACHE
         .set(PlanCache::with_config(max_entries, max_age))

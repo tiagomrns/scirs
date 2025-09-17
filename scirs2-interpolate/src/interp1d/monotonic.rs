@@ -64,7 +64,9 @@ impl<F: Float> MonotonicInterpolator<F> {
     }
 }
 
-impl<F: Float + FromPrimitive + Debug> MonotonicInterpolator<F> {
+impl<F: Float + FromPrimitive + Debug + crate::traits::InterpolationFloat>
+    MonotonicInterpolator<F>
+{
     /// Create a new monotonic interpolator
     ///
     /// # Arguments
@@ -93,21 +95,23 @@ impl<F: Float + FromPrimitive + Debug> MonotonicInterpolator<F> {
     ) -> InterpolateResult<Self> {
         // Check inputs
         if x.len() != y.len() {
-            return Err(InterpolateError::ValueError(
+            return Err(InterpolateError::invalid_input(
                 "x and y arrays must have the same length".to_string(),
             ));
         }
 
         if x.len() < 2 {
-            return Err(InterpolateError::ValueError(
-                "at least 2 points are required for interpolation".to_string(),
+            return Err(InterpolateError::insufficient_points(
+                2,
+                x.len(),
+                "monotonic interpolation",
             ));
         }
 
         // Check that x is sorted
         for i in 1..x.len() {
             if x[i] <= x[i - 1] {
-                return Err(InterpolateError::ValueError(
+                return Err(InterpolateError::invalid_input(
                     "x values must be sorted in ascending order".to_string(),
                 ));
             }
@@ -140,29 +144,29 @@ impl<F: Float + FromPrimitive + Debug> MonotonicInterpolator<F> {
     ///
     /// # Arguments
     ///
-    /// * `x_new` - The x coordinate at which to evaluate the interpolation
+    /// * `xnew` - The x coordinate at which to evaluate the interpolation
     ///
     /// # Returns
     ///
-    /// The interpolated y value at `x_new`
+    /// The interpolated y value at `xnew`
     ///
     /// # Errors
     ///
-    /// Returns an error if `x_new` is outside the interpolation range and
+    /// Returns an error if `xnew` is outside the interpolation range and
     /// extrapolation is disabled.
-    pub fn evaluate(&self, x_new: F) -> InterpolateResult<F> {
+    pub fn evaluate(&self, xnew: F) -> InterpolateResult<F> {
         // Check if we're extrapolating
-        let is_extrapolating = x_new < self.x[0] || x_new > self.x[self.x.len() - 1];
+        let is_extrapolating = xnew < self.x[0] || xnew > self.x[self.x.len() - 1];
         if is_extrapolating && !self.extrapolate {
-            return Err(InterpolateError::DomainError(
-                "x_new is outside the interpolation range".to_string(),
+            return Err(InterpolateError::OutOfBounds(
+                "xnew is outside the interpolation range".to_string(),
             ));
         }
 
-        // Find index of segment containing x_new
+        // Find index of segment containing xnew
         let mut idx = 0;
         for i in 0..self.x.len() - 1 {
-            if x_new >= self.x[i] && x_new <= self.x[i + 1] {
+            if xnew >= self.x[i] && xnew <= self.x[i + 1] {
                 idx = i;
                 break;
             }
@@ -170,7 +174,7 @@ impl<F: Float + FromPrimitive + Debug> MonotonicInterpolator<F> {
 
         // Handle extrapolation case
         if is_extrapolating {
-            if x_new < self.x[0] {
+            if xnew < self.x[0] {
                 // Extrapolate below the data range using the first segment
                 idx = 0;
             } else {
@@ -179,9 +183,9 @@ impl<F: Float + FromPrimitive + Debug> MonotonicInterpolator<F> {
             }
         }
 
-        // Special case: x_new is exactly at a knot point
+        // Special case: xnew is exactly at a knot point
         for i in 0..self.x.len() {
-            if x_new == self.x[i] {
+            if xnew == self.x[i] {
                 return Ok(self.y[i]);
             }
         }
@@ -196,7 +200,7 @@ impl<F: Float + FromPrimitive + Debug> MonotonicInterpolator<F> {
 
         // Normalized position within the interval [x1, x2]
         let h = x2 - x1;
-        let t = (x_new - x1) / h;
+        let t = (xnew - x1) / h;
 
         // Compute Hermite basis functions
         let h00 = Self::h00(t);
@@ -214,19 +218,19 @@ impl<F: Float + FromPrimitive + Debug> MonotonicInterpolator<F> {
     ///
     /// # Arguments
     ///
-    /// * `x_new` - The x coordinates at which to evaluate the interpolation
+    /// * `xnew` - The x coordinates at which to evaluate the interpolation
     ///
     /// # Returns
     ///
-    /// The interpolated y values at `x_new`
+    /// The interpolated y values at `xnew`
     ///
     /// # Errors
     ///
-    /// Returns an error if any point in `x_new` is outside the interpolation range
+    /// Returns an error if any point in `xnew` is outside the interpolation range
     /// and extrapolation is disabled.
-    pub fn evaluate_array(&self, x_new: &ArrayView1<F>) -> InterpolateResult<Array1<F>> {
-        let mut result = Array1::zeros(x_new.len());
-        for (i, &x) in x_new.iter().enumerate() {
+    pub fn evaluate_array(&self, xnew: &ArrayView1<F>) -> InterpolateResult<Array1<F>> {
+        let mut result = Array1::zeros(xnew.len());
+        for (i, &x) in xnew.iter().enumerate() {
             result[i] = self.evaluate(x)?;
         }
         Ok(result)
@@ -234,21 +238,21 @@ impl<F: Float + FromPrimitive + Debug> MonotonicInterpolator<F> {
 
     /// Hermite basis function h₀₀(t)
     fn h00(t: F) -> F {
-        let two = F::from_f64(2.0).unwrap();
-        let three = F::from_f64(3.0).unwrap();
+        let two = F::from_f64(2.0).unwrap_or_else(|| F::from(2).unwrap_or(F::zero()));
+        let three = F::from_f64(3.0).unwrap_or_else(|| F::from(3).unwrap_or(F::zero()));
         (two * t * t * t) - (three * t * t) + F::one()
     }
 
     /// Hermite basis function h₁₀(t)
     fn h10(t: F) -> F {
-        let two = F::from_f64(2.0).unwrap();
+        let two = F::from_f64(2.0).unwrap_or_else(|| F::from(2).unwrap_or(F::zero()));
         (t * t * t) - (two * t * t) + t
     }
 
     /// Hermite basis function h₀₁(t)
     fn h01(t: F) -> F {
-        let two = F::from_f64(2.0).unwrap();
-        let three = F::from_f64(3.0).unwrap();
+        let two = F::from_f64(2.0).unwrap_or_else(|| F::from(2).unwrap_or(F::zero()));
+        let three = F::from_f64(3.0).unwrap_or_else(|| F::from(3).unwrap_or(F::zero()));
         -(two * t * t * t) + (three * t * t)
     }
 
@@ -283,8 +287,16 @@ impl<F: Float + FromPrimitive + Debug> MonotonicInterpolator<F> {
         }
 
         // For interior points, use PCHIP formula
-        let two = F::from_f64(2.0).unwrap();
-        let three = F::from_f64(3.0).unwrap();
+        let two = F::from_f64(2.0).ok_or_else(|| {
+            InterpolateError::ComputationError(
+                "Failed to convert constant 2.0 to float type".to_string(),
+            )
+        })?;
+        let three = F::from_f64(3.0).ok_or_else(|| {
+            InterpolateError::ComputationError(
+                "Failed to convert constant 3.0 to float type".to_string(),
+            )
+        })?;
 
         for i in 1..n - 1 {
             // Determine if slopes have different signs or if either is zero
@@ -401,7 +413,11 @@ impl<F: Float + FromPrimitive + Debug> MonotonicInterpolator<F> {
         }
 
         // Apply Hyman filtering to ensure monotonicity
-        let three = F::from_f64(3.0).unwrap();
+        let three = F::from_f64(3.0).ok_or_else(|| {
+            InterpolateError::ComputationError(
+                "Failed to convert constant 3.0 to float type".to_string(),
+            )
+        })?;
 
         for i in 0..n {
             // For interior points, check adjacent slopes
@@ -497,8 +513,12 @@ impl<F: Float + FromPrimitive + Debug> MonotonicInterpolator<F> {
             // Only if the slopes have the same sign, use a weighted average approach
             if p1 * p2 > F::zero() {
                 // Bound the derivative to ensure monotonicity
-                derivatives[i] =
-                    F::min(a.abs(), min_slope * F::from_f64(2.0).unwrap()) * a.signum();
+                let two = F::from_f64(2.0).ok_or_else(|| {
+                    InterpolateError::ComputationError(
+                        "Failed to convert constant 2.0 to float type".to_string(),
+                    )
+                })?;
+                derivatives[i] = F::min(a.abs(), min_slope * two) * a.signum();
             }
         }
 
@@ -654,7 +674,7 @@ impl<F: Float + FromPrimitive + Debug> MonotonicInterpolator<F> {
 ///
 /// * `x` - The x coordinates (must be sorted in ascending order)
 /// * `y` - The y coordinates
-/// * `x_new` - The points at which to interpolate
+/// * `xnew` - The points at which to interpolate
 /// * `method` - The monotonic interpolation method to use
 /// * `extrapolate` - Whether to extrapolate beyond the data range
 ///
@@ -670,25 +690,28 @@ impl<F: Float + FromPrimitive + Debug> MonotonicInterpolator<F> {
 ///
 /// let x = array![0.0f64, 1.0, 2.0, 3.0];
 /// let y = array![0.0f64, 1.0, 4.0, 9.0];
-/// let x_new = array![0.5f64, 1.5, 2.5];
+/// let xnew = array![0.5f64, 1.5, 2.5];
 ///
 /// let y_interp = monotonic_interpolate(
 ///     &x.view(),
 ///     &y.view(),
-///     &x_new.view(),
+///     &xnew.view(),
 ///     MonotonicMethod::Steffen,
 ///     true
 /// ).unwrap();
 /// ```
-pub fn monotonic_interpolate<F: Float + FromPrimitive + Debug>(
+#[allow(dead_code)]
+pub fn monotonic_interpolate<
+    F: Float + FromPrimitive + Debug + crate::traits::InterpolationFloat,
+>(
     x: &ArrayView1<F>,
     y: &ArrayView1<F>,
-    x_new: &ArrayView1<F>,
+    xnew: &ArrayView1<F>,
     method: MonotonicMethod,
     extrapolate: bool,
 ) -> InterpolateResult<Array1<F>> {
     let interp = MonotonicInterpolator::new(x, y, method, extrapolate)?;
-    interp.evaluate_array(x_new)
+    interp.evaluate_array(xnew)
 }
 
 /// Convenience function for Hyman filtered cubic spline interpolation
@@ -697,7 +720,7 @@ pub fn monotonic_interpolate<F: Float + FromPrimitive + Debug>(
 ///
 /// * `x` - The x coordinates (must be sorted in ascending order)
 /// * `y` - The y coordinates
-/// * `x_new` - The points at which to interpolate
+/// * `xnew` - The points at which to interpolate
 /// * `extrapolate` - Whether to extrapolate beyond the data range
 ///
 /// # Returns
@@ -712,17 +735,18 @@ pub fn monotonic_interpolate<F: Float + FromPrimitive + Debug>(
 ///
 /// let x = array![0.0f64, 1.0, 2.0, 3.0];
 /// let y = array![0.0f64, 1.0, 4.0, 9.0];
-/// let x_new = array![0.5f64, 1.5, 2.5];
+/// let xnew = array![0.5f64, 1.5, 2.5];
 ///
-/// let y_interp = hyman_interpolate(&x.view(), &y.view(), &x_new.view(), true).unwrap();
+/// let y_interp = hyman_interpolate(&x.view(), &y.view(), &xnew.view(), true).unwrap();
 /// ```
-pub fn hyman_interpolate<F: Float + FromPrimitive + Debug>(
+#[allow(dead_code)]
+pub fn hyman_interpolate<F: Float + FromPrimitive + Debug + crate::traits::InterpolationFloat>(
     x: &ArrayView1<F>,
     y: &ArrayView1<F>,
-    x_new: &ArrayView1<F>,
+    xnew: &ArrayView1<F>,
     extrapolate: bool,
 ) -> InterpolateResult<Array1<F>> {
-    monotonic_interpolate(x, y, x_new, MonotonicMethod::Hyman, extrapolate)
+    monotonic_interpolate(x, y, xnew, MonotonicMethod::Hyman, extrapolate)
 }
 
 /// Convenience function for Steffen's monotonic interpolation
@@ -731,7 +755,7 @@ pub fn hyman_interpolate<F: Float + FromPrimitive + Debug>(
 ///
 /// * `x` - The x coordinates (must be sorted in ascending order)
 /// * `y` - The y coordinates
-/// * `x_new` - The points at which to interpolate
+/// * `xnew` - The points at which to interpolate
 /// * `extrapolate` - Whether to extrapolate beyond the data range
 ///
 /// # Returns
@@ -746,17 +770,18 @@ pub fn hyman_interpolate<F: Float + FromPrimitive + Debug>(
 ///
 /// let x = array![0.0f64, 1.0, 2.0, 3.0];
 /// let y = array![0.0f64, 1.0, 4.0, 9.0];
-/// let x_new = array![0.5f64, 1.5, 2.5];
+/// let xnew = array![0.5f64, 1.5, 2.5];
 ///
-/// let y_interp = steffen_interpolate(&x.view(), &y.view(), &x_new.view(), true).unwrap();
+/// let y_interp = steffen_interpolate(&x.view(), &y.view(), &xnew.view(), true).unwrap();
 /// ```
-pub fn steffen_interpolate<F: Float + FromPrimitive + Debug>(
+#[allow(dead_code)]
+pub fn steffen_interpolate<F: Float + FromPrimitive + Debug + crate::traits::InterpolationFloat>(
     x: &ArrayView1<F>,
     y: &ArrayView1<F>,
-    x_new: &ArrayView1<F>,
+    xnew: &ArrayView1<F>,
     extrapolate: bool,
 ) -> InterpolateResult<Array1<F>> {
-    monotonic_interpolate(x, y, x_new, MonotonicMethod::Steffen, extrapolate)
+    monotonic_interpolate(x, y, xnew, MonotonicMethod::Steffen, extrapolate)
 }
 
 /// Convenience function for modified Akima monotonic interpolation
@@ -765,7 +790,7 @@ pub fn steffen_interpolate<F: Float + FromPrimitive + Debug>(
 ///
 /// * `x` - The x coordinates (must be sorted in ascending order)
 /// * `y` - The y coordinates
-/// * `x_new` - The points at which to interpolate
+/// * `xnew` - The points at which to interpolate
 /// * `extrapolate` - Whether to extrapolate beyond the data range
 ///
 /// # Returns
@@ -780,17 +805,20 @@ pub fn steffen_interpolate<F: Float + FromPrimitive + Debug>(
 ///
 /// let x = array![0.0f64, 1.0, 2.0, 3.0];
 /// let y = array![0.0f64, 1.0, 4.0, 9.0];
-/// let x_new = array![0.5f64, 1.5, 2.5];
+/// let xnew = array![0.5f64, 1.5, 2.5];
 ///
-/// let y_interp = modified_akima_interpolate(&x.view(), &y.view(), &x_new.view(), true).unwrap();
+/// let y_interp = modified_akima_interpolate(&x.view(), &y.view(), &xnew.view(), true).unwrap();
 /// ```
-pub fn modified_akima_interpolate<F: Float + FromPrimitive + Debug>(
+#[allow(dead_code)]
+pub fn modified_akima_interpolate<
+    F: Float + FromPrimitive + Debug + crate::traits::InterpolationFloat,
+>(
     x: &ArrayView1<F>,
     y: &ArrayView1<F>,
-    x_new: &ArrayView1<F>,
+    xnew: &ArrayView1<F>,
     extrapolate: bool,
 ) -> InterpolateResult<Array1<F>> {
-    monotonic_interpolate(x, y, x_new, MonotonicMethod::ModifiedAkima, extrapolate)
+    monotonic_interpolate(x, y, xnew, MonotonicMethod::ModifiedAkima, extrapolate)
 }
 
 #[cfg(test)]
@@ -990,17 +1018,17 @@ mod tests {
     fn test_convenience_functions() {
         let x = array![0.0, 1.0, 2.0, 3.0];
         let y = array![0.0, 1.0, 4.0, 9.0];
-        let x_new = array![0.5, 1.5, 2.5];
+        let xnew = array![0.5, 1.5, 2.5];
 
         // Test each convenience function
-        let y_hyman = hyman_interpolate(&x.view(), &y.view(), &x_new.view(), false).unwrap();
-        let y_steffen = steffen_interpolate(&x.view(), &y.view(), &x_new.view(), false).unwrap();
+        let y_hyman = hyman_interpolate(&x.view(), &y.view(), &xnew.view(), false).unwrap();
+        let y_steffen = steffen_interpolate(&x.view(), &y.view(), &xnew.view(), false).unwrap();
         let y_akima =
-            modified_akima_interpolate(&x.view(), &y.view(), &x_new.view(), false).unwrap();
+            modified_akima_interpolate(&x.view(), &y.view(), &xnew.view(), false).unwrap();
         let y_generic = monotonic_interpolate(
             &x.view(),
             &y.view(),
-            &x_new.view(),
+            &xnew.view(),
             MonotonicMethod::Pchip,
             false,
         )

@@ -1,7 +1,8 @@
-//! Real-valued wavelets (e.g., Ricker)
+// Real-valued wavelets (e.g., Ricker)
 
 use crate::error::{SignalError, SignalResult};
 
+#[allow(unused_imports)]
 /// Generate a Ricker (Mexican hat) wavelet
 ///
 /// # Arguments
@@ -21,6 +22,7 @@ use crate::error::{SignalError, SignalResult};
 /// // Generate a Ricker wavelet with 100 points and width parameter 4.0
 /// let wavelet = ricker(100, 4.0).unwrap();
 /// ```
+#[allow(dead_code)]
 pub fn ricker(points: usize, a: f64) -> SignalResult<Vec<f64>> {
     if points == 0 {
         return Err(SignalError::ValueError(
@@ -35,7 +37,7 @@ pub fn ricker(points: usize, a: f64) -> SignalResult<Vec<f64>> {
     }
 
     // Calculate amplitude factor
-    let amplitude = 2.0 / (std::f64::consts::PI.powf(0.25) * (3.0 * a).sqrt());
+    let amplitude = 2.0 / (std::f64::consts::PI.powf(0.25) * ((3.0 * a) as f64).sqrt());
     let wsq = a * a;
 
     // Generate position vector

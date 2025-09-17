@@ -102,8 +102,8 @@ impl SpectralElementMesh2D {
         let n = order + 1;
 
         // Generate Gauss-Lobatto-Legendre points in 1D (scaled to [0, 1])
-        let (xi_pts, _) = legendre_points(n);
-        let xi = (xi_pts + 1.0) * 0.5;
+        let (xi_pts_, weights) = legendre_points(n);
+        let xi = (xi_pts_ + 1.0) * 0.5;
 
         // Create elements and nodes
         let mut elements = Vec::with_capacity(nx * ny);
@@ -255,7 +255,7 @@ impl SpectralElementMesh2D {
         &mut self,
         boundary_conditions: &[BoundaryCondition<f64>],
     ) -> PDEResult<()> {
-        // Map boundary conditions to mesh boundary nodes
+        // Map boundary _conditions to mesh boundary nodes
         for bc in boundary_conditions {
             let nodes_to_update = match bc.location {
                 BoundaryLocation::Lower => match bc.dimension {
@@ -264,14 +264,14 @@ impl SpectralElementMesh2D {
                         .iter()
                         .enumerate()
                         .filter(|(_, (idx, _))| self.nodes[*idx].0 < 1e-10)
-                        .map(|(i, _)| i)
+                        .map(|(i_, _)| i_)
                         .collect::<Vec<_>>(),
                     1 => self
                         .boundary_nodes
                         .iter()
                         .enumerate()
                         .filter(|(_, (idx, _))| self.nodes[*idx].1 < 1e-10)
-                        .map(|(i, _)| i)
+                        .map(|(i_, _)| i_)
                         .collect::<Vec<_>>(),
                     _ => {
                         return Err(PDEError::DomainError(format!(
@@ -286,14 +286,14 @@ impl SpectralElementMesh2D {
                         .iter()
                         .enumerate()
                         .filter(|(_, (idx, _))| (self.nodes[*idx].0 - 1.0).abs() < 1e-10)
-                        .map(|(i, _)| i)
+                        .map(|(i_, _)| i_)
                         .collect::<Vec<_>>(),
                     1 => self
                         .boundary_nodes
                         .iter()
                         .enumerate()
                         .filter(|(_, (idx, _))| (self.nodes[*idx].1 - 1.0).abs() < 1e-10)
-                        .map(|(i, _)| i)
+                        .map(|(i_, _)| i_)
                         .collect::<Vec<_>>(),
                     _ => {
                         return Err(PDEError::DomainError(format!(
@@ -452,7 +452,7 @@ impl SpectralElementPoisson2D {
             ));
         }
 
-        // Validate boundary conditions
+        // Validate boundary _conditions
         for bc in &boundary_conditions {
             if bc.dimension >= 2 {
                 return Err(PDEError::BoundaryConditions(format!(
@@ -467,13 +467,13 @@ impl SpectralElementPoisson2D {
                 BoundaryConditionType::Robin => {
                     if bc.coefficients.is_none() {
                         return Err(PDEError::BoundaryConditions(
-                            "Robin boundary conditions require coefficients".to_string(),
+                            "Robin boundary _conditions require coefficients".to_string(),
                         ));
                     }
                 }
                 BoundaryConditionType::Periodic => {
                     return Err(PDEError::BoundaryConditions(
-                        "Periodic boundary conditions not implemented for spectral element method"
+                        "Periodic boundary _conditions not implemented for spectral element method"
                             .to_string(),
                     ));
                 }
@@ -777,10 +777,10 @@ impl SpectralElementPoisson2D {
                         };
 
                         if is_on_boundary {
-                            if let Some([a, _b, c]) = bc.coefficients {
+                            if let Some([a_b, c, _]) = bc.coefficients {
                                 // For Robin BCs: a*u + b*du/dn = c
                                 // We need to modify the matrix and load vector
-                                global_matrix[[node_idx, node_idx]] += a;
+                                global_matrix[[node_idx, node_idx]] += a_b;
                                 global_load[node_idx] += c;
                             }
 
@@ -797,7 +797,8 @@ impl SpectralElementPoisson2D {
         }
 
         // Solve the linear system
-        let solution = self.solve_linear_system(&global_matrix, &global_load.view())?;
+        let solution =
+            SpectralElementPoisson2D::solve_linear_system(&global_matrix, &global_load.view())?;
 
         // Compute residual
         let global_residual = {
@@ -831,7 +832,7 @@ impl SpectralElementPoisson2D {
     }
 
     /// Solve the linear system Ax = b
-    fn solve_linear_system(&self, a: &Array2<f64>, b: &ArrayView1<f64>) -> PDEResult<Array1<f64>> {
+    fn solve_linear_system(a: &Array2<f64>, b: &ArrayView1<f64>) -> PDEResult<Array1<f64>> {
         let n = b.len();
 
         // Simple Gaussian elimination with partial pivoting

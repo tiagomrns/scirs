@@ -1,18 +1,21 @@
 [package]
 name = "scirs2-vision"
 version.workspace = true
-edition = "2021"
-authors = ["SciRS2 Team"]
-license = "MIT OR Apache-2.0"
-description = "Computer vision module for SciRS2"
-repository = "https://github.com/cool-japan/scirs"
+edition.workspace = true
+authors.workspace = true
+description = "Computer vision module for SciRS2 (scirs2-vision)"
+license.workspace = true
+repository.workspace = true
 keywords = ["vision", "image-processing", "scientific", "ai", "machine-learning"]
 categories = ["science", "mathematics", "algorithms"]
 
+[lints]
+workspace = true
+
 [dependencies]
 # Core dependencies
-scirs2-core = { workspace = true, features = ["parallel"] }
-scirs2-linalg = { workspace = true }
+scirs2-core = { workspace = true, features = ["parallel", "gpu", "random"] }
+# scirs2-linalg = { workspace = true, default-features = false }
 # Temporarily commented out for publishing
 # scirs2-ndimage = { workspace = true }
 ndarray = { workspace = true }
@@ -23,9 +26,12 @@ num-complex = { workspace = true }
 thiserror = { workspace = true }
 rand = { workspace = true }
 rand_distr = { workspace = true }
+statrs = { workspace = true }
 
 # Vision specific dependencies
 image = { workspace = true }
+num_cpus = { workspace = true }
+crossbeam-channel = { workspace = true }
 # rayon = { workspace = true }  # Now use scirs2-core parallel abstractions
 
 [dev-dependencies]

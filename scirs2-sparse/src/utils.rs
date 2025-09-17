@@ -155,8 +155,7 @@ pub fn is_symmetric(matrix: &CsrMatrix<f64>) -> bool {
 pub fn random(shape: (usize, usize), density: f64) -> SparseResult<CsrMatrix<f64>> {
     if !(0.0..=1.0).contains(&density) {
         return Err(SparseError::ValueError(format!(
-            "Density must be between 0 and 1, got {}",
-            density
+            "Density must be between 0 and 1, got {density}"
         )));
     }
 

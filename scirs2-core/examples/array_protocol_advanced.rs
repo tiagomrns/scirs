@@ -24,6 +24,7 @@ use scirs2_core::array_protocol::{
     GPUBackend, GPUConfig, GPUNdarray,
 };
 
+#[allow(dead_code)]
 fn main() {
     // Initialize the array protocol system
     array_protocol::init();
@@ -83,7 +84,7 @@ fn main() {
     // Configure mixed precision
     let mixed_precision_config = MixedPrecisionConfig {
         storage_precision: Precision::Single,
-        compute_precision: Precision::Double,
+        computeprecision: Precision::Double,
         auto_precision: true,
         downcast_threshold: 1000,
         double_precision_accumulation: true,
@@ -126,7 +127,7 @@ fn main() {
 
     // Matrix multiplication with single precision
     let result =
-        array_protocol::mixed_precision::ops::matmul(&mixed_f64, &mixed_f32, Precision::Single);
+        array_protocol::mixed_precision_ops::matmul(&mixed_f64, &mixed_f32, Precision::Single);
     match result {
         Ok(_) => println!("Matrix multiplication (single precision): succeeded"),
         Err(e) => println!("Operation error: {}", e),
@@ -134,7 +135,7 @@ fn main() {
 
     // Matrix multiplication with double precision
     let result =
-        array_protocol::mixed_precision::ops::matmul(&mixed_f64, &mixed_f32, Precision::Double);
+        array_protocol::mixed_precision_ops::matmul(&mixed_f64, &mixed_f32, Precision::Double);
     match result {
         Ok(_) => println!("Matrix multiplication (double precision): succeeded"),
         Err(e) => println!("Operation error: {}", e),

@@ -82,12 +82,12 @@ Add to your `Cargo.toml`:
 
 ```toml
 [dependencies]
-scirs2_optimize = "0.1.0-alpha.6"
+scirs2_optimize = "0.1.0-beta.1"
 ndarray = "0.16"
 
 # Optional features
 scirs2_optimize = { 
-    version = "0.1.0-alpha.6", 
+    version = "0.1.0-beta.1", 
     features = ["parallel", "simd", "async"] 
 }
 ```

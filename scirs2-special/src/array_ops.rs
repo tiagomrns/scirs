@@ -8,8 +8,43 @@
 use crate::error::{SpecialError, SpecialResult};
 use ndarray::{Array, ArrayView1, Dimension};
 
+/// Safe slice casting replacement for bytemuck::cast_slice
+#[allow(dead_code)]
+fn cast_slice_to_bytes<T>(slice: &[T]) -> &[u8] {
+    // SAFETY: This is safe because:
+    // 1. The pointer is derived from a valid _slice
+    // 2. The size calculation is correct using size_of_val
+    // 3. The lifetime is bounded by the input _slice
+    unsafe {
+        std::_slice::from_raw_parts(_slice.as_ptr() as *const u8, std::mem::size_of_val(_slice))
+    }
+}
+
+/// Safe slice casting replacement for bytemuck::cast_slice (reverse)
+#[allow(dead_code)]
+fn cast_bytes_to_slice<T>(bytes: &[u8]) -> &[T] {
+    assert_eq!(_bytes.len() % std::mem::size_of::<T>(), 0);
+    // SAFETY: This is safe because:
+    // 1. We assert that the byte length is a multiple of T's size
+    // 2. The pointer is derived from a valid slice
+    // 3. The length calculation ensures we don't exceed bounds
+    // 4. The lifetime is bounded by the input slice
+    unsafe {
+        std::slice::from_raw_parts(
+            bytes.as_ptr() as *const T,
+            bytes.len() / std::mem::size_of::<T>(),
+        )
+    }
+}
+
 #[cfg(feature = "futures")]
 use futures::future::BoxFuture;
+
+// #[cfg(feature = "arrayfire")]
+// use arrayfire;
+
+// #[cfg(feature = "arrayfire")]
+// use log;
 
 // #[cfg(feature = "lazy")]
 // use std::collections::HashMap;
@@ -26,8 +61,8 @@ pub enum Backend {
     /// Lazy evaluation (requires lazy feature)
     #[cfg(feature = "lazy")]
     Lazy,
-    // ArrayFire backend (placeholder for future implementation)
-    // #[cfg(feature = "array-api")]
+    // /// ArrayFire backend for GPU acceleration (disabled - placeholder)
+    // #[cfg(feature = "arrayfire")]
     // ArrayFire,
 }
 
@@ -35,7 +70,7 @@ pub enum Backend {
 #[derive(Debug, Clone)]
 pub struct ArrayConfig {
     /// Chunk size for memory-efficient processing
-    pub chunk_size: usize,
+    pub chunksize: usize,
     /// Whether to use parallel processing
     pub parallel: bool,
     /// Memory limit for operations (in bytes)
@@ -45,7 +80,7 @@ pub struct ArrayConfig {
     /// Whether to cache computed results
     pub cache_results: bool,
     /// Maximum cache size (number of entries)
-    pub max_cache_size: usize,
+    pub max_cachesize: usize,
     /// Lazy evaluation threshold (array size)
     pub lazy_threshold: usize,
 }
@@ -53,12 +88,12 @@ pub struct ArrayConfig {
 impl Default for ArrayConfig {
     fn default() -> Self {
         Self {
-            chunk_size: 1024,
+            chunksize: 1024,
             parallel: cfg!(feature = "parallel"),
             memory_limit: 1024 * 1024 * 1024, // 1GB
             backend: Backend::default(),
             cache_results: true,
-            max_cache_size: 1000,
+            max_cachesize: 1000,
             lazy_threshold: 10_000, // Use lazy evaluation for arrays > 10k elements
         }
     }
@@ -69,14 +104,14 @@ pub mod memory_efficient {
     use super::*;
 
     /// Estimate memory usage for an operation
-    pub fn estimate_memory_usage<T>(shape: &[usize], num_arrays: usize) -> usize {
-        let elem_size = std::mem::size_of::<T>();
+    pub fn estimate_memory_usage<T>(shape: &[usize], numarrays: usize) -> usize {
+        let elemsize = std::mem::size_of::<T>();
         let total_elements: usize = shape.iter().product();
-        total_elements * elem_size * num_arrays
+        total_elements * elemsize * num_arrays
     }
 
     /// Check if operation fits within memory limits
-    pub fn check_memory_limit<T>(shape: &[usize], num_arrays: usize, config: &ArrayConfig) -> bool {
+    pub fn check_memory_limit<T>(shape: &[usize], numarrays: usize, config: &ArrayConfig) -> bool {
         estimate_memory_usage::<T>(shape, num_arrays) <= config.memory_limit
     }
 }
@@ -271,140 +306,266 @@ pub mod lazy {
 pub mod gpu {
     use super::*;
 
-    /// GPU buffer for array data
+    /// Advanced GPU buffer for array data with memory management
     pub struct GpuBuffer {
-        // TODO: Replace with scirs2_core::gpu abstractions
         #[cfg(feature = "gpu")]
-        buffer: Option<()>, // Placeholder - should use core GPU abstractions
+        buffer: Option<std::sync::Arc<scirs2_core::gpu::GpuBuffer<f64>>>,
         size: usize,
+        elementsize: usize,
+        shape: Vec<usize>,
+        allocatedsize: usize,
     }
 
-    /// GPU compute pipeline for special functions
+    impl GpuBuffer {
+        /// Create a new GPU buffer
+        #[cfg(feature = "gpu")]
+        pub fn new<T>(ctx: &scirs2_core::gpu::GpuContext, data: &[T]) -> SpecialResult<Self>
+        where
+            T: 'static,
+        {
+            let byte_data = cast_slice_to_bytes(data);
+            let buffer = ctx.create_buffer_with_data(byte_data).map_err(|e| {
+                SpecialError::ComputationError(format!("GPU buffer creation failed: {}", e))
+            })?;
+
+            Ok(Self {
+                buffer: Some(buffer),
+                size: data.len(),
+                elementsize: std::mem::size_of::<T>(),
+                shape: vec![data.len()],
+                allocatedsize: byte_data.len(),
+            })
+        }
+
+        /// Get buffer size in elements
+        pub fn size(&self) -> usize {
+            self.size
+        }
+
+        /// Get buffer shape
+        pub fn shape(&self) -> &[usize] {
+            &self.shape
+        }
+
+        /// Check if buffer is valid
+        #[cfg(feature = "gpu")]
+        pub fn is_valid(&self) -> bool {
+            self.buffer.is_some()
+        }
+
+        #[cfg(not(feature = "gpu"))]
+        pub fn is_valid(&self) -> bool {
+            false
+        }
+    }
+
+    /// Advanced GPU compute pipeline for special functions
     pub struct GpuPipeline {
-        // TODO: Replace with scirs2_core::gpu abstractions
         #[cfg(feature = "gpu")]
-        device: Option<()>, // Placeholder - should use core GPU abstractions
+        context: Option<std::sync::Arc<scirs2_core::gpu::GpuContext>>,
         #[cfg(feature = "gpu")]
-        queue: Option<()>, // Placeholder - should use core GPU abstractions
-        #[cfg(feature = "gpu")]
-        pipeline: Option<()>, // Placeholder - should use core GPU abstractions
+        pipelines:
+            std::collections::HashMap<String, std::sync::Arc<scirs2_core::gpu::GpuKernelHandle>>,
+        cache_enabled: bool,
+        performance_stats:
+            std::sync::Mutex<std::collections::HashMap<String, (u64, std::time::Duration)>>,
     }
 
     impl GpuPipeline {
-        /// Create a new GPU pipeline
+        /// Create a new advanced GPU pipeline with comprehensive functionality
         #[cfg(feature = "gpu")]
-        pub async fn new() -> SpecialResult<Self> {
-            // TODO: Use scirs2_core::gpu for GPU operations
-            // This is a placeholder implementation that should be replaced
-            // with core GPU abstractions when available
-            Err(SpecialError::ComputationError(
-                "GPU operations should use scirs2_core::gpu abstractions".to_string(),
-            ))
+        pub fn new() -> SpecialResult<Self> {
+            use crate::gpu_context_manager::get_best_gpu_context;
+
+            let context = get_best_gpu_context().map_err(|e| {
+                SpecialError::ComputationError(format!("Failed to create GPU context: {}", e))
+            })?;
+
+            let mut pipelines = std::collections::HashMap::new();
+
+            // Pre-load commonly used shaders
+            let gamma_shader = include_str!("../shaders/gamma_compute.wgsl");
+            if let Ok(pipeline) = context.create_compute_pipeline(gamma_shader) {
+                pipelines.insert("gamma".to_string(), pipeline);
+            }
+
+            let bessel_shader = include_str!("../shaders/bessel_j0_compute.wgsl");
+            if let Ok(pipeline) = context.create_compute_pipeline(bessel_shader) {
+                pipelines.insert("bessel_j0".to_string(), pipeline);
+            }
+
+            let erf_shader = include_str!("../shaders/erf_compute.wgsl");
+            if let Ok(pipeline) = context.create_compute_pipeline(erf_shader) {
+                pipelines.insert("erf".to_string(), pipeline);
+            }
+
+            Ok(Self {
+                context: Some(context),
+                pipelines,
+                cache_enabled: true,
+                performance_stats: std::sync::Mutex::new(std::collections::HashMap::new()),
+            })
         }
 
-        /// Execute gamma function on GPU
+        /// Execute a kernel on GPU with performance monitoring
         #[cfg(feature = "gpu")]
-        pub async fn gamma_gpu<D>(&self, input: &Array<f64, D>) -> SpecialResult<Array<f64, D>>
+        pub fn execute_kernel<T>(
+            &self,
+            kernel_name: &str,
+            input: &[T],
+            output: &mut [T],
+        ) -> SpecialResult<std::time::Duration>
+        where
+            T: Clone,
+        {
+            let start_time = std::time::Instant::now();
+
+            let context = self.context.as_ref().ok_or_else(|| {
+                SpecialError::ComputationError("No GPU context available".to_string())
+            })?;
+
+            let pipeline = self.pipelines.get(kernel_name).ok_or_else(|| {
+                SpecialError::ComputationError(format!("Kernel '{}' not found", kernel_name))
+            })?;
+
+            // Create GPU buffers
+            let input_buffer = context
+                .create_buffer_with_data(cast_slice_to_bytes(input))
+                .map_err(|e| {
+                    SpecialError::ComputationError(format!("Input buffer creation failed: {}", e))
+                })?;
+
+            let output_buffer = context
+                .create_buffer(output.len() * std::mem::size_of::<T>())
+                .map_err(|e| {
+                    SpecialError::ComputationError(format!("Output buffer creation failed: {}", e))
+                })?;
+
+            // Execute kernel
+            let workgroup_count = (input.len() + 255) / 256;
+            context
+                .execute_compute(
+                    pipeline.as_ref(),
+                    input_buffer.as_ref(),
+                    output_buffer.as_ref(),
+                    (workgroup_count, 1, 1),
+                )
+                .map_err(|e| {
+                    SpecialError::ComputationError(format!("Kernel execution failed: {}", e))
+                })?;
+
+            // Read results
+            let result_data = context.read_buffer(output_buffer.as_ref()).map_err(|e| {
+                SpecialError::ComputationError(format!("Buffer read failed: {}", e))
+            })?;
+
+            let typed_result = cast_bytes_to_slice::<T>(&result_data);
+            output.copy_from_slice(typed_result);
+
+            let elapsed = start_time.elapsed();
+
+            // Update performance statistics
+            if let Ok(mut stats) = self.performance_stats.lock() {
+                let entry = stats
+                    .entry(kernel_name.to_string())
+                    .or_insert((0, std::time::Duration::ZERO));
+                entry.0 += 1;
+                entry.1 += elapsed;
+            }
+
+            Ok(elapsed)
+        }
+
+        /// Get performance statistics for a kernel
+        pub fn get_kernel_stats(&self, kernelname: &str) -> Option<(u64, std::time::Duration)> {
+            self.performance_stats
+                .lock()
+                .ok()?
+                .get(kernel_name)
+                .copied()
+        }
+
+        /// Clear performance statistics
+        pub fn clear_stats(&self) {
+            if let Ok(mut stats) = self.performance_stats.lock() {
+                stats.clear();
+            }
+        }
+
+        /// Execute gamma function on GPU with advanced features
+        #[cfg(feature = "gpu")]
+        pub fn gamma_gpu<D>(&self, input: &Array<f64, D>) -> SpecialResult<Array<f64, D>>
         where
             D: Dimension,
         {
-            // TODO: Use scirs2_core::gpu for GPU operations
-            // Temporarily disabled direct GPU implementation
-            /*
-            use bytemuck;
-            use wgpu::util::{BufferInitDescriptor, DeviceExt};
-            use wgpu::*;
+            // For 1D arrays, use direct GPU execution
+            if input.ndim() == 1 {
+                let input_slice = input.as_slice().ok_or_else(|| {
+                    SpecialError::ComputationError("Array not contiguous".to_string())
+                })?;
 
-            let data: Vec<f32> = input.iter().map(|&x| x as f32).collect();
-            let size = data.len() * std::mem::size_of::<f32>();
+                let mut output = vec![0.0f64; input_slice.len()];
+                self.execute_kernel("gamma", input_slice, &mut output)?;
 
-            // Create input buffer
-            let input_buffer = self.device.create_buffer_init(&BufferInitDescriptor {
-                label: Some("Input Buffer"),
-                contents: bytemuck::cast_slice(&data),
-                usage: BufferUsages::STORAGE | BufferUsages::COPY_DST,
-            });
+                let result = Array::from_vec(output)
+                    .into_dimensionality::<D>()
+                    .map_err(|e| {
+                        SpecialError::ComputationError(format!("Shape conversion error: {}", e))
+                    })?;
 
-            // Create output buffer
-            let output_buffer = self.device.create_buffer(&BufferDescriptor {
-                label: Some("Output Buffer"),
-                size: size as u64,
-                usage: BufferUsages::STORAGE | BufferUsages::COPY_SRC,
-                mapped_at_creation: false,
-            });
+                Ok(result)
+            } else {
+                // For multi-dimensional arrays, flatten, process, and reshape
+                let flattened: Vec<f64> = input.iter().copied().collect();
+                let mut output = vec![0.0f64; flattened.len()];
 
-            // Create staging buffer for reading results
-            let staging_buffer = self.device.create_buffer(&BufferDescriptor {
-                label: Some("Staging Buffer"),
-                size: size as u64,
-                usage: BufferUsages::MAP_READ | BufferUsages::COPY_DST,
-                mapped_at_creation: false,
-            });
+                self.execute_kernel("gamma", &flattened, &mut output)?;
 
-            // Create bind group
-            let bind_group_layout = self.pipeline.get_bind_group_layout(0);
-            let bind_group = self.device.create_bind_group(&BindGroupDescriptor {
-                label: Some("Compute Bind Group"),
-                layout: &bind_group_layout,
-                entries: &[
-                    BindGroupEntry {
-                        binding: 0,
-                        resource: input_buffer.as_entire_binding(),
-                    },
-                    BindGroupEntry {
-                        binding: 1,
-                        resource: output_buffer.as_entire_binding(),
-                    },
-                ],
-            });
+                let result = Array::from_vec(output)
+                    .toshape(input.dim())
+                    .map_err(|e| SpecialError::ComputationError(format!("Shape error: {}", e)))?
+                    .into_owned();
 
-            // Dispatch compute shader
-            let mut encoder = self
-                .device
-                .create_command_encoder(&CommandEncoderDescriptor {
-                    label: Some("Compute Encoder"),
-                });
-
-            {
-                let mut compute_pass = encoder.begin_compute_pass(&ComputePassDescriptor {
-                    label: Some("Compute Pass"),
-                    timestamp_writes: None,
-                });
-                compute_pass.set_pipeline(&self.pipeline);
-                compute_pass.set_bind_group(0, &bind_group, &[]);
-                compute_pass.dispatch_workgroups((data.len() as u32).div_ceil(256), 1, 1);
+                Ok(result)
             }
+        }
 
-            encoder.copy_buffer_to_buffer(&output_buffer, 0, &staging_buffer, 0, size as u64);
-            self.queue.submit(Some(encoder.finish()));
+        /// Execute Bessel J0 function on GPU
+        #[cfg(feature = "gpu")]
+        pub fn bessel_j0_gpu<D>(&self, input: &Array<f64, D>) -> SpecialResult<Array<f64, D>>
+        where
+            D: Dimension,
+        {
+            let flattened: Vec<f64> = input.iter().copied().collect();
+            let mut output = vec![0.0f64; flattened.len()];
 
-            // Read results
-            let buffer_slice = staging_buffer.slice(..);
-            let (sender, receiver) = futures::channel::oneshot::channel();
-            buffer_slice.map_async(MapMode::Read, move |result| {
-                sender.send(result).unwrap();
-            });
+            self.execute_kernel("bessel_j0", &flattened, &mut output)?;
 
-            self.device.poll(Maintain::Wait);
-            receiver.await.unwrap().map_err(|e| {
-                SpecialError::ComputationError(format!("GPU buffer error: {:?}", e))
-            })?;
+            let result = Array::from_vec(output)
+                .toshape(input.dim())
+                .map_err(|e| SpecialError::ComputationError(format!("Shape error: {}", e)))?
+                .into_owned();
 
-            let buffer_view = buffer_slice.get_mapped_range();
-            let result_data: &[f32] = bytemuck::cast_slice(&buffer_view);
-            let result_f64: Vec<f64> = result_data.iter().map(|&x| x as f64).collect();
+            Ok(result)
+        }
 
-            drop(buffer_view);
-            staging_buffer.unmap();
+        /// Execute error function on GPU
+        #[cfg(feature = "gpu")]
+        pub fn erf_gpu<D>(&self, input: &Array<f64, D>) -> SpecialResult<Array<f64, D>>
+        where
+            D: Dimension,
+        {
+            let flattened: Vec<f64> = input.iter().copied().collect();
+            let mut output = vec![0.0f64; flattened.len()];
 
-            // Reconstruct array with original shape
-            let result_array = Array::from_vec(result_f64)
-                .into_shape_with_order(input.dim())
-                .map_err(|e| SpecialError::ComputationError(format!("Shape error: {}", e)))?;
-            Ok(result_array)
-            */
-            // Fallback to CPU implementation until core GPU abstractions are used
-            Ok(input.mapv(crate::gamma::gamma))
+            self.execute_kernel("erf", &flattened, &mut output)?;
+
+            let result = Array::from_vec(output)
+                .toshape(input.dim())
+                .map_err(|e| SpecialError::ComputationError(format!("Shape error: {}", e)))?
+                .into_owned();
+
+            Ok(result)
         }
 
         /// Execute gamma function on CPU as fallback
@@ -425,8 +586,8 @@ pub mod gpu {
     {
         #[cfg(feature = "gpu")]
         {
-            let pipeline = GpuPipeline::new().await?;
-            pipeline.gamma_gpu(input).await
+            let pipeline = GpuPipeline::new()?;
+            pipeline.gamma_gpu(input)
         }
         #[cfg(not(feature = "gpu"))]
         {
@@ -457,7 +618,7 @@ pub mod broadcasting {
     }
 
     /// Compute the broadcast shape of two arrays
-    pub fn broadcast_shape(shape1: &[usize], shape2: &[usize]) -> Result<Vec<usize>, SpecialError> {
+    pub fn broadcastshape(shape1: &[usize], shape2: &[usize]) -> Result<Vec<usize>, SpecialError> {
         if !can_broadcast(shape1, shape2) {
             return Err(SpecialError::DomainError(
                 "Arrays cannot be broadcast together".to_string(),
@@ -486,9 +647,6 @@ pub mod vectorized {
     #[cfg(feature = "lazy")]
     use super::lazy::*;
 
-    #[cfg(feature = "gpu")]
-    use super::gpu::*;
-
     /// Enhanced gamma function computation with backend selection
     pub fn gamma_array<D>(
         input: &Array<f64, D>,
@@ -508,33 +666,71 @@ pub mod vectorized {
                     return Ok(GammaResult::Lazy(lazy_array));
                 }
             }
-            #[cfg(feature = "gpu")]
+            #[cfg(all(feature = "gpu", feature = "futures"))]
             Backend::Gpu => {
                 if total_elements >= 1000 {
                     // GPU efficient for larger arrays
                     let input_owned = input.to_owned();
+                    // Since gamma_gpu is not async, we create a future wrapper
                     return Ok(GammaResult::Future(Box::pin(async move {
-                        gamma_gpu(&input_owned).await
+                        // Convert to appropriate array views for 1D operations
+                        if input_owned.ndim() == 1 {
+                            let input_1d = input_owned
+                                .into_dimensionality::<ndarray::Ix1>()
+                                .map_err(|e| {
+                                    SpecialError::ComputationError(format!(
+                                        "Dimension error: {}",
+                                        e
+                                    ))
+                                })?;
+                            let mut output = Array::zeros(input_1d.len());
+                            match crate::gpu_ops::gamma_gpu(
+                                &input_1d.view(),
+                                &mut output.view_mut(),
+                            ) {
+                                Ok(_) => {
+                                    // Convert back to original dimensions
+                                    let result =
+                                        output.into_dimensionality::<D>().map_err(|e| {
+                                            SpecialError::ComputationError(format!(
+                                                "Dimension error: {}",
+                                                e
+                                            ))
+                                        })?;
+                                    Ok(result)
+                                }
+                                Err(e) => {
+                                    Err(SpecialError::ComputationError(format!("GPU error: {}", e)))
+                                }
+                            }
+                        } else {
+                            // For multi-dimensional arrays, fall back to CPU implementation
+                            Ok(input_owned.mapv(crate::gamma::gamma))
+                        }
                     })));
                 }
             }
+            #[cfg(all(feature = "gpu", not(feature = "futures")))]
+            Backend::Gpu => {
+                // Without futures, fall through to CPU implementation
+            }
             Backend::Cpu => {
                 // Use CPU implementation
-            } // #[cfg(feature = "array-api")]
+            } // #[cfg(feature = "arrayfire")]
               // Backend::ArrayFire => {
               //     return arrayfire_gamma(input, config);
               // }
         }
 
         // Default CPU implementation with optional parallelization
-        if config.parallel && total_elements > config.chunk_size {
+        if config.parallel && total_elements > config.chunksize {
             #[cfg(feature = "parallel")]
             {
                 use scirs2_core::parallel_ops::*;
                 let data: Vec<f64> = input.iter().copied().collect();
                 let result: Vec<f64> = data.par_iter().map(|&x| crate::gamma::gamma(x)).collect();
                 let result_array = Array::from_vec(result)
-                    .to_shape(input.dim())
+                    .toshape(input.dim())
                     .map_err(|e| SpecialError::ComputationError(format!("Shape error: {}", e)))?
                     .into_owned();
                 return Ok(GammaResult::Immediate(result_array));
@@ -581,14 +777,14 @@ pub mod vectorized {
     where
         D: Dimension,
     {
-        if config.parallel && input.len() > config.chunk_size {
+        if config.parallel && input.len() > config.chunksize {
             #[cfg(feature = "parallel")]
             {
                 use scirs2_core::parallel_ops::*;
                 let data: Vec<f64> = input.iter().copied().collect();
                 let result: Vec<f64> = data.par_iter().map(|&x| crate::erf::erf(x)).collect();
                 return Ok(Array::from_vec(result)
-                    .to_shape(input.dim())
+                    .toshape(input.dim())
                     .map_err(|e| SpecialError::ComputationError(format!("Shape error: {}", e)))?
                     .into_owned());
             }
@@ -605,7 +801,7 @@ pub mod vectorized {
     where
         D: Dimension,
     {
-        if config.parallel && input.len() > config.chunk_size {
+        if config.parallel && input.len() > config.chunksize {
             #[cfg(feature = "parallel")]
             {
                 use scirs2_core::parallel_ops::*;
@@ -615,7 +811,7 @@ pub mod vectorized {
                     .map(|&x| crate::combinatorial::factorial(x).unwrap_or(f64::NAN))
                     .collect();
                 return Ok(Array::from_vec(result)
-                    .to_shape(input.dim())
+                    .toshape(input.dim())
                     .map_err(|e| SpecialError::ComputationError(format!("Shape error: {}", e)))?
                     .into_owned());
             }
@@ -701,18 +897,134 @@ pub mod vectorized {
         }
     }
 
-    // ArrayFire backend implementation (placeholder)
-    // #[cfg(feature = "array-api")]
+    // ArrayFire backend implementation for gamma function (disabled - placeholder)
+    // #[cfg(feature = "arrayfire")]
     // fn arrayfire_gamma<D>(
     //     input: &Array<f64, D>,
-    //     _config: &ArrayConfig,
+    //     config: &ArrayConfig,
     // ) -> SpecialResult<GammaResult<D>>
     // where
     //     D: Dimension,
     // {
-    //     // TODO: Implement ArrayFire backend
-    //     // For now, fallback to CPU
-    //     Ok(GammaResult::Immediate(input.mapv(crate::gamma::gamma)))
+    //     use arrayfire as af;
+    //
+    //     // Initialize ArrayFire if not already done
+    //     af::set_backend(af::Backend::DEFAULT);
+    //     af::set_device(0);
+    //
+    //     // Convert ndarray to ArrayFire array
+    //     let input_vec: Vec<f64> = input.iter().cloned().collect();
+    //     let dims = input.shape();
+    //
+    //     // Create ArrayFire array
+    //     let afinput = match dims.len() {
+    //         1 => af::Array::new(&input_vec, af::Dim4::new(&[dims[0] as u64, 1, 1, 1])),
+    //         2 => af::Array::new(&input_vec, af::Dim4::new(&[dims[0] as u64, dims[1] as u64, 1, 1])),
+    //         3 => af::Array::new(&input_vec, af::Dim4::new(&[dims[0] as u64, dims[1] as u64, dims[2] as u64, 1])),
+    //         4 => af::Array::new(&input_vec, af::Dim4::new(&[dims[0] as u64, dims[1] as u64, dims[2] as u64, dims[3] as u64])),
+    //         _ => {
+    //             // For higher dimensions, flatten and reshape later
+    //             af::Array::new(&input_vec, af::Dim4::new(&[input_vec.len() as u64, 1, 1, 1]))
+    //         }
+    //     };
+    //
+    //     // Compute gamma function using ArrayFire
+    //     let af_result = arrayfire_gamma_kernel(&afinput)?;
+    //
+    //     // Convert result back to ndarray
+    //     let mut result_vec = vec![0.0; input.len()];
+    //     af_result.host(&mut result_vec);
+    //
+    //     let result = Array::from_vec(result_vec)
+    //         .toshape(input.dim())
+    //         .map_err(|e| SpecialError::ComputationError(format!("Shape conversion error: {}", e)))?
+    //         .into_owned();
+    //
+    //     Ok(GammaResult::Immediate(result))
+    // }
+
+    // ArrayFire kernel for gamma function computation (disabled - placeholder)
+    // #[cfg(feature = "arrayfire")]
+    // fn arrayfire_gamma_kernel(input: &arrayfire::Array<f64>) -> SpecialResult<arrayfire::Array<f64>> {
+    //     use arrayfire as af;
+    //
+    //     // Check for negative values (gamma undefined for negative integers)
+    //     let negative_mask = af::lt(input, &0.0, false);
+    //     let has_negatives = af::any_true_all(&negative_mask).0;
+    //
+    //     if has_negatives {
+    //         log::warn!("Gamma function called with negative values, may produce NaN");
+    //     }
+    //
+    //     // Compute gamma using ArrayFire's built-in function if available,
+    //     // otherwise implement Lanczos approximation
+    //     let result = if af::get_backend() == af::Backend::CUDA || af::get_backend() == af::Backend::OPENCL {
+    //         // Use GPU-accelerated computation
+    //         arrayfire_gamma_lanczos(input)?
+    //     } else {
+    //         // Fallback to CPU
+    //         arrayfire_gamma_lanczos(input)?
+    //     };
+    //
+    //     Ok(result)
+    // }
+
+    // Lanczos approximation for gamma function in ArrayFire (disabled - placeholder)
+    // #[cfg(feature = "arrayfire")]
+    // fn arrayfire_gamma_lanczos(x: &arrayfire::Array<f64>) -> SpecialResult<arrayfire::Array<f64>> {
+    //     use arrayfire as af;
+    //
+    //     // Lanczos coefficients
+    //     let g = 7.0;
+    //     let coeffs = vec![
+    //         0.99999999999980993,
+    //         676.5203681218851,
+    //         -1259.1392167224028,
+    //         771.32342877765313,
+    //         -176.61502916214059,
+    //         12.507343278686905,
+    //         -0.13857109526572012,
+    //         9.9843695780195716e-6,
+    //         1.5056327351493116e-7,
+    //     ];
+    //
+    //     // Handle reflection formula for x < 0.5
+    //     let half = af::constant(0.5, x.dims());
+    //     let use_reflection = af::lt(x, &half, false);
+    //
+    //     // For reflection formula: Γ(z) = π / (sin(πz) × Γ(1-z))
+    //     let pi = af::constant(std::f64::consts::PI, x.dims());
+    //     let one = af::constant(1.0, x.dims());
+    //     let reflected_x = af::sub(&one, x, false);
+    //
+    //     // Compute main Lanczos approximation
+    //     let z = af::sub(x, &one, false);
+    //     let mut acc = af::constant(coeffs[0], x.dims());
+    //
+    //     for (i, &coeff) in coeffs.iter().enumerate().skip(1) {
+    //         let k = af::constant(i as f64, x.dims());
+    //         let denominator = af::add(&z, &k, false);
+    //         let term = af::div(&af::constant(coeff, x.dims()), &denominator, false);
+    //         acc = af::add(&acc, &term, false);
+    //     }
+    //
+    //     let t = af::add(&z, &af::constant(g + 0.5, x.dims()), false);
+    //     let sqrt_2pi = af::constant((2.0 * std::f64::consts::PI).sqrt(), x.dims());
+    //
+    //     let z_plus_half = af::add(&z, &af::constant(0.5, x.dims()), false);
+    //     let t_pow = af::pow(&t, &z_plus_half, false);
+    //     let exp_neg_t = af::exp(&af::mul(&t, &af::constant(-1.0, x.dims()), false));
+    //
+    //     let gamma_main = af::mul(&af::mul(&sqrt_2pi, &acc, false), &af::mul(&t_pow, &exp_neg_t, false), false);
+    //
+    //     // Apply reflection formula where needed
+    //     let sin_pi_x = af::sin(&af::mul(&pi, x, false));
+    //     let gamma_reflected = af::div(&pi, &af::mul(&sin_pi_x, &gamma_main, false), false);
+    //
+    //     // Select appropriate result based on x value
+    //     let result = af::select(&use_reflection, &gamma_reflected, &gamma_main);
+    //
+    //     Ok(result)
     // }
 
     /// Chunked processing for large arrays
@@ -726,7 +1038,7 @@ pub mod vectorized {
         D: Dimension,
         F: Fn(T) -> T + Send + Sync,
     {
-        if input.len() <= config.chunk_size {
+        if input.len() <= config.chunksize {
             return Ok(input.mapv(operation));
         }
 
@@ -737,7 +1049,7 @@ pub mod vectorized {
             let data: Vec<T> = input.iter().cloned().collect();
             let processed: Vec<T> = data.into_par_iter().map(operation).collect();
             let result = Array::from_vec(processed)
-                .to_shape(input.dim())
+                .toshape(input.dim())
                 .map_err(|e| SpecialError::ComputationError(format!("Shape error: {}", e)))?
                 .into_owned();
             return Ok(result);
@@ -923,8 +1235,8 @@ pub mod convenience {
         }
 
         /// Set chunk size for processing
-        pub fn chunk_size(mut self, size: usize) -> Self {
-            self.config.chunk_size = size;
+        pub fn chunksize(mut self, size: usize) -> Self {
+            self.config.chunksize = size;
             self
         }
 
@@ -955,7 +1267,7 @@ pub mod convenience {
     /// Create a configuration optimized for large arrays
     pub fn large_array_config() -> ArrayConfig {
         ConfigBuilder::new()
-            .chunk_size(8192)
+            .chunksize(8192)
             .memory_limit(4 * 1024 * 1024 * 1024) // 4GB
             .lazy_threshold(50_000)
             .parallel(true)
@@ -965,7 +1277,7 @@ pub mod convenience {
     /// Create a configuration optimized for small arrays
     pub fn small_array_config() -> ArrayConfig {
         ConfigBuilder::new()
-            .chunk_size(256)
+            .chunksize(256)
             .lazy_threshold(100_000) // Higher threshold to avoid lazy overhead
             .parallel(false)
             .build()
@@ -976,7 +1288,7 @@ pub mod convenience {
     pub fn gpu_config() -> ArrayConfig {
         ConfigBuilder::new()
             .backend(Backend::Gpu)
-            .chunk_size(4096)
+            .chunksize(4096)
             .build()
     }
 
@@ -1002,7 +1314,7 @@ mod tests {
         assert!(broadcasting::can_broadcast(&[2, 3, 4], &[3, 4]));
         assert!(!broadcasting::can_broadcast(&[3, 2], &[4, 5]));
 
-        let shape = broadcasting::broadcast_shape(&[3, 1], &[1, 4]).unwrap();
+        let shape = broadcasting::broadcastshape(&[3, 1], &[1, 4]).unwrap();
         assert_eq!(shape, vec![3, 4]);
     }
 
@@ -1069,13 +1381,13 @@ mod tests {
     #[test]
     fn test_config_builder() {
         let config = convenience::ConfigBuilder::new()
-            .chunk_size(2048)
+            .chunksize(2048)
             .parallel(true)
             .memory_limit(2 * 1024 * 1024 * 1024)
             .lazy_threshold(5000)
             .build();
 
-        assert_eq!(config.chunk_size, 2048);
+        assert_eq!(config.chunksize, 2048);
         assert!(config.parallel);
         assert_eq!(config.memory_limit, 2 * 1024 * 1024 * 1024);
         assert_eq!(config.lazy_threshold, 5000);
@@ -1084,12 +1396,12 @@ mod tests {
     #[test]
     fn test_predefined_configs() {
         let large_config = convenience::large_array_config();
-        assert_eq!(large_config.chunk_size, 8192);
+        assert_eq!(large_config.chunksize, 8192);
         assert!(large_config.parallel);
         assert_eq!(large_config.lazy_threshold, 50_000);
 
         let small_config = convenience::small_array_config();
-        assert_eq!(small_config.chunk_size, 256);
+        assert_eq!(small_config.chunksize, 256);
         assert!(!small_config.parallel);
         assert_eq!(small_config.lazy_threshold, 100_000);
     }
@@ -1153,7 +1465,7 @@ mod tests {
     fn test_chunked_processing() {
         let input = Array::ones(2000);
         let config = ArrayConfig {
-            chunk_size: 100,
+            chunksize: 100,
             ..Default::default()
         };
 

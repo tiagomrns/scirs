@@ -10,6 +10,7 @@ use scirs2_linalg::prelude::*;
 use scirs2_linalg::specialized::TridiagonalMatrix;
 use scirs2_linalg::structured::{CirculantMatrix, ToeplitzMatrix};
 
+#[allow(dead_code)]
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("=== Advanced Linear Algebra Tutorial ===\n");
 
@@ -138,15 +139,15 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("-----------------------------");
 
     // Attention mechanism example
-    let batch_size = 1;
+    let batchsize = 1;
     let seq_len = 4;
     let d_k = 8;
     let d_v = 8;
 
     // Create random Q, K, V matrices
-    let query = Array3::from_shape_fn((batch_size, seq_len, d_k), |_| rand::random::<f32>());
-    let key = Array3::from_shape_fn((batch_size, seq_len, d_k), |_| rand::random::<f32>());
-    let value = Array3::from_shape_fn((batch_size, seq_len, d_v), |_| rand::random::<f32>());
+    let query = Array3::from_shape_fn((batchsize, seq_len, d_k), |_| rand::random::<f32>());
+    let key = Array3::from_shape_fn((batchsize, seq_len, d_k), |_| rand::random::<f32>());
+    let value = Array3::from_shape_fn((batchsize, seq_len, d_v), |_| rand::random::<f32>());
 
     // Scaled dot-product attention
     let scale = 1.0 / (d_k as f32).sqrt();

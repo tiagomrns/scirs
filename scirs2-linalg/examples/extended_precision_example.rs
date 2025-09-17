@@ -7,6 +7,7 @@ use ndarray::{Array1, Array2};
 use scirs2_linalg::error::LinalgResult;
 use scirs2_linalg::prelude::*;
 
+#[allow(dead_code)]
 fn main() -> LinalgResult<()> {
     println!("Extended Precision Matrix Operations Example");
     println!("==========================================\n");
@@ -216,7 +217,7 @@ fn main() -> LinalgResult<()> {
     println!("-------------------------------------\n");
 
     // Create an ill-conditioned test matrix
-    let test_matrix_f32 = Array2::from_shape_fn((4, 4), |(i, j)| {
+    let testmatrix_f32 = Array2::from_shape_fn((4, 4), |(i, j)| {
         if i == j {
             1.0f32
         } else {
@@ -225,16 +226,16 @@ fn main() -> LinalgResult<()> {
     });
 
     println!("Test matrix (close to singular):");
-    for i in 0..test_matrix_f32.nrows() {
-        for j in 0..test_matrix_f32.ncols() {
-            print!("{:.4} ", test_matrix_f32[[i, j]]);
+    for i in 0..testmatrix_f32.nrows() {
+        for j in 0..testmatrix_f32.ncols() {
+            print!("{:.4} ", testmatrix_f32[[i, j]]);
         }
         println!();
     }
 
     // LU factorization with extended precision
     println!("\nLU factorization with extended precision:");
-    let (p, l, u) = extended_lu::<_, f64>(&test_matrix_f32.view())?;
+    let (p, l, u) = extended_lu::<_, f64>(&testmatrix_f32.view())?;
 
     println!("L matrix:");
     for i in 0..l.nrows() {
@@ -258,9 +259,9 @@ fn main() -> LinalgResult<()> {
     let reconstructed = p_t.dot(&lu);
 
     println!("\nOriginal matrix:");
-    for i in 0..test_matrix_f32.nrows() {
-        for j in 0..test_matrix_f32.ncols() {
-            print!("{:.6} ", test_matrix_f32[[i, j]]);
+    for i in 0..testmatrix_f32.nrows() {
+        for j in 0..testmatrix_f32.ncols() {
+            print!("{:.6} ", testmatrix_f32[[i, j]]);
         }
         println!();
     }
@@ -275,9 +276,9 @@ fn main() -> LinalgResult<()> {
 
     // Calculate reconstruction error
     let mut max_error = 0.0f32;
-    for i in 0..test_matrix_f32.nrows() {
-        for j in 0..test_matrix_f32.ncols() {
-            let error = (test_matrix_f32[[i, j]] - reconstructed[[i, j]]).abs();
+    for i in 0..testmatrix_f32.nrows() {
+        for j in 0..testmatrix_f32.ncols() {
+            let error = (testmatrix_f32[[i, j]] - reconstructed[[i, j]]).abs();
             if error > max_error {
                 max_error = error;
             }
@@ -292,26 +293,26 @@ fn main() -> LinalgResult<()> {
 
     // Create a symmetric matrix that's moderately ill-conditioned
     let n = 5;
-    let mut sym_matrix = Array2::<f32>::zeros((n, n));
+    let mut symmatrix = Array2::<f32>::zeros((n, n));
 
     // Fill with Hilbert-like entries but ensure symmetry
     for i in 0..n {
         for j in 0..=i {
-            sym_matrix[[i, j]] = 1.0 / ((i + j + 1) as f32);
-            sym_matrix[[j, i]] = sym_matrix[[i, j]]; // Ensure symmetry
+            symmatrix[[i, j]] = 1.0 / ((i + j + 1) as f32);
+            symmatrix[[j, i]] = symmatrix[[i, j]]; // Ensure symmetry
         }
     }
 
     println!("Symmetric matrix:");
     for i in 0..n {
         for j in 0..n {
-            print!("{:.4} ", sym_matrix[[i, j]]);
+            print!("{:.4} ", symmatrix[[i, j]]);
         }
         println!();
     }
 
     // Compute eigenvalues and eigenvectors with standard precision
-    let (eigvals_std, eigvecs_std) = match scirs2_linalg::eigh(&sym_matrix.view(), None) {
+    let (eigvals_std, eigvecs_std) = match scirs2_linalg::eigh(&symmatrix.view(), None) {
         Ok(result) => result,
         Err(e) => {
             println!(
@@ -323,7 +324,7 @@ fn main() -> LinalgResult<()> {
     };
 
     // Compute eigenvalues and eigenvectors with extended precision
-    let (eigvals_ext, eigvecs_ext) = extended_eigh::<_, f64>(&sym_matrix.view(), None, None)?;
+    let (eigvals_ext, eigvecs_ext) = extended_eigh::<_, f64>(&symmatrix.view(), None, None)?;
 
     println!("\nEigenvalues with standard precision:");
     for (i, &val) in eigvals_std.iter().enumerate() {
@@ -365,7 +366,7 @@ fn main() -> LinalgResult<()> {
     for j in 0..n {
         // Standard precision
         let v_std = eigvecs_std.column(j).to_owned();
-        let av_std = sym_matrix.dot(&v_std);
+        let av_std = symmatrix.dot(&v_std);
         let lambda_v_std = &v_std * eigvals_std[j];
 
         let residual_std = (&av_std - &lambda_v_std)
@@ -377,7 +378,7 @@ fn main() -> LinalgResult<()> {
 
         // Extended precision
         let v_ext = eigvecs_ext.column(j).to_owned();
-        let av_ext = sym_matrix.dot(&v_ext);
+        let av_ext = symmatrix.dot(&v_ext);
         let lambda_v_ext = &v_ext * eigvals_ext[j];
 
         let residual_ext = (&av_ext - &lambda_v_ext)

@@ -170,6 +170,7 @@ impl<F: Float + ndarray::ScalarOperand + FromPrimitive> Op<F> for SymmetricEigen
 // Helper functions
 
 /// Check if matrix is symmetric
+#[allow(dead_code)]
 fn is_symmetric<F: Float>(matrix: &ArrayView2<F>) -> bool {
     let n = matrix.shape()[0];
     let tol = F::epsilon() * F::from(10.0).unwrap();
@@ -185,6 +186,7 @@ fn is_symmetric<F: Float>(matrix: &ArrayView2<F>) -> bool {
 }
 
 /// Compute eigendecomposition for symmetric matrix using Jacobi method
+#[allow(dead_code)]
 fn compute_symmetric_eigen<F: Float + ndarray::ScalarOperand + FromPrimitive>(
     matrix: &ArrayView2<F>,
 ) -> Result<(Array1<F>, Array2<F>), OpError> {
@@ -372,6 +374,7 @@ fn compute_symmetric_eigen<F: Float + ndarray::ScalarOperand + FromPrimitive>(
 }
 
 /// Compute gradient for symmetric eigendecomposition
+#[allow(dead_code)]
 fn symmetric_eigen_gradient<F: Float + ndarray::ScalarOperand + FromPrimitive>(
     eigenvalues: &ndarray::ArrayView1<F>,
     eigenvectors: &ArrayView2<F>,
@@ -432,6 +435,7 @@ fn symmetric_eigen_gradient<F: Float + ndarray::ScalarOperand + FromPrimitive>(
 // Public API functions
 
 /// Compute eigenvalues and eigenvectors of a symmetric matrix
+#[allow(dead_code)]
 pub fn eigh<'g, F: Float + ndarray::ScalarOperand + FromPrimitive>(
     matrix: &Tensor<'g, F>,
 ) -> (Tensor<'g, F>, Tensor<'g, F>) {
@@ -451,6 +455,7 @@ pub fn eigh<'g, F: Float + ndarray::ScalarOperand + FromPrimitive>(
 }
 
 /// Compute only the eigenvalues of a symmetric matrix (more efficient)
+#[allow(dead_code)]
 pub fn eigvalsh<'g, F: Float + ndarray::ScalarOperand + FromPrimitive>(
     matrix: &Tensor<'g, F>,
 ) -> Tensor<'g, F> {

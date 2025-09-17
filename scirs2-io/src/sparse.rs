@@ -40,6 +40,8 @@
 //! # Ok::<(), scirs2_io::error::IoError>(())
 //! ```
 
+#![allow(dead_code)]
+
 use crate::error::{IoError, Result};
 use crate::matrix_market::{
     MMDataType, MMFormat, MMHeader, MMSparseMatrix, MMSymmetry, SparseEntry,
@@ -266,7 +268,10 @@ where
         triplets.sort_by(|a, b| a.0.cmp(&b.0).then(a.1.cmp(&b.1)));
 
         // Extract values and column indices
-        let values: Vec<T> = triplets.iter().map(|(_, _, val)| (*val).clone()).collect();
+        let values: Vec<T> = triplets
+            .iter()
+            .map(|(_row, col, val)| (*val).clone())
+            .collect();
         let col_indices: Vec<usize> = triplets.iter().map(|(_, col, _)| *col).collect();
 
         Ok(SparseMatrixCSR {
@@ -320,8 +325,11 @@ where
         triplets.sort_by(|a, b| a.1.cmp(&b.1).then(a.0.cmp(&b.0)));
 
         // Extract values and row indices
-        let values: Vec<T> = triplets.iter().map(|(_, _, val)| (*val).clone()).collect();
-        let row_indices: Vec<usize> = triplets.iter().map(|(row, _, _)| *row).collect();
+        let values: Vec<T> = triplets
+            .iter()
+            .map(|(_row, col, val)| (*val).clone())
+            .collect();
+        let row_indices: Vec<usize> = triplets.iter().map(|(row, col, val)| *row).collect();
 
         Ok(SparseMatrixCSC {
             rows: self.shape.0,

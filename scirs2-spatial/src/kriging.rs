@@ -306,7 +306,7 @@ impl OrdinaryKriging {
     /// let kriging = OrdinaryKriging::new(&points.view(), &values.view(), variogram).unwrap();
     /// ```
     pub fn new(
-        points: &ArrayView2<f64>,
+        points: &ArrayView2<'_, f64>,
         values: &ArrayView1<f64>,
         variogram: VariogramModel,
     ) -> SpatialResult<Self> {
@@ -347,7 +347,7 @@ impl OrdinaryKriging {
     /// as it avoids recomputing the matrix inverse each time.
     pub fn fit(&mut self) -> SpatialResult<()> {
         let cov_matrix = self.build_covariance_matrix()?;
-        let inv_matrix = self.invert_matrix(&cov_matrix)?;
+        let inv_matrix = OrdinaryKriging::invert_matrix(&cov_matrix)?;
         self.cov_matrix_inv = Some(inv_matrix);
         Ok(())
     }
@@ -388,13 +388,13 @@ impl OrdinaryKriging {
             inv.clone()
         } else {
             let cov_matrix = self.build_covariance_matrix()?;
-            self.invert_matrix(&cov_matrix)?
+            OrdinaryKriging::invert_matrix(&cov_matrix)?
         };
 
-        // Build covariance vector between new location and data points
+        // Build covariance vector between new _location and data points
         let mut cov_vector = Array1::zeros(self.n_points + 1);
         for i in 0..self.n_points {
-            let dist = self.distance(location, &self.points.row(i).to_vec());
+            let dist = OrdinaryKriging::distance(location, &self.points.row(i).to_vec());
             cov_vector[i] = self.variogram.sill() - self.variogram.evaluate(dist);
         }
         cov_vector[self.n_points] = 1.0; // Lagrange multiplier for unbiasedness constraint
@@ -425,7 +425,7 @@ impl OrdinaryKriging {
     /// * Vector of KrigingPrediction results
     pub fn predict_batch(
         &self,
-        locations: &ArrayView2<f64>,
+        locations: &ArrayView2<'_, f64>,
     ) -> SpatialResult<Vec<KrigingPrediction>> {
         if locations.ncols() != self.ndim {
             return Err(SpatialError::ValueError(
@@ -438,7 +438,7 @@ impl OrdinaryKriging {
             inv.clone()
         } else {
             let cov_matrix = self.build_covariance_matrix()?;
-            self.invert_matrix(&cov_matrix)?
+            OrdinaryKriging::invert_matrix(&cov_matrix)?
         };
 
         let mut predictions = Vec::with_capacity(locations.nrows());
@@ -449,7 +449,7 @@ impl OrdinaryKriging {
             // Build covariance vector
             let mut cov_vector = Array1::zeros(self.n_points + 1);
             for i in 0..self.n_points {
-                let dist = self.distance(&location, &self.points.row(i).to_vec());
+                let dist = OrdinaryKriging::distance(&location, &self.points.row(i).to_vec());
                 cov_vector[i] = self.variogram.sill() - self.variogram.evaluate(dist);
             }
             cov_vector[self.n_points] = 1.0;
@@ -483,7 +483,10 @@ impl OrdinaryKriging {
                 let dist = if i == j {
                     0.0
                 } else {
-                    self.distance(&self.points.row(i).to_vec(), &self.points.row(j).to_vec())
+                    OrdinaryKriging::distance(
+                        &self.points.row(i).to_vec(),
+                        &self.points.row(j).to_vec(),
+                    )
                 };
                 // Covariance = Sill - Variogram
                 matrix[[i, j]] = self.variogram.sill() - self.variogram.evaluate(dist);
@@ -501,7 +504,8 @@ impl OrdinaryKriging {
     }
 
     /// Compute Euclidean distance between two points
-    fn distance(&self, p1: &[f64], p2: &[f64]) -> f64 {
+    #[allow(dead_code)]
+    fn distance(p1: &[f64], p2: &[f64]) -> f64 {
         p1.iter()
             .zip(p2.iter())
             .map(|(a, b)| (a - b).powi(2))
@@ -510,7 +514,7 @@ impl OrdinaryKriging {
     }
 
     /// Invert a matrix using Gaussian elimination with partial pivoting
-    fn invert_matrix(&self, matrix: &Array2<f64>) -> SpatialResult<Array2<f64>> {
+    fn invert_matrix(matrix: &Array2<f64>) -> SpatialResult<Array2<f64>> {
         let n = matrix.nrows();
         if n != matrix.ncols() {
             return Err(SpatialError::ComputationError(
@@ -518,7 +522,7 @@ impl OrdinaryKriging {
             ));
         }
 
-        // Create augmented matrix [A | I]
+        // Create augmented _matrix [A | I]
         let mut aug = Array2::zeros((n, 2 * n));
 
         // Fill A part
@@ -552,7 +556,7 @@ impl OrdinaryKriging {
                 }
             }
 
-            // Check for singular matrix
+            // Check for singular _matrix
             if aug[[i, i]].abs() < 1e-12 {
                 return Err(SpatialError::ComputationError(
                     "Matrix is singular (not invertible)".to_string(),
@@ -576,7 +580,7 @@ impl OrdinaryKriging {
             }
         }
 
-        // Extract inverse matrix
+        // Extract inverse _matrix
         let mut inverse = Array2::zeros((n, n));
         for i in 0..n {
             for j in 0..n {
@@ -674,7 +678,7 @@ impl SimpleKriging {
     /// * `mean` - Known mean value
     /// * `variogram` - Variogram model
     pub fn new(
-        points: &ArrayView2<f64>,
+        points: &ArrayView2<'_, f64>,
         values: &ArrayView1<f64>,
         mean: f64,
         variogram: VariogramModel,
@@ -725,7 +729,10 @@ impl SimpleKriging {
                 let dist = if i == j {
                     0.0
                 } else {
-                    self.distance(&self.points.row(i).to_vec(), &self.points.row(j).to_vec())
+                    OrdinaryKriging::distance(
+                        &self.points.row(i).to_vec(),
+                        &self.points.row(j).to_vec(),
+                    )
                 };
                 cov_matrix[[i, j]] = self.variogram.sill() - self.variogram.evaluate(dist);
             }
@@ -734,12 +741,12 @@ impl SimpleKriging {
         // Build covariance vector
         let mut cov_vector = Array1::zeros(self.n_points);
         for i in 0..self.n_points {
-            let dist = self.distance(location, &self.points.row(i).to_vec());
+            let dist = OrdinaryKriging::distance(location, &self.points.row(i).to_vec());
             cov_vector[i] = self.variogram.sill() - self.variogram.evaluate(dist);
         }
 
         // Solve for weights
-        let weights = self.solve_linear_system(&cov_matrix, &cov_vector)?;
+        let weights = SimpleKriging::solve_linear_system(&cov_matrix, &cov_vector)?;
 
         // Calculate prediction (residuals from mean)
         let residuals: Array1<f64> = &self.values - self.mean;
@@ -756,7 +763,8 @@ impl SimpleKriging {
     }
 
     /// Compute Euclidean distance between two points
-    fn distance(&self, p1: &[f64], p2: &[f64]) -> f64 {
+    #[allow(dead_code)]
+    fn distance(p1: &[f64], p2: &[f64]) -> f64 {
         p1.iter()
             .zip(p2.iter())
             .map(|(a, b)| (a - b).powi(2))
@@ -765,7 +773,7 @@ impl SimpleKriging {
     }
 
     /// Solve linear system using Gaussian elimination
-    fn solve_linear_system(&self, a: &Array2<f64>, b: &Array1<f64>) -> SpatialResult<Array1<f64>> {
+    fn solve_linear_system(a: &Array2<f64>, b: &Array1<f64>) -> SpatialResult<Array1<f64>> {
         let n = a.nrows();
 
         // Create augmented matrix

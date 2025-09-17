@@ -21,6 +21,7 @@ use ndarray::Array1;
 #[cfg(feature = "neural_common")]
 use rand::Rng;
 
+#[allow(dead_code)]
 fn main() -> Result<(), Box<dyn Error>> {
     #[cfg(not(feature = "neural_common"))]
     {

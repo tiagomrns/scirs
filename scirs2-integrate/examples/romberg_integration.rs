@@ -2,6 +2,7 @@ use ndarray::ArrayView1;
 use scirs2_integrate::romberg::{multi_romberg, romberg, RombergOptions};
 use std::f64::consts::PI;
 
+#[allow(dead_code)]
 fn main() {
     println!("Romberg Integration Examples\n");
 
@@ -77,7 +78,7 @@ fn main() {
     .unwrap();
 
     println!("∫∫cos(x+y) dxdy over [0,π/2]²:");
-    println!("  Calculated: {:.15}", result_2d);
+    println!("  Calculated: {result_2d:.15}");
     println!("  Exact:      {:.15}", 0.0);
     println!("  Error:      {:.1e}", result_2d.abs());
     println!();

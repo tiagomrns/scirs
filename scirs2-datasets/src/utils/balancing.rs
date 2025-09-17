@@ -7,12 +7,14 @@
 use crate::error::{DatasetsError, Result};
 use ndarray::{Array1, Array2};
 use rand::prelude::*;
-use rand::rng;
 use rand::rngs::StdRng;
+use rand::seq::SliceRandom;
+use rand_distr::Uniform;
+use scirs2_core::rng;
 use std::collections::HashMap;
 
 /// Balancing strategies for handling imbalanced datasets
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, serde::Serialize, serde::Deserialize)]
 pub enum BalancingStrategy {
     /// Random oversampling - duplicates minority class samples
     RandomOversample,
@@ -51,6 +53,7 @@ pub enum BalancingStrategy {
 /// let (balanced_data, balanced_targets) = random_oversample(&data, &targets, Some(42)).unwrap();
 /// // Now both classes have 4 samples each
 /// ```
+#[allow(dead_code)]
 pub fn random_oversample(
     data: &Array2<f64>,
     targets: &Array1<f64>,
@@ -79,7 +82,7 @@ pub fn random_oversample(
     let max_class_size = class_indices.values().map(|v| v.len()).max().unwrap();
 
     let mut rng = match random_seed {
-        Some(seed) => StdRng::seed_from_u64(seed),
+        Some(_seed) => StdRng::seed_from_u64(_seed),
         None => {
             let mut r = rng();
             StdRng::seed_from_u64(r.next_u64())
@@ -99,7 +102,7 @@ pub fn random_oversample(
         if class_size < max_class_size {
             let samples_needed = max_class_size - class_size;
             for _ in 0..samples_needed {
-                let random_idx = rng.random_range(0..class_size);
+                let random_idx = rng.sample(Uniform::new(0, class_size).unwrap());
                 resampled_indices.push(indices[random_idx]);
             }
         }
@@ -138,6 +141,7 @@ pub fn random_oversample(
 /// let (balanced_data, balanced_targets) = random_undersample(&data, &targets, Some(42)).unwrap();
 /// // Now both classes have 2 samples each
 /// ```
+#[allow(dead_code)]
 pub fn random_undersample(
     data: &Array2<f64>,
     targets: &Array1<f64>,
@@ -166,7 +170,7 @@ pub fn random_undersample(
     let min_class_size = class_indices.values().map(|v| v.len()).min().unwrap();
 
     let mut rng = match random_seed {
-        Some(seed) => StdRng::seed_from_u64(seed),
+        Some(_seed) => StdRng::seed_from_u64(_seed),
         None => {
             let mut r = rng();
             StdRng::seed_from_u64(r.next_u64())
@@ -224,6 +228,7 @@ pub fn random_undersample(
 /// assert_eq!(synthetic_data.nrows(), 2);
 /// assert_eq!(synthetic_targets.len(), 2);
 /// ```
+#[allow(dead_code)]
 pub fn generate_synthetic_samples(
     data: &Array2<f64>,
     targets: &Array1<f64>,
@@ -240,17 +245,17 @@ pub fn generate_synthetic_samples(
 
     if n_synthetic == 0 {
         return Err(DatasetsError::InvalidFormat(
-            "Number of synthetic samples must be > 0".to_string(),
+            "Number of _synthetic samples must be > 0".to_string(),
         ));
     }
 
     if k_neighbors == 0 {
         return Err(DatasetsError::InvalidFormat(
-            "Number of neighbors must be > 0".to_string(),
+            "Number of _neighbors must be > 0".to_string(),
         ));
     }
 
-    // Find samples belonging to the target class
+    // Find samples belonging to the target _class
     let class_indices: Vec<usize> = targets
         .iter()
         .enumerate()
@@ -260,18 +265,18 @@ pub fn generate_synthetic_samples(
 
     if class_indices.len() < 2 {
         return Err(DatasetsError::InvalidFormat(
-            "Need at least 2 samples of the target class for synthetic generation".to_string(),
+            "Need at least 2 samples of the target _class for _synthetic generation".to_string(),
         ));
     }
 
     if k_neighbors >= class_indices.len() {
         return Err(DatasetsError::InvalidFormat(
-            "k_neighbors must be less than the number of samples in the target class".to_string(),
+            "k_neighbors must be less than the number of samples in the target _class".to_string(),
         ));
     }
 
     let mut rng = match random_seed {
-        Some(seed) => StdRng::seed_from_u64(seed),
+        Some(_seed) => StdRng::seed_from_u64(_seed),
         None => {
             let mut r = rng();
             StdRng::seed_from_u64(r.next_u64())
@@ -283,11 +288,11 @@ pub fn generate_synthetic_samples(
     let synthetic_targets = Array1::from_elem(n_synthetic, target_class);
 
     for i in 0..n_synthetic {
-        // Randomly select a sample from the target class
-        let base_idx = class_indices[rng.random_range(0..class_indices.len())];
+        // Randomly select a sample from the target _class
+        let base_idx = class_indices[rng.sample(Uniform::new(0, class_indices.len()).unwrap())];
         let base_sample = data.row(base_idx);
 
-        // Find k nearest neighbors within the same class
+        // Find k nearest _neighbors within the same _class
         let mut distances: Vec<(usize, f64)> = class_indices
             .iter()
             .filter(|&&idx| idx != base_idx)
@@ -307,11 +312,11 @@ pub fn generate_synthetic_samples(
         let k_nearest = &distances[0..k_neighbors.min(distances.len())];
 
         // Select a random neighbor from the k nearest
-        let neighbor_idx = k_nearest[rng.random_range(0..k_nearest.len())].0;
+        let neighbor_idx = k_nearest[rng.sample(Uniform::new(0, k_nearest.len()).unwrap())].0;
         let neighbor_sample = data.row(neighbor_idx);
 
-        // Generate synthetic sample by interpolation
-        let alpha = rng.random_range(0.0..1.0);
+        // Generate _synthetic sample by interpolation
+        let alpha = rng.gen_range(0.0..1.0);
         for (j, synthetic_feature) in synthetic_data.row_mut(i).iter_mut().enumerate() {
             *synthetic_feature = base_sample[j] + alpha * (neighbor_sample[j] - base_sample[j]);
         }
@@ -346,6 +351,7 @@ pub fn generate_synthetic_samples(
 /// let targets = Array1::from(vec![0.0, 0.0, 1.0, 1.0, 1.0, 1.0]);
 /// let (balanced_data, balanced_targets) = create_balanced_dataset(&data, &targets, BalancingStrategy::RandomOversample, Some(42)).unwrap();
 /// ```
+#[allow(dead_code)]
 pub fn create_balanced_dataset(
     data: &Array2<f64>,
     targets: &Array1<f64>,
@@ -406,6 +412,7 @@ pub fn create_balanced_dataset(
 #[cfg(test)]
 mod tests {
     use super::*;
+    use rand_distr::Uniform;
 
     #[test]
     fn test_random_oversample() {

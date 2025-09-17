@@ -6,6 +6,7 @@ use ndarray::{Array1, ArrayView1};
 
 /// Backtracking line search with Armijo condition
 #[allow(clippy::too_many_arguments)]
+#[allow(dead_code)]
 pub fn backtracking_line_search<F, S>(
     fun: &mut F,
     x: &ArrayView1<f64>,
@@ -50,6 +51,7 @@ where
 
 /// Strong Wolfe line search
 #[allow(clippy::too_many_arguments)]
+#[allow(dead_code)]
 pub fn strong_wolfe_line_search<F, S, G>(
     fun: &mut F,
     grad_fun: &mut G,
@@ -121,6 +123,7 @@ where
 }
 
 #[allow(clippy::too_many_arguments)]
+#[allow(dead_code)]
 fn zoom<F, S, G>(
     fun: &mut F,
     grad_fun: &mut G,
@@ -176,6 +179,7 @@ where
 }
 
 /// Simple bracketing line search
+#[allow(dead_code)]
 pub fn bracketing_line_search<F, S>(
     fun: &mut F,
     x: &ArrayView1<f64>,

@@ -48,7 +48,7 @@ impl Default for GradientCheckConfig {
 
 /// Gradient checking engine
 pub struct GradientChecker<F: Float> {
-    config: GradientCheckConfig,
+    _config: GradientCheckConfig,
     finite_diff_computer: FiniteDifferenceComputer<F>,
 }
 
@@ -56,7 +56,7 @@ impl<F: Float> GradientChecker<F> {
     /// Create a new gradient checker
     pub fn new() -> Self {
         Self {
-            config: GradientCheckConfig::default(),
+            _config: GradientCheckConfig::default(),
             finite_diff_computer: FiniteDifferenceComputer::new(),
         }
     }
@@ -66,7 +66,7 @@ impl<F: Float> GradientChecker<F> {
         let finite_diff_computer =
             FiniteDifferenceComputer::with_config(config.finite_diff_config.clone());
         Self {
-            config,
+            _config: config,
             finite_diff_computer,
         }
     }
@@ -83,9 +83,9 @@ impl<F: Float> GradientChecker<F> {
     {
         let mut result = GradientCheckResult::new();
 
-        if self.config.check_multiple_points {
+        if self._config.check_multiple_points {
             // Test at multiple random points around the input
-            for _i in 0..self.config.num_test_points {
+            for _i in 0..self._config.num_test_points {
                 // Create a simplified point result to avoid lifetime issues
                 let point_result = SinglePointResult {
                     analytical_gradient: *analytical_gradient,
@@ -117,7 +117,7 @@ impl<F: Float> GradientChecker<F> {
     where
         Func: for<'b> Fn(&Tensor<'b, F>) -> Result<Tensor<'b, F>, StabilityError>,
     {
-        // Compute numerical gradient using finite differences
+        // Compute numerical _gradient using finite differences
         let numerical_gradient = self
             .finite_diff_computer
             .compute_gradient(|x| function(x), input)?;
@@ -133,7 +133,7 @@ impl<F: Float> GradientChecker<F> {
         };
 
         // Optionally check second-order gradients (Hessian)
-        if self.config.check_second_order {
+        if self._config.check_second_order {
             result.second_order_check = Some(self.check_second_order_gradients(input)?);
         }
 
@@ -199,10 +199,10 @@ impl<F: Float> GradientChecker<F> {
         comparison.mean_relative_error = total_rel_error / num_elements as f64;
 
         // Determine if the check passed
-        comparison.passed = comparison.max_absolute_error < self.config.absolute_tolerance
-            && comparison.max_relative_error < self.config.relative_tolerance;
+        comparison.passed = comparison.max_absolute_error < self._config.absolute_tolerance
+            && comparison.max_relative_error < self._config.relative_tolerance;
 
-        if self.config.verbose {
+        if self._config.verbose {
             self.print_comparison_details(&comparison);
         }
 
@@ -212,7 +212,7 @@ impl<F: Float> GradientChecker<F> {
     /// Check second-order gradients (Hessian)
     fn check_second_order_gradients(
         &self,
-        _input: &Tensor<F>,
+        input: &Tensor<F>,
     ) -> Result<SecondOrderCheck, StabilityError> {
         // Simplified implementation - would compute and compare Hessians
         Ok(SecondOrderCheck {
@@ -249,8 +249,7 @@ impl<F: Float> GradientChecker<F> {
     /// Compute analytical gradient at a test point
     #[allow(dead_code)]
     fn compute_analytical_gradient_at_point<'a, Func>(
-        &self,
-        _function: &Func,
+        self_function: &Func,
         input: &'a Tensor<'a, F>,
     ) -> Result<Tensor<'a, F>, StabilityError>
     where
@@ -285,8 +284,8 @@ impl<F: Float> GradientChecker<F> {
         if !comparison.passed {
             println!("  Failed Elements:");
             for error in &comparison.element_wise_errors {
-                if error.absolute_error > self.config.absolute_tolerance
-                    || error.relative_error > self.config.relative_tolerance
+                if error.absolute_error > self._config.absolute_tolerance
+                    || error.relative_error > self._config.relative_tolerance
                 {
                     println!("    Index {}: analytical={:.6e}, numerical={:.6e}, abs_err={:.2e}, rel_err={:.2e}",
                             error.index, error.analytical_value, error.numerical_value,
@@ -468,17 +467,17 @@ impl<F: Float> VectorFunctionChecker<F> {
     }
 
     /// Check gradients of a vector-valued function (Jacobian)
-    pub fn check_jacobian<Func>(
+    pub fn check_jacobian<'a, Func>(
         &self,
-        _function: Func,
-        _input: &Tensor<F>,
-        _analytical_jacobian: &Array<F, IxDyn>,
-    ) -> Result<JacobianCheckResult<'_, F>, StabilityError>
+        function: Func,
+        input: &'a Tensor<F>,
+        analytical_jacobian: &'a Array<F, IxDyn>,
+    ) -> Result<JacobianCheckResult<'a, F>, StabilityError>
     where
-        Func: for<'a> Fn(&Tensor<'a, F>) -> Result<Tensor<'a, F>, StabilityError>,
+        Func: for<'b> Fn(&Tensor<'b, F>) -> Result<Tensor<'b, F>, StabilityError>,
     {
         // Check each output component separately
-        let output_dims = _analytical_jacobian.shape()[0];
+        let output_dims = analytical_jacobian.shape()[0];
         let mut component_results = Vec::new();
 
         for _output_idx in 0..output_dims {
@@ -504,7 +503,7 @@ impl<F: Float> VectorFunctionChecker<F> {
         _row: usize,
         graph: &'a Graph<F>,
     ) -> Result<Tensor<'a, F>, StabilityError> {
-        // Extract a specific row from the Jacobian matrix
+        // Extract a specific _row from the Jacobian matrix
         // Simplified implementation
         let row_data = vec![F::zero(); jacobian.shape()[1]];
         Ok(Tensor::from_vec(row_data, vec![jacobian.shape()[1]], graph))
@@ -540,10 +539,10 @@ impl<F: Float> ParameterGradientChecker<F> {
     /// Check gradients with respect to model parameters
     pub fn check_parameter_gradients<'a, Func>(
         &self,
-        _loss_function: Func,
+        loss_function: Func,
         parameters: &'a HashMap<String, Tensor<'a, F>>,
         analytical_gradients: &'a HashMap<String, Tensor<'a, F>>,
-    ) -> Result<ParameterCheckResult<'_, F>, StabilityError>
+    ) -> Result<ParameterCheckResult<'a, F>, StabilityError>
     where
         Func:
             for<'b> Fn(&'b HashMap<String, Tensor<'b, F>>) -> Result<Tensor<'b, F>, StabilityError>,
@@ -609,6 +608,7 @@ impl<F: Float> ParameterCheckResult<'_, F> {
 
 /// Public API functions
 /// Quick gradient check for a scalar function
+#[allow(dead_code)]
 pub fn check_gradient<F: Float, Func>(
     function: Func,
     input: &Tensor<F>,
@@ -623,9 +623,10 @@ where
 }
 
 /// Comprehensive gradient check with detailed results
+#[allow(dead_code)]
 pub fn comprehensive_gradient_check<'a, F: Float, Func>(
     _function: Func,
-    _input: &'a Tensor<'a, F>,
+    input: &'a Tensor<'a, F>,
     _analytical_gradient: &'a Tensor<'a, F>,
     _config: GradientCheckConfig,
 ) -> Result<GradientCheckResult<'a, F>, StabilityError>

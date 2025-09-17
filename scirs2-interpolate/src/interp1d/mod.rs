@@ -61,7 +61,7 @@ pub struct Interp1d<F: Float> {
     extrapolate: ExtrapolateMode,
 }
 
-impl<F: Float + FromPrimitive + Debug> Interp1d<F> {
+impl<F: Float + FromPrimitive + Debug + std::fmt::Display> Interp1d<F> {
     /// Create a new interpolation object
     ///
     /// # Arguments
@@ -104,21 +104,23 @@ impl<F: Float + FromPrimitive + Debug> Interp1d<F> {
     ) -> InterpolateResult<Self> {
         // Check inputs
         if x.len() != y.len() {
-            return Err(InterpolateError::ValueError(
+            return Err(InterpolateError::invalid_input(
                 "x and y arrays must have the same length".to_string(),
             ));
         }
 
         if x.len() < 2 {
-            return Err(InterpolateError::ValueError(
-                "at least 2 points are required for interpolation".to_string(),
+            return Err(InterpolateError::insufficient_points(
+                2,
+                x.len(),
+                "interpolation",
             ));
         }
 
         // Check that x is sorted
         for i in 1..x.len() {
             if x[i] <= x[i - 1] {
-                return Err(InterpolateError::ValueError(
+                return Err(InterpolateError::invalid_input(
                     "x values must be sorted in ascending order".to_string(),
                 ));
             }
@@ -126,8 +128,10 @@ impl<F: Float + FromPrimitive + Debug> Interp1d<F> {
 
         // For cubic interpolation, need at least 4 points
         if method == InterpolationMethod::Cubic && x.len() < 4 {
-            return Err(InterpolateError::ValueError(
-                "at least 4 points are required for cubic interpolation".to_string(),
+            return Err(InterpolateError::insufficient_points(
+                4,
+                x.len(),
+                "cubic interpolation",
             ));
         }
 
@@ -143,24 +147,29 @@ impl<F: Float + FromPrimitive + Debug> Interp1d<F> {
     ///
     /// # Arguments
     ///
-    /// * `x_new` - The x coordinate at which to evaluate the interpolation
+    /// * `xnew` - The x coordinate at which to evaluate the interpolation
     ///
     /// # Returns
     ///
-    /// The interpolated y value at `x_new`
-    pub fn evaluate(&self, x_new: F) -> InterpolateResult<F> {
+    /// The interpolated y value at `xnew`
+    pub fn evaluate(&self, xnew: F) -> InterpolateResult<F> {
         // Check if we're extrapolating
-        let is_extrapolating = x_new < self.x[0] || x_new > self.x[self.x.len() - 1];
+        let is_extrapolating = xnew < self.x[0] || xnew > self.x[self.x.len() - 1];
 
         if is_extrapolating {
             match self.extrapolate {
                 ExtrapolateMode::Error => {
-                    return Err(InterpolateError::DomainError(
-                        "x_new is outside the interpolation range".to_string(),
+                    return Err(InterpolateError::out_of_domain_with_suggestion(
+                        xnew,
+                        self.x[0],
+                        self.x[self.x.len() - 1],
+                        "1D interpolation evaluation",
+                        format!("Use ExtrapolateMode::Extrapolate for linear extrapolation, ExtrapolateMode::Nearest for constant extrapolation, or ensure query points are within the data range [{:?}, {:?}]", 
+                               self.x[0], self.x[self.x.len() - 1])
                     ));
                 }
                 ExtrapolateMode::Nearest => {
-                    if x_new < self.x[0] {
+                    if xnew < self.x[0] {
                         return Ok(self.y[0]);
                     } else {
                         return Ok(self.y[self.y.len() - 1]);
@@ -168,7 +177,7 @@ impl<F: Float + FromPrimitive + Debug> Interp1d<F> {
                 }
                 ExtrapolateMode::Extrapolate => {
                     // For extrapolation, we'll use linear extrapolation based on the edge segments
-                    if x_new < self.x[0] {
+                    if xnew < self.x[0] {
                         // Use the first segment for extrapolation below the range
                         let x0 = self.x[0];
                         let x1 = self.x[1];
@@ -177,7 +186,7 @@ impl<F: Float + FromPrimitive + Debug> Interp1d<F> {
 
                         // Linear extrapolation formula: y = y0 + (x - x0) * (y1 - y0) / (x1 - x0)
                         let slope = (y1 - y0) / (x1 - x0);
-                        return Ok(y0 + (x_new - x0) * slope);
+                        return Ok(y0 + (xnew - x0) * slope);
                     } else {
                         // Use the last segment for extrapolation above the range
                         let n = self.x.len();
@@ -188,42 +197,40 @@ impl<F: Float + FromPrimitive + Debug> Interp1d<F> {
 
                         // Linear extrapolation formula: y = y1 + (x - x1) * (y1 - y0) / (x1 - x0)
                         let slope = (y1 - y0) / (x1 - x0);
-                        return Ok(y1 + (x_new - x1) * slope);
+                        return Ok(y1 + (xnew - x1) * slope);
                     }
                 }
             }
         }
 
-        // Find the index of the segment containing x_new
+        // Find the index of the segment containing xnew
         let mut idx = 0;
         for i in 0..self.x.len() - 1 {
-            if x_new >= self.x[i] && x_new <= self.x[i + 1] {
+            if xnew >= self.x[i] && xnew <= self.x[i + 1] {
                 idx = i;
                 break;
             }
         }
 
-        // Special case: x_new is exactly the last point
-        if x_new == self.x[self.x.len() - 1] {
+        // Special case: xnew is exactly the last point
+        if xnew == self.x[self.x.len() - 1] {
             return Ok(self.y[self.x.len() - 1]);
         }
 
         // Apply the selected interpolation method
         match self.method {
             InterpolationMethod::Nearest => {
-                nearest_interp(&self.x.view(), &self.y.view(), idx, x_new)
+                nearest_interp(&self.x.view(), &self.y.view(), idx, xnew)
             }
-            InterpolationMethod::Linear => {
-                linear_interp(&self.x.view(), &self.y.view(), idx, x_new)
-            }
-            InterpolationMethod::Cubic => cubic_interp(&self.x.view(), &self.y.view(), idx, x_new),
+            InterpolationMethod::Linear => linear_interp(&self.x.view(), &self.y.view(), idx, xnew),
+            InterpolationMethod::Cubic => cubic_interp(&self.x.view(), &self.y.view(), idx, xnew),
             InterpolationMethod::Pchip => {
                 // For PCHIP, we'll create a PCHIP interpolator and use it
                 // This is not the most efficient approach, but it keeps the interface consistent
                 let extrapolate = self.extrapolate == ExtrapolateMode::Extrapolate
                     || self.extrapolate == ExtrapolateMode::Nearest;
                 let pchip = PchipInterpolator::new(&self.x.view(), &self.y.view(), extrapolate)?;
-                pchip.evaluate(x_new)
+                pchip.evaluate(xnew)
             }
         }
     }
@@ -232,14 +239,14 @@ impl<F: Float + FromPrimitive + Debug> Interp1d<F> {
     ///
     /// # Arguments
     ///
-    /// * `x_new` - The x coordinates at which to evaluate the interpolation
+    /// * `xnew` - The x coordinates at which to evaluate the interpolation
     ///
     /// # Returns
     ///
-    /// The interpolated y values at `x_new`
-    pub fn evaluate_array(&self, x_new: &ArrayView1<F>) -> InterpolateResult<Array1<F>> {
-        let mut result = Array1::zeros(x_new.len());
-        for (i, &x) in x_new.iter().enumerate() {
+    /// The interpolated y values at `xnew`
+    pub fn evaluate_array(&self, xnew: &ArrayView1<F>) -> InterpolateResult<Array1<F>> {
+        let mut result = Array1::zeros(xnew.len());
+        for (i, &x) in xnew.iter().enumerate() {
             result[i] = self.evaluate(x)?;
         }
         Ok(result)
@@ -253,20 +260,21 @@ impl<F: Float + FromPrimitive + Debug> Interp1d<F> {
 /// * `x` - The x coordinates
 /// * `y` - The y coordinates
 /// * `idx` - The index of the segment containing the target point
-/// * `x_new` - The x coordinate at which to interpolate
+/// * `xnew` - The x coordinate at which to interpolate
 ///
 /// # Returns
 ///
 /// The interpolated value
+#[allow(dead_code)]
 fn nearest_interp<F: Float>(
     x: &ArrayView1<F>,
     y: &ArrayView1<F>,
     idx: usize,
-    x_new: F,
+    xnew: F,
 ) -> InterpolateResult<F> {
     // Find which of the two points is closer
-    let dist_left = (x_new - x[idx]).abs();
-    let dist_right = (x_new - x[idx + 1]).abs();
+    let dist_left = (xnew - x[idx]).abs();
+    let dist_right = (xnew - x[idx + 1]).abs();
 
     if dist_left <= dist_right {
         Ok(y[idx])
@@ -282,16 +290,17 @@ fn nearest_interp<F: Float>(
 /// * `x` - The x coordinates
 /// * `y` - The y coordinates
 /// * `idx` - The index of the segment containing the target point
-/// * `x_new` - The x coordinate at which to interpolate
+/// * `xnew` - The x coordinate at which to interpolate
 ///
 /// # Returns
 ///
 /// The interpolated value
+#[allow(dead_code)]
 fn linear_interp<F: Float>(
     x: &ArrayView1<F>,
     y: &ArrayView1<F>,
     idx: usize,
-    x_new: F,
+    xnew: F,
 ) -> InterpolateResult<F> {
     let x0 = x[idx];
     let x1 = x[idx + 1];
@@ -304,7 +313,7 @@ fn linear_interp<F: Float>(
     }
 
     // Linear interpolation formula: y = y0 + (x - x0) * (y1 - y0) / (x1 - x0)
-    Ok(y0 + (x_new - x0) * (y1 - y0) / (x1 - x0))
+    Ok(y0 + (xnew - x0) * (y1 - y0) / (x1 - x0))
 }
 
 /// Perform cubic interpolation
@@ -314,16 +323,17 @@ fn linear_interp<F: Float>(
 /// * `x` - The x coordinates
 /// * `y` - The y coordinates
 /// * `idx` - The index of the segment containing the target point
-/// * `x_new` - The x coordinate at which to interpolate
+/// * `xnew` - The x coordinate at which to interpolate
 ///
 /// # Returns
 ///
 /// The interpolated value
+#[allow(dead_code)]
 fn cubic_interp<F: Float + FromPrimitive>(
     x: &ArrayView1<F>,
     y: &ArrayView1<F>,
     idx: usize,
-    x_new: F,
+    xnew: F,
 ) -> InterpolateResult<F> {
     // We need 4 points for cubic interpolation
     // If we're near the edges, we need to adjust the indices
@@ -348,7 +358,7 @@ fn cubic_interp<F: Float + FromPrimitive>(
 
     // Normalized position within the interval [x1, x2]
     let t = if x2 != x1 {
-        (x_new - x1) / (x2 - x1)
+        (xnew - x1) / (x2 - x1)
     } else {
         F::zero()
     };
@@ -543,10 +553,10 @@ mod tests {
     fn test_convenience_functions() {
         let x = array![0.0, 1.0, 2.0, 3.0];
         let y = array![0.0, 1.0, 4.0, 9.0];
-        let x_new = array![0.5, 1.5, 2.5];
+        let xnew = array![0.5, 1.5, 2.5];
 
         // Test nearest interpolation
-        let y_nearest = nearest_interpolate(&x.view(), &y.view(), &x_new.view()).unwrap();
+        let y_nearest = nearest_interpolate(&x.view(), &y.view(), &xnew.view()).unwrap();
         // Point 0.5 is exactly halfway between x[0]=0.0 and x[1]=1.0, so we default to the left point's value
         assert_relative_eq!(y_nearest[0], 0.0);
         // Point 1.5 is exactly halfway between x[1]=1.0 and x[2]=2.0, so we default to the left point's value
@@ -555,13 +565,13 @@ mod tests {
         assert_relative_eq!(y_nearest[2], 4.0);
 
         // Test linear interpolation
-        let y_linear = linear_interpolate(&x.view(), &y.view(), &x_new.view()).unwrap();
+        let y_linear = linear_interpolate(&x.view(), &y.view(), &xnew.view()).unwrap();
         assert_relative_eq!(y_linear[0], 0.5);
         assert_relative_eq!(y_linear[1], 2.5);
         assert_relative_eq!(y_linear[2], 6.5);
 
         // Test cubic interpolation
-        let y_cubic = cubic_interpolate(&x.view(), &y.view(), &x_new.view()).unwrap();
+        let y_cubic = cubic_interpolate(&x.view(), &y.view(), &xnew.view()).unwrap();
         // Allow a wider tolerance for cubic interpolation since it depends on the specific spline implementation
         assert!((y_cubic[0] - 0.25).abs() < 0.15);
         assert!((y_cubic[1] - 2.25).abs() < 0.15);
@@ -569,7 +579,7 @@ mod tests {
         assert!((y_cubic[2] - 6.25).abs() < 1.0);
 
         // Test PCHIP interpolation
-        let y_pchip = pchip_interpolate(&x.view(), &y.view(), &x_new.view(), false).unwrap();
+        let y_pchip = pchip_interpolate(&x.view(), &y.view(), &xnew.view(), false).unwrap();
         // For monotonically increasing data, PCHIP should preserve monotonicity
         assert!(y_pchip[0] > 0.0 && y_pchip[0] < 1.0);
         assert!(y_pchip[1] > 1.0 && y_pchip[1] < 4.0);

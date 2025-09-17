@@ -1,5 +1,6 @@
 use scirs2_special::{ai, aip, bi, bip};
 
+#[allow(dead_code)]
 fn main() {
     println!("Example of Airy functions");
     println!("-----------------------");

@@ -117,16 +117,16 @@ impl ParallelElementWise {
 
     /// Calculate optimal chunk size for parallel processing
     #[allow(dead_code)]
-    fn calculate_chunk_size(total_size: usize, config: &ParallelConfig) -> usize {
+    fn calculate_chunk_size(_totalsize: usize, config: &ParallelConfig) -> usize {
         if let Some(num_chunks) = config.num_chunks {
-            total_size.div_ceil(num_chunks)
+            _totalsize.div_ceil(num_chunks)
         } else {
             // Use number of available threads
             let num_threads = std::thread::available_parallelism()
                 .map(|n| n.get())
                 .unwrap_or(4);
 
-            let chunk_size = total_size.div_ceil(num_threads);
+            let chunk_size = _totalsize.div_ceil(num_threads);
             chunk_size.max(config.preferred_chunk_size / num_threads)
         }
     }
@@ -354,7 +354,7 @@ impl ParallelMatrix {
     }
 
     /// Calculate optimal block size for matrix multiplication
-    fn calculate_block_size(m: usize, n: usize, k: usize, _config: &ParallelConfig) -> usize {
+    fn calculate_block_size(m: usize, n: usize, k: usize, config: &ParallelConfig) -> usize {
         // Simple heuristic for cache-friendly block size
         let cache_size = 32 * 1024; // Assume 32KB L1 cache
         let element_size = std::mem::size_of::<f64>(); // Assume f64 for estimation

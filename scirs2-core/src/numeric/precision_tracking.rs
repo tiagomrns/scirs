@@ -85,8 +85,20 @@ impl Default for PrecisionContext {
 }
 
 impl PrecisionContext {
+    pub fn new() -> Self {
+        Self {
+            precision: 1e-15, // Default to f64 precision
+            error_bounds: 0.0,
+            significant_digits: 15,
+            precision_loss_sources: Vec::new(),
+            condition_number: None,
+            is_stable: true,
+            last_updated: Instant::now(),
+        }
+    }
+
     /// Create a new precision context with given precision
-    pub fn new(precision: f64) -> Self {
+    pub fn with_precision(precision: f64) -> Self {
         Self {
             precision,
             significant_digits: precision as u32,
@@ -96,23 +108,23 @@ impl PrecisionContext {
 
     /// Create a precision context for single precision (f32)
     pub fn single_precision() -> Self {
-        Self::new(7.0) // Typical for f32
+        Self::with_precision(7.0) // Typical for f32
     }
 
     /// Create a precision context for double precision (f64)
     pub fn double_precision() -> Self {
-        Self::new(15.0) // Typical for f64
+        Self::with_precision(15.0) // Typical for f64
     }
 
     /// Create a precision context for extended precision
     pub fn extended_precision() -> Self {
-        Self::new(18.0) // Extended precision
+        Self::with_precision(18.0) // Extended precision
     }
 
     /// Update precision after an operation
-    pub fn update_precision(&mut self, new_precision: f64, operation: &str) {
-        if new_precision < self.precision {
-            let loss = self.precision - new_precision;
+    pub fn update_precision(&mut self, newprecision: f64, operation: &str) {
+        if newprecision < self.precision {
+            let loss = self.precision - newprecision;
             let severity = Self::classify_precision_loss(loss);
 
             self.precision_loss_sources.push(PrecisionLossSource {
@@ -120,15 +132,15 @@ impl PrecisionContext {
                 precision_lost: loss,
                 description: format!(
                     "Precision reduced from {:.2} to {:.2} digits",
-                    self.precision, new_precision
+                    self.precision, newprecision
                 ),
                 severity,
                 location: None,
             });
         }
 
-        self.precision = new_precision;
-        self.significant_digits = new_precision as u32;
+        self.precision = newprecision;
+        self.significant_digits = newprecision as u32;
         self.is_stable = self.precision > 3.0; // Heuristic for stability
         self.last_updated = Instant::now();
     }
@@ -201,24 +213,24 @@ impl PrecisionContext {
     }
 
     /// Check if the computation has acceptable precision
-    pub fn is_acceptable(&self, min_precision: f64) -> bool {
-        self.precision >= min_precision && self.is_stable
+    pub fn has_acceptable_precision(&self, minprecision: f64) -> bool {
+        self.precision >= minprecision && self.is_stable
     }
 
     /// Generate precision warning if necessary
-    pub fn check_precision_warning(&self, min_acceptable: f64) -> Option<PrecisionWarning> {
-        if self.precision < min_acceptable {
+    pub fn check_acceptable(&self, threshold: f64) -> Option<PrecisionWarning> {
+        if self.precision < threshold {
             Some(PrecisionWarning {
                 current_precision: self.precision,
-                required_precision: min_acceptable,
-                severity: if self.precision < min_acceptable / 2.0 {
+                required_precision: threshold,
+                severity: if self.precision < threshold / 2.0 {
                     PrecisionLossSeverity::Severe
                 } else {
                     PrecisionLossSeverity::Moderate
                 },
                 message: format!(
                     "Precision ({:.2} digits) below acceptable threshold ({:.2} digits)",
-                    self.precision, min_acceptable
+                    self.precision, threshold
                 ),
                 suggestions: self.generate_suggestions(),
             })
@@ -278,6 +290,27 @@ impl PrecisionContext {
 
         suggestions
     }
+
+    /// Check if precision falls below a minimum threshold and return a warning
+    pub fn check_precision_warning(&self, minprecision: f64) -> Option<PrecisionWarning> {
+        if self.precision < minprecision {
+            Some(PrecisionWarning {
+                current_precision: self.precision,
+                required_precision: minprecision,
+                severity: PrecisionLossSeverity::Severe,
+                message: format!(
+                    "Precision ({:.2} digits) below required minimum ({:.2} digits)",
+                    self.precision, minprecision
+                ),
+                suggestions: vec![
+                    "Use higher precision data types".to_string(),
+                    "Consider rescaling the problem".to_string(),
+                ],
+            })
+        } else {
+            None
+        }
+    }
 }
 
 /// Warning about precision loss
@@ -317,9 +350,9 @@ pub trait PrecisionTracked {
     fn precision_context_mut(&mut self) -> &mut PrecisionContext;
 
     /// Update precision after an operation
-    fn update_precision_after_op(&mut self, operation: &str, result_precision: f64) {
+    fn update_precision(&mut self, resultprecision: f64, operation: &str) {
         self.precision_context_mut()
-            .update_precision(result_precision, operation);
+            .update_precision(resultprecision, operation);
     }
 
     /// Record precision loss
@@ -329,10 +362,10 @@ pub trait PrecisionTracked {
     }
 
     /// Check if precision is acceptable
-    fn check_precision(&self, min_precision: f64) -> CoreResult<()> {
+    fn check_precision(&self, minprecision: f64) -> CoreResult<()> {
         if let Some(warning) = self
             .precision_context()
-            .check_precision_warning(min_precision)
+            .check_precision_warning(minprecision)
         {
             Err(CoreError::ValidationError(ErrorContext::new(
                 warning.message,
@@ -368,7 +401,7 @@ where
     pub fn with_precision(value: T, precision: f64) -> Self {
         Self {
             value,
-            context: PrecisionContext::new(precision),
+            context: PrecisionContext::with_precision(precision),
         }
     }
 
@@ -410,8 +443,8 @@ impl TrackedFloat<f64> {
 
         // Estimate precision loss from addition
         let min_precision = self.context.precision.min(other.context.precision);
-        let relative_error = estimate_addition_error(self.value, other.value);
-        let precision_loss = -relative_error.log10().max(0.0);
+        let relativeerror = estimate_additionerror(self.value, other.value);
+        let precision_loss = -relativeerror.log10().max(0.0);
 
         result.context.precision = (min_precision - precision_loss).max(0.0);
         result.record_loss("addition", precision_loss, None);
@@ -449,8 +482,8 @@ impl TrackedFloat<f64> {
         let mut result = Self::new(result_value);
 
         let min_precision = self.context.precision.min(other.context.precision);
-        let relative_error = estimate_multiplication_error(self.value, other.value);
-        let precision_loss = -relative_error.log10().max(0.0);
+        let relativeerror = estimate_multiplicationerror(self.value, other.value);
+        let precision_loss = -relativeerror.log10().max(0.0);
 
         result.context.precision = (min_precision - precision_loss).max(0.0);
         result.record_loss("multiplication", precision_loss, None);
@@ -470,8 +503,8 @@ impl TrackedFloat<f64> {
         let mut result = Self::new(result_value);
 
         let min_precision = self.context.precision.min(other.context.precision);
-        let relative_error = estimate_division_error(self.value, other.value);
-        let precision_loss = -relative_error.log10().max(0.0);
+        let relativeerror = estimate_divisionerror(self.value, other.value);
+        let precision_loss = -relativeerror.log10().max(0.0);
 
         // Additional precision loss for small divisors
         if other.value.abs() < 1e-10 {
@@ -538,7 +571,8 @@ impl TrackedFloat<f64> {
 }
 
 /// Error estimation functions
-fn estimate_addition_error(a: f64, b: f64) -> f64 {
+#[allow(dead_code)]
+fn estimate_additionerror(a: f64, b: f64) -> f64 {
     let result = a + b;
     if result == 0.0 {
         f64::EPSILON
@@ -547,14 +581,16 @@ fn estimate_addition_error(a: f64, b: f64) -> f64 {
     }
 }
 
-fn estimate_multiplication_error(_a: f64, _b: f64) -> f64 {
+#[allow(dead_code)]
+fn estimate_multiplicationerror(_a: f64, b: f64) -> f64 {
     2.0 * f64::EPSILON // Relative error for multiplication
 }
 
-fn estimate_division_error(a: f64, b: f64) -> f64 {
-    let rel_error_a = f64::EPSILON;
-    let rel_error_b = f64::EPSILON;
-    (rel_error_a + rel_error_b) * (a / b).abs()
+#[allow(dead_code)]
+fn estimate_divisionerror(a: f64, b: f64) -> f64 {
+    let relerror_a = f64::EPSILON;
+    let relerror_b = f64::EPSILON;
+    (relerror_a + relerror_b) * (a / b).abs()
 }
 
 /// Global precision tracking registry
@@ -688,6 +724,7 @@ static GLOBAL_PRECISION_REGISTRY: std::sync::LazyLock<PrecisionRegistry> =
     std::sync::LazyLock::new(PrecisionRegistry::new);
 
 /// Get the global precision registry
+#[allow(dead_code)]
 pub fn global_precision_registry() -> &'static PrecisionRegistry {
     &GLOBAL_PRECISION_REGISTRY
 }
@@ -767,18 +804,18 @@ mod tests {
         let a = TrackedFloat::with_precision(1.0, 15.0);
         let b = TrackedFloat::with_precision(1e-12, 15.0);
 
-        let result = a.div(&b).unwrap();
+        let result = a.div(&b).expect("Division should succeed for test values");
         // Division by small number should show precision loss
         assert!(result.context.precision < 15.0);
     }
 
     #[test]
     fn test_precision_warning() {
-        let context = PrecisionContext::new(2.0);
+        let context = PrecisionContext::with_precision(2.0);
         let warning = context.check_precision_warning(5.0);
         assert!(warning.is_some());
 
-        let warning = warning.unwrap();
+        let warning = warning.expect("Warning should be present when precision is lost");
         assert_eq!(warning.current_precision, 2.0);
         assert_eq!(warning.required_precision, 5.0);
     }
@@ -786,19 +823,28 @@ mod tests {
     #[test]
     fn test_precision_registry() {
         let registry = PrecisionRegistry::new();
-        let context = PrecisionContext::new(10.0);
+        let context = PrecisionContext::with_precision(10.0);
 
-        registry.register_computation("test", context).unwrap();
+        registry
+            .register_computation("test", context)
+            .expect("Registering computation should succeed");
 
-        let retrieved = registry.get_computation_context("test").unwrap();
+        let retrieved = registry
+            .get_computation_context("test")
+            .expect("Retrieving registered computation should succeed");
         assert!(retrieved.is_some());
-        assert_eq!(retrieved.unwrap().precision, 10.0);
+        assert_eq!(
+            retrieved.expect("Retrieved context should exist").precision,
+            10.0
+        );
     }
 
     #[test]
     fn test_sqrt_precision() {
         let a = TrackedFloat::with_precision(4.0, 15.0);
-        let result = a.sqrt().unwrap();
+        let result = a
+            .sqrt()
+            .expect("Square root of positive number should succeed");
         assert_eq!(result.value, 2.0);
         assert!(result.context.precision < 15.0); // Some precision loss expected
     }
@@ -806,7 +852,9 @@ mod tests {
     #[test]
     fn test_ln_near_one() {
         let a = TrackedFloat::with_precision(1.0 + 1e-12, 15.0);
-        let result = a.ln().unwrap();
+        let result = a
+            .ln()
+            .expect("Natural log of positive number should succeed");
         // Logarithm near 1 should show some precision loss
         assert!(
             result.context.precision < 15.0,
@@ -840,7 +888,12 @@ mod tests {
             "Should have precision loss sources after setting high condition number"
         );
         assert!(context.condition_number.is_some());
-        assert_eq!(context.condition_number.unwrap(), 1e15);
+        assert_eq!(
+            context
+                .condition_number
+                .expect("Condition number should be set"),
+            1e15
+        );
     }
 
     #[test]

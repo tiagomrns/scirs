@@ -4,6 +4,7 @@ use scirs2_spatial::interpolate::{
     IDWInterpolator, NaturalNeighborInterpolator, RBFInterpolator, RBFKernel,
 };
 
+#[allow(dead_code)]
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("Spatial Interpolation Examples");
     println!("=============================\n");
@@ -42,10 +43,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let nn_interp = NaturalNeighborInterpolator::new(&points.view(), &values.view())?;
     let nn_results = nn_interp.interpolate_many(&grid_points.view())?;
 
-    println!(
-        "Natural Neighbor interpolation results on a {}x{} grid:",
-        grid_size, grid_size
-    );
+    println!("Natural Neighbor interpolation results on a {grid_size}x{grid_size} grid:");
     print_grid(grid_size, &nn_results);
 
     // ===== Radial Basis Function Interpolation =====
@@ -65,7 +63,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
         let rbf_results = rbf_interp.interpolate_many(&grid_points.view())?;
 
-        println!("\nRBF interpolation with {} kernel:", name);
+        println!("\nRBF interpolation with {name} kernel:");
         print_grid(grid_size, &rbf_results);
     }
 
@@ -81,7 +79,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
         let idw_results = idw_interp.interpolate_many(&grid_points.view())?;
 
-        println!("\nIDW interpolation with power={}:", power);
+        println!("\nIDW interpolation with power={power}:");
         print_grid(grid_size, &idw_results);
     }
 
@@ -96,7 +94,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Generate values using the test function
     let random_values = generate_test_function(&random_points);
 
-    println!("Generated {} random points", n_points);
+    println!("Generated {n_points} random points");
 
     // Define evaluation grid
     let eval_grid = create_grid(0.0, 1.0, 0.0, 1.0, 10);
@@ -126,15 +124,16 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let idw_rmse = calculate_rmse(&true_values, &idw_pred);
 
     println!("Root Mean Square Error (RMSE) on evaluation grid:");
-    println!("  Natural Neighbor: {:.6}", nn_rmse);
-    println!("  RBF (Gaussian):   {:.6}", rbf_rmse);
-    println!("  IDW (power=2):    {:.6}", idw_rmse);
+    println!("  Natural Neighbor: {nn_rmse:.6}");
+    println!("  RBF (Gaussian):   {rbf_rmse:.6}");
+    println!("  IDW (power=2):    {idw_rmse:.6}");
 
     println!("\nExample completed successfully!");
     Ok(())
 }
 
 /// Generate test function values for a set of points
+#[allow(dead_code)]
 fn generate_test_function(points: &Array2<f64>) -> Array1<f64> {
     let n = points.nrows();
     let mut values = Array1::zeros(n);
@@ -153,6 +152,7 @@ fn generate_test_function(points: &Array2<f64>) -> Array1<f64> {
 }
 
 /// Create a regular grid of points
+#[allow(dead_code)]
 fn create_grid(x_min: f64, x_max: f64, y_min: f64, y_max: f64, size: usize) -> Array2<f64> {
     let n_points = size * size;
     let mut grid = Array2::zeros((n_points, 2));
@@ -175,6 +175,7 @@ fn create_grid(x_min: f64, x_max: f64, y_min: f64, y_max: f64, size: usize) -> A
 }
 
 /// Generate random points in a given range
+#[allow(dead_code)]
 fn generate_random_points(n: usize, x_min: f64, x_max: f64, y_min: f64, y_max: f64) -> Array2<f64> {
     let mut rng = rand::rng();
     let mut points = Array2::zeros((n, 2));
@@ -188,6 +189,7 @@ fn generate_random_points(n: usize, x_min: f64, x_max: f64, y_min: f64, y_max: f
 }
 
 /// Print interpolation results as a grid
+#[allow(dead_code)]
 fn print_grid(size: usize, values: &Array1<f64>) {
     for i in 0..size {
         let mut row = String::new();
@@ -195,11 +197,12 @@ fn print_grid(size: usize, values: &Array1<f64>) {
             let idx = i * size + j;
             row.push_str(&format!("{:.4}  ", values[idx]));
         }
-        println!("  {}", row);
+        println!("  {row}");
     }
 }
 
 /// Calculate the root mean square error between two arrays
+#[allow(dead_code)]
 fn calculate_rmse(truth: &Array1<f64>, pred: &Array1<f64>) -> f64 {
     let n = truth.len();
     let mut sum_sq_err = 0.0;

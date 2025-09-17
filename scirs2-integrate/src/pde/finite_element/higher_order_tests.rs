@@ -51,7 +51,7 @@ mod tests {
         // Test that quadrature rules integrate polynomials exactly
 
         // Test 1-point rule integrates constants exactly
-        let (xi, _eta, w) = TriangularQuadrature::get_rule(1).unwrap();
+        let (xi, eta, w) = TriangularQuadrature::get_rule(1).unwrap();
         let mut integral = 0.0;
         for i in 0..xi.len() {
             integral += w[i]; // integrating f(xi,eta) = 1
@@ -77,7 +77,7 @@ mod tests {
     }
 
     #[test]
-    fn test_shape_function_properties() {
+    fn testshape_function_properties() {
         // Test partition of unity for all element types
         let test_points = vec![
             (0.0, 0.0),             // corner
@@ -145,8 +145,7 @@ mod tests {
 
             assert!(
                 solver_result.is_ok(),
-                "Failed to create solver for {:?}",
-                element_type
+                "Failed to create solver for {element_type:?}"
             );
         }
     }
@@ -211,7 +210,7 @@ mod tests {
         // Get the first higher-order element for testing
         if let Some(ho_elements) = &solver.higher_order_elements {
             if !ho_elements.is_empty() {
-                let (a_e, _b_e) = solver
+                let (a_e, b_e) = solver
                     .element_matrices_higher_order(&ho_elements[0])
                     .unwrap();
 

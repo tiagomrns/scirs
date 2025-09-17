@@ -12,6 +12,7 @@ use std::error::Error;
 #[cfg(feature = "optim_integration")]
 use scirs2_metrics::integration::optim::MetricLRScheduler;
 
+#[allow(dead_code)]
 fn main() -> Result<(), Box<dyn Error>> {
     #[cfg(not(feature = "optim_integration"))]
     {
@@ -61,7 +62,7 @@ fn main() -> Result<(), Box<dyn Error>> {
         // Print history
         println!("\nLearning rate history:");
         for (i, &lr) in scheduler.history().iter().enumerate() {
-            println!("Change {}: {:.6}", i, lr);
+            println!("Change {i}: {lr:.6}");
         }
 
         // Best metric value
@@ -104,10 +105,7 @@ fn main() -> Result<(), Box<dyn Error>> {
             // Show how to extract configuration values
             let (initial_lr, factor, patience, min_lr, mode) = scheduler_config.as_tuple();
             println!("\nConfiguration as tuple:");
-            println!(
-                "  ({}, {}, {}, {}, {})",
-                initial_lr, factor, patience, min_lr, mode
-            );
+            println!("  ({initial_lr}, {factor}, {patience}, {min_lr}, {mode})");
 
             println!("\nThis configuration can be used to create external schedulers");
             println!("from scirs2-optim or other optimization libraries.");
@@ -119,7 +117,7 @@ fn main() -> Result<(), Box<dyn Error>> {
 
 /// Simulate training for one epoch
 #[allow(dead_code)]
-fn simulate_epoch_training(current_val_loss: f64, learning_rate: f64) -> (f64, f64) {
+fn simulate_epoch_training(current_val_loss: f64, learningrate: f64) -> (f64, f64) {
     // Simulate training loss
     let train_loss = current_val_loss * (0.8 + rand::random::<f64>() * 0.2);
 
@@ -134,10 +132,10 @@ fn simulate_epoch_training(current_val_loss: f64, learning_rate: f64) -> (f64, f
     // - Very small learning rates improve slowly
     // - Mid-range learning rates improve well
     // - Very large learning rates can cause instability
-    let lr_factor = if learning_rate < 0.01 {
-        learning_rate / 0.01 // Slower improvement for very small LRs
-    } else if learning_rate > 0.2 {
-        1.0 - ((learning_rate - 0.2) / 0.8) // Worse improvement for very large LRs
+    let lr_factor = if learningrate < 0.01 {
+        learningrate / 0.01 // Slower improvement for very small LRs
+    } else if learningrate > 0.2 {
+        1.0 - ((learningrate - 0.2) / 0.8) // Worse improvement for very large LRs
     } else {
         1.0 // Good improvement for mid-range LRs
     };

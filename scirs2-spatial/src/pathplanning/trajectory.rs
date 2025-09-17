@@ -65,6 +65,7 @@ impl TrajectoryPoint {
     /// # Returns
     ///
     /// * A new TrajectoryPoint instance
+    #[allow(clippy::too_many_arguments)]
     pub fn new(x: f64, y: f64, vx: f64, vy: f64, ax: f64, ay: f64) -> Self {
         Self {
             x,
@@ -78,6 +79,7 @@ impl TrajectoryPoint {
     }
 
     /// Create a new trajectory point with time
+    #[allow(clippy::too_many_arguments)]
     pub fn with_time(x: f64, y: f64, vx: f64, vy: f64, ax: f64, ay: f64, t: f64) -> Self {
         Self {
             x,
@@ -162,9 +164,9 @@ impl CircularObstacle {
     }
 
     /// Check if a point is inside the obstacle (with safety margin)
-    pub fn contains(&self, x: f64, y: f64, safety_margin: f64) -> bool {
+    pub fn contains(&self, x: f64, y: f64, safetymargin: f64) -> bool {
         let distance = ((x - self.x).powi(2) + (y - self.y).powi(2)).sqrt();
-        distance < self.radius + safety_margin
+        distance < self.radius + safetymargin
     }
 }
 
@@ -271,15 +273,15 @@ impl Trajectory {
     }
 
     /// Check if the trajectory satisfies velocity constraints
-    pub fn satisfies_velocity_constraints(&self, max_velocity: f64) -> bool {
-        self.points.iter().all(|p| p.speed() <= max_velocity + 1e-6)
+    pub fn satisfies_velocity_constraints(&self, _maxvelocity: f64) -> bool {
+        self.points.iter().all(|p| p.speed() <= _maxvelocity + 1e-6)
     }
 
     /// Check if the trajectory satisfies acceleration constraints
-    pub fn satisfies_acceleration_constraints(&self, max_acceleration: f64) -> bool {
+    pub fn satisfies_acceleration_constraints(&self, _maxacceleration: f64) -> bool {
         self.points
             .iter()
-            .all(|p| p.acceleration_magnitude() <= max_acceleration + 1e-6)
+            .all(|p| p.acceleration_magnitude() <= _maxacceleration + 1e-6)
     }
 }
 
@@ -341,8 +343,8 @@ impl TrajectoryOptimizer {
 
         for i in 0..=num_steps {
             let t = (i as f64) * duration / (num_steps as f64);
-            let (x, vx, ax) = self.evaluate_quintic_polynomial(&x_coeffs, t);
-            let (y, vy, ay) = self.evaluate_quintic_polynomial(&y_coeffs, t);
+            let (x, vx, ax) = TrajectoryOptimizer::evaluate_quintic_polynomial(&x_coeffs, t);
+            let (y, vy, ay) = TrajectoryOptimizer::evaluate_quintic_polynomial(&y_coeffs, t);
 
             points.push(TrajectoryPoint::with_time(x, y, vx, vy, ax, ay, t));
         }
@@ -451,7 +453,7 @@ impl TrajectoryOptimizer {
     }
 
     /// Evaluate quintic polynomial and its derivatives
-    fn evaluate_quintic_polynomial(&self, coeffs: &Array1<f64>, t: f64) -> (f64, f64, f64) {
+    fn evaluate_quintic_polynomial(coeffs: &Array1<f64>, t: f64) -> (f64, f64, f64) {
         let t2 = t * t;
         let t3 = t2 * t;
         let t4 = t3 * t;
@@ -557,7 +559,7 @@ impl TrajectoryOptimizer {
         obstacles: &[CircularObstacle],
         safety_margin: f64,
     ) -> SpatialResult<TrajectoryPoint> {
-        // Simple strategy: try points in a circle around the original point
+        // Simple strategy: try points in a circle around the original _point
         let search_radius = 2.0;
         let num_candidates = 16;
 
@@ -588,7 +590,7 @@ impl TrajectoryOptimizer {
         }
 
         Err(SpatialError::ComputationError(
-            "Could not find valid detour point".to_string(),
+            "Could not find valid detour _point".to_string(),
         ))
     }
 }
@@ -703,7 +705,6 @@ mod tests {
         match trajectory_result {
             Ok(trajectory) => {
                 // Basic checks
-                assert!(!trajectory.is_empty());
                 assert!(!trajectory.is_empty());
                 println!(
                     "Successfully generated obstacle-avoiding trajectory with {} points",

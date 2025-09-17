@@ -1,18 +1,22 @@
-// Sparse signal recovery module
-//
-// This module implements various sparse signal recovery techniques including compressed sensing,
-// L1/L0 regularization, basis pursuit, matching pursuit, and orthogonal matching pursuit.
-
+use crate::dwt::Wavelet;
 use crate::error::{SignalError, SignalResult};
-use ndarray::{s, Array1, Array2};
+use ndarray::s;
+use ndarray::{Array1, Array2};
 use num_complex::Complex64;
+use rand::rngs::StdRng;
 use rand::seq::SliceRandom;
-use rand::{rngs::StdRng, Rng, SeedableRng};
+use rand::{Rng, SeedableRng};
 use rand_distr::Distribution;
 use rustfft::{num_complex::Complex, FftPlanner};
 use scirs2_linalg::{solve, vector_norm};
 use std::cmp::min;
 
+// Sparse signal recovery module
+//
+// This module implements various sparse signal recovery techniques including compressed sensing,
+// L1/L0 regularization, basis pursuit, matching pursuit, and orthogonal matching pursuit.
+
+#[allow(unused_imports)]
 /// Configuration for sparse signal recovery algorithms
 #[derive(Debug, Clone)]
 pub struct SparseRecoveryConfig {
@@ -91,6 +95,7 @@ pub enum SparseRecoveryMethod {
 /// # Returns
 ///
 /// * Recovered sparse signal
+#[allow(dead_code)]
 pub fn omp(
     y: &Array1<f64>,
     phi: &Array2<f64>,
@@ -159,7 +164,7 @@ pub fn omp(
         ) {
             Ok(coef) => coef,
             Err(_) => {
-                return Err(SignalError::Compute(
+                return Err(SignalError::ComputationError(
                     "Failed to solve least squares in OMP".to_string(),
                 ));
             }
@@ -170,7 +175,7 @@ pub fn omp(
 
         // Check convergence
         let res_norm = vector_norm(&residual.view(), 2)
-            .map_err(|_| SignalError::Compute("Failed to compute norm".to_string()))?;
+            .map_err(|_| SignalError::ComputationError("Failed to compute norm".to_string()))?;
         if res_norm < config.convergence_threshold || res_norm < config.eps {
             break;
         }
@@ -191,7 +196,7 @@ pub fn omp(
     ) {
         Ok(coef) => coef,
         Err(_) => {
-            return Err(SignalError::Compute(
+            return Err(SignalError::ComputationError(
                 "Failed to solve final least squares in OMP".to_string(),
             ));
         }
@@ -221,6 +226,7 @@ pub fn omp(
 /// # Returns
 ///
 /// * Recovered sparse signal
+#[allow(dead_code)]
 pub fn mp(
     y: &Array1<f64>,
     phi: &Array2<f64>,
@@ -248,7 +254,7 @@ pub fn mp(
     for j in 0..n {
         let mut col = normalized_phi.slice_mut(s![.., j]);
         let norm = vector_norm(&col.view(), 2)
-            .map_err(|_| SignalError::Compute("Failed to compute norm".to_string()))?;
+            .map_err(|_| SignalError::ComputationError("Failed to compute norm".to_string()))?;
         if norm > config.eps {
             col.mapv_inplace(|val| val / norm);
         }
@@ -299,7 +305,7 @@ pub fn mp(
 
         // Check convergence
         let res_norm = vector_norm(&residual.view(), 2)
-            .map_err(|_| SignalError::Compute("Failed to compute norm".to_string()))?;
+            .map_err(|_| SignalError::ComputationError("Failed to compute norm".to_string()))?;
         if res_norm < config.convergence_threshold || res_norm < config.eps {
             break;
         }
@@ -331,6 +337,7 @@ pub fn mp(
 /// # Returns
 ///
 /// * Recovered sparse signal
+#[allow(dead_code)]
 pub fn ista(
     y: &Array1<f64>,
     phi: &Array2<f64>,
@@ -380,9 +387,9 @@ pub fn ista(
 
         // Check convergence
         let x_diff_norm = vector_norm(&(&x - &x_prev).view(), 2)
-            .map_err(|_| SignalError::Compute("Failed to compute norm".to_string()))?;
+            .map_err(|_| SignalError::ComputationError("Failed to compute norm".to_string()))?;
         let x_norm = vector_norm(&x.view(), 2)
-            .map_err(|_| SignalError::Compute("Failed to compute norm".to_string()))?;
+            .map_err(|_| SignalError::ComputationError("Failed to compute norm".to_string()))?;
         let diff = x_diff_norm / x_norm.max(config.eps);
         if diff < config.convergence_threshold {
             break;
@@ -403,6 +410,7 @@ pub fn ista(
 /// # Returns
 ///
 /// * Recovered sparse signal
+#[allow(dead_code)]
 pub fn fista(
     y: &Array1<f64>,
     phi: &Array2<f64>,
@@ -464,9 +472,9 @@ pub fn fista(
 
         // Check convergence
         let x_diff_norm = vector_norm(&(&x - &x_prev).view(), 2)
-            .map_err(|_| SignalError::Compute("Failed to compute norm".to_string()))?;
+            .map_err(|_| SignalError::ComputationError("Failed to compute norm".to_string()))?;
         let x_norm = vector_norm(&x.view(), 2)
-            .map_err(|_| SignalError::Compute("Failed to compute norm".to_string()))?;
+            .map_err(|_| SignalError::ComputationError("Failed to compute norm".to_string()))?;
         let diff = x_diff_norm / x_norm.max(config.eps);
         if diff < config.convergence_threshold {
             break;
@@ -487,6 +495,7 @@ pub fn fista(
 /// # Returns
 ///
 /// * Recovered sparse signal
+#[allow(dead_code)]
 pub fn cosamp(
     y: &Array1<f64>,
     phi: &Array2<f64>,
@@ -565,7 +574,7 @@ pub fn cosamp(
         ) {
             Ok(coef) => coef,
             Err(_) => {
-                return Err(SignalError::Compute(
+                return Err(SignalError::ComputationError(
                     "Failed to solve least squares in CoSaMP".to_string(),
                 ));
             }
@@ -601,9 +610,9 @@ pub fn cosamp(
 
         // Check convergence
         let x_diff_norm = vector_norm(&(&x - &x_prev).view(), 2)
-            .map_err(|_| SignalError::Compute("Failed to compute norm".to_string()))?;
+            .map_err(|_| SignalError::ComputationError("Failed to compute norm".to_string()))?;
         let x_norm = vector_norm(&x.view(), 2)
-            .map_err(|_| SignalError::Compute("Failed to compute norm".to_string()))?;
+            .map_err(|_| SignalError::ComputationError("Failed to compute norm".to_string()))?;
         let diff = x_diff_norm / x_norm.max(config.eps);
         if diff < config.convergence_threshold {
             break;
@@ -611,7 +620,7 @@ pub fn cosamp(
 
         // Check residual
         let res_norm = vector_norm(&residual.view(), 2)
-            .map_err(|_| SignalError::Compute("Failed to compute norm".to_string()))?;
+            .map_err(|_| SignalError::ComputationError("Failed to compute norm".to_string()))?;
         if res_norm < config.convergence_threshold || res_norm < config.eps {
             break;
         }
@@ -643,6 +652,7 @@ pub fn cosamp(
 /// # Returns
 ///
 /// * Recovered sparse signal
+#[allow(dead_code)]
 pub fn iht(
     y: &Array1<f64>,
     phi: &Array2<f64>,
@@ -712,9 +722,9 @@ pub fn iht(
 
         // Check convergence
         let x_diff_norm = vector_norm(&(&x - &x_prev).view(), 2)
-            .map_err(|_| SignalError::Compute("Failed to compute norm".to_string()))?;
+            .map_err(|_| SignalError::ComputationError("Failed to compute norm".to_string()))?;
         let x_norm = vector_norm(&x.view(), 2)
-            .map_err(|_| SignalError::Compute("Failed to compute norm".to_string()))?;
+            .map_err(|_| SignalError::ComputationError("Failed to compute norm".to_string()))?;
         let diff = x_diff_norm / x_norm.max(config.eps);
         if diff < config.convergence_threshold {
             break;
@@ -724,7 +734,7 @@ pub fn iht(
         if let Some(target) = config.target_error {
             let err_vec = phi.dot(&x) - y;
             let err = vector_norm(&err_vec.view(), 2)
-                .map_err(|_| SignalError::Compute("Failed to compute norm".to_string()))?;
+                .map_err(|_| SignalError::ComputationError("Failed to compute norm".to_string()))?;
             if err <= target {
                 break;
             }
@@ -745,6 +755,7 @@ pub fn iht(
 /// # Returns
 ///
 /// * Recovered sparse signal
+#[allow(dead_code)]
 pub fn subspace_pursuit(
     y: &Array1<f64>,
     phi: &Array2<f64>,
@@ -800,7 +811,7 @@ pub fn subspace_pursuit(
         ) {
             Ok(proxy) => proxy,
             Err(_) => {
-                return Err(SignalError::Compute(
+                return Err(SignalError::ComputationError(
                     "Failed to solve least squares in Subspace Pursuit".to_string(),
                 ));
             }
@@ -846,7 +857,7 @@ pub fn subspace_pursuit(
         ) {
             Ok(proxy) => proxy,
             Err(_) => {
-                return Err(SignalError::Compute(
+                return Err(SignalError::ComputationError(
                     "Failed to solve least squares on merged support in Subspace Pursuit"
                         .to_string(),
                 ));
@@ -878,7 +889,7 @@ pub fn subspace_pursuit(
         // Check if target error is achieved
         if let Some(target) = config.target_error {
             let res_norm = vector_norm(&residual.view(), 2)
-                .map_err(|_| SignalError::Compute("Failed to compute norm".to_string()))?;
+                .map_err(|_| SignalError::ComputationError("Failed to compute norm".to_string()))?;
             if res_norm <= target {
                 break;
             }
@@ -899,7 +910,7 @@ pub fn subspace_pursuit(
     ) {
         Ok(coef) => coef,
         Err(_) => {
-            return Err(SignalError::Compute(
+            return Err(SignalError::ComputationError(
                 "Failed to solve final least squares in Subspace Pursuit".to_string(),
             ));
         }
@@ -930,12 +941,13 @@ pub fn subspace_pursuit(
 /// # Returns
 ///
 /// * Recovered sparse signal
+#[allow(dead_code)]
 pub fn smooth_l0(
     y: &Array1<f64>,
     phi: &Array2<f64>,
     config: &SparseRecoveryConfig,
 ) -> SignalResult<Array1<f64>> {
-    let (_m, _n) = phi.dim();
+    let (_m_n) = phi.dim();
 
     // Initialize solution with minimum L2 norm solution
     let phi_t = phi.t();
@@ -944,7 +956,7 @@ pub fn smooth_l0(
     let x = match solve(&gram.view(), &y.view(), None) {
         Ok(solution) => phi_t.dot(&solution),
         Err(_) => {
-            return Err(SignalError::Compute(
+            return Err(SignalError::ComputationError(
                 "Failed to compute initial solution in SL0".to_string(),
             ));
         }
@@ -983,7 +995,7 @@ pub fn smooth_l0(
             let correction = match solve(&gram.view(), &residual.view(), None) {
                 Ok(corr) => corr,
                 Err(_) => {
-                    return Err(SignalError::Compute(
+                    return Err(SignalError::ComputationError(
                         "Failed to compute projection in SL0".to_string(),
                     ));
                 }
@@ -1019,6 +1031,7 @@ pub fn smooth_l0(
 /// # Returns
 ///
 /// * Recovered sparse signal
+#[allow(dead_code)]
 pub fn basis_pursuit(
     y: &Array1<f64>,
     phi: &Array2<f64>,
@@ -1047,6 +1060,7 @@ pub fn basis_pursuit(
 /// # Returns
 ///
 /// * Recovered sparse signal
+#[allow(dead_code)]
 pub fn lasso(
     y: &Array1<f64>,
     phi: &Array2<f64>,
@@ -1068,6 +1082,7 @@ pub fn lasso(
 /// # Returns
 ///
 /// * Recovered sparse signal
+#[allow(dead_code)]
 pub fn compressed_sensing_recover(
     y: &Array1<f64>,
     phi: &Array2<f64>,
@@ -1102,6 +1117,7 @@ pub fn compressed_sensing_recover(
 /// # Returns
 ///
 /// * Recovered full signal
+#[allow(dead_code)]
 pub fn sparse_transform_recovery<F, G>(
     y: &Array1<f64>,
     _transform_forward: F,
@@ -1133,8 +1149,8 @@ where
     // Count observed samples
     let m = mask.iter().filter(|&&x| x > 0.5).count();
 
-    // Create sensing matrix (masked inverse transform)
-    // For each column j, compute inverse transform of a unit vector at position j,
+    // Create sensing matrix (masked _inverse transform)
+    // For each column j, compute _inverse transform of a unit vector at position j,
     // then apply the observation mask
     let mut phi = Array2::<f64>::zeros((m, n));
 
@@ -1143,7 +1159,7 @@ where
         let mut unit = Array1::<f64>::zeros(n);
         unit[j] = 1.0;
 
-        // Apply inverse transform
+        // Apply _inverse transform
         let col = transform_inverse(&unit)?;
 
         // Apply mask and store in the appropriate column
@@ -1184,6 +1200,7 @@ where
 /// # Returns
 ///
 /// * Recovered full signal
+#[allow(dead_code)]
 pub fn recover_missing_samples(
     y: &Array1<f64>,
     method: SparseRecoveryMethod,
@@ -1268,6 +1285,7 @@ pub fn recover_missing_samples(
 /// # Returns
 ///
 /// * Recovered image
+#[allow(dead_code)]
 pub fn image_inpainting(
     image: &Array2<f64>,
     patch_size: usize,
@@ -1341,11 +1359,12 @@ pub fn image_inpainting(
 /// # Returns
 ///
 /// * Random sensing matrix with normalized columns
+#[allow(dead_code)]
 pub fn random_sensing_matrix(m: usize, n: usize, seed: Option<u64>) -> Array2<f64> {
     // Initialize with random Gaussian entries
     let mut rng = match seed {
-        Some(s) => StdRng::from_seed([s as u8; 32]),
-        None => StdRng::from_seed([0u8; 32]), // Use deterministic seed for consistency
+        Some(s) => StdRng::seed_from_u64([s as u8; 32]),
+        None => StdRng::seed_from_u64([0u8; 32]), // Use deterministic seed for consistency
     };
 
     let normal = rand_distr::Normal::new(0.0, 1.0).unwrap();
@@ -1379,6 +1398,7 @@ pub fn random_sensing_matrix(m: usize, n: usize, seed: Option<u64>) -> Array2<f6
 /// # Returns
 ///
 /// * Coherence (maximum absolute inner product between normalized columns)
+#[allow(dead_code)]
 pub fn matrix_coherence(phi: &Array2<f64>) -> SignalResult<f64> {
     let (_, n) = phi.dim();
 
@@ -1387,12 +1407,12 @@ pub fn matrix_coherence(phi: &Array2<f64>) -> SignalResult<f64> {
     for i in 0..n {
         let col_i = phi.slice(s![.., i]);
         let norm_i = vector_norm(&col_i.view(), 2)
-            .map_err(|_| SignalError::Compute("Failed to compute norm".to_string()))?;
+            .map_err(|_| SignalError::ComputationError("Failed to compute norm".to_string()))?;
 
         for j in i + 1..n {
             let col_j = phi.slice(s![.., j]);
             let norm_j = vector_norm(&col_j.view(), 2)
-                .map_err(|_| SignalError::Compute("Failed to compute norm".to_string()))?;
+                .map_err(|_| SignalError::ComputationError("Failed to compute norm".to_string()))?;
 
             let inner_product = col_i.dot(&col_j);
             let coherence = (inner_product / (norm_i * norm_j)).abs();
@@ -1414,6 +1434,7 @@ pub fn matrix_coherence(phi: &Array2<f64>) -> SignalResult<f64> {
 /// # Returns
 ///
 /// * Estimated RIP constant
+#[allow(dead_code)]
 pub fn estimate_rip_constant(phi: &Array2<f64>, s: usize) -> SignalResult<f64> {
     let (_m, n) = phi.dim();
 
@@ -1426,7 +1447,6 @@ pub fn estimate_rip_constant(phi: &Array2<f64>, s: usize) -> SignalResult<f64> {
     // For exact computation, we would need to check all (n choose s) submatrices,
     // which is computationally infeasible for large n and s.
     // Instead, we use a Monte Carlo approach with random sparse vectors.
-
     const NUM_TRIALS: usize = 1000;
     let mut rng = rand::rng();
 
@@ -1450,7 +1470,7 @@ pub fn estimate_rip_constant(phi: &Array2<f64>, s: usize) -> SignalResult<f64> {
 
         // Normalize x
         let x_norm = vector_norm(&x.view(), 2)
-            .map_err(|_| SignalError::Compute("Failed to compute norm".to_string()))?;
+            .map_err(|_| SignalError::ComputationError("Failed to compute norm".to_string()))?;
         x.mapv_inplace(|val| val / x_norm);
 
         // Compute Phi * x
@@ -1459,7 +1479,7 @@ pub fn estimate_rip_constant(phi: &Array2<f64>, s: usize) -> SignalResult<f64> {
         // Compute the ratio ||Phi * x||^2 / ||x||^2
         // Since x is normalized, ||x||^2 = 1
         let y_norm = vector_norm(&y.view(), 2)
-            .map_err(|_| SignalError::Compute("Failed to compute norm".to_string()))?;
+            .map_err(|_| SignalError::ComputationError("Failed to compute norm".to_string()))?;
         let ratio = y_norm.powi(2);
 
         min_ratio = f64::min(min_ratio, ratio);
@@ -1482,6 +1502,7 @@ pub fn estimate_rip_constant(phi: &Array2<f64>, s: usize) -> SignalResult<f64> {
 /// # Returns
 ///
 /// * Normalized sparsity measure (0 = dense, 1 = maximally sparse)
+#[allow(dead_code)]
 pub fn measure_sparsity(x: &Array1<f64>, threshold: f64) -> SignalResult<f64> {
     let n = x.len();
 
@@ -1491,11 +1512,11 @@ pub fn measure_sparsity(x: &Array1<f64>, threshold: f64) -> SignalResult<f64> {
 
     // L1 norm
     let l1_norm = vector_norm(&x.view(), 1)
-        .map_err(|_| SignalError::Compute("Failed to compute norm".to_string()))?;
+        .map_err(|_| SignalError::ComputationError("Failed to compute norm".to_string()))?;
 
     // L2 norm
     let l2_norm_val = vector_norm(&x.view(), 2)
-        .map_err(|_| SignalError::Compute("Failed to compute norm".to_string()))?;
+        .map_err(|_| SignalError::ComputationError("Failed to compute norm".to_string()))?;
 
     // Compute normalized sparsity measure: 1 - (L1/L2)/sqrt(n)
     // This will be close to 1 for sparse signals and close to 0 for dense signals
@@ -1518,6 +1539,7 @@ pub fn measure_sparsity(x: &Array1<f64>, threshold: f64) -> SignalResult<f64> {
 /// # Returns
 ///
 /// * Denoised signal
+#[allow(dead_code)]
 pub fn sparse_denoise(
     y: &Array1<f64>,
     transform: SparseTransform,

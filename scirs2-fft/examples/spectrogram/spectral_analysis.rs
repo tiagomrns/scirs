@@ -7,8 +7,8 @@ use num_complex::Complex64;
 use scirs2_fft::{
     fft, fftfreq, fftshift, get_window, spectrogram, stft, window::Window, hilbert,
 };
-use std::f64::consts::PI;
 
+#[allow(dead_code)]
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("Spectral Analysis Example");
     println!("-----------------------\n");
@@ -129,13 +129,13 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("\n3. Short-Time Fourier Transform (STFT)");
     
     // Compute STFT
-    let window_size = 256;
+    let windowsize = 256;
     let hop_length = 128;
     let (stft_freqs, stft_times, stft_result) = stft(
         &signal,
         Window::Hann,
-        window_size,
-        Some(window_size - hop_length),
+        windowsize,
+        Some(windowsize - hop_length),
         None,
         Some(fs),
         None,

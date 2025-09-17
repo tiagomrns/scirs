@@ -63,6 +63,7 @@ impl PartialOrd for PixelPriority {
 /// # Ok(())
 /// # }
 /// ```
+#[allow(dead_code)]
 pub fn watershed(
     img: &DynamicImage,
     markers: Option<&Array2<u32>>,
@@ -228,6 +229,7 @@ pub fn watershed(
 /// # Returns
 ///
 /// * Result containing labeled regions
+#[allow(dead_code)]
 pub fn watershed_markers(
     img: &DynamicImage,
     markers: &Array2<u32>,
@@ -268,6 +270,7 @@ pub fn watershed_markers(
 }
 
 /// Find local minima in an image
+#[allow(dead_code)]
 fn find_local_minima(img: &GrayImage, connectivity: u8) -> Vec<(usize, usize)> {
     let (width, height) = img.dimensions();
     let mut minima = Vec::new();
@@ -300,6 +303,7 @@ fn find_local_minima(img: &GrayImage, connectivity: u8) -> Vec<(usize, usize)> {
 }
 
 /// Get neighbor offsets based on connectivity
+#[allow(dead_code)]
 fn get_neighbors(connectivity: u8) -> &'static [(i32, i32)] {
     match connectivity {
         4 => &[(-1, 0), (0, -1), (0, 1), (1, 0)],
@@ -327,6 +331,7 @@ fn get_neighbors(connectivity: u8) -> &'static [(i32, i32)] {
 /// # Returns
 ///
 /// * Color image with each region in a different color
+#[allow(dead_code)]
 pub fn labels_to_color_image(
     labels: &Array2<u32>,
     colormap: Option<&HashMap<u32, [u8; 3]>>,
@@ -357,6 +362,7 @@ pub fn labels_to_color_image(
 }
 
 /// Generate a colormap for labels
+#[allow(dead_code)]
 fn generate_colormap(labels: &Array2<u32>) -> HashMap<u32, [u8; 3]> {
     use std::collections::HashSet;
 
@@ -385,6 +391,7 @@ fn generate_colormap(labels: &Array2<u32>) -> HashMap<u32, [u8; 3]> {
 }
 
 /// Convert HSV to RGB
+#[allow(dead_code)]
 fn hsv_to_rgb(h: f32, s: f32, v: f32) -> (u8, u8, u8) {
     let c = v * s;
     let x = c * (1.0 - ((h / 60.0) % 2.0 - 1.0).abs());
@@ -414,6 +421,7 @@ fn hsv_to_rgb(h: f32, s: f32, v: f32) -> (u8, u8, u8) {
 /// Compute gradient magnitude for watershed
 ///
 /// Higher gradients indicate stronger boundaries between regions.
+#[allow(dead_code)]
 pub fn compute_gradient_magnitude(img: &DynamicImage) -> Result<Array2<f32>> {
     let gray = img.to_luma8();
     let (width, height) = gray.dimensions();

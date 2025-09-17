@@ -448,14 +448,14 @@ impl<
     > HardwareAwareOptimizer<A, D>
 {
     /// Create a new hardware-aware optimizer
-    pub fn new(platform: HardwarePlatform, initial_parameters: Array<A, D>) -> Self {
+    pub fn new(platform: HardwarePlatform, initialparameters: Array<A, D>) -> Self {
         let config = Self::default_config_for_platform(&platform);
         let profiler = PerformanceProfiler::new();
         let resource_monitor = ResourceMonitor::new();
         let adaptive_tuner = AdaptiveTuner::new();
 
         let current_state = OptimizationState {
-            parameters: initial_parameters,
+            parameters: initialparameters,
             gradient_accumulator: None,
             optimizer_state: HashMap::new(),
             step_count: 0,
@@ -522,7 +522,7 @@ impl<
         cache_size: usize,
         simd_support: SIMDSupport,
     ) -> Result<()> {
-        // Optimize batch size for cache efficiency
+        // Optimize batch _size for cache efficiency
         let cache_friendly_batch_size = (cache_size / 4) / self.current_state.parameters.len(); // Rough estimate
         self.config.batch_size = cache_friendly_batch_size.clamp(16, 512);
 
@@ -616,9 +616,9 @@ impl<
             }
         }
 
-        // Memory bandwidth optimizations
+        // Memory _bandwidth optimizations
         if memory_bandwidth < 500.0 {
-            // Low bandwidth
+            // Low _bandwidth
             self.config.memory_strategy = MemoryStrategy::GradientAccumulation {
                 accumulation_steps: 4,
             };
@@ -653,7 +653,7 @@ impl<
             A::from(matrix_units as f64).unwrap(),
         );
 
-        // Use all available matrix units
+        // Use all available matrix _units
         self.config.parallelization = ParallelizationStrategy::TensorParallel {
             tensor_parallel_size: matrix_units.min(8),
         };
@@ -728,29 +728,40 @@ impl<
         network_bandwidth: f64,
         node_hardware: &HardwarePlatform,
     ) -> Result<()> {
-        // Scale batch size with number of nodes
+        // Scale batch size with number of _nodes
         let base_batch_size = match node_hardware {
             HardwarePlatform::GPU { .. } => 128,
             HardwarePlatform::CPU { .. } => 64,
-            _ => 32,
+            HardwarePlatform::TPU { .. } => 256, // TPUs can handle larger batches
+            HardwarePlatform::Edge { .. } => 32, // Edge devices have memory constraints
+            HardwarePlatform::Distributed { node_hardware, .. } => {
+                // Use the underlying node hardware type for distributed systems
+                match node_hardware.as_ref() {
+                    HardwarePlatform::GPU { .. } => 128,
+                    HardwarePlatform::CPU { .. } => 64,
+                    HardwarePlatform::TPU { .. } => 256,
+                    HardwarePlatform::Edge { .. } => 32,
+                    HardwarePlatform::Distributed { .. } => 64, // Fallback for nested distributed
+                }
+            }
         };
         self.config.batch_size = base_batch_size * num_nodes;
 
-        // Configure communication strategy based on network bandwidth
+        // Configure communication strategy based on network _bandwidth
         let communication = if network_bandwidth >= 100.0 {
-            // High bandwidth (100 Gbps+)
+            // High _bandwidth (100 Gbps+)
             CommunicationStrategy::AllReduce {
                 algorithm: AllReduceAlgorithm::Ring,
                 compression: false,
             }
         } else if network_bandwidth >= 10.0 {
-            // Medium bandwidth (10 Gbps+)
+            // Medium _bandwidth (10 Gbps+)
             CommunicationStrategy::AllReduce {
                 algorithm: AllReduceAlgorithm::Tree,
                 compression: true,
             }
         } else {
-            // Low bandwidth
+            // Low _bandwidth
             CommunicationStrategy::ParameterServer {
                 num_servers: (num_nodes / 4).max(1),
                 update_frequency: 10,
@@ -780,9 +791,9 @@ impl<
     }
 
     /// Profile current performance
-    pub fn profile_performance(&mut self, computation_time: A, memory_used: usize, energy: A) {
+    pub fn profile_performance(&mut self, computation_time: A, memoryused: usize, energy: A) {
         self.profiler.computation_times.push(computation_time);
-        self.profiler.memory_usage.push(memory_used);
+        self.profiler.memory_usage.push(memoryused);
         self.profiler.energy_consumption.push(energy);
 
         // Calculate throughput (simplified)
@@ -800,23 +811,23 @@ impl<
     }
 
     /// Update resource monitoring
-    pub fn update_resource_monitor(&mut self, memory: usize, cpu_util: A, power: A, temp: A) {
+    pub fn update_resource_monitor(&mut self, memory: usize, cpuutil: A, power: A, temp: A) {
         self.resource_monitor.current_memory = memory;
         self.resource_monitor.peak_memory = self.resource_monitor.peak_memory.max(memory);
-        self.resource_monitor.cpu_utilization = cpu_util;
+        self.resource_monitor.cpu_utilization = cpuutil;
         self.resource_monitor.power_consumption = power;
         self.resource_monitor.temperature = temp;
     }
 
     /// Adaptive tuning based on performance feedback
-    pub fn adaptive_tune(&mut self, target_performance: A) -> Result<()> {
-        self.adaptive_tuner.performance_target = target_performance;
+    pub fn adaptive_tune(&mut self, targetperformance: A) -> Result<()> {
+        self.adaptive_tuner.performance_target = targetperformance;
 
         // Simple adaptive tuning logic
         let current_performance = self.get_average_performance();
 
-        if current_performance < target_performance {
-            // Need to improve performance
+        if current_performance < targetperformance {
+            // Need to improve _performance
             self.tune_for_performance()?;
         } else {
             // Can optimize for efficiency

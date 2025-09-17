@@ -9,6 +9,7 @@ use scirs2_io::netcdf::{
 };
 use std::collections::HashMap;
 
+#[allow(dead_code)]
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("🌐 NetCDF4/HDF5 Integration Example");
     println!("===================================");
@@ -38,6 +39,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     Ok(())
 }
 
+#[allow(dead_code)]
 fn demonstrate_format_comparison() -> Result<(), Box<dyn std::error::Error>> {
     println!("\n📊 Demonstrating NetCDF Format Comparison...");
 
@@ -84,6 +86,7 @@ fn demonstrate_format_comparison() -> Result<(), Box<dyn std::error::Error>> {
     Ok(())
 }
 
+#[allow(dead_code)]
 fn demonstrate_netcdf4_convenience() -> Result<(), Box<dyn std::error::Error>> {
     println!("\n🚀 Demonstrating NetCDF4 Convenience Functions...");
 
@@ -103,7 +106,8 @@ fn demonstrate_netcdf4_convenience() -> Result<(), Box<dyn std::error::Error>> {
     );
 
     // Pressure data (time only)
-    let pressure = Array2::from_shape_fn((24, 1), |(t, _)| 1013.25 - 2.0 * (t as f64 * 0.26).cos());
+    let pressure =
+        Array2::from_shape_fn((24, 1), |(t_, _)| 1013.25 - 2.0 * (t_ as f64 * 0.26).cos());
     datasets.insert(
         "pressure".to_string(),
         (
@@ -159,6 +163,7 @@ fn demonstrate_netcdf4_convenience() -> Result<(), Box<dyn std::error::Error>> {
     Ok(())
 }
 
+#[allow(dead_code)]
 fn demonstrate_large_dataset_support() -> Result<(), Box<dyn std::error::Error>> {
     println!("\n📈 Demonstrating Large Dataset Support...");
 
@@ -200,6 +205,7 @@ fn demonstrate_large_dataset_support() -> Result<(), Box<dyn std::error::Error>>
     Ok(())
 }
 
+#[allow(dead_code)]
 fn demonstrate_netcdf4_reading() -> Result<(), Box<dyn std::error::Error>> {
     println!("\n📖 Demonstrating NetCDF4 Reading...");
 
@@ -246,6 +252,7 @@ fn demonstrate_netcdf4_reading() -> Result<(), Box<dyn std::error::Error>> {
     Ok(())
 }
 
+#[allow(dead_code)]
 fn demonstrate_netcdf4_advanced_features() -> Result<(), Box<dyn std::error::Error>> {
     println!("\n🔬 Demonstrating NetCDF4 Advanced Features...");
 

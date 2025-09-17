@@ -3,6 +3,7 @@ use scirs2_cluster::vq::{
     kmeans2, kmeans_plus_plus, kmeans_with_options, KMeansOptions, MinitMethod, MissingMethod,
 };
 
+#[allow(dead_code)]
 fn main() {
     println!("K-means Clustering Example");
     println!("=========================");
@@ -55,7 +56,7 @@ fn main() {
 
     println!("\nCluster sizes:");
     for (i, &count) in counts.iter().enumerate() {
-        println!("  Cluster {}: {} points", i, count);
+        println!("  Cluster {i}: {count} points");
     }
 
     // Run K-means++
@@ -63,7 +64,7 @@ fn main() {
     let _initial_centroids = kmeans_plus_plus(data.view(), 3, None).unwrap();
     // Using the default options but with k-means++ initialization
     let options = KMeansOptions::<f64>::default();
-    let (centroids_pp, _labels_pp) = kmeans_with_options(data.view(), 3, Some(options)).unwrap();
+    let (centroids_pp, labels_pp) = kmeans_with_options(data.view(), 3, Some(options)).unwrap();
 
     println!("\nK-means++ Centroids:");
     for (i, centroid) in centroids_pp.outer_iter().enumerate() {

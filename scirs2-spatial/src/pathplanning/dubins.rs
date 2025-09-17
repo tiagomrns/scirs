@@ -321,8 +321,10 @@ impl DubinsPlanner {
     ///
     /// let planner = DubinsPlanner::new(1.0);
     /// ```
-    pub fn new(turning_radius: f64) -> Self {
-        Self { turning_radius }
+    pub fn new(_turningradius: f64) -> Self {
+        Self {
+            turning_radius: _turningradius,
+        }
     }
 
     /// Plan a Dubins path between two poses
@@ -355,8 +357,8 @@ impl DubinsPlanner {
             ));
         }
 
-        // Normalize start and goal poses
-        let start = start.normalize_angle();
+        // Normalize _start and goal poses
+        let _start = start.normalize_angle();
         let goal = goal.normalize_angle();
 
         // Transform to local coordinate system
@@ -365,7 +367,7 @@ impl DubinsPlanner {
         let d = (dx * dx + dy * dy).sqrt();
         let theta = (dy).atan2(dx);
 
-        let alpha = Self::normalize_angle(start.theta - theta);
+        let alpha = Self::normalize_angle(_start.theta - theta);
         let beta = Self::normalize_angle(goal.theta - theta);
 
         // Compute all possible paths and choose the shortest
@@ -385,8 +387,8 @@ impl DubinsPlanner {
                 if path_length < best_length {
                     best_length = path_length;
                     best_path = Some(DubinsPath::new(
-                        start,
-                        goal,
+                        start.clone(),
+                        goal.clone(),
                         self.turning_radius,
                         path_type,
                         segments,
@@ -728,14 +730,13 @@ mod tests {
             if let Ok(path) = path_result {
                 assert!(
                     path.length() > 0.0,
-                    "Path length should be positive for goal {:?}",
-                    goal
+                    "Path length should be positive for goal {goal:?}"
                 );
                 assert_eq!(path.segments().len(), 3);
             } else {
                 // Some configurations might not have valid Dubins paths with the given turning radius
                 // This is acceptable behavior
-                println!("No valid path found for goal {:?}", goal);
+                println!("No valid path found for goal {goal:?}");
             }
         }
     }
@@ -750,15 +751,13 @@ mod tests {
         let normalized_3pi = DubinsPlanner::normalize_angle(3.0 * PI);
         assert!(
             (normalized_3pi - PI).abs() < 1e-10 || (normalized_3pi - (-PI)).abs() < 1e-10,
-            "Expected ±π, got {}",
-            normalized_3pi
+            "Expected ±π, got {normalized_3pi}"
         );
 
         let normalized_neg3pi = DubinsPlanner::normalize_angle(-3.0 * PI);
         assert!(
             (normalized_neg3pi - PI).abs() < 1e-10 || (normalized_neg3pi - (-PI)).abs() < 1e-10,
-            "Expected ±π, got {}",
-            normalized_neg3pi
+            "Expected ±π, got {normalized_neg3pi}"
         );
     }
 

@@ -39,6 +39,7 @@ use num_traits::Float;
 /// // Degrees of freedom for a 2x2 table is 1
 /// assert_eq!(dof, 1);
 /// ```
+#[allow(dead_code)]
 pub fn chi2_contingency<F>(
     observed: &ArrayView2<F>,
     correction: bool,
@@ -51,7 +52,8 @@ where
         + std::fmt::Debug
         + std::marker::Send
         + std::marker::Sync
-        + 'static,
+        + 'static
+        + std::fmt::Display,
 {
     // Check input dimensions
     if observed.ndim() != 2 {
@@ -185,6 +187,7 @@ where
 /// // The p-value should be between 0 and 1
 /// assert!(p_value >= 0.0f64 && p_value <= 1.0f64);
 /// ```
+#[allow(dead_code)]
 pub fn fisher_exact<F>(table: &ArrayView2<F>, alternative: &str) -> StatsResult<(F, F)>
 where
     F: Float
@@ -193,12 +196,13 @@ where
         + std::fmt::Debug
         + std::marker::Send
         + std::marker::Sync
-        + 'static,
+        + 'static
+        + std::fmt::Display,
 {
     // Check input dimensions
     if table.nrows() != 2 || table.ncols() != 2 {
         return Err(StatsError::InvalidArgument(format!(
-            "table must be a 2x2 array, got {}x{}",
+            "_table must be a 2x2 array, got {}x{}",
             table.nrows(),
             table.ncols()
         )));
@@ -212,7 +216,7 @@ where
         )));
     }
 
-    // Extract values from the table
+    // Extract values from the _table
     let a = table[[0, 0]];
     let b = table[[0, 1]];
     let c = table[[1, 0]];
@@ -221,7 +225,7 @@ where
     // Check that all values are non-negative
     if a < F::zero() || b < F::zero() || c < F::zero() || d < F::zero() {
         return Err(StatsError::InvalidArgument(
-            "All values in table must be non-negative".to_string(),
+            "All values in _table must be non-negative".to_string(),
         ));
     }
 
@@ -340,6 +344,7 @@ where
 /// // Cramer's V is between 0 and 1
 /// assert!(cramer_v >= 0.0f64 && cramer_v <= 1.0f64);
 /// ```
+#[allow(dead_code)]
 pub fn association<F>(table: &ArrayView2<F>, measure: &str) -> StatsResult<F>
 where
     F: Float
@@ -348,12 +353,13 @@ where
         + std::fmt::Debug
         + std::marker::Send
         + std::marker::Sync
-        + 'static,
+        + 'static
+        + std::fmt::Display,
 {
     // Check input dimensions
     if table.ndim() != 2 {
         return Err(StatsError::InvalidArgument(format!(
-            "table must be a 2D array, got {}D",
+            "_table must be a 2D array, got {}D",
             table.ndim()
         )));
     }
@@ -363,7 +369,7 @@ where
 
     if nrows < 2 || ncols < 2 {
         return Err(StatsError::InvalidArgument(format!(
-            "table must be at least 2x2, got {}x{}",
+            "_table must be at least 2x2, got {}x{}",
             nrows, ncols
         )));
     }
@@ -383,7 +389,7 @@ where
 
             if total <= F::zero() {
                 return Err(StatsError::InvalidArgument(
-                    "The contingency table is empty or contains only zeros".to_string(),
+                    "The contingency _table is empty or contains only zeros".to_string(),
                 ));
             }
 
@@ -433,6 +439,7 @@ where
 /// // In this example, the relative risk should be about 2.0
 /// assert!((rr - 2.0f64).abs() < 0.1f64);
 /// ```
+#[allow(dead_code)]
 pub fn relative_risk<F>(table: &ArrayView2<F>) -> StatsResult<F>
 where
     F: Float
@@ -441,18 +448,19 @@ where
         + std::fmt::Debug
         + std::marker::Send
         + std::marker::Sync
-        + 'static,
+        + 'static
+        + std::fmt::Display,
 {
     // Check input dimensions
     if table.nrows() != 2 || table.ncols() != 2 {
         return Err(StatsError::InvalidArgument(format!(
-            "table must be a 2x2 array, got {}x{}",
+            "_table must be a 2x2 array, got {}x{}",
             table.nrows(),
             table.ncols()
         )));
     }
 
-    // Extract values from the table
+    // Extract values from the _table
     let a = table[[0, 0]]; // Exposed and disease
     let b = table[[0, 1]]; // Exposed and no disease
     let c = table[[1, 0]]; // Unexposed and disease
@@ -461,12 +469,12 @@ where
     // Check that all values are non-negative
     if a < F::zero() || b < F::zero() || c < F::zero() || d < F::zero() {
         return Err(StatsError::InvalidArgument(
-            "All values in table must be non-negative".to_string(),
+            "All values in _table must be non-negative".to_string(),
         ));
     }
 
     // For the test case
-    // table = array![[10.0f64, 90.0f64], [5.0f64, 195.0f64]]
+    // _table = array![[10.0f64, 90.0f64], [5.0f64, 195.0f64]]
     // The exact result should be:
     // risk_exposed = 10/(10+90) = 10/100 = 0.1
     // risk_unexposed = 5/(5+195) = 5/200 = 0.025
@@ -486,7 +494,7 @@ where
     let exposed_total = a + b;
     if exposed_total <= F::zero() {
         return Err(StatsError::ComputationError(
-            "No exposed subjects in the table".to_string(),
+            "No exposed subjects in the _table".to_string(),
         ));
     }
     let risk_exposed = a / exposed_total;
@@ -495,7 +503,7 @@ where
     let unexposed_total = c + d;
     if unexposed_total <= F::zero() {
         return Err(StatsError::ComputationError(
-            "No unexposed subjects in the table".to_string(),
+            "No unexposed subjects in the _table".to_string(),
         ));
     }
     let risk_unexposed = c / unexposed_total;
@@ -548,6 +556,7 @@ where
 /// // In this example, the odds ratio should be about 4.3
 /// assert!((or - 4.33f64).abs() < 0.1f64);
 /// ```
+#[allow(dead_code)]
 pub fn odds_ratio<F>(table: &ArrayView2<F>) -> StatsResult<F>
 where
     F: Float
@@ -556,18 +565,19 @@ where
         + std::fmt::Debug
         + std::marker::Send
         + std::marker::Sync
-        + 'static,
+        + 'static
+        + std::fmt::Display,
 {
     // Check input dimensions
     if table.nrows() != 2 || table.ncols() != 2 {
         return Err(StatsError::InvalidArgument(format!(
-            "table must be a 2x2 array, got {}x{}",
+            "_table must be a 2x2 array, got {}x{}",
             table.nrows(),
             table.ncols()
         )));
     }
 
-    // Extract values from the table
+    // Extract values from the _table
     let a = table[[0, 0]]; // Exposed and disease
     let b = table[[0, 1]]; // Exposed and no disease
     let c = table[[1, 0]]; // Unexposed and disease
@@ -576,7 +586,7 @@ where
     // Check that all values are non-negative
     if a < F::zero() || b < F::zero() || c < F::zero() || d < F::zero() {
         return Err(StatsError::InvalidArgument(
-            "All values in table must be non-negative".to_string(),
+            "All values in _table must be non-negative".to_string(),
         ));
     }
 

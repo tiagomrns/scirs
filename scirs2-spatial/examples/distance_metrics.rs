@@ -1,6 +1,7 @@
 use ndarray::array;
 use scirs2_spatial::distance::*;
 
+#[allow(dead_code)]
 fn main() {
     // Define some test vectors
     let u = vec![1.0, 2.0, 3.0];

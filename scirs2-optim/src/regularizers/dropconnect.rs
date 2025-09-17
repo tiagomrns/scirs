@@ -4,8 +4,6 @@
 //! during training. Unlike Dropout which drops units, DropConnect drops individual weights.
 
 use ndarray::{Array, Dimension, ScalarOperand};
-use ndarray_rand::rand::thread_rng;
-use ndarray_rand::rand_distr::{Bernoulli, Distribution};
 use num_traits::Float;
 use std::fmt::Debug;
 
@@ -49,14 +47,16 @@ impl<A: Float + Debug + ScalarOperand> DropConnect<A> {
     /// # Returns
     ///
     /// A new DropConnect instance or error if probability is invalid
-    pub fn new(drop_prob: A) -> Result<Self> {
-        if drop_prob < A::zero() || drop_prob > A::one() {
+    pub fn new(dropprob: A) -> Result<Self> {
+        if dropprob < A::zero() || dropprob > A::one() {
             return Err(OptimError::InvalidConfig(
                 "Drop probability must be between 0.0 and 1.0".to_string(),
             ));
         }
 
-        Ok(Self { drop_prob })
+        Ok(Self {
+            drop_prob: dropprob,
+        })
     }
 
     /// Apply DropConnect to weights
@@ -75,13 +75,15 @@ impl<A: Float + Debug + ScalarOperand> DropConnect<A> {
             return weights.clone();
         }
 
-        // Create Bernoulli distribution for sampling
+        // Create keep probability for sampling
         let keep_prob = A::one() - self.drop_prob;
-        let dist = Bernoulli::new(keep_prob.to_f64().unwrap()).unwrap();
+        let keep_prob_f64 = keep_prob.to_f64().unwrap();
 
         // Sample mask
-        let mut rng = thread_rng();
-        let mask = Array::from_shape_fn(weights.raw_dim(), |_| dist.sample(&mut rng));
+        let mut rng = scirs2_core::random::rng();
+        let mask = Array::from_shape_fn(weights.raw_dim(), |_| {
+            rng.random_bool_with_chance(keep_prob_f64)
+        });
 
         // Apply mask and scale by keep probability
         let mut result = weights.clone();
@@ -104,7 +106,7 @@ impl<A: Float + Debug + ScalarOperand> DropConnect<A> {
     pub fn apply_to_gradients<D: Dimension>(
         &self,
         gradients: &Array<A, D>,
-        weights_shape: D,
+        weightsshape: D,
         training: bool,
     ) -> Array<A, D> {
         if !training || self.drop_prob == A::zero() {
@@ -113,11 +115,12 @@ impl<A: Float + Debug + ScalarOperand> DropConnect<A> {
 
         // Use the same mask for gradients
         let keep_prob = A::one() - self.drop_prob;
-        let dist = Bernoulli::new(keep_prob.to_f64().unwrap()).unwrap();
+        let keep_prob_f64 = keep_prob.to_f64().unwrap();
 
         // Create mask with same shape as weights
-        let mut rng = thread_rng();
-        let mask = Array::from_shape_fn(weights_shape, |_| dist.sample(&mut rng));
+        let mut rng = scirs2_core::random::rng();
+        let mask =
+            Array::from_shape_fn(weightsshape, |_| rng.random_bool_with_chance(keep_prob_f64));
 
         // Apply mask to gradients
         let mut result = gradients.clone();
@@ -146,7 +149,7 @@ impl<A: Float + Debug + ScalarOperand, D: Dimension> Regularizer<A, D> for DropC
         Ok(A::zero())
     }
 
-    fn penalty(&self, _params: &Array<A, D>) -> Result<A> {
+    fn penalty(&self, params: &Array<A, D>) -> Result<A> {
         // DropConnect doesn't add a penalty term to the loss
         Ok(A::zero())
     }
@@ -213,10 +216,10 @@ mod tests {
     fn test_dropconnect_gradients() {
         let dc = DropConnect::new(0.5).unwrap();
         let gradients = array![[1.0, 1.0], [1.0, 1.0]];
-        let weights_shape = gradients.raw_dim();
+        let weightsshape = gradients.raw_dim();
 
         // Apply to gradients
-        let masked_grads = dc.apply_to_gradients(&gradients, weights_shape, true);
+        let masked_grads = dc.apply_to_gradients(&gradients, weightsshape, true);
 
         // Check scaling
         for &grad in masked_grads.iter() {

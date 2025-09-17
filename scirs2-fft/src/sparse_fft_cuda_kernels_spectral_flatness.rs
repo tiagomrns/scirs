@@ -27,6 +27,7 @@ impl Default for CUDAFrequencyPruningSparseFFTKernel {
 }
 
 /// Execute CUDA frequency pruning sparse FFT (stub)
+#[allow(dead_code)]
 pub fn execute_cuda_frequency_pruning_sparse_fft<T>(
     _input: &[T],
     _k: usize,
@@ -56,6 +57,7 @@ impl Default for CUDAIterativeSparseFFTKernel {
 }
 
 /// Execute CUDA iterative sparse FFT (stub)
+#[allow(dead_code)]
 pub fn execute_cuda_iterative_sparse_fft<T>(
     _input: &[T],
     _k: usize,
@@ -85,6 +87,7 @@ impl Default for CUDASpectralFlatnessSparseFFTKernel {
 }
 
 /// Execute CUDA spectral flatness sparse FFT (stub)
+#[allow(dead_code)]
 pub fn execute_cuda_spectral_flatness_sparse_fft<T>(
     _input: &[T],
     _k: usize,

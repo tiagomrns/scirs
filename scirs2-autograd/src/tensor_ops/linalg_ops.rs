@@ -19,7 +19,7 @@ impl<F: Float> Op<F> for EyeOp {
         Ok(())
     }
 
-    fn grad(&self, _ctx: &mut GradientContext<F>) {
+    fn grad<'a>(&self, _ctx: &mut GradientContext<'a, 'a, F>) {
         // Identity matrix is constant, no gradient
     }
 }
@@ -52,7 +52,7 @@ impl<F: Float> Op<F> for TraceOp {
         }
 
         // For debugging
-        println!("Calculated trace of {:?}: result = {:?}", shape, trace);
+        println!("Calculated trace of {shape:?}: result = {trace:?}");
 
         // Create a proper scalar output
         ctx.append_output(ndarray::arr0(trace).into_dyn());
@@ -256,11 +256,13 @@ impl<F: Float> Op<F> for ExtractDiagOp {
 // Public functions
 
 /// Create an identity matrix
+#[allow(dead_code)]
 pub fn eye<'g, F: Float>(n: usize, ctx: &'g Context<F>) -> Tensor<'g, F> {
     Tensor::builder(ctx).build(EyeOp { size: n })
 }
 
 /// Compute the trace of a matrix
+#[allow(dead_code)]
 pub fn trace<'g, F: Float>(matrix: &Tensor<'g, F>) -> Tensor<'g, F> {
     let g = matrix.graph();
     Tensor::builder(g)
@@ -269,12 +271,14 @@ pub fn trace<'g, F: Float>(matrix: &Tensor<'g, F>) -> Tensor<'g, F> {
 }
 
 /// Create a diagonal matrix from a vector
+#[allow(dead_code)]
 pub fn diag<'g, F: Float>(v: &Tensor<'g, F>) -> Tensor<'g, F> {
     let g = v.graph();
     Tensor::builder(g).append_input(v, false).build(DiagOp)
 }
 
 /// Extract diagonal elements from a matrix
+#[allow(dead_code)]
 pub fn extract_diag<'g, F: Float>(matrix: &Tensor<'g, F>) -> Tensor<'g, F> {
     let g = matrix.graph();
     Tensor::builder(g)

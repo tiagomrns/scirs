@@ -10,6 +10,7 @@ use scirs2_fft::{
 };
 use std::f64::consts::PI;
 
+#[allow(dead_code)]
 fn main() {
     println!("CUDA-Accelerated Sparse FFT Example");
     println!("==================================\n");
@@ -42,10 +43,7 @@ fn main() {
 
     // 1. Create a signal with a few frequency components
     let n = 1024;
-    println!(
-        "\nCreating a signal with n = {} samples and 3 frequency components",
-        n
-    );
+    println!("\nCreating a signal with n = {n} samples and 3 frequency components");
     let frequencies = vec![(3, 1.0), (7, 0.5), (15, 0.25)];
     let signal = create_sparse_signal(n, &frequencies);
 
@@ -103,7 +101,7 @@ fn main() {
     // Get unique index-value pairs sorted by magnitude
     let mut cpu_components: Vec<(usize, Complex64)> = Vec::new();
     for (&idx, &val) in cpu_result.indices.iter().zip(cpu_result.values.iter()) {
-        if !cpu_components.iter().any(|(i, _)| *i == idx) {
+        if !cpu_components.iter().any(|(i_, _)| *i_ == idx) {
             cpu_components.push((idx, val));
         }
     }
@@ -130,7 +128,7 @@ fn main() {
     // Get unique index-value pairs sorted by magnitude
     let mut cuda_components: Vec<(usize, Complex64)> = Vec::new();
     for (&idx, &val) in cuda_result.indices.iter().zip(cuda_result.values.iter()) {
-        if !cuda_components.iter().any(|(i, _)| *i == idx) {
+        if !cuda_components.iter().any(|(i_, _)| *i_ == idx) {
             cuda_components.push((idx, val));
         }
     }
@@ -179,8 +177,8 @@ fn main() {
     .unwrap();
     let cuda_elapsed = cuda_start.elapsed();
 
-    println!("  CPU  elapsed time: {:?}", cpu_elapsed);
-    println!("  CUDA elapsed time: {:?}", cuda_elapsed);
+    println!("  CPU  elapsed time: {cpu_elapsed:?}");
+    println!("  CUDA elapsed time: {cuda_elapsed:?}");
 
     if cuda_elapsed < cpu_elapsed {
         println!(
@@ -205,6 +203,7 @@ fn main() {
 }
 
 // Helper function to create a sparse signal
+#[allow(dead_code)]
 fn create_sparse_signal(n: usize, frequencies: &[(usize, f64)]) -> Vec<f64> {
     let mut signal = vec![0.0; n];
 
@@ -219,6 +218,7 @@ fn create_sparse_signal(n: usize, frequencies: &[(usize, f64)]) -> Vec<f64> {
 }
 
 // Create visualization plots comparing CPU and CUDA results
+#[allow(dead_code)]
 fn create_comparison_plot(
     signal: &[f64],
     cpu_result: &scirs2_fft::sparse_fft::SparseFFTResult,

@@ -8,6 +8,7 @@ use ndarray::Array1;
 use scirs2_special::*;
 use std::f64::consts::PI;
 
+#[allow(dead_code)]
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("=== Advanced Usage Patterns ===\n");
 
@@ -27,6 +28,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     Ok(())
 }
 
+#[allow(dead_code)]
 fn numerical_analysis_demo() -> Result<(), Box<dyn std::error::Error>> {
     println!("1. Numerical Analysis Applications");
     println!("==================================");
@@ -66,18 +68,19 @@ fn numerical_analysis_demo() -> Result<(), Box<dyn std::error::Error>> {
     Ok(())
 }
 
+#[allow(dead_code)]
 fn statistical_computing_demo() -> Result<(), Box<dyn std::error::Error>> {
     println!("2. Statistical Computing");
     println!("========================");
 
     // Beta distribution density function
-    fn beta_pdf(x: f64, alpha: f64, beta_param: f64) -> Result<f64, Box<dyn std::error::Error>> {
-        if !(0.0..=1.0).contains(&x) || alpha <= 0.0 || beta_param <= 0.0 {
+    fn beta_pdf(x: f64, alpha: f64, betaparam: f64) -> Result<f64, Box<dyn std::error::Error>> {
+        if !(0.0..=1.0).contains(&x) || alpha <= 0.0 || betaparam <= 0.0 {
             return Ok(0.0);
         }
 
-        let numerator = x.powf(alpha - 1.0) * (1.0 - x).powf(beta_param - 1.0);
-        let denominator = beta(alpha, beta_param);
+        let numerator = x.powf(alpha - 1.0) * (1.0 - x).powf(betaparam - 1.0);
+        let denominator = beta(alpha, betaparam);
         Ok(numerator / denominator)
     }
 
@@ -120,6 +123,7 @@ fn statistical_computing_demo() -> Result<(), Box<dyn std::error::Error>> {
     Ok(())
 }
 
+#[allow(dead_code)]
 fn physics_applications_demo() -> Result<(), Box<dyn std::error::Error>> {
     println!("3. Physics and Engineering Applications");
     println!("=======================================");
@@ -167,6 +171,7 @@ fn physics_applications_demo() -> Result<(), Box<dyn std::error::Error>> {
     Ok(())
 }
 
+#[allow(dead_code)]
 fn optimization_demo() -> Result<(), Box<dyn std::error::Error>> {
     println!("4. Optimization and Root Finding");
     println!("===============================");

@@ -116,8 +116,8 @@ impl TextGenerationMetrics {
     }
 
     /// Set maximum n-gram for BLEU calculation
-    pub fn with_max_ngram(mut self, max_ngram: usize) -> Self {
-        self.max_ngram = max_ngram;
+    pub fn with_max_ngram(mut self, maxngram: usize) -> Self {
+        self.max_ngram = maxngram;
         self
     }
 
@@ -470,7 +470,7 @@ impl NERMetrics {
         let mut true_bio = vec!["O".to_string(); num_tokens];
         let mut pred_bio = vec!["O".to_string(); num_tokens];
 
-        // Convert entities to BIO tags
+        // Convert _entities to BIO tags
         for (start, end, entity_type) in true_entities {
             if *start < num_tokens {
                 true_bio[*start] = format!("B-{}", entity_type);
@@ -754,7 +754,7 @@ mod tests {
     }
 
     #[test]
-    fn test_text_generation_evaluation() {
+    fn testtext_generation_evaluation() {
         let metrics = TextGenerationMetrics::new();
 
         let references = vec![
@@ -777,7 +777,7 @@ mod tests {
     }
 
     #[test]
-    fn test_text_classification_evaluation() {
+    fn testtext_classification_evaluation() {
         let metrics = TextClassificationMetrics::new();
 
         let y_true = Array1::from_vec(vec![0, 1, 2, 0, 1, 2]);

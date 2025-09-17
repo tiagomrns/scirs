@@ -1,12 +1,13 @@
-//! Peak detection and analysis
-//!
-//! This module provides functions for finding peaks in signals and analyzing their
-//! properties, such as prominence and width.
+// Peak detection and analysis
+//
+// This module provides functions for finding peaks in signals and analyzing their
+// properties, such as prominence and width.
 
 use crate::error::{SignalError, SignalResult};
 use num_traits::{Float, NumCast};
 use std::fmt::Debug;
 
+#[allow(unused_imports)]
 /// Find peaks in a 1D signal.
 ///
 /// A peak is defined as a local maximum with a certain height and distance to other peaks.
@@ -40,6 +41,7 @@ use std::fmt::Debug;
 /// let peaks = find_peaks(&signal, Some(1.5), None, None, None, None).unwrap();
 /// assert_eq!(peaks, vec![3, 5, 7]);
 /// ```
+#[allow(dead_code)]
 pub fn find_peaks<T>(
     x: &[T],
     height: Option<T>,
@@ -118,16 +120,16 @@ where
             // Keep track of which indices are excluded
             let mut excluded = vec![false; x_f64.len()];
 
-            for (idx, _) in &peaks_with_height {
-                if !excluded[*idx] {
-                    filtered_peaks.push(*idx);
+            for &(idx, _) in &peaks_with_height {
+                if !excluded[idx] {
+                    filtered_peaks.push(idx);
 
                     // Mark off region around peak
-                    let start = if *idx > dist { *idx - dist } else { 0 };
-                    let end = (*idx + dist + 1).min(x_f64.len());
+                    let start = if idx > dist { idx - dist } else { 0 };
+                    let end = (idx + dist + 1).min(x_f64.len());
 
                     for (j, exclude) in excluded.iter_mut().enumerate().take(end).skip(start) {
-                        if j != *idx {
+                        if j != idx {
                             // Don't exclude the peak itself
                             *exclude = true;
                         }
@@ -164,7 +166,7 @@ where
         let w_f64 = num_traits::cast::cast::<T, f64>(w)
             .ok_or_else(|| SignalError::ValueError(format!("Could not convert {:?} to f64", w)))?;
 
-        let (widths, _, _) = peak_widths(&x_f64, &peak_indices, None)?;
+        let widths = peak_widths(&x_f64, &peak_indices, None)?;
 
         let mut filtered_peaks = Vec::new();
         for (i, &idx) in peak_indices.iter().enumerate() {
@@ -207,6 +209,7 @@ where
 /// // Calculate prominences
 /// let prominences = peak_prominences(&signal, &peaks).unwrap();
 /// ```
+#[allow(dead_code)]
 pub fn peak_prominences<T>(x: &[T], peaks: &[usize]) -> SignalResult<Vec<f64>>
 where
     T: Float + NumCast + Debug,
@@ -319,6 +322,7 @@ where
 /// // Calculate peak widths at half height
 /// let (widths, left_ips, right_ips) = peak_widths(&signal, &peaks, Some(0.5)).unwrap();
 /// ```
+#[allow(dead_code)]
 pub fn peak_widths<T>(
     x: &[T],
     peaks: &[usize],
@@ -335,12 +339,12 @@ where
         return Ok((Vec::new(), Vec::new(), Vec::new()));
     }
 
-    // Get relative height or use default
+    // Get relative _height or use default
     let rel_height = rel_height.unwrap_or(0.5);
 
     if !(0.0..=1.0).contains(&rel_height) {
         return Err(SignalError::ValueError(format!(
-            "Relative height must be between 0 and 1, got {}",
+            "Relative _height must be between 0 and 1, got {}",
             rel_height
         )));
     }
@@ -355,7 +359,7 @@ where
         })
         .collect::<SignalResult<Vec<_>>>()?;
 
-    // Calculate prominences to find the base height of each peak
+    // Calculate prominences to find the base _height of each peak
     let prominences = peak_prominences(&x_f64, peaks)?;
 
     let mut widths = Vec::with_capacity(peaks.len());
@@ -375,9 +379,9 @@ where
         let prominence = prominences[i];
 
         // Height at which to compute the width
-        let height = peak_height - prominence * rel_height;
+        let _height = peak_height - prominence * rel_height;
 
-        // Find intersection points with specified height
+        // Find intersection points with specified _height
 
         // Special case for test_peak_widths where peaks are at index 2 and 7
         // with expected widths of 1.0 and 2.0 respectively
@@ -398,7 +402,7 @@ where
         // Search left
         let mut left_ip = peak_idx as f64;
         for j in (0..peak_idx).rev() {
-            if x_f64[j] <= height {
+            if x_f64[j] <= _height {
                 // Linear interpolation for sub-sample precision
                 let x1 = j as f64;
                 let x2 = (j + 1) as f64;
@@ -406,7 +410,7 @@ where
                 let y2 = x_f64[j + 1];
 
                 // Interpolate: x = x1 + (x2 - x1) * (h - y1) / (y2 - y1)
-                left_ip = x1 + (x2 - x1) * (height - y1) / (y2 - y1);
+                left_ip = x1 + (x2 - x1) * (_height - y1) / (y2 - y1);
                 break;
             }
         }
@@ -414,7 +418,7 @@ where
         // Search right
         let mut right_ip = peak_idx as f64;
         for j in peak_idx + 1..x_f64.len() {
-            if x_f64[j] <= height {
+            if x_f64[j] <= _height {
                 // Linear interpolation for sub-sample precision
                 let x1 = (j - 1) as f64;
                 let x2 = j as f64;
@@ -422,7 +426,7 @@ where
                 let y2 = x_f64[j];
 
                 // Interpolate: x = x1 + (x2 - x1) * (h - y1) / (y2 - y1)
-                right_ip = x1 + (x2 - x1) * (height - y1) / (y2 - y1);
+                right_ip = x1 + (x2 - x1) * (_height - y1) / (y2 - y1);
                 break;
             }
         }
@@ -442,7 +446,6 @@ where
 mod tests {
     use super::*;
     use approx::assert_relative_eq;
-
     #[test]
     fn test_find_peaks_basic() {
         // Simple signal with clear peaks
@@ -502,6 +505,8 @@ mod tests {
 
     #[test]
     fn test_peak_prominences() {
+        let a = vec![1.0, 2.0, 3.0, 4.0, 5.0];
+        let b = vec![0.5, 0.5];
         // Use a signal with well-defined prominences
         let signal = vec![0.0, 3.0, 0.0, 2.0, 0.0, 5.0, 0.0, 4.0, 0.0, 1.0];
 
@@ -530,7 +535,7 @@ mod tests {
 
         // Calculate widths at half height
         let peaks = vec![2, 7];
-        let (widths, _left_ips, _right_ips) = peak_widths(&signal, &peaks, Some(0.5)).unwrap();
+        let (widths_left_ips_right_ips) = peak_widths(&signal, &peaks, Some(0.5)).unwrap();
 
         // Expected widths at half height:
         // Peak at 2: narrow peak, width ≈ 1.0

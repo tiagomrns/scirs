@@ -6,6 +6,7 @@
 //! ```
 
 #[cfg(feature = "tensor_contraction")]
+#[allow(dead_code)]
 fn main() -> scirs2_linalg::error::LinalgResult<()> {
     use ndarray::{ArrayD, IxDyn};
     use scirs2_linalg::tensor_contraction::tensor_network::{TensorNetwork, TensorNode};
@@ -169,9 +170,9 @@ fn main() -> scirs2_linalg::error::LinalgResult<()> {
     println!("  This is equivalent to matrix chain multiplication A@B@C");
 
     // Comparing with direct matrix multiplication
-    let expected_shape = vec![2, 2];
-    println!("  Expected shape: {:?}", expected_shape);
-    assert_eq!(result.shape(), expected_shape);
+    let expectedshape = vec![2, 2];
+    println!("  Expected shape: {:?}", expectedshape);
+    assert_eq!(result.shape(), expectedshape);
 
     // Print some values
     println!("  Some values from the result:");
@@ -184,6 +185,7 @@ fn main() -> scirs2_linalg::error::LinalgResult<()> {
 }
 
 #[cfg(not(feature = "tensor_contraction"))]
+#[allow(dead_code)]
 fn main() {
     println!("This example requires the 'tensor_contraction' feature.");
     println!(

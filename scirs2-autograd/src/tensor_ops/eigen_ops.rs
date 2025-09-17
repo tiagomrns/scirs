@@ -231,6 +231,7 @@ impl<F: Float + ScalarOperand + FromPrimitive> Op<F> for EigenvaluesOp {
 }
 
 // Helper functions
+#[allow(dead_code)]
 fn is_symmetric_matrix<F: Float>(matrix: &ndarray::ArrayView2<F>) -> bool {
     let n = matrix.shape()[0];
     for i in 0..n {
@@ -243,6 +244,7 @@ fn is_symmetric_matrix<F: Float>(matrix: &ndarray::ArrayView2<F>) -> bool {
     true
 }
 
+#[allow(dead_code)]
 fn compute_symmetric_eigen<F: Float + ScalarOperand + FromPrimitive>(
     matrix: &ndarray::ArrayView2<F>,
 ) -> Result<(Array1<F>, Array2<F>), OpError> {
@@ -334,6 +336,7 @@ fn compute_symmetric_eigen<F: Float + ScalarOperand + FromPrimitive>(
     Ok((eigenvalues, v))
 }
 
+#[allow(dead_code)]
 fn compute_general_eigen<F: Float + ScalarOperand + FromPrimitive>(
     matrix: &ndarray::ArrayView2<F>,
 ) -> Result<(Array1<F>, Array2<F>), OpError> {
@@ -341,10 +344,7 @@ fn compute_general_eigen<F: Float + ScalarOperand + FromPrimitive>(
     // This is a more robust implementation for non-symmetric matrices
 
     let n = matrix.shape()[0];
-    println!(
-        "Computing eigendecomposition for general matrix of size: {}",
-        n
-    );
+    println!("Computing eigendecomposition for general matrix of size: {n}");
 
     // Check if the matrix is close to symmetric within a tolerance
     let is_nearly_symmetric =
@@ -463,6 +463,7 @@ fn compute_general_eigen<F: Float + ScalarOperand + FromPrimitive>(
 }
 
 // Helper function to check if a matrix is nearly symmetric
+#[allow(dead_code)]
 fn is_nearly_symmetric_matrix<F: Float>(matrix: &ndarray::ArrayView2<F>, tol: F) -> bool {
     let n = matrix.shape()[0];
     for i in 0..n {
@@ -476,6 +477,7 @@ fn is_nearly_symmetric_matrix<F: Float>(matrix: &ndarray::ArrayView2<F>, tol: F)
 }
 
 // Helper function to compute QR decomposition
+#[allow(dead_code)]
 fn compute_qr_decomposition<F: Float + ScalarOperand + FromPrimitive>(
     a: &Array2<F>,
 ) -> Result<(Array2<F>, Array2<F>), OpError> {
@@ -565,19 +567,21 @@ fn compute_qr_decomposition<F: Float + ScalarOperand + FromPrimitive>(
     Ok((q, r))
 }
 
+#[allow(dead_code)]
 fn compute_eigenvalues_only<F: Float + ScalarOperand + FromPrimitive>(
     matrix: &ndarray::ArrayView2<F>,
 ) -> Result<Array1<F>, OpError> {
     // Simplified implementation - use full eigen decomposition but return only values
-    let (values, _) = if is_symmetric_matrix(matrix) {
+    let (values_, _vectors) = if is_symmetric_matrix(matrix) {
         compute_symmetric_eigen(matrix)?
     } else {
         compute_general_eigen(matrix)?
     };
 
-    Ok(values)
+    Ok(values_)
 }
 
+#[allow(dead_code)]
 fn eigendecomposition_gradient<F: Float + ScalarOperand + FromPrimitive>(
     eigenvalues: &ndarray::ArrayView1<F>,
     eigenvectors: &ndarray::ArrayView2<F>,
@@ -587,10 +591,7 @@ fn eigendecomposition_gradient<F: Float + ScalarOperand + FromPrimitive>(
     let n = eigenvalues.len();
     let mut grad = Array2::<F>::zeros((n, n));
 
-    println!(
-        "Computing eigendecomposition gradient for matrix of size: {}",
-        n
-    );
+    println!("Computing eigendecomposition gradient for matrix of size: {n}");
 
     // Gradient for eigenvalues part
     // For each eigenvalue, we add the corresponding component to the gradient
@@ -748,6 +749,7 @@ impl<F: Float + ScalarOperand + FromPrimitive> Op<F> for EigenExtractOp {
 // Public API functions
 
 /// Compute eigenvalues and eigenvectors of a square matrix
+#[allow(dead_code)]
 pub fn eigen<'g, F: Float + ScalarOperand + FromPrimitive>(
     matrix: &Tensor<'g, F>,
 ) -> (Tensor<'g, F>, Tensor<'g, F>) {
@@ -767,6 +769,7 @@ pub fn eigen<'g, F: Float + ScalarOperand + FromPrimitive>(
 }
 
 /// Compute only the eigenvalues of a square matrix
+#[allow(dead_code)]
 pub fn eigenvalues<'g, F: Float + ScalarOperand + FromPrimitive>(
     matrix: &Tensor<'g, F>,
 ) -> Tensor<'g, F> {
@@ -774,10 +777,10 @@ pub fn eigenvalues<'g, F: Float + ScalarOperand + FromPrimitive>(
 
     // Get the shape of the input tensor for setting the output shape
     // For eigenvalues, we'll have a 1D tensor with size n for an n×n matrix
-    let matrix_shape = crate::tensor_ops::shape(matrix);
+    let matrixshape = crate::tensor_ops::shape(matrix);
 
     Tensor::builder(g)
         .append_input(matrix, false)
-        .set_shape(&matrix_shape)
+        .setshape(&matrixshape)
         .build(EigenvaluesOp)
 }

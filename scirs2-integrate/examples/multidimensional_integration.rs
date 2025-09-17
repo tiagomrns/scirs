@@ -4,6 +4,7 @@ use std::f64::consts::PI;
 use std::time::Instant;
 
 /// A helper function to time and report the result of an integration method
+#[allow(dead_code)]
 fn time_integration<F, R>(name: &str, f: F) -> R
 where
     F: FnOnce() -> R,
@@ -11,10 +12,11 @@ where
     let start = Instant::now();
     let result = f();
     let elapsed = start.elapsed();
-    println!("{}: {:?}", name, elapsed);
+    println!("{name}: {elapsed:?}");
     result
 }
 
+#[allow(dead_code)]
 fn main() {
     println!("Multidimensional Integration Examples\n");
 
@@ -108,7 +110,7 @@ fn main() {
 
     // The volume of a 5D hypersphere with radius 1 is pi^(5/2) / (5/2)!
     let exact_volume_5d = PI.powf(2.5) * 8.0 / 15.0;
-    println!("Exact result: {:.10}", exact_volume_5d);
+    println!("Exact result: {exact_volume_5d:.10}");
 
     // Function that is 1 inside the 5D hypersphere, 0 outside
     let hypersphere_5d = |x: ArrayView1<f64>| {
@@ -165,13 +167,13 @@ fn main() {
 
     // Test with different dimensions
     for dim in 1..=5 {
-        println!("\nDimension {}", dim);
+        println!("\nDimension {dim}");
 
         // Create the appropriate ranges
         let ranges: Vec<(f64, f64)> = vec![(0.0, 1.0); dim];
 
         // Integration with default options
-        let result = time_integration(&format!("Integration (dim={})", dim), || {
+        let result = time_integration(&format!("Integration (dim={dim})"), || {
             multi_romberg_with_details(gaussian_function, &ranges, None).unwrap()
         });
 
@@ -183,7 +185,7 @@ fn main() {
         println!("  Method used: {:?}", result.method);
         println!("  Result: {:.10}", result.value);
         println!("  Error estimate: {:.10}", result.abs_error);
-        println!("  Exact result: {:.10}", exact_result);
+        println!("  Exact result: {exact_result:.10}");
         println!(
             "  Absolute error: {:.10}",
             (result.value - exact_result).abs()

@@ -26,6 +26,7 @@ use ndarray::{Array1, Array2, ArrayView1};
 /// # Returns
 ///
 /// The solution as an ODEResult or an error
+#[allow(dead_code)]
 pub fn bdf_method<F, Func>(
     f: Func,
     t_span: [F; 2],
@@ -51,14 +52,14 @@ where
     // Determine initial step size if not provided
     let h0 = opts.h0.unwrap_or_else(|| {
         // Simple heuristic for initial step size
-        let span = t_end - t_start;
-        span / F::from_usize(100).unwrap() * F::from_f64(0.1).unwrap() // 0.1% of interval
+        let _span = t_end - t_start;
+        _span / F::from_usize(100).unwrap() * F::from_f64(0.1).unwrap() // 0.1% of interval
     });
 
     // Determine minimum and maximum step sizes
     let min_step = opts.min_step.unwrap_or_else(|| {
-        let span = t_end - t_start;
-        span * F::from_f64(1e-10).unwrap() // Minimal step size
+        let _span = t_end - t_start;
+        _span * F::from_f64(1e-10).unwrap() // Minimal step size
     });
 
     let max_step = opts.max_step.unwrap_or_else(|| {
@@ -458,6 +459,7 @@ where
 /// # Returns
 ///
 /// The solution as an ODEResult or an error
+#[allow(dead_code)]
 pub fn radau_method<F, Func>(
     f: Func,
     t_span: [F; 2],
@@ -475,14 +477,14 @@ where
     // Determine initial step size if not provided
     let h0 = opts.h0.unwrap_or_else(|| {
         // Simple heuristic for initial step size
-        let span = t_end - t_start;
-        span / F::from_usize(100).unwrap() * F::from_f64(0.1).unwrap() // 0.1% of interval
+        let _span = t_end - t_start;
+        _span / F::from_usize(100).unwrap() * F::from_f64(0.1).unwrap() // 0.1% of interval
     });
 
     // Determine minimum and maximum step sizes
     let min_step = opts.min_step.unwrap_or_else(|| {
-        let span = t_end - t_start;
-        span * F::from_f64(1e-10).unwrap() // Minimal step size
+        let _span = t_end - t_start;
+        _span * F::from_f64(1e-10).unwrap() // Minimal step size
     });
 
     let max_step = opts.max_step.unwrap_or_else(|| {

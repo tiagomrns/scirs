@@ -3,6 +3,7 @@ use scirs2_interpolate::{
     generate_knots, make_interp_bspline, make_lsq_bspline, BSpline, BSplineExtrapolateMode,
 };
 
+#[allow(dead_code)]
 fn main() {
     println!("SciRS2 B-Spline Interpolation Examples");
     println!("=====================================\n");
@@ -20,6 +21,7 @@ fn main() {
     bspline_least_squares_example();
 }
 
+#[allow(dead_code)]
 fn basic_bspline_example() {
     println!("Example 1: Basic B-spline Usage");
     println!("-------------------------------");
@@ -75,6 +77,7 @@ fn basic_bspline_example() {
     println!();
 }
 
+#[allow(dead_code)]
 fn bspline_calculus_example() {
     println!("Example 2: B-spline Derivatives and Integration");
     println!("----------------------------------------------");
@@ -129,6 +132,7 @@ fn bspline_calculus_example() {
     println!();
 }
 
+#[allow(dead_code)]
 fn bspline_interpolation_example() {
     println!("Example 3: Interpolation with B-splines");
     println!("--------------------------------------");
@@ -177,6 +181,7 @@ fn bspline_interpolation_example() {
     println!();
 }
 
+#[allow(dead_code)]
 fn bspline_least_squares_example() {
     println!("Example 4: Least-squares Fitting with B-splines");
     println!("----------------------------------------------");

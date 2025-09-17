@@ -1,6 +1,7 @@
 use ndarray::array;
 use scirs2_spatial::pathplanning::VisibilityGraphPlanner;
 
+#[allow(dead_code)]
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("Visibility Graph Pathfinding Example");
     println!("====================================\n");
@@ -29,7 +30,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let start = [1.0, 1.0];
     let goal = [9.0, 9.0];
 
-    println!("Finding path from {:?} to {:?}", start, goal);
+    println!("Finding path from {start:?} to {goal:?}");
     println!("Obstacles:");
     println!("- Square at (2,2) to (4,4)");
     println!("- Triangle at (6,6), (8,6), (7,8)");
@@ -47,7 +48,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             );
 
             for (i, point) in path.nodes.iter().enumerate() {
-                println!("  {}: {:?}", i, point);
+                println!("  {i}: {point:?}");
             }
 
             // Print ASCII visualization (simple)
@@ -80,7 +81,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let wall_start = [2.0, 5.0];
     let wall_goal = [9.0, 5.0];
 
-    println!("Finding path from {:?} to {:?}", wall_start, wall_goal);
+    println!("Finding path from {wall_start:?} to {wall_goal:?}");
     println!("Obstacle: Wall from (5,0) to (6,10)\n");
 
     let wall_result = wall_planner.find_path(wall_start, wall_goal)?;
@@ -94,7 +95,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             );
 
             for (i, point) in path.nodes.iter().enumerate() {
-                println!("  {}: {:?}", i, point);
+                println!("  {i}: {point:?}");
             }
         }
         None => {
@@ -106,6 +107,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 }
 
 /// Simple ASCII visualization of the path and obstacles
+#[allow(dead_code)]
 fn print_ascii_visualization(path: &[[f64; 2]], planner: &VisibilityGraphPlanner) {
     const SIZE: usize = 20;
     let mut grid = vec![vec![' '; SIZE]; SIZE];

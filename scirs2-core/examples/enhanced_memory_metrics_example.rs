@@ -4,6 +4,7 @@
 //! and profiling capabilities of the enhanced memory metrics system.
 
 #[cfg(not(feature = "memory_management"))]
+#[allow(dead_code)]
 fn main() {
     println!("This example requires the 'memory_management' feature to be enabled.");
     println!("Run with: cargo run --example enhanced_memory_metrics_example --features memory_management");
@@ -22,6 +23,7 @@ use std::thread;
 use std::time::{Duration, Instant};
 
 #[cfg(feature = "memory_management")]
+#[allow(dead_code)]
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("=== Enhanced Memory Metrics System Demonstration ===");
 
@@ -46,6 +48,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
 /// Demonstrate basic memory analytics capabilities
 #[cfg(feature = "memory_management")]
+#[allow(dead_code)]
 fn demo_memory_analytics() -> Result<(), Box<dyn std::error::Error>> {
     println!("\n1. Basic Memory Analytics");
     println!("=========================");
@@ -132,6 +135,7 @@ fn demo_memory_analytics() -> Result<(), Box<dyn std::error::Error>> {
 
 /// Demonstrate memory leak detection
 #[cfg(feature = "memory_management")]
+#[allow(dead_code)]
 fn demo_leak_detection() -> Result<(), Box<dyn std::error::Error>> {
     println!("\n2. Memory Leak Detection");
     println!("========================");
@@ -219,6 +223,7 @@ fn demo_leak_detection() -> Result<(), Box<dyn std::error::Error>> {
 
 /// Demonstrate memory profiler with real-time monitoring
 #[cfg(feature = "memory_management")]
+#[allow(dead_code)]
 fn demo_memory_profiler() -> Result<(), Box<dyn std::error::Error>> {
     println!("\n3. Memory Profiler with Real-time Monitoring");
     println!("===========================================");
@@ -235,9 +240,9 @@ fn demo_memory_profiler() -> Result<(), Box<dyn std::error::Error>> {
     let profiler = MemoryProfiler::new(config);
 
     // Start profiling session
-    let session_id =
+    let sessionid =
         profiler.start_session(Some(format!("demo_session_{}", Utc::now().timestamp())));
-    println!("Started profiling session: {}", session_id);
+    println!("Started profiling session: {}", sessionid);
 
     // Simulate various memory operations
     println!("Simulating memory operations...");
@@ -344,7 +349,7 @@ fn demo_memory_profiler() -> Result<(), Box<dyn std::error::Error>> {
         );
         println!(
             "  Memory bandwidth utilization: {:.2}%",
-            result.performance_impact.memory_bandwidth_utilization * 100.0
+            result.performance_impact.memorybandwidth_utilization * 100.0
         );
 
         println!("\nSummary:");
@@ -368,6 +373,7 @@ fn demo_memory_profiler() -> Result<(), Box<dyn std::error::Error>> {
 
 /// Demonstrate pattern analysis and optimization recommendations
 #[cfg(feature = "memory_management")]
+#[allow(dead_code)]
 fn demo_pattern_analysis() -> Result<(), Box<dyn std::error::Error>> {
     println!("\n4. Pattern Analysis and Optimization Recommendations");
     println!("===================================================");
@@ -586,9 +592,9 @@ fn demo_pattern_analysis() -> Result<(), Box<dyn std::error::Error>> {
                 println!("   💡 Optimization Recommendations:");
                 for (i, recommendation) in analysis.recommendations.iter().enumerate() {
                     match recommendation {
-                        scirs2_core::memory::metrics::OptimizationRecommendation::UseBufferPooling { expected_savings, suggested_pool_sizes } => {
+                        scirs2_core::memory::metrics::OptimizationRecommendation::UseBufferPooling { expected_savings, suggested_poolsizes } => {
                             println!("     {}. Use Buffer Pooling: Save ~{} bytes, pools: {:?}", 
-                                    i + 1, expected_savings, suggested_pool_sizes);
+                                    i + 1, expected_savings, suggested_poolsizes);
                         }
                         scirs2_core::memory::metrics::OptimizationRecommendation::BatchAllocations { current_frequency, suggested_batch_size } => {
                             println!("     {}. Batch Allocations: Reduce from {:.2}/sec, batch size: {}", 
@@ -617,6 +623,7 @@ fn demo_pattern_analysis() -> Result<(), Box<dyn std::error::Error>> {
 
 /// Demonstrate performance impact analysis
 #[cfg(feature = "memory_management")]
+#[allow(dead_code)]
 fn demo_performance_analysis() -> Result<(), Box<dyn std::error::Error>> {
     println!("\n5. Performance Impact Analysis");
     println!("==============================");
@@ -626,8 +633,8 @@ fn demo_performance_analysis() -> Result<(), Box<dyn std::error::Error>> {
         ..Default::default()
     });
 
-    let session_id = profiler.start_session(Some("performance_analysis".to_string()));
-    println!("Started performance analysis session: {}", session_id);
+    let sessionid = profiler.start_session(Some("performance_analysis".to_string()));
+    println!("Started performance analysis session: {}", sessionid);
 
     // Simulate high-frequency allocation patterns that impact performance
     println!("Simulating performance-impacting allocation patterns...");
@@ -726,7 +733,7 @@ fn demo_performance_analysis() -> Result<(), Box<dyn std::error::Error>> {
         );
         println!(
             "  Memory bandwidth utilization: {:.2}%",
-            result.performance_impact.memory_bandwidth_utilization * 100.0
+            result.performance_impact.memorybandwidth_utilization * 100.0
         );
         println!(
             "  Cache miss estimate: {:.2}%",

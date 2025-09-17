@@ -1,13 +1,16 @@
 [package]
 name = "scirs2-stats"
 version.workspace = true
-edition = "2021"
-authors = ["SciRS2 Team"]
-description = "Statistical functions module for SciRS2"
-license = "MIT OR Apache-2.0"
-repository = "https://github.com/cool-japan/scirs"
+edition.workspace = true
+authors.workspace = true
+description = "Statistical functions module for SciRS2 (scirs2-stats)"
+license.workspace = true
+repository.workspace = true
 keywords = ["statistics", "probability", "scientific", "scipy", "numerical"]
 categories = ["science", "mathematics", "algorithms"]
+
+[lints]
+workspace = true
 
 [dependencies]
 # Core dependencies
@@ -15,26 +18,59 @@ ndarray = { workspace = true }
 num-traits = { workspace = true }
 num-complex = { workspace = true }
 thiserror = { workspace = true }
-# BLAS dependencies removed - using core abstractions
-# ndarray-linalg = { workspace = true, default-features = false }
-scirs2-core = { workspace = true, features = ["validation", "parallel", "simd", "linalg"] }
+# Linear algebra for PCA and other multivariate methods
+ndarray-linalg = { workspace = true, default-features = false, features = ["openblas-system"] }
+scirs2-core = { workspace = true, features = ["validation", "parallel", "simd", "linalg", "random"] }
 scirs2-linalg = { workspace = true }
 
 # Statistics specific dependencies
 rand = { workspace = true }
 rand_distr = { workspace = true }
 rand_pcg = { workspace = true }
+rand_chacha = { workspace = true }
 statrs = { workspace = true }
-special-11 = { workspace = true }
+special = { workspace = true }
+num_cpus = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+either = { workspace = true }
+chrono = { workspace = true }
+memmap2 = { workspace = true }
+quickcheck = { workspace = true }
+crossbeam = { workspace = true }
 
 [dev-dependencies]
-approx = { workspace = true }
 criterion = { workspace = true }
 plotters = { workspace = true }
+quickcheck = { workspace = true }
+quickcheck_macros = { workspace = true }
+rand = { workspace = true }
+approx = { workspace = true }
 
 [features]
 default = []
 # BLAS backends - these are mutually exclusive, managed through scirs2-core
 openblas = ["scirs2-core/openblas"]
-intel-mkl = ["scirs2-core/intel-mkl"]
+accelerate = ["scirs2-core/accelerate"]  # System BLAS (Accelerate on macOS)
+# intel-mkl = ["scirs2-core/intel-mkl"]  # Removed due to conflicts with openblas
 netlib = ["scirs2-core/netlib"]
+# Memory mapping support for large files
+memmap = []
+
+[[bench]]
+name = "distributions"
+harness = false
+
+[[bench]]
+name = "statistical_tests"
+harness = false
+
+[[bench]]
+name = "scipy_comparison"
+harness = false
+
+[[bench]]
+name = "comprehensive_scipy_comparison"
+harness = false
+
+

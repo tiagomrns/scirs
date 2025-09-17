@@ -1,11 +1,12 @@
-//! Scalogram and related visualizations
+// Scalogram and related visualizations
 
 use super::transform::cwt;
-use crate::error::SignalResult;
+use crate::error::{SignalError, SignalResult};
 use num_complex::Complex64;
 use num_traits::{Float, NumCast};
 use std::fmt::Debug;
 
+#[allow(unused_imports)]
 /// Computes a scalogram (squared magnitude of CWT coefficients) of a signal.
 ///
 /// A scalogram is a visual representation of the energy density of a signal
@@ -47,6 +48,7 @@ use std::fmt::Debug;
 /// assert_eq!(scalo.len(), scales.len());
 /// assert_eq!(scalo[0].len(), signal.len());
 /// ```
+#[allow(dead_code)]
 pub fn scalogram<T, F, W>(
     signal: &[T],
     wavelet_fn: F,
@@ -135,6 +137,7 @@ where
 /// assert_eq!(mag.len(), scales.len());
 /// assert_eq!(mag[0].len(), signal.len());
 /// ```
+#[allow(dead_code)]
 pub fn cwt_magnitude<T, F, W>(
     signal: &[T],
     wavelet_fn: F,
@@ -228,6 +231,7 @@ where
 ///     }
 /// }
 /// ```
+#[allow(dead_code)]
 pub fn cwt_phase<T, F, W>(
     signal: &[T],
     wavelet_fn: F,
@@ -288,6 +292,7 @@ where
 ///     assert!(freqs[i] < freqs[i-1]);
 /// }
 /// ```
+#[allow(dead_code)]
 pub fn scale_to_frequency(
     scales: &[f64],
     central_frequency: f64,
@@ -301,17 +306,17 @@ pub fn scale_to_frequency(
 
     if sampling_period <= 0.0 {
         return Err(crate::error::SignalError::ValueError(
-            "Sampling period must be positive".to_string(),
+            "Sampling _period must be positive".to_string(),
         ));
     }
 
     if central_frequency <= 0.0 {
         return Err(crate::error::SignalError::ValueError(
-            "Central frequency must be positive".to_string(),
+            "Central _frequency must be positive".to_string(),
         ));
     }
 
-    // Get the central frequency for this wavelet
+    // Get the central _frequency for this wavelet
     let central_freq = central_frequency;
 
     // Convert scales to frequencies using the formula: f = central_freq / (scale * dt)

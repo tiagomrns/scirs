@@ -9,6 +9,7 @@ use std::time::Duration;
 use crate::memory::metrics::collector::MemoryReport;
 
 /// Format bytes in human-readable format
+#[allow(dead_code)]
 pub fn format_bytes(bytes: usize) -> String {
     const KB: usize = 1024;
     const MB: usize = KB * 1024;
@@ -21,29 +22,30 @@ pub fn format_bytes(bytes: usize) -> String {
     } else if bytes >= KB {
         format!("{:.2} KB", bytes as f64 / KB as f64)
     } else {
-        format!("{} bytes", bytes)
+        format!("{bytes} bytes")
     }
 }
 
 /// Format duration in human-readable format
+#[allow(dead_code)]
 pub fn format_duration(duration: Duration) -> String {
     let total_secs = duration.as_secs();
 
     if total_secs < 60 {
-        return format!("{}s", total_secs);
+        return format!("{total_secs}s");
     }
 
     let mins = total_secs / 60;
     let secs = total_secs % 60;
 
     if mins < 60 {
-        return format!("{}m {}s", mins, secs);
+        return format!("{mins}m {secs}s");
     }
 
     let hours = mins / 60;
     let mins = mins % 60;
 
-    format!("{}h {}m {}s", hours, mins, secs)
+    format!("{hours}h {mins}m {secs}s")
 }
 
 impl MemoryReport {
@@ -53,7 +55,7 @@ impl MemoryReport {
 
         output.push_str(&format!(
             "Memory Report (duration: {})\n",
-            format_duration(self.duration)
+            format_duration(Duration::from_secs(1))
         ));
         output.push_str(&format!(
             "Total Current Usage: {}\n",
@@ -79,7 +81,7 @@ impl MemoryReport {
         components.sort_by(|a, b| b.1.peak_usage.cmp(&a.1.peak_usage));
 
         for (component, stats) in components {
-            output.push_str(&format!("\n  {}\n", component));
+            output.push_str(&format!("\n  {component}\n"));
             output.push_str(&format!(
                 "    Current Usage: {}\n",
                 format_bytes(stats.current_usage)
@@ -104,13 +106,13 @@ impl MemoryReport {
             // Calculate reuse ratio (if peak is non-zero)
             if stats.peak_usage > 0 {
                 let reuse_ratio = stats.total_allocated as f64 / stats.peak_usage as f64;
-                output.push_str(&format!("    Memory Reuse Ratio: {:.2}\n", reuse_ratio));
+                output.push_str(&format!("    Memory Reuse Ratio: {reuse_ratio:.2}\n"));
             }
 
             // Calculate allocation frequency
             if self.duration.as_secs_f64() > 0.0 {
                 let alloc_per_sec = stats.allocation_count as f64 / self.duration.as_secs_f64();
-                output.push_str(&format!("    Allocations/sec: {:.2}\n", alloc_per_sec));
+                output.push_str(&format!("    Allocations/sec: {alloc_per_sec:.2}\n"));
             }
         }
 
@@ -168,7 +170,7 @@ impl MemoryReport {
 
     /// Export the report as JSON - stub when memory_metrics is disabled
     #[cfg(not(feature = "memory_metrics"))]
-    pub fn to_json(&self) -> String {
+    pub fn to_json_2(&self) -> String {
         "{}".to_string()
     }
 
@@ -221,7 +223,7 @@ impl MemoryReport {
             output.push_str(&format!(
                 "{:<20} [{:<50}] {}\n",
                 component,
-                format!("{}{}", current_bar, peak_bar),
+                format!("{current_bar}{peak_bar}"),
                 format_bytes(stats.peak_usage)
             ));
         }
@@ -346,10 +348,10 @@ mod tests {
         #[cfg(feature = "memory_metrics")]
         {
             let json = report.to_json();
-            assert_eq!(json["total_current_usage"], 1024);
-            assert_eq!(json["total_peak_usage"], 2048);
-            assert_eq!(json["total_allocation_count"], 10);
-            assert_eq!(json["components"]["Component1"]["current_usage"], 1024);
+            assert_eq!(json[total_current_usage], 1024);
+            assert_eq!(json[total_peak_usage], 2048);
+            assert_eq!(json[total_allocation_count], 10);
+            assert_eq!(json[components][Component1][current_usage], 1024);
         }
 
         #[cfg(not(feature = "memory_metrics"))]

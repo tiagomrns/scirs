@@ -3,8 +3,11 @@
 //! This benchmark compares the performance of regular iterative solvers with
 //! specialized solvers for quantized matrices.
 
-use criterion::{black_box, criterion_group, criterion_main, BenchmarkId, Criterion};
+use std::hint::black_box;
+
+use criterion::{criterion_group, criterion_main, BenchmarkId, Criterion};
 use ndarray::{Array1, Array2, ArrayView1};
+use rand::Rng;
 use scirs2_linalg::matrixfree::{conjugate_gradient, gmres, LinearOperator};
 use scirs2_linalg::quantization::{
     quantized_matrixfree::quantized_to_linear_operator,
@@ -17,17 +20,18 @@ use scirs2_linalg::quantization::{
 };
 
 /// Create a random matrix with specified dimensions
-fn create_random_array2_f32(rows: usize, cols: usize) -> Array2<f32> {
+#[allow(dead_code)]
+fn create_randomarray2_f32(rows: usize, cols: usize) -> Array2<f32> {
     let mut rng = rand::rng();
     let mut matrix = Array2::zeros((rows, cols));
 
     for i in 0..rows {
         for j in 0..cols {
-            matrix[[i, j]] = rand::Rng::random_range(&mut rng, -1.0..1.0);
+            matrix[[i, j]] = rng.random_range(-1.0..1.0);
         }
     }
 
-    // For SPD matrices (used in CG), we need to ensure positive definiteness
+    // For SPD matrices (used in CG)..we need to ensure positive definiteness
     if rows == cols {
         // Make the matrix symmetric
         for i in 0..rows {
@@ -46,6 +50,7 @@ fn create_random_array2_f32(rows: usize, cols: usize) -> Array2<f32> {
 }
 
 /// Benchmark conjugate gradient solver with different matrix representations
+#[allow(dead_code)]
 fn bench_conjugate_gradient(c: &mut Criterion) {
     let mut group = c.benchmark_group("Conjugate Gradient Solver");
     let sizes = [10, 50, 100];
@@ -55,7 +60,7 @@ fn bench_conjugate_gradient(c: &mut Criterion) {
         // Benchmark standard conjugate gradient
         group.bench_with_input(BenchmarkId::new("Standard", size), &size, |bench, &size| {
             // Create a symmetric positive definite matrix
-            let matrix = create_random_array2_f32(size, size);
+            let matrix = create_randomarray2_f32(size, size);
 
             // Create a right-hand side vector
             let b = Array1::from_vec(vec![1.0; size]);
@@ -80,13 +85,13 @@ fn bench_conjugate_gradient(c: &mut Criterion) {
                 &size,
                 |bench, &size| {
                     // Create a symmetric positive definite matrix
-                    let matrix = create_random_array2_f32(size, size);
+                    let matrix = create_randomarray2_f32(size, size);
 
                     // Create a right-hand side vector
                     let b = Array1::from_vec(vec![1.0; size]);
 
                     // Create a quantized matrix-free operator
-                    let quantized_op = QuantizedMatrixFreeOp::from_matrix(
+                    let quantized_op = QuantizedMatrixFreeOp::frommatrix(
                         &matrix.view(),
                         bits,
                         QuantizationMethod::Symmetric,
@@ -113,13 +118,13 @@ fn bench_conjugate_gradient(c: &mut Criterion) {
                 &size,
                 |bench, &size| {
                     // Create a symmetric positive definite matrix
-                    let matrix = create_random_array2_f32(size, size);
+                    let matrix = create_randomarray2_f32(size, size);
 
                     // Create a right-hand side vector
                     let b = Array1::from_vec(vec![1.0; size]);
 
                     // Create a quantized matrix-free operator
-                    let quantized_op = QuantizedMatrixFreeOp::from_matrix(
+                    let quantized_op = QuantizedMatrixFreeOp::frommatrix(
                         &matrix.view(),
                         bits,
                         QuantizationMethod::Symmetric,
@@ -146,13 +151,13 @@ fn bench_conjugate_gradient(c: &mut Criterion) {
                 &size,
                 |bench, &size| {
                     // Create a symmetric positive definite matrix
-                    let matrix = create_random_array2_f32(size, size);
+                    let matrix = create_randomarray2_f32(size, size);
 
                     // Create a right-hand side vector
                     let b = Array1::from_vec(vec![1.0; size]);
 
                     // Create a quantized matrix-free operator
-                    let quantized_op = QuantizedMatrixFreeOp::from_matrix(
+                    let quantized_op = QuantizedMatrixFreeOp::frommatrix(
                         &matrix.view(),
                         bits,
                         QuantizationMethod::Symmetric,
@@ -176,13 +181,13 @@ fn bench_conjugate_gradient(c: &mut Criterion) {
                 &size,
                 |bench, &size| {
                     // Create a symmetric positive definite matrix
-                    let matrix = create_random_array2_f32(size, size);
+                    let matrix = create_randomarray2_f32(size, size);
 
                     // Create a right-hand side vector
                     let b = Array1::from_vec(vec![1.0; size]);
 
                     // Create a quantized matrix-free operator
-                    let quantized_op = QuantizedMatrixFreeOp::from_matrix(
+                    let quantized_op = QuantizedMatrixFreeOp::frommatrix(
                         &matrix.view(),
                         bits,
                         QuantizationMethod::Symmetric,
@@ -216,6 +221,7 @@ fn bench_conjugate_gradient(c: &mut Criterion) {
 }
 
 /// Benchmark GMRES solver with different matrix representations
+#[allow(dead_code)]
 fn bench_gmres(c: &mut Criterion) {
     let mut group = c.benchmark_group("GMRES Solver");
     let sizes = [10, 50, 100];
@@ -225,7 +231,7 @@ fn bench_gmres(c: &mut Criterion) {
         // Benchmark standard GMRES
         group.bench_with_input(BenchmarkId::new("Standard", size), &size, |bench, &size| {
             // Create a general matrix (not necessarily symmetric)
-            let matrix = create_random_array2_f32(size, size);
+            let matrix = create_randomarray2_f32(size, size);
 
             // Create a right-hand side vector
             let b = Array1::from_vec(vec![1.0; size]);
@@ -248,13 +254,13 @@ fn bench_gmres(c: &mut Criterion) {
                 &size,
                 |bench, &size| {
                     // Create a general matrix (not necessarily symmetric)
-                    let matrix = create_random_array2_f32(size, size);
+                    let matrix = create_randomarray2_f32(size, size);
 
                     // Create a right-hand side vector
                     let b = Array1::from_vec(vec![1.0; size]);
 
                     // Create a quantized matrix-free operator
-                    let quantized_op = QuantizedMatrixFreeOp::from_matrix(
+                    let quantized_op = QuantizedMatrixFreeOp::frommatrix(
                         &matrix.view(),
                         bits,
                         QuantizationMethod::Symmetric,
@@ -279,13 +285,13 @@ fn bench_gmres(c: &mut Criterion) {
                 &size,
                 |bench, &size| {
                     // Create a general matrix (not necessarily symmetric)
-                    let matrix = create_random_array2_f32(size, size);
+                    let matrix = create_randomarray2_f32(size, size);
 
                     // Create a right-hand side vector
                     let b = Array1::from_vec(vec![1.0; size]);
 
                     // Create a quantized matrix-free operator
-                    let quantized_op = QuantizedMatrixFreeOp::from_matrix(
+                    let quantized_op = QuantizedMatrixFreeOp::frommatrix(
                         &matrix.view(),
                         bits,
                         QuantizationMethod::Symmetric,
@@ -309,13 +315,13 @@ fn bench_gmres(c: &mut Criterion) {
                 &size,
                 |bench, &size| {
                     // Create a general matrix (not necessarily symmetric)
-                    let matrix = create_random_array2_f32(size, size);
+                    let matrix = create_randomarray2_f32(size, size);
 
                     // Create a right-hand side vector
                     let b = Array1::from_vec(vec![1.0; size]);
 
                     // Create a quantized matrix-free operator
-                    let quantized_op = QuantizedMatrixFreeOp::from_matrix(
+                    let quantized_op = QuantizedMatrixFreeOp::frommatrix(
                         &matrix.view(),
                         bits,
                         QuantizationMethod::Symmetric,
@@ -336,7 +342,8 @@ fn bench_gmres(c: &mut Criterion) {
 }
 
 /// Benchmark special case: large sparse banded matrix
-fn bench_large_banded_matrix(c: &mut Criterion) {
+#[allow(dead_code)]
+fn bench_large_bandedmatrix(c: &mut Criterion) {
     let mut group = c.benchmark_group("Large Banded Matrix");
 
     group.bench_with_input(
@@ -453,6 +460,7 @@ fn bench_large_banded_matrix(c: &mut Criterion) {
 }
 
 /// Benchmark memory usage by solving progressively larger problems
+#[allow(dead_code)]
 fn bench_memory_usage(c: &mut Criterion) {
     let mut group = c.benchmark_group("Memory Usage");
     let sizes = [100, 500, 1000];
@@ -463,7 +471,7 @@ fn bench_memory_usage(c: &mut Criterion) {
             &size,
             |bench, &size| {
                 // Create a symmetric positive definite matrix
-                let matrix = create_random_array2_f32(size, size);
+                let matrix = create_randomarray2_f32(size, size);
 
                 // Create a right-hand side vector
                 let b = Array1::from_vec(vec![1.0; size]);
@@ -472,7 +480,7 @@ fn bench_memory_usage(c: &mut Criterion) {
                 let bits = 4;
 
                 // Create a quantized matrix-free operator
-                let quantized_op = QuantizedMatrixFreeOp::from_matrix(
+                let quantized_op = QuantizedMatrixFreeOp::frommatrix(
                     &matrix.view(),
                     bits,
                     QuantizationMethod::Symmetric,
@@ -497,7 +505,7 @@ criterion_group!(
     benches,
     bench_conjugate_gradient,
     bench_gmres,
-    bench_large_banded_matrix,
+    bench_large_bandedmatrix,
     bench_memory_usage
 );
 criterion_main!(benches);

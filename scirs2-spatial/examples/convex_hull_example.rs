@@ -1,6 +1,7 @@
 use ndarray::array;
 use scirs2_spatial::convex_hull::{convex_hull, ConvexHull};
 
+#[allow(dead_code)]
 fn main() {
     println!("=== SciRS2 Spatial - Convex Hull Example ===\n");
 

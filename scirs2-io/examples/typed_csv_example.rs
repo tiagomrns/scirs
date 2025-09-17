@@ -4,6 +4,7 @@ use scirs2_io::csv::{
 };
 use std::error::Error;
 
+#[allow(dead_code)]
 fn main() -> Result<(), Box<dyn Error>> {
     println!("=== Advanced CSV Functions Example ===\n");
 

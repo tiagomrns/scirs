@@ -65,7 +65,7 @@ pub struct KernelMetadata {
     /// Whether the kernel supports tensor cores (NVIDIA) or similar
     pub supports_tensor_cores: bool,
     /// Operation type (compute intensive, memory intensive, balanced)
-    pub operation_type: OperationType,
+    pub operationtype: OperationType,
     /// Additional backend-specific metadata
     pub backend_metadata: HashMap<String, String>,
 }
@@ -76,7 +76,7 @@ impl Default for KernelMetadata {
             workgroup_size: [16, 16, 1],
             local_memory_usage: 0,
             supports_tensor_cores: false,
-            operation_type: OperationType::Balanced,
+            operationtype: OperationType::Balanced,
             backend_metadata: HashMap::new(),
         }
     }
@@ -86,7 +86,7 @@ impl Default for KernelMetadata {
 #[derive(Debug, Clone)]
 pub struct KernelParams {
     /// Numeric type (f32, f64, etc.)
-    pub data_type: DataType,
+    pub datatype: DataType,
     /// Input dimensions
     pub input_dims: Vec<usize>,
     /// Output dimensions
@@ -99,9 +99,9 @@ pub struct KernelParams {
 
 impl KernelParams {
     /// Create new kernel parameters
-    pub fn new(data_type: DataType) -> Self {
+    pub fn new(datatype: DataType) -> Self {
         Self {
-            data_type,
+            datatype,
             input_dims: Vec::new(),
             output_dims: Vec::new(),
             numeric_params: HashMap::new(),
@@ -207,11 +207,11 @@ impl GpuKernel for BaseKernel {
         self.metadata.clone()
     }
 
-    fn can_specialize(&self, _params: &KernelParams) -> bool {
+    fn can_specialize(&self, params: &KernelParams) -> bool {
         false // Base implementation doesn't support specialization
     }
 
-    fn specialize(&self, _params: &KernelParams) -> Result<Box<dyn GpuKernel>, GpuError> {
+    fn specialize(&self, params: &KernelParams) -> Result<Box<dyn GpuKernel>, GpuError> {
         Err(GpuError::SpecializationNotSupported)
     }
 }
@@ -263,6 +263,14 @@ impl KernelRegistry {
         registry.register(Box::new(complex::ComplexConjugateKernel::new()));
         registry.register(Box::new(complex::ComplexMatMulKernel::new()));
 
+        // Register RK4 integration kernels for advanced mode
+        registry.register(Box::new(create_rk4_stage1_kernel()));
+        registry.register(Box::new(create_rk4_stage2_kernel()));
+        registry.register(Box::new(create_rk4_stage3_kernel()));
+        registry.register(Box::new(create_rk4_stage4_kernel()));
+        registry.register(Box::new(create_rk4_combine_kernel()));
+        registry.register(Box::new(createerror_estimate_kernel()));
+
         registry
     }
 
@@ -298,4 +306,142 @@ impl Default for KernelRegistry {
     fn default() -> Self {
         Self::with_default_kernels()
     }
+}
+
+/// Create RK4 Stage 1 kernel for advanced mode GPU acceleration
+#[allow(dead_code)]
+fn create_rk4_stage1_kernel() -> BaseKernel {
+    let cuda_source = include_str!("rk4_stage1.cu");
+    let metadata = KernelMetadata {
+        workgroup_size: [256, 1, 1],
+        local_memory_usage: 0,
+        supports_tensor_cores: false,
+        operationtype: OperationType::ComputeIntensive,
+        backend_metadata: HashMap::new(),
+    };
+
+    BaseKernel::new(
+        "rk4_stage1",
+        cuda_source,
+        cuda_source, // Use CUDA source for ROCm (HIP compatible)
+        "",          // WGPU source not implemented yet
+        "",          // Metal source not implemented yet
+        cuda_source, // Use CUDA source for OpenCL (with minor modifications)
+        metadata,
+    )
+}
+
+/// Create RK4 Stage 2 kernel for advanced mode GPU acceleration
+#[allow(dead_code)]
+fn create_rk4_stage2_kernel() -> BaseKernel {
+    let cuda_source = include_str!("rk4_stage2.cu");
+    let metadata = KernelMetadata {
+        workgroup_size: [256, 1, 1],
+        local_memory_usage: 0,
+        supports_tensor_cores: false,
+        operationtype: OperationType::ComputeIntensive,
+        backend_metadata: HashMap::new(),
+    };
+
+    BaseKernel::new(
+        "rk4_stage2",
+        cuda_source,
+        cuda_source,
+        "",
+        "",
+        cuda_source,
+        metadata,
+    )
+}
+
+/// Create RK4 Stage 3 kernel for advanced mode GPU acceleration
+#[allow(dead_code)]
+fn create_rk4_stage3_kernel() -> BaseKernel {
+    let cuda_source = include_str!("rk4_stage3.cu");
+    let metadata = KernelMetadata {
+        workgroup_size: [256, 1, 1],
+        local_memory_usage: 0,
+        supports_tensor_cores: false,
+        operationtype: OperationType::ComputeIntensive,
+        backend_metadata: HashMap::new(),
+    };
+
+    BaseKernel::new(
+        "rk4_stage3",
+        cuda_source,
+        cuda_source,
+        "",
+        "",
+        cuda_source,
+        metadata,
+    )
+}
+
+/// Create RK4 Stage 4 kernel for advanced mode GPU acceleration
+#[allow(dead_code)]
+fn create_rk4_stage4_kernel() -> BaseKernel {
+    let cuda_source = include_str!("rk4_stage4.cu");
+    let metadata = KernelMetadata {
+        workgroup_size: [256, 1, 1],
+        local_memory_usage: 0,
+        supports_tensor_cores: false,
+        operationtype: OperationType::ComputeIntensive,
+        backend_metadata: HashMap::new(),
+    };
+
+    BaseKernel::new(
+        "rk4_stage4",
+        cuda_source,
+        cuda_source,
+        "",
+        "",
+        cuda_source,
+        metadata,
+    )
+}
+
+/// Create RK4 Combination kernel for advanced mode GPU acceleration
+#[allow(dead_code)]
+fn create_rk4_combine_kernel() -> BaseKernel {
+    let cuda_source = include_str!("rk4_combine.cu");
+    let metadata = KernelMetadata {
+        workgroup_size: [256, 1, 1],
+        local_memory_usage: 0,
+        supports_tensor_cores: false,
+        operationtype: OperationType::MemoryIntensive,
+        backend_metadata: HashMap::new(),
+    };
+
+    BaseKernel::new(
+        "rk4_combine",
+        cuda_source,
+        cuda_source,
+        "",
+        "",
+        cuda_source,
+        metadata,
+    )
+}
+
+/// Create Error Estimation kernel for adaptive step size control
+#[allow(dead_code)]
+fn createerror_estimate_kernel() -> BaseKernel {
+    let cuda_source = include_str!("error_estimate.cu");
+    let metadata = KernelMetadata {
+        workgroup_size: [256, 1, 1],
+        local_memory_usage: 1024, // Shared memory for reduction
+        supports_tensor_cores: false,
+        operationtype: OperationType::ComputeIntensive,
+        backend_metadata: HashMap::new(),
+    };
+
+    BaseKernel::new(
+        "error_estimate",
+        cuda_source,
+        cuda_source,
+        "",
+        "",
+        cuda_source,
+        metadata,
+    )
 }

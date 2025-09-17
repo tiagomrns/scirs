@@ -185,8 +185,7 @@ impl BackendManager {
         let mut backends = self.backends.lock().unwrap();
         if backends.contains_key(&name) {
             return Err(FFTError::ValueError(format!(
-                "Backend '{}' already exists",
-                name
+                "Backend '{name}' already exists"
             )));
         }
         backends.insert(name, backend);
@@ -203,18 +202,14 @@ impl BackendManager {
     pub fn set_backend(&self, name: &str) -> FFTResult<()> {
         let backends = self.backends.lock().unwrap();
         if !backends.contains_key(name) {
-            return Err(FFTError::ValueError(format!(
-                "Backend '{}' not found",
-                name
-            )));
+            return Err(FFTError::ValueError(format!("Backend '{name}' not found")));
         }
 
         // Check if backend is available
         if let Some(backend) = backends.get(name) {
             if !backend.is_available() {
                 return Err(FFTError::ValueError(format!(
-                    "Backend '{}' is not available",
-                    name
+                    "Backend '{name}' is not available"
                 )));
             }
         }
@@ -283,33 +278,39 @@ impl std::fmt::Display for BackendInfo {
 static GLOBAL_BACKEND_MANAGER: OnceLock<BackendManager> = OnceLock::new();
 
 /// Get the global backend manager
+#[allow(dead_code)]
 pub fn get_backend_manager() -> &'static BackendManager {
     GLOBAL_BACKEND_MANAGER.get_or_init(BackendManager::new)
 }
 
 /// Initialize global backend manager with custom configuration
+#[allow(dead_code)]
 pub fn init_backend_manager(manager: BackendManager) -> Result<(), &'static str> {
     GLOBAL_BACKEND_MANAGER
         .set(manager)
-        .map_err(|_| "Global backend manager already initialized")
+        .map_err(|_| "Global backend _manager already initialized")
 }
 
 /// List available backends
+#[allow(dead_code)]
 pub fn list_backends() -> Vec<String> {
     get_backend_manager().list_backends()
 }
 
 /// Set the current backend
+#[allow(dead_code)]
 pub fn set_backend(name: &str) -> FFTResult<()> {
     get_backend_manager().set_backend(name)
 }
 
 /// Get current backend name
+#[allow(dead_code)]
 pub fn get_backend_name() -> String {
     get_backend_manager().get_backend_name()
 }
 
 /// Get backend information
+#[allow(dead_code)]
 pub fn get_backend_info(name: &str) -> Option<BackendInfo> {
     get_backend_manager().get_backend_info(name)
 }
@@ -322,12 +323,12 @@ pub struct BackendContext {
 
 impl BackendContext {
     /// Create a new backend context
-    pub fn new(backend_name: &str) -> FFTResult<Self> {
+    pub fn new(_backendname: &str) -> FFTResult<Self> {
         let manager = get_backend_manager();
         let previous_backend = manager.get_backend_name();
 
         // Set the new backend
-        manager.set_backend(backend_name)?;
+        manager.set_backend(_backendname)?;
 
         Ok(Self {
             previous_backend,

@@ -77,7 +77,7 @@ impl<F: Float> Default for ClippingStats<F> {
 /// ```
 /// use scirs2_autograd as ag;
 /// use scirs2_autograd::gradient_clipping::{ClipByValue, GradientClipper};
-/// use scirs2_autograd::tensor_ops::*;
+/// use scirs2_autograd::tensor_ops::convert_to_tensor;
 ///
 /// let mut env = ag::VariableEnvironment::new();
 /// let mut rng = ag::ndarray_ext::ArrayRng::<f32>::default();
@@ -166,7 +166,7 @@ impl<F: Float> GradientClipper<F> for ClipByValue<F> {
 /// ```
 /// use scirs2_autograd as ag;
 /// use scirs2_autograd::gradient_clipping::{ClipByNorm, GradientClipper};
-/// use scirs2_autograd::tensor_ops::*;
+/// use scirs2_autograd::tensor_ops::convert_to_tensor;
 ///
 /// let mut env = ag::VariableEnvironment::new();
 /// let mut rng = ag::ndarray_ext::ArrayRng::<f32>::default();
@@ -266,7 +266,7 @@ impl<F: Float> GradientClipper<F> for ClipByNorm<F> {
 /// ```
 /// use scirs2_autograd as ag;
 /// use scirs2_autograd::gradient_clipping::{ClipByGlobalNorm, GradientClipper};
-/// use scirs2_autograd::tensor_ops::*;
+/// use scirs2_autograd::tensor_ops::convert_to_tensor;
 ///
 /// let mut env = ag::VariableEnvironment::new();
 /// let mut rng = ag::ndarray_ext::ArrayRng::<f32>::default();

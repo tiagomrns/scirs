@@ -1,6 +1,7 @@
 use scirs2_sparse::linalg::{qmr, IdentityOperator, QMROptions};
 
 #[test]
+#[allow(dead_code)]
 fn test_qmr_identity_step_by_step() {
     // Test QMR implementation step-by-step on the identity matrix
     println!("=== QMR Step-by-Step Debug ===");
@@ -15,7 +16,7 @@ fn test_qmr_identity_step_by_step() {
     println!("Initial residual: {:?}", r_initial);
 
     let r_star = r_initial.clone();
-    println!("r_star: {:?}", r_star);
+    println!("rstar: {:?}", r_star);
 
     let rho_initial: f64 = r_initial.iter().zip(&r_star).map(|(a, b)| a * b).sum();
     println!("Initial rho = dot(r, r_star) = {}", rho_initial);

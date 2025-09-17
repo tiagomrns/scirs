@@ -20,6 +20,7 @@ use scirs2_core::memory_efficient::{
 use std::time::{Duration, Instant};
 use tempfile::tempdir;
 
+#[allow(dead_code)]
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("Advanced Memory-Mapped Array Prefetching Example");
     println!("================================================\n");
@@ -281,7 +282,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let cross_file_config = CrossFilePrefetchConfigBuilder::new()
         .with_correlation_threshold(0.7)
         .build();
-    let _dataset_manager = CrossFilePrefetchManager::new(cross_file_config);
+    let dataset_manager = CrossFilePrefetchManager::new(cross_file_config);
 
     // Note: Current API doesn't support directly registering compressed arrays as DatasetPrefetcher
     println!("Note: Direct registration of compressed arrays as DatasetPrefetcher not supported in current API");
@@ -371,8 +372,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     for i in 0..500 {
         for j in 0..500 {
             // Access matrix - this will trigger prefetching in other datasets
-            let _dataset_key = "matrix";
-            let _indices = [i, j];
+            let dataset_key = matrix;
+            let indices = [i, j];
             // Note: dataset_manager.get() not available in current API
             let matrix_val = 0.0; // Placeholder
             matrix_sum += matrix_val;

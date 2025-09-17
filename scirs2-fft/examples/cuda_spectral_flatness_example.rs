@@ -6,6 +6,7 @@ use scirs2_fft::{
 };
 use std::time::Instant;
 
+#[allow(dead_code)]
 fn create_sparse_signal(n: usize, frequencies: &[(usize, f64)]) -> Vec<f64> {
     let mut signal = vec![0.0; n];
     for &(freq, amplitude) in frequencies {
@@ -17,20 +18,22 @@ fn create_sparse_signal(n: usize, frequencies: &[(usize, f64)]) -> Vec<f64> {
     signal
 }
 
-fn add_noise(signal: &[f64], noise_level: f64) -> Vec<f64> {
+#[allow(dead_code)]
+fn add_noise(_signal: &[f64], noise_level: f64) -> Vec<f64> {
     let mut rng = rand::rng();
-    signal
+    _signal
         .iter()
         .map(|&x| x + rng.random_range(-noise_level..noise_level))
         .collect()
 }
 
+#[allow(dead_code)]
 fn print_result(
     name: &str,
     result: &scirs2_fft::sparse_fft::SparseFFTResult,
     expected_freqs: &[usize],
 ) {
-    println!("=== {} Results ===", name);
+    println!("=== {name} Results ===");
     println!("Algorithm: {:?}", result.algorithm);
     println!(
         "Computation Time: {:.3} ms",
@@ -56,6 +59,7 @@ fn print_result(
     println!();
 }
 
+#[allow(dead_code)]
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Parameters
     let n = 8192;
@@ -64,9 +68,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let sparsity = 6; // Max number of components to search for
     let noise_level = 0.2;
 
-    println!("Generating signal with {} samples", n);
-    println!("Frequencies: {:?}", frequencies);
-    println!("Noise level: {}", noise_level);
+    println!("Generating signal with {n} samples");
+    println!("Frequencies: {frequencies:?}");
+    println!("Noise level: {noise_level}");
     println!();
 
     // Create a sparse signal with noise
@@ -156,11 +160,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let speedup_cpu = duration_cpu.as_secs_f64() / duration_cuda.as_secs_f64();
     let speedup_spectral = duration_spectral.as_secs_f64() / duration_cuda.as_secs_f64();
 
-    println!("Speedup over CPU standard: {:.2}x", speedup_cpu);
-    println!(
-        "Speedup over CPU spectral flatness: {:.2}x",
-        speedup_spectral
-    );
+    println!("Speedup over CPU standard: {speedup_cpu:.2}x");
+    println!("Speedup over CPU spectral flatness: {speedup_spectral:.2}x");
 
     Ok(())
 }

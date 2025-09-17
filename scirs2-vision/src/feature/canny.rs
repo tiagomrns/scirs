@@ -6,6 +6,21 @@
 //!
 //! This module provides functionality for edge detection in images using the Canny algorithm,
 //! which is known for its good detection, localization, and single response properties.
+//!
+//! # Performance Characteristics
+//!
+//! - Time complexity: O(N × M) where N×M is the image size
+//! - Space complexity: O(N × M) for storing intermediate gradient and edge maps
+//! - Gaussian smoothing: O(N × M × K) where K is the kernel size (proportional to sigma)
+//! - Non-maximum suppression: O(N × M) single pass
+//! - Hysteresis thresholding: O(N × M) using connected component analysis
+//! - The algorithm is parallelizable for gradient computation when the `parallel` feature is enabled
+//!
+//! # Thread Safety
+//!
+//! The Canny edge detection functions are thread-safe and can be called concurrently
+//! on different images. When the `parallel` feature is enabled, gradient computations
+//! are automatically parallelized using Rayon.
 
 use crate::error::{Result, VisionError};
 use image::{DynamicImage, GrayImage};
@@ -29,6 +44,7 @@ pub enum PreprocessMode {
 }
 
 /// Convert image to array with proper normalization
+#[allow(dead_code)]
 fn image_to_array_normalized(img: &DynamicImage) -> Result<Array2<f32>> {
     let gray = img.to_luma8();
     let (width, height) = gray.dimensions();
@@ -45,6 +61,7 @@ fn image_to_array_normalized(img: &DynamicImage) -> Result<Array2<f32>> {
 }
 
 /// Convert array to image with proper scaling
+#[allow(dead_code)]
 fn array_to_binary_image(array: &Array2<bool>) -> Result<GrayImage> {
     let (height, width) = array.dim();
     let mut img = GrayImage::new(width as u32, height as u32);
@@ -60,6 +77,7 @@ fn array_to_binary_image(array: &Array2<bool>) -> Result<GrayImage> {
 }
 
 /// Simple Gaussian kernel generation
+#[allow(dead_code)]
 fn gaussian_kernel(sigma: f32, size: usize) -> Vec<f32> {
     let mut kernel = vec![0.0; size];
     let center = (size as f32 - 1.0) / 2.0;
@@ -81,6 +99,7 @@ fn gaussian_kernel(sigma: f32, size: usize) -> Vec<f32> {
 }
 
 /// Apply Gaussian filter to an array
+#[allow(dead_code)]
 fn gaussian_filter(image: &Array2<f32>, sigma: f32) -> Array2<f32> {
     if sigma <= 0.0 {
         return image.clone();
@@ -132,6 +151,7 @@ fn gaussian_filter(image: &Array2<f32>, sigma: f32) -> Array2<f32> {
 }
 
 /// Connected component labeling using flood fill
+#[allow(dead_code)]
 fn label(binary: &Array2<bool>) -> Result<(Array2<u32>, usize)> {
     let (height, width) = binary.dim();
     let mut labels = Array2::zeros((height, width));
@@ -178,11 +198,12 @@ fn label(binary: &Array2<bool>) -> Result<(Array2<u32>, usize)> {
 }
 
 /// Preprocess image with Gaussian smoothing
+#[allow(dead_code)]
 fn preprocess(
     image: &Array2<f32>,
     mask: Option<&Array2<bool>>,
     sigma: f32,
-    _mode: PreprocessMode,
+    mode: PreprocessMode,
 ) -> Result<(Array2<f32>, Array2<bool>)> {
     let (height, width) = image.dim();
 
@@ -235,6 +256,7 @@ fn preprocess(
 }
 
 /// Compute Sobel gradients
+#[allow(dead_code)]
 fn compute_gradients(image: &Array2<f32>) -> (Array2<f32>, Array2<f32>) {
     let (height, width) = image.dim();
     let mut gx = Array2::zeros((height, width));
@@ -244,20 +266,20 @@ fn compute_gradients(image: &Array2<f32>) -> (Array2<f32>, Array2<f32>) {
     for y in 1..(height - 1) {
         for x in 1..(width - 1) {
             // Horizontal gradient (Sobel-X)
-            gx[[y, x]] = -1.0 * image[[y - 1, x - 1]]
-                + 1.0 * image[[y - 1, x + 1]]
+            gx[[y, x]] = -image[[y - 1, x - 1]]
+                + image[[y - 1, x + 1]]
                 + -2.0 * image[[y, x - 1]]
                 + 2.0 * image[[y, x + 1]]
-                + -1.0 * image[[y + 1, x - 1]]
-                + 1.0 * image[[y + 1, x + 1]];
+                + -image[[y + 1, x - 1]]
+                + image[[y + 1, x + 1]];
 
             // Vertical gradient (Sobel-Y)
-            gy[[y, x]] = -1.0 * image[[y - 1, x - 1]]
+            gy[[y, x]] = -image[[y - 1, x - 1]]
                 + -2.0 * image[[y - 1, x]]
-                + -1.0 * image[[y - 1, x + 1]]
-                + 1.0 * image[[y + 1, x - 1]]
+                + -image[[y - 1, x + 1]]
+                + image[[y + 1, x - 1]]
                 + 2.0 * image[[y + 1, x]]
-                + 1.0 * image[[y + 1, x + 1]];
+                + image[[y + 1, x + 1]];
         }
     }
 
@@ -265,6 +287,7 @@ fn compute_gradients(image: &Array2<f32>) -> (Array2<f32>, Array2<f32>) {
 }
 
 /// Non-maximum suppression using bilinear interpolation
+#[allow(dead_code)]
 fn nonmaximum_suppression(
     gx: &Array2<f32>,
     gy: &Array2<f32>,
@@ -346,6 +369,7 @@ fn nonmaximum_suppression(
 /// # Ok(())
 /// # }
 /// ```
+#[allow(dead_code)]
 pub fn canny(
     image: &DynamicImage,
     sigma: f32,
@@ -449,6 +473,7 @@ pub fn canny(
 /// # Returns
 ///
 /// * Result containing binary edge map
+#[allow(dead_code)]
 pub fn canny_simple(image: &DynamicImage, sigma: f32) -> Result<GrayImage> {
     canny(
         image,

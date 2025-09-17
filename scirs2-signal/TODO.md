@@ -2,7 +2,35 @@
 
 This module provides signal processing functionality similar to SciPy's signal module.
 
-## Production-Ready Features (v0.1.0-alpha.6)
+## 🚨 URGENT: SIMD DISABLING PROJECT (Current Priority)
+
+**Status**: Active compilation issue resolution
+**Target**: Fully functional scirs2-signal module with SIMD disabled  
+**Estimated Time**: 5-7 hours
+**Current Errors**: 1000+ due to missing SIMD implementations
+
+### IMMEDIATE TASKS (Current Session)
+- [x] **Phase 0**: Project documentation setup (TODO.md, PROGRESS.md, README.md)
+- [ ] **Phase 1**: Error categorization and analysis (30 mins)
+- [ ] **Phase 2**: Investigate scalar implementation fallbacks (45 mins)  
+- [ ] **Phase 3**: Create automated fix scripts (1-1.5 hours)
+- [ ] **Phase 4**: Implement missing scalar functions (2-3 hours)
+- [ ] **Phase 5**: Fix non-SIMD issues (rand::chacha, ndarray::s) (1 hour)
+- [ ] **Phase 6**: Full compilation testing (30 mins)
+- [ ] **Phase 7**: Documentation and handover prep (45 mins)
+
+### IMPLEMENTATION STRATEGY
+- **Disable SIMD optimizations** via scalar fallbacks
+- **Preserve API surface** for future SIMD re-enabling
+- **Focus on correctness** over performance for now
+- **Systematic pattern-based** batch fixing approach
+
+**📋 Detailed planning**: See `/tmp/simd_disabling_project_plan.md`
+**📊 Progress tracking**: See `PROGRESS.md`
+
+---
+
+## Production-Ready Features (v0.1.0-beta.1)
 
 ### Core Signal Processing ✅
 - [x] Module structure and error handling

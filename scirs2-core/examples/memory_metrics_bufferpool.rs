@@ -4,6 +4,7 @@
 //! track memory allocations and deallocations in buffer pool operations.
 
 #[cfg(not(feature = "memory_management"))]
+#[allow(dead_code)]
 fn main() {
     println!("This example requires the 'memory_management' feature to be enabled.");
     println!(
@@ -21,6 +22,7 @@ use std::thread;
 use std::time::Duration;
 
 #[cfg(feature = "memory_management")]
+#[allow(dead_code)]
 fn main() {
     println!("Memory Metrics with TrackedBufferPool Example");
     println!("=============================================\n");

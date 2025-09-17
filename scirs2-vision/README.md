@@ -6,7 +6,7 @@
 
 Computer vision module for SciRS2, providing comprehensive functionality for image processing, feature detection, segmentation, and color transformations.
 
-## Production Status (0.1.0-alpha.6)
+## Production Status (0.1.0-beta.1)
 
 **✅ PRODUCTION READY** - Final alpha release with complete functionality:
 - **217 unit tests** passing with zero warnings
@@ -70,36 +70,40 @@ The `scirs2-vision` module provides a complete computer vision library for scien
 use scirs2_vision::{
     sobel_edges, harris_corners, image_to_array, array_to_image
 };
-use scirs2_vision::feature::{canny, prewitt, laplacian, fast_corners, shi_tomasi_corners};
-use scirs2_vision::preprocessing::gaussian_blur;
+use scirs2_vision::{prewitt_edges, laplacian_edges, laplacian_of_gaussian};
+use scirs2_vision::feature::{canny_simple, fast_corners, shi_tomasi_corners};
+use scirs2_vision::gaussian_blur;
 
 // Load an image and convert to array
 let img = image::open("input.jpg")?;
 let img_array = image_to_array(&img)?;
 
 // Preprocess with Gaussian blur
-let blurred = gaussian_blur(&img_array, 1.0)?;
+let blurred = gaussian_blur(&img, 1.0)?;
 
 // Detect edges using Sobel (available in public API)
-let sobel = sobel_edges(&blurred, 0.1)?;
+let sobel = sobel_edges(&img, 0.1)?;
 
 // Detect edges using Canny
-let canny_result = canny::canny_simple(&blurred, 1.0)?;
+let canny_result = canny_simple(&img_array, 1.0)?;
 
-// Detect edges using Prewitt
-let prewitt_result = prewitt::prewitt_edges(&blurred, 0.1)?;
+// Detect edges using Prewitt (available in public API)
+let prewitt_result = prewitt_edges(&img, 0.1)?;
 
-// Detect edges using Laplacian
-let laplacian_result = laplacian::laplacian_edges(&blurred, 0.05, true)?;
+// Detect edges using Laplacian (available in public API)
+let laplacian_result = laplacian_edges(&img, 0.05, true)?;
+
+// Detect edges using Laplacian of Gaussian (available in public API)
+let log_result = laplacian_of_gaussian(&img, 1.0, 0.05)?;
 
 // Detect corners using Harris (available in public API)
-let corners = harris_corners(&blurred, 3, 0.04, 0.01)?;
+let corners = harris_corners(&img, 3, 0.04, 0.01)?;
 
 // Detect corners using FAST
-let fast_corners = fast_corners::fast_corners(&blurred, 9, 0.05)?;
+let fast_corners = fast_corners(&img_array, 9, 0.05)?;
 
 // Detect corners using Shi-Tomasi
-let shi_tomasi = shi_tomasi_corners::shi_tomasi_corners(&blurred, 100, 0.01, 10.0)?;
+let shi_tomasi = shi_tomasi_corners(&img_array, 100, 0.01, 10.0)?;
 ```
 
 ### Color Transformations
@@ -170,9 +174,9 @@ let gradient = morphological_gradient(&img_array, se)?;
 ```rust
 use scirs2_vision::{log_blob_detect, image_to_array, LogBlobConfig};
 use scirs2_vision::feature::{
-    dog::{dog_detect, DogConfig},
-    mser::{mser_detect, MserConfig},
-    hough_circle::{hough_circles, HoughCircleConfig}
+    dog_detect, DogConfig,
+    mser_detect, MserConfig,
+    hough_circles, HoughCircleConfig
 };
 
 // Load an image and convert to array
@@ -181,7 +185,7 @@ let img_array = image_to_array(&img)?;
 
 // Detect blobs using Difference of Gaussians
 let dog_config = DogConfig::default();
-let dog_blobs = dog::dog_detect(&img_array, dog_config)?;
+let dog_blobs = dog_detect(&img_array, dog_config)?;
 
 // Detect blobs using Laplacian of Gaussian (available in public API)
 let log_config = LogBlobConfig::default();
@@ -189,11 +193,11 @@ let log_blobs = log_blob_detect(&img_array, log_config)?;
 
 // Detect stable regions using MSER
 let mser_config = MserConfig::default();
-let mser_regions = mser::mser_detect(&img_array, mser_config)?;
+let mser_regions = mser_detect(&img_array, mser_config)?;
 
 // Detect circles using Hough Transform
 let hough_config = HoughCircleConfig::default();
-let circles = hough_circle::hough_circles(&img_array, hough_config)?;
+let circles = hough_circles(&img_array, hough_config)?;
 ```
 
 ## Installation
@@ -202,14 +206,14 @@ Add `scirs2-vision` to your dependencies in `Cargo.toml`:
 
 ```toml
 [dependencies]
-scirs2-vision = "0.1.0-alpha.6"
+scirs2-vision = "0.1.0-beta.1"
 ```
 
 To enable optimizations through the core module, add feature flags:
 
 ```toml
 [dependencies]
-scirs2-vision = { version = "0.1.0-alpha.6", features = ["parallel"] }
+scirs2-vision = { version = "0.1.0-beta.1", features = ["parallel"] }
 ```
 
 ## Documentation
@@ -272,7 +276,7 @@ This project is dual-licensed under:
 You can choose to use either license. See the [LICENSE](../LICENSE) file for details.
 ## Production Readiness
 
-This **0.1.0-alpha.6** release represents a mature, production-ready computer vision library suitable for:
+This **0.1.0-beta.1** release represents a mature, production-ready computer vision library suitable for:
 
 ### 🏭 Production Applications
 - **Scientific Computing**: Research applications requiring reliable computer vision algorithms

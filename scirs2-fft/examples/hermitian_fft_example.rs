@@ -2,6 +2,7 @@ use num_complex::Complex64;
 use scirs2_fft::{hfft, ihfft};
 use std::f64::consts::PI;
 
+#[allow(dead_code)]
 fn main() {
     // Part 1: Real to Complex (IHFFT)
     // Create a simple real-valued signal (a cosine wave)
@@ -12,7 +13,7 @@ fn main() {
 
     println!("Original real signal:");
     for (i, val) in signal.iter().enumerate() {
-        println!("  x[{}] = {:.6}", i, val);
+        println!("  x[{i}] = {val:.6}");
     }
 
     // Convert to complex spectrum with ihfft, using "backward" normalization
@@ -22,7 +23,7 @@ fn main() {
     for (i, val) in spectrum.iter().enumerate() {
         let re = if val.re.abs() < 1e-10 { 0.0 } else { val.re };
         let im = if val.im.abs() < 1e-10 { 0.0 } else { val.im };
-        println!("  X[{}] = {:.6} + {:.6}i", i, re, im);
+        println!("  X[{i}] = {re:.6} + {im:.6}i");
     }
 
     println!("\nVerifying Hermitian symmetry properties:");
@@ -75,7 +76,7 @@ fn main() {
         Ok(real_result) => {
             println!("\nReal output signal:");
             for (i, val) in real_result.iter().enumerate() {
-                println!("  x[{}] = {:.6}", i, val);
+                println!("  x[{i}] = {val:.6}");
             }
 
             // Expected output is a cosine wave at frequency 1
@@ -93,10 +94,10 @@ fn main() {
                     i, real_result[i], expected[i], error
                 );
             }
-            println!("\nMaximum error: {:.6e}", max_error);
+            println!("\nMaximum error: {max_error:.6e}");
         }
         Err(e) => {
-            println!("\nError in hfft: {:?}", e);
+            println!("\nError in hfft: {e:?}");
         }
     }
 }

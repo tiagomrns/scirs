@@ -10,6 +10,7 @@ use rand::{rngs::StdRng, seq::SliceRandom, SeedableRng};
 use crate::error::{MetricsError, Result};
 
 // Re-export evaluation submodules
+pub mod advanced_statistical;
 pub mod cross_validation;
 pub mod statistical;
 pub mod workflow;
@@ -46,7 +47,7 @@ pub type TrainTestSplitResult<T> = (Vec<Array1<T>>, Vec<Array1<T>>);
 /// use ndarray::{Array, Ix1};
 /// use scirs2_metrics::evaluation::train_test_split;
 ///
-/// let x = Array::<f64, _>::linspace(0., 9., 10).into_shape(Ix1(10)).unwrap();
+/// let x = Array::<f64, Ix1>::linspace(0., 9., 10).into_shape(Ix1(10)).unwrap();
 /// let y = &x * 2.;
 ///
 /// let (train_arrays, test_arrays) = train_test_split(&[&x, &y], 0.3, Some(42)).unwrap();
@@ -60,6 +61,7 @@ pub type TrainTestSplitResult<T> = (Vec<Array1<T>>, Vec<Array1<T>>);
 /// assert_eq!(x_train.len(), 7);  // 70% of the data
 /// assert_eq!(x_test.len(), 3);   // 30% of the data
 /// ```
+#[allow(dead_code)]
 pub fn train_test_split<T>(
     arrays: &[&ArrayBase<impl Data<Elem = T>, impl Dimension>],
     test_size: f64,
@@ -95,11 +97,11 @@ where
         )));
     }
 
-    // Calculate the size of the test set
+    // Calculate the _size of the test set
     let n_test = (n_samples as f64 * test_size).round() as usize;
     if n_test == 0 || n_test >= n_samples {
         return Err(MetricsError::InvalidInput(format!(
-            "test_size={} resulted in an invalid test set size: {}",
+            "test_size={} resulted in an invalid test set _size: {}",
             test_size, n_test
         )));
     }
@@ -107,10 +109,10 @@ where
     // Generate shuffled indices
     let mut indices: Vec<usize> = (0..n_samples).collect();
 
-    // Initialize random number generator with provided seed
-    // In rand 0.9.0 we need to use rng() instead of thread_rng()
+    // Initialize random number generator with provided _seed
+    // In rand 0.9.0 we need to use rand::rng() instead of rand::rng()
     let mut rng = match random_seed {
-        Some(seed) => StdRng::seed_from_u64(seed),
+        Some(_seed) => StdRng::seed_from_u64(_seed),
         None => {
             // In rand 0.9.0, from_rng returns the RNG directly, not a Result
             let mut r = rand::rng();

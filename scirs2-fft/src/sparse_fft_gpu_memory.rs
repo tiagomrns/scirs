@@ -118,6 +118,7 @@ unsafe impl Sync for BufferDescriptor {}
 
 /// Initialize CUDA device (call once at startup)
 #[cfg(feature = "cuda")]
+#[allow(dead_code)]
 pub fn init_cuda_device() -> FFTResult<bool> {
     let device_result = CUDA_DEVICE.get_or_init(|| {
         // CUDA device initialization temporarily disabled until cudarc dependency is enabled
@@ -135,12 +136,14 @@ pub fn init_cuda_device() -> FFTResult<bool> {
 
 /// Initialize CUDA device (no-op without CUDA feature)
 #[cfg(not(feature = "cuda"))]
+#[allow(dead_code)]
 pub fn init_cuda_device() -> FFTResult<bool> {
     Ok(false)
 }
 
 /// Initialize HIP device (call once at startup)
 #[cfg(feature = "hip")]
+#[allow(dead_code)]
 pub fn init_hip_device() -> FFTResult<bool> {
     // HIP support temporarily disabled until hiprt dependency is enabled
     Err(FFTError::NotImplementedError(
@@ -150,12 +153,14 @@ pub fn init_hip_device() -> FFTResult<bool> {
 
 /// Initialize HIP device (no-op without HIP feature)
 #[cfg(not(feature = "hip"))]
+#[allow(dead_code)]
 pub fn init_hip_device() -> FFTResult<bool> {
     Ok(false)
 }
 
 /// Initialize SYCL device (call once at startup)
 #[cfg(feature = "sycl")]
+#[allow(dead_code)]
 pub fn init_sycl_device() -> FFTResult<bool> {
     let device_result = SYCL_DEVICE.get_or_init(|| {
         // In a real SYCL implementation, this would:
@@ -175,52 +180,61 @@ pub fn init_sycl_device() -> FFTResult<bool> {
 
 /// Initialize SYCL device (no-op without SYCL feature)
 #[cfg(not(feature = "sycl"))]
+#[allow(dead_code)]
 pub fn init_sycl_device() -> FFTResult<bool> {
     Ok(false)
 }
 
 /// Check if CUDA is available
 #[cfg(feature = "cuda")]
+#[allow(dead_code)]
 pub fn is_cuda_available() -> bool {
     CUDA_DEVICE.get().map(|d| d.is_some()).unwrap_or(false)
 }
 
 /// Check if CUDA is available (always false without CUDA feature)
 #[cfg(not(feature = "cuda"))]
+#[allow(dead_code)]
 pub fn is_cuda_available() -> bool {
     false
 }
 
 /// Check if HIP is available
 #[cfg(feature = "hip")]
+#[allow(dead_code)]
 pub fn is_hip_available() -> bool {
     HIP_DEVICE.get().map(|d| d.is_some()).unwrap_or(false)
 }
 
 /// Check if HIP is available (always false without HIP feature)
 #[cfg(not(feature = "hip"))]
+#[allow(dead_code)]
 pub fn is_hip_available() -> bool {
     false
 }
 
 /// Check if SYCL is available
 #[cfg(feature = "sycl")]
+#[allow(dead_code)]
 pub fn is_sycl_available() -> bool {
     SYCL_DEVICE.get().map(|d| d.is_some()).unwrap_or(false)
 }
 
 /// Check if SYCL is available (always false without SYCL feature)
 #[cfg(not(feature = "sycl"))]
+#[allow(dead_code)]
 pub fn is_sycl_available() -> bool {
     false
 }
 
 /// Check if any GPU backend is available
+#[allow(dead_code)]
 pub fn is_gpu_available() -> bool {
     is_cuda_available() || is_hip_available() || is_sycl_available()
 }
 
 /// Initialize the best available GPU backend
+#[allow(dead_code)]
 pub fn init_gpu_backend() -> FFTResult<GPUBackend> {
     // Try CUDA first (usually fastest)
     if init_cuda_device()? {
@@ -442,7 +456,7 @@ impl BufferDescriptor {
     }
 
     /// Copy data from host to device
-    pub fn copy_host_to_device(&self, host_data: &[u8]) -> FFTResult<()> {
+    pub fn copy_host_to_device(&self, hostdata: &[u8]) -> FFTResult<()> {
         match self.location {
             BufferLocation::Device => {
                 match self.backend {
@@ -455,9 +469,9 @@ impl BufferDescriptor {
                             ) {
                                 // CUDA API calls temporarily disabled until cudarc dependency is enabled
                                 /*
-                                device.htod_copy(host_data, device_ptr).map_err(|e| {
+                                device.htod_copy(hostdata, device_ptr).map_err(|e| {
                                     FFTError::ComputationError(format!(
-                                        "Failed to copy data to CUDA GPU: {:?}",
+                                        "Failed to copy _data to CUDA GPU: {:?}",
                                         e
                                     ))
                                 })?;
@@ -467,7 +481,7 @@ impl BufferDescriptor {
                         }
 
                         // Fallback to host memory
-                        self.copy_to_host_memory(host_data)?;
+                        self.copy_to_host_memory(hostdata)?;
                     }
                     GPUBackend::HIP => {
                         #[cfg(feature = "hip")]
@@ -479,14 +493,14 @@ impl BufferDescriptor {
                                 unsafe {
                                     let result = hipMemcpyHtoD(
                                         device_ptr,
-                                        host_data.as_ptr() as *const std::os::raw::c_void,
-                                        host_data.len(),
+                                        hostdata.as_ptr() as *const std::os::raw::c_void,
+                                        hostdata.len(),
                                     );
                                     if result == hipError_t::hipSuccess {
                                         return Ok(());
                                     } else {
                                         return Err(FFTError::ComputationError(format!(
-                                            "Failed to copy data to HIP GPU: {:?}",
+                                            "Failed to copy _data to HIP GPU: {:?}",
                                             result
                                         )));
                                     }
@@ -496,23 +510,23 @@ impl BufferDescriptor {
                         }
 
                         // Fallback to host memory
-                        self.copy_to_host_memory(host_data)?;
+                        self.copy_to_host_memory(hostdata)?;
                     }
                     GPUBackend::SYCL => {
                         #[cfg(feature = "sycl")]
                         {
                             if let Some(device_ptr) = self.sycl_device_ptr {
                                 // In a real SYCL implementation, this would:
-                                // 1. Use sycl::queue::memcpy() or similar to copy data
+                                // 1. Use sycl::queue::memcpy() or similar to copy _data
                                 // 2. Handle synchronization appropriately
                                 // 3. Return appropriate error codes
 
                                 // For placeholder implementation, simulate the copy
                                 unsafe {
                                     std::ptr::copy_nonoverlapping(
-                                        host_data.as_ptr(),
+                                        hostdata.as_ptr(),
                                         device_ptr as *mut u8,
-                                        host_data.len(),
+                                        hostdata.len(),
                                     );
                                 }
                                 return Ok(());
@@ -520,16 +534,16 @@ impl BufferDescriptor {
                         }
 
                         // Fallback to host memory
-                        self.copy_to_host_memory(host_data)?;
+                        self.copy_to_host_memory(hostdata)?;
                     }
                     _ => {
                         // CPU fallback
-                        self.copy_to_host_memory(host_data)?;
+                        self.copy_to_host_memory(hostdata)?;
                     }
                 }
             }
             BufferLocation::Host | BufferLocation::PinnedHost | BufferLocation::Unified => {
-                self.copy_to_host_memory(host_data)?;
+                self.copy_to_host_memory(hostdata)?;
             }
         }
 
@@ -537,13 +551,13 @@ impl BufferDescriptor {
     }
 
     /// Helper to copy data to host memory
-    fn copy_to_host_memory(&self, host_data: &[u8]) -> FFTResult<()> {
+    fn copy_to_host_memory(&self, hostdata: &[u8]) -> FFTResult<()> {
         if let Some(host_ptr) = self.host_ptr {
             unsafe {
                 std::ptr::copy_nonoverlapping(
-                    host_data.as_ptr(),
+                    hostdata.as_ptr(),
                     host_ptr as *mut u8,
-                    host_data.len(),
+                    hostdata.len(),
                 );
             }
         }
@@ -551,7 +565,7 @@ impl BufferDescriptor {
     }
 
     /// Copy data from device to host
-    pub fn copy_device_to_host(&self, host_data: &mut [u8]) -> FFTResult<()> {
+    pub fn copy_device_to_host(&self, hostdata: &mut [u8]) -> FFTResult<()> {
         match self.location {
             BufferLocation::Device => {
                 match self.backend {
@@ -564,9 +578,9 @@ impl BufferDescriptor {
                             ) {
                                 // CUDA API calls temporarily disabled until cudarc dependency is enabled
                                 /*
-                                device.dtoh_copy(device_ptr, host_data).map_err(|e| {
+                                device.dtoh_copy(device_ptr, hostdata).map_err(|e| {
                                     FFTError::ComputationError(format!(
-                                        "Failed to copy data from CUDA GPU: {:?}",
+                                        "Failed to copy _data from CUDA GPU: {:?}",
                                         e
                                     ))
                                 })?;
@@ -576,7 +590,7 @@ impl BufferDescriptor {
                         }
 
                         // Fallback to host memory
-                        self.copy_from_host_memory(host_data)?;
+                        self.copy_from_host_memory(hostdata)?;
                     }
                     GPUBackend::HIP => {
                         #[cfg(feature = "hip")]
@@ -587,15 +601,15 @@ impl BufferDescriptor {
                                 /*
                                 unsafe {
                                     let result = hipMemcpyDtoH(
-                                        host_data.as_mut_ptr() as *mut std::os::raw::c_void,
+                                        hostdata.as_mut_ptr() as *mut std::os::raw::c_void,
                                         device_ptr,
-                                        host_data.len(),
+                                        hostdata.len(),
                                     );
                                     if result == hipError_t::hipSuccess {
                                         return Ok(());
                                     } else {
                                         return Err(FFTError::ComputationError(format!(
-                                            "Failed to copy data from HIP GPU: {:?}",
+                                            "Failed to copy _data from HIP GPU: {:?}",
                                             result
                                         )));
                                     }
@@ -605,7 +619,7 @@ impl BufferDescriptor {
                         }
 
                         // Fallback to host memory
-                        self.copy_from_host_memory(host_data)?;
+                        self.copy_from_host_memory(hostdata)?;
                     }
                     GPUBackend::SYCL => {
                         #[cfg(feature = "sycl")]
@@ -620,8 +634,8 @@ impl BufferDescriptor {
                                 unsafe {
                                     std::ptr::copy_nonoverlapping(
                                         device_ptr as *const u8,
-                                        host_data.as_mut_ptr(),
-                                        host_data.len(),
+                                        hostdata.as_mut_ptr(),
+                                        hostdata.len(),
                                     );
                                 }
                                 return Ok(());
@@ -629,16 +643,16 @@ impl BufferDescriptor {
                         }
 
                         // Fallback to host memory
-                        self.copy_from_host_memory(host_data)?;
+                        self.copy_from_host_memory(hostdata)?;
                     }
                     _ => {
                         // CPU fallback
-                        self.copy_from_host_memory(host_data)?;
+                        self.copy_from_host_memory(hostdata)?;
                     }
                 }
             }
             BufferLocation::Host | BufferLocation::PinnedHost | BufferLocation::Unified => {
-                self.copy_from_host_memory(host_data)?;
+                self.copy_from_host_memory(hostdata)?;
             }
         }
 
@@ -646,13 +660,13 @@ impl BufferDescriptor {
     }
 
     /// Helper to copy data from host memory
-    fn copy_from_host_memory(&self, host_data: &mut [u8]) -> FFTResult<()> {
+    fn copy_from_host_memory(&self, hostdata: &mut [u8]) -> FFTResult<()> {
         if let Some(host_ptr) = self.host_ptr {
             unsafe {
                 std::ptr::copy_nonoverlapping(
                     host_ptr as *const u8,
-                    host_data.as_mut_ptr(),
-                    host_data.len(),
+                    hostdata.as_mut_ptr(),
+                    hostdata.len(),
                 );
             }
         }
@@ -817,15 +831,17 @@ impl GPUMemoryManager {
 
     /// Release a buffer
     pub fn release_buffer(&mut self, descriptor: BufferDescriptor) -> FFTResult<()> {
-        // If using cache strategy, add to cache
+        let buffer_size = descriptor.size * descriptor.element_size;
+
+        // If using cache strategy, add to cache but don't decrement memory (it's still allocated)
         if self.allocation_strategy == AllocationStrategy::CacheBySize {
             self.buffer_cache
                 .entry(descriptor.size)
                 .or_default()
                 .push(descriptor);
         } else {
-            // Actually free the buffer (in a real implementation, this would call the GPU API)
-            self.current_memory -= descriptor.size * descriptor.element_size;
+            // Actually free the buffer and decrement memory usage
+            self.current_memory = self.current_memory.saturating_sub(buffer_size);
         }
 
         Ok(())
@@ -833,10 +849,12 @@ impl GPUMemoryManager {
 
     /// Clear the buffer cache
     pub fn clear_cache(&mut self) -> FFTResult<()> {
-        // Free all cached buffers
+        // Free all cached buffers and update memory usage
         for (_, buffers) in self.buffer_cache.drain() {
             for descriptor in buffers {
-                self.current_memory -= descriptor.size * descriptor.element_size;
+                let buffer_size = descriptor.size * descriptor.element_size;
+                self.current_memory = self.current_memory.saturating_sub(buffer_size);
+                // The BufferDescriptor's Drop implementation will handle actual memory cleanup
             }
         }
 
@@ -858,6 +876,7 @@ impl GPUMemoryManager {
 static GLOBAL_MEMORY_MANAGER: Mutex<Option<Arc<Mutex<GPUMemoryManager>>>> = Mutex::new(None);
 
 /// Initialize global memory manager
+#[allow(dead_code)]
 pub fn init_global_memory_manager(
     backend: GPUBackend,
     device_id: i32,
@@ -875,6 +894,7 @@ pub fn init_global_memory_manager(
 }
 
 /// Get global memory manager
+#[allow(dead_code)]
 pub fn get_global_memory_manager() -> FFTResult<Arc<Mutex<GPUMemoryManager>>> {
     let global = GLOBAL_MEMORY_MANAGER.lock().unwrap();
     if let Some(ref manager) = *global {
@@ -892,6 +912,7 @@ pub fn get_global_memory_manager() -> FFTResult<Arc<Mutex<GPUMemoryManager>>> {
 }
 
 /// Memory-efficient GPU sparse FFT computation
+#[allow(dead_code)]
 pub fn memory_efficient_gpu_sparse_fft<T>(
     signal: &[T],
     _max_memory: usize,
@@ -899,11 +920,11 @@ pub fn memory_efficient_gpu_sparse_fft<T>(
 where
     T: Clone + 'static,
 {
-    // Get the global memory manager
+    // Get the global _memory manager
     let manager = get_global_memory_manager()?;
     let _manager = manager.lock().unwrap();
 
-    // Determine optimal chunk size based on available memory
+    // Determine optimal chunk size based on available _memory
     let signal_len = signal.len();
     // let _element_size = std::mem::size_of::<Complex64>();
 
@@ -952,7 +973,6 @@ mod tests {
     }
 
     #[test]
-    #[ignore = "Ignored for alpha-4 release - experiencing issues with memory manager caching"]
     fn test_memory_manager_cache() {
         let mut manager = GPUMemoryManager::new(
             GPUBackend::CPUFallback,
@@ -978,20 +998,25 @@ mod tests {
         assert_eq!(manager.current_memory_usage(), 1024 * 8);
 
         // Allocate same size buffer, should get from cache
-        let _buffer2 = manager
+        let buffer2 = manager
             .allocate_buffer(1024, 8, BufferLocation::Host, BufferType::Input)
             .unwrap();
 
         // Memory should not increase since we're reusing
         assert_eq!(manager.current_memory_usage(), 1024 * 8);
 
-        // Clear cache
+        // Release the second buffer back to cache
+        manager.release_buffer(buffer2).unwrap();
+
+        // Memory should still be allocated (cached)
+        assert_eq!(manager.current_memory_usage(), 1024 * 8);
+
+        // Clear cache - now this should free the cached memory
         manager.clear_cache().unwrap();
         assert_eq!(manager.current_memory_usage(), 0);
     }
 
     #[test]
-    #[ignore = "Ignored for alpha-4 release - experiencing issues with global memory manager"]
     fn test_global_memory_manager() {
         // Initialize global memory manager
         init_global_memory_manager(

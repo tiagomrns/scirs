@@ -3,7 +3,7 @@
 //! This module provides comprehensive performance benchmarks comparing
 //! scirs2-fft with SciPy's FFT implementation.
 
-use criterion::{black_box, criterion_group, criterion_main, BenchmarkId, Criterion};
+use criterion::{criterion_group, criterion_main, BenchmarkId, Criterion};
 use ndarray::{Array1, Array2};
 use num_complex::Complex64;
 use scirs2_fft::{
@@ -11,6 +11,7 @@ use scirs2_fft::{
     worker_pool::set_workers,
 };
 use std::f64::consts::PI;
+use std::hint::black_box;
 
 /// Performance test configuration
 #[derive(Debug, Clone)]
@@ -36,6 +37,7 @@ impl Default for TestConfig {
 }
 
 /// Generate test signals
+#[allow(dead_code)]
 fn generate_1d_signal(size: usize) -> (Vec<f64>, Vec<Complex64>) {
     let real_signal: Vec<f64> = (0..size)
         .map(|i| {
@@ -52,6 +54,7 @@ fn generate_1d_signal(size: usize) -> (Vec<f64>, Vec<Complex64>) {
     (real_signal, complex_signal)
 }
 
+#[allow(dead_code)]
 fn generate_2d_signal(size: usize) -> Array2<f64> {
     Array2::from_shape_fn((size, size), |(i, j)| {
         let x = i as f64 / size as f64;
@@ -61,6 +64,7 @@ fn generate_2d_signal(size: usize) -> Array2<f64> {
 }
 
 /// Comprehensive 1D FFT benchmarks
+#[allow(dead_code)]
 fn bench_fft_1d_comprehensive(c: &mut Criterion) {
     let mut group = c.benchmark_group("FFT-1D-Comprehensive");
     let config = TestConfig::default();
@@ -105,6 +109,7 @@ fn bench_fft_1d_comprehensive(c: &mut Criterion) {
 }
 
 /// 2D and N-D FFT benchmarks
+#[allow(dead_code)]
 fn bench_fft_multidim(c: &mut Criterion) {
     let mut group = c.benchmark_group("FFT-MultiDim");
     let config = TestConfig::default();
@@ -125,9 +130,9 @@ fn bench_fft_multidim(c: &mut Criterion) {
         let data_nd = data.into_shape_with_order(shape.as_slice()).unwrap();
 
         group.bench_with_input(
-            BenchmarkId::new("fftn", format!("{:?}", shape)),
+            BenchmarkId::new("fftn", format!("{shape:?}")),
             &data_nd,
-            |b, data| {
+            |b, data: &ndarray::ArrayD<f64>| {
                 b.iter(|| {
                     fftn(
                         black_box(&data.clone().into_dyn()),
@@ -146,6 +151,7 @@ fn bench_fft_multidim(c: &mut Criterion) {
 }
 
 /// Transform-specific benchmarks
+#[allow(dead_code)]
 fn bench_specialized_transforms(c: &mut Criterion) {
     let mut group = c.benchmark_group("Specialized-Transforms");
     let config = TestConfig::default();
@@ -157,7 +163,7 @@ fn bench_specialized_transforms(c: &mut Criterion) {
         // DCT benchmarks
         for &dct_type in &[1, 2, 3, 4] {
             group.bench_with_input(
-                BenchmarkId::new(format!("dct_type_{}", dct_type), size),
+                BenchmarkId::new(format!("dct_type_{dct_type}"), size),
                 &signal,
                 |b, signal| {
                     b.iter(|| {
@@ -168,7 +174,7 @@ fn bench_specialized_transforms(c: &mut Criterion) {
                                 2 => DCTType::Type2,
                                 3 => DCTType::Type3,
                                 4 => DCTType::Type4,
-                                _ => DCTType::Type2,
+                                _ => DCTType::Type2, // Default case
                             }),
                             None,
                         )
@@ -180,7 +186,7 @@ fn bench_specialized_transforms(c: &mut Criterion) {
         // DST benchmarks
         for &dst_type in &[1, 2, 3, 4] {
             group.bench_with_input(
-                BenchmarkId::new(format!("dst_type_{}", dst_type), size),
+                BenchmarkId::new(format!("dst_type_{dst_type}"), size),
                 &signal,
                 |b, signal| {
                     b.iter(|| {
@@ -191,7 +197,7 @@ fn bench_specialized_transforms(c: &mut Criterion) {
                                 2 => DSTType::Type2,
                                 3 => DSTType::Type3,
                                 4 => DSTType::Type4,
-                                _ => DSTType::Type2,
+                                _ => DSTType::Type2, // Default case
                             }),
                             None,
                         )
@@ -203,7 +209,7 @@ fn bench_specialized_transforms(c: &mut Criterion) {
         // FrFT benchmarks
         for &alpha in &config.frft_orders {
             group.bench_with_input(
-                BenchmarkId::new(format!("frft_alpha_{}", alpha), size),
+                BenchmarkId::new(format!("frft_alpha_{alpha}"), size),
                 &signal,
                 |b, signal| b.iter(|| frft(black_box(signal), alpha, None)),
             );
@@ -214,6 +220,7 @@ fn bench_specialized_transforms(c: &mut Criterion) {
 }
 
 /// Worker scaling benchmarks
+#[allow(dead_code)]
 fn bench_worker_scaling(c: &mut Criterion) {
     let mut group = c.benchmark_group("Worker-Scaling");
     let config = TestConfig::default();
@@ -239,6 +246,7 @@ fn bench_worker_scaling(c: &mut Criterion) {
 }
 
 /// Generate comparison report with Python
+#[allow(dead_code)]
 fn generate_comparison_report() {
     println!("Generating comparison report...");
 

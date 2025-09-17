@@ -3,6 +3,8 @@
 //! This module provides functionality for detecting and extracting features
 //! from images.
 
+pub mod advanced_enhancement;
+pub mod advanced_tracking;
 pub mod brief;
 pub mod canny;
 pub mod descriptor;
@@ -20,6 +22,7 @@ pub mod lbp;
 pub mod log_blob;
 pub mod matching;
 pub mod mser;
+pub mod neural_features;
 pub mod nms;
 pub mod optical_flow;
 pub mod orb;
@@ -30,7 +33,16 @@ pub mod sobel;
 pub mod tamura;
 pub mod template_matching;
 pub mod tracker;
+pub mod vision_transformer;
 
+pub use advanced_enhancement::{
+    AdvancedDenoiser, DenoisingMethod, HDRProcessor, SuperResolutionMethod,
+    SuperResolutionProcessor, ToneMappingMethod,
+};
+pub use advanced_tracking::{
+    AppearanceExtractor, BoundingBox as TrackingBoundingBox, DeepSORT, Detection, KalmanFilter,
+    Track, TrackState, TrackingMetrics,
+};
 pub use brief::*;
 pub use canny::*;
 pub use descriptor::*;
@@ -48,6 +60,7 @@ pub use lbp::*;
 pub use log_blob::*;
 pub use matching::*;
 pub use mser::*;
+pub use neural_features::*;
 pub use nms::*;
 pub use optical_flow::*;
 pub use orb::*;
@@ -58,6 +71,10 @@ pub use sobel::*;
 pub use tamura::*;
 pub use template_matching::*;
 pub use tracker::*;
+pub use vision_transformer::{
+    MatcherConfig, SwinConfig, SwinTransformer, TransformerFeatureMatcher, ViTConfig,
+    VisionTransformer,
+};
 
 use crate::error::{Result, VisionError};
 use image::{DynamicImage, GrayImage};
@@ -72,6 +89,7 @@ use ndarray::Array2;
 /// # Returns
 ///
 /// * Result containing a 2D array of pixel intensities (grayscale)
+#[allow(dead_code)]
 pub fn image_to_array(img: &DynamicImage) -> Result<Array2<f32>> {
     // Convert to grayscale
     let gray = img.to_luma8();
@@ -100,6 +118,7 @@ pub fn image_to_array(img: &DynamicImage) -> Result<Array2<f32>> {
 /// # Returns
 ///
 /// * Result containing a grayscale image
+#[allow(dead_code)]
 pub fn array_to_image(array: &Array2<f32>) -> Result<GrayImage> {
     let height = array.shape()[0];
     let width = array.shape()[1];
@@ -126,6 +145,7 @@ pub fn array_to_image(array: &Array2<f32>) -> Result<GrayImage> {
 /// # Returns
 ///
 /// * Result containing an edge image
+#[allow(dead_code)]
 pub fn sobel_edges(img: &DynamicImage, threshold: f32) -> Result<GrayImage> {
     let array = image_to_array(img)?;
     let (height, width) = array.dim();
@@ -137,17 +157,17 @@ pub fn sobel_edges(img: &DynamicImage, threshold: f32) -> Result<GrayImage> {
     for y in 1..(height - 1) {
         for x in 1..(width - 1) {
             // Horizontal Sobel kernel: [[-1, 0, 1], [-2, 0, 2], [-1, 0, 1]]
-            let gx = -1.0 * array[[y - 1, x - 1]]
+            let gx = -array[[y - 1, x - 1]]
                 + 1.0 * array[[y - 1, x + 1]]
                 + -2.0 * array[[y, x - 1]]
                 + 2.0 * array[[y, x + 1]]
-                + -1.0 * array[[y + 1, x - 1]]
+                + -array[[y + 1, x - 1]]
                 + 1.0 * array[[y + 1, x + 1]];
 
             // Vertical Sobel kernel: [[-1, -2, -1], [0, 0, 0], [1, 2, 1]]
-            let gy = -1.0 * array[[y - 1, x - 1]]
+            let gy = -array[[y - 1, x - 1]]
                 + -2.0 * array[[y - 1, x]]
-                + -1.0 * array[[y - 1, x + 1]]
+                + -array[[y - 1, x + 1]]
                 + 1.0 * array[[y + 1, x - 1]]
                 + 2.0 * array[[y + 1, x]]
                 + 1.0 * array[[y + 1, x + 1]];
@@ -168,16 +188,25 @@ pub fn sobel_edges(img: &DynamicImage, threshold: f32) -> Result<GrayImage> {
 
 /// Detect corners using a Harris corner detector
 ///
+/// The Harris corner detector is a corner detection operator that is commonly
+/// used in computer vision algorithms to extract corners and infer features
+/// of an image.
+///
 /// # Arguments
 ///
 /// * `img` - Input image
 /// * `block_size` - Size of the window for corner detection
-/// * `k` - Harris detector free parameter
+/// * `k` - Harris detector free parameter (typically 0.04-0.06)
 /// * `threshold` - Threshold for corner detection
 ///
 /// # Returns
 ///
 /// * Result containing an image with corners marked
+///
+/// # References
+///
+/// - Harris, C. and Stephens, M., 1988, August. A combined corner and edge detector. In Alvey vision conference (Vol. 15, No. 50, pp. 10-5244).
+#[allow(dead_code)]
 pub fn harris_corners(
     img: &DynamicImage,
     block_size: usize,
@@ -292,6 +321,7 @@ pub fn harris_corners(
 /// # Returns
 ///
 /// * Vector of (x, y) coordinates of features
+#[allow(dead_code)]
 pub fn extract_feature_coordinates(img: &GrayImage) -> Vec<(u32, u32)> {
     let mut coords = Vec::new();
     let (width, height) = img.dimensions();

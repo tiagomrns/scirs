@@ -3,27 +3,84 @@
 use ndarray::{Array, Array1, Array2, Dimension, Ix2, IxDyn};
 
 use super::{pad_array, BorderMode};
-use crate::error::{NdimageError, Result};
-use scirs2_core::{parallel, CoreError};
+use crate::error::{NdimageError, NdimageResult};
+use scirs2_core::{parallel_ops, CoreError};
 
-/// Apply a gaussian filter to an n-dimensional array of f64 values
+/// Apply a Gaussian filter to an n-dimensional array of f64 values
+///
+/// Gaussian filtering is a fundamental image processing operation that applies a
+/// Gaussian kernel to smooth the input array, reducing noise while preserving
+/// edges better than simple averaging filters.
 ///
 /// # Arguments
 ///
 /// * `input` - Input array to filter
-/// * `sigma` - Standard deviation for Gaussian kernel
-/// * `mode` - Border handling mode (defaults to Reflect)
+/// * `sigma` - Standard deviation for Gaussian kernel (controls smoothing strength)
+/// * `mode` - Border handling mode (defaults to Reflect). Options include:
+///   - `BorderMode::Reflect`: Mirror the input along the boundary
+///   - `BorderMode::Constant`: Use a constant value outside boundaries  
+///   - `BorderMode::Nearest`: Extend the edge values
+///   - `BorderMode::Wrap`: Wrap around periodically
 /// * `truncate` - Truncate the filter at this many standard deviations (defaults to 4.0)
 ///
 /// # Returns
 ///
-/// * `Result<Array<f64, D>>` - Filtered array
+/// * `Result<Array<f64, D>>` - Smoothed array with same shape as input
+///
+/// # Examples
+///
+/// ## Basic 1D smoothing
+/// ```no_run
+/// use ndarray::array;
+/// use scirs2_ndimage::filters::gaussian_filter;
+///
+/// let data = array![1.0, 5.0, 2.0, 8.0, 3.0];
+/// let smoothed = gaussian_filter(&data, 0.8, None, None).unwrap();
+/// // Result will be smoother with reduced sharp transitions
+/// ```
+///
+/// ## 2D image smoothing with different border modes
+/// ```no_run
+/// use ndarray::Array2;
+/// use scirs2_ndimage::filters::{gaussian_filter, BorderMode};
+///
+/// let image = Array2::from_shape_fn((10, 10), |(i, j)| {
+///     ((i * j) as f64).sin()
+/// });
+///
+/// // Light smoothing with reflective boundaries
+/// let smooth1 = gaussian_filter(&image, 1.0, Some(BorderMode::Reflect), None).unwrap();
+///
+/// // Heavy smoothing with constant boundaries  
+/// let smooth2 = gaussian_filter(&image, 3.0, Some(BorderMode::Constant), None).unwrap();
+/// ```
+///
+/// ## 3D volume smoothing
+/// ```no_run
+/// use ndarray::Array3;
+/// use scirs2_ndimage::filters::gaussian_filter;
+///
+/// let volume = Array3::from_shape_fn((20, 20, 20), |(i, j, k)| {
+///     (i + j + k) as f64
+/// });
+///
+/// let smoothed_volume = gaussian_filter(&volume, 2.0, None, None).unwrap();
+/// assert_eq!(smoothed_volume.shape(), volume.shape());
+/// ```
+///
+/// # Performance Notes
+///
+/// - Uses separable filtering for O(n) complexity instead of O(n²) for 2D
+/// - Automatically switches to parallel processing for large arrays
+/// - Kernel size is automatically determined from sigma and truncate parameters
+/// - For σ < 0.5, consider using other smoothing methods for better efficiency
+#[allow(dead_code)]
 pub fn gaussian_filter<D>(
     input: &Array<f64, D>,
     sigma: f64,
     mode: Option<BorderMode>,
     truncate: Option<f64>,
-) -> Result<Array<f64, D>>
+) -> NdimageResult<Array<f64, D>>
 where
     D: Dimension + 'static,
 {
@@ -77,12 +134,13 @@ where
 }
 
 /// Apply a 1D Gaussian filter along a single dimension (f64 version)
+#[allow(dead_code)]
 pub fn gaussian_filter1d_f64<D>(
     input: &Array<f64, D>,
     sigma: f64,
     mode: Option<BorderMode>,
     truncate: Option<f64>,
-) -> Result<Array<f64, D>>
+) -> NdimageResult<Array<f64, D>>
 where
     D: Dimension + 'static,
 {
@@ -126,7 +184,8 @@ where
 
 /// Generate a 1D Gaussian kernel for f64 filtering
 /// This function uses manual caching to avoid Result Clone issues
-pub fn gaussian_kernel1d_f64(sigma: f64, truncate: f64) -> Result<Array1<f64>> {
+#[allow(dead_code)]
+pub fn gaussian_kernel1d_f64(sigma: f64, truncate: f64) -> NdimageResult<Array1<f64>> {
     // Manual caching using lazy_static or thread_local would be ideal here
     // but for simplicity, we'll just implement the function without caching for now
 
@@ -152,10 +211,10 @@ pub fn gaussian_kernel1d_f64(sigma: f64, truncate: f64) -> Result<Array1<f64>> {
         x_squared[i] = x_values[i] * x_values[i];
     }
 
-    // Calculate exp(-x^2/(2*sigma^2))
+    // Calculate exp(-x^2/(2*_sigma^2))
     let two_sigma_squared = 2.0 * sigma * sigma;
 
-    // Apply the Gaussian formula: exp(-x^2/(2*sigma^2))
+    // Apply the Gaussian formula: exp(-x^2/(2*_sigma^2))
     for i in 0..size {
         kernel[i] = (-x_squared[i] / two_sigma_squared).exp();
     }
@@ -170,11 +229,12 @@ pub fn gaussian_kernel1d_f64(sigma: f64, truncate: f64) -> Result<Array1<f64>> {
 }
 
 /// Apply a f64 1D kernel to a f64 1D array
+#[allow(dead_code)]
 fn apply_kernel1d_1d_f64(
     input: &Array1<f64>,
     kernel: &Array1<f64>,
     mode: &BorderMode,
-) -> Result<Array1<f64>> {
+) -> NdimageResult<Array1<f64>> {
     let input_len = input.len();
     let kernel_len = kernel.len();
     let radius = kernel_len / 2;
@@ -202,13 +262,14 @@ fn apply_kernel1d_1d_f64(
 }
 
 /// Apply a Gaussian filter along a specific axis (f64 version)
+#[allow(dead_code)]
 fn apply_gaussian_along_axis_f64<D>(
     input: &Array<f64, D>,
     axis: usize,
     sigma: f64,
     mode: &BorderMode,
     truncate: f64,
-) -> Result<Array<f64, D>>
+) -> NdimageResult<Array<f64, D>>
 where
     D: Dimension + 'static,
 {
@@ -241,7 +302,11 @@ where
                 for i in 0..array2d.shape()[0] {
                     // Extract row
                     let row_view = array2d.row(i).to_owned();
-                    let row_1d = row_view.as_slice().unwrap();
+                    let row_1d = row_view.as_slice().ok_or_else(|| {
+                        NdimageError::ComputationError(
+                            "Failed to get contiguous slice from row".into(),
+                        )
+                    })?;
                     // Create a 1D array from the slice
                     let row_array = Array1::from_vec(row_1d.to_vec());
 
@@ -259,7 +324,11 @@ where
                 for j in 0..array2d.shape()[1] {
                     // Extract column
                     let col_view = array2d.column(j).to_owned();
-                    let col_1d = col_view.as_slice().unwrap();
+                    let col_1d = col_view.as_slice().ok_or_else(|| {
+                        NdimageError::ComputationError(
+                            "Failed to get contiguous slice from column".into(),
+                        )
+                    })?;
                     // Create a 1D array from the slice
                     let col_array = Array1::from_vec(col_1d.to_vec());
 
@@ -286,13 +355,14 @@ where
 }
 
 /// Apply a Gaussian filter along a specific axis for n-dimensional arrays (f64 version)
+#[allow(dead_code)]
 fn apply_gaussian_along_axis_nd_f64<D>(
     input: &Array<f64, D>,
     axis: usize,
     sigma: f64,
     mode: &BorderMode,
     truncate: f64,
-) -> Result<Array<f64, D>>
+) -> NdimageResult<Array<f64, D>>
 where
     D: Dimension + 'static,
 {
@@ -311,7 +381,7 @@ where
     let kernel_radius = kernel_len / 2;
 
     // Get input shape for later
-    let input_shape = input.shape();
+    let inputshape = input.shape();
 
     // Convert to dynamic dimension to facilitate filtering across arbitrary axes
     let input_dyn = input.clone().into_dyn();
@@ -339,7 +409,7 @@ where
 
             // Calculate source position along the axis
             let src_pos = idx_vec[axis] as isize + kernel_pos;
-            let src_len = input_shape[axis] as isize;
+            let src_len = inputshape[axis] as isize;
 
             // Apply border mode to get actual index
             let src_idx = match mode {
@@ -409,7 +479,7 @@ where
     } else {
         // Process in parallel for larger arrays
         // Create a new closure that doesn't depend on the captured variables
-        let input_shape_clone = input_shape.to_vec();
+        let inputshape_clone = inputshape.to_vec();
         let axis_clone = axis;
         let mode_clone = *mode;
         let kernel_clone = kernel.clone();
@@ -430,7 +500,7 @@ where
 
                 // Calculate source position along the axis
                 let src_pos = idx_vec[axis_clone] as isize + kernel_pos;
-                let src_len = input_shape_clone[axis_clone] as isize;
+                let src_len = inputshape_clone[axis_clone] as isize;
 
                 // Apply border mode to get actual index
                 let src_idx = match mode_clone {
@@ -489,7 +559,7 @@ where
         };
 
         // Use parallel_map from scirs2-core for parallel processing
-        let results = parallel::parallel_map(&indices, parallel_convolve)?;
+        let results = parallel_ops::parallel_map_result(&indices, parallel_convolve)?;
 
         // Apply results to output array
         for (pos, value) in results {
@@ -515,12 +585,13 @@ where
 /// # Returns
 ///
 /// * `Result<Array<f32, D>>` - Filtered array
+#[allow(dead_code)]
 pub fn gaussian_filter_f32<D>(
     input: &Array<f32, D>,
     sigma: f32,
     mode: Option<BorderMode>,
     truncate: Option<f32>,
-) -> Result<Array<f32, D>>
+) -> NdimageResult<Array<f32, D>>
 where
     D: Dimension + 'static,
 {
@@ -684,7 +755,7 @@ where
             // Apply kernel along each dimension
             for axis in 0..input.ndim() {
                 let mut output = Array::zeros(result.raw_dim());
-                let input_shape = result.shape();
+                let inputshape = result.shape();
 
                 let mut pad_width = vec![(0, 0); input.ndim()];
                 pad_width[axis] = (radius, radius);
@@ -702,7 +773,7 @@ where
 
                         // Calculate source position along the axis
                         let src_pos = idx[axis] as isize + kernel_pos;
-                        let src_len = input_shape[axis] as isize;
+                        let src_len = inputshape[axis] as isize;
 
                         // Apply border mode to get actual index
                         let src_idx = match border_mode {
@@ -775,7 +846,7 @@ where
 /// Generate a 1D Gaussian kernel for f32 filtering
 /// This function uses manual caching to avoid Result Clone issues
 #[allow(dead_code)]
-pub fn gaussian_kernel1d_f32(sigma: f32, truncate: f32) -> Result<Array1<f32>> {
+pub fn gaussian_kernel1d_f32(sigma: f32, truncate: f32) -> NdimageResult<Array1<f32>> {
     // Manual caching using lazy_static or thread_local would be ideal here
     // but for simplicity, we'll just implement the function without caching for now
 
@@ -801,10 +872,10 @@ pub fn gaussian_kernel1d_f32(sigma: f32, truncate: f32) -> Result<Array1<f32>> {
         x_squared[i] = x_values[i] * x_values[i];
     }
 
-    // Calculate exp(-x^2/(2*sigma^2))
+    // Calculate exp(-x^2/(2*_sigma^2))
     let two_sigma_squared = 2.0 * sigma * sigma;
 
-    // Apply the Gaussian formula: exp(-x^2/(2*sigma^2))
+    // Apply the Gaussian formula: exp(-x^2/(2*_sigma^2))
     for i in 0..size {
         kernel[i] = (-x_squared[i] / two_sigma_squared).exp();
     }
@@ -822,12 +893,13 @@ pub fn gaussian_kernel1d_f32(sigma: f32, truncate: f32) -> Result<Array1<f32>> {
 ///
 /// This is a convenience function for the common case where T is f64.
 /// It's useful for functions like canny_edges that need to avoid Send/Sync constraints.
+#[allow(dead_code)]
 pub fn gaussian_filter_f64<D>(
     input: &Array<f64, D>,
     sigma: f64,
     mode: Option<BorderMode>,
     truncate: Option<f64>,
-) -> Result<Array<f64, D>>
+) -> NdimageResult<Array<f64, D>>
 where
     D: Dimension + 'static,
 {
@@ -845,7 +917,8 @@ mod tests {
     fn test_gaussian_kernel1d() {
         let sigma = 1.0;
         let truncate = 4.0;
-        let kernel = gaussian_kernel1d_f64(sigma, truncate).unwrap();
+        let kernel = gaussian_kernel1d_f64(sigma, truncate)
+            .expect("gaussian_kernel1d_f64 should succeed for test");
 
         // Check kernel properties
         assert_eq!(kernel.len(), 9); // 2*4 + 1 = 9
@@ -863,7 +936,8 @@ mod tests {
 
         // Apply Gaussian filter
         let sigma = 1.0;
-        let result = gaussian_filter1d_f64(&input, sigma, None, None).unwrap();
+        let result = gaussian_filter1d_f64(&input, sigma, None, None)
+            .expect("gaussian_filter1d_f64 should succeed for test");
 
         // Check that result is smoothed
         assert!(result[5] < 1.0); // Peak should be reduced
@@ -885,7 +959,8 @@ mod tests {
 
         // Apply Gaussian filter with constant border mode to avoid edge effects
         let sigma = 1.0;
-        let result = gaussian_filter(&input, sigma, Some(BorderMode::Constant), None).unwrap();
+        let result = gaussian_filter(&input, sigma, Some(BorderMode::Constant), None)
+            .expect("gaussian_filter should succeed for test");
 
         // Check that result is smoothed
         assert!(result[[3, 3]] < 1.0); // Peak should be reduced
@@ -910,7 +985,8 @@ mod tests {
 
         // Apply Gaussian filter
         let sigma = 1.0;
-        let result = gaussian_filter(&input, sigma, Some(BorderMode::Reflect), None).unwrap();
+        let result = gaussian_filter(&input, sigma, Some(BorderMode::Reflect), None)
+            .expect("gaussian_filter should succeed for test");
 
         // Check that result is smoothed
         assert!(result[[2, 2, 2]] > 0.0); // Peak should have a value
@@ -932,8 +1008,8 @@ mod tests {
 
         // Check that applying filter with very small sigma doesn't change the input much
         let small_sigma = 0.1;
-        let small_result =
-            gaussian_filter(&input, small_sigma, Some(BorderMode::Reflect), None).unwrap();
+        let small_result = gaussian_filter(&input, small_sigma, Some(BorderMode::Reflect), None)
+            .expect("gaussian_filter should succeed for test");
         println!(
             "Gaussian 3D filter (small sigma) center value: {}",
             small_result[[2, 2, 2]]

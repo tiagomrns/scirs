@@ -266,12 +266,12 @@ where
         };
 
         // Read metadata to determine array size
-        let (len, _metadata_size) = Self::read_metadata(&mmap[..])?;
+        let (len_value, metadata_size) = Self::read_metadata(&mmap[..])?;
 
         Ok(Self {
             mmap,
             _file: file,
-            len,
+            len: len_value,
             _phantom: PhantomData,
         })
     }
@@ -444,12 +444,12 @@ where
         };
 
         // Read metadata to determine array size
-        let (len, _metadata_size) = Self::read_metadata(&mmap)?;
+        let (len_value, metadata_size) = Self::read_metadata(&mmap)?;
 
         Ok(Self {
             mmap,
             _file: file,
-            len,
+            len: len_value,
             _phantom: PhantomData,
         })
     }
@@ -549,6 +549,7 @@ where
 }
 
 /// Convenience function to create a memory-mapped array from an ndarray
+#[allow(dead_code)]
 pub fn create_mmap_array<P, S, D, T>(path: P, array: &ArrayBase<S, D>) -> Result<()>
 where
     P: AsRef<Path>,
@@ -560,6 +561,7 @@ where
 }
 
 /// Convenience function to read a memory-mapped array as an ndarray
+#[allow(dead_code)]
 pub fn read_mmap_array<P, T>(path: P) -> Result<ArrayD<T>>
 where
     P: AsRef<Path>,
@@ -649,7 +651,7 @@ mod tests {
             // Modify some values using linear indexing
             let slice = array_view.as_slice_mut().unwrap();
             slice[5 * 10 + 5] = 42.0; // (5, 5) in row-major order
-            slice[1 * 10 + 2] = 13.7; // (1, 2) in row-major order
+            slice[10 + 2] = 13.7; // (1, 2) in row-major order
         }
 
         // Flush changes
@@ -659,7 +661,7 @@ mod tests {
         let read_array: ArrayD<f64> = read_mmap_array(&file_path).unwrap();
         let read_slice = read_array.as_slice().unwrap();
         assert_eq!(read_slice[5 * 10 + 5], 42.0);
-        assert_eq!(read_slice[1 * 10 + 2], 13.7);
+        assert_eq!(read_slice[10 + 2], 13.7);
         assert_eq!(read_slice[0], 0.0);
     }
 
@@ -696,8 +698,8 @@ mod tests {
 
         // Verify it was created correctly
         let mmap_array = MmapArray::<f64>::open(&file_path).unwrap();
-        let read_shape = mmap_array.shape().unwrap();
-        assert_eq!(read_shape, shape);
+        let readshape = mmap_array.shape().unwrap();
+        assert_eq!(readshape, shape);
         assert_eq!(mmap_array.len(), 100 * 200);
 
         let array_view = mmap_array.as_array_view(&shape).unwrap();

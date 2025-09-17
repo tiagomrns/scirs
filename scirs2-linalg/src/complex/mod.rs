@@ -37,6 +37,7 @@ pub mod decompositions;
 pub use decompositions::*;
 
 /// Complex matrix multiplication C = A * B
+#[allow(dead_code)]
 pub fn complex_matmul<F>(
     a: &ArrayView2<Complex<F>>,
     b: &ArrayView2<Complex<F>>,
@@ -71,6 +72,7 @@ where
 }
 
 /// Compute the Hermitian transpose (conjugate transpose) of a complex matrix
+#[allow(dead_code)]
 pub fn hermitian_transpose<F>(a: &ArrayView2<Complex<F>>) -> Array2<Complex<F>>
 where
     F: Float,
@@ -88,6 +90,7 @@ where
 }
 
 /// Frobenius norm of a complex matrix
+#[allow(dead_code)]
 pub fn complex_norm_frobenius<F>(a: &ArrayView2<Complex<F>>) -> F
 where
     F: Float,
@@ -105,6 +108,7 @@ where
 }
 
 /// Compute the inverse of a complex matrix
+#[allow(dead_code)]
 pub fn complex_inverse<F>(a: &ArrayView2<Complex<F>>) -> LinalgResult<Array2<Complex<F>>>
 where
     F: Float + Zero + One + Debug,

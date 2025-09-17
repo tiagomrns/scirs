@@ -158,6 +158,7 @@ impl LinalgScalar for f64 {
 }
 
 /// Generic matrix multiplication - wrapper using ndarray's dot
+#[allow(dead_code)]
 pub fn gemm<T>(a: &ArrayView2<T>, b: &ArrayView2<T>) -> LinalgResult<Array2<T>>
 where
     T: LinalgScalar + ndarray::LinalgScalar,
@@ -176,6 +177,7 @@ where
 }
 
 /// Generic matrix-vector multiplication - wrapper using ndarray's dot
+#[allow(dead_code)]
 pub fn gemv<T>(a: &ArrayView2<T>, x: &ndarray::ArrayView1<T>) -> LinalgResult<ndarray::Array1<T>>
 where
     T: LinalgScalar + ndarray::LinalgScalar,
@@ -193,17 +195,23 @@ where
 }
 
 /// Generic determinant calculation (only for real floats)
-pub fn gdet<T: LinalgScalar + Float>(a: &ArrayView2<T>) -> LinalgResult<T> {
+#[allow(dead_code)]
+pub fn gdet<T: LinalgScalar + Float + Send + Sync>(a: &ArrayView2<T>) -> LinalgResult<T> {
     crate::basic::det(a, None)
 }
 
 /// Generic matrix inversion (only for real floats)
-pub fn ginv<T: LinalgScalar + Float>(a: &ArrayView2<T>) -> LinalgResult<Array2<T>> {
+#[allow(dead_code)]
+pub fn ginv<T: LinalgScalar + Float + Send + Sync>(a: &ArrayView2<T>) -> LinalgResult<Array2<T>> {
     crate::basic::inv(a, None)
 }
 
 /// Generic matrix norm (only for real floats)
-pub fn gnorm<T: LinalgScalar + Float>(a: &ArrayView2<T>, norm_type: &str) -> LinalgResult<T> {
+#[allow(dead_code)]
+pub fn gnorm<T: LinalgScalar + Float + Send + Sync>(
+    a: &ArrayView2<T>,
+    norm_type: &str,
+) -> LinalgResult<T> {
     crate::norm::matrix_norm(a, norm_type, None)
 }
 
@@ -215,7 +223,8 @@ pub struct GenericSVD<T: LinalgScalar> {
 }
 
 /// Generic SVD decomposition (only for real floats)  
-pub fn gsvd<T: LinalgScalar + Float>(
+#[allow(dead_code)]
+pub fn gsvd<T: LinalgScalar + Float + Send + Sync>(
     a: &ArrayView2<T>,
     full_matrices: bool,
 ) -> LinalgResult<GenericSVD<T>> {
@@ -234,7 +243,8 @@ pub struct GenericQR<T: LinalgScalar> {
 }
 
 /// Generic QR decomposition (only for real floats)
-pub fn gqr<T: LinalgScalar + Float>(a: &ArrayView2<T>) -> LinalgResult<GenericQR<T>> {
+#[allow(dead_code)]
+pub fn gqr<T: LinalgScalar + Float + Send + Sync>(a: &ArrayView2<T>) -> LinalgResult<GenericQR<T>> {
     let result = crate::lapack::qr_factor(a)?;
     Ok(GenericQR {
         q: result.q,
@@ -249,7 +259,10 @@ pub struct GenericEigen<T: LinalgScalar> {
 }
 
 /// Generic eigendecomposition (only for real floats, returns complex)
-pub fn geig<T: LinalgScalar + Float>(a: &ArrayView2<T>) -> LinalgResult<GenericEigen<T>> {
+#[allow(dead_code)]
+pub fn geig<T: LinalgScalar + Float + Send + Sync>(
+    a: &ArrayView2<T>,
+) -> LinalgResult<GenericEigen<T>> {
     let (eigenvalues, eigenvectors) = crate::eigen::eig(a, None)?;
     Ok(GenericEigen {
         eigenvalues,
@@ -258,7 +271,8 @@ pub fn geig<T: LinalgScalar + Float>(a: &ArrayView2<T>) -> LinalgResult<GenericE
 }
 
 /// Generic linear solve (only for real floats)
-pub fn gsolve<T: LinalgScalar + Float>(
+#[allow(dead_code)]
+pub fn gsolve<T: LinalgScalar + Float + Send + Sync>(
     a: &ArrayView2<T>,
     b: &ArrayView2<T>,
 ) -> LinalgResult<Array2<T>> {
@@ -270,8 +284,8 @@ pub trait PrecisionSelector {
     type HighPrecision: LinalgScalar;
     type LowPrecision: LinalgScalar;
 
-    fn should_use_high_precision(input_condition: f64) -> bool {
-        input_condition > 1e6
+    fn should_use_high_precision(_inputcondition: f64) -> bool {
+        _inputcondition > 1e6
     }
 }
 

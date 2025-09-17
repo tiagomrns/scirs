@@ -1,14 +1,17 @@
-//! Kernel ICA for nonlinear blind source separation
-//!
-//! This module implements kernel-based ICA methods.
+use ndarray::s;
+// Kernel ICA for nonlinear blind source separation
+//
+// This module implements kernel-based ICA methods.
 
 use super::{pca, BssConfig};
 use crate::error::{SignalError, SignalResult};
-use ndarray::{s, Array1, Array2, Axis};
+use ndarray::{Array1, Array2, Axis};
 use rand::SeedableRng;
 use rand_distr::{Distribution, Normal};
 use scirs2_linalg::{eigh, svd};
+use statrs::statistics::Statistics;
 
+#[allow(unused_imports)]
 /// Apply Kernel ICA for nonlinear blind source separation
 ///
 /// Kernel ICA uses kernel methods to handle nonlinearities in the data.
@@ -23,6 +26,7 @@ use scirs2_linalg::{eigh, svd};
 /// # Returns
 ///
 /// * Tuple containing (extracted sources, mixing matrix)
+#[allow(dead_code)]
 pub fn kernel_ica(
     signals: &Array2<f64>,
     n_components: usize,
@@ -46,7 +50,7 @@ pub fn kernel_ica(
 
     // Initialize random unmixing matrix
     let mut rng = if let Some(seed) = config.random_seed {
-        rand::rngs::StdRng::from_seed([seed as u8; 32])
+        rand::rngs::StdRng::seed_from_u64([seed as u8; 32])
     } else {
         {
             // In rand 0.9, from_rng doesn't return Result but directly returns the PRNG
@@ -85,7 +89,7 @@ pub fn kernel_ica(
         // Center Gram matrix
         let row_means = gram.mean_axis(Axis(0)).unwrap();
         let col_means = gram.mean_axis(Axis(1)).unwrap();
-        let total_mean = gram.mean().unwrap();
+        let total_mean = gram.clone().mean();
 
         for i in 0..n_samples {
             for j in 0..n_samples {
@@ -180,7 +184,7 @@ pub fn kernel_ica(
         let (eigvals, eigvecs) = match eigh(&ww_t.view(), None) {
             Ok((vals, vecs)) => (vals, vecs),
             Err(_) => {
-                return Err(SignalError::Compute(
+                return Err(SignalError::ComputationError(
                     "Failed to compute eigendecomposition in KernelICA".to_string(),
                 ));
             }
@@ -214,7 +218,7 @@ pub fn kernel_ica(
     let (u, s, vt) = match svd(&unmixing.view(), false, None) {
         Ok((u, s, vt)) => (u, s, vt),
         Err(_) => {
-            return Err(SignalError::Compute(
+            return Err(SignalError::ComputationError(
                 "Failed to compute SVD of unmixing matrix".to_string(),
             ));
         }

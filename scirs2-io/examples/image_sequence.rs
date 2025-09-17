@@ -9,6 +9,7 @@ use scirs2_io::image::{
 use std::error::Error;
 use std::fs;
 
+#[allow(dead_code)]
 fn main() -> Result<(), Box<dyn Error>> {
     println!("=== Image Sequence Example ===\n");
 

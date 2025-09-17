@@ -41,9 +41,9 @@ use std::fmt::Debug;
 /// let updated_slow = optimizer.step_group(group_slow, &grads_slow).unwrap();
 /// ```
 #[derive(Debug)]
-pub struct GroupedAdam<A: Float, D: Dimension> {
+pub struct GroupedAdam<A: Float + Send + Sync, D: Dimension> {
     /// Default learning rate
-    default_lr: A,
+    defaultlr: A,
     /// Default beta1
     default_beta1: A,
     /// Default beta2
@@ -60,11 +60,11 @@ pub struct GroupedAdam<A: Float, D: Dimension> {
     step: usize,
 }
 
-impl<A: Float + ScalarOperand + Debug, D: Dimension> GroupedAdam<A, D> {
+impl<A: Float + ScalarOperand + Debug + Send + Sync, D: Dimension> GroupedAdam<A, D> {
     /// Create a new grouped Adam optimizer
-    pub fn new(default_lr: A) -> Self {
+    pub fn new(defaultlr: A) -> Self {
         Self {
-            default_lr,
+            defaultlr,
             default_beta1: A::from(0.9).unwrap(),
             default_beta2: A::from(0.999).unwrap(),
             default_weight_decay: A::zero(),
@@ -100,8 +100,8 @@ impl<A: Float + ScalarOperand + Debug, D: Dimension> GroupedAdam<A, D> {
     }
 
     /// Initialize state for a group
-    fn init_group_state(&mut self, group_id: usize) -> Result<()> {
-        let group = self.group_manager.get_group_mut(group_id)?;
+    fn init_group_state(&mut self, groupid: usize) -> Result<()> {
+        let group = self.group_manager.get_group_mut(groupid)?;
 
         if group.state.is_empty() {
             let mut m_t = Vec::new();
@@ -129,15 +129,15 @@ impl<A: Float + ScalarOperand + Debug, D: Dimension> GroupedAdam<A, D> {
     /// Step for a specific group
     fn step_group_internal(
         &mut self,
-        group_id: usize,
+        groupid: usize,
         gradients: &[Array<A, D>],
     ) -> Result<Vec<Array<A, D>>> {
         let t = A::from(self.step + 1).unwrap();
 
         // Initialize state if needed
-        self.init_group_state(group_id)?;
+        self.init_group_state(groupid)?;
 
-        let group = self.group_manager.get_group_mut(group_id)?;
+        let group = self.group_manager.get_group_mut(groupid)?;
 
         if gradients.len() != group.params.len() {
             return Err(OptimError::InvalidConfig(format!(
@@ -148,10 +148,10 @@ impl<A: Float + ScalarOperand + Debug, D: Dimension> GroupedAdam<A, D> {
         }
 
         // Get hyperparameters for this group
-        let lr = group.learning_rate(self.default_lr);
+        let lr = group.learning_rate(self.defaultlr);
         let beta1 = group.get_custom_param("beta1", self.default_beta1);
         let beta2 = group.get_custom_param("beta2", self.default_beta2);
-        let weight_decay = group.weight_decay(self.default_weight_decay);
+        let weightdecay = group.weight_decay(self.default_weight_decay);
 
         let mut updated_params = Vec::new();
 
@@ -161,8 +161,8 @@ impl<A: Float + ScalarOperand + Debug, D: Dimension> GroupedAdam<A, D> {
             let grad = &gradients[i];
 
             // Apply weight decay
-            let grad_with_decay = if weight_decay > A::zero() {
-                grad + &(param * weight_decay)
+            let grad_with_decay = if weightdecay > A::zero() {
+                grad + &(param * weightdecay)
             } else {
                 grad.clone()
             };
@@ -199,7 +199,9 @@ impl<A: Float + ScalarOperand + Debug, D: Dimension> GroupedAdam<A, D> {
     }
 }
 
-impl<A: Float + ScalarOperand + Debug, D: Dimension> GroupedOptimizer<A, D> for GroupedAdam<A, D> {
+impl<A: Float + ScalarOperand + Debug + Send + Sync, D: Dimension> GroupedOptimizer<A, D>
+    for GroupedAdam<A, D>
+{
     fn add_group(
         &mut self,
         params: Vec<Array<A, D>>,
@@ -208,12 +210,12 @@ impl<A: Float + ScalarOperand + Debug, D: Dimension> GroupedOptimizer<A, D> for 
         Ok(self.group_manager.add_group(params, config))
     }
 
-    fn get_group(&self, group_id: usize) -> Result<&ParameterGroup<A, D>> {
-        self.group_manager.get_group(group_id)
+    fn get_group(&self, groupid: usize) -> Result<&ParameterGroup<A, D>> {
+        self.group_manager.get_group(groupid)
     }
 
-    fn get_group_mut(&mut self, group_id: usize) -> Result<&mut ParameterGroup<A, D>> {
-        self.group_manager.get_group_mut(group_id)
+    fn get_group_mut(&mut self, groupid: usize) -> Result<&mut ParameterGroup<A, D>> {
+        self.group_manager.get_group_mut(groupid)
     }
 
     fn groups(&self) -> &[ParameterGroup<A, D>] {
@@ -226,46 +228,48 @@ impl<A: Float + ScalarOperand + Debug, D: Dimension> GroupedOptimizer<A, D> for 
 
     fn step_group(
         &mut self,
-        group_id: usize,
+        groupid: usize,
         gradients: &[Array<A, D>],
     ) -> Result<Vec<Array<A, D>>> {
         self.step += 1;
-        self.step_group_internal(group_id, gradients)
+        self.step_group_internal(groupid, gradients)
     }
 
-    fn set_group_learning_rate(&mut self, group_id: usize, lr: A) -> Result<()> {
-        let group = self.group_manager.get_group_mut(group_id)?;
+    fn set_group_learning_rate(&mut self, groupid: usize, lr: A) -> Result<()> {
+        let group = self.group_manager.get_group_mut(groupid)?;
         group.config.learning_rate = Some(lr);
         Ok(())
     }
 
-    fn set_group_weight_decay(&mut self, group_id: usize, wd: A) -> Result<()> {
-        let group = self.group_manager.get_group_mut(group_id)?;
+    fn set_group_weight_decay(&mut self, groupid: usize, wd: A) -> Result<()> {
+        let group = self.group_manager.get_group_mut(groupid)?;
         group.config.weight_decay = Some(wd);
         Ok(())
     }
 }
 
 // Standard optimizer implementation for default behavior
-impl<A: Float + ScalarOperand + Debug, D: Dimension> Optimizer<A, D> for GroupedAdam<A, D> {
+impl<A: Float + ScalarOperand + Debug + Send + Sync, D: Dimension> Optimizer<A, D>
+    for GroupedAdam<A, D>
+{
     fn step(&mut self, params: &Array<A, D>, gradients: &Array<A, D>) -> Result<Array<A, D>> {
         // For single parameter optimization, create a temporary group
         let params_vec = vec![params.clone()];
         let gradients_vec = vec![gradients.clone()];
         let config = ParameterGroupConfig::new();
 
-        let group_id = self.add_group(params_vec, config)?;
-        let result = self.step_group(group_id, &gradients_vec)?;
+        let groupid = self.add_group(params_vec, config)?;
+        let result = self.step_group(groupid, &gradients_vec)?;
 
         Ok(result.into_iter().next().unwrap())
     }
 
     fn get_learning_rate(&self) -> A {
-        self.default_lr
+        self.defaultlr
     }
 
     fn set_learning_rate(&mut self, learning_rate: A) {
-        self.default_lr = learning_rate;
+        self.defaultlr = learning_rate;
     }
 }
 
@@ -277,7 +281,7 @@ mod tests {
     #[test]
     fn test_grouped_adam_creation() {
         let optimizer: GroupedAdam<f64, ndarray::Ix1> = GroupedAdam::new(0.001);
-        assert_eq!(optimizer.default_lr, 0.001);
+        assert_eq!(optimizer.defaultlr, 0.001);
         assert_eq!(optimizer.default_beta1, 0.9);
         assert_eq!(optimizer.default_beta2, 0.999);
     }

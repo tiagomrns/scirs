@@ -8,6 +8,7 @@ use crate::error::OptimizeError;
 use crate::unconstrained::result::OptimizeResult;
 use ndarray::{Array1, ArrayView1, ArrayView2, ScalarOperand};
 use num_traits::Float;
+use rand::seq::SliceRandom;
 use std::collections::HashMap;
 
 /// L1 regularization (Lasso) optimizer using proximal gradient descent
@@ -114,7 +115,6 @@ impl<F: Float + ScalarOperand> LassoOptimizer<F> {
                 return Ok(OptimizeResult {
                     x: x_prox.mapv(|v| v.into()),
                     fun: F::zero(),
-                    iterations: iter,
                     nit: iter,
                     func_evals: iter,
                     nfev: iter,
@@ -225,7 +225,6 @@ impl<F: Float + ScalarOperand> GroupLassoOptimizer<F> {
                 return Ok(OptimizeResult {
                     x: x_prox.mapv(|v| v.into()),
                     fun: F::zero(),
-                    iterations: iter,
                     nit: iter,
                     func_evals: iter,
                     nfev: iter,
@@ -317,7 +316,6 @@ impl<F: Float + ScalarOperand> ElasticNetOptimizer<F> {
                 return Ok(OptimizeResult {
                     x: x_prox.mapv(|v| v.into()),
                     fun: F::zero(),
-                    iterations: iter,
                     nit: iter,
                     func_evals: iter,
                     nfev: iter,
@@ -425,7 +423,6 @@ impl<F: Float + ScalarOperand> ADMMOptimizer<F> {
                 return Ok(OptimizeResult {
                     x: x.mapv(|v| v.into()),
                     fun: F::zero(),
-                    iterations: iter,
                     nit: iter,
                     func_evals: iter,
                     nfev: iter,
@@ -501,7 +498,7 @@ impl<F: Float + ScalarOperand> CoordinateDescentOptimizer<F> {
             let coords: Vec<usize> = if self.random {
                 use rand::{rng, seq::SliceRandom};
                 let mut coords: Vec<usize> = (0..n).collect();
-                coords.shuffle(&mut rng());
+                coords.shuffle(&mut rand::rng());
                 coords
             } else {
                 (0..n).collect()
@@ -523,7 +520,6 @@ impl<F: Float + ScalarOperand> CoordinateDescentOptimizer<F> {
                 return Ok(OptimizeResult {
                     x: x.mapv(|v| v.into()),
                     fun: final_obj,
-                    iterations: iter,
                     nit: iter,
                     func_evals: iter * n,
                     nfev: iter * n,

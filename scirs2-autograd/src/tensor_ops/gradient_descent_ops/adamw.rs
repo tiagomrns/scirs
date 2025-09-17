@@ -40,7 +40,7 @@ impl<F: Float> crate::op::Op<F> for AdamWOp<F> {
         let t_array = ctx.input(4).to_owned(); // Timestep
 
         // Handle shape mismatches: ensure arrays have compatible shapes
-        let grad_shape = grad.shape().to_vec();
+        let gradshape = grad.shape().to_vec();
 
         // Get the current timestep value and increment it
         let t_val = t_array[ndarray::IxDyn(&[])];
@@ -53,27 +53,27 @@ impl<F: Float> crate::op::Op<F> for AdamWOp<F> {
         let mut new_v: NdArray<F>;
 
         // Check if we need to broadcast scalar arrays to match grad shape
-        if m.shape().is_empty() && !grad_shape.is_empty() {
+        if m.shape().is_empty() && !gradshape.is_empty() {
             // If m is scalar but grad is not, create a new array with m's value broadcast to grad's shape
             let m_val = m[ndarray::IxDyn(&[])];
-            new_m = NdArray::from_elem(ndarray::IxDyn(&grad_shape), m_val);
+            new_m = NdArray::from_elem(ndarray::IxDyn(&gradshape), m_val);
         } else {
             new_m = m.to_owned();
         }
 
-        if v.shape().is_empty() && !grad_shape.is_empty() {
+        if v.shape().is_empty() && !gradshape.is_empty() {
             // If v is scalar but grad is not, create a new array with v's value broadcast to grad's shape
             let v_val = v[ndarray::IxDyn(&[])];
-            new_v = NdArray::from_elem(ndarray::IxDyn(&grad_shape), v_val);
+            new_v = NdArray::from_elem(ndarray::IxDyn(&gradshape), v_val);
         } else {
             new_v = v.to_owned();
         }
 
         // Also handle param broadcasting if needed
         let mut new_param: NdArray<F>;
-        if param.shape().is_empty() && !grad_shape.is_empty() {
+        if param.shape().is_empty() && !gradshape.is_empty() {
             let param_val = param[ndarray::IxDyn(&[])];
-            new_param = NdArray::from_elem(ndarray::IxDyn(&grad_shape), param_val);
+            new_param = NdArray::from_elem(ndarray::IxDyn(&gradshape), param_val);
         } else {
             new_param = param.to_owned();
         }

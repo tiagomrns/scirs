@@ -2,6 +2,7 @@ use scirs2_text::{LancasterStemmer, PorterStemmer, SnowballStemmer, Stemmer};
 use std::error::Error;
 use std::time::{Duration, Instant};
 
+#[allow(dead_code)]
 fn main() -> Result<(), Box<dyn Error>> {
     println!("Stemmer Benchmark");
     println!("----------------");
@@ -122,6 +123,7 @@ fn main() -> Result<(), Box<dyn Error>> {
     Ok(())
 }
 
-fn words_per_ms(word_count: usize, iterations: usize, duration: Duration) -> f64 {
-    (word_count * iterations) as f64 / duration.as_millis() as f64
+#[allow(dead_code)]
+fn words_per_ms(_wordcount: usize, iterations: usize, duration: Duration) -> f64 {
+    (_wordcount * iterations) as f64 / duration.as_millis() as f64
 }

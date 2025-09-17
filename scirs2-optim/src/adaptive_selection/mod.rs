@@ -6,6 +6,7 @@
 use crate::error::{OptimError, Result};
 use ndarray::{Array1, Array2, ScalarOperand};
 use num_traits::Float;
+use rand::Rng;
 use std::collections::{HashMap, VecDeque};
 use std::fmt::Debug;
 
@@ -177,18 +178,17 @@ pub struct SelectionNetwork<A: Float> {
     hidden_size: usize,
 }
 
-impl<A: Float + ScalarOperand + Debug> SelectionNetwork<A> {
+impl<A: Float + ScalarOperand + Debug + num_traits::FromPrimitive> SelectionNetwork<A> {
     /// Create a new selection network
     pub fn new(input_size: usize, hidden_size: usize, num_optimizers: usize) -> Self {
-        use rand::Rng;
-        let mut rng = rand::rng();
+        let mut rng = scirs2_core::random::rng();
 
         let input_weights = Array2::from_shape_fn((hidden_size, input_size), |_| {
-            A::from(rng.random::<f64>() * 0.1 - 0.05).unwrap()
+            A::from(rng.random_f64()).unwrap() * A::from(0.1).unwrap() - A::from(0.05).unwrap()
         });
 
         let output_weights = Array2::from_shape_fn((num_optimizers, hidden_size), |_| {
-            A::from(rng.random::<f64>() * 0.1 - 0.05).unwrap()
+            A::from(rng.random_f64()).unwrap() * A::from(0.1).unwrap() - A::from(0.05).unwrap()
         });
 
         let input_bias = Array1::zeros(hidden_size);
@@ -206,7 +206,7 @@ impl<A: Float + ScalarOperand + Debug> SelectionNetwork<A> {
     /// Forward pass to get optimizer probabilities
     pub fn forward(&self, features: &Array1<A>) -> Result<Array1<A>> {
         // Hidden layer
-        let hidden = self.input_weights.dot(features) + &self.input_bias;
+        let hidden = self.input_weights.dot(features) + self.input_bias.clone();
         let hidden_activated = hidden.mapv(|x| {
             // ReLU activation
             if x > A::zero() {
@@ -250,7 +250,7 @@ impl<A: Float + ScalarOperand + Debug> SelectionNetwork<A> {
                 output_grad[label] = output_grad[label] - A::one();
 
                 // Update weights (simplified gradient descent)
-                let hidden = self.input_weights.dot(feature) + &self.input_bias;
+                let hidden = self.input_weights.dot(feature) + self.input_bias.clone();
                 let hidden_activated = hidden.mapv(|x| if x > A::zero() { x } else { A::zero() });
 
                 // Update output weights
@@ -271,7 +271,7 @@ impl<A: Float + ScalarOperand + Debug> SelectionNetwork<A> {
     }
 }
 
-impl<A: Float + ScalarOperand + Debug> AdaptiveOptimizerSelector<A> {
+impl<A: Float + ScalarOperand + Debug + num_traits::FromPrimitive> AdaptiveOptimizerSelector<A> {
     /// Create a new adaptive optimizer selector
     pub fn new(strategy: SelectionStrategy) -> Self {
         let available_optimizers = vec![
@@ -331,7 +331,7 @@ impl<A: Float + ScalarOperand + Debug> AdaptiveOptimizerSelector<A> {
             SelectionStrategy::MetaLearning {
                 feature_dim,
                 k_nearest,
-            } => self.meta_learning_selection(&problem, *feature_dim, *k_nearest),
+            } => self.meta_learning_selection(&problem, *feature_dim),
         }
     }
 
@@ -408,11 +408,11 @@ impl<A: Float + ScalarOperand + Debug> AdaptiveOptimizerSelector<A> {
     /// Ensemble selection by trying multiple optimizers
     fn ensemble_selection(
         &self,
-        _problem: &ProblemCharacteristics,
+        problem: &ProblemCharacteristics,
         num_candidates: usize,
         _evaluation_steps: usize,
     ) -> Result<OptimizerType> {
-        // Select top candidates based on historical performance
+        // Select top _candidates based on historical performance
         let mut candidates = self.available_optimizers.clone();
         candidates.truncate(num_candidates.min(candidates.len()));
 
@@ -423,18 +423,17 @@ impl<A: Float + ScalarOperand + Debug> AdaptiveOptimizerSelector<A> {
 
     /// Bandit-based selection with epsilon-greedy strategy
     fn bandit_selection(
-        &mut self,
-        _problem: &ProblemCharacteristics,
+        &self,
+        problem: &ProblemCharacteristics,
         epsilon: f64,
         confidence: f64,
     ) -> Result<OptimizerType> {
-        use rand::Rng;
-        let mut rng = rand::rng();
+        let mut rng = scirs2_core::random::rng();
 
         // Epsilon-greedy exploration
-        if rng.random::<f64>() < epsilon {
+        if rng.random_f64() < epsilon {
             // Explore: random selection
-            let idx = rng.random_range(0..self.available_optimizers.len());
+            let idx = rng.gen_range(0..self.available_optimizers.len());
             return Ok(self.available_optimizers[idx]);
         }
 
@@ -470,7 +469,6 @@ impl<A: Float + ScalarOperand + Debug> AdaptiveOptimizerSelector<A> {
     fn meta_learning_selection(
         &mut self,
         problem: &ProblemCharacteristics,
-        _feature_dim: usize,
         k_nearest: usize,
     ) -> Result<OptimizerType> {
         // Extract features from problem
@@ -508,7 +506,7 @@ impl<A: Float + ScalarOperand + Debug> AdaptiveOptimizerSelector<A> {
             // Sort by similarity
             similarities.sort_by(|a, b| b.0.partial_cmp(&a.0).unwrap());
 
-            // Take k nearest and vote
+            // Take k _nearest and vote
             let mut votes: HashMap<OptimizerType, f64> = HashMap::new();
             for (similarity, optimizer, performance) in similarities.iter().take(k_nearest) {
                 let weight = similarity * performance;
@@ -519,7 +517,7 @@ impl<A: Float + ScalarOperand + Debug> AdaptiveOptimizerSelector<A> {
             let best_optimizer = votes
                 .iter()
                 .max_by(|a, b| a.1.partial_cmp(b.1).unwrap())
-                .map(|(&optimizer, _)| optimizer)
+                .map(|(optimizer_, _)| *optimizer_)
                 .unwrap_or(OptimizerType::Adam);
 
             return Ok(best_optimizer);
@@ -571,7 +569,7 @@ impl<A: Float + ScalarOperand + Debug> AdaptiveOptimizerSelector<A> {
         let mut features = Vec::new();
         let mut labels = Vec::new();
 
-        for (problem, optimizer, _) in &self.problem_optimizer_map {
+        for (problem, optimizer_, metrics) in &self.problem_optimizer_map {
             let feature_vec = self.extract_problem_features(problem);
             features.push(feature_vec);
 
@@ -579,7 +577,7 @@ impl<A: Float + ScalarOperand + Debug> AdaptiveOptimizerSelector<A> {
             if let Some(label) = self
                 .available_optimizers
                 .iter()
-                .position(|&opt| opt == *optimizer)
+                .position(|&opt| opt == *optimizer_)
             {
                 labels.push(label);
             }

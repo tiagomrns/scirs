@@ -1,5 +1,4 @@
 use ndarray::{Array1, Array2, Array3};
-// use std::f64::consts::PI;
 use rand::Rng;
 use std::fs::File;
 use std::io::Write;
@@ -9,6 +8,7 @@ use scirs2_signal::tv::{
     TvConfig, TvVariant,
 };
 
+#[allow(dead_code)]
 fn main() {
     println!("Total Variation Denoising Examples");
     println!("---------------------------------");
@@ -234,6 +234,7 @@ fn main() {
 }
 
 /// Generates a test 1D signal with additive noise
+#[allow(dead_code)]
 fn generate_test_signal() -> (Array1<f64>, Array1<f64>) {
     // Create a piecewise signal with sharp edges
     let n = 500;
@@ -261,13 +262,14 @@ fn generate_test_signal() -> (Array1<f64>, Array1<f64>) {
     let mut noisy_signal = clean_signal.clone();
 
     for i in 0..n {
-        noisy_signal[i] += noise_level * rng.random_range(-1.0..1.0);
+        noisy_signal[i] += noise_level * (rng.random::<f64>() * 2.0 - 1.0);
     }
 
     (clean_signal, noisy_signal)
 }
 
 /// Generates a test 2D image with additive noise
+#[allow(dead_code)]
 fn generate_test_image() -> (Array2<f64>, Array2<f64>) {
     // Create a test image with sharp edges and smooth regions
     let size = 64;
@@ -317,17 +319,18 @@ fn generate_test_image() -> (Array2<f64>, Array2<f64>) {
 
     for i in 0..size {
         for j in 0..size {
-            noisy_image[[i, j]] += noise_level * rng.random_range(-1.0..1.0);
+            noisy_image[[i, j]] += noise_level * (rng.random::<f64>() * 2.0 - 1.0);
         }
     }
 
-    // Clip to [0, 1]
+    // Clip to [0..1]
     noisy_image.mapv_inplace(|x| x.clamp(0.0, 1.0));
 
     (clean_image, noisy_image)
 }
 
 /// Generates a test color image with additive noise
+#[allow(dead_code)]
 fn generate_color_image() -> (Array3<f64>, Array3<f64>) {
     // Create a color image with RGB channels
     let size = 64;
@@ -381,21 +384,22 @@ fn generate_color_image() -> (Array3<f64>, Array3<f64>) {
     for i in 0..size {
         for j in 0..size {
             for c in 0..3 {
-                noisy_image[[i, j, c]] += noise_level * rng.random_range(-1.0..1.0);
+                noisy_image[[i, j, c]] += noise_level * (rng.random::<f64>() * 2.0 - 1.0);
             }
         }
     }
 
-    // Clip to [0, 1]
+    // Clip to [0..1]
     noisy_image.mapv_inplace(|x| x.clamp(0.0, 1.0));
 
     (clean_image, noisy_image)
 }
 
 /// Generates a test image with missing pixels for inpainting
+#[allow(dead_code)]
 fn generate_inpainting_image() -> (Array2<f64>, Array2<f64>) {
     // Start with a clean image
-    let (clean_image, _) = generate_test_image();
+    let (clean_image, _noisy) = generate_test_image();
     let (height, width) = clean_image.dim();
 
     // Create a copy with missing pixels (represented as NaN)
@@ -407,7 +411,7 @@ fn generate_inpainting_image() -> (Array2<f64>, Array2<f64>) {
 
     for i in 0..height {
         for j in 0..width {
-            if rng.random_range(0.0..1.0) < missing_ratio {
+            if rng.random::<f64>() < missing_ratio {
                 corrupted_image[[i, j]] = f64::NAN;
             }
         }
@@ -447,6 +451,7 @@ fn generate_inpainting_image() -> (Array2<f64>, Array2<f64>) {
 }
 
 /// Helper function to extract a channel from a color image
+#[allow(dead_code)]
 fn extract_channel(image: &Array3<f64>, channel: usize) -> Array2<f64> {
     let (height, width, _) = image.dim();
     let mut result = Array2::zeros((height, width));
@@ -461,6 +466,7 @@ fn extract_channel(image: &Array3<f64>, channel: usize) -> Array2<f64> {
 }
 
 /// Helper function to convert NaN values to a fixed value for CSV export
+#[allow(dead_code)]
 fn corrupted_image_for_csv(image: &Array2<f64>) -> Array2<f64> {
     let (height, width) = image.dim();
     let mut result = Array2::zeros((height, width));
@@ -479,6 +485,7 @@ fn corrupted_image_for_csv(image: &Array2<f64>) -> Array2<f64> {
 }
 
 /// Calculates the Signal-to-Noise Ratio (SNR) in dB for 1D signals
+#[allow(dead_code)]
 fn calculate_snr(clean: &Array1<f64>, noisy: &Array1<f64>) -> f64 {
     let mut signal_power = 0.0;
     let mut noise_power = 0.0;
@@ -496,6 +503,7 @@ fn calculate_snr(clean: &Array1<f64>, noisy: &Array1<f64>) -> f64 {
 }
 
 /// Calculates the Signal-to-Noise Ratio (SNR) in dB for 2D images
+#[allow(dead_code)]
 fn calculate_image_snr(clean: &Array2<f64>, noisy: &Array2<f64>) -> f64 {
     let (height, width) = clean.dim();
     let mut signal_power = 0.0;
@@ -516,6 +524,7 @@ fn calculate_image_snr(clean: &Array2<f64>, noisy: &Array2<f64>) -> f64 {
 }
 
 /// Calculates the Signal-to-Noise Ratio (SNR) in dB for color images
+#[allow(dead_code)]
 fn calculate_color_snr(clean: &Array3<f64>, noisy: &Array3<f64>) -> f64 {
     let (height, width, channels) = clean.dim();
     let mut signal_power = 0.0;
@@ -538,6 +547,7 @@ fn calculate_color_snr(clean: &Array3<f64>, noisy: &Array3<f64>) -> f64 {
 }
 
 /// Calculates the Peak Signal-to-Noise Ratio (PSNR) in dB for images with missing data
+#[allow(dead_code)]
 fn calculate_inpaint_psnr(original: &Array2<f64>, inpainted: &Array2<f64>) -> f64 {
     let (height, width) = original.dim();
     let mut mse = 0.0;
@@ -563,6 +573,7 @@ fn calculate_inpaint_psnr(original: &Array2<f64>, inpainted: &Array2<f64>) -> f6
 }
 
 /// Saves 1D signals to a CSV file for plotting
+#[allow(dead_code)]
 fn save_signal_to_csv(
     filename: &str,
     clean: &Array1<f64>,
@@ -593,14 +604,15 @@ fn save_signal_to_csv(
 }
 
 /// Appends a signal column to an existing CSV file
-fn append_signal_to_csv(filename: &str, column_name: &str, signal: &Array1<f64>) {
+#[allow(dead_code)]
+fn append_signal_to_csv(_filename: &str, columnname: &str, signal: &Array1<f64>) {
     // Read existing file
-    let contents = std::fs::read_to_string(filename).expect("Failed to read file");
+    let contents = std::fs::read_to_string(_filename).expect("Failed to read file");
     let mut lines: Vec<String> = contents.lines().map(|s| s.to_string()).collect();
 
     // Update header
     let header = &mut lines[0];
-    *header = format!("{},{}", header, column_name);
+    *header = format!("{},{}", header, columnname);
 
     // Update data rows
     for (i, line) in lines.iter_mut().enumerate().skip(1) {
@@ -610,13 +622,14 @@ fn append_signal_to_csv(filename: &str, column_name: &str, signal: &Array1<f64>)
     }
 
     // Write back to file
-    let mut file = File::create(filename).expect("Failed to create file");
+    let mut file = File::create(_filename).expect("Failed to create file");
     for line in lines {
         writeln!(file, "{}", line).expect("Failed to write data");
     }
 }
 
 /// Saves a 2D image to a CSV file for visualization
+#[allow(dead_code)]
 fn save_image_to_csv(filename: &str, image: &Array2<f64>) {
     let mut file = File::create(filename).expect("Failed to create file");
 

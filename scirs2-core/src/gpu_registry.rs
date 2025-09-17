@@ -51,7 +51,12 @@ impl KernelId {
                 "{}_{}_{}__{}",
                 self.module, self.operation, self.dtype, variant
             ),
-            None => format!("{}_{}__{}", self.module, self.operation, self.dtype),
+            None => format!(
+                "{module}_{operation}__{dtype}",
+                module = self.module,
+                operation = self.operation,
+                dtype = self.dtype
+            ),
         }
     }
 }
@@ -141,7 +146,7 @@ impl KernelRegistry {
         id: &KernelId,
         device: &GpuDevice,
     ) -> Result<Arc<GpuKernel>, GpuError> {
-        let device_id = device.id();
+        let device_id = device.device_id();
         let cache_key = (id.clone(), device_id);
 
         // Check cache first
@@ -307,10 +312,16 @@ impl KernelRegistry {
 /// use scirs2_core::gpu::GpuBackend;
 ///
 /// fn register_fft_kernels() {
+///     let fft_kernel_source = r#"
+///         extern "C" __global__ void fft2d_c32(float2* data, int n) {
+///             // FFT kernel implementation
+///         }
+///     "#;
+///
 ///     register_module_kernel(
 ///         KernelId::new("fft", "fft2d", "c32"),
 ///         KernelSource {
-///             source: FFT_KERNEL_SOURCE.to_string(),
+///             source: fft_kernel_source.to_string(),
 ///             backend: GpuBackend::Cuda,
 ///             entry_point: "fft2d_c32".to_string(),
 ///             workgroup_size: (32, 8, 1),
@@ -320,6 +331,7 @@ impl KernelRegistry {
 ///     );
 /// }
 /// ```
+#[allow(dead_code)]
 pub fn register_module_kernel(id: KernelId, source: KernelSource) {
     let registry = KernelRegistry::global();
     let mut registry = registry.lock().unwrap();
@@ -328,6 +340,7 @@ pub fn register_module_kernel(id: KernelId, source: KernelSource) {
 
 /// Get a compiled kernel for the current device
 #[cfg(feature = "gpu")]
+#[allow(dead_code)]
 pub fn get_kernel(id: &KernelId, device: &GpuDevice) -> Result<Arc<GpuKernel>, GpuError> {
     let registry = KernelRegistry::global();
     let mut registry = registry.lock().unwrap();
@@ -335,6 +348,7 @@ pub fn get_kernel(id: &KernelId, device: &GpuDevice) -> Result<Arc<GpuKernel>, G
 }
 
 /// Check if a kernel is registered
+#[allow(dead_code)]
 pub fn has_kernel(id: &KernelId) -> bool {
     let registry = KernelRegistry::global();
     let registry = registry.lock().unwrap();
@@ -342,6 +356,7 @@ pub fn has_kernel(id: &KernelId) -> bool {
 }
 
 /// List all registered kernels
+#[allow(dead_code)]
 pub fn list_kernels() -> Vec<KernelId> {
     let registry = KernelRegistry::global();
     let registry = registry.lock().unwrap();

@@ -11,6 +11,7 @@ use crate::common::IntegrateFloat;
 use crate::error::IntegrateResult;
 use crate::symplectic::{HamiltonianFn, SymplecticIntegrator};
 use ndarray::{Array1, Array2};
+use std::f64::consts::PI;
 use std::marker::PhantomData;
 
 /// Gauss-Legendre 4th order symplectic Runge-Kutta method
@@ -287,7 +288,6 @@ mod tests {
     use crate::symplectic::leapfrog::StormerVerlet;
     use crate::symplectic::potential::SeparableHamiltonian;
     use ndarray::array;
-    use std::f64::consts::PI;
 
     /// Test accuracy of high-order methods
     #[test]
@@ -340,16 +340,12 @@ mod tests {
         // Higher-order methods should be more accurate
         assert!(
             gl4_error < verlet_error,
-            "GL4 error ({}) should be smaller than Verlet error ({})",
-            gl4_error,
-            verlet_error
+            "GL4 error ({gl4_error}) should be smaller than Verlet error ({verlet_error})"
         );
 
         assert!(
             gl6_error < gl4_error,
-            "GL6 error ({}) should be smaller than GL4 error ({})",
-            gl6_error,
-            gl4_error
+            "GL6 error ({gl6_error}) should be smaller than GL4 error ({gl4_error})"
         );
     }
 
@@ -391,9 +387,7 @@ mod tests {
             // Higher-order method should have better energy conservation
             assert!(
                 gl4_error < verlet_error,
-                "GL4 energy error ({}) should be smaller than Verlet error ({})",
-                gl4_error,
-                verlet_error
+                "GL4 energy error ({gl4_error}) should be smaller than Verlet error ({verlet_error})"
             );
         }
     }

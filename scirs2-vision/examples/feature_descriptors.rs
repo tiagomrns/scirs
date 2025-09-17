@@ -9,6 +9,7 @@ use scirs2_vision::feature::{
 use std::env;
 use std::path::Path;
 
+#[allow(dead_code)]
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Get command line arguments
     let args: Vec<String> = env::args().collect();
@@ -143,6 +144,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 }
 
 /// Draw a circle on an image
+#[allow(dead_code)]
 fn draw_circle(img: &mut RgbImage, cx: u32, cy: u32, radius: u32, color: Rgb<u8>) {
     let (width, height) = img.dimensions();
 
@@ -183,6 +185,7 @@ fn draw_circle(img: &mut RgbImage, cx: u32, cy: u32, radius: u32, color: Rgb<u8>
 }
 
 /// Draw a line on an image
+#[allow(dead_code)]
 fn draw_line(img: &mut RgbImage, x0: f32, y0: f32, x1: f32, y1: f32, color: Rgb<u8>) {
     let (width, height) = img.dimensions();
 
@@ -218,6 +221,7 @@ fn draw_line(img: &mut RgbImage, x0: f32, y0: f32, x1: f32, y1: f32, color: Rgb<
 }
 
 /// Create a side-by-side image for matching visualization
+#[allow(dead_code)]
 fn create_side_by_side(img1: &DynamicImage, img2: &DynamicImage) -> RgbImage {
     let (w1, h1) = img1.dimensions();
     let (w2, h2) = img2.dimensions();

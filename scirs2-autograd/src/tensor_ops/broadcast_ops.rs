@@ -34,7 +34,7 @@ pub struct BroadcastInfo {
     /// Strategy to use for this broadcast
     pub strategy: BroadcastStrategy,
     /// Output shape after broadcasting
-    pub output_shape: Vec<usize>,
+    pub outputshape: Vec<usize>,
     /// Whether left operand needs broadcasting
     pub left_needs_broadcast: bool,
     /// Whether right operand needs broadcasting  
@@ -54,19 +54,20 @@ static BROADCAST_CACHE: LazyLock<Mutex<HashMap<BroadcastCacheKey, BroadcastInfo>
     LazyLock::new(|| Mutex::new(HashMap::new()));
 
 /// Analyze broadcasting requirements between two shapes
+#[allow(dead_code)]
 pub fn analyze_broadcast(
-    left_shape: &[usize],
-    right_shape: &[usize],
+    leftshape: &[usize],
+    rightshape: &[usize],
 ) -> Result<BroadcastInfo, OpError> {
     // Check cache first
-    let cache_key = (left_shape.to_vec(), right_shape.to_vec());
+    let cache_key = (leftshape.to_vec(), rightshape.to_vec());
     if let Ok(cache) = BROADCAST_CACHE.lock() {
         if let Some(info) = cache.get(&cache_key) {
             return Ok(info.clone());
         }
     }
 
-    let info = analyze_broadcast_impl(left_shape, right_shape)?;
+    let info = analyze_broadcast_impl(leftshape, rightshape)?;
 
     // Cache the result
     if let Ok(mut cache) = BROADCAST_CACHE.lock() {
@@ -80,115 +81,117 @@ pub fn analyze_broadcast(
     Ok(info)
 }
 
+#[allow(dead_code)]
 fn analyze_broadcast_impl(
-    left_shape: &[usize],
-    right_shape: &[usize],
+    leftshape: &[usize],
+    rightshape: &[usize],
 ) -> Result<BroadcastInfo, OpError> {
     // Check for exact shape match (no broadcasting needed)
-    if left_shape == right_shape {
+    if leftshape == rightshape {
         return Ok(BroadcastInfo {
             strategy: BroadcastStrategy::NoOp,
-            output_shape: left_shape.to_vec(),
+            outputshape: leftshape.to_vec(),
             left_needs_broadcast: false,
             right_needs_broadcast: false,
             left_reduce_axes: Vec::new(),
             right_reduce_axes: Vec::new(),
-            memory_cost: left_shape.iter().product(),
+            memory_cost: leftshape.iter().product(),
         });
     }
 
     // Check for scalar cases
     let left_is_scalar =
-        left_shape.is_empty() || left_shape == [1] || left_shape.iter().all(|&x| x == 1);
+        leftshape.is_empty() || leftshape == [1] || leftshape.iter().all(|&x| x == 1);
     let right_is_scalar =
-        right_shape.is_empty() || right_shape == [1] || right_shape.iter().all(|&x| x == 1);
+        rightshape.is_empty() || rightshape == [1] || rightshape.iter().all(|&x| x == 1);
 
     if left_is_scalar || right_is_scalar {
-        let output_shape = if left_is_scalar {
-            right_shape.to_vec()
+        let outputshape = if left_is_scalar {
+            rightshape.to_vec()
         } else {
-            left_shape.to_vec()
+            leftshape.to_vec()
         };
         return Ok(BroadcastInfo {
             strategy: BroadcastStrategy::ScalarBroadcast,
-            output_shape: output_shape.clone(),
+            outputshape: outputshape.clone(),
             left_needs_broadcast: left_is_scalar,
             right_needs_broadcast: right_is_scalar,
             left_reduce_axes: if left_is_scalar {
-                (0..output_shape.len()).collect()
+                (0..outputshape.len()).collect()
             } else {
                 Vec::new()
             },
             right_reduce_axes: if right_is_scalar {
-                (0..output_shape.len()).collect()
+                (0..outputshape.len()).collect()
             } else {
                 Vec::new()
             },
-            memory_cost: output_shape.iter().product(),
+            memory_cost: outputshape.iter().product(),
         });
     }
 
     // Standard broadcasting rules
-    let max_dims = left_shape.len().max(right_shape.len());
-    let mut output_shape = Vec::with_capacity(max_dims);
+    let max_dims = leftshape.len().max(rightshape.len());
+    let mut outputshape = Vec::with_capacity(max_dims);
     let mut left_reduce_axes = Vec::new();
     let mut right_reduce_axes = Vec::new();
 
     // Pad shapes to same length (broadcasting pads with 1s on the left)
-    let left_padded = pad_shape_left(left_shape, max_dims);
-    let right_padded = pad_shape_left(right_shape, max_dims);
+    let left_padded = padshape_left(leftshape, max_dims);
+    let right_padded = padshape_left(rightshape, max_dims);
 
     for i in 0..max_dims {
         let left_dim = left_padded[i];
         let right_dim = right_padded[i];
 
         if left_dim == right_dim {
-            output_shape.push(left_dim);
+            outputshape.push(left_dim);
         } else if left_dim == 1 {
-            output_shape.push(right_dim);
+            outputshape.push(right_dim);
             left_reduce_axes.push(i);
         } else if right_dim == 1 {
-            output_shape.push(left_dim);
+            outputshape.push(left_dim);
             right_reduce_axes.push(i);
         } else {
             return Err(OpError::IncompatibleShape(format!(
-                "Cannot broadcast shapes {:?} and {:?}: dimension {} incompatible ({} vs {})",
-                left_shape, right_shape, i, left_dim, right_dim
+                "Cannot broadcast shapes {leftshape:?} and {rightshape:?}: dimension {i} incompatible ({left_dim} vs {right_dim})"
             )));
         }
     }
 
     // Choose strategy based on characteristics
-    let memory_cost: usize = output_shape.iter().product();
+    let memory_cost: usize = outputshape.iter().product();
     let strategy =
-        choose_broadcast_strategy(&left_padded, &right_padded, &output_shape, memory_cost);
+        choose_broadcast_strategy(&left_padded, &right_padded, &outputshape, memory_cost);
 
     Ok(BroadcastInfo {
         strategy,
-        output_shape,
-        left_needs_broadcast: !left_reduce_axes.is_empty() || left_shape.len() != max_dims,
-        right_needs_broadcast: !right_reduce_axes.is_empty() || right_shape.len() != max_dims,
+        outputshape,
+        left_needs_broadcast: !left_reduce_axes.is_empty() || leftshape.len() != max_dims,
+        right_needs_broadcast: !right_reduce_axes.is_empty() || rightshape.len() != max_dims,
         left_reduce_axes,
         right_reduce_axes,
         memory_cost,
     })
 }
 
-fn pad_shape_left(shape: &[usize], target_len: usize) -> Vec<usize> {
-    let mut padded = vec![1; target_len];
-    let offset = target_len - shape.len();
+#[allow(dead_code)]
+fn padshape_left(shape: &[usize], targetlen: usize) -> Vec<usize> {
+    let mut padded = vec![1; targetlen];
+    let offset = targetlen - shape.len();
     padded[offset..].copy_from_slice(shape);
     padded
 }
 
+#[allow(dead_code)]
 fn choose_broadcast_strategy(
-    _left_shape: &[usize],
-    _right_shape: &[usize],
-    output_shape: &[usize],
+    _leftshape: &[usize],
+    _rightshape: &[usize],
+    outputshape: &[usize],
     memory_cost: usize,
 ) -> BroadcastStrategy {
     // SIMD strategy for 1D arrays with compatible shapes
-    if output_shape.len() == 1 && memory_cost <= 100_000 {
+    if outputshape.len() == 1 && memory_cost <= 100_000 {
         return BroadcastStrategy::SimdBroadcast;
     }
 
@@ -205,7 +208,7 @@ fn choose_broadcast_strategy(
 pub struct OptimizedBroadcastOp<F: Float> {
     pub operation: BinaryOperation,
     pub info: BroadcastInfo,
-    _phantom: std::marker::PhantomData<F>,
+    phantom: std::marker::PhantomData<F>,
 }
 
 #[derive(Debug, Clone, Copy)]
@@ -222,14 +225,14 @@ pub enum BinaryOperation {
 impl<F: Float> OptimizedBroadcastOp<F> {
     pub fn new(
         operation: BinaryOperation,
-        left_shape: &[usize],
-        right_shape: &[usize],
+        leftshape: &[usize],
+        rightshape: &[usize],
     ) -> Result<Self, OpError> {
-        let info = analyze_broadcast(left_shape, right_shape)?;
+        let info = analyze_broadcast(leftshape, rightshape)?;
         Ok(Self {
             operation,
             info,
-            _phantom: std::marker::PhantomData,
+            phantom: std::marker::PhantomData,
         })
     }
 }
@@ -254,7 +257,7 @@ impl<F: Float> Op<F> for OptimizedBroadcastOp<F> {
         let result = match self.info.strategy {
             BroadcastStrategy::NoOp => {
                 // Same shapes - direct operation
-                apply_binary_op_same_shape(&left, &right, self.operation)
+                apply_binary_op_sameshape(&left, &right, self.operation)
             }
             BroadcastStrategy::ScalarBroadcast => {
                 apply_scalar_broadcast(&left, &right, self.operation, &self.info)?
@@ -334,7 +337,8 @@ impl<F: Float> Op<F> for OptimizedBroadcastOp<F> {
 }
 
 /// Apply binary operation when tensors have the same shape
-fn apply_binary_op_same_shape<'a, F: Float>(
+#[allow(dead_code)]
+fn apply_binary_op_sameshape<'a, F: Float>(
     left: &NdArrayView<'a, F>,
     right: &NdArrayView<'a, F>,
     op: BinaryOperation,
@@ -344,31 +348,35 @@ fn apply_binary_op_same_shape<'a, F: Float>(
         BinaryOperation::Subtract => left - right,
         BinaryOperation::Multiply => left * right,
         BinaryOperation::Divide => left / right,
-        BinaryOperation::Power => left
-            .iter()
-            .zip(right.iter())
-            .map(|(&a, &b)| a.powf(b))
-            .collect::<Array<F, _>>()
-            .into_shape_with_order(left.shape())
-            .unwrap(),
-        BinaryOperation::Maximum => left
-            .iter()
-            .zip(right.iter())
-            .map(|(&a, &b)| a.max(b))
-            .collect::<Array<F, _>>()
-            .into_shape_with_order(left.shape())
-            .unwrap(),
-        BinaryOperation::Minimum => left
-            .iter()
-            .zip(right.iter())
-            .map(|(&a, &b)| a.min(b))
-            .collect::<Array<F, _>>()
-            .into_shape_with_order(left.shape())
-            .unwrap(),
+        BinaryOperation::Power => {
+            let vec: Vec<F> = left
+                .iter()
+                .zip(right.iter())
+                .map(|(&a, &b)| a.powf(b))
+                .collect();
+            Array::from_shape_vec(IxDyn(left.shape()), vec).unwrap()
+        }
+        BinaryOperation::Maximum => {
+            let vec: Vec<F> = left
+                .iter()
+                .zip(right.iter())
+                .map(|(&a, &b)| a.max(b))
+                .collect();
+            Array::from_shape_vec(IxDyn(left.shape()), vec).unwrap()
+        }
+        BinaryOperation::Minimum => {
+            let vec: Vec<F> = left
+                .iter()
+                .zip(right.iter())
+                .map(|(&a, &b)| a.min(b))
+                .collect();
+            Array::from_shape_vec(IxDyn(left.shape()), vec).unwrap()
+        }
     }
 }
 
 /// Apply binary operation with scalar broadcasting
+#[allow(dead_code)]
 fn apply_scalar_broadcast<'a, F: Float>(
     left: &NdArrayView<'a, F>,
     right: &NdArrayView<'a, F>,
@@ -410,11 +418,12 @@ fn apply_scalar_broadcast<'a, F: Float>(
 }
 
 /// Apply SIMD-optimized broadcasting for 1D cases
+#[allow(dead_code)]
 fn apply_simd_broadcast<'a, F: Float>(
     left: &NdArrayView<'a, F>,
     right: &NdArrayView<'a, F>,
     op: BinaryOperation,
-    _info: &BroadcastInfo,
+    info: &BroadcastInfo,
 ) -> Result<NdArray<F>, OpError> {
     // For now, fall back to standard broadcasting
     // In a full implementation, this would use SIMD instructions
@@ -422,6 +431,7 @@ fn apply_simd_broadcast<'a, F: Float>(
 }
 
 /// Apply chunked broadcasting for large tensors
+#[allow(dead_code)]
 fn apply_chunked_broadcast<'a, F: Float>(
     left: &NdArrayView<'a, F>,
     right: &NdArrayView<'a, F>,
@@ -431,10 +441,10 @@ fn apply_chunked_broadcast<'a, F: Float>(
     const CHUNK_SIZE: usize = 100_000; // Process in chunks of 100k elements
 
     // Create output array
-    let _output = Array::<F, IxDyn>::zeros(IxDyn(&info.output_shape));
+    let _output = Array::<F, IxDyn>::zeros(IxDyn(&info.outputshape));
 
     // Process in chunks to manage memory usage
-    let total_elements = info.output_shape.iter().product::<usize>();
+    let total_elements = info.outputshape.iter().product::<usize>();
     let num_chunks = total_elements.div_ceil(CHUNK_SIZE);
 
     if let Some(chunk_idx) = (0..num_chunks).next() {
@@ -452,6 +462,7 @@ fn apply_chunked_broadcast<'a, F: Float>(
 }
 
 /// Apply standard ndarray broadcasting
+#[allow(dead_code)]
 fn apply_standard_broadcast<'a, F: Float>(
     left: &NdArrayView<'a, F>,
     right: &NdArrayView<'a, F>,
@@ -471,13 +482,12 @@ fn apply_standard_broadcast<'a, F: Float>(
                 OpError::IncompatibleShape("Cannot broadcast for power operation".into())
             })?;
 
-            let result: Array<F, IxDyn> = broadcasted_left
+            let vec: Vec<F> = broadcasted_left
                 .iter()
                 .zip(broadcasted_right.iter())
                 .map(|(&a, &b)| a.powf(b))
-                .collect::<Array<F, _>>()
-                .into_shape_with_order(broadcasted_left.shape())
-                .unwrap();
+                .collect();
+            let result = Array::from_shape_vec(IxDyn(broadcasted_left.shape()), vec).unwrap();
             Ok(result)
         }
         BinaryOperation::Maximum => {
@@ -488,13 +498,12 @@ fn apply_standard_broadcast<'a, F: Float>(
                 OpError::IncompatibleShape("Cannot broadcast for max operation".into())
             })?;
 
-            let result: Array<F, IxDyn> = broadcasted_left
+            let vec: Vec<F> = broadcasted_left
                 .iter()
                 .zip(broadcasted_right.iter())
                 .map(|(&a, &b)| a.max(b))
-                .collect::<Array<F, _>>()
-                .into_shape_with_order(broadcasted_left.shape())
-                .unwrap();
+                .collect();
+            let result = Array::from_shape_vec(IxDyn(broadcasted_left.shape()), vec).unwrap();
             Ok(result)
         }
         BinaryOperation::Minimum => {
@@ -505,24 +514,24 @@ fn apply_standard_broadcast<'a, F: Float>(
                 OpError::IncompatibleShape("Cannot broadcast for min operation".into())
             })?;
 
-            let result: Array<F, IxDyn> = broadcasted_left
+            let vec: Vec<F> = broadcasted_left
                 .iter()
                 .zip(broadcasted_right.iter())
                 .map(|(&a, &b)| a.min(b))
-                .collect::<Array<F, _>>()
-                .into_shape_with_order(broadcasted_left.shape())
-                .unwrap();
+                .collect();
+            let result = Array::from_shape_vec(IxDyn(broadcasted_left.shape()), vec).unwrap();
             Ok(result)
         }
     }
 }
 
 /// Reduce gradients appropriately for broadcasting
+#[allow(dead_code)]
 fn reduce_for_broadcast_grad<'g, F: Float>(
     grad: &Tensor<'g, F>,
     reduce_axes: &[usize],
     original_input: &Tensor<'g, F>,
-    _graph: &'g crate::Graph<F>,
+    graph: &'g crate::Graph<F>,
 ) -> Tensor<'g, F> {
     let mut result = *grad;
 
@@ -531,9 +540,9 @@ fn reduce_for_broadcast_grad<'g, F: Float>(
         result = tensor_ops::reduce_sum(result, &[axis as isize], true);
     }
 
-    // Reshape to match original input shape if needed
-    let original_shape = tensor_ops::shape(original_input);
-    result = tensor_ops::reshape(result, &original_shape);
+    // Reshape to match original _input shape if needed
+    let originalshape = tensor_ops::shape(original_input);
+    result = tensor_ops::reshape(result, &originalshape);
 
     result
 }
@@ -541,31 +550,37 @@ fn reduce_for_broadcast_grad<'g, F: Float>(
 /// Public API functions for optimized broadcasting
 ///
 /// Add tensors with optimized broadcasting
+#[allow(dead_code)]
 pub fn broadcast_add<'g, F: Float>(left: &Tensor<'g, F>, right: &Tensor<'g, F>) -> Tensor<'g, F> {
     broadcast_binary_op(left, right, BinaryOperation::Add)
 }
 
 /// Subtract tensors with optimized broadcasting
+#[allow(dead_code)]
 pub fn broadcast_sub<'g, F: Float>(left: &Tensor<'g, F>, right: &Tensor<'g, F>) -> Tensor<'g, F> {
     broadcast_binary_op(left, right, BinaryOperation::Subtract)
 }
 
 /// Multiply tensors with optimized broadcasting
+#[allow(dead_code)]
 pub fn broadcast_mul<'g, F: Float>(left: &Tensor<'g, F>, right: &Tensor<'g, F>) -> Tensor<'g, F> {
     broadcast_binary_op(left, right, BinaryOperation::Multiply)
 }
 
 /// Divide tensors with optimized broadcasting
+#[allow(dead_code)]
 pub fn broadcast_div<'g, F: Float>(left: &Tensor<'g, F>, right: &Tensor<'g, F>) -> Tensor<'g, F> {
     broadcast_binary_op(left, right, BinaryOperation::Divide)
 }
 
 /// Power tensors with optimized broadcasting
+#[allow(dead_code)]
 pub fn broadcast_pow<'g, F: Float>(left: &Tensor<'g, F>, right: &Tensor<'g, F>) -> Tensor<'g, F> {
     broadcast_binary_op(left, right, BinaryOperation::Power)
 }
 
 /// Element-wise maximum with optimized broadcasting
+#[allow(dead_code)]
 pub fn broadcast_maximum<'g, F: Float>(
     left: &Tensor<'g, F>,
     right: &Tensor<'g, F>,
@@ -574,6 +589,7 @@ pub fn broadcast_maximum<'g, F: Float>(
 }
 
 /// Element-wise minimum with optimized broadcasting
+#[allow(dead_code)]
 pub fn broadcast_minimum<'g, F: Float>(
     left: &Tensor<'g, F>,
     right: &Tensor<'g, F>,
@@ -581,6 +597,7 @@ pub fn broadcast_minimum<'g, F: Float>(
     broadcast_binary_op(left, right, BinaryOperation::Minimum)
 }
 
+#[allow(dead_code)]
 fn broadcast_binary_op<'g, F: Float>(
     left: &Tensor<'g, F>,
     right: &Tensor<'g, F>,
@@ -590,11 +607,11 @@ fn broadcast_binary_op<'g, F: Float>(
 
     // Get shapes for analysis (placeholder implementation)
     // In a real implementation, we'd need to evaluate or infer shapes
-    let left_shape = vec![1]; // Placeholder
-    let right_shape = vec![1]; // Placeholder
+    let leftshape = vec![1]; // Placeholder
+    let rightshape = vec![1]; // Placeholder
 
     // Create optimized operation
-    if let Ok(op) = OptimizedBroadcastOp::new(operation, &left_shape, &right_shape) {
+    if let Ok(op) = OptimizedBroadcastOp::new(operation, &leftshape, &rightshape) {
         Tensor::builder(g)
             .append_input(left, false)
             .append_input(right, false)
@@ -619,6 +636,7 @@ fn broadcast_binary_op<'g, F: Float>(
 }
 
 /// Clear the broadcast analysis cache
+#[allow(dead_code)]
 pub fn clear_broadcast_cache() {
     if let Ok(mut cache) = BROADCAST_CACHE.lock() {
         cache.clear();
@@ -626,6 +644,7 @@ pub fn clear_broadcast_cache() {
 }
 
 /// Get broadcast cache statistics
+#[allow(dead_code)]
 pub fn get_broadcast_cache_stats() -> (usize, usize) {
     if let Ok(cache) = BROADCAST_CACHE.lock() {
         (cache.len(), cache.capacity())
@@ -639,45 +658,45 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_broadcast_analysis_same_shape() {
-        let left_shape = vec![3, 4];
-        let right_shape = vec![3, 4];
-        let info = analyze_broadcast(&left_shape, &right_shape).unwrap();
+    fn test_broadcast_analysis_sameshape() {
+        let leftshape = vec![3, 4];
+        let rightshape = vec![3, 4];
+        let info = analyze_broadcast(&leftshape, &rightshape).unwrap();
 
         assert_eq!(info.strategy, BroadcastStrategy::NoOp);
         assert!(!info.left_needs_broadcast);
         assert!(!info.right_needs_broadcast);
-        assert_eq!(info.output_shape, vec![3, 4]);
+        assert_eq!(info.outputshape, vec![3, 4]);
     }
 
     #[test]
     fn test_broadcast_analysis_scalar() {
-        let left_shape = vec![];
-        let right_shape = vec![3, 4];
-        let info = analyze_broadcast(&left_shape, &right_shape).unwrap();
+        let leftshape = vec![];
+        let rightshape = vec![3, 4];
+        let info = analyze_broadcast(&leftshape, &rightshape).unwrap();
 
         assert_eq!(info.strategy, BroadcastStrategy::ScalarBroadcast);
         assert!(info.left_needs_broadcast);
         assert!(!info.right_needs_broadcast);
-        assert_eq!(info.output_shape, vec![3, 4]);
+        assert_eq!(info.outputshape, vec![3, 4]);
     }
 
     #[test]
     fn test_broadcast_analysis_incompatible() {
-        let left_shape = vec![3, 4];
-        let right_shape = vec![2, 4];
-        let result = analyze_broadcast(&left_shape, &right_shape);
+        let leftshape = vec![3, 4];
+        let rightshape = vec![2, 4];
+        let result = analyze_broadcast(&leftshape, &rightshape);
 
         assert!(result.is_err());
     }
 
     #[test]
     fn test_broadcast_analysis_compatible() {
-        let left_shape = vec![1, 4];
-        let right_shape = vec![3, 1];
-        let info = analyze_broadcast(&left_shape, &right_shape).unwrap();
+        let leftshape = vec![1, 4];
+        let rightshape = vec![3, 1];
+        let info = analyze_broadcast(&leftshape, &rightshape).unwrap();
 
-        assert_eq!(info.output_shape, vec![3, 4]);
+        assert_eq!(info.outputshape, vec![3, 4]);
         assert!(info.left_needs_broadcast);
         assert!(info.right_needs_broadcast);
     }

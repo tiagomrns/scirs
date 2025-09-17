@@ -2,7 +2,9 @@ use crate::error::SignalResult;
 use crate::measurements;
 use std::collections::HashMap;
 
+#[allow(unused_imports)]
 /// Extract statistical features from a time series
+#[allow(dead_code)]
 pub fn extract_statistical_features(
     signal: &[f64],
     features: &mut HashMap<String, f64>,
@@ -83,7 +85,8 @@ pub fn extract_statistical_features(
 }
 
 /// Calculate skewness of a signal
-pub fn calculate_skewness(signal: &[f64], mean: f64, std_dev: f64) -> f64 {
+#[allow(dead_code)]
+pub fn calculate_skewness(_signal: &[f64], mean: f64, stddev: f64) -> f64 {
     if std_dev <= 0.0 || signal.len() < 3 {
         return 0.0;
     }
@@ -95,7 +98,8 @@ pub fn calculate_skewness(signal: &[f64], mean: f64, std_dev: f64) -> f64 {
 }
 
 /// Calculate kurtosis of a signal
-pub fn calculate_kurtosis(signal: &[f64], mean: f64, std_dev: f64) -> f64 {
+#[allow(dead_code)]
+pub fn calculate_kurtosis(_signal: &[f64], mean: f64, stddev: f64) -> f64 {
     if std_dev <= 0.0 || signal.len() < 4 {
         return 0.0;
     }
@@ -107,12 +111,13 @@ pub fn calculate_kurtosis(signal: &[f64], mean: f64, std_dev: f64) -> f64 {
 }
 
 /// Calculate a quantile (percentile) of a sorted array
+#[allow(dead_code)]
 pub fn calculate_quantile(sorted: &[f64], q: f64) -> f64 {
     if sorted.is_empty() {
         return 0.0;
     }
 
-    let pos = q * (sorted.len() - 1) as f64;
+    let pos = q * (_sorted.len() - 1) as f64;
     let idx = pos.floor() as usize;
     let frac = pos - idx as f64;
 
@@ -124,6 +129,7 @@ pub fn calculate_quantile(sorted: &[f64], q: f64) -> f64 {
 }
 
 /// Calculate standard deviation
+#[allow(dead_code)]
 pub fn calculate_std(signal: &[f64]) -> f64 {
     if signal.is_empty() {
         return 0.0;
@@ -142,6 +148,8 @@ mod tests {
 
     #[test]
     fn test_extract_statistical_features() {
+        let a = vec![1.0, 2.0, 3.0, 4.0, 5.0];
+        let b = vec![0.5, 0.5];
         // Create a simple signal
         let signal = vec![1.0, 2.0, 3.0, 4.0, 5.0];
 

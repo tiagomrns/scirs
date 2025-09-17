@@ -20,6 +20,7 @@ pub use sgd::SGD;
 ///
 /// Returns a tuple `(variables, gradients)`.
 /// See also [crate::tensor_ops::grad()].
+#[allow(dead_code)]
 pub fn grad_helper<'g, A, F: Float>(
     losses: &[A],
     namespace: &'g VariableNamespace<F>,

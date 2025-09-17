@@ -18,6 +18,7 @@ use std::sync::{Arc, Mutex};
 use std::time::Instant;
 use tempfile::tempdir;
 
+#[allow(dead_code)]
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("⚡ Parallel I/O Operations Example");
     println!("=================================");
@@ -63,6 +64,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     Ok(())
 }
 
+#[allow(dead_code)]
 fn demonstrate_parallel_file_processing(
     pool: &ThreadPool,
     temp_dir: &tempfile::TempDir,
@@ -170,6 +172,7 @@ fn demonstrate_parallel_file_processing(
     Ok(())
 }
 
+#[allow(dead_code)]
 fn demonstrate_concurrent_format_conversion(
     pool: &ThreadPool,
     temp_dir: &tempfile::TempDir,
@@ -364,6 +367,7 @@ fn demonstrate_concurrent_format_conversion(
     Ok(())
 }
 
+#[allow(dead_code)]
 fn demonstrate_batch_operations(
     pool: &ThreadPool,
     temp_dir: &tempfile::TempDir,
@@ -428,6 +432,7 @@ fn demonstrate_batch_operations(
     Ok(())
 }
 
+#[allow(dead_code)]
 fn demonstrate_pipeline_processing(
     pool: &ThreadPool,
     temp_dir: &tempfile::TempDir,
@@ -599,6 +604,7 @@ fn demonstrate_pipeline_processing(
 
 // Helper functions
 
+#[allow(dead_code)]
 fn generate_csv_data(rows: usize) -> Vec<Vec<String>> {
     let mut data = vec![vec![
         "id".to_string(),
@@ -617,6 +623,7 @@ fn generate_csv_data(rows: usize) -> Vec<Vec<String>> {
     data
 }
 
+#[allow(dead_code)]
 fn create_test_sparse_matrix() -> MMSparseMatrix<f64> {
     let header = MMHeader {
         object: "matrix".to_string(),

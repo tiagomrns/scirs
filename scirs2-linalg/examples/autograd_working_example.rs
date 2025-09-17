@@ -8,12 +8,14 @@ use ag::tensor_ops::*;
 use scirs2_autograd as ag;
 
 #[cfg(not(feature = "autograd"))]
+#[allow(dead_code)]
 fn main() {
     println!("This example requires the 'autograd' feature. Run with:");
     println!("cargo run --example autograd_working_example --features=autograd");
 }
 
 #[cfg(feature = "autograd")]
+#[allow(dead_code)]
 fn main() {
     println!("SciRS2 Automatic Differentiation Example");
     println!("======================================\n");
@@ -22,13 +24,14 @@ fn main() {
     demo_basic_derivatives();
 
     // Example 2: Matrix operations
-    demo_matrix_operations();
+    demomatrix_operations();
 
     // Example 3: Linear algebra operations
     demo_linalg_ops();
 }
 
 #[cfg(feature = "autograd")]
+#[allow(dead_code)]
 fn demo_basic_derivatives() {
     println!("1. Basic Derivatives");
     println!("-------------------");
@@ -66,7 +69,8 @@ fn demo_basic_derivatives() {
 }
 
 #[cfg(feature = "autograd")]
-fn demo_matrix_operations() {
+#[allow(dead_code)]
+fn demomatrix_operations() {
     println!("2. Matrix Operations");
     println!("-------------------");
 
@@ -79,8 +83,8 @@ fn demo_matrix_operations() {
         let c = matmul(a, b);
 
         // Trace using reduce_sum over diagonal
-        let eye_matrix = eye(2, ctx);
-        let diag_mask = c * eye_matrix;
+        let eyematrix = eye(2, ctx);
+        let diag_mask = c * eyematrix;
         let trace_c = sum_all(&diag_mask);
 
         // Gradient of trace w.r.t. A and B
@@ -121,6 +125,7 @@ fn demo_matrix_operations() {
 }
 
 #[cfg(feature = "autograd")]
+#[allow(dead_code)]
 fn demo_linalg_ops() {
     println!("3. Linear Algebra Operations");
     println!("---------------------------");
@@ -134,8 +139,8 @@ fn demo_linalg_ops() {
         let ata = matmul(a_t, a);
 
         // Compute trace using sum of diagonal
-        let eye_matrix = eye(2, ctx);
-        let diag = ata * eye_matrix;
+        let eyematrix = eye(2, ctx);
+        let diag = ata * eyematrix;
         let trace_ata = sum_all(&diag);
 
         // Gradient

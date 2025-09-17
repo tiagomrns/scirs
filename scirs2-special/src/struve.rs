@@ -21,7 +21,7 @@ const LN_PI: f64 = 1.1447298858494002; // ln(π)
 ///
 /// The Struve function H_v(x) is defined as:
 ///
-/// H_v(x) = (z/2)^(v+1) / (sqrt(π) * Γ(v+3/2)) * ∫_0^π sin(z*cos(θ)) * (sin(θ))^(2v+1) dθ
+/// H_v(x) = (z/2)^(v+1) / (sqrt(π) * Γ(v+3/2)) * ∫_0_^π sin(z*cos(θ)) * (sin(θ))^(2v+1) dθ
 ///
 /// where Γ is the gamma function.
 ///
@@ -42,6 +42,7 @@ const LN_PI: f64 = 1.1447298858494002; // ln(π)
 /// let h0_1 = struve(0.0, 1.0).unwrap();
 /// println!("H_0(1.0) = {}", h0_1);
 /// ```
+#[allow(dead_code)]
 pub fn struve(v: f64, x: f64) -> SpecialResult<f64> {
     if x.is_nan() || v.is_nan() {
         return Err(SpecialError::DomainError("NaN input to struve".to_string()));
@@ -78,6 +79,7 @@ pub fn struve(v: f64, x: f64) -> SpecialResult<f64> {
 }
 
 /// Struve function H_0(x) for order v=0.
+#[allow(dead_code)]
 fn struve_h0(x: f64) -> SpecialResult<f64> {
     if x.abs() < 20.0 {
         // Use the series expansion for small x
@@ -105,6 +107,7 @@ fn struve_h0(x: f64) -> SpecialResult<f64> {
 }
 
 /// Struve function H_1(x) for order v=1.
+#[allow(dead_code)]
 fn struve_h1(x: f64) -> SpecialResult<f64> {
     if x.abs() < 20.0 {
         // Use the series expansion for small x
@@ -132,6 +135,7 @@ fn struve_h1(x: f64) -> SpecialResult<f64> {
 }
 
 /// Compute the Struve function H_v(x) using series expansion.
+#[allow(dead_code)]
 fn struve_series(v: f64, x: f64) -> SpecialResult<f64> {
     let z = 0.5 * x;
     let z_squared = z * z;
@@ -257,9 +261,10 @@ fn struve_series(v: f64, x: f64) -> SpecialResult<f64> {
 }
 
 /// Compute the Struve function H_v(x) using asymptotic approximation for large x.
+#[allow(dead_code)]
 fn struve_asymptotic(v: f64, x: f64) -> SpecialResult<f64> {
-    // For large x, the Struve function can be approximated using Bessel functions
-    // H_v(x) ≈ Y_v(x) + 2/π * (x/2)^(v-1) / Γ(v + 1/2) Γ(1/2)
+    // Enhanced asymptotic expansion for large x
+    // Uses multiple approaches based on the parameter regime
 
     // Safety checks
     if x.is_nan() || v.is_nan() {
@@ -274,68 +279,60 @@ fn struve_asymptotic(v: f64, x: f64) -> SpecialResult<f64> {
         ));
     }
 
-    // First, determine which Bessel function to use based on v
+    // Choose the best asymptotic method based on parameters
+    if x > 50.0 && v.abs() < x / 4.0 {
+        // Use full asymptotic series for very large x and moderate v
+        struve_asymptotic_series(v, x)
+    } else if x > 20.0 {
+        // Use Bessel-based approximation with corrections for large x
+        struve_asymptotic_bessel_based(v, x)
+    } else {
+        // For borderline cases, use series expansion which is more reliable
+        struve_series(v, x)
+    }
+}
+
+/// Full asymptotic series expansion for Struve functions
+#[allow(dead_code)]
+fn struve_asymptotic_series(v: f64, x: f64) -> SpecialResult<f64> {
+    // For large x, use the complete asymptotic expansion:
+    // H_v(x) = Y_v(x) + (2/π) * Σ_{k=0}^∞ (-1)^k * U_k(v) / x^{2k+1}
+    // where U_k(v) are the asymptotic coefficients
+
+    // Get the Bessel Y function
     let bessel_y = if v == 0.0 {
         y0(x)
     } else if v == 1.0 {
         y1(x)
     } else if v.fract() == 0.0 && v.abs() < 20.0 {
-        // For small integer orders
         yn(v as i32, x)
-    } else if v > 0.0 && v < 100.0 {
-        // For non-integer v between 0 and 100, we'll use the fact that
-        // Y_v(x) ~ sqrt(2/(πx)) * sin(x - vπ/2 - π/4) for large x
-
-        // Only valid for large enough x relative to v
-        if x > v * 2.0 + 10.0 {
-            let phase = x - v * PI / 2.0 - PI / 4.0;
-            (2.0 / (PI * x)).sqrt() * phase.sin()
-        } else {
-            // If x isn't large enough for the approximation, fall back to series expansion
-            return struve_series(v, x);
-        }
     } else {
-        // For very large v or extreme cases, fall back to the series expansion
-        return struve_series(v, x);
+        // Use asymptotic form of Y_v for non-integer v
+        struve_bessel_y_asymptotic(v, x)?
     };
 
-    // Calculate the correction term with overflow protection
-    let correction_term = if v == 0.0 {
-        2.0 / (PI * x)
-    } else if v == 1.0 {
-        // For v=1, use special form that handles precision better
-        let term1 = -2.0 / (PI * x);
-        if x < 2.0 {
-            // For smaller x, be careful with subtraction
-            term1 * (-(2.0 / (x * x) - 1.0))
-        } else {
-            // For larger x, direct calculation
-            term1 * (1.0 - 2.0 / (x * x))
+    // Compute the asymptotic series correction
+    let mut correction = 0.0;
+    let x_inv = 1.0 / x;
+    let x_inv_sq = x_inv * x_inv;
+    let mut x_power = x_inv; // 1/x
+
+    // Compute first several terms of the asymptotic series
+    for k in 0..8 {
+        let u_k = struve_asymptotic_coefficient(k, v);
+        let term = u_k * x_power;
+
+        correction += if k % 2 == 0 { term } else { -term };
+
+        // Check for convergence
+        if term.abs() < 1e-15 * correction.abs() || term.abs() < 1e-15 {
+            break;
         }
-    } else {
-        // For other v values, we need gamma functions
-        // Compute in log space to avoid overflow
-        let log_gamma_v_plus_half = log_gamma(v + 0.5)?;
-        let log_sqrt_pi = 0.5 * PI.ln(); // log(Γ(1/2)) = log(√π)
 
-        // Calculate (x/2)^(v-1) in log space
-        let log_x_half_pow = (v - 1.0) * (0.5 * x).ln();
+        x_power *= x_inv_sq; // Update for next term
+    }
 
-        // Combine all terms in log space
-        let log_correction = (2.0 / PI).ln() + log_x_half_pow - log_gamma_v_plus_half - log_sqrt_pi;
-
-        // Check for overflow before converting back from log space
-        if log_correction > 700.0 {
-            f64::INFINITY
-        } else if log_correction < -700.0 {
-            0.0 // Effectively zero due to underflow
-        } else {
-            log_correction.exp()
-        }
-    };
-
-    // Final result
-    let result = bessel_y + correction_term;
+    let result = bessel_y + (2.0 / PI) * correction;
 
     // Final check for NaN (which might happen from 0*∞ or ∞-∞)
     if result.is_nan() {
@@ -347,8 +344,180 @@ fn struve_asymptotic(v: f64, x: f64) -> SpecialResult<f64> {
     }
 }
 
+/// Bessel-based approximation with higher-order corrections
+#[allow(dead_code)]
+fn struve_asymptotic_bessel_based(v: f64, x: f64) -> SpecialResult<f64> {
+    // Get the Bessel Y function
+    let bessel_y = if v == 0.0 {
+        y0(x)
+    } else if v == 1.0 {
+        y1(x)
+    } else if v.fract() == 0.0 && v.abs() < 20.0 {
+        yn(v as i32, x)
+    } else {
+        struve_bessel_y_asymptotic(v, x)?
+    };
+
+    // Enhanced correction term with higher-order terms
+    let correction = struve_correction_term_enhanced(v, x)?;
+
+    Ok(bessel_y + correction)
+}
+
+/// Asymptotic form of Y_v(x) for non-integer v
+#[allow(dead_code)]
+fn struve_bessel_y_asymptotic(v: f64, x: f64) -> SpecialResult<f64> {
+    // For large x: Y_v(x) ~ sqrt(2/(πx)) * sin(x - vπ/2 - π/4)
+    if x < 10.0 {
+        return Err(SpecialError::DomainError(
+            "x too small for Y_v asymptotic approximation".to_string(),
+        ));
+    }
+
+    let phase = x - v * PI / 2.0 - PI / 4.0;
+    let amplitude = (2.0 / (PI * x)).sqrt();
+
+    // Add first-order correction for better accuracy
+    let correction = -(v * v - 0.25) / (8.0 * x);
+
+    Ok(amplitude * (phase.sin() + correction * phase.cos()))
+}
+
+/// Compute asymptotic coefficients U_k(v) for the Struve function expansion
+#[allow(dead_code)]
+fn struve_asymptotic_coefficient(k: usize, v: f64) -> f64 {
+    // The coefficients U_k(v) in the asymptotic expansion
+    // These are related to the Euler polynomials and Bernoulli numbers
+
+    match k {
+        0 => {
+            // U_0(v) = (4v^2 - 1) / 8
+            (4.0 * v * v - 1.0) / 8.0
+        }
+        1 => {
+            // U_1(v) = ((4v^2 - 1)(4v^2 - 9)) / 128
+            let v2 = v * v;
+            (4.0 * v2 - 1.0) * (4.0 * v2 - 9.0) / 128.0
+        }
+        2 => {
+            // U_2(v) = ((4v^2 - 1)(4v^2 - 9)(4v^2 - 25)) / 3072
+            let v2 = v * v;
+            (4.0 * v2 - 1.0) * (4.0 * v2 - 9.0) * (4.0 * v2 - 25.0) / 3072.0
+        }
+        3 => {
+            // U_3(v) = higher-order term
+            let v2 = v * v;
+            let factor1 = 4.0 * v2 - 1.0;
+            let factor2 = 4.0 * v2 - 9.0;
+            let factor3 = 4.0 * v2 - 25.0;
+            let factor4 = 4.0 * v2 - 49.0;
+            factor1 * factor2 * factor3 * factor4 / 73728.0
+        }
+        _ => {
+            // For higher orders, use the general recurrence relation
+            // U_k(v) = product of (4v^2 - (2n-1)^2) for n=1 to k+1, divided by appropriate factorial
+            let mut product = 1.0;
+            let v2 = v * v;
+
+            for n in 1..=(k + 1) {
+                let odd_num = (2 * n - 1) as f64;
+                let odd_square = odd_num * odd_num;
+                product *= 4.0 * v2 - odd_square;
+            }
+
+            // Divide by 8^{k+1} * (2k+1)!/(k!)
+            let denominator = 8.0_f64.powi(k as i32 + 1) * factorial_ratio(2 * k + 1, k);
+            product / denominator
+        }
+    }
+}
+
+/// Enhanced correction term with multiple orders
+#[allow(dead_code)]
+fn struve_correction_term_enhanced(v: f64, x: f64) -> SpecialResult<f64> {
+    if v == 0.0 {
+        // H_0(x) special case with higher-order corrections
+        let leading = 2.0 / (PI * x);
+        let correction = -1.0 / (2.0 * PI * x.powi(3)); // Next order term
+        Ok(leading + correction)
+    } else if v == 1.0 {
+        // H_1(x) special case with higher-order corrections
+        let leading = -2.0 / (PI * x) * (1.0 - 2.0 / (x * x));
+        let correction = 8.0 / (3.0 * PI * x.powi(5)); // Next order term
+        Ok(leading + correction)
+    } else {
+        // General case: compute (2/π) * (x/2)^{v-1} / [Γ(v+1/2) * √π]
+        // with higher-order corrections
+
+        // Use log space for stability
+        let log_gamma_v_plus_half = log_gamma(v + 0.5)?;
+        let log_sqrt_pi = 0.5 * PI.ln();
+        let log_x_half_pow = (v - 1.0) * (0.5 * x).ln();
+
+        let log_leading = (2.0 / PI).ln() + log_x_half_pow - log_gamma_v_plus_half - log_sqrt_pi;
+
+        // Check for overflow
+        if log_leading > 700.0 {
+            return Ok(f64::INFINITY);
+        } else if log_leading < -700.0 {
+            return Ok(0.0);
+        }
+
+        let leading_term = log_leading.exp();
+
+        // Add first-order correction: multiply by (1 - (v^2 - 1/4)/(2x^2))
+        let correction_factor = 1.0 - (v * v - 0.25) / (2.0 * x * x);
+
+        Ok(leading_term * correction_factor)
+    }
+}
+
+/// Compute factorial ratios efficiently to avoid overflow
+#[allow(dead_code)]
+fn factorial_ratio(n: usize, k: usize) -> f64 {
+    if k > n {
+        return 0.0;
+    }
+
+    let mut result = 1.0;
+    for i in (k + 1)..=n {
+        result *= i as f64;
+    }
+    result
+}
+
+/// Enhanced asymptotic approximation for integrated modified Struve function of order 1
+#[allow(dead_code)]
+fn it_mod_struve_1_asymptotic(x: f64) -> SpecialResult<f64> {
+    // For large x, use the more sophisticated asymptotic expansion
+    // that properly accounts for the oscillatory behavior and higher-order terms
+
+    if x < 5.0 {
+        return Err(SpecialError::DomainError(
+            "x too small for asymptotic approximation".to_string(),
+        ));
+    }
+
+    // Use the relation with L_0(x) and the asymptotic properties
+    // ∫L_1(t)dt = x*L_0(x) - ∫L_0(t)dt + corrections
+
+    let mod_struve_0 = mod_struve(0.0, x)?;
+    let it_mod_struve_0 = it_mod_struve0(x)?;
+
+    // Main asymptotic term
+    let main_term = x * mod_struve_0 - it_mod_struve_0;
+
+    // Add higher-order corrections for better accuracy
+    let correction1 = 2.0 / PI; // Constant correction
+    let correction2 = -1.0 / (PI * x); // 1/x correction
+    let correction3 = 1.0 / (2.0 * PI * x * x); // 1/x^2 correction
+
+    Ok(main_term + correction1 + correction2 + correction3)
+}
+
 /// Calculate the logarithm of the gamma function for large arguments.
 /// This is more stable than calling gamma and then taking the log.
+#[allow(dead_code)]
 fn log_gamma(x: f64) -> SpecialResult<f64> {
     if x <= 0.0 {
         return Err(SpecialError::DomainError(
@@ -391,6 +560,7 @@ fn log_gamma(x: f64) -> SpecialResult<f64> {
 /// let l0_1 = mod_struve(0.0, 1.0).unwrap();
 /// println!("L_0(1.0) = {}", l0_1);
 /// ```
+#[allow(dead_code)]
 pub fn mod_struve(v: f64, x: f64) -> SpecialResult<f64> {
     if x.is_nan() || v.is_nan() {
         return Err(SpecialError::DomainError(
@@ -653,6 +823,7 @@ pub fn mod_struve(v: f64, x: f64) -> SpecialResult<f64> {
 }
 
 /// Helper function to approximate the modified Bessel function I_v(x) for large arguments.
+#[allow(dead_code)]
 fn bessel_i_approximation(v: f64, x: f64) -> SpecialResult<f64> {
     // Modified Bessel function I_v(x) for large x
     // Using the asymptotic expansion I_v(x) ~ e^x / sqrt(2πx) * (1 + O(1/x))
@@ -756,6 +927,7 @@ fn bessel_i_approximation(v: f64, x: f64) -> SpecialResult<f64> {
 ///
 /// Returns (n!)² but computed in a way that avoids overflow for larger values of n.
 /// Uses a log-space calculation for large values of n.
+#[allow(dead_code)]
 fn fact_squared(n: usize) -> f64 {
     if n == 0 {
         return 1.0;
@@ -804,8 +976,9 @@ fn fact_squared(n: usize) -> f64 {
 /// use scirs2_special::it_struve0;
 ///
 /// let its0_1 = it_struve0(1.0).unwrap();
-/// println!("∫_0^1 H_0(t) dt = {}", its0_1);
+/// println!("∫_0_^1 H_0(t) dt = {}", its0_1);
 /// ```
+#[allow(dead_code)]
 pub fn it_struve0(x: f64) -> SpecialResult<f64> {
     if x.is_nan() {
         return Err(SpecialError::DomainError(
@@ -922,6 +1095,7 @@ pub fn it_struve0(x: f64) -> SpecialResult<f64> {
 }
 
 /// Compute the logarithm of the squared factorial for larger values
+#[allow(dead_code)]
 fn fact_squared_log(n: usize) -> f64 {
     if n == 0 {
         return 0.0; // log(1) = 0
@@ -953,8 +1127,9 @@ fn fact_squared_log(n: usize) -> f64 {
 /// use scirs2_special::it2_struve0;
 ///
 /// let it2s0_1 = it2_struve0(1.0).unwrap();
-/// println!("∫_0^x ∫_0^t H_0(s) ds dt = {}", it2s0_1);
+/// println!("∫_0_^x ∫_0_^t H_0(s) ds dt = {}", it2s0_1);
 /// ```
+#[allow(dead_code)]
 pub fn it2_struve0(x: f64) -> SpecialResult<f64> {
     if x.is_nan() {
         return Err(SpecialError::DomainError(
@@ -987,13 +1162,8 @@ pub fn it2_struve0(x: f64) -> SpecialResult<f64> {
 
         Ok(sum * 2.0 * x * x * x / PI)
     } else {
-        // For large x, use asymptotic approximation
-        // This is a simplified version - SciPy has a more sophisticated implementation
-        let it_struve_0 = it_struve0(x)?;
-        let struve_0 = struve(0.0, x)?;
-        let bessel_j0 = j0(x);
-
-        Ok(it_struve_0 * x - (struve_0 - bessel_j0) * x.powi(2) / 2.0)
+        // For large x, use enhanced asymptotic approximation
+        it_mod_struve_1_asymptotic(x)
     }
 }
 
@@ -1015,8 +1185,9 @@ pub fn it2_struve0(x: f64) -> SpecialResult<f64> {
 /// use scirs2_special::it_mod_struve0;
 ///
 /// let itl0_1 = it_mod_struve0(1.0).unwrap();
-/// println!("∫_0^1 L_0(t) dt = {}", itl0_1);
+/// println!("∫_0_^1 L_0(t) dt = {}", itl0_1);
 /// ```
+#[allow(dead_code)]
 pub fn it_mod_struve0(x: f64) -> SpecialResult<f64> {
     if x.is_nan() {
         return Err(SpecialError::DomainError(

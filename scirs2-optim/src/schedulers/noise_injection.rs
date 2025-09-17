@@ -4,11 +4,8 @@
 //! to help escape local minima and improve exploration during training.
 
 use ndarray::ScalarOperand;
-use ndarray_rand::rand::distributions::Distribution;
-use ndarray_rand::rand::rngs::ThreadRng;
-use ndarray_rand::rand::thread_rng;
-use ndarray_rand::rand_distr::{Normal, Uniform};
 use num_traits::{Float, NumCast};
+use rand::Rng;
 use std::fmt::Debug;
 
 use super::LearningRateScheduler;
@@ -61,7 +58,7 @@ where
     /// Current step number
     step_count: usize,
     /// Random number generator
-    rng: ThreadRng,
+    rng: scirs2_core::random::Random,
     /// Minimum learning rate to ensure training stability
     min_lr: A,
 }
@@ -105,7 +102,7 @@ where
             base_scheduler,
             noise_dist,
             step_count: 0,
-            rng: thread_rng(),
+            rng: scirs2_core::random::rng(),
             min_lr,
         }
     }
@@ -114,13 +111,19 @@ where
     fn sample_noise(&mut self) -> A {
         match self.noise_dist {
             NoiseDistribution::Uniform { min, max } => {
-                let dist = Uniform::new(min.to_f64().unwrap(), max.to_f64().unwrap());
-                let sample = dist.sample(&mut self.rng);
+                let min_f64 = min.to_f64().unwrap();
+                let max_f64 = max.to_f64().unwrap();
+                let sample = self.rng.gen_range(min_f64..max_f64);
                 <A as NumCast>::from(sample).unwrap()
             }
             NoiseDistribution::Gaussian { mean, std_dev } => {
-                let dist = Normal::new(mean.to_f64().unwrap(), std_dev.to_f64().unwrap()).unwrap();
-                let sample = dist.sample(&mut self.rng);
+                let mean_f64 = mean.to_f64().unwrap();
+                let std_dev_f64 = std_dev.to_f64().unwrap();
+                // Box-Muller transformation for Gaussian
+                let u1: f64 = self.rng.gen_range(0.0..1.0);
+                let u2: f64 = self.rng.gen_range(0.0..1.0);
+                let z0 = (-2.0 * u1.ln()).sqrt() * (2.0 * std::f64::consts::PI * u2).cos();
+                let sample = mean_f64 + std_dev_f64 * z0;
                 <A as NumCast>::from(sample).unwrap()
             }
             NoiseDistribution::Cyclical { amplitude, period } => {
@@ -143,8 +146,7 @@ where
                 let scale = initial_scale - (step / decay_steps_a) * (initial_scale - final_scale);
 
                 // Sample from uniform distribution and scale by the decaying factor
-                let dist = Uniform::new(-1.0, 1.0);
-                let sample = dist.sample(&mut self.rng);
+                let sample = self.rng.gen_range(-1.0..1.0);
                 scale * NumCast::from(sample).unwrap()
             }
         }
@@ -160,17 +162,23 @@ where
         // Get the base learning rate from the underlying scheduler
         let base_lr = self.base_scheduler.get_learning_rate();
 
-        // Use fresh thread RNG to sample noise since get_learning_rate takes &self
-        let mut thread_rng = thread_rng();
+        // Use fresh RNG to sample noise since get_learning_rate takes &self
+        let mut rand_rng = scirs2_core::random::rng();
         let noise = match self.noise_dist {
             NoiseDistribution::Uniform { min, max } => {
-                let dist = Uniform::new(min.to_f64().unwrap(), max.to_f64().unwrap());
-                let sample = dist.sample(&mut thread_rng);
+                let min_f64 = min.to_f64().unwrap();
+                let max_f64 = max.to_f64().unwrap();
+                let sample = rand_rng.gen_range(min_f64..max_f64);
                 <A as NumCast>::from(sample).unwrap()
             }
             NoiseDistribution::Gaussian { mean, std_dev } => {
-                let dist = Normal::new(mean.to_f64().unwrap(), std_dev.to_f64().unwrap()).unwrap();
-                let sample = dist.sample(&mut thread_rng);
+                let mean_f64 = mean.to_f64().unwrap();
+                let std_dev_f64 = std_dev.to_f64().unwrap();
+                // Box-Muller transformation
+                let u1: f64 = rand_rng.gen_range(0.0..1.0);
+                let u2: f64 = rand_rng.gen_range(0.0..1.0);
+                let z0 = (-2.0 * u1.ln()).sqrt() * (2.0 * std::f64::consts::PI * u2).cos();
+                let sample = mean_f64 + std_dev_f64 * z0;
                 <A as NumCast>::from(sample).unwrap()
             }
             NoiseDistribution::Cyclical { amplitude, period } => {
@@ -193,8 +201,7 @@ where
                 let scale = initial_scale - (step / decay_steps_a) * (initial_scale - final_scale);
 
                 // Sample from uniform distribution and scale by the decaying factor
-                let dist = Uniform::new(-1.0, 1.0);
-                let sample = dist.sample(&mut thread_rng);
+                let sample = rand_rng.gen_range(-1.0..1.0);
                 scale * NumCast::from(sample).unwrap()
             }
         };
@@ -237,7 +244,7 @@ where
             base_scheduler: self.base_scheduler.clone(),
             noise_dist: self.noise_dist,
             step_count: self.step_count,
-            rng: thread_rng(),
+            rng: scirs2_core::random::rng(),
             min_lr: self.min_lr,
         }
     }

@@ -16,7 +16,7 @@ pub struct HoughCircleConfig {
     /// Accumulator threshold
     pub threshold: f32,
     /// Minimum distance between circle centers
-    pub min_distance: usize,
+    pub mindistance: usize,
     /// Edge magnitude threshold
     pub edge_threshold: f32,
     /// Maximum number of circles to return
@@ -29,7 +29,7 @@ impl Default for HoughCircleConfig {
             min_radius: 10,
             max_radius: 100,
             threshold: 0.3,
-            min_distance: 20,
+            mindistance: 20,
             edge_threshold: 0.1,
             max_circles: None,
         }
@@ -50,6 +50,7 @@ pub struct Circle {
 }
 
 /// Detect circles using Hough Transform
+#[allow(dead_code)]
 pub fn hough_circles(img: &DynamicImage, config: HoughCircleConfig) -> Result<Vec<Circle>> {
     let gray = img.to_luma8();
     let (width, height) = (gray.width() as usize, gray.height() as usize);
@@ -116,7 +117,7 @@ pub fn hough_circles(img: &DynamicImage, config: HoughCircleConfig) -> Result<Ve
     }
 
     // Apply non-maximum suppression
-    circles = non_max_suppression(circles, config.min_distance);
+    circles = non_max_suppression(circles, config.mindistance);
 
     // Limit number of circles if specified
     if let Some(max_circles) = config.max_circles {
@@ -127,6 +128,7 @@ pub fn hough_circles(img: &DynamicImage, config: HoughCircleConfig) -> Result<Ve
 }
 
 /// Draw circles on an image
+#[allow(dead_code)]
 pub fn draw_circles(img: &mut GrayImage, circles: &[Circle], intensity: u8) {
     for circle in circles {
         draw_circle(
@@ -141,6 +143,7 @@ pub fn draw_circles(img: &mut GrayImage, circles: &[Circle], intensity: u8) {
 
 // Helper functions
 
+#[allow(dead_code)]
 fn compute_edges(img: &GrayImage) -> Result<(Array2<f32>, Array2<f32>, Array2<f32>)> {
     let (height, width) = (img.height() as usize, img.width() as usize);
     let mut edges = Array2::<f32>::zeros((height, width));
@@ -153,20 +156,20 @@ fn compute_edges(img: &GrayImage) -> Result<(Array2<f32>, Array2<f32>, Array2<f3
             let (x_u32, y_u32) = (x as u32, y as u32);
 
             // Sobel X
-            let gx = -1.0 * img.get_pixel(x_u32 - 1, y_u32 - 1).0[0] as f32
+            let gx = -(img.get_pixel(x_u32 - 1, y_u32 - 1).0[0] as f32)
                 + 0.0 * img.get_pixel(x_u32, y_u32 - 1).0[0] as f32
-                + 1.0 * img.get_pixel(x_u32 + 1, y_u32 - 1).0[0] as f32
+                + img.get_pixel(x_u32 + 1, y_u32 - 1).0[0] as f32
                 + -2.0 * img.get_pixel(x_u32 - 1, y_u32).0[0] as f32
                 + 0.0 * img.get_pixel(x_u32, y_u32).0[0] as f32
                 + 2.0 * img.get_pixel(x_u32 + 1, y_u32).0[0] as f32
-                + -1.0 * img.get_pixel(x_u32 - 1, y_u32 + 1).0[0] as f32
+                + -(img.get_pixel(x_u32 - 1, y_u32 + 1).0[0] as f32)
                 + 0.0 * img.get_pixel(x_u32, y_u32 + 1).0[0] as f32
-                + 1.0 * img.get_pixel(x_u32 + 1, y_u32 + 1).0[0] as f32;
+                + img.get_pixel(x_u32 + 1, y_u32 + 1).0[0] as f32;
 
             // Sobel Y
-            let gy = -1.0 * img.get_pixel(x_u32 - 1, y_u32 - 1).0[0] as f32
+            let gy = -(img.get_pixel(x_u32 - 1, y_u32 - 1).0[0] as f32)
                 + -2.0 * img.get_pixel(x_u32, y_u32 - 1).0[0] as f32
-                + -1.0 * img.get_pixel(x_u32 + 1, y_u32 - 1).0[0] as f32
+                + -(img.get_pixel(x_u32 + 1, y_u32 - 1).0[0] as f32)
                 + 0.0 * img.get_pixel(x_u32 - 1, y_u32).0[0] as f32
                 + 0.0 * img.get_pixel(x_u32, y_u32).0[0] as f32
                 + 0.0 * img.get_pixel(x_u32 + 1, y_u32).0[0] as f32
@@ -183,6 +186,7 @@ fn compute_edges(img: &GrayImage) -> Result<(Array2<f32>, Array2<f32>, Array2<f3
     Ok((edges, grad_x, grad_y))
 }
 
+#[allow(dead_code)]
 fn find_circles(accumulator: &Array3<f32>, threshold: f32) -> Result<Vec<Circle>> {
     let (height, width, num_radii) = accumulator.dim();
     let mut circles = Vec::new();
@@ -240,7 +244,8 @@ fn find_circles(accumulator: &Array3<f32>, threshold: f32) -> Result<Vec<Circle>
     Ok(circles)
 }
 
-fn non_max_suppression(mut circles: Vec<Circle>, min_distance: usize) -> Vec<Circle> {
+#[allow(dead_code)]
+fn non_max_suppression(mut circles: Vec<Circle>, mindistance: usize) -> Vec<Circle> {
     // Sort by confidence
     circles.sort_by(|a, b| {
         b.confidence
@@ -268,7 +273,7 @@ fn non_max_suppression(mut circles: Vec<Circle>, min_distance: usize) -> Vec<Cir
             let dy = circles[i].center_y as f32 - circles[j].center_y as f32;
             let dist = (dx * dx + dy * dy).sqrt();
 
-            if dist < min_distance as f32 {
+            if dist < mindistance as f32 {
                 suppressed[j] = true;
             }
         }
@@ -277,6 +282,7 @@ fn non_max_suppression(mut circles: Vec<Circle>, min_distance: usize) -> Vec<Cir
     kept
 }
 
+#[allow(dead_code)]
 fn draw_circle(img: &mut GrayImage, cx: i32, cy: i32, radius: i32, intensity: u8) {
     let (width, height) = (img.width() as i32, img.height() as i32);
 
@@ -306,6 +312,7 @@ fn draw_circle(img: &mut GrayImage, cx: i32, cy: i32, radius: i32, intensity: u8
     }
 }
 
+#[allow(dead_code)]
 fn set_pixel(img: &mut GrayImage, x: i32, y: i32, intensity: u8, width: i32, height: i32) {
     if x >= 0 && x < width && y >= 0 && y < height {
         img.put_pixel(x as u32, y as u32, Luma([intensity]));
@@ -322,7 +329,7 @@ mod tests {
         assert_eq!(config.min_radius, 10);
         assert_eq!(config.max_radius, 100);
         assert_eq!(config.threshold, 0.3);
-        assert_eq!(config.min_distance, 20);
+        assert_eq!(config.mindistance, 20);
         assert_eq!(config.edge_threshold, 0.1);
         assert!(config.max_circles.is_none());
     }

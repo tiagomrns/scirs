@@ -1,13 +1,16 @@
 [package]
 name = "scirs2-autograd"
 version.workspace = true
-edition = "2021"
-authors = ["SciRS2 Team"]
-license = "MIT OR Apache-2.0"
-description = "Automatic differentiation module for SciRS2"
-repository = "https://github.com/cool-japan/scirs"
+edition.workspace = true
+authors.workspace = true
+description = "Automatic differentiation module for SciRS2 (scirs2-autograd)"
+license.workspace = true
+repository.workspace = true
 keywords = ["autograd", "machine-learning", "scientific", "ai", "ml"]
 categories = ["science", "mathematics", "algorithms"]
+
+[lints]
+workspace = true
 
 [dependencies]
 ndarray = { workspace = true }
@@ -42,8 +45,8 @@ default = []
 blas = ["scirs2-core/linalg"]
 openblas = ["scirs2-core/openblas"] 
 netlib = ["scirs2-core/netlib"]
-intel-mkl = ["scirs2-core/intel-mkl"]  # Legacy feature compatibility
-mkl = ["intel-mkl"]  # Legacy feature compatibility
+# intel-mkl feature removed from scirs2-core to avoid conflicts
+# mkl = ["intel-mkl"]  # Legacy feature compatibility removed
 simd = ["scirs2-core/simd"]
 
 [[example]]

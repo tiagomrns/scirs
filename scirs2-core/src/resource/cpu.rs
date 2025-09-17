@@ -4,6 +4,7 @@
 //! optimizing computational workloads.
 
 use crate::error::{CoreError, CoreResult};
+#[cfg(target_os = "linux")]
 use std::fs;
 
 /// CPU information and capabilities
@@ -68,6 +69,27 @@ impl CpuInfo {
 
         #[cfg(not(any(target_os = "linux", target_os = "windows", target_os = "macos")))]
         return Ok(Self::default());
+
+        fn parse_cache_size(sizestr: &str) -> Option<u64> {
+            let parts: Vec<&str> = sizestr.split_whitespace().collect();
+            if parts.is_empty() {
+                return None;
+            }
+
+            let number = parts[0].parse::<u64>().ok()?;
+
+            // Convert to bytes
+            if parts.len() > 1 {
+                match parts[1] {
+                    "K" | "KB" => Some(number * 1024),
+                    "M" | "MB" => Some(number * 1024 * 1024),
+                    "G" | "GB" => Some(number * 1024 * 1024 * 1024),
+                    _ => Some(number),
+                }
+            } else {
+                Some(number)
+            }
+        }
     }
 
     /// Detect CPU information on Linux
@@ -75,8 +97,7 @@ impl CpuInfo {
     fn detect_linux() -> CoreResult<Self> {
         let cpuinfo = fs::read_to_string("/proc/cpuinfo").map_err(|e| {
             CoreError::IoError(crate::error::ErrorContext::new(format!(
-                "Failed to read /proc/cpuinfo: {}",
-                e
+                "Failed to read /proc/cpuinfo: {e}"
             )))
         })?;
 
@@ -172,30 +193,27 @@ impl CpuInfo {
 
     /// Parse cache size string (e.g., "32K", "256K", "8192K")
     #[allow(dead_code)]
-    fn parse_cache_size(size_str: &str) -> CoreResult<usize> {
-        if size_str.ends_with('K') || size_str.ends_with('k') {
-            let num_str = &size_str[..size_str.len() - 1];
+    fn parse_cache_size(sizestr: &str) -> CoreResult<usize> {
+        if sizestr.ends_with('K') || sizestr.ends_with('k') {
+            let num_str = &sizestr[..sizestr.len() - 1];
             let size = num_str.parse::<usize>().map_err(|e| {
                 CoreError::ValidationError(crate::error::ErrorContext::new(format!(
-                    "Failed to parse cache size: {}",
-                    e
+                    "Failed to parse cache size: {e}"
                 )))
             })?;
             Ok(size)
-        } else if size_str.ends_with('M') || size_str.ends_with('m') {
-            let num_str = &size_str[..size_str.len() - 1];
+        } else if sizestr.ends_with('M') || sizestr.ends_with('m') {
+            let num_str = &sizestr[..sizestr.len() - 1];
             let size = num_str.parse::<usize>().map_err(|e| {
                 CoreError::ValidationError(crate::error::ErrorContext::new(format!(
-                    "Failed to parse cache size: {}",
-                    e
+                    "Failed to parse cache size: {e}"
                 )))
             })? * 1024;
             Ok(size)
         } else {
-            let size = size_str.parse::<usize>().map_err(|e| {
+            let size = sizestr.parse::<usize>().map_err(|e| {
                 CoreError::ValidationError(crate::error::ErrorContext::new(format!(
-                    "Failed to parse cache size: {}",
-                    e
+                    "Failed to parse cache size: {e}"
                 )))
             })?;
             Ok(size)
@@ -342,10 +360,10 @@ impl CpuInfo {
     }
 
     /// Check if CPU supports specific instruction set
-    pub fn supports_instruction_set(&self, instruction_set: &str) -> bool {
+    pub fn supports_instruction_set(&self, instructionset: &str) -> bool {
         self.features
             .iter()
-            .any(|f| f.eq_ignore_ascii_case(instruction_set))
+            .any(|f| f.eq_ignore_ascii_case(instructionset))
     }
 }
 
@@ -520,10 +538,10 @@ mod tests {
 
     #[test]
     fn test_cpu_detection() {
-        let cpu_info = CpuInfo::detect();
-        assert!(cpu_info.is_ok());
+        let cpuinfo = CpuInfo::detect();
+        assert!(cpuinfo.is_ok());
 
-        let cpu = cpu_info.unwrap();
+        let cpu = cpuinfo.unwrap();
         assert!(cpu.logical_cores > 0);
         assert!(cpu.physical_cores > 0);
         assert!(cpu.physical_cores <= cpu.logical_cores);

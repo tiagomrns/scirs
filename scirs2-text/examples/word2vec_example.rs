@@ -2,6 +2,7 @@ use ndarray::Array1;
 use scirs2_text::embeddings::{cosine_similarity, Word2Vec, Word2VecAlgorithm};
 use std::time::Instant;
 
+#[allow(dead_code)]
 fn main() {
     println!("Word2Vec Example");
     println!("================\n");
@@ -50,7 +51,7 @@ fn main() {
         .expect("Failed to find similar words");
 
     for (word, similarity) in similar_to_fox {
-        println!("{}: {:.4}", word, similarity);
+        println!("{word}: {similarity:.4}");
     }
 
     println!("\nFinding words similar to 'dog':");
@@ -59,7 +60,7 @@ fn main() {
         .expect("Failed to find similar words");
 
     for (word, similarity) in similar_to_dog {
-        println!("{}: {:.4}", word, similarity);
+        println!("{word}: {similarity:.4}");
     }
 
     // Compute analogies (e.g., fox is to dog as quick is to ?)
@@ -69,7 +70,7 @@ fn main() {
         .expect("Failed to compute analogy");
 
     for (word, similarity) in analogy_result {
-        println!("{}: {:.4}", word, similarity);
+        println!("{word}: {similarity:.4}");
     }
 
     // Get word vectors and calculate cosine similarity manually
@@ -126,7 +127,7 @@ fn main() {
         .expect("Failed to find similar words");
 
     for (word, similarity) in similar_to_fox_cbow {
-        println!("{}: {:.4}", word, similarity);
+        println!("{word}: {similarity:.4}");
     }
 
     // Vector arithmetic: fox - dog + cat = ?
@@ -153,7 +154,7 @@ fn main() {
         .expect("Failed to find similar words");
 
     for (word, similarity) in similar_to_result {
-        println!("{}: {:.4}", word, similarity);
+        println!("{word}: {similarity:.4}");
     }
 
     // Save and load the model
@@ -173,6 +174,6 @@ fn main() {
 
     println!("\nWords similar to 'fox' using loaded model:");
     for (word, similarity) in similar_words_loaded {
-        println!("{}: {:.4}", word, similarity);
+        println!("{word}: {similarity:.4}");
     }
 }

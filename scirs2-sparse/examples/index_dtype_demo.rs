@@ -8,31 +8,32 @@ use scirs2_sparse::{
     can_cast_safely, get_index_dtype, safely_cast_index_arrays, CooArray, SparseArray,
 };
 
+#[allow(dead_code)]
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("# Index dtype handling in sparse arrays\n");
 
     // Example 1: Determine appropriate dtype for small array
-    let small_shape = (100, 100);
-    let small_dtype = get_index_dtype(small_shape, &[]);
+    let smallshape = (100, 100);
+    let small_dtype = get_index_dtype(smallshape, &[]);
     println!(
         "For a small array with shape {:?}, recommended dtype: {}",
-        small_shape, small_dtype
+        smallshape, small_dtype
     );
 
     // Example 2: Determine appropriate dtype for medium array
-    let medium_shape = (50_000, 50_000);
-    let medium_dtype = get_index_dtype(medium_shape, &[]);
+    let mediumshape = (50_000, 50_000);
+    let medium_dtype = get_index_dtype(mediumshape, &[]);
     println!(
         "For a medium array with shape {:?}, recommended dtype: {}",
-        medium_shape, medium_dtype
+        mediumshape, medium_dtype
     );
 
     // Example 3: Determine appropriate dtype for large array
-    let large_shape = (1_000_000_000, 1_000_000_000);
-    let large_dtype = get_index_dtype(large_shape, &[]);
+    let largeshape = (1_000_000_000, 1_000_000_000);
+    let large_dtype = get_index_dtype(largeshape, &[]);
     println!(
         "For a large array with shape {:?}, recommended dtype: {}",
-        large_shape, large_dtype
+        largeshape, large_dtype
     );
 
     // Example 4: Consider existing indices when determining dtype
@@ -105,9 +106,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let shape = (3, 3);
 
     // Determine the best index dtype
-    let rows_array = Array1::from_vec(rows.clone());
+    let rowsarray = Array1::from_vec(rows.clone());
     let cols_array = Array1::from_vec(cols.clone());
-    let dtype = get_index_dtype(shape, &[rows_array.view(), cols_array.view()]);
+    let dtype = get_index_dtype(shape, &[rowsarray.view(), cols_array.view()]);
 
     println!(
         "  For a sparse array with shape {:?}, recommended index dtype: {}",

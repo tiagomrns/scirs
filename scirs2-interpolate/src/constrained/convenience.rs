@@ -24,6 +24,7 @@ use super::types::{ConstrainedSpline, Constraint};
 /// # Returns
 ///
 /// A new constrained spline that interpolates the data points while guaranteeing monotonicity
+#[allow(dead_code)]
 pub fn monotone_increasing_spline<T>(
     x: &ArrayView1<T>,
     y: &ArrayView1<T>,
@@ -63,6 +64,7 @@ where
 /// # Returns
 ///
 /// A new constrained spline that interpolates the data points while guaranteeing monotonic decrease
+#[allow(dead_code)]
 pub fn monotone_decreasing_spline<T>(
     x: &ArrayView1<T>,
     y: &ArrayView1<T>,
@@ -102,6 +104,7 @@ where
 /// # Returns
 ///
 /// A new constrained spline that interpolates the data points while guaranteeing convexity
+#[allow(dead_code)]
 pub fn convex_spline<T>(
     x: &ArrayView1<T>,
     y: &ArrayView1<T>,
@@ -141,6 +144,7 @@ where
 /// # Returns
 ///
 /// A new constrained spline that interpolates the data points while guaranteeing concavity
+#[allow(dead_code)]
 pub fn concave_spline<T>(
     x: &ArrayView1<T>,
     y: &ArrayView1<T>,
@@ -180,6 +184,7 @@ where
 /// # Returns
 ///
 /// A new constrained spline that interpolates the data points while guaranteeing positivity
+#[allow(dead_code)]
 pub fn positive_spline<T>(
     x: &ArrayView1<T>,
     y: &ArrayView1<T>,
@@ -221,6 +226,7 @@ where
 /// # Returns
 ///
 /// A new constrained spline that interpolates the data points with both constraints
+#[allow(dead_code)]
 pub fn monotone_convex_spline<T>(
     x: &ArrayView1<T>,
     y: &ArrayView1<T>,

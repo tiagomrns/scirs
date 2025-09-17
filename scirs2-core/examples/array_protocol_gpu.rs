@@ -20,6 +20,7 @@ use scirs2_core::array_protocol::{self, add, matmul, NdarrayWrapper};
 #[cfg(feature = "gpu")]
 use scirs2_core::array_protocol::{GPUBackend, GPUConfig, GPUNdarray};
 
+#[allow(dead_code)]
 fn main() {
     // Initialize the array protocol system
     array_protocol::init();

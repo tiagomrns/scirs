@@ -49,6 +49,7 @@ impl Default for SparseFiniteDiffOptions {
 /// # Returns
 ///
 /// Vector of step sizes for each dimension
+#[allow(dead_code)]
 pub fn compute_step_sizes(x: &ArrayView1<f64>, options: &SparseFiniteDiffOptions) -> Vec<f64> {
     let n = x.len();
     let mut h = vec![0.0; n];

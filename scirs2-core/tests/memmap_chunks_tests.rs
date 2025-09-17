@@ -75,7 +75,7 @@ mod tests {
 
         // Verify changes persisted
         let array = mmap.as_array::<ndarray::Ix1>().unwrap();
-        println!("After mutation through process_chunks_mut: {:?}", array);
+        println!("After mutation through process_chunksmut: {:?}", array);
 
         // Test should pass if mutation worked
         assert_eq!(array[0], 42);

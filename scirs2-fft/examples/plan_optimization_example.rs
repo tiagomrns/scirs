@@ -6,6 +6,7 @@ use scirs2_fft::{
 };
 use std::time::{Duration, Instant};
 
+#[allow(dead_code)]
 fn main() {
     println!("FFT Plan Optimization Example");
     println!("============================\n");
@@ -25,8 +26,8 @@ fn main() {
 
     // Plan ahead of time for common sizes
     println!("Planning ahead for common FFT sizes...");
-    let common_sizes = [128, 256, 512, 1024, 2048];
-    plan_ahead_of_time(&common_sizes, Some("./fft_plans.json")).unwrap();
+    let commonsizes = [128, 256, 512, 1024, 2048];
+    plan_ahead_of_time(&commonsizes, Some("./fft_plans.json")).unwrap();
 
     // Create test data
     println!("Creating test arrays...");
@@ -41,7 +42,7 @@ fn main() {
     let start = Instant::now();
     let result1 = fft2(&test_array, None, None, None).unwrap();
     let std_time = start.elapsed();
-    println!("Standard FFT completed in {:?}", std_time);
+    println!("Standard FFT completed in {std_time:?}");
 
     // Now use the custom planner
     println!("\nTrying different planning strategies:");
@@ -57,7 +58,7 @@ fn main() {
     let plan_time = start.elapsed();
 
     println!("1. PlanningStrategy::AlwaysNew");
-    println!("   Plan creation took: {:?}", plan_time);
+    println!("   Plan creation took: {plan_time:?}");
 
     // Execute the plan
     let executor = FftPlanExecutor::new(plan);
@@ -69,7 +70,7 @@ fn main() {
     let start = Instant::now();
     executor.execute(&input_flat, &mut result2_data).unwrap();
     let exec_time = start.elapsed();
-    println!("   Plan execution took: {:?}", exec_time);
+    println!("   Plan execution took: {exec_time:?}");
     println!("   Total time: {:?}", plan_time + exec_time);
 
     // 2. Use cached plans
@@ -83,7 +84,7 @@ fn main() {
     let plan_time = start.elapsed();
 
     println!("\n2. PlanningStrategy::CacheFirst");
-    println!("   Plan lookup/creation took: {:?}", plan_time);
+    println!("   Plan lookup/creation took: {plan_time:?}");
 
     // Execute the plan
     let executor = FftPlanExecutor::new(plan);
@@ -92,7 +93,7 @@ fn main() {
     let start = Instant::now();
     executor.execute(&input_flat, &mut result3_data).unwrap();
     let exec_time = start.elapsed();
-    println!("   Plan execution took: {:?}", exec_time);
+    println!("   Plan execution took: {exec_time:?}");
     println!("   Total time: {:?}", plan_time + exec_time);
 
     // 3. Use the global planner for a second run (should be cached now)
@@ -107,7 +108,7 @@ fn main() {
             .unwrap()
     };
     let plan_time = start.elapsed();
-    println!("   Plan lookup took: {:?}", plan_time);
+    println!("   Plan lookup took: {plan_time:?}");
 
     // Execute the plan
     let executor = FftPlanExecutor::new(plan);
@@ -116,7 +117,7 @@ fn main() {
     let start = Instant::now();
     executor.execute(&input_flat, &mut result4_data).unwrap();
     let exec_time = start.elapsed();
-    println!("   Plan execution took: {:?}", exec_time);
+    println!("   Plan execution took: {exec_time:?}");
     println!("   Total time: {:?}", plan_time + exec_time);
 
     // Verify results are the same
@@ -127,14 +128,14 @@ fn main() {
 
     let result1_flat: Vec<Complex64> = result1.iter().take(10).cloned().collect();
 
-    println!("First 10 elements from standard FFT:    {:?}", result1_flat);
-    println!("First 10 elements from AlwaysNew:       {:?}", result2_flat);
-    println!("First 10 elements from CacheFirst:      {:?}", result3_flat);
-    println!("First 10 elements from global planner:  {:?}", result4_flat);
+    println!("First 10 elements from standard FFT:    {result1_flat:?}");
+    println!("First 10 elements from AlwaysNew:       {result2_flat:?}");
+    println!("First 10 elements from CacheFirst:      {result3_flat:?}");
+    println!("First 10 elements from global planner:  {result4_flat:?}");
 
     // Compare performance
     println!("\nPerformance comparison:");
-    println!("Standard FFT:           {:?}", std_time);
+    println!("Standard FFT:           {std_time:?}");
     println!("AlwaysNew + execution:  {:?}", plan_time + exec_time);
     println!("Cached + execution:     {:?}", plan_time + exec_time);
 

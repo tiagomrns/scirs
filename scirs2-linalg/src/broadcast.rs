@@ -17,7 +17,7 @@ pub trait BroadcastExt<A> {
         D2: Data<Elem = A>;
 
     /// Get the shape after broadcasting
-    fn broadcast_shape<D2>(&self, other: &ArrayBase<D2, impl Dimension>) -> Option<Vec<usize>>
+    fn broadcastshape<D2>(&self, other: &ArrayBase<D2, impl Dimension>) -> Option<Vec<usize>>
     where
         D2: Data<Elem = A>;
 }
@@ -56,7 +56,7 @@ where
         true
     }
 
-    fn broadcast_shape<D2>(&self, other: &ArrayBase<D2, impl Dimension>) -> Option<Vec<usize>>
+    fn broadcastshape<D2>(&self, other: &ArrayBase<D2, impl Dimension>) -> Option<Vec<usize>>
     where
         D2: Data<Elem = A>,
     {
@@ -70,7 +70,7 @@ where
         let ndim2 = shape2.len();
         let max_ndim = ndim1.max(ndim2);
 
-        let mut broadcast_shape = vec![0; max_ndim];
+        let mut broadcastshape = vec![0; max_ndim];
 
         // Fill from the trailing dimensions
         let mut i = ndim1;
@@ -94,10 +94,10 @@ where
                 1
             };
 
-            broadcast_shape[k] = dim1.max(dim2);
+            broadcastshape[k] = dim1.max(dim2);
         }
 
-        Some(broadcast_shape)
+        Some(broadcastshape)
     }
 }
 
@@ -106,6 +106,7 @@ where
 /// This function implements NumPy-style broadcasting for matrix multiplication
 /// on 3D arrays. The last two dimensions are treated as matrices, and the
 /// first dimension is broadcast.
+#[allow(dead_code)]
 pub fn broadcast_matmul_3d<A>(
     a: &ArrayBase<impl Data<Elem = A>, Ix3>,
     b: &ArrayBase<impl Data<Elem = A>, Ix3>,
@@ -113,42 +114,42 @@ pub fn broadcast_matmul_3d<A>(
 where
     A: Float + NumAssign + Sum + Debug + 'static,
 {
-    let a_shape = a.shape();
-    let b_shape = b.shape();
+    let ashape = a.shape();
+    let bshape = b.shape();
 
     // Check matrix dimensions are compatible
-    let a_cols = a_shape[2];
-    let b_rows = b_shape[1];
+    let a_cols = ashape[2];
+    let b_rows = bshape[1];
 
     if a_cols != b_rows {
         return Err(LinalgError::DimensionError(format!(
             "Matrix dimensions don't match for multiplication: ({}, {}) x ({}, {})",
-            a_shape[1], a_cols, b_rows, b_shape[2]
+            ashape[1], a_cols, b_rows, bshape[2]
         )));
     }
 
     // Get the batch dimension
-    let batch_size = a_shape[0].max(b_shape[0]);
+    let batchsize = ashape[0].max(bshape[0]);
 
     // Check if batch dimensions can be broadcast
-    if a_shape[0] != b_shape[0] && a_shape[0] != 1 && b_shape[0] != 1 {
+    if ashape[0] != bshape[0] && ashape[0] != 1 && bshape[0] != 1 {
         return Err(LinalgError::DimensionError(
             "Batch dimensions must be compatible for broadcasting".to_string(),
         ));
     }
 
     // Compute output shape
-    let a_rows = a_shape[1];
-    let b_cols = b_shape[2];
-    let output_shape = [batch_size, a_rows, b_cols];
+    let a_rows = ashape[1];
+    let b_cols = bshape[2];
+    let outputshape = [batchsize, a_rows, b_cols];
 
     // Create output array
-    let mut output = Array::zeros(output_shape);
+    let mut output = Array::zeros(outputshape);
 
     // Perform batched matrix multiplication
-    for i in 0..batch_size {
-        let a_idx = if a_shape[0] == 1 { 0 } else { i };
-        let b_idx = if b_shape[0] == 1 { 0 } else { i };
+    for i in 0..batchsize {
+        let a_idx = if ashape[0] == 1 { 0 } else { i };
+        let b_idx = if bshape[0] == 1 { 0 } else { i };
 
         let a_mat = a.index_axis(ndarray::Axis(0), a_idx);
         let b_mat = b.index_axis(ndarray::Axis(0), b_idx);
@@ -166,6 +167,7 @@ where
 /// This function implements NumPy-style broadcasting for matrix multiplication
 /// on arrays with arbitrary dimensions. The last two dimensions are treated
 /// as matrices, and the leading dimensions are broadcast together.
+#[allow(dead_code)]
 pub fn broadcast_matmul<A>(
     a: &ArrayBase<impl Data<Elem = A>, IxDyn>,
     b: &ArrayBase<impl Data<Elem = A>, IxDyn>,
@@ -180,27 +182,26 @@ where
         ));
     }
 
-    let a_shape = a.shape();
-    let b_shape = b.shape();
+    let ashape = a.shape();
+    let bshape = b.shape();
 
     // Check matrix dimensions are compatible
-    let a_cols = a_shape[a_shape.len() - 1];
-    let b_rows = b_shape[b_shape.len() - 2];
+    let a_cols = ashape[ashape.len() - 1];
+    let b_rows = bshape[bshape.len() - 2];
 
     if a_cols != b_rows {
         return Err(LinalgError::DimensionError(format!(
-            "Matrix dimensions don't match for multiplication: (..., {}) x ({}, ...)",
-            a_cols, b_rows
+            "Matrix dimensions don't match for multiplication: (..., {a_cols}) x ({b_rows}, ...)"
         )));
     }
 
     // Get the batch dimensions (all but the last 2)
-    let a_batch_shape = &a_shape[..a_shape.len() - 2];
-    let b_batch_shape = &b_shape[..b_shape.len() - 2];
+    let a_batchshape = &ashape[..ashape.len() - 2];
+    let b_batchshape = &bshape[..bshape.len() - 2];
 
     // Check if batch dimensions can be broadcast
-    let batch_shape = if a_batch_shape == b_batch_shape {
-        a_batch_shape.to_vec()
+    let batchshape = if a_batchshape == b_batchshape {
+        a_batchshape.to_vec()
     } else {
         // For now, we don't support full broadcasting - require exact match
         return Err(LinalgError::DimensionError(
@@ -210,14 +211,14 @@ where
     };
 
     // Compute output shape
-    let a_rows = a_shape[a_shape.len() - 2];
-    let b_cols = b_shape[b_shape.len() - 1];
-    let mut output_shape = batch_shape;
-    output_shape.push(a_rows);
-    output_shape.push(b_cols);
+    let a_rows = ashape[ashape.len() - 2];
+    let b_cols = bshape[bshape.len() - 1];
+    let mut outputshape = batchshape;
+    outputshape.push(a_rows);
+    outputshape.push(b_cols);
 
     // Create output array
-    let mut output = Array::zeros(IxDyn(&output_shape));
+    let mut output = Array::zeros(IxDyn(&outputshape));
 
     // Extract the matrix dimensions
     let n_batch = output.len() / (a_rows * b_cols);
@@ -242,8 +243,8 @@ where
                     let mut idx = vec![0; a.ndim()];
                     let mut remaining = flat_idx;
                     for dim in (0..a.ndim()).rev() {
-                        idx[dim] = remaining % a_shape[dim];
-                        remaining /= a_shape[dim];
+                        idx[dim] = remaining % ashape[dim];
+                        remaining /= ashape[dim];
                     }
                     idx
                 };
@@ -258,8 +259,8 @@ where
                     let mut idx = vec![0; b.ndim()];
                     let mut remaining = flat_idx;
                     for dim in (0..b.ndim()).rev() {
-                        idx[dim] = remaining % b_shape[dim];
-                        remaining /= b_shape[dim];
+                        idx[dim] = remaining % bshape[dim];
+                        remaining /= bshape[dim];
                     }
                     idx
                 };
@@ -284,8 +285,8 @@ where
                     let mut idx = vec![0; output.ndim()];
                     let mut remaining = flat_idx;
                     for dim in (0..output.ndim()).rev() {
-                        idx[dim] = remaining % output_shape[dim];
-                        remaining /= output_shape[dim];
+                        idx[dim] = remaining % outputshape[dim];
+                        remaining /= outputshape[dim];
                     }
                     idx
                 };
@@ -298,6 +299,7 @@ where
 }
 
 /// Broadcasting matrix-vector multiplication for dynamic dimensional arrays
+#[allow(dead_code)]
 pub fn broadcast_matvec<A>(
     a: &ArrayBase<impl Data<Elem = A>, IxDyn>,
     x: &ArrayBase<impl Data<Elem = A>, IxDyn>,
@@ -312,27 +314,26 @@ where
         ));
     }
 
-    let a_shape = a.shape();
-    let x_shape = x.shape();
+    let ashape = a.shape();
+    let xshape = x.shape();
 
     // Check dimensions are compatible
-    let a_cols = a_shape[a_shape.len() - 1];
-    let x_len = x_shape[x_shape.len() - 1];
+    let a_cols = ashape[ashape.len() - 1];
+    let x_len = xshape[xshape.len() - 1];
 
     if a_cols != x_len {
         return Err(LinalgError::DimensionError(format!(
-            "Matrix and vector dimensions don't match: (..., {}) x ({})",
-            a_cols, x_len
+            "Matrix and vector dimensions don't match: (..., {a_cols}) x ({x_len})"
         )));
     }
 
     // Get the batch dimensions
-    let a_batch_shape = &a_shape[..a_shape.len() - 2];
-    let x_batch_shape = &x_shape[..x_shape.len() - 1];
+    let a_batchshape = &ashape[..ashape.len() - 2];
+    let x_batchshape = &xshape[..xshape.len() - 1];
 
     // Check if batch dimensions can be broadcast
-    let batch_shape = if a_batch_shape == x_batch_shape {
-        a_batch_shape.to_vec()
+    let batchshape = if a_batchshape == x_batchshape {
+        a_batchshape.to_vec()
     } else {
         // For now, we don't support full broadcasting
         return Err(LinalgError::DimensionError(
@@ -342,12 +343,12 @@ where
     };
 
     // Compute output shape
-    let a_rows = a_shape[a_shape.len() - 2];
-    let mut output_shape = batch_shape;
-    output_shape.push(a_rows);
+    let a_rows = ashape[ashape.len() - 2];
+    let mut outputshape = batchshape;
+    outputshape.push(a_rows);
 
     // Create output array
-    let mut output = Array::zeros(IxDyn(&output_shape));
+    let mut output = Array::zeros(IxDyn(&outputshape));
 
     // Extract dimensions
     let n_batch = output.len() / a_rows;
@@ -371,8 +372,8 @@ where
                     let mut idx = vec![0; a.ndim()];
                     let mut remaining = flat_idx;
                     for dim in (0..a.ndim()).rev() {
-                        idx[dim] = remaining % a_shape[dim];
-                        remaining /= a_shape[dim];
+                        idx[dim] = remaining % ashape[dim];
+                        remaining /= ashape[dim];
                     }
                     idx
                 };
@@ -386,8 +387,8 @@ where
                 let mut idx = vec![0; x.ndim()];
                 let mut remaining = flat_idx;
                 for dim in (0..x.ndim()).rev() {
-                    idx[dim] = remaining % x_shape[dim];
-                    remaining /= x_shape[dim];
+                    idx[dim] = remaining % xshape[dim];
+                    remaining /= xshape[dim];
                 }
                 idx
             };
@@ -410,8 +411,8 @@ where
                 let mut idx = vec![0; output.ndim()];
                 let mut remaining = flat_idx;
                 for dim in (0..output.ndim()).rev() {
-                    idx[dim] = remaining % output_shape[dim];
-                    remaining /= output_shape[dim];
+                    idx[dim] = remaining % outputshape[dim];
+                    remaining /= outputshape[dim];
                 }
                 idx
             };
@@ -441,11 +442,11 @@ mod tests {
     }
 
     #[test]
-    fn test_broadcast_shape() {
+    fn test_broadcastshape() {
         let a = array![[[1.0, 2.0], [3.0, 4.0]], [[5.0, 6.0], [7.0, 8.0]]];
         let b = array![[[1.0, 2.0], [3.0, 4.0]]];
 
-        let shape = a.broadcast_shape(&b).unwrap();
+        let shape = a.broadcastshape(&b).unwrap();
         assert_eq!(shape, vec![2, 2, 2]);
     }
 

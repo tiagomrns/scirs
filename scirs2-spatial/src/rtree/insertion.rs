@@ -40,6 +40,56 @@ impl<T: Clone> RTree<T> {
         Ok(())
     }
 
+    /// Insert a rectangle into the R-tree
+    ///
+    /// # Arguments
+    ///
+    /// * `min` - The minimum coordinates of the rectangle
+    /// * `max` - The maximum coordinates of the rectangle
+    /// * `data` - The data associated with the rectangle
+    ///
+    /// # Returns
+    ///
+    /// A `SpatialResult` containing nothing if successful, or an error if the rectangle has invalid dimensions
+    pub fn insert_rectangle(
+        &mut self,
+        min: Array1<f64>,
+        max: Array1<f64>,
+        data: T,
+    ) -> SpatialResult<()> {
+        if min.len() != self.ndim() {
+            return Err(crate::error::SpatialError::DimensionError(format!(
+                "Min coordinate dimension {} does not match RTree dimension {}",
+                min.len(),
+                self.ndim()
+            )));
+        }
+
+        if max.len() != self.ndim() {
+            return Err(crate::error::SpatialError::DimensionError(format!(
+                "Max coordinate dimension {} does not match RTree dimension {}",
+                max.len(),
+                self.ndim()
+            )));
+        }
+
+        // Create a leaf entry for the rectangle
+        let mbr = Rectangle::new(min, max)?;
+        let entry = Entry::Leaf {
+            mbr,
+            data,
+            index: self.size(),
+        };
+
+        // Insert the entry and handle node splits
+        self.insert_entry(&entry, 0)?;
+
+        // Increment the size after successful insertion
+        self.increment_size();
+
+        Ok(())
+    }
+
     /// Helper function to insert an entry into the tree
     pub(crate) fn insert_entry(
         &mut self,
@@ -48,11 +98,11 @@ impl<T: Clone> RTree<T> {
     ) -> SpatialResult<Option<Node<T>>> {
         // For leaf entries, we should insert at level 0
         // If the root is a leaf node (level 0), insert directly
-        if self.root.is_leaf && level == 0 {
+        if self.root._isleaf && level == 0 {
             self.root.entries.push(entry.clone());
 
             // If the node overflows, split it
-            if self.root.size() > self.max_entries {
+            if self.root.size() > self.maxentries {
                 // Take ownership of the root temporarily
                 let mut root = std::mem::replace(&mut self.root, Node::new(true, 0));
                 let (node1, node2) = self.split_node(&mut root)?;
@@ -61,14 +111,14 @@ impl<T: Clone> RTree<T> {
                 let mut new_root = Node::new(false, 1);
 
                 // Add both split nodes as children
-                if let Some(mbr1) = node1.mbr() {
+                if let Ok(Some(mbr1)) = node1.mbr() {
                     new_root.entries.push(Entry::NonLeaf {
                         mbr: mbr1,
                         child: Box::new(node1),
                     });
                 }
 
-                if let Some(mbr2) = node2.mbr() {
+                if let Ok(Some(mbr2)) = node2.mbr() {
                     new_root.entries.push(Entry::NonLeaf {
                         mbr: mbr2,
                         child: Box::new(node2),
@@ -83,14 +133,14 @@ impl<T: Clone> RTree<T> {
         }
 
         // If root is not a leaf, we need to insert recursively
-        if !self.root.is_leaf {
+        if !self.root._isleaf {
             // Choose the best subtree to insert into
             let subtree_index = self.choose_subtree(&self.root, entry.mbr(), level)?;
 
             // Get the subtree
-            let child = match &mut self.root.entries[subtree_index] {
+            let child: &mut Box<Node<T>> = match &mut self.root.entries[subtree_index] {
                 Entry::NonLeaf { child, .. } => child,
-                _ => {
+                Entry::Leaf { .. } => {
                     return Err(crate::error::SpatialError::ComputationError(
                         "Expected a non-leaf entry".into(),
                     ))
@@ -107,14 +157,14 @@ impl<T: Clone> RTree<T> {
             // If the child was split, add the new node as a sibling
             if let Some(split_node) = maybe_split {
                 // Create a new entry for the split node
-                if let Some(mbr) = split_node.mbr() {
+                if let Ok(Some(mbr)) = split_node.mbr() {
                     self.root.entries.push(Entry::NonLeaf {
                         mbr,
                         child: Box::new(split_node),
                     });
 
                     // If the node overflows, split it
-                    if self.root.size() > self.max_entries {
+                    if self.root.size() > self.maxentries {
                         // Take ownership of the root temporarily
                         let mut root = std::mem::replace(&mut self.root, Node::new(false, 1));
                         let root_level = root.level;
@@ -124,14 +174,14 @@ impl<T: Clone> RTree<T> {
                         let mut new_root = Node::new(false, root_level + 1);
 
                         // Add both split nodes as children
-                        if let Some(mbr1) = node1.mbr() {
+                        if let Ok(Some(mbr1)) = node1.mbr() {
                             new_root.entries.push(Entry::NonLeaf {
                                 mbr: mbr1,
                                 child: Box::new(node1),
                             });
                         }
 
-                        if let Some(mbr2) = node2.mbr() {
+                        if let Ok(Some(mbr2)) = node2.mbr() {
                             new_root.entries.push(Entry::NonLeaf {
                                 mbr: mbr2,
                                 child: Box::new(node2),
@@ -146,7 +196,7 @@ impl<T: Clone> RTree<T> {
 
             // Update the MBR of the parent entry
             if let Entry::NonLeaf { mbr, child } = &mut self.root.entries[subtree_index] {
-                if let Some(child_mbr) = child.mbr() {
+                if let Ok(Some(child_mbr)) = child.mbr() {
                     *mbr = child_mbr;
                 }
             }
@@ -167,7 +217,7 @@ impl<T: Clone> RTree<T> {
             node.entries.push(entry.clone());
 
             // If the node overflows, split it
-            if node.size() > self.max_entries {
+            if node.size() > self.maxentries {
                 let (new_node, split_node) = self.split_node(node)?;
                 *node = new_node;
                 return Ok(Some(split_node));
@@ -180,9 +230,9 @@ impl<T: Clone> RTree<T> {
         let subtree_index = self.choose_subtree(node, entry.mbr(), level)?;
 
         // Get the subtree
-        let child = match &mut node.entries[subtree_index] {
+        let child: &mut Box<Node<T>> = match &mut node.entries[subtree_index] {
             Entry::NonLeaf { child, .. } => child,
-            _ => {
+            Entry::Leaf { .. } => {
                 return Err(crate::error::SpatialError::ComputationError(
                     "Expected a non-leaf entry".into(),
                 ))
@@ -198,14 +248,14 @@ impl<T: Clone> RTree<T> {
         // If the child was split, add the new node as a sibling
         if let Some(split_node) = maybe_split {
             // Create a new entry for the split node
-            if let Some(mbr) = split_node.mbr() {
+            if let Ok(Some(mbr)) = split_node.mbr() {
                 node.entries.push(Entry::NonLeaf {
                     mbr,
                     child: Box::new(split_node),
                 });
 
                 // If the node overflows, split it
-                if node.size() > self.max_entries {
+                if node.size() > self.maxentries {
                     let (new_node, split_node) = self.split_node(node)?;
                     *node = new_node;
                     return Ok(Some(split_node));
@@ -215,7 +265,7 @@ impl<T: Clone> RTree<T> {
 
         // Update the MBR of the parent entry
         if let Entry::NonLeaf { mbr, child } = &mut node.entries[subtree_index] {
-            if let Some(child_mbr) = child.mbr() {
+            if let Ok(Some(child_mbr)) = child.mbr() {
                 *mbr = child_mbr;
             }
         }
@@ -228,14 +278,14 @@ impl<T: Clone> RTree<T> {
         &self,
         node: &Node<T>,
         mbr: &Rectangle,
-        _level: usize,
+        level: usize,
     ) -> SpatialResult<usize> {
         let mut min_enlargement = f64::MAX;
         let mut min_area = f64::MAX;
         let mut chosen_index = 0;
 
         // If this is a leaf node, we shouldn't be choosing a subtree
-        if node.is_leaf {
+        if node._isleaf {
             return Err(crate::error::SpatialError::ComputationError(
                 "Cannot choose subtree in a leaf node".into(),
             ));
@@ -263,8 +313,8 @@ impl<T: Clone> RTree<T> {
     /// Split a node that has more than max_entries
     pub(crate) fn split_node(&self, node: &mut Node<T>) -> SpatialResult<(Node<T>, Node<T>)> {
         // Create two new nodes: the original (which will be replaced) and the split node
-        let mut node1 = Node::new(node.is_leaf, node.level);
-        let mut node2 = Node::new(node.is_leaf, node.level);
+        let mut node1 = Node::new(node._isleaf, node.level);
+        let mut node2 = Node::new(node._isleaf, node.level);
 
         // Choose two seed entries to initialize the split
         let (seed1, seed2) = self.choose_split_seeds(node)?;
@@ -410,5 +460,42 @@ mod tests {
         // Check the size
         assert_eq!(rtree.size(), 10);
         assert!(!rtree.is_empty());
+    }
+
+    #[test]
+    #[ignore]
+    fn test_rtree_insert_rectangle() {
+        // Create a new R-tree
+        let mut rtree: RTree<&str> = RTree::new(2, 2, 4).unwrap();
+
+        // Insert some rectangles
+        let rectangles = vec![
+            (array![0.0, 0.0], array![1.0, 1.0], "A"),
+            (array![2.0, 2.0], array![3.0, 3.0], "B"),
+            (array![1.5, 0.0], array![2.5, 1.0], "C"),
+            (array![0.0, 1.5], array![1.0, 2.5], "D"),
+        ];
+
+        for (min, max, value) in rectangles {
+            rtree.insert_rectangle(min, max, value).unwrap();
+        }
+
+        // Check the size
+        assert_eq!(rtree.size(), 4);
+
+        // Test searching for rectangles that overlap with a query range
+        let results = rtree
+            .search_range(&array![0.5, 0.5].view(), &array![2.0, 2.0].view())
+            .unwrap();
+
+        // Should find rectangles A, C, and D
+        assert_eq!(results.len(), 3);
+
+        // Verify that the results contain the expected values
+        let result_values: Vec<&str> = results.iter().map(|(_, v)| *v).collect();
+        assert!(result_values.contains(&"A"));
+        assert!(result_values.contains(&"C"));
+        assert!(result_values.contains(&"D"));
+        assert!(!result_values.contains(&"B"));
     }
 }

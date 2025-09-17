@@ -37,6 +37,7 @@ use std::ops::{Add, Div, Mul, Sub};
 /// assert_eq!(eye.get(2, 2), 1.0);
 /// assert_eq!(eye.get(0, 1), 0.0);
 /// ```
+#[allow(dead_code)]
 pub fn eye_sym_array<T>(n: usize, format: &str) -> SparseResult<Box<dyn SymSparseArray<T>>>
 where
     T: Float
@@ -46,7 +47,10 @@ where
         + Add<Output = T>
         + Sub<Output = T>
         + Mul<Output = T>
-        + Div<Output = T>,
+        + Div<Output = T>
+        + scirs2_core::simd_ops::SimdUnifiedOps
+        + Send
+        + Sync,
 {
     // Create data for identity matrix
     let mut data = Vec::with_capacity(n);
@@ -90,8 +94,7 @@ where
             Ok(Box::new(SymCooArray::new(sym_coo)))
         }
         _ => Err(crate::error::SparseError::ValueError(format!(
-            "Unknown format: {}. Supported formats are 'csr' and 'coo'",
-            format
+            "Unknown format: {format}. Supported formats are 'csr' and 'coo'"
         ))),
     }
 }
@@ -129,6 +132,7 @@ where
 /// assert_eq!(tri.get(1, 2), 1.0);
 /// assert_eq!(tri.get(0, 2), 0.0); // Zero element
 /// ```
+#[allow(dead_code)]
 pub fn tridiagonal_sym_array<T>(
     diag: &[T],
     offdiag: &[T],
@@ -142,7 +146,10 @@ where
         + Add<Output = T>
         + Sub<Output = T>
         + Mul<Output = T>
-        + Div<Output = T>,
+        + Div<Output = T>
+        + scirs2_core::simd_ops::SimdUnifiedOps
+        + Send
+        + Sync,
 {
     let n = diag.len();
 
@@ -257,8 +264,7 @@ where
             Ok(Box::new(SymCooArray::new(sym_coo)))
         }
         _ => Err(crate::error::SparseError::ValueError(format!(
-            "Unknown format: {}. Supported formats are 'csr' and 'coo'",
-            format
+            "Unknown format: {format}. Supported formats are 'csr' and 'coo'"
         ))),
     }
 }
@@ -299,6 +305,7 @@ where
 /// assert_eq!(banded.get(0, 2), 0.5);  // Second off-diagonal
 /// assert_eq!(banded.get(0, 3), 0.0);  // Outside band
 /// ```
+#[allow(dead_code)]
 pub fn banded_sym_array<T>(
     diagonals: &[Vec<T>],
     n: usize,
@@ -312,7 +319,10 @@ where
         + Add<Output = T>
         + Sub<Output = T>
         + Mul<Output = T>
-        + Div<Output = T>,
+        + Div<Output = T>
+        + scirs2_core::simd_ops::SimdUnifiedOps
+        + Send
+        + Sync,
 {
     if diagonals.is_empty() {
         return Err(crate::error::SparseError::ValueError(
@@ -325,9 +335,7 @@ where
         let expected_len = n - i;
         if diag.len() != expected_len {
             return Err(crate::error::SparseError::ValueError(format!(
-                "Diagonal {} should have length {}, got {}",
-                i,
-                expected_len,
+                "Diagonal {i} should have length {expected_len}, got {}",
                 diag.len()
             )));
         }
@@ -397,8 +405,7 @@ where
             Ok(Box::new(SymCsrArray::new(sym_csr)))
         }
         _ => Err(crate::error::SparseError::ValueError(format!(
-            "Unknown format: {}. Supported formats are 'csr' and 'coo'",
-            format
+            "Unknown format: {format}. Supported formats are 'csr' and 'coo'"
         ))),
     }
 }
@@ -430,6 +437,7 @@ where
 ///
 /// // The actual density may vary slightly due to randomness
 /// ```
+#[allow(dead_code)]
 pub fn random_sym_array<T>(
     n: usize,
     density: f64,
@@ -443,7 +451,10 @@ where
         + Add<Output = T>
         + Sub<Output = T>
         + Mul<Output = T>
-        + Div<Output = T>,
+        + Div<Output = T>
+        + scirs2_core::simd_ops::SimdUnifiedOps
+        + Send
+        + Sync,
 {
     if !(0.0..=1.0).contains(&density) {
         return Err(crate::error::SparseError::ValueError(
@@ -464,10 +475,7 @@ where
 
     // Convert to COO for easier manipulation
     let coo = random_array.to_coo().map_err(|e| {
-        crate::error::SparseError::ValueError(format!(
-            "Failed to convert random array to COO: {}",
-            e
-        ))
+        crate::error::SparseError::ValueError(format!("Failed to convert random array to COO: {e}"))
     })?;
 
     // Extract triplets
@@ -492,8 +500,7 @@ where
             }
         }
         _ => Err(crate::error::SparseError::ValueError(format!(
-            "Unknown format: {}. Supported formats are 'csr' and 'coo'",
-            format
+            "Unknown format: {format}. Supported formats are 'csr' and 'coo'"
         ))),
     }
 }
@@ -637,7 +644,7 @@ mod tests {
             Ok(array) => array,
             Err(e) => {
                 // If it fails, just skip the test
-                println!("Warning: Random generation failed with error: {}", e);
+                println!("Warning: Random generation failed with error: {e}");
                 return; // Skip the test if random generation fails
             }
         };

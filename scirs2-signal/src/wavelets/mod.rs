@@ -1,9 +1,12 @@
-//! Wavelet transforms
-//!
-//! This module provides functions for continuous and discrete wavelet transforms,
-//! useful for multi-resolution analysis of signals.
+// Wavelet transforms
+//
+// This module provides functions for continuous and discrete wavelet transforms,
+// useful for multi-resolution analysis of signals.
+
+use crate::dwt::Wavelet;
 
 // Import internal modules
+#[allow(unused_imports)]
 mod complex_wavelets;
 mod cwt;
 mod dual_tree_complex;

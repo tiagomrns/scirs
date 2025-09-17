@@ -1,7 +1,8 @@
 use scirs2_stats::distributions::beta::Beta;
-use scirs2_stats::traits::distribution::{ContinuousDistribution, Distribution};
+use scirs2_stats::traits::{ContinuousCDF, ContinuousDistribution, Distribution};
 use std::error::Error;
 
+#[allow(dead_code)]
 fn main() -> Result<(), Box<dyn Error>> {
     println!("Beta Distribution Example");
     println!("-----------------------");
@@ -254,7 +255,7 @@ fn main() -> Result<(), Box<dyn Error>> {
     println!("  PPF at p=0.75 (trait): {}", q_trait);
     println!("  PPF at p=0.75 (direct): {}", q_direct);
 
-    let sf_trait = ContinuousDistribution::sf(&symmetric_beta, 0.5);
+    let sf_trait = symmetric_beta.sf(0.5);
     println!("  Survival function at x=0.5 (trait): {}", sf_trait);
     println!(
         "  Survival function computed manually: {}",

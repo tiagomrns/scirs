@@ -29,7 +29,7 @@
 //!
 //! // Initialize audit logging
 //! let audit_config = audit::AuditConfig::default();
-//! let audit_logger = audit::AuditLogger::new(audit_config)?;
+//! let auditlogger = audit::AuditLogger::new(audit_config)?;
 //!
 //! // Use tracing
 //! if let Some(tracer) = tracing::global_tracer() {
@@ -40,16 +40,17 @@
 //! }
 //!
 //! // Log audit events
-//! audit_logger.log_data_access("user123", "dataset", "read", None)?;
+//! auditlogger.log_data_access("user123", "dataset", "read", None)?;
 //! # Ok::<(), Box<dyn std::error::Error>>(())
 //! ```
 
+pub mod adaptivemonitoring;
 pub mod audit;
 pub mod tracing;
 
 // Re-export main types for convenience
 pub use tracing::{
-    example_matrix_computation_with_tracing, ActiveSpan, AdaptiveSampler, BatchExporter,
+    examplematrix_computation_with_tracing, ActiveSpan, AdaptiveSampler, BatchExporter,
     ConsoleExporter, EnhancedSpanMetrics, NegotiationResult, ProbabilitySampler,
     RateLimitingSampler, ResourceAttribution, SpanBuilder, SpanKind, SpanStatus, TraceContext,
     TracingConfig, TracingSystem, TracingVersion,

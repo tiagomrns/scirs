@@ -11,7 +11,7 @@
 //
 
 use ndarray::Array2;
-use scirs2_core::array_protocol::{ArrayProtocol, NdarrayWrapper, NotImplemented};
+use scirs2_core::array_protocol::{ArrayFunction, ArrayProtocol, NdarrayWrapper, NotImplemented};
 use std::any::{Any, TypeId};
 use std::collections::HashMap;
 use std::marker::PhantomData;
@@ -23,21 +23,22 @@ use std::marker::PhantomData;
 
 /// A simplified mock distributed array for testing box_clone
 #[derive(Debug, Clone)]
+#[allow(dead_code)]
 struct MockDistributedArray {
-    _data: Vec<f64>, // Prefixed with underscore to indicate it's unused
+    data: Vec<f64>, // Prefixed with underscore to indicate it's unused
     shape: Vec<usize>,
 }
 
 impl MockDistributedArray {
     fn new(data: Vec<f64>, shape: Vec<usize>) -> Self {
-        Self { _data: data, shape }
+        Self { data, shape }
     }
 }
 
 impl ArrayProtocol for MockDistributedArray {
     fn array_function(
         &self,
-        _func: &scirs2_core::array_protocol::ArrayFunction,
+        _func: &ArrayFunction,
         _types: &[TypeId],
         _args: &[Box<dyn Any>],
         _kwargs: &HashMap<String, Box<dyn Any>>,
@@ -60,18 +61,19 @@ impl ArrayProtocol for MockDistributedArray {
 
 /// A simplified mock GPU array for testing box_clone
 #[derive(Debug, Clone)]
+#[allow(dead_code)]
 struct MockGPUArray {
-    _data: Vec<f64>, // Prefixed with underscore to indicate it's unused
+    data: Vec<f64>, // Prefixed with underscore to indicate it's unused
     shape: Vec<usize>,
-    _device: String, // Prefixed with underscore to indicate it's unused
+    device: String, // Prefixed with underscore to indicate it's unused
 }
 
 impl MockGPUArray {
     fn new(data: Vec<f64>, shape: Vec<usize>, device: String) -> Self {
         Self {
-            _data: data,
+            data,
             shape,
-            _device: device,
+            device,
         }
     }
 }
@@ -79,7 +81,7 @@ impl MockGPUArray {
 impl ArrayProtocol for MockGPUArray {
     fn array_function(
         &self,
-        _func: &scirs2_core::array_protocol::ArrayFunction,
+        _func: &ArrayFunction,
         _types: &[TypeId],
         _args: &[Box<dyn Any>],
         _kwargs: &HashMap<String, Box<dyn Any>>,
@@ -104,14 +106,14 @@ impl ArrayProtocol for MockGPUArray {
 #[derive(Debug, Clone)]
 struct JITEnabledArray<T, A: Clone> {
     inner: A,
-    _phantom: PhantomData<T>,
+    phantom: PhantomData<T>,
 }
 
 impl<T, A: Clone> JITEnabledArray<T, A> {
     fn new(inner: A) -> Self {
         Self {
             inner,
-            _phantom: PhantomData,
+            phantom: PhantomData,
         }
     }
 }
@@ -123,7 +125,7 @@ where
 {
     fn array_function(
         &self,
-        func: &scirs2_core::array_protocol::ArrayFunction,
+        func: &ArrayFunction,
         types: &[TypeId],
         args: &[Box<dyn Any>],
         kwargs: &HashMap<String, Box<dyn Any>>,
@@ -140,15 +142,13 @@ where
     }
 
     fn box_clone(&self) -> Box<dyn ArrayProtocol> {
-        Box::new(JITEnabledArray {
-            inner: self.inner.clone(),
-            _phantom: PhantomData::<T>,
-        })
+        Box::new(self.clone())
     }
 }
 
 /// Standalone test for box_clone implementation in ArrayProtocol
 #[test]
+#[allow(dead_code)]
 fn test_array_protocol_box_clone() {
     // Test NdarrayWrapper
     let array = Array2::<f64>::ones((3, 3));
@@ -178,6 +178,7 @@ fn test_array_protocol_box_clone() {
 
 /// Test box_clone for NdarrayWrapper
 #[test]
+#[allow(dead_code)]
 fn test_ndarray_wrapper_box_clone() {
     // Create a simple ndarray
     let array = Array2::<f64>::ones((3, 3));
@@ -201,6 +202,7 @@ fn test_ndarray_wrapper_box_clone() {
 
 /// Test box_clone for MockDistributedArray
 #[test]
+#[allow(dead_code)]
 fn test_mock_distributed_array_box_clone() {
     // Create a mock distributed array
     let array = MockDistributedArray::new(vec![1.0, 2.0, 3.0], vec![3]);
@@ -221,6 +223,7 @@ fn test_mock_distributed_array_box_clone() {
 
 /// Test box_clone for MockGPUArray
 #[test]
+#[allow(dead_code)]
 fn test_mock_gpu_array_box_clone() {
     // Create a mock GPU array
     let array = MockGPUArray::new(vec![1.0, 2.0, 3.0], vec![3], "cuda:0".to_string());
@@ -241,6 +244,7 @@ fn test_mock_gpu_array_box_clone() {
 
 /// Test box_clone for JIT-enabled arrays
 #[test]
+#[allow(dead_code)]
 fn test_jit_array_box_clone() {
     // Create a regular array
     let array = Array2::<f64>::ones((10, 5));
@@ -267,6 +271,7 @@ fn test_jit_array_box_clone() {
 
 /// Test chained cloning of different array types
 #[test]
+#[allow(dead_code)]
 fn test_chained_box_clone() {
     // Create a variety of array types
     let ndarray = NdarrayWrapper::new(Array2::<f64>::ones((3, 3)));

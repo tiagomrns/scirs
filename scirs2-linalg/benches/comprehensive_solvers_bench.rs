@@ -8,8 +8,10 @@
 //! Many of the solver functions used here are not yet implemented or have
 //! different signatures than expected.
 
+#[allow(dead_code)]
 fn main() {
-    println!("Comprehensive solvers benchmark is currently disabled.");
-    println!("The benchmark uses solver functions that are not yet implemented.");
-    println!("This will be re-enabled once the solver API is stabilized.");
+    // Silent main function to avoid cargo nextest parsing issues
+    // println!("Comprehensive solvers benchmark is currently disabled.");
+    // println!("The benchmark uses solver functions that are not yet implemented.");
+    // println!("This will be re-enabled once the solver API is stabilized.");
 }

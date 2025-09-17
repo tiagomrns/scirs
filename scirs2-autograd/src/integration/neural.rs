@@ -68,11 +68,11 @@ impl<'a, F: Float> AutogradLayer<'a, F> {
     }
 
     /// Initialize layer parameters
-    pub fn initialize_parameters(&mut self, input_shape: &[usize]) -> Result<(), IntegrationError> {
+    pub fn initialize_parameters(&mut self, inputshape: &[usize]) -> Result<(), IntegrationError> {
         match self.layer_type {
-            LayerType::Linear => self.init_linear_parameters(input_shape),
-            LayerType::Conv2D => self.init_conv2d_parameters(input_shape),
-            LayerType::BatchNorm => self.init_batch_norm_parameters(input_shape),
+            LayerType::Linear => self.init_linear_parameters(inputshape),
+            LayerType::Conv2D => self.init_conv2d_parameters(inputshape),
+            LayerType::BatchNorm => self.init_batch_norm_parameters(inputshape),
             _ => Ok(()), // No initialization needed for activation layers
         }
     }
@@ -179,14 +179,14 @@ impl<'a, F: Float> AutogradLayer<'a, F> {
     }
 
     // Parameter initialization methods
-    fn init_linear_parameters(&mut self, input_shape: &[usize]) -> Result<(), IntegrationError> {
-        if input_shape.is_empty() {
+    fn init_linear_parameters(&mut self, inputshape: &[usize]) -> Result<(), IntegrationError> {
+        if inputshape.is_empty() {
             return Err(IntegrationError::TensorConversion(
                 "Invalid input shape for linear layer".to_string(),
             ));
         }
 
-        let _input_size = input_shape[input_shape.len() - 1];
+        let _input_size = inputshape[inputshape.len() - 1];
         let _output_size = self.config.units.unwrap_or(128);
 
         // Skip tensor initialization due to autograd's lazy evaluation
@@ -195,11 +195,11 @@ impl<'a, F: Float> AutogradLayer<'a, F> {
         Ok(())
     }
 
-    fn init_conv2d_parameters(&mut self, input_shape: &[usize]) -> Result<(), IntegrationError> {
+    fn init_conv2d_parameters(&mut self, inputshape: &[usize]) -> Result<(), IntegrationError> {
         let _kernel_size = self.config.kernel_size.unwrap_or((3, 3));
         let _out_channels = self.config.filters.unwrap_or(32);
-        let _in_channels = if input_shape.len() >= 3 {
-            input_shape[input_shape.len() - 3]
+        let _in_channels = if inputshape.len() >= 3 {
+            inputshape[inputshape.len() - 3]
         } else {
             1
         };
@@ -210,11 +210,8 @@ impl<'a, F: Float> AutogradLayer<'a, F> {
         Ok(())
     }
 
-    fn init_batch_norm_parameters(
-        &mut self,
-        input_shape: &[usize],
-    ) -> Result<(), IntegrationError> {
-        let _num_features = input_shape[input_shape.len() - 1];
+    fn init_batch_norm_parameters(&mut self, inputshape: &[usize]) -> Result<(), IntegrationError> {
+        let _num_features = inputshape[inputshape.len() - 1];
 
         // Skip tensor initialization due to autograd's lazy evaluation
         // Parameters would be initialized when first needed
@@ -222,7 +219,7 @@ impl<'a, F: Float> AutogradLayer<'a, F> {
         Ok(())
     }
 
-    fn update_batch_norm_stats(&mut self, _input: &Tensor<'_, F>) -> Result<(), IntegrationError> {
+    fn update_batch_norm_stats(&mut self, input: &Tensor<'_, F>) -> Result<(), IntegrationError> {
         // Update running mean and variance (placeholder)
         Ok(())
     }
@@ -296,7 +293,7 @@ pub struct AutogradNetworkBuilder<'a, F: Float> {
     #[allow(dead_code)]
     config: NetworkConfig,
     /// Current input shape
-    current_shape: Option<Vec<usize>>,
+    currentshape: Option<Vec<usize>>,
 }
 
 impl<'a, F: Float> AutogradNetworkBuilder<'a, F> {
@@ -305,23 +302,23 @@ impl<'a, F: Float> AutogradNetworkBuilder<'a, F> {
         Self {
             layers: Vec::new(),
             config: NetworkConfig::default(),
-            current_shape: None,
+            currentshape: None,
         }
     }
 
     /// Set input shape
-    pub fn input_shape(mut self, shape: Vec<usize>) -> Self {
-        self.current_shape = Some(shape);
+    pub fn inputshape(mut self, shape: Vec<usize>) -> Self {
+        self.currentshape = Some(shape);
         self
     }
 
     /// Add a layer to the network
     pub fn add_layer(mut self, mut layer: AutogradLayer<'a, F>) -> Result<Self, IntegrationError> {
-        if let Some(ref shape) = self.current_shape {
+        if let Some(ref shape) = self.currentshape {
             layer.initialize_parameters(shape)?;
 
             // Update current shape based on layer type
-            self.current_shape = Some(self.compute_output_shape(&layer, shape)?);
+            self.currentshape = Some(self.compute_outputshape(&layer, shape)?);
         }
 
         self.layers.push(layer);
@@ -363,24 +360,24 @@ impl<'a, F: Float> AutogradNetworkBuilder<'a, F> {
     }
 
     /// Compute output shape for a layer
-    fn compute_output_shape(
+    fn compute_outputshape(
         &self,
         layer: &AutogradLayer<'a, F>,
-        input_shape: &[usize],
+        inputshape: &[usize],
     ) -> Result<Vec<usize>, IntegrationError> {
         match layer.layer_type {
             LayerType::Linear => {
                 let units = layer.config.units.unwrap_or(128);
-                let mut output_shape = input_shape.to_vec();
-                let last_idx = output_shape.len() - 1;
-                output_shape[last_idx] = units;
-                Ok(output_shape)
+                let mut outputshape = inputshape.to_vec();
+                let last_idx = outputshape.len() - 1;
+                outputshape[last_idx] = units;
+                Ok(outputshape)
             }
             LayerType::Conv2D => {
                 // Simplified shape computation for conv2d
-                Ok(input_shape.to_vec())
+                Ok(inputshape.to_vec())
             }
-            _ => Ok(input_shape.to_vec()), // Shape-preserving layers
+            _ => Ok(inputshape.to_vec()), // Shape-preserving layers
         }
     }
 }
@@ -450,7 +447,7 @@ impl<'a, F: Float> AutogradNetwork<'a, F> {
         // Add network parameters
         for (layer_idx, layer) in self.layers.iter().enumerate() {
             for (param_name, tensor) in &layer.parameters {
-                let key = format!("layer_{}_{}", layer_idx, param_name);
+                let key = format!("layer_{layer_idx}_{param_name}");
                 data = data.add_tensor(key, *tensor);
             }
         }
@@ -464,8 +461,8 @@ impl<'a, F: Float> AutogradNetwork<'a, F> {
     }
 
     /// Create from SciRS2Data format
-    pub fn from_scirs2_data(_data: &SciRS2Data<'a, F>) -> Result<Self, IntegrationError> {
-        // Simplified reconstruction from data
+    pub fn from_scirs2_data(data: &SciRS2Data<'a, F>) -> Result<Self, IntegrationError> {
+        // Simplified reconstruction from _data
         // In practice, would parse layer information and rebuild network
         Ok(Self {
             layers: Vec::new(),
@@ -529,7 +526,7 @@ impl<F: Float> SciRS2Integration for AutogradNetwork<'_, F> {
     }
 
     fn module_version() -> &'static str {
-        "0.1.0-alpha.6"
+        "0.1.0-beta.1"
     }
 
     fn check_compatibility() -> Result<(), IntegrationError> {
@@ -544,15 +541,16 @@ impl<F: Float> SciRS2Integration for AutogradNetwork<'_, F> {
 
 /// Utility functions for neural integration
 /// Create a simple neural network for autograd
+#[allow(dead_code)]
 pub fn create_simple_network<'a, F: Float>(
-    input_shape: Vec<usize>,
+    inputshape: Vec<usize>,
     hidden_units: &[usize],
     output_units: usize,
 ) -> Result<AutogradNetwork<'a, F>, IntegrationError> {
-    let mut builder = AutogradNetworkBuilder::new().input_shape(input_shape);
+    let mut builder = AutogradNetworkBuilder::new().inputshape(inputshape);
 
-    for &units in hidden_units {
-        builder = builder.linear(units)?.relu()?;
+    for &_units in hidden_units {
+        builder = builder.linear(_units)?.relu()?;
     }
 
     builder = builder.linear(output_units)?;
@@ -561,12 +559,13 @@ pub fn create_simple_network<'a, F: Float>(
 }
 
 /// Convert neural network to computation graph
+#[allow(dead_code)]
 pub fn network_to_graph<F: Float>(
     _network: &AutogradNetwork<'_, F>,
 ) -> Result<Graph<F>, IntegrationError> {
-    // Create computation graph from network
+    // Create computation graph from _network
     // Graph creation is handled by the run function, not directly accessible
-    // In practice, would build graph from network layers
+    // In practice, would build graph from _network layers
     Err(IntegrationError::ModuleCompatibility(
         "Direct graph creation not supported. Use run() function instead.".to_string(),
     ))
@@ -592,7 +591,7 @@ mod tests {
     #[test]
     fn test_network_builder() {
         let network = AutogradNetworkBuilder::<f32>::new()
-            .input_shape(vec![10])
+            .inputshape(vec![10])
             .linear(64)
             .unwrap()
             .relu()

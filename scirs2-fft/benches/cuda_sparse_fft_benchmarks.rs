@@ -1,4 +1,4 @@
-use criterion::{black_box, criterion_group, criterion_main, Bencher, Criterion};
+use criterion::{criterion_group, criterion_main, Bencher, Criterion};
 use rand::rngs::StdRng;
 use rand::SeedableRng;
 use rand_distr::{Distribution, Normal};
@@ -10,8 +10,10 @@ use scirs2_fft::{
     sparse_fft_gpu_memory::{init_global_memory_manager, AllocationStrategy},
 };
 use std::f64::consts::PI;
+use std::hint::black_box;
 
 // Helper function to create a sparse signal
+#[allow(dead_code)]
 fn create_sparse_signal(n: usize, frequencies: &[(usize, f64)]) -> Vec<f64> {
     let mut signal = vec![0.0; n];
 
@@ -26,6 +28,7 @@ fn create_sparse_signal(n: usize, frequencies: &[(usize, f64)]) -> Vec<f64> {
 }
 
 // Helper function to create a signal with noise
+#[allow(dead_code)]
 fn create_noisy_sparse_signal(
     n: usize,
     frequencies: &[(usize, f64)],
@@ -45,6 +48,7 @@ fn create_noisy_sparse_signal(
     signal
 }
 
+#[allow(dead_code)]
 fn setup_memory_manager() {
     init_global_memory_manager(
         GPUBackend::CPUFallback, // Use CPU fallback for benchmarks if CUDA is not available
@@ -56,6 +60,7 @@ fn setup_memory_manager() {
 }
 
 /// CPU Benchmarks
+#[allow(dead_code)]
 fn bench_cpu_sparse_fft_8192(b: &mut Bencher) {
     let n = 8192;
     let frequencies = vec![(100, 1.0), (500, 0.5), (1000, 0.3)];
@@ -73,6 +78,7 @@ fn bench_cpu_sparse_fft_8192(b: &mut Bencher) {
     });
 }
 
+#[allow(dead_code)]
 fn bench_cpu_sparse_fft_16384(b: &mut Bencher) {
     let n = 16384;
     let frequencies = vec![(100, 1.0), (500, 0.5), (1000, 0.3)];
@@ -91,6 +97,7 @@ fn bench_cpu_sparse_fft_16384(b: &mut Bencher) {
 }
 
 // GPU Benchmarks
+#[allow(dead_code)]
 fn bench_cuda_sparse_fft_8192_sublinear(b: &mut Bencher) {
     let n = 8192;
     let frequencies = vec![(100, 1.0), (500, 0.5), (1000, 0.3)];
@@ -109,6 +116,7 @@ fn bench_cuda_sparse_fft_8192_sublinear(b: &mut Bencher) {
     });
 }
 
+#[allow(dead_code)]
 fn bench_cuda_sparse_fft_16384_sublinear(b: &mut Bencher) {
     let n = 16384;
     let frequencies = vec![(100, 1.0), (500, 0.5), (1000, 0.3)];
@@ -127,6 +135,7 @@ fn bench_cuda_sparse_fft_16384_sublinear(b: &mut Bencher) {
     });
 }
 
+#[allow(dead_code)]
 fn bench_cuda_sparse_fft_8192_iterative(b: &mut Bencher) {
     let n = 8192;
     let frequencies = vec![(100, 1.0), (500, 0.5), (1000, 0.3)];
@@ -145,6 +154,7 @@ fn bench_cuda_sparse_fft_8192_iterative(b: &mut Bencher) {
     });
 }
 
+#[allow(dead_code)]
 fn bench_cuda_sparse_fft_16384_iterative(b: &mut Bencher) {
     let n = 16384;
     let frequencies = vec![(100, 1.0), (500, 0.5), (1000, 0.3)];
@@ -163,6 +173,7 @@ fn bench_cuda_sparse_fft_16384_iterative(b: &mut Bencher) {
     });
 }
 
+#[allow(dead_code)]
 fn bench_cuda_sparse_fft_with_noise(b: &mut Bencher) {
     let n = 8192;
     let frequencies = vec![(100, 1.0), (500, 0.5), (1000, 0.3)];
@@ -181,6 +192,7 @@ fn bench_cuda_sparse_fft_with_noise(b: &mut Bencher) {
     });
 }
 
+#[allow(dead_code)]
 fn bench_cuda_sparse_fft_large(b: &mut Bencher) {
     let n = 32768;
     let frequencies = vec![(100, 1.0), (500, 0.5), (1000, 0.3), (1500, 0.2)];
@@ -199,6 +211,7 @@ fn bench_cuda_sparse_fft_large(b: &mut Bencher) {
     });
 }
 
+#[allow(dead_code)]
 fn cuda_sparse_fft_benches(c: &mut Criterion) {
     // Initialize memory manager once
     setup_memory_manager();

@@ -7,6 +7,7 @@
 use crate::error::{IntegrateError, IntegrateResult};
 use crate::IntegrateFloat;
 use ndarray::Array1;
+use std::f64::consts::PI;
 use std::fmt::Debug;
 
 /// Options for the cubature integration
@@ -71,6 +72,7 @@ impl<F: IntegrateFloat> Bound<F> {
 }
 
 /// Function to handle the transformation of infinite bounds
+#[allow(dead_code)]
 fn transform_for_infinite_bounds<F: IntegrateFloat>(x: F, a: &Bound<F>, b: &Bound<F>) -> (F, F) {
     match (a, b) {
         // Finite bounds - no transformation needed
@@ -165,6 +167,7 @@ fn transform_for_infinite_bounds<F: IntegrateFloat>(x: F, a: &Bound<F>, b: &Boun
 /// // Exact result is 0.25
 /// assert!((result.value - 0.25).abs() < 1e-10);
 /// ```
+#[allow(dead_code)]
 pub fn cubature<F, Func>(
     f: Func,
     bounds: &[(Bound<F>, Bound<F>)],
@@ -251,6 +254,7 @@ where
 
 /// Internal recursive implementation of cubature algorithm
 #[allow(clippy::too_many_arguments)]
+#[allow(dead_code)]
 fn adaptive_cubature_impl<F, Func>(
     f: &Func,
     mapped_bounds: &[(F, F)],
@@ -282,11 +286,11 @@ where
         return Ok((result, error, true));
     }
 
-    // Check if we're dealing with infinite bounds for this dimension
+    // Check if we're dealing with infinite _bounds for this dimension
     let (a_bound, b_bound) = &original_bounds[dim];
     let has_infinite_bound = a_bound.is_infinite() || b_bound.is_infinite();
 
-    // Choose appropriate quadrature rule based on infinite bounds
+    // Choose appropriate quadrature rule based on infinite _bounds
     if has_infinite_bound {
         // For infinite bounds, use a transformation and higher number of points
         integrate_with_infinite_bounds(
@@ -313,6 +317,7 @@ where
 }
 
 /// Helper function for integrating with finite bounds
+#[allow(dead_code)]
 fn integrate_with_finite_bounds<F, Func>(
     f: &Func,
     mapped_bounds: &[(F, F)],
@@ -326,7 +331,7 @@ where
     F: IntegrateFloat,
     Func: Fn(&Array1<F>) -> F,
 {
-    // Get the current dimension's bounds
+    // Get the current dimension's _bounds
     let (a, b) = mapped_bounds[dim];
 
     // Set up 7-point Gauss-Kronrod quadrature for better accuracy
@@ -411,6 +416,7 @@ where
 }
 
 /// Helper function for integrating with infinite bounds
+#[allow(dead_code)]
 fn integrate_with_infinite_bounds<F, Func>(
     f: &Func,
     mapped_bounds: &[(F, F)],
@@ -479,7 +485,7 @@ where
     let mut all_converged = true;
 
     // Map nodes from [-1,1] to [0,1] for our transformation
-    // But avoid exact 0 and 1 for infinite bounds
+    // But avoid exact 0 and 1 for infinite _bounds
     let scale_factor = match (a_bound, b_bound) {
         (Bound::Finite(_), Bound::PosInf) | (Bound::NegInf, Bound::Finite(_)) => {
             F::from_f64(0.4999).unwrap()
@@ -557,6 +563,7 @@ where
 /// // Exact result is 0.25
 /// assert!((result.value - 0.25).abs() < 1e-10);
 /// ```
+#[allow(dead_code)]
 pub fn nquad<F, Func>(
     func: Func,
     ranges: &[(F, F)],
@@ -584,7 +591,6 @@ where
 #[cfg(test)]
 mod tests {
     use super::*;
-    use std::f64::consts::PI;
 
     #[test]
     fn test_simple_2d_integral() {

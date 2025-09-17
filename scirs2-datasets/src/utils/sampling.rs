@@ -8,8 +8,10 @@
 use crate::error::{DatasetsError, Result};
 use ndarray::Array1;
 use rand::prelude::*;
-use rand::rng;
 use rand::rngs::StdRng;
+use rand::seq::SliceRandom;
+use rand_distr::Uniform;
+use scirs2_core::rng;
 use std::collections::HashMap;
 
 /// Performs random sampling with or without replacement
@@ -42,6 +44,7 @@ use std::collections::HashMap;
 /// let bootstrap_indices = random_sample(10, 15, true, Some(42)).unwrap();
 /// assert_eq!(bootstrap_indices.len(), 15);
 /// ```
+#[allow(dead_code)]
 pub fn random_sample(
     n_samples: usize,
     sample_size: usize,
@@ -50,25 +53,24 @@ pub fn random_sample(
 ) -> Result<Vec<usize>> {
     if n_samples == 0 {
         return Err(DatasetsError::InvalidFormat(
-            "Number of samples must be > 0".to_string(),
+            "Number of _samples must be > 0".to_string(),
         ));
     }
 
     if sample_size == 0 {
         return Err(DatasetsError::InvalidFormat(
-            "Sample size must be > 0".to_string(),
+            "Sample _size must be > 0".to_string(),
         ));
     }
 
     if !replace && sample_size > n_samples {
         return Err(DatasetsError::InvalidFormat(format!(
-            "Cannot sample {} items from {} without replacement",
-            sample_size, n_samples
+            "Cannot sample {sample_size} items from {n_samples} without replacement"
         )));
     }
 
     let mut rng = match random_seed {
-        Some(seed) => StdRng::seed_from_u64(seed),
+        Some(_seed) => StdRng::seed_from_u64(_seed),
         None => {
             let mut r = rng();
             StdRng::seed_from_u64(r.next_u64())
@@ -80,7 +82,7 @@ pub fn random_sample(
     if replace {
         // Bootstrap sampling (with replacement)
         for _ in 0..sample_size {
-            indices.push(rng.random_range(0..n_samples));
+            indices.push(rng.sample(Uniform::new(0, n_samples).unwrap()));
         }
     } else {
         // Sampling without replacement
@@ -125,6 +127,7 @@ pub fn random_sample(
 ///     *class_counts.entry(class).or_insert(0) += 1;
 /// }
 /// ```
+#[allow(dead_code)]
 pub fn stratified_sample(
     targets: &Array1<f64>,
     sample_size: usize,
@@ -138,7 +141,7 @@ pub fn stratified_sample(
 
     if sample_size == 0 {
         return Err(DatasetsError::InvalidFormat(
-            "Sample size must be > 0".to_string(),
+            "Sample _size must be > 0".to_string(),
         ));
     }
 
@@ -158,7 +161,7 @@ pub fn stratified_sample(
     }
 
     let mut rng = match random_seed {
-        Some(seed) => StdRng::seed_from_u64(seed),
+        Some(_seed) => StdRng::seed_from_u64(_seed),
         None => {
             let mut r = rng();
             StdRng::seed_from_u64(r.next_u64())
@@ -245,6 +248,7 @@ pub fn stratified_sample(
 /// // This should be true with high probability
 /// assert!(high_weight_count >= 1);
 /// ```
+#[allow(dead_code)]
 pub fn importance_sample(
     weights: &Array1<f64>,
     sample_size: usize,
@@ -259,7 +263,7 @@ pub fn importance_sample(
 
     if sample_size == 0 {
         return Err(DatasetsError::InvalidFormat(
-            "Sample size must be > 0".to_string(),
+            "Sample _size must be > 0".to_string(),
         ));
     }
 
@@ -288,7 +292,7 @@ pub fn importance_sample(
     }
 
     let mut rng = match random_seed {
-        Some(seed) => StdRng::seed_from_u64(seed),
+        Some(_seed) => StdRng::seed_from_u64(_seed),
         None => {
             let mut r = rng();
             StdRng::seed_from_u64(r.next_u64())
@@ -306,7 +310,7 @@ pub fn importance_sample(
         }
 
         // Generate random number between 0 and current_sum
-        let random_value = rng.random_range(0.0..current_sum);
+        let random_value = rng.gen_range(0.0..current_sum);
 
         // Find the index corresponding to this random value
         let mut cumulative_weight = 0.0;
@@ -329,7 +333,7 @@ pub fn importance_sample(
                 available_weights
                     .iter()
                     .enumerate()
-                    .filter(|(i, _)| *i != selected_idx)
+                    .filter(|(i_, _)| *i_ != selected_idx)
                     .map(|(_, &w)| w),
             );
             available_indices.remove(selected_idx);
@@ -369,6 +373,7 @@ pub fn importance_sample(
 /// unique_indices.dedup();
 /// assert!(unique_indices.len() < bootstrap_indices.len());
 /// ```
+#[allow(dead_code)]
 pub fn bootstrap_sample(
     n_samples: usize,
     n_bootstrap_samples: usize,
@@ -402,6 +407,7 @@ pub fn bootstrap_sample(
 /// assert_eq!(bootstrap_samples.len(), 10);
 /// assert!(bootstrap_samples.iter().all(|sample| sample.len() == 50));
 /// ```
+#[allow(dead_code)]
 pub fn multiple_bootstrap_samples(
     n_samples: usize,
     sample_size: usize,
@@ -410,12 +416,12 @@ pub fn multiple_bootstrap_samples(
 ) -> Result<Vec<Vec<usize>>> {
     if n_bootstrap_rounds == 0 {
         return Err(DatasetsError::InvalidFormat(
-            "Number of bootstrap rounds must be > 0".to_string(),
+            "Number of bootstrap _rounds must be > 0".to_string(),
         ));
     }
 
     let mut rng = match random_seed {
-        Some(seed) => StdRng::seed_from_u64(seed),
+        Some(_seed) => StdRng::seed_from_u64(_seed),
         None => {
             let mut r = rng();
             StdRng::seed_from_u64(r.next_u64())
@@ -436,6 +442,7 @@ pub fn multiple_bootstrap_samples(
 mod tests {
     use super::*;
     use ndarray::array;
+    use rand_distr::Uniform;
     use std::collections::HashSet;
 
     #[test]

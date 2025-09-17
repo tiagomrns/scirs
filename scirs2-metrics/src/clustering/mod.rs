@@ -40,8 +40,7 @@ pub use self::validation::*;
 
 // Common utility functions that might be used across multiple submodules
 use ndarray::{Array1, Array2, ArrayBase, Data, Dimension, Ix2};
-use num_traits::{Float, FromPrimitive, NumCast};
-use rand::{rngs::StdRng, Rng, SeedableRng};
+use num_traits::{Float, NumCast};
 use std::collections::HashMap;
 
 use crate::error::{MetricsError, Result};
@@ -108,8 +107,7 @@ where
             Ok(F::one() - cosine_similarity)
         }
         _ => Err(MetricsError::InvalidInput(format!(
-            "Unknown distance metric: {}",
-            metric
+            "Unknown distance metric: {metric}"
         ))),
     }
 }

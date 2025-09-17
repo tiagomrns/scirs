@@ -33,6 +33,7 @@ use ndarray::Array2;
 ///
 /// let sparse = dense_to_csr(&dense).unwrap();
 /// ```
+#[allow(dead_code)]
 pub fn dense_to_csr(dense: &Array2<f64>) -> SparseResult<CsrMatrix<f64>> {
     let shape = dense.dim();
     let (rows, cols) = (shape.0, shape.1);
@@ -64,6 +65,7 @@ pub fn dense_to_csr(dense: &Array2<f64>) -> SparseResult<CsrMatrix<f64>> {
 /// # Returns
 ///
 /// * Sparse matrix in CSC format
+#[allow(dead_code)]
 pub fn dense_to_csc(dense: &Array2<f64>) -> SparseResult<CscMatrix<f64>> {
     let shape = dense.dim();
     let (rows, cols) = (shape.0, shape.1);
@@ -95,6 +97,7 @@ pub fn dense_to_csc(dense: &Array2<f64>) -> SparseResult<CscMatrix<f64>> {
 /// # Returns
 ///
 /// * Sparse matrix in COO format
+#[allow(dead_code)]
 pub fn dense_to_coo(dense: &Array2<f64>) -> SparseResult<CooMatrix<f64>> {
     let shape = dense.dim();
     let (rows, cols) = (shape.0, shape.1);
@@ -126,6 +129,7 @@ pub fn dense_to_coo(dense: &Array2<f64>) -> SparseResult<CooMatrix<f64>> {
 /// # Returns
 ///
 /// * Dense matrix as 2D array
+#[allow(dead_code)]
 pub fn csr_to_dense(sparse: &CsrMatrix<f64>) -> Array2<f64> {
     let (rows, cols) = sparse.shape();
     let mut dense = Array2::zeros((rows, cols));
@@ -149,6 +153,7 @@ pub fn csr_to_dense(sparse: &CsrMatrix<f64>) -> Array2<f64> {
 /// # Returns
 ///
 /// * Dense matrix as 2D array
+#[allow(dead_code)]
 pub fn csc_to_dense(sparse: &CscMatrix<f64>) -> Array2<f64> {
     let (rows, cols) = sparse.shape();
     let mut dense = Array2::zeros((rows, cols));
@@ -172,6 +177,7 @@ pub fn csc_to_dense(sparse: &CscMatrix<f64>) -> Array2<f64> {
 /// # Returns
 ///
 /// * Dense matrix as 2D array
+#[allow(dead_code)]
 pub fn coo_to_dense(sparse: &CooMatrix<f64>) -> Array2<f64> {
     let (rows, cols) = sparse.shape();
     let mut dense = Array2::zeros((rows, cols));
@@ -195,6 +201,7 @@ pub fn coo_to_dense(sparse: &CooMatrix<f64>) -> Array2<f64> {
 /// # Returns
 ///
 /// * Sparse matrix in COO format
+#[allow(dead_code)]
 pub fn csr_to_coo(csr: &CsrMatrix<f64>) -> CooMatrix<f64> {
     let (rows, cols) = csr.shape();
     let dense = csr.to_dense();
@@ -225,6 +232,7 @@ pub fn csr_to_coo(csr: &CsrMatrix<f64>) -> CooMatrix<f64> {
 /// # Returns
 ///
 /// * Sparse matrix in COO format
+#[allow(dead_code)]
 pub fn csc_to_coo(csc: &CscMatrix<f64>) -> CooMatrix<f64> {
     let (rows, cols) = csc.shape();
     let dense = csc.to_dense();
@@ -255,6 +263,7 @@ pub fn csc_to_coo(csc: &CscMatrix<f64>) -> CooMatrix<f64> {
 /// # Returns
 ///
 /// * Sparse matrix in CSR format
+#[allow(dead_code)]
 pub fn coo_to_csr(coo: &CooMatrix<f64>) -> CsrMatrix<f64> {
     let (rows, cols) = coo.shape();
     let dense = coo.to_dense();
@@ -285,6 +294,7 @@ pub fn coo_to_csr(coo: &CooMatrix<f64>) -> CsrMatrix<f64> {
 /// # Returns
 ///
 /// * Sparse matrix in CSC format
+#[allow(dead_code)]
 pub fn coo_to_csc(coo: &CooMatrix<f64>) -> CscMatrix<f64> {
     let (rows, cols) = coo.shape();
     let dense = coo.to_dense();
@@ -315,6 +325,7 @@ pub fn coo_to_csc(coo: &CooMatrix<f64>) -> CscMatrix<f64> {
 /// # Returns
 ///
 /// * Sparse matrix in CSC format
+#[allow(dead_code)]
 pub fn csr_to_csc<F>(csr: &CsrMatrix<F>) -> SparseResult<CscMatrix<F>>
 where
     F: Clone + Copy + std::fmt::Debug + PartialEq + num_traits::Zero,

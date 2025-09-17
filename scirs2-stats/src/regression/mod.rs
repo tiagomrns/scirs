@@ -108,8 +108,7 @@ where
     ///
     /// # Examples
     ///
-    /// ```ignore
-    /// # FIXME: This doc test requires LAPACK/BLAS to be linked properly
+    /// ```
     /// use ndarray::{array, Array2};
     /// use scirs2_stats::linear_regression;
     ///
@@ -135,21 +134,21 @@ where
     /// assert!((predictions[0] - 9.0f64).abs() < 1e-8f64);  // 1 + 2*4 = 9
     /// assert!((predictions[1] - 11.0f64).abs() < 1e-8f64); // 1 + 2*5 = 11
     /// ```
-    pub fn predict(&self, x_new: &ArrayView2<F>) -> StatsResult<Array1<F>>
+    pub fn predict(&self, xnew: &ArrayView2<F>) -> StatsResult<Array1<F>>
     where
         F: std::ops::Mul<Output = F> + std::iter::Sum<F>,
     {
         // Check that the number of features matches
-        if x_new.ncols() != self.coefficients.len() {
+        if xnew.ncols() != self.coefficients.len() {
             return Err(StatsError::DimensionMismatch(format!(
                 "Number of features in x_new ({}) must match the number of coefficients ({})",
-                x_new.ncols(),
+                xnew.ncols(),
                 self.coefficients.len()
             )));
         }
 
         // Calculate predictions
-        let predictions = x_new.dot(&self.coefficients);
+        let predictions = xnew.dot(&self.coefficients);
 
         Ok(predictions)
     }

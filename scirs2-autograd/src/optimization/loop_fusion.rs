@@ -73,9 +73,9 @@ pub struct FusionChain<F: Float> {
     /// Operations in the chain
     operations: Vec<FusableOperation<F>>,
     /// Input tensor shapes
-    input_shapes: Vec<Vec<usize>>,
+    inputshapes: Vec<Vec<usize>>,
     /// Output shape
-    output_shape: Vec<usize>,
+    outputshape: Vec<usize>,
     /// Estimated performance benefit
     performance_benefit: f64,
 }
@@ -91,33 +91,33 @@ impl<F: Float> FusionChain<F> {
     pub fn new() -> Self {
         Self {
             operations: Vec::new(),
-            input_shapes: Vec::new(),
-            output_shape: Vec::new(),
+            inputshapes: Vec::new(),
+            outputshape: Vec::new(),
             performance_benefit: 0.0,
         }
     }
 
     /// Add an operation to the chain
-    pub fn add_operation(&mut self, op: FusableOperation<F>, input_shape: Vec<usize>) {
+    pub fn add_operation(&mut self, op: FusableOperation<F>, inputshape: Vec<usize>) {
         // For the first operation, set output shape before estimating benefit
-        if self.output_shape.is_empty() {
-            self.output_shape = input_shape.clone();
+        if self.outputshape.is_empty() {
+            self.outputshape = inputshape.clone();
         }
 
         // Estimate performance benefit before moving op
         self.performance_benefit += self.estimate_benefit(&op);
 
         self.operations.push(op);
-        self.input_shapes.push(input_shape.clone());
+        self.inputshapes.push(inputshape.clone());
 
         // For element-wise operations, output shape matches input shape
-        self.output_shape = input_shape;
+        self.outputshape = inputshape;
     }
 
     /// Estimate performance benefit of adding this operation
     fn estimate_benefit(&self, op: &FusableOperation<F>) -> f64 {
         // Each fused operation saves one memory round-trip
-        let elements = self.output_shape.iter().product::<usize>() as f64;
+        let elements = self.outputshape.iter().product::<usize>() as f64;
 
         match op {
             FusableOperation::Add
@@ -186,7 +186,7 @@ impl<F: Float> LoopFusionOptimizer<F> {
         self.fusion_mapping.clear();
 
         // Find all element-wise operations
-        let element_wise_ops = self.find_element_wise_operations(graph);
+        let element_wise_ops = LoopFusionOptimizer::<F>::find_element_wise_operations(graph);
 
         // Group operations into fusion chains
         let chains = self.identify_fusion_chains(&element_wise_ops, graph);
@@ -206,9 +206,9 @@ impl<F: Float> LoopFusionOptimizer<F> {
     }
 
     /// Find all element-wise operations in the graph
-    fn find_element_wise_operations(&self, _graph: &Graph<F>) -> Vec<TensorID> {
+    fn find_element_wise_operations(selfgraph: &Graph<F>) -> Vec<TensorID> {
         // This is a simplified implementation - in practice, would need to
-        // inspect the actual graph structure and operation types
+        // inspect the actual _graph structure and operation types
         Vec::new()
     }
 
@@ -251,15 +251,18 @@ impl<F: Float> LoopFusionOptimizer<F> {
             }
 
             // Check if current operation is fusable
-            if let Some(fusable_op) = self.classify_operation(current_op, graph) {
+            if let Some(fusableop) = LoopFusionOptimizer::<F>::classify_operation(current_op, graph)
+            {
                 visited.insert(current_op);
 
                 // For this example, assume shape is [100] - in practice would extract from graph
-                chain.add_operation(fusable_op, vec![100]);
+                chain.add_operation(fusableop, vec![100]);
 
                 // Find next operation in chain
-                if let Some(next_op) = self.find_next_fusable_operation(current_op, graph) {
-                    current_op = next_op;
+                if let Some(nextop) =
+                    LoopFusionOptimizer::<F>::find_next_fusable_operation(current_op, graph)
+                {
+                    current_op = nextop;
                 } else {
                     break;
                 }
@@ -272,23 +275,15 @@ impl<F: Float> LoopFusionOptimizer<F> {
     }
 
     /// Classify an operation as fusable or not
-    fn classify_operation(
-        &self,
-        _op_idx: TensorID,
-        _graph: &Graph<F>,
-    ) -> Option<FusableOperation<F>> {
+    fn classify_operation(op_idx: TensorID, graph: &Graph<F>) -> Option<FusableOperation<F>> {
         // In practice, would inspect the actual operation type
         // For this example, return a sample operation
         Some(FusableOperation::Add)
     }
 
     /// Find the next operation that can be fused with the current one
-    fn find_next_fusable_operation(
-        &self,
-        _current_op: TensorID,
-        _graph: &Graph<F>,
-    ) -> Option<TensorID> {
-        // In practice, would traverse graph dependencies
+    fn find_next_fusable_operation(current_op: TensorID, graph: &Graph<F>) -> Option<TensorID> {
+        // In practice, would traverse _graph dependencies
         None
     }
 
@@ -334,7 +329,7 @@ impl<F: Float> FusedKernel<F> {
     /// Compile the fusion chain into an executable kernel
     fn compile_kernel(chain: &FusionChain<F>) -> KernelResult<F> {
         let operations = chain.operations.clone();
-        let _output_shape = chain.output_shape.clone();
+        let _outputshape = chain.outputshape.clone();
 
         Ok(Box::new(
             move |inputs: &[&Array<F, IxDyn>]| -> Result<Array<F, IxDyn>, OpError> {
@@ -593,6 +588,7 @@ static FUSION_MANAGER: std::sync::OnceLock<Arc<Mutex<LoopFusionManager<f32>>>> =
     std::sync::OnceLock::new();
 
 /// Initialize the global fusion manager
+#[allow(dead_code)]
 pub fn init_fusion_manager() -> Arc<Mutex<LoopFusionManager<f32>>> {
     FUSION_MANAGER
         .get_or_init(|| Arc::new(Mutex::new(LoopFusionManager::new())))
@@ -600,6 +596,7 @@ pub fn init_fusion_manager() -> Arc<Mutex<LoopFusionManager<f32>>> {
 }
 
 /// Configure global fusion settings
+#[allow(dead_code)]
 pub fn configure_fusion(config: FusionConfig) -> Result<(), OpError> {
     let manager = init_fusion_manager();
     let mut manager_guard = manager
@@ -610,6 +607,7 @@ pub fn configure_fusion(config: FusionConfig) -> Result<(), OpError> {
 }
 
 /// Enable or disable loop fusion globally
+#[allow(dead_code)]
 pub fn set_fusion_enabled(enabled: bool) -> Result<(), OpError> {
     let config = FusionConfig {
         enable_fusion: enabled,
@@ -619,6 +617,7 @@ pub fn set_fusion_enabled(enabled: bool) -> Result<(), OpError> {
 }
 
 /// Check if loop fusion is enabled
+#[allow(dead_code)]
 pub fn is_fusion_enabled() -> bool {
     let manager = init_fusion_manager();
     let result = match manager.lock() {

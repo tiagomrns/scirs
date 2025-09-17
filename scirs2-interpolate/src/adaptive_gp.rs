@@ -106,7 +106,7 @@ impl<T: Float + FromPrimitive> Default for KernelHyperparameters<T> {
 #[derive(Debug, Clone)]
 pub struct KernelModel<T> {
     /// Type of kernel
-    pub kernel_type: KernelType,
+    pub kerneltype: KernelType,
     /// Optimized hyperparameters
     pub hyperparameters: KernelHyperparameters<T>,
     /// Log marginal likelihood (model evidence)
@@ -302,15 +302,15 @@ where
     }
 
     /// Set the maximum number of optimization iterations
-    pub fn with_max_optimization_iterations(mut self, max_iter: usize) -> Self {
-        self.config.max_optimization_iterations = max_iter;
+    pub fn with_max_optimization_iterations(mut self, maxiter: usize) -> Self {
+        self.config.max_optimization_iterations = maxiter;
         self
     }
 
     /// Enable sparse GP approximations for large datasets
-    pub fn with_sparse_approximation(mut self, enable: bool, num_inducing: usize) -> Self {
+    pub fn with_sparse_approximation(mut self, enable: bool, numinducing: usize) -> Self {
         self.config.enable_sparse_gp = enable;
-        self.config.num_inducing_points = num_inducing;
+        self.config.num_inducing_points = numinducing;
         self
     }
 
@@ -351,15 +351,15 @@ where
         self.evaluated_models.clear();
         self.stats = GPStats::default();
 
-        for &kernel_type in &self.config.kernel_candidates.clone() {
-            let model = self.fit_kernel(kernel_type)?;
+        for &kerneltype in &self.config.kernel_candidates.clone() {
+            let model = self.fit_kernel(kerneltype)?;
             self.evaluated_models.push(model);
 
             // Update statistics
             *self
                 .stats
                 .kernel_usage
-                .entry(format!("{:?}", kernel_type))
+                .entry(format!("{kerneltype:?}"))
                 .or_insert(0) += 1;
             self.stats.kernels_evaluated += 1;
         }
@@ -390,15 +390,15 @@ where
     /// # Returns
     ///
     /// Predicted mean values
-    pub fn predict(&self, x_new: &ArrayView1<T>) -> InterpolateResult<Array1<T>> {
+    pub fn predict(&self, xnew: &ArrayView1<T>) -> InterpolateResult<Array1<T>> {
         if self.selected_model.is_none() {
             return Err(InterpolateError::InvalidState(
                 "Model must be fitted before making predictions".to_string(),
             ));
         }
 
-        let (mean, _) = self.predict_with_uncertainty(x_new)?;
-        Ok(mean)
+        let (mean_, _) = self.predict_with_uncertainty(xnew)?;
+        Ok(mean_)
     }
 
     /// Make predictions with uncertainty quantification
@@ -427,7 +427,7 @@ where
         let k_star = self.compute_kernel_matrix_cross(
             &self.x_train.view(),
             x_new,
-            selected_model.kernel_type,
+            selected_model.kerneltype,
             &selected_model.hyperparameters,
         )?;
 
@@ -447,7 +447,7 @@ where
 
     /// Get the selected kernel type
     pub fn get_selected_kernel(&self) -> Option<KernelType> {
-        self.selected_model.as_ref().map(|m| m.kernel_type)
+        self.selected_model.as_ref().map(|m| m.kerneltype)
     }
 
     /// Get the selected model's hyperparameters
@@ -466,12 +466,12 @@ where
     }
 
     /// Fit a specific kernel type and return the fitted model
-    fn fit_kernel(&mut self, kernel_type: KernelType) -> InterpolateResult<KernelModel<T>> {
-        // Initialize hyperparameters based on kernel type
-        let mut hyperparams = self.initialize_hyperparameters(kernel_type)?;
+    fn fit_kernel(&mut self, kerneltype: KernelType) -> InterpolateResult<KernelModel<T>> {
+        // Initialize hyperparameters based on kernel _type
+        let mut hyperparams = self.initialize_hyperparameters(kerneltype)?;
 
         let mut log_marginal_likelihood =
-            self.compute_log_marginal_likelihood(kernel_type, &hyperparams)?;
+            self.compute_log_marginal_likelihood(kerneltype, &hyperparams)?;
 
         if self.config.enable_optimization {
             let optimization_start = std::time::Instant::now();
@@ -479,7 +479,7 @@ where
             // Optimize hyperparameters using gradient-free method (simplified)
             for iteration in 0..self.config.max_optimization_iterations {
                 let improved = self.optimize_hyperparameters_step(
-                    kernel_type,
+                    kerneltype,
                     &mut hyperparams,
                     &mut log_marginal_likelihood,
                 )?;
@@ -501,13 +501,13 @@ where
         }
 
         // Compute BIC for model comparison
-        let num_params = self.count_hyperparameters(kernel_type);
+        let num_params = self.count_hyperparameters(kerneltype);
         let n = T::from(self.x_train.len()).unwrap();
         let bic = T::from(2.0).unwrap() * T::from(num_params).unwrap() * n.ln()
             - T::from(2.0).unwrap() * log_marginal_likelihood;
 
         Ok(KernelModel {
-            kernel_type,
+            kerneltype,
             hyperparameters: hyperparams,
             log_marginal_likelihood,
             num_hyperparameters: num_params,
@@ -519,7 +519,7 @@ where
     /// Initialize hyperparameters for a given kernel type
     fn initialize_hyperparameters(
         &self,
-        kernel_type: KernelType,
+        kerneltype: KernelType,
     ) -> InterpolateResult<KernelHyperparameters<T>> {
         let mut hyperparams = KernelHyperparameters::default();
 
@@ -535,7 +535,7 @@ where
         hyperparams.output_variance = y_var.max(T::from(0.01).unwrap());
 
         // Kernel-specific parameter initialization
-        match kernel_type {
+        match kerneltype {
             KernelType::Periodic => {
                 // Add period parameter
                 hyperparams
@@ -563,14 +563,14 @@ where
     /// Compute the log marginal likelihood for given kernel and hyperparameters
     fn compute_log_marginal_likelihood(
         &self,
-        kernel_type: KernelType,
+        kerneltype: KernelType,
         hyperparams: &KernelHyperparameters<T>,
     ) -> InterpolateResult<T> {
         // Compute kernel matrix
         let k_matrix = self.compute_kernel_matrix(
             &self.x_train.view(),
             &self.x_train.view(),
-            kernel_type,
+            kerneltype,
             hyperparams,
         )?;
 
@@ -608,7 +608,7 @@ where
     /// Perform one step of hyperparameter optimization
     fn optimize_hyperparameters_step(
         &self,
-        kernel_type: KernelType,
+        kerneltype: KernelType,
         hyperparams: &mut KernelHyperparameters<T>,
         current_likelihood: &mut T,
     ) -> InterpolateResult<bool> {
@@ -622,7 +622,7 @@ where
         let original_output_var = hyperparams.output_variance;
         for &multiplier in &[1.1, 0.9] {
             hyperparams.output_variance = original_output_var * T::from(multiplier).unwrap();
-            if let Ok(likelihood) = self.compute_log_marginal_likelihood(kernel_type, hyperparams) {
+            if let Ok(likelihood) = self.compute_log_marginal_likelihood(kerneltype, hyperparams) {
                 if likelihood > *current_likelihood {
                     *current_likelihood = likelihood;
                     improved = true;
@@ -637,7 +637,7 @@ where
             for &multiplier in &[1.2, 0.8] {
                 hyperparams.length_scales[i] = original_length_scale * T::from(multiplier).unwrap();
                 if let Ok(likelihood) =
-                    self.compute_log_marginal_likelihood(kernel_type, hyperparams)
+                    self.compute_log_marginal_likelihood(kerneltype, hyperparams)
                 {
                     if likelihood > *current_likelihood {
                         *current_likelihood = likelihood;
@@ -653,7 +653,7 @@ where
         let original_noise_var = hyperparams.noise_variance;
         for &multiplier in &[1.1, 0.9] {
             hyperparams.noise_variance = original_noise_var * T::from(multiplier).unwrap();
-            if let Ok(likelihood) = self.compute_log_marginal_likelihood(kernel_type, hyperparams) {
+            if let Ok(likelihood) = self.compute_log_marginal_likelihood(kerneltype, hyperparams) {
                 if likelihood > *current_likelihood {
                     *current_likelihood = likelihood;
                     improved = true;
@@ -719,7 +719,7 @@ where
             let k_matrix = self.compute_kernel_matrix(
                 &self.x_train.view(),
                 &self.x_train.view(),
-                model.kernel_type,
+                model.kerneltype,
                 &model.hyperparameters,
             )?;
 
@@ -747,7 +747,7 @@ where
         &self,
         x1: &ArrayView1<T>,
         x2: &ArrayView1<T>,
-        kernel_type: KernelType,
+        kerneltype: KernelType,
         hyperparams: &KernelHyperparameters<T>,
     ) -> InterpolateResult<Array2<T>> {
         let n1 = x1.len();
@@ -756,7 +756,7 @@ where
 
         for i in 0..n1 {
             for j in 0..n2 {
-                k_matrix[(i, j)] = self.kernel_function(x1[i], x2[j], kernel_type, hyperparams)?;
+                k_matrix[(i, j)] = self.kernel_function(x1[i], x2[j], kerneltype, hyperparams)?;
             }
         }
 
@@ -768,10 +768,10 @@ where
         &self,
         x_train: &ArrayView1<T>,
         x_test: &ArrayView1<T>,
-        kernel_type: KernelType,
+        kerneltype: KernelType,
         hyperparams: &KernelHyperparameters<T>,
     ) -> InterpolateResult<Array2<T>> {
-        self.compute_kernel_matrix(x_train, x_test, kernel_type, hyperparams)
+        self.compute_kernel_matrix(x_train, x_test, kerneltype, hyperparams)
     }
 
     /// Evaluate kernel function between two points
@@ -779,14 +779,14 @@ where
         &self,
         x1: T,
         x2: T,
-        kernel_type: KernelType,
+        kerneltype: KernelType,
         hyperparams: &KernelHyperparameters<T>,
     ) -> InterpolateResult<T> {
         let output_var = hyperparams.output_variance;
         let length_scale = hyperparams.length_scales[0];
         let distance = (x1 - x2).abs();
 
-        let value = match kernel_type {
+        let value = match kerneltype {
             KernelType::RBF => {
                 let scaled_dist = distance / length_scale;
                 output_var * (-T::from(0.5).unwrap() * scaled_dist * scaled_dist).exp()
@@ -844,8 +844,7 @@ where
             }
             _ => {
                 return Err(InterpolateError::InvalidValue(format!(
-                    "Kernel type {:?} not implemented",
-                    kernel_type
+                    "Kernel _type {kerneltype:?} not implemented"
                 )));
             }
         };
@@ -888,8 +887,8 @@ where
     }
 
     /// Count the number of hyperparameters for a kernel type
-    fn count_hyperparameters(&self, kernel_type: KernelType) -> usize {
-        match kernel_type {
+    fn count_hyperparameters(&self, kerneltype: KernelType) -> usize {
+        match kerneltype {
             KernelType::RBF
             | KernelType::Matern12
             | KernelType::Matern32
@@ -980,6 +979,7 @@ where
 /// # Returns
 ///
 /// A fitted adaptive Gaussian process
+#[allow(dead_code)]
 pub fn make_adaptive_gp<T>(
     x: &ArrayView1<T>,
     y: &ArrayView1<T>,

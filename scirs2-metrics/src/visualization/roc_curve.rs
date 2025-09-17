@@ -135,8 +135,8 @@ where
     /// # Returns
     ///
     /// * Self for method chaining
-    pub fn with_show_auc(mut self, show_auc: bool) -> Self {
-        self.show_auc = show_auc;
+    pub fn with_show_auc(mut self, showauc: bool) -> Self {
+        self.show_auc = showauc;
         self
     }
 
@@ -149,8 +149,8 @@ where
     /// # Returns
     ///
     /// * Self for method chaining
-    pub fn with_show_baseline(mut self, show_baseline: bool) -> Self {
-        self.show_baseline = show_baseline;
+    pub fn with_show_baseline(mut self, showbaseline: bool) -> Self {
+        self.show_baseline = showbaseline;
         self
     }
 
@@ -224,13 +224,13 @@ where
     f64: From<T>,
 {
     fn prepare_data(&self) -> std::result::Result<VisualizationData, Box<dyn Error>> {
-        let (fpr, tpr, _, auc) = self
+        let (fpr, tpr_, thresholds, auc) = self
             .compute_roc()
             .map_err(|e| Box::new(e) as Box<dyn Error>)?;
 
         // Prepare data for visualization
         let mut x = fpr;
-        let mut y = tpr;
+        let mut y = tpr_;
 
         // Add baseline if requested
         if self.show_baseline {
@@ -290,6 +290,7 @@ where
 /// # Returns
 ///
 /// * A ROCCurveVisualizer
+#[allow(dead_code)]
 pub fn roc_curve_visualization(
     fpr: Vec<f64>,
     tpr: Vec<f64>,
@@ -310,6 +311,7 @@ pub fn roc_curve_visualization(
 /// # Returns
 ///
 /// * A ROCCurveVisualizer
+#[allow(dead_code)]
 pub fn roc_curve_from_labels<'a, T, S>(
     y_true: &'a ArrayBase<S, Ix1>,
     y_score: &'a ArrayBase<S, Ix1>,

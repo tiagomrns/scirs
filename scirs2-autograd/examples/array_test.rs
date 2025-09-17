@@ -1,3 +1,4 @@
+#[allow(dead_code)]
 fn main() {
     println!("Testing ndarray shapes");
 
@@ -33,7 +34,7 @@ fn main() {
     println!("Matrix (dyn)[0,0]: {}", matrix_dyn[[0, 0]]);
 
     // Create an array directly
-    let direct = ndarray::Array::<f64, _>::zeros((2, 2));
+    let direct = ndarray::Array::<f64, ndarray::Ix2>::zeros((2, 2));
     println!("Direct shape: {:?}", direct.shape());
 
     // Clone the arrays

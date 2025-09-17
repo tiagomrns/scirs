@@ -1,36 +1,105 @@
 [package]
 name = "scirs2-cluster"
 version.workspace = true
-edition = "2021"
-authors = ["SciRS2 Team"]
-license = "MIT OR Apache-2.0"
-description = "Clustering algorithms module for SciRS2"
-repository = "https://github.com/cool-japan/scirs"
+edition.workspace = true
+authors.workspace = true
+description = "Clustering algorithms module for SciRS2 (scirs2-cluster)"
+license.workspace = true
+repository.workspace = true
 keywords = ["clustering", "scientific", "scipy", "numerical", "kmeans"]
 categories = ["science", "mathematics", "algorithms"]
+
+[lints]
+workspace = true
 
 [dependencies]
 # Core dependencies
 scirs2-core = { workspace = true, features = ["parallel", "simd"] }
 scirs2-spatial = { workspace = true }
 scirs2-linalg = { workspace = true }
-scirs2-stats = { workspace = true }
+# scirs2-stats = { workspace = true } # Temporarily disabled due to compilation errors
 ndarray = { workspace = true }
+statrs = { workspace = true }
 # BLAS dependencies removed - using core abstractions
 # ndarray-linalg = { workspace = true }
 num-traits = { workspace = true }
+num-complex = { workspace = true }
 thiserror = { workspace = true }
 rand = { workspace = true }
 rand_distr = { workspace = true }
 approx = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+bincode = { workspace = true }
+flate2 = { workspace = true }
+chrono = { workspace = true }
+num_cpus = { workspace = true }
+
+# Optional serialization formats
+serde_yaml = { workspace = true, optional = true }
+rmp-serde = { workspace = true, optional = true }
+serde_cbor = { workspace = true, optional = true }
+
+# Optional compression algorithms
+lz4 = { workspace = true, optional = true }
+zstd = { workspace = true, optional = true }
+bzip2 = { workspace = true, optional = true }
+
+# Temporary file handling
+tempfile = { workspace = true }
+
+# Archive handling for batch operations
+tar = { workspace = true }
+
+# UUID generation for model versioning
+uuid = { workspace = true }
+
+# Optional Python bindings
+pyo3 = { workspace = true, optional = true }
+numpy = { workspace = true, optional = true }
+
+# Optional visualization libraries
+plotters = { workspace = true, optional = true }
+egui = { workspace = true, optional = true }
+eframe = { workspace = true, optional = true }
 
 [dev-dependencies]
-proptest = "1.4.0"
-criterion = { version = "0.5", features = ["html_reports"] }
+proptest = { workspace = true }
+criterion = { workspace = true, features = ["html_reports"] }
 
 [features]
-default = []
+default = ["json", "binary"]
+json = []
+binary = []
+yaml = ["serde_yaml"]
+msgpack = ["rmp-serde"]
+cbor = ["serde_cbor"]
+all_formats = ["yaml", "msgpack", "cbor"]
+
+# Compression features
+lz4_compression = ["lz4"]
+zstd_compression = ["zstd"]
+bzip2_compression = ["bzip2"]
+all_compression = ["lz4_compression", "zstd_compression", "bzip2_compression"]
+
+# GPU acceleration features
+gpu = []
+cuda = ["gpu"]
+opencl = ["gpu"]
+rocm = ["gpu"]
+metal = ["gpu"]
+oneapi = ["gpu"]
+gpu_all = ["cuda", "opencl", "rocm", "metal", "oneapi"]
+
+# Python bindings feature
+pyo3 = ["dep:pyo3", "dep:numpy"]
+
+# Visualization features
+plotters = ["dep:plotters"]
+egui = ["dep:egui", "dep:eframe"]
+visualization = ["plotters", "egui"]
 
 [[bench]]
 name = "clustering_benchmarks"
 harness = false
+

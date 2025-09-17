@@ -53,9 +53,9 @@ pub use profiler::{
 };
 pub use reporter::{format_bytes, format_duration};
 pub use snapshot::{
-    clear_snapshots, compare_snapshots, global_snapshot_manager, load_snapshots, save_snapshots,
-    take_snapshot, ComponentStatsDiff, MemorySnapshot, SnapshotComponentStats, SnapshotDiff,
-    SnapshotManager, SnapshotReport,
+    clear_snapshots, compare_snapshots, global_snapshot_manager, load_all_snapshots,
+    save_all_snapshots, take_snapshot, ComponentStatsDiff, MemorySnapshot, SnapshotComponentStats,
+    SnapshotDiff, SnapshotManager, SnapshotReport,
 };
 
 #[cfg(feature = "memory_visualization")]
@@ -67,7 +67,7 @@ pub use reporter::ChartFormat;
 pub use gpu::{setup_gpu_memory_tracking, TrackedGpuBuffer, TrackedGpuContext};
 
 use crate::memory::{BufferPool, ChunkProcessor, ChunkProcessor2D};
-use ndarray::{ArrayBase, Data, Dimension, ViewRepr};
+use ndarray::{ArrayBase, Data, Dimension, IxDyn, ViewRepr};
 use once_cell::sync::Lazy;
 use std::marker::PhantomData;
 use std::mem;
@@ -78,27 +78,31 @@ static GLOBAL_METRICS_COLLECTOR: Lazy<Arc<MemoryMetricsCollector>> =
     Lazy::new(|| Arc::new(MemoryMetricsCollector::new(MemoryMetricsConfig::default())));
 
 /// Get the global memory metrics collector
+#[allow(dead_code)]
 pub fn global_metrics_collector() -> Arc<MemoryMetricsCollector> {
     GLOBAL_METRICS_COLLECTOR.clone()
 }
 
 /// Track a memory allocation event in the global collector
+#[allow(dead_code)]
 pub fn track_allocation(component: impl Into<String>, size: usize, address: usize) {
     let event = MemoryEvent::new(MemoryEventType::Allocation, component, size, address);
     GLOBAL_METRICS_COLLECTOR.record_event(event);
 }
 
 /// Track a memory deallocation event in the global collector
+#[allow(dead_code)]
 pub fn track_deallocation(component: impl Into<String>, size: usize, address: usize) {
     let event = MemoryEvent::new(MemoryEventType::Deallocation, component, size, address);
     GLOBAL_METRICS_COLLECTOR.record_event(event);
 }
 
 /// Track a memory resize event in the global collector
+#[allow(dead_code)]
 pub fn track_resize(
     component: impl Into<String>,
-    new_size: usize,
     old_size: usize,
+    new_size: usize,
     address: usize,
 ) {
     let event = MemoryEvent::new(MemoryEventType::Resize, component, new_size, address)
@@ -107,16 +111,19 @@ pub fn track_resize(
 }
 
 /// Generate a memory report from the global collector
+#[allow(dead_code)]
 pub fn generate_memory_report() -> MemoryReport {
     GLOBAL_METRICS_COLLECTOR.generate_report()
 }
 
 /// Format the current memory report as a string
+#[allow(dead_code)]
 pub fn format_memory_report() -> String {
     GLOBAL_METRICS_COLLECTOR.generate_report().format()
 }
 
 /// Reset the global memory metrics collector
+#[allow(dead_code)]
 pub fn reset_memory_metrics() {
     GLOBAL_METRICS_COLLECTOR.reset();
 }
@@ -125,7 +132,7 @@ pub fn reset_memory_metrics() {
 pub struct TrackedBufferPool<T: Clone + Default> {
     inner: BufferPool<T>,
     component_name: String,
-    _phantom: PhantomData<T>,
+    phantom: PhantomData<T>,
 }
 
 impl<T: Clone + Default> TrackedBufferPool<T> {
@@ -134,7 +141,7 @@ impl<T: Clone + Default> TrackedBufferPool<T> {
         Self {
             inner: BufferPool::new(),
             component_name: component_name.into(),
-            _phantom: PhantomData,
+            phantom: PhantomData,
         }
     }
 
@@ -203,24 +210,24 @@ where
 {
     /// Create a new tracked chunk processor
     pub fn new(
-        array: &'a ArrayBase<S, D>,
-        chunk_shape: D,
         component_name: impl Into<String>,
+        array: &'a ArrayBase<S, D>,
+        chunkshape: &[usize],
     ) -> Self {
         Self {
-            inner: ChunkProcessor::new(array, chunk_shape),
+            inner: ChunkProcessor::new(array, array.raw_dim()),
             component_name: component_name.into(),
         }
     }
 
     /// Process the array in chunks, tracking memory usage for each chunk
-    pub fn process_chunks<F>(&mut self, mut f: F)
+    pub fn process_chunks_dyn<F>(&mut self, mut f: F)
     where
-        F: FnMut(&ArrayBase<ViewRepr<&A>, D>, D),
+        F: FnMut(&ArrayBase<ViewRepr<&A>, IxDyn>, IxDyn),
     {
         // Create a wrapper function that tracks memory
         let component_name = self.component_name.clone();
-        let tracked_f = move |chunk: &ArrayBase<ViewRepr<&A>, D>, coords: D| {
+        let tracked_f = move |chunk: &ArrayBase<ViewRepr<&A>, IxDyn>, coords: IxDyn| {
             // Calculate memory size (approximate)
             let size = chunk.len() * mem::size_of::<A>();
 
@@ -236,7 +243,7 @@ where
         };
 
         // Process chunks with the tracked function
-        self.inner.process_chunks(tracked_f);
+        self.inner.process_chunks_dyn(tracked_f);
     }
 
     /// Get the total number of chunks
@@ -261,11 +268,11 @@ where
     /// Create a new tracked 2D chunk processor
     pub fn new(
         array: &'a ArrayBase<S, ndarray::Ix2>,
-        chunk_shape: (usize, usize),
+        chunkshape: (usize, usize),
         component_name: impl Into<String>,
     ) -> Self {
         Self {
-            inner: ChunkProcessor2D::new(array, chunk_shape),
+            inner: ChunkProcessor2D::new(array, chunkshape),
             component_name: component_name.into(),
         }
     }
@@ -306,7 +313,7 @@ mod tests {
     #[test]
     fn test_global_memory_metrics() {
         // Lock the mutex to ensure test isolation
-        let _lock = MEMORY_METRICS_TEST_MUTEX
+        let lock = MEMORY_METRICS_TEST_MUTEX
             .lock()
             .unwrap_or_else(|poisoned| poisoned.into_inner());
 

@@ -15,6 +15,7 @@ use scirs2_io::{
 };
 use tempfile::tempdir;
 
+#[allow(dead_code)]
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("🔄 Round-trip Testing Example");
     println!("=============================");
@@ -47,6 +48,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     Ok(())
 }
 
+#[allow(dead_code)]
 fn test_csv_round_trip(temp_dir: &tempfile::TempDir) -> Result<(), Box<dyn std::error::Error>> {
     println!("\n📊 Testing CSV Round-trip...");
 
@@ -120,6 +122,7 @@ fn test_csv_round_trip(temp_dir: &tempfile::TempDir) -> Result<(), Box<dyn std::
     Ok(())
 }
 
+#[allow(dead_code)]
 fn test_matrix_market_round_trip(
     temp_dir: &tempfile::TempDir,
 ) -> Result<(), Box<dyn std::error::Error>> {
@@ -219,6 +222,7 @@ fn test_matrix_market_round_trip(
     Ok(())
 }
 
+#[allow(dead_code)]
 fn test_hdf5_round_trip(temp_dir: &tempfile::TempDir) -> Result<(), Box<dyn std::error::Error>> {
     println!("\n🗄️  Testing HDF5 Round-trip...");
 
@@ -296,6 +300,7 @@ fn test_hdf5_round_trip(temp_dir: &tempfile::TempDir) -> Result<(), Box<dyn std:
     Ok(())
 }
 
+#[allow(dead_code)]
 fn test_serialization_round_trip(
     temp_dir: &tempfile::TempDir,
 ) -> Result<(), Box<dyn std::error::Error>> {
@@ -370,6 +375,7 @@ fn test_serialization_round_trip(
     Ok(())
 }
 
+#[allow(dead_code)]
 fn test_validation_round_trip(
     temp_dir: &tempfile::TempDir,
 ) -> Result<(), Box<dyn std::error::Error>> {
@@ -467,6 +473,7 @@ fn test_validation_round_trip(
     Ok(())
 }
 
+#[allow(dead_code)]
 fn test_parallel_round_trip(
     temp_dir: &tempfile::TempDir,
 ) -> Result<(), Box<dyn std::error::Error>> {

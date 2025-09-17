@@ -4,6 +4,7 @@
 //! and analyze memory usage in a scientific computing application.
 
 #[cfg(not(feature = "memory_management"))]
+#[allow(dead_code)]
 fn main() {
     println!("This example requires the 'memory_management' feature to be enabled.");
     println!("Run with: cargo run --example memory_metrics_example --features memory_management");
@@ -23,6 +24,7 @@ use std::thread;
 use std::time::Duration;
 
 #[cfg(feature = "memory_management")]
+#[allow(dead_code)]
 fn main() {
     println!("Memory Metrics Example");
     println!("======================\n");
@@ -63,7 +65,7 @@ fn main() {
         capture_call_stacks: false,
         max_events: 100,
         real_time_aggregation: true,
-        sampling_rate: 0.75, // Only track 75% of events
+        samplingrate: 0.75, // Only track 75% of events
     };
 
     // Create a collector
@@ -71,7 +73,7 @@ fn main() {
 
     // Track array allocations for matrix operations
     println!("Creating and tracking matrices...");
-    simulate_matrix_operations(&collector);
+    simulatematrix_operations(&collector);
 
     // Get and print the report
     let report = collector.generate_report();
@@ -99,17 +101,14 @@ fn main() {
     #[cfg(feature = "memory_metrics")]
     {
         // If memory_metrics feature is enabled, we get a serde_json::Value
-        let json = report.to_json();
+        let json = report.to_json_2();
         println!("\nJSON Report Format (excerpt):");
         println!("{{");
-        println!(
-            "  \"total_current_usage\": {},",
-            json["total_current_usage"]
-        );
-        println!("  \"total_peak_usage\": {},", json["total_peak_usage"]);
+        println!("  \"total_current_usage\": {},", json[total_current_usage]);
+        println!("  \"total_peak_usage\": {},", json[total_peak_usage]);
         println!(
             "  \"total_allocation_count\": {}",
-            json["total_allocation_count"]
+            json[total_allocation_count]
         );
         println!("  ...");
         println!("}}");
@@ -118,7 +117,7 @@ fn main() {
     #[cfg(not(feature = "memory_metrics"))]
     {
         // If memory_metrics feature is disabled, we get a String
-        let json = report.to_json();
+        let json = report.to_json_2();
         println!("\nJSON Report Format (feature disabled):");
         println!("{}", json);
     }
@@ -126,7 +125,8 @@ fn main() {
 
 // Simulate matrix operations with memory tracking
 #[cfg(feature = "memory_management")]
-fn simulate_matrix_operations(collector: &MemoryMetricsCollector) {
+#[allow(dead_code)]
+fn simulatematrix_operations(collector: &MemoryMetricsCollector) {
     // Track memory for matrix A
     let matrix_a_size = 8 * 1024 * 1024; // 8MB
     collector.record_event(
@@ -209,19 +209,20 @@ fn simulate_matrix_operations(collector: &MemoryMetricsCollector) {
 
 // Create and track actual ndarray arrays
 #[cfg(feature = "memory_management")]
+#[allow(dead_code)]
 fn create_arrays() {
     // Create a 2D array (1000 x 1000 f64 values = ~8MB)
     let dims = (1000, 1000);
     let size_2d = 8 * dims.0 * dims.1;
     track_allocation("ndarray", size_2d, 0xd000);
-    let _array_2d = Array2::<f64>::zeros(dims);
+    let array_2d = Array2::<f64>::zeros(dims);
     println!("Created 2D array: {}", format_bytes(size_2d));
 
     // Create a 3D array (100 x 100 x 100 f64 values = ~8MB)
     let dims_3d = (100, 100, 100);
     let size_3d = 8 * dims_3d.0 * dims_3d.1 * dims_3d.2;
     track_allocation("ndarray", size_3d, 0xe000);
-    let _array_3d = Array3::<f64>::zeros(dims_3d);
+    let array_3d = Array3::<f64>::zeros(dims_3d);
     println!("Created 3D array: {}", format_bytes(size_3d));
 
     // Simulate some computation

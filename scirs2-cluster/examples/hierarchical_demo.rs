@@ -1,6 +1,7 @@
 use ndarray::Array2;
 use scirs2_cluster::hierarchy::{fcluster, linkage, ClusterCriterion, LinkageMethod, Metric};
 
+#[allow(dead_code)]
 fn main() {
     println!("Hierarchical Clustering Example");
     println!("==============================");
@@ -34,7 +35,7 @@ fn main() {
     ];
 
     for &method in &linkage_methods {
-        println!("\n{:?} Linkage:", method);
+        println!("\n{method:?} Linkage:");
 
         // Calculate linkage matrix
         let linkage_matrix = linkage(data.view(), method, Metric::Euclidean).unwrap();
@@ -60,7 +61,7 @@ fn main() {
             )
             .unwrap();
 
-            println!("\n  {} Clusters:", n_clusters);
+            println!("\n  {n_clusters} Clusters:");
             // Count elements in each cluster
             let mut cluster_counts = vec![0; n_clusters];
             for &label in labels.iter() {
@@ -69,12 +70,12 @@ fn main() {
 
             // Print cluster sizes
             for (i, &count) in cluster_counts.iter().enumerate() {
-                println!("    Cluster {}: {} points", i, count);
+                println!("    Cluster {i}: {count} points");
             }
 
             // Print points in each cluster
             for cluster_idx in 0..n_clusters {
-                println!("    Points in Cluster {}:", cluster_idx);
+                println!("    Points in Cluster {cluster_idx}:");
                 for (point_idx, &label) in labels.iter().enumerate() {
                     if label == cluster_idx {
                         println!(

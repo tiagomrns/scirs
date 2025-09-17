@@ -8,6 +8,7 @@ use ndarray::array;
 use scirs2_linalg::compat;
 use scirs2_linalg::error::LinalgResult;
 
+#[allow(dead_code)]
 fn main() -> LinalgResult<()> {
     println!("=== SciPy-compatible Linear Algebra API Showcase ===\n");
 
@@ -120,7 +121,7 @@ fn main() -> LinalgResult<()> {
     }
 
     // Eigenvalues only (SciPy: scipy.linalg.eigvalsh)
-    let (eigenvals_only, _) = compat::eigh(
+    let eigenvals_only = compat::eigh(
         &a.view(),
         None,
         false,
@@ -277,7 +278,7 @@ mod tests {
     }
 
     #[test]
-    fn test_scipy_compat_matrix_functions() {
+    fn test_scipy_compatmatrix_functions() {
         let a = array![[1.0, 0.1], [0.1, 1.0]];
 
         // Test matrix exponential

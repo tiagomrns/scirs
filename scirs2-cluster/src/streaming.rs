@@ -4,10 +4,13 @@
 //! large datasets that don't fit entirely in memory, using streaming and
 //! progressive processing techniques.
 
-use ndarray::{Array1, Array2, ArrayView2};
+use ndarray::{Array1, Array2, ArrayView1, ArrayView2};
 use num_traits::{Float, FromPrimitive};
-use std::collections::VecDeque;
+use std::collections::{HashMap, VecDeque};
 use std::fmt::Debug;
+use std::fs::{File, OpenOptions};
+use std::io::{BufReader, BufWriter, Read, Seek, SeekFrom, Write};
+use std::path::{Path, PathBuf};
 
 use crate::error::{ClusteringError, Result};
 use crate::vq::euclidean_distance;
@@ -537,5 +540,941 @@ mod tests {
         assert_eq!(config.n_centers, 10);
         assert_eq!(config.tolerance, 1e-4);
         assert_eq!(config.max_iterations, 100);
+    }
+}
+
+/// Enhanced memory management for out-of-core clustering
+pub mod memory_management {
+    use super::*;
+
+    /// Adaptive memory manager that monitors system resources
+    #[derive(Debug, Clone)]
+    pub struct AdaptiveMemoryManager {
+        /// Current memory usage estimate (bytes)
+        current_usage: usize,
+        /// Maximum allowed memory usage (bytes)
+        max_memory: usize,
+        /// Memory pressure threshold (0.0 to 1.0)
+        pressure_threshold: f64,
+        /// Enable disk-based storage when memory is full
+        enable_disk_storage: bool,
+        /// Temporary directory for disk storage
+        temp_dir: Option<PathBuf>,
+    }
+
+    impl AdaptiveMemoryManager {
+        /// Create a new adaptive memory manager
+        pub fn new(max_memory_mb: usize) -> Self {
+            Self {
+                current_usage: 0,
+                max_memory: max_memory_mb * 1024 * 1024,
+                pressure_threshold: 0.8,
+                enable_disk_storage: true,
+                temp_dir: std::env::temp_dir().into(),
+            }
+        }
+
+        /// Check if memory pressure is high
+        pub fn is_memory_pressure_high(&self) -> bool {
+            self.current_usage as f64 / self.max_memory as f64 > self.pressure_threshold
+        }
+
+        /// Estimate memory usage for storing data
+        pub fn estimate_memory_usage<F: Float>(
+            &self,
+            n_samples: usize,
+            n_features: usize,
+        ) -> usize {
+            std::mem::size_of::<F>() * n_samples * n_features
+        }
+
+        /// Allocate memory for data
+        pub fn allocate<F: Float>(&mut self, n_samples: usize, n_features: usize) -> Result<()> {
+            let required = self.estimate_memory_usage::<F>(n_samples, n_features);
+
+            if self.current_usage + required > self.max_memory {
+                if self.enable_disk_storage {
+                    // Allow allocation but mark that we need disk storage
+                    Ok(())
+                } else {
+                    Err(ClusteringError::InvalidInput(
+                        "Not enough memory and disk storage is disabled".to_string(),
+                    ))
+                }
+            } else {
+                self.current_usage += required;
+                Ok(())
+            }
+        }
+
+        /// Deallocate memory
+        pub fn deallocate(&mut self, amount: usize) {
+            self.current_usage = self.current_usage.saturating_sub(amount);
+        }
+
+        /// Get available memory
+        pub fn available_memory(&self) -> usize {
+            self.max_memory.saturating_sub(self.current_usage)
+        }
+
+        /// Get optimal batch size based on available memory
+        pub fn optimal_batch_size<F: Float>(&self, n_features: usize) -> usize {
+            let available = self.available_memory();
+            let bytes_per_sample = std::mem::size_of::<F>() * n_features;
+
+            if bytes_per_sample == 0 {
+                1000 // Default fallback
+            } else {
+                (available / bytes_per_sample).max(1).min(10000)
+            }
+        }
+    }
+
+    /// Disk-based storage for large intermediate results
+    #[derive(Debug)]
+    pub struct DiskBackedStorage<F: Float + FromPrimitive> {
+        temp_files: Vec<PathBuf>,
+        temp_dir: PathBuf,
+        buffer_size: usize,
+        _phantom: std::marker::PhantomData<F>,
+    }
+
+    impl<F: Float + FromPrimitive> DiskBackedStorage<F> {
+        /// Create a new disk-backed storage
+        pub fn new(temp_dir: Option<PathBuf>, buffer_size: usize) -> Self {
+            let temp_dir = temp_dir.unwrap_or_else(std::env::temp_dir);
+
+            Self {
+                temp_files: Vec::new(),
+                temp_dir,
+                buffer_size,
+                _phantom: std::marker::PhantomData,
+            }
+        }
+
+        /// Write data chunk to disk
+        pub fn write_chunk(&mut self, data: ArrayView2<F>) -> Result<usize> {
+            let chunk_id = self.temp_files.len();
+            let file_path = self
+                .temp_dir
+                .join(format!("cluster_chunk_{}.bin", chunk_id));
+
+            let file = File::create(&file_path).map_err(|e| {
+                ClusteringError::InvalidInput(format!("Failed to create temp file: {}", e))
+            })?;
+            let mut writer = BufWriter::new(file);
+
+            // Write dimensions
+            let n_rows = data.shape()[0] as u64;
+            let n_cols = data.shape()[1] as u64;
+            writer.write_all(&n_rows.to_le_bytes()).map_err(|e| {
+                ClusteringError::InvalidInput(format!("Failed to write dimensions: {}", e))
+            })?;
+            writer.write_all(&n_cols.to_le_bytes()).map_err(|e| {
+                ClusteringError::InvalidInput(format!("Failed to write dimensions: {}", e))
+            })?;
+
+            // Write data (simplified - in practice, you'd want more sophisticated serialization)
+            for row in data.rows() {
+                for &value in row.iter() {
+                    let bytes = value.to_f64().unwrap_or(0.0).to_le_bytes();
+                    writer.write_all(&bytes).map_err(|e| {
+                        ClusteringError::InvalidInput(format!("Failed to write data: {}", e))
+                    })?;
+                }
+            }
+
+            writer.flush().map_err(|e| {
+                ClusteringError::InvalidInput(format!("Failed to flush data: {}", e))
+            })?;
+
+            self.temp_files.push(file_path);
+            Ok(chunk_id)
+        }
+
+        /// Read data chunk from disk
+        pub fn read_chunk(&self, chunk_id: usize) -> Result<Array2<F>> {
+            if chunk_id >= self.temp_files.len() {
+                return Err(ClusteringError::InvalidInput(
+                    "Invalid chunk ID".to_string(),
+                ));
+            }
+
+            let file = File::open(&self.temp_files[chunk_id]).map_err(|e| {
+                ClusteringError::InvalidInput(format!("Failed to open temp file: {}", e))
+            })?;
+            let mut reader = BufReader::new(file);
+
+            // Read dimensions
+            let mut dim_bytes = [0u8; 8];
+            reader.read_exact(&mut dim_bytes).map_err(|e| {
+                ClusteringError::InvalidInput(format!("Failed to read dimensions: {}", e))
+            })?;
+            let n_rows = u64::from_le_bytes(dim_bytes) as usize;
+
+            reader.read_exact(&mut dim_bytes).map_err(|e| {
+                ClusteringError::InvalidInput(format!("Failed to read dimensions: {}", e))
+            })?;
+            let n_cols = u64::from_le_bytes(dim_bytes) as usize;
+
+            // Read data
+            let mut data = Array2::zeros((n_rows, n_cols));
+            for mut row in data.rows_mut() {
+                for element in row.iter_mut() {
+                    let mut value_bytes = [0u8; 8];
+                    reader.read_exact(&mut value_bytes).map_err(|e| {
+                        ClusteringError::InvalidInput(format!("Failed to read data: {}", e))
+                    })?;
+                    let value = f64::from_le_bytes(value_bytes);
+                    *element = F::from(value).unwrap_or(F::zero());
+                }
+            }
+
+            Ok(data)
+        }
+
+        /// Clean up temporary files
+        pub fn cleanup(&mut self) -> Result<()> {
+            for file_path in &self.temp_files {
+                if file_path.exists() {
+                    std::fs::remove_file(file_path).map_err(|e| {
+                        ClusteringError::InvalidInput(format!("Failed to remove temp file: {}", e))
+                    })?;
+                }
+            }
+            self.temp_files.clear();
+            Ok(())
+        }
+
+        /// Get number of chunks stored
+        pub fn num_chunks(&self) -> usize {
+            self.temp_files.len()
+        }
+    }
+
+    impl<F: Float + FromPrimitive> Drop for DiskBackedStorage<F> {
+        fn drop(&mut self) {
+            let _ = self.cleanup(); // Best effort cleanup
+        }
+    }
+}
+
+/// Advanced streaming algorithms for out-of-core processing
+pub mod advanced_streaming {
+    use super::*;
+
+    /// Count-Min Sketch for approximate frequency counting
+    /// Useful for identifying heavy hitters in streaming data
+    #[derive(Debug, Clone)]
+    pub struct CountMinSketch {
+        /// Hash tables (width x depth)
+        tables: Vec<Vec<u64>>,
+        /// Width of each hash table
+        width: usize,
+        /// Depth (number of hash tables)
+        depth: usize,
+        /// Hash functions (simple linear congruential generators)
+        hash_params: Vec<(u64, u64)>,
+    }
+
+    impl CountMinSketch {
+        /// Create a new Count-Min Sketch
+        pub fn new(epsilon: f64, delta: f64) -> Self {
+            let width = (std::f64::consts::E / epsilon).ceil() as usize;
+            let depth = (1.0 / delta).ln().ceil() as usize;
+
+            let mut tables = Vec::new();
+            let mut hash_params = Vec::new();
+
+            for i in 0..depth {
+                tables.push(vec![0u64; width]);
+                // Simple hash parameters (in practice, use better hash functions)
+                hash_params.push((
+                    1000000007 + i as u64 * 1000000009,
+                    1000000021 + i as u64 * 1000000033,
+                ));
+            }
+
+            Self {
+                tables,
+                width,
+                depth,
+                hash_params,
+            }
+        }
+
+        /// Add an item to the sketch
+        pub fn add(&mut self, item: u64) {
+            for i in 0..self.depth {
+                let hash = self.hash(item, i);
+                let idx = (hash as usize) % self.width;
+                self.tables[i][idx] += 1;
+            }
+        }
+
+        /// Estimate the frequency of an item
+        pub fn estimate(&self, item: u64) -> u64 {
+            let mut min_count = u64::MAX;
+
+            for i in 0..self.depth {
+                let hash = self.hash(item, i);
+                let idx = (hash as usize) % self.width;
+                min_count = min_count.min(self.tables[i][idx]);
+            }
+
+            min_count
+        }
+
+        /// Simple hash function
+        fn hash(&self, item: u64, table_idx: usize) -> u64 {
+            let (a, b) = self.hash_params[table_idx];
+            a.wrapping_mul(item).wrapping_add(b)
+        }
+
+        /// Get heavy hitters (items with frequency above threshold)
+        pub fn heavy_hitters(&self, threshold: u64) -> Vec<u64> {
+            // This is a simplified implementation
+            // In practice, you'd need to track candidates more carefully
+            Vec::new()
+        }
+    }
+
+    /// Reservoir sampling for maintaining a random sample from a stream
+    #[derive(Debug, Clone)]
+    pub struct ReservoirSampler<T> {
+        reservoir: Vec<T>,
+        capacity: usize,
+        seen_count: usize,
+    }
+
+    impl<T: Clone> ReservoirSampler<T> {
+        /// Create a new reservoir sampler
+        pub fn new(capacity: usize) -> Self {
+            Self {
+                reservoir: Vec::with_capacity(capacity),
+                capacity,
+                seen_count: 0,
+            }
+        }
+
+        /// Add an item to the reservoir
+        pub fn add(&mut self, item: T) {
+            self.seen_count += 1;
+
+            if self.reservoir.len() < self.capacity {
+                self.reservoir.push(item);
+            } else {
+                // Replace random item with probability k/n
+                let random_idx = (self.seen_count - 1) % self.capacity; // Simplified random selection
+                if random_idx < self.capacity {
+                    self.reservoir[random_idx] = item;
+                }
+            }
+        }
+
+        /// Get the current sample
+        pub fn sample(&self) -> &[T] {
+            &self.reservoir
+        }
+
+        /// Get the number of items seen
+        pub fn items_seen(&self) -> usize {
+            self.seen_count
+        }
+    }
+
+    /// Progressive learning framework for online clustering
+    #[derive(Debug)]
+    pub struct ProgressiveLearner<F: Float> {
+        /// Current model state
+        model_state: HashMap<String, Vec<F>>,
+        /// Learning rate schedule
+        learning_rate: F,
+        /// Decay factor for learning rate
+        decay_factor: F,
+        /// Number of updates performed
+        update_count: usize,
+        /// Memory for recent gradients (for momentum)
+        gradient_memory: HashMap<String, Vec<F>>,
+        /// Momentum coefficient
+        momentum: F,
+    }
+
+    impl<F: Float + FromPrimitive + std::fmt::Debug> ProgressiveLearner<F> {
+        /// Create a new progressive learner
+        pub fn new(initial_lr: F, decay: F, momentum: F) -> Self {
+            Self {
+                model_state: HashMap::new(),
+                learning_rate: initial_lr,
+                decay_factor: decay,
+                update_count: 0,
+                gradient_memory: HashMap::new(),
+                momentum,
+            }
+        }
+
+        /// Update model parameters with gradient
+        pub fn update(&mut self, param_name: &str, gradient: &[F]) -> Result<()> {
+            self.update_count += 1;
+
+            // Update learning rate with decay
+            if self.update_count % 100 == 0 {
+                self.learning_rate = self.learning_rate * self.decay_factor;
+            }
+
+            // Initialize parameter if not exists
+            if !self.model_state.contains_key(param_name) {
+                self.model_state
+                    .insert(param_name.to_string(), vec![F::zero(); gradient.len()]);
+                self.gradient_memory
+                    .insert(param_name.to_string(), vec![F::zero(); gradient.len()]);
+            }
+
+            let params = self.model_state.get_mut(param_name).unwrap();
+            let momentum_grad = self.gradient_memory.get_mut(param_name).unwrap();
+
+            // Update with momentum
+            for i in 0..params.len() {
+                momentum_grad[i] = self.momentum * momentum_grad[i] + gradient[i];
+                params[i] = params[i] - self.learning_rate * momentum_grad[i];
+            }
+
+            Ok(())
+        }
+
+        /// Get current parameter values
+        pub fn get_parameters(&self, param_name: &str) -> Option<&[F]> {
+            self.model_state.get(param_name).map(|v| v.as_slice())
+        }
+
+        /// Get current learning rate
+        pub fn current_learning_rate(&self) -> F {
+            self.learning_rate
+        }
+
+        /// Get update count
+        pub fn update_count(&self) -> usize {
+            self.update_count
+        }
+    }
+}
+
+/// Intelligent data loading and preprocessing for streaming
+pub mod intelligent_loading {
+    use super::*;
+
+    /// Adaptive data loader that adjusts batch sizes based on system performance
+    #[derive(Debug)]
+    pub struct AdaptiveDataLoader {
+        /// Current batch size
+        current_batch_size: usize,
+        /// Minimum batch size
+        min_batch_size: usize,
+        /// Maximum batch size
+        max_batch_size: usize,
+        /// Performance history (processing times)
+        performance_history: VecDeque<f64>,
+        /// Target processing time per batch (seconds)
+        target_time: f64,
+        /// Adjustment factor for batch size changes
+        adjustment_factor: f64,
+    }
+
+    impl AdaptiveDataLoader {
+        /// Create a new adaptive data loader
+        pub fn new(initial_batch_size: usize, target_time_seconds: f64) -> Self {
+            Self {
+                current_batch_size: initial_batch_size,
+                min_batch_size: initial_batch_size / 10,
+                max_batch_size: initial_batch_size * 10,
+                performance_history: VecDeque::with_capacity(10),
+                target_time: target_time_seconds,
+                adjustment_factor: 0.1,
+            }
+        }
+
+        /// Report batch processing time and adjust batch size
+        pub fn report_batch_time(&mut self, processing_time: f64) {
+            self.performance_history.push_back(processing_time);
+            if self.performance_history.len() > 10 {
+                self.performance_history.pop_front();
+            }
+
+            // Calculate moving average
+            let avg_time = self.performance_history.iter().sum::<f64>()
+                / self.performance_history.len() as f64;
+
+            // Adjust batch size based on performance
+            if avg_time > self.target_time * 1.2 {
+                // Too slow, reduce batch size
+                let new_size =
+                    (self.current_batch_size as f64 * (1.0 - self.adjustment_factor)) as usize;
+                self.current_batch_size = new_size.max(self.min_batch_size);
+            } else if avg_time < self.target_time * 0.8 {
+                // Too fast, increase batch size
+                let new_size =
+                    (self.current_batch_size as f64 * (1.0 + self.adjustment_factor)) as usize;
+                self.current_batch_size = new_size.min(self.max_batch_size);
+            }
+        }
+
+        /// Get current optimal batch size
+        pub fn current_batch_size(&self) -> usize {
+            self.current_batch_size
+        }
+
+        /// Get performance statistics
+        pub fn get_stats(&self) -> (f64, f64, usize) {
+            let avg_time = if self.performance_history.is_empty() {
+                0.0
+            } else {
+                self.performance_history.iter().sum::<f64>() / self.performance_history.len() as f64
+            };
+
+            let efficiency = if avg_time > 0.0 {
+                self.target_time / avg_time
+            } else {
+                1.0
+            };
+
+            (avg_time, efficiency, self.current_batch_size)
+        }
+    }
+
+    /// Smart preprocessing pipeline for streaming data
+    #[derive(Debug, Clone)]
+    pub struct StreamingPreprocessor<F: Float> {
+        /// Running statistics for normalization
+        running_mean: Option<Array1<F>>,
+        running_var: Option<Array1<F>>,
+        sample_count: usize,
+        /// Enable online normalization
+        normalize: bool,
+        /// Outlier detection threshold (standard deviations)
+        outlier_threshold: F,
+        /// Missing value strategy
+        missing_value_strategy: MissingValueStrategy,
+    }
+
+    #[derive(Debug, Clone)]
+    pub enum MissingValueStrategy {
+        Drop,
+        FillMean,
+        FillZero,
+        Interpolate,
+    }
+
+    impl<F: Float + FromPrimitive + std::fmt::Debug> StreamingPreprocessor<F> {
+        /// Create a new streaming preprocessor
+        pub fn new(normalize: bool, outlier_threshold: F) -> Self {
+            Self {
+                running_mean: None,
+                running_var: None,
+                sample_count: 0,
+                normalize,
+                outlier_threshold,
+                missing_value_strategy: MissingValueStrategy::FillMean,
+            }
+        }
+
+        /// Process a batch of data
+        pub fn process_batch(&mut self, mut data: Array2<F>) -> Result<Array2<F>> {
+            let (n_samples, n_features) = (data.shape()[0], data.shape()[1]);
+
+            if n_samples == 0 {
+                return Ok(data);
+            }
+
+            // Initialize statistics if first batch
+            if self.running_mean.is_none() {
+                self.running_mean = Some(Array1::zeros(n_features));
+                self.running_var = Some(Array1::zeros(n_features));
+            }
+
+            // Update running statistics
+            if self.normalize {
+                self.update_statistics(&data)?;
+            }
+
+            // Handle missing values (simplified - assumes NaN for missing)
+            self.handle_missing_values(&mut data)?;
+
+            // Apply normalization
+            if self.normalize {
+                self.apply_normalization(&mut data)?;
+            }
+
+            // Detect and handle outliers
+            self.handle_outliers(&mut data)?;
+
+            Ok(data)
+        }
+
+        /// Update running mean and variance
+        fn update_statistics(&mut self, data: &Array2<F>) -> Result<()> {
+            let (n_samples, n_features) = (data.shape()[0], data.shape()[1]);
+            let mean = self.running_mean.as_mut().unwrap();
+            let var = self.running_var.as_mut().unwrap();
+
+            for i in 0..n_samples {
+                self.sample_count += 1;
+                let sample = data.row(i);
+
+                for j in 0..n_features {
+                    if sample[j].is_finite() {
+                        // Online update of mean and variance (Welford's algorithm)
+                        let delta = sample[j] - mean[j];
+                        mean[j] = mean[j] + delta / F::from(self.sample_count).unwrap();
+                        let delta2 = sample[j] - mean[j];
+                        var[j] = var[j] + delta * delta2;
+                    }
+                }
+            }
+
+            Ok(())
+        }
+
+        /// Handle missing values
+        fn handle_missing_values(&self, data: &mut Array2<F>) -> Result<()> {
+            match self.missing_value_strategy {
+                MissingValueStrategy::FillZero => {
+                    for elem in data.iter_mut() {
+                        if !elem.is_finite() {
+                            *elem = F::zero();
+                        }
+                    }
+                }
+                MissingValueStrategy::FillMean => {
+                    if let Some(ref mean) = self.running_mean {
+                        for (_i, mut row) in data.rows_mut().into_iter().enumerate() {
+                            for (j, elem) in row.iter_mut().enumerate() {
+                                if !elem.is_finite() && j < mean.len() {
+                                    *elem = mean[j];
+                                }
+                            }
+                        }
+                    }
+                }
+                _ => {} // Other strategies not implemented
+            }
+            Ok(())
+        }
+
+        /// Apply normalization
+        fn apply_normalization(&self, data: &mut Array2<F>) -> Result<()> {
+            if let (Some(ref mean), Some(ref var)) = (&self.running_mean, &self.running_var) {
+                if self.sample_count > 1 {
+                    for (_i, mut row) in data.rows_mut().into_iter().enumerate() {
+                        for (j, elem) in row.iter_mut().enumerate() {
+                            if j < mean.len() && var[j] > F::zero() {
+                                let std_dev =
+                                    (var[j] / F::from(self.sample_count - 1).unwrap()).sqrt();
+                                if std_dev > F::zero() {
+                                    *elem = (*elem - mean[j]) / std_dev;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            Ok(())
+        }
+
+        /// Handle outliers
+        fn handle_outliers(&self, data: &mut Array2<F>) -> Result<()> {
+            // Simple outlier detection: clip values beyond threshold standard deviations
+            for elem in data.iter_mut() {
+                if elem.abs() > self.outlier_threshold {
+                    *elem = if *elem > F::zero() {
+                        self.outlier_threshold
+                    } else {
+                        -self.outlier_threshold
+                    };
+                }
+            }
+            Ok(())
+        }
+
+        /// Get current statistics
+        pub fn get_statistics(&self) -> Option<(Array1<F>, Array1<F>)> {
+            if let (Some(ref mean), Some(ref var)) = (&self.running_mean, &self.running_var) {
+                Some((mean.clone(), var.clone()))
+            } else {
+                None
+            }
+        }
+    }
+}
+
+/// Advanced online clustering algorithms for streaming data
+pub mod online_algorithms {
+    use super::*;
+    use std::collections::VecDeque;
+
+    /// Online K-means with adaptive learning rate
+    #[derive(Debug, Clone)]
+    pub struct AdaptiveOnlineKMeans<F: Float> {
+        /// Current cluster centers
+        centers: Array2<F>,
+        /// Learning rate schedule
+        learning_rate_schedule: LearningRateSchedule,
+        /// Current iteration count
+        iteration: usize,
+        /// Adaptive parameters
+        adaptive_params: AdaptiveParams<F>,
+        /// Performance metrics
+        metrics: OnlineMetrics,
+    }
+
+    /// Learning rate scheduling strategies
+    #[derive(Debug, Clone)]
+    pub enum LearningRateSchedule {
+        /// Constant learning rate
+        Constant(f64),
+        /// Decreasing with iteration: lr / (1 + decay * iteration)
+        Decay { initial_lr: f64, decay: f64 },
+        /// Step decay: lr * factor every step_size iterations
+        StepDecay {
+            initial_lr: f64,
+            factor: f64,
+            step_size: usize,
+        },
+        /// Adaptive based on cluster stability
+        Adaptive {
+            min_lr: f64,
+            max_lr: f64,
+            stability_window: usize,
+        },
+    }
+
+    /// Adaptive parameters for online learning
+    #[derive(Debug, Clone)]
+    pub struct AdaptiveParams<F: Float> {
+        /// Momentum for center updates
+        pub momentum: F,
+        /// Cluster stability tracking
+        pub stability_scores: Vec<F>,
+        /// Recent center movements
+        pub center_movements: VecDeque<F>,
+        /// Automatic cluster count adjustment
+        pub auto_k_adjustment: bool,
+        /// Split threshold for creating new clusters
+        pub split_threshold: F,
+        /// Merge threshold for combining clusters
+        pub merge_threshold: F,
+    }
+
+    /// Online performance metrics
+    #[derive(Debug, Clone, Default)]
+    pub struct OnlineMetrics {
+        /// Running estimate of within-cluster sum of squares
+        pub wcss: f64,
+        /// Number of samples processed
+        pub samples_processed: usize,
+        /// Center update frequency
+        pub update_frequency: f64,
+        /// Cluster assignments distribution
+        pub cluster_distribution: Vec<usize>,
+        /// Processing time per batch
+        pub batch_processing_times: VecDeque<f64>,
+    }
+
+    impl<F: Float + FromPrimitive + Debug> AdaptiveOnlineKMeans<F> {
+        /// Create a new adaptive online K-means instance
+        pub fn new(
+            initial_centers: Array2<F>,
+            learning_rate_schedule: LearningRateSchedule,
+        ) -> Self {
+            let n_clusters = initial_centers.nrows();
+            let adaptive_params = AdaptiveParams {
+                momentum: F::from(0.9).unwrap(),
+                stability_scores: vec![F::zero(); n_clusters],
+                center_movements: VecDeque::with_capacity(100),
+                auto_k_adjustment: false,
+                split_threshold: F::from(2.0).unwrap(),
+                merge_threshold: F::from(0.5).unwrap(),
+            };
+
+            Self {
+                centers: initial_centers,
+                learning_rate_schedule,
+                iteration: 0,
+                adaptive_params,
+                metrics: OnlineMetrics::default(),
+            }
+        }
+
+        /// Process a new sample and update clusters
+        pub fn update(&mut self, sample: ArrayView1<F>) -> Result<usize> {
+            let start_time = std::time::Instant::now();
+
+            // Find nearest cluster
+            let (nearest_cluster, min_distance) = self.find_nearest_cluster(sample)?;
+
+            // Get current learning rate
+            let lr = self.get_current_learning_rate();
+
+            // Update cluster center
+            let old_center = self.centers.row(nearest_cluster).to_owned();
+            self.update_center(nearest_cluster, sample, lr)?;
+
+            // Track center movement for adaptive learning
+            let movement = euclidean_distance(old_center.view(), self.centers.row(nearest_cluster));
+            self.adaptive_params.center_movements.push_back(movement);
+            if self.adaptive_params.center_movements.len() > 100 {
+                self.adaptive_params.center_movements.pop_front();
+            }
+
+            // Update metrics
+            self.update_metrics(
+                nearest_cluster,
+                min_distance,
+                start_time.elapsed().as_secs_f64(),
+            );
+
+            // Check for adaptive cluster adjustments
+            if self.adaptive_params.auto_k_adjustment {
+                // TODO: Implement maybe_adjust_clusters
+                // self.maybe_adjust_clusters(sample, min_distance)?;
+            }
+
+            self.iteration += 1;
+            Ok(nearest_cluster)
+        }
+
+        /// Find the nearest cluster to a sample
+        fn find_nearest_cluster(&self, sample: ArrayView1<F>) -> Result<(usize, F)> {
+            let mut min_distance = F::infinity();
+            let mut nearest_cluster = 0;
+
+            for (i, center) in self.centers.rows().into_iter().enumerate() {
+                let distance = euclidean_distance(sample, center);
+                if distance < min_distance {
+                    min_distance = distance;
+                    nearest_cluster = i;
+                }
+            }
+
+            Ok((nearest_cluster, min_distance))
+        }
+
+        /// Update a cluster center using momentum
+        fn update_center(
+            &mut self,
+            cluster_idx: usize,
+            sample: ArrayView1<F>,
+            lr: f64,
+        ) -> Result<()> {
+            let learning_rate = F::from(lr).unwrap();
+            let momentum = self.adaptive_params.momentum;
+
+            let mut center = self.centers.row_mut(cluster_idx);
+            for (i, &sample_val) in sample.iter().enumerate() {
+                if i < center.len() {
+                    let old_val = center[i];
+                    let gradient = sample_val - old_val;
+                    let update = learning_rate * gradient;
+                    center[i] = momentum * old_val + (F::one() - momentum) * (old_val + update);
+                }
+            }
+
+            Ok(())
+        }
+
+        /// Get current learning rate based on schedule
+        fn get_current_learning_rate(&self) -> f64 {
+            match &self.learning_rate_schedule {
+                LearningRateSchedule::Constant(lr) => *lr,
+                LearningRateSchedule::Decay { initial_lr, decay } => {
+                    initial_lr / (1.0 + decay * self.iteration as f64)
+                }
+                LearningRateSchedule::StepDecay {
+                    initial_lr,
+                    factor,
+                    step_size,
+                } => {
+                    let steps = self.iteration / step_size;
+                    initial_lr * factor.powi(steps as i32)
+                }
+                LearningRateSchedule::Adaptive {
+                    min_lr,
+                    max_lr,
+                    stability_window,
+                } => {
+                    let recent_movements: Vec<F> = self
+                        .adaptive_params
+                        .center_movements
+                        .iter()
+                        .rev()
+                        .take(*stability_window)
+                        .cloned()
+                        .collect();
+
+                    if recent_movements.is_empty() {
+                        return *max_lr;
+                    }
+
+                    let avg_movement = recent_movements.iter().fold(F::zero(), |acc, x| acc + *x)
+                        / F::from(recent_movements.len()).unwrap();
+                    let stability = F::one() / (F::one() + avg_movement);
+
+                    // High stability = low learning rate, low stability = high learning rate
+                    let adaptive_lr =
+                        min_lr + (max_lr - min_lr) * (F::one() - stability).to_f64().unwrap();
+                    adaptive_lr.clamp(*min_lr, *max_lr)
+                }
+            }
+        }
+
+        /// Update performance metrics
+        fn update_metrics(&mut self, cluster_idx: usize, distance: F, processing_time: f64) {
+            self.metrics.samples_processed += 1;
+
+            // Update WCSS estimate
+            let distance_sq = distance.to_f64().unwrap().powi(2);
+            let n = self.metrics.samples_processed as f64;
+            self.metrics.wcss = ((n - 1.0) * self.metrics.wcss + distance_sq) / n;
+
+            // Update cluster distribution
+            if cluster_idx >= self.metrics.cluster_distribution.len() {
+                self.metrics.cluster_distribution.resize(cluster_idx + 1, 0);
+            }
+            self.metrics.cluster_distribution[cluster_idx] += 1;
+
+            // Track processing times
+            self.metrics
+                .batch_processing_times
+                .push_back(processing_time);
+            if self.metrics.batch_processing_times.len() > 1000 {
+                self.metrics.batch_processing_times.pop_front();
+            }
+
+            // Update frequency calculation
+            let total_updates = self.metrics.cluster_distribution.iter().sum::<usize>() as f64;
+            self.metrics.update_frequency = total_updates / self.iteration.max(1) as f64;
+        }
+
+        /// Get current cluster centers
+        pub fn get_centers(&self) -> &Array2<F> {
+            &self.centers
+        }
+
+        /// Get current metrics
+        pub fn get_metrics(&self) -> &OnlineMetrics {
+            &self.metrics
+        }
+
+        /// Predict cluster for new samples
+        pub fn predict(&self, samples: ArrayView2<F>) -> Result<Array1<usize>> {
+            let n_samples = samples.nrows();
+            let mut predictions = Array1::zeros(n_samples);
+
+            for (i, sample) in samples.rows().into_iter().enumerate() {
+                let (cluster_id, _distance) = self.find_nearest_cluster(sample)?;
+                predictions[i] = cluster_id;
+            }
+
+            Ok(predictions)
+        }
     }
 }

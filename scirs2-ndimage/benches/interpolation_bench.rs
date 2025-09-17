@@ -1,11 +1,13 @@
-use criterion::{black_box, criterion_group, criterion_main, BenchmarkId, Criterion};
+use criterion::{criterion_group, criterion_main, BenchmarkId, Criterion};
 use ndarray::{Array2, Array3};
 use scirs2_ndimage::interpolation::{
     affine_transform, map_coordinates, rotate, shift, zoom, InterpolationOrder,
 };
+use std::hint::black_box;
 use std::time::Duration;
 
 /// Benchmark basic interpolation operations
+#[allow(dead_code)]
 fn bench_interpolation_operations(c: &mut Criterion) {
     let mut group = c.benchmark_group("interpolation_operations");
     group.measurement_time(Duration::from_secs(10));
@@ -32,6 +34,7 @@ fn bench_interpolation_operations(c: &mut Criterion) {
 }
 
 /// Benchmark affine transformations
+#[allow(dead_code)]
 fn bench_affine_transform(c: &mut Criterion) {
     let mut group = c.benchmark_group("affine_transform");
     group.measurement_time(Duration::from_secs(10));
@@ -104,6 +107,7 @@ fn bench_affine_transform(c: &mut Criterion) {
 }
 
 /// Benchmark different interpolation orders
+#[allow(dead_code)]
 fn bench_interpolation_orders(c: &mut Criterion) {
     let mut group = c.benchmark_group("interpolation_orders");
     group.measurement_time(Duration::from_secs(10));
@@ -130,6 +134,7 @@ fn bench_interpolation_orders(c: &mut Criterion) {
 }
 
 /// Benchmark map_coordinates for direct coordinate mapping
+#[allow(dead_code)]
 fn bench_map_coordinates(c: &mut Criterion) {
     let mut group = c.benchmark_group("map_coordinates");
     group.measurement_time(Duration::from_secs(10));
@@ -138,14 +143,16 @@ fn bench_map_coordinates(c: &mut Criterion) {
 
     // Create simple coordinate transformation (identity with slight offset)
     let (rows, cols) = input.dim();
-    let coordinates = Array2::from_shape_fn((rows, cols), |(i, j)| (i * j) as f64 + 0.5);
+    let coordinates = Array2::from_shape_fn((rows, cols), |(i, j)| (i * j) as f64 + 0.5)
+        .into_dimensionality::<ndarray::IxDyn>()
+        .unwrap();
 
     group.bench_function("map_coordinates_linear", |b| {
         b.iter(|| {
             map_coordinates(
                 black_box(&input),
                 black_box(&coordinates),
-                Some(InterpolationOrder::Linear),
+                Some(1), // Linear interpolation
                 None,
                 None,
                 None,
@@ -159,7 +166,7 @@ fn bench_map_coordinates(c: &mut Criterion) {
             map_coordinates(
                 black_box(&input),
                 black_box(&coordinates),
-                Some(InterpolationOrder::Cubic),
+                Some(3), // Cubic interpolation
                 None,
                 None,
                 None,
@@ -172,6 +179,7 @@ fn bench_map_coordinates(c: &mut Criterion) {
 }
 
 /// Benchmark 3D interpolation operations
+#[allow(dead_code)]
 fn bench_3d_interpolation(c: &mut Criterion) {
     let mut group = c.benchmark_group("3d_interpolation");
     group.measurement_time(Duration::from_secs(15));
@@ -191,6 +199,7 @@ fn bench_3d_interpolation(c: &mut Criterion) {
 }
 
 /// Benchmark different array sizes for scaling behavior
+#[allow(dead_code)]
 fn bench_scaling_behavior(c: &mut Criterion) {
     let mut group = c.benchmark_group("scaling_behavior");
     group.measurement_time(Duration::from_secs(10));

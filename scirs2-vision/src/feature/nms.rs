@@ -92,22 +92,23 @@ impl BoundingBox {
 /// # Returns
 ///
 /// * Vector of indices of boxes to keep
-pub fn nms_boxes(boxes: &[BoundingBox], iou_threshold: f32) -> Vec<usize> {
-    if boxes.is_empty() {
+#[allow(dead_code)]
+pub fn nms_boxes(_boxes: &[BoundingBox], iouthreshold: f32) -> Vec<usize> {
+    if _boxes.is_empty() {
         return vec![];
     }
 
-    // Sort boxes by score in descending order
-    let mut indices: Vec<usize> = (0..boxes.len()).collect();
+    // Sort _boxes by score in descending order
+    let mut indices: Vec<usize> = (0.._boxes.len()).collect();
     indices.sort_by(|&a, &b| {
-        boxes[b]
+        _boxes[b]
             .score
-            .partial_cmp(&boxes[a].score)
+            .partial_cmp(&_boxes[a].score)
             .unwrap_or(Ordering::Equal)
     });
 
     let mut keep = Vec::new();
-    let mut suppressed = vec![false; boxes.len()];
+    let mut suppressed = vec![false; _boxes.len()];
 
     for &idx in &indices {
         if suppressed[idx] {
@@ -116,11 +117,11 @@ pub fn nms_boxes(boxes: &[BoundingBox], iou_threshold: f32) -> Vec<usize> {
 
         keep.push(idx);
 
-        // Suppress boxes with high IoU
+        // Suppress _boxes with high IoU
         for &other_idx in &indices {
             if other_idx != idx && !suppressed[other_idx] {
-                let iou = boxes[idx].iou(&boxes[other_idx]);
-                if iou > iou_threshold {
+                let iou = _boxes[idx].iou(&_boxes[other_idx]);
+                if iou > iouthreshold {
                     suppressed[other_idx] = true;
                 }
             }
@@ -133,16 +134,17 @@ pub fn nms_boxes(boxes: &[BoundingBox], iou_threshold: f32) -> Vec<usize> {
 /// Perform class-aware NMS
 ///
 /// Only suppress boxes of the same class
-pub fn nms_boxes_class_aware(boxes: &[BoundingBox], iou_threshold: f32) -> Vec<usize> {
-    if boxes.is_empty() {
+#[allow(dead_code)]
+pub fn nms_boxes_class_aware(_boxes: &[BoundingBox], iouthreshold: f32) -> Vec<usize> {
+    if _boxes.is_empty() {
         return vec![];
     }
 
-    // Group boxes by class
+    // Group _boxes by class
     let mut class_groups: std::collections::HashMap<Option<usize>, Vec<usize>> =
         std::collections::HashMap::new();
 
-    for (idx, box_) in boxes.iter().enumerate() {
+    for (idx, box_) in _boxes.iter().enumerate() {
         class_groups.entry(box_.class_id).or_default().push(idx);
     }
 
@@ -150,9 +152,9 @@ pub fn nms_boxes_class_aware(boxes: &[BoundingBox], iou_threshold: f32) -> Vec<u
 
     // Apply NMS within each class
     for indices in class_groups.values() {
-        let class_boxes: Vec<BoundingBox> = indices.iter().map(|&idx| boxes[idx]).collect();
+        let class_boxes: Vec<BoundingBox> = indices.iter().map(|&idx| _boxes[idx]).collect();
 
-        let kept_in_class = nms_boxes(&class_boxes, iou_threshold);
+        let kept_in_class = nms_boxes(&class_boxes, iouthreshold);
 
         for kept_idx in kept_in_class {
             keep.push(indices[kept_idx]);
@@ -173,6 +175,7 @@ pub fn nms_boxes_class_aware(boxes: &[BoundingBox], iou_threshold: f32) -> Vec<u
 /// * `iou_threshold` - IoU threshold for score reduction
 /// * `sigma` - Gaussian parameter for score reduction
 /// * `score_threshold` - Minimum score threshold
+#[allow(dead_code)]
 pub fn soft_nms(
     boxes: &mut [BoundingBox],
     iou_threshold: f32,
@@ -236,6 +239,7 @@ pub fn soft_nms(
 /// # Returns
 ///
 /// * Vector of (x, y, response) tuples for local maxima
+#[allow(dead_code)]
 pub fn nms_2d(
     response: &ArrayView2<f32>,
     window_size: usize,
@@ -279,6 +283,7 @@ pub fn nms_2d(
 /// Fast NMS for 2D using maximum filter
 ///
 /// More efficient implementation using maximum filtering
+#[allow(dead_code)]
 pub fn fast_nms_2d(
     response: &ArrayView2<f32>,
     window_size: usize,
@@ -321,6 +326,7 @@ pub fn fast_nms_2d(
 /// Oriented NMS for edge detection
 ///
 /// Performs NMS along the gradient direction
+#[allow(dead_code)]
 pub fn oriented_nms(
     magnitude: &ArrayView2<f32>,
     orientation: &ArrayView2<f32>,
@@ -366,6 +372,7 @@ pub fn oriented_nms(
 /// Scale-space NMS
 ///
 /// Performs NMS across multiple scales
+#[allow(dead_code)]
 pub fn scale_space_nms(
     responses: &[Array2<f32>],
     window_size: usize,

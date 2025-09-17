@@ -3,11 +3,13 @@ use scirs2_core::memory_efficient::{
     ArithmeticOps, BroadcastOps, ChunkingStrategy, MemoryMappedArray, MemoryMappedChunks,
     ZeroCopyOps,
 };
+// Removed unused statrs import
 use std::fs::File;
 use std::io::Write;
 use std::time::Instant;
 use tempfile::tempdir;
 
+#[allow(dead_code)]
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("Memory-Mapped Array Zero-Copy Operations Example");
     println!("===============================================\n");
@@ -41,7 +43,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     );
 
     // Open as memory-mapped array
-    let array = MemoryMappedArray::<f64>::open(&file_path, &[size])?;
+    let array = MemoryMappedArray::<f64>::path(&file_path, &[size])?;
     println!(
         "Opened as memory-mapped array with shape: {:?}",
         array.shape
@@ -82,7 +84,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Compare with loading the entire array
     println!("\nComparison with loading the entire array:");
     let start = Instant::now();
-    let loaded_array = array.readonly_array::<ndarray::Ix1>()?;
+    let loaded_array = array.readonlyarray::<ndarray::Ix1>()?;
     let loaded_sum: f64 = loaded_array.iter().sum();
     let elapsed = start.elapsed();
     println!(
@@ -113,7 +115,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Compare with conventional approach
     println!("\nComparison with conventional approach:");
     let start = Instant::now();
-    let loaded_array = array.readonly_array::<ndarray::Ix1>()?;
+    let loaded_array = array.readonlyarray::<ndarray::Ix1>()?;
     let squared_loaded: Array<f64, _> = loaded_array.map(|&x| x * x);
     let squared_loaded_mean = squared_loaded.mean().unwrap();
     let elapsed = start.elapsed();
@@ -141,7 +143,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     }
     drop(file);
 
-    let array2 = MemoryMappedArray::<f64>::open(&file_path2, &[size])?;
+    let array2 = MemoryMappedArray::<f64>::path(&file_path2, &[size])?;
     println!("Created second array with values offset by 1000");
 
     // Perform arithmetic operations
@@ -205,8 +207,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     }
     drop(file);
 
-    let matrix = MemoryMappedArray::<f64>::open(&file_path4, &[rows, cols])?;
-    let factors = MemoryMappedArray::<f64>::open(&file_path3, &[cols])?;
+    let matrix = MemoryMappedArray::<f64>::path(&file_path4, &[rows, cols])?;
+    let factors = MemoryMappedArray::<f64>::path(&file_path3, &[cols])?;
 
     println!(
         "Created matrix with shape {:?} and factors with shape {:?}",
@@ -222,7 +224,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("Result shape: {:?}", broadcast_result.shape);
 
     // Display a small sample of the result
-    let result_array = broadcast_result.readonly_array()?;
+    let result_array = broadcast_result.readonlyarray()?;
     println!("\nSample of the broadcast result:");
     for i in 0..3 {
         for j in 0..3 {
@@ -247,7 +249,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     }
     drop(file);
 
-    let bench_array = MemoryMappedArray::<f64>::open(&benchmark_path, &[benchmark_size])?;
+    let bench_array = MemoryMappedArray::<f64>::path(&benchmark_path, &[benchmark_size])?;
 
     // Function to time: Calculate sum
     println!(
@@ -263,7 +265,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let mut result = 0.0;
     for _ in 0..n_runs {
         let start = Instant::now();
-        let full_array = bench_array.readonly_array::<ndarray::Ix1>()?;
+        let full_array = bench_array.readonlyarray::<ndarray::Ix1>()?;
         result = full_array.iter().sum();
         total_time += start.elapsed().as_millis();
     }
@@ -296,7 +298,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         let strategy = ChunkingStrategy::Fixed(chunk_size);
 
         // Process chunks
-        let chunk_sums = bench_array.process_chunks(strategy, |chunk, _| chunk.iter().sum::<f64>());
+        let chunk_sums =
+            bench_array.process_chunks(strategy, |chunk, _idx| chunk.iter().sum::<f64>());
 
         // Calculate final sum
         result = chunk_sums.iter().sum();
@@ -321,8 +324,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             let strategy = ChunkingStrategy::Fixed(chunk_size);
 
             // Process chunks in parallel
-            let chunk_sums =
-                bench_array.process_chunks_parallel(strategy, |chunk, _| chunk.iter().sum::<f64>());
+            let chunk_sums = bench_array
+                .process_chunks_parallel(strategy, |chunk, _idx| chunk.iter().sum::<f64>());
 
             // Calculate final sum
             result = chunk_sums.iter().sum();

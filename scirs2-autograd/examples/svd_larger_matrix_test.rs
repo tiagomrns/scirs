@@ -2,10 +2,11 @@ use ag::tensor_ops::*;
 use ndarray::array;
 use scirs2_autograd as ag;
 
+#[allow(dead_code)]
 fn main() {
     println!("Testing SVD with larger matrices");
 
-    ag::run::<f64, _, _>(|g| {
+    ag::run(|g| {
         // Create a 3x3 matrix
         let matrix_data = array![[1.0, 2.0, 3.0], [4.0, 5.0, 6.0], [7.0, 8.0, 9.0]];
         let matrix = convert_to_tensor(matrix_data.clone(), g);

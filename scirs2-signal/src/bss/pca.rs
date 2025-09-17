@@ -1,12 +1,14 @@
-//! Principal Component Analysis (PCA) for blind source separation
-//!
-//! This module implements PCA techniques for signal processing.
+use ndarray::s;
+// Principal Component Analysis (PCA) for blind source separation
+//
+// This module implements PCA techniques for signal processing.
 
 use super::BssConfig;
 use crate::error::{SignalError, SignalResult};
-use ndarray::{s, Array2, Axis};
+use ndarray::{Array2, Axis};
 use scirs2_linalg::eigh;
 
+#[allow(unused_imports)]
 /// Apply Principal Component Analysis (PCA) to separate mixed signals
 ///
 /// PCA finds uncorrelated components that maximize variance.
@@ -19,10 +21,11 @@ use scirs2_linalg::eigh;
 /// # Returns
 ///
 /// * Tuple containing (extracted sources, mixing matrix)
+#[allow(dead_code)]
 pub fn pca(signals: &Array2<f64>, config: &BssConfig) -> SignalResult<(Array2<f64>, Array2<f64>)> {
     let (n_signals, n_samples) = signals.dim();
 
-    // Center the signals
+    // Center the _signals
     let means = signals.mean_axis(Axis(1)).unwrap();
     let mut centered = signals.clone();
 
@@ -39,7 +42,7 @@ pub fn pca(signals: &Array2<f64>, config: &BssConfig) -> SignalResult<(Array2<f6
     let (eigvals, eigvecs) = match eigh(&cov.view(), None) {
         Ok((vals, vecs)) => (vals, vecs),
         Err(_) => {
-            return Err(SignalError::Compute(
+            return Err(SignalError::ComputationError(
                 "Failed to compute eigendecomposition".to_string(),
             ));
         }

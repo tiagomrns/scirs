@@ -75,9 +75,9 @@ macro_rules! impl_reduce_forward {
             mut axes: Vec<usize>,
             keep_dims: bool,
         ) -> NdArray<T> {
-            let x_shape = x.shape();
+            let xshape = x.shape();
 
-            if ndarray_ext::is_scalar_shape(x_shape) {
+            if ndarray_ext::is_scalarshape(xshape) {
                 // case of 0 rank
                 return x.to_owned();
             } else {
@@ -125,6 +125,7 @@ impl_reduce_forward!(compute_reduce_max, max, min_value);
 impl_reduce_forward!(compute_reduce_prod, mul, one);
 
 #[inline]
+#[allow(dead_code)]
 fn preprocess_axes<T: Float>(
     x: &NdArrayView<T>,
     axes: &NdArrayView<T>,
@@ -162,7 +163,7 @@ struct ReduceSumToScalarGrad;
 
 impl<T: Float> op::Op<T> for ReduceSumToScalarGrad {
     fn compute(&self, ctx: &mut crate::op::ComputeContext<T>) -> Result<(), crate::op::OpError> {
-        let shape = ndarray_ext::as_shape(&ctx.input(1));
+        let shape = ndarray_ext::asshape(&ctx.input(1));
         let ret = unsafe {
             let x = *ctx.input(0).as_ptr();
             ndarray::ArrayD::<T>::from_elem(ndarray::IxDyn(shape.as_slice()), x)
@@ -208,7 +209,7 @@ impl<T: Float> op::Op<T> for ReduceMean {
     fn compute(&self, ctx: &mut crate::op::ComputeContext<T>) -> Result<(), crate::op::OpError> {
         let x = &ctx.input(0);
         let axes = preprocess_axes(x, &ctx.input(1), self.sparse_axes);
-        let x_shape = x.shape();
+        let xshape = x.shape();
         if axes.is_empty() {
             ctx.append_output(x.to_owned());
             return Ok(());
@@ -217,7 +218,7 @@ impl<T: Float> op::Op<T> for ReduceMean {
         // Make reduction_len
         let mut reduction_len = 1.;
         for &axis in axes.iter() {
-            reduction_len *= x_shape[axis] as f32;
+            reduction_len *= xshape[axis] as f32;
         }
         // Do summation
         let mut sum = compute_reduce_sum(x, axes, self.keep_dims);
@@ -326,6 +327,7 @@ impl<T: Float> op::Op<T> for ReduceMax {
     }
 }
 
+#[allow(dead_code)]
 fn min_max_grad<'a, 'g: 'a, T: Float>(
     gy: &Tensor<'g, T>,
     x1: &Tensor<'g, T>,
@@ -343,15 +345,15 @@ fn min_max_grad<'a, 'g: 'a, T: Float>(
         should_make_broadcast_dims: !keep_dims,
         sparse_axes,
     };
-    let x_shape = &shape(x1);
+    let xshape = &shape(x1);
     let y = Tensor::builder(ctx.graph())
         .append_input(y, false)
-        .append_input(x_shape, false)
+        .append_input(xshape, false)
         .append_input(x2, false)
         .build(grad_op1);
     let gy = Tensor::builder(ctx.graph())
         .append_input(gy, false)
-        .append_input(x_shape, false)
+        .append_input(xshape, false)
         .append_input(x2, false)
         .build(grad_op2);
     let eq = equal(x1, y);
@@ -359,6 +361,7 @@ fn min_max_grad<'a, 'g: 'a, T: Float>(
     ctx.append_input_grad(1, None);
 }
 
+#[allow(dead_code)]
 fn argx_helper<T: Float>(
     x: &NdArrayView<T>,
     comp_fn: fn(T, T) -> T,
@@ -367,7 +370,7 @@ fn argx_helper<T: Float>(
     axis: isize,
 ) -> NdArray<T> {
     let axis = ndarray_ext::normalize_negative_axis(axis, x.ndim());
-    let x_shape = x.shape();
+    let xshape = x.shape();
     // 1. Make binary mask tensor (maximums are 1s)
     let mut mask = {
         let maxed = x.fold_axis(ndarray::Axis(axis), default_val, move |&a, &b| {
@@ -393,7 +396,7 @@ fn argx_helper<T: Float>(
     // 2. Reshape the mask to 2-ranked. e.g. (2, 3, 4) -> (8, 3) (let `axis` be 1)
     let mask = {
         // move the `axis` to first, and put remaining together on the 2nd axis
-        let reduction_len = x_shape[axis];
+        let reduction_len = xshape[axis];
         ndarray_ext::roll_axis(&mut mask, ndarray::Axis(0), ndarray::Axis(axis));
         let shape2d = (reduction_len, mask.len() / reduction_len);
         let mut mask = if mask.is_standard_layout() {
@@ -421,15 +424,15 @@ fn argx_helper<T: Float>(
     let mat = mask.dot(&indices);
 
     // 5. Reshape it
-    let mut final_shape = x_shape.to_vec();
+    let mut finalshape = xshape.to_vec();
     if keep_dim {
-        final_shape[axis] = 1;
+        finalshape[axis] = 1;
     } else {
-        final_shape.remove(axis);
+        finalshape.remove(axis);
     }
     // unwrap is safe (95% confidence...)
     mat.into_dyn()
-        .into_shape_with_order(ndarray::IxDyn(final_shape.as_slice()))
+        .into_shape_with_order(ndarray::IxDyn(finalshape.as_slice()))
         .unwrap()
 }
 
@@ -463,16 +466,16 @@ impl<T: Float> op::Op<T> for ArgMax {
 
 impl<T: Float> op::Op<T> for ReduceGradCommon {
     fn compute(&self, ctx: &mut crate::op::ComputeContext<T>) -> Result<(), crate::op::OpError> {
-        //  broadcast `gy` into `target_shape`
+        //  broadcast `gy` into `targetshape`
         let gy = ctx.input(0);
-        let target_shape = ndarray_ext::as_shape(&ctx.input(1)); // x's shape
+        let targetshape = ndarray_ext::asshape(&ctx.input(1)); // x's shape
 
-        if gy.shape() == target_shape.as_slice() {
+        if gy.shape() == targetshape.as_slice() {
             ctx.append_output(gy.to_owned());
             return Ok(());
         }
 
-        let x_is_scalar = ndarray_ext::is_scalar_shape(gy.shape());
+        let x_is_scalar = ndarray_ext::is_scalarshape(gy.shape());
 
         // make broadcast dims if needed
         if self.should_make_broadcast_dims || x_is_scalar {
@@ -482,20 +485,20 @@ impl<T: Float> op::Op<T> for ReduceGradCommon {
             let mut axes = if self.sparse_axes {
                 ndarray_ext::sparse_to_dense(axes)
             } else {
-                ndarray_ext::normalize_negative_axes(axes, target_shape.len())
+                ndarray_ext::normalize_negative_axes(axes, targetshape.len())
             };
 
-            let mut gy_shape = gy.shape().to_vec();
+            let mut gyshape = gy.shape().to_vec();
             axes.sort();
             for &axis in axes.iter() {
-                gy_shape.insert(axis, 1);
+                gyshape.insert(axis, 1);
             }
             // do broadcast
-            let a = gy.into_shape_with_order(gy_shape).unwrap();
-            ctx.append_output(a.broadcast(target_shape).unwrap().to_owned())
+            let a = gy.into_shape_with_order(gyshape).unwrap();
+            ctx.append_output(a.broadcast(targetshape).unwrap().to_owned())
         } else {
             // do broadcast
-            ctx.append_output(gy.broadcast(target_shape).unwrap().to_owned())
+            ctx.append_output(gy.broadcast(targetshape).unwrap().to_owned())
         }
         Ok(())
     }

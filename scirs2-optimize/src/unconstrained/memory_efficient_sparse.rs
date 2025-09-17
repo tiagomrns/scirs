@@ -15,9 +15,9 @@ use std::fs::{File, OpenOptions};
 use std::io::{Read, Seek, SeekFrom, Write};
 use std::path::PathBuf;
 
-/// Options for ultra-large-scale memory-efficient optimization
+/// Options for advanced-large-scale memory-efficient optimization
 #[derive(Debug, Clone)]
-pub struct UltraScaleOptions {
+pub struct AdvancedScaleOptions {
     /// Base memory options
     pub memory_options: MemoryOptions,
     /// Sparse finite difference options
@@ -36,7 +36,7 @@ pub struct UltraScaleOptions {
     pub compression_level: u32,
 }
 
-impl Default for UltraScaleOptions {
+impl Default for AdvancedScaleOptions {
     fn default() -> Self {
         Self {
             memory_options: MemoryOptions::default(),
@@ -51,8 +51,8 @@ impl Default for UltraScaleOptions {
     }
 }
 
-/// Ultra-large-scale problem state manager
-struct UltraScaleState {
+/// Advanced-large-scale problem state manager
+struct AdvancedScaleState {
     /// Current variable values (may be stored on disk)
     variables: VariableStorage,
     /// Current gradient (sparse representation)
@@ -95,8 +95,8 @@ struct VariableBlock {
     last_updated: usize,
 }
 
-impl UltraScaleState {
-    fn new(x0: Array1<f64>, options: &UltraScaleOptions) -> Result<Self, OptimizeError> {
+impl AdvancedScaleState {
+    fn new(x0: Array1<f64>, options: &AdvancedScaleOptions) -> Result<Self, OptimizeError> {
         let n = x0.len();
 
         // Determine storage strategy
@@ -112,7 +112,7 @@ impl UltraScaleState {
                 OptimizeError::ComputationError(format!("Failed to create temp directory: {}", e))
             })?;
 
-            let file_path = temp_dir.join(format!("ultrascale_vars_{}.dat", std::process::id()));
+            let file_path = temp_dir.join(format!("advancedscale_vars_{}.dat", std::process::id()));
 
             // Write initial variables to disk
             let mut file = File::create(&file_path).map_err(|e| {
@@ -230,7 +230,7 @@ impl UltraScaleState {
     }
 }
 
-impl Drop for UltraScaleState {
+impl Drop for AdvancedScaleState {
     fn drop(&mut self) {
         // Clean up temporary files
         if let VariableStorage::Disk { file_path, .. } = &self.variables {
@@ -240,8 +240,9 @@ impl Drop for UltraScaleState {
 }
 
 /// Create variable blocks for progressive processing
+#[allow(dead_code)]
 fn create_variable_blocks(n: usize, block_size: usize) -> Vec<VariableBlock> {
-    let mut blocks = Vec::new();
+    let mut _blocks = Vec::new();
     let num_blocks = n.div_ceil(block_size);
 
     for i in 0..num_blocks {
@@ -249,7 +250,7 @@ fn create_variable_blocks(n: usize, block_size: usize) -> Vec<VariableBlock> {
         let end_idx = std::cmp::min((i + 1) * block_size, n);
         let size = end_idx - start_idx;
 
-        blocks.push(VariableBlock {
+        _blocks.push(VariableBlock {
             start_idx,
             size,
             priority: 1.0, // Initial priority
@@ -257,14 +258,15 @@ fn create_variable_blocks(n: usize, block_size: usize) -> Vec<VariableBlock> {
         });
     }
 
-    blocks
+    _blocks
 }
 
-/// Ultra-large-scale optimization using progressive refinement and memory management
-pub fn minimize_ultra_scale<F, S>(
+/// Advanced-large-scale optimization using progressive refinement and memory management
+#[allow(dead_code)]
+pub fn minimize_advanced_scale<F, S>(
     fun: F,
     x0: Array1<f64>,
-    options: &UltraScaleOptions,
+    options: &AdvancedScaleOptions,
 ) -> Result<OptimizeResult<S>, OptimizeError>
 where
     F: Fn(&ArrayView1<f64>) -> S + Clone + Sync,
@@ -282,12 +284,12 @@ where
     }
 
     println!(
-        "Starting ultra-large-scale optimization for {} variables",
+        "Starting advanced-large-scale optimization for {} variables",
         n
     );
 
     // Initialize state manager
-    let mut state = UltraScaleState::new(x0, options)?;
+    let mut state = AdvancedScaleState::new(x0, options)?;
     let mut iteration = 0;
     let mut total_nfev = 0;
 
@@ -353,12 +355,11 @@ where
                     return Ok(OptimizeResult {
                         x: new_x.clone(),
                         fun: fun(&new_x.view()),
-                        iterations: iteration,
                         nit: iteration,
                         func_evals: total_nfev,
                         nfev: total_nfev,
                         success: true,
-                        message: "Ultra-scale optimization converged successfully.".to_string(),
+                        message: "Advanced-scale optimization converged successfully.".to_string(),
                         jacobian: None,
                         hessian: None,
                     });
@@ -381,13 +382,12 @@ where
     Ok(OptimizeResult {
         x: final_x.clone(),
         fun: fun(&final_x.view()),
-        iterations: iteration,
         nit: iteration,
         func_evals: total_nfev,
         nfev: total_nfev,
         success: iteration < options.memory_options.base_options.max_iter,
         message: if iteration < options.memory_options.base_options.max_iter {
-            "Ultra-scale optimization completed successfully.".to_string()
+            "Advanced-scale optimization completed successfully.".to_string()
         } else {
             "Maximum iterations reached.".to_string()
         },
@@ -397,6 +397,7 @@ where
 }
 
 /// Optimize a single block of variables
+#[allow(dead_code)]
 fn optimize_block<F, S>(
     fun: &F,
     full_x: &Array1<f64>,
@@ -422,6 +423,7 @@ where
 }
 
 /// Update block priorities based on gradient magnitude
+#[allow(dead_code)]
 fn update_block_priorities(blocks: &mut [VariableBlock], gradient: &CsrArray<f64>) {
     for block in blocks {
         // Compute average gradient magnitude in this block
@@ -439,41 +441,108 @@ fn update_block_priorities(blocks: &mut [VariableBlock], gradient: &CsrArray<f64
         if count > 0 {
             block.priority = total_grad_mag / count as f64;
         } else {
-            block.priority *= 0.9; // Decay priority for blocks with no gradient info
+            block.priority *= 0.9; // Decay priority for _blocks with no gradient info
         }
     }
 }
 
 /// Estimate sparse gradient norm efficiently
+#[allow(dead_code)]
 fn estimate_sparse_gradient_norm<F, S>(
     fun: &F,
     x: &ArrayView1<f64>,
-    options: &UltraScaleOptions,
+    options: &AdvancedScaleOptions,
 ) -> Result<f64, OptimizeError>
 where
     F: Fn(&ArrayView1<f64>) -> S,
     S: Into<f64>,
 {
-    // TODO: Implement sparse gradient computation when function is available
-    // For now, return a placeholder gradient norm
-    let _sparse_options = &options.sparse_options;
-    let _fun_val = fun(x).into();
-    Ok(1e-6) // Placeholder gradient norm
+    let n = x.len();
+
+    // For very large problems, use sampling to estimate gradient norm
+    if n > options.max_variables_in_memory {
+        // Sample a subset of variables for gradient estimation
+        let sample_size = (options.max_variables_in_memory / 10).min(1000).max(10);
+        let step_size = options.sparse_options.rel_step.unwrap_or(1e-8);
+
+        let mut gradient_norm_squared = 0.0;
+        let f0 = fun(x).into();
+
+        // Sample variables uniformly across the space
+        let step = n / sample_size;
+        for i in (0..n).step_by(step).take(sample_size) {
+            // Compute finite difference for this variable
+            let mut x_pert = x.to_owned();
+            let h = step_size * (1.0 + x[i].abs());
+            x_pert[i] += h;
+
+            let f_pert = fun(&x_pert.view()).into();
+            let grad_i = (f_pert - f0) / h;
+            gradient_norm_squared += grad_i * grad_i;
+        }
+
+        // Scale by the sampling ratio to estimate full gradient norm
+        let scaling_factor = n as f64 / sample_size as f64;
+        Ok((gradient_norm_squared * scaling_factor).sqrt())
+    } else {
+        // For smaller problems, compute a more accurate sparse gradient
+        compute_sparse_gradient_norm(fun, x, &options.sparse_options)
+    }
 }
 
-/// Create ultra-scale optimizer with automatic parameter selection
-pub fn create_ultra_scale_optimizer(
+/// Compute sparse gradient norm using finite differences
+#[allow(dead_code)]
+fn compute_sparse_gradient_norm<F, S>(
+    fun: &F,
+    x: &ArrayView1<f64>,
+    sparse_options: &SparseFiniteDiffOptions,
+) -> Result<f64, OptimizeError>
+where
+    F: Fn(&ArrayView1<f64>) -> S,
+    S: Into<f64>,
+{
+    let n = x.len();
+    let step_size = sparse_options.rel_step.unwrap_or(1e-8);
+    let _f0 = fun(x).into();
+
+    // Use central differences for better accuracy
+    let mut gradient_norm_squared = 0.0;
+
+    for i in 0..n {
+        let h = step_size * (1.0 + x[i].abs());
+
+        // Forward difference
+        let mut x_forward = x.to_owned();
+        x_forward[i] += h;
+        let f_forward = fun(&x_forward.view()).into();
+
+        // Backward difference
+        let mut x_backward = x.to_owned();
+        x_backward[i] -= h;
+        let f_backward = fun(&x_backward.view()).into();
+
+        // Central difference
+        let grad_i = (f_forward - f_backward) / (2.0 * h);
+        gradient_norm_squared += grad_i * grad_i;
+    }
+
+    Ok(gradient_norm_squared.sqrt())
+}
+
+/// Create advanced-scale optimizer with automatic parameter selection
+#[allow(dead_code)]
+pub fn create_advanced_scale_optimizer(
     problem_size: usize,
     available_memory_mb: usize,
     estimated_sparsity: f64, // Fraction of non-zero elements
-) -> UltraScaleOptions {
+) -> AdvancedScaleOptions {
     let available_bytes = available_memory_mb * 1024 * 1024;
 
     // Estimate memory per variable
     let bytes_per_var = std::mem::size_of::<f64>() * 8; // Variable + gradient + temporaries
     let max_vars_in_memory = (available_bytes / bytes_per_var).min(problem_size);
 
-    // Block size based on memory and sparsity
+    // Block _size based on memory and _sparsity
     let block_size = if estimated_sparsity < 0.1 {
         // Very sparse: larger blocks
         (max_vars_in_memory / 4).max(1000)
@@ -494,7 +563,7 @@ pub fn create_ultra_scale_optimizer(
         3
     };
 
-    UltraScaleOptions {
+    AdvancedScaleOptions {
         memory_options: super::memory_efficient::create_memory_efficient_optimizer(
             max_vars_in_memory,
             available_memory_mb / 2,
@@ -518,15 +587,15 @@ mod tests {
     use approx::assert_abs_diff_eq;
 
     #[test]
-    fn test_ultra_scale_small_problem() {
+    fn test_advanced_scale_small_problem() {
         // Test that small problems fall back to regular memory-efficient method
         let quadratic = |x: &ArrayView1<f64>| -> f64 { x.mapv(|xi| xi.powi(2)).sum() };
 
         let n = 50; // Small problem
         let x0 = Array1::ones(n);
-        let options = UltraScaleOptions::default();
+        let options = AdvancedScaleOptions::default();
 
-        let result = minimize_ultra_scale(quadratic, x0, &options).unwrap();
+        let result = minimize_advanced_scale(quadratic, x0, &options).unwrap();
 
         assert!(result.success);
         // Should converge to origin
@@ -547,7 +616,7 @@ mod tests {
 
     #[test]
     fn test_auto_parameter_selection() {
-        let options = create_ultra_scale_optimizer(1_000_000, 1024, 0.05);
+        let options = create_advanced_scale_optimizer(1_000_000, 1024, 0.05);
 
         assert!(options.max_variables_in_memory > 0);
         assert!(options.block_size > 0);

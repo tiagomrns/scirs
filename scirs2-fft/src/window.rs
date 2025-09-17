@@ -70,7 +70,7 @@ impl FromStr for Window {
             "barthann" => Ok(Window::Barthann),
             "cosine" | "cos" => Ok(Window::Cosine),
             "exponential" | "exp" => Ok(Window::Exponential),
-            _ => Err(FFTError::ValueError(format!("Unknown window type: {}", s))),
+            _ => Err(FFTError::ValueError(format!("Unknown window type: {s}"))),
         }
     }
 }
@@ -104,6 +104,7 @@ impl FromStr for Window {
 /// let win = get_window("hamming", 10, true).unwrap();
 /// assert_eq!(win.len(), 10);
 /// ```
+#[allow(dead_code)]
 pub fn get_window<T>(window: T, n: usize, sym: bool) -> FFTResult<Array1<f64>>
 where
     T: Into<WindowParam>,
@@ -171,6 +172,7 @@ impl From<String> for WindowParam {
 /// Rectangular window
 ///
 /// A rectangular window is a window with constant value 1.
+#[allow(dead_code)]
 fn rectangular(n: usize) -> FFTResult<Array1<f64>> {
     Ok(Array1::ones(n))
 }
@@ -179,6 +181,7 @@ fn rectangular(n: usize) -> FFTResult<Array1<f64>> {
 ///
 /// The Hann window is a taper formed by using a raised cosine with ends that
 /// touch zero.
+#[allow(dead_code)]
 fn hann(n: usize, sym: bool) -> FFTResult<Array1<f64>> {
     general_cosine(n, sym, &[0.5, 0.5])
 }
@@ -187,6 +190,7 @@ fn hann(n: usize, sym: bool) -> FFTResult<Array1<f64>> {
 ///
 /// The Hamming window is a taper formed by using a raised cosine with non-zero
 /// endpoints.
+#[allow(dead_code)]
 fn hamming(n: usize, sym: bool) -> FFTResult<Array1<f64>> {
     general_cosine(n, sym, &[0.54, 0.46])
 }
@@ -195,6 +199,7 @@ fn hamming(n: usize, sym: bool) -> FFTResult<Array1<f64>> {
 ///
 /// The Blackman window is a taper formed by using the first three terms of
 /// a summation of cosines.
+#[allow(dead_code)]
 fn blackman(n: usize, sym: bool) -> FFTResult<Array1<f64>> {
     general_cosine(n, sym, &[0.42, 0.5, 0.08])
 }
@@ -202,6 +207,7 @@ fn blackman(n: usize, sym: bool) -> FFTResult<Array1<f64>> {
 /// Bartlett window
 ///
 /// The Bartlett window is a triangular window that touches zero at both ends.
+#[allow(dead_code)]
 fn bartlett(n: usize, sym: bool) -> FFTResult<Array1<f64>> {
     if n == 1 {
         return Ok(Array1::ones(1));
@@ -236,6 +242,7 @@ fn bartlett(n: usize, sym: bool) -> FFTResult<Array1<f64>> {
 ///
 /// The flat top window is a window with the main lobe widened and flattened
 /// at the expense of higher sidelobes compared to other windows.
+#[allow(dead_code)]
 fn flattop(n: usize, sym: bool) -> FFTResult<Array1<f64>> {
     general_cosine(
         n,
@@ -253,6 +260,7 @@ fn flattop(n: usize, sym: bool) -> FFTResult<Array1<f64>> {
 /// Parzen window
 ///
 /// The Parzen window is a piecewise cubic approximation of the Gaussian window.
+#[allow(dead_code)]
 fn parzen(n: usize, sym: bool) -> FFTResult<Array1<f64>> {
     if n == 1 {
         return Ok(Array1::ones(1));
@@ -288,6 +296,7 @@ fn parzen(n: usize, sym: bool) -> FFTResult<Array1<f64>> {
 /// Bohman window
 ///
 /// The Bohman window is the convolution of two half-duration cosine lobes.
+#[allow(dead_code)]
 fn bohman(n: usize) -> FFTResult<Array1<f64>> {
     if n == 1 {
         return Ok(Array1::ones(1));
@@ -310,6 +319,7 @@ fn bohman(n: usize) -> FFTResult<Array1<f64>> {
 ///
 /// The Blackman-Harris window is a variation of the Blackman window with
 /// better sidelobe suppression.
+#[allow(dead_code)]
 fn blackmanharris(n: usize, sym: bool) -> FFTResult<Array1<f64>> {
     general_cosine(n, sym, &[0.35875, 0.48829, 0.14128, 0.01168])
 }
@@ -318,6 +328,7 @@ fn blackmanharris(n: usize, sym: bool) -> FFTResult<Array1<f64>> {
 ///
 /// The Nuttall window is a Blackman-Harris window with slightly different
 /// coefficients for improved sidelobe behavior.
+#[allow(dead_code)]
 fn nuttall(n: usize, sym: bool) -> FFTResult<Array1<f64>> {
     general_cosine(
         n,
@@ -329,6 +340,7 @@ fn nuttall(n: usize, sym: bool) -> FFTResult<Array1<f64>> {
 /// Barthann window
 ///
 /// The Barthann window is the convolution of the Bartlett and Hann windows.
+#[allow(dead_code)]
 fn barthann(n: usize, sym: bool) -> FFTResult<Array1<f64>> {
     if n == 1 {
         return Ok(Array1::ones(1));
@@ -359,6 +371,7 @@ fn barthann(n: usize, sym: bool) -> FFTResult<Array1<f64>> {
 /// Cosine window
 ///
 /// Simple cosine (half-cycle) window.
+#[allow(dead_code)]
 fn cosine(n: usize, sym: bool) -> FFTResult<Array1<f64>> {
     if n == 1 {
         return Ok(Array1::ones(1));
@@ -388,6 +401,7 @@ fn cosine(n: usize, sym: bool) -> FFTResult<Array1<f64>> {
 /// * `n` - Window length
 /// * `sym` - Whether the window is symmetric
 /// * `tau` - Decay constant (tau > 0)
+#[allow(dead_code)]
 fn exponential(n: usize, sym: bool, tau: f64) -> FFTResult<Array1<f64>> {
     if tau <= 0.0 {
         return Err(FFTError::ValueError("tau must be positive".to_string()));
@@ -420,6 +434,7 @@ fn exponential(n: usize, sym: bool, tau: f64) -> FFTResult<Array1<f64>> {
 /// * `sym` - Whether the window is symmetric
 /// * `alpha` - Shape parameter of the Tukey window, representing the ratio of cosine-tapered
 ///   section length to the total window length (0 <= alpha <= 1)
+#[allow(dead_code)]
 fn tukey(n: usize, sym: bool, alpha: f64) -> FFTResult<Array1<f64>> {
     if !(0.0..=1.0).contains(&alpha) {
         return Err(FFTError::ValueError(
@@ -467,6 +482,7 @@ fn tukey(n: usize, sym: bool, alpha: f64) -> FFTResult<Array1<f64>> {
 /// * `n` - Window length
 /// * `sym` - Whether the window is symmetric
 /// * `beta` - Shape parameter for Kaiser window
+#[allow(dead_code)]
 fn kaiser(n: usize, sym: bool, beta: f64) -> FFTResult<Array1<f64>> {
     if n == 1 {
         return Ok(Array1::ones(1));
@@ -510,6 +526,7 @@ fn kaiser(n: usize, sym: bool, beta: f64) -> FFTResult<Array1<f64>> {
 /// * `n` - Window length
 /// * `sym` - Whether the window is symmetric
 /// * `std` - Standard deviation of the Gaussian window
+#[allow(dead_code)]
 fn gaussian(n: usize, sym: bool, std: f64) -> FFTResult<Array1<f64>> {
     if n == 1 {
         return Ok(Array1::ones(1));
@@ -539,6 +556,7 @@ fn gaussian(n: usize, sym: bool, std: f64) -> FFTResult<Array1<f64>> {
 /// * `n` - Window length
 /// * `sym` - Whether the window is symmetric
 /// * `a` - Window coefficients in the form: w(n) = a₀ - a₁*cos(2πn/N) + a₂*cos(4πn/N) - ...
+#[allow(dead_code)]
 fn general_cosine(n: usize, sym: bool, a: &[f64]) -> FFTResult<Array1<f64>> {
     if n == 1 {
         return Ok(Array1::ones(1));
@@ -571,6 +589,7 @@ fn general_cosine(n: usize, sym: bool, a: &[f64]) -> FFTResult<Array1<f64>> {
 ///
 /// Approximation of the modified Bessel function I₀(x) using polynomial
 /// approximation for numerical stability.
+#[allow(dead_code)]
 fn bessel_i0(x: f64) -> f64 {
     let ax = x.abs();
 
@@ -630,6 +649,7 @@ fn bessel_i0(x: f64) -> f64 {
 /// # Panics
 ///
 /// Panics if the conversion from f64 to type F fails.
+#[allow(dead_code)]
 pub fn apply_window<F, S>(x: &ArrayBase<S, Ix1>, window: Window) -> FFTResult<Array1<F>>
 where
     S: Data<Elem = F>,
@@ -669,6 +689,7 @@ where
 /// # Errors
 ///
 /// Returns an error if the window calculation fails.
+#[allow(dead_code)]
 pub fn enbw(window: Window, n: usize) -> FFTResult<f64> {
     let w = get_window(window, n, true)?;
 

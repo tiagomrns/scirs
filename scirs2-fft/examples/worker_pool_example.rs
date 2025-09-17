@@ -7,6 +7,7 @@ use num_complex::Complex64;
 use scirs2_fft::{fft2, get_global_pool, get_workers, with_workers};
 use std::time::Instant;
 
+#[allow(dead_code)]
 fn main() {
     println!("FFT Worker Pool Management Example");
     println!("==================================");
@@ -18,19 +19,19 @@ fn main() {
 
     // Get current worker configuration
     let original_workers = get_workers();
-    println!("Original number of workers: {}", original_workers);
+    println!("Original number of workers: {original_workers}");
 
     // Show worker pool info
     let pool = get_global_pool();
     let info = pool.get_info();
-    println!("Worker pool info: {}", info);
+    println!("Worker pool info: {info}");
     println!();
 
     // Test with different numbers of workers
     let worker_counts = vec![1, 2, 4, 8];
 
     for &num_workers in &worker_counts {
-        println!("Testing with {} workers:", num_workers);
+        println!("Testing with {num_workers} workers:");
 
         let start = Instant::now();
 
@@ -40,7 +41,7 @@ fn main() {
         });
 
         let duration = start.elapsed();
-        println!("  Time: {:?}", duration);
+        println!("  Time: {duration:?}");
     }
 
     println!();
@@ -53,7 +54,7 @@ fn main() {
     let _result = fft2(&signal.to_owned(), None, None, None).unwrap();
     let duration = start.elapsed();
 
-    println!("  Time: {:?}", duration);
+    println!("  Time: {duration:?}");
 
     // Re-enable parallelization
     pool.set_enabled(true);

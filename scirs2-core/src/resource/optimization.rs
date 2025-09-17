@@ -111,16 +111,16 @@ impl OptimizationParams {
         storage: &StorageInfo,
     ) -> usize {
         // Base on CPU cache size
-        let cache_based = cpu.cache_l3_kb * 1024 / 4; // Use 1/4 of L3 cache
+        let cachebased = cpu.cache_l3_kb * 1024 / 4; // Use 1/4 of L3 cache
 
         // Base on memory bandwidth
-        let memory_based = memory.optimal_chunk_size();
+        let memorybased = memory.optimal_chunk_size();
 
         // Base on storage characteristics
-        let storage_based = storage.optimal_io_size;
+        let storagebased = storage.optimal_io_size;
 
         // Take the geometric mean to balance all factors
-        let geometric_mean = ((cache_based as f64 * memory_based as f64 * storage_based as f64)
+        let geometric_mean = ((cachebased as f64 * memorybased as f64 * storagebased as f64)
             .powf(1.0 / 3.0)) as usize;
 
         // Ensure it's a reasonable size (between 4KB and 64MB)
@@ -133,8 +133,8 @@ impl OptimizationParams {
     }
 
     /// Determine if GPU should be enabled
-    fn should_enable_gpu(gpu: Option<&GpuInfo>) -> bool {
-        gpu.map(|g| g.is_compute_capable()).unwrap_or(false)
+    fn should_enable_gpu(gpuinfo: Option<&GpuInfo>) -> bool {
+        gpuinfo.map(|g| g.is_compute_capable()).unwrap_or(false)
     }
 
     /// Determine if prefetching should be enabled
@@ -144,15 +144,20 @@ impl OptimizationParams {
     }
 
     /// Get scaling factor for different problem sizes
-    pub fn scaling_factor(&self, problem_size: usize) -> f64 {
+    pub fn get_scaling_factor(problemsize: usize) -> f64 {
         let base_size = 1024 * 1024; // 1MB base
-        if problem_size <= base_size {
+        if problemsize <= base_size {
             1.0
         } else {
-            let ratio = problem_size as f64 / base_size as f64;
+            let ratio = problemsize as f64 / base_size as f64;
             // Use square root scaling to avoid excessive resource usage
             ratio.sqrt()
         }
+    }
+
+    /// Instance method to get scaling factor
+    pub fn scaling_factor(&self, problemsize: usize) -> f64 {
+        Self::get_scaling_factor(problemsize)
     }
 
     /// Adjust parameters for specific workload type
@@ -175,7 +180,7 @@ impl OptimizationParams {
             WorkloadType::IoIntensive => {
                 // Optimize for I/O throughput
                 self.thread_count = (self.thread_count * 2).min(16); // More threads for I/O
-                self.chunk_size = self.io_params.optimal_buffer_size;
+                self.chunk_size = self.io_params.optimal_buffersize;
             }
             WorkloadType::GpuIntensive => {
                 // Favor GPU over CPU
@@ -236,7 +241,7 @@ impl CacheParams {
 #[derive(Debug, Clone)]
 pub struct IoParams {
     /// Optimal buffer size for I/O operations
-    pub optimal_buffer_size: usize,
+    pub optimal_buffersize: usize,
     /// Number of concurrent I/O operations
     pub concurrent_operations: usize,
     /// Enable asynchronous I/O
@@ -248,7 +253,7 @@ pub struct IoParams {
 impl Default for IoParams {
     fn default() -> Self {
         Self {
-            optimal_buffer_size: 64 * 1024, // 64KB
+            optimal_buffersize: 64 * 1024, // 64KB
             concurrent_operations: 4,
             enable_async_io: true,
             enable_io_cache: true,
@@ -258,18 +263,23 @@ impl Default for IoParams {
 
 impl IoParams {
     /// Generate I/O parameters from network and storage info
-    pub fn from_resources(network: &NetworkInfo, storage: &StorageInfo) -> Self {
-        let optimal_buffer_size = storage.optimal_io_size.max(network.mtu);
+    pub fn from_network(network: &NetworkInfo, storage: &StorageInfo) -> Self {
+        let optimal_buffersize = storage.optimal_io_size.max(network.mtu);
         let concurrent_operations = storage.queue_depth.min(16);
         let enable_async_io = storage.supports_async_io();
         let enable_io_cache = !storage.is_ssd() || storage.capacity > 512 * 1024 * 1024 * 1024; // Cache for HDD or large SSDs
 
         Self {
-            optimal_buffer_size,
+            optimal_buffersize,
             concurrent_operations,
             enable_async_io,
             enable_io_cache,
         }
+    }
+
+    /// Generate I/O parameters from resources (alias for from_network)
+    pub fn from_resources(network: &NetworkInfo, storage: &StorageInfo) -> Self {
+        Self::from_network(network, storage)
     }
 }
 
@@ -296,7 +306,7 @@ impl GpuParams {
         let shared_memory_size = 16 * 1024; // 16KB default shared memory
         let use_unified_memory = gpu.features.unified_memory;
 
-        let transfer_strategy = if gpu.memory_bandwidth_gbps > 500.0 {
+        let transfer_strategy = if gpu.memorybandwidth_gbps > 500.0 {
             GpuTransferStrategy::HighBandwidth
         } else if use_unified_memory {
             GpuTransferStrategy::Unified

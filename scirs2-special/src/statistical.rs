@@ -1,12 +1,110 @@
-//! Statistical convenience functions
+//! Statistical convenience functions with comprehensive mathematical foundations
 //!
 //! This module provides various statistical functions commonly used in
-//! machine learning, statistics, and numerical computing including:
-//! - Logistic function and its derivatives
-//! - Softmax and log-softmax functions
-//! - Numerically stable logarithmic operations
-//! - Normalized sinc function
-//! - LogSumExp for numerical stability
+//! machine learning, statistics, and numerical computing, with detailed
+//! mathematical theory, derivations, and numerical stability analysis.
+//!
+//! ## Mathematical Theory and Foundations
+//!
+//! ### Historical Context
+//!
+//! These functions form the mathematical backbone of modern machine learning
+//! and statistical inference. The logistic function was first introduced by
+//! Pierre François Verhulst (1838) for modeling population growth, while the
+//! softmax function emerged from the development of statistical mechanics
+//! and was later adopted for neural networks by John Hopfield (1982).
+//!
+//! ### The Logistic Function
+//!
+//! **Definition**: The logistic function (sigmoid) is defined as:
+//! ```text
+//! σ(x) = 1 / (1 + e^(-x)) = e^x / (1 + e^x)
+//! ```
+//!
+//! **Mathematical Properties**:
+//!
+//! 1. **Range**: σ(x) ∈ (0, 1) for all x ∈ ℝ
+//!    - **Proof**: Since e^(-x) > 0 for all x, we have 1 + e^(-x) > 1,
+//!      so 0 < σ(x) < 1. The limits are: lim_{x→-∞} σ(x) = 0, lim_{x→∞} σ(x) = 1
+//!
+//! 2. **Symmetry**: σ(-x) = 1 - σ(x)
+//!    - **Proof**: σ(-x) = 1/(1 + e^x) = e^(-x)/(e^(-x) + 1) = 1 - 1/(1 + e^(-x)) = 1 - σ(x)
+//!
+//! 3. **Monotonicity**: σ'(x) = σ(x)(1 - σ(x)) > 0
+//!    - **Proof**: d/dx[1/(1 + e^(-x))] = e^(-x)/(1 + e^(-x))² = σ(x) · σ(-x) = σ(x)(1 - σ(x))
+//!    - Since σ(x) ∈ (0,1), the derivative is always positive, so σ is strictly increasing
+//!
+//! 4. **Inflection Point**: The function has an inflection point at x = 0
+//!    - **Proof**: σ''(x) = σ'(x)(1 - 2σ(x)) = 0 when σ(x) = 1/2, i.e., at x = 0
+//!
+//! ### The Softmax Function
+//!
+//! **Definition**: For a vector x = (x₁, x₂, ..., xₙ), the softmax function is:
+//! ```text
+//! softmax(xᵢ) = exp(xᵢ) / Σⱼ exp(xⱼ)
+//! ```
+//!
+//! **Mathematical Properties**:
+//!
+//! 1. **Probability Distribution**: Σᵢ softmax(xᵢ) = 1 and softmax(xᵢ) > 0
+//!    - **Proof**: Direct from definition, since we normalize by the sum
+//!
+//! 2. **Translation Invariance**: softmax(x + c) = softmax(x) for any constant c
+//!    - **Proof**: exp(xᵢ + c) / Σⱼ exp(xⱼ + c) = exp(c)exp(xᵢ) / exp(c)Σⱼ exp(xⱼ) = exp(xᵢ) / Σⱼ exp(xⱼ)
+//!    - **Numerical Significance**: This property enables the numerically stable
+//!      implementation by subtracting max(x) to prevent overflow
+//!
+//! 3. **Maximum Preservation**: If xₖ > xᵢ for all i ≠ k, then softmax(xₖ) > softmax(xᵢ)
+//!    - **Proof**: The exponential function preserves order, and normalization maintains it
+//!
+//! ### Numerical Stability Analysis
+//!
+//! **Logistic Function Stability**:
+//! - For x ≥ 0: Use σ(x) = 1/(1 + e^(-x)) to avoid exp(x) overflow
+//! - For x < 0: Use σ(x) = e^x/(1 + e^x) to avoid e^(-x) underflow
+//! - **Error Analysis**: Relative error is O(ε) where ε is machine epsilon
+//!
+//! **Softmax Stability**:
+//! - Standard implementation suffers from overflow when max(x) >> 0
+//! - **Solution**: Compute softmax(x - max(x)) using translation invariance
+//! - **Condition Number**: κ ≈ max(xᵢ) - min(xᵢ), well-conditioned when differences are moderate
+//!
+//! ### The LogSumExp Function
+//!
+//! **Definition**: LSE(x) = log(Σᵢ exp(xᵢ))
+//!
+//! **Connection to Softmax**: log(softmax(xᵢ)) = xᵢ - LSE(x)
+//!
+//! **Numerical Implementation**:
+//! ```text
+//! LSE(x) = max(x) + log(Σᵢ exp(xᵢ - max(x)))
+//! ```
+//!
+//! **Properties**:
+//! 1. **Smooth Maximum**: LSE(x) ≥ max(x) with equality as differences grow
+//! 2. **Convexity**: LSE is convex (log-sum-exp is log of sum of convex exponentials)
+//! 3. **Translation Invariance**: LSE(x + c) = LSE(x) + c
+//!
+//! ### The Sinc Function
+//!
+//! **Definition**: The normalized sinc function is:
+//! ```text
+//! sinc(x) = sin(πx) / (πx) for x ≠ 0, sinc(0) = 1
+//! ```
+//!
+//! **Properties**:
+//! 1. **Limit**: lim_{x→0} sin(πx)/(πx) = 1 (by L'Hôpital's rule)
+//! 2. **Zeros**: sinc(n) = 0 for all non-zero integers n
+//! 3. **Fourier Connection**: The Fourier transform of a rectangular pulse is a sinc function
+//! 4. **Sampling Theory**: Central to the Whittaker-Shannon interpolation formula
+//!
+//! ## Applications in Machine Learning
+//!
+//! - **Logistic Regression**: The logistic function serves as the link function
+//! - **Neural Networks**: Sigmoid activation function in hidden layers
+//! - **Softmax Classification**: Output layer for multi-class classification
+//! - **Attention Mechanisms**: Softmax for computing attention weights
+//! - **Loss Functions**: Cross-entropy loss uses log-softmax for numerical stability
 
 use crate::error::{SpecialError, SpecialResult};
 use ndarray::{Array1, ArrayView1};
@@ -36,6 +134,7 @@ use std::f64::consts::PI;
 /// assert_relative_eq!(logistic(1.0), 1.0 / (1.0 + (-1.0_f64).exp()), epsilon = 1e-10);
 /// assert_relative_eq!(logistic(-1.0), (-1.0_f64).exp() / (1.0 + (-1.0_f64).exp()), epsilon = 1e-10);
 /// ```
+#[allow(dead_code)]
 pub fn logistic(x: f64) -> f64 {
     // Use numerically stable computation to avoid overflow
     if x >= 0.0 {
@@ -69,6 +168,7 @@ pub fn logistic(x: f64) -> f64 {
 /// // At x=0, σ'(0) = 0.5 * (1 - 0.5) = 0.25
 /// assert_relative_eq!(logistic_derivative(0.0), 0.25, epsilon = 1e-10);
 /// ```
+#[allow(dead_code)]
 pub fn logistic_derivative(x: f64) -> f64 {
     let sigma = logistic(x);
     sigma * (1.0 - sigma)
@@ -105,6 +205,7 @@ pub fn logistic_derivative(x: f64) -> f64 {
 /// // Check that all values are positive
 /// assert!(result.iter().all(|&val| val > 0.0));
 /// ```
+#[allow(dead_code)]
 pub fn softmax(x: ArrayView1<f64>) -> SpecialResult<Array1<f64>> {
     if x.is_empty() {
         return Err(SpecialError::DomainError(
@@ -113,17 +214,17 @@ pub fn softmax(x: ArrayView1<f64>) -> SpecialResult<Array1<f64>> {
     }
 
     // Find maximum for numerical stability
-    let x_max = x.fold(f64::NEG_INFINITY, |acc, &val| acc.max(val));
+    let xmax = x.fold(f64::NEG_INFINITY, |acc, &val| acc.max(val));
 
     // Handle case where all values are -infinity
-    if x_max == f64::NEG_INFINITY {
+    if xmax == f64::NEG_INFINITY {
         return Err(SpecialError::DomainError(
             "All input values are negative infinity".to_string(),
         ));
     }
 
-    // Compute exp(x_i - x_max)
-    let exp_shifted: Array1<f64> = x.mapv(|val| (val - x_max).exp());
+    // Compute exp(x_i - xmax)
+    let exp_shifted: Array1<f64> = x.mapv(|val| (val - xmax).exp());
 
     // Compute sum of exponentials
     let sum_exp = exp_shifted.sum();
@@ -171,6 +272,7 @@ pub fn softmax(x: ArrayView1<f64>) -> SpecialResult<Array1<f64>> {
 ///     assert_relative_eq!(a, b, epsilon = 1e-10);
 /// }
 /// ```
+#[allow(dead_code)]
 pub fn log_softmax(x: ArrayView1<f64>) -> SpecialResult<Array1<f64>> {
     if x.is_empty() {
         return Err(SpecialError::DomainError(
@@ -179,17 +281,17 @@ pub fn log_softmax(x: ArrayView1<f64>) -> SpecialResult<Array1<f64>> {
     }
 
     // Find maximum for numerical stability
-    let x_max = x.fold(f64::NEG_INFINITY, |acc, &val| acc.max(val));
+    let xmax = x.fold(f64::NEG_INFINITY, |acc, &val| acc.max(val));
 
     // Handle case where all values are -infinity
-    if x_max == f64::NEG_INFINITY {
+    if xmax == f64::NEG_INFINITY {
         return Err(SpecialError::DomainError(
             "All input values are negative infinity".to_string(),
         ));
     }
 
-    // Compute log(sum(exp(x_i - x_max))) + x_max
-    let log_sum_exp = x.fold(0.0, |acc, &val| acc + (val - x_max).exp()).ln() + x_max;
+    // Compute log(sum(exp(x_i - xmax))) + xmax
+    let log_sum_exp = x.fold(0.0, |acc, &val| acc + (val - xmax).exp()).ln() + xmax;
 
     // Handle numerical issues
     if !log_sum_exp.is_finite() {
@@ -230,6 +332,7 @@ pub fn log_softmax(x: ArrayView1<f64>) -> SpecialResult<Array1<f64>> {
 /// let manual = (1.0_f64.exp() + 2.0_f64.exp() + 3.0_f64.exp()).ln();
 /// assert_relative_eq!(result, manual, epsilon = 1e-10);
 /// ```
+#[allow(dead_code)]
 pub fn logsumexp(x: ArrayView1<f64>) -> SpecialResult<f64> {
     if x.is_empty() {
         return Err(SpecialError::DomainError(
@@ -238,23 +341,23 @@ pub fn logsumexp(x: ArrayView1<f64>) -> SpecialResult<f64> {
     }
 
     // Find maximum for numerical stability
-    let x_max = x.fold(f64::NEG_INFINITY, |acc, &val| acc.max(val));
+    let xmax = x.fold(f64::NEG_INFINITY, |acc, &val| acc.max(val));
 
     // Handle case where all values are -infinity
-    if x_max == f64::NEG_INFINITY {
+    if xmax == f64::NEG_INFINITY {
         return Ok(f64::NEG_INFINITY);
     }
 
     // Handle case where maximum is +infinity
-    if x_max == f64::INFINITY {
+    if xmax == f64::INFINITY {
         return Ok(f64::INFINITY);
     }
 
-    // Compute sum(exp(x_i - x_max))
-    let sum_exp = x.fold(0.0, |acc, &val| acc + (val - x_max).exp());
+    // Compute sum(exp(x_i - xmax))
+    let sum_exp = x.fold(0.0, |acc, &val| acc + (val - xmax).exp());
 
-    // Return log(sum_exp) + x_max
-    Ok(sum_exp.ln() + x_max)
+    // Return log(sum_exp) + xmax
+    Ok(sum_exp.ln() + xmax)
 }
 
 /// Computes log(1 + x) with improved numerical stability for small x.
@@ -285,6 +388,7 @@ pub fn logsumexp(x: ArrayView1<f64>) -> SpecialResult<f64> {
 ///     assert_relative_eq!(*output, input.ln_1p(), epsilon = 1e-15);
 /// }
 /// ```
+#[allow(dead_code)]
 pub fn log1p_array(x: ArrayView1<f64>) -> Array1<f64> {
     x.mapv(|val| val.ln_1p())
 }
@@ -317,6 +421,7 @@ pub fn log1p_array(x: ArrayView1<f64>) -> Array1<f64> {
 ///     assert_relative_eq!(*output, input.exp_m1(), epsilon = 1e-15);
 /// }
 /// ```
+#[allow(dead_code)]
 pub fn expm1_array(x: ArrayView1<f64>) -> Array1<f64> {
     x.mapv(|val| val.exp_m1())
 }
@@ -344,6 +449,7 @@ pub fn expm1_array(x: ArrayView1<f64>) -> Array1<f64> {
 /// assert_relative_eq!(sinc(1.0), 0.0, epsilon = 1e-10);
 /// assert_relative_eq!(sinc(0.5), 2.0 / std::f64::consts::PI, epsilon = 1e-10);
 /// ```
+#[allow(dead_code)]
 pub fn sinc(x: f64) -> f64 {
     if x == 0.0 {
         1.0
@@ -378,6 +484,7 @@ pub fn sinc(x: f64) -> f64 {
 /// assert_eq!(result[0], 1.0);
 /// assert_relative_eq!(result[2], 0.0, epsilon = 1e-10);
 /// ```
+#[allow(dead_code)]
 pub fn sinc_array(x: ArrayView1<f64>) -> Array1<f64> {
     x.mapv(sinc)
 }
@@ -404,6 +511,7 @@ pub fn sinc_array(x: ArrayView1<f64>) -> Array1<f64> {
 /// // For small positive integers, log(Γ(n)) = log((n-1)!)
 /// assert_relative_eq!(log_abs_gamma(5.0).unwrap(), (24.0_f64).ln(), epsilon = 1e-10);
 /// ```
+#[allow(dead_code)]
 pub fn log_abs_gamma(x: f64) -> SpecialResult<f64> {
     if x <= 0.0 && x == x.floor() {
         // Gamma function has poles at non-positive integers

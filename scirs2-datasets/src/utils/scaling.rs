@@ -5,6 +5,7 @@
 //! (z-score), min-max scaling, and robust scaling that is resistant to outliers.
 
 use ndarray::Array2;
+use statrs::statistics::Statistics;
 
 /// Helper function to normalize data (zero mean, unit variance)
 ///
@@ -26,6 +27,7 @@ use ndarray::Array2;
 /// normalize(&mut data);
 /// // data is now normalized with zero mean and unit variance for each feature
 /// ```
+#[allow(dead_code)]
 pub fn normalize(data: &mut Array2<f64>) {
     let n_features = data.ncols();
 
@@ -33,8 +35,15 @@ pub fn normalize(data: &mut Array2<f64>) {
         let mut column = data.column_mut(j);
 
         // Calculate mean and std
-        let mean = column.mean().unwrap_or(0.0);
-        let std = column.std(0.0);
+        let mean = {
+            let val = column.view().mean();
+            if val.is_nan() {
+                0.0
+            } else {
+                val
+            }
+        };
+        let std = column.view().std(0.0);
 
         // Avoid division by zero
         if std > 1e-10 {
@@ -63,12 +72,13 @@ pub fn normalize(data: &mut Array2<f64>) {
 /// min_max_scale(&mut data, (0.0, 1.0));
 /// // Features are now scaled to [0, 1] range
 /// ```
-pub fn min_max_scale(data: &mut Array2<f64>, feature_range: (f64, f64)) {
-    let (range_min, range_max) = feature_range;
+#[allow(dead_code)]
+pub fn min_max_scale(_data: &mut Array2<f64>, featurerange: (f64, f64)) {
+    let (range_min, range_max) = featurerange;
     let range_size = range_max - range_min;
 
-    for j in 0..data.ncols() {
-        let mut column = data.column_mut(j);
+    for j in 0.._data.ncols() {
+        let mut column = _data.column_mut(j);
 
         // Find min and max values in the column
         let col_min = column.iter().fold(f64::INFINITY, |a, &b| a.min(b));
@@ -78,7 +88,7 @@ pub fn min_max_scale(data: &mut Array2<f64>, feature_range: (f64, f64)) {
         if (col_max - col_min).abs() > 1e-10 {
             column.mapv_inplace(|x| (x - col_min) / (col_max - col_min) * range_size + range_min);
         } else {
-            // If all values are the same, set to the middle of the range
+            // If all values are the same, set to the middle of the _range
             column.fill(range_min + range_size / 2.0);
         }
     }
@@ -104,6 +114,7 @@ pub fn min_max_scale(data: &mut Array2<f64>, feature_range: (f64, f64)) {
 /// robust_scale(&mut data);
 /// // Features are now robustly scaled using median and IQR
 /// ```
+#[allow(dead_code)]
 pub fn robust_scale(data: &mut Array2<f64>) {
     for j in 0..data.ncols() {
         let mut column_values: Vec<f64> = data.column(j).to_vec();
@@ -143,11 +154,13 @@ pub fn robust_scale(data: &mut Array2<f64>) {
 ///
 /// This trait provides statistical methods for ndarray's ArrayView1 type,
 /// enabling easy calculation of mean and standard deviation for scaling operations.
+///
+/// Note: Uses `standard_deviation` instead of `std` to avoid conflicts with ndarray's built-in methods.
 pub trait StatsExt {
     /// Calculate the mean of the array
     fn mean(&self) -> Option<f64>;
     /// Calculate the standard deviation with specified degrees of freedom
-    fn std(&self, ddof: f64) -> f64;
+    fn standard_deviation(&self, ddof: f64) -> f64;
 }
 
 impl StatsExt for ndarray::ArrayView1<'_, f64> {
@@ -174,13 +187,18 @@ impl StatsExt for ndarray::ArrayView1<'_, f64> {
     /// # Returns
     ///
     /// Standard deviation of the array
-    fn std(&self, ddof: f64) -> f64 {
+    fn standard_deviation(&self, ddof: f64) -> f64 {
         if self.is_empty() {
             return 0.0;
         }
 
         let n = self.len() as f64;
-        let mean = self.mean().unwrap_or(0.0);
+        let mean = {
+            match self.mean() {
+                Some(val) if !val.is_nan() => val,
+                _ => 0.0,
+            }
+        };
 
         let mut sum_sq = 0.0;
         for &x in self.iter() {
@@ -210,7 +228,7 @@ mod tests {
         // Check that each column has approximately zero mean
         for j in 0..data.ncols() {
             let column = data.column(j);
-            let mean = column.mean().unwrap();
+            let mean = column.mean();
             assert!(mean.abs() < 1e-10);
         }
     }
@@ -346,7 +364,7 @@ mod tests {
         let view = data.view();
 
         // Test mean calculation
-        let mean = view.mean().unwrap();
+        let mean = view.mean();
         assert!((mean - 3.0_f64).abs() < 1e-10);
 
         // Test standard deviation calculation
@@ -365,11 +383,11 @@ mod tests {
         let data: Array1<f64> = array![];
         let view = data.view();
 
-        // Mean of empty array should be None
-        assert!(StatsExt::mean(&view).is_none());
+        // Mean of empty array should be NaN
+        assert!(view.mean().is_nan());
 
         // Standard deviation of empty array should be 0
-        assert_eq!(StatsExt::std(&view, 0.0), 0.0);
+        assert_eq!(view.standard_deviation(0.0), 0.0);
     }
 
     #[test]

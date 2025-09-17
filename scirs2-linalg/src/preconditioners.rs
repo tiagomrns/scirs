@@ -85,7 +85,7 @@ pub struct PreconditionerConfig {
     /// Smoother iterations for multigrid
     pub mg_smoothing_iterations: usize,
     /// Block size for block methods
-    pub block_size: usize,
+    pub blocksize: usize,
     /// Domain overlap for Schwarz methods
     pub domain_overlap: usize,
     /// Polynomial degree for polynomial preconditioners
@@ -104,7 +104,7 @@ impl Default for PreconditionerConfig {
             drop_tolerance: 1e-4,
             mg_levels: 4,
             mg_smoothing_iterations: 2,
-            block_size: 64,
+            blocksize: 64,
             domain_overlap: 2,
             polynomial_degree: 3,
             workers: WorkerConfig::default(),
@@ -120,45 +120,45 @@ impl PreconditionerConfig {
     }
 
     /// Set the preconditioner type
-    pub fn with_type(mut self, preconditioner_type: PreconditionerType) -> Self {
-        self.preconditioner_type = preconditioner_type;
+    pub fn with_type(mut self, preconditionertype: PreconditionerType) -> Self {
+        self.preconditioner_type = preconditionertype;
         self
     }
 
     /// Set the fill level for incomplete factorizations
-    pub fn with_fill_level(mut self, fill_level: usize) -> Self {
-        self.fill_level = fill_level;
+    pub fn with_fill_level(mut self, filllevel: usize) -> Self {
+        self.fill_level = filllevel;
         self
     }
 
     /// Set the drop tolerance
-    pub fn with_drop_tolerance(mut self, drop_tolerance: f64) -> Self {
-        self.drop_tolerance = drop_tolerance;
+    pub fn with_drop_tolerance(mut self, droptolerance: f64) -> Self {
+        self.drop_tolerance = droptolerance;
         self
     }
 
     /// Set multigrid parameters
-    pub fn with_multigrid(mut self, levels: usize, smoothing_iterations: usize) -> Self {
+    pub fn with_multigrid(mut self, levels: usize, smoothingiterations: usize) -> Self {
         self.mg_levels = levels;
-        self.mg_smoothing_iterations = smoothing_iterations;
+        self.mg_smoothing_iterations = smoothingiterations;
         self
     }
 
     /// Set block size for block methods
-    pub fn with_block_size(mut self, block_size: usize) -> Self {
-        self.block_size = block_size;
+    pub fn with_blocksize(mut self, blocksize: usize) -> Self {
+        self.blocksize = blocksize;
         self
     }
 
     /// Set domain overlap for Schwarz methods
-    pub fn with_domain_overlap(mut self, domain_overlap: usize) -> Self {
-        self.domain_overlap = domain_overlap;
+    pub fn with_domain_overlap(mut self, domainoverlap: usize) -> Self {
+        self.domain_overlap = domainoverlap;
         self
     }
 
     /// Set polynomial degree
-    pub fn with_polynomial_degree(mut self, polynomial_degree: usize) -> Self {
-        self.polynomial_degree = polynomial_degree;
+    pub fn with_polynomial_degree(mut self, polynomialdegree: usize) -> Self {
+        self.polynomial_degree = polynomialdegree;
         self
     }
 
@@ -169,8 +169,8 @@ impl PreconditionerConfig {
     }
 
     /// Set adaptive threshold
-    pub fn with_adaptive_threshold(mut self, adaptive_threshold: f64) -> Self {
-        self.adaptive_threshold = adaptive_threshold;
+    pub fn with_adaptive_threshold(mut self, adaptivethreshold: f64) -> Self {
+        self.adaptive_threshold = adaptivethreshold;
         self
     }
 }
@@ -204,7 +204,7 @@ pub struct DiagonalPreconditioner<F> {
 
 impl<F> DiagonalPreconditioner<F>
 where
-    F: Float + NumAssign + Zero + One + Sum + ndarray::ScalarOperand + 'static,
+    F: Float + NumAssign + Zero + One + Sum + ndarray::ScalarOperand + Send + Sync + 'static,
 {
     /// Create a diagonal preconditioner from matrix diagonal
     pub fn new(matrix: &ArrayView2<F>) -> LinalgResult<Self> {
@@ -232,7 +232,7 @@ where
 
 impl<F> PreconditionerOp<F> for DiagonalPreconditioner<F>
 where
-    F: Float + NumAssign + Zero + One + Sum + ndarray::ScalarOperand + 'static,
+    F: Float + NumAssign + Zero + One + Sum + ndarray::ScalarOperand + Send + Sync + 'static,
 {
     fn apply(&self, x: &ArrayView1<F>) -> LinalgResult<Array1<F>> {
         Ok(&self.inverse_diagonal * x)
@@ -256,7 +256,7 @@ pub struct IncompleteLUPreconditioner<F> {
 
 impl<F> IncompleteLUPreconditioner<F>
 where
-    F: Float + NumAssign + Zero + One + Sum + ndarray::ScalarOperand + 'static,
+    F: Float + NumAssign + Zero + One + Sum + ndarray::ScalarOperand + Send + Sync + 'static,
 {
     /// Create incomplete LU preconditioner with specified fill level
     pub fn new(matrix: &ArrayView2<F>, config: &PreconditionerConfig) -> LinalgResult<Self> {
@@ -272,12 +272,12 @@ where
         let mut u_factor = Array2::zeros((n, n));
 
         // Copy matrix to working array
-        let mut working_matrix = matrix.to_owned();
+        let mut workingmatrix = matrix.to_owned();
 
         // Perform incomplete LU factorization
         for k in 0..n {
             // Diagonal element
-            let pivot = working_matrix[[k, k]];
+            let pivot = workingmatrix[[k, k]];
             if pivot.abs() < F::epsilon() {
                 return Err(LinalgError::SingularMatrixError(
                     "Matrix is singular".to_string(),
@@ -289,16 +289,15 @@ where
 
             // Update submatrix with fill-in control
             for i in (k + 1)..n {
-                if working_matrix[[i, k]].abs() > F::from(config.drop_tolerance).unwrap() {
-                    l_factor[[i, k]] = working_matrix[[i, k]] / pivot;
+                if workingmatrix[[i, k]].abs() > F::from(config.drop_tolerance).unwrap() {
+                    l_factor[[i, k]] = workingmatrix[[i, k]] / pivot;
 
                     for j in (k + 1)..n {
-                        if working_matrix[[k, j]].abs() > F::from(config.drop_tolerance).unwrap()
-                            && working_matrix[[i, j]].abs()
-                                > F::from(config.drop_tolerance).unwrap()
+                        if workingmatrix[[k, j]].abs() > F::from(config.drop_tolerance).unwrap()
+                            && workingmatrix[[i, j]].abs() > F::from(config.drop_tolerance).unwrap()
                         {
-                            working_matrix[[i, j]] =
-                                working_matrix[[i, j]] - l_factor[[i, k]] * working_matrix[[k, j]];
+                            workingmatrix[[i, j]] =
+                                workingmatrix[[i, j]] - l_factor[[i, k]] * workingmatrix[[k, j]];
                         }
                     }
                 }
@@ -306,8 +305,8 @@ where
 
             // Update U factor
             for j in (k + 1)..n {
-                if working_matrix[[k, j]].abs() > F::from(config.drop_tolerance).unwrap() {
-                    u_factor[[k, j]] = working_matrix[[k, j]];
+                if workingmatrix[[k, j]].abs() > F::from(config.drop_tolerance).unwrap() {
+                    u_factor[[k, j]] = workingmatrix[[k, j]];
                 }
             }
         }
@@ -352,7 +351,7 @@ where
 
 impl<F> PreconditionerOp<F> for IncompleteLUPreconditioner<F>
 where
-    F: Float + NumAssign + Zero + One + Sum + ndarray::ScalarOperand + 'static,
+    F: Float + NumAssign + Zero + One + Sum + ndarray::ScalarOperand + Send + Sync + 'static,
 {
     fn apply(&self, x: &ArrayView1<F>) -> LinalgResult<Array1<F>> {
         // Solve Ly = x, then Uz = y
@@ -380,7 +379,7 @@ pub struct IncompleteCholeskyPreconditioner<F> {
 
 impl<F> IncompleteCholeskyPreconditioner<F>
 where
-    F: Float + NumAssign + Zero + One + Sum + ndarray::ScalarOperand + 'static,
+    F: Float + NumAssign + Zero + One + Sum + ndarray::ScalarOperand + Send + Sync + 'static,
 {
     /// Create incomplete Cholesky preconditioner
     pub fn new(matrix: &ArrayView2<F>, config: &PreconditionerConfig) -> LinalgResult<Self> {
@@ -392,12 +391,12 @@ where
         }
 
         let mut l_factor = Array2::zeros((n, n));
-        let mut working_matrix = matrix.to_owned();
+        let mut workingmatrix = matrix.to_owned();
 
         // Perform incomplete Cholesky factorization
         for k in 0..n {
             // Diagonal element
-            let diag_elem = working_matrix[[k, k]];
+            let diag_elem = workingmatrix[[k, k]];
             if diag_elem <= F::zero() {
                 return Err(LinalgError::InvalidInput(
                     "Matrix is not positive definite".to_string(),
@@ -408,8 +407,8 @@ where
 
             // Update column below diagonal
             for i in (k + 1)..n {
-                if working_matrix[[i, k]].abs() > F::from(config.drop_tolerance).unwrap() {
-                    l_factor[[i, k]] = working_matrix[[i, k]] / l_factor[[k, k]];
+                if workingmatrix[[i, k]].abs() > F::from(config.drop_tolerance).unwrap() {
+                    l_factor[[i, k]] = workingmatrix[[i, k]] / l_factor[[k, k]];
                 }
             }
 
@@ -419,7 +418,7 @@ where
                     if l_factor[[i, k]].abs() > F::from(config.drop_tolerance).unwrap()
                         && l_factor[[j, k]].abs() > F::from(config.drop_tolerance).unwrap()
                     {
-                        working_matrix[[i, j]] -= l_factor[[i, k]] * l_factor[[j, k]];
+                        workingmatrix[[i, j]] -= l_factor[[i, k]] * l_factor[[j, k]];
                     }
                 }
             }
@@ -461,7 +460,7 @@ where
 
 impl<F> PreconditionerOp<F> for IncompleteCholeskyPreconditioner<F>
 where
-    F: Float + NumAssign + Zero + One + Sum + ndarray::ScalarOperand + 'static,
+    F: Float + NumAssign + Zero + One + Sum + ndarray::ScalarOperand + Send + Sync + 'static,
 {
     fn apply(&self, x: &ArrayView1<F>) -> LinalgResult<Array1<F>> {
         // Solve Ly = x, then Lᵀz = y
@@ -480,14 +479,14 @@ pub struct BlockJacobiPreconditioner<F> {
     /// Inverse blocks on the diagonal
     inverse_blocks: Vec<Array2<F>>,
     /// Block sizes
-    block_sizes: Vec<usize>,
+    blocksizes: Vec<usize>,
     /// Total size
     size: usize,
 }
 
 impl<F> BlockJacobiPreconditioner<F>
 where
-    F: Float + NumAssign + Zero + One + Sum + ndarray::ScalarOperand + 'static,
+    F: Float + NumAssign + Zero + One + Sum + ndarray::ScalarOperand + Send + Sync + 'static,
 {
     /// Create block Jacobi preconditioner with specified block size
     pub fn new(matrix: &ArrayView2<F>, config: &PreconditionerConfig) -> LinalgResult<Self> {
@@ -498,15 +497,15 @@ where
             ));
         }
 
-        let block_size = config.block_size.min(n);
-        let num_blocks = n.div_ceil(block_size);
+        let blocksize = config.blocksize.min(n);
+        let num_blocks = n.div_ceil(blocksize);
         let mut inverse_blocks = Vec::with_capacity(num_blocks);
-        let mut block_sizes = Vec::with_capacity(num_blocks);
+        let mut blocksizes = Vec::with_capacity(num_blocks);
 
         for block_idx in 0..num_blocks {
-            let start_idx = block_idx * block_size;
-            let end_idx = (start_idx + block_size).min(n);
-            let current_block_size = end_idx - start_idx;
+            let start_idx = block_idx * blocksize;
+            let end_idx = (start_idx + blocksize).min(n);
+            let current_blocksize = end_idx - start_idx;
 
             // Extract diagonal block
             let block = matrix.slice(ndarray::s![start_idx..end_idx, start_idx..end_idx]);
@@ -515,18 +514,18 @@ where
             let (p, l, u) = lu(&block, None)?;
 
             // Create identity for solving
-            let identity = Array2::eye(current_block_size);
-            let mut inverse_block = Array2::zeros((current_block_size, current_block_size));
+            let identity = Array2::eye(current_blocksize);
+            let mut inverse_block = Array2::zeros((current_blocksize, current_blocksize));
 
             // Solve for each column of the inverse
-            for j in 0..current_block_size {
+            for j in 0..current_blocksize {
                 let rhs = identity.column(j);
                 // Apply permutation: P*e_j
                 let permuted_rhs = p.dot(&rhs);
 
                 // Forward substitution: solve Ly = P*e_j
-                let mut y = Array1::zeros(current_block_size);
-                for i in 0..current_block_size {
+                let mut y = Array1::zeros(current_blocksize);
+                for i in 0..current_blocksize {
                     let mut sum = F::zero();
                     for k in 0..i {
                         sum += l[[i, k]] * y[k];
@@ -535,28 +534,28 @@ where
                 }
 
                 // Backward substitution: solve Ux = y
-                let mut x = Array1::zeros(current_block_size);
-                for i in (0..current_block_size).rev() {
+                let mut x = Array1::zeros(current_blocksize);
+                for i in (0..current_blocksize).rev() {
                     let mut sum = F::zero();
-                    for k in (i + 1)..current_block_size {
+                    for k in (i + 1)..current_blocksize {
                         sum += u[[i, k]] * x[k];
                     }
                     x[i] = (y[i] - sum) / u[[i, i]];
                 }
 
                 // Store column in inverse block
-                for i in 0..current_block_size {
+                for i in 0..current_blocksize {
                     inverse_block[[i, j]] = x[i];
                 }
             }
 
             inverse_blocks.push(inverse_block);
-            block_sizes.push(current_block_size);
+            blocksizes.push(current_blocksize);
         }
 
         Ok(Self {
             inverse_blocks,
-            block_sizes,
+            blocksizes,
             size: n,
         })
     }
@@ -564,14 +563,14 @@ where
 
 impl<F> PreconditionerOp<F> for BlockJacobiPreconditioner<F>
 where
-    F: Float + NumAssign + Zero + One + Sum + ndarray::ScalarOperand + 'static,
+    F: Float + NumAssign + Zero + One + Sum + ndarray::ScalarOperand + Send + Sync + 'static,
 {
     fn apply(&self, x: &ArrayView1<F>) -> LinalgResult<Array1<F>> {
         let mut result = Array1::zeros(self.size);
         let mut current_idx = 0;
 
-        for (block_inv, &block_size) in self.inverse_blocks.iter().zip(&self.block_sizes) {
-            let end_idx = current_idx + block_size;
+        for (block_inv, &blocksize) in self.inverse_blocks.iter().zip(&self.blocksizes) {
+            let end_idx = current_idx + blocksize;
             let x_block = x.slice(ndarray::s![current_idx..end_idx]);
             let y_block = block_inv.dot(&x_block);
 
@@ -605,7 +604,7 @@ pub struct PolynomialPreconditioner<F> {
 
 impl<F> PolynomialPreconditioner<F>
 where
-    F: Float + NumAssign + Zero + One + Sum + ndarray::ScalarOperand + 'static,
+    F: Float + NumAssign + Zero + One + Sum + ndarray::ScalarOperand + Send + Sync + 'static,
 {
     /// Create polynomial preconditioner using Neumann series
     pub fn new(matrix: &ArrayView2<F>, config: &PreconditionerConfig) -> LinalgResult<Self> {
@@ -631,19 +630,19 @@ where
 
 impl<F> PreconditionerOp<F> for PolynomialPreconditioner<F>
 where
-    F: Float + NumAssign + Zero + One + Sum + ndarray::ScalarOperand + 'static,
+    F: Float + NumAssign + Zero + One + Sum + ndarray::ScalarOperand + Send + Sync + 'static,
 {
     fn apply(&self, x: &ArrayView1<F>) -> LinalgResult<Array1<F>> {
         // Neumann series: M⁻¹ ≈ α(I + (I - αA) + (I - αA)² + ... + (I - αA)ᵏ)
-        let scaled_matrix = &self.matrix * self.scaling;
+        let scaledmatrix = &self.matrix * self.scaling;
         let identity = Array2::eye(self.size);
-        let residual_matrix = &identity - &scaled_matrix;
+        let residualmatrix = &identity - &scaledmatrix;
 
         let mut result = x.to_owned() * self.scaling;
         let mut power = x.to_owned();
 
         for _k in 1..=self.degree {
-            power = residual_matrix.dot(&power);
+            power = residualmatrix.dot(&power);
             result = &result + &power * self.scaling;
         }
 
@@ -672,7 +671,7 @@ pub enum AdaptivePreconditioner<F> {
 
 impl<F> AdaptivePreconditioner<F>
 where
-    F: Float + NumAssign + Zero + One + Sum + ndarray::ScalarOperand + 'static,
+    F: Float + NumAssign + Zero + One + Sum + ndarray::ScalarOperand + Send + Sync + 'static,
 {
     /// Create adaptive preconditioner based on matrix properties
     pub fn new(matrix: &ArrayView2<F>, config: &PreconditionerConfig) -> LinalgResult<Self> {
@@ -693,12 +692,12 @@ where
         if condition_estimate < F::from(10.0).unwrap() {
             // Well-conditioned: use simple diagonal preconditioner
             Ok(Self::Diagonal(DiagonalPreconditioner::new(matrix)?))
-        } else if is_positive_definite && sparsity > 0.8 {
+        } else if is_positive_definite && sparsity > F::from(0.8).unwrap() {
             // Sparse SPD: use incomplete Cholesky
             Ok(Self::IncompleteCholesky(
                 IncompleteCholeskyPreconditioner::new(matrix, config)?,
             ))
-        } else if sparsity > 0.7 {
+        } else if sparsity > F::from(0.7).unwrap() {
             // Sparse general: use incomplete LU
             Ok(Self::IncompleteLU(IncompleteLUPreconditioner::new(
                 matrix, config,
@@ -771,19 +770,19 @@ where
     }
 
     /// Estimate sparsity ratio
-    fn estimate_sparsity(matrix: &ArrayView2<F>) -> f64 {
+    fn estimate_sparsity(matrix: &ArrayView2<F>) -> F {
         let (m, n) = matrix.dim();
         let total_elements = m * n;
         let tolerance = F::from(1e-14).unwrap();
 
         let zero_elements = matrix.iter().filter(|&&val| val.abs() <= tolerance).count();
-        zero_elements as f64 / total_elements as f64
+        F::from(zero_elements).unwrap() / F::from(total_elements).unwrap()
     }
 }
 
 impl<F> PreconditionerOp<F> for AdaptivePreconditioner<F>
 where
-    F: Float + NumAssign + Zero + One + Sum + ndarray::ScalarOperand + 'static,
+    F: Float + NumAssign + Zero + One + Sum + ndarray::ScalarOperand + Send + Sync + 'static,
 {
     fn apply(&self, x: &ArrayView1<F>) -> LinalgResult<Array1<F>> {
         match self {
@@ -827,12 +826,13 @@ where
 }
 
 /// Create a preconditioner based on configuration
+#[allow(dead_code)]
 pub fn create_preconditioner<F>(
     matrix: &ArrayView2<F>,
     config: &PreconditionerConfig,
 ) -> LinalgResult<Box<dyn PreconditionerOp<F>>>
 where
-    F: Float + NumAssign + Zero + One + Sum + ndarray::ScalarOperand + 'static,
+    F: Float + NumAssign + Zero + One + Sum + ndarray::ScalarOperand + Send + Sync + 'static,
 {
     match config.preconditioner_type {
         PreconditionerType::Identity => {
@@ -872,6 +872,7 @@ where
 }
 
 /// Preconditioned conjugate gradient solver
+#[allow(dead_code)]
 pub fn preconditioned_conjugate_gradient<F>(
     matrix: &ArrayView2<F>,
     rhs: &ArrayView1<F>,
@@ -881,7 +882,7 @@ pub fn preconditioned_conjugate_gradient<F>(
     initial_guess: Option<&ArrayView1<F>>,
 ) -> LinalgResult<Array1<F>>
 where
-    F: Float + NumAssign + Zero + One + Sum + ndarray::ScalarOperand + 'static,
+    F: Float + NumAssign + Zero + One + Sum + ndarray::ScalarOperand + Send + Sync + 'static,
 {
     let n = matrix.nrows();
     if matrix.ncols() != n || rhs.len() != n {
@@ -892,7 +893,7 @@ where
 
     // Initialize solution vector
     let mut x = match initial_guess {
-        Some(guess) => guess.to_owned(),
+        Some(_guess) => _guess.to_owned(),
         None => Array1::zeros(n),
     };
 
@@ -909,13 +910,13 @@ where
         let ap = matrix.dot(&p);
         let alpha = rsold / p.dot(&ap);
 
-        x = &x + &p * alpha;
-        r = &r - &ap * alpha;
+        x.scaled_add(alpha, &p);
+        r.scaled_add(-alpha, &ap);
 
         // Check convergence
         let residual_norm = (r.iter().map(|&val| val * val).sum::<F>()).sqrt();
         if residual_norm < tolerance {
-            println!("PCG converged in {} iterations", iteration + 1);
+            println!("PCG converged in {} _iterations", iteration + 1);
             return Ok(x);
         }
 
@@ -931,6 +932,7 @@ where
 }
 
 /// Preconditioned GMRES solver  
+#[allow(dead_code)]
 pub fn preconditioned_gmres<F>(
     matrix: &ArrayView2<F>,
     rhs: &ArrayView1<F>,
@@ -941,7 +943,7 @@ pub fn preconditioned_gmres<F>(
     initial_guess: Option<&ArrayView1<F>>,
 ) -> LinalgResult<Array1<F>>
 where
-    F: Float + NumAssign + Zero + One + Sum + ndarray::ScalarOperand + 'static,
+    F: Float + NumAssign + Zero + One + Sum + ndarray::ScalarOperand + Send + Sync + 'static,
 {
     let n = matrix.nrows();
     if matrix.ncols() != n || rhs.len() != n {
@@ -952,7 +954,7 @@ where
 
     // Initialize solution vector
     let mut x = match initial_guess {
-        Some(guess) => guess.to_owned(),
+        Some(_guess) => _guess.to_owned(),
         None => Array1::zeros(n),
     };
 
@@ -962,10 +964,7 @@ where
         let r_norm = (r.iter().map(|&val| val * val).sum::<F>()).sqrt();
 
         if r_norm < tolerance {
-            println!(
-                "Preconditioned GMRES converged in {} outer iterations",
-                outer_iter
-            );
+            println!("Preconditioned GMRES converged in {outer_iter} outer _iterations");
             return Ok(x);
         }
 
@@ -1006,7 +1005,7 @@ where
 
         // For simplicity, use approximate solution update
         // (Full GMRES would solve the least squares problem)
-        x = &x + &v[0] * (tolerance * F::from(0.1).unwrap());
+        x.scaled_add(tolerance * F::from(0.1).unwrap(), &v[0]);
     }
 
     Ok(x)
@@ -1043,12 +1042,13 @@ impl Default for PreconditionerAnalysis {
 }
 
 /// Analyze preconditioner performance and effectiveness
+#[allow(dead_code)]
 pub fn analyze_preconditioner<F>(
     matrix: &ArrayView2<F>,
     _preconditioner: &dyn PreconditionerOp<F>,
 ) -> LinalgResult<PreconditionerAnalysis>
 where
-    F: Float + NumAssign + Zero + One + Sum + ndarray::ScalarOperand + 'static,
+    F: Float + NumAssign + Zero + One + Sum + ndarray::ScalarOperand + Send + Sync + 'static,
 {
     let n = matrix.nrows();
 
@@ -1129,7 +1129,7 @@ mod tests {
             [0.0, 0.0, 1.0, 3.0]
         ];
 
-        let config = PreconditionerConfig::default().with_block_size(2);
+        let config = PreconditionerConfig::default().with_blocksize(2);
         let preconditioner = BlockJacobiPreconditioner::new(&matrix.view(), &config).unwrap();
 
         let x = array![1.0, 2.0, 3.0, 4.0];

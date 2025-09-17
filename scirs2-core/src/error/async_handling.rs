@@ -39,18 +39,18 @@ impl AsyncRetryExecutor {
 
             RecoveryStrategy::ExponentialBackoff {
                 max_attempts,
-                initial_delay,
-                max_delay,
+                initialdelay,
+                maxdelay,
                 multiplier,
             } => {
-                let mut delay = *initial_delay;
-                let mut last_error = None;
+                let mut delay = *initialdelay;
+                let mut lasterror = None;
 
                 for attempt in 0..*max_attempts {
                     match f().await {
                         Ok(result) => return Ok(result),
                         Err(err) => {
-                            last_error = Some(err);
+                            lasterror = Some(err);
 
                             if attempt < max_attempts - 1 {
                                 tokio::time::sleep(delay).await;
@@ -58,27 +58,27 @@ impl AsyncRetryExecutor {
                                     Duration::from_nanos(
                                         (delay.as_nanos() as f64 * multiplier) as u64,
                                     ),
-                                    *max_delay,
+                                    *maxdelay,
                                 );
                             }
                         }
                     }
                 }
 
-                Err(last_error.unwrap())
+                Err(lasterror.unwrap())
             }
 
             RecoveryStrategy::LinearBackoff {
                 max_attempts,
                 delay,
             } => {
-                let mut last_error = None;
+                let mut lasterror = None;
 
                 for attempt in 0..*max_attempts {
                     match f().await {
                         Ok(result) => return Ok(result),
                         Err(err) => {
-                            last_error = Some(err);
+                            lasterror = Some(err);
 
                             if attempt < max_attempts - 1 {
                                 tokio::time::sleep(*delay).await;
@@ -87,20 +87,20 @@ impl AsyncRetryExecutor {
                     }
                 }
 
-                Err(last_error.unwrap())
+                Err(lasterror.unwrap())
             }
 
             RecoveryStrategy::CustomBackoff {
                 max_attempts,
                 delays,
             } => {
-                let mut last_error = None;
+                let mut lasterror = None;
 
                 for attempt in 0..*max_attempts {
                     match f().await {
                         Ok(result) => return Ok(result),
                         Err(err) => {
-                            last_error = Some(err);
+                            lasterror = Some(err);
 
                             if attempt < max_attempts - 1 {
                                 if let Some(&delay) = delays.get(attempt) {
@@ -111,7 +111,7 @@ impl AsyncRetryExecutor {
                     }
                 }
 
-                Err(last_error.unwrap())
+                Err(lasterror.unwrap())
             }
 
             _ => f().await, // Other strategies not applicable for retry
@@ -128,12 +128,12 @@ pub struct AsyncCircuitBreaker {
 
 impl AsyncCircuitBreaker {
     /// Create a new async circuit breaker
-    pub fn new(failure_threshold: usize, timeout: Duration, recovery_timeout: Duration) -> Self {
+    pub fn new(failure_threshold: usize, timeout: Duration, recoverytimeout: Duration) -> Self {
         Self {
             inner: Arc::new(CircuitBreaker::new(
                 failure_threshold,
                 timeout,
-                recovery_timeout,
+                recoverytimeout,
             )),
         }
     }
@@ -228,7 +228,7 @@ pub struct AsyncProgressTracker {
 
 impl AsyncProgressTracker {
     /// Create a new progress tracker
-    pub fn new(total_steps: usize) -> Self {
+    pub fn new(totalsteps: usize) -> Self {
         Self {
             total_steps,
             completed_steps: Arc::new(Mutex::new(0)),
@@ -244,7 +244,7 @@ impl AsyncProgressTracker {
     }
 
     /// Record an error that occurred during processing
-    pub fn record_error(&self, error: RecoverableError) {
+    pub fn recorderror(&self, error: RecoverableError) {
         let mut errors = self.errors.lock().unwrap();
         errors.push(error);
     }
@@ -279,7 +279,7 @@ impl AsyncProgressTracker {
     }
 
     /// Check if any errors have been recorded
-    pub fn has_errors(&self) -> bool {
+    pub fn haserrors(&self) -> bool {
         !self.errors.lock().unwrap().is_empty()
     }
 
@@ -296,7 +296,7 @@ impl AsyncProgressTracker {
         );
 
         if let Some(remaining) = self.estimated_remaining_time() {
-            report.push_str(&format!(" | ETA: {:?}", remaining));
+            report.push_str(&format!(" | Remaining: {:?}", remaining));
         }
 
         if error_count > 0 {
@@ -311,7 +311,7 @@ impl AsyncProgressTracker {
 #[derive(Debug)]
 pub struct AsyncErrorAggregator {
     errors: Arc<Mutex<Vec<RecoverableError>>>,
-    max_errors: Option<usize>,
+    maxerrors: Option<usize>,
 }
 
 impl AsyncErrorAggregator {
@@ -319,23 +319,23 @@ impl AsyncErrorAggregator {
     pub fn new() -> Self {
         Self {
             errors: Arc::new(Mutex::new(Vec::new())),
-            max_errors: None,
+            maxerrors: None,
         }
     }
 
     /// Create a new async error aggregator with maximum error limit
-    pub fn with_max_errors(max_errors: usize) -> Self {
+    pub fn with_maxerrors(maxerrors: usize) -> Self {
         Self {
             errors: Arc::new(Mutex::new(Vec::new())),
-            max_errors: Some(max_errors),
+            maxerrors: Some(maxerrors),
         }
     }
 
     /// Add an error to the aggregator (async-safe)
-    pub async fn add_error(&self, error: RecoverableError) {
+    pub async fn adderror(&self, error: RecoverableError) {
         let mut errors = self.errors.lock().unwrap();
 
-        if let Some(max) = self.max_errors {
+        if let Some(max) = self.maxerrors {
             if errors.len() >= max {
                 return; // Ignore additional errors
             }
@@ -345,12 +345,12 @@ impl AsyncErrorAggregator {
     }
 
     /// Add a simple error to the aggregator
-    pub async fn add_simple_error(&self, error: CoreError) {
-        self.add_error(RecoverableError::new(error)).await;
+    pub async fn add_simpleerror(&self, error: CoreError) {
+        self.adderror(RecoverableError::new(error)).await;
     }
 
     /// Check if there are any errors
-    pub fn has_errors(&self) -> bool {
+    pub fn haserrors(&self) -> bool {
         !self.errors.lock().unwrap().is_empty()
     }
 
@@ -360,21 +360,21 @@ impl AsyncErrorAggregator {
     }
 
     /// Get all errors
-    pub fn errors(&self) -> Vec<RecoverableError> {
+    pub fn geterrors(&self) -> Vec<RecoverableError> {
         self.errors.lock().unwrap().clone()
     }
 
     /// Get the most severe error
-    pub fn most_severe_error(&self) -> Option<RecoverableError> {
-        self.errors().into_iter().max_by_key(|err| err.severity)
+    pub fn most_severeerror(&self) -> Option<RecoverableError> {
+        self.geterrors().into_iter().max_by_key(|err| err.severity)
     }
 
     /// Convert to a single error if there are any errors
-    pub fn into_result<T>(self, success_value: T) -> Result<T, RecoverableError> {
-        if let Some(most_severe) = self.most_severe_error() {
+    pub fn into_result<T>(self, successvalue: T) -> Result<T, RecoverableError> {
+        if let Some(most_severe) = self.most_severeerror() {
             Err(most_severe)
         } else {
-            Ok(success_value)
+            Ok(successvalue)
         }
     }
 }
@@ -403,8 +403,8 @@ where
 pub async fn retry_with_exponential_backoff<F, Fut, T>(
     f: F,
     max_attempts: usize,
-    initial_delay: Duration,
-    max_delay: Duration,
+    initialdelay: Duration,
+    maxdelay: Duration,
     multiplier: f64,
 ) -> CoreResult<T>
 where
@@ -413,8 +413,8 @@ where
 {
     let executor = AsyncRetryExecutor::new(RecoveryStrategy::ExponentialBackoff {
         max_attempts,
-        initial_delay,
-        max_delay,
+        initialdelay,
+        maxdelay,
         multiplier,
     });
 
@@ -422,7 +422,7 @@ where
 }
 
 /// Convenience function to execute multiple async operations with error aggregation
-pub async fn execute_with_error_aggregation<T>(
+pub async fn execute_witherror_aggregation<T>(
     operations: Vec<impl Future<Output = CoreResult<T>>>,
     fail_fast: bool,
 ) -> Result<Vec<T>, AsyncErrorAggregator> {
@@ -433,7 +433,7 @@ pub async fn execute_with_error_aggregation<T>(
         match operation.await {
             Ok(result) => results.push(result),
             Err(error) => {
-                aggregator.add_simple_error(error).await;
+                aggregator.add_simpleerror(error).await;
 
                 if fail_fast {
                     return Err(aggregator);
@@ -442,7 +442,7 @@ pub async fn execute_with_error_aggregation<T>(
         }
     }
 
-    if aggregator.has_errors() {
+    if aggregator.haserrors() {
         Err(aggregator)
     } else {
         Ok(results)
@@ -458,7 +458,7 @@ pub struct TrackedAsyncOperation<F> {
 
 impl<F> TrackedAsyncOperation<F> {
     /// Create a new tracked async operation
-    pub fn new(operation: F, total_steps: usize) -> Self {
+    pub fn new(operation: F, totalsteps: usize) -> Self {
         Self {
             operation,
             tracker: AsyncProgressTracker::new(total_steps),
@@ -493,8 +493,8 @@ where
                 match &result {
                     Ok(_) => this.tracker.complete_step(),
                     Err(error) => {
-                        let recoverable_error = RecoverableError::new(error.clone());
-                        this.tracker.record_error(recoverable_error);
+                        let recoverableerror = RecoverableError::new(error.clone());
+                        this.tracker.recorderror(recoverableerror);
                     }
                 }
                 Poll::Ready(result)
@@ -586,19 +586,19 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn test_async_error_aggregator() {
+    async fn test_asyncerror_aggregator() {
         let aggregator = AsyncErrorAggregator::new();
 
-        assert!(!aggregator.has_errors());
+        assert!(!aggregator.haserrors());
 
         aggregator
-            .add_simple_error(CoreError::ValueError(ErrorContext::new("Error 1")))
+            .add_simpleerror(CoreError::ValueError(ErrorContext::new("Error 1")))
             .await;
         aggregator
-            .add_simple_error(CoreError::DomainError(ErrorContext::new("Error 2")))
+            .add_simpleerror(CoreError::DomainError(ErrorContext::new("Error 2")))
             .await;
 
         assert_eq!(aggregator.error_count(), 2);
-        assert!(aggregator.has_errors());
+        assert!(aggregator.haserrors());
     }
 }

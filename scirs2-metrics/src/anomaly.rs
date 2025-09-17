@@ -133,6 +133,7 @@ use crate::error::{MetricsError, Result};
 /// let accuracy = detection_accuracy(&y_true, &y_pred).unwrap();
 /// assert!(accuracy >= 0.0 && accuracy <= 1.0);
 /// ```
+#[allow(dead_code)]
 pub fn detection_accuracy<T, S, R>(
     y_true: &ArrayBase<S, Ix1>,
     y_pred: &ArrayBase<R, Ix1>,
@@ -198,6 +199,7 @@ where
 /// let far = false_alarm_rate(&y_true, &y_pred).unwrap();
 /// assert!(far >= 0.0 && far <= 1.0);
 /// ```
+#[allow(dead_code)]
 pub fn false_alarm_rate<T, S, R>(
     y_true: &ArrayBase<S, Ix1>,
     y_pred: &ArrayBase<R, Ix1>,
@@ -272,6 +274,7 @@ where
 /// let mdr = miss_detection_rate(&y_true, &y_pred).unwrap();
 /// assert!(mdr >= 0.0 && mdr <= 1.0);
 /// ```
+#[allow(dead_code)]
 pub fn miss_detection_rate<T, S, R>(
     y_true: &ArrayBase<S, Ix1>,
     y_pred: &ArrayBase<R, Ix1>,
@@ -346,6 +349,7 @@ where
 /// let auc = anomaly_auc_score(&y_true, &y_score).unwrap();
 /// assert!(auc >= 0.0 && auc <= 1.0);
 /// ```
+#[allow(dead_code)]
 pub fn anomaly_auc_score<T, S, R>(
     y_true: &ArrayBase<S, Ix1>,
     y_score: &ArrayBase<R, Ix1>,
@@ -370,14 +374,14 @@ where
         ));
     }
 
-    // Collect pairs of (score, label) for sorting
+    // Collect pairs of (_score, label) for sorting
     let mut score_label: Vec<_> = y_score
         .iter()
         .zip(y_true.iter())
         .map(|(s, l)| (s.to_f64().unwrap_or(0.0), l.to_f64().unwrap_or(0.0)))
         .collect();
 
-    // Sort by score in descending order
+    // Sort by _score in descending order
     score_label.sort_by(|(a, _), (b, _)| b.partial_cmp(a).unwrap_or(Ordering::Equal));
 
     // Count total positives and negatives
@@ -398,9 +402,9 @@ where
     let mut pos_at_current_score = if score_label[0].1 > 0.0 { 1 } else { 0 };
 
     for i in 1..score_label.len() {
-        let (score, label) = score_label[i];
+        let (_score, label) = score_label[i];
 
-        if (score - prev_score).abs() < 1e-10 {
+        if (_score - prev_score).abs() < 1e-10 {
             // Same score, continue counting
             count_at_current_score += 1;
             if label > 0.0 {
@@ -411,11 +415,11 @@ where
             let avg_rank = current_rank + (count_at_current_score - 1) as f64 / 2.0;
             positive_rank_sum += avg_rank * pos_at_current_score as f64;
 
-            // Reset for new score
+            // Reset for new _score
             current_rank += count_at_current_score as f64;
             count_at_current_score = 1;
             pos_at_current_score = if label > 0.0 { 1 } else { 0 };
-            prev_score = score;
+            prev_score = _score;
         }
     }
 
@@ -458,6 +462,7 @@ where
 /// let ap = anomaly_average_precision_score(&y_true, &y_score).unwrap();
 /// assert!(ap > 0.0 && ap <= 1.0);
 /// ```
+#[allow(dead_code)]
 pub fn anomaly_average_precision_score<T, S, R>(
     y_true: &ArrayBase<S, Ix1>,
     y_score: &ArrayBase<R, Ix1>,
@@ -482,14 +487,14 @@ where
         ));
     }
 
-    // Collect pairs of (score, label) for sorting
+    // Collect pairs of (_score, label) for sorting
     let mut score_label: Vec<_> = y_score
         .iter()
         .zip(y_true.iter())
         .map(|(s, l)| (s.to_f64().unwrap_or(0.0), l.to_f64().unwrap_or(0.0)))
         .collect();
 
-    // Sort by score in descending order
+    // Sort by _score in descending order
     score_label.sort_by(|(a, _), (b, _)| b.partial_cmp(a).unwrap_or(Ordering::Equal));
 
     // Count total positives (anomalies)
@@ -557,6 +562,7 @@ where
 /// // Calculate KL divergence
 /// let kl = kl_divergence(&p, &q).unwrap();
 /// ```
+#[allow(dead_code)]
 pub fn kl_divergence<T, S, R>(p: &ArrayBase<S, Ix1>, q: &ArrayBase<R, Ix1>) -> Result<f64>
 where
     T: Real + PartialOrd + Clone,
@@ -634,6 +640,7 @@ where
 /// let js = js_divergence(&p, &q).unwrap();
 /// assert!(js >= 0.0 && js <= 0.693);
 /// ```
+#[allow(dead_code)]
 pub fn js_divergence<T, S, R>(p: &ArrayBase<S, Ix1>, q: &ArrayBase<R, Ix1>) -> Result<f64>
 where
     T: Real + PartialOrd + Clone,
@@ -730,6 +737,7 @@ where
 ///     assert!(w_dist >= 0.0);
 /// }
 /// ```
+#[allow(dead_code)]
 pub fn wasserstein_distance<T, S, R>(
     u_values: &ArrayBase<S, Ix1>,
     v_values: &ArrayBase<R, Ix1>,
@@ -745,7 +753,7 @@ where
         ));
     }
 
-    // Convert to f64 and sort values
+    // Convert to f64 and sort _values
     let mut u_sorted: Vec<f64> = u_values.iter().map(|x| x.to_f64().unwrap_or(0.0)).collect();
     let mut v_sorted: Vec<f64> = v_values.iter().map(|x| x.to_f64().unwrap_or(0.0)).collect();
 
@@ -828,6 +836,7 @@ where
 ///
 /// The lower the MMD value, the more similar the distributions.
 /// A value close to 0 suggests the samples come from the same distribution.
+#[allow(dead_code)]
 pub fn maximum_mean_discrepancy<T, S, R>(
     x: &ArrayBase<S, Ix1>,
     y: &ArrayBase<R, Ix1>,
@@ -983,6 +992,7 @@ where
 /// let (precision_strict, recall_strict, f1_strict) =
 ///     precision_recall_with_tolerance(&y_true, &y_pred, 0).unwrap();
 /// ```
+#[allow(dead_code)]
 pub fn precision_recall_with_tolerance<T, S, R>(
     y_true: &ArrayBase<S, Ix1>,
     y_pred: &ArrayBase<R, Ix1>,
@@ -1011,7 +1021,7 @@ where
     let zero = T::zero();
     let n = y_true.len();
 
-    // Find indices of true anomalies
+    // Find indices of _true anomalies
     let mut true_anomaly_indices = Vec::new();
     for (i, val) in y_true.iter().enumerate() {
         if val > &zero {
@@ -1027,10 +1037,10 @@ where
         }
     }
 
-    // If there are no true anomalies, precision is undefined
+    // If there are no _true anomalies, precision is undefined
     if true_anomaly_indices.is_empty() {
         if pred_anomaly_indices.is_empty() {
-            // If neither true nor predicted anomalies exist, return perfect scores
+            // If neither _true nor predicted anomalies exist, return perfect scores
             return Ok((1.0, 1.0, 1.0));
         } else {
             // If there are only predicted anomalies, all are false positives
@@ -1053,7 +1063,7 @@ where
         }
     }
 
-    // Count true positives (predicted anomalies that are within the tolerance window of true anomalies)
+    // Count _true positives (predicted anomalies that are within the tolerance window of _true anomalies)
     let mut true_positives = 0;
     for idx in &pred_anomaly_indices {
         if true_anomaly_regions.contains(idx) {
@@ -1064,9 +1074,9 @@ where
     // Calculate precision, recall, and F1 score
     let precision = true_positives as f64 / pred_anomaly_indices.len() as f64;
     let recall = if true_anomaly_indices.is_empty() {
-        1.0 // If no true anomalies, perfect recall
+        1.0 // If no _true anomalies, perfect recall
     } else {
-        // Count how many true anomaly regions have at least one prediction within them
+        // Count how many _true anomaly regions have at least one prediction within them
         let mut detected_anomalies = 0;
         for idx in &true_anomaly_indices {
             let start = idx.saturating_sub(tolerance);
@@ -1124,6 +1134,7 @@ where
 /// // Point-adjusted evaluation considers both anomaly sequences correctly detected
 /// let (pa_precision, pa_recall, pa_f1) = point_adjusted_precision_recall(&y_true, &y_pred).unwrap();
 /// ```
+#[allow(dead_code)]
 pub fn point_adjusted_precision_recall<T, S, R>(
     y_true: &ArrayBase<S, Ix1>,
     y_pred: &ArrayBase<R, Ix1>,
@@ -1184,10 +1195,10 @@ where
         }
     }
 
-    // If there are no true anomaly segments, precision is undefined but recall is perfect
+    // If there are no _true anomaly segments, precision is undefined but recall is perfect
     if true_segments.is_empty() {
         if pred_anomaly_indices.is_empty() {
-            // If neither true nor predicted anomalies exist, return perfect scores
+            // If neither _true nor predicted anomalies exist, return perfect scores
             return Ok((1.0, 1.0, 1.0));
         } else {
             // If there are only predicted anomalies, all are false positives
@@ -1200,7 +1211,7 @@ where
         return Ok((1.0, 0.0, 0.0));
     }
 
-    // Compute point-adjusted recall: fraction of true segments with at least one predicted point
+    // Compute point-adjusted recall: fraction of _true segments with at least one predicted point
     let mut detected_segments = 0;
     for segment in &true_segments {
         for &idx in segment {
@@ -1287,6 +1298,7 @@ where
 /// // Calculate NAB score with custom parameters
 /// let custom_score = nab_score(&y_true, &y_pred, Some(5), Some(2.0), Some(-1.0)).unwrap();
 /// ```
+#[allow(dead_code)]
 pub fn nab_score<T, S, R>(
     y_true: &ArrayBase<S, Ix1>,
     y_pred: &ArrayBase<R, Ix1>,
@@ -1326,7 +1338,7 @@ where
     let mut anomaly_windows = Vec::new();
     for (i, val) in y_true.iter().enumerate() {
         if val > &zero {
-            // Create an anomaly window around this point
+            // Create an anomaly _window around this point
             let start = i.saturating_sub(window_size / 2);
             let end = (i + window_size / 2).min(n - 1);
             anomaly_windows.push((start, end, i)); // (start, end, center)
@@ -1361,7 +1373,7 @@ where
 
         for (i, &(start, end, center)) in anomaly_windows.iter().enumerate() {
             if pred_idx >= start && pred_idx <= end && !detected_windows.contains(&i) {
-                // True positive: prediction falls within an undetected anomaly window
+                // True positive: prediction falls within an undetected anomaly _window
                 is_tp = true;
                 detected_windows.insert(i);
 
@@ -1370,14 +1382,14 @@ where
                 let relative_position = (pred_idx as isize - center as isize) as f64;
                 let sigmoid_scale = 1.0 / (1.0 + (0.5 * relative_position).exp());
 
-                // Add scaled reward for true positive
+                // Add scaled reward for _true positive
                 score += weight_tp * sigmoid_scale;
                 break;
             }
         }
 
         if !is_tp {
-            // False positive: prediction doesn't fall within any anomaly window
+            // False positive: prediction doesn't fall within any anomaly _window
             score += weight_fp;
         }
     }

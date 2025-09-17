@@ -13,8 +13,9 @@
 use ndarray::{Array1, Array2};
 use scirs2_linalg::hierarchical::{adaptive_block_lowrank, HMatrix, HSSMatrix};
 
+#[allow(dead_code)]
 fn main() -> Result<(), Box<dyn std::error::Error>> {
-    println!("🚀 Hierarchical Matrix Factorizations - ULTRATHINK DEMONSTRATION");
+    println!("🚀 Hierarchical Matrix Factorizations - Advanced DEMONSTRATION");
     println!("================================================================");
 
     // Test 1: H-Matrix Construction and Operations
@@ -39,12 +40,12 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Build H-matrix with controlled approximation
     let tolerance = 1e-6;
     let max_rank = 16;
-    let min_block_size = 16;
+    let min_blocksize = 16;
 
-    let h_matrix = HMatrix::from_dense(&matrix.view(), tolerance, max_rank, min_block_size)?;
+    let hmatrix = HMatrix::from_dense(&matrix.view(), tolerance, max_rank, min_blocksize)?;
 
     // Analyze memory usage
-    let memory_info = h_matrix.memory_info();
+    let memory_info = hmatrix.memory_info();
     println!("   H-matrix compression achieved:");
     println!("     - Dense blocks: {}", memory_info.dense_blocks);
     println!("     - Low-rank blocks: {}", memory_info.lowrank_blocks);
@@ -55,7 +56,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!(
         "     - Memory savings: {:.1}%",
         (1.0 - (memory_info.total_dense_elements + memory_info.total_lowrank_elements) as f64
-            / memory_info.original_size as f64)
+            / memory_info.originalsize as f64)
             * 100.0
     );
 
@@ -72,7 +73,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // H-matrix multiplication (O(n log n) complexity)
     let start = std::time::Instant::now();
-    let y_hierarchical = h_matrix.matvec(&x.view())?;
+    let y_hierarchical = hmatrix.matvec(&x.view())?;
     let h_time = start.elapsed();
 
     // Check accuracy
@@ -101,8 +102,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("--------------------------------------------");
 
     // Create a matrix suitable for HSS (often from elliptic PDEs)
-    let hss_size = 64; // Smaller for demonstration
-    let hss_matrix = Array2::from_shape_fn((hss_size, hss_size), |(i, j)| {
+    let hsssize = 64; // Smaller for demonstration
+    let hssmatrix = Array2::from_shape_fn((hsssize, hsssize), |(i, j)| {
         // Structured matrix with hierarchical low-rank property
         if (i as i32 - j as i32).abs() <= 2 {
             2.0 - (i as f64 - j as f64).abs() * 0.1 // Near-diagonal dominance
@@ -111,13 +112,13 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         }
     });
 
-    let hss = HSSMatrix::from_dense(&hss_matrix.view(), 1e-6)?;
+    let hss = HSSMatrix::from_dense(&hssmatrix.view(), 1e-6)?;
 
-    let x_hss = Array1::from_shape_fn(hss_size, |i| (i + 1) as f64);
+    let x_hss = Array1::from_shape_fn(hsssize, |i| (i + 1) as f64);
 
     // HSS multiplication (O(n) complexity!)
     let start = std::time::Instant::now();
-    let y_hss_dense = hss_matrix.dot(&x_hss);
+    let y_hss_dense = hssmatrix.dot(&x_hss);
     let hss_dense_time = start.elapsed();
 
     let start = std::time::Instant::now();
@@ -125,14 +126,14 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let hss_time = start.elapsed();
 
     let mut hss_max_error = 0.0;
-    for i in 0..hss_size {
+    for i in 0..hsssize {
         let error = (y_hss_dense[i] - y_hss[i]).abs();
         if error > hss_max_error {
             hss_max_error = error;
         }
     }
 
-    println!("   HSS matrix size: {}×{}", hss_size, hss_size);
+    println!("   HSS matrix size: {}×{}", hsssize, hsssize);
     println!("   Dense matvec time: {:?}", hss_dense_time);
     println!("   HSS matvec time: {:?}", hss_time);
     println!(
@@ -147,12 +148,12 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("---------------------------------------------");
 
     // Create a matrix with varying rank structure
-    let block_size = 32;
-    let test_block = Array2::from_shape_fn((block_size, block_size), |(i, j)| {
+    let blocksize = 32;
+    let test_block = Array2::from_shape_fn((blocksize, blocksize), |(i, j)| {
         // Low-rank block: sum of few rank-1 matrices
-        let r1 = (i as f64 / block_size as f64) * (j as f64 / block_size as f64);
-        let r2 = ((i + j) as f64 / (2.0 * block_size as f64)).sin() * 0.5;
-        let r3 = ((i as f64 - j as f64).abs() / block_size as f64).exp() * 0.1;
+        let r1 = (i as f64 / blocksize as f64) * (j as f64 / blocksize as f64);
+        let r2 = ((i + j) as f64 / (2.0 * blocksize as f64)).sin() * 0.5;
+        let r3 = ((i as f64 - j as f64).abs() / blocksize as f64).exp() * 0.1;
         r1 + r2 + r3
     });
 
@@ -162,17 +163,17 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     for &tol in &tolerance_levels {
         if let Ok(Some((u, v))) = adaptive_block_lowrank(&test_block.view(), tol, 20) {
             let rank = u.ncols();
-            let compression = (block_size * block_size) as f64 / (u.len() + v.len()) as f64;
+            let compression = (blocksize * blocksize) as f64 / (u.len() + v.len()) as f64;
 
             // Check reconstruction error
             let reconstruction = u.dot(&v.t());
             let mut error = 0.0;
-            for i in 0..block_size {
-                for j in 0..block_size {
+            for i in 0..blocksize {
+                for j in 0..blocksize {
                     error += (test_block[[i, j]] - reconstruction[[i, j]]).powi(2);
                 }
             }
-            let rmse = (error / (block_size * block_size) as f64).sqrt();
+            let rmse = (error / (blocksize * blocksize) as f64).sqrt();
 
             println!(
                 "     Tolerance {:.0e}: rank={}, compression={:.1}x, RMSE={:.2e}",
@@ -211,7 +212,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("      - Materials science calculations");
 
     println!("\n================================================================");
-    println!("🎯 ULTRATHINK ACHIEVEMENT: HIERARCHICAL MATRIX FACTORIZATIONS");
+    println!("🎯 Advanced ACHIEVEMENT: HIERARCHICAL MATRIX FACTORIZATIONS");
     println!("================================================================");
     println!("✅ H-matrices: O(n log n) storage and operations");
     println!("✅ HSS matrices: O(n) complexity for specialized problems");

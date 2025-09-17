@@ -10,6 +10,7 @@ use scirs2_io::streaming::{
 use std::io::Write;
 use tempfile::tempdir;
 
+#[allow(dead_code)]
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("🔄 Streaming and Iterator Interfaces Example");
     println!("============================================");
@@ -35,6 +36,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     Ok(())
 }
 
+#[allow(dead_code)]
 fn demonstrate_chunked_reading() -> Result<(), Box<dyn std::error::Error>> {
     println!("\n📁 Demonstrating Chunked File Reading...");
 
@@ -88,11 +90,12 @@ fn demonstrate_chunked_reading() -> Result<(), Box<dyn std::error::Error>> {
     Ok(())
 }
 
+#[allow(dead_code)]
 fn demonstrate_line_reading() -> Result<(), Box<dyn std::error::Error>> {
     println!("\n📄 Demonstrating Line-based Reading...");
 
     let temp_dir = tempdir()?;
-    let test_file = temp_dir.path().join("large_text.txt");
+    let test_file = temp_dir.path().join("largetext.txt");
 
     // Create a large text file with numbered lines
     println!("  📝 Creating test file with 10,000 lines...");
@@ -145,6 +148,7 @@ fn demonstrate_line_reading() -> Result<(), Box<dyn std::error::Error>> {
     Ok(())
 }
 
+#[allow(dead_code)]
 fn demonstrate_csv_streaming() -> Result<(), Box<dyn std::error::Error>> {
     println!("\n📊 Demonstrating Streaming CSV Processing...");
 
@@ -235,6 +239,7 @@ fn demonstrate_csv_streaming() -> Result<(), Box<dyn std::error::Error>> {
     Ok(())
 }
 
+#[allow(dead_code)]
 fn demonstrate_large_file_processing() -> Result<(), Box<dyn std::error::Error>> {
     println!("\n⚡ Demonstrating Large File Processing with Statistics...");
 
@@ -308,6 +313,7 @@ fn demonstrate_large_file_processing() -> Result<(), Box<dyn std::error::Error>>
     Ok(())
 }
 
+#[allow(dead_code)]
 fn demonstrate_parallel_streaming() -> Result<(), Box<dyn std::error::Error>> {
     println!("\n🚀 Demonstrating Parallel Processing with Streaming...");
 

@@ -1,6 +1,7 @@
 use ndarray::{Array, Axis};
 use scirs2_optim::regularizers::SpatialDropout;
 
+#[allow(dead_code)]
 fn main() {
     let sd = SpatialDropout::new(0.0).unwrap(); // No dropout to test
 

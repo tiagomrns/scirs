@@ -1,13 +1,15 @@
-//! Savitzky-Golay filtering
-//!
-//! This module provides functions for Savitzky-Golay filtering, which is
-//! used for smoothing data and computing derivatives.
+use ndarray::s;
+// Savitzky-Golay filtering
+//
+// This module provides functions for Savitzky-Golay filtering, which is
+// used for smoothing data and computing derivatives.
 
 use crate::error::{SignalError, SignalResult};
-use ndarray::{s, Array1, Array2, ArrayBase, Data, Ix1};
+use ndarray::{Array1, Array2, ArrayBase, Data, Ix1};
 use num_traits::{Float, NumCast};
 use std::fmt::Debug;
 
+#[allow(unused_imports)]
 /// Compute the coefficients for a 1-D Savitzky-Golay FIR filter.
 ///
 /// # Arguments
@@ -44,6 +46,7 @@ use std::fmt::Debug;
 /// A. Savitzky, M. J. E. Golay, "Smoothing and Differentiation of Data by
 /// Simplified Least Squares Procedures." Analytical Chemistry, 1964, 36 (8),
 /// pp 1627-1639.
+#[allow(dead_code)]
 pub fn savgol_coeffs(
     window_length: usize,
     polyorder: usize,
@@ -176,6 +179,7 @@ pub fn savgol_coeffs(
 }
 
 // Helper function for full SG coefficient calculation
+#[allow(dead_code)]
 fn calculate_savgol_coeffs(
     window_length: usize,
     polyorder: usize,
@@ -226,6 +230,7 @@ fn calculate_savgol_coeffs(
 }
 
 /// Simple implementation of least squares solution for Ax = b
+#[allow(dead_code)]
 fn solve_lstsq(a: Array2<f64>, b: Array1<f64>) -> SignalResult<Array1<f64>> {
     // Calculate dimensions
     let nrows = a.nrows();
@@ -313,6 +318,7 @@ fn solve_lstsq(a: Array2<f64>, b: Array1<f64>) -> SignalResult<Array1<f64>> {
 }
 
 /// Simple linear system solver for Ax = b using Gaussian elimination
+#[allow(dead_code)]
 fn solve_system(a: &Array2<f64>, b: &Array1<f64>) -> Result<Array1<f64>, String> {
     let n = a.nrows();
     if n != a.ncols() {
@@ -390,6 +396,7 @@ fn solve_system(a: &Array2<f64>, b: &Array1<f64>) -> Result<Array1<f64>, String>
 /// # Returns
 ///
 /// * The coefficients of the differentiated polynomial
+#[allow(dead_code)]
 fn polyder<S>(p: &ArrayBase<S, Ix1>, m: usize) -> Array1<f64>
 where
     S: Data<Elem = f64>,
@@ -440,6 +447,7 @@ struct EdgeFitConfig {
     delta: f64,
 }
 
+#[allow(dead_code)]
 fn fit_edge<T>(x: &[T], config: EdgeFitConfig) -> SignalResult<Vec<f64>>
 where
     T: Float + NumCast + Debug,
@@ -517,6 +525,7 @@ where
 /// # Returns
 ///
 /// * The filtered data including edge handling
+#[allow(dead_code)]
 fn fit_edges_polyfit<T>(
     x: &[T],
     window_length: usize,
@@ -618,6 +627,7 @@ where
 /// let smoothed = savgol_filter(&x, 11, 2, None, None, None, None).unwrap();
 /// ```
 #[allow(clippy::too_many_arguments)]
+#[allow(dead_code)]
 pub fn savgol_filter<T>(
     x: &[T],
     window_length: usize,
@@ -823,10 +833,10 @@ where
 mod tests {
     use super::*;
     use approx::assert_relative_eq;
-    use ndarray::Array1;
-
     #[test]
     fn test_savgol_coeffs_basic() {
+        let a = vec![1.0, 2.0, 3.0, 4.0, 5.0];
+        let b = vec![0.5, 0.5];
         // Test with window_length = 5, polyorder = 2
         let coeffs = savgol_coeffs(5, 2, None, None, None, None).unwrap();
         let expected = [-0.08571429, 0.34285714, 0.48571429, 0.34285714, -0.08571429];
@@ -839,6 +849,8 @@ mod tests {
 
     #[test]
     fn test_savgol_coeffs_deriv() {
+        let a = vec![1.0, 2.0, 3.0, 4.0, 5.0];
+        let b = vec![0.5, 0.5];
         // Test with derivative = 1
         let coeffs = savgol_coeffs(5, 2, Some(1), None, None, None).unwrap();
         let expected = [0.2, 0.1, 0.0, -0.1, -0.2];
@@ -851,6 +863,8 @@ mod tests {
 
     #[test]
     fn test_savgol_filter_smooth() {
+        let a = vec![1.0, 2.0, 3.0, 4.0, 5.0];
+        let b = vec![0.5, 0.5];
         // Create a signal with a known shape
         let t: Vec<f64> = (0..100).map(|i| i as f64 / 10.0).collect();
         let mut x: Vec<f64> = t.iter().map(|&t| t.sin()).collect();
@@ -897,6 +911,8 @@ mod tests {
 
     #[test]
     fn test_savgol_filter_modes() {
+        let a = vec![1.0, 2.0, 3.0, 4.0, 5.0];
+        let b = vec![0.5, 0.5];
         // Create a simple signal
         let x: Vec<f64> = vec![1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0];
 

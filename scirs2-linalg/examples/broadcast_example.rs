@@ -3,6 +3,7 @@
 use ndarray::array;
 use scirs2_linalg::prelude::*;
 
+#[allow(dead_code)]
 fn main() {
     println!("NumPy-style Broadcasting Example\n");
 
@@ -16,6 +17,7 @@ fn main() {
     broadcast_different_batch_example();
 }
 
+#[allow(dead_code)]
 fn broadcast_3d_example() {
     println!("=== 3D Array Broadcasting ===");
 
@@ -45,6 +47,7 @@ fn broadcast_3d_example() {
     println!("Second batch result: {:?}", &y.as_slice().unwrap()[2..4]);
 }
 
+#[allow(dead_code)]
 fn broadcast_dynamic_example() {
     println!("\n=== Dynamic Array Broadcasting ===");
 
@@ -59,6 +62,7 @@ fn broadcast_dynamic_example() {
     println!("Sample value: {}", c[[0, 0, 0, 0]]);
 }
 
+#[allow(dead_code)]
 fn broadcast_different_batch_example() {
     println!("\n=== Broadcasting with Different Batch Sizes ===");
 

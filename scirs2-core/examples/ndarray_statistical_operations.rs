@@ -4,6 +4,7 @@ use scirs2_core::ndarray_ext::stats::{
     std_dev_2d, sum_2d, variance_2d,
 };
 
+#[allow(dead_code)]
 fn main() {
     println!("Demonstrating SciPy-like Statistical Functions in scirs2-core\n");
 
@@ -27,8 +28,8 @@ fn main() {
     let row_means = mean_2d(&data.view(), Some(Axis(1))).unwrap();
 
     println!("Global mean: {}", global_mean[0]);
-    println!("Column means: {:?}", col_means);
-    println!("Row means: {:?}", row_means);
+    println!("Column means: {col_means:?}");
+    println!("Row means: {row_means:?}");
     println!();
 
     // Median
@@ -37,8 +38,8 @@ fn main() {
     let row_medians = median_2d(&data.view(), Some(Axis(1))).unwrap();
 
     println!("Global median: {}", global_median[0]);
-    println!("Column medians: {:?}", col_medians);
-    println!("Row medians: {:?}", row_medians);
+    println!("Column medians: {col_medians:?}");
+    println!("Row medians: {row_medians:?}");
     println!();
 
     // Variance and Standard Deviation
@@ -62,7 +63,7 @@ fn main() {
     let col_sums = sum_2d(&data.view(), Some(Axis(0))).unwrap();
 
     println!("Global sum: {}", global_sum[0]);
-    println!("Column sums: {:?}", col_sums);
+    println!("Column sums: {col_sums:?}");
     println!();
 
     // Percentile
@@ -79,14 +80,14 @@ fn main() {
     ];
 
     println!("=== Histogram Example ===");
-    println!("1D array: {:?}", data_1d);
+    println!("1D array: {data_1d:?}");
 
     // Calculate histogram
     let (hist, bin_edges) = histogram(data_1d.view(), 5, None, None).unwrap();
 
     println!("Histogram with 5 bins:");
-    println!("Bin edges: {:?}", bin_edges);
-    println!("Counts: {:?}", hist);
+    println!("Bin edges: {bin_edges:?}");
+    println!("Counts: {hist:?}");
     println!();
 
     // Visualize histogram as ASCII
@@ -109,7 +110,7 @@ fn main() {
 
     println!("Quantiles using 'linear' interpolation:");
     for (&q, &val) in quantiles.iter().zip(results.iter()) {
-        println!("  {:.2} quantile: {:.2}", q, val);
+        println!("  {q:.2} quantile: {val:.2}");
     }
     println!();
 
@@ -138,15 +139,15 @@ fn main() {
         .column(0)
         .to_owned();
 
-    println!("Generated {} data points", n);
+    println!("Generated {n} data points");
 
     // Calculate 2D histogram
     let (hist_2d, x_edges, y_edges) =
         histogram2d(x_arr.view(), y_arr.view(), Some((6, 6)), None, None).unwrap();
 
     println!("2D Histogram (6×6 bins):");
-    println!("X edges: {:?}", x_edges);
-    println!("Y edges: {:?}", y_edges);
+    println!("X edges: {x_edges:?}");
+    println!("Y edges: {y_edges:?}");
     println!();
 
     // Visualize the 2D histogram
@@ -158,7 +159,7 @@ fn main() {
             if count == 0 {
                 print!(" . ");
             } else {
-                print!(" {} ", count);
+                print!(" {count} ");
             }
         }
         println!();
@@ -172,10 +173,11 @@ fn main() {
 }
 
 // Helper function to print a 2D array
+#[allow(dead_code)]
 fn print_array2<T: std::fmt::Display>(arr: &Array2<T>) {
     for row in arr.rows() {
         for item in row.iter() {
-            print!("{:6} ", item);
+            print!("{item:6} ");
         }
         println!();
     }

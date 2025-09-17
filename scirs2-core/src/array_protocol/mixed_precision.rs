@@ -64,7 +64,7 @@ pub struct MixedPrecisionConfig {
     pub storage_precision: Precision,
 
     /// Computation precision for operations.
-    pub compute_precision: Precision,
+    pub computeprecision: Precision,
 
     /// Automatic precision selection based on array size and operation.
     pub auto_precision: bool,
@@ -80,7 +80,7 @@ impl Default for MixedPrecisionConfig {
     fn default() -> Self {
         Self {
             storage_precision: Precision::Single,
-            compute_precision: Precision::Double,
+            computeprecision: Precision::Double,
             auto_precision: true,
             downcast_threshold: 10_000_000, // 10M elements
             double_precision_accumulation: true,
@@ -92,7 +92,7 @@ impl Default for MixedPrecisionConfig {
 pub static MIXED_PRECISION_CONFIG: LazyLock<RwLock<MixedPrecisionConfig>> = LazyLock::new(|| {
     RwLock::new(MixedPrecisionConfig {
         storage_precision: Precision::Single,
-        compute_precision: Precision::Double,
+        computeprecision: Precision::Double,
         auto_precision: true,
         downcast_threshold: 10_000_000, // 10M elements
         double_precision_accumulation: true,
@@ -100,6 +100,7 @@ pub static MIXED_PRECISION_CONFIG: LazyLock<RwLock<MixedPrecisionConfig>> = Lazy
 });
 
 /// Set the global mixed-precision configuration.
+#[allow(dead_code)]
 pub fn set_mixed_precision_config(config: MixedPrecisionConfig) {
     if let Ok(mut global_config) = MIXED_PRECISION_CONFIG.write() {
         *global_config = config;
@@ -107,6 +108,7 @@ pub fn set_mixed_precision_config(config: MixedPrecisionConfig) {
 }
 
 /// Get the current mixed-precision configuration.
+#[allow(dead_code)]
 pub fn get_mixed_precision_config() -> MixedPrecisionConfig {
     MIXED_PRECISION_CONFIG
         .read()
@@ -115,6 +117,7 @@ pub fn get_mixed_precision_config() -> MixedPrecisionConfig {
 }
 
 /// Determine the optimal precision for an array based on its size.
+#[allow(dead_code)]
 pub fn determine_optimal_precision<T, D>(array: &Array<T, D>) -> Precision
 where
     T: Clone + 'static,
@@ -151,7 +154,7 @@ where
     storage_precision: Precision,
 
     /// The precision used for computations.
-    compute_precision: Precision,
+    computeprecision: Precision,
 }
 
 impl<T, D> MixedPrecisionArray<T, D>
@@ -171,12 +174,12 @@ where
         Self {
             array,
             storage_precision: precision,
-            compute_precision: precision,
+            computeprecision: precision,
         }
     }
 
     /// Create a new mixed-precision array with specified compute precision.
-    pub fn with_compute_precision(array: Array<T, D>, compute_precision: Precision) -> Self {
+    pub fn with_computeprecision(data: Array<T, D>, computeprecision: Precision) -> Self {
         let storage_precision = match std::mem::size_of::<T>() {
             2 => Precision::Half,
             4 => Precision::Single,
@@ -185,9 +188,9 @@ where
         };
 
         Self {
-            array,
+            array: data,
             storage_precision,
-            compute_precision,
+            computeprecision,
         }
     }
 
@@ -247,7 +250,7 @@ where
             .get("precision")
             .and_then(|p| p.downcast_ref::<Precision>())
             .cloned()
-            .unwrap_or(self.compute_precision);
+            .unwrap_or(self.computeprecision);
 
         // Determine operating precision based on function and arguments
         match func.name {
@@ -256,11 +259,12 @@ where
                 if args.len() >= 2 {
                     // Adjust to highest precision of the two arrays
                     if let Some(other) = args[1].downcast_ref::<MixedPrecisionArray<T, D>>() {
-                        let other_precision = other.compute_precision;
+                        let other_precision = other.computeprecision;
                         let _precision_to_use = match (precision, other_precision) {
                             (Precision::Double, _) | (_, Precision::Double) => Precision::Double,
                             (Precision::Mixed, _) | (_, Precision::Mixed) => Precision::Mixed,
-                            _ => Precision::Single,
+                            (Precision::Single, _) | (_, Precision::Single) => Precision::Single,
+                            (Precision::Half, Precision::Half) => Precision::Half,
                         };
 
                         // We can't modify kwargs, so we'll just forward directly
@@ -310,11 +314,12 @@ where
                 if args.len() >= 2 {
                     if let Some(other) = args[1].downcast_ref::<MixedPrecisionArray<T, D>>() {
                         // Use the highest precision for the operation
-                        let other_precision = other.compute_precision;
+                        let other_precision = other.computeprecision;
                         let _precision_to_use = match (precision, other_precision) {
                             (Precision::Double, _) | (_, Precision::Double) => Precision::Double,
                             (Precision::Mixed, _) | (_, Precision::Mixed) => Precision::Mixed,
-                            _ => Precision::Single,
+                            (Precision::Single, _) | (_, Precision::Single) => Precision::Single,
+                            (Precision::Half, Precision::Half) => Precision::Half,
                         };
 
                         // We can't modify kwargs, so we'll just forward directly
@@ -362,7 +367,7 @@ where
         Box::new(Self {
             array: self.array.clone(),
             storage_precision: self.storage_precision,
-            compute_precision: self.compute_precision,
+            computeprecision: self.computeprecision,
         })
     }
 }
@@ -388,9 +393,8 @@ where
                 // In real implementation, would handle proper conversion from T to f32
                 // For now, create a new array with the requested precision
                 let array_single = self.array.clone();
-                let new_array =
-                    MixedPrecisionArray::with_compute_precision(array_single, precision);
-                Ok(Box::new(new_array))
+                let newarray = MixedPrecisionArray::with_computeprecision(array_single, precision);
+                Ok(Box::new(newarray))
             }
             Precision::Double => {
                 // For actual implementation, this would convert f32 to f64 if needed
@@ -404,35 +408,33 @@ where
                 // In real implementation, would handle proper conversion from T to f64
                 // For now, create a new array with the requested precision
                 let array_double = self.array.clone();
-                let new_array =
-                    MixedPrecisionArray::with_compute_precision(array_double, precision);
-                Ok(Box::new(new_array))
+                let newarray = MixedPrecisionArray::with_computeprecision(array_double, precision);
+                Ok(Box::new(newarray))
             }
             Precision::Mixed => {
                 // For mixed precision, use storage precision of the current array and double compute precision
                 let array_mixed = self.array.clone();
-                let new_array =
-                    MixedPrecisionArray::with_compute_precision(array_mixed, Precision::Double);
-                Ok(Box::new(new_array))
+                let newarray =
+                    MixedPrecisionArray::with_computeprecision(array_mixed, Precision::Double);
+                Ok(Box::new(newarray))
             }
             _ => Err(CoreError::NotImplementedError(ErrorContext::new(format!(
-                "Conversion to {} precision not implemented",
-                precision
+                "Conversion to {precision} precision not implemented"
             )))),
         }
     }
 
     fn precision(&self) -> Precision {
         // If storage and compute precision differ, return Mixed
-        if self.storage_precision != self.compute_precision {
+        if self.storage_precision != self.computeprecision {
             Precision::Mixed
         } else {
             self.storage_precision
         }
     }
 
-    fn supports_precision(&self, _precision: Precision) -> bool {
-        matches!(_precision, Precision::Single | Precision::Double)
+    fn supports_precision(&self, precision: Precision) -> bool {
+        matches!(precision, Precision::Single | Precision::Double)
     }
 }
 
@@ -456,8 +458,7 @@ where
         }
 
         Err(CoreError::NotImplementedError(ErrorContext::new(format!(
-            "Conversion to {} precision not implemented for GPU arrays",
-            precision
+            "Conversion to {precision} precision not implemented for GPU arrays"
         ))))
     }
 
@@ -473,7 +474,7 @@ where
         }
     }
 
-    fn supports_precision(&self, _precision: Precision) -> bool {
+    fn supports_precision(&self, precision: Precision) -> bool {
         // Most GPUs support all precision levels
         true
     }
@@ -483,6 +484,7 @@ where
 ///
 /// This function automatically converts arrays to the specified precision
 /// before executing the operation.
+#[allow(dead_code)]
 pub fn execute_with_precision<F, R>(
     arrays: &[&dyn MixedPrecisionSupport],
     precision: Precision,
@@ -496,8 +498,7 @@ where
     for array in arrays {
         if !array.supports_precision(precision) {
             return Err(CoreError::InvalidArgument(ErrorContext::new(format!(
-                "One or more arrays do not support {} precision",
-                precision
+                "One or more arrays do not support {precision} precision"
             ))));
         }
     }

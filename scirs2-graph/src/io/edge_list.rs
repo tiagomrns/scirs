@@ -62,20 +62,20 @@ use crate::error::{GraphError, Result};
 /// - Lines starting with '#' are treated as comments
 /// - Empty lines are ignored
 /// - Malformed lines are skipped
+#[allow(dead_code)]
 pub fn read_edge_list_format<N, E, P>(path: P, weighted: bool) -> Result<Graph<N, E>>
 where
     N: Node + std::fmt::Debug + FromStr + Clone,
     E: EdgeWeight + std::marker::Copy + std::fmt::Debug + std::default::Default + FromStr,
     P: AsRef<Path>,
 {
-    let file =
-        File::open(path).map_err(|e| GraphError::Other(format!("Cannot open file: {}", e)))?;
+    let file = File::open(path).map_err(|e| GraphError::Other(format!("Cannot open file: {e}")))?;
     let reader = BufReader::new(file);
     let mut graph = Graph::new();
 
     for line_result in reader.lines() {
         let line =
-            line_result.map_err(|e| GraphError::Other(format!("Error reading line: {}", e)))?;
+            line_result.map_err(|e| GraphError::Other(format!("Error reading line: {e}")))?;
         let line = line.trim();
 
         // Skip empty lines and comments
@@ -93,9 +93,9 @@ where
         let target_str = parts[1];
 
         let source_data = N::from_str(source_str)
-            .map_err(|_| GraphError::Other(format!("Cannot parse source node: {}", source_str)))?;
+            .map_err(|_| GraphError::Other(format!("Cannot parse source node: {source_str}")))?;
         let target_data = N::from_str(target_str)
-            .map_err(|_| GraphError::Other(format!("Cannot parse target node: {}", target_str)))?;
+            .map_err(|_| GraphError::Other(format!("Cannot parse target node: {target_str}")))?;
 
         // Parse edge weight if needed
         let edge_weight = if weighted && parts.len() > 2 {
@@ -131,6 +131,7 @@ where
 /// Each line will contain:
 /// - `source target` for unweighted output
 /// - `source target weight` for weighted output
+#[allow(dead_code)]
 pub fn write_edge_list_format<N, E, Ix, P>(
     graph: &Graph<N, E, Ix>,
     path: P,
@@ -148,16 +149,16 @@ where
     P: AsRef<Path>,
 {
     let mut file =
-        File::create(path).map_err(|e| GraphError::Other(format!("Cannot create file: {}", e)))?;
+        File::create(path).map_err(|e| GraphError::Other(format!("Cannot create file: {e}")))?;
 
     // Write edges
     for edge in graph.edges() {
         if weighted {
             writeln!(file, "{} {} {}", edge.source, edge.target, edge.weight)
-                .map_err(|e| GraphError::Other(format!("Error writing line: {}", e)))?;
+                .map_err(|e| GraphError::Other(format!("Error writing line: {e}")))?;
         } else {
             writeln!(file, "{} {}", edge.source, edge.target)
-                .map_err(|e| GraphError::Other(format!("Error writing line: {}", e)))?;
+                .map_err(|e| GraphError::Other(format!("Error writing line: {e}")))?;
         }
     }
 
@@ -190,20 +191,20 @@ where
 /// - Lines starting with '#' are treated as comments
 /// - Empty lines are ignored
 /// - Malformed lines are skipped
+#[allow(dead_code)]
 pub fn read_edge_list_format_digraph<N, E, P>(path: P, weighted: bool) -> Result<DiGraph<N, E>>
 where
     N: Node + std::fmt::Debug + FromStr + Clone,
     E: EdgeWeight + std::marker::Copy + std::fmt::Debug + std::default::Default + FromStr,
     P: AsRef<Path>,
 {
-    let file =
-        File::open(path).map_err(|e| GraphError::Other(format!("Cannot open file: {}", e)))?;
+    let file = File::open(path).map_err(|e| GraphError::Other(format!("Cannot open file: {e}")))?;
     let reader = BufReader::new(file);
     let mut graph = DiGraph::new();
 
     for line_result in reader.lines() {
         let line =
-            line_result.map_err(|e| GraphError::Other(format!("Error reading line: {}", e)))?;
+            line_result.map_err(|e| GraphError::Other(format!("Error reading line: {e}")))?;
         let line = line.trim();
 
         // Skip empty lines and comments
@@ -221,9 +222,9 @@ where
         let target_str = parts[1];
 
         let source_data = N::from_str(source_str)
-            .map_err(|_| GraphError::Other(format!("Cannot parse source node: {}", source_str)))?;
+            .map_err(|_| GraphError::Other(format!("Cannot parse source node: {source_str}")))?;
         let target_data = N::from_str(target_str)
-            .map_err(|_| GraphError::Other(format!("Cannot parse target node: {}", target_str)))?;
+            .map_err(|_| GraphError::Other(format!("Cannot parse target node: {target_str}")))?;
 
         // Parse edge weight if needed
         let edge_weight = if weighted && parts.len() > 2 {
@@ -259,6 +260,7 @@ where
 /// Each line will contain:
 /// - `source target` for unweighted output
 /// - `source target weight` for weighted output
+#[allow(dead_code)]
 pub fn write_edge_list_format_digraph<N, E, Ix, P>(
     graph: &DiGraph<N, E, Ix>,
     path: P,
@@ -276,16 +278,16 @@ where
     P: AsRef<Path>,
 {
     let mut file =
-        File::create(path).map_err(|e| GraphError::Other(format!("Cannot create file: {}", e)))?;
+        File::create(path).map_err(|e| GraphError::Other(format!("Cannot create file: {e}")))?;
 
     // Write edges
     for edge in graph.edges() {
         if weighted {
             writeln!(file, "{} {} {}", edge.source, edge.target, edge.weight)
-                .map_err(|e| GraphError::Other(format!("Error writing line: {}", e)))?;
+                .map_err(|e| GraphError::Other(format!("Error writing line: {e}")))?;
         } else {
             writeln!(file, "{} {}", edge.source, edge.target)
-                .map_err(|e| GraphError::Other(format!("Error writing line: {}", e)))?;
+                .map_err(|e| GraphError::Other(format!("Error writing line: {e}")))?;
         }
     }
 

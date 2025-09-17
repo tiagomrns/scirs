@@ -251,8 +251,7 @@ impl TriangularMesh {
         let area = self.triangle_area(element);
         if area < 1e-10 {
             return Err(PDEError::FiniteElementError(format!(
-                "Element has nearly zero area: {}",
-                area
+                "Element has nearly zero area: {area}"
             )));
         }
 
@@ -366,7 +365,7 @@ impl FEMPoissonSolver {
         boundary_conditions: Vec<BoundaryCondition<f64>>,
         options: Option<FEMOptions>,
     ) -> PDEResult<Self> {
-        // Validate boundary conditions
+        // Validate boundary _conditions
         if boundary_conditions.is_empty() {
             return Err(PDEError::BoundaryConditions(
                 "At least one boundary condition is required".to_string(),
@@ -420,10 +419,10 @@ impl FEMPoissonSolver {
         self.apply_dirichlet_boundary_conditions(&mut a, &mut b)?;
 
         // Solve the linear system
-        let u = self.solve_linear_system(&a, &b)?;
+        let u = FEMPoissonSolver::solve_linear_system(&a, &b)?;
 
         // Compute residual norm
-        let residual_norm = self.compute_residual(&a, &b, &u);
+        let residual_norm = FEMPoissonSolver::compute_residual(&a, &b, &u);
 
         let computation_time = start_time.elapsed().as_secs_f64();
 
@@ -512,7 +511,7 @@ impl FEMPoissonSolver {
         // Shape function gradients
         let gradients = self.mesh.shape_function_gradients(element)?;
 
-        // Stiffness matrix - For Poisson's equation: Integral of (∇φᵢ · ∇φⱼ) over element
+        // Stiffness matrix - For Poisson's equation: Integral of (∇φᵢ · ∇φⱼ) over _element
         let mut a_e = [[0.0; 3]; 3];
 
         for m in 0..3 {
@@ -523,7 +522,7 @@ impl FEMPoissonSolver {
             }
         }
 
-        // Load vector - For Poisson's equation: Integral of (f · φᵢ) over element
+        // Load vector - For Poisson's equation: Integral of (f · φᵢ) over _element
         let mut b_e = [0.0; 3];
 
         // Approximate the source term at the centroid of the triangle
@@ -531,7 +530,7 @@ impl FEMPoissonSolver {
         let centroid_y = (pi.y + pj.y + pk.y) / 3.0;
         let f_centroid = (self.source_term)(centroid_x, centroid_y);
 
-        // For linear elements, the integral of each shape function over the element is area/3
+        // For linear elements, the integral of each shape function over the _element is area/3
         b_e.iter_mut().for_each(|value| {
             *value = f_centroid * (area / 3.0);
         });
@@ -689,7 +688,7 @@ impl FEMPoissonSolver {
                 }
             } else if bc_info.bc_type == BoundaryConditionType::Robin {
                 // Robin boundary conditions (a*u + b*∂u/∂n = c)
-                if let Some([a_coef, _b_coef, c_coef]) = bc_info.coefficients {
+                if let Some([a_coef, b_coef, c_coef]) = bc_info.coefficients {
                     // Similar to Neumann, we need to find boundary edges
                     let boundary_edges: Vec<_> = self
                         .mesh
@@ -724,7 +723,7 @@ impl FEMPoissonSolver {
     }
 
     /// Solve the linear system Ax = b
-    fn solve_linear_system(&self, a: &Array2<f64>, b: &Array1<f64>) -> PDEResult<Array1<f64>> {
+    fn solve_linear_system(a: &Array2<f64>, b: &Array1<f64>) -> PDEResult<Array1<f64>> {
         let n = b.len();
 
         // Simple Gaussian elimination for demonstration purposes
@@ -794,7 +793,7 @@ impl FEMPoissonSolver {
     }
 
     /// Compute residual norm ||Ax - b||₂
-    fn compute_residual(&self, a: &Array2<f64>, b: &Array1<f64>, x: &Array1<f64>) -> f64 {
+    fn compute_residual(a: &Array2<f64>, b: &Array1<f64>, x: &Array1<f64>) -> f64 {
         let n = b.len();
         let mut residual = 0.0;
 
@@ -857,6 +856,6 @@ impl From<FEMResult> for PDESolution<f64> {
 impl PDEError {
     /// Create a finite element error
     pub fn finite_element_error(msg: String) -> Self {
-        PDEError::Other(format!("Finite element error: {}", msg))
+        PDEError::Other(format!("Finite element error: {msg}"))
     }
 }

@@ -6,7 +6,6 @@ use ndarray::ScalarOperand;
 use num_traits::Float;
 use std::fmt::Debug;
 use std::path::{Path, PathBuf};
-
 /// TensorBoard logger callback that writes training metrics to TensorBoard.
 ///
 /// Note: This is a placeholder implementation. A full implementation would
@@ -21,25 +20,20 @@ pub struct TensorBoardLogger<F: Float + Debug + ScalarOperand> {
     /// Phantom data for generic type
     _phantom: std::marker::PhantomData<F>,
 }
-
 impl<F: Float + Debug + ScalarOperand> TensorBoardLogger<F> {
     /// Create a new TensorBoard logger callback
     ///
     /// # Arguments
-    ///
     /// * `log_dir` - Directory to store TensorBoard logs
     /// * `log_histograms` - Whether to log histograms of model parameters
     /// * `update_freq` - Frequency of logging (in batches)
-    pub fn new<P: AsRef<Path>>(log_dir: P, log_histograms: bool, update_freq: usize) -> Self {
+    pub fn new<P: AsRef<Path>>(_log, dir: P, log_histograms: bool, updatefreq: usize) -> Self {
         Self {
             log_dir: log_dir.as_ref().to_path_buf(),
             log_histograms,
-            update_freq,
-            _phantom: std::marker::PhantomData,
+            update_freq_phantom: std::marker::PhantomData,
         }
     }
-}
-
 impl<F: Float + Debug + ScalarOperand> Callback<F> for TensorBoardLogger<F> {
     fn on_event(&mut self, timing: CallbackTiming, context: &mut CallbackContext<F>) -> Result<()> {
         match timing {
@@ -63,10 +57,8 @@ impl<F: Float + Debug + ScalarOperand> Callback<F> for TensorBoardLogger<F> {
                         // writer.add_scalar("train/batch_loss", batch_loss, global_step);
                     }
                 }
-            }
             CallbackTiming::AfterEpoch => {
                 let epoch = context.epoch;
-
                 // Log epoch metrics
                 if let Some(epoch_loss) = context.epoch_loss {
                     println!(
@@ -75,48 +67,28 @@ impl<F: Float + Debug + ScalarOperand> Callback<F> for TensorBoardLogger<F> {
                         epoch_loss
                     );
                     // writer.add_scalar("train/epoch_loss", epoch_loss, epoch);
-                }
-
                 if let Some(val_loss) = context.val_loss {
-                    println!(
                         "TensorBoard: Logging epoch {} validation loss: {:.6?}",
-                        epoch + 1,
                         val_loss
-                    );
                     // writer.add_scalar("validation/loss", val_loss, epoch);
-                }
-
                 // Log metrics if available
                 if !context.metrics.is_empty() {
-                    println!(
                         "TensorBoard: Logging epoch {} metrics: {:.6?}",
-                        epoch + 1,
                         context.metrics
-                    );
                     // In a real implementation, we'd log each metric with a name
                     // For now just log the raw values
                     // for (i, metric) in context.metrics.iter().enumerate() {
                     //     writer.add_scalar(&format!("metrics/metric_{}", i), *metric, epoch);
                     // }
-                }
-
                 // Log model parameter histograms
                 if self.log_histograms {
                     println!("TensorBoard: Logging model parameter histograms");
                     // In a real implementation, we'd log parameter histograms here
                     // for (name, param) in model.named_parameters() {
                     //     writer.add_histogram(&format!("parameters/{}", name), param, epoch);
-                    // }
-                }
-            }
             CallbackTiming::AfterTraining => {
                 println!("TensorBoard: Closing logger");
                 // In a real implementation, we'd close the TensorBoard writer here
                 // writer.close();
-            }
             _ => {}
-        }
-
         Ok(())
-    }
-}

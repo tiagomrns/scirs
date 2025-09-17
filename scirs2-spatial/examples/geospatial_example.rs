@@ -9,6 +9,7 @@
 use scirs2_spatial::geospatial::*;
 use std::f64::consts::PI;
 
+#[allow(dead_code)]
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("=== Geospatial Functionality Example ===\n");
 
@@ -49,6 +50,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     Ok(())
 }
 
+#[allow(dead_code)]
 fn distance_calculations_example() -> Result<(), Box<dyn std::error::Error>> {
     // Define major world cities
     let cities = vec![
@@ -69,12 +71,12 @@ fn distance_calculations_example() -> Result<(), Box<dyn std::error::Error>> {
     );
 
     for (i, (city1, coord1)) in cities.iter().enumerate() {
-        print!("{:>12}", city1);
+        print!("{city1:>12}");
         for (j, (_, coord2)) in cities.iter().enumerate() {
             if i <= j {
                 let distance_m = haversine_distance(*coord1, *coord2);
                 let distance_km = distance_m / 1000.0;
-                print!(" {:>8.0}", distance_km);
+                print!(" {distance_km:>8.0}");
             } else {
                 print!(" {:>8}", "-");
             }
@@ -95,9 +97,9 @@ fn distance_calculations_example() -> Result<(), Box<dyn std::error::Error>> {
         let vincenty_km = vincenty_distance(coord1, coord2)? / 1000.0;
         let difference = (vincenty_km - haversine_km).abs();
 
-        println!("{} to {}:", city1, city2);
-        println!("  Haversine: {:.1} km", haversine_km);
-        println!("  Vincenty:  {:.1} km", vincenty_km);
+        println!("{city1} to {city2}:");
+        println!("  Haversine: {haversine_km:.1} km");
+        println!("  Vincenty:  {vincenty_km:.1} km");
         println!(
             "  Difference: {:.1} km ({:.2}%)",
             difference,
@@ -108,6 +110,7 @@ fn distance_calculations_example() -> Result<(), Box<dyn std::error::Error>> {
     Ok(())
 }
 
+#[allow(dead_code)]
 fn navigation_example() -> Result<(), Box<dyn std::error::Error>> {
     let departure = (40.6413, -73.7781); // JFK Airport, New York
     let destination = (51.4700, -0.4543); // Heathrow Airport, London
@@ -130,10 +133,7 @@ fn navigation_example() -> Result<(), Box<dyn std::error::Error>> {
     let final_bearing_rad = final_bearing(departure, destination);
     let final_bearing_deg = final_bearing_rad * 180.0 / PI;
 
-    println!(
-        "Distance: {:.1} km ({:.1} nautical miles)",
-        distance_km, distance_nm
-    );
+    println!("Distance: {distance_km:.1} km ({distance_nm:.1} nautical miles)");
     println!(
         "Initial bearing: {:.1}°",
         normalize_bearing(initial_bearing_deg)
@@ -166,18 +166,13 @@ fn navigation_example() -> Result<(), Box<dyn std::error::Error>> {
     let mid_distance_from_destination = haversine_distance(destination, mid) / 1000.0;
 
     println!("\nMidpoint: ({:.4}°, {:.4}°)", mid.0, mid.1);
-    println!(
-        "Distance from departure: {:.1} km",
-        mid_distance_from_departure
-    );
-    println!(
-        "Distance from destination: {:.1} km",
-        mid_distance_from_destination
-    );
+    println!("Distance from departure: {mid_distance_from_departure:.1} km");
+    println!("Distance from destination: {mid_distance_from_destination:.1} km");
 
     Ok(())
 }
 
+#[allow(dead_code)]
 fn coordinate_transformations_example() -> Result<(), Box<dyn std::error::Error>> {
     let locations = vec![
         ("Greenwich Observatory", (51.4769, 0.0)),
@@ -202,8 +197,7 @@ fn coordinate_transformations_example() -> Result<(), Box<dyn std::error::Error>
             match utm_result {
                 Ok((easting, northing, zone, letter)) => {
                     println!(
-                        "{:>20} {:>12.4} {:>12.4} {:>15.0} {:>15.0} {:>6} {:>3}",
-                        name, lat, lon, easting, northing, zone, letter
+                        "{name:>20} {lat:>12.4} {lon:>12.4} {easting:>15.0} {northing:>15.0} {zone:>6} {letter:>3}"
                     );
                 }
                 Err(_) => {
@@ -234,7 +228,7 @@ fn coordinate_transformations_example() -> Result<(), Box<dyn std::error::Error>
             let web_merc_result = geographic_to_web_mercator(*lat, *lon);
             match web_merc_result {
                 Ok((x, y)) => {
-                    println!("{:>20} {:>15.0} {:>15.0}", name, x, y);
+                    println!("{name:>20} {x:>15.0} {y:>15.0}");
 
                     // Test round trip
                     let (back_lat, back_lon) = web_mercator_to_geographic(x, y);
@@ -242,10 +236,7 @@ fn coordinate_transformations_example() -> Result<(), Box<dyn std::error::Error>
                     let lon_diff = (back_lon - lon).abs();
 
                     if lat_diff > 1e-6 || lon_diff > 1e-6 {
-                        println!(
-                            "    Round trip error: Δlat={:.8}, Δlon={:.8}",
-                            lat_diff, lon_diff
-                        );
+                        println!("    Round trip error: Δlat={lat_diff:.8}, Δlon={lon_diff:.8}");
                     }
                 }
                 Err(_) => {
@@ -260,6 +251,7 @@ fn coordinate_transformations_example() -> Result<(), Box<dyn std::error::Error>
     Ok(())
 }
 
+#[allow(dead_code)]
 fn flight_path_example() -> Result<(), Box<dyn std::error::Error>> {
     // Simulate an aircraft flying from Los Angeles to London
     let departure = (34.0522, -118.2437); // Los Angeles
@@ -310,7 +302,7 @@ fn flight_path_example() -> Result<(), Box<dyn std::error::Error>> {
         "Great circle distance: {:.0} km",
         great_circle_distance / 1000.0
     );
-    println!("Route efficiency: {:.1}%", route_efficiency);
+    println!("Route efficiency: {route_efficiency:.1}%");
 
     // Simulate aircraft deviating from planned route
     println!("\nSimulating aircraft tracking:");
@@ -339,6 +331,7 @@ fn flight_path_example() -> Result<(), Box<dyn std::error::Error>> {
     Ok(())
 }
 
+#[allow(dead_code)]
 fn spherical_geometry_example() -> Result<(), Box<dyn std::error::Error>> {
     // Create a polygon representing the Bermuda Triangle
     let bermuda_triangle = vec![
@@ -356,14 +349,14 @@ fn spherical_geometry_example() -> Result<(), Box<dyn std::error::Error>> {
             2 => "San Juan",
             _ => "Unknown",
         };
-        println!("  {}: ({:.4}°, {:.4}°)", name, lat, lon);
+        println!("  {name}: ({lat:.4}°, {lon:.4}°)");
     }
 
     // Calculate area
     let area_sq_m = spherical_polygon_area(&bermuda_triangle)?;
     let area_sq_km = area_sq_m / 1_000_000.0;
 
-    println!("Area: {:.0} km²", area_sq_km);
+    println!("Area: {area_sq_km:.0} km²");
 
     // Calculate perimeter
     let mut perimeter = 0.0;
@@ -409,14 +402,12 @@ fn spherical_geometry_example() -> Result<(), Box<dyn std::error::Error>> {
     ];
 
     let caribbean_area = spherical_polygon_area(&caribbean)? / 1_000_000.0;
-    println!(
-        "\nCaribbean Sea (approximate area): {:.0} km²",
-        caribbean_area
-    );
+    println!("\nCaribbean Sea (approximate area): {caribbean_area:.0} km²");
 
     Ok(())
 }
 
+#[allow(dead_code)]
 fn gps_tracking_example() -> Result<(), Box<dyn std::error::Error>> {
     println!("GPS tracking simulation: Hiking trail");
 
@@ -451,13 +442,9 @@ fn gps_tracking_example() -> Result<(), Box<dyn std::error::Error>> {
             // Calculate speed (assuming 30 minutes between points)
             let speed_kmh = (segment_distance / 1000.0) / 0.5; // 0.5 hours
 
-            println!("  {}: ({:.4}°, {:.4}°) - {:.0}m - {:.1}m segment, {:.1}m elevation change, {:.1} km/h", 
-                     time, lat, lon, elevation, segment_distance, elevation_change, speed_kmh);
+            println!("  {time}: ({lat:.4}°, {lon:.4}°) - {elevation:.0}m - {segment_distance:.1}m segment, {elevation_change:.1}m elevation change, {speed_kmh:.1} km/h");
         } else {
-            println!(
-                "  {}: ({:.4}°, {:.4}°) - {:.0}m - Start",
-                time, lat, lon, elevation
-            );
+            println!("  {time}: ({lat:.4}°, {lon:.4}°) - {elevation:.0}m - Start");
         }
     }
 
@@ -469,22 +456,20 @@ fn gps_tracking_example() -> Result<(), Box<dyn std::error::Error>> {
         .sum::<f64>();
 
     println!("\nHike summary:");
-    println!("  Total distance: {:.2} km", total_km);
-    println!("  Total elevation gain: {:.0} m", total_elevation_gain);
+    println!("  Total distance: {total_km:.2} km");
+    println!("  Total elevation gain: {total_elevation_gain:.0} m");
     println!("  Average speed: {:.1} km/h", total_km / 4.5); // 4.5 hours total
 
     // Calculate some statistics
     let max_elevation = elevations.iter().fold(0.0f64, |acc, &x| acc.max(x));
     let min_elevation = elevations.iter().fold(f64::INFINITY, |acc, &x| acc.min(x));
 
-    println!(
-        "  Elevation range: {:.0}m - {:.0}m",
-        min_elevation, max_elevation
-    );
+    println!("  Elevation range: {min_elevation:.0}m - {max_elevation:.0}m");
 
     Ok(())
 }
 
+#[allow(dead_code)]
 fn geospatial_analysis_example() -> Result<(), Box<dyn std::error::Error>> {
     println!("Geospatial analysis: Earthquake monitoring network");
 
@@ -504,12 +489,12 @@ fn geospatial_analysis_example() -> Result<(), Box<dyn std::error::Error>> {
 
     println!("Monitoring stations:");
     for (name, (lat, lon)) in &monitoring_stations {
-        println!("  {}: ({:.4}°, {:.4}°)", name, lat, lon);
+        println!("  {name}: ({lat:.4}°, {lon:.4}°)");
     }
 
     println!("\nEarthquake event:");
     println!("  Epicenter: ({:.4}°, {:.4}°)", earthquake.0, earthquake.1);
-    println!("  Magnitude: M{:.1}", magnitude);
+    println!("  Magnitude: M{magnitude:.1}");
 
     // Calculate distances from each station to earthquake
     println!("\nStation distances from epicenter:");
@@ -532,8 +517,7 @@ fn geospatial_analysis_example() -> Result<(), Box<dyn std::error::Error>> {
         let s_wave_time = distance / 3.5; // seconds
 
         println!(
-            "  {}: {:.1} km - P-wave: {:.1}s, S-wave: {:.1}s",
-            name, distance, p_wave_time, s_wave_time
+            "  {name}: {distance:.1} km - P-wave: {p_wave_time:.1}s, S-wave: {s_wave_time:.1}s"
         );
     }
 
@@ -557,10 +541,7 @@ fn geospatial_analysis_example() -> Result<(), Box<dyn std::error::Error>> {
     );
 
     let distance_to_centroid = haversine_distance(earthquake, centroid) / 1000.0;
-    println!(
-        "  Distance from earthquake to network centroid: {:.1} km",
-        distance_to_centroid
-    );
+    println!("  Distance from earthquake to network centroid: {distance_to_centroid:.1} km");
 
     // Calculate network coverage
     let mut max_station_distance = 0.0f64;
@@ -572,18 +553,14 @@ fn geospatial_analysis_example() -> Result<(), Box<dyn std::error::Error>> {
         }
     }
 
-    println!(
-        "  Maximum inter-station distance: {:.1} km",
-        max_station_distance
-    );
+    println!("  Maximum inter-station distance: {max_station_distance:.1} km");
 
     // Estimate detection threshold
     let closest_station_distance = station_distances[0].1;
     let estimated_magnitude_threshold = 1.0 + 2.0 * (closest_station_distance / 100.0).log10();
 
     println!(
-        "  Estimated detection threshold at closest station: M{:.1}",
-        estimated_magnitude_threshold
+        "  Estimated detection threshold at closest station: M{estimated_magnitude_threshold:.1}"
     );
 
     Ok(())
@@ -593,9 +570,9 @@ fn geospatial_analysis_example() -> Result<(), Box<dyn std::error::Error>> {
 #[allow(dead_code)]
 fn format_dms(decimal_degrees: f64, is_latitude: bool) -> String {
     let abs_degrees = decimal_degrees.abs();
-    let degrees = abs_degrees.floor() as i32;
-    let minutes = ((abs_degrees - degrees as f64) * 60.0).floor() as i32;
-    let seconds = ((abs_degrees - degrees as f64) * 60.0 - minutes as f64) * 60.0;
+    let _degrees = abs_degrees.floor() as i32;
+    let minutes = ((abs_degrees - _degrees as f64) * 60.0).floor() as i32;
+    let seconds = ((abs_degrees - _degrees as f64) * 60.0 - minutes as f64) * 60.0;
 
     let direction = if is_latitude {
         if decimal_degrees >= 0.0 {
@@ -609,7 +586,7 @@ fn format_dms(decimal_degrees: f64, is_latitude: bool) -> String {
         "W"
     };
 
-    format!("{}°{}'{:.1}\"{}", degrees, minutes, seconds, direction)
+    format!("{_degrees}°{minutes}'{seconds:.1}\"{direction}")
 }
 
 /// Calculate the centroid of a set of geographic points

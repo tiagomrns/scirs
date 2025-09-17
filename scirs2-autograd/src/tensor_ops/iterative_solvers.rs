@@ -19,16 +19,16 @@ impl<F: Float + ndarray::ScalarOperand + FromPrimitive> Op<F> for ConjugateGradi
         let a = ctx.input(0);
         let b = ctx.input(1);
 
-        let a_shape = a.shape();
-        let b_shape = b.shape();
+        let ashape = a.shape();
+        let bshape = b.shape();
 
-        if a_shape.len() != 2 || a_shape[0] != a_shape[1] {
+        if ashape.len() != 2 || ashape[0] != ashape[1] {
             return Err(OpError::IncompatibleShape(
                 "CG requires square matrix".into(),
             ));
         }
 
-        if b_shape.len() != 1 || b_shape[0] != a_shape[0] {
+        if bshape.len() != 1 || bshape[0] != ashape[0] {
             return Err(OpError::IncompatibleShape(
                 "Incompatible dimensions for Ax=b".into(),
             ));
@@ -145,16 +145,16 @@ impl<F: Float + ndarray::ScalarOperand + FromPrimitive> Op<F> for GMRESOp {
         let a = ctx.input(0);
         let b = ctx.input(1);
 
-        let a_shape = a.shape();
-        let b_shape = b.shape();
+        let ashape = a.shape();
+        let bshape = b.shape();
 
-        if a_shape.len() != 2 || a_shape[0] != a_shape[1] {
+        if ashape.len() != 2 || ashape[0] != ashape[1] {
             return Err(OpError::IncompatibleShape(
                 "GMRES requires square matrix".into(),
             ));
         }
 
-        if b_shape.len() != 1 || b_shape[0] != a_shape[0] {
+        if bshape.len() != 1 || bshape[0] != ashape[0] {
             return Err(OpError::IncompatibleShape(
                 "Incompatible dimensions for Ax=b".into(),
             ));
@@ -199,16 +199,16 @@ impl<F: Float + ndarray::ScalarOperand + FromPrimitive> Op<F> for BiCGSTABOp {
         let a = ctx.input(0);
         let b = ctx.input(1);
 
-        let a_shape = a.shape();
-        let b_shape = b.shape();
+        let ashape = a.shape();
+        let bshape = b.shape();
 
-        if a_shape.len() != 2 || a_shape[0] != a_shape[1] {
+        if ashape.len() != 2 || ashape[0] != ashape[1] {
             return Err(OpError::IncompatibleShape(
                 "BiCGSTAB requires square matrix".into(),
             ));
         }
 
-        if b_shape.len() != 1 || b_shape[0] != a_shape[0] {
+        if bshape.len() != 1 || bshape[0] != ashape[0] {
             return Err(OpError::IncompatibleShape(
                 "Incompatible dimensions for Ax=b".into(),
             ));
@@ -289,6 +289,7 @@ impl<F: Float + ndarray::ScalarOperand + FromPrimitive> Op<F> for PCGOp {
 // Helper functions
 
 /// Conjugate Gradient implementation
+#[allow(dead_code)]
 fn conjugate_gradient<F: Float + ndarray::ScalarOperand + FromPrimitive>(
     a: &ndarray::ArrayView2<F>,
     b: &ndarray::ArrayView1<F>,
@@ -331,6 +332,7 @@ fn conjugate_gradient<F: Float + ndarray::ScalarOperand + FromPrimitive>(
 }
 
 /// GMRES implementation
+#[allow(dead_code)]
 fn gmres<F: Float + ndarray::ScalarOperand + FromPrimitive>(
     a: &ndarray::ArrayView2<F>,
     b: &ndarray::ArrayView1<F>,
@@ -397,6 +399,7 @@ fn gmres<F: Float + ndarray::ScalarOperand + FromPrimitive>(
 }
 
 /// BiCGSTAB implementation
+#[allow(dead_code)]
 fn bicgstab<F: Float + ndarray::ScalarOperand + FromPrimitive>(
     a: &ndarray::ArrayView2<F>,
     b: &ndarray::ArrayView1<F>,
@@ -456,6 +459,7 @@ fn bicgstab<F: Float + ndarray::ScalarOperand + FromPrimitive>(
 }
 
 /// Preconditioned Conjugate Gradient
+#[allow(dead_code)]
 fn pcg<F: Float + ndarray::ScalarOperand + FromPrimitive>(
     a: &ndarray::ArrayView2<F>,
     b: &ndarray::ArrayView1<F>,
@@ -497,6 +501,7 @@ fn pcg<F: Float + ndarray::ScalarOperand + FromPrimitive>(
 }
 
 /// Build preconditioner
+#[allow(dead_code)]
 fn build_preconditioner<F: Float + ndarray::ScalarOperand>(
     a: &ndarray::ArrayView2<F>,
     preconditioner_type: PreconditionerType,
@@ -558,6 +563,7 @@ fn build_preconditioner<F: Float + ndarray::ScalarOperand>(
 }
 
 /// Solve least squares problem
+#[allow(dead_code)]
 fn solve_least_squares<F: Float>(a: &Array2<F>, b: &Array1<F>) -> Result<Array1<F>, OpError> {
     // Use normal equations: A^T A x = A^T b
     let at = a.t();
@@ -569,6 +575,7 @@ fn solve_least_squares<F: Float>(a: &Array2<F>, b: &Array1<F>) -> Result<Array1<
 }
 
 /// Solve using Cholesky decomposition
+#[allow(dead_code)]
 fn solve_cholesky<F: Float>(
     a: &ndarray::ArrayView2<F>,
     b: &ndarray::ArrayView1<F>,
@@ -621,6 +628,7 @@ fn solve_cholesky<F: Float>(
 }
 
 /// Outer product of two vectors
+#[allow(dead_code)]
 fn outer_product<F: Float>(u: &ndarray::ArrayView1<F>, v: &ndarray::ArrayView1<F>) -> Array2<F> {
     let m = u.len();
     let n = v.len();
@@ -638,6 +646,7 @@ fn outer_product<F: Float>(u: &ndarray::ArrayView1<F>, v: &ndarray::ArrayView1<F
 // Public API functions
 
 /// Solve Ax = b using Conjugate Gradient (for symmetric positive definite A)
+#[allow(dead_code)]
 pub fn conjugate_gradient_solve<'g, F: Float + ndarray::ScalarOperand + FromPrimitive>(
     a: &Tensor<'g, F>,
     b: &Tensor<'g, F>,
@@ -656,6 +665,7 @@ pub fn conjugate_gradient_solve<'g, F: Float + ndarray::ScalarOperand + FromPrim
 }
 
 /// Solve Ax = b using GMRES (for general matrices)
+#[allow(dead_code)]
 pub fn gmres_solve<'g, F: Float + ndarray::ScalarOperand + FromPrimitive>(
     a: &Tensor<'g, F>,
     b: &Tensor<'g, F>,
@@ -676,6 +686,7 @@ pub fn gmres_solve<'g, F: Float + ndarray::ScalarOperand + FromPrimitive>(
 }
 
 /// Solve Ax = b using BiCGSTAB (for general matrices)
+#[allow(dead_code)]
 pub fn bicgstab_solve<'g, F: Float + ndarray::ScalarOperand + FromPrimitive>(
     a: &Tensor<'g, F>,
     b: &Tensor<'g, F>,
@@ -694,6 +705,7 @@ pub fn bicgstab_solve<'g, F: Float + ndarray::ScalarOperand + FromPrimitive>(
 }
 
 /// Solve Ax = b using Preconditioned Conjugate Gradient
+#[allow(dead_code)]
 pub fn pcg_solve<'g, F: Float + ndarray::ScalarOperand + FromPrimitive>(
     a: &Tensor<'g, F>,
     b: &Tensor<'g, F>,

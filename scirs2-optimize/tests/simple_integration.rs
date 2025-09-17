@@ -12,16 +12,17 @@ use scirs2_optimize::stochastic::{
 struct QuadraticFunction;
 
 impl StochasticGradientFunction for QuadraticFunction {
-    fn compute_gradient(&mut self, x: &ArrayView1<f64>, _batch_data: &[f64]) -> Array1<f64> {
+    fn compute_gradient(&mut self, x: &ArrayView1<f64>, _batchdata: &[f64]) -> Array1<f64> {
         x.mapv(|xi| 2.0 * xi)
     }
 
-    fn compute_value(&mut self, x: &ArrayView1<f64>, _batch_data: &[f64]) -> f64 {
+    fn compute_value(&mut self, x: &ArrayView1<f64>, _batchdata: &[f64]) -> f64 {
         x.mapv(|xi| xi * xi).sum()
     }
 }
 
 #[test]
+#[allow(dead_code)]
 fn test_basic_sgd_integration() {
     // Test SGD
     let grad_func = QuadraticFunction;
@@ -44,11 +45,12 @@ fn test_basic_sgd_integration() {
     );
     println!(
         "SGD converged to f = {:.2e} in {} iterations",
-        result.fun, result.iterations
+        result.fun, result.nit
     );
 }
 
 #[test]
+#[allow(dead_code)]
 fn test_basic_adam_integration() {
     // Test Adam optimizer
     let grad_func = QuadraticFunction;
@@ -71,11 +73,12 @@ fn test_basic_adam_integration() {
     );
     println!(
         "Adam converged to f = {:.2e} in {} iterations",
-        result.fun, result.iterations
+        result.fun, result.nit
     );
 }
 
 #[test]
+#[allow(dead_code)]
 fn test_stochastic_optimization_capabilities() {
     println!("\n🔬 scirs2-optimize Stochastic Capabilities Test");
     println!("==============================================");
@@ -111,6 +114,7 @@ fn test_stochastic_optimization_capabilities() {
 }
 
 #[test]
+#[allow(dead_code)]
 fn test_stochastic_algorithms_variety() {
     use scirs2_optimize::stochastic::{
         minimize_adamw, minimize_rmsprop, AdamWOptions, RMSPropOptions,

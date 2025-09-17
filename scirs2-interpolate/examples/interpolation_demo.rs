@@ -22,6 +22,7 @@ use scirs2_interpolate::{
     InterpolationMethod as Interp1DMethod,
 };
 
+#[allow(dead_code)]
 fn main() {
     println!("SciRS2 Interpolation Methods Demonstration");
     println!("========================================");
@@ -36,6 +37,7 @@ fn main() {
     demo_nd_interpolation();
 }
 
+#[allow(dead_code)]
 fn demo_1d_interpolation() {
     println!("\n1. One-dimensional Interpolation");
     println!("-------------------------------");
@@ -117,6 +119,7 @@ fn demo_1d_interpolation() {
     );
 }
 
+#[allow(dead_code)]
 fn demo_spline_interpolation() {
     println!("\n2. Spline Interpolation");
     println!("----------------------");
@@ -166,6 +169,7 @@ fn demo_spline_interpolation() {
     }
 }
 
+#[allow(dead_code)]
 fn demo_nd_interpolation() {
     println!("\n3. N-dimensional Interpolation");
     println!("----------------------------");

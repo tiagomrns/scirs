@@ -140,37 +140,37 @@ mod broadcasting_tests {
     #[test]
     fn test_broadcast_analysis() {
         // Test same shape (no broadcasting needed)
-        let left_shape = vec![3, 4];
-        let right_shape = vec![3, 4];
-        let info = T::analyze_broadcast(&left_shape, &right_shape).unwrap();
+        let leftshape = vec![3, 4];
+        let rightshape = vec![3, 4];
+        let info = T::analyze_broadcast(&leftshape, &rightshape).unwrap();
 
         assert_eq!(info.strategy, T::BroadcastStrategy::NoOp);
         assert!(!info.left_needs_broadcast);
         assert!(!info.right_needs_broadcast);
-        assert_eq!(info.output_shape, vec![3, 4]);
+        assert_eq!(info.outputshape, vec![3, 4]);
     }
 
     #[test]
     fn test_broadcast_analysis_scalar() {
         // Test scalar broadcasting
-        let left_shape = vec![];
-        let right_shape = vec![3, 4];
-        let info = T::analyze_broadcast(&left_shape, &right_shape).unwrap();
+        let leftshape = vec![];
+        let rightshape = vec![3, 4];
+        let info = T::analyze_broadcast(&leftshape, &rightshape).unwrap();
 
         assert_eq!(info.strategy, T::BroadcastStrategy::ScalarBroadcast);
         assert!(info.left_needs_broadcast);
         assert!(!info.right_needs_broadcast);
-        assert_eq!(info.output_shape, vec![3, 4]);
+        assert_eq!(info.outputshape, vec![3, 4]);
     }
 
     #[test]
     fn test_broadcast_analysis_compatible() {
         // Test compatible broadcasting
-        let left_shape = vec![1, 4];
-        let right_shape = vec![3, 1];
-        let info = T::analyze_broadcast(&left_shape, &right_shape).unwrap();
+        let leftshape = vec![1, 4];
+        let rightshape = vec![3, 1];
+        let info = T::analyze_broadcast(&leftshape, &rightshape).unwrap();
 
-        assert_eq!(info.output_shape, vec![3, 4]);
+        assert_eq!(info.outputshape, vec![3, 4]);
         assert!(info.left_needs_broadcast);
         assert!(info.right_needs_broadcast);
     }
@@ -178,9 +178,9 @@ mod broadcasting_tests {
     #[test]
     fn test_broadcast_analysis_incompatible() {
         // Test incompatible broadcasting
-        let left_shape = vec![3, 4];
-        let right_shape = vec![2, 4];
-        let result = T::analyze_broadcast(&left_shape, &right_shape);
+        let leftshape = vec![3, 4];
+        let rightshape = vec![2, 4];
+        let result = T::analyze_broadcast(&leftshape, &rightshape);
 
         assert!(result.is_err());
     }
@@ -216,16 +216,16 @@ mod broadcasting_tests {
     fn test_broadcast_cache() {
         // Test cache operations
         T::clear_broadcast_cache();
-        let (size, _) = T::get_broadcast_cache_stats();
-        assert_eq!(size, 0);
+        let (size_, _) = T::get_broadcast_cache_stats();
+        assert_eq!(size_, 0);
 
         // After some operations, cache should have entries
-        let left_shape = vec![2, 3];
-        let right_shape = vec![2, 3];
-        let _ = T::analyze_broadcast(&left_shape, &right_shape).unwrap();
+        let leftshape = vec![2, 3];
+        let rightshape = vec![2, 3];
+        let _ = T::analyze_broadcast(&leftshape, &rightshape).unwrap();
 
-        let (size, _) = T::get_broadcast_cache_stats();
-        assert!(size > 0);
+        let (size_, _) = T::get_broadcast_cache_stats();
+        assert!(size_ > 0);
     }
 }
 
@@ -388,8 +388,8 @@ mod efficient_operations_tests {
     fn test_efficient_reshape_cache() {
         // Test reshape cache operations
         T::clear_reshape_cache();
-        let (size, _) = T::get_reshape_cache_stats();
-        assert_eq!(size, 0);
+        let (size_, _) = T::get_reshape_cache_stats();
+        assert_eq!(size_, 0);
     }
 
     #[test]
@@ -421,7 +421,7 @@ mod efficient_operations_tests {
             );
 
             // Reshape to 3x2
-            let reshaped = T::efficient_reshape_with_shape(&data, &[3, 2]);
+            let reshaped = T::efficient_reshape_withshape(&data, &[3, 2]);
             let reshaped_array = reshaped.eval(ctx).unwrap();
 
             assert_eq!(reshaped_array.shape(), &[3, 2]);
@@ -784,7 +784,7 @@ mod integration_tests {
             let activated = T::relu(biased);
 
             // Use efficient operations
-            let reshaped = T::efficient_reshape_with_shape(&activated, &[32 * 64]);
+            let reshaped = T::efficient_reshape_withshape(&activated, &[32 * 64]);
             let result = T::reduce_sum(reshaped, &[0], false);
 
             // Verify result
@@ -857,7 +857,7 @@ mod integration_tests {
             );
 
             // Apply efficient operations
-            let reshaped = T::efficient_reshape_with_shape(&x, &[3, 2]);
+            let reshaped = T::efficient_reshape_withshape(&x, &[3, 2]);
             let checkpointed = T::checkpoint(&reshaped);
 
             // Slice operation

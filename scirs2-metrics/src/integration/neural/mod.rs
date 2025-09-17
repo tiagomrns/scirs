@@ -31,8 +31,8 @@
 //! let f1_score = NeuralMetricAdapter::<f64>::f1_score();
 //!
 //! // Use with neural network predictions and targets
-//! let predictions = Array::<f64, _>::zeros(IxDyn(&[10, 1]));
-//! let targets = Array::<f64, _>::zeros(IxDyn(&[10, 1]));
+//! let predictions = Array::<f64, IxDyn>::zeros(IxDyn(&[10, 1]));
+//! let targets = Array::<f64, IxDyn>::zeros(IxDyn(&[10, 1]));
 //!
 //! // Compute metrics
 //! let acc = accuracy.compute(&predictions, &targets).unwrap();
@@ -82,8 +82,8 @@
 //! use std::collections::HashMap;
 //!
 //! // Example data
-//! let y_true = Array::<f64, _>::zeros(IxDyn(&[100]));
-//! let y_score = Array::<f64, _>::zeros(IxDyn(&[100]));
+//! let y_true = Array::<f64, IxDyn>::zeros(IxDyn(&[100]));
+//! let y_score = Array::<f64, IxDyn>::zeros(IxDyn(&[100]));
 //! let history = vec![HashMap::from([
 //!     ("loss".to_string(), 0.5),
 //!     ("accuracy".to_string(), 0.85),
@@ -113,10 +113,14 @@ pub use neural_adapter::*;
 #[cfg(feature = "neural_common")]
 mod callback;
 #[cfg(feature = "neural_common")]
+mod deep_uncertainty;
+#[cfg(feature = "neural_common")]
 mod visualization;
 
 // Re-export only when feature is enabled
 #[cfg(feature = "neural_common")]
 pub use callback::*;
+#[cfg(feature = "neural_common")]
+pub use deep_uncertainty::*;
 #[cfg(feature = "neural_common")]
 pub use visualization::*;

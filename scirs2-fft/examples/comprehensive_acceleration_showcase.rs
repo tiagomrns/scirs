@@ -30,6 +30,7 @@ use scirs2_fft::{
 use std::f64::consts::PI;
 use std::time::Instant;
 
+#[allow(dead_code)]
 fn main() -> FFTResult<()> {
     println!("🚀 SciRS2-FFT Comprehensive Acceleration Showcase");
     println!("================================================");
@@ -63,6 +64,7 @@ fn main() -> FFTResult<()> {
 }
 
 /// Create test signals of different characteristics
+#[allow(dead_code)]
 fn create_test_signals() -> Vec<(String, Vec<f64>)> {
     let mut signals = Vec::new();
 
@@ -117,6 +119,7 @@ fn create_test_signals() -> Vec<(String, Vec<f64>)> {
 }
 
 /// Create a sparse signal with specified frequency components
+#[allow(dead_code)]
 fn create_sparse_signal(n: usize, components: &[(usize, f64)]) -> Vec<f64> {
     let mut signal = vec![0.0; n];
 
@@ -140,6 +143,7 @@ fn create_sparse_signal(n: usize, components: &[(usize, f64)]) -> Vec<f64> {
 }
 
 /// Compare acceleration methods for a given signal
+#[allow(dead_code)]
 fn perform_acceleration_comparison(signal: &[f64]) -> FFTResult<()> {
     let sparsity = (signal.len() / 64).max(4).min(32); // Adaptive sparsity
     let config = SparseFFTConfig {
@@ -149,7 +153,7 @@ fn perform_acceleration_comparison(signal: &[f64]) -> FFTResult<()> {
         ..SparseFFTConfig::default()
     };
 
-    println!("  Sparsity level: {}", sparsity);
+    println!("  Sparsity level: {sparsity}");
     println!("  Algorithm: {:?}", config.algorithm);
 
     // 1. CPU Reference Implementation
@@ -198,6 +202,7 @@ fn perform_acceleration_comparison(signal: &[f64]) -> FFTResult<()> {
 }
 
 /// Demonstrate multi-GPU processing capabilities
+#[allow(dead_code)]
 fn demonstrate_multi_gpu_processing(signal: &[f64]) -> FFTResult<()> {
     println!("\n  🔄 Multi-GPU Processing:");
 
@@ -212,7 +217,7 @@ fn demonstrate_multi_gpu_processing(signal: &[f64]) -> FFTResult<()> {
     ];
 
     for (strategy_name, _strategy) in &strategies {
-        print_performance_result(&format!("Multi-GPU ({})", strategy_name), || {
+        print_performance_result(&format!("Multi-GPU ({strategy_name})"), || {
             multi_gpu_sparse_fft(signal, sparsity, Some(SparseFFTAlgorithm::Sublinear), None)
         });
     }
@@ -221,6 +226,7 @@ fn demonstrate_multi_gpu_processing(signal: &[f64]) -> FFTResult<()> {
 }
 
 /// Demonstrate specialized hardware capabilities
+#[allow(dead_code)]
 fn demonstrate_specialized_hardware(signal: &[f64]) -> FFTResult<()> {
     println!("\n  ⚡ Specialized Hardware:");
 
@@ -262,6 +268,7 @@ fn demonstrate_specialized_hardware(signal: &[f64]) -> FFTResult<()> {
 }
 
 /// Helper function to measure and print performance results
+#[allow(dead_code)]
 fn print_performance_result<F, R>(name: &str, f: F)
 where
     F: FnOnce() -> FFTResult<R>,
@@ -278,12 +285,13 @@ where
             );
         }
         Err(e) => {
-            println!("    ❌ {:<20}: Failed ({})", name, e);
+            println!("    ❌ {name:<20}: Failed ({e})");
         }
     }
 }
 
 /// Display comprehensive hardware capabilities
+#[allow(dead_code)]
 fn display_hardware_capabilities() -> FFTResult<()> {
     println!("\n🔧 Hardware Capabilities Overview");
     println!("================================");
@@ -328,7 +336,7 @@ fn display_hardware_capabilities() -> FFTResult<()> {
                 manager.initialize_all().ok();
                 for id in discovered {
                     if let Some(info) = manager.get_accelerator_info(&id) {
-                        println!("  {}:", id);
+                        println!("  {id}:");
                         println!("    Type: {}", info.accelerator_type);
                         println!(
                             "    Peak Performance: {:.1} GFLOPS",
@@ -348,7 +356,7 @@ fn display_hardware_capabilities() -> FFTResult<()> {
             }
         }
         Err(e) => {
-            println!("  Error discovering accelerators: {}", e);
+            println!("  Error discovering accelerators: {e}");
         }
     }
 
@@ -356,6 +364,7 @@ fn display_hardware_capabilities() -> FFTResult<()> {
 }
 
 /// Display performance recommendations based on use cases
+#[allow(dead_code)]
 fn display_performance_recommendations() {
     println!("\n💡 Performance Recommendations");
     println!("==============================");

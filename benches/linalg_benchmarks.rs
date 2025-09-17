@@ -1,15 +1,14 @@
 use criterion::{
-    black_box, criterion_group, criterion_main, AxisScale, BenchmarkId, Criterion,
-    PlotConfiguration,
+    criterion_group, criterion_main, AxisScale, BenchmarkId, Criterion, PlotConfiguration,
 };
 use ndarray::{Array1, Array2};
-use ndarray_rand::RandomExt;
-use rand::distributions::Uniform;
-use rand::SeedableRng;
+use rand::distr::Uniform;
+use rand::{Rng, SeedableRng};
 use rand_chacha::ChaCha8Rng;
 use scirs2_linalg::{
     cholesky, det, eigen, inv, lstsq, lu, matrix_norm, qr, solve, solve_triangular, svd,
 };
+use std::hint::black_box;
 use std::time::Instant;
 
 // Benchmark configuration
@@ -17,13 +16,15 @@ const MATRIX_SIZES: &[usize] = &[10, 50, 100, 200, 500, 1000];
 const SEED: u64 = 42;
 
 /// Generate a random matrix with controlled properties
+#[allow(dead_code)]
 fn generate_matrix(n: usize, condition_number: Option<f64>) -> Array2<f64> {
     let mut rng = ChaCha8Rng::seed_from_u64(SEED);
 
     match condition_number {
         Some(cond) => {
             // Generate matrix with specific condition number for numerical stability tests
-            let u = Array2::random_using((n, n), Uniform::new(-1.0, 1.0), &mut rng);
+            let uniform = Uniform::new(-1.0, 1.0).unwrap();
+            let u = Array2::from_shape_fn((n, n), |_| rng.sample(uniform));
             let mut s = Array1::linspace(1.0, 1.0 / cond, n);
             s.mapv_inplace(|x| x.abs()); // Ensure positive singular values
 
@@ -40,15 +41,18 @@ fn generate_matrix(n: usize, condition_number: Option<f64>) -> Array2<f64> {
         }
         None => {
             // Generate well-conditioned random matrix
-            Array2::random_using((n, n), Uniform::new(-1.0, 1.0), &mut rng)
+            let uniform = Uniform::new(-1.0, 1.0).unwrap();
+            Array2::from_shape_fn((n, n), |_| rng.sample(uniform))
         }
     }
 }
 
 /// Generate a symmetric positive definite matrix
+#[allow(dead_code)]
 fn generate_spd_matrix(n: usize) -> Array2<f64> {
     let mut rng = ChaCha8Rng::seed_from_u64(SEED);
-    let a = Array2::random_using((n, n), Uniform::new(-1.0, 1.0), &mut rng);
+    let uniform = Uniform::new(-1.0, 1.0).unwrap();
+    let a = Array2::from_shape_fn((n, n), |_| rng.sample(uniform));
 
     // A^T * A is always positive definite
     let at = a.t();
@@ -56,6 +60,7 @@ fn generate_spd_matrix(n: usize) -> Array2<f64> {
 }
 
 /// Benchmark basic matrix operations
+#[allow(dead_code)]
 fn bench_basic_operations(c: &mut Criterion) {
     let mut group = c.benchmark_group("basic_operations");
     group.plot_config(PlotConfiguration::default().summary_scale(AxisScale::Logarithmic));
@@ -102,6 +107,7 @@ fn bench_basic_operations(c: &mut Criterion) {
 }
 
 /// Benchmark matrix decompositions
+#[allow(dead_code)]
 fn bench_decompositions(c: &mut Criterion) {
     let mut group = c.benchmark_group("decompositions");
     group.plot_config(PlotConfiguration::default().summary_scale(AxisScale::Logarithmic));
@@ -158,6 +164,7 @@ fn bench_decompositions(c: &mut Criterion) {
 }
 
 /// Benchmark linear system solvers
+#[allow(dead_code)]
 fn bench_linear_solvers(c: &mut Criterion) {
     let mut group = c.benchmark_group("linear_solvers");
     group.plot_config(PlotConfiguration::default().summary_scale(AxisScale::Logarithmic));
@@ -198,6 +205,7 @@ fn bench_linear_solvers(c: &mut Criterion) {
 }
 
 /// Benchmark eigenvalue computations
+#[allow(dead_code)]
 fn bench_eigenvalues(c: &mut Criterion) {
     let mut group = c.benchmark_group("eigenvalues");
     group.plot_config(PlotConfiguration::default().summary_scale(AxisScale::Logarithmic));
@@ -237,6 +245,7 @@ fn bench_eigenvalues(c: &mut Criterion) {
 }
 
 /// Benchmark numerical stability with ill-conditioned matrices
+#[allow(dead_code)]
 fn bench_numerical_stability(c: &mut Criterion) {
     let mut group = c.benchmark_group("numerical_stability");
 
@@ -277,6 +286,7 @@ fn bench_numerical_stability(c: &mut Criterion) {
 }
 
 /// Benchmark memory efficiency by measuring peak memory usage
+#[allow(dead_code)]
 fn bench_memory_efficiency(c: &mut Criterion) {
     let mut group = c.benchmark_group("memory_efficiency");
 
@@ -307,6 +317,7 @@ fn bench_memory_efficiency(c: &mut Criterion) {
 }
 
 /// Performance analysis and reporting
+#[allow(dead_code)]
 fn performance_analysis(c: &mut Criterion) {
     let mut group = c.benchmark_group("performance_analysis");
 

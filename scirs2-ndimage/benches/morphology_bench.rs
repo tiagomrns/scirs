@@ -1,12 +1,27 @@
-use criterion::{black_box, criterion_group, criterion_main, BenchmarkId, Criterion};
+use criterion::{criterion_group, criterion_main, BenchmarkId, Criterion};
 use ndarray::{Array2, Array3};
 use scirs2_ndimage::morphology::{
-    binary_dilation, binary_erosion, binary_hit_or_miss, black_tophat, grey_dilation, grey_erosion,
-    morphological_gradient, white_tophat,
+    binary_dilation,
+    binary_dilation_2d_optimized,
+    binary_erosion,
+    binary_erosion_2d_optimized,
+    binary_hit_or_miss,
+    black_tophat,
+    grey_dilation,
+    grey_dilation_2d_optimized,
+    grey_erosion,
+    // Import optimized versions
+    grey_erosion_2d_optimized,
+    morphological_gradient,
+    // Import simple morphology for comparison
+    simple_morph::{binary_dilation_2d, binary_erosion_2d, grey_dilation_2d, grey_erosion_2d},
+    white_tophat,
 };
+use std::hint::black_box;
 use std::time::Duration;
 
 /// Benchmark binary morphological operations
+#[allow(dead_code)]
 fn bench_binary_morphology(c: &mut Criterion) {
     let mut group = c.benchmark_group("binary_morphology");
     group.measurement_time(Duration::from_secs(10));
@@ -64,6 +79,7 @@ fn bench_binary_morphology(c: &mut Criterion) {
 }
 
 /// Benchmark grayscale morphological operations
+#[allow(dead_code)]
 fn bench_grayscale_morphology(c: &mut Criterion) {
     let mut group = c.benchmark_group("grayscale_morphology");
     group.measurement_time(Duration::from_secs(10));
@@ -106,6 +122,7 @@ fn bench_grayscale_morphology(c: &mut Criterion) {
 }
 
 /// Benchmark hit-or-miss transform
+#[allow(dead_code)]
 fn bench_hit_or_miss(c: &mut Criterion) {
     let mut group = c.benchmark_group("hit_or_miss");
     group.measurement_time(Duration::from_secs(10));
@@ -137,6 +154,7 @@ fn bench_hit_or_miss(c: &mut Criterion) {
 }
 
 /// Benchmark different structuring element sizes
+#[allow(dead_code)]
 fn bench_structuring_sizes(c: &mut Criterion) {
     let mut group = c.benchmark_group("structuring_sizes");
     group.measurement_time(Duration::from_secs(10));
@@ -161,6 +179,7 @@ fn bench_structuring_sizes(c: &mut Criterion) {
 }
 
 /// Benchmark 3D morphological operations
+#[allow(dead_code)]
 fn bench_3d_morphology(c: &mut Criterion) {
     let mut group = c.benchmark_group("3d_morphology");
     group.measurement_time(Duration::from_secs(15));
@@ -205,12 +224,110 @@ fn bench_3d_morphology(c: &mut Criterion) {
     group.finish();
 }
 
+/// Benchmark optimized vs simple morphological operations
+#[allow(dead_code)]
+fn bench_optimized_vs_simple(c: &mut Criterion) {
+    let mut group = c.benchmark_group("optimized_vs_simple");
+    group.measurement_time(Duration::from_secs(10));
+
+    // Test with different sizes to see scaling behavior
+    let sizes = vec![100, 500, 1000];
+
+    for size in sizes {
+        // Create test data
+        let grayscale_input = Array2::from_shape_fn((size, size), |(i, j)| {
+            ((i as f64) * (j as f64)).sin() * 255.0
+        });
+        let binary_input =
+            Array2::from_shape_fn((size, size), |(i, j)| (i % 10 < 5) && (j % 10 < 5));
+
+        // Compare grayscale erosion
+        group.bench_with_input(
+            BenchmarkId::new("grey_erosion_simple", format!("{}x{}", size, size)),
+            &grayscale_input,
+            |b, input| {
+                b.iter(|| grey_erosion_2d(black_box(input), None, None, None, None).unwrap())
+            },
+        );
+
+        group.bench_with_input(
+            BenchmarkId::new("grey_erosion_optimized", format!("{}x{}", size, size)),
+            &grayscale_input,
+            |b, input| {
+                b.iter(|| {
+                    grey_erosion_2d_optimized(black_box(input), None, None, None, None).unwrap()
+                })
+            },
+        );
+
+        // Compare grayscale dilation
+        group.bench_with_input(
+            BenchmarkId::new("grey_dilation_simple", format!("{}x{}", size, size)),
+            &grayscale_input,
+            |b, input| {
+                b.iter(|| grey_dilation_2d(black_box(input), None, None, None, None).unwrap())
+            },
+        );
+
+        group.bench_with_input(
+            BenchmarkId::new("grey_dilation_optimized", format!("{}x{}", size, size)),
+            &grayscale_input,
+            |b, input| {
+                b.iter(|| {
+                    grey_dilation_2d_optimized(black_box(input), None, None, None, None).unwrap()
+                })
+            },
+        );
+
+        // Compare binary erosion
+        group.bench_with_input(
+            BenchmarkId::new("binary_erosion_simple", format!("{}x{}", size, size)),
+            &binary_input,
+            |b, input| {
+                b.iter(|| binary_erosion_2d(black_box(input), None, None, None, None).unwrap())
+            },
+        );
+
+        group.bench_with_input(
+            BenchmarkId::new("binary_erosion_optimized", format!("{}x{}", size, size)),
+            &binary_input,
+            |b, input| {
+                b.iter(|| {
+                    binary_erosion_2d_optimized(black_box(input), None, None, None, None).unwrap()
+                })
+            },
+        );
+
+        // Compare binary dilation
+        group.bench_with_input(
+            BenchmarkId::new("binary_dilation_simple", format!("{}x{}", size, size)),
+            &binary_input,
+            |b, input| {
+                b.iter(|| binary_dilation_2d(black_box(input), None, None, None, None).unwrap())
+            },
+        );
+
+        group.bench_with_input(
+            BenchmarkId::new("binary_dilation_optimized", format!("{}x{}", size, size)),
+            &binary_input,
+            |b, input| {
+                b.iter(|| {
+                    binary_dilation_2d_optimized(black_box(input), None, None, None, None).unwrap()
+                })
+            },
+        );
+    }
+
+    group.finish();
+}
+
 criterion_group!(
     benches,
     bench_binary_morphology,
     bench_grayscale_morphology,
     bench_hit_or_miss,
     bench_structuring_sizes,
-    bench_3d_morphology
+    bench_3d_morphology,
+    bench_optimized_vs_simple
 );
 criterion_main!(benches);

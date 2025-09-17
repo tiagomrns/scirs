@@ -48,6 +48,7 @@ use crate::error::{LinalgError, LinalgResult};
 ///     }
 /// }
 /// ```
+#[allow(dead_code)]
 pub fn lu<F>(a: &ArrayView2<F>) -> LinalgResult<(Array2<F>, Array2<F>, Array2<F>)>
 where
     F: Float + NumAssign + 'static,
@@ -176,6 +177,7 @@ where
 ///     }
 /// }
 /// ```
+#[allow(dead_code)]
 pub fn qr<F>(a: &ArrayView2<F>) -> LinalgResult<(Array2<F>, Array2<F>)>
 where
     F: Float + NumAssign + 'static,
@@ -287,6 +289,7 @@ where
 /// assert_eq!(s.len(), 2, "S vector should have length 2");
 /// assert_eq!(vt.shape(), &[2, 2], "V^T matrix should have shape 2x2");
 /// ```
+#[allow(dead_code)]
 pub fn svd<F>(
     a: &ArrayView2<F>,
     full_matrices: bool,
@@ -304,7 +307,7 @@ where
     let m = a.ncols();
     let k = n.min(m);
 
-    // Create matrices U, Sigma, VT
+    // Create _matrices U, Sigma, VT
     let mut u: Array2<F>;
     let mut s: Array1<F> = Array1::zeros(k);
     let mut vt: Array2<F>;
@@ -451,6 +454,7 @@ where
 type EigenResult<F> = (Array1<Complex<F>>, Array2<Complex<F>>);
 
 #[allow(clippy::type_complexity)]
+#[allow(dead_code)]
 pub fn eig<F>(a: &ArrayView2<F>) -> LinalgResult<EigenResult<F>>
 where
     F: Float + NumAssign + 'static,
@@ -605,6 +609,7 @@ where
 ///     }
 /// }
 /// ```
+#[allow(dead_code)]
 pub fn eigh<F>(a: &ArrayView2<F>) -> LinalgResult<(Array1<F>, Array2<F>)>
 where
     F: Float + NumAssign + 'static,
@@ -789,6 +794,7 @@ where
 ///     }
 /// }
 /// ```
+#[allow(dead_code)]
 pub fn cholesky<F>(a: &ArrayView2<F>) -> LinalgResult<Array2<F>>
 where
     F: Float + NumAssign + 'static,

@@ -8,7 +8,6 @@
 //! The test problem is a simple pendulum DAE system, which we can solve analytically
 //! for comparison purposes.
 
-// FIXME: This example has compilation errors - missing plotters imports and API changes
 #![allow(dead_code)]
 
 use ndarray::{array, Array1, ArrayView1};
@@ -20,6 +19,7 @@ use scirs2_integrate::{
 };
 use std::time::Instant;
 
+#[allow(dead_code)]
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("Comparing DAE solver methods for a pendulum system");
 
@@ -124,8 +124,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     constraint_violations.push(violation_general);
 
     println!("  Time: {:.6} seconds", elapsed_general.as_secs_f64());
-    println!("  Error: {:.6e}", error_general);
-    println!("  Constraint violation: {:.6e}", violation_general);
+    println!("  Error: {error_general:.6e}");
+    println!("  Constraint violation: {violation_general:.6e}");
     println!("  Steps: {}", result_general.n_steps);
 
     // 2. Run solver using standard ODE solver with constraints solved at each step
@@ -198,8 +198,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     constraint_violations.push(violation_ode);
 
     println!("  Time: {:.6} seconds", elapsed_ode.as_secs_f64());
-    println!("  Error: {:.6e}", error_ode);
-    println!("  Constraint violation: {:.6e}", violation_ode);
+    println!("  Error: {error_ode:.6e}");
+    println!("  Constraint violation: {violation_ode:.6e}");
     println!("  Steps: {}", result_ode.n_steps);
 
     // 3. Run solver using specialized BDF method for DAEs
@@ -227,8 +227,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     constraint_violations.push(violation_bdf);
 
     println!("  Time: {:.6} seconds", elapsed_bdf.as_secs_f64());
-    println!("  Error: {:.6e}", error_bdf);
-    println!("  Constraint violation: {:.6e}", violation_bdf);
+    println!("  Error: {error_bdf:.6e}");
+    println!("  Constraint violation: {violation_bdf:.6e}");
     println!("  Steps: {}", result_bdf.n_steps);
 
     // Print performance comparison
@@ -371,6 +371,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 }
 
 /// Calculate the analytical solution for the pendulum
+#[allow(dead_code)]
 fn compute_analytical_solution(g: f64, length: f64, theta0: f64, times: &[f64]) -> Vec<(f64, f64)> {
     // For small oscillations, the solution is approximately:
     // theta(t) = theta0 * cos(omega * t)
@@ -390,6 +391,7 @@ fn compute_analytical_solution(g: f64, length: f64, theta0: f64, times: &[f64]) 
 }
 
 /// Compute error metrics for a DAE solution
+#[allow(dead_code)]
 fn compute_error_metrics<F>(
     result: &scirs2_integrate::DAEResult<f64>,
     g: f64,

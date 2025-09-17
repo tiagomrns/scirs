@@ -7,6 +7,7 @@
 use crate::error::Result;
 use image::{DynamicImage, GrayImage, ImageBuffer, Luma};
 use ndarray::{Array2, Array3};
+use statrs::statistics::Statistics;
 use std::f32::consts::PI;
 
 /// Parameters for Gabor filter
@@ -46,6 +47,7 @@ impl Default for GaborParams {
 /// # Returns
 ///
 /// * 2D array containing the Gabor kernel
+#[allow(dead_code)]
 pub fn gabor_kernel(params: &GaborParams, size: usize) -> Array2<f32> {
     let half_size = size as i32 / 2;
     let mut kernel = Array2::zeros((size, size));
@@ -111,6 +113,7 @@ pub fn gabor_kernel(params: &GaborParams, size: usize) -> Array2<f32> {
 /// # Ok(())
 /// # }
 /// ```
+#[allow(dead_code)]
 pub fn gabor_filter(img: &DynamicImage, params: &GaborParams) -> Result<GrayImage> {
     let gray = img.to_luma8();
     let (width, height) = gray.dimensions();
@@ -185,6 +188,7 @@ impl Default for GaborBank {
 /// # Returns
 ///
 /// * Result containing 3D array of filter responses [n_filters, height, width]
+#[allow(dead_code)]
 pub fn gabor_filter_bank(img: &DynamicImage, bank: &GaborBank) -> Result<Array3<f32>> {
     let gray = img.to_luma8();
     let (width, height) = gray.dimensions();
@@ -232,6 +236,7 @@ pub fn gabor_filter_bank(img: &DynamicImage, bank: &GaborBank) -> Result<Array3<
 /// # Returns
 ///
 /// * Feature vector containing mean and standard deviation of each filter response
+#[allow(dead_code)]
 pub fn extract_gabor_features(
     responses: &Array3<f32>,
     x: usize,
@@ -278,6 +283,7 @@ pub fn extract_gabor_features(
 /// # Returns
 ///
 /// * Result containing energy image (magnitude of complex Gabor response)
+#[allow(dead_code)]
 pub fn gabor_energy(img: &DynamicImage, params: &GaborParams) -> Result<GrayImage> {
     // Real part (cosine)
     let real_response = gabor_filter(img, params)?;

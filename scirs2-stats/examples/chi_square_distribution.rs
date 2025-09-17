@@ -1,7 +1,9 @@
-use scirs2_stats::distributions::chi_square::ChiSquare;
-use scirs2_stats::traits::distribution::{ContinuousDistribution, Distribution};
+use scirs2_stats::distributions::ChiSquare;
+use scirs2_stats::traits::{ContinuousCDF, ContinuousDistribution, Distribution};
+use statrs::statistics::Statistics;
 use std::f64;
 
+#[allow(dead_code)]
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("Chi-Square Distribution Example");
     println!("============================\n");
@@ -34,13 +36,12 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("   CDF(2.0) = {:.6}", dist.cdf(2.0));
     println!("   CDF(3.0) = {:.6}\n", dist.cdf(3.0));
 
-    // Survival function and hazard function
-    println!("4. Additional functions available through the trait:");
-    println!("   Survival function SF(2.0) = {:.6}", dist.sf(2.0));
-    println!("   Hazard function h(2.0) = {:.6}", dist.hazard(2.0));
+    // Note: ChiSquare doesn't implement ContinuousCDF trait
+    // so survival function, hazard function etc. are not available
+    println!("4. Additional functions:");
     println!(
-        "   Cumulative hazard function H(2.0) = {:.6}\n",
-        dist.cumhazard(2.0)
+        "   Manual survival function SF(2.0) = {:.6}",
+        1.0 - dist.cdf(2.0)
     );
 
     // Quantile function (inverse CDF)
@@ -54,10 +55,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         "   Critical value for α=0.01 (p=0.99) = {:.6}",
         dist.ppf(0.99)?
     );
-    println!(
-        "   Inverse survival function (p=0.95) = {:.6}\n",
-        dist.isf(0.95)?
-    );
+    // Note: ISF not available without ContinuousCDF trait implementation
 
     // Random sampling
     println!("6. Random sampling:");

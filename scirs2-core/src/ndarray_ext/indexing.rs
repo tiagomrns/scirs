@@ -34,6 +34,7 @@ pub type IndicesResult = Result<(Array<usize, Ix1>, Array<usize, Ix1>), &'static
 /// assert_eq!(result[[0, 0]], 1);
 /// assert_eq!(result[[0, 1]], 3);
 /// ```
+#[allow(dead_code)]
 pub fn take_2d<T>(
     array: ArrayView<T, Ix2>,
     indices: ArrayView<usize, Ix1>,
@@ -110,6 +111,7 @@ where
 /// assert_eq!(result[1], 3);
 /// assert_eq!(result[2], 5);
 /// ```
+#[allow(dead_code)]
 pub fn boolean_mask_2d<T>(
     array: ArrayView<T, Ix2>,
     mask: ArrayView<bool, Ix2>,
@@ -165,6 +167,7 @@ where
 /// assert_eq!(result[1], 3);
 /// assert_eq!(result[2], 5);
 /// ```
+#[allow(dead_code)]
 pub fn boolean_mask_1d<T>(
     array: ArrayView<T, Ix1>,
     mask: ArrayView<bool, Ix1>,
@@ -220,6 +223,7 @@ where
 /// assert_eq!(result[1], 30);
 /// assert_eq!(result[2], 50);
 /// ```
+#[allow(dead_code)]
 pub fn take_1d<T>(
     array: ArrayView<T, Ix1>,
     indices: ArrayView<usize, Ix1>,
@@ -274,6 +278,7 @@ where
 /// assert_eq!(result[1], 5);
 /// assert_eq!(result[2], 9);
 /// ```
+#[allow(dead_code)]
 pub fn fancy_index_2d<T>(
     array: ArrayView<T, Ix2>,
     row_indices: ArrayView<usize, Ix1>,
@@ -290,7 +295,7 @@ where
 
     let (rows, cols) = (array.shape()[0], array.shape()[1]);
 
-    // Check that indices are within bounds
+    // Check that _indices are within bounds
     for &idx in row_indices.iter() {
         if idx >= rows {
             return Err("Row index out of bounds");
@@ -354,6 +359,7 @@ where
 /// assert_eq!(lower_diag[0], 4);
 /// assert_eq!(lower_diag[1], 8);
 /// ```
+#[allow(dead_code)]
 pub fn diagonal<T>(array: ArrayView<T, Ix2>, offset: isize) -> Result<Array<T, Ix1>, &'static str>
 where
     T: Clone + Default,
@@ -371,7 +377,7 @@ where
         return Err("No diagonal elements for the given offset");
     }
 
-    // Create the result array
+    // Create the result _array
     let mut result = Array::<T, Ix1>::default(diag_len);
 
     // Extract the diagonal elements
@@ -413,12 +419,13 @@ where
 /// assert_eq!(result[0], 4);
 /// assert_eq!(result[1], 5);
 /// ```
+#[allow(dead_code)]
 pub fn where_1d<T, F>(array: ArrayView<T, Ix1>, condition: F) -> Result<Array<T, Ix1>, &'static str>
 where
     T: Clone + Default,
     F: Fn(&T) -> bool,
 {
-    // Build a boolean mask array based on the condition
+    // Build a boolean mask _array based on the condition
     let mask = array.map(condition);
 
     // Use the boolean_mask_1d function to select elements
@@ -449,12 +456,13 @@ where
 /// assert_eq!(result[1], 5);
 /// assert_eq!(result[2], 6);
 /// ```
+#[allow(dead_code)]
 pub fn where_2d<T, F>(array: ArrayView<T, Ix2>, condition: F) -> Result<Array<T, Ix1>, &'static str>
 where
     T: Clone + Default,
     F: Fn(&T) -> bool,
 {
-    // Build a boolean mask array based on the condition
+    // Build a boolean mask _array based on the condition
     let mask = array.map(condition);
 
     // Use the boolean_mask_2d function to select elements
@@ -484,6 +492,7 @@ where
 /// assert_eq!(result[0], 3);
 /// assert_eq!(result[1], 4);
 /// ```
+#[allow(dead_code)]
 pub fn indices_where_1d<T, F>(
     array: ArrayView<T, Ix1>,
     condition: F,
@@ -528,6 +537,7 @@ where
 /// assert_eq!(cols.len(), 4);
 /// // The indices correspond to elements: 6, 7, 8, 9
 /// ```
+#[allow(dead_code)]
 pub fn indices_where_2d<T, F>(array: ArrayView<T, Ix2>, condition: F) -> IndicesResult
 where
     T: Clone,
@@ -583,6 +593,7 @@ where
 /// assert_eq!(result[[1, 1]], 8);
 /// assert_eq!(result[[1, 2]], 9);
 /// ```
+#[allow(dead_code)]
 pub fn take_along_axis<T>(
     array: ArrayView<T, Ix2>,
     indices: ArrayView<usize, Ix1>,

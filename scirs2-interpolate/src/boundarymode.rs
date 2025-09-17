@@ -118,9 +118,9 @@ impl<T: Float + std::fmt::Display> BoundaryParameters<T> {
     /// # Returns
     ///
     /// A reference to the modified parameters
-    pub fn with_values(mut self, lower_value: T, upper_value: T) -> Self {
+    pub fn with_values(mut self, lower_value: T, uppervalue: T) -> Self {
         self.lower_value = Some(lower_value);
-        self.upper_value = Some(upper_value);
+        self.upper_value = Some(uppervalue);
         self
     }
 
@@ -134,9 +134,9 @@ impl<T: Float + std::fmt::Display> BoundaryParameters<T> {
     /// # Returns
     ///
     /// A reference to the modified parameters
-    pub fn with_derivatives(mut self, lower_derivative: T, upper_derivative: T) -> Self {
+    pub fn with_derivatives(mut self, lower_derivative: T, upperderivative: T) -> Self {
         self.lower_derivative = Some(lower_derivative);
-        self.upper_derivative = Some(upper_derivative);
+        self.upper_derivative = Some(upperderivative);
         self
     }
 
@@ -189,7 +189,7 @@ impl<T: Float + std::fmt::Display> BoundaryParameters<T> {
                         Ok(BoundaryResult::AllowExtrapolation(x))
                     }
                     ExtrapolateMode::Nan => {
-                        // Return NaN for points outside the interpolation domain
+                        // Return NaN for _points outside the interpolation domain
                         Ok(BoundaryResult::DirectValue(T::nan()))
                     }
                 }
@@ -214,14 +214,14 @@ impl<T: Float + std::fmt::Display> BoundaryParameters<T> {
                 if let Some(lower_val) = self.lower_value {
                     // Use provided boundary value
                     Ok(BoundaryResult::DirectValue(lower_val + gradient_t * dx))
-                } else if let (Some(vals), Some(points)) = (values, domain_points) {
+                } else if let (Some(vals), Some(_points)) = (values, domain_points) {
                     // Find the value at the lower boundary
-                    let idx = self.find_nearest_point_index(self.lower_bound, points)?;
+                    let idx = self.find_nearest_point_index(self.lower_bound, _points)?;
                     let lower_val = vals[idx];
                     Ok(BoundaryResult::DirectValue(lower_val + gradient_t * dx))
                 } else {
                     Err(InterpolateError::InvalidState(
-                        "Values or domain points not provided for LinearGradient mode".to_string(),
+                        "Values or domain _points not provided for LinearGradient mode".to_string(),
                     ))
                 }
             }
@@ -267,9 +267,9 @@ impl<T: Float + std::fmt::Display> BoundaryParameters<T> {
                 let offset = self.lower_bound - x;
                 let x_mapped = self.lower_bound + offset;
 
-                if let (Some(vals), Some(points)) = (values, domain_points) {
+                if let (Some(vals), Some(_points)) = (values, domain_points) {
                     // Find the value at the mapped point
-                    let mapped_index = self.find_nearest_point_index(x_mapped, points)?;
+                    let mapped_index = self.find_nearest_point_index(x_mapped, _points)?;
                     let mapped_value = vals[mapped_index];
 
                     // Negate the value for antisymmetric reflection
@@ -306,7 +306,7 @@ impl<T: Float + std::fmt::Display> BoundaryParameters<T> {
                         Ok(BoundaryResult::AllowExtrapolation(x))
                     }
                     ExtrapolateMode::Nan => {
-                        // Return NaN for points outside the interpolation domain
+                        // Return NaN for _points outside the interpolation domain
                         Ok(BoundaryResult::DirectValue(T::nan()))
                     }
                 }
@@ -331,14 +331,14 @@ impl<T: Float + std::fmt::Display> BoundaryParameters<T> {
                 if let Some(upper_val) = self.upper_value {
                     // Use provided boundary value
                     Ok(BoundaryResult::DirectValue(upper_val + gradient_t * dx))
-                } else if let (Some(vals), Some(points)) = (values, domain_points) {
+                } else if let (Some(vals), Some(_points)) = (values, domain_points) {
                     // Find the value at the upper boundary
-                    let idx = self.find_nearest_point_index(self.upper_bound, points)?;
+                    let idx = self.find_nearest_point_index(self.upper_bound, _points)?;
                     let upper_val = vals[idx];
                     Ok(BoundaryResult::DirectValue(upper_val + gradient_t * dx))
                 } else {
                     Err(InterpolateError::InvalidState(
-                        "Values or domain points not provided for LinearGradient mode".to_string(),
+                        "Values or domain _points not provided for LinearGradient mode".to_string(),
                     ))
                 }
             }
@@ -384,9 +384,9 @@ impl<T: Float + std::fmt::Display> BoundaryParameters<T> {
                 let offset = x - self.upper_bound;
                 let x_mapped = self.upper_bound - offset;
 
-                if let (Some(vals), Some(points)) = (values, domain_points) {
+                if let (Some(vals), Some(_points)) = (values, domain_points) {
                     // Find the value at the mapped point
-                    let mapped_index = self.find_nearest_point_index(x_mapped, points)?;
+                    let mapped_index = self.find_nearest_point_index(x_mapped, _points)?;
                     let mapped_value = vals[mapped_index];
 
                     // Negate the value for antisymmetric reflection
@@ -481,6 +481,7 @@ pub enum BoundaryResult<T: Float> {
 /// # Returns
 ///
 /// A new `BoundaryParameters` instance with zero-gradient boundary conditions
+#[allow(dead_code)]
 pub fn make_zero_gradient_boundary<T: Float + std::fmt::Display>(
     lower_bound: T,
     upper_bound: T,
@@ -506,6 +507,7 @@ pub fn make_zero_gradient_boundary<T: Float + std::fmt::Display>(
 /// # Returns
 ///
 /// A new `BoundaryParameters` instance with zero-value boundary conditions
+#[allow(dead_code)]
 pub fn make_zero_value_boundary<T: Float + std::fmt::Display>(
     lower_bound: T,
     upper_bound: T,
@@ -531,6 +533,7 @@ pub fn make_zero_value_boundary<T: Float + std::fmt::Display>(
 /// # Returns
 ///
 /// A new `BoundaryParameters` instance with periodic boundary conditions
+#[allow(dead_code)]
 pub fn make_periodic_boundary<T: Float + std::fmt::Display>(
     lower_bound: T,
     upper_bound: T,
@@ -556,6 +559,7 @@ pub fn make_periodic_boundary<T: Float + std::fmt::Display>(
 /// # Returns
 ///
 /// A new `BoundaryParameters` instance with symmetric boundary conditions
+#[allow(dead_code)]
 pub fn make_symmetric_boundary<T: Float + std::fmt::Display>(
     lower_bound: T,
     upper_bound: T,
@@ -581,6 +585,7 @@ pub fn make_symmetric_boundary<T: Float + std::fmt::Display>(
 /// # Returns
 ///
 /// A new `BoundaryParameters` instance with antisymmetric boundary conditions
+#[allow(dead_code)]
 pub fn make_antisymmetric_boundary<T: Float + std::fmt::Display>(
     lower_bound: T,
     upper_bound: T,
@@ -608,6 +613,7 @@ pub fn make_antisymmetric_boundary<T: Float + std::fmt::Display>(
 /// # Returns
 ///
 /// A new `BoundaryParameters` instance with linear gradient boundary conditions
+#[allow(dead_code)]
 pub fn make_linear_gradient_boundary<T: Float + std::fmt::Display>(
     lower_bound: T,
     upper_bound: T,

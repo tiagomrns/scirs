@@ -5,25 +5,26 @@ use scirs2_fft::mdct::{imdct, imdst, mdct, mdct_overlap_add, mdst};
 use scirs2_fft::window::Window;
 use std::f64::consts::PI;
 
+#[allow(dead_code)]
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("=== MDCT/MDST Example ===");
     println!();
 
     // Example 1: Basic MDCT transform
     println!("1. Basic MDCT Transform:");
-    let block_size = 8;
+    let blocksize = 8;
     let signal = array![1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0];
-    println!("   Input signal: {:?}", signal);
+    println!("   Input signal: {signal:?}");
 
-    let mdct_coeffs = mdct(&signal, block_size, Some(Window::Hann))?;
-    println!("   MDCT coefficients: {:?}", mdct_coeffs);
+    let mdct_coeffs = mdct(&signal, blocksize, Some(Window::Hann))?;
+    println!("   MDCT coefficients: {mdct_coeffs:?}");
     println!(
         "   Number of coefficients: {} (half of block size)",
         mdct_coeffs.len()
     );
 
     let reconstructed = imdct(&mdct_coeffs, Some(Window::Hann))?;
-    println!("   Reconstructed signal: {:?}", reconstructed);
+    println!("   Reconstructed signal: {reconstructed:?}");
     println!();
 
     // Example 2: Perfect reconstruction with overlap-add
@@ -37,23 +38,23 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     }
 
     // Process with overlapping blocks
-    let block_size = 16;
-    let hop_size = block_size / 2;
+    let blocksize = 16;
+    let hopsize = blocksize / 2;
     let mut blocks = Vec::new();
 
-    println!("   Signal length: {}", signal_len);
-    println!("   Block size: {}", block_size);
-    println!("   Hop size: {}", hop_size);
+    println!("   Signal length: {signal_len}");
+    println!("   Block size: {blocksize}");
+    println!("   Hop size: {hopsize}");
 
     // Extract and transform overlapping blocks
-    let num_blocks = (signal_len - block_size) / hop_size + 1;
+    let num_blocks = (signal_len - blocksize) / hopsize + 1;
     for i in 0..num_blocks {
-        let start = i * hop_size;
-        let end = start + block_size;
+        let start = i * hopsize;
+        let end = start + blocksize;
 
         if end <= signal_len {
             let block = long_signal.slice(ndarray::s![start..end]).to_owned();
-            let mdct_block = mdct(&block, block_size, Some(Window::Hann))?;
+            let mdct_block = mdct(&block, blocksize, Some(Window::Hann))?;
             blocks.push(mdct_block);
         }
     }
@@ -61,20 +62,17 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("   Number of MDCT blocks: {}", blocks.len());
 
     // Reconstruct with overlap-add
-    let reconstructed = mdct_overlap_add(&blocks, Some(Window::Hann), hop_size)?;
+    let reconstructed = mdct_overlap_add(&blocks, Some(Window::Hann), hopsize)?;
 
     // Calculate reconstruction error (excluding boundaries)
-    let start_idx = block_size / 2;
-    let end_idx = signal_len - block_size / 2;
+    let start_idx = blocksize / 2;
+    let end_idx = signal_len - blocksize / 2;
     let mut error = 0.0;
     for i in start_idx..end_idx {
         error += (long_signal[i] - reconstructed[i]).abs();
     }
 
-    println!(
-        "   Reconstruction error (excluding boundaries): {:.6e}",
-        error
-    );
+    println!("   Reconstruction error (excluding boundaries): {error:.6e}");
     println!();
 
     // Example 3: MDST transform
@@ -82,10 +80,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let test_signal = array![1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0];
 
     let mdst_coeffs = mdst(&test_signal, 8, Some(Window::Hann))?;
-    println!("   MDST coefficients: {:?}", mdst_coeffs);
+    println!("   MDST coefficients: {mdst_coeffs:?}");
 
     let mdst_reconstructed = imdst(&mdst_coeffs, Some(Window::Hann))?;
-    println!("   MDST reconstructed: {:?}", mdst_reconstructed);
+    println!("   MDST reconstructed: {mdst_reconstructed:?}");
     println!();
 
     // Example 4: Comparison of MDCT vs MDST
@@ -101,15 +99,15 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let mdst_result = mdst(&test_signal, 16, None)?;
 
     println!("   Test signal (cos + sin components)");
-    println!("   MDCT coefficients: {:?}", mdct_result);
-    println!("   MDST coefficients: {:?}", mdst_result);
+    println!("   MDCT coefficients: {mdct_result:?}");
+    println!("   MDST coefficients: {mdst_result:?}");
 
     // Energy comparison
     let mdct_energy: f64 = mdct_result.mapv(|x| x * x).sum();
     let mdst_energy: f64 = mdst_result.mapv(|x| x * x).sum();
 
-    println!("   MDCT energy: {:.4}", mdct_energy);
-    println!("   MDST energy: {:.4}", mdst_energy);
+    println!("   MDCT energy: {mdct_energy:.4}");
+    println!("   MDST energy: {mdst_energy:.4}");
     println!();
 
     // Example 5: Audio coding simulation
@@ -128,18 +126,18 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     }
 
     // Process with MDCT
-    let block_size = 2048;
-    let hop_size = block_size / 2;
+    let blocksize = 2048;
+    let hopsize = blocksize / 2;
     let mut mdct_blocks = Vec::new();
 
-    let num_blocks = (signal_len - block_size) / hop_size + 1;
+    let num_blocks = (signal_len - blocksize) / hopsize + 1;
     for i in 0..num_blocks {
-        let start = i * hop_size;
-        let end = (start + block_size).min(signal_len);
+        let start = i * hopsize;
+        let end = (start + blocksize).min(signal_len);
 
-        if end - start == block_size {
+        if end - start == blocksize {
             let block = audio_signal.slice(ndarray::s![start..end]).to_owned();
-            let mdct_block = mdct(&block, block_size, Some(Window::Hann))?;
+            let mdct_block = mdct(&block, blocksize, Some(Window::Hann))?;
 
             // Simulate quantization (lossy compression)
             let quantized: Array1<f64> = mdct_block.mapv(|x| (x * 100.0).round() / 100.0);
@@ -148,7 +146,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     }
 
     // Reconstruct
-    let reconstructed_audio = mdct_overlap_add(&mdct_blocks, Some(Window::Hann), hop_size)?;
+    let reconstructed_audio = mdct_overlap_add(&mdct_blocks, Some(Window::Hann), hopsize)?;
 
     // Calculate SNR
     let signal_power: f64 = audio_signal.mapv(|x| x * x).sum() / signal_len as f64;
@@ -157,10 +155,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let noise_power: f64 = noise.mapv(|x| x * x).sum() / noise.len() as f64;
     let snr_db = 10.0 * (signal_power / noise_power).log10();
 
-    println!("   Audio signal length: {} samples", signal_len);
-    println!("   Block size: {} samples", block_size);
+    println!("   Audio signal length: {signal_len} samples");
+    println!("   Block size: {blocksize} samples");
     println!("   Number of MDCT blocks: {}", mdct_blocks.len());
-    println!("   SNR after quantization: {:.2} dB", snr_db);
+    println!("   SNR after quantization: {snr_db:.2} dB");
 
     Ok(())
 }

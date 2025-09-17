@@ -7,7 +7,7 @@ use crate::error::{Result, TextError};
 use crate::tokenize::{Tokenizer, WordTokenizer};
 use crate::vocabulary::Vocabulary;
 use ndarray::{Array1, Array2, Axis};
-use scirs2_core::parallel;
+use scirs2_core::parallel_ops;
 use std::collections::HashMap;
 
 /// Trait for text vectorizers
@@ -29,16 +29,19 @@ pub trait Vectorizer: Clone {
 }
 
 /// Count vectorizer that uses a bag-of-words representation
-#[derive(Clone)]
 pub struct CountVectorizer {
     tokenizer: Box<dyn Tokenizer + Send + Sync>,
     vocabulary: Vocabulary,
     binary: bool, // If true, all non-zero counts are set to 1
 }
 
-impl Clone for Box<dyn Tokenizer + Send + Sync> {
+impl Clone for CountVectorizer {
     fn clone(&self) -> Self {
-        self.clone_box()
+        Self {
+            tokenizer: self.tokenizer.clone_box(),
+            vocabulary: self.vocabulary.clone(),
+            binary: self.binary,
+        }
     }
 }
 
@@ -69,6 +72,25 @@ impl CountVectorizer {
     /// Get the vocabulary size
     pub fn vocabulary_size(&self) -> usize {
         self.vocabulary.len()
+    }
+
+    /// Get feature count for a specific document and feature index from a matrix
+    pub fn get_feature_count(
+        &self,
+        matrix: &Array2<f64>,
+        document_index: usize,
+        feature_index: usize,
+    ) -> Option<f64> {
+        if document_index < matrix.nrows() && feature_index < matrix.ncols() {
+            Some(matrix[[document_index, feature_index]])
+        } else {
+            None
+        }
+    }
+
+    /// Get vocabulary as HashMap for compatibility with visualization
+    pub fn vocabulary_map(&self) -> HashMap<String, usize> {
+        self.vocabulary.token_to_index().clone()
     }
 }
 
@@ -148,11 +170,11 @@ impl Vectorizer for CountVectorizer {
         let texts_owned: Vec<String> = texts.iter().map(|&s| s.to_string()).collect();
         let self_clone = self.clone();
 
-        let vectors = parallel::parallel_map(&texts_owned, move |text| {
+        let vectors = parallel_ops::parallel_map_result(&texts_owned, move |text| {
             self_clone.transform(text).map_err(|e| {
                 // Convert TextError to CoreError
                 scirs2_core::CoreError::ComputationError(scirs2_core::error::ErrorContext::new(
-                    format!("Text vectorization error: {}", e),
+                    format!("Text vectorization error: {e}"),
                 ))
             })
         })?;
@@ -175,17 +197,17 @@ impl Vectorizer for CountVectorizer {
 pub struct TfidfVectorizer {
     count_vectorizer: CountVectorizer,
     idf: Option<Array1<f64>>,
-    smooth_idf: bool,
+    smoothidf: bool,
     norm: Option<String>, // None, "l1", "l2"
 }
 
 impl TfidfVectorizer {
     /// Create a new TF-IDF vectorizer
-    pub fn new(binary: bool, smooth_idf: bool, norm: Option<String>) -> Self {
+    pub fn new(binary: bool, smoothidf: bool, norm: Option<String>) -> Self {
         Self {
             count_vectorizer: CountVectorizer::new(binary),
             idf: None,
-            smooth_idf,
+            smoothidf,
             norm,
         }
     }
@@ -194,13 +216,13 @@ impl TfidfVectorizer {
     pub fn with_tokenizer(
         tokenizer: Box<dyn Tokenizer + Send + Sync>,
         binary: bool,
-        smooth_idf: bool,
+        smoothidf: bool,
         norm: Option<String>,
     ) -> Self {
         Self {
             count_vectorizer: CountVectorizer::with_tokenizer(tokenizer, binary),
             idf: None,
-            smooth_idf,
+            smoothidf,
             norm,
         }
     }
@@ -215,23 +237,42 @@ impl TfidfVectorizer {
         self.count_vectorizer.vocabulary_size()
     }
 
+    /// Get TF-IDF score for a specific document and feature index from a matrix
+    pub fn get_feature_score(
+        &self,
+        matrix: &Array2<f64>,
+        document_index: usize,
+        feature_index: usize,
+    ) -> Option<f64> {
+        if document_index < matrix.nrows() && feature_index < matrix.ncols() {
+            Some(matrix[[document_index, feature_index]])
+        } else {
+            None
+        }
+    }
+
+    /// Get vocabulary as HashMap for compatibility with visualization
+    pub fn vocabulary_map(&self) -> HashMap<String, usize> {
+        self.count_vectorizer.vocabulary_map()
+    }
+
     /// Compute IDF values from document frequencies
-    fn compute_idf(&mut self, df: &Array1<f64>, n_documents: f64) -> Result<()> {
+    fn compute_idf(&mut self, df: &Array1<f64>, ndocuments: f64) -> Result<()> {
         let n_features = df.len();
 
         let mut idf = Array1::zeros(n_features);
 
         for (i, &df_i) in df.iter().enumerate() {
             if df_i > 0.0 {
-                if self.smooth_idf {
-                    // log((n_documents + 1) / (df + 1)) + 1
-                    idf[i] = ((n_documents + 1.0) / (df_i + 1.0)).ln() + 1.0;
+                if self.smoothidf {
+                    // log((ndocuments + 1) / (df + 1)) + 1
+                    idf[i] = ((ndocuments + 1.0) / (df_i + 1.0)).ln() + 1.0;
                 } else {
-                    // log(n_documents / df)
-                    idf[i] = (n_documents / df_i).ln();
+                    // log(ndocuments / df)
+                    idf[i] = (ndocuments / df_i).ln();
                 }
-            } else if self.smooth_idf {
-                idf[i] = ((n_documents + 1.0) / 1.0).ln() + 1.0;
+            } else if self.smoothidf {
+                idf[i] = ((ndocuments + 1.0) / 1.0).ln() + 1.0;
             } else {
                 // For features that aren't present in the corpus, set IDF to a high value
                 idf[i] = 0.0;
@@ -261,8 +302,7 @@ impl TfidfVectorizer {
                 }
                 _ => {
                     return Err(TextError::InvalidInput(format!(
-                        "Unknown normalization: {}",
-                        norm
+                        "Unknown normalization: {norm}"
                     )))
                 }
             }
@@ -289,7 +329,7 @@ impl Vectorizer for TfidfVectorizer {
         // First, fit the count vectorizer to build the vocabulary
         self.count_vectorizer.fit(texts)?;
 
-        let n_documents = texts.len() as f64;
+        let ndocuments = texts.len() as f64;
         let n_features = self.count_vectorizer.vocabulary_size();
 
         // Get document frequency for each term
@@ -313,7 +353,7 @@ impl Vectorizer for TfidfVectorizer {
         }
 
         // Compute IDF
-        self.compute_idf(&df, n_documents)?;
+        self.compute_idf(&df, ndocuments)?;
 
         Ok(())
     }
@@ -379,8 +419,7 @@ impl Vectorizer for TfidfVectorizer {
                     }
                     _ => {
                         return Err(TextError::InvalidInput(format!(
-                            "Unknown normalization: {}",
-                            norm
+                            "Unknown normalization: {norm}"
                         )))
                     }
                 }

@@ -1,18 +1,20 @@
-//! Hilbert transform implementation
-//!
-//! This module provides functions for computing the Hilbert transform
-//! and analytic signal of a real-valued signal.
-//!
-//! The Hilbert transform is useful for creating analytic signals,
-//! computing instantaneous frequency and amplitude, and other signal
-//! processing applications.
+// Hilbert transform implementation
+//
+// This module provides functions for computing the Hilbert transform
+// and analytic signal of a real-valued signal.
+//
+// The Hilbert transform is useful for creating analytic signals,
+// computing instantaneous frequency and amplitude, and other signal
+// processing applications.
 
 use crate::error::{SignalError, SignalResult};
 use num_complex::Complex64;
 use num_traits::{Float, NumCast};
 use rustfft;
+use std::f64::consts::PI;
 use std::fmt::Debug;
 
+#[allow(unused_imports)]
 /// Compute the Hilbert transform of a real-valued signal.
 ///
 /// The Hilbert transform is a linear operator that takes a function of real variable
@@ -36,9 +38,8 @@ use std::fmt::Debug;
 /// # Examples
 ///
 /// ```
-/// use scirs2_signal::hilbert;
+/// use scirs2_signal::hilbert::hilbert;
 /// use std::f64::consts::PI;
-/// use num_complex::Complex64;
 ///
 /// // Generate a cosine signal
 /// let n = 100;
@@ -65,13 +66,14 @@ use std::fmt::Debug;
 /// let avg_magnitude = magnitudes.iter().sum::<f64>() / magnitudes.len() as f64;
 ///
 /// // Average magnitude should be reasonably close to 1.0 (allowing for FFT edge effects)
-/// assert!((avg_magnitude - 1.0).abs() < 0.5);
+/// assert!(((avg_magnitude - 1.0) as f64).abs() < 0.5);
 /// ```
 ///
 /// # References
 ///
 /// * Marple, S. L. "Computing the Discrete-Time Analytic Signal via FFT."
 ///   IEEE Transactions on Signal Processing, Vol. 47, No. 9, 1999.
+#[allow(dead_code)]
 pub fn hilbert<T>(x: &[T]) -> SignalResult<Vec<Complex64>>
 where
     T: Float + NumCast + Debug,
@@ -180,7 +182,7 @@ where
 /// # Examples
 ///
 /// ```
-/// use scirs2_signal::envelope;
+/// use scirs2_signal::hilbert::envelope;
 /// use std::f64::consts::PI;
 ///
 /// // Generate a windowed sine wave
@@ -202,6 +204,7 @@ where
 /// assert!(envelope.iter().all(|&x| x >= 0.0));
 /// assert!(envelope.iter().any(|&x| x > 0.5));
 /// ```
+#[allow(dead_code)]
 pub fn envelope<T>(x: &[T]) -> SignalResult<Vec<f64>>
 where
     T: Float + NumCast + Debug,
@@ -235,7 +238,7 @@ where
 /// # Examples
 ///
 /// ```
-/// use scirs2_signal::instantaneous_frequency;
+/// use scirs2_signal::hilbert::instantaneous_frequency;
 /// use std::f64::consts::PI;
 ///
 /// // Generate a chirp signal (increasing frequency)
@@ -257,12 +260,11 @@ where
 /// assert!(inst_freq[n/2] > inst_freq[n/4]);
 /// assert!(inst_freq[3*n/4] > inst_freq[n/2]);
 /// ```
+#[allow(dead_code)]
 pub fn instantaneous_frequency<T>(x: &[T], fs: f64) -> SignalResult<Vec<f64>>
 where
     T: Float + NumCast + Debug,
 {
-    use std::f64::consts::PI;
-
     // Check input
     if x.is_empty() {
         return Err(SignalError::ValueError("Input array is empty".to_string()));
@@ -335,7 +337,7 @@ where
 /// # Examples
 ///
 /// ```
-/// use scirs2_signal::instantaneous_phase;
+/// use scirs2_signal::hilbert::instantaneous_phase;
 /// use std::f64::consts::PI;
 ///
 /// // Generate a sine wave
@@ -365,12 +367,11 @@ where
 /// let avg_diff = total_diff / count as f64;
 /// assert!((avg_diff - expected_phase_diff).abs() < 0.2); // Allow some error
 /// ```
+#[allow(dead_code)]
 pub fn instantaneous_phase<T>(x: &[T], unwrap: bool) -> SignalResult<Vec<f64>>
 where
     T: Float + NumCast + Debug,
 {
-    use std::f64::consts::PI;
-
     // Check input
     if x.is_empty() {
         return Err(SignalError::ValueError("Input array is empty".to_string()));
@@ -412,8 +413,6 @@ where
 mod tests {
     use super::*;
     use approx::assert_relative_eq;
-    use std::f64::consts::PI;
-
     #[test]
     fn test_hilbert_transform() {
         // Test on a cosine wave
@@ -533,6 +532,8 @@ mod tests {
 
     #[test]
     fn test_instantaneous_frequency() {
+        let a = vec![1.0, 2.0, 3.0, 4.0, 5.0];
+        let b = vec![0.5, 0.5];
         // Generate a chirp signal (increasing frequency)
         let n = 1000;
         let fs = 1000.0; // 1000 Hz sampling
@@ -573,6 +574,8 @@ mod tests {
 
     #[test]
     fn test_instantaneous_phase() {
+        let a = vec![1.0, 2.0, 3.0, 4.0, 5.0];
+        let b = vec![0.5, 0.5];
         // Generate a sinusoidal signal
         let n = 1000;
         let freq = 10.0; // Hz

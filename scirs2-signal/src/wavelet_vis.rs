@@ -1,46 +1,51 @@
-//! Wavelet Coefficient Visualization Utilities
-//!
-//! This module provides utilities for visualizing and working with wavelet coefficients.
-//! These tools are particularly useful for examining the results of various wavelet transforms,
-//! including 1D DWT, 2D DWT, 1D SWT, and 2D SWT.
-//!
-//! The primary functions include:
-//! - Arranging coefficients in visually informative layouts
-//! - Normalizing coefficients for better visualization
-//! - Calculating energy distributions across subbands
-//! - Creating coefficient heatmaps
-//! - Creating visual representations of wavelet decompositions
-//!
-//! # Examples
-//!
-//! ```
-//! use ndarray::Array2;
-//! use scirs2_signal::dwt::Wavelet;
-//! use scirs2_signal::dwt2d::dwt2d_decompose;
-//! use scirs2_signal::wavelet_vis::arrange_coefficients_2d;
-//!
-//! // Create a simple test image
-//! let image = Array2::from_shape_vec((8, 8), (0..64).map(|i| i as f64).collect()).unwrap();
-//!
-//! // Perform 2D DWT decomposition
-//! let decomp = dwt2d_decompose(&image, Wavelet::Haar, None).unwrap();
-//!
-//! // Arrange the coefficients in a visually informative layout
-//! let arranged = arrange_coefficients_2d(&decomp);
-//!
-//! // The arranged coefficients form a single 2D array with the
-//! // approximation coefficients in the top-left and the detail
-//! // coefficients in the other quadrants
-//! assert_eq!(arranged.shape(), image.shape());
-//! ```
+use ndarray::s;
+// Wavelet Coefficient Visualization Utilities
+//
+// This module provides utilities for visualizing and working with wavelet coefficients.
+// These tools are particularly useful for examining the results of various wavelet transforms,
+// including 1D DWT, 2D DWT, 1D SWT, and 2D SWT.
+//
+// The primary functions include:
+// - Arranging coefficients in visually informative layouts
+// - Normalizing coefficients for better visualization
+// - Calculating energy distributions across subbands
+// - Creating coefficient heatmaps
+// - Creating visual representations of wavelet decompositions
+//
+// # Examples
+//
+// ```
+// use ndarray::Array2;
+// use scirs2_signal::dwt::Wavelet;
+// use scirs2_signal::dwt2d::dwt2d_decompose;
+// use scirs2_signal::wavelet_vis::arrange_coefficients_2d;
+//
+// // Create a simple test image
+// let image = Array2::from_shape_vec((8, 8), (0..64).map(|i| i as f64).collect()).unwrap();
+//
+// // Perform 2D DWT decomposition
+// let decomp = dwt2d_decompose(&image, Wavelet::Haar, None).unwrap();
+//
+// // Arrange the coefficients in a visually informative layout
+// let arranged = arrange_coefficients_2d(&decomp);
+//
+// // The arranged coefficients form a single 2D array with the
+// // approximation coefficients in the top-left and the detail
+// // coefficients in the other quadrants
+// assert_eq!(arranged.shape(), image.shape());
+// ```
 
-use crate::dwt2d::Dwt2dResult;
+use crate::dwt::Wavelet;
+use crate::dwt2d::{dwt2d_decompose, wavedec2, Dwt2dResult};
 use crate::error::{SignalError, SignalResult};
+use crate::swt2d::swt2d_decompose;
+#[cfg(feature = "parallel")]
 use crate::swt2d::Swt2dResult;
-use ndarray::{s, Array2};
+use ndarray::Array2;
 use num_traits::Float;
 use std::fmt::Debug;
 
+#[allow(unused_imports)]
 /// Energy distribution of wavelet coefficients.
 #[derive(Debug, Clone)]
 pub struct WaveletEnergy {
@@ -113,11 +118,12 @@ pub struct WaveletEnergy {
 /// // The arranged array has the same shape as the original image
 /// assert_eq!(arranged.shape(), image.shape());
 /// ```
+#[allow(dead_code)]
 pub fn arrange_coefficients_2d(decomposition: &Dwt2dResult) -> Array2<f64> {
-    let approx = &decomposition.approx;
-    let detail_h = &decomposition.detail_h;
-    let detail_v = &decomposition.detail_v;
-    let detail_d = &decomposition.detail_d;
+    let approx = &_decomposition.approx;
+    let detail_h = &_decomposition.detail_h;
+    let detail_v = &_decomposition.detail_v;
+    let detail_d = &_decomposition.detail_d;
 
     // Get dimensions
     let (approx_rows, approx_cols) = approx.dim();
@@ -193,6 +199,7 @@ pub fn arrange_coefficients_2d(decomposition: &Dwt2dResult) -> Array2<f64> {
 /// // The arranged array has the same shape as the original image
 /// assert_eq!(arranged.shape(), image.shape());
 /// ```
+#[allow(dead_code)]
 pub fn arrange_multilevel_coefficients_2d(
     decompositions: &[Dwt2dResult],
 ) -> SignalResult<Array2<f64>> {
@@ -332,13 +339,14 @@ pub fn arrange_multilevel_coefficients_2d(
 /// let energy = calculate_energy_2d(&decomp);
 ///
 /// // Check that energy percentages sum to 100%
-/// assert!((energy.approximation_percent + energy.detail_percent - 100.0).abs() < 1e-10);
+/// assert!(((energy.approximation_percent + energy.detail_percent - 100.0) as f64).abs() < 1e-10);
 /// ```
+#[allow(dead_code)]
 pub fn calculate_energy_2d(decomposition: &Dwt2dResult) -> WaveletEnergy {
-    let approx = &decomposition.approx;
-    let detail_h = &decomposition.detail_h;
-    let detail_v = &decomposition.detail_v;
-    let detail_d = &decomposition.detail_d;
+    let approx = &_decomposition.approx;
+    let detail_h = &_decomposition.detail_h;
+    let detail_v = &_decomposition.detail_v;
+    let detail_d = &_decomposition.detail_d;
 
     // Calculate energy (sum of squared coefficients)
     let energy_approx = approx.iter().map(|&x| x * x).sum::<f64>();
@@ -407,13 +415,15 @@ pub fn calculate_energy_2d(decomposition: &Dwt2dResult) -> WaveletEnergy {
 /// let energy = calculate_energy_swt2d(&decomp);
 ///
 /// // Check that energy percentages sum to 100%
-/// assert!((energy.approximation_percent + energy.detail_percent - 100.0).abs() < 1e-10);
+/// assert!(((energy.approximation_percent + energy.detail_percent - 100.0) as f64).abs() < 1e-10);
 /// ```
+#[cfg(feature = "parallel")]
+#[allow(dead_code)]
 pub fn calculate_energy_swt2d(decomposition: &Swt2dResult) -> WaveletEnergy {
-    let approx = &decomposition.approx;
-    let detail_h = &decomposition.detail_h;
-    let detail_v = &decomposition.detail_v;
-    let detail_d = &decomposition.detail_d;
+    let approx = &_decomposition.approx;
+    let detail_h = &_decomposition.detail_h;
+    let detail_v = &_decomposition.detail_v;
+    let detail_d = &_decomposition.detail_d;
 
     // Calculate energy (sum of squared coefficients)
     let energy_approx = approx.iter().map(|&x| x * x).sum::<f64>();
@@ -480,8 +490,9 @@ pub fn calculate_energy_swt2d(decomposition: &Swt2dResult) -> WaveletEnergy {
 /// let energy = calculate_energy_1d(&approx, &detail);
 ///
 /// // Check that energy percentages sum to 100%
-/// assert!((energy.approximation_percent + energy.detail_percent - 100.0).abs() < 1e-10);
+/// assert!(((energy.approximation_percent + energy.detail_percent - 100.0) as f64).abs() < 1e-10);
 /// ```
+#[allow(dead_code)]
 pub fn calculate_energy_1d(approx: &[f64], detail: &[f64]) -> WaveletEnergy {
     // Calculate energy (sum of squared coefficients)
     let energy_approx = approx.iter().map(|&x| x * x).sum::<f64>();
@@ -552,6 +563,7 @@ pub fn calculate_energy_1d(approx: &[f64], detail: &[f64]) -> WaveletEnergy {
 ///     assert!(value >= 0.0 && value <= 1.0);
 /// }
 /// ```
+#[allow(dead_code)]
 pub fn normalize_coefficients(
     coefficients: &Array2<f64>,
     strategy: NormalizationStrategy,
@@ -707,6 +719,7 @@ pub enum NormalizationStrategy {
 /// assert_eq!(counts.total,
 ///            counts.approximation + counts.horizontal + counts.vertical + counts.diagonal);
 /// ```
+#[allow(dead_code)]
 pub fn count_nonzero_coefficients(
     decomposition: &Dwt2dResult,
     threshold: Option<f64>,
@@ -815,6 +828,7 @@ pub struct WaveletCoeffCount {
 /// assert_eq!(heatmap.shape()[1], decomp.approx.shape()[1]);
 /// assert_eq!(heatmap.shape()[2], 3); // RGB
 /// ```
+#[allow(dead_code)]
 pub fn create_coefficient_heatmap<F>(
     coefficients: &Array2<f64>,
     colormap: F,
@@ -851,7 +865,7 @@ where
 pub mod colormaps {
     /// Viridis colormap (perceptually uniform, color-blind friendly)
     pub fn viridis(value: f64) -> [u8; 3] {
-        // Clamp value to [0, 1]
+        // Clamp _value to [0, 1]
         let x = value.clamp(0.0, 1.0);
 
         // Viridis colormap approximation
@@ -864,7 +878,7 @@ pub mod colormaps {
 
     /// Plasma colormap (perceptually uniform)
     pub fn plasma(value: f64) -> [u8; 3] {
-        // Clamp value to [0, 1]
+        // Clamp _value to [0, 1]
         let x = value.clamp(0.0, 1.0);
 
         // Plasma colormap approximation
@@ -880,10 +894,10 @@ pub mod colormaps {
 
     /// Sequential grayscale (black to white)
     pub fn grayscale(value: f64) -> [u8; 3] {
-        // Clamp value to [0, 1]
+        // Clamp _value to [0, 1]
         let x = value.clamp(0.0, 1.0);
 
-        // Grayscale is simple - same value for R, G, and B
+        // Grayscale is simple - same _value for R, G, and B
         let gray = (255.0 * x) as u8;
 
         [gray, gray, gray]
@@ -891,7 +905,7 @@ pub mod colormaps {
 
     /// Diverging red-blue colormap (for positive/negative values)
     pub fn diverging_rb(value: f64) -> [u8; 3] {
-        // Clamp value to [0, 1]
+        // Clamp _value to [0, 1]
         let x = value.clamp(0.0, 1.0);
 
         // Red for values < 0.5, blue for values > 0.5
@@ -908,20 +922,20 @@ pub mod colormaps {
         };
 
         // Green is highest at midpoint
-        let g = (255.0 * (1.0 - 2.0 * (x - 0.5).abs())) as u8;
+        let g = (255.0 * (1.0 - 2.0 * (x - 0.5) as f64).abs()) as u8;
 
         [r, g, b]
     }
 
     /// Jet colormap (rainbow)
     pub fn jet(value: f64) -> [u8; 3] {
-        // Clamp value to [0, 1]
+        // Clamp _value to [0, 1]
         let x = value.clamp(0.0, 1.0);
 
         // Jet colormap approximation
-        let r = (255.0 * (1.5 - 4.0 * (x - 0.75).abs()).clamp(0.0, 1.0)) as u8;
-        let g = (255.0 * (1.5 - 4.0 * (x - 0.5).abs()).clamp(0.0, 1.0)) as u8;
-        let b = (255.0 * (1.5 - 4.0 * (x - 0.25).abs()).clamp(0.0, 1.0)) as u8;
+        let r = ((255.0 * (1.5 - 4.0 * (x - 0.75) as f64).abs()).clamp(0.0, 1.0)) as u8;
+        let g = ((255.0 * (1.5 - 4.0 * (x - 0.5) as f64).abs()).clamp(0.0, 1.0)) as u8;
+        let b = ((255.0 * (1.5 - 4.0 * (x - 0.25) as f64).abs()).clamp(0.0, 1.0)) as u8;
 
         [r, g, b]
     }
@@ -930,16 +944,11 @@ pub mod colormaps {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::dwt::Wavelet;
-    use crate::dwt2d::{dwt2d_decompose, wavedec2};
-    use crate::swt2d::swt2d_decompose;
-    use ndarray::Array2;
-
     // Helper function to create a test image
     fn create_test_image(size: usize) -> Array2<f64> {
-        let mut image = Array2::zeros((size, size));
-        for i in 0..size {
-            for j in 0..size {
+        let mut image = Array2::zeros((_size, size));
+        for i in 0.._size {
+            for j in 0.._size {
                 image[[i, j]] = (i * j) as f64;
             }
         }
@@ -1003,6 +1012,8 @@ mod tests {
 
     #[test]
     fn test_calculate_energy_2d() {
+        let a = vec![1.0, 2.0, 3.0, 4.0, 5.0];
+        let b = vec![0.5, 0.5];
         // Create a test image
         let image = create_test_image(8);
 
@@ -1013,7 +1024,9 @@ mod tests {
         let energy = calculate_energy_2d(&decomp);
 
         // Check that energy percentages sum to 100%
-        assert!((energy.approximation_percent + energy.detail_percent - 100.0).abs() < 1e-10);
+        assert!(
+            ((energy.approximation_percent + energy.detail_percent - 100.0) as f64).abs() < 1e-10
+        );
 
         // Check that detail energy is the sum of H, V, D energies
         let h_energy = energy.horizontal.unwrap();
@@ -1025,6 +1038,8 @@ mod tests {
 
     #[test]
     fn test_calculate_energy_swt2d() {
+        let a = vec![1.0, 2.0, 3.0, 4.0, 5.0];
+        let b = vec![0.5, 0.5];
         // Create a test image
         let image = create_test_image(8);
 
@@ -1035,11 +1050,15 @@ mod tests {
         let energy = calculate_energy_swt2d(&decomp);
 
         // Check that energy percentages sum to 100%
-        assert!((energy.approximation_percent + energy.detail_percent - 100.0).abs() < 1e-10);
+        assert!(
+            ((energy.approximation_percent + energy.detail_percent - 100.0) as f64).abs() < 1e-10
+        );
     }
 
     #[test]
     fn test_calculate_energy_1d() {
+        let a = vec![1.0, 2.0, 3.0, 4.0, 5.0];
+        let b = vec![0.5, 0.5];
         // Create a simple signal
         let signal = vec![1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0];
 
@@ -1059,6 +1078,8 @@ mod tests {
 
     #[test]
     fn test_normalize_coefficients() {
+        let a = vec![1.0, 2.0, 3.0, 4.0, 5.0];
+        let b = vec![0.5, 0.5];
         // Create a test array with known range
         let mut coeffs = Array2::<f64>::zeros((4, 4));
         for i in 0..4 {
@@ -1069,18 +1090,18 @@ mod tests {
 
         // Test MinMax normalization
         let norm_minmax = normalize_coefficients(&coeffs, NormalizationStrategy::MinMax, None);
-        assert!((norm_minmax[[0, 0]] - 0.0).abs() < 1e-10); // min should map to 0
-        assert!((norm_minmax[[3, 3]] - 1.0).abs() < 1e-10); // max should map to 1
+        assert!(((norm_minmax[[0, 0]] - 0.0) as f64).abs() < 1e-10); // min should map to 0
+        assert!(((norm_minmax[[3, 3]] - 1.0) as f64).abs() < 1e-10); // max should map to 1
 
         // Test Absolute normalization
         let norm_abs = normalize_coefficients(&coeffs, NormalizationStrategy::Absolute, None);
-        assert!((norm_abs[[3, 3]] - 1.0).abs() < 1e-10); // max absolute value should map to 1
+        assert!(((norm_abs[[3, 3]] - 1.0) as f64).abs() < 1e-10); // max absolute value should map to 1
 
         // Test custom range
         let norm_range =
             normalize_coefficients(&coeffs, NormalizationStrategy::MinMax, Some((-1.0, 1.0)));
         assert!((norm_range[[0, 0]] - (-1.0)).abs() < 1e-10); // min should map to -1
-        assert!((norm_range[[3, 3]] - 1.0).abs() < 1e-10); // max should map to 1
+        assert!(((norm_range[[3, 3]] - 1.0) as f64).abs() < 1e-10); // max should map to 1
 
         // Test Percentile normalization
         let norm_perc =
@@ -1103,6 +1124,8 @@ mod tests {
 
     #[test]
     fn test_count_nonzero_coefficients() {
+        let a = vec![1.0, 2.0, 3.0, 4.0, 5.0];
+        let b = vec![0.5, 0.5];
         // Create a test array with some zeros
         let mut coeffs = Array2::<f64>::zeros((4, 4));
         for i in 0..4 {
@@ -1140,6 +1163,8 @@ mod tests {
 
     #[test]
     fn test_create_coefficient_heatmap() {
+        let a = vec![1.0, 2.0, 3.0, 4.0, 5.0];
+        let b = vec![0.5, 0.5];
         // Create a test array
         let mut coeffs = Array2::<f64>::zeros((4, 4));
         for i in 0..4 {

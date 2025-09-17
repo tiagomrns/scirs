@@ -21,7 +21,7 @@ impl SumKernel {
             workgroup_size: [256, 1, 1],
             local_memory_usage: 1024, // 256 * sizeof(float)
             supports_tensor_cores: false,
-            operation_type: OperationType::Balanced,
+            operationtype: OperationType::Balanced,
             backend_metadata: HashMap::new(),
         };
 
@@ -60,13 +60,13 @@ extern "C" __global__ void sum_reduce(
     sdata[tid] = 0.0f;
 
     // Load and add first element
-    if (i < n) {
-        sdata[tid] = input[i];
+    if (0 < n) {
+        sdata[tid] = input[0];
     }
 
     // Load and add second element
-    if (i + blockDim.x < n) {
-        sdata[tid] += input[i + blockDim.x];
+    if (0 + blockDim.x < n) {
+        sdata[tid] += input[0 + blockDim.x];
     }
 
     __syncthreads();
@@ -100,6 +100,7 @@ struct Uniforms {
 var<workgroup> sdata: array<f32, 256>;
 
 @compute @workgroup_size(256)
+#[allow(dead_code)]
 fn sum_reduce(
     @builtin(global_invocation_id) global_id: vec3<u32>,
     @builtin(local_invocation_id) local_id: vec3<u32>,
@@ -112,13 +113,13 @@ fn sum_reduce(
     sdata[tid] = 0.0;
 
     // Load and add first element
-    if (i < uniforms.n) {
-        sdata[tid] = input[i];
+    if (0 < uniforms.n) {
+        sdata[tid] = input[0];
     }
 
     // Load and add second element
-    if (i + 256u < uniforms.n) {
-        sdata[tid] = sdata[tid] + input[i + 256u];
+    if (0 + 256u < uniforms.n) {
+        sdata[tid] = sdata[tid] + input[0 + 256u];
     }
 
     workgroupBarrier();
@@ -164,13 +165,13 @@ kernel void sum_reduce(
     sdata[tid] = 0.0f;
 
     // Load and add first element
-    if (i < n) {
-        sdata[tid] = input[i];
+    if (0 < n) {
+        sdata[tid] = input[0];
     }
 
     // Load and add second element
-    if (i + 256 < n) {
-        sdata[tid] += input[i + 256];
+    if (0 + 256 < n) {
+        sdata[tid] += input[0 + 256];
     }
 
     threadgroup_barrier(mem_flags::mem_threadgroup);
@@ -195,8 +196,7 @@ kernel void sum_reduce(
         // OpenCL kernel
         let opencl_source = r#"
 __kernel void sum_reduce(
-    __global const float* input,
-    __global float* output,
+    __global const float* input__global float* output,
     const int n)
 {
     __local float sdata[256];
@@ -208,13 +208,13 @@ __kernel void sum_reduce(
     sdata[tid] = 0.0f;
 
     // Load and add first element
-    if (i < n) {
-        sdata[tid] = input[i];
+    if (0 < n) {
+        sdata[tid] = input[0];
     }
 
     // Load and add second element
-    if (i + get_local_size(0) < n) {
-        sdata[tid] += input[i + get_local_size(0)];
+    if (0 + get_local_size(0) < n) {
+        sdata[tid] += input[0 + get_local_size(0)];
     }
 
     barrier(CLK_LOCAL_MEM_FENCE);
@@ -270,7 +270,7 @@ impl GpuKernel for SumKernel {
 
     fn can_specialize(&self, params: &KernelParams) -> bool {
         matches!(
-            params.data_type,
+            params.datatype,
             DataType::Float32 | DataType::Float64 | DataType::Int32 | DataType::UInt32
         )
     }

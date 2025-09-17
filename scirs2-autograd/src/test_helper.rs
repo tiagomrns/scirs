@@ -6,6 +6,7 @@ use crate::{ndarray_ext, Context, Float};
 
 /// Checks the validity of `gradients` with finite difference trick.
 /// For this test only, `variables` must be *shared* variables.
+#[allow(dead_code)]
 pub fn check_theoretical_grads<'g, 't, 'v, F: Float, A>(
     objective: A,
     gradients: &'t [A],
@@ -141,8 +142,7 @@ pub fn check_theoretical_grads<'g, 't, 'v, F: Float, A>(
             let diff = (g_num - g_th).abs();
             if diff > tol {
                 panic!(
-                    "Gradient checking failed with too large error: numerical={}, theoretical={}",
-                    g_num, g_th
+                    "Gradient checking failed with too large error: numerical={g_num}, theoretical={g_th}"
                 );
             }
         }
@@ -150,6 +150,7 @@ pub fn check_theoretical_grads<'g, 't, 'v, F: Float, A>(
 }
 
 /// Helper function to add gradient checking to a neural network.
+#[allow(dead_code)]
 pub fn gradient_check<F: Float>(
     model: &Tensor<F>,
     inputs: &[Tensor<F>],
@@ -165,14 +166,16 @@ pub fn gradient_check<F: Float>(
 }
 
 /// Prints a summary of the model architecture to help with debugging.
+#[allow(dead_code)]
 pub fn print_model_summary<F: Float>(model: &Tensor<F>) {
     let _ = model;
     // Implementation placeholder
-    // In a real implementation, this would print a summary of the model architecture
+    // In a real implementation, this would print a summary of the _model architecture
     println!("Model summary: [placeholder]");
 }
 
 /// Helper function to profile memory usage of a model.
+#[allow(dead_code)]
 pub fn profile_memory_usage<F: Float>(model: &Tensor<F>, inputs: &[Tensor<F>]) {
     let _ = (model, inputs);
     // Implementation placeholder
@@ -181,6 +184,7 @@ pub fn profile_memory_usage<F: Float>(model: &Tensor<F>, inputs: &[Tensor<F>]) {
 }
 
 /// Helper function to measure computation time.
+#[allow(dead_code)]
 pub fn measure_computation_time<'a, F: Float, G>(
     model: &'a Tensor<'a, F>,
     inputs: &'a [Tensor<'a, F>],

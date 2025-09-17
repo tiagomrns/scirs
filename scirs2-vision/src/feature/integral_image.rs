@@ -30,6 +30,7 @@ use ndarray::Array2;
 /// let integral = compute_integral_image(&img).unwrap();
 /// assert_eq!(integral.dim(), (10, 10));
 /// ```
+#[allow(dead_code)]
 pub fn compute_integral_image(img: &DynamicImage) -> Result<Array2<u64>> {
     let gray = img.to_luma8();
     let (width, height) = gray.dimensions();
@@ -74,6 +75,7 @@ pub fn compute_integral_image(img: &DynamicImage) -> Result<Array2<u64>> {
 /// # Returns
 ///
 /// * Result containing squared integral image as Array2<u64>
+#[allow(dead_code)]
 pub fn compute_squared_integral_image(img: &DynamicImage) -> Result<Array2<u64>> {
     let gray = img.to_luma8();
     let (width, height) = gray.dimensions();
@@ -117,6 +119,7 @@ pub fn compute_squared_integral_image(img: &DynamicImage) -> Result<Array2<u64>>
 /// # Returns
 ///
 /// * Result containing tilted integral image as Array2<u64>
+#[allow(dead_code)]
 pub fn compute_tilted_integral_image(img: &DynamicImage) -> Result<Array2<u64>> {
     let gray = img.to_luma8();
     let (width, height) = gray.dimensions();
@@ -162,6 +165,7 @@ pub fn compute_tilted_integral_image(img: &DynamicImage) -> Result<Array2<u64>> 
 /// # Returns
 ///
 /// * Sum of pixel values in the rectangle
+#[allow(dead_code)]
 pub fn compute_rect_sum(integral: &Array2<u64>, x1: usize, y1: usize, x2: usize, y2: usize) -> u64 {
     let (height, width) = integral.dim();
 
@@ -205,6 +209,7 @@ pub fn compute_rect_sum(integral: &Array2<u64>, x1: usize, y1: usize, x2: usize,
 /// # Returns
 ///
 /// * Tuple of (mean, variance)
+#[allow(dead_code)]
 pub fn compute_rect_mean_variance(
     integral: &Array2<u64>,
     squared_integral: &Array2<u64>,
@@ -237,6 +242,7 @@ pub fn compute_rect_mean_variance(
 /// # Returns
 ///
 /// * Result containing tuple of (red, green, blue) integral images
+#[allow(dead_code)]
 pub fn compute_color_integral_image(
     img: &DynamicImage,
 ) -> Result<(Array2<u64>, Array2<u64>, Array2<u64>)> {
@@ -284,6 +290,7 @@ pub fn compute_color_integral_image(
 /// Convert integral image to visualization image
 ///
 /// Normalizes integral image values for visualization
+#[allow(dead_code)]
 pub fn integral_to_image(integral: &Array2<u64>) -> GrayImage {
     let (height, width) = integral.dim();
     let mut img = GrayImage::new(width as u32, height as u32);

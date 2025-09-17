@@ -97,6 +97,7 @@ enum GraphType {
 /// - Edge declarations: `node1 -- node2;` or `node1 -- node2 [attributes];`
 /// - Comments: `// comment` or `/* comment */`
 /// - Attributes in square brackets: `[weight=1.5, label="edge"]`
+#[allow(dead_code)]
 pub fn read_dot_format<N, E, P>(path: P, weighted: bool) -> Result<Graph<N, E>>
 where
     N: Node + std::fmt::Debug + FromStr + Clone,
@@ -108,10 +109,13 @@ where
     let mut graph = Graph::new();
     let mut state = ParseState::Header;
     let mut graph_type = None;
+    let mut in_multiline_comment = false;
 
     for (line_num, line_result) in reader.lines().enumerate() {
         let line = line_result?;
-        let line = remove_comments(&line).trim().to_string();
+        let (processed_line, comment_continues) = remove_comments(&line, in_multiline_comment);
+        in_multiline_comment = comment_continues;
+        let line = processed_line.trim().to_string();
 
         if line.is_empty() {
             continue;
@@ -166,6 +170,7 @@ where
 ///
 /// * `Ok(DiGraph)` - The directed graph read from the file
 /// * `Err(GraphError)` - If there was an error reading or parsing the file
+#[allow(dead_code)]
 pub fn read_dot_format_digraph<N, E, P>(path: P, weighted: bool) -> Result<DiGraph<N, E>>
 where
     N: Node + std::fmt::Debug + FromStr + Clone,
@@ -177,10 +182,13 @@ where
     let mut graph = DiGraph::new();
     let mut state = ParseState::Header;
     let mut graph_type = None;
+    let mut in_multiline_comment = false;
 
     for (line_num, line_result) in reader.lines().enumerate() {
         let line = line_result?;
-        let line = remove_comments(&line).trim().to_string();
+        let (processed_line, comment_continues) = remove_comments(&line, in_multiline_comment);
+        in_multiline_comment = comment_continues;
+        let line = processed_line.trim().to_string();
 
         if line.is_empty() {
             continue;
@@ -236,6 +244,7 @@ where
 ///
 /// * `Ok(())` - If the graph was written successfully
 /// * `Err(GraphError)` - If there was an error writing the file
+#[allow(dead_code)]
 pub fn write_dot_format<N, E, Ix, P>(graph: &Graph<N, E, Ix>, path: P, weighted: bool) -> Result<()>
 where
     N: Node + std::fmt::Debug + std::fmt::Display + Clone,
@@ -255,7 +264,7 @@ where
 
     // Write nodes
     for node in graph.nodes() {
-        writeln!(file, "    {};", node)?;
+        writeln!(file, "    {node};")?;
     }
 
     writeln!(file)?;
@@ -290,6 +299,7 @@ where
 ///
 /// * `Ok(())` - If the graph was written successfully
 /// * `Err(GraphError)` - If there was an error writing the file
+#[allow(dead_code)]
 pub fn write_dot_format_digraph<N, E, Ix, P>(
     graph: &DiGraph<N, E, Ix>,
     path: P,
@@ -313,7 +323,7 @@ where
 
     // Write nodes
     for node in graph.nodes() {
-        writeln!(file, "    {};", node)?;
+        writeln!(file, "    {node};")?;
     }
 
     writeln!(file)?;
@@ -338,28 +348,48 @@ where
 
 // Helper functions
 
-/// Remove comments from a line
-fn remove_comments(line: &str) -> String {
-    // Remove // comments
-    if let Some(pos) = line.find("//") {
-        return line[..pos].to_string();
-    }
+/// Remove comments from a line, handling multi-line /* */ comments
+/// Returns (processed_line, is_still_in_multiline_comment)
+#[allow(dead_code)]
+fn remove_comments(line: &str, in_multiline_comment: bool) -> (String, bool) {
+    let mut result = String::new();
+    let mut chars = line.chars().peekable();
+    let mut in_comment = in_multiline_comment;
 
-    // TODO: Handle /* */ comments properly (they can span multiple lines)
-    if let Some(start) = line.find("/*") {
-        if let Some(end) = line.find("*/") {
-            if end > start {
-                return format!("{}{}", &line[..start], &line[end + 2..]);
+    while let Some(ch) = chars.next() {
+        if in_comment {
+            // We're inside a multi-line comment, look for */
+            if ch == '*' && chars.peek() == Some(&'/') {
+                chars.next(); // consume '/'
+                in_comment = false;
+            }
+            // Skip characters inside comment
+        } else {
+            // Not in a comment, check for comment start
+            if ch == '/' {
+                if let Some(&next_ch) = chars.peek() {
+                    if next_ch == '/' {
+                        // Single-line comment, skip rest of line
+                        break;
+                    } else if next_ch == '*' {
+                        // Multi-line comment start
+                        chars.next(); // consume '*'
+                        in_comment = true;
+                        continue;
+                    }
+                }
+            }
+            if !in_comment {
+                result.push(ch);
             }
         }
-        // If /* found but no matching */, remove everything after /*
-        return line[..start].to_string();
     }
 
-    line.to_string()
+    (result, in_comment)
 }
 
 /// Parse the header line to determine graph type
+#[allow(dead_code)]
 fn parse_header(line: &str) -> Result<Option<GraphType>> {
     let line = line.trim();
 
@@ -376,6 +406,7 @@ fn parse_header(line: &str) -> Result<Option<GraphType>> {
 }
 
 /// Parse a graph element (node or edge) for undirected graphs
+#[allow(dead_code)]
 fn parse_graph_element<N, E>(
     line: &str,
     graph_type: &GraphType,
@@ -406,6 +437,7 @@ where
 }
 
 /// Parse a graph element (node or edge) for directed graphs
+#[allow(dead_code)]
 fn parse_digraph_element<N, E>(
     line: &str,
     graph_type: &GraphType,
@@ -436,6 +468,7 @@ where
 }
 
 /// Parse an edge declaration for undirected graphs
+#[allow(dead_code)]
 fn parse_edge<N, E>(
     line: &str,
     edge_separator: &str,
@@ -451,8 +484,7 @@ where
     let parts: Vec<&str> = line.split(edge_separator).collect();
     if parts.len() != 2 {
         return Err(GraphError::Other(format!(
-            "Invalid edge format on line {}: {}",
-            line_num, line
+            "Invalid edge format on line {line_num}: {line}"
         )));
     }
 
@@ -462,8 +494,7 @@ where
     // Parse source node
     let source_node = N::from_str(source_part).map_err(|_| {
         GraphError::Other(format!(
-            "Failed to parse source node '{}' on line {}",
-            source_part, line_num
+            "Failed to parse source node '{source_part}' on line {line_num}"
         ))
     })?;
 
@@ -480,8 +511,7 @@ where
 
     let target_node = N::from_str(target_str).map_err(|_| {
         GraphError::Other(format!(
-            "Failed to parse target node '{}' on line {}",
-            target_str, line_num
+            "Failed to parse target node '{target_str}' on line {line_num}"
         ))
     })?;
 
@@ -499,6 +529,7 @@ where
 }
 
 /// Parse an edge declaration for directed graphs
+#[allow(dead_code)]
 fn parse_digraph_edge<N, E>(
     line: &str,
     edge_separator: &str,
@@ -514,8 +545,7 @@ where
     let parts: Vec<&str> = line.split(edge_separator).collect();
     if parts.len() != 2 {
         return Err(GraphError::Other(format!(
-            "Invalid edge format on line {}: {}",
-            line_num, line
+            "Invalid edge format on line {line_num}: {line}"
         )));
     }
 
@@ -525,8 +555,7 @@ where
     // Parse source node
     let source_node = N::from_str(source_part).map_err(|_| {
         GraphError::Other(format!(
-            "Failed to parse source node '{}' on line {}",
-            source_part, line_num
+            "Failed to parse source node '{source_part}' on line {line_num}"
         ))
     })?;
 
@@ -543,8 +572,7 @@ where
 
     let target_node = N::from_str(target_str).map_err(|_| {
         GraphError::Other(format!(
-            "Failed to parse target node '{}' on line {}",
-            target_str, line_num
+            "Failed to parse target node '{target_str}' on line {line_num}"
         ))
     })?;
 
@@ -562,6 +590,7 @@ where
 }
 
 /// Parse a node declaration (currently just validates the syntax)
+#[allow(dead_code)]
 fn parse_node(_line: &str, _line_num: usize) -> Result<()> {
     // For now, we don't need to explicitly add nodes since they'll be added
     // when edges are added. This function validates node syntax.
@@ -569,6 +598,7 @@ fn parse_node(_line: &str, _line_num: usize) -> Result<()> {
 }
 
 /// Parse weight from DOT attributes
+#[allow(dead_code)]
 fn parse_weight_from_attributes<E>(attributes: &str) -> Result<E>
 where
     E: EdgeWeight + std::marker::Copy + std::fmt::Debug + std::default::Default + FromStr,
@@ -585,7 +615,7 @@ where
         let weight_str = &weight_part[..weight_end];
 
         return E::from_str(weight_str)
-            .map_err(|_| GraphError::Other(format!("Failed to parse weight: {}", weight_str)));
+            .map_err(|_| GraphError::Other(format!("Failed to parse weight: {weight_str}")));
     }
 
     Ok(E::default())
@@ -675,9 +705,18 @@ mod tests {
 
     #[test]
     fn test_remove_comments() {
-        assert_eq!(remove_comments("1 -- 2; // this is a comment"), "1 -- 2; ");
-        assert_eq!(remove_comments("1 -- 2; /* comment */"), "1 -- 2; ");
-        assert_eq!(remove_comments("no comments here"), "no comments here");
+        assert_eq!(
+            remove_comments("1 -- 2; // this is a comment", false),
+            ("1 -- 2; ".to_string(), false)
+        );
+        assert_eq!(
+            remove_comments("1 -- 2; /* comment */", false),
+            ("1 -- 2; ".to_string(), false)
+        );
+        assert_eq!(
+            remove_comments("no comments here", false),
+            ("no comments here".to_string(), false)
+        );
     }
 
     #[test]

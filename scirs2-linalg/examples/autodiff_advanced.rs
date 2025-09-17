@@ -4,6 +4,7 @@
 //! exponential with gradient tracking.
 
 #[cfg(feature = "autograd")]
+#[allow(dead_code)]
 fn main() {
     println!("Advanced matrix operations with automatic differentiation");
     println!("=======================================================");
@@ -19,6 +20,7 @@ fn main() {
 }
 
 #[cfg(not(feature = "autograd"))]
+#[allow(dead_code)]
 fn main() {
     println!("This example requires the 'autograd' feature.");
     println!("Run with: cargo run --example autodiff_advanced --features autograd");

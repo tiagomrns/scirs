@@ -56,7 +56,7 @@ impl BoundingBox2D {
             )));
         }
 
-        // Check that min <= max for all dimensions
+        // Check that _min <= max for all dimensions
         for i in 0..2 {
             if min[i] > max[i] {
                 return Err(SpatialError::ValueError(format!(
@@ -85,7 +85,7 @@ impl BoundingBox2D {
     /// # Errors
     ///
     /// Returns an error if the points array is empty or if points don't have 2 dimensions
-    pub fn from_points(points: &ArrayView2<f64>) -> SpatialResult<Self> {
+    pub fn from_points(points: &ArrayView2<'_, f64>) -> SpatialResult<Self> {
         if points.is_empty() {
             return Err(SpatialError::ValueError(
                 "Cannot create bounding box from empty point set".into(),
@@ -371,7 +371,7 @@ impl Quadtree {
     /// # Errors
     ///
     /// Returns an error if the points array is empty or if points don't have 2 dimensions
-    pub fn new(points: &ArrayView2<f64>) -> SpatialResult<Self> {
+    pub fn new(points: &ArrayView2<'_, f64>) -> SpatialResult<Self> {
         if points.is_empty() {
             return Err(SpatialError::ValueError(
                 "Cannot create quadtree from empty point set".into(),
@@ -853,19 +853,19 @@ impl Quadtree {
     ///
     /// The maximum depth of the tree
     pub fn max_depth(&self) -> usize {
-        self.compute_max_depth(self.root.as_ref())
+        Quadtree::compute_max_depth(self.root.as_ref())
     }
 
     /// Helper method to compute the maximum depth
     #[allow(clippy::only_used_in_recursion)]
-    fn compute_max_depth(&self, node: Option<&QuadtreeNode>) -> usize {
+    fn compute_max_depth(node: Option<&QuadtreeNode>) -> usize {
         match node {
             None => 0,
             Some(QuadtreeNode::Leaf { .. }) => 1,
             Some(QuadtreeNode::Internal { children, .. }) => {
                 let mut max_child_depth = 0;
                 for child in children.iter().flatten() {
-                    let child_depth = self.compute_max_depth(Some(child));
+                    let child_depth = Self::compute_max_depth(Some(child));
                     max_child_depth = max_child_depth.max(child_depth);
                 }
                 1 + max_child_depth
@@ -884,6 +884,7 @@ impl Quadtree {
 /// # Returns
 ///
 /// The squared Euclidean distance
+#[allow(dead_code)]
 fn squared_distance(p1: &ArrayView1<f64>, p2: &ArrayView1<f64>) -> f64 {
     let mut sum_sq = 0.0;
     for i in 0..p1.len().min(p2.len()) {
@@ -1047,25 +1048,25 @@ mod tests {
         // Test radius search with small radius
         let query = array![0.0, 0.0];
         let radius = 0.5;
-        let (indices, _distances) = quadtree.query_radius(&query.view(), radius).unwrap();
+        let (indices, distances) = quadtree.query_radius(&query.view(), radius).unwrap();
 
         assert_eq!(indices.len(), 1);
         assert_eq!(indices[0], 0); // Only origin is within 0.5 units
 
         // Test with larger radius
         let radius = 1.5;
-        let (indices, _distances) = quadtree.query_radius(&query.view(), radius).unwrap();
+        let (indices, distances) = quadtree.query_radius(&query.view(), radius).unwrap();
 
         assert!(indices.len() >= 4); // Should find at least origin, right, up, center
 
         // Check all distances are within radius
-        for &dist in &_distances {
+        for &dist in &distances {
             assert!(dist <= radius * radius);
         }
 
         // Test with radius covering all points
         let radius = 4.0;
-        let (indices, _) = quadtree.query_radius(&query.view(), radius).unwrap();
+        let (indices, distances) = quadtree.query_radius(&query.view(), radius).unwrap();
 
         assert_eq!(indices.len(), 6); // Should find all points
     }

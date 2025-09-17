@@ -1,6 +1,8 @@
 use ndarray::{array, s, Array2};
 use scirs2_stats::distributions::multivariate;
+use statrs::statistics::Statistics;
 
+#[allow(dead_code)]
 fn main() {
     println!("Wishart Distribution Example");
     println!("===========================");
@@ -152,6 +154,7 @@ fn main() {
     print_matrix(&true_cov);
 }
 
+#[allow(dead_code)]
 fn print_matrix(matrix: &Array2<f64>) {
     for i in 0..matrix.shape()[0] {
         print!("[");
@@ -165,6 +168,7 @@ fn print_matrix(matrix: &Array2<f64>) {
     }
 }
 
+#[allow(dead_code)]
 fn compute_mean(samples: &[Array2<f64>]) -> Array2<f64> {
     let n_samples = samples.len();
     if n_samples == 0 {

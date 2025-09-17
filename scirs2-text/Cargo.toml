@@ -1,17 +1,20 @@
 [package]
 name = "scirs2-text"
 version.workspace = true
-edition = "2021"
-authors = ["SciRS2 Team"]
-license = "MIT OR Apache-2.0"
-description = "Text processing module for SciRS2"
-repository = "https://github.com/cool-japan/scirs"
+edition.workspace = true
+authors.workspace = true
+description = "Text processing module for SciRS2 (scirs2-text)"
+license.workspace = true
+repository.workspace = true
 keywords = ["text", "nlp", "scientific", "ai", "machine-learning"]
 categories = ["science", "mathematics", "algorithms"]
 
+[lints]
+workspace = true
+
 [dependencies]
 # Core dependencies
-scirs2-core = { workspace = true, features = ["parallel"] }
+scirs2-core = { workspace = true, features = ["parallel", "simd"] }
 # Temporarily removed for publishing
 # scirs2-linalg = { workspace = true }
 ndarray = { workspace = true }
@@ -19,6 +22,7 @@ num-traits = { workspace = true }
 num-complex = { workspace = true }
 thiserror = { workspace = true }
 rand = { workspace = true }
+statrs = { workspace = true }
 approx = { workspace = true }
 
 # Text processing specific dependencies
@@ -29,13 +33,17 @@ lazy_static = { workspace = true }
 tempfile = { workspace = true }
 # rayon = { workspace = true }  # Now use scirs2-core parallel abstractions
 num_cpus = { workspace = true }
+memmap2 = { workspace = true }
+chrono = { workspace = true }
 
 # Feature-gated dependencies
 tokenizers = { workspace = true, optional = true }
 serde = { workspace = true, optional = true }
 serde_json = { workspace = true, optional = true }
+wide = { workspace = true, optional = true }
 
 [features]
 default = []
 serde-support = ["dep:serde", "dep:serde_json"]
 tokenization = ["dep:tokenizers"]
+simd = ["dep:wide", "scirs2-core/simd"]

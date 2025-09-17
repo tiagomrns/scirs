@@ -9,6 +9,7 @@ use scirs2_linalg::sparse_dense::{
     sparse_from_ndarray, sparse_transpose,
 };
 
+#[allow(dead_code)]
 fn main() {
     println!("Sparse-Dense Matrix Operations Example");
     println!("======================================\n");

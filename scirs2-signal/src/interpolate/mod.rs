@@ -1,56 +1,60 @@
-//! Signal interpolation and missing data imputation
-//!
-//! This module provides a comprehensive suite of interpolation algorithms for filling
-//! missing values in signals, including linear, spline, spectral, and advanced statistical methods.
-//!
-//! # Module Organization
-//!
-//! The interpolation functionality is organized into focused submodules:
-//!
-//! - [`core`] - Core configuration types and dispatch functions
-//! - [`basic`] - Simple interpolation methods (linear, nearest neighbor)
-//! - [`spline`] - Spline-based methods (cubic spline, Hermite)
-//! - [`advanced`] - Statistical methods (Gaussian process, Kriging, RBF, minimum energy)
-//! - [`spectral`] - Frequency-domain methods (sinc, spectral, auto-selection)
-//!
-//! # Quick Start
-//!
-//! For simple interpolation tasks, use the main dispatch function:
-//!
-//! ```rust
-//! use ndarray::Array1;
-//! use scirs2_signal::interpolate::{interpolate, InterpolationMethod, InterpolationConfig};
-//!
-//! let signal = Array1::from_vec(vec![1.0, f64::NAN, 3.0, f64::NAN, 5.0]);
-//! let config = InterpolationConfig::default();
-//! let result = interpolate(&signal, InterpolationMethod::Linear, &config).unwrap();
-//! ```
-//!
-//! For automatic method selection:
-//!
-//! ```rust
-//! use ndarray::Array1;
-//! use scirs2_signal::interpolate::{auto_interpolate, InterpolationConfig};
-//!
-//! let signal = Array1::from_vec(vec![1.0, f64::NAN, 3.0, f64::NAN, 5.0]);
-//! let config = InterpolationConfig::default();
-//! let (result, method) = auto_interpolate(&signal, &config, false).unwrap();
-//! ```
-//!
-//! # Algorithm Selection Guide
-//!
-//! | Method | Best For | Pros | Cons |
-//! |--------|----------|------|------|
-//! | Linear | Simple, fast interpolation | Fast, stable | Not smooth |
-//! | Cubic Spline | Smooth curves | Very smooth | Can overshoot |
-//! | PCHIP | Shape-preserving | Preserves monotonicity | More complex |
-//! | Gaussian Process | Statistical modeling | Uncertainty quantification | Computationally intensive |
-//! | Kriging | Spatial data | Optimal for spatial correlation | Requires variogram model |
-//! | RBF | Scattered data | Flexible basis functions | Parameter tuning needed |
-//! | Sinc | Bandlimited signals | Optimal for bandlimited | Requires knowledge of bandwidth |
-//! | Spectral | Periodic signals | Good for frequency content | Iterative process |
+// Signal interpolation and missing data imputation
+//
+// This module provides a comprehensive suite of interpolation algorithms for filling
+// missing values in signals, including linear, spline, spectral, and advanced statistical methods.
+//
+// # Module Organization
+//
+// The interpolation functionality is organized into focused submodules:
+//
+// - [`core`] - Core configuration types and dispatch functions
+// - [`basic`] - Simple interpolation methods (linear, nearest neighbor)
+// - [`spline`] - Spline-based methods (cubic spline, Hermite)
+// - [`advanced`] - Statistical methods (Gaussian process, Kriging, RBF, minimum energy)
+// - [`spectral`] - Frequency-domain methods (sinc, spectral, auto-selection)
+//
+// # Quick Start
+//
+// For simple interpolation tasks, use the main dispatch function:
+//
+// ```rust
+// use ndarray::Array1;
+// use scirs2_signal::interpolate::{interpolate, InterpolationMethod, InterpolationConfig};
+//
+// let signal = Array1::from_vec(vec![1.0, f64::NAN, 3.0, f64::NAN, 5.0]);
+// let config = InterpolationConfig::default();
+// let result = interpolate(&signal, InterpolationMethod::Linear, &config).unwrap();
+// ```
+//
+// For automatic method selection:
+//
+// ```rust
+// use ndarray::Array1;
+// use scirs2_signal::interpolate::{auto_interpolate, InterpolationConfig};
+//
+// let signal = Array1::from_vec(vec![1.0, f64::NAN, 3.0, f64::NAN, 5.0]);
+// let config = InterpolationConfig::default();
+// let (result, method) = auto_interpolate(&signal, &config, false).unwrap();
+// ```
+//
+// # Algorithm Selection Guide
+//
+// | Method | Best For | Pros | Cons |
+// |--------|----------|------|------|
+// | Linear | Simple, fast interpolation | Fast, stable | Not smooth |
+// | Cubic Spline | Smooth curves | Very smooth | Can overshoot |
+// | PCHIP | Shape-preserving | Preserves monotonicity | More complex |
+// | Gaussian Process | Statistical modeling | Uncertainty quantification | Computationally intensive |
+// | Kriging | Spatial data | Optimal for spatial correlation | Requires variogram model |
+// | RBF | Scattered data | Flexible basis functions | Parameter tuning needed |
+// | Sinc | Bandlimited signals | Optimal for bandlimited | Requires knowledge of bandwidth |
+// | Spectral | Periodic signals | Good for frequency content | Iterative process |
+
+use crate::error::SignalResult;
+use ndarray::{Array1, Array2};
 
 // Re-export all submodules
+#[allow(unused_imports)]
 pub mod advanced;
 pub mod basic;
 pub mod core;
@@ -117,8 +121,9 @@ pub use spectral::polynomial::{
 /// let result = linear(&signal).unwrap();
 /// assert_eq!(result[1], 2.0); // Linear interpolation between 1.0 and 3.0
 /// ```
+#[allow(dead_code)]
 pub fn linear(signal: &ndarray::Array1<f64>) -> crate::error::SignalResult<ndarray::Array1<f64>> {
-    linear_interpolate(signal)
+    linear_interpolate(_signal)
 }
 
 /// Convenience function for cubic spline interpolation
@@ -143,6 +148,7 @@ pub fn linear(signal: &ndarray::Array1<f64>) -> crate::error::SignalResult<ndarr
 /// let result = cubic_spline(&signal).unwrap();
 /// // Result contains smooth interpolated values
 /// ```
+#[allow(dead_code)]
 pub fn cubic_spline(
     signal: &ndarray::Array1<f64>,
 ) -> crate::error::SignalResult<ndarray::Array1<f64>> {
@@ -172,6 +178,7 @@ pub fn cubic_spline(
 /// let (result, method) = auto(&signal).unwrap();
 /// println!("Selected method: {:?}", method);
 /// ```
+#[allow(dead_code)]
 pub fn auto(
     signal: &ndarray::Array1<f64>,
 ) -> crate::error::SignalResult<(ndarray::Array1<f64>, InterpolationMethod)> {
@@ -219,7 +226,7 @@ impl InterpolationBuilder {
     }
 
     /// Sets the maximum number of iterations for iterative methods
-    pub fn max_iterations(mut self, max_iterations: usize) -> Self {
+    pub fn max_iterations(mut self, maxiterations: usize) -> Self {
         self.config.max_iterations = max_iterations;
         self
     }
@@ -237,7 +244,7 @@ impl InterpolationBuilder {
     }
 
     /// Sets the window size for local methods
-    pub fn window_size(mut self, window_size: usize) -> Self {
+    pub fn window_size(mut self, windowsize: usize) -> Self {
         self.config.window_size = window_size;
         self
     }
@@ -357,8 +364,6 @@ impl InterpolationMethods {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use ndarray::Array1;
-
     #[test]
     fn test_convenience_functions() {
         let signal = Array1::from_vec(vec![1.0, f64::NAN, 3.0]);
@@ -369,7 +374,7 @@ mod tests {
         let result2 = cubic_spline(&signal).unwrap();
         assert!(!result2[1].is_nan());
 
-        let (result3, _method) = auto(&signal).unwrap();
+        let (result3_method) = auto(&signal).unwrap();
         assert!(!result3[1].is_nan());
     }
 
@@ -427,7 +432,7 @@ mod tests {
         let result2 = linear_interpolate(&signal).unwrap();
         let result3 = cubic_spline_interpolate(&signal, &config).unwrap();
         let result4 = sinc_interpolate(&signal, 0.4).unwrap();
-        let (result5, _) = auto_interpolate(&signal, &config, false).unwrap();
+        let (result5_) = auto_interpolate(&signal, &config, false).unwrap();
 
         // All results should have no NaN values
         assert!(result1.iter().all(|&x| !x.is_nan()));

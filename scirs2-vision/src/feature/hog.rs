@@ -79,6 +79,7 @@ pub struct HogDescriptor {
 /// # Returns
 ///
 /// * Result containing HOG descriptor
+#[allow(dead_code)]
 pub fn compute_hog(img: &DynamicImage, config: &HogConfig) -> Result<HogDescriptor> {
     // Convert to grayscale
     let array = image_to_array(img)?;
@@ -142,6 +143,7 @@ pub fn compute_hog(img: &DynamicImage, config: &HogConfig) -> Result<HogDescript
 }
 
 /// Compute image gradients
+#[allow(dead_code)]
 fn compute_gradients(image: &Array2<f32>) -> Result<(Array2<f32>, Array2<f32>)> {
     let (height, width) = image.dim();
     let mut magnitudes = Array2::zeros((height, width));
@@ -162,6 +164,7 @@ fn compute_gradients(image: &Array2<f32>) -> Result<(Array2<f32>, Array2<f32>)> 
 }
 
 /// Compute histogram for a single cell
+#[allow(dead_code)]
 fn compute_cell_histogram(
     magnitudes: &Array2<f32>,
     orientations: &Array2<f32>,
@@ -181,10 +184,10 @@ fn compute_cell_histogram(
     let angle_range = if unsigned_gradients { PI } else { 2.0 * PI };
     let bin_width = angle_range / num_bins as f32;
 
-    for y in y_start..y_end {
-        for x in x_start..x_end {
-            let magnitude = magnitudes[[y, x]];
-            let mut orientation = orientations[[y, x]];
+    for _y in y_start..y_end {
+        for _x in x_start..x_end {
+            let magnitude = magnitudes[[_y, _x]];
+            let mut orientation = orientations[[_y, _x]];
 
             // Convert to unsigned gradient if needed
             if unsigned_gradients && orientation < 0.0 {
@@ -203,7 +206,7 @@ fn compute_cell_histogram(
             let bin_idx = ((orientation / bin_width).floor() as usize) % num_bins;
             let bin_center = (bin_idx as f32 + 0.5) * bin_width;
 
-            // Bilinear interpolation between adjacent bins
+            // Bilinear interpolation between adjacent _bins
             let next_bin = (bin_idx + 1) % num_bins;
             let angle_diff = (orientation - bin_center).abs();
 
@@ -219,6 +222,7 @@ fn compute_cell_histogram(
 }
 
 /// Compute features for a single block
+#[allow(dead_code)]
 fn compute_block_features(
     cell_histograms: &Array3<f32>,
     block_y: usize,
@@ -236,7 +240,7 @@ fn compute_block_features(
         vec![1.0; block_size * block_size]
     };
 
-    // Concatenate cell histograms within block
+    // Concatenate cell _histograms within block
     for dy in 0..block_size {
         for dx in 0..block_size {
             let cell_y = block_y + dy;
@@ -260,17 +264,18 @@ fn compute_block_features(
 }
 
 /// Compute Gaussian weights for block cells
-fn compute_gaussian_weights(block_size: usize) -> Vec<f32> {
-    let mut weights = vec![0.0; block_size * block_size];
-    let sigma = block_size as f32 * 0.5;
-    let center = (block_size - 1) as f32 * 0.5;
+#[allow(dead_code)]
+fn compute_gaussian_weights(_blocksize: usize) -> Vec<f32> {
+    let mut weights = vec![0.0; _blocksize * _blocksize];
+    let sigma = _blocksize as f32 * 0.5;
+    let center = (_blocksize - 1) as f32 * 0.5;
 
-    for y in 0..block_size {
-        for x in 0..block_size {
+    for y in 0.._blocksize {
+        for x in 0.._blocksize {
             let dy = y as f32 - center;
             let dx = x as f32 - center;
             let dist_sq = dx * dx + dy * dy;
-            weights[y * block_size + x] = (-dist_sq / (2.0 * sigma * sigma)).exp();
+            weights[y * _blocksize + x] = (-dist_sq / (2.0 * sigma * sigma)).exp();
         }
     }
 
@@ -284,6 +289,7 @@ fn compute_gaussian_weights(block_size: usize) -> Vec<f32> {
 }
 
 /// Normalize block features
+#[allow(dead_code)]
 fn normalize_block_features(features: &mut [f32], method: HogNormalization) {
     match method {
         HogNormalization::L2 => {
@@ -343,6 +349,7 @@ fn normalize_block_features(features: &mut [f32], method: HogNormalization) {
 }
 
 /// Visualize HOG features
+#[allow(dead_code)]
 pub fn visualize_hog(
     descriptor: &HogDescriptor,
     cell_size: usize,
@@ -364,7 +371,7 @@ pub fn visualize_hog(
                 .iter()
                 .enumerate()
                 .max_by(|(_, a), (_, b)| a.partial_cmp(b).unwrap())
-                .map(|(idx, _)| idx)
+                .map(|(idx_, _)| idx_)
                 .unwrap_or(0);
 
             let angle = (max_idx as f32 + 0.5) * PI / bin_count as f32;

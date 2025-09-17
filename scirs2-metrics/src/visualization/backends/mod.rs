@@ -100,6 +100,7 @@ pub trait PlottingBackend {
 ///
 /// let backend = backends::default_backend();
 /// ```
+#[allow(dead_code)]
 pub fn default_backend() -> impl PlottingBackend {
     #[cfg(feature = "plotly_backend")]
     {
@@ -118,29 +119,26 @@ pub fn default_backend() -> impl PlottingBackend {
 
         impl PlottingBackend for NoopBackend {
             fn save_to_file(
-                &self,
-                _data: &VisualizationData,
+                self_data: &VisualizationData,
                 _metadata: &VisualizationMetadata,
-                _options: &VisualizationOptions,
+                options: &VisualizationOptions,
                 _path: impl AsRef<Path>,
             ) -> Result<(), Box<dyn Error>> {
                 Err("No visualization backend available. Enable either 'plotly_backend' or 'plotters_backend' feature.".into())
             }
 
             fn render_svg(
-                &self,
-                _data: &VisualizationData,
+                self_data: &VisualizationData,
                 _metadata: &VisualizationMetadata,
-                _options: &VisualizationOptions,
+                options: &VisualizationOptions,
             ) -> Result<Vec<u8>, Box<dyn Error>> {
                 Err("No visualization backend available. Enable either 'plotly_backend' or 'plotters_backend' feature.".into())
             }
 
             fn render_png(
-                &self,
-                _data: &VisualizationData,
+                self_data: &VisualizationData,
                 _metadata: &VisualizationMetadata,
-                _options: &VisualizationOptions,
+                options: &VisualizationOptions,
             ) -> Result<Vec<u8>, Box<dyn Error>> {
                 Err("No visualization backend available. Enable either 'plotly_backend' or 'plotters_backend' feature.".into())
             }
@@ -163,6 +161,7 @@ pub fn default_backend() -> impl PlottingBackend {
 /// let backend = backends::default_interactive_backend();
 /// ```
 #[cfg(feature = "plotly_backend")]
+#[allow(dead_code)]
 pub fn default_interactive_backend() -> PlotlyInteractiveBackend {
     PlotlyInteractiveBackend::new()
 }
@@ -180,6 +179,7 @@ pub fn default_interactive_backend() -> PlotlyInteractiveBackend {
 /// # Returns
 ///
 /// * `VisualizationData` - The enhanced visualization data
+#[allow(dead_code)]
 pub fn enhance_visualization(
     data: &VisualizationData,
     metadata: &VisualizationMetadata,

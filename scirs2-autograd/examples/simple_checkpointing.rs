@@ -6,6 +6,7 @@ use std::time::Instant;
 // It creates a small linear chain of operations and shows how checkpointing
 // affects memory usage and computation time
 
+#[allow(dead_code)]
 fn main() {
     println!("Simple Gradient Checkpointing Example");
     println!("===================================");
@@ -15,7 +16,7 @@ fn main() {
     );
 
     // Create a computation graph with a chain of operations
-    ag::run::<f32, _, _>(|ctx| {
+    ag::run(|ctx| {
         // Start tracking memory with the checkpoint profiler
         CheckpointProfiler::start_tracking();
 

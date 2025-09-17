@@ -12,6 +12,7 @@ use scirs2_core::gpu::kernels::{DataType, KernelParams};
 #[cfg(feature = "gpu")]
 use scirs2_core::gpu::{GpuBackend, GpuContext};
 
+#[allow(dead_code)]
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("=== SciRS2 GPU Foundation Example ===\n");
 
@@ -25,6 +26,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 }
 
 #[cfg(feature = "gpu")]
+#[allow(dead_code)]
 fn run_gpu_foundation_demo() -> Result<(), Box<dyn std::error::Error>> {
     println!("1. GPU Backend Detection");
     println!("------------------------");

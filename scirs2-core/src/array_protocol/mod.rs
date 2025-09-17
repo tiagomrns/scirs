@@ -80,9 +80,9 @@ pub trait ArrayProtocol: Any + Send + Sync {
     fn array_function(
         &self,
         func: &ArrayFunction,
-        _types: &[TypeId],
-        _args: &[Box<dyn Any>],
-        _kwargs: &HashMap<String, Box<dyn Any>>,
+        types: &[TypeId],
+        args: &[Box<dyn Any>],
+        kwargs: &HashMap<String, Box<dyn Any>>,
     ) -> Result<Box<dyn Any>, NotImplemented>;
 
     /// Get the array as Any for downcasting
@@ -175,7 +175,7 @@ impl ArrayFunction {
         Self {
             name,
             // Default implementation that returns NotImplemented
-            implementation: Arc::new(|_, _| {
+            implementation: Arc::new(|_args, _kwargs| {
                 Err(CoreError::NotImplementedError(ErrorContext::new(
                     "Function not implemented".to_string(),
                 )))
@@ -254,10 +254,10 @@ impl ArrayFunctionRegistry {
     #[must_use]
     pub fn get_cached_dispatch(
         &self,
-        func_name: &'static str,
+        funcname: &'static str,
         types: &[TypeId],
     ) -> Option<&DispatchCacheEntry> {
-        let key = (func_name, types.to_vec());
+        let key = (funcname, types.to_vec());
         if let Some(entry) = self.dispatch_cache.get(&key) {
             // Check if cache entry is still valid (TTL check)
             if entry.timestamp.elapsed() < self.cache_ttl {
@@ -268,9 +268,9 @@ impl ArrayFunctionRegistry {
     }
 
     /// Cache dispatch result for future optimization
-    pub fn cache_dispatch_result(
+    pub fn cache_dispatch(
         &mut self,
-        func_name: &'static str,
+        funcname: &'static str,
         types: Vec<TypeId>,
         impl_type: TypeId,
     ) {
@@ -279,7 +279,7 @@ impl ArrayFunctionRegistry {
             self.cleanup_cache();
         }
 
-        let key = (func_name, types.clone());
+        let key = (funcname, types.clone());
         let entry = DispatchCacheEntry {
             type_signature: types,
             preferred_impl_type: impl_type,
@@ -290,8 +290,8 @@ impl ArrayFunctionRegistry {
     }
 
     /// Update cache hit count for an entry
-    pub fn update_cache_hit(&mut self, func_name: &'static str, types: &[TypeId]) {
-        let key = (func_name, types.to_vec());
+    pub fn update_cache_hit(&mut self, funcname: &'static str, types: &[TypeId]) {
+        let key = (funcname, types.to_vec());
         if let Some(entry) = self.dispatch_cache.get_mut(&key) {
             entry.hit_count += 1;
         }
@@ -343,6 +343,7 @@ impl ArrayFunctionRegistry {
 ///
 /// This is similar to `NumPy`'s `_get_implementing_args` function.
 /// Optimized version with pre-allocated capacity and fast-path for common cases.
+#[allow(dead_code)]
 pub fn get_implementing_args(args: &[Box<dyn Any>]) -> Vec<(TypeId, &dyn ArrayProtocol)> {
     if args.is_empty() {
         return Vec::new();
@@ -358,13 +359,13 @@ pub fn get_implementing_args(args: &[Box<dyn Any>]) -> Vec<(TypeId, &dyn ArrayPr
         }
     }
 
-    // Sort implementing args by TypeId for deterministic dispatch order
+    // Sort implementing _args by TypeId for deterministic dispatch order
     // This ensures consistent dispatch behavior across calls
-    implementing_args.sort_by_key(|&(type_id, _)| {
+    implementing_args.sort_by_key(|&_type_id_| {
         // Use TypeId hash for deterministic ordering
         use std::hash::{Hash, Hasher};
         let mut hasher = std::collections::hash_map::DefaultHasher::new();
-        type_id.hash(&mut hasher);
+        std::any::TypeId::of::<i32>().hash(&mut hasher);
         hasher.finish()
     });
 
@@ -381,6 +382,7 @@ pub fn get_implementing_args(args: &[Box<dyn Any>]) -> Vec<(TypeId, &dyn ArrayPr
 /// cannot be dispatched to any of the array protocol implementations.
 ///
 /// Optimized version with caching and fast-path optimizations.
+#[allow(dead_code)]
 pub fn array_function_dispatch(
     func: &ArrayFunction,
     args: &[Box<dyn Any>],
@@ -482,7 +484,8 @@ where
         if let Ok(mut registry) = registry.write() {
             registry.register(func);
         } else {
-            panic!("Failed to acquire write lock on ArrayFunctionRegistry");
+            eprintln!("Warning: Failed to acquire write lock on ArrayFunctionRegistry, skipping function registration");
+            // Continue without registration - this may result in reduced functionality but avoids crash
         }
 
         self.function
@@ -558,11 +561,15 @@ pub trait JITFunction: Send + Sync {
 /// A factory for creating JIT functions for specific array implementations.
 pub trait JITFunctionFactory: Send + Sync {
     /// Create a new JIT function for the given expression and array type.
-    fn create(&self, expression: &str, array_type_id: TypeId) -> CoreResult<Box<dyn JITFunction>>;
+    fn create_jit_function(
+        &self,
+        expression: &str,
+        array_typeid: TypeId,
+    ) -> CoreResult<Box<dyn JITFunction>>;
 
     /// Check if this factory supports the given array type.
     #[must_use]
-    fn supports_array_type(&self, array_type_id: TypeId) -> bool;
+    fn supports_array_type(&self, array_typeid: TypeId) -> bool;
 }
 
 /// Registry of JIT function factories.
@@ -600,9 +607,12 @@ impl JITFactoryRegistry {
 
     /// Get a JIT function factory that supports the given array type.
     #[must_use]
-    pub fn get_for_array_type(&self, array_type_id: TypeId) -> Option<&dyn JITFunctionFactory> {
+    pub fn get_factory_for_array_type(
+        &self,
+        array_typeid: TypeId,
+    ) -> Option<&dyn JITFunctionFactory> {
         for factory in &self.factories {
-            if factory.supports_array_type(array_type_id) {
+            if factory.supports_array_type(array_typeid) {
                 return Some(&**factory);
             }
         }
@@ -614,7 +624,7 @@ impl JITFactoryRegistry {
 #[derive(Debug, Clone)]
 pub struct NdarrayWrapper<T, D: ndarray::Dimension> {
     array: ndarray::Array<T, D>,
-    _phantom: PhantomData<(T, D)>,
+    phantom: PhantomData<(T, D)>,
 }
 
 impl<T, D> NdarrayWrapper<T, D>
@@ -627,7 +637,7 @@ where
     pub fn new(array: ndarray::Array<T, D>) -> Self {
         Self {
             array,
-            _phantom: PhantomData,
+            phantom: PhantomData,
         }
     }
 
@@ -644,8 +654,8 @@ where
     }
 
     /// Update the underlying array with a new one.
-    pub fn update_array(&mut self, new_array: ndarray::Array<T, D>) {
-        self.array = new_array;
+    pub fn array_2(&mut self, newarray: ndarray::Array<T, D>) {
+        self.array = newarray;
     }
 }
 
@@ -711,7 +721,7 @@ where
 
                     // Handle the case for f64 matrices
                     if TypeId::of::<T>() == TypeId::of::<f64>() {
-                        // Cast to concrete types we know how to handle
+                        // Cast to concrete _types we know how to handle
                         let a_f64 = unsafe {
                             &*(self as *const _ as *const NdarrayWrapper<f64, ndarray::Ix2>)
                         };
@@ -720,10 +730,10 @@ where
                         };
 
                         // Get dimensions
-                        let a_shape = a_f64.as_array().shape();
-                        let b_shape = b_f64.as_array().shape();
+                        let ashape = a_f64.as_array().shape();
+                        let bshape = b_f64.as_array().shape();
 
-                        if a_shape.len() != 2 || b_shape.len() != 2 || a_shape[1] != b_shape[0] {
+                        if ashape.len() != 2 || bshape.len() != 2 || ashape[1] != bshape[0] {
                             return Err(NotImplemented);
                         }
 
@@ -734,7 +744,7 @@ where
                     }
                     // Handle the case for f32 matrices
                     else if TypeId::of::<T>() == TypeId::of::<f32>() {
-                        // Cast to concrete types we know how to handle
+                        // Cast to concrete _types we know how to handle
                         let a_f32 = unsafe {
                             &*(self as *const _ as *const NdarrayWrapper<f32, ndarray::Ix2>)
                         };
@@ -743,10 +753,10 @@ where
                         };
 
                         // Get dimensions
-                        let a_shape = a_f32.as_array().shape();
-                        let b_shape = b_f32.as_array().shape();
+                        let ashape = a_f32.as_array().shape();
+                        let bshape = b_f32.as_array().shape();
 
-                        if a_shape.len() != 2 || b_shape.len() != 2 || a_shape[1] != b_shape[0] {
+                        if ashape.len() != 2 || bshape.len() != 2 || ashape[1] != bshape[0] {
                             return Err(NotImplemented);
                         }
 
@@ -925,7 +935,7 @@ impl<T: Clone + Send + Sync + 'static> DistributedArray for MockDistributedArray
         Ok(Box::new(self.clone()) as Box<dyn ArrayProtocol>)
     }
 
-    fn scatter(&self, _chunks: usize) -> CoreResult<Box<dyn DistributedArray>> {
+    fn scatter(&self, _numchunks: usize) -> CoreResult<Box<dyn DistributedArray>> {
         // In a real implementation, this would scatter data to multiple nodes
         // For now, we just return self boxed as DistributedArray
         Ok(Box::new(self.clone()) as Box<dyn DistributedArray>)
@@ -1060,7 +1070,8 @@ where
         if let Ok(mut registry) = ArrayFunctionRegistry::global().write() {
             registry.register(array_func);
         } else {
-            panic!("Failed to acquire write lock on ArrayFunctionRegistry");
+            eprintln!("Warning: Failed to acquire write lock on ArrayFunctionRegistry during array protocol building, skipping function registration");
+            // Continue without registration - this may result in reduced functionality but avoids crash
         }
 
         self.func
@@ -1082,7 +1093,7 @@ where
 /// // Define and register a sum function
 /// fn register_sum_function() {
 ///     let implementation = Arc::new(
-///         move |args: &[Box<dyn Any>], _kwargs: &HashMap<String, Box<dyn Any>>| {
+///         move |args: &[Box<dyn Any>], kwargs: &HashMap<String, Box<dyn Any>>| {
 ///             if let Some(array) = args.get(0)
 ///                 .and_then(|arg| arg.downcast_ref::<ndarray::Array<f64, ndarray::Ix2>>()) {
 ///                 let sum = array.sum();
@@ -1110,7 +1121,7 @@ where
 /// ```
 #[macro_export]
 macro_rules! array_function_def {
-    (fn $name:ident $(<$($gen:ident),*>)? ($($arg:ident : $arg_ty:ty),*) -> $ret:ty $body:block, $func_name:expr) => {
+    (fn $name:ident $(<$($gen:ident),*>)? ($($arg:ident : $arg_ty:ty),*) -> $ret:ty $body:block, $funcname:expr) => {
         {
             // Define the function
             fn $name $(<$($gen),*>)? ($($arg : $arg_ty),*) -> $ret $body
@@ -1154,6 +1165,7 @@ pub use self::ml_ops::{
 /// This function initializes the array protocol system by registering the
 /// default JIT function factories and other components. It should be called
 /// before using any of the array protocol features.
+#[allow(dead_code)]
 pub fn init() {
     // Initialize the JIT manager
     let mut jit_manager = JITManager::global().write().unwrap();
@@ -1203,11 +1215,11 @@ pub mod traits {
         ) -> Vec<Box<dyn DifferentiableArray>>;
 
         /// Set whether to record operations for automatic differentiation.
-        fn set_requires_grad(&mut self, requires_grad: bool);
+        fn set_requiresgrad(&mut self, requiresgrad: bool);
 
         /// Check if this array requires gradient computation.
         #[must_use]
-        fn requires_grad(&self) -> bool;
+        fn requiresgrad(&self) -> bool;
 
         /// Get the gradient of this array.
         #[must_use]
@@ -1384,24 +1396,25 @@ mod examples {
         let wrapped = NdarrayWrapper::new(array);
 
         // Create a JIT-enabled array
-        let jit_array: JITEnabledArray<f64, _> = JITEnabledArray::new(wrapped);
+        let jitarray: JITEnabledArray<f64, NdarrayWrapper<f64, ndarray::Ix2>> =
+            JITEnabledArray::new(wrapped);
 
         // Check if JIT is supported
-        assert!(jit_array.supports_jit());
+        assert!(jitarray.supports_jit());
 
         // Compile a function
         let expression = "x + y";
-        let jit_function = jit_array.compile(expression).unwrap();
+        let jit_function = jitarray.compile(expression).unwrap();
 
         // Check the function's properties
         assert_eq!(jit_function.source(), expression);
 
         // Get JIT information
-        let info = jit_array.jit_info();
+        let info = jitarray.jit_info();
         assert_eq!(info.get("supports_jit").unwrap(), "true");
 
         // Test box_clone for JIT-enabled array
-        let jit_box: Box<dyn ArrayProtocol> = Box::new(jit_array);
+        let jit_box: Box<dyn ArrayProtocol> = Box::new(jitarray);
         let jit_clone = jit_box.clone();
 
         // Check the cloned JIT array
@@ -1448,10 +1461,10 @@ mod examples {
     #[test]
     fn example_array_function() {
         // Create a simple array function (without using macros)
-        let func_name = "scirs2::example::sum";
+        let funcname = "scirs2::example::sum";
 
         // Create an ArrayFunction manually
-        let implementation = Arc::new(move |args: &[Box<dyn Any>], _kwargs: &HashMap<String, Box<dyn Any>>| {
+        let implementation = Arc::new(move |args: &[Box<dyn Any>], kwargs: &HashMap<String, Box<dyn Any>>| {
             if let Some(array) = args.get(0)
                 .and_then(|arg| arg.downcast_ref::<Array2<f64>>()) {
                 let sum = array.sum();
@@ -1464,7 +1477,7 @@ mod examples {
         });
 
         let func = ArrayFunction {
-            name: func_name,
+            name: funcname,
             implementation,
         };
 
@@ -1478,8 +1491,8 @@ mod examples {
         // Verify the function was registered
         {
             let reg = registry.read().unwrap();
-            let registered_func = reg.get(func_name).unwrap();
-            assert_eq!(registered_func.name, func_name);
+            let registered_func = reg.get(funcname).unwrap();
+            assert_eq!(registered_func.name, funcname);
         }
     }
     */
@@ -1551,7 +1564,7 @@ mod examples {
             fn array_function(
                 &self,
                 func: &ArrayFunction,
-                _types: &[std::any::TypeId],
+                _types: &[TypeId],
                 _args: &[Box<dyn Any>],
                 _kwargs: &HashMap<String, Box<dyn Any>>,
             ) -> Result<Box<dyn Any>, NotImplemented> {

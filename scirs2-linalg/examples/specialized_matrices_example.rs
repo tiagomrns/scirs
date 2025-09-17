@@ -13,6 +13,7 @@ use scirs2_linalg::{
     LinalgResult,
 };
 
+#[allow(dead_code)]
 fn main() -> LinalgResult<()> {
     println!("=== Specialized Matrices Example ===");
 
@@ -29,7 +30,7 @@ fn main() -> LinalgResult<()> {
     // Print the matrix
     println!("Tridiagonal matrix:");
     let dense = tri.to_dense()?;
-    print_matrix(&dense);
+    printmatrix(&dense);
 
     // Perform matrix-vector multiplication
     let x = array![1.0, 2.0, 3.0, 4.0, 5.0];
@@ -85,7 +86,7 @@ fn main() -> LinalgResult<()> {
     // Print the matrix
     println!("Banded matrix:");
     let dense = band.to_dense()?;
-    print_matrix(&dense);
+    printmatrix(&dense);
 
     // Perform matrix-vector multiplication
     let x = array![1.0, 2.0, 3.0, 4.0, 5.0];
@@ -105,12 +106,12 @@ fn main() -> LinalgResult<()> {
         [0.0, 0.0, -1.0, 2.0]
     ];
 
-    let sym = SymmetricMatrix::from_matrix(&sym_data.view())?;
+    let sym = SymmetricMatrix::frommatrix(&sym_data.view())?;
 
     // Print the matrix
     println!("Symmetric matrix:");
     let dense = sym.to_dense()?;
-    print_matrix(&dense);
+    printmatrix(&dense);
 
     // Perform matrix-vector multiplication
     let x = array![1.0, 2.0, 3.0, 4.0];
@@ -122,7 +123,7 @@ fn main() -> LinalgResult<()> {
     // Cholesky decomposition
     println!("\nCholesky decomposition:");
     let chol = sym.cholesky()?;
-    print_matrix(&chol);
+    printmatrix(&chol);
 
     // Solve a symmetric system
     let b = array![4.0, 0.0, 0.0, 4.0];
@@ -142,7 +143,8 @@ fn main() -> LinalgResult<()> {
 }
 
 // Helper function to print a matrix
-fn print_matrix<T: std::fmt::Display>(matrix: &Array2<T>) {
+#[allow(dead_code)]
+fn printmatrix<T: std::fmt::Display>(matrix: &Array2<T>) {
     for i in 0..matrix.nrows() {
         print!("[");
         for j in 0..matrix.ncols() {

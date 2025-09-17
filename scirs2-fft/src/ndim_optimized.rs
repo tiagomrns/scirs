@@ -14,6 +14,7 @@ use crate::fft::fft;
 use crate::rfft::rfft;
 
 /// Optimized N-dimensional FFT with better memory access patterns
+#[allow(dead_code)]
 pub fn fftn_optimized<T, D>(
     x: &ArrayView<T, D>,
     _shape: Option<Vec<usize>>,
@@ -60,6 +61,7 @@ where
 }
 
 /// Apply FFT along a specific axis
+#[allow(dead_code)]
 fn apply_fft_along_axis<D>(data: &mut Array<Complex64, D>, axis: usize) -> FFTResult<()>
 where
     D: Dimension,
@@ -71,7 +73,7 @@ where
 
     // Process slices along the specified axis
     for mut lane in data.lanes_mut(Axis(axis)) {
-        // Copy data to buffer
+        // Copy _data to buffer
         buffer
             .iter_mut()
             .zip(lane.iter())
@@ -90,6 +92,7 @@ where
 }
 
 /// Optimize axis order based on memory layout and cache efficiency
+#[allow(dead_code)]
 fn optimize_axis_order(axes: &[usize], shape: &[usize]) -> Vec<usize> {
     let mut axis_info: Vec<(usize, usize, usize)> = axes
         .iter()
@@ -108,12 +111,12 @@ fn optimize_axis_order(axes: &[usize], shape: &[usize]) -> Vec<usize> {
 }
 
 /// Validate that axes are within bounds
+#[allow(dead_code)]
 fn validate_axes(axes: &[usize], ndim: usize) -> FFTResult<()> {
     for &axis in axes {
         if axis >= ndim {
             return Err(FFTError::ValueError(format!(
-                "Axis {} is out of bounds for array with {} dimensions",
-                axis, ndim
+                "Axis {axis} is out of bounds for array with {ndim} dimensions"
             )));
         }
     }
@@ -122,10 +125,10 @@ fn validate_axes(axes: &[usize], ndim: usize) -> FFTResult<()> {
 
 /// Determine whether to use parallel processing
 #[allow(dead_code)]
-fn should_parallelize(data_size: usize, axis_len: usize) -> bool {
+fn should_parallelize(_data_size: usize, axislen: usize) -> bool {
     // Use parallel processing for large data sizes
     const MIN_PARALLEL_SIZE: usize = 10000;
-    data_size > MIN_PARALLEL_SIZE && axis_len > 64
+    _data_size > MIN_PARALLEL_SIZE && axislen > 64
 }
 
 /// Apply FFT along axis with optional parallelization
@@ -156,6 +159,7 @@ where
 }
 
 /// Memory-efficient FFT for very large arrays
+#[allow(dead_code)]
 pub fn fftn_memory_efficient<T, D>(
     x: &ArrayView<T, D>,
     axes: Option<Vec<usize>>,
@@ -193,7 +197,7 @@ where
 
     // Process each axis with chunking if needed
     for &axis in &axes_to_transform {
-        let axis_len = result.shape()[axis];
+        let axis_len: usize = result.shape()[axis];
 
         if axis_len > 1048576 {
             // For very large axes, use chunked processing
@@ -207,6 +211,7 @@ where
 }
 
 /// Apply FFT along axis using chunked processing for large dimensions
+#[allow(dead_code)]
 fn apply_fft_chunked<D>(data: &mut Array<Complex64, D>, axis: usize) -> FFTResult<()>
 where
     D: Dimension,
@@ -249,6 +254,7 @@ where
 }
 
 /// Optimized real-to-complex N-dimensional FFT
+#[allow(dead_code)]
 pub fn rfftn_optimized<T, D>(
     x: &ArrayView<T, D>,
     _shape: Option<Vec<usize>>,

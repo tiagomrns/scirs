@@ -6,6 +6,7 @@ use scirs2_metrics::ranking::label::{
 };
 
 #[test]
+#[allow(dead_code)]
 fn test_coverage_error() {
     // Test case 1: Single sample, perfect ranking
     let y_true_1 = array![1.0, 1.0, 0.0, 0.0, 0.0];
@@ -32,6 +33,7 @@ fn test_coverage_error() {
 }
 
 #[test]
+#[allow(dead_code)]
 fn test_coverage_error_multiple() {
     // Test case 1: Multiple samples, all perfect rankings
     let y_true_1 = Array2::from_shape_vec(
@@ -86,6 +88,7 @@ fn test_coverage_error_multiple() {
 }
 
 #[test]
+#[allow(dead_code)]
 fn test_label_ranking_loss() {
     // Test case 1: Perfect rankings
     let y_true_1 = Array2::from_shape_vec(
@@ -165,6 +168,7 @@ fn test_label_ranking_loss() {
 }
 
 #[test]
+#[allow(dead_code)]
 fn test_label_ranking_average_precision_score() {
     // Test case 1: Perfect rankings
     let y_true_1 = Array2::from_shape_vec(
@@ -243,6 +247,7 @@ fn test_label_ranking_average_precision_score() {
 }
 
 #[test]
+#[allow(dead_code)]
 fn test_edge_cases() {
     // Test case 1: Empty arrays
     let y_true_empty = Array2::<f64>::from_shape_vec((0, 4), vec![]).unwrap();

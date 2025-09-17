@@ -5,6 +5,7 @@ use scirs2_fft::{fft, frft, rfft};
 use std::f64::consts::PI;
 use std::time::Instant;
 
+#[allow(dead_code)]
 fn main() {
     println!("Simple FFT Benchmark");
     println!("===================");
@@ -13,7 +14,7 @@ fn main() {
     let sizes = vec![64, 256, 1024, 4096];
 
     for &size in &sizes {
-        println!("\nSize: {}", size);
+        println!("\nSize: {size}");
 
         // Generate test signal
         let signal: Vec<f64> = (0..size)
@@ -28,19 +29,19 @@ fn main() {
         let start = Instant::now();
         let _ = fft(&complex_signal, None).unwrap();
         let fft_time = start.elapsed();
-        println!("  FFT:  {:?}", fft_time);
+        println!("  FFT:  {fft_time:?}");
 
         // Benchmark RFFT
         let start = Instant::now();
         let _ = rfft(&signal, None).unwrap();
         let rfft_time = start.elapsed();
-        println!("  RFFT: {:?}", rfft_time);
+        println!("  RFFT: {rfft_time:?}");
 
         // Benchmark FrFT
         let start = Instant::now();
         let _ = frft(&signal, 0.5, None).unwrap();
         let frft_time = start.elapsed();
-        println!("  FrFT: {:?}", frft_time);
+        println!("  FrFT: {frft_time:?}");
     }
 
     // Compare with memory-efficient versions
@@ -62,7 +63,7 @@ fn main() {
     let start = Instant::now();
     let _ = fft(&signal_copy, None).unwrap();
     let regular_time = start.elapsed();
-    println!("Regular FFT: {:?}", regular_time);
+    println!("Regular FFT: {regular_time:?}");
 
     // In-place FFT
     let mut output_buffer = vec![Complex64::new(0.0, 0.0); size];
@@ -75,11 +76,11 @@ fn main() {
     )
     .unwrap();
     let inplace_time = start.elapsed();
-    println!("In-place FFT: {:?}", inplace_time);
+    println!("In-place FFT: {inplace_time:?}");
 
     let speedup = regular_time.as_secs_f64() / inplace_time.as_secs_f64();
     if speedup > 1.0 {
-        println!("\nIn-place is {:.2}x faster", speedup);
+        println!("\nIn-place is {speedup:.2}x faster");
     } else {
         println!("\nRegular is {:.2}x faster", 1.0 / speedup);
     }

@@ -5,6 +5,7 @@ use ndarray_rand::RandomExt;
 use scirs2_optim::gradient_processing::GradientProcessor;
 use scirs2_optim::memory_efficient::{InPlaceAdam, InPlaceOptimizer};
 use std::error::Error;
+// use statrs::statistics::Statistics; // statrs not available
 
 // Simple neural network layer
 struct Layer {
@@ -13,9 +14,9 @@ struct Layer {
 }
 
 impl Layer {
-    fn new(input_size: usize, output_size: usize) -> Self {
-        let weights = Array2::random((input_size, output_size), Uniform::new(-0.1, 0.1));
-        let bias = Array1::zeros(output_size);
+    fn new(_input_size: usize, outputsize: usize) -> Self {
+        let weights = Array2::random((_input_size, outputsize), Uniform::new(-0.1, 0.1));
+        let bias = Array1::zeros(outputsize);
         Self { weights, bias }
     }
 
@@ -36,6 +37,7 @@ impl Layer {
 }
 
 // Memory-efficient training function
+#[allow(dead_code)]
 fn train_memory_efficient(
     layer: &mut Layer,
     training_data: &Array2<f64>,
@@ -86,6 +88,7 @@ fn train_memory_efficient(
 }
 
 // Advanced memory-efficient training with custom gradient processing
+#[allow(dead_code)]
 fn train_with_custom_processing(
     layer: &mut Layer,
     training_data: &Array2<f64>,
@@ -138,20 +141,21 @@ fn train_with_custom_processing(
     Ok(losses)
 }
 
+#[allow(dead_code)]
 fn main() -> Result<(), Box<dyn Error>> {
     // Create synthetic dataset
     let n_samples = 1000;
     let input_size = 50;
-    let output_size = 10;
+    let outputsize = 10;
 
     let training_data = Array2::random((n_samples, input_size), Uniform::new(-1.0, 1.0));
-    let true_weights = Array2::random((input_size, output_size), Uniform::new(-0.5, 0.5));
-    let true_bias = Array1::random(output_size, Uniform::new(-0.1, 0.1));
+    let true_weights = Array2::random((input_size, outputsize), Uniform::new(-0.5, 0.5));
+    let true_bias = Array1::random(outputsize, Uniform::new(-0.1, 0.1));
     let targets = training_data.dot(&true_weights) + &true_bias;
 
     // Initialize layers
-    let mut layer1 = Layer::new(input_size, output_size);
-    let mut layer2 = Layer::new(input_size, output_size);
+    let mut layer1 = Layer::new(input_size, outputsize);
+    let mut layer2 = Layer::new(input_size, outputsize);
 
     // Train with standard memory-efficient approach
     let losses1 = train_memory_efficient(&mut layer1, &training_data, &targets, 500)?;

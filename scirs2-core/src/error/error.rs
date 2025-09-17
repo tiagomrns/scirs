@@ -34,7 +34,7 @@ impl ErrorLocation {
     /// Create a new error location with function information
     #[must_use]
     #[inline]
-    pub const fn with_function(file: &'static str, line: u32, function: &'static str) -> Self {
+    pub const fn new_with_function(file: &'static str, line: u32, function: &'static str) -> Self {
         Self {
             file,
             line,
@@ -46,7 +46,7 @@ impl ErrorLocation {
     /// Create a new error location with column information
     #[must_use]
     #[inline]
-    pub const fn with_column(file: &'static str, line: u32, column: u32) -> Self {
+    pub const fn new_with_column(file: &'static str, line: u32, column: u32) -> Self {
         Self {
             file,
             line,
@@ -58,7 +58,12 @@ impl ErrorLocation {
     /// Create a new error location with function and column information
     #[must_use]
     #[inline]
-    pub const fn full(file: &'static str, line: u32, column: u32, function: &'static str) -> Self {
+    pub const fn new_full(
+        file: &'static str,
+        line: u32,
+        column: u32,
+        function: &'static str,
+    ) -> Self {
         Self {
             file,
             line,
@@ -66,16 +71,23 @@ impl ErrorLocation {
             function: Some(function),
         }
     }
+
+    /// Create an error location for the current position (convenience method)
+    #[must_use]
+    #[inline]
+    pub fn here() -> Self {
+        Self::new(file!(), line!())
+    }
 }
 
 impl fmt::Display for ErrorLocation {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "{}:{}", self.file, self.line)?;
         if let Some(column) = self.column {
-            write!(f, ":{}", column)?;
+            write!(f, ":{column}")?;
         }
         if let Some(function) = self.function {
-            write!(f, " in {}", function)?;
+            write!(f, " in {function}")?;
         }
         Ok(())
     }
@@ -122,10 +134,10 @@ impl fmt::Display for ErrorContext {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "{}", self.message)?;
         if let Some(location) = &self.location {
-            write!(f, " at {}", location)?;
+            write!(f, " at {location}")?;
         }
         if let Some(cause) = &self.cause {
-            write!(f, "\nCaused by: {}", cause)?;
+            write!(f, "\nCaused by: {cause}")?;
         }
         Ok(())
     }
@@ -182,6 +194,10 @@ pub enum CoreError {
     #[error("{0}")]
     MemoryError(ErrorContext),
 
+    /// Allocation error (memory allocation failed)
+    #[error("{0}")]
+    AllocationError(ErrorContext),
+
     /// Configuration error (invalid configuration)
     #[error("{0}")]
     ConfigError(ErrorContext),
@@ -190,6 +206,10 @@ pub enum CoreError {
     #[error("{0}")]
     InvalidArgument(ErrorContext),
 
+    /// Invalid input error
+    #[error("{0}")]
+    InvalidInput(ErrorContext),
+
     /// Permission error (insufficient permissions)
     #[error("{0}")]
     PermissionError(ErrorContext),
@@ -197,6 +217,10 @@ pub enum CoreError {
     /// Validation error (input failed validation)
     #[error("{0}")]
     ValidationError(ErrorContext),
+
+    /// Invalid state error (object is in an invalid state)
+    #[error("{0}")]
+    InvalidState(ErrorContext),
 
     /// JIT compilation error (error during JIT compilation)
     #[error("{0}")]
@@ -245,6 +269,18 @@ pub enum CoreError {
     /// End of stream error (stream ended unexpectedly)
     #[error("End of stream: {0}")]
     EndOfStream(ErrorContext),
+
+    /// Resource error (insufficient or unavailable resources)
+    #[error("Resource error: {0}")]
+    ResourceError(ErrorContext),
+
+    /// Communication error (network or inter-process communication error)
+    #[error("Communication error: {0}")]
+    CommunicationError(ErrorContext),
+
+    /// Security error (authentication, authorization, or security-related error)
+    #[error("Security error: {0}")]
+    SecurityError(ErrorContext),
 }
 
 /// Result type alias for core operations
@@ -262,6 +298,13 @@ impl From<std::io::Error> for CoreError {
 impl From<serde_json::Error> for CoreError {
     fn from(err: serde_json::Error) -> Self {
         CoreError::JSONError(ErrorContext::new(format!("JSON error: {err}")))
+    }
+}
+
+/// Convert from String to CoreError (for parsing errors)
+impl From<String> for CoreError {
+    fn from(err: String) -> Self {
+        CoreError::ValueError(ErrorContext::new(err))
     }
 }
 
@@ -306,14 +349,14 @@ macro_rules! error_context {
     };
     ($message:expr, $function:expr) => {
         $crate::error::ErrorContext::new($message).with_location(
-            $crate::error::ErrorLocation::with_function(file!(), line!(), $function),
+            $crate::error::ErrorLocation::new_with_function(file!(), line!(), $function),
         )
     };
 }
 
 /// Macro to create a domain error with location information
 #[macro_export]
-macro_rules! domain_error {
+macro_rules! domainerror {
     ($message:expr) => {
         $crate::error::CoreError::DomainError(error_context!($message))
     };
@@ -324,7 +367,7 @@ macro_rules! domain_error {
 
 /// Macro to create a dimension error with location information
 #[macro_export]
-macro_rules! dimension_error {
+macro_rules! dimensionerror {
     ($message:expr) => {
         $crate::error::CoreError::DimensionError(error_context!($message))
     };
@@ -335,7 +378,7 @@ macro_rules! dimension_error {
 
 /// Macro to create a value error with location information
 #[macro_export]
-macro_rules! value_error {
+macro_rules! valueerror {
     ($message:expr) => {
         $crate::error::CoreError::ValueError(error_context!($message))
     };
@@ -346,7 +389,7 @@ macro_rules! value_error {
 
 /// Macro to create a computation error with location information
 #[macro_export]
-macro_rules! computation_error {
+macro_rules! computationerror {
     ($message:expr) => {
         $crate::error::CoreError::ComputationError(error_context!($message))
     };
@@ -370,6 +413,7 @@ macro_rules! computation_error {
 /// # Errors
 ///
 /// Returns `CoreError::DomainError` if the condition is false.
+#[allow(dead_code)]
 pub fn check_domain<S: Into<String>>(condition: bool, message: S) -> CoreResult<()> {
     if condition {
         Ok(())
@@ -395,6 +439,7 @@ pub fn check_domain<S: Into<String>>(condition: bool, message: S) -> CoreResult<
 /// # Errors
 ///
 /// Returns `CoreError::DimensionError` if the condition is false.
+#[allow(dead_code)]
 pub fn check_dimensions<S: Into<String>>(condition: bool, message: S) -> CoreResult<()> {
     if condition {
         Ok(())
@@ -420,6 +465,7 @@ pub fn check_dimensions<S: Into<String>>(condition: bool, message: S) -> CoreRes
 /// # Errors
 ///
 /// Returns `CoreError::ValueError` if the condition is false.
+#[allow(dead_code)]
 pub fn check_value<S: Into<String>>(condition: bool, message: S) -> CoreResult<()> {
     if condition {
         Ok(())
@@ -446,6 +492,7 @@ pub fn check_value<S: Into<String>>(condition: bool, message: S) -> CoreResult<(
 /// # Errors
 ///
 /// Returns `CoreError::ValidationError` if the validator function returns false.
+#[allow(dead_code)]
 pub fn validate<T, F, S>(value: T, validator: F, message: S) -> CoreResult<T>
 where
     F: FnOnce(&T) -> bool,
@@ -471,7 +518,8 @@ where
 ///
 /// * A CoreError with the original error as its cause
 #[must_use]
-pub fn convert_error<E, S>(error: E, message: S) -> CoreError
+#[allow(dead_code)]
+pub fn converterror<E, S>(error: E, message: S) -> CoreError
 where
     E: std::error::Error + 'static,
     S: Into<String>,
@@ -503,7 +551,8 @@ where
 ///
 /// * A CoreError with the original error as its cause
 #[must_use]
-pub fn chain_error<S>(error: CoreError, message: S) -> CoreError
+#[allow(dead_code)]
+pub fn chainerror<S>(error: CoreError, message: S) -> CoreError
 where
     S: Into<String>,
 {

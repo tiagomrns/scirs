@@ -1,3 +1,9 @@
+use crate::error::{SignalError, SignalResult};
+use crate::hilbert;
+use ndarray::s;
+use ndarray::{Array1, Array2};
+use num_complex::Complex64;
+
 // Wigner-Ville Distribution Implementation
 //
 // This module provides implementations of the Wigner-Ville distribution (WVD) and its variants
@@ -7,12 +13,7 @@
 // - Cohen, L. (1989). Time-frequency distributions - A review. Proceedings of the IEEE, 77(7), 941-981.
 // - Boashash, B. (2015). Time-Frequency Signal Analysis and Processing (2nd ed.). Academic Press.
 
-use ndarray::{s, Array1, Array2};
-use num_complex::Complex64;
-
-use crate::error::{SignalError, SignalResult};
-use crate::hilbert;
-
+#[allow(unused_imports)]
 /// Configuration parameters for the Wigner-Ville Distribution
 #[derive(Debug, Clone)]
 pub struct WvdConfig {
@@ -76,10 +77,11 @@ impl Default for WvdConfig {
 /// // Compute the WVD
 /// let wvd = wigner_ville(&signal, config).unwrap();
 /// ```
+#[allow(dead_code)]
 pub fn wigner_ville(signal: &Array1<f64>, config: WvdConfig) -> SignalResult<Array2<f64>> {
-    // Convert to analytic signal if needed
+    // Convert to analytic _signal if needed
     let analytic_signal = if config.analytic {
-        Array1::from(hilbert::hilbert(signal.as_slice().unwrap())?)
+        Array1::from(hilbert::hilbert(_signal.as_slice().unwrap())?)
     } else {
         signal.mapv(|x| Complex64::new(x, 0.0))
     };
@@ -121,6 +123,7 @@ pub fn wigner_ville(signal: &Array1<f64>, config: WvdConfig) -> SignalResult<Arr
 /// // Compute the Cross WVD
 /// let xwvd = cross_wigner_ville(&signal1, &signal2, config).unwrap();
 /// ```
+#[allow(dead_code)]
 pub fn cross_wigner_ville(
     signal1: &Array1<f64>,
     signal2: &Array1<f64>,
@@ -128,7 +131,7 @@ pub fn cross_wigner_ville(
 ) -> SignalResult<Array2<Complex64>> {
     // Check that signals have the same length
     if signal1.len() != signal2.len() {
-        return Err(SignalError::DimensionError(
+        return Err(SignalError::DimensionMismatch(
             "Signals must have the same length for cross-WVD".to_string(),
         ));
     }
@@ -189,6 +192,7 @@ pub fn cross_wigner_ville(
 /// // Compute the SPWVD
 /// let spwvd = smoothed_pseudo_wigner_ville(&signal, &time_win, &freq_win, config).unwrap();
 /// ```
+#[allow(dead_code)]
 pub fn smoothed_pseudo_wigner_ville(
     signal: &Array1<f64>,
     time_window: &Array1<f64>,
@@ -213,6 +217,7 @@ pub fn smoothed_pseudo_wigner_ville(
 /// Core computation function for the Wigner-Ville Distribution
 ///
 /// This function implements the core algorithm for all variants of the WVD.
+#[allow(dead_code)]
 fn compute_wvd(
     signal: &Array1<Complex64>,
     signal2: Option<&Array1<Complex64>>,
@@ -229,6 +234,7 @@ fn compute_wvd(
 }
 
 /// Core computation function for the Cross Wigner-Ville Distribution
+#[allow(dead_code)]
 fn compute_cross_wvd(
     signal1: &Array1<Complex64>,
     signal2: &Array1<Complex64>,
@@ -350,7 +356,8 @@ fn compute_cross_wvd(
 /// # Returns
 ///
 /// An array of frequency values in Hz
-pub fn frequency_axis(n_freqs: usize, fs: f64) -> Array1<f64> {
+#[allow(dead_code)]
+pub fn frequency_axis(_nfreqs: usize, fs: f64) -> Array1<f64> {
     Array1::linspace(0.0, fs / 2.0, n_freqs)
 }
 
@@ -364,9 +371,10 @@ pub fn frequency_axis(n_freqs: usize, fs: f64) -> Array1<f64> {
 /// # Returns
 ///
 /// An array of time values in seconds
-pub fn time_axis(n_times: usize, fs: f64) -> Array1<f64> {
+#[allow(dead_code)]
+pub fn time_axis(_ntimes: usize, fs: f64) -> Array1<f64> {
     let dt = 1.0 / fs;
-    Array1::linspace(0.0, (n_times as f64 - 1.0) * dt, n_times)
+    Array1::linspace(0.0, (_n_times as f64 - 1.0) * dt, n_times)
 }
 
 /// Extracts ridges (instantaneous frequencies) from a WVD representation
@@ -381,6 +389,7 @@ pub fn time_axis(n_times: usize, fs: f64) -> Array1<f64> {
 /// # Returns
 ///
 /// A vector of ridges, where each ridge is a vector of (time_index, frequency) pairs
+#[allow(dead_code)]
 pub fn extract_ridges(
     wvd: &Array2<f64>,
     frequencies: &Array1<f64>,
@@ -391,7 +400,7 @@ pub fn extract_ridges(
     let n_times = wvd.shape()[1];
 
     let max_ridges = max_ridges.max(1);
-    let mut ridges = Vec::with_capacity(max_ridges);
+    let mut _ridges = Vec::with_capacity(max_ridges);
 
     // For each time point, find the frequencies with the highest energy
     for t in 0..n_times {
@@ -437,14 +446,14 @@ pub fn extract_ridges(
         }
     }
 
-    // Sort ridges by average energy
+    // Sort _ridges by average energy
     ridges.sort_by(|a, b| {
         let energy_a: f64 = a
             .iter()
-            .map(|(t, _)| {
+            .map(|(t_, _)| {
                 let f_idx = a[0].1.mul_add(0.0, frequencies.len() as f64) as usize;
                 if f_idx < n_freqs {
-                    wvd[[f_idx, *t]]
+                    wvd[[f_idx, *t_]]
                 } else {
                     0.0
                 }
@@ -454,10 +463,10 @@ pub fn extract_ridges(
 
         let energy_b: f64 = b
             .iter()
-            .map(|(t, _)| {
+            .map(|(t_, _)| {
                 let f_idx = b[0].1.mul_add(0.0, frequencies.len() as f64) as usize;
                 if f_idx < n_freqs {
-                    wvd[[f_idx, *t]]
+                    wvd[[f_idx, *t_]]
                 } else {
                     0.0
                 }
@@ -470,17 +479,18 @@ pub fn extract_ridges(
             .unwrap_or(std::cmp::Ordering::Equal)
     });
 
-    ridges
+    _ridges
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use ndarray::Array;
-    use std::f64::consts::PI;
 
+    use approx::assert_relative_eq;
     #[test]
     fn test_wigner_ville_chirp() {
+        let a = vec![1.0, 2.0, 3.0, 4.0, 5.0];
+        let b = vec![0.5, 0.5];
         // Create a chirp signal
         let n = 128;
         let t = Array1::linspace(0.0, 1.0, n);
@@ -516,14 +526,14 @@ mod tests {
         // Get mean frequencies from first and last quarters
         let early_freq: f64 = ridge
             .iter()
-            .filter(|(t, _)| *t < first_quarter)
+            .filter(|(t_)| *t < first_quarter)
             .map(|(_, f)| *f)
             .sum::<f64>()
             / first_quarter as f64;
 
         let late_freq: f64 = ridge
             .iter()
-            .filter(|(t, _)| *t >= last_quarter)
+            .filter(|(t_)| *t >= last_quarter)
             .map(|(_, f)| *f)
             .sum::<f64>()
             / (n - last_quarter) as f64;
@@ -575,6 +585,8 @@ mod tests {
 
     #[test]
     fn test_smoothed_pseudo_wigner_ville() {
+        let a = vec![1.0, 2.0, 3.0, 4.0, 5.0];
+        let b = vec![0.5, 0.5];
         // Create a simple test signal
         let n = 64; // Smaller size for faster test
         let t = Array1::linspace(0.0, 1.0, n);
@@ -609,8 +621,8 @@ mod tests {
         }
 
         // Check that smoothing reduces total variation (smoother result)
-        let mut wvd_variation = 0.0;
-        let mut spwvd_variation = 0.0;
+        let mut wvd_variation: f64 = 0.0;
+        let mut spwvd_variation: f64 = 0.0;
 
         // Calculate variation along time axis
         for i in 0..wvd.shape()[0] {

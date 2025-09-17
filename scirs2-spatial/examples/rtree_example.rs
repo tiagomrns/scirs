@@ -1,6 +1,7 @@
 use ndarray::array;
 use scirs2_spatial::rtree::RTree;
 
+#[allow(dead_code)]
 fn main() {
     // Create a new 2D R-tree with min entries 2 and max entries 5
     let mut rtree: RTree<String> = RTree::new(2, 2, 5).unwrap();
@@ -37,7 +38,7 @@ fn main() {
         .unwrap();
 
     for (_idx, city) in results {
-        println!("- {}", city);
+        println!("- {city}");
     }
 
     // Find the 3 nearest cities to Vienna
@@ -47,7 +48,7 @@ fn main() {
     let nearest_results = rtree.nearest(&vienna_coords.view(), 3).unwrap();
 
     for (_idx, city, distance) in nearest_results {
-        println!("- {} (distance: {:.2})", city, distance);
+        println!("- {city} (distance: {distance:.2})");
     }
 
     // Find the 3 nearest cities to Paris
@@ -57,7 +58,7 @@ fn main() {
     let nearest_results = rtree.nearest(&paris_coords.view(), 3).unwrap();
 
     for (_idx, city, distance) in nearest_results {
-        println!("- {} (distance: {:.2})", city, distance);
+        println!("- {city} (distance: {distance:.2})");
     }
 
     // Delete a city from the R-tree
@@ -80,6 +81,6 @@ fn main() {
     let nearest_results = rtree.nearest(&london_coords.view(), 3).unwrap();
 
     for (_idx, city, distance) in nearest_results {
-        println!("- {} (distance: {:.2})", city, distance);
+        println!("- {city} (distance: {distance:.2})");
     }
 }

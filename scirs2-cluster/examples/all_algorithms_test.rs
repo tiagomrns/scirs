@@ -32,6 +32,7 @@ use scirs2_cluster::{
     SpectralClusteringOptions,
 };
 
+#[allow(dead_code)]
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("Comprehensive Clustering Algorithm Test");
     println!("======================================\n");
@@ -83,7 +84,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("\n3. HDBSCAN Clustering");
     let hdbscan_opts = HDBSCANOptions {
         min_cluster_size: 2,
-        min_samples: Some(2),
+        minsamples: Some(2),
         ..Default::default()
     };
     let hdbscan_result = hdbscan(data.view(), Some(hdbscan_opts))?;
@@ -162,8 +163,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     Ok(())
 }
 
+#[allow(dead_code)]
 fn print_results(labels: &ndarray::Array1<usize>, data: &Array2<f64>) {
-    // Count unique labels
+    // Count unique _labels
     let mut unique_labels = std::collections::HashSet::new();
     for &label in labels.iter() {
         unique_labels.insert(label);
@@ -189,7 +191,7 @@ fn print_results(labels: &ndarray::Array1<usize>, data: &Array2<f64>) {
 
     print!("   Label distribution: ");
     let mut sorted_labels: Vec<_> = label_counts.into_iter().collect();
-    sorted_labels.sort_by_key(|&(label, _)| label);
+    sorted_labels.sort_by_key(|&(label_, _count)| label_);
 
     for (i, (label, count)) in sorted_labels.iter().enumerate() {
         if i > 0 {

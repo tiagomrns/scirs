@@ -11,6 +11,7 @@ use scirs2_integrate::ode::{
     ODEOptions, ODEOptionsWithEvents,
 };
 
+#[allow(dead_code)]
 fn main() -> IntegrateResult<()> {
     println!("=== Event Detection Flowchart Example ===");
     println!("This example will demonstrate the event detection system flow\n");
@@ -80,8 +81,7 @@ fn main() -> IntegrateResult<()> {
             max_count: None,
             precise_time: true,
         },
-        // Event 3: Terminal event (stop when amplitude falls below threshold)
-        terminal_event::<f64>("threshold", EventDirection::Falling),
+        // Event 3: Terminal event (stop when amplitude falls below threshold), terminal_event::<f64>("threshold", EventDirection::Falling),
     ];
 
     // Step 4: Set up solver options
@@ -146,10 +146,7 @@ fn main() -> IntegrateResult<()> {
             _ => "?",
         };
 
-        println!(
-            "  t = {:.4}: {:15} | y = {:.6} | direction: {}",
-            time, id, value, dir_str
-        );
+        println!("  t = {time:.4}: {id:15} | y = {value:.6} | direction: {dir_str}");
     }
 
     // Report final state

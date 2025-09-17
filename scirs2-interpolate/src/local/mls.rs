@@ -183,8 +183,8 @@ where
     /// # Returns
     ///
     /// Self for method chaining
-    pub fn with_max_points(mut self, max_points: usize) -> Self {
-        self.max_points = Some(max_points);
+    pub fn with_max_points(mut self, maxpoints: usize) -> Self {
+        self.max_points = Some(maxpoints);
         self
     }
 
@@ -223,7 +223,7 @@ where
         let (indices, distances) = self.find_relevant_points(x)?;
 
         if indices.is_empty() {
-            return Err(InterpolateError::ValueError(
+            return Err(InterpolateError::invalid_input(
                 "No points found within effective range".to_string(),
             ));
         }
@@ -511,10 +511,10 @@ where
         // Solve the system for coefficients
         #[cfg(feature = "linalg")]
         let coeffs = {
-            use ndarray_linalg::Solve;
+            use scirs2_linalg::solve;
             let btb_f64 = btb.mapv(|x| x.to_f64().unwrap());
             let bty_f64 = bty.mapv(|x| x.to_f64().unwrap());
-            match btb_f64.solve(&bty_f64) {
+            match solve(&btb_f64.view(), &bty_f64.view(), None) {
                 Ok(c) => c.mapv(|x| F::from_f64(x).unwrap()),
                 Err(_) => {
                     // Fallback: use local mean for numerical stability

@@ -8,6 +8,7 @@ use scirs2_io::mmap::{create_mmap_array, read_mmap_array, MmapArray, MmapArrayMu
 use std::time::Instant;
 use tempfile::tempdir;
 
+#[allow(dead_code)]
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("🗂️  Memory-Mapped File I/O Example");
     println!("==================================");
@@ -37,6 +38,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     Ok(())
 }
 
+#[allow(dead_code)]
 fn demonstrate_basic_memory_mapping() -> Result<(), Box<dyn std::error::Error>> {
     println!("\n📚 Demonstrating Basic Memory Mapping...");
 
@@ -73,6 +75,7 @@ fn demonstrate_basic_memory_mapping() -> Result<(), Box<dyn std::error::Error>> 
     Ok(())
 }
 
+#[allow(dead_code)]
 fn demonstrate_large_dataset_handling() -> Result<(), Box<dyn std::error::Error>> {
     println!("\n📈 Demonstrating Large Dataset Handling...");
 
@@ -133,6 +136,7 @@ fn demonstrate_large_dataset_handling() -> Result<(), Box<dyn std::error::Error>
     Ok(())
 }
 
+#[allow(dead_code)]
 fn demonstrate_mutable_memory_mapping() -> Result<(), Box<dyn std::error::Error>> {
     println!("\n✏️  Demonstrating Mutable Memory Mapping...");
 
@@ -199,6 +203,7 @@ fn demonstrate_mutable_memory_mapping() -> Result<(), Box<dyn std::error::Error>
     Ok(())
 }
 
+#[allow(dead_code)]
 fn demonstrate_performance_benefits() -> Result<(), Box<dyn std::error::Error>> {
     println!("\n⚡ Demonstrating Performance Benefits...");
 
@@ -267,6 +272,7 @@ fn demonstrate_performance_benefits() -> Result<(), Box<dyn std::error::Error>> 
     Ok(())
 }
 
+#[allow(dead_code)]
 fn demonstrate_multidimensional_arrays() -> Result<(), Box<dyn std::error::Error>> {
     println!("\n🧊 Demonstrating Multidimensional Arrays...");
 

@@ -4,6 +4,7 @@ use scirs2_vision::preprocessing::StructuringElement;
 use scirs2_vision::segmentation::{threshold_binary, AdaptiveMethod};
 
 #[test]
+#[allow(dead_code)]
 fn test_colorspace_enum() {
     assert_ne!(ColorSpace::RGB, ColorSpace::HSV);
     assert_ne!(ColorSpace::RGB, ColorSpace::LAB);
@@ -14,6 +15,7 @@ fn test_colorspace_enum() {
 }
 
 #[test]
+#[allow(dead_code)]
 fn test_create_structuring_elements() {
     let rect = StructuringElement::Rectangle(3, 3);
     let ellipse = StructuringElement::Ellipse(5, 5);
@@ -44,6 +46,7 @@ fn test_create_structuring_elements() {
 }
 
 #[test]
+#[allow(dead_code)]
 fn test_adaptive_method_enum() {
     match AdaptiveMethod::Mean {
         AdaptiveMethod::Mean => {}
@@ -57,6 +60,7 @@ fn test_adaptive_method_enum() {
 }
 
 #[test]
+#[allow(dead_code)]
 fn test_grayscale_conversion_with_test_image() {
     // Create a simple test image
     let mut img = RgbImage::new(2, 2);
@@ -79,6 +83,7 @@ fn test_grayscale_conversion_with_test_image() {
 }
 
 #[test]
+#[allow(dead_code)]
 fn test_binary_threshold_with_test_image() {
     // Create a simple test image
     let mut img = RgbImage::new(2, 2);

@@ -9,6 +9,7 @@ use scirs2_sparse::csr_array::CsrArray;
 use std::collections::{HashMap, HashSet};
 
 /// Get the list of non-zero columns in a specific row of a sparse matrix
+#[allow(dead_code)]
 fn get_nonzero_cols_in_row(matrix: &CsrArray<f64>, row: usize) -> Vec<usize> {
     // Get row indices
     let row_start = matrix.get_indptr()[row];
@@ -35,6 +36,7 @@ fn get_nonzero_cols_in_row(matrix: &CsrArray<f64>, row: usize) -> Vec<usize> {
 /// # Returns
 ///
 /// * Vector of column groups, where each group contains columns that don't conflict
+#[allow(dead_code)]
 pub fn determine_column_groups(
     sparsity: &CsrArray<f64>,
     seed: Option<u64>,
@@ -71,7 +73,7 @@ pub fn determine_column_groups(
     let mut rng = match seed {
         Some(s) => StdRng::seed_from_u64(s),
         None => {
-            // Use a constant seed for reproducibility in case thread_rng fails
+            // Use a constant seed for reproducibility in case rng fails
             // This is a fallback case, so using a fixed seed is acceptable
             StdRng::seed_from_u64(0)
         }
@@ -121,7 +123,7 @@ pub fn determine_column_groups(
         color_groups[color].push(*vertex);
     }
 
-    // Apply max group size constraint if specified
+    // Apply max group _size constraint if specified
     let max_size = max_group_size.unwrap_or(usize::MAX);
     if max_size < n {
         let mut final_groups = Vec::new();

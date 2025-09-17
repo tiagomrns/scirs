@@ -1,12 +1,13 @@
-//! Resampling and rate conversion
-//!
-//! This module provides functions for resampling signals at different rates,
-//! including upsampling, downsampling, and arbitrary resampling.
+// Resampling and rate conversion
+//
+// This module provides functions for resampling signals at different rates,
+// including upsampling, downsampling, and arbitrary resampling.
 
 use crate::error::{SignalError, SignalResult};
 use num_traits::{Float, NumCast};
 use std::fmt::Debug;
 
+#[allow(unused_imports)]
 /// Resample a signal using polyphase filtering.
 ///
 /// # Arguments
@@ -34,6 +35,7 @@ use std::fmt::Debug;
 /// // Result should be approximately twice as long
 /// assert_eq!(resampled.len(), signal.len() * 2);
 /// ```
+#[allow(dead_code)]
 pub fn resample<T>(x: &[T], up: usize, down: usize, window: Option<&str>) -> SignalResult<Vec<f64>>
 where
     T: Float + NumCast + Debug,
@@ -106,24 +108,18 @@ where
         let sinc = if t == 0.0 {
             1.0
         } else {
-            (std::f64::consts::PI * t).sin() / (std::f64::consts::PI * t)
+            (PI * t).sin() / (PI * t)
         };
 
         // Apply window function
         let window_val = match window_type {
-            "hamming" => {
-                0.54 - 0.46
-                    * (2.0 * std::f64::consts::PI * i as f64 / (filter_length - 1) as f64).cos()
-            }
-            "hanning" => {
-                0.5 * (1.0
-                    - (2.0 * std::f64::consts::PI * i as f64 / (filter_length - 1) as f64).cos())
-            }
+            "hamming" => 0.54 - 0.46 * (2.0 * PI * i as f64 / (filter_length - 1) as f64).cos(),
+            "hanning" => 0.5 * (1.0 - (2.0 * PI * i as f64 / (filter_length - 1) as f64).cos()),
             "blackman" => {
                 let a0 = 0.42;
                 let a1 = 0.5;
                 let a2 = 0.08;
-                let w = 2.0 * std::f64::consts::PI * i as f64 / (filter_length - 1) as f64;
+                let w = 2.0 * PI * i as f64 / (filter_length - 1) as f64;
                 a0 - a1 * w.cos() + a2 * (2.0 * w).cos()
             }
             _ => 1.0, // Rectangular window (no window)
@@ -189,6 +185,7 @@ where
 /// // Result should be approximately twice as long
 /// assert_eq!(upsampled.len(), signal.len() * 2);
 /// ```
+#[allow(dead_code)]
 pub fn upsample<T>(x: &[T], factor: usize) -> SignalResult<Vec<f64>>
 where
     T: Float + NumCast + Debug,
@@ -241,6 +238,7 @@ where
 /// // Result should be approximately half as long
 /// assert_eq!(downsampled.len(), (signal.len() + 1) / 2);
 /// ```
+#[allow(dead_code)]
 pub fn downsample<T>(x: &[T], factor: usize) -> SignalResult<Vec<f64>>
 where
     T: Float + NumCast + Debug,
@@ -292,6 +290,7 @@ where
 ///
 /// assert_eq!(resampled.len(), 150);
 /// ```
+#[allow(dead_code)]
 pub fn resample_poly<T>(x: &[T], num: usize) -> SignalResult<Vec<f64>>
 where
     T: Float + NumCast + Debug,
@@ -342,6 +341,7 @@ where
 }
 
 /// Find the greatest common divisor of two numbers.
+#[allow(dead_code)]
 fn gcd(mut a: usize, mut b: usize) -> usize {
     while b != 0 {
         let temp = b;
@@ -354,6 +354,7 @@ fn gcd(mut a: usize, mut b: usize) -> usize {
 /// Find a rational approximation of a floating point number.
 ///
 /// Returns a tuple (numerator, denominator) such that n/d ≈ x.
+#[allow(dead_code)]
 fn rational_approximation(x: f64) -> (usize, usize) {
     if x <= 0.0 {
         return (1, 1); // Invalid input, return 1/1
@@ -363,7 +364,7 @@ fn rational_approximation(x: f64) -> (usize, usize) {
 
     let mut best_num = 1;
     let mut best_denom = 1;
-    let mut best_error = (x - 1.0).abs();
+    let mut best_error = ((x - 1.0) as f64).abs();
 
     for denom in 1..=MAX_DENOM {
         let num = (x * denom as f64).round() as usize;
@@ -386,7 +387,6 @@ fn rational_approximation(x: f64) -> (usize, usize) {
 mod tests {
     use super::*;
     use approx::assert_relative_eq;
-
     #[test]
     fn test_resample_identity() {
         // Resampling with up=1, down=1 should return the original signal
@@ -429,6 +429,8 @@ mod tests {
 
     #[test]
     fn test_resample_poly() {
+        let a = vec![1.0, 2.0, 3.0, 4.0, 5.0];
+        let b = vec![0.5, 0.5];
         // Resample to a specific length
         let signal: Vec<f64> = (0..100).map(|i| (i as f64 * 0.1).sin()).collect();
 
@@ -444,9 +446,9 @@ mod tests {
     #[test]
     fn test_rational_approximation() {
         // Test rational approximation of π
-        let (num, denom) = rational_approximation(std::f64::consts::PI);
+        let (num, denom) = rational_approximation(PI);
         let approx = num as f64 / denom as f64;
-        assert!((approx - std::f64::consts::PI).abs() < 0.001);
+        assert!((approx - PI).abs() < 0.001);
 
         // Common fractions should be exact
         assert_eq!(rational_approximation(0.5), (1, 2));

@@ -2,6 +2,7 @@
 //!
 //! This example demonstrates the Fast Kriging implementation for large-scale datasets.
 
+#[allow(dead_code)]
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     #[cfg(feature = "linalg")]
     {

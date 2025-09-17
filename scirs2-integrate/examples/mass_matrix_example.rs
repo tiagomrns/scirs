@@ -11,6 +11,7 @@ use ndarray::{array, Array2, ArrayView1};
 use scirs2_integrate::error::IntegrateResult;
 use scirs2_integrate::ode::{solve_ivp, MassMatrix, ODEMethod, ODEOptions};
 
+#[allow(dead_code)]
 fn main() -> IntegrateResult<()> {
     println!("=== Mass Matrix ODE Example ===");
 
@@ -97,8 +98,7 @@ fn main() -> IntegrateResult<()> {
         let v_analytical = -f64::sqrt(2.0) * (omega * t).sin();
 
         println!(
-            "  {:.3}\t\t{:.6}\t{:.6}\t{:.6}\t{:.6}",
-            t, x_numerical, x_analytical, v_numerical, v_analytical
+            "  {t:.3}\t\t{x_numerical:.6}\t{x_analytical:.6}\t{v_numerical:.6}\t{v_analytical:.6}"
         );
     }
 
@@ -111,7 +111,7 @@ fn main() -> IntegrateResult<()> {
     let x_analytical = (omega * t_final).cos();
     let v_analytical = -f64::sqrt(2.0) * (omega * t_final).sin();
 
-    println!("\nAt t = {:.3}:", t_final);
+    println!("\nAt t = {t_final:.3}:");
     println!("  x error: {:.3e}", (x_numerical - x_analytical).abs());
     println!("  v error: {:.3e}", (v_numerical - v_analytical).abs());
 
@@ -188,7 +188,7 @@ fn main() -> IntegrateResult<()> {
         let x = result.y[i][0];
         let v = result.y[i][1];
 
-        println!("  {:.3}\t\t{:.6}\t{:.6}", t, x, v);
+        println!("  {t:.3}\t\t{x:.6}\t{v:.6}");
     }
 
     // Compare solution with standard oscillator (no mass matrix)
@@ -206,14 +206,8 @@ fn main() -> IntegrateResult<()> {
     let final_x_standard = result_standard.y.last().unwrap()[0];
 
     println!("\nEffect of time-dependent mass matrix:");
-    println!(
-        "  Final position with mass matrix: {:.6}",
-        final_x_with_mass
-    );
-    println!(
-        "  Final position standard oscillator: {:.6}",
-        final_x_standard
-    );
+    println!("  Final position with mass matrix: {final_x_with_mass:.6}");
+    println!("  Final position standard oscillator: {final_x_standard:.6}");
     println!(
         "  Difference: {:.6}",
         (final_x_with_mass - final_x_standard).abs()

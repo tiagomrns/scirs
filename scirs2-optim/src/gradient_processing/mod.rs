@@ -17,9 +17,9 @@ pub struct GradientClipConfig<A: Float> {
     /// Minimum allowed value for individual gradient elements  
     pub min_value: Option<A>,
     /// Maximum allowed L2 norm for the entire gradient vector
-    pub max_norm: Option<A>,
+    pub maxnorm: Option<A>,
     /// Maximum allowed L1 norm
-    pub max_l1_norm: Option<A>,
+    pub max_l1norm: Option<A>,
     /// Whether to apply gradient centralization
     pub centralization: bool,
     /// Threshold for zeroing small gradients
@@ -31,8 +31,8 @@ impl<A: Float> Default for GradientClipConfig<A> {
         Self {
             max_value: None,
             min_value: None,
-            max_norm: None,
-            max_l1_norm: None,
+            maxnorm: None,
+            max_l1norm: None,
             centralization: false,
             zero_threshold: None,
         }
@@ -77,13 +77,13 @@ impl<A: Float + ScalarOperand + Debug> GradientProcessor<A> {
 
     /// Set max L2 norm clipping
     pub fn set_max_norm(&mut self, value: A) -> &mut Self {
-        self.config.max_norm = Some(value);
+        self.config.maxnorm = Some(value);
         self
     }
 
     /// Set max L1 norm clipping
     pub fn set_max_l1_norm(&mut self, value: A) -> &mut Self {
-        self.config.max_l1_norm = Some(value);
+        self.config.max_l1norm = Some(value);
         self
     }
 
@@ -107,14 +107,14 @@ impl<A: Float + ScalarOperand + Debug> GradientProcessor<A> {
     }
 
     /// Set norm clipping
-    pub fn set_norm_clip(&mut self, max_norm: A) -> &mut Self {
-        self.config.max_norm = Some(max_norm);
+    pub fn set_norm_clip(&mut self, maxnorm: A) -> &mut Self {
+        self.config.maxnorm = Some(maxnorm);
         self
     }
 
     /// Set L1 norm clipping
-    pub fn set_l1_norm_clip(&mut self, max_l1_norm: A) -> &mut Self {
-        self.config.max_l1_norm = Some(max_l1_norm);
+    pub fn set_l1_norm_clip(&mut self, max_l1norm: A) -> &mut Self {
+        self.config.max_l1norm = Some(max_l1norm);
         self
     }
 
@@ -132,13 +132,13 @@ impl<A: Float + ScalarOperand + Debug> GradientProcessor<A> {
         }
 
         // Apply L2 norm clipping if configured
-        if let Some(max_norm) = self.config.max_norm {
-            clip_gradient_norm(gradients, max_norm)?;
+        if let Some(maxnorm) = self.config.maxnorm {
+            clip_gradient_norm(gradients, maxnorm)?;
         }
 
         // Apply L1 norm clipping if configured
-        if let Some(max_l1_norm) = self.config.max_l1_norm {
-            clip_gradient_l1_norm(gradients, max_l1_norm)?;
+        if let Some(max_l1norm) = self.config.max_l1norm {
+            clip_gradient_l1_norm(gradients, max_l1norm)?;
         }
 
         // Apply gradient centralization if enabled
@@ -156,6 +156,7 @@ impl<A: Float + ScalarOperand + Debug> GradientProcessor<A> {
 }
 
 /// Clip gradient values to a specified range
+#[allow(dead_code)]
 pub fn clip_gradients_by_value<A, D>(
     gradients: &mut Array<A, D>,
     min_value: A,
@@ -178,29 +179,27 @@ where
 }
 
 /// Clip gradient L2 norm (global gradient clipping)
-pub fn clip_gradient_norm<A, D>(
-    gradients: &mut Array<A, D>,
-    max_norm: A,
-) -> Result<&mut Array<A, D>>
+#[allow(dead_code)]
+pub fn clip_gradient_norm<A, D>(gradients: &mut Array<A, D>, maxnorm: A) -> Result<&mut Array<A, D>>
 where
     A: Float + ScalarOperand,
     D: Dimension,
 {
-    if max_norm <= A::zero() {
+    if maxnorm <= A::zero() {
         return Err(OptimError::InvalidConfig(
-            "max_norm must be positive".to_string(),
+            "maxnorm must be positive".to_string(),
         ));
     }
 
-    // Calculate current L2 norm
-    let norm = gradients
+    // Calculate current L2 _norm
+    let _norm = gradients
         .iter()
         .fold(A::zero(), |acc, &x| acc + x * x)
         .sqrt();
 
-    // If norm exceeds max_norm, scale gradients
-    if norm > max_norm {
-        let scale = max_norm / norm;
+    // If _norm exceeds maxnorm, scale gradients
+    if _norm > maxnorm {
+        let scale = maxnorm / _norm;
         gradients.mapv_inplace(|x| x * scale);
     }
 
@@ -208,26 +207,27 @@ where
 }
 
 /// Clip gradient L1 norm
+#[allow(dead_code)]
 pub fn clip_gradient_l1_norm<A, D>(
     gradients: &mut Array<A, D>,
-    max_l1_norm: A,
+    max_l1norm: A,
 ) -> Result<&mut Array<A, D>>
 where
     A: Float + ScalarOperand,
     D: Dimension,
 {
-    if max_l1_norm <= A::zero() {
+    if max_l1norm <= A::zero() {
         return Err(OptimError::InvalidConfig(
-            "max_l1_norm must be positive".to_string(),
+            "max_l1norm must be positive".to_string(),
         ));
     }
 
-    // Calculate current L1 norm
+    // Calculate current L1 _norm
     let l1_norm = gradients.iter().fold(A::zero(), |acc, &x| acc + x.abs());
 
-    // If norm exceeds max_l1_norm, scale gradients
-    if l1_norm > max_l1_norm {
-        let scale = max_l1_norm / l1_norm;
+    // If _norm exceeds max_l1norm, scale gradients
+    if l1_norm > max_l1norm {
+        let scale = max_l1norm / l1_norm;
         gradients.mapv_inplace(|x| x * scale);
     }
 
@@ -235,6 +235,7 @@ where
 }
 
 /// Compute gradient centralization
+#[allow(dead_code)]
 pub fn gradient_centralization<A, D>(gradients: &mut Array<A, D>) -> &mut Array<A, D>
 where
     A: Float + ScalarOperand,
@@ -251,6 +252,7 @@ where
 }
 
 /// Zero out small gradient values
+#[allow(dead_code)]
 pub fn zero_small_gradients<A, D>(gradients: &mut Array<A, D>, threshold: A) -> &mut Array<A, D>
 where
     A: Float + ScalarOperand,
@@ -279,7 +281,7 @@ pub struct GradientAccumulator<A: Float, D: Dimension> {
     /// Target number of micro-batches before step
     accumulation_steps: usize,
     /// Whether to average gradients (vs sum)
-    average_gradients: bool,
+    averagegradients: bool,
 }
 
 impl<A: Float + ScalarOperand + Debug, D: Dimension> GradientAccumulator<A, D> {
@@ -288,13 +290,13 @@ impl<A: Float + ScalarOperand + Debug, D: Dimension> GradientAccumulator<A, D> {
     /// # Arguments
     ///
     /// * `accumulation_steps` - Number of micro-batches to accumulate before stepping
-    /// * `average_gradients` - Whether to average gradients (true) or sum them (false)
-    pub fn new(accumulation_steps: usize, average_gradients: bool) -> Self {
+    /// * `averagegradients` - Whether to average gradients (true) or sum them (false)
+    pub fn new(_accumulation_steps: usize, averagegradients: bool) -> Self {
         Self {
             accumulated_gradients: None,
             num_accumulated: 0,
-            accumulation_steps,
-            average_gradients,
+            accumulation_steps: _accumulation_steps,
+            averagegradients,
         }
     }
 
@@ -328,7 +330,7 @@ impl<A: Float + ScalarOperand + Debug, D: Dimension> GradientAccumulator<A, D> {
     /// The accumulated gradients, ready for optimization step
     pub fn get_and_reset(&mut self) -> Option<Array<A, D>> {
         if let Some(mut gradients) = self.accumulated_gradients.take() {
-            if self.average_gradients && self.num_accumulated > 0 {
+            if self.averagegradients && self.num_accumulated > 0 {
                 let scale = A::one() / A::from(self.num_accumulated).unwrap_or(A::one());
                 gradients.mapv_inplace(|x| x * scale);
             }
@@ -365,6 +367,7 @@ impl<A: Float + ScalarOperand + Debug, D: Dimension> GradientAccumulator<A, D> {
 ///
 /// Clips gradients based on the ratio of gradient norm to parameter norm.
 /// This is particularly useful for transformer models.
+#[allow(dead_code)]
 pub fn adaptive_gradient_clipping<'a, A, D>(
     gradients: &'a mut Array<A, D>,
     parameters: &Array<A, D>,
@@ -391,9 +394,9 @@ where
         .sqrt();
 
     if param_norm > A::zero() && grad_norm > A::zero() {
-        let ratio = grad_norm / param_norm;
-        if ratio > max_ratio {
-            let scale = max_ratio / ratio;
+        let _ratio = grad_norm / param_norm;
+        if _ratio > max_ratio {
+            let scale = max_ratio / _ratio;
             gradients.mapv_inplace(|x| x * scale);
         }
     }
@@ -408,6 +411,7 @@ where
 /// * `gradients` - Gradients to add noise to
 /// * `noise_std` - Standard deviation of Gaussian noise to add
 /// * `seed` - Optional seed for reproducible results
+#[allow(dead_code)]
 pub fn add_gradient_noise<A, D>(
     gradients: &mut Array<A, D>,
     noise_std: A,
@@ -428,7 +432,7 @@ where
     let mut rng = if let Some(s) = seed {
         ndarray_rand::rand::rngs::StdRng::seed_from_u64(s)
     } else {
-        ndarray_rand::rand::rngs::StdRng::from_entropy()
+        ndarray_rand::rand::rngs::StdRng::seed_from_u64(42)
     };
 
     let normal = Normal::new(0.0, noise_std.to_f64().unwrap_or(0.01)).unwrap();
@@ -575,7 +579,7 @@ mod tests {
         let config = GradientClipConfig::<f64> {
             max_value: Some(5.0),
             min_value: Some(-5.0),
-            max_norm: Some(10.0),
+            maxnorm: Some(10.0),
             ..Default::default()
         };
 

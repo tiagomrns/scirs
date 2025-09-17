@@ -67,7 +67,7 @@ where
 
                 // Get the operation type from the tensor
                 let op_name = y_tensor.inner().get_op().name();
-                println!("DEBUG gradient.rs: Processing op '{}'", op_name);
+                println!("DEBUG gradient.rs: Processing op '{op_name}'");
 
                 // Get the input tensors
                 let num_inputs = y_tensor.num_backprop_inputs();
@@ -78,7 +78,7 @@ where
                 // scalar ones for every operation
                 for i in 0..num_inputs {
                     let x_tensor = y_tensor.get_backprop_input(i);
-                    let _x_shape = match x_tensor.inner().known_shape {
+                    let _xshape = match x_tensor.inner().knownshape {
                         Some(ref shape) => shape.get().to_vec(),
                         None => vec![1], // Default to scalar if shape unknown
                     };
@@ -362,6 +362,7 @@ impl<'graph, F: Float> GradientInfo<'graph, F> {
 }
 
 #[inline]
+#[allow(dead_code)]
 fn has_child_on_path<T: Float>(
     parent: Tensor<T>,
     path: &FxHashMap<usize, GradientInfo<T>>,
@@ -377,6 +378,7 @@ fn has_child_on_path<T: Float>(
 
 // checks `candidate` node is an xs node or not.
 #[inline]
+#[allow(dead_code)]
 fn is_given_xs<'graph, F: Float, A>(candidate: usize, xs: &[A]) -> bool
 where
     A: AsRef<Tensor<'graph, F>>,
@@ -391,6 +393,7 @@ where
 
 // Go backward from ys and collect reachable nodes.
 // Nodes between `ys` and `xs` are marked as `on_backprop_path`.
+#[allow(dead_code)]
 fn init_gradient_map<'graph, A, B, F: Float>(
     g: &'graph Graph<F>,
     ys: &[A],

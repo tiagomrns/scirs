@@ -5,6 +5,7 @@ use scirs2_interpolate::{
 };
 
 // Helper function to calculate squared difference
+#[allow(dead_code)]
 fn squared_diff<T>(a: &T, b: &T) -> f64
 where
     T: std::ops::Sub<Output = f64> + Copy,
@@ -14,6 +15,7 @@ where
 }
 
 // Helper function to calculate absolute difference
+#[allow(dead_code)]
 fn abs_diff<T>(a: &T, b: &T) -> f64
 where
     T: std::ops::Sub<Output = f64> + Copy,
@@ -23,10 +25,12 @@ where
 }
 
 // Helper function to extract scalar value from array
+#[allow(dead_code)]
 fn extract_scalar(arr: &Array1<f64>) -> f64 {
     arr[0]
 }
 
+#[allow(dead_code)]
 fn main() {
     println!("Multiscale B-Splines with Adaptive Refinement Example");
     println!("===================================================\n");

@@ -45,7 +45,7 @@ pub(crate) fn try_as_complex<T: Copy + Debug + 'static + NumCast>(val: T) -> Opt
     let type_name = std::any::type_name::<T>();
     if type_name.contains("Complex") {
         // For complex types, try to get the representation and parse it
-        let debug_str = format!("{:?}", val);
+        let debug_str = format!("{val:?}");
 
         // Try to extract re and im values using split and parse
         let re_im: Vec<f64> = debug_str
@@ -86,7 +86,7 @@ pub(crate) fn try_as_complex<T: Copy + Debug + 'static + NumCast>(val: T) -> Opt
 
     // For other potential complex types, try to parse from Debug representation
     // This is a more robust approach for complex types from other libraries
-    let debug_str = format!("{:?}", val);
+    let debug_str = format!("{val:?}");
     if debug_str.contains("Complex") || (debug_str.contains("re") && debug_str.contains("im")) {
         // Extract numbers from the debug string
         let re_im: Vec<f64> = debug_str

@@ -1,15 +1,11 @@
 //! Error types for the SciRS2 linear algebra module
 
-use scirs2_core::error::CoreError;
+use scirs2_core::CoreError;
 use thiserror::Error;
 
 /// Linear algebra error type
-#[derive(Error, Debug)]
+#[derive(Error, Debug, Clone)]
 pub enum LinalgError {
-    /// Core error
-    #[error(transparent)]
-    CoreError(#[from] CoreError),
-
     /// Computation error (generic error)
     #[error("Computation error: {0}")]
     ComputationError(String),
@@ -70,13 +66,15 @@ pub enum LinalgError {
 /// Enhanced error types with regularization suggestions
 impl LinalgError {
     /// Create a singular matrix error with regularization suggestions
-    pub fn singular_matrix_with_suggestions(
+    pub fn singularmatrix_with_suggestions(
         operation: &str,
-        matrix_shape: (usize, usize),
+        matrixshape: (usize, usize),
         condition_number: Option<f64>,
     ) -> Self {
-        let base_msg = format!("Matrix is singular during {} operation", operation);
-        let shape_info = format!("Matrix shape: {}×{}", matrix_shape.0, matrix_shape.1);
+        let base_msg = format!("Matrix is singular during {operation} operation");
+        let rows = matrixshape.0;
+        let cols = matrixshape.1;
+        let shape_info = format!("Matrix shape: {rows}×{cols}");
 
         let mut suggestions = vec![
             "Consider the following regularization approaches:".to_string(),
@@ -88,8 +86,7 @@ impl LinalgError {
 
         if let Some(cond) = condition_number {
             suggestions.push(format!(
-                "4. Condition number: {:.2e} (>1e12 indicates ill-conditioning)",
-                cond
+                "4. Condition number: {cond:.2e} (>1e12 indicates ill-conditioning)"
             ));
             if cond > 1e12 {
                 suggestions.push(
@@ -104,35 +101,34 @@ impl LinalgError {
             "7. Use iterative refinement for improved accuracy".to_string(),
         ]);
 
-        let full_msg = format!("{}\n{}\n{}", base_msg, shape_info, suggestions.join("\n"));
+        let suggestions_str = suggestions.join("\n");
+        let full_msg = format!("{base_msg}\n{shape_info}\n{suggestions_str}");
         LinalgError::SingularMatrixError(full_msg)
     }
 
     /// Create a non-positive definite error with regularization suggestions
     pub fn non_positive_definite_with_suggestions(
         operation: &str,
-        matrix_shape: (usize, usize),
+        matrixshape: (usize, usize),
         negative_eigenvalues: Option<usize>,
     ) -> Self {
-        let base_msg = format!(
-            "Matrix is not positive definite during {} operation",
-            operation
-        );
-        let shape_info = format!("Matrix shape: {}×{}", matrix_shape.0, matrix_shape.1);
+        let base_msg = format!("Matrix is not positive definite during {operation} operation");
+        let rows = matrixshape.0;
+        let cols = matrixshape.1;
+        let shape_info = format!("Matrix shape: {rows}×{cols}");
 
         let mut suggestions = vec![
             "Consider the following regularization approaches:".to_string(),
             "1. Diagonal regularization: Add λI where λ > |most negative eigenvalue|".to_string(),
             "2. Modified Cholesky: Use algorithms that ensure positive definiteness".to_string(),
-            "3. Eigenvalue clipping: Replace negative eigenvalues with small positive values"
+            "3. Eigenvalue clipping: Replace negative _eigenvalues with small positive values"
                 .to_string(),
             "4. Use LDL decomposition instead of Cholesky for indefinite matrices".to_string(),
         ];
 
         if let Some(neg_count) = negative_eigenvalues {
             suggestions.push(format!(
-                "5. Found {} negative eigenvalue(s) - consider spectral regularization",
-                neg_count
+                "5. Found {neg_count} negative eigenvalue(s) - consider spectral regularization"
             ));
         }
 
@@ -142,7 +138,8 @@ impl LinalgError {
             "8. Consider using QR or LU decomposition for non-symmetric matrices".to_string(),
         ]);
 
-        let full_msg = format!("{}\n{}\n{}", base_msg, shape_info, suggestions.join("\n"));
+        let suggestions_str = suggestions.join("\n");
+        let full_msg = format!("{base_msg}\n{shape_info}\n{suggestions_str}");
         LinalgError::NonPositiveDefiniteError(full_msg)
     }
 
@@ -153,11 +150,8 @@ impl LinalgError {
         tolerance: f64,
         current_residual: Option<f64>,
     ) -> Self {
-        let base_msg = format!(
-            "{} failed to converge after {} iterations",
-            algorithm, iterations
-        );
-        let tolerance_info = format!("Target tolerance: {:.2e}", tolerance);
+        let base_msg = format!("{algorithm} failed to converge after {iterations} iterations");
+        let tolerance_info = format!("Target tolerance: {tolerance:.2e}");
 
         let mut suggestions = vec![
             "Consider the following approaches to improve convergence:".to_string(),
@@ -167,12 +161,11 @@ impl LinalgError {
             "4. Try different initial guess or starting point".to_string(),
         ];
 
-        if let Some(residual) = current_residual {
+        if let Some(_residual) = current_residual {
             suggestions.push(format!(
-                "5. Current residual: {:.2e} (target: {:.2e})",
-                residual, tolerance
+                "5. Current _residual: {_residual:.2e} (target: {tolerance:.2e})"
             ));
-            if residual / tolerance < 10.0 {
+            if _residual / tolerance < 10.0 {
                 suggestions.push(
                     "6. Close to convergence - try increasing iterations slightly".to_string(),
                 );
@@ -188,18 +181,36 @@ impl LinalgError {
             "9. Consider switching to direct methods for smaller problems".to_string(),
         ]);
 
-        let full_msg = format!(
-            "{}\n{}\n{}",
-            base_msg,
-            tolerance_info,
-            suggestions.join("\n")
-        );
+        let suggestions_str = suggestions.join("\n");
+        let full_msg = format!("{base_msg}\n{tolerance_info}\n{suggestions_str}");
         LinalgError::ConvergenceError(full_msg)
     }
 }
 
 /// Result type for linear algebra operations
 pub type LinalgResult<T> = Result<T, LinalgError>;
+
+/// Conversion from CoreError to LinalgError
+impl From<CoreError> for LinalgError {
+    fn from(error: CoreError) -> Self {
+        match error {
+            CoreError::ShapeError(msg) => LinalgError::ShapeError(msg.to_string()),
+            CoreError::DimensionError(msg) => LinalgError::DimensionError(msg.to_string()),
+            CoreError::IndexError(msg) => LinalgError::IndexError(msg.to_string()),
+            CoreError::ValueError(msg) => LinalgError::ValueError(msg.to_string()),
+            CoreError::InvalidInput(msg) => LinalgError::InvalidInput(msg.to_string()),
+            CoreError::ComputationError(msg) => LinalgError::ComputationError(msg.to_string()),
+            CoreError::NotImplementedError(msg) => {
+                LinalgError::NotImplementedError(msg.to_string())
+            }
+            CoreError::ImplementationError(msg) => {
+                LinalgError::ImplementationError(msg.to_string())
+            }
+            // For other CoreError variants, map to a generic LinalgError
+            _ => LinalgError::ComputationError(format!("Core error: {error}")),
+        }
+    }
+}
 
 /// Checks if a condition is true, otherwise returns a domain error
 ///
@@ -212,6 +223,7 @@ pub type LinalgResult<T> = Result<T, LinalgError>;
 ///
 /// * `Ok(())` if the condition is true
 /// * `Err(LinalgError::DomainError)` if the condition is false
+#[allow(dead_code)]
 pub fn check_domain<S: AsRef<str>>(condition: bool, message: S) -> LinalgResult<()> {
     if condition {
         Ok(())
@@ -236,6 +248,7 @@ pub fn check_domain<S: AsRef<str>>(condition: bool, message: S) -> LinalgResult<
 ///
 /// This is a linalg-specific wrapper around scirs2_core::validation functions.
 /// For new code, consider using scirs2_core::validation functions directly when possible.
+#[allow(dead_code)]
 pub fn check_dimensions<S: AsRef<str>>(condition: bool, message: S) -> LinalgResult<()> {
     if condition {
         Ok(())
@@ -260,6 +273,7 @@ pub fn check_dimensions<S: AsRef<str>>(condition: bool, message: S) -> LinalgRes
 ///
 /// This is a linalg-specific wrapper around scirs2_core::validation functions.
 /// For new code, consider using scirs2_core::validation functions directly when possible.
+#[allow(dead_code)]
 pub fn check_value<S: AsRef<str>>(condition: bool, message: S) -> LinalgResult<()> {
     if condition {
         Ok(())

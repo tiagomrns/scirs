@@ -133,6 +133,7 @@ impl SimdConfig {
 }
 
 /// SIMD-optimized RBF evaluation
+#[allow(dead_code)]
 pub fn simd_rbf_evaluate<F>(
     queries: &ArrayView2<F>,
     centers: &ArrayView2<F>,
@@ -144,13 +145,13 @@ where
     F: Float + FromPrimitive + Debug + Display + Zero + Copy + 'static,
 {
     if queries.ncols() != centers.ncols() {
-        return Err(InterpolateError::ValueError(
+        return Err(InterpolateError::invalid_input(
             "Query and center dimensions must match".to_string(),
         ));
     }
 
     if centers.nrows() != coefficients.len() {
-        return Err(InterpolateError::ValueError(
+        return Err(InterpolateError::invalid_input(
             "Number of centers must match number of coefficients".to_string(),
         ));
     }
@@ -200,6 +201,7 @@ where
 }
 
 /// SIMD-optimized RBF evaluation for f64
+#[allow(dead_code)]
 fn simd_rbf_evaluate_f64(
     queries: &ArrayView2<f64>,
     centers: &ArrayView2<f64>,
@@ -227,6 +229,7 @@ fn simd_rbf_evaluate_f64(
 }
 
 /// Vectorized f64 RBF evaluation using SIMD
+#[allow(dead_code)]
 fn simd_rbf_evaluate_f64_vectorized(
     queries: &ArrayView2<f64>,
     centers: &ArrayView2<f64>,
@@ -275,6 +278,7 @@ fn simd_rbf_evaluate_f64_vectorized(
 
 /// Fallback implementation for all architectures
 /// Scalar fallback implementation
+#[allow(dead_code)]
 fn simd_rbf_evaluate_scalar<F>(
     queries: &ArrayView2<F>,
     centers: &ArrayView2<F>,
@@ -352,6 +356,7 @@ fn evaluate_rbf_kernel_scalar(r: f64, epsilon: f64, kernel: RBFKernel) -> f64 {
 ///
 /// Distance matrix with shape (n_a, n_b) where entry (i,j) contains the
 /// Euclidean distance between points_a[i] and points_b[j]
+#[allow(dead_code)]
 pub fn simd_distance_matrix<F>(
     points_a: &ArrayView2<F>,
     points_b: &ArrayView2<F>,
@@ -360,7 +365,7 @@ where
     F: Float + FromPrimitive + Debug + Display + Zero + Copy + 'static,
 {
     if points_a.ncols() != points_b.ncols() {
-        return Err(InterpolateError::ValueError(
+        return Err(InterpolateError::invalid_input(
             "Point sets must have the same dimensionality".to_string(),
         ));
     }
@@ -382,6 +387,7 @@ where
 }
 
 /// SIMD-optimized distance matrix computation for f64 values
+#[allow(dead_code)]
 fn simd_distance_matrix_f64_vectorized(
     points_a: &ArrayView2<f64>,
     points_b: &ArrayView2<f64>,
@@ -420,6 +426,7 @@ fn simd_distance_matrix_f64_vectorized(
 // Direct SIMD intrinsics implementations removed - all SIMD operations now go through core abstractions
 
 /// Scalar fallback implementation for distance matrix computation
+#[allow(dead_code)]
 fn simd_distance_matrix_scalar<F>(
     points_a: &ArrayView2<F>,
     points_b: &ArrayView2<F>,
@@ -447,6 +454,7 @@ where
 }
 
 /// SIMD-optimized batch evaluation for B-splines
+#[allow(dead_code)]
 pub fn simd_bspline_batch_evaluate<F>(
     knots: &ArrayView1<F>,
     coefficients: &ArrayView1<F>,
@@ -471,6 +479,7 @@ where
 ///
 /// This function computes B-spline basis functions for multiple evaluation points
 /// simultaneously using SIMD instructions when available.
+#[allow(dead_code)]
 pub fn simd_bspline_basis_functions<F>(
     knots: &ArrayView1<F>,
     degree: usize,
@@ -484,31 +493,14 @@ where
     let n_basis = degree + 1;
     let mut basis_values = Array2::zeros((n_points, n_basis));
 
-    // Use SIMD for f64, fall back to scalar for other types
-    if std::any::TypeId::of::<F>() == std::any::TypeId::of::<f64>() {
-        #[cfg(all(feature = "simd", target_arch = "x86_64"))]
-        {
-            if is_x86_feature_detected!("avx2") {
-                unsafe {
-                    return simd_bspline_basis_avx2(
-                        knots,
-                        degree,
-                        x_values,
-                        span_indices,
-                        &mut basis_values,
-                    );
-                }
-            }
-        }
-    }
-
-    // Scalar fallback
+    // Use scalar implementation (AVX2 implementation removed)
     scalar_bspline_basis_functions(knots, degree, x_values, span_indices, &mut basis_values)
 }
 
 // B-spline basis function AVX2 implementation removed - using scalar implementation only
 
 /// Scalar implementation of B-spline basis function computation
+#[allow(dead_code)]
 fn scalar_bspline_basis_functions<F>(
     knots: &ArrayView1<F>,
     degree: usize,
@@ -536,6 +528,7 @@ where
 }
 
 /// Compute basis functions for a single point using de Boor's algorithm
+#[allow(dead_code)]
 fn compute_basis_functions_scalar<F>(
     knots: &ArrayView1<F>,
     degree: usize,
@@ -582,6 +575,7 @@ where
 }
 
 /// Improved scalar B-spline evaluation using cached workspace
+#[allow(dead_code)]
 fn scalar_bspline_evaluate<F>(
     knots: &ArrayView1<F>,
     coefficients: &ArrayView1<F>,
@@ -610,6 +604,7 @@ where
 }
 
 /// Find the knot span for a given parameter value
+#[allow(dead_code)]
 fn find_knot_span<F>(knots: &ArrayView1<F>, n: usize, degree: usize, x: F) -> usize
 where
     F: Float + FromPrimitive + PartialOrd,
@@ -641,11 +636,13 @@ where
 // SIMD helper functions removed - all operations now use core abstractions
 
 /// Get SIMD configuration information
+#[allow(dead_code)]
 pub fn get_simd_config() -> SimdConfig {
     SimdConfig::detect()
 }
 
 /// Check if SIMD is available on this platform
+#[allow(dead_code)]
 pub fn is_simd_available() -> bool {
     SimdConfig::detect().simd_available
 }
@@ -659,7 +656,7 @@ mod tests {
     #[test]
     fn test_simd_config_detection() {
         let config = SimdConfig::detect();
-        println!("SIMD Config: {:?}", config);
+        println!("SIMD Config: {config:?}");
 
         // Basic validation
         assert!(config.f32_width >= 1);
@@ -771,7 +768,7 @@ mod tests {
     #[test]
     fn test_simd_availability() {
         let available = is_simd_available();
-        println!("SIMD available: {}", available);
+        println!("SIMD available: {available}");
 
         // Test should always pass regardless of SIMD availability
         // (just checking that the SIMD detection function doesn't panic)

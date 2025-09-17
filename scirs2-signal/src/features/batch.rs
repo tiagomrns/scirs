@@ -1,15 +1,18 @@
 use crate::error::{SignalError, SignalResult};
 use crate::features::options::FeatureOptions;
+use ndarray::s;
+use ndarray::Array2;
+use num_traits::{Float, NumCast};
+use std::collections::HashMap;
+use std::fmt::Debug;
+
 use crate::features::{
     entropy::extract_entropy_features, peaks::extract_peak_features,
     spectral::extract_spectral_features, statistical::extract_statistical_features,
     trend::extract_trend_features, zero_crossing::extract_zero_crossing_features,
 };
-use ndarray::{s, Array2};
-use num_traits::{Float, NumCast};
-use std::collections::HashMap;
-use std::fmt::Debug;
-
+#[allow(unused_imports)]
+use crate::utilities::spectral::spectral_centroid;
 /// Run feature extraction on a time series
 ///
 /// # Arguments
@@ -25,7 +28,6 @@ use std::fmt::Debug;
 ///
 /// ```
 /// use scirs2_signal::features::{extract_features, FeatureOptions};
-/// use std::f64::consts::PI;
 ///
 /// // Generate a sinusoidal signal
 /// let signal: Vec<f64> = (0..1000)
@@ -49,6 +51,7 @@ use std::fmt::Debug;
 /// // Standard deviation should be close to 1/sqrt(2) for a sine wave
 /// assert!((std_dev - 1.0 / 2.0_f64.sqrt()).abs() < 0.01);
 /// ```
+#[allow(dead_code)]
 pub fn extract_features<T>(
     signal: &[T],
     options: &FeatureOptions,
@@ -122,7 +125,6 @@ where
 ///
 /// ```
 /// use scirs2_signal::features::{extract_features_batch, FeatureOptions};
-/// use std::f64::consts::PI;
 /// use ndarray::Array2;
 ///
 /// // Generate multiple signals
@@ -148,6 +150,7 @@ where
 /// assert_eq!(feature_matrix.shape()[0], n_signals);
 /// assert_eq!(feature_matrix.shape()[1], feature_names.len());
 /// ```
+#[allow(dead_code)]
 pub fn extract_features_batch(
     signals: &Array2<f64>,
     options: &FeatureOptions,

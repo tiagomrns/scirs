@@ -24,9 +24,10 @@ pub struct GraphColoring<N: Node> {
 ///
 /// # Returns
 /// * A graph coloring
+#[allow(dead_code)]
 pub fn greedy_coloring<N, E, Ix>(graph: &Graph<N, E, Ix>) -> GraphColoring<N>
 where
-    N: Node,
+    N: Node + std::fmt::Debug,
     E: EdgeWeight,
     Ix: petgraph::graph::IndexType,
 {
@@ -73,9 +74,10 @@ where
 ///
 /// # Returns
 /// * The chromatic number if found within max_colors, None otherwise
+#[allow(dead_code)]
 pub fn chromatic_number<N, E, Ix>(graph: &Graph<N, E, Ix>, max_colors: usize) -> Option<usize>
 where
-    N: Node,
+    N: Node + std::fmt::Debug,
     E: EdgeWeight,
     Ix: petgraph::graph::IndexType,
 {
@@ -83,14 +85,15 @@ where
         return Some(0);
     }
 
-    // Try coloring with 1, 2, 3, ... colors
+    // Try coloring with 1, 2, 3, ... _colors
     (1..=max_colors).find(|&num_colors| can_color_with_k_colors(graph, num_colors))
 }
 
 /// Helper function to check if a graph can be colored with k colors
+#[allow(dead_code)]
 fn can_color_with_k_colors<N, E, Ix>(graph: &Graph<N, E, Ix>, k: usize) -> bool
 where
-    N: Node,
+    N: Node + std::fmt::Debug,
     E: EdgeWeight,
     Ix: petgraph::graph::IndexType,
 {
@@ -98,14 +101,14 @@ where
     let mut coloring = vec![0; nodes.len()];
 
     fn backtrack<N, E, Ix>(
-        graph: &Graph<N, E, Ix>,
+        _graph: &Graph<N, E, Ix>,
         nodes: &[petgraph::graph::NodeIndex<Ix>],
         coloring: &mut [usize],
         node_idx: usize,
         k: usize,
     ) -> bool
     where
-        N: Node,
+        N: Node + std::fmt::Debug,
         E: EdgeWeight,
         Ix: petgraph::graph::IndexType,
     {
@@ -119,8 +122,8 @@ where
             // Check if this color is valid (no adjacent node has the same color)
             let mut valid = true;
             for (i, &other_node) in nodes.iter().enumerate().take(node_idx) {
-                if (graph.inner().contains_edge(node, other_node)
-                    || graph.inner().contains_edge(other_node, node))
+                if (_graph.inner().contains_edge(node, other_node)
+                    || _graph.inner().contains_edge(other_node, node))
                     && coloring[i] == color
                 {
                     valid = false;
@@ -130,7 +133,7 @@ where
 
             if valid {
                 coloring[node_idx] = color;
-                if backtrack(graph, nodes, coloring, node_idx + 1, k) {
+                if backtrack(_graph, nodes, coloring, node_idx + 1, k) {
                     return true;
                 }
             }

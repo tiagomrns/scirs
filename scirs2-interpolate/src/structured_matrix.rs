@@ -110,7 +110,7 @@ where
     /// * `ku` - Number of super-diagonals to extract
     pub fn from_dense(dense: &ArrayView2<T>, kl: usize, ku: usize) -> InterpolateResult<Self> {
         if dense.nrows() != dense.ncols() {
-            return Err(InterpolateError::ValueError(
+            return Err(InterpolateError::invalid_input(
                 "matrix must be square".to_string(),
             ));
         }
@@ -189,14 +189,14 @@ where
     /// * `value` - Value to set
     pub fn set(&mut self, i: usize, j: usize, value: T) -> InterpolateResult<()> {
         if i >= self.size || j >= self.size {
-            return Err(InterpolateError::ValueError(
+            return Err(InterpolateError::invalid_input(
                 "indices out of bounds".to_string(),
             ));
         }
 
         let diag_offset = j as isize - i as isize;
         if diag_offset < -(self.kl as isize) || diag_offset > (self.ku as isize) {
-            return Err(InterpolateError::ValueError(
+            return Err(InterpolateError::invalid_input(
                 "element outside band structure".to_string(),
             ));
         }
@@ -255,7 +255,7 @@ where
     /// Result vector y = A * x
     pub fn multiply_vector(&self, x: &ArrayView1<T>) -> InterpolateResult<Array1<T>> {
         if x.len() != self.size {
-            return Err(InterpolateError::ValueError(
+            return Err(InterpolateError::invalid_input(
                 "vector dimension must match matrix size".to_string(),
             ));
         }
@@ -379,7 +379,7 @@ where
     /// Optimized sparse matrix-vector product.
     pub fn multiply_vector(&self, x: &ArrayView1<T>) -> InterpolateResult<Array1<T>> {
         if x.len() != self.ncols {
-            return Err(InterpolateError::ValueError(
+            return Err(InterpolateError::invalid_input(
                 "vector dimension must match matrix columns".to_string(),
             ));
         }
@@ -488,6 +488,7 @@ where
 /// let rhs = Array1::from_vec(vec![1.0, 2.0, 1.0]);
 /// let solution = solve_band_system(&matrix, &rhs.view()).unwrap();
 /// ```
+#[allow(dead_code)]
 pub fn solve_band_system<T>(
     band_matrix: &BandMatrix<T>,
     rhs: &ArrayView1<T>,
@@ -509,8 +510,8 @@ where
         + Copy,
 {
     if rhs.len() != band_matrix.size() {
-        return Err(InterpolateError::ValueError(
-            "RHS vector size must match matrix size".to_string(),
+        return Err(InterpolateError::invalid_input(
+            "RHS vector size must match _matrix size".to_string(),
         ));
     }
 
@@ -528,7 +529,7 @@ where
 ///
 /// This is a basic implementation for correctness. Production code should
 /// use optimized LAPACK routines.
-fn solve_dense_system<T>(
+pub(crate) fn solve_dense_system<T>(
     matrix: &ArrayView2<T>,
     rhs: &ArrayView1<T>,
 ) -> InterpolateResult<Array1<T>>
@@ -550,12 +551,12 @@ where
 {
     let n = matrix.nrows();
     if matrix.ncols() != n {
-        return Err(InterpolateError::ValueError(
+        return Err(InterpolateError::invalid_input(
             "matrix must be square".to_string(),
         ));
     }
     if rhs.len() != n {
-        return Err(InterpolateError::ValueError(
+        return Err(InterpolateError::invalid_input(
             "RHS vector size must match matrix size".to_string(),
         ));
     }
@@ -584,7 +585,7 @@ where
 
         // Check for singular matrix
         if max_val < T::from_f64(1e-14).unwrap() {
-            return Err(InterpolateError::ValueError(
+            return Err(InterpolateError::invalid_input(
                 "matrix is singular or nearly singular".to_string(),
             ));
         }
@@ -625,6 +626,7 @@ where
 ///
 /// Uses the Conjugate Gradient method for symmetric positive definite systems,
 /// or GMRES for general systems.
+#[allow(dead_code)]
 pub fn solve_sparse_system<T>(
     sparse_matrix: &CSRMatrix<T>,
     rhs: &ArrayView1<T>,
@@ -649,8 +651,8 @@ where
 {
     let n = sparse_matrix.nrows;
     if rhs.len() != n {
-        return Err(InterpolateError::ValueError(
-            "RHS vector size must match matrix size".to_string(),
+        return Err(InterpolateError::invalid_input(
+            "RHS vector size must match _matrix size".to_string(),
         ));
     }
 
@@ -678,8 +680,8 @@ where
             }
 
             if diagonal.abs() < T::from_f64(1e-14).unwrap() {
-                return Err(InterpolateError::ValueError(
-                    "matrix has zero diagonal element".to_string(),
+                return Err(InterpolateError::invalid_input(
+                    "_matrix has zero diagonal element".to_string(),
                 ));
             }
 
@@ -702,7 +704,7 @@ where
         x.assign(&x_new);
     }
 
-    Err(InterpolateError::ValueError(
+    Err(InterpolateError::invalid_input(
         "iterative solver failed to converge".to_string(),
     ))
 }
@@ -713,6 +715,7 @@ where
 /// - Band matrices: Band QR factorization
 /// - Sparse matrices: Sparse QR or iterative methods
 /// - Dense matrices: Standard QR factorization
+#[allow(dead_code)]
 pub fn solve_structured_least_squares<T>(
     matrix: &ArrayView2<T>,
     rhs: &ArrayView1<T>,
@@ -738,7 +741,7 @@ where
     let n = matrix.ncols();
 
     if rhs.len() != m {
-        return Err(InterpolateError::ValueError(
+        return Err(InterpolateError::invalid_input(
             "RHS vector size must match matrix rows".to_string(),
         ));
     }
@@ -792,6 +795,7 @@ where
 /// # Returns
 ///
 /// A band matrix structure suitable for B-spline coefficient systems
+#[allow(dead_code)]
 pub fn create_bspline_band_matrix<T>(n: usize, degree: usize) -> BandMatrix<T>
 where
     T: Float + Copy + Zero + AddAssign,
@@ -806,6 +810,7 @@ where
 ///
 /// Uses blocking and SIMD-friendly algorithms when possible.
 #[cfg(feature = "simd")]
+#[allow(dead_code)]
 pub fn vectorized_matvec<T>(
     matrix: &ArrayView2<T>,
     vector: &ArrayView1<T>,
@@ -817,7 +822,7 @@ where
 
     let (m, n) = matrix.dim();
     if vector.len() != n {
-        return Err(InterpolateError::ValueError(
+        return Err(InterpolateError::invalid_input(
             "vector size must match matrix columns".to_string(),
         ));
     }
@@ -836,6 +841,7 @@ where
 }
 
 #[cfg(feature = "simd")]
+#[allow(dead_code)]
 fn vectorized_matvec_simd_f64<T>(
     matrix: &ArrayView2<T>,
     vector: &ArrayView1<T>,
@@ -861,6 +867,7 @@ where
 
 #[cfg(not(feature = "simd"))]
 /// Vectorized matrix-vector product (scalar fallback)
+#[allow(dead_code)]
 pub fn vectorized_matvec<T>(
     matrix: &ArrayView2<T>,
     vector: &ArrayView1<T>,
@@ -870,7 +877,7 @@ where
 {
     let (m, n) = matrix.dim();
     if vector.len() != n {
-        return Err(InterpolateError::ValueError(
+        return Err(InterpolateError::invalid_input(
             "vector size must match matrix columns".to_string(),
         ));
     }
@@ -880,6 +887,7 @@ where
     Ok(result)
 }
 
+#[allow(dead_code)]
 fn vectorized_matvec_scalar<T>(
     matrix: &ArrayView2<T>,
     vector: &ArrayView1<T>,

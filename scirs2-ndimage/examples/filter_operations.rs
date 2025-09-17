@@ -11,6 +11,7 @@ use scirs2_ndimage::filters::{
     gaussian_filter, maximum_filter, median_filter, minimum_filter, uniform_filter, BorderMode,
 };
 
+#[allow(dead_code)]
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("=== scirs2-ndimage Filter Operations Example ===\n");
 
@@ -83,6 +84,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 }
 
 // Helper function to print an array in a grid format
+#[allow(dead_code)]
 fn print_array(array: &Array2<f64>) {
     let (rows, cols) = array.dim();
 

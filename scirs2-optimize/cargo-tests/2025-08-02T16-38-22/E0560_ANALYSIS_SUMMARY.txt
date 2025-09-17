@@ -1,0 +1,82 @@
+E0560 STRUCT FIELD ERRORS ANALYSIS - scirs2-optimize
+================================================================
+
+Total E0560 errors: 46
+Files affected: 35
+Test artifacts directory: /Users/kitasan/work/scirs/scirs2-optimize/cargo-tests/2025-08-02T16-38-22
+
+HIGHEST IMPACT PATTERNS (for targeted fixing):
+==============================================
+
+1. _config → config (5 errors)
+   - scirs2-optimize/src/benchmarking.rs:581
+   - scirs2-optimize/src/gpu/acceleration.rs:1851
+   - scirs2-optimize/src/gpu/memory_management.rs:453
+   - scirs2-optimize/src/neuromorphic/spiking_networks.rs:236
+   - scirs2-optimize/src/reinforcement_learning/q_learning_optimization.rs:34
+
+2. _options → options (4 errors)
+   - scirs2-optimize/src/jit_optimization.rs:137
+   - scirs2-optimize/src/unconstrained/adaptive_convergence.rs:98
+   - scirs2-optimize/src/unconstrained/convergence_diagnostics.rs:353
+   - scirs2-optimize/src/unconstrained/robust_convergence.rs:164
+
+3. _func → func (3 errors)
+   - scirs2-optimize/src/automatic_differentiation/mod.rs:93
+   - scirs2-optimize/src/global/particle_swarm.rs:135
+   - scirs2-optimize/src/stochastic/mod.rs:157
+
+4. _parameters → parameters (3 errors)
+   - scirs2-optimize/src/neuromorphic/mod.rs:202
+   - scirs2-optimize/src/streaming/real_time_estimation.rs:76
+   - scirs2-optimize/src/streaming/streaming_trust_region.rs:56
+
+ALL ERROR PATTERNS BY FREQUENCY:
+================================
+_config: 5 occurrences
+_options: 4 occurrences
+_func: 3 occurrences
+_parameters: 3 occurrences
+_name: 2 occurrences
+_context: 2 occurrences
+_max_size: 2 occurrences
+_func_evals: 2 occurrences
+_penalty: 1 occurrence
+_fun: 1 occurrence
+_lb: 1 occurrence
+_mpi: 1 occurrence
+_rank: 1 occurrence
+_nit: 1 occurrence
+_dimension: 1 occurrence
+_architecture: 1 occurrence
+activation_size: 1 occurrence
+_delta: 1 occurrence
+_nrows: 1 occurrence
+_method: 1 occurrence
+_optimizer: 1 occurrence
+_params: 1 occurrence
+_source: 1 occurrence
+_eta_ltp: 1 occurrence
+_learning_rate: 1 occurrence
+_objective: 1 occurrence
+_num_arms: 1 occurrence
+x_fun: 1 occurrence
+_data: 1 occurrence
+_chunk_size: 1 occurrence
+_size: 1 occurrence
+
+REMEDIATION STRATEGY:
+====================
+1. Start with highest impact patterns (_config, _options, _func, _parameters)
+2. These 15 errors (33% of total) can be fixed with 4 systematic replacements
+3. Remaining 31 errors require individual attention
+4. All errors have clear suggested replacements from the compiler
+
+VERIFICATION STEPS:
+==================
+1. Apply fixes for each pattern group
+2. Re-run compilation after each group to verify progress
+3. Ensure no new errors are introduced
+4. Update test artifacts with validation results
+
+Files can be updated using MultiEdit tool for efficient batch processing.

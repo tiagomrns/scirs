@@ -13,6 +13,7 @@ use scirs2_integrate::ode::utils::jacobian::JacobianStrategy;
 use scirs2_integrate::ode::{solve_ivp, ODEMethod, ODEOptions};
 use std::time::Instant;
 
+#[allow(dead_code)]
 fn main() {
     println!("Jacobian Handling Example");
     println!("========================\n");
@@ -51,10 +52,10 @@ fn main() {
             println!("  Number of steps: {}", res.n_steps);
             println!("  Number of function evaluations: {}", res.n_eval);
             println!("  Number of Jacobian evaluations: {}", res.n_jac);
-            println!("  Execution time: {:?}", duration);
+            println!("  Execution time: {duration:?}");
             println!("  Final state: {:?}", res.y.last().unwrap());
         }
-        Err(e) => println!("  Error: {:?}", e),
+        Err(e) => println!("  Error: {e:?}"),
     }
     println!();
 
@@ -87,10 +88,10 @@ fn main() {
             println!("  Number of steps: {}", res.n_steps);
             println!("  Number of function evaluations: {}", res.n_eval);
             println!("  Number of Jacobian evaluations: {}", res.n_jac);
-            println!("  Execution time: {:?}", duration);
+            println!("  Execution time: {duration:?}");
             println!("  Final state: {:?}", res.y.last().unwrap());
         }
-        Err(e) => println!("  Error: {:?}", e),
+        Err(e) => println!("  Error: {e:?}"),
     }
     println!();
 
@@ -118,8 +119,8 @@ fn main() {
         rtol: 1e-6,
         atol: 1e-8,
         max_steps: 1000,
-        jac: None, // Use finite difference, but with sparsity
-        // jac_sparsity: Some(sparsity), // FIXME: jac_sparsity field doesn't exist in ODEOptions
+        jac: None, // Use finite difference
+        // Note: Sparsity pattern could be utilized in future versions
         ..Default::default()
     };
 
@@ -138,10 +139,10 @@ fn main() {
             println!("  Number of steps: {}", res.n_steps);
             println!("  Number of function evaluations: {}", res.n_eval);
             println!("  Number of Jacobian evaluations: {}", res.n_jac);
-            println!("  Execution time: {:?}", duration);
+            println!("  Execution time: {duration:?}");
             println!("  Final state: {:?}", res.y.last().unwrap());
         }
-        Err(e) => println!("  Error: {:?}", e),
+        Err(e) => println!("  Error: {e:?}"),
     }
     println!();
 
@@ -167,6 +168,7 @@ fn main() {
 /// dy1/dt = -0.04y1 + 1e4*y2*y3
 /// dy2/dt = 0.04y1 - 1e4*y2*y3 - 3e7*y2^2
 /// dy3/dt = 3e7*y2^2
+#[allow(dead_code)]
 fn chemical_kinetics(y: ArrayView1<f64>) -> Array1<f64> {
     let mut dydt = Array1::zeros(3);
 

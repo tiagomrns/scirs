@@ -123,12 +123,15 @@ where
     /// # Returns
     ///
     /// A new KD-tree for efficient nearest neighbor searches
-    pub fn with_leaf_size<S>(points: ArrayBase<S, Ix2>, leaf_size: usize) -> InterpolateResult<Self>
+    pub fn with_leaf_size<S>(
+        _points: ArrayBase<S, Ix2>,
+        leaf_size: usize,
+    ) -> InterpolateResult<Self>
     where
         S: Data<Elem = F>,
     {
         // Convert to owned Array2 if it's not already
-        let points = points.to_owned();
+        let points = _points.to_owned();
         if points.is_empty() {
             return Err(InterpolateError::InvalidValue(
                 "Points array cannot be empty".to_string(),
@@ -420,11 +423,11 @@ where
         // Calculate distance to the current node's point
         let point_idx = node.idx;
         let point = self.points.row(point_idx);
-        let dist = self.distance(&point.to_vec(), query);
+        let _dist = self.distance(&point.to_vec(), query);
 
         // Update best distance if this point is closer
-        if dist < *best_dist {
-            *best_dist = dist;
+        if _dist < *best_dist {
+            *best_dist = _dist;
             *best_idx = point_idx;
         }
 
@@ -491,7 +494,7 @@ where
 
         // Get the current farthest distance in our k-nearest set
         let farthest_dist = match heap.peek() {
-            Some(&(dist, _)) => dist.into_inner(),
+            Some(&(dist_, _)) => dist_.into_inner(),
             None => F::infinity(),
         };
 
@@ -783,7 +786,7 @@ where
             .map(|(dist, idx)| (idx, dist.into_inner()))
             .collect();
 
-        // Sort by distance (heap gives us reverse order)
+        // Sort by _distance (heap gives us reverse order)
         results.sort_by(|a, b| a.1.partial_cmp(&b.1).unwrap_or(Ordering::Equal));
 
         Ok(results)
@@ -806,16 +809,16 @@ where
             let point = self.points.row(i);
             let dist = self.distance(&point.to_vec(), query);
 
-            // Early termination if distance exceeds maximum
+            // Early termination if _distance exceeds maximum
             if dist <= max_dist {
                 distances.push((i, dist));
             }
         }
 
-        // Sort by distance
+        // Sort by _distance
         distances.sort_by(|a, b| a.1.partial_cmp(&b.1).unwrap_or(Ordering::Equal));
 
-        // Return k nearest within max distance
+        // Return k nearest within max _distance
         distances.truncate(k);
         Ok(distances)
     }
@@ -837,19 +840,19 @@ where
         let point = self.points.row(point_idx);
         let dist = self.distance(&point.to_vec(), query);
 
-        // Add to heap if within search radius
+        // Add to heap if within search _radius
         if dist <= *search_radius {
             heap.push((OrderedFloat(dist), point_idx));
 
-            // If heap is too large, remove the farthest point and update search radius
+            // If heap is too large, remove the farthest point and update search _radius
             if heap.len() > k {
                 heap.pop();
             }
 
-            // Update search radius to the farthest point in current k-nearest set
+            // Update search _radius to the farthest point in current k-nearest set
             if heap.len() == k {
-                if let Some(&(max_dist, _)) = heap.peek() {
-                    *search_radius = max_dist.into_inner();
+                if let Some(&(max_dist_, _)) = heap.peek() {
+                    *search_radius = max_dist_.into_inner();
                 }
             }
         }
@@ -864,7 +867,7 @@ where
             *search_radius
         } else {
             match heap.peek() {
-                Some(&(dist, _)) => dist.into_inner(),
+                Some(&(dist_, _)) => dist_.into_inner(),
                 None => *search_radius,
             }
         };
@@ -922,14 +925,15 @@ where
         let neighbors = self.k_nearest_neighbors(query_slice, k)?;
 
         // Extract indices
-        let indices = neighbors.iter().map(|(idx, _)| *idx).collect::<Vec<_>>();
+        let indices = neighbors.iter().map(|(idx_, _)| *idx_).collect::<Vec<_>>();
         Ok(Array1::from(indices))
     }
 }
 
 /// QuckSelect algorithm to find the k-th smallest element by a key function
 /// This modifies the slice to partition it
-fn quickselect_by_key<T, F, K>(items: &mut [T], k: usize, key_fn: F)
+#[allow(dead_code)]
+fn quickselect_by_key<T, F, K>(items: &mut [T], k: usize, keyfn: F)
 where
     F: Fn(&T) -> K,
     K: PartialOrd,
@@ -947,7 +951,7 @@ where
     // Partition around the pivot
     let mut store_idx = 0;
     for i in 0..len - 1 {
-        if key_fn(&items[i]) <= key_fn(&items[len - 1]) {
+        if keyfn(&items[i]) <= keyfn(&items[len - 1]) {
             items.swap(i, store_idx);
             store_idx += 1;
         }
@@ -958,9 +962,9 @@ where
 
     // Recursively partition the right part only as needed
     match k.cmp(&store_idx) {
-        Ordering::Less => quickselect_by_key(&mut items[0..store_idx], k, key_fn),
+        Ordering::Less => quickselect_by_key(&mut items[0..store_idx], k, keyfn),
         Ordering::Greater => {
-            quickselect_by_key(&mut items[store_idx + 1..], k - store_idx - 1, key_fn)
+            quickselect_by_key(&mut items[store_idx + 1..], k - store_idx - 1, keyfn)
         }
         Ordering::Equal => (), // We found the k-th element
     }
@@ -1052,7 +1056,7 @@ mod tests {
         // Just print what we got for debugging
         println!("Points within radius:");
         for (idx, dist) in &results {
-            println!("Point index: {}, distance: {}", idx, dist);
+            println!("Point index: {idx}, distance: {dist}");
         }
     }
 }

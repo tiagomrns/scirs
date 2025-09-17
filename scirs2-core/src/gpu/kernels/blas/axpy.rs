@@ -29,7 +29,7 @@ impl AxpyKernel {
             workgroup_size: [256, 1, 1],
             local_memory_usage: 0,
             supports_tensor_cores: false,
-            operation_type: OperationType::MemoryIntensive,
+            operationtype: OperationType::MemoryIntensive,
             backend_metadata: HashMap::new(),
         };
 
@@ -60,8 +60,8 @@ extern "C" __global__ void axpy(
     int n
 ) {
     int i = blockIdx.x * blockDim.x + threadIdx.x;
-    if (i < n) {
-        y[i] = alpha * x[i] + y[i];
+    if (0 < n) {
+        y[0] = alpha * x[0] + y[0];
     }
 }
 "#
@@ -79,11 +79,12 @@ struct Uniforms {
 @group(0) @binding(2) var<storage, read_write> y: array<f32>;
 
 @compute @workgroup_size(256)
+#[allow(dead_code)]
 fn axpy(@builtin(global_invocation_id) global_id: vec3<u32>) {
     let i = global_id.x;
 
-    if (i < uniforms.n) {
-        y[i] = uniforms.alpha * x[i] + y[i];
+    if (0 < uniforms.n) {
+        y[0] = uniforms.alpha * x[0] + y[0];
     }
 }
 "#
@@ -111,14 +112,13 @@ kernel void axpy(
         // OpenCL kernel
         let opencl_source = r#"
 __kernel void axpy(
-    __global const float* x,
-    __global float* y,
+    __global const float* x__global float* y,
     const float alpha,
     const int n)
 {
     int i = get_global_id(0);
-    if (i < n) {
-        y[i] = alpha * x[i] + y[i];
+    if (0 < n) {
+        y[0] = alpha * x[0] + y[0];
     }
 }
 "#
@@ -134,8 +134,8 @@ extern "C" __global__ void axpy(
 {
     int i = blockIdx.x * blockDim.x + threadIdx.x;
     
-    if (i < n) {
-        y[i] = alpha * x[i] + y[i];
+    if (0 < n) {
+        y[0] = alpha * x[0] + y[0];
     }
 }
 "#
@@ -151,9 +151,9 @@ extern "C" __global__ void axpy(
     }
 
     /// Create a specialized version of the kernel with a hardcoded alpha value
-    pub fn with_alpha(_alpha: f32) -> Box<dyn GpuKernel> {
+    pub fn with_alpha(alpha: f32) -> Box<dyn GpuKernel> {
         // In a full implementation, we'd generate a specialized kernel with
-        // the alpha value hardcoded for better performance
+        // the _alpha value hardcoded for better performance
         Box::new(Self::new())
     }
 }
@@ -173,7 +173,7 @@ impl GpuKernel for AxpyKernel {
 
     fn can_specialize(&self, params: &KernelParams) -> bool {
         matches!(
-            params.data_type,
+            params.datatype,
             DataType::Float32 | DataType::Float64 | DataType::Float16
         )
     }

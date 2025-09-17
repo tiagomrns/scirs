@@ -6,6 +6,7 @@
 use num_complex::Complex64;
 use scirs2_special::{beta_complex, digamma_complex, gamma_complex, loggamma_complex};
 
+#[allow(dead_code)]
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("=== SCIRS2-SPECIAL Complex Gamma Functions Demo ===\n");
 
@@ -28,6 +29,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     Ok(())
 }
 
+#[allow(dead_code)]
 fn demo_complex_gamma() -> Result<(), Box<dyn std::error::Error>> {
     println!("1. Complex Gamma Function Γ(z)");
     println!("==============================");
@@ -54,6 +56,7 @@ fn demo_complex_gamma() -> Result<(), Box<dyn std::error::Error>> {
     Ok(())
 }
 
+#[allow(dead_code)]
 fn demo_complex_loggamma() -> Result<(), Box<dyn std::error::Error>> {
     println!("2. Complex Log Gamma Function log(Γ(z))");
     println!("=======================================");
@@ -79,6 +82,7 @@ fn demo_complex_loggamma() -> Result<(), Box<dyn std::error::Error>> {
     Ok(())
 }
 
+#[allow(dead_code)]
 fn demo_complex_digamma() -> Result<(), Box<dyn std::error::Error>> {
     println!("3. Complex Digamma Function ψ(z)");
     println!("=================================");
@@ -103,6 +107,7 @@ fn demo_complex_digamma() -> Result<(), Box<dyn std::error::Error>> {
     Ok(())
 }
 
+#[allow(dead_code)]
 fn demo_complex_beta() -> Result<(), Box<dyn std::error::Error>> {
     println!("4. Complex Beta Function B(a,b)");
     println!("===============================");
@@ -127,6 +132,7 @@ fn demo_complex_beta() -> Result<(), Box<dyn std::error::Error>> {
     Ok(())
 }
 
+#[allow(dead_code)]
 fn demo_mathematical_properties() -> Result<(), Box<dyn std::error::Error>> {
     println!("5. Mathematical Properties Verification");
     println!("======================================");

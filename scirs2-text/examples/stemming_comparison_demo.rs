@@ -1,6 +1,7 @@
 use scirs2_text::{LancasterStemmer, PorterStemmer, SimpleLemmatizer, SnowballStemmer, Stemmer};
 use std::error::Error;
 
+#[allow(dead_code)]
 fn main() -> Result<(), Box<dyn Error>> {
     println!("Stemming Algorithms Comparison Demo");
     println!("-----------------------------------");
@@ -50,8 +51,7 @@ fn main() -> Result<(), Box<dyn Error>> {
         let lemma_result = lemmatizer.stem(word)?;
 
         println!(
-            "{:<15} {:<15} {:<15} {:<15} {:<15}",
-            word, porter_result, snowball_result, lancaster_result, lemma_result
+            "{word:<15} {porter_result:<15} {snowball_result:<15} {lancaster_result:<15} {lemma_result:<15}"
         );
     }
 
@@ -76,7 +76,7 @@ fn main() -> Result<(), Box<dyn Error>> {
         let default_result = default_lancaster.stem(word)?;
         let custom_result = custom_lancaster.stem(word)?;
 
-        println!("{:<15} {:<20} {:<20}", word, default_result, custom_result);
+        println!("{word:<15} {default_result:<20} {custom_result:<20}");
     }
 
     println!("\nNotes:");

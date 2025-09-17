@@ -2,13 +2,14 @@ use ndarray::array;
 use scirs2_linalg::eigh;
 
 #[test]
+#[allow(dead_code)]
 fn test_3x3_eigenvalue_precision() {
-    let symmetric_matrix = array![[4.0, 1.0, 0.0], [1.0, 3.0, 1.0], [0.0, 1.0, 2.0]];
+    let symmetricmatrix = array![[4.0, 1.0, 0.0], [1.0, 3.0, 1.0], [0.0, 1.0, 2.0]];
 
-    let (eigenvals, eigenvecs) = eigh(&symmetric_matrix.view(), None).unwrap();
+    let (eigenvals, eigenvecs) = eigh(&symmetricmatrix.view(), None).unwrap();
 
     // Check A * V = V * Λ with high precision
-    let av = symmetric_matrix.dot(&eigenvecs);
+    let av = symmetricmatrix.dot(&eigenvecs);
     let vl = eigenvecs.dot(&ndarray::Array2::from_diag(&eigenvals));
 
     let mut max_error = 0.0f64;

@@ -3,13 +3,15 @@
 //! This module contains benchmarks comparing various FFT implementations
 //! and measuring performance across different input sizes.
 
-use criterion::{black_box, criterion_group, criterion_main, BenchmarkId, Criterion};
+use criterion::{criterion_group, criterion_main, BenchmarkId, Criterion};
 use ndarray::Array1;
 use num_complex::Complex64;
 use scirs2_fft::{fft, fft2, fftn, frft, ifft, irfft, rfft};
 use std::f64::consts::PI;
+use std::hint::black_box;
 
 /// Benchmark basic 1D FFT operations
+#[allow(dead_code)]
 fn bench_fft_1d(c: &mut Criterion) {
     let mut group = c.benchmark_group("FFT-1D");
 
@@ -56,6 +58,7 @@ fn bench_fft_1d(c: &mut Criterion) {
 }
 
 /// Benchmark 2D FFT operations
+#[allow(dead_code)]
 fn bench_fft_2d(c: &mut Criterion) {
     let mut group = c.benchmark_group("FFT-2D");
 
@@ -79,24 +82,29 @@ fn bench_fft_2d(c: &mut Criterion) {
         });
 
         // Benchmark N-dimensional FFT
-        group.bench_with_input(BenchmarkId::new("fftn", size), &data_2d, |b, data| {
-            b.iter(|| {
-                fftn(
-                    black_box(&data.clone().into_dyn()),
-                    None,
-                    None,
-                    None,
-                    None,
-                    None,
-                )
-            })
-        });
+        group.bench_with_input(
+            BenchmarkId::new("fftn", size),
+            &data_2d,
+            |b, data: &ndarray::Array2<f64>| {
+                b.iter(|| {
+                    fftn(
+                        black_box(&data.clone().into_dyn()),
+                        None,
+                        None,
+                        None,
+                        None,
+                        None,
+                    )
+                })
+            },
+        );
     }
 
     group.finish();
 }
 
 /// Benchmark Fractional Fourier Transform
+#[allow(dead_code)]
 fn bench_frft(c: &mut Criterion) {
     let mut group = c.benchmark_group("FrFT");
 
@@ -112,7 +120,7 @@ fn bench_frft(c: &mut Criterion) {
         // Different fractional orders
         for &alpha in [0.25, 0.5, 0.75, 1.0].iter() {
             group.bench_with_input(
-                BenchmarkId::new(format!("alpha_{}", alpha), size),
+                BenchmarkId::new(format!("alpha_{alpha}"), size),
                 &signal,
                 |b, signal| b.iter(|| frft(black_box(signal), alpha, None)),
             );
@@ -123,6 +131,7 @@ fn bench_frft(c: &mut Criterion) {
 }
 
 /// Benchmark memory-efficient FFT operations
+#[allow(dead_code)]
 fn bench_memory_efficient(c: &mut Criterion) {
     // Memory efficient FFT mode is used inline below
 
@@ -176,7 +185,7 @@ fn bench_memory_efficient(c: &mut Criterion) {
         group.bench_with_input(
             BenchmarkId::new("fft2_efficient", size),
             &data_2d,
-            |b, data| {
+            |b, data: &ndarray::Array2<f64>| {
                 b.iter(|| {
                     use scirs2_fft::memory_efficient::{fft2_efficient, FftMode};
                     fft2_efficient(black_box(&data.view()), None, FftMode::Forward, false)

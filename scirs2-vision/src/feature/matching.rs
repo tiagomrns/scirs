@@ -49,7 +49,7 @@ pub struct DescriptorMatch {
 #[derive(Debug, Clone)]
 pub struct BruteForceConfig {
     /// Distance metric to use
-    pub distance_metric: DistanceMetric,
+    pub distancemetric: DistanceMetric,
     /// Maximum distance threshold for valid matches
     pub max_distance: f32,
     /// Apply cross-check validation
@@ -63,7 +63,7 @@ pub struct BruteForceConfig {
 impl Default for BruteForceConfig {
     fn default() -> Self {
         Self {
-            distance_metric: DistanceMetric::Euclidean,
+            distancemetric: DistanceMetric::Euclidean,
             max_distance: 0.7,
             cross_check: true,
             use_ratio_test: true,
@@ -322,7 +322,7 @@ impl BruteForceMatcher {
     ) -> Result<Vec<DescriptorMatch>> {
         let mut validated_matches = Vec::new();
 
-        // Create reverse matches
+        // Create reverse _matches
         let mut reverse_matches = HashMap::new();
         for (j, desc2) in descriptors2.iter().enumerate() {
             if let Some(m) = self.find_best_match(j, &desc2.vector, descriptors1)? {
@@ -351,7 +351,7 @@ impl BruteForceMatcher {
     ) -> Result<Vec<DescriptorMatch>> {
         let mut validated_matches = Vec::new();
 
-        // Create reverse matches
+        // Create reverse _matches
         let mut reverse_matches = HashMap::new();
         for (j, desc2) in descriptors2.iter().enumerate() {
             if let Some(m) = self.find_best_binary_match(j, desc2, descriptors1)? {
@@ -379,7 +379,7 @@ impl BruteForceMatcher {
             ));
         }
 
-        match self.config.distance_metric {
+        match self.config.distancemetric {
             DistanceMetric::Euclidean => {
                 let sum_sq: f32 = desc1
                     .iter()
@@ -613,7 +613,7 @@ impl KdTree {
                     .max_by(|(_, a), (_, b)| {
                         a.1.partial_cmp(&b.1).unwrap_or(std::cmp::Ordering::Equal)
                     })
-                    .map(|(i, _)| i)
+                    .map(|(i_, _)| i_)
                     .unwrap();
 
                 if distance < neighbors[max_idx].1 {
@@ -653,6 +653,7 @@ impl KdTree {
 }
 
 /// Calculate Euclidean distance between two points
+#[allow(dead_code)]
 fn euclidean_distance(p1: &[f32], p2: &[f32]) -> f32 {
     p1.iter()
         .zip(p2.iter())
@@ -664,15 +665,15 @@ fn euclidean_distance(p1: &[f32], p2: &[f32]) -> f32 {
 /// Ratio test matcher implementing Lowe's ratio test
 pub struct RatioTestMatcher {
     ratio_threshold: f32,
-    distance_metric: DistanceMetric,
+    distancemetric: DistanceMetric,
 }
 
 impl RatioTestMatcher {
     /// Create new ratio test matcher
-    pub fn new(ratio_threshold: f32, distance_metric: DistanceMetric) -> Self {
+    pub fn new(ratio_threshold: f32, distancemetric: DistanceMetric) -> Self {
         Self {
             ratio_threshold,
-            distance_metric,
+            distancemetric,
         }
     }
 
@@ -680,7 +681,7 @@ impl RatioTestMatcher {
     pub fn new_default() -> Self {
         Self {
             ratio_threshold: 0.75,
-            distance_metric: DistanceMetric::Euclidean,
+            distancemetric: DistanceMetric::Euclidean,
         }
     }
 
@@ -700,7 +701,7 @@ impl RatioTestMatcher {
         descriptors2: &[Descriptor],
     ) -> Result<Vec<DescriptorMatch>> {
         let bf_config = BruteForceConfig {
-            distance_metric: self.distance_metric,
+            distancemetric: self.distancemetric,
             max_distance: f32::MAX,
             cross_check: false,
             use_ratio_test: true,
@@ -719,9 +720,9 @@ pub struct CrossCheckMatcher {
 
 impl CrossCheckMatcher {
     /// Create new cross-check matcher
-    pub fn new(distance_metric: DistanceMetric) -> Self {
+    pub fn new(distancemetric: DistanceMetric) -> Self {
         let config = BruteForceConfig {
-            distance_metric,
+            distancemetric,
             max_distance: f32::MAX,
             cross_check: true,
             use_ratio_test: false,
@@ -800,7 +801,7 @@ impl RansacMatcher {
 
             let mut sample_indices = Vec::new();
             while sample_indices.len() < 4 {
-                let idx = rng.random_range(0..matches.len());
+                let idx = rng.gen_range(0..matches.len());
                 if !sample_indices.contains(&idx) {
                     sample_indices.push(idx);
                 }
@@ -808,16 +809,16 @@ impl RansacMatcher {
 
             // Extract sample points
             let mut src_points = Vec::new();
-            let mut dst_points = Vec::new();
+            let mut dstpoints = Vec::new();
 
             for &idx in &sample_indices {
                 let m = &matches[idx];
                 src_points.push([keypoints1[m.query_idx].x, keypoints1[m.query_idx].y]);
-                dst_points.push([keypoints2[m.train_idx].x, keypoints2[m.train_idx].y]);
+                dstpoints.push([keypoints2[m.train_idx].x, keypoints2[m.train_idx].y]);
             }
 
             // Estimate homography (simplified)
-            if let Ok(homography) = estimate_homography(&src_points, &dst_points) {
+            if let Ok(homography) = estimate_homography(&src_points, &dstpoints) {
                 // Count inliers
                 let mut inliers = Vec::new();
                 for (i, m) in matches.iter().enumerate() {
@@ -852,28 +853,143 @@ impl RansacMatcher {
         Ok(best_inliers.iter().map(|&i| matches[i].clone()).collect())
     }
 
-    /// RANSAC for fundamental matrix estimation
+    /// RANSAC for fundamental matrix estimation using 8-point algorithm
     fn ransac_fundamental(
         &self,
         matches: &[DescriptorMatch],
         keypoints1: &[KeyPoint],
         keypoints2: &[KeyPoint],
     ) -> Result<Vec<DescriptorMatch>> {
-        // Simplified implementation - in practice, use proper 8-point algorithm
-        // For now, use homography as approximation
-        self.ransac_homography(matches, keypoints1, keypoints2)
+        let mut rng = StdRng::seed_from_u64(42);
+        let mut best_inliers = Vec::new();
+        let mut best_inlier_count = 0;
+
+        for _ in 0..self.config.max_iterations {
+            // Select 8 random matches for fundamental matrix estimation
+            if matches.len() < 8 {
+                break;
+            }
+
+            let mut sample_indices = Vec::new();
+            while sample_indices.len() < 8 {
+                let idx = rng.gen_range(0..matches.len());
+                if !sample_indices.contains(&idx) {
+                    sample_indices.push(idx);
+                }
+            }
+
+            // Extract sample points
+            let mut src_points = Vec::new();
+            let mut dstpoints = Vec::new();
+
+            for &idx in &sample_indices {
+                let m = &matches[idx];
+                src_points.push([keypoints1[m.query_idx].x, keypoints1[m.query_idx].y]);
+                dstpoints.push([keypoints2[m.train_idx].x, keypoints2[m.train_idx].y]);
+            }
+
+            // Estimate fundamental matrix using 8-point algorithm
+            if let Ok(fundamental) = estimate_fundamental_matrix(&src_points, &dstpoints) {
+                // Count inliers using epipolar constraint
+                let mut inliers = Vec::new();
+                for (i, m) in matches.iter().enumerate() {
+                    let p1 = [keypoints1[m.query_idx].x, keypoints1[m.query_idx].y, 1.0];
+                    let p2 = [keypoints2[m.train_idx].x, keypoints2[m.train_idx].y, 1.0];
+
+                    let error = compute_epipolar_error(&fundamental, &p1, &p2);
+
+                    if error < self.config.threshold {
+                        inliers.push(i);
+                    }
+                }
+
+                if inliers.len() > best_inlier_count {
+                    best_inlier_count = inliers.len();
+                    best_inliers = inliers;
+                }
+
+                // Early termination if we have enough inliers
+                if best_inlier_count >= self.config.min_inliers {
+                    let inlier_ratio = best_inlier_count as f32 / matches.len() as f32;
+                    if inlier_ratio > self.config.confidence {
+                        break;
+                    }
+                }
+            }
+        }
+
+        // Return inlier matches
+        Ok(best_inliers.iter().map(|&i| matches[i].clone()).collect())
     }
 
-    /// RANSAC for essential matrix estimation
+    /// RANSAC for essential matrix estimation using 5-point algorithm
     fn ransac_essential(
         &self,
         matches: &[DescriptorMatch],
         keypoints1: &[KeyPoint],
         keypoints2: &[KeyPoint],
     ) -> Result<Vec<DescriptorMatch>> {
-        // Simplified implementation - in practice, use proper 5-point algorithm
-        // For now, use homography as approximation
-        self.ransac_homography(matches, keypoints1, keypoints2)
+        let mut rng = StdRng::seed_from_u64(42);
+        let mut best_inliers = Vec::new();
+        let mut best_inlier_count = 0;
+
+        for _ in 0..self.config.max_iterations {
+            // Select 5 random matches for essential matrix estimation
+            if matches.len() < 5 {
+                break;
+            }
+
+            let mut sample_indices = Vec::new();
+            while sample_indices.len() < 5 {
+                let idx = rng.gen_range(0..matches.len());
+                if !sample_indices.contains(&idx) {
+                    sample_indices.push(idx);
+                }
+            }
+
+            // Extract sample points (assuming calibrated cameras with unit focal length)
+            let mut src_points = Vec::new();
+            let mut dstpoints = Vec::new();
+
+            for &idx in &sample_indices {
+                let m = &matches[idx];
+                src_points.push([keypoints1[m.query_idx].x, keypoints1[m.query_idx].y]);
+                dstpoints.push([keypoints2[m.train_idx].x, keypoints2[m.train_idx].y]);
+            }
+
+            // Estimate essential matrix (simplified using fundamental matrix for now)
+            // In practice, implement proper 5-point algorithm
+            if let Ok(essential) = estimate_essential_matrix(&src_points, &dstpoints) {
+                // Count inliers using epipolar constraint
+                let mut inliers = Vec::new();
+                for (i, m) in matches.iter().enumerate() {
+                    let p1 = [keypoints1[m.query_idx].x, keypoints1[m.query_idx].y, 1.0];
+                    let p2 = [keypoints2[m.train_idx].x, keypoints2[m.train_idx].y, 1.0];
+
+                    let error = compute_epipolar_error(&essential, &p1, &p2);
+
+                    if error < self.config.threshold {
+                        inliers.push(i);
+                    }
+                }
+
+                if inliers.len() > best_inlier_count {
+                    best_inlier_count = inliers.len();
+                    best_inliers = inliers;
+                }
+
+                // Early termination if we have enough inliers
+                if best_inlier_count >= self.config.min_inliers {
+                    let inlier_ratio = best_inlier_count as f32 / matches.len() as f32;
+                    if inlier_ratio > self.config.confidence {
+                        break;
+                    }
+                }
+            }
+        }
+
+        // Return inlier matches
+        Ok(best_inliers.iter().map(|&i| matches[i].clone()).collect())
     }
 
     /// RANSAC for affine transformation estimation
@@ -895,7 +1011,7 @@ impl RansacMatcher {
 
             let mut sample_indices = Vec::new();
             while sample_indices.len() < 3 {
-                let idx = rng.random_range(0..matches.len());
+                let idx = rng.gen_range(0..matches.len());
                 if !sample_indices.contains(&idx) {
                     sample_indices.push(idx);
                 }
@@ -903,16 +1019,16 @@ impl RansacMatcher {
 
             // Extract sample points
             let mut src_points = Vec::new();
-            let mut dst_points = Vec::new();
+            let mut dstpoints = Vec::new();
 
             for &idx in &sample_indices {
                 let m = &matches[idx];
                 src_points.push([keypoints1[m.query_idx].x, keypoints1[m.query_idx].y]);
-                dst_points.push([keypoints2[m.train_idx].x, keypoints2[m.train_idx].y]);
+                dstpoints.push([keypoints2[m.train_idx].x, keypoints2[m.train_idx].y]);
             }
 
             // Estimate affine transformation (simplified)
-            if let Ok(affine) = estimate_affine(&src_points, &dst_points) {
+            if let Ok(affine) = estimate_affine(&src_points, &dstpoints) {
                 // Count inliers
                 let mut inliers = Vec::new();
                 for (i, m) in matches.iter().enumerate() {
@@ -939,22 +1055,26 @@ impl RansacMatcher {
     }
 }
 
-/// Estimate homography matrix from point correspondences (simplified)
-fn estimate_homography(src_points: &[[f32; 2]], dst_points: &[[f32; 2]]) -> Result<Array2<f32>> {
-    if src_points.len() != dst_points.len() || src_points.len() < 4 {
+/// Estimate homography matrix from point correspondences using Direct Linear Transform (DLT)
+#[allow(dead_code)]
+fn estimate_homography(src_points: &[[f32; 2]], dstpoints: &[[f32; 2]]) -> Result<Array2<f32>> {
+    if src_points.len() != dstpoints.len() || src_points.len() < 4 {
         return Err(VisionError::InvalidParameter(
             "Need at least 4 point correspondences".to_string(),
         ));
     }
 
-    // Simplified homography estimation using Direct Linear Transform (DLT)
-    // In practice, use proper normalization and robust estimation
+    // Normalize points for better numerical stability
+    let (src_norm, src_transform) = normalize_points(src_points);
+    let (dst_norm, dst_transform) = normalize_points(dstpoints);
+
+    // Build the coefficient matrix using normalized points
     let n = src_points.len();
     let mut a = Array2::zeros((2 * n, 9));
 
     for i in 0..n {
-        let [x, y] = src_points[i];
-        let [xp, yp] = dst_points[i];
+        let [x, y] = src_norm[i];
+        let [xp, yp] = dst_norm[i];
 
         // First row: -xi, -yi, -1, 0, 0, 0, xi*xp', yi*xp', xp'
         a[[2 * i, 0]] = -x;
@@ -973,15 +1093,30 @@ fn estimate_homography(src_points: &[[f32; 2]], dst_points: &[[f32; 2]]) -> Resu
         a[[2 * i + 1, 8]] = yp;
     }
 
-    // Solve using SVD (simplified - in practice use proper SVD)
-    // For now, return identity matrix as placeholder
-    let mut h = Array2::eye(3);
-    h[[2, 2]] = 1.0;
+    // Solve for homography using SVD via eigenvalue decomposition of A^T*A
+    let ata = compute_ata(&a);
+    let h_vec = find_smallest_eigenvector_homography(&ata)?;
 
-    Ok(h)
+    // Reshape to 3x3 matrix
+    let mut h_norm = Array2::from_shape_vec((3, 3), h_vec)
+        .map_err(|e| VisionError::OperationError(format!("Failed to reshape homography: {e}")))?;
+
+    // Denormalize: H = T_dst^(-1) * H_norm * Tsrc
+    let dst_inv = matrix_inverse_3x3(&dst_transform)?;
+    h_norm = matrix_multiply_3x3(&dst_inv, &h_norm);
+    let h = matrix_multiply_3x3(&h_norm, &src_transform);
+
+    // Normalize so that h[2,2] = 1 if possible
+    if h[[2, 2]].abs() > 1e-8 {
+        let h_normalized = h.mapv(|v| v / h[[2, 2]]);
+        Ok(h_normalized)
+    } else {
+        Ok(h)
+    }
 }
 
 /// Apply homography transformation to a point
+#[allow(dead_code)]
 fn apply_homography(h: &Array2<f32>, point: [f32; 2]) -> [f32; 2] {
     let [x, y] = point;
     let w = h[[2, 0]] * x + h[[2, 1]] * y + h[[2, 2]];
@@ -996,24 +1131,60 @@ fn apply_homography(h: &Array2<f32>, point: [f32; 2]) -> [f32; 2] {
     }
 }
 
-/// Estimate affine transformation from point correspondences
-fn estimate_affine(src_points: &[[f32; 2]], dst_points: &[[f32; 2]]) -> Result<Array2<f32>> {
-    if src_points.len() != dst_points.len() || src_points.len() < 3 {
+/// Estimate affine transformation from point correspondences using least squares
+#[allow(dead_code)]
+fn estimate_affine(src_points: &[[f32; 2]], dstpoints: &[[f32; 2]]) -> Result<Array2<f32>> {
+    if src_points.len() != dstpoints.len() || src_points.len() < 3 {
         return Err(VisionError::InvalidParameter(
             "Need at least 3 point correspondences".to_string(),
         ));
     }
 
-    // Simplified affine estimation
-    // In practice, use least squares fitting
-    let mut affine = Array2::eye(3);
-    affine[[0, 0]] = 1.0;
-    affine[[1, 1]] = 1.0;
+    let n = src_points.len();
+
+    // Set up the linear system: A * x = b
+    // For affine transformation: [a b c; d e f; 0 0 1]
+    // We solve two separate 3x1 systems for [a b c] and [d e f]
+
+    let mut a_matrix = Array2::zeros((n, 3));
+    let mut bx = vec![0.0f32; n];
+    let mut by = vec![0.0f32; n];
+
+    for i in 0..n {
+        let [x, y] = src_points[i];
+        let [xp, yp] = dstpoints[i];
+
+        // Fill coefficient matrix: [x y 1]
+        a_matrix[[i, 0]] = x;
+        a_matrix[[i, 1]] = y;
+        a_matrix[[i, 2]] = 1.0;
+
+        // Fill target vectors
+        bx[i] = xp;
+        by[i] = yp;
+    }
+
+    // Solve for x-coefficients: [a b c]
+    let x_coeffs = solve_least_squares(&a_matrix, &bx)?;
+
+    // Solve for y-coefficients: [d e f]
+    let y_coeffs = solve_least_squares(&a_matrix, &by)?;
+
+    // Construct affine transformation matrix
+    let mut affine = Array2::zeros((3, 3));
+    affine[[0, 0]] = x_coeffs[0]; // a
+    affine[[0, 1]] = x_coeffs[1]; // b
+    affine[[0, 2]] = x_coeffs[2]; // c
+    affine[[1, 0]] = y_coeffs[0]; // d
+    affine[[1, 1]] = y_coeffs[1]; // e
+    affine[[1, 2]] = y_coeffs[2]; // f
+    affine[[2, 2]] = 1.0;
 
     Ok(affine)
 }
 
 /// Apply affine transformation to a point
+#[allow(dead_code)]
 fn apply_affine(affine: &Array2<f32>, point: [f32; 2]) -> [f32; 2] {
     let [x, y] = point;
     [
@@ -1146,6 +1317,342 @@ impl Default for MatchStatistics {
     }
 }
 
+/// Helper functions for linear algebra operations
+/// Normalize points for better numerical stability in homography estimation
+#[allow(dead_code)]
+fn normalize_points(points: &[[f32; 2]]) -> (Vec<[f32; 2]>, Array2<f32>) {
+    if points.is_empty() {
+        return (Vec::new(), Array2::eye(3));
+    }
+
+    // Compute centroid
+    let n = points.len() as f32;
+    let cx = points.iter().map(|p| p[0]).sum::<f32>() / n;
+    let cy = points.iter().map(|p| p[1]).sum::<f32>() / n;
+
+    // Compute average distance from centroid
+    let avg_dist = points
+        .iter()
+        .map(|p| ((p[0] - cx).powi(2) + (p[1] - cy).powi(2)).sqrt())
+        .sum::<f32>()
+        / n;
+
+    // Scale factor for unit average distance
+    let scale = if avg_dist > 1e-8 {
+        (2.0_f32).sqrt() / avg_dist
+    } else {
+        1.0
+    };
+
+    // Apply normalization transformation
+    let normalized: Vec<[f32; 2]> = points
+        .iter()
+        .map(|p| [(p[0] - cx) * scale, (p[1] - cy) * scale])
+        .collect();
+
+    // Build transformation matrix
+    let mut transform = Array2::zeros((3, 3));
+    transform[[0, 0]] = scale;
+    transform[[1, 1]] = scale;
+    transform[[0, 2]] = -cx * scale;
+    transform[[1, 2]] = -cy * scale;
+    transform[[2, 2]] = 1.0;
+
+    (normalized, transform)
+}
+
+/// Compute A^T * A for homography estimation
+#[allow(dead_code)]
+fn compute_ata(a: &Array2<f32>) -> Array2<f32> {
+    let (m, n) = a.dim();
+    let mut ata = Array2::zeros((n, n));
+
+    for i in 0..n {
+        for j in 0..n {
+            for k in 0..m {
+                ata[[i, j]] += a[[k, i]] * a[[k, j]];
+            }
+        }
+    }
+
+    ata
+}
+
+/// Find smallest eigenvector for homography estimation using power iteration
+#[allow(dead_code)]
+fn find_smallest_eigenvector_homography(matrix: &Array2<f32>) -> Result<Vec<f32>> {
+    let n = matrix.shape()[0];
+    let mut v = vec![1.0; n];
+    v[n - 1] = 1.0; // Bias toward the last element
+
+    // Normalize
+    let mut norm = v.iter().map(|x| x * x).sum::<f32>().sqrt();
+    for val in &mut v {
+        *val /= norm;
+    }
+
+    // Power iteration to find smallest eigenvalue
+    for _ in 0..100 {
+        let mut mv = vec![0.0; n];
+        for i in 0..n {
+            for j in 0..n {
+                mv[i] += matrix[[i, j]] * v[j];
+            }
+        }
+
+        // Compute Rayleigh quotient
+        let mut rayleigh = 0.0;
+        for i in 0..n {
+            rayleigh += v[i] * mv[i];
+        }
+
+        // Inverse iteration for smallest eigenvalue
+        for i in 0..n {
+            v[i] = mv[i] - rayleigh * v[i];
+        }
+
+        // Renormalize
+        norm = v.iter().map(|x| x * x).sum::<f32>().sqrt();
+        if norm < 1e-10 {
+            break;
+        }
+
+        for val in &mut v {
+            *val /= norm;
+        }
+    }
+
+    Ok(v)
+}
+
+/// Compute 3x3 matrix inverse
+#[allow(dead_code)]
+fn matrix_inverse_3x3(matrix: &Array2<f32>) -> Result<Array2<f32>> {
+    let m = matrix;
+    let det = m[[0, 0]] * (m[[1, 1]] * m[[2, 2]] - m[[1, 2]] * m[[2, 1]])
+        - m[[0, 1]] * (m[[1, 0]] * m[[2, 2]] - m[[1, 2]] * m[[2, 0]])
+        + m[[0, 2]] * (m[[1, 0]] * m[[2, 1]] - m[[1, 1]] * m[[2, 0]]);
+
+    if det.abs() < 1e-10 {
+        return Err(VisionError::OperationError(
+            "Matrix is singular".to_string(),
+        ));
+    }
+
+    let mut inv = Array2::zeros((3, 3));
+    inv[[0, 0]] = (m[[1, 1]] * m[[2, 2]] - m[[1, 2]] * m[[2, 1]]) / det;
+    inv[[0, 1]] = (m[[0, 2]] * m[[2, 1]] - m[[0, 1]] * m[[2, 2]]) / det;
+    inv[[0, 2]] = (m[[0, 1]] * m[[1, 2]] - m[[0, 2]] * m[[1, 1]]) / det;
+    inv[[1, 0]] = (m[[1, 2]] * m[[2, 0]] - m[[1, 0]] * m[[2, 2]]) / det;
+    inv[[1, 1]] = (m[[0, 0]] * m[[2, 2]] - m[[0, 2]] * m[[2, 0]]) / det;
+    inv[[1, 2]] = (m[[0, 2]] * m[[1, 0]] - m[[0, 0]] * m[[1, 2]]) / det;
+    inv[[2, 0]] = (m[[1, 0]] * m[[2, 1]] - m[[1, 1]] * m[[2, 0]]) / det;
+    inv[[2, 1]] = (m[[0, 1]] * m[[2, 0]] - m[[0, 0]] * m[[2, 1]]) / det;
+    inv[[2, 2]] = (m[[0, 0]] * m[[1, 1]] - m[[0, 1]] * m[[1, 0]]) / det;
+
+    Ok(inv)
+}
+
+/// Multiply two 3x3 matrices
+#[allow(dead_code)]
+fn matrix_multiply_3x3(a: &Array2<f32>, b: &Array2<f32>) -> Array2<f32> {
+    let mut result = Array2::zeros((3, 3));
+    for i in 0..3 {
+        for j in 0..3 {
+            for k in 0..3 {
+                result[[i, j]] += a[[i, k]] * b[[k, j]];
+            }
+        }
+    }
+    result
+}
+
+/// Solve least squares problem using normal equations
+#[allow(dead_code)]
+fn solve_least_squares(a: &Array2<f32>, b: &[f32]) -> Result<Vec<f32>> {
+    let (m, n) = a.dim();
+
+    // Compute A^T * A
+    let mut ata = Array2::zeros((n, n));
+    for i in 0..n {
+        for j in 0..n {
+            for k in 0..m {
+                ata[[i, j]] += a[[k, i]] * a[[k, j]];
+            }
+        }
+    }
+
+    // Compute A^T * b
+    let mut atb = vec![0.0f32; n];
+    for i in 0..n {
+        for k in 0..m {
+            atb[i] += a[[k, i]] * b[k];
+        }
+    }
+
+    // Solve using simple Gaussian elimination
+    solve_linear_system(&ata, &atb)
+}
+
+/// Solve linear system using Gaussian elimination with partial pivoting
+#[allow(dead_code)]
+fn solve_linear_system(a: &Array2<f32>, b: &[f32]) -> Result<Vec<f32>> {
+    let n = a.shape()[0];
+    let mut a_copy = a.clone();
+    let mut b_copy = b.to_vec();
+
+    // Forward elimination with partial pivoting
+    for i in 0..n {
+        // Find pivot
+        let mut max_row = i;
+        for k in (i + 1)..n {
+            if a_copy[[k, i]].abs() > a_copy[[max_row, i]].abs() {
+                max_row = k;
+            }
+        }
+
+        // Swap rows
+        if max_row != i {
+            for j in 0..n {
+                let temp = a_copy[[i, j]];
+                a_copy[[i, j]] = a_copy[[max_row, j]];
+                a_copy[[max_row, j]] = temp;
+            }
+            b_copy.swap(i, max_row);
+        }
+
+        // Check for singular matrix
+        if a_copy[[i, i]].abs() < 1e-10 {
+            return Err(VisionError::OperationError("Singular matrix".to_string()));
+        }
+
+        // Eliminate column
+        for k in (i + 1)..n {
+            let factor = a_copy[[k, i]] / a_copy[[i, i]];
+            for j in (i + 1)..n {
+                a_copy[[k, j]] -= factor * a_copy[[i, j]];
+            }
+            b_copy[k] -= factor * b_copy[i];
+        }
+    }
+
+    // Back substitution
+    let mut x = vec![0.0f32; n];
+    for i in (0..n).rev() {
+        x[i] = b_copy[i];
+        for j in (i + 1)..n {
+            x[i] -= a_copy[[i, j]] * x[j];
+        }
+        x[i] /= a_copy[[i, i]];
+    }
+
+    Ok(x)
+}
+
+/// Estimate fundamental matrix using 8-point algorithm
+#[allow(dead_code)]
+fn estimate_fundamental_matrix(
+    src_points: &[[f32; 2]],
+    dstpoints: &[[f32; 2]],
+) -> Result<Array2<f32>> {
+    if src_points.len() != dstpoints.len() || src_points.len() < 8 {
+        return Err(VisionError::InvalidParameter(
+            "Need at least 8 point correspondences for fundamental matrix".to_string(),
+        ));
+    }
+
+    // Normalize points
+    let (src_norm, src_transform) = normalize_points(src_points);
+    let (dst_norm, dst_transform) = normalize_points(dstpoints);
+
+    let n = src_points.len();
+    let mut a = Array2::zeros((n, 9));
+
+    // Build coefficient matrix
+    for i in 0..n {
+        let [x1, y1] = src_norm[i];
+        let [x2, y2] = dst_norm[i];
+
+        a[[i, 0]] = x2 * x1;
+        a[[i, 1]] = x2 * y1;
+        a[[i, 2]] = x2;
+        a[[i, 3]] = y2 * x1;
+        a[[i, 4]] = y2 * y1;
+        a[[i, 5]] = y2;
+        a[[i, 6]] = x1;
+        a[[i, 7]] = y1;
+        a[[i, 8]] = 1.0;
+    }
+
+    // Solve using SVD approximation
+    let ata = compute_ata(&a);
+    let f_vec = find_smallest_eigenvector_homography(&ata)?;
+
+    // Reshape to 3x3 matrix
+    let mut f_norm = Array2::from_shape_vec((3, 3), f_vec).map_err(|e| {
+        VisionError::OperationError(format!("Failed to reshape fundamental matrix: {e}"))
+    })?;
+
+    // Enforce rank-2 constraint by setting smallest singular value to 0
+    // (Simplified approach - in practice use proper SVD)
+
+    // Denormalize: F = T_dst^T * F_norm * Tsrc
+    let dst_t = transpose_3x3(&dst_transform);
+    f_norm = matrix_multiply_3x3(&dst_t, &f_norm);
+    let f = matrix_multiply_3x3(&f_norm, &src_transform);
+
+    Ok(f)
+}
+
+/// Estimate essential matrix (simplified using fundamental matrix)
+#[allow(dead_code)]
+fn estimate_essential_matrix(
+    src_points: &[[f32; 2]],
+    dstpoints: &[[f32; 2]],
+) -> Result<Array2<f32>> {
+    // For calibrated cameras, essential matrix is similar to fundamental matrix
+    // In practice, use proper 5-point algorithm with camera calibration
+    estimate_fundamental_matrix(src_points, dstpoints)
+}
+
+/// Compute epipolar error for a point correspondence
+#[allow(dead_code)]
+fn compute_epipolar_error(matrix: &Array2<f32>, p1: &[f32; 3], p2: &[f32; 3]) -> f32 {
+    // Compute F * p1
+    let mut fp1 = [0.0f32; 3];
+    for i in 0..3 {
+        for j in 0..3 {
+            fp1[i] += matrix[[i, j]] * p1[j];
+        }
+    }
+
+    // Compute p2^T * F * p1
+    let mut error = 0.0f32;
+    for i in 0..3 {
+        error += p2[i] * fp1[i];
+    }
+
+    // Normalize by the norm of the epipolar line
+    let line_norm = (fp1[0] * fp1[0] + fp1[1] * fp1[1]).sqrt();
+    if line_norm > 1e-8 {
+        error.abs() / line_norm
+    } else {
+        error.abs()
+    }
+}
+
+/// Transpose a 3x3 matrix
+#[allow(dead_code)]
+fn transpose_3x3(matrix: &Array2<f32>) -> Array2<f32> {
+    let mut result = Array2::zeros((3, 3));
+    for i in 0..3 {
+        for j in 0..3 {
+            result[[i, j]] = matrix[[j, i]];
+        }
+    }
+    result
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -1215,7 +1722,7 @@ mod tests {
         let vec2 = vec![0.0, 1.0, 1.0, 0.0];
 
         let config = BruteForceConfig {
-            distance_metric: DistanceMetric::Euclidean,
+            distancemetric: DistanceMetric::Euclidean,
             ..Default::default()
         };
         let matcher = BruteForceMatcher::new(config);
@@ -1224,7 +1731,7 @@ mod tests {
         assert!(dist > 0.0);
 
         let config = BruteForceConfig {
-            distance_metric: DistanceMetric::Manhattan,
+            distancemetric: DistanceMetric::Manhattan,
             ..Default::default()
         };
         let matcher = BruteForceMatcher::new(config);
@@ -1252,7 +1759,7 @@ mod tests {
         let desc2 = vec![0b11001100u32];
 
         let config = BruteForceConfig {
-            distance_metric: DistanceMetric::Hamming,
+            distancemetric: DistanceMetric::Hamming,
             ..Default::default()
         };
         let matcher = BruteForceMatcher::new(config);

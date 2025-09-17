@@ -1,5 +1,6 @@
 use std::env;
 
+#[allow(dead_code)]
 fn main() {
     // Skip clippy checks for dependencies to avoid build failures
     if let Ok(val) = env::var("CARGO_PRIMARY_PACKAGE") {

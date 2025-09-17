@@ -23,7 +23,7 @@ use std::collections::HashMap;
 ///
 /// let data = Array2::from_shape_vec((3, 2), vec![1.0, 2.0, 3.0, 4.0, 5.0, 6.0]).unwrap();
 /// let dataset = Dataset::new(data, None)
-///     .with_feature_names(vec!["feature1".to_string(), "feature2".to_string()])
+///     .with_featurenames(vec!["feature1".to_string(), "feature2".to_string()])
 ///     .with_description("Sample dataset".to_string());
 ///
 /// assert_eq!(dataset.n_samples(), 3);
@@ -44,11 +44,11 @@ pub struct Dataset {
 
     /// Optional target names for classification problems
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub target_names: Option<Vec<String>>,
+    pub targetnames: Option<Vec<String>>,
 
     /// Optional feature names
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub feature_names: Option<Vec<String>>,
+    pub featurenames: Option<Vec<String>>,
 
     /// Optional descriptions for each feature
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -88,11 +88,44 @@ impl Dataset {
         Dataset {
             data,
             target,
-            target_names: None,
-            feature_names: None,
+            targetnames: None,
+            featurenames: None,
             feature_descriptions: None,
             description: None,
             metadata: HashMap::new(),
+        }
+    }
+
+    /// Create a new dataset with the given data, target, and metadata
+    ///
+    /// # Arguments
+    ///
+    /// * `data` - The feature matrix (n_samples, n_features)
+    /// * `target` - Optional target values (n_samples,)
+    /// * `metadata` - Dataset metadata information
+    ///
+    /// # Returns
+    ///
+    /// A new Dataset instance with metadata applied
+    pub fn from_metadata(
+        data: Array2<f64>,
+        target: Option<Array1<f64>>,
+        metadata: crate::registry::DatasetMetadata,
+    ) -> Self {
+        let mut dataset_metadata = HashMap::new();
+        dataset_metadata.insert("name".to_string(), metadata.name);
+        dataset_metadata.insert("task_type".to_string(), metadata.task_type);
+        dataset_metadata.insert("n_samples".to_string(), metadata.n_samples.to_string());
+        dataset_metadata.insert("n_features".to_string(), metadata.n_features.to_string());
+
+        Dataset {
+            data,
+            target,
+            targetnames: metadata.targetnames,
+            featurenames: None,
+            feature_descriptions: None,
+            description: Some(metadata.description),
+            metadata: dataset_metadata,
         }
     }
 
@@ -100,13 +133,13 @@ impl Dataset {
     ///
     /// # Arguments
     ///
-    /// * `target_names` - Vector of target class names
+    /// * `targetnames` - Vector of target class names
     ///
     /// # Returns
     ///
     /// Self for method chaining
-    pub fn with_target_names(mut self, target_names: Vec<String>) -> Self {
-        self.target_names = Some(target_names);
+    pub fn with_targetnames(mut self, targetnames: Vec<String>) -> Self {
+        self.targetnames = Some(targetnames);
         self
     }
 
@@ -114,13 +147,13 @@ impl Dataset {
     ///
     /// # Arguments
     ///
-    /// * `feature_names` - Vector of feature names
+    /// * `featurenames` - Vector of feature names
     ///
     /// # Returns
     ///
     /// Self for method chaining
-    pub fn with_feature_names(mut self, feature_names: Vec<String>) -> Self {
-        self.feature_names = Some(feature_names);
+    pub fn with_featurenames(mut self, featurenames: Vec<String>) -> Self {
+        self.featurenames = Some(featurenames);
         self
     }
 
@@ -133,8 +166,8 @@ impl Dataset {
     /// # Returns
     ///
     /// Self for method chaining
-    pub fn with_feature_descriptions(mut self, feature_descriptions: Vec<String>) -> Self {
-        self.feature_descriptions = Some(feature_descriptions);
+    pub fn with_feature_descriptions(mut self, featuredescriptions: Vec<String>) -> Self {
+        self.feature_descriptions = Some(featuredescriptions);
         self
     }
 
@@ -208,8 +241,8 @@ impl Dataset {
     /// # Returns
     ///
     /// Optional reference to feature names vector
-    pub fn feature_names(&self) -> Option<&Vec<String>> {
-        self.feature_names.as_ref()
+    pub fn featurenames(&self) -> Option<&Vec<String>> {
+        self.featurenames.as_ref()
     }
 
     /// Get a reference to the target names if available
@@ -217,8 +250,8 @@ impl Dataset {
     /// # Returns
     ///
     /// Optional reference to target names vector  
-    pub fn target_names(&self) -> Option<&Vec<String>> {
-        self.target_names.as_ref()
+    pub fn targetnames(&self) -> Option<&Vec<String>> {
+        self.targetnames.as_ref()
     }
 
     /// Get a reference to the dataset description if available
@@ -288,12 +321,12 @@ mod tests {
         let data = array![[1.0, 2.0], [3.0, 4.0]];
 
         let dataset = Dataset::new(data, None)
-            .with_feature_names(vec!["feat1".to_string(), "feat2".to_string()])
+            .with_featurenames(vec!["feat1".to_string(), "feat2".to_string()])
             .with_description("Test dataset".to_string())
             .with_metadata("version", "1.0")
             .with_metadata("author", "test");
 
-        assert_eq!(dataset.feature_names().unwrap().len(), 2);
+        assert_eq!(dataset.featurenames().unwrap().len(), 2);
         assert_eq!(dataset.description().unwrap(), "Test dataset");
         assert_eq!(dataset.get_metadata("version").unwrap(), "1.0");
         assert_eq!(dataset.get_metadata("author").unwrap(), "test");

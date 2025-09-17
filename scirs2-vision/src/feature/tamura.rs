@@ -6,6 +6,7 @@
 use crate::error::Result;
 use image::{DynamicImage, GrayImage};
 use ndarray::Array2;
+use statrs::statistics::Statistics;
 use std::f32::consts::PI;
 
 /// Tamura texture features
@@ -35,6 +36,7 @@ pub struct TamuraFeatures {
 /// # Returns
 ///
 /// * Result containing Tamura features
+#[allow(dead_code)]
 pub fn compute_tamura_features(
     img: &DynamicImage,
     compute_optional: bool,
@@ -70,6 +72,7 @@ pub fn compute_tamura_features(
 /// Compute coarseness feature
 ///
 /// Coarseness relates to the size of texture elements
+#[allow(dead_code)]
 fn compute_coarseness(img: &GrayImage) -> Result<f32> {
     let (width, height) = img.dimensions();
     let max_k = 5; // Maximum window size = 2^5 = 32
@@ -134,6 +137,7 @@ fn compute_coarseness(img: &GrayImage) -> Result<f32> {
 }
 
 /// Compute E value for coarseness
+#[allow(dead_code)]
 fn compute_e(averages: &[Array2<f32>], x: usize, y: usize, k: usize) -> f32 {
     let (height, width) = averages[0].dim();
     let d = 1 << (k - 1); // 2^(k-1)
@@ -157,6 +161,7 @@ fn compute_e(averages: &[Array2<f32>], x: usize, y: usize, k: usize) -> f32 {
 /// Compute contrast feature
 ///
 /// Contrast measures the intensity variations in the image
+#[allow(dead_code)]
 fn compute_contrast(img: &GrayImage) -> Result<f32> {
     let (width, height) = img.dimensions();
     let n = (width * height) as f32;
@@ -197,6 +202,7 @@ fn compute_contrast(img: &GrayImage) -> Result<f32> {
 /// Compute directionality feature
 ///
 /// Directionality measures the presence of oriented patterns
+#[allow(dead_code)]
 fn compute_directionality(img: &GrayImage) -> Result<f32> {
     let (width, height) = img.dimensions();
 
@@ -255,6 +261,7 @@ fn compute_directionality(img: &GrayImage) -> Result<f32> {
 /// Compute line-likeness feature (optional)
 ///
 /// Line-likeness measures the presence of line-like structures
+#[allow(dead_code)]
 fn compute_line_likeness(img: &GrayImage) -> Result<f32> {
     let (width, height) = img.dimensions();
 
@@ -292,6 +299,7 @@ fn compute_line_likeness(img: &GrayImage) -> Result<f32> {
 /// Compute regularity feature (optional)
 ///
 /// Regularity measures how regular the texture pattern is
+#[allow(dead_code)]
 fn compute_regularity(img: &GrayImage) -> Result<f32> {
     let coarseness = compute_coarseness(img)?;
     let contrast = compute_contrast(img)?;
@@ -339,6 +347,7 @@ fn compute_regularity(img: &GrayImage) -> Result<f32> {
 }
 
 /// Quick Tamura features for real-time applications
+#[allow(dead_code)]
 pub fn compute_tamura_features_fast(img: &DynamicImage) -> Result<TamuraFeatures> {
     let gray = img.to_luma8();
 
@@ -364,6 +373,7 @@ pub fn compute_tamura_features_fast(img: &DynamicImage) -> Result<TamuraFeatures
 }
 
 /// Fast coarseness computation
+#[allow(dead_code)]
 fn compute_coarseness_fast(img: &GrayImage) -> Result<f32> {
     let (width, height) = img.dimensions();
     let mut edge_count = 0;
@@ -386,6 +396,7 @@ fn compute_coarseness_fast(img: &GrayImage) -> Result<f32> {
 }
 
 /// Fast directionality computation
+#[allow(dead_code)]
 fn compute_directionality_fast(img: &GrayImage) -> Result<f32> {
     let (width, height) = img.dimensions();
     let mut hist = vec![0.0; 8]; // 8 bins for speed

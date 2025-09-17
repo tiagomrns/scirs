@@ -37,6 +37,7 @@ use crate::error::{LinalgError, LinalgResult};
 /// let tr = trace(&a.view()).unwrap();
 /// assert_eq!(tr, Complex::new(5.0, 0.0));  // 1 + 4 = 5
 /// ```
+#[allow(dead_code)]
 pub fn trace<F>(a: &ArrayView2<Complex<F>>) -> LinalgResult<Complex<F>>
 where
     F: Float + Debug + 'static,
@@ -80,6 +81,7 @@ where
 /// assert!((d.re + 3.0_f64).abs() < 1e-10);
 /// assert!((d.im + 1.0_f64).abs() < 1e-10);
 /// ```
+#[allow(dead_code)]
 pub fn det<F>(a: &ArrayView2<Complex<F>>) -> LinalgResult<Complex<F>>
 where
     F: Float + Debug + Zero + One,
@@ -199,6 +201,7 @@ where
 /// assert!((y[1].re - 9.0_f64).abs() < 1e-10);
 /// assert!((y[1].im + 3.0_f64).abs() < 1e-10);
 /// ```
+#[allow(dead_code)]
 pub fn matvec<F>(
     a: &ArrayView2<Complex<F>>,
     x: &ArrayView1<Complex<F>>,
@@ -250,7 +253,7 @@ where
 
 /// Compute the inner product of two complex vectors
 ///
-/// Computes <x, y> = ∑ x[i]* y[i], where x[i]* is the complex conjugate.
+/// Computes <x, y> = ∑ x\[i\]* y\[i\], where x\[i\]* is the complex conjugate.
 ///
 /// # Arguments
 ///
@@ -279,6 +282,7 @@ where
 /// assert!((ip.re + 18.0_f64).abs() < 1e-10);
 /// assert!((ip.im + 8.0_f64).abs() < 1e-10);
 /// ```
+#[allow(dead_code)]
 pub fn inner_product<F>(
     x: &ArrayView1<Complex<F>>,
     y: &ArrayView1<Complex<F>>,
@@ -359,6 +363,7 @@ where
 /// assert!(is_hermitian(&h.view(), 1e-10).unwrap());
 /// assert!(!is_hermitian(&nh.view(), 1e-10).unwrap());
 /// ```
+#[allow(dead_code)]
 pub fn is_hermitian<F>(a: &ArrayView2<Complex<F>>, tol: F) -> LinalgResult<bool>
 where
     F: Float + Debug + 'static,
@@ -419,6 +424,7 @@ where
 /// assert!(is_unitary(&u.view(), 1e-10_f64).unwrap());
 /// assert!(!is_unitary(&nu.view(), 1e-10_f64).unwrap());
 /// ```
+#[allow(dead_code)]
 pub fn is_unitary<F>(a: &ArrayView2<Complex<F>>, tol: F) -> LinalgResult<bool>
 where
     F: Float + Debug + 'static,
@@ -478,12 +484,13 @@ where
 ///     [Complex::new(1.0, 0.0), Complex::new(2.0, 0.0)]
 /// ];
 ///
-/// let (eval, _) = power_method(&h.view(), 100, 1e-10_f64).unwrap();
+/// let (eval_, _evec) = power_method(&h.view(), 100, 1e-10_f64).unwrap();
 ///
 /// // The dominant eigenvalue should be 3
-/// assert!((eval.re - 3.0_f64).abs() < 1e-10_f64);
-/// assert!(eval.im.abs() < 1e-10_f64);
+/// assert!((eval_.re - 3.0_f64).abs() < 1e-10_f64);
+/// assert!(eval_.im.abs() < 1e-10_f64);
 /// ```
+#[allow(dead_code)]
 pub fn power_method<F>(
     a: &ArrayView2<Complex<F>>,
     max_iter: usize,
@@ -580,6 +587,7 @@ where
 /// let r = rank(&r1.view(), 1e-10).unwrap();
 /// assert_eq!(r, 1);
 /// ```
+#[allow(dead_code)]
 pub fn rank<F>(a: &ArrayView2<Complex<F>>, tol: F) -> LinalgResult<usize>
 where
     F: Float + Debug + 'static,
@@ -679,6 +687,7 @@ where
 /// // Check that the result is Hermitian
 /// assert!(is_hermitian(&h.view(), 1e-10).unwrap());
 /// ```
+#[allow(dead_code)]
 pub fn hermitian_part<F>(a: &ArrayView2<Complex<F>>) -> LinalgResult<Array2<Complex<F>>>
 where
     F: Float + Debug + 'static,
@@ -734,6 +743,7 @@ where
 /// // Check skew-Hermitian property: A[i,j] = -A[j,i]^*
 /// assert!((s[[0, 1]] + s[[1, 0]].conj()).norm() < 1e-10);
 /// ```
+#[allow(dead_code)]
 pub fn skew_hermitian_part<F>(a: &ArrayView2<Complex<F>>) -> LinalgResult<Array2<Complex<F>>>
 where
     F: Float + Debug + 'static,
@@ -785,6 +795,7 @@ where
 /// // ||(1+i, 2, 3i, 4)|| = sqrt(1² + 1² + 2² + 3² + 4²) = sqrt(31)
 /// assert!((norm - 31.0_f64.sqrt()).abs() < 1e-10);
 /// ```
+#[allow(dead_code)]
 pub fn frobenius_norm<F>(a: &ArrayView2<Complex<F>>) -> LinalgResult<F>
 where
     F: Float + Debug + 'static,
@@ -848,6 +859,7 @@ where
 /// Type alias for a pair of complex matrix arrays
 pub type ComplexMatrixPair<F> = (Array2<Complex<F>>, Array2<Complex<F>>);
 
+#[allow(dead_code)]
 pub fn polar_decomposition<F>(
     a: &ArrayView2<Complex<F>>,
     max_iter: usize,
@@ -907,6 +919,7 @@ where
 
 // see M. Arioli et. al. 1996 https://doi.org/10.1016/0024-3795(94)00190-1
 // for the Padé approximation coefficients
+#[allow(dead_code)]
 fn pade_factors<F>(p: usize, q: usize) -> Vec<F>
 where
     F: Float + Debug + 'static,
@@ -955,6 +968,7 @@ where
 /// assert!((exp_zero[[1, 0]] - Complex::new(0.0, 0.0)).norm() < 1e-10);
 /// assert!((exp_zero[[1, 1]] - Complex::new(1.0, 0.0)).norm() < 1e-10);
 /// ```
+#[allow(dead_code)]
 pub fn matrix_exp<F>(a: &ArrayView2<Complex<F>>) -> LinalgResult<Array2<Complex<F>>>
 where
     F: Float + Debug + 'static,
@@ -1060,6 +1074,7 @@ where
 ///     .sum();
 /// assert!(total_error < 10.0_f64); // Total error should be bounded
 /// ```
+#[allow(dead_code)]
 pub fn schur<F>(
     a: &ArrayView2<Complex<F>>,
     max_iter: usize,

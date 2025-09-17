@@ -1,14 +1,17 @@
-//! FastICA implementation for Independent Component Analysis
-//!
-//! This module implements the FastICA algorithm for blind source separation.
+use ndarray::s;
+// FastICA implementation for Independent Component Analysis
+//
+// This module implements the FastICA algorithm for blind source separation.
 
 use super::{BssConfig, NonlinearityFunction};
-use crate::error::SignalResult;
-use ndarray::{s, Array1, Array2};
+use crate::error::{SignalError, SignalResult};
+use ndarray::{Array1, Array2};
 use rand::SeedableRng;
 use rand_distr::{Distribution, Normal};
 use scirs2_linalg::eigh;
+use statrs::statistics::Statistics;
 
+#[allow(unused_imports)]
 /// Implement FastICA algorithm for ICA
 ///
 /// FastICA is a computationally efficient method that uses fixed-point iteration.
@@ -23,6 +26,7 @@ use scirs2_linalg::eigh;
 /// # Returns
 ///
 /// * Tuple containing (extracted sources, unmixing matrix)
+#[allow(dead_code)]
 pub fn fast_ica(
     signals: &Array2<f64>,
     n_components: usize,
@@ -33,7 +37,7 @@ pub fn fast_ica(
 
     // Initialize random unmixing matrix
     let mut rng = if let Some(seed) = config.random_seed {
-        rand::rngs::StdRng::from_seed([seed as u8; 32])
+        rand::rngs::StdRng::seed_from_u64([seed as u8; 32])
     } else {
         {
             // In rand 0.9, from_rng doesn't return Result but directly returns the PRNG
@@ -41,7 +45,9 @@ pub fn fast_ica(
         }
     };
 
-    let normal = Normal::new(0.0, 1.0).unwrap();
+    let normal = Normal::new(0.0, 1.0).map_err(|e| {
+        SignalError::ValueError(format!("Failed to create normal distribution: {}", e))
+    })?;
     let mut w = Array2::<f64>::zeros((n_components, n_signals));
 
     for i in 0..n_components {
@@ -124,7 +130,7 @@ pub fn fast_ica(
                     new_wp[i] = sum_gx_x / (n_samples as f64) - g_prime_sum * wp[i];
                 }
 
-                // Decorrelate from existing components (Gram-Schmidt orthogonalization)
+                // Decorrelate from existing _components (Gram-Schmidt orthogonalization)
                 for i in 0..p {
                     let wi = w.slice(s![i, ..]);
                     let proj = new_wp.dot(&wi);
@@ -178,7 +184,7 @@ pub fn fast_ica(
 
             // Compute gradient
             let gradient = gx.dot(&signals.t()) / (n_samples as f64)
-                - Array2::<f64>::eye(n_components) * w.mapv(|x: f64| g_prime(x)).mean().unwrap();
+                - Array2::<f64>::eye(n_components) * w.mapv(|x: f64| g_prime(x)).mean();
 
             // Update weight matrix
             w = &w + &(&gradient * config.learning_rate);
@@ -188,7 +194,7 @@ pub fn fast_ica(
             let (eigvals, eigvecs) = match eigh(&ww_t.view(), None) {
                 Ok((vals, vecs)) => (vals, vecs),
                 Err(_) => {
-                    return Err(crate::error::SignalError::Compute(
+                    return Err(crate::error::SignalError::ComputationError(
                         "Failed to compute eigendecomposition in FastICA".to_string(),
                     ));
                 }
@@ -225,7 +231,7 @@ pub fn fast_ica(
         }
     }
 
-    // Extract the independent components
+    // Extract the independent _components
     let sources = w.dot(signals);
 
     Ok((sources, w))

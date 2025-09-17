@@ -87,7 +87,7 @@ impl MultiIndex {
     }
 
     /// Check if this multi-index is admissible for the given level
-    pub fn is_admissible(&self, max_level: usize, _dim: usize) -> bool {
+    pub fn is_admissible(&self, max_level: usize, dim: usize) -> bool {
         self.l1_norm() <= max_level
     }
 }
@@ -185,8 +185,8 @@ where
     }
 
     /// Set the maximum level for the sparse grid
-    pub fn with_max_level(mut self, max_level: usize) -> Self {
-        self.max_level = max_level;
+    pub fn with_max_level(mut self, maxlevel: usize) -> Self {
+        self.max_level = maxlevel;
         self
     }
 
@@ -213,12 +213,12 @@ where
     where
         Func: Fn(&[F]) -> F,
     {
-        let bounds = self
-            .bounds
-            .ok_or_else(|| InterpolateError::ValueError("Bounds must be specified".to_string()))?;
+        let bounds = self.bounds.ok_or_else(|| {
+            InterpolateError::invalid_input("Bounds must be specified".to_string())
+        })?;
 
         if bounds.is_empty() {
-            return Err(InterpolateError::ValueError(
+            return Err(InterpolateError::invalid_input(
                 "At least one dimension required".to_string(),
             ));
         }
@@ -254,19 +254,19 @@ where
         values: &[F],
     ) -> InterpolateResult<SparseGridInterpolator<F>> {
         if points.len() != values.len() {
-            return Err(InterpolateError::ValueError(
+            return Err(InterpolateError::invalid_input(
                 "Number of points must match number of values".to_string(),
             ));
         }
 
-        let bounds = self
-            .bounds
-            .ok_or_else(|| InterpolateError::ValueError("Bounds must be specified".to_string()))?;
+        let bounds = self.bounds.ok_or_else(|| {
+            InterpolateError::invalid_input("Bounds must be specified".to_string())
+        })?;
 
         let dimension = bounds.len();
 
         if points.is_empty() {
-            return Err(InterpolateError::ValueError(
+            return Err(InterpolateError::invalid_input(
                 "At least one data point required".to_string(),
             ));
         }
@@ -274,7 +274,7 @@ where
         // Verify dimensionality
         for point in points {
             if point.len() != dimension {
-                return Err(InterpolateError::ValueError(
+                return Err(InterpolateError::invalid_input(
                     "All points must have the same dimensionality".to_string(),
                 ));
             }
@@ -392,10 +392,10 @@ where
     }
 
     /// Generate tensor product points for a multi-index
-    fn generate_tensor_product_points(&self, multi_idx: &MultiIndex) -> Vec<Vec<F>> {
+    fn generate_tensor_product_points(&self, multiidx: &MultiIndex) -> Vec<Vec<F>> {
         let mut points = vec![Vec::new()];
 
-        for (dim, &level) in multi_idx.indices.iter().enumerate() {
+        for (dim, &level) in multiidx.indices.iter().enumerate() {
             let dim_points = self.generate_1d_points(level, dim);
 
             let mut new_points = Vec::new();
@@ -435,9 +435,9 @@ where
     }
 
     /// Convert coordinates to multi-index representation
-    fn coords_to_multi_index(&self, coords: &[F], base_idx: &MultiIndex) -> MultiIndex {
+    fn coords_to_multi_index(&self, coords: &[F], baseidx: &MultiIndex) -> MultiIndex {
         // For simplicity, use a hash-based approach
-        let mut indices = base_idx.indices.clone();
+        let mut indices = baseidx.indices.clone();
 
         // Add coordinate-based information to make unique
         for (i, &coord) in coords.iter().enumerate() {
@@ -454,9 +454,9 @@ where
     /// Compute hierarchical surplus for a point
     fn compute_hierarchical_surplus(
         &self,
-        _coords: &[F],
+        coords: &[F],
         value: F,
-        _multi_idx: &MultiIndex,
+        idx: &MultiIndex,
     ) -> InterpolateResult<F> {
         // Simplified surplus computation
         // In a full implementation, this would compute the hierarchical surplus
@@ -612,7 +612,7 @@ where
     /// Interpolate at a query point
     pub fn interpolate(&self, query: &[F]) -> InterpolateResult<F> {
         if query.len() != self.dimension {
-            return Err(InterpolateError::ValueError(
+            return Err(InterpolateError::invalid_input(
                 "Query point dimension mismatch".to_string(),
             ));
         }
@@ -620,7 +620,7 @@ where
         // Check bounds
         for (i, &coord) in query.iter().enumerate() {
             if coord < self.bounds[i].0 || coord > self.bounds[i].1 {
-                return Err(InterpolateError::DomainError(
+                return Err(InterpolateError::OutOfBounds(
                     "Query point outside interpolation domain".to_string(),
                 ));
             }
@@ -638,14 +638,14 @@ where
     }
 
     /// Compute hierarchical weight for interpolation
-    fn compute_hierarchical_weight(&self, query: &[F], grid_point: &[F]) -> F {
+    fn compute_hierarchical_weight(&self, query: &[F], gridpoint: &[F]) -> F {
         let mut weight = F::one();
 
         for i in 0..self.dimension {
             // Adaptive grid spacing based on level and dimension
             let level_spacing = F::from_f64(2.0_f64.powi(-(self.max_level as i32))).unwrap();
             let h = (self.bounds[i].1 - self.bounds[i].0) * level_spacing;
-            let dist = (query[i] - grid_point[i]).abs();
+            let dist = (query[i] - gridpoint[i]).abs();
 
             if dist <= h {
                 weight *= F::one() - dist / h;
@@ -695,6 +695,7 @@ where
 }
 
 /// Create a sparse grid interpolator with default settings
+#[allow(dead_code)]
 pub fn make_sparse_grid_interpolator<F, Func>(
     bounds: Vec<(F, F)>,
     max_level: usize,
@@ -711,6 +712,7 @@ where
 }
 
 /// Create an adaptive sparse grid interpolator
+#[allow(dead_code)]
 pub fn make_adaptive_sparse_grid_interpolator<F, Func>(
     bounds: Vec<(F, F)>,
     max_level: usize,
@@ -730,6 +732,7 @@ where
 }
 
 /// Create a sparse grid interpolator from scattered data
+#[allow(dead_code)]
 pub fn make_sparse_grid_from_data<F>(
     bounds: Vec<(F, F)>,
     points: &[Vec<F>],

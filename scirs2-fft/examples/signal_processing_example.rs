@@ -1,6 +1,7 @@
 // The signal_processing module is currently gated behind a feature flag
 // This example is temporarily disabled until the module is available
 
+#[allow(dead_code)]
 fn main() {
     println!("Signal Processing Example");
     println!("------------------------");
@@ -19,9 +20,9 @@ use scirs2_fft::signal_processing::{
     convolve, cross_correlate, design_fir_filter, fir_filter, frequency_filter, FilterSpec,
     FilterType, FilterWindow,
 };
-use std::f64::consts::PI;
 use std::time::Instant;
 
+#[allow(dead_code)]
 fn main() {
     println!("Signal Processing Example");
     println!("------------------------");
@@ -71,7 +72,7 @@ fn main() {
         .iter()
         .enumerate()
         .max_by(|(_, a), (_, b)| a.partial_cmp(b).unwrap())
-        .map(|(index, _)| index)
+        .map(|(index_)| index)
         .unwrap();
 
     println!("  Best match found at position: {}", best_match_index);
@@ -139,8 +140,8 @@ fn main() {
     let mut freq_magnitude: Vec<(f64, f64)> = Vec::new();
     for i in 0..n_samples/2 {
         let freq = i as f64 * sample_rate / n_samples as f64;
-        let mag_original = original_fft[i].norm();
-        freq_magnitude.push((freq, mag_original));
+        let magoriginal = original_fft[i].norm();
+        freq_magnitude.push((freq, magoriginal));
     }
 
     // Find the top 3 peaks

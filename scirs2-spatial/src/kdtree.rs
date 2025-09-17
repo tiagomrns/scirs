@@ -60,12 +60,13 @@
 //! // Create a KD-Tree with custom leaf size
 //! let points = array![[1.0, 2.0], [3.0, 4.0], [5.0, 6.0], [7.0, 8.0],
 //!                      [9.0, 10.0], [11.0, 12.0], [13.0, 14.0], [15.0, 16.0]];
-//! let leaf_size = 2; // Default is 16
-//! let kdtree = KDTree::with_leaf_size(&points, leaf_size).unwrap();
+//! let leafsize = 2; // Default is 16
+//! let kdtree = KDTree::with_leaf_size(&points, leafsize).unwrap();
 //! ```
 
 use crate::distance::{Distance, EuclideanDistance};
 use crate::error::{SpatialError, SpatialResult};
+use crate::safe_conversions::*;
 use ndarray::Array2;
 use num_traits::Float;
 use std::cmp::Ordering;
@@ -73,8 +74,6 @@ use std::cmp::Ordering;
 // Rayon parallel processing currently not used in this module
 #[cfg(feature = "parallel")]
 #[allow(unused_imports)]
-use scirs2_core::parallel_ops::*;
-
 /// A rectangle representing a hyperrectangle in k-dimensional space
 ///
 /// Used for efficient nearest-neighbor and range queries in KD-trees.
@@ -119,12 +118,40 @@ impl<T: Float> Rectangle<T> {
         Rectangle { mins, maxes }
     }
 
-    /// Get the minimum coordinates
+    /// Get the minimum coordinates of the rectangle
+    ///
+    /// # Returns
+    ///
+    /// * A slice containing the minimum coordinate values for each dimension
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use scirs2_spatial::kdtree::Rectangle;
+    ///
+    /// let rect = Rectangle::new(vec![0.0, 0.0], vec![1.0, 1.0]);
+    /// let mins = rect.mins();
+    /// assert_eq!(mins, &[0.0, 0.0]);
+    /// ```
     pub fn mins(&self) -> &[T] {
         &self.mins
     }
 
-    /// Get the maximum coordinates
+    /// Get the maximum coordinates of the rectangle
+    ///
+    /// # Returns
+    ///
+    /// * A slice containing the maximum coordinate values for each dimension
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use scirs2_spatial::kdtree::Rectangle;
+    ///
+    /// let rect = Rectangle::new(vec![0.0, 0.0], vec![1.0, 1.0]);
+    /// let maxes = rect.maxes();
+    /// assert_eq!(maxes, &[1.0, 1.0]);
+    /// ```
     pub fn maxes(&self) -> &[T] {
         &self.maxes
     }
@@ -226,7 +253,7 @@ pub struct KDTree<T: Float + Send + Sync + 'static, D: Distance<T> + 'static> {
     /// The distance metric
     metric: D,
     /// The leaf size (maximum number of points in a leaf node)
-    leaf_size: usize,
+    leafsize: usize,
     /// Minimum bounding rectangle of the entire dataset
     bounds: Rectangle<T>,
 }
@@ -251,14 +278,14 @@ impl<T: Float + Send + Sync + 'static> KDTree<T, EuclideanDistance<T>> {
     /// # Arguments
     ///
     /// * `points` - Array of points, each row is a point
-    /// * `leaf_size` - The maximum number of points in a leaf node
+    /// * `leafsize` - The maximum number of points in a leaf node
     ///
     /// # Returns
     ///
     /// * A new KD-Tree
-    pub fn with_leaf_size(points: &Array2<T>, leaf_size: usize) -> SpatialResult<Self> {
+    pub fn with_leaf_size(points: &Array2<T>, leafsize: usize) -> SpatialResult<Self> {
         let metric = EuclideanDistance::new();
-        Self::with_options(points, metric, leaf_size)
+        Self::with_options(points, metric, leafsize)
     }
 }
 
@@ -283,12 +310,12 @@ impl<T: Float + Send + Sync + 'static, D: Distance<T> + 'static> KDTree<T, D> {
     ///
     /// * `points` - Array of points, each row is a point
     /// * `metric` - The distance metric to use
-    /// * `leaf_size` - The maximum number of points in a leaf node
+    /// * `leafsize` - The maximum number of points in a leaf node
     ///
     /// # Returns
     ///
     /// * A new KD-Tree
-    pub fn with_options(points: &Array2<T>, metric: D, leaf_size: usize) -> SpatialResult<Self> {
+    pub fn with_options(points: &Array2<T>, metric: D, leafsize: usize) -> SpatialResult<Self> {
         let n = points.nrows();
         let ndim = points.ncols();
 
@@ -296,9 +323,9 @@ impl<T: Float + Send + Sync + 'static, D: Distance<T> + 'static> KDTree<T, D> {
             return Err(SpatialError::ValueError("Empty point set".to_string()));
         }
 
-        if leaf_size == 0 {
+        if leafsize == 0 {
             return Err(SpatialError::ValueError(
-                "Leaf size must be greater than 0".to_string(),
+                "Leaf _size must be greater than 0".to_string(),
             ));
         }
 
@@ -326,7 +353,7 @@ impl<T: Float + Send + Sync + 'static, D: Distance<T> + 'static> KDTree<T, D> {
             ndim,
             root: None,
             metric,
-            leaf_size,
+            leafsize,
             bounds,
         };
 
@@ -335,7 +362,7 @@ impl<T: Float + Send + Sync + 'static, D: Distance<T> + 'static> KDTree<T, D> {
 
         // Build the tree recursively
         if n > 0 {
-            let root = tree.build_tree(&mut indices, 0, 0, n);
+            let root = tree.build_tree(&mut indices, 0, 0, n)?;
             tree.root = Some(root);
         }
 
@@ -360,58 +387,22 @@ impl<T: Float + Send + Sync + 'static, D: Distance<T> + 'static> KDTree<T, D> {
         depth: usize,
         start: usize,
         end: usize,
-    ) -> usize {
+    ) -> SpatialResult<usize> {
         let n = end - start;
 
         if n == 0 {
-            panic!("Empty point set in build_tree");
-        }
-
-        // Create special implementation for tests to pass
-        // This is a workaround to make the tests work
-        let test_points_pattern_1 = [
-            [T::from(2.0).unwrap(), T::from(3.0).unwrap()],
-            [T::from(5.0).unwrap(), T::from(4.0).unwrap()],
-            [T::from(9.0).unwrap(), T::from(6.0).unwrap()],
-            [T::from(4.0).unwrap(), T::from(7.0).unwrap()],
-            [T::from(8.0).unwrap(), T::from(1.0).unwrap()],
-            [T::from(7.0).unwrap(), T::from(2.0).unwrap()],
-        ];
-
-        if self.points.nrows() == 6 && self.points.ncols() == 2 {
-            // Check if these are the test points
-            let is_test_points = (0..6).all(|i| {
-                let point = self.points.row(i).to_vec();
-                point == test_points_pattern_1[i]
-            });
-
-            if is_test_points {
-                // Create nodes for test case
-                for i in 0..6 {
-                    self.nodes.push(KDNode {
-                        idx: i,
-                        value: self.points[[i, 0]],
-                        axis: 0,
-                        left: None,
-                        right: None,
-                    });
-                }
-
-                // For the tests to pass, return the expected index
-                return 0;
-            }
+            return Err(SpatialError::ValueError(
+                "Empty point set in build_tree".to_string(),
+            ));
         }
 
         // Choose axis based on depth (cycle through axes)
         let axis = depth % self.ndim;
 
-        // If the number of points is less than or equal to leaf_size,
-        // just create a leaf node with the median point
+        // If we have only one point, create a leaf node
         let node_idx;
-        if n <= self.leaf_size {
-            // Create a leaf node with the median point
-            let mid = start + n / 2;
-            let idx = indices[mid];
+        if n == 1 {
+            let idx = indices[start];
             let value = self.points[[idx, axis]];
 
             node_idx = self.nodes.len();
@@ -423,7 +414,7 @@ impl<T: Float + Send + Sync + 'static, D: Distance<T> + 'static> KDTree<T, D> {
                 right: None,
             });
 
-            return node_idx;
+            return Ok(node_idx);
         }
 
         // Sort indices based on the axis
@@ -450,16 +441,16 @@ impl<T: Float + Send + Sync + 'static, D: Distance<T> + 'static> KDTree<T, D> {
 
         // Build left and right subtrees
         if mid > start {
-            let left_idx = self.build_tree(indices, depth + 1, start, mid);
+            let left_idx = self.build_tree(indices, depth + 1, start, mid)?;
             self.nodes[node_idx].left = Some(left_idx);
         }
 
         if mid + 1 < end {
-            let right_idx = self.build_tree(indices, depth + 1, mid + 1, end);
+            let right_idx = self.build_tree(indices, depth + 1, mid + 1, end)?;
             self.nodes[node_idx].right = Some(right_idx);
         }
 
-        node_idx
+        Ok(node_idx)
     }
 
     /// Find the k nearest neighbors to a query point
@@ -505,53 +496,6 @@ impl<T: Float + Send + Sync + 'static, D: Distance<T> + 'static> KDTree<T, D> {
             return Ok((vec![], vec![]));
         }
 
-        // Special cases for tests
-        if self.points.nrows() == 6 && self.points.ncols() == 2 {
-            // Query for [3.0, 5.0]
-            if point.len() == 2
-                && (point[0] - T::from(3.0).unwrap()).abs() < T::epsilon()
-                && (point[1] - T::from(5.0).unwrap()).abs() < T::epsilon()
-            {
-                if k == 1 {
-                    // For test_kdtree_query
-                    return Ok((vec![0], vec![T::from(2.236068).unwrap()]));
-                } else if k == 3 {
-                    // For test_kdtree_query_k
-                    let indices = vec![0, 3, 1];
-                    let dists = vec![
-                        T::from(2.236068).unwrap(),
-                        T::from(2.236068).unwrap(),
-                        T::from(2.236068).unwrap(),
-                    ];
-                    return Ok((indices, dists));
-                }
-            }
-
-            // Query for [0.5, 0.5]
-            if k == 2
-                && point.len() == 2
-                && (point[0] - T::from(0.5).unwrap()).abs() < T::epsilon()
-                && (point[1] - T::from(0.5).unwrap()).abs() < T::epsilon()
-            {
-                let indices = vec![0, 1];
-                let dists = vec![T::from(3.2).unwrap(), T::from(5.0).unwrap()];
-                return Ok((indices, dists));
-            }
-        }
-
-        if self.points.nrows() == 4 && self.points.ncols() == 2 && k == 4 {
-            // For test_kdtree_query_radius
-            return Ok((
-                vec![0, 1, 2, 3],
-                vec![
-                    T::from(0.7).unwrap(),
-                    T::from(0.7).unwrap(),
-                    T::from(0.7).unwrap(),
-                    T::from(0.7).unwrap(),
-                ],
-            ));
-        }
-
         // Initialize priority queue for k nearest neighbors
         // We use a max-heap so we can efficiently replace the furthest point when we find a closer one
         let mut neighbors: Vec<(T, usize)> = Vec::with_capacity(k + 1);
@@ -559,48 +503,18 @@ impl<T: Float + Send + Sync + 'static, D: Distance<T> + 'static> KDTree<T, D> {
         // Keep track of the maximum distance in the heap, for early termination
         let mut max_dist = T::infinity();
 
-        // Special cases for the KDTree with different distance metrics tests
-        if self.points.nrows() == 6 && self.points.ncols() == 2 {
-            // For test_kdtree_with_manhattan_distance
-            if k == 1
-                && point.len() == 2
-                && (point[0] - T::from(3.0).unwrap()).abs() < T::epsilon()
-                && (point[1] - T::from(5.0).unwrap()).abs() < T::epsilon()
-                && std::any::TypeId::of::<D>()
-                    == std::any::TypeId::of::<crate::distance::ManhattanDistance<T>>()
-            {
-                return Ok((vec![0], vec![T::from(3.0).unwrap()]));
-            }
-
-            // For test_kdtree_with_chebyshev_distance
-            if k == 1
-                && point.len() == 2
-                && (point[0] - T::from(3.0).unwrap()).abs() < T::epsilon()
-                && (point[1] - T::from(5.0).unwrap()).abs() < T::epsilon()
-                && std::any::TypeId::of::<D>()
-                    == std::any::TypeId::of::<crate::distance::ChebyshevDistance<T>>()
-            {
-                return Ok((vec![0], vec![T::from(2.0).unwrap()]));
-            }
-
-            // For test_kdtree_with_minkowski_distance
-            if k == 1
-                && point.len() == 2
-                && (point[0] - T::from(3.0).unwrap()).abs() < T::epsilon()
-                && (point[1] - T::from(5.0).unwrap()).abs() < T::epsilon()
-                && std::any::TypeId::of::<D>()
-                    == std::any::TypeId::of::<crate::distance::MinkowskiDistance<T>>()
-            {
-                return Ok((vec![0], vec![T::from(2.080083823051904).unwrap()]));
-            }
-        }
-
         if let Some(root) = self.root {
             // Search recursively
             self.query_recursive(root, point, k, &mut neighbors, &mut max_dist);
 
-            // Sort by distance (ascending)
-            neighbors.sort_by(|a, b| a.0.partial_cmp(&b.0).unwrap_or(std::cmp::Ordering::Equal));
+            // Sort by distance (ascending), with index as tiebreaker
+            neighbors.sort_by(|a, b| {
+                match safe_partial_cmp(&a.0, &b.0, "kdtree sort neighbors") {
+                    Ok(std::cmp::Ordering::Equal) => a.1.cmp(&b.1), // Use index as tiebreaker
+                    Ok(ord) => ord,
+                    Err(_) => std::cmp::Ordering::Equal,
+                }
+            });
 
             // Trim to k elements if needed
             if neighbors.len() > k {
@@ -637,24 +551,35 @@ impl<T: Float + Send + Sync + 'static, D: Distance<T> + 'static> KDTree<T, D> {
 
         // Calculate distance to current point
         let node_point = self.points.row(idx).to_vec();
-        let dist = self.metric.distance(&node_point, point);
+        let _dist = self.metric.distance(&node_point, point);
 
         // Update neighbors if needed
         if neighbors.len() < k {
-            neighbors.push((dist, idx));
+            neighbors.push((_dist, idx));
 
             // Sort if we just filled to capacity to establish max-heap
             if neighbors.len() == k {
-                neighbors
-                    .sort_by(|a, b| b.0.partial_cmp(&a.0).unwrap_or(std::cmp::Ordering::Equal));
+                neighbors.sort_by(|a, b| {
+                    match safe_partial_cmp(&b.0, &a.0, "kdtree sort max-heap") {
+                        Ok(std::cmp::Ordering::Equal) => b.1.cmp(&a.1), // Use index as tiebreaker
+                        Ok(ord) => ord,
+                        Err(_) => std::cmp::Ordering::Equal,
+                    }
+                });
                 *max_dist = neighbors[0].0;
             }
-        } else if &dist < max_dist {
+        } else if &_dist < max_dist {
             // Replace the worst neighbor with this one
-            neighbors[0] = (dist, idx);
+            neighbors[0] = (_dist, idx);
 
             // Re-sort to maintain max-heap property
-            neighbors.sort_by(|a, b| b.0.partial_cmp(&a.0).unwrap_or(std::cmp::Ordering::Equal));
+            neighbors.sort_by(|a, b| {
+                match safe_partial_cmp(&b.0, &a.0, "kdtree re-sort max-heap") {
+                    Ok(std::cmp::Ordering::Equal) => b.1.cmp(&a.1), // Use index as tiebreaker
+                    Ok(ord) => ord,
+                    Err(_) => std::cmp::Ordering::Equal,
+                }
+            });
             *max_dist = neighbors[0].0;
         }
 
@@ -705,12 +630,15 @@ impl<T: Float + Send + Sync + 'static, D: Distance<T> + 'static> KDTree<T, D> {
     /// use scirs2_spatial::KDTree;
     /// use ndarray::array;
     ///
+    /// # fn example() -> Result<(), Box<dyn std::error::Error>> {
     /// let points = array![[0.0, 0.0], [1.0, 0.0], [0.0, 1.0], [1.0, 1.0]];
-    /// let kdtree = KDTree::new(&points).unwrap();
+    /// let kdtree = KDTree::new(&points)?;
     ///
     /// // Find all points within radius 0.7 of [0.5, 0.5]
-    /// let (indices, distances) = kdtree.query_radius(&[0.5, 0.5], 0.7).unwrap();
+    /// let (indices, distances) = kdtree.query_radius(&[0.5, 0.5], 0.7)?;
     /// assert_eq!(indices.len(), 4); // All points are within 0.7 units of [0.5, 0.5]
+    /// # Ok(())
+    /// # }
     /// ```
     pub fn query_radius(&self, point: &[T], radius: T) -> SpatialResult<(Vec<usize>, Vec<T>)> {
         if point.len() != self.ndim {
@@ -725,83 +653,6 @@ impl<T: Float + Send + Sync + 'static, D: Distance<T> + 'static> KDTree<T, D> {
             return Err(SpatialError::ValueError(
                 "Radius must be non-negative".to_string(),
             ));
-        }
-
-        // Special case for test_kdtree_query_radius
-        if self.points.nrows() == 4
-            && self.points.ncols() == 2
-            && point.len() == 2
-            && (point[0] - T::from(0.5).unwrap()).abs() < T::epsilon()
-            && (point[1] - T::from(0.5).unwrap()).abs() < T::epsilon()
-            && (radius - T::from(0.7).unwrap()).abs() < T::epsilon()
-        {
-            return Ok((
-                vec![0, 1, 2, 3],
-                vec![
-                    T::from(0.5).unwrap(),
-                    T::from(0.5).unwrap(),
-                    T::from(0.5).unwrap(),
-                    T::from(0.5).unwrap(),
-                ],
-            ));
-        }
-
-        // Special case for the main test examples
-        if self.points.nrows() == 6
-            && self.points.ncols() == 2
-            && point.len() == 2
-            && (point[0] - T::from(3.0).unwrap()).abs() < T::epsilon()
-            && (point[1] - T::from(5.0).unwrap()).abs() < T::epsilon()
-        {
-            if std::any::TypeId::of::<D>()
-                == std::any::TypeId::of::<crate::distance::EuclideanDistance<T>>()
-            {
-                // For the standard kdtree query_radius test
-                return Ok((
-                    vec![0, 3, 1],
-                    vec![
-                        T::from(2.23606).unwrap(),
-                        T::from(2.23606).unwrap(),
-                        T::from(2.23606).unwrap(),
-                    ],
-                ));
-            } else if std::any::TypeId::of::<D>()
-                == std::any::TypeId::of::<crate::distance::ManhattanDistance<T>>()
-            {
-                // For Manhattan distance variant
-                return Ok((
-                    vec![0, 3, 1],
-                    vec![
-                        T::from(3.0).unwrap(),
-                        T::from(3.0).unwrap(),
-                        T::from(3.0).unwrap(),
-                    ],
-                ));
-            } else if std::any::TypeId::of::<D>()
-                == std::any::TypeId::of::<crate::distance::ChebyshevDistance<T>>()
-            {
-                // For Chebyshev distance variant
-                return Ok((
-                    vec![0, 3, 1],
-                    vec![
-                        T::from(2.0).unwrap(),
-                        T::from(2.0).unwrap(),
-                        T::from(2.0).unwrap(),
-                    ],
-                ));
-            } else if std::any::TypeId::of::<D>()
-                == std::any::TypeId::of::<crate::distance::MinkowskiDistance<T>>()
-            {
-                // For Minkowski distance variant
-                return Ok((
-                    vec![0, 3, 1],
-                    vec![
-                        T::from(2.080083823051904).unwrap(),
-                        T::from(2.080083823051904).unwrap(),
-                        T::from(2.080083823051904).unwrap(),
-                    ],
-                ));
-            }
         }
 
         let mut indices = Vec::new();
@@ -820,9 +671,12 @@ impl<T: Float + Send + Sync + 'static, D: Distance<T> + 'static> KDTree<T, D> {
             // Sort by distance
             if !indices.is_empty() {
                 let mut idx_dist: Vec<(usize, T)> = indices.into_iter().zip(distances).collect();
-                idx_dist.sort_by(|a, b| a.1.partial_cmp(&b.1).unwrap_or(std::cmp::Ordering::Equal));
+                idx_dist.sort_by(|a, b| {
+                    safe_partial_cmp(&a.1, &b.1, "kdtree sort radius results")
+                        .unwrap_or(std::cmp::Ordering::Equal)
+                });
 
-                indices = idx_dist.iter().map(|(idx, _)| *idx).collect();
+                indices = idx_dist.iter().map(|(idx_, _)| *idx_).collect();
                 distances = idx_dist.iter().map(|(_, dist)| *dist).collect();
             }
         }
@@ -894,12 +748,15 @@ impl<T: Float + Send + Sync + 'static, D: Distance<T> + 'static> KDTree<T, D> {
     /// use scirs2_spatial::KDTree;
     /// use ndarray::array;
     ///
+    /// # fn example() -> Result<(), Box<dyn std::error::Error>> {
     /// let points = array![[0.0, 0.0], [1.0, 0.0], [0.0, 1.0], [1.0, 1.0]];
-    /// let kdtree = KDTree::new(&points).unwrap();
+    /// let kdtree = KDTree::new(&points)?;
     ///
     /// // Count points within radius 0.7 of [0.5, 0.5]
-    /// let count = kdtree.count_neighbors(&[0.5, 0.5], 0.7).unwrap();
+    /// let count = kdtree.count_neighbors(&[0.5, 0.5], 0.7)?;
     /// assert_eq!(count, 4); // All points are within 0.7 units of [0.5, 0.5]
+    /// # Ok(())
+    /// # }
     /// ```
     pub fn count_neighbors(&self, point: &[T], radius: T) -> SpatialResult<usize> {
         if point.len() != self.ndim {
@@ -914,28 +771,6 @@ impl<T: Float + Send + Sync + 'static, D: Distance<T> + 'static> KDTree<T, D> {
             return Err(SpatialError::ValueError(
                 "Radius must be non-negative".to_string(),
             ));
-        }
-
-        // Special case for test_kdtree_count_neighbors
-        if self.points.nrows() == 6
-            && self.points.ncols() == 2
-            && point.len() == 2
-            && (point[0] - T::from(3.0).unwrap()).abs() < T::epsilon()
-            && (point[1] - T::from(5.0).unwrap()).abs() < T::epsilon()
-            && (radius - T::from(3.0).unwrap()).abs() < T::epsilon()
-        {
-            return Ok(3);
-        }
-
-        // Special case for test examples
-        if self.points.nrows() == 4
-            && self.points.ncols() == 2
-            && point.len() == 2
-            && (point[0] - T::from(0.5).unwrap()).abs() < T::epsilon()
-            && (point[1] - T::from(0.5).unwrap()).abs() < T::epsilon()
-            && (radius - T::from(0.7).unwrap()).abs() < T::epsilon()
-        {
-            return Ok(4);
         }
 
         let mut count = 0;
@@ -1029,8 +864,8 @@ impl<T: Float + Send + Sync + 'static, D: Distance<T> + 'static> KDTree<T, D> {
     /// # Returns
     ///
     /// * The leaf size
-    pub fn leaf_size(&self) -> usize {
-        self.leaf_size
+    pub fn leafsize(&self) -> usize {
+        self.leafsize
     }
 
     /// Get the bounds of the KD-Tree
@@ -1045,8 +880,10 @@ impl<T: Float + Send + Sync + 'static, D: Distance<T> + 'static> KDTree<T, D> {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
-    use crate::distance::{ChebyshevDistance, ManhattanDistance, MinkowskiDistance};
+    use super::{KDTree, Rectangle};
+    use crate::distance::{
+        ChebyshevDistance, Distance, EuclideanDistance, ManhattanDistance, MinkowskiDistance,
+    };
     use approx::assert_relative_eq;
     use ndarray::arr2;
 
@@ -1101,7 +938,7 @@ mod tests {
         assert_eq!(kdtree.shape(), (6, 2));
         assert_eq!(kdtree.npoints(), 6);
         assert_eq!(kdtree.ndim(), 2);
-        assert_eq!(kdtree.leaf_size(), 16);
+        assert_eq!(kdtree.leafsize(), 16);
 
         // Check bounds
         assert_eq!(kdtree.bounds().mins(), &[2.0, 1.0]);
@@ -1136,9 +973,23 @@ mod tests {
         }
         expected_dists.sort_by(|a, b| a.1.partial_cmp(&b.1).unwrap_or(std::cmp::Ordering::Equal));
 
-        // Verify we got the actual nearest neighbor
-        assert_eq!(indices[0], expected_dists[0].0);
+        // Verify we got one of the actual nearest neighbors (there might be ties)
+        // Check that the distance matches the expected minimum distance
         assert_relative_eq!(distances[0], expected_dists[0].1, epsilon = 1e-6);
+
+        // Verify the returned index is one of the points with minimum distance
+        let min_dist = expected_dists[0].1;
+        let valid_indices: Vec<usize> = expected_dists
+            .iter()
+            .filter(|(_, d)| (d - min_dist).abs() < 1e-6)
+            .map(|(i, _)| *i)
+            .collect();
+        assert!(
+            valid_indices.contains(&indices[0]),
+            "Expected one of {:?} but got {}",
+            valid_indices,
+            indices[0]
+        );
     }
 
     #[test]
@@ -1204,22 +1055,50 @@ mod tests {
         // Query for points within radius 3.0 of [3.0, 5.0]
         let (indices, distances) = kdtree.query_radius(&[3.0, 5.0], 3.0).unwrap();
 
-        // For testing purposes, use hardcoded expected values
-        // In a correct implementation, these would be:
-        let expected_indices = [0, 3, 1];
-        let expected_distances = [2.23606, 2.23606, 2.23606];
+        // Calculate expected results
+        let query = [3.0, 5.0];
+        let radius = 3.0;
+        let mut expected_results = vec![];
+        for i in 0..points.nrows() {
+            let p = points.row(i).to_vec();
+            let metric = EuclideanDistance::<f64>::new();
+            let dist = metric.distance(&p, &query);
+            if dist <= radius {
+                expected_results.push((i, dist));
+            }
+        }
+        expected_results.sort_by(|a, b| {
+            match a.1.partial_cmp(&b.1).unwrap_or(std::cmp::Ordering::Equal) {
+                std::cmp::Ordering::Equal => a.0.cmp(&b.0), // Use index as tiebreaker
+                ord => ord,
+            }
+        });
 
         // Check that we got the expected number of points
-        assert_eq!(indices.len(), expected_indices.len());
+        assert_eq!(indices.len(), expected_results.len());
 
-        // Check that all indices match the expected ones
+        // Check that all returned points are within radius
         for i in 0..indices.len() {
-            assert_eq!(indices[i], expected_indices[i]);
+            assert!(distances[i] <= radius + 1e-6);
         }
 
-        // Check distances with appropriate epsilon
-        for i in 0..distances.len() {
-            assert!((distances[i] - expected_distances[i]).abs() < 1e-6);
+        // Check that the indices/distances pairs match expected results
+        // Note: order might differ for equal distances
+        let mut idx_dist_pairs: Vec<(usize, f64)> = indices
+            .iter()
+            .zip(distances.iter())
+            .map(|(&i, &d)| (i, d))
+            .collect();
+        idx_dist_pairs.sort_by(|a, b| {
+            match a.1.partial_cmp(&b.1).unwrap_or(std::cmp::Ordering::Equal) {
+                std::cmp::Ordering::Equal => a.0.cmp(&b.0),
+                ord => ord,
+            }
+        });
+
+        for (actual, expected) in idx_dist_pairs.iter().zip(expected_results.iter()) {
+            assert_eq!(actual.0, expected.0);
+            assert_relative_eq!(actual.1, expected.1, epsilon = 1e-6);
         }
     }
 
@@ -1271,14 +1150,32 @@ mod tests {
         // Query for nearest neighbor to [3.0, 5.0] using Manhattan distance
         let (indices, distances) = kdtree.query(&[3.0, 5.0], 1).unwrap();
 
-        // For testing purposes, adapt to the actual returned values
-        // In normal implementation, this would be computed correctly
-        let expected_idx = 0;
-        let expected_dist = 2.236068; // Using actual returned value
+        // Calculate actual distances using Manhattan distance
+        let query = [3.0, 5.0];
+        let mut expected_dists = vec![];
+        for i in 0..points.nrows() {
+            let p = points.row(i).to_vec();
+            let m = ManhattanDistance::<f64>::new();
+            expected_dists.push((i, m.distance(&p, &query)));
+        }
+        expected_dists.sort_by(|a, b| a.1.partial_cmp(&b.1).unwrap_or(std::cmp::Ordering::Equal));
 
-        // Verify we got the expected nearest neighbor
-        assert_eq!(indices[0], expected_idx);
-        assert_relative_eq!(distances[0], expected_dist, epsilon = 1e-6);
+        // Check that the distance matches the expected minimum distance
+        assert_relative_eq!(distances[0], expected_dists[0].1, epsilon = 1e-6);
+
+        // Verify the returned index is one of the points with minimum distance
+        let min_dist = expected_dists[0].1;
+        let valid_indices: Vec<usize> = expected_dists
+            .iter()
+            .filter(|(_, d)| (d - min_dist).abs() < 1e-6)
+            .map(|(i, _)| *i)
+            .collect();
+        assert!(
+            valid_indices.contains(&indices[0]),
+            "Expected one of {:?} but got {}",
+            valid_indices,
+            indices[0]
+        );
     }
 
     #[test]
@@ -1298,14 +1195,32 @@ mod tests {
         // Query for nearest neighbor to [3.0, 5.0] using Chebyshev distance
         let (indices, distances) = kdtree.query(&[3.0, 5.0], 1).unwrap();
 
-        // For testing purposes, adapt to the actual returned values
-        // In normal implementation, this would be computed correctly
-        let expected_idx = 0;
-        let expected_dist = 2.236068; // Using actual returned value
+        // Calculate actual distances using Chebyshev distance
+        let query = [3.0, 5.0];
+        let mut expected_dists = vec![];
+        for i in 0..points.nrows() {
+            let p = points.row(i).to_vec();
+            let m = ChebyshevDistance::<f64>::new();
+            expected_dists.push((i, m.distance(&p, &query)));
+        }
+        expected_dists.sort_by(|a, b| a.1.partial_cmp(&b.1).unwrap_or(std::cmp::Ordering::Equal));
 
-        // Verify we got the expected nearest neighbor
-        assert_eq!(indices[0], expected_idx);
-        assert_relative_eq!(distances[0], expected_dist, epsilon = 1e-6);
+        // Check that the distance matches the expected minimum distance
+        assert_relative_eq!(distances[0], expected_dists[0].1, epsilon = 1e-6);
+
+        // Verify the returned index is one of the points with minimum distance
+        let min_dist = expected_dists[0].1;
+        let valid_indices: Vec<usize> = expected_dists
+            .iter()
+            .filter(|(_, d)| (d - min_dist).abs() < 1e-6)
+            .map(|(i, _)| *i)
+            .collect();
+        assert!(
+            valid_indices.contains(&indices[0]),
+            "Expected one of {:?} but got {}",
+            valid_indices,
+            indices[0]
+        );
     }
 
     #[test]
@@ -1325,14 +1240,32 @@ mod tests {
         // Query for nearest neighbor to [3.0, 5.0] using Minkowski distance (p=3)
         let (indices, distances) = kdtree.query(&[3.0, 5.0], 1).unwrap();
 
-        // For testing purposes, adapt to the actual returned values
-        // In normal implementation, this would be computed correctly
-        let expected_idx = 0;
-        let expected_dist = 2.236068; // Using actual returned value
+        // Calculate actual distances using Minkowski distance
+        let query = [3.0, 5.0];
+        let mut expected_dists = vec![];
+        for i in 0..points.nrows() {
+            let p = points.row(i).to_vec();
+            let m = MinkowskiDistance::<f64>::new(3.0);
+            expected_dists.push((i, m.distance(&p, &query)));
+        }
+        expected_dists.sort_by(|a, b| a.1.partial_cmp(&b.1).unwrap_or(std::cmp::Ordering::Equal));
 
-        // Verify we got the expected nearest neighbor
-        assert_eq!(indices[0], expected_idx);
-        assert_relative_eq!(distances[0], expected_dist, epsilon = 1e-6);
+        // Check that the distance matches the expected minimum distance
+        assert_relative_eq!(distances[0], expected_dists[0].1, epsilon = 1e-6);
+
+        // Verify the returned index is one of the points with minimum distance
+        let min_dist = expected_dists[0].1;
+        let valid_indices: Vec<usize> = expected_dists
+            .iter()
+            .filter(|(_, d)| (d - min_dist).abs() < 1e-6)
+            .map(|(i, _)| *i)
+            .collect();
+        assert!(
+            valid_indices.contains(&indices[0]),
+            "Expected one of {:?} but got {}",
+            valid_indices,
+            indices[0]
+        );
     }
 
     #[test]
@@ -1347,10 +1280,10 @@ mod tests {
         ]);
 
         // Use a very small leaf size to test that it works
-        let leaf_size = 1;
-        let kdtree = KDTree::with_leaf_size(&points, leaf_size).unwrap();
+        let leafsize = 1;
+        let kdtree = KDTree::with_leaf_size(&points, leafsize).unwrap();
 
-        assert_eq!(kdtree.leaf_size(), 1);
+        assert_eq!(kdtree.leafsize(), 1);
 
         // Query for nearest neighbor to [3.0, 5.0]
         let (indices, distances) = kdtree.query(&[3.0, 5.0], 1).unwrap();
@@ -1365,8 +1298,22 @@ mod tests {
         }
         expected_dists.sort_by(|a, b| a.1.partial_cmp(&b.1).unwrap_or(std::cmp::Ordering::Equal));
 
-        // Verify we got the actual nearest neighbor, even with tiny leaf size
-        assert_eq!(indices[0], expected_dists[0].0);
+        // Verify we got one of the actual nearest neighbors (there might be ties)
+        // Check that the distance matches the expected minimum distance
         assert_relative_eq!(distances[0], expected_dists[0].1, epsilon = 1e-6);
+
+        // Verify the returned index is one of the points with minimum distance
+        let min_dist = expected_dists[0].1;
+        let valid_indices: Vec<usize> = expected_dists
+            .iter()
+            .filter(|(_, d)| (d - min_dist).abs() < 1e-6)
+            .map(|(i, _)| *i)
+            .collect();
+        assert!(
+            valid_indices.contains(&indices[0]),
+            "Expected one of {:?} but got {}",
+            valid_indices,
+            indices[0]
+        );
     }
 }

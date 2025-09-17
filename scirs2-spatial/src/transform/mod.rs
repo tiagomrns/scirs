@@ -1,11 +1,11 @@
-//! Spatial transformations module
-//!
-//! This module provides functionality for spatial transformations including rotations,
-//! rigid transforms (rotation + translation), interpolation between rotations,
-//! and conversions between Cartesian and spherical coordinate systems.
-//!
-//! The module is inspired by SciPy's `scipy.spatial.transform` module and provides similar
-//! functionality in a Rust-idiomatic way.
+// Spatial transformations module
+//
+// This module provides functionality for spatial transformations including rotations,
+// rigid transforms (rotation + translation), interpolation between rotations,
+// and conversions between Cartesian and spherical coordinate systems.
+//
+// The module is inspired by SciPy's `scipy.spatial.transform` module and provides similar
+// functionality in a Rust-idiomatic way.
 
 // Public modules
 mod rigid_transform;

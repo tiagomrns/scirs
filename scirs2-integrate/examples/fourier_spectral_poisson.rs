@@ -1,4 +1,3 @@
-// FIXME: This example has compilation errors - ambiguous type for max()
 #![allow(dead_code)]
 
 use scirs2_integrate::{
@@ -8,6 +7,7 @@ use scirs2_integrate::{
 use std::f64::consts::PI;
 use std::time::Instant;
 
+#[allow(dead_code)]
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("Fourier Spectral Method example for the Poisson equation");
     println!("Solving: d²u/dx² = f(x) with periodic boundary conditions");
@@ -60,7 +60,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let grid = &result.grid;
     let coeffs = &result.coefficients;
 
-    println!("Solution computed in {:.4} seconds", solve_time);
+    println!("Solution computed in {solve_time:.4} seconds");
     println!("Residual norm: {:.6e}", result.residual_norm);
 
     // Calculate errors
@@ -83,8 +83,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     l2_error = (l2_error / grid.len() as f64).sqrt();
 
     println!("\nError analysis:");
-    println!("  - Maximum error: {:.6e}", max_error);
-    println!("  - L2 error norm: {:.6e}", l2_error);
+    println!("  - Maximum error: {max_error:.6e}");
+    println!("  - L2 error norm: {l2_error:.6e}");
 
     // Print solution at selected points
     println!("\nSolution at selected points:");
@@ -111,10 +111,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         let exact = x.sin() + (3.0 * x).sin() / 9.0;
         let error = (numerical - exact).abs();
 
-        println!(
-            "{:<10.4} {:<15.8e} {:<15.8e} {:<10.2e}",
-            x, numerical, exact, error
-        );
+        println!("{x:<10.4} {numerical:<15.8e} {exact:<15.8e} {error:<10.2e}");
     }
 
     // Print largest Fourier coefficients
@@ -166,7 +163,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
         l2_error = (l2_error / n as f64).sqrt();
 
-        println!("  - N = {}: L2 error = {:.6e}", n, l2_error);
+        println!("  - N = {n}: L2 error = {l2_error:.6e}");
     }
 
     Ok(())

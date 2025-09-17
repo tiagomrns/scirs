@@ -2,6 +2,7 @@ use ndarray::Array2;
 use scirs2_cluster::gmm::{gaussian_mixture, CovarianceType, GMMInit, GMMOptions};
 use scirs2_cluster::metrics::silhouette_score;
 
+#[allow(dead_code)]
 fn main() {
     println!("Gaussian Mixture Models (GMM) Demo");
     println!("{}", "=".repeat(50));
@@ -133,6 +134,7 @@ fn main() {
     }
 }
 
+#[allow(dead_code)]
 fn generate_gaussian_mixture_data() -> Array2<f64> {
     let mut data = Vec::new();
 

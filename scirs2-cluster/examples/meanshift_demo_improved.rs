@@ -1,6 +1,7 @@
 use ndarray::{array, Array2};
 use scirs2_cluster::meanshift::{estimate_bandwidth, mean_shift, MeanShiftOptions};
 
+#[allow(dead_code)]
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("Mean Shift Clustering Demo (Improved)");
     println!("=====================================\n");
@@ -103,7 +104,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         };
 
         match mean_shift(&data2.view(), options) {
-            Ok((centers, _)) => {
+            Ok(centers_) => {
                 println!("  Clusters found: {}", centers.nrows());
             }
             Err(e) => println!("  Error: {}", e),
@@ -123,7 +124,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         };
 
         match mean_shift(&data2.view(), options) {
-            Ok((centers, _)) => {
+            Ok(centers_) => {
                 print!("  Bandwidth {:.1}: {} clusters", bw, centers.nrows());
                 if centers.nrows() == 3 {
                     print!(" ✓ (optimal)");

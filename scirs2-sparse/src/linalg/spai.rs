@@ -51,7 +51,7 @@ impl<F: Float + NumAssign + Sum + Debug + 'static> SpaiPreconditioner<F> {
         // For now, we'll implement a simplified version of SPAI
         // that uses a static sparsity pattern (diagonal + few off-diagonals)
 
-        // Initialize M as identity matrix in dense format
+        // Initialize M as identity _matrix in dense format
         let mut m_dense = vec![vec![F::zero(); n]; n];
         for (i, row) in m_dense.iter_mut().enumerate().take(n) {
             row[i] = F::one();
@@ -65,7 +65,7 @@ impl<F: Float + NumAssign + Sum + Debug + 'static> SpaiPreconditioner<F> {
             let mut pattern = vec![j];
 
             // Add neighbors within distance 2
-            let start = if j >= 2 { j - 2 } else { 0 };
+            let start = j.saturating_sub(2);
             let end = (j + 3).min(n);
 
             for k in start..end {
@@ -192,6 +192,7 @@ impl<F: Float + NumAssign + Sum + Debug + 'static> LinearOperator<F> for SpaiPre
 }
 
 /// Solve a dense linear system using Gaussian elimination with partial pivoting
+#[allow(dead_code)]
 fn solve_dense_system<F: Float + NumAssign>(a: &[Vec<F>], b: &[F]) -> SparseResult<Vec<F>> {
     let n = a.len();
     if n == 0 || n != a[0].len() || n != b.len() {

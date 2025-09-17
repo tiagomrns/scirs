@@ -282,6 +282,7 @@ where
 }
 
 /// Compute Kalman gain
+#[allow(dead_code)]
 fn compute_kalman_gain<F>(
     covariance: &Array2<F>,
     observation_matrix: &Array2<F>,
@@ -299,6 +300,7 @@ where
 }
 
 /// Matrix inversion using LU decomposition with partial pivoting
+#[allow(dead_code)]
 fn matrix_inverse<F>(matrix: &Array2<F>) -> Result<Array2<F>>
 where
     F: Float + FromPrimitive + Debug + Display + ScalarOperand,
@@ -314,7 +316,7 @@ where
         return Ok(Array2::zeros((0, 0)));
     }
 
-    // Check for diagonal matrix (optimization)
+    // Check for diagonal _matrix (optimization)
     let mut is_diagonal = true;
     for i in 0..m {
         for j in 0..n {
@@ -335,7 +337,7 @@ where
             let diag = matrix[[i, i]];
             if diag.abs() < F::from(1e-12).unwrap() {
                 return Err(TimeSeriesError::NumericalInstability(
-                    "Singular matrix: zero diagonal element".to_string(),
+                    "Singular _matrix: zero diagonal element".to_string(),
                 ));
             }
             inv[[i, i]] = F::one() / diag;
@@ -379,7 +381,7 @@ where
         // Check for near-zero pivot
         if lu[[col, col]].abs() < F::from(1e-12).unwrap() {
             return Err(TimeSeriesError::NumericalInstability(
-                "Singular matrix: near-zero pivot".to_string(),
+                "Singular _matrix: near-zero pivot".to_string(),
             ));
         }
 
@@ -398,7 +400,7 @@ where
         }
     }
 
-    // Back substitution for each column of the identity matrix
+    // Back substitution for each column of the identity _matrix
     let mut inverse = Array2::zeros((n, n));
     for col in 0..n {
         let mut x = vec![F::zero(); n];
@@ -424,6 +426,7 @@ where
 }
 
 /// Pseudo-inverse implementation using the matrix inverse with regularization
+#[allow(dead_code)]
 fn pseudo_inverse<F>(matrix: &Array2<F>) -> Result<Array2<F>>
 where
     F: Float + FromPrimitive + Debug + Display + ScalarOperand,
@@ -431,7 +434,7 @@ where
     let (m, n) = matrix.dim();
 
     if m == n {
-        // Square matrix - try direct inversion
+        // Square _matrix - try direct inversion
         match matrix_inverse(matrix) {
             Ok(inv) => return Ok(inv),
             Err(_) => {
@@ -456,6 +459,7 @@ where
 }
 
 /// Calculate outer product of two vectors
+#[allow(dead_code)]
 fn outer_product<F>(a: &Array1<F>, b: &Array1<F>) -> Array2<F>
 where
     F: Float + Clone,
@@ -470,13 +474,14 @@ where
 }
 
 /// Calculate log determinant of a matrix using LU decomposition
+#[allow(dead_code)]
 fn matrix_log_determinant<F>(matrix: &Array2<F>) -> F
 where
     F: Float + FromPrimitive + Debug + Display + ScalarOperand,
 {
     let n = matrix.nrows();
     if n != matrix.ncols() {
-        return F::neg_infinity(); // Invalid matrix
+        return F::neg_infinity(); // Invalid _matrix
     }
 
     if n == 0 {
@@ -531,7 +536,7 @@ where
     for i in 0..n {
         let diag_element = lu[[i, i]];
         if diag_element.abs() < F::from(1e-12).unwrap() {
-            return F::neg_infinity(); // Singular matrix
+            return F::neg_infinity(); // Singular _matrix
         }
         log_det = log_det + diag_element.abs().ln();
     }
@@ -563,15 +568,15 @@ where
     F: Float + FromPrimitive + Debug + Display + ScalarOperand,
 {
     /// Create a local level model (random walk plus noise)
-    pub fn local_level(sigma_level: F, sigma_obs: F) -> Result<Self> {
+    pub fn local_level(_sigma_level: F, sigmaobs: F) -> Result<Self> {
         let transition = StateTransition {
             transition_matrix: Array2::eye(1),
-            process_noise: Array2::from_elem((1, 1), sigma_level * sigma_level),
+            process_noise: Array2::from_elem((1, 1), _sigma_level * _sigma_level),
         };
 
         let observation = ObservationModel {
             observation_matrix: Array2::eye(1),
-            observation_noise: Array2::from_elem((1, 1), sigma_obs * sigma_obs),
+            observation_noise: Array2::from_elem((1, 1), sigmaobs * sigmaobs),
         };
 
         Ok(Self {
@@ -583,27 +588,27 @@ where
     }
 
     /// Create a local linear trend model
-    pub fn local_linear_trend(sigma_level: F, sigma_trend: F, sigma_obs: F) -> Result<Self> {
-        // State: [level, trend]
+    pub fn local_linear_trend(_sigma_level: F, sigma_trend: F, sigmaobs: F) -> Result<Self> {
+        // State: [_level_trend]
         let transition_matrix = Array2::from_shape_vec(
             (2, 2),
             vec![F::one(), F::one(), F::zero(), F::one()],
         )
         .map_err(|e| {
-            TimeSeriesError::InvalidInput(format!("Failed to create transition matrix: {}", e))
+            TimeSeriesError::InvalidInput(format!("Failed to create transition matrix: {e}"))
         })?;
 
         let process_noise = Array2::from_shape_vec(
             (2, 2),
             vec![
-                sigma_level * sigma_level,
+                _sigma_level * _sigma_level,
                 F::zero(),
                 F::zero(),
                 sigma_trend * sigma_trend,
             ],
         )
         .map_err(|e| {
-            TimeSeriesError::InvalidInput(format!("Failed to create process noise matrix: {}", e))
+            TimeSeriesError::InvalidInput(format!("Failed to create process noise matrix: {e}"))
         })?;
 
         let transition = StateTransition {
@@ -615,12 +620,11 @@ where
             observation_matrix: Array2::from_shape_vec((1, 2), vec![F::one(), F::zero()]).map_err(
                 |e| {
                     TimeSeriesError::InvalidInput(format!(
-                        "Failed to create observation matrix: {}",
-                        e
+                        "Failed to create observation matrix: {e}"
                     ))
                 },
             )?,
-            observation_noise: Array2::from_elem((1, 1), sigma_obs * sigma_obs),
+            observation_noise: Array2::from_elem((1, 1), sigmaobs * sigmaobs),
         };
 
         Ok(Self {
@@ -636,7 +640,7 @@ where
     where
         S: Data<Elem = F>,
     {
-        scirs2_core::validation::check_array_finite(data, "data")?;
+        scirs2_core::validation::checkarray_finite(data, "data")?;
 
         let em_params = EMParameters::default();
         self.fit_with_em(data, &em_params)
@@ -667,10 +671,7 @@ where
             log_likelihood_history.push(new_log_likelihood);
 
             if em_params.verbose {
-                println!(
-                    "EM Iteration {}: Log-likelihood = {:.6}",
-                    iteration, new_log_likelihood
-                );
+                println!("EM Iteration {iteration}: Log-likelihood = {new_log_likelihood:.6}");
             }
 
             // Check convergence
@@ -679,16 +680,13 @@ where
                 if improvement.abs() < em_params.tolerance {
                     converged = true;
                     if em_params.verbose {
-                        println!("EM converged after {} iterations", iteration);
+                        println!("EM converged after {iteration} iterations");
                     }
                     break;
                 }
 
                 if improvement < F::zero() && em_params.verbose {
-                    println!(
-                        "Warning: Log-likelihood decreased in EM iteration {}",
-                        iteration
-                    );
+                    println!("Warning: Log-likelihood decreased in EM iteration {iteration}");
                 }
             }
 
@@ -893,7 +891,7 @@ where
             process_noise: Array2::from_elem((1, 1), sigma_level * sigma_level),
         };
 
-        // Seasonal component (sum-to-zero seasonal states)
+        // Seasonal component (sum-to-zero _seasonal states)
         let mut seasonal_matrix = Array2::zeros((period - 1, period - 1));
 
         // First row: [-1, -1, ..., -1]
@@ -915,11 +913,11 @@ where
             },
         };
 
-        // Observation model: observe level + first seasonal state
-        let obs_dim = 1 + (period - 1); // level + seasonal states
+        // Observation model: observe _level + first _seasonal state
+        let obs_dim = 1 + (period - 1); // _level + _seasonal states
         let mut obs_matrix = Array2::zeros((1, obs_dim));
-        obs_matrix[[0, 0]] = F::one(); // level
-        obs_matrix[[0, 1]] = F::one(); // first seasonal state
+        obs_matrix[[0, 0]] = F::one(); // _level
+        obs_matrix[[0, 1]] = F::one(); // first _seasonal state
 
         let observation = ObservationModel {
             observation_matrix: obs_matrix,
@@ -972,9 +970,9 @@ where
     }
 
     /// Add control input
-    pub fn with_control(mut self, control: Array2<F>, control_matrix: Array2<F>) -> Self {
+    pub fn with_control(mut self, control: Array2<F>, controlmatrix: Array2<F>) -> Self {
         self.control = Some(control);
-        self.control_matrix = Some(control_matrix);
+        self.control_matrix = Some(controlmatrix);
         self
     }
 
@@ -983,7 +981,7 @@ where
     where
         S: Data<Elem = F>,
     {
-        scirs2_core::validation::check_array_finite(data, "data")?;
+        scirs2_core::validation::checkarray_finite(data, "data")?;
 
         let em_params = EMParameters::default();
         self.fit_with_em(data, &em_params)
@@ -1012,10 +1010,7 @@ where
             log_likelihood_history.push(new_log_likelihood);
 
             if em_params.verbose {
-                println!(
-                    "DLM EM Iteration {}: Log-likelihood = {:.6}",
-                    iteration, new_log_likelihood
-                );
+                println!("DLM EM Iteration {iteration}: Log-likelihood = {new_log_likelihood:.6}");
             }
 
             // Check convergence
@@ -1024,16 +1019,13 @@ where
                 if improvement.abs() < em_params.tolerance {
                     converged = true;
                     if em_params.verbose {
-                        println!("DLM EM converged after {} iterations", iteration);
+                        println!("DLM EM converged after {iteration} iterations");
                     }
                     break;
                 }
 
                 if improvement < F::zero() && em_params.verbose {
-                    println!(
-                        "Warning: Log-likelihood decreased in DLM EM iteration {}",
-                        iteration
-                    );
+                    println!("Warning: Log-likelihood decreased in DLM EM iteration {iteration}");
                 }
             }
 

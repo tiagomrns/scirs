@@ -119,8 +119,7 @@ where
         let expected_rows = lower_bandwidth + upper_bandwidth + 1;
         if data.nrows() != expected_rows {
             return Err(LinalgError::ShapeError(format!(
-                "Data should have {} rows for a matrix with lower bandwidth {} and upper bandwidth {}",
-                expected_rows, lower_bandwidth, upper_bandwidth
+                "Data should have {expected_rows} rows for a matrix with lower _bandwidth {lower_bandwidth} and upper _bandwidth {upper_bandwidth}"
             )));
         }
 
@@ -131,8 +130,7 @@ where
         // of any diagonal in the full matrix
         if data.ncols() != max_diag_len {
             return Err(LinalgError::ShapeError(format!(
-                "Data should have {} columns for a matrix with dimensions {}x{}",
-                max_diag_len, nrows, ncols
+                "Data should have {max_diag_len} columns for a matrix with dimensions {nrows}x{ncols}"
             )));
         }
 
@@ -156,7 +154,7 @@ where
     /// # Returns
     ///
     /// * `BandedMatrix` representation of the input matrix
-    pub fn from_matrix(
+    pub fn frommatrix(
         a: &ArrayView2<A>,
         lower_bandwidth: usize,
         upper_bandwidth: usize,
@@ -644,7 +642,7 @@ mod tests {
     }
 
     #[test]
-    fn test_from_matrix() {
+    fn test_frommatrix() {
         // Create a dense matrix
         let a = array![
             [5.0, 10.0, 14.0, 0.0, 0.0],
@@ -655,7 +653,7 @@ mod tests {
         ];
 
         // Convert to banded form
-        let band = BandedMatrix::from_matrix(&a.view(), 1, 2).unwrap();
+        let band = BandedMatrix::frommatrix(&a.view(), 1, 2).unwrap();
 
         assert_eq!(band.nrows(), 5);
         assert_eq!(band.ncols(), 5);
@@ -816,7 +814,7 @@ mod tests {
         let a = array![[2.0, -1.0, 0.0], [-1.0, 2.0, -1.0], [0.0, -1.0, 2.0]];
 
         // Convert to banded form
-        let band = BandedMatrix::from_matrix(&a.view(), 1, 1).unwrap();
+        let band = BandedMatrix::frommatrix(&a.view(), 1, 1).unwrap();
 
         // Right-hand side b = [1, 2, 3]
         let b = array![1.0, 2.0, 3.0];

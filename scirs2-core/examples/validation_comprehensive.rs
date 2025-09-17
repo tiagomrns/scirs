@@ -14,6 +14,7 @@ use scirs2_core::validation::data::*;
 use std::time::Duration;
 
 #[cfg(feature = "data_validation")]
+#[allow(dead_code)]
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("=== Comprehensive Data Validation Examples ===\n");
 
@@ -42,6 +43,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 }
 
 #[cfg(feature = "data_validation")]
+#[allow(dead_code)]
 fn basic_validation_example() -> Result<(), Box<dyn std::error::Error>> {
     println!("1. Basic Data Type Validation");
     println!("-----------------------------");
@@ -51,7 +53,7 @@ fn basic_validation_example() -> Result<(), Box<dyn std::error::Error>> {
 
     // Create a schema for user data
     let schema = ValidationSchema::new()
-        .name("user_profile")
+        .name(user_profile)
         .require_field("username", DataType::String)
         .require_field("age", DataType::Integer)
         .require_field("email", DataType::String)
@@ -59,7 +61,7 @@ fn basic_validation_example() -> Result<(), Box<dyn std::error::Error>> {
         .require_field("scores", DataType::Array(Box::new(DataType::Float64)));
 
     // Valid data
-    #[cfg(feature = "serde")]
+
     {
         use serde_json::json;
 
@@ -109,6 +111,7 @@ fn basic_validation_example() -> Result<(), Box<dyn std::error::Error>> {
 }
 
 #[cfg(feature = "data_validation")]
+#[allow(dead_code)]
 fn temporal_validation_example() -> Result<(), Box<dyn std::error::Error>> {
     println!("2. Temporal Constraint Validation");
     println!("---------------------------------");
@@ -124,12 +127,11 @@ fn temporal_validation_example() -> Result<(), Box<dyn std::error::Error>> {
         .disallow_duplicates();
 
     let schema = ValidationSchema::new()
-        .name("sensor_data")
+        .name(sensor_data)
         .require_field("timestamps", DataType::Array(Box::new(DataType::Float64)))
         .require_field("values", DataType::Array(Box::new(DataType::Float64)))
         .add_constraint("timestamps", Constraint::Temporal(time_constraints));
 
-    #[cfg(feature = "serde")]
     {
         use serde_json::json;
 
@@ -171,6 +173,7 @@ fn temporal_validation_example() -> Result<(), Box<dyn std::error::Error>> {
 }
 
 #[cfg(feature = "data_validation")]
+#[allow(dead_code)]
 fn statistical_validation_example() -> Result<(), Box<dyn std::error::Error>> {
     println!("3. Statistical Constraint Validation");
     println!("-----------------------------------");
@@ -182,14 +185,13 @@ fn statistical_validation_example() -> Result<(), Box<dyn std::error::Error>> {
     let stats_constraints = StatisticalConstraints::new()
         .with_mean_range(20.0, 30.0)  // Expected temperature range
         .with_std_range(0.5, 5.0)     // Expected variability
-        .with_distribution("normal"); // Expected distribution
+        .with_distribution(normal); // Expected distribution
 
     let schema = ValidationSchema::new()
-        .name("temperature_readings")
+        .name(temperature_readings)
         .require_field("measurements", DataType::Array(Box::new(DataType::Float64)))
         .add_constraint("measurements", Constraint::Statistical(stats_constraints));
 
-    #[cfg(feature = "serde")]
     {
         use serde_json::json;
 
@@ -229,6 +231,7 @@ fn statistical_validation_example() -> Result<(), Box<dyn std::error::Error>> {
 }
 
 #[cfg(feature = "data_validation")]
+#[allow(dead_code)]
 fn shape_validation_example() -> Result<(), Box<dyn std::error::Error>> {
     println!("4. Shape Constraint Validation");
     println!("------------------------------");
@@ -241,15 +244,14 @@ fn shape_validation_example() -> Result<(), Box<dyn std::error::Error>> {
         .with_dimensions(vec![Some(10), Some(10)])  // Expect 10x10 matrix
         .require_square();
 
-    let _schema = ValidationSchema::new()
-        .name("correlation_matrix")
+    let schema = ValidationSchema::new()
+        .name(correlationmatrix)
         .require_field(
             "matrix",
             DataType::Array(Box::new(DataType::Array(Box::new(DataType::Float64)))),
         )
         .add_constraint("matrix", Constraint::Shape(shape_constraints));
 
-    #[cfg(feature = "serde")]
     {
         use serde_json::json;
 
@@ -259,7 +261,7 @@ fn shape_validation_example() -> Result<(), Box<dyn std::error::Error>> {
             .require_square();
 
         let schema_3x3 = ValidationSchema::new()
-            .name("small_matrix")
+            .name(smallmatrix)
             .require_field(
                 "matrix",
                 DataType::Array(Box::new(DataType::Array(Box::new(DataType::Float64)))),
@@ -309,6 +311,7 @@ fn shape_validation_example() -> Result<(), Box<dyn std::error::Error>> {
 }
 
 #[cfg(feature = "data_validation")]
+#[allow(dead_code)]
 fn complex_schema_example() -> Result<(), Box<dyn std::error::Error>> {
     println!("5. Complex Schema Composition");
     println!("-----------------------------");
@@ -326,7 +329,7 @@ fn complex_schema_example() -> Result<(), Box<dyn std::error::Error>> {
         .with_std_range(0.1, 50.0);
 
     let schema = ValidationSchema::new()
-        .name("experiment_data")
+        .name(experiment_data)
         .require_field("experiment_id", DataType::String)
         .require_field("timestamps", DataType::Array(Box::new(DataType::Float64)))
         .require_field("measurements", DataType::Array(Box::new(DataType::Float64)))
@@ -344,7 +347,6 @@ fn complex_schema_example() -> Result<(), Box<dyn std::error::Error>> {
             },
         );
 
-    #[cfg(feature = "serde")]
     {
         use serde_json::json;
 
@@ -375,6 +377,7 @@ fn complex_schema_example() -> Result<(), Box<dyn std::error::Error>> {
 }
 
 #[cfg(feature = "data_validation")]
+#[allow(dead_code)]
 fn array_validation_example() -> Result<(), Box<dyn std::error::Error>> {
     println!("6. Array Validation with ndarray");
     println!("--------------------------------");
@@ -387,7 +390,7 @@ fn array_validation_example() -> Result<(), Box<dyn std::error::Error>> {
     // Validate a 1D array
     let data_1d = Array1::from_vec(vec![1.0, 2.0, 3.0, 4.0, 5.0]);
     let constraints_1d = ArrayValidationConstraints::new()
-        .with_shape(vec![5])
+        .withshape(vec![5])
         .check_numeric_quality();
 
     let result = validator.validate_ndarray(&data_1d, &constraints_1d, &config)?;
@@ -405,7 +408,7 @@ fn array_validation_example() -> Result<(), Box<dyn std::error::Error>> {
         Array2::from_shape_vec((3, 3), vec![1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0])?;
 
     let constraints_2d = ArrayValidationConstraints::new()
-        .with_shape(vec![3, 3])
+        .withshape(vec![3, 3])
         .check_numeric_quality();
 
     let result = validator.validate_ndarray(&data_2d, &constraints_2d, &config)?;
@@ -439,6 +442,7 @@ fn array_validation_example() -> Result<(), Box<dyn std::error::Error>> {
 }
 
 #[cfg(feature = "data_validation")]
+#[allow(dead_code)]
 fn custom_validation_example() -> Result<(), Box<dyn std::error::Error>> {
     println!("7. Custom Validation Rules");
     println!("--------------------------");
@@ -447,7 +451,7 @@ fn custom_validation_example() -> Result<(), Box<dyn std::error::Error>> {
     struct EmailValidator;
 
     impl ValidationRule for EmailValidator {
-        fn validate(&self, value: &serde_json::Value, _field_path: &str) -> Result<(), String> {
+        fn validate_path(path: &str) -> Result<(), String> {
             if let Some(email) = value.as_str() {
                 if email.contains('@') && email.contains('.') {
                     Ok(())
@@ -476,17 +480,16 @@ fn custom_validation_example() -> Result<(), Box<dyn std::error::Error>> {
 
     // Create a schema that uses the custom rule
     // Note: Custom rules need to be added through field definition, not constraints
-    let mut schema = ValidationSchema::new().name("contact_info");
+    let mut schema = ValidationSchema::new().name(contact_info);
 
     // Add the email field with custom validation rule
     let email_field = FieldDefinition::new(DataType::String)
         .required()
-        .with_validation_rule("email_format");
+        .with_validation_rule(email_format);
 
     // Add the field to the schema
     schema.fields.insert("email".to_string(), email_field);
 
-    #[cfg(feature = "serde")]
     {
         use serde_json::json;
 
@@ -533,6 +536,7 @@ fn custom_validation_example() -> Result<(), Box<dyn std::error::Error>> {
 }
 
 #[cfg(not(feature = "data_validation"))]
+#[allow(dead_code)]
 fn main() {
     println!("This example requires the 'data_validation' feature to be enabled.");
     println!("Run with: cargo run --example validation_comprehensive --features data_validation");

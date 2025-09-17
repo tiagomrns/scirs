@@ -1,23 +1,26 @@
-use criterion::{black_box, criterion_group, criterion_main, BenchmarkId, Criterion, Throughput};
+use criterion::{criterion_group, criterion_main, BenchmarkId, Criterion, Throughput};
 use ndarray::{Array1, Array2};
-use ndarray_rand::RandomExt;
-use rand::distributions::Uniform;
-use rand::SeedableRng;
+use rand::distr::Uniform;
+use rand::{Rng, SeedableRng};
 use rand_chacha::ChaCha8Rng;
 use scirs2_core::memory::BufferPool;
 use scirs2_linalg::{det, solve};
+use std::hint::black_box;
 use std::time::Instant;
 
 const SEED: u64 = 42;
 const MEMORY_TEST_SIZES: &[usize] = &[100, 500, 1000, 2000];
 
 /// Generate test data with specific memory characteristics
+#[allow(dead_code)]
 fn generate_memory_test_data(size: usize) -> Array2<f64> {
     let mut rng = ChaCha8Rng::seed_from_u64(SEED);
-    Array2::random_using((size, size), Uniform::new(-1.0, 1.0), &mut rng)
+    let uniform = Uniform::new(-1.0, 1.0).unwrap();
+    Array2::from_shape_fn((size, size), |_| rng.sample(uniform))
 }
 
 /// Benchmark buffer pool efficiency
+#[allow(dead_code)]
 fn bench_buffer_pool_efficiency(c: &mut Criterion) {
     let mut group = c.benchmark_group("buffer_pool_efficiency");
 
@@ -27,20 +30,20 @@ fn bench_buffer_pool_efficiency(c: &mut Criterion) {
         group.bench_with_input(
             BenchmarkId::new("buffer_allocation", size),
             &size,
-            |b, _| {
+            |b, &s| {
                 b.iter(|| {
-                    let buffer = pool.acquire_vec(size);
+                    let buffer = pool.acquire_vec(s);
                     black_box(&buffer);
                     // Buffer is automatically returned to pool when dropped
                 })
             },
         );
 
-        group.bench_with_input(BenchmarkId::new("buffer_reuse", size), &size, |b, _| {
+        group.bench_with_input(BenchmarkId::new("buffer_reuse", size), &size, |b, &s| {
             b.iter(|| {
                 // Test rapid allocation/deallocation
                 for _ in 0..10 {
-                    let buffer = pool.acquire_vec(size);
+                    let buffer = pool.acquire_vec(s);
                     black_box(&buffer);
                 }
             })
@@ -51,6 +54,7 @@ fn bench_buffer_pool_efficiency(c: &mut Criterion) {
 }
 
 /// Benchmark chunked matrix operations
+#[allow(dead_code)]
 fn bench_chunked_operations(c: &mut Criterion) {
     let mut group = c.benchmark_group("chunked_operations");
 
@@ -58,8 +62,8 @@ fn bench_chunked_operations(c: &mut Criterion) {
         let matrix = generate_memory_test_data(size);
 
         // Chunked matrix multiplication
-        group.bench_with_input(BenchmarkId::new("chunked_matmul", size), &size, |b, _| {
-            let chunk_size = (size / 4).max(64);
+        group.bench_with_input(BenchmarkId::new("chunked_matmul", size), &size, |b, &s| {
+            let chunk_size = (s / 4).max(64);
             b.iter(|| {
                 // Simplified chunked operation
                 let result = matrix
@@ -81,8 +85,8 @@ fn bench_chunked_operations(c: &mut Criterion) {
 
         // Chunked determinant computation
         if size <= 1000 {
-            group.bench_with_input(BenchmarkId::new("chunked_det", size), &size, |b, _| {
-                let chunk_size = (size / 2).max(50);
+            group.bench_with_input(BenchmarkId::new("chunked_det", size), &size, |b, &s| {
+                let chunk_size = (s / 2).max(50);
                 b.iter(|| {
                     // Simplified chunked operation
                     let result = matrix
@@ -101,6 +105,7 @@ fn bench_chunked_operations(c: &mut Criterion) {
 }
 
 /// Benchmark memory usage patterns
+#[allow(dead_code)]
 fn bench_memory_usage_patterns(c: &mut Criterion) {
     let mut group = c.benchmark_group("memory_usage_patterns");
 
@@ -159,6 +164,7 @@ fn bench_memory_usage_patterns(c: &mut Criterion) {
 }
 
 /// Benchmark memory allocation patterns
+#[allow(dead_code)]
 fn bench_allocation_patterns(c: &mut Criterion) {
     let mut group = c.benchmark_group("allocation_patterns");
 
@@ -167,11 +173,11 @@ fn bench_allocation_patterns(c: &mut Criterion) {
         group.bench_with_input(
             BenchmarkId::new("preallocated_arrays", size),
             &size,
-            |b, _| {
+            |b, &s| {
                 // Pre-allocate arrays
                 let mut matrices = Vec::with_capacity(10);
                 for _ in 0..10 {
-                    matrices.push(Array2::<f64>::zeros((size, size)));
+                    matrices.push(Array2::<f64>::zeros((s, s)));
                 }
 
                 b.iter(|| {
@@ -186,10 +192,10 @@ fn bench_allocation_patterns(c: &mut Criterion) {
         group.bench_with_input(
             BenchmarkId::new("dynamic_allocation", size),
             &size,
-            |b, _| {
+            |b, &s| {
                 b.iter(|| {
                     for _ in 0..10 {
-                        let matrix = Array2::<f64>::ones((size, size));
+                        let matrix = Array2::<f64>::ones((s, s));
                         black_box(matrix);
                     }
                 })
@@ -201,6 +207,7 @@ fn bench_allocation_patterns(c: &mut Criterion) {
 }
 
 /// Benchmark memory fragmentation resistance
+#[allow(dead_code)]
 fn bench_fragmentation_resistance(c: &mut Criterion) {
     let mut group = c.benchmark_group("fragmentation_resistance");
 
@@ -233,6 +240,7 @@ fn bench_fragmentation_resistance(c: &mut Criterion) {
 }
 
 /// Benchmark large matrix operations with memory constraints
+#[allow(dead_code)]
 fn bench_large_matrix_operations(c: &mut Criterion) {
     let mut group = c.benchmark_group("large_matrix_operations");
     group.sample_size(10); // Fewer samples for large operations
@@ -282,6 +290,7 @@ fn bench_large_matrix_operations(c: &mut Criterion) {
 }
 
 /// Benchmark zero-copy operations
+#[allow(dead_code)]
 fn bench_zero_copy_operations(c: &mut Criterion) {
     let mut group = c.benchmark_group("zero_copy_operations");
 
@@ -289,18 +298,18 @@ fn bench_zero_copy_operations(c: &mut Criterion) {
         let large_matrix = generate_memory_test_data(size);
 
         // Zero-copy slicing vs copying
-        group.bench_with_input(BenchmarkId::new("zero_copy_slice", size), &size, |b, _| {
+        group.bench_with_input(BenchmarkId::new("zero_copy_slice", size), &size, |b, &s| {
             b.iter(|| {
-                let half_size = size / 2;
+                let half_size = s / 2;
                 let slice = large_matrix.slice(ndarray::s![0..half_size, 0..half_size]);
                 let _norm = slice.map(|&x| x * x).sum();
                 black_box(_norm);
             })
         });
 
-        group.bench_with_input(BenchmarkId::new("copy_submatrix", size), &size, |b, _| {
+        group.bench_with_input(BenchmarkId::new("copy_submatrix", size), &size, |b, &s| {
             b.iter(|| {
-                let half_size = size / 2;
+                let half_size = s / 2;
                 let submatrix = large_matrix
                     .slice(ndarray::s![0..half_size, 0..half_size])
                     .to_owned();

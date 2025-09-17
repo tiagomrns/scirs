@@ -136,24 +136,31 @@ impl<F: IntegrateFloat> LsodaState<F> {
     }
 
     /// Switch method type
-    fn switch_method(&mut self, new_method: LsodaMethodType) {
+    fn switch_method(&mut self, _newmethod: LsodaMethodType) {
         // Track switches between methods
-        if self.method_type == LsodaMethodType::Adams && new_method == LsodaMethodType::Bdf {
+        if self.method_type == LsodaMethodType::Adams && _newmethod == LsodaMethodType::Bdf {
             self.nonstiff_to_stiff_switches += 1;
 
             // When switching to Bdf, reset order and jacobian
             self.order = 1;
             self.jacobian = None;
             self.jacobian_age = 0;
-        } else if self.method_type == LsodaMethodType::Bdf && new_method == LsodaMethodType::Adams {
+        } else if self.method_type == LsodaMethodType::Bdf && _newmethod == LsodaMethodType::Adams {
             self.stiff_to_nonstiff_switches += 1;
 
             // When switching to Adams, be more conservative
             self.order = 1;
 
-            // Optionally reduce step size when switching to non-stiff method
+            // Optionally reduce step size when switching to non-stiff _method
             if self.rejected_steps > 2 {
-                self.h *= F::from_f64(0.5).unwrap();
+                let half = F::from_f64(0.5)
+                    .ok_or_else(|| {
+                        IntegrateError::ComputationError(
+                            "Failed to convert constant 0.5 to float type".to_string(),
+                        )
+                    })
+                    .unwrap_or_else(|_| F::from(0.5).unwrap()); // Fallback to safe conversion
+                self.h *= half;
             }
         }
 
@@ -161,8 +168,8 @@ impl<F: IntegrateFloat> LsodaState<F> {
         self.steps_since_switch = 0;
         self.recently_switched = true;
 
-        // Update method type
-        self.method_type = new_method;
+        // Update _method type
+        self.method_type = _newmethod;
     }
 }
 
@@ -186,7 +193,13 @@ impl<F: IntegrateFloat> StiffnessDetector<F> {
             min_steps_before_switch: 5,
             stiffness_threshold: 3,
             non_stiffness_threshold: 5,
-            step_size_ratio_threshold: F::from_f64(0.1).unwrap(),
+            step_size_ratio_threshold: F::from_f64(0.1)
+                .ok_or_else(|| {
+                    IntegrateError::ComputationError(
+                        "Failed to convert constant 0.1 to float type".to_string(),
+                    )
+                })
+                .unwrap_or_else(|_| F::from(0.1).unwrap()), // Fallback to safe conversion
         }
     }
 
@@ -234,6 +247,7 @@ impl<F: IntegrateFloat> StiffnessDetector<F> {
 /// - Increasing `rtol` and `atol` can improve performance for less demanding accuracy
 /// - For problems known to be stiff, consider specifying a larger initial step size
 /// - The solver automatically detects when to switch methods, but benefits from good initial settings
+#[allow(dead_code)]
 pub fn lsoda_method<F, Func>(
     f: Func,
     t_span: [F; 2],
@@ -255,14 +269,17 @@ where
     // Determine initial step size if not provided
     let h0 = opts.h0.unwrap_or_else(|| {
         // Simple heuristic for initial step size
-        let span = t_end - t_start;
-        span / F::from_usize(100).unwrap() * F::from_f64(0.1).unwrap() // 0.1% of interval
+        let _span = t_end - t_start;
+        let hundred = F::from_usize(100).unwrap_or_else(|| F::from(100).unwrap());
+        let tenth = F::from_f64(0.1).unwrap_or_else(|| F::from(0.1).unwrap());
+        _span / hundred * tenth // 0.1% of interval
     });
 
     // Determine minimum and maximum step sizes
     let min_step = opts.min_step.unwrap_or_else(|| {
-        let span = t_end - t_start;
-        span * F::from_f64(1e-10).unwrap() // Minimal step size
+        let _span = t_end - t_start;
+        let epsilon = F::from_f64(1e-10).unwrap_or_else(|| F::from(1e-10).unwrap());
+        _span * epsilon // Minimal step size
     });
 
     let max_step = opts.max_step.unwrap_or_else(|| {
@@ -350,7 +367,8 @@ where
                             state.switch_method(LsodaMethodType::Bdf);
 
                             // Reduce step size
-                            state.h *= F::from_f64(0.5).unwrap();
+                            let half = F::from_f64(0.5).unwrap_or_else(|| F::from(0.5).unwrap());
+                            state.h *= half;
                             if state.h < min_step {
                                 return Err(IntegrateError::ConvergenceError(
                                     "Step size too small after method switch".to_string(),
@@ -368,7 +386,8 @@ where
                             state.switch_method(LsodaMethodType::Adams);
 
                             // Reduce step size for stability
-                            state.h *= F::from_f64(0.5).unwrap();
+                            let half = F::from_f64(0.5).unwrap_or_else(|| F::from(0.5).unwrap());
+                            state.h *= half;
                             if state.h < min_step {
                                 return Err(IntegrateError::ConvergenceError(
                                     "Step size too small after method switch".to_string(),
@@ -412,6 +431,7 @@ where
 }
 
 /// Take a step using Adams method (predictor-corrector) for non-stiff regions
+#[allow(dead_code)]
 fn adams_step<F, Func>(
     state: &mut LsodaState<F>,
     f: &Func,
@@ -802,6 +822,7 @@ where
 }
 
 /// Take a step using Bdf method for stiff regions
+#[allow(dead_code)]
 fn bdf_step<F, Func>(
     state: &mut LsodaState<F>,
     f: &Func,

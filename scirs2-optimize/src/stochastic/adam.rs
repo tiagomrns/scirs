@@ -12,6 +12,7 @@ use crate::stochastic::{
 };
 use crate::unconstrained::result::OptimizeResult;
 use ndarray::Array1;
+use statrs::statistics::Statistics;
 
 /// Options for ADAM optimization
 #[derive(Debug, Clone)]
@@ -56,6 +57,7 @@ impl Default for AdamOptions {
 }
 
 /// ADAM optimizer implementation
+#[allow(dead_code)]
 pub fn minimize_adam<F>(
     mut grad_func: F,
     mut x: Array1<f64>,
@@ -172,7 +174,7 @@ where
             if iteration % 100 == 0 {
                 let grad_norm = gradient.mapv(|g| g * g).sum().sqrt();
                 let m_norm = m_hat.mapv(|g: f64| g * g).sum().sqrt();
-                let v_mean = v_final.mean().unwrap_or(0.0);
+                let v_mean = v_final.view().mean();
                 println!("  Iteration {}: loss = {:.6e}, |grad| = {:.3e}, |m| = {:.3e}, <v> = {:.3e}, lr = {:.3e}",
                     iteration, current_loss, grad_norm, m_norm, v_mean, current_lr);
             }
@@ -183,7 +185,6 @@ where
                 return Ok(OptimizeResult {
                     x: best_x,
                     fun: best_f,
-                    iterations: iteration,
                     nit: iteration,
                     func_evals,
                     nfev: func_evals,
@@ -204,7 +205,6 @@ where
                 return Ok(OptimizeResult {
                     x: best_x,
                     fun: best_f,
-                    iterations: iteration,
                     nit: iteration,
                     func_evals,
                     nfev: func_evals,
@@ -225,7 +225,6 @@ where
     Ok(OptimizeResult {
         x: best_x,
         fun: final_loss.min(best_f),
-        iterations: options.max_iter,
         nit: options.max_iter,
         func_evals,
         nfev: func_evals,
@@ -237,6 +236,7 @@ where
 }
 
 /// ADAM with learning rate warmup
+#[allow(dead_code)]
 pub fn minimize_adam_with_warmup<F>(
     grad_func: F,
     x: Array1<f64>,
@@ -267,6 +267,7 @@ where
 }
 
 /// ADAM with custom learning rate schedule function
+#[allow(dead_code)]
 fn minimize_adam_with_custom_schedule<F, S>(
     mut grad_func: F,
     mut x: Array1<f64>,
@@ -359,7 +360,6 @@ where
     Ok(OptimizeResult {
         x: best_x,
         fun: best_f,
-        iterations: options.max_iter,
         nit: options.max_iter,
         func_evals,
         nfev: func_evals,
@@ -381,12 +381,12 @@ mod tests {
     struct QuadraticFunction;
 
     impl StochasticGradientFunction for QuadraticFunction {
-        fn compute_gradient(&mut self, x: &ArrayView1<f64>, _batch_data: &[f64]) -> Array1<f64> {
+        fn compute_gradient(&mut self, x: &ArrayView1<f64>, _batchdata: &[f64]) -> Array1<f64> {
             // Gradient of f(x) = sum(x_i^2) is 2*x
             x.mapv(|xi| 2.0 * xi)
         }
 
-        fn compute_value(&mut self, x: &ArrayView1<f64>, _batch_data: &[f64]) -> f64 {
+        fn compute_value(&mut self, x: &ArrayView1<f64>, _batchdata: &[f64]) -> f64 {
             // f(x) = sum(x_i^2)
             x.mapv(|xi| xi * xi).sum()
         }

@@ -1,10 +1,12 @@
-use criterion::{black_box, criterion_group, criterion_main, BenchmarkId, Criterion};
+use criterion::{criterion_group, criterion_main, BenchmarkId, Criterion};
 use scirs2_signal::dwt::{dwt_decompose, dwt_reconstruct, wavedec, waverec, Wavelet};
 use scirs2_signal::swt::{iswt, swt, swt_decompose, swt_reconstruct};
 use scirs2_signal::waveforms::chirp;
-use scirs2_signal::wpt::{reconstruct_from_nodes, wp_decompose};
+use std::hint::black_box;
+// use scirs2_signal::wpt::{reconstruct_from_nodes, wp_decompose}; // wpt module not available
 use std::time::Duration;
 
+#[allow(dead_code)]
 fn generate_signal(size: usize) -> Vec<f64> {
     // Generate a chirp signal with increasing frequency
     let fs = 1000.0; // Sample rate in Hz
@@ -13,6 +15,7 @@ fn generate_signal(size: usize) -> Vec<f64> {
     chirp(&t, 0.0, 1.0, 100.0, "linear", 0.5).unwrap()
 }
 
+#[allow(dead_code)]
 fn bench_wavelets_single_level(c: &mut Criterion) {
     let mut group = c.benchmark_group("single_level_dwt");
     group.measurement_time(Duration::from_secs(5));
@@ -37,7 +40,7 @@ fn bench_wavelets_single_level(c: &mut Criterion) {
             group.bench_with_input(
                 BenchmarkId::new(format!("{}_decompose", name), size),
                 &size,
-                |b, _| b.iter(|| black_box(dwt_decompose(&signal, *wavelet, None).unwrap())),
+                |b, &size| b.iter(|| black_box(dwt_decompose(&signal, *wavelet, None).unwrap())),
             );
 
             // Also benchmark reconstruction
@@ -48,7 +51,9 @@ fn bench_wavelets_single_level(c: &mut Criterion) {
             group.bench_with_input(
                 BenchmarkId::new(format!("{}_reconstruct", name), size),
                 &size,
-                |b, _| b.iter(|| black_box(dwt_reconstruct(&approx, &detail, *wavelet).unwrap())),
+                |b, &size| {
+                    b.iter(|| black_box(dwt_reconstruct(&approx, &detail, *wavelet).unwrap()))
+                },
             );
         }
     }
@@ -89,7 +94,7 @@ fn bench_wavelets_multi_level(c: &mut Criterion) {
                 group.bench_with_input(
                     BenchmarkId::new(format!("{}_decompose", level_name), size),
                     &size,
-                    |b, _| {
+                    |b, &size| {
                         b.iter(|| black_box(wavedec(&signal, *wavelet, Some(level), None).unwrap()))
                     },
                 );
@@ -101,7 +106,7 @@ fn bench_wavelets_multi_level(c: &mut Criterion) {
                 group.bench_with_input(
                     BenchmarkId::new(format!("{}_reconstruct", level_name), size),
                     &size,
-                    |b, _| b.iter(|| black_box(waverec(&coeffs, *wavelet).unwrap())),
+                    |b, &size| b.iter(|| black_box(waverec(&coeffs, *wavelet).unwrap())),
                 );
             }
         }
@@ -142,7 +147,7 @@ fn bench_stationary_wavelet_transform(c: &mut Criterion) {
                 group.bench_with_input(
                     BenchmarkId::new(format!("{}_swt_decompose", level_name), size),
                     &size,
-                    |b, _| {
+                    |b, &size| {
                         b.iter(|| black_box(swt_decompose(&signal, *wavelet, level, None).unwrap()))
                     },
                 );
@@ -154,7 +159,7 @@ fn bench_stationary_wavelet_transform(c: &mut Criterion) {
                 group.bench_with_input(
                     BenchmarkId::new(format!("{}_swt_reconstruct", level_name), size),
                     &size,
-                    |b, _| {
+                    |b, &size| {
                         b.iter(|| {
                             black_box(swt_reconstruct(&approx, &detail, *wavelet, level).unwrap())
                         })
@@ -167,7 +172,9 @@ fn bench_stationary_wavelet_transform(c: &mut Criterion) {
                     group.bench_with_input(
                         BenchmarkId::new(format!("{}_full_swt", level_name), size),
                         &size,
-                        |b, _| b.iter(|| black_box(swt(&signal, *wavelet, level, None).unwrap())),
+                        |b, &size| {
+                            b.iter(|| black_box(swt(&signal, *wavelet, level, None).unwrap()))
+                        },
                     );
 
                     // Get coefficients for multi-level reconstruction benchmark
@@ -177,7 +184,7 @@ fn bench_stationary_wavelet_transform(c: &mut Criterion) {
                     group.bench_with_input(
                         BenchmarkId::new(format!("{}_full_iswt", level_name), size),
                         &size,
-                        |b, _| b.iter(|| black_box(iswt(&details, &approx, *wavelet).unwrap())),
+                        |b, &size| b.iter(|| black_box(iswt(&details, &approx, *wavelet).unwrap())),
                     );
                 }
             }
@@ -215,30 +222,32 @@ fn bench_wavelet_packet_transform(c: &mut Criterion) {
             for &level in &levels {
                 let level_name = format!("{}_level{}", name, level);
 
-                // Benchmark WPT decomposition
-                group.bench_with_input(
-                    BenchmarkId::new(format!("{}_wp_decompose", level_name), size),
-                    &size,
-                    |b, _| {
-                        b.iter(|| black_box(wp_decompose(&signal, *wavelet, level, None).unwrap()))
-                    },
-                );
-
-                // Get tree for reconstruction benchmark
-                let tree = wp_decompose(&signal, *wavelet, level, None).unwrap();
-
-                // Create nodes list for level-based reconstruction
-                let mut nodes = Vec::new();
-                for i in 0..(1 << level) {
-                    nodes.push((level, i));
-                }
-
-                // Benchmark WPT reconstruction
-                group.bench_with_input(
-                    BenchmarkId::new(format!("{}_wp_reconstruct", level_name), size),
-                    &size,
-                    |b, _| b.iter(|| black_box(reconstruct_from_nodes(&tree, &nodes).unwrap())),
-                );
+                // WPT functions not available - commented out
+                //
+                // // Benchmark WPT decomposition
+                // group.bench_with_input(
+                //     BenchmarkId::new(format!("{}_wp_decompose", level_name), size),
+                //     &size,
+                //     |b_| {
+                //         b.iter(|| black_box(wp_decompose(&signal, *wavelet, level, None).unwrap()))
+                //     },
+                // );
+                //
+                // // Get tree for reconstruction benchmark
+                // let tree = wp_decompose(&signal, *wavelet, level, None).unwrap();
+                //
+                // // Create nodes list for level-based reconstruction
+                // let mut nodes = Vec::new();
+                // for i in 0..(1 << level) {
+                //     nodes.push((level, i));
+                // }
+                //
+                // // Benchmark WPT reconstruction
+                // group.bench_with_input(
+                //     BenchmarkId::new(format!("{}_wp_reconstruct", level_name), size),
+                //     &size,
+                //     |b_| b.iter(|| black_box(reconstruct_from_nodes(&tree, &nodes).unwrap())),
+                // );
             }
         }
     }

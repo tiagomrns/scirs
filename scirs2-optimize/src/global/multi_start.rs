@@ -8,8 +8,9 @@ use crate::unconstrained::{
     minimize, Bounds as UnconstrainedBounds, Method as UnconstrainedMethod, OptimizeResult, Options,
 };
 use ndarray::{Array1, ArrayView1};
-use rand::prelude::*;
+use rand::prelude::SliceRandom;
 use rand::rngs::StdRng;
+use rand::{Rng, SeedableRng};
 use scirs2_core::parallel_ops::*;
 
 /// Options for multi-start optimization
@@ -76,7 +77,9 @@ where
     /// Create new multi-start solver
     pub fn new(func: F, bounds: Bounds, options: MultiStartOptions) -> Self {
         let ndim = bounds.len();
-        let seed = options.seed.unwrap_or_else(rand::random);
+        let seed = options
+            .seed
+            .unwrap_or_else(|| rand::rng().random_range(0..u64::MAX));
         let rng = StdRng::seed_from_u64(seed);
 
         Self {
@@ -107,7 +110,7 @@ where
             let mut point = Array1::zeros(self.ndim);
             for j in 0..self.ndim {
                 let (lb, ub) = self.bounds[j];
-                point[j] = self.rng.random_range(lb..ub);
+                point[j] = self.rng.gen_range(lb..ub);
             }
             points.push(point);
         }
@@ -129,7 +132,7 @@ where
                 let segment_size = (ub - lb) / n as f64;
 
                 // Random offset within segment
-                let offset = self.rng.random::<f64>();
+                let offset = self.rng.gen_range(0.0..1.0);
                 point[j] = lb + (i as f64 + offset) * segment_size;
             }
 
@@ -278,7 +281,6 @@ where
             x: best_result.x,
             fun: best_result.fun,
             nit: self.options.n_starts,
-            iterations: self.options.n_starts,
             success: best_result.success,
             message: format!(
                 "Multi-start optimization with {} starts",
@@ -290,6 +292,7 @@ where
 }
 
 /// Perform multi-start optimization
+#[allow(dead_code)]
 pub fn multi_start<F>(
     func: F,
     bounds: Bounds,

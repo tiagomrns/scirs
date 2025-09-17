@@ -5,6 +5,7 @@ use ndarray::array;
 use scirs2_autograd as ag;
 
 #[test]
+#[allow(dead_code)]
 fn test_matrix_sqrt() {
     ag::run(|g| {
         // Test with a simple 2x2 positive definite matrix
@@ -63,6 +64,7 @@ fn test_matrix_sqrt() {
 }
 
 #[test]
+#[allow(dead_code)]
 fn test_matrix_log() {
     ag::run(|g| {
         // Test with a simple diagonal matrix
@@ -102,6 +104,7 @@ fn test_matrix_log() {
 }
 
 #[test]
+#[allow(dead_code)]
 fn test_matrix_power() {
     ag::run(|g| {
         // Test integer powers
@@ -165,6 +168,7 @@ fn test_matrix_power() {
 }
 
 #[test]
+#[allow(dead_code)]
 fn test_matrix_functions_consistency() {
     ag::run(|g| {
         // Test that exp(log(A)) = A for positive definite matrix
@@ -206,6 +210,7 @@ fn test_matrix_functions_consistency() {
     });
 }
 
+#[allow(dead_code)]
 fn main() {
     println!("Running tests for matrix functions (sqrtm, logm, powm)...");
 }

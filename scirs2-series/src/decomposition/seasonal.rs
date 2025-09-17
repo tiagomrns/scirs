@@ -32,6 +32,7 @@ use crate::utils::moving_average;
 /// println!("Seasonal: {:?}", result.seasonal);
 /// println!("Residual: {:?}", result.residual);
 /// ```
+#[allow(dead_code)]
 pub fn decompose_seasonal<F>(
     ts: &Array1<F>,
     period: usize,

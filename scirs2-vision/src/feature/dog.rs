@@ -36,7 +36,7 @@ impl Default for DogConfig {
 }
 
 /// Represents a detected blob
-#[derive(Clone, Debug)]
+#[derive(Copy, Clone, Debug)]
 pub struct Blob {
     /// X coordinate of the blob center
     pub x: usize,
@@ -49,6 +49,7 @@ pub struct Blob {
 }
 
 /// Detect blobs using Difference of Gaussians
+#[allow(dead_code)]
 pub fn dog_detect(img: &DynamicImage, config: DogConfig) -> Result<Vec<Blob>> {
     let gray = img.to_luma8();
     let (height, width) = (gray.height() as usize, gray.width() as usize);
@@ -139,6 +140,7 @@ pub fn dog_detect(img: &DynamicImage, config: DogConfig) -> Result<Vec<Blob>> {
 }
 
 /// Convert blobs to image
+#[allow(dead_code)]
 pub fn blobs_to_image(blobs: &[Blob], width: u32, height: u32) -> Result<GrayImage> {
     let mut img = GrayImage::new(width, height);
 
@@ -153,6 +155,7 @@ pub fn blobs_to_image(blobs: &[Blob], width: u32, height: u32) -> Result<GrayIma
 
 // Helper functions
 
+#[allow(dead_code)]
 fn gaussian_blur(img: &Array2<f32>, sigma: f32) -> Result<Array2<f32>> {
     let kernel_size = ((6.0 * sigma) as usize) | 1; // Make it odd
     let kernel = gaussian_kernel(kernel_size, sigma);
@@ -162,6 +165,7 @@ fn gaussian_blur(img: &Array2<f32>, sigma: f32) -> Result<Array2<f32>> {
     convolve_1d_vertical(&temp, &kernel)
 }
 
+#[allow(dead_code)]
 fn gaussian_kernel(size: usize, sigma: f32) -> Vec<f32> {
     let mut kernel = vec![0.0; size];
     let center = size / 2;
@@ -183,6 +187,7 @@ fn gaussian_kernel(size: usize, sigma: f32) -> Vec<f32> {
     kernel
 }
 
+#[allow(dead_code)]
 fn convolve_1d_horizontal(img: &Array2<f32>, kernel: &[f32]) -> Result<Array2<f32>> {
     let (height, width) = img.dim();
     let mut result = Array2::zeros((height, width));
@@ -207,6 +212,7 @@ fn convolve_1d_horizontal(img: &Array2<f32>, kernel: &[f32]) -> Result<Array2<f3
     Ok(result)
 }
 
+#[allow(dead_code)]
 fn convolve_1d_vertical(img: &Array2<f32>, kernel: &[f32]) -> Result<Array2<f32>> {
     let (height, width) = img.dim();
     let mut result = Array2::zeros((height, width));
@@ -231,6 +237,7 @@ fn convolve_1d_vertical(img: &Array2<f32>, kernel: &[f32]) -> Result<Array2<f32>
     Ok(result)
 }
 
+#[allow(dead_code)]
 fn is_local_extremum(
     prev: &Array2<f32>,
     curr: &Array2<f32>,
@@ -269,6 +276,7 @@ fn is_local_extremum(
     true
 }
 
+#[allow(dead_code)]
 fn downsample(img: &Array2<f32>) -> Array2<f32> {
     let (height, width) = img.dim();
     let new_height = height / 2;
@@ -284,6 +292,7 @@ fn downsample(img: &Array2<f32>) -> Array2<f32> {
     result
 }
 
+#[allow(dead_code)]
 fn non_max_suppression(mut blobs: Vec<Blob>) -> Vec<Blob> {
     // Sort by response
     blobs.sort_by(|a, b| {
@@ -300,7 +309,7 @@ fn non_max_suppression(mut blobs: Vec<Blob>) -> Vec<Blob> {
             continue;
         }
 
-        kept.push(blobs[i].clone());
+        kept.push(blobs[i]);
 
         // Suppress nearby blobs
         for j in i + 1..blobs.len() {
@@ -323,6 +332,7 @@ fn non_max_suppression(mut blobs: Vec<Blob>) -> Vec<Blob> {
     kept
 }
 
+#[allow(dead_code)]
 fn draw_circle(img: &mut GrayImage, cx: i32, cy: i32, radius: i32) {
     let (width, height) = (img.width() as i32, img.height() as i32);
 

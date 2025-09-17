@@ -12,12 +12,13 @@ use scirs2_vision::preprocessing::{bilateral_filter, gaussian_blur, median_filte
 use std::error::Error;
 use std::path::PathBuf;
 
+#[allow(dead_code)]
 fn main() -> Result<(), Box<dyn Error>> {
     println!("SciRS2 Vision - Noise Reduction Example");
 
     // Load or create an image
     let input_image = get_input_image()?;
-    let (_width, _height) = input_image.dimensions();
+    let _width_height = input_image.dimensions();
 
     // Create a copy with random noise (salt and pepper)
     let mut noisy_image = input_image.to_rgba8();
@@ -67,6 +68,7 @@ fn main() -> Result<(), Box<dyn Error>> {
 }
 
 /// Get input image from file or create a test image
+#[allow(dead_code)]
 fn get_input_image() -> Result<DynamicImage, Box<dyn Error>> {
     // Try to load from standard locations
     let image_paths = [
@@ -77,7 +79,7 @@ fn get_input_image() -> Result<DynamicImage, Box<dyn Error>> {
 
     for path in &image_paths {
         if let Ok(img) = image::open(path) {
-            println!("Successfully loaded image from: {}", path);
+            println!("Successfully loaded image from: {path}");
             return Ok(img);
         }
     }
@@ -108,9 +110,10 @@ fn get_input_image() -> Result<DynamicImage, Box<dyn Error>> {
 }
 
 /// Add salt and pepper noise to an image
-fn add_salt_and_pepper_noise(img: &mut ImageBuffer<Rgba<u8>, Vec<u8>>, noise_amount: f64) {
+#[allow(dead_code)]
+fn add_salt_and_pepper_noise(img: &mut ImageBuffer<Rgba<u8>, Vec<u8>>, noiseamount: f64) {
     let (width, height) = img.dimensions();
-    let noise_pixels = (width * height) as f64 * noise_amount;
+    let noise_pixels = (width * height) as f64 * noiseamount;
 
     for _ in 0..(noise_pixels as u32) {
         let x = (random::<f32>() * width as f32) as u32;
@@ -130,6 +133,7 @@ fn add_salt_and_pepper_noise(img: &mut ImageBuffer<Rgba<u8>, Vec<u8>>, noise_amo
 }
 
 /// Draw a rectangle on an image
+#[allow(dead_code)]
 fn draw_rectangle(
     img: &mut ImageBuffer<Rgba<u8>, Vec<u8>>,
     x: u32,
@@ -150,6 +154,7 @@ fn draw_rectangle(
 }
 
 /// Draw a circle on an image
+#[allow(dead_code)]
 fn draw_circle(
     img: &mut ImageBuffer<Rgba<u8>, Vec<u8>>,
     cx: u32,
@@ -171,6 +176,7 @@ fn draw_circle(
 }
 
 /// Create a side-by-side comparison of different noise reduction methods
+#[allow(dead_code)]
 fn create_comparison_image(
     original: &DynamicImage,
     noisy: &DynamicImage,

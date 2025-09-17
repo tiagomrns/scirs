@@ -100,16 +100,24 @@ impl MemoryEvent {
     }
 }
 
+/// Capture current call stack (simplified implementation)
+fn capture_call_stack(skipframes: usize) -> Vec<String> {
+    // In a real implementation, this would use backtrace crate or similar
+    vec![format!("frame_{}", skipframes)]
+}
+
 /// Capture a call stack (simplified implementation)
 #[cfg(feature = "memory_call_stack")]
-fn capture_call_stack(_skip_frames: usize) -> Vec<String> {
+#[allow(dead_code)]
+fn capture_stack_frames(maxframes: usize) -> Vec<String> {
     // This is a placeholder. In a real implementation, we would use
     // the backtrace crate to capture the call stack.
     vec!["<callstack not available>".to_string()]
 }
 
 #[cfg(not(feature = "memory_call_stack"))]
-fn capture_call_stack(_skip_frames: usize) -> Vec<String> {
+#[allow(dead_code)]
+fn capture_stack_frames(maxframes: usize) -> Vec<String> {
     Vec::new()
 }
 

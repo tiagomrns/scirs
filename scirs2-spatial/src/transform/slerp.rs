@@ -44,7 +44,7 @@ fn rotation_from_euler(x: f64, y: f64, z: f64, convention: &str) -> SpatialResul
 ///
 /// // Apply the rotation to a point
 /// let point = array![1.0, 0.0, 0.0];
-/// let rotated = rot_half.apply(&point.view());
+/// let rotated = rot_half.apply(&point.view()).unwrap();
 /// // Should be approximately [std::f64::consts::FRAC_1_SQRT_2, std::f64::consts::FRAC_1_SQRT_2, 0.0]
 /// ```
 #[derive(Clone, Debug)]
@@ -206,10 +206,10 @@ impl Slerp {
     /// let slerp = Slerp::new(rot1, rot2).unwrap();
     ///
     /// // Get 5 times for constant angular velocity
-    /// let times = slerp.times(5);
+    /// let times = Slerp::times(5);
     /// // Should be [0.0, 0.25, 0.5, 0.75, 1.0]
     /// ```
-    pub fn times(&self, n: usize) -> Vec<f64> {
+    pub fn times(n: usize) -> Vec<f64> {
         if n <= 1 {
             return vec![0.0];
         }
@@ -227,7 +227,6 @@ impl Slerp {
 mod tests {
     use super::*;
     use approx::assert_relative_eq;
-    use ndarray::array;
     use std::f64::consts::PI;
 
     #[test]
@@ -263,7 +262,7 @@ mod tests {
 
         // Apply the rotation to a point
         let point = array![1.0, 0.0, 0.0];
-        let rotated = interp_half.apply(&point.view());
+        let rotated = interp_half.apply(&point.view()).unwrap();
 
         // Make sure the result is a point on the unit circle
         let magnitude =
@@ -287,7 +286,7 @@ mod tests {
 
             // Apply the interpolated rotation to a point
             let point = array![1.0, 0.0, 0.0];
-            let rotated = interp.apply(&point.view());
+            let rotated = interp.apply(&point.view()).unwrap();
 
             // Make sure the result is a point on the unit circle
             let magnitude =
@@ -324,7 +323,7 @@ mod tests {
 
         // The negative dot product should be handled correctly
         let point = array![1.0, 0.0, 0.0];
-        let rotated = interp.apply(&point.view());
+        let rotated = interp.apply(&point.view()).unwrap();
 
         // Make sure the result is a point on the unit circle
         let magnitude =
@@ -341,7 +340,7 @@ mod tests {
         let slerp = Slerp::new(rot1, rot2).unwrap();
 
         // Get 5 equally spaced times
-        let times = slerp.times(5);
+        let times = Slerp::times(5);
 
         assert_eq!(times.len(), 5);
         assert_relative_eq!(times[0], 0.0, epsilon = 1e-10);
@@ -373,8 +372,8 @@ mod tests {
 
             // Apply both rotations to a point
             let point = array![1.0, 0.0, 0.0];
-            let rotated = interp.apply(&point.view());
-            let expected_rotated = expected.apply(&point.view());
+            let rotated = interp.apply(&point.view()).unwrap();
+            let expected_rotated = expected.apply(&point.view()).unwrap();
 
             assert_relative_eq!(rotated[0], expected_rotated[0], epsilon = 1e-10);
             assert_relative_eq!(rotated[1], expected_rotated[1], epsilon = 1e-10);

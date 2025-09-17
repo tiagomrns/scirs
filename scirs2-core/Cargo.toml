@@ -1,13 +1,16 @@
 [package]
 name = "scirs2-core"
 version.workspace = true
-edition = "2021"
-authors = ["SciRS2 Team"]
-description = "Core utilities and common functionality for SciRS2"
-license = "MIT OR Apache-2.0"
-repository = "https://github.com/cool-japan/scirs"
+edition.workspace = true
+authors.workspace = true
+description = "Core utilities and common functionality for SciRS2 (scirs2-core)"
+license.workspace = true
+repository.workspace = true
 keywords = ["scientific", "mathematics", "science", "scipy", "numerical"]
 categories = ["science", "mathematics", "algorithms"]
+
+[lints]
+workspace = true
 
 [dependencies]
 # Core dependencies
@@ -28,7 +31,8 @@ bincode = { workspace = true, optional = true }  # For serialization in memory_e
 memmap2 = { workspace = true, optional = true }  # For memory-mapped arrays
 regex = { workspace = true, optional = true }  # For string pattern validation
 
-# Feature-gated dependencies
+# Feature-gated dependencies  
+log = { workspace = true, optional = true }  # Logging support
 wide = { workspace = true, optional = true }  # SIMD acceleration
 rayon = { workspace = true, optional = true }  # Parallel processing
 crossbeam = { workspace = true, optional = true }  # Used in parallel scheduler for channels
@@ -47,6 +51,8 @@ bytemuck = { workspace = true, optional = true }  # Zero-copy type casting
 libc = { workspace = true, optional = true }  # System calls for resource monitoring
 sysinfo = { workspace = true, optional = true }  # System information gathering
 
+# Platform-specific dependencies for cross-platform validation are handled through feature gates
+
 # BLAS/LAPACK dependencies for linear algebra operations
 # Note: BLAS backend selection is now handled at workspace level with platform-specific defaults
 ndarray-linalg = { workspace = true, optional = true, default-features = false }  # LAPACK bindings for ndarray
@@ -54,7 +60,7 @@ ndarray-linalg = { workspace = true, optional = true, default-features = false }
 # BLAS backend dependencies - optional and feature-gated
 openblas-src = { workspace = true, optional = true }
 blas-src = { workspace = true, optional = true }
-intel-mkl-src = { workspace = true, optional = true }
+# NOTE: intel-mkl-src removed to avoid conflicts with openblas-src
 
 # JIT compilation for Array Protocol
 cranelift-module = { workspace = true, optional = true }  # JIT compilation module
@@ -63,19 +69,36 @@ cranelift-frontend = { workspace = true, optional = true }  # JIT compiler front
 
 # Async runtime for async error handling
 tokio = { workspace = true, optional = true }  # Async runtime for async error handling
+async-trait = { workspace = true, optional = true }  # For object-safe async traits
 
 # GPU backend dependencies
-metal = { workspace = true, optional = true }  # Metal GPU backend for macOS
-objc2-metal-performance-shaders = { workspace = true, optional = true }  # MPS integration for Metal
+# Note: metal and objc2-metal-performance-shaders are macOS-specific, moved to target-specific section
+cudarc = { workspace = true, optional = true, features = ["cuda-12000"] }  # CUDA runtime
+opencl3 = { workspace = true, optional = true }  # OpenCL runtime  
+wgpu = { workspace = true, optional = true }  # WebGPU runtime
+pollster = { workspace = true, optional = true }  # Async runtime for WebGPU
 
 # Production-level feature dependencies
 reqwest = { workspace = true, optional = true }  # HTTP client for tracing export
 sha2 = { workspace = true, optional = true }  # Cryptographic hash functions
 
+# Testing and validation dependencies
+statrs = { workspace = true, optional = true }  # Statistical functions for validation
+quickcheck = { workspace = true, optional = true }  # Property-based testing
+
+# Arbitrary precision dependencies
+num-bigint = { workspace = true, optional = true }  # Arbitrary precision integers
+num-rational = { workspace = true, optional = true }  # Exact rational arithmetic
+rug = { workspace = true, optional = true }  # High-performance arbitrary precision
+gmp-mpfr-sys = { workspace = true, optional = true }  # Low-level GMP/MPFR bindings
+
 # Platform-specific BLAS backend configuration
 # macOS: Use Accelerate framework by default (when linalg feature is enabled)
 [target.'cfg(target_os = "macos")'.dependencies]
 # For macOS, we don't include OpenBLAS dependencies - use system Accelerate framework
+# Metal GPU dependencies (macOS only)
+metal = { workspace = true, optional = true }  # Metal GPU backend for macOS
+objc2-metal-performance-shaders = { workspace = true, optional = true }  # MPS integration for Metal
 
 # Linux: OpenBLAS by default (when openblas feature is enabled)
 [target.'cfg(target_os = "linux")'.dependencies]
@@ -98,14 +121,15 @@ default = ["array", "serialization"]  # Enable array module by default
 simd = ["wide"]  # SIMD operations
 parallel = ["rayon", "ndarray/rayon", "crossbeam", "crossbeam-utils", "crossbeam-deque", "num_cpus"]  # Parallel processing with rayon
 cache = ["cached"]  # Caching and memoization functionality
-validation = ["regex"]  # Validation utilities
-logging = []  # Structured logging and diagnostics
-async = ["tokio"]  # Async error handling and recovery mechanisms
+validation = ["regex", "statrs"]  # Validation utilities
+cross_platform = ["libc", "sysinfo"]  # Cross-platform validation and compatibility
+logging = ["log"]  # Structured logging and diagnostics
+async = ["tokio", "async-trait"]  # Async error handling and recovery mechanisms
 gpu = []  # GPU acceleration abstractions
-cuda = ["gpu"]  # CUDA-specific GPU acceleration
-opencl = ["gpu"]  # OpenCL-specific GPU acceleration
+cuda = ["gpu", "dep:cudarc"]  # CUDA-specific GPU acceleration
+opencl = ["gpu", "dep:opencl3"]  # OpenCL-specific GPU acceleration
 metal = ["gpu", "dep:metal", "dep:objc2-metal-performance-shaders"]  # Metal-specific GPU acceleration (Apple)
-wgpu = ["gpu"]  # WebGPU-specific GPU acceleration
+wgpu_backend = ["gpu", "dep:wgpu", "dep:pollster"]  # WebGPU-specific GPU acceleration
 rocm = ["gpu"]  # ROCm-specific GPU acceleration (AMD)
 memory_management = ["bincode", "tempfile"]  # Advanced memory management
 memory_efficient = ["tempfile", "bincode", "memmap2", "rayon"]  # Memory-efficient operations
@@ -124,25 +148,25 @@ serialization = ["serde", "serde_json"]  # Serialization support
 array = []  # Scientific array types (MaskedArray, RecordArray)
 memory_visualization = ["memory_metrics"]  # Memory usage visualization
 memory_call_stack = ["memory_metrics"]  # Capture call stacks for memory events
-profiling = []  # Performance profiling tools
+profiling = ["num_cpus"]  # Performance profiling tools
 random = []  # Random number generation utilities
 types = []  # Type conversion utilities
 ufuncs = []  # Universal Functions (ufuncs) system
-testing = ["tempfile", "serde", "serde_json"]  # Testing framework for production systems
+testing = ["tempfile", "serde", "serde_json", "quickcheck"]  # Testing framework for production systems
 benchmarking = ["testing", "serde", "serde_json"]  # Comprehensive benchmarking system
 linalg = ["ndarray-linalg"]  # Linear algebra with BLAS/LAPACK bindings
 # LAPACK backends - Note: On macOS, use system Accelerate; on Linux/Windows, use OpenBLAS
 openblas = ["linalg", "dep:openblas-src", "dep:blas-src"]  # Force OpenBLAS (Linux/Windows)
-intel-mkl = ["linalg", "dep:intel-mkl-src"]  # Force Intel MKL
 netlib = ["linalg", "dep:blas-src"]  # Force Reference Netlib
 accelerate = ["linalg"]  # Use system BLAS (typically Accelerate on macOS)
+# NOTE: intel-mkl feature removed to avoid conflicts with openblas
 array_protocol = []  # Array Protocol for third-party array implementations
 array_protocol_jit = ["array_protocol", "cranelift-module", "cranelift-jit", "cranelift-frontend"]  # JIT compilation for Array Protocol
 array_protocol_gpu = ["array_protocol", "gpu"]  # GPU support for Array Protocol
 array_protocol_cuda = ["array_protocol_gpu", "cuda"]  # CUDA support for Array Protocol
 array_protocol_opencl = ["array_protocol_gpu", "opencl"]  # OpenCL support for Array Protocol
 array_protocol_metal = ["array_protocol_gpu", "metal"]  # Metal support for Array Protocol
-array_protocol_wgpu = ["array_protocol_gpu", "wgpu"]  # WebGPU support for Array Protocol
+array_protocol_wgpu = ["array_protocol_gpu", "wgpu_backend"]  # WebGPU support for Array Protocol
 array_protocol_rocm = ["array_protocol_gpu", "rocm"]  # ROCm support for Array Protocol
 array_protocol_distributed = ["array_protocol", "parallel"]  # Distributed computing for Array Protocol
 array_protocol_all = ["array_protocol", "array_protocol_jit", "array_protocol_cuda", "array_protocol_distributed"]  # All Array Protocol features
@@ -156,15 +180,19 @@ s3 = []  # S3 integration for remote storage
 crypto = []  # Cryptographic features (placeholder)
 compression = ["flate2"]  # Compression support
 database = []  # Database integration features
+cloud = []  # Cloud storage integration (S3, GCS, Azure)
+jit = ["cranelift-jit", "cranelift-module", "cranelift-frontend"]  # Just-in-time compilation with LLVM
+ml_pipeline = []  # ML pipeline integration and real-time processing
 production = ["observability", "versioning", "leak_detection", "data_validation"]  # All production features
+arbitrary-precision = ["num-bigint", "num-rational", "rug", "gmp-mpfr-sys"]  # Arbitrary precision arithmetic
 all = [
     "simd", "parallel", "cache", "validation", "logging",
     "gpu", "cuda", "memory_management", "memory_efficient", "memory_compression",
     "array", "profiling", "random", "types", "ufuncs", "testing", "benchmarking",
-    "array_protocol_all", "production"
+    "array_protocol_all", "production", "arbitrary-precision"
 ]  # Enable all features except mutually exclusive BLAS backends
-# NOTE: BLAS backends (openblas, intel-mkl, netlib) are mutually exclusive
-# Use --features openblas (default), --features intel-mkl, or --features netlib
+# NOTE: BLAS backends (openblas, netlib) are mutually exclusive
+# Use --features openblas (default) or --features netlib
 
 [[example]]
 name = "gpu_example"
@@ -302,8 +330,8 @@ path = "examples/scientific_arrays_example.rs"
 required-features = ["array"]
 
 [[example]]
-name = "large_dataset_processing"
-path = "examples/large_dataset_processing.rs"
+name = "core_large_dataset_processing"
+path = "examples/core_large_dataset_processing.rs"
 required-features = ["memory_efficient", "array", "random"]
 
 [[example]]
@@ -361,6 +389,11 @@ required-features = ["array_protocol"]
 name = "array_protocol_distributed_training"
 path = "examples/array_protocol_distributed_training.rs"
 required-features = ["array_protocol_distributed"]
+
+[[example]]
+name = "distributed_training_example"
+path = "examples/distributed_training_example.rs"
+required-features = ["array_protocol_distributed", "serialization"]
 
 [[example]]
 name = "array_protocol_gpu"
@@ -449,6 +482,7 @@ harness = false
 [[bench]]
 name = "pattern_recognition_bench"
 harness = false
+required-features = ["memory_efficient"]
 
 [[bench]]
 name = "numpy_scipy_comparison_bench"
@@ -462,3 +496,23 @@ harness = false
 name = "parallel_ops_example"
 path = "examples/parallel_ops_example.rs"
 required-features = ["parallel"]
+
+[[example]]
+name = "arbitrary_precision_example"
+path = "examples/arbitrary_precision_example.rs"
+required-features = ["arbitrary-precision"]
+
+[[example]]
+name = "advanced_parallel_processing"
+path = "examples/advanced_parallel_processing.rs"
+required-features = ["parallel"]
+
+[[example]]
+name = "ecosystem_integration_demo"
+path = "examples/ecosystem_integration_demo.rs"
+required-features = ["testing", "parallel", "random"]
+
+[[example]]
+name = "security_test_verification"
+path = "examples/security_test_verification.rs"
+required-features = ["testing"]

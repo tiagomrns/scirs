@@ -10,11 +10,13 @@ use scirs2_spatial::simd_distance::{
 use std::hint::black_box;
 use std::time::Duration;
 
-fn generate_test_data(n_points: usize, dimensions: usize) -> Array2<f64> {
+#[allow(dead_code)]
+fn generate_test_data(_npoints: usize, dimensions: usize) -> Array2<f64> {
     let mut rng = StdRng::seed_from_u64(42);
-    Array2::from_shape_fn((n_points, dimensions), |_| rng.random_range(-10.0..10.0))
+    Array2::from_shape_fn((_npoints, dimensions), |_| rng.gen_range(-10.0..10.0))
 }
 
+#[allow(dead_code)]
 fn simd_vs_scalar_benchmark(c: &mut Criterion) {
     let mut group = c.benchmark_group("simd_vs_scalar");
     group.measurement_time(Duration::from_secs(3));
@@ -25,17 +27,17 @@ fn simd_vs_scalar_benchmark(c: &mut Criterion) {
         let p2: Vec<f64> = (0..size).map(|i| (i + 1) as f64).collect();
 
         // Scalar version
-        group.bench_function(format!("scalar_euclidean_{}", size), |b| {
+        group.bench_function(format!("scalar_euclidean_{size}"), |b| {
             b.iter(|| black_box(euclidean(&p1, &p2)))
         });
 
         // SIMD version
-        group.bench_function(format!("simd_euclidean_{}", size), |b| {
+        group.bench_function(format!("simd_euclidean_{size}"), |b| {
             b.iter(|| black_box(simd_euclidean_distance(&p1, &p2).unwrap()))
         });
 
         // SIMD Manhattan
-        group.bench_function(format!("simd_manhattan_{}", size), |b| {
+        group.bench_function(format!("simd_manhattan_{size}"), |b| {
             b.iter(|| black_box(simd_manhattan_distance(&p1, &p2).unwrap()))
         });
     }
@@ -43,6 +45,7 @@ fn simd_vs_scalar_benchmark(c: &mut Criterion) {
     group.finish();
 }
 
+#[allow(dead_code)]
 fn parallel_vs_sequential_benchmark(c: &mut Criterion) {
     let mut group = c.benchmark_group("parallel_vs_sequential");
     group.measurement_time(Duration::from_secs(3));
@@ -53,7 +56,7 @@ fn parallel_vs_sequential_benchmark(c: &mut Criterion) {
         let points = generate_test_data(size, 10);
 
         // Sequential (using our manual pdist implementation)
-        group.bench_function(format!("sequential_pdist_{}", size), |b| {
+        group.bench_function(format!("sequential_pdist_{size}"), |b| {
             b.iter(|| {
                 let mut distances = Vec::new();
                 for i in 0..points.nrows() {
@@ -68,7 +71,7 @@ fn parallel_vs_sequential_benchmark(c: &mut Criterion) {
         });
 
         // Parallel version
-        group.bench_function(format!("parallel_pdist_{}", size), |b| {
+        group.bench_function(format!("parallel_pdist_{size}"), |b| {
             b.iter(|| {
                 let distances = parallel_pdist(&points.view(), "euclidean").unwrap();
                 black_box(distances.sum())
@@ -79,6 +82,7 @@ fn parallel_vs_sequential_benchmark(c: &mut Criterion) {
     group.finish();
 }
 
+#[allow(dead_code)]
 fn architecture_detection(c: &mut Criterion) {
     let mut group = c.benchmark_group("architecture");
     group.measurement_time(Duration::from_secs(1));

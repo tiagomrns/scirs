@@ -7,6 +7,7 @@
 //! in the scirs2-autograd integration. The API is under active development.
 
 #[cfg(feature = "autograd")]
+#[allow(dead_code)]
 fn main() {
     println!("Automatic Differentiation in Linear Algebra");
     println!("===========================================\n");
@@ -22,6 +23,7 @@ fn main() {
 }
 
 #[cfg(not(feature = "autograd"))]
+#[allow(dead_code)]
 fn main() {
     println!("This example requires the 'autograd' feature. Run with:");
     println!("cargo run --example autograd_example --features=autograd");

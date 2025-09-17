@@ -116,5 +116,5 @@ impl<T: Float> op::Op<T> for ConvertToTensor<T> {
         Ok(())
     }
 
-    fn grad(&self, _: &mut crate::op::GradientContext<T>) {}
+    fn grad<'a>(&self, _ctx: &mut crate::op::GradientContext<'a, 'a, T>) {}
 }

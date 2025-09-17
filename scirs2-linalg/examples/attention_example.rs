@@ -4,20 +4,21 @@ use scirs2_linalg::attention::{
     scaled_dot_product_attention, sparse_attention, AttentionConfig,
 };
 
+#[allow(dead_code)]
 fn main() {
     println!("Attention Mechanism Examples");
     println!("============================\n");
 
     // Common setup
-    let batch_size = 2;
+    let batchsize = 2;
     let seq_len = 6;
     let d_model = 8;
     let scale = 1.0 / (d_model as f32).sqrt();
 
     // Create query, key, value tensors (in a real scenario, these would contain meaningful data)
-    let query = Array3::<f32>::from_elem((batch_size, seq_len, d_model), 0.1);
-    let key = Array3::<f32>::from_elem((batch_size, seq_len, d_model), 0.1);
-    let value = Array3::<f32>::from_elem((batch_size, seq_len, d_model), 0.1);
+    let query = Array3::<f32>::from_elem((batchsize, seq_len, d_model), 0.1);
+    let key = Array3::<f32>::from_elem((batchsize, seq_len, d_model), 0.1);
+    let value = Array3::<f32>::from_elem((batchsize, seq_len, d_model), 0.1);
 
     // Example 1: Basic Scaled Dot-Product Attention
     println!("Example 1: Basic Scaled Dot-Product Attention");
@@ -37,14 +38,14 @@ fn main() {
 
     // Example 3: Flash Attention (memory-efficient)
     println!("Example 3: Flash Attention (memory-efficient)");
-    let block_size = 2;
+    let blocksize = 2;
     let flash_output = flash_attention(
         &query.view(),
         &key.view(),
         &value.view(),
         None,
         scale,
-        block_size,
+        blocksize,
     )
     .unwrap();
     println!("Output shape: {:?}", flash_output.shape());

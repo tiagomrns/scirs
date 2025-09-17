@@ -1,6 +1,6 @@
 //! Linear equation solvers
 
-use ndarray::{Array1, Array2, ArrayView1, ArrayView2};
+use ndarray::{Array1, Array2, ArrayView1, ArrayView2, ScalarOperand};
 use num_traits::{Float, NumAssign, One};
 use std::iter::Sum;
 
@@ -8,9 +8,9 @@ use crate::basic::inv;
 use crate::decomposition::{lu, qr, svd};
 use crate::error::{LinalgError, LinalgResult};
 use crate::validation::{
-    validate_finite_matrix, validate_finite_vector, validate_least_squares, validate_linear_system,
-    validate_matrix_vector_dimensions, validate_multiple_linear_systems, validate_not_empty_matrix,
-    validate_not_empty_vector, validate_square_matrix,
+    validate_finite_vector, validate_finitematrix, validate_least_squares, validate_linear_system,
+    validate_multiple_linear_systems, validate_not_empty_vector, validate_not_emptymatrix,
+    validate_squarematrix, validatematrix_vector_dimensions,
 };
 
 /// Solution to a least-squares problem
@@ -42,7 +42,7 @@ pub struct LstsqResult<F: Float> {
 /// # Examples
 ///
 /// ```
-/// use ndarray::array;
+/// use ndarray::{array, ScalarOperand};
 /// use scirs2_linalg::solve;
 ///
 /// let a = array![[1.0_f64, 0.0], [0.0, 1.0]];
@@ -51,13 +51,14 @@ pub struct LstsqResult<F: Float> {
 /// assert!((x[0] - 2.0).abs() < 1e-10);
 /// assert!((x[1] - 3.0).abs() < 1e-10);
 /// ```
+#[allow(dead_code)]
 pub fn solve<F>(
     a: &ArrayView2<F>,
     b: &ArrayView1<F>,
     workers: Option<usize>,
 ) -> LinalgResult<Array1<F>>
 where
-    F: Float + NumAssign + One + Sum,
+    F: Float + NumAssign + One + Sum + Send + Sync + ndarray::ScalarOperand + 'static,
 {
     // Parameter validation using helper function
     validate_linear_system(a, b, "Linear system solve")?;
@@ -83,7 +84,7 @@ where
     // For larger systems, use LU decomposition
     let (p, l, u) = match lu(a, workers) {
         Err(LinalgError::SingularMatrixError(_)) => {
-            return Err(LinalgError::singular_matrix_with_suggestions(
+            return Err(LinalgError::singularmatrix_with_suggestions(
                 "linear system solve",
                 a.dim(),
                 None,
@@ -126,7 +127,7 @@ where
 /// # Examples
 ///
 /// ```
-/// use ndarray::array;
+/// use ndarray::{array, ScalarOperand};
 /// use scirs2_linalg::solve_triangular;
 ///
 /// // Lower triangular system
@@ -136,6 +137,7 @@ where
 /// assert!((x[0] - 2.0).abs() < 1e-10);
 /// assert!((x[1] - 4.0/3.0).abs() < 1e-10);
 /// ```
+#[allow(dead_code)]
 pub fn solve_triangular<F>(
     a: &ArrayView2<F>,
     b: &ArrayView1<F>,
@@ -143,14 +145,14 @@ pub fn solve_triangular<F>(
     unit_diagonal: bool,
 ) -> LinalgResult<Array1<F>>
 where
-    F: Float + NumAssign + Sum,
+    F: Float + NumAssign + Sum + Send + Sync + ScalarOperand + 'static,
 {
     // Parameter validation using helper functions
-    validate_not_empty_matrix(a, "Triangular system solve")?;
+    validate_not_emptymatrix(a, "Triangular system solve")?;
     validate_not_empty_vector(b, "Triangular system solve")?;
-    validate_square_matrix(a, "Triangular system solve")?;
-    validate_matrix_vector_dimensions(a, b, "Triangular system solve")?;
-    validate_finite_matrix(a, "Triangular system solve")?;
+    validate_squarematrix(a, "Triangular system solve")?;
+    validatematrix_vector_dimensions(a, b, "Triangular system solve")?;
+    validate_finitematrix(a, "Triangular system solve")?;
     validate_finite_vector(b, "Triangular system solve")?;
 
     let n = a.nrows();
@@ -167,10 +169,10 @@ where
                 x[i] = sum;
             } else {
                 if a[[i, i]].abs() < F::epsilon() {
-                    return Err(LinalgError::singular_matrix_with_suggestions(
+                    return Err(LinalgError::singularmatrix_with_suggestions(
                         "triangular system solve (forward substitution)",
                         a.dim(),
-                        Some(1e16), // Very high condition number due to zero diagonal
+                        Some(1e16), // Very high condition number due to zero _diagonal
                     ));
                 }
                 x[i] = sum / a[[i, i]];
@@ -187,10 +189,10 @@ where
                 x[i] = sum;
             } else {
                 if a[[i, i]].abs() < F::epsilon() {
-                    return Err(LinalgError::singular_matrix_with_suggestions(
+                    return Err(LinalgError::singularmatrix_with_suggestions(
                         "triangular system solve (back substitution)",
                         a.dim(),
-                        Some(1e16), // Very high condition number due to zero diagonal
+                        Some(1e16), // Very high condition number due to zero _diagonal
                     ));
                 }
                 x[i] = sum / a[[i, i]];
@@ -223,7 +225,7 @@ where
 /// # Examples
 ///
 /// ```
-/// use ndarray::array;
+/// use ndarray::{array, ScalarOperand};
 /// use scirs2_linalg::lstsq;
 ///
 /// let a = array![[1.0_f64, 1.0], [1.0, 2.0], [1.0, 3.0]];
@@ -231,13 +233,14 @@ where
 /// let result = lstsq(&a.view(), &b.view(), None).unwrap();
 /// // result.x should be approximately [3.0, 3.0]
 /// ```
+#[allow(dead_code)]
 pub fn lstsq<F>(
     a: &ArrayView2<F>,
     b: &ArrayView1<F>,
     workers: Option<usize>,
 ) -> LinalgResult<LstsqResult<F>>
 where
-    F: Float + NumAssign + Sum + One + ndarray::ScalarOperand,
+    F: Float + NumAssign + Sum + One + ndarray::ScalarOperand + Send + Sync + 'static,
 {
     // Parameter validation using helper function
     validate_least_squares(a, b, "Least squares solve")?;
@@ -296,7 +299,13 @@ where
         let (u, s, vt) = svd(a, false, workers)?;
 
         // Determine effective rank by thresholding singular values
-        let threshold = s[0] * F::from(a.nrows().max(a.ncols())).unwrap() * F::epsilon();
+        let max_dim = a.nrows().max(a.ncols());
+        let max_dim_f = F::from(max_dim).ok_or_else(|| {
+            LinalgError::NumericalError(format!(
+                "Failed to convert matrix dimension {max_dim} to numeric type"
+            ))
+        })?;
+        let threshold = s[0] * max_dim_f * F::epsilon();
         let rank = s.iter().filter(|&&val| val > threshold).count();
 
         // Compute U^T * b
@@ -354,7 +363,7 @@ where
 /// # Examples
 ///
 /// ```
-/// use ndarray::array;
+/// use ndarray::{array, ScalarOperand};
 /// use scirs2_linalg::solve_multiple;
 ///
 /// let a = array![[1.0_f64, 0.0], [0.0, 1.0]];
@@ -363,13 +372,14 @@ where
 /// // First column of x should be [2.0, 3.0]
 /// // Second column of x should be [4.0, 5.0]
 /// ```
+#[allow(dead_code)]
 pub fn solve_multiple<F>(
     a: &ArrayView2<F>,
     b: &ArrayView2<F>,
     workers: Option<usize>,
 ) -> LinalgResult<Array2<F>>
 where
-    F: Float + NumAssign + One + Sum,
+    F: Float + NumAssign + One + Sum + Send + Sync + ndarray::ScalarOperand + 'static,
 {
     // Parameter validation using helper function
     validate_multiple_linear_systems(a, b, "Multiple linear systems solve")?;
@@ -382,7 +392,7 @@ where
     // For efficiency, perform LU decomposition once
     let (p, l, u) = match lu(a, workers) {
         Err(LinalgError::SingularMatrixError(_)) => {
-            return Err(LinalgError::singular_matrix_with_suggestions(
+            return Err(LinalgError::singularmatrix_with_suggestions(
                 "multiple linear systems solve",
                 a.dim(),
                 None,
@@ -426,25 +436,28 @@ where
 // Convenience wrapper functions for backward compatibility
 
 /// Solve linear system using default thread count
+#[allow(dead_code)]
 pub fn solve_default<F>(a: &ArrayView2<F>, b: &ArrayView1<F>) -> LinalgResult<Array1<F>>
 where
-    F: Float + NumAssign + One + Sum,
+    F: Float + NumAssign + One + Sum + Send + Sync + ndarray::ScalarOperand + 'static,
 {
     solve(a, b, None)
 }
 
 /// Compute least-squares solution using default thread count
+#[allow(dead_code)]
 pub fn lstsq_default<F>(a: &ArrayView2<F>, b: &ArrayView1<F>) -> LinalgResult<LstsqResult<F>>
 where
-    F: Float + NumAssign + Sum + One + ndarray::ScalarOperand,
+    F: Float + NumAssign + Sum + One + ndarray::ScalarOperand + Send + Sync + 'static,
 {
     lstsq(a, b, None)
 }
 
 /// Solve multiple linear systems using default thread count
+#[allow(dead_code)]
 pub fn solve_multiple_default<F>(a: &ArrayView2<F>, b: &ArrayView2<F>) -> LinalgResult<Array2<F>>
 where
-    F: Float + NumAssign + One + Sum,
+    F: Float + NumAssign + One + Sum + Send + Sync + ndarray::ScalarOperand + 'static,
 {
     solve_multiple(a, b, None)
 }
@@ -460,14 +473,16 @@ mod tests {
         // Identity matrix
         let a = array![[1.0, 0.0], [0.0, 1.0]];
         let b = array![2.0, 3.0];
-        let x = solve(&a.view(), &b.view(), None).unwrap();
+        let x =
+            solve(&a.view(), &b.view(), None).expect("Solve should succeed for identity matrix");
         assert_relative_eq!(x[0], 2.0);
         assert_relative_eq!(x[1], 3.0);
 
         // General 2x2 matrix
         let a = array![[1.0, 2.0], [3.0, 4.0]];
         let b = array![5.0, 11.0];
-        let x = solve(&a.view(), &b.view(), None).unwrap();
+        let x =
+            solve(&a.view(), &b.view(), None).expect("Solve should succeed for this test system");
         assert_relative_eq!(x[0], 1.0);
         assert_relative_eq!(x[1], 2.0);
     }
@@ -477,14 +492,16 @@ mod tests {
         // Lower triangular system
         let a = array![[1.0, 0.0], [2.0, 3.0]];
         let b = array![2.0, 8.0];
-        let x = solve_triangular(&a.view(), &b.view(), true, false).unwrap();
+        let x = solve_triangular(&a.view(), &b.view(), true, false)
+            .expect("Lower triangular solve should succeed");
         assert_relative_eq!(x[0], 2.0);
         assert_relative_eq!(x[1], 4.0 / 3.0);
 
         // With unit diagonal
         let a = array![[1.0, 0.0], [2.0, 1.0]];
         let b = array![2.0, 6.0];
-        let x = solve_triangular(&a.view(), &b.view(), true, true).unwrap();
+        let x = solve_triangular(&a.view(), &b.view(), true, true)
+            .expect("Upper triangular solve should succeed");
         assert_relative_eq!(x[0], 2.0);
         assert_relative_eq!(x[1], 2.0);
     }
@@ -494,14 +511,16 @@ mod tests {
         // Upper triangular system
         let a = array![[3.0, 2.0], [0.0, 1.0]];
         let b = array![8.0, 2.0];
-        let x = solve_triangular(&a.view(), &b.view(), false, false).unwrap();
+        let x = solve_triangular(&a.view(), &b.view(), false, false)
+            .expect("Lower triangular unit diagonal solve should succeed");
         assert_relative_eq!(x[0], 4.0 / 3.0);
         assert_relative_eq!(x[1], 2.0);
 
         // With unit diagonal
         let a = array![[1.0, 2.0], [0.0, 1.0]];
         let b = array![6.0, 2.0];
-        let x = solve_triangular(&a.view(), &b.view(), false, true).unwrap();
+        let x = solve_triangular(&a.view(), &b.view(), false, true)
+            .expect("Upper triangular unit diagonal solve should succeed");
         assert_relative_eq!(x[0], 2.0);
         assert_relative_eq!(x[1], 2.0);
     }

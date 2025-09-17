@@ -29,7 +29,7 @@ where
     /// Color map to use
     color_map: ColorMap,
     /// Whether to include text labels in the visualization
-    include_text: bool,
+    includetext: bool,
     /// Original y_true data
     y_true: Option<&'a ArrayBase<S, Ix2>>,
     /// Original y_pred data
@@ -58,7 +58,7 @@ where
             title: "Confusion Matrix".to_string(),
             normalize: false,
             color_map: ColorMap::BlueRed,
-            include_text: true,
+            includetext: true,
             y_true: None,
             y_pred: None,
         }
@@ -88,7 +88,7 @@ where
             title: "Confusion Matrix".to_string(),
             normalize: false,
             color_map: ColorMap::BlueRed,
-            include_text: true,
+            includetext: true,
             y_true: Some(y_true),
             y_pred: Some(y_pred),
         })
@@ -131,8 +131,8 @@ where
     /// # Returns
     ///
     /// * Self for method chaining
-    pub fn with_color_map(mut self, color_map: ColorMap) -> Self {
-        self.color_map = color_map;
+    pub fn with_color_map(mut self, colormap: ColorMap) -> Self {
+        self.color_map = colormap;
         self
     }
 
@@ -140,13 +140,13 @@ where
     ///
     /// # Arguments
     ///
-    /// * `include_text` - Whether to include text labels
+    /// * `includetext` - Whether to include text labels
     ///
     /// # Returns
     ///
     /// * Self for method chaining
-    pub fn with_include_text(mut self, include_text: bool) -> Self {
-        self.include_text = include_text;
+    pub fn with_includetext(mut self, includetext: bool) -> Self {
+        self.includetext = includetext;
         self
     }
 
@@ -164,7 +164,7 @@ where
             let y_pred = self.y_pred.unwrap();
 
             // Calculate confusion matrix
-            let (cm, _) = confusion_matrix(y_true, y_pred, None)?;
+            let (cm, _labels) = confusion_matrix(y_true, y_pred, None)?;
 
             // Normalize if requested
             if self.normalize {
@@ -278,6 +278,7 @@ where
 /// # Returns
 ///
 /// * Result containing a type-erased ConfusionMatrixVisualizer that implements MetricVisualizer
+#[allow(dead_code)]
 pub fn confusion_matrix_visualization(
     matrix: Array2<f64>,
     labels: Option<Vec<String>>,
@@ -291,7 +292,7 @@ pub fn confusion_matrix_visualization(
         title: String,
         normalize: bool,
         color_map: ColorMap,
-        include_text: bool,
+        includetext: bool,
     }
 
     impl MetricVisualizer for F64ConfusionMatrixVisualizer {
@@ -371,7 +372,7 @@ pub fn confusion_matrix_visualization(
         title: "Confusion Matrix".to_string(),
         normalize,
         color_map: ColorMap::BlueRed,
-        include_text: true,
+        includetext: true,
     })
 }
 
@@ -387,6 +388,7 @@ pub fn confusion_matrix_visualization(
 /// # Returns
 ///
 /// * Result containing a box of dyn MetricVisualizer
+#[allow(dead_code)]
 pub fn confusion_matrix_from_labels<'a, T, S>(
     y_true: &'a ArrayBase<S, Ix2>,
     y_pred: &'a ArrayBase<S, Ix2>,

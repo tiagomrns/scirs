@@ -54,13 +54,13 @@ impl<F: Float + FromPrimitive + Debug> AkimaSpline<F> {
     pub fn new(x: &ArrayView1<F>, y: &ArrayView1<F>) -> InterpolateResult<Self> {
         // Check inputs
         if x.len() != y.len() {
-            return Err(InterpolateError::ValueError(
+            return Err(InterpolateError::invalid_input(
                 "x and y arrays must have the same length".to_string(),
             ));
         }
 
         if x.len() < 5 {
-            return Err(InterpolateError::ValueError(
+            return Err(InterpolateError::invalid_input(
                 "at least 5 points are required for Akima spline".to_string(),
             ));
         }
@@ -68,7 +68,7 @@ impl<F: Float + FromPrimitive + Debug> AkimaSpline<F> {
         // Check that x is strictly increasing
         for i in 1..x.len() {
             if x[i] <= x[i - 1] {
-                return Err(InterpolateError::ValueError(
+                return Err(InterpolateError::invalid_input(
                     "x array must be strictly increasing".to_string(),
                 ));
             }
@@ -139,35 +139,35 @@ impl<F: Float + FromPrimitive + Debug> AkimaSpline<F> {
     ///
     /// # Arguments
     ///
-    /// * `x_new` - The point at which to evaluate the spline
+    /// * `xnew` - The point at which to evaluate the spline
     ///
     /// # Returns
     ///
-    /// The interpolated value at `x_new`
-    pub fn evaluate(&self, x_new: F) -> InterpolateResult<F> {
-        // Check if x_new is within the interpolation range
-        if x_new < self.x[0] || x_new > self.x[self.x.len() - 1] {
-            return Err(InterpolateError::DomainError(
-                "x_new is outside the interpolation range".to_string(),
+    /// The interpolated value at `xnew`
+    pub fn evaluate(&self, xnew: F) -> InterpolateResult<F> {
+        // Check if xnew is within the interpolation range
+        if xnew < self.x[0] || xnew > self.x[self.x.len() - 1] {
+            return Err(InterpolateError::OutOfBounds(
+                "xnew is outside the interpolation range".to_string(),
             ));
         }
 
-        // Find the index of the segment containing x_new
+        // Find the index of the segment containing xnew
         let mut idx = 0;
         for i in 0..self.x.len() - 1 {
-            if x_new >= self.x[i] && x_new <= self.x[i + 1] {
+            if xnew >= self.x[i] && xnew <= self.x[i + 1] {
                 idx = i;
                 break;
             }
         }
 
-        // Special case: x_new is exactly the last point
-        if x_new == self.x[self.x.len() - 1] {
+        // Special case: xnew is exactly the last point
+        if xnew == self.x[self.x.len() - 1] {
             return Ok(self.y[self.y.len() - 1]);
         }
 
-        // Evaluate the polynomial at x_new
-        let dx = x_new - self.x[idx];
+        // Evaluate the polynomial at xnew
+        let dx = xnew - self.x[idx];
         let a = self.coeffs[[idx, 0]];
         let b = self.coeffs[[idx, 1]];
         let c = self.coeffs[[idx, 2]];
@@ -181,14 +181,14 @@ impl<F: Float + FromPrimitive + Debug> AkimaSpline<F> {
     ///
     /// # Arguments
     ///
-    /// * `x_new` - The points at which to evaluate the spline
+    /// * `xnew` - The points at which to evaluate the spline
     ///
     /// # Returns
     ///
-    /// The interpolated values at `x_new`
-    pub fn evaluate_array(&self, x_new: &ArrayView1<F>) -> InterpolateResult<Array1<F>> {
-        let mut result = Array1::zeros(x_new.len());
-        for (i, &x) in x_new.iter().enumerate() {
+    /// The interpolated values at `xnew`
+    pub fn evaluate_array(&self, xnew: &ArrayView1<F>) -> InterpolateResult<Array1<F>> {
+        let mut result = Array1::zeros(xnew.len());
+        for (i, &x) in xnew.iter().enumerate() {
             result[i] = self.evaluate(x)?;
         }
         Ok(result)
@@ -198,30 +198,30 @@ impl<F: Float + FromPrimitive + Debug> AkimaSpline<F> {
     ///
     /// # Arguments
     ///
-    /// * `x_new` - The point at which to evaluate the derivative
+    /// * `xnew` - The point at which to evaluate the derivative
     ///
     /// # Returns
     ///
-    /// The derivative of the spline at `x_new`
-    pub fn derivative(&self, x_new: F) -> InterpolateResult<F> {
-        // Check if x_new is within the interpolation range
-        if x_new < self.x[0] || x_new > self.x[self.x.len() - 1] {
-            return Err(InterpolateError::DomainError(
-                "x_new is outside the interpolation range".to_string(),
+    /// The derivative of the spline at `xnew`
+    pub fn derivative(&self, xnew: F) -> InterpolateResult<F> {
+        // Check if xnew is within the interpolation range
+        if xnew < self.x[0] || xnew > self.x[self.x.len() - 1] {
+            return Err(InterpolateError::OutOfBounds(
+                "xnew is outside the interpolation range".to_string(),
             ));
         }
 
-        // Find the index of the segment containing x_new
+        // Find the index of the segment containing xnew
         let mut idx = 0;
         for i in 0..self.x.len() - 1 {
-            if x_new >= self.x[i] && x_new <= self.x[i + 1] {
+            if xnew >= self.x[i] && xnew <= self.x[i + 1] {
                 idx = i;
                 break;
             }
         }
 
-        // Special case: x_new is exactly the last point
-        if x_new == self.x[self.x.len() - 1] {
+        // Special case: xnew is exactly the last point
+        if xnew == self.x[self.x.len() - 1] {
             // Use the derivative at the last internal point
             idx = self.x.len() - 2;
             let dx = self.x[idx + 1] - self.x[idx];
@@ -233,8 +233,8 @@ impl<F: Float + FromPrimitive + Debug> AkimaSpline<F> {
                 + F::from_f64(3.0).unwrap() * d * dx * dx);
         }
 
-        // Evaluate the derivative at x_new
-        let dx = x_new - self.x[idx];
+        // Evaluate the derivative at xnew
+        let dx = xnew - self.x[idx];
         let b = self.coeffs[[idx, 1]];
         let c = self.coeffs[[idx, 2]];
         let d = self.coeffs[[idx, 3]];
@@ -271,11 +271,23 @@ impl<F: Float + FromPrimitive + Debug> AkimaSpline<F> {
 /// let y_interp = spline.evaluate(2.5).unwrap();
 /// println!("Interpolated value at x=2.5: {}", y_interp);
 /// ```
-pub fn make_akima_spline<F: Float + FromPrimitive + Debug>(
+#[allow(dead_code)]
+pub fn make_akima_spline<F: crate::traits::InterpolationFloat>(
     x: &ArrayView1<F>,
     y: &ArrayView1<F>,
 ) -> InterpolateResult<AkimaSpline<F>> {
     AkimaSpline::new(x, y)
+}
+
+/// Convenience function for Akima interpolation
+#[allow(dead_code)]
+pub fn akima_interpolate<F: crate::traits::InterpolationFloat>(
+    x: &ArrayView1<F>,
+    y: &ArrayView1<F>,
+    xnew: &ArrayView1<F>,
+) -> InterpolateResult<Array1<F>> {
+    let spline = AkimaSpline::new(x, y)?;
+    spline.evaluate_array(xnew)
 }
 
 #[cfg(test)]

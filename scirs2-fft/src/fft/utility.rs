@@ -43,6 +43,7 @@ pub(crate) fn try_as_complex<T: Copy + Debug + 'static>(val: T) -> Option<Comple
 ///
 /// `true` if the number is a power of 2, `false` otherwise
 #[inline]
+#[allow(dead_code)]
 pub fn is_power_of_two(n: usize) -> bool {
     n != 0 && (n & (n - 1)) == 0
 }
@@ -57,6 +58,7 @@ pub fn is_power_of_two(n: usize) -> bool {
 ///
 /// The next power of 2 that is greater than or equal to `n`
 #[inline]
+#[allow(dead_code)]
 pub fn next_power_of_two(n: usize) -> usize {
     if n == 0 {
         return 1;
@@ -88,15 +90,16 @@ pub fn next_power_of_two(n: usize) -> usize {
 /// # Errors
 ///
 /// Returns an error if the input size is zero or n is zero
-pub fn validate_fft_size(input_size: usize, n: Option<usize>) -> FFTResult<usize> {
-    if input_size == 0 {
+#[allow(dead_code)]
+pub fn validate_fft_size(inputsize: usize, n: Option<usize>) -> FFTResult<usize> {
+    if inputsize == 0 {
         return Err(FFTError::ValueError("Input cannot be empty".to_string()));
     }
 
     match n {
-        Some(0) => Err(FFTError::ValueError("FFT size cannot be zero".to_string())),
-        Some(size) => Ok(size),
-        None => Ok(next_power_of_two(input_size)),
+        Some(0) => Err(FFTError::ValueError("FFT _size cannot be zero".to_string())),
+        Some(_size) => Ok(_size),
+        None => Ok(next_power_of_two(inputsize)),
     }
 }
 
@@ -104,7 +107,7 @@ pub fn validate_fft_size(input_size: usize, n: Option<usize>) -> FFTResult<usize
 ///
 /// # Arguments
 ///
-/// * `input_shape` - The shape of the input array
+/// * `inputshape` - The shape of the input array
 /// * `shape` - The requested output shape (optional)
 ///
 /// # Returns
@@ -114,20 +117,18 @@ pub fn validate_fft_size(input_size: usize, n: Option<usize>) -> FFTResult<usize
 /// # Errors
 ///
 /// Returns an error if the dimensions don't match
-pub fn validate_fft_shapes(
-    input_shape: &[usize],
-    shape: Option<&[usize]>,
-) -> FFTResult<Vec<usize>> {
+#[allow(dead_code)]
+pub fn validate_fftshapes(inputshape: &[usize], shape: Option<&[usize]>) -> FFTResult<Vec<usize>> {
     match shape {
-        Some(output_shape) => {
-            if output_shape.len() != input_shape.len() {
+        Some(outputshape) => {
+            if outputshape.len() != inputshape.len() {
                 return Err(FFTError::ValueError(
                     "Output shape must have the same number of dimensions as input".to_string(),
                 ));
             }
-            Ok(output_shape.to_vec())
+            Ok(outputshape.to_vec())
         }
-        None => Ok(input_shape.to_vec()),
+        None => Ok(inputshape.to_vec()),
     }
 }
 
@@ -145,6 +146,7 @@ pub fn validate_fft_shapes(
 /// # Errors
 ///
 /// Returns an error if any axis is out of bounds
+#[allow(dead_code)]
 pub fn validate_fft_axes(ndim: usize, axes: Option<&[usize]>) -> FFTResult<Vec<usize>> {
     match axes {
         Some(axes) => {
@@ -152,8 +154,7 @@ pub fn validate_fft_axes(ndim: usize, axes: Option<&[usize]>) -> FFTResult<Vec<u
             for &axis in axes {
                 if axis >= ndim {
                     return Err(FFTError::ValueError(format!(
-                        "Axis {} out of bounds for array of dimension {}",
-                        axis, ndim
+                        "Axis {axis} out of bounds for array of dimension {ndim}"
                     )));
                 }
             }
@@ -187,11 +188,12 @@ pub fn zeros_like_complex(shape: &[usize]) -> ArrayD<Complex64> {
 /// # Returns
 ///
 /// A complex array with the same shape
-pub fn real_to_complex<D>(real_array: &Array<f64, D>) -> Array<Complex64, D>
+#[allow(dead_code)]
+pub fn real_to_complex<D>(_realarray: &Array<f64, D>) -> Array<Complex64, D>
 where
     D: ndarray::Dimension,
 {
-    real_array.mapv(|x| Complex64::new(x, 0.0))
+    _realarray.mapv(|x| Complex64::new(x, 0.0))
 }
 
 /// Extract the real part of a complex array
@@ -203,11 +205,12 @@ where
 /// # Returns
 ///
 /// A real array with the same shape
-pub fn complex_to_real<D>(complex_array: &Array<Complex64, D>) -> Array<f64, D>
+#[allow(dead_code)]
+pub fn complex_to_real<D>(_complexarray: &Array<Complex64, D>) -> Array<f64, D>
 where
     D: ndarray::Dimension,
 {
-    complex_array.mapv(|x| x.re)
+    _complexarray.mapv(|x| x.re)
 }
 
 /// Calculate the magnitude of a complex array (absolute values)
@@ -219,11 +222,12 @@ where
 /// # Returns
 ///
 /// A real array with the magnitude (absolute value) of each element
-pub fn complex_magnitude<D>(complex_array: &Array<Complex64, D>) -> Array<f64, D>
+#[allow(dead_code)]
+pub fn complex_magnitude<D>(_complexarray: &Array<Complex64, D>) -> Array<f64, D>
 where
     D: ndarray::Dimension,
 {
-    complex_array.mapv(|x| x.norm())
+    _complexarray.mapv(|x| x.norm())
 }
 
 /// Calculate the phase angle of a complex array (in radians)
@@ -235,11 +239,12 @@ where
 /// # Returns
 ///
 /// A real array with the phase angle of each element
-pub fn complex_angle<D>(complex_array: &Array<Complex64, D>) -> Array<f64, D>
+#[allow(dead_code)]
+pub fn complex_angle<D>(_complexarray: &Array<Complex64, D>) -> Array<f64, D>
 where
     D: ndarray::Dimension,
 {
-    complex_array.mapv(|x| x.arg())
+    _complexarray.mapv(|x| x.arg())
 }
 
 /// Calculate the power spectrum of a complex array (squared magnitude)
@@ -251,11 +256,12 @@ where
 /// # Returns
 ///
 /// A real array with the power spectrum (squared magnitude) of each element
-pub fn power_spectrum<D>(complex_array: &Array<Complex64, D>) -> Array<f64, D>
+#[allow(dead_code)]
+pub fn power_spectrum<D>(_complexarray: &Array<Complex64, D>) -> Array<f64, D>
 where
     D: ndarray::Dimension,
 {
-    complex_array.mapv(|x| x.norm_sqr())
+    _complexarray.mapv(|x| x.norm_sqr())
 }
 
 /// Convert an array slice to an index vector

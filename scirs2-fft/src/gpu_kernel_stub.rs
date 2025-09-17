@@ -39,6 +39,7 @@ impl GpuFftKernel {
 }
 
 /// Check if GPU is available through core
+#[allow(dead_code)]
 pub fn is_gpu_available() -> bool {
     // This should use scirs2-core::gpu capabilities
     false

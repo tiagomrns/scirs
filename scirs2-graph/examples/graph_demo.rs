@@ -4,6 +4,7 @@ use scirs2_graph::algorithms::*;
 use scirs2_graph::generators::*;
 use scirs2_graph::Hypergraph;
 
+#[allow(dead_code)]
 fn main() {
     println!("=== SciRS2 Graph Module Demo ===\n");
 
@@ -37,7 +38,7 @@ fn main() {
 
     // 3. Shortest path algorithms
     println!("\n3. Shortest Path Algorithms");
-    match shortest_path(&graph, &"Alice", &"Charlie") {
+    match dijkstra_path(&graph, &"Alice", &"Charlie") {
         Ok(Some(path)) => {
             println!("   Shortest path from Alice to Charlie:");
             println!("   Path: {:?}", path.nodes);
@@ -58,8 +59,11 @@ fn main() {
 
     // 5. Community detection
     println!("\n5. Community Detection");
-    let communities = louvain_communities(&graph);
-    println!("   Modularity: {:.4}", communities.modularity);
+    let communities = louvain_communities_result(&graph);
+    println!(
+        "   Quality Score: {:.4}",
+        communities.quality_score.unwrap_or(0.0)
+    );
     println!("   Community assignments:");
     for (node, community) in &communities.node_communities {
         println!("     {} belongs to community {}", node, community);

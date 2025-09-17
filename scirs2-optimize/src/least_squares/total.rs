@@ -34,6 +34,7 @@
 
 use crate::error::OptimizeResult;
 use ndarray::{array, s, Array1, Array2, ArrayBase, Data, Ix1};
+use statrs::statistics::Statistics;
 
 /// Options for total least squares
 #[derive(Debug, Clone)]
@@ -92,7 +93,7 @@ pub struct TotalLeastSquaresResult {
     pub orthogonal_residuals: f64,
 
     /// Number of iterations (for iterative methods)
-    pub iterations: usize,
+    pub nit: usize,
 
     /// Convergence status
     pub converged: bool,
@@ -110,6 +111,7 @@ pub struct TotalLeastSquaresResult {
 /// * `x_variance` - Optional variance estimates for x measurements
 /// * `y_variance` - Optional variance estimates for y measurements
 /// * `options` - Options for the optimization
+#[allow(dead_code)]
 pub fn total_least_squares<S1, S2, S3, S4>(
     x_measured: &ArrayBase<S1, Ix1>,
     y_measured: &ArrayBase<S2, Ix1>,
@@ -132,7 +134,7 @@ where
         ));
     }
 
-    // Check variance arrays if provided
+    // Check _variance arrays if provided
     if let Some(x_var) = x_variance {
         if x_var.len() != n {
             return Err(crate::error::OptimizeError::ValueError(
@@ -161,6 +163,7 @@ where
 }
 
 /// Total least squares using SVD
+#[allow(dead_code)]
 fn tls_svd<S1, S2, S3, S4>(
     x_measured: &ArrayBase<S1, Ix1>,
     y_measured: &ArrayBase<S2, Ix1>,
@@ -257,12 +260,13 @@ where
         x_corrected,
         y_corrected,
         orthogonal_residuals: total_residual,
-        iterations: 1,
+        nit: 1,
         converged: true,
     })
 }
 
 /// Iterative total least squares
+#[allow(dead_code)]
 fn tls_iterative<S1, S2, S3, S4>(
     x_measured: &ArrayBase<S1, Ix1>,
     y_measured: &ArrayBase<S2, Ix1>,
@@ -356,18 +360,19 @@ where
         x_corrected,
         y_corrected,
         orthogonal_residuals,
-        iterations: iter,
+        nit: iter,
         converged,
     })
 }
 
 /// Maximum likelihood total least squares
+#[allow(dead_code)]
 fn tls_maximum_likelihood<S1, S2, S3, S4>(
     x_measured: &ArrayBase<S1, Ix1>,
     y_measured: &ArrayBase<S2, Ix1>,
     x_variance: Option<&ArrayBase<S3, Ix1>>,
     y_variance: Option<&ArrayBase<S4, Ix1>>,
-    _options: &TotalLeastSquaresOptions,
+    options: &TotalLeastSquaresOptions,
 ) -> OptimizeResult<TotalLeastSquaresResult>
 where
     S1: Data<Elem = f64>,
@@ -377,10 +382,11 @@ where
 {
     // For now, use the iterative method
     // A proper implementation would maximize the likelihood function
-    tls_iterative(x_measured, y_measured, x_variance, y_variance, _options)
+    tls_iterative(x_measured, y_measured, x_variance, y_variance, options)
 }
 
 /// Compute ordinary least squares for initial estimate
+#[allow(dead_code)]
 fn ordinary_least_squares<S1, S2>(x: &ArrayBase<S1, Ix1>, y: &ArrayBase<S2, Ix1>) -> (f64, f64)
 where
     S1: Data<Elem = f64>,
@@ -407,6 +413,7 @@ where
 }
 
 /// Orthogonal projection of a point onto a line
+#[allow(dead_code)]
 fn orthogonal_projection(x: f64, y: f64, slope: f64, intercept: f64) -> (f64, f64) {
     // Line equation: y = slope * x + intercept
     // Normal vector: (slope, -1)
@@ -422,6 +429,7 @@ fn orthogonal_projection(x: f64, y: f64, slope: f64, intercept: f64) -> (f64, f6
 }
 
 /// Weighted orthogonal projection
+#[allow(dead_code)]
 fn weighted_orthogonal_projection(
     x: f64,
     y: f64,
@@ -444,6 +452,7 @@ fn weighted_orthogonal_projection(
 }
 
 /// Weighted least squares for a line
+#[allow(dead_code)]
 fn weighted_least_squares_line<S1, S2, S3, S4>(
     x: &ArrayBase<S1, Ix1>,
     y: &ArrayBase<S2, Ix1>,
@@ -487,6 +496,7 @@ where
 }
 
 /// Simple 2x2 eigendecomposition
+#[allow(dead_code)]
 fn eigen_2x2(matrix: &Array2<f64>) -> (Array1<f64>, Array2<f64>) {
     let a = matrix[[0, 0]];
     let b = matrix[[0, 1]];
@@ -554,7 +564,7 @@ mod tests {
         let x_measured = &x_true + &x_errors;
         let y_measured = &y_true + &y_errors;
 
-        let result = total_least_squares::<_, _, _, _>(
+        let result = total_least_squares(
             &x_measured,
             &y_measured,
             None::<&Array1<f64>>,
@@ -607,7 +617,12 @@ mod tests {
         let mut options_iter = TotalLeastSquaresOptions::default();
         options_iter.method = TLSMethod::Iterative;
 
-        let result_svd = total_least_squares::<_, _, _, _>(
+        let result_svd = total_least_squares::<
+            ndarray::OwnedRepr<f64>,
+            ndarray::OwnedRepr<f64>,
+            ndarray::OwnedRepr<f64>,
+            ndarray::OwnedRepr<f64>,
+        >(
             &x_measured,
             &y_measured,
             None::<&Array1<f64>>,
@@ -616,7 +631,12 @@ mod tests {
         )
         .unwrap();
 
-        let result_iter = total_least_squares::<_, _, _, _>(
+        let result_iter = total_least_squares::<
+            ndarray::OwnedRepr<f64>,
+            ndarray::OwnedRepr<f64>,
+            ndarray::OwnedRepr<f64>,
+            ndarray::OwnedRepr<f64>,
+        >(
             &x_measured,
             &y_measured,
             None::<&Array1<f64>>,

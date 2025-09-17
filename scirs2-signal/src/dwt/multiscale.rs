@@ -1,14 +1,15 @@
-//! Multi-level wavelet transform functions
-//!
-//! This module provides functions for multi-level/multi-resolution wavelet analysis,
-//! including decomposition and reconstruction of signals.
+// Multi-level wavelet transform functions
+//
+// This module provides functions for multi-level/multi-resolution wavelet analysis,
+// including decomposition and reconstruction of signals.
 
-use super::filters::Wavelet;
 use super::transform::{dwt_decompose, dwt_reconstruct};
+use crate::dwt::Wavelet;
 use crate::error::{SignalError, SignalResult};
 use num_traits::{Float, NumCast};
 use std::fmt::Debug;
 
+#[allow(unused_imports)]
 /// Perform multi-level wavelet decomposition
 ///
 /// # Arguments
@@ -35,6 +36,7 @@ use std::fmt::Debug;
 /// // coeffs[1] contains level-2 detail
 /// // coeffs[2] contains level-1 detail
 /// ```
+#[allow(dead_code)]
 pub fn wavedec<T>(
     data: &[T],
     wavelet: Wavelet,
@@ -132,6 +134,7 @@ where
 ///     assert!((signal[i] - reconstructed[i]).abs() < 1e-10);
 /// }
 /// ```
+#[allow(dead_code)]
 pub fn waverec(coeffs: &[Vec<f64>], wavelet: Wavelet) -> SignalResult<Vec<f64>> {
     if coeffs.is_empty() {
         return Err(SignalError::ValueError(
@@ -187,4 +190,19 @@ pub fn waverec(coeffs: &[Vec<f64>], wavelet: Wavelet) -> SignalResult<Vec<f64>> 
     }
 
     Ok(approx)
+}
+
+// Compatibility wrapper functions for old API style
+
+/// Compatibility wrapper for wavedec with 3 parameters (old API)
+pub fn wavedec_compat<T>(data: &[T], wavelet: Wavelet, level: usize) -> SignalResult<Vec<Vec<f64>>>
+where
+    T: Float + NumCast + Debug,
+{
+    wavedec(data, wavelet, Some(level), None)
+}
+
+/// Compatibility wrapper for waverec with DecompositionResult input
+pub fn waverec_compat(coeffs: &[Vec<f64>], wavelet: Wavelet) -> SignalResult<Vec<f64>> {
+    waverec(coeffs, wavelet)
 }

@@ -21,6 +21,7 @@ mod cuda_operations;
 pub use cuda_operations::*;
 
 /// Initializes the GPU system for the array protocol.
+#[allow(dead_code)]
 pub fn init_gpu_system() {
     // Initialize CUDA operations
     cuda_operations::register_cuda_operations();

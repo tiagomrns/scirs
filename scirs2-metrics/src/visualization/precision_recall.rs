@@ -2,6 +2,8 @@
 //!
 //! This module provides tools for visualizing Precision-Recall curves.
 
+#![allow(clippy::uninlined_format_args)]
+
 use ndarray::{ArrayBase, Data, Ix1};
 use std::error::Error;
 
@@ -134,8 +136,8 @@ where
     /// # Returns
     ///
     /// * Self for method chaining
-    pub fn with_show_ap(mut self, show_ap: bool) -> Self {
-        self.show_ap = show_ap;
+    pub fn with_show_ap(mut self, showap: bool) -> Self {
+        self.show_ap = showap;
         self
     }
 
@@ -148,8 +150,8 @@ where
     /// # Returns
     ///
     /// * Self for method chaining
-    pub fn with_show_baseline(mut self, show_baseline: bool) -> Self {
-        self.show_baseline = show_baseline;
+    pub fn with_show_baseline(mut self, showbaseline: bool) -> Self {
+        self.show_baseline = showbaseline;
         self
     }
 
@@ -162,8 +164,8 @@ where
     /// # Returns
     ///
     /// * Self for method chaining
-    pub fn with_average_precision(mut self, average_precision: f64) -> Self {
-        self.average_precision = Some(average_precision);
+    pub fn with_average_precision(mut self, averageprecision: f64) -> Self {
+        self.average_precision = Some(averageprecision);
         self
     }
 
@@ -222,12 +224,12 @@ where
     f64: From<T>,
 {
     fn prepare_data(&self) -> std::result::Result<VisualizationData, Box<dyn Error>> {
-        let (precision, recall, _, ap) = self
+        let (precision, recall_, thresholds, ap) = self
             .compute_pr()
             .map_err(|e| Box::new(e) as Box<dyn Error>)?;
 
         // Prepare data for visualization
-        let mut x = recall;
+        let mut x = recall_;
         let mut y = precision;
 
         // Prepare series names
@@ -306,6 +308,7 @@ where
 /// # Returns
 ///
 /// * A PrecisionRecallVisualizer
+#[allow(dead_code)]
 pub fn precision_recall_visualization(
     precision: Vec<f64>,
     recall: Vec<f64>,
@@ -326,6 +329,7 @@ pub fn precision_recall_visualization(
 /// # Returns
 ///
 /// * A PrecisionRecallVisualizer
+#[allow(dead_code)]
 pub fn precision_recall_from_labels<'a, T, S>(
     y_true: &'a ArrayBase<S, Ix1>,
     y_score: &'a ArrayBase<S, Ix1>,

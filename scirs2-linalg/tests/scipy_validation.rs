@@ -5,12 +5,13 @@
 //! with the standard scientific computing library.
 
 use approx::assert_abs_diff_eq;
-use ndarray::{array, Array2};
+use ndarray::{array, s, Array2};
 use scirs2_linalg::{cholesky, det, inv, lu, matrix_norm, qr, solve, svd};
 
 const TOLERANCE: f64 = 1e-10;
 
 #[test]
+#[allow(dead_code)]
 fn test_determinant_against_scipy() {
     // Test case 1: Simple 2x2 matrix
     let a = array![[1.0_f64, 2.0], [3.0, 4.0]];
@@ -32,6 +33,7 @@ fn test_determinant_against_scipy() {
 }
 
 #[test]
+#[allow(dead_code)]
 fn test_inverse_against_scipy() {
     // Test case: 2x2 matrix
     let a = array![[4.0_f64, 2.0], [2.0, 5.0]];
@@ -47,6 +49,7 @@ fn test_inverse_against_scipy() {
 }
 
 #[test]
+#[allow(dead_code)]
 fn test_lu_decomposition_against_scipy() {
     // Test case: 3x3 matrix
     let a = array![[2.0_f64, 1.0, 1.0], [4.0, -6.0, 0.0], [-2.0, 7.0, 2.0]];
@@ -75,6 +78,7 @@ fn test_lu_decomposition_against_scipy() {
 }
 
 #[test]
+#[allow(dead_code)]
 fn test_qr_decomposition_against_scipy() {
     // Test case: 3x2 matrix
     let a = array![[1.0_f64, 2.0], [3.0, 4.0], [5.0, 6.0]];
@@ -99,6 +103,7 @@ fn test_qr_decomposition_against_scipy() {
 }
 
 #[test]
+#[allow(dead_code)]
 fn test_svd_against_scipy() {
     // Test case: 3x2 matrix
     let a = array![[1.0_f64, 2.0], [3.0, 4.0], [5.0, 6.0]];
@@ -123,12 +128,31 @@ fn test_svd_against_scipy() {
         assert!(s[i] >= 0.0, "Singular value {} is negative: {}", i, s[i]);
     }
 
-    // TODO: The SVD reconstruction test is failing - our implementation seems to have issues
-    // with the thin SVD shape handling. This needs to be investigated and fixed.
-    // For now, we've verified that U and V are orthogonal and singular values are non-negative.
+    // Test SVD reconstruction: A = U * S * V^T
+    // Create diagonal matrix from singular values
+    let mut smatrix = Array2::zeros((s.len(), s.len()));
+    for i in 0..s.len() {
+        smatrix[[i, i]] = s[i];
+    }
+
+    // Reconstruct matrix: A = U * S * V^T
+    // Handle shape compatibility for thin SVD
+    let reconstructed = if u.ncols() == s.len() && vt.nrows() == s.len() {
+        u.dot(&smatrix).dot(&vt)
+    } else {
+        // For thin SVD, we might need to handle shapes differently
+        // Take only the relevant columns/rows
+        let u_thin = u.slice(s![.., ..s.len()]).to_owned();
+        let vt_thin = vt.slice(s![..s.len(), ..]).to_owned();
+        u_thin.dot(&smatrix).dot(&vt_thin)
+    };
+
+    // Verify reconstruction within tolerance
+    assert_abs_diff_eq!(reconstructed, a, epsilon = TOLERANCE * 10.0); // Slightly higher tolerance for reconstruction
 }
 
 #[test]
+#[allow(dead_code)]
 fn test_cholesky_against_scipy() {
     // Test case: symmetric positive definite matrix
     let a = array![
@@ -152,6 +176,7 @@ fn test_cholesky_against_scipy() {
 }
 
 #[test]
+#[allow(dead_code)]
 fn test_norm_against_scipy() {
     // Test case: 3x3 matrix
     let a = array![[1.0_f64, 2.0, 3.0], [4.0, 5.0, 6.0], [7.0, 8.0, 9.0]];
@@ -176,6 +201,7 @@ fn test_norm_against_scipy() {
 }
 
 #[test]
+#[allow(dead_code)]
 fn test_solve_against_scipy() {
     // Test case: solving Ax = b
     let a = array![[3.0_f64, 1.0], [1.0, 2.0]];
@@ -189,6 +215,7 @@ fn test_solve_against_scipy() {
 }
 
 #[test]
+#[allow(dead_code)]
 fn test_edge_cases() {
     // Test singular matrix determinant
     let singular = array![[1.0_f64, 2.0], [2.0, 4.0]];
@@ -209,6 +236,7 @@ fn test_edge_cases() {
 }
 
 #[test]
+#[allow(dead_code)]
 fn test_numerical_stability() {
     // Test with a poorly conditioned matrix
     let a = array![[1.0_f64, 1.0], [1.0, 1.000001]];
@@ -226,7 +254,8 @@ fn test_numerical_stability() {
 
 // Helper test to verify our test matrices match SciPy inputs
 #[test]
-fn test_matrix_creation() {
+#[allow(dead_code)]
+fn testmatrix_creation() {
     let a = array![[1.0_f64, 2.0], [3.0, 4.0]];
     assert_eq!(a.shape(), &[2, 2]);
     assert_eq!(a[[0, 0]], 1.0);

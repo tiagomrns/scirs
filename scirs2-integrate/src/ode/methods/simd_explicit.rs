@@ -30,6 +30,7 @@ use crate::ode::utils::simd_ops::{SimdOdeOps};
 ///
 /// The solution as an ODEResult or an error
 #[cfg(feature = "simd")]
+#[allow(dead_code)]
 pub fn simd_rk4_method<F, Func>(
     f: Func,
     t_span: [F; 2],
@@ -110,6 +111,7 @@ where
 ///
 /// The solution as an ODEResult or an error
 #[cfg(feature = "simd")]
+#[allow(dead_code)]
 pub fn simd_rk45_method<F, Func>(
     f: Func,
     t_span: [F; 2],
@@ -217,6 +219,7 @@ where
 
 /// Perform a single SIMD-accelerated RK4 step
 #[cfg(feature = "simd")]
+#[allow(dead_code)]
 fn simd_rk4_step<F, Func>(
     f: &Func,
     t: F,
@@ -268,6 +271,7 @@ where
 
 /// Perform a single SIMD-accelerated RK45 step with error estimation
 #[cfg(feature = "simd")]
+#[allow(dead_code)]
 fn simd_rk45_step<F, Func>(
     f: &Func,
     t: F,
@@ -359,6 +363,7 @@ where
 }
 
 /// Compute error tolerance for adaptive step size control
+#[allow(dead_code)]
 fn compute_error_tolerance<F: IntegrateFloat>(
     y_old: &ArrayView1<F>,
     y_new: &ArrayView1<F>,
@@ -378,6 +383,7 @@ fn compute_error_tolerance<F: IntegrateFloat>(
 
 /// Fallback methods when SIMD is not available
 #[cfg(not(feature = "simd"))]
+#[allow(dead_code)]
 pub fn simd_rk4_method<F, Func>(
     f: Func,
     t_span: [F; 2],
@@ -393,6 +399,7 @@ where
 }
 
 #[cfg(not(feature = "simd"))]
+#[allow(dead_code)]
 pub fn simd_rk45_method<F, Func>(
     f: Func,
     t_span: [F; 2],

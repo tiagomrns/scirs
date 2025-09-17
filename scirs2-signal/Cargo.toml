@@ -1,13 +1,16 @@
 [package]
 name = "scirs2-signal"
 version.workspace = true
-edition = "2021"
-authors = ["SciRS2 Team"]
-description = "Signal processing module for SciRS2"
-license = "MIT OR Apache-2.0"
-repository = "https://github.com/cool-japan/scirs"
+edition.workspace = true
+authors.workspace = true
+description = "Signal processing module for SciRS2 (scirs2-signal)"
+license.workspace = true
+repository.workspace = true
 keywords = ["signal-processing", "filter", "scientific", "scipy", "numerical"]
 categories = ["science", "mathematics", "algorithms"]
+
+[lints]
+workspace = true
 
 [dependencies]
 # Core dependencies
@@ -26,7 +29,14 @@ scirs2-linalg = { workspace = true }
 scirs2-special = { workspace = true }
 rand = { workspace = true }
 rand_distr = { workspace = true }
+rand_chacha = { workspace = true }
 plotly = { workspace = true }
+statrs = { workspace = true }
+serde = { workspace = true, features = ["derive"] }
+serde_json = { workspace = true }
+chrono = { workspace = true }
+num_cpus = { workspace = true }
+approx = { workspace = true }
 # BLAS dependencies removed - using core abstractions
 # ndarray-linalg = { workspace = true }
 ndarray-rand = { workspace = true }
@@ -34,8 +44,9 @@ ndarray-rand = { workspace = true }
 # rayon = { workspace = true, optional = true }
 
 [features]
-default = []
+default = ["parallel"]
 parallel = ["scirs2-core/parallel"]  # Use scirs2-core parallel abstractions
+unstable_avx512 = []  # Experimental AVX-512 support
 
 [dev-dependencies]
 approx = { workspace = true }

@@ -2,6 +2,7 @@ use num_complex::Complex;
 use scirs2_special::{sph_harm, sph_harm_complex};
 use std::f64::consts::PI;
 
+#[allow(dead_code)]
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("Spherical Harmonics Example");
     println!("===========================\n");

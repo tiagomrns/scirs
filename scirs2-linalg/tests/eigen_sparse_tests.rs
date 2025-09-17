@@ -3,6 +3,7 @@ use ndarray::array;
 use scirs2_linalg::{largest_k_eigh, smallest_k_eigh};
 
 #[test]
+#[allow(dead_code)]
 fn test_largest_k_eigh_diagonal() {
     // Simple diagonal matrix
     let a = array![
@@ -32,6 +33,7 @@ fn test_largest_k_eigh_diagonal() {
 }
 
 #[test]
+#[allow(dead_code)]
 fn test_smallest_k_eigh_diagonal() {
     // Simple diagonal matrix
     let a = array![
@@ -61,6 +63,7 @@ fn test_smallest_k_eigh_diagonal() {
 }
 
 #[test]
+#[allow(dead_code)]
 fn test_largest_k_eigh_symmetric() {
     // Symmetric matrix with known eigenvalues
     let a = array![
@@ -91,6 +94,7 @@ fn test_largest_k_eigh_symmetric() {
 }
 
 #[test]
+#[allow(dead_code)]
 fn test_smallest_k_eigh_symmetric() {
     // Symmetric matrix with known eigenvalues
     let a = array![
@@ -121,6 +125,7 @@ fn test_smallest_k_eigh_symmetric() {
 }
 
 #[test]
+#[allow(dead_code)]
 fn test_k_equal_zero() {
     let a = array![[1.0_f64, 0.0, 0.0], [0.0, 2.0, 0.0], [0.0, 0.0, 3.0]];
 
@@ -137,6 +142,7 @@ fn test_k_equal_zero() {
 }
 
 #[test]
+#[allow(dead_code)]
 fn test_k_equal_n() {
     let a = array![
         [1.0_f64, 0.0, 0.0, 0.0],
@@ -170,6 +176,7 @@ fn test_k_equal_n() {
 }
 
 #[test]
+#[allow(dead_code)]
 fn test_invalid_input() {
     // Non-square matrix
     let a = array![[1.0_f64, 2.0, 3.0], [4.0, 5.0, 6.0]];

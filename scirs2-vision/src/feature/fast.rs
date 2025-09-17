@@ -3,6 +3,10 @@
 //! FAST is a corner detection method designed to be computational efficient
 //! while maintaining good detection quality. It examines a circle of pixels
 //! around a candidate point to determine if it's a corner.
+//!
+//! # References
+//!
+//! - Rosten, E. and Drummond, T., 2006, May. Machine learning for high-speed corner detection. In European conference on computer vision (pp. 430-443). Springer, Berlin, Heidelberg.
 
 use crate::error::Result;
 use crate::feature::image_to_array;
@@ -38,6 +42,7 @@ use ndarray::Array2;
 /// # Ok(())
 /// # }
 /// ```
+#[allow(dead_code)]
 pub fn fast_corners(
     img: &DynamicImage,
     threshold: f32,
@@ -140,19 +145,19 @@ pub fn fast_corners(
                 pixels[i] = array[[ny, nx]];
             }
 
-            // Check for consecutive brighter or darker pixels
+            // Check for _consecutive brighter or darker pixels
             let is_corner =
                 check_consecutive_pixels(&pixels, center, normalized_threshold, n_consecutive);
 
             if is_corner {
-                // Compute corner score for non-maximum suppression
+                // Compute corner score for non-maximum _suppression
                 let score = compute_corner_score(&pixels, center, normalized_threshold);
                 corners[[y, x]] = score;
             }
         }
     }
 
-    // Apply non-maximum suppression if requested
+    // Apply non-maximum _suppression if requested
     if non_max_suppression {
         corners = apply_non_max_suppression(&corners, 3);
     }
@@ -162,6 +167,7 @@ pub fn fast_corners(
 }
 
 /// Check if there are N consecutive pixels that are all brighter or darker
+#[allow(dead_code)]
 fn check_consecutive_pixels(
     pixels: &[f32; 16],
     center: f32,
@@ -169,7 +175,7 @@ fn check_consecutive_pixels(
     n_consecutive: usize,
 ) -> bool {
     // We need to check circular sequences, so we extend the check
-    // Check for consecutive brighter pixels
+    // Check for _consecutive brighter pixels
     let mut brighter_count = 0;
     let mut max_brighter = 0;
 
@@ -190,7 +196,7 @@ fn check_consecutive_pixels(
         }
     }
 
-    // Check for consecutive darker pixels
+    // Check for _consecutive darker pixels
     let mut darker_count = 0;
     let mut max_darker = 0;
 
@@ -214,6 +220,7 @@ fn check_consecutive_pixels(
 }
 
 /// Compute corner score based on the sum of absolute differences
+#[allow(dead_code)]
 fn compute_corner_score(pixels: &[f32; 16], center: f32, threshold: f32) -> f32 {
     let mut score = 0.0;
 
@@ -228,10 +235,11 @@ fn compute_corner_score(pixels: &[f32; 16], center: f32, threshold: f32) -> f32 
 }
 
 /// Apply non-maximum suppression to corner scores
-fn apply_non_max_suppression(corners: &Array2<f32>, window_size: usize) -> Array2<f32> {
+#[allow(dead_code)]
+fn apply_non_max_suppression(corners: &Array2<f32>, windowsize: usize) -> Array2<f32> {
     let (height, width) = corners.dim();
     let mut result = Array2::zeros((height, width));
-    let radius = window_size / 2;
+    let radius = windowsize / 2;
 
     for y in radius..(height - radius) {
         for x in radius..(width - radius) {
@@ -279,6 +287,7 @@ fn apply_non_max_suppression(corners: &Array2<f32>, window_size: usize) -> Array
 /// # Returns
 ///
 /// * Result containing corner points
+#[allow(dead_code)]
 pub fn fast_corners_simple(img: &DynamicImage, threshold: f32) -> Result<GrayImage> {
     fast_corners(img, threshold, 9, true)
 }

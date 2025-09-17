@@ -18,6 +18,7 @@
 //! for JIT-enabled arrays.
 
 /// Initializes the JIT system for the array protocol.
+#[allow(dead_code)]
 pub fn init_jit_system() {
     // This function would initialize the JIT compilation system
     // For now, it's just a placeholder

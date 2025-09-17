@@ -42,7 +42,7 @@ impl WrapperMethods {
         target: &Array1<f64>,
         config: &FeatureSelectionConfig,
     ) -> Result<FeatureSelectionResult> {
-        let (n_samples, n_features) = features.dim();
+        let (n_samples, nfeatures) = features.dim();
 
         if n_samples != target.len() {
             return Err(TimeSeriesError::DimensionMismatch {
@@ -51,23 +51,23 @@ impl WrapperMethods {
             });
         }
 
-        let max_features = config.n_features.unwrap_or(n_features.min(10));
-        let mut selected_features = Vec::new();
-        let mut remaining_features: HashSet<usize> = (0..n_features).collect();
-        let mut feature_scores = Array1::zeros(n_features);
+        let maxfeatures = config.n_features.unwrap_or(nfeatures.min(10));
+        let mut selectedfeatures = Vec::new();
+        let mut remainingfeatures: HashSet<usize> = (0..nfeatures).collect();
+        let mut feature_scores = Array1::zeros(nfeatures);
         let mut best_score = f64::NEG_INFINITY;
 
-        for _iteration in 0..max_features.min(config.max_iterations) {
+        for _iteration in 0..maxfeatures.min(config.max_iterations) {
             let mut best_feature = None;
             let mut best_iteration_score = f64::NEG_INFINITY;
 
             // Try adding each remaining feature
-            for &feature_idx in &remaining_features {
-                let mut current_features = selected_features.clone();
-                current_features.push(feature_idx);
+            for &feature_idx in &remainingfeatures {
+                let mut currentfeatures = selectedfeatures.clone();
+                currentfeatures.push(feature_idx);
 
                 let score =
-                    Self::evaluate_feature_subset(features, target, &current_features, config)?;
+                    Self::evaluate_feature_subset(features, target, &currentfeatures, config)?;
 
                 if score > best_iteration_score {
                     best_iteration_score = score;
@@ -78,8 +78,8 @@ impl WrapperMethods {
             if let Some(feature_idx) = best_feature {
                 // Check if adding this feature improves the score
                 if best_iteration_score > best_score {
-                    selected_features.push(feature_idx);
-                    remaining_features.remove(&feature_idx);
+                    selectedfeatures.push(feature_idx);
+                    remainingfeatures.remove(&feature_idx);
                     feature_scores[feature_idx] = best_iteration_score;
                     best_score = best_iteration_score;
                 } else {
@@ -93,10 +93,10 @@ impl WrapperMethods {
 
         let mut metadata = HashMap::new();
         metadata.insert("final_score".to_string(), best_score);
-        metadata.insert("iterations".to_string(), selected_features.len() as f64);
+        metadata.insert("iterations".to_string(), selectedfeatures.len() as f64);
 
         Ok(FeatureSelectionResult {
-            selected_features,
+            selected_features: selectedfeatures,
             feature_scores,
             method: "ForwardSelection".to_string(),
             metadata,
@@ -121,7 +121,7 @@ impl WrapperMethods {
         target: &Array1<f64>,
         config: &FeatureSelectionConfig,
     ) -> Result<FeatureSelectionResult> {
-        let (n_samples, n_features) = features.dim();
+        let (n_samples, nfeatures) = features.dim();
 
         if n_samples != target.len() {
             return Err(TimeSeriesError::DimensionMismatch {
@@ -130,27 +130,27 @@ impl WrapperMethods {
             });
         }
 
-        let min_features = config.n_features.unwrap_or(1).max(1);
-        let mut selected_features: Vec<usize> = (0..n_features).collect();
-        let mut feature_scores = Array1::zeros(n_features);
+        let minfeatures = config.n_features.unwrap_or(1).max(1);
+        let mut selectedfeatures: Vec<usize> = (0..nfeatures).collect();
+        let mut feature_scores = Array1::zeros(nfeatures);
         let mut best_score =
-            Self::evaluate_feature_subset(features, target, &selected_features, config)?;
+            Self::evaluate_feature_subset(features, target, &selectedfeatures, config)?;
 
-        while selected_features.len() > min_features {
+        while selectedfeatures.len() > minfeatures {
             let mut worst_feature = None;
             let mut best_iteration_score = f64::NEG_INFINITY;
 
             // Try removing each feature
-            for (i, &_feature_idx) in selected_features.iter().enumerate() {
-                let mut current_features = selected_features.clone();
-                current_features.remove(i);
+            for (i, &_feature_idx) in selectedfeatures.iter().enumerate() {
+                let mut currentfeatures = selectedfeatures.clone();
+                currentfeatures.remove(i);
 
-                if current_features.is_empty() {
+                if currentfeatures.is_empty() {
                     continue;
                 }
 
                 let score =
-                    Self::evaluate_feature_subset(features, target, &current_features, config)?;
+                    Self::evaluate_feature_subset(features, target, &currentfeatures, config)?;
 
                 if score > best_iteration_score {
                     best_iteration_score = score;
@@ -162,7 +162,7 @@ impl WrapperMethods {
                 // Check if removing this feature improves or maintains the score
                 if best_iteration_score >= best_score * 0.99 {
                     // Allow small degradation
-                    let removed_feature = selected_features.remove(worst_idx);
+                    let removed_feature = selectedfeatures.remove(worst_idx);
                     feature_scores[removed_feature] = best_score - best_iteration_score;
                     best_score = best_iteration_score;
                 } else {
@@ -175,7 +175,7 @@ impl WrapperMethods {
         }
 
         // Set scores for remaining features
-        for &idx in &selected_features {
+        for &idx in &selectedfeatures {
             feature_scores[idx] = best_score;
         }
 
@@ -183,11 +183,11 @@ impl WrapperMethods {
         metadata.insert("final_score".to_string(), best_score);
         metadata.insert(
             "features_removed".to_string(),
-            (n_features - selected_features.len()) as f64,
+            (nfeatures - selectedfeatures.len()) as f64,
         );
 
         Ok(FeatureSelectionResult {
-            selected_features,
+            selected_features: selectedfeatures,
             feature_scores,
             method: "BackwardElimination".to_string(),
             metadata,
@@ -212,7 +212,7 @@ impl WrapperMethods {
         target: &Array1<f64>,
         config: &FeatureSelectionConfig,
     ) -> Result<FeatureSelectionResult> {
-        let (n_samples, n_features) = features.dim();
+        let (n_samples, nfeatures) = features.dim();
 
         if n_samples != target.len() {
             return Err(TimeSeriesError::DimensionMismatch {
@@ -221,26 +221,26 @@ impl WrapperMethods {
             });
         }
 
-        let target_features = config.n_features.unwrap_or(n_features / 2).max(1);
-        let mut selected_features: Vec<usize> = (0..n_features).collect();
-        let mut feature_scores = Array1::ones(n_features);
+        let targetfeatures = config.n_features.unwrap_or(nfeatures / 2).max(1);
+        let mut selectedfeatures: Vec<usize> = (0..nfeatures).collect();
+        let mut feature_scores = Array1::ones(nfeatures);
 
         let mut iteration = 0;
-        while selected_features.len() > target_features && iteration < config.max_iterations {
+        while selectedfeatures.len() > targetfeatures && iteration < config.max_iterations {
             // Fit a simple linear model to get feature importance
             let importance =
-                Self::calculate_feature_importance(features, target, &selected_features)?;
+                Self::calculate_feature_importance(features, target, &selectedfeatures)?;
 
             // Remove the least important features (remove 10% or at least 1)
-            let n_to_remove = ((selected_features.len() as f64 * 0.1).ceil() as usize).max(1);
-            let n_to_remove = n_to_remove.min(selected_features.len() - target_features);
+            let n_to_remove = ((selectedfeatures.len() as f64 * 0.1).ceil() as usize).max(1);
+            let n_to_remove = n_to_remove.min(selectedfeatures.len() - targetfeatures);
 
             if n_to_remove == 0 {
                 break;
             }
 
             // Sort by importance and remove the worst
-            let mut indexed_importance: Vec<(usize, f64)> = selected_features
+            let mut indexed_importance: Vec<(usize, f64)> = selectedfeatures
                 .iter()
                 .map(|&idx| (idx, importance[idx]))
                 .collect();
@@ -251,8 +251,8 @@ impl WrapperMethods {
             // Remove the least important features
             for &(feature_idx, importance) in indexed_importance.iter().take(n_to_remove) {
                 feature_scores[feature_idx] = importance;
-                if let Some(pos) = selected_features.iter().position(|&x| x == feature_idx) {
-                    selected_features.remove(pos);
+                if let Some(pos) = selectedfeatures.iter().position(|&x| x == feature_idx) {
+                    selectedfeatures.remove(pos);
                 }
             }
 
@@ -261,8 +261,8 @@ impl WrapperMethods {
 
         // Set final scores for remaining features
         let final_score =
-            Self::evaluate_feature_subset(features, target, &selected_features, config)?;
-        for &idx in &selected_features {
+            Self::evaluate_feature_subset(features, target, &selectedfeatures, config)?;
+        for &idx in &selectedfeatures {
             feature_scores[idx] = final_score;
         }
 
@@ -271,7 +271,7 @@ impl WrapperMethods {
         metadata.insert("iterations".to_string(), iteration as f64);
 
         Ok(FeatureSelectionResult {
-            selected_features,
+            selected_features: selectedfeatures,
             feature_scores,
             method: "RecursiveFeatureElimination".to_string(),
             metadata,
@@ -296,7 +296,7 @@ impl WrapperMethods {
         target: &Array1<f64>,
         config: &FeatureSelectionConfig,
     ) -> Result<FeatureSelectionResult> {
-        let (n_samples, n_features) = features.dim();
+        let (n_samples, nfeatures) = features.dim();
 
         if n_samples != target.len() {
             return Err(TimeSeriesError::DimensionMismatch {
@@ -305,26 +305,26 @@ impl WrapperMethods {
             });
         }
 
-        let max_features = config.n_features.unwrap_or(n_features.min(10));
-        let mut selected_features = Vec::new();
-        let mut remaining_features: HashSet<usize> = (0..n_features).collect();
-        let mut feature_scores = Array1::zeros(n_features);
+        let maxfeatures = config.n_features.unwrap_or(nfeatures.min(10));
+        let mut selectedfeatures = Vec::new();
+        let mut remainingfeatures: HashSet<usize> = (0..nfeatures).collect();
+        let mut feature_scores = Array1::zeros(nfeatures);
         let mut best_score = f64::NEG_INFINITY;
 
         for _iteration in 0..config.max_iterations {
             let mut improved = false;
 
             // Forward step: try adding a feature
-            if selected_features.len() < max_features {
+            if selectedfeatures.len() < maxfeatures {
                 let mut best_add_feature = None;
                 let mut best_add_score = best_score;
 
-                for &feature_idx in &remaining_features {
-                    let mut current_features = selected_features.clone();
-                    current_features.push(feature_idx);
+                for &feature_idx in &remainingfeatures {
+                    let mut currentfeatures = selectedfeatures.clone();
+                    currentfeatures.push(feature_idx);
 
                     let score =
-                        Self::evaluate_feature_subset(features, target, &current_features, config)?;
+                        Self::evaluate_feature_subset(features, target, &currentfeatures, config)?;
 
                     if score > best_add_score {
                         best_add_score = score;
@@ -333,8 +333,8 @@ impl WrapperMethods {
                 }
 
                 if let Some(feature_idx) = best_add_feature {
-                    selected_features.push(feature_idx);
-                    remaining_features.remove(&feature_idx);
+                    selectedfeatures.push(feature_idx);
+                    remainingfeatures.remove(&feature_idx);
                     feature_scores[feature_idx] = best_add_score;
                     best_score = best_add_score;
                     improved = true;
@@ -342,16 +342,16 @@ impl WrapperMethods {
             }
 
             // Backward step: try removing a feature
-            if selected_features.len() > 1 {
+            if selectedfeatures.len() > 1 {
                 let mut best_remove_idx = None;
                 let mut best_remove_score = best_score;
 
-                for (i, &_feature_idx) in selected_features.iter().enumerate() {
-                    let mut current_features = selected_features.clone();
-                    current_features.remove(i);
+                for (i, &_feature_idx) in selectedfeatures.iter().enumerate() {
+                    let mut currentfeatures = selectedfeatures.clone();
+                    currentfeatures.remove(i);
 
                     let score =
-                        Self::evaluate_feature_subset(features, target, &current_features, config)?;
+                        Self::evaluate_feature_subset(features, target, &currentfeatures, config)?;
 
                     if score > best_remove_score {
                         best_remove_score = score;
@@ -360,8 +360,8 @@ impl WrapperMethods {
                 }
 
                 if let Some(remove_idx) = best_remove_idx {
-                    let removed_feature = selected_features.remove(remove_idx);
-                    remaining_features.insert(removed_feature);
+                    let removed_feature = selectedfeatures.remove(remove_idx);
+                    remainingfeatures.insert(removed_feature);
                     feature_scores[removed_feature] = best_score - best_remove_score;
                     best_score = best_remove_score;
                     improved = true;
@@ -375,10 +375,10 @@ impl WrapperMethods {
 
         let mut metadata = HashMap::new();
         metadata.insert("final_score".to_string(), best_score);
-        metadata.insert("n_selected".to_string(), selected_features.len() as f64);
+        metadata.insert("n_selected".to_string(), selectedfeatures.len() as f64);
 
         Ok(FeatureSelectionResult {
-            selected_features,
+            selected_features: selectedfeatures,
             feature_scores,
             method: "BidirectionalSelection".to_string(),
             metadata,
@@ -401,23 +401,21 @@ impl WrapperMethods {
         let n_samples = features.nrows();
 
         // Extract selected features
-        let selected_features =
+        let selectedfeatures =
             Array2::from_shape_fn((n_samples, feature_indices.len()), |(i, j)| {
                 features[[i, feature_indices[j]]]
             });
 
         match config.scoring_method {
-            ScoringMethod::MeanSquaredError => {
-                Self::calculate_mse_score(&selected_features, target)
-            }
+            ScoringMethod::MeanSquaredError => Self::calculate_mse_score(&selectedfeatures, target),
             ScoringMethod::MeanAbsoluteError => {
-                Self::calculate_mae_score(&selected_features, target)
+                Self::calculate_mae_score(&selectedfeatures, target)
             }
-            ScoringMethod::RSquared => Self::calculate_r2_score(&selected_features, target),
-            ScoringMethod::AIC => Self::calculate_aic_score(&selected_features, target),
-            ScoringMethod::BIC => Self::calculate_bic_score(&selected_features, target),
+            ScoringMethod::RSquared => Self::calculate_r2_score(&selectedfeatures, target),
+            ScoringMethod::AIC => Self::calculate_aic_score(&selectedfeatures, target),
+            ScoringMethod::BIC => Self::calculate_bic_score(&selectedfeatures, target),
             ScoringMethod::CrossValidation => {
-                Self::calculate_cv_score(&selected_features, target, config.cv_folds)
+                Self::calculate_cv_score(&selectedfeatures, target, config.cv_folds)
             }
         }
     }
@@ -523,25 +521,24 @@ impl WrapperMethods {
             }
 
             // Create training and test sets
-            let train_features =
+            let trainfeatures =
                 Array2::from_shape_fn((train_indices.len(), features.ncols()), |(i, j)| {
                     features[[train_indices[i], j]]
                 });
-            let train_target =
+            let traintarget =
                 Array1::from_shape_fn(train_indices.len(), |i| target[train_indices[i]]);
-            let test_features =
+            let testfeatures =
                 Array2::from_shape_fn((test_indices.len(), features.ncols()), |(i, j)| {
                     features[[test_indices[i], j]]
                 });
-            let test_target =
-                Array1::from_shape_fn(test_indices.len(), |i| target[test_indices[i]]);
+            let testtarget = Array1::from_shape_fn(test_indices.len(), |i| target[test_indices[i]]);
 
             // Fit on training and predict on test
-            let coefficients = Self::fit_linear_regression(&train_features, &train_target)?;
-            let predictions = Self::predict_linear(&test_features, &coefficients);
+            let coefficients = Self::fit_linear_regression(&trainfeatures, &traintarget)?;
+            let predictions = Self::predict_linear(&testfeatures, &coefficients);
 
             // Calculate R²
-            let score = Self::calculate_r2_from_predictions(&test_target, &predictions);
+            let score = Self::calculate_r2_from_predictions(&testtarget, &predictions);
             scores.push(score);
         }
 
@@ -564,12 +561,12 @@ impl WrapperMethods {
         target: &Array1<f64>,
     ) -> Result<Array1<f64>> {
         let n_samples = features.nrows();
-        let n_features = features.ncols();
+        let nfeatures = features.ncols();
 
         // Add intercept term
-        let mut x_matrix = Array2::ones((n_samples, n_features + 1));
+        let mut x_matrix = Array2::ones((n_samples, nfeatures + 1));
         for i in 0..n_samples {
-            for j in 0..n_features {
+            for j in 0..nfeatures {
                 x_matrix[[i, j + 1]] = features[[i, j]];
             }
         }
@@ -587,13 +584,13 @@ impl WrapperMethods {
 
     fn predict_linear(features: &Array2<f64>, coefficients: &Array1<f64>) -> Array1<f64> {
         let n_samples = features.nrows();
-        let n_features = features.ncols();
+        let nfeatures = features.ncols();
 
         let mut predictions = Array1::zeros(n_samples);
 
         for i in 0..n_samples {
             let mut pred = coefficients[0]; // Intercept
-            for j in 0..n_features {
+            for j in 0..nfeatures {
                 pred += coefficients[j + 1] * features[[i, j]];
             }
             predictions[i] = pred;
@@ -693,17 +690,17 @@ impl WrapperMethods {
         target: &Array1<f64>,
         feature_indices: &[usize],
     ) -> Result<Array1<f64>> {
-        let n_features = features.ncols();
-        let mut importance = Array1::zeros(n_features);
+        let nfeatures = features.ncols();
+        let mut importance = Array1::zeros(nfeatures);
 
         // Extract selected features
-        let selected_features =
+        let selectedfeatures =
             Array2::from_shape_fn((features.nrows(), feature_indices.len()), |(i, j)| {
                 features[[i, feature_indices[j]]]
             });
 
         // Fit linear regression
-        let coefficients = Self::fit_linear_regression(&selected_features, target)?;
+        let coefficients = Self::fit_linear_regression(&selectedfeatures, target)?;
 
         // Use absolute coefficients as importance (skip intercept)
         for (i, &feature_idx) in feature_indices.iter().enumerate() {

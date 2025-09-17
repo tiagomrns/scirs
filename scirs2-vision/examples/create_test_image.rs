@@ -6,6 +6,7 @@
 
 use image::{Rgb, RgbImage};
 
+#[allow(dead_code)]
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("Creating test image for scirs2-vision examples...");
 
@@ -98,10 +99,12 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     Ok(())
 }
 
+#[allow(dead_code)]
 fn sign(p1: (f32, f32), p2: (f32, f32), p3: (f32, f32)) -> f32 {
     (p1.0 - p3.0) * (p2.1 - p3.1) - (p2.0 - p3.0) * (p1.1 - p3.1)
 }
 
+#[allow(dead_code)]
 fn point_in_triangle(pt: (f32, f32), triangle: &[(f32, f32); 3]) -> bool {
     let d1 = sign(pt, triangle[0], triangle[1]);
     let d2 = sign(pt, triangle[1], triangle[2]);

@@ -8,6 +8,7 @@ use scirs2_graph::{
     TimeInterval,
 };
 
+#[allow(dead_code)]
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("=== Temporal Graph Demo ===\n");
 
@@ -128,8 +129,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         let connected_ab = tgraph.are_connected_at(&"Alice", &"Bob", TimeInstant::new(time));
         let connected_ce = tgraph.are_connected_at(&"Charlie", &"Eve", TimeInstant::new(time));
         println!(
-            "   t={}: Alice-Bob connected: {}, Charlie-Eve connected: {}",
-            time, connected_ab, connected_ce
+            "   t={time}: Alice-Bob connected: {connected_ab}, Charlie-Eve connected: {connected_ce}"
         );
     }
 
@@ -144,7 +144,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     centrality_vec.sort_by(|a, b| b.1.partial_cmp(a.1).unwrap());
 
     for (node, score) in centrality_vec {
-        println!("     {}: {:.3}", node, score);
+        println!("     {node}: {score:.3}");
     }
 
     println!("\n10. Edge activity analysis:");
@@ -176,10 +176,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         } else {
             0.0
         };
-        println!(
-            "     t={}: {} nodes, {} edges, density: {:.3}",
-            time, node_count, edge_count, density
-        );
+        println!("     t={time}: {node_count} nodes, {edge_count} edges, density: {density:.3}");
     }
 
     println!("\n12. Temporal edge overlap analysis:");
@@ -198,7 +195,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             }
         }
     }
-    println!("   Overlapping edge pairs: {}", overlapping_pairs);
+    println!("   Overlapping edge pairs: {overlapping_pairs}");
 
     println!("\n=== Demo Complete ===");
     println!("\nTemporal graphs enable modeling of:");

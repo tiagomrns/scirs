@@ -5,6 +5,7 @@
 use scirs2_spatial::error::SpatialResult;
 use scirs2_spatial::pathplanning::{ContinuousAStarPlanner, GridAStarPlanner};
 
+#[allow(dead_code)]
 fn main() -> SpatialResult<()> {
     println!("A* Pathfinding Examples");
     println!("======================\n");
@@ -21,6 +22,7 @@ fn main() -> SpatialResult<()> {
     Ok(())
 }
 
+#[allow(dead_code)]
 fn grid_astar_example() -> SpatialResult<()> {
     println!("Example 1: Grid-based A* with obstacles");
     println!("---------------------------------------");
@@ -56,7 +58,7 @@ fn grid_astar_example() -> SpatialResult<()> {
     let start = [1, 1];
     let goal = [8, 8];
 
-    println!("\nFinding path from {:?} to {:?}...", start, goal);
+    println!("\nFinding path from {start:?} to {goal:?}...");
 
     // Find a path
     match planner.find_path(start, goal)? {
@@ -67,7 +69,7 @@ fn grid_astar_example() -> SpatialResult<()> {
                 path.cost
             );
             for (i, pos) in path.nodes.iter().enumerate() {
-                println!("  Step {}: {:?}", i, pos);
+                println!("  Step {i}: {pos:?}");
             }
 
             // Visualize the path on the grid
@@ -93,7 +95,7 @@ fn grid_astar_example() -> SpatialResult<()> {
             println!("\nPath visualization:");
             for row in &grid_with_path {
                 for &cell in row {
-                    print!("{} ", cell);
+                    print!("{cell} ");
                 }
                 println!();
             }
@@ -107,6 +109,7 @@ fn grid_astar_example() -> SpatialResult<()> {
     Ok(())
 }
 
+#[allow(dead_code)]
 fn grid_astar_diagonal_example() -> SpatialResult<()> {
     println!("Example 2: Grid-based A* with diagonal movement");
     println!("----------------------------------------------");
@@ -133,10 +136,7 @@ fn grid_astar_diagonal_example() -> SpatialResult<()> {
     let start = [1, 1];
     let goal = [8, 8];
 
-    println!(
-        "\nFinding path from {:?} to {:?} with diagonal movement...",
-        start, goal
-    );
+    println!("\nFinding path from {start:?} to {goal:?} with diagonal movement...");
 
     // Find a path
     match planner.find_path(start, goal)? {
@@ -147,7 +147,7 @@ fn grid_astar_diagonal_example() -> SpatialResult<()> {
                 path.cost
             );
             for (i, pos) in path.nodes.iter().enumerate() {
-                println!("  Step {}: {:?}", i, pos);
+                println!("  Step {i}: {pos:?}");
             }
 
             // Visualize the path on the grid
@@ -173,7 +173,7 @@ fn grid_astar_diagonal_example() -> SpatialResult<()> {
             println!("\nPath visualization:");
             for row in &grid_with_path {
                 for &cell in row {
-                    print!("{} ", cell);
+                    print!("{cell} ");
                 }
                 println!();
             }
@@ -187,6 +187,7 @@ fn grid_astar_diagonal_example() -> SpatialResult<()> {
     Ok(())
 }
 
+#[allow(dead_code)]
 fn continuous_astar_example() -> SpatialResult<()> {
     println!("Example 3: Continuous space A* with polygon obstacles");
     println!("-------------------------------------------------");
@@ -207,10 +208,7 @@ fn continuous_astar_example() -> SpatialResult<()> {
     let goal = [9.0, 9.0];
     let neighbor_radius = 1.0;
 
-    println!(
-        "\nFinding path from {:?} to {:?} in continuous space...",
-        start, goal
-    );
+    println!("\nFinding path from {start:?} to {goal:?} in continuous space...");
 
     // Find a path
     match planner.find_path(start, goal, neighbor_radius)? {

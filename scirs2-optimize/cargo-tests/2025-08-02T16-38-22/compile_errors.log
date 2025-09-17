@@ -1,0 +1,3766 @@
+   Compiling bytemuck v1.23.1
+   Compiling num-integer v0.1.46
+   Compiling serde v1.0.219
+   Compiling rand v0.8.5
+   Compiling either v1.15.0
+   Compiling rand_chacha v0.9.0
+   Compiling thiserror v2.0.12
+   Compiling thiserror v1.0.69
+   Compiling lapack-sys v0.14.0
+   Compiling crossbeam-channel v0.5.15
+   Compiling safe_arch v0.7.4
+   Compiling rayon v1.10.0
+   Compiling wide v0.7.33
+   Compiling num-rational v0.4.2
+   Compiling rand v0.9.2
+   Compiling rand_distr v0.4.3
+   Compiling crossbeam v0.8.4
+   Compiling rand_distr v0.5.1
+   Compiling smallvec v1.15.1
+   Compiling rand_xoshiro v0.6.0
+   Compiling instant v0.1.13
+   Compiling num-complex v0.4.6
+   Compiling serde_json v1.0.141
+   Compiling uuid v1.17.0
+   Compiling chrono v0.4.41
+   Compiling bincode v1.3.3
+   Compiling half v2.6.0
+   Compiling ndarray v0.16.1
+   Compiling cauchy v0.4.0
+   Compiling simba v0.9.0
+   Compiling simba v0.7.3
+   Compiling lax v0.17.0
+   Compiling argmin-math v0.4.0
+   Compiling argmin v0.10.0
+   Compiling ndarray-linalg v0.17.0
+   Compiling ndarray-rand v0.15.0
+   Compiling sprs v0.11.3
+   Compiling scirs2-core v0.1.0-beta.1 (/Users/kitasan/work/scirs/scirs2-core)
+   Compiling nalgebra v0.30.1
+   Compiling nalgebra v0.33.2
+   Compiling statrs v0.18.0
+   Compiling friedrich v0.5.0
+   Compiling scirs2-linalg v0.1.0-beta.1 (/Users/kitasan/work/scirs/scirs2-linalg)
+   Compiling scirs2-sparse v0.1.0-beta.1 (/Users/kitasan/work/scirs/scirs2-sparse)
+   Compiling scirs2-optimize v0.1.0-beta.1 (/Users/kitasan/work/scirs/scirs2-optimize)
+error[E0425]: cannot find value `population_size` in this scope
+  --> scirs2-optimize/src/reinforcement_learning/evolutionary_strategies.rs:35:13
+   |
+16 |     pub population_size: usize,
+   |         --------------- a field by that name exists in `Self`
+...
+27 |     pub fn new(_population_size: usize, dimensions: usize, sigma: f64) -> Self {
+   |                ---------------- `_population_size` defined here
+...
+35 |             population_size,
+   |             ^^^^^^^^^^^^^^^
+   |
+help: the leading underscore in `_population_size` marks it as unused, consider renaming it to `population_size`
+   |
+27 -     pub fn new(_population_size: usize, dimensions: usize, sigma: f64) -> Self {
+27 +     pub fn new(population_size: usize, dimensions: usize, sigma: f64) -> Self {
+   |
+
+error[E0425]: cannot find value `population_size` in this scope
+  --> scirs2-optimize/src/reinforcement_learning/evolutionary_strategies.rs:37:42
+   |
+16 |     pub population_size: usize,
+   |         --------------- a field by that name exists in `Self`
+...
+27 |     pub fn new(_population_size: usize, dimensions: usize, sigma: f64) -> Self {
+   |                ---------------- `_population_size` defined here
+...
+37 |             fitness: vec![f64::INFINITY; population_size],
+   |                                          ^^^^^^^^^^^^^^^
+   |
+help: the leading underscore in `_population_size` marks it as unused, consider renaming it to `population_size`
+   |
+27 -     pub fn new(_population_size: usize, dimensions: usize, sigma: f64) -> Self {
+27 +     pub fn new(population_size: usize, dimensions: usize, sigma: f64) -> Self {
+   |
+
+error[E0412]: cannot find type `AdvancedPolicyGradientOptimizer` in this scope
+   --> scirs2-optimize/src/reinforcement_learning/policy_gradient.rs:437:6
+    |
+270 | pub struct AdvancedAdvancedPolicyGradientOptimizer {
+    | -------------------------------------------------- similarly named struct `AdvancedAdvancedPolicyGradientOptimizer` defined here
+...
+437 | impl AdvancedPolicyGradientOptimizer {
+    |      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ help: a struct with a similar name exists: `AdvancedAdvancedPolicyGradientOptimizer`
+
+error[E0425]: cannot find value `a` in this scope
+   --> scirs2-optimize/src/scalar.rs:162:29
+    |
+162 |     let (mut a, mut b) = if a < c { (a, c) } else { (c, a) };
+    |                             ^ help: a local variable with a similar name exists: `c`
+
+error[E0425]: cannot find value `a` in this scope
+   --> scirs2-optimize/src/scalar.rs:162:38
+    |
+162 |     let (mut a, mut b) = if a < c { (a, c) } else { (c, a) };
+    |                                      ^ help: a local variable with a similar name exists: `c`
+
+error[E0425]: cannot find value `a` in this scope
+   --> scirs2-optimize/src/scalar.rs:162:57
+    |
+162 |     let (mut a, mut b) = if a < c { (a, c) } else { (c, a) };
+    |                                                         ^ help: a local variable with a similar name exists: `c`
+
+error[E0425]: cannot find value `a` in this scope
+   --> scirs2-optimize/src/scalar.rs:449:29
+    |
+449 |     let (mut a, mut b) = if a < c { (a, c) } else { (c, a) };
+    |                             ^ help: a local variable with a similar name exists: `c`
+
+error[E0425]: cannot find value `a` in this scope
+   --> scirs2-optimize/src/scalar.rs:449:38
+    |
+449 |     let (mut a, mut b) = if a < c { (a, c) } else { (c, a) };
+    |                                      ^ help: a local variable with a similar name exists: `c`
+
+error[E0425]: cannot find value `a` in this scope
+   --> scirs2-optimize/src/scalar.rs:449:57
+    |
+449 |     let (mut a, mut b) = if a < c { (a, c) } else { (c, a) };
+    |                                                         ^ help: a local variable with a similar name exists: `c`
+
+error[E0425]: cannot find value `min_bound` in this scope
+   --> scirs2-optimize/src/self_tuning.rs:895:42
+    |
+895 |                     if let Some(min_f) = min_bound.as_f64() {
+    |                                          ^^^^^^^^^ help: a local variable with a similar name exists: `min_bound_`
+
+error[E0425]: cannot find value `min_bound` in this scope
+   --> scirs2-optimize/src/self_tuning.rs:911:42
+    |
+911 |                     if let Some(min_i) = min_bound.as_i64() {
+    |                                          ^^^^^^^^^ help: a local variable with a similar name exists: `min_bound_`
+
+error[E0425]: cannot find value `best_params` in this scope
+    --> scirs2-optimize/src/self_tuning.rs:1167:47
+     |
+1167 |                     if let Some(best_value) = best_params.get(name) {
+     |                                               ^^^^^^^^^^^ help: a local variable with a similar name exists: `best_params_`
+
+error[E0425]: cannot find value `param_size` in this scope
+   --> scirs2-optimize/src/streaming/advanced_adaptive_streaming.rs:897:47
+    |
+885 |     fn new(_param_size: usize) -> Self {
+    |            ----------- `_param_size` defined here
+...
+897 |             homeostatic_scaling: Array1::ones(param_size),
+    |                                               ^^^^^^^^^^
+    |
+help: the leading underscore in `_param_size` marks it as unused, consider renaming it to `param_size`
+    |
+885 -     fn new(_param_size: usize) -> Self {
+885 +     fn new(param_size: usize) -> Self {
+    |
+
+error[E0412]: cannot find type `StreamingDataPoint_processing` in this scope
+    --> scirs2-optimize/src/streaming/advanced_adaptive_streaming.rs:1069:23
+     |
+1069 |         _data_point: &StreamingDataPoint_processing,
+     |                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ not found in this scope
+
+error[E0425]: cannot find value `_x` in this scope
+   --> scirs2-optimize/src/unconstrained/conjugate_gradient.rs:207:29
+    |
+207 |         compute_line_bounds(_x, direction, Some(b))
+    |                             ^^ help: a local variable with a similar name exists: `f_x`
+
+error[E0425]: cannot find value `_x` in this scope
+   --> scirs2-optimize/src/unconstrained/conjugate_gradient.rs:222:21
+    |
+222 |         let x_new = _x + alpha * direction;
+    |                     ^^ help: a local variable with a similar name exists: `f_x`
+
+error[E0425]: cannot find value `_x` in this scope
+   --> scirs2-optimize/src/unconstrained/conjugate_gradient.rs:230:25
+    |
+230 |         let mut x_new = _x + alpha * direction;
+    |                         ^^ help: a local variable with a similar name exists: `f_x`
+
+error[E0412]: cannot find type `SparsityInfo_current` in this scope
+   --> scirs2-optimize/src/unconstrained/efficient_sparse.rs:639:26
+    |
+639 |     _sparsity_info: &mut SparsityInfo_current,
+    |                          ^^^^^^^^^^^^^^^^^^^^ not found in this scope
+
+error[E0425]: cannot find value `_x` in this scope
+   --> scirs2-optimize/src/unconstrained/lbfgs.rs:627:46
+    |
+627 |     let (a_min, a_max) = compute_line_bounds(_x, direction, bounds);
+    |                                              ^^ help: a local variable with a similar name exists: `f_x`
+
+error[E0425]: cannot find value `_x` in this scope
+   --> scirs2-optimize/src/unconstrained/lbfgs.rs:639:21
+    |
+639 |         let x_new = _x + alpha * direction;
+    |                     ^^ help: a local variable with a similar name exists: `f_x`
+
+error[E0425]: cannot find value `_x` in this scope
+   --> scirs2-optimize/src/unconstrained/lbfgs.rs:650:25
+    |
+650 |         let mut x_new = _x + alpha * direction;
+    |                         ^^ help: a local variable with a similar name exists: `f_x`
+
+error[E0425]: cannot find value `_fun` in this scope
+  --> scirs2-optimize/src/unconstrained/line_search.rs:96:17
+   |
+96 |                 _fun, grad_fun, x, direction, alpha_lo, alpha, phi_lo, phi, dphi_lo, phi0, dphi0,
+   |                 ^^^^ help: a local variable with a similar name exists: `fun`
+
+error[E0425]: cannot find value `_fun` in this scope
+   --> scirs2-optimize/src/unconstrained/line_search.rs:110:17
+    |
+110 |                 _fun, grad_fun, x, direction, alpha, alpha_lo, phi, phi_lo, dphi, phi0, dphi0, c1,
+    |                 ^^^^ help: a local variable with a similar name exists: `fun`
+
+error[E0425]: cannot find value `_x` in this scope
+   --> scirs2-optimize/src/unconstrained/newton.rs:233:29
+    |
+233 |         compute_line_bounds(_x, direction, Some(b))
+    |                             ^^ help: a local variable with a similar name exists: `f_x`
+
+error[E0425]: cannot find value `_x` in this scope
+   --> scirs2-optimize/src/unconstrained/newton.rs:248:21
+    |
+248 |         let x_new = _x + alpha * direction;
+    |                     ^^ help: a local variable with a similar name exists: `f_x`
+
+error[E0425]: cannot find value `_x` in this scope
+   --> scirs2-optimize/src/unconstrained/newton.rs:256:25
+    |
+256 |         let mut x_new = _x + alpha * direction;
+    |                         ^^ help: a local variable with a similar name exists: `f_x`
+
+error[E0425]: cannot find value `_x` in this scope
+   --> scirs2-optimize/src/unconstrained/powell.rs:205:38
+    |
+205 |     let (a_min, a_max) = line_bounds(_x, direction, bounds);
+    |                                      ^^ help: a local variable with a similar name exists: `f_x`
+
+error[E0425]: cannot find value `_x` in this scope
+   --> scirs2-optimize/src/unconstrained/powell.rs:214:17
+    |
+214 |         let y = _x + &(direction * alpha);
+    |                 ^^ help: a local variable with a similar name exists: `f_x`
+
+error[E0425]: cannot find value `_fun` in this scope
+   --> scirs2-optimize/src/unconstrained/strong_wolfe.rs:117:9
+    |
+117 |         _fun, grad_fun, x, f0, derphi0, direction, alpha, options, bounds,
+    |         ^^^^ help: a local variable with a similar name exists: `fun`
+
+error[E0425]: cannot find value `_fun` in this scope
+   --> scirs2-optimize/src/unconstrained/strong_wolfe.rs:136:17
+    |
+136 |                 _fun, grad_fun, x, f0, derphi0, direction, alpha_lo, alpha_hi, f_lo, f_hi, g_lo,
+    |                 ^^^^ help: a local variable with a similar name exists: `fun`
+
+error[E0186]: method `weight` has a `&self` declaration in the trait, but not in the impl
+  --> scirs2-optimize/src/least_squares/robust.rs:88:5
+   |
+73 |     fn weight(&self, r: f64) -> f64;
+   |     -------------------------------- `&self` used in trait
+...
+88 |     fn weight(&self_r: f64) -> f64 {
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ expected `&self` in impl
+
+error[E0186]: method `weight_derivative` has a `&self` declaration in the trait, but not in the impl
+  --> scirs2-optimize/src/least_squares/robust.rs:92:5
+   |
+76 |     fn weight_derivative(&self, r: f64) -> f64;
+   |     ------------------------------------------- `&self` used in trait
+...
+92 |     fn weight_derivative(&self_r: f64) -> f64 {
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ expected `&self` in impl
+
+error[E0186]: method `update` has a `&mut self` declaration in the trait, but not in the impl
+   --> scirs2-optimize/src/reinforcement_learning/policy_gradient.rs:776:5
+    |
+776 |     fn update(&mut self_experience: &Experience) -> Result<(), OptimizeError> {
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ expected `&mut self` in impl
+    |
+   ::: scirs2-optimize/src/reinforcement_learning/mod.rs:162:5
+    |
+162 |     fn update(&mut self, experience: &Experience) -> OptimizeResult<()>;
+    |     -------------------------------------------------------------------- `&mut self` used in trait
+
+error[E0185]: method `hessian` has a `&self` declaration in the impl, but not in the trait
+   --> scirs2-optimize/src/streaming/mod.rs:277:5
+    |
+196 | /     fn hessian(
+197 | |         &self_parameters: &ArrayView1<f64>,
+198 | |         _data_point: &StreamingDataPoint,
+199 | |     ) -> Option<Array2<f64>> {
+    | |____________________________- trait method declared without `&self`
+...
+277 | /     fn hessian(
+278 | |         &self,
+279 | |         parameters: &ArrayView1<f64>,
+280 | |         data_point: &StreamingDataPoint,
+281 | |     ) -> Option<Array2<f64>> {
+    | |____________________________^ `&self` used in impl
+
+error[E0560]: struct `FunctionWrapper<F>` has no field named `_func`
+  --> scirs2-optimize/src/automatic_differentiation/mod.rs:93:16
+   |
+93 |         Self { _func }
+   |                ^^^^^ unknown field
+   |
+help: a field with a similar name exists
+   |
+93 -         Self { _func }
+93 +         Self { func }
+   |
+
+error[E0560]: struct `TestProblem` has no field named `_name`
+   --> scirs2-optimize/src/benchmarking.rs:167:13
+    |
+167 |             _name: _name.to_string(),
+    |             ^^^^^ unknown field
+    |
+help: a field with a similar name exists
+    |
+167 -             _name: _name.to_string(),
+167 +             name: _name.to_string(),
+    |
+
+error[E0560]: struct `BenchmarkSystem` has no field named `_config`
+   --> scirs2-optimize/src/benchmarking.rs:581:13
+    |
+581 |             _config,
+    |             ^^^^^^^ unknown field
+    |
+help: a field with a similar name exists
+    |
+581 -             _config,
+581 +             config,
+    |
+
+error[E0560]: struct `AugmentedLagrangianState` has no field named `_penalty`
+   --> scirs2-optimize/src/constrained/augmented_lagrangian.rs:109:13
+    |
+109 |             _penalty: initial_penalty,
+    |             ^^^^^^^^ unknown field
+    |
+help: a field with a similar name exists
+    |
+109 -             _penalty: initial_penalty,
+109 +             penalty: initial_penalty,
+    |
+
+error[E0061]: this method takes 9 arguments but 8 arguments were supplied
+   --> scirs2-optimize/src/constrained/interior_point.rs:476:25
+    |
+476 |               return self.compute_newton_direction(
+    |  _________________________^^^^^^^^^^^^^^^^^^^^^^^^-
+477 | |                 g,
+478 | |                 c_eq,
+479 | |                 c_ineq,
+...   |
+484 | |                 lambda_ineq,
+485 | |             );
+    | |_____________- argument #9 of type `f64` is missing
+    |
+note: method defined here
+   --> scirs2-optimize/src/constrained/interior_point.rs:338:8
+    |
+338 |     fn compute_newton_direction(
+    |        ^^^^^^^^^^^^^^^^^^^^^^^^
+...
+348 |         barrier: f64,
+    |         ------------
+help: provide the argument
+    |
+476 -             return self.compute_newton_direction(
+477 -                 g,
+478 -                 c_eq,
+479 -                 c_ineq,
+480 -                 j_eq,
+481 -                 j_ineq,
+482 -                 s,
+483 -                 &Array1::zeros(self.m_eq),
+484 -                 lambda_ineq,
+485 -             );
+476 +             return self.compute_newton_direction(g, c_eq, c_ineq, j_eq, j_ineq, s, &Array1::zeros(self.m_eq), lambda_ineq, /* f64 */);
+    |
+
+error[E0560]: struct `Constraint<for<'a> fn(&'a [f64]) -> f64>` has no field named `_fun`
+   --> scirs2-optimize/src/constrained/mod.rs:178:13
+    |
+178 |             _fun,
+    |             ^^^^ unknown field
+    |
+help: a field with a similar name exists
+    |
+178 -             _fun,
+178 +             fun,
+    |
+
+error[E0560]: struct `Constraint<for<'a> fn(&'a [f64]) -> f64>` has no field named `_lb`
+   --> scirs2-optimize/src/constrained/mod.rs:190:13
+    |
+190 |             _lb,
+    |             ^^^ unknown field
+    |
+help: a field with a similar name exists
+    |
+190 -             _lb,
+190 +             lb,
+    |
+
+error[E0560]: struct `distributed::DistributedOptimizationContext<M>` has no field named `_mpi`
+   --> scirs2-optimize/src/distributed.rs:187:13
+    |
+187 |             _mpi,
+    |             ^^^^ unknown field
+    |
+help: a field with a similar name exists
+    |
+187 -             _mpi,
+187 +             mpi,
+    |
+
+error[E0560]: struct `WorkDistribution` has no field named `_rank`
+   --> scirs2-optimize/src/distributed.rs:281:13
+    |
+281 |             _rank,
+    |             ^^^^^ unknown field
+    |
+help: a field with a similar name exists
+    |
+281 -             _rank,
+281 +             rank,
+    |
+
+error[E0560]: struct `OptimizeResults<f64>` has no field named `_nit`
+   --> scirs2-optimize/src/distributed_gpu.rs:246:17
+    |
+246 |                 _nit: max_nit,
+    |                 ^^^^ unknown field
+    |
+help: a field with a similar name exists
+    |
+246 -                 _nit: max_nit,
+246 +                 nit: max_nit,
+    |
+
+error[E0599]: no method named `gpu_direct_migration` found for mutable reference `&mut DistributedGpuOptimizer<M>` in the current scope
+   --> scirs2-optimize/src/distributed_gpu.rs:424:22
+    |
+424 |                 self.gpu_direct_migration(population, fitness)
+    |                      ^^^^^^^^^^^^^^^^^^^^ this is an associated function, not a method
+    |
+    = note: found the following associated functions; to be used as methods, functions must have a `self` parameter
+note: the candidate is defined in an impl for the type `DistributedGpuOptimizer<M>`
+   --> scirs2-optimize/src/distributed_gpu.rs:442:5
+    |
+442 | /     fn gpu_direct_migration(
+443 | |         &mut self_population: &mut Array2<f64>,
+444 | |         _fitness: &mut Array1<f64>,
+445 | |     ) -> ScirsResult<()> {
+    | |________________________^
+help: use associated function syntax instead
+    |
+424 -                 self.gpu_direct_migration(population, fitness)
+424 +                 DistributedGpuOptimizer::<M>::gpu_direct_migration(population, fitness)
+    |
+help: there is a method `gpu_migration` with a similar name
+    |
+424 -                 self.gpu_direct_migration(population, fitness)
+424 +                 self.gpu_migration(population, fitness)
+    |
+
+error[E0599]: no method named `staged_migration` found for mutable reference `&mut DistributedGpuOptimizer<M>` in the current scope
+   --> scirs2-optimize/src/distributed_gpu.rs:428:22
+    |
+428 |                 self.staged_migration(population, fitness)
+    |                      ^^^^^^^^^^^^^^^^ this is an associated function, not a method
+    |
+    = note: found the following associated functions; to be used as methods, functions must have a `self` parameter
+note: the candidate is defined in an impl for the type `DistributedGpuOptimizer<M>`
+   --> scirs2-optimize/src/distributed_gpu.rs:452:5
+    |
+452 | /     fn staged_migration(
+453 | |         &mut self_population: &mut Array2<f64>,
+454 | |         _fitness: &mut Array1<f64>,
+455 | |     ) -> ScirsResult<()> {
+    | |________________________^
+help: use associated function syntax instead
+    |
+428 -                 self.staged_migration(population, fitness)
+428 +                 DistributedGpuOptimizer::<M>::staged_migration(population, fitness)
+    |
+help: there is a method `gpu_migration` with a similar name
+    |
+428 -                 self.staged_migration(population, fitness)
+428 +                 self.gpu_migration(population, fitness)
+    |
+
+error[E0599]: no method named `async_migration` found for mutable reference `&mut DistributedGpuOptimizer<M>` in the current scope
+   --> scirs2-optimize/src/distributed_gpu.rs:432:22
+    |
+432 |                 self.async_migration(population, fitness)
+    |                      ^^^^^^^^^^^^^^^ this is an associated function, not a method
+    |
+    = note: found the following associated functions; to be used as methods, functions must have a `self` parameter
+note: the candidate is defined in an impl for the type `DistributedGpuOptimizer<M>`
+   --> scirs2-optimize/src/distributed_gpu.rs:462:5
+    |
+462 | /     fn async_migration(
+463 | |         &mut self_population: &mut Array2<f64>,
+464 | |         _fitness: &mut Array1<f64>,
+465 | |     ) -> ScirsResult<()> {
+    | |________________________^
+help: use associated function syntax instead
+    |
+432 -                 self.async_migration(population, fitness)
+432 +                 DistributedGpuOptimizer::<M>::async_migration(population, fitness)
+    |
+help: there is a method `gpu_migration` with a similar name
+    |
+432 -                 self.async_migration(population, fitness)
+432 +                 self.gpu_migration(population, fitness)
+    |
+
+error[E0599]: no method named `hierarchical_migration` found for mutable reference `&mut DistributedGpuOptimizer<M>` in the current scope
+   --> scirs2-optimize/src/distributed_gpu.rs:436:22
+    |
+436 |                 self.hierarchical_migration(population, fitness)
+    |                 -----^^^^^^^^^^^^^^^^^^^^^^---------------------
+    |                 |    |
+    |                 |    this is an associated function, not a method
+    |                 help: use associated function syntax instead: `DistributedGpuOptimizer::<M>::hierarchical_migration(population, fitness)`
+    |
+    = note: found the following associated functions; to be used as methods, functions must have a `self` parameter
+note: the candidate is defined in an impl for the type `DistributedGpuOptimizer<M>`
+   --> scirs2-optimize/src/distributed_gpu.rs:471:5
+    |
+471 | /     fn hierarchical_migration(
+472 | |         &mut self_population: &mut Array2<f64>,
+473 | |         _fitness: &mut Array1<f64>,
+474 | |     ) -> ScirsResult<()> {
+    | |________________________^
+
+error[E0277]: the trait bound `[std::ops::Range<usize>; 1]: NdIndex<Dim<[usize; 2]>>` is not satisfied
+   --> scirs2-optimize/src/distributed_gpu.rs:509:33
+    |
+509 |                         indices[[i..j]] = idx as i32;
+    |                                 ^^^^^^ the trait `NdIndex<Dim<[usize; 2]>>` is not implemented for `[std::ops::Range<usize>; 1]`
+    |
+    = help: the following other types implement trait `NdIndex<E>`:
+              `&[usize]` implements `NdIndex<Dim<IxDynImpl>>`
+              `[usize; 0]` implements `NdIndex<Dim<[usize; 0]>>`
+              `[usize; 1]` implements `NdIndex<Dim<[usize; 1]>>`
+              `[usize; 2]` implements `NdIndex<Dim<[usize; 2]>>`
+              `[usize; 3]` implements `NdIndex<Dim<[usize; 3]>>`
+              `[usize; 4]` implements `NdIndex<Dim<[usize; 4]>>`
+              `[usize; 5]` implements `NdIndex<Dim<[usize; 5]>>`
+              `[usize; 6]` implements `NdIndex<Dim<[usize; 6]>>`
+              `[usize; N]` implements `NdIndex<Dim<IxDynImpl>>`
+    = note: required for `ArrayBase<OwnedRepr<_>, Dim<[usize; 2]>>` to implement `std::ops::Index<[std::ops::Range<usize>; 1]>`
+
+error[E0599]: no function or associated item named `seed_from_u64` found for struct `StdRng` in the current scope
+   --> scirs2-optimize/src/global/basinhopping.rs:166:31
+    |
+166 |         let mut rng = StdRng::seed_from_u64(seed);
+    |                               ^^^^^^^^^^^^^ function or associated item not found in `StdRng`
+    |
+    = help: items from traits can only be used if the trait is in scope
+help: trait `SeedableRng` which provides `seed_from_u64` is implemented but not in scope; perhaps you want to import it
+    |
+7   + use rand::SeedableRng;
+    |
+
+error[E0593]: closure is expected to take 3 arguments, but it takes 2 arguments
+   --> scirs2-optimize/src/global/basinhopping.rs:171:22
+    |
+171 |             Box::new(move |f_new: f64, f_old: f64| {
+    |                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |                      |
+    |                      expected closure that takes 3 arguments
+    |                      takes 2 arguments
+
+error[E0599]: no function or associated item named `seed_from_u64` found for struct `StdRng` in the current scope
+   --> scirs2-optimize/src/global/basinhopping.rs:189:45
+    |
+189 |                 let mut local_rng = StdRng::seed_from_u64(seed + x.len() as u64);
+    |                                             ^^^^^^^^^^^^^ function or associated item not found in `StdRng`
+    |
+    = help: items from traits can only be used if the trait is in scope
+help: trait `SeedableRng` which provides `seed_from_u64` is implemented but not in scope; perhaps you want to import it
+    |
+7   + use rand::SeedableRng;
+    |
+
+error[E0277]: the trait bound `std::ops::Range<f64>: SampleBorrow<std::ops::Range<f64>>` is not satisfied
+   --> scirs2-optimize/src/global/basinhopping.rs:192:48
+    |
+192 |                     let uniform = Uniform::new(-stepsize..stepsize).unwrap();
+    |                                   ------------ ^^^^^^^^^^^^^^^^^^^ the trait `SampleUniform` is not implemented for `std::ops::Range<f64>`
+    |                                   |
+    |                                   required by a bound introduced by this call
+    |
+note: there are multiple different versions of crate `rand` in the dependency graph
+   --> /Users/kitasan/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/rand-0.9.2/src/distr/uniform.rs:268:1
+    |
+268 | pub trait SampleUniform: Sized {
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ this is the required trait
+    |
+   ::: scirs2-optimize/src/advanced_coordinator.rs:29:5
+    |
+29  | use rand::rng;
+    |     ---- one version of crate `rand` used here, as a direct dependency of the current crate
+    |
+   ::: scirs2-optimize/src/error.rs:3:5
+    |
+3   | use scirs2_core::error::{CoreError, CoreResult};
+    |     ----------- one version of crate `rand` used here, as a dependency of crate `num_complex`
+   --> /rustc/6b00bc3880198600130e1cf62b8f8a93494488cc/library/core/src/ops/range.rs:80:1
+    |
+    = note: this type doesn't implement the required trait
+    |
+   ::: /Users/kitasan/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/rand-0.8.5/src/distributions/distribution.rs:35:1
+    |
+35  | pub trait Distribution<T> {
+    | ------------------------- this is the found trait
+    = help: you can use `cargo tree` to explore your dependency tree
+    = note: required for `std::ops::Range<f64>` to implement `SampleBorrow<std::ops::Range<f64>>`
+note: required by a bound in `rand_distr::Uniform::<X>::new`
+   --> /Users/kitasan/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/rand-0.9.2/src/distr/uniform.rs:235:13
+    |
+233 |     pub fn new<B1, B2>(low: B1, high: B2) -> Result<Uniform<X>, Error>
+    |            --- required by a bound in this associated function
+234 |     where
+235 |         B1: SampleBorrow<X> + Sized,
+    |             ^^^^^^^^^^^^^^^ required by this bound in `Uniform::<X>::new`
+
+error[E0061]: this function takes 2 arguments but 1 argument was supplied
+   --> scirs2-optimize/src/global/basinhopping.rs:192:35
+    |
+192 |                     let uniform = Uniform::new(-stepsize..stepsize).unwrap();
+    |                                   ^^^^^^^^^^^^--------------------- argument #2 is missing
+    |
+note: associated function defined here
+   --> /Users/kitasan/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/rand-0.9.2/src/distr/uniform.rs:233:12
+    |
+233 |     pub fn new<B1, B2>(low: B1, high: B2) -> Result<Uniform<X>, Error>
+    |            ^^^
+help: provide the argument
+    |
+192 |                     let uniform = Uniform::new(-stepsize..stepsize, /* high */).unwrap();
+    |                                                                   ++++++++++++
+
+error[E0599]: the method `unwrap` exists for enum `Result<Uniform<Range<f64>>, Error>`, but its trait bounds were not satisfied
+   --> scirs2-optimize/src/global/basinhopping.rs:192:69
+    |
+192 |                     let uniform = Uniform::new(-stepsize..stepsize).unwrap();
+    |                                                                     ^^^^^^ method cannot be called on `Result<Uniform<Range<f64>>, Error>` due to unsatisfied trait bounds
+    |
+   ::: /Users/kitasan/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/rand-0.9.2/src/distr/uniform.rs:220:1
+    |
+220 | pub struct Uniform<X: SampleUniform>(X::Sampler);
+    | ------------------------------------ doesn't satisfy `rand_distr::Uniform<std::ops::Range<f64>>: Sized`
+    |
+    = note: the following trait bounds were not satisfied:
+            `std::ops::Range<f64>: SampleUniform`
+            which is required by `rand_distr::Uniform<std::ops::Range<f64>>: Sized`
+
+error[E0277]: the trait bound `std::ops::Range<f64>: SampleUniform` is not satisfied
+   --> scirs2-optimize/src/global/basinhopping.rs:192:35
+    |
+192 |                     let uniform = Uniform::new(-stepsize..stepsize).unwrap();
+    |                                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ the trait `SampleUniform` is not implemented for `std::ops::Range<f64>`
+    |
+note: there are multiple different versions of crate `rand` in the dependency graph
+   --> /Users/kitasan/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/rand-0.9.2/src/distr/uniform.rs:268:1
+    |
+268 | pub trait SampleUniform: Sized {
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ this is the required trait
+    |
+   ::: scirs2-optimize/src/advanced_coordinator.rs:29:5
+    |
+29  | use rand::rng;
+    |     ---- one version of crate `rand` used here, as a direct dependency of the current crate
+    |
+   ::: scirs2-optimize/src/error.rs:3:5
+    |
+3   | use scirs2_core::error::{CoreError, CoreResult};
+    |     ----------- one version of crate `rand` used here, as a dependency of crate `num_complex`
+   --> /rustc/6b00bc3880198600130e1cf62b8f8a93494488cc/library/core/src/ops/range.rs:80:1
+    |
+    = note: this type doesn't implement the required trait
+    |
+   ::: /Users/kitasan/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/rand-0.8.5/src/distributions/distribution.rs:35:1
+    |
+35  | pub trait Distribution<T> {
+    | ------------------------- this is the found trait
+    = help: you can use `cargo tree` to explore your dependency tree
+note: required by a bound in `rand_distr::Uniform`
+   --> /Users/kitasan/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/rand-0.9.2/src/distr/uniform.rs:220:23
+    |
+220 | pub struct Uniform<X: SampleUniform>(X::Sampler);
+    |                       ^^^^^^^^^^^^^ required by this bound in `Uniform`
+
+error[E0023]: this pattern has 1 field, but the corresponding tuple variant has 2 fields
+  --> scirs2-optimize/src/global/bayesian.rs:86:29
+   |
+52 |     Real(f64, f64),
+   |          ---  --- tuple variant has 2 fields
+...
+86 |             Parameter::Real(__) => 1,
+   |                             ^^ expected 2 fields, found 1
+   |
+help: use `_` to explicitly ignore each field
+   |
+86 |             Parameter::Real(__, _) => 1,
+   |                               +++
+
+error[E0023]: this pattern has 1 field, but the corresponding tuple variant has 2 fields
+  --> scirs2-optimize/src/global/bayesian.rs:87:32
+   |
+54 |     Integer(i64, i64),
+   |             ---  --- tuple variant has 2 fields
+...
+87 |             Parameter::Integer(__) => 1,
+   |                                ^^ expected 2 fields, found 1
+   |
+help: use `_` to explicitly ignore each field
+   |
+87 |             Parameter::Integer(__, _) => 1,
+   |                                  +++
+
+error[E0023]: this pattern has 1 field, but the corresponding tuple variant has 2 fields
+   --> scirs2-optimize/src/global/bayesian.rs:127:40
+    |
+54  |     Integer(i64, i64),
+    |             ---  --- tuple variant has 2 fields
+...
+127 |                     Parameter::Integer((lower, upper)) => {
+    |                                        ^^^^^^^^^^^^^^ expected 2 fields, found 1
+    |
+help: use `_` to explicitly ignore each field
+    |
+127 |                     Parameter::Integer((lower, upper), _) => {
+    |                                                      +++
+
+error[E0560]: struct `SobolState` has no field named `_dimension`
+  --> scirs2-optimize/src/global/differential_evolution.rs:53:13
+   |
+53 |             _dimension,
+   |             ^^^^^^^^^^ unknown field
+   |
+help: a field with a similar name exists
+   |
+53 -             _dimension,
+53 +             dimension,
+   |
+
+error[E0308]: mismatched types
+   --> scirs2-optimize/src/global/differential_evolution.rs:518:47
+    |
+518 |             mutant[i] = self.ensure_bounds(i..mutant[i]);
+    |                                               ^^^^^^^^^ expected `usize`, found `f64`
+
+error[E0061]: this method takes 2 arguments but 1 argument was supplied
+   --> scirs2-optimize/src/global/differential_evolution.rs:518:30
+    |
+518 |             mutant[i] = self.ensure_bounds(i..mutant[i]);
+    |                              ^^^^^^^^^^^^^-------------- argument #2 of type `f64` is missing
+    |
+note: expected `usize`, found `Range<usize>`
+   --> scirs2-optimize/src/global/differential_evolution.rs:518:44
+    |
+518 |             mutant[i] = self.ensure_bounds(i..mutant[i]);
+    |                                            ^^^^^^^^^^^^
+    = note: expected type `usize`
+             found struct `std::ops::Range<usize>`
+note: method defined here
+   --> scirs2-optimize/src/global/differential_evolution.rs:407:8
+    |
+407 |     fn ensure_bounds(&mut self, idx: usize, val: f64) -> f64 {
+    |        ^^^^^^^^^^^^^            ----------  --------
+help: provide the argument
+    |
+518 -             mutant[i] = self.ensure_bounds(i..mutant[i]);
+518 +             mutant[i] = self.ensure_bounds(/* usize */, /* f64 */);
+    |
+
+error[E0308]: mismatched types
+   --> scirs2-optimize/src/global/differential_evolution.rs:563:46
+    |
+563 |             trial[i] = self.ensure_bounds(i..trial[i]);
+    |                                              ^^^^^^^^ expected `usize`, found `f64`
+
+error[E0061]: this method takes 2 arguments but 1 argument was supplied
+   --> scirs2-optimize/src/global/differential_evolution.rs:563:29
+    |
+563 |             trial[i] = self.ensure_bounds(i..trial[i]);
+    |                             ^^^^^^^^^^^^^------------- argument #2 of type `f64` is missing
+    |
+note: expected `usize`, found `Range<usize>`
+   --> scirs2-optimize/src/global/differential_evolution.rs:563:43
+    |
+563 |             trial[i] = self.ensure_bounds(i..trial[i]);
+    |                                           ^^^^^^^^^^^
+    = note: expected type `usize`
+             found struct `std::ops::Range<usize>`
+note: method defined here
+   --> scirs2-optimize/src/global/differential_evolution.rs:407:8
+    |
+407 |     fn ensure_bounds(&mut self, idx: usize, val: f64) -> f64 {
+    |        ^^^^^^^^^^^^^            ----------  --------
+help: provide the argument
+    |
+563 -             trial[i] = self.ensure_bounds(i..trial[i]);
+563 +             trial[i] = self.ensure_bounds(/* usize */, /* f64 */);
+    |
+
+error[E0599]: no function or associated item named `seed_from_u64` found for struct `StdRng` in the current scope
+  --> scirs2-optimize/src/global/dual_annealing.rs:81:27
+   |
+81 |         let rng = StdRng::seed_from_u64(seed);
+   |                           ^^^^^^^^^^^^^ function or associated item not found in `StdRng`
+   |
+   = help: items from traits can only be used if the trait is in scope
+help: trait `SeedableRng` which provides `seed_from_u64` is implemented but not in scope; perhaps you want to import it
+   |
+7  + use rand::SeedableRng;
+   |
+
+error[E0599]: no function or associated item named `seed_from_u64` found for struct `StdRng` in the current scope
+  --> scirs2-optimize/src/global/particle_swarm.rs:98:31
+   |
+98 |         let mut rng = StdRng::seed_from_u64(seed);
+   |                               ^^^^^^^^^^^^^ function or associated item not found in `StdRng`
+   |
+   = help: items from traits can only be used if the trait is in scope
+help: trait `SeedableRng` which provides `seed_from_u64` is implemented but not in scope; perhaps you want to import it
+   |
+8  + use rand::SeedableRng;
+   |
+
+error[E0063]: missing field `velocity` in initializer of `Particle`
+   --> scirs2-optimize/src/global/particle_swarm.rs:127:28
+    |
+127 |             particles.push(Particle {
+    |                            ^^^^^^^^ missing `velocity`
+
+error[E0560]: struct `particle_swarm::ParticleSwarm<F>` has no field named `_func`
+   --> scirs2-optimize/src/global/particle_swarm.rs:135:13
+    |
+135 |             _func,
+    |             ^^^^^ unknown field
+    |
+help: a field with a similar name exists
+    |
+135 -             _func,
+135 +             func,
+    |
+
+error[E0560]: struct `AccelerationManager` has no field named `_config`
+    --> scirs2-optimize/src/gpu/acceleration.rs:1851:16
+     |
+1851 |         Self { _config }
+     |                ^^^^^^^ unknown field
+     |
+help: a field with a similar name exists
+     |
+1851 -         Self { _config }
+1851 +         Self { config }
+     |
+
+error[E0599]: no method named `compile` found for struct `std::sync::Arc<scirs2_core::GpuContext>` in the current scope
+  --> scirs2-optimize/src/gpu/cuda_kernels.rs:44:31
+   |
+44 |         let kernel = _context.compile(kernel_source)?;
+   |                               ^^^^^^^ method not found in `Arc<GpuContext>`
+
+error[E0599]: no method named `compile` found for struct `std::sync::Arc<scirs2_core::GpuContext>` in the current scope
+  --> scirs2-optimize/src/gpu/cuda_kernels.rs:99:31
+   |
+99 |         let kernel = _context.compile(kernel_source)?;
+   |                               ^^^^^^^ method not found in `Arc<GpuContext>`
+
+error[E0599]: no method named `compile` found for struct `std::sync::Arc<scirs2_core::GpuContext>` in the current scope
+   --> scirs2-optimize/src/gpu/cuda_kernels.rs:159:31
+    |
+159 |         let kernel = _context.compile(kernel_source)?;
+    |                               ^^^^^^^ method not found in `Arc<GpuContext>`
+
+error[E0599]: no method named `compile` found for struct `std::sync::Arc<scirs2_core::GpuContext>` in the current scope
+   --> scirs2-optimize/src/gpu/cuda_kernels.rs:214:31
+    |
+214 |         let kernel = _context.compile(kernel_source)?;
+    |                               ^^^^^^^ method not found in `Arc<GpuContext>`
+
+error[E0560]: struct `memory_management::GpuMemoryPool` has no field named `_context`
+  --> scirs2-optimize/src/gpu/memory_management.rs:38:13
+   |
+38 |             _context,
+   |             ^^^^^^^^ unknown field
+   |
+help: a field with a similar name exists
+   |
+38 -             _context,
+38 +             context,
+   |
+
+error[E0277]: `scirs2_core::GpuBuffer<u8>` doesn't implement `std::fmt::Debug`
+   --> scirs2-optimize/src/gpu/memory_management.rs:178:5
+    |
+174 | #[derive(Debug)]
+    |          ----- in this derive macro expansion
+...
+178 |     gpu_buffer: Option<OptimGpuBuffer<u8>>,
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ `scirs2_core::GpuBuffer<u8>` cannot be formatted using `{:?}` because it doesn't implement `std::fmt::Debug`
+    |
+    = help: the trait `std::fmt::Debug` is not implemented for `scirs2_core::GpuBuffer<u8>`
+    = help: the trait `std::fmt::Debug` is implemented for `Option<T>`
+
+error[E0599]: no method named `cast_type` found for reference `&scirs2_core::GpuBuffer<u8>` in the current scope
+   --> scirs2-optimize/src/gpu/memory_management.rs:200:18
+    |
+199 | /             buffer
+200 | |                 .cast_type::<T>()
+    | |                 -^^^^^^^^^ method not found in `&GpuBuffer<u8>`
+    | |_________________|
+    |
+
+error[E0308]: mismatched types
+   --> scirs2-optimize/src/gpu/memory_management.rs:201:59
+    |
+201 |                 .map_err(|e| ScirsError::ComputationError(format!("Type casting failed: {}", e)))
+    |                                                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ expected `ErrorContext`, found `String`
+    |
+    = note: this error originates in the macro `format` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+error[E0308]: mismatched types
+   --> scirs2-optimize/src/gpu/memory_management.rs:204:17
+    |
+203 |             Err(ScirsError::InvalidInput(
+    |                 ------------------------ arguments to this enum variant are incorrect
+204 |                 "Memory block not available".to_string(),
+    |                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ expected `ErrorContext`, found `String`
+    |
+note: tuple variant defined here
+   --> /Users/kitasan/work/scirs/scirs2-core/src/error/error.rs:206:5
+    |
+206 |     InvalidInput(ErrorContext),
+    |     ^^^^^^^^^^^^
+
+error[E0599]: no variant or associated item named `OutOfMemory` found for enum `CoreError` in the current scope
+    --> scirs2-optimize/src/gpu/memory_management.rs:239:25
+     |
+239  |         Err(ScirsError::OutOfMemory(
+     |                         ^^^^^^^^^^^ variant or associated item not found in `CoreError`
+     |
+note: if you're trying to build a new `CoreError`, consider using `scirs2_core::parallel::scheduler::<impl CoreError>::scheduler_error` which returns `CoreError`
+    --> /Users/kitasan/work/scirs/scirs2-core/src/parallel/scheduler.rs:1567:5
+     |
+1567 |     pub fn scheduler_error(message: &str) -> Self {
+     |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+error[E0599]: no function or associated item named `from_buffer` found for struct `scirs2_core::GpuBuffer` in the current scope
+   --> scirs2-optimize/src/gpu/memory_management.rs:263:24
+    |
+263 |         OptimGpuArray::from_buffer(buffer, dimensions)
+    |                        ^^^^^^^^^^^ function or associated item not found in `GpuBuffer<_>`
+
+error[E0308]: mismatched types
+   --> scirs2-optimize/src/gpu/memory_management.rs:264:55
+    |
+264 |             .map_err(|e| ScirsError::ComputationError(format!("Array creation failed: {}", e)))
+    |                                                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ expected `ErrorContext`, found `String`
+    |
+    = note: this error originates in the macro `format` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+error[E0560]: struct `MemoryOptimizer` has no field named `_config`
+   --> scirs2-optimize/src/gpu/memory_management.rs:453:17
+    |
+453 |                 _config,
+    |                 ^^^^^^^ unknown field
+    |
+help: a field with a similar name exists
+    |
+453 -                 _config,
+453 +                 config,
+    |
+
+error[E0599]: no method named `supports_tensor_cores` found for struct `std::sync::Arc<scirs2_core::GpuContext>` in the current scope
+  --> scirs2-optimize/src/gpu/tensor_core_optimization.rs:54:21
+   |
+54 |         if !context.supports_tensor_cores()? {
+   |                     ^^^^^^^^^^^^^^^^^^^^^ method not found in `Arc<GpuContext>`
+
+error[E0599]: no variant or associated item named `NotSupported` found for enum `CoreError` in the current scope
+    --> scirs2-optimize/src/gpu/tensor_core_optimization.rs:55:36
+     |
+55   |             return Err(ScirsError::NotSupported(
+     |                                    ^^^^^^^^^^^^ variant or associated item not found in `CoreError`
+     |
+note: if you're trying to build a new `CoreError`, consider using `scirs2_core::parallel::scheduler::<impl CoreError>::scheduler_error` which returns `CoreError`
+    --> /Users/kitasan/work/scirs/scirs2-core/src/parallel/scheduler.rs:1567:5
+     |
+1567 |     pub fn scheduler_error(message: &str) -> Self {
+     |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+error[E0599]: no method named `compile_kernel` found for reference `&std::sync::Arc<scirs2_core::GpuContext>` in the current scope
+   --> scirs2-optimize/src/gpu/tensor_core_optimization.rs:196:17
+    |
+196 |         context.compile_kernel(kernel_name, &kernel_source)
+    |                 ^^^^^^^^^^^^^^ method not found in `&Arc<GpuContext>`
+
+error[E0599]: no method named `compile_kernel` found for reference `&std::sync::Arc<scirs2_core::GpuContext>` in the current scope
+   --> scirs2-optimize/src/gpu/tensor_core_optimization.rs:273:17
+    |
+273 |         context.compile_kernel("tensor_core_batch_gemm", kernel_source)
+    |                 ^^^^^^^^^^^^^^ method not found in `&Arc<GpuContext>`
+
+error[E0599]: no method named `compile_kernel` found for reference `&std::sync::Arc<scirs2_core::GpuContext>` in the current scope
+   --> scirs2-optimize/src/gpu/tensor_core_optimization.rs:328:17
+    |
+328 |         context.compile_kernel("tensor_core_gradient_computation", kernel_source)
+    |                 ^^^^^^^^^^^^^^ method not found in `&Arc<GpuContext>`
+
+error[E0308]: mismatched types
+   --> scirs2-optimize/src/gpu/tensor_core_optimization.rs:345:17
+    |
+344 |             return Err(ScirsError::InvalidInput(
+    |                        ------------------------ arguments to this enum variant are incorrect
+345 |                 "Matrix dimensions don't match for multiplication".to_string(),
+    |                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ expected `ErrorContext`, found `String`
+    |
+note: tuple variant defined here
+   --> /Users/kitasan/work/scirs/scirs2-core/src/error/error.rs:206:5
+    |
+206 |     InvalidInput(ErrorContext),
+    |     ^^^^^^^^^^^^
+
+error[E0599]: no method named `convert_to_fp16` found for struct `std::sync::Arc<scirs2_core::GpuContext>` in the current scope
+   --> scirs2-optimize/src/gpu/tensor_core_optimization.rs:351:39
+    |
+351 |             let a_fp16 = self.context.convert_to_fp16(a)?;
+    |                                       ^^^^^^^^^^^^^^^ method not found in `Arc<GpuContext>`
+
+error[E0599]: no method named `convert_to_fp16` found for struct `std::sync::Arc<scirs2_core::GpuContext>` in the current scope
+   --> scirs2-optimize/src/gpu/tensor_core_optimization.rs:352:39
+    |
+352 |             let b_fp16 = self.context.convert_to_fp16(b)?;
+    |                                       ^^^^^^^^^^^^^^^ method not found in `Arc<GpuContext>`
+
+error[E0599]: no method named `launch` found for struct `scirs2_core::GpuKernel` in the current scope
+   --> scirs2-optimize/src/gpu/tensor_core_optimization.rs:360:30
+    |
+360 |             self.gemm_kernel.launch(
+    |             -----------------^^^^^^ method not found in `GpuKernel`
+
+error[E0599]: no method named `launch` found for struct `scirs2_core::GpuKernel` in the current scope
+   --> scirs2-optimize/src/gpu/tensor_core_optimization.rs:382:30
+    |
+382 |             self.gemm_kernel.launch(
+    |             -----------------^^^^^^ method not found in `GpuKernel`
+
+error[E0308]: mismatched types
+   --> scirs2-optimize/src/gpu/tensor_core_optimization.rs:389:21
+    |
+389 |                     &(m as i32),
+    |                     ^^^^^^^^^^^ expected `*const f64`, found `&i32`
+    |
+    = note: expected raw pointer `*const f64`
+                 found reference `&i32`
+
+error[E0308]: mismatched types
+   --> scirs2-optimize/src/gpu/tensor_core_optimization.rs:415:17
+    |
+414 |             return Err(ScirsError::InvalidInput(
+    |                        ------------------------ arguments to this enum variant are incorrect
+415 |                 "Batch sizes must match".to_string(),
+    |                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ expected `ErrorContext`, found `String`
+    |
+note: tuple variant defined here
+   --> /Users/kitasan/work/scirs/scirs2-core/src/error/error.rs:206:5
+    |
+206 |     InvalidInput(ErrorContext),
+    |     ^^^^^^^^^^^^
+
+error[E0308]: mismatched types
+   --> scirs2-optimize/src/gpu/tensor_core_optimization.rs:428:17
+    |
+428 |             let (m, k1) = a_batch[i].shape();
+    |                 ^^^^^^^   ------------------ this expression has type `&[usize]`
+    |                 |
+    |                 expected `[usize]`, found `(_, _)`
+    |
+    = note: expected slice `[usize]`
+               found tuple `(_, _)`
+
+error[E0308]: mismatched types
+   --> scirs2-optimize/src/gpu/tensor_core_optimization.rs:429:17
+    |
+429 |             let (k2, n) = b_batch[i].shape();
+    |                 ^^^^^^^   ------------------ this expression has type `&[usize]`
+    |                 |
+    |                 expected `[usize]`, found `(_, _)`
+    |
+    = note: expected slice `[usize]`
+               found tuple `(_, _)`
+
+error[E0308]: mismatched types
+   --> scirs2-optimize/src/gpu/tensor_core_optimization.rs:432:53
+    |
+432 |                   return Err(ScirsError::InvalidInput(format!(
+    |  _____________________________________________________^
+433 | |                     "Matrix dimensions don't match for _batch {}",
+434 | |                     i
+435 | |                 )));
+    | |_________________^ expected `ErrorContext`, found `String`
+    |
+    = note: this error originates in the macro `format` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+error[E0599]: no method named `upload_ptr_array` found for struct `std::sync::Arc<scirs2_core::GpuContext>` in the current scope
+   --> scirs2-optimize/src/gpu/tensor_core_optimization.rs:447:39
+    |
+447 |         let gpu_a_ptrs = self.context.upload_ptr_array(&a_ptrs)?;
+    |                                       ^^^^^^^^^^^^^^^^ method not found in `Arc<GpuContext>`
+
+error[E0599]: no method named `upload_ptr_array` found for struct `std::sync::Arc<scirs2_core::GpuContext>` in the current scope
+   --> scirs2-optimize/src/gpu/tensor_core_optimization.rs:448:39
+    |
+448 |         let gpu_b_ptrs = self.context.upload_ptr_array(&b_ptrs)?;
+    |                                       ^^^^^^^^^^^^^^^^ method not found in `Arc<GpuContext>`
+
+error[E0599]: no method named `upload_ptr_array` found for struct `std::sync::Arc<scirs2_core::GpuContext>` in the current scope
+   --> scirs2-optimize/src/gpu/tensor_core_optimization.rs:449:39
+    |
+449 |         let gpu_c_ptrs = self.context.upload_ptr_array(&c_ptrs)?;
+    |                                       ^^^^^^^^^^^^^^^^ method not found in `Arc<GpuContext>`
+
+error[E0599]: no method named `upload_array` found for struct `std::sync::Arc<scirs2_core::GpuContext>` in the current scope
+   --> scirs2-optimize/src/gpu/tensor_core_optimization.rs:450:40
+    |
+450 |         let gpu_m_array = self.context.upload_array(&Array1::from(m_array))?;
+    |                                        ^^^^^^^^^^^^ method not found in `Arc<GpuContext>`
+
+error[E0599]: no method named `upload_array` found for struct `std::sync::Arc<scirs2_core::GpuContext>` in the current scope
+   --> scirs2-optimize/src/gpu/tensor_core_optimization.rs:451:40
+    |
+451 |         let gpu_n_array = self.context.upload_array(&Array1::from(n_array))?;
+    |                                        ^^^^^^^^^^^^ method not found in `Arc<GpuContext>`
+
+error[E0599]: no method named `upload_array` found for struct `std::sync::Arc<scirs2_core::GpuContext>` in the current scope
+   --> scirs2-optimize/src/gpu/tensor_core_optimization.rs:452:40
+    |
+452 |         let gpu_k_array = self.context.upload_array(&Array1::from(k_array))?;
+    |                                        ^^^^^^^^^^^^ method not found in `Arc<GpuContext>`
+
+error[E0599]: no method named `upload_array` found for struct `std::sync::Arc<scirs2_core::GpuContext>` in the current scope
+   --> scirs2-optimize/src/gpu/tensor_core_optimization.rs:453:44
+    |
+453 |         let gpu_alpha_array = self.context.upload_array(&Array1::from(
+    |                               -------------^^^^^^^^^^^^ method not found in `Arc<GpuContext>`
+
+error[E0599]: no method named `upload_array` found for struct `std::sync::Arc<scirs2_core::GpuContext>` in the current scope
+   --> scirs2-optimize/src/gpu/tensor_core_optimization.rs:456:43
+    |
+456 |         let gpu_beta_array = self.context.upload_array(&Array1::from(
+    |                              -------------^^^^^^^^^^^^ method not found in `Arc<GpuContext>`
+
+error[E0599]: no method named `launch` found for struct `scirs2_core::GpuKernel` in the current scope
+   --> scirs2-optimize/src/gpu/tensor_core_optimization.rs:472:32
+    |
+472 |         self.batch_gemm_kernel.launch(
+    |         -----------------------^^^^^^ method not found in `GpuKernel`
+
+error[E0308]: mismatched types
+   --> scirs2-optimize/src/gpu/tensor_core_optimization.rs:498:13
+    |
+498 |         let (n_points, n_dims) = jacobian.shape();
+    |             ^^^^^^^^^^^^^^^^^^   ---------------- this expression has type `&[usize]`
+    |             |
+    |             expected `[usize]`, found `(_, _)`
+    |
+    = note: expected slice `[usize]`
+               found tuple `(_, _)`
+
+error[E0599]: no method named `allocate_array` found for struct `std::sync::Arc<scirs2_core::GpuContext>` in the current scope
+   --> scirs2-optimize/src/gpu/tensor_core_optimization.rs:499:38
+    |
+499 |         let gradients = self.context.allocate_array::<f64>(&[n_dims, 1])?;
+    |                                      ^^^^^^^^^^^^^^ method not found in `Arc<GpuContext>`
+
+error[E0599]: no method named `convert_to_fp16` found for struct `std::sync::Arc<scirs2_core::GpuContext>` in the current scope
+   --> scirs2-optimize/src/gpu/tensor_core_optimization.rs:503:46
+    |
+503 |             let jacobian_fp16 = self.context.convert_to_fp16(jacobian)?;
+    |                                              ^^^^^^^^^^^^^^^ method not found in `Arc<GpuContext>`
+
+error[E0599]: no method named `convert_to_fp16` found for struct `std::sync::Arc<scirs2_core::GpuContext>` in the current scope
+   --> scirs2-optimize/src/gpu/tensor_core_optimization.rs:504:47
+    |
+504 |             let residuals_fp16 = self.context.convert_to_fp16(residuals)?;
+    |                                               ^^^^^^^^^^^^^^^ method not found in `Arc<GpuContext>`
+
+error[E0599]: no method named `launch` found for struct `scirs2_core::GpuKernel` in the current scope
+   --> scirs2-optimize/src/gpu/tensor_core_optimization.rs:510:34
+    |
+510 |             self.gradient_kernel.launch(
+    |             ---------------------^^^^^^ method not found in `GpuKernel`
+
+error[E0599]: no method named `dot` found for struct `std::sync::Arc<scirs2_core::GpuContext>` in the current scope
+   --> scirs2-optimize/src/gpu/tensor_core_optimization.rs:532:50
+    |
+532 |             let grad_norm_squared = self.context.dot(gradients, gradients)?;
+    |                                                  ^^^ method not found in `Arc<GpuContext>`
+
+error[E0599]: no method named `scale_array` found for struct `std::sync::Arc<scirs2_core::GpuContext>` in the current scope
+   --> scirs2-optimize/src/gpu/tensor_core_optimization.rs:537:30
+    |
+537 |                 self.context.scale_array(gradients, scale_factor)?;
+    |                              ^^^^^^^^^^^ method not found in `Arc<GpuContext>`
+
+error[E0599]: no method named `has_nan_or_inf` found for struct `std::sync::Arc<scirs2_core::GpuContext>` in the current scope
+   --> scirs2-optimize/src/gpu/tensor_core_optimization.rs:556:22
+    |
+556 |         self.context.has_nan_or_inf(tensor)
+    |                      ^^^^^^^^^^^^^^ method not found in `Arc<GpuContext>`
+
+error[E0277]: `scirs2_core::GpuContext` doesn't implement `std::fmt::Debug`
+  --> scirs2-optimize/src/gpu/mod.rs:28:5
+   |
+25 | #[derive(Debug, Clone)]
+   |          ----- in this derive macro expansion
+...
+28 |     pub context: GpuContext,
+   |     ^^^^^^^^^^^^^^^^^^^^^^^ `scirs2_core::GpuContext` cannot be formatted using `{:?}` because it doesn't implement `std::fmt::Debug`
+   |
+   = help: the trait `std::fmt::Debug` is not implemented for `scirs2_core::GpuContext`
+
+error[E0277]: the trait bound `scirs2_core::GpuContext: Clone` is not satisfied
+  --> scirs2-optimize/src/gpu/mod.rs:28:5
+   |
+25 | #[derive(Debug, Clone)]
+   |                 ----- in this derive macro expansion
+...
+28 |     pub context: GpuContext,
+   |     ^^^^^^^^^^^^^^^^^^^^^^^ the trait `Clone` is not implemented for `scirs2_core::GpuContext`
+
+error[E0599]: no variant or associated item named `NotImplemented` found for enum `CoreError` in the current scope
+    --> scirs2-optimize/src/gpu/mod.rs:75:25
+     |
+75   |         Err(ScirsError::NotImplemented(
+     |                         ^^^^^^^^^^^^^^ variant or associated item not found in `CoreError`
+     |
+note: if you're trying to build a new `CoreError`, consider using `scirs2_core::parallel::scheduler::<impl CoreError>::scheduler_error` which returns `CoreError`
+    --> /Users/kitasan/work/scirs/scirs2-core/src/parallel/scheduler.rs:1567:5
+     |
+1567 |     pub fn scheduler_error(message: &str) -> Self {
+     |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+error[E0599]: no method named `clone` found for struct `scirs2_core::GpuContext` in the current scope
+  --> scirs2-optimize/src/gpu/mod.rs:96:48
+   |
+96 |         let context = Arc::new(_config.context.clone());
+   |                                                ^^^^^ method not found in `GpuContext`
+
+error[E0599]: no function or associated item named `zeros` found for struct `scirs2_core::GpuBuffer` in the current scope
+   --> scirs2-optimize/src/gpu/mod.rs:131:44
+    |
+131 |         let mut gpu_array = OptimGpuArray::zeros(&self.context, [shape.0, shape.1])?;
+    |                                            ^^^^^ function or associated item not found in `GpuBuffer<_>`
+
+error[E0599]: no method named `shape` found for reference `&scirs2_core::GpuBuffer<T>` in the current scope
+   --> scirs2-optimize/src/gpu/mod.rs:145:30
+    |
+145 |         let shape = gpu_data.shape();
+    |                              ^^^^^ method not found in `&GpuBuffer<T>`
+
+error[E0308]: mismatched types
+   --> scirs2-optimize/src/gpu/mod.rs:154:55
+    |
+154 |             .map_err(|e| ScirsError::ComputationError(format!("Shape error: {}", e)))
+    |                                                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ expected `ErrorContext`, found `String`
+    |
+    = note: this error originates in the macro `format` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+error[E0308]: mismatched types
+   --> scirs2-optimize/src/gpu/mod.rs:184:17
+    |
+183 |             return Err(ScirsError::InvalidInput(
+    |                        ------------------------ arguments to this enum variant are incorrect
+184 |                 "Function does not support GPU acceleration".to_string(),
+    |                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ expected `ErrorContext`, found `String`
+    |
+note: tuple variant defined here
+   --> /Users/kitasan/work/scirs/scirs2-core/src/error/error.rs:206:5
+    |
+206 |     InvalidInput(ErrorContext),
+    |     ^^^^^^^^^^^^
+
+error[E0308]: mismatched types
+   --> scirs2-optimize/src/gpu/mod.rs:207:17
+    |
+206 |             return Err(ScirsError::InvalidInput(
+    |                        ------------------------ arguments to this enum variant are incorrect
+207 |                 "Function does not support GPU acceleration".to_string(),
+    |                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ expected `ErrorContext`, found `String`
+    |
+note: tuple variant defined here
+   --> /Users/kitasan/work/scirs/scirs2-core/src/error/error.rs:206:5
+    |
+206 |     InvalidInput(ErrorContext),
+    |     ^^^^^^^^^^^^
+
+error[E0560]: struct `GpuParticleSwarm` has no field named `_context`
+   --> scirs2-optimize/src/gpu/mod.rs:470:17
+    |
+470 |                 _context,
+    |                 ^^^^^^^^ unknown field
+    |
+help: a field with a similar name exists
+    |
+470 -                 _context,
+470 +                 context,
+    |
+
+error[E0277]: the trait bound `[std::ops::Range<usize>; 1]: NdIndex<Dim<[usize; 2]>>` is not satisfied
+   --> scirs2-optimize/src/gpu/mod.rs:614:32
+    |
+614 |                     velocities[[i..j]] = self.w * velocities[[i, j]]
+    |                                ^^^^^^ the trait `NdIndex<Dim<[usize; 2]>>` is not implemented for `[std::ops::Range<usize>; 1]`
+    |
+    = help: the following other types implement trait `NdIndex<E>`:
+              `&[usize]` implements `NdIndex<Dim<IxDynImpl>>`
+              `[usize; 0]` implements `NdIndex<Dim<[usize; 0]>>`
+              `[usize; 1]` implements `NdIndex<Dim<[usize; 1]>>`
+              `[usize; 2]` implements `NdIndex<Dim<[usize; 2]>>`
+              `[usize; 3]` implements `NdIndex<Dim<[usize; 3]>>`
+              `[usize; 4]` implements `NdIndex<Dim<[usize; 4]>>`
+              `[usize; 5]` implements `NdIndex<Dim<[usize; 5]>>`
+              `[usize; 6]` implements `NdIndex<Dim<[usize; 6]>>`
+              `[usize; N]` implements `NdIndex<Dim<IxDynImpl>>`
+    = note: required for `ArrayBase<OwnedRepr<f64>, Dim<[usize; 2]>>` to implement `std::ops::Index<[std::ops::Range<usize>; 1]>`
+
+error[E0560]: struct `JitCompiler` has no field named `_options`
+   --> scirs2-optimize/src/jit_optimization.rs:137:13
+    |
+137 |             _options,
+    |             ^^^^^^^^ unknown field
+    |
+help: a field with a similar name exists
+    |
+137 -             _options,
+137 +             options,
+    |
+
+error[E0599]: no method named `generate_signature` found for mutable reference `&mut JitCompiler` in the current scope
+   --> scirs2-optimize/src/jit_optimization.rs:156:30
+    |
+156 |         let signature = self.generate_signature(&fun, n_vars);
+    |                         -----^^^^^^^^^^^^^^^^^^--------------
+    |                         |    |
+    |                         |    this is an associated function, not a method
+    |                         help: use associated function syntax instead: `JitCompiler::generate_signature(&fun, n_vars)`
+    |
+    = note: found the following associated functions; to be used as methods, functions must have a `self` parameter
+note: the candidate is defined in an impl for the type `JitCompiler`
+   --> scirs2-optimize/src/jit_optimization.rs:215:5
+    |
+215 | /     fn generate_signature<F>(&self_fun: &F, n_vars: usize) -> u64
+216 | |     where
+217 | |         F: Fn(&ArrayView1<f64>) -> f64,
+    | |_______________________________________^
+
+error[E0614]: type `F` cannot be dereferenced
+   --> scirs2-optimize/src/jit_optimization.rs:227:29
+    |
+227 |         (std::ptr::addr_of!(*self_fun) as usize).hash(&mut hasher);
+    |                             ^^^^^^^^^ can't be dereferenced
+
+error[E0599]: no method named `is_sum_of_squares` found for mutable reference `&mut jit_optimization::PatternDetector` in the current scope
+   --> scirs2-optimize/src/jit_optimization.rs:463:24
+    |
+463 |         } else if self.is_sum_of_squares(&values) {
+    |                   -----^^^^^^^^^^^^^^^^^---------
+    |                   |    |
+    |                   |    this is an associated function, not a method
+    |                   help: use associated function syntax instead: `jit_optimization::PatternDetector::is_sum_of_squares(&values)`
+    |
+    = note: found the following associated functions; to be used as methods, functions must have a `self` parameter
+note: the candidate is defined in an impl for the type `jit_optimization::PatternDetector`
+   --> scirs2-optimize/src/jit_optimization.rs:502:5
+    |
+502 |     fn is_sum_of_squares(&self_values: &[f64]) -> bool {
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+error[E0599]: no method named `is_separable` found for mutable reference `&mut jit_optimization::PatternDetector` in the current scope
+   --> scirs2-optimize/src/jit_optimization.rs:465:24
+    |
+465 |         } else if self.is_separable(fun, n_vars)? {
+    |                   -----^^^^^^^^^^^^-------------
+    |                   |    |
+    |                   |    this is an associated function, not a method
+    |                   help: use associated function syntax instead: `jit_optimization::PatternDetector::is_separable(fun, n_vars)`
+    |
+    = note: found the following associated functions; to be used as methods, functions must have a `self` parameter
+note: the candidate is defined in an impl for the type `jit_optimization::PatternDetector`
+   --> scirs2-optimize/src/jit_optimization.rs:508:5
+    |
+508 | /     fn is_separable<F>(&self_fun: &F, _vars: usize) -> Result<bool, OptimizeError>
+509 | |     where
+510 | |         F: Fn(&ArrayView1<f64>) -> f64,
+    | |_______________________________________^
+
+error[E0599]: no method named `detect_polynomial_degree` found for mutable reference `&mut jit_optimization::PatternDetector` in the current scope
+   --> scirs2-optimize/src/jit_optimization.rs:467:43
+    |
+467 |         } else if let Some(degree) = self.detect_polynomial_degree(&values) {
+    |                                      -----^^^^^^^^^^^^^^^^^^^^^^^^---------
+    |                                      |    |
+    |                                      |    this is an associated function, not a method
+    |                                      help: use associated function syntax instead: `jit_optimization::PatternDetector::detect_polynomial_degree(&values)`
+    |
+    = note: found the following associated functions; to be used as methods, functions must have a `self` parameter
+note: the candidate is defined in an impl for the type `jit_optimization::PatternDetector`
+   --> scirs2-optimize/src/jit_optimization.rs:518:5
+    |
+518 |     fn detect_polynomial_degree(&self_values: &[f64]) -> Option<usize> {
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+help: there is a method `detect_pattern` with a similar name, but with different arguments
+   --> scirs2-optimize/src/jit_optimization.rs:441:5
+    |
+441 | /     pub fn detect_pattern<F>(
+442 | |         &mut self,
+443 | |         fun: &F,
+444 | |         n_vars: usize,
+445 | |     ) -> Result<FunctionPattern, OptimizeError>
+446 | |     where
+447 | |         F: Fn(&ArrayView1<f64>) -> f64,
+    | |_______________________________________^
+
+error[E0277]: the size for values of type `[f64]` cannot be known at compilation time
+   --> scirs2-optimize/src/jit_optimization.rs:502:27
+    |
+502 |     fn is_sum_of_squares(&self_values: &[f64]) -> bool {
+    |                           ^^^^^^^^^^^ doesn't have a size known at compile-time
+    |
+    = help: the trait `Sized` is not implemented for `[f64]`
+    = note: all local variables must have a statically known size
+    = help: unsized locals are gated as an unstable feature
+
+error[E0277]: the size for values of type `[f64]` cannot be known at compilation time
+   --> scirs2-optimize/src/jit_optimization.rs:518:34
+    |
+518 |     fn detect_polynomial_degree(&self_values: &[f64]) -> Option<usize> {
+    |                                  ^^^^^^^^^^^ doesn't have a size known at compile-time
+    |
+    = help: the trait `Sized` is not implemented for `[f64]`
+    = note: all local variables must have a statically known size
+    = help: unsized locals are gated as an unstable feature
+
+error[E0308]: mismatched types
+   --> scirs2-optimize/src/learned_optimizers/adaptive_nas_system.rs:500:33
+    |
+500 |                 regularization: 1e-6 + rand::rng().gen_range(0.0..1e-3)..,
+    |                                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ expected `f64`, found `RangeFrom<{float}>`
+    |
+    = note: expected type `f64`
+             found struct `std::ops::RangeFrom<{float}>`
+help: remove the unnecessary `.` operator for a floating point literal
+    |
+500 -                 regularization: 1e-6 + rand::rng().gen_range(0.0..1e-3)..,
+500 +                 regularization: 1e-6 + rand::rng().gen_range(0.0..1e-3).,
+    |
+
+error[E0599]: no method named `nrows` found for struct `ArrayBase<OwnedRepr<f64>, Dim<[usize; 3]>>` in the current scope
+   --> scirs2-optimize/src/learned_optimizers/adaptive_nas_system.rs:590:58
+    |
+590 |                 for j in 0..self.controller.lstm_weights.nrows() {
+    |                                                          ^^^^^
+    |
+help: there is a method `rows` with a similar name
+    |
+590 -                 for j in 0..self.controller.lstm_weights.nrows() {
+590 +                 for j in 0..self.controller.lstm_weights.rows() {
+    |
+
+error[E0599]: no method named `ncols` found for struct `ArrayBase<OwnedRepr<f64>, Dim<[usize; 3]>>` in the current scope
+   --> scirs2-optimize/src/learned_optimizers/adaptive_nas_system.rs:591:62
+    |
+591 |                     for k in 0..self.controller.lstm_weights.ncols() {
+    |                                                              ^^^^^
+    |
+help: there is a method `cos` with a similar name
+    |
+591 -                     for k in 0..self.controller.lstm_weights.ncols() {
+591 +                     for k in 0..self.controller.lstm_weights.cos() {
+    |
+
+error[E0599]: no method named `unwrap_or` found for type `f64` in the current scope
+   --> scirs2-optimize/src/learned_optimizers/adaptive_nas_system.rs:632:76
+    |
+632 |         let controller_influence = self.controller.controller_state.mean().unwrap_or(0.0);
+    |                                                                            ^^^^^^^^^ method not found in `f64`
+
+error[E0308]: mismatched types
+   --> scirs2-optimize/src/learned_optimizers/adaptive_transformer_enhancement.rs:305:59
+    |
+305 |         let transformer_output = self.transformer.forward(&state_encoding)?;
+    |                                                   ------- ^^^^^^^^^^^^^^^ expected `&ArrayBase<ViewRepr<&f64>, ...>`, found `&ArrayBase<OwnedRepr<f64>, ...>`
+    |                                                   |
+    |                                                   arguments to this method are incorrect
+    |
+    = note: expected reference `&ArrayBase<ViewRepr<&f64>, _>`
+               found reference `&ArrayBase<OwnedRepr<f64>, _>`
+note: method defined here
+   --> scirs2-optimize/src/learned_optimizers/adaptive_transformer_enhancement.rs:664:12
+    |
+664 |     pub fn forward(&mut self, input_sequence: &ArrayView2<f64>) -> OptimizeResult<Array2<f64>> {
+    |            ^^^^^^^            --------------------------------
+
+error[E0308]: mismatched types
+   --> scirs2-optimize/src/learned_optimizers/adaptive_transformer_enhancement.rs:308:63
+    |
+308 |         let optimization_step = self.decode_optimization_step(&transformer_output)?;
+    |                                      ------------------------ ^^^^^^^^^^^^^^^^^^^ expected `&ArrayBase<ViewRepr<&f64>, ...>`, found `&ArrayBase<OwnedRepr<f64>, ...>`
+    |                                      |
+    |                                      arguments to this method are incorrect
+    |
+    = note: expected reference `&ArrayBase<ViewRepr<&f64>, _>`
+               found reference `&ArrayBase<OwnedRepr<f64>, _>`
+note: method defined here
+   --> scirs2-optimize/src/learned_optimizers/adaptive_transformer_enhancement.rs:398:8
+    |
+398 |     fn decode_optimization_step(
+    |        ^^^^^^^^^^^^^^^^^^^^^^^^
+399 |         &self,
+400 |         transformer_output: &ArrayView2<f64>,
+    |         ------------------------------------
+
+error[E0308]: mismatched types
+   --> scirs2-optimize/src/learned_optimizers/adaptive_transformer_enhancement.rs:746:22
+    |
+746 |             .forward(&(input + &attention_output.view()))?;
+    |              ------- ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ expected `&ArrayBase<ViewRepr<&f64>, ...>`, found `&ArrayBase<OwnedRepr<f64>, ...>`
+    |              |
+    |              arguments to this method are incorrect
+    |
+    = note: expected reference `&ArrayBase<ViewRepr<&f64>, _>`
+               found reference `&ArrayBase<OwnedRepr<f64>, _>`
+note: method defined here
+   --> scirs2-optimize/src/learned_optimizers/adaptive_transformer_enhancement.rs:989:12
+    |
+989 |     pub fn forward(&self, input: &ArrayView2<f64>) -> OptimizeResult<Array2<f64>> {
+    |            ^^^^^^^        -----------------------
+
+error[E0308]: mismatched types
+   --> scirs2-optimize/src/learned_optimizers/adaptive_transformer_enhancement.rs:752:22
+    |
+752 |             .forward(&(&after_attention + &ff_output.view()))?;
+    |              ------- ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ expected `&ArrayBase<ViewRepr<&f64>, ...>`, found `&ArrayBase<OwnedRepr<f64>, ...>`
+    |              |
+    |              arguments to this method are incorrect
+    |
+    = note: expected reference `&ArrayBase<ViewRepr<&f64>, _>`
+               found reference `&ArrayBase<OwnedRepr<f64>, _>`
+note: method defined here
+   --> scirs2-optimize/src/learned_optimizers/adaptive_transformer_enhancement.rs:989:12
+    |
+989 |     pub fn forward(&self, input: &ArrayView2<f64>) -> OptimizeResult<Array2<f64>> {
+    |            ^^^^^^^        -----------------------
+
+error[E0599]: no method named `unwrap_or` found for type `f64` in the current scope
+   --> scirs2-optimize/src/learned_optimizers/adaptive_transformer_enhancement.rs:997:35
+    |
+997 |             let mean = row.mean().unwrap_or(0.0);
+    |                                   ^^^^^^^^^ method not found in `f64`
+
+error[E0599]: no method named `unwrap_or` found for type `f64` in the current scope
+    --> scirs2-optimize/src/learned_optimizers/adaptive_transformer_enhancement.rs:1118:43
+     |
+1118 |             features[2] = gradient.mean().unwrap_or(0.0).tanh(); // Gradient mean
+     |                                           ^^^^^^^^^ method not found in `f64`
+
+error[E0599]: no method named `unwrap_or` found for type `f64` in the current scope
+    --> scirs2-optimize/src/learned_optimizers/adaptive_transformer_enhancement.rs:1236:60
+     |
+1236 |             new_focus[i] = attention_weights.row(i).mean().unwrap_or(0.0);
+     |                                                            ^^^^^^^^^ method not found in `f64`
+
+error[E0282]: type annotations needed for `ArrayBase<OwnedRepr<_>, Dim<[usize; 1]>>`
+    --> scirs2-optimize/src/learned_optimizers/few_shot_learning_enhancement.rs:1006:13
+     |
+1006 |         let mut params = Array1::zeros(self.param_dim);
+     |             ^^^^^^^^^^
+...
+1013 |             params[i] = params[i].tanh(); // Normalize to [-1, 1]
+     |                         --------- type must be known at this point
+     |
+help: consider giving `params` an explicit type, where the type for type parameter `A` is specified
+     |
+1006 |         let mut params: ArrayBase<OwnedRepr<A>, _> = Array1::zeros(self.param_dim);
+     |                       ++++++++++++++++++++++++++++
+
+error[E0063]: missing fields `constr`, `hess`, `jac` and 5 other fields in initializer of `OptimizeResults<f64>`
+   --> scirs2-optimize/src/learned_optimizers/learned_hyperparameter_tuner.rs:762:12
+    |
+762 |         Ok(OptimizeResults::<f64> {
+    |            ^^^^^^^^^^^^^^^^^^^^^^ missing `constr`, `hess`, `jac` and 5 other fields
+
+error[E0433]: failed to resolve: use of unresolved module or unlinked crate `libm`
+   --> scirs2-optimize/src/learned_optimizers/learned_hyperparameter_tuner.rs:901:22
+    |
+901 |         0.5 * (1.0 + libm::erf(x / 2.0_f64.sqrt()))
+    |                      ^^^^ use of unresolved module or unlinked crate `libm`
+    |
+    = help: if you wanted to use a crate named `libm`, use `cargo add libm` to add it to your `Cargo.toml`
+
+error[E0308]: mismatched types
+   --> scirs2-optimize/src/learned_optimizers/neural_adaptive_optimizer.rs:497:64
+    |
+497 |         let network_output = self.optimization_network.forward(&state_features)?;
+    |                                                        ------- ^^^^^^^^^^^^^^^ expected `&ArrayBase<ViewRepr<&f64>, ...>`, found `&ArrayBase<OwnedRepr<f64>, ...>`
+    |                                                        |
+    |                                                        arguments to this method are incorrect
+    |
+    = note: expected reference `&ArrayBase<ViewRepr<&f64>, _>`
+               found reference `&ArrayBase<OwnedRepr<f64>, _>`
+note: method defined here
+   --> scirs2-optimize/src/learned_optimizers/neural_adaptive_optimizer.rs:940:12
+    |
+940 |     pub fn forward(&mut self, input: &ArrayView1<f64>) -> OptimizeResult<Array1<f64>> {
+    |            ^^^^^^^            -----------------------
+
+error[E0308]: mismatched types
+   --> scirs2-optimize/src/learned_optimizers/neural_adaptive_optimizer.rs:782:74
+    |
+782 |                 let predicted_action = self.optimization_network.forward(state)?;
+    |                                                                  ------- ^^^^^ expected `&ArrayBase<ViewRepr<&f64>, ...>`, found `&ArrayBase<OwnedRepr<f64>, ...>`
+    |                                                                  |
+    |                                                                  arguments to this method are incorrect
+    |
+    = note: expected reference `&ArrayBase<ViewRepr<&f64>, _>`
+               found reference `&ArrayBase<OwnedRepr<f64>, _>`
+note: method defined here
+   --> scirs2-optimize/src/learned_optimizers/neural_adaptive_optimizer.rs:940:12
+    |
+940 |     pub fn forward(&mut self, input: &ArrayView1<f64>) -> OptimizeResult<Array1<f64>> {
+    |            ^^^^^^^            -----------------------
+
+error[E0560]: struct `neural_adaptive_optimizer::OptimizationNetwork` has no field named `_architecture`
+   --> scirs2-optimize/src/learned_optimizers/neural_adaptive_optimizer.rs:935:13
+    |
+935 |             _architecture,
+    |             ^^^^^^^^^^^^^ unknown field
+    |
+help: a field with a similar name exists
+    |
+935 -             _architecture,
+935 +             architecture,
+    |
+
+error[E0560]: struct `neural_adaptive_optimizer::NeuralLayer` has no field named `activation_size`
+   --> scirs2-optimize/src/learned_optimizers/neural_adaptive_optimizer.rs:996:13
+    |
+996 |             activation_size: output_size,
+    |             ^^^^^^^^^^^^^^^ unknown field
+    |
+help: a field with a similar name exists
+    |
+996 -             activation_size: output_size,
+996 +             activation: output_size,
+    |
+
+error[E0560]: struct `ProgressIndicator` has no field named `_name`
+    --> scirs2-optimize/src/learned_optimizers/neural_adaptive_optimizer.rs:1445:13
+     |
+1445 |             _name,
+     |             ^^^^^ unknown field
+     |
+help: a field with a similar name exists
+     |
+1445 -             _name,
+1445 +             name,
+     |
+
+error[E0609]: no field `_value` on type `&mut ProgressIndicator`
+    --> scirs2-optimize/src/learned_optimizers/neural_adaptive_optimizer.rs:1455:14
+     |
+1455 |         self._value = new_value;
+     |              ^^^^^^ unknown field
+     |
+help: a field with a similar name exists
+     |
+1455 -         self._value = new_value;
+1455 +         self.value = new_value;
+     |
+
+error[E0599]: no method named `unwrap_or` found for type `f64` in the current scope
+   --> scirs2-optimize/src/learned_optimizers/mod.rs:378:40
+    |
+378 |                 let mean = next.mean().unwrap_or(0.0);
+    |                                        ^^^^^^^^^ method not found in `f64`
+
+error[E0308]: mismatched types
+  --> scirs2-optimize/src/least_squares/robust.rs:88:15
+   |
+88 |     fn weight(&self_r: f64) -> f64 {
+   |               ^^^^^^^  --- expected due to this
+   |               |
+   |               expected `f64`, found `&_`
+   |
+   = note:   expected type `f64`
+           found reference `&_`
+help: to take parameter `self_r` by reference, move `&` to the type
+   |
+88 -     fn weight(&self_r: f64) -> f64 {
+88 +     fn weight(self_r: &f64) -> f64 {
+   |
+
+error[E0308]: mismatched types
+  --> scirs2-optimize/src/least_squares/robust.rs:92:26
+   |
+92 |     fn weight_derivative(&self_r: f64) -> f64 {
+   |                          ^^^^^^^  --- expected due to this
+   |                          |
+   |                          expected `f64`, found `&_`
+   |
+   = note:   expected type `f64`
+           found reference `&_`
+help: to take parameter `self_r` by reference, move `&` to the type
+   |
+92 -     fn weight_derivative(&self_r: f64) -> f64 {
+92 +     fn weight_derivative(self_r: &f64) -> f64 {
+   |
+
+error[E0560]: struct `HuberLoss` has no field named `_delta`
+   --> scirs2-optimize/src/least_squares/robust.rs:113:21
+    |
+113 |         HuberLoss { _delta }
+    |                     ^^^^^^ unknown field
+    |
+help: a field with a similar name exists
+    |
+113 -         HuberLoss { _delta }
+113 +         HuberLoss { delta }
+    |
+
+error[E0560]: struct `least_squares::sparse::SparseMatrix` has no field named `_nrows`
+  --> scirs2-optimize/src/least_squares/sparse.rs:33:13
+   |
+33 |             _nrows,
+   |             ^^^^^^ unknown field
+   |
+help: a field with a similar name exists
+   |
+33 -             _nrows,
+33 +             nrows,
+   |
+
+error[E0560]: struct `neural_integration::NeuralOptimizer<F>` has no field named `_method`
+   --> scirs2-optimize/src/neural_integration.rs:124:13
+    |
+124 |             _method,
+    |             ^^^^^^^ unknown field
+    |
+help: a field with a similar name exists
+    |
+124 -             _method,
+124 +             method,
+    |
+
+error[E0560]: struct `NeuralTrainer<F>` has no field named `_optimizer`
+   --> scirs2-optimize/src/neural_integration.rs:418:13
+    |
+418 |             _optimizer,
+    |             ^^^^^^^^^^ unknown field
+    |
+help: a field with a similar name exists
+    |
+418 -             _optimizer,
+418 +             optimizer,
+    |
+
+error[E0282]: type annotations needed for `ArrayBase<OwnedRepr<_>, Dim<[usize; 1]>>`
+  --> scirs2-optimize/src/neuromorphic/liquid_state_machines.rs:65:13
+   |
+65 |         let mut new_state = Array1::zeros(self.reservoir_size);
+   |             ^^^^^^^^^^^^^
+...
+83 |             new_state[i] = new_state[i].tanh();
+   |                            ------------ type must be known at this point
+   |
+help: consider giving `new_state` an explicit type, where the type for type parameter `A` is specified
+   |
+65 |         let mut new_state: ArrayBase<OwnedRepr<A>, _> = Array1::zeros(self.reservoir_size);
+   |                          ++++++++++++++++++++++++++++
+
+error[E0560]: struct `Memristor` has no field named `_params`
+   --> scirs2-optimize/src/neuromorphic/memristive_optimization.rs:101:13
+    |
+101 |             _params,
+    |             ^^^^^^^ unknown field
+    |
+help: a field with a similar name exists
+    |
+101 -             _params,
+101 +             params,
+    |
+
+error[E0599]: no function or associated item named `simd_dot_product` found for type `f64` in the current scope
+   --> scirs2-optimize/src/neuromorphic/memristive_optimization.rs:397:28
+    |
+397 |                 sum = f64::simd_dot_product(&g_array.view(), input);
+    |                            ^^^^^^^^^^^^^^^^ function or associated item not found in `f64`
+    |
+help: there is an associated function `simd_dot` with a similar name
+    |
+397 -                 sum = f64::simd_dot_product(&g_array.view(), input);
+397 +                 sum = f64::simd_dot(&g_array.view(), input);
+    |
+
+error[E0609]: no field `_nit` on type `&mut MemristiveOptimizer`
+   --> scirs2-optimize/src/neuromorphic/memristive_optimization.rs:666:18
+    |
+666 |             self._nit += 1;
+    |                  ^^^^ unknown field
+    |
+help: a field with a similar name exists
+    |
+666 -             self._nit += 1;
+666 +             self.nit += 1;
+    |
+
+error[E0609]: no field `_nit` on type `&mut MemristiveOptimizer`
+   --> scirs2-optimize/src/neuromorphic/memristive_optimization.rs:678:23
+    |
+678 |             nit: self._nit,
+    |                       ^^^^ unknown field
+    |
+help: a field with a similar name exists
+    |
+678 -             nit: self._nit,
+678 +             nit: self.nit,
+    |
+
+error[E0063]: missing fields `constr`, `hess`, `jac` and 5 other fields in initializer of `OptimizeResults<f64>`
+   --> scirs2-optimize/src/neuromorphic/memristive_optimization.rs:674:12
+    |
+674 |         Ok(OptimizeResults::<f64> {
+    |            ^^^^^^^^^^^^^^^^^^^^^^ missing `constr`, `hess`, `jac` and 5 other fields
+
+error[E0631]: type mismatch in function arguments
+    --> scirs2-optimize/src/neuromorphic/memristive_optimization.rs:709:61
+     |
+709  |         let max_grad = gradient.mapv(|x| x.abs()).fold(0.0, f64::max);
+     |                                                   ----      ^^^^^^^^
+     |                                                   |         |
+     |                                                   |         expected due to this
+     |                                                   |         found signature defined here
+     |                                                   required by a bound introduced by this call
+     |
+     = note: expected function signature `fn(_, &_) -> _`
+                found function signature `fn(_, _) -> _`
+note: required by a bound in `ndarray::impl_methods::<impl ArrayBase<S, D>>::fold`
+    --> /Users/kitasan/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/ndarray-0.16.1/src/impl_methods.rs:2693:12
+     |
+2691 |     pub fn fold<'a, F, B>(&'a self, init: B, f: F) -> B
+     |            ---- required by a bound in this associated function
+2692 |     where
+2693 |         F: FnMut(B, &'a A) -> B,
+     |            ^^^^^^^^^^^^^^^^^^^^ required by this bound in `ndarray::impl_methods::<impl ArrayBase<S, D>>::fold`
+help: consider wrapping the function in a closure
+     |
+709  |         let max_grad = gradient.mapv(|x| x.abs()).fold(0.0, |arg0: f64, other: &f64| f64::max(arg0, *other));
+     |                                                             ++++++++++++++++++++++++         ++++++++++++++
+
+error[E0609]: no field `_state` on type `&mut NeuralODE`
+  --> scirs2-optimize/src/neuromorphic/neural_ode_optimization.rs:73:14
+   |
+73 |         self._state = initial_state.to_owned();
+   |              ^^^^^^ unknown field
+   |
+help: a field with a similar name exists
+   |
+73 -         self._state = initial_state.to_owned();
+73 +         self.state = initial_state.to_owned();
+   |
+
+error[E0560]: struct `Synapse` has no field named `_source`
+   --> scirs2-optimize/src/neuromorphic/spiking_networks.rs:140:13
+    |
+140 |             _source,
+    |             ^^^^^^^ unknown field
+    |
+help: a field with a similar name exists
+    |
+140 -             _source,
+140 +             source,
+    |
+
+error[E0560]: struct `SpikingNeuralNetwork` has no field named `_config`
+   --> scirs2-optimize/src/neuromorphic/spiking_networks.rs:236:13
+    |
+236 |             _config,
+    |             ^^^^^^^ unknown field
+    |
+help: a field with a similar name exists
+    |
+236 -             _config,
+236 +             config,
+    |
+
+error[E0560]: struct `AdvancedAdvancedSTDP` has no field named `_eta_ltp`
+   --> scirs2-optimize/src/neuromorphic/stdp_learning.rs:108:13
+    |
+108 |             _eta_ltp,
+    |             ^^^^^^^^ unknown field
+    |
+help: a field with a similar name exists
+    |
+108 -             _eta_ltp,
+108 +             eta_ltp,
+    |
+
+error[E0560]: struct `STDPLearningRule` has no field named `_learning_rate`
+   --> scirs2-optimize/src/neuromorphic/stdp_learning.rs:393:13
+    |
+393 |             _learning_rate,
+    |             ^^^^^^^^^^^^^^ unknown field
+    |
+help: a field with a similar name exists
+    |
+393 -             _learning_rate,
+393 +             learning_rate,
+    |
+
+error[E0609]: no field `_nit` on type `&mut AdvancedSTDPNetwork`
+   --> scirs2-optimize/src/neuromorphic/stdp_learning.rs:601:18
+    |
+601 |             self._nit = iteration + 1;
+    |                  ^^^^ unknown field
+    |
+help: a field with a similar name exists
+    |
+601 -             self._nit = iteration + 1;
+601 +             self.nit = iteration + 1;
+    |
+
+error[E0560]: struct `NeuromorphicNetwork` has no field named `_parameters`
+   --> scirs2-optimize/src/neuromorphic/mod.rs:202:13
+    |
+202 |             _parameters: Array1::zeros(num_parameters),
+    |             ^^^^^^^^^^^ unknown field
+    |
+help: a field with a similar name exists
+    |
+202 -             _parameters: Array1::zeros(num_parameters),
+202 +             parameters: Array1::zeros(num_parameters),
+    |
+
+error[E0061]: this method takes 2 arguments but 1 argument was supplied
+   --> scirs2-optimize/src/neuromorphic/mod.rs:286:37
+    |
+286 |                 && !self.neurons[i].is_refractory(self.current_time..self.config.refractory_period)
+    |                                     ^^^^^^^^^^^^^-------------------------------------------------- argument #2 of type `f64` is missing
+    |
+note: expected `f64`, found `Range<f64>`
+   --> scirs2-optimize/src/neuromorphic/mod.rs:286:51
+    |
+286 |                 && !self.neurons[i].is_refractory(self.current_time..self.config.refractory_period)
+    |                                                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    = note: expected type `f64`
+             found struct `std::ops::Range<f64>`
+note: method defined here
+   --> scirs2-optimize/src/neuromorphic/mod.rs:129:12
+    |
+129 |     pub fn is_refractory(&self, current_time: f64, refractory_period: f64) -> bool {
+    |            ^^^^^^^^^^^^^        -----------------  ----------------------
+help: remove the unnecessary `.` operator for a floating point literal
+    |
+286 -                 && !self.neurons[i].is_refractory(self.current_time..self.config.refractory_period)
+286 +                 && !self.neurons[i].is_refractory(self.current_time.self.config.refractory_period)
+    |
+help: provide the argument
+    |
+286 -                 && !self.neurons[i].is_refractory(self.current_time..self.config.refractory_period)
+286 +                 && !self.neurons[i].is_refractory(/* f64 */, /* f64 */)
+    |
+
+error[E0560]: struct `ParallelMultiStart<F>` has no field named `_objective`
+   --> scirs2-optimize/src/parallel/mod.rs:186:13
+    |
+186 |             _objective,
+    |             ^^^^^^^^^^ unknown field
+    |
+help: a field with a similar name exists
+    |
+186 -             _objective,
+186 +             objective,
+    |
+
+error[E0061]: this function takes 2 arguments but 1 argument was supplied
+   --> scirs2-optimize/src/quantum_inspired.rs:106:13
+    |
+106 |             Complex::new(rand::rng().gen_range(-1.0..1.0)..rand::rng().gen_range(-1.0..1.0))
+    |             ^^^^^^^^^^^^-------------------------------------------------------------------- argument #2 of type `f64` is missing
+    |
+note: expected `f64`, found `Range<{float}>`
+   --> scirs2-optimize/src/quantum_inspired.rs:106:26
+    |
+106 |             Complex::new(rand::rng().gen_range(-1.0..1.0)..rand::rng().gen_range(-1.0..1.0))
+    |                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    = note: expected type `f64`
+             found struct `std::ops::Range<{float}>`
+note: associated function defined here
+   --> scirs2-optimize/src/quantum_inspired.rs:27:12
+    |
+27  |     pub fn new(_real: f64, imag: f64) -> Self {
+    |            ^^^ ----------  ---------
+help: remove the unnecessary `.` operator for a floating point literal
+    |
+106 -             Complex::new(rand::rng().gen_range(-1.0..1.0)..rand::rng().gen_range(-1.0..1.0))
+106 +             Complex::new(rand::rng().gen_range(-1.0..1.0).rand::rng().gen_range(-1.0..1.0))
+    |
+help: provide the argument
+    |
+106 -             Complex::new(rand::rng().gen_range(-1.0..1.0)..rand::rng().gen_range(-1.0..1.0))
+106 +             Complex::new(/* f64 */, /* f64 */)
+    |
+
+error[E0271]: type mismatch resolving `<Range<usize> as ShapeBuilder>::Dim == Dim<[usize; 2]>`
+   --> scirs2-optimize/src/quantum_inspired.rs:120:50
+    |
+120 |         let basis_states = Array2::from_shape_fn((actual_states.._num_params), |_| {
+    |                            --------------------- ^^^^^^^^^^^^^^^^^^^^^^^^^^^^ expected `Dim<[usize; 2]>`, found `Range<usize>`
+    |                            |
+    |                            required by a bound introduced by this call
+    |
+    = note: expected struct `Dim<[usize; 2]>`
+               found struct `std::ops::Range<usize>`
+note: required by a bound in `ndarray::impl_constructors::<impl ArrayBase<S, D>>::from_shape_fn`
+   --> /Users/kitasan/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/ndarray-0.16.1/src/impl_constructors.rs:410:26
+    |
+408 |     pub fn from_shape_fn<Sh, F>(shape: Sh, f: F) -> Self
+    |            ------------- required by a bound in this associated function
+409 |     where
+410 |         Sh: ShapeBuilder<Dim = D>,
+    |                          ^^^^^^^ required by this bound in `ndarray::impl_constructors::<impl ArrayBase<S, D>>::from_shape_fn`
+
+error[E0277]: the trait bound `std::ops::Range<usize>: ShapeBuilder` is not satisfied
+   --> scirs2-optimize/src/quantum_inspired.rs:120:50
+    |
+120 |         let basis_states = Array2::from_shape_fn((actual_states.._num_params), |_| {
+    |                            --------------------- ^^^^^^^^^^^^^^^^^^^^^^^^^^^^ the trait `ndarray::Dimension` is not implemented for `std::ops::Range<usize>`
+    |                            |
+    |                            required by a bound introduced by this call
+    |
+    = help: the following other types implement trait `ndarray::Dimension`:
+              Dim<IxDynImpl>
+              Dim<[usize; 0]>
+              Dim<[usize; 1]>
+              Dim<[usize; 2]>
+              Dim<[usize; 3]>
+              Dim<[usize; 4]>
+              Dim<[usize; 5]>
+              Dim<[usize; 6]>
+    = note: required for `std::ops::Range<usize>` to implement `IntoDimension`
+    = note: required for `std::ops::Range<usize>` to implement `ShapeBuilder`
+note: required by a bound in `ndarray::impl_constructors::<impl ArrayBase<S, D>>::from_shape_fn`
+   --> /Users/kitasan/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/ndarray-0.16.1/src/impl_constructors.rs:410:13
+    |
+408 |     pub fn from_shape_fn<Sh, F>(shape: Sh, f: F) -> Self
+    |            ------------- required by a bound in this associated function
+409 |     where
+410 |         Sh: ShapeBuilder<Dim = D>,
+    |             ^^^^^^^^^^^^^^^^^^^^^ required by this bound in `ndarray::impl_constructors::<impl ArrayBase<S, D>>::from_shape_fn`
+
+error[E0061]: this function takes 2 arguments but 1 argument was supplied
+   --> scirs2-optimize/src/quantum_inspired.rs:286:27
+    |
+286 |             *amp = *amp + Complex::new(noise_real..noise_imag);
+    |                           ^^^^^^^^^^^^------------------------ argument #2 of type `f64` is missing
+    |
+note: expected `f64`, found `Range<f64>`
+   --> scirs2-optimize/src/quantum_inspired.rs:286:40
+    |
+286 |             *amp = *amp + Complex::new(noise_real..noise_imag);
+    |                                        ^^^^^^^^^^^^^^^^^^^^^^
+    = note: expected type `f64`
+             found struct `std::ops::Range<f64>`
+note: associated function defined here
+   --> scirs2-optimize/src/quantum_inspired.rs:27:12
+    |
+27  |     pub fn new(_real: f64, imag: f64) -> Self {
+    |            ^^^ ----------  ---------
+help: remove the unnecessary `.` operator for a floating point literal
+    |
+286 -             *amp = *amp + Complex::new(noise_real..noise_imag);
+286 +             *amp = *amp + Complex::new(noise_real.noise_imag);
+    |
+help: provide the argument
+    |
+286 -             *amp = *amp + Complex::new(noise_real..noise_imag);
+286 +             *amp = *amp + Complex::new(/* f64 */, /* f64 */);
+    |
+
+error[E0277]: the trait bound `[std::ops::Range<usize>; 1]: NdIndex<Dim<[usize; 2]>>` is not satisfied
+   --> scirs2-optimize/src/quantum_inspired.rs:336:35
+    |
+336 |                 self.basis_states[[i..j]] += perturbation;
+    |                                   ^^^^^^ the trait `NdIndex<Dim<[usize; 2]>>` is not implemented for `[std::ops::Range<usize>; 1]`
+    |
+    = help: the following other types implement trait `NdIndex<E>`:
+              `&[usize]` implements `NdIndex<Dim<IxDynImpl>>`
+              `[usize; 0]` implements `NdIndex<Dim<[usize; 0]>>`
+              `[usize; 1]` implements `NdIndex<Dim<[usize; 1]>>`
+              `[usize; 2]` implements `NdIndex<Dim<[usize; 2]>>`
+              `[usize; 3]` implements `NdIndex<Dim<[usize; 3]>>`
+              `[usize; 4]` implements `NdIndex<Dim<[usize; 4]>>`
+              `[usize; 5]` implements `NdIndex<Dim<[usize; 5]>>`
+              `[usize; 6]` implements `NdIndex<Dim<[usize; 6]>>`
+              `[usize; N]` implements `NdIndex<Dim<IxDynImpl>>`
+    = note: required for `ArrayBase<OwnedRepr<f64>, Dim<[usize; 2]>>` to implement `std::ops::Index<[std::ops::Range<usize>; 1]>`
+
+error[E0277]: the trait bound `[std::ops::Range<usize>; 1]: NdIndex<Dim<[usize; 2]>>` is not satisfied
+   --> scirs2-optimize/src/quantum_inspired.rs:366:35
+    |
+366 |                 self.basis_states[[source_state..j]] += tunnel_distance;
+    |                                   ^^^^^^^^^^^^^^^^^ the trait `NdIndex<Dim<[usize; 2]>>` is not implemented for `[std::ops::Range<usize>; 1]`
+    |
+    = help: the following other types implement trait `NdIndex<E>`:
+              `&[usize]` implements `NdIndex<Dim<IxDynImpl>>`
+              `[usize; 0]` implements `NdIndex<Dim<[usize; 0]>>`
+              `[usize; 1]` implements `NdIndex<Dim<[usize; 1]>>`
+              `[usize; 2]` implements `NdIndex<Dim<[usize; 2]>>`
+              `[usize; 3]` implements `NdIndex<Dim<[usize; 3]>>`
+              `[usize; 4]` implements `NdIndex<Dim<[usize; 4]>>`
+              `[usize; 5]` implements `NdIndex<Dim<[usize; 5]>>`
+              `[usize; 6]` implements `NdIndex<Dim<[usize; 6]>>`
+              `[usize; N]` implements `NdIndex<Dim<IxDynImpl>>`
+    = note: required for `ArrayBase<OwnedRepr<f64>, Dim<[usize; 2]>>` to implement `std::ops::Index<[std::ops::Range<usize>; 1]>`
+
+error[E0308]: mismatched types
+   --> scirs2-optimize/src/quantum_inspired.rs:547:69
+    |
+547 |                 self.compute_finite_difference_gradient(&objective, &candidate_params)?;
+    |                      ----------------------------------             ^^^^^^^^^^^^^^^^^ expected `&ArrayBase<ViewRepr<&f64>, ...>`, found `&ArrayBase<OwnedRepr<f64>, ...>`
+    |                      |
+    |                      arguments to this method are incorrect
+    |
+    = note: expected reference `&ArrayBase<ViewRepr<&f64>, _>`
+               found reference `&ArrayBase<OwnedRepr<f64>, _>`
+note: method defined here
+   --> scirs2-optimize/src/quantum_inspired.rs:618:8
+    |
+618 |     fn compute_finite_difference_gradient<F>(
+    |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+...
+621 |         params: &ArrayView1<f64>,
+    |         ------------------------
+
+error[E0609]: no field `num_qubits` on type `&mut quantum_inspired::QuantumInspiredOptimizer`
+   --> scirs2-optimize/src/quantum_inspired.rs:606:41
+    |
+606 |             nfev: self.iteration * self.num_qubits, // Iteration count times qubits
+    |                                         ^^^^^^^^^^ unknown field
+    |
+help: one of the expressions' fields has a field of the same name
+    |
+606 |             nfev: self.iteration * self.quantum_state.num_qubits, // Iteration count times qubits
+    |                                         ++++++++++++++
+
+error[E0308]: mismatched types
+   --> scirs2-optimize/src/quantum_inspired.rs:768:77
+    |
+768 |                     particle.compute_finite_difference_gradient(&objective, &candidate)?;
+    |                              ----------------------------------             ^^^^^^^^^^ expected `&ArrayBase<ViewRepr<&f64>, ...>`, found `&ArrayBase<OwnedRepr<f64>, ...>`
+    |                              |
+    |                              arguments to this method are incorrect
+    |
+    = note: expected reference `&ArrayBase<ViewRepr<&f64>, _>`
+               found reference `&ArrayBase<OwnedRepr<f64>, _>`
+note: method defined here
+   --> scirs2-optimize/src/quantum_inspired.rs:618:8
+    |
+618 |     fn compute_finite_difference_gradient<F>(
+    |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+...
+621 |         params: &ArrayView1<f64>,
+    |         ------------------------
+
+error[E0277]: the trait bound `[std::ops::Range<usize>; 1]: NdIndex<Dim<[usize; 2]>>` is not satisfied
+   --> scirs2-optimize/src/quantum_inspired.rs:777:65
+    |
+777 | ...                   particle.quantum_state.basis_states[[state_idx..i]] = (1.0
+    |                                                           ^^^^^^^^^^^^^^ the trait `NdIndex<Dim<[usize; 2]>>` is not implemented for `[std::ops::Range<usize>; 1]`
+    |
+    = help: the following other types implement trait `NdIndex<E>`:
+              `&[usize]` implements `NdIndex<Dim<IxDynImpl>>`
+              `[usize; 0]` implements `NdIndex<Dim<[usize; 0]>>`
+              `[usize; 1]` implements `NdIndex<Dim<[usize; 1]>>`
+              `[usize; 2]` implements `NdIndex<Dim<[usize; 2]>>`
+              `[usize; 3]` implements `NdIndex<Dim<[usize; 3]>>`
+              `[usize; 4]` implements `NdIndex<Dim<[usize; 4]>>`
+              `[usize; 5]` implements `NdIndex<Dim<[usize; 5]>>`
+              `[usize; 6]` implements `NdIndex<Dim<[usize; 6]>>`
+              `[usize; N]` implements `NdIndex<Dim<IxDynImpl>>`
+    = note: required for `ArrayBase<OwnedRepr<f64>, Dim<[usize; 2]>>` to implement `std::ops::Index<[std::ops::Range<usize>; 1]>`
+
+error[E0283]: type annotations needed for `ArrayBase<OwnedRepr<_>, Dim<[usize; 1]>>`
+   --> scirs2-optimize/src/reinforcement_learning/actor_critic.rs:205:13
+    |
+205 |         let mut hidden_gradient = Array1::zeros(self.hidden_size);
+    |             ^^^^^^^^^^^^^^^^^^^   ------------------------------- type must be known at this point
+    |
+    = note: cannot satisfy `_: Clone`
+note: required by a bound in `ndarray::impl_constructors::<impl ArrayBase<S, D>>::zeros`
+   --> /Users/kitasan/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/ndarray-0.16.1/src/impl_constructors.rs:339:12
+    |
+337 |     pub fn zeros<Sh>(shape: Sh) -> Self
+    |            ----- required by a bound in this associated function
+338 |     where
+339 |         A: Clone + Zero,
+    |            ^^^^^ required by this bound in `ndarray::impl_constructors::<impl ArrayBase<S, D>>::zeros`
+help: consider giving `hidden_gradient` an explicit type, where the type for type parameter `A` is specified
+    |
+205 |         let mut hidden_gradient: ArrayBase<OwnedRepr<A>, _> = Array1::zeros(self.hidden_size);
+    |                                ++++++++++++++++++++++++++++
+
+error[E0283]: type annotations needed for `ArrayBase<OwnedRepr<_>, Dim<[usize; 1]>>`
+   --> scirs2-optimize/src/reinforcement_learning/actor_critic.rs:205:13
+    |
+205 |         let mut hidden_gradient = Array1::zeros(self.hidden_size);
+    |             ^^^^^^^^^^^^^^^^^^^
+...
+208 |                 hidden_gradient[j] += output_raw_gradient[i] * self.output_weights[[i, j]];
+    |                                    -- type must be known at this point
+    |
+    = note: multiple `impl`s satisfying `_: AddAssign<f64>` found in the following crates: `core`, `ndarray`, `num_complex`, `zerocopy`:
+            - impl AddAssign for f64;
+            - impl<A, S, D> AddAssign<A> for ArrayBase<S, D>
+              where <S as RawData>::Elem == A, A: ndarray::ScalarOperand, A: AddAssign, S: DataMut, D: ndarray::Dimension;
+            - impl<O> AddAssign<f64> for zerocopy::byteorder::F64<O>
+              where O: zerocopy::byteorder::ByteOrder;
+            - impl<T> AddAssign<T> for num_complex::Complex<T>
+              where T: Clone, T: NumAssign;
+help: consider giving `hidden_gradient` an explicit type, where the type for type parameter `A` is specified
+    |
+205 |         let mut hidden_gradient: ArrayBase<OwnedRepr<A>, _> = Array1::zeros(self.hidden_size);
+    |                                ++++++++++++++++++++++++++++
+
+error[E0283]: type annotations needed
+   --> scirs2-optimize/src/reinforcement_learning/actor_critic.rs:225:45
+    |
+225 |                 self.hidden_weights[[i, j]] -= learning_rate * hidden_gradient[i] * input[j];
+    |                                             ^^ cannot infer type
+    |
+    = note: multiple `impl`s satisfying `f64: SubAssign<_>` found in the following crates: `core`, `zerocopy`:
+            - impl SubAssign for f64;
+            - impl SubAssign<&f64> for f64;
+            - impl<O> SubAssign<zerocopy::byteorder::F64<O>> for f64
+              where O: zerocopy::byteorder::ByteOrder;
+
+error[E0283]: type annotations needed
+   --> scirs2-optimize/src/reinforcement_learning/actor_critic.rs:225:83
+    |
+225 |                 self.hidden_weights[[i, j]] -= learning_rate * hidden_gradient[i] * input[j];
+    |                                                                                   ^ cannot infer type
+    |
+note: multiple `impl`s satisfying `_: std::ops::Mul<f64>` found
+   --> scirs2-optimize/src/automatic_differentiation/dual_numbers.rs:232:1
+    |
+232 | impl Mul<f64> for Dual {
+    | ^^^^^^^^^^^^^^^^^^^^^^
+...
+476 | impl Mul<f64> for MultiDual {
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |
+   ::: scirs2-optimize/src/automatic_differentiation/forward_mode.rs:262:1
+    |
+262 | impl std::ops::Mul<f64> for SecondOrderDual {
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |
+   ::: scirs2-optimize/src/automatic_differentiation/reverse_mode.rs:471:1
+    |
+471 | impl std::ops::Mul<f64> for ReverseVariable {
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |
+   ::: scirs2-optimize/src/quantum_inspired.rs:63:1
+    |
+63  | impl std::ops::Mul<f64> for Complex {
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    = note: and more `impl`s found in the following crates: `core`, `scirs2_core`, `wide`:
+            - impl std::ops::Mul for f64;
+            - impl std::ops::Mul<f64> for Angle64;
+            - impl std::ops::Mul<f64> for wide::f64x2_::f64x2;
+            - impl std::ops::Mul<f64> for wide::f64x4_::f64x4;
+
+error[E0283]: type annotations needed
+   --> scirs2-optimize/src/reinforcement_learning/actor_critic.rs:227:33
+    |
+227 |             self.hidden_bias[i] -= learning_rate * hidden_gradient[i];
+    |                                 ^^ cannot infer type
+    |
+    = note: multiple `impl`s satisfying `f64: SubAssign<_>` found in the following crates: `core`, `zerocopy`:
+            - impl SubAssign for f64;
+            - impl SubAssign<&f64> for f64;
+            - impl<O> SubAssign<zerocopy::byteorder::F64<O>> for f64
+              where O: zerocopy::byteorder::ByteOrder;
+
+error[E0308]: mismatched types
+   --> scirs2-optimize/src/reinforcement_learning/actor_critic.rs:450:13
+    |
+450 |         let (_, policy_output) = self.actor.forward(&state_features.view());
+    |             ^^^^^^^^^^^^^^^^^^   ------------------------------------------ this expression has type `(ArrayBase<OwnedRepr<f64>, Dim<[usize; 1]>>, ArrayBase<..., ...>, ...)`
+    |             |
+    |             expected a tuple with 3 elements, found one with 2 elements
+    |
+    = note: expected tuple `(ArrayBase<OwnedRepr<f64>, Dim<[usize; 1]>>, ArrayBase<OwnedRepr<f64>, Dim<[usize; 1]>>, ArrayBase<OwnedRepr<f64>, Dim<[usize; 1]>>)`
+               found tuple `(_, _)`
+    = note: the full name for the type has been written to '/Users/kitasan/work/scirs/target/debug/deps/scirs2_optimize-0092e3948c019e50.long-type-10568736200862264039.txt'
+    = note: consider using `--verbose` to print the full type name to the console
+
+error[E0308]: mismatched types
+   --> scirs2-optimize/src/reinforcement_learning/actor_critic.rs:544:17
+    |
+544 |             let (_, next_value) = self.critic.forward(&next_state_features.view());
+    |                 ^^^^^^^^^^^^^^^   ------------------------------------------------ this expression has type `(ArrayBase<OwnedRepr<f64>, Dim<[usize; 1]>>, ArrayBase<OwnedRepr<f64>, Dim<[usize; 1]>>, f64)`
+    |                 |
+    |                 expected a tuple with 3 elements, found one with 2 elements
+    |
+    = note: expected tuple `(ArrayBase<OwnedRepr<f64>, Dim<[usize; 1]>>, ArrayBase<OwnedRepr<f64>, Dim<[usize; 1]>>, f64)`
+               found tuple `(_, _)`
+
+error[E0560]: struct `bandit_optimization::BanditOptimizer` has no field named `_num_arms`
+  --> scirs2-optimize/src/reinforcement_learning/bandit_optimization.rs:27:13
+   |
+27 |             _num_arms,
+   |             ^^^^^^^^^ unknown field
+   |
+help: a field with a similar name exists
+   |
+27 -             _num_arms,
+27 +             num_arms,
+   |
+
+error[E0308]: mismatched types
+  --> scirs2-optimize/src/reinforcement_learning/policy_gradient.rs:69:45
+   |
+69 |                     meta_weights[[layer..i, j]] =
+   |                                             ^ expected `Range<usize>`, found `usize`
+   |
+   = note: expected struct `std::ops::Range<usize>`
+                found type `usize`
+
+error[E0308]: mismatched types
+   --> scirs2-optimize/src/reinforcement_learning/policy_gradient.rs:192:52
+    |
+192 |                 .insert(problem_class.to_string()..embedding.clone());
+    |                                                    ^^^^^^^^^^-----^^
+    |                                                    |         |
+    |                                                    |         help: try using a conversion method: `to_string`
+    |                                                    expected `String`, found `ArrayBase<OwnedRepr<{float}>, ...>`
+    |
+    = note: expected struct `std::string::String`
+               found struct `ArrayBase<OwnedRepr<{float}>, Dim<[usize; 1]>>`
+
+error[E0061]: this method takes 2 arguments but 1 argument was supplied
+   --> scirs2-optimize/src/reinforcement_learning/policy_gradient.rs:192:18
+    |
+192 |                 .insert(problem_class.to_string()..embedding.clone());
+    |                  ^^^^^^---------------------------------------------- argument #2 of type `ArrayBase<OwnedRepr<f64>, Dim<[usize; 1]>>` is missing
+    |
+note: expected `String`, found `Range<String>`
+   --> scirs2-optimize/src/reinforcement_learning/policy_gradient.rs:192:25
+    |
+192 |                 .insert(problem_class.to_string()..embedding.clone());
+    |                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    = note: expected struct `std::string::String`
+               found struct `std::ops::Range<std::string::String>`
+note: method defined here
+   --> /rustc/6b00bc3880198600130e1cf62b8f8a93494488cc/library/std/src/collections/hash/map.rs:1203:12
+help: provide the argument
+    |
+192 -                 .insert(problem_class.to_string()..embedding.clone());
+192 +                 .insert(/* std::string::String */, /* ArrayBase<OwnedRepr<f64>, Dim<[usize; 1]>> */);
+    |
+
+error[E0560]: struct `MetaExperienceBuffer` has no field named `_max_size`
+   --> scirs2-optimize/src/reinforcement_learning/policy_gradient.rs:401:13
+    |
+401 |             _max_size,
+    |             ^^^^^^^^^ unknown field
+    |
+help: a field with a similar name exists
+    |
+401 -             _max_size,
+401 +             max_size,
+    |
+
+error[E0599]: no method named `extract_meta_state_features` found for mutable reference `&mut AdvancedAdvancedPolicyGradientOptimizer` in the current scope
+   --> scirs2-optimize/src/reinforcement_learning/policy_gradient.rs:769:51
+    |
+769 |         let (state_features, meta_context) = self.extract_meta_state_features(state, problem_class);
+    |                                                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^ method not found in `&mut AdvancedAdvancedPolicyGradientOptimizer`
+
+error[E0599]: no method named `decode_meta_action` found for mutable reference `&mut AdvancedAdvancedPolicyGradientOptimizer` in the current scope
+   --> scirs2-optimize/src/reinforcement_learning/policy_gradient.rs:773:14
+    |
+773 |         self.decode_meta_action(&policy_output.view(), &meta_output.view())
+    |              ^^^^^^^^^^^^^^^^^^
+    |
+help: there is a method `select_action` with a similar name, but with different arguments
+   --> scirs2-optimize/src/reinforcement_learning/mod.rs:159:5
+    |
+159 |     fn select_action(&mut self, state: &OptimizationState) -> OptimizationAction;
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+error[E0308]: mismatched types
+   --> scirs2-optimize/src/reinforcement_learning/policy_gradient.rs:776:15
+    |
+776 |     fn update(&mut self_experience: &Experience) -> Result<(), OptimizeError> {
+    |               ^^^^^^^^^^^^^^^^^^^^  ----------- expected due to this
+    |               |
+    |               types differ in mutability
+    |
+    = note:      expected reference `&reinforcement_learning::Experience`
+            found mutable reference `&mut _`
+note: to declare a mutable parameter use: `mut self_experience`
+   --> scirs2-optimize/src/reinforcement_learning/policy_gradient.rs:776:15
+    |
+776 |     fn update(&mut self_experience: &Experience) -> Result<(), OptimizeError> {
+    |               ^^^^^^^^^^^^^^^^^^^^
+help: to take parameter `self_experience` by reference, move `&mut` to the type
+    |
+776 -     fn update(&mut self_experience: &Experience) -> Result<(), OptimizeError> {
+776 +     fn update(self_experience: &mut &Experience) -> Result<(), OptimizeError> {
+    |
+
+error[E0599]: no method named `classify_problem` found for mutable reference `&mut AdvancedAdvancedPolicyGradientOptimizer` in the current scope
+   --> scirs2-optimize/src/reinforcement_learning/policy_gradient.rs:789:34
+    |
+789 |         let problem_class = self.classify_problem(objective, initial_params);
+    |                                  ^^^^^^^^^^^^^^^^ method not found in `&mut AdvancedAdvancedPolicyGradientOptimizer`
+
+error[E0599]: no method named `compute_meta_gradients` found for mutable reference `&mut AdvancedAdvancedPolicyGradientOptimizer` in the current scope
+   --> scirs2-optimize/src/reinforcement_learning/policy_gradient.rs:956:43
+    |
+956 |                 let meta_gradients = self.compute_meta_gradients(&meta_batch);
+    |                                           ^^^^^^^^^^^^^^^^^^^^^^ method not found in `&mut AdvancedAdvancedPolicyGradientOptimizer`
+
+error[E0599]: no method named `update_meta_stats` found for mutable reference `&mut AdvancedAdvancedPolicyGradientOptimizer` in the current scope
+   --> scirs2-optimize/src/reinforcement_learning/policy_gradient.rs:973:26
+    |
+973 |                     self.update_meta_stats(
+    |                     -----^^^^^^^^^^^^^^^^^ method not found in `&mut AdvancedAdvancedPolicyGradientOptimizer`
+
+error[E0599]: no function or associated item named `new` found for struct `AdvancedAdvancedPolicyGradientOptimizer` in the current scope
+    --> scirs2-optimize/src/reinforcement_learning/policy_gradient.rs:1022:66
+     |
+270  | pub struct AdvancedAdvancedPolicyGradientOptimizer {
+     | -------------------------------------------------- function or associated item `new` not found for this struct
+...
+1022 |     let mut optimizer = AdvancedAdvancedPolicyGradientOptimizer::new(
+     |                                                                  ^^^ function or associated item not found in `AdvancedAdvancedPolicyGradientOptimizer`
+     |
+     = help: items from traits can only be used if the trait is implemented and in scope
+     = note: the following traits define an item `new`, perhaps you need to implement one of them:
+             candidate #1: `DualNumber`
+             candidate #2: `DataOwned`
+             candidate #3: `UniformSampler`
+             candidate #4: `argmin::core::State`
+             candidate #5: `rand::distributions::uniform::UniformSampler`
+             candidate #6: `typenum::marker_traits::Bit`
+
+error[E0560]: struct `q_learning_optimization::QLearningOptimizer` has no field named `_config`
+  --> scirs2-optimize/src/reinforcement_learning/q_learning_optimization.rs:34:13
+   |
+34 |             _config,
+   |             ^^^^^^^ unknown field
+   |
+help: a field with a similar name exists
+   |
+34 -             _config,
+34 +             config,
+   |
+
+error[E0308]: mismatched types
+   --> scirs2-optimize/src/reinforcement_learning/q_learning_optimization.rs:107:54
+    |
+107 |             let mut best_q = self.get_q_value(state..&best_action);
+    |                                                      ^^^^^^^^^^^^ expected `&OptimizationState`, found `&OptimizationAction`
+    |
+    = note: expected reference `&reinforcement_learning::OptimizationState`
+               found reference `&reinforcement_learning::OptimizationAction`
+
+error[E0061]: this method takes 2 arguments but 1 argument was supplied
+   --> scirs2-optimize/src/reinforcement_learning/q_learning_optimization.rs:107:35
+    |
+107 |             let mut best_q = self.get_q_value(state..&best_action);
+    |                                   ^^^^^^^^^^^--------------------- argument #2 of type `&reinforcement_learning::OptimizationAction` is missing
+    |
+note: expected `&OptimizationState`, found `Range<&OptimizationState>`
+   --> scirs2-optimize/src/reinforcement_learning/q_learning_optimization.rs:107:47
+    |
+107 |             let mut best_q = self.get_q_value(state..&best_action);
+    |                                               ^^^^^^^^^^^^^^^^^^^
+    = note: expected reference `&reinforcement_learning::OptimizationState`
+                  found struct `std::ops::Range<&reinforcement_learning::OptimizationState>`
+note: method defined here
+   --> scirs2-optimize/src/reinforcement_learning/q_learning_optimization.rs:60:8
+    |
+60  |     fn get_q_value(&self, state: &OptimizationState, action: &OptimizationAction) -> f64 {
+    |        ^^^^^^^^^^^        -------------------------  ---------------------------
+help: provide the argument
+    |
+107 -             let mut best_q = self.get_q_value(state..&best_action);
+107 +             let mut best_q = self.get_q_value(/* &reinforcement_learning::OptimizationState */, /* &reinforcement_learning::OptimizationAction */);
+    |
+
+error[E0560]: struct `ExperienceBuffer` has no field named `_max_size`
+   --> scirs2-optimize/src/reinforcement_learning/mod.rs:259:13
+    |
+259 |             _max_size,
+    |             ^^^^^^^^^ unknown field
+    |
+help: a field with a similar name exists
+    |
+259 -             _max_size,
+259 +             max_size,
+    |
+
+error[E0282]: type annotations needed
+   --> scirs2-optimize/src/roots.rs:979:33
+    |
+979 |         let neg_jtf = jtf.mapv(|x| -x);
+    |                                 ^  -- type must be known at this point
+    |
+help: consider giving this closure parameter an explicit type
+    |
+979 |         let neg_jtf = jtf.mapv(|x: /* Type */| -x);
+    |                                  ++++++++++++
+
+error[E0599]: no method named `_iter` found for struct `ArrayBase` in the current scope
+   --> scirs2-optimize/src/roots_krylov.rs:186:28
+    |
+186 |     let r_norm_initial = r._iter().map(|&ri| ri.powi(2)).sum::<f64>().sqrt();
+    |                            ^^^^^
+    |
+help: there is a method `iter` with a similar name
+    |
+186 -     let r_norm_initial = r._iter().map(|&ri| ri.powi(2)).sum::<f64>().sqrt();
+186 +     let r_norm_initial = r.iter().map(|&ri| ri.powi(2)).sum::<f64>().sqrt();
+    |
+
+error[E0599]: no method named `_iter` found for struct `ArrayBase` in the current scope
+   --> scirs2-optimize/src/roots_krylov.rs:229:14
+    |
+228 |           let w_norm = w_regularized
+    |  ______________________-
+229 | |             ._iter()
+    | |_____________-^^^^^
+    |
+help: there is a method `iter` with a similar name
+    |
+229 -             ._iter()
+229 +             .iter()
+    |
+
+error[E0308]: mismatched types
+   --> scirs2-optimize/src/scalar.rs:152:9
+    |
+152 |       let (a_b, c) = if let Some(bracket) = options.bracket {
+    |  _________^^^^^^^^___-
+    | |         |
+    | |         expected a tuple with 3 elements, found one with 2 elements
+153 | |         bracket
+154 | |     } else {
+...   |
+158 | |         bracket_minimum(&_fun, x0, x1)?
+159 | |     };
+    | |_____- this expression has type `(f64, f64, f64)`
+    |
+    = note: expected tuple `(f64, f64, f64)`
+               found tuple `(_, _)`
+
+error[E0560]: struct `ScalarOptimizeResult` has no field named `x_fun`
+   --> scirs2-optimize/src/scalar.rs:185:17
+    |
+185 |                 x_fun: fx,
+    |                 ^^^^^ `ScalarOptimizeResult` does not have this field
+    |
+    = note: available fields are: `x`, `fun`
+
+error[E0689]: can't call method `abs` on ambiguous numeric type `{float}`
+   --> scirs2-optimize/src/scalar.rs:194:14
+    |
+194 |         if e.abs() > tol1 {
+    |              ^^^
+    |
+help: you must specify a type for this binding, like `f32`
+    |
+173 |     let mut e: f32 = 0.0;
+    |              +++++
+
+error[E0689]: can't call method `abs` on ambiguous numeric type `{float}`
+   --> scirs2-optimize/src/scalar.rs:340:14
+    |
+340 |         if e.abs() > tol1 {
+    |              ^^^
+    |
+help: you must specify a type for this binding, like `f32`
+    |
+318 |     let mut e: f32 = 0.0;
+    |              +++++
+
+error[E0308]: mismatched types
+   --> scirs2-optimize/src/scalar.rs:441:9
+    |
+441 |       let (a_b, c) = if let Some(bracket) = options.bracket {
+    |  _________^^^^^^^^___-
+    | |         |
+    | |         expected a tuple with 3 elements, found one with 2 elements
+442 | |         bracket
+443 | |     } else {
+444 | |         let x0 = 0.0;
+445 | |         let x1 = 1.0;
+446 | |         bracket_minimum(&fun, x0, x1)?
+447 | |     };
+    | |_____- this expression has type `(f64, f64, f64)`
+    |
+    = note: expected tuple `(f64, f64, f64)`
+               found tuple `(_, _)`
+
+error[E0308]: mismatched types
+   --> scirs2-optimize/src/sparse_numdiff/hessian.rs:194:9
+    |
+194 |     let (rows, cols) = sparsity.find();
+    |         ^^^^^^^^^^^^   --------------- this expression has type `(ArrayBase<OwnedRepr<usize>, Dim<[usize; 1]>>, ..., ...)`
+    |         |
+    |         expected a tuple with 3 elements, found one with 2 elements
+    |
+    = note: expected tuple `(ArrayBase<OwnedRepr<usize>, Dim<[usize; 1]>>, ArrayBase<OwnedRepr<usize>, Dim<[usize; 1]>>, ArrayBase<OwnedRepr<f64>, Dim<[usize; 1]>>)`
+               found tuple `(_, _)`
+    = note: the full name for the type has been written to '/Users/kitasan/work/scirs/target/debug/deps/scirs2_optimize-0092e3948c019e50.long-type-15199610293697243067.txt'
+    = note: consider using `--verbose` to print the full type name to the console
+
+error[E0308]: mismatched types
+   --> scirs2-optimize/src/sparse_numdiff/hessian.rs:341:9
+    |
+341 |     let (rows, cols) = sparsity.find();
+    |         ^^^^^^^^^^^^   --------------- this expression has type `(ArrayBase<OwnedRepr<usize>, Dim<[usize; 1]>>, ..., ...)`
+    |         |
+    |         expected a tuple with 3 elements, found one with 2 elements
+    |
+    = note: expected tuple `(ArrayBase<OwnedRepr<usize>, Dim<[usize; 1]>>, ArrayBase<OwnedRepr<usize>, Dim<[usize; 1]>>, ArrayBase<OwnedRepr<f64>, Dim<[usize; 1]>>)`
+               found tuple `(_, _)`
+    = note: the full name for the type has been written to '/Users/kitasan/work/scirs/target/debug/deps/scirs2_optimize-0092e3948c019e50.long-type-15199610293697243067.txt'
+    = note: consider using `--verbose` to print the full type name to the console
+
+error[E0308]: mismatched types
+   --> scirs2-optimize/src/sparse_numdiff/hessian.rs:515:9
+    |
+515 |     let (rows, cols) = sparsity.find();
+    |         ^^^^^^^^^^^^   --------------- this expression has type `(ArrayBase<OwnedRepr<usize>, Dim<[usize; 1]>>, ..., ...)`
+    |         |
+    |         expected a tuple with 3 elements, found one with 2 elements
+    |
+    = note: expected tuple `(ArrayBase<OwnedRepr<usize>, Dim<[usize; 1]>>, ArrayBase<OwnedRepr<usize>, Dim<[usize; 1]>>, ArrayBase<OwnedRepr<f64>, Dim<[usize; 1]>>)`
+               found tuple `(_, _)`
+    = note: the full name for the type has been written to '/Users/kitasan/work/scirs/target/debug/deps/scirs2_optimize-0092e3948c019e50.long-type-15199610293697243067.txt'
+    = note: consider using `--verbose` to print the full type name to the console
+
+error[E0308]: mismatched types
+   --> scirs2-optimize/src/sparse_numdiff/jacobian.rs:130:9
+    |
+130 |     let (rows, cols) = sparsity.find();
+    |         ^^^^^^^^^^^^   --------------- this expression has type `(ArrayBase<OwnedRepr<usize>, Dim<[usize; 1]>>, ..., ...)`
+    |         |
+    |         expected a tuple with 3 elements, found one with 2 elements
+    |
+    = note: expected tuple `(ArrayBase<OwnedRepr<usize>, Dim<[usize; 1]>>, ArrayBase<OwnedRepr<usize>, Dim<[usize; 1]>>, ArrayBase<OwnedRepr<f64>, Dim<[usize; 1]>>)`
+               found tuple `(_, _)`
+    = note: the full name for the type has been written to '/Users/kitasan/work/scirs/target/debug/deps/scirs2_optimize-0092e3948c019e50.long-type-15199610293697243067.txt'
+    = note: consider using `--verbose` to print the full type name to the console
+
+error[E0308]: mismatched types
+   --> scirs2-optimize/src/sparse_numdiff/jacobian.rs:243:9
+    |
+243 |     let (rows, cols) = sparsity.find();
+    |         ^^^^^^^^^^^^   --------------- this expression has type `(ArrayBase<OwnedRepr<usize>, Dim<[usize; 1]>>, ..., ...)`
+    |         |
+    |         expected a tuple with 3 elements, found one with 2 elements
+    |
+    = note: expected tuple `(ArrayBase<OwnedRepr<usize>, Dim<[usize; 1]>>, ArrayBase<OwnedRepr<usize>, Dim<[usize; 1]>>, ArrayBase<OwnedRepr<f64>, Dim<[usize; 1]>>)`
+               found tuple `(_, _)`
+    = note: the full name for the type has been written to '/Users/kitasan/work/scirs/target/debug/deps/scirs2_optimize-0092e3948c019e50.long-type-15199610293697243067.txt'
+    = note: consider using `--verbose` to print the full type name to the console
+
+error[E0308]: mismatched types
+   --> scirs2-optimize/src/sparse_numdiff/jacobian.rs:365:9
+    |
+365 |     let (rows, cols) = sparsity.find();
+    |         ^^^^^^^^^^^^   --------------- this expression has type `(ArrayBase<OwnedRepr<usize>, Dim<[usize; 1]>>, ..., ...)`
+    |         |
+    |         expected a tuple with 3 elements, found one with 2 elements
+    |
+    = note: expected tuple `(ArrayBase<OwnedRepr<usize>, Dim<[usize; 1]>>, ArrayBase<OwnedRepr<usize>, Dim<[usize; 1]>>, ArrayBase<OwnedRepr<f64>, Dim<[usize; 1]>>)`
+               found tuple `(_, _)`
+    = note: the full name for the type has been written to '/Users/kitasan/work/scirs/target/debug/deps/scirs2_optimize-0092e3948c019e50.long-type-15199610293697243067.txt'
+    = note: consider using `--verbose` to print the full type name to the console
+
+error[E0599]: no method named `unwrap_or` found for type `f64` in the current scope
+   --> scirs2-optimize/src/stochastic/adamw.rs:178:43
+    |
+178 |                 let v_mean = v_hat.mean().unwrap_or(0.0);
+    |                                           ^^^^^^^^^ method not found in `f64`
+
+error[E0599]: no method named `_min` found for type `usize` in the current scope
+   --> scirs2-optimize/src/stochastic/adamw.rs:265:62
+    |
+265 |         let cycle_end = (cycle_start + current_cycle_length)._min(total_max_iter);
+    |                                                              ^^^^
+    |
+help: there is a method `min` with a similar name
+    |
+265 -         let cycle_end = (cycle_start + current_cycle_length)._min(total_max_iter);
+265 +         let cycle_end = (cycle_start + current_cycle_length).min(total_max_iter);
+    |
+
+error[E0560]: struct `unconstrained::result::OptimizeResult<f64>` has no field named `_func_evals`
+   --> scirs2-optimize/src/stochastic/adamw.rs:311:9
+    |
+311 |         _func_evals: 0, // Would need to track across cycles
+    |         ^^^^^^^^^^^ unknown field
+    |
+help: a field with a similar name exists
+    |
+311 -         _func_evals: 0, // Would need to track across cycles
+311 +         func_evals: 0, // Would need to track across cycles
+    |
+
+error[E0599]: no method named `_min` found for type `{integer}` in the current scope
+   --> scirs2-optimize/src/stochastic/adamw.rs:343:54
+    |
+343 |     let batch_size = options.batch_size.unwrap_or(32._min(num_samples / 10));
+    |                                                      ^^^^ method not found in `{integer}`
+
+error[E0599]: no method named `_min` found for type `usize` in the current scope
+   --> scirs2-optimize/src/stochastic/adamw.rs:344:40
+    |
+344 |     let actual_batch_size = batch_size._min(num_samples);
+    |                                        ^^^^
+    |
+help: there is a method `min` with a similar name
+    |
+344 -     let actual_batch_size = batch_size._min(num_samples);
+344 +     let actual_batch_size = batch_size.min(num_samples);
+    |
+
+error[E0560]: struct `unconstrained::result::OptimizeResult<f64>` has no field named `_func_evals`
+   --> scirs2-optimize/src/stochastic/adamw.rs:404:9
+    |
+404 |         _func_evals: 0,
+    |         ^^^^^^^^^^^ unknown field
+    |
+help: a field with a similar name exists
+    |
+404 -         _func_evals: 0,
+404 +         func_evals: 0,
+    |
+
+error[E0599]: no method named `unwrap_or` found for type `f64` in the current scope
+   --> scirs2-optimize/src/stochastic/rmsprop.rs:197:60
+    |
+197 |                 let rms_norm = s.mapv(|s| s.sqrt()).mean().unwrap_or(0.0);
+    |                                                            ^^^^^^^^^ method not found in `f64`
+
+error[E0560]: struct `InMemoryDataProvider` has no field named `_data`
+   --> scirs2-optimize/src/stochastic/mod.rs:118:16
+    |
+118 |         Self { _data }
+    |                ^^^^^ unknown field
+    |
+help: a field with a similar name exists
+    |
+118 -         Self { _data }
+118 +         Self { data }
+    |
+
+error[E0560]: struct `BatchGradientWrapper<F, G>` has no field named `_func`
+   --> scirs2-optimize/src/stochastic/mod.rs:157:16
+    |
+157 |         Self { _func, grad }
+    |                ^^^^^ unknown field
+    |
+help: a field with a similar name exists
+    |
+157 -         Self { _func, grad }
+157 +         Self { func, grad }
+    |
+
+error[E0599]: no method named `hessian` found for type parameter `T` in the current scope
+   --> scirs2-optimize/src/streaming/advanced_adaptive_streaming.rs:647:51
+    |
+471 | impl<T: StreamingObjective> AdvancedAdaptiveStreamingOptimizer<T> {
+    |      - method `hessian` not found for this type parameter
+...
+647 |             if let Some(hessian) = self.objective.hessian(&self.parameters.view(), data_point) {
+    |                                                   ^^^^^^^ this is an associated function, not a method
+    |
+    = note: found the following associated functions; to be used as methods, functions must have a `self` parameter
+note: the candidate is defined in the trait `StreamingObjective`
+   --> scirs2-optimize/src/streaming/mod.rs:196:5
+    |
+196 | /     fn hessian(
+197 | |         &self_parameters: &ArrayView1<f64>,
+198 | |         _data_point: &StreamingDataPoint,
+199 | |     ) -> Option<Array2<f64>> {
+    | |____________________________^
+    = help: items from traits can only be used if the type parameter is bounded by the trait
+help: use associated function syntax instead
+    |
+647 -             if let Some(hessian) = self.objective.hessian(&self.parameters.view(), data_point) {
+647 +             if let Some(hessian) = T::hessian(&self.parameters.view(), data_point) {
+    |
+help: the following trait defines an item `hessian`, perhaps you need to restrict type parameter `T` with it:
+    |
+471 | impl<T: StreamingObjective + argmin::core::Hessian> AdvancedAdaptiveStreamingOptimizer<T> {
+    |                            +++++++++++++++++++++++
+
+error[E0599]: no method named `unwrap_or` found for type `usize` in the current scope
+   --> scirs2-optimize/src/streaming/incremental_newton.rs:162:52
+    |
+162 |             IncrementalNewtonMethod::LBFGS(m) => m.unwrap_or(10), // Default memory size
+    |                                                    ^^^^^^^^^ method not found in `usize`
+
+error[E0599]: no method named `hessian` found for type parameter `T` in the current scope
+   --> scirs2-optimize/src/streaming/incremental_newton.rs:248:40
+    |
+152 | impl<T: StreamingObjective> IncrementalNewton<T> {
+    |      - method `hessian` not found for this type parameter
+...
+248 |                         self.objective.hessian(&self.parameters.view(), &data_point)
+    |                                        ^^^^^^^ this is an associated function, not a method
+    |
+    = note: found the following associated functions; to be used as methods, functions must have a `self` parameter
+note: the candidate is defined in the trait `StreamingObjective`
+   --> scirs2-optimize/src/streaming/mod.rs:196:5
+    |
+196 | /     fn hessian(
+197 | |         &self_parameters: &ArrayView1<f64>,
+198 | |         _data_point: &StreamingDataPoint,
+199 | |     ) -> Option<Array2<f64>> {
+    | |____________________________^
+    = help: items from traits can only be used if the type parameter is bounded by the trait
+help: use associated function syntax instead
+    |
+248 -                         self.objective.hessian(&self.parameters.view(), &data_point)
+248 +                         T::hessian(&self.parameters.view(), &data_point)
+    |
+help: the following trait defines an item `hessian`, perhaps you need to restrict type parameter `T` with it:
+    |
+152 | impl<T: StreamingObjective + argmin::core::Hessian> IncrementalNewton<T> {
+    |                            +++++++++++++++++++++++
+
+error[E0560]: struct `real_time_estimation::RealTimeEstimator<T>` has no field named `_parameters`
+  --> scirs2-optimize/src/streaming/real_time_estimation.rs:76:13
+   |
+76 |             _parameters: initial_parameters,
+   |             ^^^^^^^^^^^ unknown field
+   |
+help: a field with a similar name exists
+   |
+76 -             _parameters: initial_parameters,
+76 +             parameters: initial_parameters,
+   |
+
+error[E0560]: struct `streaming_trust_region::StreamingTrustRegion<T>` has no field named `_parameters`
+  --> scirs2-optimize/src/streaming/streaming_trust_region.rs:56:13
+   |
+56 |             _parameters: initial_parameters,
+   |             ^^^^^^^^^^^ unknown field
+   |
+help: a field with a similar name exists
+   |
+56 -             _parameters: initial_parameters,
+56 +             parameters: initial_parameters,
+   |
+
+error[E0560]: struct `AdaptiveToleranceState` has no field named `_options`
+  --> scirs2-optimize/src/unconstrained/adaptive_convergence.rs:98:13
+   |
+98 |             _options,
+   |             ^^^^^^^^ unknown field
+   |
+help: a field with a similar name exists
+   |
+98 -             _options,
+98 +             options,
+   |
+
+error[E0425]: cannot find function `gradfun` in this scope
+   --> scirs2-optimize/src/unconstrained/advanced_line_search.rs:256:32
+    |
+256 |                 let grad_new = gradfun(&x_new.view());
+    |                                ^^^^^^^ help: a local variable with a similar name exists: `grad_fun`
+
+error[E0425]: cannot find function `gradfun` in this scope
+   --> scirs2-optimize/src/unconstrained/advanced_line_search.rs:353:32
+    |
+353 |                 let grad_new = gradfun(&x_new.view());
+    |                                ^^^^^^^ help: a local variable with a similar name exists: `grad_fun`
+
+error[E0425]: cannot find function `gradfun` in this scope
+   --> scirs2-optimize/src/unconstrained/advanced_line_search.rs:523:32
+    |
+523 |                 let grad_new = gradfun(&x_new.view());
+    |                                ^^^^^^^ help: a local variable with a similar name exists: `grad_fun`
+
+error[E0425]: cannot find function `gradfun` in this scope
+   --> scirs2-optimize/src/unconstrained/advanced_line_search.rs:648:24
+    |
+648 |         let grad_new = gradfun(&x_new.view());
+    |                        ^^^^^^^ help: a local variable with a similar name exists: `grad_fun`
+
+error[E0425]: cannot find function `gradfun` in this scope
+   --> scirs2-optimize/src/unconstrained/advanced_line_search.rs:749:28
+    |
+749 |             let grad_new = gradfun(&x_new.view());
+    |                            ^^^^^^^ help: a local variable with a similar name exists: `grad_fun`
+
+error[E0425]: cannot find function `fun` in this scope
+   --> scirs2-optimize/src/unconstrained/callback_diagnostics.rs:299:14
+    |
+293 | fn finite_diff_gradient<F>(_fun: &mut F, x: &ArrayView1<f64>, eps: f64) -> Array1<f64>
+    |                            ---- `_fun` defined here
+...
+299 |     let f0 = fun(x);
+    |              ^^^
+    |
+help: the leading underscore in `_fun` marks it as unused, consider renaming it to `fun`
+    |
+293 - fn finite_diff_gradient<F>(_fun: &mut F, x: &ArrayView1<f64>, eps: f64) -> Array1<f64>
+293 + fn finite_diff_gradient<F>(fun: &mut F, x: &ArrayView1<f64>, eps: f64) -> Array1<f64>
+    |
+
+error[E0425]: cannot find function `fun` in this scope
+   --> scirs2-optimize/src/unconstrained/callback_diagnostics.rs:305:22
+    |
+293 | fn finite_diff_gradient<F>(_fun: &mut F, x: &ArrayView1<f64>, eps: f64) -> Array1<f64>
+    |                            ---- `_fun` defined here
+...
+305 |         let f_plus = fun(&x_pert.view());
+    |                      ^^^
+    |
+help: the leading underscore in `_fun` marks it as unused, consider renaming it to `fun`
+    |
+293 - fn finite_diff_gradient<F>(_fun: &mut F, x: &ArrayView1<f64>, eps: f64) -> Array1<f64>
+293 + fn finite_diff_gradient<F>(fun: &mut F, x: &ArrayView1<f64>, eps: f64) -> Array1<f64>
+    |
+
+error[E0560]: struct `DiagnosticCollector` has no field named `_options`
+   --> scirs2-optimize/src/unconstrained/convergence_diagnostics.rs:353:13
+    |
+353 |             _options,
+    |             ^^^^^^^^ unknown field
+    |
+help: a field with a similar name exists
+    |
+353 -             _options,
+353 +             options,
+    |
+
+error[E0425]: cannot find function `gradfun` in this scope
+   --> scirs2-optimize/src/unconstrained/line_search.rs:101:24
+    |
+101 |         let grad_new = gradfun(&x_new.view());
+    |                        ^^^^^^^ help: a local variable with a similar name exists: `grad_fun`
+
+error[E0425]: cannot find function `gradfun` in this scope
+   --> scirs2-optimize/src/unconstrained/line_search.rs:156:28
+    |
+156 |             let grad_new = gradfun(&x_new.view());
+    |                            ^^^^^^^ help: a local variable with a similar name exists: `grad_fun`
+
+error[E0560]: struct `StreamingGradient` has no field named `_chunk_size`
+  --> scirs2-optimize/src/unconstrained/memory_efficient.rs:92:16
+   |
+92 |         Self { _chunk_size, eps }
+   |                ^^^^^^^^^^^ unknown field
+   |
+help: a field with a similar name exists
+   |
+92 -         Self { _chunk_size, eps }
+92 +         Self { chunk_size, eps }
+   |
+
+error[E0560]: struct `VariableBlock` has no field named `_size`
+   --> scirs2-optimize/src/unconstrained/memory_efficient_sparse.rs:255:13
+    |
+255 |             _size,
+    |             ^^^^^ unknown field
+    |
+help: a field with a similar name exists
+    |
+255 -             _size,
+255 +             size,
+    |
+
+error[E0425]: cannot find function `boundedfun` in this scope
+  --> scirs2-optimize/src/unconstrained/nelder_mead.rs:52:35
+   |
+52 |     simplex.push((x0_vec.clone(), boundedfun(&x0_vec.view())));
+   |                                   ^^^^^^^^^^ help: a local variable with a similar name exists: `bounded_fun`
+
+error[E0425]: cannot find function `boundedfun` in this scope
+  --> scirs2-optimize/src/unconstrained/nelder_mead.rs:68:35
+   |
+68 |         simplex.push((xi.clone(), boundedfun(&xi.view())));
+   |                                   ^^^^^^^^^^ help: a local variable with a similar name exists: `bounded_fun`
+
+error[E0425]: cannot find function `boundedfun` in this scope
+   --> scirs2-optimize/src/unconstrained/nelder_mead.rs:101:19
+    |
+101 |         let fxr = boundedfun(&xr.view());
+    |                   ^^^^^^^^^^ help: a local variable with a similar name exists: `bounded_fun`
+
+error[E0425]: cannot find function `boundedfun` in this scope
+   --> scirs2-optimize/src/unconstrained/nelder_mead.rs:113:23
+    |
+113 |             let fxe = boundedfun(&xe.view());
+    |                       ^^^^^^^^^^ help: a local variable with a similar name exists: `bounded_fun`
+
+error[E0425]: cannot find function `boundedfun` in this scope
+   --> scirs2-optimize/src/unconstrained/nelder_mead.rs:143:32
+    |
+143 |             let fxc_contract = boundedfun(&xc_contract.view());
+    |                                ^^^^^^^^^^ help: a local variable with a similar name exists: `bounded_fun`
+
+error[E0425]: cannot find function `boundedfun` in this scope
+   --> scirs2-optimize/src/unconstrained/nelder_mead.rs:161:36
+    |
+161 |                     simplex[i].1 = boundedfun(&simplex[i].0.view());
+    |                                    ^^^^^^^^^^ help: a local variable with a similar name exists: `bounded_fun`
+
+error[E0560]: struct `RobustConvergenceState` has no field named `_options`
+   --> scirs2-optimize/src/unconstrained/robust_convergence.rs:164:13
+    |
+164 |             _options,
+    |             ^^^^^^^^ unknown field
+    |
+help: a field with a similar name exists
+    |
+164 -             _options,
+164 +             options,
+    |
+
+error[E0425]: cannot find function `fun` in this scope
+   --> scirs2-optimize/src/unconstrained/simd_bfgs.rs:339:14
+    |
+332 | fn compute_gradient_finite_diff<F>(_fun: &mut F, x: &Array1<f64>, nfev: &mut usize) -> Array1<f64>
+    |                                    ---- `_fun` defined here
+...
+339 |     let f0 = fun(&x.view());
+    |              ^^^
+    |
+help: the leading underscore in `_fun` marks it as unused, consider renaming it to `fun`
+    |
+332 - fn compute_gradient_finite_diff<F>(_fun: &mut F, x: &Array1<f64>, nfev: &mut usize) -> Array1<f64>
+332 + fn compute_gradient_finite_diff<F>(fun: &mut F, x: &Array1<f64>, nfev: &mut usize) -> Array1<f64>
+    |
+
+error[E0425]: cannot find function `fun` in this scope
+   --> scirs2-optimize/src/unconstrained/simd_bfgs.rs:345:22
+    |
+332 | fn compute_gradient_finite_diff<F>(_fun: &mut F, x: &Array1<f64>, nfev: &mut usize) -> Array1<f64>
+    |                                    ---- `_fun` defined here
+...
+345 |         let f_plus = fun(&x_plus.view());
+    |                      ^^^
+    |
+help: the leading underscore in `_fun` marks it as unused, consider renaming it to `fun`
+    |
+332 - fn compute_gradient_finite_diff<F>(_fun: &mut F, x: &Array1<f64>, nfev: &mut usize) -> Array1<f64>
+332 + fn compute_gradient_finite_diff<F>(fun: &mut F, x: &Array1<f64>, nfev: &mut usize) -> Array1<f64>
+    |
+
+error[E0308]: mismatched types
+   --> scirs2-optimize/src/unconstrained/sparse_optimization.rs:427:65
+    |
+427 |             finite_difference_gradient_sparse(&mut fun.clone()..&x_pert.view(), &options)
+    |                                                                 ^^^^^^^^^^^^^^ types differ in mutability
+    |
+    = note: expected mutable reference `&mut F`
+                       found reference `&ArrayBase<ViewRepr<&f64>, Dim<[usize; 1]>>`
+
+error[E0061]: this function takes 3 arguments but 2 arguments were supplied
+   --> scirs2-optimize/src/unconstrained/sparse_optimization.rs:427:13
+    |
+427 |             finite_difference_gradient_sparse(&mut fun.clone()..&x_pert.view(), &options)
+    |             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^                                   -------- argument #2 of type `&ArrayBase<ViewRepr<&f64>, Dim<[usize; 1]>>` is missing
+    |
+note: expected `&mut _`, found `Range<&mut F>`
+   --> scirs2-optimize/src/unconstrained/sparse_optimization.rs:427:47
+    |
+427 |             finite_difference_gradient_sparse(&mut fun.clone()..&x_pert.view(), &options)
+    |                                               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    = note: expected mutable reference `&mut _`
+                          found struct `std::ops::Range<&mut F>`
+note: function defined here
+   --> scirs2-optimize/src/unconstrained/sparse_optimization.rs:321:4
+    |
+321 | fn finite_difference_gradient_sparse<F, S>(
+    |    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+322 |     fun: &mut F,
+    |     -----------
+323 |     x: &ArrayView1<f64>,
+    |     -------------------
+help: consider mutably borrowing here
+    |
+427 |             finite_difference_gradient_sparse(&mut (&mut fun.clone()..&x_pert.view()), &options)
+    |                                               ++++++                                +
+help: provide the argument
+    |
+427 -             finite_difference_gradient_sparse(&mut fun.clone()..&x_pert.view(), &options)
+427 +             finite_difference_gradient_sparse(/* fun */, /* &ArrayBase<ViewRepr<&f64>, Dim<[usize; 1]>> */, &options)
+    |
+
+error[E0425]: cannot find function `gradfun` in this scope
+   --> scirs2-optimize/src/unconstrained/strong_wolfe.rs:220:23
+    |
+220 |         let g_alpha = gradfun(&x_alpha.view());
+    |                       ^^^^^^^ help: a local variable with a similar name exists: `grad_fun`
+
+error[E0425]: cannot find function `gradfun` in this scope
+   --> scirs2-optimize/src/unconstrained/strong_wolfe.rs:316:27
+    |
+316 |             let g_alpha = gradfun(&x_alpha.view());
+    |                           ^^^^^^^ help: a local variable with a similar name exists: `grad_fun`
+
+error[E0425]: cannot find function `gradfun` in this scope
+   --> scirs2-optimize/src/unconstrained/strong_wolfe.rs:347:19
+    |
+347 |     let g_alpha = gradfun(&x_alpha.view());
+    |                   ^^^^^^^ help: a local variable with a similar name exists: `grad_fun`
+
+error[E0308]: mismatched types
+   --> scirs2-optimize/src/unconstrained/subspace_methods.rs:260:58
+    |
+260 |                 let step_size = find_step_size(&mut fun..&x, coord, direction, &mut nfev);
+    |                                                          ^^ types differ in mutability
+    |
+    = note: expected mutable reference `&mut F`
+                       found reference `&ArrayBase<OwnedRepr<f64>, Dim<[usize; 1]>>`
+
+error[E0061]: this function takes 5 arguments but 4 arguments were supplied
+   --> scirs2-optimize/src/unconstrained/subspace_methods.rs:260:33
+    |
+260 |                 let step_size = find_step_size(&mut fun..&x, coord, direction, &mut nfev);
+    |                                 ^^^^^^^^^^^^^^-------------------------------------------
+    |                                               ||             |                 |
+    |                                               ||             |                 expected `usize`, found `&mut {integer}`
+    |                                               ||             argument #2 of type `&ArrayBase<OwnedRepr<f64>, Dim<[usize; 1]>>` is missing
+    |                                               ||             expected `&mut _`, found `usize`
+    |                                               |unexpected argument #1 of type `std::ops::Range<&mut F>`
+    |                                               argument #5 of type `&mut usize` is missing
+    |
+note: function defined here
+   --> scirs2-optimize/src/unconstrained/subspace_methods.rs:706:4
+    |
+706 | fn find_step_size<F>(
+    |    ^^^^^^^^^^^^^^
+707 |     fun: &mut F,
+708 |     x: &Array1<f64>,
+    |     ---------------
+...
+711 |     nfev: &mut usize,
+    |     ----------------
+help: did you mean
+    |
+260 -                 let step_size = find_step_size(&mut fun..&x, coord, direction, &mut nfev);
+260 +                 let step_size = find_step_size(&mut nfev, /* &ArrayBase<OwnedRepr<f64>, Dim<[usize; 1]>> */, coord, direction, /* &mut usize */);
+    |
+
+error[E0369]: cannot multiply `(f64, f64)` by `&ArrayBase<OwnedRepr<f64>, Dim<[usize; 1]>>`
+   --> scirs2-optimize/src/unconstrained/subspace_methods.rs:462:36
+    |
+462 |         let x_new = &x - step_size * &search_direction;
+    |                          --------- ^ ----------------- &ArrayBase<OwnedRepr<f64>, Dim<[usize; 1]>>
+    |                          |
+    |                          (f64, f64)
+
+error[E0369]: cannot multiply `(f64, f64)` by `&ArrayBase<OwnedRepr<f64>, Dim<[usize; 1]>>`
+   --> scirs2-optimize/src/unconstrained/subspace_methods.rs:566:36
+    |
+566 |         let x_new = &x - step_size * &search_direction;
+    |                          --------- ^ ----------------- &ArrayBase<OwnedRepr<f64>, Dim<[usize; 1]>>
+    |                          |
+    |                          (f64, f64)
+
+error[E0425]: cannot find function `fun` in this scope
+   --> scirs2-optimize/src/unconstrained/subspace_methods.rs:845:14
+    |
+837 | fn compute_finite_diff_gradient<F>(_fun: &mut F, x: &Array1<f64>, nfev: &mut usize) -> Array1<f64>
+    |                                    ---- `_fun` defined here
+...
+845 |     let f0 = fun(&x.view());
+    |              ^^^
+    |
+help: the leading underscore in `_fun` marks it as unused, consider renaming it to `fun`
+    |
+837 - fn compute_finite_diff_gradient<F>(_fun: &mut F, x: &Array1<f64>, nfev: &mut usize) -> Array1<f64>
+837 + fn compute_finite_diff_gradient<F>(fun: &mut F, x: &Array1<f64>, nfev: &mut usize) -> Array1<f64>
+    |
+
+error[E0425]: cannot find function `fun` in this scope
+   --> scirs2-optimize/src/unconstrained/subspace_methods.rs:851:22
+    |
+837 | fn compute_finite_diff_gradient<F>(_fun: &mut F, x: &Array1<f64>, nfev: &mut usize) -> Array1<f64>
+    |                                    ---- `_fun` defined here
+...
+851 |         let f_plus = fun(&x_plus.view());
+    |                      ^^^
+    |
+help: the leading underscore in `_fun` marks it as unused, consider renaming it to `fun`
+    |
+837 - fn compute_finite_diff_gradient<F>(_fun: &mut F, x: &Array1<f64>, nfev: &mut usize) -> Array1<f64>
+837 + fn compute_finite_diff_gradient<F>(fun: &mut F, x: &Array1<f64>, nfev: &mut usize) -> Array1<f64>
+    |
+
+error[E0369]: cannot multiply `(f64, f64)` by `&ArrayBase<OwnedRepr<f64>, Dim<[usize; 1]>>`
+   --> scirs2-optimize/src/unconstrained/truncated_newton.rs:377:36
+    |
+377 |         let x_new = &x + step_size * &p;
+    |                          --------- ^ -- &ArrayBase<OwnedRepr<f64>, Dim<[usize; 1]>>
+    |                          |
+    |                          (f64, f64)
+
+error[E0425]: cannot find function `fun` in this scope
+   --> scirs2-optimize/src/unconstrained/truncated_newton.rs:425:14
+    |
+419 | fn finite_diff_gradient<F>(_fun: &mut F, x: &ArrayView1<f64>, eps: f64) -> Array1<f64>
+    |                            ---- `_fun` defined here
+...
+425 |     let f0 = fun(x);
+    |              ^^^
+    |
+help: the leading underscore in `_fun` marks it as unused, consider renaming it to `fun`
+    |
+419 - fn finite_diff_gradient<F>(_fun: &mut F, x: &ArrayView1<f64>, eps: f64) -> Array1<f64>
+419 + fn finite_diff_gradient<F>(fun: &mut F, x: &ArrayView1<f64>, eps: f64) -> Array1<f64>
+    |
+
+error[E0425]: cannot find function `fun` in this scope
+   --> scirs2-optimize/src/unconstrained/truncated_newton.rs:431:22
+    |
+419 | fn finite_diff_gradient<F>(_fun: &mut F, x: &ArrayView1<f64>, eps: f64) -> Array1<f64>
+    |                            ---- `_fun` defined here
+...
+431 |         let f_plus = fun(&x_plus.view());
+    |                      ^^^
+    |
+help: the leading underscore in `_fun` marks it as unused, consider renaming it to `fun`
+    |
+419 - fn finite_diff_gradient<F>(_fun: &mut F, x: &ArrayView1<f64>, eps: f64) -> Array1<f64>
+419 + fn finite_diff_gradient<F>(fun: &mut F, x: &ArrayView1<f64>, eps: f64) -> Array1<f64>
+    |
+
+error[E0609]: no field `config` on type `&mut UnifiedOptimizer<M>`
+   --> scirs2-optimize/src/unified_pipeline.rs:209:32
+    |
+209 |         while iteration < self.config.max_nit {
+    |                                ^^^^^^ unknown field
+    |
+help: a field with a similar name exists
+    |
+209 |         while iteration < self._config.max_nit {
+    |                                +
+
+error[E0609]: no field `config` on type `&mut UnifiedOptimizer<M>`
+   --> scirs2-optimize/src/unified_pipeline.rs:224:33
+    |
+224 |             if grad_norm < self.config.gradient_tolerance {
+    |                                 ^^^^^^ unknown field
+    |
+help: a field with a similar name exists
+    |
+224 |             if grad_norm < self._config.gradient_tolerance {
+    |                                 +
+
+error[E0609]: no field `config` on type `&mut UnifiedOptimizer<M>`
+   --> scirs2-optimize/src/unified_pipeline.rs:253:44
+    |
+253 |             let search_direction = if self.config.use_gpu {
+    |                                            ^^^^^^ unknown field
+    |
+help: a field with a similar name exists
+    |
+253 |             let search_direction = if self._config.use_gpu {
+    |                                            +
+
+error[E0609]: no field `config` on type `&mut UnifiedOptimizer<M>`
+   --> scirs2-optimize/src/unified_pipeline.rs:304:43
+    |
+304 |                 if abs_improvement < self.config.function_tolerance
+    |                                           ^^^^^^ unknown field
+    |
+help: a field with a similar name exists
+    |
+304 |                 if abs_improvement < self._config.function_tolerance
+    |                                           +
+
+error[E0609]: no field `config` on type `&mut UnifiedOptimizer<M>`
+   --> scirs2-optimize/src/unified_pipeline.rs:305:47
+    |
+305 |                     || rel_improvement < self.config.function_tolerance
+    |                                               ^^^^^^ unknown field
+    |
+help: a field with a similar name exists
+    |
+305 |                     || rel_improvement < self._config.function_tolerance
+    |                                               +
+
+error[E0609]: no field `config` on type `&mut UnifiedOptimizer<M>`
+   --> scirs2-optimize/src/unified_pipeline.rs:318:40
+    |
+318 |         let success = iteration < self.config.max_nit;
+    |                                        ^^^^^^ unknown field
+    |
+help: a field with a similar name exists
+    |
+318 |         let success = iteration < self._config.max_nit;
+    |                                        +
+
+error[E0609]: no field `config` on type `&UnifiedOptimizer<M>`
+   --> scirs2-optimize/src/unified_pipeline.rs:375:17
+    |
+375 |         if self.config.use_gpu {
+    |                 ^^^^^^ unknown field
+    |
+help: a field with a similar name exists
+    |
+375 |         if self._config.use_gpu {
+    |                 +
+
+error[E0599]: no method named `update_algorithm_parameter` found for mutable reference `&mut UnifiedOptimizer<M>` in the current scope
+   --> scirs2-optimize/src/unified_pipeline.rs:496:30
+    |
+496 |                         self.update_algorithm_parameter("step_size", f_val)?;
+    |                         -----^^^^^^^^^^^^^^^^^^^^^^^^^^--------------------
+    |                         |    |
+    |                         |    this is an associated function, not a method
+    |                         help: use associated function syntax instead: `UnifiedOptimizer::<M>::update_algorithm_parameter("step_size", f_val)`
+    |
+    = note: found the following associated functions; to be used as methods, functions must have a `self` parameter
+note: the candidate is defined in an impl for the type `UnifiedOptimizer<M>`
+   --> scirs2-optimize/src/unified_pipeline.rs:514:5
+    |
+514 |     fn update_algorithm_parameter(&mut self_name: &str, _value: f64) -> ScirsResult<()> {
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+error[E0599]: no method named `update_algorithm_parameter` found for mutable reference `&mut UnifiedOptimizer<M>` in the current scope
+   --> scirs2-optimize/src/unified_pipeline.rs:502:30
+    |
+502 |                         self.update_algorithm_parameter("tolerance", f_val)?;
+    |                         -----^^^^^^^^^^^^^^^^^^^^^^^^^^--------------------
+    |                         |    |
+    |                         |    this is an associated function, not a method
+    |                         help: use associated function syntax instead: `UnifiedOptimizer::<M>::update_algorithm_parameter("tolerance", f_val)`
+    |
+    = note: found the following associated functions; to be used as methods, functions must have a `self` parameter
+note: the candidate is defined in an impl for the type `UnifiedOptimizer<M>`
+   --> scirs2-optimize/src/unified_pipeline.rs:514:5
+    |
+514 |     fn update_algorithm_parameter(&mut self_name: &str, _value: f64) -> ScirsResult<()> {
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+error[E0308]: mismatched types
+   --> scirs2-optimize/src/unified_pipeline.rs:514:35
+    |
+514 |     fn update_algorithm_parameter(&mut self_name: &str, _value: f64) -> ScirsResult<()> {
+    |                                   ^^^^^^^^^^^^^^  ---- expected due to this
+    |                                   |
+    |                                   types differ in mutability
+    |
+    = note:      expected reference `&str`
+            found mutable reference `&mut _`
+note: to declare a mutable parameter use: `mut self_name`
+   --> scirs2-optimize/src/unified_pipeline.rs:514:35
+    |
+514 |     fn update_algorithm_parameter(&mut self_name: &str, _value: f64) -> ScirsResult<()> {
+    |                                   ^^^^^^^^^^^^^^
+help: to take parameter `self_name` by reference, move `&mut` to the type
+    |
+514 -     fn update_algorithm_parameter(&mut self_name: &str, _value: f64) -> ScirsResult<()> {
+514 +     fn update_algorithm_parameter(self_name: &mut &str, _value: f64) -> ScirsResult<()> {
+    |
+
+error[E0609]: no field `config` on type `&UnifiedOptimizer<M>`
+   --> scirs2-optimize/src/unified_pipeline.rs:528:44
+    |
+528 |         if let Some(ref output_dir) = self.config.output_directory {
+    |                                            ^^^^^^ unknown field
+    |
+help: a field with a similar name exists
+    |
+528 |         if let Some(ref output_dir) = self._config.output_directory {
+    |                                            +
+
+error[E0382]: use of moved value: `iteration_result`
+   --> scirs2-optimize/src/advanced_coordinator.rs:310:46
+    |
+283 |             let iteration_result = match self.config.strategy {
+    |                 ---------------- move occurs because `iteration_result` has type `OptimizeResults<f64>`, which does not implement the `Copy` trait
+...
+304 |                 best_result = Some(iteration_result);
+    |                                    ---------------- value moved here
+...
+310 |             self.update_performance_tracking(iteration_result.fun)?;
+    |                                              ^^^^^^^^^^^^^^^^^^^^ value used here after move
+    |
+note: these 3 reinitializations and 2 others might get skipped
+   --> scirs2-optimize/src/advanced_coordinator.rs:291:21
+    |
+291 |                     self.execute_meta_learning_quantum(&objective)?
+    |                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+...
+294 |                     self.execute_adaptive_selection(&objective)?
+    |                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+295 |                 }
+296 |                 AdvancedStrategy::FullAdvanced => self.execute_full_advanced(&objective)?,
+    |                                                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+help: consider cloning the value if the performance cost is acceptable
+    |
+304 |                 best_result = Some(iteration_result.clone());
+    |                                                    ++++++++
+
+error[E0596]: cannot borrow data in a `&` reference as mutable
+   --> scirs2-optimize/src/advanced_coordinator.rs:363:13
+    |
+363 | /             neuro_opt
+364 | |                 .network()
+    | |__________________________^ cannot borrow as mutable
+
+error[E0507]: cannot move out of a shared reference
+   --> scirs2-optimize/src/constrained/interior_point.rs:632:9
+    |
+632 |         &self_g: &Array1<f64>,
+    |         ^------
+    |          |
+    |          data moved here
+    |          move occurs because `self_g` has type `ArrayBase<OwnedRepr<f64>, Dim<[usize; 1]>>`, which does not implement the `Copy` trait
+    |
+help: consider removing the borrow
+    |
+632 -         &self_g: &Array1<f64>,
+632 +         self_g: &Array1<f64>,
+    |
+
+error[E0382]: use of moved value: `final_best`
+   --> scirs2-optimize/src/distributed.rs:485:39
+    |
+482 |             let final_best = self.find_global_best(&local_population, &local_fitness)?;
+    |                 ---------- move occurs because `final_best` has type `(ArrayBase<OwnedRepr<f64>, Dim<[usize; 1]>>, f64)`, which does not implement the `Copy` trait
+483 |             if final_best.1 < global_best_fitness {
+484 |                 global_best = final_best;
+    |                               ---------- value moved here
+485 |                 global_best_fitness = final_best.1;
+    |                                       ^^^^^^^^^^^^ value used here after move
+    |
+help: consider cloning the value if the performance cost is acceptable
+    |
+484 |                 global_best = final_best.clone();
+    |                                         ++++++++
+
+error[E0507]: cannot move out of a mutable reference
+   --> scirs2-optimize/src/distributed_gpu.rs:443:9
+    |
+443 |         &mut self_population: &mut Array2<f64>,
+    |         ^^^^^---------------
+    |              |
+    |              data moved here
+    |              move occurs because `self_population` has type `ArrayBase<OwnedRepr<f64>, Dim<[usize; 2]>>`, which does not implement the `Copy` trait
+    |
+help: consider removing the mutable borrow
+    |
+443 -         &mut self_population: &mut Array2<f64>,
+443 +         self_population: &mut Array2<f64>,
+    |
+
+error[E0507]: cannot move out of a mutable reference
+   --> scirs2-optimize/src/distributed_gpu.rs:453:9
+    |
+453 |         &mut self_population: &mut Array2<f64>,
+    |         ^^^^^---------------
+    |              |
+    |              data moved here
+    |              move occurs because `self_population` has type `ArrayBase<OwnedRepr<f64>, Dim<[usize; 2]>>`, which does not implement the `Copy` trait
+    |
+help: consider removing the mutable borrow
+    |
+453 -         &mut self_population: &mut Array2<f64>,
+453 +         self_population: &mut Array2<f64>,
+    |
+
+error[E0507]: cannot move out of a mutable reference
+   --> scirs2-optimize/src/distributed_gpu.rs:463:9
+    |
+463 |         &mut self_population: &mut Array2<f64>,
+    |         ^^^^^---------------
+    |              |
+    |              data moved here
+    |              move occurs because `self_population` has type `ArrayBase<OwnedRepr<f64>, Dim<[usize; 2]>>`, which does not implement the `Copy` trait
+    |
+help: consider removing the mutable borrow
+    |
+463 -         &mut self_population: &mut Array2<f64>,
+463 +         self_population: &mut Array2<f64>,
+    |
+
+error[E0507]: cannot move out of a mutable reference
+   --> scirs2-optimize/src/distributed_gpu.rs:472:9
+    |
+472 |         &mut self_population: &mut Array2<f64>,
+    |         ^^^^^---------------
+    |              |
+    |              data moved here
+    |              move occurs because `self_population` has type `ArrayBase<OwnedRepr<f64>, Dim<[usize; 2]>>`, which does not implement the `Copy` trait
+    |
+help: consider removing the mutable borrow
+    |
+472 -         &mut self_population: &mut Array2<f64>,
+472 +         self_population: &mut Array2<f64>,
+    |
+
+error[E0502]: cannot borrow `*self` as immutable because it is also borrowed as mutable
+    --> scirs2-optimize/src/gpu/acceleration.rs:1383:29
+     |
+1382 |         for swarm in &mut self.swarm_states {
+     |                      ----------------------
+     |                      |
+     |                      mutable borrow occurs here
+     |                      mutable borrow later used here
+1383 |             let diversity = self.compute_swarm_diversity(swarm)?;
+     |                             ^^^^ immutable borrow occurs here
+
+error[E0502]: cannot borrow `*self` as mutable because it is also borrowed as immutable
+   --> scirs2-optimize/src/gpu/memory_management.rs:77:17
+    |
+69  |         let mut stats = self.allocation_stats.lock().unwrap();
+    |                         --------------------- immutable borrow occurs here
+...
+77  |                 self.garbage_collect()?;
+    |                 ^^^^^^^^^^^^^^^^^^^^^^ mutable borrow occurs here
+...
+114 |     }
+    |     - immutable borrow might be used here, when `stats` is dropped and runs the `Drop` code for type `MutexGuard`
+
+error[E0507]: cannot move out of a shared reference
+   --> scirs2-optimize/src/jit_optimization.rs:508:24
+    |
+508 |     fn is_separable<F>(&self_fun: &F, _vars: usize) -> Result<bool, OptimizeError>
+    |                        ^--------
+    |                         |
+    |                         data moved here
+    |                         move occurs because `self_fun` has type `F`, which does not implement the `Copy` trait
+    |
+help: consider removing the borrow
+    |
+508 -     fn is_separable<F>(&self_fun: &F, _vars: usize) -> Result<bool, OptimizeError>
+508 +     fn is_separable<F>(self_fun: &F, _vars: usize) -> Result<bool, OptimizeError>
+    |
+
+error[E0502]: cannot borrow `*self` as immutable because it is also borrowed as mutable
+   --> scirs2-optimize/src/learned_optimizers/adaptive_nas_system.rs:531:36
+    |
+525 |         for architecture in &mut self.architecture_population {
+    |                             ---------------------------------
+    |                             |
+    |                             mutable borrow occurs here
+    |                             mutable borrow later used here
+...
+531 |                 if let Ok(score) = self.evaluate_architecture_on_problem(architecture, problem) {
+    |                                    ^^^^ immutable borrow occurs here
+
+error[E0596]: cannot borrow `new_architectures` as mutable, as it is not declared as mutable
+   --> scirs2-optimize/src/learned_optimizers/adaptive_nas_system.rs:708:45
+    |
+708 |         self.architecture_population.append(&mut new_architectures);
+    |                                             ^^^^^^^^^^^^^^^^^^^^^^ cannot borrow as mutable
+    |
+help: consider changing this to be mutable
+    |
+705 |         mut new_architectures: Vec<OptimizationArchitecture>,
+    |         +++
+
+error[E0004]: non-exhaustive patterns: `&_` not covered
+    --> scirs2-optimize/src/learned_optimizers/adaptive_transformer_enhancement.rs:1142:15
+     |
+1142 |         match problem.problem_class.as_str() {
+     |               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ pattern `&_` not covered
+     |
+     = note: the matched value is of type `&str`
+     = note: `&str` cannot be matched exhaustively, so a wildcard `_` is necessary
+help: ensure that all possible cases are being handled by adding a match arm with a wildcard pattern or an explicit pattern as shown
+     |
+1148 ~             },
+1149 +             &_ => todo!()
+     |
+
+error[E0004]: non-exhaustive patterns: `&_` not covered
+   --> scirs2-optimize/src/learned_optimizers/few_shot_learning_enhancement.rs:508:15
+    |
+508 |         match problem.problem_class.as_str() {
+    |               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ pattern `&_` not covered
+    |
+    = note: the matched value is of type `&str`
+    = note: `&str` cannot be matched exhaustively, so a wildcard `_` is necessary
+help: ensure that all possible cases are being handled by adding a match arm with a wildcard pattern or an explicit pattern as shown
+    |
+514 ~             },
+515 +             &_ => todo!()
+    |
+
+error[E0502]: cannot borrow `*self` as immutable because it is also borrowed as mutable
+   --> scirs2-optimize/src/learned_optimizers/few_shot_learning_enhancement.rs:575:34
+    |
+571 |         let adapter = &mut self.fast_adapter.gradient_adapter;
+    |                       --------------------------------------- mutable borrow occurs here
+...
+575 |             let meta_gradients = self.compute_meta_gradients(example)?;
+    |                                  ^^^^ immutable borrow occurs here
+...
+579 |                 if i < adapter.gradient_accumulator.len() {
+    |                        ---------------------------- mutable borrow later used here
+
+error[E0382]: borrow of moved value: `objective`
+    --> scirs2-optimize/src/learned_optimizers/learned_hyperparameter_tuner.rs:1336:57
+     |
+1315 |         objective: F,
+     |         --------- move occurs because `objective` has type `F`, which does not implement the `Copy` trait
+...
+1333 |             self.tune_hyperparameters(objective, initial_params, &default_problem, 20.0)?;
+     |                                       --------- value moved here
+...
+1336 |         self.create_optimizer_from_config(&best_config, &objective, initial_params, 1.0)
+     |                                                         ^^^^^^^^^^ value borrowed here after move
+     |
+help: consider borrowing `objective`
+     |
+1333 |             self.tune_hyperparameters(&objective, initial_params, &default_problem, 20.0)?;
+     |                                       +
+
+error[E0499]: cannot borrow `self.computation_cache` as mutable more than once at a time
+   --> scirs2-optimize/src/learned_optimizers/neural_adaptive_optimizer.rs:629:28
+    |
+626 |           let gradient_buffer = self
+    |  _______________________________-
+627 | |             .computation_cache
+    | |______________________________- first mutable borrow occurs here
+628 |               .get_gradient_buffer(gradient_sample_size);
+629 |           let param_buffer = self.computation_cache.get_param_buffer(params.len());
+    |                              ^^^^^^^^^^^^^^^^^^^^^^ second mutable borrow occurs here
+...
+648 |           let gradient_norm = (gradient_buffer
+    |                                --------------- first borrow later used here
+
+error[E0507]: cannot move out of a shared reference
+    --> scirs2-optimize/src/learned_optimizers/neural_adaptive_optimizer.rs:1724:9
+     |
+1724 |         &self_task: &TrainingTask,
+     |         ^---------
+     |          |
+     |          data moved here
+     |          move occurs because `self_task` has type `TrainingTask`, which does not implement the `Copy` trait
+     |
+help: consider removing the borrow
+     |
+1724 -         &self_task: &TrainingTask,
+1724 +         self_task: &TrainingTask,
+     |
+
+error[E0499]: cannot borrow `self.computation_cache` as mutable more than once at a time
+    --> scirs2-optimize/src/learned_optimizers/neural_adaptive_optimizer.rs:1773:28
+     |
+1772 |         let gradient_buffer = self.computation_cache.get_gradient_buffer(params.len());
+     |                               ---------------------- first mutable borrow occurs here
+1773 |         let param_buffer = self.computation_cache.get_param_buffer(params.len());
+     |                            ^^^^^^^^^^^^^^^^^^^^^^ second mutable borrow occurs here
+...
+1782 |         for i in 0..params.len().min(gradient_buffer.len()) {
+     |                                      --------------- first borrow later used here
+
+error[E0507]: cannot move out of `layer.firing_rates` which is behind a shared reference
+   --> scirs2-optimize/src/neuromorphic/stdp_learning.rs:764:33
+    |
+764 |             let rate_variance = layer.firing_rates.variance();
+    |                                 ^^^^^^^^^^^^^^^^^^ ---------- `layer.firing_rates` moved due to this method call
+    |                                 |
+    |                                 move occurs because `layer.firing_rates` has type `ArrayBase<OwnedRepr<f64>, Dim<[usize; 1]>>`, which does not implement the `Copy` trait
+    |
+note: `statrs::statistics::Statistics::variance` takes ownership of the receiver `self`, which moves `layer.firing_rates`
+   --> /Users/kitasan/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/statrs-0.18.0/src/statistics/statistics.rs:241:17
+    |
+241 |     fn variance(self) -> T;
+    |                 ^^^^
+help: you can `clone` the value and consume it, but this might not be your desired behavior
+    |
+764 |             let rate_variance = <ArrayBase<OwnedRepr<f64>, Dim<[usize; 1]>> as Clone>::clone(&layer.firing_rates).variance();
+    |                                 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++                  +
+help: consider cloning the value if the performance cost is acceptable
+    |
+764 |             let rate_variance = layer.firing_rates.clone().variance();
+    |                                                   ++++++++
+
+error[E0502]: cannot borrow `self.network` as mutable because it is also borrowed as immutable
+   --> scirs2-optimize/src/neuromorphic/mod.rs:455:13
+    |
+454 |             let params_view = self.network.parameters.view();
+    |                               ----------------------- immutable borrow occurs here
+455 |             self.network.encode_parameters(&params_view);
+    |             ^^^^^^^^^^^^^-----------------^^^^^^^^^^^^^^
+    |             |            |
+    |             |            immutable borrow later used by call
+    |             mutable borrow occurs here
+
+error[E0499]: cannot borrow `*self` as mutable more than once at a time
+   --> scirs2-optimize/src/streaming/rolling_window.rs:115:17
+    |
+109 |         match &mut self.window_optimizer {
+    |               -------------------------- first mutable borrow occurs here
+...
+115 |                 self.optimize_gradient_descent(gradient_accumulator, lr)
+    |                 ^^^^                           -------------------- first borrow later used here
+    |                 |
+    |                 second mutable borrow occurs here
+
+error[E0499]: cannot borrow `*self` as mutable more than once at a time
+   --> scirs2-optimize/src/streaming/rolling_window.rs:123:17
+    |
+109 |         match &mut self.window_optimizer {
+    |               -------------------------- first mutable borrow occurs here
+...
+123 |                 self.optimize_least_squares(xtx, xty, reg)
+    |                 ^^^^                        --- first borrow later used here
+    |                 |
+    |                 second mutable borrow occurs here
+
+error[E0499]: cannot borrow `*self` as mutable more than once at a time
+   --> scirs2-optimize/src/streaming/rolling_window.rs:133:17
+    |
+109 |         match &mut self.window_optimizer {
+    |               -------------------------- first mutable borrow occurs here
+...
+133 |                 self.optimize_weighted_least_squares(weighted_xtx, weighted_xty, reg, decay)
+    |                 ^^^^                                 ------------ first borrow later used here
+    |                 |
+    |                 second mutable borrow occurs here
+
+Some errors have detailed explanations: E0004, E0023, E0061, E0063, E0185, E0186, E0271, E0277, E0282...
+For more information about an error, try `rustc --explain E0004`.
+error: could not compile `scirs2-optimize` (lib) due to 309 previous errors

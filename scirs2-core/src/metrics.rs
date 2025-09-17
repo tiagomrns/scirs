@@ -378,22 +378,34 @@ impl MetricProvider for Histogram {
 
         // Count metric
         points.push(MetricPoint {
-            name: format!("{}_count", self.name),
+            name: {
+                let name = &self.name;
+                format!("{name}_count")
+            },
             metric_type: MetricType::Counter,
             value: MetricValue::Integer(stats.count as i64),
             timestamp: SystemTime::now(),
             labels: self.labels.clone(),
-            help: Some(format!("Total count for {}", self.name)),
+            help: Some({
+                let name = &self.name;
+                format!("name: {name}")
+            }),
         });
 
         // Sum metric
         points.push(MetricPoint {
-            name: format!("{}_sum", self.name),
+            name: {
+                let name = &self.name;
+                format!("{name}_sum")
+            },
             metric_type: MetricType::Counter,
             value: MetricValue::Float(stats.sum),
             timestamp: SystemTime::now(),
             labels: self.labels.clone(),
-            help: Some(format!("Total sum for {}", self.name)),
+            help: Some({
+                let name = &self.name;
+                format!("name: {name}")
+            }),
         });
 
         // Bucket metrics
@@ -402,12 +414,18 @@ impl MetricProvider for Histogram {
             bucket_labels.insert("le".to_string(), bucket.to_string());
 
             points.push(MetricPoint {
-                name: format!("{}_bucket", self.name),
+                name: {
+                    let name = &self.name;
+                    format!("{name}_bucket")
+                },
                 metric_type: MetricType::Counter,
                 value: MetricValue::Integer(count as i64),
                 timestamp: SystemTime::now(),
                 labels: bucket_labels,
-                help: Some(format!("Histogram bucket for {}", self.name)),
+                help: Some({
+                    let name = &self.name;
+                    format!("name: {name}")
+                }),
             });
         }
 
@@ -458,7 +476,11 @@ impl MetricsRegistry {
         for metric in metrics {
             // Add help text if available
             if let Some(help) = &metric.help {
-                output.push_str(&format!("# HELP {} {}\n", metric.name, help));
+                output.push_str(&format!(
+                    "# HELP {name} {help}\n",
+                    name = metric.name,
+                    help = help
+                ));
             }
 
             // Add type information
@@ -469,7 +491,11 @@ impl MetricsRegistry {
                 MetricType::Timer => "histogram",
                 MetricType::Summary => "summary",
             };
-            output.push_str(&format!("# TYPE {} {}\n", metric.name, type_str));
+            output.push_str(&format!(
+                "# TYPE {name} {type_str}\n",
+                name = metric.name,
+                type_str = type_str
+            ));
 
             // Format labels
             let labels_str = if metric.labels.is_empty() {
@@ -478,7 +504,7 @@ impl MetricsRegistry {
                 let label_pairs: Vec<String> = metric
                     .labels
                     .iter()
-                    .map(|(k, v)| format!("{}=\"{}\"", k, v))
+                    .map(|(k, v)| format!("{k}=\"{v}\""))
                     .collect();
                 format!("{{{}}}", label_pairs.join(","))
             };
@@ -596,7 +622,7 @@ impl HealthMonitor {
                     results.push(HealthCheck {
                         name: checker.name().to_string(),
                         status: HealthStatus::Unhealthy,
-                        message: format!("Health check failed: {}", error),
+                        message: format!("error: {error}"),
                         timestamp: SystemTime::now(),
                         duration: Duration::ZERO,
                     });
@@ -639,15 +665,15 @@ impl Default for HealthMonitor {
 /// Memory usage health check
 pub struct MemoryHealthCheck {
     warning_threshold: f64,
-    critical_threshold: f64,
+    criticalthreshold: f64,
 }
 
 impl MemoryHealthCheck {
     /// Create a new memory health check
-    pub fn new(warning_threshold: f64, critical_threshold: f64) -> Self {
+    pub fn new(warning_threshold: f64, criticalthreshold: f64) -> Self {
         Self {
             warning_threshold,
-            critical_threshold,
+            criticalthreshold,
         }
     }
 }
@@ -666,7 +692,7 @@ impl HealthChecker for MemoryHealthCheck {
         #[cfg(not(feature = "memory_management"))]
         let pressure = 0.0; // Fallback when memory management is not available
 
-        let (status, message) = if pressure >= self.critical_threshold {
+        let (status, message) = if pressure >= self.criticalthreshold {
             (
                 HealthStatus::Unhealthy,
                 format!("Memory usage critical: {:.1}%", pressure * 100.0),
@@ -712,12 +738,14 @@ static GLOBAL_HEALTH_MONITOR: std::sync::LazyLock<HealthMonitor> = std::sync::La
 });
 
 /// Get the global metrics registry
+#[allow(dead_code)]
 pub fn global_metrics_registry() -> &'static MetricsRegistry {
     &GLOBAL_METRICS_REGISTRY
 }
 
 /// Get the global health monitor
-pub fn global_health_monitor() -> &'static HealthMonitor {
+#[allow(dead_code)]
+pub fn global_healthmonitor() -> &'static HealthMonitor {
     &GLOBAL_HEALTH_MONITOR
 }
 
@@ -851,7 +879,7 @@ mod tests {
     }
 
     #[test]
-    fn test_health_monitor() {
+    fn test_healthmonitor() {
         let monitor = HealthMonitor::new();
 
         // Register memory health check

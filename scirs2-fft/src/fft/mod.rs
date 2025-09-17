@@ -24,7 +24,7 @@ pub use planning::{fft2_parallel, ifft2_parallel};
 // Re-export useful utility functions
 pub use utility::{
     complex_angle, complex_magnitude, complex_to_real, is_power_of_two, next_power_of_two,
-    power_spectrum, real_to_complex, validate_fft_axes, validate_fft_shapes, validate_fft_size,
+    power_spectrum, real_to_complex, validate_fft_axes, validate_fft_size, validate_fftshapes,
 };
 
 // Re-export window functions

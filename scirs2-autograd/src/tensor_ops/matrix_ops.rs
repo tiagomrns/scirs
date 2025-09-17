@@ -24,7 +24,7 @@ impl<F: Float> Op<F> for MatrixInverseOp {
         let n = shape[0];
 
         // Debug information
-        println!("Computing matrix inverse of shape: {:?}", shape);
+        println!("Computing matrix inverse of shape: {shape:?}");
 
         let input_2d = input_array
             .into_dimensionality::<Ix2>()
@@ -34,8 +34,8 @@ impl<F: Float> Op<F> for MatrixInverseOp {
         let inv = compute_inverse(&input_2d)?;
 
         // Verify the shape of the result
-        let result_shape = inv.shape();
-        println!("Matrix inverse result shape: {:?}", result_shape);
+        let resultshape = inv.shape();
+        println!("Matrix inverse result shape: {resultshape:?}");
 
         // No need to reshape, just use the computed inverse directly
         // but make a deep copy of it to ensure we have a clean array
@@ -218,9 +218,9 @@ impl<F: Float + ndarray::ScalarOperand> Op<F> for GeneralDeterminantOp {
             .into_dimensionality::<Ix2>()
             .map_err(|_| OpError::IncompatibleShape("Failed to convert to 2D".into()))?;
 
-        println!("Computing determinant for matrix of shape: {:?}", shape);
+        println!("Computing determinant for matrix of shape: {shape:?}");
         let det = compute_determinant_lu(&input_2d)?;
-        println!("Determinant result: {}", det);
+        println!("Determinant result: {det}");
 
         // Create a scalar (0-dimensional) array with the determinant value
         // Use explicit arr0 to ensure we get a 0-dimensional array
@@ -274,7 +274,7 @@ impl<F: Float + ndarray::ScalarOperand> Op<F> for GeneralDeterminantOp {
         // Access scalar values
         let grad_scalar = grad_output_array[[0]];
         let det = output_array[[0]];
-        println!("Determinant: {}, Gradient scale: {}", det, grad_scalar);
+        println!("Determinant: {det}, Gradient scale: {grad_scalar}");
 
         // Gradient of determinant: det(A) * A^{-T}
         if det.abs() > F::epsilon() {
@@ -334,6 +334,7 @@ impl<F: Float + ndarray::ScalarOperand> Op<F> for GeneralDeterminantOp {
 }
 
 // Helper functions
+#[allow(dead_code)]
 fn compute_inverse<F: Float>(matrix: &ndarray::ArrayView2<F>) -> Result<Array2<F>, OpError> {
     let n = matrix.shape()[0];
     let mut a = matrix.to_owned();
@@ -383,6 +384,7 @@ fn compute_inverse<F: Float>(matrix: &ndarray::ArrayView2<F>) -> Result<Array2<F
     Ok(inv)
 }
 
+#[allow(dead_code)]
 fn compute_pseudo_inverse<F: Float>(matrix: &ndarray::ArrayView2<F>) -> Result<Array2<F>, OpError> {
     // Simplified pseudo-inverse using transpose
     // For a full implementation, use SVD
@@ -404,6 +406,7 @@ fn compute_pseudo_inverse<F: Float>(matrix: &ndarray::ArrayView2<F>) -> Result<A
     }
 }
 
+#[allow(dead_code)]
 fn compute_determinant_lu<F: Float>(matrix: &ndarray::ArrayView2<F>) -> Result<F, OpError> {
     let n = matrix.shape()[0];
     let mut a = matrix.to_owned();
@@ -421,7 +424,7 @@ fn compute_determinant_lu<F: Float>(matrix: &ndarray::ArrayView2<F>) -> Result<F
         }
 
         if a[[max_row, k]].abs() < F::epsilon() {
-            return Ok(F::zero()); // Singular matrix
+            return Ok(F::zero()); // Singular _matrix
         }
 
         // Swap rows
@@ -546,6 +549,7 @@ impl<F: Float + ndarray::ScalarOperand + FromPrimitive> Op<F> for MatrixExp3Op {
 }
 
 /// Compute matrix exponential using Padé approximation
+#[allow(dead_code)]
 fn compute_matrix_exp_pade<F: Float + ndarray::ScalarOperand + FromPrimitive>(
     matrix: &ndarray::ArrayView2<F>,
 ) -> Result<Array2<F>, OpError> {
@@ -610,6 +614,7 @@ fn compute_matrix_exp_pade<F: Float + ndarray::ScalarOperand + FromPrimitive>(
 }
 
 /// Compute matrix exponential using eigendecomposition
+#[allow(dead_code)]
 fn compute_matrix_exp_eigen<F: Float + ndarray::ScalarOperand + FromPrimitive>(
     matrix: &ndarray::ArrayView2<F>,
 ) -> Result<Array2<F>, OpError> {
@@ -646,6 +651,7 @@ fn compute_matrix_exp_eigen<F: Float + ndarray::ScalarOperand + FromPrimitive>(
 }
 
 /// Compute matrix exponential using Taylor series
+#[allow(dead_code)]
 fn compute_matrix_exp_taylor<F: Float + ndarray::ScalarOperand>(
     matrix: &ndarray::ArrayView2<F>,
 ) -> Result<Array2<F>, OpError> {
@@ -670,6 +676,7 @@ fn compute_matrix_exp_taylor<F: Float + ndarray::ScalarOperand>(
 }
 
 /// Solve matrix equation AX = B
+#[allow(dead_code)]
 fn solve_matrix_equation<F: Float>(
     a: &ndarray::ArrayView2<F>,
     b: &ndarray::ArrayView2<F>,
@@ -735,6 +742,7 @@ fn solve_matrix_equation<F: Float>(
 }
 
 /// Check if matrix is symmetric
+#[allow(dead_code)]
 fn is_symmetric_matrix<F: Float>(matrix: &ndarray::ArrayView2<F>) -> bool {
     let n = matrix.shape()[0];
     for i in 0..n {
@@ -748,6 +756,7 @@ fn is_symmetric_matrix<F: Float>(matrix: &ndarray::ArrayView2<F>) -> bool {
 }
 
 /// Simple symmetric eigendecomposition
+#[allow(dead_code)]
 fn compute_symmetric_eigen_simple<F: Float + ndarray::ScalarOperand + FromPrimitive>(
     matrix: &ndarray::ArrayView2<F>,
 ) -> Result<(Array1<F>, Array2<F>), OpError> {
@@ -812,66 +821,71 @@ fn compute_symmetric_eigen_simple<F: Float + ndarray::ScalarOperand + FromPrimit
 }
 
 // Public API functions
+#[allow(dead_code)]
 pub fn matrix_inverse<'g, F: Float>(matrix: &Tensor<'g, F>) -> Tensor<'g, F> {
     let g = matrix.graph();
 
     // Get the shape tensor from the input
-    let matrix_shape = crate::tensor_ops::shape(matrix);
+    let matrixshape = crate::tensor_ops::shape(matrix);
 
     // Build the tensor with shape information
     Tensor::builder(g)
         .append_input(matrix, false)
-        .set_shape(&matrix_shape)
+        .setshape(&matrixshape)
         .build(MatrixInverseOp)
 }
 
+#[allow(dead_code)]
 pub fn pseudo_inverse<'g, F: Float>(matrix: &Tensor<'g, F>) -> Tensor<'g, F> {
     let g = matrix.graph();
 
     // Get the shape tensor from the input
-    let matrix_shape = crate::tensor_ops::shape(matrix);
+    let matrixshape = crate::tensor_ops::shape(matrix);
 
     Tensor::builder(g)
         .append_input(matrix, false)
-        .set_shape(&matrix_shape)
+        .setshape(&matrixshape)
         .build(PseudoInverseOp)
 }
 
+#[allow(dead_code)]
 pub fn determinant<'g, F: Float + ndarray::ScalarOperand>(matrix: &Tensor<'g, F>) -> Tensor<'g, F> {
     let g = matrix.graph();
 
     // For determinant, we're creating a scalar output (0-dimensional tensor)
     // We'll use zeros(0) to create a scalar tensor shape
-    let scalar_shape = crate::tensor_ops::zeros(&[0], g);
+    let scalarshape = crate::tensor_ops::zeros(&[0], g);
 
     Tensor::builder(g)
         .append_input(matrix, false)
-        .set_shape(&scalar_shape)
+        .setshape(&scalarshape)
         .build(GeneralDeterminantOp)
 }
 
 /// Matrix exponential using improved Padé approximation (method 2)
+#[allow(dead_code)]
 pub fn expm2<'g, F: Float + ndarray::ScalarOperand + FromPrimitive>(
     matrix: &Tensor<'g, F>,
 ) -> Tensor<'g, F> {
     let g = matrix.graph();
-    let matrix_shape = crate::tensor_ops::shape(matrix);
+    let matrixshape = crate::tensor_ops::shape(matrix);
 
     Tensor::builder(g)
         .append_input(matrix, false)
-        .set_shape(&matrix_shape)
+        .setshape(&matrixshape)
         .build(MatrixExp2Op)
 }
 
 /// Matrix exponential using eigendecomposition (method 3)  
+#[allow(dead_code)]
 pub fn expm3<'g, F: Float + ndarray::ScalarOperand + FromPrimitive>(
     matrix: &Tensor<'g, F>,
 ) -> Tensor<'g, F> {
     let g = matrix.graph();
-    let matrix_shape = crate::tensor_ops::shape(matrix);
+    let matrixshape = crate::tensor_ops::shape(matrix);
 
     Tensor::builder(g)
         .append_input(matrix, false)
-        .set_shape(&matrix_shape)
+        .setshape(&matrixshape)
         .build(MatrixExp3Op)
 }

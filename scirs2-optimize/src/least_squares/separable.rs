@@ -141,6 +141,7 @@ pub struct SeparableResult {
 /// * `y_data` - Dependent variable data  
 /// * `beta0` - Initial guess for nonlinear parameters
 /// * `options` - Options for the optimization
+#[allow(dead_code)]
 pub fn separable_least_squares<F, J, S1, S2, S3>(
     basis_functions: F,
     basis_jacobian: J,
@@ -176,7 +177,7 @@ where
         let phi = basis_functions(x_data.as_slice().unwrap(), beta.as_slice().unwrap());
         nfev += 1;
 
-        let (n_points, _n_basis) = phi.dim();
+        let (n_points, n_basis) = phi.dim();
         if n_points != n {
             return Err(crate::error::OptimizeError::ValueError(
                 "Basis functions returned wrong number of rows".to_string(),
@@ -292,6 +293,7 @@ where
 }
 
 /// Solve the linear least squares subproblem
+#[allow(dead_code)]
 fn solve_linear_subproblem<S1>(
     phi: &Array2<f64>,
     y: &ArrayBase<S1, Ix1>,
@@ -328,6 +330,7 @@ where
 }
 
 /// Compute gradient w.r.t. nonlinear parameters
+#[allow(dead_code)]
 fn compute_gradient<J>(
     _phi: &Array2<f64>,
     alpha: &Array1<f64>,
@@ -362,6 +365,7 @@ where
 }
 
 /// Simple backtracking line search
+#[allow(dead_code)]
 fn backtracking_line_search<F>(x: &Array1<f64>, direction: &Array1<f64>, f0: f64, f: F) -> f64
 where
     F: Fn(&[f64]) -> f64,
@@ -387,6 +391,7 @@ where
 }
 
 /// Solve symmetric positive definite system
+#[allow(dead_code)]
 fn solve_symmetric_system(a: &Array2<f64>, b: &Array1<f64>) -> OptimizeResult<Array1<f64>> {
     // Cholesky decomposition for symmetric positive definite matrices
     // Fallback to LU if Cholesky fails
@@ -433,6 +438,7 @@ fn solve_symmetric_system(a: &Array2<f64>, b: &Array1<f64>) -> OptimizeResult<Ar
 }
 
 /// QR solve (simplified)
+#[allow(dead_code)]
 fn qr_solve<S>(phi: &Array2<f64>, y: &ArrayBase<S, Ix1>, lambda: f64) -> OptimizeResult<Array1<f64>>
 where
     S: Data<Elem = f64>,
@@ -451,6 +457,7 @@ where
 }
 
 /// SVD solve (simplified)
+#[allow(dead_code)]
 fn svd_solve<S>(
     phi: &Array2<f64>,
     y: &ArrayBase<S, Ix1>,

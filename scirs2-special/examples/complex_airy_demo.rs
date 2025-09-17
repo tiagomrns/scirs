@@ -6,6 +6,7 @@
 use num_complex::Complex64;
 use scirs2_special::{ai_complex, aip_complex, bi_complex, bip_complex};
 
+#[allow(dead_code)]
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("=== SCIRS2-SPECIAL Complex Airy Functions Demo ===\n");
 
@@ -25,6 +26,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     Ok(())
 }
 
+#[allow(dead_code)]
 fn demo_basic_airy_functions() -> Result<(), Box<dyn std::error::Error>> {
     println!("1. Complex Airy Functions of the First Kind - Ai(z)");
     println!("==================================================");
@@ -50,6 +52,7 @@ fn demo_basic_airy_functions() -> Result<(), Box<dyn std::error::Error>> {
     Ok(())
 }
 
+#[allow(dead_code)]
 fn demo_airy_derivatives() -> Result<(), Box<dyn std::error::Error>> {
     println!("2. Complex Airy Function Derivatives");
     println!("===================================");
@@ -88,6 +91,7 @@ fn demo_airy_derivatives() -> Result<(), Box<dyn std::error::Error>> {
     Ok(())
 }
 
+#[allow(dead_code)]
 fn demo_mathematical_properties() -> Result<(), Box<dyn std::error::Error>> {
     println!("3. Mathematical Properties Verification");
     println!("======================================");
@@ -137,6 +141,7 @@ fn demo_mathematical_properties() -> Result<(), Box<dyn std::error::Error>> {
     Ok(())
 }
 
+#[allow(dead_code)]
 fn demo_complex_arguments() -> Result<(), Box<dyn std::error::Error>> {
     println!("4. Complex Arguments and Special Cases");
     println!("=====================================");

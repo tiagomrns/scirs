@@ -2,7 +2,7 @@
 
 use ndarray::{s, Array1, Array2, ArrayView2};
 use num_traits::{Float, FromPrimitive};
-use rand::{rng, rngs::StdRng, Rng, RngCore, SeedableRng};
+use rand::{rngs::StdRng, Rng, RngCore, SeedableRng};
 use rand_distr::{Distribution, Normal};
 use std::fmt::Debug;
 use std::str::FromStr;
@@ -57,12 +57,21 @@ impl FromStr for MinitMethod {
     }
 }
 
-/// Methods for handling empty clusters
+/// Methods for handling empty clusters during K-means clustering
+///
+/// When a cluster becomes empty during the K-means iteration process,
+/// this enum determines how the algorithm should respond.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum MissingMethod {
-    /// Give a warning and continue
+    /// Give a warning and continue with the algorithm
+    ///
+    /// The algorithm will continue execution, potentially with fewer
+    /// effective clusters than originally requested.
     Warn,
     /// Raise a ClusteringError and terminate the algorithm
+    ///
+    /// The algorithm will stop execution and return an error when
+    /// an empty cluster is encountered.
     Raise,
 }
 
@@ -77,7 +86,7 @@ pub enum MissingMethod {
 /// * `minit` - Initialization method (None if k is a centroid array)
 /// * `missing` - Method to handle empty clusters
 /// * `check_finite` - Whether to check input validity
-/// * `random_seed` - Optional random seed
+/// * `randomseed` - Optional random seed
 ///
 /// # Returns
 ///
@@ -85,6 +94,7 @@ pub enum MissingMethod {
 ///   - centroids: Array of shape (k × n_features)
 ///   - labels: Array of shape (n_samples,) with cluster assignments
 #[allow(clippy::too_many_arguments)]
+#[allow(dead_code)]
 pub fn kmeans2<F>(
     data: ArrayView2<F>,
     k: usize,
@@ -93,7 +103,7 @@ pub fn kmeans2<F>(
     minit: Option<MinitMethod>,
     missing: Option<MissingMethod>,
     check_finite: Option<bool>,
-    random_seed: Option<u64>,
+    randomseed: Option<u64>,
 ) -> Result<(Array2<F>, Array1<usize>)>
 where
     F: Float + FromPrimitive + Debug + std::iter::Sum + std::fmt::Display,
@@ -118,9 +128,9 @@ where
     // Initialize centroids
     let init_method = minit.unwrap_or(MinitMethod::PlusPlus); // Default to k-means++
     let mut centroids = match init_method {
-        MinitMethod::Random => krandinit(data, k, random_seed)?,
-        MinitMethod::Points => kpoints(data, k, random_seed)?,
-        MinitMethod::PlusPlus => kmeans_plus_plus(data, k, random_seed)?,
+        MinitMethod::Random => krandinit(data, k, randomseed)?,
+        MinitMethod::Points => kpoints(data, k, randomseed)?,
+        MinitMethod::PlusPlus => kmeans_plus_plus(data, k, randomseed)?,
     };
 
     let mut labels;
@@ -211,7 +221,7 @@ where
     }
 
     // Final assignment
-    let (final_labels, _) = vq(data, centroids.view())?;
+    let (final_labels, _distances) = vq(data, centroids.view())?;
 
     Ok((centroids, final_labels))
 }
@@ -230,7 +240,7 @@ where
 /// * `minit` - Initialization method as string ('random', 'points', 'k-means++')
 /// * `missing` - Method to handle empty clusters ('warn', 'raise')
 /// * `check_finite` - Whether to check input validity
-/// * `random_seed` - Optional random seed
+/// * `randomseed` - Optional random seed
 ///
 /// # Returns
 ///
@@ -255,6 +265,7 @@ where
 /// ).unwrap();
 /// ```
 #[allow(clippy::too_many_arguments)]
+#[allow(dead_code)]
 pub fn kmeans2_str<F>(
     data: ArrayView2<F>,
     k: usize,
@@ -263,7 +274,7 @@ pub fn kmeans2_str<F>(
     minit: Option<&str>,
     missing: Option<&str>,
     check_finite: Option<bool>,
-    random_seed: Option<u64>,
+    randomseed: Option<u64>,
 ) -> Result<(Array2<F>, Array1<usize>)>
 where
     F: Float + FromPrimitive + Debug + std::iter::Sum + std::fmt::Display,
@@ -299,13 +310,14 @@ where
         minit_method,
         missing_method,
         check_finite,
-        random_seed,
+        randomseed,
     )
 }
 
 /// Random initialization: generate k centroids from a Gaussian with mean and
 /// variance estimated from the data
-fn krandinit<F>(data: ArrayView2<F>, k: usize, random_seed: Option<u64>) -> Result<Array2<F>>
+#[allow(dead_code)]
+fn krandinit<F>(data: ArrayView2<F>, k: usize, randomseed: Option<u64>) -> Result<Array2<F>>
 where
     F: Float + FromPrimitive + Debug + std::iter::Sum,
 {
@@ -334,10 +346,10 @@ where
     // Generate random centroids from Gaussian distribution
     let mut centroids = Array2::<F>::zeros((k, n_features));
 
-    let mut rng: Box<dyn RngCore> = if let Some(seed) = random_seed {
-        Box::new(StdRng::from_seed([seed as u8; 32]))
+    let mut rng: Box<dyn RngCore> = if let Some(_seed) = randomseed {
+        Box::new(StdRng::seed_from_u64(_seed))
     } else {
-        Box::new(rng())
+        Box::new(rand::rng())
     };
 
     for i in 0..k {
@@ -360,17 +372,18 @@ where
 }
 
 /// Points initialization: choose k observations (rows) at random from data
-fn kpoints<F>(data: ArrayView2<F>, k: usize, random_seed: Option<u64>) -> Result<Array2<F>>
+#[allow(dead_code)]
+fn kpoints<F>(data: ArrayView2<F>, k: usize, randomseed: Option<u64>) -> Result<Array2<F>>
 where
     F: Float + FromPrimitive + Debug,
 {
     let n_samples = data.shape()[0];
     let n_features = data.shape()[1];
 
-    let mut rng: Box<dyn RngCore> = if let Some(seed) = random_seed {
-        Box::new(StdRng::from_seed([seed as u8; 32]))
+    let mut rng: Box<dyn RngCore> = if let Some(_seed) = randomseed {
+        Box::new(StdRng::seed_from_u64(_seed))
     } else {
-        Box::new(rng())
+        Box::new(rand::rng())
     };
 
     // Choose k random indices without replacement
@@ -382,7 +395,7 @@ where
         indices.swap(i, j);
     }
 
-    // Extract centroids from data
+    // Extract centroids from _data
     let mut centroids = Array2::zeros((k, n_features));
     for i in 0..k {
         let idx = indices[i];
@@ -395,17 +408,18 @@ where
 }
 
 /// K-means++ initialization
-fn kmeans_plus_plus<F>(data: ArrayView2<F>, k: usize, random_seed: Option<u64>) -> Result<Array2<F>>
+#[allow(dead_code)]
+fn kmeans_plus_plus<F>(data: ArrayView2<F>, k: usize, randomseed: Option<u64>) -> Result<Array2<F>>
 where
     F: Float + FromPrimitive + Debug + std::iter::Sum,
 {
     let n_samples = data.shape()[0];
     let n_features = data.shape()[1];
 
-    let mut rng: Box<dyn RngCore> = if let Some(seed) = random_seed {
-        Box::new(StdRng::from_seed([seed as u8; 32]))
+    let mut rng: Box<dyn RngCore> = if let Some(_seed) = randomseed {
+        Box::new(StdRng::seed_from_u64(_seed))
     } else {
-        Box::new(rng())
+        Box::new(rand::rng())
     };
 
     let mut centroids = Array2::zeros((k, n_features));
@@ -697,7 +711,7 @@ mod tests {
         ];
 
         // Test with different iteration counts
-        let (centroids_few, _) = kmeans2(
+        let (centroids_few_) = kmeans2(
             data.view(),
             2,
             Some(1),
@@ -709,7 +723,7 @@ mod tests {
         )
         .unwrap();
 
-        let (centroids_many, _) = kmeans2(
+        let (centroids_many_) = kmeans2(
             data.view(),
             2,
             Some(100),
@@ -722,8 +736,8 @@ mod tests {
         .unwrap();
 
         // Results should be valid for both
-        assert_eq!(centroids_few.shape(), [2, 2]);
-        assert_eq!(centroids_many.shape(), [2, 2]);
+        assert_eq!(centroids_few_.0.shape(), [2, 2]);
+        assert_eq!(centroids_many_.0.shape(), [2, 2]);
     }
 
     #[test]

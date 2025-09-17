@@ -51,6 +51,7 @@ impl Default for MomentumOptions {
 }
 
 /// SGD with momentum optimizer implementation
+#[allow(dead_code)]
 pub fn minimize_sgd_momentum<F>(
     mut grad_func: F,
     mut x: Array1<f64>,
@@ -121,7 +122,7 @@ where
             // First iteration: initialize velocity
             velocity = gradient.clone();
         } else {
-            // Subsequent iterations: apply momentum with optional dampening
+            // Subsequent nit: apply momentum with optional dampening
             velocity = &velocity * options.momentum + &gradient * (1.0 - options.dampening);
         }
 
@@ -164,7 +165,6 @@ where
                 return Ok(OptimizeResult {
                     x: best_x,
                     fun: best_f,
-                    iterations: iteration,
                     nit: iteration,
                     func_evals,
                     nfev: func_evals,
@@ -185,7 +185,6 @@ where
                 return Ok(OptimizeResult {
                     x: best_x,
                     fun: best_f,
-                    iterations: iteration,
                     nit: iteration,
                     func_evals,
                     nfev: func_evals,
@@ -206,7 +205,6 @@ where
     Ok(OptimizeResult {
         x: best_x,
         fun: final_loss.min(best_f),
-        iterations: options.max_iter,
         nit: options.max_iter,
         func_evals,
         nfev: func_evals,
@@ -218,6 +216,7 @@ where
 }
 
 /// Heavy-ball momentum (Polyak momentum) implementation
+#[allow(dead_code)]
 pub fn minimize_heavy_ball<F>(
     mut grad_func: F,
     mut x: Array1<f64>,
@@ -306,7 +305,6 @@ where
     Ok(OptimizeResult {
         x: best_x,
         fun: best_f,
-        iterations: options.max_iter,
         nit: options.max_iter,
         func_evals,
         nfev: func_evals,
@@ -318,6 +316,7 @@ where
 }
 
 /// Adaptive momentum based on gradient correlation
+#[allow(dead_code)]
 pub fn minimize_adaptive_momentum<F>(
     mut grad_func: F,
     mut x: Array1<f64>,
@@ -423,7 +422,6 @@ where
     Ok(OptimizeResult {
         x: best_x,
         fun: best_f,
-        iterations: options.max_iter,
         nit: options.max_iter,
         func_evals,
         nfev: func_evals,
@@ -445,12 +443,12 @@ mod tests {
     struct QuadraticFunction;
 
     impl StochasticGradientFunction for QuadraticFunction {
-        fn compute_gradient(&mut self, x: &ArrayView1<f64>, _batch_data: &[f64]) -> Array1<f64> {
+        fn compute_gradient(&mut self, x: &ArrayView1<f64>, _batchdata: &[f64]) -> Array1<f64> {
             // Gradient of f(x) = sum(x_i^2) is 2*x
             x.mapv(|xi| 2.0 * xi)
         }
 
-        fn compute_value(&mut self, x: &ArrayView1<f64>, _batch_data: &[f64]) -> f64 {
+        fn compute_value(&mut self, x: &ArrayView1<f64>, _batchdata: &[f64]) -> f64 {
             // f(x) = sum(x_i^2)
             x.mapv(|xi| xi * xi).sum()
         }

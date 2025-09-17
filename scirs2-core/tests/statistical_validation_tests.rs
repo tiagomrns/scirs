@@ -10,6 +10,7 @@ use serde_json::json;
 
 #[cfg(all(feature = "data_validation", feature = "serde"))]
 #[test]
+#[allow(dead_code)]
 fn test_statistical_constraint_mean() {
     let config = ValidationConfig::default();
     let validator = Validator::new(config).unwrap();
@@ -32,6 +33,7 @@ fn test_statistical_constraint_mean() {
 
 #[cfg(all(feature = "data_validation", feature = "serde"))]
 #[test]
+#[allow(dead_code)]
 fn test_statistical_constraint_mean_too_low() {
     let config = ValidationConfig::default();
     let validator = Validator::new(config).unwrap();
@@ -59,6 +61,7 @@ fn test_statistical_constraint_mean_too_low() {
 
 #[cfg(all(feature = "data_validation", feature = "serde"))]
 #[test]
+#[allow(dead_code)]
 fn test_statistical_constraint_mean_too_high() {
     let config = ValidationConfig::default();
     let validator = Validator::new(config).unwrap();
@@ -86,6 +89,7 @@ fn test_statistical_constraint_mean_too_high() {
 
 #[cfg(all(feature = "data_validation", feature = "serde"))]
 #[test]
+#[allow(dead_code)]
 fn test_statistical_constraint_std_dev() {
     let config = ValidationConfig::default();
     let validator = Validator::new(config).unwrap();
@@ -111,6 +115,7 @@ fn test_statistical_constraint_std_dev() {
 
 #[cfg(all(feature = "data_validation", feature = "serde"))]
 #[test]
+#[allow(dead_code)]
 fn test_statistical_constraint_std_too_low() {
     let config = ValidationConfig::default();
     let validator = Validator::new(config).unwrap();
@@ -141,6 +146,7 @@ fn test_statistical_constraint_std_too_low() {
 
 #[cfg(all(feature = "data_validation", feature = "serde"))]
 #[test]
+#[allow(dead_code)]
 fn test_statistical_constraint_std_too_high() {
     let config = ValidationConfig::default();
     let validator = Validator::new(config).unwrap();
@@ -171,6 +177,7 @@ fn test_statistical_constraint_std_too_high() {
 
 #[cfg(all(feature = "data_validation", feature = "serde"))]
 #[test]
+#[allow(dead_code)]
 fn test_statistical_constraint_non_numeric() {
     let config = ValidationConfig::default();
     let validator = Validator::new(config).unwrap();
@@ -201,6 +208,7 @@ fn test_statistical_constraint_non_numeric() {
 
 #[cfg(all(feature = "data_validation", feature = "serde"))]
 #[test]
+#[allow(dead_code)]
 fn test_statistical_constraint_empty_array() {
     let config = ValidationConfig::default();
     let validator = Validator::new(config).unwrap();
@@ -231,6 +239,7 @@ fn test_statistical_constraint_empty_array() {
 
 #[cfg(all(feature = "data_validation", feature = "serde"))]
 #[test]
+#[allow(dead_code)]
 fn test_statistical_constraint_integer_values() {
     let config = ValidationConfig::default();
     let validator = Validator::new(config).unwrap();
@@ -256,6 +265,7 @@ fn test_statistical_constraint_integer_values() {
 
 #[cfg(all(feature = "data_validation", feature = "serde"))]
 #[test]
+#[allow(dead_code)]
 fn test_statistical_constraint_complex() {
     let config = ValidationConfig::default();
     let validator = Validator::new(config).unwrap();
@@ -264,7 +274,7 @@ fn test_statistical_constraint_complex() {
     let stats_constraints = StatisticalConstraints::new()
         .with_mean_range(48.0, 52.0)
         .with_std_range(8.0, 12.0)
-        .with_distribution("normal");
+        .with_distribution(normal);
 
     let schema = ValidationSchema::new()
         .require_field("measurements", DataType::Array(Box::new(DataType::Float64)))

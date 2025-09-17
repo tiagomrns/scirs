@@ -361,7 +361,7 @@ where
     /// Entries stored in this node
     pub entries: Vec<Entry<T>>,
     /// Whether this is a leaf node
-    pub is_leaf: bool,
+    pub _isleaf: bool,
     /// Node level in the tree (0 for leaf nodes, increasing towards the root)
     pub level: usize,
 }
@@ -370,7 +370,7 @@ impl<T: Clone> Default for Node<T> {
     fn default() -> Self {
         Self {
             entries: Vec::new(),
-            is_leaf: true,
+            _isleaf: true,
             level: 0,
         }
     }
@@ -378,10 +378,10 @@ impl<T: Clone> Default for Node<T> {
 
 impl<T: Clone> Node<T> {
     /// Create a new node
-    pub fn new(is_leaf: bool, level: usize) -> Self {
+    pub fn new(_isleaf: bool, level: usize) -> Self {
         Node {
             entries: Vec::new(),
-            is_leaf,
+            _isleaf,
             level,
         }
     }
@@ -392,18 +392,18 @@ impl<T: Clone> Node<T> {
     }
 
     /// Calculate the bounding rectangle for the node
-    pub fn mbr(&self) -> Option<Rectangle> {
+    pub fn mbr(&self) -> SpatialResult<Option<Rectangle>> {
         if self.entries.is_empty() {
-            return None;
+            return Ok(None);
         }
 
         let mut result = self.entries[0].mbr().clone();
 
         for i in 1..self.size() {
-            result = result.enlarge(self.entries[i].mbr()).unwrap();
+            result = result.enlarge(self.entries[i].mbr())?;
         }
 
-        Some(result)
+        Ok(Some(result))
     }
 }
 
@@ -496,7 +496,7 @@ where
     /// Minimum number of entries in each node (except the root)
     pub(crate) min_entries: usize,
     /// Maximum number of entries in each node
-    pub(crate) max_entries: usize,
+    pub(crate) maxentries: usize,
     /// Number of data points in the tree
     size: usize,
     /// Height of the tree
@@ -510,29 +510,27 @@ impl<T: Clone> RTree<T> {
     ///
     /// * `ndim` - Number of dimensions
     /// * `min_entries` - Minimum number of entries in each node (except the root)
-    /// * `max_entries` - Maximum number of entries in each node
+    /// * `maxentries` - Maximum number of entries in each node
     ///
     /// # Returns
     ///
     /// A `SpatialResult` containing the new R-tree, or an error if the parameters are invalid
-    pub fn new(ndim: usize, min_entries: usize, max_entries: usize) -> SpatialResult<Self> {
+    pub fn new(ndim: usize, min_entries: usize, maxentries: usize) -> SpatialResult<Self> {
         if ndim == 0 {
             return Err(SpatialError::ValueError(
                 "Number of dimensions must be positive".into(),
             ));
         }
 
-        if min_entries < 1 || min_entries > max_entries / 2 {
+        if min_entries < 1 || min_entries > maxentries / 2 {
             return Err(SpatialError::ValueError(format!(
-                "min_entries must be between 1 and max_entries/2, got: {}",
-                min_entries
+                "min_entries must be between 1 and maxentries/2, got: {min_entries}"
             )));
         }
 
-        if max_entries < 2 {
+        if maxentries < 2 {
             return Err(SpatialError::ValueError(format!(
-                "max_entries must be at least 2, got: {}",
-                max_entries
+                "maxentries must be at least 2, got: {maxentries}"
             )));
         }
 
@@ -540,7 +538,7 @@ impl<T: Clone> RTree<T> {
             root: Node::new(true, 0),
             ndim,
             min_entries,
-            max_entries,
+            maxentries,
             size: 0,
             height: 1,
         })
@@ -747,7 +745,7 @@ mod tests {
         // Invalid parameters
         assert!(RTree::<usize>::new(0, 2, 5).is_err()); // ndim = 0
         assert!(RTree::<usize>::new(2, 0, 5).is_err()); // min_entries = 0
-        assert!(RTree::<usize>::new(2, 3, 5).is_err()); // min_entries > max_entries/2
-        assert!(RTree::<usize>::new(2, 2, 1).is_err()); // max_entries < 2
+        assert!(RTree::<usize>::new(2, 3, 5).is_err()); // min_entries > maxentries/2
+        assert!(RTree::<usize>::new(2, 2, 1).is_err()); // maxentries < 2
     }
 }

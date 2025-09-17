@@ -1,10 +1,12 @@
-//! Tests for the wavelets module
+// Tests for the wavelets module
 
 use super::*;
 use approx::assert_relative_eq;
 use std::f64::consts::PI;
 
+#[allow(unused_imports)]
 #[test]
+#[allow(dead_code)]
 fn test_morlet_wavelet() {
     // Test basic creation
     let points = 32;
@@ -20,6 +22,7 @@ fn test_morlet_wavelet() {
 }
 
 #[test]
+#[allow(dead_code)]
 fn test_scale_to_frequency() {
     // Define scales
     let scales: Vec<f64> = (1..32).map(|i| i as f64).collect();
@@ -47,6 +50,7 @@ fn test_scale_to_frequency() {
 }
 
 #[test]
+#[allow(dead_code)]
 fn test_cwt_simple_signal() {
     // Create a simple signal (sine wave)
     let n = 128;

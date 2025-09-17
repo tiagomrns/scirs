@@ -10,9 +10,10 @@ use scirs2_core::logging::{LogLevel, Logger};
 use std::thread;
 use std::time::Duration;
 
+#[allow(dead_code)]
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Configure logging
-    scirs2_core::logging::set_min_log_level(LogLevel::Info);
+    scirs2_core::logging::set_module_level("scirs2_core", LogLevel::Info);
 
     println!("=== Enhanced Progress Visualization Demo ===\n");
 
@@ -23,7 +24,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     demo_multi_progress()?;
 
     // Demo 3: Logger integration
-    demo_logger_integration()?;
+    demologger_integration()?;
 
     // Demo 4: Custom themes and templates
     demo_themes_and_templates()?;
@@ -35,6 +36,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     Ok(())
 }
 
+#[allow(dead_code)]
 fn demo_progress_styles() -> Result<(), Box<dyn std::error::Error>> {
     println!("Demo 1: Different Progress Styles\n");
 
@@ -71,6 +73,7 @@ fn demo_progress_styles() -> Result<(), Box<dyn std::error::Error>> {
     Ok(())
 }
 
+#[allow(dead_code)]
 fn demo_multi_progress() -> Result<(), Box<dyn std::error::Error>> {
     println!("\nDemo 2: Multi-Progress Tracking\n");
 
@@ -131,7 +134,8 @@ fn demo_multi_progress() -> Result<(), Box<dyn std::error::Error>> {
     Ok(())
 }
 
-fn demo_logger_integration() -> Result<(), Box<dyn std::error::Error>> {
+#[allow(dead_code)]
+fn demologger_integration() -> Result<(), Box<dyn std::error::Error>> {
     println!("\nDemo 3: Logger Integration\n");
 
     let logger = Logger::new("data_processor")
@@ -164,6 +168,7 @@ fn demo_logger_integration() -> Result<(), Box<dyn std::error::Error>> {
     Ok(())
 }
 
+#[allow(dead_code)]
 fn demo_themes_and_templates() -> Result<(), Box<dyn std::error::Error>> {
     println!("\nDemo 4: Custom Themes and Templates\n");
 
@@ -224,6 +229,7 @@ fn demo_themes_and_templates() -> Result<(), Box<dyn std::error::Error>> {
     Ok(())
 }
 
+#[allow(dead_code)]
 fn demo_progress_groups() -> Result<(), Box<dyn std::error::Error>> {
     println!("\nDemo 5: Progress Groups\n");
 
@@ -269,6 +275,7 @@ fn demo_progress_groups() -> Result<(), Box<dyn std::error::Error>> {
 }
 
 /// Demonstrate adaptive progress tracking
+#[allow(dead_code)]
 fn _demo_adaptive_tracking() -> Result<(), Box<dyn std::error::Error>> {
     println!("\nDemo: Adaptive Progress Tracking\n");
 

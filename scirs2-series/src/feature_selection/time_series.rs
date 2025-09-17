@@ -83,7 +83,7 @@ impl TimeSeriesMethods {
             feature_scores[i] = max_correlation;
         }
 
-        // Select top features
+        // Select top _features
         let n_to_select = n_features.unwrap_or(n_feat / 2).min(n_feat);
         let mut indexed_scores: Vec<(usize, f64)> = feature_scores
             .iter()
@@ -96,7 +96,7 @@ impl TimeSeriesMethods {
         let selected_features: Vec<usize> = indexed_scores
             .into_iter()
             .take(n_to_select)
-            .map(|(idx, _)| idx)
+            .map(|(idx_, _)| idx_)
             .collect();
 
         let mut metadata = HashMap::new();
@@ -148,7 +148,7 @@ impl TimeSeriesMethods {
             feature_scores[i] = seasonal_strength;
         }
 
-        // Select top features
+        // Select top _features
         let n_to_select = n_features.unwrap_or(n_feat / 2).min(n_feat);
         let mut indexed_scores: Vec<(usize, f64)> = feature_scores
             .iter()
@@ -161,7 +161,7 @@ impl TimeSeriesMethods {
         let selected_features: Vec<usize> = indexed_scores
             .into_iter()
             .take(n_to_select)
-            .map(|(idx, _)| idx)
+            .map(|(idx_, _)| idx_)
             .collect();
 
         let mut metadata = HashMap::new();

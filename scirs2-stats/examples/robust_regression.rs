@@ -9,6 +9,7 @@ struct SimpleTheilSlopes {
 }
 
 /// Simple implementation of Theil-Sen estimator
+#[allow(dead_code)]
 fn simple_theilslopes(x: &[f64], y: &[f64]) -> SimpleTheilSlopes {
     assert_eq!(x.len(), y.len(), "x and y must have same length");
 
@@ -48,6 +49,7 @@ fn simple_theilslopes(x: &[f64], y: &[f64]) -> SimpleTheilSlopes {
 }
 
 /// Simple OLS (Ordinary Least Squares) implementation
+#[allow(dead_code)]
 fn simple_ols(x: &[f64], y: &[f64]) -> (f64, f64) {
     // (slope, intercept)
     assert_eq!(x.len(), y.len(), "x and y must have same length");
@@ -73,7 +75,8 @@ fn simple_ols(x: &[f64], y: &[f64]) -> (f64, f64) {
 }
 
 /// Simple implementation of RANSAC (Random Sample Consensus) regression
-fn simple_ransac(x: &[f64], y: &[f64], threshold: f64, n_trials: usize) -> (f64, f64, Vec<bool>) {
+#[allow(dead_code)]
+fn simple_ransac(x: &[f64], y: &[f64], threshold: f64, ntrials: usize) -> (f64, f64, Vec<bool>) {
     assert_eq!(x.len(), y.len(), "x and y must have same length");
 
     let n = x.len();
@@ -94,7 +97,7 @@ fn simple_ransac(x: &[f64], y: &[f64], threshold: f64, n_trials: usize) -> (f64,
     let mut best_model = (0.0, 0.0); // (slope, intercept)
     let mut best_inlier_mask = vec![false; n];
 
-    for _ in 0..n_trials {
+    for _ in 0..ntrials {
         // Select 2 random points
         let idx1 = (rng % n as u64) as usize;
         rng = (rng * 1103515245 + 12345) % 2147483648; // Simple LCG
@@ -155,13 +158,14 @@ fn simple_ransac(x: &[f64], y: &[f64], threshold: f64, n_trials: usize) -> (f64,
 }
 
 /// A simplified implementation of Huber regression
-fn simple_huber(x: &[f64], y: &[f64], epsilon: f64, max_iter: usize) -> (f64, f64) {
+#[allow(dead_code)]
+fn simple_huber(x: &[f64], y: &[f64], epsilon: f64, maxiter: usize) -> (f64, f64) {
     assert_eq!(x.len(), y.len(), "x and y must have same length");
 
     // Start with OLS estimate
     let (mut slope, mut intercept) = simple_ols(x, y);
 
-    for _ in 0..max_iter {
+    for _ in 0..maxiter {
         let mut numerator = 0.0;
         let mut denominator = 0.0;
 
@@ -220,6 +224,7 @@ fn simple_huber(x: &[f64], y: &[f64], epsilon: f64, max_iter: usize) -> (f64, f6
     (slope, intercept)
 }
 
+#[allow(dead_code)]
 fn main() {
     println!("=== Robust Regression Methods Demonstration ===");
 
@@ -285,12 +290,12 @@ fn main() {
             let x_val = j as f64 / 3.0;
 
             // Check if there's a data point
-            let mut is_data = false;
+            let mut isdata = false;
             let mut is_outlier = false;
 
             for k in 0..x.len() {
                 if (x[k] - x_val).abs() < 0.2 && (y[k] - y_val).abs() < 0.5 {
-                    is_data = true;
+                    isdata = true;
                     if k == x.len() - 1 {
                         // Last point is our outlier
                         is_outlier = true;
@@ -310,7 +315,7 @@ fn main() {
             let near_ransac = (ransac_y - y_val).abs() < 0.3;
             let near_huber = (huber_y - y_val).abs() < 0.3;
 
-            if is_data {
+            if isdata {
                 if is_outlier {
                     line.push('X'); // Outlier
                 } else {

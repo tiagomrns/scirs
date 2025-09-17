@@ -38,8 +38,7 @@ pub mod properties {
                         && (gamma_x_plus_1 - expected).abs() > tolerance * expected.abs()
                     {
                         errors.push(format!(
-                            "Gamma recurrence failed for x={}: Γ(x+1)={}, x*Γ(x)={}",
-                            x, gamma_x_plus_1, expected
+                            "Gamma recurrence failed for x={x}: Γ(x+1)={gamma_x_plus_1}, x*Γ(x)={expected}"
                         ));
                     }
                 }
@@ -47,19 +46,17 @@ pub mod properties {
                 // Test reflection formula for x < 1, but avoid very small values that have numerical issues
                 if x < 1.0 && x > 1e-6 {
                     let gamma_x = crate::gamma::gamma(x);
-                    let gamma_1_minus_x = crate::gamma::gamma(1.0 - x);
+                    let gamma_1minus_x = crate::gamma::gamma(1.0 - x);
                     let sin_pi_x = (std::f64::consts::PI * x).sin();
 
-                    if sin_pi_x.abs() > 1e-10 && gamma_x.is_finite() && gamma_1_minus_x.is_finite()
-                    {
-                        let product = gamma_x * gamma_1_minus_x * sin_pi_x;
+                    if sin_pi_x.abs() > 1e-10 && gamma_x.is_finite() && gamma_1minus_x.is_finite() {
+                        let product = gamma_x * gamma_1minus_x * sin_pi_x;
                         let expected = std::f64::consts::PI;
 
                         // Use larger tolerance for the reflection formula
                         if (product - expected).abs() > 1e-4 * expected {
                             errors.push(format!(
-                                "Gamma reflection formula failed for x={}: Γ(x)*Γ(1-x)*sin(πx)={}, π={}",
-                                x, product, expected
+                                "Gamma reflection formula failed for x={x}: Γ(x)*Γ(1-x)*sin(πx)={product}, π={expected}"
                             ));
                         }
                     }
@@ -80,7 +77,7 @@ pub mod properties {
                 if x.abs() < 1e-10 {
                     let j0_zero: f64 = crate::bessel::j0(0.0);
                     if (j0_zero - 1.0).abs() > 1e-10 {
-                        errors.push(format!("J₀(0) should be 1, got {}", j0_zero));
+                        errors.push(format!("J₀(0) should be 1, got {j0_zero}"));
                     }
                 }
 
@@ -90,8 +87,8 @@ pub mod properties {
 
                 if (j0_prime + j1_x).abs() > 1e-8 {
                     errors.push(format!(
-                        "J₀'(x) = -J₁(x) failed for x={}: J₀'({})={}, -J₁({})={}",
-                        x, x, j0_prime, x, -j1_x
+                        "J₀'(x) = -J₁(x) failed for x={x}: J₀'({x})={j0_prime}, -J₁({x})={neg_j1}",
+                        neg_j1 = -j1_x
                     ));
                 }
             }
@@ -111,8 +108,8 @@ pub mod properties {
 
             if (erf_x + erf_neg_x).abs() > 1e-12 {
                 errors.push(format!(
-                    "erf(-x) = -erf(x) failed for x={}: erf({})={}, erf({})={}",
-                    x, x, erf_x, -x, erf_neg_x
+                    "erf(-x) = -erf(x) failed for x={x}: erf({x})={erf_x}, erf({neg_x})={erf_neg_x}",
+                    neg_x = -x
                 ));
             }
 
@@ -121,18 +118,12 @@ pub mod properties {
             let sum = erf_x + erfc_x;
 
             if (sum - 1.0).abs() > 1e-12 {
-                errors.push(format!(
-                    "erf(x) + erfc(x) = 1 failed for x={}: sum={}",
-                    x, sum
-                ));
+                errors.push(format!("erf(x) + erfc(x) = 1 failed for x={x}: sum={sum}"));
             }
 
             // Test bounds: -1 ≤ erf(x) ≤ 1
             if !(-1.0..=1.0).contains(&erf_x) {
-                errors.push(format!(
-                    "erf(x) out of bounds for x={}: erf({})={}",
-                    x, x, erf_x
-                ));
+                errors.push(format!("erf(x) out of bounds for x={x}: erf({x})={erf_x}"));
             }
         }
 
@@ -147,18 +138,13 @@ pub mod properties {
         for n in 0..=20 {
             for k in 0..=n {
                 let binom_nk = crate::combinatorial::binomial(n, k).unwrap();
-                let binom_n_n_minus_k = crate::combinatorial::binomial(n, n - k).unwrap();
+                let binom_n_nminus_k = crate::combinatorial::binomial(n, n - k).unwrap();
 
                 // Test symmetry: C(n,k) = C(n,n-k)
-                if (binom_nk - binom_n_n_minus_k).abs() > 1e-10 {
+                if (binom_nk - binom_n_nminus_k).abs() > 1e-10 {
+                    let nminus_k = n - k;
                     errors.push(format!(
-                        "Binomial symmetry failed: C({},{})={}, C({},{})={}",
-                        n,
-                        k,
-                        binom_nk,
-                        n,
-                        n - k,
-                        binom_n_n_minus_k
+                        "Binomial symmetry failed: C({n},{k})={binom_nk}, C({n},{nminus_k})={binom_n_nminus_k}"
                     ));
                 }
 
@@ -169,16 +155,10 @@ pub mod properties {
                     let pascal_sum = pascal_left + pascal_right;
 
                     if (binom_nk - pascal_sum).abs() > 1e-10 {
+                        let nminus_1 = n - 1;
+                        let kminus_1 = k - 1;
                         errors.push(format!(
-                            "Pascal's triangle failed: C({},{})={}, C({},{}) + C({},{})={}",
-                            n,
-                            k,
-                            binom_nk,
-                            n - 1,
-                            k - 1,
-                            n - 1,
-                            k,
-                            pascal_sum
+                            "Pascal's triangle failed: C({n},{k})={binom_nk}, C({nminus_1},{kminus_1}) + C({nminus_1},{k})={pascal_sum}"
                         ));
                     }
                 }
@@ -199,8 +179,7 @@ pub mod properties {
             // Test bounds: 0 < σ(x) < 1 (allowing for numerical precision at extremes)
             if logistic_x < 0.0 || (logistic_x >= 1.0 && x < 20.0) {
                 errors.push(format!(
-                    "Logistic function out of bounds for x={}: σ({})={}",
-                    x, x, logistic_x
+                    "Logistic function out of bounds for x={x}: σ({x})={logistic_x}"
                 ));
             }
 
@@ -209,9 +188,9 @@ pub mod properties {
             let symmetry_check = logistic_x + logistic_neg_x;
 
             if (symmetry_check - 1.0).abs() > 1e-12 {
+                let neg_x = -x;
                 errors.push(format!(
-                    "Logistic symmetry failed for x={}: σ({}) + σ({})={}",
-                    x, x, -x, symmetry_check
+                    "Logistic symmetry failed for x={x}: σ({x}) + σ({neg_x})={symmetry_check}"
                 ));
             }
         }
@@ -237,18 +216,18 @@ pub mod edge_cases {
         // Test error functions at extremes
         let erf_large_pos: f64 = crate::erf::erf(10.0);
         if (erf_large_pos - 1.0).abs() > 1e-10 {
-            errors.push(format!("erf(10) should be ≈ 1, got {}", erf_large_pos));
+            errors.push(format!("erf(10) should be ≈ 1, got {erf_large_pos}"));
         }
 
         let erf_large_neg: f64 = crate::erf::erf(-10.0);
         if (erf_large_neg + 1.0).abs() > 1e-10 {
-            errors.push(format!("erf(-10) should be ≈ -1, got {}", erf_large_neg));
+            errors.push(format!("erf(-10) should be ≈ -1, got {erf_large_neg}"));
         }
 
         // Test Bessel functions at zero
         let j1_zero: f64 = crate::bessel::j1(0.0);
         if j1_zero.abs() > 1e-15 {
-            errors.push(format!("J₁(0) should be 0, got {}", j1_zero));
+            errors.push(format!("J₁(0) should be 0, got {j1_zero}"));
         }
 
         errors
@@ -265,8 +244,7 @@ pub mod edge_cases {
 
             if !gamma_val.is_nan() && !gamma_val.is_infinite() && gamma_val.abs() < 1e10 {
                 errors.push(format!(
-                    "Gamma function should blow up near -{}, got {}",
-                    n, gamma_val
+                    "Gamma function should blow up near -{n}, got {gamma_val}"
                 ));
             }
         }
@@ -276,7 +254,7 @@ pub mod edge_cases {
         for &x in &small_values {
             let erf_small: f64 = crate::erf::erf(x);
             if !erf_small.is_finite() {
-                errors.push(format!("erf({}) should be finite, got {}", x, erf_small));
+                errors.push(format!("erf({x}) should be finite, got {erf_small}"));
             }
         }
 
@@ -294,13 +272,13 @@ pub mod edge_cases {
             // Gamma function should handle large values gracefully
             let gamma_large: f64 = crate::gamma::gamma(x);
             if gamma_large.is_nan() {
-                errors.push(format!("Gamma function returned NaN for large value {}", x));
+                errors.push(format!("Gamma function returned NaN for large value {x}"));
             }
 
             // Error function should saturate to ±1
             let erf_large: f64 = crate::erf::erf(x);
             if (erf_large - 1.0).abs() > 1e-12 {
-                errors.push(format!("erf({}) should be ≈ 1, got {}", x, erf_large));
+                errors.push(format!("erf({x}) should be ≈ 1, got {erf_large}"));
             }
         }
 
@@ -329,8 +307,7 @@ pub mod regression {
             let gamma_val = crate::gamma::gamma(x);
             if (gamma_val - expected).abs() > 1e-12 * expected.abs() {
                 errors.push(format!(
-                    "Gamma regression test failed: Γ({}) = {}, expected {}",
-                    x, gamma_val, expected
+                    "Gamma regression test failed: Γ({x}) = {gamma_val}, expected {expected}"
                 ));
             }
         }
@@ -338,7 +315,7 @@ pub mod regression {
         // Test Bessel function zeros - simply test that J0(0) = 1 instead of zeros
         let j0_at_zero: f64 = crate::bessel::j0(0.0);
         if (j0_at_zero - 1.0).abs() > 1e-10 {
-            errors.push(format!("J₀(0) should be 1, got {}", j0_at_zero));
+            errors.push(format!("J₀(0) should be 1, got {j0_at_zero}"));
         }
 
         errors
@@ -346,6 +323,7 @@ pub mod regression {
 }
 
 /// Comprehensive test runner
+#[allow(dead_code)]
 pub fn run_comprehensive_tests() -> Vec<String> {
     let mut all_errors = Vec::new();
 

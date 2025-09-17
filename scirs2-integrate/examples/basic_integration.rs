@@ -1,5 +1,6 @@
 use scirs2_integrate::quad;
 
+#[allow(dead_code)]
 fn main() {
     println!("Basic numerical integration examples");
 

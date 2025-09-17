@@ -13,6 +13,7 @@ use scirs2_metrics::{
     },
 };
 
+#[allow(dead_code)]
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("Creating interactive ROC curve visualization example...");
 

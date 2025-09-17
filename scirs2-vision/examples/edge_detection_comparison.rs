@@ -15,12 +15,13 @@ use scirs2_vision::feature::{
 use scirs2_vision::preprocessing::{gaussian_blur, normalize_brightness};
 use std::path::PathBuf;
 
+#[allow(dead_code)]
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("SciRS2 Vision - Edge Detection Comparison");
 
     // In a real application, you would provide your own image file path
     let image_path = "examples/input/input.jpg"; // Change this to your image path
-    println!("Attempting to load image from: {}", image_path);
+    println!("Attempting to load image from: {image_path}");
 
     // Check if the image file exists
     let path = PathBuf::from(image_path);

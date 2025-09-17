@@ -21,6 +21,7 @@ use std::f64::consts::PI;
 ///
 /// # Returns
 /// Array of complex points where z-transform is evaluated
+#[allow(dead_code)]
 pub fn czt_points(
     m: usize,
     a: Option<Complex<f64>>,
@@ -113,9 +114,7 @@ impl CZT {
         }
 
         let chirp_array = Array1::from_vec(chirp_vec);
-        // TODO: Fix FFT reference once fft module is properly resolved
-        //let fwk2_vec = fft(&chirp_array.to_vec(), None)?;
-        let fwk2_vec = vec![Complex::new(0.0, 0.0); chirp_array.len()];
+        let fwk2_vec = crate::fft::fft(&chirp_array.to_vec(), None)?;
         let fwk2 = Array1::from_vec(fwk2_vec);
 
         Ok(CZT {
@@ -173,9 +172,9 @@ impl CZT {
         }
 
         // Create output shape - same as input but with m points along specified axis
-        let mut output_shape = x.shape().to_vec();
-        output_shape[axis] = self.m;
-        let mut result = Array::<Complex<f64>, _>::zeros(output_shape).into_dyn();
+        let mut outputshape = x.shape().to_vec();
+        outputshape[axis] = self.m;
+        let mut result = Array::<Complex<f64>, _>::zeros(outputshape).into_dyn();
 
         // Apply CZT along the specified axis
         // For 1D array, directly apply the transform
@@ -183,9 +182,15 @@ impl CZT {
             let x_1d: Array1<Complex<f64>> = x
                 .to_owned()
                 .into_shape_with_order(x.len())
-                .unwrap()
+                .map_err(|e| {
+                    FFTError::ComputationError(format!("Failed to reshape input array to 1D: {e}"))
+                })?
                 .into_dimensionality()
-                .unwrap();
+                .map_err(|e| {
+                    FFTError::ComputationError(format!(
+                        "Failed to convert array dimensionality: {e}"
+                    ))
+                })?;
             let y = self.transform_1d(&x_1d)?;
             return Ok(y.into_dyn());
         }
@@ -196,7 +201,9 @@ impl CZT {
             let x_1d: Array1<Complex<f64>> = x_slice
                 .to_owned()
                 .into_shape_with_order(x_slice.len())
-                .unwrap();
+                .map_err(|e| {
+                    FFTError::ComputationError(format!("Failed to reshape slice to 1D array: {e}"))
+                })?;
             let y = self.transform_1d(&x_1d)?;
 
             // Dynamic slicing based on the number of dimensions
@@ -242,9 +249,7 @@ impl CZT {
         padded.slice_mut(s![..self.n]).assign(&x_weighted);
 
         // Forward FFT
-        // TODO: Fix FFT reference once fft module is properly resolved
-        //let x_fft_vec = fft(&padded.to_vec(), None)?;
-        let x_fft_vec = vec![Complex::new(0.0, 0.0); padded.len()];
+        let x_fft_vec = crate::fft::fft(&padded.to_vec(), None)?;
         let x_fft = Array1::from_vec(x_fft_vec);
 
         // Multiply by pre-computed FFT of reciprocal chirp
@@ -253,9 +258,7 @@ impl CZT {
             .map_collect(|&xi, &fi| xi * fi);
 
         // Inverse FFT
-        // TODO: Fix FFT reference once fft module is properly resolved
-        //let y_full_vec = ifft(&product.to_vec(), None)?;
-        let y_full_vec = vec![Complex::new(0.0, 0.0); product.len()];
+        let y_full_vec = crate::fft::ifft(&product.to_vec(), None)?;
         let y_full = Array1::from_vec(y_full_vec);
 
         // Extract relevant portion and multiply by w_k^2
@@ -276,6 +279,7 @@ impl CZT {
 /// - `w`: Ratio between points (default: exp(-2j*pi/m))
 /// - `a`: Starting point in complex plane (default: 1+0j)
 /// - `axis`: Axis along which to compute CZT (default: -1)
+#[allow(dead_code)]
 pub fn czt<S, D>(
     x: &ArrayBase<S, D>,
     m: Option<usize>,
@@ -312,6 +316,7 @@ where
 /// - `f0`: Starting normalized frequency (0 to 1)
 /// - `f1`: Ending normalized frequency (0 to 1)
 /// - `oversampling`: Oversampling factor for frequency resolution
+#[allow(dead_code)]
 pub fn zoom_fft<S, D>(
     x: &ArrayBase<S, D>,
     m: usize,
@@ -388,15 +393,17 @@ mod tests {
         let n = 8;
         let x: Array1<Complex<f64>> = Array1::linspace(0.0, 7.0, n).mapv(|v| Complex::new(v, 0.0));
 
-        let czt_result = czt(&x.view(), None, None, None, None).unwrap();
+        let czt_result = czt(&x.view(), None, None, None, None)
+            .expect("CZT computation should succeed for test data");
 
         // czt returns ArrayD, need to convert to Array1
         assert_eq!(czt_result.ndim(), 1);
-        let czt_result_1d: Array1<Complex<f64>> = czt_result.into_dimensionality().unwrap();
+        let czt_result_1d: Array1<Complex<f64>> = czt_result
+            .into_dimensionality()
+            .expect("CZT result should convert to 1D array");
 
-        // TODO: Fix FFT reference once fft module is properly resolved
-        //let fft_result_vec = fft(&x.to_vec(), None).unwrap();
-        let fft_result_vec = vec![Complex::new(0.0, 0.0); x.len()];
+        let fft_result_vec = crate::fft::fft(&x.to_vec(), None)
+            .expect("FFT computation should succeed for test data");
         let fft_result = Array1::from_vec(fft_result_vec);
 
         for i in 0..n {
@@ -406,7 +413,6 @@ mod tests {
     }
 
     #[test]
-    #[ignore = "CZT zoom_fft implementation needs investigation - may have numerical issues"]
     fn test_zoom_fft() {
         // Create a simple signal with a clear frequency peak
         let n = 64;
@@ -418,11 +424,14 @@ mod tests {
 
         // Zoom in on a wider frequency range to ensure we capture the signal
         let m = 16;
-        let zoom_result = zoom_fft(&x.view(), m, 0.0, 0.5, None).unwrap();
+        let zoom_result =
+            zoom_fft(&x.view(), m, 0.0, 0.5, None).expect("Zoom FFT should succeed for test data");
 
         // Basic validation - check that we got a result and it's the right size
         assert_eq!(zoom_result.ndim(), 1);
-        let zoom_result_1d: Array1<Complex<f64>> = zoom_result.into_dimensionality().unwrap();
+        let zoom_result_1d: Array1<Complex<f64>> = zoom_result
+            .into_dimensionality()
+            .expect("Zoom FFT result should convert to 1D array");
         assert_eq!(zoom_result_1d.len(), m);
 
         // Simple check - there should be some non-zero values in the result

@@ -10,6 +10,7 @@ use crate::stochastic::{
 };
 use crate::unconstrained::result::OptimizeResult;
 use ndarray::Array1;
+use scirs2_core::rng;
 
 /// Options for SGD optimization
 #[derive(Debug, Clone)]
@@ -42,6 +43,7 @@ impl Default for SGDOptions {
 }
 
 /// Stochastic Gradient Descent optimizer
+#[allow(dead_code)]
 pub fn minimize_sgd<F>(
     mut grad_func: F,
     mut x: Array1<f64>,
@@ -134,7 +136,6 @@ where
                 return Ok(OptimizeResult {
                     x: best_x,
                     fun: best_f,
-                    iterations: iteration,
                     nit: iteration,
                     func_evals,
                     nfev: func_evals,
@@ -155,7 +156,6 @@ where
                 return Ok(OptimizeResult {
                     x: best_x,
                     fun: best_f,
-                    iterations: iteration,
                     nit: iteration,
                     func_evals,
                     nfev: func_evals,
@@ -176,7 +176,6 @@ where
     Ok(OptimizeResult {
         x: best_x,
         fun: final_loss.min(best_f),
-        iterations: options.max_iter,
         nit: options.max_iter,
         func_evals,
         nfev: func_evals,
@@ -188,6 +187,7 @@ where
 }
 
 /// Variance-reduced SGD using SVRG (Stochastic Variance Reduced Gradient)
+#[allow(dead_code)]
 pub fn minimize_svrg<F>(
     mut grad_func: F,
     mut x: Array1<f64>,
@@ -281,7 +281,6 @@ where
             return Ok(OptimizeResult {
                 x: best_x,
                 fun: best_f,
-                iterations: epoch,
                 nit: epoch,
                 func_evals,
                 nfev: func_evals,
@@ -299,7 +298,6 @@ where
     Ok(OptimizeResult {
         x: best_x,
         fun: best_f,
-        iterations: options.max_iter,
         nit: options.max_iter,
         func_evals,
         nfev: func_evals,
@@ -311,6 +309,7 @@ where
 }
 
 /// Mini-batch SGD with averaging for better convergence
+#[allow(dead_code)]
 pub fn minimize_mini_batch_sgd<F>(
     mut grad_func: F,
     mut x: Array1<f64>,
@@ -350,7 +349,6 @@ where
 
         // Shuffle data indices for this epoch
         let mut all_indices: Vec<usize> = (0..num_samples).collect();
-        use rand::rng;
         use rand::seq::SliceRandom;
         all_indices.shuffle(&mut rng());
 
@@ -428,7 +426,6 @@ where
             return Ok(OptimizeResult {
                 x: best_x,
                 fun: best_f,
-                iterations: epoch,
                 nit: epoch,
                 func_evals,
                 nfev: func_evals,
@@ -446,7 +443,6 @@ where
     Ok(OptimizeResult {
         x: best_x,
         fun: best_f,
-        iterations: options.max_iter,
         nit: options.max_iter,
         func_evals,
         nfev: func_evals,
@@ -468,12 +464,12 @@ mod tests {
     struct QuadraticFunction;
 
     impl StochasticGradientFunction for QuadraticFunction {
-        fn compute_gradient(&mut self, x: &ArrayView1<f64>, _batch_data: &[f64]) -> Array1<f64> {
+        fn compute_gradient(&mut self, x: &ArrayView1<f64>, _batchdata: &[f64]) -> Array1<f64> {
             // Gradient of f(x) = sum(x_i^2) is 2*x
             x.mapv(|xi| 2.0 * xi)
         }
 
-        fn compute_value(&mut self, x: &ArrayView1<f64>, _batch_data: &[f64]) -> f64 {
+        fn compute_value(&mut self, x: &ArrayView1<f64>, _batchdata: &[f64]) -> f64 {
             // f(x) = sum(x_i^2)
             x.mapv(|xi| xi * xi).sum()
         }

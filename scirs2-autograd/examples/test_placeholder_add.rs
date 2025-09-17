@@ -1,6 +1,7 @@
 use ag::ndarray::array;
 use scirs2_autograd as ag;
 
+#[allow(dead_code)]
 fn main() {
     ag::run(|ctx| {
         // Test the exact code from the doc test

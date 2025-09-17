@@ -1,3 +1,4 @@
+#![allow(deprecated)]
 //! SciRS2 Benchmarking Suite
 //!
 //! This crate provides comprehensive performance benchmarking for SciRS2,
@@ -31,30 +32,32 @@
 /// Common utilities for benchmarking
 pub mod common {
     use ndarray::{Array1, Array2};
-    use ndarray_rand::RandomExt;
-    use rand::distributions::Uniform;
-    use rand::SeedableRng;
-    use rand_chacha::ChaCha8Rng;
+    use rand::distr::Uniform;
+    use rand::rngs::SmallRng;
+    use rand::{Rng, SeedableRng};
 
     /// Standard seed for reproducible benchmarks
     pub const BENCHMARK_SEED: u64 = 42;
 
     /// Generate a random matrix with controlled properties
     pub fn generate_random_matrix(n: usize, seed: u64) -> Array2<f64> {
-        let mut rng = ChaCha8Rng::seed_from_u64(seed);
-        Array2::random_using((n, n), Uniform::new(-1.0, 1.0), &mut rng)
+        let mut rng = SmallRng::seed_from_u64(seed);
+        let uniform = Uniform::new(-1.0, 1.0).unwrap();
+        Array2::from_shape_fn((n, n), |_| rng.sample(uniform))
     }
 
     /// Generate a random vector with controlled properties
     pub fn generate_random_vector(n: usize, seed: u64) -> Array1<f64> {
-        let mut rng = ChaCha8Rng::seed_from_u64(seed);
-        Array1::random_using(n, Uniform::new(-1.0, 1.0), &mut rng)
+        let mut rng = SmallRng::seed_from_u64(seed);
+        let uniform = Uniform::new(-1.0, 1.0).unwrap();
+        Array1::from_shape_fn(n, |_| rng.sample(uniform))
     }
 
     /// Generate a symmetric positive definite matrix
     pub fn generate_spd_matrix(n: usize, seed: u64) -> Array2<f64> {
-        let mut rng = ChaCha8Rng::seed_from_u64(seed);
-        let a = Array2::random_using((n, n), Uniform::new(-1.0, 1.0), &mut rng);
+        let mut rng = SmallRng::seed_from_u64(seed);
+        let uniform = Uniform::new(-1.0, 1.0).unwrap();
+        let a = Array2::from_shape_fn((n, n), |_| rng.sample(uniform));
 
         // A^T * A is always positive definite
         let at = a.t();
@@ -71,8 +74,8 @@ pub mod common {
     }
 
     /// Check if a computation result is numerically acceptable
-    pub fn is_numerically_acceptable(relative_error: f64, tolerance: f64) -> bool {
-        relative_error < tolerance && relative_error.is_finite()
+    pub fn is_numerically_acceptable(relativeerror: f64, tolerance: f64) -> bool {
+        relativeerror < tolerance && relativeerror.is_finite()
     }
 }
 

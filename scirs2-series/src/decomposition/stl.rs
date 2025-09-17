@@ -105,6 +105,7 @@ pub struct MultiSeasonalDecompositionResult<F> {
 /// println!("Seasonal: {:?}", result.seasonal);
 /// println!("Residual: {:?}", result.residual);
 /// ```
+#[allow(dead_code)]
 pub fn stl_decomposition<F>(
     ts: &Array1<F>,
     period: usize,
@@ -332,6 +333,7 @@ where
 /// println!("Seasonal Components: {}", result.seasonal_components.len());
 /// println!("Residual: {:?}", result.residual);
 /// ```
+#[allow(dead_code)]
 pub fn mstl_decomposition<F>(
     ts: &Array1<F>,
     options: &MSTLOptions,

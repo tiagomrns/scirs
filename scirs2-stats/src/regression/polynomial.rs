@@ -24,8 +24,7 @@ use scirs2_linalg::lstsq;
 ///
 /// # Examples
 ///
-/// ```ignore
-/// # FIXME: This doc test requires LAPACK/BLAS to be linked properly
+/// ```
 /// use ndarray::array;
 /// use scirs2_stats::polyfit;
 ///
@@ -40,6 +39,7 @@ use scirs2_linalg::lstsq;
 /// // Check that the fit is good (high R^2 value)
 /// assert!(result.r_squared > 0.95);
 /// ```
+#[allow(dead_code)]
 pub fn polyfit<F>(
     x: &ArrayView1<F>,
     y: &ArrayView1<F>,
@@ -54,7 +54,9 @@ where
         + 'static
         + num_traits::NumAssign
         + num_traits::One
-        + ndarray::ScalarOperand,
+        + ndarray::ScalarOperand
+        + Send
+        + Sync,
 {
     // Check input dimensions
     if x.len() != y.len() {

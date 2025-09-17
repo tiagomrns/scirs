@@ -1,3 +1,4 @@
+#![allow(deprecated)]
 //! Linear algebra functions
 //!
 //! This module provides functions for linear algebra operations,
@@ -100,8 +101,8 @@ pub mod decomposition_advanced;
 // Main eigen module
 pub mod eigen;
 pub use self::eigen::{
-    eig, eig_gen, eigh, eigh_gen, eigvals, eigvals_gen, eigvalsh, eigvalsh_gen, power_iteration,
-    ultra_precision_eig,
+    advanced_precision_eig, eig, eig_gen, eigh, eigh_gen, eigvals, eigvals_gen, eigvalsh,
+    eigvalsh_gen, power_iteration,
 };
 
 // Specialized eigen solvers in separate module
@@ -124,24 +125,24 @@ pub mod mixed_precision;
 mod norm;
 pub mod optim;
 pub mod parallel;
+pub mod parallel_dispatch;
 pub mod perf_opt;
 pub mod preconditioners;
 pub mod projection;
 /// Quantization-aware linear algebra operations
-// pub mod quantization; // Temporarily disabled due to wide dependency issues
-// Temporarily disabled due to wide dependency issues
-// pub use self::quantization::calibration::{
-//     calibrate_matrix, calibrate_vector, get_activation_calibration_config,
-//     get_weight_calibration_config, CalibrationConfig, CalibrationMethod,
-// };
+pub mod quantization;
+// Re-enabled quantization module
+pub use self::quantization::calibration::{
+    calibrate_matrix, calibrate_vector, get_activation_calibration_config,
+    get_weight_calibration_config, CalibrationConfig, CalibrationMethod,
+};
 pub mod random;
 pub mod random_matrices;
-// Temporarily disabled due to validation trait dependency issues
+// Temporarily disabled due to validation trait dependency issues and API incompatibilities
 // pub mod random_new;
 pub mod circulant_toeplitz;
 mod diagnostics;
 pub mod fft;
-pub mod quantization;
 pub mod scalable;
 pub mod simd_ops;
 mod solve;
@@ -155,6 +156,18 @@ pub mod structured;
 pub mod tensor_contraction;
 pub mod tensor_train;
 mod validation;
+// Distributed computing support (temporarily disabled - needs extensive API fixes)
+// pub mod distributed;
+
+// GPU acceleration foundations
+#[cfg(any(
+    feature = "cuda",
+    feature = "opencl",
+    feature = "rocm",
+    feature = "metal"
+))]
+pub mod gpu;
+
 // Automatic differentiation support
 #[cfg(feature = "autograd")]
 pub mod autograd;
@@ -222,7 +235,9 @@ pub use self::matrix_factorization::{
     cur_decomposition, interpolative_decomposition, nmf, rank_revealing_qr, utv_decomposition,
 };
 pub use self::matrix_functions::{
-    acosm, asinm, atanm, coshm, cosm, expm, logm, signm, sinhm, sinm, sqrtm, tanhm, tanm,
+    acosm, asinm, atanm, coshm, cosm, expm, geometric_mean_spd, logm, logm_parallel, nuclear_norm,
+    signm, sinhm, sinm, spectral_condition_number, spectral_radius, sqrtm, sqrtm_parallel, tanhm,
+    tanm, tikhonov_regularization,
 };
 pub use self::matrixfree::{
     block_diagonal_operator, conjugate_gradient as matrix_free_conjugate_gradient,
@@ -292,8 +307,8 @@ pub mod prelude {
         polar_decomposition_newton, qr_with_column_pivoting,
     };
     pub use super::eigen::{
-        eig, eig_gen, eigh, eigh_gen, eigvals, eigvals_gen, eigvalsh, eigvalsh_gen,
-        power_iteration, ultra_precision_eig,
+        advanced_precision_eig, eig, eig_gen, eigh, eigh_gen, eigvals, eigvals_gen, eigvalsh,
+        eigvalsh_gen, power_iteration,
     };
     pub use super::eigen_specialized::{
         banded_eigen, banded_eigh, banded_eigvalsh, circulant_eigenvalues, largest_k_eigh,
@@ -346,8 +361,10 @@ pub mod prelude {
         interpolative_decomposition, nmf, rank_revealing_qr, utv_decomposition,
     };
     pub use super::matrix_functions::{
-        acosm, asinm, atanm, coshm, cosm, expm, logm, matrix_power, signm, sinhm, sinm, sqrtm,
-        tanhm, tanm,
+        acosm, asinm, atanm, coshm, cosm, expm, geometric_mean_spd, logm, logm_parallel,
+        matrix_power, nuclear_norm, polar_decomposition, signm, sinhm, sinm,
+        spectral_condition_number, spectral_radius, sqrtm, sqrtm_parallel, tanhm, tanm,
+        tikhonov_regularization,
     };
     pub use super::matrixfree::{
         block_diagonal_operator, conjugate_gradient as matrix_free_conjugate_gradient,
@@ -366,7 +383,7 @@ pub mod prelude {
     //     simd_mixed_precision_dot_f32_f64, simd_mixed_precision_matmul_f32_f64,
     //     simd_mixed_precision_matvec_f32_f64,
     // };
-    pub use super::norm::{cond, matrix_norm, matrix_rank, vector_norm};
+    pub use super::norm::{cond, matrix_norm, matrix_rank, vector_norm, vector_norm_parallel};
     pub use super::optim::{block_matmul, strassen_matmul, tiled_matmul};
     pub use super::perf_opt::{
         blocked_matmul, inplace_add, inplace_scale, matmul_benchmark, optimized_transpose,
@@ -380,8 +397,8 @@ pub mod prelude {
         PreconditionerType,
     };
     pub use super::projection::{
-        gaussian_random_matrix, johnson_lindenstrauss_min_dim, johnson_lindenstrauss_transform,
-        project, sparse_random_matrix, very_sparse_random_matrix,
+        gaussian_randommatrix, johnson_lindenstrauss_min_dim, johnson_lindenstrauss_transform,
+        project, sparse_randommatrix, very_sparse_randommatrix,
     };
     pub use super::quantization::calibration::{
         calibrate_matrix, calibrate_vector, CalibrationConfig, CalibrationMethod,
@@ -401,7 +418,7 @@ pub mod prelude {
         sparse, spd, toeplitz, uniform, vandermonde, with_condition_number, with_eigenvalues,
     };
     pub use super::random_matrices::{
-        random_complex_matrix, random_hermitian, random_matrix, Distribution1D, MatrixType,
+        random_complexmatrix, random_hermitian, randommatrix, Distribution1D, MatrixType,
     };
     // 一時的にrandom_newエクスポートを無効化（コンパイル問題解決まで）
     // pub use super::random_new::{
@@ -440,10 +457,6 @@ pub mod prelude {
         simd_matmul_f64,
         simd_matmul_optimized_f32,
         simd_matmul_optimized_f64,
-        simd_matrix_max_f32,
-        simd_matrix_max_f64,
-        simd_matrix_min_f32,
-        simd_matrix_min_f64,
         simd_matvec_f32,
         simd_matvec_f64,
         // Transpose operations
@@ -452,6 +465,10 @@ pub mod prelude {
         // Vector norm operations
         simd_vector_norm_f32,
         simd_vector_norm_f64,
+        simdmatrix_max_f32,
+        simdmatrix_max_f64,
+        simdmatrix_min_f32,
+        simdmatrix_min_f64,
         GemmBlockSizes,
     };
     pub use super::solve::{lstsq, solve, solve_multiple, solve_triangular};
@@ -465,7 +482,7 @@ pub mod prelude {
         specialized_to_operator, BandedMatrix, BlockTridiagonalMatrix, SpecializedMatrix,
         SymmetricMatrix, TridiagonalMatrix,
     };
-    pub use super::stats::{correlation_matrix, covariance_matrix};
+    pub use super::stats::{correlationmatrix, covariancematrix};
     pub use super::structured::{
         solve_circulant, solve_toeplitz, structured_to_operator, CirculantMatrix, HankelMatrix,
         StructuredMatrix, ToeplitzMatrix,
@@ -473,6 +490,13 @@ pub mod prelude {
     #[cfg(feature = "tensor_contraction")]
     pub use super::tensor_contraction::{batch_matmul, contract, einsum, hosvd};
     pub use super::tensor_train::{tt_add, tt_decomposition, tt_hadamard, TTTensor};
+
+    // Distributed computing (temporarily disabled)
+    // pub use super::distributed::{
+    //     initialize_distributed, finalize_distributed, DistributedConfig, DistributedContext,
+    //     DistributedMatrix, DistributedVector, DistributedLinalgOps, DistributedStats,
+    //     CompressionConfig, CompressionAlgorithm, CommunicationBackend, DistributionStrategy,
+    // };
 
     // Automatic differentiation support
     #[cfg(feature = "autograd")]
@@ -542,7 +566,7 @@ pub mod prelude {
             eigvalsh_tridiagonal,
             // Matrix functions
             expm,
-            fractional_matrix_power,
+            fractionalmatrix_power,
             funm,
             inv,
             logm,

@@ -52,6 +52,7 @@ pub struct BriefDescriptor {
 /// # Returns
 ///
 /// * Result containing vector of BRIEF descriptors
+#[allow(dead_code)]
 pub fn compute_brief_descriptors(
     img: &DynamicImage,
     keypoints: Vec<KeyPoint>,
@@ -91,6 +92,7 @@ pub fn compute_brief_descriptors(
 }
 
 /// Compute BRIEF descriptor at a single keypoint
+#[allow(dead_code)]
 fn compute_descriptor_at_keypoint(
     image: &Array2<f32>,
     keypoint: &KeyPoint,
@@ -152,6 +154,7 @@ fn compute_descriptor_at_keypoint(
 }
 
 /// Generate test pattern for BRIEF descriptor
+#[allow(dead_code)]
 fn generate_test_pattern(
     descriptor_size: usize,
     patch_size: usize,
@@ -209,6 +212,7 @@ fn generate_test_pattern(
 /// # Returns
 ///
 /// * Vector of matched descriptor indices with distances
+#[allow(dead_code)]
 pub fn match_brief_descriptors(
     descriptors1: &[BriefDescriptor],
     descriptors2: &[BriefDescriptor],
@@ -222,30 +226,31 @@ pub fn match_brief_descriptors(
         let mut second_best_distance = u32::MAX;
 
         for (j, desc2) in descriptors2.iter().enumerate() {
-            let distance = hamming_distance(&desc1.descriptor, &desc2.descriptor);
+            let _distance = hamming_distance(&desc1.descriptor, &desc2.descriptor);
 
-            if distance < best_distance {
+            if _distance < best_distance {
                 second_best_distance = best_distance;
-                best_distance = distance;
+                best_distance = _distance;
                 best_index = j;
-            } else if distance < second_best_distance {
-                second_best_distance = distance;
+            } else if _distance < second_best_distance {
+                second_best_distance = _distance;
             }
         }
 
-        // Apply distance threshold and ratio test
+        // Apply _distance threshold and ratio test
         if best_distance < max_distance && best_distance < (second_best_distance * 7 / 10) {
             matches.push((i, best_index, best_distance));
         }
     }
 
-    // Sort matches by distance
+    // Sort matches by _distance
     matches.sort_by_key(|&(_, _, dist)| dist);
 
     matches
 }
 
 /// Calculate Hamming distance between binary descriptors
+#[allow(dead_code)]
 pub fn hamming_distance(desc1: &[u32], desc2: &[u32]) -> u32 {
     desc1
         .iter()
@@ -255,8 +260,9 @@ pub fn hamming_distance(desc1: &[u32], desc2: &[u32]) -> u32 {
 }
 
 /// Convert Hamming distance to normalized similarity score
-pub fn hamming_to_similarity(distance: u32, descriptor_bits: usize) -> f32 {
-    1.0 - (distance as f32) / (descriptor_bits as f32)
+#[allow(dead_code)]
+pub fn hamming_to_similarity(_distance: u32, descriptorbits: usize) -> f32 {
+    1.0 - (_distance as f32) / (descriptorbits as f32)
 }
 
 #[cfg(test)]

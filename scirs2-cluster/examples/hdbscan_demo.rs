@@ -1,6 +1,7 @@
 use ndarray::Array2;
 use scirs2_cluster::{hdbscan, ClusterSelectionMethod, HDBSCANOptions};
 
+#[allow(dead_code)]
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("HDBSCAN Clustering Example");
     println!("=========================\n");
@@ -59,7 +60,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("\nRunning HDBSCAN with custom parameters...");
     let options = HDBSCANOptions {
         min_cluster_size: 3,
-        min_samples: Some(3),
+        minsamples: Some(3),
         cluster_selection_method: ClusterSelectionMethod::EOM,
         ..Default::default()
     };

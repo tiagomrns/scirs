@@ -9,6 +9,7 @@ use scirs2_core::gpu::kernels::{DataType, KernelParams};
 use scirs2_core::gpu::{GpuBackend, GpuContext};
 
 #[cfg(feature = "gpu")]
+#[allow(dead_code)]
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("=== GPU Kernel Library Demonstration ===");
 
@@ -50,6 +51,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 }
 
 #[cfg(not(feature = "gpu"))]
+#[allow(dead_code)]
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("=== GPU Kernel Library Example ===");
     println!("This example requires the 'gpu' feature to be enabled.");
@@ -59,6 +61,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
 /// Demonstrate BLAS operations (GEMM, AXPY)
 #[cfg(feature = "gpu")]
+#[allow(dead_code)]
 fn demo_blas_operations(context: &GpuContext) -> Result<(), Box<dyn std::error::Error>> {
     println!("Demo 1: BLAS Operations");
     println!("-----------------------");
@@ -138,6 +141,7 @@ fn demo_blas_operations(context: &GpuContext) -> Result<(), Box<dyn std::error::
 
 /// Demonstrate reduction operations (sum, min, max, mean, std)
 #[cfg(feature = "gpu")]
+#[allow(dead_code)]
 fn demo_reduction_operations(context: &GpuContext) -> Result<(), Box<dyn std::error::Error>> {
     println!("Demo 2: Reduction Operations");
     println!("----------------------------");
@@ -210,6 +214,7 @@ fn demo_reduction_operations(context: &GpuContext) -> Result<(), Box<dyn std::er
 
 /// Demonstrate machine learning operations (activations, pooling, softmax)
 #[cfg(feature = "gpu")]
+#[allow(dead_code)]
 fn demo_ml_operations(context: &GpuContext) -> Result<(), Box<dyn std::error::Error>> {
     println!("Demo 3: Machine Learning Operations");
     println!("----------------------------------");
@@ -282,6 +287,7 @@ fn demo_ml_operations(context: &GpuContext) -> Result<(), Box<dyn std::error::Er
 
 /// Demonstrate transform operations (FFT)
 #[cfg(feature = "gpu")]
+#[allow(dead_code)]
 fn demo_transform_operations(context: &GpuContext) -> Result<(), Box<dyn std::error::Error>> {
     println!("Demo 4: Transform Operations");
     println!("---------------------------");
@@ -335,6 +341,7 @@ fn demo_transform_operations(context: &GpuContext) -> Result<(), Box<dyn std::er
 
 /// Demonstrate kernel specialization capabilities
 #[cfg(feature = "gpu")]
+#[allow(dead_code)]
 fn demo_kernel_specialization(context: &GpuContext) -> Result<(), Box<dyn std::error::Error>> {
     println!("Demo 5: Kernel Specialization");
     println!("-----------------------------");
@@ -401,12 +408,12 @@ fn demo_kernel_specialization(context: &GpuContext) -> Result<(), Box<dyn std::e
 
 /// Helper function to compare CPU and GPU results
 #[allow(dead_code)]
-fn compare_results(cpu_result: &[f32], gpu_result: &[f32], tolerance: f32) -> bool {
-    if cpu_result.len() != gpu_result.len() {
+fn result(cpu_result: &[f32], gpuresult: &[f32], tolerance: f32) -> bool {
+    if cpu_result.len() != gpuresult.len() {
         return false;
     }
 
-    for (cpu_val, gpu_val) in cpu_result.iter().zip(gpu_result.iter()) {
+    for (cpu_val, gpu_val) in cpu_result.iter().zip(gpuresult.iter()) {
         if (cpu_val - gpu_val).abs() > tolerance {
             return false;
         }
@@ -417,10 +424,10 @@ fn compare_results(cpu_result: &[f32], gpu_result: &[f32], tolerance: f32) -> bo
 
 /// Helper function to print performance comparison
 #[allow(dead_code)]
-fn print_performance_comparison(operation: &str, cpu_time: f64, gpu_time: f64) {
+fn time(operation: &str, cpu_time: f64, gpu_time: f64) {
     let speedup = cpu_time / gpu_time;
-    println!("   {} Performance:", operation);
+    println!("   {operation} Performance:");
     println!("     CPU: {:.2} ms", cpu_time * 1000.0);
     println!("     GPU: {:.2} ms", gpu_time * 1000.0);
-    println!("     Speedup: {:.2}x", speedup);
+    println!("     Speedup: {speedup:.2}x");
 }

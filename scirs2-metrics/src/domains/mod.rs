@@ -11,6 +11,12 @@
 //! - **Time Series**: Forecasting, anomaly detection, trend analysis metrics
 //! - **Recommendation Systems**: Ranking, relevance, diversity metrics
 //! - **Anomaly Detection**: Detection accuracy, false alarm rates, distribution metrics
+//! - **Audio Processing**: Speech recognition, music analysis, sound event detection metrics
+//! - **Graph Neural Networks**: Node/edge/graph classification, community detection, graph generation metrics
+//! - **Biomedical & Healthcare**: Clinical trials, drug discovery, medical imaging, genomics, epidemiology metrics
+//! - **Financial Modeling**: Risk management, portfolio optimization, credit risk, trading strategy evaluation metrics
+//! - **Quantum Machine Learning**: Quantum fidelity, entanglement, circuit complexity, quantum advantage metrics
+//! - **Edge AI & Federated Learning**: Edge performance, privacy preservation, federated learning convergence metrics
 //!
 //! # Examples
 //!
@@ -65,9 +71,27 @@
 use crate::error::{MetricsError, Result};
 use std::collections::HashMap;
 
+// Import domain-specific metric suites
+use crate::domains::anomaly_detection::AnomalyDetectionSuite;
+use crate::domains::audio_processing::AudioProcessingMetrics;
+use crate::domains::computer_vision::ComputerVisionSuite;
+use crate::domains::edge_ai::EdgeAISuite;
+use crate::domains::generative_ai::GenerativeAISuite;
+use crate::domains::graph_neural_networks::GraphNeuralNetworkMetrics;
+use crate::domains::quantum_ml::QuantumMLSuite;
+use crate::domains::time_series::TimeSeriesSuite;
+
 pub mod anomaly_detection;
+pub mod audio_processing;
+pub mod biomedical;
 pub mod computer_vision;
+pub mod edge_ai;
+pub mod financial;
+pub mod generative_ai;
+pub mod graph_neural_networks;
+pub mod neuromorphic;
 pub mod nlp;
+pub mod quantum_ml;
 pub mod recommender;
 pub mod time_series;
 
@@ -176,28 +200,43 @@ impl Default for DomainEvaluationResult {
 }
 
 /// Helper function to create metric collections for multiple domains
+#[allow(dead_code)]
 pub fn create_domain_suite() -> DomainSuite {
     DomainSuite::new()
 }
 
 /// Collection of domain-specific metric calculators
 pub struct DomainSuite {
-    cv_metrics: computer_vision::ComputerVisionSuite,
+    cv_metrics: ComputerVisionSuite,
     nlp_metrics: nlp::NLPSuite,
-    ts_metrics: time_series::TimeSeriesSuite,
+    ts_metrics: TimeSeriesSuite,
     rec_metrics: recommender::RecommenderSuite,
-    ad_metrics: anomaly_detection::AnomalyDetectionSuite,
+    ad_metrics: AnomalyDetectionSuite,
+    gen_ai_metrics: GenerativeAISuite<f64>,
+    audio_metrics: AudioProcessingMetrics,
+    gnn_metrics: GraphNeuralNetworkMetrics,
+    biomedical_metrics: biomedical::BiomedicalSuite,
+    financial_metrics: financial::FinancialSuite,
+    quantum_ml_metrics: QuantumMLSuite,
+    edge_ai_metrics: EdgeAISuite,
 }
 
 impl DomainSuite {
     /// Create a new domain suite with all available domain metrics
     pub fn new() -> Self {
         Self {
-            cv_metrics: computer_vision::ComputerVisionSuite::new(),
+            cv_metrics: ComputerVisionSuite::new(),
             nlp_metrics: nlp::NLPSuite::new(),
-            ts_metrics: time_series::TimeSeriesSuite::new(),
+            ts_metrics: TimeSeriesSuite::new(),
             rec_metrics: recommender::RecommenderSuite::new(),
-            ad_metrics: anomaly_detection::AnomalyDetectionSuite::new(),
+            ad_metrics: AnomalyDetectionSuite::new(),
+            gen_ai_metrics: GenerativeAISuite::new(),
+            audio_metrics: AudioProcessingMetrics::new(),
+            gnn_metrics: GraphNeuralNetworkMetrics::new(),
+            biomedical_metrics: biomedical::BiomedicalSuite::new(),
+            financial_metrics: financial::FinancialSuite::new(),
+            quantum_ml_metrics: QuantumMLSuite::new(),
+            edge_ai_metrics: EdgeAISuite::new(),
         }
     }
 
@@ -226,6 +265,41 @@ impl DomainSuite {
         &self.ad_metrics
     }
 
+    /// Get generative AI metrics
+    pub fn generative_ai(&self) -> &generative_ai::GenerativeAISuite<f64> {
+        &self.gen_ai_metrics
+    }
+
+    /// Get audio processing metrics
+    pub fn audio_processing(&self) -> &audio_processing::AudioProcessingMetrics {
+        &self.audio_metrics
+    }
+
+    /// Get graph neural network metrics
+    pub fn graph_neural_networks(&self) -> &graph_neural_networks::GraphNeuralNetworkMetrics {
+        &self.gnn_metrics
+    }
+
+    /// Get biomedical and healthcare metrics
+    pub fn biomedical(&self) -> &biomedical::BiomedicalSuite {
+        &self.biomedical_metrics
+    }
+
+    /// Get financial modeling metrics
+    pub fn financial(&self) -> &financial::FinancialSuite {
+        &self.financial_metrics
+    }
+
+    /// Get quantum machine learning metrics
+    pub fn quantum_ml(&self) -> &quantum_ml::QuantumMLSuite {
+        &self.quantum_ml_metrics
+    }
+
+    /// Get edge AI and federated learning metrics
+    pub fn edge_ai(&self) -> &edge_ai::EdgeAISuite {
+        &self.edge_ai_metrics
+    }
+
     /// List all available domains
     pub fn available_domains(&self) -> Vec<&'static str> {
         vec![
@@ -234,6 +308,13 @@ impl DomainSuite {
             self.ts_metrics.domain_name(),
             self.rec_metrics.domain_name(),
             self.ad_metrics.domain_name(),
+            self.gen_ai_metrics.domain_name(),
+            self.audio_metrics.domain_name(),
+            self.gnn_metrics.domain_name(),
+            self.biomedical_metrics.domain_name(),
+            self.financial_metrics.domain_name(),
+            self.quantum_ml_metrics.domain_name(),
+            self.edge_ai_metrics.domain_name(),
         ]
     }
 }
@@ -275,11 +356,18 @@ mod tests {
         let suite = create_domain_suite();
         let domains = suite.available_domains();
 
-        assert_eq!(domains.len(), 5);
+        assert_eq!(domains.len(), 12);
         assert!(domains.contains(&"Computer Vision"));
         assert!(domains.contains(&"Natural Language Processing"));
         assert!(domains.contains(&"Time Series"));
         assert!(domains.contains(&"Recommender Systems"));
         assert!(domains.contains(&"Anomaly Detection"));
+        assert!(domains.contains(&"Generative AI & Deep Learning"));
+        assert!(domains.contains(&"Audio Processing"));
+        assert!(domains.contains(&"Graph Neural Networks"));
+        assert!(domains.contains(&"Biomedical & Healthcare"));
+        assert!(domains.contains(&"Financial Modeling & Quantitative Finance"));
+        assert!(domains.contains(&"Quantum Machine Learning"));
+        assert!(domains.contains(&"Edge AI & Federated Learning"));
     }
 }

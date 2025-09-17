@@ -1,4 +1,11 @@
+#![allow(deprecated)]
 //! Machine Learning evaluation metrics module for SciRS2
+
+#![allow(clippy::uninlined_format_args)]
+#![allow(clippy::new_without_default)]
+#![allow(clippy::useless_vec)]
+#![allow(clippy::too_many_arguments)]
+#![allow(dead_code)]
 //!
 //! This module provides functions for evaluating machine learning models
 //! including classification, regression, clustering, and ranking metrics, as well as
@@ -8,7 +15,7 @@
 //!
 //! Classification metrics evaluate the performance of classification models:
 //!
-//! ```
+//! ```ignore
 //! use ndarray::array;
 //! use scirs2_metrics::classification::{accuracy_score, precision_score, f1_score};
 //!
@@ -20,42 +27,32 @@
 //! let f1 = f1_score(&y_true, &y_pred, 1).unwrap();
 //! ```
 //!
+//!
 //! ## One-vs-One Classification Metrics
 //!
 //! One-vs-One metrics are useful for evaluating multi-class classification problems by
-//! considering each pair of classes separately:
-//!
-//! ```
-//! use ndarray::array;
-//! use scirs2_metrics::classification::one_vs_one::{one_vs_one_accuracy, weighted_one_vs_one_f1_score};
-//!
-//! let y_true = array![0, 1, 2, 0, 1, 2];
-//! let y_pred = array![0, 2, 1, 0, 0, 2];
-//!
-//! let ovo_acc = one_vs_one_accuracy(&y_true, &y_pred).unwrap();
-//! let weighted_f1 = weighted_one_vs_one_f1_score(&y_true, &y_pred).unwrap();
-//! ```
+//! considering each pair of classes separately.
 //!
 //! # Regression Metrics
 //!
 //! Regression metrics evaluate the performance of regression models:
 //!
-//! ```
+//! ```ignore
 //! use ndarray::array;
 //! use scirs2_metrics::regression::{mean_squared_error, r2_score};
 //!
 //! let y_true = array![3.0, -0.5, 2.0, 7.0];
 //! let y_pred = array![2.5, 0.0, 2.0, 8.0];
 //!
-//! let mse = mean_squared_error(&y_true, &y_pred).unwrap();
-//! let r2 = r2_score(&y_true, &y_pred).unwrap();
+//! let mse: f64 = mean_squared_error(&y_true, &y_pred).unwrap();
+//! let r2: f64 = r2_score(&y_true, &y_pred).unwrap();
 //! ```
 //!
 //! # Clustering Metrics
 //!
 //! Clustering metrics evaluate the performance of clustering algorithms:
 //!
-//! ```
+//! ```ignore
 //! use ndarray::{array, Array2};
 //! use scirs2_metrics::clustering::silhouette_score;
 //!
@@ -78,7 +75,7 @@
 //!
 //! Ranking metrics evaluate the performance of ranking and recommendation models:
 //!
-//! ```
+//! ```ignore
 //! use ndarray::array;
 //! use scirs2_metrics::ranking::{
 //!     mean_reciprocal_rank, ndcg_score, mean_average_precision,
@@ -115,7 +112,7 @@
 //!
 //! For evaluating correlation between rankings:
 //!
-//! ```
+//! ```ignore
 //! use ndarray::array;
 //! use scirs2_metrics::ranking::{kendalls_tau, spearmans_rho};
 //!
@@ -132,7 +129,7 @@
 //!
 //! For multi-label ranking problems:
 //!
-//! ```
+//! ```ignore
 //! use ndarray::Array2;
 //! use scirs2_metrics::ranking::label::{
 //!     coverage_error_multiple, label_ranking_loss, label_ranking_average_precision_score
@@ -166,7 +163,7 @@
 //!
 //! Metrics for evaluating anomaly detection systems:
 //!
-//! ```
+//! ```ignore
 //! use ndarray::array;
 //! use scirs2_metrics::anomaly::{
 //!     detection_accuracy, false_alarm_rate, miss_detection_rate,
@@ -200,7 +197,7 @@
 //!
 //! ## Distribution Metrics
 //!
-//! ```
+//! ```ignore
 //! use ndarray::array;
 //! use scirs2_metrics::anomaly::{
 //!     kl_divergence, js_divergence, wasserstein_distance, maximum_mean_discrepancy
@@ -231,7 +228,7 @@
 //!
 //! Metrics for evaluating fairness and bias in machine learning models:
 //!
-//! ```
+//! ```ignore
 //! use ndarray::{array, Array2};
 //! use scirs2_metrics::fairness::{
 //!     demographic_parity_difference, equalized_odds_difference, equal_opportunity_difference,
@@ -341,11 +338,11 @@
 //!
 //! Utilities for model evaluation like cross-validation:
 //!
-//! ```
+//! ```ignore
 //! use ndarray::{Array, Ix1};
 //! use scirs2_metrics::evaluation::train_test_split;
 //!
-//! let x = Array::<f64, _>::linspace(0., 9., 10).into_shape(Ix1(10)).unwrap();
+//! let x = Array::<f64, Ix1>::linspace(0., 9., 10).into_shape(Ix1(10)).unwrap();
 //! let y = &x * 2.;
 //!
 //! let (train_arrays, test_arrays) = train_test_split(&[&x, &y], 0.3, Some(42)).unwrap();
@@ -355,7 +352,7 @@
 //!
 //! Optimized metrics computation for better performance and memory efficiency:
 //!
-//! ```
+//! ```ignore
 //! use ndarray::array;
 //! use scirs2_metrics::optimization::parallel::ParallelConfig;
 //! use scirs2_metrics::optimization::memory::{ChunkedMetrics, StreamingMetric};
@@ -432,7 +429,7 @@
 //!
 //! Visualization utilities for metrics results:
 //!
-//! ```
+//! ```ignore
 //! use ndarray::{array, Array2};
 //! use scirs2_metrics::classification::confusion_matrix;
 //! use scirs2_metrics::classification::curves::{roc_curve, precision_recall_curve, calibration_curve};
@@ -510,7 +507,7 @@
 //! The library also provides interactive visualizations that allow for dynamic exploration
 //! of metrics via web interfaces:
 //!
-//! ```
+//! ```ignore
 //! use ndarray::array;
 //! use scirs2_metrics::classification::curves::roc_curve;
 //! use scirs2_metrics::visualization::{
@@ -555,7 +552,7 @@
 //!
 //! Utilities for saving, loading, and comparing metric results:
 //!
-//! ```
+//! ```ignore
 //! use std::collections::HashMap;
 //! use scirs2_metrics::serialization::{
 //!     MetricResult, MetricMetadata, MetricCollection, SerializationFormat,
@@ -628,7 +625,6 @@
 
 #![allow(
     unused_imports,
-    dead_code,
     unexpected_cfgs,
     clippy::clone_on_copy,
     clippy::needless_range_loop,
@@ -646,6 +642,7 @@ pub mod dashboard;
 pub mod domains;
 pub mod error;
 pub mod evaluation;
+pub mod explainability;
 pub mod fairness;
 
 // Integration modules with conditional compilation

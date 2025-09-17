@@ -20,18 +20,17 @@ impl<F: Float> Op<F> for KroneckerOp {
         let a = ctx.input(0);
         let b = ctx.input(1);
 
-        let a_shape = a.shape();
-        let b_shape = b.shape();
+        let ashape = a.shape();
+        let bshape = b.shape();
 
-        if a_shape.len() != 2 || b_shape.len() != 2 {
+        if ashape.len() != 2 || bshape.len() != 2 {
             return Err(OpError::IncompatibleShape(format!(
-                "Kronecker product requires 2D matrices, got shapes {:?} and {:?}",
-                a_shape, b_shape
+                "Kronecker product requires 2D matrices, got shapes {ashape:?} and {bshape:?}"
             )));
         }
 
-        let (m, n) = (a_shape[0], a_shape[1]);
-        let (p, q) = (b_shape[0], b_shape[1]);
+        let (m, n) = (ashape[0], ashape[1]);
+        let (p, q) = (bshape[0], bshape[1]);
 
         // Convert to 2D arrays
         let a_2d = a
@@ -71,17 +70,17 @@ impl<F: Float> Op<F> for KroneckerOp {
         let g = ctx.graph();
 
         // Get shapes
-        let a_shape = a.shape();
-        let b_shape = b.shape();
+        let ashape = a.shape();
+        let bshape = b.shape();
 
-        if a_shape.len() != 2 || b_shape.len() != 2 {
+        if ashape.len() != 2 || bshape.len() != 2 {
             ctx.append_input_grad(0, None);
             ctx.append_input_grad(1, None);
             return;
         }
 
-        let (m, n) = (a_shape[0], a_shape[1]);
-        let (p, q) = (b_shape[0], b_shape[1]);
+        let (m, n) = (ashape[0], ashape[1]);
+        let (p, q) = (bshape[0], bshape[1]);
 
         // For Kronecker product gradient:
         // If Y = A ⊗ B, then:
@@ -163,6 +162,7 @@ impl<F: Float> Op<F> for KroneckerOp {
 ///     assert_eq!(c.eval(g).unwrap().shape(), &[4, 4]);
 /// });
 /// ```
+#[allow(dead_code)]
 pub fn kron<'g, F: Float>(a: &Tensor<'g, F>, b: &Tensor<'g, F>) -> Tensor<'g, F> {
     let g = a.graph();
 

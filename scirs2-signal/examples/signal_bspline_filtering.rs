@@ -5,6 +5,7 @@ use scirs2_signal::spline::{
 use std::error::Error;
 use std::f64::consts::PI;
 
+#[allow(dead_code)]
 fn main() -> Result<(), Box<dyn Error>> {
     println!("B-Spline Filtering and Interpolation Example");
     println!("--------------------------------------------");

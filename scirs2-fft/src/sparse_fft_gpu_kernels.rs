@@ -9,6 +9,7 @@ use crate::error::{FFTError, FFTResult};
 use crate::sparse_fft::{SparseFFTAlgorithm, WindowFunction};
 use num_complex::Complex64;
 use num_traits::NumCast;
+use scirs2_core::simd_ops::PlatformCapabilities;
 use std::fmt::Debug;
 
 /// GPU kernel configuration
@@ -105,16 +106,16 @@ pub struct FFTKernel {
 
 impl FFTKernel {
     /// Create a new FFT kernel
-    pub fn new(input_size: usize, input_address: usize, output_address: usize) -> Self {
+    pub fn new(input_size: usize, input_address: usize, outputaddress: usize) -> Self {
         let mut config = KernelConfig::default();
-        // Calculate grid size based on input size and block size
+        // Calculate grid _size based on input _size and block _size
         config.grid_size = input_size.div_ceil(config.block_size);
 
         Self {
             config,
             input_size,
             input_address,
-            output_address,
+            output_address: outputaddress,
         }
     }
 }
@@ -190,7 +191,7 @@ impl SparseFFTKernel {
         window_function: WindowFunction,
     ) -> Self {
         let mut config = KernelConfig::default();
-        // Calculate grid size based on input size and block size
+        // Calculate grid _size based on input _size and block _size
         config.grid_size = input_size.div_ceil(config.block_size);
 
         Self {
@@ -337,7 +338,7 @@ impl KernelFactory {
         // Customize configuration based on GPU
         let mut config = KernelConfig::default();
 
-        // Set block size based on GPU capabilities
+        // Set block _size based on GPU capabilities
         config.block_size = if self.max_threads_per_block >= 1024 {
             1024
         } else if self.max_threads_per_block >= 512 {
@@ -346,10 +347,10 @@ impl KernelFactory {
             256
         };
 
-        // Calculate grid size
+        // Calculate grid _size
         config.grid_size = input_size.div_ceil(config.block_size);
 
-        // Set shared memory size
+        // Set shared memory _size
         config.shared_memory_size = std::cmp::min(
             self.shared_memory_per_block,
             16 * 1024, // 16 KB default
@@ -397,7 +398,7 @@ impl KernelFactory {
         // Customize configuration based on GPU and algorithm
         let mut config = KernelConfig::default();
 
-        // Optimize block size based on algorithm
+        // Optimize block _size based on algorithm
         config.block_size = match algorithm {
             SparseFFTAlgorithm::Sublinear => 256,
             SparseFFTAlgorithm::CompressedSensing => 512,
@@ -407,10 +408,10 @@ impl KernelFactory {
             SparseFFTAlgorithm::SpectralFlatness => 512,
         };
 
-        // Ensure block size is within GPU limits
+        // Ensure block _size is within GPU limits
         config.block_size = std::cmp::min(config.block_size, self.max_threads_per_block);
 
-        // Calculate grid size
+        // Calculate grid _size
         config.grid_size = input_size.div_ceil(config.block_size);
 
         // Optimize shared memory based on algorithm
@@ -463,11 +464,11 @@ impl KernelFactory {
     }
 
     /// Check if there's enough memory for the requested operation
-    pub fn check_memory_requirements(&self, total_bytes_needed: usize) -> FFTResult<()> {
-        if total_bytes_needed > self.available_memory {
+    pub fn check_memory_requirements(&self, total_bytesneeded: usize) -> FFTResult<()> {
+        if total_bytesneeded > self.available_memory {
             return Err(FFTError::MemoryError(format!(
                 "Not enough GPU memory: need {} bytes, available {} bytes",
-                total_bytes_needed, self.available_memory
+                total_bytesneeded, self.available_memory
             )));
         }
 
@@ -496,10 +497,10 @@ impl KernelLauncher {
     }
 
     /// Allocate memory for FFT operation
-    pub fn allocate_fft_memory(&mut self, input_size: usize) -> FFTResult<(usize, usize)> {
+    pub fn allocate_fft_memory(&mut self, inputsize: usize) -> FFTResult<(usize, usize)> {
         let element_size = std::mem::size_of::<Complex64>();
-        let input_bytes = input_size * element_size;
-        let output_bytes = input_size * element_size;
+        let input_bytes = inputsize * element_size;
+        let output_bytes = inputsize * element_size;
 
         let total_bytes = input_bytes + output_bytes;
         self.factory.check_memory_requirements(total_bytes)?;
@@ -582,7 +583,7 @@ impl KernelLauncher {
             window_function,
         )?;
 
-        // Apply window function if needed
+        // Apply window _function if needed
         if window_function != WindowFunction::None {
             // Launch window kernel first
             kernel.apply_window()?;
@@ -628,6 +629,7 @@ impl KernelLauncher {
 ///
 /// * Result containing sparse frequency components and kernel statistics
 #[allow(clippy::too_many_arguments)]
+#[allow(dead_code)]
 pub fn execute_sparse_fft_kernel<T>(
     signal: &[T],
     sparsity: usize,
@@ -645,18 +647,18 @@ where
         gpu_arch.to_string(),
         vec![compute_capability],
         available_memory,
-        48 * 1024, // 48 KB shared memory per block
+        48 * 1024, // 48 KB shared _memory per block
         1024,      // 1024 threads per block
     );
 
     // Create kernel launcher
     let mut launcher = KernelLauncher::new(factory);
 
-    // Allocate memory
+    // Allocate _memory
     let (input_address, output_values_address, output_indices_address) =
         launcher.allocate_sparse_fft_memory(signal.len(), sparsity)?;
 
-    // In a real implementation, this would copy the signal to GPU memory
+    // In a real implementation, this would copy the signal to GPU _memory
 
     // Launch kernel
     let stats = launcher.launch_sparse_fft_kernel(
@@ -669,7 +671,7 @@ where
         window_function,
     )?;
 
-    // In a real implementation, this would copy the results back from GPU memory
+    // In a real implementation, this would copy the results back from GPU _memory
     // For now, just return dummy data
 
     // Create dummy frequency components
@@ -684,7 +686,7 @@ where
         indices.push(idx);
     }
 
-    // Free memory
+    // Free _memory
     launcher.free_all_memory();
 
     Ok((values, indices, stats))
@@ -710,8 +712,24 @@ mod tests {
     }
 
     #[test]
-    #[ignore = "Ignored for alpha-4 release - GPU-dependent test"]
     fn test_kernel_factory() {
+        // Check if GPU is available
+        let caps = PlatformCapabilities::detect();
+        if !caps.cuda_available && !caps.gpu_available {
+            // Mock test for CPU-only environments
+            eprintln!("GPU not available, using mock kernel factory test");
+            // Test factory creation still works
+            let factory = KernelFactory::new(
+                "Mock Device".to_string(),
+                vec![(1, 1)],
+                1024 * 1024, // 1 MB
+                16 * 1024,   // 16 KB
+                32,          // 32 threads
+            );
+            assert!(factory.arch.contains("Mock"));
+            return;
+        }
+
         let factory = KernelFactory::new(
             "NVIDIA GeForce RTX 3080".to_string(),
             vec![(8, 6)],
@@ -749,8 +767,25 @@ mod tests {
     }
 
     #[test]
-    #[ignore = "Ignored for alpha-4 release - GPU-dependent test"]
     fn test_kernel_launcher() {
+        // Check if GPU is available
+        let caps = PlatformCapabilities::detect();
+        if !caps.cuda_available && !caps.gpu_available {
+            // Mock test for CPU-only environments
+            eprintln!("GPU not available, using mock kernel launcher test");
+            let factory = KernelFactory::new(
+                "Mock Device".to_string(),
+                vec![(1, 1)],
+                1024 * 1024,
+                16 * 1024,
+                32,
+            );
+            let launcher = KernelLauncher::new(factory);
+            // Test that launcher is created successfully
+            assert_eq!(launcher.get_total_memory_allocated(), 0);
+            return;
+        }
+
         let factory = KernelFactory::new(
             "NVIDIA GeForce RTX 3080".to_string(),
             vec![(8, 6)],
@@ -782,14 +817,36 @@ mod tests {
     }
 
     #[test]
-    #[ignore = "Ignored for alpha-4 release - GPU-dependent test"]
     fn test_execute_sparse_fft_kernel() {
         // Create a sparse signal
         let n = 1024;
         let frequencies = vec![(3, 1.0), (7, 0.5), (15, 0.25)];
         let signal = create_sparse_signal(n, &frequencies);
 
-        // Execute sparse FFT kernel
+        // Check if GPU is available
+        let caps = PlatformCapabilities::detect();
+        if !caps.cuda_available && !caps.gpu_available {
+            // Mock test for CPU-only environments
+            eprintln!("GPU not available, using mock sparse FFT kernel test");
+            // Test with mock device
+            let result = execute_sparse_fft_kernel(
+                &signal,
+                6,
+                SparseFFTAlgorithm::Sublinear,
+                WindowFunction::Hann,
+                "Mock Device",
+                (1, 1),
+                1024 * 1024, // 1 MB
+            );
+            // In mock mode, this should still return valid dummy data
+            let (values, indices, stats) = result.unwrap();
+            assert_eq!(values.len(), 6);
+            assert_eq!(indices.len(), 6);
+            assert!(stats.execution_time_ms >= 0.0);
+            return;
+        }
+
+        // Execute sparse FFT kernel with GPU
         let (values, indices, stats) = execute_sparse_fft_kernel(
             &signal,
             6,

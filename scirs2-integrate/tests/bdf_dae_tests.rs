@@ -14,6 +14,7 @@ use scirs2_integrate::{bdf_implicit_dae, bdf_semi_explicit_dae, DAEIndex, DAEOpt
 ///
 /// Analytical solution: x(t) = e^(-0.5t), y(t) = 0.5 * e^(-0.5t)
 #[test]
+#[allow(dead_code)]
 fn test_bdf_semi_explicit_linear() {
     // System definition
     let f = |_t: f64, x: ArrayView1<f64>, _y: ArrayView1<f64>| {
@@ -83,6 +84,7 @@ fn test_bdf_semi_explicit_linear() {
 /// vy' = -g - λy
 /// 0 = x² + y² - L²
 #[test]
+#[allow(dead_code)]
 fn test_bdf_semi_explicit_pendulum() {
     // Constants
     let g = 9.81;
@@ -175,6 +177,7 @@ fn test_bdf_semi_explicit_pendulum() {
 /// Analytical solution: y(t) = c*e^(-t) + t, z(t) = c*e^(-t)
 /// With initial condition y(0) = 1, we get c = 1
 #[test]
+#[allow(dead_code)]
 fn test_bdf_implicit_dae_simple() {
     // System in implicit form: F(t, y, y') = 0
     let f = |t: f64, y: ArrayView1<f64>, y_prime: ArrayView1<f64>| {
@@ -251,6 +254,7 @@ fn test_bdf_implicit_dae_simple() {
 
 /// Test the BDF solver for an RLC circuit DAE
 #[test]
+#[allow(dead_code)]
 fn test_bdf_implicit_dae_rlc_circuit() {
     // Circuit parameters
     let r = 1.0; // Resistance (Ohms)

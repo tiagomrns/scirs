@@ -2,10 +2,11 @@ extern crate scirs2_autograd as ag;
 use ag::tensor_ops as T;
 use ndarray::array;
 
+#[allow(dead_code)]
 fn main() {
     println!("Running basic shape tests");
 
-    ag::run::<f64, _, _>(|ctx| {
+    ag::run(|ctx| {
         // Test scalar
         let scalar = T::scalar(5.0, ctx);
         println!("Scalar shape: {:?}", scalar.eval(ctx).unwrap().shape());

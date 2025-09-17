@@ -218,6 +218,7 @@ where
 ///
 /// Comprehensive wavelet features including energy distribution,
 /// entropy measures, and time-frequency characteristics.
+#[allow(dead_code)]
 pub fn calculate_wavelet_features<F>(
     ts: &Array1<F>,
     config: &WaveletConfig,
@@ -299,6 +300,7 @@ struct DWTResult<F> {
 /// Implements a simplified DWT using Haar wavelets or Daubechies wavelets.
 /// This is a basic implementation for demonstration purposes.
 /// In production, you would typically use a specialized wavelet library.
+#[allow(dead_code)]
 fn discrete_wavelet_transform<F>(signal: &Array1<F>, config: &WaveletConfig) -> Result<DWTResult<F>>
 where
     F: Float + FromPrimitive + Debug + Clone,
@@ -323,7 +325,7 @@ where
         // Use approximation for next level
         current_signal = approx;
 
-        // Stop if signal becomes too short
+        // Stop if _signal becomes too short
         if current_signal.len() < 4 {
             break;
         }
@@ -340,6 +342,7 @@ where
 }
 
 /// Get wavelet filter coefficients for different wavelet families
+#[allow(dead_code)]
 fn get_wavelet_filters<F>(family: &WaveletFamily) -> Result<(Array1<F>, Array1<F>)>
 where
     F: Float + FromPrimitive,
@@ -431,6 +434,7 @@ where
 }
 
 /// Perform one level of wavelet decomposition
+#[allow(dead_code)]
 fn wavelet_decompose_level<F>(
     signal: &Array1<F>,
     h: &Array1<F>, // Low-pass filter
@@ -491,6 +495,7 @@ where
 // =============================================================================
 
 /// Calculate energy in each wavelet frequency band
+#[allow(dead_code)]
 fn calculate_wavelet_energy_bands<F>(coefficients: &[Array1<F>]) -> Result<Vec<F>>
 where
     F: Float + FromPrimitive,
@@ -506,17 +511,18 @@ where
 }
 
 /// Calculate relative wavelet energy (normalized energy distribution)
-fn calculate_relative_wavelet_energy<F>(energy_bands: &[F]) -> Result<Vec<F>>
+#[allow(dead_code)]
+fn calculate_relative_wavelet_energy<F>(_energybands: &[F]) -> Result<Vec<F>>
 where
     F: Float + FromPrimitive,
 {
-    let total_energy: F = energy_bands.iter().fold(F::zero(), |acc, &x| acc + x);
+    let total_energy: F = _energybands.iter().fold(F::zero(), |acc, &x| acc + x);
 
     if total_energy <= F::zero() {
-        return Ok(vec![F::zero(); energy_bands.len()]);
+        return Ok(vec![F::zero(); _energybands.len()]);
     }
 
-    let relative_energy = energy_bands
+    let relative_energy = _energybands
         .iter()
         .map(|&energy| energy / total_energy)
         .collect();
@@ -534,6 +540,7 @@ where
 /// ```
 ///
 /// where p_j is the relative energy at scale j.
+#[allow(dead_code)]
 fn calculate_wavelet_entropy<F>(coefficients: &[Array1<F>]) -> Result<F>
 where
     F: Float + FromPrimitive,
@@ -552,6 +559,7 @@ where
 }
 
 /// Calculate wavelet variance as a measure of signal variability
+#[allow(dead_code)]
 fn calculate_wavelet_variance<F>(coefficients: &[Array1<F>]) -> Result<F>
 where
     F: Float + FromPrimitive,
@@ -559,7 +567,7 @@ where
     let mut total_variance = F::zero();
     let mut total_count = 0;
 
-    // Skip the first level (approximation coefficients) and only use detail coefficients
+    // Skip the first level (approximation coefficients) and only use detail _coefficients
     for coeff_level in coefficients.iter().skip(1) {
         if coeff_level.len() > 1 {
             let mean = coeff_level.sum() / F::from(coeff_level.len()).unwrap();
@@ -582,6 +590,7 @@ where
 ///
 /// The regularity index measures the smoothness/regularity of the signal
 /// based on the decay of wavelet coefficients across scales.
+#[allow(dead_code)]
 fn calculate_regularity_index<F>(coefficients: &[Array1<F>]) -> Result<F>
 where
     F: Float + FromPrimitive,
@@ -614,7 +623,7 @@ where
     let n = F::from(scale_energies.len()).unwrap();
     let sum_x: F = scale_energies
         .iter()
-        .map(|(x, _)| *x)
+        .map(|(x_, _)| *x_)
         .fold(F::zero(), |acc, x| acc + x);
     let sum_y: F = scale_energies
         .iter()
@@ -626,7 +635,7 @@ where
         .fold(F::zero(), |acc, xy| acc + xy);
     let sum_xx: F = scale_energies
         .iter()
-        .map(|(x, _)| *x * *x)
+        .map(|(x_, _)| *x_ * *x_)
         .fold(F::zero(), |acc, xx| acc + xx);
 
     let denominator = n * sum_xx - sum_x * sum_x;
@@ -641,15 +650,16 @@ where
 }
 
 /// Find the dominant scale (frequency band) based on energy distribution
-fn find_dominant_wavelet_scale<F>(energy_bands: &[F]) -> usize
+#[allow(dead_code)]
+fn find_dominant_wavelet_scale<F>(_energybands: &[F]) -> usize
 where
     F: Float + PartialOrd,
 {
-    energy_bands
+    _energybands
         .iter()
         .enumerate()
         .max_by(|(_, a), (_, b)| a.partial_cmp(b).unwrap_or(std::cmp::Ordering::Equal))
-        .map(|(idx, _)| idx)
+        .map(|(idx_, _)| idx_)
         .unwrap_or(0)
 }
 
@@ -658,11 +668,12 @@ where
 // =============================================================================
 
 /// Calculate multi-resolution analysis features
-fn calculate_mra_features<F>(dwt_result: &DWTResult<F>) -> Result<MultiResolutionFeatures<F>>
+#[allow(dead_code)]
+fn calculate_mra_features<F>(_dwtresult: &DWTResult<F>) -> Result<MultiResolutionFeatures<F>>
 where
     F: Float + FromPrimitive,
 {
-    let level_energies = calculate_wavelet_energy_bands(&dwt_result.coefficients)?;
+    let level_energies = calculate_wavelet_energy_bands(&_dwtresult.coefficients)?;
     let level_relative_energies = calculate_relative_wavelet_energy(&level_energies)?;
 
     // Calculate entropy across levels
@@ -704,6 +715,7 @@ where
 // =============================================================================
 
 /// Calculate time-frequency features using simplified CWT
+#[allow(dead_code)]
 fn calculate_time_frequency_features<F>(
     signal: &Array1<F>,
     config: &WaveletConfig,
@@ -745,6 +757,7 @@ where
 }
 
 /// Generate scales for CWT analysis
+#[allow(dead_code)]
 fn generate_cwt_scales(config: &WaveletConfig) -> Vec<f64> {
     let (min_scale, max_scale) = config.cwt_scales.unwrap_or((1.0, 32.0));
     let count = config.cwt_scale_count;
@@ -759,6 +772,7 @@ fn generate_cwt_scales(config: &WaveletConfig) -> Vec<f64> {
 }
 
 /// Compute simplified CWT using Morlet-like wavelet
+#[allow(dead_code)]
 fn compute_simplified_cwt<F>(signal: &Array1<F>, scales: &[f64]) -> Result<Array2<F>>
 where
     F: Float + FromPrimitive + Clone,
@@ -803,15 +817,16 @@ where
 }
 
 /// Estimate instantaneous frequencies from CWT
-fn estimate_instantaneous_frequencies<F>(cwt_matrix: &Array2<F>, scales: &[f64]) -> Result<Vec<F>>
+#[allow(dead_code)]
+fn estimate_instantaneous_frequencies<F>(_cwtmatrix: &Array2<F>, scales: &[f64]) -> Result<Vec<F>>
 where
     F: Float + FromPrimitive + PartialOrd,
 {
-    let (_, n_time) = cwt_matrix.dim();
+    let (_, n_time) = _cwtmatrix.dim();
     let mut inst_freqs = Vec::with_capacity(n_time);
 
     for t in 0..n_time {
-        let time_slice = cwt_matrix.column(t);
+        let time_slice = _cwtmatrix.column(t);
 
         // Find scale with maximum magnitude
         let max_scale_idx = time_slice
@@ -822,7 +837,7 @@ where
                     .partial_cmp(&b.abs())
                     .unwrap_or(std::cmp::Ordering::Equal)
             })
-            .map(|(idx, _)| idx)
+            .map(|(idx_, _)| idx_)
             .unwrap_or(0);
 
         // Convert scale to frequency (simplified)
@@ -835,15 +850,16 @@ where
 }
 
 /// Calculate energy concentrations from CWT
-fn calculate_energy_concentrations<F>(cwt_matrix: &Array2<F>) -> Result<Vec<F>>
+#[allow(dead_code)]
+fn calculate_energy_concentrations<F>(_cwtmatrix: &Array2<F>) -> Result<Vec<F>>
 where
     F: Float + FromPrimitive,
 {
-    let (_, n_time) = cwt_matrix.dim();
+    let (_, n_time) = _cwtmatrix.dim();
     let mut concentrations = Vec::with_capacity(n_time);
 
     for t in 0..n_time {
-        let time_slice = cwt_matrix.column(t);
+        let time_slice = _cwtmatrix.column(t);
         let energy = time_slice.mapv(|x| x * x).sum();
         concentrations.push(energy);
     }
@@ -852,21 +868,22 @@ where
 }
 
 /// Calculate frequency stability over time
-fn calculate_frequency_stability<F>(instantaneous_frequencies: &[F]) -> Result<F>
+#[allow(dead_code)]
+fn calculate_frequency_stability<F>(_instantaneousfrequencies: &[F]) -> Result<F>
 where
     F: Float + FromPrimitive,
 {
-    if instantaneous_frequencies.len() < 2 {
+    if _instantaneousfrequencies.len() < 2 {
         return Ok(F::zero());
     }
 
-    let n = instantaneous_frequencies.len();
-    let mean = instantaneous_frequencies
+    let n = _instantaneousfrequencies.len();
+    let mean = _instantaneousfrequencies
         .iter()
         .fold(F::zero(), |acc, &x| acc + x)
         / F::from(n).unwrap();
 
-    let variance = instantaneous_frequencies
+    let variance = _instantaneousfrequencies
         .iter()
         .fold(F::zero(), |acc, &x| acc + (x - mean) * (x - mean))
         / F::from(n - 1).unwrap();
@@ -881,18 +898,19 @@ where
 }
 
 /// Calculate scalogram entropy
-fn calculate_scalogram_entropy<F>(cwt_matrix: &Array2<F>) -> Result<F>
+#[allow(dead_code)]
+fn calculate_scalogram_entropy<F>(_cwtmatrix: &Array2<F>) -> Result<F>
 where
     F: Float + FromPrimitive,
 {
-    let total_energy = cwt_matrix.mapv(|x| x * x).sum();
+    let total_energy = _cwtmatrix.mapv(|x| x * x).sum();
 
     if total_energy <= F::zero() {
         return Ok(F::zero());
     }
 
     let mut entropy = F::zero();
-    for &coeff in cwt_matrix.iter() {
+    for &coeff in _cwtmatrix.iter() {
         let energy = coeff * coeff;
         if energy > F::zero() {
             let p = energy / total_energy;
@@ -904,15 +922,16 @@ where
 }
 
 /// Calculate frequency evolution over time
-fn calculate_frequency_evolution<F>(cwt_matrix: &Array2<F>, scales: &[f64]) -> Result<Vec<F>>
+#[allow(dead_code)]
+fn calculate_frequency_evolution<F>(_cwtmatrix: &Array2<F>, scales: &[f64]) -> Result<Vec<F>>
 where
     F: Float + FromPrimitive + PartialOrd,
 {
-    let (_, n_time) = cwt_matrix.dim();
+    let (_, n_time) = _cwtmatrix.dim();
     let mut evolution = Vec::with_capacity(n_time);
 
     for t in 0..n_time {
-        let time_slice = cwt_matrix.column(t);
+        let time_slice = _cwtmatrix.column(t);
 
         // Calculate weighted average frequency
         let mut weighted_freq = F::zero();
@@ -941,6 +960,7 @@ where
 // =============================================================================
 
 /// Calculate statistical features of wavelet coefficients
+#[allow(dead_code)]
 fn calculate_coefficient_statistics<F>(
     coefficients: &[Array1<F>],
 ) -> Result<WaveletCoefficientStats<F>>
@@ -1041,6 +1061,7 @@ where
 /// # Returns
 ///
 /// Tuple of (denoised_signal, denoising_features)
+#[allow(dead_code)]
 pub fn wavelet_denoise<F>(
     signal: &Array1<F>,
     config: &WaveletConfig,
@@ -1092,6 +1113,7 @@ where
 }
 
 /// Calculate optimal threshold for denoising
+#[allow(dead_code)]
 fn calculate_optimal_threshold<F>(coefficients: &[Array1<F>], method: &DenoisingMethod) -> Result<F>
 where
     F: Float + FromPrimitive + PartialOrd,
@@ -1132,6 +1154,7 @@ where
 }
 
 /// Apply thresholding to wavelet coefficients
+#[allow(dead_code)]
 fn apply_thresholding<F>(
     coefficients: &[Array1<F>],
     threshold: F,
@@ -1191,6 +1214,7 @@ where
 }
 
 /// Simplified signal reconstruction from thresholded coefficients
+#[allow(dead_code)]
 fn reconstruct_signal_simplified<F>(coefficients: &[Array1<F>]) -> Result<Array1<F>>
 where
     F: Float + FromPrimitive + Clone,
@@ -1203,7 +1227,7 @@ where
     let approx_coeffs = &coefficients[0];
     let mut reconstructed = approx_coeffs.clone();
 
-    // Add scaled detail coefficients (simplified approach)
+    // Add scaled detail _coefficients (simplified approach)
     for (level, detail_coeffs) in coefficients.iter().enumerate().skip(1) {
         let scale_factor = F::from(2.0_f64.powi(level as i32)).unwrap();
 
@@ -1218,6 +1242,7 @@ where
 }
 
 /// Calculate SNR improvement after denoising
+#[allow(dead_code)]
 fn calculate_snr_improvement<F>(original: &Array1<F>, denoised: &Array1<F>) -> Result<F>
 where
     F: Float + FromPrimitive,
@@ -1241,6 +1266,7 @@ where
 }
 
 /// Calculate MSE reduction after denoising
+#[allow(dead_code)]
 fn calculate_mse_reduction<F>(original: &Array1<F>, denoised: &Array1<F>) -> Result<F>
 where
     F: Float + FromPrimitive,

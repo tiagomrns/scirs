@@ -1,6 +1,7 @@
 use scirs2_signal::window::*;
 use std::error::Error;
 
+#[allow(dead_code)]
 fn main() -> Result<(), Box<dyn Error>> {
     // Create windows of length 64
     let length = 64;
@@ -41,6 +42,7 @@ fn main() -> Result<(), Box<dyn Error>> {
     Ok(())
 }
 
+#[allow(dead_code)]
 fn print_stats(window: &[f64]) {
     // Calculate some basic statistics
     let min = window.iter().fold(f64::INFINITY, |a, &b| a.min(b));

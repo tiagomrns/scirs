@@ -71,7 +71,7 @@ pub use self::validation::{
     validate_linkage_matrix, validate_monotonic_distances, validate_square_distance_matrix,
 };
 pub use self::visualization::{
-    create_dendrogram_plot, get_color_palette, Branch, ColorScheme, ColorThreshold,
+    create_dendrogramplot, get_color_palette, Branch, ColorScheme, ColorThreshold,
     DendrogramConfig, DendrogramOrientation, DendrogramPlot, Leaf, LegendEntry, TruncateMode,
 };
 
@@ -130,6 +130,7 @@ pub enum ClusterCriterion {
 }
 
 /// Computes distances between observations
+#[allow(dead_code)]
 fn compute_distances<F: Float + FromPrimitive>(data: ArrayView2<F>, metric: Metric) -> Array1<F> {
     let n_samples = data.shape()[0];
     let n_features = data.shape()[1];
@@ -221,6 +222,7 @@ fn compute_distances<F: Float + FromPrimitive>(data: ArrayView2<F>, metric: Metr
 }
 
 /// Converts a condensed distance matrix index to (i, j) coordinates
+#[allow(dead_code)]
 pub fn condensed_index_to_coords(n: usize, idx: usize) -> (usize, usize) {
     // Find i and j from the condensed index
     let mut i = 0;
@@ -246,13 +248,23 @@ pub fn condensed_index_to_coords(n: usize, idx: usize) -> (usize, usize) {
 }
 
 /// Converts (i, j) coordinates to a condensed distance matrix index
-pub fn coords_to_condensed_index(n: usize, i: usize, j: usize) -> usize {
+#[allow(dead_code)]
+pub fn coords_to_condensed_index(n: usize, i: usize, j: usize) -> Result<usize> {
     if i == j {
-        panic!("Cannot compute diagonal index in condensed matrix");
+        return Err(ClusteringError::InvalidInput(
+            "Cannot compute diagonal index in condensed matrix".into(),
+        ));
+    }
+
+    if i >= n || j >= n {
+        return Err(ClusteringError::InvalidInput(format!(
+            "Indices ({}, {}) out of bounds for matrix size {}",
+            i, j, n
+        )));
     }
 
     let (i_min, j_min) = if i < j { (i, j) } else { (j, i) };
-    (n * i_min) - ((i_min * (i_min + 1)) / 2) + (j_min - i_min - 1)
+    Ok((n * i_min) - ((i_min * (i_min + 1)) / 2) + (j_min - i_min - 1))
 }
 
 /// Performs hierarchical clustering using the specified linkage method
@@ -266,6 +278,7 @@ pub fn coords_to_condensed_index(n: usize, i: usize, j: usize) -> usize {
 /// # Returns
 ///
 /// * `Result<Array2<F>>` - The linkage matrix, which describes the dendrogram
+#[allow(dead_code)]
 pub fn linkage<
     F: Float + FromPrimitive + Debug + PartialOrd + Send + Sync + ndarray::ScalarOperand + 'static,
 >(
@@ -284,7 +297,7 @@ pub fn linkage<
     if n_samples > 10000 {
         // Hierarchical clustering on large datasets can be very memory-intensive
         // and slow. We'll add a warning here.
-        eprintln!("Warning: Performing hierarchical clustering on {} samples. This may be slow and memory-intensive.", n_samples);
+        eprintln!("Warning: Performing hierarchical clustering on {n_samples} samples. This may be slow and memory-intensive.");
     }
 
     // Use optimized Ward's method if requested
@@ -335,6 +348,7 @@ pub fn linkage<
 ///
 /// println!("Linkage matrix shape: {:?}", linkage_matrix.shape());
 /// ```
+#[allow(dead_code)]
 pub fn parallel_linkage<
     F: Float
         + FromPrimitive
@@ -361,7 +375,7 @@ pub fn parallel_linkage<
     if n_samples > 10000 {
         // Hierarchical clustering on large datasets can be very memory-intensive
         // and slow. We'll add a warning here.
-        eprintln!("Warning: Performing parallel hierarchical clustering on {} samples. This may still be slow for very large datasets.", n_samples);
+        eprintln!("Warning: Performing parallel hierarchical clustering on {n_samples} samples. This may still be slow for very large datasets.");
     }
 
     // Use optimized Ward's method if requested (already parallel-optimized)
@@ -387,7 +401,13 @@ pub fn parallel_linkage<
 /// # Returns
 ///
 /// * `Result<Array1<usize>>` - Cluster assignments (0-indexed)
-pub fn fcluster<F: Float + FromPrimitive + PartialOrd>(
+///
+/// # Note
+///
+/// For Distance and Inconsistent criteria, consider using `fcluster_generic` which accepts
+/// float thresholds directly.
+#[allow(dead_code)]
+pub fn fcluster<F: Float + FromPrimitive + PartialOrd + Debug>(
     z: &Array2<F>,
     t: usize,
     criterion: Option<ClusterCriterion>,
@@ -413,10 +433,87 @@ pub fn fcluster<F: Float + FromPrimitive + PartialOrd>(
             agglomerative::cut_tree_by_distance(z, t_float)
         }
         ClusterCriterion::Inconsistent => {
-            // Not implemented yet
-            Err(ClusteringError::InvalidInput(
-                "Inconsistent criterion not yet implemented".into(),
-            ))
+            // t represents an inconsistency threshold
+            let t_float = F::from_usize(t).unwrap();
+
+            // Calculate inconsistency values with default depth of 2
+            let inconsistency_matrix = dendrogram::inconsistent(z, None)?;
+
+            // Cut tree based on inconsistency threshold
+            agglomerative::cut_tree_by_inconsistency(z, t_float, &inconsistency_matrix)
+        }
+    }
+}
+
+/// Forms flat clusters from a hierarchical clustering result with generic threshold type
+///
+/// This function is more flexible than `fcluster` as it accepts float thresholds directly,
+/// which is useful for Distance and Inconsistent criteria.
+///
+/// # Arguments
+///
+/// * `z` - The linkage matrix from the `linkage` function
+/// * `t` - The threshold value (float for Distance/Inconsistent, can be integer for MaxClust)
+/// * `criterion` - The criterion to use for forming clusters
+///
+/// # Returns
+///
+/// * `Result<Array1<usize>>` - Cluster assignments (0-indexed)
+///
+/// # Examples
+///
+/// ```
+/// use ndarray::Array2;
+/// use scirs2_cluster::hierarchy::{linkage, fcluster_generic, LinkageMethod, Metric, ClusterCriterion};
+///
+/// let data = Array2::from_shape_vec((6, 2), vec![
+///     1.0, 2.0, 1.2, 1.8, 0.8, 1.9,
+///     3.7, 4.2, 3.9, 3.9, 4.2, 4.1,
+/// ]).unwrap();
+///
+/// let linkage_matrix = linkage(data.view(), LinkageMethod::Ward, Metric::Euclidean).unwrap();
+///
+/// // Cut at distance threshold 2.5
+/// let labels = fcluster_generic(&linkage_matrix, 2.5, ClusterCriterion::Distance).unwrap();
+///
+/// // Cut at inconsistency threshold 0.8
+/// let labels2 = fcluster_generic(&linkage_matrix, 0.8, ClusterCriterion::Inconsistent).unwrap();
+/// ```
+#[allow(dead_code)]
+pub fn fcluster_generic<F: Float + FromPrimitive + PartialOrd + Debug>(
+    z: &Array2<F>,
+    t: F,
+    criterion: ClusterCriterion,
+) -> Result<Array1<usize>> {
+    let n_samples = z.shape()[0] + 1;
+
+    match criterion {
+        ClusterCriterion::MaxClust => {
+            // t represents the number of clusters
+            let n_clusters = t.to_usize().ok_or_else(|| {
+                ClusteringError::InvalidInput("Invalid number of clusters".into())
+            })?;
+
+            if n_clusters == 0 || n_clusters > n_samples {
+                return Err(ClusteringError::InvalidInput(format!(
+                    "Number of clusters must be between 1 and {}",
+                    n_samples
+                )));
+            }
+
+            agglomerative::cut_tree(z, n_clusters)
+        }
+        ClusterCriterion::Distance => {
+            // t represents a distance threshold
+            agglomerative::cut_tree_by_distance(z, t)
+        }
+        ClusterCriterion::Inconsistent => {
+            // t represents an inconsistency threshold
+            // Calculate inconsistency values with default depth of 2
+            let inconsistency_matrix = dendrogram::inconsistent(z, None)?;
+
+            // Cut tree based on inconsistency threshold
+            agglomerative::cut_tree_by_inconsistency(z, t, &inconsistency_matrix)
         }
     }
 }
@@ -536,5 +633,56 @@ mod tests {
             // Should have 6 labels
             assert_eq!(labels.len(), 6);
         }
+    }
+
+    #[test]
+    fn test_fcluster_inconsistent_criterion() {
+        // Create a simple linkage matrix
+        let data = Array2::from_shape_vec(
+            (6, 2),
+            vec![1.0, 2.0, 1.2, 1.8, 0.8, 1.9, 3.7, 4.2, 3.9, 3.9, 4.2, 4.1],
+        )
+        .unwrap();
+
+        let linkage_matrix = linkage(data.view(), LinkageMethod::Ward, Metric::Euclidean).unwrap();
+
+        // Test with Inconsistent criterion using fcluster_generic
+        let labels =
+            fcluster_generic(&linkage_matrix, 1.0, ClusterCriterion::Inconsistent).unwrap();
+
+        // Should have 6 labels
+        assert_eq!(labels.len(), 6);
+
+        // All labels should be valid cluster indices
+        assert!(labels.iter().all(|&l| l < 6));
+    }
+
+    #[test]
+    fn test_fcluster_generic_all_criteria() {
+        let data = Array2::from_shape_vec(
+            (6, 2),
+            vec![1.0, 2.0, 1.2, 1.8, 0.8, 1.9, 3.7, 4.2, 3.9, 3.9, 4.2, 4.1],
+        )
+        .unwrap();
+
+        let linkage_matrix = linkage(data.view(), LinkageMethod::Ward, Metric::Euclidean).unwrap();
+
+        // Test MaxClust
+        let labels_maxclust =
+            fcluster_generic(&linkage_matrix, 2.0, ClusterCriterion::MaxClust).unwrap();
+        assert_eq!(labels_maxclust.len(), 6);
+        let unique_maxclust: std::collections::HashSet<_> =
+            labels_maxclust.iter().cloned().collect();
+        assert_eq!(unique_maxclust.len(), 2);
+
+        // Test Distance
+        let labels_distance =
+            fcluster_generic(&linkage_matrix, 2.5, ClusterCriterion::Distance).unwrap();
+        assert_eq!(labels_distance.len(), 6);
+
+        // Test Inconsistent
+        let labels_inconsistent =
+            fcluster_generic(&linkage_matrix, 0.5, ClusterCriterion::Inconsistent).unwrap();
+        assert_eq!(labels_inconsistent.len(), 6);
     }
 }

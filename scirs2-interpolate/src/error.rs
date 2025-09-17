@@ -39,23 +39,11 @@ pub enum InterpolateError {
     #[error("Computation error: {0}")]
     ComputationError(String),
 
-    /// Domain error (input outside valid domain) - legacy
-    #[error("Domain error: {0}")]
-    DomainError(String),
-
-    /// Value error (invalid value) - legacy  
-    #[error("Value error: {0}")]
-    ValueError(String),
-
     /// Shape error (ndarray shape mismatch)
     #[error("Shape error: {0}")]
     ShapeError(String),
 
     /// Not implemented error
-    #[error("Not implemented: {0}")]
-    NotImplementedError(String),
-
-    /// Feature not implemented (alias for NotImplementedError)
     #[error("Not implemented: {0}")]
     NotImplemented(String),
 
@@ -132,6 +120,12 @@ impl From<ndarray::ShapeError> for InterpolateError {
     }
 }
 
+impl From<scirs2_core::CoreError> for InterpolateError {
+    fn from(err: scirs2_core::CoreError) -> Self {
+        InterpolateError::ComputationError(err.to_string())
+    }
+}
+
 /// Result type for interpolation operations
 pub type InterpolateResult<T> = Result<T, InterpolateError>;
 
@@ -184,5 +178,146 @@ impl InterpolateError {
             actual: actual.into(),
             object: object.into(),
         }
+    }
+
+    /// Create a standard dimension mismatch error
+    pub fn dimension_mismatch(expected: usize, actual: usize, context: &str) -> Self {
+        Self::DimensionMismatch(format!(
+            "Dimension mismatch in {context}: expected {expected}, got {actual}"
+        ))
+    }
+
+    /// Create a standard empty data error
+    pub fn empty_data(context: &str) -> Self {
+        Self::InsufficientData(format!("Empty input data provided to {context}"))
+    }
+
+    /// Create a standard convergence failure error
+    pub fn convergence_failure(method: &str, iterations: usize) -> Self {
+        Self::ComputationError(format!(
+            "{method} failed to converge after {iterations} iterations"
+        ))
+    }
+
+    /// Create a numerical stability error
+    pub fn numerical_instability(context: &str, details: &str) -> Self {
+        Self::NumericalError(format!("Numerical instability in {context}: {details}"))
+    }
+
+    /// Create a numerical error
+    pub fn numerical_error(message: impl Into<String>) -> Self {
+        Self::NumericalError(message.into())
+    }
+
+    /// Create an insufficient data points error
+    pub fn insufficient_points(required: usize, provided: usize, method: &str) -> Self {
+        Self::InsufficientData(format!(
+            "{method} requires at least {required} points, but only {provided} provided"
+        ))
+    }
+
+    /// Create an actionable parameter error with suggestions
+    pub fn invalid_parameter_with_suggestion<T: std::fmt::Display>(
+        parameter: impl Into<String>,
+        value: T,
+        context: impl Into<String>,
+        suggestion: impl Into<String>,
+    ) -> Self {
+        Self::InvalidParameter {
+            parameter: parameter.into(),
+            expected: suggestion.into(),
+            actual: value.to_string(),
+            context: context.into(),
+        }
+    }
+
+    /// Create an actionable domain error with recovery suggestions
+    pub fn out_of_domain_with_suggestion<T: std::fmt::Display>(
+        point: T,
+        min: T,
+        max: T,
+        context: impl Into<String>,
+        suggestion: impl Into<String>,
+    ) -> Self {
+        let context_str = context.into();
+        let suggestion_str = suggestion.into();
+        Self::OutOfDomain {
+            point: point.to_string(),
+            min: min.to_string(),
+            max: max.to_string(),
+            context: format!("{context_str} - Suggestion: {suggestion_str}"),
+        }
+    }
+
+    /// Create a numerical stability error with actionable advice
+    pub fn numerical_instability_with_advice(context: &str, details: &str, advice: &str) -> Self {
+        Self::NumericalError(format!(
+            "Numerical instability in {context}: {details} - ADVICE: {advice}"
+        ))
+    }
+
+    /// Create a convergence failure with actionable recommendations
+    pub fn convergence_failure_with_advice(method: &str, iterations: usize, advice: &str) -> Self {
+        Self::ComputationError(format!(
+            "{method} failed to converge after {iterations} iterations - RECOMMENDATION: {advice}"
+        ))
+    }
+
+    /// Create a matrix conditioning error with specific recommendations
+    pub fn matrix_conditioning_error(
+        condition_number: f64,
+        context: &str,
+        recommended_regularization: Option<f64>,
+    ) -> Self {
+        let advice = if let Some(reg) = recommended_regularization {
+            format!(
+                "Matrix is ill-conditioned (condition number: {condition_number:.2e}). Try regularization parameter ≥ {reg:.2e}"
+            )
+        } else {
+            format!(
+                "Matrix is ill-conditioned (condition number: {condition_number:.2e}). Consider data preprocessing or regularization"
+            )
+        };
+
+        Self::LinalgError(format!(
+            "{context}: {} - SOLUTION: {advice}",
+            if condition_number > 1e16 {
+                "Severe numerical instability"
+            } else {
+                "Poor numerical conditioning"
+            }
+        ))
+    }
+
+    /// Create a data quality error with preprocessing suggestions
+    pub fn data_quality_error(issue: &str, context: &str, preprocessingadvice: &str) -> Self {
+        Self::InvalidInput {
+            message: format!(
+                "{issue} detected in {context}: Data may be unsuitable for interpolation - DATA PREPROCESSING: {preprocessingadvice}"
+            ),
+        }
+    }
+
+    /// Create a method selection error with alternative suggestions
+    pub fn method_selection_error(
+        attempted_method: &str,
+        data_characteristics: &str,
+        recommended_alternatives: &[&str],
+    ) -> Self {
+        let alternatives = recommended_alternatives.join(", ");
+        Self::UnsupportedOperation(format!(
+            "{attempted_method} is not suitable for data with {data_characteristics}: Consider using a different interpolation method - ALTERNATIVES: Try {alternatives}"
+        ))
+    }
+
+    /// Create a performance warning with optimization suggestions
+    pub fn performance_warning(
+        operation: &str,
+        data_size: usize,
+        optimization_advice: &str,
+    ) -> Self {
+        Self::ComputationError(format!(
+            "{operation} may be slow for {data_size} data points - OPTIMIZATION: {optimization_advice}"
+        ))
     }
 }

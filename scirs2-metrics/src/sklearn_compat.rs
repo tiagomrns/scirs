@@ -50,7 +50,25 @@ pub struct ClassificationMetrics {
     pub support: usize,
 }
 
+impl ClassificationMetrics {
+    pub fn new() -> Self {
+        Self {
+            precision: 0.0,
+            recall: 0.0,
+            f1_score: 0.0,
+            support: 0,
+        }
+    }
+}
+
+impl Default for ClassificationMetrics {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 /// Equivalent to sklearn.metrics.classification_report
+#[allow(dead_code)]
 pub fn classification_report_sklearn(
     y_true: &Array1<i32>,
     y_pred: &Array1<i32>,
@@ -183,6 +201,7 @@ pub fn classification_report_sklearn(
 }
 
 /// Calculate metrics for a specific class
+#[allow(dead_code)]
 fn calculate_class_metrics(
     y_true: &Array1<i32>,
     y_pred: &Array1<i32>,
@@ -229,8 +248,9 @@ fn calculate_class_metrics(
 }
 
 /// Equivalent to sklearn.metrics.accuracy_score
-pub fn accuracy_score_sklearn(y_true: &Array1<i32>, y_pred: &Array1<i32>) -> Result<f64> {
-    if y_true.len() != y_pred.len() {
+#[allow(dead_code)]
+pub fn accuracy_score_sklearn(y_true: &Array1<i32>, ypred: &Array1<i32>) -> Result<f64> {
+    if y_true.len() != ypred.len() {
         return Err(MetricsError::InvalidInput(
             "y_true and y_pred must have the same length".to_string(),
         ));
@@ -238,7 +258,7 @@ pub fn accuracy_score_sklearn(y_true: &Array1<i32>, y_pred: &Array1<i32>) -> Res
 
     let correct = y_true
         .iter()
-        .zip(y_pred.iter())
+        .zip(ypred.iter())
         .filter(|(&true_val, &pred_val)| true_val == pred_val)
         .count();
 
@@ -246,6 +266,7 @@ pub fn accuracy_score_sklearn(y_true: &Array1<i32>, y_pred: &Array1<i32>) -> Res
 }
 
 /// Equivalent to sklearn.metrics.precision_recall_fscore_support
+#[allow(dead_code)]
 pub fn precision_recall_fscore_support_sklearn(
     y_true: &Array1<i32>,
     y_pred: &Array1<i32>,
@@ -278,7 +299,7 @@ pub fn precision_recall_fscore_support_sklearn(
     let mut supports = Vec::new();
 
     for &label in &target_labels {
-        let (precision, recall, _f1, support) =
+        let (precision, recall, f1, support) =
             calculate_class_metrics(y_true, y_pred, label, zero_division)?;
 
         // Calculate F-beta score
@@ -362,6 +383,7 @@ pub fn precision_recall_fscore_support_sklearn(
 }
 
 /// Calculate micro-averaged metrics
+#[allow(dead_code)]
 fn calculate_micro_average(
     y_true: &Array1<i32>,
     y_pred: &Array1<i32>,
@@ -420,6 +442,7 @@ fn calculate_micro_average(
 }
 
 /// Equivalent to sklearn.metrics.multilabel_confusion_matrix
+#[allow(dead_code)]
 pub fn multilabel_confusion_matrix_sklearn(
     y_true: &Array2<i32>,
     y_pred: &Array2<i32>,
@@ -497,6 +520,7 @@ pub fn multilabel_confusion_matrix_sklearn(
 }
 
 /// Equivalent to sklearn.metrics.cohen_kappa_score  
+#[allow(dead_code)]
 pub fn cohen_kappa_score_sklearn(
     y1: &Array1<i32>,
     y2: &Array1<i32>,
@@ -612,6 +636,7 @@ pub fn cohen_kappa_score_sklearn(
 }
 
 /// Equivalent to sklearn.metrics.hinge_loss
+#[allow(dead_code)]
 pub fn hinge_loss_sklearn(
     y_true: &Array1<i32>,
     y_pred: &Array2<f64>,
@@ -665,7 +690,7 @@ pub fn hinge_loss_sklearn(
             1.0
         };
 
-        // Find the index of the true label
+        // Find the index of the _true label
         if let Some(true_class_idx) = class_labels.iter().position(|&x| x == true_label) {
             let true_score = y_pred[[sample_idx, true_class_idx]];
 
@@ -697,6 +722,7 @@ pub fn hinge_loss_sklearn(
 }
 
 /// Equivalent to sklearn.metrics.zero_one_loss
+#[allow(dead_code)]
 pub fn zero_one_loss_sklearn(
     y_true: &Array1<i32>,
     y_pred: &Array1<i32>,

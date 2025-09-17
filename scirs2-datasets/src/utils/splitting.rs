@@ -8,8 +8,9 @@ use crate::error::{DatasetsError, Result};
 use crate::utils::Dataset;
 use ndarray::Array1;
 use rand::prelude::*;
-use rand::rng;
 use rand::rngs::StdRng;
+use rand::seq::SliceRandom;
+use scirs2_core::rng;
 use std::collections::HashMap;
 
 /// Cross-validation fold indices
@@ -45,6 +46,7 @@ pub type CrossValidationFolds = Vec<(Vec<usize>, Vec<usize>)>;
 /// let (train, test) = train_test_split(&dataset, 0.3, Some(42)).unwrap();
 /// assert_eq!(train.n_samples() + test.n_samples(), 10);
 /// ```
+#[allow(dead_code)]
 pub fn train_test_split(
     dataset: &Dataset,
     test_size: f64,
@@ -69,7 +71,7 @@ pub fn train_test_split(
     // Create shuffled indices
     let mut indices: Vec<usize> = (0..n_samples).collect();
     let mut rng = match random_seed {
-        Some(seed) => StdRng::seed_from_u64(seed),
+        Some(_seed) => StdRng::seed_from_u64(_seed),
         None => {
             let mut r = rng();
             StdRng::seed_from_u64(r.next_u64())
@@ -88,8 +90,8 @@ pub fn train_test_split(
         .map(|t| t.select(ndarray::Axis(0), train_indices));
 
     let mut train_dataset = Dataset::new(train_data, train_target);
-    if let Some(feature_names) = &dataset.feature_names {
-        train_dataset = train_dataset.with_feature_names(feature_names.clone());
+    if let Some(featurenames) = &dataset.featurenames {
+        train_dataset = train_dataset.with_featurenames(featurenames.clone());
     }
     if let Some(description) = &dataset.description {
         train_dataset = train_dataset.with_description(description.clone());
@@ -103,8 +105,8 @@ pub fn train_test_split(
         .map(|t| t.select(ndarray::Axis(0), test_indices));
 
     let mut test_dataset = Dataset::new(test_data, test_target);
-    if let Some(feature_names) = &dataset.feature_names {
-        test_dataset = test_dataset.with_feature_names(feature_names.clone());
+    if let Some(featurenames) = &dataset.featurenames {
+        test_dataset = test_dataset.with_featurenames(featurenames.clone());
     }
     if let Some(description) = &dataset.description {
         test_dataset = test_dataset.with_description(description.clone());
@@ -143,6 +145,7 @@ pub fn train_test_split(
 ///     assert_eq!(train_idx.len() + val_idx.len(), 10);
 /// }
 /// ```
+#[allow(dead_code)]
 pub fn k_fold_split(
     n_samples: usize,
     n_folds: usize,
@@ -151,13 +154,13 @@ pub fn k_fold_split(
 ) -> Result<CrossValidationFolds> {
     if n_folds < 2 {
         return Err(DatasetsError::InvalidFormat(
-            "Number of folds must be at least 2".to_string(),
+            "Number of _folds must be at least 2".to_string(),
         ));
     }
 
     if n_folds > n_samples {
         return Err(DatasetsError::InvalidFormat(
-            "Number of folds cannot exceed number of samples".to_string(),
+            "Number of _folds cannot exceed number of _samples".to_string(),
         ));
     }
 
@@ -165,7 +168,7 @@ pub fn k_fold_split(
 
     if shuffle {
         let mut rng = match random_seed {
-            Some(seed) => StdRng::seed_from_u64(seed),
+            Some(_seed) => StdRng::seed_from_u64(_seed),
             None => {
                 let mut r = rng();
                 StdRng::seed_from_u64(r.next_u64())
@@ -225,6 +228,7 @@ pub fn k_fold_split(
 ///     assert_eq!(train_idx.len() + val_idx.len(), 6);
 /// }
 /// ```
+#[allow(dead_code)]
 pub fn stratified_k_fold_split(
     targets: &Array1<f64>,
     n_folds: usize,
@@ -233,14 +237,14 @@ pub fn stratified_k_fold_split(
 ) -> Result<CrossValidationFolds> {
     if n_folds < 2 {
         return Err(DatasetsError::InvalidFormat(
-            "Number of folds must be at least 2".to_string(),
+            "Number of _folds must be at least 2".to_string(),
         ));
     }
 
     let n_samples = targets.len();
     if n_folds > n_samples {
         return Err(DatasetsError::InvalidFormat(
-            "Number of folds cannot exceed number of samples".to_string(),
+            "Number of _folds cannot exceed number of samples".to_string(),
         ));
     }
 
@@ -255,7 +259,7 @@ pub fn stratified_k_fold_split(
     // Shuffle indices within each class if requested
     if shuffle {
         let mut rng = match random_seed {
-            Some(seed) => StdRng::seed_from_u64(seed),
+            Some(_seed) => StdRng::seed_from_u64(_seed),
             None => {
                 let mut r = rng();
                 StdRng::seed_from_u64(r.next_u64())
@@ -267,7 +271,7 @@ pub fn stratified_k_fold_split(
         }
     }
 
-    // Create folds while maintaining class proportions
+    // Create _folds while maintaining class proportions
     let mut folds = vec![Vec::new(); n_folds];
 
     for (_, indices) in class_indices {
@@ -330,6 +334,7 @@ pub fn stratified_k_fold_split(
 ///     assert!(folds[i].0.len() > folds[i-1].0.len());
 /// }
 /// ```
+#[allow(dead_code)]
 pub fn time_series_split(
     n_samples: usize,
     n_splits: usize,
@@ -338,22 +343,21 @@ pub fn time_series_split(
 ) -> Result<CrossValidationFolds> {
     if n_splits < 1 {
         return Err(DatasetsError::InvalidFormat(
-            "Number of splits must be at least 1".to_string(),
+            "Number of _splits must be at least 1".to_string(),
         ));
     }
 
     if n_test_samples < 1 {
         return Err(DatasetsError::InvalidFormat(
-            "Number of test samples must be at least 1".to_string(),
+            "Number of test _samples must be at least 1".to_string(),
         ));
     }
 
-    // Calculate minimum samples needed
+    // Calculate minimum _samples needed
     let min_samples_needed = n_test_samples + gap + n_splits;
     if n_samples < min_samples_needed {
         return Err(DatasetsError::InvalidFormat(format!(
-            "Not enough samples for time series split. Need at least {}, got {}",
-            min_samples_needed, n_samples
+            "Not enough _samples for time series split. Need at least {min_samples_needed}, got {n_samples}"
         )));
     }
 
@@ -381,7 +385,7 @@ pub fn time_series_split(
 
     if folds.is_empty() {
         return Err(DatasetsError::InvalidFormat(
-            "Could not create any valid time series splits".to_string(),
+            "Could not create any valid time series _splits".to_string(),
         ));
     }
 

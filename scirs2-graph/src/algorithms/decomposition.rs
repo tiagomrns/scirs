@@ -11,9 +11,10 @@ use std::hash::Hash;
 /// The k-core of a graph is the maximal subgraph where every node has degree at least k.
 /// This function returns a mapping from each node to its core number (the maximum k for which
 /// the node belongs to the k-core).
+#[allow(dead_code)]
 pub fn k_core_decomposition<N, E, Ix>(graph: &Graph<N, E, Ix>) -> HashMap<N, usize>
 where
-    N: Node + Clone + Hash + Eq,
+    N: Node + Clone + Hash + Eq + std::fmt::Debug,
     E: EdgeWeight,
     Ix: IndexType,
 {

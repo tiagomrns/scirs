@@ -1,6 +1,8 @@
 use ndarray::{array, Array1, Array2};
 use scirs2_stats::distributions::multivariate::multivariate_lognormal::MultivariateLognormal;
+use statrs::statistics::Statistics;
 
+#[allow(dead_code)]
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("Multivariate Lognormal Distribution Example");
     println!("------------------------------------------");
@@ -119,20 +121,22 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 }
 
 // Helper function to calculate mean of samples
-fn calculate_mean(samples: &Array2<f64>, n_samples: usize) -> Array1<f64> {
+#[allow(dead_code)]
+fn calculate_mean(samples: &Array2<f64>, nsamples: usize) -> Array1<f64> {
     let mut mean = Array1::zeros(samples.shape()[1]);
 
-    for i in 0..n_samples {
+    for i in 0..nsamples {
         for j in 0..samples.shape()[1] {
             mean[j] += samples[[i, j]];
         }
     }
 
-    mean / n_samples as f64
+    mean / nsamples as f64
 }
 
 // Helper function to calculate median of samples
-fn calculate_median(samples: &Array2<f64>, n_samples: usize) -> Array1<f64> {
+#[allow(dead_code)]
+fn calculate_median(samples: &Array2<f64>, nsamples: usize) -> Array1<f64> {
     let dim = samples.shape()[1];
     let mut median = Array1::zeros(dim);
 
@@ -140,12 +144,12 @@ fn calculate_median(samples: &Array2<f64>, n_samples: usize) -> Array1<f64> {
         let mut values: Vec<f64> = samples.column(j).to_vec();
         values.sort_by(|a, b| a.partial_cmp(b).unwrap());
 
-        if n_samples % 2 == 0 {
+        if nsamples % 2 == 0 {
             // Even number of samples, take average of middle two
-            median[j] = (values[n_samples / 2 - 1] + values[n_samples / 2]) / 2.0;
+            median[j] = (values[nsamples / 2 - 1] + values[nsamples / 2]) / 2.0;
         } else {
             // Odd number of samples, take middle value
-            median[j] = values[n_samples / 2];
+            median[j] = values[nsamples / 2];
         }
     }
 
@@ -153,6 +157,7 @@ fn calculate_median(samples: &Array2<f64>, n_samples: usize) -> Array1<f64> {
 }
 
 // Helper function to calculate covariance matrix of samples
+#[allow(dead_code)]
 fn calculate_covariance(
     samples: &Array2<f64>,
     mean: &Array1<f64>,

@@ -37,6 +37,7 @@ use crate::error::{MetricsError, Result};
 ///
 /// let ari = adjusted_rand_index(&labels_true, &labels_pred).unwrap();
 /// ```
+#[allow(dead_code)]
 pub fn adjusted_rand_index<T, U, S1, S2, D1, D2>(
     labels_true: &ArrayBase<S1, D1>,
     labels_pred: &ArrayBase<S2, D2>,
@@ -68,17 +69,17 @@ where
     // Compute contingency matrix
     let mut contingency: HashMap<(String, String), usize> = HashMap::new();
     for (lt, lp) in labels_true.iter().zip(labels_pred.iter()) {
-        let key = (format!("{:?}", lt), format!("{:?}", lp));
+        let key = (format!("{lt:?}"), format!("{lp:?}"));
         *contingency.entry(key).or_insert(0) += 1;
     }
 
     // Count pairs
     let (mut sum_comb_a, mut sum_comb_b, mut sum_comb) = (0.0, 0.0, 0.0);
 
-    // Count terms for true labels
+    // Count terms for _true labels
     let mut a_counts: HashMap<String, usize> = HashMap::new();
     for lt in labels_true.iter() {
-        let key = format!("{:?}", lt);
+        let key = format!("{lt:?}");
         *a_counts.entry(key).or_insert(0) += 1;
     }
 
@@ -91,7 +92,7 @@ where
     // Count terms for predicted labels
     let mut b_counts: HashMap<String, usize> = HashMap::new();
     for lp in labels_pred.iter() {
-        let key = format!("{:?}", lp);
+        let key = format!("{lp:?}");
         *b_counts.entry(key).or_insert(0) += 1;
     }
 
@@ -124,6 +125,7 @@ where
 }
 
 /// Helper function to calculate nC2 (number of ways to choose 2 items from n)
+#[allow(dead_code)]
 fn combinations(n: usize) -> f64 {
     if n < 2 {
         0.0

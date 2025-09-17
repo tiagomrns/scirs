@@ -88,8 +88,7 @@ impl<
 
         if dim != 2 && dim != 3 {
             return Err(InterpolateError::UnsupportedOperation(format!(
-                "Natural Neighbor interpolation for {}-dimensional data not yet implemented",
-                dim
+                "Natural Neighbor interpolation for {dim}-dimensional data not yet implemented"
             )));
         }
 
@@ -193,10 +192,10 @@ impl<
                 let mut interpolated_value = F::zero();
                 let mut total_weight = F::zero();
 
-                for (idx, _) in neighbor_weights.iter() {
+                for (idx_, _) in neighbor_weights.iter() {
                     // For Laplace method, we need to compute a different weight
                     // based on the distances and Voronoi cell edge lengths
-                    let site = &self.voronoi_diagram.cells[*idx].site;
+                    let site = &self.voronoi_diagram.cells[*idx_].site;
 
                     // Compute distance to the neighbor
                     let mut distance = F::zero();
@@ -208,13 +207,13 @@ impl<
                     if distance < F::epsilon() {
                         // If the query point is very close to this site,
                         // just return the value at this site
-                        return Ok(self.values[*idx]);
+                        return Ok(self.values[*idx_]);
                     }
 
                     // In the Laplace method, weight is inversely proportional to distance
                     let weight = F::one() / distance;
 
-                    interpolated_value = interpolated_value + self.values[*idx] * weight;
+                    interpolated_value = interpolated_value + self.values[*idx_] * weight;
                     total_weight = total_weight + weight;
                 }
 
@@ -285,6 +284,7 @@ impl<
 ///
 /// # Returns
 /// A new Natural Neighbor interpolator
+#[allow(dead_code)]
 pub fn make_natural_neighbor_interpolator<
     F: Float + FromPrimitive + Debug + ndarray::ScalarOperand + 'static + std::cmp::PartialOrd,
 >(
@@ -303,6 +303,7 @@ pub fn make_natural_neighbor_interpolator<
 ///
 /// # Returns
 /// A new Natural Neighbor interpolator using Sibson's method
+#[allow(dead_code)]
 pub fn make_sibson_interpolator<
     F: Float + FromPrimitive + Debug + ndarray::ScalarOperand + 'static + std::cmp::PartialOrd,
 >(
@@ -320,6 +321,7 @@ pub fn make_sibson_interpolator<
 ///
 /// # Returns
 /// A new Natural Neighbor interpolator using the non-Sibsonian (Laplace) method
+#[allow(dead_code)]
 pub fn make_laplace_interpolator<
     F: Float + FromPrimitive + Debug + ndarray::ScalarOperand + 'static + std::cmp::PartialOrd,
 >(

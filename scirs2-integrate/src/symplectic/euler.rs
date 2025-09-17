@@ -112,6 +112,7 @@ impl<F: IntegrateFloat> SymplecticIntegrator<F> for SymplecticEulerB<F> {
 ///
 /// Provides a simple functional interface to the Symplectic Euler A algorithm,
 /// which updates position first, then momentum.
+#[allow(dead_code)]
 pub fn symplectic_euler<F: IntegrateFloat>(
     system: &dyn HamiltonianFn<F>,
     t: F,
@@ -123,6 +124,7 @@ pub fn symplectic_euler<F: IntegrateFloat>(
 }
 
 /// Convenience function for the Symplectic Euler A method (position first)
+#[allow(dead_code)]
 pub fn symplectic_euler_a<F: IntegrateFloat>(
     system: &dyn HamiltonianFn<F>,
     t: F,
@@ -134,6 +136,7 @@ pub fn symplectic_euler_a<F: IntegrateFloat>(
 }
 
 /// Convenience function for the Symplectic Euler B method (momentum first)
+#[allow(dead_code)]
 pub fn symplectic_euler_b<F: IntegrateFloat>(
     system: &dyn HamiltonianFn<F>,
     t: F,
@@ -209,7 +212,7 @@ mod tests {
         // Energy should be conserved to within a small error
         // First-order methods will have linear drift, but it should still be small
         if let Some(error) = result.energy_relative_error {
-            assert!(error < 0.1, "Energy error too large: {}", error);
+            assert!(error < 0.1, "Energy error too large: {error}");
         }
 
         // Phase space trajectory should follow an ellipse for harmonic oscillator

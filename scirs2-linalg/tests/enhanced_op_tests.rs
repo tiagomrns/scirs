@@ -9,6 +9,7 @@ use approx::assert_abs_diff_eq;
 use ndarray::array;
 use num_complex::Complex;
 
+use ndarray::ArrayView1;
 use scirs2_linalg::complex::enhanced_ops::{
     det, hermitian_part, inner_product, is_hermitian, is_unitary, matrix_exp, matvec,
 };
@@ -22,7 +23,8 @@ use scirs2_linalg::complex::enhanced_ops::{
 // requires the random module which was refactored
 
 #[test]
-fn test_complex_matrix_operations() {
+#[allow(dead_code)]
+fn test_complexmatrix_operations() {
     // Create test matrices
     let a = array![
         [Complex::new(1.0, 0.0), Complex::new(2.0, 1.0)],
@@ -211,7 +213,8 @@ fn test_complex_matrix_operations() {
 
 /* Matrix calculus is temporarily disabled
 #[test]
-fn test_matrix_calculus() {
+#[allow(dead_code)]
+fn testmatrix_calculus() {
     // Define a simple quadratic function f(x) = x[0]^2 + 2*x[1]^2
     let f = |x: &ArrayView1<f64>| -> LinalgResult<f64> { Ok(x[0] * x[0] + 2.0 * x[1] * x[1]) };
 

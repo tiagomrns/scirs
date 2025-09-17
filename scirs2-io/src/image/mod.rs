@@ -197,16 +197,17 @@ pub struct AnimationData {
 /// println!("Image size: {}x{}", image_data.metadata.width, image_data.metadata.height);
 /// # Ok::<(), scirs2_io::error::IoError>(())
 /// ```
+#[allow(dead_code)]
 pub fn load_image<P: AsRef<Path>>(path: P) -> Result<ImageData> {
-    let path = path.as_ref();
-    let img = image::open(path).map_err(|e| IoError::FileError(e.to_string()))?;
+    let _path = path.as_ref();
+    let img = image::open(_path).map_err(|e| IoError::FileError(e.to_string()))?;
 
     let width = img.width();
     let height = img.height();
     let format =
-        ImageFormat::from_extension(path.extension().and_then(|ext| ext.to_str()).unwrap_or(""));
+        ImageFormat::from_extension(_path.extension().and_then(|ext| ext.to_str()).unwrap_or(""));
 
-    let file_size = fs::metadata(path)
+    let file_size = fs::metadata(_path)
         .map(|metadata| metadata.len())
         .unwrap_or(0);
 
@@ -219,7 +220,7 @@ pub fn load_image<P: AsRef<Path>>(path: P) -> Result<ImageData> {
         .map_err(|e| IoError::FormatError(e.to_string()))?;
 
     // Try to read EXIF metadata
-    let exif = read_exif_metadata(path)?;
+    let exif = read_exif_metadata(_path)?;
 
     let metadata = ImageMetadata {
         width,
@@ -248,6 +249,7 @@ pub fn load_image<P: AsRef<Path>>(path: P) -> Result<ImageData> {
 /// save_image(&image_data, "output.png", Some(ImageFormat::PNG))?;
 /// # Ok::<(), scirs2_io::error::IoError>(())
 /// ```
+#[allow(dead_code)]
 pub fn save_image<P: AsRef<Path>>(
     image_data: &ImageData,
     path: P,
@@ -258,10 +260,10 @@ pub fn save_image<P: AsRef<Path>>(
         ImageFormat::from_extension(path.extension().and_then(|ext| ext.to_str()).unwrap_or(""))
     });
 
-    let (height, width, _) = image_data.data.dim();
+    let (height, width_, _) = image_data.data.dim();
     let raw_data = image_data.data.iter().cloned().collect::<Vec<u8>>();
 
-    let img_buffer = image::RgbImage::from_raw(width as u32, height as u32, raw_data)
+    let img_buffer = image::RgbImage::from_raw(width_ as u32, height as u32, raw_data)
         .ok_or_else(|| IoError::FormatError("Invalid image dimensions".to_string()))?;
 
     let dynamic_img = image::DynamicImage::ImageRgb8(img_buffer);
@@ -294,6 +296,7 @@ pub fn save_image<P: AsRef<Path>>(
 /// convert_image("photo.jpg", "photo.png", ImageFormat::PNG)?;
 /// # Ok::<(), scirs2_io::error::IoError>(())
 /// ```
+#[allow(dead_code)]
 pub fn convert_image<P1: AsRef<Path>, P2: AsRef<Path>>(
     input_path: P1,
     output_path: P2,
@@ -321,11 +324,12 @@ pub fn convert_image<P1: AsRef<Path>, P2: AsRef<Path>>(
 /// let resized = resize_image(&image_data, 800, 600)?;
 /// # Ok::<(), scirs2_io::error::IoError>(())
 /// ```
+#[allow(dead_code)]
 pub fn resize_image(image_data: &ImageData, new_width: u32, new_height: u32) -> Result<ImageData> {
-    let (height, width, _) = image_data.data.dim();
+    let (_height, width_, _) = image_data.data.dim();
     let raw_data = image_data.data.iter().cloned().collect::<Vec<u8>>();
 
-    let img_buffer = image::RgbImage::from_raw(width as u32, height as u32, raw_data)
+    let img_buffer = image::RgbImage::from_raw(width_ as u32, _height as u32, raw_data)
         .ok_or_else(|| IoError::FormatError("Invalid image dimensions".to_string()))?;
 
     let dynamic_img = image::DynamicImage::ImageRgb8(img_buffer);
@@ -364,9 +368,10 @@ pub fn resize_image(image_data: &ImageData, new_width: u32, new_height: u32) -> 
 /// println!("Image: {}x{} pixels", info.width, info.height);
 /// # Ok::<(), scirs2_io::error::IoError>(())
 /// ```
+#[allow(dead_code)]
 pub fn get_image_info<P: AsRef<Path>>(path: P) -> Result<ImageMetadata> {
-    let path = path.as_ref();
-    let reader = image::ImageReader::open(path).map_err(|e| IoError::FileError(e.to_string()))?;
+    let _path = path.as_ref();
+    let reader = image::ImageReader::open(_path).map_err(|e| IoError::FileError(e.to_string()))?;
 
     let reader = reader
         .with_guessed_format()
@@ -377,14 +382,14 @@ pub fn get_image_info<P: AsRef<Path>>(path: P) -> Result<ImageMetadata> {
         .map_err(|e| IoError::FileError(e.to_string()))?;
 
     let format =
-        ImageFormat::from_extension(path.extension().and_then(|ext| ext.to_str()).unwrap_or(""));
+        ImageFormat::from_extension(_path.extension().and_then(|ext| ext.to_str()).unwrap_or(""));
 
-    let file_size = fs::metadata(path)
+    let file_size = fs::metadata(_path)
         .map(|metadata| metadata.len())
         .unwrap_or(0);
 
     // Try to read EXIF metadata
-    let exif = read_exif_metadata(path)?;
+    let exif = read_exif_metadata(_path)?;
 
     Ok(ImageMetadata {
         width: dimensions.0,
@@ -412,9 +417,10 @@ pub fn get_image_info<P: AsRef<Path>>(path: P) -> Result<ImageMetadata> {
 /// println!("Animation has {} frames", animation.frames.len());
 /// # Ok::<(), scirs2_io::error::IoError>(())
 /// ```
+#[allow(dead_code)]
 pub fn load_animation<P: AsRef<Path>>(path: P) -> Result<AnimationData> {
-    let path = path.as_ref();
-    let file = std::fs::File::open(path).map_err(|e| IoError::FileError(e.to_string()))?;
+    let _path = path.as_ref();
+    let file = std::fs::File::open(_path).map_err(|e| IoError::FileError(e.to_string()))?;
     let reader = BufReader::new(file);
 
     let decoder = image::codecs::gif::GifDecoder::new(reader)
@@ -486,10 +492,285 @@ pub fn load_animation<P: AsRef<Path>>(path: P) -> Result<AnimationData> {
 /// }
 /// # Ok::<(), scirs2_io::error::IoError>(())
 /// ```
-pub fn read_exif_metadata<P: AsRef<Path>>(_path: P) -> Result<Option<ExifMetadata>> {
-    // TODO: Implement EXIF reading functionality
-    // Currently disabled due to dependency issues with kamadak-exif
-    Ok(None)
+#[allow(dead_code)]
+pub fn read_exif_metadata<P: AsRef<Path>>(path: P) -> Result<Option<ExifMetadata>> {
+    let _path = path.as_ref();
+
+    // Try to read EXIF data using the `exif` crate
+    #[cfg(feature = "exif")]
+    {
+        use std::fs::File;
+        use std::io::BufReader;
+
+        let file = match File::open(_path) {
+            Ok(f) => f,
+            Err(_) => return Ok(None), // File not found or permission denied
+        };
+
+        let mut reader = BufReader::new(file);
+
+        let exif_reader = match exif::Reader::new().read_from_container(&mut reader) {
+            Ok(reader) => reader,
+            Err(_) => return Ok(None), // No EXIF data or read error
+        };
+
+        let mut metadata = ExifMetadata::default();
+
+        // Extract datetime
+        if let Some(field) = exif_reader.get_field(exif::Tag::DateTime, exif::In::PRIMARY) {
+            if let exif::Value::Ascii(ref vec) = field.value {
+                if let Some(ascii_str) = vec.first() {
+                    if let Ok(datetime_str) = std::str::from_utf8(ascii_str) {
+                        // Parse EXIF datetime format: "YYYY:MM:DD HH:MM:SS"
+                        if let Ok(datetime) = chrono::NaiveDateTime::parse_from_str(
+                            datetime_str.trim_end_matches('\0'),
+                            "%Y:%m:%d %H:%M:%S",
+                        ) {
+                            metadata.datetime = Some(datetime.and_utc());
+                        }
+                    }
+                }
+            }
+        }
+
+        // Extract GPS coordinates
+        let mut gps = GpsCoordinates::default();
+
+        // Latitude
+        if let Some(lat_field) = exif_reader.get_field(exif::Tag::GPSLatitude, exif::In::PRIMARY) {
+            if let Some(lat_ref_field) =
+                exif_reader.get_field(exif::Tag::GPSLatitudeRef, exif::In::PRIMARY)
+            {
+                if let (exif::Value::Rational(ref lat_vec), exif::Value::Ascii(ref lat_ref_vec)) =
+                    (&lat_field.value, &lat_ref_field.value)
+                {
+                    if lat_vec.len() >= 3 && !lat_ref_vec.is_empty() {
+                        let degrees = lat_vec[0].to_f64();
+                        let minutes = lat_vec[1].to_f64();
+                        let seconds = lat_vec[2].to_f64();
+
+                        let mut latitude = degrees + minutes / 60.0 + seconds / 3600.0;
+
+                        // Check hemisphere
+                        if let Ok(ref_str) = std::str::from_utf8(&lat_ref_vec[0]) {
+                            if ref_str.starts_with('S') {
+                                latitude = -latitude;
+                            }
+                        }
+
+                        gps.latitude = Some(latitude);
+                    }
+                }
+            }
+        }
+
+        // Longitude
+        if let Some(lon_field) = exif_reader.get_field(exif::Tag::GPSLongitude, exif::In::PRIMARY) {
+            if let Some(lon_ref_field) =
+                exif_reader.get_field(exif::Tag::GPSLongitudeRef, exif::In::PRIMARY)
+            {
+                if let (exif::Value::Rational(ref lon_vec), exif::Value::Ascii(ref lon_ref_vec)) =
+                    (&lon_field.value, &lon_ref_field.value)
+                {
+                    if lon_vec.len() >= 3 && !lon_ref_vec.is_empty() {
+                        let degrees = lon_vec[0].to_f64();
+                        let minutes = lon_vec[1].to_f64();
+                        let seconds = lon_vec[2].to_f64();
+
+                        let mut longitude = degrees + minutes / 60.0 + seconds / 3600.0;
+
+                        // Check hemisphere
+                        if let Ok(ref_str) = std::str::from_utf8(&lon_ref_vec[0]) {
+                            if ref_str.starts_with('W') {
+                                longitude = -longitude;
+                            }
+                        }
+
+                        gps.longitude = Some(longitude);
+                    }
+                }
+            }
+        }
+
+        // Altitude
+        if let Some(alt_field) = exif_reader.get_field(exif::Tag::GPSAltitude, exif::In::PRIMARY) {
+            if let exif::Value::Rational(ref alt_vec) = alt_field.value {
+                if !alt_vec.is_empty() {
+                    gps.altitude = Some(alt_vec[0].to_f64());
+                }
+            }
+        }
+
+        if gps.latitude.is_some() || gps.longitude.is_some() || gps.altitude.is_some() {
+            metadata.gps = Some(gps);
+        }
+
+        // Extract camera information
+        let mut camera = CameraSettings::default();
+
+        // Camera make
+        if let Some(field) = exif_reader.get_field(exif::Tag::Make, exif::In::PRIMARY) {
+            if let exif::Value::Ascii(ref vec) = field.value {
+                if let Some(ascii_str) = vec.first() {
+                    if let Ok(make_str) = std::str::from_utf8(ascii_str) {
+                        camera.make = Some(make_str.trim_end_matches('\0').to_string());
+                    }
+                }
+            }
+        }
+
+        // Camera model
+        if let Some(field) = exif_reader.get_field(exif::Tag::Model, exif::In::PRIMARY) {
+            if let exif::Value::Ascii(ref vec) = field.value {
+                if let Some(ascii_str) = vec.first() {
+                    if let Ok(model_str) = std::str::from_utf8(ascii_str) {
+                        camera.model = Some(model_str.trim_end_matches('\0').to_string());
+                    }
+                }
+            }
+        }
+
+        // Lens model
+        if let Some(field) = exif_reader.get_field(exif::Tag::LensModel, exif::In::PRIMARY) {
+            if let exif::Value::Ascii(ref vec) = field.value {
+                if let Some(ascii_str) = vec.first() {
+                    if let Ok(lens_str) = std::str::from_utf8(ascii_str) {
+                        camera.lens_model = Some(lens_str.trim_end_matches('\0').to_string());
+                    }
+                }
+            }
+        }
+
+        // ISO
+        if let Some(field) =
+            exif_reader.get_field(exif::Tag::PhotographicSensitivity, exif::In::PRIMARY)
+        {
+            if let exif::Value::Short(ref vec) = field.value {
+                if !vec.is_empty() {
+                    camera.iso = Some(vec[0] as u32);
+                }
+            }
+        }
+
+        // Aperture (F-number)
+        if let Some(field) = exif_reader.get_field(exif::Tag::FNumber, exif::In::PRIMARY) {
+            if let exif::Value::Rational(ref vec) = field.value {
+                if !vec.is_empty() {
+                    camera.aperture = Some(vec[0].to_f64());
+                }
+            }
+        }
+
+        // Shutter speed
+        if let Some(field) = exif_reader.get_field(exif::Tag::ExposureTime, exif::In::PRIMARY) {
+            if let exif::Value::Rational(ref vec) = field.value {
+                if !vec.is_empty() {
+                    camera.shutter_speed = Some(vec[0].to_f64());
+                }
+            }
+        }
+
+        // Focal length
+        if let Some(field) = exif_reader.get_field(exif::Tag::FocalLength, exif::In::PRIMARY) {
+            if let exif::Value::Rational(ref vec) = field.value {
+                if !vec.is_empty() {
+                    camera.focal_length = Some(vec[0].to_f64());
+                }
+            }
+        }
+
+        // Flash
+        if let Some(field) = exif_reader.get_field(exif::Tag::Flash, exif::In::PRIMARY) {
+            if let exif::Value::Short(ref vec) = field.value {
+                if !vec.is_empty() {
+                    camera.flash = Some((vec[0] & 1) == 1); // Bit 0 indicates flash fired
+                }
+            }
+        }
+
+        // White balance
+        if let Some(field) = exif_reader.get_field(exif::Tag::WhiteBalance, exif::In::PRIMARY) {
+            if let exif::Value::Short(ref vec) = field.value {
+                if !vec.is_empty() {
+                    camera.white_balance = Some(match vec[0] {
+                        0 => "Auto".to_string(),
+                        1 => "Manual".to_string(),
+                        _ => "Unknown".to_string(),
+                    });
+                }
+            }
+        }
+
+        metadata.camera = camera;
+
+        // Orientation
+        if let Some(field) = exif_reader.get_field(exif::Tag::Orientation, exif::In::PRIMARY) {
+            if let exif::Value::Short(ref vec) = field.value {
+                if !vec.is_empty() {
+                    metadata.orientation = Some(vec[0] as u32);
+                }
+            }
+        }
+
+        // Software
+        if let Some(field) = exif_reader.get_field(exif::Tag::Software, exif::In::PRIMARY) {
+            if let exif::Value::Ascii(ref vec) = field.value {
+                if let Some(ascii_str) = vec.first() {
+                    if let Ok(software_str) = std::str::from_utf8(ascii_str) {
+                        metadata.software = Some(software_str.trim_end_matches('\0').to_string());
+                    }
+                }
+            }
+        }
+
+        // Copyright
+        if let Some(field) = exif_reader.get_field(exif::Tag::Copyright, exif::In::PRIMARY) {
+            if let exif::Value::Ascii(ref vec) = field.value {
+                if let Some(ascii_str) = vec.first() {
+                    if let Ok(copyright_str) = std::str::from_utf8(ascii_str) {
+                        metadata.copyright = Some(copyright_str.trim_end_matches('\0').to_string());
+                    }
+                }
+            }
+        }
+
+        // Artist
+        if let Some(field) = exif_reader.get_field(exif::Tag::Artist, exif::In::PRIMARY) {
+            if let exif::Value::Ascii(ref vec) = field.value {
+                if let Some(ascii_str) = vec.first() {
+                    if let Ok(artist_str) = std::str::from_utf8(ascii_str) {
+                        metadata.artist = Some(artist_str.trim_end_matches('\0').to_string());
+                    }
+                }
+            }
+        }
+
+        // Image description
+        if let Some(field) = exif_reader.get_field(exif::Tag::ImageDescription, exif::In::PRIMARY) {
+            if let exif::Value::Ascii(ref vec) = field.value {
+                if let Some(ascii_str) = vec.first() {
+                    if let Ok(desc_str) = std::str::from_utf8(ascii_str) {
+                        metadata.description = Some(desc_str.trim_end_matches('\0').to_string());
+                    }
+                }
+            }
+        }
+
+        // Store raw tags for advanced users
+        for field in exif_reader.fields() {
+            let tag_name = format!("{}", field.tag);
+            let value_str = format!("{}", field.display_value().with_unit(&exif_reader));
+            metadata.raw_tags.insert(tag_name, value_str);
+        }
+
+        Ok(Some(metadata))
+    }
+
+    #[cfg(not(feature = "exif"))]
+    {
+        // If EXIF feature is not enabled, return None
+        Ok(None)
+    }
 }
 
 /// Extract all images from a directory matching pattern
@@ -512,6 +793,7 @@ pub fn read_exif_metadata<P: AsRef<Path>>(_path: P) -> Result<Option<ExifMetadat
 /// }
 /// # Ok::<(), scirs2_io::error::IoError>(())
 /// ```
+#[allow(dead_code)]
 pub fn find_images<P: AsRef<Path>>(
     dir_path: P,
     pattern: &str,
@@ -556,6 +838,7 @@ pub fn find_images<P: AsRef<Path>>(
 /// )?;
 /// # Ok::<(), scirs2_io::error::IoError>(())
 /// ```
+#[allow(dead_code)]
 pub fn batch_process_images<P1, P2, F>(input_dir: P1, output_dir: P2, processor: F) -> Result<()>
 where
     P1: AsRef<Path>,

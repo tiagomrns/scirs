@@ -6,6 +6,7 @@ use ndarray::array;
 use scirs2_linalg::error::LinalgResult;
 use scirs2_linalg::{tridiagonal_eigh, tridiagonal_eigvalsh};
 
+#[allow(dead_code)]
 fn main() -> LinalgResult<()> {
     println!("Tridiagonal Eigenvalue Solver Example");
     println!("====================================\n");

@@ -1,7 +1,9 @@
 use scirs2_stats::distributions::student_t::StudentT;
-use scirs2_stats::traits::distribution::{ContinuousDistribution, Distribution};
+use scirs2_stats::traits::{ContinuousCDF, ContinuousDistribution, Distribution};
+use statrs::statistics::Statistics;
 use std::f64;
 
+#[allow(dead_code)]
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("Student's t Distribution Example");
     println!("==============================\n");
@@ -24,7 +26,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("   CDF(2.0) = {:.6}\n", t5.cdf(2.0));
 
     // Using the trait interface (ContinuousDistribution)
-    let dist: &dyn ContinuousDistribution<f64> = &t5;
+    let dist: &dyn ContinuousCDF<f64> = &t5;
 
     println!("3. PDF and CDF at various points (trait method):");
     println!("   PDF(0.0) = {:.6}", dist.pdf(0.0));

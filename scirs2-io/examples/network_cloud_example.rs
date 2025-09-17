@@ -493,9 +493,9 @@ async fn demonstrate_batch_operations() -> Result<(), Box<dyn std::error::Error>
 
     let upload_tasks: Vec<(String, String)> = upload_files
         .iter()
-        .map(|(filename, _)| {
+        .map(|(filename_)| {
             let local_path = temp_dir.path().join(filename).to_string_lossy().to_string();
-            (local_path, format!("uploads/{}", filename))
+            (local_path, format!("uploads/{filename}"))
         })
         .collect();
 

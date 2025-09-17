@@ -110,6 +110,7 @@ pub struct SpectralResult {
 ///
 /// This matrix D satisfies Du = u' where u is a vector of function values
 /// at Chebyshev points x_j = cos(jπ/n), j=0...n
+#[allow(dead_code)]
 pub fn chebyshev_diff_matrix(n: usize) -> Array2<f64> {
     let mut d = Array2::zeros((n, n));
 
@@ -146,12 +147,14 @@ pub fn chebyshev_diff_matrix(n: usize) -> Array2<f64> {
 }
 
 /// Create a second-derivative Chebyshev differentiation matrix
+#[allow(dead_code)]
 pub fn chebyshev_diff2_matrix(n: usize) -> Array2<f64> {
     let d1 = chebyshev_diff_matrix(n);
     d1.dot(&d1) // D^2 = D * D
 }
 
 /// Generate Chebyshev grid points x_j = cos(jπ/n), j=0...n-1
+#[allow(dead_code)]
 pub fn chebyshev_points(n: usize) -> Array1<f64> {
     let mut x = Array1::zeros(n);
     for j in 0..n {
@@ -161,6 +164,7 @@ pub fn chebyshev_points(n: usize) -> Array1<f64> {
 }
 
 /// Transform from physical space to Chebyshev coefficient space
+#[allow(dead_code)]
 pub fn chebyshev_transform(u: &ArrayView1<f64>) -> Array1<f64> {
     let n = u.len();
     let mut coeffs = Array1::zeros(n);
@@ -185,6 +189,7 @@ pub fn chebyshev_transform(u: &ArrayView1<f64>) -> Array1<f64> {
 }
 
 /// Transform from Chebyshev coefficient space to physical space
+#[allow(dead_code)]
 pub fn chebyshev_inverse_transform(coeffs: &ArrayView1<f64>) -> Array1<f64> {
     let n = coeffs.len();
     let mut u = Array1::zeros(n);
@@ -208,6 +213,7 @@ pub fn chebyshev_inverse_transform(coeffs: &ArrayView1<f64>) -> Array1<f64> {
 ///
 /// These are the zeros of (1-x²)P'ₙ₋₁(x) in [-1, 1] where Pₙ is the
 /// Legendre polynomial of degree n. The points include the endpoints ±1.
+#[allow(dead_code)]
 pub fn legendre_points(n: usize) -> (Array1<f64>, Array1<f64>) {
     if n <= 1 {
         return (Array1::zeros(1), Array1::ones(1));
@@ -309,6 +315,7 @@ pub fn legendre_points(n: usize) -> (Array1<f64>, Array1<f64>) {
 }
 
 /// Evaluate the Legendre polynomial of degree n at point x
+#[allow(dead_code)]
 fn legendre_polynomial(n: usize, x: f64) -> f64 {
     if n == 0 {
         return 1.0;
@@ -333,6 +340,7 @@ fn legendre_polynomial(n: usize, x: f64) -> f64 {
 }
 
 /// Evaluate the derivative of the Legendre polynomial of degree n at point x
+#[allow(dead_code)]
 fn legendre_polynomial_derivative(n: usize, x: f64) -> f64 {
     if n == 0 {
         return 0.0;
@@ -365,20 +373,21 @@ fn legendre_polynomial_derivative(n: usize, x: f64) -> f64 {
 ///
 /// This matrix D satisfies Du = u' where u is a vector of function values
 /// at Legendre-Gauss-Lobatto points
+#[allow(dead_code)]
 pub fn legendre_diff_matrix(n: usize) -> Array2<f64> {
     let mut d = Array2::zeros((n, n));
 
     // Compute Legendre-Gauss-Lobatto points and weights
-    let (x, _) = legendre_points(n);
+    let (x_, weights) = legendre_points(n);
 
     // Compute the differentiation matrix entries
     for i in 0..n {
         for j in 0..n {
             if i != j {
-                let p_i = legendre_polynomial(n - 1, x[i]);
-                let p_j = legendre_polynomial(n - 1, x[j]);
+                let p_i = legendre_polynomial(n - 1, x_[i]);
+                let p_j = legendre_polynomial(n - 1, x_[j]);
 
-                d[[i, j]] = p_i / (p_j * (x[i] - x[j]));
+                d[[i, j]] = p_i / (p_j * (x_[i] - x_[j]));
 
                 if j == 0 || j == n - 1 {
                     d[[i, j]] *= 2.0;
@@ -401,12 +410,14 @@ pub fn legendre_diff_matrix(n: usize) -> Array2<f64> {
 }
 
 /// Create a second-derivative Legendre differentiation matrix
+#[allow(dead_code)]
 pub fn legendre_diff2_matrix(n: usize) -> Array2<f64> {
     let d1 = legendre_diff_matrix(n);
     d1.dot(&d1) // D^2 = D * D
 }
 
 /// Transform from physical space to Legendre coefficient space
+#[allow(dead_code)]
 pub fn legendre_transform(u: &ArrayView1<f64>) -> Array1<f64> {
     let n = u.len();
     let mut coeffs = Array1::zeros(n);
@@ -431,6 +442,7 @@ pub fn legendre_transform(u: &ArrayView1<f64>) -> Array1<f64> {
 }
 
 /// Transform from Legendre coefficient space to physical space
+#[allow(dead_code)]
 pub fn legendre_inverse_transform(
     coeffs: &ArrayView1<f64>,
     x_points: Option<&ArrayView1<f64>>,
@@ -501,7 +513,7 @@ impl FourierSpectralSolver1D {
 
         if !has_periodic {
             return Err(PDEError::BoundaryConditions(
-                "Fourier spectral methods require periodic boundary conditions".to_string(),
+                "Fourier spectral methods require periodic boundary _conditions".to_string(),
             ));
         }
 
@@ -664,10 +676,10 @@ impl ChebyshevSpectralSolver1D {
             ));
         }
 
-        // Validate boundary conditions
+        // Validate boundary _conditions
         if boundary_conditions.len() != 2 {
             return Err(PDEError::BoundaryConditions(
-                "1D Chebyshev spectral solver requires exactly 2 boundary conditions".to_string(),
+                "1D Chebyshev spectral solver requires exactly 2 boundary _conditions".to_string(),
             ));
         }
 
@@ -680,10 +692,10 @@ impl ChebyshevSpectralSolver1D {
                 BoundaryLocation::Upper => has_upper = true,
             }
 
-            // Periodic boundary conditions are not suitable for Chebyshev methods
+            // Periodic boundary _conditions are not suitable for Chebyshev methods
             if bc.bc_type == BoundaryConditionType::Periodic {
                 return Err(PDEError::BoundaryConditions(
-                    "Chebyshev spectral methods are not suitable for periodic boundary conditions"
+                    "Chebyshev spectral methods are not suitable for periodic boundary _conditions"
                         .to_string(),
                 ));
             }
@@ -691,7 +703,7 @@ impl ChebyshevSpectralSolver1D {
 
         if !has_lower || !has_upper {
             return Err(PDEError::BoundaryConditions(
-                "Chebyshev spectral solver requires boundary conditions at both domain endpoints"
+                "Chebyshev spectral solver requires boundary _conditions at both domain endpoints"
                     .to_string(),
             ));
         }
@@ -855,7 +867,7 @@ impl ChebyshevSpectralSolver1D {
         }
 
         // Solve the linear system
-        let u = self.solve_linear_system(&a_matrix, &rhs.view())?;
+        let u = ChebyshevSpectralSolver1D::solve_linear_system(&a_matrix, &rhs.view())?;
 
         // Compute Chebyshev coefficients (optional)
         let coefficients = chebyshev_transform(&u.view());
@@ -889,7 +901,7 @@ impl ChebyshevSpectralSolver1D {
     }
 
     /// Solve the linear system Ax = b
-    fn solve_linear_system(&self, a: &Array2<f64>, b: &ArrayView1<f64>) -> PDEResult<Array1<f64>> {
+    fn solve_linear_system(a: &Array2<f64>, b: &ArrayView1<f64>) -> PDEResult<Array1<f64>> {
         let n = b.len();
 
         // Simple Gaussian elimination with partial pivoting
@@ -990,10 +1002,10 @@ impl LegendreSpectralSolver1D {
             ));
         }
 
-        // Validate boundary conditions
+        // Validate boundary _conditions
         if boundary_conditions.len() != 2 {
             return Err(PDEError::BoundaryConditions(
-                "1D Legendre spectral solver requires exactly 2 boundary conditions".to_string(),
+                "1D Legendre spectral solver requires exactly 2 boundary _conditions".to_string(),
             ));
         }
 
@@ -1006,10 +1018,10 @@ impl LegendreSpectralSolver1D {
                 BoundaryLocation::Upper => has_upper = true,
             }
 
-            // Periodic boundary conditions are not suitable for Legendre methods
+            // Periodic boundary _conditions are not suitable for Legendre methods
             if bc.bc_type == BoundaryConditionType::Periodic {
                 return Err(PDEError::BoundaryConditions(
-                    "Legendre spectral methods are not suitable for periodic boundary conditions"
+                    "Legendre spectral methods are not suitable for periodic boundary _conditions"
                         .to_string(),
                 ));
             }
@@ -1017,7 +1029,7 @@ impl LegendreSpectralSolver1D {
 
         if !has_lower || !has_upper {
             return Err(PDEError::BoundaryConditions(
-                "Legendre spectral solver requires boundary conditions at both domain endpoints"
+                "Legendre spectral solver requires boundary _conditions at both domain endpoints"
                     .to_string(),
             ));
         }
@@ -1048,12 +1060,12 @@ impl LegendreSpectralSolver1D {
         let n = self.options.num_modes;
 
         // Generate Legendre-Gauss-Lobatto grid in [-1, 1] and weights
-        let (lgb_grid, _weights) = legendre_points(n);
+        let (lgb_grid_, weights) = legendre_points(n);
 
         // Map Legendre grid to the domain [a, b]
         let mut grid = Array1::zeros(n);
         for j in 0..n {
-            grid[j] = a + (b - a) * (lgb_grid[j] + 1.0) / 2.0;
+            grid[j] = a + (b - a) * (lgb_grid_[j] + 1.0) / 2.0;
         }
 
         // Compute source term on the grid
@@ -1178,7 +1190,7 @@ impl LegendreSpectralSolver1D {
         }
 
         // Solve the linear system
-        let u = self.solve_linear_system(&a_matrix, &rhs.view())?;
+        let u = LegendreSpectralSolver1D::solve_linear_system(&a_matrix, &rhs.view())?;
 
         // Compute Legendre coefficients
         let coefficients = legendre_transform(&u.view());
@@ -1212,7 +1224,7 @@ impl LegendreSpectralSolver1D {
     }
 
     /// Solve the linear system Ax = b
-    fn solve_linear_system(&self, a: &Array2<f64>, b: &ArrayView1<f64>) -> PDEResult<Array1<f64>> {
+    fn solve_linear_system(a: &Array2<f64>, b: &ArrayView1<f64>) -> PDEResult<Array1<f64>> {
         let n = b.len();
 
         // Simple Gaussian elimination with partial pivoting
@@ -1316,30 +1328,114 @@ impl From<SpectralResult> for PDESolution<f64> {
 // These are temporary placeholders for the missing FFT functions
 // In a real implementation, these would use a proper FFT library
 
-/// Perform a Fast Fourier Transform (FFT) on a real-valued array
+/// Perform a Fast Fourier Transform (FFT) on a real-valued array using Cooley-Tukey algorithm
 ///
 /// # Arguments
 /// * `x` - The input array
 ///
 /// # Returns
 /// * A complex-valued array containing the FFT result
+#[allow(dead_code)]
 fn fft(x: &Array1<f64>) -> Array1<num_complex::Complex<f64>> {
-    // This is a stub implementation
-    // In a real implementation, this would use a proper FFT algorithm
-    let n = x.len();
-    let mut result = Array1::zeros(n);
+    // Convert to _complex array
+    let mut input: Vec<num_complex::Complex<f64>> = x
+        .iter()
+        .map(|&val| num_complex::Complex::new(val, 0.0))
+        .collect();
 
-    for k in 0..n {
-        let mut sum = num_complex::Complex::new(0.0, 0.0);
-        for j in 0..n {
-            let angle = -2.0 * PI * (j as f64) * (k as f64) / (n as f64);
-            let factor = num_complex::Complex::new(angle.cos(), angle.sin());
-            sum += factor * x[j];
-        }
-        result[k] = sum;
+    // Perform FFT
+    fft_complex(&mut input);
+
+    // Convert back to Array1
+    Array1::from_vec(input)
+}
+
+/// Cooley-Tukey FFT algorithm for complex input (in-place)
+#[allow(dead_code)]
+fn fft_complex(x: &mut [num_complex::Complex<f64>]) {
+    let n = x.len();
+
+    if n <= 1 {
+        return;
     }
 
-    result
+    // For power-of-2 lengths, use radix-2 FFT
+    if n.is_power_of_two() {
+        fft_radix2(x);
+    } else {
+        // Fall back to mixed-radix or DFT for non-power-of-2
+        fft_mixed_radix(x);
+    }
+}
+
+/// Radix-2 Cooley-Tukey FFT for power-of-2 lengths
+#[allow(dead_code)]
+fn fft_radix2(x: &mut [num_complex::Complex<f64>]) {
+    let n = x.len();
+
+    if n <= 1 {
+        return;
+    }
+
+    // Bit-reversal permutation
+    let mut j = 0;
+    for i in 1..n {
+        let mut bit = n >> 1;
+        while j & bit != 0 {
+            j ^= bit;
+            bit >>= 1;
+        }
+        j ^= bit;
+
+        if j > i {
+            x.swap(i, j);
+        }
+    }
+
+    // Cooley-Tukey FFT
+    let mut length = 2;
+    while length <= n {
+        let angle = -2.0 * PI / (length as f64);
+        let wlen = num_complex::Complex::new(angle.cos(), angle.sin());
+
+        for i in (0..n).step_by(length) {
+            let mut w = num_complex::Complex::new(1.0, 0.0);
+
+            for j in 0..length / 2 {
+                let u = x[i + j];
+                let v = x[i + j + length / 2] * w;
+
+                x[i + j] = u + v;
+                x[i + j + length / 2] = u - v;
+
+                w *= wlen;
+            }
+        }
+
+        length <<= 1;
+    }
+}
+
+/// Mixed-radix FFT for non-power-of-2 lengths
+#[allow(dead_code)]
+fn fft_mixed_radix(x: &mut [num_complex::Complex<f64>]) {
+    let n = x.len();
+
+    // Simple DFT for small sizes or non-power-of-2
+    if n < 32 || !n.is_power_of_two() {
+        let input = x.to_vec();
+        for k in 0..n {
+            let mut sum = num_complex::Complex::new(0.0, 0.0);
+            for j in 0..n {
+                let angle = -2.0 * PI * (j as f64) * (k as f64) / (n as f64);
+                let factor = num_complex::Complex::new(angle.cos(), angle.sin());
+                sum += factor * input[j];
+            }
+            x[k] = sum;
+        }
+    } else {
+        fft_radix2(x);
+    }
 }
 
 /// Perform an Inverse Fast Fourier Transform (IFFT) on a complex-valued array
@@ -1349,23 +1445,26 @@ fn fft(x: &Array1<f64>) -> Array1<num_complex::Complex<f64>> {
 ///
 /// # Returns
 /// * A complex-valued array containing the IFFT result
+#[allow(dead_code)]
 fn ifft(x: &Array1<num_complex::Complex<f64>>) -> Array1<num_complex::Complex<f64>> {
-    // This is a stub implementation
-    // In a real implementation, this would use a proper IFFT algorithm
     let n = x.len();
-    let mut result = Array1::zeros(n);
+    let mut input: Vec<num_complex::Complex<f64>> = x.to_vec();
 
-    for k in 0..n {
-        let mut sum = num_complex::Complex::new(0.0, 0.0);
-        for j in 0..n {
-            let angle = 2.0 * PI * (j as f64) * (k as f64) / (n as f64);
-            let factor = num_complex::Complex::new(angle.cos(), angle.sin());
-            sum += factor * x[j];
-        }
-        result[k] = sum / (n as f64);
+    // Take _complex conjugate
+    for val in &mut input {
+        *val = val.conj();
     }
 
-    result
+    // Perform FFT
+    fft_complex(&mut input);
+
+    // Take _complex conjugate and scale by 1/n
+    let scale = 1.0 / (n as f64);
+    for val in &mut input {
+        *val = val.conj() * scale;
+    }
+
+    Array1::from_vec(input)
 }
 
 /// Perform a Real Fast Fourier Transform (RFFT) on a real-valued array
@@ -1374,33 +1473,73 @@ fn ifft(x: &Array1<num_complex::Complex<f64>>) -> Array1<num_complex::Complex<f6
 /// * `x` - The input array
 ///
 /// # Returns
-/// * A complex-valued array containing the RFFT result
+/// * A complex-valued array containing the RFFT result (only positive frequencies)
+#[allow(dead_code)]
 fn rfft(x: &Array1<f64>) -> Array1<num_complex::Complex<f64>> {
-    // For simplicity, use the regular FFT
-    fft(x)
+    let n = x.len();
+    let full_fft = fft(x);
+
+    // For real input, the FFT is symmetric: X[n-k] = X[k]^*
+    // We only need the first n/2 + 1 components
+    let rfft_size = n / 2 + 1;
+    let mut result = Array1::zeros(rfft_size);
+
+    for i in 0..rfft_size {
+        result[i] = full_fft[i];
+    }
+
+    result
 }
 
 /// Perform an Inverse Real Fast Fourier Transform (IRFFT) on a complex-valued array
 ///
 /// # Arguments
-/// * `x` - The input array
+/// * `x` - The input array (RFFT coefficients)
+/// * `n` - The desired output length (must be even for proper reconstruction)
 ///
 /// # Returns
 /// * A real-valued array containing the IRFFT result
-fn irfft(x: &Array1<num_complex::Complex<f64>>) -> Array1<f64> {
-    // This is a stub implementation
-    // In a real implementation, this would use a proper IRFFT algorithm
-    let complex_result = ifft(x);
+#[allow(dead_code)]
+fn irfft_with_size(x: &Array1<num_complex::Complex<f64>>, n: usize) -> Array1<f64> {
+    // Reconstruct the full _complex spectrum using Hermitian symmetry
+    let mut full_spectrum = Array1::zeros(n);
+    let rfft_size = x.len();
 
-    // Extract real parts
-    let n = complex_result.len();
+    // Copy the positive frequencies
+    for i in 0..rfft_size {
+        full_spectrum[i] = x[i];
+    }
+
+    // Fill in the negative frequencies using Hermitian symmetry: X[n-k] = X[k]^*
+    for i in 1..n / 2 {
+        full_spectrum[n - i] = x[i].conj();
+    }
+
+    // Perform IFFT
+    let complex_result = ifft(&full_spectrum);
+
+    // Extract real parts (imaginary parts should be negligible for real input)
     let mut result = Array1::zeros(n);
-
     for i in 0..n {
         result[i] = complex_result[i].re;
     }
 
     result
+}
+
+/// Perform an Inverse Real Fast Fourier Transform (IRFFT) on a complex-valued array
+///
+/// # Arguments
+/// * `x` - The input array (RFFT coefficients)
+///
+/// # Returns
+/// * A real-valued array containing the IRFFT result
+#[allow(dead_code)]
+fn irfft(x: &Array1<num_complex::Complex<f64>>) -> Array1<f64> {
+    // Infer the output size from the input size
+    // For RFFT output of size k, the original input was size 2*(k-1)
+    let n = 2 * (x.len() - 1);
+    irfft_with_size(x, n)
 }
 
 // Import spectral element module

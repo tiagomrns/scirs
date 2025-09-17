@@ -7,6 +7,7 @@ use scirs2_metrics::anomaly::{
 
 // These functions will test the specific cases that are causing problems in doctests
 #[test]
+#[allow(dead_code)]
 fn test_auc_doctest() {
     let y_true = array![0.0, 0.0, 1.0, 0.0, 1.0, 0.0, 0.0, 1.0, 0.0, 0.0];
     let y_score = array![0.1, 0.2, 0.9, 0.3, 0.8, 0.2, 0.4, 0.95, 0.1, 0.05];
@@ -17,6 +18,7 @@ fn test_auc_doctest() {
 }
 
 #[test]
+#[allow(dead_code)]
 fn test_wasserstein_doctest() {
     let u_values = array![1.0, 2.0, 3.0, 4.0, 5.0];
     let v_values = array![1.5, 2.5, 3.5, 4.5, 5.5];
@@ -32,6 +34,7 @@ fn test_wasserstein_doctest() {
 }
 
 #[test]
+#[allow(dead_code)]
 fn test_mmd_wrapper() {
     let x = array![1.0, 2.0, 3.0, 4.0, 5.0];
     let y = array![1.2, 2.1, 3.0, 4.1, 5.2];
@@ -46,6 +49,7 @@ fn test_mmd_wrapper() {
 }
 
 #[test]
+#[allow(dead_code)]
 fn test_precision_recall_with_tolerance_doctest() {
     // Ground truth: anomalies at positions 3-4 and 9
     let y_true = array![0.0, 0.0, 0.0, 1.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0];
@@ -67,6 +71,7 @@ fn test_precision_recall_with_tolerance_doctest() {
 }
 
 #[test]
+#[allow(dead_code)]
 fn test_point_adjusted_precision_recall_doctest() {
     // Ground truth: anomaly sequences at positions 3-4 and 9
     let y_true = array![0.0, 0.0, 0.0, 1.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0];
@@ -82,6 +87,7 @@ fn test_point_adjusted_precision_recall_doctest() {
 }
 
 #[test]
+#[allow(dead_code)]
 fn test_nab_score_doctest() {
     // Ground truth: anomalies at positions 20 and 50
     let mut y_true = vec![0.0; 100];

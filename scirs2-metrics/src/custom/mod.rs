@@ -26,13 +26,13 @@
 //!         "custom_accuracy"
 //!     }
 //!
-//!     fn compute(&self, y_true: &Array1<i32>, y_pred: &Array1<i32>) -> MetricResult<f64> {
-//!         if y_true.len() != y_pred.len() {
+//!     fn compute(&self, y_true: &Array1<i32>, ypred: &Array1<i32>) -> MetricResult<f64> {
+//!         if y_true.len() != ypred.len() {
 //!             return Err("Arrays must have the same length".into());
 //!         }
 //!
 //!         let correct = y_true.iter()
-//!             .zip(y_pred.iter())
+//!             .zip(ypred.iter())
 //!             .filter(|(true_val, pred_val)| true_val == pred_val)
 //!             .count();
 //!
@@ -58,13 +58,13 @@
 //!         "log_cosh_error"
 //!     }
 //!
-//!     fn compute(&self, y_true: &Array1<f64>, y_pred: &Array1<f64>) -> MetricResult<f64> {
-//!         if y_true.len() != y_pred.len() {
+//!     fn compute(&self, y_true: &Array1<f64>, ypred: &Array1<f64>) -> MetricResult<f64> {
+//!         if y_true.len() != ypred.len() {
 //!             return Err("Arrays must have the same length".into());
 //!         }
 //!
 //!         let error: f64 = y_true.iter()
-//!             .zip(y_pred.iter())
+//!             .zip(ypred.iter())
 //!             .map(|(true_val, pred_val)| {
 //!                 let diff = pred_val - true_val;
 //!                 (diff.cosh()).ln()
@@ -94,7 +94,7 @@ pub trait ClassificationMetric<F: Float> {
     fn name(&self) -> &'static str;
 
     /// Computes the metric value given true and predicted labels
-    fn compute(&self, y_true: &Array1<i32>, y_pred: &Array1<i32>) -> MetricResult<F>;
+    fn compute(&self, y_true: &Array1<i32>, ypred: &Array1<i32>) -> MetricResult<F>;
 
     /// Returns whether higher values indicate better performance
     fn higher_is_better(&self) -> bool;
@@ -116,7 +116,7 @@ pub trait RegressionMetric<F: Float> {
     fn name(&self) -> &'static str;
 
     /// Computes the metric value given true and predicted values
-    fn compute(&self, y_true: &Array1<F>, y_pred: &Array1<F>) -> MetricResult<F>;
+    fn compute(&self, y_true: &Array1<F>, ypred: &Array1<F>) -> MetricResult<F>;
 
     /// Returns whether higher values indicate better performance
     fn higher_is_better(&self) -> bool;
@@ -208,12 +208,12 @@ impl<F: Float> CustomMetricSuite<F> {
     pub fn evaluate_classification(
         &self,
         y_true: &Array1<i32>,
-        y_pred: &Array1<i32>,
+        ypred: &Array1<i32>,
     ) -> MetricsResult<CustomMetricResults<F>> {
         let mut results = CustomMetricResults::new("classification");
 
         for metric in &self.classification_metrics {
-            match metric.compute(y_true, y_pred) {
+            match metric.compute(y_true, ypred) {
                 Ok(value) => {
                     results.add_result(metric.name(), value, metric.higher_is_better());
                 }
@@ -230,12 +230,12 @@ impl<F: Float> CustomMetricSuite<F> {
     pub fn evaluate_regression(
         &self,
         y_true: &Array1<F>,
-        y_pred: &Array1<F>,
+        ypred: &Array1<F>,
     ) -> MetricsResult<CustomMetricResults<F>> {
         let mut results = CustomMetricResults::new("regression");
 
         for metric in &self.regression_metrics {
-            match metric.compute(y_true, y_pred) {
+            match metric.compute(y_true, ypred) {
                 Ok(value) => {
                     results.add_result(metric.name(), value, metric.higher_is_better());
                 }
@@ -306,19 +306,19 @@ pub struct CustomMetricResult<F: Float> {
 
 impl<F: Float> CustomMetricResults<F> {
     /// Creates a new results container
-    pub fn new(metric_type: &str) -> Self {
+    pub fn new(_metrictype: &str) -> Self {
         Self {
-            metric_type: metric_type.to_string(),
+            metric_type: _metrictype.to_string(),
             results: Vec::new(),
         }
     }
 
     /// Adds a metric result
-    pub fn add_result(&mut self, name: &str, value: F, higher_is_better: bool) {
+    pub fn add_result(&mut self, name: &str, value: F, higher_isbetter: bool) {
         self.results.push(CustomMetricResult {
             name: name.to_string(),
             value,
-            higher_is_better,
+            higher_is_better: higher_isbetter,
         });
     }
 
@@ -395,9 +395,9 @@ macro_rules! classification_metric {
             fn compute(
                 &self,
                 y_true: &ndarray::Array1<i32>,
-                y_pred: &ndarray::Array1<i32>,
+                ypred: &ndarray::Array1<i32>,
             ) -> $crate::custom::MetricResult<f64> {
-                $compute(y_true, y_pred)
+                $compute(y_true, ypred)
             }
 
             fn higher_is_better(&self) -> bool {
@@ -421,9 +421,9 @@ macro_rules! regression_metric {
             fn compute(
                 &self,
                 y_true: &ndarray::Array1<f64>,
-                y_pred: &ndarray::Array1<f64>,
+                ypred: &ndarray::Array1<f64>,
             ) -> $crate::custom::MetricResult<f64> {
-                $compute(y_true, y_pred)
+                $compute(y_true, ypred)
             }
 
             fn higher_is_better(&self) -> bool {
@@ -445,14 +445,14 @@ mod tests {
             "test_accuracy"
         }
 
-        fn compute(&self, y_true: &Array1<i32>, y_pred: &Array1<i32>) -> MetricResult<f64> {
-            if y_true.len() != y_pred.len() {
+        fn compute(&self, y_true: &Array1<i32>, ypred: &Array1<i32>) -> MetricResult<f64> {
+            if y_true.len() != ypred.len() {
                 return Err("Length mismatch".into());
             }
 
             let correct = y_true
                 .iter()
-                .zip(y_pred.iter())
+                .zip(ypred.iter())
                 .filter(|(a, b)| a == b)
                 .count();
 
@@ -471,14 +471,14 @@ mod tests {
             "test_mse"
         }
 
-        fn compute(&self, y_true: &Array1<f64>, y_pred: &Array1<f64>) -> MetricResult<f64> {
-            if y_true.len() != y_pred.len() {
+        fn compute(&self, y_true: &Array1<f64>, ypred: &Array1<f64>) -> MetricResult<f64> {
+            if y_true.len() != ypred.len() {
                 return Err("Length mismatch".into());
             }
 
             let mse = y_true
                 .iter()
-                .zip(y_pred.iter())
+                .zip(ypred.iter())
                 .map(|(a, b)| (a - b).powi(2))
                 .sum::<f64>()
                 / y_true.len() as f64;
@@ -495,9 +495,9 @@ mod tests {
     fn test_custom_classification_metric() {
         let metric = TestAccuracy;
         let y_true = array![1, 0, 1, 1, 0];
-        let y_pred = array![1, 0, 0, 1, 0];
+        let ypred = array![1, 0, 0, 1, 0];
 
-        let result = metric.compute(&y_true, &y_pred).unwrap();
+        let result = metric.compute(&y_true, &ypred).unwrap();
         assert_eq!(result, 0.8);
         assert!(metric.higher_is_better());
     }
@@ -506,9 +506,9 @@ mod tests {
     fn test_custom_regression_metric() {
         let metric = TestMSE;
         let y_true = array![1.0, 2.0, 3.0];
-        let y_pred = array![1.1, 2.1, 2.9];
+        let ypred = array![1.1, 2.1, 2.9];
 
-        let result = metric.compute(&y_true, &y_pred).unwrap();
+        let result = metric.compute(&y_true, &ypred).unwrap();
         // MSE = ((1.0-1.1)² + (2.0-2.1)² + (3.0-2.9)²) / 3 = (0.01 + 0.01 + 0.01) / 3 = 0.01
         assert!((result - 0.01).abs() < 1e-10);
         assert!(!metric.higher_is_better());
@@ -522,9 +522,9 @@ mod tests {
 
         // Test classification
         let y_true_cls = array![1, 0, 1, 1, 0];
-        let y_pred_cls = array![1, 0, 0, 1, 0];
+        let ypred_cls = array![1, 0, 0, 1, 0];
         let cls_results = suite
-            .evaluate_classification(&y_true_cls, &y_pred_cls)
+            .evaluate_classification(&y_true_cls, &ypred_cls)
             .unwrap();
 
         assert_eq!(cls_results.results().len(), 1);
@@ -532,8 +532,8 @@ mod tests {
 
         // Test regression
         let y_true_reg = array![1.0, 2.0, 3.0];
-        let y_pred_reg = array![1.1, 2.1, 2.9];
-        let reg_results = suite.evaluate_regression(&y_true_reg, &y_pred_reg).unwrap();
+        let ypred_reg = array![1.1, 2.1, 2.9];
+        let reg_results = suite.evaluate_regression(&y_true_reg, &ypred_reg).unwrap();
 
         assert_eq!(reg_results.results().len(), 1);
         assert!((reg_results.get("test_mse").unwrap().value - 0.01).abs() < 1e-10);

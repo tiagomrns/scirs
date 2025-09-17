@@ -16,20 +16,22 @@ mod ode_problems {
     use ndarray::Array1;
 
     /// Simple exponential decay: dy/dt = -y, y(0) = 1
-    pub fn exponential_decay(_t: f64, y: ndarray::ArrayView1<f64>) -> Array1<f64> {
+    pub fn exponential_decay(t: f64, y: ndarray::ArrayView1<f64>) -> Array1<f64> {
         Array1::from_vec(vec![-y[0]])
     }
 
     /// Harmonic oscillator: d²x/dt² + x = 0, converted to first order system
-    pub fn harmonic_oscillator(_t: f64, y: ndarray::ArrayView1<f64>) -> Array1<f64> {
+    pub fn harmonic_oscillator(t: f64, y: ndarray::ArrayView1<f64>) -> Array1<f64> {
         Array1::from_vec(vec![y[1], -y[0]])
     }
 
     /// Van der Pol oscillator (stiff for large mu): d²x/dt² - mu*(1-x²)*dx/dt + x = 0
     #[allow(dead_code)]
-    pub fn van_der_pol(mu: f64) -> impl Fn(f64, ndarray::ArrayView1<f64>) -> Array1<f64> + 'static {
+    pub fn van_der_pol(
+        _mu: f64,
+    ) -> impl Fn(f64, ndarray::ArrayView1<f64>) -> Array1<f64> + 'static {
         move |_t: f64, y: ndarray::ArrayView1<f64>| {
-            Array1::from_vec(vec![y[1], mu * (1.0 - y[0] * y[0]) * y[1] - y[0]])
+            Array1::from_vec(vec![y[1], _mu * (1.0 - y[0] * y[0]) * y[1] - y[0]])
         }
     }
 
@@ -52,7 +54,7 @@ mod ode_problems {
     }
 
     /// N-body problem (simplified 3-body)
-    pub fn three_body_problem(_t: f64, y: ndarray::ArrayView1<f64>) -> Array1<f64> {
+    pub fn three_body_problem(t: f64, y: ndarray::ArrayView1<f64>) -> Array1<f64> {
         let mut dydt = Array1::zeros(y.len());
 
         // Positions: x1, y1, x2, y2, x3, y3
@@ -134,6 +136,7 @@ mod quadrature_problems {
 }
 
 /// Benchmark ODE solvers
+#[allow(dead_code)]
 fn bench_ode_solvers(c: &mut Criterion) {
     let mut group = c.benchmark_group("ODE Solvers");
 
@@ -165,7 +168,7 @@ fn bench_ode_solvers(c: &mut Criterion) {
 
     for (prob_name, dim, t_span, y0) in problems {
         for method in &methods {
-            let parameter = format!("{}_{:?}_dim{}", prob_name, method, dim);
+            let parameter = format!("{prob_name}_{method:?}_dim{dim}");
 
             group.bench_with_input(
                 BenchmarkId::new("solve_ivp", &parameter),
@@ -257,6 +260,7 @@ fn bench_ode_solvers(c: &mut Criterion) {
 }
 
 /// Benchmark quadrature methods
+#[allow(dead_code)]
 fn bench_quadrature_methods(c: &mut Criterion) {
     let mut group = c.benchmark_group("Quadrature Methods");
 
@@ -268,7 +272,7 @@ fn bench_quadrature_methods(c: &mut Criterion) {
     ];
 
     for (prob_name, a, b) in problems {
-        let parameter = format!("{}_{:.1e}_{:.1e}", prob_name, a, b);
+        let parameter = format!("{prob_name}_{a:.1e}_{b:.1e}");
 
         group.bench_with_input(
             BenchmarkId::new("quad", &parameter),
@@ -304,6 +308,7 @@ fn bench_quadrature_methods(c: &mut Criterion) {
 }
 
 /// Benchmark multidimensional integration
+#[allow(dead_code)]
 fn bench_multidimensional_integration(c: &mut Criterion) {
     let mut group = c.benchmark_group("Multidimensional Integration");
 
@@ -312,7 +317,7 @@ fn bench_multidimensional_integration(c: &mut Criterion) {
     for &dim in &dimensions {
         // Monte Carlo integration
         group.bench_with_input(
-            BenchmarkId::new("monte_carlo", format!("gaussian_{}d", dim)),
+            BenchmarkId::new("monte_carlo", format!("gaussian_{dim}d")),
             &dim,
             |b, &dim| {
                 b.iter(|| {
@@ -336,7 +341,7 @@ fn bench_multidimensional_integration(c: &mut Criterion) {
         // Cubature integration (for reasonable dimensions)
         if dim <= 4 {
             group.bench_with_input(
-                BenchmarkId::new("cubature", format!("gaussian_{}d", dim)),
+                BenchmarkId::new("cubature", format!("gaussian_{dim}d")),
                 &dim,
                 |b, &dim| {
                     b.iter(|| {
@@ -378,6 +383,7 @@ fn bench_multidimensional_integration(c: &mut Criterion) {
 
 /// Benchmark parallel operations
 #[cfg(feature = "parallel")]
+#[allow(dead_code)]
 fn bench_parallel_operations(c: &mut Criterion) {
     let mut group = c.benchmark_group("Parallel Operations");
 
@@ -452,6 +458,7 @@ fn bench_parallel_operations(c: &mut Criterion) {
 }
 
 /// Memory usage benchmark
+#[allow(dead_code)]
 fn bench_memory_usage(c: &mut Criterion) {
     let mut group = c.benchmark_group("Memory Usage");
 
@@ -460,7 +467,7 @@ fn bench_memory_usage(c: &mut Criterion) {
 
     for &n in &system_sizes {
         group.bench_with_input(
-            BenchmarkId::new("large_ode_system", format!("{}x{}", n, n)),
+            BenchmarkId::new("large_ode_system", format!("{n}x{n}")),
             &n,
             |b, &n| {
                 b.iter(|| {
@@ -499,6 +506,7 @@ fn bench_memory_usage(c: &mut Criterion) {
 }
 
 /// Accuracy vs performance trade-off benchmark
+#[allow(dead_code)]
 fn bench_accuracy_performance_tradeoff(c: &mut Criterion) {
     let mut group = c.benchmark_group("Accuracy vs Performance");
 
@@ -506,7 +514,7 @@ fn bench_accuracy_performance_tradeoff(c: &mut Criterion) {
 
     for &tol in &tolerances {
         group.bench_with_input(
-            BenchmarkId::new("ode_tolerance", format!("rtol_{:.0e}", tol)),
+            BenchmarkId::new("ode_tolerance", format!("rtol_{tol:.0e}")),
             &tol,
             |b, &tol| {
                 b.iter(|| {

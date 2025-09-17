@@ -18,11 +18,11 @@ impl<F: Float + ndarray::ScalarOperand> Op<F> for TensorSolveOp {
         let a = ctx.input(0);
         let b = ctx.input(1);
 
-        let a_shape = a.shape();
-        let b_shape = b.shape();
+        let ashape = a.shape();
+        let bshape = b.shape();
 
         // Validate shapes and compute solution shape
-        let (prod_x, prod_b) = validate_tensor_solve_shapes(a_shape, b_shape, &self.axes)?;
+        let (prod_x, prod_b) = validate_tensor_solveshapes(ashape, bshape, &self.axes)?;
 
         // Reshape tensors for matrix solve
         let a_reshaped = reshape_for_solve(&a.view(), prod_b, prod_x)?;
@@ -32,8 +32,8 @@ impl<F: Float + ndarray::ScalarOperand> Op<F> for TensorSolveOp {
         let x_flat = solve_linear_system(&a_reshaped, &b_reshaped)?;
 
         // Reshape solution back to expected shape
-        let x_shape = compute_solution_shape(a_shape, b_shape, &self.axes)?;
-        let x = reshape_solution(&x_flat, &x_shape)?;
+        let xshape = compute_solutionshape(ashape, bshape, &self.axes)?;
+        let x = reshape_solution(&x_flat, &xshape)?;
 
         ctx.append_output(x);
         Ok(())
@@ -147,14 +147,15 @@ impl<F: Float + ndarray::ScalarOperand> Op<F> for EinsumOp {
 
 // Helper functions
 
-fn validate_tensor_solve_shapes(
-    a_shape: &[usize],
-    b_shape: &[usize],
+#[allow(dead_code)]
+fn validate_tensor_solveshapes(
+    ashape: &[usize],
+    bshape: &[usize],
     axes: &Option<Vec<i32>>,
 ) -> Result<(usize, usize), OpError> {
     // Default axes behavior
-    let ndim_a = a_shape.len();
-    let ndim_b = b_shape.len();
+    let ndim_a = ashape.len();
+    let ndim_b = bshape.len();
 
     let axes_normalized = if let Some(ax) = axes {
         ax.clone()
@@ -168,7 +169,7 @@ fn validate_tensor_solve_shapes(
     let mut prod_x = 1;
     let mut prod_b = 1;
 
-    for (i, &dim) in a_shape.iter().enumerate() {
+    for (i, &dim) in ashape.iter().enumerate() {
         if axes_normalized.contains(&(i as i32)) {
             prod_x *= dim;
         } else {
@@ -176,7 +177,7 @@ fn validate_tensor_solve_shapes(
         }
     }
 
-    let b_prod: usize = b_shape.iter().product();
+    let b_prod: usize = bshape.iter().product();
     if b_prod != prod_b {
         return Err(OpError::IncompatibleShape(
             "Incompatible shapes for tensor solve".into(),
@@ -186,6 +187,7 @@ fn validate_tensor_solve_shapes(
     Ok((prod_x, prod_b))
 }
 
+#[allow(dead_code)]
 fn reshape_for_solve<F: Float>(
     tensor: &ndarray::ArrayViewD<F>,
     rows: usize,
@@ -206,6 +208,7 @@ fn reshape_for_solve<F: Float>(
     Ok(matrix)
 }
 
+#[allow(dead_code)]
 fn reshape_vector<F: Float>(
     tensor: &ndarray::ArrayViewD<F>,
     size: usize,
@@ -217,6 +220,7 @@ fn reshape_vector<F: Float>(
         .map(|v| v.to_owned())
 }
 
+#[allow(dead_code)]
 fn solve_linear_system<F: Float>(
     a: &Array2<F>,
     b: &ndarray::Array1<F>,
@@ -242,6 +246,7 @@ fn solve_linear_system<F: Float>(
     solve_square_system(a, b)
 }
 
+#[allow(dead_code)]
 fn solve_square_system<F: Float>(
     a: &Array2<F>,
     b: &ndarray::Array1<F>,
@@ -301,12 +306,13 @@ fn solve_square_system<F: Float>(
     Ok(x)
 }
 
-fn compute_solution_shape(
-    a_shape: &[usize],
-    _b_shape: &[usize],
+#[allow(dead_code)]
+fn compute_solutionshape(
+    ashape: &[usize],
+    bshape: &[usize],
     axes: &Option<Vec<i32>>,
 ) -> Result<Vec<usize>, OpError> {
-    let ndim_a = a_shape.len();
+    let ndim_a = ashape.len();
 
     let axes_normalized = if let Some(ax) = axes {
         ax.clone()
@@ -315,24 +321,25 @@ fn compute_solution_shape(
         vec![]
     };
 
-    let mut x_shape = Vec::new();
-    for (i, &dim) in a_shape.iter().enumerate() {
+    let mut xshape = Vec::new();
+    for (i, &dim) in ashape.iter().enumerate() {
         if axes_normalized.contains(&(i as i32)) {
-            x_shape.push(dim);
+            xshape.push(dim);
         }
     }
 
-    if x_shape.is_empty() {
+    if xshape.is_empty() {
         // If no axes specified, use last dimensions
-        let ndim_b = _b_shape.len();
-        for &dim in a_shape.iter().skip(ndim_a - ndim_b) {
-            x_shape.push(dim);
+        let ndim_b = bshape.len();
+        for &dim in ashape.iter().skip(ndim_a - ndim_b) {
+            xshape.push(dim);
         }
     }
 
-    Ok(x_shape)
+    Ok(xshape)
 }
 
+#[allow(dead_code)]
 fn reshape_solution<F: Float>(
     flat: &ndarray::Array1<F>,
     shape: &[usize],
@@ -344,13 +351,14 @@ fn reshape_solution<F: Float>(
         ));
     }
 
-    let dyn_shape = IxDyn(shape);
+    let dynshape = IxDyn(shape);
     flat.view()
-        .to_shape(dyn_shape)
+        .to_shape(dynshape)
         .map_err(|_| OpError::IncompatibleShape("Failed to reshape solution".into()))
         .map(|v| v.to_owned())
 }
 
+#[allow(dead_code)]
 fn compute_grad_b<F: Float>(
     _a: &ArrayD<F>,
     grad_x: &ArrayD<F>,
@@ -360,23 +368,25 @@ fn compute_grad_b<F: Float>(
     grad_x.clone()
 }
 
+#[allow(dead_code)]
 fn compute_grad_a<F: Float>(
     _grad_x: &ArrayD<F>,
     _x: &ArrayD<F>,
-    a_shape: &[usize],
+    ashape: &[usize],
     _axes: &Option<Vec<i32>>,
 ) -> ArrayD<F> {
     // Simplified: return negative outer product with appropriate shape
     // This is a placeholder - actual implementation would compute proper tensor product
-    ArrayD::<F>::zeros(IxDyn(a_shape))
+    ArrayD::<F>::zeros(IxDyn(ashape))
 }
 
 // Einsum helpers
 
+#[allow(dead_code)]
 fn parse_einsum_pattern(pattern: &str) -> Result<(Vec<String>, String), OpError> {
     let parts: Vec<&str> = pattern.split("->").collect();
     if parts.len() != 2 {
-        return Err(OpError::Other("Invalid einsum pattern".into()));
+        return Err(OpError::Other("Invalid einsum _pattern".into()));
     }
 
     let input_part = parts[0];
@@ -387,6 +397,7 @@ fn parse_einsum_pattern(pattern: &str) -> Result<(Vec<String>, String), OpError>
     Ok((input_specs, output_part.to_string()))
 }
 
+#[allow(dead_code)]
 fn compute_matmul<F: Float>(
     a: &ndarray::ArrayViewD<F>,
     b: &ndarray::ArrayViewD<F>,
@@ -403,6 +414,7 @@ fn compute_matmul<F: Float>(
     Ok(a_2d.dot(&b_2d).into_dyn())
 }
 
+#[allow(dead_code)]
 fn compute_dot_product<F: Float>(
     a: &ndarray::ArrayViewD<F>,
     b: &ndarray::ArrayViewD<F>,
@@ -421,6 +433,7 @@ fn compute_dot_product<F: Float>(
     Ok(ndarray::arr0(sum).into_dyn())
 }
 
+#[allow(dead_code)]
 fn compute_elementwise_mul<F: Float>(
     a: &ndarray::ArrayViewD<F>,
     b: &ndarray::ArrayViewD<F>,
@@ -434,6 +447,7 @@ fn compute_elementwise_mul<F: Float>(
     Ok((a * b).into_owned())
 }
 
+#[allow(dead_code)]
 fn compute_general_einsum<F: Float>(
     a: &ndarray::ArrayViewD<F>,
     _b: &ndarray::ArrayViewD<F>,
@@ -447,6 +461,7 @@ fn compute_general_einsum<F: Float>(
 // Public API functions
 
 /// Solve tensor equation a @ x = b for x
+#[allow(dead_code)]
 pub fn tensor_solve<'g, F: Float + ndarray::ScalarOperand>(
     a: &Tensor<'g, F>,
     b: &Tensor<'g, F>,
@@ -461,6 +476,7 @@ pub fn tensor_solve<'g, F: Float + ndarray::ScalarOperand>(
 }
 
 /// Einstein summation convention
+#[allow(dead_code)]
 pub fn einsum<'g, F: Float + ndarray::ScalarOperand>(
     pattern: &str,
     operands: &[&Tensor<'g, F>],
@@ -480,6 +496,7 @@ pub fn einsum<'g, F: Float + ndarray::ScalarOperand>(
 }
 
 /// Kronecker product (tensor product of matrices)
+#[allow(dead_code)]
 pub fn kron<'g, F: Float>(a: &Tensor<'g, F>, b: &Tensor<'g, F>) -> Tensor<'g, F> {
     let g = a.graph();
 
@@ -506,17 +523,17 @@ impl<F: Float> Op<F> for KroneckerOp {
         let a = ctx.input(0);
         let b = ctx.input(1);
 
-        let a_shape = a.shape();
-        let b_shape = b.shape();
+        let ashape = a.shape();
+        let bshape = b.shape();
 
-        if a_shape.len() != 2 || b_shape.len() != 2 {
+        if ashape.len() != 2 || bshape.len() != 2 {
             return Err(OpError::IncompatibleShape(
                 "Kronecker product requires 2D matrices".into(),
             ));
         }
 
-        let (m, n) = (a_shape[0], a_shape[1]);
-        let (p, q) = (b_shape[0], b_shape[1]);
+        let (m, n) = (ashape[0], ashape[1]);
+        let (p, q) = (bshape[0], bshape[1]);
 
         let mut result = ArrayD::<F>::zeros(IxDyn(&[m * p, n * q]));
 

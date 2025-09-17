@@ -15,6 +15,7 @@ use std::error::Error;
 #[cfg(feature = "optim_integration")]
 use std::collections::HashMap;
 
+#[allow(dead_code)]
 fn main() -> Result<(), Box<dyn Error>> {
     #[cfg(not(feature = "optim_integration"))]
     {
@@ -42,7 +43,7 @@ fn main() -> Result<(), Box<dyn Error>> {
         ];
 
         // Create hyperparameter tuner
-        let mut tuner = HyperParameterTuner::new(params, "accuracy", true, 20);
+        let mut tuner = HyperParameterTuner::new(params, "accuracy", true, 20)?;
 
         // Define evaluation function
         let eval_fn = |params: &HashMap<String, f64>| -> scirs2_metrics::error::Result<f64> {
@@ -57,8 +58,7 @@ fn main() -> Result<(), Box<dyn Error>> {
                 .map_err(|e| scirs2_metrics::error::MetricsError::Other(e.to_string()))?;
 
             println!(
-                "Evaluated: lr={:.4}, hidden={}, epochs={} -> accuracy={:.4}",
-                learning_rate, hidden_size, num_epochs, accuracy
+                "Evaluated: lr={learning_rate:.4}, hidden={hidden_size}, epochs={num_epochs} -> accuracy={accuracy:.4}"
             );
 
             Ok(accuracy)
@@ -73,7 +73,7 @@ fn main() -> Result<(), Box<dyn Error>> {
         for (name, value) in result.best_params() {
             match name.as_str() {
                 "hidden_size" | "num_epochs" => println!("  {}: {}", name, *value as usize),
-                _ => println!("  {}: {:.6}", name, value),
+                _ => println!("  {name}: {value:.6}"),
             }
         }
         println!("Best accuracy: {:.6}", result.best_metric());
@@ -88,7 +88,7 @@ fn main() -> Result<(), Box<dyn Error>> {
         println!("\nFinal evaluation with best parameters:");
         let final_accuracy =
             simulate_model_training(&x, &y, best_learning_rate, best_hidden_size, best_epochs)?;
-        println!("Final accuracy with best parameters: {:.6}", final_accuracy);
+        println!("Final accuracy with best parameters: {final_accuracy:.6}");
 
         Ok(())
     }
@@ -109,7 +109,7 @@ fn simulate_model_training(
     // Simulate how well the model will perform based on hyperparameters
     let base_accuracy = 0.6;
 
-    // Learning rate factor: too small or too large reduces accuracy
+    // Learning _rate factor: too small or too large reduces accuracy
     let lr_factor = if learning_rate < 0.005 {
         learning_rate / 0.005 // Too small
     } else if learning_rate > 0.05 {
@@ -118,7 +118,7 @@ fn simulate_model_training(
         1.0 // Good range
     };
 
-    // Hidden size factor: XOR needs at least 2 neurons, more is fine but less efficient
+    // Hidden _size factor: XOR needs at least 2 neurons, more is fine but less efficient
     let hidden_factor = if hidden_size < 3 {
         0.5 // Too small
     } else if hidden_size < 8 {
@@ -127,9 +127,9 @@ fn simulate_model_training(
         0.9 // Larger than needed
     };
 
-    // Epochs factor: more epochs generally better up to a point
+    // Epochs factor: more _epochs generally better up to a point
     let epoch_factor = if num_epochs < 100 {
-        0.7 + (num_epochs as f64 / 100.0) * 0.3 // Too few epochs
+        0.7 + (num_epochs as f64 / 100.0) * 0.3 // Too few _epochs
     } else if num_epochs < 300 {
         1.0 // Good range
     } else {

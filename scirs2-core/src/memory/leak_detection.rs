@@ -23,7 +23,7 @@
 //! // Configure leak detection
 //! let config = LeakDetectionConfig::default()
 //!     .with_threshold_mb(100)
-//!     .with_sampling_rate(0.1);
+//!     .with_samplingrate(0.1);
 //!
 //! let mut detector = LeakDetector::new(config)?;
 //!
@@ -31,11 +31,11 @@
 //! let checkpoint = detector.create_checkpoint("matrix_operations")?;
 //!
 //! // Perform operations that might leak memory
-//! fn perform_matrix_calculations() {
+//! fn performmatrix_calculations() {
 //!     // Example computation that could potentially leak memory
-//!     let _matrix: Vec<Vec<f64>> = (0..100).map(|i| vec![i as f64; 100]).collect();
+//!     let matrix: Vec<Vec<f64>> = (0..100).map(|i| vec![i as f64; 100]).collect();
 //! }
-//! perform_matrix_calculations();
+//! performmatrix_calculations();
 //!
 //! // Check for leaks
 //! let report = detector.check_leaks(&checkpoint)?;
@@ -51,12 +51,10 @@ use std::sync::{Arc, Mutex, RwLock};
 use std::time::Duration;
 use uuid::Uuid;
 
-#[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
 
 /// Memory leak detection configuration
-#[derive(Debug, Clone)]
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct LeakDetectionConfig {
     /// Enable real-time leak detection
     pub enabled: bool,
@@ -65,7 +63,7 @@ pub struct LeakDetectionConfig {
     /// Time window for leak detection
     pub detection_window: Duration,
     /// Sampling rate for profiling (0.0 to 1.0)
-    pub sampling_rate: f64,
+    pub samplingrate: f64,
     /// Enable call stack collection
     pub collect_call_stacks: bool,
     /// Maximum number of tracked allocations
@@ -88,7 +86,7 @@ impl Default for LeakDetectionConfig {
             enabled: true,
             growth_threshold_bytes: 100 * 1024 * 1024, // 100MB
             detection_window: Duration::from_secs(300), // 5 minutes
-            sampling_rate: 0.01,                       // 1% sampling in production
+            samplingrate: 0.01,                        // 1% sampling in production
             collect_call_stacks: false,                // Expensive in production
             max_tracked_allocations: 10000,
             enable_external_profilers: false,
@@ -108,8 +106,8 @@ impl LeakDetectionConfig {
     }
 
     /// Set sampling rate
-    pub fn with_sampling_rate(mut self, rate: f64) -> Self {
-        self.sampling_rate = rate.clamp(0.0, 1.0);
+    pub fn with_samplingrate(mut self, rate: f64) -> Self {
+        self.samplingrate = rate.clamp(0.0, 1.0);
         self
     }
 
@@ -122,7 +120,7 @@ impl LeakDetectionConfig {
     /// Enable development mode (more detailed tracking)
     pub fn development_mode(mut self) -> Self {
         self.production_mode = false;
-        self.sampling_rate = 1.0;
+        self.samplingrate = 1.0;
         self.collect_call_stacks = true;
         self.max_tracked_allocations = 100000;
         self
@@ -130,8 +128,7 @@ impl LeakDetectionConfig {
 }
 
 /// External profiler tools
-#[derive(Debug, Clone, PartialEq, Eq)]
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub enum ProfilerTool {
     /// Valgrind memcheck
     Valgrind,
@@ -162,8 +159,7 @@ impl ProfilerTool {
 }
 
 /// Memory checkpoint for leak detection
-#[derive(Debug, Clone)]
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct MemoryCheckpoint {
     /// Unique checkpoint identifier
     pub id: Uuid,
@@ -184,8 +180,7 @@ pub struct MemoryCheckpoint {
 }
 
 /// Memory usage snapshot
-#[derive(Debug, Clone)]
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct MemoryUsage {
     /// Resident set size (RSS) in bytes
     pub rss_bytes: u64,
@@ -202,8 +197,7 @@ pub struct MemoryUsage {
 }
 
 /// Call stack information
-#[derive(Debug, Clone)]
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct CallStack {
     /// Stack frames
     pub frames: Vec<StackFrame>,
@@ -214,8 +208,7 @@ pub struct CallStack {
 }
 
 /// Individual stack frame
-#[derive(Debug, Clone)]
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct StackFrame {
     /// Function name
     pub function: Option<String>,
@@ -230,8 +223,7 @@ pub struct StackFrame {
 }
 
 /// Memory leak report
-#[derive(Debug, Clone)]
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct LeakReport {
     /// Checkpoint information
     pub checkpoint: MemoryCheckpoint,
@@ -275,8 +267,7 @@ impl LeakReport {
 }
 
 /// Individual memory leak
-#[derive(Debug, Clone)]
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct MemoryLeak {
     /// Leak identifier
     pub id: Uuid,
@@ -297,8 +288,7 @@ pub struct MemoryLeak {
 }
 
 /// Types of memory leaks
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub enum LeakType {
     /// Definite leak - memory definitely lost
     Definite,
@@ -326,8 +316,7 @@ impl LeakType {
 }
 
 /// Leak detection summary
-#[derive(Debug, Clone)]
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct LeakSummary {
     /// Total number of leaks
     pub total_leaks: usize,
@@ -398,7 +387,7 @@ impl LeakDetector {
     }
 
     /// Start background monitoring
-    pub fn start_monitoring(&self) -> Result<(), CoreError> {
+    pub fn startmonitoring(&self) -> Result<(), CoreError> {
         if !self.config.enabled || !self.config.enable_periodic_checks {
             return Ok(());
         }
@@ -421,7 +410,7 @@ impl LeakDetector {
     }
 
     /// Stop background monitoring
-    pub fn stop_monitoring(&self) -> Result<(), CoreError> {
+    pub fn stopmonitoring(&self) -> Result<(), CoreError> {
         let mut monitoring = self.monitoring_active.lock().map_err(|_| {
             CoreError::ComputationError(crate::error::ErrorContext::new(
                 "Failed to acquire monitoring lock".to_string(),
@@ -521,10 +510,10 @@ impl LeakDetector {
         }
 
         // Apply sampling
-        if self.config.sampling_rate < 1.0 {
+        if self.config.samplingrate < 1.0 {
             use rand::Rng;
             let mut rng = rand::rng();
-            if rng.random::<f64>() > self.config.sampling_rate {
+            if rng.random::<f64>() > self.config.samplingrate {
                 return Ok(());
             }
         }
@@ -560,7 +549,7 @@ impl LeakDetector {
         // Prevent memory usage from growing too much
         if allocations.len() >= self.config.max_tracked_allocations {
             // Remove oldest allocation
-            if let Some((oldest_id, _oldest_info)) = allocations
+            if let Some((oldest_id, oldest_info)) = allocations
                 .iter()
                 .min_by_key(|(_, info)| info.timestamp)
                 .map(|(id, info)| (*id, info.clone()))
@@ -764,13 +753,13 @@ impl LeakDetector {
     }
 
     /// Create leak summary
-    fn create_leak_summary(&self, leaks: &[MemoryLeak], memory_growth: i64) -> LeakSummary {
+    fn create_leak_summary(&self, leaks: &[MemoryLeak], memorygrowth: i64) -> LeakSummary {
         let total_leaks = leaks.len();
         let total_leaked_bytes = leaks.iter().map(|leak| leak.size_bytes).sum();
 
         let mut leaks_by_type = HashMap::new();
         for leak in leaks {
-            let type_name = format!("{:?}", leak.leak_type);
+            let type_name = format!("{0:?}", leak.leak_type);
             *leaks_by_type.entry(type_name).or_insert(0) += 1;
         }
 
@@ -786,7 +775,7 @@ impl LeakDetector {
             0.0
         };
 
-        let growth_rate = memory_growth as f64 / 60.0; // bytes per second (assuming 1 minute window)
+        let growth_rate = memorygrowth as f64 / 60.0; // bytes per second (assuming 1 minute window)
 
         LeakSummary {
             total_leaks,
@@ -799,18 +788,17 @@ impl LeakDetector {
     }
 
     /// Generate recommendations based on detected leaks
-    fn generate_recommendations(&self, leaks: &[MemoryLeak], memory_growth: i64) -> Vec<String> {
+    fn generate_recommendations(&self, leaks: &[MemoryLeak], memorygrowth: i64) -> Vec<String> {
         let mut recommendations = Vec::new();
 
-        if leaks.is_empty() && memory_growth < 1024 * 1024 {
+        if leaks.is_empty() && memorygrowth < 1024 * 1024 {
             recommendations.push("No significant memory issues detected".to_string());
             return recommendations;
         }
 
-        if memory_growth > self.config.growth_threshold_bytes as i64 {
+        if memorygrowth > self.config.growth_threshold_bytes as i64 {
             recommendations.push(format!(
-                "Memory growth of {} bytes exceeds threshold, investigate allocation patterns",
-                memory_growth
+                "Memory growth of {memorygrowth} bytes exceeds threshold, investigate allocation patterns"
             ));
         }
 
@@ -859,7 +847,7 @@ impl LeakDetector {
     }
 
     /// Clear old reports
-    pub fn clear_old_reports(&self, max_age: Duration) -> Result<usize, CoreError> {
+    pub fn clear_old_reports(&self, maxage: Duration) -> Result<usize, CoreError> {
         let mut reports = self.reports.lock().map_err(|_| {
             CoreError::ComputationError(crate::error::ErrorContext::new(
                 "Failed to acquire reports lock".to_string(),
@@ -867,10 +855,9 @@ impl LeakDetector {
         })?;
 
         let cutoff = chrono::Utc::now()
-            - chrono::Duration::from_std(max_age).map_err(|e| {
+            - chrono::Duration::from_std(maxage).map_err(|e| {
                 CoreError::ComputationError(crate::error::ErrorContext::new(format!(
-                    "Invalid duration: {}",
-                    e
+                    "Invalid duration: {e}"
                 )))
             })?;
 
@@ -987,7 +974,7 @@ impl Drop for LeakCheckGuard<'_> {
 #[macro_export]
 macro_rules! check_leaks {
     ($detector:expr, $name:expr, $block:block) => {{
-        let _guard = $crate::memory::leak_detection::LeakCheckGuard::new($detector, $name)?;
+        let guard = $crate::memory::leak_detection::LeakCheckGuard::new($detector, $name)?;
         $block
     }};
 }
@@ -996,6 +983,7 @@ macro_rules! check_leaks {
 static GLOBAL_DETECTOR: std::sync::OnceLock<Arc<Mutex<LeakDetector>>> = std::sync::OnceLock::new();
 
 /// Get the global leak detector
+#[allow(dead_code)]
 pub fn global_leak_detector() -> Arc<Mutex<LeakDetector>> {
     GLOBAL_DETECTOR
         .get_or_init(|| {
@@ -1051,7 +1039,7 @@ mod tests {
         let detector = LeakDetector::new(config).unwrap();
 
         {
-            let _guard = LeakCheckGuard::new(&detector, "test_guard").unwrap();
+            let guard = LeakCheckGuard::new(&detector, "test_guard").unwrap();
             // Simulate some work that might leak memory
             detector.track_allocation(1024 * 1024, 0x12345678).unwrap();
         } // Guard drops here and checks for leaks
@@ -1068,11 +1056,11 @@ mod tests {
     fn test_config_builder() {
         let config = LeakDetectionConfig::default()
             .with_threshold_mb(50)
-            .with_sampling_rate(0.5)
+            .with_samplingrate(0.5)
             .with_call_stacks(true);
 
         assert_eq!(config.growth_threshold_bytes, 50 * 1024 * 1024);
-        assert_eq!(config.sampling_rate, 0.5);
+        assert_eq!(config.samplingrate, 0.5);
         assert!(config.collect_call_stacks);
     }
 

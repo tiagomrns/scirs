@@ -14,6 +14,7 @@ use scirs2_integrate::ode::{
     ODEMethod, ODEOptions, ODEOptionsWithEvents,
 };
 
+#[allow(dead_code)]
 fn main() -> IntegrateResult<()> {
     println!("=== Bead on Rotating Wire with Event Detection ===");
 
@@ -102,14 +103,14 @@ fn main() -> IntegrateResult<()> {
     // Define event functions as closures
     let max_radius_event = {
         let max_radius_copy = max_radius;
-        Box::new(move |_t: f64, y: ArrayView1<f64>| max_radius_copy - y[0])
+        Box::new(move |t: f64, y: ArrayView1<f64>| max_radius_copy - y[0])
             as Box<dyn Fn(f64, ArrayView1<f64>) -> f64 + Send + Sync>
     };
 
     let height_event = {
         let alpha_copy = alpha;
         let target_height_copy = target_height;
-        Box::new(move |_t: f64, y: ArrayView1<f64>| {
+        Box::new(move |t: f64, y: ArrayView1<f64>| {
             let r = y[0];
             let height = alpha_copy * r * r;
             height - target_height_copy
@@ -118,10 +119,9 @@ fn main() -> IntegrateResult<()> {
 
     type EventFunc = Box<dyn Fn(f64, ArrayView1<f64>) -> f64 + Send + Sync>;
     let event_funcs: Vec<EventFunc> = vec![
-        // Event 1: Velocity changes sign (turning points)
-        Box::new(|_t: f64, y: ArrayView1<f64>| y[1]),
+        // Event 1: Velocity changes sign (turning points), Box::new(|t: f64, y: ArrayView1<f64>| y[1]),
         // Event 2: Bead passes through origin
-        Box::new(|_t: f64, y: ArrayView1<f64>| y[0]),
+        Box::new(|t: f64, y: ArrayView1<f64>| y[0]),
         // Event 3: Bead reaches maximum allowed radius (terminal event)
         max_radius_event,
         // Event 4: Bead reaches specific height
@@ -253,7 +253,7 @@ fn main() -> IntegrateResult<()> {
     // Analyze target height events
     let height_events = result.events.get_events("target_height");
     if !height_events.is_empty() {
-        println!("\nTarget height events (z = {:.4} m):", target_height);
+        println!("\nTarget height events (z = {target_height:.4} m):");
         println!("  Time (s)\tRadius (m)\tVelocity (m/s)");
 
         for (i, event) in height_events.iter().enumerate() {
@@ -276,9 +276,9 @@ fn main() -> IntegrateResult<()> {
 
             println!("\nTerminal event (maximum radius reached):");
             println!("  Time: {:.4} s", terminal_event.time);
-            println!("  Final radius: {:.4} m", r);
-            println!("  Final velocity: {:.4} m/s", v);
-            println!("  Height at termination: {:.4} m", height);
+            println!("  Final radius: {r:.4} m");
+            println!("  Final velocity: {v:.4} m/s");
+            println!("  Height at termination: {height:.4} m");
 
             // Calculate energy at termination
             let kinetic_energy = 0.5 * m * v * v;
@@ -287,13 +287,10 @@ fn main() -> IntegrateResult<()> {
             let total_energy = kinetic_energy + potential_energy + rotational_energy;
 
             println!("  Energy components at termination:");
-            println!("    Kinetic energy: {:.4} J", kinetic_energy);
-            println!(
-                "    Gravitational potential energy: {:.4} J",
-                potential_energy
-            );
-            println!("    Rotational energy: {:.4} J", rotational_energy);
-            println!("    Total energy: {:.4} J", total_energy);
+            println!("    Kinetic energy: {kinetic_energy:.4} J");
+            println!("    Gravitational potential energy: {potential_energy:.4} J");
+            println!("    Rotational energy: {rotational_energy:.4} J");
+            println!("    Total energy: {total_energy:.4} J");
         }
     }
 

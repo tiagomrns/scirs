@@ -163,6 +163,7 @@ impl AugmentedLagrangianState {
 }
 
 /// Minimize a function subject to constraints using augmented Lagrangian method
+#[allow(dead_code)]
 pub fn minimize_augmented_lagrangian<F, EqCon, IneqCon>(
     fun: F,
     x0: Array1<f64>,
@@ -346,6 +347,7 @@ where
 }
 
 /// Compute optimality measure  
+#[allow(dead_code)]
 fn compute_optimality<F>(
     fun: &F,
     x: &Array1<f64>,
@@ -374,6 +376,7 @@ where
 }
 
 /// Minimize with equality constraints only
+#[allow(dead_code)]
 pub fn minimize_equality_constrained<F, EqCon>(
     fun: F,
     x0: Array1<f64>,
@@ -394,6 +397,7 @@ where
 }
 
 /// Minimize with inequality constraints only
+#[allow(dead_code)]
 pub fn minimize_inequality_constrained<F, IneqCon>(
     fun: F,
     x0: Array1<f64>,

@@ -4,6 +4,7 @@ use scirs2_special::{
 use std::f64::consts::PI;
 
 #[allow(unused_variables)]
+#[allow(dead_code)]
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("Mathieu Functions Example");
     println!("========================\n");
@@ -94,9 +95,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Verify the differential equation
     // We need the second derivative. We can approximate it:
     let h = 1e-6;
-    let (ce_plus, _) = mathieu_cem(m, q, x + h)?;
-    let (ce_minus, _) = mathieu_cem(m, q, x - h)?;
-    let ce_second_deriv = (ce_plus - 2.0 * ce + ce_minus) / (h * h);
+    let (ce_plus_, _) = mathieu_cem(m, q, x + h)?;
+    let (ceminus_, _) = mathieu_cem(m, q, x - h)?;
+    let ce_second_deriv = (ce_plus_ - 2.0 * ce + ceminus_) / (h * h);
 
     // Term of differential equation: d²y/dx² + [a - 2q cos(2x)]y = 0
     let diff_eq_term = ce_second_deriv + (a - 2.0 * q * (2.0 * x).cos()) * ce;
@@ -115,9 +116,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let (se, se_prime) = mathieu_sem(m, q, x)?;
 
     // Verify the differential equation for se
-    let (se_plus, _) = mathieu_sem(m, q, x + h)?;
-    let (se_minus, _) = mathieu_sem(m, q, x - h)?;
-    let se_second_deriv = (se_plus - 2.0 * se + se_minus) / (h * h);
+    let (se_plus_, _) = mathieu_sem(m, q, x + h)?;
+    let (seminus_, _) = mathieu_sem(m, q, x - h)?;
+    let se_second_deriv = (se_plus_ - 2.0 * se + seminus_) / (h * h);
 
     // Term of differential equation: d²y/dx² + [b - 2q cos(2x)]y = 0
     let diff_eq_term = se_second_deriv + (b - 2.0 * q * (2.0 * x).cos()) * se;

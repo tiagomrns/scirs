@@ -127,15 +127,15 @@ impl LanguageDetector {
     }
 
     /// Create a language detector with custom n-gram size
-    pub fn with_ngram_size(n_gram_size: usize) -> Result<Self> {
-        if !(1..=5).contains(&n_gram_size) {
+    pub fn with_ngram_size(n_gramsize: usize) -> Result<Self> {
+        if !(1..=5).contains(&n_gramsize) {
             return Err(TextError::InvalidInput(
                 "N-gram size must be between 1 and 5".to_string(),
             ));
         }
         let mut detector = Self {
             profiles: HashMap::new(),
-            n_gram_size,
+            n_gram_size: n_gramsize,
         };
         detector.initialize_default_profiles();
         Ok(detector)
@@ -249,7 +249,7 @@ impl LanguageDetector {
         }
 
         // Extract n-grams from the text
-        let text_profile = self.create_text_profile(text);
+        let text_profile = self.createtext_profile(text);
 
         // Score each language profile
         let mut scores: Vec<(Language, f64)> = self
@@ -293,7 +293,7 @@ impl LanguageDetector {
     }
 
     /// Create n-gram profile for a text
-    fn create_text_profile(&self, text: &str) -> HashMap<String, f64> {
+    fn createtext_profile(&self, text: &str) -> HashMap<String, f64> {
         let mut profile = HashMap::new();
         let text_lower = text.to_lowercase();
         let chars: Vec<char> = text_lower.chars().collect();
@@ -566,9 +566,9 @@ mod tests {
     }
 
     #[test]
-    fn test_create_text_profile() {
+    fn test_createtext_profile() {
         let detector = LanguageDetector::new();
-        let profile = detector.create_text_profile("hello world");
+        let profile = detector.createtext_profile("hello world");
 
         // Check that profile contains some n-grams
         assert!(!profile.is_empty());

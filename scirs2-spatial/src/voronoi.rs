@@ -57,7 +57,7 @@ pub struct Voronoi {
     vertices: Array2<f64>,
 
     /// Ridge points - pairs of indices (i,j) meaning a ridge separates points i and j
-    ridge_points: Vec<[usize; 2]>,
+    ridgepoints: Vec<[usize; 2]>,
 
     /// Ridge vertices - indices of vertices that form each ridge
     /// -1 indicates infinity (an unbounded ridge)
@@ -73,7 +73,7 @@ pub struct Voronoi {
 
     /// Furthest site flag
     /// Indicates whether this is a furthest-site Voronoi diagram
-    furthest_site: bool,
+    furthestsite: bool,
 }
 
 impl Voronoi {
@@ -81,8 +81,8 @@ impl Voronoi {
     ///
     /// # Arguments
     ///
-    /// * `points` - Input points, shape (n_points, n_dim)
-    /// * `furthest_site` - Whether to compute a furthest-site Voronoi diagram
+    /// * `points` - Input points, shape (npoints, n_dim)
+    /// * `furthestsite` - Whether to compute a furthest-site Voronoi diagram
     ///
     /// # Returns
     ///
@@ -103,7 +103,7 @@ impl Voronoi {
     ///
     /// let vor = Voronoi::new(&points.view(), false).unwrap();
     /// ```
-    pub fn new(points: &ArrayView2<f64>, furthest_site: bool) -> SpatialResult<Self> {
+    pub fn new(points: &ArrayView2<'_, f64>, furthestsite: bool) -> SpatialResult<Self> {
         let npoints = points.nrows();
         let ndim = points.ncols();
 
@@ -111,13 +111,13 @@ impl Voronoi {
         if ndim == 2 {
             // Handle triangle manually (3 points in 2D)
             if npoints == 3 {
-                return Self::special_case_triangle(points, furthest_site);
+                return Self::special_case_triangle(points, furthestsite);
             }
 
             // Handle square manually (4 points in 2D)
             if npoints == 4 {
                 // Check if it forms a square-like pattern
-                let [[x0, y0], [x1, y1], [x2, y2], [_x3, _y3]] = [
+                let [[x0, y0], [x1, y1], [x2, y2], [x3, y3]] = [
                     [points[[0, 0]], points[[0, 1]]],
                     [points[[1, 0]], points[[1, 1]]],
                     [points[[2, 0]], points[[2, 1]]],
@@ -128,7 +128,7 @@ impl Voronoi {
                 if ((x0 - x1).abs() < 1e-10 && (y0 - y2).abs() < 1e-10)
                     || ((x0 - x2).abs() < 1e-10 && (y0 - y1).abs() < 1e-10)
                 {
-                    return Self::special_case_square(points, furthest_site);
+                    return Self::special_case_square(points, furthestsite);
                 }
             }
         }
@@ -137,31 +137,30 @@ impl Voronoi {
         match Delaunay::new(&points.to_owned()) {
             Ok(delaunay) => {
                 // Compute the Voronoi diagram from the Delaunay triangulation
-                match Self::from_delaunay(delaunay, furthest_site) {
+                match Self::from_delaunay(delaunay, furthestsite) {
                     Ok(voronoi) => Ok(voronoi),
                     Err(_) => {
                         // If conversion fails, try special cases
                         if ndim == 2 && npoints == 3 {
-                            Self::special_case_triangle(points, furthest_site)
+                            Self::special_case_triangle(points, furthestsite)
                         } else if ndim == 2 && npoints == 4 {
-                            Self::special_case_square(points, furthest_site)
+                            Self::special_case_square(points, furthestsite)
                         } else {
                             // Add a small perturbation to points and retry
-                            let mut perturbed_points = points.to_owned();
+                            let mut perturbedpoints = points.to_owned();
                             use rand::Rng;
                             let mut rng = rand::rng();
 
                             for i in 0..npoints {
                                 for j in 0..ndim {
-                                    perturbed_points[[i, j]] += rng.random_range(-0.001..0.001);
+                                    perturbedpoints[[i, j]] += rng.gen_range(-0.001..0.001);
                                 }
                             }
 
-                            match Delaunay::new(&perturbed_points) {
-                                Ok(delaunay) => Self::from_delaunay(delaunay, furthest_site),
+                            match Delaunay::new(&perturbedpoints) {
+                                Ok(delaunay) => Self::from_delaunay(delaunay, furthestsite),
                                 Err(e) => Err(SpatialError::ComputationError(format!(
-                                    "Voronoi computation failed: {}",
-                                    e
+                                    "Voronoi computation failed: {e}"
                                 ))),
                             }
                         }
@@ -171,9 +170,9 @@ impl Voronoi {
             Err(_) => {
                 // Handle special cases directly
                 if ndim == 2 && npoints == 3 {
-                    Self::special_case_triangle(points, furthest_site)
+                    Self::special_case_triangle(points, furthestsite)
                 } else if ndim == 2 && npoints == 4 {
-                    Self::special_case_square(points, furthest_site)
+                    Self::special_case_square(points, furthestsite)
                 } else {
                     Err(SpatialError::ComputationError(
                         "Could not compute Voronoi diagram - too few points or degenerate configuration".to_string()
@@ -184,7 +183,10 @@ impl Voronoi {
     }
 
     /// Special case handler for a triangle (3 points in 2D)
-    fn special_case_triangle(points: &ArrayView2<f64>, furthest_site: bool) -> SpatialResult<Self> {
+    fn special_case_triangle(
+        points: &ArrayView2<'_, f64>,
+        furthestsite: bool,
+    ) -> SpatialResult<Self> {
         let _npoints = 3;
         let _ndim = 2;
 
@@ -212,7 +214,7 @@ impl Voronoi {
             vertices[[0, 1]] = ccy;
 
             // Create a simple Voronoi diagram with one vertex
-            let ridge_points = vec![[0, 1], [1, 2], [0, 2]];
+            let ridgepoints = vec![[0, 1], [1, 2], [0, 2]];
             let ridge_vertices = vec![vec![0, -1], vec![0, -1], vec![0, -1]];
             let regions = vec![vec![0, -1, -1], vec![0, -1, -1], vec![0, -1, -1]];
             let point_region = Array1::from_vec(vec![0, 1, 2]);
@@ -220,11 +222,11 @@ impl Voronoi {
             Ok(Voronoi {
                 points: points.to_owned(),
                 vertices,
-                ridge_points,
+                ridgepoints,
                 ridge_vertices,
                 regions,
                 point_region,
-                furthest_site,
+                furthestsite,
             })
         } else {
             let ux = ((x1 * x1 + y1 * y1) * (y2 - y3)
@@ -241,7 +243,7 @@ impl Voronoi {
             vertices[[0, 1]] = uy;
 
             // Create Voronoi diagram with one vertex
-            let ridge_points = vec![[0, 1], [1, 2], [0, 2]];
+            let ridgepoints = vec![[0, 1], [1, 2], [0, 2]];
             let ridge_vertices = vec![vec![0, -1], vec![0, -1], vec![0, -1]];
             let regions = vec![vec![0, -1, -1], vec![0, -1, -1], vec![0, -1, -1]];
             let point_region = Array1::from_vec(vec![0, 1, 2]);
@@ -249,17 +251,20 @@ impl Voronoi {
             Ok(Voronoi {
                 points: points.to_owned(),
                 vertices,
-                ridge_points,
+                ridgepoints,
                 ridge_vertices,
                 regions,
                 point_region,
-                furthest_site,
+                furthestsite,
             })
         }
     }
 
     /// Special case handler for a square/rectangle (4 points in 2D)
-    fn special_case_square(points: &ArrayView2<f64>, furthest_site: bool) -> SpatialResult<Self> {
+    fn special_case_square(
+        points: &ArrayView2<'_, f64>,
+        furthestsite: bool,
+    ) -> SpatialResult<Self> {
         // For a square, there's a single Voronoi vertex at the center
         let mut center_x = 0.0;
         let mut center_y = 0.0;
@@ -277,7 +282,7 @@ impl Voronoi {
         vertices[[0, 1]] = center_y;
 
         // Create ridges connecting each pair of adjacent points
-        let ridge_points = vec![[0, 1], [1, 2], [2, 3], [3, 0]];
+        let ridgepoints = vec![[0, 1], [1, 2], [2, 3], [3, 0]];
         let ridge_vertices = vec![vec![0, -1], vec![0, -1], vec![0, -1], vec![0, -1]];
 
         // Each region contains the center vertex and extends to infinity
@@ -293,11 +298,11 @@ impl Voronoi {
         Ok(Voronoi {
             points: points.to_owned(),
             vertices,
-            ridge_points,
+            ridgepoints,
             ridge_vertices,
             regions,
             point_region,
-            furthest_site,
+            furthestsite,
         })
     }
 
@@ -306,12 +311,12 @@ impl Voronoi {
     /// # Arguments
     ///
     /// * `delaunay` - A Delaunay triangulation
-    /// * `furthest_site` - Whether to compute a furthest-site Voronoi diagram
+    /// * `furthestsite` - Whether to compute a furthest-site Voronoi diagram
     ///
     /// # Returns
     ///
     /// * Result containing a Voronoi diagram or an error
-    fn from_delaunay(delaunay: Delaunay, furthest_site: bool) -> SpatialResult<Self> {
+    fn from_delaunay(delaunay: Delaunay, furthestsite: bool) -> SpatialResult<Self> {
         let points = delaunay.points().clone();
         let ndim = points.ncols();
         let npoints = points.nrows();
@@ -340,7 +345,7 @@ impl Voronoi {
         }
 
         // Create ridge points and ridge vertices
-        let mut ridge_points = Vec::new();
+        let mut ridgepoints = Vec::new();
         let mut ridge_vertices = Vec::new();
 
         // Map from pairs of points to ridge vertices
@@ -389,7 +394,7 @@ impl Voronoi {
                 }
 
                 // Add ridge points
-                ridge_points.push([p1, p2]);
+                ridgepoints.push([p1, p2]);
 
                 // Create ridge vertices
                 let mut ridge_verts = vec![i as i64];
@@ -438,11 +443,11 @@ impl Voronoi {
         Ok(Voronoi {
             points,
             vertices,
-            ridge_points,
+            ridgepoints,
             ridge_vertices,
             regions,
             point_region,
-            furthest_site,
+            furthestsite,
         })
     }
 
@@ -570,8 +575,8 @@ impl Voronoi {
     ///
     /// * Vector of pairs of point indices, representing the points
     ///   separated by each Voronoi ridge
-    pub fn ridge_points(&self) -> &[[usize; 2]] {
-        &self.ridge_points
+    pub fn ridgepoints(&self) -> &[[usize; 2]] {
+        &self.ridgepoints
     }
 
     /// Get the ridge vertices
@@ -607,7 +612,7 @@ impl Voronoi {
     ///
     /// * true if this is a furthest-site Voronoi diagram, false otherwise
     pub fn is_furthest_site(&self) -> bool {
-        self.furthest_site
+        self.furthestsite
     }
 }
 
@@ -615,8 +620,8 @@ impl Voronoi {
 ///
 /// # Arguments
 ///
-/// * `points` - Input points, shape (n_points, n_dim)
-/// * `furthest_site` - Whether to compute a furthest-site Voronoi diagram (default: false)
+/// * `points` - Input points, shape (npoints, n_dim)
+/// * `furthestsite` - Whether to compute a furthest-site Voronoi diagram (default: false)
 ///
 /// # Returns
 ///
@@ -637,8 +642,9 @@ impl Voronoi {
 ///
 /// let vor = voronoi(&points.view(), false).unwrap();
 /// ```
-pub fn voronoi(points: &ArrayView2<f64>, furthest_site: bool) -> SpatialResult<Voronoi> {
-    Voronoi::new(points, furthest_site)
+#[allow(dead_code)]
+pub fn voronoi(points: &ArrayView2<'_, f64>, furthestsite: bool) -> SpatialResult<Voronoi> {
+    Voronoi::new(points, furthestsite)
 }
 
 #[cfg(test)]
@@ -685,7 +691,7 @@ mod tests {
 
         let vor = Voronoi::new(&points.view(), true).unwrap();
 
-        // Check if furthest_site flag is set
+        // Check if furthestsite flag is set
         assert!(vor.is_furthest_site());
     }
 

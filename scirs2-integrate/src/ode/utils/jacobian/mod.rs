@@ -43,6 +43,7 @@ pub enum JacobianStrategy {
 }
 
 /// Compute Jacobian using finite differences (for compatibility)
+#[allow(dead_code)]
 pub fn compute_jacobian<F, Func>(f: &Func, t: F, y: &Array1<F>) -> IntegrateResult<Array2<F>>
 where
     F: IntegrateFloat,
@@ -105,6 +106,9 @@ pub struct JacobianManager<F: IntegrateFloat> {
     condition_estimate: Option<F>,
     /// Factorized form (if available)
     factorized: bool,
+    /// Whether parallel computation is available for this type
+    #[allow(dead_code)]
+    parallel_available: bool,
 }
 
 impl<F: IntegrateFloat> Default for JacobianManager<F> {
@@ -126,6 +130,7 @@ impl<F: IntegrateFloat> JacobianManager<F> {
             structure: JacobianStructure::default(),
             condition_estimate: None,
             factorized: false,
+            parallel_available: false,
         }
     }
 
@@ -141,29 +146,34 @@ impl<F: IntegrateFloat> JacobianManager<F> {
                 JacobianStrategy::BroydenUpdate => 20,
                 JacobianStrategy::ParallelFiniteDifference => 1,
                 JacobianStrategy::ParallelSparseFiniteDifference => 1,
-                _ => 1, // Other strategies don't reuse as much
+                JacobianStrategy::FiniteDifference => 1,
+                JacobianStrategy::SparseFiniteDifference => 1,
+                JacobianStrategy::ColoredFiniteDifference => 1,
+                JacobianStrategy::AutoDiff => 1,
+                JacobianStrategy::Adaptive => 1,
             },
             strategy,
             structure,
             condition_estimate: None,
             factorized: false,
+            parallel_available: false,
         }
     }
 
     /// Create a Jacobian manager with automatically selected strategy
     /// based on system size and structure
-    pub fn with_auto_strategy(n_dim: usize, is_banded: bool) -> Self {
-        let (strategy, structure) = if n_dim > 100 {
+    pub fn with_auto_strategy(_n_dim: usize, isbanded: bool) -> Self {
+        let (strategy, structure) = if _n_dim > 100 {
             // For very large systems, use parallel computation
             let parallel_available = cfg!(feature = "parallel");
 
             if parallel_available {
-                if is_banded {
+                if isbanded {
                     (
                         JacobianStrategy::ParallelSparseFiniteDifference,
                         JacobianStructure::Banded {
-                            lower: n_dim / 10,
-                            upper: n_dim / 10,
+                            lower: _n_dim / 10,
+                            upper: _n_dim / 10,
                         },
                     )
                 } else {
@@ -176,7 +186,7 @@ impl<F: IntegrateFloat> JacobianManager<F> {
                 // Fall back to modified Newton for large systems without parallel
                 (JacobianStrategy::ModifiedNewton, JacobianStructure::Dense)
             }
-        } else if n_dim > 20 {
+        } else if _n_dim > 20 {
             // For medium-sized systems, use Broyden updates
             (JacobianStrategy::BroydenUpdate, JacobianStructure::Dense)
         } else {
@@ -194,14 +204,14 @@ impl<F: IntegrateFloat> JacobianManager<F> {
     }
 
     /// Check if the Jacobian needs to be recomputed
-    pub fn needs_update(&self, t: F, y: &Array1<F>, force_age: Option<usize>) -> bool {
+    pub fn needs_update(&self, t: F, y: &Array1<F>, forceage: Option<usize>) -> bool {
         // Always recompute if we don't have a Jacobian yet
         if self.jacobian.is_none() {
             return true;
         }
 
-        // Check age against threshold (possibly overridden)
-        let max_age = force_age.unwrap_or(self.max_age);
+        // Check _age against threshold (possibly overridden)
+        let max_age = forceage.unwrap_or(self.max_age);
         if self.age >= max_age {
             return true;
         }
@@ -329,8 +339,10 @@ impl<F: IntegrateFloat> JacobianManager<F> {
                     f(t, y.view())
                 };
 
-                // Use implementation based on strategy, but fall back to serial for now
-                // TODO: Fix parallel jacobian computation trait bounds
+                // For parallel strategies, we need additional trait bounds (F: Send + Sync, Func: Sync).
+                // Since we can't guarantee them at compile time in this generic method, we'll use
+                // the serial implementation as a fallback. For parallel computation, use the
+                // update_jacobian_parallel method which has the proper trait bounds.
                 let jac =
                     finite_difference_jacobian(&f, t, y, &f_current, F::from_f64(1e-8).unwrap());
 
@@ -569,35 +581,35 @@ impl<F: IntegrateFloat> JacobianManager<F> {
 
         for j in 0..n {
             // Compute perturbation size scaled by variable magnitude
-            let eps = base_eps * (F::one() + y[j].abs()).max(F::one());
+            let _eps = base_eps * (F::one() + y[j].abs()).max(F::one());
 
             // Perturb the j-th component
             let mut y_perturbed = y.clone();
-            y_perturbed[j] += eps;
+            y_perturbed[j] += _eps;
 
             // Evaluate function at perturbed point
             let f_perturbed = f(t, y_perturbed.view());
 
             // Compute j-th column of Jacobian
             for i in 0..n {
-                jac[[i, j]] = (f_perturbed[i] - f_current[i]) / eps;
+                jac[[i, j]] = (f_perturbed[i] - f_current[i]) / _eps;
             }
         }
     }
 
     /// Get the current Jacobian (returns None if not computed)
-    pub fn jacobian(&self) -> Option<&Array2<F>> {
+    pub fn jacobian(&mut self) -> Option<&Array2<F>> {
         self.jacobian.as_ref()
     }
 
     /// Get the age of the current Jacobian
-    pub fn age(&self) -> usize {
+    pub fn age(&mut self) -> usize {
         self.age
     }
 
     /// Update the age threshold for recomputation
-    pub fn set_max_age(&mut self, max_age: usize) {
-        self.max_age = max_age;
+    pub fn set_max_age(&mut self, _maxage: usize) {
+        self.max_age = _maxage;
     }
 
     /// Mark the Jacobian as factorized
@@ -608,5 +620,111 @@ impl<F: IntegrateFloat> JacobianManager<F> {
     /// Check if the Jacobian is factorized
     pub fn is_factorized(&self) -> bool {
         self.factorized
+    }
+
+    /// Compute or update the Jacobian matrix with parallel support
+    /// This version requires additional trait bounds for parallel computation
+    pub fn update_jacobian_parallel<Func>(
+        &mut self,
+        t: F,
+        y: &Array1<F>,
+        f: &Func,
+        scale: Option<F>,
+    ) -> IntegrateResult<&Array2<F>>
+    where
+        F: Send + Sync,
+        Func: Fn(F, ArrayView1<F>) -> Array1<F> + Clone + Sync,
+    {
+        let scale_val = scale.unwrap_or_else(|| F::from_f64(1.0).unwrap());
+        let n = y.len();
+
+        // Handle parallel strategies with proper trait bounds
+        match self.strategy {
+            JacobianStrategy::ParallelFiniteDifference => {
+                let f_current = if let Some(f_val) = &self.f_eval {
+                    f_val.clone()
+                } else {
+                    f(t, y.view())
+                };
+
+                let jac = parallel_finite_difference_jacobian(
+                    &f,
+                    t,
+                    y,
+                    &f_current,
+                    F::from_f64(1e-8).unwrap(),
+                )?;
+
+                // Apply scaling if needed
+                let scaled_jac = if scale_val != F::one() {
+                    let mut scaled = Array2::<F>::zeros((n, n));
+                    for i in 0..n {
+                        for j in 0..n {
+                            if i == j {
+                                scaled[[i, j]] = F::one() - scale_val * jac[[i, j]];
+                            } else {
+                                scaled[[i, j]] = -scale_val * jac[[i, j]];
+                            }
+                        }
+                    }
+                    scaled
+                } else {
+                    jac
+                };
+
+                self.jacobian = Some(scaled_jac);
+                self.state_point = Some((t, y.clone()));
+                self.f_eval = Some(f_current);
+                self.age = 0;
+                self.factorized = false;
+
+                Ok(self.jacobian.as_ref().unwrap())
+            }
+            JacobianStrategy::ParallelSparseFiniteDifference => {
+                let f_current = if let Some(f_val) = &self.f_eval {
+                    f_val.clone()
+                } else {
+                    f(t, y.view())
+                };
+
+                let jac = parallel_sparse_jacobian(
+                    &f,
+                    t,
+                    y,
+                    &f_current,
+                    None,
+                    F::from_f64(1e-8).unwrap(),
+                )?;
+
+                // Apply scaling if needed
+                let scaled_jac = if scale_val != F::one() {
+                    let mut scaled = Array2::<F>::zeros((n, n));
+                    for i in 0..n {
+                        for j in 0..n {
+                            if i == j {
+                                scaled[[i, j]] = F::one() - scale_val * jac[[i, j]];
+                            } else {
+                                scaled[[i, j]] = -scale_val * jac[[i, j]];
+                            }
+                        }
+                    }
+                    scaled
+                } else {
+                    jac
+                };
+
+                self.jacobian = Some(scaled_jac);
+                self.state_point = Some((t, y.clone()));
+                self.f_eval = Some(f_current);
+                self.age = 0;
+                self.factorized = false;
+
+                Ok(self.jacobian.as_ref().unwrap())
+            }
+            _ => {
+                // For non-parallel strategies, use the regular method
+                self.update_jacobian(t, y, f, scale)
+            }
+        }
     }
 }

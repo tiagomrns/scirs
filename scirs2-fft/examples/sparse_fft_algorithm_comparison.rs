@@ -15,6 +15,7 @@ use std::f64::consts::PI;
 use std::time::Instant;
 
 /// Create a sparse signal with known frequencies in the spectrum
+#[allow(dead_code)]
 fn create_sparse_signal(n: usize, frequencies: &[(usize, f64)], noise_level: f64) -> Vec<f64> {
     // Create deterministic RNG for reproducible results
     let mut rng = StdRng::seed_from_u64(42);
@@ -41,12 +42,13 @@ fn create_sparse_signal(n: usize, frequencies: &[(usize, f64)], noise_level: f64
 }
 
 /// Calculate relative error between identified frequencies and ground truth
-fn calculate_frequency_error(result: &SparseFFTResult, true_frequencies: &[(usize, f64)]) -> f64 {
+#[allow(dead_code)]
+fn calculate_frequency_error(result: &SparseFFTResult, truefrequencies: &[(usize, f64)]) -> f64 {
     let mut min_error_sum = 0.0;
     let mut found_count = 0;
 
     // For each true frequency, find the closest detected frequency
-    for &(true_freq, _true_amp) in true_frequencies {
+    for &(true_freq, _true_amp) in truefrequencies {
         let mut min_error = f64::MAX;
 
         // Find the closest detected frequency
@@ -69,11 +71,12 @@ fn calculate_frequency_error(result: &SparseFFTResult, true_frequencies: &[(usiz
     if found_count > 0 {
         min_error_sum / found_count as f64
     } else {
-        1.0 // All frequencies missed
+        1.0 // All _frequencies missed
     }
 }
 
 /// Run a benchmark of all algorithms on signals with different characteristics
+#[allow(dead_code)]
 fn run_algorithm_benchmarks() {
     // Print header
     println!(
@@ -83,7 +86,7 @@ fn run_algorithm_benchmarks() {
     println!("{:-<80}", "");
 
     // List of signal sizes to test
-    let signal_sizes = [1024, 8 * 1024, 64 * 1024, 256 * 1024];
+    let signalsizes = [1024, 8 * 1024, 64 * 1024, 256 * 1024];
 
     // List of noise levels to test
     let noise_levels = [0.0, 0.05, 0.2, 0.5];
@@ -107,7 +110,7 @@ fn run_algorithm_benchmarks() {
     ];
 
     // Test over different signal sizes
-    for &size in &signal_sizes {
+    for &size in &signalsizes {
         // Create frequency components (scaled by signal size)
         let frequencies = vec![
             (size / 100, 1.0),
@@ -175,6 +178,7 @@ fn run_algorithm_benchmarks() {
 }
 
 /// Analyze algorithm accuracy on signals with increasing noise levels
+#[allow(dead_code)]
 fn analyze_algorithm_accuracy() {
     println!("\nAnalyzing algorithm accuracy with increasing noise levels:");
 
@@ -252,11 +256,11 @@ fn analyze_algorithm_accuracy() {
         let error_trace = Scatter::new(
             noise_levels
                 .iter()
-                .map(|&n| format!("{:.2}", n))
+                .map(|&n| format!("{n:.2}"))
                 .collect::<Vec<_>>(),
             algorithm_errors[i].clone(),
         )
-        .name(format!("{:?}", algorithm))
+        .name(format!("{algorithm:?}"))
         .mode(Mode::LinesMarkers);
 
         accuracy_plot.add_trace(error_trace);
@@ -265,11 +269,11 @@ fn analyze_algorithm_accuracy() {
         let time_trace = Scatter::new(
             noise_levels
                 .iter()
-                .map(|&n| format!("{:.2}", n))
+                .map(|&n| format!("{n:.2}"))
                 .collect::<Vec<_>>(),
             algorithm_times[i].clone(),
         )
-        .name(format!("{:?}", algorithm))
+        .name(format!("{algorithm:?}"))
         .mode(Mode::LinesMarkers);
 
         time_plot.add_trace(time_trace);
@@ -310,6 +314,7 @@ fn analyze_algorithm_accuracy() {
 }
 
 /// Analyze the performance of different algorithms with increasing signal size
+#[allow(dead_code)]
 fn analyze_scaling_behavior() {
     println!("\nAnalyzing algorithm scaling behavior with increasing signal size:");
 
@@ -384,10 +389,10 @@ fn analyze_scaling_behavior() {
     for (i, &algorithm) in algorithms.iter().enumerate() {
         // Scaling plot
         let time_trace = Scatter::new(
-            sizes.iter().map(|&s| format!("{}", s)).collect::<Vec<_>>(),
+            sizes.iter().map(|&s| format!("{s}")).collect::<Vec<_>>(),
             algorithm_times[i].clone(),
         )
-        .name(format!("{:?}", algorithm))
+        .name(format!("{algorithm:?}"))
         .mode(Mode::LinesMarkers);
 
         scaling_plot.add_trace(time_trace);
@@ -417,6 +422,7 @@ fn analyze_scaling_behavior() {
     println!("\nPlot saved as sparse_fft_algorithm_scaling.html");
 }
 
+#[allow(dead_code)]
 fn main() {
     println!("GPU-Accelerated Sparse FFT Algorithm Comparison");
     println!("===============================================");

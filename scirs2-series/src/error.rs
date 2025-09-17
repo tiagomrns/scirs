@@ -83,9 +83,21 @@ pub enum TimeSeriesError {
         message: String,
     },
 
+    /// Model not fitted
+    #[error("Model not fitted: {0}")]
+    ModelNotFitted(String),
+
     /// Not implemented
     #[error("Not implemented: {0}")]
     NotImplemented(String),
+
+    /// I/O error
+    #[error("I/O error: {0}")]
+    IOError(String),
+
+    /// Invalid operation
+    #[error("Invalid operation: {0}")]
+    InvalidOperation(String),
 
     /// Other error
     #[error("Error: {0}")]

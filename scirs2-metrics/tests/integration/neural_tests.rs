@@ -14,6 +14,7 @@ use std::collections::HashMap;
 
 /// Test that the neural metric adapter produces the same results as direct metric calls
 #[test]
+#[allow(dead_code)]
 fn test_metric_adapter_consistency() {
     // Create binary classification data
     let y_true = array![0.0, 1.0, 0.0, 1.0, 0.0];
@@ -84,6 +85,7 @@ fn test_metric_adapter_consistency() {
 
 /// Test the MetricsCallback functionality
 #[test]
+#[allow(dead_code)]
 fn test_metrics_callback() {
     // Create binary classification data
     let y_true = array![0.0, 1.0, 0.0, 1.0, 0.0];
@@ -134,6 +136,7 @@ fn test_metrics_callback() {
 
 /// Test the visualization adapters
 #[test]
+#[allow(dead_code)]
 fn test_visualization_adapters() {
     // Create binary classification data
     let y_true = array![0.0, 1.0, 0.0, 1.0, 0.0, 1.0, 0.0, 1.0, 0.0, 1.0];
@@ -207,6 +210,7 @@ fn test_visualization_adapters() {
 /// Test creating a custom metric adapter
 #[test]
 #[allow(clippy::unnecessary_cast)]
+#[allow(dead_code)]
 fn test_custom_metric_adapter() {
     // Create custom metric adapter
     let custom_metric = NeuralMetricAdapter::new(

@@ -5,19 +5,20 @@
 //! algorithms can be significantly faster than general-purpose eigenvalue solvers.
 
 use crate::error::{LinalgError, LinalgResult};
-use ndarray::{Array1, Array2, ArrayView1, ArrayView2};
+use ndarray::{Array1, Array2, ArrayView1, ArrayView2, ScalarOperand};
 use num_traits::{Float, NumAssign, One, Zero};
-use rand::Rng;
+use rand::{self, Rng};
 use std::iter::Sum;
 
 // Compatibility wrapper functions for the compat module
 /// Wrapper for banded matrix eigenvalues and eigenvectors (SciPy-style)
+#[allow(dead_code)]
 pub fn banded_eigh<F>(
     matrix: &ArrayView2<F>,
     bandwidth: usize,
 ) -> LinalgResult<(Array1<F>, Array2<F>)>
 where
-    F: Float + NumAssign + Zero + One + Sum + 'static,
+    F: Float + NumAssign + Zero + One + Sum + Send + Sync + ScalarOperand + 'static,
 {
     let (eigenvals, eigenvecs_opt) = banded_eigen(matrix, bandwidth, true)?;
     let eigenvecs = eigenvecs_opt.ok_or_else(|| {
@@ -27,21 +28,23 @@ where
 }
 
 /// Wrapper for banded matrix eigenvalues only (SciPy-style)
+#[allow(dead_code)]
 pub fn banded_eigvalsh<F>(matrix: &ArrayView2<F>, bandwidth: usize) -> LinalgResult<Array1<F>>
 where
-    F: Float + NumAssign + Zero + One + Sum + 'static,
+    F: Float + NumAssign + Zero + One + Sum + Send + Sync + ScalarOperand + 'static,
 {
     let (eigenvals, _) = banded_eigen(matrix, bandwidth, false)?;
     Ok(eigenvals)
 }
 
 /// Wrapper for tridiagonal matrix eigenvalues and eigenvectors (SciPy-style)
+#[allow(dead_code)]
 pub fn tridiagonal_eigh<F>(
     diagonal: &ArrayView1<F>,
     sub_diagonal: &ArrayView1<F>,
 ) -> LinalgResult<(Array1<F>, Array2<F>)>
 where
-    F: Float + NumAssign + Zero + One + Sum + 'static,
+    F: Float + NumAssign + Zero + One + Sum + Send + Sync + ScalarOperand + 'static,
 {
     let (eigenvals, eigenvecs_opt) = tridiagonal_eigen(diagonal, sub_diagonal, true)?;
     let eigenvecs = eigenvecs_opt.ok_or_else(|| {
@@ -51,12 +54,13 @@ where
 }
 
 /// Wrapper for tridiagonal matrix eigenvalues only (SciPy-style)
+#[allow(dead_code)]
 pub fn tridiagonal_eigvalsh<F>(
     diagonal: &ArrayView1<F>,
     sub_diagonal: &ArrayView1<F>,
 ) -> LinalgResult<Array1<F>>
 where
-    F: Float + NumAssign + Zero + One + Sum + 'static,
+    F: Float + NumAssign + Zero + One + Sum + Send + Sync + ScalarOperand + 'static,
 {
     let (eigenvals, _) = tridiagonal_eigen(diagonal, sub_diagonal, false)?;
     Ok(eigenvals)
@@ -76,6 +80,7 @@ where
 /// # Returns
 ///
 /// * k largest eigenvalues and corresponding eigenvectors
+#[allow(dead_code)]
 pub fn largest_k_eigh<F>(
     matrix: &ArrayView2<F>,
     k: usize,
@@ -83,7 +88,7 @@ pub fn largest_k_eigh<F>(
     tol: F,
 ) -> LinalgResult<(Array1<F>, Array2<F>)>
 where
-    F: Float + NumAssign + Zero + One + Sum + 'static,
+    F: Float + NumAssign + Zero + One + Sum + Send + Sync + ScalarOperand + 'static,
 {
     if k == 0 {
         let n = matrix.nrows();
@@ -107,6 +112,7 @@ where
 /// # Returns
 ///
 /// * k smallest eigenvalues and corresponding eigenvectors
+#[allow(dead_code)]
 pub fn smallest_k_eigh<F>(
     matrix: &ArrayView2<F>,
     k: usize,
@@ -114,7 +120,7 @@ pub fn smallest_k_eigh<F>(
     tol: F,
 ) -> LinalgResult<(Array1<F>, Array2<F>)>
 where
-    F: Float + NumAssign + Zero + One + Sum + 'static,
+    F: Float + NumAssign + Zero + One + Sum + Send + Sync + ScalarOperand + 'static,
 {
     if k == 0 {
         let n = matrix.nrows();
@@ -150,13 +156,14 @@ where
 /// let (eigenvals, eigenvecs) = tridiagonal_eigen(&diagonal.view(), &sub_diagonal.view(), true).unwrap();
 /// assert_eq!(eigenvals.len(), 3);
 /// ```
+#[allow(dead_code)]
 pub fn tridiagonal_eigen<F>(
     diagonal: &ArrayView1<F>,
     sub_diagonal: &ArrayView1<F>,
     compute_eigenvectors: bool,
 ) -> LinalgResult<(Array1<F>, Option<Array2<F>>)>
 where
-    F: Float + NumAssign + Zero + One + Sum + 'static,
+    F: Float + NumAssign + Zero + One + Sum + Send + Sync + ScalarOperand + 'static,
 {
     let n = diagonal.len();
 
@@ -255,7 +262,7 @@ where
             d[i + 1] = g + p;
             g = c * r - b;
 
-            // Accumulate eigenvectors if needed
+            // Accumulate _eigenvectors if needed
             if let Some(ref mut z_mat) = z {
                 for k in 0..n {
                     let temp = z_mat[[k, i + 1]];
@@ -276,7 +283,7 @@ where
         ));
     }
 
-    // Sort eigenvalues and eigenvectors in ascending order
+    // Sort eigenvalues and _eigenvectors in ascending order
     let mut indices: Vec<usize> = (0..n).collect();
     indices.sort_by(|&i, &j| d[i].partial_cmp(&d[j]).unwrap_or(std::cmp::Ordering::Equal));
 
@@ -316,13 +323,14 @@ where
 /// # Returns
 ///
 /// * Tuple (eigenvalues, eigenvectors)
+#[allow(dead_code)]
 pub fn banded_eigen<F>(
     matrix: &ArrayView2<F>,
     bandwidth: usize,
     compute_eigenvectors: bool,
 ) -> LinalgResult<(Array1<F>, Option<Array2<F>>)>
 where
-    F: Float + NumAssign + Zero + One + Sum + 'static,
+    F: Float + NumAssign + Zero + One + Sum + Send + Sync + ScalarOperand + 'static,
 {
     let n = matrix.nrows();
 
@@ -338,15 +346,15 @@ where
     }
 
     // For small bandwidth, reduce to tridiagonal form
-    let (tri_diag, tri_sub, q_matrix) = reduce_banded_to_tridiagonal(matrix, bandwidth)?;
+    let (tri_diag, tri_sub, qmatrix) = reduce_banded_to_tridiagonal(matrix, bandwidth)?;
 
     // Solve tridiagonal eigenvalue problem
     let (eigenvals, tri_eigenvecs) =
         tridiagonal_eigen(&tri_diag.view(), &tri_sub.view(), compute_eigenvectors)?;
 
-    // Transform eigenvectors back if needed
+    // Transform _eigenvectors back if needed
     let eigenvecs = if compute_eigenvectors {
-        if let (Some(q), Some(tri_vecs)) = (q_matrix, tri_eigenvecs) {
+        if let (Some(q), Some(tri_vecs)) = (qmatrix, tri_eigenvecs) {
             Some(q.dot(&tri_vecs))
         } else {
             None
@@ -370,11 +378,12 @@ where
 /// # Returns
 ///
 /// * Complex eigenvalues of the circulant matrix
+#[allow(dead_code)]
 pub fn circulant_eigenvalues<F>(
     first_column: &ArrayView1<F>,
 ) -> LinalgResult<Array1<num_complex::Complex<F>>>
 where
-    F: Float + NumAssign + Zero + One + Sum + 'static,
+    F: Float + NumAssign + Zero + One + Sum + Send + Sync + ScalarOperand + 'static,
 {
     let n = first_column.len();
 
@@ -382,7 +391,7 @@ where
         return Ok(Array1::zeros(0));
     }
 
-    // For circulant matrices, eigenvalues are DFT of the first column
+    // For circulant matrices, eigenvalues are DFT of the first _column
     // This is a simplified version - in practice you'd use an FFT library
     let mut eigenvals = Array1::zeros(n);
 
@@ -418,6 +427,7 @@ where
 /// # Returns
 ///
 /// * k eigenvalues and corresponding eigenvectors
+#[allow(dead_code)]
 pub fn partial_eigen<F>(
     matrix: &ArrayView2<F>,
     k: usize,
@@ -426,7 +436,7 @@ pub fn partial_eigen<F>(
     tol: Option<F>,
 ) -> LinalgResult<(Array1<F>, Array2<F>)>
 where
-    F: Float + NumAssign + Zero + One + Sum + 'static,
+    F: Float + NumAssign + Zero + One + Sum + Send + Sync + ScalarOperand + 'static,
 {
     let n = matrix.nrows();
 
@@ -492,24 +502,24 @@ where
 
     // Simplified Lanczos algorithm
     let m = std::cmp::min(max_iter, n);
-    let mut q_matrix = Array2::zeros((n, m + 1));
+    let mut qmatrix = Array2::zeros((n, m + 1));
     let mut alpha = Array1::zeros(m);
     let mut beta = Array1::zeros(m);
 
     // Initialize with random vector
     let mut rng = rand::rng();
     for i in 0..n {
-        q_matrix[[i, 0]] = F::from(rng.random_range(-1.0..=1.0)).unwrap();
+        qmatrix[[i, 0]] = F::from(rng.random_range(-1.0..=1.0)).unwrap();
     }
 
     // Normalize
     let mut norm = F::zero();
     for i in 0..n {
-        norm += q_matrix[[i, 0]] * q_matrix[[i, 0]];
+        norm += qmatrix[[i, 0]] * qmatrix[[i, 0]];
     }
     norm = norm.sqrt();
     for i in 0..n {
-        q_matrix[[i, 0]] /= norm;
+        qmatrix[[i, 0]] /= norm;
     }
 
     for j in 0..m {
@@ -517,25 +527,25 @@ where
         let mut w = Array1::zeros(n);
         for i in 0..n {
             for l in 0..n {
-                w[i] += matrix[[i, l]] * q_matrix[[l, j]];
+                w[i] += matrix[[i, l]] * qmatrix[[l, j]];
             }
         }
 
         // Compute alpha_j = q_j^T * w
         alpha[j] = F::zero();
         for i in 0..n {
-            alpha[j] += q_matrix[[i, j]] * w[i];
+            alpha[j] += qmatrix[[i, j]] * w[i];
         }
 
         // Update w = w - alpha_j * q_j
         for i in 0..n {
-            w[i] -= alpha[j] * q_matrix[[i, j]];
+            w[i] -= alpha[j] * qmatrix[[i, j]];
         }
 
         // Orthogonalize against previous vector if j > 0
         if j > 0 {
             for i in 0..n {
-                w[i] -= beta[j - 1] * q_matrix[[i, j - 1]];
+                w[i] -= beta[j - 1] * qmatrix[[i, j - 1]];
             }
         }
 
@@ -549,7 +559,7 @@ where
         if j + 1 < m && beta[j] > tol {
             // q_{j+1} = w / beta_j
             for i in 0..n {
-                q_matrix[[i, j + 1]] = w[i] / beta[j];
+                qmatrix[[i, j + 1]] = w[i] / beta[j];
             }
         } else {
             break;
@@ -599,7 +609,7 @@ where
             for row in 0..n {
                 let mut sum = F::zero();
                 for col in 0..m_actual {
-                    sum += q_matrix[[row, col]] * tri_vecs[[col, tri_idx]];
+                    sum += qmatrix[[row, col]] * tri_vecs[[col, tri_idx]];
                 }
                 result_eigenvecs[[row, i]] = sum;
             }
@@ -613,12 +623,13 @@ where
 type TridiagonalReduction<F> = LinalgResult<(Array1<F>, Array1<F>, Option<Array2<F>>)>;
 
 /// Helper function to reduce banded matrix to tridiagonal form
+#[allow(dead_code)]
 fn reduce_banded_to_tridiagonal<F>(
     matrix: &ArrayView2<F>,
     bandwidth: usize,
 ) -> TridiagonalReduction<F>
 where
-    F: Float + NumAssign + Zero + One + Sum + 'static,
+    F: Float + NumAssign + Zero + One + Sum + Send + Sync + ScalarOperand + 'static,
 {
     let n = matrix.nrows();
     let mut a = matrix.to_owned();

@@ -96,7 +96,7 @@ impl<'a, F: Float> LinalgContext<'a, F> {
             operation_info: OperationInfo {
                 operation: self.operation.clone(),
                 computational_cost: self.estimate_matmul_cost(a, b),
-                numerical_stability: self.assess_stability(&self.inputs),
+                numerical_stability: LinalgContext::<F>::assess_stability(&self.inputs),
                 memory_usage: self.estimate_memory_usage(&self.inputs),
             },
         })
@@ -123,7 +123,7 @@ impl<'a, F: Float> LinalgContext<'a, F> {
             operation_info: OperationInfo {
                 operation: self.operation.clone(),
                 computational_cost: self.estimate_svd_cost(input),
-                numerical_stability: self.assess_stability(&self.inputs),
+                numerical_stability: LinalgContext::<F>::assess_stability(&self.inputs),
                 memory_usage: self.estimate_memory_usage(&self.inputs),
             },
         })
@@ -149,7 +149,7 @@ impl<'a, F: Float> LinalgContext<'a, F> {
             operation_info: OperationInfo {
                 operation: self.operation.clone(),
                 computational_cost: self.estimate_qr_cost(input),
-                numerical_stability: self.assess_stability(&self.inputs),
+                numerical_stability: LinalgContext::<F>::assess_stability(&self.inputs),
                 memory_usage: self.estimate_memory_usage(&self.inputs),
             },
         })
@@ -176,7 +176,7 @@ impl<'a, F: Float> LinalgContext<'a, F> {
             operation_info: OperationInfo {
                 operation: self.operation.clone(),
                 computational_cost: self.estimate_lu_cost(input),
-                numerical_stability: self.assess_stability(&self.inputs),
+                numerical_stability: LinalgContext::<F>::assess_stability(&self.inputs),
                 memory_usage: self.estimate_memory_usage(&self.inputs),
             },
         })
@@ -198,7 +198,7 @@ impl<'a, F: Float> LinalgContext<'a, F> {
             operation_info: OperationInfo {
                 operation: self.operation.clone(),
                 computational_cost: self.estimate_cholesky_cost(input),
-                numerical_stability: self.assess_stability(&self.inputs),
+                numerical_stability: LinalgContext::<F>::assess_stability(&self.inputs),
                 memory_usage: self.estimate_memory_usage(&self.inputs),
             },
         })
@@ -223,7 +223,7 @@ impl<'a, F: Float> LinalgContext<'a, F> {
             operation_info: OperationInfo {
                 operation: self.operation.clone(),
                 computational_cost: self.estimate_eigenvalue_cost(input),
-                numerical_stability: self.assess_stability(&self.inputs),
+                numerical_stability: LinalgContext::<F>::assess_stability(&self.inputs),
                 memory_usage: self.estimate_memory_usage(&self.inputs),
             },
         })
@@ -245,7 +245,7 @@ impl<'a, F: Float> LinalgContext<'a, F> {
             operation_info: OperationInfo {
                 operation: self.operation.clone(),
                 computational_cost: self.estimate_inverse_cost(input),
-                numerical_stability: self.assess_stability(&self.inputs),
+                numerical_stability: LinalgContext::<F>::assess_stability(&self.inputs),
                 memory_usage: self.estimate_memory_usage(&self.inputs),
             },
         })
@@ -268,7 +268,7 @@ impl<'a, F: Float> LinalgContext<'a, F> {
             operation_info: OperationInfo {
                 operation: self.operation.clone(),
                 computational_cost: self.estimate_solve_cost(a, b),
-                numerical_stability: self.assess_stability(&self.inputs),
+                numerical_stability: LinalgContext::<F>::assess_stability(&self.inputs),
                 memory_usage: self.estimate_memory_usage(&self.inputs),
             },
         })
@@ -296,7 +296,7 @@ impl<'a, F: Float> LinalgContext<'a, F> {
             operation_info: OperationInfo {
                 operation: self.operation.clone(),
                 computational_cost: self.estimate_norm_cost(input),
-                numerical_stability: self.assess_stability(&self.inputs),
+                numerical_stability: LinalgContext::<F>::assess_stability(&self.inputs),
                 memory_usage: self.estimate_memory_usage(&self.inputs),
             },
         })
@@ -318,7 +318,7 @@ impl<'a, F: Float> LinalgContext<'a, F> {
             operation_info: OperationInfo {
                 operation: self.operation.clone(),
                 computational_cost: self.estimate_det_cost(input),
-                numerical_stability: self.assess_stability(&self.inputs),
+                numerical_stability: LinalgContext::<F>::assess_stability(&self.inputs),
                 memory_usage: self.estimate_memory_usage(&self.inputs),
             },
         })
@@ -350,13 +350,13 @@ impl<'a, F: Float> LinalgContext<'a, F> {
                     },
                     memory_accesses: input.data().len() as u64,
                 },
-                numerical_stability: self.assess_stability(&self.inputs),
+                numerical_stability: LinalgContext::<F>::assess_stability(&self.inputs),
                 memory_usage: self.estimate_memory_usage(&self.inputs),
             },
         })
     }
 
-    fn execute_custom(&self, _name: &str) -> Result<LinalgResult<'a, F>, IntegrationError> {
+    fn execute_custom(&self, name: &str) -> Result<LinalgResult<'a, F>, IntegrationError> {
         // Placeholder for custom operations
         let graph = if !self.inputs.is_empty() {
             self.inputs[0].graph()
@@ -390,20 +390,20 @@ impl<'a, F: Float> LinalgContext<'a, F> {
     ) -> Result<Tensor<'a, F>, IntegrationError> {
         // Simplified matrix multiplication
         // In practice, would use optimized BLAS routines
-        let a_shape = a.shape();
-        let b_shape = b.shape();
+        let ashape = a.shape();
+        let bshape = b.shape();
 
-        if a_shape.len() < 2 || b_shape.len() < 2 {
+        if ashape.len() < 2 || bshape.len() < 2 {
             return Err(IntegrationError::TensorConversion(
                 "Tensors must be at least 2D for matrix multiplication".to_string(),
             ));
         }
 
-        let m = a_shape[a_shape.len() - 2];
-        let k = a_shape[a_shape.len() - 1];
-        let n = b_shape[b_shape.len() - 1];
+        let m = ashape[ashape.len() - 2];
+        let k = ashape[ashape.len() - 1];
+        let n = bshape[bshape.len() - 1];
 
-        if k != b_shape[b_shape.len() - 2] {
+        if k != bshape[bshape.len() - 2] {
             return Err(IntegrationError::TensorConversion(
                 "Matrix dimensions do not match for multiplication".to_string(),
             ));
@@ -537,23 +537,23 @@ impl<'a, F: Float> LinalgContext<'a, F> {
         a: &Tensor<'a, F>,
         b: &Tensor<'a, F>,
     ) -> Result<Tensor<'a, F>, IntegrationError> {
-        let a_shape = a.shape();
-        let b_shape = b.shape();
+        let ashape = a.shape();
+        let bshape = b.shape();
 
-        if a_shape.len() != 2 || a_shape[0] != a_shape[1] {
+        if ashape.len() != 2 || ashape[0] != ashape[1] {
             return Err(IntegrationError::TensorConversion(
                 "A matrix must be square".to_string(),
             ));
         }
 
-        if b_shape[0] != a_shape[0] {
+        if bshape[0] != ashape[0] {
             return Err(IntegrationError::TensorConversion(
                 "Dimension mismatch between A and b".to_string(),
             ));
         }
 
         let x_data = vec![F::zero(); b.data().len()];
-        Ok(Tensor::from_vec(x_data, b_shape.to_vec(), b.graph()))
+        Ok(Tensor::from_vec(x_data, bshape.to_vec(), b.graph()))
     }
 
     fn compute_norm(
@@ -567,8 +567,7 @@ impl<'a, F: Float> LinalgContext<'a, F> {
             "inf" => self.compute_inf_norm(input),
             _ => {
                 return Err(IntegrationError::ModuleCompatibility(format!(
-                    "Unsupported norm type: {}",
-                    norm_type
+                    "Unsupported norm _type: {norm_type}"
                 )))
             }
         };
@@ -664,25 +663,25 @@ impl<'a, F: Float> LinalgContext<'a, F> {
 
     // Cost estimation methods
     fn estimate_matmul_cost(&self, a: &Tensor<F>, b: &Tensor<F>) -> ComputationalCost {
-        let a_shape = a.shape();
-        let b_shape = b.shape();
+        let ashape = a.shape();
+        let bshape = b.shape();
 
         // Handle cases where tensors might have insufficient dimensions
-        let (m, k) = if a_shape.len() >= 2 {
+        let (m, k) = if ashape.len() >= 2 {
             (
-                a_shape[a_shape.len() - 2] as u64,
-                a_shape[a_shape.len() - 1] as u64,
+                ashape[ashape.len() - 2] as u64,
+                ashape[ashape.len() - 1] as u64,
             )
-        } else if a_shape.len() == 1 {
-            (1u64, a_shape[0] as u64)
+        } else if ashape.len() == 1 {
+            (1u64, ashape[0] as u64)
         } else {
             // For autograd tensors without shape info, provide default estimate
             // In a real implementation, this would need proper shape tracking
             (10u64, 10u64) // Default for test compatibility
         };
 
-        let n = if !b_shape.is_empty() {
-            b_shape[b_shape.len() - 1] as u64
+        let n = if !bshape.is_empty() {
+            bshape[bshape.len() - 1] as u64
         } else {
             // Default for autograd tensors
             10u64 // Default for test compatibility
@@ -782,7 +781,7 @@ impl<'a, F: Float> LinalgContext<'a, F> {
         }
     }
 
-    fn estimate_solve_cost(&self, a: &Tensor<F>, _b: &Tensor<F>) -> ComputationalCost {
+    fn estimate_solve_cost(&self, a: &Tensor<F>, b: &Tensor<F>) -> ComputationalCost {
         let shape = a.shape();
         let n = if !shape.is_empty() {
             shape[0] as u64
@@ -792,7 +791,7 @@ impl<'a, F: Float> LinalgContext<'a, F> {
 
         ComputationalCost {
             flops: (2 * n * n * n) / 3 + 2 * n * n,
-            memory_accesses: (a.data().len() + _b.data().len()) as u64,
+            memory_accesses: (a.data().len() + b.data().len()) as u64,
         }
     }
 
@@ -812,7 +811,7 @@ impl<'a, F: Float> LinalgContext<'a, F> {
         }
     }
 
-    fn assess_stability(&self, _inputs: &[Tensor<F>]) -> NumericalStability {
+    fn assess_stability(selfinputs: &[Tensor<F>]) -> NumericalStability {
         // Simplified stability assessment
         NumericalStability::Stable
     }
@@ -964,7 +963,7 @@ impl<F: Float> SciRS2Integration for LinalgResult<'_, F> {
     }
 
     fn module_version() -> &'static str {
-        "0.1.0-alpha.6"
+        "0.1.0-beta.1"
     }
 
     fn check_compatibility() -> Result<(), IntegrationError> {
@@ -975,6 +974,7 @@ impl<F: Float> SciRS2Integration for LinalgResult<'_, F> {
 
 /// Utility functions for linear algebra integration
 /// Create a matrix multiplication context
+#[allow(dead_code)]
 pub fn create_matmul_context<'a, F: Float>(
     a: Tensor<'a, F>,
     b: Tensor<'a, F>,
@@ -986,6 +986,7 @@ pub fn create_matmul_context<'a, F: Float>(
 }
 
 /// Create an SVD context
+#[allow(dead_code)]
 pub fn create_svd_context<F: Float>(input: Tensor<F>, full_matrices: bool) -> LinalgContext<F> {
     LinalgContext::new(LinalgOperation::SVD)
         .add_input(input)
@@ -997,6 +998,7 @@ pub fn create_svd_context<F: Float>(input: Tensor<F>, full_matrices: bool) -> Li
 }
 
 /// Create a solve context
+#[allow(dead_code)]
 pub fn create_solve_context<'a, F: Float>(
     a: Tensor<'a, F>,
     b: Tensor<'a, F>,
@@ -1008,6 +1010,7 @@ pub fn create_solve_context<'a, F: Float>(
 }
 
 /// Execute linear algebra operation with error handling
+#[allow(dead_code)]
 pub fn execute_linalg_operation<'a, F: Float>(
     context: &LinalgContext<'a, F>,
 ) -> Result<LinalgResult<'a, F>, IntegrationError> {
@@ -1015,6 +1018,7 @@ pub fn execute_linalg_operation<'a, F: Float>(
 }
 
 /// Convert LinalgResult to SciRS2Data
+#[allow(dead_code)]
 pub fn linalg_result_to_scirs2_data<'a, F: Float>(
     result: &LinalgResult<'a, F>,
 ) -> SciRS2Data<'a, F> {

@@ -34,7 +34,7 @@ pub struct DistributedLogEntry {
     /// Unique entry ID
     pub id: String,
     /// Node ID that generated the log
-    pub node_id: String,
+    pub nodeid: String,
     /// Log level
     pub level: crate::logging::LogLevel,
     /// Log message
@@ -51,15 +51,14 @@ pub struct DistributedLogEntry {
 
 impl DistributedLogEntry {
     /// Create a new distributed log entry
-    pub fn new(
-        node_id: String,
+    pub fn new(nodeid: String,
         level: crate::logging::LogLevel,
         message: String,
         service: String,
     ) -> Self {
         Self {
             id: Self::generate_id(),
-            node_id,
+            nodeid,
             level,
             message,
             context: HashMap::new(),
@@ -76,7 +75,7 @@ impl DistributedLogEntry {
     }
 
     /// Set correlation ID
-    pub fn with_correlation_id(mut self, correlation_id: String) -> Self {
+    pub fn with_correlation_id(mut self, correlationid: String) -> Self {
         self.correlation_id = Some(correlation_id);
         self
     }
@@ -92,18 +91,18 @@ impl DistributedLogEntry {
             .as_millis();
         let counter = COUNTER.fetch_add(1, Ordering::SeqCst);
 
-        format!("{:x}_{:x}", timestamp, counter)
+        format!("{:x}-{:x}", timestamp, counter)
     }
 
     /// Convert to JSON string
     pub fn to_json(&self) -> String {
         // Simplified JSON serialization - real implementation would use serde
         format!(
-            r#"{{"id":"{}","node_id":"{}","level":"{}","message":"{}","service":"{}","timestamp":"{}"}}"#,
+            r#"{{"id":"{}","nodeid":"{}","level":"{}","message":"{}","service":"{}","timestamp":"{}"}}"#,
             self.id,
-            self.node_id,
-            format!("{:?}", self.level),
-            self.message.replace('"', "\\\""),
+            self.nodeid,
+            format!("{self.level:?}"),
+            self.message.replace(", "\\\""),
             self.service,
             self.timestamp
                 .duration_since(UNIX_EPOCH)
@@ -156,13 +155,13 @@ pub enum NodeStatus {
 #[derive(Debug, Clone)]
 pub struct DistributedConfig {
     /// Current node ID
-    pub node_id: String,
+    pub nodeid: String,
     /// Current node role
     pub node_role: NodeRole,
     /// Aggregator nodes
     pub aggregators: Vec<String>,
     /// Buffer size for log entries
-    pub buffer_size: usize,
+    pub buffersize: usize,
     /// Flush interval for buffered logs
     pub flush_interval: Duration,
     /// Retry attempts for failed sends
@@ -176,10 +175,10 @@ pub struct DistributedConfig {
 impl Default for DistributedConfig {
     fn default() -> Self {
         Self {
-            node_id: format!("node-{}", uuid::Uuid::new_v4()),
+            nodeid: format!("{}", uuid::Uuid::new_v4()),
             node_role: NodeRole::Producer,
             aggregators: Vec::new(),
-            buffer_size: 1000,
+            buffersize: 1000,
             flush_interval: Duration::from_secs(5),
             retry_attempts: 3,
             enable_compression: false,
@@ -233,7 +232,7 @@ impl DistributedLogger {
         // Initialize aggregator nodes
         for aggregator_addr in &self.config.aggregators {
             let node = LogNode {
-                id: format!("aggregator-{}", aggregator_addr),
+                id: format!("{aggregator_addr}"),
                 address: aggregator_addr.clone(),
                 role: NodeRole::Aggregator,
                 last_heartbeat: SystemTime::now(),
@@ -257,7 +256,7 @@ impl DistributedLogger {
     /// Log a distributed entry
     pub fn log(&self, level: crate::logging::LogLevel, message: &str, service: &str) {
         let entry = DistributedLogEntry::new(
-            self.config.node_id.clone(),
+            self.config.nodeid.clone(),
             level,
             message.to_string(),
             service.to_string(),
@@ -266,21 +265,16 @@ impl DistributedLogger {
         self.buffer.lock().unwrap().push(entry);
 
         // Check if buffer needs immediate flush
-        if self.buffer.lock().unwrap().len() >= self.config.buffer_size {
+        if self.buffer.lock().unwrap().len() >= self.config.buffersize {
             self.flush_buffer();
         }
     }
 
     /// Log with correlation ID for distributed tracing
-    pub fn log_with_correlation(
-        &self,
-        level: crate::logging::LogLevel,
-        message: &str,
-        service: &str,
-        correlation_id: &str,
+    pub fn log_with_correlation(&self, level: crate::logging::LogLevel, message: &str, service: &str, correlationid: &str
     ) {
         let entry = DistributedLogEntry::new(
-            self.config.node_id.clone(),
+            self.config.nodeid.clone(),
             level,
             message.to_string(),
             service.to_string(),
@@ -378,9 +372,9 @@ impl DistributedLogger {
                 std::thread::sleep(flush_interval);
 
                 // This is a simplified version - real implementation would call flush_buffer
-                let buffer_size = buffer.lock().unwrap().len();
-                if buffer_size > 0 {
-                    println!("Background flush: {} entries buffered", buffer_size);
+                let buffersize = buffer.lock().unwrap().len();
+                if buffersize > 0 {
+                    println!("Background flush: {} entries buffered", buffersize);
                 }
             }
         });
@@ -412,7 +406,7 @@ impl DistributedLogger {
 
     /// Get node statistics
     pub fn get_node_stats(&self) -> NodeStats {
-        let buffer_size = self.buffer.lock().unwrap().len();
+        let buffersize = self.buffer.lock().unwrap().len();
         let nodes = self.nodes.lock().unwrap();
 
         let healthy_nodes = nodes
@@ -423,10 +417,10 @@ impl DistributedLogger {
         let total_nodes = nodes.len();
 
         NodeStats {
-            buffer_size,
+            buffersize,
             healthy_nodes,
             total_nodes,
-            node_id: self.config.node_id.clone(),
+            nodeid: self.config.nodeid.clone(),
             uptime: SystemTime::now(),
         }
     }
@@ -448,13 +442,13 @@ impl Drop for DistributedLogger {
 #[derive(Debug)]
 pub struct NodeStats {
     /// Current buffer size
-    pub buffer_size: usize,
+    pub buffersize: usize,
     /// Number of healthy nodes
     pub healthy_nodes: usize,
     /// Total number of nodes
     pub total_nodes: usize,
     /// Current node ID
-    pub node_id: String,
+    pub nodeid: String,
     /// Node uptime
     pub uptime: SystemTime,
 }
@@ -462,7 +456,7 @@ pub struct NodeStats {
 /// Log aggregator for collecting logs from multiple nodes
 pub struct LogAggregator {
     config: DistributedConfig,
-    collected_logs: Arc<Mutex<Vec<DistributedLogEntry>>>,
+    collectedlogs: Arc<Mutex<Vec<DistributedLogEntry>>>,
     running: Arc<Mutex<bool>>,
 }
 
@@ -471,7 +465,7 @@ impl LogAggregator {
     pub fn new(config: DistributedConfig) -> Self {
         Self {
             config,
-            collected_logs: Arc::new(Mutex::new(Vec::new())),
+            collectedlogs: Arc::new(Mutex::new(Vec::new())),
             running: Arc::new(Mutex::new(false)),
         }
     }
@@ -481,7 +475,7 @@ impl LogAggregator {
         *self.running.lock().unwrap() = true;
 
         // In a real implementation, would start HTTP/gRPC server
-        println!("Log aggregator started on node: {}", self.config.node_id);
+        println!("Log aggregator started on node: {}", self.config.nodeid);
 
         Ok(())
     }
@@ -492,8 +486,8 @@ impl LogAggregator {
     }
 
     /// Receive log entries from remote nodes
-    pub fn receive_logs(&self, entries: Vec<DistributedLogEntry>) {
-        let mut logs = self.collected_logs.lock().unwrap();
+    pub fn receivelogs(&self, entries: Vec<DistributedLogEntry>) {
+        let mut logs = self.collectedlogs.lock().unwrap();
         logs.extend(entries);
 
         // Keep only recent logs (simple cleanup)
@@ -503,12 +497,12 @@ impl LogAggregator {
     }
 
     /// Query logs by criteria
-    pub fn query_logs(
+    pub fn querylogs(
         &self,
         service: Option<&str>,
         level: Option<crate::logging::LogLevel>,
     ) -> Vec<DistributedLogEntry> {
-        let logs = self.collected_logs.lock().unwrap();
+        let logs = self.collectedlogs.lock().unwrap();
 
         logs.iter()
             .filter(|entry| {
@@ -530,7 +524,7 @@ impl LogAggregator {
 
     /// Get aggregated statistics
     pub fn get_stats(&self) -> AggregatorStats {
-        let logs = self.collected_logs.lock().unwrap();
+        let logs = self.collectedlogs.lock().unwrap();
 
         let mut service_counts = HashMap::new();
         let mut level_counts = HashMap::new();
@@ -538,15 +532,15 @@ impl LogAggregator {
         for entry in logs.iter() {
             *service_counts.entry(entry.service.clone()).or_insert(0) += 1;
             *level_counts
-                .entry(format!("{:?}", entry.level))
+                .entry(format!("{entry.level:?}"))
                 .or_insert(0) += 1;
         }
 
         AggregatorStats {
-            total_logs: logs.len(),
+            totallogs: logs.len(),
             service_counts,
             level_counts,
-            aggregator_id: self.config.node_id.clone(),
+            aggregator_id: self.config.nodeid.clone(),
         }
     }
 }
@@ -555,7 +549,7 @@ impl LogAggregator {
 #[derive(Debug)]
 pub struct AggregatorStats {
     /// Total number of logs collected
-    pub total_logs: usize,
+    pub totallogs: usize,
     /// Log counts per service
     pub service_counts: HashMap<String, usize>,
     /// Log counts per level
@@ -569,7 +563,7 @@ pub mod utils {
     use super::*;
 
     /// Create a simple distributed logging setup
-    pub fn create_simple_setup(node_role: NodeRole) -> DistributedLogger {
+    pub fn create_simplelogger(noderole: NodeRole) -> DistributedLogger {
         let config = DistributedConfig {
             node_role,
             ..Default::default()
@@ -579,13 +573,13 @@ pub mod utils {
     }
 
     /// Create a distributed logging cluster
-    pub fn create_cluster(aggregator_addresses: Vec<String>) -> Vec<DistributedLogger> {
+    pub fn create_cluster(aggregatoraddresses: Vec<String>) -> Vec<DistributedLogger> {
         let mut loggers = Vec::new();
 
         // Create aggregators
         for addr in &aggregator_addresses {
             let config = DistributedConfig {
-                node_id: format!("aggregator-{}", addr),
+                nodeid: format!("{addr}"),
                 node_role: NodeRole::Aggregator,
                 ..Default::default()
             };
@@ -594,7 +588,7 @@ pub mod utils {
 
         // Create producers pointing to aggregators
         let producer_config = DistributedConfig {
-            aggregators: aggregator_addresses,
+            aggregators: aggregator_addresses.clone(),
             node_role: NodeRole::Producer,
             ..Default::default()
         };
@@ -609,7 +603,7 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_distributed_log_entry() {
+    fn test_distributedlog_entry() {
         let entry = DistributedLogEntry::new(
             "test-node".to_string(),
             crate::logging::LogLevel::Info,
@@ -617,14 +611,14 @@ mod tests {
             "test-service".to_string(),
         );
 
-        assert_eq!(entry.node_id, "test-node");
+        assert_eq!(entry.nodeid, "test-node");
         assert_eq!(entry.message, "Test message");
         assert_eq!(entry.service, "test-service");
         assert!(!entry.id.is_empty());
     }
 
     #[test]
-    fn test_distributed_logger_creation() {
+    fn test_distributedlogger_creation() {
         let config = DistributedConfig::default();
         let logger = DistributedLogger::new(config);
 
@@ -632,7 +626,7 @@ mod tests {
     }
 
     #[test]
-    fn test_log_aggregator() {
+    fn testlog_aggregator() {
         let config = DistributedConfig {
             node_role: NodeRole::Aggregator,
             ..Default::default()
@@ -646,9 +640,9 @@ mod tests {
             "api-service".to_string(),
         );
 
-        aggregator.receive_logs(vec![entry]);
+        aggregator.receivelogs(vec![entry]);
 
-        let logs = aggregator.query_logs(Some("api-service"), None);
+        let logs = aggregator.querylogs(Some("api-service"), None);
         assert_eq!(logs.len(), 1);
         assert_eq!(logs[0].message, "Error occurred");
     }
@@ -659,7 +653,7 @@ mod tests {
         let logger = DistributedLogger::new(config);
 
         let stats = logger.get_node_stats();
-        assert_eq!(stats.buffer_size, 0);
+        assert_eq!(stats.buffersize, 0);
         assert_eq!(stats.total_nodes, 0);
     }
 }

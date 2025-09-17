@@ -46,6 +46,7 @@ use super::utility::try_as_complex;
 /// assert_eq!(result.len(), 3);
 /// assert!(result[0].im.abs() < 1e-10); // DC component should be real
 /// ```
+#[allow(dead_code)]
 pub fn ihfft<T>(x: &[T], n: Option<usize>, norm: Option<&str>) -> FFTResult<Vec<Complex64>>
 where
     T: NumCast + Copy + Debug + 'static,
@@ -100,8 +101,7 @@ where
 
         // If we can't convert, return an error
         return Err(FFTError::ValueError(format!(
-            "Could not convert {:?} to f64",
-            val
+            "Could not convert {val:?} to f64"
         )));
     }
 
@@ -109,6 +109,7 @@ where
 }
 
 /// Internal implementation for f64 input
+#[allow(dead_code)]
 fn _ihfft_real(x: &[f64], n: Option<usize>, _norm: Option<&str>) -> FFTResult<Vec<Complex64>> {
     let n_input = x.len();
     let n_fft = n.unwrap_or(n_input);
@@ -122,7 +123,7 @@ fn _ihfft_real(x: &[f64], n: Option<usize>, _norm: Option<&str>) -> FFTResult<Ve
     complex_input.resize(n_fft, Complex64::new(0.0, 0.0));
 
     // Compute the inverse FFT
-    // Note: We ignore the norm parameter for now as the ifft function doesn't support it yet
+    // Note: We ignore the _norm parameter for now as the ifft function doesn't support it yet
     let ifft_result = ifft(&complex_input, Some(n_fft))?;
 
     // Enforce Hermitian symmetry on the result
@@ -163,6 +164,7 @@ fn _ihfft_real(x: &[f64], n: Option<usize>, _norm: Option<&str>) -> FFTResult<Ve
 /// # Returns
 ///
 /// * The Hermitian-symmetric complex 2D FFT of the real input array
+#[allow(dead_code)]
 pub fn ihfft2<T>(
     x: &ArrayView2<T>,
     shape: Option<(usize, usize)>,
@@ -199,9 +201,9 @@ where
             }
 
             // If we can't convert, return an error
+            let val = x[[r, c]];
             return Err(FFTError::ValueError(format!(
-                "Could not convert {:?} to f64",
-                x[[r, c]]
+                "Could not convert {val:?} to f64"
             )));
         }
     }
@@ -210,6 +212,7 @@ where
 }
 
 /// Internal implementation for f64 input
+#[allow(dead_code)]
 fn _ihfft2_real(
     x: &ArrayView2<f64>,
     shape: Option<(usize, usize)>,
@@ -245,7 +248,7 @@ fn _ihfft2_real(
         }
 
         // Perform 1D IFFT for this column
-        // Note: We ignore the norm parameter for now
+        // Note: We ignore the _norm parameter for now
         let ifft_col = ifft(&col, Some(out_rows))?;
 
         // Store the result in the temporary array
@@ -266,7 +269,7 @@ fn _ihfft2_real(
         }
 
         // Perform 1D IFFT for this row
-        // Note: We ignore the norm parameter for now
+        // Note: We ignore the _norm parameter for now
         let ifft_row = ifft(&row, Some(out_cols))?;
 
         // Store the result
@@ -298,6 +301,7 @@ fn _ihfft2_real(
 /// # Returns
 ///
 /// * The Hermitian-symmetric complex N-dimensional FFT of the real input array
+#[allow(dead_code)]
 pub fn ihfftn<T>(
     x: &ArrayView<T, IxDyn>,
     shape: Option<Vec<usize>>,
@@ -324,10 +328,10 @@ where
     }
 
     // For other types, convert to real and call the internal implementation
-    let x_shape = x.shape().to_vec();
+    let xshape = x.shape().to_vec();
 
     // Convert input to real array
-    let real_input = Array::from_shape_fn(IxDyn(&x_shape), |idx| {
+    let real_input = Array::from_shape_fn(IxDyn(&xshape), |idx| {
         let val = x[idx.clone()];
 
         // Try direct conversion to f64
@@ -344,6 +348,7 @@ where
 }
 
 /// Internal implementation that works directly with f64 input
+#[allow(dead_code)]
 fn _ihfftn_real(
     x: &ArrayView<f64, IxDyn>,
     shape: Option<Vec<usize>>,
@@ -352,19 +357,19 @@ fn _ihfftn_real(
     _overwrite_x: Option<bool>,
     _workers: Option<usize>,
 ) -> FFTResult<Array<Complex64, IxDyn>> {
-    // The overwrite_x and workers parameters are not used in this implementation
+    // The overwrite_x and _workers parameters are not used in this implementation
     // They are included for API compatibility with scipy's fftn
 
-    let x_shape = x.shape().to_vec();
-    let ndim = x_shape.len();
+    let xshape = x.shape().to_vec();
+    let ndim = xshape.len();
 
     // Handle empty array case
-    if ndim == 0 || x_shape.iter().any(|&d| d == 0) {
+    if ndim == 0 || xshape.contains(&0) {
         return Ok(Array::zeros(IxDyn(&[])));
     }
 
     // Determine the output shape
-    let out_shape = match shape {
+    let outshape = match shape {
         Some(s) => {
             if s.len() != ndim {
                 return Err(FFTError::ValueError(format!(
@@ -375,7 +380,7 @@ fn _ihfftn_real(
             }
             s
         }
-        None => x_shape.clone(),
+        None => xshape.clone(),
     };
 
     // Determine the axes
@@ -389,8 +394,7 @@ fn _ihfftn_real(
             for &ax in &sorted_axes {
                 if ax >= ndim {
                     return Err(FFTError::ValueError(format!(
-                        "Axis {} is out of bounds for array of dimension {}",
-                        ax, ndim
+                        "Axis {ax} is out of bounds for array of dimension {ndim}"
                     )));
                 }
             }
@@ -406,10 +410,10 @@ fn _ihfftn_real(
             real_vals.push(val);
         }
 
-        let result = _ihfft_real(&real_vals, Some(out_shape[0]), norm)?;
-        let mut complex_result = Array::zeros(IxDyn(&[out_shape[0]]));
+        let result = _ihfft_real(&real_vals, Some(outshape[0]), norm)?;
+        let mut complex_result = Array::zeros(IxDyn(&[outshape[0]]));
 
-        for i in 0..out_shape[0] {
+        for i in 0..outshape[0] {
             complex_result[i] = result[i];
         }
 
@@ -418,7 +422,7 @@ fn _ihfftn_real(
 
     // Create a complex array from the real input
     let complex_input =
-        Array::from_shape_fn(IxDyn(&x_shape), |idx| Complex64::new(x[idx.clone()], 0.0));
+        Array::from_shape_fn(IxDyn(&xshape), |idx| Complex64::new(x[idx.clone()], 0.0));
 
     // For multi-dimensional transforms, we have to transform along each axis
     let mut array = complex_input;
@@ -426,15 +430,15 @@ fn _ihfftn_real(
     // For each axis, perform a 1D transform along that axis
     for &axis in &transform_axes {
         // Get the shape for this axis transformation
-        let axis_dim = out_shape[axis];
+        let axis_dim = outshape[axis];
 
         // Reshape the array to transform along this axis
         let _dim_permutation: Vec<_> = (0..ndim).collect();
-        let mut working_shape = array.shape().to_vec();
-        working_shape[axis] = axis_dim;
+        let mut workingshape = array.shape().to_vec();
+        workingshape[axis] = axis_dim;
 
         // Allocate an array for the result along this axis
-        let mut axis_result = Array::zeros(IxDyn(&working_shape));
+        let mut axis_result = Array::zeros(IxDyn(&workingshape));
 
         // For each "fiber" along the current axis, perform a 1D IFFT
         let mut indices = vec![0; ndim];

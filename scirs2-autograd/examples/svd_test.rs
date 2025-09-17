@@ -2,10 +2,11 @@ use ag::tensor_ops::*;
 use ndarray::{array, Ix2};
 use scirs2_autograd as ag;
 
+#[allow(dead_code)]
 fn main() {
     println!("Testing SVD with a simple matrix...");
 
-    ag::run::<f64, _, _>(|g| {
+    ag::run(|g| {
         // Create a 3x2 matrix
         let matrix = convert_to_tensor(array![[1.0, 2.0], [3.0, 4.0], [5.0, 6.0]], g);
         println!(

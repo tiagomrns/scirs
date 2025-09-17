@@ -17,7 +17,7 @@ pub struct GpuInfo {
     /// Available GPU memory in bytes
     pub memory_available: usize,
     /// Memory bandwidth in GB/s
-    pub memory_bandwidth_gbps: f64,
+    pub memorybandwidth_gbps: f64,
     /// Number of compute units (CUDA cores, stream processors, etc.)
     pub compute_units: usize,
     /// Base clock frequency in MHz
@@ -151,7 +151,7 @@ impl GpuInfo {
                 vendor: GpuVendor::Apple,
                 memory_total: 8 * 1024 * 1024 * 1024, // Unified memory
                 memory_available: 6 * 1024 * 1024 * 1024,
-                memory_bandwidth_gbps: 200.0,
+                memorybandwidth_gbps: 200.0,
                 compute_units: 8,
                 base_clock_mhz: 1000,
                 memory_clock_mhz: 2000,
@@ -166,7 +166,7 @@ impl GpuInfo {
                 performance: GpuPerformance {
                     fp32_gflops: 2600.0,
                     fp16_gflops: 5200.0,
-                    memory_bandwidth_gbps: 200.0,
+                    memorybandwidth_gbps: 200.0,
                     efficiency_score: 0.9,
                 },
             })
@@ -181,20 +181,20 @@ impl GpuInfo {
 
     /// Create GPU info from PCI vendor/device IDs
     #[allow(dead_code)]
-    fn create_from_pci_ids(vendor_id: &str, device_id: &str) -> Self {
+    fn from_pci_ids(vendor_id: u16, _device_id: &str) -> Self {
         let vendor = match vendor_id {
-            "0x10de" => GpuVendor::Nvidia,
-            "0x1002" => GpuVendor::Amd,
-            "0x8086" => GpuVendor::Intel,
+            0x10de => GpuVendor::Nvidia,
+            0x1002 => GpuVendor::Amd,
+            0x8086 => GpuVendor::Intel,
             _ => GpuVendor::Unknown,
         };
 
         // This is a simplified mapping - real implementation would have
         // comprehensive device databases
-        let (name, memory_gb, compute_units) = match (vendor_id, device_id) {
-            ("0x10de", _) => ("NVIDIA GPU".to_string(), 8, 2048),
-            ("0x1002", _) => ("AMD GPU".to_string(), 8, 64),
-            ("0x8086", _) => ("Intel GPU".to_string(), 4, 96),
+        let (name, memory_gb, compute_units) = match vendor_id {
+            0x10de => ("NVIDIA GPU".to_string(), 8, 2048),
+            0x1002 => ("AMD GPU".to_string(), 8, 64),
+            0x8086 => ("Intel GPU".to_string(), 4, 96),
             _ => ("Unknown GPU".to_string(), 4, 32),
         };
 
@@ -203,7 +203,7 @@ impl GpuInfo {
             vendor,
             memory_total: memory_gb * 1024 * 1024 * 1024,
             memory_available: (memory_gb * 1024 * 1024 * 1024 * 3) / 4, // 75% available
-            memory_bandwidth_gbps: 500.0,
+            memorybandwidth_gbps: 500.0,
             compute_units,
             base_clock_mhz: 1500,
             memory_clock_mhz: 7000,
@@ -217,7 +217,7 @@ impl GpuInfo {
     pub fn performance_score(&self) -> f64 {
         let memory_score = (self.memory_total as f64 / (24.0 * 1024.0 * 1024.0 * 1024.0)).min(1.0); // Normalize to 24GB
         let compute_score = (self.compute_units as f64 / 4096.0).min(1.0); // Normalize to 4096 units
-        let bandwidth_score = (self.memory_bandwidth_gbps / 1000.0).min(1.0); // Normalize to 1000 GB/s
+        let bandwidth_score = (self.memorybandwidth_gbps / 1000.0).min(1.0); // Normalize to 1000 GB/s
         let efficiency_score = self.performance.efficiency_score;
 
         (memory_score + compute_score + bandwidth_score + efficiency_score) / 4.0
@@ -243,6 +243,44 @@ impl GpuInfo {
     /// Check if suitable for machine learning
     pub fn is_ml_capable(&self) -> bool {
         self.is_compute_capable() && (self.features.tensor_cores || self.features.half_precision)
+    }
+
+    /// Create GpuInfo from PCI IDs
+    pub fn create_from_pci_ids(vendor_id: &str, device_id: &str) -> Self {
+        // Strip 0x prefix if present
+        let vendor_id = vendor_id.strip_prefix("0x").unwrap_or(vendor_id);
+
+        let vendor = match vendor_id {
+            "10de" => GpuVendor::Nvidia,
+            "1002" => GpuVendor::Amd,
+            "8086" => GpuVendor::Intel,
+            _ => GpuVendor::Unknown,
+        };
+
+        // Create appropriate name based on vendor
+        let name = match vendor {
+            GpuVendor::Nvidia => format!("NVIDIA GPU {}", device_id),
+            GpuVendor::Amd => format!("AMD GPU {}", device_id),
+            GpuVendor::Intel => format!("Intel GPU {}", device_id),
+            GpuVendor::Apple => format!("Apple GPU {}", device_id),
+            GpuVendor::Unknown => format!("Unknown GPU {}", device_id),
+        };
+
+        // Default GPU info based on vendor
+        // In a real implementation, this would look up specific device info
+        Self {
+            name,
+            vendor,
+            memory_total: 8 * 1024 * 1024 * 1024, // 8GB default
+            memory_available: 8 * 1024 * 1024 * 1024,
+            memorybandwidth_gbps: 400.0,
+            compute_capability: ComputeCapability::Cuda(7, 0), // Default compute capability
+            compute_units: 128,
+            base_clock_mhz: 1500,
+            memory_clock_mhz: 1750, // Default memory clock
+            features: GpuFeatures::default(),
+            performance: GpuPerformance::default(),
+        }
     }
 }
 
@@ -313,7 +351,7 @@ pub struct GpuPerformance {
     /// FP16 performance in GFLOPS
     pub fp16_gflops: f64,
     /// Memory bandwidth in GB/s
-    pub memory_bandwidth_gbps: f64,
+    pub memorybandwidth_gbps: f64,
     /// Overall efficiency score (0.0 to 1.0)
     pub efficiency_score: f64,
 }
@@ -323,7 +361,7 @@ impl Default for GpuPerformance {
         Self {
             fp32_gflops: 1000.0,
             fp16_gflops: 2000.0,
-            memory_bandwidth_gbps: 500.0,
+            memorybandwidth_gbps: 500.0,
             efficiency_score: 0.7,
         }
     }
@@ -339,7 +377,7 @@ pub struct MultiGpuInfo {
     /// Whether GPUs support peer-to-peer communication
     pub p2p_capable: bool,
     /// SLI/CrossFire configuration
-    pub multi_gpu_config: MultiGpuConfig,
+    pub multi_gpuconfig: MultiGpuConfig,
 }
 
 impl MultiGpuInfo {
@@ -359,7 +397,7 @@ impl MultiGpuInfo {
             gpus,
             total_memory,
             p2p_capable: false,
-            multi_gpu_config: MultiGpuConfig::Single,
+            multi_gpuconfig: MultiGpuConfig::Single,
         })
     }
 
@@ -403,7 +441,7 @@ impl Default for GpuInfo {
             vendor: GpuVendor::Unknown,
             memory_total: 4 * 1024 * 1024 * 1024,     // 4GB
             memory_available: 3 * 1024 * 1024 * 1024, // 3GB
-            memory_bandwidth_gbps: 200.0,
+            memorybandwidth_gbps: 200.0,
             compute_units: 512,
             base_clock_mhz: 1000,
             memory_clock_mhz: 4000,

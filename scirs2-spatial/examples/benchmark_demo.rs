@@ -12,6 +12,7 @@ use scirs2_spatial::{
 };
 use std::time::Instant;
 
+#[allow(dead_code)]
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("SCIRS2-Spatial Benchmark Demonstration");
     println!("======================================");
@@ -49,6 +50,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     Ok(())
 }
 
+#[allow(dead_code)]
 fn report_simd_capabilities() {
     #[cfg(target_arch = "x86_64")]
     {
@@ -74,11 +76,13 @@ fn report_simd_capabilities() {
     }
 }
 
+#[allow(dead_code)]
 fn generate_test_data(n_points: usize, dimensions: usize, seed: u64) -> Array2<f64> {
     let mut rng = StdRng::seed_from_u64(seed);
     Array2::from_shape_fn((n_points, dimensions), |_| rng.random_range(-10.0..10.0))
 }
 
+#[allow(dead_code)]
 fn benchmark_distance_calculations() -> Result<(), Box<dyn std::error::Error>> {
     println!("  Comparing SIMD vs Scalar distance calculations:");
     println!(
@@ -107,15 +111,13 @@ fn benchmark_distance_calculations() -> Result<(), Box<dyn std::error::Error>> {
 
         let speedup = scalar_time as f64 / simd_time as f64;
 
-        println!(
-            "  {:>8} {:>8} {:>12} {:>12} {:>10.2}x",
-            size, dim, scalar_time, simd_time, speedup
-        );
+        println!("  {size:>8} {dim:>8} {scalar_time:>12} {simd_time:>12} {speedup:>10.2}x");
     }
 
     Ok(())
 }
 
+#[allow(dead_code)]
 fn benchmark_distance_matrices() -> Result<(), Box<dyn std::error::Error>> {
     println!("  Distance matrix computation performance:");
     println!(
@@ -139,15 +141,13 @@ fn benchmark_distance_matrices() -> Result<(), Box<dyn std::error::Error>> {
 
         let speedup = sequential_time as f64 / parallel_time as f64;
 
-        println!(
-            "  {:>8} {:>15} {:>15} {:>10.2}x",
-            size, sequential_time, parallel_time, speedup
-        );
+        println!("  {size:>8} {sequential_time:>15} {parallel_time:>15} {speedup:>10.2}x");
     }
 
     Ok(())
 }
 
+#[allow(dead_code)]
 fn benchmark_spatial_structures() -> Result<(), Box<dyn std::error::Error>> {
     println!("  Spatial data structure performance:");
     println!(
@@ -172,12 +172,13 @@ fn benchmark_spatial_structures() -> Result<(), Box<dyn std::error::Error>> {
         }
         let query_time = start.elapsed().as_millis();
 
-        println!("  {:>8} {:>15} {:>15}", size, build_time, query_time);
+        println!("  {size:>8} {build_time:>15} {query_time:>15}");
     }
 
     Ok(())
 }
 
+#[allow(dead_code)]
 fn analyze_memory_scaling() -> Result<(), Box<dyn std::error::Error>> {
     println!("  Memory usage analysis:");
     println!(
@@ -201,14 +202,14 @@ fn analyze_memory_scaling() -> Result<(), Box<dyn std::error::Error>> {
         let efficiency = (size * (size - 1) / 2) as f64 / elapsed as f64;
 
         println!(
-            "  {:>8} {:>12.2} {:>15.2} {:>15.0} ops/ms",
-            size, data_size_mb, dist_matrix_size_mb, efficiency
+            "  {size:>8} {data_size_mb:>12.2} {dist_matrix_size_mb:>15.2} {efficiency:>15.0} ops/ms"
         );
     }
 
     Ok(())
 }
 
+#[allow(dead_code)]
 fn generate_recommendations() {
     println!("  Based on benchmark results:");
     println!();

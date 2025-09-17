@@ -1,6 +1,7 @@
 use num_complex::Complex64;
 use scirs2_special::{wright_omega, wright_omega_real};
 
+#[allow(dead_code)]
 fn main() {
     println!("Wright Omega Function Example\n");
 

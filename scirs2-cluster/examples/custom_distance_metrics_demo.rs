@@ -12,12 +12,13 @@ use scirs2_cluster::vq::{
     KMeansInit, KMeansOptions, MahalanobisDistance, ManhattanDistance,
 };
 
+#[allow(dead_code)]
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("Custom Distance Metrics Demo");
     println!("============================\n");
 
     // Generate sample data with distinct patterns for different metrics
-    let data = generate_test_data();
+    let data = generate_testdata();
     println!(
         "Generated dataset with {} samples and {} features",
         data.shape()[0],
@@ -25,22 +26,23 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     );
 
     // Standardize the data for better comparison
-    let standardized_data = standardize(data.view(), true)?;
+    let standardizeddata = standardize(data.view(), true)?;
     println!("Data standardized for fair comparison\n");
 
     // Demo different distance metrics
-    demo_euclidean_distance(&standardized_data)?;
-    demo_manhattan_distance(&standardized_data)?;
-    demo_chebyshev_distance(&standardized_data)?;
-    demo_cosine_distance(&standardized_data)?;
-    demo_correlation_distance(&standardized_data)?;
-    demo_mahalanobis_distance(&standardized_data)?;
+    demo_euclidean_distance(&standardizeddata)?;
+    demo_manhattan_distance(&standardizeddata)?;
+    demo_chebyshev_distance(&standardizeddata)?;
+    demo_cosine_distance(&standardizeddata)?;
+    demo_correlation_distance(&standardizeddata)?;
+    demo_mahalanobis_distance(&standardizeddata)?;
 
     println!("Demo completed successfully!");
     Ok(())
 }
 
-fn generate_test_data() -> Array2<f64> {
+#[allow(dead_code)]
+fn generate_testdata() -> Array2<f64> {
     // Create a more complex dataset with multiple patterns
     let mut data = Vec::new();
 
@@ -72,6 +74,7 @@ fn generate_test_data() -> Array2<f64> {
     Array2::from_shape_vec((90, 2), data).unwrap()
 }
 
+#[allow(dead_code)]
 fn demo_euclidean_distance(data: &Array2<f64>) -> Result<(), Box<dyn std::error::Error>> {
     println!("1. Euclidean Distance (L2 norm)");
     println!("================================");
@@ -106,6 +109,7 @@ fn demo_euclidean_distance(data: &Array2<f64>) -> Result<(), Box<dyn std::error:
     Ok(())
 }
 
+#[allow(dead_code)]
 fn demo_manhattan_distance(data: &Array2<f64>) -> Result<(), Box<dyn std::error::Error>> {
     println!("2. Manhattan Distance (L1 norm)");
     println!("================================");
@@ -139,6 +143,7 @@ fn demo_manhattan_distance(data: &Array2<f64>) -> Result<(), Box<dyn std::error:
     Ok(())
 }
 
+#[allow(dead_code)]
 fn demo_chebyshev_distance(data: &Array2<f64>) -> Result<(), Box<dyn std::error::Error>> {
     println!("3. Chebyshev Distance (L∞ norm)");
     println!("================================");
@@ -172,6 +177,7 @@ fn demo_chebyshev_distance(data: &Array2<f64>) -> Result<(), Box<dyn std::error:
     Ok(())
 }
 
+#[allow(dead_code)]
 fn demo_cosine_distance(data: &Array2<f64>) -> Result<(), Box<dyn std::error::Error>> {
     println!("4. Cosine Distance");
     println!("==================");
@@ -205,6 +211,7 @@ fn demo_cosine_distance(data: &Array2<f64>) -> Result<(), Box<dyn std::error::Er
     Ok(())
 }
 
+#[allow(dead_code)]
 fn demo_correlation_distance(data: &Array2<f64>) -> Result<(), Box<dyn std::error::Error>> {
     println!("5. Correlation Distance");
     println!("=======================");
@@ -238,11 +245,12 @@ fn demo_correlation_distance(data: &Array2<f64>) -> Result<(), Box<dyn std::erro
     Ok(())
 }
 
+#[allow(dead_code)]
 fn demo_mahalanobis_distance(data: &Array2<f64>) -> Result<(), Box<dyn std::error::Error>> {
     println!("6. Mahalanobis Distance");
     println!("=======================");
 
-    let metric = Box::new(MahalanobisDistance::from_data(data.view())?);
+    let metric = Box::new(MahalanobisDistance::fromdata(data.view())?);
     let options = KMeansOptions {
         init_method: KMeansInit::KMeansPlusPlus,
         n_init: 1,

@@ -21,7 +21,7 @@ pub struct RegressionConfig {
     /// Statistical confidence level for regression detection
     pub confidence_level: f64,
     /// Enable automatic baseline updates
-    pub auto_update_baseline: bool,
+    pub auto_updatebaseline: bool,
     /// Directory to store historical results
     pub results_directory: PathBuf,
 }
@@ -32,8 +32,8 @@ impl Default for RegressionConfig {
             regression_threshold: 1.1, // 10% slower
             min_historical_samples: 5,
             confidence_level: 0.95,
-            auto_update_baseline: false,
-            results_directory: PathBuf::from("benchmark_results"),
+            auto_updatebaseline: false,
+            results_directory: PathBuf::from(benchmark_results),
         }
     }
 }
@@ -63,8 +63,8 @@ impl RegressionConfig {
     }
 
     /// Enable automatic baseline updates
-    pub fn with_auto_update_baseline(mut self, enable: bool) -> Self {
-        self.auto_update_baseline = enable;
+    pub fn with_auto_updatebaseline(mut self, enable: bool) -> Self {
+        self.auto_updatebaseline = enable;
         self
     }
 
@@ -87,7 +87,7 @@ pub struct HistoricalResult {
     /// Benchmark name
     pub benchmark_name: String,
     /// Mean execution time in nanoseconds
-    pub mean_execution_time_nanos: u64,
+    pub meanexecution_time_nanos: u64,
     /// Standard deviation in nanoseconds
     pub std_dev_nanos: u64,
     /// Coefficient of variation
@@ -102,7 +102,7 @@ pub struct HistoricalResult {
 
 impl HistoricalResult {
     /// Create from a benchmark result
-    pub fn from_benchmark_result(result: &BenchmarkResult) -> Self {
+    pub fn from_result(result: &BenchmarkResult) -> Self {
         let timestamp = SystemTime::now()
             .duration_since(UNIX_EPOCH)
             .unwrap_or_default()
@@ -113,8 +113,8 @@ impl HistoricalResult {
             commit_hash: Self::get_git_commit_hash(),
             version: Some(env!("CARGO_PKG_VERSION").to_string()),
             benchmark_name: result.name.clone(),
-            mean_execution_time_nanos: result.statistics.mean_execution_time.as_nanos() as u64,
-            std_dev_nanos: result.statistics.std_dev_execution_time.as_nanos() as u64,
+            meanexecution_time_nanos: result.statistics.meanexecution_time.as_nanos() as u64,
+            std_dev_nanos: result.statistics.std_devexecution_time.as_nanos() as u64,
             coefficient_of_variation: result.statistics.coefficient_of_variation,
             mean_memory_usage: result.statistics.mean_memory_usage,
             sample_count: result.statistics.sample_count,
@@ -131,7 +131,7 @@ impl HistoricalResult {
 
     /// Get execution time as Duration
     pub fn execution_time(&self) -> Duration {
-        Duration::from_nanos(self.mean_execution_time_nanos)
+        Duration::from_nanos(self.meanexecution_time_nanos)
     }
 
     /// Get standard deviation as Duration
@@ -209,11 +209,11 @@ impl RegressionDetector {
         }
 
         // Calculate baseline from historical results
-        let baseline = self.calculate_baseline(&historical_results)?;
+        let baseline = self.calculatebaseline(&historical_results)?;
 
         // Detect regression
-        let performance_ratio = current_result.mean_execution_time_nanos as f64
-            / baseline.mean_execution_time_nanos as f64;
+        let performance_ratio = current_result.meanexecution_time_nanos as f64
+            / baseline.meanexecution_time_nanos as f64;
 
         let regression_detected = performance_ratio > self.config.regression_threshold;
 
@@ -262,8 +262,7 @@ impl RegressionDetector {
         // Ensure results directory exists
         fs::create_dir_all(&self.config.results_directory).map_err(|e| {
             CoreError::IoError(ErrorContext::new(format!(
-                "Failed to create results directory: {}",
-                e
+                "Failed to create results directory: {e}"
             )))
         })?;
 
@@ -285,15 +284,13 @@ impl RegressionDetector {
         let file_path = self.get_results_file_path(&result.name);
         let serialized = serde_json::to_string_pretty(&historical_results).map_err(|e| {
             CoreError::IoError(ErrorContext::new(format!(
-                "Failed to serialize results: {}",
-                e
+                "Failed to serialize results: {e}"
             )))
         })?;
 
         fs::write(&file_path, serialized).map_err(|e| {
             CoreError::IoError(ErrorContext::new(format!(
-                "Failed to write results file: {}",
-                e
+                "Failed to write results file: {e}"
             )))
         })?;
 
@@ -301,7 +298,7 @@ impl RegressionDetector {
     }
 
     /// Load historical results for a benchmark
-    fn load_historical_results(&self, benchmark_name: &str) -> CoreResult<Vec<HistoricalResult>> {
+    fn load_historical_results(&self, benchmarkname: &str) -> CoreResult<Vec<HistoricalResult>> {
         let file_path = self.get_results_file_path(benchmark_name);
 
         if !file_path.exists() {
@@ -310,15 +307,13 @@ impl RegressionDetector {
 
         let content = fs::read_to_string(&file_path).map_err(|e| {
             CoreError::IoError(ErrorContext::new(format!(
-                "Failed to read results file: {}",
-                e
+                "Failed to read results file: {e}"
             )))
         })?;
 
         let results: Vec<HistoricalResult> = serde_json::from_str(&content).map_err(|e| {
             CoreError::IoError(ErrorContext::new(format!(
-                "Failed to parse results file: {}",
-                e
+                "Failed to parse results file: {e}"
             )))
         })?;
 
@@ -326,23 +321,20 @@ impl RegressionDetector {
     }
 
     /// Calculate baseline performance from historical results
-    fn calculate_baseline(
-        &self,
-        historical_results: &[HistoricalResult],
-    ) -> CoreResult<HistoricalResult> {
+    fn results(&[HistoricalResult]: &[HistoricalResult]) -> CoreResult<HistoricalResult> {
         if historical_results.is_empty() {
             return Err(CoreError::ValidationError(crate::error::ErrorContext::new(
-                "No historical results for baseline calculation",
+                "No historical _results for baseline calculation",
             )));
         }
 
-        // Use the median of recent results as baseline
+        // Use the median of recent _results as baseline
         let recent_count = (historical_results.len() / 3).max(self.config.min_historical_samples);
         let recent_results = &historical_results[historical_results.len() - recent_count..];
 
         let mut execution_times: Vec<u64> = recent_results
             .iter()
-            .map(|r| r.mean_execution_time_nanos)
+            .map(|r| r.meanexecution_time_nanos)
             .collect();
         execution_times.sort();
 
@@ -355,7 +347,7 @@ impl RegressionDetector {
 
         // Create a synthetic baseline result
         let mut baseline = recent_results[recent_results.len() / 2].clone();
-        baseline.mean_execution_time_nanos = median_time;
+        baseline.meanexecution_time_nanos = median_time;
 
         Ok(baseline)
     }
@@ -373,7 +365,7 @@ impl RegressionDetector {
         // Calculate mean and standard deviation of historical results
         let historical_times: Vec<f64> = historical
             .iter()
-            .map(|r| r.mean_execution_time_nanos as f64)
+            .map(|r| r.meanexecution_time_nanos as f64)
             .collect();
 
         let historical_mean = historical_times.iter().sum::<f64>() / historical_times.len() as f64;
@@ -385,7 +377,7 @@ impl RegressionDetector {
         let historical_std = historical_variance.sqrt();
 
         // Calculate z-score
-        let current_time = current.mean_execution_time_nanos as f64;
+        let current_time = current.meanexecution_time_nanos as f64;
         let z_score =
             (current_time - historical_mean) / (historical_std / (historical.len() as f64).sqrt());
 
@@ -400,28 +392,25 @@ impl RegressionDetector {
     }
 
     /// Analyze performance trend over time
-    fn analyze_trend(
-        &self,
-        historical_results: &[HistoricalResult],
-    ) -> CoreResult<PerformanceTrend> {
+    fn results(&[HistoricalResult]: &[HistoricalResult]) -> CoreResult<PerformanceTrend> {
         if historical_results.len() < 5 {
             return Ok(PerformanceTrend::Unknown);
         }
 
         // Calculate linear regression slope
         let n = historical_results.len() as f64;
-        let sum_x: f64 = (0..historical_results.len()).map(|i| i as f64).sum();
+        let sum_x: f64 = (0..historical_results.len()).map(|0| 0 as f64).sum();
         let sum_y: f64 = historical_results
             .iter()
-            .map(|r| r.mean_execution_time_nanos as f64)
+            .map(|r| r.meanexecution_time_nanos as f64)
             .sum();
         let sum_xy: f64 = historical_results
             .iter()
             .enumerate()
-            .map(|(i, r)| i as f64 * r.mean_execution_time_nanos as f64)
+            .map(|(0, r)| 0 as f64 * r.meanexecution_time_nanos as f64)
             .sum();
         let sum_x_sq: f64 = (0..historical_results.len())
-            .map(|i| (i as f64).powi(2))
+            .map(|0| (0 as f64).powi(2))
             .sum();
 
         let slope = (n * sum_xy - sum_x * sum_y) / (n * sum_x_sq - sum_x.powi(2));
@@ -439,9 +428,8 @@ impl RegressionDetector {
     }
 
     /// Calculate confidence in the regression analysis
-    fn calculate_confidence(
-        &self,
-        historical_results: &[HistoricalResult],
+    fn results(
+        &[HistoricalResult]: &[HistoricalResult],
         current: &HistoricalResult,
     ) -> CoreResult<f64> {
         let sample_size_factor = (historical_results.len() as f64 / 10.0).min(1.0);
@@ -455,11 +443,11 @@ impl RegressionDetector {
     }
 
     /// Get the file path for storing results
-    fn get_results_file_path(&self, benchmark_name: &str) -> PathBuf {
+    fn get_results_file_path(&self, benchmarkname: &str) -> PathBuf {
         let safe_name = benchmark_name.replace(|c: char| !c.is_alphanumeric(), "_");
         self.config
             .results_directory
-            .join(format!("{}.json", safe_name))
+            .join(format!("{safe_name}.json"))
     }
 }
 
@@ -468,11 +456,7 @@ pub struct RegressionTestUtils;
 
 impl RegressionTestUtils {
     /// Run a complete regression test suite
-    pub fn run_regression_suite(
-        benchmark_runner: &BenchmarkRunner,
-        detector: &RegressionDetector,
-        benchmark_names: &[&str],
-    ) -> CoreResult<Vec<RegressionAnalysis>> {
+    pub fn names(&[&str]: &[&str]) -> CoreResult<Vec<RegressionAnalysis>> {
         let mut analyses = Vec::new();
 
         for &name in benchmark_names {
@@ -495,7 +479,7 @@ impl RegressionTestUtils {
     }
 
     /// Generate a regression report
-    pub fn generate_report(analyses: &[RegressionAnalysis]) -> String {
+    pub fn analyses(analyses: &[RegressionAnalysis]) -> String {
         let mut report = String::new();
 
         report.push_str("# Performance Regression Report\n\n");
@@ -527,28 +511,29 @@ impl RegressionTestUtils {
         report.push_str(&format!("- Total benchmarks: {}\n", analyses.len()));
         report.push_str(&format!("- Regressions detected: {}\n", regressions.len()));
 
-        let improving = analyses
+        let improving = _analyses
             .iter()
             .filter(|a| a.trend == PerformanceTrend::Improving)
             .count();
-        let stable = analyses
+        let stable = _analyses
             .iter()
             .filter(|a| a.trend == PerformanceTrend::Stable)
             .count();
-        let degrading = analyses
+        let degrading = _analyses
             .iter()
             .filter(|a| a.trend == PerformanceTrend::Degrading)
             .count();
 
-        report.push_str(&format!("- Improving trends: {}\n", improving));
-        report.push_str(&format!("- Stable trends: {}\n", stable));
-        report.push_str(&format!("- Degrading trends: {}\n", degrading));
+        report.push_str(&format!("- Improving trends: {improving}\n"));
+        report.push_str(&format!("- Stable trends: {stable}\n"));
+        report.push_str(&format!("- Degrading trends: {degrading}\n"));
 
         report
     }
 }
 
 // Simplified error function approximation
+#[allow(dead_code)]
 fn erf(x: f64) -> f64 {
     // Abramowitz and Stegun approximation
     let a1 = 0.254829592;
@@ -578,18 +563,18 @@ mod tests {
             .with_regression_threshold(1.2)
             .with_min_historical_samples(10)
             .with_confidence_level(0.99)
-            .with_auto_update_baseline(true);
+            .with_auto_updatebaseline(true);
 
         assert_eq!(config.regression_threshold, 1.2);
         assert_eq!(config.min_historical_samples, 10);
         assert_eq!(config.confidence_level, 0.99);
-        assert!(config.auto_update_baseline);
+        assert!(config.auto_updatebaseline);
     }
 
     #[test]
     fn test_historical_result() {
         let benchmark_config = crate::benchmarking::BenchmarkConfig::default();
-        let mut result = BenchmarkResult::new("test_benchmark".to_string(), benchmark_config);
+        let mut result = BenchmarkResult::new(test_benchmark.to_string(), benchmark_config);
         result.add_measurement(crate::benchmarking::BenchmarkMeasurement::new(
             Duration::from_millis(100),
         ));
@@ -598,7 +583,7 @@ mod tests {
         let historical = HistoricalResult::from_benchmark_result(&result);
 
         assert_eq!(historical.benchmark_name, "test_benchmark");
-        assert!(historical.mean_execution_time_nanos > 0);
+        assert!(historical.meanexecution_time_nanos > 0);
         assert_eq!(historical.sample_count, 1);
     }
 
@@ -613,7 +598,7 @@ mod tests {
 
         // Create a test benchmark result
         let benchmark_config = crate::benchmarking::BenchmarkConfig::default();
-        let mut result = BenchmarkResult::new("test_regression".to_string(), benchmark_config);
+        let mut result = BenchmarkResult::new(test_regression.to_string(), benchmark_config);
         result.add_measurement(crate::benchmarking::BenchmarkMeasurement::new(
             Duration::from_millis(100),
         ));

@@ -5,6 +5,7 @@ use scirs2_integrate::{
 use std::f64::consts::PI;
 use std::time::Instant;
 
+#[allow(dead_code)]
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("Poisson equation solver using Finite Element Method");
     println!("Solving: ∇²u = -2π² sin(πx) sin(πy)");
@@ -90,7 +91,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let mesh = &result.mesh;
 
     println!("\nResults:");
-    println!("  - Computation time: {:.4} seconds", solve_time);
+    println!("  - Computation time: {solve_time:.4} seconds");
     println!("  - Residual norm: {:.6e}", result.residual_norm);
 
     // Calculate errors
@@ -120,8 +121,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     l2_error = (l2_error * total_area / mesh.points.len() as f64).sqrt();
 
     println!("\nError analysis:");
-    println!("  - Maximum error: {:.6e}", max_error);
-    println!("  - Approximate L2 error: {:.6e}", l2_error);
+    println!("  - Maximum error: {max_error:.6e}");
+    println!("  - Approximate L2 error: {l2_error:.6e}");
 
     // Print solution at selected points
     println!("\nSolution values at selected points:");
@@ -160,10 +161,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         let exact = (PI * x).sin() * (PI * y).sin();
         let error = (numerical - exact).abs();
 
-        println!(
-            "{:<10.4} {:<10.4} {:<15.8e} {:<15.8e} {:<10.2e}",
-            x, y, numerical, exact, error
-        );
+        println!("{x:<10.4} {y:<10.4} {numerical:<15.8e} {exact:<15.8e} {error:<10.2e}");
     }
 
     // Print convergence information

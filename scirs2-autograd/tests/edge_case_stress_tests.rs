@@ -1,7 +1,7 @@
-//! Comprehensive edge case and stress testing for ultrathink features
+//! Comprehensive edge case and stress testing for Advanced features
 //!
 //! This test suite focuses on testing edge cases, numerical stability,
-//! and stress conditions for all the new ultrathink features:
+//! and stress conditions for all the new Advanced features:
 //! - Graph visualization under extreme conditions
 //! - Graph optimization with pathological cases
 //! - Thread pool behavior under high load and edge cases
@@ -26,6 +26,7 @@ use std::f32;
 
 /// Test graph visualization with extremely large graphs
 #[test]
+#[allow(dead_code)]
 fn test_visualization_extreme_graphs() {
     println!("🧪 Testing graph visualization with extreme cases...");
 
@@ -50,7 +51,7 @@ fn test_visualization_extreme_graphs() {
         // Test visualization config with limits
         let config = VisualizationConfig {
             format: OutputFormat::Text,
-            show_shapes: true,
+            showshapes: true,
             show_operations: true,
             show_gradients: false,
             max_nodes: Some(50), // Limit to prevent excessive output
@@ -74,6 +75,7 @@ fn test_visualization_extreme_graphs() {
 
 /// Test graph optimization with pathological cases
 #[test]
+#[allow(dead_code)]
 fn test_optimization_pathological_cases() {
     println!("🧪 Testing graph optimization with pathological cases...");
 
@@ -129,6 +131,7 @@ fn test_optimization_pathological_cases() {
 
 /// Test thread pool under extreme load and edge cases
 #[test]
+#[allow(dead_code)]
 fn test_thread_pool_extreme_load() {
     println!("🧪 Testing thread pool under extreme load...");
 
@@ -208,6 +211,7 @@ fn test_thread_pool_extreme_load() {
 
 /// Test custom activation functions with extreme inputs
 #[test]
+#[allow(dead_code)]
 fn test_custom_activations_extreme_inputs() {
     println!("🧪 Testing custom activations with extreme inputs...");
 
@@ -299,6 +303,7 @@ fn test_custom_activations_extreme_inputs() {
 
 /// Test SIMD operations with edge values and numerical stability
 #[test]
+#[allow(dead_code)]
 fn test_simd_operations_edge_cases() {
     println!("🧪 Testing SIMD operations with edge cases...");
 
@@ -410,6 +415,7 @@ fn test_simd_operations_edge_cases() {
 
 /// Test memory optimization under stress conditions
 #[test]
+#[allow(dead_code)]
 fn test_memory_optimization_stress() {
     println!("🧪 Testing memory optimization under stress...");
 
@@ -492,6 +498,7 @@ fn test_memory_optimization_stress() {
 
 /// Test parallel operations under numerical instability conditions
 #[test]
+#[allow(dead_code)]
 fn test_parallel_operations_numerical_stability() {
     println!("🧪 Testing parallel operations numerical stability...");
 
@@ -598,6 +605,7 @@ fn test_parallel_operations_numerical_stability() {
 
 /// Test graph enhancement features under edge conditions
 #[test]
+#[allow(dead_code)]
 fn test_graph_enhancements_edge_cases() {
     println!("🧪 Testing graph enhancements with edge cases...");
 
@@ -678,6 +686,7 @@ fn test_graph_enhancements_edge_cases() {
 
 /// Test cross-feature integration under stress
 #[test]
+#[allow(dead_code)]
 fn test_cross_feature_integration_stress() {
     println!("🧪 Testing cross-feature integration under stress...");
 
@@ -709,14 +718,14 @@ fn test_cross_feature_integration_stress() {
         );
 
         // Step 2: Apply visualization-optimized operations
-        let normalized = T::efficient_reshape_with_shape(&input, &[batch_size * feature_size]);
+        let normalized = T::efficient_reshape_withshape(&input, &[batch_size * feature_size]);
 
         // Step 3: SIMD operations with custom activations
         let simd_processed = T::simd_mul(&normalized, &normalized);
         let activated = T::custom_activation(&simd_processed, "gelu");
 
         // Step 4: Memory-efficient reshaping back
-        let reshaped = T::efficient_reshape_with_shape(&activated, &[batch_size, feature_size]);
+        let reshaped = T::efficient_reshape_withshape(&activated, &[batch_size, feature_size]);
 
         // Step 5: Parallel reductions with checkpointing
         let checkpointed = T::smart_checkpoint(&reshaped, 1000);
@@ -781,6 +790,7 @@ fn test_cross_feature_integration_stress() {
 
 /// Test numerical precision and stability across all features
 #[test]
+#[allow(dead_code)]
 fn test_numerical_precision_stability() {
     println!("🧪 Testing numerical precision and stability...");
 
@@ -863,6 +873,7 @@ fn test_numerical_precision_stability() {
 
 /// Summary test for all edge cases
 #[test]
+#[allow(dead_code)]
 fn test_edge_case_summary() {
     println!("\n🎯 EDGE CASE AND STRESS TESTING SUMMARY");
     println!("=====================================");
@@ -893,5 +904,5 @@ fn test_edge_case_summary() {
     println!("   - Thread contention: minimal/maximal thread counts");
     println!("   - Integration stress: 7-step complex pipelines");
 
-    println!("\n🚀 All ultrathink edge case testing completed successfully!");
+    println!("\n🚀 All Advanced edge case testing completed successfully!");
 }

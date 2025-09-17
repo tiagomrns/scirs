@@ -34,6 +34,7 @@ use crate::fft::fft;
 /// let h = dht(&x).unwrap();
 /// println!("Hartley transform: {:?}", h);
 /// ```
+#[allow(dead_code)]
 pub fn dht<S, D>(x: &ArrayBase<S, D>) -> FFTResult<Array1<f64>>
 where
     S: Data<Elem = f64>,
@@ -89,6 +90,7 @@ where
 /// let x_recovered = idht(&h).unwrap();
 /// assert!((x_recovered[0] - 1.0).abs() < 1e-10);
 /// ```
+#[allow(dead_code)]
 pub fn idht<S>(h: &ArrayBase<S, ndarray::Ix1>) -> FFTResult<Array1<f64>>
 where
     S: Data<Elem = f64>,
@@ -130,6 +132,7 @@ where
 /// let h = dht2(&x, None).unwrap();
 /// println!("2D Hartley transform: {:?}", h);
 /// ```
+#[allow(dead_code)]
 pub fn dht2<S>(
     x: &ArrayBase<S, ndarray::Ix2>,
     axes: Option<(usize, usize)>,
@@ -142,8 +145,7 @@ where
 
     if axes.0 >= 2 || axes.1 >= 2 {
         return Err(FFTError::ValueError(format!(
-            "Axes out of bounds: {:?}",
-            axes
+            "Axes out of bounds: {axes:?}"
         )));
     }
 
@@ -199,6 +201,7 @@ where
 /// Fast Hartley Transform using FFT
 ///
 /// This is an optimized version that uses FFT directly for better performance.
+#[allow(dead_code)]
 pub fn fht<S, D>(x: &ArrayBase<S, D>) -> FFTResult<Array1<f64>>
 where
     S: Data<Elem = f64>,

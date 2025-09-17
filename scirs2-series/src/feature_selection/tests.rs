@@ -3,6 +3,7 @@
 use super::*;
 use ndarray::{array, Array2};
 
+#[allow(dead_code)]
 fn create_test_data() -> (Array2<f64>, Array1<f64>) {
     // Create synthetic data with known relationships
     let n_samples = 100;
@@ -39,6 +40,7 @@ fn create_test_data() -> (Array2<f64>, Array1<f64>) {
 }
 
 #[test]
+#[allow(dead_code)]
 fn test_variance_threshold() {
     let (features, _) = create_test_data();
 
@@ -50,6 +52,7 @@ fn test_variance_threshold() {
 }
 
 #[test]
+#[allow(dead_code)]
 fn test_correlation_selection() {
     let (features, target) = create_test_data();
 
@@ -62,6 +65,7 @@ fn test_correlation_selection() {
 }
 
 #[test]
+#[allow(dead_code)]
 fn test_mutual_information_selection() {
     let (features, target) = create_test_data();
 
@@ -73,6 +77,7 @@ fn test_mutual_information_selection() {
 }
 
 #[test]
+#[allow(dead_code)]
 fn test_f_test_selection() {
     let (features, target) = create_test_data();
 
@@ -84,6 +89,7 @@ fn test_f_test_selection() {
 }
 
 #[test]
+#[allow(dead_code)]
 fn test_autocorrelation_filter() {
     let (features, _) = create_test_data();
 
@@ -94,6 +100,7 @@ fn test_autocorrelation_filter() {
 }
 
 #[test]
+#[allow(dead_code)]
 fn test_forward_selection() {
     let (features, target) = create_test_data();
     let config = FeatureSelectionConfig {
@@ -109,6 +116,7 @@ fn test_forward_selection() {
 }
 
 #[test]
+#[allow(dead_code)]
 fn test_backward_elimination() {
     let (features, target) = create_test_data();
     let config = FeatureSelectionConfig {
@@ -122,6 +130,7 @@ fn test_backward_elimination() {
 }
 
 #[test]
+#[allow(dead_code)]
 fn test_recursive_feature_elimination() {
     let (features, target) = create_test_data();
     let config = FeatureSelectionConfig {
@@ -136,6 +145,7 @@ fn test_recursive_feature_elimination() {
 }
 
 #[test]
+#[allow(dead_code)]
 fn test_bidirectional_selection() {
     let (features, target) = create_test_data();
     let config = FeatureSelectionConfig {
@@ -150,6 +160,7 @@ fn test_bidirectional_selection() {
 }
 
 #[test]
+#[allow(dead_code)]
 fn test_lasso_selection() {
     let (features, target) = create_test_data();
 
@@ -161,6 +172,7 @@ fn test_lasso_selection() {
 }
 
 #[test]
+#[allow(dead_code)]
 fn test_ridge_selection() {
     let (features, target) = create_test_data();
 
@@ -170,6 +182,7 @@ fn test_ridge_selection() {
 }
 
 #[test]
+#[allow(dead_code)]
 fn test_tree_based_selection() {
     let (features, target) = create_test_data();
 
@@ -179,6 +192,7 @@ fn test_tree_based_selection() {
 }
 
 #[test]
+#[allow(dead_code)]
 fn test_lag_based_selection() {
     let (features, target) = create_test_data();
 
@@ -188,6 +202,7 @@ fn test_lag_based_selection() {
 }
 
 #[test]
+#[allow(dead_code)]
 fn test_seasonal_importance_selection() {
     let (features, _) = create_test_data();
 
@@ -197,6 +212,7 @@ fn test_seasonal_importance_selection() {
 }
 
 #[test]
+#[allow(dead_code)]
 fn test_cross_correlation_selection() {
     let (features, target) = create_test_data();
 
@@ -207,6 +223,7 @@ fn test_cross_correlation_selection() {
 }
 
 #[test]
+#[allow(dead_code)]
 fn test_granger_causality_selection() {
     let (features, target) = create_test_data();
 
@@ -218,6 +235,7 @@ fn test_granger_causality_selection() {
 }
 
 #[test]
+#[allow(dead_code)]
 fn test_auto_select() {
     let (features, target) = create_test_data();
     let config = FeatureSelectionConfig {
@@ -232,6 +250,7 @@ fn test_auto_select() {
 }
 
 #[test]
+#[allow(dead_code)]
 fn test_edge_cases() {
     // Test with insufficient data
     let small_features = Array2::zeros((2, 5));
@@ -249,6 +268,7 @@ fn test_edge_cases() {
 }
 
 #[test]
+#[allow(dead_code)]
 fn test_feature_selection_result() {
     let result = FeatureSelectionResult {
         selected_features: vec![0, 2, 4],

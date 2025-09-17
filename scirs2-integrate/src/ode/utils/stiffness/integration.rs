@@ -31,12 +31,12 @@ impl<F: IntegrateFloat> AdaptiveMethodState<F> {
     }
 
     /// Record a step
-    pub fn record_step(&mut self, _error_estimate: F) {
+    pub fn record_step(&mut self, _errorestimate: F) {
         self.steps_since_switch += 1;
     }
 
     /// Check if method should switch
-    pub fn check_method_switch(&mut self) -> Option<AdaptiveMethodType> {
+    pub fn check_method_switch(&self) -> Option<AdaptiveMethodType> {
         if self.steps_since_switch > 10 {
             // Simple switching logic for now
             None

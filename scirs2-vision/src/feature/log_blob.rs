@@ -48,6 +48,7 @@ pub struct LogBlob {
 }
 
 /// Detect blobs using Laplacian of Gaussian
+#[allow(dead_code)]
 pub fn log_blob_detect(img: &DynamicImage, config: LogBlobConfig) -> Result<Vec<LogBlob>> {
     let gray = img.to_luma8();
     let (height, width) = (gray.height() as usize, gray.width() as usize);
@@ -74,8 +75,8 @@ pub fn log_blob_detect(img: &DynamicImage, config: LogBlobConfig) -> Result<Vec<
     // Find local maxima in scale space
     for scale_idx in 1..scale_space.len() - 1 {
         let (curr_response, sigma) = &scale_space[scale_idx];
-        let (prev_response, _) = &scale_space[scale_idx - 1];
-        let (next_response, _) = &scale_space[scale_idx + 1];
+        let (prev_response_, _) = &scale_space[scale_idx - 1];
+        let (next_response_, _) = &scale_space[scale_idx + 1];
 
         // Find local maxima in current scale
         for y in 1..height - 1 {
@@ -87,7 +88,7 @@ pub fn log_blob_detect(img: &DynamicImage, config: LogBlobConfig) -> Result<Vec<
                 }
 
                 // Check if it's a local maximum in scale space
-                if is_local_maximum(prev_response, curr_response, next_response, x, y) {
+                if is_local_maximum(prev_response_, curr_response, next_response_, x, y) {
                     blobs.push(LogBlob {
                         x,
                         y,
@@ -108,6 +109,7 @@ pub fn log_blob_detect(img: &DynamicImage, config: LogBlobConfig) -> Result<Vec<
 }
 
 /// Convert blobs to image
+#[allow(dead_code)]
 pub fn log_blobs_to_image(blobs: &[LogBlob], width: u32, height: u32) -> Result<GrayImage> {
     let mut img = GrayImage::new(width, height);
 
@@ -122,6 +124,7 @@ pub fn log_blobs_to_image(blobs: &[LogBlob], width: u32, height: u32) -> Result<
 
 // Helper functions
 
+#[allow(dead_code)]
 fn apply_log(img: &Array2<f32>, sigma: f32) -> Result<Array2<f32>> {
     // Apply Gaussian blur
     let blurred = gaussian_blur(img, sigma)?;
@@ -139,6 +142,7 @@ fn apply_log(img: &Array2<f32>, sigma: f32) -> Result<Array2<f32>> {
     Ok(normalized)
 }
 
+#[allow(dead_code)]
 fn gaussian_blur(img: &Array2<f32>, sigma: f32) -> Result<Array2<f32>> {
     let kernel_size = ((6.0 * sigma) as usize) | 1; // Make it odd
     let kernel = gaussian_kernel(kernel_size, sigma);
@@ -148,6 +152,7 @@ fn gaussian_blur(img: &Array2<f32>, sigma: f32) -> Result<Array2<f32>> {
     convolve_1d_vertical(&temp, &kernel)
 }
 
+#[allow(dead_code)]
 fn gaussian_kernel(size: usize, sigma: f32) -> Vec<f32> {
     let mut kernel = vec![0.0; size];
     let center = size / 2;
@@ -169,6 +174,7 @@ fn gaussian_kernel(size: usize, sigma: f32) -> Vec<f32> {
     kernel
 }
 
+#[allow(dead_code)]
 fn apply_laplacian(img: &Array2<f32>) -> Result<Array2<f32>> {
     let (height, width) = img.dim();
     let mut result = Array2::zeros((height, width));
@@ -195,6 +201,7 @@ fn apply_laplacian(img: &Array2<f32>) -> Result<Array2<f32>> {
     Ok(result)
 }
 
+#[allow(dead_code)]
 fn convolve_1d_horizontal(img: &Array2<f32>, kernel: &[f32]) -> Result<Array2<f32>> {
     let (height, width) = img.dim();
     let mut result = Array2::zeros((height, width));
@@ -219,6 +226,7 @@ fn convolve_1d_horizontal(img: &Array2<f32>, kernel: &[f32]) -> Result<Array2<f3
     Ok(result)
 }
 
+#[allow(dead_code)]
 fn convolve_1d_vertical(img: &Array2<f32>, kernel: &[f32]) -> Result<Array2<f32>> {
     let (height, width) = img.dim();
     let mut result = Array2::zeros((height, width));
@@ -243,6 +251,7 @@ fn convolve_1d_vertical(img: &Array2<f32>, kernel: &[f32]) -> Result<Array2<f32>
     Ok(result)
 }
 
+#[allow(dead_code)]
 fn is_local_maximum(
     prev: &Array2<f32>,
     curr: &Array2<f32>,
@@ -276,6 +285,7 @@ fn is_local_maximum(
     true
 }
 
+#[allow(dead_code)]
 fn non_max_suppression(mut blobs: Vec<LogBlob>) -> Vec<LogBlob> {
     // Sort by response
     blobs.sort_by(|a, b| {
@@ -315,6 +325,7 @@ fn non_max_suppression(mut blobs: Vec<LogBlob>) -> Vec<LogBlob> {
     kept
 }
 
+#[allow(dead_code)]
 fn draw_circle(img: &mut GrayImage, cx: i32, cy: i32, radius: i32) {
     let (width, height) = (img.width() as i32, img.height() as i32);
 

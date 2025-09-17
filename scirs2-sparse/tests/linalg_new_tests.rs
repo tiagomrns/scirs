@@ -3,6 +3,7 @@ use scirs2_sparse::csr::CsrMatrix;
 use scirs2_sparse::linalg::{bicg, cg, expm_multiply, BiCGOptions, CGOptions};
 
 #[test]
+#[allow(dead_code)]
 fn test_cg_solver() {
     // Create a simple positive definite matrix: [[2, -1], [-1, 2]]
     let rows = vec![0, 0, 1, 1];
@@ -32,6 +33,7 @@ fn test_cg_solver() {
 }
 
 #[test]
+#[allow(dead_code)]
 fn test_bicg_solver() {
     // Create a non-symmetric matrix: [[2, -1], [1, 3]]
     let rows = vec![0, 0, 1, 1];
@@ -78,6 +80,7 @@ fn test_bicg_solver() {
 }
 
 #[test]
+#[allow(dead_code)]
 fn test_expm_multiply() {
     // Create a dense matrix: [[1, 0], [0, -1]]
     let rows = vec![0, 1];

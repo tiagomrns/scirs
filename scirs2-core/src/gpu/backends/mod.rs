@@ -9,7 +9,19 @@ use std::process::Command;
 #[cfg(target_os = "macos")]
 use serde_json;
 
+#[cfg(feature = "validation")]
+use regex::Regex;
+
 // Backend implementation modules
+#[cfg(feature = "cuda")]
+pub mod cuda;
+
+#[cfg(feature = "opencl")]
+pub mod opencl;
+
+#[cfg(feature = "wgpu_backend")]
+pub mod wgpu;
+
 #[cfg(all(feature = "metal", target_os = "macos"))]
 pub mod metal;
 
@@ -17,6 +29,15 @@ pub mod metal;
 pub mod metal_mps;
 
 // Re-export backend implementations
+#[cfg(feature = "cuda")]
+pub use cuda::{get_optimizer_kernels, CudaContext, CudaStream};
+
+#[cfg(feature = "opencl")]
+pub use opencl::OpenCLContext;
+
+#[cfg(feature = "wgpu_backend")]
+pub use wgpu::WebGPUContext;
+
 #[cfg(all(feature = "metal", target_os = "macos"))]
 pub use metal::{MetalBufferOptions, MetalContext, MetalStorageMode};
 
@@ -48,6 +69,7 @@ pub struct GpuDetectionResult {
 }
 
 /// Detect available GPU backends and devices
+#[allow(dead_code)]
 pub fn detect_gpu_backends() -> GpuDetectionResult {
     let mut devices = Vec::new();
 
@@ -117,6 +139,7 @@ pub fn detect_gpu_backends() -> GpuDetectionResult {
 }
 
 /// Detect ROCm devices using rocm-smi
+#[allow(dead_code)]
 fn detect_rocm_devices() -> Result<Vec<GpuInfo>, GpuError> {
     let mut devices = Vec::new();
 
@@ -178,6 +201,7 @@ fn detect_rocm_devices() -> Result<Vec<GpuInfo>, GpuError> {
 }
 
 /// Detect CUDA devices using nvidia-ml-py or nvidia-smi
+#[allow(dead_code)]
 fn detect_cuda_devices() -> Result<Vec<GpuInfo>, GpuError> {
     let mut devices = Vec::new();
 
@@ -237,6 +261,7 @@ fn detect_cuda_devices() -> Result<Vec<GpuInfo>, GpuError> {
 
 /// Detect Metal devices (macOS only)
 #[cfg(target_os = "macos")]
+#[allow(dead_code)]
 fn detect_metal_devices() -> Result<Vec<GpuInfo>, GpuError> {
     use std::str::FromStr;
 
@@ -257,6 +282,10 @@ fn detect_metal_devices() -> Result<Vec<GpuInfo>, GpuError> {
                     .get("SPDisplaysDataType")
                     .and_then(|v| v.as_array())
                 {
+                    // Pre-compile regex outside loop for performance
+                    #[cfg(feature = "validation")]
+                    let vram_regex = Regex::new(r"(\d+)\s*(GB|MB)").ok();
+
                     for display in displays {
                         // Extract GPU information from each display
                         if let Some(model) = display.get("sppci_model").and_then(|v| v.as_str()) {
@@ -275,9 +304,9 @@ fn detect_metal_devices() -> Result<Vec<GpuInfo>, GpuError> {
                                 .or_else(|| display.get("vram").and_then(|v| v.as_str()))
                             {
                                 // Parse VRAM string like "8 GB" or "8192 MB"
-                                if let Some(captures) = regex::Regex::new(r"(\d+)\s*(GB|MB)")
-                                    .ok()
-                                    .and_then(|re| re.captures(vram_str))
+                                #[cfg(feature = "validation")]
+                                if let Some(captures) =
+                                    vram_regex.as_ref().and_then(|re| re.captures(vram_str))
                                 {
                                     if let (Some(value), Some(unit)) =
                                         (captures.get(1), captures.get(2))
@@ -385,6 +414,7 @@ fn detect_metal_devices() -> Result<Vec<GpuInfo>, GpuError> {
 }
 
 /// Detect OpenCL devices
+#[allow(dead_code)]
 fn detect_opencl_devices() -> Result<Vec<GpuInfo>, GpuError> {
     let mut devices = Vec::new();
 
@@ -421,6 +451,7 @@ fn detect_opencl_devices() -> Result<Vec<GpuInfo>, GpuError> {
 }
 
 /// Check if a specific backend is properly installed and functional
+#[allow(dead_code)]
 pub fn check_backend_installation(backend: GpuBackend) -> Result<bool, GpuError> {
     match backend {
         GpuBackend::Cuda => {
@@ -470,6 +501,7 @@ pub fn check_backend_installation(backend: GpuBackend) -> Result<bool, GpuError>
 }
 
 /// Get detailed information about a specific GPU device
+#[allow(dead_code)]
 pub fn get_device_info(backend: GpuBackend, device_id: usize) -> Result<GpuInfo, GpuError> {
     let detection_result = detect_gpu_backends();
 
@@ -480,13 +512,14 @@ pub fn get_device_info(backend: GpuBackend, device_id: usize) -> Result<GpuInfo,
         .nth(device_id)
         .ok_or_else(|| {
             GpuError::InvalidParameter(format!(
-                "Device {} not found for backend {}",
-                device_id, backend
+                "Device {device_id} not found for backend {:?}",
+                backend
             ))
         })
 }
 
 /// Initialize the optimal GPU backend for the current system
+#[allow(dead_code)]
 pub fn initialize_optimal_backend() -> Result<GpuBackend, GpuError> {
     let detection_result = detect_gpu_backends();
 
@@ -681,7 +714,7 @@ mod tests {
 
     // Mock tests to verify error handling in detection functions
     #[test]
-    fn test_detect_cuda_devices_error_handling() {
+    fn test_detect_cuda_deviceserror_handling() {
         // In the real implementation, detect_cuda_devices returns an error
         // when nvidia-smi is not available. We can't easily test this without
         // mocking the Command execution, but we can at least call the function
@@ -689,13 +722,13 @@ mod tests {
     }
 
     #[test]
-    fn test_detect_rocm_devices_error_handling() {
+    fn test_detect_rocm_deviceserror_handling() {
         // Similar to CUDA test
         let _ = detect_rocm_devices();
     }
 
     #[test]
-    fn test_detect_opencl_devices_error_handling() {
+    fn test_detect_opencl_deviceserror_handling() {
         // Similar to CUDA test
         let _ = detect_opencl_devices();
     }

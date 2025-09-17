@@ -15,12 +15,14 @@ use scirs2_spatial::{
 use std::time::Instant;
 
 /// Generate random points for testing
+#[allow(dead_code)]
 fn generate_points(n_points: usize, dimensions: usize, seed: u64) -> Array2<f64> {
     let mut rng = StdRng::seed_from_u64(seed);
     Array2::from_shape_fn((n_points, dimensions), |_| rng.random_range(-10.0..10.0))
 }
 
 /// Test SIMD vs scalar distance calculations
+#[allow(dead_code)]
 fn test_simd_vs_scalar() {
     println!("=== SIMD vs Scalar Distance Performance ===");
     println!(
@@ -61,6 +63,7 @@ fn test_simd_vs_scalar() {
 }
 
 /// Test distance matrix computation performance
+#[allow(dead_code)]
 fn test_distance_matrix_performance() {
     println!("=== Distance Matrix Performance ===");
     println!(
@@ -99,6 +102,7 @@ fn test_distance_matrix_performance() {
 }
 
 /// Test SIMD batch operations
+#[allow(dead_code)]
 fn test_simd_batch_operations() {
     println!("=== SIMD Batch Operations ===");
     println!(
@@ -139,6 +143,7 @@ fn test_simd_batch_operations() {
 }
 
 /// Test KNN search performance
+#[allow(dead_code)]
 fn test_knn_performance() {
     println!("=== K-Nearest Neighbors Performance ===");
     println!("{:>6} {:>15} {:>15}", "k", "Time (ms)", "Queries/sec");
@@ -149,7 +154,7 @@ fn test_knn_performance() {
 
     for &k in &[1, 5, 10, 20] {
         let start = Instant::now();
-        let (_indices, _distances) =
+        let _indicesdistances =
             simd_knn_search(&query_points.view(), &data_points.view(), k, "euclidean").unwrap();
         let time = start.elapsed();
 
@@ -166,6 +171,7 @@ fn test_knn_performance() {
 }
 
 /// Test spatial data structure performance
+#[allow(dead_code)]
 fn test_spatial_structures() {
     println!("=== Spatial Data Structure Performance ===");
     println!("{:>8} {:>15} {:>15}", "Size", "Construction", "Query (ms)");
@@ -198,6 +204,7 @@ fn test_spatial_structures() {
 }
 
 /// Display architecture information
+#[allow(dead_code)]
 fn display_architecture_info() {
     println!("=== System Architecture Information ===");
 
@@ -228,6 +235,7 @@ fn display_architecture_info() {
     println!();
 }
 
+#[allow(dead_code)]
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("scirs2-spatial Performance Validation\n");
 

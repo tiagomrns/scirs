@@ -107,7 +107,7 @@ pub struct PerformanceImpactAnalysis {
     /// Number of potential performance bottlenecks
     pub performance_bottlenecks: usize,
     /// Memory bandwidth utilization estimate
-    pub memory_bandwidth_utilization: f64,
+    pub memorybandwidth_utilization: f64,
     /// Cache miss estimate
     pub cache_miss_estimate: f64,
 }
@@ -151,7 +151,7 @@ pub struct MemoryProfiler {
     /// Current session information
     current_session: Arc<Mutex<Option<ProfilingSession>>>,
     /// Background thread handle
-    _background_thread: Option<thread::JoinHandle<()>>,
+    background_thread: Option<thread::JoinHandle<()>>,
 }
 
 impl MemoryProfiler {
@@ -174,7 +174,7 @@ impl MemoryProfiler {
             analytics,
             results_history,
             current_session,
-            _background_thread: None,
+            background_thread: None,
         };
 
         // Start background profiling if enabled
@@ -186,13 +186,13 @@ impl MemoryProfiler {
     }
 
     /// Start a new profiling session
-    pub fn start_session(&self, session_id: Option<String>) -> String {
-        let session_id = session_id.unwrap_or_else(|| {
+    pub fn start_session(&self, sessionid: Option<String>) -> String {
+        let sessionid = sessionid.unwrap_or_else(|| {
             let timestamp = SystemTime::now()
                 .duration_since(UNIX_EPOCH)
                 .unwrap_or_default()
                 .as_secs();
-            format!("session_{}", timestamp)
+            format!("{timestamp}")
         });
 
         let now = SystemTime::now();
@@ -202,7 +202,7 @@ impl MemoryProfiler {
             .as_micros() as u64;
 
         let session = ProfilingSession {
-            id: session_id.clone(),
+            id: sessionid.clone(),
             start_time_micros,
             duration_micros: 0,
             event_count: 0,
@@ -220,7 +220,7 @@ impl MemoryProfiler {
         self.collector.reset();
         self.analytics.lock().unwrap().clear();
 
-        session_id
+        sessionid
     }
 
     /// End the current profiling session and generate results
@@ -253,7 +253,8 @@ impl MemoryProfiler {
         };
 
         let performance_impact = self.analyze_performance_impact(&memory_report, &pattern_analysis);
-        let summary = self.generate_summary(&memory_report, &leak_results, &pattern_analysis);
+        let summary =
+            self.generate_profiling_summary(&memory_report, &leak_results, &pattern_analysis);
 
         let result = ProfilingResult {
             session: updated_session,
@@ -296,15 +297,15 @@ impl MemoryProfiler {
 
     /// Start background profiling thread
     fn start_background_profiling(&mut self) {
-        if self._background_thread.is_some() {
+        if self.background_thread.is_some() {
             return; // Already running
         }
 
         let interval = self.config.profiling_interval;
         let collector = Arc::clone(&self.collector);
         let analytics = Arc::clone(&self.analytics);
-        let _results_history = Arc::clone(&self.results_history);
-        let _current_session = Arc::clone(&self.current_session);
+        let results_history = Arc::clone(&self.results_history);
+        let current_session = Arc::clone(&self.current_session);
         let config = self.config.clone();
 
         let handle = thread::spawn(move || {
@@ -318,7 +319,7 @@ impl MemoryProfiler {
                     let memory_report = collector.generate_report();
                     let analytics_guard = analytics.lock().unwrap();
                     let leak_results = analytics_guard.get_leak_detection_results();
-                    let _pattern_analysis = analytics_guard.get_pattern_analysis_results();
+                    let pattern_analysis = analytics_guard.get_pattern_analysis_results();
                     drop(analytics_guard);
 
                     // Check for critical issues
@@ -351,7 +352,7 @@ impl MemoryProfiler {
             }
         });
 
-        self._background_thread = Some(handle);
+        self.background_thread = Some(handle);
     }
 
     /// Analyze performance impact based on memory patterns
@@ -362,7 +363,7 @@ impl MemoryProfiler {
     ) -> PerformanceImpactAnalysis {
         // Calculate performance metrics based on allocation patterns
         let total_allocations = memory_report.total_allocation_count;
-        let duration = memory_report.duration;
+        let total_duration = memory_report.duration;
 
         // Estimate allocation time (this would be more accurate with actual timing data)
         let avg_allocation_time = if total_allocations > 0 {
@@ -388,14 +389,14 @@ impl MemoryProfiler {
             .sum();
 
         // Estimate memory bandwidth utilization (simplified)
-        let bytes_per_second = if duration.as_secs() > 0 {
-            memory_report.total_allocated_bytes as f64 / duration.as_secs_f64()
+        let bytes_per_second = if total_duration.as_secs() > 0 {
+            memory_report.total_allocated_bytes as f64 / total_duration.as_secs_f64()
         } else {
             0.0
         };
 
         // Assume peak memory bandwidth of 100 GB/s (modern systems)
-        let memory_bandwidth_utilization =
+        let memorybandwidth_utilization =
             (bytes_per_second / (100.0 * 1024.0 * 1024.0 * 1024.0)).min(1.0);
 
         // Estimate cache miss rate based on allocation patterns
@@ -409,13 +410,13 @@ impl MemoryProfiler {
             total_allocation_time,
             avg_allocation_time,
             performance_bottlenecks,
-            memory_bandwidth_utilization,
+            memorybandwidth_utilization,
             cache_miss_estimate,
         }
     }
 
     /// Generate profiling summary with insights and recommendations
-    fn generate_summary(
+    fn generate_profiling_summary(
         &self,
         memory_report: &MemoryReport,
         leak_results: &[crate::memory::metrics::analytics::LeakDetectionResult],
@@ -430,10 +431,7 @@ impl MemoryProfiler {
         let total_memory_mb = memory_report.total_current_usage / (1024 * 1024);
         if total_memory_mb > 1000 {
             health_score -= 0.2;
-            key_insights.push(format!(
-                "High memory usage detected: {} MB",
-                total_memory_mb
-            ));
+            key_insights.push(format!("High memory usage detected: {total_memory_mb} MB"));
             priority_recommendations
                 .push("Consider implementing memory optimization strategies".to_string());
         }
@@ -445,13 +443,10 @@ impl MemoryProfiler {
             .count();
         if critical_leaks > 0 {
             health_score -= 0.3 * critical_leaks as f64;
-            key_insights.push(format!(
-                "{} potential memory leaks detected",
-                critical_leaks
-            ));
+            key_insights.push(format!("{critical_leaks} potential memory leaks detected"));
             priority_recommendations
                 .push("Investigate and fix memory leaks immediately".to_string());
-            risk_issues.push(format!("{} critical memory leaks", critical_leaks));
+            risk_issues.push(format!("{critical_leaks} critical memory leaks"));
         }
 
         // Check allocation efficiency
@@ -477,8 +472,7 @@ impl MemoryProfiler {
         if high_frequency_components > 0 {
             health_score -= 0.1;
             key_insights.push(format!(
-                "{} components with high allocation frequency",
-                high_frequency_components
+                "{high_frequency_components} components with high allocation frequency"
             ));
             priority_recommendations
                 .push("Consider batching allocations for better performance".to_string());
@@ -563,7 +557,7 @@ impl MemoryProfiler {
         let pattern_analysis = analytics.get_pattern_analysis_results();
         drop(analytics);
 
-        self.generate_summary(&memory_report, &leak_results, &pattern_analysis)
+        self.generate_profiling_summary(&memory_report, &leak_results, &pattern_analysis)
     }
 
     /// Clear all profiling data
@@ -600,8 +594,8 @@ mod tests {
         });
 
         // Start session
-        let session_id = profiler.start_session(Some("test_session".to_string()));
-        assert_eq!(session_id, "test_session");
+        let sessionid = profiler.start_session(Some("test_session".to_string()));
+        assert_eq!(sessionid, "test_session");
         assert!(profiler.get_current_session().is_some());
 
         // Record some events

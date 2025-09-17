@@ -13,6 +13,7 @@ use crate::sparse_fft_gpu_memory::{
 use num_complex::Complex64;
 use num_traits::NumCast;
 use scirs2_core::parallel_ops::*;
+use scirs2_core::simd_ops::PlatformCapabilities;
 use std::collections::HashMap;
 use std::fmt::Debug;
 use std::sync::{Arc, Mutex};
@@ -111,7 +112,7 @@ impl Default for MultiGPUConfig {
 /// Multi-GPU sparse FFT processor
 pub struct MultiGPUSparseFFT {
     /// Configuration
-    config: MultiGPUConfig,
+    _config: MultiGPUConfig,
     /// Available devices
     devices: Vec<GPUDeviceInfo>,
     /// Device selection for current operation
@@ -126,7 +127,7 @@ impl MultiGPUSparseFFT {
     /// Create a new multi-GPU sparse FFT processor
     pub fn new(config: MultiGPUConfig) -> Self {
         Self {
-            config,
+            _config: config,
             devices: Vec::new(),
             selected_devices: Vec::new(),
             performance_history: Arc::new(Mutex::new(HashMap::new())),
@@ -270,14 +271,14 @@ impl MultiGPUSparseFFT {
         }
 
         // Determine how many devices to use
-        let max_devices = if self.config.max_devices == 0 {
+        let max_devices = if self._config.max_devices == 0 {
             available_devices.len()
         } else {
-            self.config.max_devices.min(available_devices.len())
+            self._config.max_devices.min(available_devices.len())
         };
 
         // Select devices based on strategy
-        match self.config.distribution {
+        match self._config.distribution {
             WorkloadDistribution::Equal => {
                 // Use first N available devices
                 for i in 0..max_devices {
@@ -346,12 +347,12 @@ impl MultiGPUSparseFFT {
                             // Default score based on device capabilities
                             device.compute_capability as f64 * device.compute_units as f64
                         } else {
-                            // Higher score for faster devices (lower execution times)
+                            // Higher score for faster _devices (lower execution times)
                             1.0 / (times.iter().sum::<f64>() / times.len() as f64)
                         }
                     })
                     .unwrap_or_else(|| {
-                        // Default score for devices without history
+                        // Default score for _devices without history
                         device.compute_capability as f64 * device.compute_units as f64
                     });
 
@@ -362,7 +363,7 @@ impl MultiGPUSparseFFT {
         // Sort by performance score (descending)
         device_scores.sort_by(|a, b| b.1.partial_cmp(&a.1).unwrap_or(std::cmp::Ordering::Equal));
 
-        // Select top N devices
+        // Select top N _devices
         for i in 0..max_devices {
             self.selected_devices.push(device_scores[i].0);
         }
@@ -395,7 +396,7 @@ impl MultiGPUSparseFFT {
         let signal_len = signal.len();
 
         // Check if signal is large enough for multi-GPU processing
-        if signal_len < self.config.min_signal_size || self.selected_devices.len() <= 1 {
+        if signal_len < self._config.min_signal_size || self.selected_devices.len() <= 1 {
             // Fall back to single-device processing
             return self.single_device_sparse_fft(signal);
         }
@@ -415,7 +416,7 @@ impl MultiGPUSparseFFT {
 
         // Create GPU configuration for the selected device
         let gpu_config = GPUSparseFFTConfig {
-            base_config: self.config.base_config.clone(),
+            base_config: self._config.base_config.clone(),
             backend: device.backend,
             device_id: device.device_id,
             ..GPUSparseFFTConfig::default()
@@ -450,7 +451,7 @@ impl MultiGPUSparseFFT {
 
                 // Create GPU configuration for this device
                 let gpu_config = GPUSparseFFTConfig {
-                    base_config: self.config.base_config.clone(),
+                    base_config: self._config.base_config.clone(),
                     backend: device.backend,
                     device_id: device.device_id,
                     ..GPUSparseFFTConfig::default()
@@ -496,7 +497,7 @@ impl MultiGPUSparseFFT {
     ) -> FFTResult<Vec<usize>> {
         let mut chunk_sizes = Vec::with_capacity(num_devices);
 
-        match self.config.distribution {
+        match self._config.distribution {
             WorkloadDistribution::Equal => {
                 let base_size = signal_len / num_devices;
                 let remainder = signal_len % num_devices;
@@ -563,16 +564,16 @@ impl MultiGPUSparseFFT {
                 }
             }
             WorkloadDistribution::Manual => {
-                if self.config.manual_ratios.len() != num_devices {
+                if self._config.manual_ratios.len() != num_devices {
                     return Err(FFTError::ValueError(
-                        "Manual ratios length must match number of selected devices".to_string(),
+                        "Manual ratios length must match number of selected _devices".to_string(),
                     ));
                 }
 
-                let total_ratio: f32 = self.config.manual_ratios.iter().sum();
+                let total_ratio: f32 = self._config.manual_ratios.iter().sum();
                 let mut remaining = signal_len;
 
-                for (i, &ratio) in self.config.manual_ratios.iter().enumerate() {
+                for (i, &ratio) in self._config.manual_ratios.iter().enumerate() {
                     let size = if i == num_devices - 1 {
                         remaining
                     } else {
@@ -595,14 +596,14 @@ impl MultiGPUSparseFFT {
     }
 
     /// Split signal into chunks based on calculated sizes
-    fn split_signal<T>(&self, signal: &[T], chunk_sizes: &[usize]) -> FFTResult<Vec<Vec<T>>>
+    fn split_signal<T>(&self, signal: &[T], chunksizes: &[usize]) -> FFTResult<Vec<Vec<T>>>
     where
         T: Copy,
     {
         let mut chunks = Vec::new();
         let mut offset = 0;
 
-        for &chunk_size in chunk_sizes {
+        for &chunk_size in chunksizes {
             if offset + chunk_size > signal.len() {
                 return Err(FFTError::ValueError(
                     "Chunk sizes exceed signal length".to_string(),
@@ -625,7 +626,7 @@ impl MultiGPUSparseFFT {
     ) -> FFTResult<SparseFFTResult> {
         if chunk_results.is_empty() {
             return Err(FFTError::ComputationError(
-                "No chunk results to combine".to_string(),
+                "No chunk _results to combine".to_string(),
             ));
         }
 
@@ -674,9 +675,9 @@ impl MultiGPUSparseFFT {
         }
 
         let mut sorted_entries: Vec<_> = frequency_map.into_iter().collect();
-        sorted_entries.sort_by_key(|&(idx, _)| idx);
+        sorted_entries.sort_by_key(|&(idx_, _)| idx_);
 
-        let final_indices: Vec<usize> = sorted_entries.iter().map(|(idx, _)| *idx).collect();
+        let final_indices: Vec<usize> = sorted_entries.iter().map(|(idx_, _)| *idx_).collect();
         let final_values: Vec<Complex64> = sorted_entries.iter().map(|(_, val)| *val).collect();
 
         // Calculate combined sparsity
@@ -687,7 +688,7 @@ impl MultiGPUSparseFFT {
             indices: final_indices,
             estimated_sparsity: total_estimated_sparsity,
             computation_time: max_computation_time,
-            algorithm: self.config.base_config.algorithm,
+            algorithm: self._config.base_config.algorithm,
         })
     }
 
@@ -703,6 +704,7 @@ impl MultiGPUSparseFFT {
 }
 
 /// Convenience function for multi-GPU sparse FFT with default configuration
+#[allow(dead_code)]
 pub fn multi_gpu_sparse_fft<T>(
     signal: &[T],
     k: usize,
@@ -748,7 +750,6 @@ mod tests {
     }
 
     #[test]
-    #[ignore = "Ignored for alpha-4 release - multi-GPU dependent test"]
     fn test_multi_gpu_initialization() {
         let mut processor = MultiGPUSparseFFT::new(MultiGPUConfig::default());
         let result = processor.initialize();
@@ -756,10 +757,19 @@ mod tests {
         // Should succeed even if no GPU devices available (CPU fallback)
         assert!(result.is_ok());
         assert!(!processor.get_devices().is_empty());
+
+        // Check if GPU is available
+        let caps = PlatformCapabilities::detect();
+        if !caps.cuda_available && !caps.gpu_available {
+            eprintln!("GPU not available, verifying CPU fallback is present");
+            assert!(processor
+                .get_devices()
+                .iter()
+                .any(|d| d.backend == GPUBackend::CPUFallback));
+        }
     }
 
     #[test]
-    #[ignore = "Ignored for alpha-4 release - multi-GPU dependent test"]
     fn test_device_enumeration() {
         let mut processor = MultiGPUSparseFFT::new(MultiGPUConfig::default());
         processor.initialize().unwrap();
@@ -769,13 +779,32 @@ mod tests {
 
         // Should have at least CPU fallback
         assert!(devices.iter().any(|d| d.backend == GPUBackend::CPUFallback));
+
+        // Check if GPU is available
+        let caps = PlatformCapabilities::detect();
+        if caps.cuda_available || caps.gpu_available {
+            eprintln!("GPU available, checking for GPU devices in enumeration");
+            // May have GPU devices
+            assert!(devices.len() >= 1);
+        } else {
+            eprintln!("GPU not available, verifying only CPU fallback present");
+            assert_eq!(devices.len(), 1);
+            assert_eq!(devices[0].backend, GPUBackend::CPUFallback);
+        }
     }
 
     #[test]
-    #[ignore = "Ignored for alpha-4 release - multi-GPU dependent test"]
     fn test_multi_gpu_sparse_fft() {
-        let n = 8192; // Large enough to trigger multi-GPU
-        let frequencies = vec![(100, 1.0), (500, 0.5), (1000, 0.25)];
+        // Check if GPU is available
+        let caps = PlatformCapabilities::detect();
+        let n = if caps.cuda_available || caps.gpu_available {
+            8192 // Large size for multi-GPU if available
+        } else {
+            eprintln!("GPU not available, using smaller size for CPU fallback");
+            1024 // Smaller size for CPU fallback
+        };
+
+        let frequencies = vec![(10, 1.0), (50, 0.5), (100, 0.25)];
         let signal = create_sparse_signal(n, &frequencies);
 
         let result = multi_gpu_sparse_fft(

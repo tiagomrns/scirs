@@ -6,38 +6,189 @@ use std::fmt::Debug;
 
 use super::utils::{interpolate_linear, interpolate_nearest};
 use super::{BoundaryMode, InterpolationOrder};
-use crate::error::{NdimageError, Result};
+use crate::error::{NdimageError, NdimageResult};
 
-/// Affine transform of an array using interpolation
+/// Apply an affine transformation to an array using interpolation
+///
+/// Performs geometric transformations like rotation, scaling, shearing, and translation
+/// on n-dimensional arrays. The transformation is defined by a matrix and optional offset.
+/// This function is fundamental for image registration, data augmentation, and geometric
+/// corrections in computer vision and scientific computing.
 ///
 /// # Arguments
 ///
-/// * `input` - Input array
-/// * `matrix` - Transformation matrix
-/// * `offset` - Offset vector (default: zeros)
-/// * `output_shape` - Shape of the output array (default: same as input)
-/// * `order` - Interpolation order (default: Linear)
-/// * `mode` - Boundary handling mode (default: Constant)
-/// * `cval` - Value to use for constant mode (default: 0.0)
-/// * `prefilter` - Whether to prefilter the input with a spline filter (default: true)
+/// * `input` - Input array to transform
+/// * `matrix` - Transformation matrix (ndim × ndim) defining the affine transformation
+/// * `offset` - Translation vector (optional, defaults to zeros)
+/// * `outputshape` - Shape of output array (optional, defaults to input shape)
+/// * `order` - Interpolation method (optional, defaults to Linear)
+///   - `Nearest`: Fast but may introduce aliasing
+///   - `Linear`: Good balance of speed and quality
+///   - `Cubic`: Higher quality, slower computation
+/// * `mode` - Boundary handling for points outside input (optional, defaults to Constant)
+/// * `cval` - Fill value for constant boundary mode (optional, defaults to 0.0)
+/// * `prefilter` - Apply spline prefiltering for high-order interpolation (optional, defaults to true)
 ///
 /// # Returns
 ///
-/// * `Result<Array<T, D>>` - Transformed array
+/// * `Result<Array<T, D>>` - Transformed array with specified output shape
+///
+/// # Examples
+///
+/// ## Basic 2D rotation
+/// ```
+/// use ndarray::{Array2, array};
+/// use scirs2_ndimage::interpolation::{affine_transform, InterpolationOrder};
+/// use std::f64::consts::PI;
+///
+/// // Create a simple test image
+/// let image = array![
+///     [0.0, 1.0, 0.0],
+///     [0.0, 1.0, 0.0],
+///     [0.0, 1.0, 0.0]
+/// ];
+///
+/// // Create 45-degree rotation matrix
+/// let angle = PI / 4.0;
+/// let cos_a = angle.cos();
+/// let sin_a = angle.sin();
+/// let rotation_matrix = array![
+///     [cos_a, -sin_a],
+///     [sin_a,  cos_a]
+/// ];
+///
+/// let rotated = affine_transform(
+///     &image,
+///     &rotation_matrix,
+///     None, None,
+///     Some(InterpolationOrder::Linear),
+///     None, None, None
+/// ).unwrap();
+/// ```
+///
+/// ## Scaling and translation combined
+/// ```
+/// use ndarray::{Array2, array};
+/// use scirs2_ndimage::interpolation::affine_transform;
+///
+/// let input = Array2::from_shape_fn((10, 10), |(i, j)| (i + j) as f64);
+///
+/// // Scale by 2x and translate by (5, 5)
+/// let scale_matrix = array![
+///     [2.0, 0.0],
+///     [0.0, 2.0]
+/// ];
+/// let offset = array![5.0, 5.0];
+///
+/// let transformed = affine_transform(
+///     &input,
+///     &scale_matrix,
+///     Some(&offset),
+///     None, None, None, None, None
+/// ).unwrap();
+/// ```
+///
+/// ## Shearing transformation
+/// ```
+/// use ndarray::{Array2, array};
+/// use scirs2_ndimage::interpolation::affine_transform;
+///
+/// let squareimage = Array2::from_shape_fn((20, 20), |(i, j)| {
+///     if i >= 5 && i < 15 && j >= 5 && j < 15 { 1.0 } else { 0.0 }
+/// });
+///
+/// // Apply horizontal shear
+/// let shear_matrix = array![
+///     [1.0, 0.5],  // Shear factor of 0.5
+///     [0.0, 1.0]
+/// ];
+///
+/// let sheared = affine_transform(
+///     &squareimage,
+///     &shear_matrix,
+///     None, None, None, None, None, None
+/// ).unwrap();
+/// ```
+///
+/// ## Image rectification with different output size
+/// ```
+/// use ndarray::{Array2, array};
+/// use scirs2_ndimage::interpolation::{affine_transform, BoundaryMode};
+///
+/// let distorted = Array2::from_shape_fn((30, 40), |(i, j)| {
+///     ((i as f64 / 5.0).sin() * (j as f64 / 5.0).cos()).abs()
+/// });
+///
+/// // Create rectification matrix (inverse of distortion)
+/// let rectify_matrix = array![
+///     [0.8, -0.1],
+///     [0.1,  0.9]
+/// ];
+///
+/// // Output to different size
+/// let outputshape = [50, 50];
+///
+/// let rectified = affine_transform(
+///     &distorted,
+///     &rectify_matrix,
+///     None,
+///     Some(&outputshape),
+///     None,
+///     Some(BoundaryMode::Reflect),
+///     None, None
+/// ).unwrap();
+///
+/// assert_eq!(rectified.shape(), &[50, 50]);
+/// ```
+///
+/// ## 3D volume transformation
+/// ```
+/// use ndarray::{Array3, Array2};
+/// use scirs2_ndimage::interpolation::affine_transform;
+///
+/// let volume = Array3::from_shape_fn((20, 20, 20), |(i, j, k)| {
+///     ((i + j + k) as f64) / 60.0
+/// });
+///
+/// // 3D rotation around z-axis
+/// let rotation_3d = Array2::from_shape_fn((3, 3), |(i, j)| {
+///     match (i, j) {
+///         (0, 0) => 0.866, (0, 1) => -0.5, (0, 2) => 0.0,
+///         (1, 0) => 0.5,   (1, 1) => 0.866, (1, 2) => 0.0,
+///         (2, 0) => 0.0,   (2, 1) => 0.0,   (2, 2) => 1.0,
+///         _ => 0.0
+///     }
+/// });
+///
+/// let rotated_volume = affine_transform(
+///     &volume, &rotation_3d, None, None, None, None, None, None
+/// ).unwrap();
+///
+/// assert_eq!(rotated_volume.shape(), volume.shape());
+/// ```
+///
+/// # Performance Notes
+///
+/// - Use `Nearest` interpolation for best performance with discrete data
+/// - `Linear` interpolation provides good quality/speed balance for most applications
+/// - `Cubic` interpolation gives highest quality but is computationally expensive
+/// - Prefiltering is recommended for high-order interpolation to reduce artifacts
+/// - Consider using specialized functions like `rotate` or `zoom` for simple transformations
 #[allow(clippy::too_many_arguments)] // Necessary to match SciPy's API signature
+#[allow(dead_code)]
 pub fn affine_transform<T, D>(
     input: &Array<T, D>,
     matrix: &Array<T, ndarray::Ix2>,
     offset: Option<&Array<T, ndarray::Ix1>>,
-    output_shape: Option<&[usize]>,
+    outputshape: Option<&[usize]>,
     order: Option<InterpolationOrder>,
     mode: Option<BoundaryMode>,
     cval: Option<T>,
     prefilter: Option<bool>,
-) -> Result<Array<T, D>>
+) -> NdimageResult<Array<T, D>>
 where
-    T: Float + FromPrimitive + Debug,
-    D: Dimension,
+    T: Float + FromPrimitive + Debug + std::ops::AddAssign + std::ops::DivAssign + 'static,
+    D: Dimension + 'static,
 {
     // Validate inputs
     if input.ndim() == 0 {
@@ -65,7 +216,7 @@ where
         }
     }
 
-    if let Some(shape) = output_shape {
+    if let Some(shape) = outputshape {
         if shape.len() != input.ndim() {
             return Err(NdimageError::DimensionError(format!(
                 "Output shape length must match input dimensions (got {} expected {})",
@@ -81,14 +232,14 @@ where
     let _prefilter_input = prefilter.unwrap_or(true);
 
     // Determine output shape
-    let out_shape = if let Some(shape) = output_shape {
+    let outshape = if let Some(shape) = outputshape {
         shape.to_vec()
     } else {
         input.shape().to_vec()
     };
 
     // Create output array
-    let output = Array::zeros(ndarray::IxDyn(&out_shape));
+    let output = Array::zeros(ndarray::IxDyn(&outshape));
     let mut result_dyn = output.into_dyn();
     let input_dyn = input.clone().into_dyn();
 
@@ -171,7 +322,7 @@ where
 ///
 /// * `input` - Input array
 /// * `mapping` - Function mapping output coordinates to input coordinates
-/// * `output_shape` - Shape of the output array (default: same as input)
+/// * `outputshape` - Shape of the output array (default: same as input)
 /// * `order` - Interpolation order (default: Linear)
 /// * `mode` - Boundary handling mode (default: Constant)
 /// * `cval` - Value to use for constant mode (default: 0.0)
@@ -180,18 +331,19 @@ where
 /// # Returns
 ///
 /// * `Result<Array<T, D>>` - Transformed array
+#[allow(dead_code)]
 pub fn geometric_transform<T, D, F>(
     input: &Array<T, D>,
     _mapping: F,
-    output_shape: Option<&[usize]>,
+    outputshape: Option<&[usize]>,
     order: Option<InterpolationOrder>,
     mode: Option<BoundaryMode>,
     cval: Option<T>,
     prefilter: Option<bool>,
-) -> Result<Array<T, D>>
+) -> NdimageResult<Array<T, D>>
 where
-    T: Float + FromPrimitive + Debug,
-    D: Dimension,
+    T: Float + FromPrimitive + Debug + std::ops::AddAssign + std::ops::DivAssign + 'static,
+    D: Dimension + 'static,
     F: Fn(&[usize]) -> Vec<T>,
 {
     // Validate inputs
@@ -201,7 +353,7 @@ where
         ));
     }
 
-    if let Some(shape) = output_shape {
+    if let Some(shape) = outputshape {
         if shape.len() != input.ndim() {
             return Err(NdimageError::DimensionError(format!(
                 "Output shape length must match input dimensions (got {} expected {})",

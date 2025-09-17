@@ -1,5 +1,6 @@
-use scirs2_special::{fresnel, fresnelc, fresnels, mod_fresnel_minus, mod_fresnel_plus};
+use scirs2_special::{fresnel, fresnelc, fresnels, mod_fresnel_plus, mod_fresnelminus};
 
+#[allow(dead_code)]
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("Fresnel Integrals Example");
     println!("========================\n");
@@ -52,11 +53,11 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("{:-^10} | {:-^25} | {:-^25}", "", "", "");
 
     for &x in &test_points {
-        let (f_minus, k_minus) = mod_fresnel_minus(x)?;
+        let (fminus, kminus) = mod_fresnelminus(x)?;
 
         println!(
             "{:^10.2} | {:^12.6} + {:^10.6}i | {:^12.6} + {:^10.6}i",
-            x, f_minus.re, f_minus.im, k_minus.re, k_minus.im
+            x, fminus.re, fminus.im, kminus.re, kminus.im
         );
     }
 

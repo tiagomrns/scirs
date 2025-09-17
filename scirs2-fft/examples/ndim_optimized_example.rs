@@ -7,6 +7,7 @@ use ndarray::Array3;
 use scirs2_fft::{fftn, fftn_memory_efficient, fftn_optimized};
 use std::time::Instant;
 
+#[allow(dead_code)]
 fn main() {
     println!("Optimized N-dimensional FFT Example");
     println!("===================================");
@@ -16,7 +17,7 @@ fn main() {
     let sizes = vec![(64, 64, 64), (128, 128, 32), (256, 64, 64)];
 
     for size in sizes {
-        println!("Testing size: {:?}", size);
+        println!("Testing size: {size:?}");
 
         // Create test array
         let array = Array3::from_shape_fn(size, |(i, j, k)| {
@@ -36,9 +37,9 @@ fn main() {
         // Calculate speedup
         let speedup = time_standard.as_secs_f64() / time_optimized.as_secs_f64();
 
-        println!("  Standard FFT: {:?}", time_standard);
-        println!("  Optimized FFT: {:?}", time_optimized);
-        println!("  Speedup: {:.2}x", speedup);
+        println!("  Standard FFT: {time_standard:?}");
+        println!("  Optimized FFT: {time_optimized:?}");
+        println!("  Speedup: {speedup:.2}x");
         println!();
     }
 
@@ -47,26 +48,26 @@ fn main() {
     println!("-------------------------------------");
 
     // Create a large array
-    let large_size = (512, 512, 16);
-    let large_array = Array3::from_shape_fn(large_size, |(i, j, k)| (i + j + k) as f64);
+    let largesize = (512, 512, 16);
+    let large_array = Array3::from_shape_fn(largesize, |(i, j, k)| (i + j + k) as f64);
 
     let memory_gb =
         (large_array.len() * std::mem::size_of::<f64>()) as f64 / (1024.0 * 1024.0 * 1024.0);
-    println!("Array size: {:?}, Memory: {:.2} GB", large_size, memory_gb);
+    println!("Array size: {largesize:?}, Memory: {memory_gb:.2} GB");
 
     // Test memory-efficient FFT with different memory limits
     let memory_limits = vec![0.5, 1.0, 2.0];
 
     for limit in memory_limits {
-        println!("\nMemory limit: {:.1} GB", limit);
+        println!("\nMemory limit: {limit:.1} GB");
 
         let start = Instant::now();
         let result = fftn_memory_efficient(&large_array.view(), None, limit);
         let duration = start.elapsed();
 
         match result {
-            Ok(_) => println!("  Success! Time: {:?}", duration),
-            Err(e) => println!("  Error: {}", e),
+            Ok(_) => println!("  Success! Time: {duration:?}"),
+            Err(e) => println!("  Error: {e}"),
         }
     }
 
@@ -81,13 +82,13 @@ fn main() {
     let axis_orders = vec![vec![0, 1, 2], vec![1, 2, 0], vec![2, 0, 1]];
 
     for axes in axis_orders {
-        println!("\nAxis order: {:?}", axes);
+        println!("\nAxis order: {axes:?}");
 
         let start = Instant::now();
         let _result = fftn_optimized(&asymmetric.view(), None, Some(axes)).unwrap();
         let duration = start.elapsed();
 
-        println!("  Time: {:?}", duration);
+        println!("  Time: {duration:?}");
     }
 
     // Demonstrate cache-friendly chunking
@@ -101,12 +102,12 @@ fn main() {
     let _result = fftn_optimized(&chunk_test.view(), None, None).unwrap();
     let duration = start.elapsed();
 
-    println!("FFT with optimized chunking: {:?}", duration);
+    println!("FFT with optimized chunking: {duration:?}");
 
     // Show how chunk size affects performance
     println!("\nChunk size analysis:");
     let total_elements = chunk_test.len();
-    println!("Total elements: {}", total_elements);
+    println!("Total elements: {total_elements}");
     println!("Optimal chunk size: determined automatically based on cache size");
 
     // Verify correctness by comparing results
@@ -135,9 +136,6 @@ fn main() {
         .map(|(a, b)| ((a.re - b.re).abs() + (a.im - b.im).abs()))
         .fold(0.0, f64::max);
 
-    println!(
-        "Maximum difference between standard and optimized: {:.2e}",
-        max_diff
-    );
+    println!("Maximum difference between standard and optimized: {max_diff:.2e}");
     println!("Results match: {}", max_diff < 1e-10);
 }

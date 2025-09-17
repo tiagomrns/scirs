@@ -19,7 +19,7 @@
 //!
 //! fn example() -> Result<(), Box<dyn std::error::Error>> {
 //!     // Generate Sobol sequence in 2D
-//!     let mut sobol = SobolGenerator::new(2)?;
+//!     let mut sobol = SobolGenerator::dimension(2)?;
 //!     let points = sobol.generate(1000);
 //!
 //!     // Generate Halton sequence
@@ -36,6 +36,7 @@
 //! ```
 
 use ndarray::{Array1, Array2};
+use rand::Rng;
 use std::f64;
 use thiserror::Error;
 
@@ -114,7 +115,7 @@ impl SobolGenerator {
     pub const MAX_DIMENSION: usize = 21201;
 
     /// Create a new Sobol generator for the given dimension
-    pub fn new(dimension: usize) -> Result<Self, QmcError> {
+    pub fn dimension(dimension: usize) -> Result<Self, QmcError> {
         if dimension == 0 || dimension > Self::MAX_DIMENSION {
             return Err(QmcError::InvalidDimension(dimension, Self::MAX_DIMENSION));
         }
@@ -177,7 +178,7 @@ impl SobolGenerator {
         // Generate remaining values using recurrence relation
         for i in 2..self.max_bits {
             let prev2 = direction_nums[i - 2];
-            let prev1 = direction_nums[i - 1];
+            let prev1 = direction_nums[i.saturating_sub(1)];
 
             // Simplified recurrence (real Sobol uses proper polynomial recurrence)
             let next_val = prev1 ^ (prev2 >> poly_coeff) ^ (prev1 >> 1);
@@ -254,7 +255,7 @@ impl HaltonGenerator {
     }
 
     /// Create a Halton generator using the first n prime numbers as bases
-    pub fn with_prime_bases(dimension: usize) -> Result<Self, QmcError> {
+    pub fn dimension(dimension: usize) -> Result<Self, QmcError> {
         if dimension == 0 {
             return Err(QmcError::InvalidDimension(dimension, 1000));
         }
@@ -314,7 +315,7 @@ impl HaltonGenerator {
     }
 
     /// Get the bases used by this generator
-    pub fn bases(&self) -> &[u32] {
+    pub fn bases_2(&self) -> &[u32] {
         &self.bases
     }
 }
@@ -363,7 +364,7 @@ impl<R: rand::Rng> LatinHypercubeSampler<R> {
     pub fn with_seed(dimension: usize, seed: u64) -> LatinHypercubeSampler<rand::prelude::StdRng> {
         LatinHypercubeSampler {
             dimension,
-            rng: crate::random::Random::with_seed(seed),
+            rng: crate::random::Random::seed(seed),
         }
     }
 
@@ -381,15 +382,15 @@ impl<R: rand::Rng> LatinHypercubeSampler<R> {
 
             // Fisher-Yates shuffle
             for i in (1..n).rev() {
-                let j = self.rng.random_range(0, i + 1);
+                let j = self.rng.gen_range(0..i + 1);
                 permutation.swap(i, j);
             }
 
             // Convert to Latin hypercube coordinates
-            for (i, &perm_val) in permutation.iter().enumerate() {
-                let uniform_sample = self.rng.random_range(0.0, 1.0);
+            for (idx, &perm_val) in permutation.iter().enumerate() {
+                let uniform_sample = self.rng.gen_range(0.0..1.0);
                 let lh_value = (perm_val as f64 + uniform_sample) / n as f64;
-                points[[i, dim]] = lh_value;
+                points[[idx, dim]] = lh_value;
             }
         }
 
@@ -453,12 +454,12 @@ pub struct FaureGenerator {
     dimension: usize,
     base: u32,
     current_index: u64,
-    pascal_matrix: Vec<Vec<u32>>,
+    pascalmatrix: Vec<Vec<u32>>,
 }
 
 impl FaureGenerator {
     /// Create a new Faure generator
-    pub fn new(dimension: usize) -> Result<Self, QmcError> {
+    pub fn dimension(dimension: usize) -> Result<Self, QmcError> {
         if dimension == 0 {
             return Err(QmcError::InvalidDimension(dimension, 1000));
         }
@@ -470,10 +471,10 @@ impl FaureGenerator {
             dimension,
             base,
             current_index: 0,
-            pascal_matrix: Vec::new(),
+            pascalmatrix: Vec::new(),
         };
 
-        generator.initialize_pascal_matrix();
+        generator.initialize_pascalmatrix();
         Ok(generator)
     }
 
@@ -487,25 +488,25 @@ impl FaureGenerator {
     }
 
     /// Initialize the Pascal matrix modulo the base
-    fn initialize_pascal_matrix(&mut self) {
+    fn initialize_pascalmatrix(&mut self) {
         let size = self.base as usize;
-        self.pascal_matrix = vec![vec![0; size]; size];
+        self.pascalmatrix = vec![vec![0; size]; size];
 
         // Initialize Pascal's triangle modulo base
         for i in 0..size {
-            self.pascal_matrix[i][0] = 1;
+            self.pascalmatrix[i][0] = 1;
             for j in 1..=i {
                 let prev_row = if i > 0 {
-                    self.pascal_matrix[i - 1][j - 1]
+                    self.pascalmatrix[i.saturating_sub(1)][j.saturating_sub(1)]
                 } else {
                     0
                 };
                 let prev_diag = if i > 0 && j < size {
-                    self.pascal_matrix[i - 1][j]
+                    self.pascalmatrix[i.saturating_sub(1)][j]
                 } else {
                     0
                 };
-                self.pascal_matrix[i][j] = (prev_row + prev_diag) % self.base;
+                self.pascalmatrix[i][j] = (prev_row + prev_diag) % self.base;
             }
         }
     }
@@ -520,10 +521,10 @@ impl FaureGenerator {
             let digit = index % self.base as u64;
 
             // Apply scrambling based on dimension and Pascal matrix
-            let scrambled_digit = if dimension < self.pascal_matrix.len() {
+            let scrambled_digit = if dimension < self.pascalmatrix.len() {
                 (digit
-                    + self.pascal_matrix[dimension % self.pascal_matrix.len()]
-                        [digit as usize % self.pascal_matrix.len()] as u64)
+                    + self.pascalmatrix[dimension % self.pascalmatrix.len()]
+                        [digit as usize % self.pascalmatrix.len()] as u64)
                     % self.base as u64
             } else {
                 digit
@@ -590,13 +591,13 @@ pub mod integration {
         F: Fn(&[f64]) -> f64 + Send + Sync,
     {
         let dimension = bounds.len();
-        let mut generator = create_generator(sequence_type, dimension)?;
+        let mut generator = create_qmc_generator(sequence_type, dimension)?;
 
         let points = generator.generate(n_points);
         let mut sum = 0.0;
         let mut sum_sq = 0.0;
 
-        // Transform points to integration bounds and evaluate function
+        // Transform _points to integration bounds and evaluate function
         for i in 0..n_points {
             let mut transformed_point = Vec::with_capacity(dimension);
             for dim in 0..dimension {
@@ -655,7 +656,7 @@ pub mod integration {
             let results_clone = Arc::clone(&results);
 
             let handle = thread::spawn(move || {
-                let mut generator = create_generator(sequence_type, dimension).unwrap();
+                let mut generator = create_qmc_generator(sequence_type, dimension).unwrap();
                 generator.skip(thread_id * points_per_thread);
 
                 let points = generator.generate(points_per_thread);
@@ -720,14 +721,15 @@ pub enum QmcSequenceType {
 }
 
 /// Create a QMC generator of the specified type
-pub fn create_generator(
+#[allow(dead_code)]
+pub fn create_qmc_generator(
     sequence_type: QmcSequenceType,
     dimension: usize,
 ) -> Result<Box<dyn LowDiscrepancySequence>, QmcError> {
     match sequence_type {
-        QmcSequenceType::Sobol => Ok(Box::new(SobolGenerator::new(dimension)?)),
-        QmcSequenceType::Halton => Ok(Box::new(HaltonGenerator::with_prime_bases(dimension)?)),
-        QmcSequenceType::Faure => Ok(Box::new(FaureGenerator::new(dimension)?)),
+        QmcSequenceType::Sobol => Ok(Box::new(SobolGenerator::dimension(dimension)?)),
+        QmcSequenceType::Halton => Ok(Box::new(HaltonGenerator::dimension(dimension)?)),
+        QmcSequenceType::Faure => Ok(Box::new(FaureGenerator::dimension(dimension)?)),
         QmcSequenceType::LatinHypercube => {
             // Note: LHS doesn't implement LowDiscrepancySequence directly
             // This is a simplified adapter
@@ -743,16 +745,16 @@ mod tests {
 
     #[test]
     fn test_sobol_generator_creation() {
-        let sobol = SobolGenerator::new(2);
+        let sobol = SobolGenerator::dimension(2);
         assert!(sobol.is_ok());
 
-        let invalid_sobol = SobolGenerator::new(0);
+        let invalid_sobol = SobolGenerator::dimension(0);
         assert!(invalid_sobol.is_err());
     }
 
     #[test]
     fn test_sobol_sequence_properties() {
-        let mut sobol = SobolGenerator::new(2).unwrap();
+        let mut sobol = SobolGenerator::dimension(2).unwrap();
 
         // First point should be [0, 0]
         let first = sobol.next_point();
@@ -787,9 +789,9 @@ mod tests {
     }
 
     #[test]
-    fn test_halton_prime_bases() {
-        let halton = HaltonGenerator::with_prime_bases(3).unwrap();
-        assert_eq!(halton.bases(), &[2, 3, 5]);
+    fn test_halton_primebases() {
+        let halton = HaltonGenerator::dimension(3).unwrap();
+        assert_eq!(halton.bases, &[2, 3, 5]);
     }
 
     #[test]
@@ -815,7 +817,7 @@ mod tests {
 
     #[test]
     fn test_faure_generator() {
-        let mut faure = FaureGenerator::new(2).unwrap();
+        let mut faure = FaureGenerator::dimension(2).unwrap();
 
         let points = faure.generate(20);
         assert_eq!(points.nrows(), 20);
@@ -853,7 +855,7 @@ mod tests {
 
     #[test]
     fn test_sequence_reset() {
-        let mut sobol = SobolGenerator::new(2).unwrap();
+        let mut sobol = SobolGenerator::dimension(2).unwrap();
 
         let first_sequence: Vec<_> = (0..5).map(|_| sobol.next_point()).collect();
 
@@ -865,7 +867,7 @@ mod tests {
 
     #[test]
     fn test_discrepancy_estimation() {
-        let sobol = SobolGenerator::new(2).unwrap();
+        let sobol = SobolGenerator::dimension(2).unwrap();
         let discrepancy = sobol.estimate_discrepancy(1000);
 
         // Should be small for low-discrepancy sequences

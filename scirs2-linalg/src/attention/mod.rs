@@ -22,14 +22,14 @@
 //! use scirs2_linalg::attention::{scaled_dot_product_attention, AttentionMask};
 //!
 //! // Create query, key, value matrices
-//! let batch_size = 2;
+//! let batchsize = 2;
 //! let seq_len = 4;
 //! let d_model = 8;
 //!
 //! // Random matrices for demonstration
-//! let query = Array3::<f32>::ones((batch_size, seq_len, d_model));
-//! let key = Array3::<f32>::ones((batch_size, seq_len, d_model));
-//! let value = Array3::<f32>::ones((batch_size, seq_len, d_model));
+//! let query = Array3::<f32>::ones((batchsize, seq_len, d_model));
+//! let key = Array3::<f32>::ones((batchsize, seq_len, d_model));
+//! let value = Array3::<f32>::ones((batchsize, seq_len, d_model));
 //!
 //! // Compute attention
 //! let output = scaled_dot_product_attention(
@@ -40,7 +40,7 @@
 //!     1.0 / (d_model as f32).sqrt()
 //! ).unwrap();
 //!
-//! assert_eq!(output.shape(), &[batch_size, seq_len, d_model]);
+//! assert_eq!(output.shape(), &[batchsize, seq_len, d_model]);
 //! ```
 //!
 //! Multi-head attention:
@@ -50,16 +50,16 @@
 //! use scirs2_linalg::attention::{multi_head_attention, AttentionConfig};
 //!
 //! // Create query, key, value matrices
-//! let batch_size = 2;
+//! let batchsize = 2;
 //! let seq_len = 4;
 //! let d_model = 64;
 //! let num_heads = 8;
 //! let head_dim = d_model / num_heads;
 //!
 //! // Random matrices for demonstration
-//! let query = Array3::<f32>::ones((batch_size, seq_len, d_model));
-//! let key = Array3::<f32>::ones((batch_size, seq_len, d_model));
-//! let value = Array3::<f32>::ones((batch_size, seq_len, d_model));
+//! let query = Array3::<f32>::ones((batchsize, seq_len, d_model));
+//! let key = Array3::<f32>::ones((batchsize, seq_len, d_model));
+//! let value = Array3::<f32>::ones((batchsize, seq_len, d_model));
 //!
 //! // Linear projection weights
 //! let wq = Array2::<f32>::ones((d_model, d_model));
@@ -89,7 +89,7 @@
 //!     &config
 //! ).unwrap();
 //!
-//! assert_eq!(output.shape(), &[batch_size, seq_len, d_model]);
+//! assert_eq!(output.shape(), &[batchsize, seq_len, d_model]);
 //! ```
 
 use ndarray::{Array1, Array2, Array3, ArrayView1, ArrayView2, ArrayView3};
@@ -103,15 +103,15 @@ use crate::error::{check_dimensions, LinalgError, LinalgResult};
 #[derive(Debug, Clone)]
 pub enum AttentionMask {
     /// Additive mask (added to attention scores before softmax)
-    /// Shape: [batch_size, seq_len_q, seq_len_k] or [1, seq_len_q, seq_len_k]
+    /// Shape: [batchsize, seq_len_q, seq_len_k] or [1, seq_len_q, seq_len_k]
     Additive(Array3<f32>),
 
     /// Multiplicative mask (multiplied with attention scores after softmax)
-    /// Shape: [batch_size, seq_len_q, seq_len_k] or [1, seq_len_q, seq_len_k]
+    /// Shape: [batchsize, seq_len_q, seq_len_k] or [1, seq_len_q, seq_len_k]
     Multiplicative(Array3<f32>),
 
     /// Boolean mask (True means attend, False means don't attend)
-    /// Shape: [batch_size, seq_len_q, seq_len_k] or [1, seq_len_q, seq_len_k]
+    /// Shape: [batchsize, seq_len_q, seq_len_k] or [1, seq_len_q, seq_len_k]
     Boolean(Array3<bool>),
 
     /// Causal mask (upper triangular with -inf)
@@ -156,15 +156,16 @@ impl Default for AttentionConfig {
 ///
 /// # Arguments
 ///
-/// * `query` - Query tensor of shape [batch_size, seq_len_q, d_model]
-/// * `key` - Key tensor of shape [batch_size, seq_len_k, d_model]
-/// * `value` - Value tensor of shape [batch_size, seq_len_k, d_model]
+/// * `query` - Query tensor of shape [batchsize, seq_len_q, d_model]
+/// * `key` - Key tensor of shape [batchsize, seq_len_k, d_model]
+/// * `value` - Value tensor of shape [batchsize, seq_len_k, d_model]
 /// * `mask` - Optional mask to apply to attention weights
 /// * `scale` - Scaling factor for dot product (default is 1/sqrt(d_k))
 ///
 /// # Returns
 ///
-/// * Output tensor of shape [batch_size, seq_len_q, d_model]
+/// * Output tensor of shape [batchsize, seq_len_q, d_model]
+#[allow(dead_code)]
 pub fn attention<F>(
     query: &ArrayView3<F>,
     key: &ArrayView3<F>,
@@ -176,38 +177,29 @@ where
     F: Float + Add + Mul + Div + Sub + NumAssignOps + Zero + std::fmt::Debug,
 {
     // Validate input dimensions
-    let (batch_size, seq_len_q, d_model_q) = (query.shape()[0], query.shape()[1], query.shape()[2]);
-    let (batch_size_k, seq_len_k, d_model_k) = (key.shape()[0], key.shape()[1], key.shape()[2]);
-    let (batch_size_v, seq_len_v, d_model_v) =
+    let (batchsize, seq_len_q, d_model_q) = (query.shape()[0], query.shape()[1], query.shape()[2]);
+    let (batchsize_k, seq_len_k, d_model_k) = (key.shape()[0], key.shape()[1], key.shape()[2]);
+    let (batchsize_v, seq_len_v, d_model_v) =
         (value.shape()[0], value.shape()[1], value.shape()[2]);
 
     check_dimensions(
-        batch_size == batch_size_k && batch_size == batch_size_v,
-        format!(
-            "Batch sizes must match: {}, {}, {}",
-            batch_size, batch_size_k, batch_size_v
-        ),
+        batchsize == batchsize_k && batchsize == batchsize_v,
+        format!("Batch sizes must match: {batchsize}, {batchsize_k}, {batchsize_v}"),
     )?;
 
     check_dimensions(
         seq_len_k == seq_len_v,
-        format!(
-            "Key and value sequence lengths must match: {}, {}",
-            seq_len_k, seq_len_v
-        ),
+        format!("Key and value sequence lengths must match: {seq_len_k}, {seq_len_v}"),
     )?;
 
     check_dimensions(
         d_model_q == d_model_k,
-        format!(
-            "Query and key dimensions must match: {}, {}",
-            d_model_q, d_model_k
-        ),
+        format!("Query and key dimensions must match: {d_model_q}, {d_model_k}"),
     )?;
 
-    let mut result = Array3::<F>::zeros((batch_size, seq_len_q, d_model_v));
+    let mut result = Array3::<F>::zeros((batchsize, seq_len_q, d_model_v));
 
-    for b in 0..batch_size {
+    for b in 0..batchsize {
         // Calculate attention scores: QK^T [seq_len_q, seq_len_k]
         let q_b = query.slice(ndarray::s![b, .., ..]);
         let k_b = key.slice(ndarray::s![b, .., ..]);
@@ -276,6 +268,7 @@ where
 }
 
 /// Apply attention mask to scores
+#[allow(dead_code)]
 fn apply_mask<F>(scores: &mut Array2<F>, mask: &AttentionMask, batch_idx: usize) -> LinalgResult<()>
 where
     F: Float + Add + Mul + Div + Sub + NumAssignOps + Zero + std::fmt::Debug,
@@ -376,15 +369,16 @@ where
 ///
 /// # Arguments
 ///
-/// * `query` - Query tensor of shape [batch_size, seq_len_q, d_model]
-/// * `key` - Key tensor of shape [batch_size, seq_len_k, d_model]
-/// * `value` - Value tensor of shape [batch_size, seq_len_k, d_model]
+/// * `query` - Query tensor of shape [batchsize, seq_len_q, d_model]
+/// * `key` - Key tensor of shape [batchsize, seq_len_k, d_model]
+/// * `value` - Value tensor of shape [batchsize, seq_len_k, d_model]
 /// * `mask` - Optional mask to apply to attention weights
 /// * `scale` - Scaling factor for dot product (default is 1/sqrt(d_k))
 ///
 /// # Returns
 ///
-/// * Output tensor of shape [batch_size, seq_len_q, d_model]
+/// * Output tensor of shape [batchsize, seq_len_q, d_model]
+#[allow(dead_code)]
 pub fn scaled_dot_product_attention<F>(
     query: &ArrayView3<F>,
     key: &ArrayView3<F>,
@@ -405,6 +399,7 @@ where
 }
 
 /// Try to use an optimized implementation for f32 type
+#[allow(dead_code)]
 fn try_f32_attention<F>(
     query: &ArrayView3<F>,
     key: &ArrayView3<F>,
@@ -440,6 +435,7 @@ where
 /// BLAS-accelerated attention implementation for f32
 ///
 /// Uses BLAS for matrix multiplications to speed up the attention computation
+#[allow(dead_code)]
 fn blas_attention_f32(
     query: &ArrayView3<f32>,
     key: &ArrayView3<f32>,
@@ -447,38 +443,29 @@ fn blas_attention_f32(
     scale: f32,
 ) -> LinalgResult<Array3<f32>> {
     // Validate input dimensions
-    let (batch_size, seq_len_q, d_model_q) = (query.shape()[0], query.shape()[1], query.shape()[2]);
-    let (batch_size_k, seq_len_k, d_model_k) = (key.shape()[0], key.shape()[1], key.shape()[2]);
-    let (batch_size_v, seq_len_v, d_model_v) =
+    let (batchsize, seq_len_q, d_model_q) = (query.shape()[0], query.shape()[1], query.shape()[2]);
+    let (batchsize_k, seq_len_k, d_model_k) = (key.shape()[0], key.shape()[1], key.shape()[2]);
+    let (batchsize_v, seq_len_v, d_model_v) =
         (value.shape()[0], value.shape()[1], value.shape()[2]);
 
     check_dimensions(
-        batch_size == batch_size_k && batch_size == batch_size_v,
-        format!(
-            "Batch sizes must match: {}, {}, {}",
-            batch_size, batch_size_k, batch_size_v
-        ),
+        batchsize == batchsize_k && batchsize == batchsize_v,
+        format!("Batch sizes must match: {batchsize}, {batchsize_k}, {batchsize_v}"),
     )?;
 
     check_dimensions(
         seq_len_k == seq_len_v,
-        format!(
-            "Key and value sequence lengths must match: {}, {}",
-            seq_len_k, seq_len_v
-        ),
+        format!("Key and value sequence lengths must match: {seq_len_k}, {seq_len_v}"),
     )?;
 
     check_dimensions(
         d_model_q == d_model_k,
-        format!(
-            "Query and key dimensions must match: {}, {}",
-            d_model_q, d_model_k
-        ),
+        format!("Query and key dimensions must match: {d_model_q}, {d_model_k}"),
     )?;
 
-    let mut result = Array3::<f32>::zeros((batch_size, seq_len_q, d_model_v));
+    let mut result = Array3::<f32>::zeros((batchsize, seq_len_q, d_model_v));
 
-    for b in 0..batch_size {
+    for b in 0..batchsize {
         // Extract batch slices
         let q_b = query.slice(ndarray::s![b, .., ..]);
         let k_b = key.slice(ndarray::s![b, .., ..]);
@@ -543,9 +530,9 @@ fn blas_attention_f32(
 ///
 /// # Arguments
 ///
-/// * `query` - Query tensor of shape [batch_size, seq_len_q, d_model]
-/// * `key` - Key tensor of shape [batch_size, seq_len_k, d_model]
-/// * `value` - Value tensor of shape [batch_size, seq_len_v, d_model]
+/// * `query` - Query tensor of shape [batchsize, seq_len_q, d_model]
+/// * `key` - Key tensor of shape [batchsize, seq_len_k, d_model]
+/// * `value` - Value tensor of shape [batchsize, seq_len_v, d_model]
 /// * `wq` - Query projection weights [d_model, d_model]
 /// * `wk` - Key projection weights [d_model, d_model]
 /// * `wv` - Value projection weights [d_model, d_model]
@@ -555,8 +542,9 @@ fn blas_attention_f32(
 ///
 /// # Returns
 ///
-/// * Output tensor of shape [batch_size, seq_len_q, d_model]
+/// * Output tensor of shape [batchsize, seq_len_q, d_model]
 #[allow(clippy::too_many_arguments)]
+#[allow(dead_code)]
 pub fn multi_head_attention<F>(
     query: &ArrayView3<F>,
     key: &ArrayView3<F>,
@@ -572,7 +560,7 @@ where
     F: Float + Add + Mul + Div + Sub + NumAssignOps + Zero + std::fmt::Debug,
 {
     // Extract dimensions
-    let (batch_size, seq_len_q, d_model) = (query.shape()[0], query.shape()[1], query.shape()[2]);
+    let (batchsize, seq_len_q, d_model) = (query.shape()[0], query.shape()[1], query.shape()[2]);
     let seq_len_k = key.shape()[1];
     let seq_len_v = value.shape()[1];
 
@@ -600,25 +588,39 @@ where
     let num_heads = config.num_heads;
     let head_dim = config.head_dim;
     let scale = match config.scale {
-        Some(s) => F::from(s).unwrap_or_else(|| F::from(1.0 / (head_dim as f64).sqrt()).unwrap()),
-        None => F::from(1.0 / (head_dim as f64).sqrt()).unwrap(),
+        Some(s) => F::from(s).ok_or_else(|| {
+            LinalgError::ValueError("Failed to convert scale to target type".to_string())
+        })?,
+        None => {
+            let head_dim_f64 = head_dim as f64;
+            if head_dim_f64 <= 0.0 {
+                return Err(LinalgError::ValueError(
+                    "Head dimension must be positive".to_string(),
+                ));
+            }
+            let default_scale = 1.0 / head_dim_f64.sqrt();
+            F::from(default_scale).ok_or_else(|| {
+                LinalgError::ValueError(
+                    "Failed to convert default scale to target type".to_string(),
+                )
+            })?
+        }
     };
 
     // Verify that d_model is compatible with num_heads and head_dim
     if d_model != num_heads * head_dim {
         return Err(LinalgError::ValueError(format!(
-            "Model dimension ({}) must equal num_heads ({}) * head_dim ({})",
-            d_model, num_heads, head_dim
+            "Model dimension ({d_model}) must equal num_heads ({num_heads}) * head_dim ({head_dim})"
         )));
     }
 
     // Project query, key, and value
-    let mut q_proj = Array3::<F>::zeros((batch_size, seq_len_q, d_model));
-    let mut k_proj = Array3::<F>::zeros((batch_size, seq_len_k, d_model));
-    let mut v_proj = Array3::<F>::zeros((batch_size, seq_len_v, d_model));
+    let mut q_proj = Array3::<F>::zeros((batchsize, seq_len_q, d_model));
+    let mut k_proj = Array3::<F>::zeros((batchsize, seq_len_k, d_model));
+    let mut v_proj = Array3::<F>::zeros((batchsize, seq_len_v, d_model));
 
     // Perform projections batch by batch
-    for b in 0..batch_size {
+    for b in 0..batchsize {
         // Project query
         for i in 0..seq_len_q {
             for j in 0..d_model {
@@ -654,7 +656,7 @@ where
     }
 
     // Reshape for multi-head attention
-    // We need to effectively reshape to [batch_size, num_heads, seq_len, head_dim]
+    // We need to effectively reshape to [batchsize, num_heads, seq_len, head_dim]
     // but will use separate tensors for each head to avoid complex reshaping
     let mut head_outputs = Vec::with_capacity(num_heads);
 
@@ -673,13 +675,13 @@ where
     }
 
     // Concatenate head outputs along the last dimension
-    let mut concat_output = Array3::<F>::zeros((batch_size, seq_len_q, d_model));
+    let mut concat_output = Array3::<F>::zeros((batchsize, seq_len_q, d_model));
 
     for (h, head_output) in head_outputs.iter().enumerate().take(num_heads) {
         let start_idx = h * head_dim;
         let _end_idx = start_idx + head_dim; // Used for clarity
 
-        for b in 0..batch_size {
+        for b in 0..batchsize {
             for i in 0..seq_len_q {
                 for j in 0..head_dim {
                     concat_output[[b, i, start_idx + j]] = head_output[[b, i, j]];
@@ -689,9 +691,9 @@ where
     }
 
     // Apply output projection
-    let mut output = Array3::<F>::zeros((batch_size, seq_len_q, d_model));
+    let mut output = Array3::<F>::zeros((batchsize, seq_len_q, d_model));
 
-    for b in 0..batch_size {
+    for b in 0..batchsize {
         for i in 0..seq_len_q {
             for j in 0..d_model {
                 let mut sum = F::zero();
@@ -713,76 +715,71 @@ where
 ///
 /// # Arguments
 ///
-/// * `query` - Query tensor of shape [batch_size, seq_len_q, d_model]
-/// * `key` - Key tensor of shape [batch_size, seq_len_k, d_model]
-/// * `value` - Value tensor of shape [batch_size, seq_len_k, d_model]
+/// * `query` - Query tensor of shape [batchsize, seq_len_q, d_model]
+/// * `key` - Key tensor of shape [batchsize, seq_len_k, d_model]
+/// * `value` - Value tensor of shape [batchsize, seq_len_k, d_model]
 /// * `mask` - Optional mask to apply to attention weights
 /// * `scale` - Scaling factor for dot product
-/// * `block_size` - Block size for tiling (affects performance but not results)
+/// * `blocksize` - Block size for tiling (affects performance but not results)
 ///
 /// # Returns
 ///
-/// * Output tensor of shape [batch_size, seq_len_q, d_model]
+/// * Output tensor of shape [batchsize, seq_len_q, d_model]
+#[allow(dead_code)]
 pub fn flash_attention<F>(
     query: &ArrayView3<F>,
     key: &ArrayView3<F>,
     value: &ArrayView3<F>,
     mask: Option<&AttentionMask>,
     scale: F,
-    block_size: usize,
+    blocksize: usize,
 ) -> LinalgResult<Array3<F>>
 where
     F: Float + Add + Mul + Div + Sub + NumAssignOps + Zero + std::fmt::Debug,
 {
     // Validate dimensions
-    let (batch_size, seq_len_q, d_model) = (query.shape()[0], query.shape()[1], query.shape()[2]);
-    let (batch_size_k, seq_len_k, d_model_k) = (key.shape()[0], key.shape()[1], key.shape()[2]);
-    let (batch_size_v, seq_len_v, d_model_v) =
+    let (batchsize, seq_len_q, d_model) = (query.shape()[0], query.shape()[1], query.shape()[2]);
+    let (batchsize_k, seq_len_k, d_model_k) = (key.shape()[0], key.shape()[1], key.shape()[2]);
+    let (batchsize_v, seq_len_v, d_model_v) =
         (value.shape()[0], value.shape()[1], value.shape()[2]);
 
     check_dimensions(
-        batch_size == batch_size_k,
-        format!("Batch sizes must match: {} != {}", batch_size, batch_size_k),
+        batchsize == batchsize_k,
+        format!("Batch sizes must match: {batchsize} != {batchsize_k}"),
     )?;
     check_dimensions(
-        batch_size == batch_size_v,
-        format!("Batch sizes must match: {} != {}", batch_size, batch_size_v),
+        batchsize == batchsize_v,
+        format!("Batch sizes must match: {batchsize} != {batchsize_v}"),
     )?;
     check_dimensions(
         seq_len_k == seq_len_v,
-        format!(
-            "Key and value sequence lengths must match: {} != {}",
-            seq_len_k, seq_len_v
-        ),
+        format!("Key and value sequence lengths must match: {seq_len_k} != {seq_len_v}"),
     )?;
     check_dimensions(
         d_model == d_model_k,
-        format!(
-            "Query and key dimensions must match: {} != {}",
-            d_model, d_model_k
-        ),
+        format!("Query and key dimensions must match: {d_model} != {d_model_k}"),
     )?;
 
     // Determine block sizes
-    let block_size_q = block_size.min(seq_len_q);
-    let block_size_k = block_size.min(seq_len_k);
+    let blocksize_q = blocksize.min(seq_len_q);
+    let blocksize_k = blocksize.min(seq_len_k);
 
     // Initialize output
-    let mut output = Array3::<F>::zeros((batch_size, seq_len_q, d_model_v));
+    let mut output = Array3::<F>::zeros((batchsize, seq_len_q, d_model_v));
 
     // Process batch by batch
-    for b in 0..batch_size {
+    for b in 0..batchsize {
         // Process query blocks
-        for q_start in (0..seq_len_q).step_by(block_size_q) {
-            let q_end = (q_start + block_size_q).min(seq_len_q);
+        for q_start in (0..seq_len_q).step_by(blocksize_q) {
+            let q_end = (q_start + blocksize_q).min(seq_len_q);
             let q_block = query.slice(ndarray::s![b, q_start..q_end, ..]);
 
             // For each query block, process all key/value blocks
             let mut m_block = Array1::<F>::from_elem(q_end - q_start, F::neg_infinity());
             let mut l_block = Array1::<F>::zeros(q_end - q_start);
 
-            for k_start in (0..seq_len_k).step_by(block_size_k) {
-                let k_end = (k_start + block_size_k).min(seq_len_k);
+            for k_start in (0..seq_len_k).step_by(blocksize_k) {
+                let k_end = (k_start + blocksize_k).min(seq_len_k);
                 let k_block = key.slice(ndarray::s![b, k_start..k_end, ..]);
                 let v_block = value.slice(ndarray::s![b, k_start..k_end, ..]);
 
@@ -841,7 +838,12 @@ where
 
                         // Update output with scaling
                         if l_block[i] > F::zero() {
-                            let scale_factor = (m_prev - m_new).exp() / l_block[i];
+                            let scale_factor = if l_block[i] != F::zero() {
+                                (m_prev - m_new).exp() / l_block[i]
+                            } else {
+                                // Handle zero normalization factor
+                                F::zero()
+                            };
                             for j in 0..d_model_v {
                                 output[[b, q_start + i, j]] *= scale_factor;
                             }
@@ -894,15 +896,16 @@ where
 ///
 /// # Arguments
 ///
-/// * `query` - Query tensor of shape [batch_size, seq_len_q, d_model]
-/// * `key` - Key tensor of shape [batch_size, seq_len_k, d_model]
-/// * `value` - Value tensor of shape [batch_size, seq_len_k, d_model]
+/// * `query` - Query tensor of shape [batchsize, seq_len_q, d_model]
+/// * `key` - Key tensor of shape [batchsize, seq_len_k, d_model]
+/// * `value` - Value tensor of shape [batchsize, seq_len_k, d_model]
 /// * `pattern_mask` - Boolean mask defining the sparse attention pattern [seq_len_q, seq_len_k]
 /// * `scale` - Scaling factor for dot product
 ///
 /// # Returns
 ///
-/// * Output tensor of shape [batch_size, seq_len_q, d_model]
+/// * Output tensor of shape [batchsize, seq_len_q, d_model]
+#[allow(dead_code)]
 pub fn sparse_attention<F>(
     query: &ArrayView3<F>,
     key: &ArrayView3<F>,
@@ -914,13 +917,13 @@ where
     F: Float + Add + Mul + Div + Sub + NumAssignOps + Zero + std::fmt::Debug,
 {
     // Validate dimensions
-    let (batch_size, seq_len_q, d_model) = (query.shape()[0], query.shape()[1], query.shape()[2]);
+    let (batchsize, seq_len_q, d_model) = (query.shape()[0], query.shape()[1], query.shape()[2]);
     let (_, seq_len_k, _) = (key.shape()[0], key.shape()[1], key.shape()[2]);
     let (_, _, d_model_v) = (value.shape()[0], value.shape()[1], value.shape()[2]);
 
     if pattern_mask.shape() != [seq_len_q, seq_len_k] {
         return Err(LinalgError::DimensionError(format!(
-            "Pattern mask shape {:?} doesn't match query and key sequence lengths [{}, {}]",
+            "Pattern _mask shape {:?} doesn't match query and key sequence lengths [{}, {}]",
             pattern_mask.shape(),
             seq_len_q,
             seq_len_k
@@ -928,10 +931,10 @@ where
     }
 
     // Initialize output
-    let mut output = Array3::<F>::zeros((batch_size, seq_len_q, d_model_v));
+    let mut output = Array3::<F>::zeros((batchsize, seq_len_q, d_model_v));
 
     // Process batch by batch
-    for b in 0..batch_size {
+    for b in 0..batchsize {
         let q_b = query.slice(ndarray::s![b, .., ..]);
         let k_b = key.slice(ndarray::s![b, .., ..]);
         let v_b = value.slice(ndarray::s![b, .., ..]);
@@ -944,7 +947,7 @@ where
             let mut scores = Vec::new();
             let mut indices = Vec::new();
 
-            // Only compute scores for positions allowed by the pattern mask
+            // Only compute scores for positions allowed by the pattern _mask
             for j in 0..seq_len_k {
                 if pattern_mask[[i, j]] {
                     let k_j = k_b.slice(ndarray::s![j, ..]);
@@ -1007,15 +1010,16 @@ where
 ///
 /// # Arguments
 ///
-/// * `query` - Query tensor of shape [batch_size, seq_len_q, d_model]
-/// * `key` - Key tensor of shape [batch_size, seq_len_k, d_model]
-/// * `value` - Value tensor of shape [batch_size, seq_len_k, d_model]
+/// * `query` - Query tensor of shape [batchsize, seq_len_q, d_model]
+/// * `key` - Key tensor of shape [batchsize, seq_len_k, d_model]
+/// * `value` - Value tensor of shape [batchsize, seq_len_k, d_model]
 /// * `mask` - The mask to apply to attention weights
 /// * `scale` - Scaling factor for dot product
 ///
 /// # Returns
 ///
-/// * Output tensor of shape [batch_size, seq_len_q, d_model]
+/// * Output tensor of shape [batchsize, seq_len_q, d_model]
+#[allow(dead_code)]
 pub fn masked_attention<F>(
     query: &ArrayView3<F>,
     key: &ArrayView3<F>,
@@ -1036,14 +1040,15 @@ where
 ///
 /// # Arguments
 ///
-/// * `query` - Query tensor of shape [batch_size, seq_len_q, d_model]
-/// * `key` - Key tensor of shape [batch_size, seq_len_k, d_model]
-/// * `value` - Value tensor of shape [batch_size, seq_len_k, d_model]
+/// * `query` - Query tensor of shape [batchsize, seq_len_q, d_model]
+/// * `key` - Key tensor of shape [batchsize, seq_len_k, d_model]
+/// * `value` - Value tensor of shape [batchsize, seq_len_k, d_model]
 /// * `scale` - Scaling factor for dot product
 ///
 /// # Returns
 ///
-/// * Output tensor of shape [batch_size, seq_len_q, d_model]
+/// * Output tensor of shape [batchsize, seq_len_q, d_model]
+#[allow(dead_code)]
 pub fn causal_attention<F>(
     query: &ArrayView3<F>,
     key: &ArrayView3<F>,
@@ -1064,16 +1069,17 @@ where
 ///
 /// # Arguments
 ///
-/// * `query` - Query tensor of shape [batch_size, seq_len_q, d_model]
-/// * `key` - Key tensor of shape [batch_size, seq_len_k, d_model]
-/// * `value` - Value tensor of shape [batch_size, seq_len_k, d_model]
+/// * `query` - Query tensor of shape [batchsize, seq_len_q, d_model]
+/// * `key` - Key tensor of shape [batchsize, seq_len_k, d_model]
+/// * `value` - Value tensor of shape [batchsize, seq_len_k, d_model]
 /// * `slopes` - Tensor of slope values for each attention head
 /// * `scale` - Scaling factor for dot product
 /// * `causal` - Whether to apply causal masking
 ///
 /// # Returns
 ///
-/// * Output tensor of shape [batch_size, seq_len_q, d_model]
+/// * Output tensor of shape [batchsize, seq_len_q, d_model]
+#[allow(dead_code)]
 pub fn attention_with_alibi<F>(
     query: &ArrayView3<F>,
     key: &ArrayView3<F>,
@@ -1086,14 +1092,14 @@ where
     F: Float + Add + Mul + Div + Sub + NumAssignOps + Zero + std::fmt::Debug,
 {
     // Validate dimensions
-    let (batch_size, seq_len_q, d_model) = (query.shape()[0], query.shape()[1], query.shape()[2]);
+    let (batchsize, seq_len_q, d_model) = (query.shape()[0], query.shape()[1], query.shape()[2]);
     let (_, seq_len_k, _) = (key.shape()[0], key.shape()[1], key.shape()[2]);
     let (_, _, d_model_v) = (value.shape()[0], value.shape()[1], value.shape()[2]);
 
     // Calculate attention scores (QK^T)
-    let mut result = Array3::<F>::zeros((batch_size, seq_len_q, d_model_v));
+    let mut result = Array3::<F>::zeros((batchsize, seq_len_q, d_model_v));
 
-    for b in 0..batch_size {
+    for b in 0..batchsize {
         // Calculate QK^T
         let q_b = query.slice(ndarray::s![b, .., ..]);
         let k_b = key.slice(ndarray::s![b, .., ..]);
@@ -1117,7 +1123,12 @@ where
             for j in 0..seq_len_k {
                 // In ALiBi, the bias is -slope * |i - j|
                 // For simplicity, we'll use a single slope here
-                let pos_diff = F::from((i as isize - j as isize).abs() as f64).unwrap();
+                let pos_diff =
+                    F::from((i as isize - j as isize).abs() as f64).ok_or_else(|| {
+                        LinalgError::ValueError(
+                            "Failed to convert position difference to target type".to_string(),
+                        )
+                    })?;
                 let slope = slopes[0]; // Using first slope for simplicity
                 scores[[i, j]] -= slope * pos_diff;
             }
@@ -1187,17 +1198,18 @@ where
 ///
 /// # Arguments
 ///
-/// * `x` - Input tensor of shape [batch_size, seq_len, d_model]
+/// * `x` - Input tensor of shape [batchsize, seq_len, d_model]
 /// * `freq_base` - Base frequency for the rotations (default: 10000.0)
 ///
 /// # Returns
 ///
 /// * Tensor with rotary position embeddings applied
-pub fn rotary_embedding<F>(x: &ArrayView3<F>, freq_base: F) -> LinalgResult<Array3<F>>
+#[allow(dead_code)]
+pub fn rotary_embedding<F>(x: &ArrayView3<F>, freqbase: F) -> LinalgResult<Array3<F>>
 where
     F: Float + Add + Mul + Div + Sub + NumAssignOps + Zero + std::fmt::Debug,
 {
-    let (batch_size, seq_len, d_model) = (x.shape()[0], x.shape()[1], x.shape()[2]);
+    let (batchsize, seq_len, d_model) = (x.shape()[0], x.shape()[1], x.shape()[2]);
 
     // Ensure dimension is even for proper pairing of dimensions
     if d_model % 2 != 0 {
@@ -1206,19 +1218,29 @@ where
         ));
     }
 
-    let mut result = Array3::<F>::zeros((batch_size, seq_len, d_model));
+    let mut result = Array3::<F>::zeros((batchsize, seq_len, d_model));
 
     // Create position frequencies
+    if d_model % 2 != 0 {
+        return Err(LinalgError::ValueError(
+            "Model dimension must be even for rotary embeddings".to_string(),
+        ));
+    }
     let half_dim = d_model / 2;
     let mut freqs = Vec::with_capacity(half_dim);
 
     for i in 0..half_dim {
-        let freq = F::one() / (freq_base.powf(F::from(2.0 * i as f64 / d_model as f64).unwrap()));
+        let exponent = F::from(2.0 * i as f64 / d_model as f64).ok_or_else(|| {
+            LinalgError::ValueError(
+                "Failed to convert frequency exponent to target type".to_string(),
+            )
+        })?;
+        let freq = F::one() / freqbase.powf(exponent);
         freqs.push(freq);
     }
 
     // Apply rotary embeddings
-    for b in 0..batch_size {
+    for b in 0..batchsize {
         for pos in 0..seq_len {
             for (i, _) in freqs.iter().enumerate().take(half_dim) {
                 let i2 = 2 * i;
@@ -1228,7 +1250,10 @@ where
                 let x_i_plus_1 = x[[b, pos, i2 + 1]];
 
                 // Calculate rotation
-                let theta = F::from(pos as f64).unwrap() * freqs[i];
+                let pos_f = F::from(pos as f64).ok_or_else(|| {
+                    LinalgError::ValueError("Failed to convert position to target type".to_string())
+                })?;
+                let theta = pos_f * freqs[i];
                 let cos_theta = theta.cos();
                 let sin_theta = theta.sin();
 
@@ -1249,14 +1274,15 @@ where
 ///
 /// # Arguments
 ///
-/// * `query` - Query tensor of shape [batch_size, seq_len_q, d_model]
-/// * `key` - Key tensor of shape [batch_size, seq_len_k, d_model]
-/// * `value` - Value tensor of shape [batch_size, seq_len_k, d_model]
+/// * `query` - Query tensor of shape [batchsize, seq_len_q, d_model]
+/// * `key` - Key tensor of shape [batchsize, seq_len_k, d_model]
+/// * `value` - Value tensor of shape [batchsize, seq_len_k, d_model]
 /// * `scale` - Scaling factor for dot product
 ///
 /// # Returns
 ///
-/// * Output tensor of shape [batch_size, seq_len_q, d_model]
+/// * Output tensor of shape [batchsize, seq_len_q, d_model]
+#[allow(dead_code)]
 pub fn linear_attention<F>(
     query: &ArrayView3<F>,
     key: &ArrayView3<F>,
@@ -1266,14 +1292,14 @@ pub fn linear_attention<F>(
 where
     F: Float + Add + Mul + Div + Sub + NumAssignOps + Zero + std::fmt::Debug,
 {
-    let (batch_size, seq_len_q, d_model) = (query.shape()[0], query.shape()[1], query.shape()[2]);
+    let (batchsize, seq_len_q, d_model) = (query.shape()[0], query.shape()[1], query.shape()[2]);
     let (_, seq_len_k, _) = (key.shape()[0], key.shape()[1], key.shape()[2]);
     let (_, _, d_model_v) = (value.shape()[0], value.shape()[1], value.shape()[2]);
 
-    let mut result = Array3::<F>::zeros((batch_size, seq_len_q, d_model_v));
+    let mut result = Array3::<F>::zeros((batchsize, seq_len_q, d_model_v));
 
     // Apply elu + 1 feature mapping to query and key
-    for b in 0..batch_size {
+    for b in 0..batchsize {
         // Feature map: elu(x) + 1
         let mut q_prime = Array2::<F>::zeros((seq_len_q, d_model));
         let mut k_prime = Array2::<F>::zeros((seq_len_k, d_model));
@@ -1339,7 +1365,12 @@ where
                 }
 
                 if z[i] > F::zero() {
-                    result[[b, i, j]] = sum / z[i];
+                    result[[b, i, j]] = if z[i] != F::zero() {
+                        sum / z[i]
+                    } else {
+                        // Handle zero normalization - typically indicates all-masked row
+                        F::zero()
+                    };
                 }
             }
         }
@@ -1355,15 +1386,16 @@ where
 ///
 /// # Arguments
 ///
-/// * `query` - Query tensor of shape [batch_size, seq_len_q, d_model]
-/// * `key` - Key tensor of shape [batch_size, seq_len_k, d_model]
-/// * `value` - Value tensor of shape [batch_size, seq_len_k, d_model]
+/// * `query` - Query tensor of shape [batchsize, seq_len_q, d_model]
+/// * `key` - Key tensor of shape [batchsize, seq_len_k, d_model]
+/// * `value` - Value tensor of shape [batchsize, seq_len_k, d_model]
 /// * `rel_emb` - Relative position embeddings of shape [2*max_len-1, d_model]
 /// * `scale` - Scaling factor for dot product
 ///
 /// # Returns
 ///
-/// * Output tensor of shape [batch_size, seq_len_q, d_model]
+/// * Output tensor of shape [batchsize, seq_len_q, d_model]
+#[allow(dead_code)]
 pub fn relative_position_attention<F>(
     query: &ArrayView3<F>,
     key: &ArrayView3<F>,
@@ -1374,7 +1406,7 @@ pub fn relative_position_attention<F>(
 where
     F: Float + Add + Mul + Div + Sub + NumAssignOps + Zero + std::fmt::Debug,
 {
-    let (batch_size, seq_len_q, d_model) = (query.shape()[0], query.shape()[1], query.shape()[2]);
+    let (batchsize, seq_len_q, d_model) = (query.shape()[0], query.shape()[1], query.shape()[2]);
     let (_, seq_len_k, _) = (key.shape()[0], key.shape()[1], key.shape()[2]);
     let (_, _, d_model_v) = (value.shape()[0], value.shape()[1], value.shape()[2]);
 
@@ -1389,10 +1421,10 @@ where
         )));
     }
 
-    let mut result = Array3::<F>::zeros((batch_size, seq_len_q, d_model_v));
+    let mut result = Array3::<F>::zeros((batchsize, seq_len_q, d_model_v));
 
     // Process batch by batch
-    for b in 0..batch_size {
+    for b in 0..batchsize {
         // Calculate content-content attention: QK^T
         let mut content_scores = Array2::<F>::zeros((seq_len_q, seq_len_k));
 
@@ -1475,9 +1507,9 @@ where
 ///
 /// # Arguments
 ///
-/// * `query` - Query tensor of shape [batch_size, seq_len_q, d_model]
-/// * `key` - Key tensor of shape [batch_size, seq_len_k, d_model]
-/// * `value` - Value tensor of shape [batch_size, seq_len_k, d_model]
+/// * `query` - Query tensor of shape [batchsize, seq_len_q, d_model]
+/// * `key` - Key tensor of shape [batchsize, seq_len_k, d_model]
+/// * `value` - Value tensor of shape [batchsize, seq_len_k, d_model]
 /// * `wq` - Query projection weights [d_model, d_model]
 /// * `wk` - Key projection weights [d_model, kv_dim]
 /// * `wv` - Value projection weights [d_model, kv_dim]
@@ -1489,8 +1521,9 @@ where
 ///
 /// # Returns
 ///
-/// * Output tensor of shape [batch_size, seq_len_q, d_model]
+/// * Output tensor of shape [batchsize, seq_len_q, d_model]
 #[allow(clippy::too_many_arguments)]
+#[allow(dead_code)]
 pub fn grouped_query_attention<F>(
     query: &ArrayView3<F>,
     key: &ArrayView3<F>,
@@ -1508,17 +1541,21 @@ where
     F: Float + Add + Mul + Div + Sub + NumAssignOps + Zero + std::fmt::Debug,
 {
     // Validate dimensions
-    let (batch_size, seq_len_q, d_model) = (query.shape()[0], query.shape()[1], query.shape()[2]);
+    let (batchsize, seq_len_q, d_model) = (query.shape()[0], query.shape()[1], query.shape()[2]);
     let seq_len_k = key.shape()[1];
 
     // Validate kv head configuration
     if num_heads % num_kv_heads != 0 {
         return Err(LinalgError::ValueError(format!(
-            "Number of query heads ({}) must be divisible by number of KV heads ({})",
-            num_heads, num_kv_heads
+            "Number of query _heads ({num_heads}) must be divisible by number of KV _heads ({num_kv_heads})"
         )));
     }
 
+    if num_heads % num_kv_heads != 0 {
+        return Err(LinalgError::ValueError(format!(
+            "Number of _heads ({num_heads}) must be divisible by number of key-value _heads ({num_kv_heads})"
+        )));
+    }
     let heads_per_kv = num_heads / num_kv_heads;
     let head_dim = d_model / num_heads;
     let kv_dim = num_kv_heads * head_dim;
@@ -1535,12 +1572,12 @@ where
     }
 
     // Project query, key, and value
-    let mut q_proj = Array3::<F>::zeros((batch_size, seq_len_q, d_model));
-    let mut k_proj = Array3::<F>::zeros((batch_size, seq_len_k, kv_dim));
-    let mut v_proj = Array3::<F>::zeros((batch_size, seq_len_k, kv_dim));
+    let mut q_proj = Array3::<F>::zeros((batchsize, seq_len_q, d_model));
+    let mut k_proj = Array3::<F>::zeros((batchsize, seq_len_k, kv_dim));
+    let mut v_proj = Array3::<F>::zeros((batchsize, seq_len_k, kv_dim));
 
     // Perform projections batch by batch
-    for b in 0..batch_size {
+    for b in 0..batchsize {
         // Project query
         for i in 0..seq_len_q {
             for j in 0..d_model {
@@ -1576,7 +1613,7 @@ where
     }
 
     // Initialize output
-    let mut concat_output = Array3::<F>::zeros((batch_size, seq_len_q, d_model));
+    let mut concat_output = Array3::<F>::zeros((batchsize, seq_len_q, d_model));
 
     // Process each head
     for h in 0..num_heads {
@@ -1592,7 +1629,7 @@ where
         // Extract query head
         let q_head = q_proj.slice(ndarray::s![.., .., q_start..q_end]);
 
-        // Extract key and value heads (shared across multiple query heads)
+        // Extract key and value _heads (shared across multiple query heads)
         let k_head = k_proj.slice(ndarray::s![.., .., kv_start..kv_end]);
         let v_head = v_proj.slice(ndarray::s![.., .., kv_start..kv_end]);
 
@@ -1600,7 +1637,7 @@ where
         let head_output = attention(&q_head, &k_head, &v_head, mask, scale)?;
 
         // Add to concatenated output
-        for b in 0..batch_size {
+        for b in 0..batchsize {
             for i in 0..seq_len_q {
                 for j in 0..head_dim {
                     concat_output[[b, i, q_start + j]] = head_output[[b, i, j]];
@@ -1610,9 +1647,9 @@ where
     }
 
     // Apply output projection
-    let mut output = Array3::<F>::zeros((batch_size, seq_len_q, d_model));
+    let mut output = Array3::<F>::zeros((batchsize, seq_len_q, d_model));
 
-    for b in 0..batch_size {
+    for b in 0..batchsize {
         for i in 0..seq_len_q {
             for j in 0..d_model {
                 let mut sum = F::zero();
@@ -1634,16 +1671,17 @@ where
 ///
 /// # Arguments
 ///
-/// * `query` - Query tensor [batch_size, seq_len_q, d_model]
-/// * `key` - Key tensor [batch_size, seq_len_k, d_model]
-/// * `value` - Value tensor [batch_size, seq_len_k, d_model]
+/// * `query` - Query tensor [batchsize, seq_len_q, d_model]
+/// * `key` - Key tensor [batchsize, seq_len_k, d_model]
+/// * `value` - Value tensor [batchsize, seq_len_k, d_model]
 /// * `rel_emb` - Relative embeddings tensor
 /// * `scale` - Scaling factor for attention
 /// * `use_xpos` - Whether to use the xPos style of relative positioning
 ///
 /// # Returns
 ///
-/// * Output tensor of shape [batch_size, seq_len_q, d_model]
+/// * Output tensor of shape [batchsize, seq_len_q, d_model]
+#[allow(dead_code)]
 pub fn attention_with_rpe<F>(
     query: &ArrayView3<F>,
     key: &ArrayView3<F>,
@@ -1660,7 +1698,7 @@ where
         // This is a simplified implementation of xPos relative position encoding
         // In a full implementation, we would implement the complete xPos algorithm
 
-        let (batch_size, seq_len_q, d_model) =
+        let (batchsize, seq_len_q, d_model) =
             (query.shape()[0], query.shape()[1], query.shape()[2]);
         let (_, seq_len_k, _) = (key.shape()[0], key.shape()[1], key.shape()[2]);
         let (_, _, _d_model_v) = (value.shape()[0], value.shape()[1], value.shape()[2]); // For future use
@@ -1668,11 +1706,11 @@ where
         // Create scaled arrays for computation
 
         // Apply xPos scaling to query and key based on position
-        let mut q_scaled = Array3::<F>::zeros((batch_size, seq_len_q, d_model));
-        let mut k_scaled = Array3::<F>::zeros((batch_size, seq_len_k, d_model));
+        let mut q_scaled = Array3::<F>::zeros((batchsize, seq_len_q, d_model));
+        let mut k_scaled = Array3::<F>::zeros((batchsize, seq_len_k, d_model));
 
         // Apply rotary-style position encoding with xPos modifications
-        for b in 0..batch_size {
+        for b in 0..batchsize {
             for i in 0..seq_len_q {
                 let pos_i = F::from(i as f64 + 1.0).unwrap(); // 1-indexed position
                 for j in 0..d_model {

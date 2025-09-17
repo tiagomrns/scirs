@@ -8,6 +8,7 @@ use scirs2_vision::feature::{
 };
 use scirs2_vision::preprocessing::{fast_guided_filter, guided_filter, guided_filter_color};
 
+#[allow(dead_code)]
 fn main() -> Result<()> {
     // Load input image
     let img_path = "examples/input/input.jpg";
@@ -25,6 +26,7 @@ fn main() -> Result<()> {
     Ok(())
 }
 
+#[allow(dead_code)]
 fn demonstrate_guided_filter(img: &DynamicImage) -> Result<()> {
     println!("\n1. Guided Filter Examples:");
 
@@ -45,10 +47,7 @@ fn demonstrate_guided_filter(img: &DynamicImage) -> Result<()> {
     let epsilons = [0.01, 0.1, 0.5];
 
     for (&radius, &epsilon) in radii.iter().zip(epsilons.iter()) {
-        println!(
-            "  - Applying guided filter with radius={}, epsilon={}",
-            radius, epsilon
-        );
+        println!("  - Applying guided filter with radius={radius}, epsilon={epsilon}");
 
         let filtered = guided_filter(&array, &array, radius, epsilon)?;
 
@@ -61,9 +60,9 @@ fn demonstrate_guided_filter(img: &DynamicImage) -> Result<()> {
             }
         }
 
-        let output_path = format!("examples/output/guided_filter_r{}_e{}.png", radius, epsilon);
+        let output_path = format!("examples/output/guided_filter_r{radius}_e{epsilon}.png");
         output_img.save(&output_path).expect("Failed to save image");
-        println!("    Saved: {}", output_path);
+        println!("    Saved: {output_path}");
     }
 
     // Demonstrate fast guided filter
@@ -119,6 +118,7 @@ fn demonstrate_guided_filter(img: &DynamicImage) -> Result<()> {
     Ok(())
 }
 
+#[allow(dead_code)]
 fn demonstrate_oriented_gradients(img: &DynamicImage) -> Result<()> {
     println!("\n2. Oriented Gradient Examples:");
 
@@ -159,13 +159,10 @@ fn demonstrate_oriented_gradients(img: &DynamicImage) -> Result<()> {
     let thresholds = vec![0.02, 0.1, 0.2];
     for threshold in thresholds {
         let vis = visualize_gradient_orientation(&magnitude, &orientation, threshold)?;
-        let path = format!("examples/output/gradient_orientation_t{}.png", threshold);
+        let path = format!("examples/output/gradient_orientation_t{threshold}.png");
         vis.save(&path)
             .expect("Failed to save orientation visualization");
-        println!(
-            "    Saved orientation visualization with threshold={}: {}",
-            threshold, path
-        );
+        println!("    Saved orientation visualization with threshold={threshold}: {path}");
     }
 
     Ok(())

@@ -6,6 +6,7 @@ use scirs2_text::{
 };
 use std::collections::HashMap;
 
+#[allow(dead_code)]
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("Topic Coherence Evaluation Demo");
     println!("==============================\n");
@@ -66,7 +67,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("1. Training LDA Model");
     println!("--------------------");
 
-    let mut lda = LatentDirichletAllocation::with_n_topics(3);
+    let mut lda = LatentDirichletAllocation::with_ntopics(3);
     lda.fit(&doc_term_matrix)?;
 
     // Create reverse vocabulary mapping
@@ -82,7 +83,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     for (i, topic) in topics.iter().enumerate() {
         println!("\nTopic {}: ", i + 1);
         for (word, prob) in &topic.top_words {
-            println!("  {} ({:.4})", word, prob);
+            println!("  {word} ({prob:.4})");
         }
     }
 
@@ -94,22 +95,22 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // C_v coherence
     let cv_coherence = coherence_calc.cv_coherence(&topics, &tokenized_docs)?;
-    println!("C_v coherence: {:.4}", cv_coherence);
+    println!("C_v coherence: {cv_coherence:.4}");
 
     // UMass coherence
     let umass_coherence = coherence_calc.umass_coherence(&topics, &tokenized_docs)?;
-    println!("UMass coherence: {:.4}", umass_coherence);
+    println!("UMass coherence: {umass_coherence:.4}");
 
     // UCI coherence
     let uci_coherence = coherence_calc.uci_coherence(&topics, &tokenized_docs)?;
-    println!("UCI coherence: {:.4}", uci_coherence);
+    println!("UCI coherence: {uci_coherence:.4}");
 
     // Topic diversity
     println!("\n3. Topic Diversity");
     println!("-----------------");
 
     let diversity = TopicDiversity::calculate(&topics);
-    println!("Topic diversity: {:.4}", diversity);
+    println!("Topic diversity: {diversity:.4}");
 
     // Pairwise distances
     let distances = TopicDiversity::pairwise_distances(&topics);
@@ -129,7 +130,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let mut results = Vec::new();
 
     for n_topics in topic_counts {
-        let mut lda = LatentDirichletAllocation::with_n_topics(n_topics);
+        let mut lda = LatentDirichletAllocation::with_ntopics(n_topics);
         lda.fit(&doc_term_matrix)?;
 
         let topics = lda.get_topics(5, &id_to_word)?;
@@ -137,10 +138,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         let diversity = TopicDiversity::calculate(&topics);
 
         results.push((n_topics, coherence, diversity));
-        println!(
-            "{} topics: coherence={:.4}, diversity={:.4}",
-            n_topics, coherence, diversity
-        );
+        println!("{n_topics} topics: coherence={coherence:.4}, diversity={diversity:.4}");
     }
 
     // Find optimal number of topics
@@ -191,8 +189,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let manual_coherence = coherence_calc.cv_coherence(&manual_topics, &tokenized_docs)?;
     let manual_diversity = TopicDiversity::calculate(&manual_topics);
 
-    println!("Manual topics coherence: {:.4}", manual_coherence);
-    println!("Manual topics diversity: {:.4}", manual_diversity);
+    println!("Manual topics coherence: {manual_coherence:.4}");
+    println!("Manual topics diversity: {manual_diversity:.4}");
 
     Ok(())
 }

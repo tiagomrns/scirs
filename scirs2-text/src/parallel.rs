@@ -28,8 +28,8 @@ impl<T: Tokenizer + Send + Sync> ParallelTokenizer<T> {
     }
 
     /// Set the chunk size
-    pub fn with_chunk_size(mut self, chunk_size: usize) -> Self {
-        self.chunk_size = chunk_size;
+    pub fn with_chunk_size(mut self, chunksize: usize) -> Self {
+        self.chunk_size = chunksize;
         self
     }
 
@@ -94,8 +94,8 @@ impl<T: Vectorizer + Send + Sync> ParallelVectorizer<T> {
     }
 
     /// Set the chunk size
-    pub fn with_chunk_size(mut self, chunk_size: usize) -> Self {
-        self.chunk_size = chunk_size;
+    pub fn with_chunk_size(mut self, chunksize: usize) -> Self {
+        self.chunk_size = chunksize;
         self
     }
 
@@ -142,9 +142,13 @@ impl<T: Vectorizer + Send + Sync> ParallelVectorizer<T> {
         }
 
         let result = Arc::try_unwrap(result)
-            .unwrap_or_else(|_| panic!("Failed to unwrap result Arc"))
+            .map_err(|_| {
+                crate::error::TextError::RuntimeError("Failed to unwrap result Arc".to_string())
+            })?
             .into_inner()
-            .unwrap_or_else(|_| panic!("Failed to unwrap result Mutex"));
+            .map_err(|_| {
+                crate::error::TextError::RuntimeError("Failed to unwrap result Mutex".to_string())
+            })?;
 
         Ok(result)
     }
@@ -159,7 +163,7 @@ pub struct ParallelTextProcessor {
 impl Default for ParallelTextProcessor {
     fn default() -> Self {
         Self {
-            num_threads: num_threads(),
+            num_threads: num_cpus::get(),
         }
     }
 }
@@ -171,8 +175,8 @@ impl ParallelTextProcessor {
     }
 
     /// Set the number of threads
-    pub fn with_threads(mut self, num_threads: usize) -> Self {
-        self.num_threads = num_threads;
+    pub fn with_threads(mut self, numthreads: usize) -> Self {
+        self.num_threads = numthreads;
         self
     }
 
@@ -200,7 +204,7 @@ impl ParallelTextProcessor {
         texts: &[&str],
         f: F,
         update_interval: usize,
-    ) -> (Vec<R>, Vec<usize>)
+    ) -> Result<(Vec<R>, Vec<usize>)>
     where
         F: Fn(&str) -> R + Send + Sync,
         R: Send,
@@ -225,20 +229,24 @@ impl ParallelTextProcessor {
             .collect();
 
         let progress = Arc::try_unwrap(progress)
-            .unwrap_or_else(|_| panic!("Failed to unwrap progress Arc"))
+            .map_err(|_| {
+                crate::error::TextError::RuntimeError("Failed to unwrap progress Arc".to_string())
+            })?
             .into_inner()
-            .unwrap_or_else(|_| panic!("Failed to unwrap progress Mutex"));
+            .map_err(|_| {
+                crate::error::TextError::RuntimeError("Failed to unwrap progress Mutex".to_string())
+            })?;
 
-        (results, progress)
+        Ok((results, progress))
     }
 
     /// Batch process texts with custom chunking
-    pub fn batch_process<F, R>(&self, texts: &[&str], chunk_size: usize, f: F) -> Vec<Vec<R>>
+    pub fn batch_process<F, R>(&self, texts: &[&str], chunksize: usize, f: F) -> Vec<Vec<R>>
     where
         F: Fn(&[&str]) -> Vec<R> + Send + Sync,
         R: Send,
     {
-        texts.par_chunks(chunk_size).map(f).collect()
+        texts.par_chunks(chunksize).map(f).collect()
     }
 }
 
@@ -254,23 +262,23 @@ pub struct ParallelCorpusProcessor {
 
 impl ParallelCorpusProcessor {
     /// Create a new parallel corpus processor
-    pub fn new(batch_size: usize) -> Self {
+    pub fn new(_batchsize: usize) -> Self {
         Self {
-            batch_size,
+            batch_size: _batchsize,
             num_threads: None,
             max_memory: None,
         }
     }
 
     /// Set the number of threads
-    pub fn with_threads(mut self, num_threads: usize) -> Self {
-        self.num_threads = Some(num_threads);
+    pub fn with_threads(mut self, numthreads: usize) -> Self {
+        self.num_threads = Some(numthreads);
         self
     }
 
     /// Set the maximum memory usage
-    pub fn with_max_memory(mut self, max_memory: usize) -> Self {
-        self.max_memory = Some(max_memory);
+    pub fn with_max_memory(mut self, maxmemory: usize) -> Self {
+        self.max_memory = Some(maxmemory);
         self
     }
 
@@ -308,7 +316,7 @@ impl ParallelCorpusProcessor {
             // Sort by index and flatten results
             let mut sorted_results: Vec<_> =
                 indexed_results.into_iter().filter_map(|r| r.ok()).collect();
-            sorted_results.sort_by_key(|(idx, _)| *idx);
+            sorted_results.sort_by_key(|(idx_, _)| *idx_);
 
             let mut results_guard = results.lock().unwrap();
             for (_, batch_results) in sorted_results {
@@ -324,9 +332,13 @@ impl ParallelCorpusProcessor {
 
         // Return results
         let results = Arc::try_unwrap(results)
-            .unwrap_or_else(|_| panic!("Failed to unwrap results Arc"))
+            .map_err(|_| {
+                crate::error::TextError::RuntimeError("Failed to unwrap results Arc".to_string())
+            })?
             .into_inner()
-            .unwrap_or_else(|_| panic!("Failed to unwrap results Mutex"));
+            .map_err(|_| {
+                crate::error::TextError::RuntimeError("Failed to unwrap results Mutex".to_string())
+            })?;
 
         Ok(results)
     }
@@ -385,7 +397,7 @@ impl ParallelCorpusProcessor {
         // Sort by index and flatten results
         let mut sorted_results: Vec<_> =
             indexed_results.into_iter().filter_map(|r| r.ok()).collect();
-        sorted_results.sort_by_key(|(idx, _)| *idx);
+        sorted_results.sort_by_key(|(idx_, _)| *idx_);
 
         let mut final_results = Vec::new();
         for (_, batch_results) in sorted_results {
@@ -402,7 +414,7 @@ mod tests {
     use crate::tokenize::WhitespaceTokenizer;
     use crate::vectorize::TfidfVectorizer;
 
-    fn create_test_texts() -> Vec<&'static str> {
+    fn create_testtexts() -> Vec<&'static str> {
         vec![
             "This is a test document",
             "Another test document here",
@@ -415,7 +427,7 @@ mod tests {
     #[test]
     fn test_parallel_tokenizer() {
         let tokenizer = ParallelTokenizer::new(WhitespaceTokenizer::new());
-        let texts = create_test_texts();
+        let texts = create_testtexts();
 
         let tokens = tokenizer.tokenize(&texts);
 
@@ -427,7 +439,7 @@ mod tests {
     #[test]
     fn test_parallel_tokenizer_with_mapper() {
         let tokenizer = ParallelTokenizer::new(WhitespaceTokenizer::new());
-        let texts = create_test_texts();
+        let texts = create_testtexts();
 
         let token_counts = tokenizer.tokenize_and_map(&texts, |tokens| tokens.len());
 
@@ -438,7 +450,7 @@ mod tests {
     #[test]
     fn test_parallel_vectorizer() {
         let mut vectorizer = TfidfVectorizer::default();
-        let texts = create_test_texts();
+        let texts = create_testtexts();
 
         vectorizer.fit(&texts).unwrap();
         let parallel_vectorizer = ParallelVectorizer::new(vectorizer);
@@ -450,9 +462,9 @@ mod tests {
     }
 
     #[test]
-    fn test_parallel_text_processor() {
+    fn test_paralleltext_processor() {
         let processor = ParallelTextProcessor::new();
-        let texts = create_test_texts();
+        let texts = create_testtexts();
 
         let word_counts = processor.process(&texts, |text| text.split_whitespace().count());
 
@@ -460,12 +472,13 @@ mod tests {
     }
 
     #[test]
-    fn test_parallel_text_processor_with_progress() {
+    fn test_paralleltext_processor_with_progress() {
         let processor = ParallelTextProcessor::new();
-        let texts = create_test_texts();
+        let texts = create_testtexts();
 
-        let (word_counts, progress) =
-            processor.process_with_progress(&texts, |text| text.split_whitespace().count(), 2);
+        let (word_counts, progress) = processor
+            .process_with_progress(&texts, |text| text.split_whitespace().count(), 2)
+            .unwrap();
 
         assert_eq!(word_counts, vec![5, 4, 6, 2, 6]);
         assert!(!progress.is_empty());
@@ -474,7 +487,7 @@ mod tests {
     #[test]
     fn test_parallel_corpus_processor() {
         let processor = ParallelCorpusProcessor::new(2);
-        let texts = create_test_texts();
+        let texts = create_testtexts();
 
         let result = processor
             .process(&texts, |batch| {

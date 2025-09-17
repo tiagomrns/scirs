@@ -20,12 +20,14 @@ use std::path::Path;
 use tempfile::tempdir;
 
 #[cfg(not(feature = "memory_efficient"))]
+#[allow(dead_code)]
 fn main() {
     println!("This example requires the memory_efficient feature.");
     println!("Run with: cargo run --example memory_mapped_mutation --features memory_efficient");
 }
 
 #[cfg(feature = "memory_efficient")]
+#[allow(dead_code)]
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("Memory-Mapped Array Mutation Example");
     println!("====================================\n");
@@ -46,7 +48,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
 /// Basic example of mutating a memory-mapped array
 #[cfg(feature = "memory_efficient")]
-fn basic_mutation_example(temp_dir: &Path) -> Result<(), Box<dyn std::error::Error>> {
+#[allow(dead_code)]
+fn basic_mutation_example(tempdir: &Path) -> Result<(), Box<dyn std::error::Error>> {
     println!("\n1. Basic Mutation Example");
     println!("-------------------------");
 
@@ -56,7 +59,7 @@ fn basic_mutation_example(temp_dir: &Path) -> Result<(), Box<dyn std::error::Err
     let data = Array1::<i32>::zeros(size);
 
     // Create a memory-mapped file
-    let file_path = temp_dir.join("basic_mutation.bin");
+    let file_path = tempdir.join("basic_mutation.bin");
     let mut mmap = create_mmap(&data, &file_path, AccessMode::Write, 0)?;
     println!("Created memory-mapped array at: {:?}", file_path);
 
@@ -72,7 +75,7 @@ fn basic_mutation_example(temp_dir: &Path) -> Result<(), Box<dyn std::error::Err
     // Modify the array using process_chunks_mut (more reliable)
     mmap.process_chunks_mut(
         ChunkingStrategy::Fixed(100), // Process the entire array in one chunk since it's small
-        |chunk_data, _| {
+        |chunk_data, _chunk_idx| {
             // Set every 10th element to its index * 100
             for i in 0..10 {
                 if i * 10 < chunk_data.len() {
@@ -94,7 +97,7 @@ fn basic_mutation_example(temp_dir: &Path) -> Result<(), Box<dyn std::error::Err
     println!("Changes flushed to disk");
 
     // Reopen the file to verify changes were saved
-    let mmap_reopened = create_mmap::<i32, _, _>(&data, &file_path, AccessMode::ReadOnly, 0)?;
+    let mmap_reopened = create_mmap(&data, &file_path, AccessMode::ReadOnly, 0)?;
     let array_reopened = mmap_reopened.as_array::<ndarray::Ix1>()?;
 
     println!(
@@ -120,7 +123,8 @@ fn basic_mutation_example(temp_dir: &Path) -> Result<(), Box<dyn std::error::Err
 
 /// Example of mutating a memory-mapped array using chunk-wise processing
 #[cfg(feature = "memory_efficient")]
-fn chunked_mutation_example(temp_dir: &Path) -> Result<(), Box<dyn std::error::Error>> {
+#[allow(dead_code)]
+fn chunked_mutation_example(tempdir: &Path) -> Result<(), Box<dyn std::error::Error>> {
     println!("\n2. Chunked Mutation Example");
     println!("---------------------------");
 
@@ -130,7 +134,7 @@ fn chunked_mutation_example(temp_dir: &Path) -> Result<(), Box<dyn std::error::E
     let data = Array1::<i32>::zeros(size);
 
     // Create a memory-mapped file
-    let file_path = temp_dir.join("chunked_mutation.bin");
+    let file_path = tempdir.join("chunked_mutation.bin");
     let mut mmap = create_mmap(&data, &file_path, AccessMode::Write, 0)?;
     println!("Created memory-mapped array at: {:?}", file_path);
 
@@ -167,7 +171,7 @@ fn chunked_mutation_example(temp_dir: &Path) -> Result<(), Box<dyn std::error::E
     println!("All chunks processed");
 
     // Reopen the file to verify changes were saved
-    let mmap_reopened = create_mmap::<i32, _, _>(&data, &file_path, AccessMode::ReadOnly, 0)?;
+    let mmap_reopened = create_mmap(&data, &file_path, AccessMode::ReadOnly, 0)?;
 
     // Verify some key points in the array
     println!("Verifying modifications at key points:");

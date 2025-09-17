@@ -9,13 +9,14 @@ use std::error::Error;
 #[cfg(feature = "gpu")]
 use scirs2_core::gpu::{GpuBackend, GpuContext};
 
+#[allow(dead_code)]
 fn main() -> Result<(), Box<dyn Error>> {
     println!("=== SciRS2 GPU Stress Test Example ===");
 
     #[cfg(not(feature = "gpu"))]
     {
         println!("GPU feature not enabled. Run with --features=gpu");
-        return Ok(());
+        Ok(())
     }
 
     #[cfg(feature = "gpu")]
@@ -26,6 +27,7 @@ fn main() -> Result<(), Box<dyn Error>> {
 }
 
 #[cfg(feature = "gpu")]
+#[allow(dead_code)]
 fn run_stress_test() -> Result<(), Box<dyn Error>> {
     // Try to create GPU context, fallback to CPU if needed
     let ctx = match GpuContext::new(GpuBackend::Cuda) {
@@ -69,7 +71,7 @@ fn run_stress_test() -> Result<(), Box<dyn Error>> {
 
     // Copy back results
     let mut results = vec![0.0f32; 5];
-    gpu_buffer.copy_to_host(&mut results[0..5]);
+    let _ = gpu_buffer.copy_to_host(&mut results[0..5]);
     println!("Sample result: {:?}", &results);
 
     println!("\nStress test completed!");

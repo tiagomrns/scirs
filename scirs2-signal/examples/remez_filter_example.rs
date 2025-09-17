@@ -1,9 +1,10 @@
-//! Example of Parks-McClellan optimal FIR filter design using the Remez exchange algorithm
+// Example of Parks-McClellan optimal FIR filter design using the Remez exchange algorithm
 
 use scirs2_fft::fft;
 use scirs2_signal::filter::remez;
 use std::f64::consts::PI;
 
+#[allow(dead_code)]
 fn main() {
     println!("Parks-McClellan Optimal FIR Filter Design Example");
     println!("=================================================\n");

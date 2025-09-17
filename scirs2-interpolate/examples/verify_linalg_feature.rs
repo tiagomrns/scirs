@@ -1,5 +1,6 @@
 use ndarray::{Array1, Array2};
 
+#[allow(dead_code)]
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("Testing scirs2-interpolate linalg feature configuration");
 

@@ -1,6 +1,7 @@
 use ndarray::{array, Array2};
 use scirs2_interpolate::{BivariateInterpolator, RectBivariateSpline};
 
+#[allow(dead_code)]
 fn main() {
     println!("Bivariate Spline Interpolation Example");
     println!("=====================================\n");

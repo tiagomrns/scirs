@@ -9,6 +9,7 @@ use scirs2_linalg::quantization::{
     quantized_dot, quantized_matmul, quantized_matvec, QuantizationMethod, QuantizedData2D,
 };
 
+#[allow(dead_code)]
 fn main() {
     println!("Quantization-aware Linear Algebra Example");
     println!("=======================================\n");
@@ -477,46 +478,46 @@ fn main() {
     println!("Float16 matmul relative error: {:.6e}\n", rel_error_f16);
 
     // Demonstrate storage efficiency
-    let matrix_size = 100;
-    let large_matrix = Array2::from_elem((matrix_size, matrix_size), 1.0f32);
+    let matrixsize = 100;
+    let largematrix = Array2::from_elem((matrixsize, matrixsize), 1.0f32);
 
-    let original_size = matrix_size * matrix_size * std::mem::size_of::<f32>();
+    let originalsize = matrixsize * matrixsize * std::mem::size_of::<f32>();
 
     // Quantize with different methods
-    let (int8_large, _) = quantize_matrix(&large_matrix.view(), 8, QuantizationMethod::Symmetric);
-    let (int4_large, _) = quantize_matrix(&large_matrix.view(), 4, QuantizationMethod::Int4);
-    let (f16_large, _) = quantize_matrix(&large_matrix.view(), 16, QuantizationMethod::Float16);
-    let (bf16_large, _) = quantize_matrix(&large_matrix.view(), 16, QuantizationMethod::BFloat16);
+    let (int8_large, _) = quantize_matrix(&largematrix.view(), 8, QuantizationMethod::Symmetric);
+    let (int4_large, _) = quantize_matrix(&largematrix.view(), 4, QuantizationMethod::Int4);
+    let (f16_large, _) = quantize_matrix(&largematrix.view(), 16, QuantizationMethod::Float16);
+    let (bf16_large, _) = quantize_matrix(&largematrix.view(), 16, QuantizationMethod::BFloat16);
 
     // Sizes in bytes
-    let int8_size = int8_large.data.len() * std::mem::size_of::<i8>();
-    let int4_size = int4_large.data.len() * std::mem::size_of::<i8>(); // Packed, 2 values per byte
-    let f16_size = f16_large.data.len() * 2; // 2 bytes per f16 value
-    let bf16_size = bf16_large.data.len() * 2; // 2 bytes per bf16 value
+    let int8size = int8_large.data.len() * std::mem::size_of::<i8>();
+    let int4size = int4_large.data.len() * std::mem::size_of::<i8>(); // Packed, 2 values per byte
+    let f16size = f16_large.data.len() * 2; // 2 bytes per f16 value
+    let bf16size = bf16_large.data.len() * 2; // 2 bytes per bf16 value
 
     println!(
         "Storage Efficiency Comparison ({}x{} matrix):",
-        matrix_size, matrix_size
+        matrixsize, matrixsize
     );
-    println!("  Original f32: {} bytes (100.0%)", original_size);
+    println!("  Original f32: {} bytes (100.0%)", originalsize);
     println!(
         "  Int8:         {} bytes ({:.1}%)",
-        int8_size,
-        100.0 * int8_size as f32 / original_size as f32
+        int8size,
+        100.0 * int8size as f32 / originalsize as f32
     );
     println!(
         "  Int4:         {} bytes ({:.1}%)",
-        int4_size,
-        100.0 * int4_size as f32 / original_size as f32
+        int4size,
+        100.0 * int4size as f32 / originalsize as f32
     );
     println!(
         "  Float16:      {} bytes ({:.1}%)",
-        f16_size,
-        100.0 * f16_size as f32 / original_size as f32
+        f16size,
+        100.0 * f16size as f32 / originalsize as f32
     );
     println!(
         "  BFloat16:     {} bytes ({:.1}%)",
-        bf16_size,
-        100.0 * bf16_size as f32 / original_size as f32
+        bf16size,
+        100.0 * bf16size as f32 / originalsize as f32
     );
 }

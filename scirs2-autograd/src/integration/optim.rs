@@ -180,13 +180,13 @@ pub struct ParameterGroup<F: Float> {
 
 impl<F: Float> ParameterGroup<F> {
     /// Create new parameter group
-    pub fn new(name: String, learning_rate: f64) -> Self {
+    pub fn new(_name: String, learning_rate: f64) -> Self {
         Self {
             parameters: Vec::new(),
             learning_rate,
             weight_decay: 0.0,
             config: HashMap::new(),
-            name,
+            name: _name,
             _phantom: std::marker::PhantomData,
         }
     }
@@ -249,7 +249,7 @@ impl Default for OptimizerConfig {
 /// SGD optimizer implementation
 pub struct SGDOptimizer<'a, F: Float> {
     /// Optimizer configuration
-    config: OptimizerConfig,
+    _config: OptimizerConfig,
     /// Optimizer state
     state: OptimizerState<'a, F>,
     /// Parameter groups
@@ -266,7 +266,7 @@ impl<F: Float> SGDOptimizer<'_, F> {
         };
 
         Self {
-            config,
+            _config: config,
             state: OptimizerState::new(),
             parameter_groups: Vec::new(),
         }
@@ -274,7 +274,7 @@ impl<F: Float> SGDOptimizer<'_, F> {
 
     /// Create with weight decay
     pub fn with_weight_decay(mut self, weight_decay: f64) -> Self {
-        self.config.weight_decay = weight_decay;
+        self._config.weight_decay = weight_decay;
         self
     }
 }
@@ -285,8 +285,8 @@ impl<F: Float> AutogradOptimizer<F> for SGDOptimizer<'_, F> {
     }
 
     fn initialize(&mut self, parameters: &[&Tensor<F>]) -> Result<(), IntegrationError> {
-        for (i, _param) in parameters.iter().enumerate() {
-            let param_id = format!("param_{}", i);
+        for (i, param) in parameters.iter().enumerate() {
+            let param_id = format!("param_{i}");
             let param_state = ParameterState::new();
             // Skip shape-based initialization to avoid lazy evaluation issues
             self.state.set_param_state(param_id, param_state);
@@ -308,14 +308,14 @@ impl<F: Float> AutogradOptimizer<F> for SGDOptimizer<'_, F> {
         // Collect parameter states first to avoid borrowing conflicts
         let mut param_updates = Vec::new();
         for (i, (param, grad)) in parameters.iter_mut().zip(gradients.iter()).enumerate() {
-            let param_id = format!("param_{}", i);
+            let param_id = format!("param_{i}");
             param_updates.push((param, grad, param_id));
         }
 
         // Now update parameters
         for (param, grad, param_id) in param_updates {
             if let Some(param_state) = self.state.param_state.get_mut(&param_id) {
-                Self::update_parameter(&self.config, param, grad, param_state)?;
+                Self::update_parameter(&self._config, param, grad, param_state)?;
             }
         }
 
@@ -328,11 +328,11 @@ impl<F: Float> AutogradOptimizer<F> for SGDOptimizer<'_, F> {
     }
 
     fn learning_rate(&self) -> f64 {
-        self.config.learning_rate
+        self._config.learning_rate
     }
 
     fn set_learning_rate(&mut self, lr: f64) {
-        self.config.learning_rate = lr;
+        self._config.learning_rate = lr;
     }
 
     fn state(&self) -> OptimizerState<'_, F> {
@@ -362,11 +362,11 @@ impl<F: Float> AutogradOptimizer<F> for SGDOptimizer<'_, F> {
 impl<'a, F: Float> SGDOptimizer<'a, F> {
     fn update_parameter(
         config: &OptimizerConfig,
-        _param: &mut &mut Tensor<F>,
+        _param: &mut Tensor<F>,
         _grad: &Tensor<F>,
-        _param_state: &mut ParameterState<'a, F>,
+        param_state: &mut ParameterState<'a, F>,
     ) -> Result<(), IntegrationError> {
-        // Simplified SGD update: param = param - lr * grad
+        // Simplified SGD update: _param = _param - lr * _grad
         // In practice, would implement proper momentum and weight decay
 
         let _lr = F::from(config.learning_rate).unwrap();
@@ -379,14 +379,14 @@ impl<'a, F: Float> SGDOptimizer<'a, F> {
 
         // Update with momentum if configured
         if config.momentum > 0.0 {
-            if let Some(ref mut _momentum_buffer) = _param_state.momentum {
+            if let Some(ref mut momentum_buffer) = param_state.momentum {
                 let _momentum = F::from(config.momentum).unwrap();
-                // momentum_buffer = momentum * momentum_buffer + lr * grad
+                // momentum_buffer = momentum * momentum_buffer + lr * _grad
                 // param_data = param_data - momentum_buffer
             }
         } else {
-            // Simple update: param = param - lr * grad
-            // This is a placeholder - actual implementation would modify param data
+            // Simple update: _param = _param - lr * _grad
+            // This is a placeholder - actual implementation would modify _param data
         }
 
         Ok(())
@@ -433,8 +433,8 @@ impl<F: Float> AutogradOptimizer<F> for AdamOptimizer<'_, F> {
     }
 
     fn initialize(&mut self, parameters: &[&Tensor<F>]) -> Result<(), IntegrationError> {
-        for (i, _param) in parameters.iter().enumerate() {
-            let param_id = format!("param_{}", i);
+        for (i, param) in parameters.iter().enumerate() {
+            let param_id = format!("param_{i}");
             let param_state = ParameterState::new();
             // Skip shape-based initialization to avoid lazy evaluation issues
             self.state.set_param_state(param_id, param_state);
@@ -454,7 +454,7 @@ impl<F: Float> AutogradOptimizer<F> for AdamOptimizer<'_, F> {
         }
 
         for (i, (param, grad)) in parameters.iter_mut().zip(gradients.iter()).enumerate() {
-            let param_id = format!("param_{}", i);
+            let param_id = format!("param_{i}");
 
             if let Some(param_state) = self.state.param_state.get_mut(&param_id) {
                 Self::update_parameter_adam(&self.config, param, grad, param_state)?;
@@ -504,7 +504,7 @@ impl<F: Float> AutogradOptimizer<F> for AdamOptimizer<'_, F> {
 impl<'a, F: Float> AdamOptimizer<'a, F> {
     fn update_parameter_adam(
         _config: &OptimizerConfig,
-        _param: &mut &mut Tensor<F>,
+        _param: &mut Tensor<F>,
         _grad: &Tensor<F>,
         param_state: &mut ParameterState<'a, F>,
     ) -> Result<(), IntegrationError> {
@@ -567,7 +567,7 @@ impl<F: Float> LearningRateScheduler<F> for StepLRScheduler {
         optimizer.set_learning_rate(new_lr);
     }
 
-    fn step_with_metric(&mut self, optimizer: &mut dyn AutogradOptimizer<F>, _metric: f64) {
+    fn step_with_metric(&mut self, optimizer: &mut dyn AutogradOptimizer<F>, metric: f64) {
         self.step(optimizer);
     }
 }
@@ -605,7 +605,7 @@ impl<F: Float> LearningRateScheduler<F> for CosineAnnealingLRScheduler {
         optimizer.set_learning_rate(new_lr);
     }
 
-    fn step_with_metric(&mut self, optimizer: &mut dyn AutogradOptimizer<F>, _metric: f64) {
+    fn step_with_metric(&mut self, optimizer: &mut dyn AutogradOptimizer<F>, metric: f64) {
         self.step(optimizer);
     }
 }
@@ -623,8 +623,8 @@ impl OptimizerFactory {
     }
 
     /// Create Adam optimizer
-    pub fn adam<'a, F: Float>(learning_rate: f64) -> Box<dyn AutogradOptimizer<F> + 'a> {
-        Box::new(AdamOptimizer::default_adam(learning_rate))
+    pub fn adam<'a, F: Float>(learningrate: f64) -> Box<dyn AutogradOptimizer<F> + 'a> {
+        Box::new(AdamOptimizer::default_adam(learningrate))
     }
 
     /// Create custom Adam optimizer
@@ -645,7 +645,7 @@ impl<F: Float> SciRS2Integration for OptimizerState<'_, F> {
     }
 
     fn module_version() -> &'static str {
-        "0.1.0-alpha.6"
+        "0.1.0-beta.1"
     }
 
     fn check_compatibility() -> Result<(), IntegrationError> {
@@ -659,6 +659,7 @@ impl<F: Float> SciRS2Integration for OptimizerState<'_, F> {
 }
 
 /// Convert optimizer state to SciRS2Data
+#[allow(dead_code)]
 pub fn optimizer_to_scirs2_data<'a, F: Float>(
     optimizer: &dyn AutogradOptimizer<F>,
 ) -> SciRS2Data<'a, F> {

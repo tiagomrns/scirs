@@ -5,12 +5,10 @@
 
 use std::time::Duration;
 
-#[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
 
 /// Validation constraints for data fields
-#[derive(Debug, Clone, PartialEq)]
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub enum Constraint {
     /// Value must be within range (inclusive)
     Range { min: f64, max: f64 },
@@ -53,8 +51,7 @@ pub enum Constraint {
 }
 
 /// Statistical constraints for numeric data
-#[derive(Debug, Clone, PartialEq)]
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct StatisticalConstraints {
     /// Minimum allowed mean value
     pub min_mean: Option<f64>,
@@ -69,8 +66,7 @@ pub struct StatisticalConstraints {
 }
 
 /// Shape constraints for arrays and matrices
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub struct ShapeConstraints {
     /// Exact dimensions required (None = any size for that dimension)
     pub dimensions: Vec<Option<usize>>,
@@ -85,8 +81,7 @@ pub struct ShapeConstraints {
 }
 
 /// Time series constraints
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub struct TimeConstraints {
     /// Minimum time interval between samples
     pub min_interval: Option<Duration>,
@@ -99,8 +94,7 @@ pub struct TimeConstraints {
 }
 
 /// Sparse matrix formats
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub enum SparseFormat {
     /// Compressed Sparse Row
     CSR,
@@ -118,9 +112,9 @@ pub type ElementValidatorFn<T> = Box<dyn Fn(&T) -> bool + Send + Sync>;
 /// Array validation constraints
 pub struct ArrayValidationConstraints {
     /// Expected array shape
-    pub expected_shape: Option<Vec<usize>>,
+    pub expectedshape: Option<Vec<usize>>,
     /// Field name for error reporting
-    pub field_name: Option<String>,
+    pub fieldname: Option<String>,
     /// Check for NaN and infinity values
     pub check_numeric_quality: bool,
     /// Statistical constraints
@@ -135,8 +129,8 @@ impl ArrayValidationConstraints {
     /// Create new array validation constraints
     pub fn new() -> Self {
         Self {
-            expected_shape: None,
-            field_name: None,
+            expectedshape: None,
+            fieldname: None,
             check_numeric_quality: false,
             statistical_constraints: None,
             check_performance: false,
@@ -145,14 +139,14 @@ impl ArrayValidationConstraints {
     }
 
     /// Set expected shape
-    pub fn with_shape(mut self, shape: Vec<usize>) -> Self {
-        self.expected_shape = Some(shape);
+    pub fn withshape(mut self, shape: Vec<usize>) -> Self {
+        self.expectedshape = Some(shape);
         self
     }
 
     /// Set field name
-    pub fn with_field_name(mut self, name: &str) -> Self {
-        self.field_name = Some(name.to_string());
+    pub fn with_fieldname(mut self, name: &str) -> Self {
+        self.fieldname = Some(name.to_string());
         self
     }
 
@@ -468,7 +462,7 @@ mod tests {
     }
 
     #[test]
-    fn test_shape_constraints() {
+    fn testshape_constraints() {
         let constraints = ShapeConstraints::new()
             .with_dimensions(vec![Some(10), Some(20)])
             .with_element_range(100, 500)
@@ -647,7 +641,7 @@ mod tests {
             max: 50.0,
         };
         let middle = Constraint::And(vec![inner, Constraint::NotNull]);
-        let outer = Constraint::Or(vec![middle, Constraint::Pattern("special".to_string())]);
+        let outer = Constraint::Or(vec![middle, Constraint::Pattern(special.to_string())]);
         let complex = Constraint::Not(Box::new(outer));
 
         match complex {
@@ -687,13 +681,13 @@ mod tests {
     #[test]
     fn test_array_validation_constraints() {
         let constraints = ArrayValidationConstraints::new()
-            .with_shape(vec![10, 20])
-            .with_field_name("test_array")
+            .withshape(vec![10, 20])
+            .with_fieldname(test_array)
             .check_numeric_quality()
             .check_performance();
 
-        assert_eq!(constraints.expected_shape, Some(vec![10, 20]));
-        assert_eq!(constraints.field_name, Some("test_array".to_string()));
+        assert_eq!(constraints.expectedshape, Some(vec![10, 20]));
+        assert_eq!(constraints.fieldname, Some(test_array.to_string()));
         assert!(constraints.check_numeric_quality);
         assert!(constraints.check_performance);
     }

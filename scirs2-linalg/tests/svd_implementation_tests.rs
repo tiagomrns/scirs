@@ -3,7 +3,8 @@ use ndarray::{array, Array2};
 use scirs2_linalg::svd;
 
 #[test]
-fn test_svd_identity_matrix() {
+#[allow(dead_code)]
+fn test_svd_identitymatrix() {
     let a: Array2<f64> = Array2::eye(3);
     let (u, s, vt) = svd(&a.view(), false, None).unwrap();
 
@@ -33,7 +34,8 @@ fn test_svd_identity_matrix() {
 }
 
 #[test]
-fn test_svd_diagonal_matrix() {
+#[allow(dead_code)]
+fn test_svd_diagonalmatrix() {
     let a = array![[3.0, 0.0], [0.0, 2.0]];
     let (u, s, vt) = svd(&a.view(), false, None).unwrap();
 
@@ -57,7 +59,8 @@ fn test_svd_diagonal_matrix() {
 }
 
 #[test]
-fn test_svd_rectangular_matrix() {
+#[allow(dead_code)]
+fn test_svd_rectangularmatrix() {
     let a = array![[1.0, 2.0], [3.0, 4.0], [5.0, 6.0]];
     let (u, s, vt) = svd(&a.view(), false, None).unwrap();
 
@@ -93,6 +96,7 @@ fn test_svd_rectangular_matrix() {
 }
 
 #[test]
+#[allow(dead_code)]
 fn test_svd_full_matrices() {
     let a = array![[1.0, 2.0], [3.0, 4.0], [5.0, 6.0]];
     let (u, s, vt) = svd(&a.view(), true, None).unwrap();
@@ -123,7 +127,8 @@ fn test_svd_full_matrices() {
 }
 
 #[test]
-fn test_svd_1x1_matrix() {
+#[allow(dead_code)]
+fn test_svd_1x1matrix() {
     let a = array![[-5.0]];
     let a_view = a.view();
     let a_1x1 = a_view.view().into_shape_with_order((1, 1)).unwrap();
@@ -142,7 +147,8 @@ fn test_svd_1x1_matrix() {
 }
 
 #[test]
-fn test_svd_rank_deficient_matrix() {
+#[allow(dead_code)]
+fn test_svd_rank_deficientmatrix() {
     // Create a rank-1 matrix
     let a = array![[1.0, 2.0], [2.0, 4.0]];
     let (u, s, vt) = svd(&a.view(), false, None).unwrap();

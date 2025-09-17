@@ -166,6 +166,7 @@ impl<'graph, F: Float> Tensor<'graph, F> {
 ///     assert_eq!(8., gx_result[0].as_ref().unwrap()[ndarray::IxDyn(&[])]);
 /// });
 ///    ```
+#[allow(dead_code)]
 pub fn grad<'graph, F: Float, A, B>(ys: &[A], xs: &[B]) -> Vec<Tensor<'graph, F>>
 where
     A: AsRef<Tensor<'graph, F>>,
@@ -174,8 +175,8 @@ where
     use crate::gradient::compute_gradients;
 
     let g = ys[0].as_ref().graph();
-    let ys: Vec<_> = ys.iter().map(|y| sum_all(y)).collect();
-    let mut grads = compute_gradients(ys.as_slice(), xs, None, g);
+    let _ys: Vec<_> = ys.iter().map(|y| sum_all(y)).collect();
+    let mut grads = compute_gradients(_ys.as_slice(), xs, None, g);
     let mut ret = Vec::with_capacity(xs.len());
     for x in xs {
         if let Some(gx) = grads.extract_grad(x) {
@@ -204,6 +205,7 @@ where
 ///
 /// # Returns
 /// Gradient tensors of `xs` in the same order as `xs`'graph.
+#[allow(dead_code)]
 pub fn grad_with_default<'graph, F: Float, A, B>(
     ys: &[A],
     xs: &[B],
@@ -244,7 +246,7 @@ where
 /// Note: the current implementation works correctly but is unoptimized for serious use.
 ///
 ///    ```ignore
-/// // FIXME: Gradient computation returns scalars instead of proper gradients for matrix operations
+/// # Gradient computation returns scalars instead of proper gradients for matrix operations
 /// use scirs2_autograd as ag;
 /// use ag::prelude::*;
 /// use ag::tensor_ops::*;
@@ -265,6 +267,7 @@ where
 ///    assert_eq!(j[1].eval(g).unwrap().shape(), &[4*3, 2*3]);
 /// });
 ///    ```
+#[allow(dead_code)]
 pub fn jacobians<'graph, A, B, F: Float>(
     y_: A,
     xs_: &[B],
@@ -280,10 +283,10 @@ where
         vec_vec.push(grad(&[y.access_elem(i)], xs_));
     }
 
-    let len = xs_.len();
-    let mut ret = Vec::with_capacity(len);
+    let _len = xs_.len();
+    let mut ret = Vec::with_capacity(_len);
     // post process gradients
-    for i in 0..len {
+    for i in 0.._len {
         // jac is matrix
         let mut jac = Vec::with_capacity(objective_len);
         for vec in &vec_vec {
@@ -296,6 +299,7 @@ where
 }
 
 /// (Experimental) Computes hessian vector product
+#[allow(dead_code)]
 pub fn _hessian_vector_product<'graph, A, B, C, F: Float>(
     ys: &[A],
     xs: &[B],
@@ -319,6 +323,7 @@ where
 ///
 /// Guarantees that the gradient is not propagated to the tensors behind this
 /// during gradient computation.
+#[allow(dead_code)]
 pub fn stop_gradient<'graph, A, F: Float>(x: A) -> Tensor<'graph, F>
 where
     A: AsRef<Tensor<'graph, F>> + Copy,
@@ -343,6 +348,7 @@ where
 ///    assert_eq!(&[2., 3.], s.eval(c).unwrap().as_slice().unwrap());
 /// });
 ///    ```
+#[allow(dead_code)]
 pub fn shape<'graph, A, F: Float>(x: A) -> Tensor<'graph, F>
 where
     A: AsRef<Tensor<'graph, F>> + Copy,
@@ -372,6 +378,7 @@ where
 ///    assert_eq!(12., b.eval(c).unwrap()[ndarray::IxDyn(&[])]);
 /// });
 ///    ```
+#[allow(dead_code)]
 pub fn size<'graph, A, F: Float>(x: A) -> Tensor<'graph, F>
 where
     A: AsRef<Tensor<'graph, F>> + Copy,
@@ -397,6 +404,7 @@ where
 ///    assert_eq!(3., r.eval(c).unwrap()[ndarray::IxDyn(&[])]);
 /// });
 ///    ```
+#[allow(dead_code)]
 pub fn rank<'graph, A, F: Float>(x: A) -> Tensor<'graph, F>
 where
     A: AsRef<Tensor<'graph, F>> + Copy,
@@ -414,6 +422,7 @@ where
 ///
 /// `x` must be a result of a multi-outputs op;
 /// otherwise index-out-of-bounds error may happen.
+#[allow(dead_code)]
 pub fn nth_tensor<'graph, A, F: Float>(x: A, n: usize) -> Tensor<'graph, F>
 where
     A: AsRef<Tensor<'graph, F>> + Copy,
@@ -426,6 +435,7 @@ where
 }
 
 /// Identity function without copy.
+#[allow(dead_code)]
 pub fn identity<'graph, A, F: Float>(x: A) -> Tensor<'graph, F>
 where
     A: AsRef<Tensor<'graph, F>> + Copy,
@@ -434,7 +444,7 @@ where
     let g = x.graph();
     Tensor::builder(g)
         .append_input(x.as_ref(), false)
-        .set_shape(&shape(x))
+        .setshape(&shape(x))
         .build(activation_ops::Identity)
 }
 
@@ -458,6 +468,7 @@ where
 /// });
 ///    ```
 ///
+#[allow(dead_code)]
 pub fn setdiff1d<'graph, A, B, F: Float>(a: A, b: B) -> Tensor<'graph, F>
 where
     A: AsRef<Tensor<'graph, F>> + Copy,
@@ -503,13 +514,17 @@ where
 ///    assert_eq!(b.eval(g).unwrap().shape(), &[3, 2]);
 /// });
 ///    ```
-pub fn slice<'graph, A, F: Float>(x: A, starts: &[isize], ends: &[isize]) -> Tensor<'graph, F>
+#[allow(dead_code)]
+pub fn slice<'graph, A, S, E, F: Float>(x: A, starts: S, ends: E) -> Tensor<'graph, F>
 where
     A: AsRef<Tensor<'graph, F>> + Copy,
+    S: AsRef<[isize]>,
+    E: AsRef<[isize]>,
 {
     let x = x.as_ref();
     let g = x.graph();
-    // TODO: Make starts and ends ArrayLike
+    let starts = starts.as_ref();
+    let ends = ends.as_ref();
     assert_eq!(starts.len(), ends.len());
     let starts_ends = starts.iter().zip(ends.iter());
 
@@ -553,20 +568,21 @@ where
 ///    assert_eq!(y.eval(g).unwrap().shape(), &[5, 4, 2, 3, 2])
 /// });
 ///    ```
+#[allow(dead_code)]
 pub fn gather_common<'graph, A, B, F: Float>(param: A, indices: B, axis: isize) -> Tensor<'graph, F>
 where
     A: AsRef<Tensor<'graph, F>> + Copy,
     B: AsRef<Tensor<'graph, F>> + Copy,
 {
-    let param = param.as_ref();
-    let g = param.graph();
+    let _param = param.as_ref();
+    let g = _param.graph();
     let op = array_ops::Gather {
         axis,
         should_normalize_negative_indices: true,
     };
     Tensor::builder(g)
         .append_input(indices.as_ref(), false)
-        .append_input(param.as_ref(), false)
+        .append_input(_param.as_ref(), false)
         .build(op)
 }
 
@@ -591,20 +607,21 @@ where
 ///    assert_eq!(y.eval(g).unwrap().shape(), &[5, 4, 2, 3, 2])
 /// });
 ///    ```
+#[allow(dead_code)]
 pub fn gather<'graph, A, B, F: Float>(param: A, indices: B, axis: isize) -> Tensor<'graph, F>
 where
     A: AsRef<Tensor<'graph, F>> + Copy,
     B: AsRef<Tensor<'graph, F>> + Copy,
 {
-    let param = param.as_ref();
-    let g = param.graph();
+    let _param = param.as_ref();
+    let g = _param.graph();
     let op = array_ops::Gather {
         axis,
         should_normalize_negative_indices: false,
     };
     Tensor::builder(g)
         .append_input(indices.as_ref(), false)
-        .append_input(param, false)
+        .append_input(_param, false)
         .build(op)
 }
 
@@ -620,6 +637,7 @@ where
 ///    assert_eq!(b.eval(g).unwrap().shape(), &[2, 6]);
 /// });
 ///    ```
+#[allow(dead_code)]
 pub fn reshape<'graph, A, AT, F: Float>(x: A, shape: &AT) -> Tensor<'graph, F>
 where
     A: AsRef<Tensor<'graph, F>> + Copy,
@@ -631,7 +649,7 @@ where
     Tensor::builder(g)
         .append_input(x.as_ref(), false)
         .append_input(t, false)
-        .set_shape(&t)
+        .setshape(&t)
         .build(array_ops::Reshape)
 }
 
@@ -647,6 +665,7 @@ where
 ///    assert_eq!(b.eval(g).unwrap().shape(), &[12]);
 /// });
 ///    ```
+#[allow(dead_code)]
 pub fn flatten<'graph, A, F: Float>(x: A) -> Tensor<'graph, F>
 where
     A: AsRef<Tensor<'graph, F>> + Copy,
@@ -671,6 +690,7 @@ where
 ///    assert_eq!(b.eval(g).unwrap().shape(), &[3, 1]);
 /// });
 ///    ```
+#[allow(dead_code)]
 pub fn expand_dims<'graph, A, AT, F: Float>(x: A, axes: &AT) -> Tensor<'graph, F>
 where
     A: AsRef<Tensor<'graph, F>> + Copy,
@@ -696,6 +716,7 @@ where
 ///    assert_eq!(b.eval(g).unwrap().shape(), &[3]);
 /// });
 ///    ```
+#[allow(dead_code)]
 pub fn squeeze<'graph, A, AT, F: Float>(x: A, axes: &AT) -> Tensor<'graph, F>
 where
     A: AsRef<Tensor<'graph, F>> + Copy,
@@ -715,13 +736,14 @@ where
 ///
 /// `XorShiftRng` is used internally.
 /// If you need to specify a seed value or use any other `Rng`, use `dropout_rng` instead.
-pub fn dropout<'graph, A, F: Float>(x: A, dropout_ratio: F, train: bool) -> Tensor<'graph, F>
+#[allow(dead_code)]
+pub fn dropout<'graph, A, F: Float>(x: A, dropoutratio: F, train: bool) -> Tensor<'graph, F>
 where
     A: AsRef<Tensor<'graph, F>> + Copy,
 {
     dropout_rng(
         x,
-        dropout_ratio,
+        dropoutratio,
         train,
         crate::ndarray_ext::get_default_rng::<F>(),
     )
@@ -730,6 +752,7 @@ where
 /// Dropout
 ///
 /// http://arxiv.org/abs/1207.0580
+#[allow(dead_code)]
 pub fn dropout_rng<'graph, A, F: Float, R: Rng + 'static>(
     x: A,
     dropout_ratio: F,
@@ -753,6 +776,7 @@ where
 }
 
 /// Same as [crate::tensor::Tensor::map()]
+#[allow(dead_code)]
 pub fn map<'graph, A, F: Float>(
     x: A,
     f: fn(crate::ndarray_ext::NdArrayView<F>) -> NdArray<F>,
@@ -774,6 +798,7 @@ where
 /// Controls evaluation order of tensors
 ///
 /// Same as [crate::Tensor::depends_on()].
+#[allow(dead_code)]
 pub fn control_dependencies<'graph, A, F: Float>(
     x: Tensor<'graph, F>,
     deps: &[A],
@@ -800,6 +825,7 @@ where
 ///
 /// Internally uses ndarray::ArrayBase::assign as is.
 /// Note that `x` must be a variable tensor.
+#[allow(dead_code)]
 pub fn assign<'graph, A, B, F: Float>(x: A, y: B) -> Tensor<'graph, F>
 where
     A: AsRef<Tensor<'graph, F>> + Copy,
@@ -827,6 +853,7 @@ where
 ///    assert_eq!(tensor.eval(g), Ok(arr.into_dyn()));
 /// });
 ///    ```
+#[allow(dead_code)]
 pub fn convert_to_tensor<F: Float, D>(
     arr: ndarray::Array<F, D>,
     graph: &impl AsGraph<F>,
@@ -835,24 +862,24 @@ where
     D: ndarray::Dimension,
 {
     // Store the original array shape for later use
-    let original_shape = arr.shape().to_vec();
+    let originalshape = arr.shape().to_vec();
     let arr = arr.into_dyn();
 
     // Create the tensor with explicitly set known shape
-    let shape_isize: Vec<isize> = original_shape.iter().map(|&s| s as isize).collect();
+    let shape_isize: Vec<isize> = originalshape.iter().map(|&s| s as isize).collect();
     let tensor = Tensor::builder(graph)
-        .set_known_shape(&shape_isize)
+        .set_knownshape(&shape_isize)
         .set_differentiable(false)
         .build(const_gen_ops::ConvertToTensor { arr });
 
     // Manually handle shape for debug purposes
     if let Some(ctx) = crate::graph::AsGraph::context_ref(graph) {
         if let Ok(eval_result) = tensor.eval(ctx) {
-            if eval_result.shape() != original_shape.as_slice() {
+            if eval_result.shape() != originalshape.as_slice() {
                 // For debugging only, doesn't affect the actual tensor shape
                 println!(
                     "DEBUG: convert_to_tensor shape mismatch: Expected {:?}, got {:?}",
-                    original_shape,
+                    originalshape,
                     eval_result.shape()
                 );
             }
@@ -874,13 +901,15 @@ where
 ///    assert_eq!(a.eval(g).unwrap().shape().len(), 0);
 /// });
 ///    ```
+#[allow(dead_code)]
 pub fn scalar<F: Float>(val: F, graph: &impl AsGraph<F>) -> Tensor<F> {
     let op = const_gen_ops::Scalar { val };
-    // For scalars, use set_known_shape with empty shape (scalar)
-    Tensor::builder(graph).set_known_shape(&[]).build(op)
+    // For scalars, use set_knownshape with empty shape (scalar)
+    Tensor::builder(graph).set_knownshape(&[]).build(op)
 }
 
 /// Outputs values sampled from the normal distribution.
+#[allow(dead_code)]
 pub fn random_normal<'graph, A, F: Float>(
     shape: &A,
     mean: f64,
@@ -896,6 +925,7 @@ where
 /// Outputs values sampled from the normal distribution.
 ///
 /// Pre-instantiated [ArrayRng](ndarray_ext/array_gen/struct.ArrayRng.html) is acceptable.
+#[allow(dead_code)]
 pub fn random_normal_rng<'graph, A, F: Float>(
     arr_rng: ArrayRng<F>,
     shape: &A,
@@ -909,11 +939,12 @@ where
     let t = shape.as_tensor(graph);
     Tensor::builder(graph)
         .append_input(t, false)
-        .set_shape(&t)
+        .setshape(&t)
         .build(random_ops::RandomNormal::new(arr_rng, mean, stddev))
 }
 
 /// Outputs values sampled from the uniform distribution.
+#[allow(dead_code)]
 pub fn random_uniform<'graph, A, F: Float>(
     shape: &A,
     min: f64,
@@ -929,6 +960,7 @@ where
 /// Outputs values sampled from the uniform distribution.
 ///
 /// Pre-instantiated [ArrayRng](ndarray_ext/array_gen/struct.ArrayRng.html) is acceptable.
+#[allow(dead_code)]
 pub fn random_uniform_rng<'graph, A, F: Float>(
     arr_rng: ArrayRng<F>,
     shape: &A,
@@ -942,11 +974,12 @@ where
     let t = shape.as_tensor(graph);
     Tensor::builder(graph)
         .append_input(t, false)
-        .set_shape(&t)
+        .setshape(&t)
         .build(random_ops::RandomUniform::new(arr_rng, min, max))
 }
 
 /// Outputs values sampled from the standard normal distribution.
+#[allow(dead_code)]
 pub fn standard_normal<'graph, A, F: Float>(
     shape: &A,
     graph: &'graph impl AsGraph<F>,
@@ -960,6 +993,7 @@ where
 /// Outputs values sampled from the standard normal distribution.
 ///
 /// Pre-instantiated [ArrayRng](ndarray_ext/array_gen/struct.ArrayRng.html) is acceptable.
+#[allow(dead_code)]
 pub fn standard_normal_rng<'graph, A, F: Float>(
     arr_rng: ArrayRng<F>,
     shape: &A,
@@ -971,11 +1005,12 @@ where
     let t = shape.as_tensor(graph);
     Tensor::builder(graph)
         .append_input(t, false)
-        .set_shape(&t)
+        .setshape(&t)
         .build(random_ops::StandardNormal::new(arr_rng))
 }
 
 /// Outputs values sampled from the standard uniform distribution.
+#[allow(dead_code)]
 pub fn standard_uniform<'graph, A, F: Float>(
     shape: &A,
     graph: &'graph impl AsGraph<F>,
@@ -989,6 +1024,7 @@ where
 /// Outputs values sampled from the standard uniform distribution.
 ///
 /// Pre-instantiated [ArrayRng](ndarray_ext/array_gen/struct.ArrayRng.html) is acceptable.
+#[allow(dead_code)]
 pub fn standard_uniform_rng<'graph, F: Float, A>(
     arr_rng: ArrayRng<F>,
     shape: &A,
@@ -1000,11 +1036,12 @@ where
     let t = shape.as_tensor(graph);
     Tensor::builder(graph)
         .append_input(t, false)
-        .set_shape(&t)
+        .setshape(&t)
         .build(random_ops::StandardUniform::new(arr_rng))
 }
 
 /// Outputs values sampled from the bernoulli distribution.
+#[allow(dead_code)]
 pub fn bernoulli<'graph, A, F: Float>(
     shape: &A,
     p: f64,
@@ -1019,6 +1056,7 @@ where
 /// Outputs values sampled from the bernoulli distribution.
 ///
 /// Pre-instantiated [ArrayRng](ndarray_ext/array_gen/struct.ArrayRng.html) is acceptable.
+#[allow(dead_code)]
 pub fn bernoulli_rng<'graph, A, F: Float>(
     arr_rng: ArrayRng<F>,
     shape: &A,
@@ -1031,11 +1069,12 @@ where
     let t = shape.as_tensor(graph);
     Tensor::builder(graph)
         .append_input(t, false)
-        .set_shape(&t)
+        .setshape(&t)
         .build(random_ops::Bernoulli::new(arr_rng, p))
 }
 
 /// Outputs values sampled from the exponential distribution.
+#[allow(dead_code)]
 pub fn random_exp<'graph, A, F: Float>(
     shape: &A,
     lambda: f64,
@@ -1050,6 +1089,7 @@ where
 /// Outputs values sampled from the exponential distribution.
 ///
 /// Pre-instantiated [ArrayRng](ndarray_ext/array_gen/struct.ArrayRng.html) is acceptable.
+#[allow(dead_code)]
 pub fn random_exp_rng<'graph, A, F: Float>(
     arr_rng: ArrayRng<F>,
     shape: &A,
@@ -1062,11 +1102,12 @@ where
     let t = shape.as_tensor(graph);
     Tensor::builder(graph)
         .append_input(t, false)
-        .set_shape(&t)
+        .setshape(&t)
         .build(random_ops::Exponential::new(arr_rng, lambda))
 }
 
 /// Outputs values sampled from the gamma distribution.
+#[allow(dead_code)]
 pub fn random_gamma<'graph, A, F: Float>(
     shape: &A,
     shape_param: f64,
@@ -1082,6 +1123,7 @@ where
 /// Outputs values sampled from the gamma distribution.
 ///
 /// Pre-instantiated [ArrayRng](ndarray_ext/array_gen/struct.ArrayRng.html) is acceptable.
+#[allow(dead_code)]
 pub fn random_gamma_rng<'graph, A, F: Float>(
     arr_rng: ArrayRng<F>,
     shape: &A,
@@ -1095,11 +1137,12 @@ where
     let t = shape.as_tensor(graph);
     Tensor::builder(graph)
         .append_input(t, false)
-        .set_shape(&t)
+        .setshape(&t)
         .build(random_ops::Gamma::new(arr_rng, shape_param, scale))
 }
 
 /// Outputs values sampled from the log-normal distribution.
+#[allow(dead_code)]
 pub fn log_normal<'graph, A, F: Float>(
     shape: &A,
     mean: f64,
@@ -1115,6 +1158,7 @@ where
 /// Outputs values sampled from the log-normal distribution.
 ///
 /// Pre-instantiated [ArrayRng](ndarray_ext/array_gen/struct.ArrayRng.html) is acceptable.
+#[allow(dead_code)]
 pub fn log_normal_rng<'graph, A, F: Float>(
     arr_rng: ArrayRng<F>,
     shape: &A,
@@ -1128,7 +1172,7 @@ where
     let t = shape.as_tensor(graph);
     Tensor::builder(graph)
         .append_input(t, false)
-        .set_shape(&t)
+        .setshape(&t)
         .build(random_ops::LogNormal::new(arr_rng, mean, stddev))
 }
 
@@ -1144,6 +1188,7 @@ where
 ///    assert_eq!(a.eval(g), Ok(ndarray::Array2::<f32>::zeros((4, 2)).into_dyn()));
 /// });
 ///    ```
+#[allow(dead_code)]
 pub fn zeros<'graph, A, F: Float>(shape: &A, graph: &'graph impl AsGraph<F>) -> Tensor<'graph, F>
 where
     A: AsTensor<'graph, F>,
@@ -1166,6 +1211,7 @@ where
 ///    assert_eq!(a.eval(g), Ok(ndarray::Array2::<f32>::ones((4, 2)).into_dyn()));
 /// });
 ///    ```
+#[allow(dead_code)]
 pub fn ones<'graph, A, F: Float>(shape: &A, graph: &'graph impl AsGraph<F>) -> Tensor<'graph, F>
 where
     A: AsTensor<'graph, F>,
@@ -1188,13 +1234,14 @@ where
 /// This function creates a tensor from the given ndarray, ensuring that
 /// the shape information is preserved. Variables represent the inputs to
 /// computational graphs, so proper shape handling is critical.
+#[allow(dead_code)]
 pub fn variable<F: Float, D>(arr: ndarray::Array<F, D>, graph: &impl AsGraph<F>) -> Tensor<F>
 where
     D: ndarray::Dimension,
 {
     // Save the original shape for debugging
-    let orig_shape = arr.shape().to_vec();
-    println!("Creating variable with shape: {:?}", orig_shape);
+    let origshape = arr.shape().to_vec();
+    println!("Creating variable with shape: {origshape:?}");
 
     // Convert the array to dynamic form for tensor creation
     let arr_dyn = arr.into_dyn();
@@ -1206,10 +1253,10 @@ where
     if let Some(ctx) = crate::graph::AsGraph::context_ref(graph) {
         if let Ok(eval_result) = tensor.eval(ctx) {
             println!("Created tensor with shape: {:?}", eval_result.shape());
-            if eval_result.shape() != orig_shape.as_slice() {
+            if eval_result.shape() != origshape.as_slice() {
                 println!(
                     "WARNING: Shape mismatch! Expected {:?}, got {:?}",
-                    orig_shape,
+                    origshape,
                     eval_result.shape()
                 );
             }
@@ -1265,28 +1312,28 @@ impl<'g, F: Float> Tensor<'g, F> {
 
     /// Same as [tensor_ops::reduce_sum](reduce_sum)
     #[inline]
-    pub fn reduce_sum<AT: AsTensor<'g, F>>(&self, axes: &AT, keep_dims: bool) -> Tensor<'g, F> {
-        reduce_sum(self, axes, keep_dims)
+    pub fn reduce_sum<AT: AsTensor<'g, F>>(&self, axes: &AT, keepdims: bool) -> Tensor<'g, F> {
+        reduce_sum(self, axes, keepdims)
     }
     /// Same as [tensor_ops::reduce_mean](reduce_mean)
     #[inline]
-    pub fn reduce_mean<AT: AsTensor<'g, F>>(&self, axes: &AT, keep_dims: bool) -> Tensor<'g, F> {
-        reduce_mean(self, axes, keep_dims)
+    pub fn reduce_mean<AT: AsTensor<'g, F>>(&self, axes: &AT, keepdims: bool) -> Tensor<'g, F> {
+        reduce_mean(self, axes, keepdims)
     }
     /// Same as [tensor_ops::reduce_prod](reduce_prod)
     #[inline]
-    pub fn reduce_prod<AT: AsTensor<'g, F>>(&self, axes: &AT, keep_dims: bool) -> Tensor<'g, F> {
-        reduce_prod(self, axes, keep_dims)
+    pub fn reduce_prod<AT: AsTensor<'g, F>>(&self, axes: &AT, keepdims: bool) -> Tensor<'g, F> {
+        reduce_prod(self, axes, keepdims)
     }
     /// Same as [tensor_ops::reduce_min](reduce_min)
     #[inline]
-    pub fn reduce_min<AT: AsTensor<'g, F>>(&self, axes: &AT, keep_dims: bool) -> Tensor<'g, F> {
-        reduce_min(self, axes, keep_dims)
+    pub fn reduce_min<AT: AsTensor<'g, F>>(&self, axes: &AT, keepdims: bool) -> Tensor<'g, F> {
+        reduce_min(self, axes, keepdims)
     }
     /// Same as [tensor_ops::reduce_max](reduce_max)
     #[inline]
-    pub fn reduce_max<AT: AsTensor<'g, F>>(&self, axes: &AT, keep_dims: bool) -> Tensor<'g, F> {
-        reduce_max(self, axes, keep_dims)
+    pub fn reduce_max<AT: AsTensor<'g, F>>(&self, axes: &AT, keepdims: bool) -> Tensor<'g, F> {
+        reduce_max(self, axes, keepdims)
     }
     /// Same as [tensor_ops::reduce_variance](reduce_variance)
     #[inline]
@@ -1463,7 +1510,7 @@ pub use memory_optimization::{
 
 // Efficient tensor operations
 pub use efficient_ops::{
-    clear_reshape_cache, efficient_concat, efficient_reshape, efficient_reshape_with_shape,
+    clear_reshape_cache, efficient_concat, efficient_reshape, efficient_reshape_withshape,
     efficient_slice, efficient_transpose, get_reshape_cache_stats, EfficientOpsManager,
     EfficientOpsStats, SliceRange,
 };

@@ -1,50 +1,53 @@
-//! Wiener filtering module
-//!
-//! This module implements Wiener filtering techniques for signal denoising and restoration.
-//! Wiener filters are optimal linear filters for signal restoration in the presence of
-//! additive noise, based on a statistical approach.
-//!
-//! The implementation includes:
-//! - Time-domain Wiener filtering for 1D signals
-//! - Frequency-domain Wiener filtering for noise reduction
-//! - Adaptive Wiener filtering with local variance estimation
-//! - Iterative Wiener filtering for improved restoration
-//!
-//! # Example
-//! ```
-//! use ndarray::Array1;
-//! use scirs2_signal::wiener::wiener_filter;
-//! use scirs2_signal::waveforms;
-//! use rand::Rng;
-//!
-//! // Create a test signal
-//! let fs = 1000.0;
-//! let t: Vec<f64> = (0..1000).map(|i| i as f64 / fs).collect();
-//! let clean_signal_vec = waveforms::chirp(
-//!     &t, 10.0, 1.0, 100.0, "linear", 0.0
-//! ).unwrap();
-//!
-//! // Convert to ndarray
-//! let clean_signal = Array1::from_vec(clean_signal_vec);
-//!
-//! // Add noise
-//! let mut rng = rand::rng();
-//! let mut noisy_signal = clean_signal.clone();
-//! for i in 0..noisy_signal.len() {
-//!     noisy_signal[i] += 0.5 * rng.random_range(-1.0..1.0);
-//! }
-//!
-//! // Apply Wiener filter
-//! let denoised_signal = wiener_filter(&noisy_signal, None, None).unwrap();
-//! ```
-
-use ndarray::{s, Array1, Array2};
-use num_complex::Complex64;
-use std::cmp;
+use ndarray::s;
+// Wiener filtering module
+//
+// This module implements Wiener filtering techniques for signal denoising and restoration.
+// Wiener filters are optimal linear filters for signal restoration in the presence of
+// additive noise, based on a statistical approach.
+//
+// The implementation includes:
+// - Time-domain Wiener filtering for 1D signals
+// - Frequency-domain Wiener filtering for noise reduction
+// - Adaptive Wiener filtering with local variance estimation
+// - Iterative Wiener filtering for improved restoration
+//
+// # Example
+// ```
+// use ndarray::Array1;
+// use scirs2_signal::wiener::wiener_filter;
+// use scirs2_signal::waveforms;
+// use rand::Rng;
+//
+// // Create a test signal
+// let fs = 1000.0;
+// let t: Vec<f64> = (0..1000).map(|i| i as f64 / fs).collect();
+// let clean_signal_vec = waveforms::chirp(
+//     &t, 10.0, 1.0, 100.0, "linear", 0.0
+// ).unwrap();
+//
+// // Convert to ndarray
+// let clean_signal = Array1::from_vec(clean_signal_vec);
+//
+// // Add noise
+// let mut rng = rand::rng();
+// let mut noisy_signal = clean_signal.clone();
+// for i in 0..noisy_signal.len() {
+//     noisy_signal[i] += 0.5 * rng.gen_range(-1.0..1.0);
+// }
+//
+// // Apply Wiener filter
+// let denoised_signal = wiener_filter(&noisy_signal, None, None).unwrap();
+// ```
 
 use crate::error::{SignalError, SignalResult};
+use ndarray::{Array1, Array2};
+use num_complex::Complex64;
+use rand::Rng;
 use scirs2_fft;
+use statrs::statistics::Statistics;
+use std::cmp;
 
+#[allow(unused_imports)]
 /// Configuration for Wiener filtering
 #[derive(Debug, Clone)]
 pub struct WienerConfig {
@@ -107,6 +110,7 @@ impl Default for WienerConfig {
 /// let result = wiener_filter(&noisy_signal, Some(0.1), None);
 /// assert!(result.is_ok());
 /// ```
+#[allow(dead_code)]
 pub fn wiener_filter(
     signal: &Array1<f64>,
     noise_power: Option<f64>,
@@ -134,6 +138,7 @@ pub fn wiener_filter(
 ///
 /// # Returns
 /// * The denoised signal
+#[allow(dead_code)]
 pub fn wiener_filter_freq(
     signal: &Array1<f64>,
     config: &WienerConfig,
@@ -205,6 +210,7 @@ pub fn wiener_filter_freq(
 ///
 /// # Returns
 /// * The denoised signal
+#[allow(dead_code)]
 pub fn wiener_filter_time(
     signal: &Array1<f64>,
     config: &WienerConfig,
@@ -254,7 +260,7 @@ pub fn wiener_filter_time(
         );
 
         if end <= start {
-            return Err(SignalError::DimensionError(
+            return Err(SignalError::DimensionMismatch(
                 "Invalid window bounds in Wiener filter".to_string(),
             ));
         }
@@ -262,7 +268,7 @@ pub fn wiener_filter_time(
         let window = padded_signal.slice(s![start..end]);
 
         // Compute local mean and variance
-        let local_mean = window.mean().unwrap_or(0.0);
+        let local_mean = window.mean();
         let local_var = window
             .iter()
             .map(|&x| (x - local_mean).powi(2))
@@ -301,6 +307,7 @@ pub fn wiener_filter_time(
 ///
 /// # Returns
 /// * The denoised signal
+#[allow(dead_code)]
 pub fn iterative_wiener_filter(
     signal: &Array1<f64>,
     config: &WienerConfig,
@@ -353,6 +360,7 @@ pub fn iterative_wiener_filter(
 ///
 /// # Returns
 /// * The denoised image
+#[allow(dead_code)]
 pub fn wiener_filter_2d(
     image: &Array2<f64>,
     noise_power: Option<f64>,
@@ -360,17 +368,17 @@ pub fn wiener_filter_2d(
 ) -> SignalResult<Array2<f64>> {
     let (height, width) = image.dim();
 
-    // Set default window size or use provided
+    // Set default window _size or use provided
     let win_size = window_size.unwrap_or([5, 5]);
 
-    // Validate window size
+    // Validate window _size
     if win_size[0] < 3 || win_size[1] < 3 {
         return Err(SignalError::ValueError(
-            "Window size must be at least 3x3".to_string(),
+            "Window _size must be at least 3x3".to_string(),
         ));
     }
 
-    // Estimate noise power if not provided
+    // Estimate noise _power if not provided
     let noise_var = match noise_power {
         Some(np) => np,
         None => {
@@ -400,7 +408,7 @@ pub fn wiener_filter_2d(
             let window = image.slice(s![row_start..row_end, col_start..col_end]);
 
             // Compute local mean and variance
-            let local_mean = window.mean().unwrap_or(0.0);
+            let local_mean = window.mean();
             let local_var = window
                 .iter()
                 .map(|&x| (x - local_mean).powi(2))
@@ -436,6 +444,7 @@ pub fn wiener_filter_2d(
 ///
 /// # Returns
 /// * The denoised signal
+#[allow(dead_code)]
 pub fn spectral_subtraction(
     signal: &Array1<f64>,
     noise_power: Option<&Array1<f64>>,
@@ -460,11 +469,11 @@ pub fn spectral_subtraction(
         }
     };
 
-    // Get noise power spectrum
+    // Get noise _power spectrum
     let noise_spectrum = match noise_power {
         Some(np) => np.clone(),
         None => {
-            // Estimate noise power from the signal
+            // Estimate noise _power from the signal
             // (Use first 100ms or 5% of signal, whichever is smaller)
             let noise_samples = (n as f64 * 0.05).min(100.0) as usize;
             if noise_samples < 4 {
@@ -479,7 +488,7 @@ pub fn spectral_subtraction(
             // Compute noise spectrum
             match scirs2_fft::fft(&noise_segment.to_vec(), Some(n)) {
                 Ok(noise_fft) => {
-                    // Convert to power spectrum
+                    // Convert to _power spectrum
                     Array1::from_iter(
                         noise_fft
                             .iter()
@@ -506,7 +515,7 @@ pub fn spectral_subtraction(
         let mag = filtered_fft[i].norm();
         let phase = filtered_fft[i].arg();
 
-        // Compute noise power for this bin
+        // Compute noise _power for this bin
         let noise_power = if i < noise_spectrum.len() {
             noise_spectrum[i]
         } else {
@@ -557,6 +566,7 @@ pub fn spectral_subtraction(
 ///
 /// # Returns
 /// * The denoised signal
+#[allow(dead_code)]
 pub fn psd_wiener_filter(
     signal: &Array1<f64>,
     signal_psd: Option<&Array1<f64>>,
@@ -578,7 +588,7 @@ pub fn psd_wiener_filter(
 
     // Estimate signal PSD if not provided
     let s_psd = match signal_psd {
-        Some(psd) => psd.clone(),
+        Some(_psd) => psd.clone(),
         None => {
             // Simple periodogram estimate
             let half_n = n / 2 + 1;
@@ -594,7 +604,7 @@ pub fn psd_wiener_filter(
 
     // Estimate noise PSD if not provided
     let n_psd = match noise_psd {
-        Some(psd) => psd.clone(),
+        Some(_psd) => psd.clone(),
         None => {
             // Use noise estimation method
             let noise_var = estimate_noise_power(signal)?;
@@ -666,6 +676,7 @@ pub fn psd_wiener_filter(
 ///
 /// # Returns
 /// * The denoised signal
+#[allow(dead_code)]
 pub fn kalman_wiener_filter(
     signal: &Array1<f64>,
     process_var: f64,
@@ -706,8 +717,9 @@ pub fn kalman_wiener_filter(
 }
 
 /// Helper function to estimate the noise power from a signal
+#[allow(dead_code)]
 fn estimate_noise_power(signal: &Array1<f64>) -> SignalResult<f64> {
-    // Compute signal median
+    // Compute _signal median
     let mut values = signal.to_vec();
     values.sort_by(|a, b| a.partial_cmp(b).unwrap_or(std::cmp::Ordering::Equal));
 
@@ -739,22 +751,24 @@ fn estimate_noise_power(signal: &Array1<f64>) -> SignalResult<f64> {
 }
 
 /// Helper function to estimate the signal power
+#[allow(dead_code)]
 fn estimate_signal_power(signal: &Array1<f64>) -> SignalResult<f64> {
     // Compute mean
     let mean = signal.mean().unwrap_or(0.0);
 
-    // Compute variance (signal power)
+    // Compute variance (_signal power)
     let power = signal.iter().map(|&x| (x - mean).powi(2)).sum::<f64>() / signal.len() as f64;
 
     Ok(power)
 }
 
 /// Helper function to pad a signal for boundary handling
-fn pad_signal(signal: &Array1<f64>, pad_size: usize) -> Array1<f64> {
+#[allow(dead_code)]
+fn pad_signal(_signal: &Array1<f64>, padsize: usize) -> Array1<f64> {
     let n = signal.len();
     let mut padded = Array1::zeros(n + 2 * pad_size);
 
-    // Copy original signal
+    // Copy original _signal
     for i in 0..n {
         padded[i + pad_size] = signal[i];
     }
@@ -772,6 +786,7 @@ fn pad_signal(signal: &Array1<f64>, pad_size: usize) -> Array1<f64> {
 }
 
 /// Helper function to smooth a power spectral density estimate
+#[allow(dead_code)]
 fn smooth_psd(psd: &Array1<f64>) -> Array1<f64> {
     let n = psd.len();
     let mut smoothed = Array1::zeros(n);

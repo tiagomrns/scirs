@@ -25,21 +25,61 @@ impl Variable {
     }
 }
 
+/// Type of unary operation
+#[derive(Debug, Clone, Copy)]
+pub enum UnaryOpType {
+    /// Negation: -x
+    Neg,
+    /// Natural logarithm: ln(x)
+    Ln,
+    /// Exponential: exp(x)
+    Exp,
+    /// Sine: sin(x)
+    Sin,
+    /// Cosine: cos(x)
+    Cos,
+    /// Tangent: tan(x)
+    Tan,
+    /// Square root: sqrt(x)
+    Sqrt,
+    /// Square: x^2
+    Square,
+    /// Reciprocal: 1/x
+    Reciprocal,
+}
+
+/// Type of binary operation
+#[derive(Debug, Clone, Copy)]
+pub enum BinaryOpType {
+    /// Addition: x + y
+    Add,
+    /// Subtraction: x - y
+    Sub,
+    /// Multiplication: x * y
+    Mul,
+    /// Division: x / y
+    Div,
+    /// Power: x^y
+    Pow,
+}
+
 /// A node in the computational tape representing an operation
 #[derive(Debug, Clone)]
 pub enum TapeNode {
     /// Input variable (leaf node)
     Input { var_id: usize },
     /// Constant value
-    Constant { value: f64 },
+    Constant { value: f64, result: usize },
     /// Unary operation
     UnaryOp {
+        op_type: UnaryOpType,
         input: usize,
         result: usize,
         partial: f64, // ∂result/∂input
     },
     /// Binary operation
     BinaryOp {
+        op_type: BinaryOpType,
         left: usize,
         right: usize,
         result: usize,
@@ -91,6 +131,10 @@ impl ComputationTape {
     pub fn add_node(&mut self, node: TapeNode) {
         // Update variable positions for result variables
         match &node {
+            TapeNode::Constant { result, .. } => {
+                self.var_positions.insert(*result, self.nodes.len());
+                self.max_var_id = self.max_var_id.max(*result);
+            }
             TapeNode::UnaryOp { result, .. } => {
                 self.var_positions.insert(*result, self.nodes.len());
                 self.max_var_id = self.max_var_id.max(*result);
@@ -126,14 +170,19 @@ impl ComputationTape {
                     // Constants have zero gradient
                 }
                 TapeNode::UnaryOp {
+                    op_type: _,
                     input,
                     result,
                     partial,
                 } => {
                     // Propagate gradient: ∂L/∂input += ∂L/∂result * ∂result/∂input
-                    gradients[*input] += gradients[*result] * partial;
+                    // Skip constants (which have index usize::MAX)
+                    if *input != usize::MAX && *input < gradients.len() {
+                        gradients[*input] += gradients[*result] * partial;
+                    }
                 }
                 TapeNode::BinaryOp {
+                    op_type: _,
                     left,
                     right,
                     result,
@@ -141,8 +190,13 @@ impl ComputationTape {
                     right_partial,
                 } => {
                     // Propagate gradients to both inputs
-                    gradients[*left] += gradients[*result] * left_partial;
-                    gradients[*right] += gradients[*result] * right_partial;
+                    // Skip constants (which have index usize::MAX)
+                    if *left != usize::MAX && *left < gradients.len() {
+                        gradients[*left] += gradients[*result] * left_partial;
+                    }
+                    if *right != usize::MAX && *right < gradients.len() {
+                        gradients[*right] += gradients[*result] * right_partial;
+                    }
                 }
                 TapeNode::NAryOp {
                     inputs,
@@ -150,8 +204,11 @@ impl ComputationTape {
                     partials,
                 } => {
                     // Propagate gradient to all inputs
+                    // Skip constants (which have index usize::MAX)
                     for (input_id, partial) in inputs.iter().zip(partials.iter()) {
-                        gradients[*input_id] += gradients[*result] * partial;
+                        if *input_id != usize::MAX && *input_id < gradients.len() {
+                            gradients[*input_id] += gradients[*result] * partial;
+                        }
                     }
                 }
             }
@@ -179,32 +236,268 @@ impl ComputationTape {
                 TapeNode::Input { .. } => {
                     // Already handled above
                 }
-                TapeNode::Constant { value: _ } => {
-                    // Constants are handled implicitly
+                TapeNode::Constant { value, result } => {
+                    // Set constant value
+                    values[*result] = *value;
                 }
-                TapeNode::UnaryOp { input, result, .. } => {
-                    // The actual operation would be stored elsewhere
-                    // This is just the structure for gradient computation
-                    values[*result] = values[*input]; // Placeholder
+                TapeNode::UnaryOp {
+                    op_type,
+                    input,
+                    result,
+                    ..
+                } => {
+                    // Perform actual unary operation
+                    let input_val = values[*input];
+                    values[*result] = match op_type {
+                        UnaryOpType::Neg => -input_val,
+                        UnaryOpType::Ln => input_val.ln(),
+                        UnaryOpType::Exp => input_val.exp(),
+                        UnaryOpType::Sin => input_val.sin(),
+                        UnaryOpType::Cos => input_val.cos(),
+                        UnaryOpType::Tan => input_val.tan(),
+                        UnaryOpType::Sqrt => input_val.sqrt(),
+                        UnaryOpType::Square => input_val * input_val,
+                        UnaryOpType::Reciprocal => 1.0 / input_val,
+                    };
                 }
                 TapeNode::BinaryOp {
+                    op_type,
                     left,
                     right,
                     result,
                     ..
                 } => {
-                    // The actual operation would be stored elsewhere
-                    values[*result] = values[*left] + values[*right]; // Placeholder
+                    // Perform actual binary operation
+                    let left_val = values[*left];
+                    let right_val = values[*right];
+                    values[*result] = match op_type {
+                        BinaryOpType::Add => left_val + right_val,
+                        BinaryOpType::Sub => left_val - right_val,
+                        BinaryOpType::Mul => left_val * right_val,
+                        BinaryOpType::Div => left_val / right_val,
+                        BinaryOpType::Pow => left_val.powf(right_val),
+                    };
                 }
                 TapeNode::NAryOp { inputs, result, .. } => {
-                    // The actual operation would be stored elsewhere
+                    // N-ary operations are application-specific
+                    // For now, implement as sum (could be extended for other operations)
                     values[*result] = inputs.iter().map(|&id| values[id]).sum();
-                    // Placeholder
                 }
             }
         }
 
         Ok(values)
+    }
+
+    /// Add a constant to the tape
+    pub fn add_constant(&mut self, value: f64) -> usize {
+        let result_id = self.max_var_id + 1;
+        self.add_node(TapeNode::Constant {
+            value,
+            result: result_id,
+        });
+        result_id
+    }
+
+    /// Add a unary operation with automatic partial derivative computation
+    pub fn add_unary_op(
+        &mut self,
+        op_type: UnaryOpType,
+        input: usize,
+        input_values: &[f64],
+    ) -> usize {
+        let result_id = self.max_var_id + 1;
+
+        // Compute partial derivative based on operation type and current input value
+        let input_val = input_values[input];
+        let partial = match op_type {
+            UnaryOpType::Neg => -1.0,
+            UnaryOpType::Ln => 1.0 / input_val,
+            UnaryOpType::Exp => input_val.exp(),
+            UnaryOpType::Sin => input_val.cos(),
+            UnaryOpType::Cos => -input_val.sin(),
+            UnaryOpType::Tan => 1.0 + input_val.tan().powi(2), // sec^2(x)
+            UnaryOpType::Sqrt => 1.0 / (2.0 * input_val.sqrt()),
+            UnaryOpType::Square => 2.0 * input_val,
+            UnaryOpType::Reciprocal => -1.0 / (input_val * input_val),
+        };
+
+        self.add_node(TapeNode::UnaryOp {
+            op_type,
+            input,
+            result: result_id,
+            partial,
+        });
+
+        result_id
+    }
+
+    /// Add a binary operation with automatic partial derivative computation  
+    pub fn add_binary_op(
+        &mut self,
+        op_type: BinaryOpType,
+        left: usize,
+        right: usize,
+        input_values: &[f64],
+    ) -> usize {
+        let result_id = self.max_var_id + 1;
+
+        // Compute partial derivatives based on operation type and current input values
+        let left_val = input_values[left];
+        let right_val = input_values[right];
+
+        let (left_partial, right_partial) = match op_type {
+            BinaryOpType::Add => (1.0, 1.0),
+            BinaryOpType::Sub => (1.0, -1.0),
+            BinaryOpType::Mul => (right_val, left_val),
+            BinaryOpType::Div => (1.0 / right_val, -left_val / (right_val * right_val)),
+            BinaryOpType::Pow => {
+                // d/dx[f^g] = f^(g-1) * (g * f' + f * ln(f) * g')
+                // d/dx[x^y] = y * x^(y-1), d/dy[x^y] = x^y * ln(x)
+                (
+                    right_val * left_val.powf(right_val - 1.0),
+                    left_val.powf(right_val) * left_val.ln(),
+                )
+            }
+        };
+
+        self.add_node(TapeNode::BinaryOp {
+            op_type,
+            left,
+            right,
+            result: result_id,
+            left_partial,
+            right_partial,
+        });
+
+        result_id
+    }
+
+    /// Forward-mode AD: compute function value and derivatives simultaneously
+    pub fn forward_ad(
+        &self,
+        input_values: &[f64],
+        seed_derivatives: &[f64],
+    ) -> Result<(Vec<f64>, Vec<f64>), OptimizeError> {
+        let mut values = vec![0.0; self.max_var_id + 1];
+        let mut derivatives = vec![0.0; self.max_var_id + 1];
+
+        // Set input values and seed derivatives
+        for (i, var) in self.inputs.iter().enumerate() {
+            if i < input_values.len() {
+                values[var.id] = input_values[i];
+                if i < seed_derivatives.len() {
+                    derivatives[var.id] = seed_derivatives[i];
+                }
+            } else {
+                values[var.id] = var.value;
+            }
+        }
+
+        // Forward pass through the tape
+        for node in &self.nodes {
+            match node {
+                TapeNode::Input { .. } => {
+                    // Already handled above
+                }
+                TapeNode::Constant { value, result } => {
+                    // Constants have zero derivative
+                    values[*result] = *value;
+                    derivatives[*result] = 0.0;
+                }
+                TapeNode::UnaryOp {
+                    op_type,
+                    input,
+                    result,
+                    ..
+                } => {
+                    // Forward-mode AD for unary operations
+                    let input_val = values[*input];
+                    let input_deriv = derivatives[*input];
+
+                    // Compute function value
+                    values[*result] = match op_type {
+                        UnaryOpType::Neg => -input_val,
+                        UnaryOpType::Ln => input_val.ln(),
+                        UnaryOpType::Exp => input_val.exp(),
+                        UnaryOpType::Sin => input_val.sin(),
+                        UnaryOpType::Cos => input_val.cos(),
+                        UnaryOpType::Tan => input_val.tan(),
+                        UnaryOpType::Sqrt => input_val.sqrt(),
+                        UnaryOpType::Square => input_val * input_val,
+                        UnaryOpType::Reciprocal => 1.0 / input_val,
+                    };
+
+                    // Compute derivative using chain rule: d/dx[f(g(x))] = f'(g(x)) * g'(x)
+                    let f_prime = match op_type {
+                        UnaryOpType::Neg => -1.0,
+                        UnaryOpType::Ln => 1.0 / input_val,
+                        UnaryOpType::Exp => input_val.exp(),
+                        UnaryOpType::Sin => input_val.cos(),
+                        UnaryOpType::Cos => -input_val.sin(),
+                        UnaryOpType::Tan => 1.0 + input_val.tan().powi(2),
+                        UnaryOpType::Sqrt => 1.0 / (2.0 * input_val.sqrt()),
+                        UnaryOpType::Square => 2.0 * input_val,
+                        UnaryOpType::Reciprocal => -1.0 / (input_val * input_val),
+                    };
+                    derivatives[*result] = f_prime * input_deriv;
+                }
+                TapeNode::BinaryOp {
+                    op_type,
+                    left,
+                    right,
+                    result,
+                    ..
+                } => {
+                    // Forward-mode AD for binary operations
+                    let left_val = values[*left];
+                    let right_val = values[*right];
+                    let left_deriv = derivatives[*left];
+                    let right_deriv = derivatives[*right];
+
+                    // Compute function value
+                    values[*result] = match op_type {
+                        BinaryOpType::Add => left_val + right_val,
+                        BinaryOpType::Sub => left_val - right_val,
+                        BinaryOpType::Mul => left_val * right_val,
+                        BinaryOpType::Div => left_val / right_val,
+                        BinaryOpType::Pow => left_val.powf(right_val),
+                    };
+
+                    // Compute derivative using product rule and chain rule
+                    derivatives[*result] = match op_type {
+                        BinaryOpType::Add => left_deriv + right_deriv,
+                        BinaryOpType::Sub => left_deriv - right_deriv,
+                        BinaryOpType::Mul => left_deriv * right_val + left_val * right_deriv,
+                        BinaryOpType::Div => {
+                            (left_deriv * right_val - left_val * right_deriv)
+                                / (right_val * right_val)
+                        }
+                        BinaryOpType::Pow => {
+                            // d/dx[f^g] = f^g * (g' * ln(f) + g * f'/f)
+                            let result_val = left_val.powf(right_val);
+                            result_val
+                                * (right_deriv * left_val.ln() + right_val * left_deriv / left_val)
+                        }
+                    };
+                }
+                TapeNode::NAryOp {
+                    inputs,
+                    result,
+                    partials,
+                } => {
+                    // N-ary operations: sum for now
+                    values[*result] = inputs.iter().map(|&id| values[id]).sum();
+                    derivatives[*result] = inputs
+                        .iter()
+                        .enumerate()
+                        .map(|(i, &id)| partials.get(i).unwrap_or(&1.0) * derivatives[id])
+                        .sum();
+                }
+            }
+        }
+
+        Ok((values, derivatives))
     }
 
     /// Optimize the tape by removing unnecessary operations
@@ -347,11 +640,12 @@ impl TapeBuilder {
     }
 
     /// Add a unary operation
-    pub fn unary_op(&mut self, input: usize, partial: f64) -> usize {
+    pub fn unary_op(&mut self, op_type: UnaryOpType, input: usize, partial: f64) -> usize {
         let result_id = self.next_var_id;
         self.next_var_id += 1;
 
         let node = TapeNode::UnaryOp {
+            op_type,
             input,
             result: result_id,
             partial,
@@ -364,6 +658,7 @@ impl TapeBuilder {
     /// Add a binary operation
     pub fn binary_op(
         &mut self,
+        op_type: BinaryOpType,
         left: usize,
         right: usize,
         left_partial: f64,
@@ -373,6 +668,7 @@ impl TapeBuilder {
         self.next_var_id += 1;
 
         let node = TapeNode::BinaryOp {
+            op_type,
             left,
             right,
             result: result_id,
@@ -464,8 +760,8 @@ mod tests {
         // Build tape for: z = (x + y) * x
         let x = builder.input(2.0);
         let y = builder.input(3.0);
-        let sum = builder.binary_op(x, y, 1.0, 1.0); // x + y, partials: ∂/∂x=1, ∂/∂y=1
-        let _result = builder.binary_op(sum, x, 2.0, 5.0); // sum * x, partials: ∂/∂sum=x=2, ∂/∂x=sum=5
+        let sum = builder.binary_op(BinaryOpType::Add, x, y, 1.0, 1.0); // x + y, partials: ∂/∂x=1, ∂/∂y=1
+        let _result = builder.binary_op(BinaryOpType::Mul, sum, x, 2.0, 5.0); // sum * x, partials: ∂/∂sum=x=2, ∂/∂x=sum=5
 
         let tape = builder.build();
 
@@ -486,6 +782,7 @@ mod tests {
 
         // Add operation: z = x + y (result=2)
         tape.add_node(TapeNode::BinaryOp {
+            op_type: BinaryOpType::Add,
             left: 0,
             right: 1,
             result: 2,
@@ -509,6 +806,7 @@ mod tests {
 
         tape.add_input(Variable::new(0, 1.0));
         tape.add_node(TapeNode::UnaryOp {
+            op_type: UnaryOpType::Neg,
             input: 0,
             result: 1,
             partial: 1.0,
@@ -541,6 +839,7 @@ mod tests {
         // This should have triggered one batch
         streaming_tape
             .add_node(TapeNode::UnaryOp {
+                op_type: UnaryOpType::Neg,
                 input: 0,
                 result: 2,
                 partial: 1.0,
@@ -556,8 +855,8 @@ mod tests {
 
         let x = builder.input(1.0);
         let y = builder.input(2.0);
-        builder.binary_op(x, y, 1.0, 1.0);
-        builder.unary_op(x, 2.0);
+        builder.binary_op(BinaryOpType::Add, x, y, 1.0, 1.0);
+        builder.unary_op(UnaryOpType::Neg, x, 2.0);
 
         let tape = builder.build();
         let stats = tape.get_stats();

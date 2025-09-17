@@ -8,7 +8,25 @@ use std::collections::HashMap;
 use std::fmt::Debug;
 
 /// Training history that stores metrics during training
-pub type History<F> = HashMap<String, Vec<F>>;
+#[derive(Debug, Clone)]
+pub struct History<F: Float> {
+    /// Training loss per epoch
+    pub train_loss: Vec<F>,
+    /// Validation loss per epoch  
+    pub val_loss: Vec<F>,
+    /// Additional metrics
+    pub metrics: HashMap<String, Vec<F>>,
+}
+
+impl<F: Float> Default for History<F> {
+    fn default() -> Self {
+        Self {
+            train_loss: Vec::new(),
+            val_loss: Vec::new(),
+            metrics: HashMap::new(),
+        }
+    }
+}
 
 /// Configuration for model training
 #[derive(Debug, Clone)]
@@ -53,7 +71,7 @@ impl<F: Float + Debug + ScalarOperand> Trainer<F> {
     pub fn new(config: TrainingConfig) -> Self {
         Self {
             config,
-            history: HashMap::new(),
+            history: History::default(),
         }
     }
 }

@@ -51,6 +51,7 @@ use crate::error::{MetricsError, Result};
 ///
 /// let (precision, recall, thresholds) = precision_recall_curve(&y_true, &y_prob, None, None).unwrap();
 /// ```
+#[allow(dead_code)]
 pub fn precision_recall_curve<T, S1, S2, D1>(
     y_true: &ArrayBase<S1, D1>,
     y_prob: &ArrayBase<S2, Ix1>,
@@ -222,9 +223,10 @@ where
 /// let y_true = array![0.0, 0.0, 1.0, 1.0];
 /// let y_prob = array![0.1, 0.4, 0.35, 0.8];
 ///
-/// let (precision, recall, _) = precision_recall_curve(&y_true, &y_prob, None, None).unwrap();
+/// let (precision, recall, _thresholds) = precision_recall_curve(&y_true, &y_prob, None, None).unwrap();
 /// let average_precision = average_precision_score_from_curve(&precision, &recall);
 /// ```
+#[allow(dead_code)]
 pub fn average_precision_score_from_curve<S>(
     precision: &ArrayBase<S, Ix1>,
     recall: &ArrayBase<S, Ix1>,
@@ -275,6 +277,7 @@ where
 ///
 /// let ap = average_precision_score(&y_true, &y_prob, None, None).unwrap();
 /// ```
+#[allow(dead_code)]
 pub fn average_precision_score<T, S1, S2, D1>(
     y_true: &ArrayBase<S1, D1>,
     y_prob: &ArrayBase<S2, Ix1>,
@@ -287,8 +290,9 @@ where
     S2: Data<Elem = f64>,
     D1: Dimension,
 {
-    let (precision, recall, _) = precision_recall_curve(y_true, y_prob, pos_label, sample_weight)?;
-    Ok(average_precision_score_from_curve(&precision, &recall))
+    let (precision, recall_, _thresholds) =
+        precision_recall_curve(y_true, y_prob, pos_label, sample_weight)?;
+    Ok(average_precision_score_from_curve(&precision, &recall_))
 }
 
 /// Find the optimal threshold to maximize a given score function.
@@ -327,6 +331,7 @@ where
 ///
 /// let (threshold, score) = find_optimal_threshold(&y_true, &y_prob, None, score_func, None).unwrap();
 /// ```
+#[allow(dead_code)]
 pub fn find_optimal_threshold<T, S1, S2, D1, F>(
     y_true: &ArrayBase<S1, D1>,
     y_prob: &ArrayBase<S2, Ix1>,
@@ -437,6 +442,7 @@ where
 ///
 /// let g_means = g_means_score(&y_true, &y_pred, None).unwrap();
 /// ```
+#[allow(dead_code)]
 pub fn g_means_score<T, S1, S2, D1, D2>(
     y_true: &ArrayBase<S1, D1>,
     y_pred: &ArrayBase<S2, D2>,
@@ -532,6 +538,7 @@ where
 ///
 /// let (threshold, score) = find_optimal_threshold_g_means(&y_true, &y_prob, None, None).unwrap();
 /// ```
+#[allow(dead_code)]
 pub fn find_optimal_threshold_g_means<T, S1, S2, D1>(
     y_true: &ArrayBase<S1, D1>,
     y_prob: &ArrayBase<S2, Ix1>,

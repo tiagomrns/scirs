@@ -8,6 +8,7 @@ use scirs2_signal::median::{
     rank_filter_1d, EdgeMode, MedianConfig,
 };
 
+#[allow(dead_code)]
 fn main() {
     println!("Median Filtering Examples");
     println!("-------------------------");
@@ -245,6 +246,7 @@ fn main() {
 }
 
 /// Generates a test signal with impulse noise
+#[allow(dead_code)]
 fn generate_impulse_signal() -> (Array1<f64>, Array1<f64>) {
     // Create clean signal with step edges and smooth regions
     let n = 500;
@@ -292,6 +294,7 @@ fn generate_impulse_signal() -> (Array1<f64>, Array1<f64>) {
 }
 
 /// Generates a test image with impulse noise
+#[allow(dead_code)]
 fn generate_impulse_image() -> (Array2<f64>, Array2<f64>) {
     // Create a test image with geometric shapes
     let size = 64;
@@ -352,6 +355,7 @@ fn generate_impulse_image() -> (Array2<f64>, Array2<f64>) {
 }
 
 /// Generates a test color image with impulse noise
+#[allow(dead_code)]
 fn generate_color_impulse_image() -> (Array3<f64>, Array3<f64>) {
     // Create a color image with RGB channels
     let size = 64;
@@ -425,6 +429,7 @@ fn generate_color_impulse_image() -> (Array3<f64>, Array3<f64>) {
 }
 
 /// Helper function to extract a channel from a color image
+#[allow(dead_code)]
 fn extract_channel(image: &Array3<f64>, channel: usize) -> Array2<f64> {
     let (height, width, _) = image.dim();
     let mut result = Array2::zeros((height, width));
@@ -439,6 +444,7 @@ fn extract_channel(image: &Array3<f64>, channel: usize) -> Array2<f64> {
 }
 
 /// Calculates Mean Squared Error (MSE) between two signals
+#[allow(dead_code)]
 fn calculate_mse(signal1: &Array1<f64>, signal2: &Array1<f64>) -> f64 {
     if signal1.len() != signal2.len() {
         return f64::INFINITY;
@@ -455,6 +461,7 @@ fn calculate_mse(signal1: &Array1<f64>, signal2: &Array1<f64>) -> f64 {
 }
 
 /// Calculates Mean Squared Error (MSE) between two images
+#[allow(dead_code)]
 fn calculate_image_mse(image1: &Array2<f64>, image2: &Array2<f64>) -> f64 {
     if image1.dim() != image2.dim() {
         return f64::INFINITY;
@@ -474,6 +481,7 @@ fn calculate_image_mse(image1: &Array2<f64>, image2: &Array2<f64>) -> f64 {
 }
 
 /// Calculates Mean Squared Error (MSE) between two color images
+#[allow(dead_code)]
 fn calculate_color_mse(image1: &Array3<f64>, image2: &Array3<f64>) -> f64 {
     if image1.dim() != image2.dim() {
         return f64::INFINITY;
@@ -495,6 +503,7 @@ fn calculate_color_mse(image1: &Array3<f64>, image2: &Array3<f64>) -> f64 {
 }
 
 /// Saves 1D signals to a CSV file for plotting
+#[allow(dead_code)]
 fn save_signal_to_csv(
     filename: &str,
     clean: &Array1<f64>,
@@ -533,6 +542,7 @@ fn save_signal_to_csv(
 }
 
 /// Saves a 2D image to a CSV file for visualization
+#[allow(dead_code)]
 fn save_image_to_csv(filename: &str, image: &Array2<f64>) {
     let mut file = File::create(filename).expect("Failed to create file");
 

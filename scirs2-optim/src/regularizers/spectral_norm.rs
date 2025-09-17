@@ -6,6 +6,8 @@
 
 use ndarray::{Array, Array2, Array4, Dimension, ScalarOperand};
 use num_traits::{Float, FromPrimitive};
+use rand::Rng;
+use scirs2_core::random::Random;
 use std::fmt::Debug;
 
 use crate::error::{OptimError, Result};
@@ -38,6 +40,8 @@ pub struct SpectralNorm<A: Float> {
     u: Option<Array<A, ndarray::Ix1>>,
     /// Cached right singular vector  
     v: Option<Array<A, ndarray::Ix1>>,
+    /// Random number generator
+    rng: Random<rand::rngs::StdRng>,
 }
 
 impl<A: Float + Debug + ScalarOperand + FromPrimitive> SpectralNorm<A> {
@@ -46,12 +50,13 @@ impl<A: Float + Debug + ScalarOperand + FromPrimitive> SpectralNorm<A> {
     /// # Arguments
     ///
     /// * `n_power_iterations` - Number of power iterations for SVD approximation
-    pub fn new(n_power_iterations: usize) -> Self {
+    pub fn new(n_poweriterations: usize) -> Self {
         Self {
-            n_power_iterations,
+            n_power_iterations: n_poweriterations,
             eps: A::from_f64(1e-12).unwrap(),
             u: None,
             v: None,
+            rng: Random::seed(42),
         }
     }
 
@@ -62,14 +67,14 @@ impl<A: Float + Debug + ScalarOperand + FromPrimitive> SpectralNorm<A> {
         // Initialize u and v if not already done
         if self.u.is_none() || self.u.as_ref().unwrap().len() != m {
             self.u = Some(Array::from_shape_fn((m,), |_| {
-                let val: f64 = rand::random();
+                let val: f64 = self.rng.gen_range(0.0..1.0);
                 A::from_f64(val).unwrap()
             }));
         }
 
         if self.v.is_none() || self.v.as_ref().unwrap().len() != n {
             self.v = Some(Array::from_shape_fn((n,), |_| {
-                let val: f64 = rand::random();
+                let val: f64 = self.rng.gen_range(0.0..1.0);
                 A::from_f64(val).unwrap()
             }));
         }
@@ -141,13 +146,13 @@ impl<A: Float + Debug + ScalarOperand + FromPrimitive> SpectralNorm<A> {
 impl<A: Float + Debug + ScalarOperand + FromPrimitive, D: Dimension> Regularizer<A, D>
     for SpectralNorm<A>
 {
-    fn apply(&self, _params: &Array<A, D>, _gradients: &mut Array<A, D>) -> Result<A> {
-        // For spectral normalization, we don't modify gradients directly
+    fn apply(&self, _params: &Array<A, D>, gradients: &mut Array<A, D>) -> Result<A> {
+        // For spectral normalization, we don't modify _gradients directly
         // Instead, the normalization is typically applied during the forward pass
         Ok(A::zero())
     }
 
-    fn penalty(&self, _params: &Array<A, D>) -> Result<A> {
+    fn penalty(&self, params: &Array<A, D>) -> Result<A> {
         // Spectral normalization doesn't add a penalty term
         Ok(A::zero())
     }

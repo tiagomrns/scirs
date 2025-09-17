@@ -359,7 +359,7 @@ impl WorkStealingStats {
             .iter()
             .enumerate()
             .max_by_key(|(_, &size)| size)
-            .map(|(id, _)| id)
+            .map(|(id_, _)| id_)
     }
 
     /// Get the least loaded thread
@@ -368,7 +368,7 @@ impl WorkStealingStats {
             .iter()
             .enumerate()
             .min_by_key(|(_, &size)| size)
-            .map(|(id, _)| id)
+            .map(|(id_, _)| id_)
     }
 }
 
@@ -384,15 +384,15 @@ where
     T: Send + 'static,
 {
     /// Create a new simple work-stealing pool
-    pub fn new<F>(num_threads: usize, task_processor: F) -> Self
+    pub fn new<F>(_num_threads: usize, task_processor: F) -> Self
     where
         F: Fn(T) + Send + Sync + Clone + 'static,
     {
-        let scheduler = WorkStealingScheduler::new(num_threads);
+        let scheduler = WorkStealingScheduler::new(_num_threads);
         let shutdown = Arc::new(std::sync::atomic::AtomicBool::new(false));
-        let mut worker_handles = Vec::with_capacity(num_threads);
+        let mut worker_handles = Vec::with_capacity(_num_threads);
 
-        for thread_id in 0..num_threads {
+        for thread_id in 0.._num_threads {
             let scheduler_clone = WorkStealingScheduler {
                 deques: scheduler.deques.clone(),
                 num_threads: scheduler.num_threads,
@@ -587,7 +587,7 @@ mod tests {
         let counter = Arc::new(AtomicUsize::new(0));
         let counter_clone = Arc::clone(&counter);
 
-        let pool = SimpleWorkStealingPool::new(2, move |_task: i32| {
+        let pool = SimpleWorkStealingPool::new(2, move |task: i32| {
             counter_clone.fetch_add(1, Ordering::SeqCst);
         });
 

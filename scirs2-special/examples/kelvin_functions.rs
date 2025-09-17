@@ -1,5 +1,6 @@
 use scirs2_special::{bei, beip, ber, berp, kei, keip, kelvin, ker, kerp};
 
+#[allow(dead_code)]
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("Kelvin Functions Example");
     println!("=======================\n");

@@ -56,6 +56,7 @@ use crate::error::{Result, TimeSeriesError};
 /// // The trend should have the same length as the input
 /// assert_eq!(trend.len(), ts.len());
 /// ```
+#[allow(dead_code)]
 pub fn robust_trend_filter<F>(ts: &Array1<F>, options: &RobustFilterOptions) -> Result<Array1<F>>
 where
     F: Float + FromPrimitive + Debug + 'static,
@@ -91,6 +92,7 @@ where
 }
 
 /// Calculates robust weights based on residuals
+#[allow(dead_code)]
 fn calculate_robust_weights<F>(
     residuals: &[F],
     weight_function: WeightFunction,
@@ -123,7 +125,7 @@ where
 
     let scaled_residuals: Vec<F> = residuals.iter().map(|&r| r.abs() / scale).collect();
 
-    // Apply the selected weight function
+    // Apply the selected weight _function
     let weights: Vec<F> = scaled_residuals
         .iter()
         .map(|&u| {
@@ -162,6 +164,7 @@ where
 }
 
 /// Implements the robust Hodrick-Prescott filter
+#[allow(dead_code)]
 fn robust_hodrick_prescott<F>(ts: &Array1<F>, options: &RobustFilterOptions) -> Result<Array1<F>>
 where
     F: Float + FromPrimitive + Debug + 'static,
@@ -270,6 +273,7 @@ where
 }
 
 /// Implements the L1 trend filter
+#[allow(dead_code)]
 fn l1_trend_filter<F>(ts: &Array1<F>, options: &RobustFilterOptions) -> Result<Array1<F>>
 where
     F: Float + FromPrimitive + Debug + 'static,
@@ -392,6 +396,7 @@ where
 }
 
 /// Implements the robust Whittaker smoother
+#[allow(dead_code)]
 fn robust_whittaker_smoother<F>(ts: &Array1<F>, options: &RobustFilterOptions) -> Result<Array1<F>>
 where
     F: Float + FromPrimitive + Debug + 'static,
@@ -514,6 +519,7 @@ where
 /// # Returns
 ///
 /// A `TrendWithConfidenceInterval` struct containing the estimated trend and confidence bounds
+#[allow(dead_code)]
 pub fn robust_trend_filter_with_ci<F>(
     ts: &Array1<F>,
     options: &RobustFilterOptions,

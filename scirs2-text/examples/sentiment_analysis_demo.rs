@@ -2,13 +2,14 @@
 
 use scirs2_text::{LexiconSentimentAnalyzer, RuleBasedSentimentAnalyzer, SentimentLexicon};
 
+#[allow(dead_code)]
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("Sentiment Analysis Demo");
     println!("======================\n");
 
     // Create sentiment analyzers
-    let basic_analyzer = LexiconSentimentAnalyzer::with_basic_lexicon();
-    let rule_based_analyzer = RuleBasedSentimentAnalyzer::with_basic_lexicon();
+    let basic_analyzer = LexiconSentimentAnalyzer::with_basiclexicon();
+    let rule_based_analyzer = RuleBasedSentimentAnalyzer::with_basiclexicon();
 
     // Example texts for analysis
     let texts = vec![
@@ -27,7 +28,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     for text in &texts {
         let result = basic_analyzer.analyze(text)?;
-        println!("\nText: \"{}\"", text);
+        println!("\nText: \"{text}\"");
         println!("  Sentiment: {:?}", result.sentiment);
         println!("  Score: {:.2}", result.score);
         println!("  Confidence: {:.2}%", result.confidence * 100.0);
@@ -44,7 +45,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("=============================");
 
     // Examples with intensifiers
-    let intensified_texts = vec![
+    let intensifiedtexts = vec![
         "This is good",
         "This is very good",
         "This is extremely good",
@@ -53,11 +54,11 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         "This is slightly bad",
     ];
 
-    for text in &intensified_texts {
+    for text in &intensifiedtexts {
         let basic_result = basic_analyzer.analyze(text)?;
         let rule_result = rule_based_analyzer.analyze(text)?;
 
-        println!("\nText: \"{}\"", text);
+        println!("\nText: \"{text}\"");
         println!("  Basic score: {:.2}", basic_result.score);
         println!("  Rule-based score: {:.2}", rule_result.score);
         println!(
@@ -70,7 +71,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("\n\nBatch Analysis:");
     println!("==============");
 
-    let batch_texts = vec![
+    let batchtexts = vec![
         "Great product!",
         "Terrible service.",
         "Average quality.",
@@ -78,9 +79,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         "Would not buy again.",
     ];
 
-    let batch_results = basic_analyzer.analyze_batch(&batch_texts)?;
+    let batch_results = basic_analyzer.analyze_batch(&batchtexts)?;
 
-    for (text, result) in batch_texts.iter().zip(batch_results.iter()) {
+    for (text, result) in batchtexts.iter().zip(batch_results.iter()) {
         println!(
             "{}: {:?} (score: {:.2})",
             text, result.sentiment, result.score
@@ -98,13 +99,13 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let custom_analyzer = LexiconSentimentAnalyzer::new(custom_lexicon);
 
-    let custom_texts = vec![
+    let customtexts = vec![
         "This is awesome!",
         "Meh, not impressed",
         "Terrible experience",
     ];
 
-    for text in &custom_texts {
+    for text in &customtexts {
         let result = custom_analyzer.analyze(text)?;
         println!(
             "\n\"{}\" -> {:?} (score: {:.2})",

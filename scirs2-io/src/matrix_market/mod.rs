@@ -286,6 +286,7 @@ impl MMHeader {
 /// let matrix = read_sparse_matrix("matrix.mtx").unwrap();
 /// println!("Matrix: {}x{} with {} non-zeros", matrix.rows, matrix.cols, matrix.nnz);
 /// ```
+#[allow(dead_code)]
 pub fn read_sparse_matrix<P: AsRef<Path>>(path: P) -> Result<MMSparseMatrix<f64>> {
     let file = File::open(path).map_err(|e| IoError::FileError(e.to_string()))?;
     let reader = BufReader::new(file);
@@ -426,6 +427,7 @@ pub fn read_sparse_matrix<P: AsRef<Path>>(path: P) -> Result<MMSparseMatrix<f64>
 ///
 /// write_sparse_matrix("output.mtx", &matrix).unwrap();
 /// ```
+#[allow(dead_code)]
 pub fn write_sparse_matrix<P: AsRef<Path>>(path: P, matrix: &MMSparseMatrix<f64>) -> Result<()> {
     let file = File::create(path).map_err(|e| IoError::FileError(e.to_string()))?;
     let mut writer = BufWriter::new(file);
@@ -478,6 +480,7 @@ pub fn write_sparse_matrix<P: AsRef<Path>>(path: P, matrix: &MMSparseMatrix<f64>
 /// # Returns
 ///
 /// * `Result<MMDenseMatrix<f64>>` - The dense matrix or an error
+#[allow(dead_code)]
 pub fn read_dense_matrix<P: AsRef<Path>>(path: P) -> Result<MMDenseMatrix<f64>> {
     let file = File::open(path).map_err(|e| IoError::FileError(e.to_string()))?;
     let reader = BufReader::new(file);
@@ -573,6 +576,7 @@ pub fn read_dense_matrix<P: AsRef<Path>>(path: P) -> Result<MMDenseMatrix<f64>> 
 /// # Returns
 ///
 /// * `Result<()>` - Success or an error
+#[allow(dead_code)]
 pub fn write_dense_matrix<P: AsRef<Path>>(path: P, matrix: &MMDenseMatrix<f64>) -> Result<()> {
     let file = File::create(path).map_err(|e| IoError::FileError(e.to_string()))?;
     let mut writer = BufWriter::new(file);
@@ -614,6 +618,7 @@ pub fn write_dense_matrix<P: AsRef<Path>>(path: P, matrix: &MMDenseMatrix<f64>) 
 /// # Returns
 ///
 /// * `(Array1<usize>, Array1<usize>, Array1<f64>)` - Row indices, column indices, and values
+#[allow(dead_code)]
 pub fn sparse_to_coo(matrix: &MMSparseMatrix<f64>) -> (Array1<usize>, Array1<usize>, Array1<f64>) {
     let rows: Vec<usize> = matrix.entries.iter().map(|e| e.row).collect();
     let cols: Vec<usize> = matrix.entries.iter().map(|e| e.col).collect();
@@ -635,6 +640,7 @@ pub fn sparse_to_coo(matrix: &MMSparseMatrix<f64>) -> (Array1<usize>, Array1<usi
 /// # Returns
 ///
 /// * `MMSparseMatrix<f64>` - The Matrix Market sparse matrix
+#[allow(dead_code)]
 pub fn coo_to_sparse(
     rows: &Array1<usize>,
     cols: &Array1<usize>,
@@ -678,6 +684,7 @@ pub fn coo_to_sparse(
 /// let (matrix, stats) = read_sparse_matrix_parallel("large_matrix.mtx", config).unwrap();
 /// println!("Read {} entries in {:.2}ms", stats.entries_processed, stats.io_time_ms);
 /// ```
+#[allow(dead_code)]
 pub fn read_sparse_matrix_parallel<P: AsRef<Path>>(
     path: P,
     config: ParallelConfig,
@@ -859,6 +866,7 @@ pub fn read_sparse_matrix_parallel<P: AsRef<Path>>(
 }
 
 /// Parse a single matrix entry line
+#[allow(dead_code)]
 fn parse_matrix_entry(line: &str, header: &MMHeader) -> Result<SparseEntry<f64>> {
     let parts: Vec<&str> = line.split_whitespace().collect();
     if parts.len() < 2 {
@@ -928,6 +936,7 @@ fn parse_matrix_entry(line: &str, header: &MMHeader) -> Result<SparseEntry<f64>>
 /// let stats = write_sparse_matrix_parallel("output.mtx", &matrix, config).unwrap();
 /// println!("Wrote {} entries in {:.2}ms", stats.entries_processed, stats.io_time_ms);
 /// ```
+#[allow(dead_code)]
 pub fn write_sparse_matrix_parallel<P: AsRef<Path>>(
     path: P,
     matrix: &MMSparseMatrix<f64>,
@@ -1000,7 +1009,7 @@ pub fn write_sparse_matrix_parallel<P: AsRef<Path>>(
             .into_inner()
             .unwrap();
 
-        all_formatted.sort_by_key(|&(idx, _)| idx);
+        all_formatted.sort_by_key(|&(idx_, _)| idx_);
 
         for (_, lines) in all_formatted {
             for line in lines {
@@ -1026,6 +1035,7 @@ pub fn write_sparse_matrix_parallel<P: AsRef<Path>>(
 }
 
 /// Write a single matrix entry to the writer
+#[allow(dead_code)]
 fn write_matrix_entry<W: Write>(
     writer: &mut W,
     entry: &SparseEntry<f64>,
@@ -1048,6 +1058,7 @@ fn write_matrix_entry<W: Write>(
 }
 
 /// Format a single matrix entry as a string
+#[allow(dead_code)]
 fn format_matrix_entry(entry: &SparseEntry<f64>, header: &MMHeader) -> String {
     if header.data_type == MMDataType::Pattern {
         format!("{} {}", entry.row + 1, entry.col + 1)
@@ -1066,6 +1077,7 @@ fn format_matrix_entry(entry: &SparseEntry<f64>, header: &MMHeader) -> String {
 /// # Returns
 ///
 /// * `ParallelConfig` - Optimized configuration
+#[allow(dead_code)]
 pub fn create_optimal_parallel_config(
     nnz: usize,
     available_memory: Option<usize>,
@@ -1086,10 +1098,10 @@ pub fn create_optimal_parallel_config(
         config.use_memory_mapping = true;
     }
 
-    // Adjust based on available memory
-    if let Some(memory) = available_memory {
+    // Adjust based on available _memory
+    if let Some(_memory) = available_memory {
         let entry_size = std::mem::size_of::<SparseEntry<f64>>();
-        let max_entries_in_memory = memory / (entry_size * 4); // Use 25% of available memory
+        let max_entries_in_memory = _memory / (entry_size * 4); // Use 25% of available _memory
 
         if nnz > max_entries_in_memory {
             config.chunk_size = config

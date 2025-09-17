@@ -4,6 +4,7 @@ use scirs2_vision::preprocessing::{
 };
 
 #[test]
+#[allow(dead_code)]
 fn test_gaussian_blur() {
     // Create a simple test image
     let mut img = RgbImage::new(5, 5);
@@ -41,6 +42,7 @@ fn test_gaussian_blur() {
 }
 
 #[test]
+#[allow(dead_code)]
 fn test_bilateral_filter_grayscale() {
     // Create a test image with a sharp edge
     let mut img = GrayImage::new(10, 10);
@@ -76,6 +78,7 @@ fn test_bilateral_filter_grayscale() {
 }
 
 #[test]
+#[allow(dead_code)]
 fn test_bilateral_filter_color() {
     // Create a test color image with a sharp edge
     let mut img = RgbImage::new(10, 10);
@@ -120,6 +123,7 @@ fn test_bilateral_filter_color() {
 }
 
 #[test]
+#[allow(dead_code)]
 fn test_median_filter() {
     // Create a test image with salt and pepper noise
     let mut img = GrayImage::new(10, 10);
@@ -155,6 +159,7 @@ fn test_median_filter() {
 }
 
 #[test]
+#[allow(dead_code)]
 fn test_unsharp_mask() {
     // Create a simple test image with a blurred edge
     let mut img = GrayImage::new(10, 10);
@@ -196,6 +201,7 @@ fn test_unsharp_mask() {
 }
 
 #[test]
+#[allow(dead_code)]
 fn test_normalize_brightness() {
     // Create a simple test image with varying brightness
     let mut img = GrayImage::new(10, 10);
@@ -223,13 +229,11 @@ fn test_normalize_brightness() {
     // Darkest should be around 0.2*255 = ~51, brightest around 0.8*255 = ~204
     assert!(
         (50..=52).contains(&darkest_normalized),
-        "Normalized darkest value should be around 51, got {}",
-        darkest_normalized
+        "Normalized darkest value should be around 51, got {darkest_normalized}"
     );
     assert!(
         (203..=205).contains(&brightest_normalized),
-        "Normalized brightest value should be around 204, got {}",
-        brightest_normalized
+        "Normalized brightest value should be around 204, got {brightest_normalized}"
     );
 
     // Original dark and bright values for comparison
@@ -243,6 +247,7 @@ fn test_normalize_brightness() {
 }
 
 #[test]
+#[allow(dead_code)]
 fn test_clahe() {
     // Create a test image with varying contrast
     let mut img = GrayImage::new(64, 64);

@@ -4,7 +4,9 @@
 //! optimizing memory-intensive operations.
 
 use crate::error::CoreResult;
+#[cfg(target_os = "linux")]
 use crate::CoreError;
+#[cfg(target_os = "linux")]
 use std::fs;
 
 /// Memory system information
@@ -59,13 +61,22 @@ impl MemoryInfo {
         return Ok(Self::default());
     }
 
+    fn parse_meminfo_value(line: &str) -> Option<u64> {
+        let parts: Vec<&str> = line.split_whitespace().collect();
+        if parts.len() < 2 {
+            return None;
+        }
+
+        // The second part is typically the value in KB
+        parts[1].parse::<u64>().ok()
+    }
+
     /// Detect memory information on Linux
     #[cfg(target_os = "linux")]
     fn detect_linux() -> CoreResult<Self> {
         let meminfo = fs::read_to_string("/proc/meminfo").map_err(|e| {
             CoreError::IoError(crate::error::ErrorContext::new(format!(
-                "Failed to read /proc/meminfo: {}",
-                e
+                "Failed to read /proc/meminfo: {e}"
             )))
         })?;
 
@@ -96,19 +107,19 @@ impl MemoryInfo {
 
         let page_size = Self::get_page_size();
         let numa_nodes = Self::detect_numa_nodes();
-        let bandwidth_gbps = Self::estimate_memory_bandwidth();
+        let bandwidth_gbps = Self::estimate_memorybandwidth();
         let latency_ns = Self::estimate_memory_latency();
         let pressure = Self::detect_memory_pressure();
 
         let swap_info = SwapInfo {
-            total: swap_total,
-            free: swap_free,
-            used: swap_total - swap_free,
+            total: swap_total as usize,
+            free: swap_free as usize,
+            used: (swap_total - swap_free) as usize,
         };
 
         Ok(Self {
-            total_memory,
-            available_memory,
+            total_memory: total_memory as usize,
+            available_memory: available_memory as usize,
             page_size,
             bandwidth_gbps,
             latency_ns,
@@ -120,7 +131,7 @@ impl MemoryInfo {
 
     /// Parse value from /proc/meminfo line
     #[allow(dead_code)]
-    fn parse_meminfo_value(line: &str) -> Option<usize> {
+    fn parse_meminfo_line(line: &str) -> Option<usize> {
         let parts: Vec<&str> = line.split_whitespace().collect();
         if parts.len() >= 2 {
             parts[1].parse().ok()
@@ -157,7 +168,7 @@ impl MemoryInfo {
 
     /// Estimate memory bandwidth
     #[allow(dead_code)]
-    fn estimate_memory_bandwidth() -> f64 {
+    fn estimate_memorybandwidth() -> f64 {
         // This is a simplified estimation
         // In a real implementation, we might:
         // 1. Read from hardware databases
@@ -331,10 +342,10 @@ mod tests {
 
     #[test]
     fn test_memory_detection() {
-        let memory_info = MemoryInfo::detect();
-        assert!(memory_info.is_ok());
+        let memoryinfo = MemoryInfo::detect();
+        assert!(memoryinfo.is_ok());
 
-        let memory = memory_info.unwrap();
+        let memory = memoryinfo.unwrap();
         assert!(memory.total_memory > 0);
         assert!(memory.available_memory > 0);
         assert!(memory.available_memory <= memory.total_memory);

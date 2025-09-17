@@ -1,6 +1,6 @@
 # scirs2-sparse TODO
 
-## Release Status: 0.1.0-alpha.6 (Final Alpha)
+## Release Status: 0.1.0-beta.1 (Final Alpha)
 
 This is the final alpha release before the stable 1.0.0 release. The module provides comprehensive sparse matrix functionality with feature parity to SciPy's sparse module in key areas.
 
@@ -50,42 +50,64 @@ This is the final alpha release before the stable 1.0.0 release. The module prov
 - Support for NumPy-like array semantics
 - Consistent element-wise and matrix multiplication operators
 
-## Planned Features for 1.0.0 Release 📋
+### Graph Algorithms (csgraph module)
+- **Shortest Path Algorithms**: Dijkstra, Bellman-Ford, Floyd-Warshall with automatic selection
+- **Connected Components**: Undirected, strongly connected, and weakly connected components
+- **Graph Traversal**: BFS, DFS, topological sort, and reachability analysis
+- **Laplacian Matrices**: Standard, normalized, and random walk Laplacians with algebraic connectivity
+- **Minimum Spanning Trees**: Kruskal and Prim algorithms with validation utilities
+- **Advanced Features**: Path reconstruction, component extraction, and graph validation
 
-### High Priority
-- **Graph Algorithms (csgraph module)**
-  - Shortest path algorithms (Dijkstra, Bellman-Ford)
-  - Connected components analysis
-  - Graph traversal utilities
-  - Laplacian matrix computation
+### Performance Optimizations
+- **SIMD Acceleration**: Comprehensive SIMD optimization for matrix operations using `scirs2-core::simd_ops`
+- **Parallel Processing**: Multi-threaded implementations using `scirs2-core::parallel_ops`
+- **GPU Acceleration**: Multi-backend GPU support (CUDA, OpenCL, Metal) with automatic backend selection and CPU fallback
+- **Memory Efficiency**: Out-of-core processing, cache-aware operations, and memory pooling
+- **Platform Detection**: Automatic capability detection and algorithm selection
 
-- **Advanced Linear Algebra**
-  - Eigenvalue solvers (eigs, eigsh)
-  - Singular Value Decomposition (SVD)
-  - Matrix decompositions (LU, Cholesky with pivoting)
-  - One-norm estimator and advanced norm computations
+## Completed Features for 1.0.0 Release ✅
 
-- **Performance Optimizations**
-  - SIMD acceleration for key operations
-  - Parallel implementations using Rayon
-  - Memory usage optimizations
-  - GPU acceleration (optional CUDA/ROCm bindings)
+### High Priority - COMPLETED
 
-### Medium Priority
+- **Advanced Linear Algebra Enhancements**
+  - ✅ Cholesky decomposition with pivoting for indefinite matrices
+  - ✅ Enhanced pivoting strategies for LU decomposition (Partial, Scaled Partial, Threshold, Complete, Rook)
+  - ✅ 2-norm estimation and condition number computation
+  - ✅ Shift-and-invert eigenvalue mode for interior eigenvalues
+  - ✅ Generalized eigenvalue problems (Ax = λBx)
+
+### Medium Priority - COMPLETED
+
 - **Enhanced Linear Operators**
-  - Operator composition (addition, multiplication)
-  - Matrix-free operator implementations
-  - Custom operator support
+  - ✅ Operator composition (addition, subtraction, multiplication)
+  - ✅ Matrix-free operator implementations
+  - ✅ Custom operator support with function operators
+  - ✅ Transpose, adjoint, and power operators
+  - ✅ Utility functions for operator manipulation
 
 - **Specialized Formats**
-  - Additional symmetric sparse formats
-  - Banded matrix formats with specialized solvers
-  - Block diagonal formats
+  - ✅ Additional symmetric sparse formats (SymCsrArray, SymCooArray)
+  - ✅ Banded matrix formats with specialized solvers
+  - ✅ Block diagonal and other specialized formats
 
 - **Advanced Solvers**
-  - Least squares solvers (LSQR, LSMR)
-  - Additional Krylov methods (GCROT, TFQMR)
-  - Algebraic Multigrid (AMG) preconditioners
+  - ✅ Least squares solvers (LSQR, LSMR)
+  - ✅ Additional Krylov methods (GCROT, TFQMR)
+  - ✅ Algebraic Multigrid (AMG) preconditioners
+
+### Production Readiness Enhancements - NEW
+
+- **Documentation and Examples**
+  - ✅ Comprehensive documentation with examples for core types
+  - ✅ Production-ready API documentation
+  - ✅ Comprehensive tutorial showcasing all features
+  - ✅ Clear performance characteristics documentation
+
+- **Error Handling and Diagnostics**
+  - ✅ Enhanced error messages with helpful suggestions
+  - ✅ Context-aware error diagnostics
+  - ✅ Recovery suggestions for common issues
+  - ✅ User-friendly error descriptions
 
 ## Migration Guide
 

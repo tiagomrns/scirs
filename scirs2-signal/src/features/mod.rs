@@ -1,10 +1,11 @@
-//! Time series feature extraction
-//!
-//! This module provides functions for extracting statistical and
-//! spectral features from time series data. These features can be
-//! used for signal characterization, classification, and similarity analysis.
+// Time series feature extraction
+//
+// This module provides functions for extracting statistical and
+// spectral features from time series data. These features can be
+// used for signal characterization, classification, and similarity analysis.
 
 // Re-export modules
+#[allow(unused_imports)]
 pub mod activity;
 pub mod batch;
 pub mod entropy;

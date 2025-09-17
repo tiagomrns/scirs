@@ -14,36 +14,40 @@ use scirs2_metrics::{
 };
 
 /// Generate synthetic classification data for benchmarking
-fn generate_classification_data(n_samples: usize) -> (Array1<f64>, Array1<f64>) {
-    let y_true: Array1<f64> = Array1::from_iter((0..n_samples).map(|i| (i % 2) as f64));
-    let y_pred: Array1<f64> = Array1::from_iter((0..n_samples).map(|i| ((i + 1) % 2) as f64));
+#[allow(dead_code)]
+fn generate_classification_data(_nsamples: usize) -> (Array1<f64>, Array1<f64>) {
+    let y_true: Array1<f64> = Array1::from_iter((0.._nsamples).map(|i| (i % 2) as f64));
+    let y_pred: Array1<f64> = Array1::from_iter((0.._nsamples).map(|i| ((i + 1) % 2) as f64));
     (y_true, y_pred)
 }
 
 /// Generate synthetic classification data with integer labels for confusion matrix
-fn generate_classification_data_int(n_samples: usize) -> (Array1<i32>, Array1<i32>) {
-    let y_true: Array1<i32> = Array1::from_iter((0..n_samples).map(|i| (i % 2) as i32));
-    let y_pred: Array1<i32> = Array1::from_iter((0..n_samples).map(|i| ((i + 1) % 2) as i32));
+#[allow(dead_code)]
+fn generate_classification_data_int(_nsamples: usize) -> (Array1<i32>, Array1<i32>) {
+    let y_true: Array1<i32> = Array1::from_iter((0.._nsamples).map(|i| (i % 2) as i32));
+    let y_pred: Array1<i32> = Array1::from_iter((0.._nsamples).map(|i| ((i + 1) % 2) as i32));
     (y_true, y_pred)
 }
 
 /// Generate synthetic regression data for benchmarking
-fn generate_regression_data(n_samples: usize) -> (Array1<f64>, Array1<f64>) {
-    let y_true: Array1<f64> = Array1::from_iter((0..n_samples).map(|i| i as f64));
-    let y_pred: Array1<f64> = Array1::from_iter((0..n_samples).map(|i| (i as f64) + 0.1));
+#[allow(dead_code)]
+fn generate_regression_data(_nsamples: usize) -> (Array1<f64>, Array1<f64>) {
+    let y_true: Array1<f64> = Array1::from_iter((0.._nsamples).map(|i| i as f64));
+    let y_pred: Array1<f64> = Array1::from_iter((0.._nsamples).map(|i| (i as f64) + 0.1));
     (y_true, y_pred)
 }
 
 /// Generate synthetic clustering data for benchmarking
-fn generate_clustering_data(n_samples: usize, n_features: usize) -> (Array2<f64>, Array1<usize>) {
-    let mut data = Array2::zeros((n_samples, n_features));
-    let mut labels = Array1::zeros(n_samples);
+#[allow(dead_code)]
+fn generate_clustering_data(_n_samples: usize, nfeatures: usize) -> (Array2<f64>, Array1<usize>) {
+    let mut data = Array2::zeros((_n_samples, nfeatures));
+    let mut labels = Array1::zeros(_n_samples);
 
-    for i in 0..n_samples {
+    for i in 0.._n_samples {
         let cluster = i % 3; // 3 clusters
         labels[i] = cluster;
 
-        for j in 0..n_features {
+        for j in 0..nfeatures {
             // Create cluster-specific offsets
             let offset = (cluster as f64) * 10.0;
             data[[i, j]] = offset + (i as f64) + (j as f64) * 0.1;
@@ -54,22 +58,33 @@ fn generate_clustering_data(n_samples: usize, n_features: usize) -> (Array2<f64>
 }
 
 /// Generate synthetic probability distributions for benchmarking
-fn generate_probability_distributions(n_samples: usize) -> (Array1<f64>, Array1<f64>) {
-    let mut p = Array1::zeros(n_samples);
-    let mut q = Array1::zeros(n_samples);
+#[allow(dead_code)]
+fn generate_probability_distributions(_nsamples: usize) -> (Array1<f64>, Array1<f64>) {
+    let mut p = Array1::zeros(_nsamples);
+    let mut q = Array1::zeros(_nsamples);
 
-    let sum_p = n_samples as f64;
-    let sum_q = (n_samples * 2) as f64;
+    // Generate unnormalized weights
+    let mut sum_p = 0.0;
+    let mut sum_q = 0.0;
 
-    for i in 0..n_samples {
-        p[i] = (i + 1) as f64 / sum_p;
-        q[i] = ((i + 1) * 2) as f64 / sum_q;
+    for i in 0.._nsamples {
+        p[i] = (i + 1) as f64;
+        q[i] = ((i + 1) * 2) as f64;
+        sum_p += p[i];
+        sum_q += q[i];
+    }
+
+    // Normalize to make them proper probability distributions
+    for i in 0.._nsamples {
+        p[i] /= sum_p;
+        q[i] /= sum_q;
     }
 
     (p, q)
 }
 
 /// Benchmark classification metrics performance
+#[allow(dead_code)]
 fn benchmark_classification_metrics(c: &mut Criterion) {
     let mut group = c.benchmark_group("classification_metrics");
 
@@ -108,6 +123,7 @@ fn benchmark_classification_metrics(c: &mut Criterion) {
 }
 
 /// Benchmark regression metrics performance
+#[allow(dead_code)]
 fn benchmark_regression_metrics(c: &mut Criterion) {
     let mut group = c.benchmark_group("regression_metrics");
 
@@ -135,6 +151,7 @@ fn benchmark_regression_metrics(c: &mut Criterion) {
 }
 
 /// Benchmark clustering metrics performance
+#[allow(dead_code)]
 fn benchmark_clustering_metrics(c: &mut Criterion) {
     let mut group = c.benchmark_group("clustering_metrics");
 
@@ -159,6 +176,7 @@ fn benchmark_clustering_metrics(c: &mut Criterion) {
 }
 
 /// Benchmark anomaly detection metrics performance
+#[allow(dead_code)]
 fn benchmark_anomaly_metrics(c: &mut Criterion) {
     let mut group = c.benchmark_group("anomaly_metrics");
 
@@ -189,6 +207,7 @@ fn benchmark_anomaly_metrics(c: &mut Criterion) {
 }
 
 /// Benchmark stable statistical computation performance
+#[allow(dead_code)]
 fn benchmark_stable_metrics(c: &mut Criterion) {
     let mut group = c.benchmark_group("stable_metrics");
     let stable_metrics = StableMetrics::<f64>::new();
@@ -215,6 +234,7 @@ fn benchmark_stable_metrics(c: &mut Criterion) {
 }
 
 /// Benchmark high-dimensional data performance
+#[allow(dead_code)]
 fn benchmark_high_dimensional_performance(c: &mut Criterion) {
     let mut group = c.benchmark_group("high_dimensional");
 
@@ -233,6 +253,7 @@ fn benchmark_high_dimensional_performance(c: &mut Criterion) {
 }
 
 /// Benchmark memory efficiency for large datasets
+#[allow(dead_code)]
 fn benchmark_memory_efficiency(c: &mut Criterion) {
     let mut group = c.benchmark_group("memory_efficiency");
 
@@ -269,6 +290,7 @@ fn benchmark_memory_efficiency(c: &mut Criterion) {
 }
 
 /// Benchmark worst-case scenarios for edge case handling
+#[allow(dead_code)]
 fn benchmark_edge_cases(c: &mut Criterion) {
     let mut group = c.benchmark_group("edge_cases");
 

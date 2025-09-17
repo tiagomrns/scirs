@@ -1,14 +1,15 @@
-//! Advanced interpolation methods for signal processing
-//!
-//! This module provides sophisticated interpolation algorithms including
-//! Gaussian process interpolation, Kriging, Radial Basis Functions (RBF),
-//! and minimum energy interpolation.
+// Advanced interpolation methods for signal processing
+//
+// This module provides sophisticated interpolation algorithms including
+// Gaussian process interpolation, Kriging, Radial Basis Functions (RBF),
+// and minimum energy interpolation.
 
-use super::core::InterpolationConfig;
 use crate::error::{SignalError, SignalResult};
+use crate::interpolate::core::InterpolationConfig;
 use ndarray::{Array1, Array2};
 use scirs2_linalg::{cholesky, solve, solve_triangular};
 
+#[allow(unused_imports)]
 /// Applies Gaussian process interpolation to fill missing values in a signal
 ///
 /// Gaussian process interpolation provides a probabilistic approach to interpolation
@@ -36,6 +37,7 @@ use scirs2_linalg::{cholesky, solve, solve_triangular};
 /// let result = gaussian_process_interpolate(&signal, 2.0, 1.0, 0.01).unwrap();
 /// // Result contains probabilistically interpolated values
 /// ```
+#[allow(dead_code)]
 pub fn gaussian_process_interpolate(
     signal: &Array1<f64>,
     kernel_length: f64,
@@ -122,7 +124,7 @@ pub fn gaussian_process_interpolate(
     let l = match cholesky(&k_xx.view(), None) {
         Ok(l) => l,
         Err(_) => {
-            return Err(SignalError::Compute(
+            return Err(SignalError::ComputationError(
                 "Failed to compute Cholesky decomposition of covariance matrix".to_string(),
             ));
         }
@@ -133,7 +135,7 @@ pub fn gaussian_process_interpolate(
     let alpha = match solve_triangular(&l.view(), &y.view(), true, false) {
         Ok(a) => a,
         Err(_) => {
-            return Err(SignalError::Compute(
+            return Err(SignalError::ComputationError(
                 "Failed to solve triangular system in Gaussian process".to_string(),
             ));
         }
@@ -179,6 +181,7 @@ pub fn gaussian_process_interpolate(
 /// let variogram = |h: f64| 1.0 - (-h / 2.0).exp(); // Exponential model
 /// let result = kriging_interpolate(&signal, variogram, &config).unwrap();
 /// ```
+#[allow(dead_code)]
 pub fn kriging_interpolate<F>(
     signal: &Array1<f64>,
     variogram_model: F,
@@ -259,7 +262,7 @@ where
         let weights = match solve(&gamma.view(), &rhs.view(), None) {
             Ok(w) => w,
             Err(_) => {
-                return Err(SignalError::Compute(
+                return Err(SignalError::ComputationError(
                     "Failed to solve Kriging system".to_string(),
                 ));
             }
@@ -304,6 +307,7 @@ where
 /// let rbf = |r: f64| (-r * r).exp(); // Gaussian RBF
 /// let result = rbf_interpolate(&signal, rbf, &config).unwrap();
 /// ```
+#[allow(dead_code)]
 pub fn rbf_interpolate<F>(
     signal: &Array1<f64>,
     rbf_function: F,
@@ -364,7 +368,7 @@ where
     let weights = match solve(&phi.view(), &y.view(), None) {
         Ok(w) => w,
         Err(_) => {
-            return Err(SignalError::Compute(
+            return Err(SignalError::ComputationError(
                 "Failed to solve RBF system".to_string(),
             ));
         }
@@ -414,6 +418,7 @@ where
 /// let result = minimum_energy_interpolate(&signal, &config).unwrap();
 /// // Result contains the smoothest possible interpolation
 /// ```
+#[allow(dead_code)]
 pub fn minimum_energy_interpolate(
     signal: &Array1<f64>,
     config: &InterpolationConfig,
@@ -490,7 +495,7 @@ pub fn minimum_energy_interpolate(
     let y_unknown = match solve(&a_reg.view(), &b.view(), None) {
         Ok(solution) => -solution, // Negative because of how we set up the system
         Err(_) => {
-            return Err(SignalError::Compute(
+            return Err(SignalError::ComputationError(
                 "Failed to solve minimum energy interpolation system".to_string(),
             ));
         }
@@ -524,7 +529,7 @@ pub mod variogram_models {
                 return 0.0;
             }
 
-            if h >= range {
+            if h >= _range {
                 return sill;
             }
 
@@ -567,7 +572,7 @@ pub mod variogram_models {
                 return 0.0;
             }
 
-            nugget + (sill - nugget) * (1.0 - (-9.0 * h * h / (range * range)).exp())
+            nugget + (sill - nugget) * (1.0 - (-9.0 * h * h / (_range * range)).exp())
         }
     }
 
@@ -585,7 +590,7 @@ pub mod variogram_models {
                 return 0.0;
             }
 
-            nugget + slope * h
+            nugget + _slope * h
         }
     }
 }
@@ -600,7 +605,7 @@ pub mod rbf_functions {
     ///
     /// * `epsilon` - Shape parameter controlling the width of the basis function
     pub fn gaussian(epsilon: f64) -> impl Fn(f64) -> f64 {
-        move |r: f64| (-epsilon * r * r).exp()
+        move |r: f64| (-_epsilon * r * r).exp()
     }
 
     /// Multiquadric RBF
@@ -611,7 +616,7 @@ pub mod rbf_functions {
     ///
     /// * `epsilon` - Shape parameter
     pub fn multiquadric(epsilon: f64) -> impl Fn(f64) -> f64 {
-        move |r: f64| (1.0 + epsilon * r * r).sqrt()
+        move |r: f64| ((1.0 + _epsilon * r * r) as f64).sqrt()
     }
 
     /// Inverse multiquadric RBF
@@ -622,7 +627,7 @@ pub mod rbf_functions {
     ///
     /// * `epsilon` - Shape parameter
     pub fn inverse_multiquadric(epsilon: f64) -> impl Fn(f64) -> f64 {
-        move |r: f64| 1.0 / (1.0 + epsilon * r * r).sqrt()
+        move |r: f64| 1.0 / ((1.0 + _epsilon * r * r) as f64).sqrt()
     }
 
     /// Thin plate spline RBF
@@ -644,9 +649,6 @@ pub mod rbf_functions {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::interpolate::core::InterpolationConfig;
-    use ndarray::Array1;
-
     #[test]
     fn test_gaussian_process_interpolate() {
         let signal = Array1::from_vec(vec![1.0, f64::NAN, 3.0, f64::NAN, 5.0]);

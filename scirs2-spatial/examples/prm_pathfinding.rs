@@ -2,6 +2,7 @@ use ndarray::Array1;
 use scirs2_spatial::pathplanning::{PRM2DPlanner, PRMConfig, PRMPlanner};
 use std::time::Instant;
 
+#[allow(dead_code)]
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("Probabilistic Roadmap (PRM) Pathfinding Examples");
     println!("===============================================\n");
@@ -22,7 +23,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let upper_bounds = Array1::from_vec(vec![10.0, 10.0]);
 
     // Create a PRM planner with a circle obstacle at (5,5) with radius 2
-    let mut planner = PRMPlanner::new(config, lower_bounds, upper_bounds);
+    let mut planner = PRMPlanner::new(config, lower_bounds, upper_bounds)?;
 
     planner.set_collision_checker(Box::new(|p: &Array1<f64>| {
         let dx = p[0] - 5.0;
@@ -36,7 +37,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     planner.build_roadmap()?;
     let build_time = start_time.elapsed();
 
-    println!("Roadmap built in {:.2?}", build_time);
+    println!("Roadmap built in {build_time:.2?}");
 
     // Find path from start to goal
     let start = Array1::from_vec(vec![1.0, 1.0]);
@@ -56,7 +57,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             for (i, point) in path.nodes.iter().enumerate() {
                 println!("  {}: [{:.2}, {:.2}]", i, point[0], point[1]);
             }
-            println!("Path finding time: {:.2?}", path_find_time);
+            println!("Path finding time: {path_find_time:.2?}");
 
             // Simple ASCII visualization
             print_ascii_visualization_circle(&path.nodes, 5.0, 5.0, 2.0);
@@ -99,7 +100,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     planner.build_roadmap()?;
     let build_time = start_time.elapsed();
 
-    println!("Roadmap built in {:.2?}", build_time);
+    println!("Roadmap built in {build_time:.2?}");
 
     // Find path from start to goal
     let start = [1.0, 5.0];
@@ -124,7 +125,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             for (i, point) in path.nodes.iter().enumerate() {
                 println!("  {}: [{:.2}, {:.2}]", i, point[0], point[1]);
             }
-            println!("Path finding time: {:.2?}", path_find_time);
+            println!("Path finding time: {path_find_time:.2?}");
 
             // Simple ASCII visualization
             print_ascii_visualization_polygons(&path.nodes, planner.obstacles());
@@ -163,7 +164,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     planner.build_roadmap()?;
     let build_time = start_time.elapsed();
 
-    println!("Roadmap built in {:.2?}", build_time);
+    println!("Roadmap built in {build_time:.2?}");
 
     // Find path from left to right through the narrow passage
     let start = [2.0, 5.0];
@@ -188,7 +189,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             for (i, point) in path.nodes.iter().enumerate() {
                 println!("  {}: [{:.2}, {:.2}]", i, point[0], point[1]);
             }
-            println!("Path finding time: {:.2?}", path_find_time);
+            println!("Path finding time: {path_find_time:.2?}");
 
             // Simple ASCII visualization
             print_ascii_visualization_polygons(&path.nodes, planner.obstacles());
@@ -200,6 +201,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 }
 
 /// Simple ASCII visualization of a path with a circle obstacle
+#[allow(dead_code)]
 fn print_ascii_visualization_circle(
     path: &[Array1<f64>],
     circle_x: f64,
@@ -210,10 +212,10 @@ fn print_ascii_visualization_circle(
     let mut grid = vec![vec![' '; SIZE]; SIZE];
 
     // Draw the circle obstacle
-    for y in 0..SIZE {
-        for x in 0..SIZE {
-            let px = x as f64 / (SIZE as f64) * 10.0;
-            let py = y as f64 / (SIZE as f64) * 10.0;
+    for _y in 0..SIZE {
+        for _x in 0..SIZE {
+            let px = _x as f64 / (SIZE as f64) * 10.0;
+            let py = _y as f64 / (SIZE as f64) * 10.0;
 
             // Check if the point is inside the circle
             let dx = px - circle_x;
@@ -221,7 +223,7 @@ fn print_ascii_visualization_circle(
             let dist_squared = dx * dx + dy * dy;
 
             if dist_squared < circle_radius * circle_radius {
-                grid[SIZE - 1 - y][x] = '#';
+                grid[SIZE - 1 - _y][_x] = '#';
             }
         }
     }
@@ -253,11 +255,11 @@ fn print_ascii_visualization_circle(
             } else {
                 j as f64 / (steps - 1) as f64
             };
-            let x = (gx1 as f64 * (1.0 - t) + gx2 as f64 * t).round() as usize;
-            let y = (gy1 as f64 * (1.0 - t) + gy2 as f64 * t).round() as usize;
+            let _x = (gx1 as f64 * (1.0 - t) + gx2 as f64 * t).round() as usize;
+            let _y = (gy1 as f64 * (1.0 - t) + gy2 as f64 * t).round() as usize;
 
-            if x < SIZE && y < SIZE {
-                grid[SIZE - 1 - y][x] = '*';
+            if _x < SIZE && _y < SIZE {
+                grid[SIZE - 1 - _y][_x] = '*';
             }
         }
     }
@@ -288,6 +290,7 @@ fn print_ascii_visualization_circle(
 }
 
 /// Simple ASCII visualization of a path with polygon obstacles
+#[allow(dead_code)]
 fn print_ascii_visualization_polygons(path: &[Array1<f64>], obstacles: &[Vec<[f64; 2]>]) {
     const SIZE: usize = 20;
     let mut grid = vec![vec![' '; SIZE]; SIZE];
@@ -363,13 +366,14 @@ fn print_ascii_visualization_polygons(path: &[Array1<f64>], obstacles: &[Vec<[f6
     }
 
     // Print the grid
-    println!("\nASCII Visualization (S=start, G=goal, #=obstacle, *=path):");
+    println!("\nASCII Visualization (S=start, G=goal, #=obstacle, *=_path):");
     for row in &grid {
         println!("{}", row.iter().collect::<String>());
     }
 }
 
 /// Check if a point is inside a polygon using the ray casting algorithm
+#[allow(dead_code)]
 fn point_in_polygon(point: &[f64; 2], polygon: &[[f64; 2]]) -> bool {
     let (x, y) = (point[0], point[1]);
     let mut inside = false;

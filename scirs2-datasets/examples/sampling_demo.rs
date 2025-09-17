@@ -6,6 +6,7 @@
 use ndarray::Array1;
 use scirs2_datasets::{load_iris, random_sample, stratified_sample, Dataset};
 
+#[allow(dead_code)]
 fn main() {
     println!("=== Sampling and Bootstrapping Demonstration ===\n");
 
@@ -14,57 +15,51 @@ fn main() {
     let n_samples = iris.n_samples();
 
     println!("Original Iris dataset:");
-    println!("- Samples: {}", n_samples);
+    println!("- Samples: {n_samples}");
     println!("- Features: {}", iris.n_features());
 
     if let Some(target) = &iris.target {
         let class_counts = count_classes(target);
-        println!("- Class distribution: {:?}\n", class_counts);
+        println!("- Class distribution: {class_counts:?}\n");
     }
 
     // Demonstrate random sampling without replacement
     println!("=== Random Sampling (without replacement) ===");
-    let sample_size = 30;
-    let random_indices = random_sample(n_samples, sample_size, false, Some(42)).unwrap();
+    let samplesize = 30;
+    let random_indices = random_sample(n_samples, samplesize, false, Some(42)).unwrap();
 
-    println!(
-        "Sampled {} indices from {} total samples",
-        sample_size, n_samples
-    );
+    println!("Sampled {samplesize} indices from {n_samples} total samples");
     println!(
         "Sample indices: {:?}",
         &random_indices[..10.min(random_indices.len())]
     );
 
     // Create a subset dataset
-    let sample_data = iris.data.select(ndarray::Axis(0), &random_indices);
+    let sampledata = iris.data.select(ndarray::Axis(0), &random_indices);
     let sample_target = iris
         .target
         .as_ref()
         .map(|t| t.select(ndarray::Axis(0), &random_indices));
-    let sample_dataset = Dataset::new(sample_data, sample_target)
+    let sampledataset = Dataset::new(sampledata, sample_target)
         .with_description("Random sample from Iris dataset".to_string());
 
     println!(
         "Random sample dataset: {} samples, {} features",
-        sample_dataset.n_samples(),
-        sample_dataset.n_features()
+        sampledataset.n_samples(),
+        sampledataset.n_features()
     );
 
-    if let Some(target) = &sample_dataset.target {
+    if let Some(target) = &sampledataset.target {
         let sample_class_counts = count_classes(target);
-        println!("Sample class distribution: {:?}\n", sample_class_counts);
+        println!("Sample class distribution: {sample_class_counts:?}\n");
     }
 
     // Demonstrate bootstrap sampling (with replacement)
     println!("=== Bootstrap Sampling (with replacement) ===");
-    let bootstrap_size = 200; // More than original dataset size
-    let bootstrap_indices = random_sample(n_samples, bootstrap_size, true, Some(42)).unwrap();
+    let bootstrapsize = 200; // More than original dataset size
+    let bootstrap_indices = random_sample(n_samples, bootstrapsize, true, Some(42)).unwrap();
 
-    println!(
-        "Bootstrap sampled {} indices from {} total samples",
-        bootstrap_size, n_samples
-    );
+    println!("Bootstrap sampled {bootstrapsize} indices from {n_samples} total samples");
     println!(
         "Bootstrap may have duplicates - first 10 indices: {:?}",
         &bootstrap_indices[..10]
@@ -79,40 +74,31 @@ fn main() {
     let zero_count = index_counts.iter().filter(|&&count| count == 0).count();
 
     println!("Bootstrap statistics:");
-    println!("- Maximum frequency of any sample: {}", max_count);
-    println!(
-        "- Number of original samples not selected: {}\n",
-        zero_count
-    );
+    println!("- Maximum frequency of any sample: {max_count}");
+    println!("- Number of original samples not selected: {zero_count}\n");
 
     // Demonstrate stratified sampling
     println!("=== Stratified Sampling ===");
     if let Some(target) = &iris.target {
-        let stratified_size = 30;
-        let stratified_indices = stratified_sample(target, stratified_size, Some(42)).unwrap();
+        let stratifiedsize = 30;
+        let stratified_indices = stratified_sample(target, stratifiedsize, Some(42)).unwrap();
 
-        println!(
-            "Stratified sampled {} indices maintaining class proportions",
-            stratified_size
-        );
+        println!("Stratified sampled {stratifiedsize} indices maintaining class proportions");
 
         // Create stratified subset
-        let stratified_data = iris.data.select(ndarray::Axis(0), &stratified_indices);
+        let stratifieddata = iris.data.select(ndarray::Axis(0), &stratified_indices);
         let stratified_target = target.select(ndarray::Axis(0), &stratified_indices);
-        let stratified_dataset = Dataset::new(stratified_data, Some(stratified_target))
+        let stratifieddataset = Dataset::new(stratifieddata, Some(stratified_target))
             .with_description("Stratified sample from Iris dataset".to_string());
 
         println!(
             "Stratified sample dataset: {} samples, {} features",
-            stratified_dataset.n_samples(),
-            stratified_dataset.n_features()
+            stratifieddataset.n_samples(),
+            stratifieddataset.n_features()
         );
 
-        let stratified_class_counts = count_classes(&stratified_dataset.target.unwrap());
-        println!(
-            "Stratified sample class distribution: {:?}",
-            stratified_class_counts
-        );
+        let stratified_class_counts = count_classes(&stratifieddataset.target.unwrap());
+        println!("Stratified sample class distribution: {stratified_class_counts:?}");
 
         // Verify proportions are maintained
         let original_proportions = calculate_proportions(&count_classes(target));
@@ -148,6 +134,7 @@ fn main() {
 }
 
 /// Count the number of samples in each class
+#[allow(dead_code)]
 fn count_classes(targets: &Array1<f64>) -> std::collections::HashMap<i64, usize> {
     let mut counts = std::collections::HashMap::new();
     for &target in targets.iter() {
@@ -158,6 +145,7 @@ fn count_classes(targets: &Array1<f64>) -> std::collections::HashMap<i64, usize>
 }
 
 /// Calculate class proportions
+#[allow(dead_code)]
 fn calculate_proportions(
     counts: &std::collections::HashMap<i64, usize>,
 ) -> std::collections::HashMap<i64, f64> {

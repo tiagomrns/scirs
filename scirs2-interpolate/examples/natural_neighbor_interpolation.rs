@@ -10,6 +10,7 @@ use rand::Rng;
 use scirs2_interpolate::voronoi::{make_laplace_interpolator, make_sibson_interpolator};
 use std::error::Error;
 
+#[allow(dead_code)]
 fn main() -> Result<(), Box<dyn Error>> {
     // Generate scattered data points
     let n_points = 30;

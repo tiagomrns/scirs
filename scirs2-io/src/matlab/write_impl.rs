@@ -25,11 +25,12 @@ const MI_INT64: i32 = 12;
 const MI_UINT64: i32 = 13;
 
 /// Write MAT file header (simplified version)
+#[allow(dead_code)]
 pub fn write_mat_header<W: Write>(writer: &mut W) -> Result<()> {
     // Write "MATLAB" magic string
     writer
         .write_all(b"MATLAB")
-        .map_err(|e| IoError::FileError(format!("Failed to write header: {}", e)))?;
+        .map_err(|e| IoError::FileError(format!("Failed to write header: {e}")))?;
 
     // Write descriptive text - MATLAB header is exactly 128 bytes total
     let description = b" 5.0 MAT-file, Created by: scirs2-io library";
@@ -38,33 +39,34 @@ pub fn write_mat_header<W: Write>(writer: &mut W) -> Result<()> {
     // Write the description
     writer
         .write_all(description)
-        .map_err(|e| IoError::FileError(format!("Failed to write description: {}", e)))?;
+        .map_err(|e| IoError::FileError(format!("Failed to write description: {e}")))?;
 
     // Calculate padding needed to reach position 124 (subsystem data offset at 124-128)
-    let header_text_target = 124;
+    let headertext_target = 124;
     let already_written = 6 + description_len; // "MATLAB" (6 bytes) + description
-    let padding_needed = header_text_target - already_written;
+    let padding_needed = headertext_target - already_written;
 
     // Write padding (spaces or nulls)
     if padding_needed > 0 {
         let padding = vec![0u8; padding_needed];
         writer
             .write_all(&padding)
-            .map_err(|e| IoError::FileError(format!("Failed to write padding: {}", e)))?;
+            .map_err(|e| IoError::FileError(format!("Failed to write padding: {e}")))?;
     }
 
     // Write subsystem data offset (4 bytes: version + endianness at positions 124-128)
     writer
         .write_u16::<LittleEndian>(0x0100) // Version
-        .map_err(|e| IoError::FileError(format!("Failed to write version: {}", e)))?;
+        .map_err(|e| IoError::FileError(format!("Failed to write version: {e}")))?;
     writer
         .write_u16::<LittleEndian>(0x4D49) // Endianness indicator "MI"
-        .map_err(|e| IoError::FileError(format!("Failed to write endianness: {}", e)))?;
+        .map_err(|e| IoError::FileError(format!("Failed to write endianness: {e}")))?;
 
     Ok(())
 }
 
 /// Write a variable (simplified version that only handles basic types)
+#[allow(dead_code)]
 pub fn write_variable<W: Write + Seek>(
     writer: &mut W,
     name: &str,
@@ -73,19 +75,19 @@ pub fn write_variable<W: Write + Seek>(
     // Write matrix element header (MI_MATRIX)
     writer
         .write_i32::<LittleEndian>(MI_MATRIX)
-        .map_err(|e| IoError::FileError(format!("Failed to write matrix type: {}", e)))?;
+        .map_err(|e| IoError::FileError(format!("Failed to write matrix type: {e}")))?;
 
     // Placeholder for size - we'll calculate and update this at the end
     let size_pos = writer
         .stream_position()
-        .map_err(|e| IoError::FileError(format!("Failed to get size position: {}", e)))?;
+        .map_err(|e| IoError::FileError(format!("Failed to get size position: {e}")))?;
     writer
         .write_i32::<LittleEndian>(0)
-        .map_err(|e| IoError::FileError(format!("Failed to write size placeholder: {}", e)))?;
+        .map_err(|e| IoError::FileError(format!("Failed to write size placeholder: {e}")))?;
 
     let data_start = writer
         .stream_position()
-        .map_err(|e| IoError::FileError(format!("Failed to get data start: {}", e)))?;
+        .map_err(|e| IoError::FileError(format!("Failed to get data start: {e}")))?;
 
     match mat_type {
         MatType::Double(array) => {
@@ -109,7 +111,7 @@ pub fn write_variable<W: Write + Seek>(
         }
         _ => {
             return Err(IoError::Other(format!(
-                "Data type not yet supported in simplified writer: {:?}",
+                "Data _type not yet supported in simplified writer: {:?}",
                 std::any::type_name::<MatType>()
             )));
         }
@@ -118,27 +120,28 @@ pub fn write_variable<W: Write + Seek>(
     // Calculate and write the actual matrix size
     let data_end = writer
         .stream_position()
-        .map_err(|e| IoError::FileError(format!("Failed to get data end: {}", e)))?;
+        .map_err(|e| IoError::FileError(format!("Failed to get data end: {e}")))?;
     let total_size = (data_end - data_start) as i32;
 
     // Go back and write the actual size
     let current_pos = data_end;
     writer
         .seek(std::io::SeekFrom::Start(size_pos))
-        .map_err(|e| IoError::FileError(format!("Failed to seek to size: {}", e)))?;
+        .map_err(|e| IoError::FileError(format!("Failed to seek to size: {e}")))?;
     writer
         .write_i32::<LittleEndian>(total_size)
-        .map_err(|e| IoError::FileError(format!("Failed to write actual size: {}", e)))?;
+        .map_err(|e| IoError::FileError(format!("Failed to write actual size: {e}")))?;
 
     // Return to end of data
     writer
         .seek(std::io::SeekFrom::Start(current_pos))
-        .map_err(|e| IoError::FileError(format!("Failed to seek back: {}", e)))?;
+        .map_err(|e| IoError::FileError(format!("Failed to seek back: {e}")))?;
 
     Ok(())
 }
 
 /// Write matrix header content (flags, dimensions, name) without the outer matrix element header
+#[allow(dead_code)]
 fn write_matrix_header_content<W: Write + Seek>(
     writer: &mut W,
     name: &str,
@@ -214,6 +217,7 @@ fn write_matrix_header_content<W: Write + Seek>(
 }
 
 /// Write double precision data
+#[allow(dead_code)]
 fn write_double_data<W: Write>(writer: &mut W, array: &ArrayD<f64>) -> Result<()> {
     let data_size = (array.len() * 8) as i32;
     writer
@@ -241,6 +245,7 @@ fn write_double_data<W: Write>(writer: &mut W, array: &ArrayD<f64>) -> Result<()
 }
 
 /// Write single precision data
+#[allow(dead_code)]
 fn write_single_data<W: Write>(writer: &mut W, array: &ArrayD<f32>) -> Result<()> {
     let data_size = (array.len() * 4) as i32;
     writer
@@ -268,6 +273,7 @@ fn write_single_data<W: Write>(writer: &mut W, array: &ArrayD<f32>) -> Result<()
 }
 
 /// Write int32 data
+#[allow(dead_code)]
 fn write_int32_data<W: Write>(writer: &mut W, array: &ArrayD<i32>) -> Result<()> {
     let data_size = (array.len() * 4) as i32;
     writer
@@ -295,6 +301,7 @@ fn write_int32_data<W: Write>(writer: &mut W, array: &ArrayD<i32>) -> Result<()>
 }
 
 /// Write logical data (as uint8)
+#[allow(dead_code)]
 fn write_logical_data<W: Write>(writer: &mut W, array: &ArrayD<bool>) -> Result<()> {
     let data_size = array.len() as i32;
     writer
@@ -322,6 +329,7 @@ fn write_logical_data<W: Write>(writer: &mut W, array: &ArrayD<bool>) -> Result<
 }
 
 /// Write character data content (without outer matrix header)
+#[allow(dead_code)]
 fn write_char_data_content<W: Write + Seek>(
     writer: &mut W,
     name: &str,

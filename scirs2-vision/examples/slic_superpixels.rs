@@ -3,6 +3,7 @@
 use scirs2_vision::segmentation::{draw_superpixel_boundaries, slic};
 use std::error::Error;
 
+#[allow(dead_code)]
 fn main() -> Result<(), Box<dyn Error>> {
     // Load input image
     let img = image::open("examples/input/input.jpg")?;
@@ -19,7 +20,7 @@ fn main() -> Result<(), Box<dyn Error>> {
     ];
 
     for (n_segments, compactness, description) in test_cases {
-        println!("\n{}", description);
+        println!("\n{description}");
 
         // Run SLIC
         let labels = slic(&img, n_segments, compactness, 10, 1.0)?;
@@ -37,7 +38,7 @@ fn main() -> Result<(), Box<dyn Error>> {
             n_segments, compactness as i32
         );
         result.save(&filename)?;
-        println!("  Saved to: {}", filename);
+        println!("  Saved to: {filename}");
     }
 
     println!("\nSLIC superpixel segmentation complete!");

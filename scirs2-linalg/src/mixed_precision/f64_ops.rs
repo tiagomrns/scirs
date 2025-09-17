@@ -16,6 +16,7 @@ use crate::error::{LinalgError, LinalgResult};
 /// This implementation is automatically selected when the "parallel" feature is enabled.
 /// Uses advanced blocked algorithms with parallel processing for optimal performance.
 #[cfg(feature = "parallel")]
+#[allow(dead_code)]
 pub fn mixed_precision_matmul_f64_parallel<A, B, C, H>(
     a: &ArrayView2<A>,
     b: &ArrayView2<B>,
@@ -29,19 +30,19 @@ where
     use ndarray::Zip;
 
     // Check dimensions
-    let a_shape = a.shape();
-    let b_shape = b.shape();
+    let ashape = a.shape();
+    let bshape = b.shape();
 
-    if a_shape[1] != b_shape[0] {
+    if ashape[1] != bshape[0] {
         return Err(LinalgError::ShapeError(format!(
             "Matrix dimensions incompatible for multiplication: {}x{} and {}x{}",
-            a_shape[0], a_shape[1], b_shape[0], b_shape[1]
+            ashape[0], ashape[1], bshape[0], bshape[1]
         )));
     }
 
-    let m = a_shape[0];
-    let n = b_shape[1];
-    let k = a_shape[1];
+    let m = ashape[0];
+    let n = bshape[1];
+    let k = ashape[1];
 
     // Convert to high precision
     let a_high = convert_2d::<A, H>(a);
@@ -162,6 +163,7 @@ where
 /// This implementation is automatically selected when the "parallel" feature is disabled.
 /// Uses efficient blocked algorithms optimized for f64 precision computations.
 #[cfg(not(feature = "parallel"))]
+#[allow(dead_code)]
 pub fn mixed_precision_matmul_f64_serial<A, B, C, H>(
     a: &ArrayView2<A>,
     b: &ArrayView2<B>,
@@ -173,19 +175,19 @@ where
     H: Float + Clone + NumCast + Debug + ToPrimitive + NumAssign + Zero,
 {
     // Check dimensions
-    let a_shape = a.shape();
-    let b_shape = b.shape();
+    let ashape = a.shape();
+    let bshape = b.shape();
 
-    if a_shape[1] != b_shape[0] {
+    if ashape[1] != bshape[0] {
         return Err(LinalgError::ShapeError(format!(
             "Matrix dimensions incompatible for multiplication: {}x{} and {}x{}",
-            a_shape[0], a_shape[1], b_shape[0], b_shape[1]
+            ashape[0], ashape[1], bshape[0], bshape[1]
         )));
     }
 
-    let m = a_shape[0];
-    let n = b_shape[1];
-    let k = a_shape[1];
+    let m = ashape[0];
+    let n = bshape[1];
+    let k = ashape[1];
 
     // Convert to high precision
     let a_high = convert_2d::<A, H>(a);
@@ -277,6 +279,7 @@ where
 ///
 /// Automatically chooses between parallel and serial implementations based
 /// on compile-time feature flags.
+#[allow(dead_code)]
 pub fn mixed_precision_matmul_f64<A, B, C, H>(
     a: &ArrayView2<A>,
     b: &ArrayView2<B>,

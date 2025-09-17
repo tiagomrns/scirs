@@ -17,6 +17,7 @@
 //! backends for distributed computing.
 
 /// Initializes the distributed system for the array protocol.
+#[allow(dead_code)]
 pub fn init_distributed_system() {
     // This function would initialize the distributed computing system
     // For now, it's just a placeholder

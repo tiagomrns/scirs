@@ -7,7 +7,7 @@ use ndarray::{Array1, Array2, ArrayBase, Data, Dimension};
 use num_traits::{Float, FromPrimitive, NumCast};
 use std::cmp::Ordering;
 
-use super::check_same_shape;
+use super::check_sameshape;
 use crate::error::{MetricsError, Result};
 
 /// Structure representing a histogram of residuals
@@ -51,6 +51,7 @@ pub struct ErrorHistogram<F: Float> {
 /// assert_eq!(hist.bin_edges.len(), 5);
 /// assert_eq!(hist.n_observations, 8);
 /// ```
+#[allow(dead_code)]
 pub fn error_histogram<F, S1, S2, D1, D2>(
     y_true: &ArrayBase<S1, D1>,
     y_pred: &ArrayBase<S2, D2>,
@@ -64,11 +65,11 @@ where
     D2: Dimension,
 {
     // Check that arrays have the same shape
-    check_same_shape::<F, S1, S2, D1, D2>(y_true, y_pred)?;
+    check_sameshape::<F, S1, S2, D1, D2>(y_true, y_pred)?;
 
     if n_bins == 0 {
         return Err(MetricsError::InvalidInput(
-            "Number of bins must be positive".to_string(),
+            "Number of _bins must be positive".to_string(),
         ));
     }
 
@@ -164,6 +165,7 @@ pub struct QQPlotData<F: Float> {
 /// let qq_data = qq_plot_data(&y_true, &y_pred, 20).unwrap();
 /// assert_eq!(qq_data.theoretical_quantiles.len(), qq_data.sample_quantiles.len());
 /// ```
+#[allow(dead_code)]
 pub fn qq_plot_data<F, S1, S2, D1, D2>(
     y_true: &ArrayBase<S1, D1>,
     y_pred: &ArrayBase<S2, D2>,
@@ -177,11 +179,11 @@ where
     D2: Dimension,
 {
     // Check that arrays have the same shape
-    check_same_shape::<F, S1, S2, D1, D2>(y_true, y_pred)?;
+    check_sameshape::<F, S1, S2, D1, D2>(y_true, y_pred)?;
 
     if n_quantiles < 2 {
         return Err(MetricsError::InvalidInput(
-            "Number of quantiles must be at least 2".to_string(),
+            "Number of _quantiles must be at least 2".to_string(),
         ));
     }
 
@@ -212,7 +214,7 @@ where
         std_residuals.push((r - mean) / std_dev);
     }
 
-    // Calculate theoretical quantiles
+    // Calculate theoretical _quantiles
     let mut theoretical_quantiles = Vec::with_capacity(n_quantiles);
     let mut sample_quantiles = Vec::with_capacity(n_quantiles);
 
@@ -250,6 +252,7 @@ where
 }
 
 /// Approximation of the normal quantile function (inverse CDF)
+#[allow(dead_code)]
 fn normal_quantile(p: f64) -> f64 {
     if p <= 0.0 || p >= 1.0 {
         // Return a reasonable default value instead of panicking
@@ -371,6 +374,7 @@ pub struct ResidualAnalysis<F: Float> {
 /// println!("Durbin-Watson statistic: {}", analysis.durbin_watson);
 /// println!("Number of residuals: {}", analysis.residuals.len());
 /// ```
+#[allow(dead_code)]
 pub fn residual_analysis<F, S1, S2, D1, D2>(
     y_true: &ArrayBase<S1, D1>,
     y_pred: &ArrayBase<S2, D2>,
@@ -385,26 +389,26 @@ where
     D2: Dimension,
 {
     // Check that arrays have the same shape
-    check_same_shape::<F, S1, S2, D1, D2>(y_true, y_pred)?;
+    check_sameshape::<F, S1, S2, D1, D2>(y_true, y_pred)?;
 
     let n_samples = y_true.len();
 
-    // Check X matrix dimensions
+    // Check X _matrix dimensions
     if let Some(x_mat) = x {
         if x_mat.shape()[0] != n_samples {
             return Err(MetricsError::InvalidInput(format!(
-                "X matrix has {} rows, but y_true has {} elements",
+                "X _matrix has {} rows, but y_true has {} elements",
                 x_mat.shape()[0],
                 n_samples
             )));
         }
     }
 
-    // Check hat matrix dimensions
+    // Check hat _matrix dimensions
     if let Some(h_mat) = hat_matrix {
         if h_mat.shape() != [n_samples, n_samples] {
             return Err(MetricsError::InvalidInput(format!(
-                "Hat matrix has shape {:?}, but should be [{}, {}]",
+                "Hat _matrix has shape {:?}, but should be [{}, {}]",
                 h_mat.shape(),
                 n_samples,
                 n_samples
@@ -436,33 +440,33 @@ where
         standardized_residuals.push((r - residual_mean) / residual_std);
     }
 
-    // Calculate leverage (hat matrix diagonal)
+    // Calculate leverage (hat _matrix diagonal)
     let leverage = if let Some(h_mat) = hat_matrix {
-        // Extract diagonal from provided hat matrix
+        // Extract diagonal from provided hat _matrix
         let mut h_diag = Vec::with_capacity(n_samples);
         for i in 0..n_samples {
             h_diag.push(h_mat[[i, i]]);
         }
         h_diag
     } else if let Some(x_mat) = x {
-        // Calculate hat matrix diagonal using X matrix: diag(X (X'X)^(-1) X')
+        // Calculate hat _matrix diagonal using X _matrix: diag(X (X'X)^(-1) X')
         let p = x_mat.shape()[1]; // Number of predictors
         let xt = x_mat.t();
 
         // Calculate X'X
         let xtx = xt.dot(x_mat);
 
-        // Invert X'X (simplified - not a proper matrix inversion)
+        // Invert X'X (simplified - not a proper _matrix inversion)
         let mut xtx_inv = Array2::<F>::zeros((p, p));
 
-        // Diagonal matrix as a simple approximation
+        // Diagonal _matrix as a simple approximation
         for i in 0..p {
             if xtx[[i, i]] > F::epsilon() {
                 xtx_inv[[i, i]] = F::one() / xtx[[i, i]];
             }
         }
 
-        // Calculate hat matrix diagonal
+        // Calculate hat _matrix diagonal
         let mut h_diag = Vec::with_capacity(n_samples);
         for i in 0..n_samples {
             let mut h_ii = F::zero();
@@ -476,7 +480,7 @@ where
 
         h_diag
     } else {
-        // No X matrix or hat matrix provided, use default
+        // No X _matrix or hat _matrix provided, use default
         vec![F::one() / NumCast::from(n_samples).unwrap(); n_samples]
     };
 
@@ -497,7 +501,7 @@ where
     for (i, &r) in standardized_residuals.iter().enumerate() {
         let h_ii = leverage[i];
         if h_ii < F::one() {
-            // Use a default number of parameters if no X matrix was provided
+            // Use a default number of parameters if no X _matrix was provided
             let p_value = if let Some(x_mat) = x {
                 x_mat.shape()[1]
             } else {
@@ -546,10 +550,10 @@ where
     let mut denominator = F::zero();
 
     for (i, &sq_r) in squared_residuals.iter().enumerate() {
-        let pred = y_pred.iter().nth(i).unwrap();
+        let _pred = y_pred.iter().nth(i).unwrap();
         let diff = sq_r - mean_sq_residual;
         numerator = numerator + diff * diff;
-        denominator = denominator + (*pred) * (*pred);
+        denominator = denominator + (*_pred) * (*_pred);
     }
 
     let breusch_pagan = if denominator > F::epsilon() {
@@ -628,6 +632,7 @@ where
 /// let bp_stat = test_heteroscedasticity(&y_true, &y_pred).unwrap();
 /// assert!(bp_stat >= 0.0);
 /// ```
+#[allow(dead_code)]
 pub fn test_heteroscedasticity<F, S1, S2, D1, D2>(
     y_true: &ArrayBase<S1, D1>,
     y_pred: &ArrayBase<S2, D2>,
@@ -640,7 +645,7 @@ where
     D2: Dimension,
 {
     // Check that arrays have the same shape
-    check_same_shape::<F, S1, S2, D1, D2>(y_true, y_pred)?;
+    check_sameshape::<F, S1, S2, D1, D2>(y_true, y_pred)?;
 
     let n_samples = y_true.len();
 
@@ -660,10 +665,10 @@ where
     let mut denominator = F::zero();
 
     for (i, &sq_r) in squared_residuals.iter().enumerate() {
-        let pred = y_pred.iter().nth(i).unwrap();
+        let _pred = y_pred.iter().nth(i).unwrap();
         let diff = sq_r - mean_sq_residual;
         numerator = numerator + diff * diff;
-        denominator = denominator + (*pred) * (*pred);
+        denominator = denominator + (*_pred) * (*_pred);
     }
 
     if denominator < F::epsilon() {
@@ -700,6 +705,7 @@ where
 /// // DW statistic ranges from 0 to 4, with 2 being no autocorrelation
 /// assert!(dw_stat >= 0.0 && dw_stat <= 4.0);
 /// ```
+#[allow(dead_code)]
 pub fn test_autocorrelation<F, S1, S2, D1, D2>(
     y_true: &ArrayBase<S1, D1>,
     y_pred: &ArrayBase<S2, D2>,
@@ -712,7 +718,7 @@ where
     D2: Dimension,
 {
     // Check that arrays have the same shape
-    check_same_shape::<F, S1, S2, D1, D2>(y_true, y_pred)?;
+    check_sameshape::<F, S1, S2, D1, D2>(y_true, y_pred)?;
 
     let n_samples = y_true.len();
 
@@ -771,6 +777,7 @@ where
 /// // SW statistic ranges from 0 to 1, with values close to 1 indicating normality
 /// assert!(sw_stat >= 0.0 && sw_stat <= 1.0);
 /// ```
+#[allow(dead_code)]
 pub fn test_normality<F, S1, S2, D1, D2>(
     y_true: &ArrayBase<S1, D1>,
     y_pred: &ArrayBase<S2, D2>,
@@ -783,7 +790,7 @@ where
     D2: Dimension,
 {
     // Check that arrays have the same shape
-    check_same_shape::<F, S1, S2, D1, D2>(y_true, y_pred)?;
+    check_sameshape::<F, S1, S2, D1, D2>(y_true, y_pred)?;
 
     let n_samples = y_true.len();
 

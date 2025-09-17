@@ -69,6 +69,7 @@ type CURResult<F> = LinalgResult<(Array2<F>, Array2<F>, Array2<F>, Vec<usize>, V
 ///
 /// - Halko, Martinsson, and Tropp (2011), "Finding structure with randomness:
 ///   Probabilistic algorithms for constructing approximate matrix decompositions"
+#[allow(dead_code)]
 pub fn randomized_svd<F>(
     a: &ArrayView2<F>,
     k: usize,
@@ -77,7 +78,7 @@ pub fn randomized_svd<F>(
     workers: Option<usize>,
 ) -> LinalgResult<(Array2<F>, Array1<F>, Array2<F>)>
 where
-    F: Float + NumAssign + Sum + ndarray::ScalarOperand + 'static,
+    F: Float + NumAssign + Sum + ndarray::ScalarOperand + Send + Sync + 'static,
 {
     let (m, n) = a.dim();
     let oversampling = oversampling.unwrap_or(10);
@@ -100,8 +101,7 @@ where
 
     if l > n {
         return Err(LinalgError::ShapeError(format!(
-            "Oversampled dimension l ({}) cannot exceed n = {}",
-            l, n
+            "Oversampled dimension l ({l}) cannot exceed n = {n}"
         )));
     }
 
@@ -125,7 +125,7 @@ where
     // Step 2: Compute Y = A * Ω
     let mut y = a.dot(&omega);
 
-    // Step 3: Power iterations (optional, for improved accuracy)
+    // Step 3: Power _iterations (optional, for improved accuracy)
     for _ in 0..power_iterations {
         // Y = A * (A^T * Y)
         let aty = a.t().dot(&y);
@@ -166,13 +166,14 @@ where
 /// # Returns
 ///
 /// * Tuple (U, S, Vt) where each component contains only the top k components
+#[allow(dead_code)]
 pub fn truncated_svd<F>(
     a: &ArrayView2<F>,
     k: usize,
     workers: Option<usize>,
 ) -> LinalgResult<(Array2<F>, Array1<F>, Array2<F>)>
 where
-    F: Float + NumAssign + Sum + ndarray::ScalarOperand,
+    F: Float + NumAssign + Sum + ndarray::ScalarOperand + Send + Sync + 'static,
 {
     let (m, n) = a.dim();
 
@@ -219,25 +220,26 @@ where
 ///   - components: Principal component vectors (n_components × n_features)
 ///   - explained_variance: Variance explained by each component
 ///   - explained_variance_ratio: Fraction of total variance explained by each component
+#[allow(dead_code)]
 pub fn pca<F>(
     data: &ArrayView2<F>,
     n_components: usize,
     workers: Option<usize>,
 ) -> LinalgResult<(Array2<F>, Array1<F>, Array1<F>)>
 where
-    F: Float + NumAssign + Sum + ndarray::ScalarOperand + 'static,
+    F: Float + NumAssign + Sum + ndarray::ScalarOperand + Send + Sync + 'static,
 {
     let (n_samples, n_features) = data.dim();
 
     if n_components == 0 {
         return Err(LinalgError::ShapeError(
-            "Number of components must be greater than 0".to_string(),
+            "Number of _components must be greater than 0".to_string(),
         ));
     }
 
     if n_components > n_features.min(n_samples) {
         return Err(LinalgError::ShapeError(format!(
-            "Number of components ({}) cannot exceed min(n_samples, n_features) = {}",
+            "Number of _components ({}) cannot exceed min(n_samples, n_features) = {}",
             n_components,
             n_features.min(n_samples)
         )));
@@ -265,8 +267,8 @@ where
         truncated_svd(&centered_data.view(), n_components, workers)?
     };
 
-    // The principal components are the rows of Vt (columns of V)
-    let components = vt;
+    // The principal _components are the rows of Vt (columns of V)
+    let _components = vt;
 
     // Explained variance is the square of singular values
     let explained_variance = s.mapv(|x| x * x);
@@ -279,7 +281,7 @@ where
         Array1::zeros(n_components)
     };
 
-    Ok((components, explained_variance, explained_variance_ratio))
+    Ok((_components, explained_variance, explained_variance_ratio))
 }
 
 /// Non-negative Matrix Factorization (NMF) using multiplicative updates.
@@ -298,6 +300,7 @@ where
 /// # Returns
 ///
 /// * Tuple (W, H) where A ≈ W * H
+#[allow(dead_code)]
 pub fn nmf<F>(
     a: &ArrayView2<F>,
     k: usize,
@@ -306,7 +309,7 @@ pub fn nmf<F>(
     workers: Option<usize>,
 ) -> LinalgResult<(Array2<F>, Array2<F>)>
 where
-    F: Float + NumAssign + Sum + ndarray::ScalarOperand + 'static,
+    F: Float + NumAssign + Sum + ndarray::ScalarOperand + Send + Sync + 'static,
 {
     let (m, n) = a.dim();
     let max_iter = max_iter.unwrap_or(100);
@@ -460,6 +463,7 @@ where
 ///
 /// - Mahoney and Drineas (2009), "CUR matrix decompositions for improved data analysis"
 /// - Drineas et al. (2008), "Relative-error CUR matrix decompositions"
+#[allow(dead_code)]
 pub fn cur_decomposition<F>(
     a: &ArrayView2<F>,
     k: usize,
@@ -467,7 +471,7 @@ pub fn cur_decomposition<F>(
     workers: Option<usize>,
 ) -> CURResult<F>
 where
-    F: Float + NumAssign + Sum + ndarray::ScalarOperand + 'static,
+    F: Float + NumAssign + Sum + ndarray::ScalarOperand + Send + Sync + 'static,
 {
     let (m, n) = a.dim();
     let oversampling = oversampling.unwrap_or(5);
@@ -793,7 +797,7 @@ mod tests {
         let a = array![[2.0, 0.5], [0.5, 2.0]];
 
         match cur_decomposition(&a.view(), 2, Some(0), None) {
-            Ok((c, u, r, _col_indices, _row_indices)) => {
+            Ok((c, u, r, col_indices, row_indices)) => {
                 // Check dimensions
                 assert_eq!(c.shape(), [2, 2]);
                 assert_eq!(u.shape(), [2, 2]);
@@ -849,7 +853,7 @@ mod tests {
         let a = array![[2.0, 0.0, 1.0], [0.0, 3.0, 0.0], [1.0, 0.0, 2.0]];
 
         match cur_decomposition(&a.view(), 2, Some(0), None) {
-            Ok((c, _u, r, col_indices, row_indices)) => {
+            Ok((c, u, r, col_indices, row_indices)) => {
                 // Basic dimension checks
                 assert_eq!(c.shape()[0], 3);
                 assert_eq!(r.shape()[1], 3);

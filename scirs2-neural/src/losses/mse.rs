@@ -10,11 +10,9 @@ use std::fmt::Debug;
 ///
 /// The MSE is calculated as the average of squared differences between
 /// predictions and targets: MSE = mean((predictions - targets)^2)
-///
 /// It is commonly used for regression problems.
 ///
 /// # Examples
-///
 /// ```
 /// use scirs2_neural::losses::MeanSquaredError;
 /// use scirs2_neural::losses::Loss;
@@ -23,10 +21,8 @@ use std::fmt::Debug;
 /// let mse = MeanSquaredError::new();
 /// let predictions = arr1(&[1.0, 2.0, 3.0]).into_dyn();
 /// let targets = arr1(&[1.5, 1.8, 2.5]).into_dyn();
-///
 /// // Forward pass to calculate loss
 /// let loss = mse.forward(&predictions, &targets).unwrap();
-///
 /// // Backward pass to calculate gradients
 /// let gradients = mse.backward(&predictions, &targets).unwrap();
 /// ```
@@ -67,12 +63,10 @@ impl<F: Float + Debug> Loss<F> for MeanSquaredError {
 
         // Calculate squared differences and mean
         let mut sum_squared_diff = F::zero();
-
         Zip::from(predictions).and(targets).for_each(|&p, &t| {
             let diff = p - t;
             sum_squared_diff = sum_squared_diff + diff * diff;
         });
-
         let mse = sum_squared_diff / n;
         Ok(mse)
     }
@@ -98,11 +92,9 @@ impl<F: Float + Debug> Loss<F> for MeanSquaredError {
         // dL/dp = 2 * (p - t) / n
         let two = F::one() + F::one();
         let mut gradients = predictions.clone();
-
         Zip::from(&mut gradients).and(targets).for_each(|grad, &t| {
             *grad = two * (*grad - t) / n;
         });
-
         Ok(gradients)
     }
 }

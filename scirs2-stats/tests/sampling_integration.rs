@@ -7,6 +7,7 @@ use scirs2_stats::{
 };
 
 #[test]
+#[allow(dead_code)]
 fn test_sampling_distribution_consistency() {
     // Test that sampling API produces consistent results when using the same seed
     let normal = norm(0.0f64, 1.0).unwrap();
@@ -29,6 +30,7 @@ fn test_sampling_distribution_consistency() {
 }
 
 #[test]
+#[allow(dead_code)]
 fn test_bootstrap_sample_properties() {
     // Test bootstrap sampling functionality
     let data = array![1.0f64, 2.0, 3.0, 4.0, 5.0];
@@ -56,6 +58,7 @@ fn test_bootstrap_sample_properties() {
 }
 
 #[test]
+#[allow(dead_code)]
 fn test_permutation_properties() {
     // Test permutation functionality
     let data = array![10, 20, 30, 40, 50];
@@ -78,6 +81,7 @@ fn test_permutation_properties() {
 }
 
 #[test]
+#[allow(dead_code)]
 fn test_statistical_properties() {
     // Test that random samples have expected statistical properties
 
@@ -112,6 +116,7 @@ fn test_statistical_properties() {
 }
 
 // Helper functions for statistical calculations
+#[allow(dead_code)]
 fn custom_mean(arr: &Array1<f64>) -> f64 {
     if arr.is_empty() {
         return 0.0;
@@ -120,6 +125,7 @@ fn custom_mean(arr: &Array1<f64>) -> f64 {
     sum / arr.len() as f64
 }
 
+#[allow(dead_code)]
 fn custom_std(arr: &Array1<f64>, ddof: usize) -> f64 {
     if arr.len() <= ddof {
         return 0.0;

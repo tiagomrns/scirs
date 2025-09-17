@@ -10,12 +10,13 @@ use scirs2_vision::feature::{canny, canny_simple, PreprocessMode};
 use std::error::Error;
 use std::path::PathBuf;
 
+#[allow(dead_code)]
 fn main() -> Result<(), Box<dyn Error>> {
     println!("SciRS2 Vision - Canny Edge Detection Example");
 
     // In a real application, you would provide your own image file path
     let image_path = "examples/input/input.jpg"; // Change this to your image path
-    println!("Attempting to load image from: {}", image_path);
+    println!("Attempting to load image from: {image_path}");
 
     // Check if the image file exists
     let path = PathBuf::from(image_path);
@@ -36,7 +37,7 @@ fn main() -> Result<(), Box<dyn Error>> {
 
     // Save result (if possible)
     if let Err(e) = edges_simple.save("examples/output/canny_simple_output.png") {
-        println!("Could not save output: {}", e);
+        println!("Could not save output: {e}");
     } else {
         println!("Saved result to examples/output/canny_simple_output.png");
     }
@@ -54,7 +55,7 @@ fn main() -> Result<(), Box<dyn Error>> {
     )?;
 
     if let Err(e) = edges_custom.save("examples/output/canny_custom_output.png") {
-        println!("Could not save output: {}", e);
+        println!("Could not save output: {e}");
     } else {
         println!("Saved result to examples/output/canny_custom_output.png");
     }
@@ -72,7 +73,7 @@ fn main() -> Result<(), Box<dyn Error>> {
     )?;
 
     if let Err(e) = edges_quantile.save("examples/output/canny_quantile_output.png") {
-        println!("Could not save output: {}", e);
+        println!("Could not save output: {e}");
     } else {
         println!("Saved result to examples/output/canny_quantile_output.png");
     }
@@ -81,12 +82,12 @@ fn main() -> Result<(), Box<dyn Error>> {
     println!("\n4. Demonstrating effect of sigma parameter...");
     for sigma in &[0.5, 1.0, 2.0, 3.0] {
         let edges = canny_simple(&img, *sigma)?;
-        let filename = format!("examples/output/canny_sigma_{}.png", sigma);
+        let filename = format!("examples/output/canny_sigma_{sigma}.png");
 
         if let Err(e) = edges.save(&filename) {
-            println!("Could not save {}: {}", filename, e);
+            println!("Could not save {filename}: {e}");
         } else {
-            println!("Saved result with sigma={} to {}", sigma, filename);
+            println!("Saved result with sigma={sigma} to {filename}");
         }
     }
 
@@ -96,7 +97,7 @@ fn main() -> Result<(), Box<dyn Error>> {
     // Count edges in simple result
     let edge_count = count_edge_pixels(&edges_simple);
     println!("\nStatistics:");
-    println!("  Edge pixels detected (simple): {}", edge_count);
+    println!("  Edge pixels detected (simple): {edge_count}");
     println!(
         "  Total pixels: {}",
         edges_simple.width() * edges_simple.height()
@@ -110,6 +111,7 @@ fn main() -> Result<(), Box<dyn Error>> {
 }
 
 /// Create a demo image with various features for edge detection
+#[allow(dead_code)]
 fn create_demo_image() -> DynamicImage {
     let size = 200;
     let mut img_buffer = GrayImage::new(size, size);
@@ -156,6 +158,7 @@ fn create_demo_image() -> DynamicImage {
 }
 
 /// Count the number of edge pixels in an image
+#[allow(dead_code)]
 fn count_edge_pixels(img: &GrayImage) -> usize {
     let mut count = 0;
     for pixel in img.pixels() {

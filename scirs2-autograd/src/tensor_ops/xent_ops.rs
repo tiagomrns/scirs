@@ -67,25 +67,25 @@ impl<T: Float> op::Op<T> for SparseSoftmaxCrossEntropy {
 
         // validation
         {
-            let t_shape = t.shape();
+            let tshape = t.shape();
             if log_x.ndim() != 2 {
                 return Err(op::OpError::IncompatibleShape(format!(
                     "SparseSoftmaxCrossEntropy: given first argument's ndim is not 2: shape={:?}",
                     log_x.shape()
                 )));
             }
-            let t_rank = t_shape.len();
+            let t_rank = tshape.len();
             if t_rank == 2 {
                 // example label shape: [batch_size, 1]
-                if t_shape[1] != 1 {
+                if tshape[1] != 1 {
                     return Err(op::OpError::IncompatibleShape(
-                        format!("SparseSoftmaxCrossEntropy: second argument's shape must be (batch_size, 1) or (batch_size,). given shape={:?}", t_shape)
+                        format!("SparseSoftmaxCrossEntropy: second argument's shape must be (batch_size, 1) or (batch_size,). given shape={tshape:?}")
                     ));
                 }
             } else if t_rank != 1 {
                 // example label shape: [batch_size]
                 return Err(op::OpError::IncompatibleShape(
-                    format!("SparseSoftmaxCrossEntropy: second argument's shape must be (batch_size, 1) or (batch_size,). given shape={:?}", t_shape)
+                    format!("SparseSoftmaxCrossEntropy: second argument's shape must be (batch_size, 1) or (batch_size,). given shape={tshape:?}")
                 ));
             }
         }

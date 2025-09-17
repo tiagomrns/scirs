@@ -7,6 +7,7 @@ use num_complex::Complex64;
 use std::fmt::Debug;
 
 /// Helper function to extract complex values from various types (for doctests)
+#[allow(dead_code)]
 pub fn try_as_complex<T: 'static + Copy>(val: T) -> Option<Complex64> {
     use std::any::Any;
 

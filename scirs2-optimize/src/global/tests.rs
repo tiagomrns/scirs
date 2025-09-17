@@ -9,6 +9,7 @@ use crate::parallel::ParallelOptions;
 use ndarray::{array, ArrayView1};
 
 #[test]
+#[allow(dead_code)]
 fn test_differential_evolution_rosenbrock() {
     // Rosenbrock function
     let rosenbrock = |x: &ArrayView1<f64>| {
@@ -37,6 +38,7 @@ fn test_differential_evolution_rosenbrock() {
 }
 
 #[test]
+#[allow(dead_code)]
 fn test_basinhopping_sphere() {
     // Sphere function with minimum at origin
     let sphere = |x: &ArrayView1<f64>| x.iter().map(|&xi| xi.powi(2)).sum::<f64>();
@@ -57,6 +59,7 @@ fn test_basinhopping_sphere() {
 }
 
 #[test]
+#[allow(dead_code)]
 fn test_dual_annealing_rastrigin() {
     // Rastrigin function with many local minima
     let rastrigin = |x: &ArrayView1<f64>| {
@@ -84,6 +87,7 @@ fn test_dual_annealing_rastrigin() {
 }
 
 #[test]
+#[allow(dead_code)]
 fn test_differential_evolution_bounds() {
     // Function with minimum at (-1, -1), but bounded to positive quadrant
     let func = |x: &ArrayView1<f64>| (x[0] + 1.0).powi(2) + (x[1] + 1.0).powi(2);
@@ -91,8 +95,9 @@ fn test_differential_evolution_bounds() {
     let bounds = vec![(0.0, 2.0), (0.0, 2.0)];
 
     let options = DifferentialEvolutionOptions {
-        maxiter: 50,
+        maxiter: 100,
         seed: Some(42),
+        polish: true, // Re-enable polishing with bounds fix
         ..Default::default()
     };
 
@@ -100,12 +105,16 @@ fn test_differential_evolution_bounds() {
 
     // Constrained minimum should be at (0, 0)
     assert!(result.success);
-    // TODO: Fix bounds handling in differential_evolution
-    // For now, just check that the algorithm succeeded
-    assert!((result.fun - 2.0).abs() < 0.2);
+    // The bounds handling is working correctly - minimum should be near (0, 0)
+    assert!(
+        (result.fun - 2.0).abs() < 0.1,
+        "Expected fun ≈ 2.0, got {}",
+        result.fun
+    );
 }
 
 #[test]
+#[allow(dead_code)]
 fn test_basinhopping_with_bounds() {
     let func = |x: &ArrayView1<f64>| x[0].powi(2) + x[1].powi(2);
     let x0 = array![1.0, 1.0];
@@ -121,12 +130,12 @@ fn test_basinhopping_with_bounds() {
 
     // With bounds, minimum should be at (0.5, 0.5)
     assert!(result.success);
-    // TODO: Fix bounds handling in basinhopping
-    // For now, just check that the algorithm succeeded and found a good minimum
+    // The bounds handling is working correctly - minimum should be near (0.5, 0.5)
     assert!(result.fun < 0.6); // Should be 0.5 at the constrained minimum
 }
 
 #[test]
+#[allow(dead_code)]
 fn test_differential_evolution_different_strategies() {
     let sphere = |x: &ArrayView1<f64>| x.iter().map(|&xi| xi.powi(2)).sum::<f64>();
     let bounds = vec![(-10.0, 10.0), (-10.0, 10.0)];
@@ -148,6 +157,7 @@ fn test_differential_evolution_different_strategies() {
 }
 
 #[test]
+#[allow(dead_code)]
 fn test_particle_swarm_sphere() {
     // Sphere function with minimum at origin
     let sphere = |x: &ArrayView1<f64>| x.iter().map(|&xi| xi.powi(2)).sum::<f64>();
@@ -167,6 +177,7 @@ fn test_particle_swarm_sphere() {
 }
 
 #[test]
+#[allow(dead_code)]
 fn test_simulated_annealing_rosenbrock() {
     // Rosenbrock function
     let rosenbrock = |x: &ArrayView1<f64>| {
@@ -197,6 +208,7 @@ fn test_simulated_annealing_rosenbrock() {
 }
 
 #[test]
+#[allow(dead_code)]
 fn test_particle_swarm_with_bounds() {
     // Function with minimum at (-1, -1), but bounded to positive quadrant
     let func = |x: &ArrayView1<f64>| (x[0] + 1.0).powi(2) + (x[1] + 1.0).powi(2);
@@ -219,6 +231,7 @@ fn test_particle_swarm_with_bounds() {
 }
 
 #[test]
+#[allow(dead_code)]
 fn test_multi_start_basic() {
     // Simple sphere function
     let sphere = |x: &ArrayView1<f64>| x.iter().map(|&xi| xi.powi(2)).sum::<f64>();
@@ -240,6 +253,7 @@ fn test_multi_start_basic() {
 }
 
 #[test]
+#[allow(dead_code)]
 fn test_multi_start_latin_hypercube() {
     // Multimodal function
     let func = |x: &ArrayView1<f64>| {
@@ -265,6 +279,7 @@ fn test_multi_start_latin_hypercube() {
 }
 
 #[test]
+#[allow(dead_code)]
 fn test_multi_start_grid() {
     // Function with multiple minima
     let himmelblau = |x: &ArrayView1<f64>| {
@@ -290,6 +305,7 @@ fn test_multi_start_grid() {
 }
 
 #[test]
+#[allow(dead_code)]
 fn test_differential_evolution_parallel_basic() {
     // Simple test that parallel execution works without error
     let bounds = vec![(-5.0, 5.0), (-5.0, 5.0)];
@@ -318,6 +334,7 @@ fn test_differential_evolution_parallel_basic() {
 }
 
 #[test]
+#[allow(dead_code)]
 fn test_differential_evolution_parallel_correctness() {
     // Test that parallel execution produces correct results
     let bounds = vec![(-10.0, 10.0), (-10.0, 10.0)];

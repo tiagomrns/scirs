@@ -1,3 +1,4 @@
+#![allow(deprecated)]
 //! # SciRS2
 //!
 //! SciRS2 is a comprehensive scientific computing library for Rust,
@@ -70,7 +71,7 @@
 //!         }
 //!         
 //!         // Calculate standard deviation
-//!         if let Ok(std_val) = scirs2::stats::std(&data.view(), 0) {
+//!         if let Ok(std_val) = scirs2::stats::std(&data.view(), 0, None) {
 //!             println!("Standard deviation: {}", std_val);
 //!         }
 //!     }
@@ -197,6 +198,7 @@ pub mod prelude {
 
 // Public API
 /// SciRS2 version information
+#[allow(dead_code)]
 pub fn version() -> &'static str {
     env!("CARGO_PKG_VERSION")
 }

@@ -36,8 +36,8 @@ pub struct SeedPoint {
     pub x: usize,
     /// Y coordinate  
     pub y: usize,
-    /// Optional label for this seed
-    pub label: Option<u32>,
+    /// Optional label_ for this seed
+    pub label_: Option<u32>,
 }
 
 /// Perform region growing segmentation
@@ -50,7 +50,7 @@ pub struct SeedPoint {
 ///
 /// # Returns
 ///
-/// * Result containing segmented label map
+/// * Result containing segmented label_ map
 ///
 /// # Example
 ///
@@ -61,13 +61,14 @@ pub struct SeedPoint {
 /// # fn main() -> scirs2_vision::error::Result<()> {
 /// let img = image::open("examples/input/input.jpg").unwrap();
 /// let seeds = vec![
-///     SeedPoint { x: 100, y: 100, label: Some(1) },
-///     SeedPoint { x: 200, y: 200, label: Some(2) },
+///     SeedPoint { x: 100, y: 100, label_: Some(1) },
+///     SeedPoint { x: 200, y: 200, label_: Some(2) },
 /// ];
 /// let labels = region_growing(&img, &seeds, &RegionGrowingParams::default())?;
 /// # Ok(())
 /// # }
 /// ```
+#[allow(dead_code)]
 pub fn region_growing(
     img: &DynamicImage,
     seeds: &[SeedPoint],
@@ -76,7 +77,7 @@ pub fn region_growing(
     let gray = img.to_luma8();
     let (width, height) = gray.dimensions();
 
-    // Initialize label map
+    // Initialize label_ map
     let mut labels = Array2::zeros((height as usize, width as usize));
     let mut visited = Array2::from_elem((height as usize, width as usize), false);
 
@@ -90,14 +91,14 @@ pub fn region_growing(
             continue;
         }
 
-        let label = seed.label.unwrap_or((seed_idx + 1) as u32);
+        let label_ = seed.label_.unwrap_or((seed_idx + 1) as u32);
         grow_region(
             &gray,
             &mut labels,
             &mut visited,
             seed.x,
             seed.y,
-            label,
+            label_,
             params,
         );
     }
@@ -114,13 +115,14 @@ pub fn region_growing(
 }
 
 /// Grow a single region from a seed point
+#[allow(dead_code)]
 fn grow_region(
     img: &GrayImage,
     labels: &mut Array2<u32>,
     visited: &mut Array2<bool>,
     seed_x: usize,
     seed_y: usize,
-    label: u32,
+    label_: u32,
     params: &RegionGrowingParams,
 ) {
     let (width, height) = img.dimensions();
@@ -129,7 +131,7 @@ fn grow_region(
     let mut queue = VecDeque::new();
     queue.push_back((seed_x, seed_y));
     visited[[seed_y, seed_x]] = true;
-    labels[[seed_y, seed_x]] = label;
+    labels[[seed_y, seed_x]] = label_;
 
     let neighbors = get_neighbors(params.connectivity);
 
@@ -143,7 +145,7 @@ fn grow_region(
 
                 if (pixel_value - seed_value).abs() <= params.threshold {
                     visited[[ny, nx]] = true;
-                    labels[[ny, nx]] = label;
+                    labels[[ny, nx]] = label_;
                     queue.push_back((nx, ny));
                 }
             }
@@ -152,6 +154,7 @@ fn grow_region(
 }
 
 /// Auto-generate seeds and perform region growing
+#[allow(dead_code)]
 fn auto_seeded_region_growing(
     img: &GrayImage,
     labels: &mut Array2<u32>,
@@ -178,6 +181,7 @@ fn auto_seeded_region_growing(
 }
 
 /// Get neighbor offsets based on connectivity
+#[allow(dead_code)]
 fn get_neighbors(connectivity: u8) -> Vec<(i32, i32)> {
     match connectivity {
         4 => vec![(-1, 0), (1, 0), (0, -1), (0, 1)],
@@ -196,22 +200,23 @@ fn get_neighbors(connectivity: u8) -> Vec<(i32, i32)> {
 }
 
 /// Remove regions smaller than minimum size
-fn remove_small_regions(labels: &mut Array2<u32>, min_size: usize) {
+#[allow(dead_code)]
+fn remove_small_regions(labels: &mut Array2<u32>, minsize: usize) {
     let (height, width) = labels.dim();
 
     // Count region sizes
     let mut region_sizes = std::collections::HashMap::new();
-    for &label in labels.iter() {
-        if label > 0 {
-            *region_sizes.entry(label).or_insert(0) += 1;
+    for &label_ in labels.iter() {
+        if label_ > 0 {
+            *region_sizes.entry(label_).or_insert(0) += 1;
         }
     }
 
     // Find small regions
     let small_regions: HashSet<_> = region_sizes
         .iter()
-        .filter(|(_, &size)| size < min_size)
-        .map(|(&label, _)| label)
+        .filter(|(_, &size)| size < minsize)
+        .map(|(&label_, _)| label_)
         .collect();
 
     // Remove small regions
@@ -227,17 +232,18 @@ fn remove_small_regions(labels: &mut Array2<u32>, min_size: usize) {
 /// Region growing with adaptive threshold
 ///
 /// The threshold is adapted based on local statistics
+#[allow(dead_code)]
 pub fn adaptive_region_growing(
     img: &DynamicImage,
     seeds: &[SeedPoint],
     base_threshold: f32,
-    window_size: usize,
+    windowsize: usize,
 ) -> Result<Array2<u32>> {
     let gray = img.to_luma8();
     let (width, height) = gray.dimensions();
 
     // Compute local statistics
-    let (local_mean, local_std) = compute_local_stats(&gray, window_size)?;
+    let (local_mean, local_std) = compute_local_stats(&gray, windowsize)?;
 
     let mut labels = Array2::zeros((height as usize, width as usize));
     let mut visited = Array2::from_elem((height as usize, width as usize), false);
@@ -251,9 +257,9 @@ pub fn adaptive_region_growing(
             continue;
         }
 
-        let label = seed.label.unwrap_or((seed_idx + 1) as u32);
+        let label_ = seed.label_.unwrap_or((seed_idx + 1) as u32);
 
-        // Adaptive threshold based on local statistics
+        // Adaptive _threshold based on local statistics
         let local_threshold = base_threshold * (1.0 + local_std[[seed.y, seed.x]] / 128.0);
 
         grow_region_adaptive(
@@ -262,7 +268,7 @@ pub fn adaptive_region_growing(
             &mut visited,
             seed.x,
             seed.y,
-            label,
+            label_,
             local_threshold,
             &local_mean,
             &local_std,
@@ -273,13 +279,14 @@ pub fn adaptive_region_growing(
 }
 
 /// Grow region with adaptive threshold
+#[allow(dead_code)]
 fn grow_region_adaptive(
     img: &GrayImage,
     labels: &mut Array2<u32>,
     visited: &mut Array2<bool>,
     seed_x: usize,
     seed_y: usize,
-    label: u32,
+    label_: u32,
     base_threshold: f32,
     _local_mean: &Array2<f32>,
     local_std: &Array2<f32>,
@@ -288,9 +295,9 @@ fn grow_region_adaptive(
     let mut queue = VecDeque::new();
     queue.push_back((seed_x, seed_y));
     visited[[seed_y, seed_x]] = true;
-    labels[[seed_y, seed_x]] = label;
+    labels[[seed_y, seed_x]] = label_;
 
-    // Running mean of region
+    // Running _mean of region
     let mut region_sum = img.get_pixel(seed_x as u32, seed_y as u32)[0] as f32;
     let mut region_count = 1;
 
@@ -309,10 +316,10 @@ fn grow_region_adaptive(
 
                 if (pixel_value - region_mean).abs() <= threshold {
                     visited[[ny, nx]] = true;
-                    labels[[ny, nx]] = label;
+                    labels[[ny, nx]] = label_;
                     queue.push_back((nx, ny));
 
-                    // Update running mean
+                    // Update running _mean
                     region_sum += pixel_value;
                     region_count += 1;
                 }
@@ -322,12 +329,13 @@ fn grow_region_adaptive(
 }
 
 /// Compute local mean and standard deviation
-fn compute_local_stats(img: &GrayImage, window_size: usize) -> Result<(Array2<f32>, Array2<f32>)> {
+#[allow(dead_code)]
+fn compute_local_stats(img: &GrayImage, windowsize: usize) -> Result<(Array2<f32>, Array2<f32>)> {
     let (width, height) = img.dimensions();
     let mut local_mean = Array2::zeros((height as usize, width as usize));
     let mut local_std = Array2::zeros((height as usize, width as usize));
 
-    let half_window = window_size / 2;
+    let half_window = windowsize / 2;
 
     for y in 0..height as usize {
         for x in 0..width as usize {
@@ -357,15 +365,16 @@ fn compute_local_stats(img: &GrayImage, window_size: usize) -> Result<(Array2<f3
 }
 
 /// Convert labels to color image for visualization
+#[allow(dead_code)]
 pub fn region_labels_to_color(labels: &Array2<u32>) -> RgbImage {
     let (height, width) = labels.dim();
     let mut result = RgbImage::new(width as u32, height as u32);
 
-    // Find unique labels
+    // Find unique _labels
     let mut unique_labels = HashSet::new();
-    for &label in labels.iter() {
-        if label > 0 {
-            unique_labels.insert(label);
+    for &label_ in labels.iter() {
+        if label_ > 0 {
+            unique_labels.insert(label_);
         }
     }
 
@@ -374,13 +383,13 @@ pub fn region_labels_to_color(labels: &Array2<u32>) -> RgbImage {
     let golden_ratio = 0.618_034;
     let mut hue = 0.0;
 
-    for &label in &unique_labels {
+    for &label_ in &unique_labels {
         hue += golden_ratio;
         hue %= 1.0;
 
         let (r, g, b) = hsv_to_rgb(hue, 0.7, 0.9);
         label_colors.insert(
-            label,
+            label_,
             [(r * 255.0) as u8, (g * 255.0) as u8, (b * 255.0) as u8],
         );
     }
@@ -388,11 +397,11 @@ pub fn region_labels_to_color(labels: &Array2<u32>) -> RgbImage {
     // Apply colors
     for y in 0..height {
         for x in 0..width {
-            let label = labels[[y, x]];
-            let color = if label == 0 {
+            let label_ = labels[[y, x]];
+            let color = if label_ == 0 {
                 [0, 0, 0]
             } else {
-                label_colors.get(&label).copied().unwrap_or([0, 0, 0])
+                label_colors.get(&label_).copied().unwrap_or([0, 0, 0])
             };
             result.put_pixel(x as u32, y as u32, Rgb(color));
         }
@@ -402,6 +411,7 @@ pub fn region_labels_to_color(labels: &Array2<u32>) -> RgbImage {
 }
 
 /// Convert HSV to RGB
+#[allow(dead_code)]
 fn hsv_to_rgb(h: f32, s: f32, v: f32) -> (f32, f32, f32) {
     let c = v * s;
     let x = c * (1.0 - ((h * 6.0) % 2.0 - 1.0).abs());
@@ -445,12 +455,12 @@ mod tests {
             SeedPoint {
                 x: 10,
                 y: 10,
-                label: Some(1),
+                label_: Some(1),
             },
             SeedPoint {
                 x: 30,
                 y: 30,
-                label: Some(2),
+                label_: Some(2),
             },
         ];
 
@@ -491,7 +501,7 @@ mod tests {
         let seeds = vec![SeedPoint {
             x: 15,
             y: 15,
-            label: None,
+            label_: None,
         }];
 
         let result = adaptive_region_growing(&img, &seeds, 10.0, 5);

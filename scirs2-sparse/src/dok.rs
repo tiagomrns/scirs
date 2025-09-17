@@ -153,7 +153,7 @@ where
 
         // Sort by row, then column for deterministic output
         let mut entries: Vec<_> = self.data.iter().collect();
-        entries.sort_by_key(|&(&(row, col), _)| (row, col));
+        entries.sort_by_key(|(&(row, col), _)| (row, col));
 
         for (&(row, col), &value) in entries {
             data.push(value);

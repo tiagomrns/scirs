@@ -97,6 +97,7 @@ impl<F: Float + FromPrimitive + Debug> TensorProductInterpolator<F> {
 /// # Returns
 ///
 /// Interpolated values at the points
+#[allow(dead_code)]
 pub fn tensor_product_interpolate<F>(
     _coords: &[Array1<F>],
     _values: &ndarray::ArrayD<F>,
@@ -187,6 +188,7 @@ impl<F: Float + FromPrimitive + Debug> LagrangeTensorInterpolator<F> {
 /// # Returns
 ///
 /// Interpolated values at the points
+#[allow(dead_code)]
 pub fn lagrange_tensor_interpolate<F>(
     _coords: &[Array1<F>],
     _values: &ndarray::ArrayD<F>,

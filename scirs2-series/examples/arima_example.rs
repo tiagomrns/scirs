@@ -5,6 +5,7 @@ use scirs2_series::arima_models::{
     auto_arima, ArimaModel, ArimaSelectionOptions, SelectionCriterion,
 };
 
+#[allow(dead_code)]
 fn main() {
     // Example 1: Manual ARIMA fitting
     println!("Example 1: Manual ARIMA(1,1,1) model");

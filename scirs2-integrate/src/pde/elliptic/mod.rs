@@ -103,15 +103,15 @@ impl PoissonSolver2D {
             ));
         }
 
-        // Validate boundary conditions
+        // Validate boundary _conditions
         if boundary_conditions.len() != 4 {
             return Err(PDEError::BoundaryConditions(
-                "2D Poisson equation requires exactly 4 boundary conditions (one for each edge)"
+                "2D Poisson equation requires exactly 4 boundary _conditions (one for each edge)"
                     .to_string(),
             ));
         }
 
-        // Ensure we have boundary conditions for all dimensions/edges
+        // Ensure we have boundary _conditions for all dimensions/edges
         let has_x_lower = boundary_conditions
             .iter()
             .any(|bc| bc.location == BoundaryLocation::Lower && bc.dimension == 0);
@@ -127,7 +127,7 @@ impl PoissonSolver2D {
 
         if !has_x_lower || !has_x_upper || !has_y_lower || !has_y_upper {
             return Err(PDEError::BoundaryConditions(
-                "2D Poisson equation requires boundary conditions for all edges of the domain"
+                "2D Poisson equation requires boundary _conditions for all edges of the domain"
                     .to_string(),
             ));
         }
@@ -213,7 +213,7 @@ impl PoissonSolver2D {
             // Print progress if verbose
             if self.options.verbose && (iter % 100 == 0 || iter == self.options.max_iterations - 1)
             {
-                println!("Iteration {}: residual = {:.6e}", iter, residual_norm);
+                println!("Iteration {iter}: residual = {residual_norm:.6e}");
             }
 
             iter += 1;
@@ -287,7 +287,7 @@ impl PoissonSolver2D {
 
         // Solve the linear system using Gaussian elimination
         // For a real implementation, use a sparse solver library
-        let u_flat = self.solve_linear_system(&a, &b)?;
+        let u_flat = PoissonSolver2D::solve_linear_system(&a, &b)?;
 
         // Reshape the solution to 2D
         let mut u = Array2::zeros((ny, nx));
@@ -326,7 +326,7 @@ impl PoissonSolver2D {
 
     // Helper method to solve linear system Ax = b using Gaussian elimination
     // In a real implementation, this would use a specialized sparse solver
-    fn solve_linear_system(&self, a: &Array2<f64>, b: &Array1<f64>) -> PDEResult<Array1<f64>> {
+    fn solve_linear_system(a: &Array2<f64>, b: &Array1<f64>) -> PDEResult<Array1<f64>> {
         let n = b.len();
 
         // Simple Gaussian elimination for demonstration purposes

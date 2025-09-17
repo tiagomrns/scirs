@@ -21,9 +21,10 @@ use crate::error::{LinalgError, LinalgResult};
 /// # Returns
 ///
 /// * Tuple containing eigenvalues and eigenvectors
+#[allow(dead_code)]
 pub fn symmetric_eigh<F>(a: &ArrayView2<F>) -> LinalgResult<(Array1<F>, Array2<F>)>
 where
-    F: Float + NumAssign + Sum + 'static,
+    F: Float + NumAssign + Sum + Send + Sync + ScalarOperand + 'static,
 {
     let n = a.nrows();
 
@@ -64,9 +65,10 @@ where
 /// # Returns
 ///
 /// * Vector of eigenvalues
+#[allow(dead_code)]
 pub fn symmetric_eigvalsh<F>(a: &ArrayView2<F>) -> LinalgResult<Array1<F>>
 where
-    F: Float + NumAssign + Sum + 'static,
+    F: Float + NumAssign + Sum + Send + Sync + ScalarOperand + 'static,
 {
     let n = a.nrows();
 
@@ -108,12 +110,13 @@ where
 /// # Returns
 ///
 /// * Diagonal and off-diagonal elements of the tridiagonal matrix
+#[allow(dead_code)]
 fn tridiagonalize<F>(a: &ArrayView2<F>) -> LinalgResult<(Array1<F>, Array1<F>)>
 where
-    F: Float + NumAssign + Sum + 'static,
+    F: Float + NumAssign + Sum + Send + Sync + ScalarOperand + 'static,
 {
     let n = a.nrows();
-    let mut working_matrix = a.to_owned();
+    let mut workingmatrix = a.to_owned();
     let mut diagonal = Array1::zeros(n);
     let mut off_diagonal = Array1::zeros(n - 1);
 
@@ -123,12 +126,12 @@ where
 
         // Compute norm of the subdiagonal column
         for j in i + 1..n {
-            alpha += working_matrix[[j, i]] * working_matrix[[j, i]];
+            alpha += workingmatrix[[j, i]] * workingmatrix[[j, i]];
         }
         alpha = alpha.sqrt();
 
         // Set the diagonal element
-        diagonal[i] = working_matrix[[i, i]];
+        diagonal[i] = workingmatrix[[i, i]];
 
         if alpha < F::epsilon() {
             // Subdiagonal is already zero, no need for Householder reflection
@@ -137,7 +140,7 @@ where
         }
 
         // Choose sign to avoid cancellation
-        let sgn = if working_matrix[[i + 1, i]] < F::zero() {
+        let sgn = if workingmatrix[[i + 1, i]] < F::zero() {
             F::one()
         } else {
             -F::one()
@@ -147,9 +150,9 @@ where
 
         // Householder vector
         let mut v = Array1::zeros(n);
-        v[i + 1] = working_matrix[[i + 1, i]] - alpha;
+        v[i + 1] = workingmatrix[[i + 1, i]] - alpha;
         for j in i + 2..n {
-            v[j] = working_matrix[[j, i]];
+            v[j] = workingmatrix[[j, i]];
         }
 
         // Normalize the Householder vector
@@ -160,14 +163,14 @@ where
             }
         }
 
-        // Apply Householder reflection H = I - 2*v*v' to working_matrix
+        // Apply Householder reflection H = I - 2*v*v' to workingmatrix
         // Formula: A' = H*A*H
 
         // Compute w = A*v
         let mut w = Array1::zeros(n);
         for j in 0..n {
             for k in i + 1..n {
-                w[j] += working_matrix[[j, k]] * v[k];
+                w[j] += workingmatrix[[j, k]] * v[k];
             }
         }
 
@@ -180,10 +183,10 @@ where
         // Update the matrix: A' = A - 2*v*w' - 2*w*v' + 4*z*v*v'
         for j in 0..n {
             for k in j..n {
-                working_matrix[[j, k]] = working_matrix[[j, k]]
+                workingmatrix[[j, k]] = workingmatrix[[j, k]]
                     - F::from(2.0).unwrap() * (v[j] * w[k] + w[j] * v[k])
                     + F::from(4.0).unwrap() * z * v[j] * v[k];
-                working_matrix[[k, j]] = working_matrix[[j, k]]; // Maintain symmetry
+                workingmatrix[[k, j]] = workingmatrix[[j, k]]; // Maintain symmetry
             }
         }
     }
@@ -191,12 +194,12 @@ where
     // Set the last two diagonal elements
     match n.cmp(&1) {
         std::cmp::Ordering::Greater => {
-            diagonal[n - 2] = working_matrix[[n - 2, n - 2]];
-            diagonal[n - 1] = working_matrix[[n - 1, n - 1]];
-            off_diagonal[n - 2] = working_matrix[[n - 1, n - 2]];
+            diagonal[n - 2] = workingmatrix[[n - 2, n - 2]];
+            diagonal[n - 1] = workingmatrix[[n - 1, n - 1]];
+            off_diagonal[n - 2] = workingmatrix[[n - 1, n - 2]];
         }
         std::cmp::Ordering::Equal => {
-            diagonal[0] = working_matrix[[0, 0]];
+            diagonal[0] = workingmatrix[[0, 0]];
         }
         std::cmp::Ordering::Less => {
             // No action needed for n = 0

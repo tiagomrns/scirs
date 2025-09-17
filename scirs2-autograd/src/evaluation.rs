@@ -148,21 +148,20 @@ impl<'c, 'g, F: Float> Evaluator<'c, 'g, F> {
 
         // Prepare input feeds
         if let Some(feeder) = &self.feeder {
-            for (key, array, _) in &feeder.feeds {
+            for (key, array_, phantom) in &feeder.feeds {
                 match key {
                     PlaceholderKey::Name(name) => {
                         if let Some(tid) = self.ctx.get_tensor_by_name(name) {
-                            placeholders.insert(tid, array);
+                            placeholders.insert(tid, array_);
                         } else {
                             ret.push(Err(EvalError::VariableError(format!(
-                                "Placeholder not found: {:?}",
-                                name
+                                "Placeholder not found: {name:?}"
                             ))));
                             return ret;
                         }
                     }
                     PlaceholderKey::ID(id) => {
-                        placeholders.insert(*id, array);
+                        placeholders.insert(*id, array_);
                     }
                 }
             }

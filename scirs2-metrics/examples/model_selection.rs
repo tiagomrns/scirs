@@ -6,6 +6,7 @@
 use scirs2_metrics::selection::{AggregationStrategy, ModelSelectionBuilder, ModelSelector};
 use std::collections::HashMap;
 
+#[allow(dead_code)]
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("Automated Model Selection Example");
     println!("================================");
@@ -17,9 +18,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("\nModel Evaluation Results:");
     println!("------------------------");
     for (model_name, scores) in &model_scores {
-        println!("{}:", model_name);
+        println!("{model_name}:");
         for (metric, value) in scores {
-            println!("  {}: {:.4}", metric, value);
+            println!("  {metric}: {value:.4}");
         }
         println!();
     }
@@ -37,7 +38,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let best_model = selector.select_best(&model_scores)?;
     let rankings = selector.rank_models(&model_scores)?;
 
-    println!("Best model: {}", best_model);
+    println!("Best model: {best_model}");
     println!("\nComplete rankings:");
     for (i, (model, score)) in rankings.iter().enumerate() {
         println!("{}: {} (score: {:.4})", i + 1, model, score);
@@ -57,14 +58,14 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     match threshold_selector.select_best(&model_scores) {
         Ok(best) => {
             let rankings = threshold_selector.rank_models(&model_scores)?;
-            println!("Best model meeting thresholds: {}", best);
+            println!("Best model meeting thresholds: {best}");
             println!("Models meeting thresholds: {}", rankings.len());
             for (model, score) in &rankings {
-                println!("  {}: {:.4}", model, score);
+                println!("  {model}: {score:.4}");
             }
         }
         Err(e) => {
-            println!("No models meet the threshold requirements: {}", e);
+            println!("No models meet the threshold requirements: {e}");
             let all_rankings = threshold_selector.rank_models(&model_scores)?;
             println!(
                 "Models that would qualify without thresholds: {}",
@@ -86,10 +87,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let pareto_optimal = pareto_selector.find_pareto_optimal(&model_scores);
     println!("Pareto optimal models (not dominated by others):");
     for model in &pareto_optimal {
-        println!("  {}", model);
+        println!("  {model}");
         if let Some(scores) = model_scores.get(model) {
             for (metric, value) in scores {
-                println!("    {}: {:.4}", metric, value);
+                println!("    {metric}: {value:.4}");
             }
         }
     }
@@ -114,7 +115,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             .with_aggregation(*strategy);
 
         if let Ok(best) = strategy_selector.select_best(&model_scores) {
-            println!("{}: {}", name, best);
+            println!("{name}: {best}");
         }
     }
 
@@ -133,7 +134,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         .aggregation(AggregationStrategy::WeightedSum)
         .select(&model_scores)?;
 
-    println!("{}", result);
+    println!("{result}");
 
     // Example 6: Domain-specific selection scenarios
     println!("\n6. Domain-Specific Selection Scenarios");
@@ -178,7 +179,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let empty_selector = ModelSelector::new();
     match empty_selector.select_best(&empty_scores) {
         Ok(_) => println!("Unexpected success with empty model set"),
-        Err(e) => println!("Expected error with empty models: {}", e),
+        Err(e) => println!("Expected error with empty models: {e}"),
     }
 
     // Missing metrics
@@ -191,8 +192,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         .add_metric("missing_metric", 0.5, true);
 
     match strict_selector.select_best(&incomplete_scores) {
-        Ok(best) => println!("Selected model despite missing metrics: {}", best),
-        Err(e) => println!("Error with missing metrics: {}", e),
+        Ok(best) => println!("Selected model despite missing metrics: {best}"),
+        Err(e) => println!("Error with missing metrics: {e}"),
     }
 
     println!("\nModel selection example completed successfully!");
@@ -200,6 +201,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 }
 
 /// Creates a comprehensive set of model evaluation results
+#[allow(dead_code)]
 fn create_model_scores() -> HashMap<String, Vec<(&'static str, f64)>> {
     let mut scores = HashMap::new();
 

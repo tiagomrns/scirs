@@ -1,0 +1,7 @@
+[build]
+rustflags = [
+    "-L", "/opt/homebrew/opt/lapack/lib",
+    "-L", "/opt/homebrew/opt/openblas/lib", 
+    "-l", "lapack",
+    "-l", "blas"
+]

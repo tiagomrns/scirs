@@ -2,8 +2,8 @@
 
 use ndarray::{Array, Dimension, ScalarOperand, Zip};
 use num_traits::Float;
-use rand::rngs::SmallRng;
-use rand::{Rng, SeedableRng};
+use rand::Rng;
+use scirs2_core::random::Random;
 use std::fmt::Debug;
 
 use crate::error::Result;
@@ -24,8 +24,8 @@ use crate::regularizers::Regularizer;
 /// use rand::rngs::SmallRng;
 ///
 /// // Create a dropout regularizer with 0.5 dropout rate
-/// let seed = 42;
-/// let mut rng = SmallRng::seed_from_u64(seed);
+/// let seed = [0u8; 32];
+/// let mut rng = SmallRng::from_seed(seed);
 /// let mut dropout = Dropout::new(0.5f64, &mut rng);
 ///
 /// // Set to training mode
@@ -43,7 +43,7 @@ pub struct Dropout<A: Float + Debug> {
     /// Dropout rate (fraction of units that are dropped)
     rate: A,
     /// Random number generator
-    rng: SmallRng,
+    rng: Random<rand::rngs::StdRng>,
     /// Boolean indicating whether in training mode
     training: bool,
     /// Cached dropout mask
@@ -58,14 +58,14 @@ impl<A: Float + Debug> Dropout<A> {
     /// * `rate` - Dropout rate (0.0 to 1.0, fraction of units that are dropped)
     /// * `rng` - Random number generator
     pub fn new<R: Rng>(rate: A, rng: &mut R) -> Self {
-        // Ensure rate is between 0 and 1
+        // Ensure _rate is between 0 and 1
         let rate = rate.max(A::zero()).min(A::one());
 
         // Create a new RNG from the provided one
         let mut seed_bytes = [0u8; 8];
         rng.fill_bytes(&mut seed_bytes);
         let seed = u64::from_ne_bytes(seed_bytes);
-        let rng = SmallRng::seed_from_u64(seed);
+        let rng = Random::seed(seed);
 
         Self {
             rate,
@@ -129,7 +129,7 @@ impl<A: Float + Debug> Dropout<A> {
         // and scaled by 1/(1-rate)
         let mut mask = Array::zeros(shape);
         for elem in mask.iter_mut() {
-            let rand_val = A::from(self.rng.random_range(0.0..1.0)).unwrap();
+            let rand_val = A::from(self.rng.gen_range(0.0..1.0)).unwrap();
             if rand_val > self.rate {
                 *elem = scale;
             }
@@ -144,7 +144,7 @@ where
     A: Float + ScalarOperand + Debug,
     D: Dimension<Pattern = D>,
 {
-    fn apply(&self, _params: &Array<A, D>, gradients: &mut Array<A, D>) -> Result<A> {
+    fn apply(&self, params: &Array<A, D>, gradients: &mut Array<A, D>) -> Result<A> {
         if !self.training || self.rate <= A::zero() {
             // In eval mode or with 0 dropout rate, no dropout is applied
             return Ok(A::zero());
@@ -173,7 +173,7 @@ where
         Ok(A::zero())
     }
 
-    fn penalty(&self, _params: &Array<A, D>) -> Result<A> {
+    fn penalty(&self, params: &Array<A, D>) -> Result<A> {
         // Dropout doesn't add a penalty term to the loss
         Ok(A::zero())
     }

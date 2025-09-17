@@ -179,6 +179,7 @@ pub struct SparseInfo {
 }
 
 /// Solve sparse least squares problem using iterative methods
+#[allow(dead_code)]
 pub fn sparse_least_squares<F, J>(
     fun: F,
     jac: Option<J>,
@@ -282,6 +283,7 @@ struct InternalResult {
 }
 
 /// Solve L1-regularized least squares using coordinate descent (LASSO)
+#[allow(dead_code)]
 fn solve_lasso_coordinate_descent<F>(
     fun: &F,
     x0: &Array1<f64>,
@@ -361,6 +363,7 @@ where
 }
 
 /// Soft thresholding operator for L1 regularization
+#[allow(dead_code)]
 fn soft_threshold(x: f64, threshold: f64) -> f64 {
     if x > threshold {
         x - threshold
@@ -372,6 +375,7 @@ fn soft_threshold(x: f64, threshold: f64) -> f64 {
 }
 
 /// Solve L1-regularized least squares using proximal gradient method
+#[allow(dead_code)]
 fn solve_lasso_proximal_gradient<F>(
     fun: &F,
     x0: &Array1<f64>,
@@ -451,6 +455,7 @@ where
 }
 
 /// Solve sparse least squares using sparse Gauss-Newton method
+#[allow(dead_code)]
 fn solve_sparse_gauss_newton<F, J>(
     fun: &F,
     jac: &Option<J>,
@@ -544,6 +549,7 @@ where
 }
 
 /// Compute diagonal element of J^T J for preconditioning
+#[allow(dead_code)]
 fn compute_diagonal_element(jac: &SparseMatrix, col: usize) -> f64 {
     let mut diag = 0.0;
 
@@ -562,6 +568,7 @@ fn compute_diagonal_element(jac: &SparseMatrix, col: usize) -> f64 {
 }
 
 /// Fallback to dense least squares for small or dense problems
+#[allow(dead_code)]
 fn solve_dense_least_squares<F, J>(
     fun: &F,
     _jac: &Option<J>,
@@ -635,6 +642,7 @@ where
 }
 
 /// Estimate memory usage of sparse matrix in MB
+#[allow(dead_code)]
 fn estimate_memory_usage(sparse_matrix: &SparseMatrix) -> f64 {
     let nnz = sparse_matrix.values.len();
     let nrows = sparse_matrix.nrows;
@@ -645,6 +653,7 @@ fn estimate_memory_usage(sparse_matrix: &SparseMatrix) -> f64 {
 }
 
 /// LSQR algorithm for sparse least squares
+#[allow(dead_code)]
 pub fn lsqr<F>(
     matvec: F,
     rmatvec: F,

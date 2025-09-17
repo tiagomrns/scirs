@@ -1,6 +1,7 @@
 use num_complex::Complex64;
 use scirs2_special::{e1, expint, li, li_complex};
 
+#[allow(dead_code)]
 fn main() {
     println!("Logarithmic Integral Function Examples");
     println!("=====================================");

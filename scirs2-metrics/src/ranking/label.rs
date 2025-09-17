@@ -49,6 +49,7 @@ use crate::error::{MetricsError, Result};
 /// let coverage = coverage_error(&y_true, &y_score).unwrap();
 /// assert_eq!(coverage, 2.0); // Since the last relevant label is at index 1
 /// ```
+#[allow(dead_code)]
 pub fn coverage_error<T, S, R>(
     y_true: &ArrayBase<S, Ix1>,
     y_score: &ArrayBase<R, Ix1>,
@@ -84,7 +85,7 @@ where
         ));
     }
 
-    // Count true labels
+    // Count _true labels
     let n_true = y_true.iter().filter(|&&x| x > zero).count();
 
     if n_true == 0 {
@@ -93,7 +94,7 @@ where
         ));
     }
 
-    // Create pairs of (score, relevance, index) for sorting
+    // Create pairs of (_score, relevance, index) for sorting
     let mut score_relevance_idx: Vec<_> = y_score
         .iter()
         .zip(y_true.iter())
@@ -101,7 +102,7 @@ where
         .map(|(idx, (s, r))| (s.clone(), r.clone(), idx))
         .collect();
 
-    // Sort by score in descending order
+    // Sort by _score in descending order
     score_relevance_idx.sort_by(|(a, _, _), (b, _, _)| b.partial_cmp(a).unwrap_or(Ordering::Equal));
 
     // Find position of last relevant item
@@ -158,6 +159,7 @@ where
 /// // Calculate average coverage error
 /// let coverage = coverage_error_multiple(&y_true, &y_score).unwrap();
 /// ```
+#[allow(dead_code)]
 pub fn coverage_error_multiple<T, S, R>(
     y_true: &ArrayBase<S, Ix2>,
     y_score: &ArrayBase<R, Ix2>,
@@ -190,11 +192,11 @@ where
 
     // Process each sample
     for i in 0..n_samples {
-        // Extract one sample's true labels and scores
+        // Extract one sample's _true labels and scores
         let sample_true = y_true.slice(ndarray::s![i, ..]);
         let sample_score = y_score.slice(ndarray::s![i, ..]);
 
-        // Count true labels for this sample
+        // Count _true labels for this sample
         let true_count = sample_true.iter().filter(|&&x| x > T::zero()).count();
 
         // Skip samples with no positive labels
@@ -202,14 +204,14 @@ where
             continue;
         }
 
-        // Create pairs of (score, relevance) for sorting
+        // Create pairs of (_score, relevance) for sorting
         let mut score_relevance: Vec<_> = sample_score
             .iter()
             .zip(sample_true.iter())
             .map(|(s, r)| (s.clone(), r.clone()))
             .collect();
 
-        // Sort by score in descending order
+        // Sort by _score in descending order
         score_relevance.sort_by(|(a, _), (b, _)| b.partial_cmp(a).unwrap_or(Ordering::Equal));
 
         // Find position of last relevant item
@@ -274,6 +276,7 @@ where
 /// // Calculate label ranking loss
 /// let loss = label_ranking_loss(&y_true, &y_score).unwrap();
 /// ```
+#[allow(dead_code)]
 pub fn label_ranking_loss<T, S, R>(
     y_true: &ArrayBase<S, Ix2>,
     y_score: &ArrayBase<R, Ix2>,
@@ -307,7 +310,7 @@ where
 
     // Process each sample
     for i in 0..n_samples {
-        // Extract one sample's true labels and scores
+        // Extract one sample's _true labels and scores
         let sample_true = y_true.slice(ndarray::s![i, ..]);
         let sample_score = y_score.slice(ndarray::s![i, ..]);
 
@@ -332,7 +335,7 @@ where
         let mut n_incorrect = 0;
         for &r_idx in &relevant_labels {
             for &i_idx in &irrelevant_labels {
-                // Check if irrelevant label score >= relevant label score
+                // Check if irrelevant label _score >= relevant label _score
                 if sample_score[i_idx] >= sample_score[r_idx] {
                     n_incorrect += 1;
                 }
@@ -395,6 +398,7 @@ where
 /// // Calculate label ranking average precision score
 /// let score = label_ranking_average_precision_score(&y_true, &y_score).unwrap();
 /// ```
+#[allow(dead_code)]
 pub fn label_ranking_average_precision_score<T, S, R>(
     y_true: &ArrayBase<S, Ix2>,
     y_score: &ArrayBase<R, Ix2>,
@@ -428,7 +432,7 @@ where
 
     // Process each sample
     for i in 0..n_samples {
-        // Extract one sample's true labels and scores
+        // Extract one sample's _true labels and scores
         let sample_true = y_true.slice(ndarray::s![i, ..]);
         let sample_score = y_score.slice(ndarray::s![i, ..]);
 
@@ -440,7 +444,7 @@ where
             continue;
         }
 
-        // Create pairs of (score, relevance, index) for sorting
+        // Create pairs of (_score, relevance, index) for sorting
         let mut score_relevance_idx: Vec<_> = sample_score
             .iter()
             .zip(sample_true.iter())
@@ -448,7 +452,7 @@ where
             .map(|(idx, (s, r))| (s.clone(), r.clone(), idx))
             .collect();
 
-        // Sort by score in descending order
+        // Sort by _score in descending order
         score_relevance_idx
             .sort_by(|(a, _, _), (b, _, _)| b.partial_cmp(a).unwrap_or(Ordering::Equal));
 

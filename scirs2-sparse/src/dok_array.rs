@@ -126,7 +126,7 @@ where
 
         // Sort by row, then column for deterministic output
         let mut entries: Vec<_> = self.data.iter().collect();
-        entries.sort_by_key(|&(&(row, col), _)| (row, col));
+        entries.sort_by_key(|(&(row, col), _)| (row, col));
 
         for (&(row, col), &value) in entries {
             row_indices.push(row);
@@ -350,7 +350,7 @@ where
 
     fn dot(&self, other: &dyn SparseArray<T>) -> SparseResult<Box<dyn SparseArray<T>>> {
         let (_m, n) = self.shape();
-        let (p, _q) = other.shape();
+        let (p, q) = other.shape();
 
         if n != p {
             return Err(SparseError::DimensionMismatch {
@@ -471,7 +471,7 @@ where
                 let (rows, _) = self.shape();
                 let mut result = DokArray::new((rows, 1));
 
-                for (&(row, _col), &value) in &self.data {
+                for (&(row, col), &value) in &self.data {
                     let current = result.get(row, 0);
                     result.set(row, 0, current + value)?;
                 }
@@ -523,8 +523,8 @@ where
             return Err(SparseError::InvalidSliceRange);
         }
 
-        let slice_shape = (end_row - start_row, end_col - start_col);
-        let mut result = DokArray::new(slice_shape);
+        let sliceshape = (end_row - start_row, end_col - start_col);
+        let mut result = DokArray::new(sliceshape);
 
         for (&(row, col), &value) in &self.data {
             if row >= start_row && row < end_row && col >= start_col && col < end_col {

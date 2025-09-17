@@ -6,6 +6,7 @@ use scirs2_metrics::ranking::{
 };
 
 #[test]
+#[allow(dead_code)]
 fn test_mean_reciprocal_rank() {
     // Test case 1: Perfect ranking - relevant item at rank 1
     let y_true_1 = vec![array![0.0, 1.0, 0.0, 0.0, 0.0]];
@@ -51,6 +52,7 @@ fn test_mean_reciprocal_rank() {
 }
 
 #[test]
+#[allow(dead_code)]
 fn test_ndcg_score() {
     // Test case 1: Perfect ranking
     let y_true_1 = vec![array![0.0, 1.0, 0.0, 0.0, 0.0]];
@@ -119,6 +121,7 @@ fn test_ndcg_score() {
 }
 
 #[test]
+#[allow(dead_code)]
 fn test_metrics_edge_cases() {
     // Empty arrays should return error
     let empty_true: Vec<ndarray::Array1<f64>> = vec![];
@@ -138,17 +141,18 @@ fn test_metrics_edge_cases() {
     assert!(ndcg_score(&y_true, &y_score, None).is_err());
 
     // Arrays with different shapes should return error
-    let y_true_diff_shape = vec![array![0.0, 1.0, 0.0, 0.0, 0.0]];
-    let y_score_diff_shape = vec![array![0.1, 0.9, 0.2, 0.3]];
+    let y_true_diffshape = vec![array![0.0, 1.0, 0.0, 0.0, 0.0]];
+    let y_score_diffshape = vec![array![0.1, 0.9, 0.2, 0.3]];
 
-    assert!(mean_reciprocal_rank(&y_true_diff_shape, &y_score_diff_shape).is_err());
-    assert!(ndcg_score(&y_true_diff_shape, &y_score_diff_shape, None).is_err());
-    assert!(mean_average_precision(&y_true_diff_shape, &y_score_diff_shape, None).is_err());
-    assert!(precision_at_k(&y_true_diff_shape, &y_score_diff_shape, 3).is_err());
-    assert!(recall_at_k(&y_true_diff_shape, &y_score_diff_shape, 3).is_err());
+    assert!(mean_reciprocal_rank(&y_true_diffshape, &y_score_diffshape).is_err());
+    assert!(ndcg_score(&y_true_diffshape, &y_score_diffshape, None).is_err());
+    assert!(mean_average_precision(&y_true_diffshape, &y_score_diffshape, None).is_err());
+    assert!(precision_at_k(&y_true_diffshape, &y_score_diffshape, 3).is_err());
+    assert!(recall_at_k(&y_true_diffshape, &y_score_diffshape, 3).is_err());
 }
 
 #[test]
+#[allow(dead_code)]
 fn test_mean_average_precision() {
     // Test case 1: Perfect ranking
     let y_true_1 = vec![array![0.0, 1.0, 0.0, 1.0, 0.0]]; // Two relevant items
@@ -219,6 +223,7 @@ fn test_mean_average_precision() {
 }
 
 #[test]
+#[allow(dead_code)]
 fn test_precision_at_k() {
     // Test case 1: All relevant in top-k
     let y_true_1 = vec![array![0.0, 1.0, 0.0, 1.0, 0.0]]; // Two relevant items
@@ -273,6 +278,7 @@ fn test_precision_at_k() {
 }
 
 #[test]
+#[allow(dead_code)]
 fn test_recall_at_k() {
     // Test case 1: Various k values
     let y_true_1 = vec![array![0.0, 1.0, 0.0, 1.0, 0.0]]; // Two relevant items
@@ -335,6 +341,7 @@ fn test_recall_at_k() {
 }
 
 #[test]
+#[allow(dead_code)]
 fn test_kendalls_tau() {
     // Test case 1: Perfect agreement
     let x_1 = array![1.0, 2.0, 3.0, 4.0, 5.0];
@@ -374,6 +381,7 @@ fn test_kendalls_tau() {
 }
 
 #[test]
+#[allow(dead_code)]
 fn test_spearmans_rho() {
     // Test case 1: Perfect positive correlation
     let x_1 = array![1.0, 2.0, 3.0, 4.0, 5.0];
@@ -411,6 +419,7 @@ fn test_spearmans_rho() {
 }
 
 #[test]
+#[allow(dead_code)]
 fn test_map_at_k() {
     // Test case 1: Standard case
     let y_true_1 = vec![
@@ -444,6 +453,7 @@ fn test_map_at_k() {
 }
 
 #[test]
+#[allow(dead_code)]
 fn test_click_through_rate() {
     // Test case 1: All relevant in top positions
     let y_true_1 = vec![array![1.0, 1.0, 0.0, 0.0, 0.0]]; // First two items are relevant

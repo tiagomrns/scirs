@@ -13,6 +13,9 @@
 use crate::error::InterpolateResult;
 use crate::spatial::{BallTree, KdTree};
 use ndarray::{ArrayView2, Axis};
+
+#[cfg(feature = "simd")]
+use ndarray::Array1;
 use num_traits::{Float, FromPrimitive};
 use std::fmt::Debug;
 
@@ -82,6 +85,91 @@ impl SimdDistanceOps {
         }
     }
 
+    /// Enhanced batch distance computation with SIMD optimization for better memory access patterns
+    #[cfg(feature = "simd")]
+    pub fn enhanced_batch_distances<F>(
+        points: &ArrayView2<F>,
+        queries: &ArrayView2<F>,
+    ) -> Vec<Vec<F>>
+    where
+        F: Float + FromPrimitive + SimdUnifiedOps + Debug,
+    {
+        let n_queries = queries.nrows();
+        let n_points = points.nrows();
+        let dim = points.ncols();
+
+        let mut results = Vec::with_capacity(n_queries);
+
+        for query_idx in 0..n_queries {
+            let query = queries.row(query_idx);
+            let mut distances = Vec::with_capacity(n_points);
+
+            if F::simd_available() && dim >= 4 && n_points >= 8 {
+                // Process in chunks for better cache utilization
+                const CHUNK_SIZE: usize = 16;
+
+                for chunk_start in (0..n_points).step_by(CHUNK_SIZE) {
+                    let chunk_end = (chunk_start + CHUNK_SIZE).min(n_points);
+
+                    for point_idx in chunk_start..chunk_end {
+                        let point = points.row(point_idx);
+
+                        // Use SIMD-optimized distance calculation
+                        let distance = if dim >= 8 {
+                            // For higher dimensions, use vectorized operations
+                            let diff = F::simd_sub(&point, &query);
+                            let squared = F::simd_mul(&diff.view(), &diff.view());
+                            F::simd_sum(&squared.view())
+                        } else {
+                            // Fallback for lower dimensions
+                            Self::squared_euclidean_distance(
+                                point.as_slice().unwrap(),
+                                query.as_slice().unwrap(),
+                            )
+                        };
+
+                        distances.push(distance);
+                    }
+                }
+            } else {
+                // Non-SIMD fallback
+                for point_idx in 0..n_points {
+                    let point = points.row(point_idx);
+                    let distance = Self::squared_euclidean_distance(
+                        point.as_slice().unwrap(),
+                        query.as_slice().unwrap(),
+                    );
+                    distances.push(distance);
+                }
+            }
+
+            results.push(distances);
+        }
+
+        results
+    }
+
+    /// SIMD-optimized parallel batch processing for very large datasets
+    #[cfg(all(feature = "simd", feature = "parallel"))]
+    pub fn parallel_enhanced_batch_distances<F>(
+        points: &ArrayView2<F>,
+        queries: &ArrayView2<F>,
+        _num_threads: Option<usize>,
+    ) -> Vec<Vec<F>>
+    where
+        F: Float + FromPrimitive + SimdUnifiedOps + Debug + Send + Sync,
+    {
+        let n_queries = queries.nrows();
+
+        // Process queries sequentially for now
+        (0..n_queries)
+            .map(|query_idx| {
+                let query = queries.row(query_idx);
+                Self::batch_distances_to_query(points, query.as_slice().unwrap())
+            })
+            .collect()
+    }
+
     /// Compute squared Euclidean distance without SIMD
     #[cfg(not(feature = "simd"))]
     pub fn squared_euclidean_distance<F>(a: &[F], b: &[F]) -> F
@@ -141,9 +229,9 @@ pub struct CacheFriendlyKNN<F: Float> {
 
 impl<F: Float + FromPrimitive> CacheFriendlyKNN<F> {
     /// Create a new cache-friendly kNN searcher
-    pub fn new(cache_size: usize) -> Self {
+    pub fn new(cachesize: usize) -> Self {
         Self {
-            cache_size,
+            cache_size: cachesize,
             _phantom: std::marker::PhantomData,
         }
     }
@@ -241,7 +329,7 @@ where
                     let query_slice = query.as_slice().unwrap();
                     self.k_nearest_neighbors(query_slice, k)
                 })
-                .collect::<Result<Vec<_>, _>>()
+                .collect::<Result<Vec<_>>>()
         })
     }
 
@@ -250,7 +338,7 @@ where
         &self,
         queries: &ArrayView2<F>,
         k: usize,
-        _workers: Option<usize>,
+        workers: Option<usize>,
     ) -> InterpolateResult<Vec<Vec<(usize, F)>>> {
         // Fallback to sequential processing
         self.batch_k_nearest_neighbors(queries, k)
@@ -316,7 +404,7 @@ where
                     let query_slice = query.as_slice().unwrap();
                     self.k_nearest_neighbors(query_slice, k)
                 })
-                .collect::<Result<Vec<_>, _>>()
+                .collect::<Result<Vec<_>>>()
         })
     }
 
@@ -325,7 +413,7 @@ where
         &self,
         queries: &ArrayView2<F>,
         k: usize,
-        _workers: Option<usize>,
+        workers: Option<usize>,
     ) -> InterpolateResult<Vec<Vec<(usize, F)>>> {
         // Fallback to sequential processing
         self.batch_k_nearest_neighbors(queries, k)

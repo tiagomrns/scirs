@@ -125,8 +125,10 @@ struct Mase {
 }
 
 impl Mase {
-    fn new(baseline_mae: f64) -> Self {
-        Self { baseline_mae }
+    fn new(_baselinemae: f64) -> Self {
+        Self {
+            baseline_mae: _baselinemae,
+        }
     }
 }
 
@@ -171,6 +173,7 @@ impl RegressionMetric<f64> for Mase {
     }
 }
 
+#[allow(dead_code)]
 fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     println!("Custom Metrics Example");
     println!("=====================");
@@ -192,7 +195,7 @@ fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     );
     println!("Value Range: {:?}", balanced_acc.value_range());
     println!("Higher is Better: {}", balanced_acc.higher_is_better());
-    println!("Result: {:.4}", result);
+    println!("Result: {result:.4}");
 
     // Test custom regression metrics
     println!("\n2. Custom Regression Metrics (SMAPE and MASE)");
@@ -213,7 +216,7 @@ fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     );
     println!("Value Range: {:?}", smape.value_range());
     println!("Higher is Better: {}", smape.higher_is_better());
-    println!("Result: {:.4}%", smape_result);
+    println!("Result: {smape_result:.4}%");
 
     // MASE (using naive baseline MAE)
     let baseline_mae = 10.0; // Assume this comes from a baseline model
@@ -228,7 +231,7 @@ fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     );
     println!("Value Range: {:?}", mase.value_range());
     println!("Higher is Better: {}", mase.higher_is_better());
-    println!("Result: {:.4}", mase_result);
+    println!("Result: {mase_result:.4}");
     println!("(Values < 1.0 indicate better than baseline, > 1.0 indicate worse)");
 
     // Test metric suite
@@ -245,12 +248,12 @@ fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     // Evaluate classification metrics
     let cls_results = suite.evaluate_classification(&y_true_cls, &y_pred_cls)?;
     println!("\nClassification Results:");
-    println!("{}", cls_results);
+    println!("{cls_results}");
 
     // Evaluate regression metrics
     let reg_results = suite.evaluate_regression(&y_true_reg, &y_pred_reg)?;
     println!("Regression Results:");
-    println!("{}", reg_results);
+    println!("{reg_results}");
 
     // Find best metrics
     if let Some(best_cls) = cls_results.best_result() {
@@ -277,7 +280,7 @@ fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
 
     match balanced_acc.compute(&y_true_short, &y_pred_long) {
         Ok(_) => println!("Unexpected success with mismatched arrays"),
-        Err(e) => println!("Expected error with mismatched arrays: {}", e),
+        Err(e) => println!("Expected error with mismatched arrays: {e}"),
     }
 
     // Test with edge case data
@@ -285,7 +288,7 @@ fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     let y_pred_edge = array![1.0, 1.0, 1.0];
 
     let smape_edge = smape.compute(&y_true_edge, &y_pred_edge)?;
-    println!("SMAPE with identical values: {:.4}%", smape_edge);
+    println!("SMAPE with identical values: {smape_edge:.4}%");
 
     println!("\nCustom metrics example completed successfully!");
 

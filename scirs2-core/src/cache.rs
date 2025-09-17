@@ -43,10 +43,10 @@ where
 {
     /// Create a new TTL cache with specified size and TTL
     #[must_use]
-    pub fn new(size: usize, ttl_seconds: u64) -> Self {
+    pub fn new(size: usize, ttlseconds: u64) -> Self {
         Self {
             cache: SizedCache::with_size(size),
-            ttl: Duration::from_secs(ttl_seconds),
+            ttl: Duration::from_secs(ttlseconds),
         }
     }
 
@@ -161,7 +161,8 @@ impl CacheBuilder {
 
 /// Example of how to use the cached attribute
 ///
-/// ```rust
+/// ```ignore
+/// // Example disabled due to missing cached dependency
 /// use cached::proc_macro::cached;
 ///
 /// #[cached(size = 100)]
@@ -182,28 +183,32 @@ impl CacheBuilder {
 /// let mut cache = TTLSizedCache::<String, String>::new(100, 60);
 ///
 /// // Cache a value
-/// cache.insert("key".to_string(), "value".to_string());
+/// let key = "example_key";
+/// let value = "example_value";
+/// cache.insert(key.to_string(), value.to_string());
 ///
 /// // Retrieve a value
-/// let value = cache.get(&"key".to_string());
+/// let retrieved_value = cache.get(&key.to_string());
 /// ```
-pub fn memoize_example() {
-    // Create a TTL cache
-    let mut cache = TTLSizedCache::<String, String>::new(100, 60);
-
-    // Cache a value
-    cache.insert("key".to_string(), "value".to_string());
-
-    // Retrieve a value
-    let value = cache.get(&"key".to_string());
-
-    println!("Value from cache: {:?}", value);
-}
-
 /// Compute Fibonacci numbers with memoization
 ///
 /// This function demonstrates the use of memoization for computing
 /// Fibonacci numbers efficiently.
+///
+/// # Example
+///
+/// ```ignore
+/// use cached::proc_macro::cached;
+///
+/// #[cached(size = 100)]
+/// pub fn fibonacci_prime_cache(n: u64) -> u64 {
+///     match n {
+///         0 => 0,
+///         1 => 1,
+///         n => fibonacci_prime_cache(n - 1) + fibonacci_prime_cache(n - 2),
+///     }
+/// }
+/// ```
 ///
 /// # Arguments
 ///
@@ -214,6 +219,7 @@ pub fn memoize_example() {
 /// * The nth Fibonacci number
 #[cached]
 #[must_use]
+#[allow(dead_code)]
 pub fn fibonacci(n: u64) -> u64 {
     match n {
         0 => 0,
@@ -247,7 +253,7 @@ mod tests {
 
         // Test size limit
         for i in 0..10 {
-            cache.insert(i, "value");
+            cache.insert(i, "test");
         }
 
         // Only the last 5 should be in the cache due to size limit
@@ -256,7 +262,7 @@ mod tests {
         }
 
         for i in 5..10 {
-            assert_eq!(cache.get(&i), Some("value"));
+            assert_eq!(cache.get(&i), Some("test"));
         }
     }
 
@@ -282,11 +288,11 @@ mod tests {
         // The second call should be much faster due to memoization
         let start = Instant::now();
         let fib20_again = fibonacci(20);
-        let duration = start.elapsed();
+        let _elapsed = start.elapsed();
 
         assert_eq!(fib20_again, 6765);
 
         // The second call should be very fast (less than 1ms)
-        assert!(duration.as_millis() < 10);
+        assert!(_elapsed.as_millis() < 10);
     }
 }

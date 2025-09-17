@@ -29,6 +29,7 @@ use crate::tensor_ops::{activation_ops, scalar, shape, xent_ops};
 ///    // sigmoid(0) ≈ 0.5, sigmoid(1) ≈ 0.73, sigmoid(-1) ≈ 0.27
 /// });
 /// ```
+#[allow(dead_code)]
 pub fn sigmoid<'graph, A, F: Float>(x: A) -> Tensor<'graph, F>
 where
     A: AsRef<Tensor<'graph, F>> + Copy,
@@ -56,6 +57,7 @@ where
 ///    // tanh(0) = 0, tanh(1) ≈ 0.76, tanh(-1) ≈ -0.76
 /// });
 /// ```
+#[allow(dead_code)]
 pub fn tanh<'graph, A, F: Float>(x: A) -> Tensor<'graph, F>
 where
     A: AsRef<Tensor<'graph, F>> + Copy,
@@ -84,6 +86,7 @@ where
 ///    assert_eq!(y.eval(g), Ok(array![0., 0., 1., 2.].into_dyn()));
 /// });
 /// ```
+#[allow(dead_code)]
 pub fn relu<'graph, A, F: Float>(x: A) -> Tensor<'graph, F>
 where
     A: AsRef<Tensor<'graph, F>> + Copy,
@@ -115,6 +118,7 @@ where
 ///    assert_eq!(y.eval(g), Ok(array![-0.1, 0., 1., 2.].into_dyn()));
 /// });
 /// ```
+#[allow(dead_code)]
 pub fn leaky_relu<'graph, A, F: Float>(x: A, alpha: F) -> Tensor<'graph, F>
 where
     A: AsRef<Tensor<'graph, F>> + Copy,
@@ -143,6 +147,7 @@ where
 ///    // ELU smoothly transitions from exponential to linear
 /// });
 /// ```
+#[allow(dead_code)]
 pub fn elu<'graph, A, F: Float>(x: A, alpha: F) -> Tensor<'graph, F>
 where
     A: AsRef<Tensor<'graph, F>> + Copy,
@@ -172,6 +177,7 @@ where
 ///    // Softplus is a smooth approximation to ReLU
 /// });
 /// ```
+#[allow(dead_code)]
 pub fn softplus<'graph, A, F: Float>(x: A) -> Tensor<'graph, F>
 where
     A: AsRef<Tensor<'graph, F>> + Copy,
@@ -202,6 +208,7 @@ where
 ///    // Swish: x * sigmoid(x)
 /// });
 /// ```
+#[allow(dead_code)]
 pub fn swish<'graph, A, F: Float>(x: A) -> Tensor<'graph, F>
 where
     A: AsRef<Tensor<'graph, F>> + Copy,
@@ -232,6 +239,7 @@ where
 ///    // GELU is commonly used in transformer models
 /// });
 /// ```
+#[allow(dead_code)]
 pub fn gelu<'graph, A, F: Float>(x: A) -> Tensor<'graph, F>
 where
     A: AsRef<Tensor<'graph, F>> + Copy,
@@ -262,6 +270,7 @@ where
 ///    // Mish: x * tanh(softplus(x))
 /// });
 /// ```
+#[allow(dead_code)]
 pub fn mish<'graph, A, F: Float>(x: A) -> Tensor<'graph, F>
 where
     A: AsRef<Tensor<'graph, F>> + Copy,
@@ -292,6 +301,7 @@ where
 ///    // Each row should sum to 1
 /// });
 /// ```
+#[allow(dead_code)]
 pub fn softmax<'graph, A, F: Float>(x: A, axis: isize) -> Tensor<'graph, F>
 where
     A: AsRef<Tensor<'graph, F>> + Copy,
@@ -322,6 +332,7 @@ where
 ///    // Log of softmax probabilities
 /// });
 /// ```
+#[allow(dead_code)]
 pub fn log_softmax<'graph, A, F: Float>(x: A, axis: isize) -> Tensor<'graph, F>
 where
     A: AsRef<Tensor<'graph, F>> + Copy,
@@ -363,6 +374,7 @@ where
 ///    // Binary cross-entropy loss
 /// });
 /// ```
+#[allow(dead_code)]
 pub fn sigmoid_cross_entropy<'graph, A, B, F: Float>(y: A, t: B) -> Tensor<'graph, F>
 where
     A: AsRef<Tensor<'graph, F>> + Copy,
@@ -372,7 +384,7 @@ where
     let g = y.graph();
     let op = xent_ops::SigmoidCrossEntropy;
     Tensor::builder(g)
-        .set_shape(&shape(y))
+        .setshape(&shape(y))
         .append_input(y.as_ref(), false)
         .append_input(t.as_ref(), false)
         .build(op)
@@ -405,6 +417,7 @@ where
 ///    // Categorical cross-entropy loss
 /// });
 /// ```
+#[allow(dead_code)]
 pub fn softmax_cross_entropy<'graph, A, B, F: Float>(y: A, t: B) -> Tensor<'graph, F>
 where
     A: AsRef<Tensor<'graph, F>> + Copy,
@@ -446,6 +459,7 @@ where
 ///    // Sparse categorical cross-entropy loss
 /// });
 /// ```
+#[allow(dead_code)]
 pub fn sparse_softmax_cross_entropy<'graph, A, B, F: Float>(y: A, t: B) -> Tensor<'graph, F>
 where
     A: AsRef<Tensor<'graph, F>> + Copy,
@@ -479,6 +493,7 @@ where
 ///    // MSE loss
 /// });
 /// ```
+#[allow(dead_code)]
 pub fn mean_squared_error<'graph, A, B, F: Float>(y: A, t: B) -> Tensor<'graph, F>
 where
     A: AsRef<Tensor<'graph, F>> + Copy,
@@ -511,19 +526,20 @@ where
 ///    assert_eq!(e1.as_ref().unwrap().shape(), &[3, 4]);
 /// });
 /// ```
-pub fn normalize<'graph, A, AT, F: Float>(_x: A, _axes: &AT) -> Tensor<'graph, F>
+#[allow(dead_code)]
+pub fn normalize<'graph, A, AT, F: Float>(x: A, axes: &AT) -> Tensor<'graph, F>
 where
     A: AsRef<Tensor<'graph, F>> + Copy,
     AT: AsTensor<'graph, F>,
 {
-    let x = _x.as_ref();
-    let g = x.graph();
-    let axes = _axes.as_tensor(g);
-    let mean = crate::tensor_ops::reduction::reduce_mean(x, &axes, true);
-    let centered = x - mean;
+    let _x = x.as_ref();
+    let g = _x.graph();
+    let _axes = axes.as_tensor(g);
+    let mean = crate::tensor_ops::reduction::reduce_mean(_x, &_axes, true);
+    let centered = _x - mean;
     let variance = crate::tensor_ops::reduction::reduce_mean(
         crate::tensor_ops::arithmetic::square(centered),
-        &axes,
+        &_axes,
         true,
     );
     let em5 = scalar(F::from(1e-5).unwrap(), g);
@@ -554,6 +570,7 @@ where
 ///    assert_eq!(norm.eval(g).unwrap().shape(), &[3, 4]);
 /// });
 /// ```
+#[allow(dead_code)]
 pub fn batch_norm<'graph, A, B, C, F: Float>(x: A, scale: B, shift: C) -> Tensor<'graph, F>
 where
     A: AsRef<Tensor<'graph, F>> + Copy,
@@ -580,6 +597,7 @@ where
 ///    assert_eq!(y.eval(g), Ok(array![0., 0.5, 1.].into_dyn()));
 /// });
 /// ```
+#[allow(dead_code)]
 pub fn hard_sigmoid<'graph, A, F: Float>(x: A) -> Tensor<'graph, F>
 where
     A: AsRef<Tensor<'graph, F>> + Copy,
@@ -614,6 +632,7 @@ where
 ///    assert_eq!(y.eval(g), Ok(array![-1., 0., 1.].into_dyn()));
 /// });
 /// ```
+#[allow(dead_code)]
 pub fn hard_tanh<'graph, A, F: Float>(x: A) -> Tensor<'graph, F>
 where
     A: AsRef<Tensor<'graph, F>> + Copy,
@@ -643,6 +662,7 @@ where
 ///    assert_eq!(y.eval(g), Ok(array![0., 3., 6.].into_dyn()));
 /// });
 /// ```
+#[allow(dead_code)]
 pub fn relu6<'graph, A, F: Float>(x: A) -> Tensor<'graph, F>
 where
     A: AsRef<Tensor<'graph, F>> + Copy,

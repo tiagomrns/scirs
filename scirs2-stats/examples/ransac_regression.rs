@@ -2,6 +2,7 @@ use ndarray::array;
 use plotters::prelude::*;
 use scirs2_stats::ransac;
 
+#[allow(dead_code)]
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("RANSAC Robust Regression Example");
     println!("===============================\n");
@@ -34,7 +35,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // Compute ordinary least squares regression for comparison
     let ols_result = scirs2_stats::linregress(&x_values.view(), &y.view()).unwrap();
-    let (ols_slope, ols_intercept, _, _, _) = ols_result;
+    let (ols_slope, ols_intercept, r, p_value, std_err) = ols_result;
 
     // Print results
     println!("RANSAC Regression Results:");
@@ -85,7 +86,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // Plot the data points
     chart.draw_series(
-        x.iter()
+        x_values
+            .iter()
             .zip(y.iter())
             .map(|(x, y)| Circle::new((*x, *y), 5, BLUE.filled())),
     )?;

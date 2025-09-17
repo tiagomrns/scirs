@@ -19,6 +19,7 @@ pub enum UpdateFormula {
 }
 
 /// Implements quasi-Newton algorithm with different update formulas
+#[allow(dead_code)]
 pub fn minimize_quasi_newton<F, S>(
     mut fun: F,
     x0: Array1<f64>,
@@ -50,7 +51,7 @@ where
     // Calculate initial gradient using finite differences
     let mut g = finite_difference_gradient(&mut fun, &x.view(), eps)?;
 
-    // Initialize approximation based on update formula
+    // Initialize approximation based on update _formula
     let mut h_inv: Option<Array2<f64>> = None;
     let mut b_mat: Option<Array2<f64>> = None;
 
@@ -176,7 +177,7 @@ where
             break;
         }
 
-        // Update approximation based on formula
+        // Update approximation based on _formula
         match update_formula {
             UpdateFormula::SR1 => {
                 update_sr1(&mut b_mat, &s, &y);
@@ -209,7 +210,6 @@ where
     Ok(OptimizeResult {
         x,
         fun: final_fun,
-        iterations: iter,
         nit: iter,
         func_evals: nfev,
         nfev,
@@ -228,6 +228,7 @@ where
 }
 
 /// SR1 update formula for Hessian approximation B
+#[allow(dead_code)]
 fn update_sr1(b_mat: &mut Option<Array2<f64>>, s: &Array1<f64>, y: &Array1<f64>) {
     if let Some(b) = b_mat.as_mut() {
         let bs = b.dot(s);
@@ -246,6 +247,7 @@ fn update_sr1(b_mat: &mut Option<Array2<f64>>, s: &Array1<f64>, y: &Array1<f64>)
 }
 
 /// DFP update formula for inverse Hessian approximation H
+#[allow(dead_code)]
 fn update_dfp(h_inv: &mut Option<Array2<f64>>, s: &Array1<f64>, y: &Array1<f64>) {
     if let Some(h) = h_inv.as_mut() {
         let s_dot_y = s.dot(y);
@@ -273,6 +275,7 @@ fn update_dfp(h_inv: &mut Option<Array2<f64>>, s: &Array1<f64>, y: &Array1<f64>)
 }
 
 /// BFGS update formula for inverse Hessian approximation H
+#[allow(dead_code)]
 fn update_bfgs(h_inv: &mut Option<Array2<f64>>, s: &Array1<f64>, y: &Array1<f64>, n: usize) {
     if let Some(h) = h_inv.as_mut() {
         let s_dot_y = s.dot(y);
@@ -301,6 +304,7 @@ fn update_bfgs(h_inv: &mut Option<Array2<f64>>, s: &Array1<f64>, y: &Array1<f64>
 }
 
 /// Simple matrix inversion using LU decomposition (for small matrices)
+#[allow(dead_code)]
 fn invert_matrix(mat: &Array2<f64>) -> Result<Array2<f64>, OptimizeError> {
     let n = mat.nrows();
     if n != mat.ncols() {
@@ -387,6 +391,7 @@ impl UpdateFormula {
 }
 
 /// Convenience functions for specific quasi-Newton methods
+#[allow(dead_code)]
 pub fn minimize_sr1<F, S>(
     fun: F,
     x0: Array1<f64>,
@@ -399,6 +404,7 @@ where
     minimize_quasi_newton(fun, x0, options, UpdateFormula::SR1)
 }
 
+#[allow(dead_code)]
 pub fn minimize_dfp<F, S>(
     fun: F,
     x0: Array1<f64>,

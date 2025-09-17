@@ -19,7 +19,7 @@ use std::ops::{Add, Div, Mul, Sub};
 ///   - cheap to `Copy`
 ///   - Lazily evaluated to [ndarray::Array], i.e. the value is obtained only after call `Tensor::eval`, `Evaluator::run`, or `Optimizer::update`.
 /// - `Tensor` belongs to a particular [Graph] and is shorter lived than the graph
-///   - Note the lifetime parameter: `Tensor<'graph, _>`
+///   - Note the lifetime parameter: `Tensor<'graph_>`
 ///   - The graph is always wrapped in [Context]
 /// - `Tensor` can behave as a trainable variable when in-place operations are applied
 ///   - See [crate::variable]
@@ -47,7 +47,7 @@ use std::ops::{Add, Div, Mul, Sub};
 ///     // Evaluating multiple tensors at once.
 ///     // Note that although `random` node is required two times in this computation graph,
 ///     // it's evaluated only once since `Evaluator` is smart enough to avoid duplicated computations.
-///     let pair: Vec<Result<NdArray, _>> = ctx.evaluator().extend(&[mul, reshaped]).run();
+///     let pair: Vec<Result<NdArray, ag::EvalError>> = ctx.evaluator().extend(&[mul, reshaped]).run();
 /// });
 ///    ```
 #[derive(Clone, Copy)]
@@ -56,7 +56,7 @@ pub struct Tensor<'graph, F: Float> {
     pub(crate) graph: &'graph Graph<F>,
 }
 
-impl<F: Float> std::fmt::Debug for Tensor<'_, F> {
+impl<F: Float + std::fmt::Debug> std::fmt::Debug for Tensor<'_, F> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("Tensor")
             .field("id", &self.id)
@@ -168,7 +168,7 @@ impl<'graph, F: Float> Tensor<'graph, F> {
             differentiable: true,
             placeholder_name: None,
             backprop_inputs: None,
-            known_shape: None,
+            knownshape: None,
             variable_id: None,
         }
     }
@@ -267,13 +267,13 @@ impl<'graph, F: Float> Tensor<'graph, F> {
     /// use ag::tensor_ops::*;
     ///
     /// ag::run(|g| {
-    ///     let a: ag::Tensor<f32> = zeros(&[2, 3], g).show_shape();
+    ///     let a: ag::Tensor<f32> = zeros(&[2, 3], g).showshape();
     ///     a.eval(g);
     ///     // [2, 3]
     /// });
     ///    ```
     #[inline]
-    pub fn show_shape(self) -> Tensor<'graph, F> {
+    pub fn showshape(self) -> Tensor<'graph, F> {
         self.register_hook(crate::hooks::ShowShape)
     }
 
@@ -284,14 +284,14 @@ impl<'graph, F: Float> Tensor<'graph, F> {
     /// use ag::tensor_ops::*;
     ///
     /// ag::run(|g| {
-    ///     let a: ag::Tensor<f32> = zeros(&[2, 3], g).show_prefixed_shape("My shape:");
+    ///     let a: ag::Tensor<f32> = zeros(&[2, 3], g).show_prefixedshape("My shape:");
     ///     a.eval(g);
     ///     // My shape:
     ///     // [2, 3]
     /// });
     ///    ```
     #[inline]
-    pub fn show_prefixed_shape(self, prefix: &'static str) -> Tensor<'graph, F> {
+    pub fn show_prefixedshape(self, prefix: &'static str) -> Tensor<'graph, F> {
         self.register_hook(crate::hooks::ShowPrefixedShape(prefix))
     }
 
@@ -388,12 +388,12 @@ impl<'graph, F: Float> Tensor<'graph, F> {
     }
 
     #[inline]
-    pub fn validate_using_known_shape(&self, shape: &[usize]) {
-        if let Some(ref known_shape) = self.inner().known_shape {
-            if !known_shape.validate(shape) {
+    pub fn validate_using_knownshape(&self, shape: &[usize]) {
+        if let Some(ref knownshape) = self.inner().knownshape {
+            if !knownshape.validate(shape) {
                 panic!(
                     "Shape error: placeholder required {:?}, but got {:?}",
-                    known_shape.get(),
+                    knownshape.get(),
                     shape
                 );
             }
@@ -417,9 +417,9 @@ impl<'graph, F: Float> Tensor<'graph, F> {
     /// Returns the shape of this tensor as a vector.
     /// This method evaluates the shape tensor if needed.
     pub fn shape(&self) -> Vec<usize> {
-        // Fallback: try to get shape from known_shape or estimate
-        if let Some(ref known_shape) = self.inner().known_shape {
-            known_shape
+        // Fallback: try to get shape from knownshape or estimate
+        if let Some(ref knownshape) = self.inner().knownshape {
+            knownshape
                 .get()
                 .iter()
                 .map(|&x| x.max(0) as usize)
@@ -439,8 +439,12 @@ impl<'graph, F: Float> Tensor<'graph, F> {
     }
 
     /// Creates a tensor from a vector of data and shape.
-    pub fn from_vec(data: Vec<F>, shape: Vec<usize>, graph: &'graph Graph<F>) -> Tensor<'graph, F> {
-        let array = match NdArray::from_shape_vec(ndarray::IxDyn(&shape), data) {
+    pub fn from_vec(
+        _data: Vec<F>,
+        shape: Vec<usize>,
+        graph: &'graph Graph<F>,
+    ) -> Tensor<'graph, F> {
+        let array = match NdArray::from_shape_vec(ndarray::IxDyn(&shape), _data) {
             Ok(arr) => arr,
             Err(_) => NdArray::zeros(ndarray::IxDyn(&shape)),
         };
@@ -494,7 +498,7 @@ pub(crate) struct TensorInternal<F: Float> {
 
     /// Static shape of this tensor.
     /// Each dim size is *signed* for placeholders.
-    pub(crate) known_shape: Option<KnownShape>,
+    pub(crate) knownshape: Option<KnownShape>,
 
     /// ID to lookup variable array in VariableEnvironment
     pub(crate) variable_id: Option<VariableID>,
@@ -513,7 +517,7 @@ impl<F: Float> TensorInternal<F> {
             placeholder_name: None,
             is_differentiable: true,
             backprop_inputs: None,
-            known_shape: None,
+            knownshape: None,
             variable_id: None,
         }
     }
@@ -631,11 +635,11 @@ pub(crate) struct IncomingTensor {
 impl<'graph> IncomingTensor {
     /// Instantiates a new immutable `IncomingTensor`.
     #[inline]
-    pub(crate) fn new<F: Float>(val: &Tensor<'graph, F>, array_selector: usize) -> IncomingTensor {
+    pub(crate) fn new<F: Float>(val: &Tensor<'graph, F>, arrayselector: usize) -> IncomingTensor {
         IncomingTensor {
             id: val.id(),
             allow_mut: false,
-            array_selector,
+            array_selector: arrayselector,
         }
     }
 
@@ -677,8 +681,8 @@ impl<'graph> IncomingTensor {
 /// }
 ///
 /// impl Op<f32> for DummyOp {
-///     fn compute(&self, _: &mut ComputeContext<f32>) -> Result<(), OpError> { Ok(()) }
-///     fn grad(&self, _: &mut GradientContext<f32>) {}
+///     fn compute(&self, ctx: &mut ComputeContext<f32>) -> Result<(), OpError> { Ok(()) }
+///     fn grad(&self, ctx: &mut GradientContext<f32>) {}
 /// }
 ///
 /// ag::run(|g: &mut ag::Context<f32>| {
@@ -695,7 +699,7 @@ pub struct TensorBuilder<'g, F: Float> {
     in_nodes: SmallVec<IncomingTensor>,
     differentiable: bool,
     backprop_inputs: Option<SmallVec<IncomingTensor>>,
-    known_shape: Option<KnownShape>,
+    knownshape: Option<KnownShape>,
     variable_id: Option<VariableID>,
     placeholder_name: Option<&'static str>,
 }
@@ -751,6 +755,7 @@ impl KnownShape {
 }
 
 #[test]
+#[allow(dead_code)]
 fn test_topo_order() {
     use crate::tensor_ops as T;
     crate::run(|g| {
@@ -776,13 +781,13 @@ impl<'graph, F: Float> TensorBuilder<'graph, F> {
     }
 
     #[inline]
-    pub(crate) fn set_known_shape(mut self, s: &[isize]) -> TensorBuilder<'graph, F> {
-        self.known_shape = Some(KnownShape::new(s));
+    pub(crate) fn set_knownshape(mut self, s: &[isize]) -> TensorBuilder<'graph, F> {
+        self.knownshape = Some(KnownShape::new(s));
         self
     }
 
     #[inline]
-    pub(crate) fn set_shape(mut self, s: &Tensor<'graph, F>) -> TensorBuilder<'graph, F> {
+    pub(crate) fn setshape(mut self, s: &Tensor<'graph, F>) -> TensorBuilder<'graph, F> {
         self.shape = Some(s.id());
         self
     }
@@ -875,7 +880,7 @@ impl<'graph, F: Float> TensorBuilder<'graph, F> {
             shape: self.shape,
             is_differentiable: self.differentiable,
             backprop_inputs: self.backprop_inputs,
-            known_shape: self.known_shape,
+            knownshape: self.knownshape,
             variable_id: self.variable_id,
             placeholder_name: self.placeholder_name,
         };
@@ -1002,7 +1007,7 @@ pub trait AsTensor<'graph, F: Float> {
 }
 
 impl<'graph, F: Float> AsTensor<'graph, F> for Tensor<'graph, F> {
-    fn as_tensor(&self, _: &'graph impl AsGraph<F>) -> Tensor<'graph, F> {
+    fn as_tensor(&self, graph: &'graph impl AsGraph<F>) -> Tensor<'graph, F> {
         *self
     }
 }

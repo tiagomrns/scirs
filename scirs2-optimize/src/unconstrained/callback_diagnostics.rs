@@ -59,9 +59,9 @@ pub struct DiagnosticOptimizer {
 
 impl DiagnosticOptimizer {
     /// Create new diagnostic optimizer
-    pub fn new(diagnostic_options: DiagnosticOptions) -> Self {
+    pub fn new(_diagnostic_options: DiagnosticOptions) -> Self {
         Self {
-            collector: Rc::new(RefCell::new(DiagnosticCollector::new(diagnostic_options))),
+            collector: Rc::new(RefCell::new(DiagnosticCollector::new(_diagnostic_options))),
             callbacks: Vec::new(),
             start_time: std::time::Instant::now(),
         }
@@ -73,10 +73,10 @@ impl DiagnosticOptimizer {
     }
 
     /// Add a simple progress callback
-    pub fn add_progress_callback(&mut self, every_n_iterations: usize) {
+    pub fn add_progress_callback(&mut self, every_n_nit: usize) {
         let mut last_printed = 0;
         self.add_callback(Box::new(move |info| {
-            if info.iteration >= last_printed + every_n_iterations {
+            if info.iteration >= last_printed + every_n_nit {
                 println!(
                     "Iteration {}: f = {:.6e}, |grad| = {:.6e}",
                     info.iteration,
@@ -103,7 +103,7 @@ impl DiagnosticOptimizer {
             }
 
             if no_improvement_count >= patience {
-                CallbackResult::StopWithMessage("Early stopping: no improvement")
+                CallbackResult::StopWithMessage("Early stopping: no _improvement")
             } else {
                 CallbackResult::Continue
             }
@@ -157,6 +157,7 @@ impl DiagnosticOptimizer {
 }
 
 /// Optimization wrapper that integrates diagnostics
+#[allow(dead_code)]
 pub fn optimize_with_diagnostics<F, O>(
     optimizer_fn: O,
     fun: F,
@@ -189,6 +190,7 @@ where
 }
 
 /// Example of integrating diagnostics into an optimization algorithm
+#[allow(dead_code)]
 pub fn minimize_with_diagnostics<F>(
     mut fun: F,
     x0: Array1<f64>,
@@ -243,7 +245,6 @@ where
                 return Ok(OptimizeResult {
                     x,
                     fun: f,
-                    iterations: iteration,
                     nit: iteration,
                     func_evals: iteration * 2,
                     nfev: iteration * 2,
@@ -273,7 +274,6 @@ where
     Ok(OptimizeResult {
         x,
         fun: f,
-        iterations: iteration,
         nit: iteration,
         func_evals: iteration * 2,
         nfev: iteration * 2,
@@ -289,6 +289,7 @@ where
 }
 
 /// Simple finite difference gradient
+#[allow(dead_code)]
 fn finite_diff_gradient<F>(fun: &mut F, x: &ArrayView1<f64>, eps: f64) -> Array1<f64>
 where
     F: FnMut(&ArrayView1<f64>) -> f64,

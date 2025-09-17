@@ -41,13 +41,16 @@ impl ProgressRenderer {
     }
 
     /// Render percentage-only progress
-    pub fn render_percentage(&self, description: &str, stats: &ProgressStats) {
-        let output = format!("{}: {:.1}%", description, stats.percentage);
+    pub fn renderpercentage(&self, description: &str, stats: &ProgressStats) {
+        let output = format!(
+            "{description}: {percentage:.1}%",
+            percentage = stats.percentage
+        );
         self.print_progress(&output);
     }
 
     /// Render basic progress bar
-    pub fn render_bar(
+    pub fn render_basic(
         &self,
         description: &str,
         stats: &ProgressStats,
@@ -67,10 +70,10 @@ impl ProgressRenderer {
             symbols.end,
         );
 
-        let mut output = format!("{}: {} {:.1}%", description, progress_bar, percentage);
+        let mut output = format!("{description}: {progress_bar} {percentage:.1}%");
 
         if show_eta && stats.processed < stats.total {
-            output.push_str(&format!(" ETA: {}", format_duration(&stats.eta)));
+            output.push_str(&format!(" eta: {}", format_duration(&stats.eta)));
         }
 
         self.print_progress(&output);
@@ -81,8 +84,8 @@ impl ProgressRenderer {
         &mut self,
         description: &str,
         stats: &ProgressStats,
-        symbols: &ProgressSymbols,
         show_eta: bool,
+        symbols: &ProgressSymbols,
     ) {
         self.spinner_index = (self.spinner_index + 1) % symbols.spinner.len();
         let spinner = &symbols.spinner[self.spinner_index];
@@ -93,21 +96,21 @@ impl ProgressRenderer {
         );
 
         if show_eta && stats.processed < stats.total {
-            output.push_str(&format!(" ETA: {}", format_duration(&stats.eta)));
+            output.push_str(&format!(" eta: {}", format_duration(&stats.eta)));
         }
 
         self.print_progress(&output);
     }
 
     /// Render detailed progress bar with statistics
-    pub fn render_detailed_bar(
+    pub fn render_detailed(
         &self,
         description: &str,
         stats: &ProgressStats,
         width: usize,
+        show_speed: bool,
         show_eta: bool,
         show_statistics: bool,
-        show_speed: bool,
         symbols: &ProgressSymbols,
     ) {
         let percentage = stats.percentage;
@@ -128,18 +131,27 @@ impl ProgressRenderer {
         );
 
         if show_speed {
-            output.push_str(&format!(" [{}]", format_rate(stats.items_per_second)));
+            output.push_str(&format!(
+                " [{rate}]",
+                rate = format_rate(stats.items_per_second)
+            ));
         }
 
         if show_eta && stats.processed < stats.total {
-            output.push_str(&format!(" ETA: {}", format_duration(&stats.eta)));
+            output.push_str(&format!(" eta: {}", format_duration(&stats.eta)));
         }
 
         if show_statistics {
-            output.push_str(&format!(" | Elapsed: {}", format_duration(&stats.elapsed)));
+            output.push_str(&format!(
+                " | Elapsed: {elapsed}",
+                elapsed = format_duration(&stats.elapsed)
+            ));
 
             if stats.max_speed > 0.0 {
-                output.push_str(&format!(" | Peak: {}", format_rate(stats.max_speed)));
+                output.push_str(&format!(
+                    " | Peak: {peak}",
+                    peak = format_rate(stats.max_speed)
+                ));
             }
         }
 
@@ -170,7 +182,7 @@ impl ProgressRenderer {
             let clear_length = self.last_length - output_width;
             print!("\r{}{}", output, " ".repeat(clear_length));
         } else {
-            print!("\r{}", output);
+            print!("\r{output}");
         }
 
         let _ = io::stdout().flush();
@@ -189,6 +201,7 @@ impl Default for ProgressRenderer {
 }
 
 /// Calculate the display width of a string, accounting for Unicode
+#[allow(dead_code)]
 fn console_width(s: &str) -> usize {
     // This is a simplified implementation
     // For full Unicode support, you might want to use the `unicode-width` crate
@@ -196,6 +209,7 @@ fn console_width(s: &str) -> usize {
 }
 
 /// Generate a color-coded progress bar based on completion percentage
+#[allow(dead_code)]
 pub fn colored_progress_bar(percentage: f64, width: usize) -> String {
     let filled_width = ((percentage / 100.0) * width as f64) as usize;
     let empty_width = width.saturating_sub(filled_width);
@@ -221,6 +235,7 @@ pub fn colored_progress_bar(percentage: f64, width: usize) -> String {
 }
 
 /// Create an ASCII art progress visualization
+#[allow(dead_code)]
 pub fn ascii_art_progress(percentage: f64) -> String {
     let blocks = [" ", "▏", "▎", "▍", "▌", "▋", "▊", "▉", "█"];
     let width = 20;
@@ -238,7 +253,7 @@ pub fn ascii_art_progress(percentage: f64) -> String {
     let remaining = width - full_blocks - if partial_block > 0 { 1 } else { 0 };
     result.push_str(&" ".repeat(remaining));
 
-    format!("│{}│", result)
+    format!("│{result}│")
 }
 
 #[cfg(test)]

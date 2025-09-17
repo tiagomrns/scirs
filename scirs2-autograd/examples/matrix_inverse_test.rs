@@ -2,11 +2,12 @@ extern crate scirs2_autograd as ag;
 use ag::ndarray;
 use ag::tensor_ops as T;
 
+#[allow(dead_code)]
 fn main() {
     println!("Testing matrix inverse operation");
 
     // Create and evaluate a 2x2 matrix
-    ag::run::<f64, _, _>(|ctx| {
+    ag::run(|ctx| {
         // Create a 2x2 matrix with specific values
         println!("Creating a 2x2 matrix");
         let matrix_data = ndarray::arr2(&[[2.0, 0.0], [0.0, 2.0]]);

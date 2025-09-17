@@ -35,6 +35,7 @@ use crate::error::{Result, TimeSeriesError};
 /// println!("Seasonal: {:?}", result.seasonal);
 /// println!("Residual: {:?}", result.residual);
 /// ```
+#[allow(dead_code)]
 pub fn exponential_decomposition<F>(
     ts: &Array1<F>,
     period: usize,

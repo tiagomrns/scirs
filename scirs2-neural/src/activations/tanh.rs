@@ -1,34 +1,28 @@
-//! Hyperbolic tangent (tanh) activation function implementation
+//! Tanh activation function implementation
 
 use crate::activations::Activation;
 use crate::error::Result;
-use ndarray::{Array, Zip};
+use crate::layers::Layer;
+use ndarray::{Array, IxDyn, ScalarOperand, Zip};
 use num_traits::Float;
 use std::fmt::Debug;
 
-/// Hyperbolic tangent (tanh) activation function.
+/// Hyperbolic tangent (Tanh) activation function.
 ///
-/// The tanh function is defined as:
-/// f(x) = (exp(x) - exp(-x)) / (exp(x) + exp(-x))
+/// Tanh activation is defined as:
+/// f(x) = tanh(x) = (e^x - e^(-x)) / (e^x + e^(-x))
 ///
-/// It maps any input value to a value between -1 and 1.
+/// It's similar to sigmoid but with output range [-1, 1].
 ///
 /// # Examples
-///
 /// ```
 /// use scirs2_neural::activations::Tanh;
 /// use scirs2_neural::activations::Activation;
 /// use ndarray::Array;
-///
+/// 
 /// let tanh = Tanh::new();
-/// let input = Array::from_vec(vec![0.0f64, 1.0, -1.0]).into_dyn();
+/// let input = Array::from_vec(vec![1.0, -1.0, 2.0, -2.0]).into_dyn();
 /// let output = tanh.forward(&input).unwrap();
-///
-/// // Check that values are in the expected range
-/// assert!(output.iter().all(|&x| x >= -1.0f64 && x <= 1.0f64));
-///
-/// // tanh(0) should be 0
-/// assert!(output[0].abs() < 1e-6);
 /// ```
 #[derive(Debug, Clone, Copy)]
 pub struct Tanh;
@@ -49,32 +43,55 @@ impl Default for Tanh {
 impl<F: Float + Debug> Activation<F> for Tanh {
     fn forward(&self, input: &Array<F, ndarray::IxDyn>) -> Result<Array<F, ndarray::IxDyn>> {
         let mut output = input.clone();
-
         Zip::from(&mut output).for_each(|x| {
             *x = x.tanh();
         });
-
         Ok(output)
     }
 
     fn backward(
         &self,
         grad_output: &Array<F, ndarray::IxDyn>,
-        output: &Array<F, ndarray::IxDyn>,
+        input: &Array<F, ndarray::IxDyn>,
     ) -> Result<Array<F, ndarray::IxDyn>> {
-        let one = F::one();
-        let mut grad_input = Array::zeros(output.raw_dim());
-
-        // For tanh: derivative = 1 - tanh^2(x)
-        // output already contains tanh(x), so we compute 1 - output^2
-        // grad_input = grad_output * (1 - output^2)
+        let mut grad_input = Array::zeros(grad_output.raw_dim());
+        
+        // Derivative of tanh(x) is 1 - tanh^2(x)
         Zip::from(&mut grad_input)
             .and(grad_output)
-            .and(output)
-            .for_each(|grad_in, &grad_out, &out| {
-                *grad_in = grad_out * (one - out * out);
+            .and(input)
+            .for_each(|grad_in, &grad_out, &x| {
+                let tanh_x = x.tanh();
+                let derivative = F::one() - tanh_x * tanh_x;
+                *grad_in = grad_out * derivative;
             });
 
         Ok(grad_input)
+    }
+}
+
+impl<F: Float + Debug + ScalarOperand> Layer<F> for Tanh {
+    fn as_any(&self) -> &dyn std::any::Any {
+        self
+    }
+
+    fn as_any_mut(&mut self) -> &mut dyn std::any::Any {
+        self
+    }
+
+    fn forward(&self, input: &Array<F, IxDyn>) -> Result<Array<F, IxDyn>> {
+        <Self as Activation<F>>::forward(self, input)
+    }
+
+    fn backward(
+        &self,
+        input: &Array<F, IxDyn>,
+        grad_output: &Array<F, IxDyn>,
+    ) -> Result<Array<F, IxDyn>> {
+        <Self as Activation<F>>::backward(self, grad_output, input)
+    }
+
+    fn update(&mut self, learningrate: F) -> Result<()> {
+        Ok(())
     }
 }

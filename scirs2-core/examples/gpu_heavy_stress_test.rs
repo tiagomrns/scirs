@@ -7,6 +7,7 @@ use scirs2_core::gpu::{GpuBackend, GpuContext, GpuError};
 #[cfg(feature = "gpu")]
 use std::time::Instant;
 
+#[allow(dead_code)]
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("=== SciRS2 Heavy GPU Stress Test ===\n");
 
@@ -25,6 +26,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 }
 
 #[cfg(feature = "gpu")]
+#[allow(dead_code)]
 fn run_gpu_stress_test() -> Result<(), Box<dyn std::error::Error>> {
     // Try to create GPU context with CUDA
     let ctx = match GpuContext::new(GpuBackend::Cuda) {
@@ -42,20 +44,21 @@ fn run_gpu_stress_test() -> Result<(), Box<dyn std::error::Error>> {
     println!();
 
     // Test 1: Large Matrix Operations
-    test_large_matrix_ops(&ctx)?;
+    test_largematrix_operations(&ctx)?;
 
     // Test 2: Massive Data Transfer
     test_massive_data_transfer(&ctx)?;
 
     // Test 3: Intensive Computation Loop
-    test_intensive_computation(&ctx)?;
+    test_intensive_computation_loop(&ctx)?;
 
     println!("\n=== All GPU stress tests completed! ===");
     Ok(())
 }
 
 #[cfg(feature = "gpu")]
-fn test_large_matrix_ops(ctx: &GpuContext) -> Result<(), GpuError> {
+#[allow(dead_code)]
+fn test_largematrix_operations(ctx: &GpuContext) -> Result<(), GpuError> {
     println!("Test 1: Large Matrix Operations");
     println!("================================");
 
@@ -82,7 +85,7 @@ fn test_large_matrix_ops(ctx: &GpuContext) -> Result<(), GpuError> {
         // Allocate GPU buffers
         let start = Instant::now();
         let gpu_a = ctx.create_buffer_from_slice(&a);
-        let _gpu_b = ctx.create_buffer_from_slice(&b);
+        let gpu_b = ctx.create_buffer_from_slice(&b);
         let alloc_time = start.elapsed();
         println!("  Allocation time: {:?}", alloc_time);
 
@@ -95,7 +98,7 @@ fn test_large_matrix_ops(ctx: &GpuContext) -> Result<(), GpuError> {
             // In a real implementation, we would use a kernel here
             // For now, just copy data back and forth to simulate work
             let mut temp = vec![0.0f32; n_elements];
-            gpu_a.copy_to_host(&mut temp);
+            let _ = gpu_a.copy_to_host(&mut temp);
 
             if i % 2 == 0 {
                 print!(".");
@@ -118,6 +121,7 @@ fn test_large_matrix_ops(ctx: &GpuContext) -> Result<(), GpuError> {
 }
 
 #[cfg(feature = "gpu")]
+#[allow(dead_code)]
 fn test_massive_data_transfer(ctx: &GpuContext) -> Result<(), GpuError> {
     println!("\nTest 2: Massive Data Transfer");
     println!("==============================");
@@ -138,16 +142,16 @@ fn test_massive_data_transfer(ctx: &GpuContext) -> Result<(), GpuError> {
 
         // Download from GPU
         let download_start = Instant::now();
-        let _result = gpu_buffer.to_vec();
+        let result = gpu_buffer.to_vec();
         let download_time = download_start.elapsed();
 
-        let upload_bandwidth = (size_mb as f64) / upload_time.as_secs_f64();
-        let download_bandwidth = (size_mb as f64) / download_time.as_secs_f64();
+        let uploadbandwidth = (size_mb as f64) / upload_time.as_secs_f64();
+        let downloadbandwidth = (size_mb as f64) / download_time.as_secs_f64();
 
-        println!("  Upload: {:?} ({:.2} MB/s)", upload_time, upload_bandwidth);
+        println!("  Upload: {:?} ({:.2} MB/s)", upload_time, uploadbandwidth);
         println!(
             "  Download: {:?} ({:.2} MB/s)",
-            download_time, download_bandwidth
+            download_time, downloadbandwidth
         );
     }
 
@@ -155,7 +159,8 @@ fn test_massive_data_transfer(ctx: &GpuContext) -> Result<(), GpuError> {
 }
 
 #[cfg(feature = "gpu")]
-fn test_intensive_computation(ctx: &GpuContext) -> Result<(), GpuError> {
+#[allow(dead_code)]
+fn test_intensive_computation_loop(ctx: &GpuContext) -> Result<(), GpuError> {
     println!("\nTest 3: Intensive Computation Loop");
     println!("===================================");
 
@@ -181,7 +186,7 @@ fn test_intensive_computation(ctx: &GpuContext) -> Result<(), GpuError> {
         // In a real implementation, we would use a kernel here
         // For now, just copy data back and forth to simulate work
         let mut temp = vec![0.0f32; n];
-        gpu_data.copy_to_host(&mut temp);
+        let _ = gpu_data.copy_to_host(&mut temp);
 
         if i % 10 == 0 {
             println!("Progress: {}%", i);

@@ -1,3 +1,4 @@
+#[allow(dead_code)]
 fn main() {
     println!("Testing parabolic cylinder functions with enhanced stability");
 
@@ -23,6 +24,7 @@ fn main() {
 }
 
 /// Asymptotic expansion for V_v(x) with enhanced numerical stability
+#[allow(dead_code)]
 fn pbvv_asymptotic(v: f64, x: f64) -> Result<(f64, f64), String> {
     // For extremely large |x|
     if x.abs() > 100.0 {
@@ -167,6 +169,7 @@ fn pbvv_asymptotic(v: f64, x: f64) -> Result<(f64, f64), String> {
 }
 
 // A simplified gamma function implementation for testing
+#[allow(dead_code)]
 fn gamma(x: f64) -> Result<f64, String> {
     if x <= 0.0 && x == x.floor() {
         return Err(format!("Gamma function pole at x = {}", x));

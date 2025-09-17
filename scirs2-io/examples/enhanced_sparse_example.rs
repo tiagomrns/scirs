@@ -15,6 +15,7 @@ use scirs2_io::serialize::{
 };
 use std::time::Instant;
 
+#[allow(dead_code)]
 fn main() -> Result<()> {
     println!("=== Enhanced Sparse Matrix Serialization Example ===");
 
@@ -37,6 +38,7 @@ fn main() -> Result<()> {
     Ok(())
 }
 
+#[allow(dead_code)]
 fn demonstrate_sparse_formats() -> Result<()> {
     println!("\n1. Demonstrating different sparse matrix formats...");
 
@@ -93,6 +95,7 @@ fn demonstrate_sparse_formats() -> Result<()> {
     Ok(())
 }
 
+#[allow(dead_code)]
 fn demonstrate_format_conversion() -> Result<()> {
     println!("\n2. Demonstrating format conversion performance...");
 
@@ -113,7 +116,7 @@ fn demonstrate_format_conversion() -> Result<()> {
         // Test row access in CSR
         let start = Instant::now();
         for i in 0..std::cmp::min(100, size) {
-            if let Some((cols, _vals)) = csr.row(i) {
+            if let Some((cols, vals)) = csr.row(i) {
                 let _row_nnz = cols.len();
             }
         }
@@ -131,7 +134,7 @@ fn demonstrate_format_conversion() -> Result<()> {
         // Test column access in CSC
         let start = Instant::now();
         for j in 0..std::cmp::min(100, size) {
-            if let Some((rows, _vals)) = csc.column(j) {
+            if let Some((rows, vals)) = csc.column(j) {
                 let _col_nnz = rows.len();
             }
         }
@@ -147,6 +150,7 @@ fn demonstrate_format_conversion() -> Result<()> {
     Ok(())
 }
 
+#[allow(dead_code)]
 fn demonstrate_sparse_operations() -> Result<()> {
     println!("3. Demonstrating sparse matrix operations...");
 
@@ -223,6 +227,7 @@ fn demonstrate_sparse_operations() -> Result<()> {
     Ok(())
 }
 
+#[allow(dead_code)]
 fn demonstrate_serialization() -> Result<()> {
     println!("\n4. Demonstrating sparse matrix serialization...");
 
@@ -297,6 +302,7 @@ fn demonstrate_serialization() -> Result<()> {
     Ok(())
 }
 
+#[allow(dead_code)]
 fn demonstrate_memory_analysis() -> Result<()> {
     println!("5. Demonstrating memory efficiency analysis...");
 
@@ -353,6 +359,7 @@ fn demonstrate_memory_analysis() -> Result<()> {
 }
 
 /// Create a sample sparse matrix (tridiagonal pattern)
+#[allow(dead_code)]
 fn create_sample_sparse_matrix(size: usize) -> SparseMatrix<f64> {
     let mut sparse = SparseMatrix::new(size, size);
 
@@ -375,6 +382,7 @@ fn create_sample_sparse_matrix(size: usize) -> SparseMatrix<f64> {
 }
 
 /// Format bytes in human-readable format
+#[allow(dead_code)]
 fn format_bytes(bytes: usize) -> String {
     if bytes < 1024 {
         format!("{}B", bytes)

@@ -106,7 +106,7 @@ impl<T: Float> Gamma<T> {
 
 impl<T: Float> op::Op<T> for RandomNormal<T> {
     fn compute(&self, ctx: &mut crate::op::ComputeContext<T>) -> Result<(), crate::op::OpError> {
-        let shape = ndarray_ext::as_shape(&ctx.input(0));
+        let shape = ndarray_ext::asshape(&ctx.input(0));
         // Clone the ArrayRng to get a mutable version
         let mut arr_rng = self.arr_rng.clone();
         ctx.append_output(arr_rng.normal(shape.as_slice(), self.mean, self.stddev));
@@ -120,7 +120,7 @@ impl<T: Float> op::Op<T> for RandomNormal<T> {
 
 impl<T: Float> op::Op<T> for RandomUniform<T> {
     fn compute(&self, ctx: &mut crate::op::ComputeContext<T>) -> Result<(), crate::op::OpError> {
-        let shape = ndarray_ext::as_shape(&ctx.input(0));
+        let shape = ndarray_ext::asshape(&ctx.input(0));
         // Clone the ArrayRng to get a mutable version
         let mut arr_rng = self.arr_rng.clone();
         ctx.append_output(arr_rng.uniform(shape.as_slice(), self.min, self.max));
@@ -134,7 +134,7 @@ impl<T: Float> op::Op<T> for RandomUniform<T> {
 
 impl<T: Float> op::Op<T> for StandardNormal<T> {
     fn compute(&self, ctx: &mut crate::op::ComputeContext<T>) -> Result<(), crate::op::OpError> {
-        let shape = ndarray_ext::as_shape(&ctx.input(0));
+        let shape = ndarray_ext::asshape(&ctx.input(0));
         // Clone the ArrayRng to get a mutable version
         let mut arr_rng = self.arr_rng.clone();
         ctx.append_output(arr_rng.standard_normal(shape.as_slice()));
@@ -148,7 +148,7 @@ impl<T: Float> op::Op<T> for StandardNormal<T> {
 
 impl<T: Float> op::Op<T> for StandardUniform<T> {
     fn compute(&self, ctx: &mut crate::op::ComputeContext<T>) -> Result<(), crate::op::OpError> {
-        let shape = ndarray_ext::as_shape(&ctx.input(0));
+        let shape = ndarray_ext::asshape(&ctx.input(0));
         // Clone the ArrayRng to get a mutable version
         let mut arr_rng = self.arr_rng.clone();
         ctx.append_output(arr_rng.standard_uniform(shape.as_slice()));
@@ -162,7 +162,7 @@ impl<T: Float> op::Op<T> for StandardUniform<T> {
 
 impl<T: Float> op::Op<T> for Bernoulli<T> {
     fn compute(&self, ctx: &mut crate::op::ComputeContext<T>) -> Result<(), crate::op::OpError> {
-        let shape = ndarray_ext::as_shape(&ctx.input(0));
+        let shape = ndarray_ext::asshape(&ctx.input(0));
         // Clone the ArrayRng to get a mutable version
         let mut arr_rng = self.arr_rng.clone();
         ctx.append_output(arr_rng.bernoulli(shape.as_slice(), self.p));
@@ -176,7 +176,7 @@ impl<T: Float> op::Op<T> for Bernoulli<T> {
 
 impl<T: Float> op::Op<T> for Exponential<T> {
     fn compute(&self, ctx: &mut crate::op::ComputeContext<T>) -> Result<(), crate::op::OpError> {
-        let shape = ndarray_ext::as_shape(&ctx.input(0));
+        let shape = ndarray_ext::asshape(&ctx.input(0));
         // Clone the ArrayRng to get a mutable version
         let mut arr_rng = self.arr_rng.clone();
         ctx.append_output(arr_rng.exponential(shape.as_slice(), self.lambda));
@@ -190,7 +190,7 @@ impl<T: Float> op::Op<T> for Exponential<T> {
 
 impl<T: Float> op::Op<T> for LogNormal<T> {
     fn compute(&self, ctx: &mut crate::op::ComputeContext<T>) -> Result<(), crate::op::OpError> {
-        let shape = ndarray_ext::as_shape(&ctx.input(0));
+        let shape = ndarray_ext::asshape(&ctx.input(0));
         // Clone the ArrayRng to get a mutable version
         let mut arr_rng = self.arr_rng.clone();
         ctx.append_output(arr_rng.log_normal(shape.as_slice(), self.mean, self.stddev));
@@ -204,7 +204,7 @@ impl<T: Float> op::Op<T> for LogNormal<T> {
 
 impl<T: Float> op::Op<T> for Gamma<T> {
     fn compute(&self, ctx: &mut crate::op::ComputeContext<T>) -> Result<(), crate::op::OpError> {
-        let shape = ndarray_ext::as_shape(&ctx.input(0));
+        let shape = ndarray_ext::asshape(&ctx.input(0));
         // Clone the ArrayRng to get a mutable version
         let mut arr_rng = self.arr_rng.clone();
         ctx.append_output(arr_rng.gamma(shape.as_slice(), self.shape_param, self.scale));

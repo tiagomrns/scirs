@@ -16,6 +16,7 @@ use std::time::Instant;
 /// ∂u/∂t = ε∂²u/∂x² - v∂u/∂x + ku(1-u)
 ///
 /// For small ε, this equation becomes stiff, making it challenging for explicit methods.
+#[allow(dead_code)]
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Domain and time range
     let domain = Domain::new(vec![0.0..1.0], vec![101])?;
@@ -63,13 +64,13 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     println!("Stiff PDE: Advection-Diffusion-Reaction Equation");
     println!("Parameters:");
-    println!("  Diffusion coefficient (ε): {}", epsilon);
-    println!("  Advection velocity (v): {}", velocity);
-    println!("  Reaction rate (k): {}", reaction_rate);
-    println!("  Grid spacing (dx): {}", dx);
+    println!("  Diffusion coefficient (ε): {epsilon}");
+    println!("  Advection velocity (v): {velocity}");
+    println!("  Reaction rate (k): {reaction_rate}");
+    println!("  Grid spacing (dx): {dx}");
     println!("\nStability limits for explicit methods:");
-    println!("  Diffusion limit: dt < {:.6}", diffusion_limit);
-    println!("  Advection limit (CFL): dt < {:.6}", advection_limit);
+    println!("  Diffusion limit: dt < {diffusion_limit:.6}");
+    println!("  Advection limit (CFL): dt < {advection_limit:.6}");
     println!(
         "  Combined limit: dt < {:.6}",
         diffusion_limit.min(advection_limit)
@@ -85,7 +86,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("------------------------------------------------");
 
     for &dt in &time_steps {
-        print!("{:.4} | ", dt);
+        print!("{dt:.4} | ");
 
         // 1. Explicit Method of Lines
         let start_time = Instant::now();
@@ -102,7 +103,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         let mol_time = start_time.elapsed().as_secs_f64();
 
         match mol_result {
-            Ok(_) => print!("Stable ({:.3}s) | ", mol_time),
+            Ok(_) => print!("Stable ({mol_time:.3}s) | "),
             Err(_) => print!("Unstable      | "),
         }
 
@@ -127,7 +128,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         let cn_time = start_time.elapsed().as_secs_f64();
 
         match cn_result {
-            Ok(_) => print!("Stable ({:.3}s) | ", cn_time),
+            Ok(_) => print!("Stable ({cn_time:.3}s) | "),
             Err(_) => print!("Unstable      | "),
         }
 
@@ -153,7 +154,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         let be_time = start_time.elapsed().as_secs_f64();
 
         match be_result {
-            Ok(_) => println!("Stable ({:.3}s)", be_time),
+            Ok(_) => println!("Stable ({be_time:.3}s)"),
             Err(_) => println!("Unstable"),
         }
     }
@@ -177,7 +178,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         &boundary_conditions,
     ) {
         Ok(result) => result,
-        Err(_) => panic!("MOL should be stable with dt = {}", stable_dt),
+        Err(_) => panic!("MOL should be stable with dt = {stable_dt}"),
     };
 
     // 2. Crank-Nicolson
@@ -235,6 +236,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 }
 
 /// Helper function to try solving with explicit MOL method
+#[allow(dead_code)]
 fn try_explicit_method(
     domain: &Domain,
     time_range: [f64; 2],
@@ -268,6 +270,7 @@ fn try_explicit_method(
 }
 
 /// Compare the solutions from different methods
+#[allow(dead_code)]
 fn compare_solutions(
     mol_solution: &Array2<f64>,
     cn_solution: &Array2<f64>,
@@ -294,11 +297,11 @@ fn compare_solutions(
     cn_be_diff = (cn_be_diff / nx as f64).sqrt();
 
     println!("Solution differences (L2 norm):");
-    println!("  MOL vs Crank-Nicolson: {:.6e}", mol_cn_diff);
-    println!("  MOL vs Backward Euler: {:.6e}", mol_be_diff);
-    println!("  CN vs Backward Euler:  {:.6e}", cn_be_diff);
+    println!("  MOL vs Crank-Nicolson: {mol_cn_diff:.6e}");
+    println!("  MOL vs Backward Euler: {mol_be_diff:.6e}");
+    println!("  CN vs Backward Euler:  {cn_be_diff:.6e}");
 
-    // Print solution at selected points
+    // Print _solution at selected points
     println!("\nSolution values at selected points:");
     println!("    x    |    MOL    | Crank-Nicolson | Backward Euler");
     println!("------------------------------------------------");

@@ -20,6 +20,7 @@ pub use sgd::{minimize_sgd, SGDOptions};
 use crate::error::OptimizeError;
 use crate::unconstrained::result::OptimizeResult;
 use ndarray::{Array1, ArrayView1};
+use scirs2_core::rng;
 
 /// Stochastic optimization method selection
 #[derive(Debug, Clone, Copy)]
@@ -136,10 +137,10 @@ impl DataProvider for InMemoryDataProvider {
 /// Stochastic gradient function trait
 pub trait StochasticGradientFunction {
     /// Compute gradient on a batch of data
-    fn compute_gradient(&mut self, x: &ArrayView1<f64>, batch_data: &[f64]) -> Array1<f64>;
+    fn compute_gradient(&mut self, x: &ArrayView1<f64>, batchdata: &[f64]) -> Array1<f64>;
 
     /// Compute function value on a batch of data
-    fn compute_value(&mut self, x: &ArrayView1<f64>, batch_data: &[f64]) -> f64;
+    fn compute_value(&mut self, x: &ArrayView1<f64>, batchdata: &[f64]) -> f64;
 }
 
 /// Wrapper for regular gradient functions
@@ -163,16 +164,17 @@ where
     F: FnMut(&ArrayView1<f64>) -> f64,
     G: FnMut(&ArrayView1<f64>) -> Array1<f64>,
 {
-    fn compute_gradient(&mut self, x: &ArrayView1<f64>, _batch_data: &[f64]) -> Array1<f64> {
+    fn compute_gradient(&mut self, x: &ArrayView1<f64>, _batchdata: &[f64]) -> Array1<f64> {
         (self.grad)(x)
     }
 
-    fn compute_value(&mut self, x: &ArrayView1<f64>, _batch_data: &[f64]) -> f64 {
+    fn compute_value(&mut self, x: &ArrayView1<f64>, _batchdata: &[f64]) -> f64 {
         (self.func)(x)
     }
 }
 
 /// Update learning rate according to schedule
+#[allow(dead_code)]
 pub fn update_learning_rate(
     initial_lr: f64,
     epoch: usize,
@@ -203,28 +205,30 @@ pub fn update_learning_rate(
 }
 
 /// Clip gradients to prevent exploding gradients
-pub fn clip_gradients(gradient: &mut Array1<f64>, max_norm: f64) {
+#[allow(dead_code)]
+pub fn clip_gradients(gradient: &mut Array1<f64>, maxnorm: f64) {
     let grad_norm = gradient.mapv(|x| x * x).sum().sqrt();
-    if grad_norm > max_norm {
-        let scale = max_norm / grad_norm;
+    if grad_norm > maxnorm {
+        let scale = maxnorm / grad_norm;
         gradient.mapv_inplace(|x| x * scale);
     }
 }
 
 /// Generate random batch indices
-pub fn generate_batch_indices(num_samples: usize, batch_size: usize, shuffle: bool) -> Vec<usize> {
-    let mut indices: Vec<usize> = (0..num_samples).collect();
+#[allow(dead_code)]
+pub fn generate_batch_indices(_num_samples: usize, batchsize: usize, shuffle: bool) -> Vec<usize> {
+    let mut indices: Vec<usize> = (0.._num_samples).collect();
 
     if shuffle {
-        use rand::rng;
         use rand::seq::SliceRandom;
         indices.shuffle(&mut rng());
     }
 
-    indices.into_iter().take(batch_size).collect()
+    indices.into_iter().take(batchsize).collect()
 }
 
 /// Main stochastic optimization function
+#[allow(dead_code)]
 pub fn minimize_stochastic<F>(
     method: StochasticMethod,
     grad_func: F,
@@ -311,6 +315,7 @@ where
 }
 
 /// Create stochastic options optimized for specific problem types
+#[allow(dead_code)]
 pub fn create_stochastic_options_for_problem(
     problem_type: &str,
     dataset_size: usize,
@@ -320,7 +325,7 @@ pub fn create_stochastic_options_for_problem(
             learning_rate: 0.001,
             max_iter: 1000,
             batch_size: Some(32.min(dataset_size / 10)),
-            lr_schedule: LearningRateSchedule::ExponentialDecay { decay_rate: 0.95 },
+            lr_schedule: LearningRateSchedule::ExponentialDecay { decay_rate: 0.99 },
             gradient_clip: Some(1.0),
             early_stopping_patience: Some(50),
             ..Default::default()
@@ -355,7 +360,7 @@ pub fn create_stochastic_options_for_problem(
             learning_rate: 0.01,
             max_iter: 1000,
             batch_size: Some(64.min(dataset_size / 5)),
-            lr_schedule: LearningRateSchedule::InverseTimeDecay { decay_rate: 0.001 },
+            lr_schedule: LearningRateSchedule::InverseTimeDecay { decay_rate: 1.0 },
             gradient_clip: Some(2.0),
             early_stopping_patience: Some(100),
             ..Default::default()

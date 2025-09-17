@@ -15,6 +15,7 @@ use scirs2_vision::registration::{
     Point2D, PointMatch, RegistrationParams, TransformType,
 };
 
+#[allow(dead_code)]
 fn main() -> Result<()> {
     println!("Image Registration Example");
     println!("=========================");
@@ -177,15 +178,15 @@ fn main() -> Result<()> {
     let intensity_mse = compute_mse(&ref_gray, &registered_intensity);
 
     println!("Mean Squared Error:");
-    println!("  Feature-based: {:.2}", feature_mse);
-    println!("  Intensity-based: {:.2}", intensity_mse);
+    println!("  Feature-based: {feature_mse:.2}");
+    println!("  Intensity-based: {intensity_mse:.2}");
 
     let feature_ncc = compute_ncc(&ref_gray, &registered_feature);
     let intensity_ncc = compute_ncc(&ref_gray, &registered_intensity);
 
     println!("Normalized Cross-Correlation:");
-    println!("  Feature-based: {:.4}", feature_ncc);
-    println!("  Intensity-based: {:.4}", intensity_ncc);
+    println!("  Feature-based: {feature_ncc:.4}");
+    println!("  Intensity-based: {intensity_ncc:.4}");
 
     println!("\nRegistration example completed successfully!");
     println!("Check the 'output' directory for result images.");
@@ -194,6 +195,7 @@ fn main() -> Result<()> {
 }
 
 /// Create synthetic test images with known transformation
+#[allow(dead_code)]
 fn create_test_images() -> Result<(DynamicImage, DynamicImage, Array2<f64>)> {
     let width = 300;
     let height = 300;
@@ -267,6 +269,7 @@ fn create_test_images() -> Result<(DynamicImage, DynamicImage, Array2<f64>)> {
 }
 
 /// Add a filled circle to an image
+#[allow(dead_code)]
 fn add_circle(
     img: &mut ImageBuffer<Luma<u8>, Vec<u8>>,
     cx: u32,
@@ -290,6 +293,7 @@ fn add_circle(
 }
 
 /// Add a filled rectangle to an image
+#[allow(dead_code)]
 fn add_rectangle(
     img: &mut ImageBuffer<Luma<u8>, Vec<u8>>,
     x: u32,
@@ -308,6 +312,7 @@ fn add_rectangle(
 }
 
 /// Add a corner pattern to create good feature points
+#[allow(dead_code)]
 fn add_corner_pattern(
     img: &mut ImageBuffer<Luma<u8>, Vec<u8>>,
     cx: u32,
@@ -333,11 +338,12 @@ fn add_corner_pattern(
 }
 
 /// Create synthetic point matches with some outliers
-fn create_synthetic_matches(num_matches: usize) -> Vec<PointMatch> {
-    let mut matches = Vec::new();
+#[allow(dead_code)]
+fn create_synthetic_matches(_nummatches: usize) -> Vec<PointMatch> {
+    let mut _matches = Vec::new();
     let mut rng = rand::rng();
 
-    // Create mostly good matches with known transformation
+    // Create mostly good _matches with known transformation
     let true_transform = Array2::from_shape_vec(
         (3, 3),
         vec![
@@ -354,8 +360,8 @@ fn create_synthetic_matches(num_matches: usize) -> Vec<PointMatch> {
     )
     .unwrap();
 
-    for _ in 0..(num_matches * 8 / 10) {
-        // 80% good matches
+    for _ in 0..(_nummatches * 8 / 10) {
+        // 80% good _matches
         let source = Point2D::new(rng.random_range(50.0..250.0), rng.random_range(50.0..250.0));
 
         let target = transform_point(source, &true_transform);
@@ -366,7 +372,7 @@ fn create_synthetic_matches(num_matches: usize) -> Vec<PointMatch> {
             target.y + rng.random_range(-2.0..2.0),
         );
 
-        matches.push(PointMatch {
+        _matches.push(PointMatch {
             source,
             target: noisy_target,
             confidence: rng.random_range(0.8..1.0),
@@ -374,18 +380,19 @@ fn create_synthetic_matches(num_matches: usize) -> Vec<PointMatch> {
     }
 
     // Add outliers
-    for _ in (num_matches * 8 / 10)..num_matches {
-        matches.push(PointMatch {
+    for _ in (_nummatches * 8 / 10).._nummatches {
+        _matches.push(PointMatch {
             source: Point2D::new(rng.random_range(50.0..250.0), rng.random_range(50.0..250.0)),
             target: Point2D::new(rng.random_range(50.0..250.0), rng.random_range(50.0..250.0)),
             confidence: rng.random_range(0.3..0.7),
         });
     }
 
-    matches
+    _matches
 }
 
 /// Analyze transformation accuracy
+#[allow(dead_code)]
 fn analyze_transform_accuracy(
     ground_truth: &Array2<f64>,
     estimated: &Array2<f64>,
@@ -409,13 +416,14 @@ fn analyze_transform_accuracy(
     let est_scale = (estimated[[0, 0]].powi(2) + estimated[[1, 0]].powi(2)).sqrt();
     let scale_error = ((gt_scale - est_scale) / gt_scale * 100.0).abs();
 
-    println!("{} transform accuracy:", method_name);
-    println!("  Translation error: {:.2} pixels", translation_error);
-    println!("  Rotation error: {:.2} degrees", rotation_error);
-    println!("  Scale error: {:.2}%", scale_error);
+    println!("{method_name} transform accuracy:");
+    println!("  Translation error: {translation_error:.2} pixels");
+    println!("  Rotation error: {rotation_error:.2} degrees");
+    println!("  Scale error: {scale_error:.2}%");
 }
 
 /// Create registration comparison visualization
+#[allow(dead_code)]
 fn create_registration_comparison(
     reference: &ImageBuffer<Luma<u8>, Vec<u8>>,
     target: &ImageBuffer<Luma<u8>, Vec<u8>>,
@@ -487,6 +495,7 @@ fn create_registration_comparison(
 }
 
 /// Compute Mean Squared Error between two images
+#[allow(dead_code)]
 fn compute_mse(
     img1: &ImageBuffer<Luma<u8>, Vec<u8>>,
     img2: &ImageBuffer<Luma<u8>, Vec<u8>>,
@@ -516,6 +525,7 @@ fn compute_mse(
 }
 
 /// Compute Normalized Cross-Correlation between two images
+#[allow(dead_code)]
 fn compute_ncc(
     img1: &ImageBuffer<Luma<u8>, Vec<u8>>,
     img2: &ImageBuffer<Luma<u8>, Vec<u8>>,

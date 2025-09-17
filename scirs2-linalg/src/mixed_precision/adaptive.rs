@@ -46,6 +46,7 @@ use crate::error::{LinalgError, LinalgResult};
 ///
 /// assert_eq!(x.len(), 2);
 /// ```
+#[allow(dead_code)]
 pub fn mixed_precision_solve<A, B, C, H>(
     a: &ArrayView2<A>,
     b: &ArrayView1<B>,
@@ -57,18 +58,17 @@ where
     H: Float + Clone + NumCast + Debug + Zero + ToPrimitive + NumAssign,
 {
     // Check dimensions
-    let a_shape = a.shape();
-    if a_shape[0] != a_shape[1] {
+    let ashape = a.shape();
+    if ashape[0] != ashape[1] {
         return Err(LinalgError::ShapeError(format!(
-            "Matrix must be square, got shape {:?}",
-            a_shape
+            "Matrix must be square, got shape {ashape:?}"
         )));
     }
 
-    if a_shape[0] != b.len() {
+    if ashape[0] != b.len() {
         return Err(LinalgError::ShapeError(format!(
             "Matrix rows ({}) must match vector length ({})",
-            a_shape[0],
+            ashape[0],
             b.len()
         )));
     }
@@ -78,7 +78,7 @@ where
     let b_high = convert::<B, H>(b);
 
     // Perform Gaussian elimination with partial pivoting in high precision
-    let n = a_shape[0];
+    let n = ashape[0];
     let mut aug = Array2::<H>::zeros((n, n + 1));
 
     // Create augmented matrix [A|b]
@@ -184,6 +184,7 @@ where
 /// // The condition number should indicate poor conditioning
 /// println!("Condition number: {}", cond);
 /// ```
+#[allow(dead_code)]
 pub fn mixed_precision_cond<A, C, H>(a: &ArrayView2<A>, p: Option<H>) -> LinalgResult<C>
 where
     A: Clone + Debug + ToPrimitive + Copy,
@@ -196,7 +197,9 @@ where
         + 'static
         + std::iter::Sum
         + NumAssign
-        + ndarray::ScalarOperand,
+        + ndarray::ScalarOperand
+        + Send
+        + Sync,
 {
     // Convert to high precision
     let a_high = convert_2d::<A, H>(a);
@@ -279,6 +282,7 @@ where
 /// assert!((x[0] - 1.0).abs() < 1e-10);
 /// assert!((x[1] - 2.0).abs() < 1e-10);
 /// ```
+#[allow(dead_code)]
 pub fn iterative_refinement_solve<A, B, C, H, W>(
     a: &ArrayView2<A>,
     b: &ArrayView1<B>,
@@ -289,8 +293,16 @@ where
     A: Float + NumAssign + Debug + 'static,
     B: Float + NumAssign + Debug + 'static,
     C: Float + NumAssign + Debug + 'static,
-    H: Float + NumAssign + Debug + 'static + std::iter::Sum + ndarray::ScalarOperand,
-    W: Float + NumAssign + Debug + 'static + std::iter::Sum + One,
+    H: Float + NumAssign + Debug + 'static + std::iter::Sum + ndarray::ScalarOperand + Send + Sync,
+    W: Float
+        + NumAssign
+        + Debug
+        + 'static
+        + std::iter::Sum
+        + One
+        + Send
+        + Sync
+        + ndarray::ScalarOperand,
     A: NumCast,
     B: NumCast,
     C: NumCast,
@@ -422,11 +434,12 @@ where
 ///     }
 /// }
 /// ```
+#[allow(dead_code)]
 pub fn mixed_precision_qr<A, C, H>(a: &ArrayView2<A>) -> LinalgResult<(Array2<C>, Array2<C>)>
 where
     A: Float + NumAssign + Debug + 'static,
     C: Float + NumAssign + Debug + 'static,
-    H: Float + NumAssign + Debug + 'static + std::iter::Sum + ndarray::ScalarOperand,
+    H: Float + NumAssign + Debug + 'static + std::iter::Sum + ndarray::ScalarOperand + Send + Sync,
     A: NumCast,
     C: NumCast,
     H: NumCast,
@@ -559,6 +572,7 @@ where
 /// * `A` - Input matrix precision
 /// * `C` - Output matrices/values precision
 /// * `H` - Higher precision used for computation
+#[allow(dead_code)]
 pub fn mixed_precision_svd<A, C, H>(
     a: &ArrayView2<A>,
     full_matrices: bool,
@@ -566,7 +580,7 @@ pub fn mixed_precision_svd<A, C, H>(
 where
     A: Float + NumAssign + Debug + 'static,
     C: Float + NumAssign + Debug + 'static,
-    H: Float + NumAssign + Debug + 'static + std::iter::Sum + ndarray::ScalarOperand,
+    H: Float + NumAssign + Debug + 'static + std::iter::Sum + ndarray::ScalarOperand + Send + Sync,
     A: NumCast,
     C: NumCast,
     H: NumCast,

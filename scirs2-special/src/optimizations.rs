@@ -25,6 +25,28 @@ lazy_static::lazy_static! {
         m.insert("pi_fourth_div_90", PI.powi(4) / 90.0);
         Mutex::new(m)
     };
+
+    // High-performance lookup table for Bessel J0 function
+    static ref BESSEL_J0_LOOKUP: [f64; 1000] = {
+        let mut table = [0.0; 1000];
+        #[allow(clippy::needless_range_loop)]
+        for i in 0..1000 {
+            let x = i as f64 * 0.01; // 0.00 to 9.99 with step 0.01
+            table[i] = bessel_j0_series(x);
+        }
+        table
+    };
+
+    // High-performance lookup table for Gamma function
+    static ref GAMMA_LOOKUP: [f64; 1000] = {
+        let mut table = [0.0; 1000];
+        #[allow(clippy::needless_range_loop)]
+        for i in 0..1000 {
+            let x = 0.1 + i as f64 * 0.01; // 0.1 to 10.09 with step 0.01
+            table[i] = gamma_stirling(x);
+        }
+        table
+    };
 }
 
 /// Get a cached constant value.
@@ -36,6 +58,7 @@ lazy_static::lazy_static! {
 /// # Returns
 ///
 /// * `f64` - Value of the constant
+#[allow(dead_code)]
 pub fn get_constant(name: &'static str) -> f64 {
     if let Some(value) = SPECIAL_VALUES.lock().unwrap().get(name) {
         return *value;
@@ -65,6 +88,7 @@ pub fn get_constant(name: &'static str) -> f64 {
 /// # Returns
 ///
 /// * `Option<f64>` - Cached value if available, None otherwise
+#[allow(dead_code)]
 pub fn get_cached_polylog(s: f64, x: f64) -> Option<f64> {
     // We only cache for integer s and discretized x (to avoid filling memory)
     let s_int = s.round() as i32;
@@ -87,6 +111,7 @@ pub fn get_cached_polylog(s: f64, x: f64) -> Option<f64> {
 /// * `s` - Order of the polylogarithm
 /// * `x` - Argument value
 /// * `value` - Result to cache
+#[allow(dead_code)]
 pub fn cache_polylog(s: f64, x: f64, value: f64) {
     // We only cache for integer s and discretized x (to avoid filling memory)
     let s_int = s.round() as i32;
@@ -112,6 +137,7 @@ pub fn cache_polylog(s: f64, x: f64, value: f64) {
 /// # Returns
 ///
 /// * `f64` - ln(1+x) computed accurately
+#[allow(dead_code)]
 pub fn ln_1p_optimized(x: f64) -> f64 {
     if x.abs() < 1e-4 {
         // Use series expansion for very small x
@@ -131,6 +157,7 @@ pub fn ln_1p_optimized(x: f64) -> f64 {
 /// # Returns
 ///
 /// * `f64` - Exponential integral
+#[allow(dead_code)]
 pub fn exponential_integral_pade(x: f64) -> f64 {
     // Only use Pade approximation for x > 0
     if x <= 0.0 {
@@ -183,6 +210,7 @@ pub fn exponential_integral_pade(x: f64) -> f64 {
 /// # Returns
 ///
 /// * `f64` - Exponential integral E₁(x)
+#[allow(dead_code)]
 pub fn exponential_integral_e1_pade(x: f64) -> f64 {
     assert!(x > 0.0, "E₁(x) is only defined for x > 0");
 
@@ -758,6 +786,105 @@ pub mod vectorized {
     }
 }
 
+/// Fast Bessel J0 series computation for lookup table initialization
+#[allow(dead_code)]
+fn bessel_j0_series(x: f64) -> f64 {
+    if x.abs() < 1e-14 {
+        return 1.0;
+    }
+
+    let x_half = x / 2.0;
+    let x_half_squared = x_half * x_half;
+
+    let mut sum = 1.0;
+    let mut term = 1.0;
+    let mut k = 1;
+
+    while k <= 50 {
+        term *= -x_half_squared / ((k * k) as f64);
+        sum += term;
+
+        if term.abs() < 1e-15 * sum.abs() {
+            break;
+        }
+        k += 1;
+    }
+
+    sum
+}
+
+/// Fast Gamma function using Stirling's approximation for lookup table
+#[allow(dead_code)]
+fn gamma_stirling(x: f64) -> f64 {
+    if x < 0.5 {
+        // Use reflection formula
+        return PI / ((PI * x).sin() * gamma_stirling(1.0 - x));
+    }
+
+    // Stirling's approximation with correction terms
+    let ln_gamma = (x - 0.5) * x.ln() - x + 0.5 * (2.0_f64 * PI).ln() + 1.0 / (12.0 * x)
+        - 1.0 / (360.0 * x.powi(3))
+        + 1.0 / (1260.0 * x.powi(5));
+    ln_gamma.exp()
+}
+
+/// Fast lookup-based Bessel J0 function
+#[allow(dead_code)]
+pub fn bessel_j0_fast(x: f64) -> f64 {
+    let abs_x = x.abs();
+
+    if abs_x < 10.0 {
+        let index = (abs_x * 100.0) as usize;
+        if index < 999 {
+            // Linear interpolation between lookup table values
+            let x1 = index as f64 * 0.01;
+            let x2 = (index + 1) as f64 * 0.01;
+            let y1 = BESSEL_J0_LOOKUP[index];
+            let y2 = BESSEL_J0_LOOKUP[index + 1];
+            return y1 + (y2 - y1) * (abs_x - x1) / (x2 - x1);
+        }
+    }
+
+    // Fall back to direct computation for values outside lookup range
+    bessel_j0_series(abs_x)
+}
+
+/// Fast lookup-based Gamma function
+#[allow(dead_code)]
+pub fn gamma_fast(x: f64) -> f64 {
+    // Special cases for exact integer values
+    if (x - 1.0).abs() < 1e-14 {
+        return 1.0;
+    } // Γ(1) = 1
+    if (x - 2.0).abs() < 1e-14 {
+        return 1.0;
+    } // Γ(2) = 1
+    if (x - 3.0).abs() < 1e-14 {
+        return 2.0;
+    } // Γ(3) = 2
+    if (x - 4.0).abs() < 1e-14 {
+        return 6.0;
+    } // Γ(4) = 6
+    if (x - 5.0).abs() < 1e-14 {
+        return 24.0;
+    } // Γ(5) = 24
+
+    if x > 0.1 && x < 10.1 {
+        let index = ((x - 0.1) * 100.0) as usize;
+        if index < 999 {
+            // Linear interpolation between lookup table values
+            let x1 = 0.1 + index as f64 * 0.01;
+            let x2 = 0.1 + (index + 1) as f64 * 0.01;
+            let y1 = GAMMA_LOOKUP[index];
+            let y2 = GAMMA_LOOKUP[index + 1];
+            return y1 + (y2 - y1) * (x - x1) / (x2 - x1);
+        }
+    }
+
+    // Fall back to direct computation for values outside lookup range
+    gamma_stirling(x)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -876,6 +1003,37 @@ mod tests {
 
         for (i, &expected) in [1.0, 4.0, 9.0, 16.0].iter().enumerate() {
             assert_relative_eq!(output[i], expected, epsilon = 1e-10);
+        }
+    }
+
+    #[test]
+    fn test_bessel_j0_fast() {
+        // Test lookup-based Bessel J0 function
+        assert_relative_eq!(bessel_j0_fast(0.0), 1.0, epsilon = 1e-10);
+        assert_relative_eq!(bessel_j0_fast(1.0), 0.7651976865579666, epsilon = 1e-8);
+        assert_relative_eq!(bessel_j0_fast(2.0), 0.22389077914123566, epsilon = 1e-8);
+
+        // Test that it matches the series computation
+        for x in [0.5, 1.5, 3.0, 5.0] {
+            let fast_result = bessel_j0_fast(x);
+            let series_result = bessel_j0_series(x);
+            assert_relative_eq!(fast_result, series_result, epsilon = 1e-6);
+        }
+    }
+
+    #[test]
+    fn test_gamma_fast() {
+        // Test lookup-based Gamma function
+        assert_relative_eq!(gamma_fast(1.0), 1.0, epsilon = 1e-10);
+        assert_relative_eq!(gamma_fast(2.0), 1.0, epsilon = 1e-10);
+        assert_relative_eq!(gamma_fast(3.0), 2.0, epsilon = 1e-10);
+        assert_relative_eq!(gamma_fast(4.0), 6.0, epsilon = 1e-10);
+
+        // Test that it matches Stirling approximation
+        for x in [0.5, 1.5, 2.5, 5.0, 8.0] {
+            let fast_result = gamma_fast(x);
+            let stirling_result = gamma_stirling(x);
+            assert_relative_eq!(fast_result, stirling_result, epsilon = 1e-6);
         }
     }
 }

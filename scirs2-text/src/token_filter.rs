@@ -15,7 +15,7 @@ pub trait TokenFilter {
     fn apply(&self, tokens: &[String]) -> Vec<String>;
 
     /// Apply the filter directly to text
-    fn filter_text(&self, text: &str, tokenizer: &dyn Tokenizer) -> Result<String> {
+    fn filtertext(&self, text: &str, tokenizer: &dyn Tokenizer) -> Result<String> {
         let tokens = tokenizer.tokenize(text)?;
         let filtered = self.apply(&tokens);
         Ok(filtered.join(" "))
@@ -42,22 +42,22 @@ impl Default for LengthFilter {
 
 impl LengthFilter {
     /// Create a new length filter
-    pub fn new(min_length: usize, max_length: usize) -> Self {
+    pub fn new(_min_length: usize, maxlength: usize) -> Self {
         Self {
-            min_length,
-            max_length,
+            min_length: _min_length,
+            max_length: maxlength,
         }
     }
 
     /// Set minimum token length
-    pub fn with_min_length(mut self, min_length: usize) -> Self {
-        self.min_length = min_length;
+    pub fn with_min_length(mut self, minlength: usize) -> Self {
+        self.min_length = minlength;
         self
     }
 
     /// Set maximum token length
-    pub fn with_max_length(mut self, max_length: usize) -> Self {
-        self.max_length = max_length;
+    pub fn with_max_length(mut self, maxlength: usize) -> Self {
+        self.max_length = maxlength;
         self
     }
 }
@@ -118,14 +118,14 @@ impl FrequencyFilter {
     }
 
     /// Create a new frequency filter from token counts
-    pub fn from_counts(token_counts: HashMap<String, usize>, min_count: usize) -> Self {
-        let total_count = token_counts.values().sum();
+    pub fn from_counts(_token_counts: HashMap<String, usize>, mincount: usize) -> Self {
+        let total_count = _token_counts.values().sum();
 
         Self {
-            min_count,
+            min_count: mincount,
             max_count: None,
             max_freq: None,
-            token_counts,
+            token_counts: _token_counts,
             total_count,
         }
     }
@@ -157,20 +157,20 @@ impl FrequencyFilter {
     }
 
     /// Set the maximum count threshold
-    pub fn with_max_count(mut self, max_count: usize) -> Self {
-        self.max_count = Some(max_count);
+    pub fn with_max_count(mut self, maxcount: usize) -> Self {
+        self.max_count = Some(maxcount);
         self
     }
 
     /// Set the maximum frequency threshold (0.0 to 1.0)
-    pub fn with_max_freq(mut self, max_freq: f64) -> Result<Self> {
-        if !(0.0..=1.0).contains(&max_freq) {
+    pub fn with_max_freq(mut self, maxfreq: f64) -> Result<Self> {
+        if !(0.0..=1.0).contains(&maxfreq) {
             return Err(TextError::InvalidInput(
                 "max_freq must be between 0.0 and 1.0".to_string(),
             ));
         }
 
-        self.max_freq = Some(max_freq);
+        self.max_freq = Some(maxfreq);
         Ok(self)
     }
 }
@@ -222,15 +222,14 @@ pub struct RegexFilter {
 
 impl RegexFilter {
     /// Create a new regex filter
-    pub fn new(pattern: &str, keep_matching: bool) -> Result<Self> {
-        match Regex::new(pattern) {
+    pub fn new(_pattern: &str, keepmatching: bool) -> Result<Self> {
+        match Regex::new(_pattern) {
             Ok(regex) => Ok(Self {
                 pattern: regex,
-                keep_matching,
+                keep_matching: keepmatching,
             }),
             Err(e) => Err(TextError::InvalidInput(format!(
-                "Invalid regex pattern: {}",
-                e
+                "Invalid regex pattern: {e}"
             ))),
         }
     }
@@ -260,10 +259,10 @@ pub struct StopwordsFilter {
 
 impl StopwordsFilter {
     /// Create a new stopwords filter
-    pub fn new(stopwords: Vec<String>, remove_stopwords: bool) -> Self {
+    pub fn new(_stopwords: Vec<String>, removestopwords: bool) -> Self {
         Self {
-            stopwords: stopwords.into_iter().collect(),
-            remove_stopwords,
+            stopwords: _stopwords.into_iter().collect(),
+            remove_stopwords: removestopwords,
         }
     }
 
@@ -569,13 +568,13 @@ mod tests {
     }
 
     #[test]
-    fn test_filter_text() {
+    fn test_filtertext() {
         let text = "The quick brown fox jumps over the lazy dog";
         let tokenizer = WordTokenizer::default();
 
         // Filter out short words
         let filter = LengthFilter::new(5, usize::MAX);
-        let filtered = filter.filter_text(text, &tokenizer).unwrap();
+        let filtered = filter.filtertext(text, &tokenizer).unwrap();
 
         assert_eq!(filtered, "quick brown jumps");
     }

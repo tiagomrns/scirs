@@ -2,10 +2,12 @@
 
 use ndarray::Array1;
 use scirs2_optim::{
+    // use statrs::statistics::Statistics; // statrs not available
     gradient_processing::GradientProcessor,
     optimizers::{Adam, Optimizer},
 };
 
+#[allow(dead_code)]
 fn main() {
     // Create example parameters and large gradients (simulating gradient explosion)
     let params = Array1::zeros(5);

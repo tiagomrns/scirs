@@ -115,9 +115,9 @@ pub struct PlanSerializationManager {
 
 impl PlanSerializationManager {
     /// Create a new plan serialization manager
-    pub fn new(db_path: impl AsRef<Path>) -> Self {
-        let db_path = db_path.as_ref().to_path_buf();
-        let database = Self::load_or_create_database(&db_path).unwrap_or_else(|_| {
+    pub fn new(dbpath: impl AsRef<Path>) -> Self {
+        let dbpath = dbpath.as_ref().to_path_buf();
+        let database = Self::load_or_create_database(&dbpath).unwrap_or_else(|_| {
             Arc::new(Mutex::new(PlanDatabase {
                 plans: HashMap::new(),
                 stats: PlanDatabaseStats::default(),
@@ -126,7 +126,7 @@ impl PlanSerializationManager {
         });
 
         Self {
-            db_path,
+            db_path: dbpath,
             database,
             enabled: true,
         }
@@ -136,20 +136,16 @@ impl PlanSerializationManager {
     fn load_or_create_database(path: &Path) -> FFTResult<Arc<Mutex<PlanDatabase>>> {
         if path.exists() {
             let file = File::open(path)
-                .map_err(|e| FFTError::IOError(format!("Failed to open plan database: {}", e)))?;
+                .map_err(|e| FFTError::IOError(format!("Failed to open plan database: {e}")))?;
             let reader = BufReader::new(file);
-            let database: PlanDatabase = serde_json::from_reader(reader).map_err(|e| {
-                FFTError::ValueError(format!("Failed to parse plan database: {}", e))
-            })?;
+            let database: PlanDatabase = serde_json::from_reader(reader)
+                .map_err(|e| FFTError::ValueError(format!("Failed to parse plan database: {e}")))?;
             Ok(Arc::new(Mutex::new(database)))
         } else {
             // Create parent directories if they don't exist
             if let Some(parent) = path.parent() {
                 fs::create_dir_all(parent).map_err(|e| {
-                    FFTError::IOError(format!(
-                        "Failed to create directory for plan database: {}",
-                        e
-                    ))
+                    FFTError::IOError(format!("Failed to create directory for plan database: {e}"))
                 })?;
             }
 
@@ -228,7 +224,7 @@ impl PlanSerializationManager {
     }
 
     /// Record plan usage in the database
-    pub fn record_plan_usage(&self, plan_info: &PlanInfo, execution_time_ns: u64) -> FFTResult<()> {
+    pub fn record_plan_usage(&self, plan_info: &PlanInfo, execution_timens: u64) -> FFTResult<()> {
         if !self.enabled {
             return Ok(());
         }
@@ -240,7 +236,7 @@ impl PlanSerializationManager {
             .plans
             .entry(plan_info.clone())
             .or_insert_with(|| PlanMetrics {
-                avg_execution_ns: execution_time_ns,
+                avg_execution_ns: execution_timens,
                 usage_count: 0,
                 last_used: system_time_as_millis(),
             });
@@ -252,10 +248,10 @@ impl PlanSerializationManager {
         // Update running average of execution time
         metrics.avg_execution_ns = if metrics.usage_count > 1 {
             ((metrics.avg_execution_ns as f64 * (metrics.usage_count - 1) as f64)
-                + execution_time_ns as f64)
+                + execution_timens as f64)
                 / metrics.usage_count as f64
         } else {
-            execution_time_ns as f64
+            execution_timens as f64
         } as u64;
 
         // Save database periodically
@@ -275,13 +271,12 @@ impl PlanSerializationManager {
         }
 
         let db = self.database.lock().unwrap();
-        let file = File::create(&self.db_path).map_err(|e| {
-            FFTError::IOError(format!("Failed to create plan database file: {}", e))
-        })?;
+        let file = File::create(&self.db_path)
+            .map_err(|e| FFTError::IOError(format!("Failed to create plan database file: {e}")))?;
 
         let writer = BufWriter::new(file);
         serde_json::to_writer_pretty(writer, &*db)
-            .map_err(|e| FFTError::IOError(format!("Failed to serialize plan database: {}", e)))?;
+            .map_err(|e| FFTError::IOError(format!("Failed to serialize plan database: {e}")))?;
 
         Ok(())
     }
@@ -306,8 +301,8 @@ impl PlanSerializationManager {
 
         db.plans
             .iter()
-            .filter(|(info, _)| {
-                info.size == size && info.forward == forward && info.arch_id == arch_id
+            .filter(|(info_, _)| {
+                info_.size == size && info_.forward == forward && info_.arch_id == arch_id
             })
             .min_by_key(|(_, metrics)| metrics.avg_execution_ns)
             .map(|(info, metrics)| (info.clone(), metrics.clone()))
@@ -324,6 +319,7 @@ impl PlanSerializationManager {
 }
 
 /// Convert SystemTime to milliseconds since epoch
+#[allow(dead_code)]
 fn system_time_as_millis() -> u64 {
     SystemTime::now()
         .duration_since(SystemTime::UNIX_EPOCH)
@@ -332,6 +328,7 @@ fn system_time_as_millis() -> u64 {
 }
 
 /// Create a plan with timing measurement
+#[allow(dead_code)]
 pub fn create_and_time_plan(size: usize, forward: bool) -> (Arc<dyn rustfft::Fft<f64>>, u64) {
     let start = Instant::now();
     let mut planner = FftPlanner::new();

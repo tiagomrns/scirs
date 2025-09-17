@@ -27,21 +27,19 @@ pub trait IntegrateFloat:
     + LowerExp
     + std::iter::Sum
 {
+    /// Convert to f64 for interfacing with GPU kernels
+    fn to_f64(self) -> Option<f64>;
 }
 
-// Implement IntegrateFloat for any type that satisfies all the trait bounds
-impl<T> IntegrateFloat for T where
-    T: Float
-        + FromPrimitive
-        + Debug
-        + 'static
-        + ScalarOperand
-        + std::ops::AddAssign
-        + std::ops::SubAssign
-        + std::ops::MulAssign
-        + std::ops::DivAssign
-        + Display
-        + LowerExp
-        + std::iter::Sum
-{
+// Specific implementations for common float types
+impl IntegrateFloat for f32 {
+    fn to_f64(self) -> Option<f64> {
+        Some(self as f64)
+    }
+}
+
+impl IntegrateFloat for f64 {
+    fn to_f64(self) -> Option<f64> {
+        Some(self)
+    }
 }

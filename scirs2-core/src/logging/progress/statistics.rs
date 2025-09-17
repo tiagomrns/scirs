@@ -163,45 +163,48 @@ impl ProgressStats {
 }
 
 /// Format duration in human-readable format
+#[allow(dead_code)]
 pub fn format_duration(duration: &Duration) -> String {
     let total_secs = duration.as_secs();
 
     if total_secs < 60 {
-        return format!("{}s", total_secs);
+        return format!("{total_secs}s");
     }
 
     let mins = total_secs / 60;
     let secs = total_secs % 60;
 
     if mins < 60 {
-        return format!("{}m {}s", mins, secs);
+        return format!("{mins}m {secs}s");
     }
 
     let hours = mins / 60;
     let mins = mins % 60;
 
     if hours < 24 {
-        return format!("{}h {}m {}s", hours, mins, secs);
+        return format!("{hours}h {mins}m {secs}s");
     }
 
     let days = hours / 24;
     let hours = hours % 24;
 
-    format!("{}d {}h {}m {}s", days, hours, mins, secs)
+    format!("{days}d {hours}h {mins}m {secs}s")
 }
 
 /// Format processing rate in human-readable format
+#[allow(dead_code)]
 pub fn format_rate(rate: f64) -> String {
     if rate >= 1000000.0 {
         format!("{:.1}M it/s", rate / 1000000.0)
     } else if rate >= 1000.0 {
         format!("{:.1}k it/s", rate / 1000.0)
     } else {
-        format!("{:.1} it/s", rate)
+        format!("{rate:.1} it/s")
     }
 }
 
 /// Format byte count in human-readable format
+#[allow(dead_code)]
 pub fn format_bytes(bytes: u64) -> String {
     const UNITS: &[&str] = &["B", "KB", "MB", "GB", "TB"];
     let mut size = bytes as f64;
@@ -213,7 +216,7 @@ pub fn format_bytes(bytes: u64) -> String {
     }
 
     if unit_index == 0 {
-        format!("{} {}", bytes, UNITS[unit_index])
+        format!("{:.0} {}", size, UNITS[unit_index])
     } else {
         format!("{:.1} {}", size, UNITS[unit_index])
     }

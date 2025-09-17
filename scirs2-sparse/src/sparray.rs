@@ -140,6 +140,18 @@ where
 
     /// Returns the concrete type of the array for downcasting.
     fn as_any(&self) -> &dyn std::any::Any;
+
+    /// Returns the indptr array for CSR/CSC formats.
+    /// For formats that don't have indptr, returns None.
+    fn get_indptr(&self) -> Option<&Array1<usize>> {
+        None
+    }
+
+    /// Returns the indptr array for CSR/CSC formats.
+    /// For formats that don't have indptr, returns None.
+    fn indptr(&self) -> Option<&Array1<usize>> {
+        None
+    }
 }
 
 /// Represents the result of a sum operation on a sparse array.
@@ -162,7 +174,7 @@ where
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             SparseSum::SparseArray(_) => write!(f, "SparseSum::SparseArray(...)"),
-            SparseSum::Scalar(value) => write!(f, "SparseSum::Scalar({:?})", value),
+            SparseSum::Scalar(value) => write!(f, "SparseSum::Scalar({value:?})"),
         }
     }
 }
@@ -180,7 +192,8 @@ where
 }
 
 /// Identifies sparse arrays (both matrix and array types)
-pub fn is_sparse<T>(_obj: &dyn SparseArray<T>) -> bool
+#[allow(dead_code)]
+pub fn is_sparse<T>(obj: &dyn SparseArray<T>) -> bool
 where
     T: Float
         + Add<Output = T>
@@ -428,9 +441,9 @@ where
                 ))))
             }
             Some(1) => {
-                let (m, _) = self.shape();
-                let mut result = Array2::zeros((m, 1));
-                for i in 0..m {
+                let (m_, _) = self.shape();
+                let mut result = Array2::zeros((m_, 1));
+                for i in 0..m_ {
                     let mut sum = T::zero();
                     for j in 0..self.data.shape()[1] {
                         sum = sum + self.data[[i, j]];

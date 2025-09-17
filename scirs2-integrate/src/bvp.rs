@@ -100,6 +100,7 @@ pub struct BVPResult<F: IntegrateFloat> {
 /// // The BVP solver needs more work for robust convergence
 /// assert!(result.is_ok() || result.is_err());
 /// ```
+#[allow(dead_code)]
 pub fn solve_bvp<F, FunType, BCType>(
     fun: FunType,
     bc: BCType,
@@ -347,6 +348,7 @@ where
 }
 
 /// Solve a linear system Ax = b using Gaussian elimination with partial pivoting
+#[allow(dead_code)]
 fn solve_linear_system<F: IntegrateFloat>(
     a: ArrayView2<F>,
     b: ArrayView1<F>,
@@ -454,6 +456,7 @@ fn solve_linear_system<F: IntegrateFloat>(
 /// # Returns
 ///
 /// * `IntegrateResult<BVPResult<F>>` - The solution or an error
+#[allow(dead_code)]
 pub fn solve_bvp_auto<F, FunType>(
     fun: FunType,
     x_span: [F; 2],
@@ -482,7 +485,7 @@ where
     let n_dim = bc_values[0].len();
     if bc_values[1].len() != n_dim {
         return Err(IntegrateError::ValueError(
-            "Boundary values must have the same dimension at both endpoints".to_string(),
+            "Boundary _values must have the same dimension at both endpoints".to_string(),
         ));
     }
 
@@ -494,7 +497,7 @@ where
         y_init.push(y_i);
     }
 
-    // Create a boundary condition function based on the type
+    // Create a boundary condition function based on the _type
     let bc = match bc_type.to_lowercase().as_str() {
         "dirichlet" => {
             // For Dirichlet boundary conditions
@@ -559,8 +562,7 @@ where
         }
         _ => {
             return Err(IntegrateError::ValueError(format!(
-                "Unsupported boundary condition type: {}. Use 'dirichlet', 'neumann', or 'mixed'.",
-                bc_type
+                "Unsupported boundary condition _type: {bc_type}. Use 'dirichlet', 'neumann', or 'mixed'."
             )));
         }
     };
@@ -595,7 +597,8 @@ mod tests {
         let b = array![5.0, 8.0];
 
         // Using crate's utils module function instead
-        let x = crate::utils::solve_linear_system(a.view(), b.view());
+        let x = crate::utils::solve_linear_system(a.view(), b.view())
+            .expect("Linear system should solve successfully for test data");
 
         // Expected solution: x = [2.0, 1.0]
         assert!(

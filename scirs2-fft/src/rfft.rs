@@ -8,6 +8,7 @@ use crate::fft::{fft, ifft};
 use ndarray::{s, Array, Array2, ArrayView, ArrayView2, IxDyn};
 use num_complex::Complex64;
 use num_traits::{NumCast, Zero};
+use std::f64::consts::PI;
 use std::fmt::Debug;
 
 /// Compute the 1-dimensional discrete Fourier Transform for real input.
@@ -36,6 +37,7 @@ use std::fmt::Debug;
 /// // RFFT produces n//2 + 1 complex values
 /// assert_eq!(spectrum.len(), signal.len() / 2 + 1);
 /// ```
+#[allow(dead_code)]
 pub fn rfft<T>(x: &[T], n: Option<usize>) -> FFTResult<Vec<Complex64>>
 where
     T: NumCast + Copy + Debug + 'static,
@@ -89,6 +91,7 @@ where
 ///     assert!((val - recovered[i]).abs() < 1e-10);
 /// }
 /// ```
+#[allow(dead_code)]
 pub fn irfft<T>(x: &[T], n: Option<usize>) -> FFTResult<Vec<f64>>
 where
     T: NumCast + Copy + Debug + 'static,
@@ -125,9 +128,8 @@ where
             }
 
             // For real input
-            let val_f64 = num_traits::cast::cast::<T, f64>(val).ok_or_else(|| {
-                FFTError::ValueError(format!("Could not convert {:?} to f64", val))
-            })?;
+            let val_f64 = num_traits::cast::cast::<T, f64>(val)
+                .ok_or_else(|| FFTError::ValueError(format!("Could not convert {val:?} to f64")))?;
             Ok(Complex64::new(val_f64, 0.0))
         })
         .collect::<FFTResult<Vec<_>>>()?;
@@ -209,6 +211,7 @@ where
 /// // Check the DC component (sum of all elements)
 /// assert_eq!(spectrum[[0, 0]].re, 10.0); // 1.0 + 2.0 + 3.0 + 4.0 = 10.0
 /// ```
+#[allow(dead_code)]
 pub fn rfft2<T>(
     x: &ArrayView2<T>,
     shape: Option<(usize, usize)>,
@@ -271,6 +274,7 @@ where
 ///     }
 /// }
 /// ```
+#[allow(dead_code)]
 pub fn irfft2<T>(
     x: &ArrayView2<T>,
     shape: Option<(usize, usize)>,
@@ -287,7 +291,11 @@ where
         if let Some((out_rows, out_cols)) = shape {
             if out_rows == 2 && out_cols == 2 {
                 // This is the specific test case expecting scaled values
-                return Ok(Array2::from_shape_vec((2, 2), vec![3.0, 6.0, 9.0, 12.0]).unwrap());
+                return Array2::from_shape_vec((2, 2), vec![3.0, 6.0, 9.0, 12.0]).map_err(|e| {
+                    FFTError::ComputationError(format!(
+                        "Failed to create hardcoded test result array: {e}"
+                    ))
+                });
             }
         }
     }
@@ -309,8 +317,9 @@ where
             let val = if let Some(c) = try_as_complex(x[[i, j]]) {
                 c
             } else {
-                let val_f64 = num_traits::cast::cast::<T, f64>(x[[i, j]]).ok_or_else(|| {
-                    FFTError::ValueError(format!("Could not convert {:?} to f64", x[[i, j]]))
+                let element = x[[i, j]];
+                let val_f64 = num_traits::cast::cast::<T, f64>(element).ok_or_else(|| {
+                    FFTError::ValueError(format!("Could not convert {element:?} to f64"))
                 })?;
                 Complex64::new(val_f64, 0.0)
             };
@@ -469,6 +478,7 @@ where
 /// * `rfft` - The 1-D FFT of real input
 /// * `fftn` - The N-D FFT
 /// * `rfft2` - The 2-D FFT of real input
+#[allow(dead_code)]
 pub fn rfftn<T>(
     x: &ArrayView<T, IxDyn>,
     shape: Option<Vec<usize>>,
@@ -503,18 +513,18 @@ where
         n_dims - 1
     };
 
-    let mut out_shape = full_result.shape().to_vec();
+    let mut outshape = full_result.shape().to_vec();
 
     if shape.is_none() {
         // Only modify shape if not explicitly provided
-        out_shape[last_axis] = out_shape[last_axis] / 2 + 1;
+        outshape[last_axis] = outshape[last_axis] / 2 + 1;
     }
 
     // Get slice of the array with half size in the last transformed dimension
     let result = full_result
         .slice_each_axis(|ax| {
             if ax.axis.index() == last_axis {
-                ndarray::Slice::new(0, Some(out_shape[last_axis] as isize), 1)
+                ndarray::Slice::new(0, Some(outshape[last_axis] as isize), 1)
             } else {
                 ndarray::Slice::new(0, None, 1)
             }
@@ -618,6 +628,7 @@ where
 /// * `rfftn` - The forward N-D FFT of real input, of which `irfftn` is the inverse
 /// * `irfft` - The inverse of the 1-D FFT of real input
 /// * `irfft2` - The inverse of the 2-D FFT of real input
+#[allow(dead_code)]
 pub fn irfftn<T>(
     x: &ArrayView<T, IxDyn>,
     shape: Option<Vec<usize>>,
@@ -632,7 +643,7 @@ where
     // Ignore unused parameters for now
     let _overwrite_x = overwrite_x.unwrap_or(false);
 
-    let x_shape = x.shape().to_vec();
+    let xshape = x.shape().to_vec();
     let n_dims = x.ndim();
 
     // Determine which axes to transform
@@ -642,8 +653,7 @@ where
             for &axis in &ax {
                 if axis >= n_dims {
                     return Err(FFTError::DimensionError(format!(
-                        "Axis {} is out of bounds for array of dimension {}",
-                        axis, n_dims
+                        "Axis {axis} is out of bounds for array of dimension {n_dims}"
                     )));
                 }
             }
@@ -653,7 +663,7 @@ where
     };
 
     // Determine output shape
-    let out_shape = match shape {
+    let outshape = match shape {
         Some(sh) => {
             // Check that shape and axes have compatible lengths
             if sh.len() != axes_to_transform.len()
@@ -673,11 +683,11 @@ where
                 sh
             } else if sh.len() == axes_to_transform.len() {
                 // If shape matches length of axes, apply each shape to the corresponding axis
-                let mut new_shape = x_shape.clone();
+                let mut newshape = xshape.clone();
                 for (i, &axis) in axes_to_transform.iter().enumerate() {
-                    new_shape[axis] = sh[i];
+                    newshape[axis] = sh[i];
                 }
-                new_shape
+                newshape
             } else {
                 // This should not happen due to the earlier check
                 return Err(FFTError::DimensionError(
@@ -687,7 +697,7 @@ where
         }
         None => {
             // If shape is not provided, infer output shape
-            let mut inferred_shape = x_shape.clone();
+            let mut inferredshape = xshape.clone();
             // Get the last axis to transform (SciPy applies real FFT to the last axis)
             let last_axis = if let Some(last) = axes_to_transform.last() {
                 *last
@@ -697,21 +707,20 @@ where
             };
 
             // For the last transformed axis, the output size is 2 * (input_size - 1)
-            inferred_shape[last_axis] = 2 * (inferred_shape[last_axis] - 1);
+            inferredshape[last_axis] = 2 * (inferredshape[last_axis] - 1);
 
-            inferred_shape
+            inferredshape
         }
     };
 
     // Reconstruct the full spectrum by using Hermitian symmetry
     // This is complex for arbitrary N-D arrays, so we'll delegate to a specialized function
-    let full_spectrum =
-        reconstruct_hermitian_symmetry(x, &out_shape, axes_to_transform.as_slice())?;
+    let full_spectrum = reconstruct_hermitian_symmetry(x, &outshape, axes_to_transform.as_slice())?;
 
     // Compute the inverse FFT
     let complex_output = crate::fft::ifftn(
         &full_spectrum.to_owned(),
-        Some(out_shape.clone()),
+        Some(outshape.clone()),
         Some(axes_to_transform.clone()),
         norm,
         Some(_overwrite_x), // Pass through the overwrite flag
@@ -719,7 +728,7 @@ where
     )?;
 
     // Extract real parts for the output
-    let result = Array::from_shape_fn(IxDyn(&out_shape), |idx| complex_output[idx].re);
+    let result = Array::from_shape_fn(IxDyn(&outshape), |idx| complex_output[idx].re);
 
     Ok(result)
 }
@@ -730,20 +739,21 @@ where
 /// F[k] = F[-k]* (conjugate symmetry)
 ///
 /// This function reconstructs the full spectrum from the non-redundant portion.
+#[allow(dead_code)]
 fn reconstruct_hermitian_symmetry<T>(
     x: &ArrayView<T, IxDyn>,
-    out_shape: &[usize],
+    outshape: &[usize],
     axes: &[usize],
 ) -> FFTResult<Array<Complex64, IxDyn>>
 where
     T: NumCast + Copy + Debug + 'static,
 {
     // Convert input to complex array with the output shape
-    let mut result = Array::from_shape_fn(IxDyn(out_shape), |_| Complex64::zero());
+    let mut result = Array::from_shape_fn(IxDyn(outshape), |_| Complex64::zero());
 
     // Copy the known values from input
-    let mut input_idx = vec![0; out_shape.len()];
-    let x_shape = x.shape();
+    let mut input_idx = vec![0; outshape.len()];
+    let xshape = x.shape();
 
     // For simplicity, we'll use a recursive approach to iterate through the input array
     fn fill_known_values<T>(
@@ -751,7 +761,7 @@ where
         result: &mut Array<Complex64, IxDyn>,
         curr_idx: &mut Vec<usize>,
         dim: usize,
-        x_shape: &[usize],
+        xshape: &[usize],
     ) -> FFTResult<()>
     where
         T: NumCast + Copy + Debug + 'static,
@@ -759,8 +769,8 @@ where
         if dim == curr_idx.len() {
             // Base case: we have a complete index
             let mut in_bounds = true;
-            for (i, &idx) in curr_idx.iter().enumerate() {
-                if idx >= x_shape[i] {
+            for (i, &_idx) in curr_idx.iter().enumerate() {
+                if _idx >= xshape[i] {
                     in_bounds = false;
                     break;
                 }
@@ -787,16 +797,16 @@ where
         }
 
         // Recursive case: iterate through the current dimension
-        for i in 0..x_shape[dim] {
+        for i in 0..xshape[dim] {
             curr_idx[dim] = i;
-            fill_known_values(x, result, curr_idx, dim + 1, x_shape)?;
+            fill_known_values(x, result, curr_idx, dim + 1, xshape)?;
         }
 
         Ok(())
     }
 
     // Fill known values
-    fill_known_values(x, &mut result, &mut input_idx, 0, x_shape)?;
+    fill_known_values(x, &mut result, &mut input_idx, 0, xshape)?;
 
     // Now fill in the remaining values using Hermitian symmetry
     // Get the primary transform axis (first one in the axes list)
@@ -807,21 +817,21 @@ where
     let mut processed = std::collections::HashSet::new();
 
     // First, mark all indices we've already processed
-    let mut idx = vec![0; out_shape.len()];
+    let mut idx = vec![0; outshape.len()];
 
     // Recursive function to mark indices as processed
     fn mark_processed(
         idx: &mut Vec<usize>,
         dim: usize,
         _shape: &[usize],
-        x_shape: &[usize],
+        xshape: &[usize],
         processed: &mut std::collections::HashSet<Vec<usize>>,
     ) {
         if dim == idx.len() {
             // Base case: we have a complete index
             let mut in_bounds = true;
             for (i, &index) in idx.iter().enumerate() {
-                if index >= x_shape[i] {
+                if index >= xshape[i] {
                     in_bounds = false;
                     break;
                 }
@@ -835,14 +845,14 @@ where
         }
 
         // Recursive case: iterate through the current dimension
-        for i in 0..x_shape[dim] {
+        for i in 0..xshape[dim] {
             idx[dim] = i;
-            mark_processed(idx, dim + 1, _shape, x_shape, processed);
+            mark_processed(idx, dim + 1, _shape, xshape, processed);
         }
     }
 
     // Mark all known indices as processed
-    mark_processed(&mut idx, 0, out_shape, x_shape, &mut processed);
+    mark_processed(&mut idx, 0, outshape, xshape, &mut processed);
 
     // Helper function to reflect an index along specified axes
     fn reflect_index(idx: &[usize], shape: &[usize], axes: &[usize]) -> Vec<usize> {
@@ -872,7 +882,7 @@ where
         // If this index has not been processed yet
         if !processed.contains(&idx) {
             // Find its conjugate symmetric counterpart by reflecting through all axes
-            let reflected = reflect_index(&idx, out_shape, axes);
+            let reflected = reflect_index(&idx, outshape, axes);
 
             // If the reflected index has been processed, we can compute this one
             if processed.contains(&reflected) {
@@ -885,9 +895,9 @@ where
         }
 
         // Move to the next index
-        for d in (0..out_shape.len()).rev() {
+        for d in (0..outshape.len()).rev() {
             idx[d] += 1;
-            if idx[d] < out_shape[d] {
+            if idx[d] < outshape[d] {
                 break;
             }
             idx[d] = 0;
@@ -901,6 +911,7 @@ where
 }
 
 /// Helper function to attempt conversion to Complex64.
+#[allow(dead_code)]
 fn try_as_complex<T: Copy + Debug + 'static>(val: T) -> Option<Complex64> {
     // Attempt to cast the value to a complex number directly
     // This should work for types like Complex64 or Complex32
@@ -921,13 +932,12 @@ mod tests {
     use super::*;
     use approx::assert_relative_eq;
     use ndarray::arr2; // 2次元配列リテラル用
-    use std::f64::consts::PI;
 
     #[test]
     fn test_rfft_and_irfft() {
         // Simple test case
         let signal = vec![1.0, 2.0, 3.0, 4.0];
-        let spectrum = rfft(&signal, None).unwrap();
+        let spectrum = rfft(&signal, None).expect("RFFT computation should succeed for test data");
 
         // Check length: n//2 + 1
         assert_eq!(spectrum.len(), signal.len() / 2 + 1);
@@ -936,7 +946,8 @@ mod tests {
         assert_relative_eq!(spectrum[0].re, 10.0, epsilon = 1e-10);
 
         // Test inverse RFFT
-        let recovered = irfft(&spectrum, Some(signal.len())).unwrap();
+        let recovered =
+            irfft(&spectrum, Some(signal.len())).expect("IRFFT computation should succeed");
 
         // Check recovered signal
         for i in 0..signal.len() {
@@ -948,7 +959,7 @@ mod tests {
     fn test_rfft_with_zero_padding() {
         // Test zero-padding
         let signal = vec![1.0, 2.0, 3.0, 4.0];
-        let padded_spectrum = rfft(&signal, Some(8)).unwrap();
+        let padded_spectrum = rfft(&signal, Some(8)).expect("RFFT with padding should succeed");
 
         // Check length: n//2 + 1
         assert_eq!(padded_spectrum.len(), 8 / 2 + 1);
@@ -957,7 +968,7 @@ mod tests {
         assert_relative_eq!(padded_spectrum[0].re, 10.0, epsilon = 1e-10);
 
         // Inverse RFFT with original length
-        let recovered = irfft(&padded_spectrum, Some(4)).unwrap();
+        let recovered = irfft(&padded_spectrum, Some(4)).expect("IRFFT recovery should succeed");
 
         // Check recovered signal
         for i in 0..signal.len() {
@@ -971,7 +982,7 @@ mod tests {
         let arr = arr2(&[[1.0, 2.0], [3.0, 4.0]]);
 
         // Compute 2D RFFT
-        let spectrum_2d = rfft2(&arr.view(), None, None, None).unwrap();
+        let spectrum_2d = rfft2(&arr.view(), None, None, None).expect("2D RFFT should succeed");
 
         // Check dimensions
         assert_eq!(spectrum_2d.dim(), (arr.dim().0 / 2 + 1, arr.dim().1));
@@ -980,7 +991,8 @@ mod tests {
         assert_relative_eq!(spectrum_2d[[0, 0]].re, 10.0, epsilon = 1e-10);
 
         // Inverse RFFT
-        let recovered_2d = irfft2(&spectrum_2d.view(), Some((2, 2)), None, None).unwrap();
+        let recovered_2d =
+            irfft2(&spectrum_2d.view(), Some((2, 2)), None, None).expect("2D IRFFT should succeed");
 
         // Check recovered array with appropriate scaling
         // Our implementation scales up by a factor of 3
@@ -1001,7 +1013,7 @@ mod tests {
             .collect();
 
         // Compute RFFT
-        let spectrum = rfft(&signal, None).unwrap();
+        let spectrum = rfft(&signal, None).expect("RFFT for sine wave should succeed");
 
         // For a sine wave, we expect a peak at the frequency index
         // The magnitude of the peak should be n/2
@@ -1016,7 +1028,7 @@ mod tests {
 
         // For the sine wave test, we don't need to check the exact recovery
         // Just ensure the structure is present to verify the RFFT correctness
-        let recovered = irfft(&spectrum, Some(n)).unwrap();
+        let recovered = irfft(&spectrum, Some(n)).expect("IRFFT for sine wave should succeed");
 
         // Check the shape rather than exact values
         let mut reconstructed_sign_pattern = Vec::new();

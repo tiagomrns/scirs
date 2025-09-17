@@ -9,6 +9,7 @@ use scirs2_datasets::{
     statistical_features, BinningStrategy,
 };
 
+#[allow(dead_code)]
 fn main() {
     println!("=== Feature Extraction Utilities Demonstration ===\n");
 
@@ -46,25 +47,25 @@ fn main() {
 
     // Demonstrate Polynomial Features
     println!("=== Polynomial Feature Generation ==============");
-    let small_data = Array2::from_shape_vec((3, 2), vec![1.0, 2.0, 2.0, 3.0, 3.0, 4.0]).unwrap();
+    let smalldata = Array2::from_shape_vec((3, 2), vec![1.0, 2.0, 2.0, 3.0, 3.0, 4.0]).unwrap();
 
     println!("Small dataset for polynomial demonstration:");
-    print_data_matrix(&small_data, &["x1", "x2"]);
+    print_data_matrix(&smalldata, &["x1", "x2"]);
 
-    let poly_with_bias = polynomial_features(&small_data, 2, true).unwrap();
+    let poly_with_bias = polynomial_features(&smalldata, 2, true).unwrap();
     println!("Polynomial features (degree=2, with bias):");
     print_data_matrix(&poly_with_bias, &["1", "x1", "x2", "x1²", "x1*x2", "x2²"]);
 
-    let poly_no_bias = polynomial_features(&small_data, 2, false).unwrap();
+    let poly_no_bias = polynomial_features(&smalldata, 2, false).unwrap();
     println!("Polynomial features (degree=2, no bias):");
     print_data_matrix(&poly_no_bias, &["x1", "x2", "x1²", "x1*x2", "x2²"]);
     println!();
 
     // Demonstrate Statistical Feature Extraction
     println!("=== Statistical Feature Extraction =============");
-    let stats_data = Array2::from_shape_vec((5, 1), vec![1.0, 2.0, 3.0, 4.0, 5.0]).unwrap();
+    let statsdata = Array2::from_shape_vec((5, 1), vec![1.0, 2.0, 3.0, 4.0, 5.0]).unwrap();
 
-    let stats_features = statistical_features(&stats_data).unwrap();
+    let stats_features = statistical_features(&statsdata).unwrap();
     println!("Statistical features for data [1, 2, 3, 4, 5]:");
     println!("(Each sample gets the same global statistics)");
     print_statistical_features(stats_features.row(0).to_owned());
@@ -72,13 +73,12 @@ fn main() {
 
     // Demonstrate Binning/Discretization
     println!("=== Feature Binning/Discretization =============");
-    let binning_data =
+    let binningdata =
         Array2::from_shape_vec((8, 1), vec![1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0]).unwrap();
 
     println!("Original data for binning: [1, 2, 3, 4, 5, 6, 7, 8]");
 
-    let uniform_binned =
-        create_binned_features(&binning_data, 3, BinningStrategy::Uniform).unwrap();
+    let uniform_binned = create_binned_features(&binningdata, 3, BinningStrategy::Uniform).unwrap();
     println!(
         "Uniform binning (3 bins): {:?}",
         uniform_binned
@@ -89,7 +89,7 @@ fn main() {
     );
 
     let quantile_binned =
-        create_binned_features(&binning_data, 4, BinningStrategy::Quantile).unwrap();
+        create_binned_features(&binningdata, 4, BinningStrategy::Quantile).unwrap();
     println!(
         "Quantile binning (4 bins): {:?}",
         quantile_binned
@@ -134,7 +134,7 @@ fn main() {
 
     // Comparison of scaling methods with outliers
     println!("=== Scaling Methods Comparison (with outliers) =");
-    let outlier_data = Array2::from_shape_vec(
+    let outlierdata = Array2::from_shape_vec(
         (5, 1),
         vec![1.0, 2.0, 3.0, 4.0, 100.0], // 100.0 is a severe outlier
     )
@@ -142,25 +142,25 @@ fn main() {
 
     println!("Original data with outlier: [1, 2, 3, 4, 100]");
 
-    let mut minmax_outlier = outlier_data.clone();
+    let mut minmax_outlier = outlierdata.clone();
     min_max_scale(&mut minmax_outlier, (0.0, 1.0));
     println!(
         "Min-Max scaled: {:?}",
         minmax_outlier
             .column(0)
             .iter()
-            .map(|&x| format!("{:.3}", x))
+            .map(|&x| format!("{x:.3}"))
             .collect::<Vec<_>>()
     );
 
-    let mut robust_outlier = outlier_data.clone();
+    let mut robust_outlier = outlierdata.clone();
     robust_scale(&mut robust_outlier);
     println!(
         "Robust scaled: {:?}",
         robust_outlier
             .column(0)
             .iter()
-            .map(|&x| format!("{:.3}", x))
+            .map(|&x| format!("{x:.3}"))
             .collect::<Vec<_>>()
     );
 
@@ -180,6 +180,7 @@ fn main() {
 }
 
 /// Print a summary of data statistics
+#[allow(dead_code)]
 fn print_data_summary(data: &Array2<f64>, title: &str) {
     println!("{}: shape=({}, {})", title, data.nrows(), data.ncols());
     for j in 0..data.ncols() {
@@ -187,25 +188,23 @@ fn print_data_summary(data: &Array2<f64>, title: &str) {
         let min_val = col.iter().fold(f64::INFINITY, |a, &b| a.min(b));
         let max_val = col.iter().fold(f64::NEG_INFINITY, |a, &b| a.max(b));
         let mean = col.iter().sum::<f64>() / col.len() as f64;
-        println!(
-            "  Feature {}: min={:.3}, max={:.3}, mean={:.3}",
-            j, min_val, max_val, mean
-        );
+        println!("  Feature {j}: min={min_val:.3}, max={max_val:.3}, mean={mean:.3}");
     }
 }
 
 /// Print a data matrix with feature names
-fn print_data_matrix(data: &Array2<f64>, feature_names: &[&str]) {
+#[allow(dead_code)]
+fn print_data_matrix(data: &Array2<f64>, featurenames: &[&str]) {
     // Print header
     print!("     ");
-    for name in feature_names {
-        print!("{:>8}", name);
+    for name in featurenames {
+        print!("{name:>8}");
     }
     println!();
 
-    // Print data
+    // Print _data
     for i in 0..data.nrows() {
-        print!("  {}: ", i);
+        print!("  {i}: ");
         for j in 0..data.ncols() {
             print!("{:8.3}", data[[i, j]]);
         }
@@ -214,6 +213,7 @@ fn print_data_matrix(data: &Array2<f64>, feature_names: &[&str]) {
 }
 
 /// Print statistical features with labels
+#[allow(dead_code)]
 fn print_statistical_features(stats: Array1<f64>) {
     let labels = [
         "mean", "std", "min", "max", "median", "q25", "q75", "skewness", "kurtosis",

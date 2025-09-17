@@ -9,6 +9,7 @@ use std::path::PathBuf;
 use std::time::{Duration, Instant};
 
 // Helper function to create a test array with an impulse
+#[allow(dead_code)]
 fn create_test_array(size: usize) -> Array2<Complex64> {
     let mut array = Array2::zeros((size, size).f());
     array[[size / 4, size / 4]] = Complex64::new(1.0, 0.0);
@@ -16,6 +17,7 @@ fn create_test_array(size: usize) -> Array2<Complex64> {
 }
 
 // Helper function to benchmark a strategy with multiple sizes
+#[allow(dead_code)]
 fn benchmark_strategy(
     strategy: PlanningStrategy,
     sizes: &[usize],
@@ -50,7 +52,7 @@ fn benchmark_strategy(
 
         for _ in 0..iterations {
             let start = Instant::now();
-            if let Err(_) = executor.execute(&input_flat, &mut result_data) {
+            if executor.execute(&input_flat, &mut result_data).is_err() {
                 continue;
             }
             total_exec_time += start.elapsed();
@@ -64,6 +66,7 @@ fn benchmark_strategy(
     results
 }
 
+#[allow(dead_code)]
 fn main() {
     println!("Advanced FFT Planning Strategies Benchmark");
     println!("==========================================\n");
@@ -151,10 +154,7 @@ fn main() {
             let (_, plan_time, exec_time) = *result;
             let total_time = plan_time + exec_time;
 
-            println!(
-                "{:<10} {:<15} {:<20?} {:<20?} {:<20?}",
-                size, name, plan_time, exec_time, total_time
-            );
+            println!("{size:<10} {name:<15} {plan_time:<20?} {exec_time:<20?} {total_time:<20?}");
         }
 
         println!("{:-<85}", "");
@@ -190,7 +190,7 @@ fn main() {
 
         for (name, time) in strategies {
             let relative = time.as_secs_f64() / baseline.as_secs_f64();
-            println!("{:<10} {:<15} {:<20.2}", size, name, relative);
+            println!("{size:<10} {name:<15} {relative:<20.2}");
         }
 
         println!("{:-<45}", "");

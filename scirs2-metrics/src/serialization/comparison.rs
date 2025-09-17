@@ -79,6 +79,7 @@ pub struct ComparisonSummary {
 /// # Returns
 ///
 /// * A MetricComparison
+#[allow(dead_code)]
 pub fn compare_metrics(
     metric1: &MetricResult,
     metric2: &MetricResult,
@@ -124,6 +125,7 @@ pub fn compare_metrics(
 /// # Returns
 ///
 /// * A CollectionComparison
+#[allow(dead_code)]
 pub fn compare_collections(
     collection1: &MetricCollection,
     collection2: &MetricCollection,
@@ -229,6 +231,7 @@ pub fn compare_collections(
 /// # Returns
 ///
 /// * Vector of significantly different metrics
+#[allow(dead_code)]
 pub fn find_significant_differences(
     collection1: &MetricCollection,
     collection2: &MetricCollection,
@@ -254,6 +257,7 @@ pub fn find_significant_differences(
 /// # Returns
 ///
 /// * A combined MetricCollection
+#[allow(dead_code)]
 pub fn combine_collections(
     collections: &[MetricCollection],
     name: &str,
@@ -303,17 +307,18 @@ pub fn combine_collections(
 /// # Returns
 ///
 /// * A new collection with filtered metrics
-pub fn filter_metrics<F>(collection: &MetricCollection, filter_fn: F) -> MetricCollection
+#[allow(dead_code)]
+pub fn filter_metrics<F>(_collection: &MetricCollection, filterfn: F) -> MetricCollection
 where
     F: Fn(&MetricResult) -> bool,
 {
     let mut filtered = MetricCollection::new(
-        &format!("{} (filtered)", collection.name),
-        collection.description.as_deref(),
+        &format!("{} (filtered)", _collection.name),
+        _collection.description.as_deref(),
     );
 
-    for metric in &collection.metrics {
-        if filter_fn(metric) {
+    for metric in &_collection.metrics {
+        if filterfn(metric) {
             filtered.add_metric(metric.clone());
         }
     }
@@ -331,6 +336,7 @@ where
 /// # Returns
 ///
 /// * A new collection with filtered metrics
+#[allow(dead_code)]
 pub fn filter_by_name(collection: &MetricCollection, pattern: &str) -> MetricCollection {
     filter_metrics(collection, |metric| metric.name.contains(pattern))
 }
@@ -346,6 +352,7 @@ pub fn filter_by_name(collection: &MetricCollection, pattern: &str) -> MetricCol
 /// # Returns
 ///
 /// * A new collection with filtered metrics
+#[allow(dead_code)]
 pub fn filter_by_time_range(
     collection: &MetricCollection,
     start_age: Duration,
@@ -354,7 +361,7 @@ pub fn filter_by_time_range(
     let now = chrono::Utc::now();
 
     Ok(filter_metrics(collection, |metric| {
-        let age = now - metric.timestamp;
-        age >= end_age && age <= start_age
+        let _age = now - metric.timestamp;
+        _age >= end_age && _age <= start_age
     }))
 }

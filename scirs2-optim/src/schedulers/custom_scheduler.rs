@@ -51,9 +51,9 @@ where
     /// assert_eq!(scheduler.get_learning_rate(), 0.1);
     /// scheduler.step();
     /// ```
-    pub fn new(_initial_lr: A, lr_func: F) -> Self {
+    pub fn new(initial_lr: A, lrfunc: F) -> Self {
         Self {
-            lr_func: Rc::new(RefCell::new(lr_func)),
+            lr_func: Rc::new(RefCell::new(lrfunc)),
             step_count: 0,
             _phantom: PhantomData,
         }
@@ -197,8 +197,10 @@ where
     A: Float + Debug + ScalarOperand,
 {
     /// Create a new scheduler builder with the given initial learning rate
-    pub fn new(initial_lr: A) -> Self {
-        Self { initial_lr }
+    pub fn new(initiallr: A) -> Self {
+        Self {
+            initial_lr: initiallr,
+        }
     }
 
     /// Create a step decay scheduler

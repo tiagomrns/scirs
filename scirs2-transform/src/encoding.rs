@@ -9,6 +9,86 @@ use std::collections::HashMap;
 
 use crate::error::{Result, TransformError};
 
+/// Simple sparse matrix representation in COO (Coordinate) format
+#[derive(Debug, Clone)]
+pub struct SparseMatrix {
+    /// Shape of the matrix (rows, cols)
+    pub shape: (usize, usize),
+    /// Row indices of non-zero values
+    pub row_indices: Vec<usize>,
+    /// Column indices of non-zero values
+    pub col_indices: Vec<usize>,
+    /// Non-zero values
+    pub values: Vec<f64>,
+}
+
+impl SparseMatrix {
+    /// Create a new empty sparse matrix
+    pub fn new(shape: (usize, usize)) -> Self {
+        SparseMatrix {
+            shape,
+            row_indices: Vec::new(),
+            col_indices: Vec::new(),
+            values: Vec::new(),
+        }
+    }
+
+    /// Add a non-zero value at (row, col)
+    pub fn push(&mut self, row: usize, col: usize, value: f64) {
+        if row < self.shape.0 && col < self.shape.1 && value != 0.0 {
+            self.row_indices.push(row);
+            self.col_indices.push(col);
+            self.values.push(value);
+        }
+    }
+
+    /// Convert to dense Array2
+    pub fn to_dense(&self) -> Array2<f64> {
+        let mut dense = Array2::zeros(self.shape);
+        for ((&row, &col), &val) in self
+            .row_indices
+            .iter()
+            .zip(self.col_indices.iter())
+            .zip(self.values.iter())
+        {
+            dense[[row, col]] = val;
+        }
+        dense
+    }
+
+    /// Get number of non-zero elements
+    pub fn nnz(&self) -> usize {
+        self.values.len()
+    }
+}
+
+/// Output format for encoded data
+#[derive(Debug, Clone)]
+pub enum EncodedOutput {
+    /// Dense matrix representation
+    Dense(Array2<f64>),
+    /// Sparse matrix representation
+    Sparse(SparseMatrix),
+}
+
+impl EncodedOutput {
+    /// Convert to dense matrix (creates copy if sparse)
+    pub fn to_dense(&self) -> Array2<f64> {
+        match self {
+            EncodedOutput::Dense(arr) => arr.clone(),
+            EncodedOutput::Sparse(sparse) => sparse.to_dense(),
+        }
+    }
+
+    /// Get shape of the output
+    pub fn shape(&self) -> (usize, usize) {
+        match self {
+            EncodedOutput::Dense(arr) => (arr.nrows(), arr.ncols()),
+            EncodedOutput::Sparse(sparse) => sparse.shape,
+        }
+    }
+}
+
 /// OneHotEncoder for converting categorical features to binary features
 ///
 /// This transformer converts categorical features into a one-hot encoded representation,
@@ -19,9 +99,8 @@ pub struct OneHotEncoder {
     /// Whether to drop one category per feature to avoid collinearity
     drop: Option<String>,
     /// Whether to handle unknown categories
-    handle_unknown: String,
-    /// Sparse output (not implemented yet)
-    #[allow(dead_code)]
+    handleunknown: String,
+    /// Whether to return sparse matrix output
     sparse: bool,
 }
 
@@ -30,36 +109,30 @@ impl OneHotEncoder {
     ///
     /// # Arguments
     /// * `drop` - Strategy for dropping categories ('first', 'if_binary', or None)
-    /// * `handle_unknown` - How to handle unknown categories ('error' or 'ignore')
-    /// * `sparse` - Whether to return sparse arrays (not implemented)
+    /// * `handleunknown` - How to handle unknown categories ('error' or 'ignore')
+    /// * `sparse` - Whether to return sparse arrays
     ///
     /// # Returns
     /// * A new OneHotEncoder instance
-    pub fn new(drop: Option<String>, handle_unknown: &str, sparse: bool) -> Result<Self> {
-        if let Some(ref drop_strategy) = drop {
+    pub fn new(_drop: Option<String>, handleunknown: &str, sparse: bool) -> Result<Self> {
+        if let Some(ref drop_strategy) = _drop {
             if drop_strategy != "first" && drop_strategy != "if_binary" {
                 return Err(TransformError::InvalidInput(
-                    "drop must be 'first', 'if_binary', or None".to_string(),
+                    "_drop must be 'first', 'if_binary', or None".to_string(),
                 ));
             }
         }
 
-        if handle_unknown != "error" && handle_unknown != "ignore" {
+        if handleunknown != "error" && handleunknown != "ignore" {
             return Err(TransformError::InvalidInput(
-                "handle_unknown must be 'error' or 'ignore'".to_string(),
-            ));
-        }
-
-        if sparse {
-            return Err(TransformError::InvalidInput(
-                "Sparse output is not yet implemented".to_string(),
+                "handleunknown must be 'error' or 'ignore'".to_string(),
             ));
         }
 
         Ok(OneHotEncoder {
             categories_: None,
-            drop,
-            handle_unknown: handle_unknown.to_string(),
+            drop: _drop,
+            handleunknown: handleunknown.to_string(),
             sparse,
         })
     }
@@ -114,8 +187,8 @@ impl OneHotEncoder {
     /// * `x` - The input categorical data, shape (n_samples, n_features)
     ///
     /// # Returns
-    /// * `Result<Array2<f64>>` - The one-hot encoded data
-    pub fn transform<S>(&self, x: &ArrayBase<S, Ix2>) -> Result<Array2<f64>>
+    /// * `Result<EncodedOutput>` - The one-hot encoded data (dense or sparse)
+    pub fn transform<S>(&self, x: &ArrayBase<S, Ix2>) -> Result<EncodedOutput>
     where
         S: Data,
         S::Elem: Float + NumCast,
@@ -158,15 +231,12 @@ impl OneHotEncoder {
 
             if n_output_cats == 0 {
                 return Err(TransformError::InvalidInput(format!(
-                    "Feature {} has only one category after dropping",
-                    j
+                    "Feature {j} has only one category after dropping"
                 )));
             }
 
             total_features += n_output_cats;
         }
-
-        let mut transformed = Array2::zeros((n_samples, total_features));
 
         // Create mappings from category values to column indices
         let mut category_mappings = Vec::new();
@@ -193,42 +263,80 @@ impl OneHotEncoder {
             current_col += n_output_cats;
         }
 
-        // Fill the transformed array
-        for i in 0..n_samples {
-            for j in 0..n_features {
-                let value = x_u64[[i, j]];
+        // Create output based on sparse setting
+        if self.sparse {
+            // Sparse output
+            let mut sparse_matrix = SparseMatrix::new((n_samples, total_features));
 
-                if let Some(&col_idx) = category_mappings[j].get(&value) {
-                    transformed[[i, col_idx]] = 1.0;
-                } else {
-                    // Check if this is a dropped category (which should be represented as all zeros)
-                    let feature_categories = &categories[j];
-                    let is_dropped_category = match &self.drop {
-                        Some(strategy) if strategy == "first" => {
-                            // If it's the first category in the sorted list, it was dropped
-                            !feature_categories.is_empty() && value == feature_categories[0]
-                        }
-                        Some(strategy)
-                            if strategy == "if_binary" && feature_categories.len() == 2 =>
-                        {
-                            // If it's the second category (index 1) in a binary feature, it was dropped
-                            feature_categories.len() == 2 && value == feature_categories[1]
-                        }
-                        _ => false,
-                    };
+            for i in 0..n_samples {
+                for j in 0..n_features {
+                    let value = x_u64[[i, j]];
 
-                    if !is_dropped_category && self.handle_unknown == "error" {
-                        return Err(TransformError::InvalidInput(format!(
-                            "Found unknown category {} in feature {}",
-                            value, j
-                        )));
+                    if let Some(&col_idx) = category_mappings[j].get(&value) {
+                        sparse_matrix.push(i, col_idx, 1.0);
+                    } else {
+                        // Check if this is a dropped category
+                        let feature_categories = &categories[j];
+                        let is_dropped_category = match &self.drop {
+                            Some(strategy) if strategy == "first" => {
+                                !feature_categories.is_empty() && value == feature_categories[0]
+                            }
+                            Some(strategy)
+                                if strategy == "if_binary" && feature_categories.len() == 2 =>
+                            {
+                                feature_categories.len() == 2 && value == feature_categories[1]
+                            }
+                            _ => false,
+                        };
+
+                        if !is_dropped_category && self.handleunknown == "error" {
+                            return Err(TransformError::InvalidInput(format!(
+                                "Found unknown category {value} in feature {j}"
+                            )));
+                        }
+                        // If it's a dropped category or handleunknown == "ignore", we don't add anything (sparse)
                     }
-                    // If it's a dropped category or handle_unknown == "ignore", we just leave it as 0
                 }
             }
-        }
 
-        Ok(transformed)
+            Ok(EncodedOutput::Sparse(sparse_matrix))
+        } else {
+            // Dense output
+            let mut transformed = Array2::zeros((n_samples, total_features));
+
+            for i in 0..n_samples {
+                for j in 0..n_features {
+                    let value = x_u64[[i, j]];
+
+                    if let Some(&col_idx) = category_mappings[j].get(&value) {
+                        transformed[[i, col_idx]] = 1.0;
+                    } else {
+                        // Check if this is a dropped category
+                        let feature_categories = &categories[j];
+                        let is_dropped_category = match &self.drop {
+                            Some(strategy) if strategy == "first" => {
+                                !feature_categories.is_empty() && value == feature_categories[0]
+                            }
+                            Some(strategy)
+                                if strategy == "if_binary" && feature_categories.len() == 2 =>
+                            {
+                                feature_categories.len() == 2 && value == feature_categories[1]
+                            }
+                            _ => false,
+                        };
+
+                        if !is_dropped_category && self.handleunknown == "error" {
+                            return Err(TransformError::InvalidInput(format!(
+                                "Found unknown category {value} in feature {j}"
+                            )));
+                        }
+                        // If it's a dropped category or handleunknown == "ignore", we just leave it as 0
+                    }
+                }
+            }
+
+            Ok(EncodedOutput::Dense(transformed))
+        }
     }
 
     /// Fits the OneHotEncoder to the input data and transforms it
@@ -237,14 +345,44 @@ impl OneHotEncoder {
     /// * `x` - The input categorical data, shape (n_samples, n_features)
     ///
     /// # Returns
-    /// * `Result<Array2<f64>>` - The one-hot encoded data
-    pub fn fit_transform<S>(&mut self, x: &ArrayBase<S, Ix2>) -> Result<Array2<f64>>
+    /// * `Result<EncodedOutput>` - The one-hot encoded data (dense or sparse)
+    pub fn fit_transform<S>(&mut self, x: &ArrayBase<S, Ix2>) -> Result<EncodedOutput>
     where
         S: Data,
         S::Elem: Float + NumCast,
     {
         self.fit(x)?;
         self.transform(x)
+    }
+
+    /// Convenience method that always returns dense output for backward compatibility
+    ///
+    /// # Arguments
+    /// * `x` - The input categorical data, shape (n_samples, n_features)
+    ///
+    /// # Returns
+    /// * `Result<Array2<f64>>` - The one-hot encoded data as dense matrix
+    pub fn transform_dense<S>(&self, x: &ArrayBase<S, Ix2>) -> Result<Array2<f64>>
+    where
+        S: Data,
+        S::Elem: Float + NumCast,
+    {
+        Ok(self.transform(x)?.to_dense())
+    }
+
+    /// Convenience method that fits and transforms returning dense output
+    ///
+    /// # Arguments
+    /// * `x` - The input categorical data, shape (n_samples, n_features)
+    ///
+    /// # Returns
+    /// * `Result<Array2<f64>>` - The one-hot encoded data as dense matrix
+    pub fn fit_transform_dense<S>(&mut self, x: &ArrayBase<S, Ix2>) -> Result<Array2<f64>>
+    where
+        S: Data,
+        S::Elem: Float + NumCast,
+    {
+        Ok(self.fit_transform(x)?.to_dense())
     }
 
     /// Returns the categories for each feature
@@ -258,11 +396,11 @@ impl OneHotEncoder {
     /// Gets the feature names for the transformed output
     ///
     /// # Arguments
-    /// * `input_features` - Names of input features
+    /// * `inputfeatures` - Names of input features
     ///
     /// # Returns
     /// * `Result<Vec<String>>` - Names of output features
-    pub fn get_feature_names(&self, input_features: Option<&[String]>) -> Result<Vec<String>> {
+    pub fn get_feature_names(&self, inputfeatures: Option<&[String]>) -> Result<Vec<String>> {
         if self.categories_.is_none() {
             return Err(TransformError::TransformationError(
                 "OneHotEncoder has not been fitted".to_string(),
@@ -273,14 +411,14 @@ impl OneHotEncoder {
         let mut feature_names = Vec::new();
 
         for (j, feature_categories) in categories.iter().enumerate() {
-            let feature_name = if let Some(names) = input_features {
+            let feature_name = if let Some(names) = inputfeatures {
                 if j < names.len() {
                     names[j].clone()
                 } else {
-                    format!("x{}", j)
+                    format!("x{j}")
                 }
             } else {
-                format!("x{}", j)
+                format!("x{j}")
             };
 
             let n_cats = feature_categories.len();
@@ -297,7 +435,7 @@ impl OneHotEncoder {
                 .skip(start_idx)
                 .take(n_output_cats)
             {
-                feature_names.push(format!("{}_cat_{}", feature_name, category));
+                feature_names.push(format!("{feature_name}_cat_{category}"));
             }
         }
 
@@ -313,38 +451,37 @@ pub struct OrdinalEncoder {
     /// Categories for each feature (learned during fit)
     categories_: Option<Vec<Vec<u64>>>,
     /// How to handle unknown categories
-    handle_unknown: String,
+    handleunknown: String,
     /// Value to use for unknown categories
-    unknown_value: Option<f64>,
+    unknownvalue: Option<f64>,
 }
 
 impl OrdinalEncoder {
     /// Creates a new OrdinalEncoder
     ///
     /// # Arguments
-    /// * `handle_unknown` - How to handle unknown categories ('error' or 'use_encoded_value')
-    /// * `unknown_value` - Value to use for unknown categories (when handle_unknown='use_encoded_value')
+    /// * `handleunknown` - How to handle unknown categories ('error' or 'use_encoded_value')
+    /// * `unknownvalue` - Value to use for unknown categories (when handleunknown='use_encoded_value')
     ///
     /// # Returns
     /// * A new OrdinalEncoder instance
-    pub fn new(handle_unknown: &str, unknown_value: Option<f64>) -> Result<Self> {
-        if handle_unknown != "error" && handle_unknown != "use_encoded_value" {
+    pub fn new(handleunknown: &str, unknownvalue: Option<f64>) -> Result<Self> {
+        if handleunknown != "error" && handleunknown != "use_encoded_value" {
             return Err(TransformError::InvalidInput(
-                "handle_unknown must be 'error' or 'use_encoded_value'".to_string(),
+                "handleunknown must be 'error' or 'use_encoded_value'".to_string(),
             ));
         }
 
-        if handle_unknown == "use_encoded_value" && unknown_value.is_none() {
+        if handleunknown == "use_encoded_value" && unknownvalue.is_none() {
             return Err(TransformError::InvalidInput(
-                "unknown_value must be specified when handle_unknown='use_encoded_value'"
-                    .to_string(),
+                "unknownvalue must be specified when handleunknown='use_encoded_value'".to_string(),
             ));
         }
 
         Ok(OrdinalEncoder {
             categories_: None,
-            handle_unknown: handle_unknown.to_string(),
-            unknown_value,
+            handleunknown: handleunknown.to_string(),
+            unknownvalue,
         })
     }
 
@@ -447,14 +584,13 @@ impl OrdinalEncoder {
 
                 if let Some(&ordinal_value) = category_mappings[j].get(&value) {
                     transformed[[i, j]] = ordinal_value;
-                } else if self.handle_unknown == "error" {
+                } else if self.handleunknown == "error" {
                     return Err(TransformError::InvalidInput(format!(
-                        "Found unknown category {} in feature {}",
-                        value, j
+                        "Found unknown category {value} in feature {j}"
                     )));
                 } else {
-                    // handle_unknown == "use_encoded_value"
-                    transformed[[i, j]] = self.unknown_value.unwrap();
+                    // handleunknown == "use_encoded_value"
+                    transformed[[i, j]] = self.unknownvalue.unwrap();
                 }
             }
         }
@@ -511,7 +647,7 @@ pub struct TargetEncoder {
     /// Smoothing parameter for regularization (higher = more smoothing toward global mean)
     smoothing: f64,
     /// Global statistic to use for smoothing and unknown categories
-    global_stat: f64,
+    globalstat: f64,
     /// Mappings from categories to encoded values for each feature
     encodings_: Option<Vec<HashMap<u64, f64>>>,
     /// Whether the encoder has been fitted
@@ -526,14 +662,14 @@ impl TargetEncoder {
     /// # Arguments
     /// * `strategy` - Encoding strategy ('mean', 'median', 'count', 'sum')
     /// * `smoothing` - Smoothing parameter (0.0 = no smoothing, higher = more smoothing)
-    /// * `global_stat` - Global statistic fallback for unknown categories
+    /// * `globalstat` - Global statistic fallback for unknown categories
     ///
     /// # Returns
     /// * A new TargetEncoder instance
-    pub fn new(strategy: &str, smoothing: f64, global_stat: f64) -> Result<Self> {
-        if !["mean", "median", "count", "sum"].contains(&strategy) {
+    pub fn new(_strategy: &str, smoothing: f64, globalstat: f64) -> Result<Self> {
+        if !["mean", "median", "count", "sum"].contains(&_strategy) {
             return Err(TransformError::InvalidInput(
-                "strategy must be 'mean', 'median', 'count', or 'sum'".to_string(),
+                "_strategy must be 'mean', 'median', 'count', or 'sum'".to_string(),
             ));
         }
 
@@ -544,9 +680,9 @@ impl TargetEncoder {
         }
 
         Ok(TargetEncoder {
-            strategy: strategy.to_string(),
+            strategy: _strategy.to_string(),
             smoothing,
-            global_stat,
+            globalstat,
             encodings_: None,
             is_fitted: false,
             global_mean_: 0.0,
@@ -558,7 +694,7 @@ impl TargetEncoder {
         TargetEncoder {
             strategy: "mean".to_string(),
             smoothing,
-            global_stat: 0.0,
+            globalstat: 0.0,
             encodings_: None,
             is_fitted: false,
             global_mean_: 0.0,
@@ -570,7 +706,7 @@ impl TargetEncoder {
         TargetEncoder {
             strategy: "median".to_string(),
             smoothing,
-            global_stat: 0.0,
+            globalstat: 0.0,
             encodings_: None,
             is_fitted: false,
             global_mean_: 0.0,
@@ -721,8 +857,8 @@ impl TargetEncoder {
                     transformed[[i, j]] = encoded_value;
                 } else {
                     // Use global statistic for unknown categories
-                    transformed[[i, j]] = if self.global_stat != 0.0 {
-                        self.global_stat
+                    transformed[[i, j]] = if self.globalstat != 0.0 {
+                        self.globalstat
                     } else {
                         self.global_mean_
                     };
@@ -833,11 +969,11 @@ impl TargetEncoder {
             fold_indices.push((start, end));
         }
 
-        // For each fold, train on other folds and predict on this fold
+        // For each fold, train on other _folds and predict on this fold
         for fold in 0..cv_folds {
             let (val_start, val_end) = fold_indices[fold];
 
-            // Collect training data (all folds except current)
+            // Collect training data (all _folds except current)
             let mut train_indices = Vec::new();
             for (other_fold, &(start, end)) in fold_indices.iter().enumerate().take(cv_folds) {
                 if other_fold != fold {
@@ -935,7 +1071,7 @@ pub struct BinaryEncoder {
     /// Number of binary features per original feature
     n_binary_features_: Option<Vec<usize>>,
     /// Whether to handle unknown categories
-    handle_unknown: String,
+    handleunknown: String,
     /// Whether the encoder has been fitted
     is_fitted: bool,
 }
@@ -944,28 +1080,28 @@ impl BinaryEncoder {
     /// Creates a new BinaryEncoder
     ///
     /// # Arguments
-    /// * `handle_unknown` - How to handle unknown categories ('error' or 'ignore')
+    /// * `handleunknown` - How to handle unknown categories ('error' or 'ignore')
     ///   - 'error': Raise an error if unknown categories are encountered
     ///   - 'ignore': Encode unknown categories as all zeros
     ///
     /// # Returns
     /// * `Result<BinaryEncoder>` - The new encoder instance
-    pub fn new(handle_unknown: &str) -> Result<Self> {
-        if handle_unknown != "error" && handle_unknown != "ignore" {
+    pub fn new(handleunknown: &str) -> Result<Self> {
+        if handleunknown != "error" && handleunknown != "ignore" {
             return Err(TransformError::InvalidInput(
-                "handle_unknown must be 'error' or 'ignore'".to_string(),
+                "handleunknown must be 'error' or 'ignore'".to_string(),
             ));
         }
 
         Ok(BinaryEncoder {
             categories_: None,
             n_binary_features_: None,
-            handle_unknown: handle_unknown.to_string(),
+            handleunknown: handleunknown.to_string(),
             is_fitted: false,
         })
     }
 
-    /// Creates a BinaryEncoder with default settings (handle_unknown='error')
+    /// Creates a BinaryEncoder with default settings (handleunknown='error')
     pub fn with_defaults() -> Self {
         Self::new("error").unwrap()
     }
@@ -1011,7 +1147,7 @@ impl BinaryEncoder {
 
             // Calculate number of binary features needed
             let n_cats = unique_categories.len();
-            let n_bits = if n_cats <= 1 {
+            let nbits = if n_cats <= 1 {
                 1
             } else {
                 (n_cats as f64).log2().ceil() as usize
@@ -1020,12 +1156,12 @@ impl BinaryEncoder {
             // Create binary mappings
             let mut category_map = HashMap::new();
             for (idx, &category) in unique_categories.iter().enumerate() {
-                let binary_code = Self::int_to_binary(idx, n_bits);
+                let binary_code = Self::int_to_binary(idx, nbits);
                 category_map.insert(category, binary_code);
             }
 
             categories.push(category_map);
-            n_binary_features.push(n_bits);
+            n_binary_features.push(nbits);
         }
 
         self.categories_ = Some(categories);
@@ -1079,7 +1215,7 @@ impl BinaryEncoder {
         let mut output_col = 0;
         for j in 0..n_features {
             let category_map = &categories[j];
-            let n_bits = n_binary_features[j];
+            let nbits = n_binary_features[j];
 
             for i in 0..n_samples {
                 let category = x_u64[[i, j]];
@@ -1091,11 +1227,10 @@ impl BinaryEncoder {
                     }
                 } else {
                     // Unknown category
-                    match self.handle_unknown.as_str() {
+                    match self.handleunknown.as_str() {
                         "error" => {
                             return Err(TransformError::InvalidInput(format!(
-                                "Unknown category {} in feature {}",
-                                category, j
+                                "Unknown category {category} in feature {j}"
                             )));
                         }
                         "ignore" => {
@@ -1106,7 +1241,7 @@ impl BinaryEncoder {
                 }
             }
 
-            output_col += n_bits;
+            output_col += nbits;
         }
 
         Ok(result)
@@ -1149,17 +1284,521 @@ impl BinaryEncoder {
     }
 
     /// Converts an integer to binary representation
-    fn int_to_binary(value: usize, n_bits: usize) -> Vec<u8> {
-        let mut binary = Vec::with_capacity(n_bits);
-        let mut val = value;
+    fn int_to_binary(_value: usize, nbits: usize) -> Vec<u8> {
+        let mut binary = Vec::with_capacity(nbits);
+        let mut val = _value;
 
-        for _ in 0..n_bits {
+        for _ in 0..nbits {
             binary.push((val & 1) as u8);
             val >>= 1;
         }
 
         binary.reverse(); // Most significant bit first
         binary
+    }
+}
+
+/// FrequencyEncoder for converting categorical features to frequency counts
+///
+/// This transformer converts categorical features into their frequency of occurrence
+/// in the training data. High-frequency categories get higher values, which can be
+/// useful for models that can leverage frequency information.
+#[derive(Debug, Clone)]
+pub struct FrequencyEncoder {
+    /// Frequency mappings for each feature
+    frequency_maps_: Option<Vec<HashMap<u64, f64>>>,
+    /// Whether to normalize frequencies to [0, 1]
+    normalize: bool,
+    /// How to handle unknown categories
+    handleunknown: String,
+    /// Value to use for unknown categories (when handleunknown="use_encoded_value")
+    unknownvalue: f64,
+    /// Whether the encoder has been fitted
+    is_fitted: bool,
+}
+
+impl FrequencyEncoder {
+    /// Creates a new FrequencyEncoder
+    ///
+    /// # Arguments
+    /// * `normalize` - Whether to normalize frequencies to [0, 1] range
+    /// * `handleunknown` - How to handle unknown categories ('error', 'ignore', or 'use_encoded_value')
+    /// * `unknownvalue` - Value to use for unknown categories (when handleunknown="use_encoded_value")
+    ///
+    /// # Returns
+    /// * `Result<FrequencyEncoder>` - The new encoder instance
+    pub fn new(normalize: bool, handleunknown: &str, unknownvalue: f64) -> Result<Self> {
+        if !["error", "ignore", "use_encoded_value"].contains(&handleunknown) {
+            return Err(TransformError::InvalidInput(
+                "handleunknown must be 'error', 'ignore', or 'use_encoded_value'".to_string(),
+            ));
+        }
+
+        Ok(FrequencyEncoder {
+            frequency_maps_: None,
+            normalize,
+            handleunknown: handleunknown.to_string(),
+            unknownvalue,
+            is_fitted: false,
+        })
+    }
+
+    /// Creates a FrequencyEncoder with default settings
+    pub fn with_defaults() -> Self {
+        Self::new(false, "error", 0.0).unwrap()
+    }
+
+    /// Creates a FrequencyEncoder with normalized frequencies
+    pub fn with_normalization() -> Self {
+        Self::new(true, "error", 0.0).unwrap()
+    }
+
+    /// Fits the FrequencyEncoder to the input data
+    ///
+    /// # Arguments
+    /// * `x` - The input categorical data, shape (n_samples, n_features)
+    ///
+    /// # Returns
+    /// * `Result<()>` - Ok if successful, Err otherwise
+    pub fn fit<S>(&mut self, x: &ArrayBase<S, Ix2>) -> Result<()>
+    where
+        S: Data,
+        S::Elem: Float + NumCast,
+    {
+        let x_u64 = x.mapv(|x| {
+            let val_f64 = num_traits::cast::<S::Elem, f64>(x).unwrap_or(0.0);
+            val_f64 as u64
+        });
+
+        let n_samples = x_u64.shape()[0];
+        let n_features = x_u64.shape()[1];
+
+        if n_samples == 0 || n_features == 0 {
+            return Err(TransformError::InvalidInput("Empty input data".to_string()));
+        }
+
+        let mut frequency_maps = Vec::with_capacity(n_features);
+
+        for j in 0..n_features {
+            // Count frequency of each category
+            let mut category_counts: HashMap<u64, usize> = HashMap::new();
+            for i in 0..n_samples {
+                let category = x_u64[[i, j]];
+                *category_counts.entry(category).or_insert(0) += 1;
+            }
+
+            // Convert counts to frequencies
+            let mut frequency_map = HashMap::new();
+            for (category, count) in category_counts {
+                let frequency = if self.normalize {
+                    count as f64 / n_samples as f64
+                } else {
+                    count as f64
+                };
+                frequency_map.insert(category, frequency);
+            }
+
+            frequency_maps.push(frequency_map);
+        }
+
+        self.frequency_maps_ = Some(frequency_maps);
+        self.is_fitted = true;
+        Ok(())
+    }
+
+    /// Transforms the input data using the fitted FrequencyEncoder
+    ///
+    /// # Arguments
+    /// * `x` - The input categorical data, shape (n_samples, n_features)
+    ///
+    /// # Returns
+    /// * `Result<Array2<f64>>` - The frequency-encoded data
+    pub fn transform<S>(&self, x: &ArrayBase<S, Ix2>) -> Result<Array2<f64>>
+    where
+        S: Data,
+        S::Elem: Float + NumCast,
+    {
+        if !self.is_fitted {
+            return Err(TransformError::TransformationError(
+                "FrequencyEncoder has not been fitted".to_string(),
+            ));
+        }
+
+        let frequency_maps = self.frequency_maps_.as_ref().unwrap();
+
+        let x_u64 = x.mapv(|x| {
+            let val_f64 = num_traits::cast::<S::Elem, f64>(x).unwrap_or(0.0);
+            val_f64 as u64
+        });
+
+        let n_samples = x_u64.shape()[0];
+        let n_features = x_u64.shape()[1];
+
+        if n_features != frequency_maps.len() {
+            return Err(TransformError::InvalidInput(format!(
+                "x has {} features, but FrequencyEncoder was fitted with {} features",
+                n_features,
+                frequency_maps.len()
+            )));
+        }
+
+        let mut transformed = Array2::zeros((n_samples, n_features));
+
+        for i in 0..n_samples {
+            for j in 0..n_features {
+                let category = x_u64[[i, j]];
+
+                if let Some(&frequency) = frequency_maps[j].get(&category) {
+                    transformed[[i, j]] = frequency;
+                } else {
+                    // Handle unknown category
+                    match self.handleunknown.as_str() {
+                        "error" => {
+                            return Err(TransformError::InvalidInput(format!(
+                                "Unknown category {category} in feature {j}"
+                            )));
+                        }
+                        "ignore" => {
+                            transformed[[i, j]] = 0.0;
+                        }
+                        "use_encoded_value" => {
+                            transformed[[i, j]] = self.unknownvalue;
+                        }
+                        _ => unreachable!(),
+                    }
+                }
+            }
+        }
+
+        Ok(transformed)
+    }
+
+    /// Fits the encoder and transforms the data in one step
+    ///
+    /// # Arguments
+    /// * `x` - The input categorical data
+    ///
+    /// # Returns
+    /// * `Result<Array2<f64>>` - The frequency-encoded data
+    pub fn fit_transform<S>(&mut self, x: &ArrayBase<S, Ix2>) -> Result<Array2<f64>>
+    where
+        S: Data,
+        S::Elem: Float + NumCast,
+    {
+        self.fit(x)?;
+        self.transform(x)
+    }
+
+    /// Returns whether the encoder has been fitted
+    pub fn is_fitted(&self) -> bool {
+        self.is_fitted
+    }
+
+    /// Returns the learned frequency mappings if fitted
+    pub fn frequency_maps(&self) -> Option<&Vec<HashMap<u64, f64>>> {
+        self.frequency_maps_.as_ref()
+    }
+}
+
+/// Weight of Evidence (WOE) Encoder for converting categorical features using target information
+///
+/// WOE encoding transforms categorical features based on the relationship between
+/// each category and a binary target variable. It's particularly useful for credit
+/// scoring and other binary classification tasks.
+///
+/// WOE = ln(P(target=1|category) / P(target=0|category))
+#[derive(Debug, Clone)]
+pub struct WOEEncoder {
+    /// WOE mappings for each feature
+    woe_maps_: Option<Vec<HashMap<u64, f64>>>,
+    /// Information Value (IV) for each feature
+    information_values_: Option<Vec<f64>>,
+    /// Regularization parameter to handle categories with zero events/non-events
+    regularization: f64,
+    /// How to handle unknown categories
+    handleunknown: String,
+    /// Value to use for unknown categories (when handleunknown="use_encoded_value")
+    unknownvalue: f64,
+    /// Global WOE value for unknown categories (computed as overall log-odds)
+    global_woe_: f64,
+    /// Whether the encoder has been fitted
+    is_fitted: bool,
+}
+
+impl WOEEncoder {
+    /// Creates a new WOEEncoder
+    ///
+    /// # Arguments
+    /// * `regularization` - Small value added to prevent division by zero (default: 0.5)
+    /// * `handleunknown` - How to handle unknown categories ('error', 'global_woe', or 'use_encoded_value')
+    /// * `unknownvalue` - Value to use for unknown categories (when handleunknown="use_encoded_value")
+    ///
+    /// # Returns
+    /// * `Result<WOEEncoder>` - The new encoder instance
+    pub fn new(regularization: f64, handleunknown: &str, unknownvalue: f64) -> Result<Self> {
+        if regularization < 0.0 {
+            return Err(TransformError::InvalidInput(
+                "regularization must be non-negative".to_string(),
+            ));
+        }
+
+        if !["error", "global_woe", "use_encoded_value"].contains(&handleunknown) {
+            return Err(TransformError::InvalidInput(
+                "handleunknown must be 'error', 'global_woe', or 'use_encoded_value'".to_string(),
+            ));
+        }
+
+        Ok(WOEEncoder {
+            woe_maps_: None,
+            information_values_: None,
+            regularization,
+            handleunknown: handleunknown.to_string(),
+            unknownvalue,
+            global_woe_: 0.0,
+            is_fitted: false,
+        })
+    }
+
+    /// Creates a WOEEncoder with default settings
+    pub fn with_defaults() -> Self {
+        Self::new(0.5, "global_woe", 0.0).unwrap()
+    }
+
+    /// Creates a WOEEncoder with custom regularization
+    pub fn with_regularization(regularization: f64) -> Result<Self> {
+        Self::new(regularization, "global_woe", 0.0)
+    }
+
+    /// Fits the WOEEncoder to the input data
+    ///
+    /// # Arguments
+    /// * `x` - The input categorical data, shape (n_samples, n_features)
+    /// * `y` - The binary target values (0 or 1), length n_samples
+    ///
+    /// # Returns
+    /// * `Result<()>` - Ok if successful, Err otherwise
+    pub fn fit<S>(&mut self, x: &ArrayBase<S, Ix2>, y: &[f64]) -> Result<()>
+    where
+        S: Data,
+        S::Elem: Float + NumCast,
+    {
+        let x_u64 = x.mapv(|x| {
+            let val_f64 = num_traits::cast::<S::Elem, f64>(x).unwrap_or(0.0);
+            val_f64 as u64
+        });
+
+        let n_samples = x_u64.shape()[0];
+        let n_features = x_u64.shape()[1];
+
+        if n_samples == 0 || n_features == 0 {
+            return Err(TransformError::InvalidInput("Empty input data".to_string()));
+        }
+
+        if y.len() != n_samples {
+            return Err(TransformError::InvalidInput(
+                "Number of target values must match number of samples".to_string(),
+            ));
+        }
+
+        // Validate that target is binary
+        for &target in y {
+            if target != 0.0 && target != 1.0 {
+                return Err(TransformError::InvalidInput(
+                    "Target values must be binary (0 or 1)".to_string(),
+                ));
+            }
+        }
+
+        // Calculate global statistics
+        let total_events: f64 = y.iter().sum();
+        let total_non_events = n_samples as f64 - total_events;
+
+        if total_events == 0.0 || total_non_events == 0.0 {
+            return Err(TransformError::InvalidInput(
+                "Target must contain both 0 and 1 values".to_string(),
+            ));
+        }
+
+        // Global WOE (overall log-odds)
+        self.global_woe_ = (total_events / total_non_events).ln();
+
+        let mut woe_maps = Vec::with_capacity(n_features);
+        let mut information_values = Vec::with_capacity(n_features);
+
+        for j in 0..n_features {
+            // Collect target values by category
+            let mut category_stats: HashMap<u64, (f64, f64)> = HashMap::new(); // (events, non_events)
+
+            for i in 0..n_samples {
+                let category = x_u64[[i, j]];
+                let target = y[i];
+
+                let (events, non_events) = category_stats.entry(category).or_insert((0.0, 0.0));
+                if target == 1.0 {
+                    *events += 1.0;
+                } else {
+                    *non_events += 1.0;
+                }
+            }
+
+            // Calculate WOE and IV for each category
+            let mut woe_map = HashMap::new();
+            let mut feature_iv = 0.0;
+
+            for (category, (events, non_events)) in category_stats.iter() {
+                // Add regularization to handle zero counts
+                let reg_events = events + self.regularization;
+                let reg_non_events = non_events + self.regularization;
+                let reg_total_events =
+                    total_events + self.regularization * category_stats.len() as f64;
+                let reg_total_non_events =
+                    total_non_events + self.regularization * category_stats.len() as f64;
+
+                // Calculate distribution percentages
+                let event_rate = reg_events / reg_total_events;
+                let non_event_rate = reg_non_events / reg_total_non_events;
+
+                // Calculate WOE
+                let woe = (event_rate / non_event_rate).ln();
+                woe_map.insert(*category, woe);
+
+                // Calculate Information Value contribution
+                let iv_contribution = (event_rate - non_event_rate) * woe;
+                feature_iv += iv_contribution;
+            }
+
+            woe_maps.push(woe_map);
+            information_values.push(feature_iv);
+        }
+
+        self.woe_maps_ = Some(woe_maps);
+        self.information_values_ = Some(information_values);
+        self.is_fitted = true;
+        Ok(())
+    }
+
+    /// Transforms the input data using the fitted WOEEncoder
+    ///
+    /// # Arguments
+    /// * `x` - The input categorical data, shape (n_samples, n_features)
+    ///
+    /// # Returns
+    /// * `Result<Array2<f64>>` - The WOE-encoded data
+    pub fn transform<S>(&self, x: &ArrayBase<S, Ix2>) -> Result<Array2<f64>>
+    where
+        S: Data,
+        S::Elem: Float + NumCast,
+    {
+        if !self.is_fitted {
+            return Err(TransformError::TransformationError(
+                "WOEEncoder has not been fitted".to_string(),
+            ));
+        }
+
+        let woe_maps = self.woe_maps_.as_ref().unwrap();
+
+        let x_u64 = x.mapv(|x| {
+            let val_f64 = num_traits::cast::<S::Elem, f64>(x).unwrap_or(0.0);
+            val_f64 as u64
+        });
+
+        let n_samples = x_u64.shape()[0];
+        let n_features = x_u64.shape()[1];
+
+        if n_features != woe_maps.len() {
+            return Err(TransformError::InvalidInput(format!(
+                "x has {} features, but WOEEncoder was fitted with {} features",
+                n_features,
+                woe_maps.len()
+            )));
+        }
+
+        let mut transformed = Array2::zeros((n_samples, n_features));
+
+        for i in 0..n_samples {
+            for j in 0..n_features {
+                let category = x_u64[[i, j]];
+
+                if let Some(&woe_value) = woe_maps[j].get(&category) {
+                    transformed[[i, j]] = woe_value;
+                } else {
+                    // Handle unknown category
+                    match self.handleunknown.as_str() {
+                        "error" => {
+                            return Err(TransformError::InvalidInput(format!(
+                                "Unknown category {category} in feature {j}"
+                            )));
+                        }
+                        "global_woe" => {
+                            transformed[[i, j]] = self.global_woe_;
+                        }
+                        "use_encoded_value" => {
+                            transformed[[i, j]] = self.unknownvalue;
+                        }
+                        _ => unreachable!(),
+                    }
+                }
+            }
+        }
+
+        Ok(transformed)
+    }
+
+    /// Fits the encoder and transforms the data in one step
+    ///
+    /// # Arguments
+    /// * `x` - The input categorical data
+    /// * `y` - The binary target values
+    ///
+    /// # Returns
+    /// * `Result<Array2<f64>>` - The WOE-encoded data
+    pub fn fit_transform<S>(&mut self, x: &ArrayBase<S, Ix2>, y: &[f64]) -> Result<Array2<f64>>
+    where
+        S: Data,
+        S::Elem: Float + NumCast,
+    {
+        self.fit(x, y)?;
+        self.transform(x)
+    }
+
+    /// Returns whether the encoder has been fitted
+    pub fn is_fitted(&self) -> bool {
+        self.is_fitted
+    }
+
+    /// Returns the learned WOE mappings if fitted
+    pub fn woe_maps(&self) -> Option<&Vec<HashMap<u64, f64>>> {
+        self.woe_maps_.as_ref()
+    }
+
+    /// Returns the Information Values for each feature if fitted
+    ///
+    /// Information Value interpretation:
+    /// - < 0.02: Not useful for prediction
+    /// - 0.02 - 0.1: Weak predictive power
+    /// - 0.1 - 0.3: Medium predictive power  
+    /// - 0.3 - 0.5: Strong predictive power
+    /// - > 0.5: Suspicious, too good to be true
+    pub fn information_values(&self) -> Option<&Vec<f64>> {
+        self.information_values_.as_ref()
+    }
+
+    /// Returns the global WOE value (overall log-odds)
+    pub fn global_woe(&self) -> f64 {
+        self.global_woe_
+    }
+
+    /// Returns features ranked by Information Value (descending order)
+    ///
+    /// # Returns
+    /// * `Option<Vec<(usize, f64)>>` - Vector of (feature_index, information_value) pairs
+    pub fn feature_importance_ranking(&self) -> Option<Vec<(usize, f64)>> {
+        self.information_values_.as_ref().map(|ivs| {
+            let mut ranking: Vec<(usize, f64)> =
+                ivs.iter().enumerate().map(|(idx, &iv)| (idx, iv)).collect();
+            ranking.sort_by(|a, b| b.1.partial_cmp(&a.1).unwrap_or(std::cmp::Ordering::Equal));
+            ranking
+        })
     }
 }
 
@@ -1185,23 +1824,26 @@ mod tests {
         let encoded = encoder.fit_transform(&data).unwrap();
 
         // Should have 3 + 3 = 6 output features
-        assert_eq!(encoded.shape(), &[4, 6]);
+        assert_eq!(encoded.shape(), (4, 6));
+
+        // Convert to dense for indexing
+        let encoded_dense = encoded.to_dense();
 
         // Check first row: category 0 in feature 0, category 1 in feature 1
-        assert_abs_diff_eq!(encoded[[0, 0]], 1.0, epsilon = 1e-10); // cat 0, feature 0
-        assert_abs_diff_eq!(encoded[[0, 1]], 0.0, epsilon = 1e-10); // cat 1, feature 0
-        assert_abs_diff_eq!(encoded[[0, 2]], 0.0, epsilon = 1e-10); // cat 2, feature 0
-        assert_abs_diff_eq!(encoded[[0, 3]], 1.0, epsilon = 1e-10); // cat 1, feature 1
-        assert_abs_diff_eq!(encoded[[0, 4]], 0.0, epsilon = 1e-10); // cat 2, feature 1
-        assert_abs_diff_eq!(encoded[[0, 5]], 0.0, epsilon = 1e-10); // cat 3, feature 1
+        assert_abs_diff_eq!(encoded_dense[[0, 0]], 1.0, epsilon = 1e-10); // cat 0, feature 0
+        assert_abs_diff_eq!(encoded_dense[[0, 1]], 0.0, epsilon = 1e-10); // cat 1, feature 0
+        assert_abs_diff_eq!(encoded_dense[[0, 2]], 0.0, epsilon = 1e-10); // cat 2, feature 0
+        assert_abs_diff_eq!(encoded_dense[[0, 3]], 1.0, epsilon = 1e-10); // cat 1, feature 1
+        assert_abs_diff_eq!(encoded_dense[[0, 4]], 0.0, epsilon = 1e-10); // cat 2, feature 1
+        assert_abs_diff_eq!(encoded_dense[[0, 5]], 0.0, epsilon = 1e-10); // cat 3, feature 1
 
         // Check second row: category 1 in feature 0, category 2 in feature 1
-        assert_abs_diff_eq!(encoded[[1, 0]], 0.0, epsilon = 1e-10); // cat 0, feature 0
-        assert_abs_diff_eq!(encoded[[1, 1]], 1.0, epsilon = 1e-10); // cat 1, feature 0
-        assert_abs_diff_eq!(encoded[[1, 2]], 0.0, epsilon = 1e-10); // cat 2, feature 0
-        assert_abs_diff_eq!(encoded[[1, 3]], 0.0, epsilon = 1e-10); // cat 1, feature 1
-        assert_abs_diff_eq!(encoded[[1, 4]], 1.0, epsilon = 1e-10); // cat 2, feature 1
-        assert_abs_diff_eq!(encoded[[1, 5]], 0.0, epsilon = 1e-10); // cat 3, feature 1
+        assert_abs_diff_eq!(encoded_dense[[1, 0]], 0.0, epsilon = 1e-10); // cat 0, feature 0
+        assert_abs_diff_eq!(encoded_dense[[1, 1]], 1.0, epsilon = 1e-10); // cat 1, feature 0
+        assert_abs_diff_eq!(encoded_dense[[1, 2]], 0.0, epsilon = 1e-10); // cat 2, feature 0
+        assert_abs_diff_eq!(encoded_dense[[1, 3]], 0.0, epsilon = 1e-10); // cat 1, feature 1
+        assert_abs_diff_eq!(encoded_dense[[1, 4]], 1.0, epsilon = 1e-10); // cat 2, feature 1
+        assert_abs_diff_eq!(encoded_dense[[1, 5]], 0.0, epsilon = 1e-10); // cat 3, feature 1
     }
 
     #[test]
@@ -1213,20 +1855,21 @@ mod tests {
         let encoded = encoder.fit_transform(&data).unwrap();
 
         // Should have (3-1) + (2-1) = 3 output features (dropped first category of each)
-        assert_eq!(encoded.shape(), &[3, 3]);
+        assert_eq!(encoded.shape(), (3, 3));
 
         // Categories: feature 0: [0, 1, 2] -> keep [1, 2]
         //            feature 1: [1, 2] -> keep [2]
+        let encoded_dense = encoded.to_dense();
 
         // First row: category 0 (dropped), category 1 (dropped)
-        assert_abs_diff_eq!(encoded[[0, 0]], 0.0, epsilon = 1e-10); // cat 1, feature 0
-        assert_abs_diff_eq!(encoded[[0, 1]], 0.0, epsilon = 1e-10); // cat 2, feature 0
-        assert_abs_diff_eq!(encoded[[0, 2]], 0.0, epsilon = 1e-10); // cat 2, feature 1
+        assert_abs_diff_eq!(encoded_dense[[0, 0]], 0.0, epsilon = 1e-10); // cat 1, feature 0
+        assert_abs_diff_eq!(encoded_dense[[0, 1]], 0.0, epsilon = 1e-10); // cat 2, feature 0
+        assert_abs_diff_eq!(encoded_dense[[0, 2]], 0.0, epsilon = 1e-10); // cat 2, feature 1
 
         // Second row: category 1, category 2
-        assert_abs_diff_eq!(encoded[[1, 0]], 1.0, epsilon = 1e-10); // cat 1, feature 0
-        assert_abs_diff_eq!(encoded[[1, 1]], 0.0, epsilon = 1e-10); // cat 2, feature 0
-        assert_abs_diff_eq!(encoded[[1, 2]], 1.0, epsilon = 1e-10); // cat 2, feature 1
+        assert_abs_diff_eq!(encoded_dense[[1, 0]], 1.0, epsilon = 1e-10); // cat 1, feature 0
+        assert_abs_diff_eq!(encoded_dense[[1, 1]], 0.0, epsilon = 1e-10); // cat 2, feature 0
+        assert_abs_diff_eq!(encoded_dense[[1, 2]], 1.0, epsilon = 1e-10); // cat 2, feature 1
     }
 
     #[test]
@@ -1272,7 +1915,7 @@ mod tests {
         .unwrap();
 
         // Test error handling
-        let mut encoder = OneHotEncoder::with_defaults(); // with_defaults is handle_unknown="error"
+        let mut encoder = OneHotEncoder::with_defaults(); // with_defaults is handleunknown="error"
         encoder.fit(&train_data).unwrap();
         assert!(encoder.transform(&test_data).is_err());
 
@@ -1282,9 +1925,10 @@ mod tests {
         let encoded = encoder.transform(&test_data).unwrap();
 
         // Should be all zeros (ignored unknown category)
-        assert_eq!(encoded.shape(), &[1, 2]);
-        assert_abs_diff_eq!(encoded[[0, 0]], 0.0, epsilon = 1e-10);
-        assert_abs_diff_eq!(encoded[[0, 1]], 0.0, epsilon = 1e-10);
+        assert_eq!(encoded.shape(), (1, 2));
+        let encoded_dense = encoded.to_dense();
+        assert_abs_diff_eq!(encoded_dense[[0, 0]], 0.0, epsilon = 1e-10);
+        assert_abs_diff_eq!(encoded_dense[[0, 1]], 0.0, epsilon = 1e-10);
     }
 
     #[test]
@@ -1432,7 +2076,7 @@ mod tests {
         encoder.fit(&train_x, &train_y).unwrap();
         let encoded = encoder.transform(&test_x).unwrap();
 
-        // Should use global_stat for unknown categories
+        // Should use globalstat for unknown categories
         assert_abs_diff_eq!(encoded[[0, 0]], -1.0, epsilon = 1e-10);
         assert_abs_diff_eq!(encoded[[1, 0]], -1.0, epsilon = 1e-10);
     }
@@ -1444,11 +2088,11 @@ mod tests {
 
         let test_x = Array::from_shape_vec((1, 1), vec![3.0]).unwrap(); // Unknown category
 
-        let mut encoder = TargetEncoder::new("mean", 0.0, 0.0).unwrap(); // global_stat = 0.0
+        let mut encoder = TargetEncoder::new("mean", 0.0, 0.0).unwrap(); // globalstat = 0.0
         encoder.fit(&train_x, &train_y).unwrap();
         let encoded = encoder.transform(&test_x).unwrap();
 
-        // Should use global_mean for unknown categories when global_stat == 0.0
+        // Should use global_mean for unknown categories when globalstat == 0.0
         assert_abs_diff_eq!(encoded[[0, 0]], 2.0, epsilon = 1e-10); // Global mean = 2.0
     }
 
@@ -1770,7 +2414,7 @@ mod tests {
 
     #[test]
     fn test_binary_encoder_validation_errors() {
-        // Invalid handle_unknown parameter
+        // Invalid handleunknown parameter
         assert!(BinaryEncoder::new("invalid").is_err());
 
         // Empty data
@@ -1831,7 +2475,149 @@ mod tests {
 
         // Binary should use fewer features
         assert_eq!(binary_encoded.shape()[1], 4); // ceil(log2(10)) = 4
-        assert_eq!(onehot_encoded.shape()[1], 10); // 10 categories = 10 features
-        assert!(binary_encoded.shape()[1] < onehot_encoded.shape()[1]);
+        assert_eq!(onehot_encoded.shape().1, 10); // 10 categories = 10 features
+        assert!(binary_encoded.shape()[1] < onehot_encoded.shape().1);
+    }
+
+    #[test]
+    fn test_sparse_matrix_basic() {
+        let mut sparse = SparseMatrix::new((3, 4));
+        sparse.push(0, 1, 1.0);
+        sparse.push(1, 2, 1.0);
+        sparse.push(2, 0, 1.0);
+
+        assert_eq!(sparse.shape, (3, 4));
+        assert_eq!(sparse.nnz(), 3);
+
+        let dense = sparse.to_dense();
+        assert_eq!(dense.shape(), &[3, 4]);
+        assert_eq!(dense[[0, 1]], 1.0);
+        assert_eq!(dense[[1, 2]], 1.0);
+        assert_eq!(dense[[2, 0]], 1.0);
+        assert_eq!(dense[[0, 0]], 0.0); // Verify zeros
+    }
+
+    #[test]
+    fn test_onehot_sparse_output() {
+        let data =
+            Array::from_shape_vec((4, 2), vec![0.0, 1.0, 1.0, 2.0, 2.0, 0.0, 0.0, 1.0]).unwrap();
+
+        // Test sparse output
+        let mut encoder_sparse = OneHotEncoder::new(None, "error", true).unwrap();
+        let result_sparse = encoder_sparse.fit_transform(&data).unwrap();
+
+        match &result_sparse {
+            EncodedOutput::Sparse(sparse) => {
+                assert_eq!(sparse.shape, (4, 6)); // 3 categories + 3 categories = 6 features
+                assert_eq!(sparse.nnz(), 8); // 4 samples * 2 features = 8 non-zeros
+
+                // Convert to dense for comparison
+                let dense = sparse.to_dense();
+
+                // First sample [0, 1] should have [1,0,0,0,1,0] (category 0 in col0, category 1 in col1)
+                assert_eq!(dense[[0, 0]], 1.0); // category 0 in feature 0
+                assert_eq!(dense[[0, 4]], 1.0); // category 1 in feature 1
+                assert_eq!(dense[[0, 1]], 0.0); // not category 1 in feature 0
+            }
+            EncodedOutput::Dense(_) => assert!(false, "Expected sparse output, got dense"),
+        }
+
+        // Test dense output for comparison
+        let mut encoder_dense = OneHotEncoder::new(None, "error", false).unwrap();
+        let result_dense = encoder_dense.fit_transform(&data).unwrap();
+
+        match result_dense {
+            EncodedOutput::Dense(dense) => {
+                assert_eq!(dense.shape(), &[4, 6]);
+                // Verify dense and sparse produce same results
+                let sparse_as_dense = result_sparse.to_dense();
+                for i in 0..4 {
+                    for j in 0..6 {
+                        assert_abs_diff_eq!(
+                            dense[[i, j]],
+                            sparse_as_dense[[i, j]],
+                            epsilon = 1e-10
+                        );
+                    }
+                }
+            }
+            EncodedOutput::Sparse(_) => assert!(false, "Expected dense output, got sparse"),
+        }
+    }
+
+    #[test]
+    fn test_onehot_sparse_with_drop() {
+        let data = Array::from_shape_vec((3, 1), vec![0.0, 1.0, 2.0]).unwrap();
+
+        let mut encoder = OneHotEncoder::new(Some("first".to_string()), "error", true).unwrap();
+        let result = encoder.fit_transform(&data).unwrap();
+
+        match result {
+            EncodedOutput::Sparse(sparse) => {
+                assert_eq!(sparse.shape, (3, 2)); // 3 categories - 1 dropped = 2 features
+                assert_eq!(sparse.nnz(), 2); // Only categories 1 and 2 are encoded
+
+                let dense = sparse.to_dense();
+                assert_eq!(dense[[0, 0]], 0.0); // Category 0 dropped, all zeros
+                assert_eq!(dense[[0, 1]], 0.0);
+                assert_eq!(dense[[1, 0]], 1.0); // Category 1 maps to first output
+                assert_eq!(dense[[2, 1]], 1.0); // Category 2 maps to second output
+            }
+            EncodedOutput::Dense(_) => assert!(false, "Expected sparse output, got dense"),
+        }
+    }
+
+    #[test]
+    fn test_onehot_sparse_backward_compatibility() {
+        let data = Array::from_shape_vec((2, 1), vec![0.0, 1.0]).unwrap();
+
+        let mut encoder = OneHotEncoder::new(None, "error", true).unwrap();
+        encoder.fit(&data).unwrap();
+
+        // Test that the convenience methods work
+        let dense_result = encoder.transform_dense(&data).unwrap();
+        assert_eq!(dense_result.shape(), &[2, 2]);
+        assert_eq!(dense_result[[0, 0]], 1.0);
+        assert_eq!(dense_result[[1, 1]], 1.0);
+
+        let mut encoder2 = OneHotEncoder::new(None, "error", true).unwrap();
+        let dense_result2 = encoder2.fit_transform_dense(&data).unwrap();
+        assert_eq!(dense_result2.shape(), &[2, 2]);
+
+        // Results should be identical
+        for i in 0..2 {
+            for j in 0..2 {
+                assert_abs_diff_eq!(dense_result[[i, j]], dense_result2[[i, j]], epsilon = 1e-10);
+            }
+        }
+    }
+
+    #[test]
+    fn test_encoded_output_methods() {
+        let dense_array =
+            Array::from_shape_vec((2, 3), vec![1.0, 0.0, 0.0, 0.0, 1.0, 0.0]).unwrap();
+        let dense_output = EncodedOutput::Dense(dense_array);
+
+        let mut sparse_matrix = SparseMatrix::new((2, 3));
+        sparse_matrix.push(0, 0, 1.0);
+        sparse_matrix.push(1, 1, 1.0);
+        let sparse_output = EncodedOutput::Sparse(sparse_matrix);
+
+        // Test shape method
+        assert_eq!(dense_output.shape(), (2, 3));
+        assert_eq!(sparse_output.shape(), (2, 3));
+
+        // Test to_dense method
+        let dense_from_dense = dense_output.to_dense();
+        let dense_from_sparse = sparse_output.to_dense();
+
+        assert_eq!(dense_from_dense.shape(), &[2, 3]);
+        assert_eq!(dense_from_sparse.shape(), &[2, 3]);
+
+        // Verify values are equivalent
+        assert_eq!(dense_from_dense[[0, 0]], 1.0);
+        assert_eq!(dense_from_sparse[[0, 0]], 1.0);
+        assert_eq!(dense_from_dense[[1, 1]], 1.0);
+        assert_eq!(dense_from_sparse[[1, 1]], 1.0);
     }
 }

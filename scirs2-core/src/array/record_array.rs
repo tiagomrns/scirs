@@ -137,7 +137,7 @@ pub struct Record {
     fields: HashMap<String, FieldValue>,
 
     /// Field names in order
-    field_names: Vec<String>,
+    names: Vec<String>,
 }
 
 impl Record {
@@ -150,7 +150,7 @@ impl Record {
     /// Add a field to the record
     pub fn add_field(&mut self, name: &str, value: FieldValue) {
         if !self.fields.contains_key(name) {
-            self.field_names.push(name.to_string());
+            self.names.push(name.to_string());
         }
         self.fields.insert(name.to_string(), value);
     }
@@ -175,23 +175,22 @@ impl Record {
     /// Get the field names
     #[must_use]
     #[allow(clippy::missing_const_for_fn)]
-    pub fn field_names(&self) -> &[String] {
-        &self.field_names
+    pub fn names(&self) -> &[String] {
+        &self.names
     }
-
     /// Pretty print the record
     #[must_use]
     pub fn pprint(&self) -> String {
         let mut result = String::new();
 
         let max_name_len = self
-            .field_names
+            .names
             .iter()
             .map(std::string::String::len)
             .max()
             .unwrap_or(0);
 
-        for name in &self.field_names {
+        for name in &self.names {
             if let Some(value) = self.fields.get(name) {
                 use std::fmt::Write;
                 let _ = writeln!(&mut result, "{name:<max_name_len$}: {value}");
@@ -207,7 +206,7 @@ impl fmt::Display for Record {
         write!(
             f,
             "({})",
-            self.field_names
+            self.names
                 .iter()
                 .filter_map(|name| self.fields.get(name).map(|v| format!("{name}: {v}")))
                 .collect::<Vec<_>>()
@@ -223,12 +222,12 @@ pub struct RecordArray {
     pub records: Vec<Record>,
 
     /// The names of the fields (columns)
-    pub field_names: Vec<String>,
+    pub names: Vec<String>,
 
     /// Optional titles (aliases) for fields
     pub field_titles: HashMap<String, String>,
 
-    /// Maps field names to their index in `field_names`
+    /// Maps field names to their index in `names`
     field_indices: HashMap<String, usize>,
 
     /// The shape of the array
@@ -251,20 +250,20 @@ impl RecordArray {
         }
 
         // Get field names from the first record
-        let field_names = records[0].field_names().to_vec();
+        let names = records[0].names().to_vec();
 
         // Verify all records have the same fields
         for (i, record) in records.iter().enumerate().skip(1) {
-            let record_fields = record.field_names();
-            if record_fields.len() != field_names.len() {
+            let record_fields = record.names();
+            if record_fields.len() != names.len() {
                 return Err(ArrayError::ValueError(format!(
                     "Record {i} has {} fields, but expected {}",
                     record_fields.len(),
-                    field_names.len()
+                    names.len()
                 )));
             }
 
-            for name in &field_names {
+            for name in &names {
                 if !record_fields.contains(name) {
                     return Err(ArrayError::ValueError(format!(
                         "Record {i} is missing field '{name}'"
@@ -275,8 +274,8 @@ impl RecordArray {
 
         // Create field index map
         let mut field_indices = HashMap::new();
-        for (i, name) in field_names.iter().enumerate() {
-            field_indices.insert(name.clone(), i);
+        for (_i, name) in names.iter().enumerate() {
+            field_indices.insert(name.clone(), 0);
         }
 
         // Store the length
@@ -284,7 +283,7 @@ impl RecordArray {
 
         Ok(Self {
             records,
-            field_names,
+            names,
             field_titles: HashMap::new(),
             field_indices,
             shape: vec![len],
@@ -303,10 +302,10 @@ impl RecordArray {
         let mut record_array = Self::new(records)?;
 
         // Validate titles
-        for field_name in titles.keys() {
-            if !record_array.field_indices.contains_key(field_name) {
+        for name in titles.keys() {
+            if !record_array.field_indices.contains_key(name) {
                 return Err(ArrayError::ValueError(format!(
-                    "Cannot add title for non-existent field '{field_name}'"
+                    "Cannot add title for non-existent field '{name}'"
                 )));
             }
         }
@@ -333,9 +332,33 @@ impl RecordArray {
         &self.shape
     }
 
+    /// Get all values for a specific field across all records
+    pub fn field_values(&self, name: &str) -> Result<Vec<FieldValue>, ArrayError> {
+        if !self.names.contains(&name.to_string()) {
+            return Err(ArrayError::ValueError(format!(
+                "Field '{}' not found",
+                name
+            )));
+        }
+
+        let mut values = Vec::with_capacity(self.records.len());
+        for record in &self.records {
+            if let Some(value) = record.get_field(name) {
+                values.push(value.clone());
+            } else {
+                return Err(ArrayError::ValueError(format!(
+                    "Field '{}' missing in some records",
+                    name
+                )));
+            }
+        }
+
+        Ok(values)
+    }
+
     /// Get the number of records
     #[must_use]
-    pub fn num_records(&self) -> usize {
+    pub fn numrecords(&self) -> usize {
         self.records.len()
     }
 
@@ -357,17 +380,20 @@ impl RecordArray {
     ///
     /// # Panics
     /// Panics if a record doesn't have the field that should exist based on validation.
-    pub fn get_field_values(&self, field_name: &str) -> Result<Vec<FieldValue>, ArrayError> {
-        if !self.field_indices.contains_key(field_name) {
-            return Err(ArrayError::ValueError(format!(
-                "Field '{field_name}' not found"
-            )));
+    pub fn get_field(&self, name: &str) -> Result<Vec<FieldValue>, ArrayError> {
+        if !self.field_indices.contains_key(name) {
+            return Err(ArrayError::ValueError(format!("Field '{name}' not found")));
         }
 
         let values = self
             .records
             .iter()
-            .map(|record| record.get_field(field_name).unwrap().clone())
+            .map(|record| {
+                record
+                    .get_field(name)
+                    .expect("Field should exist based on validation")
+                    .clone()
+            })
             .collect();
 
         Ok(values)
@@ -378,8 +404,8 @@ impl RecordArray {
     /// # Errors
     /// Returns `ArrayError::ValueError` if the field name is not found.
     #[allow(clippy::cast_precision_loss)]
-    pub fn get_field_as_f64(&self, field_name: &str) -> Result<Array<f64, Ix1>, ArrayError> {
-        let values = self.get_field_values(field_name)?;
+    pub fn field_as_f64_array(&self, name: &str) -> Result<Array<f64, Ix1>, ArrayError> {
+        let values = self.field_values(name)?;
 
         let mut result = Array::zeros(self.records.len());
 
@@ -404,7 +430,7 @@ impl RecordArray {
                 FieldValue::Float64(v) => *v,
                 FieldValue::String(_) => {
                     return Err(ArrayError::ValueError(format!(
-                        "Cannot convert field '{field_name}' of type String to f64"
+                        "Cannot convert field '{name}' of type String to f64"
                     )))
                 }
             };
@@ -420,8 +446,8 @@ impl RecordArray {
     /// # Errors
     /// Returns `ArrayError::ValueError` if the field name is not found or contains non-convertible types.
     #[allow(clippy::cast_possible_wrap, clippy::cast_possible_truncation)]
-    pub fn get_field_as_i64(&self, field_name: &str) -> Result<Array<i64, Ix1>, ArrayError> {
-        let values = self.get_field_values(field_name)?;
+    pub fn field_as_i64_array(&self, name: &str) -> Result<Array<i64, Ix1>, ArrayError> {
+        let values = self.field_values(name)?;
 
         let mut result = Array::zeros(self.records.len());
 
@@ -438,7 +464,7 @@ impl RecordArray {
                 FieldValue::UInt64(v) => {
                     if *v > i64::MAX as u64 {
                         return Err(ArrayError::ValueError(format!(
-                            "Value {v} in field '{field_name}' is too large for i64"
+                            "Value {v} in field '{name}' is too large for i64"
                         )));
                     }
                     *v as i64
@@ -447,7 +473,7 @@ impl RecordArray {
                 FieldValue::Float64(v) => *v as i64,
                 FieldValue::String(_) => {
                     return Err(ArrayError::ValueError(format!(
-                        "Cannot convert field '{field_name}' of type String to i64"
+                        "Cannot convert field '{name}' of type String to i64"
                     )))
                 }
             };
@@ -462,8 +488,8 @@ impl RecordArray {
     ///
     /// # Errors
     /// Returns `ArrayError::ValueError` if the field name is not found.
-    pub fn get_field_as_string(&self, field_name: &str) -> Result<Vec<String>, ArrayError> {
-        let values = self.get_field_values(field_name)?;
+    pub fn name_4(&self, name: &str) -> Result<Vec<String>, ArrayError> {
+        let values = self.field_values(name)?;
 
         let mut result = Vec::with_capacity(self.records.len());
 
@@ -495,31 +521,29 @@ impl RecordArray {
     /// Returns `ArrayError::ValueError` if the title is not found.
     pub fn get_field_by_title(&self, title: &str) -> Result<Vec<FieldValue>, ArrayError> {
         // Find the field name corresponding to the title
-        let field_name = self
+        let name = self
             .field_titles
             .iter()
             .find_map(|(name, t)| if t == title { Some(name) } else { None })
             .ok_or_else(|| ArrayError::ValueError(format!("Title '{title}' not found")))?;
 
         // Get the field values by name
-        self.get_field_values(field_name)
+        self.field_values(name)
     }
 
     /// Set a field value for a record
     ///
     /// # Errors
     /// Returns `ArrayError::ValueError` if the field name is not found or record index is out of bounds.
-    pub fn set_field_value(
+    pub fn name_5(
         &mut self,
+        name: &str,
         record_idx: usize,
-        field_name: &str,
         value: FieldValue,
     ) -> Result<(), ArrayError> {
         // First check if field exists
-        if !self.field_indices.contains_key(field_name) {
-            return Err(ArrayError::ValueError(format!(
-                "Field '{field_name}' not found"
-            )));
+        if !self.field_indices.contains_key(name) {
+            return Err(ArrayError::ValueError(format!("Field '{name}' not found")));
         }
 
         // Then get record and set the field
@@ -527,7 +551,7 @@ impl RecordArray {
             ArrayError::ValueError(format!("Record index {record_idx} out of bounds"))
         })?;
 
-        record.add_field(field_name, value);
+        record.add_field(name, value);
         Ok(())
     }
 
@@ -535,15 +559,11 @@ impl RecordArray {
     ///
     /// # Errors
     /// Returns `ArrayError::ValueError` if the field already exists or the number of values doesn't match the number of records.
-    pub fn add_field(
-        &mut self,
-        field_name: &str,
-        values: Vec<FieldValue>,
-    ) -> Result<(), ArrayError> {
+    pub fn name_6(&mut self, name: &str, values: Vec<FieldValue>) -> Result<(), ArrayError> {
         // Check if field already exists
-        if self.field_indices.contains_key(field_name) {
+        if self.field_indices.contains_key(name) {
             return Err(ArrayError::ValueError(format!(
-                "Field '{field_name}' already exists"
+                "Field '{name}' already exists"
             )));
         }
 
@@ -558,13 +578,13 @@ impl RecordArray {
 
         // Add field to each record
         for (i, record) in self.records.iter_mut().enumerate() {
-            record.add_field(field_name, values[i].clone());
+            record.add_field(name, values[i].clone());
         }
 
         // Update field names and indices
-        let new_index = self.field_names.len();
-        self.field_names.push(field_name.to_string());
-        self.field_indices.insert(field_name.to_string(), new_index);
+        let new_index = self.names.len();
+        self.names.push(name.to_string());
+        self.field_indices.insert(name.to_string(), new_index);
 
         Ok(())
     }
@@ -573,44 +593,42 @@ impl RecordArray {
     ///
     /// # Errors
     /// Returns `ArrayError::ValueError` if the field name is not found.
-    pub fn remove_field(&mut self, field_name: &str) -> Result<(), ArrayError> {
+    pub fn name_7(&mut self, name: &str) -> Result<(), ArrayError> {
         // Check if field exists
-        if !self.field_indices.contains_key(field_name) {
-            return Err(ArrayError::ValueError(format!(
-                "Field '{field_name}' not found"
-            )));
+        if !self.field_indices.contains_key(name) {
+            return Err(ArrayError::ValueError(format!("Field '{name}' not found")));
         }
 
         // Remove field from each record
         for record in &mut self.records {
             // Create a new vector of field names without the removed field
-            let new_field_names: Vec<String> = record
-                .field_names
+            let new_names: Vec<String> = record
+                .names
                 .iter()
-                .filter(|name| *name != field_name)
+                .filter(|fieldname| *fieldname != name)
                 .cloned()
                 .collect();
 
             // Remove the field from the hashmap
-            record.fields.remove(field_name);
+            record.fields.remove(name);
 
             // Update field names
-            record.field_names = new_field_names;
+            record.names = new_names;
         }
 
         // Get the index of the field to remove
-        let index_to_remove = self.field_indices[field_name];
+        let index_to_remove = self.field_indices[name];
 
-        // Remove field from field_names
-        self.field_names.remove(index_to_remove);
+        // Remove field from names
+        self.names.remove(index_to_remove);
 
         // Remove field from field_titles if present
-        self.field_titles.remove(field_name);
+        self.field_titles.remove(name);
 
         // Rebuild field_indices map
         self.field_indices.clear();
-        for (i, name) in self.field_names.iter().enumerate() {
-            self.field_indices.insert(name.clone(), i);
+        for (i, fieldname) in self.names.iter().enumerate() {
+            self.field_indices.insert(fieldname.clone(), i);
         }
 
         Ok(())
@@ -620,7 +638,7 @@ impl RecordArray {
     ///
     /// # Errors
     /// Returns `ArrayError::ValueError` if old field is not found or new field already exists.
-    pub fn rename_field(&mut self, old_name: &str, new_name: &str) -> Result<(), ArrayError> {
+    pub fn name_8(&mut self, old_name: &str, newname: &str) -> Result<(), ArrayError> {
         // Check if old field exists
         if !self.field_indices.contains_key(old_name) {
             return Err(ArrayError::ValueError(format!(
@@ -629,9 +647,9 @@ impl RecordArray {
         }
 
         // Check if new field already exists
-        if self.field_indices.contains_key(new_name) {
+        if self.field_indices.contains_key(newname) {
             return Err(ArrayError::ValueError(format!(
-                "Field '{new_name}' already exists"
+                "Field '{newname}' already exists"
             )));
         }
 
@@ -640,29 +658,29 @@ impl RecordArray {
             // Get the value for the field
             if let Some(value) = record.fields.remove(old_name) {
                 // Add field with new name
-                record.add_field(new_name, value);
+                record.add_field(newname, value);
 
-                // Update field_names
+                // Update names
                 let old_index = record
-                    .field_names
+                    .names
                     .iter()
                     .position(|name| name == old_name)
-                    .unwrap();
-                record.field_names[old_index] = new_name.to_string();
+                    .expect("Failed to create RecordArray in test");
+                record.names[old_index] = newname.to_string();
             }
         }
 
-        // Update field_names in RecordArray
+        // Update names in RecordArray
         let old_index = self.field_indices[old_name];
-        self.field_names[old_index] = new_name.to_string();
+        self.names[old_index] = newname.to_string();
 
         // Update field_indices
         self.field_indices.remove(old_name);
-        self.field_indices.insert(new_name.to_string(), old_index);
+        self.field_indices.insert(newname.to_string(), old_index);
 
         // Update field_titles if the old name had a title
         if let Some(title) = self.field_titles.remove(old_name) {
-            self.field_titles.insert(new_name.to_string(), title);
+            self.field_titles.insert(newname.to_string(), title);
         }
 
         Ok(())
@@ -673,7 +691,7 @@ impl RecordArray {
     /// # Errors
     /// Returns `ArrayError::ValueError` if any index is out of bounds.
     pub fn view(&self, indices: &[usize]) -> Result<Self, ArrayError> {
-        let mut new_records = Vec::with_capacity(indices.len());
+        let mut newrecords = Vec::with_capacity(indices.len());
 
         // Collect records at specified indices
         for &idx in indices {
@@ -684,13 +702,13 @@ impl RecordArray {
                 )));
             }
 
-            new_records.push(self.records[idx].clone());
+            newrecords.push(self.records[idx].clone());
         }
 
         // Create a new RecordArray with the selected records
         let result = Self {
-            records: new_records,
-            field_names: self.field_names.clone(),
+            records: newrecords,
+            names: self.names.clone(),
             field_titles: self.field_titles.clone(),
             field_indices: self.field_indices.clone(),
             shape: vec![indices.len()],
@@ -704,19 +722,17 @@ impl RecordArray {
     ///
     /// # Errors
     /// Returns `ArrayError::ValueError` if the field name is not found.
-    pub fn filter<F>(&self, field_name: &str, condition: F) -> Result<Self, ArrayError>
+    pub fn filter<F>(&self, name: &str, condition: F) -> Result<Self, ArrayError>
     where
         F: Fn(&FieldValue) -> bool,
     {
         // Check if field exists
-        if !self.field_indices.contains_key(field_name) {
-            return Err(ArrayError::ValueError(format!(
-                "Field '{field_name}' not found"
-            )));
+        if !self.field_indices.contains_key(name) {
+            return Err(ArrayError::ValueError(format!("Field '{name}' not found")));
         }
 
         // Get all values for the field
-        let values = self.get_field_values(field_name)?;
+        let values = self.field_values(name)?;
 
         // Find indices where the condition is true
         let mut indices = Vec::new();
@@ -736,15 +752,15 @@ impl RecordArray {
     /// Returns `ArrayError::ValueError` if the arrays have incompatible field structures.
     pub fn merge(&self, other: &Self) -> Result<Self, ArrayError> {
         // Check field compatibility
-        if self.field_names.len() != other.field_names.len() {
+        if self.names.len() != other.names.len() {
             return Err(ArrayError::ValueError(format!(
                 "Cannot merge record arrays with different number of fields ({} vs {})",
-                self.field_names.len(),
-                other.field_names.len()
+                self.names.len(),
+                other.names.len()
             )));
         }
 
-        for name in &self.field_names {
+        for name in &self.names {
             if !other.field_indices.contains_key(name) {
                 return Err(ArrayError::ValueError(format!(
                     "Field '{name}' not found in the second record array"
@@ -753,14 +769,14 @@ impl RecordArray {
         }
 
         // Combine records
-        let mut new_records = Vec::with_capacity(self.records.len() + other.records.len());
-        new_records.extend_from_slice(&self.records);
-        new_records.extend_from_slice(&other.records);
+        let mut newrecords = Vec::with_capacity(self.records.len() + other.records.len());
+        newrecords.extend_from_slice(&self.records);
+        newrecords.extend_from_slice(&other.records);
 
         // Create merged RecordArray
         let result = Self {
-            records: new_records,
-            field_names: self.field_names.clone(),
+            records: newrecords,
+            names: self.names.clone(),
             field_titles: self.field_titles.clone(),
             field_indices: self.field_indices.clone(),
             shape: vec![self.records.len() + other.records.len()],
@@ -808,14 +824,14 @@ impl fmt::Display for RecordArray {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         writeln!(f, "RecordArray(")?;
 
-        let max_records_to_show = 10;
-        let num_records = self.records.len();
-        let show_all = num_records <= max_records_to_show;
+        let maxrecords_to_show = 10;
+        let numrecords = self.records.len();
+        let show_all = numrecords <= maxrecords_to_show;
 
         let records_to_show = if show_all {
             &self.records[..]
         } else {
-            let half = max_records_to_show / 2;
+            let half = maxrecords_to_show / 2;
             &self.records[..half]
         };
 
@@ -826,8 +842,8 @@ impl fmt::Display for RecordArray {
         if !show_all {
             writeln!(f, "  ...")?;
 
-            let half = max_records_to_show / 2;
-            let remaining = &self.records[num_records - half..];
+            let half = maxrecords_to_show / 2;
+            let remaining = &self.records[numrecords - half..];
 
             for record in remaining {
                 writeln!(f, "  {record},")?;
@@ -842,14 +858,12 @@ impl fmt::Display for RecordArray {
 ///
 /// # Errors
 /// Returns `ArrayError::ValueError` if field names don't match arrays count or arrays have different lengths.
-pub fn record_array_from_arrays(
-    field_names: &[&str],
-    arrays: &[Vec<FieldValue>],
-) -> Result<RecordArray, ArrayError> {
-    if field_names.len() != arrays.len() {
+#[allow(dead_code)]
+pub fn from_arrays(names: &[&str], arrays: &[Vec<FieldValue>]) -> Result<RecordArray, ArrayError> {
+    if names.len() != arrays.len() {
         return Err(ArrayError::ValueError(format!(
-            "Number of field names ({}) must match number of arrays ({})",
-            field_names.len(),
+            "Number of field _names ({}) must match number of arrays ({})",
+            names.len(),
             arrays.len()
         )));
     }
@@ -858,25 +872,25 @@ pub fn record_array_from_arrays(
         return Err(ArrayError::ValueError("No arrays provided".to_string()));
     }
 
-    let num_records = arrays[0].len();
+    let numrecords = arrays[0].len();
 
     // Check all arrays have the same length
     for (i, array) in arrays.iter().enumerate().skip(1) {
-        if array.len() != num_records {
+        if array.len() != numrecords {
             return Err(ArrayError::ValueError(format!(
-                "Array {i} has length {}, but expected {num_records}",
+                "Array {i} has length {}, but expected {numrecords}",
                 array.len()
             )));
         }
     }
 
     // Create records
-    let mut records = Vec::with_capacity(num_records);
+    let mut records = Vec::with_capacity(numrecords);
 
-    for i in 0..num_records {
+    for i in 0..numrecords {
         let mut record = Record::new();
 
-        for (name, array) in field_names.iter().zip(arrays.iter()) {
+        for (name, array) in names.iter().zip(arrays.iter()) {
             record.add_field(name, array[i].clone());
         }
 
@@ -890,8 +904,9 @@ pub fn record_array_from_arrays(
 ///
 /// # Errors
 /// Returns `ArrayError::ValueError` if field names don't match 3 arrays or arrays have different lengths.
+#[allow(dead_code)]
 pub fn record_array_from_typed_arrays<A, B, C>(
-    field_names: &[&str],
+    names: &[&str],
     arrays: (&[A], &[B], &[C]),
 ) -> Result<RecordArray, ArrayError>
 where
@@ -899,10 +914,10 @@ where
     B: Clone + Into<FieldValue>,
     C: Clone + Into<FieldValue>,
 {
-    if field_names.len() != 3 {
+    if names.len() != 3 {
         return Err(ArrayError::ValueError(format!(
-            "Number of field names ({}) must match number of arrays (3)",
-            field_names.len()
+            "Number of field _names ({}) must match number of arrays (3)",
+            names.len()
         )));
     }
 
@@ -923,9 +938,9 @@ where
     for i in 0..a_len {
         let mut record = Record::new();
 
-        record.add_field(field_names[0], arrays.0[i].clone().into());
-        record.add_field(field_names[1], arrays.1[i].clone().into());
-        record.add_field(field_names[2], arrays.2[i].clone().into());
+        record.add_field(names[0], arrays.0[i].clone().into());
+        record.add_field(names[1], arrays.1[i].clone().into());
+        record.add_field(names[2], arrays.2[i].clone().into());
 
         records.push(record);
     }
@@ -937,8 +952,9 @@ where
 ///
 /// # Errors
 /// Returns `ArrayError::ValueError` if field names don't match 3 tuple elements.
-pub fn record_array_from_records<A, B, C>(
-    field_names: &[&str],
+#[allow(dead_code)]
+pub fn record_array_fromrecords<A, B, C>(
+    names: &[&str],
     tuples: &[(A, B, C)],
 ) -> Result<RecordArray, ArrayError>
 where
@@ -946,10 +962,10 @@ where
     B: Clone + Into<FieldValue>,
     C: Clone + Into<FieldValue>,
 {
-    if field_names.len() != 3 {
+    if names.len() != 3 {
         return Err(ArrayError::ValueError(format!(
-            "Number of field names ({}) must match number of tuple elements (3)",
-            field_names.len()
+            "Number of field _names ({}) must match number of tuple elements (3)",
+            names.len()
         )));
     }
 
@@ -959,9 +975,9 @@ where
     for tuple in tuples {
         let mut record = Record::new();
 
-        record.add_field(field_names[0], tuple.0.clone().into());
-        record.add_field(field_names[1], tuple.1.clone().into());
-        record.add_field(field_names[2], tuple.2.clone().into());
+        record.add_field(names[0], tuple.0.clone().into());
+        record.add_field(names[1], tuple.1.clone().into());
+        record.add_field(names[2], tuple.2.clone().into());
 
         records.push(record);
     }

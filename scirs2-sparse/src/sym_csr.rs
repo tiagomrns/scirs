@@ -99,8 +99,7 @@ where
         if let Some(&last) = indptr.last() {
             if last != nnz {
                 return Err(SparseError::ValueError(format!(
-                    "Last indptr value ({}) must equal nnz ({})",
-                    last, nnz
+                    "Last indptr value ({last}) must equal nnz ({nnz})"
                 )));
             }
         }
@@ -417,7 +416,7 @@ where
         }
 
         // Create a temporary CSR matrix to check symmetry
-        let csr_matrix = CsrMatrix::new(
+        let csrmatrix = CsrMatrix::new(
             array.get_data().to_vec(),
             array.get_indptr().to_vec(),
             array.get_indices().to_vec(),
@@ -425,7 +424,7 @@ where
         )?;
 
         // Convert to symmetric CSR
-        let sym_csr = SymCsrMatrix::from_csr(&csr_matrix)?;
+        let sym_csr = SymCsrMatrix::from_csr(&csrmatrix)?;
 
         Ok(Self { inner: sym_csr })
     }
@@ -571,8 +570,8 @@ mod tests {
         let indices = vec![0, 0, 1, 1, 2];
         let indptr = vec![0, 1, 3, 5];
 
-        let sym_matrix = SymCsrMatrix::new(data, indptr, indices, (3, 3)).unwrap();
-        let sym_array = SymCsrArray::new(sym_matrix);
+        let symmatrix = SymCsrMatrix::new(data, indptr, indices, (3, 3)).unwrap();
+        let sym_array = SymCsrArray::new(symmatrix);
 
         assert_eq!(sym_array.inner().shape(), (3, 3));
 

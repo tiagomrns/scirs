@@ -296,8 +296,8 @@ where
     }
 
     /// Set the spatial index type
-    pub fn with_spatial_index(mut self, index_type: SpatialIndexType) -> Self {
-        self.spatial_index_type = index_type;
+    pub fn with_spatial_index(mut self, indextype: SpatialIndexType) -> Self {
+        self.spatial_index_type = indextype;
         self
     }
 
@@ -308,13 +308,13 @@ where
         values: &ArrayView1<F>,
     ) -> InterpolateResult<HighDimensionalInterpolator<F>> {
         if points.nrows() != values.len() {
-            return Err(InterpolateError::ValueError(
+            return Err(InterpolateError::invalid_input(
                 "Number of points must match number of values".to_string(),
             ));
         }
 
         if points.nrows() < 2 {
-            return Err(InterpolateError::ValueError(
+            return Err(InterpolateError::invalid_input(
                 "At least 2 points are required".to_string(),
             ));
         }
@@ -725,7 +725,7 @@ where
     /// Perform local interpolation using neighbors
     fn interpolate_local(
         &self,
-        _query: &Array1<F>,
+        self_query: &Array1<F>,
         neighbors: &[(usize, F)],
     ) -> InterpolateResult<F> {
         if neighbors.is_empty() {
@@ -980,6 +980,7 @@ where
 /// let query = Array1::from_vec(vec![0.5, 0.5, 0.5]);
 /// let result = interpolator.interpolate(&query.view()).unwrap();
 /// ```
+#[allow(dead_code)]
 pub fn make_knn_interpolator<F>(
     points: &ArrayView2<F>,
     values: &ArrayView1<F>,
@@ -1044,6 +1045,7 @@ where
 /// let query = Array1::from_vec(vec![1.5, 1.5, 1.5, 0.0, 0.0, 0.0]);
 /// let result = interpolator.interpolate(&query.view()).unwrap();
 /// ```
+#[allow(dead_code)]
 pub fn make_pca_interpolator<F>(
     points: &ArrayView2<F>,
     values: &ArrayView1<F>,
@@ -1109,6 +1111,7 @@ where
 /// let query = Array1::from_vec(vec![0.5, 0.5]);
 /// let result = interpolator.interpolate(&query.view()).unwrap();
 /// ```
+#[allow(dead_code)]
 pub fn make_local_rbf_interpolator<F>(
     points: &ArrayView2<F>,
     values: &ArrayView1<F>,

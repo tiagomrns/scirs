@@ -4,6 +4,7 @@ use scirs2_spatial::transform::{Rotation, RotationSpline};
 use std::error::Error;
 use std::f64::consts::PI;
 
+#[allow(dead_code)]
 fn main() -> Result<(), Box<dyn Error>> {
     println!("RotationSpline Example");
     println!("=====================\n");
@@ -48,7 +49,7 @@ fn main() -> Result<(), Box<dyn Error>> {
     println!("\nSampling at various times with SLERP:");
     for &t in &test_times {
         let rot = spline.interpolate(t);
-        let rotated = rot.apply(&point.view());
+        let rotated = rot.apply(&point.view()).unwrap();
         println!(
             "t = {:.1}: [{:.4}, {:.4}, {:.4}]",
             t, rotated[0], rotated[1], rotated[2]
@@ -65,7 +66,7 @@ fn main() -> Result<(), Box<dyn Error>> {
     println!("\nSampling at various times with cubic spline:");
     for &t in &test_times {
         let rot = spline.interpolate(t);
-        let rotated = rot.apply(&point.view());
+        let rotated = rot.apply(&point.view()).unwrap();
         println!(
             "t = {:.1}: [{:.4}, {:.4}, {:.4}]",
             t, rotated[0], rotated[1], rotated[2]
@@ -75,7 +76,7 @@ fn main() -> Result<(), Box<dyn Error>> {
     // Calculate angular velocities
     println!("\nCalculating angular velocities at sample times:");
     for &t in &test_times {
-        let velocity = spline.angular_velocity(t);
+        let velocity = spline.angular_velocity(t).unwrap();
 
         println!(
             "  t = {:.1}: [{:.4}, {:.4}, {:.4}] rad/s",
@@ -88,7 +89,7 @@ fn main() -> Result<(), Box<dyn Error>> {
     let (sample_times, sample_rotations) = spline.sample(9);
 
     for i in 0..9 {
-        let rotated = sample_rotations[i].apply(&point.view());
+        let rotated = sample_rotations[i].apply(&point.view()).unwrap();
         println!(
             "t = {:.2}: [{:.4}, {:.4}, {:.4}]",
             sample_times[i], rotated[0], rotated[1], rotated[2]
@@ -132,7 +133,7 @@ fn main() -> Result<(), Box<dyn Error>> {
     let (sample_times_3d, sample_rotations_3d) = spline_3d.sample(9);
 
     for i in 0..9 {
-        let rotated = sample_rotations_3d[i].apply(&point_3d.view());
+        let rotated = sample_rotations_3d[i].apply(&point_3d.view()).unwrap();
         println!(
             "t = {:.2}: [{:.4}, {:.4}, {:.4}]",
             sample_times_3d[i], rotated[0], rotated[1], rotated[2]
@@ -151,6 +152,7 @@ fn main() -> Result<(), Box<dyn Error>> {
 }
 
 /// Visualize the effect of rotation spline on a point in 2D
+#[allow(dead_code)]
 fn visualize_spline_rotations(
     spline: &RotationSpline,
     point: &Array1<f64>,
@@ -183,7 +185,7 @@ fn visualize_spline_rotations(
     // Extract rotation path
     let mut path = Vec::with_capacity(NUM_SAMPLES);
     for rotation in rotations.iter().take(NUM_SAMPLES) {
-        let rotated = rotation.apply(&point.view());
+        let rotated = rotation.apply(&point.view()).unwrap();
         path.push((rotated[0], rotated[1]));
     }
 
@@ -193,7 +195,7 @@ fn visualize_spline_rotations(
     // Create more visible dots for the control points
     let mut control_points = Vec::with_capacity(spline.rotations().len());
     for rot in spline.rotations() {
-        let rotated = rot.apply(&point.view());
+        let rotated = rot.apply(&point.view()).unwrap();
         control_points.push((rotated[0], rotated[1]));
     }
 
@@ -218,6 +220,7 @@ fn visualize_spline_rotations(
 }
 
 /// Visualize the effect of rotation spline on a point in 3D
+#[allow(dead_code)]
 fn visualize_spline_rotations_3d(
     spline: &RotationSpline,
     point: &Array1<f64>,
@@ -287,7 +290,7 @@ fn visualize_spline_rotations_3d(
     let mut yz_path = Vec::with_capacity(NUM_SAMPLES);
 
     for rotation in rotations.iter().take(NUM_SAMPLES) {
-        let rotated = rotation.apply(&point.view());
+        let rotated = rotation.apply(&point.view()).unwrap();
         xy_path.push((rotated[0], rotated[1]));
         xz_path.push((rotated[0], rotated[2]));
         yz_path.push((rotated[1], rotated[2]));
@@ -304,7 +307,7 @@ fn visualize_spline_rotations_3d(
     let mut yz_control_points = Vec::with_capacity(spline.rotations().len());
 
     for rot in spline.rotations() {
-        let rotated = rot.apply(&point.view());
+        let rotated = rot.apply(&point.view()).unwrap();
         xy_control_points.push((rotated[0], rotated[1]));
         xz_control_points.push((rotated[0], rotated[2]));
         yz_control_points.push((rotated[1], rotated[2]));

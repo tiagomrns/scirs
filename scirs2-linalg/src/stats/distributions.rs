@@ -11,7 +11,7 @@ use std::f64::consts::PI;
 use crate::basic::{det, inv};
 use crate::decomposition::cholesky;
 use crate::error::{LinalgError, LinalgResult};
-use crate::random::random_normal_matrix;
+use crate::random::random_normalmatrix;
 
 /// Parameters for a matrix normal distribution
 ///
@@ -39,8 +39,8 @@ impl<F: Float + Zero + One + Copy + std::fmt::Debug + std::fmt::Display> MatrixN
     /// # Returns
     ///
     /// * Matrix normal parameters
-    pub fn new(mean: Array2<F>, row_cov: Array2<F>, col_cov: Array2<F>) -> LinalgResult<Self> {
-        let (m, n) = mean.dim();
+    pub fn new(_mean: Array2<F>, row_cov: Array2<F>, colcov: Array2<F>) -> LinalgResult<Self> {
+        let (m, n) = _mean.dim();
 
         if row_cov.dim() != (m, m) {
             return Err(LinalgError::ShapeError(format!(
@@ -51,19 +51,19 @@ impl<F: Float + Zero + One + Copy + std::fmt::Debug + std::fmt::Display> MatrixN
             )));
         }
 
-        if col_cov.dim() != (n, n) {
+        if colcov.dim() != (n, n) {
             return Err(LinalgError::ShapeError(format!(
                 "Column covariance must be {}x{}, got {:?}",
                 n,
                 n,
-                col_cov.dim()
+                colcov.dim()
             )));
         }
 
         Ok(Self {
-            mean,
+            mean: _mean,
             row_cov,
-            col_cov,
+            col_cov: colcov,
         })
     }
 }
@@ -102,8 +102,7 @@ impl<F: Float + Zero + One + Copy + std::fmt::Debug + std::fmt::Display> Wishart
         let min_dof = F::from(p).unwrap() - F::one();
         if dof <= min_dof {
             return Err(LinalgError::InvalidInputError(format!(
-                "Degrees of freedom must be > {}, got {:?}",
-                min_dof, dof
+                "Degrees of freedom must be > {min_dof}, got {dof:?}"
             )));
         }
 
@@ -121,6 +120,7 @@ impl<F: Float + Zero + One + Copy + std::fmt::Debug + std::fmt::Display> Wishart
 /// # Returns
 ///
 /// * Log probability density
+#[allow(dead_code)]
 pub fn matrix_normal_logpdf<F>(x: &ArrayView2<F>, params: &MatrixNormalParams<F>) -> LinalgResult<F>
 where
     F: Float
@@ -131,7 +131,10 @@ where
         + ndarray::ScalarOperand
         + num_traits::FromPrimitive
         + num_traits::NumAssign
-        + std::iter::Sum,
+        + std::iter::Sum
+        + Send
+        + Sync
+        + 'static,
 {
     let (m, n) = x.dim();
 
@@ -179,6 +182,7 @@ where
 /// # Returns
 ///
 /// * Log probability density
+#[allow(dead_code)]
 pub fn wishart_logpdf<F>(x: &ArrayView2<F>, params: &WishartParams<F>) -> LinalgResult<F>
 where
     F: Float
@@ -189,7 +193,10 @@ where
         + ndarray::ScalarOperand
         + num_traits::FromPrimitive
         + num_traits::NumAssign
-        + std::iter::Sum,
+        + std::iter::Sum
+        + Send
+        + Sync
+        + 'static,
 {
     let p = x.nrows();
 
@@ -242,7 +249,8 @@ where
 /// # Returns
 ///
 /// * Random matrix sample
-pub fn sample_matrix_normal<F>(
+#[allow(dead_code)]
+pub fn samplematrix_normal<F>(
     params: &MatrixNormalParams<F>,
     rng_seed: Option<u64>,
 ) -> LinalgResult<Array2<F>>
@@ -255,12 +263,15 @@ where
         + ndarray::ScalarOperand
         + num_traits::FromPrimitive
         + num_traits::NumAssign
-        + std::iter::Sum,
+        + std::iter::Sum
+        + Send
+        + Sync
+        + 'static,
 {
     let (m, n) = params.mean.dim();
 
     // Generate standard normal matrix
-    let z = random_normal_matrix((m, n), rng_seed)?;
+    let z = random_normalmatrix((m, n), rng_seed)?;
 
     // Compute Cholesky factorizations
     let l_u = cholesky(&params.row_cov.view(), None)?;
@@ -283,6 +294,7 @@ where
 /// # Returns
 ///
 /// * Random positive definite matrix sample
+#[allow(dead_code)]
 pub fn sample_wishart<F>(
     params: &WishartParams<F>,
     rng_seed: Option<u64>,
@@ -296,7 +308,10 @@ where
         + ndarray::ScalarOperand
         + num_traits::FromPrimitive
         + num_traits::NumAssign
-        + std::iter::Sum,
+        + std::iter::Sum
+        + Send
+        + Sync
+        + 'static,
 {
     let p = params.scale.nrows();
 
@@ -310,7 +325,7 @@ where
 
     // Fill lower triangular part with random values
     // This is a simplified version - in practice you'd use proper random distributions
-    let z = random_normal_matrix::<F>((p, p), rng_seed)?;
+    let z = random_normalmatrix::<F>((p, p), rng_seed)?;
 
     for i in 0..p {
         for j in 0..=i {
@@ -338,6 +353,7 @@ where
 /// Compute the multivariate log gamma function
 ///
 /// Γ_p(x) = π^{p(p-1)/4} * ∏_{j=1}^p Γ(x + (1-j)/2)
+#[allow(dead_code)]
 fn multivariate_log_gamma<F>(x: F, p: usize) -> LinalgResult<F>
 where
     F: Float + Zero + One + Copy + std::fmt::Debug + num_traits::FromPrimitive,
@@ -367,7 +383,7 @@ mod tests {
     use ndarray::array;
 
     #[test]
-    fn test_matrix_normal_params() {
+    fn testmatrix_normal_params() {
         let mean = array![[1.0, 2.0], [3.0, 4.0]];
         let row_cov = array![[1.0, 0.0], [0.0, 1.0]];
         let col_cov = array![[2.0, 0.0], [0.0, 2.0]];
@@ -389,7 +405,7 @@ mod tests {
     }
 
     #[test]
-    fn test_matrix_normal_logpdf() {
+    fn testmatrix_normal_logpdf() {
         let x = array![[1.0, 0.0], [0.0, 1.0]];
         let mean = array![[0.0, 0.0], [0.0, 0.0]];
         let row_cov = array![[1.0, 0.0], [0.0, 1.0]];
@@ -403,13 +419,13 @@ mod tests {
     }
 
     #[test]
-    fn test_sample_matrix_normal() {
+    fn test_samplematrix_normal() {
         let mean = array![[0.0, 0.0], [0.0, 0.0]];
         let row_cov = array![[1.0, 0.0], [0.0, 1.0]];
         let col_cov = array![[1.0, 0.0], [0.0, 1.0]];
 
         let params = MatrixNormalParams::new(mean, row_cov, col_cov).unwrap();
-        let sample = sample_matrix_normal(&params, Some(42)).unwrap();
+        let sample = samplematrix_normal(&params, Some(42)).unwrap();
 
         assert_eq!(sample.dim(), (2, 2));
         assert!(sample.iter().all(|&x| x.is_finite()));
@@ -469,6 +485,7 @@ impl<F: Float + Zero + One + Copy + std::fmt::Debug + std::fmt::Display> Inverse
 /// # Returns
 ///
 /// * Log probability density
+#[allow(dead_code)]
 pub fn inverse_wishart_logpdf<F>(
     x: &ArrayView2<F>,
     params: &InverseWishartParams<F>,
@@ -482,7 +499,10 @@ where
         + std::fmt::Display
         + num_traits::NumAssign
         + std::iter::Sum
-        + 'static,
+        + 'static
+        + Send
+        + Sync
+        + ndarray::ScalarOperand,
 {
     let p = F::from(x.nrows()).unwrap();
     let nu = params.dof;
@@ -597,6 +617,7 @@ impl<F: Float + Zero + One + Copy + std::fmt::Debug + std::fmt::Display> MatrixT
 /// # Returns
 ///
 /// * Log probability density
+#[allow(dead_code)]
 pub fn matrix_t_logpdf<F>(x: &ArrayView2<F>, params: &MatrixTParams<F>) -> LinalgResult<F>
 where
     F: Float
@@ -607,7 +628,10 @@ where
         + std::fmt::Display
         + num_traits::NumAssign
         + std::iter::Sum
-        + 'static,
+        + 'static
+        + Send
+        + Sync
+        + ndarray::ScalarOperand,
 {
     let (n, p) = (x.nrows(), x.ncols());
     let nu = params.dof;
@@ -666,7 +690,7 @@ mod extended_tests {
     }
 
     #[test]
-    fn test_matrix_t_params() {
+    fn testmatrix_t_params() {
         let location = array![[0.0, 0.0], [0.0, 0.0]];
         let scale_u = array![[1.0, 0.0], [0.0, 1.0]];
         let scale_v = array![[1.0, 0.0], [0.0, 1.0]];
@@ -696,7 +720,7 @@ mod extended_tests {
     }
 
     #[test]
-    fn test_matrix_t_logpdf() {
+    fn testmatrix_t_logpdf() {
         let x = array![[1.0, 0.5], [0.5, 1.0]];
         let location = array![[0.0, 0.0], [0.0, 0.0]];
         let scale_u = array![[1.0, 0.0], [0.0, 1.0]];

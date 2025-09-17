@@ -11,6 +11,7 @@ use crate::stochastic::{
 };
 use crate::unconstrained::result::OptimizeResult;
 use ndarray::Array1;
+use statrs::statistics::Statistics;
 
 /// Options for AdamW optimization
 #[derive(Debug, Clone)]
@@ -58,6 +59,7 @@ impl Default for AdamWOptions {
 }
 
 /// AdamW optimizer implementation
+#[allow(dead_code)]
 pub fn minimize_adamw<F>(
     mut grad_func: F,
     mut x: Array1<f64>,
@@ -173,7 +175,7 @@ where
                 let grad_norm = gradient.mapv(|g| g * g).sum().sqrt();
                 let param_norm = x.mapv(|p| p * p).sum().sqrt();
                 let m_norm = m_hat.mapv(|g: f64| g * g).sum().sqrt();
-                let v_mean = v_hat.mean().unwrap_or(0.0);
+                let v_mean = v_hat.mean();
                 println!("  Iteration {}: loss = {:.6e}, |grad| = {:.3e}, |param| = {:.3e}, |m| = {:.3e}, <v> = {:.3e}, lr = {:.3e}",
                     iteration, current_loss, grad_norm, param_norm, m_norm, v_mean, current_lr);
             }
@@ -184,7 +186,6 @@ where
                 return Ok(OptimizeResult {
                     x: best_x,
                     fun: best_f,
-                    iterations: iteration,
                     nit: iteration,
                     func_evals,
                     nfev: func_evals,
@@ -205,7 +206,6 @@ where
                 return Ok(OptimizeResult {
                     x: best_x,
                     fun: best_f,
-                    iterations: iteration,
                     nit: iteration,
                     func_evals,
                     nfev: func_evals,
@@ -226,7 +226,6 @@ where
     Ok(OptimizeResult {
         x: best_x,
         fun: final_loss.min(best_f),
-        iterations: options.max_iter,
         nit: options.max_iter,
         func_evals,
         nfev: func_evals,
@@ -238,6 +237,7 @@ where
 }
 
 /// AdamW with cosine annealing and restarts
+#[allow(dead_code)]
 pub fn minimize_adamw_cosine_restarts<F>(
     mut grad_func: F,
     mut x: Array1<f64>,
@@ -307,7 +307,6 @@ where
     Ok(OptimizeResult {
         x: global_best_x,
         fun: global_best_f,
-        iterations: cycle_start,
         nit: cycle_start,
         func_evals: 0, // Would need to track across cycles
         nfev: 0,
@@ -322,6 +321,7 @@ where
 }
 
 /// Helper function for a single cycle of AdamW with cosine annealing
+#[allow(dead_code)]
 fn minimize_adamw_cycle<F>(
     grad_func: &mut F,
     mut x: Array1<f64>,
@@ -400,7 +400,6 @@ where
     Ok(OptimizeResult {
         x: best_x,
         fun: best_f,
-        iterations: options.max_iter,
         nit: options.max_iter,
         func_evals: 0,
         nfev: 0,
@@ -422,12 +421,12 @@ mod tests {
     struct QuadraticFunction;
 
     impl StochasticGradientFunction for QuadraticFunction {
-        fn compute_gradient(&mut self, x: &ArrayView1<f64>, _batch_data: &[f64]) -> Array1<f64> {
+        fn compute_gradient(&mut self, x: &ArrayView1<f64>, _batchdata: &[f64]) -> Array1<f64> {
             // Gradient of f(x) = sum(x_i^2) is 2*x
             x.mapv(|xi| 2.0 * xi)
         }
 
-        fn compute_value(&mut self, x: &ArrayView1<f64>, _batch_data: &[f64]) -> f64 {
+        fn compute_value(&mut self, x: &ArrayView1<f64>, _batchdata: &[f64]) -> f64 {
             // f(x) = sum(x_i^2)
             x.mapv(|xi| xi * xi).sum()
         }

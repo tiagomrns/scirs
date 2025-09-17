@@ -12,6 +12,7 @@ use crate::common::IntegrateFloat;
 use crate::error::IntegrateResult;
 use crate::symplectic::{HamiltonianFn, SymplecticIntegrator};
 use ndarray::Array1;
+use std::f64::consts::PI;
 use std::marker::PhantomData;
 
 /// Störmer-Verlet Method (also known as Leapfrog)
@@ -82,6 +83,7 @@ impl<F: IntegrateFloat> SymplecticIntegrator<F> for StormerVerlet<F> {
 /// For separable Hamiltonians, this simplifies to:
 /// 1. q_{n+1} = q_n + dt * p_n/m
 /// 2. p_{n+1} = p_n - dt * ∇V(q_{n+1})
+#[allow(dead_code)]
 pub fn velocity_verlet<F: IntegrateFloat>(
     system: &dyn HamiltonianFn<F>,
     t: F,
@@ -116,6 +118,7 @@ pub fn velocity_verlet<F: IntegrateFloat>(
 /// 1. p_{n+1/2} = p_n + (dt/2) * dp/dt(t_n, q_n, p_n)
 /// 2. q_{n+1} = q_n + dt * dq/dt(t_n+dt/2, q_n, p_{n+1/2})
 /// 3. p_{n+1} = p_{n+1/2} + (dt/2) * dp/dt(t_n+dt, q_{n+1}, p_{n+1/2})
+#[allow(dead_code)]
 pub fn position_verlet<F: IntegrateFloat>(
     system: &dyn HamiltonianFn<F>,
     t: F,
@@ -132,7 +135,6 @@ mod tests {
     use super::*;
     use crate::symplectic::potential::SeparableHamiltonian;
     use ndarray::array;
-    use std::f64::consts::PI;
 
     /// Test with simple harmonic oscillator
     #[test]
@@ -153,7 +155,7 @@ mod tests {
 
         // Integrate for a full period
         let period = 2.0 * PI;
-        let steps = (period / dt).round() as usize;
+        let steps = ((period / dt) as f64).round() as usize;
 
         let integrator = StormerVerlet::new();
         let mut q = q0.clone();
@@ -191,7 +193,7 @@ mod tests {
 
         // Integrate for one period
         let period = 2.0 * PI;
-        let steps = (period / dt).round() as usize;
+        let steps = ((period / dt) as f64).round() as usize;
 
         // Test StörmerVerlet
         let mut q1 = q0.clone();
@@ -259,14 +261,14 @@ mod tests {
 
         // Check energy conservation
         if let Some(error) = result.energy_relative_error {
-            assert!(error < 1e-3, "Energy error too large: {}", error);
+            assert!(error < 1e-3, "Energy error too large: {error}");
         }
 
         // For circular orbit, distance from origin should be approximately constant
         for i in 0..result.q.len() {
             let q = &result.q[i];
             let r = (q[0] * q[0] + q[1] * q[1]).sqrt();
-            assert!((r - 1.0).abs() < 0.01, "Orbit not circular, r = {}", r);
+            assert!((r - 1.0).abs() < 0.01, "Orbit not circular, r = {r}");
         }
     }
 }

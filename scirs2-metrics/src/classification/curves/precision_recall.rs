@@ -32,6 +32,7 @@ use ndarray::{Array1, ArrayBase, Data, Dimension};
 /// Type alias for precision-recall curve result
 pub type PrecisionRecallCurveResult = (Array1<f64>, Array1<f64>, Array1<f64>);
 
+#[allow(dead_code)]
 pub fn precision_recall_curve<S1, S2, D1, D2>(
     y_true: &ArrayBase<S1, D1>,
     y_score: &ArrayBase<S2, D2>,

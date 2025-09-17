@@ -56,6 +56,7 @@ pub mod tucker;
 /// assert_eq!(result.shape(), &[2, 2, 2, 2]);
 /// ```
 #[allow(clippy::too_many_arguments)]
+#[allow(dead_code)]
 pub fn contract<A, D1, D2>(
     a: &ArrayView<A, D1>,
     b: &ArrayView<A, D2>,
@@ -105,22 +106,22 @@ where
     }
 
     // Determine the axes that are not contracted
-    let free_axes_a: Vec<usize> = (0..a.ndim()).filter(|&ax| !axes_a.contains(&ax)).collect();
-    let free_axes_b: Vec<usize> = (0..b.ndim()).filter(|&ax| !axes_b.contains(&ax)).collect();
+    let free_axes_a: Vec<usize> = (0.._a.ndim()).filter(|&ax| !axes_a.contains(&ax)).collect();
+    let free_axes_b: Vec<usize> = (0.._b.ndim()).filter(|&ax| !axes_b.contains(&ax)).collect();
 
     // Determine the shape of the result tensor
-    let mut result_shape = Vec::with_capacity(free_axes_a.len() + free_axes_b.len());
+    let mut resultshape = Vec::with_capacity(free_axes_a.len() + free_axes_b.len());
     let mut free_dims_a = Vec::with_capacity(free_axes_a.len());
     let mut free_dims_b = Vec::with_capacity(free_axes_b.len());
 
     for &ax in &free_axes_a {
-        result_shape.push(a.shape()[ax]);
-        free_dims_a.push(a.shape()[ax]);
+        resultshape.push(_a.shape()[ax]);
+        free_dims_a.push(_a.shape()[ax]);
     }
 
     for &ax in &free_axes_b {
-        result_shape.push(b.shape()[ax]);
-        free_dims_b.push(b.shape()[ax]);
+        resultshape.push(_b.shape()[ax]);
+        free_dims_b.push(_b.shape()[ax]);
     }
 
     // Convert to dynamic array views
@@ -128,7 +129,7 @@ where
     let b_dyn = b.view().into_dyn();
 
     // Create the result tensor
-    let result = ArrayD::zeros(result_shape.clone());
+    let result = ArrayD::zeros(resultshape.clone());
     let result = Arc::new(Mutex::new(result));
 
     // Generate all free indices combinations
@@ -188,10 +189,10 @@ where
 
             // Recursively compute the contraction for all contracted indices
             fn accumulate_sum<A>(
-                a: &ArrayViewD<A>,
-                b: &ArrayViewD<A>,
-                a_idx: &mut Vec<usize>,
-                b_idx: &mut Vec<usize>,
+                _a: &ArrayViewD<A>,
+                _b: &ArrayViewD<A>,
+                _a_idx: &mut Vec<usize>,
+                _b_idx: &mut Vec<usize>,
                 axes_a: &[usize],
                 axes_b: &[usize],
                 depth: usize,
@@ -212,7 +213,7 @@ where
                 for i in 0..dim {
                     a_idx[ax_a] = i;
                     b_idx[ax_b] = i;
-                    accumulate_sum(a, b, a_idx, b_idx, axes_a, axes_b, depth + 1, sum);
+                    accumulate_sum(_a, b, a_idx, b_idx, axes_a, axes_b, depth + 1, sum);
                 }
             }
 
@@ -272,6 +273,7 @@ where
 /// // Check a specific result: a[0] @ b[0]
 /// assert_eq!(result[[0, 0, 0]], 1.0 * 1.0 + 2.0 * 3.0 + 3.0 * 5.0);
 /// ```
+#[allow(dead_code)]
 pub fn batch_matmul<A, D1, D2>(
     a: &ArrayView<A, D1>,
     b: &ArrayView<A, D2>,
@@ -313,29 +315,29 @@ where
     }
 
     // Determine output shape
-    let mut out_shape = Vec::with_capacity(batch_dims + 2);
+    let mut outshape = Vec::with_capacity(batch_dims + 2);
     for i in 0..batch_dims {
-        out_shape.push(a.shape()[i]);
+        outshape.push(a.shape()[i]);
     }
-    out_shape.push(a.shape()[batch_dims]); // M
-    out_shape.push(b.shape()[batch_dims + 1]); // N
+    outshape.push(a.shape()[batch_dims]); // M
+    outshape.push(b.shape()[batch_dims + 1]); // N
 
     // Convert to dynamic array views
     let a_dyn = a.view().into_dyn();
     let b_dyn = b.view().into_dyn();
 
     // Flatten batch dimensions
-    let batch_size: usize = out_shape.iter().take(batch_dims).product();
+    let batchsize: usize = outshape.iter().take(batch_dims).product();
     let m = a.shape()[batch_dims]; // rows in A
     let k = a.shape()[batch_dims + 1]; // cols in A, rows in B
     let n = b.shape()[batch_dims + 1]; // cols in B
 
     // Create result array
-    let result = ArrayD::zeros(out_shape.clone());
+    let result = ArrayD::zeros(outshape.clone());
     let result = Arc::new(Mutex::new(result));
 
     // Generate all batch indices
-    let mut all_batch_indices = Vec::with_capacity(batch_size);
+    let mut all_batch_indices = Vec::with_capacity(batchsize);
 
     fn generate_batch_indices(
         shape: &[usize],
@@ -344,26 +346,20 @@ where
         max_depth: usize,
         all_indices: &mut Vec<Vec<usize>>,
     ) {
-        if depth == max_depth {
+        if _depth == max_depth {
             all_indices.push(current);
             return;
         }
 
         let mut current = current;
-        for i in 0..shape[depth] {
+        for i in 0..shape[_depth] {
             current.push(i);
-            generate_batch_indices(shape, current.clone(), depth + 1, max_depth, all_indices);
+            generate_batch_indices(shape, current.clone(), _depth + 1, max_depth, all_indices);
             current.pop();
         }
     }
 
-    generate_batch_indices(
-        &out_shape,
-        Vec::new(),
-        0,
-        batch_dims,
-        &mut all_batch_indices,
-    );
+    generate_batch_indices(&outshape, Vec::new(), 0, batch_dims, &mut all_batch_indices);
 
     // Process each batch in parallel
     use scirs2_core::parallel_ops::*;
@@ -451,6 +447,7 @@ where
 /// // The result should have shape 4x3x2
 /// assert_eq!(result.shape(), &[4, 3, 2]);
 /// ```
+#[allow(dead_code)]
 pub fn mode_n_product<A, D1, D2>(
     tensor: &ArrayView<A, D1>,
     matrix: &ArrayView<A, D2>,
@@ -489,8 +486,8 @@ where
     }
 
     // Determine output shape
-    let mut out_shape = tensor.shape().to_vec();
-    out_shape[mode] = matrix.shape()[0];
+    let mut outshape = tensor.shape().to_vec();
+    outshape[mode] = matrix.shape()[0];
 
     // Convert to dynamic array views
     let tensor_dyn = tensor.view().into_dyn();
@@ -504,7 +501,7 @@ where
     };
 
     // Create result array with mutex for thread-safe updates
-    let result = ArrayD::zeros(out_shape.clone());
+    let result = ArrayD::zeros(outshape.clone());
     let result = Arc::new(Mutex::new(result));
 
     // Generate all indices for tensor except the mode dimension
@@ -531,22 +528,21 @@ where
 
         // Skip mode dimension
         if depth == mode {
-            generate_indices_without_mode(shape, current, depth + 1, mode, _mode_dim, all_indices);
+            generate_indices_without_mode(shape, current, depth + 1, mode_mode_dim, all_indices);
             return;
         }
 
         let current_dim = if depth > mode { depth - 1 } else { depth };
-        let dim_size = shape[current_dim];
+        let dimsize = shape[current_dim];
 
         let mut current = current;
-        for i in 0..dim_size {
+        for i in 0..dimsize {
             current.push(i);
             generate_indices_without_mode(
                 shape,
                 current.clone(),
                 depth + 1,
-                mode,
-                _mode_dim,
+                mode_mode_dim,
                 all_indices,
             );
             current.pop();
@@ -641,6 +637,7 @@ where
 /// assert_eq!(result[[0, 0]], 1.0 * 1.0 + 2.0 * 5.0 + 3.0 * 9.0);
 /// ```
 #[allow(clippy::type_complexity)]
+#[allow(dead_code)]
 pub fn einsum<'a, A>(
     einsum_str: &str,
     tensors: &'a [&'a ArrayViewD<'a, A>],
@@ -649,9 +646,9 @@ where
     A: Clone + Float + NumAssign + Zero + Send + Sync + Sum + Debug + 'static,
 {
     // Parse the einsum string
-    fn parse_einsum_notation(einsum_str: &str) -> LinalgResult<(Vec<Vec<char>>, Vec<char>)> {
+    fn parse_einsum_notation(_einsumstr: &_str) -> LinalgResult<(Vec<Vec<char>>, Vec<char>)> {
         // Split the string into input and output parts
-        let parts: Vec<&str> = einsum_str.split("->").collect();
+        let parts: Vec<&_str> = einsum_str.split("->").collect();
         if parts.len() != 2 {
             return Err(LinalgError::ValueError(
                 "Einsum string must contain exactly one '->'".to_string(),
@@ -659,7 +656,7 @@ where
         }
 
         // Parse input indices
-        let inputs: Vec<&str> = parts[0].split(',').collect();
+        let inputs: Vec<&_str> = parts[0].split(',').collect();
         let mut input_indices = Vec::with_capacity(inputs.len());
         for input in inputs {
             let indices: Vec<char> = input.trim().chars().collect();
@@ -701,16 +698,16 @@ where
 
     // First pass: collect all dimension sizes and check consistency
     for (tensor, indices) in tensors.iter().zip(input_indices.iter()) {
-        for (&dim_size, &idx) in tensor.shape().iter().zip(indices.iter()) {
+        for (&dimsize, &idx) in tensor.shape().iter().zip(indices.iter()) {
             if let Some(&existing_dim) = index_to_dim.get(&idx) {
-                if existing_dim != dim_size {
+                if existing_dim != dimsize {
                     return Err(LinalgError::ShapeError(format!(
                         "Inconsistent dimensions for index '{}': {} and {}",
-                        idx, existing_dim, dim_size
+                        idx, existing_dim, dimsize
                     )));
                 }
             } else {
-                index_to_dim.insert(idx, dim_size);
+                index_to_dim.insert(idx, dimsize);
             }
         }
     }
@@ -726,13 +723,13 @@ where
     }
 
     // Determine output shape
-    let mut output_shape = Vec::with_capacity(output_indices.len());
+    let mut outputshape = Vec::with_capacity(output_indices.len());
     for &idx in &output_indices {
-        output_shape.push(index_to_dim[&idx]);
+        outputshape.push(index_to_dim[&idx]);
     }
 
     // Create the output tensor
-    let result = Arc::new(Mutex::new(ArrayD::zeros(output_shape.clone())));
+    let result = Arc::new(Mutex::new(ArrayD::zeros(outputshape.clone())));
 
     // Collect contracted indices (those not in output_indices)
     let mut contracted_indices: Vec<char> = Vec::new();
@@ -746,7 +743,7 @@ where
 
     // Generate all output index combinations
     let mut all_output_indices = Vec::new();
-    let total_output_combinations: usize = output_shape.iter().product();
+    let total_output_combinations: usize = outputshape.iter().product();
     all_output_indices.reserve(total_output_combinations);
 
     fn generate_output_indices(
@@ -768,7 +765,7 @@ where
         }
     }
 
-    generate_output_indices(&output_shape, Vec::new(), 0, &mut all_output_indices);
+    generate_output_indices(&outputshape, Vec::new(), 0, &mut all_output_indices);
 
     // Process each output combination in parallel
     use scirs2_core::parallel_ops::*;
@@ -794,17 +791,17 @@ where
             where
                 A: Clone + Float + NumAssign + Zero + One,
             {
-                // Base case: all contracted indices have values assigned
+                // Base case: all contracted _indices have _values assigned
                 if depth == contracted_indices.len() {
                     // Compute product of tensor elements
                     let mut product = A::one();
 
-                    for (tensor, indices) in tensors.iter().zip(input_indices.iter()) {
+                    for (tensor_indices) in tensors.iter().zip(input_indices.iter()) {
                         // Create index array for this tensor
                         let tensor_indices: Vec<usize> =
                             indices.iter().map(|&idx| index_values[&idx]).collect();
 
-                        // Multiply by tensor element at these indices
+                        // Multiply by tensor element at these _indices
                         product *= tensor[tensor_indices.as_slice()];
                     }
 
@@ -813,10 +810,10 @@ where
 
                 // Recursive case: assign a value to the current contracted index
                 let idx = contracted_indices[depth];
-                let dim = index_to_dim[&idx];
+                let _dim = index_to_dim[&idx];
                 let mut sum = A::zero();
 
-                for i in 0..dim {
+                for i in 0.._dim {
                     index_values.insert(idx, i);
                     sum += compute_sum_recursive(
                         tensors,
@@ -890,6 +887,7 @@ where
 /// assert_eq!(factors[1].shape(), &[2, 2]); // mode 2
 /// assert_eq!(factors[2].shape(), &[2, 2]); // mode 3
 /// ```
+#[allow(dead_code)]
 pub fn hosvd<A, D>(
     tensor: &ArrayView<A, D>,
     rank: &[usize],
@@ -960,13 +958,14 @@ where
 
 // Helper function to unfold a tensor along a specified mode
 // "Unfolding" means reshaping a tensor into a matrix
+#[allow(dead_code)]
 fn unfold<A>(tensor: &ArrayD<A>, mode: usize) -> LinalgResult<Array2<A>>
 where
     A: Clone + Float + Debug + Send + Sync,
 {
     if mode >= tensor.ndim() {
         return Err(LinalgError::ShapeError(format!(
-            "Mode {} is out of bounds for tensor with {} dimensions",
+            "Mode {} is out of bounds for _tensor with {} dimensions",
             mode,
             tensor.ndim()
         )));
@@ -979,7 +978,7 @@ where
     let other_dims_prod: usize = shape
         .iter()
         .enumerate()
-        .filter(|&(i, _)| i != mode)
+        .filter(|&(i_)| i != mode)
         .map(|(_, &dim)| dim)
         .product();
 
@@ -1001,12 +1000,12 @@ where
         col_idx
     }
 
-    // Populate the unfolded tensor (vectorized for better performance)
-    let tensor_shape = tensor.shape().to_vec();
+    // Populate the unfolded _tensor (vectorized for better performance)
+    let tensorshape = tensor.shape().to_vec();
 
     // Generate all indices
     let mut all_indices = Vec::new();
-    let total_elements: usize = tensor_shape.iter().product();
+    let total_elements: usize = tensorshape.iter().product();
     all_indices.reserve(total_elements);
 
     fn generate_tensor_indices(
@@ -1028,7 +1027,7 @@ where
         }
     }
 
-    generate_tensor_indices(&tensor_shape, Vec::new(), 0, &mut all_indices);
+    generate_tensor_indices(&tensorshape, Vec::new(), 0, &mut all_indices);
 
     // Process all indices in parallel
     use scirs2_core::parallel_ops::*;
@@ -1037,7 +1036,7 @@ where
         .par_iter()
         .map(|idx| {
             let mode_idx = idx[mode];
-            let col_idx = calc_col_idx(idx, &tensor_shape, mode);
+            let col_idx = calc_col_idx(idx, &tensorshape, mode);
             let val = tensor[idx.as_slice()];
             (mode_idx, col_idx, val)
         })
@@ -1052,6 +1051,7 @@ where
 }
 
 // Helper function to compute truncated SVD
+#[allow(dead_code)]
 pub fn svd_truncated<A>(
     matrix: &Array2<A>,
     rank: usize,
@@ -1089,7 +1089,7 @@ mod tests {
     use ndarray::array;
 
     #[test]
-    fn test_matrix_multiplication() {
+    fn testmatrix_multiplication() {
         // 2x3 matrix
         let a = array![[1.0, 2.0, 3.0], [4.0, 5.0, 6.0]];
 
@@ -1145,7 +1145,7 @@ mod tests {
     }
 
     #[test]
-    fn test_einsum_matrix_multiplication() {
+    fn test_einsummatrix_multiplication() {
         // Matrix multiplication: "ij,jk->ik"
         let a = array![[1.0, 2.0, 3.0], [4.0, 5.0, 6.0]];
         let b = array![[7.0, 8.0], [9.0, 10.0], [11.0, 12.0]];

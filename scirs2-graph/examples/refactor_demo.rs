@@ -5,7 +5,11 @@
 
 use scirs2_graph::algorithms::*;
 use scirs2_graph::generators::{create_digraph, create_graph};
+use scirs2_graph::{
+    connected_components, diameter, dijkstra_path, minimum_spanning_tree, pagerank, radius,
+};
 
+#[allow(dead_code)]
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("=== scirs2-graph Refactoring Demo ===\n");
 
@@ -25,7 +29,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // 2. Shortest Path Algorithm (from shortest_path module)
     println!("\n2. Shortest Path:");
-    if let Ok(Some(path)) = shortest_path(&graph, &1, &4) {
+    if let Ok(Some(path)) = dijkstra_path(&graph, &1, &4) {
         println!(
             "   Path from 1 to 4: {:?} (weight: {})",
             path.nodes, path.total_weight

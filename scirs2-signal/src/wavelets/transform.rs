@@ -1,4 +1,4 @@
-//! Core wavelet transform implementations
+// Core wavelet transform implementations
 
 use super::cwt::{convolve_complex_same_complex, convolve_complex_same_real};
 use crate::error::{SignalError, SignalResult};
@@ -6,6 +6,7 @@ use num_complex::Complex64;
 use num_traits::NumCast;
 use std::fmt::Debug;
 
+#[allow(unused_imports)]
 /// Continuous wavelet transform
 ///
 /// # Arguments
@@ -59,6 +60,7 @@ use std::fmt::Debug;
 /// assert_eq!(result.len(), scales.len());
 /// assert_eq!(result[0].len(), signal.len());
 /// ```
+#[allow(dead_code)]
 pub fn cwt<T, F, W>(data: &[T], wavelet: F, scales: &[f64]) -> SignalResult<Vec<Vec<Complex64>>>
 where
     T: NumCast + Debug + Copy,
@@ -81,9 +83,9 @@ where
         .collect();
 
     // Process data based on type
-    let data_complex: Vec<Complex64> = if let Ok(real_data) = data_real {
+    let data_complex: Vec<Complex64> = if let Ok(realdata) = data_real {
         // Real data
-        real_data.iter().map(|&r| Complex64::new(r, 0.0)).collect()
+        realdata.iter().map(|&r| Complex64::new(r, 0.0)).collect()
     } else {
         // Complex data
         is_complex = true;
@@ -117,11 +119,11 @@ where
         );
 
         // Generate wavelet coefficients
-        let wavelet_data = wavelet(n, scale)?;
+        let waveletdata = wavelet(n, scale)?;
 
         // Convert to complex and take conjugate (for convolution)
         let mut wavelet_complex = Vec::with_capacity(n);
-        for &w in &wavelet_data {
+        for &w in &waveletdata {
             let complex_val: Complex64 = w.into();
             wavelet_complex.push(complex_val.conj());
         }

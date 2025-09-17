@@ -1,6 +1,7 @@
 use ndarray::{array, ArrayView1};
 use scirs2_integrate::ode::{solve_ivp, ODEMethod, ODEOptions};
 
+#[allow(dead_code)]
 fn main() {
     println!("LSODA Solver Example - Simple Test Problem");
     println!("------------------------------------------");
@@ -25,7 +26,7 @@ fn main() {
         }),
     )
     .unwrap_or_else(|e| {
-        println!("LSODA method failed with error: {}.", e);
+        println!("LSODA method failed with error: {e}.");
         println!("This is concerning as this problem is very simple.");
 
         // Fall back to DOP853
@@ -62,7 +63,7 @@ fn main() {
         let y = result.y[i][0];
         let exact = (-0.5 * t).exp();
         let error = (y - exact).abs();
-        println!("  {:.2}    {:.6}   {:.6}     {:.8}", t, y, exact, error);
+        println!("  {t:.2}    {y:.6}   {exact:.6}     {error:.8}");
     }
 
     // If there are more than 10 time points, print the last one
@@ -73,11 +74,11 @@ fn main() {
         let exact = (-0.5 * t).exp();
         let error = (y - exact).abs();
         println!("  ...    ...       ...         ...");
-        println!("  {:.2}    {:.6}   {:.6}     {:.8}", t, y, exact, error);
+        println!("  {t:.2}    {y:.6}   {exact:.6}     {error:.8}");
     }
 
     // Print message if it exists
     if let Some(msg) = &result.message {
-        println!("\n  {}", msg);
+        println!("\n  {msg}");
     }
 }

@@ -2,12 +2,13 @@
 //!
 //! Implements various hypothesis tests for time series
 
-use ndarray::{Array1, Array2, ArrayBase, Data, Ix1, ScalarOperand};
+use ndarray::{s, Array1, Array2, ArrayBase, Data, Ix1, ScalarOperand};
 use num_traits::{Float, FromPrimitive};
 use std::fmt::{Debug, Display};
 
 use crate::error::{Result, TimeSeriesError};
 use crate::utils::autocovariance;
+use statrs::statistics::Statistics;
 
 /// Augmented Dickey-Fuller test for unit root
 #[derive(Debug, Clone)]
@@ -47,6 +48,7 @@ pub enum ADFRegression {
 }
 
 /// Perform Augmented Dickey-Fuller test
+#[allow(dead_code)]
 pub fn adf_test<S, F>(
     data: &ArrayBase<S, Ix1>,
     max_lag: Option<usize>,
@@ -57,7 +59,7 @@ where
     S: Data<Elem = F>,
     F: Float + FromPrimitive + Debug + Display + ScalarOperand,
 {
-    scirs2_core::validation::check_array_finite(data, "data")?;
+    scirs2_core::validation::checkarray_finite(data, "data")?;
 
     if data.len() < 10 {
         return Err(TimeSeriesError::InvalidInput(
@@ -67,10 +69,10 @@ where
 
     // Determine number of lags
     let n = data.len();
-    let lags = if let Some(lag) = max_lag {
-        lag
+    let lags = if let Some(_lag) = max_lag {
+        _lag
     } else {
-        // Use Schwert criterion for automatic lag selection
+        // Use Schwert criterion for automatic _lag selection
         let power = F::from(0.25).unwrap();
         let max_lag = ((F::from(12).unwrap()
             * (F::from(n).unwrap() / F::from(100).unwrap()).powf(power))
@@ -82,7 +84,7 @@ where
 
     // Create regression variables
     let y_diff = difference(data);
-    let y_lag1 = lag(data, 1)?;
+    let y_lag1 = Array1::from_vec(data.slice(s![..data.len() - 1]).to_vec());
 
     // Build regression matrix
     let (x_mat, y_vec) =
@@ -147,6 +149,7 @@ pub enum KPSSType {
 }
 
 /// Perform KPSS test
+#[allow(dead_code)]
 pub fn kpss_test<S, F>(
     data: &ArrayBase<S, Ix1>,
     test_type: KPSSType,
@@ -157,7 +160,7 @@ where
     S: Data<Elem = F>,
     F: Float + FromPrimitive + Debug + Display + ScalarOperand,
 {
-    scirs2_core::validation::check_array_finite(data, "data")?;
+    scirs2_core::validation::checkarray_finite(data, "data")?;
 
     let n = data.len();
     if n < 10 {
@@ -175,7 +178,7 @@ where
     });
 
     // Detrend the series
-    let (residuals, _) = match test_type {
+    let (residuals_, _) = match test_type {
         KPSSType::Constant => {
             let (res, mean) = detrend_constant(data)?;
             (res, Array1::from_elem(1, mean))
@@ -187,12 +190,12 @@ where
     let mut partial_sums = Array1::zeros(n);
     let mut cum_sum = F::zero();
     for i in 0..n {
-        cum_sum = cum_sum + residuals[i];
+        cum_sum = cum_sum + residuals_[i];
         partial_sums[i] = cum_sum;
     }
 
     // Calculate test statistic
-    let s2 = newey_west_variance(&residuals, lags)?;
+    let s2 = newey_west_variance(&residuals_, lags)?;
     let test_statistic = partial_sums.dot(&partial_sums) / (F::from(n * n).unwrap() * s2);
 
     // Get critical values
@@ -229,6 +232,7 @@ pub struct PPTest<F> {
 }
 
 /// Perform Phillips-Perron test
+#[allow(dead_code)]
 pub fn pp_test<S, F>(
     data: &ArrayBase<S, Ix1>,
     regression: ADFRegression,
@@ -239,7 +243,7 @@ where
     S: Data<Elem = F>,
     F: Float + FromPrimitive + Debug + Display + ScalarOperand,
 {
-    scirs2_core::validation::check_array_finite(data, "data")?;
+    scirs2_core::validation::checkarray_finite(data, "data")?;
 
     let n = data.len();
     if n < 10 {
@@ -301,6 +305,7 @@ where
 // Helper functions
 
 /// Calculate first difference
+#[allow(dead_code)]
 fn difference<S, F>(data: &ArrayBase<S, Ix1>) -> Array1<F>
 where
     S: Data<Elem = F>,
@@ -315,6 +320,7 @@ where
 }
 
 /// Lag a series
+#[allow(dead_code)]
 fn lag<S, F>(data: &ArrayBase<S, Ix1>, k: usize) -> Result<Array1<F>>
 where
     S: Data<Elem = F>,
@@ -335,6 +341,7 @@ where
 }
 
 /// Build regression matrix for ADF test
+#[allow(dead_code)]
 fn build_regression_matrix<S, F>(
     y_diff: &ArrayBase<S, Ix1>,
     y_lag1: &ArrayBase<S, Ix1>,
@@ -349,7 +356,7 @@ where
     use ndarray::Array2;
 
     let n = y_diff.len() - lags;
-    let mut n_cols = 1 + lags; // lag1 + diff lags
+    let mut n_cols = 1 + lags; // _lag1 + _diff lags
 
     match regression {
         ADFRegression::NoConstantNoTrend => {}
@@ -402,6 +409,7 @@ where
 }
 
 /// Simple OLS regression using pseudoinverse
+#[allow(dead_code)]
 fn ols_regression<F>(x: &ndarray::Array2<F>, y: &Array1<F>) -> Result<Array1<F>>
 where
     F: Float + FromPrimitive + ScalarOperand,
@@ -429,6 +437,7 @@ where
 }
 
 /// Select lag using AIC
+#[allow(dead_code)]
 fn select_lag_aic<S, F>(
     data: &ArrayBase<S, Ix1>,
     max_lag: usize,
@@ -443,7 +452,7 @@ where
 
     for lag_idx in 0..=max_lag.min(data.len() / 4) {
         let y_diff = difference(data);
-        let y_lag1 = lag(data, 1)?;
+        let y_lag1 = Array1::from_vec(data.slice(s![..data.len() - 1]).to_vec());
 
         if let Ok((x_mat, y_vec)) =
             build_regression_matrix(&y_diff, &y_lag1, lag_idx, &data.to_owned(), regression)
@@ -470,6 +479,7 @@ where
 }
 
 /// Detrend with constant only
+#[allow(dead_code)]
 fn detrend_constant<S, F>(data: &ArrayBase<S, Ix1>) -> Result<(Array1<F>, F)>
 where
     S: Data<Elem = F>,
@@ -481,6 +491,7 @@ where
 }
 
 /// Detrend with linear trend
+#[allow(dead_code)]
 fn detrend_linear<S, F>(data: &ArrayBase<S, Ix1>) -> Result<(Array1<F>, Array1<F>)>
 where
     S: Data<Elem = F>,
@@ -505,6 +516,7 @@ where
 }
 
 /// Newey-West variance estimator
+#[allow(dead_code)]
 fn newey_west_variance<S, F>(residuals: &ArrayBase<S, Ix1>, lags: usize) -> Result<F>
 where
     S: Data<Elem = F>,
@@ -526,7 +538,8 @@ where
 }
 
 /// Get ADF critical values (simplified)
-fn get_adf_critical_values<F>(_n: usize, regression: ADFRegression) -> Result<CriticalValues<F>>
+#[allow(dead_code)]
+fn get_adf_critical_values<F>(n: usize, regression: ADFRegression) -> Result<CriticalValues<F>>
 where
     F: Float + FromPrimitive,
 {
@@ -553,7 +566,8 @@ where
 }
 
 /// Calculate ADF p-value (simplified)
-fn calculate_adf_pvalue<F>(test_stat: F, n: usize, regression: ADFRegression) -> Result<F>
+#[allow(dead_code)]
+fn calculate_adf_pvalue<F>(_teststat: F, n: usize, regression: ADFRegression) -> Result<F>
 where
     F: Float + FromPrimitive,
 {
@@ -561,11 +575,11 @@ where
     // In practice would use MacKinnon (1994) approximation
     let critical_values = get_adf_critical_values(n, regression)?;
 
-    if test_stat < critical_values.cv_1_percent {
+    if _teststat < critical_values.cv_1_percent {
         Ok(F::from(0.001).unwrap())
-    } else if test_stat < critical_values.cv_5_percent {
+    } else if _teststat < critical_values.cv_5_percent {
         Ok(F::from(0.025).unwrap())
-    } else if test_stat < critical_values.cv_10_percent {
+    } else if _teststat < critical_values.cv_10_percent {
         Ok(F::from(0.075).unwrap())
     } else {
         Ok(F::from(0.15).unwrap())
@@ -573,11 +587,12 @@ where
 }
 
 /// Get KPSS critical values
-fn get_kpss_critical_values<F>(test_type: KPSSType) -> Result<CriticalValues<F>>
+#[allow(dead_code)]
+fn get_kpss_critical_values<F>(_testtype: KPSSType) -> Result<CriticalValues<F>>
 where
     F: Float + FromPrimitive,
 {
-    let cv = match test_type {
+    let cv = match _testtype {
         KPSSType::Constant => CriticalValues {
             cv_1_percent: F::from(0.739).unwrap(),
             cv_5_percent: F::from(0.463).unwrap(),
@@ -594,17 +609,18 @@ where
 }
 
 /// Calculate KPSS p-value (simplified)
-fn calculate_kpss_pvalue<F>(test_stat: F, test_type: KPSSType) -> Result<F>
+#[allow(dead_code)]
+fn calculate_kpss_pvalue<F>(_test_stat: F, testtype: KPSSType) -> Result<F>
 where
     F: Float + FromPrimitive,
 {
-    let critical_values = get_kpss_critical_values(test_type)?;
+    let critical_values = get_kpss_critical_values(testtype)?;
 
-    if test_stat > critical_values.cv_1_percent {
+    if _test_stat > critical_values.cv_1_percent {
         Ok(F::from(0.001).unwrap())
-    } else if test_stat > critical_values.cv_5_percent {
+    } else if _test_stat > critical_values.cv_5_percent {
         Ok(F::from(0.025).unwrap())
-    } else if test_stat > critical_values.cv_10_percent {
+    } else if _test_stat > critical_values.cv_10_percent {
         Ok(F::from(0.075).unwrap())
     } else {
         Ok(F::from(0.15).unwrap())
@@ -612,6 +628,7 @@ where
 }
 
 /// Simple matrix inversion using Gauss-Jordan elimination
+#[allow(dead_code)]
 fn matrix_inverse<F>(a: &Array2<F>) -> Result<Array2<F>>
 where
     F: Float + FromPrimitive + ScalarOperand,

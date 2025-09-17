@@ -1,6 +1,7 @@
 use ndarray::Array2;
 use scirs2_cluster::density::{dbscan, labels, DistanceMetric};
 
+#[allow(dead_code)]
 fn main() {
     println!("DBSCAN Clustering Example");
     println!("========================");
@@ -35,7 +36,7 @@ fn main() {
 
     for &eps in &eps_values {
         for &min_samples in &min_samples_values {
-            println!("\neps={}, min_samples={}", eps, min_samples);
+            println!("\neps={eps}, min_samples={min_samples}");
 
             let labels_array = dbscan(
                 data.view(),
@@ -94,12 +95,12 @@ fn main() {
                 }
 
                 for (i, &count) in cluster_counts.iter().enumerate() {
-                    println!("    Cluster {}: {} points", i, count);
+                    println!("    Cluster {i}: {count} points");
                 }
             }
 
             if noise_count > 0 {
-                println!("    Noise: {} points", noise_count);
+                println!("    Noise: {noise_count} points");
             }
         }
     }

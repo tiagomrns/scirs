@@ -40,7 +40,7 @@
 //!
 //!     // Log intermediate results at low frequency to avoid flooding logs
 //!     if i % 100 == 0 {
-//!         logger.debug(&format!("Completed {}/{} iterations", i + 1, 1000));
+//!         logger.debug(&format!("Completed {}/1000 iterations", i + 1));
 //!     }
 //! }
 //!
@@ -136,19 +136,22 @@ impl Default for LoggerConfig {
 static LOGGER_CONFIG: Lazy<Mutex<LoggerConfig>> = Lazy::new(|| Mutex::new(LoggerConfig::default()));
 
 /// Configure the global logger
-pub fn configure_logger(config: LoggerConfig) {
+#[allow(dead_code)]
+pub fn configurelogger(config: LoggerConfig) {
     let mut global_config = LOGGER_CONFIG.lock().unwrap();
     *global_config = config;
 }
 
 /// Set the global minimum log level
-pub fn set_min_log_level(level: LogLevel) {
+#[allow(dead_code)]
+pub fn set_level(level: LogLevel) {
     let mut config = LOGGER_CONFIG.lock().unwrap();
     config.min_level = level;
 }
 
 /// Set a module-specific log level
-pub fn set_module_log_level(module: &str, level: LogLevel) {
+#[allow(dead_code)]
+pub fn set_module_level(module: &str, level: LogLevel) {
     let mut config = LOGGER_CONFIG.lock().unwrap();
     config.module_levels.insert(module.to_string(), level);
 }
@@ -194,7 +197,7 @@ impl LogHandler for ConsoleLogHandler {
             let fields_str = entry
                 .fields
                 .iter()
-                .map(|(k, v)| format!("{}={}", k, v))
+                .map(|(k, v)| format!("{k}={v}"))
                 .collect::<Vec<_>>()
                 .join(", ");
             output = output.replace("{fields}", &fields_str);
@@ -202,8 +205,8 @@ impl LogHandler for ConsoleLogHandler {
 
         // Print to the appropriate output stream based on level
         match entry.level {
-            LogLevel::Error | LogLevel::Critical => eprintln!("{}", output),
-            _ => println!("{}", output),
+            LogLevel::Error | LogLevel::Critical => eprintln!("{output}"),
+            _ => println!("{output}"),
         }
     }
 }
@@ -240,7 +243,7 @@ impl LogHandler for FileLogHandler {
             let fields_str = entry
                 .fields
                 .iter()
-                .map(|(k, v)| format!("{}={}", k, v))
+                .map(|(k, v)| format!("{k}={v}"))
                 .collect::<Vec<_>>()
                 .join(", ");
             output = output.replace("{fields}", &fields_str);
@@ -254,7 +257,7 @@ impl LogHandler for FileLogHandler {
             .open(&self.file_path)
         {
             use std::io::Write;
-            let _ = writeln!(file, "{}", output);
+            let _ = writeln!(file, "{output}");
         }
     }
 }
@@ -266,19 +269,22 @@ static LOG_HANDLERS: Lazy<Mutex<Vec<Arc<dyn LogHandler>>>> = Lazy::new(|| {
 });
 
 /// Register a log handler
-pub fn register_log_handler(handler: Arc<dyn LogHandler>) {
+#[allow(dead_code)]
+pub fn set_handler(handler: Arc<dyn LogHandler>) {
     let mut handlers = LOG_HANDLERS.lock().unwrap();
     handlers.push(handler);
 }
 
 /// Clear all log handlers
-pub fn clear_log_handlers() {
+#[allow(dead_code)]
+pub fn clearlog_handlers() {
     let mut handlers = LOG_HANDLERS.lock().unwrap();
     handlers.clear();
 }
 
 /// Reset log handlers to the default configuration
-pub fn reset_log_handlers() {
+#[allow(dead_code)]
+pub fn resetlog_handlers() {
     let mut handlers = LOG_HANDLERS.lock().unwrap();
     handlers.clear();
     handlers.push(Arc::new(ConsoleLogHandler::default()));
@@ -308,7 +314,7 @@ impl Logger {
         K: Into<String>,
         V: Display,
     {
-        self.fields.insert(key.into(), format!("{}", value));
+        self.fields.insert(key.into(), format!("{value}"));
         self
     }
 
@@ -320,13 +326,13 @@ impl Logger {
         I: IntoIterator<Item = (K, V)>,
     {
         for (key, value) in fields {
-            self.fields.insert(key.into(), format!("{}", value));
+            self.fields.insert(key.into(), format!("{value}"));
         }
         self
     }
 
     /// Log a message at a specific level
-    pub fn log(&self, level: LogLevel, message: &str) {
+    pub fn writelog(&self, level: LogLevel, message: &str) {
         // Check if this log should be processed based on configuration
         let config = LOGGER_CONFIG.lock().unwrap();
         let module_level = config
@@ -357,32 +363,32 @@ impl Logger {
 
     /// Log a message at trace level
     pub fn trace(&self, message: &str) {
-        self.log(LogLevel::Trace, message);
+        self.writelog(LogLevel::Trace, message);
     }
 
     /// Log a message at debug level
     pub fn debug(&self, message: &str) {
-        self.log(LogLevel::Debug, message);
+        self.writelog(LogLevel::Debug, message);
     }
 
     /// Log a message at info level
     pub fn info(&self, message: &str) {
-        self.log(LogLevel::Info, message);
+        self.writelog(LogLevel::Info, message);
     }
 
     /// Log a message at warning level
     pub fn warn(&self, message: &str) {
-        self.log(LogLevel::Warn, message);
+        self.writelog(LogLevel::Warn, message);
     }
 
     /// Log a message at error level
     pub fn error(&self, message: &str) {
-        self.log(LogLevel::Error, message);
+        self.writelog(LogLevel::Error, message);
     }
 
     /// Log a message at critical level
     pub fn critical(&self, message: &str) {
-        self.log(LogLevel::Critical, message);
+        self.writelog(LogLevel::Critical, message);
     }
 
     /// Create an enhanced progress tracker using the logger's context
@@ -400,7 +406,7 @@ impl Logger {
         let mut tracker = builder.build();
 
         // Log the start of progress tracking
-        self.info(&format!("Starting progress tracking: {}", description));
+        self.info(&format!("Starting progress tracking: {description}"));
 
         tracker.start();
         tracker
@@ -429,9 +435,8 @@ impl Logger {
         // Log completion
         let stats = progress.stats();
         self.info(&format!(
-            "Completed progress tracking: {} - {:.1}s elapsed",
-            description,
-            stats.elapsed.as_secs_f64()
+            "Completed progress tracking: {description} - {elapsed:.1}s elapsed",
+            elapsed = stats.elapsed.as_secs_f64()
         ));
 
         result
@@ -462,7 +467,7 @@ impl ProgressTracker {
         let now = Instant::now();
         let logger = Logger::new("progress").with_field("operation", name);
 
-        logger.info(&format!("Starting operation: {}", name));
+        logger.info(&format!("Starting operation: {name}"));
 
         Self {
             name: name.to_string(),
@@ -496,19 +501,17 @@ impl ProgressTracker {
             let eta = if self.current > 0 {
                 let time_per_item = elapsed.as_secs_f64() / self.current as f64;
                 let remaining = time_per_item * (self.total - self.current) as f64;
-                format!("ETA: {:.1}s", remaining)
+                format!("ETA: {remaining:.1}s")
             } else {
                 "ETA: calculating...".to_string()
             };
 
             self.logger.debug(&format!(
-                "{}: {}/{} ({:.1}%) - Elapsed: {:.1}s - {}",
-                self.name,
-                self.current,
-                self.total,
-                percent,
-                elapsed.as_secs_f64(),
-                eta
+                "{name}: {current}/{total} ({percent:.1}%) - Elapsed: {elapsed:.1}s - {eta}",
+                name = self.name,
+                current = self.current,
+                total = self.total,
+                elapsed = elapsed.as_secs_f64()
             ));
         }
     }
@@ -519,11 +522,10 @@ impl ProgressTracker {
         self.current = self.total;
 
         self.logger.info(&format!(
-            "{} completed: {}/{} (100%) - Total time: {:.1}s",
-            self.name,
-            self.total,
-            self.total,
-            elapsed.as_secs_f64()
+            "{name} completed: {total}/{total} (100%) - Total time: {elapsed:.1}s",
+            name = self.name,
+            total = self.total,
+            elapsed = elapsed.as_secs_f64()
         ));
     }
 
@@ -552,18 +554,19 @@ impl ProgressTracker {
 }
 
 /// Initialize the default logging system
+#[allow(dead_code)]
 pub fn init() {
     // Register the default console handler if not already done
     let handlers = LOG_HANDLERS.lock().unwrap();
     if handlers.is_empty() {
         drop(handlers);
-        reset_log_handlers();
+        resetlog_handlers();
     }
 }
 
 /// Get a logger for the current module
 #[macro_export]
-macro_rules! get_logger {
+macro_rules! getlogger {
     () => {
         $crate::logging::Logger::new(module_path!())
     };
@@ -596,8 +599,11 @@ pub mod distributed {
 
     impl NodeId {
         /// Create a new node identifier
-        pub fn new(name: String, instance_id: String) -> Self {
-            Self { name, instance_id }
+        pub fn new(name: String, instanceid: String) -> Self {
+            Self {
+                name,
+                instance_id: instanceid,
+            }
         }
 
         /// Create from hostname and process ID
@@ -631,7 +637,7 @@ pub mod distributed {
         pub id: u64,
         /// Source node
         #[allow(dead_code)]
-        pub node_id: NodeId,
+        pub nodeid: NodeId,
         /// Timestamp (Unix epoch milliseconds)
         pub timestamp: u64,
         /// Log level
@@ -649,7 +655,7 @@ pub mod distributed {
     impl DistributedLogEntry {
         /// Create a new distributed log entry
         pub fn new(
-            node_id: NodeId,
+            nodeid: NodeId,
             level: LogLevel,
             logger: String,
             message: String,
@@ -660,7 +666,7 @@ pub mod distributed {
 
             Self {
                 id: ID_COUNTER.fetch_add(1, Ordering::Relaxed),
-                node_id,
+                nodeid,
                 timestamp: SystemTime::now()
                     .duration_since(UNIX_EPOCH)
                     .unwrap()
@@ -687,7 +693,7 @@ pub mod distributed {
     #[allow(dead_code)]
     pub struct LogAggregator {
         #[allow(dead_code)]
-        node_id: NodeId,
+        nodeid: NodeId,
         entries: Arc<RwLock<VecDeque<DistributedLogEntry>>>,
         max_entries: usize,
         aggregation_window: Duration,
@@ -706,12 +712,12 @@ pub mod distributed {
 
     impl LogAggregator {
         /// Create a new log aggregator
-        pub fn new(node_id: NodeId, max_entries: usize, aggregation_window: Duration) -> Self {
+        pub fn new(nodeid: NodeId, max_entries: usize, aggregationwindow: Duration) -> Self {
             Self {
-                node_id,
+                nodeid,
                 entries: Arc::new(RwLock::new(VecDeque::new())),
                 max_entries,
-                aggregation_window,
+                aggregation_window: aggregationwindow,
                 stats: Arc::new(RwLock::new(AggregationStats::default())),
             }
         }
@@ -734,7 +740,7 @@ pub mod distributed {
                 if let Some(count) = stats.entries_by_level.get_mut(&removed.level) {
                     *count = count.saturating_sub(1);
                 }
-                if let Some(count) = stats.entries_by_node.get_mut(&removed.node_id) {
+                if let Some(count) = stats.entries_by_node.get_mut(&removed.nodeid) {
                     *count = count.saturating_sub(1);
                 }
             }
@@ -747,7 +753,7 @@ pub mod distributed {
                     if let Some(count) = stats.entries_by_level.get_mut(&removed.level) {
                         *count = count.saturating_sub(1);
                     }
-                    if let Some(count) = stats.entries_by_node.get_mut(&removed.node_id) {
+                    if let Some(count) = stats.entries_by_node.get_mut(&removed.nodeid) {
                         *count = count.saturating_sub(1);
                     }
                 }
@@ -758,7 +764,7 @@ pub mod distributed {
             *stats.entries_by_level.entry(entry.level).or_insert(0) += 1;
             *stats
                 .entries_by_node
-                .entry(entry.node_id.clone())
+                .entry(entry.nodeid.clone())
                 .or_insert(0) += 1;
 
             entries.push_back(entry);
@@ -781,12 +787,12 @@ pub mod distributed {
         }
 
         /// Get entries from specific node
-        pub fn get_entries_by_node(&self, node_id: &NodeId) -> Vec<DistributedLogEntry> {
+        pub fn get_entries_by_node(&self, nodeid: &NodeId) -> Vec<DistributedLogEntry> {
             self.entries
                 .read()
                 .unwrap()
                 .iter()
-                .filter(|entry| &entry.node_id == node_id)
+                .filter(|entry| &entry.nodeid == nodeid)
                 .cloned()
                 .collect()
         }
@@ -872,15 +878,15 @@ pub mod distributed {
         }
 
         /// Adapt the maximum rate based on observed patterns
-        fn adapt_rate(&self, actual_rate: f64) {
+        fn adapt_rate(&self, actualrate: f64) {
             let mut max_rate = self.max_rate.lock().unwrap();
 
             // If actual rate is consistently lower, reduce max rate
             // If actual rate hits the limit, increase max rate
-            if actual_rate < *max_rate * 0.5 {
+            if actualrate < *max_rate * 0.5 {
                 // Reduce max rate
                 *max_rate = (*max_rate * (1.0 - self.adaptation_factor)).max(self.min_rate);
-            } else if actual_rate >= *max_rate * 0.9 {
+            } else if actualrate >= *max_rate * 0.9 {
                 // Increase max rate
                 *max_rate =
                     (*max_rate * (1.0 + self.adaptation_factor)).min(self.max_rate_absolute);
@@ -919,8 +925,8 @@ pub mod distributed {
     /// Distributed logger that coordinates with multiple nodes
     pub struct DistributedLogger {
         #[allow(dead_code)]
-        node_id: NodeId,
-        local_logger: Logger,
+        nodeid: NodeId,
+        locallogger: Logger,
         aggregator: Arc<LogAggregator>,
         rate_limiters: Arc<RwLock<HashMap<String, AdaptiveRateLimiter>>>,
         default_rate_limit: f64,
@@ -929,22 +935,22 @@ pub mod distributed {
     impl DistributedLogger {
         /// Create a new distributed logger
         pub fn new(
-            node_id: NodeId,
             logger_name: &str,
+            nodeid: NodeId,
             max_entries: usize,
             aggregation_window: Duration,
             default_rate_limit: f64,
         ) -> Self {
-            let local_logger = Logger::new(logger_name);
+            let locallogger = Logger::new(logger_name);
             let aggregator = Arc::new(LogAggregator::new(
-                node_id.clone(),
+                nodeid.clone(),
                 max_entries,
                 aggregation_window,
             ));
 
             Self {
-                node_id,
-                local_logger,
+                nodeid,
+                locallogger,
                 aggregator,
                 rate_limiters: Arc::new(RwLock::new(HashMap::new())),
                 default_rate_limit,
@@ -958,10 +964,10 @@ pub mod distributed {
             message: &str,
             context: Option<HashMap<String, String>>,
         ) {
-            let logger_key = self.local_logger.module.clone();
+            let logger_key = self.locallogger.module.clone();
 
             // Get or create rate limiter for this logger
-            let should_log = {
+            let shouldlog = {
                 let rate_limiters = self.rate_limiters.read().unwrap();
                 if let Some(limiter) = rate_limiters.get(&logger_key) {
                     limiter.try_acquire()
@@ -975,21 +981,21 @@ pub mod distributed {
                         Duration::from_secs(1),
                         0.1, // 10% adaptation factor
                     );
-                    let should_log = limiter.try_acquire();
+                    let shouldlog = limiter.try_acquire();
                     rate_limiters.insert(logger_key, limiter);
-                    should_log
+                    shouldlog
                 }
             };
 
-            if should_log {
+            if shouldlog {
                 // Log locally
-                self.local_logger.log(level, message);
+                self.locallogger.writelog(level, message);
 
                 // Create distributed log entry
                 let entry = DistributedLogEntry::new(
-                    self.node_id.clone(),
+                    self.nodeid.clone(),
                     level,
-                    self.local_logger.module.clone(),
+                    self.locallogger.module.clone(),
                     message.to_string(),
                     context.unwrap_or_default(),
                 );
@@ -1017,7 +1023,7 @@ pub mod distributed {
         }
 
         /// Get aggregated log entries
-        pub fn get_aggregated_logs(&self) -> Vec<DistributedLogEntry> {
+        pub fn get_aggregatedlogs(&self) -> Vec<DistributedLogEntry> {
             self.aggregator.get_entries()
         }
 
@@ -1037,12 +1043,12 @@ pub mod distributed {
         }
 
         /// Export logs to JSON format
-        pub fn export_logs_json(&self) -> Result<String, Box<dyn std::error::Error>> {
-            let entries = self.get_aggregated_logs();
+        pub fn exportlogs_json(&self) -> Result<String, Box<dyn std::error::Error>> {
+            let entries = self.get_aggregatedlogs();
             let stats = self.get_aggregation_stats();
 
             let export_data = serde_json::json!({
-                "node_id": self.node_id.to_string(),
+                "nodeid": self.nodeid.to_string(),
                 "timestamp": SystemTime::now()
                     .duration_since(UNIX_EPOCH)
                     .unwrap()
@@ -1054,9 +1060,9 @@ pub mod distributed {
                 },
                 "entries": entries.iter().map(|entry| serde_json::json!({
                     "id": entry.id,
-                    "node_id": entry.node_id.to_string(),
+                    "nodeid": entry.nodeid.to_string(),
                     "timestamp": entry.timestamp,
-                    "level": format!("{:?}", entry.level),
+                    "level": format!("{0:?}", entry.level),
                     "logger": entry.logger,
                     "message": entry.message,
                     "context": entry.context,
@@ -1089,7 +1095,7 @@ pub mod distributed {
 
     impl MultiNodeCoordinator {
         /// Create a new multi-node coordinator
-        pub fn new(coordination_interval: Duration) -> Self {
+        pub fn new(coordinationinterval: Duration) -> Self {
             let global_node = NodeId::new("global".to_string(), "coordinator".to_string());
             let global_aggregator = Arc::new(LogAggregator::new(
                 global_node,
@@ -1100,21 +1106,21 @@ pub mod distributed {
             Self {
                 nodes: Arc::new(RwLock::new(HashMap::new())),
                 global_aggregator,
-                coordination_interval,
+                coordination_interval: coordinationinterval,
                 running: Arc::new(AtomicUsize::new(0)),
             }
         }
 
         /// Register a distributed logger
-        pub fn register_node(&self, node_id: NodeId, logger: Arc<DistributedLogger>) {
+        pub fn register_node(&self, nodeid: NodeId, logger: Arc<DistributedLogger>) {
             let mut nodes = self.nodes.write().unwrap();
-            nodes.insert(node_id, logger);
+            nodes.insert(nodeid, logger);
         }
 
         /// Unregister a node
-        pub fn unregister_node(&self, node_id: &NodeId) {
+        pub fn unregister_node(&self, nodeid: &NodeId) {
             let mut nodes = self.nodes.write().unwrap();
-            nodes.remove(node_id);
+            nodes.remove(nodeid);
         }
 
         /// Start coordination process
@@ -1134,7 +1140,7 @@ pub mod distributed {
                         // Collect logs from all nodes
                         let nodes_guard = nodes.read().unwrap();
                         for logger in nodes_guard.values() {
-                            let entries = logger.get_aggregated_logs();
+                            let entries = logger.get_aggregatedlogs();
                             for entry in entries {
                                 global_aggregator.add_entry(entry);
                             }
@@ -1163,7 +1169,7 @@ pub mod distributed {
         }
 
         /// Export global logs to JSON
-        pub fn export_global_logs_json(&self) -> Result<String, Box<dyn std::error::Error>> {
+        pub fn export_globallogs_json(&self) -> Result<String, Box<dyn std::error::Error>> {
             let entries = self.get_global_entries();
             let stats = self.get_global_stats();
 
@@ -1177,13 +1183,13 @@ pub mod distributed {
                     "total_entries": stats.total_entries,
                     "dropped_entries": stats.dropped_entries,
                     "nodes_count": self.nodes.read().unwrap().len(),
-                    "entries_by_level": stats.entries_by_level.iter().map(|(k, v)| (format!("{:?}", k), v)).collect::<HashMap<_, _>>()
+                    "entries_by_level": stats.entries_by_level.iter().map(|(k, v)| (format!("{k:?}"), *v)).collect::<HashMap<String, u64>>()
                 },
                 "entries": entries.iter().map(|entry| serde_json::json!({
                     "id": entry.id,
-                    "node_id": entry.node_id.to_string(),
+                    "nodeid": entry.nodeid.to_string(),
                     "timestamp": entry.timestamp,
-                    "level": format!("{:?}", entry.level),
+                    "level": format!("{0:?}", entry.level),
                     "logger": entry.logger,
                     "message": entry.message,
                     "context": entry.context,
@@ -1209,7 +1215,7 @@ mod distributed_tests {
     use std::time::Duration;
 
     #[test]
-    fn test_node_id_creation() {
+    fn test_nodeid_creation() {
         let node = NodeId::new("worker1".to_string(), "pid123".to_string());
         assert_eq!(node.name(), "worker1");
         assert_eq!(node.instance_id(), "pid123");
@@ -1217,14 +1223,14 @@ mod distributed_tests {
     }
 
     #[test]
-    fn test_log_aggregator() {
-        let node_id = NodeId::new("test_node".to_string(), "1".to_string());
-        let aggregator = LogAggregator::new(node_id.clone(), 100, Duration::from_secs(60));
+    fn testlog_aggregator() {
+        let nodeid = NodeId::new("test_node".to_string(), 1.to_string());
+        let aggregator = LogAggregator::new(nodeid.clone(), 100, Duration::from_secs(60));
 
         let entry = DistributedLogEntry::new(
-            node_id,
+            nodeid,
             LogLevel::Info,
-            "test_logger".to_string(),
+            "testlogger".to_string(),
             "Test message".to_string(),
             HashMap::new(),
         );
@@ -1253,15 +1259,15 @@ mod distributed_tests {
     }
 
     #[test]
-    fn test_distributed_logger() {
-        let node_id = NodeId::new("test_node".to_string(), "1".to_string());
+    fn test_distributedlogger() {
+        let nodeid = NodeId::new("test_node".to_string(), 1.to_string());
         let logger =
-            DistributedLogger::new(node_id, "test_logger", 1000, Duration::from_secs(60), 100.0);
+            DistributedLogger::new("testlogger", nodeid, 1000, Duration::from_secs(60), 100.0);
 
         logger.info_adaptive("Test message 1");
         logger.warn_adaptive("Test message 2");
 
-        let entries = logger.get_aggregated_logs();
+        let entries = logger.get_aggregatedlogs();
         assert!(!entries.is_empty()); // At least one message should go through
 
         let stats = logger.get_aggregation_stats();
@@ -1273,15 +1279,15 @@ mod distributed_tests {
         let coordinator = MultiNodeCoordinator::new(Duration::from_millis(10));
 
         let node1_id = NodeId::new("node1".to_string(), "1".to_string());
-        let node1_logger = Arc::new(DistributedLogger::new(
+        let node1logger = Arc::new(DistributedLogger::new(
+            "node1logger",
             node1_id.clone(),
-            "node1_logger",
             100,
             Duration::from_secs(10),
             50.0,
         ));
 
-        coordinator.register_node(node1_id, node1_logger);
+        coordinator.register_node(node1_id, node1logger);
 
         // Start coordination
         coordinator.start();
@@ -1298,19 +1304,14 @@ mod distributed_tests {
     }
 
     #[test]
-    fn test_log_export() {
-        let node_id = NodeId::new("export_test".to_string(), "1".to_string());
-        let logger = DistributedLogger::new(
-            node_id,
-            "export_logger",
-            100,
-            Duration::from_secs(60),
-            100.0,
-        );
+    fn testlog_export() {
+        let nodeid = NodeId::new("export_test".to_string(), 1.to_string());
+        let logger =
+            DistributedLogger::new("exportlogger", nodeid, 100, Duration::from_secs(60), 100.0);
 
         logger.info_adaptive("Export test message");
 
-        let json_export = logger.export_logs_json().unwrap();
+        let json_export = logger.exportlogs_json().unwrap();
         assert!(json_export.contains("export_test"));
         assert!(json_export.contains("Export test message"));
     }

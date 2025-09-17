@@ -18,6 +18,7 @@ use crate::tensor_ops::{binary_ops, math_ops, shape};
 ///
 /// This can be replaced with `+` operation of Tensor.
 #[inline]
+#[allow(dead_code)]
 pub fn add<'graph, A, B, F: Float>(a: A, b: B) -> Tensor<'graph, F>
 where
     A: AsRef<Tensor<'graph, F>> + Copy,
@@ -25,7 +26,7 @@ where
 {
     let g = a.as_ref().graph();
     Tensor::builder(g)
-        .set_shape(&infer_bin_op_shape(g, shape(a), shape(b)))
+        .setshape(&infer_bin_opshape(g, shape(a), shape(b)))
         .append_input(a.as_ref(), false)
         .append_input(b.as_ref(), false)
         .build(binary_ops::AddOp)
@@ -35,6 +36,7 @@ where
 ///
 /// This can be replaced with `-` operation of Tensor.
 #[inline]
+#[allow(dead_code)]
 pub fn sub<'graph, A, B, F: Float>(a: A, b: B) -> Tensor<'graph, F>
 where
     A: AsRef<Tensor<'graph, F>> + Copy,
@@ -42,7 +44,7 @@ where
 {
     let g = a.as_ref().graph();
     Tensor::builder(g)
-        .set_shape(&infer_bin_op_shape(g, shape(a), shape(b)))
+        .setshape(&infer_bin_opshape(g, shape(a), shape(b)))
         .append_input(a.as_ref(), false)
         .append_input(b.as_ref(), false)
         .build(binary_ops::SubOp)
@@ -52,6 +54,7 @@ where
 ///
 /// This can be replaced with `*` operation of Tensor.
 #[inline]
+#[allow(dead_code)]
 pub fn mul<'graph, A, B, F: Float>(a: A, b: B) -> Tensor<'graph, F>
 where
     A: AsRef<Tensor<'graph, F>> + Copy,
@@ -59,7 +62,7 @@ where
 {
     let g = a.as_ref().graph();
     Tensor::builder(g)
-        .set_shape(&infer_bin_op_shape(g, shape(a), shape(b)))
+        .setshape(&infer_bin_opshape(g, shape(a), shape(b)))
         .append_input(a.as_ref(), false)
         .append_input(b.as_ref(), false)
         .build(binary_ops::MulOp)
@@ -69,6 +72,7 @@ where
 ///
 /// This can be replaced with `/` operation of Tensor.
 #[inline]
+#[allow(dead_code)]
 pub fn div<'graph, A, B, F: Float>(a: A, b: B) -> Tensor<'graph, F>
 where
     A: AsRef<Tensor<'graph, F>> + Copy,
@@ -76,7 +80,7 @@ where
 {
     let g = a.as_ref().graph();
     Tensor::builder(g)
-        .set_shape(&infer_bin_op_shape(g, shape(a), shape(b)))
+        .setshape(&infer_bin_opshape(g, shape(a), shape(b)))
         .append_input(a.as_ref(), false)
         .append_input(b.as_ref(), false)
         .build(binary_ops::DivOp)
@@ -84,6 +88,7 @@ where
 
 /// Elementwise sqrt
 #[inline]
+#[allow(dead_code)]
 pub fn sqrt<'graph, A, F: Float>(x: A) -> Tensor<'graph, F>
 where
     A: AsRef<Tensor<'graph, F>> + Copy,
@@ -92,11 +97,12 @@ where
     let g = x.graph();
     Tensor::builder(g)
         .append_input(x.as_ref(), false)
-        .set_shape(&shape(x))
+        .setshape(&shape(x))
         .build(math_ops::Sqrt)
 }
 
 /// Elementwise pow
+#[allow(dead_code)]
 pub fn pow<'graph, A, F: Float>(x: A, a: F) -> Tensor<'graph, F>
 where
     A: AsRef<Tensor<'graph, F>> + Copy,
@@ -105,11 +111,12 @@ where
     let g = x.graph();
     Tensor::builder(g)
         .append_input(x.as_ref(), false)
-        .set_shape(&shape(x))
+        .setshape(&shape(x))
         .build(math_ops::Pow { a })
 }
 
 /// Elementwise square
+#[allow(dead_code)]
 pub fn square<'graph, A, F: Float>(x: A) -> Tensor<'graph, F>
 where
     A: AsRef<Tensor<'graph, F>> + Copy,
@@ -119,6 +126,7 @@ where
 }
 
 /// Elementwise absolute value
+#[allow(dead_code)]
 pub fn abs<'graph, A, F: Float>(x: A) -> Tensor<'graph, F>
 where
     A: AsRef<Tensor<'graph, F>> + Copy,
@@ -127,11 +135,12 @@ where
     let g = x.graph();
     Tensor::builder(g)
         .append_input(x.as_ref(), false)
-        .set_shape(&shape(x))
+        .setshape(&shape(x))
         .build(math_ops::Abs)
 }
 
 /// Elementwise negation
+#[allow(dead_code)]
 pub fn neg<'graph, A, F: Float>(x: A) -> Tensor<'graph, F>
 where
     A: AsRef<Tensor<'graph, F>> + Copy,
@@ -140,11 +149,12 @@ where
     let g = x.graph();
     Tensor::builder(g)
         .append_input(x.as_ref(), false)
-        .set_shape(&shape(x))
+        .setshape(&shape(x))
         .build(math_ops::NegOp)
 }
 
 /// Elementwise base e (napier) logarithm
+#[allow(dead_code)]
 pub fn ln<'graph, A, F: Float>(x: A) -> Tensor<'graph, F>
 where
     A: AsRef<Tensor<'graph, F>> + Copy,
@@ -153,11 +163,12 @@ where
     let g = x.graph();
     Tensor::builder(g)
         .append_input(x.as_ref(), false)
-        .set_shape(&shape(x))
+        .setshape(&shape(x))
         .build(math_ops::Ln)
 }
 
 /// Elementwise base 2 logarithm
+#[allow(dead_code)]
 pub fn log2<'graph, A, F: Float>(x: A) -> Tensor<'graph, F>
 where
     A: AsRef<Tensor<'graph, F>> + Copy,
@@ -166,11 +177,12 @@ where
     let g = x.graph();
     Tensor::builder(g)
         .append_input(x.as_ref(), false)
-        .set_shape(&shape(x))
+        .setshape(&shape(x))
         .build(math_ops::Log2)
 }
 
 /// Elementwise base 10 logarithm
+#[allow(dead_code)]
 pub fn log10<'graph, A, F: Float>(x: A) -> Tensor<'graph, F>
 where
     A: AsRef<Tensor<'graph, F>> + Copy,
@@ -179,11 +191,12 @@ where
     let g = x.graph();
     Tensor::builder(g)
         .append_input(x.as_ref(), false)
-        .set_shape(&shape(x))
+        .setshape(&shape(x))
         .build(math_ops::Log10)
 }
 
 /// Elementwise base e (napier) exponential
+#[allow(dead_code)]
 pub fn exp<'graph, A, F: Float>(x: A) -> Tensor<'graph, F>
 where
     A: AsRef<Tensor<'graph, F>> + Copy,
@@ -192,11 +205,12 @@ where
     let g = x.graph();
     Tensor::builder(g)
         .append_input(x.as_ref(), false)
-        .set_shape(&shape(x))
+        .setshape(&shape(x))
         .build(math_ops::Exp)
 }
 
 /// Elementwise base 2 exponential
+#[allow(dead_code)]
 pub fn exp2<'graph, A, F: Float>(x: A) -> Tensor<'graph, F>
 where
     A: AsRef<Tensor<'graph, F>> + Copy,
@@ -205,11 +219,12 @@ where
     let g = x.graph();
     Tensor::builder(g)
         .append_input(x.as_ref(), false)
-        .set_shape(&shape(x))
+        .setshape(&shape(x))
         .build(math_ops::Exp2)
 }
 
 /// Elementwise base 10 exponential
+#[allow(dead_code)]
 pub fn exp10<'graph, A, F: Float>(x: A) -> Tensor<'graph, F>
 where
     A: AsRef<Tensor<'graph, F>> + Copy,
@@ -218,11 +233,12 @@ where
     let g = x.graph();
     Tensor::builder(g)
         .append_input(x.as_ref(), false)
-        .set_shape(&shape(x))
+        .setshape(&shape(x))
         .build(math_ops::Exp10)
 }
 
 /// Elementwise sine
+#[allow(dead_code)]
 pub fn sin<'graph, A, F: Float>(x: A) -> Tensor<'graph, F>
 where
     A: AsRef<Tensor<'graph, F>> + Copy,
@@ -231,11 +247,12 @@ where
     let g = x.graph();
     Tensor::builder(g)
         .append_input(x.as_ref(), false)
-        .set_shape(&shape(x))
+        .setshape(&shape(x))
         .build(math_ops::Sin)
 }
 
 /// Elementwise cosine
+#[allow(dead_code)]
 pub fn cos<'graph, A, F: Float>(x: A) -> Tensor<'graph, F>
 where
     A: AsRef<Tensor<'graph, F>> + Copy,
@@ -244,11 +261,12 @@ where
     let g = x.graph();
     Tensor::builder(g)
         .append_input(x.as_ref(), false)
-        .set_shape(&shape(x))
+        .setshape(&shape(x))
         .build(math_ops::Cos)
 }
 
 /// Elementwise tangent
+#[allow(dead_code)]
 pub fn tan<'graph, A, F: Float>(x: A) -> Tensor<'graph, F>
 where
     A: AsRef<Tensor<'graph, F>> + Copy,
@@ -257,11 +275,12 @@ where
     let g = x.graph();
     Tensor::builder(g)
         .append_input(x.as_ref(), false)
-        .set_shape(&shape(x))
+        .setshape(&shape(x))
         .build(math_ops::Tan)
 }
 
 /// Elementwise arcsin
+#[allow(dead_code)]
 pub fn asin<'graph, A, F: Float>(x: A) -> Tensor<'graph, F>
 where
     A: AsRef<Tensor<'graph, F>> + Copy,
@@ -270,11 +289,12 @@ where
     let g = x.graph();
     Tensor::builder(g)
         .append_input(x.as_ref(), false)
-        .set_shape(&shape(x))
+        .setshape(&shape(x))
         .build(math_ops::Asin)
 }
 
 /// Elementwise arccos
+#[allow(dead_code)]
 pub fn acos<'graph, A, F: Float>(x: A) -> Tensor<'graph, F>
 where
     A: AsRef<Tensor<'graph, F>> + Copy,
@@ -283,11 +303,12 @@ where
     let g = x.graph();
     Tensor::builder(g)
         .append_input(x.as_ref(), false)
-        .set_shape(&shape(x))
+        .setshape(&shape(x))
         .build(math_ops::Acos)
 }
 
 /// Elementwise arctan
+#[allow(dead_code)]
 pub fn atan<'graph, A, F: Float>(x: A) -> Tensor<'graph, F>
 where
     A: AsRef<Tensor<'graph, F>> + Copy,
@@ -296,11 +317,12 @@ where
     let g = x.graph();
     Tensor::builder(g)
         .append_input(x.as_ref(), false)
-        .set_shape(&shape(x))
+        .setshape(&shape(x))
         .build(math_ops::Atan)
 }
 
 /// Elementwise hyperbolic sine
+#[allow(dead_code)]
 pub fn sinh<'graph, A, F: Float>(x: A) -> Tensor<'graph, F>
 where
     A: AsRef<Tensor<'graph, F>> + Copy,
@@ -309,11 +331,12 @@ where
     let g = x.graph();
     Tensor::builder(g)
         .append_input(x.as_ref(), false)
-        .set_shape(&shape(x))
+        .setshape(&shape(x))
         .build(math_ops::Sinh)
 }
 
 /// Elementwise hyperbolic cosine
+#[allow(dead_code)]
 pub fn cosh<'graph, A, F: Float>(x: A) -> Tensor<'graph, F>
 where
     A: AsRef<Tensor<'graph, F>> + Copy,
@@ -322,11 +345,12 @@ where
     let g = x.graph();
     Tensor::builder(g)
         .append_input(x.as_ref(), false)
-        .set_shape(&shape(x))
+        .setshape(&shape(x))
         .build(math_ops::Cosh)
 }
 
 /// Elementwise hyperbolic tangent
+#[allow(dead_code)]
 pub fn tanh<'graph, A, F: Float>(x: A) -> Tensor<'graph, F>
 where
     A: AsRef<Tensor<'graph, F>> + Copy,
@@ -335,11 +359,12 @@ where
     let g = x.graph();
     Tensor::builder(g)
         .append_input(x.as_ref(), false)
-        .set_shape(&shape(x))
+        .setshape(&shape(x))
         .build(math_ops::Tanh)
 }
 
 /// Elementwise hyperbolic arcsin
+#[allow(dead_code)]
 pub fn asinh<'graph, A, F: Float>(x: A) -> Tensor<'graph, F>
 where
     A: AsRef<Tensor<'graph, F>> + Copy,
@@ -348,11 +373,12 @@ where
     let g = x.graph();
     Tensor::builder(g)
         .append_input(x.as_ref(), false)
-        .set_shape(&shape(x))
+        .setshape(&shape(x))
         .build(math_ops::Asinh)
 }
 
 /// Elementwise hyperbolic arccos
+#[allow(dead_code)]
 pub fn acosh<'graph, A, F: Float>(x: A) -> Tensor<'graph, F>
 where
     A: AsRef<Tensor<'graph, F>> + Copy,
@@ -361,11 +387,12 @@ where
     let g = x.graph();
     Tensor::builder(g)
         .append_input(x.as_ref(), false)
-        .set_shape(&shape(x))
+        .setshape(&shape(x))
         .build(math_ops::Acosh)
 }
 
 /// Elementwise hyperbolic arctan
+#[allow(dead_code)]
 pub fn atanh<'graph, A, F: Float>(x: A) -> Tensor<'graph, F>
 where
     A: AsRef<Tensor<'graph, F>> + Copy,
@@ -374,11 +401,12 @@ where
     let g = x.graph();
     Tensor::builder(g)
         .append_input(x.as_ref(), false)
-        .set_shape(&shape(x))
+        .setshape(&shape(x))
         .build(math_ops::Atanh)
 }
 
 /// Elementwise lgamma function
+#[allow(dead_code)]
 pub fn lgamma_f32<'graph, A>(x: A) -> Tensor<'graph, f32>
 where
     A: AsRef<Tensor<'graph, f32>> + Copy,
@@ -391,6 +419,7 @@ where
 }
 
 /// Elementwise lgamma function
+#[allow(dead_code)]
 pub fn lgamma_f64<'graph, A>(x: A) -> Tensor<'graph, f64>
 where
     A: AsRef<Tensor<'graph, f64>> + Copy,
@@ -405,6 +434,7 @@ where
 /// Elementwise digamma function
 ///
 /// NOTE: derivative not implemented
+#[allow(dead_code)]
 pub fn digamma_f32<'graph, A>(x: A) -> Tensor<'graph, f32>
 where
     A: AsRef<Tensor<'graph, f32>> + Copy,
@@ -419,6 +449,7 @@ where
 /// Elementwise digamma function
 ///
 /// NOTE: derivative not implemented
+#[allow(dead_code)]
 pub fn digamma_f64<'graph, A>(x: A) -> Tensor<'graph, f64>
 where
     A: AsRef<Tensor<'graph, f64>> + Copy,
@@ -444,6 +475,7 @@ where
 ///    assert_eq!(c.eval(g), Ok(array![3., 2., 3.].into_dyn()));
 /// });
 ///    ```
+#[allow(dead_code)]
 pub fn maximum<'graph, A, B, F: Float>(a: A, b: B) -> Tensor<'graph, F>
 where
     A: AsRef<Tensor<'graph, F>> + Copy,
@@ -471,6 +503,7 @@ where
 ///    assert_eq!(c.eval(g), Ok(array![1., 2., 1.].into_dyn()));
 /// });
 ///    ```
+#[allow(dead_code)]
 pub fn minimum<'graph, A, B, F: Float>(a: A, b: B) -> Tensor<'graph, F>
 where
     A: AsRef<Tensor<'graph, F>> + Copy,
@@ -503,6 +536,7 @@ where
 ///    assert_eq!(c.eval(g), Ok(ndarray::arr1(&[0., 1., 0.]).into_dyn()));
 /// });
 ///    ```
+#[allow(dead_code)]
 pub fn equal<'graph, A, B, F: Float>(a: A, b: B) -> Tensor<'graph, F>
 where
     A: AsRef<Tensor<'graph, F>> + Copy,
@@ -535,6 +569,7 @@ where
 ///    assert_eq!(c.eval(g), Ok(array![1., 0., 1.].into_dyn()));
 /// });
 ///    ```
+#[allow(dead_code)]
 pub fn not_equal<'graph, A, B, F: Float>(a: A, b: B) -> Tensor<'graph, F>
 where
     A: AsRef<Tensor<'graph, F>> + Copy,
@@ -552,6 +587,7 @@ where
 ///
 /// # Panics
 /// When broadcast is impossible
+#[allow(dead_code)]
 pub fn greater<'graph, A, B, F: Float>(a: A, b: B) -> Tensor<'graph, F>
 where
     A: AsRef<Tensor<'graph, F>> + Copy,
@@ -569,6 +605,7 @@ where
 ///
 /// # Panics
 /// When broadcast is impossible
+#[allow(dead_code)]
 pub fn greater_equal<'graph, A, B, F: Float>(a: A, b: B) -> Tensor<'graph, F>
 where
     A: AsRef<Tensor<'graph, F>> + Copy,
@@ -586,6 +623,7 @@ where
 ///
 /// # Panics
 /// When broadcast is impossible
+#[allow(dead_code)]
 pub fn lesser<'graph, A, B, F: Float>(a: A, b: B) -> Tensor<'graph, F>
 where
     A: AsRef<Tensor<'graph, F>> + Copy,
@@ -603,6 +641,7 @@ where
 ///
 /// # Panics
 /// When broadcast is impossible
+#[allow(dead_code)]
 pub fn lesser_equal<'graph, A, B, F: Float>(a: A, b: B) -> Tensor<'graph, F>
 where
     A: AsRef<Tensor<'graph, F>> + Copy,
@@ -633,6 +672,7 @@ where
 ///
 /// });
 ///    ```
+#[allow(dead_code)]
 pub fn floor<'graph, A, F: Float>(a: A) -> Tensor<'graph, F>
 where
     A: AsRef<Tensor<'graph, F>> + Copy,
@@ -640,7 +680,7 @@ where
     let a = a.as_ref();
     let g = a.graph();
     Tensor::builder(g)
-        .set_shape(&shape(a))
+        .setshape(&shape(a))
         .append_input(a.as_ref(), false)
         .build(math_ops::Floor)
 }
@@ -662,6 +702,7 @@ where
 ///
 /// });
 ///    ```
+#[allow(dead_code)]
 pub fn ceil<'graph, A, F: Float>(a: A) -> Tensor<'graph, F>
 where
     A: AsRef<Tensor<'graph, F>> + Copy,
@@ -669,12 +710,13 @@ where
     let a = a.as_ref();
     let g = a.graph();
     Tensor::builder(g)
-        .set_shape(&shape(a))
+        .setshape(&shape(a))
         .append_input(a.as_ref(), false)
         .build(math_ops::Ceil)
 }
 
 /// Elementwise inverse square root (1/sqrt(x))
+#[allow(dead_code)]
 pub fn inv_sqrt<'graph, A, F: Float>(x: A) -> Tensor<'graph, F>
 where
     A: AsRef<Tensor<'graph, F>> + Copy,
@@ -684,7 +726,8 @@ where
 }
 
 /// Clamps values to the range [min_value, max_value]
-pub fn clip<'graph, A, F: Float>(x: A, min_value: F, max_value: F) -> Tensor<'graph, F>
+#[allow(dead_code)]
+pub fn clip<'graph, A, F: Float>(x: A, min_value: F, maxvalue: F) -> Tensor<'graph, F>
 where
     A: AsRef<Tensor<'graph, F>> + Copy,
 {
@@ -692,7 +735,7 @@ where
     let g = x.graph();
 
     let min_tensor = crate::tensor_ops::scalar(min_value, g);
-    let max_tensor = crate::tensor_ops::scalar(max_value, g);
+    let max_tensor = crate::tensor_ops::scalar(maxvalue, g);
 
     // clip(x, min, max) = max(min(x, max), min)
     let clipped_upper = minimum(x, max_tensor);
@@ -700,6 +743,7 @@ where
 }
 
 /// Elementwise reciprocal (1/x)
+#[allow(dead_code)]
 pub fn inv<'graph, A, F: Float>(x: A) -> Tensor<'graph, F>
 where
     A: AsRef<Tensor<'graph, F>> + Copy,
@@ -709,6 +753,7 @@ where
 }
 
 /// Elementwise sign function
+#[allow(dead_code)]
 pub fn sign<'graph, A, F: Float>(x: A) -> Tensor<'graph, F>
 where
     A: AsRef<Tensor<'graph, F>> + Copy,
@@ -717,12 +762,13 @@ where
     let g = x.graph();
     Tensor::builder(g)
         .append_input(x.as_ref(), false)
-        .set_shape(&shape(x))
+        .setshape(&shape(x))
         .build(math_ops::Sign)
 }
 
 #[inline]
-fn infer_bin_op_shape<'graph, A, B, F: Float>(
+#[allow(dead_code)]
+fn infer_bin_opshape<'graph, A, B, F: Float>(
     g: &'graph Graph<F>,
     shape_a: A,
     shape_b: B,

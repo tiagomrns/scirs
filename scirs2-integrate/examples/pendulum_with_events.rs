@@ -20,6 +20,7 @@ use scirs2_integrate::ode::{
 };
 use std::f64::consts::PI;
 
+#[allow(dead_code)]
 fn main() -> IntegrateResult<()> {
     // Pendulum parameters
     let g: f64 = 9.81; // acceleration due to gravity (m/s²)
@@ -138,15 +139,12 @@ fn main() -> IntegrateResult<()> {
             let avg_period = periods.iter().sum::<f64>() / periods.len() as f64;
 
             println!("\nPeriod analysis:");
-            println!("  Calculated periods: {:?}", periods);
-            println!("  Average observed period: {:.6} s", avg_period);
+            println!("  Calculated periods: {periods:?}");
+            println!("  Average observed period: {avg_period:.6} s");
 
             // Compare with theoretical period for small oscillations: T = 2π * sqrt(l/g)
             let theoretical_period = 2.0 * PI * (l / g).sqrt();
-            println!(
-                "  Theoretical period (small angle): {:.6} s",
-                theoretical_period
-            );
+            println!("  Theoretical period (small angle): {theoretical_period:.6} s");
             println!(
                 "  Difference: {:.2}%",
                 100.0 * (avg_period - theoretical_period).abs() / theoretical_period

@@ -1,6 +1,7 @@
 use ndarray::array;
 use scirs2_stats::mann_whitney;
 
+#[allow(dead_code)]
 fn main() {
     // Example data: ages at diagnosis for type II diabetes
     let males = array![19.0, 22.0, 16.0, 29.0, 24.0];

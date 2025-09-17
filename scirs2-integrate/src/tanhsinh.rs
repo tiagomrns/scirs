@@ -6,6 +6,7 @@
 //! The method uses a change of variable x = tanh(π/2 · sinh(t)) which transforms the interval [-1, 1]
 //! to (-∞, ∞) and clusters the quadrature points near the endpoints.
 
+use std::f64::consts::PI;
 use std::fmt;
 
 use crate::error::{IntegrateError, IntegrateResult};
@@ -195,6 +196,7 @@ impl RuleCache {
 /// let result = tanhsinh(|x| x * x, 0.0, 1.0, None).unwrap();
 /// assert!((result.integral - 1.0/3.0).abs() < 1e-6);
 /// ```
+#[allow(dead_code)]
 pub fn tanhsinh<F>(
     f: F,
     a: f64,
@@ -331,6 +333,7 @@ enum TransformType {
 }
 
 /// Determine the appropriate transform for improper integrals
+#[allow(dead_code)]
 fn determine_transform(a: f64, b: f64) -> TransformType {
     if a.is_finite() && b.is_infinite() && b.is_sign_positive() {
         // [a, ∞) -> [a, 1] via x = a + t/(1-t)
@@ -345,6 +348,7 @@ fn determine_transform(a: f64, b: f64) -> TransformType {
 }
 
 /// Evaluate integral with the given rule
+#[allow(dead_code)]
 fn evaluate_with_rule<F>(
     state: &mut IntegrationState,
     rule: &TanhSinhRule,
@@ -370,7 +374,7 @@ fn evaluate_with_rule<F>(
                 let t = points[i];
                 if t < 1.0 - f64::EPSILON {
                     // Apply the transformation
-                    let jacobian = 1.0 / (1.0 - t).powi(2);
+                    let jacobian = 1.0 / (1.0_f64 - t).powi(2);
                     weights[i] *= jacobian;
                     // Transform the point
                     points[i] = *a + t / (1.0 - t);
@@ -392,7 +396,7 @@ fn evaluate_with_rule<F>(
                 let t = points[i];
                 if t < 1.0 - f64::EPSILON {
                     // Apply the transformation
-                    let jacobian = 1.0 / (1.0 - t).powi(2);
+                    let jacobian = 1.0 / (1.0_f64 - t).powi(2);
                     weights[i] *= jacobian;
                     // Transform the point
                     points[i] = *b - t / (1.0 - t);
@@ -438,6 +442,7 @@ fn evaluate_with_rule<F>(
 }
 
 /// Compute the weighted sum of function values
+#[allow(dead_code)]
 fn compute_sum<F>(
     state: &mut IntegrationState,
     points: &[f64],
@@ -452,7 +457,7 @@ fn compute_sum<F>(
     state.nfev += n_points;
 
     if log_space {
-        // Compute in log space to handle very large/small values
+        // Compute in log _space to handle very large/small values
         let mut values: Vec<f64> = Vec::with_capacity(n_points);
         let mut max_val = f64::NEG_INFINITY;
 
@@ -535,6 +540,7 @@ fn estimate_error(state: &mut IntegrationState) {
 /// Special case for infinite range integrals (-∞, ∞)
 /// This implementation avoids recursively calling tanhsinh by directly implementing
 /// the integration method with a tangent transformation.
+#[allow(dead_code)]
 fn infinite_range_integral<F>(
     f: F,
     options: TanhSinhOptions,
@@ -698,6 +704,7 @@ where
 /// let pi_squared_over_six = std::f64::consts::PI * std::f64::consts::PI / 6.0;
 /// assert!((result.integral - pi_squared_over_six).abs() < 1e-6);
 /// ```
+#[allow(dead_code)]
 pub fn nsum<F>(
     f: F,
     a: f64,
@@ -742,10 +749,10 @@ where
         });
     }
 
-    // For infinite or large sums, compute some terms directly and
+    // For infinite or large sums, compute some _terms directly and
     // use integration for the remainder
 
-    // Compute direct terms
+    // Compute direct _terms
     let mut direct_sum = 0.0;
     let mut n_terms = 0;
     let mut remainder_start = a;
@@ -807,7 +814,6 @@ where
 mod tests {
     use super::*;
     use approx::assert_abs_diff_eq;
-    use std::f64::consts::PI;
 
     #[test]
     fn test_basic_integral() {

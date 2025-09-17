@@ -9,6 +9,7 @@ use scirs2_vision::quality::{psnr, ssim, SSIMParams};
 use scirs2_vision::segmentation::slic;
 use std::error::Error;
 
+#[allow(dead_code)]
 fn main() -> Result<(), Box<dyn Error>> {
     println!("SciRS2 Vision Module - Comprehensive Demo\n");
 
@@ -99,8 +100,8 @@ fn main() -> Result<(), Box<dyn Error>> {
     let psnr_value = psnr(&img, &noisy_img, 255.0)?;
     let ssim_value = ssim(&img, &noisy_img, &SSIMParams::default())?;
 
-    println!("   PSNR: {:.2} dB", psnr_value);
-    println!("   SSIM: {:.4}", ssim_value);
+    println!("   PSNR: {psnr_value:.2} dB");
+    println!("   SSIM: {ssim_value:.4}");
 
     println!("\nDemo complete! Check examples/output/ for generated images.");
 

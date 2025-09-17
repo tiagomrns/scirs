@@ -4,6 +4,7 @@ use ndarray::Array2;
 use scirs2_cluster::hierarchy::{linkage, parallel_linkage, LinkageMethod, Metric};
 use std::time::Instant;
 
+#[allow(dead_code)]
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("=== Parallel Hierarchical Clustering Demo ===\n");
 
@@ -78,11 +79,12 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 }
 
 /// Create a test dataset with the specified number of points
-fn create_dataset(n_points: usize) -> Array2<f64> {
-    let mut data = Array2::zeros((n_points, 2));
+#[allow(dead_code)]
+fn create_dataset(_npoints: usize) -> Array2<f64> {
+    let mut data = Array2::zeros((_npoints, 2));
 
     // Create clusters for testing
-    for i in 0..n_points {
+    for i in 0.._npoints {
         let cluster_id = i % 3; // 3 clusters
         let angle = (i as f64) * 0.5;
 
@@ -110,6 +112,7 @@ fn create_dataset(n_points: usize) -> Array2<f64> {
 }
 
 /// Check if two linkage matrices are similar within a tolerance
+#[allow(dead_code)]
 fn are_linkage_matrices_similar(
     matrix1: &Array2<f64>,
     matrix2: &Array2<f64>,

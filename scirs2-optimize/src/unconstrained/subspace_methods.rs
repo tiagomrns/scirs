@@ -8,8 +8,8 @@
 use crate::error::OptimizeError;
 use crate::unconstrained::{line_search::backtracking_line_search, OptimizeResult};
 use ndarray::{Array1, ArrayView1};
-use rand::prelude::*;
-use rand::SeedableRng;
+use rand::rngs::StdRng;
+use rand::{Rng, SeedableRng};
 use std::collections::VecDeque;
 
 /// Options for subspace optimization methods
@@ -125,8 +125,8 @@ impl SubspaceState {
             // Generate sparse random vector
             let num_nonzeros = (n / 10).clamp(1, 20); // At most 20 nonzeros
             for _ in 0..num_nonzeros {
-                let idx = self.rng.random_range(0..n);
-                vec[idx] = self.rng.random::<f64>() * 2.0 - 1.0; // Random value in [-1, 1]
+                let idx = self.rng.gen_range(0..n);
+                vec[idx] = self.rng.gen_range(-1.0..1.0); // Random value in [-1..1]
             }
             // Normalize
             let norm = vec.mapv(|x: f64| x.powi(2)).sum().sqrt();
@@ -187,6 +187,7 @@ impl SubspaceState {
 }
 
 /// Orthogonalize basis vectors using modified Gram-Schmidt
+#[allow(dead_code)]
 fn orthogonalize_basis(basis: &mut Vec<Array1<f64>>) {
     for i in 0..basis.len() {
         // Normalize current vector
@@ -209,6 +210,7 @@ fn orthogonalize_basis(basis: &mut Vec<Array1<f64>>) {
 }
 
 /// Random coordinate descent method
+#[allow(dead_code)]
 pub fn minimize_random_coordinate_descent<F>(
     mut fun: F,
     x0: Array1<f64>,
@@ -232,7 +234,7 @@ where
         // Perform coordinate descent on random coordinates
         for _ in 0..options.coord_max_iter {
             // Select random coordinate
-            let coord = state.rng.random_range(0..n);
+            let coord = state.rng.gen_range(0..n);
 
             // Line search along coordinate direction
             let _f_current = fun(&x.view());
@@ -275,7 +277,6 @@ where
             return Ok(OptimizeResult {
                 x,
                 fun: best_f,
-                iterations: iter,
                 nit: iter,
                 func_evals: nfev,
                 nfev,
@@ -290,7 +291,6 @@ where
     Ok(OptimizeResult {
         x,
         fun: best_f,
-        iterations: options.max_iter,
         nit: options.max_iter,
         func_evals: nfev,
         nfev,
@@ -302,6 +302,7 @@ where
 }
 
 /// Block coordinate descent method
+#[allow(dead_code)]
 pub fn minimize_block_coordinate_descent<F>(
     mut fun: F,
     x0: Array1<f64>,
@@ -348,7 +349,6 @@ where
             return Ok(OptimizeResult {
                 x,
                 fun: best_f,
-                iterations: iter,
                 nit: iter,
                 func_evals: nfev,
                 nfev,
@@ -363,7 +363,6 @@ where
     Ok(OptimizeResult {
         x,
         fun: best_f,
-        iterations: options.max_iter,
         nit: options.max_iter,
         func_evals: nfev,
         nfev,
@@ -375,6 +374,7 @@ where
 }
 
 /// Random subspace gradient method
+#[allow(dead_code)]
 pub fn minimize_random_subspace<F>(
     mut fun: F,
     x0: Array1<f64>,
@@ -420,7 +420,6 @@ where
             return Ok(OptimizeResult {
                 x,
                 fun: best_f,
-                iterations: iter,
                 nit: iter,
                 func_evals: nfev,
                 nfev,
@@ -475,7 +474,6 @@ where
     Ok(OptimizeResult {
         x,
         fun: best_f,
-        iterations: options.max_iter,
         nit: options.max_iter,
         func_evals: nfev,
         nfev,
@@ -487,6 +485,7 @@ where
 }
 
 /// Adaptive subspace method using gradient history
+#[allow(dead_code)]
 pub fn minimize_adaptive_subspace<F>(
     mut fun: F,
     x0: Array1<f64>,
@@ -540,7 +539,6 @@ where
             return Ok(OptimizeResult {
                 x,
                 fun: best_f,
-                iterations: iter,
                 nit: iter,
                 func_evals: nfev,
                 nfev,
@@ -580,7 +578,6 @@ where
     Ok(OptimizeResult {
         x,
         fun: best_f,
-        iterations: options.max_iter,
         nit: options.max_iter,
         func_evals: nfev,
         nfev,
@@ -592,6 +589,7 @@ where
 }
 
 /// Minimize using subspace methods
+#[allow(dead_code)]
 pub fn minimize_subspace<F>(
     fun: F,
     x0: Array1<f64>,
@@ -617,6 +615,7 @@ where
 }
 
 /// Cyclical coordinate descent method
+#[allow(dead_code)]
 pub fn minimize_cyclical_coordinate_descent<F>(
     mut fun: F,
     x0: Array1<f64>,
@@ -678,7 +677,6 @@ where
             return Ok(OptimizeResult {
                 x,
                 fun: best_f,
-                iterations: iter,
                 nit: iter,
                 func_evals: nfev,
                 nfev,
@@ -693,7 +691,6 @@ where
     Ok(OptimizeResult {
         x,
         fun: best_f,
-        iterations: options.max_iter,
         nit: options.max_iter,
         func_evals: nfev,
         nfev,
@@ -705,6 +702,7 @@ where
 }
 
 /// Helper function to find step size along a coordinate direction
+#[allow(dead_code)]
 fn find_step_size<F>(
     fun: &mut F,
     x: &Array1<f64>,
@@ -764,6 +762,7 @@ where
 }
 
 /// Optimize within a block of coordinates
+#[allow(dead_code)]
 fn optimize_block<F>(
     fun: &mut F,
     x: &mut Array1<f64>,
@@ -834,6 +833,7 @@ where
 }
 
 /// Compute finite difference gradient
+#[allow(dead_code)]
 fn compute_finite_diff_gradient<F>(fun: &mut F, x: &Array1<f64>, nfev: &mut usize) -> Array1<f64>
 where
     F: FnMut(&ArrayView1<f64>) -> f64,

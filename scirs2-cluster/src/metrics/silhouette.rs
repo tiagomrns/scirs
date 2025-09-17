@@ -21,6 +21,7 @@ use crate::vq::euclidean_distance;
 /// # Returns
 ///
 /// * Array of silhouette scores for each sample (n_samples,)
+#[allow(dead_code)]
 pub fn silhouette_samples<F>(data: ArrayView2<F>, labels: ArrayView1<i32>) -> Result<Array1<F>>
 where
     F: Float + FromPrimitive,
@@ -140,6 +141,7 @@ where
 /// # Returns
 ///
 /// * Mean silhouette score across all samples
+#[allow(dead_code)]
 pub fn silhouette_score<F>(data: ArrayView2<F>, labels: ArrayView1<i32>) -> Result<F>
 where
     F: Float + FromPrimitive,

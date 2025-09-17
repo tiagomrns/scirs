@@ -27,8 +27,9 @@ use scirs2_linalg::preconditioners::{
 };
 use std::time::Instant;
 
+#[allow(dead_code)]
 fn main() -> Result<(), Box<dyn std::error::Error>> {
-    println!("🚀 ADVANCED PRECONDITIONERS - ULTRATHINK DEMONSTRATION");
+    println!("🚀 ADVANCED PRECONDITIONERS - Advanced DEMONSTRATION");
     println!("====================================================");
 
     // Test 1: Diagonal (Jacobi) Preconditioner - Foundation of Preconditioning
@@ -148,7 +149,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("---------------------------------------------------");
 
     // Create a symmetric positive definite matrix
-    let base_matrix = Array2::from_shape_fn((4, 4), |(i, j)| {
+    let basematrix = Array2::from_shape_fn((4, 4), |(i, j)| {
         if i == j {
             5.0 // Strong diagonal
         } else if (i as i32 - j as i32).abs() == 1 {
@@ -166,11 +167,11 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         .with_type(PreconditionerType::IncompleteCholesky)
         .with_drop_tolerance(1e-8);
 
-    let ic_preconditioner = IncompleteCholeskyPreconditioner::new(&base_matrix.view(), &config_ic)?;
+    let ic_preconditioner = IncompleteCholeskyPreconditioner::new(&basematrix.view(), &config_ic)?;
 
     let start_time = Instant::now();
     let solution_ic = preconditioned_conjugate_gradient(
-        &base_matrix.view(),
+        &basematrix.view(),
         &rhs_ic.view(),
         &ic_preconditioner,
         100,
@@ -184,7 +185,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         ic_time.as_nanos() as f64 / 1_000_000.0
     );
 
-    let residual_ic = &rhs_ic - &base_matrix.dot(&solution_ic);
+    let residual_ic = &rhs_ic - &basematrix.dot(&solution_ic);
     let residual_norm_ic = (residual_ic.iter().map(|&x| x * x).sum::<f64>()).sqrt();
     println!("   Residual norm: {:.2e}", residual_norm_ic);
     println!("   ✅ Incomplete Cholesky exploits symmetry for maximum efficiency");
@@ -219,7 +220,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let config_bj = PreconditionerConfig::default()
         .with_type(PreconditionerType::BlockJacobi)
-        .with_block_size(3);
+        .with_blocksize(3);
 
     let bj_preconditioner = BlockJacobiPreconditioner::new(&matrix_bj.view(), &config_bj)?;
 
@@ -372,7 +373,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("\n7. PERFORMANCE ANALYSIS: Optimization Recommendations");
     println!("-----------------------------------------------------");
 
-    let benchmark_matrix = Array2::from_shape_fn((8, 8), |(i, j)| {
+    let benchmarkmatrix = Array2::from_shape_fn((8, 8), |(i, j)| {
         if i == j {
             5.0
         } else if (i as i32 - j as i32).abs() == 1 {
@@ -394,8 +395,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     println!(
         "   Benchmarking different preconditioners on {}×{} matrix:",
-        benchmark_matrix.nrows(),
-        benchmark_matrix.ncols()
+        benchmarkmatrix.nrows(),
+        benchmarkmatrix.ncols()
     );
     println!("   Method              Setup (ms)  Apply (μs)  Memory (KB)  Effectiveness");
     println!("   ----------------------------------------------------------------");
@@ -404,17 +405,17 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         let config = PreconditionerConfig::default().with_type(preconditioner_type);
 
         let start_setup = Instant::now();
-        let preconditioner = create_preconditioner(&benchmark_matrix.view(), &config)?;
+        let preconditioner = create_preconditioner(&benchmarkmatrix.view(), &config)?;
         let setup_time = start_setup.elapsed();
 
         // Test application time
-        let test_vector = Array1::ones(benchmark_matrix.nrows());
+        let test_vector = Array1::ones(benchmarkmatrix.nrows());
         let start_apply = Instant::now();
         let _result = preconditioner.apply(&test_vector.view())?;
         let apply_time = start_apply.elapsed();
 
         // Analyze performance
-        let analysis = analyze_preconditioner(&benchmark_matrix.view(), preconditioner.as_ref())?;
+        let analysis = analyze_preconditioner(&benchmarkmatrix.view(), preconditioner.as_ref())?;
 
         println!(
             "   {:<19} {:>8.2}    {:>8.1}    {:>8.1}      {:.1}x",
@@ -487,7 +488,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("      - Runtime performance profiling and adaptation");
 
     println!("\n======================================================");
-    println!("🎯 ULTRATHINK ACHIEVEMENT: PRECONDITIONERS COMPLETE");
+    println!("🎯 Advanced ACHIEVEMENT: PRECONDITIONERS COMPLETE");
     println!("======================================================");
     println!("✅ Incomplete factorizations: ILU/IC with drop tolerance control");
     println!("✅ Domain decomposition: Block Jacobi for parallel computing");
@@ -503,6 +504,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 }
 
 /// Estimate matrix sparsity ratio
+#[allow(dead_code)]
 fn estimate_sparsity(matrix: &ArrayView2<f64>) -> f64 {
     let (m, n) = matrix.dim();
     let total_elements = m * n;
@@ -513,6 +515,7 @@ fn estimate_sparsity(matrix: &ArrayView2<f64>) -> f64 {
 }
 
 /// Check if matrix is symmetric
+#[allow(dead_code)]
 fn check_symmetry(matrix: &ArrayView2<f64>) -> bool {
     let (m, n) = matrix.dim();
     if m != n {

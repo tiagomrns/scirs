@@ -3,19 +3,21 @@
 //! This benchmark suite covers all major operation categories in scirs2-linalg
 //! to ensure comprehensive performance monitoring.
 
-use criterion::{black_box, criterion_group, criterion_main, BenchmarkId, Criterion, Throughput};
+use std::hint::black_box;
+
+use criterion::{criterion_group, criterion_main, BenchmarkId, Criterion, Throughput};
 use ndarray::{s, Array1, Array2};
 use scirs2_linalg::blas::{dot, nrm2};
 use scirs2_linalg::mixed_precision::{
     mixed_precision_dot, mixed_precision_matmul, mixed_precision_solve,
 };
 use scirs2_linalg::prelude::*;
-use scirs2_linalg::structured::{CirculantMatrix, ToeplitzMatrix};
-use scirs2_linalg::*;
+use scirs2_linalg::structured::{solve_circulant, solve_toeplitz};
 use std::time::Duration;
 
 /// Create a well-conditioned test matrix
-fn create_test_matrix(n: usize) -> Array2<f64> {
+#[allow(dead_code)]
+fn create_testmatrix(n: usize) -> Array2<f64> {
     let mut matrix = Array2::zeros((n, n));
     for i in 0..n {
         for j in 0..n {
@@ -30,24 +32,27 @@ fn create_test_matrix(n: usize) -> Array2<f64> {
 }
 
 /// Create a symmetric positive definite matrix
-fn create_spd_matrix(n: usize) -> Array2<f64> {
+#[allow(dead_code)]
+fn create_spdmatrix(n: usize) -> Array2<f64> {
     let a = Array2::from_shape_fn((n, n), |(i, j)| ((i + j + 1) as f64 * 0.1).sin());
     a.t().dot(&a) + Array2::<f64>::eye(n) * (n as f64)
 }
 
 /// Create a test vector
+#[allow(dead_code)]
 fn create_test_vector(n: usize) -> Array1<f64> {
     Array1::from_shape_fn(n, |i| ((i + 1) as f64 * 0.1).sin())
 }
 
 /// Benchmark basic BLAS operations
+#[allow(dead_code)]
 fn bench_blas_operations(c: &mut Criterion) {
     let mut group = c.benchmark_group("blas_operations");
 
     for &size in &[100, 1000, 10000] {
         let x = create_test_vector(size);
         let y = create_test_vector(size);
-        let matrix = create_test_matrix(size.min(500)); // Limit matrix size for efficiency
+        let matrix = create_testmatrix(size.min(500)); // Limit matrix size for efficiency
 
         group.throughput(Throughput::Elements(size as u64));
 
@@ -63,12 +68,12 @@ fn bench_blas_operations(c: &mut Criterion) {
 
         // Matrix-vector multiplication (if matrix size allows)
         if size <= 500 {
-            let mv_size = size.min(matrix.nrows());
-            let v = x.slice(s![..mv_size]).to_owned();
+            let mvsize = size.min(matrix.nrows());
+            let v = x.slice(s![..mvsize]).to_owned();
             group.bench_with_input(
-                BenchmarkId::new("matvec", mv_size),
+                BenchmarkId::new("matvec", mvsize),
                 &(&matrix, &v),
-                |b, (m, v)| b.iter(|| m.dot(v)), // Remove black_box from inside dot
+                |b, (m, v)| b.iter(|| m.dot(&v.view())), // Use view for proper reference type
             );
         }
     }
@@ -77,13 +82,14 @@ fn bench_blas_operations(c: &mut Criterion) {
 }
 
 /// Benchmark iterative solvers
+#[allow(dead_code)]
 fn bench_iterative_solvers(c: &mut Criterion) {
     let mut group = c.benchmark_group("iterative_solvers");
     group.sample_size(10);
     group.measurement_time(Duration::from_secs(30));
 
     for &size in &[50, 100, 200] {
-        let matrix = create_spd_matrix(size);
+        let matrix = create_spdmatrix(size);
         let rhs = create_test_vector(size);
 
         group.throughput(Throughput::Elements(size as u64 * size as u64));
@@ -124,11 +130,12 @@ fn bench_iterative_solvers(c: &mut Criterion) {
 }
 
 /// Benchmark mixed precision operations
+#[allow(dead_code)]
 fn bench_mixed_precision(c: &mut Criterion) {
     let mut group = c.benchmark_group("mixed_precision");
 
     for &size in &[50, 100, 200] {
-        let matrix_f64 = create_test_matrix(size);
+        let matrix_f64 = create_testmatrix(size);
         let matrix_f32 = matrix_f64.mapv(|x| x as f32);
         let vector_f64 = create_test_vector(size);
         let vector_f32 = vector_f64.mapv(|x| x as f32);
@@ -168,7 +175,12 @@ fn bench_mixed_precision(c: &mut Criterion) {
             BenchmarkId::new("mixed_solve", size),
             &(&matrix_f32, &vector_f32),
             |b, (m, v)| {
-                b.iter(|| mixed_precision_solve(black_box(&m.view()), black_box(&v.view())))
+                b.iter(|| {
+                    mixed_precision_solve::<f32, f32, f32, f64>(
+                        black_box(&m.view()),
+                        black_box(&v.view()),
+                    )
+                })
             },
         );
     }
@@ -177,12 +189,12 @@ fn bench_mixed_precision(c: &mut Criterion) {
 }
 
 /// Benchmark structured matrix operations
+#[allow(dead_code)]
 fn bench_structured_matrices(c: &mut Criterion) {
     let mut group = c.benchmark_group("structured_matrices");
 
     for &size in &[50, 100, 200] {
         let first_row = create_test_vector(size);
-        let first_col = create_test_vector(size);
         let rhs = create_test_vector(size);
 
         group.throughput(Throughput::Elements(size as u64 * size as u64));
@@ -192,10 +204,7 @@ fn bench_structured_matrices(c: &mut Criterion) {
             BenchmarkId::new("toeplitz_solve", size),
             &(&first_row, &rhs),
             |b, (r, rhs)| {
-                b.iter(|| {
-                    let toeplitz = ToeplitzMatrix::new(r.clone(), r.clone()).unwrap();
-                    toeplitz.solve(black_box(&rhs.view()))
-                })
+                b.iter(|| solve_toeplitz(r.view(), r.view(), black_box(rhs.view())).unwrap())
             },
         );
 
@@ -203,12 +212,7 @@ fn bench_structured_matrices(c: &mut Criterion) {
         group.bench_with_input(
             BenchmarkId::new("circulant_solve", size),
             &(&first_row, &rhs),
-            |b, (r, rhs)| {
-                b.iter(|| {
-                    let mut circulant = CirculantMatrix::new(r.clone()).unwrap();
-                    circulant.solve(black_box(&rhs.view()))
-                })
-            },
+            |b, (r, rhs)| b.iter(|| solve_circulant(r.view(), black_box(rhs.view())).unwrap()),
         );
     }
 
@@ -216,12 +220,13 @@ fn bench_structured_matrices(c: &mut Criterion) {
 }
 
 /// Benchmark matrix factorizations
-fn bench_matrix_factorizations(c: &mut Criterion) {
+#[allow(dead_code)]
+fn benchmatrix_factorizations(c: &mut Criterion) {
     let mut group = c.benchmark_group("matrix_factorizations");
     group.sample_size(10);
 
     for &size in &[20, 50, 100] {
-        let matrix = create_test_matrix(size);
+        let matrix = create_testmatrix(size);
 
         group.throughput(Throughput::Elements(size as u64 * size as u64));
 
@@ -235,9 +240,7 @@ fn bench_matrix_factorizations(c: &mut Criterion) {
         group.bench_with_input(
             BenchmarkId::new("cur_decomposition", size),
             &matrix,
-            |b, m| {
-                b.iter(|| cur_decomposition(black_box(&m.view()), 10, None, None, "deterministic"))
-            },
+            |b, m| b.iter(|| cur_decomposition(black_box(&m.view()), 10, None, None)),
         );
 
         // Rank-revealing QR
@@ -252,13 +255,17 @@ fn bench_matrix_factorizations(c: &mut Criterion) {
 }
 
 /// Benchmark complex number operations
+#[allow(dead_code)]
 fn bench_complex_operations(c: &mut Criterion) {
     let mut group = c.benchmark_group("complex_operations");
 
     for &size in &[50, 100, 200] {
         use num_complex::Complex64;
         let matrix = Array2::from_shape_fn((size, size), |(i, j)| {
-            Complex64::new(((i + j) as f64 * 0.1).sin(), ((i - j) as f64 * 0.1).cos())
+            Complex64::new(
+                ((i + j) as f64 * 0.1).sin(),
+                ((i as f64 - j as f64) * 0.1).cos(),
+            )
         });
 
         group.throughput(Throughput::Elements(size as u64 * size as u64));
@@ -289,6 +296,7 @@ fn bench_complex_operations(c: &mut Criterion) {
 }
 
 /// Benchmark random matrix generation
+#[allow(dead_code)]
 fn bench_random_matrices(c: &mut Criterion) {
     let mut group = c.benchmark_group("random_matrices");
 
@@ -323,7 +331,7 @@ fn bench_random_matrices(c: &mut Criterion) {
 
         // Random orthogonal matrix
         group.bench_with_input(BenchmarkId::new("orthogonal", size), &size, |b, &s| {
-            b.iter(|| orthogonal(black_box(s), black_box(None)))
+            b.iter(|| orthogonal::<f64>(black_box(s), black_box(None)))
         });
 
         // Random SPD matrix
@@ -343,13 +351,14 @@ fn bench_random_matrices(c: &mut Criterion) {
 }
 
 /// Benchmark Kronecker operations
+#[allow(dead_code)]
 fn bench_kronecker_operations(c: &mut Criterion) {
     let mut group = c.benchmark_group("kronecker_operations");
 
     for &size in &[10, 20, 30] {
         // Keep sizes small for Kronecker products
-        let matrix_a = create_test_matrix(size);
-        let matrix_b = create_test_matrix(size);
+        let matrix_a = create_testmatrix(size);
+        let matrix_b = create_testmatrix(size);
         let vector = create_test_vector(size * size);
 
         group.throughput(Throughput::Elements(
@@ -385,11 +394,12 @@ fn bench_kronecker_operations(c: &mut Criterion) {
 }
 
 /// Benchmark projection operations
+#[allow(dead_code)]
 fn bench_projection_operations(c: &mut Criterion) {
     let mut group = c.benchmark_group("projection_operations");
 
     for &size in &[100, 500, 1000] {
-        let matrix = create_test_matrix(size.min(200)); // Limit for efficiency
+        let matrix = create_testmatrix(size.min(200)); // Limit for efficiency
         let target_dim = size / 4;
 
         group.throughput(Throughput::Elements(size as u64 * size as u64));
@@ -399,9 +409,9 @@ fn bench_projection_operations(c: &mut Criterion) {
             BenchmarkId::new("gaussian_projection", size),
             &(&matrix, target_dim),
             |bencher, (m, d)| {
-                let proj_matrix =
-                    gaussian_random_matrix(black_box(*d), black_box(m.ncols())).unwrap();
-                bencher.iter(|| project(black_box(&m.view()), black_box(&proj_matrix.view())))
+                let projmatrix =
+                    gaussian_randommatrix(black_box(*d), black_box(m.ncols())).unwrap();
+                bencher.iter(|| project(black_box(&m.view()), black_box(&projmatrix.view())))
             },
         );
 
@@ -429,7 +439,7 @@ criterion_group!(
     bench_iterative_solvers,
     bench_mixed_precision,
     bench_structured_matrices,
-    bench_matrix_factorizations,
+    benchmatrix_factorizations,
     bench_complex_operations,
     bench_random_matrices,
     bench_kronecker_operations,

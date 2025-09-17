@@ -3,6 +3,7 @@
 use ndarray::Array1;
 use scirs2_optim::optimizers::{Lion, Optimizer};
 
+#[allow(dead_code)]
 fn main() {
     let mut optimizer: Lion<f64> = Lion::new(0.01);
 

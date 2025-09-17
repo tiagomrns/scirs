@@ -3,6 +3,7 @@ use scirs2_signal::lombscargle::{find_peaks, lombscargle, significance_levels, A
 use std::error::Error;
 use std::f64::consts::PI;
 
+#[allow(dead_code)]
 fn main() -> Result<(), Box<dyn Error>> {
     println!("Lomb-Scargle Periodogram Example");
     println!("--------------------------------");
@@ -12,7 +13,7 @@ fn main() -> Result<(), Box<dyn Error>> {
     let n_samples = 500;
 
     // Create time samples with uneven spacing
-    let mut rng = rng();
+    let mut rng = rand::rng();
     let mut t = Vec::with_capacity(n_samples);
 
     // Start with roughly evenly spaced samples, then add jitter

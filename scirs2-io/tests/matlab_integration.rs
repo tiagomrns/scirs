@@ -6,6 +6,7 @@ use std::f64::consts::PI as PI_F64;
 use tempfile::tempdir;
 
 #[test]
+#[allow(dead_code)]
 fn test_matlab_write_read_roundtrip() {
     let temp_dir = tempdir().unwrap();
     let mat_file = temp_dir.path().join("test.mat");

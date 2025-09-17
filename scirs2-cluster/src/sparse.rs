@@ -115,7 +115,7 @@ impl<F: Float + FromPrimitive> SparseDistanceMatrix<F> {
     }
 
     /// Get all neighbors within a given distance threshold
-    pub fn neighbors_within_distance(&self, point: usize, max_distance: F) -> Vec<(usize, F)> {
+    pub fn neighbors_within_distance(&self, point: usize, maxdistance: F) -> Vec<(usize, F)> {
         let mut neighbors = Vec::new();
 
         // Check all stored distances involving this point
@@ -128,7 +128,7 @@ impl<F: Float + FromPrimitive> SparseDistanceMatrix<F> {
                 continue;
             };
 
-            if distance <= max_distance {
+            if distance <= maxdistance {
                 neighbors.push((neighbor, distance));
             }
         }
@@ -319,10 +319,10 @@ impl<F: Float + FromPrimitive + Debug + PartialOrd> SparseHierarchicalClustering
     fn mst_to_linkage(&self, mut mst_edges: Vec<(usize, usize, F)>) -> Result<Array2<F>> {
         let n_samples = self.sparse_matrix.n_samples();
 
-        // Sort edges by distance for single linkage, or process in MST order
+        // Sort _edges by distance for single linkage, or process in MST order
         match self.linkage_method {
             LinkageMethod::Single => {
-                // For single linkage, MST edges directly give the dendrogram
+                // For single linkage, MST _edges directly give the dendrogram
                 mst_edges.sort_by(|a, b| a.2.partial_cmp(&b.2).unwrap());
             }
             _ => {
@@ -361,6 +361,7 @@ impl<F: Float + FromPrimitive + Debug + PartialOrd> SparseHierarchicalClustering
 }
 
 /// Build a sparse k-nearest neighbor graph from dense data
+#[allow(dead_code)]
 pub fn sparse_knn_graph<F>(
     data: ArrayView2<F>,
     k: usize,
@@ -431,6 +432,7 @@ where
 }
 
 /// Build a sparse epsilon-neighborhood graph from dense data
+#[allow(dead_code)]
 pub fn sparse_epsilon_graph<F>(
     data: ArrayView2<F>,
     epsilon: F,

@@ -25,8 +25,9 @@ use scirs2_linalg::fft::{
 };
 use std::f64::consts::PI;
 
+#[allow(dead_code)]
 fn main() -> Result<(), Box<dyn std::error::Error>> {
-    println!("🚀 FFT AND SPECTRAL ANALYSIS - ULTRATHINK DEMONSTRATION");
+    println!("🚀 FFT AND SPECTRAL ANALYSIS - Advanced DEMONSTRATION");
     println!("========================================================");
 
     // Test 1: Basic 1D FFT Algorithms
@@ -152,9 +153,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("\n4. WINDOWING FUNCTIONS: Spectral Leakage Reduction");
     println!("--------------------------------------------------");
 
-    let window_size = 32;
-    let test_signal = Array1::from_shape_fn(window_size, |i| {
-        (2.0 * PI * 7.5 * i as f64 / window_size as f64).sin() // Non-integer frequency
+    let windowsize = 32;
+    let test_signal = Array1::from_shape_fn(windowsize, |i| {
+        (2.0 * PI * 7.5 * i as f64 / windowsize as f64).sin() // Non-integer frequency
     });
 
     let window_types = vec![
@@ -382,10 +383,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("\n9. PERFORMANCE ANALYSIS: O(n log n) Advantage");
     println!("---------------------------------------------");
 
-    let test_sizes = vec![64, 128, 256, 512, 1024];
+    let testsizes = vec![64, 128, 256, 512, 1024];
     println!("   FFT complexity scaling demonstration:");
 
-    for &size in &test_sizes {
+    for &size in &testsizes {
         let test_data = Array1::from_shape_fn(size, |i| {
             Complex64::new((2.0 * PI * i as f64 / size as f64).sin(), 0.0)
         });
@@ -407,7 +408,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     }
 
     println!("\n========================================================");
-    println!("🎯 ULTRATHINK ACHIEVEMENT: FAST FOURIER TRANSFORM");
+    println!("🎯 Advanced ACHIEVEMENT: FAST FOURIER TRANSFORM");
     println!("========================================================");
     println!("✅ Core FFT algorithms: Cooley-Tukey, mixed-radix, Bluestein");
     println!("✅ Real FFT optimization: 2x speedup via Hermitian symmetry");

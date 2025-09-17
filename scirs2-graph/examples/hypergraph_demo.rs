@@ -6,6 +6,7 @@
 
 use scirs2_graph::{Hypergraph, Result};
 
+#[allow(dead_code)]
 fn main() -> Result<()> {
     println!("=== Hypergraph Demo ===\n");
 
@@ -30,34 +31,22 @@ fn main() -> Result<()> {
 
     // Add a 3-way collaboration hyperedge
     let he1 = hypergraph.add_hyperedge_from_vec(vec!["Alice", "Bob", "Charlie"], 1.0)?;
-    println!(
-        "   Added collaboration hyperedge {}: Alice-Bob-Charlie (weight: 1.0)",
-        he1
-    );
+    println!("   Added collaboration hyperedge {he1}: Alice-Bob-Charlie (weight: 1.0)");
 
     // Add a 2-way friendship hyperedge (like a regular edge)
     let he2 = hypergraph.add_hyperedge_from_vec(vec!["Alice", "Diana"], 0.8)?;
-    println!(
-        "   Added friendship hyperedge {}: Alice-Diana (weight: 0.8)",
-        he2
-    );
+    println!("   Added friendship hyperedge {he2}: Alice-Diana (weight: 0.8)");
 
     // Add a 4-way meeting hyperedge
     let he3 = hypergraph.add_hyperedge_from_vec(vec!["Bob", "Charlie", "Diana", "Eve"], 1.5)?;
-    println!(
-        "   Added meeting hyperedge {}: Bob-Charlie-Diana-Eve (weight: 1.5)",
-        he3
-    );
+    println!("   Added meeting hyperedge {he3}: Bob-Charlie-Diana-Eve (weight: 1.5)");
 
     println!("\n3. Hypergraph statistics:");
     println!("   Total nodes: {}", hypergraph.node_count());
     println!("   Total hyperedges: {}", hypergraph.hyperedge_count());
 
     let (min_size, max_size, avg_size) = hypergraph.hyperedge_size_stats();
-    println!(
-        "   Hyperedge sizes - Min: {}, Max: {}, Avg: {:.2}",
-        min_size, max_size, avg_size
-    );
+    println!("   Hyperedge sizes - Min: {min_size}, Max: {max_size}, Avg: {avg_size:.2}");
     println!("   Is uniform: {}", hypergraph.is_uniform());
 
     println!("\n4. Analyzing connections:");
@@ -82,8 +71,7 @@ fn main() -> Result<()> {
         let connected = hypergraph.are_connected(person1, person2);
         let connecting_edges = hypergraph.connecting_hyperedges(person1, person2);
         println!(
-            "   {} and {} connected: {} (via hyperedges: {:?})",
-            person1, person2, connected, connecting_edges
+            "   {person1} and {person2} connected: {connected} (via hyperedges: {connecting_edges:?})"
         );
     }
 
@@ -127,7 +115,7 @@ fn main() -> Result<()> {
     sorted_nodes.sort();
 
     for (i, node) in sorted_nodes.iter().enumerate() {
-        print!("   {}: ", node);
+        print!("   {node}: ");
         for j in 0..incidence.shape()[1] {
             print!("{} ", incidence[[i, j]]);
         }
@@ -147,7 +135,7 @@ fn main() -> Result<()> {
 
     println!("\n10. Removing a hyperedge:");
 
-    println!("   Removing hyperedge {} (Alice-Diana friendship)", he2);
+    println!("   Removing hyperedge {he2} (Alice-Diana friendship)");
     let removed = hypergraph.remove_hyperedge(he2)?;
     println!(
         "   Removed: {:?} with weight {}",

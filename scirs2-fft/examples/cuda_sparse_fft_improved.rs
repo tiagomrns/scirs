@@ -12,6 +12,7 @@ use scirs2_fft::{
 };
 use std::time::Instant;
 
+#[allow(dead_code)]
 fn main() -> FFTResult<()> {
     println!("Enhanced CUDA Sparse FFT Example");
     println!("=================================");

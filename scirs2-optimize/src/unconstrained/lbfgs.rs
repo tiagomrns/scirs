@@ -6,6 +6,7 @@ use crate::unconstrained::{Bounds, Options};
 use ndarray::{Array1, ArrayView1};
 
 /// Implements the L-BFGS-B algorithm for bound-constrained optimization
+#[allow(dead_code)]
 pub fn minimize_lbfgsb<F, S>(
     mut fun: F,
     x0: Array1<f64>,
@@ -229,7 +230,6 @@ where
     Ok(OptimizeResult {
         x,
         fun: final_fun,
-        iterations: iter,
         nit: iter,
         func_evals: nfev,
         nfev,
@@ -245,6 +245,7 @@ where
 }
 
 /// Implements the Limited-memory BFGS algorithm for large-scale optimization
+#[allow(dead_code)]
 pub fn minimize_lbfgs<F, S>(
     mut fun: F,
     x0: Array1<f64>,
@@ -466,7 +467,6 @@ where
     Ok(OptimizeResult {
         x,
         fun: final_fun,
-        iterations: iter,
         nit: iter,
         func_evals: nfev,
         nfev,
@@ -482,6 +482,7 @@ where
 }
 
 /// Calculate gradient using finite differences, with special handling for bounds
+#[allow(dead_code)]
 fn calculate_gradient<F, S>(
     fun: &mut F,
     x: &Array1<f64>,
@@ -542,6 +543,7 @@ fn calculate_gradient<F, S>(
 
 /// Calculate the projected gradient norm, which measures how close we are to a stationary point
 /// in the presence of bounds constraints.
+#[allow(dead_code)]
 fn projected_gradient_norm(x: &Array1<f64>, g: &Array1<f64>, bounds: Option<&Bounds>) -> f64 {
     let n = x.len();
     let mut pg = Array1::zeros(n);
@@ -579,6 +581,7 @@ fn projected_gradient_norm(x: &Array1<f64>, g: &Array1<f64>, bounds: Option<&Bou
 
 /// Projects the search direction to ensure we don't move in a direction that
 /// immediately violates the bounds.
+#[allow(dead_code)]
 fn project_direction(direction: &mut Array1<f64>, x: &Array1<f64>, bounds: Option<&Bounds>) {
     if bounds.is_none() {
         return; // No bounds, no projection needed
@@ -592,14 +595,14 @@ fn project_direction(direction: &mut Array1<f64>, x: &Array1<f64>, bounds: Optio
         // Check if we're at a bound
         if let Some(lb) = bounds.lower[i] {
             if (xi - lb).abs() < 1e-10 && direction[i] < 0.0 {
-                // At lower bound and moving in negative direction
+                // At lower bound and moving in negative _direction
                 direction[i] = 0.0;
             }
         }
 
         if let Some(ub) = bounds.upper[i] {
             if (xi - ub).abs() < 1e-10 && direction[i] > 0.0 {
-                // At upper bound and moving in positive direction
+                // At upper bound and moving in positive _direction
                 direction[i] = 0.0;
             }
         }
@@ -607,6 +610,7 @@ fn project_direction(direction: &mut Array1<f64>, x: &Array1<f64>, bounds: Optio
 }
 
 /// Line search for L-BFGS-B method, respecting bounds
+#[allow(dead_code)]
 fn lbfgsb_line_search<F, S>(
     fun: &mut F,
     x: &Array1<f64>,
@@ -678,6 +682,7 @@ where
 }
 
 /// Compute bounds for line search parameter
+#[allow(dead_code)]
 fn compute_line_bounds(
     x: &Array1<f64>,
     direction: &Array1<f64>,

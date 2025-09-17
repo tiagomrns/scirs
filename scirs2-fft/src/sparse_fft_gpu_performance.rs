@@ -126,7 +126,7 @@ impl PerformanceCollector {
     }
     
     /// Get best profile for a given signal size
-    pub fn get_best_profile(&self, signal_size: usize) -> Option<&PerformanceProfile> {
+    pub fn get_best_profile(&self, signalsize: usize) -> Option<&PerformanceProfile> {
         self.profiles
             .iter()
             .filter(|p| p.signal_size == signal_size)
@@ -134,17 +134,17 @@ impl PerformanceCollector {
     }
     
     /// Get best algorithm for a given signal size
-    pub fn get_best_algorithm(&self, signal_size: usize) -> Option<SparseFFTAlgorithm> {
+    pub fn get_best_algorithm(&self, signalsize: usize) -> Option<SparseFFTAlgorithm> {
         self.get_best_profile(signal_size).map(|p| p.algorithm)
     }
     
     /// Get best window function for a given signal size
-    pub fn get_best_window_function(&self, signal_size: usize) -> Option<WindowFunction> {
+    pub fn get_best_window_function(&self, signalsize: usize) -> Option<WindowFunction> {
         self.get_best_profile(signal_size).map(|p| p.window_function)
     }
     
     /// Get best kernel configuration for a given signal size
-    pub fn get_best_kernel_config(&self, signal_size: usize) -> Option<KernelConfig> {
+    pub fn get_best_kernel_config(&self, signalsize: usize) -> Option<KernelConfig> {
         self.get_best_profile(signal_size).map(|p| p.kernel_config.clone())
     }
 }
@@ -170,7 +170,7 @@ impl SparseFftAutoTuner {
     }
     
     /// Run auto-tuning
-    pub fn run_tuning<T>(&mut self, reference_signals: &[Vec<T>]) -> FFTResult<AutoTuneResult>
+    pub fn run_tuning<T>(&mut self, referencesignals: &[Vec<T>]) -> FFTResult<AutoTuneResult>
     where
         T: NumCast + Copy + Debug + 'static,
     {
@@ -287,7 +287,7 @@ impl SparseFftAutoTuner {
         for &signal_size in &self.config.signal_sizes {
             if let Some(profile) = self.collector.get_best_profile(signal_size) {
                 // Only include configurations that meet the accuracy threshold
-                if profile.accuracy >= self.config.min_accuracy {
+                if profile.accuracy >= self._config.min_accuracy {
                     best_configs.push((
                         signal_size,
                         profile.kernel_config.clone(),
@@ -329,8 +329,7 @@ impl SparseFftAutoTuner {
         
         // Different algorithms have different accuracy
         let algorithm_factor = match kernel.name() {
-            "SparseFFT_Kernel" => 0.99,
-            _ => 0.97,
+            "SparseFFT_Kernel" => 0.99_ => 0.97,
         };
         
         // Window functions improve accuracy
@@ -342,7 +341,7 @@ impl SparseFftAutoTuner {
         // Add some randomness to simulate real-world conditions
         let mut rng = rand::rng();
         use rand::Rng;
-        let randomness = rng.random_range(0.98..1.0);
+        let randomness = rng.gen_range(0.98..1.0);
         
         Ok(accuracy * randomness)
     }
@@ -360,11 +359,9 @@ pub trait KernelFactoryExt {
     
     /// Get optimal configuration for a specific algorithm and signal size
     fn get_optimal_config(
-        &self,
-        signal_size: usize,
+        &self..signal_size: usize,
         algorithm: SparseFFTAlgorithm,
-        window_function: WindowFunction,
-    ) -> KernelConfig;
+        window_function: WindowFunction,) -> KernelConfig;
 }
 
 impl KernelFactoryExt for KernelFactory {
@@ -383,10 +380,10 @@ impl KernelFactoryExt for KernelFactory {
         // In a real implementation, this would look up the optimal configuration
         // in a database or compute it based on the GPU's capabilities
         
-        // For now, just return a sensible default based on algorithm and signal size
+        // For now, just return a sensible default based on algorithm and signal _size
         let mut config = KernelConfig::default();
         
-        // Set block size based on algorithm and signal size
+        // Set block _size based on algorithm and signal _size
         if signal_size < 4096 {
             config.block_size = 256;
         } else if signal_size < 16384 {
@@ -395,32 +392,32 @@ impl KernelFactoryExt for KernelFactory {
             config.block_size = 1024;
         }
         
-        // Adjust block size based on algorithm
+        // Adjust block _size based on algorithm
         match algorithm {
             SparseFFTAlgorithm::Sublinear => { /* Default is fine */ },
             SparseFFTAlgorithm::CompressedSensing => {
-                // Higher block size for better memory access patterns
+                // Higher block _size for better memory access patterns
                 config.block_size = config.block_size.max(512);
             },
             SparseFFTAlgorithm::Iterative => {
-                // Lower block size for better occupancy
+                // Lower block _size for better occupancy
                 config.block_size = config.block_size.min(256);
             },
             SparseFFTAlgorithm::Deterministic => { /* Default is fine */ },
             SparseFFTAlgorithm::FrequencyPruning => { /* Default is fine */ },
             SparseFFTAlgorithm::SpectralFlatness => {
-                // Higher block size for better memory access patterns
+                // Higher block _size for better memory access patterns
                 config.block_size = config.block_size.max(512);
             },
         }
         
-        // Ensure block size is within limits
+        // Ensure block _size is within limits
         config.block_size = config.block_size.min(self.max_threads_per_block);
         
-        // Calculate grid size
+        // Calculate grid _size
         config.grid_size = signal_size.div_ceil(config.block_size);
         
-        // Determine shared memory size based on algorithm and window function
+        // Determine shared memory _size based on algorithm and window _function
         if window_function != WindowFunction::None {
             // Windowing requires more shared memory
             config.shared_memory_size = 32 * 1024; // 32 KB
@@ -442,8 +439,7 @@ impl KernelFactoryExt for KernelFactory {
                 SparseFFTAlgorithm::Deterministic | 
                 SparseFFTAlgorithm::FrequencyPruning => {
                     config.use_mixed_precision = true;
-                },
-                _ => {
+                }_ => {
                     config.use_mixed_precision = false;
                 }
             }
@@ -456,8 +452,7 @@ impl KernelFactoryExt for KernelFactory {
                 SparseFFTAlgorithm::CompressedSensing | 
                 SparseFFTAlgorithm::SpectralFlatness => {
                     config.use_tensor_cores = true;
-                },
-                _ => {
+                }_ => {
                     config.use_tensor_cores = false;
                 }
             }
@@ -468,12 +463,13 @@ impl KernelFactoryExt for KernelFactory {
 }
 
 /// Get optimal algorithm for a given signal
+#[allow(dead_code)]
 pub fn get_optimal_algorithm<T>(signal: &[T]) -> SparseFFTAlgorithm
 where
     T: NumCast + Copy + Debug + 'static,
 {
-    // In a real implementation, this would analyze the signal to determine the best algorithm
-    // For now, just return a default based on the signal size
+    // In a real implementation, this would analyze the _signal to determine the best algorithm
+    // For now, just return a default based on the _signal size
     
     let n = signal.len();
     
@@ -487,15 +483,16 @@ where
 }
 
 /// Get optimal window function for a given signal
+#[allow(dead_code)]
 pub fn get_optimal_window_function<T>(signal: &[T]) -> WindowFunction
 where
     T: NumCast + Copy + Debug + 'static,
 {
-    // In a real implementation, this would analyze the signal to determine the best window
+    // In a real implementation, this would analyze the _signal to determine the best window
     // For now, just return a default based on simple heuristics
     
-    // Convert signal to a vector of f64 for analysis
-    let signal_f64: FFTResult<Vec<f64>> = signal
+    // Convert _signal to a vector of f64 for analysis
+    let _signal_f64: FFTResult<Vec<f64>> = _signal
         .iter()
         .map(|&val| {
             NumCast::from(val).ok_or_else(|| {
@@ -505,12 +502,12 @@ where
         .collect();
     
     if let Ok(signal_f64) = signal_f64 {
-        // Compute signal statistics
+        // Compute _signal statistics
         let mean = signal_f64.iter().sum::<f64>() / signal_f64.len() as f64;
         let variance = signal_f64.iter().map(|&x| (x - mean).powi(2)).sum::<f64>() / signal_f64.len() as f64;
         let std_dev = variance.sqrt();
         
-        // Calculate signal-to-noise ratio (SNR) estimate
+        // Calculate _signal-to-noise ratio (SNR) estimate
         let peak = signal_f64.iter().map(|&x| x.abs()).fold(0.0, |a, b| a.max(b));
         let snr_estimate = if std_dev > 0.0 { peak / std_dev } else { f64::INFINITY };
         
@@ -557,7 +554,7 @@ impl PerformanceManager {
     }
     
     /// Run auto-tuning
-    pub fn run_auto_tuning<T>(&mut self, reference_signals: &[Vec<T>]) -> FFTResult<()>
+    pub fn run_auto_tuning<T>(&mut self, referencesignals: &[Vec<T>]) -> FFTResult<()>
     where
         T: NumCast + Copy + Debug + 'static,
     {
@@ -572,11 +569,11 @@ impl PerformanceManager {
     }
     
     /// Get best configuration for a signal size
-    pub fn get_best_config(&self, signal_size: usize) -> Option<(KernelConfig, SparseFFTAlgorithm, WindowFunction)> {
-        // Find closest signal size
+    pub fn get_best_config(&self, signalsize: usize) -> Option<(KernelConfig, SparseFFTAlgorithm, WindowFunction)> {
+        // Find closest signal _size
         self.best_configs
             .iter()
-            .min_by_key(|&(size, _, _, _)| (size as isize - signal_size as isize).abs())
+            .min_by_key(|&(size)| (size as isize - signalsize as isize).abs())
             .map(|&(_, ref config, algorithm, window_function)| (config.clone(), algorithm, window_function))
     }
     
@@ -606,6 +603,7 @@ impl PerformanceManager {
 /// # Returns
 ///
 /// * Auto-tuning result
+#[allow(dead_code)]
 pub fn auto_tune_sparse_fft<T>(
     reference_signals: &[Vec<T>],
     gpu_arch: &str,
@@ -620,7 +618,7 @@ where
         gpu_arch.to_string(),
         vec![compute_capability],
         available_memory,
-        48 * 1024, // 48 KB shared memory
+        48 * 1024, // 48 KB shared _memory
         1024,      // 1024 threads per block
     );
     
@@ -648,6 +646,7 @@ where
 /// # Returns
 ///
 /// * Optimized sparse FFT result
+#[allow(dead_code)]
 pub fn optimized_sparse_fft<T>(
     signal: &[T],
     sparsity: usize,
@@ -663,7 +662,7 @@ where
     let signal_size = signal.len();
     let (config, algorithm, window_function) = auto_tune_result.best_configs
         .iter()
-        .min_by_key(|&(size, _, _, _)| (size as isize - signal_size as isize).abs())
+        .min_by_key(|&(size)| (size as isize - signal_size as isize).abs())
         .map(|&(_, ref config, alg, win)| (config.clone(), alg, win))
         .unwrap_or_else(|| {
             // Default configuration if not found
@@ -683,7 +682,7 @@ where
         });
     
     // Execute sparse FFT with optimized configuration
-    let (values, indices, _) = crate::sparse_fft_gpu_kernels::execute_sparse_fft_kernel(
+    let (values, indices_) = crate::sparse_fft_gpu_kernels::execute_sparse_fft_kernel(
         signal,
         sparsity,
         algorithm,
@@ -699,7 +698,6 @@ where
 #[cfg(test)]
 mod tests {
     use super::*;
-    use std::f64::consts::PI;
     
     // Helper function to create a sparse signal
     fn create_sparse_signal(n: usize, frequencies: &[(usize, f64)]) -> Vec<f64> {

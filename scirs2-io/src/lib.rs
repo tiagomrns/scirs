@@ -1,3 +1,4 @@
+#![allow(deprecated)]
 //! Input/Output utilities module for SciRS2
 //!
 //! This module provides functionality for reading and writing various file formats
@@ -24,6 +25,7 @@
 //! - `validation`: Utilities for data validation and integrity checking
 //! - `wavfile`: Support for WAV audio files
 //! - `error`: Error types for the IO module
+//! - `fortran`: Support for Fortran unformatted files
 
 #![warn(missing_docs)]
 // Allow specific Clippy warnings with justifications
@@ -31,7 +33,39 @@
 #![allow(clippy::should_implement_trait)] // from_str methods are used consistently across modules
 #![allow(clippy::type_complexity)] // Complex type is necessary for format validators
 
+/// Advanced Mode Coordinator - Unified Intelligence for I/O Operations
+///
+/// Provides the highest level of intelligent I/O processing by coordinating multiple advanced systems:
+/// - Neural adaptive optimization with reinforcement learning
+/// - Quantum-inspired parallel processing with superposition algorithms
+/// - GPU acceleration with multi-backend support
+/// - Advanced memory management and resource allocation
+/// - Real-time performance monitoring and self-optimization
+/// - Meta-learning for cross-domain adaptation
+/// - Emergent behavior detection and autonomous system improvement
+pub mod advanced_coordinator;
 pub mod arff;
+/// Enhanced algorithms for Advanced Mode
+///
+/// Provides advanced algorithmic enhancements for the Advanced coordinator:
+/// - Advanced pattern recognition with deep learning capabilities
+/// - Multi-scale feature extraction and analysis
+/// - Emergent pattern detection and meta-pattern recognition
+/// - Sophisticated optimization recommendation systems
+/// - Self-improving algorithmic components with adaptive learning
+pub mod enhanced_algorithms;
+
+/// Async I/O support for streaming capabilities
+///
+/// Provides asynchronous I/O interfaces for non-blocking processing of large datasets:
+/// - Async file reading and writing with tokio
+/// - Asynchronous stream processing with backpressure
+/// - Concurrent processing with configurable concurrency levels
+/// - Network I/O support for remote data access
+/// - Cancellation support for long-running operations
+/// - Real-time progress monitoring for async operations
+#[cfg(feature = "async")]
+pub mod async_io;
 /// Data compression module
 ///
 /// Provides utilities for compressing and decompressing scientific data:
@@ -50,7 +84,61 @@ pub mod compression;
 /// - Support for specialized data types (date, time, complex numbers)
 /// - Column-based operations with flexible configuration
 pub mod csv;
+/// Database connectivity
+///
+/// Provides interfaces for database operations:
+/// - Support for SQL databases (PostgreSQL, MySQL, SQLite)
+/// - NoSQL database support (MongoDB, Redis, Cassandra)
+/// - Time series databases (InfluxDB)
+/// - Query builder and ORM-like features
+/// - Bulk loading and export capabilities
+/// - Integration with scientific data formats
+pub mod database;
+/// Distributed I/O processing
+///
+/// Provides infrastructure for distributed processing of large datasets:
+/// - Distributed file reading with partitioning strategies
+/// - Parallel writing with merge capabilities
+/// - Distributed array operations
+/// - Load balancing and fault tolerance
+/// - Progress tracking for distributed operations
+pub mod distributed;
 pub mod error;
+/// Domain-specific file formats
+///
+/// Provides specialized support for scientific file formats:
+/// - Bioinformatics: FASTA, FASTQ, SAM/BAM, VCF
+/// - Geospatial: GeoTIFF, Shapefile, GeoJSON, KML
+/// - Astronomical: FITS, VOTable
+pub mod formats;
+/// Fortran unformatted file format module
+///
+/// Provides functionality for reading and writing Fortran unformatted files:
+/// - Sequential, direct, and stream access modes
+/// - Support for different endianness and record marker sizes
+/// - Automatic format detection
+/// - Arrays stored in column-major order (Fortran convention)
+/// - Support for all common Fortran data types
+pub mod fortran;
+/// GPU-accelerated I/O operations
+///
+/// Provides GPU-accelerated implementations of I/O operations using the scirs2-core GPU abstraction:
+/// - GPU-accelerated compression and decompression
+/// - GPU-accelerated data type conversions
+/// - GPU-accelerated matrix operations for file I/O
+/// - GPU-accelerated checksum computation
+/// - Support for multiple GPU backends (CUDA, Metal, OpenCL)
+/// - Automatic fallback to CPU when GPU is not available
+#[cfg(feature = "gpu")]
+/// GPU-accelerated I/O operations
+///
+/// Provides comprehensive GPU acceleration for I/O operations including:
+/// - Multi-backend GPU support (CUDA, Metal, OpenCL)
+/// - GPU-accelerated compression and decompression
+/// - Advanced GPU memory management with pooling
+/// - Performance monitoring and optimization
+/// - Intelligent backend selection and workload optimization
+pub mod gpu;
 /// Harwell-Boeing sparse matrix format module
 ///
 /// Provides functionality for reading and writing Harwell-Boeing sparse matrix files:
@@ -69,6 +157,15 @@ pub mod harwell_boeing;
 /// - Chunking and compression options
 /// - Integration with ndarray for efficient array operations
 pub mod hdf5;
+/// IDL (Interactive Data Language) save file format module
+///
+/// Provides functionality for reading and writing IDL save files (.sav):
+/// - Support for all standard IDL data types
+/// - Arrays, strings, structures, and complex numbers
+/// - Automatic endianness detection and handling
+/// - Compatible with IDL 8.0 format
+/// - Commonly used in astronomy and remote sensing
+pub mod idl;
 /// Image file format module
 ///
 /// Provides functionality for reading and writing common image formats:
@@ -87,7 +184,26 @@ pub mod matlab;
 /// - Different matrix symmetry types (general, symmetric, hermitian, skew-symmetric)
 /// - Integration with ndarray for efficient matrix operations
 pub mod matrix_market;
-/// Memory-mapped file I/O module
+/// Advanced metadata management
+///
+/// Provides comprehensive metadata handling across different file formats:
+/// - Unified metadata interface for all formats
+/// - Metadata validation with schemas
+/// - Processing history tracking
+/// - Format conversion between JSON, YAML, TOML
+/// - Format-specific extensions
+/// - Standard metadata keys for scientific data
+pub mod metadata;
+/// Machine learning framework compatibility
+///
+/// Provides conversion utilities and interfaces for ML frameworks:
+/// - Support for PyTorch, TensorFlow, ONNX, SafeTensors formats
+/// - Model and tensor serialization/deserialization
+/// - Data type conversions between frameworks
+/// - Dataset utilities for ML pipelines
+/// - Seamless integration with ndarray
+pub mod ml_framework;
+/// Data pipeline APIs
 ///
 /// Provides memory-mapped file operations for efficient handling of large arrays:
 /// - Memory-mapped arrays for minimal memory usage
@@ -150,6 +266,56 @@ pub mod netcdf;
 /// println!("Network client created for file operations");
 /// ```
 pub mod network;
+/// Neural-adaptive I/O optimization with advanced-level intelligence
+///
+/// Provides AI-driven adaptive optimization for I/O operations:
+/// - Machine learning-based performance optimization
+/// - Dynamic parameter adaptation based on system metrics
+/// - Neural network-driven decision making for resource allocation
+/// - Real-time performance feedback and learning
+/// - Advanced-high performance processing with adaptive algorithms
+/// - SIMD-accelerated neural inference for low-latency decisions
+pub mod neural_adaptive_io;
+/// Out-of-core processing for terabyte-scale datasets
+///
+/// Provides infrastructure for processing datasets too large for memory:
+/// - Memory-mapped arrays with virtual memory management
+/// - Chunked processing with configurable chunk sizes
+/// - Disk-based algorithms for sorting and aggregation
+/// - Virtual arrays combining multiple data sources
+/// - Sliding window iterators for streaming operations
+pub mod out_of_core;
+/// Data pipeline APIs
+///
+/// Provides a flexible framework for building data processing pipelines:
+/// - Composable pipeline stages for reading, transforming, and writing data
+/// - Multiple execution strategies (sequential, parallel, streaming, async)
+/// - Built-in transformations (normalization, encoding, aggregation)
+/// - Error handling and recovery mechanisms
+/// - Progress tracking and monitoring
+/// - Caching and checkpointing for long-running pipelines
+pub mod pipeline;
+/// Quantum-inspired I/O processing algorithms with advanced capabilities
+///
+/// Provides quantum-inspired algorithms for advanced-high performance I/O:
+/// - Quantum superposition for parallel processing paths
+/// - Quantum entanglement for correlated data operations
+/// - Quantum annealing for parameter optimization
+/// - Quantum interference patterns for data compression
+/// - Quantum tunneling for barrier-free processing
+/// - Quantum measurement for adaptive decision making
+pub mod quantum_inspired_io;
+/// Real-time data streaming protocols
+///
+/// Provides infrastructure for real-time data streaming and processing:
+/// - WebSocket and Server-Sent Events support
+/// - gRPC and MQTT streaming protocols
+/// - Backpressure handling and flow control
+/// - Stream transformations and filtering
+/// - Multi-stream synchronization
+/// - Time series buffering and aggregation
+#[cfg(feature = "async")]
+pub mod realtime;
 /// Data serialization utilities
 ///
 /// Provides functionality for serializing and deserializing scientific data:
@@ -158,6 +324,15 @@ pub mod network;
 /// - Structured data serialization
 /// - Sparse matrix serialization
 pub mod serialize;
+/// SIMD-accelerated I/O operations
+///
+/// Provides SIMD-optimized implementations of common I/O operations:
+/// - Data type conversions with SIMD
+/// - Audio normalization and processing
+/// - CSV parsing acceleration
+/// - Compression utilities with SIMD
+/// - Checksum calculations
+pub mod simd_io;
 /// Comprehensive sparse matrix format support
 ///
 /// Provides unified support for common sparse matrix formats:
@@ -217,18 +392,6 @@ pub mod sparse;
 /// # Ok::<(), scirs2_io::error::IoError>(())
 /// ```
 pub mod streaming;
-
-/// Async I/O support for streaming capabilities
-///
-/// Provides asynchronous I/O interfaces for non-blocking processing of large datasets:
-/// - Async file reading and writing with tokio
-/// - Asynchronous stream processing with backpressure
-/// - Concurrent processing with configurable concurrency levels
-/// - Network I/O support for remote data access
-/// - Cancellation support for long-running operations
-/// - Real-time progress monitoring for async operations
-#[cfg(feature = "async")]
-pub mod async_io;
 /// Thread pool for parallel I/O operations
 ///
 /// Provides a high-performance thread pool optimized for I/O operations:
@@ -247,4 +410,42 @@ pub mod thread_pool;
 /// - Directory manifests for data validation
 /// - Integrity metadata for tracking data provenance
 pub mod validation;
+/// Visualization tool integration
+///
+/// Provides interfaces for integrating with visualization libraries:
+/// - Export to multiple visualization formats (Plotly, Matplotlib, Gnuplot, Vega-Lite)
+/// - Fluent API for building plots
+/// - Support for various plot types (line, scatter, histogram, heatmap)
+/// - Quick plotting functions for common use cases
+/// - Configurable styling and theming
+pub mod visualization;
 pub mod wavfile;
+/// Workflow automation tools
+///
+/// Provides framework for building automated data processing workflows:
+/// - Task definition and dependency management
+/// - Workflow scheduling and execution
+/// - Resource management and allocation
+/// - Retry policies and error handling
+/// - Progress monitoring and notifications
+/// - Common workflow templates (ETL, batch processing)
+pub mod workflow;
+/// Zero-copy I/O optimizations
+///
+/// Provides zero-copy implementations for various I/O operations:
+/// - Memory-mapped file access
+/// - Zero-copy array views
+/// - CSV parsing without allocation
+/// - Binary data reading without copying
+/// - Minimized memory allocations for large datasets
+pub mod zero_copy;
+
+// Re-export commonly used functionality
+pub use advanced_coordinator::{
+    AdaptiveImprovements, AdvancedCoordinator, AdvancedStatistics, IntelligenceLevel,
+    PerformanceIntelligenceStats, ProcessingResult, QualityMetrics, StrategyType,
+};
+pub use enhanced_algorithms::{
+    AdvancedPatternAnalysis, AdvancedPatternRecognizer, DataCharacteristics, EmergentPattern,
+    MetaPattern, OptimizationRecommendation, SynergyType,
+};

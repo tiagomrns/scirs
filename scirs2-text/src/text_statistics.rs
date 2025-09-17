@@ -7,9 +7,9 @@ use crate::{Result, TextError};
 #[derive(Debug, Clone)]
 pub struct TextStatistics {
     /// Word tokenizer used for word-level metrics
-    word_tokenizer: WordTokenizer,
+    wordtokenizer: WordTokenizer,
     /// Sentence tokenizer used for sentence-level metrics
-    sentence_tokenizer: SentenceTokenizer,
+    sentencetokenizer: SentenceTokenizer,
 }
 
 impl Default for TextStatistics {
@@ -22,30 +22,30 @@ impl TextStatistics {
     /// Create a new TextStatistics analyzer with default tokenizers
     pub fn new() -> Self {
         Self {
-            word_tokenizer: WordTokenizer::new(true), // Use lowercase
-            sentence_tokenizer: SentenceTokenizer::new(),
+            wordtokenizer: WordTokenizer::new(true), // Use lowercase
+            sentencetokenizer: SentenceTokenizer::new(),
         }
     }
 
     /// Create a TextStatistics analyzer with custom tokenizers
     pub fn with_tokenizers(
-        word_tokenizer: WordTokenizer,
-        sentence_tokenizer: SentenceTokenizer,
+        wordtokenizer: WordTokenizer,
+        sentencetokenizer: SentenceTokenizer,
     ) -> Self {
         Self {
-            word_tokenizer,
-            sentence_tokenizer,
+            wordtokenizer,
+            sentencetokenizer,
         }
     }
 
     /// Count the number of words in text
     pub fn word_count(&self, text: &str) -> Result<usize> {
-        Ok(self.word_tokenizer.tokenize(text)?.len())
+        Ok(self.wordtokenizer.tokenize(text)?.len())
     }
 
     /// Count the number of sentences in text
     pub fn sentence_count(&self, text: &str) -> Result<usize> {
-        Ok(self.sentence_tokenizer.tokenize(text)?.len())
+        Ok(self.sentencetokenizer.tokenize(text)?.len())
     }
 
     /// Count syllables in a word using a heuristic approach
@@ -90,13 +90,13 @@ impl TextStatistics {
 
     /// Count total syllables in text
     pub fn syllable_count(&self, text: &str) -> Result<usize> {
-        let words = self.word_tokenizer.tokenize(text)?;
+        let words = self.wordtokenizer.tokenize(text)?;
         Ok(words.iter().map(|w| self.count_syllables(w)).sum())
     }
 
     /// Count the number of complex words (words with 3+ syllables)
     pub fn complex_word_count(&self, text: &str) -> Result<usize> {
-        let words = self.word_tokenizer.tokenize(text)?;
+        let words = self.wordtokenizer.tokenize(text)?;
         Ok(words
             .iter()
             .filter(|w| self.count_syllables(w) >= 3)
@@ -117,7 +117,7 @@ impl TextStatistics {
 
     /// Calculate average word length in characters
     pub fn avg_word_length(&self, text: &str) -> Result<f64> {
-        let words = self.word_tokenizer.tokenize(text)?;
+        let words = self.wordtokenizer.tokenize(text)?;
 
         if words.is_empty() {
             return Err(TextError::InvalidInput("Text has no words".to_string()));
@@ -129,7 +129,7 @@ impl TextStatistics {
 
     /// Calculate average syllables per word
     pub fn avg_syllables_per_word(&self, text: &str) -> Result<f64> {
-        let words = self.word_tokenizer.tokenize(text)?;
+        let words = self.wordtokenizer.tokenize(text)?;
 
         if words.is_empty() {
             return Err(TextError::InvalidInput("Text has no words".to_string()));
@@ -258,7 +258,7 @@ impl TextStatistics {
     pub fn dale_chall_readability(&self, text: &str) -> Result<f64> {
         // This is a simplified implementation as the real Dale-Chall formula
         // requires a list of 3000 common words that a 4th grader should know
-        let words = self.word_tokenizer.tokenize(text)?;
+        let words = self.wordtokenizer.tokenize(text)?;
         let word_count = words.len() as f64;
         let sentence_count = self.sentence_count(text)? as f64;
 
@@ -286,7 +286,7 @@ impl TextStatistics {
 
     /// Calculate lexical diversity (unique words / total words)
     pub fn lexical_diversity(&self, text: &str) -> Result<f64> {
-        let words = self.word_tokenizer.tokenize(text)?;
+        let words = self.wordtokenizer.tokenize(text)?;
 
         if words.is_empty() {
             return Err(TextError::InvalidInput("Text has no words".to_string()));
@@ -470,7 +470,7 @@ mod tests {
     }
 
     #[test]
-    fn test_empty_text() {
+    fn test_emptytext() {
         let stats = TextStatistics::new();
 
         assert_eq!(stats.word_count("").unwrap(), 0);

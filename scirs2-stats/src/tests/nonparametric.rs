@@ -43,6 +43,7 @@ use std::cmp::Ordering;
 /// // For a significance level of 0.05, we would reject the null hypothesis if p < 0.05
 /// let significant = p_value < 0.05;
 /// ```
+#[allow(dead_code)]
 pub fn wilcoxon<F>(
     x: &ArrayView1<F>,
     y: &ArrayView1<F>,
@@ -50,7 +51,7 @@ pub fn wilcoxon<F>(
     correction: bool,
 ) -> StatsResult<(F, F)>
 where
-    F: Float + std::iter::Sum<F> + std::ops::Div<Output = F> + NumCast,
+    F: Float + std::iter::Sum<F> + std::ops::Div<Output = F> + NumCast + std::fmt::Display,
 {
     // Check if the arrays are empty
     if x.is_empty() || y.is_empty() {
@@ -72,13 +73,13 @@ where
         differences.push((x[i] - y[i], i));
     }
 
-    // Handle zero differences according to the specified method
+    // Handle zero differences according to the specified _method
     let differences = match zero_method {
         "wilcox" => {
             // Remove zero differences
             differences
                 .into_iter()
-                .filter(|(diff, _)| !diff.is_zero())
+                .filter(|(diff_, _)| !diff_.is_zero())
                 .collect::<Vec<_>>()
         }
         "pratt" => {
@@ -89,7 +90,7 @@ where
             // Split zeros evenly between positive and negative ranks
             // This is more complex and would require special handling
             return Err(StatsError::InvalidArgument(
-                "zsplit method not implemented yet".to_string(),
+                "zsplit _method not implemented yet".to_string(),
             ));
         }
         _ => {
@@ -139,8 +140,8 @@ where
     let mut w_plus = F::zero();
     let mut w_minus = F::zero();
 
-    for (i, (diff, _)) in ranked_diffs.iter().enumerate() {
-        if diff.is_sign_positive() {
+    for (i, (diff_, _)) in ranked_diffs.iter().enumerate() {
+        if diff_.is_sign_positive() {
             w_plus = w_plus + ranks[i];
         } else {
             w_minus = w_minus + ranks[i];
@@ -210,6 +211,7 @@ where
 /// // For a significance level of 0.05, we would reject the null hypothesis if p < 0.05
 /// let significant = p_value < 0.05;
 /// ```
+#[allow(dead_code)]
 pub fn mann_whitney<F>(
     x: &ArrayView1<F>,
     y: &ArrayView1<F>,
@@ -217,7 +219,12 @@ pub fn mann_whitney<F>(
     use_continuity: bool,
 ) -> StatsResult<(F, F)>
 where
-    F: Float + std::iter::Sum<F> + std::ops::Div<Output = F> + NumCast + std::fmt::Debug,
+    F: Float
+        + std::iter::Sum<F>
+        + std::ops::Div<Output = F>
+        + NumCast
+        + std::fmt::Debug
+        + std::fmt::Display,
 {
     // Check if the arrays are empty
     if x.is_empty() || y.is_empty() {
@@ -253,7 +260,7 @@ where
     }
 
     // Sort the values
-    all_values.sort_by(|(a, _), (b, _)| a.partial_cmp(b).unwrap_or(Ordering::Equal));
+    all_values.sort_by(|a_, b_| a_.partial_cmp(b_).unwrap_or(Ordering::Equal));
 
     // Assign ranks, handling ties
     let n = all_values.len();
@@ -331,7 +338,7 @@ where
         (n1_f * n2_f * (n_f + F::one()) / F::from(12.0).unwrap()) * (F::one() - tie_correction);
     let std_dev_u = var_u.sqrt();
 
-    // Apply continuity correction if requested
+    // Apply _continuity correction if requested
     let correction = if use_continuity {
         F::from(0.5).unwrap()
     } else {
@@ -403,9 +410,10 @@ where
 /// // For a significance level of 0.05, we would reject the null hypothesis if p < 0.05
 /// let significant = p_value < 0.05;
 /// ```
+#[allow(dead_code)]
 pub fn kruskal_wallis<F>(samples: &[ArrayView1<F>]) -> StatsResult<(F, F)>
 where
-    F: Float + std::iter::Sum<F> + std::ops::Div<Output = F> + NumCast,
+    F: Float + std::iter::Sum<F> + std::ops::Div<Output = F> + NumCast + std::fmt::Display,
 {
     // Check if there are at least two groups
     if samples.len() < 2 {
@@ -424,19 +432,19 @@ where
         }
     }
 
-    // Combine all samples into a single vector, keeping track of the group
+    // Combine all _samples into a single vector, keeping track of the group
     let mut all_values = Vec::new();
-    let mut group_sizes = Vec::with_capacity(samples.len());
+    let mut groupsizes = Vec::with_capacity(samples.len());
 
     for (group_idx, sample) in samples.iter().enumerate() {
-        group_sizes.push(sample.len());
+        groupsizes.push(sample.len());
         for &value in sample.iter() {
             all_values.push((value, group_idx));
         }
     }
 
     // Sort all values
-    all_values.sort_by(|(a, _), (b, _)| a.partial_cmp(b).unwrap_or(Ordering::Equal));
+    all_values.sort_by(|a_, b_| a_.partial_cmp(b_).unwrap_or(Ordering::Equal));
 
     // Assign ranks, handling ties
     let n = all_values.len();
@@ -474,7 +482,7 @@ where
     let mut h = F::zero();
 
     for (i, &rank_sum) in rank_sums.iter().enumerate() {
-        let n_i = F::from(group_sizes[i]).unwrap();
+        let n_i = F::from(groupsizes[i]).unwrap();
         h = h + (rank_sum * rank_sum) / n_i;
     }
 
@@ -549,9 +557,15 @@ where
 /// // For a significance level of 0.05, we would reject the null hypothesis if p < 0.05
 /// let significant = p_value < 0.05;
 /// ```
+#[allow(dead_code)]
 pub fn friedman<F>(data: &ndarray::ArrayView2<F>) -> StatsResult<(F, F)>
 where
-    F: Float + std::iter::Sum<F> + std::ops::Div<Output = F> + NumCast + std::ops::AddAssign,
+    F: Float
+        + std::iter::Sum<F>
+        + std::ops::Div<Output = F>
+        + NumCast
+        + std::ops::AddAssign
+        + std::fmt::Display,
 {
     // Get the number of subjects (n) and treatments (k)
     let n = data.nrows();
@@ -572,22 +586,22 @@ where
         let row = data.row(i);
 
         // Create a vector of (value, column_index) pairs
-        let mut row_data = Vec::with_capacity(k);
+        let mut rowdata = Vec::with_capacity(k);
         for j in 0..k {
-            row_data.push((row[j], j));
+            rowdata.push((row[j], j));
         }
 
         // Sort by value
-        row_data.sort_by(|(a, _), (b, _)| a.partial_cmp(b).unwrap_or(Ordering::Equal));
+        rowdata.sort_by(|a_, b_| a_.partial_cmp(b_).unwrap_or(Ordering::Equal));
 
         // Assign ranks, handling ties
         let mut rank_idx = 0;
         while rank_idx < k {
-            let current_value = row_data[rank_idx].0;
+            let current_value = rowdata[rank_idx].0;
             let mut tied_idx = rank_idx;
 
             // Find the end of the tie group
-            while tied_idx < k - 1 && row_data[tied_idx + 1].0 == current_value {
+            while tied_idx < k - 1 && rowdata[tied_idx + 1].0 == current_value {
                 tied_idx += 1;
             }
 
@@ -596,7 +610,7 @@ where
             let avg_rank = F::from(rank_idx + tied_idx).unwrap() / F::from(2.0).unwrap() + F::one();
 
             // Assign average rank to all tied values
-            for data_item in row_data.iter().take(tied_idx + 1).skip(rank_idx) {
+            for data_item in rowdata.iter().take(tied_idx + 1).skip(rank_idx) {
                 let col_idx = data_item.1;
                 ranks[[i, col_idx]] = avg_rank;
             }
@@ -636,6 +650,7 @@ where
 }
 
 // Helper function: Standard normal CDF approximation
+#[allow(dead_code)]
 fn normal_cdf<F: Float + NumCast>(x: F) -> F {
     let x_f64 = <f64 as NumCast>::from(x).unwrap();
 
@@ -664,6 +679,7 @@ fn normal_cdf<F: Float + NumCast>(x: F) -> F {
 }
 
 // Helper function: Chi-square survival function (1 - CDF)
+#[allow(dead_code)]
 fn chi_square_sf<F: Float + NumCast>(x: F, df: F) -> F {
     let x_f64 = <f64 as NumCast>::from(x).unwrap();
     let df_f64 = <f64 as NumCast>::from(df).unwrap();

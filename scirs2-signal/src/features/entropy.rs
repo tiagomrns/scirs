@@ -1,9 +1,10 @@
 use crate::error::SignalResult;
-use crate::features::statistical::calculate_quantile;
-use crate::features::statistical::calculate_std;
+use crate::features::statistical::{calculate_quantile, calculate_std};
 use std::collections::HashMap;
 
+#[allow(unused_imports)]
 /// Extract entropy-based features from a time series
+#[allow(dead_code)]
 pub fn extract_entropy_features(
     signal: &[f64],
     features: &mut HashMap<String, f64>,
@@ -28,6 +29,7 @@ pub fn extract_entropy_features(
 }
 
 /// Calculate Shannon entropy of a signal
+#[allow(dead_code)]
 pub fn calculate_shannon_entropy(signal: &[f64]) -> f64 {
     if signal.is_empty() {
         return 0.0;
@@ -38,7 +40,7 @@ pub fn calculate_shannon_entropy(signal: &[f64]) -> f64 {
     let max = signal.iter().copied().fold(f64::NEG_INFINITY, f64::max);
 
     if min == max {
-        return 0.0; // Constant signal has zero entropy
+        return 0.0; // Constant _signal has zero entropy
     }
 
     // Use Freedman-Diaconis rule for bin width
@@ -56,7 +58,7 @@ pub fn calculate_shannon_entropy(signal: &[f64]) -> f64 {
     // Create histogram
     let mut histogram = vec![0; num_bins];
 
-    for &value in signal {
+    for &value in _signal {
         let bin = ((value - min) / (max - min) * num_bins as f64).floor() as usize;
         let bin = bin.min(num_bins - 1); // Ensure index is valid
         histogram[bin] += 1;
@@ -76,6 +78,7 @@ pub fn calculate_shannon_entropy(signal: &[f64]) -> f64 {
 }
 
 /// Calculate approximate entropy of a signal
+#[allow(dead_code)]
 pub fn calculate_approximate_entropy(signal: &[f64], m: usize, r: f64) -> f64 {
     if signal.is_empty() || m == 0 {
         return 0.0;
@@ -87,7 +90,7 @@ pub fn calculate_approximate_entropy(signal: &[f64], m: usize, r: f64) -> f64 {
     }
 
     // Normalize tolerance
-    let std_dev = calculate_std(signal);
+    let std_dev = calculate_std(_signal);
     let tolerance = r * std_dev;
 
     if tolerance == 0.0 {
@@ -95,24 +98,25 @@ pub fn calculate_approximate_entropy(signal: &[f64], m: usize, r: f64) -> f64 {
     }
 
     // Calculate phi for different m values
-    let phi_m = calculate_phi(signal, m, tolerance);
-    let phi_m_plus_1 = calculate_phi(signal, m + 1, tolerance);
+    let phi_m = calculate_phi(_signal, m, tolerance);
+    let phi_m_plus_1 = calculate_phi(_signal, m + 1, tolerance);
 
     // Return approximate entropy
     phi_m - phi_m_plus_1
 }
 
 /// Helper function for approximate entropy calculation
+#[allow(dead_code)]
 fn calculate_phi(signal: &[f64], m: usize, tolerance: f64) -> f64 {
     let n = signal.len();
     let mut total = 0.0;
 
     for i in 0..n - m + 1 {
-        let template_i = &signal[i..i + m];
+        let template_i = &_signal[i..i + m];
         let mut local_count = 0.0;
 
         for j in 0..n - m + 1 {
-            let template_j = &signal[j..j + m];
+            let template_j = &_signal[j..j + m];
             let mut max_diff: f64 = 0.0;
 
             for k in 0..m {
@@ -132,6 +136,7 @@ fn calculate_phi(signal: &[f64], m: usize, tolerance: f64) -> f64 {
 }
 
 /// Calculate sample entropy of a signal
+#[allow(dead_code)]
 pub fn calculate_sample_entropy(signal: &[f64], m: usize, r: f64) -> f64 {
     if signal.is_empty() || m == 0 {
         return 0.0;
@@ -143,7 +148,7 @@ pub fn calculate_sample_entropy(signal: &[f64], m: usize, r: f64) -> f64 {
     }
 
     // Normalize tolerance
-    let std_dev = calculate_std(signal);
+    let std_dev = calculate_std(_signal);
     let tolerance = r * std_dev;
 
     if tolerance == 0.0 {
@@ -151,8 +156,8 @@ pub fn calculate_sample_entropy(signal: &[f64], m: usize, r: f64) -> f64 {
     }
 
     // Count matches for m and m+1
-    let count_m = count_matches(signal, m, tolerance);
-    let count_m_plus_1 = count_matches(signal, m + 1, tolerance);
+    let count_m = count_matches(_signal, m, tolerance);
+    let count_m_plus_1 = count_matches(_signal, m + 1, tolerance);
 
     // Return sample entropy
     if count_m > 0.0 {
@@ -163,15 +168,16 @@ pub fn calculate_sample_entropy(signal: &[f64], m: usize, r: f64) -> f64 {
 }
 
 /// Helper function for sample entropy calculation
+#[allow(dead_code)]
 fn count_matches(signal: &[f64], m: usize, tolerance: f64) -> f64 {
     let n = signal.len();
     let mut match_count = 0.0;
 
     for i in 0..n - m {
-        let template_i = &signal[i..i + m];
+        let template_i = &_signal[i..i + m];
 
         for j in i + 1..n - m + 1 {
-            let template_j = &signal[j..j + m];
+            let template_j = &_signal[j..j + m];
             let mut max_diff: f64 = 0.0;
 
             for k in 0..m {
@@ -189,6 +195,7 @@ fn count_matches(signal: &[f64], m: usize, tolerance: f64) -> f64 {
 }
 
 /// Calculate permutation entropy of a signal
+#[allow(dead_code)]
 pub fn calculate_permutation_entropy(signal: &[f64], order: usize) -> f64 {
     if signal.is_empty() || order < 2 {
         return 0.0;
@@ -208,7 +215,7 @@ pub fn calculate_permutation_entropy(signal: &[f64], order: usize) -> f64 {
     for i in 0..n - order + 1 {
         let mut pattern = Vec::with_capacity(order);
         for j in 0..order {
-            pattern.push(signal[i + j]);
+            pattern.push(_signal[i + j]);
         }
 
         // Find rank ordering of the pattern

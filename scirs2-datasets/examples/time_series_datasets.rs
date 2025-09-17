@@ -1,6 +1,7 @@
 use ndarray::s;
 use scirs2_datasets::time_series::electrocardiogram;
 
+#[allow(dead_code)]
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("Loading time series datasets...\n");
 
@@ -25,17 +26,17 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // Get a slice of the data and display basic statistics
     let ecg_slice = ecg.data.slice(s![0..10, 0]);
-    println!("  First 10 data points: {:?}", ecg_slice);
+    println!("  First 10 data points: {ecg_slice:?}");
 
     // Calculate some basic statistics
-    let ecg_data = ecg.data.column(0);
-    let min = ecg_data.fold(f64::INFINITY, |a, &b| a.min(b));
-    let max = ecg_data.fold(f64::NEG_INFINITY, |a, &b| a.max(b));
-    let mean = ecg_data.sum() / ecg_data.len() as f64;
+    let ecgdata = ecg.data.column(0);
+    let min = ecgdata.fold(f64::INFINITY, |a, &b| a.min(b));
+    let max = ecgdata.fold(f64::NEG_INFINITY, |a, &b| a.max(b));
+    let mean = ecgdata.sum() / ecgdata.len() as f64;
 
-    println!("  Min: {:.3} mV", min);
-    println!("  Max: {:.3} mV", max);
-    println!("  Mean: {:.3} mV", mean);
+    println!("  Min: {min:.3} mV");
+    println!("  Max: {max:.3} mV");
+    println!("  Mean: {mean:.3} mV");
 
     // Note: Stock market and weather datasets are commented out because their source data
     // is not yet available.
@@ -50,16 +51,16 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("  Companies: {}", stock_returns.n_features());
 
     // Print companies
-    if let Some(feature_names) = &stock_returns.feature_names {
-        println!("  Companies: {}", feature_names.join(", "));
+    if let Some(featurenames) = &stock_returns.featurenames {
+        println!("  Companies: {}", featurenames.join(", "));
     }
 
     // Load the weather dataset
     println!("\nWeather dataset:");
-    let temp_data = weather(Some("temperature"))?;
+    let tempdata = weather(Some("temperature"))?;
 
-    println!("  Time steps: {}", temp_data.n_samples());
-    println!("  Locations: {}", temp_data.n_features());
+    println!("  Time steps: {}", tempdata.n_samples());
+    println!("  Locations: {}", tempdata.n_features());
     */
 
     println!("\nTime series dataset loaded successfully!");

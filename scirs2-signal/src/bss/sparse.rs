@@ -1,12 +1,14 @@
-//! Sparse Component Analysis for blind source separation
-//!
-//! This module implements SCA techniques for sparse signal processing.
+use ndarray::s;
+// Sparse Component Analysis for blind source separation
+//
+// This module implements SCA techniques for sparse signal processing.
 
 use super::{ica, BssConfig, IcaMethod, NonlinearityFunction};
 use crate::error::{SignalError, SignalResult};
-use ndarray::{s, Array2};
+use ndarray::Array2;
 use scirs2_linalg::solve;
 
+#[allow(unused_imports)]
 /// Apply Sparse Component Analysis (SCA) to separate mixed signals
 ///
 /// SCA is useful when the source signals are known to be sparse.
@@ -21,6 +23,7 @@ use scirs2_linalg::solve;
 /// # Returns
 ///
 /// * Tuple containing (extracted sources, mixing matrix)
+#[allow(dead_code)]
 pub fn sparse_component_analysis(
     signals: &Array2<f64>,
     n_components: usize,
@@ -87,7 +90,7 @@ pub fn sparse_component_analysis(
                     }
                 }
                 Err(_) => {
-                    return Err(SignalError::Compute(
+                    return Err(SignalError::ComputationError(
                         "Failed to solve least squares in SCA".to_string(),
                     ));
                 }

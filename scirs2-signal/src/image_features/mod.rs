@@ -1,10 +1,16 @@
-//! Image feature extraction
-//!
-//! This module provides functions for extracting features from images,
-//! including color histograms, texture features, edge features, and more.
-//! These features can be used for image analysis, classification, and retrieval.
+// Image feature extraction
+//
+// This module provides functions for extracting features from images,
+// including color histograms, texture features, edge features, and more.
+// These features can be used for image analysis, classification, and retrieval.
+
+use crate::error::{SignalError, SignalResult};
+use ndarray::Array2;
+use std::collections::HashMap;
+use std::fmt::Debug;
 
 // Import internal modules
+#[allow(unused_imports)]
 mod color;
 mod edge;
 mod haralick;
@@ -24,15 +30,10 @@ pub use histogram::extract_histogram_features;
 pub use lbp::extract_lbp_features;
 pub use moments::extract_moment_features;
 pub use statistical::extract_intensity_features;
-pub use texture::extract_texture_features;
+pub use texture::extracttexture_features;
 pub use types::ImageFeatureOptions;
 
 // Common imports for internal use
-use crate::error::{SignalError, SignalResult};
-use ndarray::Array2;
-use std::collections::HashMap;
-use std::fmt::Debug;
-
 /// Extract features from a grayscale image
 ///
 /// # Arguments
@@ -65,6 +66,7 @@ use std::fmt::Debug;
 /// let contrast = *features.get("haralick_contrast").unwrap();
 /// let mean = *features.get("intensity_mean").unwrap();
 /// ```
+#[allow(dead_code)]
 pub fn extract_image_features<T>(
     image: &Array2<T>,
     options: &ImageFeatureOptions,
@@ -102,7 +104,7 @@ where
 
     // Extract texture features
     if options.texture {
-        extract_texture_features(&image_f64, options, &mut features)?;
+        extracttexture_features(&image_f64, options, &mut features)?;
     }
 
     // Extract Haralick features
@@ -156,6 +158,7 @@ where
 /// let g_mean = *features.get("g_intensity_mean").unwrap();
 /// let b_mean = *features.get("b_intensity_mean").unwrap();
 /// ```
+#[allow(dead_code)]
 pub fn extract_color_image_features<T>(
     image: &ndarray::Array3<T>,
     options: &ImageFeatureOptions,

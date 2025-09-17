@@ -189,14 +189,16 @@ impl<F: Float> CustomActivation<F> for BuiltCustomActivation<F> {
 // Public API functions
 
 /// Register a custom activation function (simplified implementation)
+#[allow(dead_code)]
 pub fn register_activation<F: Float + 'static>(
     _name: &str,
-    _activation: impl CustomActivation<F> + 'static,
+    activation: impl CustomActivation<F> + 'static,
 ) {
     // Simplified registration
 }
 
 /// Apply a custom activation function to a tensor
+#[allow(dead_code)]
 pub fn custom_activation<'g, F: Float>(
     tensor: &Tensor<'g, F>,
     function_name: &str,
@@ -211,6 +213,7 @@ pub fn custom_activation<'g, F: Float>(
 }
 
 /// Apply a parameterized custom activation function
+#[allow(dead_code)]
 pub fn parameterized_activation<'g, F: Float>(
     tensor: &Tensor<'g, F>,
     function_name: &str,
@@ -226,11 +229,13 @@ pub fn parameterized_activation<'g, F: Float>(
 }
 
 /// Create a custom activation using the builder pattern
+#[allow(dead_code)]
 pub fn create_custom_activation<F: Float>() -> CustomActivationBuilder<F> {
     CustomActivationBuilder::new("custom")
 }
 
 /// Get list of registered activation functions
+#[allow(dead_code)]
 pub fn list_activation_functions() -> Vec<String> {
     let registry = ACTIVATION_REGISTRY.lock().unwrap();
     let mut functions: Vec<String> = registry.keys().cloned().collect();
@@ -239,6 +244,7 @@ pub fn list_activation_functions() -> Vec<String> {
 }
 
 /// Check if an activation function is registered
+#[allow(dead_code)]
 pub fn is_activation_registered(name: &str) -> bool {
     let registry = ACTIVATION_REGISTRY.lock().unwrap();
     registry.contains_key(name)

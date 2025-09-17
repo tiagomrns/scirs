@@ -49,14 +49,17 @@ impl<A: Float + Debug + ScalarOperand + FromPrimitive> LabelSmoothing<A> {
     /// # Errors
     ///
     /// Returns an error if alpha is not between 0 and 1
-    pub fn new(alpha: A, num_classes: usize) -> Result<Self> {
+    pub fn new(alpha: A, numclasses: usize) -> Result<Self> {
         if alpha < A::zero() || alpha > A::one() {
             return Err(OptimError::InvalidConfig(
                 "Alpha must be between 0 and 1".to_string(),
             ));
         }
 
-        Ok(Self { alpha, num_classes })
+        Ok(Self {
+            alpha,
+            num_classes: numclasses,
+        })
     }
 
     /// Smooth the one-hot encoded target labels
@@ -164,13 +167,13 @@ impl<A: Float + Debug + ScalarOperand + FromPrimitive> LabelSmoothing<A> {
 impl<A: Float + Debug + ScalarOperand + FromPrimitive, D: Dimension> Regularizer<A, D>
     for LabelSmoothing<A>
 {
-    fn apply(&self, _params: &Array<A, D>, _gradients: &mut Array<A, D>) -> Result<A> {
+    fn apply(&self, _params: &Array<A, D>, gradients: &mut Array<A, D>) -> Result<A> {
         // Label smoothing is not applied to model parameters directly
         // It's applied to the target labels during loss computation
         Ok(A::zero())
     }
 
-    fn penalty(&self, _params: &Array<A, D>) -> Result<A> {
+    fn penalty(&self, params: &Array<A, D>) -> Result<A> {
         // Label smoothing doesn't add a parameter penalty term
         Ok(A::zero())
     }

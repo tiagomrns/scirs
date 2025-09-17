@@ -9,6 +9,7 @@ use ndarray::{Array1, ArrayView1};
 use rand::prelude::*;
 use rand_distr::uniform::SampleUniform;
 use rand_distr::{Distribution, Uniform};
+use std::f64::consts::PI;
 use std::fmt::Debug;
 use std::marker::PhantomData;
 
@@ -24,7 +25,7 @@ pub struct MonteCarloOptions<F: IntegrateFloat> {
     /// Use antithetic variates for variance reduction
     pub use_antithetic: bool,
     /// Phantom data for generic type
-    pub _phantom: PhantomData<F>,
+    pub phantom: PhantomData<F>,
 }
 
 /// Method for estimating the error in Monte Carlo integration
@@ -43,7 +44,7 @@ impl<F: IntegrateFloat> Default for MonteCarloOptions<F> {
             seed: None,
             error_method: ErrorEstimationMethod::StandardError,
             use_antithetic: false,
-            _phantom: PhantomData,
+            phantom: PhantomData,
         }
     }
 }
@@ -81,7 +82,7 @@ pub struct MonteCarloResult<F: IntegrateFloat> {
 /// // Integrate f(x,y) = x²+y² over [0,1]×[0,1] (exact result: 2/3)
 /// let options = MonteCarloOptions {
 ///     n_samples: 100000,  // Use more samples for better accuracy
-///     _phantom: PhantomData,
+///     phantom: PhantomData,
 ///     ..Default::default()
 /// };
 ///
@@ -94,6 +95,7 @@ pub struct MonteCarloResult<F: IntegrateFloat> {
 /// // Should be close to 2/3, but Monte Carlo has statistical error
 /// assert!((result.value - 2.0/3.0).abs() < 0.01);
 /// ```
+#[allow(dead_code)]
 pub fn monte_carlo<F, Func>(
     f: Func,
     ranges: &[(F, F)],
@@ -130,9 +132,9 @@ where
         StdRng::seed_from_u64(seed)
     } else {
         // In rand 0.9.0, from_entropy is replaced by building from OsRng
-        // Note: thread_rng() was renamed to rng() in rand 0.9.0
-        let mut thread_rng = rand::rng();
-        StdRng::from_rng(&mut thread_rng)
+        // Note: rand::rng() was renamed to rand::rng() in rand 0.9.0
+        let mut rng = rand::rng();
+        StdRng::from_rng(&mut rng)
     };
 
     // Create uniform distributions for each dimension
@@ -252,12 +254,12 @@ where
 /// let uniform_sampler = |rng: &mut StdRng, dims: usize| {
 ///     let mut point = Array1::zeros(dims);
 ///     for i in 0..dims {
-///         point[i] = rng.gen_range(0.0..1.0);
+///         point[i] = rng.random_range(0.0..1.0);
 ///     }
 ///     point
 /// };
 ///
-/// // Uniform PDF on [0,1]
+/// // Uniform PDF on [0..1]
 /// let uniform_pdf = |x: ArrayView1<f64>| {
 ///     let mut pdf = 1.0;
 ///     for &xi in x.iter() {
@@ -285,6 +287,7 @@ where
 ///
 /// assert!((result.value - 1.0/3.0).abs() < 0.01);
 /// ```
+#[allow(dead_code)]
 pub fn importance_sampling<F, Func, Pdf, Sampler>(
     f: Func,
     g: Pdf,
@@ -319,9 +322,9 @@ where
         StdRng::seed_from_u64(seed)
     } else {
         // In rand 0.9.0, from_entropy is replaced by building from OsRng
-        // Note: thread_rng() was renamed to rng() in rand 0.9.0
-        let mut thread_rng = rand::rng();
-        StdRng::from_rng(&mut thread_rng)
+        // Note: rand::rng() was renamed to rand::rng() in rand 0.9.0
+        let mut rng = rand::rng();
+        StdRng::from_rng(&mut rng)
     };
 
     // Sample and evaluate the function
@@ -432,6 +435,7 @@ where
 ///     Some(4)
 /// ).unwrap();
 /// ```
+#[allow(dead_code)]
 pub fn monte_carlo_parallel<F, Func>(
     f: Func,
     ranges: &[(F, F)],
@@ -458,7 +462,7 @@ where
                 n_threads: workers,
                 batch_size: 1000,
                 use_chunking: true,
-                _phantom: PhantomData,
+                phantom: PhantomData,
             };
 
             return parallel_monte_carlo(f, ranges, Some(parallel_opts));
@@ -472,9 +476,12 @@ where
 
 #[cfg(test)]
 mod tests {
-    use super::*;
-
+    use crate::{importance_sampling, monte_carlo, monte_carlo_parallel, MonteCarloOptions};
+    use ndarray::{Array1, ArrayView1};
+    use rand::rngs::StdRng;
+    use rand_distr::Distribution;
     use std::f64::consts::PI;
+    use std::marker::PhantomData;
 
     // Helper function to check if result is within expected error margin
     fn is_close_enough(result: f64, expected: f64, epsilon: f64) -> bool {
@@ -487,7 +494,7 @@ mod tests {
         let options = MonteCarloOptions {
             n_samples: 100000,
             seed: Some(12345), // For reproducibility
-            _phantom: PhantomData,
+            phantom: PhantomData,
             ..Default::default()
         };
 
@@ -503,7 +510,7 @@ mod tests {
         let options = MonteCarloOptions {
             n_samples: 100000,
             seed: Some(12345), // For reproducibility
-            _phantom: PhantomData,
+            phantom: PhantomData,
             ..Default::default()
         };
 
@@ -524,7 +531,7 @@ mod tests {
             n_samples: 100000,
             seed: Some(12345), // For reproducibility
             use_antithetic: true,
-            _phantom: PhantomData,
+            phantom: PhantomData,
             ..Default::default()
         };
 
@@ -571,7 +578,7 @@ mod tests {
             for &xi in x.iter() {
                 // Normal density function, but folded to account for our transformation
                 let z = xi;
-                let density = (-0.5 * z * z).exp() / (2.0 * PI).sqrt();
+                let density = (-0.5 * z * z).exp() / (2.0f64 * PI).sqrt();
                 // Fold the negative domain to account for our transformation
                 let folded_density = if xi < 3.0 {
                     2.0 * density // Double density because we folded the distribution
@@ -586,7 +593,7 @@ mod tests {
         let options = MonteCarloOptions {
             n_samples: 100000,
             seed: Some(12345), // For reproducibility
-            _phantom: PhantomData,
+            phantom: PhantomData,
             ..Default::default()
         };
 

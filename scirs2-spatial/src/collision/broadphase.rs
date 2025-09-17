@@ -76,7 +76,7 @@ impl AABB {
 /// A simple grid-based spatial partitioning structure for 2D space
 pub struct SpatialGrid2D {
     /// Cell size (width and height)
-    cell_size: f64,
+    cellsize: f64,
     /// Total width of the grid
     width: f64,
     /// Total height of the grid
@@ -89,12 +89,12 @@ pub struct SpatialGrid2D {
 
 impl SpatialGrid2D {
     /// Creates a new 2D spatial grid with the given dimensions and cell size
-    pub fn new(width: f64, height: f64, cell_size: f64) -> Self {
-        let cells_x = (width / cell_size).ceil() as usize;
-        let cells_y = (height / cell_size).ceil() as usize;
+    pub fn new(_width: f64, height: f64, cellsize: f64) -> Self {
+        let cells_x = (_width / cellsize).ceil() as usize;
+        let cells_y = (height / cellsize).ceil() as usize;
         SpatialGrid2D {
-            cell_size,
-            width,
+            cellsize,
+            width: _width,
             height,
             cells_x,
             cells_y,
@@ -107,8 +107,8 @@ impl SpatialGrid2D {
             return None;
         }
 
-        let x = (pos[0] / self.cell_size) as usize;
-        let y = (pos[1] / self.cell_size) as usize;
+        let x = (pos[0] / self.cellsize) as usize;
+        let y = (pos[1] / self.cellsize) as usize;
 
         // Ensure indices are within bounds
         if x >= self.cells_x || y >= self.cells_y {
@@ -125,10 +125,10 @@ impl SpatialGrid2D {
         let max_x = (circle.center[0] + circle.radius).min(self.width);
         let max_y = (circle.center[1] + circle.radius).min(self.height);
 
-        let min_cell_x = (min_x / self.cell_size) as usize;
-        let min_cell_y = (min_y / self.cell_size) as usize;
-        let max_cell_x = (max_x / self.cell_size) as usize;
-        let max_cell_y = (max_y / self.cell_size) as usize;
+        let min_cell_x = (min_x / self.cellsize) as usize;
+        let min_cell_y = (min_y / self.cellsize) as usize;
+        let max_cell_x = (max_x / self.cellsize) as usize;
+        let max_cell_y = (max_y / self.cellsize) as usize;
 
         let mut cells = Vec::new();
         for y in min_cell_y..=max_cell_y {
@@ -149,10 +149,10 @@ impl SpatialGrid2D {
         let max_x = box2d.max[0].min(self.width);
         let max_y = box2d.max[1].min(self.height);
 
-        let min_cell_x = (min_x / self.cell_size) as usize;
-        let min_cell_y = (min_y / self.cell_size) as usize;
-        let max_cell_x = (max_x / self.cell_size) as usize;
-        let max_cell_y = (max_y / self.cell_size) as usize;
+        let min_cell_x = (min_x / self.cellsize) as usize;
+        let min_cell_y = (min_y / self.cellsize) as usize;
+        let max_cell_x = (max_x / self.cellsize) as usize;
+        let max_cell_y = (max_y / self.cellsize) as usize;
 
         let mut cells = Vec::new();
         for y in min_cell_y..=max_cell_y {
@@ -170,7 +170,7 @@ impl SpatialGrid2D {
 /// A simple grid-based spatial partitioning structure for 3D space
 pub struct SpatialGrid3D {
     /// Cell size (width, height, and depth)
-    cell_size: f64,
+    cellsize: f64,
     /// Total width of the grid (x-dimension)
     width: f64,
     /// Total height of the grid (y-dimension)
@@ -187,13 +187,13 @@ pub struct SpatialGrid3D {
 
 impl SpatialGrid3D {
     /// Creates a new 3D spatial grid with the given dimensions and cell size
-    pub fn new(width: f64, height: f64, depth: f64, cell_size: f64) -> Self {
-        let cells_x = (width / cell_size).ceil() as usize;
-        let cells_y = (height / cell_size).ceil() as usize;
-        let cells_z = (depth / cell_size).ceil() as usize;
+    pub fn new(_width: f64, height: f64, depth: f64, cellsize: f64) -> Self {
+        let cells_x = (_width / cellsize).ceil() as usize;
+        let cells_y = (height / cellsize).ceil() as usize;
+        let cells_z = (depth / cellsize).ceil() as usize;
         SpatialGrid3D {
-            cell_size,
-            width,
+            cellsize,
+            width: _width,
             height,
             depth,
             cells_x,
@@ -214,9 +214,9 @@ impl SpatialGrid3D {
             return None;
         }
 
-        let x = (pos[0] / self.cell_size) as usize;
-        let y = (pos[1] / self.cell_size) as usize;
-        let z = (pos[2] / self.cell_size) as usize;
+        let x = (pos[0] / self.cellsize) as usize;
+        let y = (pos[1] / self.cellsize) as usize;
+        let z = (pos[2] / self.cellsize) as usize;
 
         // Ensure indices are within bounds
         if x >= self.cells_x || y >= self.cells_y || z >= self.cells_z {
@@ -235,12 +235,12 @@ impl SpatialGrid3D {
         let max_y = (sphere.center[1] + sphere.radius).min(self.height);
         let max_z = (sphere.center[2] + sphere.radius).min(self.depth);
 
-        let min_cell_x = (min_x / self.cell_size) as usize;
-        let min_cell_y = (min_y / self.cell_size) as usize;
-        let min_cell_z = (min_z / self.cell_size) as usize;
-        let max_cell_x = (max_x / self.cell_size) as usize;
-        let max_cell_y = (max_y / self.cell_size) as usize;
-        let max_cell_z = (max_z / self.cell_size) as usize;
+        let min_cell_x = (min_x / self.cellsize) as usize;
+        let min_cell_y = (min_y / self.cellsize) as usize;
+        let min_cell_z = (min_z / self.cellsize) as usize;
+        let max_cell_x = (max_x / self.cellsize) as usize;
+        let max_cell_y = (max_y / self.cellsize) as usize;
+        let max_cell_z = (max_z / self.cellsize) as usize;
 
         let mut cells = Vec::new();
         for z in min_cell_z..=max_cell_z {
@@ -265,12 +265,12 @@ impl SpatialGrid3D {
         let max_y = box3d.max[1].min(self.height);
         let max_z = box3d.max[2].min(self.depth);
 
-        let min_cell_x = (min_x / self.cell_size) as usize;
-        let min_cell_y = (min_y / self.cell_size) as usize;
-        let min_cell_z = (min_z / self.cell_size) as usize;
-        let max_cell_x = (max_x / self.cell_size) as usize;
-        let max_cell_y = (max_y / self.cell_size) as usize;
-        let max_cell_z = (max_z / self.cell_size) as usize;
+        let min_cell_x = (min_x / self.cellsize) as usize;
+        let min_cell_y = (min_y / self.cellsize) as usize;
+        let min_cell_z = (min_z / self.cellsize) as usize;
+        let max_cell_x = (max_x / self.cellsize) as usize;
+        let max_cell_y = (max_y / self.cellsize) as usize;
+        let max_cell_z = (max_z / self.cellsize) as usize;
 
         let mut cells = Vec::new();
         for z in min_cell_z..=max_cell_z {

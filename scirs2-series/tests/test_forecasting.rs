@@ -2,6 +2,7 @@ use ndarray::array;
 use scirs2_series::forecasting::{auto_arima, auto_arima_with_options, AutoArimaOptions};
 
 #[test]
+#[allow(dead_code)]
 fn test_auto_arima_basic() {
     // Create a simple time series
     let ts = array![
@@ -23,6 +24,7 @@ fn test_auto_arima_basic() {
 }
 
 #[test]
+#[allow(dead_code)]
 fn test_auto_arima_with_options() {
     // Create a time series with a trend
     let ts = array![
@@ -53,6 +55,7 @@ fn test_auto_arima_with_options() {
 }
 
 #[test]
+#[allow(dead_code)]
 fn test_auto_arima_seasonal() {
     // Create a seasonal time series
     let ts = array![
@@ -71,6 +74,7 @@ fn test_auto_arima_seasonal() {
 }
 
 #[test]
+#[allow(dead_code)]
 fn test_auto_arima_with_seasonal_options() {
     // Create a seasonal time series with trend
     let ts = array![

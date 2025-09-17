@@ -5,6 +5,7 @@ use ndarray::{Array1, Array2};
 use scirs2_optim::optimizers::{Lion, Optimizer};
 
 #[test]
+#[allow(dead_code)]
 fn test_lion_new_creates_optimizer_with_default_values() {
     let optimizer: Lion<f64> = Lion::new(0.001);
     assert_abs_diff_eq!(optimizer.learning_rate(), 0.001);
@@ -14,6 +15,7 @@ fn test_lion_new_creates_optimizer_with_default_values() {
 }
 
 #[test]
+#[allow(dead_code)]
 fn test_lion_new_with_config() {
     let optimizer: Lion<f64> = Lion::new_with_config(0.01, 0.85, 0.98, 0.001);
     assert_abs_diff_eq!(optimizer.learning_rate(), 0.01);
@@ -23,6 +25,7 @@ fn test_lion_new_with_config() {
 }
 
 #[test]
+#[allow(dead_code)]
 fn test_lion_setters() {
     let mut optimizer: Lion<f64> = Lion::new(0.001);
 
@@ -40,6 +43,7 @@ fn test_lion_setters() {
 }
 
 #[test]
+#[allow(dead_code)]
 fn test_lion_1d_optimization() {
     let mut optimizer: Lion<f64> = Lion::new(0.1);
 
@@ -58,6 +62,7 @@ fn test_lion_1d_optimization() {
 }
 
 #[test]
+#[allow(dead_code)]
 fn test_lion_2d_optimization() {
     let mut optimizer: Lion<f64> = Lion::new(0.1);
 
@@ -77,6 +82,7 @@ fn test_lion_2d_optimization() {
 }
 
 #[test]
+#[allow(dead_code)]
 fn test_lion_with_weight_decay() {
     let mut optimizer: Lion<f64> = Lion::new_with_config(0.1, 0.9, 0.99, 0.1);
 
@@ -95,6 +101,7 @@ fn test_lion_with_weight_decay() {
 }
 
 #[test]
+#[allow(dead_code)]
 fn test_lion_reset() {
     let mut optimizer: Lion<f64> = Lion::new(0.1);
 
@@ -118,6 +125,7 @@ fn test_lion_reset() {
 }
 
 #[test]
+#[allow(dead_code)]
 fn test_lion_multiple_dimensions() {
     let mut optimizer: Lion<f64> = Lion::new(0.1);
 
@@ -136,6 +144,7 @@ fn test_lion_multiple_dimensions() {
 }
 
 #[test]
+#[allow(dead_code)]
 fn test_lion_trait_methods() {
     let mut optimizer: Lion<f64> = Lion::new(0.001);
 

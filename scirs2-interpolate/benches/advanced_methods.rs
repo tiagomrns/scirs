@@ -1,4 +1,4 @@
-use criterion::{black_box, criterion_group, criterion_main, BenchmarkId, Criterion, Throughput};
+use criterion::{criterion_group, criterion_main, BenchmarkId, Criterion, Throughput};
 use ndarray::{Array1, Array2};
 use scirs2_interpolate::advanced::enhanced_kriging::EnhancedKrigingBuilder;
 use scirs2_interpolate::advanced::enhanced_rbf::{EnhancedRBFInterpolator, KernelWidthStrategy};
@@ -8,7 +8,9 @@ use scirs2_interpolate::advanced::rbf::{RBFInterpolator, RBFKernel};
 use scirs2_interpolate::advanced::thinplate::ThinPlateSpline;
 use scirs2_interpolate::local::mls::{MovingLeastSquares, PolynomialBasis, WeightFunction};
 use scirs2_interpolate::sparse_grid::make_sparse_grid_interpolator;
+use std::hint::black_box;
 
+#[allow(dead_code)]
 fn generate_2d_test_data(n: usize) -> (Array2<f64>, Array1<f64>) {
     let mut points = Array2::zeros((n, 2));
     let mut values = Array1::zeros(n);
@@ -44,6 +46,7 @@ fn generate_3d_test_data(n: usize) -> (Array2<f64>, Array1<f64>) {
     (points, values)
 }
 
+#[allow(dead_code)]
 fn generate_query_points_2d(n: usize) -> Array2<f64> {
     let mut queries = Array2::zeros((n, 2));
     for i in 0..n {
@@ -53,6 +56,7 @@ fn generate_query_points_2d(n: usize) -> Array2<f64> {
     queries
 }
 
+#[allow(dead_code)]
 fn bench_rbf_interpolation(c: &mut Criterion) {
     let mut group = c.benchmark_group("rbf_interpolation");
 
@@ -80,7 +84,7 @@ fn bench_rbf_interpolation(c: &mut Criterion) {
             group.bench_with_input(
                 BenchmarkId::new(format!("{}_data", kernel_name), data_size),
                 data_size,
-                |b, _| {
+                |b, &data_size| {
                     b.iter(|| {
                         let _ = black_box(interpolator.interpolate(black_box(&queries.view())));
                     });
@@ -92,6 +96,7 @@ fn bench_rbf_interpolation(c: &mut Criterion) {
     group.finish();
 }
 
+#[allow(dead_code)]
 fn bench_enhanced_rbf(c: &mut Criterion) {
     let mut group = c.benchmark_group("enhanced_rbf");
 
@@ -107,7 +112,7 @@ fn bench_enhanced_rbf(c: &mut Criterion) {
         group.bench_with_input(
             BenchmarkId::new("construction", strategy_name),
             strategy_name,
-            |b, _| {
+            |b, &data_size| {
                 b.iter(|| {
                     let _ = black_box(
                         EnhancedRBFInterpolator::builder()
@@ -123,6 +128,7 @@ fn bench_enhanced_rbf(c: &mut Criterion) {
     group.finish();
 }
 
+#[allow(dead_code)]
 fn bench_kriging_interpolation(c: &mut Criterion) {
     let mut group = c.benchmark_group("kriging_interpolation");
 
@@ -157,7 +163,7 @@ fn bench_kriging_interpolation(c: &mut Criterion) {
             group.bench_with_input(
                 BenchmarkId::new(format!("{}_data", cov_name), data_size),
                 data_size,
-                |b, _| {
+                |b, &data_size| {
                     b.iter(|| {
                         for i in 0..queries.nrows() {
                             let query = queries.slice(ndarray::s![i..i + 1, ..]);
@@ -172,6 +178,7 @@ fn bench_kriging_interpolation(c: &mut Criterion) {
     group.finish();
 }
 
+#[allow(dead_code)]
 fn bench_enhanced_kriging(c: &mut Criterion) {
     let mut group = c.benchmark_group("enhanced_kriging");
 
@@ -181,7 +188,7 @@ fn bench_enhanced_kriging(c: &mut Criterion) {
         group.bench_with_input(
             BenchmarkId::new("construction", data_size),
             data_size,
-            |b, _| {
+            |b, &data_size| {
                 b.iter(|| {
                     let _ = black_box(
                         EnhancedKrigingBuilder::new()
@@ -198,6 +205,7 @@ fn bench_enhanced_kriging(c: &mut Criterion) {
     group.finish();
 }
 
+#[allow(dead_code)]
 fn bench_fast_kriging(c: &mut Criterion) {
     let mut group = c.benchmark_group("fast_kriging");
 
@@ -213,7 +221,7 @@ fn bench_fast_kriging(c: &mut Criterion) {
         group.bench_with_input(
             BenchmarkId::new("construction", method_name),
             method_name,
-            |b, _| {
+            |b, &data_size| {
                 b.iter(|| {
                     let _ = black_box(
                         FastKrigingBuilder::new()
@@ -230,6 +238,7 @@ fn bench_fast_kriging(c: &mut Criterion) {
     group.finish();
 }
 
+#[allow(dead_code)]
 fn bench_thin_plate_splines(c: &mut Criterion) {
     let mut group = c.benchmark_group("thin_plate_splines");
 
@@ -243,7 +252,7 @@ fn bench_thin_plate_splines(c: &mut Criterion) {
         group.bench_with_input(
             BenchmarkId::new("data_size", data_size),
             data_size,
-            |b, _| {
+            |b, &data_size| {
                 b.iter(|| {
                     let _ = black_box(interpolator.evaluate(black_box(&queries.view())));
                 });
@@ -254,6 +263,7 @@ fn bench_thin_plate_splines(c: &mut Criterion) {
     group.finish();
 }
 
+#[allow(dead_code)]
 fn bench_sparse_grid_interpolation(c: &mut Criterion) {
     let mut group = c.benchmark_group("sparse_grid_interpolation");
 
@@ -267,7 +277,7 @@ fn bench_sparse_grid_interpolation(c: &mut Criterion) {
                     format!("{}_{}", dim, max_level),
                 ),
                 &(dim, max_level),
-                |b, _| {
+                |b, &data_size| {
                     b.iter(|| {
                         let _ = black_box(make_sparse_grid_interpolator(
                             black_box(bounds.clone()),
@@ -283,6 +293,7 @@ fn bench_sparse_grid_interpolation(c: &mut Criterion) {
     group.finish();
 }
 
+#[allow(dead_code)]
 fn bench_moving_least_squares(c: &mut Criterion) {
     let mut group = c.benchmark_group("moving_least_squares");
 
@@ -316,7 +327,7 @@ fn bench_moving_least_squares(c: &mut Criterion) {
             group.bench_with_input(
                 BenchmarkId::new(format!("{}_{}", weight_name, basis_name), basis_name),
                 basis_name,
-                |b, _| {
+                |b, &data_size| {
                     b.iter(|| {
                         for i in 0..queries.nrows() {
                             let query = queries.slice(ndarray::s![i, ..]);
@@ -331,6 +342,7 @@ fn bench_moving_least_squares(c: &mut Criterion) {
     group.finish();
 }
 
+#[allow(dead_code)]
 fn bench_dimensionality_scaling(c: &mut Criterion) {
     let mut group = c.benchmark_group("dimensionality_scaling");
 
@@ -353,7 +365,7 @@ fn bench_dimensionality_scaling(c: &mut Criterion) {
         }
 
         // Test RBF scaling
-        group.bench_with_input(BenchmarkId::new("rbf_gaussian", dim), dim, |b, _| {
+        group.bench_with_input(BenchmarkId::new("rbf_gaussian", dim), dim, |b, &dim| {
             b.iter(|| {
                 let _ = black_box(RBFInterpolator::new(
                     black_box(&points.view()),
@@ -366,7 +378,7 @@ fn bench_dimensionality_scaling(c: &mut Criterion) {
 
         // Test MLS scaling (if dimension is reasonable)
         if *dim <= 4 {
-            group.bench_with_input(BenchmarkId::new("mls_linear", dim), dim, |b, _| {
+            group.bench_with_input(BenchmarkId::new("mls_linear", dim), dim, |b, &dim| {
                 b.iter(|| {
                     let _ = black_box(MovingLeastSquares::new(
                         black_box(points.clone()),

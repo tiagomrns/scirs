@@ -134,7 +134,7 @@ impl ParallelPlanner {
             let mut planner = planner_clone.lock().unwrap();
             planner
                 .plan_fft(&shape_clone, forward, backend_clone)
-                .map_err(|e| format!("FFT planning error: {}", e))
+                .map_err(|e| format!("FFT planning error: {e}"))
         });
 
         match result {
@@ -150,8 +150,8 @@ impl ParallelPlanner {
     ) -> FFTResult<Vec<ParallelPlanResult>> {
         // Filter out small FFTs that would be processed serially
         let (small_specs, large_specs): (Vec<_>, Vec<_>) =
-            specs.iter().enumerate().partition(|(_, (shape, _, _))| {
-                shape.iter().product::<usize>() < self.config.parallel_threshold
+            specs.iter().enumerate().partition(|(_, (shape__, _, _))| {
+                shape__.iter().product::<usize>() < self.config.parallel_threshold
             });
 
         // Process small FFTs serially
@@ -194,7 +194,7 @@ impl ParallelPlanner {
                             let mut planner_guard = planner.lock().unwrap();
                             planner_guard
                                 .plan_fft(&shape_clone, forward_val, backend_clone)
-                                .map_err(|e| format!("FFT planning error: {}", e))?
+                                .map_err(|e| format!("FFT planning error: {e}"))?
                         };
 
                         Ok((
@@ -220,7 +220,7 @@ impl ParallelPlanner {
         }
 
         // Sort results by original index
-        results.sort_by_key(|(idx, _)| *idx);
+        results.sort_by_key(|(idx_, _)| *idx_);
         Ok(results.into_iter().map(|(_, result)| result).collect())
     }
 
@@ -276,7 +276,7 @@ impl ParallelExecutor {
 
     /// Execute the plan in parallel
     pub fn execute(&self, input: &[Complex64], output: &mut [Complex64]) -> FFTResult<()> {
-        // For small FFTs or if parallel execution is disabled, use the standard executor
+        // Use the standard executor
         let size = self.plan.shape().iter().product::<usize>();
         if size < self.config.parallel_threshold || !self.config.parallel_execution {
             let executor = FftPlanExecutor::new(self.plan.clone());
@@ -297,7 +297,7 @@ impl ParallelExecutor {
 
             executor
                 .execute(&input_vec, &mut output_vec)
-                .map_err(|e| format!("FFT execution error: {}", e))?;
+                .map_err(|e| format!("FFT execution error: {e}"))?;
 
             Ok(output_vec)
         });
@@ -380,7 +380,7 @@ impl ParallelExecutor {
                     let start = Instant::now();
                     executor
                         .execute(&input_vec, &mut local_output)
-                        .map_err(|e| format!("FFT execution error for batch {}: {}", idx, e))?;
+                        .map_err(|e| format!("FFT execution error for batch {idx}: {e}"))?;
                     let elapsed = start.elapsed();
 
                     Ok((idx, local_output, elapsed))

@@ -7,6 +7,7 @@
 use scirs2_integrate::ode::chemical::{ChemicalIntegrator, StiffIntegrationMethod};
 use scirs2_integrate::ode::chemical_systems;
 
+#[allow(dead_code)]
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("Chemical Kinetics Integration Demo\n");
 
@@ -46,6 +47,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 }
 
 /// Demonstrate simple first-order reaction kinetics
+#[allow(dead_code)]
 fn demonstrate_first_order_reaction() -> Result<(), Box<dyn std::error::Error>> {
     let rate_constant = 0.5; // s^-1
     let initial_a = 1.0; // Initial concentration of A
@@ -59,12 +61,9 @@ fn demonstrate_first_order_reaction() -> Result<(), Box<dyn std::error::Error>> 
     let dt = 0.1;
     let n_steps = 50;
 
-    println!("   Rate constant k = {} s^-1", rate_constant);
+    println!("   Rate constant k = {rate_constant} s^-1");
     println!("   Analytical solution: [A](t) = [A]₀ * exp(-kt)");
-    println!(
-        "   Initial: [A] = {:.3} M, [B] = {:.3} M",
-        initial_a, initial_b
-    );
+    println!("   Initial: [A] = {initial_a:.3} M, [B] = {initial_b:.3} M");
 
     let mut concentrations_a = Vec::new();
     let mut concentrations_b = Vec::new();
@@ -99,7 +98,7 @@ fn demonstrate_first_order_reaction() -> Result<(), Box<dyn std::error::Error>> 
 
     // Calculate final conversion
     let conversion = (initial_a - state.concentrations[0]) / initial_a * 100.0;
-    println!("   Final conversion: {:.1}%", conversion);
+    println!("   Final conversion: {conversion:.1}%");
     println!(
         "   Mass balance: {:.6} M (should be {:.6} M)",
         state.concentrations.sum(),
@@ -110,6 +109,7 @@ fn demonstrate_first_order_reaction() -> Result<(), Box<dyn std::error::Error>> 
 }
 
 /// Demonstrate reversible reaction kinetics
+#[allow(dead_code)]
 fn demonstrate_reversible_reaction() -> Result<(), Box<dyn std::error::Error>> {
     let k_forward = 0.3; // Forward rate constant
     let k_reverse = 0.1; // Reverse rate constant
@@ -124,10 +124,7 @@ fn demonstrate_reversible_reaction() -> Result<(), Box<dyn std::error::Error>> {
     let dt = 0.05;
     let n_steps = 200;
 
-    println!(
-        "   Forward rate k₁ = {} s^-1, Reverse rate k₋₁ = {} s^-1",
-        k_forward, k_reverse
-    );
+    println!("   Forward rate k₁ = {k_forward} s^-1, Reverse rate k₋₁ = {k_reverse} s^-1");
     println!(
         "   Equilibrium constant K = k₁/k₋₁ = {:.2}",
         k_forward / k_reverse
@@ -139,10 +136,7 @@ fn demonstrate_reversible_reaction() -> Result<(), Box<dyn std::error::Error>> {
     let a_eq = total_conc / (1.0 + keq);
     let b_eq = total_conc * keq / (1.0 + keq);
 
-    println!(
-        "   Equilibrium: [A]_eq = {:.4} M, [B]_eq = {:.4} M",
-        a_eq, b_eq
-    );
+    println!("   Equilibrium: [A]_eq = {a_eq:.4} M, [B]_eq = {b_eq:.4} M");
 
     let mut reached_equilibrium = false;
 
@@ -156,7 +150,7 @@ fn demonstrate_reversible_reaction() -> Result<(), Box<dyn std::error::Error>> {
         let approach_b = (state.concentrations[1] - b_eq).abs() / b_eq;
 
         if !reached_equilibrium && approach_a < 0.01 && approach_b < 0.01 {
-            println!("   Approached equilibrium at t = {:.2}s", t);
+            println!("   Approached equilibrium at t = {t:.2}s");
             println!(
                 "   [A] = {:.4} M (equilibrium: {:.4}), [B] = {:.4} M (equilibrium: {:.4})",
                 state.concentrations[0], a_eq, state.concentrations[1], b_eq
@@ -183,6 +177,7 @@ fn demonstrate_reversible_reaction() -> Result<(), Box<dyn std::error::Error>> {
 }
 
 /// Demonstrate enzyme kinetics (Michaelis-Menten mechanism)
+#[allow(dead_code)]
 fn demonstrate_enzyme_kinetics() -> Result<(), Box<dyn std::error::Error>> {
     let k1 = 1.0; // Forward binding rate (M^-1 s^-1)
     let k_minus_1 = 0.5; // Reverse binding rate (s^-1)
@@ -209,19 +204,15 @@ fn demonstrate_enzyme_kinetics() -> Result<(), Box<dyn std::error::Error>> {
     let n_steps = 1000;
 
     println!("   Enzyme kinetics parameters:");
-    println!(
-        "   k₁ = {} M⁻¹s⁻¹, k₋₁ = {} s⁻¹, k₂ = {} s⁻¹",
-        k1, k_minus_1, k2
-    );
+    println!("   k₁ = {k1} M⁻¹s⁻¹, k₋₁ = {k_minus_1} s⁻¹, k₂ = {k2} s⁻¹");
 
     // Calculate Michaelis constant
     let km = (k_minus_1 + k2) / k1;
     let vmax = k2 * initial_enzyme;
-    println!("   Kₘ = {:.4} M, Vₘₐₓ = {:.4} M/s", km, vmax);
+    println!("   Kₘ = {km:.4} M, Vₘₐₓ = {vmax:.4} M/s");
 
     println!(
-        "   Initial: [E] = {:.3} M, [S] = {:.3} M, [P] = {:.3} M",
-        initial_enzyme, initial_substrate, initial_product
+        "   Initial: [E] = {initial_enzyme:.3} M, [S] = {initial_substrate:.3} M, [P] = {initial_product:.3} M"
     );
 
     let mut max_es_concentration = 0.0_f64;
@@ -252,10 +243,7 @@ fn demonstrate_enzyme_kinetics() -> Result<(), Box<dyn std::error::Error>> {
             if es_change_rate < 1e-6 {
                 _time_to_steady_state = t;
                 steady_state_reached = true;
-                println!(
-                    "   ES steady state reached at t = {:.3}s, [ES] = {:.6} M",
-                    t, es_conc
-                );
+                println!("   ES steady state reached at t = {t:.3}s, [ES] = {es_conc:.6} M");
             }
         }
 
@@ -286,21 +274,19 @@ fn demonstrate_enzyme_kinetics() -> Result<(), Box<dyn std::error::Error>> {
         "   Final product concentration: [P] = {:.5} M",
         state.concentrations[2]
     );
-    println!("   Predicted final rate: v = {:.6} M/s", final_rate);
-    println!("   Maximum ES concentration: {:.6} M", max_es_concentration);
+    println!("   Predicted final rate: v = {final_rate:.6} M/s");
+    println!("   Maximum ES concentration: {max_es_concentration:.6} M");
 
     // Check enzyme conservation
     let total_enzyme = state.concentrations[0] + state.concentrations[3]; // E + ES
     let enzyme_conservation_error = (total_enzyme - initial_enzyme).abs() / initial_enzyme;
-    println!(
-        "   Enzyme conservation error: {:.2e}",
-        enzyme_conservation_error
-    );
+    println!("   Enzyme conservation error: {enzyme_conservation_error:.2e}");
 
     Ok(())
 }
 
 /// Demonstrate competitive reactions
+#[allow(dead_code)]
 fn demonstrate_competitive_reactions() -> Result<(), Box<dyn std::error::Error>> {
     let k1 = 0.2; // A + B -> C
     let k2 = 0.3; // A + D -> E
@@ -316,19 +302,13 @@ fn demonstrate_competitive_reactions() -> Result<(), Box<dyn std::error::Error>>
     let dt = 0.1;
     let n_steps = 100;
 
-    println!("   Reaction 1: A + B -> C (k₁ = {} M⁻¹s⁻¹)", k1);
-    println!("   Reaction 2: A + D -> E (k₂ = {} M⁻¹s⁻¹)", k2);
-    println!(
-        "   Initial: [A] = {} M, [B] = {} M, [D] = {} M",
-        initial_a, initial_b, initial_d
-    );
+    println!("   Reaction 1: A + B -> C (k₁ = {k1} M⁻¹s⁻¹)");
+    println!("   Reaction 2: A + D -> E (k₂ = {k2} M⁻¹s⁻¹)");
+    println!("   Initial: [A] = {initial_a} M, [B] = {initial_b} M, [D] = {initial_d} M");
 
     // Calculate selectivity
     let selectivity_factor = k2 * initial_d / (k1 * initial_b);
-    println!(
-        "   Selectivity factor (k₂[D]₀)/(k₁[B]₀) = {:.2}",
-        selectivity_factor
-    );
+    println!("   Selectivity factor (k₂[D]₀)/(k₁[B]₀) = {selectivity_factor:.2}");
 
     let mut product_c_max = 0.0_f64;
     let mut product_e_max = 0.0_f64;
@@ -374,6 +354,7 @@ fn demonstrate_competitive_reactions() -> Result<(), Box<dyn std::error::Error>>
 }
 
 /// Demonstrate stiff reaction system
+#[allow(dead_code)]
 fn demonstrate_stiff_reactions() -> Result<(), Box<dyn std::error::Error>> {
     let fast_rate = 1000.0; // Very fast reaction
     let slow_rate = 0.001; // Very slow reaction
@@ -390,8 +371,8 @@ fn demonstrate_stiff_reactions() -> Result<(), Box<dyn std::error::Error>> {
     let dt = config.dt;
     let stiff_method = config.stiff_method;
 
-    println!("   Fast reaction: A -> B (k₁ = {} s⁻¹)", fast_rate);
-    println!("   Slow reaction: B -> C (k₂ = {} s⁻¹)", slow_rate);
+    println!("   Fast reaction: A -> B (k₁ = {fast_rate} s⁻¹)");
+    println!("   Slow reaction: B -> C (k₂ = {slow_rate} s⁻¹)");
     println!("   Stiffness ratio: {:.0}", fast_rate / slow_rate);
 
     let mut integrator = ChemicalIntegrator::new(config, properties);
@@ -419,10 +400,7 @@ fn demonstrate_stiff_reactions() -> Result<(), Box<dyn std::error::Error>> {
         // Check when fast reaction reaches quasi-equilibrium
         if fast_equilibrium_time.is_none() && state.concentrations[0] < 0.01 {
             fast_equilibrium_time = Some(t);
-            println!(
-                "   Fast reaction quasi-equilibrium reached at t = {:.4}s",
-                t
-            );
+            println!("   Fast reaction quasi-equilibrium reached at t = {t:.4}s");
             println!(
                 "   [A] = {:.6} M, [B] = {:.6} M, [C] = {:.6} M",
                 state.concentrations[0], state.concentrations[1], state.concentrations[2]
@@ -432,7 +410,7 @@ fn demonstrate_stiff_reactions() -> Result<(), Box<dyn std::error::Error>> {
         // Check when slow timescale becomes dominant
         if !slow_timescale_started && state.concentrations[2] > 0.1 {
             slow_timescale_started = true;
-            println!("   Slow timescale regime started at t = {:.2}s", t);
+            println!("   Slow timescale regime started at t = {t:.2}s");
         }
 
         // Print status every 10000 steps (every 1 second)
@@ -462,6 +440,7 @@ fn demonstrate_stiff_reactions() -> Result<(), Box<dyn std::error::Error>> {
 }
 
 /// Compare different integration methods for stiff systems
+#[allow(dead_code)]
 fn demonstrate_method_comparison() -> Result<(), Box<dyn std::error::Error>> {
     let fast_rate = 500.0;
     let slow_rate = 0.002;
@@ -475,10 +454,7 @@ fn demonstrate_method_comparison() -> Result<(), Box<dyn std::error::Error>> {
     ];
 
     println!("   Comparing integration methods for stiff system:");
-    println!(
-        "   Fast rate: {} s⁻¹, Slow rate: {} s⁻¹",
-        fast_rate, slow_rate
-    );
+    println!("   Fast rate: {fast_rate} s⁻¹, Slow rate: {slow_rate} s⁻¹");
 
     for (method_name, method) in methods {
         let (mut config, properties, initial_state) = chemical_systems::stiff_reaction_system(
@@ -510,7 +486,7 @@ fn demonstrate_method_comparison() -> Result<(), Box<dyn std::error::Error>> {
                     max_stiffness = max_stiffness.max(result.stats.stiffness_ratio);
                 }
                 Err(_) => {
-                    println!("     {}: Integration failed at t = {:.3}s", method_name, t);
+                    println!("     {method_name}: Integration failed at t = {t:.3}s");
                     break;
                 }
             }
@@ -519,16 +495,16 @@ fn demonstrate_method_comparison() -> Result<(), Box<dyn std::error::Error>> {
         let elapsed_time = start_time.elapsed().as_secs_f64();
         let final_conversion = (1.0 - state.concentrations[0]) * 100.0;
 
-        println!("     {}:", method_name);
+        println!("     {method_name}:");
         println!(
             "       Final concentrations: [A] = {:.6}, [B] = {:.6}, [C] = {:.6}",
             state.concentrations[0], state.concentrations[1], state.concentrations[2]
         );
-        println!("       Conversion: {:.2}%", final_conversion);
-        println!("       Computation time: {:.4}s", elapsed_time);
-        println!("       Function evaluations: {}", total_function_evals);
-        println!("       Newton iterations: {}", total_newton_iters);
-        println!("       Max stiffness ratio: {:.1}", max_stiffness);
+        println!("       Conversion: {final_conversion:.2}%");
+        println!("       Computation time: {elapsed_time:.4}s");
+        println!("       Function evaluations: {total_function_evals}");
+        println!("       Newton iterations: {total_newton_iters}");
+        println!("       Max stiffness ratio: {max_stiffness:.1}");
         println!();
     }
 

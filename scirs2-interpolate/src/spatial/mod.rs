@@ -63,6 +63,7 @@ pub mod balltree;
 pub mod enhanced_search;
 pub mod kdtree;
 pub mod optimized_search;
+pub mod simd_enhancements;
 
 pub use balltree::BallTree;
 pub use enhanced_search::{
@@ -73,3 +74,4 @@ pub use kdtree::KdTree;
 #[cfg(feature = "parallel")]
 pub use optimized_search::ParallelQueryProcessor;
 pub use optimized_search::{CacheFriendlyKNN, OptimizedSpatialSearch, SimdDistanceOps};
+pub use simd_enhancements::{AdvancedSimdOps, SimdBenchmark};

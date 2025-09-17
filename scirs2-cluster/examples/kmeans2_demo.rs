@@ -6,6 +6,7 @@ use ndarray::{Array1, Array2};
 use rand::Rng;
 use scirs2_cluster::vq::{kmeans2, whiten, MinitMethod, MissingMethod};
 
+#[allow(dead_code)]
 fn generate_blobs(
     n_samples: usize,
     centers: &Array2<f64>,
@@ -39,6 +40,7 @@ fn generate_blobs(
     (data, labels)
 }
 
+#[allow(dead_code)]
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("Enhanced K-means Clustering Demo");
     println!("===============================\n");

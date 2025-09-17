@@ -31,6 +31,7 @@ const SAMPLE_TRAINING_TEXT: &str =
     The museum display had many historical artifacts. The ancient artifacts were well preserved. \
     The display was impressive and educational.";
 
+#[allow(dead_code)]
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("Statistical Spelling Correction Demo\n");
 
@@ -65,11 +66,12 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 }
 
 // Function to train the language model with sample text
+#[allow(dead_code)]
 fn train_language_model(corrector: &mut StatisticalCorrector) {
     println!("Training language model with sample text...");
 
     // Add sample training text
-    corrector.add_training_text(SAMPLE_TRAINING_TEXT);
+    corrector.add_trainingtext(SAMPLE_TRAINING_TEXT);
 
     // Add more specialized training examples for context disambiguation
     let additional_examples = [
@@ -103,7 +105,7 @@ fn train_language_model(corrector: &mut StatisticalCorrector) {
     ];
 
     for example in &additional_examples {
-        corrector.add_training_text(example);
+        corrector.add_trainingtext(example);
     }
 
     println!(
@@ -113,6 +115,7 @@ fn train_language_model(corrector: &mut StatisticalCorrector) {
 }
 
 // Function to add specific words for consistent example behavior
+#[allow(dead_code)]
 fn add_example_words(corrector: &mut StatisticalCorrector) {
     // Add specific words to the dictionary
     let word_frequencies = [
@@ -145,6 +148,7 @@ fn add_example_words(corrector: &mut StatisticalCorrector) {
 }
 
 // Compare dictionary-based and statistical spelling correction
+#[allow(dead_code)]
 fn compare_correctors(
     dict_corrector: &DictionaryCorrector,
     stat_corrector: &StatisticalCorrector,
@@ -173,19 +177,16 @@ fn compare_correctors(
         let dict_correction = dict_corrector.correct(misspelled)?;
         let stat_correction = stat_corrector.correct(misspelled)?;
 
-        println!(
-            "{:<15} {:<15} {:<15}",
-            misspelled, dict_correction, stat_correction
-        );
+        println!("{misspelled:<15} {dict_correction:<15} {stat_correction:<15}");
     }
 
     println!("\nDictionary sizes:");
     println!(
-        "  - Dictionary corrector: {} words",
+        "  - Dictionary _corrector: {} words",
         dict_corrector.dictionary_size()
     );
     println!(
-        "  - Statistical corrector: {} words (+ {} in language model)",
+        "  - Statistical _corrector: {} words (+ {} in language model)",
         stat_corrector.dictionary_size(),
         stat_corrector.vocabulary_size()
     );
@@ -194,22 +195,23 @@ fn compare_correctors(
 }
 
 // Demonstrate context-aware correction
+#[allow(dead_code)]
 fn context_aware_correction_demo(
     corrector: &StatisticalCorrector,
 ) -> Result<(), Box<dyn std::error::Error>> {
     println!("\n=== Context-Aware Correction Demo ===\n");
 
     println!("Original text with misspellings:");
-    println!("{}\n", TEXT_WITH_CONTEXT_MISSPELLINGS);
+    println!("{TEXT_WITH_CONTEXT_MISSPELLINGS}\n");
 
     // Correct the text
-    let corrected_text = corrector.correct_text(TEXT_WITH_CONTEXT_MISSPELLINGS)?;
+    let correctedtext = corrector.correcttext(TEXT_WITH_CONTEXT_MISSPELLINGS)?;
 
     println!("Corrected text:");
-    println!("{}\n", corrected_text);
+    println!("{correctedtext}\n");
 
     println!("Expected text:");
-    println!("{}\n", EXPECTED_CORRECTED_TEXT);
+    println!("{EXPECTED_CORRECTED_TEXT}\n");
 
     // Compare specific correction examples
     println!("Specific context examples:\n");
@@ -219,29 +221,30 @@ fn context_aware_correction_demo(
     let text2 = "The river bnk was muddy after the rain.";
 
     println!("Example 1: 'bnk' in financial context");
-    println!("Before: {}", text1);
-    println!("After:  {}\n", corrector.correct_text(text1)?);
+    println!("Before: {text1}");
+    println!("After:  {}\n", corrector.correcttext(text1)?);
 
     println!("Example 2: 'bnk' in geographical context");
-    println!("Before: {}", text2);
-    println!("After:  {}\n", corrector.correct_text(text2)?);
+    println!("Before: {text2}");
+    println!("After:  {}\n", corrector.correcttext(text2)?);
 
     // Example 2: there/their homophone confusion
     let text3 = "Their was a problem with the computer.";
     let text4 = "There car broke down on the highway.";
 
     println!("Example 3: 'their' used incorrectly");
-    println!("Before: {}", text3);
-    println!("After:  {}\n", corrector.correct_text(text3)?);
+    println!("Before: {text3}");
+    println!("After:  {}\n", corrector.correcttext(text3)?);
 
     println!("Example 4: 'there' used incorrectly");
-    println!("Before: {}", text4);
-    println!("After:  {}\n", corrector.correct_text(text4)?);
+    println!("Before: {text4}");
+    println!("After:  {}\n", corrector.correcttext(text4)?);
 
     Ok(())
 }
 
 // Test performance of different correctors and configurations
+#[allow(dead_code)]
 fn performance_test(
     dict_corrector: &DictionaryCorrector,
     stat_corrector: &StatisticalCorrector,
@@ -249,19 +252,19 @@ fn performance_test(
     println!("\n=== Performance Test ===\n");
 
     // Create test text with a mix of correct and incorrect words
-    let test_text = TEXT_WITH_CONTEXT_MISSPELLINGS.repeat(10);
+    let testtext = TEXT_WITH_CONTEXT_MISSPELLINGS.repeat(10);
 
-    // Measure dictionary corrector performance
+    // Measure dictionary _corrector performance
     let start = Instant::now();
-    let _ = dict_corrector.correct_text(&test_text)?;
+    let _ = dict_corrector.correcttext(&testtext)?;
     let dict_time = start.elapsed();
 
-    // Measure statistical corrector performance
+    // Measure statistical _corrector performance
     let start = Instant::now();
-    let _ = stat_corrector.correct_text(&test_text)?;
+    let _ = stat_corrector.correcttext(&testtext)?;
     let stat_time = start.elapsed();
 
-    // Create a non-contextual statistical corrector for comparison
+    // Create a non-contextual statistical _corrector for comparison
     let non_context_config = StatisticalCorrectorConfig {
         use_context: false,
         ..Default::default()
@@ -272,26 +275,24 @@ fn performance_test(
     train_language_model(&mut non_context_corrector);
     add_example_words(&mut non_context_corrector);
 
-    // Measure non-contextual statistical corrector performance
+    // Measure non-contextual statistical _corrector performance
     let start = Instant::now();
-    let _ = non_context_corrector.correct_text(&test_text)?;
+    let _ = non_context_corrector.correcttext(&testtext)?;
     let non_context_time = start.elapsed();
 
     println!(
         "Performance comparison on text with {} characters:",
-        test_text.len()
+        testtext.len()
     );
-    println!("  - Dictionary corrector: {:?}", dict_time);
-    println!(
-        "  - Statistical corrector (without context): {:?}",
-        non_context_time
-    );
-    println!("  - Statistical corrector (with context): {:?}", stat_time);
+    println!("  - Dictionary corrector: {dict_time:?}");
+    println!("  - Statistical _corrector (without context): {non_context_time:?}");
+    println!("  - Statistical _corrector (with context): {stat_time:?}");
 
     Ok(())
 }
 
 // Demonstrate different configurations for statistical correction
+#[allow(dead_code)]
 fn configuration_demo() -> Result<(), Box<dyn std::error::Error>> {
     println!("\n=== Configuration Options Demo ===\n");
 
@@ -354,25 +355,25 @@ fn configuration_demo() -> Result<(), Box<dyn std::error::Error>> {
         train_language_model(&mut corrector);
         add_example_words(&mut corrector);
 
-        println!("{} configuration:", name);
-        println!("  max_edit_distance: {}", config.max_edit_distance);
-        println!("  language_model_weight: {}", config.language_model_weight);
-        println!("  edit_distance_weight: {}", config.edit_distance_weight);
-        println!("  use_context: {}", config.use_context);
+        println!("{name} configuration:");
+        println!("  max_editdistance: {}", config.max_edit_distance);
+        println!("  language_modelweight: {}", config.language_model_weight);
+        println!("  edit_distanceweight: {}", config.edit_distance_weight);
+        println!("  usecontext: {}", config.use_context);
 
         println!("\n  Correction examples:");
         for word in &test_cases {
             let corrected = corrector.correct(word)?;
-            println!("    {} -> {}", word, corrected);
+            println!("    {word} -> {corrected}");
         }
 
         // Show a context example if context is enabled
         if config.use_context {
             let context_example = "Going to the bnk to deposit money. The river bnk was muddy.";
-            let corrected = corrector.correct_text(context_example)?;
+            let corrected = corrector.correcttext(context_example)?;
             println!("\n  Context example:");
-            println!("    Before: {}", context_example);
-            println!("    After:  {}", corrected);
+            println!("    Before: {context_example}");
+            println!("    After:  {corrected}");
         }
 
         println!("\n{:-<60}", "");
@@ -382,6 +383,7 @@ fn configuration_demo() -> Result<(), Box<dyn std::error::Error>> {
 }
 
 // Demonstrate the error model (noisy channel model)
+#[allow(dead_code)]
 fn noise_model_demo() -> Result<(), Box<dyn std::error::Error>> {
     println!("\n=== Error Model Demo ===\n");
 
@@ -435,7 +437,7 @@ fn noise_model_demo() -> Result<(), Box<dyn std::error::Error>> {
 
     for (typo, correct) in &test_pairs {
         let prob = default_model.error_probability(typo, correct);
-        println!("{:<12} -> {:<12}: {:.6}", typo, correct, prob);
+        println!("{typo:<12} -> {correct:<12}: {prob:.6}");
     }
 
     println!("\nImpact on correction with custom error model:");
@@ -457,11 +459,11 @@ fn noise_model_demo() -> Result<(), Box<dyn std::error::Error>> {
 
     // Test some examples
     println!("\nCorrecting text with transposition-heavy error model:");
-    let test_text = "I recieved a mesage about thier acheivements.";
-    let corrected = custom_corrector.correct_text(test_text)?;
+    let testtext = "I recieved a mesage about thier acheivements.";
+    let corrected = custom_corrector.correcttext(testtext)?;
 
-    println!("Before: {}", test_text);
-    println!("After:  {}", corrected);
+    println!("Before: {testtext}");
+    println!("After:  {corrected}");
 
     Ok(())
 }

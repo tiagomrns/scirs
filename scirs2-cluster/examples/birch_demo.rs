@@ -2,6 +2,7 @@ use ndarray::Array2;
 use scirs2_cluster::birch::{birch, BirchOptions};
 use scirs2_cluster::metrics::silhouette_score;
 
+#[allow(dead_code)]
 fn main() {
     println!("BIRCH (Balanced Iterative Reducing and Clustering using Hierarchies) Demo");
     println!("{}", "=".repeat(70));
@@ -113,6 +114,7 @@ fn main() {
     }
 }
 
+#[allow(dead_code)]
 fn generate_clustered_data() -> Array2<f64> {
     let mut data = Vec::new();
 

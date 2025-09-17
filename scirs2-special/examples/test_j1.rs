@@ -1,5 +1,6 @@
 use scirs2_special::j1;
 
+#[allow(dead_code)]
 fn main() {
     let result = j1(2.0f64);
     println!("j1(2.0) = {}", result);

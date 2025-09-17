@@ -6,8 +6,8 @@ mod tests {
 
     #[test]
     fn test_eye() {
-        ag::run::<f64, _, _>(|ctx| {
-            let eye_matrix = eye(3, ctx);
+        ag::run(|ctx| {
+            let eye_matrix: ag::Tensor<f64> = eye(3, ctx);
             let result = eye_matrix.eval(ctx).unwrap();
 
             assert_eq!(result.shape(), &[3, 3]);
@@ -25,7 +25,7 @@ mod tests {
 
     #[test]
     fn test_trace() {
-        ag::run::<f64, _, _>(|ctx| {
+        ag::run(|ctx| {
             let matrix = ag::tensor_ops::convert_to_tensor(
                 ndarray::array![[1., 2.], [3., 4.]].into_dyn(),
                 ctx,
@@ -41,7 +41,7 @@ mod tests {
 
     #[test]
     fn test_diag_operations() {
-        ag::run::<f64, _, _>(|ctx| {
+        ag::run(|ctx| {
             // Test diag creation
             let vector =
                 ag::tensor_ops::convert_to_tensor(ndarray::array![1., 2., 3.].into_dyn(), ctx);
@@ -77,8 +77,8 @@ mod tests {
 
     #[test]
     fn test_qr_decomposition() {
-        ag::run::<f64, _, _>(|ctx| {
-            let a = ag::tensor_ops::random_normal(&[4, 3], 0.0, 1.0, ctx);
+        ag::run(|ctx| {
+            let a: ag::Tensor<f64> = ag::tensor_ops::random_normal(&[4, 3], 0.0, 1.0, ctx);
             let (q, r) = qr(a);
 
             // Check that A = QR

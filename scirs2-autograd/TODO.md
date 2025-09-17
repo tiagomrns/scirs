@@ -1,4 +1,4 @@
-# SciRS2 Autograd - Production Status (v0.1.0-alpha.6)
+# SciRS2 Autograd - Production Status (v0.1.0-beta.1)
 
 **Final Alpha Release - Production Ready**
 
@@ -98,7 +98,7 @@ let mut env = VariableEnvironment::new();
 - **Automatic Algorithm Selection:** Runtime optimization based on input characteristics
 - **Advanced Compilation:** JIT compilation and graph-level optimization improvements
 
-## 📝 Release Notes v0.1.0-alpha.6
+## 📝 Release Notes v0.1.0-beta.1
 
 **This is the final alpha release** - fully production-ready with comprehensive testing and optimization.
 

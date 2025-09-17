@@ -10,6 +10,7 @@ use scirs2_ndimage::features::{
 };
 use scirs2_ndimage::filters::BorderMode;
 
+#[allow(dead_code)]
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("=== scirs2-ndimage Advanced Edge Detection Example ===\n");
 
@@ -62,7 +63,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // 5. Using the unified edge_detector API with default settings (Canny)
     println!("\n5. Unified Edge Detector API (Default - Canny):");
-    let unified_default = edge_detector(&image, EdgeDetectionConfig::default());
+    let unified_default = edge_detector(&image, EdgeDetectionConfig::default())?;
     print_array(&unified_default);
 
     // 6. Using Canny with custom parameters
@@ -76,7 +77,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         border_mode: BorderMode::Reflect,
         return_magnitude: false,
     };
-    let unified_canny = edge_detector(&image, canny_config);
+    let unified_canny = edge_detector(&image, canny_config)?;
     print_array(&unified_canny);
 
     // 7. Using the unified edge_detector API with Laplacian of Gaussian
@@ -88,7 +89,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         return_magnitude: true,
         ..EdgeDetectionConfig::default()
     };
-    let unified_log = edge_detector(&image, log_config);
+    let unified_log = edge_detector(&image, log_config)?;
     print_array(&unified_log);
 
     // 8. Using the unified edge_detector API with Gradient algorithm and Scharr method
@@ -102,14 +103,14 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         return_magnitude: true,
         ..EdgeDetectionConfig::default()
     };
-    let unified_gradient = edge_detector(&image, gradient_config);
+    let unified_gradient = edge_detector(&image, gradient_config)?;
     print_array(&unified_gradient);
 
     // Part 3: Comparing gradient methods on diagonal edges
     println!("\n=== Gradient Method Comparison for Diagonal Edges ===");
 
     // Create a diagonal edge image
-    let diagonal_image = array![
+    let diagonalimage = array![
         [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
         [0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0],
         [0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0],
@@ -120,14 +121,14 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     ];
 
     println!("\nDiagonal edge image:");
-    print_array(&diagonal_image);
+    print_array(&diagonalimage);
 
     println!("\n9a. Sobel Gradient on Diagonal:");
-    let sobel_diagonal = gradient_edges(&diagonal_image, Some(GradientMethod::Sobel), None, None);
+    let sobel_diagonal = gradient_edges(&diagonalimage, Some(GradientMethod::Sobel), None, None)?;
     print_array(&sobel_diagonal);
 
     println!("\n9b. Scharr Gradient on Diagonal:");
-    let scharr_diagonal = gradient_edges(&diagonal_image, Some(GradientMethod::Scharr), None, None);
+    let scharr_diagonal = gradient_edges(&diagonalimage, Some(GradientMethod::Scharr), None, None)?;
     print_array(&scharr_diagonal);
 
     // Note the higher values in the diagonal with Scharr compared to Sobel
@@ -138,6 +139,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 }
 
 // Helper function to print a float array in a grid format
+#[allow(dead_code)]
 fn print_array(array: &Array2<f32>) {
     let (rows, cols) = array.dim();
 
@@ -160,6 +162,7 @@ fn print_array(array: &Array2<f32>) {
 }
 
 // Helper function to print a binary edge array (using threshold)
+#[allow(dead_code)]
 fn print_binary_array(array: &Array2<f32>) {
     let (rows, cols) = array.dim();
 

@@ -14,37 +14,38 @@ use std::fs::{self, File};
 use std::io::Write;
 use std::path::Path;
 
+#[allow(dead_code)]
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Create temporary files for examples
     println!("\n=== Creating Example Files ===");
     let temp_dir = tempfile::tempdir()?;
-    let test_file_path = temp_dir.path().join("test_data.txt");
-    let test_csv_path = temp_dir.path().join("test_data.csv");
-    let test_json_path = temp_dir.path().join("test_data.json");
+    let test_filepath = temp_dir.path().join("testdata.txt");
+    let test_csv_path = temp_dir.path().join("testdata.csv");
+    let test_json_path = temp_dir.path().join("testdata.json");
 
     // Create a test file
-    let test_data = "This is test data for demonstrating data validation and integrity checking.";
-    std::fs::write(&test_file_path, test_data)?;
-    println!("Created test file: {}", test_file_path.display());
+    let testdata = "This is test data for demonstrating data validation and integrity checking.";
+    std::fs::write(&test_filepath, testdata)?;
+    println!("Created test file: {}", test_filepath.display());
 
     // Create a test CSV file
-    let csv_data = "id,name,value\n1,item1,10.5\n2,item2,20.3\n3,item3,15.8";
-    std::fs::write(&test_csv_path, csv_data)?;
+    let csvdata = "id,name,value\n1,item1,10.5\n2,item2,20.3\n3,item3,15.8";
+    std::fs::write(&test_csv_path, csvdata)?;
     println!("Created test CSV file: {}", test_csv_path.display());
 
     // Create a test JSON file
-    let json_data = r#"{"data": [{"id": 1, "value": 10.5}, {"id": 2, "value": 20.3}]}"#;
-    std::fs::write(&test_json_path, json_data)?;
+    let jsondata = r#"{"data": [{"id": 1, "value": 10.5}, {"id": 2, "value": 20.3}]}"#;
+    std::fs::write(&test_json_path, jsondata)?;
     println!("Created test JSON file: {}", test_json_path.display());
 
     // Basic checksum operations
-    basic_checksum_example(test_data)?;
+    basic_checksum_example(testdata)?;
 
     // File checksum operations
-    file_checksum_example(&test_file_path)?;
+    file_checksum_example(&test_filepath)?;
 
     // Integrity metadata example
-    integrity_metadata_example(&test_file_path, temp_dir.path())?;
+    integrity_metadata_example(&test_filepath, temp_dir.path())?;
 
     // Format validation example
     format_validation_example(&test_csv_path, &test_json_path)?;
@@ -56,6 +57,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     Ok(())
 }
 
+#[allow(dead_code)]
 fn basic_checksum_example(data: &str) -> Result<(), Box<dyn std::error::Error>> {
     println!("\n=== Basic Checksum Example ===");
 
@@ -85,12 +87,12 @@ fn basic_checksum_example(data: &str) -> Result<(), Box<dyn std::error::Error>> 
     );
 
     // Verify with modified data
-    let modified_data = format!("{}!", data);
+    let modifieddata = format!("{}!", data);
     println!("\nVerifying checksums with modified data:");
     println!(
         "CRC32 valid: {}",
         verify_checksum(
-            modified_data.as_bytes(),
+            modifieddata.as_bytes(),
             &crc32_checksum,
             ChecksumAlgorithm::CRC32
         )
@@ -98,7 +100,7 @@ fn basic_checksum_example(data: &str) -> Result<(), Box<dyn std::error::Error>> 
     println!(
         "SHA256 valid: {}",
         verify_checksum(
-            modified_data.as_bytes(),
+            modifieddata.as_bytes(),
             &sha256_checksum,
             ChecksumAlgorithm::SHA256
         )
@@ -106,7 +108,7 @@ fn basic_checksum_example(data: &str) -> Result<(), Box<dyn std::error::Error>> 
     println!(
         "BLAKE3 valid: {}",
         verify_checksum(
-            modified_data.as_bytes(),
+            modifieddata.as_bytes(),
             &blake3_checksum,
             ChecksumAlgorithm::BLAKE3
         )
@@ -115,14 +117,15 @@ fn basic_checksum_example(data: &str) -> Result<(), Box<dyn std::error::Error>> 
     Ok(())
 }
 
-fn file_checksum_example(file_path: &Path) -> Result<(), Box<dyn std::error::Error>> {
+#[allow(dead_code)]
+fn file_checksum_example(filepath: &Path) -> Result<(), Box<dyn std::error::Error>> {
     println!("\n=== File Checksum Example ===");
 
     // Calculate checksums for the file
-    println!("Calculating file checksums for: {}", file_path.display());
+    println!("Calculating file checksums for: {}", filepath.display());
 
-    let crc32_checksum = calculate_file_checksum(file_path, ChecksumAlgorithm::CRC32)?;
-    let sha256_checksum = calculate_file_checksum(file_path, ChecksumAlgorithm::SHA256)?;
+    let crc32_checksum = calculate_file_checksum(filepath, ChecksumAlgorithm::CRC32)?;
+    let sha256_checksum = calculate_file_checksum(filepath, ChecksumAlgorithm::SHA256)?;
 
     println!("CRC32 checksum: {}", crc32_checksum);
     println!("SHA256 checksum: {}", sha256_checksum);
@@ -131,33 +134,34 @@ fn file_checksum_example(file_path: &Path) -> Result<(), Box<dyn std::error::Err
     println!("\nVerifying file checksums:");
     println!(
         "CRC32 valid: {}",
-        verify_file_checksum(file_path, &crc32_checksum, ChecksumAlgorithm::CRC32)?
+        verify_file_checksum(filepath, &crc32_checksum, ChecksumAlgorithm::CRC32)?
     );
     println!(
         "SHA256 valid: {}",
-        verify_file_checksum(file_path, &sha256_checksum, ChecksumAlgorithm::SHA256)?
+        verify_file_checksum(filepath, &sha256_checksum, ChecksumAlgorithm::SHA256)?
     );
 
     // Create a checksum file
-    let checksum_file_path =
-        create_checksum_file(file_path, ChecksumAlgorithm::SHA256, None::<String>)?;
-    println!("\nCreated checksum file: {}", checksum_file_path);
+    let checksum_filepath =
+        create_checksum_file(filepath, ChecksumAlgorithm::SHA256, None::<String>)?;
+    println!("\nCreated checksum file: {}", checksum_filepath);
 
     // Verify using the checksum file
-    let verification_result = verify_checksum_file(file_path, &checksum_file_path)?;
+    let verification_result = verify_checksum_file(filepath, &checksum_filepath)?;
     println!("Verification using checksum file: {}", verification_result);
 
     Ok(())
 }
 
+#[allow(dead_code)]
 fn integrity_metadata_example(
-    file_path: &Path,
+    filepath: &Path,
     temp_dir: &Path,
 ) -> Result<(), Box<dyn std::error::Error>> {
     println!("\n=== Integrity Metadata Example ===");
 
     // Generate integrity metadata
-    let metadata = generate_file_integrity_metadata(file_path, ChecksumAlgorithm::SHA256)?;
+    let metadata = generate_file_integrity_metadata(filepath, ChecksumAlgorithm::SHA256)?;
 
     println!("Generated integrity metadata:");
     println!("  File size: {} bytes", metadata.size);
@@ -175,31 +179,32 @@ fn integrity_metadata_example(
     println!("Loaded metadata checksum: {}", loaded_metadata.checksum);
 
     // Validate file against metadata
-    let validation_result = validate_file_integrity(file_path, &metadata)?;
+    let validation_result = validate_file_integrity(filepath, &metadata)?;
     println!("File validation result: {}", validation_result);
 
     // Generate validation report
-    let report = generate_validation_report(file_path, &metadata)?;
+    let report = generate_validation_report(filepath, &metadata)?;
     println!("\nValidation Report:");
     println!("{}", report.format());
 
     // Create a modified file to demonstrate validation failure
-    let modified_file_path = temp_dir.join("modified_test_data.txt");
-    let original_content = fs::read_to_string(file_path)?;
+    let modified_filepath = temp_dir.join("modified_testdata.txt");
+    let original_content = fs::read_to_string(filepath)?;
     let modified_content = format!("{}!", original_content); // Append an exclamation mark
-    fs::write(&modified_file_path, modified_content)?;
+    fs::write(&modified_filepath, modified_content)?;
 
     // Validate the modified file against the original metadata
-    let modified_validation = validate_file_integrity(&modified_file_path, &metadata)?;
+    let modified_validation = validate_file_integrity(&modified_filepath, &metadata)?;
     println!("\nModified file validation result: {}", modified_validation);
 
-    let modified_report = generate_validation_report(&modified_file_path, &metadata)?;
+    let modified_report = generate_validation_report(&modified_filepath, &metadata)?;
     println!("Modified File Validation Report:");
     println!("{}", modified_report.format());
 
     Ok(())
 }
 
+#[allow(dead_code)]
 fn format_validation_example(
     csv_path: &Path,
     json_path: &Path,
@@ -272,12 +277,13 @@ fn format_validation_example(
     Ok(())
 }
 
-fn directory_manifest_example(dir_path: &Path) -> Result<(), Box<dyn std::error::Error>> {
+#[allow(dead_code)]
+fn directory_manifest_example(dirpath: &Path) -> Result<(), Box<dyn std::error::Error>> {
     println!("\n=== Directory Manifest Example ===");
 
     // Create directory manifest
-    let manifest_path = dir_path.join("manifest.json");
-    create_directory_manifest(dir_path, &manifest_path, ChecksumAlgorithm::SHA256, true)?;
+    let manifest_path = dirpath.join("manifest.json");
+    create_directory_manifest(dirpath, &manifest_path, ChecksumAlgorithm::SHA256, true)?;
 
     println!("Created directory manifest: {}", manifest_path.display());
 
@@ -289,19 +295,19 @@ fn directory_manifest_example(dir_path: &Path) -> Result<(), Box<dyn std::error:
     println!("Manifest contains {} files", manifest.files.len());
 
     // Verify the directory against the manifest
-    let verification = manifest.verify_directory(dir_path)?;
+    let verification = manifest.verify_directory(dirpath)?;
     println!("Directory verification result: {}", verification.passed());
     println!("Verified {} files", verification.verified_files.len());
 
     // Create a new file to demonstrate manifest verification failure
-    let new_file_path = dir_path.join("new_file.txt");
-    let mut new_file = File::create(&new_file_path)?;
+    let new_filepath = dirpath.join("new_file.txt");
+    let mut new_file = File::create(&new_filepath)?;
     writeln!(new_file, "This file was created after the manifest")?;
 
     // Modify a file in the directory
     let first_file = if !manifest.files.is_empty() {
         let first_path = &manifest.files[0].path;
-        let full_path = dir_path.join(first_path);
+        let full_path = dirpath.join(first_path);
 
         if full_path.exists() {
             let mut content = fs::read_to_string(&full_path)?;
@@ -316,7 +322,7 @@ fn directory_manifest_example(dir_path: &Path) -> Result<(), Box<dyn std::error:
     };
 
     // Verify again
-    let verification_after = manifest.verify_directory(dir_path)?;
+    let verification_after = manifest.verify_directory(dirpath)?;
     println!("\nVerification after changes:");
     println!("Passed: {}", verification_after.passed());
     println!(
@@ -336,7 +342,7 @@ fn directory_manifest_example(dir_path: &Path) -> Result<(), Box<dyn std::error:
     }
 
     // Save the verification report
-    let report_path = dir_path.join("verification_report.json");
+    let report_path = dirpath.join("verification_report.json");
     verification_after.save(&report_path)?;
     println!("Saved verification report to: {}", report_path.display());
 

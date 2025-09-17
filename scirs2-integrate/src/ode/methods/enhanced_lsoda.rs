@@ -114,12 +114,12 @@ impl<F: IntegrateFloat> EnhancedLsodaState<F> {
     }
 
     /// Switch method type (between Adams and BDF)
-    fn switch_method(&mut self, new_method: AdaptiveMethodType) -> IntegrateResult<()> {
+    fn switch_method(&mut self, _newmethod: AdaptiveMethodType) -> IntegrateResult<()> {
         // Let the adaptive state handle the switching logic
-        self.adaptive_state.switch_method(new_method, self.steps)?;
+        self.adaptive_state.switch_method(_newmethod, self.steps)?;
 
         // Additional state adjustments
-        match new_method {
+        match _newmethod {
             AdaptiveMethodType::Implicit | AdaptiveMethodType::BDF => {
                 // When switching to BDF, reset Jacobian
                 self.jacobian = None;
@@ -152,6 +152,7 @@ impl<F: IntegrateFloat> EnhancedLsodaState<F> {
 ///
 /// The method automatically switches between Adams methods (explicit, non-stiff)
 /// and BDF methods (implicit, stiff) based on detected stiffness characteristics.
+#[allow(dead_code)]
 pub fn enhanced_lsoda_method<F, Func>(
     f: Func,
     t_span: [F; 2],
@@ -179,8 +180,8 @@ where
 
     // Determine minimum and maximum step sizes
     let min_step = opts.min_step.unwrap_or_else(|| {
-        let span = t_end - t_start;
-        span * F::from_f64(1e-10).unwrap() // Minimal step size
+        let _span = t_end - t_start;
+        _span * F::from_f64(1e-10).unwrap() // Minimal step size
     });
 
     let max_step = opts.max_step.unwrap_or_else(|| {
@@ -333,6 +334,7 @@ where
 }
 
 /// Enhanced Adams method (predictor-corrector) for non-stiff regions
+#[allow(dead_code)]
 fn enhanced_adams_step<F, Func>(
     state: &mut EnhancedLsodaState<F>,
     f: &Func,
@@ -636,6 +638,7 @@ where
 }
 
 /// Enhanced BDF method for stiff regions
+#[allow(dead_code)]
 fn enhanced_bdf_step<F, Func>(
     state: &mut EnhancedLsodaState<F>,
     f: &Func,
@@ -820,7 +823,7 @@ where
         let _y_prev = &state.y_history[state.y_history.len() - 1];
 
         // Use more sophisticated extrapolation
-        y_pred = extrapolate(&state.t_history[..], &state.y_history[..], next_t);
+        y_pred = extrapolate(&state.t_history[..], &state.y_history[..], next_t)?;
     }
 
     // Newton's method for solving the BDF equation
@@ -925,9 +928,13 @@ where
         // If the problem is consistently difficult to solve, it might not be stiff
         if iter_count >= max_newton_iters - 1 {
             // Record as potential non-stiffness indicator
-            state.adaptive_state.record_step(
-                F::one(), // placeholder for error
-            );
+            // Use the last computed error from the failed Newton iteration
+            let final_residual = &(y_next.clone() * coeffs[0])
+                + &(state.y.clone() * coeffs[1])
+                + &(state.y_history.last().unwrap_or(&state.y).clone() * coeffs[2]);
+            let final_error = scaled_norm(&final_residual, &state.tol_scale);
+
+            state.adaptive_state.record_step(final_error);
         }
 
         // If we've reduced step size too much, the problem might not be stiff

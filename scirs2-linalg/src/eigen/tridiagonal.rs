@@ -22,18 +22,19 @@ use crate::error::{LinalgError, LinalgResult};
 /// # Returns
 ///
 /// * Array of eigenvalues
+#[allow(dead_code)]
 pub fn tridiagonal_eigvalsh<F>(
     diagonal: &ArrayView1<F>,
     off_diagonal: &ArrayView1<F>
 ) -> LinalgResult<Array1<F>>
 where
-    F: Float + NumAssign + Sum + 'static,
+    F: Float + NumAssign + Sum + Send + Sync + ScalarOperand + 'static,
 {
     let n = diagonal.len();
     
     if off_diagonal.len() != n - 1 {
         return Err(LinalgError::ShapeError(format!(
-            "Off-diagonal length ({}) must be one less than diagonal length ({})",
+            "Off-_diagonal length ({}) must be one less than _diagonal length ({})",
             off_diagonal.len(), n
         )));
     }
@@ -61,7 +62,7 @@ where
         }
     };
     
-    // Zero out small off-diagonal elements
+    // Zero out small off-_diagonal elements
     let tol = F::epsilon().sqrt() * eigenvalues.iter()
               .fold(F::zero(), |max, &val| max.max(val.abs()));
     
@@ -164,29 +165,30 @@ where
 /// # Returns
 ///
 /// * Tuple containing eigenvalues and eigenvectors
+#[allow(dead_code)]
 pub fn tridiagonal_eigh<F>(
     diagonal: &ArrayView1<F>,
     off_diagonal: &ArrayView1<F>
 ) -> LinalgResult<(Array1<F>, Array2<F>)>
 where
-    F: Float + NumAssign + Sum + 'static,
+    F: Float + NumAssign + Sum + Send + Sync + ScalarOperand + 'static,
 {
     let n = diagonal.len();
     
     if off_diagonal.len() != n - 1 {
         return Err(LinalgError::ShapeError(format!(
-            "Off-diagonal length ({}) must be one less than diagonal length ({})",
+            "Off-_diagonal length ({}) must be one less than _diagonal length ({})",
             off_diagonal.len(), n
         )));
     }
     
     // Create tridiagonal matrix in full form
-    let mut tri_matrix = Array2::zeros((n, n));
+    let mut trimatrix = Array2::zeros((n, n));
     for i in 0..n {
-        tri_matrix[[i, i]] = diagonal[i];
+        trimatrix[[i, i]] = diagonal[i];
         if i < n - 1 {
-            tri_matrix[[i, i+1]] = off_diagonal[i];
-            tri_matrix[[i+1, i]] = off_diagonal[i];
+            trimatrix[[i, i+1]] = off_diagonal[i];
+            trimatrix[[i+1, i]] = off_diagonal[i];
         }
     }
     
@@ -205,7 +207,7 @@ where
     
     for _ in 0..max_iter {
         // Do a QR step
-        let (q, r) = match crate::decomposition::qr(&tri_matrix.view(), None) {
+        let (q, r) = match crate::decomposition::qr(&trimatrix.view(), None) {
             Ok((q, r)) => (q, r),
             Err(e) => return Err(e),
         };
@@ -213,7 +215,7 @@ where
         // A' = R * Q (reversed order for better convergence)
         let temp = r.dot(&q);
         
-        // Check convergence (check if off-diagonal elements are close to zero)
+        // Check convergence (check if off-_diagonal elements are close to zero)
         converged = true;
         for i in 0..n {
             for j in 0..n {
@@ -232,7 +234,7 @@ where
             let mut eigenvalues = Array1::zeros(n);
             let eigenvectors = identity.dot(&q);
             
-            // Eigenvalues are on the diagonal
+            // Eigenvalues are on the _diagonal
             for i in 0..n {
                 eigenvalues[i] = temp[[i, i]];
             }
@@ -254,13 +256,13 @@ where
             return Ok((sorted_eigenvalues, sorted_eigenvectors));
         }
         
-        tri_matrix = temp;
+        trimatrix = temp;
     }
     
     // If not converged, return a simple approximation
     let mut eigenvalues = Array1::zeros(n);
     for i in 0..n {
-        eigenvalues[i] = tri_matrix[[i, i]];
+        eigenvalues[i] = trimatrix[[i, i]];
     }
     
     Err(LinalgError::ConvergenceError(

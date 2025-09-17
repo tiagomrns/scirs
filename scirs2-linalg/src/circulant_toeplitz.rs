@@ -68,7 +68,7 @@ pub struct CirculantMatrix<F> {
 
 impl<F> CirculantMatrix<F>
 where
-    F: Float + NumAssign + Sum + Clone + Into<f64> + 'static,
+    F: Float + NumAssign + Sum + Clone + Into<f64> + Send + Sync + ndarray::ScalarOperand + 'static,
 {
     /// Create a new circulant matrix from its first row
     ///
@@ -366,7 +366,7 @@ pub struct ToeplitzMatrix<F> {
 
 impl<F> ToeplitzMatrix<F>
 where
-    F: Float + NumAssign + Sum + Clone + Into<f64> + 'static,
+    F: Float + NumAssign + Sum + Clone + Into<f64> + Send + Sync + ndarray::ScalarOperand + 'static,
 {
     /// Create a new Toeplitz matrix from its first row and first column
     ///
@@ -471,8 +471,8 @@ where
 
         // Embed in a circulant matrix of size 2n-1
         // The circulant matrix C has first row [t₀, t₁, ..., tₙ₋₁, 0, t₋ₙ₊₁, ..., t₋₁]
-        let circ_size = 2 * n - 1;
-        let mut circ_first_row = Array1::zeros(circ_size);
+        let circsize = 2 * n - 1;
+        let mut circ_first_row = Array1::zeros(circsize);
 
         // Fill positive part: [t₀, t₁, ..., tₙ₋₁]
         for i in 0..n {
@@ -481,20 +481,20 @@ where
 
         // Fill negative part: [t₋ₙ₊₁, ..., t₋₁] = [first_column[n-1], ..., first_column[1]]
         for i in 1..n {
-            circ_first_row[circ_size - i] = self.first_column[i];
+            circ_first_row[circsize - i] = self.first_column[i];
         }
 
         // Create circulant matrix and embed the problem
-        let mut circ_matrix = CirculantMatrix::new(circ_first_row)?;
+        let mut circmatrix = CirculantMatrix::new(circ_first_row)?;
 
         // Create extended RHS: [b, 0, ..., 0]
-        let mut extended_b = Array1::zeros(circ_size);
+        let mut extended_b = Array1::zeros(circsize);
         for i in 0..n {
             extended_b[i] = b[i];
         }
 
         // Solve the extended system
-        let extended_x = circ_matrix.solve(&extended_b.view())?;
+        let extended_x = circmatrix.solve(&extended_b.view())?;
 
         // Extract the solution (first n components)
         let mut x = Array1::zeros(n);
@@ -653,7 +653,7 @@ mod tests {
     use ndarray::array;
 
     #[test]
-    fn test_circulant_matrix_creation() {
+    fn test_circulantmatrix_creation() {
         let first_row = array![1.0, 2.0, 3.0, 4.0];
         let circ = CirculantMatrix::new(first_row.clone()).unwrap();
 
@@ -736,7 +736,7 @@ mod tests {
     }
 
     #[test]
-    fn test_toeplitz_matrix_creation() {
+    fn test_toeplitzmatrix_creation() {
         let first_row = array![1.0, 2.0, 3.0];
         let first_col = array![1.0, 4.0, 5.0];
         let toep = ToeplitzMatrix::new(first_row, first_col).unwrap();

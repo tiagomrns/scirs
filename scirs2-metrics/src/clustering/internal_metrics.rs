@@ -71,6 +71,7 @@ pub struct SilhouetteAnalysis<F: Float> {
 /// let score = silhouette_score(&x, &labels, "euclidean").unwrap();
 /// assert!(score > 0.8); // High score for well-separated clusters
 /// ```
+#[allow(dead_code)]
 pub fn silhouette_score<F, S1, S2, D>(
     x: &ArrayBase<S1, Ix2>,
     labels: &ArrayBase<S2, D>,
@@ -122,6 +123,7 @@ where
 /// let mean_score = samples.iter().sum::<f64>() / samples.len() as f64;
 /// assert!(mean_score > 0.8); // High score for well-separated clusters
 /// ```
+#[allow(dead_code)]
 pub fn silhouette_samples<F, S1, S2, D>(
     x: &ArrayBase<S1, Ix2>,
     labels: &ArrayBase<S2, D>,
@@ -173,6 +175,7 @@ where
 /// assert!(cluster_scores[&1] > 0.5);
 /// assert!(cluster_scores[&2] > 0.5);
 /// ```
+#[allow(dead_code)]
 pub fn silhouette_scores_per_cluster<F, S1, S2, D>(
     x: &ArrayBase<S1, Ix2>,
     labels: &ArrayBase<S2, D>,
@@ -235,6 +238,7 @@ where
 ///     println!("Sample {} silhouette value: {}", i, value);
 /// }
 /// ```
+#[allow(dead_code)]
 pub fn silhouette_analysis<F, S1, S2, D>(
     x: &ArrayBase<S1, Ix2>,
     labels: &ArrayBase<S2, D>,
@@ -249,8 +253,7 @@ where
     // Check that the metric is supported
     if metric != "euclidean" {
         return Err(MetricsError::InvalidInput(format!(
-            "Unsupported metric: {}. Only 'euclidean' is currently supported.",
-            metric
+            "Unsupported metric: {metric}. Only 'euclidean' is currently supported."
         )));
     }
 
@@ -291,8 +294,7 @@ where
 
     if !empty_clusters.is_empty() {
         return Err(MetricsError::InvalidInput(format!(
-            "Empty clusters found: {:?}",
-            empty_clusters
+            "Empty clusters found: {empty_clusters:?}"
         )));
     }
 
@@ -305,7 +307,7 @@ where
 
     for i in 0..n_samples {
         let label_i = labels.iter().nth(i).ok_or_else(|| {
-            MetricsError::InvalidInput(format!("Could not access index {} in labels", i))
+            MetricsError::InvalidInput(format!("Could not access index {i} in labels"))
         })?;
         let cluster_i = &clusters[label_i];
         sample_clusters.push(*label_i);
@@ -459,6 +461,7 @@ where
 /// let score = davies_bouldin_score(&x, &labels).unwrap();
 /// assert!(score < 0.5); // Low score for well-separated clusters
 /// ```
+#[allow(dead_code)]
 pub fn davies_bouldin_score<F, S1, S2, D>(
     x: &ArrayBase<S1, Ix2>,
     labels: &ArrayBase<S2, D>,
@@ -593,6 +596,7 @@ where
 /// let score = calinski_harabasz_score(&x, &labels).unwrap();
 /// assert!(score > 50.0); // High score for well-separated clusters
 /// ```
+#[allow(dead_code)]
 pub fn calinski_harabasz_score<F, S1, S2, D>(
     x: &ArrayBase<S1, Ix2>,
     labels: &ArrayBase<S2, D>,
@@ -711,6 +715,7 @@ where
 /// # Returns
 ///
 /// * The Dunn index
+#[allow(dead_code)]
 pub fn dunn_index<F, S1, S2, D>(x: &ArrayBase<S1, Ix2>, labels: &ArrayBase<S2, D>) -> Result<F>
 where
     F: Float + NumCast + std::fmt::Debug + 'static,

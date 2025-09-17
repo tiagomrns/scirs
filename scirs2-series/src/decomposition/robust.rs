@@ -36,6 +36,7 @@ use crate::error::{Result, TimeSeriesError};
 /// let ts = array![1.0, 2.0, 3.0, 2.0, 1.0, 2.0, 3.0, 2.0, 1.0, 2.0, 3.0, 2.0];
 /// let result = decompose_robust_seasonal(&ts, 4, DecompositionModel::Additive, 50, 1e-6).unwrap();
 /// ```
+#[allow(dead_code)]
 pub fn decompose_robust_seasonal<F>(
     ts: &Array1<F>,
     period: usize,
@@ -61,7 +62,7 @@ where
     // Initialize trend with simple moving average
     let mut trend = robust_trend_initial(ts, period)?;
 
-    for iter in 0..max_iter {
+    for _iter in 0..max_iter {
         let old_trend = trend.clone();
         let old_seasonal = seasonal.clone();
 
@@ -110,11 +111,8 @@ where
             break;
         }
 
-        if iter == max_iter - 1 {
-            eprintln!(
-                "Warning: Robust decomposition did not converge in {} iterations",
-                max_iter
-            );
+        if _iter == max_iter - 1 {
+            eprintln!("Warning: Robust decomposition did not converge in {max_iter} iterations");
         }
     }
 
@@ -139,6 +137,7 @@ where
 /// * `max_iter` - Maximum iterations
 /// * `tolerance` - Convergence tolerance
 ///
+#[allow(dead_code)]
 pub fn decompose_robust_loess<F>(
     ts: &Array1<F>,
     period: usize,
@@ -202,6 +201,7 @@ where
 ///
 /// Uses M-estimators with Huber or Tukey bisquare loss functions for robustness.
 ///
+#[allow(dead_code)]
 pub fn decompose_m_estimator<F>(
     ts: &Array1<F>,
     period: usize,
@@ -227,7 +227,7 @@ where
     // Initialize with simple decomposition
     let mut trend = robust_trend_initial(ts, period)?;
 
-    for iter in 0..max_iter {
+    for _iter in 0..max_iter {
         let old_trend = trend.clone();
         let old_seasonal = seasonal.clone();
 
@@ -261,10 +261,9 @@ where
             break;
         }
 
-        if iter == max_iter - 1 {
+        if _iter == max_iter - 1 {
             eprintln!(
-                "Warning: M-estimator decomposition did not converge in {} iterations",
-                max_iter
+                "Warning: M-estimator decomposition did not converge in {max_iter} iterations"
             );
         }
     }
@@ -306,6 +305,7 @@ pub enum RobustLossType {
 
 // Helper functions
 
+#[allow(dead_code)]
 fn robust_trend_initial<F>(ts: &Array1<F>, period: usize) -> Result<Array1<F>>
 where
     F: Float + FromPrimitive + Debug,
@@ -315,7 +315,7 @@ where
     let window = period;
 
     for i in 0..n {
-        let start = if i >= window / 2 { i - window / 2 } else { 0 };
+        let start = i.saturating_sub(window / 2);
         let end = if i + window / 2 < n {
             i + window / 2 + 1
         } else {
@@ -329,6 +329,7 @@ where
     Ok(trend)
 }
 
+#[allow(dead_code)]
 fn update_seasonal_robust<F>(
     residual: &Array1<F>,
     period: usize,
@@ -379,6 +380,7 @@ where
     Ok(seasonal)
 }
 
+#[allow(dead_code)]
 fn robust_trend_smoother<F>(ts: &Array1<F>, window: usize) -> Result<Array1<F>>
 where
     F: Float + FromPrimitive + Debug,
@@ -387,7 +389,7 @@ where
     let mut trend = Array1::zeros(n);
 
     for i in 0..n {
-        let start = if i >= window / 2 { i - window / 2 } else { 0 };
+        let start = i.saturating_sub(window / 2);
         let end = if i + window / 2 < n {
             i + window / 2 + 1
         } else {
@@ -401,6 +403,7 @@ where
     Ok(trend)
 }
 
+#[allow(dead_code)]
 fn robust_loess_seasonal<F>(
     ts: &Array1<F>,
     _period: usize,
@@ -419,11 +422,7 @@ where
     .max(1);
 
     for i in 0..n {
-        let start = if i >= window_size / 2 {
-            i - window_size / 2
-        } else {
-            0
-        };
+        let start = i.saturating_sub(window_size / 2);
         let end = if i + window_size / 2 < n {
             i + window_size / 2 + 1
         } else {
@@ -452,6 +451,7 @@ where
     Ok(seasonal)
 }
 
+#[allow(dead_code)]
 fn robust_loess_trend<F>(ts: &Array1<F>, bandwidth: F, weights: &Array1<F>) -> Result<Array1<F>>
 where
     F: Float + FromPrimitive + Debug,
@@ -465,11 +465,7 @@ where
     .max(1);
 
     for i in 0..n {
-        let start = if i >= window_size / 2 {
-            i - window_size / 2
-        } else {
-            0
-        };
+        let start = i.saturating_sub(window_size / 2);
         let end = if i + window_size / 2 < n {
             i + window_size / 2 + 1
         } else {
@@ -498,6 +494,7 @@ where
     Ok(trend)
 }
 
+#[allow(dead_code)]
 fn calculate_robust_weights<F>(residuals: &Array1<F>) -> Result<Array1<F>>
 where
     F: Float + FromPrimitive + Debug,
@@ -534,6 +531,7 @@ where
     Ok(weights)
 }
 
+#[allow(dead_code)]
 fn update_seasonal_m_estimator<F>(
     ts: &Array1<F>,
     trend: &Array1<F>,
@@ -605,6 +603,7 @@ where
     Ok(seasonal)
 }
 
+#[allow(dead_code)]
 fn update_trend_m_estimator<F>(
     ts: &Array1<F>,
     window: usize,
@@ -617,7 +616,7 @@ where
     let mut trend = Array1::zeros(n);
 
     for i in 0..n {
-        let start = if i >= window / 2 { i - window / 2 } else { 0 };
+        let start = i.saturating_sub(window / 2);
         let end = if i + window / 2 < n {
             i + window / 2 + 1
         } else {
@@ -631,7 +630,8 @@ where
     Ok(trend)
 }
 
-fn m_estimator<F>(values: &[F], loss_type: RobustLossType) -> Result<F>
+#[allow(dead_code)]
+fn m_estimator<F>(values: &[F], losstype: RobustLossType) -> Result<F>
 where
     F: Float + FromPrimitive + Debug,
 {
@@ -639,13 +639,14 @@ where
         return Ok(F::zero());
     }
 
-    match loss_type {
+    match losstype {
         RobustLossType::Huber => huber_estimator(values),
         RobustLossType::TukeyBisquare => tukey_estimator(values),
         RobustLossType::Andrews => andrews_estimator(values),
     }
 }
 
+#[allow(dead_code)]
 fn huber_estimator<F>(values: &[F]) -> Result<F>
 where
     F: Float + FromPrimitive + Debug,
@@ -705,6 +706,7 @@ where
     Ok(estimate)
 }
 
+#[allow(dead_code)]
 fn tukey_estimator<F>(values: &[F]) -> Result<F>
 where
     F: Float + FromPrimitive + Debug,
@@ -767,6 +769,7 @@ where
     Ok(estimate)
 }
 
+#[allow(dead_code)]
 fn andrews_estimator<F>(values: &[F]) -> Result<F>
 where
     F: Float + FromPrimitive + Debug,
@@ -829,6 +832,7 @@ where
     Ok(estimate)
 }
 
+#[allow(dead_code)]
 fn median<F>(values: &[F]) -> F
 where
     F: Float + FromPrimitive + Debug,
@@ -850,6 +854,7 @@ where
     }
 }
 
+#[allow(dead_code)]
 fn calculate_l2_norm<F>(arr: &Array1<F>) -> Result<F>
 where
     F: Float + FromPrimitive + Debug,

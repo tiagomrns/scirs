@@ -7,6 +7,7 @@ use scirs2_interpolate::parallel::{
 use std::error::Error;
 use std::time::Instant;
 
+#[allow(dead_code)]
 fn main() -> Result<(), Box<dyn Error>> {
     println!("Parallel Interpolation Performance Comparison");
     println!("-----------------------------------------\n");

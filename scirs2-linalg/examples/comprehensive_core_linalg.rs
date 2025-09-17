@@ -12,11 +12,12 @@ use scirs2_linalg::{
     qr, solve, svd, vector_norm,
 };
 
+#[allow(dead_code)]
 fn main() -> LinalgResult<()> {
     println!("=== Comprehensive Linear Algebra Example ===\n");
 
     // Basic matrix operations
-    basic_matrix_operations()?;
+    basicmatrix_operations()?;
 
     // Matrix decompositions
     matrix_decompositions()?;
@@ -38,7 +39,8 @@ fn main() -> LinalgResult<()> {
 }
 
 /// Demonstrates basic matrix operations
-fn basic_matrix_operations() -> LinalgResult<()> {
+#[allow(dead_code)]
+fn basicmatrix_operations() -> LinalgResult<()> {
     println!("📊 Basic Matrix Operations");
     println!("{}", "=".repeat(50));
 
@@ -102,6 +104,7 @@ fn basic_matrix_operations() -> LinalgResult<()> {
 }
 
 /// Demonstrates matrix decompositions
+#[allow(dead_code)]
 fn matrix_decompositions() -> LinalgResult<()> {
     println!("🔬 Matrix Decompositions");
     println!("{}", "=".repeat(50));
@@ -163,6 +166,7 @@ fn matrix_decompositions() -> LinalgResult<()> {
 }
 
 /// Demonstrates linear system solving
+#[allow(dead_code)]
 fn linear_system_solving() -> LinalgResult<()> {
     println!("🎯 Linear System Solving");
     println!("{}", "=".repeat(50));
@@ -208,6 +212,7 @@ fn linear_system_solving() -> LinalgResult<()> {
 }
 
 /// Demonstrates eigenvalue and eigenvector computations
+#[allow(dead_code)]
 fn eigenvalue_computations() -> LinalgResult<()> {
     println!("🌀 Eigenvalue Computations");
     println!("{}", "=".repeat(50));
@@ -263,6 +268,7 @@ fn eigenvalue_computations() -> LinalgResult<()> {
 }
 
 /// Demonstrates parallel processing capabilities
+#[allow(dead_code)]
 fn parallel_processing_examples() -> LinalgResult<()> {
     println!("⚡ Parallel Processing Examples");
     println!("{}", "=".repeat(50));
@@ -271,7 +277,7 @@ fn parallel_processing_examples() -> LinalgResult<()> {
     let config = WorkerConfig::new()
         .with_workers(4)
         .with_threshold(100) // Use parallel for matrices with 100+ elements
-        .with_chunk_size(32);
+        .with_chunksize(32);
 
     println!("Worker configuration: {:?}", config);
 
@@ -337,6 +343,7 @@ fn parallel_processing_examples() -> LinalgResult<()> {
 }
 
 /// Demonstrates error handling and validation
+#[allow(dead_code)]
 fn error_handling_demonstration() {
     println!("🚨 Error Handling Demonstration");
     println!("{}", "=".repeat(50));
@@ -369,9 +376,9 @@ fn error_handling_demonstration() {
 
     // Non-finite values
     println!("\n🔹 Non-finite Value Errors");
-    let invalid_matrix = array![[1.0, f64::NAN], [f64::INFINITY, 4.0]];
+    let invalidmatrix = array![[1.0, f64::NAN], [f64::INFINITY, 4.0]];
 
-    match det(&invalid_matrix.view(), None) {
+    match det(&invalidmatrix.view(), None) {
         Ok(_) => println!("Unexpected success!"),
         Err(e) => println!("Expected error: {}", e),
     }

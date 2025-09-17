@@ -18,6 +18,7 @@ pub mod max_pool2d;
 // BLAS dependencies removed - all operations now use core abstractions or fallback implementations
 
 #[test]
+#[allow(dead_code)]
 fn test_im2col_batch() {
     let op = conv2d::Conv2D {
         pad: 0,
@@ -65,6 +66,7 @@ fn test_im2col_batch() {
 }
 
 #[allow(clippy::too_many_arguments)]
+#[allow(dead_code)]
 fn im2col<T: Float>(
     mut x_ptr: *const T, // 4-dimensional
     mut ret_ptr: *mut T, // 4-dimensional (result)
@@ -119,6 +121,7 @@ fn im2col<T: Float>(
 }
 
 #[allow(clippy::too_many_arguments)]
+#[allow(dead_code)]
 fn im2col_batch<T: Float>(
     x: &[T],           // 4-dimensional
     batch_size: usize, // x.shape[0]
@@ -169,6 +172,7 @@ fn im2col_batch<T: Float>(
 }
 
 #[allow(clippy::too_many_arguments)]
+#[allow(dead_code)]
 fn col2im<T: Float>(
     mut x_ptr: *const T, // 6-dimensional cols
     mut ret_ptr: *mut T, // 4-dimensional

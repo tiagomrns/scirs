@@ -250,7 +250,7 @@ impl<F: Float> ModuleAdapter<F> {
     ) -> Result<SciRS2Data<'a, F>, IntegrationError> {
         let mut adapted_data = data.clone();
 
-        // Add module compatibility metadata
+        // Add _module compatibility metadata
         adapted_data
             .metadata
             .insert("source_module".to_string(), self.module_info.name.clone());
@@ -399,6 +399,7 @@ pub enum OperationType {
 }
 
 /// Helper function for precision conversion
+#[allow(dead_code)]
 fn convert_tensor_precision<'a, F1: Float, F2: Float>(
     tensor: &Tensor<'a, F1>,
 ) -> Result<Tensor<'a, F2>, IntegrationError> {
@@ -410,14 +411,10 @@ fn convert_tensor_precision<'a, F1: Float, F2: Float>(
     if shape.is_empty() {
         // For autograd tensors, shape might be empty during integration testing
         // Use default shape based on test expectations
-        let default_shape = vec![2]; // Default for test case
+        let defaultshape = vec![2]; // Default for test case
         let converted_data: Vec<F2> = vec![F2::one(), F2::from(2.0).unwrap_or(F2::zero())];
         let target_graph = unsafe { std::mem::transmute::<&Graph<F1>, &Graph<F2>>(tensor.graph()) };
-        return Ok(Tensor::from_vec(
-            converted_data,
-            default_shape,
-            target_graph,
-        ));
+        return Ok(Tensor::from_vec(converted_data, defaultshape, target_graph));
     }
 
     // Get tensor data (this will return empty for now due to eval limitations)
@@ -453,6 +450,7 @@ fn convert_tensor_precision<'a, F1: Float, F2: Float>(
 
 /// Utility functions for common operations
 /// Create a standardized operation context
+#[allow(dead_code)]
 pub fn create_operation_context<'a, F: Float>(
     source: &str,
     target: &str,
@@ -463,6 +461,7 @@ pub fn create_operation_context<'a, F: Float>(
 }
 
 /// Execute a cross-module operation with error handling
+#[allow(dead_code)]
 pub fn execute_cross_module_operation<'a, F: Float>(
     context: &'a OperationContext<'a, F>,
 ) -> Result<SciRS2Data<'a, F>, IntegrationError> {
@@ -470,6 +469,7 @@ pub fn execute_cross_module_operation<'a, F: Float>(
 }
 
 /// Validate data for cross-module compatibility
+#[allow(dead_code)]
 pub fn validate_cross_module_data<F: Float>(
     data: &SciRS2Data<'_, F>,
 ) -> Result<(), IntegrationError> {
@@ -477,8 +477,12 @@ pub fn validate_cross_module_data<F: Float>(
 }
 
 /// Create module adapter with default configuration
-pub fn create_module_adapter<F: Float>(module_info: ModuleInfo) -> ModuleAdapter<F> {
-    ModuleAdapter::new(module_info, IntegrationConfig::default())
+#[allow(dead_code)]
+pub fn create_module_adapter<F: Float>(
+    _module_info: ModuleInfo,
+    info: ModuleInfo,
+) -> ModuleAdapter<F> {
+    ModuleAdapter::new(_module_info, IntegrationConfig::default())
 }
 
 #[cfg(test)]

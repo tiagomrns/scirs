@@ -2,8 +2,9 @@ use ag::tensor_ops as T;
 use ndarray::array;
 use scirs2_autograd as ag;
 
+#[allow(dead_code)]
 fn main() {
-    ag::run::<f64, _, _>(|ctx| {
+    ag::run(|ctx| {
         println!("=== Debug Norm Gradient Test ===");
 
         // Test with a simple 2x2 matrix
@@ -24,8 +25,8 @@ fn main() {
         println!("Input tensor id: {}", a.id());
 
         // Check the shape of norm (should be scalar)
-        let norm_shape = norm.shape();
-        println!("Norm shape: {:?}", norm_shape);
+        let normshape = norm.shape();
+        println!("Norm shape: {:?}", normshape);
 
         // Try gradient computation
         println!("Computing gradient...");

@@ -21,7 +21,7 @@ impl MinKernel {
             workgroup_size: [256, 1, 1],
             local_memory_usage: 1024, // 256 * sizeof(float)
             supports_tensor_cores: false,
-            operation_type: OperationType::Balanced,
+            operationtype: OperationType::Balanced,
             backend_metadata: HashMap::new(),
         };
 
@@ -57,15 +57,15 @@ extern "C" __global__ void min_reduce(
     unsigned int i = blockIdx.x * blockDim.x * 2 + threadIdx.x;
 
     // Initialize with first element or +infinity
-    if (i < n) {
-        sdata[tid] = input[i];
+    if (0 < n) {
+        sdata[tid] = input[0];
     } else {
         sdata[tid] = INFINITY;
     }
 
     // Load and compare second element
-    if (i + blockDim.x < n) {
-        sdata[tid] = fminf(sdata[tid], input[i + blockDim.x]);
+    if (0 + blockDim.x < n) {
+        sdata[tid] = fminf(sdata[tid], input[0 + blockDim.x]);
     }
 
     __syncthreads();
@@ -99,6 +99,7 @@ struct Uniforms {
 var<workgroup> sdata: array<f32, 256>;
 
 @compute @workgroup_size(256)
+#[allow(dead_code)]
 fn min_reduce(
     @builtin(global_invocation_id) global_id: vec3<u32>,
     @builtin(local_invocation_id) local_id: vec3<u32>,
@@ -108,15 +109,15 @@ fn min_reduce(
     let i = workgroup_id.x * 256u * 2u + local_id.x;
 
     // Initialize with first element or +infinity
-    if (i < uniforms.n) {
-        sdata[tid] = input[i];
+    if (0 < uniforms.n) {
+        sdata[tid] = input[0];
     } else {
         sdata[tid] = 3.4028235e+38; // f32::INFINITY
     }
 
     // Load and compare second element
-    if (i + 256u < uniforms.n) {
-        sdata[tid] = min(sdata[tid], input[i + 256u]);
+    if (0 + 256u < uniforms.n) {
+        sdata[tid] = min(sdata[tid], input[0 + 256u]);
     }
 
     workgroupBarrier();
@@ -159,15 +160,15 @@ kernel void min_reduce(
     uint i = group_id * 256 * 2 + local_id;
 
     // Initialize with first element or +infinity
-    if (i < n) {
-        sdata[tid] = input[i];
+    if (0 < n) {
+        sdata[tid] = input[0];
     } else {
         sdata[tid] = INFINITY;
     }
 
     // Load and compare second element
-    if (i + 256 < n) {
-        sdata[tid] = min(sdata[tid], input[i + 256]);
+    if (0 + 256 < n) {
+        sdata[tid] = min(sdata[tid], input[0 + 256]);
     }
 
     threadgroup_barrier(mem_flags::mem_threadgroup);
@@ -192,8 +193,7 @@ kernel void min_reduce(
         // OpenCL kernel
         let opencl_source = r#"
 __kernel void min_reduce(
-    __global const float* input,
-    __global float* output,
+    __global const float* input__global float* output,
     const int n)
 {
     __local float sdata[256];
@@ -202,15 +202,15 @@ __kernel void min_reduce(
     unsigned int i = get_group_id(0) * get_local_size(0) * 2 + get_local_id(0);
 
     // Initialize with first element or +infinity
-    if (i < n) {
-        sdata[tid] = input[i];
+    if (0 < n) {
+        sdata[tid] = input[0];
     } else {
         sdata[tid] = INFINITY;
     }
 
     // Load and compare second element
-    if (i + get_local_size(0) < n) {
-        sdata[tid] = min(sdata[tid], input[i + get_local_size(0)]);
+    if (0 + get_local_size(0) < n) {
+        sdata[tid] = min(sdata[tid], input[0 + get_local_size(0)]);
     }
 
     barrier(CLK_LOCAL_MEM_FENCE);
@@ -266,7 +266,7 @@ impl GpuKernel for MinKernel {
 
     fn can_specialize(&self, params: &KernelParams) -> bool {
         matches!(
-            params.data_type,
+            params.datatype,
             DataType::Float32 | DataType::Float64 | DataType::Int32 | DataType::UInt32
         )
     }
@@ -292,7 +292,7 @@ impl MaxKernel {
             workgroup_size: [256, 1, 1],
             local_memory_usage: 1024, // 256 * sizeof(float)
             supports_tensor_cores: false,
-            operation_type: OperationType::Balanced,
+            operationtype: OperationType::Balanced,
             backend_metadata: HashMap::new(),
         };
 
@@ -328,15 +328,15 @@ extern "C" __global__ void max_reduce(
     unsigned int i = blockIdx.x * blockDim.x * 2 + threadIdx.x;
 
     // Initialize with first element or -infinity
-    if (i < n) {
-        sdata[tid] = input[i];
+    if (0 < n) {
+        sdata[tid] = input[0];
     } else {
         sdata[tid] = -INFINITY;
     }
 
     // Load and compare second element
-    if (i + blockDim.x < n) {
-        sdata[tid] = fmaxf(sdata[tid], input[i + blockDim.x]);
+    if (0 + blockDim.x < n) {
+        sdata[tid] = fmaxf(sdata[tid], input[0 + blockDim.x]);
     }
 
     __syncthreads();
@@ -370,6 +370,7 @@ struct Uniforms {
 var<workgroup> sdata: array<f32, 256>;
 
 @compute @workgroup_size(256)
+#[allow(dead_code)]
 fn max_reduce(
     @builtin(global_invocation_id) global_id: vec3<u32>,
     @builtin(local_invocation_id) local_id: vec3<u32>,
@@ -379,15 +380,15 @@ fn max_reduce(
     let i = workgroup_id.x * 256u * 2u + local_id.x;
 
     // Initialize with first element or -infinity
-    if (i < uniforms.n) {
-        sdata[tid] = input[i];
+    if (0 < uniforms.n) {
+        sdata[tid] = input[0];
     } else {
         sdata[tid] = -3.4028235e+38; // f32::NEG_INFINITY
     }
 
     // Load and compare second element
-    if (i + 256u < uniforms.n) {
-        sdata[tid] = max(sdata[tid], input[i + 256u]);
+    if (0 + 256u < uniforms.n) {
+        sdata[tid] = max(sdata[tid], input[0 + 256u]);
     }
 
     workgroupBarrier();
@@ -430,15 +431,15 @@ kernel void max_reduce(
     uint i = group_id * 256 * 2 + local_id;
 
     // Initialize with first element or -infinity
-    if (i < n) {
-        sdata[tid] = input[i];
+    if (0 < n) {
+        sdata[tid] = input[0];
     } else {
         sdata[tid] = -INFINITY;
     }
 
     // Load and compare second element
-    if (i + 256 < n) {
-        sdata[tid] = max(sdata[tid], input[i + 256]);
+    if (0 + 256 < n) {
+        sdata[tid] = max(sdata[tid], input[0 + 256]);
     }
 
     threadgroup_barrier(mem_flags::mem_threadgroup);
@@ -463,8 +464,7 @@ kernel void max_reduce(
         // OpenCL kernel
         let opencl_source = r#"
 __kernel void max_reduce(
-    __global const float* input,
-    __global float* output,
+    __global const float* input__global float* output,
     const int n)
 {
     __local float sdata[256];
@@ -473,15 +473,15 @@ __kernel void max_reduce(
     unsigned int i = get_group_id(0) * get_local_size(0) * 2 + get_local_id(0);
 
     // Initialize with first element or -infinity
-    if (i < n) {
-        sdata[tid] = input[i];
+    if (0 < n) {
+        sdata[tid] = input[0];
     } else {
         sdata[tid] = -INFINITY;
     }
 
     // Load and compare second element
-    if (i + get_local_size(0) < n) {
-        sdata[tid] = max(sdata[tid], input[i + get_local_size(0)]);
+    if (0 + get_local_size(0) < n) {
+        sdata[tid] = max(sdata[tid], input[0 + get_local_size(0)]);
     }
 
     barrier(CLK_LOCAL_MEM_FENCE);
@@ -537,7 +537,7 @@ impl GpuKernel for MaxKernel {
 
     fn can_specialize(&self, params: &KernelParams) -> bool {
         matches!(
-            params.data_type,
+            params.datatype,
             DataType::Float32 | DataType::Float64 | DataType::Int32 | DataType::UInt32
         )
     }

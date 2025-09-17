@@ -1,4 +1,3 @@
-// FIXME: This example has compilation errors - ambiguous type for max()
 #![allow(dead_code)]
 
 use ndarray::{array, Array1, ArrayView1};
@@ -8,6 +7,7 @@ use scirs2_integrate::dae::{
 use scirs2_integrate::ode::ODEMethod;
 use std::f64::consts::PI;
 
+#[allow(dead_code)]
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("Index-2 Pendulum DAE Example");
     println!("============================\n");
@@ -45,7 +45,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     // vx' = -λx (λ is implicitly determined)
     // vy' = -λy - g
     let f = |_t: f64, x: ArrayView1<f64>, _y: ArrayView1<f64>| -> Array1<f64> {
-        let (_px, _py, vx, vy) = (x[0], x[1], x[2], x[3]);
+        let (px, py, vx, vy) = (x[0], x[1], x[2], x[3]);
 
         // For the acceleration, we need the Lagrange multiplier λ
         // Instead of explicitly computing it, we'll let the constraint solver handle it
@@ -67,7 +67,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // We also need to enforce the hidden constraint (the time derivative of the constraint)
     // This is what makes it an index-2 problem:
-    // d/dt(x² + y² = l²) gives: 2*x*vx + 2*y*vy = 0
+    // d/dt(x² + y² = l²), gives: 2*x*vx + 2*y*vy = 0
 
     // We could explicitly include this constraint, but instead we'll let the
     // index reduction technique handle it automatically.
@@ -90,7 +90,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         .compute_index(t_span[0], x_vars.view(), y_vars.view(), &f, &g_constraint)
         .unwrap_or(DAEIndex::Index1);
 
-    println!("Detected DAE index: {:?}", detected_index);
+    println!("Detected DAE index: {detected_index:?}");
 
     // Create a projection method for the constraint
     let projection = ProjectionMethod::new(structure);
@@ -112,10 +112,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         projection.make_consistent(t_span[0], &mut x0_copy, &mut y0_copy, &g_constraint);
 
     if let Err(e) = consistency_result {
-        println!(
-            "Warning: Failed to make initial conditions fully consistent: {}",
-            e
-        );
+        println!("Warning: Failed to make initial conditions fully consistent: {e}");
     } else {
         println!("Initial conditions made consistent.");
     }
@@ -170,8 +167,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         let e_rel_error = (e - initial_energy).abs() / initial_energy.abs();
 
         println!(
-            "{:<10.3} {:<12.6} {:<12.6} {:<12.6} {:<12.6} {:<15.3e} {:<12.3e}",
-            t, x, y, vx, vy, constraint_value, e_rel_error
+            "{t:<10.3} {x:<12.6} {y:<12.6} {vx:<12.6} {vy:<12.6} {constraint_value:<15.3e} {e_rel_error:<12.3e}"
         );
     }
 
@@ -196,8 +192,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             let e_rel_error = (e - initial_energy).abs() / initial_energy.abs();
 
             println!(
-                "{:<10.3} {:<12.6} {:<12.6} {:<12.6} {:<12.6} {:<15.3e} {:<12.3e}",
-                t, x, y, vx, vy, constraint_value, e_rel_error
+                "{t:<10.3} {x:<12.6} {y:<12.6} {vx:<12.6} {vy:<12.6} {constraint_value:<15.3e} {e_rel_error:<12.3e}"
             );
         }
     }
@@ -236,11 +231,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         let theoretical_period = 2.0 * PI * (l / g).sqrt();
 
         println!("Detected {} complete oscillations", periods.len());
-        println!("Average period: {:.6} seconds", avg_period);
-        println!(
-            "Theoretical period for small oscillations: {:.6} seconds",
-            theoretical_period
-        );
+        println!("Average period: {avg_period:.6} seconds");
+        println!("Theoretical period for small oscillations: {theoretical_period:.6} seconds");
         println!(
             "Difference: {:.3}%",
             100.0 * (avg_period - theoretical_period).abs() / theoretical_period
@@ -267,8 +259,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         constraint_errors.iter().sum::<f64>() / constraint_errors.len() as f64;
 
     println!("\nConstraint Analysis:");
-    println!("Maximum constraint violation: {:.3e}", max_constraint_error);
-    println!("Average constraint violation: {:.3e}", avg_constraint_error);
+    println!("Maximum constraint violation: {max_constraint_error:.3e}");
+    println!("Average constraint violation: {avg_constraint_error:.3e}");
 
     // Analyze energy conservation
     let energies = result
@@ -286,8 +278,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         / energies.len() as f64;
 
     println!("\nEnergy Conservation Analysis:");
-    println!("Maximum relative energy error: {:.3e}", max_energy_error);
-    println!("Average relative energy error: {:.3e}", avg_energy_error);
+    println!("Maximum relative energy error: {max_energy_error:.3e}");
+    println!("Average relative energy error: {avg_energy_error:.3e}");
 
     Ok(())
 }

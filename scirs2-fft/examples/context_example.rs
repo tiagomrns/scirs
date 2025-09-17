@@ -8,6 +8,7 @@ use scirs2_fft::{
 };
 use std::time::Instant;
 
+#[allow(dead_code)]
 fn main() {
     println!("FFT Context Managers Example");
     println!("===========================");
@@ -39,8 +40,8 @@ fn main() {
         let _ = fft(&signal, None).unwrap();
         let duration2 = start.elapsed();
 
-        println!("  First FFT: {:?}", duration1);
-        println!("  Second FFT: {:?} (no caching)", duration2);
+        println!("  First FFT: {duration1:?}");
+        println!("  Second FFT: {duration2:?} (no caching)");
 
         spectrum
     })
@@ -88,7 +89,7 @@ fn main() {
             let spectrum = fft(&signal, None).unwrap();
             let duration = start.elapsed();
 
-            println!("  FFT duration: {:?}", duration);
+            println!("  FFT duration: {duration:?}");
 
             spectrum
         },
@@ -135,10 +136,10 @@ fn main() {
         .zip(context_spectrum.iter())
         .all(|(a, b)| (a.re - b.re).abs() < 1e-10 && (a.im - b.im).abs() < 1e-10);
 
-    println!("  Results match: {}", results_match);
+    println!("  Results match: {results_match}");
 
     // Show cache statistics
     let stats = get_global_cache().get_stats();
     println!("\nCache statistics:");
-    println!("{}", stats);
+    println!("{stats}");
 }

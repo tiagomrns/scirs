@@ -167,7 +167,7 @@ impl EmbeddedMethods {
         let xty = xt.dot(&normalized_target);
         let coefficients = WrapperMethods::solve_linear_system(&xtx, &xty)?;
 
-        // Rank features by absolute coefficient values
+        // Rank _features by absolute coefficient values
         let mut feature_scores = Array1::zeros(n_feat);
         let mut indexed_scores: Vec<(usize, f64)> = Vec::new();
 
@@ -179,12 +179,12 @@ impl EmbeddedMethods {
 
         indexed_scores.sort_by(|a, b| b.1.partial_cmp(&a.1).unwrap_or(std::cmp::Ordering::Equal));
 
-        // Select top features
+        // Select top _features
         let n_to_select = n_features.unwrap_or(n_feat / 2).min(n_feat);
         let selected_features: Vec<usize> = indexed_scores
             .into_iter()
             .take(n_to_select)
-            .map(|(idx, _)| idx)
+            .map(|(idx_, _)| idx_)
             .collect();
 
         let mut metadata = HashMap::new();
@@ -234,7 +234,7 @@ impl EmbeddedMethods {
             feature_scores[i] = importance;
         }
 
-        // Select top features
+        // Select top _features
         let n_to_select = n_features.unwrap_or(n_feat / 2).min(n_feat);
         let mut indexed_scores: Vec<(usize, f64)> = feature_scores
             .iter()
@@ -247,7 +247,7 @@ impl EmbeddedMethods {
         let selected_features: Vec<usize> = indexed_scores
             .into_iter()
             .take(n_to_select)
-            .map(|(idx, _)| idx)
+            .map(|(idx_, _)| idx_)
             .collect();
 
         let mut metadata = HashMap::new();

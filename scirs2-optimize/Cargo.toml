@@ -1,17 +1,20 @@
 [package]
 name = "scirs2-optimize"
 version.workspace = true
-edition = "2021"
-authors = ["SciRS2 Team"]
-description = "Optimization module for SciRS2"
-license = "MIT OR Apache-2.0"
-repository = "https://github.com/cool-japan/scirs"
+edition.workspace = true
+authors.workspace = true
+description = "Optimization module for SciRS2 (scirs2-optimize)"
+license.workspace = true
+repository.workspace = true
 keywords = ["optimization", "minimize", "scientific", "scipy", "numerical"]
 categories = ["science", "mathematics", "algorithms"]
 
+[lints]
+workspace = true
+
 [dependencies]
 # Core dependencies
-scirs2-core = { workspace = true, features = ["simd", "parallel", "linalg"] }
+scirs2-core = { workspace = true, features = ["simd", "parallel", "linalg", "gpu", "random"] }
 scirs2-linalg = { workspace = true }
 ndarray = { workspace = true }
 num-traits = { workspace = true }
@@ -25,6 +28,8 @@ rand = { workspace = true }
 rand_distr = { workspace = true }
 friedrich = { workspace = true }
 scirs2-sparse = { workspace = true }
+statrs = { workspace = true }
+serde = { workspace = true }
 # ndarray-linalg = { workspace = true, features = ["openblas-system"] } # Removed - use scirs2-core BLAS abstractions
 
 # Async dependencies (optional)
@@ -32,15 +37,16 @@ tokio = { workspace = true, optional = true }
 futures = { workspace = true, optional = true }
 
 [features]
-default = []
+default = ["parallel"]
+parallel = ["scirs2-core/parallel"]
 async = ["tokio", "futures"]
 
 [dev-dependencies]
 approx = { workspace = true }
 criterion = { workspace = true }
-serde = { version = "1.0", features = ["derive"] }
-serde_json = "1.0"
-chrono = { version = "0.4", features = ["serde"] }
+serde = { workspace = true, features = ["derive"] }
+serde_json = { workspace = true }
+chrono = { workspace = true, features = ["serde"] }
 
 [[bench]]
 name = "scipy_comparison_bench"

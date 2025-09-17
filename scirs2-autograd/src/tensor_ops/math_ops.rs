@@ -47,34 +47,42 @@ pub struct Lgamma;
 pub struct Digamma;
 
 #[inline(always)]
+#[allow(dead_code)]
 fn equal_fn<T: Float>(a: T, b: T) -> T {
     T::from((a == b) as i32).unwrap()
 }
 #[inline(always)]
+#[allow(dead_code)]
 fn not_equal_fn<T: Float>(a: T, b: T) -> T {
     T::from((a != b) as i32).unwrap()
 }
 #[inline(always)]
+#[allow(dead_code)]
 fn greater_fn<T: Float>(a: T, b: T) -> T {
     T::from((a > b) as i32).unwrap()
 }
 #[inline(always)]
+#[allow(dead_code)]
 fn lesser_fn<T: Float>(a: T, b: T) -> T {
     T::from((a < b) as i32).unwrap()
 }
 #[inline(always)]
+#[allow(dead_code)]
 fn greater_equal_fn<T: Float>(a: T, b: T) -> T {
     T::from((a >= b) as i32).unwrap()
 }
 #[inline(always)]
+#[allow(dead_code)]
 fn lesser_equal_fn<T: Float>(a: T, b: T) -> T {
     T::from((a <= b) as i32).unwrap()
 }
 #[inline(always)]
+#[allow(dead_code)]
 fn maximum_fn<T: Float>(a: T, b: T) -> T {
     a.max(b)
 }
 #[inline(always)]
+#[allow(dead_code)]
 fn minimum_fn<T: Float>(a: T, b: T) -> T {
     a.min(b)
 }
@@ -93,8 +101,8 @@ macro_rules! impl_cmp_op {
                 let shape0 = x0.shape();
                 let shape1 = x1.shape();
 
-                let x0_is_scalar = crate::ndarray_ext::is_scalar_shape(shape0);
-                let x1_is_scalar = crate::ndarray_ext::is_scalar_shape(shape1);
+                let x0_is_scalar = crate::ndarray_ext::is_scalarshape(shape0);
+                let x1_is_scalar = crate::ndarray_ext::is_scalarshape(shape1);
 
                 let ret = if x0_is_scalar && x1_is_scalar {
                     let x1_elem = x1[ndarray::IxDyn(&[])];
@@ -121,35 +129,46 @@ macro_rules! impl_cmp_op {
                         )
                     }
 
-                    let size0: usize = shape0.iter().product();
-                    let size1: usize = shape1.iter().product();
-
-                    // Whether broadcast of x0 and x1 is needed or not is depends on
-                    // their shapes.
-                    // FIXME: Is this cond branch ok?
-                    if size0 < size1 {
-                        let mut result = NdArray::zeros(shape1);
-                        Zip::from(&mut result)
-                            .and_broadcast(x0)
-                            .and(x1)
-                            .for_each(|r, a, b| *r = $assign(a.clone(), b.clone()));
-                        result
-                    } else if size0 > size1 {
-                        panic!(
-                            "Tensor ranks mismatch: {}({}'s lhs input) vs {}({}'s rhs input)",
-                            shape0.len(),
-                            $name,
-                            shape1.len(),
-                            $name
-                        );
-                    } else {
-                        // same
-                        let mut result = NdArray::zeros(shape0);
-                        Zip::from(&mut result)
-                            .and(x0)
-                            .and(x1)
-                            .for_each(|r, a, b| *r = $assign(a.clone(), b.clone()));
-                        result
+                    // Try to broadcast the arrays
+                    // First try broadcasting x0 to x1's shape
+                    match x0.broadcast(shape1) {
+                        Some(x0_broadcast) => {
+                            let mut result = NdArray::zeros(shape1);
+                            Zip::from(&mut result)
+                                .and(&x0_broadcast)
+                                .and(x1)
+                                .for_each(|r, a, b| *r = $assign(a.clone(), b.clone()));
+                            result
+                        }
+                        None => {
+                            // Try broadcasting x1 to x0's shape
+                            match x1.broadcast(shape0) {
+                                Some(x1_broadcast) => {
+                                    let mut result = NdArray::zeros(shape0);
+                                    Zip::from(&mut result)
+                                        .and(x0)
+                                        .and(&x1_broadcast)
+                                        .for_each(|r, a, b| *r = $assign(a.clone(), b.clone()));
+                                    result
+                                }
+                                None => {
+                                    // If neither works, check if they have the same shape
+                                    if shape0 == shape1 {
+                                        let mut result = NdArray::zeros(shape0);
+                                        Zip::from(&mut result)
+                                            .and(x0)
+                                            .and(x1)
+                                            .for_each(|r, a, b| *r = $assign(a.clone(), b.clone()));
+                                        result
+                                    } else {
+                                        panic!(
+                                            "Cannot broadcast shapes {:?} and {:?} for operation {}",
+                                            shape0, shape1, $name
+                                        )
+                                    }
+                                }
+                            }
+                        }
                     }
                 };
 
@@ -180,11 +199,12 @@ impl_cmp_op!(Maximum, "Maximum", maximum_fn, min_max_grad);
 impl_cmp_op!(Minimum, "Minimum", minimum_fn, min_max_grad);
 
 #[inline]
+#[allow(dead_code)]
 fn none_grad<'g, T: Float>(
-    _: Tensor<'g, T>,
-    _: Tensor<'g, T>,
-    _: Tensor<'g, T>,
-    _: Tensor<'g, T>,
+    _gy: Tensor<'g, T>,
+    _x1: Tensor<'g, T>,
+    _x2: Tensor<'g, T>,
+    _y: Tensor<'g, T>,
     ctx: &mut op::GradientContext<T>,
 ) {
     ctx.append_input_grad(0, None);
@@ -192,6 +212,7 @@ fn none_grad<'g, T: Float>(
 }
 
 #[inline]
+#[allow(dead_code)]
 fn min_max_grad<'g, T: Float>(
     gy: Tensor<'g, T>,
     x1: Tensor<'g, T>,
@@ -205,7 +226,7 @@ fn min_max_grad<'g, T: Float>(
     ctx.append_input_grad(1, Some(mul(selected_b, gy)));
 }
 
-#[cfg(all(feature = "blas", feature = "intel-mkl"))]
+#[cfg(feature = "blas")]
 macro_rules! elem_wise_vm_or_std {
     ($vms_op:ident, $vmd_op:ident, $closure:expr, $ctx:expr) => {
         let x = $ctx.input(0);
@@ -236,7 +257,7 @@ macro_rules! elem_wise_vm_or_std {
     };
 }
 
-#[cfg(all(feature = "blas", feature = "intel-mkl"))]
+#[cfg(feature = "blas")]
 macro_rules! elem_wise_vm_with_param_or_std {
     ($vms_op:ident, $vmd_op:ident, $std_name:ident, $param:expr, $ctx:expr) => {
         let x = $ctx.input(0);
@@ -407,7 +428,7 @@ impl<T: Float> op::Op<T> for Transpose {
         let gx = Tensor::builder(ctx.graph())
             .append_input(ctx.output_grad(), false)
             .append_input(ctx.input(1), false)
-            .set_shape(&shape(ctx.input(0)))
+            .setshape(&shape(ctx.input(0)))
             .build(Transpose {
                 invert_axes: !self.invert_axes,
             });
@@ -416,7 +437,7 @@ impl<T: Float> op::Op<T> for Transpose {
     }
 }
 
-#[cfg(all(feature = "blas", feature = "intel-mkl"))]
+#[cfg(feature = "blas")]
 pub(crate) fn inplace_add_impl<F: Float>(mut a: NdArray<F>, b: &NdArray<F>) -> NdArray<F> {
     unsafe {
         if same_type::<F, f32>() {
@@ -442,7 +463,7 @@ pub(crate) fn inplace_add_impl<F: Float>(mut a: NdArray<F>, b: &NdArray<F>) -> N
     a
 }
 
-#[cfg(all(feature = "blas", feature = "intel-mkl"))]
+#[cfg(feature = "blas")]
 pub(crate) fn fast_inplace_exp_impl<F: Float>(x: &mut NdArray<F>) {
     unsafe {
         if same_type::<F, f32>() {
@@ -463,7 +484,7 @@ pub(crate) fn fast_inplace_exp_impl<F: Float>(x: &mut NdArray<F>) {
     }
 }
 
-#[cfg(all(feature = "blas", feature = "intel-mkl"))]
+#[cfg(feature = "blas")]
 pub(crate) fn fast_inplace_ln_impl<F: Float>(x: &mut NdArray<F>) {
     unsafe {
         if same_type::<F, f32>() {
@@ -484,7 +505,8 @@ pub(crate) fn fast_inplace_ln_impl<F: Float>(x: &mut NdArray<F>) {
     }
 }
 
-pub fn logsumexp_forward<T: Float>(x: &NdArrayView<T>, axis: isize, keep_dims: bool) -> NdArray<T> {
+#[allow(dead_code)]
+pub fn logsumexp_forward<T: Float>(x: &NdArrayView<T>, axis: isize, keepdims: bool) -> NdArray<T> {
     let axis = if axis < 0 {
         (x.ndim() as isize + axis) as usize
     } else {
@@ -492,28 +514,28 @@ pub fn logsumexp_forward<T: Float>(x: &NdArrayView<T>, axis: isize, keep_dims: b
     };
 
     let mut a = x.shape().to_vec();
-    if keep_dims {
+    if keepdims {
         a[axis] = 1;
     } else {
         a.remove(axis);
     }
-    let reduced_shape = a.as_slice();
+    let reducedshape = a.as_slice();
 
     let max_fn = T::max;
     let min_val = T::min_value();
     let max = &x
         .fold_axis(ndarray::Axis(axis), min_val, move |&a, &b| max_fn(a, b))
-        .into_shape_with_order(ndarray::IxDyn(reduced_shape))
+        .into_shape_with_order(ndarray::IxDyn(reducedshape))
         .unwrap();
 
     let exp = {
         // subtract `max` to prevent overflow of exp
         let mut tmp = x - max;
-        #[cfg(all(feature = "blas", feature = "intel-mkl"))]
+        #[cfg(feature = "blas")]
         {
             fast_inplace_exp_impl(&mut tmp);
         }
-        #[cfg(not(all(feature = "blas", feature = "intel-mkl")))]
+        #[cfg(not(feature = "blas"))]
         {
             tmp.mapv_inplace(move |a| a.exp());
         }
@@ -523,15 +545,15 @@ pub fn logsumexp_forward<T: Float>(x: &NdArrayView<T>, axis: isize, keep_dims: b
     // unwrap is safe
     let mut sum = exp
         .sum_axis(ndarray::Axis(axis))
-        .into_shape_with_order(ndarray::IxDyn(reduced_shape))
+        .into_shape_with_order(ndarray::IxDyn(reducedshape))
         .unwrap();
 
-    #[cfg(all(feature = "blas", feature = "intel-mkl"))]
+    #[cfg(feature = "blas")]
     {
         fast_inplace_ln_impl(&mut sum);
         inplace_add_impl(sum, max)
     }
-    #[cfg(not(all(feature = "blas", feature = "intel-mkl")))]
+    #[cfg(not(feature = "blas"))]
     {
         sum.mapv_inplace(move |a| a.ln());
         sum += max;
@@ -653,7 +675,7 @@ impl<T: Float> op::Op<T> for Exp10 {
     fn compute(&self, ctx: &mut op::ComputeContext<T>) -> Result<(), op::OpError> {
         let ten = T::from(10).unwrap();
 
-        #[cfg(not(all(feature = "blas", feature = "intel-mkl")))]
+        #[cfg(not(feature = "blas"))]
         {
             let ret = ctx.input(0).map(move |&a| ten.powf(a));
             ctx.append_output(ret);

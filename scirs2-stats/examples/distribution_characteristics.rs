@@ -4,21 +4,22 @@ use scirs2_stats::distribution_characteristics::{
 };
 use scirs2_stats::skew;
 
+#[allow(dead_code)]
 fn main() {
     // Create some sample data
     println!("Distribution Characteristics Example");
     println!("===================================");
 
     // Multimodal data for mode calculation (using integers since floats don't implement Hash/Eq)
-    let multi_data = array![1, 2, 2, 3, 3, 4, 5, 5, 6];
+    let multidata = array![1, 2, 2, 3, 3, 4, 5, 5, 6];
 
     // Find modes
-    let unimodal_result = mode(&multi_data.view(), ModeMethod::Unimodal).unwrap();
-    let multimodal_result = mode(&multi_data.view(), ModeMethod::MultiModal).unwrap();
+    let unimodal_result = mode(&multidata.view(), ModeMethod::Unimodal).unwrap();
+    let multimodal_result = mode(&multidata.view(), ModeMethod::MultiModal).unwrap();
 
     println!("\n1. Mode Analysis");
     println!("---------------");
-    println!("Data: {:?}", multi_data);
+    println!("Data: {:?}", multidata);
     println!(
         "Unimodal mode: {:?} (count: {})",
         unimodal_result.values[0], unimodal_result.counts[0]
@@ -89,9 +90,9 @@ fn main() {
     let left_skewed = array![0.0f64, 7.0, 7.5, 8.0, 9.0];
 
     // Calculate direct skewness values
-    let _skew_sym = skew(&symmetric.view(), false).unwrap();
-    let _skew_right = skew(&right_skewed.view(), false).unwrap();
-    let _skew_left = skew(&left_skewed.view(), false).unwrap();
+    let _skew_sym = skew(&symmetric.view(), false, None).unwrap();
+    let _skew_right = skew(&right_skewed.view(), false, None).unwrap();
+    let _skew_left = skew(&left_skewed.view(), false, None).unwrap();
 
     // Calculate skewness with confidence intervals
     let skew_ci_sym = skewness_ci(&symmetric.view(), false, None, Some(1000), Some(42)).unwrap();

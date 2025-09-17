@@ -121,8 +121,8 @@ where
     /// # Returns
     ///
     /// Self for method chaining
-    pub fn with_max_points(mut self, max_points: usize) -> Self {
-        self.mls = self.mls.with_max_points(max_points);
+    pub fn with_max_points(mut self, maxpoints: usize) -> Self {
+        self.mls = self.mls.with_max_points(maxpoints);
         self
     }
 
@@ -301,8 +301,9 @@ where
 }
 
 /// Apply weight function to a normalized distance
-fn apply_weight<F: Float + FromPrimitive>(r: F, weight_fn: WeightFunction) -> F {
-    match weight_fn {
+#[allow(dead_code)]
+fn apply_weight<F: Float + FromPrimitive>(r: F, weightfn: WeightFunction) -> F {
+    match weightfn {
         WeightFunction::Gaussian => (-r * r).exp(),
         WeightFunction::WendlandC2 => {
             if r < F::one() {
@@ -341,6 +342,7 @@ fn apply_weight<F: Float + FromPrimitive>(r: F, weight_fn: WeightFunction) -> F 
 /// # Returns
 ///
 /// A ParallelMovingLeastSquares interpolator with linear basis and Gaussian weights
+#[allow(dead_code)]
 pub fn make_parallel_mls<F>(
     points: Array2<F>,
     values: Array1<F>,

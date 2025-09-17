@@ -261,8 +261,10 @@ impl ReedsSheppPlanner {
     /// # Returns
     ///
     /// * A new ReedsSheppPlanner instance
-    pub fn new(turning_radius: f64) -> Self {
-        Self { turning_radius }
+    pub fn new(_turningradius: f64) -> Self {
+        Self {
+            turning_radius: _turningradius,
+        }
     }
 
     /// Plan a Reeds-Shepp path between two poses
@@ -282,16 +284,16 @@ impl ReedsSheppPlanner {
             ));
         }
 
-        // Normalize start and goal poses
-        let start = start.normalize_angle();
+        // Normalize _start and goal poses
+        let _start = start.normalize_angle();
         let goal = goal.normalize_angle();
 
-        // Transform to canonical form (start at origin with zero orientation)
+        // Transform to canonical form (_start at origin with zero orientation)
         let dx = goal.x - start.x;
         let dy = goal.y - start.y;
         let dtheta = goal.theta - start.theta;
 
-        // Rotate to align start orientation with x-axis
+        // Rotate to align _start orientation with x-axis
         let cos_theta = start.theta.cos();
         let sin_theta = start.theta.sin();
         let x = dx * cos_theta + dy * sin_theta;
@@ -320,10 +322,10 @@ impl ReedsSheppPlanner {
                 let path_length: f64 = segments.iter().map(|s| s.length).sum();
                 if path_length < best_length {
                     best_length = path_length;
-                    let path_type = self.determine_path_type(&segments);
+                    let path_type = ReedsSheppPlanner::determine_path_type(&segments);
                     best_path = Some(ReedsSheppPath::new(
-                        start,
-                        goal,
+                        start.clone(),
+                        goal.clone(),
                         self.turning_radius,
                         path_type,
                         segments,
@@ -340,7 +342,7 @@ impl ReedsSheppPlanner {
     }
 
     /// Determine the path type based on segments
-    fn determine_path_type(&self, segments: &[ReedsSheppSegment]) -> ReedsSheppPathType {
+    fn determine_path_type(segments: &[ReedsSheppSegment]) -> ReedsSheppPathType {
         match segments.len() {
             3 => {
                 if segments.iter().all(|s| s.turn != Turn::Straight) {
@@ -349,7 +351,6 @@ impl ReedsSheppPlanner {
                     ReedsSheppPathType::CSC
                 }
             }
-            5 => ReedsSheppPathType::CCSCC,
             _ => ReedsSheppPathType::CSC, // Default fallback
         }
     }
@@ -1004,8 +1005,7 @@ mod tests {
         let normalized_3pi = ReedsSheppPlanner::normalize_angle(3.0 * PI);
         assert!(
             (normalized_3pi - PI).abs() < 1e-10 || (normalized_3pi - (-PI)).abs() < 1e-10,
-            "Expected ±π, got {}",
-            normalized_3pi
+            "Expected ±π, got {normalized_3pi}"
         );
     }
 

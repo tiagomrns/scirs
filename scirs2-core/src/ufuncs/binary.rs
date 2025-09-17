@@ -12,6 +12,7 @@ use std::sync::Once;
 static INIT: Once = Once::new();
 
 // Initialize the ufunc registry with binary operations
+#[allow(dead_code)]
 fn init_binary_ufuncs() {
     INIT.call_once(|| {
         // Register all the binary ufuncs
@@ -186,6 +187,7 @@ impl UFunc for PowerUFunc {
 /// let result = add(&a, &b);
 /// assert_eq!(result, array![[11.0, 22.0, 33.0], [14.0, 25.0, 36.0]]);
 /// ```
+#[allow(dead_code)]
 pub fn add<D1, D2, S1, S2>(a: &ndarray::ArrayBase<S1, D1>, b: &ndarray::ArrayBase<S2, D2>) -> Array<f64, IxDyn>
 where
     D1: Dimension,
@@ -205,7 +207,7 @@ where
     broadcast_apply(a_view, b_view, |x, y| x + y).unwrap_or_else(|_| {
         // If broadcasting fails, assume arrays are the same shape
         // and apply operation directly
-        let mut result = Array::<f64, _>::zeros(a.raw_dim().into_dyn());
+        let mut result = Array::<f64>::zeros(a.raw_dim().into_dyn());
 
         let add_ufunc = AddUFunc;
         if let Err(_) = add_ufunc.apply(&[&a.view(), &b.view()], &mut result) {
@@ -244,6 +246,7 @@ where
 /// let result = subtract(&a, &b);
 /// assert_eq!(result, array![[9.0, 18.0, 27.0], [39.0, 48.0, 57.0]]);
 /// ```
+#[allow(dead_code)]
 pub fn subtract<D1, D2, S1, S2>(a: &ndarray::ArrayBase<S1, D1>, b: &ndarray::ArrayBase<S2, D2>) -> Array<f64, IxDyn>
 where
     D1: Dimension,
@@ -262,7 +265,7 @@ where
     broadcast_apply(a_view, b_view, |x, y| x - y).unwrap_or_else(|_| {
         // If broadcasting fails, assume arrays are the same shape
         // and apply operation directly
-        let mut result = Array::<f64, _>::zeros(a.raw_dim().into_dyn());
+        let mut result = Array::<f64>::zeros(a.raw_dim().into_dyn());
 
         let subtract_ufunc = SubtractUFunc;
         if let Err(_) = subtract_ufunc.apply(&[&a.view(), &b.view()], &mut result) {
@@ -301,6 +304,7 @@ where
 /// let result = multiply(&a, &b);
 /// assert_eq!(result, array![[10.0, 40.0, 90.0], [40.0, 100.0, 180.0]]);
 /// ```
+#[allow(dead_code)]
 pub fn multiply<D1, D2, S1, S2>(a: &ndarray::ArrayBase<S1, D1>, b: &ndarray::ArrayBase<S2, D2>) -> Array<f64, IxDyn>
 where
     D1: Dimension,
@@ -319,7 +323,7 @@ where
     broadcast_apply(a_view, b_view, |x, y| x * y).unwrap_or_else(|_| {
         // If broadcasting fails, assume arrays are the same shape
         // and apply operation directly
-        let mut result = Array::<f64, _>::zeros(a.raw_dim().into_dyn());
+        let mut result = Array::<f64>::zeros(a.raw_dim().into_dyn());
 
         let multiply_ufunc = MultiplyUFunc;
         if let Err(_) = multiply_ufunc.apply(&[&a.view(), &b.view()], &mut result) {
@@ -358,6 +362,7 @@ where
 /// let result = divide(&a, &b);
 /// assert_eq!(result, array![[1.0, 2.0, 3.0], [4.0, 5.0, 6.0]]);
 /// ```
+#[allow(dead_code)]
 pub fn divide<D1, D2, S1, S2>(a: &ndarray::ArrayBase<S1, D1>, b: &ndarray::ArrayBase<S2, D2>) -> Array<f64, IxDyn>
 where
     D1: Dimension,
@@ -382,7 +387,7 @@ where
     }).unwrap_or_else(|_| {
         // If broadcasting fails, assume arrays are the same shape
         // and apply operation directly
-        let mut result = Array::<f64, _>::zeros(a.raw_dim().into_dyn());
+        let mut result = Array::<f64>::zeros(a.raw_dim().into_dyn());
 
         let divide_ufunc = DivideUFunc;
         if let Err(_) = divide_ufunc.apply(&[&a.view(), &b.view()], &mut result) {
@@ -421,6 +426,7 @@ where
 /// let result = power(&a, &b);
 /// assert_eq!(result, array![[4.0, 27.0, 16.0], [25.0, 216.0, 49.0]]);
 /// ```
+#[allow(dead_code)]
 pub fn power<D1, D2, S1, S2>(a: &ndarray::ArrayBase<S1, D1>, b: &ndarray::ArrayBase<S2, D2>) -> Array<f64, IxDyn>
 where
     D1: Dimension,
@@ -439,7 +445,7 @@ where
     broadcast_apply(a_view, b_view, |x, y| x.powf(*y)).unwrap_or_else(|_| {
         // If broadcasting fails, assume arrays are the same shape
         // and apply operation directly
-        let mut result = Array::<f64, _>::zeros(a.raw_dim().into_dyn());
+        let mut result = Array::<f64>::zeros(a.raw_dim().into_dyn());
 
         let power_ufunc = PowerUFunc;
         if let Err(_) = power_ufunc.apply(&[&a.view(), &b.view()], &mut result) {

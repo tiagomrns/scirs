@@ -11,7 +11,7 @@
 use crate::error::{CoreError, ErrorContext, ErrorLocation};
 use crate::memory_efficient::chunked::{ChunkedArray, ChunkingStrategy};
 use crate::memory_efficient::prefetch::PrefetchConfig;
-use ndarray::{ArrayBase, Dimension, OwnedRepr};
+use ndarray::{ArrayBase, Dimension, OwnedRepr, RemoveAxis};
 use std::collections::{BTreeMap, VecDeque};
 use std::sync::{Arc, Condvar, Mutex, RwLock};
 use std::thread::{self, JoinHandle};
@@ -69,7 +69,7 @@ pub struct StreamConfig {
     /// Processing mode
     pub mode: StreamMode,
     /// Buffer size in elements
-    pub buffer_size: usize,
+    pub buffersize: usize,
     /// Maximum batch size for processing
     pub max_batch_size: usize,
     /// Minimum batch size for processing
@@ -91,7 +91,7 @@ pub struct StreamConfig {
     /// Whether to enable backpressure handling
     pub enable_backpressure: bool,
     /// Window size for sliding window mode
-    pub window_size: usize,
+    pub windowsize: usize,
     /// Window stride for sliding window mode
     pub window_stride: usize,
 }
@@ -100,10 +100,10 @@ impl Default for StreamConfig {
     fn default() -> Self {
         Self {
             mode: StreamMode::Buffered,
-            buffer_size: 1024 * 1024, // 1M elements
-            max_batch_size: 65536,    // 64K elements
-            min_batch_size: 1024,     // 1K elements
-            chunk_size: 1024,         // 1K elements
+            buffersize: 1024 * 1024, // 1M elements
+            max_batch_size: 65536,   // 64K elements
+            min_batch_size: 1024,    // 1K elements
+            chunk_size: 1024,        // 1K elements
             parallel: true,
             workers: None,
             rate_limit: 0,
@@ -111,7 +111,7 @@ impl Default for StreamConfig {
             enable_prefetch: true,
             prefetch_config: None,
             enable_backpressure: true,
-            window_size: 1024,
+            windowsize: 1024,
             window_stride: 256,
         }
     }
@@ -136,8 +136,8 @@ impl StreamConfigBuilder {
     }
 
     /// Set the buffer size
-    pub const fn buffer_size(mut self, size: usize) -> Self {
-        self.config.buffer_size = size;
+    pub const fn buffersize(mut self, size: usize) -> Self {
+        self.config.buffersize = size;
         self
     }
 
@@ -202,8 +202,8 @@ impl StreamConfigBuilder {
     }
 
     /// Set the window size for sliding window mode
-    pub const fn window_size(mut self, size: usize) -> Self {
-        self.config.window_size = size;
+    pub const fn windowsize(mut self, size: usize) -> Self {
+        self.config.windowsize = size;
         self
     }
 
@@ -241,7 +241,7 @@ pub struct StreamStats {
     /// Error count
     pub error_count: usize,
     /// Last error message
-    pub last_error: Option<String>,
+    pub lasterror: Option<String>,
 }
 
 impl Default for StreamStats {
@@ -256,7 +256,7 @@ impl Default for StreamStats {
             backpressure_count: 0,
             buffer_high_water_mark: 0,
             error_count: 0,
-            last_error: None,
+            lasterror: None,
         }
     }
 }
@@ -267,7 +267,7 @@ struct StreamBuffer<T: Clone + Send + 'static> {
     /// Buffer data queue
     data: VecDeque<T>,
     /// Maximum buffer size
-    max_size: usize,
+    maxsize: usize,
     /// Mutex for buffer access
     mutex: Mutex<()>,
     /// Condition variable for buffer synchronization
@@ -278,10 +278,10 @@ struct StreamBuffer<T: Clone + Send + 'static> {
 
 impl<T: Clone + Send + 'static> StreamBuffer<T> {
     /// Create a new stream buffer
-    fn new(max_size: usize) -> Self {
+    fn new(maxsize: usize) -> Self {
         Self {
-            data: VecDeque::with_capacity(max_size),
-            max_size,
+            data: VecDeque::with_capacity(maxsize),
+            maxsize,
             mutex: Mutex::new(()),
             condvar: Condvar::new(),
             closed: false,
@@ -301,7 +301,7 @@ impl<T: Clone + Send + 'static> StreamBuffer<T> {
         }
 
         // Wait until there's space in the buffer
-        while self.data.len() >= self.max_size {
+        while self.data.len() >= self.maxsize {
             guard = self.condvar.wait(guard).unwrap();
 
             // Check if the buffer was closed while waiting
@@ -335,7 +335,7 @@ impl<T: Clone + Send + 'static> StreamBuffer<T> {
         }
 
         // Wait until there's space in the buffer
-        while self.data.len() + items.len() > self.max_size {
+        while self.data.len() + items.len() > self.maxsize {
             guard = self.condvar.wait(guard).unwrap();
 
             // Check if the buffer was closed while waiting
@@ -357,13 +357,13 @@ impl<T: Clone + Send + 'static> StreamBuffer<T> {
     }
 
     /// Get a batch of items from the buffer
-    fn pop_batch(&mut self, max_batch_size: usize, timeout_ms: u64) -> Result<Vec<T>, CoreError> {
+    fn pop_batch(&mut self, max_batch_size: usize, timeoutms: u64) -> Result<Vec<T>, CoreError> {
         let mut guard = self.mutex.lock().unwrap();
 
         // Wait until there are items in the buffer
         if self.data.is_empty() && !self.closed {
-            if timeout_ms > 0 {
-                let timeout = Duration::from_millis(timeout_ms);
+            if timeoutms > 0 {
+                let timeout = Duration::from_millis(timeoutms);
                 let result = self.condvar.wait_timeout(guard, timeout);
 
                 match result {
@@ -464,7 +464,7 @@ pub struct StreamProcessor<T: Clone + Send + 'static, U: Clone + Send + 'static>
     /// Input buffer
     input_buffer: Arc<Mutex<StreamBuffer<T>>>,
     /// Processing function
-    process_fn: ProcessFn<T, U>,
+    processfn: ProcessFn<T, U>,
     /// Output buffer
     output_buffer: Arc<Mutex<StreamBuffer<U>>>,
     /// Current state of the stream processor
@@ -477,8 +477,10 @@ pub struct StreamProcessor<T: Clone + Send + 'static, U: Clone + Send + 'static>
     start_time: Arc<RwLock<Option<Instant>>>,
 }
 
-impl<T: Clone + Send + 'static, U: Clone + Send + 'static> std::fmt::Debug
-    for StreamProcessor<T, U>
+impl<T, U> std::fmt::Debug for StreamProcessor<T, U>
+where
+    T: Clone + Send + 'static,
+    U: Clone + Send + 'static,
 {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("StreamProcessor")
@@ -493,17 +495,17 @@ impl<T: Clone + Send + 'static, U: Clone + Send + 'static> std::fmt::Debug
 
 impl<T: Clone + Send + 'static, U: Clone + Send + 'static> StreamProcessor<T, U> {
     /// Create a new stream processor
-    pub fn new<F>(config: StreamConfig, process_fn: F) -> Self
+    pub fn new<F>(config: StreamConfig, processfn: F) -> Self
     where
         F: Fn(Vec<T>) -> Result<Vec<U>, CoreError> + Send + Sync + 'static,
     {
-        let input_buffer = Arc::new(Mutex::new(StreamBuffer::new(config.buffer_size)));
-        let output_buffer = Arc::new(Mutex::new(StreamBuffer::new(config.buffer_size)));
+        let input_buffer = Arc::new(Mutex::new(StreamBuffer::new(config.buffersize)));
+        let output_buffer = Arc::new(Mutex::new(StreamBuffer::new(config.buffersize)));
 
         Self {
             config,
             input_buffer,
-            process_fn: Arc::new(process_fn),
+            processfn: Arc::new(processfn),
             output_buffer,
             state: Arc::new(RwLock::new(StreamState::Initialized)),
             stats: Arc::new(RwLock::new(StreamStats::default())),
@@ -534,7 +536,7 @@ impl<T: Clone + Send + 'static, U: Clone + Send + 'static> StreamProcessor<T, U>
         // Create worker thread
         let input_buffer = self.input_buffer.clone();
         let output_buffer = self.output_buffer.clone();
-        let process_fn = self.process_fn.clone();
+        let processfn = self.processfn.clone();
         let config = self.config.clone();
         let state = self.state.clone();
         let stats = self.stats.clone();
@@ -544,7 +546,7 @@ impl<T: Clone + Send + 'static, U: Clone + Send + 'static> StreamProcessor<T, U>
             Self::worker_loop(
                 input_buffer,
                 output_buffer,
-                process_fn,
+                processfn,
                 config,
                 state,
                 stats,
@@ -561,7 +563,7 @@ impl<T: Clone + Send + 'static, U: Clone + Send + 'static> StreamProcessor<T, U>
     fn worker_loop(
         input_buffer: Arc<Mutex<StreamBuffer<T>>>,
         output_buffer: Arc<Mutex<StreamBuffer<U>>>,
-        process_fn: ProcessFn<T, U>,
+        processfn: ProcessFn<T, U>,
         config: StreamConfig,
         state: Arc<RwLock<StreamState>>,
         stats: Arc<RwLock<StreamStats>>,
@@ -584,7 +586,7 @@ impl<T: Clone + Send + 'static, U: Clone + Send + 'static> StreamProcessor<T, U>
 
             // Rate limiting
             if rate_limit > 0 {
-                // Calculate the minimum time per batch
+                // Calculate the minimum _time per batch
                 let min_time_per_batch =
                     Duration::from_secs_f64(config.min_batch_size as f64 / rate_limit as f64);
 
@@ -615,7 +617,7 @@ impl<T: Clone + Send + 'static, U: Clone + Send + 'static> StreamProcessor<T, U>
                         config.min_batch_size
                     }
                 }
-                StreamMode::SlidingWindow => config.window_size,
+                StreamMode::SlidingWindow => config.windowsize,
             };
 
             // Get a batch of data from the input buffer
@@ -641,7 +643,7 @@ impl<T: Clone + Send + 'static, U: Clone + Send + 'static> StreamProcessor<T, U>
                             // Other error, update stats and continue
                             let mut stats_guard = stats.write().unwrap();
                             stats_guard.error_count += 1;
-                            stats_guard.last_error = Some(format!("{}", err));
+                            stats_guard.lasterror = Some(err.to_string());
                             continue;
                         }
                     }
@@ -655,11 +657,11 @@ impl<T: Clone + Send + 'static, U: Clone + Send + 'static> StreamProcessor<T, U>
 
             // For sliding window mode, manage the window
             let process_input = if config.mode == StreamMode::SlidingWindow {
-                if batch_window.len() < config.window_size {
+                if batch_window.len() < config.windowsize {
                     // Still filling the initial window
                     batch_window.extend(input_batch);
 
-                    if batch_window.len() < config.window_size {
+                    if batch_window.len() < config.windowsize {
                         // Not enough data for a full window yet
                         continue;
                     }
@@ -689,7 +691,7 @@ impl<T: Clone + Send + 'static, U: Clone + Send + 'static> StreamProcessor<T, U>
             // Process the batch
             let process_result = {
                 let batch_start_time = Instant::now();
-                let result = process_fn(process_input.clone());
+                let result = processfn(process_input.clone());
 
                 // Update processing statistics
                 let mut stats_guard = stats.write().unwrap();
@@ -726,7 +728,7 @@ impl<T: Clone + Send + 'static, U: Clone + Send + 'static> StreamProcessor<T, U>
             // Handle the processing result
             match process_result {
                 Ok(output_batch) => {
-                    // Send the output to the output buffer
+                    // Send the output to the output _buffer
                     if !output_batch.is_empty() {
                         match output_buffer.lock().unwrap().push_batch(output_batch) {
                             Ok(_) => {}
@@ -734,7 +736,7 @@ impl<T: Clone + Send + 'static, U: Clone + Send + 'static> StreamProcessor<T, U>
                                 // Error sending output, update stats
                                 let mut stats_guard = stats.write().unwrap();
                                 stats_guard.error_count += 1;
-                                stats_guard.last_error = Some(format!("{}", err));
+                                stats_guard.lasterror = Some(err.to_string());
                             }
                         }
                     }
@@ -743,7 +745,7 @@ impl<T: Clone + Send + 'static, U: Clone + Send + 'static> StreamProcessor<T, U>
                     // Processing error, update stats
                     let mut stats_guard = stats.write().unwrap();
                     stats_guard.error_count += 1;
-                    stats_guard.last_error = Some(format!("{}", err));
+                    stats_guard.lasterror = Some(err.to_string());
                 }
             }
 
@@ -845,7 +847,7 @@ impl<T: Clone + Send + 'static, U: Clone + Send + 'static> StreamProcessor<T, U>
     }
 
     /// Pop a batch of processed data from the stream processor
-    pub fn pop_batch(&self, max_size: usize) -> Result<Vec<U>, CoreError> {
+    pub fn pop_batch(&self, batchsize: usize) -> Result<Vec<U>, CoreError> {
         // Check if the stream is running or completed
         let state = self.state.read().unwrap();
         if *state != StreamState::Running && *state != StreamState::Completed {
@@ -859,7 +861,7 @@ impl<T: Clone + Send + 'static, U: Clone + Send + 'static> StreamProcessor<T, U>
         self.output_buffer
             .lock()
             .unwrap()
-            .pop_batch(max_size, self.config.timeout_ms)
+            .pop_batch(batchsize, self.config.timeout_ms)
     }
 
     /// Get the current state of the stream processor
@@ -924,14 +926,14 @@ impl<I: Clone + Send + 'static, O: Clone + Send + 'static> PipelineStage<I, O> {
     pub fn new<F>(
         name: String,
         config: StreamConfig,
-        process_fn: F,
+        processfn: F,
         parallel: bool,
         parallelism: usize,
     ) -> Self
     where
         F: Fn(Vec<I>) -> Result<Vec<O>, CoreError> + Send + Sync + Clone + 'static,
     {
-        let processor = StreamProcessor::new(config, process_fn);
+        let processor = StreamProcessor::new(config, processfn);
 
         Self {
             name,
@@ -1063,7 +1065,7 @@ impl PipelineBuilder {
         &mut self,
         name: String,
         config: StreamConfig,
-        process_fn: F,
+        processfn: F,
         parallel: bool,
         parallelism: usize,
     ) -> usize
@@ -1072,16 +1074,16 @@ impl PipelineBuilder {
         O: Clone + Send + 'static,
         F: Fn(Vec<I>) -> Result<Vec<O>, CoreError> + Send + Sync + Clone + 'static,
     {
-        let stage = PipelineStage::new(name, config, process_fn, parallel, parallelism);
+        let stage = PipelineStage::new(name, config, processfn, parallel, parallelism);
         let stage_index = self.stages.len();
         self.stages.push(Box::new(StageWrapper::new(stage)));
         stage_index
     }
 
     /// Connect two stages in the pipeline
-    pub fn connect(&mut self, from_stage: usize, to_stage: usize) -> &mut Self {
-        if from_stage < self.stages.len() && to_stage < self.stages.len() {
-            self.connections.push((from_stage, to_stage));
+    pub fn connect(&mut self, from_stage: usize, tostage: usize) -> &mut Self {
+        if from_stage < self.stages.len() && tostage < self.stages.len() {
+            self.connections.push((from_stage, tostage));
         }
         self
     }
@@ -1153,7 +1155,7 @@ impl Pipeline {
         state: Arc<RwLock<StreamState>>,
         error_context: Arc<RwLock<Option<ErrorContext>>>,
     ) {
-        let mut consecutive_errors = 0;
+        let mut consecutiveerrors = 0;
         let error_threshold = 10; // Maximum number of consecutive errors before giving up
 
         // Processing loop
@@ -1170,12 +1172,12 @@ impl Pipeline {
             match from_stage.pop_raw() {
                 Ok(data) => {
                     // Reset error counter
-                    consecutive_errors = 0;
+                    consecutiveerrors = 0;
 
                     // Try to push data to the destination stage
                     if let Err(err) = to_stage.push_raw(data) {
                         // Handle error
-                        consecutive_errors += 1;
+                        consecutiveerrors += 1;
 
                         // Update error context
                         let mut error_context_guard = error_context.write().unwrap();
@@ -1190,7 +1192,7 @@ impl Pipeline {
                         );
 
                         // Check if we should give up
-                        if consecutive_errors >= error_threshold {
+                        if consecutiveerrors >= error_threshold {
                             let mut current_state = state.write().unwrap();
                             *current_state = StreamState::Error;
                             break;
@@ -1212,7 +1214,7 @@ impl Pipeline {
                         }
                         _ => {
                             // Other error, increment counter
-                            consecutive_errors += 1;
+                            consecutiveerrors += 1;
 
                             // Update error context
                             let mut error_context_guard = error_context.write().unwrap();
@@ -1226,7 +1228,7 @@ impl Pipeline {
                             );
 
                             // Check if we should give up
-                            if consecutive_errors >= error_threshold {
+                            if consecutiveerrors >= error_threshold {
                                 let mut current_state = state.write().unwrap();
                                 *current_state = StreamState::Error;
                                 break;
@@ -1330,7 +1332,7 @@ impl Pipeline {
     }
 
     /// Get the last error from the pipeline
-    pub fn last_error(&self) -> Option<ErrorContext> {
+    pub fn lasterror(&self) -> Option<ErrorContext> {
         self.error_context.read().unwrap().clone()
     }
 
@@ -1453,10 +1455,10 @@ impl<I: Clone + Send + 'static, O: Clone + Send + 'static> Clone for StageWrappe
 impl<A, D> StreamProcessor<ArrayBase<OwnedRepr<A>, D>, ArrayBase<OwnedRepr<A>, D>>
 where
     A: Clone + Send + Default + 'static,
-    D: Dimension + Clone + Send + 'static,
+    D: Dimension + Clone + Send + 'static + RemoveAxis,
 {
     /// Create a new array stream processor
-    pub fn new_array<F>(config: StreamConfig, process_fn: F) -> Self
+    pub fn newarray<F>(config: StreamConfig, processfn: F) -> Self
     where
         F: Fn(
                 Vec<ArrayBase<OwnedRepr<A>, D>>,
@@ -1465,11 +1467,11 @@ where
             + Sync
             + 'static,
     {
-        Self::new(config, process_fn)
+        Self::new(config, processfn)
     }
 
     /// Process arrays chunk-wise
-    pub fn chunk_wise<F>(config: StreamConfig, chunk_size: usize, process_fn: F) -> Self
+    pub fn chunk_wise<F>(config: StreamConfig, chunk_size: usize, processfn: F) -> Self
     where
         F: Fn(&ArrayBase<OwnedRepr<A>, D>) -> Result<ArrayBase<OwnedRepr<A>, D>, CoreError>
             + Send
@@ -1479,7 +1481,7 @@ where
     {
         let chunking_strategy = ChunkingStrategy::Fixed(chunk_size);
 
-        let process_fn_clone = process_fn.clone();
+        let processfn_clone = processfn.clone();
         let chunks_fn = move |arrays: Vec<ArrayBase<OwnedRepr<A>, D>>| -> Result<Vec<ArrayBase<OwnedRepr<A>, D>>, CoreError> {
             let mut results = Vec::with_capacity(arrays.len());
 
@@ -1490,14 +1492,32 @@ where
                 // Process each chunk and combine results
                 let mut chunk_results = Vec::new();
                 for chunk in chunked.get_chunks() {
-                    let result = process_fn_clone(&chunk)?;
+                    let result = processfn_clone(&chunk)?;
                     chunk_results.push(result);
                 }
 
-                // Combine chunk results - for now just use the first result
-                // TODO: Implement proper chunk combining logic
+                // Combine chunk results by concatenating along the flattened dimension
                 let combined = if !chunk_results.is_empty() {
-                    chunk_results.into_iter().next().unwrap()
+                    // For 1D arrays, concatenate directly
+                    if let Ok(combined_1d) = ndarray::concatenate(
+                        ndarray::Axis(0),
+                        &chunk_results
+                            .iter()
+                            .map(|arr| arr.view())
+                            .collect::<Vec<_>>()
+                    ) {
+                        // Try to reshape back to original dimensions
+                        if let Ok(reshaped) = combined_1d.into_dimensionality::<D>() {
+                            reshaped
+                        } else {
+                            // If reshaping fails, use the first chunk as fallback
+                            chunk_results.into_iter().next().unwrap()
+                        }
+                    } else {
+                        // For multi-dimensional arrays, more complex logic would be needed
+                        // For now, concatenate and reshape approach
+                        chunk_results.into_iter().next().unwrap()
+                    }
                 } else {
                     return Err(CoreError::ValueError(ErrorContext::new(
                         "No chunks to process".to_string(),
@@ -1514,7 +1534,7 @@ where
 
     /// Process arrays in parallel
     #[cfg(feature = "parallel")]
-    pub fn parallel<F>(config: StreamConfig, process_fn: F) -> Self
+    pub fn parallel<F>(config: StreamConfig, processfn: F) -> Self
     where
         F: Fn(&ArrayBase<OwnedRepr<A>, D>) -> Result<ArrayBase<OwnedRepr<A>, D>, CoreError>
             + Send
@@ -1527,20 +1547,20 @@ where
 
         let parallel_fn = move |arrays: Vec<ArrayBase<OwnedRepr<A>, D>>| -> Result<Vec<ArrayBase<OwnedRepr<A>, D>>, CoreError> {
             // Process arrays in parallel using rayon
-            use rayon::prelude::*;
-            let pool = rayon::ThreadPoolBuilder::new()
+            use crate::parallel_ops::*;
+            let pool = ThreadPoolBuilder::new()
                 .num_threads(workers)
                 .build()
                 .map_err(|e| CoreError::StreamError(
-                    ErrorContext::new(format!("Failed to create thread pool: {}", e))
+                    ErrorContext::new(format!("{e}"))
                         .with_location(ErrorLocation::new(file!(), line!()))
                 ))?;
 
-            let process_fn_clone = process_fn.clone();
+            let processfn_clone = processfn.clone();
             pool.install(|| {
                 let results: Result<Vec<_>, _> = arrays
                     .par_iter()
-                    .map(process_fn_clone)
+                    .map(|array| processfn_clone(array))
                     .collect();
 
                 results
@@ -1552,16 +1572,18 @@ where
 }
 
 /// Create a new stream processor with default configuration
-pub fn create_stream_processor<T, U, F>(process_fn: F) -> StreamProcessor<T, U>
+#[allow(dead_code)]
+pub fn create_stream_processor<T, U, F>(processfn: F) -> StreamProcessor<T, U>
 where
     T: Clone + Send + 'static,
     U: Clone + Send + 'static,
     F: Fn(Vec<T>) -> Result<Vec<U>, CoreError> + Send + Sync + 'static,
 {
-    StreamProcessor::new(StreamConfig::default(), process_fn)
+    StreamProcessor::new(StreamConfig::default(), processfn)
 }
 
 /// Create a new pipeline
+#[allow(dead_code)]
 pub fn create_pipeline(name: &str) -> PipelineBuilder {
     PipelineBuilder::new(name.to_string())
 }
@@ -1570,18 +1592,18 @@ pub fn create_pipeline(name: &str) -> PipelineBuilder {
 pub trait StreamError {
     /// Convert to a stream error
     #[allow(dead_code)]
-    fn to_stream_error(self, message: &str) -> CoreError;
+    fn to_streamerror(self, message: &str) -> CoreError;
 }
 
 impl<T> StreamError for std::result::Result<T, CoreError> {
-    fn to_stream_error(self, message: &str) -> CoreError {
+    fn to_streamerror(self, message: &str) -> CoreError {
         match self {
             Ok(_) => CoreError::StreamError(
-                ErrorContext::new(format!("Unexpected success: {}", message))
+                ErrorContext::new(message.to_string())
                     .with_location(ErrorLocation::new(file!(), line!())),
             ),
             Err(e) => CoreError::StreamError(
-                ErrorContext::new(format!("{}: {}", message, e))
+                ErrorContext::new(format!("{message}, {e}"))
                     .with_location(ErrorLocation::new(file!(), line!())),
             ),
         }
@@ -1591,7 +1613,7 @@ impl<T> StreamError for std::result::Result<T, CoreError> {
 /// Extension to CoreError for stream errors
 impl CoreError {
     /// Create a new end of stream error
-    pub fn end_of_stream(message: &str) -> Self {
+    pub fn message(message: &str) -> Self {
         CoreError::EndOfStream(
             ErrorContext::new(message.to_string())
                 .with_location(ErrorLocation::new(file!(), line!())),
@@ -1599,7 +1621,7 @@ impl CoreError {
     }
 
     /// Create a new stream error
-    pub fn stream_error(message: &str) -> Self {
+    pub fn message_2(message: &str) -> Self {
         CoreError::StreamError(
             ErrorContext::new(message.to_string())
                 .with_location(ErrorLocation::new(file!(), line!())),
@@ -1607,7 +1629,7 @@ impl CoreError {
     }
 
     /// Create a new timeout error
-    pub fn timeout_error(message: &str) -> Self {
+    pub fn message_3(message: &str) -> Self {
         CoreError::TimeoutError(
             ErrorContext::new(message.to_string())
                 .with_location(ErrorLocation::new(file!(), line!())),

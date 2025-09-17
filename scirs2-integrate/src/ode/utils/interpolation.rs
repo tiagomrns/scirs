@@ -31,14 +31,15 @@ pub enum ContinuousOutputMethod {
 /// # Returns
 ///
 /// The index where value would be inserted to keep the array sorted
-pub fn find_index<F: Float>(sorted_array: &[F], value: F) -> usize {
+#[allow(dead_code)]
+pub fn find_index<F: Float>(sortedarray: &[F], value: F) -> usize {
     // Binary search
     let mut left = 0;
-    let mut right = sorted_array.len();
+    let mut right = sortedarray.len();
 
     while left < right {
         let mid = (left + right) / 2;
-        if sorted_array[mid] < value {
+        if sortedarray[mid] < value {
             left = mid + 1;
         } else {
             right = mid;
@@ -59,8 +60,9 @@ pub fn find_index<F: Float>(sorted_array: &[F], value: F) -> usize {
 /// # Returns
 ///
 /// Linearly interpolated value at x_new
-pub fn linear_interpolation<F: IntegrateFloat>(x: &[F], y: &[Array1<F>], x_new: F) -> Array1<F> {
-    let i = find_index(x, x_new);
+#[allow(dead_code)]
+pub fn linear_interpolation<F: IntegrateFloat>(x: &[F], y: &[Array1<F>], xnew: F) -> Array1<F> {
+    let i = find_index(x, xnew);
 
     if i == 0 {
         return y[0].clone();
@@ -76,7 +78,7 @@ pub fn linear_interpolation<F: IntegrateFloat>(x: &[F], y: &[Array1<F>], x_new: 
     let y1 = &y[i];
 
     // Linear interpolation: y = y0 + (x - x0) * (y1 - y0) / (x1 - x0)
-    let t = (x_new - x0) / (x1 - x0);
+    let t = (xnew - x0) / (x1 - x0);
 
     let mut result = y0.clone();
     for (r, (a, b)) in result.iter_mut().zip(y0.iter().zip(y1.iter())) {
@@ -98,6 +100,7 @@ pub fn linear_interpolation<F: IntegrateFloat>(x: &[F], y: &[Array1<F>], x_new: 
 /// # Returns
 ///
 /// Cubic interpolated value at x_new
+#[allow(dead_code)]
 pub fn cubic_hermite_interpolation<F: IntegrateFloat>(
     x: &[F],
     y: &[Array1<F>],

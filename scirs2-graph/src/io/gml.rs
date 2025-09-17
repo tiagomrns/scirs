@@ -241,6 +241,7 @@ impl GmlLexer {
 /// - Both directed and undirected graphs
 /// - Comments starting with #
 /// - String, integer, and float values
+#[allow(dead_code)]
 pub fn read_gml_format<N, E, P>(path: P, weighted: bool) -> Result<Graph<N, E>>
 where
     N: Node + std::fmt::Debug + FromStr + Clone,
@@ -370,18 +371,15 @@ where
                     (&current_edge_source, &current_edge_target)
                 {
                     let source_node = N::from_str(source_str).map_err(|_| {
-                        GraphError::Other(format!("Failed to parse source node: {}", source_str))
+                        GraphError::Other(format!("Failed to parse source node: {source_str}"))
                     })?;
                     let target_node = N::from_str(target_str).map_err(|_| {
-                        GraphError::Other(format!("Failed to parse target node: {}", target_str))
+                        GraphError::Other(format!("Failed to parse target node: {target_str}"))
                     })?;
 
                     let weight = if let Some(weight_str) = &current_edge_weight {
                         E::from_str(weight_str).map_err(|_| {
-                            GraphError::Other(format!(
-                                "Failed to parse edge weight: {}",
-                                weight_str
-                            ))
+                            GraphError::Other(format!("Failed to parse edge weight: {weight_str}"))
                         })?
                     } else {
                         E::default()
@@ -429,6 +427,7 @@ where
 ///
 /// * `Ok(DiGraph)` - The directed graph read from the file
 /// * `Err(GraphError)` - If there was an error reading or parsing the file
+#[allow(dead_code)]
 pub fn read_gml_format_digraph<N, E, P>(path: P, weighted: bool) -> Result<DiGraph<N, E>>
 where
     N: Node + std::fmt::Debug + FromStr + Clone,
@@ -556,18 +555,15 @@ where
                     (&current_edge_source, &current_edge_target)
                 {
                     let source_node = N::from_str(source_str).map_err(|_| {
-                        GraphError::Other(format!("Failed to parse source node: {}", source_str))
+                        GraphError::Other(format!("Failed to parse source node: {source_str}"))
                     })?;
                     let target_node = N::from_str(target_str).map_err(|_| {
-                        GraphError::Other(format!("Failed to parse target node: {}", target_str))
+                        GraphError::Other(format!("Failed to parse target node: {target_str}"))
                     })?;
 
                     let weight = if let Some(weight_str) = &current_edge_weight {
                         E::from_str(weight_str).map_err(|_| {
-                            GraphError::Other(format!(
-                                "Failed to parse edge weight: {}",
-                                weight_str
-                            ))
+                            GraphError::Other(format!("Failed to parse edge weight: {weight_str}"))
                         })?
                     } else {
                         E::default()
@@ -609,6 +605,7 @@ where
 ///
 /// * `Ok(())` - If the graph was written successfully
 /// * `Err(GraphError)` - If there was an error writing the file
+#[allow(dead_code)]
 pub fn write_gml_format<N, E, Ix, P>(graph: &Graph<N, E, Ix>, path: P, weighted: bool) -> Result<()>
 where
     N: Node + std::fmt::Debug + std::fmt::Display + Clone,
@@ -631,7 +628,7 @@ where
     // Write nodes
     for node in graph.nodes() {
         writeln!(file, "  node [")?;
-        writeln!(file, "    id {}", node)?;
+        writeln!(file, "    id {node}")?;
         writeln!(file, "  ]")?;
     }
 
@@ -647,7 +644,7 @@ where
         writeln!(file, "  ]")?;
     }
 
-    // Close graph
+    // Close _graph
     writeln!(file, "]")?;
 
     Ok(())
@@ -665,6 +662,7 @@ where
 ///
 /// * `Ok(())` - If the graph was written successfully
 /// * `Err(GraphError)` - If there was an error writing the file
+#[allow(dead_code)]
 pub fn write_gml_format_digraph<N, E, Ix, P>(
     graph: &DiGraph<N, E, Ix>,
     path: P,
@@ -691,7 +689,7 @@ where
     // Write nodes
     for node in graph.nodes() {
         writeln!(file, "  node [")?;
-        writeln!(file, "    id {}", node)?;
+        writeln!(file, "    id {node}")?;
         writeln!(file, "  ]")?;
     }
 

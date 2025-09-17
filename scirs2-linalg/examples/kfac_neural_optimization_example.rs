@@ -18,14 +18,15 @@ use ndarray::Array2;
 use scirs2_linalg::kronecker::{advanced_kfac_step, KFACOptimizer};
 use std::time::Instant;
 
+#[allow(dead_code)]
 fn main() -> Result<(), Box<dyn std::error::Error>> {
-    println!("🚀 K-FAC NEURAL NETWORK OPTIMIZATION - ULTRATHINK DEMONSTRATION");
+    println!("🚀 K-FAC NEURAL NETWORK OPTIMIZATION - Advanced DEMONSTRATION");
     println!("=================================================================");
     println!("Kronecker-Factored Approximate Curvature for Advanced Deep Learning");
     println!("=================================================================");
 
     // Simulation parameters
-    let batch_size = 32;
+    let batchsize = 32;
     let input_dim = 10;
     let hidden_dim = 8;
     let output_dim = 5;
@@ -36,7 +37,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("   Input Layer:  {} neurons", input_dim);
     println!("   Hidden Layer: {} neurons", hidden_dim);
     println!("   Output Layer: {} neurons", output_dim);
-    println!("   Batch Size:   {} samples", batch_size);
+    println!("   Batch Size:   {} samples", batchsize);
     println!("   Training:     {} epochs", num_epochs);
 
     // Test 1: Single Layer K-FAC Optimization
@@ -69,11 +70,11 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     for epoch in 0..num_epochs {
         // Generate synthetic training batch (without bias - bias added in K-FAC function)
-        let input_acts = Array2::from_shape_fn((batch_size, input_dim), |(i, j)| {
+        let input_acts = Array2::from_shape_fn((batchsize, input_dim), |(i, j)| {
             (i as f64 + j as f64) * 0.1 + (epoch as f64) * 0.01
         });
 
-        let output_grads = Array2::from_shape_fn((batch_size, output_dim), |(i, j)| {
+        let output_grads = Array2::from_shape_fn((batchsize, output_dim), |(i, j)| {
             // Simulate gradients from backpropagation
             0.1 * ((i + j + epoch) as f64).sin() + 0.05
         });
@@ -150,16 +151,16 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         );
 
         // Simulate one training step for this layer
-        let layer_acts = Array2::from_shape_fn((batch_size, layer_input_dim), |(i, j)| {
+        let layer_acts = Array2::from_shape_fn((batchsize, layer_input_dim), |(i, j)| {
             (i as f64 * 0.1 + j as f64 * 0.05 + layer_id as f64 * 0.01).tanh()
         });
 
-        let layer_grads = Array2::from_shape_fn((batch_size, layer_output_dim), |(i, j)| {
+        let layer_grads = Array2::from_shape_fn((batchsize, layer_output_dim), |(i, j)| {
             0.1 * ((i + j + layer_id) as f64).sin()
         });
 
         // Update covariances for this layer
-        let (_input_cov, _output_cov) =
+        let _input_cov_output_cov =
             layer_optimizer.update_covariances(&layer_acts.view(), &layer_grads.view())?;
 
         println!("      - Covariance estimates updated");
@@ -237,16 +238,15 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     for (name, decay, damping) in configs {
         let mut test_optimizer = KFACOptimizer::<f64>::new(Some(decay), Some(damping));
 
-        let input_acts = Array2::from_shape_fn((batch_size, input_dim), |(i, j)| {
-            (i as f64 + j as f64) * 0.1
-        });
+        let input_acts =
+            Array2::from_shape_fn((batchsize, input_dim), |(i, j)| (i as f64 + j as f64) * 0.1);
 
-        let output_grads = Array2::from_shape_fn((batch_size, output_dim), |(i, j)| {
+        let output_grads = Array2::from_shape_fn((batchsize, output_dim), |(i, j)| {
             0.1 * ((i + j) as f64).sin()
         });
 
         // Update covariances
-        let (_input_cov, _output_cov) =
+        let _input_cov_output_cov =
             test_optimizer.update_covariances(&input_acts.view(), &output_grads.view())?;
 
         println!("   ✅ {} Configuration:", name);
@@ -306,7 +306,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("      - Reduced hyperparameter sensitivity");
 
     println!("\n=================================================================");
-    println!("🎯 ULTRATHINK ACHIEVEMENT: K-FAC NEURAL NETWORK OPTIMIZATION");
+    println!("🎯 Advanced ACHIEVEMENT: K-FAC NEURAL NETWORK OPTIMIZATION");
     println!("=================================================================");
     println!("✅ Advanced K-FAC optimizer with moving averages and adaptive damping");
     println!("✅ Block-diagonal Fisher approximation for multi-layer networks");

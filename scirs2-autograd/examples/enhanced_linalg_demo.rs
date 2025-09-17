@@ -3,6 +3,7 @@ use ag::tensor_ops::*;
 use ndarray::array;
 use scirs2_autograd as ag;
 
+#[allow(dead_code)]
 fn main() {
     ag::run(|g| {
         println!("=== Enhanced Linear Algebra Operations Demo ===\n");

@@ -42,6 +42,7 @@ use crate::error::{MetricsError, Result};
 ///
 /// let factors = local_density_factor(&x, &labels, None).unwrap();
 /// ```
+#[allow(dead_code)]
 pub fn local_density_factor<F, S1, S2, D>(
     x: &ArrayBase<S1, Ix2>,
     labels: &ArrayBase<S2, D>,
@@ -197,6 +198,7 @@ where
 ///
 /// let rdi = relative_density_index(&x, &labels, None).unwrap();
 /// ```
+#[allow(dead_code)]
 pub fn relative_density_index<F, S1, S2, D>(
     x: &ArrayBase<S1, Ix2>,
     labels: &ArrayBase<S2, D>,
@@ -347,6 +349,7 @@ where
 ///
 /// let dbcv = density_based_cluster_validity(&x, &labels, None).unwrap();
 /// ```
+#[allow(dead_code)]
 pub fn density_based_cluster_validity<F, S1, S2, D>(
     x: &ArrayBase<S1, Ix2>,
     labels: &ArrayBase<S2, D>,
@@ -542,6 +545,7 @@ where
 }
 
 /// Helper function to calculate Euclidean distance between two vectors
+#[allow(dead_code)]
 fn calculate_euclidean_distance<F, S1, S2>(a: &ArrayBase<S1, Ix1>, b: &ArrayBase<S2, Ix1>) -> F
 where
     F: Float,

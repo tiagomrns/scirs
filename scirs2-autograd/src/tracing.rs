@@ -108,8 +108,8 @@ impl ExecutionTracer {
             timestamp: Instant::now(),
             event_type: EventType::OperationExecution {
                 operation: op_name.to_string(),
-                input_shapes: inputs.iter().map(|_t| vec![/* placeholder */]).collect(),
-                output_shape: vec![/* placeholder */],
+                inputshapes: inputs.iter().map(|_t| vec![/* placeholder */]).collect(),
+                outputshape: vec![/* placeholder */],
                 duration,
                 memory_usage: self.estimate_memory_usage(inputs, output),
             },
@@ -130,7 +130,7 @@ impl ExecutionTracer {
             timestamp: Instant::now(),
             event_type: EventType::GradientComputation {
                 target: target_name.to_string(),
-                gradient_shape: vec![/* placeholder */],
+                gradientshape: vec![/* placeholder */],
                 gradient_norm: self.compute_gradient_norm(gradient),
                 duration,
             },
@@ -194,8 +194,8 @@ impl ExecutionTracer {
     }
 
     /// Stop a recording
-    pub fn stop_recording(&mut self, recording_id: &RecordingId) -> Option<Recording> {
-        if let Some(mut recording) = self.recordings.remove(&recording_id.0) {
+    pub fn stop_recording(&mut self, recordingid: &RecordingId) -> Option<Recording> {
+        if let Some(mut recording) = self.recordings.remove(&recordingid.0) {
             recording.status = RecordingStatus::Completed;
             Some(recording)
         } else {
@@ -379,12 +379,15 @@ impl ExecutionTracer {
                 *duration >= self.config.min_operation_duration
             }
             EventType::MemoryAllocation { size, .. } => *size >= self.config.min_memory_threshold,
-            _ => true,
+            EventType::GradientComputation { duration, .. } => {
+                *duration >= self.config.min_operation_duration
+            }
+            EventType::PerformanceBottleneck { .. } => true, // Always record performance bottlenecks
         }
     }
 
     #[allow(dead_code)]
-    fn estimate_memory_usage<F: Float>(&self, inputs: &[&Tensor<F>], _output: &Tensor<F>) -> usize {
+    fn estimate_memory_usage<F: Float>(&self, inputs: &[&Tensor<F>], output: &Tensor<F>) -> usize {
         // Simplified memory estimation - in practice would calculate actual tensor sizes
         let estimated_input_memory = inputs.len() * 1000 * std::mem::size_of::<f64>();
         let estimated_output_memory = 1000 * std::mem::size_of::<f64>();
@@ -392,7 +395,7 @@ impl ExecutionTracer {
     }
 
     #[allow(dead_code)]
-    fn compute_gradient_norm<F: Float>(&self, _gradient: &Tensor<F>) -> f64 {
+    fn compute_gradient_norm<F: Float>(&self, gradient: &Tensor<F>) -> f64 {
         // Simplified implementation - would compute actual L2 norm
         1.0
     }
@@ -502,7 +505,7 @@ impl TraceSessionId {
         use std::sync::atomic::{AtomicU64, Ordering};
         static COUNTER: AtomicU64 = AtomicU64::new(0);
         let id = COUNTER.fetch_add(1, Ordering::SeqCst);
-        Self(format!("session_{}", id))
+        Self(format!("session_{id}"))
     }
 }
 
@@ -515,7 +518,7 @@ impl RecordingId {
         use std::sync::atomic::{AtomicU64, Ordering};
         static COUNTER: AtomicU64 = AtomicU64::new(0);
         let id = COUNTER.fetch_add(1, Ordering::SeqCst);
-        Self(format!("recording_{}", id))
+        Self(format!("recording_{id}"))
     }
 }
 
@@ -551,14 +554,14 @@ pub struct ExecutionEvent {
 pub enum EventType {
     OperationExecution {
         operation: String,
-        input_shapes: Vec<Vec<usize>>,
-        output_shape: Vec<usize>,
+        inputshapes: Vec<Vec<usize>>,
+        outputshape: Vec<usize>,
         duration: Duration,
         memory_usage: usize,
     },
     GradientComputation {
         target: String,
-        gradient_shape: Vec<usize>,
+        gradientshape: Vec<usize>,
         gradient_norm: f64,
         duration: Duration,
     },
@@ -764,6 +767,7 @@ pub enum TracingError {
 
 /// Global API functions
 /// Initialize the global tracer
+#[allow(dead_code)]
 pub fn init_tracer() -> Arc<Mutex<ExecutionTracer>> {
     GLOBAL_TRACER
         .get_or_init(|| Arc::new(Mutex::new(ExecutionTracer::new())))
@@ -771,6 +775,7 @@ pub fn init_tracer() -> Arc<Mutex<ExecutionTracer>> {
 }
 
 /// Configure global tracing
+#[allow(dead_code)]
 pub fn configure_tracing(config: TracingConfig) -> Result<(), TracingError> {
     let tracer = init_tracer();
     let mut tracer_guard = tracer
@@ -781,6 +786,7 @@ pub fn configure_tracing(config: TracingConfig) -> Result<(), TracingError> {
 }
 
 /// Start a new trace session
+#[allow(dead_code)]
 pub fn start_trace_session(name: &str) -> Result<TraceSessionId, TracingError> {
     let tracer = init_tracer();
     let mut tracer_guard = tracer
@@ -790,6 +796,7 @@ pub fn start_trace_session(name: &str) -> Result<TraceSessionId, TracingError> {
 }
 
 /// End the current trace session
+#[allow(dead_code)]
 pub fn end_trace_session() -> Result<Option<TraceRecord>, TracingError> {
     let tracer = init_tracer();
     let mut tracer_guard = tracer
@@ -799,6 +806,7 @@ pub fn end_trace_session() -> Result<Option<TraceRecord>, TracingError> {
 }
 
 /// Record an operation execution
+#[allow(dead_code)]
 pub fn trace_operation<F: Float>(
     op_name: &str,
     inputs: &[&Tensor<F>],
@@ -814,6 +822,7 @@ pub fn trace_operation<F: Float>(
 }
 
 /// Get performance analysis
+#[allow(dead_code)]
 pub fn get_performance_analysis() -> Result<PerformanceAnalysis, TracingError> {
     let tracer = init_tracer();
     let tracer_guard = tracer
@@ -823,6 +832,7 @@ pub fn get_performance_analysis() -> Result<PerformanceAnalysis, TracingError> {
 }
 
 /// Export traces to a file
+#[allow(dead_code)]
 pub fn export_traces(format: ExportFormat) -> Result<String, TracingError> {
     let tracer = init_tracer();
     let tracer_guard = tracer
@@ -832,6 +842,7 @@ pub fn export_traces(format: ExportFormat) -> Result<String, TracingError> {
 }
 
 /// Enable or disable tracing globally
+#[allow(dead_code)]
 pub fn set_tracing_enabled(enabled: bool) -> Result<(), TracingError> {
     let config = TracingConfig {
         trace_operations: enabled,
@@ -874,8 +885,8 @@ mod tests {
             timestamp: Instant::now(),
             event_type: EventType::OperationExecution {
                 operation: "add".to_string(),
-                input_shapes: vec![vec![2, 2], vec![2, 2]],
-                output_shape: vec![2, 2],
+                inputshapes: vec![vec![2, 2], vec![2, 2]],
+                outputshape: vec![2, 2],
                 duration: Duration::from_millis(1),
                 memory_usage: 1024,
             },
@@ -899,8 +910,8 @@ mod tests {
                 timestamp: Instant::now(),
                 event_type: EventType::OperationExecution {
                     operation: "matmul".to_string(),
-                    input_shapes: vec![vec![100, 100], vec![100, 100]],
-                    output_shape: vec![100, 100],
+                    inputshapes: vec![vec![100, 100], vec![100, 100]],
+                    outputshape: vec![100, 100],
                     duration: Duration::from_millis(i + 1),
                     memory_usage: 40000,
                 },

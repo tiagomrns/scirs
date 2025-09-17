@@ -24,6 +24,7 @@ use scirs2_autograd::variable::Variable;
 /// # Returns
 ///
 /// The contracted tensor with gradient tracking.
+#[allow(dead_code)]
 pub fn contract<F: Float + Debug + Send + Sync + 'static>(
     a: &Tensor<F>,
     b: &Tensor<F>,
@@ -41,34 +42,34 @@ pub fn contract<F: Float + Debug + Send + Sync + 'static>(
         ));
     }
 
-    let a_shape = a.shape();
-    let b_shape = b.shape();
+    let ashape = a.shape();
+    let bshape = b.shape();
 
     // Check contracted dimensions have the same size
     for (&dim_a, &dim_b) in dims_a.iter().zip(dims_b.iter()) {
-        if dim_a >= a_shape.len() {
+        if dim_a >= ashape.len() {
             return Err(scirs2_autograd::error::AutogradError::ShapeMismatch(
                 format!(
                     "Dimension {} out of bounds for first tensor with {} dimensions",
                     dim_a,
-                    a_shape.len()
+                    ashape.len()
                 ),
             ));
         }
-        if dim_b >= b_shape.len() {
+        if dim_b >= bshape.len() {
             return Err(scirs2_autograd::error::AutogradError::ShapeMismatch(
                 format!(
                     "Dimension {} out of bounds for second tensor with {} dimensions",
                     dim_b,
-                    b_shape.len()
+                    bshape.len()
                 ),
             ));
         }
-        if a_shape[dim_a] != b_shape[dim_b] {
+        if ashape[dim_a] != bshape[dim_b] {
             return Err(scirs2_autograd::error::AutogradError::ShapeMismatch(
                 format!(
                     "Contracted dimensions must have the same size, got {} and {}",
-                    a_shape[dim_a], b_shape[dim_b]
+                    ashape[dim_a], bshape[dim_b]
                 ),
             ));
         }
@@ -80,9 +81,9 @@ pub fn contract<F: Float + Debug + Send + Sync + 'static>(
 
     if a.data.ndim() == 2 && b.data.ndim() == 2 && dims_a == &[1] && dims_b == &[0] {
         // This is matrix multiplication: A[i,j] * B[j,k] -> C[i,k]
-        let m = a_shape[0];
-        let n = a_shape[1];
-        let p = b_shape[1];
+        let m = ashape[0];
+        let n = ashape[1];
+        let p = bshape[1];
 
         // Create result matrix
         let mut result_data = Array2::<F>::zeros((m, p));
@@ -110,8 +111,8 @@ pub fn contract<F: Float + Debug + Send + Sync + 'static>(
                 Some(
                     Box::new(move |grad: ndarray::Array<F, ndarray::IxDyn>| -> AutogradResult<ndarray::Array<F, ndarray::IxDyn>> {
                         // dA[i,j] = sum_k dC[i,k] * B[j,k]
-                        let grad_2d = grad.clone().into_shape((m, p)).unwrap();
-                        let b_2d = b_data.clone().into_shape((n, p)).unwrap();
+                        let grad_2d = grad.clone().intoshape((m, p)).unwrap();
+                        let b_2d = b_data.clone().intoshape((n, p)).unwrap();
 
                         let mut grad_a = Array2::<F>::zeros((m, n));
 
@@ -138,8 +139,8 @@ pub fn contract<F: Float + Debug + Send + Sync + 'static>(
                 Some(
                     Box::new(move |grad: ndarray::Array<F, ndarray::IxDyn>| -> AutogradResult<ndarray::Array<F, ndarray::IxDyn>> {
                         // dB[j,k] = sum_i dC[i,k] * A[i,j]
-                        let grad_2d = grad.clone().into_shape((m, p)).unwrap();
-                        let a_2d = a_data.clone().into_shape((m, n)).unwrap();
+                        let grad_2d = grad.clone().intoshape((m, p)).unwrap();
+                        let a_2d = a_data.clone().intoshape((m, n)).unwrap();
 
                         let mut grad_b = Array2::<F>::zeros((n, p));
 
@@ -163,7 +164,7 @@ pub fn contract<F: Float + Debug + Send + Sync + 'static>(
 
             let node = Node::new(
                 scirs2_autograd::graph::OpType::Activation("contract".to_string()),
-                vec![a, b],
+                vec![_a_b],
                 vec![backward_a, backward_b],
             );
 
@@ -175,7 +176,7 @@ pub fn contract<F: Float + Debug + Send + Sync + 'static>(
         }
     } else if a.data.ndim() == 1 && b.data.ndim() == 1 && dims_a == &[0] && dims_b == &[0] {
         // This is dot product: A[i] * B[i] -> C[]
-        let n = a_shape[0];
+        let n = ashape[0];
 
         // Compute the dot produc
         let mut dot_product = F::zero();
@@ -232,7 +233,7 @@ pub fn contract<F: Float + Debug + Send + Sync + 'static>(
 
             let node = Node::new(
                 scirs2_autograd::graph::OpType::Activation("contract_dot".to_string()),
-                vec![a, b],
+                vec![_a_b],
                 vec![backward_a, backward_b],
             );
 
@@ -260,6 +261,7 @@ pub fn contract<F: Float + Debug + Send + Sync + 'static>(
 /// # Returns
 ///
 /// The outer product tensor with gradient tracking.
+#[allow(dead_code)]
 pub fn outer<F: Float + Debug + Send + Sync + 'static>(
     a: &Tensor<F>,
     b: &Tensor<F>,
@@ -277,11 +279,11 @@ pub fn outer<F: Float + Debug + Send + Sync + 'static>(
         ));
     }
 
-    let a_shape = a.shape();
-    let b_shape = b.shape();
+    let ashape = a.shape();
+    let bshape = b.shape();
 
-    let m = a_shape[0];
-    let n = b_shape[0];
+    let m = ashape[0];
+    let n = bshape[0];
 
     // Create the result tensor
     let mut result_data = Array2::<F>::zeros((m, n));
@@ -305,7 +307,7 @@ pub fn outer<F: Float + Debug + Send + Sync + 'static>(
             Some(
                 Box::new(move |grad: ndarray::Array<F, ndarray::IxDyn>| -> AutogradResult<ndarray::Array<F, ndarray::IxDyn>> {
                     // Convert gradient to 2D shape
-                    let grad_2d = grad.clone().into_shape((m, n)).unwrap();
+                    let grad_2d = grad.clone().intoshape((m, n)).unwrap();
 
                     // dA[i] = sum_j dC[i,j] * B[j]
                     let mut grad_a = Array1::<F>::zeros(m);
@@ -331,7 +333,7 @@ pub fn outer<F: Float + Debug + Send + Sync + 'static>(
             Some(
                 Box::new(move |grad: ndarray::Array<F, ndarray::IxDyn>| -> AutogradResult<ndarray::Array<F, ndarray::IxDyn>> {
                     // Convert gradient to 2D shape
-                    let grad_2d = grad.clone().into_shape((m, n)).unwrap();
+                    let grad_2d = grad.clone().intoshape((m, n)).unwrap();
 
                     // dB[j] = sum_i dC[i,j] * A[i]
                     let mut grad_b = Array1::<F>::zeros(n);
@@ -377,53 +379,54 @@ pub fn outer<F: Float + Debug + Send + Sync + 'static>(
 /// # Returns
 ///
 /// The contracted tensor with gradient tracking.
+#[allow(dead_code)]
 pub fn tensor_vector_product<F: Float + Debug + Send + Sync + 'static>(
     a: &Tensor<F>,
     v: &Tensor<F>,
     axis: usize,
 ) -> AutogradResult<Tensor<F>> {
     // Validate inputs
-    let a_shape = a.shape();
-    let v_shape = v.shape();
+    let ashape = a.shape();
+    let vshape = v.shape();
 
     if v.data.ndim() != 1 {
         return Err(scirs2_autograd::error::AutogradError::ShapeMismatch(
-            format!("Vector must be a 1D tensor, got shape {:?}", v_shape),
+            format!("Vector must be a 1D tensor, got shape {:?}", vshape),
         ));
     }
 
-    if axis >= a_shape.len() {
+    if axis >= ashape.len() {
         return Err(scirs2_autograd::error::AutogradError::ShapeMismatch(
             format!(
                 "Axis {} out of bounds for tensor with {} dimensions",
                 axis,
-                a_shape.len()
+                ashape.len()
             ),
         ));
     }
 
-    if a_shape[axis] != v_shape[0] {
+    if ashape[axis] != vshape[0] {
         return Err(scirs2_autograd::error::AutogradError::ShapeMismatch(
             format!(
                 "Tensor dimension {} must match vector dimension, got {} and {}",
-                axis, a_shape[axis], v_shape[0]
+                axis, ashape[axis], vshape[0]
             ),
         ));
     }
 
     // Create result shape by removing the contracted axis
-    let mut result_shape = Vec::with_capacity(a_shape.len() - 1);
-    for (i, &dim) in a_shape.iter().enumerate() {
+    let mut resultshape = Vec::with_capacity(ashape.len() - 1);
+    for (i, &dim) in ashape.iter().enumerate() {
         if i != axis {
-            result_shape.push(dim);
+            resultshape.push(dim);
         }
     }
 
     // Special case for simple matrix-vector multiplication (matrix * vector)
-    if a_shape.len() == 2 && axis == 1 {
+    if ashape.len() == 2 && axis == 1 {
         // This is just a standard matrix-vector product A[i,j] * v[j] -> w[i]
-        let m = a_shape[0];
-        let n = a_shape[1];
+        let m = ashape[0];
+        let n = ashape[1];
 
         let mut result_data = Array1::<F>::zeros(m);
 
@@ -447,7 +450,7 @@ pub fn tensor_vector_product<F: Float + Debug + Send + Sync + 'static>(
                 Some(
                     Box::new(move |grad: ndarray::Array<F, ndarray::IxDyn>| -> AutogradResult<ndarray::Array<F, ndarray::IxDyn>> {
                         // dA[i,j] = dw[i] * v[j]
-                        let grad_1d = grad.clone().into_shape(m).unwrap();
+                        let grad_1d = grad.clone().intoshape(m).unwrap();
                         let mut grad_a = Array2::<F>::zeros((m, n));
 
                         for i in 0..m {
@@ -469,7 +472,7 @@ pub fn tensor_vector_product<F: Float + Debug + Send + Sync + 'static>(
                 Some(
                     Box::new(move |grad: ndarray::Array<F, ndarray::IxDyn>| -> AutogradResult<ndarray::Array<F, ndarray::IxDyn>> {
                         // dv[j] = sum_i dw[i] * A[i,j]
-                        let grad_1d = grad.clone().into_shape(m).unwrap();
+                        let grad_1d = grad.clone().intoshape(m).unwrap();
                         let mut grad_v = Array1::<F>::zeros(n);
 
                         for j in 0..n {
@@ -520,7 +523,7 @@ pub mod variable {
         dims_a: &[usize],
         dims_b: &[usize],
     ) -> AutogradResult<Variable<F>> {
-        let result_tensor = super::contract(&a.tensor, &b.tensor, dims_a, dims_b)?;
+        let result_tensor = super::contract(&_a.tensor, &_b.tensor, dims_a, dims_b)?;
         Ok(Variable {
             tensor: result_tensor,
         })

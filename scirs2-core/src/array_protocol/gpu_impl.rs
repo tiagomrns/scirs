@@ -121,10 +121,11 @@ where
 {
     /// Create a new GPU array from a host array.
     #[must_use]
-    pub fn new(host_data: Array<T, D>, config: GPUConfig) -> Self {
-        let id = format!("gpu_array_{}", uuid::Uuid::new_v4());
+    pub fn new(hostdata: Array<T, D>, config: GPUConfig) -> Self {
+        let uuid = uuid::Uuid::new_v4();
+        let id = format!("uuid{uuid}");
         let mut array = Self {
-            host_data,
+            host_data: hostdata,
             config,
             on_gpu: false,
             id,
@@ -315,7 +316,7 @@ where
 
                         match kernels::matmul(self_f64, other_f64) {
                             Ok(result) => {
-                                // We can't safely transmute between types with different sizes
+                                // We can't safely transmute between _types with different sizes
                                 // Since we're in a specific case where we know T is f64 and D is Ix2,
                                 // we can just return the f64 result directly
                                 return Ok(Box::new(result));
@@ -324,7 +325,7 @@ where
                         }
                     }
                     // For other types, create a placeholder result for demonstration
-                    // In a real implementation, we would support more types and dimensions
+                    // In a real implementation, we would support more _types and dimensions
                     let result = Self::new(self.host_data.clone(), self.config.clone());
                     return Ok(Box::new(result));
                 }
@@ -407,10 +408,7 @@ where
 
     fn device_info(&self) -> HashMap<String, String> {
         let mut info = HashMap::new();
-        info.insert(
-            "backend".to_string(),
-            format!("{backend:?}", backend = self.config.backend),
-        );
+        info.insert("backend".to_string(), format!("{:?}", self.config.backend));
         info.insert("device_id".to_string(), self.config.device_id.to_string());
         info.insert("on_gpu".to_string(), self.on_gpu.to_string());
         info.insert("id".to_string(), self.id.clone());
@@ -470,33 +468,33 @@ impl GPUArrayBuilder {
 
     /// Set whether to use asynchronous operations.
     #[must_use]
-    pub const fn async_ops(mut self, async_ops: bool) -> Self {
-        self.config.async_ops = async_ops;
+    pub const fn async_ops(mut self, asyncops: bool) -> Self {
+        self.config.async_ops = asyncops;
         self
     }
 
     /// Set whether to use mixed precision.
     #[must_use]
-    pub const fn mixed_precision(mut self, mixed_precision: bool) -> Self {
-        self.config.mixed_precision = mixed_precision;
+    pub const fn mixed_precision(mut self, mixedprecision: bool) -> Self {
+        self.config.mixed_precision = mixedprecision;
         self
     }
 
     /// Set the fraction of GPU memory to use.
     #[must_use]
-    pub const fn memory_fraction(mut self, memory_fraction: f32) -> Self {
-        self.config.memory_fraction = memory_fraction;
+    pub const fn memory_fraction(mut self, memoryfraction: f32) -> Self {
+        self.config.memory_fraction = memoryfraction;
         self
     }
 
     /// Build a GPU array from a host array.
     #[must_use]
-    pub fn build<T, D>(self, host_data: Array<T, D>) -> GPUNdarray<T, D>
+    pub fn build<T, D>(self, hostdata: Array<T, D>) -> GPUNdarray<T, D>
     where
         T: Clone + Send + Sync + 'static + num_traits::Zero + std::ops::Div<f64, Output = T>,
         D: Dimension + Clone + Send + Sync + 'static + ndarray::RemoveAxis,
     {
-        GPUNdarray::new(host_data, self.config)
+        GPUNdarray::new(hostdata, self.config)
     }
 }
 
@@ -599,20 +597,19 @@ pub mod kernels {
         // For now, we just perform matrix multiplication on the CPU
 
         // Check that the shapes are compatible for matrix multiplication
-        let a_shape = a.shape();
-        let b_shape = b.shape();
+        let ashape = a.shape();
+        let bshape = b.shape();
 
-        if a_shape.len() != 2 || b_shape.len() != 2 || a_shape[1] != b_shape[0] {
+        if ashape.len() != 2 || bshape.len() != 2 || ashape[1] != bshape[0] {
             return Err(CoreError::ShapeError(ErrorContext::new(format!(
-                "Incompatible shapes for matmul: {:?} vs {:?}",
-                a_shape, b_shape
+                "Incompatible shapes for matmul: {ashape:?} vs {bshape:?}"
             ))));
         }
 
         // This is a simplified implementation for a GPU array
         // In a real implementation, this would use GPU-accelerated matrix multiplication
-        let m = a_shape[0];
-        let p = b_shape[1];
+        let m = ashape[0];
+        let p = bshape[1];
 
         // Just create a default result (all zeros) for demonstration purposes
         let result_data = Array::default((m, p));

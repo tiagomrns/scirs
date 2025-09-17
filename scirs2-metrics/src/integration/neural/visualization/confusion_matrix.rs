@@ -10,6 +10,7 @@ use ndarray::{Array, Ix1, IxDyn};
 use std::error::Error;
 
 /// Create a confusion matrix visualizer from neural network predictions and targets
+#[allow(dead_code)]
 pub fn neural_confusion_matrix_visualization<F: num_traits::Float + std::fmt::Debug>(
     y_true: &Array<F, IxDyn>,
     y_pred: &Array<F, IxDyn>,

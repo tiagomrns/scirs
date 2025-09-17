@@ -32,7 +32,7 @@ impl<F: Float> Op<F> for SVDJacobiExtractOp {
         }
     }
 
-    fn compute(&self, _ctx: &mut ComputeContext<F>) -> Result<(), OpError> {
+    fn compute(&self, ctx: &mut ComputeContext<F>) -> Result<(), OpError> {
         // This is a placeholder - the actual extraction happens in the parent op
         Err(OpError::Other(
             "SVD extraction should be handled by parent op".into(),
@@ -103,7 +103,7 @@ impl<F: Float> Op<F> for RandomizedSVDExtractOp {
         }
     }
 
-    fn compute(&self, _ctx: &mut ComputeContext<F>) -> Result<(), OpError> {
+    fn compute(&self, ctx: &mut ComputeContext<F>) -> Result<(), OpError> {
         Err(OpError::Other(
             "Randomized SVD extraction should be handled by parent op".into(),
         ))
@@ -165,7 +165,7 @@ impl<F: Float> Op<F> for GeneralizedEigenExtractOp {
         }
     }
 
-    fn compute(&self, _ctx: &mut ComputeContext<F>) -> Result<(), OpError> {
+    fn compute(&self, ctx: &mut ComputeContext<F>) -> Result<(), OpError> {
         Err(OpError::Other(
             "Generalized eigen extraction should be handled by parent op".into(),
         ))
@@ -238,7 +238,7 @@ impl<F: Float> Op<F> for QRPivotExtractOp {
         }
     }
 
-    fn compute(&self, _ctx: &mut ComputeContext<F>) -> Result<(), OpError> {
+    fn compute(&self, ctx: &mut ComputeContext<F>) -> Result<(), OpError> {
         Err(OpError::Other(
             "QR pivot extraction should be handled by parent op".into(),
         ))
@@ -287,6 +287,7 @@ impl<F: Float + ndarray::ScalarOperand> Op<F> for QRPivotOp {
 // Helper functions
 
 /// Compute SVD using Jacobi algorithm (more stable for small matrices)
+#[allow(dead_code)]
 fn compute_svd_jacobi<F: Float + ndarray::ScalarOperand + FromPrimitive>(
     matrix: &ndarray::ArrayView2<F>,
     full_matrices: bool,
@@ -307,7 +308,7 @@ fn compute_svd_jacobi<F: Float + ndarray::ScalarOperand + FromPrimitive>(
         // Left Householder for column i
         if i < m - 1 {
             let col = b.slice(s![i.., i]).to_owned();
-            let (h, _) = householder_vector(&col.view())?;
+            let (h, _beta) = householder_vector(&col.view())?;
             let h_mat = householder_matrix(&h, m - i);
 
             // Apply to B and U
@@ -323,7 +324,7 @@ fn compute_svd_jacobi<F: Float + ndarray::ScalarOperand + FromPrimitive>(
         // Right Householder for row i
         if i < n - 2 {
             let row = b.slice(s![i, i + 1..]).to_owned();
-            let (h, _) = householder_vector(&row.view())?;
+            let (h, _beta) = householder_vector(&row.view())?;
             let h_mat = householder_matrix(&h, n - i - 1);
 
             // Apply to B and V
@@ -366,7 +367,7 @@ fn compute_svd_jacobi<F: Float + ndarray::ScalarOperand + FromPrimitive>(
 
                 let (cos, sin) = compute_givens_rotation(a, b, c);
 
-                // Update matrices
+                // Update _matrices
                 diag[i] = cos * cos * a + sin * sin * c + F::from(2.0).unwrap() * cos * sin * b;
                 diag[i + 1] = sin * sin * a + cos * cos * c - F::from(2.0).unwrap() * cos * sin * b;
                 superdiag[i] = F::zero();
@@ -436,6 +437,7 @@ fn compute_svd_jacobi<F: Float + ndarray::ScalarOperand + FromPrimitive>(
 }
 
 /// Compute randomized SVD for large matrices
+#[allow(dead_code)]
 fn compute_randomized_svd<F: Float + ndarray::ScalarOperand + FromPrimitive>(
     matrix: &ndarray::ArrayView2<F>,
     rank: usize,
@@ -486,6 +488,7 @@ fn compute_randomized_svd<F: Float + ndarray::ScalarOperand + FromPrimitive>(
 }
 
 /// Compute generalized eigenvalue problem
+#[allow(dead_code)]
 fn compute_generalized_eigen<F: Float + ndarray::ScalarOperand + FromPrimitive>(
     a: &ndarray::ArrayView2<F>,
     b: &ndarray::ArrayView2<F>,
@@ -511,6 +514,7 @@ fn compute_generalized_eigen<F: Float + ndarray::ScalarOperand + FromPrimitive>(
 }
 
 /// QR decomposition with column pivoting
+#[allow(dead_code)]
 fn compute_qr_pivot<F: Float + ndarray::ScalarOperand>(
     matrix: &ndarray::ArrayView2<F>,
 ) -> QRPivotResult<F> {
@@ -592,6 +596,7 @@ fn compute_qr_pivot<F: Float + ndarray::ScalarOperand>(
 
 // Utility functions
 
+#[allow(dead_code)]
 fn householder_vector<F: Float>(x: &ndarray::ArrayView1<F>) -> Result<(Array1<F>, F), OpError> {
     let n = x.len();
     if n == 0 {
@@ -619,6 +624,7 @@ fn householder_vector<F: Float>(x: &ndarray::ArrayView1<F>) -> Result<(Array1<F>
     Ok((v, beta))
 }
 
+#[allow(dead_code)]
 fn householder_matrix<F: Float>(v: &Array1<F>, size: usize) -> Array2<F> {
     let beta = F::from(2.0).unwrap() / v.dot(v);
     let mut h = Array2::<F>::eye(size);
@@ -632,6 +638,7 @@ fn householder_matrix<F: Float>(v: &Array1<F>, size: usize) -> Array2<F> {
     h
 }
 
+#[allow(dead_code)]
 fn compute_givens_rotation<F: Float>(a: F, b: F, c: F) -> (F, F) {
     if b.abs() < F::epsilon() {
         return (F::one(), F::zero());
@@ -650,6 +657,7 @@ fn compute_givens_rotation<F: Float>(a: F, b: F, c: F) -> (F, F) {
     (cos, sin)
 }
 
+#[allow(dead_code)]
 fn apply_givens_left<F: Float>(matrix: &mut Array2<F>, i: usize, j: usize, cos: F, sin: F) {
     let n = matrix.shape()[1];
     for k in 0..n {
@@ -660,6 +668,7 @@ fn apply_givens_left<F: Float>(matrix: &mut Array2<F>, i: usize, j: usize, cos: 
     }
 }
 
+#[allow(dead_code)]
 fn apply_givens_right<F: Float>(matrix: &mut Array2<F>, i: usize, j: usize, cos: F, sin: F) {
     let m = matrix.shape()[0];
     for k in 0..m {
@@ -670,6 +679,7 @@ fn apply_givens_right<F: Float>(matrix: &mut Array2<F>, i: usize, j: usize, cos:
     }
 }
 
+#[allow(dead_code)]
 fn orthogonalize_qr<F: Float + ndarray::ScalarOperand>(
     a: &Array2<F>,
 ) -> Result<Array2<F>, OpError> {
@@ -699,6 +709,7 @@ fn orthogonalize_qr<F: Float + ndarray::ScalarOperand>(
     Ok(q)
 }
 
+#[allow(dead_code)]
 fn compute_matrix_inverse<F: Float>(matrix: &ndarray::ArrayView2<F>) -> Result<Array2<F>, OpError> {
     let n = matrix.shape()[0];
     let mut a = matrix.to_owned();
@@ -750,6 +761,7 @@ fn compute_matrix_inverse<F: Float>(matrix: &ndarray::ArrayView2<F>) -> Result<A
     Ok(inv)
 }
 
+#[allow(dead_code)]
 fn compute_eigen_iterative<F: Float + ndarray::ScalarOperand + FromPrimitive>(
     matrix: &ndarray::ArrayView2<F>,
 ) -> Result<(Array1<F>, Array2<F>), OpError> {
@@ -814,6 +826,7 @@ fn compute_eigen_iterative<F: Float + ndarray::ScalarOperand + FromPrimitive>(
     Ok((eigenvalues, q_total))
 }
 
+#[allow(dead_code)]
 fn compute_qr_simple<F: Float + ndarray::ScalarOperand>(
     matrix: &ndarray::ArrayView2<F>,
 ) -> Result<(Array2<F>, Array2<F>), OpError> {
@@ -854,6 +867,7 @@ fn compute_qr_simple<F: Float + ndarray::ScalarOperand>(
 // Public API functions
 
 /// Compute SVD using improved Jacobi algorithm
+#[allow(dead_code)]
 pub fn svd_jacobi<'g, F: Float + ndarray::ScalarOperand + FromPrimitive>(
     matrix: &Tensor<'g, F>,
     full_matrices: bool,
@@ -882,6 +896,7 @@ pub fn svd_jacobi<'g, F: Float + ndarray::ScalarOperand + FromPrimitive>(
 }
 
 /// Compute randomized SVD for large matrices
+#[allow(dead_code)]
 pub fn randomized_svd<'g, F: Float + ndarray::ScalarOperand + FromPrimitive>(
     matrix: &Tensor<'g, F>,
     rank: usize,
@@ -914,6 +929,7 @@ pub fn randomized_svd<'g, F: Float + ndarray::ScalarOperand + FromPrimitive>(
 }
 
 /// Solve generalized eigenvalue problem Ax = λBx
+#[allow(dead_code)]
 pub fn generalized_eigen<'g, F: Float + ndarray::ScalarOperand + FromPrimitive>(
     a: &Tensor<'g, F>,
     b: &Tensor<'g, F>,
@@ -937,6 +953,7 @@ pub fn generalized_eigen<'g, F: Float + ndarray::ScalarOperand + FromPrimitive>(
 }
 
 /// QR decomposition with column pivoting
+#[allow(dead_code)]
 pub fn qr_pivot<'g, F: Float + ndarray::ScalarOperand>(
     matrix: &Tensor<'g, F>,
 ) -> (Tensor<'g, F>, Tensor<'g, F>, Tensor<'g, F>) {

@@ -21,6 +21,7 @@
 
 use crate::distance::{Distance, EuclideanDistance};
 use crate::error::{SpatialError, SpatialResult};
+use crate::safe_conversions::*;
 use ndarray::{Array1, Array2, ArrayView2};
 use num_traits::Float;
 use std::cmp::Ordering;
@@ -33,7 +34,7 @@ struct BallTreeNode<T: Float> {
     start_idx: usize,
 
     /// Index of the end of the points contained in this node
-    end_idx: usize,
+    endidx: usize,
 
     /// Centroid of the points in this node (center of the ball)
     centroid: Vec<T>,
@@ -112,7 +113,12 @@ impl<T: Float + Send + Sync + 'static, D: Distance<T> + Send + Sync + 'static> B
         }
 
         // Clone the data array and create an array of indices
-        let data = data.to_owned();
+        // Ensure data is in standard memory layout for as_slice to work
+        let data = if data.is_standard_layout() {
+            data.to_owned()
+        } else {
+            data.as_standard_layout().to_owned()
+        };
         let indices = Array1::from_iter(0..n_samples);
 
         // Initialize empty nodes vector (will be filled during build)
@@ -157,17 +163,17 @@ impl<T: Float + Send + Sync + 'static, D: Distance<T> + Send + Sync + 'static> B
     /// # Arguments
     ///
     /// * `start_idx` - Start index of points for this subtree
-    /// * `end_idx` - End index of points for this subtree
+    /// * `endidx` - End index of points for this subtree
     ///
     /// # Returns
     ///
     /// * `SpatialResult<usize>` - Index of the root node of the subtree
-    fn build_subtree(&mut self, start_idx: usize, end_idx: usize) -> SpatialResult<usize> {
-        let n_points = end_idx - start_idx;
+    fn build_subtree(&mut self, start_idx: usize, endidx: usize) -> SpatialResult<usize> {
+        let n_points = endidx - start_idx;
 
         // Calculate centroid of points in this node
         let mut centroid = vec![T::zero(); self.n_features];
-        for i in start_idx..end_idx {
+        for i in start_idx..endidx {
             let point_idx = self.indices[i];
             let point = self.data.row(point_idx);
 
@@ -177,16 +183,16 @@ impl<T: Float + Send + Sync + 'static, D: Distance<T> + Send + Sync + 'static> B
         }
 
         for val in centroid.iter_mut().take(self.n_features) {
-            *val = *val / T::from(n_points).unwrap();
+            *val = *val / safe_from_usize::<T>(n_points, "balltree centroid calculation")?;
         }
 
         // Calculate radius (maximum distance from centroid to any point)
         let mut radius = T::zero();
-        for i in start_idx..end_idx {
+        for i in start_idx..endidx {
             let point_idx = self.indices[i];
             let point = self.data.row(point_idx);
 
-            let dist = self.distance.distance(&centroid, point.as_slice().unwrap());
+            let dist = self.distance.distance(&centroid, point.to_vec().as_slice());
 
             if dist > radius {
                 radius = dist;
@@ -197,7 +203,7 @@ impl<T: Float + Send + Sync + 'static, D: Distance<T> + Send + Sync + 'static> B
         let node_idx = self.nodes.len();
         let node = BallTreeNode {
             start_idx,
-            end_idx,
+            endidx,
             centroid,
             radius,
             left_child: None,
@@ -213,13 +219,13 @@ impl<T: Float + Send + Sync + 'static, D: Distance<T> + Send + Sync + 'static> B
 
         // Otherwise, split the points and recursively build subtrees
         // We'll split along the direction of maximum variance
-        self.split_points(node_idx, start_idx, end_idx)?;
+        self.split_points(node_idx, start_idx, endidx)?;
 
         // Recursively build left and right subtrees
         let mid_idx = start_idx + n_points / 2;
 
         let left_idx = self.build_subtree(start_idx, mid_idx)?;
-        let right_idx = self.build_subtree(mid_idx, end_idx)?;
+        let right_idx = self.build_subtree(mid_idx, endidx)?;
 
         // Update node with child indices
         self.nodes[node_idx].left_child = Some(left_idx);
@@ -237,7 +243,7 @@ impl<T: Float + Send + Sync + 'static, D: Distance<T> + Send + Sync + 'static> B
     ///
     /// * `node_idx` - Index of the node to split
     /// * `start_idx` - Start index of points in the node
-    /// * `end_idx` - End index of points in the node
+    /// * `endidx` - End index of points in the node
     ///
     /// # Returns
     ///
@@ -246,18 +252,18 @@ impl<T: Float + Send + Sync + 'static, D: Distance<T> + Send + Sync + 'static> B
         &mut self,
         node_idx: usize,
         start_idx: usize,
-        end_idx: usize,
+        endidx: usize,
     ) -> SpatialResult<()> {
         // Find the dimension with the largest variance
         let node = &self.nodes[node_idx];
         let centroid = &node.centroid;
 
         // Calculate distances from centroid to all points
-        let mut distances: Vec<(usize, T)> = (start_idx..end_idx)
+        let mut distances: Vec<(usize, T)> = (start_idx..endidx)
             .map(|i| {
                 let point_idx = self.indices[i];
                 let point = self.data.row(point_idx);
-                let dist = self.distance.distance(centroid, point.as_slice().unwrap());
+                let dist = self.distance.distance(centroid, point.to_vec().as_slice());
                 (i, dist)
             })
             .collect();
@@ -267,11 +273,11 @@ impl<T: Float + Send + Sync + 'static, D: Distance<T> + Send + Sync + 'static> B
 
         // Reorder indices array based on sorted distances
         // Midpoint is calculated but used implicitly when we reorder the indices
-        let _mid_idx = start_idx + (end_idx - start_idx) / 2;
-        let mut new_indices = Vec::with_capacity(end_idx - start_idx);
+        let _mid_idx = start_idx + (endidx - start_idx) / 2;
+        let mut new_indices = Vec::with_capacity(endidx - start_idx);
 
-        for (i, _) in distances {
-            new_indices.push(self.indices[i]);
+        for (i_, _) in distances {
+            new_indices.push(self.indices[i_]);
         }
 
         for (i, idx) in new_indices.into_iter().enumerate() {
@@ -320,8 +326,10 @@ impl<T: Float + Send + Sync + 'static, D: Distance<T> + Send + Sync + 'static> B
         // Perform the recursive search
         self.query_recursive(0, point, k, &mut nearest_neighbors, &mut max_dist);
 
-        // Sort by distance
-        nearest_neighbors.sort_by(|a, b| a.0.partial_cmp(&b.0).unwrap_or(Ordering::Equal));
+        // Sort by _distance
+        nearest_neighbors.sort_by(|a, b| {
+            safe_partial_cmp(&a.0, &b.0, "balltree sort results").unwrap_or(Ordering::Equal)
+        });
 
         // Extract indices and distances
         let (distances, indices): (Vec<_>, Vec<_>) = nearest_neighbors.into_iter().unzip();
@@ -363,15 +371,14 @@ impl<T: Float + Send + Sync + 'static, D: Distance<T> + Send + Sync + 'static> B
 
         // If this is a leaf node, check all points
         if node.left_child.is_none() {
-            for i in node.start_idx..node.end_idx {
+            for i in node.start_idx..node.endidx {
                 let idx = self.indices[i];
-                let dist = self
-                    .distance
-                    .distance(point, self.data.row(idx).as_slice().unwrap());
+                let row_vec = self.data.row(idx).to_vec();
+                let _dist = self.distance.distance(point, row_vec.as_slice());
 
-                if dist < *max_dist || nearest.len() < k {
+                if _dist < *max_dist || nearest.len() < k {
                     // Add this point to nearest neighbors
-                    nearest.push((dist, idx));
+                    nearest.push((_dist, idx));
 
                     // If we have more than k points, remove the furthest
                     if nearest.len() > k {
@@ -380,10 +387,11 @@ impl<T: Float + Send + Sync + 'static, D: Distance<T> + Send + Sync + 'static> B
                             .iter()
                             .enumerate()
                             .max_by(|(_, a), (_, b)| {
-                                a.0.partial_cmp(&b.0).unwrap_or(Ordering::Equal)
+                                safe_partial_cmp(&a.0, &b.0, "balltree max distance")
+                                    .unwrap_or(Ordering::Equal)
                             })
-                            .map(|(idx, _)| idx)
-                            .unwrap();
+                            .map(|(idx_, _)| idx_)
+                            .unwrap_or(0);
 
                         // Remove that point
                         nearest.swap_remove(max_idx);
@@ -391,8 +399,11 @@ impl<T: Float + Send + Sync + 'static, D: Distance<T> + Send + Sync + 'static> B
                         // Update max_dist to the new maximum distance
                         *max_dist = nearest
                             .iter()
-                            .map(|(dist, _)| *dist)
-                            .max_by(|a, b| a.partial_cmp(b).unwrap_or(Ordering::Equal))
+                            .map(|(dist_, _)| *dist_)
+                            .max_by(|a, b| {
+                                safe_partial_cmp(a, b, "balltree update max_dist")
+                                    .unwrap_or(Ordering::Equal)
+                            })
                             .unwrap_or(T::infinity());
                     }
                 }
@@ -402,8 +413,15 @@ impl<T: Float + Send + Sync + 'static, D: Distance<T> + Send + Sync + 'static> B
 
         // Otherwise, recursively search child nodes
         // Determine which child to search first (closest to the query point)
-        let left_idx = node.left_child.unwrap();
-        let right_idx = node.right_child.unwrap();
+        // Get child indices - we know they exist because this is not a leaf node
+        let left_idx = match node.left_child {
+            Some(idx) => idx,
+            None => return, // Should not happen if tree is properly built
+        };
+        let right_idx = match node.right_child {
+            Some(idx) => idx,
+            None => return, // Should not happen if tree is properly built
+        };
 
         let left_node = &self.nodes[left_idx];
         let right_node = &self.nodes[right_idx];
@@ -459,7 +477,7 @@ impl<T: Float + Send + Sync + 'static, D: Distance<T> + Send + Sync + 'static> B
         // Search the tree recursively
         self.query_radius_recursive(0, point, radius, &mut result_indices, &mut result_distances);
 
-        // Sort by distance if needed
+        // Sort by _distance if needed
         if !result_indices.is_empty() {
             let mut idx_dist: Vec<(usize, T)> =
                 result_indices.into_iter().zip(result_distances).collect();
@@ -506,14 +524,13 @@ impl<T: Float + Send + Sync + 'static, D: Distance<T> + Send + Sync + 'static> B
 
         // If this is a leaf node, check all points
         if node.left_child.is_none() {
-            for i in node.start_idx..node.end_idx {
-                let idx = self.indices[i];
-                let dist = self
-                    .distance
-                    .distance(point, self.data.row(idx).as_slice().unwrap());
+            for i in node.start_idx..node.endidx {
+                let _idx = self.indices[i];
+                let row_vec = self.data.row(_idx).to_vec();
+                let dist = self.distance.distance(point, row_vec.as_slice());
 
                 if dist <= radius {
-                    indices.push(idx);
+                    indices.push(_idx);
                     distances.push(dist);
                 }
             }
@@ -521,8 +538,14 @@ impl<T: Float + Send + Sync + 'static, D: Distance<T> + Send + Sync + 'static> B
         }
 
         // Otherwise, recursively search child nodes
-        let left_idx = node.left_child.unwrap();
-        let right_idx = node.right_child.unwrap();
+        let left_idx = match node.left_child {
+            Some(idx) => idx,
+            None => return, // Should not happen if tree is properly built
+        };
+        let right_idx = match node.right_child {
+            Some(idx) => idx,
+            None => return, // Should not happen if tree is properly built
+        };
 
         self.query_radius_recursive(left_idx, point, radius, indices, distances);
         self.query_radius_recursive(right_idx, point, radius, indices, distances);
@@ -587,18 +610,19 @@ impl<T: Float + Send + Sync + 'static, D: Distance<T> + Send + Sync + 'static> B
 
         // If both are leaf nodes, check all point pairs
         if self_node.left_child.is_none() && other_node.left_child.is_none() {
-            for i in self_node.start_idx..self_node.end_idx {
+            for i in self_node.start_idx..self_node.endidx {
                 let self_idx = self.indices[i];
                 let self_point = self.data.row(self_idx);
 
-                for j in other_node.start_idx..other_node.end_idx {
+                for j in other_node.start_idx..other_node.endidx {
                     let other_idx = other.indices[j];
                     let other_point = other.data.row(other_idx);
 
-                    let dist = self.distance.distance(
-                        self_point.as_slice().unwrap(),
-                        other_point.as_slice().unwrap(),
-                    );
+                    let self_vec = self_point.to_vec();
+                    let other_vec = other_point.to_vec();
+                    let dist = self
+                        .distance
+                        .distance(self_vec.as_slice(), other_vec.as_slice());
 
                     if dist <= radius {
                         pairs.push((self_idx, other_idx));
@@ -612,17 +636,29 @@ impl<T: Float + Send + Sync + 'static, D: Distance<T> + Send + Sync + 'static> B
         // Split the node with more points
         if self_node.left_child.is_some()
             && (other_node.left_child.is_none()
-                || (self_node.end_idx - self_node.start_idx)
-                    > (other_node.end_idx - other_node.start_idx))
+                || (self_node.endidx - self_node.start_idx)
+                    > (other_node.endidx - other_node.start_idx))
         {
-            let left_idx = self_node.left_child.unwrap();
-            let right_idx = self_node.right_child.unwrap();
+            let left_idx = match self_node.left_child {
+                Some(idx) => idx,
+                None => return, // Should not happen
+            };
+            let right_idx = match self_node.right_child {
+                Some(idx) => idx,
+                None => return, // Should not happen
+            };
 
             self.query_radius_tree_recursive(left_idx, other, other_node_idx, radius, pairs);
             self.query_radius_tree_recursive(right_idx, other, other_node_idx, radius, pairs);
         } else if other_node.left_child.is_some() {
-            let left_idx = other_node.left_child.unwrap();
-            let right_idx = other_node.right_child.unwrap();
+            let left_idx = match other_node.left_child {
+                Some(idx) => idx,
+                None => return, // Should not happen
+            };
+            let right_idx = match other_node.right_child {
+                Some(idx) => idx,
+                None => return, // Should not happen
+            };
 
             self.query_radius_tree_recursive(self_node_idx, other, left_idx, radius, pairs);
             self.query_radius_tree_recursive(self_node_idx, other, right_idx, radius, pairs);
@@ -672,7 +708,7 @@ impl<T: Float + Send + Sync + 'static> BallTree<T, EuclideanDistance<T>> {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
+    use super::BallTree;
     use crate::distance::euclidean;
     use approx::assert_relative_eq;
     use ndarray::arr2;

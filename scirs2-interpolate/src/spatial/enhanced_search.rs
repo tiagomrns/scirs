@@ -253,12 +253,12 @@ where
         let n_dims = points.ncols();
 
         if n_points == 0 {
-            return Err(InterpolateError::ValueError(
+            return Err(InterpolateError::invalid_input(
                 "Cannot create searcher with zero points".to_string(),
             ));
         }
 
-        // Determine the best index type if using adaptive
+        // Determine the best index _type if using adaptive
         let actual_index_type = match index_type {
             IndexType::Adaptive => Self::choose_index_type(n_points, n_dims, &config),
             other => other,
@@ -299,8 +299,8 @@ where
     }
 
     /// Build the spatial index
-    fn build_index(&mut self, index_type: IndexType) -> InterpolateResult<()> {
-        match index_type {
+    fn build_index(&mut self, indextype: IndexType) -> InterpolateResult<()> {
+        match indextype {
             IndexType::KdTree => {
                 self.kdtree = Some(KdTreeIndex::new(&self.points)?);
             }
@@ -1238,35 +1238,231 @@ impl<F: Float + FromPrimitive> BallTreeIndex<F> {
 }
 
 impl<F: Float + FromPrimitive> LSHIndex<F> {
-    pub fn new(_points: &Array2<F>, _config: &SearchConfig) -> InterpolateResult<Self> {
-        // Simplified stub - real implementation would build the hash tables
-        Err(InterpolateError::NotImplementedError(
-            "LSHIndex not fully implemented".to_string(),
-        ))
+    pub fn new(points: &Array2<F>, config: &SearchConfig) -> InterpolateResult<Self> {
+        if points.is_empty() {
+            return Err(InterpolateError::invalid_input("Points array is empty"));
+        }
+
+        let dimensions = points.ncols();
+        let num_points = points.nrows();
+
+        // LSH parameters based on data characteristics and config
+        let num_tables = if num_points > 10000 { 20 } else { 10 };
+        let hash_functions_per_table = if dimensions > 50 { 10 } else { 6 };
+
+        // Bucket width based on approximation factor
+        let bucket_width = F::from_f64(config.approximation_factor * 0.5).ok_or_else(|| {
+            InterpolateError::ComputationError(
+                "Failed to convert bucket width to float type".to_string(),
+            )
+        })?;
+
+        // Initialize hash tables
+        let mut hash_tables = Vec::with_capacity(num_tables);
+        let mut projections = Vec::with_capacity(num_tables);
+
+        // Use a simple PRNG for reproducible results
+        let mut seed = 42u64;
+
+        for _ in 0..num_tables {
+            hash_tables.push(HashMap::new());
+
+            // Generate random projection matrix for this table
+            let mut projection = Array2::zeros((hash_functions_per_table, dimensions));
+            for i in 0..hash_functions_per_table {
+                for j in 0..dimensions {
+                    // Simple linear congruential generator for reproducible randomness
+                    seed = seed.wrapping_mul(1103515245).wrapping_add(12345);
+                    let random_val = (seed as f64) / (u64::MAX as f64) * 2.0 - 1.0;
+                    projection[[i, j]] = F::from_f64(random_val).ok_or_else(|| {
+                        InterpolateError::ComputationError(
+                            "Failed to convert random value to float type".to_string(),
+                        )
+                    })?;
+                }
+            }
+            projections.push(projection);
+        }
+
+        let mut index = Self {
+            hash_tables,
+            projections,
+            hash_functions_per_table,
+            num_tables,
+            bucket_width,
+        };
+
+        // Build hash tables by inserting all _points
+        for (point_idx, point) in points.axis_iter(ndarray::Axis(0)).enumerate() {
+            for table_idx in 0..num_tables {
+                let hash_key = index.compute_hash(&point, table_idx)?;
+                index.hash_tables[table_idx]
+                    .entry(hash_key)
+                    .or_insert_with(Vec::new)
+                    .push(point_idx);
+            }
+        }
+
+        Ok(index)
+    }
+
+    /// Compute hash key for a point using a specific table's projection
+    fn compute_hash(&self, point: &ArrayView1<F>, tableidx: usize) -> InterpolateResult<u64> {
+        let projection = &self.projections[tableidx];
+        let mut hash_key = 0u64;
+
+        for hash_func_idx in 0..self.hash_functions_per_table {
+            let projection_row = projection.slice(ndarray::s![hash_func_idx, ..]);
+
+            // Compute dot product
+            let dot_product = point
+                .iter()
+                .zip(projection_row.iter())
+                .map(|(&p, &proj)| p * proj)
+                .fold(F::zero(), |acc, x| acc + x);
+
+            // Quantize to bucket
+            let bucket = (dot_product / self.bucket_width)
+                .floor()
+                .to_u64()
+                .unwrap_or(0);
+
+            // Combine hash values using bit shifting
+            hash_key ^= bucket.wrapping_shl(hash_func_idx as u32);
+        }
+
+        Ok(hash_key)
     }
 
     pub fn approximate_k_nearest_neighbors(
         &self,
-        _query: &ArrayView1<F>,
-        _k: usize,
-        _points: &Array2<F>,
-        _stats: &mut SearchStats,
+        query: &ArrayView1<F>,
+        k: usize,
+        points: &Array2<F>,
+        stats: &mut SearchStats,
     ) -> InterpolateResult<Vec<(usize, F)>> {
-        Err(InterpolateError::NotImplementedError(
-            "LSHIndex approximate_k_nearest_neighbors not implemented".to_string(),
-        ))
+        let mut candidates = std::collections::HashSet::new();
+
+        // Collect candidate points from all hash tables
+        for table_idx in 0..self.num_tables {
+            let hash_key = self.compute_hash(query, table_idx)?;
+
+            // Look in the exact bucket and neighboring buckets for better recall
+            for offset in -1i64..=1i64 {
+                let neighbor_key = (hash_key as i64).wrapping_add(offset) as u64;
+                if let Some(bucket_points) = self.hash_tables[table_idx].get(&neighbor_key) {
+                    for &point_idx in bucket_points {
+                        candidates.insert(point_idx);
+                    }
+                }
+            }
+        }
+
+        // If we don't have enough candidates, expand search
+        if candidates.len() < k * 2 {
+            for table_idx in 0..self.num_tables {
+                let hash_key = self.compute_hash(query, table_idx)?;
+
+                // Look in wider neighborhood
+                for offset in -2i64..=2i64 {
+                    let neighbor_key = (hash_key as i64).wrapping_add(offset) as u64;
+                    if let Some(bucket_points) = self.hash_tables[table_idx].get(&neighbor_key) {
+                        for &point_idx in bucket_points {
+                            candidates.insert(point_idx);
+                        }
+                    }
+                }
+            }
+        }
+
+        // Compute actual distances to candidates and keep top-k
+        let mut neighbors = BinaryHeap::new();
+
+        for &candidate_idx in &candidates {
+            let point = points.slice(ndarray::s![candidate_idx, ..]);
+            let distance_squared = query
+                .iter()
+                .zip(point.iter())
+                .map(|(&q, &p)| {
+                    let diff = q - p;
+                    diff * diff
+                })
+                .fold(F::zero(), |acc, x| acc + x);
+
+            stats.distance_computations += 1;
+
+            let distance = distance_squared.sqrt();
+
+            if neighbors.len() < k {
+                neighbors.push(std::cmp::Reverse((OrderedFloat(distance), candidate_idx)));
+            } else if let Some(&std::cmp::Reverse((OrderedFloat(max_dist), _))) = neighbors.peek() {
+                if distance < max_dist {
+                    neighbors.pop();
+                    neighbors.push(std::cmp::Reverse((OrderedFloat(distance), candidate_idx)));
+                }
+            }
+        }
+
+        let mut result: Vec<_> = neighbors
+            .into_iter()
+            .map(|std::cmp::Reverse((OrderedFloat(dist), idx))| (idx, dist))
+            .collect();
+
+        result.sort_by(|a, b| a.1.partial_cmp(&b.1).unwrap_or(Ordering::Equal));
+        Ok(result)
     }
 
     pub fn approximate_radius_neighbors(
         &self,
-        _query: &ArrayView1<F>,
-        _radius: F,
-        _points: &Array2<F>,
-        _stats: &mut SearchStats,
+        query: &ArrayView1<F>,
+        radius: F,
+        points: &Array2<F>,
+        stats: &mut SearchStats,
     ) -> InterpolateResult<Vec<(usize, F)>> {
-        Err(InterpolateError::NotImplementedError(
-            "LSHIndex approximate_radius_neighbors not implemented".to_string(),
-        ))
+        let mut candidates = std::collections::HashSet::new();
+        let radius_squared = radius * radius;
+
+        // Collect candidate points from all hash tables
+        // Use a wider search for radius queries since we need to find all points within radius
+        for table_idx in 0..self.num_tables {
+            let hash_key = self.compute_hash(query, table_idx)?;
+
+            // Look in a wider neighborhood for radius queries
+            let search_width = ((radius / self.bucket_width).ceil().to_i64().unwrap_or(3)).max(3);
+
+            for offset in -search_width..=search_width {
+                let neighbor_key = (hash_key as i64).wrapping_add(offset) as u64;
+                if let Some(bucket_points) = self.hash_tables[table_idx].get(&neighbor_key) {
+                    for &point_idx in bucket_points {
+                        candidates.insert(point_idx);
+                    }
+                }
+            }
+        }
+
+        // Filter candidates by actual distance
+        let mut neighbors = Vec::new();
+
+        for &candidate_idx in &candidates {
+            let point = points.slice(ndarray::s![candidate_idx, ..]);
+            let distance_squared = query
+                .iter()
+                .zip(point.iter())
+                .map(|(&q, &p)| {
+                    let diff = q - p;
+                    diff * diff
+                })
+                .fold(F::zero(), |acc, x| acc + x);
+
+            stats.distance_computations += 1;
+
+            if distance_squared <= radius_squared {
+                neighbors.push((candidate_idx, distance_squared.sqrt()));
+            }
+        }
+
+        neighbors.sort_by(|a, b| a.1.partial_cmp(&b.1).unwrap_or(Ordering::Equal));
+        Ok(neighbors)
     }
 }
 
@@ -1295,6 +1491,7 @@ impl<F: Float + FromPrimitive> LSHIndex<F> {
 /// let points = Array2::from_shape_vec((100, 3), (0..300).map(|x| x as f64).collect()).unwrap();
 /// let searcher = make_enhanced_searcher(points, None).unwrap();
 /// ```
+#[allow(dead_code)]
 pub fn make_enhanced_searcher<F>(
     points: Array2<F>,
     config: Option<SearchConfig>,
@@ -1320,6 +1517,7 @@ where
 /// # Returns
 ///
 /// A high-performance nearest neighbor searcher
+#[allow(dead_code)]
 pub fn make_high_performance_searcher<F>(
     points: Array2<F>,
     approximation_factor: f64,

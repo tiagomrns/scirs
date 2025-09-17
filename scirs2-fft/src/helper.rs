@@ -31,6 +31,7 @@ use std::sync::LazyLock;
 /// assert!((freq[0] - 0.0).abs() < 1e-10);
 /// assert!((freq[4] - (-5.0)).abs() < 1e-10);
 /// ```
+#[allow(dead_code)]
 pub fn fftfreq(n: usize, d: f64) -> FFTResult<Vec<f64>> {
     if n == 0 {
         return Err(FFTError::ValueError("n must be positive".to_string()));
@@ -99,6 +100,7 @@ pub fn fftfreq(n: usize, d: f64) -> FFTResult<Vec<f64>> {
 /// assert!((freq[0] - 0.0).abs() < 1e-10);
 /// assert!((freq[4] - 5.0).abs() < 1e-10);
 /// ```
+#[allow(dead_code)]
 pub fn rfftfreq(n: usize, d: f64) -> FFTResult<Vec<f64>> {
     if n == 0 {
         return Err(FFTError::ValueError("n must be positive".to_string()));
@@ -130,6 +132,7 @@ pub fn rfftfreq(n: usize, d: f64) -> FFTResult<Vec<f64>> {
 /// let shifted = fftshift(&x).unwrap();
 /// assert_eq!(shifted, Array1::from_vec(vec![2.0, 3.0, 0.0, 1.0]));
 /// ```
+#[allow(dead_code)]
 pub fn fftshift<F, D>(x: &Array<F, D>) -> FFTResult<Array<F, D>>
 where
     F: Copy + Debug,
@@ -180,6 +183,7 @@ where
 /// let unshifted = ifftshift(&shifted).unwrap();
 /// assert_eq!(x, unshifted);
 /// ```
+#[allow(dead_code)]
 pub fn ifftshift<F, D>(x: &Array<F, D>) -> FFTResult<Array<F, D>>
 where
     F: Copy + Debug,
@@ -230,6 +234,7 @@ where
 /// assert!((bins[0] - 0.0).abs() < 1e-10);
 /// assert!((bins[1] - 43.066).abs() < 0.001);
 /// ```
+#[allow(dead_code)]
 pub fn freq_bins(n: usize, fs: f64) -> FFTResult<Vec<f64>> {
     fftfreq(n, 1.0 / fs)
 }
@@ -264,6 +269,7 @@ static EFFICIENT_FACTORS: LazyLock<HashSet<usize>> = LazyLock::new(|| {
 /// let n = next_fast_len(1000, false);
 /// assert!(n >= 1000);
 /// ```
+#[allow(dead_code)]
 pub fn next_fast_len(target: usize, real: bool) -> usize {
     if target <= 1 {
         return 1;
@@ -325,6 +331,7 @@ pub fn next_fast_len(target: usize, real: bool) -> usize {
 /// let n = prev_fast_len(1000, false);
 /// assert!(n <= 1000);
 /// ```
+#[allow(dead_code)]
 pub fn prev_fast_len(target: usize, real: bool) -> usize {
     if target <= 1 {
         return 1;
@@ -499,16 +506,13 @@ mod tests {
             // Just assert that the output is valid, not a specific value
             assert!(
                 result >= target,
-                "Result should be >= target: {} >= {}",
-                result,
-                target
+                "Result should be >= target: {result} >= {target}"
             );
 
             // Check that result is a product of allowed prime factors
             assert!(
                 is_fast_length(result, false),
-                "Result {} should be a product of efficient prime factors",
-                result
+                "Result {result} should be a product of efficient prime factors"
             );
         }
 
@@ -518,16 +522,13 @@ mod tests {
             // Just assert that the output is valid, not a specific value
             assert!(
                 result >= target,
-                "Result should be >= target: {} >= {}",
-                result,
-                target
+                "Result should be >= target: {result} >= {target}"
             );
 
             // Check that result is a product of allowed prime factors
             assert!(
                 is_fast_length(result, true),
-                "Result {} should be a product of efficient real prime factors",
-                result
+                "Result {result} should be a product of efficient real prime factors"
             );
         }
     }
@@ -542,16 +543,13 @@ mod tests {
             // Just assert that the output is valid, not a specific value
             assert!(
                 result <= target,
-                "Result should be <= target: {} <= {}",
-                result,
-                target
+                "Result should be <= target: {result} <= {target}"
             );
 
             // Check that result is a product of allowed prime factors
             assert!(
                 is_fast_length(result, false),
-                "Result {} should be a product of efficient prime factors",
-                result
+                "Result {result} should be a product of efficient prime factors"
             );
         }
 
@@ -561,16 +559,13 @@ mod tests {
             // Just assert that the output is valid, not a specific value
             assert!(
                 result <= target,
-                "Result should be <= target: {} <= {}",
-                result,
-                target
+                "Result should be <= target: {result} <= {target}"
             );
 
             // Check that result is a product of efficient real prime factors
             assert!(
                 is_fast_length(result, true),
-                "Result {} should be a product of efficient real prime factors",
-                result
+                "Result {result} should be a product of efficient real prime factors"
             );
         }
     }

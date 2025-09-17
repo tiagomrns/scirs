@@ -28,12 +28,13 @@ pub struct BipartiteMatching<N: Node> {
 ///
 /// # Returns
 /// * A maximum bipartite matching
+#[allow(dead_code)]
 pub fn maximum_bipartite_matching<N, E, Ix>(
     graph: &Graph<N, E, Ix>,
     coloring: &HashMap<N, u8>,
 ) -> BipartiteMatching<N>
 where
-    N: Node,
+    N: Node + std::fmt::Debug,
     E: EdgeWeight,
     Ix: petgraph::graph::IndexType,
 {
@@ -81,6 +82,7 @@ where
 }
 
 /// Try to find an augmenting path from an unmatched left node
+#[allow(dead_code)]
 fn augment_path<N, E, Ix>(
     graph: &Graph<N, E, Ix>,
     node: &N,
@@ -90,7 +92,7 @@ fn augment_path<N, E, Ix>(
     coloring: &HashMap<N, u8>,
 ) -> bool
 where
-    N: Node,
+    N: Node + std::fmt::Debug,
     E: EdgeWeight,
     Ix: petgraph::graph::IndexType,
 {
@@ -140,11 +142,12 @@ where
 ///
 /// Finds the minimum weight perfect matching in a bipartite graph.
 /// Returns the total weight and the matching as a vector of (left_node, right_node) pairs.
+#[allow(dead_code)]
 pub fn minimum_weight_bipartite_matching<N, E, Ix>(
     graph: &Graph<N, E, Ix>,
 ) -> Result<(f64, Vec<(N, N)>)>
 where
-    N: Node + Clone + Hash + Eq,
+    N: Node + Clone + Hash + Eq + std::fmt::Debug,
     E: EdgeWeight + Into<f64> + Clone,
     Ix: IndexType,
 {
@@ -205,13 +208,14 @@ where
     }
 }
 
+#[allow(dead_code)]
 fn minimum_weight_matching_bruteforce<N>(
     left_nodes: &[N],
     right_nodes: &[N],
     cost_matrix: &[Vec<f64>],
 ) -> Result<(f64, Vec<(N, N)>)>
 where
-    N: Node + Clone,
+    N: Node + Clone + std::fmt::Debug,
 {
     let n = left_nodes.len();
     let mut best_cost = f64::INFINITY;
@@ -243,13 +247,14 @@ where
     Ok((best_cost, best_matching))
 }
 
+#[allow(dead_code)]
 fn minimum_weight_matching_greedy<N>(
     left_nodes: &[N],
     right_nodes: &[N],
     cost_matrix: &[Vec<f64>],
 ) -> Result<(f64, Vec<(N, N)>)>
 where
-    N: Node + Clone,
+    N: Node + Clone + std::fmt::Debug,
 {
     let n = left_nodes.len();
     let mut matching = Vec::new();
@@ -278,6 +283,7 @@ where
     Ok((total_cost, matching))
 }
 
+#[allow(dead_code)]
 fn next_permutation(perm: &mut [usize]) -> bool {
     let n = perm.len();
 
@@ -330,9 +336,10 @@ pub struct MaximumMatching<N: Node> {
 ///
 /// # Returns
 /// * A maximum cardinality matching
+#[allow(dead_code)]
 pub fn maximum_cardinality_matching<N, E, Ix>(graph: &Graph<N, E, Ix>) -> MaximumMatching<N>
 where
-    N: Node + Clone,
+    N: Node + Clone + std::fmt::Debug,
     E: EdgeWeight,
     Ix: IndexType,
 {
@@ -393,9 +400,10 @@ where
 ///
 /// # Returns
 /// * A maximal matching
+#[allow(dead_code)]
 pub fn maximal_matching<N, E, Ix>(graph: &Graph<N, E, Ix>) -> MaximumMatching<N>
 where
-    N: Node + Clone,
+    N: Node + Clone + std::fmt::Debug,
     E: EdgeWeight,
     Ix: IndexType,
 {
@@ -431,6 +439,7 @@ where
 ///
 /// # Returns
 /// * A stable matching as pairs (left_index, right_index)
+#[allow(dead_code)]
 pub fn stable_marriage(
     left_prefs: &[Vec<usize>],
     right_prefs: &[Vec<usize>],
@@ -451,16 +460,14 @@ pub fn stable_marriage(
     for (i, prefs) in left_prefs.iter().enumerate() {
         if prefs.len() != n {
             return Err(GraphError::InvalidGraph(format!(
-                "Left preference list {} has wrong length",
-                i
+                "Left preference list {i} has wrong length"
             )));
         }
         let mut sorted_prefs = prefs.clone();
         sorted_prefs.sort_unstable();
         if sorted_prefs != (0..n).collect::<Vec<_>>() {
             return Err(GraphError::InvalidGraph(format!(
-                "Left preference list {} is not a valid permutation",
-                i
+                "Left preference list {i} is not a valid permutation"
             )));
         }
     }
@@ -468,16 +475,14 @@ pub fn stable_marriage(
     for (i, prefs) in right_prefs.iter().enumerate() {
         if prefs.len() != n {
             return Err(GraphError::InvalidGraph(format!(
-                "Right preference list {} has wrong length",
-                i
+                "Right preference list {i} has wrong length"
             )));
         }
         let mut sorted_prefs = prefs.clone();
         sorted_prefs.sort_unstable();
         if sorted_prefs != (0..n).collect::<Vec<_>>() {
             return Err(GraphError::InvalidGraph(format!(
-                "Right preference list {} is not a valid permutation",
-                i
+                "Right preference list {i} is not a valid permutation"
             )));
         }
     }

@@ -40,6 +40,10 @@ pub enum FFTError {
     /// Memory error (e.g., allocation failed)
     #[error("Memory error: {0}")]
     MemoryError(String),
+
+    /// Internal error
+    #[error("Internal error: {0}")]
+    InternalError(String),
 }
 
 /// Result type for FFT operations

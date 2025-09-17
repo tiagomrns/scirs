@@ -6,9 +6,9 @@
 
 A production-ready collection of dataset utilities for the SciRS2 scientific computing library. This module provides comprehensive functionality for loading, generating, and working with datasets commonly used in scientific computing, machine learning, and statistical analysis.
 
-## 🚀 Production Status - Final Alpha (0.1.0-alpha.6)
+## 🚀 Production Status - First Beta (0.1.0-beta.1)
 
-This is the final alpha release with all core functionality implemented, thoroughly tested (117+ tests), and production-ready. The API is stable and follows Rust best practices with zero-warning builds.
+This is the first beta release with all core functionality implemented, thoroughly tested (117+ tests), and production-ready. The API is stable and follows Rust best practices with zero-warning builds.
 
 ## ✨ Features
 
@@ -25,14 +25,14 @@ Add to your `Cargo.toml`:
 
 ```toml
 [dependencies]
-scirs2-datasets = "0.1.0-alpha.6"
+scirs2-datasets = "0.1.0-beta.1"
 ```
 
 For remote dataset downloading capabilities:
 
 ```toml
 [dependencies]
-scirs2-datasets = { version = "0.1.0-alpha.6", features = ["download"] }
+scirs2-datasets = { version = "0.1.0-beta.1", features = ["download"] }
 ```
 
 ## Quick Start

@@ -98,7 +98,7 @@ pub trait WeightedOps<N: Node, E: EdgeWeight> {
     fn weight_statistics(&self) -> Result<WeightStatistics<E>>;
 
     /// Filter edges by weight threshold
-    fn filter_by_weight(&self, min_weight: Option<E>, max_weight: Option<E>) -> Result<Self>
+    fn filter_by_weight(&self, min_weight: Option<E>, maxweight: Option<E>) -> Result<Self>
     where
         Self: Sized;
 
@@ -106,7 +106,7 @@ pub trait WeightedOps<N: Node, E: EdgeWeight> {
     fn edges_by_weight(&self, ascending: bool) -> Result<Vec<(N, N, E)>>;
 
     /// Extract subgraph with edges in weight range
-    fn subgraph_by_weight_range(&self, min_weight: E, max_weight: E) -> Result<Self>
+    fn subgraph_by_weight_range(&self, min_weight: E, maxweight: E) -> Result<Self>
     where
         Self: Sized;
 
@@ -174,7 +174,7 @@ where
         })
     }
 
-    fn filter_by_weight(&self, min_weight: Option<E>, max_weight: Option<E>) -> Result<Self> {
+    fn filter_by_weight(&self, min_weight: Option<E>, maxweight: Option<E>) -> Result<Self> {
         let mut filtered_graph = Graph::new();
 
         // Add all nodes first
@@ -182,7 +182,7 @@ where
             filtered_graph.add_node(node.clone());
         }
 
-        // Add edges that meet weight criteria
+        // Add edges that meet _weight criteria
         for edge in self.edges() {
             let mut include = true;
 
@@ -192,7 +192,7 @@ where
                 }
             }
 
-            if let Some(ref max) = max_weight {
+            if let Some(ref max) = maxweight {
                 if edge.weight > *max {
                     include = false;
                 }
@@ -228,8 +228,8 @@ where
         Ok(edges)
     }
 
-    fn subgraph_by_weight_range(&self, min_weight: E, max_weight: E) -> Result<Self> {
-        self.filter_by_weight(Some(min_weight), Some(max_weight))
+    fn subgraph_by_weight_range(&self, min_weight: E, maxweight: E) -> Result<Self> {
+        self.filter_by_weight(Some(min_weight), Some(maxweight))
     }
 
     fn normalize_weights(&self, method: NormalizationMethod) -> Result<Self> {
@@ -345,7 +345,7 @@ where
                 WeightTransform::Inverse => {
                     if weight_f64 == 0.0 {
                         return Err(GraphError::InvalidGraph(
-                            "Cannot invert zero weight".to_string(),
+                            "Cannot invert zero _weight".to_string(),
                         ));
                     }
                     1.0 / weight_f64
@@ -353,7 +353,7 @@ where
                 WeightTransform::SquareRoot => {
                     if weight_f64 < 0.0 {
                         return Err(GraphError::InvalidGraph(
-                            "Cannot take square root of negative weight".to_string(),
+                            "Cannot take square root of negative _weight".to_string(),
                         ));
                     }
                     weight_f64.sqrt()
@@ -481,7 +481,7 @@ where
         })
     }
 
-    fn filter_by_weight(&self, min_weight: Option<E>, max_weight: Option<E>) -> Result<Self> {
+    fn filter_by_weight(&self, min_weight: Option<E>, maxweight: Option<E>) -> Result<Self> {
         let mut filtered_graph = DiGraph::new();
 
         // Add all nodes first
@@ -489,7 +489,7 @@ where
             filtered_graph.add_node(node.clone());
         }
 
-        // Add edges that meet weight criteria
+        // Add edges that meet _weight criteria
         for edge in self.edges() {
             let mut include = true;
 
@@ -499,7 +499,7 @@ where
                 }
             }
 
-            if let Some(ref max) = max_weight {
+            if let Some(ref max) = maxweight {
                 if edge.weight > *max {
                     include = false;
                 }
@@ -535,8 +535,8 @@ where
         Ok(edges)
     }
 
-    fn subgraph_by_weight_range(&self, min_weight: E, max_weight: E) -> Result<Self> {
-        self.filter_by_weight(Some(min_weight), Some(max_weight))
+    fn subgraph_by_weight_range(&self, min_weight: E, maxweight: E) -> Result<Self> {
+        self.filter_by_weight(Some(min_weight), Some(maxweight))
     }
 
     fn normalize_weights(&self, method: NormalizationMethod) -> Result<Self> {

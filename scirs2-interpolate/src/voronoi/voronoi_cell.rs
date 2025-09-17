@@ -142,8 +142,7 @@ impl<F: Float + FromPrimitive + Debug + ndarray::ScalarOperand> VoronoiCell<F> {
             self.measure = volume.abs();
         } else {
             return Err(InterpolateError::UnsupportedOperation(format!(
-                "Computing measure for {}-dimensional Voronoi cells not yet implemented",
-                dim
+                "Computing measure for {dim}-dimensional Voronoi cells not yet implemented"
             )));
         }
 
@@ -327,14 +326,14 @@ impl<F: Float + FromPrimitive + Debug + ndarray::ScalarOperand> VoronoiCell<F> {
             Ok((intersection_vertices, volume.abs()))
         } else {
             return Err(InterpolateError::UnsupportedOperation(format!(
-                "Intersection for {}-dimensional Voronoi cells not yet implemented",
-                dim
+                "Intersection for {dim}-dimensional Voronoi cells not yet implemented"
             )));
         }
     }
 }
 
 /// Returns true if a point is inside an edge (to the left of the edge in 2D)
+#[allow(dead_code)]
 fn inside_edge<F: Float + Debug>(
     point: &Array1<F>,
     edge_start: &Array1<F>,
@@ -352,6 +351,7 @@ fn inside_edge<F: Float + Debug>(
 }
 
 /// Computes the intersection of two line segments
+#[allow(dead_code)]
 fn compute_intersection<F: Float + FromPrimitive + Debug>(
     s1: &Array1<F>,
     s2: &Array1<F>,
@@ -386,6 +386,7 @@ fn compute_intersection<F: Float + FromPrimitive + Debug>(
 /// Computes the bounding box of a set of points
 ///
 /// Returns the minimum and maximum coordinates as Arrays
+#[allow(dead_code)]
 fn compute_bounding_box<F: Float + Debug>(points: ArrayView2<F>) -> (Array1<F>, Array1<F>) {
     let dim = points.ncols();
     let n_points = points.nrows();
@@ -488,7 +489,7 @@ impl<F: Float + FromPrimitive + Debug + ndarray::ScalarOperand + 'static> Vorono
             }
         } else {
             return Err(InterpolateError::UnsupportedOperation(
-                format!("Default bounds calculation for {}-dimensional Voronoi diagrams not yet implemented", dim)));
+                format!("Default bounds calculation for {dim}-dimensional Voronoi diagrams not yet implemented")));
         };
 
         let bounds = bounds.unwrap_or(default_bounds);
@@ -588,17 +589,17 @@ impl<F: Float + FromPrimitive + Debug + ndarray::ScalarOperand + 'static> Vorono
 
                 // Add intersections between half-plane boundaries
                 for k in 0..half_planes.len() {
-                    let (mp_k, n_k, _) = &half_planes[k];
+                    let (mp_k, n_k_, _) = &half_planes[k];
 
                     for half_plane_l in half_planes.iter().skip(k + 1) {
-                        let (mp_l, n_l, _) = half_plane_l;
+                        let (mp_l, n_l_, _) = half_plane_l;
 
                         // Compute intersection of two lines:
                         // Line 1: mp_k + t * perpendicular(n_k)
                         // Line 2: mp_l + s * perpendicular(n_l)
 
-                        let p_n_k = Array1::from_vec(vec![n_k[1], -n_k[0]]); // Perpendicular to n_k
-                        let p_n_l = Array1::from_vec(vec![n_l[1], -n_l[0]]); // Perpendicular to n_l
+                        let p_n_k = Array1::from_vec(vec![n_k_[1], -n_k_[0]]); // Perpendicular to n_k
+                        let p_n_l = Array1::from_vec(vec![n_l_[1], -n_l_[0]]); // Perpendicular to n_l
 
                         // Check if lines are parallel
                         let det = p_n_k[0] * p_n_l[1] - p_n_k[1] * p_n_l[0];
@@ -622,7 +623,7 @@ impl<F: Float + FromPrimitive + Debug + ndarray::ScalarOperand + 'static> Vorono
                     for (edge_start, edge_end) in &domain_edges {
                         if let Ok(intersection) = line_segment_intersection(
                             mp_k,
-                            &Array1::from_vec(vec![mp_k[0] + n_k[1], mp_k[1] - n_k[0]]),
+                            &Array1::from_vec(vec![mp_k[0] + n_k_[1], mp_k[1] - n_k_[0]]),
                             edge_start,
                             edge_end,
                         ) {
@@ -985,14 +986,14 @@ impl<F: Float + FromPrimitive + Debug + ndarray::ScalarOperand + 'static> Vorono
             Ok(weights)
         } else {
             return Err(InterpolateError::UnsupportedOperation(format!(
-                "Natural neighbor computation for {}-dimensional diagrams not yet implemented",
-                dim
+                "Natural neighbor computation for {dim}-dimensional diagrams not yet implemented"
             )));
         }
     }
 }
 
 /// Computes the intersection of two line segments if it exists
+#[allow(dead_code)]
 fn line_segment_intersection<F: Float + FromPrimitive + Debug>(
     a1: &Array1<F>,
     a2: &Array1<F>,

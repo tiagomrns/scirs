@@ -2,7 +2,9 @@ use scirs2_special::{
     ai, aip, betainc, bi, bip, erf, erfc, erfcinv, erfinv, hurwitz_zeta, k0, k1, mathieu_a,
     mathieu_b, mathieu_cem, mathieu_even_coef, mathieu_odd_coef, mathieu_sem, y0, y1, zeta, zetac,
 };
+use std::f64::consts::PI;
 
+#[allow(dead_code)]
 fn main() {
     let x1 = 3.957678419314858;
     let x2 = 5.429;
@@ -101,7 +103,6 @@ fn main() {
     }
 
     // Test function values
-    use std::f64::consts::PI;
     let x_values = [0.0, PI / 4.0, PI / 2.0];
 
     println!("\nMathieu function values:");

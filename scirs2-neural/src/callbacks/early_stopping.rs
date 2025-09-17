@@ -5,7 +5,6 @@ use crate::error::Result;
 use ndarray::ScalarOperand;
 use num_traits::Float;
 use std::fmt::Debug;
-
 /// Early stopping callback that stops training when
 /// a monitored metric has stopped improving.
 pub struct EarlyStopping<F: Float + Debug + ScalarOperand> {
@@ -24,41 +23,32 @@ pub struct EarlyStopping<F: Float + Debug + ScalarOperand> {
     /// Whether to monitor if values are decreasing (lower is better) or increasing (higher is better)
     monitor_decrease: bool,
 }
-
 impl<F: Float + Debug + ScalarOperand> EarlyStopping<F> {
     /// Create a new early stopping callback that monitors validation loss (lower is better)
     ///
     /// # Arguments
-    ///
     /// * `patience` - Number of epochs with no improvement after which training will be stopped
     /// * `min_delta` - Minimum change in the monitored quantity to qualify as an improvement
     /// * `restore_best_weights` - Whether to restore the model weights from the epoch with the best value
-    pub fn new(patience: usize, min_delta: F, restore_best_weights: bool) -> Self {
+    pub fn new(_patience: usize, min_delta: F, restore_bestweights: bool) -> Self {
         Self {
             patience,
             min_delta,
-            patience_counter: 0,
+            _patience_counter: 0,
             best_value: None,
             restore_best_weights,
             monitor_val_loss: true,
             monitor_decrease: true,
         }
     }
-
     /// Configure to monitor training loss instead of validation loss
     pub fn monitor_train_loss(mut self) -> Self {
         self.monitor_val_loss = false;
         self
-    }
-
     /// Configure to monitor if values are increasing (higher is better)
     /// Default is monitoring decreases (lower is better)
     pub fn monitor_increase(mut self) -> Self {
         self.monitor_decrease = false;
-        self
-    }
-}
-
 impl<F: Float + Debug + ScalarOperand> Callback<F> for EarlyStopping<F> {
     fn on_event(&mut self, timing: CallbackTiming, context: &mut CallbackContext<F>) -> Result<()> {
         if timing == CallbackTiming::AfterEpoch {
@@ -68,7 +58,6 @@ impl<F: Float + Debug + ScalarOperand> Callback<F> for EarlyStopping<F> {
             } else {
                 context.epoch_loss
             };
-
             // If we don't have a value to monitor, do nothing
             if let Some(current) = current_value {
                 match self.best_value {
@@ -86,21 +75,17 @@ impl<F: Float + Debug + ScalarOperand> Callback<F> for EarlyStopping<F> {
                             // Higher is better
                             current > best + self.min_delta
                         };
-
                         if improved {
                             // Reset counter and update best value
                             self.best_value = Some(current);
                             self.patience_counter = 0;
-
                             // If we're restoring best weights, save them here
                             if self.restore_best_weights {
                                 // In a real implementation, we'd save the model weights here
                                 // self.best_weights = Some(model.get_weights());
                             }
-                        } else {
                             // Increment counter
                             self.patience_counter += 1;
-
                             // If patience is exceeded, stop training
                             if self.patience_counter >= self.patience {
                                 println!(
@@ -108,9 +93,7 @@ impl<F: Float + Debug + ScalarOperand> Callback<F> for EarlyStopping<F> {
                                     self.patience
                                 );
                                 context.stop_training = true;
-                            }
                         }
-                    }
                 }
             }
         } else if timing == CallbackTiming::AfterTraining {
@@ -120,9 +103,4 @@ impl<F: Float + Debug + ScalarOperand> Callback<F> for EarlyStopping<F> {
                 // if let Some(weights) = &self.best_weights {
                 //     model.set_weights(weights);
                 // }
-            }
-        }
-
         Ok(())
-    }
-}

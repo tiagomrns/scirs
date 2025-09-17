@@ -22,7 +22,7 @@
 //! // Configure zero-copy streaming
 //! let config = ZeroCopyConfig {
 //!     mode: ProcessingMode::RealTime,
-//!     buffer_pool_size: 1024,
+//!     buffer_poolsize: 1024,
 //!     numa_aware: true,
 //!     work_stealing: true,
 //!     ..Default::default()
@@ -38,6 +38,7 @@
 //! ```
 
 use crate::error::{CoreError, CoreResult, ErrorContext, ErrorLocation};
+use crate::error_context;
 use crate::memory_efficient::streaming::StreamState;
 use std::alloc::{alloc_zeroed, dealloc, Layout};
 use std::ptr::NonNull;
@@ -87,9 +88,9 @@ pub struct ZeroCopyConfig {
     /// Processing mode
     pub mode: ProcessingMode,
     /// Buffer pool size (number of buffers)
-    pub buffer_pool_size: usize,
+    pub buffer_poolsize: usize,
     /// Buffer size in bytes
-    pub buffer_size: usize,
+    pub buffersize: usize,
     /// Enable NUMA-aware allocation
     pub numa_aware: bool,
     /// NUMA topology information
@@ -118,8 +119,8 @@ impl Default for ZeroCopyConfig {
     fn default() -> Self {
         Self {
             mode: ProcessingMode::Adaptive,
-            buffer_pool_size: 256,
-            buffer_size: 1024 * 1024, // 1MB
+            buffer_poolsize: 256,
+            buffersize: 1024 * 1024, // 1MB
             numa_aware: false,
             numa_topology: NumaTopology::default(),
             work_stealing: true,
@@ -151,10 +152,10 @@ pub struct ZeroCopyBuffer {
 
 impl ZeroCopyBuffer {
     /// Create a new zero-copy buffer
-    pub fn new(size: usize, numa_node: Option<usize>, alignment: usize) -> CoreResult<Self> {
+    pub fn new(size: usize, numanode: Option<usize>, alignment: usize) -> CoreResult<Self> {
         let layout = Layout::from_size_align(size, alignment).map_err(|e| {
             CoreError::MemoryError(
-                ErrorContext::new(format!("Invalid memory layout: {}", e))
+                ErrorContext::new(format!("{e}"))
                     .with_location(ErrorLocation::new(file!(), line!())),
             )
         })?;
@@ -169,7 +170,7 @@ impl ZeroCopyBuffer {
             }
             // SAFETY: We've explicitly checked that raw_ptr is not null above
             // The layout is validated by Layout::from_size_align() earlier
-            // The memory is properly aligned and allocated for the specified size
+            // The memory is properly aligned and allocated for the specified _size
             NonNull::new_unchecked(raw_ptr)
         };
 
@@ -177,7 +178,7 @@ impl ZeroCopyBuffer {
             ptr,
             size,
             ref_count: Arc::new(AtomicUsize::new(1)),
-            numa_node,
+            numa_node: numanode,
             layout,
         })
     }
@@ -221,23 +222,25 @@ impl ZeroCopyBuffer {
 
     /// Create a shared reference to this buffer
     ///
-    /// # Panics
-    /// Panics if the reference count would overflow
-    pub fn share(&self) -> Self {
+    /// # Errors
+    /// Returns `CoreError::MemoryError` if the reference count would overflow
+    pub fn share(&self) -> CoreResult<Self> {
         let old_count = self.ref_count.fetch_add(1, Ordering::Relaxed);
         if old_count == usize::MAX {
             // Prevent overflow - this is extremely unlikely in practice
             self.ref_count.fetch_sub(1, Ordering::Relaxed);
-            panic!("Reference count overflow in ZeroCopyBuffer");
+            return Err(CoreError::MemoryError(error_context!(
+                "Reference count overflow in ZeroCopyBuffer"
+            )));
         }
 
-        Self {
+        Ok(Self {
             ptr: self.ptr,
             size: self.size,
             ref_count: self.ref_count.clone(),
             numa_node: self.numa_node,
             layout: self.layout,
-        }
+        })
     }
 
     /// Get the size of the buffer
@@ -290,7 +293,7 @@ pub struct LockFreeQueue<T> {
     /// Current size
     size: AtomicUsize,
     /// Maximum size
-    max_size: usize,
+    maxsize: usize,
 }
 
 struct Node<T> {
@@ -300,7 +303,7 @@ struct Node<T> {
 
 impl<T> LockFreeQueue<T> {
     /// Create a new lock-free queue
-    pub fn new(max_size: usize) -> Self {
+    pub fn new(maxsize: usize) -> Self {
         let dummy = Box::into_raw(Box::new(Node {
             data: None,
             next: AtomicPtr::new(std::ptr::null_mut()),
@@ -310,14 +313,14 @@ impl<T> LockFreeQueue<T> {
             head: AtomicPtr::new(dummy),
             tail: AtomicPtr::new(dummy),
             size: AtomicUsize::new(0),
-            max_size,
+            maxsize,
         }
     }
 
     /// Push an item to the queue
     pub fn push(&self, item: T) -> Result<(), T> {
         // Check size limit before allocating
-        if self.size.load(Ordering::Acquire) >= self.max_size {
+        if self.size.load(Ordering::Acquire) >= self.maxsize {
             return Err(item);
         }
 
@@ -476,7 +479,7 @@ impl<T> LockFreeQueue<T> {
 
     /// Check if the queue is full
     pub fn is_full(&self) -> bool {
-        self.len() >= self.max_size
+        self.len() >= self.maxsize
     }
 }
 
@@ -527,7 +530,7 @@ pub struct BufferPool {
     /// Available buffers
     available: LockFreeQueue<ZeroCopyBuffer>,
     /// Buffer configuration
-    buffer_size: usize,
+    buffersize: usize,
     /// NUMA-aware allocation
     numa_aware: bool,
     /// Buffer alignment
@@ -548,23 +551,23 @@ pub struct BufferPoolStats {
     /// Pool misses
     pub pool_misses: usize,
     /// Peak pool size
-    pub peak_pool_size: usize,
+    pub peak_poolsize: usize,
 }
 
 impl BufferPool {
     /// Create a new buffer pool
     pub fn new(
-        pool_size: usize,
-        buffer_size: usize,
+        poolsize: usize,
+        buffersize: usize,
         numa_aware: bool,
         alignment: usize,
     ) -> CoreResult<Self> {
-        let available = LockFreeQueue::new(pool_size);
+        let available = LockFreeQueue::new(poolsize);
 
         // Pre-allocate buffers
-        for _ in 0..pool_size {
+        for _ in 0..poolsize {
             let buffer = ZeroCopyBuffer::new(
-                buffer_size,
+                buffersize,
                 if numa_aware { Some(0) } else { None },
                 alignment,
             )?;
@@ -578,7 +581,7 @@ impl BufferPool {
 
         Ok(Self {
             available,
-            buffer_size,
+            buffersize,
             numa_aware,
             alignment,
             stats: Arc::new(RwLock::new(BufferPoolStats::default())),
@@ -604,7 +607,7 @@ impl BufferPool {
             }
 
             ZeroCopyBuffer::new(
-                self.buffer_size,
+                self.buffersize,
                 if self.numa_aware { Some(0) } else { None },
                 self.alignment,
             )
@@ -613,16 +616,16 @@ impl BufferPool {
 
     /// Return a buffer to the pool
     pub fn return_buffer(&self, buffer: ZeroCopyBuffer) {
-        if buffer.is_unique() && buffer.size() == self.buffer_size {
+        if buffer.is_unique() && buffer.size() == self.buffersize {
             if self.available.push(buffer).is_err() {
                 // Pool is full, buffer will be dropped
             } else {
                 let stats = self.stats.read().unwrap();
                 let current_size = self.available.len();
-                if current_size > stats.peak_pool_size {
+                if current_size > stats.peak_poolsize {
                     drop(stats);
                     let mut stats = self.stats.write().unwrap();
-                    stats.peak_pool_size = current_size;
+                    stats.peak_poolsize = current_size;
                 }
             }
         }
@@ -643,7 +646,7 @@ impl BufferPool {
 /// Work-stealing task for the scheduler
 pub trait WorkStealingTask: Send + 'static {
     /// Execute the task
-    fn execute(self: Box<Self>);
+    fn execute(&self);
 }
 
 /// Work-stealing scheduler for efficient parallel processing
@@ -672,21 +675,21 @@ struct Worker {
 
 impl WorkStealingScheduler {
     /// Create a new work-stealing scheduler
-    pub fn new(num_workers: usize, max_queue_size: usize) -> Self {
-        let global_queue = Arc::new(LockFreeQueue::new(max_queue_size));
+    pub fn new(numworkers: usize, max_queuesize: usize) -> Self {
+        let global_queue = Arc::new(LockFreeQueue::new(max_queuesize));
         let shutdown = Arc::new(AtomicBool::new(false));
-        let mut handles = Vec::with_capacity(num_workers);
+        let mut handles = Vec::with_capacity(numworkers);
 
         // Create worker local queues first
         let mut local_queues: Vec<Arc<LockFreeQueue<Box<dyn WorkStealingTask>>>> = Vec::new();
-        for _ in 0..num_workers {
+        for _ in 0..numworkers {
             local_queues.push(Arc::new(LockFreeQueue::new(
-                max_queue_size / num_workers.max(1),
+                max_queuesize / numworkers.max(1),
             )));
         }
 
         // Create and start worker threads
-        for i in 0..num_workers {
+        for i in 0..numworkers {
             let mut other_workers = Vec::new();
             for (j, queue) in local_queues.iter().enumerate() {
                 if i != j {
@@ -790,7 +793,7 @@ where
     #[allow(dead_code)]
     scheduler: Option<Arc<WorkStealingScheduler>>,
     /// Processing function
-    process_fn: Arc<dyn Fn(T) -> CoreResult<U> + Send + Sync>,
+    processfn: Arc<dyn Fn(T) -> CoreResult<U> + Send + Sync>,
     /// Input queue
     input_queue: Arc<LockFreeQueue<T>>,
     /// Output queue
@@ -830,27 +833,27 @@ where
     U: Send + 'static,
 {
     /// Create a new zero-copy stream processor
-    pub fn new<F>(config: ZeroCopyConfig, process_fn: F) -> CoreResult<Self>
+    pub fn new<F>(config: ZeroCopyConfig, processfn: F) -> CoreResult<Self>
     where
         F: Fn(T) -> CoreResult<U> + Send + Sync + 'static,
     {
         // Create buffer pool
         let buffer_pool = Arc::new(BufferPool::new(
-            config.buffer_pool_size,
-            config.buffer_size,
+            config.buffer_poolsize,
+            config.buffersize,
             config.numa_aware,
             config.memory_alignment,
         )?);
 
         // Create work-stealing scheduler if enabled
         let scheduler = if config.work_stealing {
-            let num_workers = config.worker_threads.unwrap_or_else(|| {
+            let numworkers = config.worker_threads.unwrap_or_else(|| {
                 std::thread::available_parallelism()
                     .map(|n| n.get())
                     .unwrap_or(4)
             });
             Some(Arc::new(WorkStealingScheduler::new(
-                num_workers,
+                numworkers,
                 config.max_queue_size,
             )))
         } else {
@@ -865,7 +868,7 @@ where
             config,
             buffer_pool,
             scheduler,
-            process_fn: Arc::new(process_fn),
+            processfn: Arc::new(processfn),
             input_queue,
             output_queue,
             state: Arc::new(RwLock::new(StreamState::Initialized)),
@@ -888,26 +891,26 @@ where
         drop(state);
 
         // Start worker threads
-        let num_workers = self.config.worker_threads.unwrap_or_else(|| {
+        let numworkers = self.config.worker_threads.unwrap_or_else(|| {
             std::thread::available_parallelism()
                 .map(|n| n.get())
                 .unwrap_or(4)
         });
 
-        for worker_id in 0..num_workers {
+        for workerid in 0..numworkers {
             let input_queue = self.input_queue.clone();
             let output_queue = self.output_queue.clone();
-            let process_fn = self.process_fn.clone();
+            let processfn = self.processfn.clone();
             let state = self.state.clone();
             let stats = self.stats.clone();
             let shutdown = self.shutdown.clone();
 
             let handle = thread::spawn(move || {
                 Self::worker_loop(
-                    worker_id,
+                    workerid,
                     input_queue,
                     output_queue,
-                    process_fn,
+                    processfn,
                     state,
                     stats,
                     shutdown,
@@ -922,10 +925,10 @@ where
 
     /// Worker loop for processing data
     fn worker_loop(
-        _worker_id: usize,
+        workerid: usize,
         input_queue: Arc<LockFreeQueue<T>>,
         output_queue: Arc<LockFreeQueue<U>>,
-        process_fn: Arc<dyn Fn(T) -> CoreResult<U> + Send + Sync>,
+        processfn: Arc<dyn Fn(T) -> CoreResult<U> + Send + Sync>,
         state: Arc<RwLock<StreamState>>,
         stats: Arc<RwLock<ZeroCopyStats>>,
         shutdown: Arc<AtomicBool>,
@@ -944,7 +947,7 @@ where
                 let start_time = Instant::now();
 
                 // Process the input
-                match process_fn(input) {
+                match processfn(input) {
                     Ok(output) => {
                         // Try to put output in output queue
                         if output_queue.push(output).is_err() {
@@ -1055,15 +1058,16 @@ where
 }
 
 /// Create a new zero-copy stream processor with default configuration
+#[allow(dead_code)]
 pub fn create_zero_copy_processor<T, U, F>(
-    process_fn: F,
+    processfn: F,
 ) -> CoreResult<ZeroCopyStreamProcessor<T, U>>
 where
     T: Send + 'static,
     U: Send + 'static,
     F: Fn(T) -> CoreResult<U> + Send + Sync + 'static,
 {
-    ZeroCopyStreamProcessor::new(ZeroCopyConfig::default(), process_fn)
+    ZeroCopyStreamProcessor::new(ZeroCopyConfig::default(), processfn)
 }
 
 #[cfg(test)]
@@ -1077,7 +1081,7 @@ mod tests {
         assert!(buffer.is_unique());
         assert_eq!(buffer.ref_count(), 1);
 
-        let shared = buffer.share();
+        let shared = buffer.share().unwrap();
         assert_eq!(shared.size(), 1024);
         assert!(!buffer.is_unique());
         assert_eq!(buffer.ref_count(), 2);

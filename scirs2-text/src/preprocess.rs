@@ -55,10 +55,10 @@ pub struct BasicNormalizer {
 
 impl BasicNormalizer {
     /// Create a new basic normalizer
-    pub fn new(lowercase: bool, unicode_normalization: bool) -> Self {
+    pub fn new(_lowercase: bool, unicodenormalization: bool) -> Self {
         Self {
-            lowercase,
-            unicode_normalization,
+            lowercase: _lowercase,
+            unicode_normalization: unicodenormalization,
         }
     }
 }
@@ -106,7 +106,7 @@ impl BasicTextCleaner {
         Self {
             remove_special_chars,
             remove_stopwords,
-            normalize_whitespace,
+            normalize_whitespace: true,
             stopwords: DEFAULT_STOPWORDS.clone(),
         }
     }
@@ -220,7 +220,7 @@ mod tests {
     }
 
     #[test]
-    fn test_text_cleaner() {
+    fn testtext_cleaner() {
         let cleaner = BasicTextCleaner::default();
         let text = "Hello, world! This is a test.";
         let cleaned = cleaner.clean(text).unwrap();
@@ -228,7 +228,7 @@ mod tests {
     }
 
     #[test]
-    fn test_text_preprocessor() {
+    fn testtext_preprocessor() {
         let preprocessor = TextPreprocessor::default();
         let text = "Héllo, World! This is a test.";
         let processed = preprocessor.process(text).unwrap();

@@ -1,11 +1,13 @@
-//! Histogram-based feature extraction for images
+// Histogram-based feature extraction for images
 
 use super::types::ImageFeatureOptions;
 use crate::error::SignalResult;
 use ndarray::Array2;
 use std::collections::HashMap;
 
+#[allow(unused_imports)]
 /// Extract histogram features from an image
+#[allow(dead_code)]
 pub fn extract_histogram_features(
     image: &Array2<f64>,
     options: &ImageFeatureOptions,

@@ -2,6 +2,7 @@ use scirs2_core::profiling::{Profiler, Timer};
 use std::thread;
 use std::time::Duration;
 
+#[allow(dead_code)]
 fn main() {
     println!("Profiling System Example");
 
@@ -38,6 +39,7 @@ fn main() {
 }
 
 #[cfg(feature = "profiling")]
+#[allow(dead_code)]
 fn basic_timing_example() {
     // Time a block of code using a timer
     let timer = Timer::start("basic_operation");
@@ -52,6 +54,7 @@ fn basic_timing_example() {
 }
 
 #[cfg(feature = "profiling")]
+#[allow(dead_code)]
 fn function_timing_example() {
     // Use Timer::time_function to time a function call
     let result = Timer::time_function("calculate_result", || {
@@ -64,6 +67,7 @@ fn function_timing_example() {
 }
 
 #[cfg(feature = "profiling")]
+#[allow(dead_code)]
 fn hierarchical_timing_example() {
     // Create a parent timer
     let parent_timer = Timer::start("parent_operation");
@@ -93,6 +97,7 @@ fn hierarchical_timing_example() {
 }
 
 #[cfg(feature = "profiling")]
+#[allow(dead_code)]
 fn memory_tracking_example() {
     // Create some example operations with memory tracking
     {
@@ -109,7 +114,7 @@ fn memory_tracking_example() {
     }
 
     {
-        let mem_tracker = scirs2_core::profiling::MemoryTracker::start("allocate_matrix");
+        let mem_tracker = scirs2_core::profiling::MemoryTracker::start("allocatematrix");
         println!("Allocating a matrix...");
 
         // Allocate a matrix (this is an example of what would be tracked)

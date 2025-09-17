@@ -92,7 +92,7 @@ impl<F: Float> StabilityMetrics<F> {
     {
         let mut metrics = BackwardStabilityMetrics::default();
 
-        // Find the smallest perturbation that achieves the target output
+        // Find the smallest perturbation that achieves the target _output
         // (This is a simplification - in practice would use optimization)
         let computed_output = function(input)?;
 
@@ -352,7 +352,7 @@ impl<F: Float> StabilityMetrics<F> {
         input: &Tensor<'a, F>,
         _magnitude: f64,
     ) -> Result<Tensor<'a, F>, StabilityError> {
-        // Create random perturbation with specified magnitude
+        // Create random perturbation with specified _magnitude
         let perturbed = *input;
         // Simplified - would add actual random noise
         Ok(perturbed)
@@ -438,7 +438,7 @@ impl<F: Float> StabilityMetrics<F> {
 
     fn compute_eigenvalues(
         &self,
-        _matrix: &Array<F, IxDyn>,
+        matrix: &Array<F, IxDyn>,
     ) -> Result<Vec<Complex64>, StabilityError> {
         // Simplified - would compute actual eigenvalues
         Ok(vec![
@@ -494,7 +494,7 @@ impl<F: Float> StabilityMetrics<F> {
 
     fn estimate_local_condition_number<Func>(
         &self,
-        _function: &Func,
+        function: &Func,
         _input: &Tensor<F>,
     ) -> Result<f64, StabilityError>
     where
@@ -538,7 +538,7 @@ impl<F: Float> StabilityMetrics<F> {
             x if x < 10.0 => StabilityGrade::Good,
             x if x < 100.0 => StabilityGrade::Fair,
             x if x < 1000.0 => StabilityGrade::Poor,
-            _ => StabilityGrade::Unstable,
+            _ => StabilityGrade::Critical,
         }
     }
 
@@ -551,7 +551,7 @@ impl<F: Float> StabilityMetrics<F> {
             x if x < 1e-10 => StabilityGrade::Good,
             x if x < 1e-6 => StabilityGrade::Fair,
             x if x < 1e-2 => StabilityGrade::Poor,
-            _ => StabilityGrade::Unstable,
+            _ => StabilityGrade::Critical,
         }
     }
 
@@ -583,7 +583,7 @@ impl<F: Float> StabilityMetrics<F> {
             x if x < 10.0 => StabilityGrade::Good,
             x if x < 100.0 => StabilityGrade::Fair,
             x if x < 1000.0 => StabilityGrade::Poor,
-            _ => StabilityGrade::Unstable,
+            _ => StabilityGrade::Critical,
         }
     }
 
@@ -593,7 +593,7 @@ impl<F: Float> StabilityMetrics<F> {
             x if x < 1e-8 => StabilityGrade::Good,
             x if x < 1e-4 => StabilityGrade::Fair,
             x if x < 1e-1 => StabilityGrade::Poor,
-            _ => StabilityGrade::Unstable,
+            _ => StabilityGrade::Critical,
         }
     }
 }
@@ -711,6 +711,7 @@ pub enum StabilityGrade {
     Fair,
     Poor,
     Unstable,
+    Critical,
 }
 
 /// Stability classifications
@@ -735,6 +736,7 @@ pub enum SpectralStabilityAssessment {
 
 /// Public API functions
 /// Compute forward stability for a function
+#[allow(dead_code)]
 pub fn compute_forward_stability<'a, F: Float, Func>(
     function: &Func,
     input: &'a Tensor<'a, F>,
@@ -748,6 +750,7 @@ where
 }
 
 /// Compute backward stability for a function
+#[allow(dead_code)]
 pub fn compute_backward_stability<'a, F: Float, Func>(
     function: &Func,
     input: &'a Tensor<'a, F>,
@@ -761,6 +764,7 @@ where
 }
 
 /// Quick stability assessment
+#[allow(dead_code)]
 pub fn quick_stability_check<'a, F: Float, Func>(
     function: &Func,
     input: &'a Tensor<'a, F>,

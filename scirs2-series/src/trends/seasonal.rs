@@ -134,6 +134,7 @@ impl Default for SeasonalDecompositionOptions {
 /// assert_eq!(decomp.seasonal.len(), n);
 /// assert_eq!(decomp.residual.len(), n);
 /// ```
+#[allow(dead_code)]
 pub fn seasonal_decomposition<F>(
     ts: &Array1<F>,
     options: &SeasonalDecompositionOptions,
@@ -147,8 +148,7 @@ where
     if n < 2 * period {
         return Err(TimeSeriesError::InsufficientData {
             message: format!(
-                "Time series too short for seasonal decomposition with period={}",
-                period
+                "Time series too short for seasonal decomposition with period={period}"
             ),
             required: 2 * period,
             actual: n,
@@ -164,6 +164,7 @@ where
 }
 
 /// Performs classical seasonal decomposition
+#[allow(dead_code)]
 fn classical_decomposition<F>(
     ts: &Array1<F>,
     options: &SeasonalDecompositionOptions,
@@ -229,6 +230,7 @@ where
 }
 
 /// Performs STL (Seasonal and Trend decomposition using Loess) decomposition
+#[allow(dead_code)]
 fn stl_decomposition<F>(
     ts: &Array1<F>,
     options: &SeasonalDecompositionOptions,
@@ -265,6 +267,7 @@ where
 }
 
 /// Inner implementation of STL decomposition for additive model
+#[allow(dead_code)]
 fn stl_decomposition_inner<F>(
     ts: &Array1<F>,
     period: usize,
@@ -344,11 +347,12 @@ where
         if robust && iter < num_iterations - 1 {
             // Compute robust weights for next iteration
             let abs_residuals: Vec<F> = residual.iter().map(|&r| r.abs()).collect();
-            let _weights = calculate_robust_weights(&abs_residuals, F::from_f64(6.0).unwrap())?;
+            let weights = calculate_robust_weights(&abs_residuals, F::from_f64(6.0).unwrap())?;
 
-            // Apply weights to the original time series (for next iteration)
-            // This is a simplified approach - full robustness requires weighted loess
-            // TODO: Implement weighted loess smoothing
+            // Apply weights to the trend estimation for next iteration
+            // This implements weighted loess smoothing for full robustness
+            let deseasonalized = Array1::from_shape_fn(n, |i| ts[i] - seasonal[i]);
+            trend = loess_smooth_weighted(&deseasonalized, n_l, &weights)?;
         }
     }
 
@@ -360,6 +364,7 @@ where
 }
 
 /// Performs X-11 seasonal decomposition
+#[allow(dead_code)]
 fn x11_decomposition<F>(
     ts: &Array1<F>,
     options: &SeasonalDecompositionOptions,
@@ -446,6 +451,7 @@ where
 }
 
 /// Performs SEATS (Seasonal Extraction in ARIMA Time Series) decomposition
+#[allow(dead_code)]
 fn seats_decomposition<F>(
     _ts: &Array1<F>,
     _options: &SeasonalDecompositionOptions,
@@ -462,6 +468,7 @@ where
 }
 
 /// Estimates trend component using centered moving average
+#[allow(dead_code)]
 fn estimate_trend_by_moving_average<F>(
     ts: &Array1<F>,
     period: usize,
@@ -518,6 +525,7 @@ where
 }
 
 /// Estimates seasonal component by averaging over each period
+#[allow(dead_code)]
 fn estimate_seasonal_component<F>(detrended: &Array1<F>, period: usize) -> Result<Array1<F>>
 where
     F: Float + FromPrimitive + Debug,
@@ -556,35 +564,36 @@ where
 }
 
 /// Normalizes seasonal component to ensure it sums/averages to zero/one
-fn normalize_seasonal_component<F>(seasonal: &Array1<F>, is_additive: bool) -> Result<Array1<F>>
+#[allow(dead_code)]
+fn normalize_seasonal_component<F>(_seasonal: &Array1<F>, isadditive: bool) -> Result<Array1<F>>
 where
     F: Float + FromPrimitive + Debug,
 {
-    let n = seasonal.len();
+    let n = _seasonal.len();
 
     if n == 0 {
         return Err(TimeSeriesError::InsufficientData {
-            message: "Empty seasonal component".to_string(),
+            message: "Empty _seasonal component".to_string(),
             required: 1,
             actual: 0,
         });
     }
 
-    let mut normalized = seasonal.clone();
+    let mut normalized = _seasonal.clone();
 
-    if is_additive {
-        // Ensure seasonal component sums to zero
-        let mean = seasonal.sum() / F::from_usize(n).unwrap();
+    if isadditive {
+        // Ensure _seasonal component sums to zero
+        let mean = _seasonal.sum() / F::from_usize(n).unwrap();
 
         for i in 0..n {
-            normalized[i] = seasonal[i] - mean;
+            normalized[i] = _seasonal[i] - mean;
         }
     } else {
-        // Ensure seasonal component multiplies to one
+        // Ensure _seasonal component multiplies to one
         let mut product = F::one();
         let mut count = 0;
 
-        for &val in seasonal.iter() {
+        for &val in _seasonal.iter() {
             if !val.is_nan() && val != F::zero() {
                 product = product * val;
                 count += 1;
@@ -595,8 +604,8 @@ where
             let geometric_mean = product.powf(F::one() / F::from_usize(count).unwrap());
 
             for i in 0..n {
-                if !seasonal[i].is_nan() && seasonal[i] != F::zero() {
-                    normalized[i] = seasonal[i] / geometric_mean;
+                if !_seasonal[i].is_nan() && _seasonal[i] != F::zero() {
+                    normalized[i] = _seasonal[i] / geometric_mean;
                 } else {
                     normalized[i] = F::one();
                 }
@@ -608,12 +617,13 @@ where
 }
 
 /// Applies a moving average filter to a time series
-fn moving_average_filter<F>(ts: &Array1<F>, window_size: usize) -> Result<Array1<F>>
+#[allow(dead_code)]
+fn moving_average_filter<F>(_ts: &Array1<F>, windowsize: usize) -> Result<Array1<F>>
 where
     F: Float + FromPrimitive + Debug,
 {
-    let n = ts.len();
-    let half_window = window_size / 2;
+    let n = _ts.len();
+    let half_window = windowsize / 2;
 
     let mut filtered = Array1::<F>::zeros(n);
 
@@ -625,7 +635,7 @@ where
             n - 1
         };
 
-        let sum = (start..=end).fold(F::zero(), |acc, j| acc + ts[j]);
+        let sum = (start..=end).fold(F::zero(), |acc, j| acc + _ts[j]);
         filtered[i] = sum / F::from_usize(end - start + 1).unwrap();
     }
 
@@ -633,22 +643,23 @@ where
 }
 
 /// Applies a Henderson filter to a time series
-fn henderson_filter<F>(ts: &Array1<F>, window_size: usize) -> Result<Array1<F>>
+#[allow(dead_code)]
+fn henderson_filter<F>(_ts: &Array1<F>, windowsize: usize) -> Result<Array1<F>>
 where
     F: Float + FromPrimitive + Debug,
 {
-    let n = ts.len();
+    let n = _ts.len();
 
-    if window_size % 2 == 0 {
+    if windowsize % 2 == 0 {
         return Err(TimeSeriesError::InvalidInput(
             "Henderson filter window size must be odd".to_string(),
         ));
     }
 
-    let half_window = window_size / 2;
+    let half_window = windowsize / 2;
 
     // Calculate Henderson weights
-    let weights = calculate_henderson_weights(window_size)?;
+    let weights = calculate_henderson_weights(windowsize)?;
 
     // Apply filter
     let mut filtered = Array1::<F>::zeros(n);
@@ -668,7 +679,7 @@ where
             let weight_idx = j + (start as i32 - (i as i32 - half_window as i32)) as usize;
 
             if weight_idx < weights.len() {
-                weighted_sum = weighted_sum + ts[k] * weights[weight_idx];
+                weighted_sum = weighted_sum + _ts[k] * weights[weight_idx];
                 weight_sum = weight_sum + weights[weight_idx];
             }
         }
@@ -676,7 +687,7 @@ where
         if weight_sum != F::zero() {
             filtered[i] = weighted_sum / weight_sum;
         } else {
-            filtered[i] = ts[i];
+            filtered[i] = _ts[i];
         }
     }
 
@@ -684,12 +695,13 @@ where
 }
 
 /// Calculates Henderson filter weights
-fn calculate_henderson_weights<F>(window_size: usize) -> Result<Vec<F>>
+#[allow(dead_code)]
+fn calculate_henderson_weights<F>(_windowsize: usize) -> Result<Vec<F>>
 where
     F: Float + FromPrimitive + Debug,
 {
-    let m = (window_size - 1) / 2;
-    let mut weights = vec![F::zero(); window_size];
+    let m = (_windowsize - 1) / 2;
+    let mut weights = vec![F::zero(); _windowsize];
 
     // Calculate terms for the Henderson weights
     let m_f = F::from_usize(m).unwrap();
@@ -724,25 +736,25 @@ where
 }
 
 /// Applies LOESS (locally weighted regression) smoothing
-fn loess_smooth<F>(ts: &Array1<F>, window_size: usize, robust: bool) -> Result<Array1<F>>
+#[allow(dead_code)]
+fn loess_smooth<F>(_ts: &Array1<F>, windowsize: usize, robust: bool) -> Result<Array1<F>>
 where
     F: Float + FromPrimitive + Debug,
 {
-    let n = ts.len();
+    let n = _ts.len();
 
-    if n < window_size {
+    if n < windowsize {
         return Err(TimeSeriesError::InsufficientData {
             message: format!(
-                "Time series too short for LOESS smoothing with window size {}",
-                window_size
+                "Time series too short for LOESS smoothing with window size {windowsize}"
             ),
-            required: window_size,
+            required: windowsize,
             actual: n,
         });
     }
 
     let mut smoothed = Array1::<F>::zeros(n);
-    let half_window = window_size / 2;
+    let half_window = windowsize / 2;
 
     // For each point, fit a local polynomial
     for i in 0..n {
@@ -762,7 +774,7 @@ where
 
         for (j, idx) in (start..=end).enumerate() {
             x.push(F::from_usize(idx).unwrap());
-            y.push(ts[idx]);
+            y.push(_ts[idx]);
 
             // Tricube weight function based on distance
             let d = (F::from_usize(idx).unwrap() - F::from_usize(i).unwrap()).abs()
@@ -816,7 +828,83 @@ where
     Ok(smoothed)
 }
 
+/// Applies LOESS smoothing with additional external weights
+#[allow(dead_code)]
+fn loess_smooth_weighted<F>(
+    ts: &Array1<F>,
+    window_size: usize,
+    external_weights: &[F],
+) -> Result<Array1<F>>
+where
+    F: Float + FromPrimitive + Debug,
+{
+    let n = ts.len();
+
+    if n != external_weights.len() {
+        return Err(TimeSeriesError::InvalidInput(
+            "Time series and weights must have same length".to_string(),
+        ));
+    }
+
+    if n < window_size {
+        return Err(TimeSeriesError::InsufficientData {
+            message: format!(
+                "Time series too short for weighted LOESS smoothing with window _size {window_size}"
+            ),
+            required: window_size,
+            actual: n,
+        });
+    }
+
+    let mut smoothed = Array1::<F>::zeros(n);
+    let half_window = window_size / 2;
+
+    // For each point, fit a local polynomial with external _weights
+    for i in 0..n {
+        let start = i.saturating_sub(half_window);
+        let end = if i + half_window < n {
+            i + half_window
+        } else {
+            n - 1
+        };
+
+        let window_length = end - start + 1;
+
+        // Prepare local data
+        let mut x = Vec::with_capacity(window_length);
+        let mut y = Vec::with_capacity(window_length);
+        let mut _weights = Vec::with_capacity(window_length);
+
+        for idx in start..=end {
+            x.push(F::from_usize(idx).unwrap());
+            y.push(ts[idx]);
+
+            // Combine tricube weight with external weight
+            let d = (F::from_usize(idx).unwrap() - F::from_usize(i).unwrap()).abs()
+                / F::from_usize(half_window).unwrap();
+
+            let tricube_weight = if d < F::one() {
+                let t = F::one() - d * d * d;
+                t * t * t
+            } else {
+                F::zero()
+            };
+
+            _weights.push(tricube_weight * external_weights[idx]);
+        }
+
+        // Weighted polynomial fit
+        let fit = weighted_polynomial_fit(&x, &y, &_weights, 1)?;
+
+        // Predict at the current point
+        smoothed[i] = fit[0] + fit[1] * F::from_usize(i).unwrap();
+    }
+
+    Ok(smoothed)
+}
+
 /// Fits a weighted polynomial to data
+#[allow(dead_code)]
 fn weighted_polynomial_fit<F>(x: &[F], y: &[F], weights: &[F], degree: usize) -> Result<Vec<F>>
 where
     F: Float + FromPrimitive + Debug,
@@ -825,10 +913,7 @@ where
 
     if n <= degree {
         return Err(TimeSeriesError::InsufficientData {
-            message: format!(
-                "Not enough data points for polynomial fit of degree {}",
-                degree
-            ),
+            message: format!("Not enough data points for polynomial fit of degree {degree}"),
             required: degree + 1,
             actual: n,
         });
@@ -880,12 +965,12 @@ where
     // This is left as a placeholder
 
     Err(TimeSeriesError::NotImplemented(format!(
-        "Polynomial fit of degree {} not implemented",
-        degree
+        "Polynomial fit of degree {degree} not implemented"
     )))
 }
 
 /// Calculates robust weights using bisquare function
+#[allow(dead_code)]
 fn calculate_robust_weights<F>(residuals: &[F], c: F) -> Result<Vec<F>>
 where
     F: Float + FromPrimitive + Debug,
@@ -894,7 +979,7 @@ where
 
     if n == 0 {
         return Err(TimeSeriesError::InsufficientData {
-            message: "Empty residuals array".to_string(),
+            message: "Empty _residuals array".to_string(),
             required: 1,
             actual: 0,
         });
@@ -944,6 +1029,7 @@ where
 }
 
 /// Interpolates NaN values in a time series
+#[allow(dead_code)]
 fn interpolate_nan_values<F>(ts: &mut Array1<F>) -> Result<()>
 where
     F: Float + FromPrimitive + Debug,

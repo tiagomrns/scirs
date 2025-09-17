@@ -1,12 +1,12 @@
 //! Rank-based filtering functions for n-dimensional arrays
 
-use ndarray::{Array, Array1, Array2, Dimension};
+use ndarray::{Array, Array1, Array2, ArrayView, Dimension};
 use num_traits::{Float, FromPrimitive, Zero};
-use scirs2_core::{parallel, simd, CoreError};
+use scirs2_core::{parallel_ops, CoreError};
 use std::fmt::Debug;
 
 use super::{pad_array, BorderMode};
-use crate::error::{NdimageError, Result};
+use crate::error::{NdimageError, NdimageResult};
 
 /// Apply a maximum filter to an n-dimensional array
 ///
@@ -19,11 +19,12 @@ use crate::error::{NdimageError, Result};
 /// # Returns
 ///
 /// * `Result<Array<T, D>>` - Filtered array
+#[allow(dead_code)]
 pub fn maximum_filter<T, D>(
     input: &Array<T, D>,
     size: &[usize],
     mode: Option<BorderMode>,
-) -> Result<Array<T, D>>
+) -> NdimageResult<Array<T, D>>
 where
     T: Float + FromPrimitive + Debug + PartialOrd + Clone + Send + Sync + 'static,
     D: Dimension,
@@ -72,11 +73,12 @@ where
 /// # Returns
 ///
 /// * `Result<Array<T, D>>` - Filtered array
+#[allow(dead_code)]
 pub fn minimum_filter<T, D>(
     input: &Array<T, D>,
     size: &[usize],
     mode: Option<BorderMode>,
-) -> Result<Array<T, D>>
+) -> NdimageResult<Array<T, D>>
 where
     T: Float + FromPrimitive + Debug + PartialOrd + Clone + Send + Sync + 'static,
     D: Dimension,
@@ -123,12 +125,13 @@ where
 /// # Returns
 ///
 /// * `Result<Array<T, D>>` - Filtered array
+#[allow(dead_code)]
 pub fn percentile_filter<T, D>(
     input: &Array<T, D>,
     percentile: f64,
     size: &[usize],
     mode: Option<BorderMode>,
-) -> Result<Array<T, D>>
+) -> NdimageResult<Array<T, D>>
 where
     T: Float + FromPrimitive + Debug + PartialOrd + Clone + Send + Sync + 'static,
     D: Dimension,
@@ -187,6 +190,231 @@ where
     rank_filter(input, rank, size, Some(border_mode))
 }
 
+/// Apply a percentile filter with a custom footprint to an n-dimensional array
+///
+/// # Arguments
+///
+/// * `input` - Input array to filter
+/// * `percentile` - Percentile value (0-100)
+/// * `footprint` - Boolean array defining the filter footprint
+/// * `mode` - Border handling mode
+/// * `origin` - Origin of the filter kernel
+///
+/// # Returns
+///
+/// * `Result<Array<T, D>>` - Filtered array
+#[allow(dead_code)]
+pub fn percentile_filter_footprint<T, D>(
+    input: ArrayView<T, D>,
+    percentile: f64,
+    footprint: ArrayView<bool, D>,
+    mode: BorderMode,
+    origin: Vec<isize>,
+) -> NdimageResult<Array<T, D>>
+where
+    T: Float + FromPrimitive + Debug + PartialOrd + Clone + Send + Sync + 'static,
+    D: Dimension,
+{
+    // Validate inputs
+    if input.ndim() == 0 {
+        return Err(NdimageError::InvalidInput(
+            "Input array cannot be 0-dimensional".into(),
+        ));
+    }
+
+    if footprint.ndim() != input.ndim() {
+        return Err(NdimageError::DimensionError(format!(
+            "Footprint must have same dimensionality as input (got {} expected {})",
+            footprint.ndim(),
+            input.ndim()
+        )));
+    }
+
+    if !(0.0..=100.0).contains(&percentile) {
+        return Err(NdimageError::InvalidInput(format!(
+            "Percentile must be between 0 and 100, got {}",
+            percentile
+        )));
+    }
+
+    if origin.len() != input.ndim() {
+        return Err(NdimageError::DimensionError(format!(
+            "Origin must have same length as input dimensions (got {} expected {})",
+            origin.len(),
+            input.ndim()
+        )));
+    }
+
+    // Count the number of true values in the footprint
+    let total_size = footprint.iter().filter(|&&x| x).count();
+
+    if total_size == 0 {
+        return Err(NdimageError::InvalidInput(
+            "Footprint cannot be empty (must have at least one true value)".into(),
+        ));
+    }
+
+    // Calculate the rank from the percentile
+    let rank = ((percentile / 100.0) * (total_size as f64 - 1.0)).round() as usize;
+
+    // Sanity check on the rank
+    if rank >= total_size {
+        return Err(NdimageError::InvalidInput(format!(
+            "Calculated rank {} is out of bounds for footprint of size {}",
+            rank, total_size
+        )));
+    }
+
+    // Use the rank filter implementation with the calculated rank
+    rank_filter_footprint(input, rank, footprint, mode, origin)
+}
+
+/// Apply a rank filter with a custom footprint to an n-dimensional array
+///
+/// # Arguments
+///
+/// * `input` - Input array to filter
+/// * `rank` - Rank of the element to select (0 = min, size-1 = max)
+/// * `footprint` - Boolean array defining the filter footprint
+/// * `mode` - Border handling mode
+/// * `origin` - Origin of the filter kernel
+///
+/// # Returns
+///
+/// * `Result<Array<T, D>>` - Filtered array
+#[allow(dead_code)]
+pub fn rank_filter_footprint<T, D>(
+    input: ArrayView<T, D>,
+    rank: usize,
+    footprint: ArrayView<bool, D>,
+    mode: BorderMode,
+    origin: Vec<isize>,
+) -> NdimageResult<Array<T, D>>
+where
+    T: Float + FromPrimitive + Debug + PartialOrd + Clone + Send + Sync + 'static,
+    D: Dimension,
+{
+    // Validate inputs
+    if input.ndim() == 0 {
+        return Err(NdimageError::InvalidInput(
+            "Input array cannot be 0-dimensional".into(),
+        ));
+    }
+
+    if footprint.ndim() != input.ndim() {
+        return Err(NdimageError::DimensionError(format!(
+            "Footprint must have same dimensionality as input (got {} expected {})",
+            footprint.ndim(),
+            input.ndim()
+        )));
+    }
+
+    // Count the number of true values in the footprint
+    let total_size = footprint.iter().filter(|&&x| x).count();
+
+    if total_size == 0 {
+        return Err(NdimageError::InvalidInput(
+            "Footprint cannot be empty (must have at least one true value)".into(),
+        ));
+    }
+
+    if rank >= total_size {
+        return Err(NdimageError::InvalidInput(format!(
+            "Rank {} is out of bounds for footprint of size {}",
+            rank, total_size
+        )));
+    }
+
+    // Handle scalar or constant case
+    if input.len() <= 1 {
+        return Ok(input.to_owned());
+    }
+
+    // Create output array
+    let mut output = Array::<T, D>::zeros(input.raw_dim());
+
+    // Get the center of the footprint for offset calculations
+    let footprintshape = footprint.shape();
+    let footprint_center: Vec<isize> = footprintshape.iter().map(|&s| (s / 2) as isize).collect();
+
+    // Calculate padding based on footprint size and origin
+    let mut pad_width = Vec::new();
+    for d in 0..input.ndim() {
+        let left_pad = (footprint_center[d] + origin[d]) as usize;
+        let right_pad = footprintshape[d] - 1 - left_pad;
+        pad_width.push((left_pad, right_pad));
+    }
+
+    // Pad the input array
+    let padded_input = pad_array(&input.to_owned(), &pad_width, &mode, None)?;
+
+    // Convert to dynamic arrays for easier indexing
+    let input_dyn = input.view().into_dyn();
+    let footprint_dyn = footprint.view().into_dyn();
+    let mut output_dyn = output.view_mut().into_dyn();
+
+    // Iterate through each position in the output array using linear iteration
+    for linear_idx in 0..input.len() {
+        // Convert linear index to multi-dimensional coordinates
+        let output_coords = {
+            let dims = input.shape();
+            let mut coords = Vec::new();
+            let mut remaining = linear_idx;
+
+            for d in (0..dims.len()).rev() {
+                coords.insert(0, remaining % dims[d]);
+                remaining /= dims[d];
+            }
+            coords
+        };
+
+        // Collect values within the footprint at this position
+        let mut values = Vec::new();
+
+        // Iterate through the footprint using linear iteration
+        for footprint_linear_idx in 0..footprint.len() {
+            // Convert footprint linear index to coordinates
+            let footprint_coords = {
+                let dims = footprint.shape();
+                let mut coords = Vec::new();
+                let mut remaining = footprint_linear_idx;
+
+                for d in (0..dims.len()).rev() {
+                    coords.insert(0, remaining % dims[d]);
+                    remaining /= dims[d];
+                }
+                coords
+            };
+
+            // Check if this footprint position is active
+            let is_active = footprint_dyn[ndarray::IxDyn(&footprint_coords)];
+
+            if is_active {
+                // Calculate the corresponding position in the padded input
+                let mut input_coords = Vec::new();
+                for d in 0..input.ndim() {
+                    let coord = output_coords[d] + footprint_coords[d];
+                    input_coords.push(coord);
+                }
+
+                // Get the value from the padded input using dynamic indexing
+                let padded_dyn = padded_input.view().into_dyn();
+                let value = padded_dyn[ndarray::IxDyn(&input_coords)];
+                values.push(value);
+            }
+        }
+
+        // Sort values and select the rank-th element
+        if !values.is_empty() {
+            values.sort_by(|a, b| a.partial_cmp(b).unwrap_or(std::cmp::Ordering::Equal));
+            let selected_value = values[rank.min(values.len() - 1)];
+            output_dyn[ndarray::IxDyn(&output_coords)] = selected_value;
+        }
+    }
+
+    Ok(output)
+}
+
 /// Apply a rank filter to an n-dimensional array
 ///
 /// # Arguments
@@ -199,12 +427,13 @@ where
 /// # Returns
 ///
 /// * `Result<Array<T, D>>` - Filtered array
+#[allow(dead_code)]
 pub fn rank_filter<T, D>(
     input: &Array<T, D>,
     rank: usize,
     size: &[usize],
     mode: Option<BorderMode>,
-) -> Result<Array<T, D>>
+) -> NdimageResult<Array<T, D>>
 where
     T: Float + FromPrimitive + Debug + PartialOrd + Clone + Send + Sync + 'static,
     D: Dimension,
@@ -303,12 +532,13 @@ where
 }
 
 /// Apply a rank filter to a 1D array
+#[allow(dead_code)]
 fn rank_filter_1d<T>(
     input: &Array1<T>,
     rank: usize,
     size: usize,
     mode: &BorderMode,
-) -> Result<Array1<T>>
+) -> NdimageResult<Array1<T>>
 where
     T: Float + FromPrimitive + Debug + PartialOrd + Clone + Send + Sync + Zero + 'static,
 {
@@ -357,7 +587,7 @@ where
         };
 
         let indices: Vec<usize> = (0..input.len()).collect();
-        let parallel_results = parallel::parallel_map(&indices, process_window)?;
+        let parallel_results = parallel_ops::parallel_map_result(&indices, process_window)?;
 
         // Copy the results to the output array
         for (i, val) in parallel_results.iter().enumerate() {
@@ -389,6 +619,7 @@ where
 
 /// Sort 3 elements and return them in order
 #[inline]
+#[allow(dead_code)]
 fn sort3(a: f32, b: f32, c: f32) -> (f32, f32, f32) {
     if a > b {
         if b > c {
@@ -409,6 +640,7 @@ fn sort3(a: f32, b: f32, c: f32) -> (f32, f32, f32) {
 
 /// Sort 5 elements in-place using a sorting network
 #[inline]
+#[allow(dead_code)]
 fn sort5(arr: &mut [f32; 5]) {
     // Sorting network for 5 elements
     // Optimal sorting network from http://pages.ripco.net/~jgamble/nw.html
@@ -443,6 +675,7 @@ fn sort5(arr: &mut [f32; 5]) {
 
 /// Helper function to swap elements in an array
 #[inline]
+#[allow(dead_code)]
 fn swap<T: PartialOrd>(arr: &mut [T], i: usize, j: usize) {
     if arr[i] > arr[j] {
         arr.swap(i, j);
@@ -450,7 +683,12 @@ fn swap<T: PartialOrd>(arr: &mut [T], i: usize, j: usize) {
 }
 
 /// Optimization for f32 arrays with window size 3
-fn optimize_for_f32_size3<T>(input: &Array1<T>, rank: usize, mode: &BorderMode) -> Result<Array1<T>>
+#[allow(dead_code)]
+fn optimize_for_f32_size3<T>(
+    input: &Array1<T>,
+    rank: usize,
+    mode: &BorderMode,
+) -> NdimageResult<Array1<T>>
 where
     T: Float + FromPrimitive + Debug + PartialOrd + Clone + Send + Sync + 'static,
 {
@@ -458,7 +696,15 @@ where
     // But we need to work with the generic T type for the interface
 
     // Convert input to f32 (we know it's safe because we checked the type at the call site)
-    let input_data: Vec<f32> = input.iter().map(|x| x.to_f32().unwrap()).collect();
+    let input_data: Vec<f32> = input
+        .iter()
+        .map(|x| {
+            x.to_f32().unwrap_or_else(|| {
+                // Handle conversion failure gracefully
+                f32::NAN
+            })
+        })
+        .collect();
     let input_f32 = Array1::from_vec(input_data);
 
     // Process with f32 implementation
@@ -470,172 +716,69 @@ where
     let pad_width = vec![(radius, radius)];
     let padded_input = pad_array(&input_f32, &pad_width, mode, None)?;
 
-    // We'll use SIMD processing for larger arrays and when the data is contiguous
-    // SIMD processing is handled through Cargo.toml feature flags
-    if false {
-        // Disabled because padded_input is not used
-        // Convert padded input to slice for efficient SIMD processing
-        let padded_slice = padded_input.as_slice().unwrap_or_else(|| {
-            // Fallback if for some reason we can't get a slice
-            padded_input.as_slice_memory_order().unwrap()
-        });
+    // Process the data sequentially - SIMD operations must use scirs2-core::simd_ops
+    // according to project policy (custom SIMD implementations are forbidden in modules)
+    let mut results = Vec::with_capacity(input.len());
 
-        // Process in chunks of 4 elements using SIMD when possible
-        let chunk_size = 4;
-        let simd_limit = ((input.len() / chunk_size) * chunk_size) as isize;
+    for i in 0..input.len() {
+        let center = i + radius;
 
-        // Process SIMD chunks sequentially - we're already using SIMD parallelism
-        let mut results = Vec::with_capacity(input.len());
+        // Extract 3 elements for the window
+        let a = padded_input[center - 1];
+        let b = padded_input[center];
+        let c = padded_input[center + 1];
 
-        for i in (0..simd_limit as usize).step_by(chunk_size) {
-            let mut chunk_results = Vec::with_capacity(chunk_size);
+        // Sort 3 elements (simple sorting network)
+        let (min, mid, max) = sort3(a, b, c);
 
-            // Process 4 sets of 3-element windows with SIMD
-            let idx_a0 = i + radius - 1;
-            let idx_b0 = i + radius;
-            let idx_c0 = i + radius + 1;
+        // Select element based on rank
+        let val = match rank {
+            0 => min,
+            1 => mid,
+            2 => max,
+            _ => unreachable!(), // Window size 3 can only have ranks 0, 1, 2
+        };
 
-            let idx_a1 = idx_a0 + 1;
-            let idx_b1 = idx_b0 + 1;
-            let idx_c1 = idx_c0 + 1;
-
-            let idx_a2 = idx_a0 + 2;
-            let idx_b2 = idx_b0 + 2;
-            let idx_c2 = idx_c0 + 2;
-
-            let idx_a3 = idx_a0 + 3;
-            let idx_b3 = idx_b0 + 3;
-            let idx_c3 = idx_c0 + 3;
-
-            // Load each window component as a separate vector
-            let a_arr = Array1::from_vec(vec![
-                padded_slice[idx_a0],
-                padded_slice[idx_a1],
-                padded_slice[idx_a2],
-                padded_slice[idx_a3],
-            ]);
-
-            let b_arr = Array1::from_vec(vec![
-                padded_slice[idx_b0],
-                padded_slice[idx_b1],
-                padded_slice[idx_b2],
-                padded_slice[idx_b3],
-            ]);
-
-            let c_arr = Array1::from_vec(vec![
-                padded_slice[idx_c0],
-                padded_slice[idx_c1],
-                padded_slice[idx_c2],
-                padded_slice[idx_c3],
-            ]);
-
-            // Use Core's SIMD functions to implement the sorting network
-            let min_ab = simd::simd_minimum_f32(&a_arr.view(), &b_arr.view());
-            let max_ab = simd::simd_maximum_f32(&a_arr.view(), &b_arr.view());
-
-            // SIMD sorting network for three elements
-            let min_abc = simd::simd_minimum_f32(&min_ab.view(), &c_arr.view());
-
-            // For mid element, we need max(min(max_ab, c), min_ab)
-            let max_ab_min_c = simd::simd_minimum_f32(&max_ab.view(), &c_arr.view());
-            let mid_abc = simd::simd_maximum_f32(&max_ab_min_c.view(), &min_ab.view());
-
-            let max_abc = simd::simd_maximum_f32(&max_ab.view(), &c_arr.view());
-
-            // Select result based on rank
-            let result_vec = match rank {
-                0 => min_abc,
-                1 => mid_abc,
-                2 => max_abc,
-                _ => unreachable!(),
-            };
-
-            // Store results in our vector
-            for j in 0..chunk_size {
-                if i + j < input.len() {
-                    chunk_results.push((i + j, result_vec[j]));
-                }
-            }
-
-            // Add chunk results to our main results vector
-            results.extend(chunk_results);
-        }
-
-        // Now we can safely update the output array
-        for (idx, val) in results {
-            output_f32[idx] = val;
-        }
-
-        // Handle remaining elements serially
-        for i in simd_limit as usize..input.len() {
-            let center = i + radius;
-
-            // Extract 3 elements
-            let a = padded_input[center - 1];
-            let b = padded_input[center];
-            let c = padded_input[center + 1];
-
-            // Sort using sorting network
-            let (min, mid, max) = sort3(a, b, c);
-
-            // Select based on rank
-            output_f32[i] = match rank {
-                0 => min,
-                1 => mid,
-                2 => max,
-                _ => unreachable!(),
-            };
-        }
-    } else {
-        // For smaller arrays or non-contiguous data, use sequential processing
-        // Since arrays are small, parallel overhead would outweigh benefits
-        let mut results = Vec::with_capacity(input.len());
-
-        for i in 0..input.len() {
-            let center = i + radius;
-
-            // Extract 3 elements for the window
-            let a = padded_input[center - 1];
-            let b = padded_input[center];
-            let c = padded_input[center + 1];
-
-            // Sort 3 elements (simple sorting network)
-            let (min, mid, max) = sort3(a, b, c);
-
-            // Select element based on rank
-            let val = match rank {
-                0 => min,
-                1 => mid,
-                2 => max,
-                _ => unreachable!(), // Window size 3 can only have ranks 0, 1, 2
-            };
-
-            results.push((i, val));
-        }
-
-        // Apply results
-        for (idx, val) in results {
-            output_f32[idx] = val;
-        }
+        results.push((i, val));
     }
 
-    #[allow(unreachable_code)]
-    {
-        // Convert back to type T
-        let output = output_f32.mapv(|x| T::from_f32(x).unwrap());
-        Ok(output)
+    // Apply results
+    for (idx, val) in results {
+        output_f32[idx] = val;
     }
+
+    // Convert back to type T
+    let output = output_f32.mapv(|x| {
+        T::from_f32(x).unwrap_or_else(|| {
+            // Handle conversion failure gracefully
+            T::zero()
+        })
+    });
+    Ok(output)
 }
 
 /// Optimization for f32 arrays with window size 5
-fn optimize_for_f32_size5<T>(input: &Array1<T>, rank: usize, mode: &BorderMode) -> Result<Array1<T>>
+#[allow(dead_code)]
+fn optimize_for_f32_size5<T>(
+    input: &Array1<T>,
+    rank: usize,
+    mode: &BorderMode,
+) -> NdimageResult<Array1<T>>
 where
     T: Float + FromPrimitive + Debug + PartialOrd + Clone + Send + Sync + 'static,
 {
     // This is a specialized implementation for f32 with window size 5
 
     // Convert input to f32 (we know it's safe because we checked the type at the call site)
-    let input_data: Vec<f32> = input.iter().map(|x| x.to_f32().unwrap()).collect();
+    let input_data: Vec<f32> = input
+        .iter()
+        .map(|x| {
+            x.to_f32().unwrap_or_else(|| {
+                // Handle conversion failure gracefully
+                f32::NAN
+            })
+        })
+        .collect();
     let input_f32 = Array1::from_vec(input_data);
 
     // Process with f32 implementation
@@ -670,7 +813,7 @@ where
         };
 
         let indices: Vec<usize> = (0..input.len()).collect();
-        let results = parallel::parallel_map(&indices, process_window)?;
+        let results = parallel_ops::parallel_map_result(&indices, process_window)?;
 
         // Apply results to output array
         for (idx, val) in results {
@@ -678,25 +821,36 @@ where
         }
 
         // Convert back to type T
-        let output = output_f32.mapv(|x| T::from_f32(x).unwrap());
+        let output = output_f32.mapv(|x| {
+            T::from_f32(x).unwrap_or_else(|| {
+                // Handle conversion failure gracefully
+                T::zero()
+            })
+        });
         return Ok(output);
     }
 
     #[allow(unreachable_code)]
     {
         // Convert back to type T
-        let output = output_f32.mapv(|x| T::from_f32(x).unwrap());
+        let output = output_f32.mapv(|x| {
+            T::from_f32(x).unwrap_or_else(|| {
+                // Handle conversion failure gracefully
+                T::zero()
+            })
+        });
         Ok(output)
     }
 }
 
 /// Apply a rank filter to a 2D array
+#[allow(dead_code)]
 fn rank_filter_2d<T>(
     input: &Array2<T>,
     rank: usize,
     size: &[usize],
     mode: &BorderMode,
-) -> Result<Array2<T>>
+) -> NdimageResult<Array2<T>>
 where
     T: Float + FromPrimitive + Debug + PartialOrd + Clone + Send + Sync + 'static,
 {
@@ -749,7 +903,7 @@ where
         };
 
         let row_indices: Vec<usize> = (0..rows).collect();
-        let results = parallel::parallel_map(&row_indices, process_row)?;
+        let results = parallel_ops::parallel_map_result(&row_indices, process_row)?;
 
         // Copy the results to the output array
         for (i, row) in results.iter().enumerate() {
@@ -792,12 +946,13 @@ where
 }
 
 /// Apply a rank filter to an n-dimensional IxDyn array (3D and higher)
+#[allow(dead_code)]
 fn rank_filter_nd<T>(
     input: &Array<T, ndarray::IxDyn>,
     rank: usize,
     size: &[usize],
     mode: &BorderMode,
-) -> Result<Array<T, ndarray::IxDyn>>
+) -> NdimageResult<Array<T, ndarray::IxDyn>>
 where
     T: Float + FromPrimitive + Debug + PartialOrd + Clone + Send + Sync + 'static,
 {
@@ -876,7 +1031,7 @@ mod tests {
         let array = Array1::from_vec(vec![1.0, 5.0, 3.0, 4.0, 2.0]);
 
         // Apply maximum filter with size 3
-        let result = maximum_filter(&array, &[3], None).unwrap();
+        let result = maximum_filter(&array, &[3], None).expect("test function should succeed");
 
         // Expected: [5, 5, 5, 4, 4]
         assert_eq!(result.len(), array.len());
@@ -893,14 +1048,15 @@ mod tests {
         let array = Array1::from_vec(vec![5.0, 2.0, 3.0, 4.0, 1.0]);
 
         // Apply minimum filter with size 3
-        let result = minimum_filter(&array, &[3], None).unwrap();
+        let result = minimum_filter(&array, &[3], None).expect("test function should succeed");
 
         // Note: These are expected values with reflect boundary mode:
         // Radius for window
         let radius = 1;
         let pad_width = vec![(radius, radius)];
         // This comment explains the expected values based on padded_input
-        let _padded_input = pad_array(&array, &pad_width, &BorderMode::Reflect, None).unwrap();
+        let _padded_input = pad_array(&array, &pad_width, &BorderMode::Reflect, None)
+            .expect("test function should succeed");
 
         // Expected values with reflect boundary mode:
         // Padded input: [2.0, 5.0, 2.0, 3.0, 4.0, 1.0, 4.0]
@@ -928,7 +1084,7 @@ mod tests {
         image[[3, 3]] = 0.7;
 
         // Apply filter with 3x3 window
-        let result = maximum_filter(&image, &[3, 3], None).unwrap();
+        let result = maximum_filter(&image, &[3, 3], None).expect("test function should succeed");
 
         // Check that result has the same shape
         assert_eq!(result.shape(), image.shape());
@@ -945,7 +1101,7 @@ mod tests {
         image[[2, 2]] = 0.0; // Center pixel has minimum value
 
         // Apply filter with 3x3 window
-        let result = minimum_filter(&image, &[3, 3], None).unwrap();
+        let result = minimum_filter(&image, &[3, 3], None).expect("test function should succeed");
 
         // Check that result has the same shape
         assert_eq!(result.shape(), image.shape());
@@ -971,14 +1127,16 @@ mod tests {
         let array = Array1::from_vec(vec![1.0, 2.0, 3.0, 10.0, 5.0]);
 
         // Apply median filter (50th percentile) with size 3
-        let result = percentile_filter(&array, 50.0, &[3], None).unwrap();
+        let result =
+            percentile_filter(&array, 50.0, &[3], None).expect("test function should succeed");
 
         // Note: These are expected values with reflect boundary mode:
         // Radius for window
         let radius = 1;
         let pad_width = vec![(radius, radius)];
         // This comment explains the expected values based on padded_input
-        let _padded_input = pad_array(&array, &pad_width, &BorderMode::Reflect, None).unwrap();
+        let _padded_input = pad_array(&array, &pad_width, &BorderMode::Reflect, None)
+            .expect("test function should succeed");
 
         // Expected values with reflect boundary mode:
         // Padded input: [2.0, 1.0, 2.0, 3.0, 10.0, 5.0, 10.0]
@@ -1004,14 +1162,15 @@ mod tests {
         let array = Array1::from_vec(vec![1.0, 2.0, 3.0, 4.0, 5.0]);
 
         // Apply rank filter with rank 1 (second lowest value) and size 3
-        let result = rank_filter(&array, 1, &[3], None).unwrap();
+        let result = rank_filter(&array, 1, &[3], None).expect("test function should succeed");
 
         // Note: These are expected values with reflect boundary mode:
         // Radius for window
         let radius = 1;
         let pad_width = vec![(radius, radius)];
         // This comment explains the expected values based on padded_input
-        let _padded_input = pad_array(&array, &pad_width, &BorderMode::Reflect, None).unwrap();
+        let _padded_input = pad_array(&array, &pad_width, &BorderMode::Reflect, None)
+            .expect("test function should succeed");
 
         // Expected values with reflect boundary mode:
         // Padded input: [2.0, 1.0, 2.0, 3.0, 4.0, 5.0, 4.0]
@@ -1059,7 +1218,8 @@ mod tests {
 
         // Apply maximum filter (rank = window_size - 1) with 3x3x3 window
         let window_size = 3 * 3 * 3;
-        let result = rank_filter(&array, window_size - 1, &[3, 3, 3], None).unwrap();
+        let result = rank_filter(&array, window_size - 1, &[3, 3, 3], None)
+            .expect("test function should succeed");
 
         // Check that result has the same shape
         assert_eq!(result.shape(), array.shape());
@@ -1082,7 +1242,8 @@ mod tests {
         array[[2, 2, 2]] = 0.0; // Set center to minimum value
 
         // Apply minimum filter with 3x3x3 window
-        let result = minimum_filter(&array, &[3, 3, 3], None).unwrap();
+        let result =
+            minimum_filter(&array, &[3, 3, 3], None).expect("test function should succeed");
 
         // Check that result has the same shape
         assert_eq!(result.shape(), array.shape());
@@ -1110,7 +1271,8 @@ mod tests {
         });
 
         // Apply 50th percentile (median) filter with 3x3x3 window
-        let result = percentile_filter(&array, 50.0, &[3, 3, 3], None).unwrap();
+        let result = percentile_filter(&array, 50.0, &[3, 3, 3], None)
+            .expect("test function should succeed");
 
         // Check that result has the same shape
         assert_eq!(result.shape(), array.shape());

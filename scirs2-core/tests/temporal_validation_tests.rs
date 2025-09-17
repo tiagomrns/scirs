@@ -13,6 +13,7 @@ use serde_json::json;
 
 #[cfg(all(feature = "data_validation", feature = "serde"))]
 #[test]
+#[allow(dead_code)]
 fn test_temporal_constraint_basic() {
     let config = ValidationConfig::default();
     let validator = Validator::new(config).unwrap();
@@ -40,6 +41,7 @@ fn test_temporal_constraint_basic() {
 
 #[cfg(all(feature = "data_validation", feature = "serde"))]
 #[test]
+#[allow(dead_code)]
 fn test_temporal_constraint_monotonic() {
     let config = ValidationConfig::default();
     let validator = Validator::new(config).unwrap();
@@ -70,6 +72,7 @@ fn test_temporal_constraint_monotonic() {
 
 #[cfg(all(feature = "data_validation", feature = "serde"))]
 #[test]
+#[allow(dead_code)]
 fn test_temporal_constraint_no_duplicates() {
     let config = ValidationConfig::default();
     let validator = Validator::new(config).unwrap();
@@ -100,6 +103,7 @@ fn test_temporal_constraint_no_duplicates() {
 
 #[cfg(all(feature = "data_validation", feature = "serde"))]
 #[test]
+#[allow(dead_code)]
 fn test_temporal_constraint_interval_too_small() {
     let config = ValidationConfig::default();
     let validator = Validator::new(config).unwrap();
@@ -127,6 +131,7 @@ fn test_temporal_constraint_interval_too_small() {
 
 #[cfg(all(feature = "data_validation", feature = "serde"))]
 #[test]
+#[allow(dead_code)]
 fn test_temporal_constraint_interval_too_large() {
     let config = ValidationConfig::default();
     let validator = Validator::new(config).unwrap();
@@ -154,6 +159,7 @@ fn test_temporal_constraint_interval_too_large() {
 
 #[cfg(all(feature = "data_validation", feature = "serde"))]
 #[test]
+#[allow(dead_code)]
 fn test_temporal_constraint_float_timestamps() {
     let config = ValidationConfig::default();
     let validator = Validator::new(config).unwrap();
@@ -179,6 +185,7 @@ fn test_temporal_constraint_float_timestamps() {
 
 #[cfg(all(feature = "data_validation", feature = "serde"))]
 #[test]
+#[allow(dead_code)]
 fn test_temporal_constraint_non_array() {
     let config = ValidationConfig::default();
     let validator = Validator::new(config).unwrap();
@@ -209,6 +216,7 @@ fn test_temporal_constraint_non_array() {
 
 #[cfg(all(feature = "data_validation", feature = "serde"))]
 #[test]
+#[allow(dead_code)]
 fn test_temporal_constraint_too_few_timestamps() {
     let config = ValidationConfig::default();
     let validator = Validator::new(config).unwrap();
@@ -239,6 +247,7 @@ fn test_temporal_constraint_too_few_timestamps() {
 
 #[cfg(all(feature = "data_validation", feature = "serde"))]
 #[test]
+#[allow(dead_code)]
 fn test_temporal_constraint_complex() {
     let config = ValidationConfig::default();
     let validator = Validator::new(config).unwrap();

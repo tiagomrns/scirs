@@ -14,5 +14,5 @@ impl<F: Float> op::Op<F> for MapOp<F> {
         ctx.append_output(f(x));
         Ok(())
     }
-    fn grad(&self, _: &mut op::GradientContext<F>) {}
+    fn grad<'a>(&self, _ctx: &mut op::GradientContext<'a, 'a, F>) {}
 }

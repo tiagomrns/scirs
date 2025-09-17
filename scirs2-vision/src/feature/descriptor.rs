@@ -10,7 +10,7 @@ use ndarray::Array2;
 use std::f32::consts::PI;
 
 /// Feature point with position, scale, and orientation
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Default)]
 pub struct KeyPoint {
     /// X-coordinate
     pub x: f32,
@@ -44,6 +44,7 @@ pub struct Descriptor {
 /// # Returns
 ///
 /// * Result containing a vector of descriptors
+#[allow(dead_code)]
 pub fn detect_and_compute(
     img: &DynamicImage,
     max_features: usize,
@@ -51,7 +52,7 @@ pub fn detect_and_compute(
 ) -> Result<Vec<Descriptor>> {
     // Convert to grayscale
     let gray = img.to_luma8();
-    let (_width, _height) = gray.dimensions();
+    let _width_height = gray.dimensions();
 
     // Convert to array for easier processing
     let array = image_to_array(img)?;
@@ -153,6 +154,7 @@ pub fn detect_and_compute(
 /// # Returns
 ///
 /// * Result containing a descriptor vector
+#[allow(dead_code)]
 fn compute_descriptor(
     image: &Array2<f32>,
     magnitude: &Array2<f32>,
@@ -266,6 +268,7 @@ fn compute_descriptor(
 /// # Returns
 ///
 /// * Vector of matched descriptor indices (idx1, idx2, distance)
+#[allow(dead_code)]
 pub fn match_descriptors(
     descriptors1: &[Descriptor],
     descriptors2: &[Descriptor],
@@ -313,6 +316,7 @@ pub fn match_descriptors(
 /// # Returns
 ///
 /// * Euclidean distance
+#[allow(dead_code)]
 fn euclidean_distance(vec1: &[f32], vec2: &[f32]) -> f32 {
     let mut sum_sq = 0.0;
 

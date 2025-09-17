@@ -7,13 +7,14 @@ use scirs2_vision::feature::{
 };
 use std::error::Error;
 
+#[allow(dead_code)]
 fn main() -> Result<(), Box<dyn Error>> {
     // Load input image
     let image_path = "examples/input/input.jpg";
     let img = image::open(image_path)?;
     let (width, height) = img.dimensions();
 
-    println!("Loaded image: {}x{}", width, height);
+    println!("Loaded image: {width}x{height}");
 
     // 1. Difference of Gaussians (DoG) blob detection
     println!("Applying DoG blob detection...");
@@ -69,7 +70,7 @@ fn main() -> Result<(), Box<dyn Error>> {
         min_radius: 10,
         max_radius: 60,
         threshold: 0.3,
-        min_distance: 20,
+        mindistance: 20,
         edge_threshold: 0.1,
         max_circles: Some(10),
     };

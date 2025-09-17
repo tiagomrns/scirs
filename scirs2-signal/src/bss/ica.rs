@@ -1,6 +1,6 @@
-//! Independent Component Analysis (ICA) for blind source separation
-//!
-//! This module implements the main ICA interface for BSS techniques.
+// Independent Component Analysis (ICA) for blind source separation
+//
+// This module implements the main ICA interface for BSS techniques.
 
 use super::fastica::fast_ica;
 use super::infomax::{extended_infomax_ica, infomax_ica};
@@ -10,6 +10,7 @@ use crate::error::{SignalError, SignalResult};
 use ndarray::{Array2, Axis};
 use scirs2_linalg::solve_multiple;
 
+#[allow(unused_imports)]
 /// Apply Independent Component Analysis (ICA) to separate mixed signals
 ///
 /// ICA finds statistically independent components that generated the mixed signals.
@@ -25,6 +26,7 @@ use scirs2_linalg::solve_multiple;
 /// # Returns
 ///
 /// * Tuple containing (extracted sources, mixing matrix)
+#[allow(dead_code)]
 pub fn ica(
     signals: &Array2<f64>,
     n_components: Option<usize>,
@@ -34,11 +36,11 @@ pub fn ica(
 ) -> SignalResult<(Array2<f64>, Array2<f64>)> {
     let (n_signals, n_samples) = signals.dim();
 
-    // Determine number of components
+    // Determine number of _components
     let n_comp = n_components.unwrap_or(n_signals);
     if n_comp > n_signals {
         return Err(SignalError::ValueError(format!(
-            "Number of components ({}) cannot exceed number of signals ({})",
+            "Number of _components ({}) cannot exceed number of signals ({})",
             n_comp, n_signals
         )));
     }
@@ -77,7 +79,7 @@ pub fn ica(
     ) {
         Ok(inv) => inv,
         Err(_) => {
-            return Err(SignalError::Compute(
+            return Err(SignalError::ComputationError(
                 "Failed to compute ICA mixing matrix".to_string(),
             ));
         }
@@ -90,7 +92,7 @@ pub fn ica(
     ) {
         Ok(inv) => inv,
         Err(_) => {
-            return Err(SignalError::Compute(
+            return Err(SignalError::ComputationError(
                 "Failed to invert whitening matrix".to_string(),
             ));
         }

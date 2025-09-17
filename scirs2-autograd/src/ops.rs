@@ -19,6 +19,7 @@ use crate::error::{AutogradError, Result};
 /// # Returns
 ///
 /// A new tensor with shape (..., n, p) containing the matrix product.
+#[allow(dead_code)]
 pub fn matmul_forward<F: Float + Debug + Send + Sync + 'static>(
     a: &Array<F, IxDyn>,
     b: &Array<F, IxDyn>,
@@ -30,13 +31,13 @@ pub fn matmul_forward<F: Float + Debug + Send + Sync + 'static>(
         ));
     }
 
-    let a_shape = a.shape();
-    let b_shape = b.shape();
+    let ashape = a.shape();
+    let bshape = b.shape();
 
-    if a_shape[a_shape.len() - 1] != b_shape[b_shape.len() - 2] {
+    if ashape[ashape.len() - 1] != bshape[bshape.len() - 2] {
         return Err(AutogradError::ShapeMismatch(format!(
             "Matrix multiplication dimension mismatch: {:?} and {:?}",
-            a_shape, b_shape
+            ashape, bshape
         )));
     }
 
@@ -49,7 +50,7 @@ pub fn matmul_forward<F: Float + Debug + Send + Sync + 'static>(
         let b_cols = b.shape()[1];
 
         // Create result matrix
-        let mut result = Array::<F, _>::zeros((a_rows, b_cols));
+        let mut result = Array::<F>::zeros((a_rows, b_cols));
 
         // Manually compute matrix multiplication
         for i in 0..a_rows {
@@ -81,6 +82,7 @@ pub fn matmul_forward<F: Float + Debug + Send + Sync + 'static>(
 /// # Returns
 ///
 /// A tuple of (grad_a, grad_b) containing the gradients for each input.
+#[allow(dead_code)]
 pub fn matmul_backward<F: Float + Debug + Send + Sync + 'static>(
     grad: &Array<F, IxDyn>,
     a: &Array<F, IxDyn>,
@@ -97,14 +99,14 @@ pub fn matmul_backward<F: Float + Debug + Send + Sync + 'static>(
         ));
     }
 
-    let a_shape = a.shape();
-    let b_shape = b.shape();
-    let grad_shape = grad.shape();
+    let ashape = a.shape();
+    let bshape = b.shape();
+    let gradshape = grad.shape();
 
-    if grad_shape[0] != a_shape[0] || grad_shape[1] != b_shape[1] {
+    if gradshape[0] != ashape[0] || gradshape[1] != bshape[1] {
         return Err(AutogradError::ShapeMismatch(format!(
             "Gradient shape mismatch: {:?} for matmul of {:?} and {:?}",
-            grad_shape, a_shape, b_shape
+            gradshape, ashape, bshape
         )));
     }
 
@@ -116,7 +118,7 @@ pub fn matmul_backward<F: Float + Debug + Send + Sync + 'static>(
     let b_cols = b.shape()[1];
 
     // Create transpose of b
-    let mut b_t = Array::<F, _>::zeros((b_cols, b_rows));
+    let mut b_t = Array::<F>::zeros((b_cols, b_rows));
     for i in 0..b_rows {
         for j in 0..b_cols {
             b_t[[j, i]] = b[[i, j]];
@@ -124,7 +126,7 @@ pub fn matmul_backward<F: Float + Debug + Send + Sync + 'static>(
     }
 
     // Create grad_a result matrix: grad * b^T
-    let mut grad_a = Array::<F, _>::zeros((grad_rows, b_rows));
+    let mut grad_a = Array::<F>::zeros((grad_rows, b_rows));
     for i in 0..grad_rows {
         for j in 0..b_rows {
             let mut sum = F::zero();
@@ -141,7 +143,7 @@ pub fn matmul_backward<F: Float + Debug + Send + Sync + 'static>(
     // Create transpose of a
     let a_rows = a.shape()[0];
     let a_cols = a.shape()[1];
-    let mut a_t = Array::<F, _>::zeros((a_cols, a_rows));
+    let mut a_t = Array::<F>::zeros((a_cols, a_rows));
     for i in 0..a_rows {
         for j in 0..a_cols {
             a_t[[j, i]] = a[[i, j]];
@@ -149,7 +151,7 @@ pub fn matmul_backward<F: Float + Debug + Send + Sync + 'static>(
     }
 
     // Create grad_b result matrix: a^T * grad
-    let mut grad_b = Array::<F, _>::zeros((a_cols, grad_cols));
+    let mut grad_b = Array::<F>::zeros((a_cols, grad_cols));
     for i in 0..a_cols {
         for j in 0..grad_cols {
             let mut sum = F::zero();
@@ -175,6 +177,7 @@ pub fn matmul_backward<F: Float + Debug + Send + Sync + 'static>(
 /// # Returns
 ///
 /// A tensor with ReLU applied element-wise.
+#[allow(dead_code)]
 pub fn relu_forward<F: Float + Debug + Send + Sync + 'static>(
     input: &Array<F, IxDyn>,
 ) -> Array<F, IxDyn> {
@@ -191,6 +194,7 @@ pub fn relu_forward<F: Float + Debug + Send + Sync + 'static>(
 /// # Returns
 ///
 /// Gradient for the input tensor.
+#[allow(dead_code)]
 pub fn relu_backward<F: Float + Debug + Send + Sync + 'static>(
     grad: &Array<F, IxDyn>,
     input: &Array<F, IxDyn>,
@@ -215,6 +219,7 @@ pub fn relu_backward<F: Float + Debug + Send + Sync + 'static>(
 /// # Returns
 ///
 /// A tensor with sigmoid applied element-wise.
+#[allow(dead_code)]
 pub fn sigmoid_forward<F: Float + Debug + Send + Sync + 'static>(
     input: &Array<F, IxDyn>,
 ) -> Array<F, IxDyn> {
@@ -231,6 +236,7 @@ pub fn sigmoid_forward<F: Float + Debug + Send + Sync + 'static>(
 /// # Returns
 ///
 /// Gradient for the input tensor.
+#[allow(dead_code)]
 pub fn sigmoid_backward<F: Float + Debug + Send + Sync + 'static>(
     grad: &Array<F, IxDyn>,
     output: &Array<F, IxDyn>,
@@ -248,6 +254,7 @@ pub fn sigmoid_backward<F: Float + Debug + Send + Sync + 'static>(
 /// # Returns
 ///
 /// A tensor with tanh applied element-wise.
+#[allow(dead_code)]
 pub fn tanh_forward<F: Float + Debug + Send + Sync + 'static>(
     input: &Array<F, IxDyn>,
 ) -> Array<F, IxDyn> {
@@ -264,6 +271,7 @@ pub fn tanh_forward<F: Float + Debug + Send + Sync + 'static>(
 /// # Returns
 ///
 /// Gradient for the input tensor.
+#[allow(dead_code)]
 pub fn tanh_backward<F: Float + Debug + Send + Sync + 'static>(
     grad: &Array<F, IxDyn>,
     output: &Array<F, IxDyn>,
@@ -282,6 +290,7 @@ pub fn tanh_backward<F: Float + Debug + Send + Sync + 'static>(
 /// # Returns
 ///
 /// A tensor with softmax applied along the specified dimension.
+#[allow(dead_code)]
 pub fn softmax_forward<F: Float + Debug + Send + Sync + 'static>(
     input: &Array<F, IxDyn>,
     dim: usize,
@@ -332,6 +341,7 @@ pub fn softmax_forward<F: Float + Debug + Send + Sync + 'static>(
 /// # Returns
 ///
 /// Gradient for the input tensor.
+#[allow(dead_code)]
 pub fn softmax_backward<F: Float + Debug + Send + Sync + 'static>(
     grad: &Array<F, IxDyn>,
     output: &Array<F, IxDyn>,

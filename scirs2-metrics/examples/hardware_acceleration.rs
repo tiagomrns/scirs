@@ -6,8 +6,10 @@
 use ndarray::{Array1, Array2};
 use scirs2_metrics::error::Result;
 use scirs2_metrics::optimization::hardware::*;
+use statrs::statistics::Statistics;
 use std::time::Instant;
 
+#[allow(dead_code)]
 fn main() -> Result<()> {
     println!("Hardware Acceleration Example");
     println!("===========================");
@@ -53,6 +55,7 @@ fn main() -> Result<()> {
 }
 
 /// Example of hardware capabilities detection
+#[allow(dead_code)]
 fn hardware_detection_example() {
     let capabilities = HardwareCapabilities::detect();
 
@@ -70,7 +73,7 @@ fn hardware_detection_example() {
     println!("  GPU Available: {}", capabilities.has_gpu);
 
     let optimal_width = capabilities.optimal_vector_width();
-    println!("  Optimal Vector Width: {:?}", optimal_width);
+    println!("  Optimal Vector Width: {optimal_width:?}");
     println!("  SIMD Available: {}", capabilities.simd_available());
 
     if capabilities.simd_available() {
@@ -89,6 +92,7 @@ fn hardware_detection_example() {
 }
 
 /// Example of SIMD distance computations
+#[allow(dead_code)]
 fn simd_distance_example() -> Result<()> {
     let simd_metrics = SimdDistanceMetrics::new();
 
@@ -103,25 +107,25 @@ fn simd_distance_example() -> Result<()> {
 
     // Test Euclidean distance
     let euclidean_dist = simd_metrics.euclidean_distance_simd(&vector_a, &vector_b)?;
-    println!("  Euclidean distance: {:.6}", euclidean_dist);
+    println!("  Euclidean distance: {euclidean_dist:.6}");
 
     // Test Manhattan distance
     let manhattan_dist = simd_metrics.manhattan_distance_simd(&vector_a, &vector_b)?;
-    println!("  Manhattan distance: {:.6}", manhattan_dist);
+    println!("  Manhattan distance: {manhattan_dist:.6}");
 
     // Test cosine distance
     let cosine_dist = simd_metrics.cosine_distance_simd(&vector_a, &vector_b)?;
-    println!("  Cosine distance: {:.6}", cosine_dist);
+    println!("  Cosine distance: {cosine_dist:.6}");
 
     // Test dot product
     let dot_product = simd_metrics.dot_product_simd(&vector_a, &vector_b)?;
-    println!("  Dot product: {:.6}", dot_product);
+    println!("  Dot product: {dot_product:.6}");
 
     // Test Euclidean norm
     let norm_a = simd_metrics.euclidean_norm_simd(&vector_a)?;
     let norm_b = simd_metrics.euclidean_norm_simd(&vector_b)?;
-    println!("  Norm of vector A: {:.6}", norm_a);
-    println!("  Norm of vector B: {:.6}", norm_b);
+    println!("  Norm of vector A: {norm_a:.6}");
+    println!("  Norm of vector B: {norm_b:.6}");
 
     // Test with different vector configurations
     println!("\nTesting with different vector configurations:");
@@ -131,31 +135,29 @@ fn simd_distance_example() -> Result<()> {
 }
 
 /// Test accuracy of SIMD distance computations
-fn test_distance_accuracy(simd_metrics: &SimdDistanceMetrics) -> Result<()> {
+#[allow(dead_code)]
+fn test_distance_accuracy(_simdmetrics: &SimdDistanceMetrics) -> Result<()> {
     // Test with small vectors (should use standard implementation)
     let small_a = Array1::from_vec(vec![1.0, 2.0, 3.0]);
     let small_b = Array1::from_vec(vec![4.0, 5.0, 6.0]);
 
-    let small_euclidean = simd_metrics.euclidean_distance_simd(&small_a, &small_b)?;
+    let small_euclidean = _simdmetrics.euclidean_distance_simd(&small_a, &small_b)?;
     let expected_small = ((3.0_f64).powi(2) + (3.0_f64).powi(2) + (3.0_f64).powi(2)).sqrt();
-    println!(
-        "  Small vector Euclidean: {:.6} (expected: {:.6})",
-        small_euclidean, expected_small
-    );
+    println!("  Small vector Euclidean: {small_euclidean:.6} (expected: {expected_small:.6})");
 
     // Test with large vectors (should use SIMD implementation)
     let large_size = 10000;
     let large_a = Array1::from_vec((0..large_size).map(|i| (i % 100) as f64).collect());
     let large_b = Array1::from_vec((0..large_size).map(|i| ((i + 50) % 100) as f64).collect());
 
-    let large_euclidean = simd_metrics.euclidean_distance_simd(&large_a, &large_b)?;
-    println!("  Large vector Euclidean distance: {:.6}", large_euclidean);
+    let large_euclidean = _simdmetrics.euclidean_distance_simd(&large_a, &large_b)?;
+    println!("  Large vector Euclidean distance: {large_euclidean:.6}");
 
     // Verify accuracy by comparing with standard ndarray operations
     let diff = &large_a - &large_b;
     let standard_euclidean = diff.dot(&diff).sqrt();
     let accuracy_diff = (large_euclidean - standard_euclidean).abs();
-    println!("  Accuracy difference vs standard: {:.2e}", accuracy_diff);
+    println!("  Accuracy difference vs standard: {accuracy_diff:.2e}");
 
     if accuracy_diff < 1e-10 {
         println!("  ✓ SIMD implementation maintains high accuracy");
@@ -167,6 +169,7 @@ fn test_distance_accuracy(simd_metrics: &SimdDistanceMetrics) -> Result<()> {
 }
 
 /// Example of SIMD statistical computations
+#[allow(dead_code)]
 fn simd_statistics_example() -> Result<()> {
     let simd_stats = SimdStatistics::new();
 
@@ -184,23 +187,23 @@ fn simd_statistics_example() -> Result<()> {
 
     // Test mean computation
     let mean = simd_stats.mean_simd(&data)?;
-    println!("  Mean: {:.6}", mean);
+    println!("  Mean: {mean:.6}");
 
     // Test variance computation
     let variance = simd_stats.variance_simd(&data)?;
-    println!("  Variance: {:.6}", variance);
+    println!("  Variance: {variance:.6}");
 
     // Test standard deviation computation
     let std_dev = simd_stats.std_simd(&data)?;
-    println!("  Standard deviation: {:.6}", std_dev);
+    println!("  Standard deviation: {std_dev:.6}");
 
     // Test sum computation
     let sum = simd_stats.sum_simd(&data)?;
-    println!("  Sum: {:.6}", sum);
+    println!("  Sum: {sum:.6}");
 
     // Verify accuracy against standard implementations
     println!("\nAccuracy verification:");
-    let std_mean = data.mean().unwrap_or(0.0);
+    let std_mean = data.clone().mean();
     let std_sum = data.sum();
 
     println!("  Mean difference: {:.2e}", (mean - std_mean).abs());
@@ -214,7 +217,8 @@ fn simd_statistics_example() -> Result<()> {
 }
 
 /// Test statistical computations with different distributions
-fn test_statistical_distributions(simd_stats: &SimdStatistics) -> Result<()> {
+#[allow(dead_code)]
+fn test_statistical_distributions(_simdstats: &SimdStatistics) -> Result<()> {
     // Normal distribution approximation
     let normal_data = Array1::from_vec(
         (0..5000)
@@ -225,22 +229,16 @@ fn test_statistical_distributions(simd_stats: &SimdStatistics) -> Result<()> {
             .collect(),
     );
 
-    let normal_mean = simd_stats.mean_simd(&normal_data)?;
-    let normal_std = simd_stats.std_simd(&normal_data)?;
-    println!(
-        "  Normal-like distribution - Mean: {:.4}, Std: {:.4}",
-        normal_mean, normal_std
-    );
+    let normal_mean = _simdstats.mean_simd(&normal_data)?;
+    let normal_std = _simdstats.std_simd(&normal_data)?;
+    println!("  Normal-like distribution - Mean: {normal_mean:.4}, Std: {normal_std:.4}");
 
     // Uniform distribution
     let uniform_data = Array1::from_vec((0..5000).map(|i| (i % 100) as f64).collect());
 
-    let uniform_mean = simd_stats.mean_simd(&uniform_data)?;
-    let uniform_std = simd_stats.std_simd(&uniform_data)?;
-    println!(
-        "  Uniform distribution - Mean: {:.4}, Std: {:.4}",
-        uniform_mean, uniform_std
-    );
+    let uniform_mean = _simdstats.mean_simd(&uniform_data)?;
+    let uniform_std = _simdstats.std_simd(&uniform_data)?;
+    println!("  Uniform distribution - Mean: {uniform_mean:.4}, Std: {uniform_std:.4}");
 
     // Exponential-like distribution
     let exp_data = Array1::from_vec(
@@ -252,17 +250,15 @@ fn test_statistical_distributions(simd_stats: &SimdStatistics) -> Result<()> {
             .collect(),
     );
 
-    let exp_mean = simd_stats.mean_simd(&exp_data)?;
-    let exp_std = simd_stats.std_simd(&exp_data)?;
-    println!(
-        "  Exponential-like distribution - Mean: {:.4}, Std: {:.4}",
-        exp_mean, exp_std
-    );
+    let exp_mean = _simdstats.mean_simd(&exp_data)?;
+    let exp_std = _simdstats.std_simd(&exp_data)?;
+    println!("  Exponential-like distribution - Mean: {exp_mean:.4}, Std: {exp_std:.4}");
 
     Ok(())
 }
 
 /// Example of hardware-accelerated matrix operations
+#[allow(dead_code)]
 fn hardware_matrix_example() -> Result<()> {
     let matrix_ops = HardwareAcceleratedMatrix::new();
 
@@ -299,7 +295,7 @@ fn hardware_matrix_example() -> Result<()> {
     for metric in &metrics {
         let distances = matrix_ops.pairwise_distances_accelerated(&data_points, metric)?;
         let avg_distance = distances.sum() / (distances.len() - data_points.nrows()) as f64; // Exclude diagonal
-        println!("  Average {} distance: {:.6}", metric, avg_distance);
+        println!("  Average {metric} distance: {avg_distance:.6}");
     }
 
     // Test correlation matrix computation
@@ -316,22 +312,20 @@ fn hardware_matrix_example() -> Result<()> {
         .map(|i| correlation_matrix[[i, i]])
         .sum::<f64>();
     let expected_diagonal_sum = correlation_matrix.nrows() as f64;
-    println!(
-        "  Diagonal sum: {:.6} (expected: {:.6})",
-        diagonal_sum, expected_diagonal_sum
-    );
+    println!("  Diagonal sum: {diagonal_sum:.6} (expected: {expected_diagonal_sum:.6})");
 
     Ok(())
 }
 
 /// Performance benchmarking example
+#[allow(dead_code)]
 fn performance_benchmark_example() -> Result<()> {
     println!("Performance benchmarking of SIMD vs standard implementations:");
 
     let test_sizes = vec![1000, 5000, 10000, 50000];
 
     for &size in &test_sizes {
-        println!("\nBenchmarking with data size: {}", size);
+        println!("\nBenchmarking with data size: {size}");
         benchmark_distance_performance(size)?;
         benchmark_statistics_performance(size)?;
     }
@@ -340,6 +334,7 @@ fn performance_benchmark_example() -> Result<()> {
 }
 
 /// Benchmark distance computation performance
+#[allow(dead_code)]
 fn benchmark_distance_performance(size: usize) -> Result<()> {
     let simd_metrics = SimdDistanceMetrics::new();
 
@@ -359,12 +354,12 @@ fn benchmark_distance_performance(size: usize) -> Result<()> {
     let std_duration = start_std.elapsed();
 
     println!("  Distance computation:");
-    println!("    SIMD: {:?}", simd_duration);
-    println!("    Standard: {:?}", std_duration);
+    println!("    SIMD: {simd_duration:?}");
+    println!("    Standard: {std_duration:?}");
 
     if simd_duration < std_duration {
         let speedup = std_duration.as_nanos() as f64 / simd_duration.as_nanos() as f64;
-        println!("    Speedup: {:.2}x", speedup);
+        println!("    Speedup: {speedup:.2}x");
     } else {
         println!("    No speedup (possibly too small for SIMD benefit)");
     }
@@ -373,6 +368,7 @@ fn benchmark_distance_performance(size: usize) -> Result<()> {
 }
 
 /// Benchmark statistical computation performance
+#[allow(dead_code)]
 fn benchmark_statistics_performance(size: usize) -> Result<()> {
     let simd_stats = SimdStatistics::new();
 
@@ -390,22 +386,23 @@ fn benchmark_statistics_performance(size: usize) -> Result<()> {
 
     // Benchmark standard mean computation
     let start_std = Instant::now();
-    let _std_mean = data.mean().unwrap_or(0.0);
+    let _std_mean = data.clone().mean();
     let std_duration = start_std.elapsed();
 
     println!("  Statistical computation (mean):");
-    println!("    SIMD: {:?}", simd_duration);
-    println!("    Standard: {:?}", std_duration);
+    println!("    SIMD: {simd_duration:?}");
+    println!("    Standard: {std_duration:?}");
 
     if simd_duration < std_duration {
         let speedup = std_duration.as_nanos() as f64 / simd_duration.as_nanos() as f64;
-        println!("    Speedup: {:.2}x", speedup);
+        println!("    Speedup: {speedup:.2}x");
     }
 
     Ok(())
 }
 
 /// Configuration and optimization example
+#[allow(dead_code)]
 fn configuration_example() -> Result<()> {
     println!("Testing different hardware acceleration configurations:");
 
@@ -449,10 +446,10 @@ fn configuration_example() -> Result<()> {
     let result_simd_auto = metrics_simd_auto.euclidean_distance_simd(&test_data_a, &test_data_b)?;
 
     println!("  Results from different configurations:");
-    println!("    No SIMD: {:.10}", result_no_simd);
-    println!("    SIMD 128-bit: {:.10}", result_simd_128);
-    println!("    SIMD 256-bit: {:.10}", result_simd_256);
-    println!("    SIMD Auto: {:.10}", result_simd_auto);
+    println!("    No SIMD: {result_no_simd:.10}");
+    println!("    SIMD 128-bit: {result_simd_128:.10}");
+    println!("    SIMD 256-bit: {result_simd_256:.10}");
+    println!("    SIMD Auto: {result_simd_auto:.10}");
 
     // Check consistency
     let max_diff = [
@@ -463,7 +460,7 @@ fn configuration_example() -> Result<()> {
     .iter()
     .fold(0.0_f64, |a, &b| a.max(b));
 
-    println!("    Maximum difference: {:.2e}", max_diff);
+    println!("    Maximum difference: {max_diff:.2e}");
 
     if max_diff < 1e-10 {
         println!("    ✓ All configurations produce consistent results");

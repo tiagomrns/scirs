@@ -52,7 +52,14 @@ mod utils;
 pub use circulant::CirculantMatrix;
 pub use hankel::HankelMatrix;
 pub use toeplitz::ToeplitzMatrix;
-pub use utils::{solve_circulant, solve_toeplitz};
+pub use utils::{
+    circulant_determinant, circulant_eigenvalues, circulant_inverse_fft, circulant_matvec_direct,
+    circulant_matvec_fft, dftmatrix_multiply, fast_toeplitz_inverse, gohberg_semencul_inverse,
+    hadamard_transform, hankel_determinant, hankel_matvec, hankel_matvec_fft, hankel_svd,
+    levinson_durbin, solve_circulant, solve_circulant_fft, solve_toeplitz, solve_tridiagonal_lu,
+    solve_tridiagonal_thomas, tridiagonal_determinant, tridiagonal_eigenvalues,
+    tridiagonal_eigenvectors, tridiagonal_matvec, yule_walker,
+};
 
 /// A trait for structured matrices that can be represented efficiently
 ///
@@ -110,6 +117,7 @@ where
 }
 
 /// Convert a structured matrix to a matrix-free operator
+#[allow(dead_code)]
 pub fn structured_to_operator<A, M>(matrix: &M) -> LinearOperator<A>
 where
     A: Float + NumAssign + Zero + Sum + One + ScalarOperand + Send + Sync + Debug + 'static,

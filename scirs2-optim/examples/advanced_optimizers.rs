@@ -8,6 +8,7 @@ use scirs2_optim::optimizers::{Adam, AdamW, Optimizer, RAdam, RMSprop, SGD};
 type OptimizerList = Vec<(String, Box<dyn Optimizer<f64, ndarray::Ix1>>)>;
 type OptimizerSlice<'a> = &'a [(String, Box<dyn Optimizer<f64, ndarray::Ix1>>)];
 
+#[allow(dead_code)]
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Define a simple 2D quadratic function: f(x, y) = x^2 + 2y^2
     // Minimum at (0, 0)
@@ -78,16 +79,19 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 }
 
 // Define the function: f(x, y) = x^2 + 2y^2
+#[allow(dead_code)]
 fn function_value(params: &Array1<f64>) -> f64 {
     params[0].powi(2) + 2.0 * params[1].powi(2)
 }
 
 // Define the gradients: ∇f = [2x, 4y]
+#[allow(dead_code)]
 fn compute_gradients(params: &Array1<f64>) -> Array1<f64> {
     Array1::from_vec(vec![2.0 * params[0], 4.0 * params[1]])
 }
 
 // Plot optimization paths
+#[allow(dead_code)]
 fn plot_paths(
     filename: &str,
     paths: &[Vec<(f64, f64)>],
@@ -148,7 +152,7 @@ fn plot_paths(
     // Plot optimizer paths
     let colors = [&RED, &BLUE, &GREEN, &MAGENTA, &CYAN, &YELLOW, &BLACK];
 
-    for (i, (path, (name, _))) in paths.iter().zip(optimizers).enumerate() {
+    for (i, (path, (name, _optimizer))) in paths.iter().zip(optimizers).enumerate() {
         let color = colors[i % colors.len()];
 
         // Draw path
@@ -189,6 +193,7 @@ fn plot_paths(
 }
 
 // Plot loss history
+#[allow(dead_code)]
 fn plot_loss_history(
     filename: &str,
     loss_histories: &[Vec<f64>],
@@ -223,7 +228,7 @@ fn plot_loss_history(
 
     let colors = [&RED, &BLUE, &GREEN, &MAGENTA, &CYAN, &YELLOW, &BLACK];
 
-    for (i, (losses, (name, _))) in loss_histories.iter().zip(optimizers).enumerate() {
+    for (i, (losses, (name, _optimizer))) in loss_histories.iter().zip(optimizers).enumerate() {
         let color = colors[i % colors.len()];
 
         let losses_with_idx: Vec<(f64, f64)> = losses

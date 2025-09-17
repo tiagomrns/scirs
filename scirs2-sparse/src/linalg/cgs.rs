@@ -12,6 +12,7 @@ pub type CGSResult<F> = IterationResult<F>;
 ///
 /// Implementation following the algorithm from "Templates for the Solution of Linear Systems"
 /// by Barrett et al. This is for non-symmetric linear systems.
+#[allow(dead_code)]
 pub fn cgs<F>(
     a: &dyn LinearOperator<F>,
     b: &[F],

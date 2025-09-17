@@ -90,6 +90,7 @@ impl<
     /// # Returns
     ///
     /// A `MultiscaleBSpline` object initialized with a coarse approximation.
+    #[allow(clippy::too_many_arguments)]
     pub fn new(
         x: &ArrayView1<T>,
         y: &ArrayView1<T>,
@@ -129,7 +130,7 @@ impl<
         let x_owned = x.to_owned();
         let y_owned = y.to_owned();
 
-        // Generate initial knots
+        // Generate initial _knots
         let initial_knots_count = std::cmp::min(initial_knots, x.len());
 
         // Create initial knot vector
@@ -176,7 +177,7 @@ impl<
     /// # Arguments
     ///
     /// * `criterion` - The criterion to use for refinement decisions
-    /// * `max_new_knots` - Maximum number of new knots to add in this refinement step
+    /// * `maxnew_knots` - Maximum number of new knots to add in this refinement step
     ///
     /// # Returns
     ///
@@ -185,7 +186,7 @@ impl<
     pub fn refine(
         &mut self,
         criterion: RefinementCriterion,
-        max_new_knots: usize,
+        maxnew_knots: usize,
     ) -> InterpolateResult<bool> {
         // Check if we've reached the maximum refinement level
         if self.active_level >= self.max_levels - 1 {
@@ -206,15 +207,15 @@ impl<
             return Ok(false); // No refinement needed
         }
 
-        // Limit the number of new knots to add
-        let n_add = std::cmp::min(candidates.len(), max_new_knots);
+        // Limit the number of new _knots to add
+        let n_add = std::cmp::min(candidates.len(), maxnew_knots);
         let candidates = candidates.into_iter().take(n_add).collect::<Vec<_>>();
 
-        // Get current knots and add new ones
+        // Get current _knots and add new ones
         let current_knots = current_spline.knot_vector();
         let _degree = self.order - 1;
 
-        // Generate new knots by adding to the current knot vector
+        // Generate new _knots by adding to the current knot vector
         let mut new_knots = current_knots.clone();
 
         for &idx in &candidates {
@@ -235,13 +236,12 @@ impl<
             }
         }
 
-        // Sort the new knots (required for B-splines)
+        // Sort the new _knots (required for B-splines)
         let mut new_knots_vec = new_knots.to_vec();
         new_knots_vec.sort_by(|a, b| a.partial_cmp(b).unwrap());
         new_knots = Array1::from_vec(new_knots_vec);
 
         // Create a new refined B-spline with the expanded knot vector
-        let coeffs = current_spline.coefficients().to_owned();
 
         // Convert our ExtrapolateMode to BSpline's ExtrapolateMode
         use crate::bspline::ExtrapolateMode as BSplineExtrapolateMode;
@@ -251,10 +251,14 @@ impl<
             ExtrapolateMode::Nan => BSplineExtrapolateMode::Nan,
         };
 
-        let refined_spline = BSpline::new(
+        // Instead of using the same coefficients with more knots (which breaks the constraint),
+        // create a new spline by fitting the original data with the refined knot vector
+        let refined_spline = crate::bspline::make_lsq_bspline(
+            &self.x.view(),
+            &self.y.view(),
             &new_knots.view(),
-            &coeffs.view(),
             self.order,
+            None, // No weights
             bspline_extrapolate,
         )?;
 
@@ -403,12 +407,12 @@ impl<
     ///
     /// # Arguments
     ///
-    /// * `x_new` - The points at which to evaluate the spline
+    /// * `xnew` - The points at which to evaluate the spline
     ///
     /// # Returns
     ///
     /// A `Result` containing the interpolated values at the given points.
-    pub fn evaluate(&self, x_new: &ArrayView1<T>) -> InterpolateResult<Array1<T>> {
+    pub fn evaluate(&self, xnew: &ArrayView1<T>) -> InterpolateResult<Array1<T>> {
         if self.levels.is_empty() {
             return Err(InterpolateError::InvalidState(
                 "No B-spline models available".to_string(),
@@ -417,11 +421,11 @@ impl<
 
         // Use the current active (finest) level B-spline
         // Calculate values for each point individually since BSpline::evaluate works on single points
-        let n_points = x_new.len();
+        let n_points = xnew.len();
         let mut result = Array1::zeros(n_points);
 
         for i in 0..n_points {
-            result[i] = self.levels[self.active_level].evaluate(x_new[i])?;
+            result[i] = self.levels[self.active_level].evaluate(xnew[i])?;
         }
 
         Ok(result)
@@ -432,7 +436,7 @@ impl<
     /// # Arguments
     ///
     /// * `deriv_order` - The order of the derivative (1 for first derivative, 2 for second, etc.)
-    /// * `x_new` - The points at which to evaluate the derivative
+    /// * `xnew` - The points at which to evaluate the derivative
     ///
     /// # Returns
     ///
@@ -440,7 +444,7 @@ impl<
     pub fn derivative(
         &self,
         deriv_order: usize,
-        x_new: &ArrayView1<T>,
+        xnew: &ArrayView1<T>,
     ) -> InterpolateResult<Array1<T>> {
         if self.levels.is_empty() {
             return Err(InterpolateError::InvalidState(
@@ -450,11 +454,11 @@ impl<
 
         // Use the current active (finest) level B-spline
         // Calculate derivatives for each point individually since BSpline::derivative only works for single points
-        let n_points = x_new.len();
+        let n_points = xnew.len();
         let mut result = Array1::zeros(n_points);
 
         for i in 0..n_points {
-            result[i] = self.levels[self.active_level].derivative(x_new[i], deriv_order)?;
+            result[i] = self.levels[self.active_level].derivative(xnew[i], deriv_order)?;
         }
 
         Ok(result)
@@ -544,6 +548,7 @@ impl<
 ///
 /// A `Result` containing the adaptively refined multiscale B-spline.
 #[allow(clippy::too_many_arguments)]
+#[allow(dead_code)]
 pub fn make_adaptive_bspline<
     T: Float
         + FromPrimitive
@@ -611,7 +616,6 @@ mod tests {
     }
 
     #[test]
-    #[ignore = "Knot vector size mismatch in refinement"]
     fn test_multiscale_bspline_refinement() {
         // Use a larger domain for meaningful refinement
         let x = Array::linspace(0.0, 10.0, 101);
@@ -727,7 +731,6 @@ mod tests {
     }
 
     #[test]
-    #[ignore = "Knot vector size mismatch in refinement"]
     fn test_multiscale_bspline_level_switching() {
         // Use a domain that will fit within the B-spline constraints
         let x = Array::linspace(0.0, 10.0, 101);

@@ -57,12 +57,12 @@ impl<A: Float + FromPrimitive + Debug> EntropyRegularization<A> {
     /// # Returns
     ///
     /// An entropy regularization with default epsilon
-    pub fn new(lambda: A, reg_type: EntropyRegularizerType) -> Self {
+    pub fn new(lambda: A, regtype: EntropyRegularizerType) -> Self {
         let epsilon = A::from_f64(1e-8).unwrap();
         Self {
             lambda,
             epsilon,
-            reg_type,
+            reg_type: regtype,
         }
     }
 
@@ -77,11 +77,11 @@ impl<A: Float + FromPrimitive + Debug> EntropyRegularization<A> {
     /// # Returns
     ///
     /// An entropy regularization with custom epsilon
-    pub fn new_with_epsilon(lambda: A, epsilon: A, reg_type: EntropyRegularizerType) -> Self {
+    pub fn new_with_epsilon(lambda: A, epsilon: A, regtype: EntropyRegularizerType) -> Self {
         Self {
             lambda,
             epsilon,
-            reg_type,
+            reg_type: regtype,
         }
     }
 

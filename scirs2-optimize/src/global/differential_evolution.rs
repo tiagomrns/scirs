@@ -11,8 +11,76 @@ use crate::unconstrained::{
 };
 use ndarray::{Array1, ArrayView1};
 use rand::distr::Uniform;
-use rand::prelude::*;
+use rand::prelude::SliceRandom;
 use rand::rngs::StdRng;
+use rand::{Rng, SeedableRng};
+use scirs2_core::random::Random;
+
+/// Simplified Sobol sequence generator
+/// For production use, a full Sobol implementation with proper generating matrices would be preferred
+struct SobolState {
+    dimension: usize,
+    count: usize,
+    direction_numbers: Vec<Vec<u32>>,
+}
+
+impl SobolState {
+    fn new(dimension: usize) -> Self {
+        let mut direction_numbers = Vec::new();
+
+        // Initialize direction numbers for first few dimensions
+        // This is a simplified implementation - full Sobol needs proper generating matrices
+        for d in 0..dimension {
+            let mut dirs = Vec::new();
+            if d == 0 {
+                // First dimension uses powers of 2
+                for i in 0..32 {
+                    dirs.push(1u32 << (31 - i));
+                }
+            } else {
+                // Other dimensions use simple polynomial recurrence
+                // This is not optimal but provides better distribution than random
+                let base = (d + 1) as u32;
+                dirs.push(1u32 << 31);
+                for i in 1..32 {
+                    let prev = dirs[i - 1];
+                    dirs.push(prev ^ (prev >> base));
+                }
+            }
+            direction_numbers.push(dirs);
+        }
+
+        SobolState {
+            dimension,
+            count: 0,
+            direction_numbers,
+        }
+    }
+
+    fn next_point(&mut self) -> Vec<f64> {
+        self.count += 1;
+        let mut point = Vec::with_capacity(self.dimension);
+
+        for d in 0..self.dimension {
+            let mut x = 0u32;
+            let mut c = self.count;
+            let mut j = 0;
+
+            while c > 0 {
+                if (c & 1) == 1 {
+                    x ^= self.direction_numbers[d][j];
+                }
+                c >>= 1;
+                j += 1;
+            }
+
+            // Convert to [0, 1)
+            point.push(x as f64 / (1u64 << 32) as f64);
+        }
+
+        point
+    }
+}
 
 /// Options for Differential Evolution algorithm
 #[derive(Debug, Clone)]
@@ -112,7 +180,7 @@ where
     energies: Array1<f64>,
     best_energy: f64,
     best_idx: usize,
-    rng: StdRng,
+    rng: Random<StdRng>,
     nfev: usize,
 }
 
@@ -136,8 +204,8 @@ where
             options.popsize
         };
 
-        let seed = options.seed.unwrap_or_else(rand::random);
-        let rng = StdRng::seed_from_u64(seed);
+        let seed = options.seed.unwrap_or_else(|| rand::rng().random());
+        let rng = Random::seed(seed);
 
         let strategy_enum = Strategy::from_str(strategy).unwrap_or(Strategy::Best1Bin);
 
@@ -155,8 +223,35 @@ where
             nfev: 0,
         };
 
+        // Validate bounds
+        solver.validate_bounds();
         solver.init_population();
         solver
+    }
+
+    /// Validate that bounds are properly specified
+    fn validate_bounds(&self) {
+        for (i, &(lb, ub)) in self.bounds.iter().enumerate() {
+            if !lb.is_finite() || !ub.is_finite() {
+                panic!(
+                    "Bounds must be finite values. Variable {}: bounds = ({}, {})",
+                    i, lb, ub
+                );
+            }
+            if lb >= ub {
+                panic!(
+                    "Lower bound must be less than upper bound. Variable {}: lb = {}, ub = {}",
+                    i, lb, ub
+                );
+            }
+            if (ub - lb) < 1e-12 {
+                panic!(
+                    "Bounds range is too small. Variable {}: range = {}",
+                    i,
+                    ub - lb
+                );
+            }
+        }
     }
 
     /// Initialize the population
@@ -171,10 +266,10 @@ where
             _ => self.init_random(),
         }
 
-        // If x0 is provided, replace one member with it
-        if let Some(ref x0) = self.options.x0 {
+        // If x0 is provided, replace one member with it (bounds-checked)
+        if let Some(x0) = self.options.x0.clone() {
             for (i, &val) in x0.iter().enumerate() {
-                self.population[[0, i]] = val;
+                self.population[[0, i]] = self.ensure_bounds(i, val);
             }
         }
 
@@ -250,20 +345,93 @@ where
 
     /// Initialize population using Halton sequence
     fn init_halton(&mut self) {
-        // Simplified Halton sequence implementation
-        self.init_random(); // Fallback to random for now
+        let primes = vec![
+            2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37, 41, 43, 47, 53, 59, 61, 67, 71, 73, 79, 83,
+            89, 97,
+        ];
+
+        let popsize = self.population.nrows();
+        for i in 0..popsize {
+            for j in 0..self.ndim {
+                // Use the (i+1)th term of the Halton sequence for base primes[j % primes.len()]
+                let base = primes[j % primes.len()];
+                let halton_value = self.halton_number(i + 1, base);
+
+                // Scale to bounds
+                let (lb, ub) = self.bounds[j];
+                self.population[[i, j]] = lb + halton_value * (ub - lb);
+            }
+        }
     }
 
     /// Initialize population using Sobol sequence
     fn init_sobol(&mut self) {
-        // Simplified Sobol sequence implementation
-        self.init_random(); // Fallback to random for now
+        // Simplified Sobol sequence using scrambled Van der Corput sequence
+        // For a full Sobol implementation, we would need generating matrices
+        let mut sobol_state = SobolState::new(self.ndim);
+
+        let popsize = self.population.nrows();
+        for i in 0..popsize {
+            let sobol_point = sobol_state.next_point();
+            for j in 0..self.ndim {
+                // Scale to bounds
+                let (lb, ub) = self.bounds[j];
+                let scaled_value = if j < sobol_point.len() {
+                    lb + sobol_point[j] * (ub - lb)
+                } else {
+                    // Fallback for higher dimensions
+                    let base = 2u32.pow((j + 1) as u32);
+                    let halton_value = self.halton_number(i + 1, base as usize);
+                    lb + halton_value * (ub - lb)
+                };
+                self.population[[i, j]] = scaled_value;
+            }
+        }
     }
 
-    /// Ensure bounds for a parameter
-    fn ensure_bounds(&self, idx: usize, val: f64) -> f64 {
+    /// Generate the n-th number in the Halton sequence for given base
+    fn halton_number(&self, n: usize, base: usize) -> f64 {
+        let mut result = 0.0;
+        let mut f = 1.0 / base as f64;
+        let mut i = n;
+
+        while i > 0 {
+            result += f * (i % base) as f64;
+            i /= base;
+            f /= base as f64;
+        }
+
+        result
+    }
+
+    /// Ensure bounds for a parameter using reflection method
+    fn ensure_bounds(&mut self, idx: usize, val: f64) -> f64 {
         let (lb, ub) = self.bounds[idx];
-        val.max(lb).min(ub)
+
+        if val >= lb && val <= ub {
+            // Value is within bounds
+            val
+        } else if val < lb {
+            // Reflect around lower bound
+            let excess = lb - val;
+            let range = ub - lb;
+            if excess <= range {
+                lb + excess
+            } else {
+                // If reflection goes beyond upper bound, use random value in range
+                self.rng.gen_range(lb..ub)
+            }
+        } else {
+            // val > ub..reflect around upper bound
+            let excess = val - ub;
+            let range = ub - lb;
+            if excess <= range {
+                ub - excess
+            } else {
+                // If reflection goes beyond lower bound, use random value in range
+                self.rng.gen_range(lb..ub)
+            }
+        }
     }
 
     /// Create mutant vector using differential evolution
@@ -274,7 +442,7 @@ where
         // Select indices for mutation
         let mut indices: Vec<usize> = Vec::with_capacity(5);
         while indices.len() < 5 {
-            let idx = self.rng.random_range(0..popsize);
+            let idx = self.rng.gen_range(0..popsize);
             if idx != candidate_idx && !indices.contains(&idx) {
                 indices.push(idx);
             }
@@ -284,7 +452,7 @@ where
             self.options.mutation.0
         } else {
             self.rng
-                .random_range(self.options.mutation.0..self.options.mutation.1)
+                .gen_range(self.options.mutation.0..self.options.mutation.1)
         };
 
         match self.strategy {
@@ -295,7 +463,6 @@ where
                 let r2 = self.population.row(indices[1]);
                 for i in 0..self.ndim {
                     mutant[i] = best[i] + mutation_factor * (r1[i] - r2[i]);
-                    mutant[i] = self.ensure_bounds(i, mutant[i]);
                 }
             }
             Strategy::Rand1Bin | Strategy::Rand1Exp => {
@@ -305,7 +472,6 @@ where
                 let r2 = self.population.row(indices[2]);
                 for i in 0..self.ndim {
                     mutant[i] = r0[i] + mutation_factor * (r1[i] - r2[i]);
-                    mutant[i] = self.ensure_bounds(i, mutant[i]);
                 }
             }
             Strategy::Best2Bin | Strategy::Best2Exp => {
@@ -319,7 +485,6 @@ where
                     mutant[i] = best[i]
                         + mutation_factor * (r1[i] - r2[i])
                         + mutation_factor * (r3[i] - r4[i]);
-                    mutant[i] = self.ensure_bounds(i, mutant[i]);
                 }
             }
             Strategy::Rand2Bin | Strategy::Rand2Exp => {
@@ -333,7 +498,6 @@ where
                     mutant[i] = r0[i]
                         + mutation_factor * (r1[i] - r2[i])
                         + mutation_factor * (r3[i] - r4[i]);
-                    mutant[i] = self.ensure_bounds(i, mutant[i]);
                 }
             }
             Strategy::CurrentToBest1Bin | Strategy::CurrentToBest1Exp => {
@@ -346,9 +510,13 @@ where
                     mutant[i] = current[i]
                         + mutation_factor * (best[i] - current[i])
                         + mutation_factor * (r1[i] - r2[i]);
-                    mutant[i] = self.ensure_bounds(i, mutant[i]);
                 }
             }
+        }
+
+        // Apply bounds checking after all calculations are done
+        for i in 0..self.ndim {
+            mutant[i] = self.ensure_bounds(i, mutant[i]);
         }
 
         mutant
@@ -366,9 +534,9 @@ where
             | Strategy::Rand2Bin
             | Strategy::CurrentToBest1Bin => {
                 // Binomial crossover
-                let randn = self.rng.random_range(0..self.ndim);
+                let randn = self.rng.gen_range(0..self.ndim);
                 for i in 0..self.ndim {
-                    if i == randn || self.rng.random::<f64>() < self.options.recombination {
+                    if i == randn || self.rng.gen_range(0.0..1.0) < self.options.recombination {
                         trial[i] = mutant[i];
                     }
                 }
@@ -379,16 +547,21 @@ where
             | Strategy::Rand2Exp
             | Strategy::CurrentToBest1Exp => {
                 // Exponential crossover
-                let randn = self.rng.random_range(0..self.ndim);
+                let randn = self.rng.gen_range(0..self.ndim);
                 let mut i = randn;
                 loop {
                     trial[i] = mutant[i];
                     i = (i + 1) % self.ndim;
-                    if i == randn || self.rng.random::<f64>() >= self.options.recombination {
+                    if i == randn || self.rng.gen_range(0.0..1.0) >= self.options.recombination {
                         break;
                     }
                 }
             }
+        }
+
+        // Ensure all trial elements are within bounds after crossover
+        for i in 0..self.ndim {
+            trial[i] = self.ensure_bounds(i, trial[i]);
         }
 
         trial
@@ -411,7 +584,7 @@ where
             // Extract just the trials for batch evaluation
             let trials: Vec<Array1<f64>> = trials_and_indices
                 .iter()
-                .map(|(trial, _)| trial.clone())
+                .map(|(trial_, _)| trial_.clone())
                 .collect();
 
             // Extract the parallel options for evaluation
@@ -495,7 +668,6 @@ where
             nfev: self.nfev,
             func_evals: self.nfev,
             nit,
-            iterations: nit,
             success: converged,
             message: if converged {
                 "Optimization converged successfully"
@@ -526,10 +698,20 @@ where
             )
             .unwrap();
             if local_result.success && local_result.fun < result.fun {
-                result.x = local_result.x;
-                result.fun = local_result.fun;
-                result.nfev += local_result.nfev;
-                result.func_evals = result.nfev;
+                // Ensure polished result respects bounds
+                let mut polished_x = local_result.x;
+                for (i, &(lb, ub)) in self.bounds.iter().enumerate() {
+                    polished_x[i] = polished_x[i].max(lb).min(ub);
+                }
+
+                // Only accept if still better after bounds enforcement
+                let polished_fun = (self.func)(&polished_x.view());
+                if polished_fun < result.fun {
+                    result.x = polished_x;
+                    result.fun = polished_fun;
+                    result.nfev += local_result.nfev + 1; // +1 for our re-evaluation
+                    result.func_evals = result.nfev;
+                }
             }
         }
 
@@ -538,6 +720,7 @@ where
 }
 
 /// Perform global optimization using differential evolution
+#[allow(dead_code)]
 pub fn differential_evolution<F>(
     func: F,
     bounds: Bounds,

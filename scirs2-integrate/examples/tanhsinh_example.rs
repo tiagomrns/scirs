@@ -1,6 +1,7 @@
 use scirs2_integrate::tanhsinh::{nsum, tanhsinh, TanhSinhOptions};
 use std::f64::consts::PI;
 
+#[allow(dead_code)]
 fn main() {
     println!("Tanh-Sinh Quadrature Examples");
     println!("=============================\n");

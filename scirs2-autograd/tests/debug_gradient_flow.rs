@@ -6,6 +6,7 @@ use scirs2_autograd as ag;
 
 #[test]
 #[ignore = "Gradient shape propagation architectural limitation"]
+#[allow(dead_code)]
 fn test_trace_gradient_flow() {
     ag::run(|g| {
         // Create a simple 2x2 matrix
@@ -33,6 +34,7 @@ fn test_trace_gradient_flow() {
 
 #[test]
 #[ignore = "Gradient shape propagation architectural limitation"]
+#[allow(dead_code)]
 fn test_matrix_inverse_gradient_flow() {
     ag::run(|g| {
         let a = variable(array![[3.0_f64, 1.0], [1.0, 2.0]], g);
@@ -56,6 +58,7 @@ fn test_matrix_inverse_gradient_flow() {
 
 #[test]
 #[ignore = "Gradient shape propagation architectural limitation"]
+#[allow(dead_code)]
 fn test_chained_gradient_flow() {
     ag::run(|g| {
         // Test gradient flow through inv -> trace chain

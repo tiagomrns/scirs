@@ -1,17 +1,20 @@
 [package]
 name = "scirs2-interpolate"
 version.workspace = true
-edition = "2021"
-authors = ["SciRS2 Team"]
-description = "Interpolation module for SciRS2"
-license = "MIT OR Apache-2.0"
-repository = "https://github.com/cool-japan/scirs"
+edition.workspace = true
+authors.workspace = true
+description = "Interpolation module for SciRS2 (scirs2-interpolate)"
+license.workspace = true
+repository.workspace = true
 keywords = ["interpolation", "spline", "scientific", "scipy", "numerical"]
 categories = ["science", "mathematics", "algorithms"]
 
+[lints]
+workspace = true
+
 [dependencies]
 # Core dependencies
-scirs2-core = { workspace = true, features = ["simd", "parallel"] }
+scirs2-core = { workspace = true, features = ["simd", "parallel", "random"] }
 scirs2-linalg = { workspace = true }
 ndarray = { workspace = true }
 # BLAS dependencies removed - using core abstractions
@@ -21,6 +24,15 @@ num-complex = { workspace = true }
 thiserror = { workspace = true }
 num_cpus = { workspace = true }
 ordered-float = { workspace = true }
+rand = { workspace = true }
+rand_distr = { workspace = true }
+fastrand = { workspace = true }
+statrs = { workspace = true }
+
+# Optional dependencies for features
+pyo3 = { workspace = true, optional = true }
+numpy = { workspace = true, optional = true }
+serde = { workspace = true, optional = true, features = ["derive"] }
 
 [dev-dependencies]
 approx = { workspace = true }
@@ -45,3 +57,25 @@ simd = ["scirs2-core/simd"]
 
 # Enable parallel processing features
 parallel = ["scirs2-core/parallel"]
+
+# Enable scipy comparison benchmarks (requires Python with scipy/numpy)
+scipy-comparison = ["pyo3", "numpy"]
+
+# Enable serialization support for data structures
+serde = ["dep:serde"]
+
+[[bench]]
+name = "basic_interpolation"
+harness = false
+
+[[bench]]
+name = "advanced_methods"
+harness = false
+
+[[bench]]
+name = "bspline_benchmarks"
+harness = false
+
+[[bench]]
+name = "scipy_comparison"
+harness = false

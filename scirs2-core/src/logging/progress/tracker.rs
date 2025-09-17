@@ -336,10 +336,10 @@ impl EnhancedProgressTracker {
 
         match self.config.style {
             ProgressStyle::Percentage => {
-                self.renderer.render_percentage(&self.description, &stats);
+                self.renderer.renderpercentage(&self.description, &stats);
             }
             ProgressStyle::Bar => {
-                self.renderer.render_bar(
+                self.renderer.render_basic(
                     &self.description,
                     &stats,
                     self.config.width,
@@ -349,7 +349,7 @@ impl EnhancedProgressTracker {
             }
             ProgressStyle::BlockBar => {
                 let block_symbols = ProgressSymbols::blocks();
-                self.renderer.render_bar(
+                self.renderer.render_basic(
                     &self.description,
                     &stats,
                     self.config.width,
@@ -361,12 +361,12 @@ impl EnhancedProgressTracker {
                 self.renderer.render_spinner(
                     &self.description,
                     &stats,
-                    &symbols,
                     self.config.show_eta,
+                    &symbols,
                 );
             }
             ProgressStyle::DetailedBar => {
-                self.renderer.render_detailed_bar(
+                self.renderer.render_detailed(
                     &self.description,
                     &stats,
                     self.config.width,

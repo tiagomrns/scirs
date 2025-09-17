@@ -56,14 +56,15 @@ pub enum MatrixType {
 }
 
 /// Generate a random matrix of the specified type
-pub fn random_matrix<F, R>(
+#[allow(dead_code)]
+pub fn randommatrix<F, R>(
     rows: usize,
     cols: usize,
     matrix_type: MatrixType,
     rng: &mut R,
 ) -> LinalgResult<Array2<F>>
 where
-    F: Float + Debug + NumAssign + Sum + 'static,
+    F: Float + Debug + NumAssign + Sum + Send + Sync + ndarray::ScalarOperand + 'static,
     R: Rng + ?Sized,
 {
     match matrix_type {
@@ -88,6 +89,7 @@ where
 }
 
 /// Generate a general random matrix
+#[allow(dead_code)]
 fn random_general<F, R>(
     rows: usize,
     cols: usize,
@@ -129,6 +131,7 @@ where
 }
 
 /// Generate a symmetric random matrix
+#[allow(dead_code)]
 fn random_symmetric<F, R>(
     size: usize,
     distribution: Distribution1D,
@@ -153,6 +156,7 @@ where
 }
 
 /// Generate a positive definite matrix
+#[allow(dead_code)]
 fn random_positive_definite<F, R>(
     size: usize,
     eigenvalue_min: f64,
@@ -160,7 +164,7 @@ fn random_positive_definite<F, R>(
     rng: &mut R,
 ) -> LinalgResult<Array2<F>>
 where
-    F: Float + Debug + NumAssign + Sum + 'static,
+    F: Float + Debug + NumAssign + Sum + Send + Sync + ndarray::ScalarOperand + 'static,
     R: Rng + ?Sized,
 {
     if eigenvalue_min <= 0.0 {
@@ -197,9 +201,10 @@ where
 }
 
 /// Generate a random orthogonal matrix using QR decomposition
+#[allow(dead_code)]
 fn random_orthogonal<F, R>(size: usize, rng: &mut R) -> LinalgResult<Array2<F>>
 where
-    F: Float + Debug + NumAssign + Sum + 'static,
+    F: Float + Debug + NumAssign + Sum + Send + Sync + ndarray::ScalarOperand + 'static,
     R: Rng + ?Sized,
 {
     // Generate random matrix with normal distribution
@@ -214,9 +219,10 @@ where
 }
 
 /// Generate a random correlation matrix
+#[allow(dead_code)]
 fn random_correlation<F, R>(size: usize, rng: &mut R) -> LinalgResult<Array2<F>>
 where
-    F: Float + Debug + NumAssign + Sum + 'static,
+    F: Float + Debug + NumAssign + Sum + Send + Sync + ndarray::ScalarOperand + 'static,
     R: Rng + ?Sized,
 {
     // Start with a positive definite matrix
@@ -241,6 +247,7 @@ where
 }
 
 /// Generate a sparse random matrix
+#[allow(dead_code)]
 fn random_sparse<F, R>(
     rows: usize,
     cols: usize,
@@ -284,6 +291,7 @@ where
 }
 
 /// Generate a random diagonal matrix
+#[allow(dead_code)]
 fn random_diagonal<F, R>(
     size: usize,
     distribution: Distribution1D,
@@ -324,6 +332,7 @@ where
 }
 
 /// Generate a random triangular matrix
+#[allow(dead_code)]
 fn random_triangular<F, R>(
     rows: usize,
     cols: usize,
@@ -360,7 +369,8 @@ where
 }
 
 /// Generate a random complex matrix
-pub fn random_complex_matrix<F, R>(
+#[allow(dead_code)]
+pub fn random_complexmatrix<F, R>(
     rows: usize,
     cols: usize,
     real_dist: Distribution1D,
@@ -385,6 +395,7 @@ where
 }
 
 /// Generate a random Hermitian matrix
+#[allow(dead_code)]
 pub fn random_hermitian<F, R>(
     size: usize,
     real_dist: Distribution1D,
@@ -395,7 +406,7 @@ where
     F: Float,
     R: Rng + ?Sized,
 {
-    let mut matrix = random_complex_matrix(size, size, real_dist, imag_dist, rng)?;
+    let mut matrix = random_complexmatrix(size, size, real_dist, imag_dist, rng)?;
 
     // Make it Hermitian: A = (A + A^H) / 2
     for i in 0..size {
@@ -420,9 +431,9 @@ mod tests {
     use rand_chacha::ChaCha8Rng;
 
     #[test]
-    fn test_symmetric_matrix() {
+    fn test_symmetricmatrix() {
         let mut rng = ChaCha8Rng::seed_from_u64(42);
-        let matrix = random_matrix::<f64, _>(
+        let matrix = randommatrix::<f64, ChaCha8Rng>(
             5,
             5,
             MatrixType::Symmetric(Distribution1D::StandardNormal),
@@ -439,9 +450,9 @@ mod tests {
     }
 
     #[test]
-    fn test_orthogonal_matrix() {
+    fn test_orthogonalmatrix() {
         let mut rng = ChaCha8Rng::seed_from_u64(42);
-        let q = random_matrix::<f64, _>(4, 4, MatrixType::Orthogonal, &mut rng).unwrap();
+        let q = randommatrix::<f64, ChaCha8Rng>(4, 4, MatrixType::Orthogonal, &mut rng).unwrap();
 
         // Check Q^T * Q = I
         let qt = q.t();
@@ -458,7 +469,7 @@ mod tests {
     #[test]
     fn test_positive_definite() {
         let mut rng = ChaCha8Rng::seed_from_u64(42);
-        let matrix = random_matrix::<f64, _>(
+        let matrix = randommatrix::<f64, ChaCha8Rng>(
             3,
             3,
             MatrixType::PositiveDefinite {
@@ -483,9 +494,10 @@ mod tests {
     }
 
     #[test]
-    fn test_correlation_matrix() {
+    fn test_correlationmatrix() {
         let mut rng = ChaCha8Rng::seed_from_u64(42);
-        let matrix = random_matrix::<f64, _>(4, 4, MatrixType::Correlation, &mut rng).unwrap();
+        let matrix =
+            randommatrix::<f64, ChaCha8Rng>(4, 4, MatrixType::Correlation, &mut rng).unwrap();
 
         // Check diagonal elements are 1
         for i in 0..4 {

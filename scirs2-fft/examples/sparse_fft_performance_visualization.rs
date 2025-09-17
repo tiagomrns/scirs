@@ -12,6 +12,7 @@ use std::f64::consts::PI;
 use std::time::Instant;
 
 /// Create a sparse signal with known frequencies in the spectrum
+#[allow(dead_code)]
 fn create_sparse_signal(n: usize, frequencies: &[(usize, f64)]) -> Vec<f64> {
     let mut signal = vec![0.0; n];
 
@@ -26,6 +27,7 @@ fn create_sparse_signal(n: usize, frequencies: &[(usize, f64)]) -> Vec<f64> {
 }
 
 /// Benchmark all sparse FFT algorithms and visualize the results
+#[allow(dead_code)]
 fn benchmark_and_visualize() {
     println!("Running performance benchmarks for sparse FFT algorithms...");
 
@@ -64,8 +66,8 @@ fn benchmark_and_visualize() {
     let mut speedups = Vec::new();
 
     for &algorithm in &algorithms {
-        let mut cpu_size_times = Vec::new();
-        let mut gpu_size_times = Vec::new();
+        let mut cpusize_times = Vec::new();
+        let mut gpusize_times = Vec::new();
         let mut algorithm_speedups = Vec::new();
 
         for &size in &sizes {
@@ -89,7 +91,7 @@ fn benchmark_and_visualize() {
             )
             .unwrap();
             let cpu_time = cpu_start.elapsed().as_millis() as f64;
-            cpu_size_times.push(cpu_time);
+            cpusize_times.push(cpu_time);
 
             // GPU benchmark (if available)
             if cuda_available {
@@ -103,7 +105,7 @@ fn benchmark_and_visualize() {
                 )
                 .unwrap();
                 let gpu_time = gpu_start.elapsed().as_millis() as f64;
-                gpu_size_times.push(gpu_time);
+                gpusize_times.push(gpu_time);
 
                 // Calculate speedup
                 let speedup = if gpu_time > 0.0 {
@@ -114,21 +116,17 @@ fn benchmark_and_visualize() {
                 algorithm_speedups.push(speedup);
 
                 println!(
-                    "Algorithm: {:?}, Size: {}, CPU: {:.2} ms, GPU: {:.2} ms, Speedup: {:.2}x",
-                    algorithm, size, cpu_time, gpu_time, speedup
+                    "Algorithm: {algorithm:?}, Size: {size}, CPU: {cpu_time:.2} ms, GPU: {gpu_time:.2} ms, Speedup: {speedup:.2}x"
                 );
             } else {
-                gpu_size_times.push(0.0);
+                gpusize_times.push(0.0);
                 algorithm_speedups.push(0.0);
-                println!(
-                    "Algorithm: {:?}, Size: {}, CPU: {:.2} ms, GPU: N/A",
-                    algorithm, size, cpu_time
-                );
+                println!("Algorithm: {algorithm:?}, Size: {size}, CPU: {cpu_time:.2} ms, GPU: N/A");
             }
         }
 
-        cpu_times.push(cpu_size_times);
-        gpu_times.push(gpu_size_times);
+        cpu_times.push(cpusize_times);
+        gpu_times.push(gpusize_times);
         speedups.push(algorithm_speedups);
     }
 
@@ -144,20 +142,20 @@ fn benchmark_and_visualize() {
     for (i, &algorithm) in algorithms.iter().enumerate() {
         // CPU times plot
         let cpu_trace = Scatter::new(size_labels.clone(), cpu_times[i].clone())
-            .name(format!("{:?}", algorithm))
+            .name(format!("{algorithm:?}"))
             .mode(Mode::LinesMarkers);
         cpu_plot.add_trace(cpu_trace);
 
         if cuda_available {
             // GPU times plot
             let gpu_trace = Scatter::new(size_labels.clone(), gpu_times[i].clone())
-                .name(format!("{:?}", algorithm))
+                .name(format!("{algorithm:?}"))
                 .mode(Mode::LinesMarkers);
             gpu_plot.add_trace(gpu_trace);
 
             // Speedup plot
             let speedup_trace = Scatter::new(size_labels.clone(), speedups[i].clone())
-                .name(format!("{:?}", algorithm))
+                .name(format!("{algorithm:?}"))
                 .mode(Mode::LinesMarkers);
             speedup_plot.add_trace(speedup_trace);
         }
@@ -209,6 +207,7 @@ fn benchmark_and_visualize() {
 }
 
 /// Compare algorithm accuracy on noisy signals
+#[allow(dead_code)]
 fn benchmark_accuracy() {
     println!("\nComparing algorithm accuracy with noisy signals...");
 
@@ -274,8 +273,7 @@ fn benchmark_accuracy() {
             algorithm_accuracies.push(accuracy);
 
             println!(
-                "Algorithm: {:?}, Noise Level: {:.2}, Accuracy: {:.2}",
-                algorithm, noise_level, accuracy
+                "Algorithm: {algorithm:?}, Noise Level: {noise_level:.2}, Accuracy: {accuracy:.2}"
             );
         }
 
@@ -290,11 +288,11 @@ fn benchmark_accuracy() {
         let trace = Scatter::new(
             noise_levels
                 .iter()
-                .map(|&n| format!("{:.2}", n))
+                .map(|&n| format!("{n:.2}"))
                 .collect::<Vec<_>>(),
             accuracies[i].clone(),
         )
-        .name(format!("{:?}", algorithm))
+        .name(format!("{algorithm:?}"))
         .mode(Mode::LinesMarkers);
 
         accuracy_plot.add_trace(trace);
@@ -317,6 +315,7 @@ fn benchmark_accuracy() {
     println!("\nAccuracy plot saved as sparse_fft_accuracy.html");
 }
 
+#[allow(dead_code)]
 fn main() {
     println!("Sparse FFT Performance Visualization Tool");
     println!("=======================================");

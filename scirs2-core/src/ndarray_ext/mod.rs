@@ -46,6 +46,7 @@ pub mod manipulation;
 /// assert_eq!(b[[0, 0]], 1);
 /// assert_eq!(b[[3, 0]], 4);
 /// ```
+#[allow(dead_code)]
 pub fn reshape_2d<T>(
     array: ArrayView<T, Ix2>,
     shape: (usize, usize),
@@ -97,35 +98,36 @@ where
 /// let c = stack_2d(&[a.view(), b.view()], 0).unwrap();
 /// assert_eq!(c.shape(), &[4, 2]);
 /// ```
+#[allow(dead_code)]
 pub fn stack_2d<T>(arrays: &[ArrayView<T, Ix2>], axis: usize) -> Result<Array<T, Ix2>, &'static str>
 where
     T: Clone + Default,
 {
     if arrays.is_empty() {
-        return Err("No arrays provided for stacking");
+        return Err("No _arrays provided for stacking");
     }
 
-    // Validate that all arrays have the same shape
-    let first_shape = arrays[0].shape();
+    // Validate that all _arrays have the same shape
+    let firstshape = arrays[0].shape();
     for array in arrays.iter().skip(1) {
-        if array.shape() != first_shape {
-            return Err("All arrays must have the same shape for stacking");
+        if array.shape() != firstshape {
+            return Err("All _arrays must have the same shape for stacking");
         }
     }
 
-    let (rows, cols) = (first_shape[0], first_shape[1]);
+    let (rows, cols) = (firstshape[0], firstshape[1]);
 
     // Calculate the new shape
     let (new_rows, new_cols) = match axis {
         0 => (rows * arrays.len(), cols), // Stack vertically
         1 => (rows, cols * arrays.len()), // Stack horizontally
-        _ => return Err("Axis must be 0 or 1 for 2D arrays"),
+        _ => return Err("Axis must be 0 or 1 for 2D _arrays"),
     };
 
     // Create a new array to hold the stacked result
     let mut result = Array::<T, Ix2>::default((new_rows, new_cols));
 
-    // Copy data from the input arrays to the result
+    // Copy data from the input _arrays to the result
     match axis {
         0 => {
             // Stack vertically (along rows)
@@ -177,6 +179,7 @@ where
 /// assert_eq!(b[[0, 0]], 1);
 /// assert_eq!(b[[0, 1]], 4);
 /// ```
+#[allow(dead_code)]
 pub fn transpose_2d<T>(array: ArrayView<T, Ix2>) -> Array<T, Ix2>
 where
     T: Clone,
@@ -208,6 +211,7 @@ where
 /// assert_eq!(result[0].shape(), &[2, 2]);
 /// assert_eq!(result[1].shape(), &[2, 2]);
 /// ```
+#[allow(dead_code)]
 pub fn split_2d<T>(
     array: ArrayView<T, Ix2>,
     indices: &[usize],
@@ -306,6 +310,7 @@ where
 /// assert_eq!(result[[0, 0]], 1);
 /// assert_eq!(result[[0, 1]], 3);
 /// ```
+#[allow(dead_code)]
 pub fn take_2d<T>(
     array: ArrayView<T, Ix2>,
     indices: ArrayView<usize, Ix1>,
@@ -382,6 +387,7 @@ where
 /// assert_eq!(result[1], 3);
 /// assert_eq!(result[2], 5);
 /// ```
+#[allow(dead_code)]
 pub fn mask_select<T>(
     array: ArrayView<T, Ix2>,
     mask: ArrayView<bool, Ix2>,
@@ -438,6 +444,7 @@ where
 /// assert_eq!(result[0], 1);
 /// assert_eq!(result[1], 8);
 /// ```
+#[allow(dead_code)]
 pub fn fancy_index_2d<T>(
     array: ArrayView<T, Ix2>,
     row_indices: ArrayView<usize, Ix1>,
@@ -454,7 +461,7 @@ where
 
     let (rows, cols) = (array.shape()[0], array.shape()[1]);
 
-    // Check that indices are within bounds
+    // Check that _indices are within bounds
     for &idx in row_indices.iter() {
         if idx >= rows {
             return Err("Row index out of bounds");
@@ -504,6 +511,7 @@ where
 /// assert_eq!(result[1], 5);
 /// assert_eq!(result[2], 6);
 /// ```
+#[allow(dead_code)]
 pub fn where_condition<T, F>(
     array: ArrayView<T, Ix2>,
     condition: F,
@@ -541,6 +549,7 @@ where
 /// assert!(!is_broadcast_compatible(&[5, 1, 4], &[3, 1, 1]));
 /// assert!(!is_broadcast_compatible(&[2, 3], &[4]));
 /// ```
+#[allow(dead_code)]
 pub fn is_broadcast_compatible(shape1: &[usize], shape2: &[usize]) -> bool {
     // Align shapes to have the same dimensionality by prepending with 1s
     let max_dim = shape1.len().max(shape2.len());
@@ -579,7 +588,8 @@ pub fn is_broadcast_compatible(shape1: &[usize], shape2: &[usize]) -> bool {
 /// # Returns
 ///
 /// The broadcasted shape as a `Vec<usize>`, or `None` if the shapes are incompatible
-pub fn broadcast_shape(shape1: &[usize], shape2: &[usize]) -> Option<Vec<usize>> {
+#[allow(dead_code)]
+pub fn broadcastshape(shape1: &[usize], shape2: &[usize]) -> Option<Vec<usize>> {
     if !is_broadcast_compatible(shape1, shape2) {
         return None;
     }
@@ -634,6 +644,7 @@ pub fn broadcast_shape(shape1: &[usize], shape2: &[usize]) -> Option<Vec<usize>>
 /// assert_eq!(b[[0, 0]], 1);
 /// assert_eq!(b[[1, 0]], 1);
 /// ```
+#[allow(dead_code)]
 pub fn broadcast_1d_to_2d<T>(
     array: ArrayView<T, Ix1>,
     repeats: usize,
@@ -702,6 +713,7 @@ where
 /// assert_eq!(result[[0, 0]], 11);
 /// assert_eq!(result[[1, 2]], 36);
 /// ```
+#[allow(dead_code)]
 pub fn broadcast_apply<T, R, F>(
     a: ArrayView<T, Ix2>,
     b: ArrayView<T, Ix1>,

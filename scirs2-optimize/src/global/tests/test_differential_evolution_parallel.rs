@@ -7,6 +7,7 @@ use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::Arc;
 
 // Test function that tracks the number of evaluations
+#[allow(dead_code)]
 fn test_function_with_counter(counter: Arc<AtomicUsize>) -> impl Fn(&ArrayView1<f64>) -> f64 {
     move |x: &ArrayView1<f64>| {
         counter.fetch_add(1, Ordering::Relaxed);
@@ -18,6 +19,7 @@ fn test_function_with_counter(counter: Arc<AtomicUsize>) -> impl Fn(&ArrayView1<
 }
 
 #[test]
+#[allow(dead_code)]
 fn test_parallel_vs_sequential() {
     let bounds = vec![(-5.0, 5.0), (-5.0, 5.0)];
     
@@ -75,6 +77,7 @@ fn test_parallel_vs_sequential() {
 }
 
 #[test]
+#[allow(dead_code)]
 fn test_parallel_correctness() {
     // Test that parallel execution produces correct results
     let bounds = vec![(-10.0, 10.0), (-10.0, 10.0)];
@@ -112,6 +115,7 @@ fn test_parallel_correctness() {
 }
 
 #[test]
+#[allow(dead_code)]
 fn test_parallel_options_disabled() {
     // Test that parallel options can be disabled
     let bounds = vec![(-5.0, 5.0), (-5.0, 5.0)];

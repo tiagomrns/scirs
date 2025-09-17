@@ -55,6 +55,7 @@ pub struct ComplexEigDecomposition<F: Float> {
 /// - P is a permutation matrix
 /// - L is lower triangular with 1s on diagonal
 /// - U is upper triangular
+#[allow(dead_code)]
 pub fn complex_lu<F>(a: &ArrayView2<Complex<F>>) -> LinalgResult<ComplexLUDecomposition<F>>
 where
     F: Float + Sum + Debug,
@@ -114,6 +115,7 @@ where
 /// Decomposes A into Q * R where:
 /// - Q is unitary (Q^H * Q = I)
 /// - R is upper triangular
+#[allow(dead_code)]
 pub fn complex_qr<F>(a: &ArrayView2<Complex<F>>) -> LinalgResult<ComplexQRDecomposition<F>>
 where
     F: Float + Sum + Debug,
@@ -175,6 +177,7 @@ where
 /// - U is unitary (left singular vectors)
 /// - S is diagonal with real, non-negative values
 /// - V^H is unitary (conjugate transpose of right singular vectors)
+#[allow(dead_code)]
 pub fn complex_svd<F>(
     a: &ArrayView2<Complex<F>>,
     full_matrices: bool,
@@ -238,10 +241,72 @@ where
                 u[[i, j]] = sum / Complex::<f64>::new(s[j], F::zero());
             }
         } else if j >= k && full_matrices {
-            // For full matrices, extend with orthogonal vectors
-            // This would require implementing Gram-Schmidt or similar
-            // For now, we'll leave these as zero
-            // TODO: Implement proper orthogonalization
+            // For full matrices, extend with orthogonal vectors using modified Gram-Schmidt
+            
+            // Start with a deterministic pattern to generate a starting vector
+            for i in 0..m {
+                let real_part = F::from((i + j) as f64 / m as f64).unwrap();
+                let imag_part = F::from((i * j) as f64 / (m * m) as f64).unwrap();
+                u[[i, j]] = Complex::new(real_part, imag_part);
+            }
+            
+            // Orthogonalize against previous columns using modified Gram-Schmidt
+            for prev_j in 0..j {
+                // Compute projection coefficient: <u_prev, u_current>
+                let mut proj_coeff = Complex::<F>::zero();
+                for i in 0..m {
+                    proj_coeff = proj_coeff + u[[i, prev_j]].conj() * u[[i, j]];
+                }
+                
+                // Subtract projection: u_current = u_current - proj_coeff * u_prev
+                for i in 0..m {
+                    u[[i, j]] = u[[i, j]] - proj_coeff * u[[i, prev_j]];
+                }
+            }
+            
+            // Normalize the column
+            let mut norm_sq = F::zero();
+            for i in 0..m {
+                norm_sq = norm_sq + u[[i, j]].norm_sqr();
+            }
+            let norm = norm_sq.sqrt();
+            
+            if norm > F::epsilon() {
+                for i in 0..m {
+                    u[[i, j]] = u[[i, j]] / Complex::new(norm, F::zero());
+                }
+            } else {
+                // If the vector becomes zero after orthogonalization, use a canonical vector
+                for i in 0..m {
+                    let real_part = if i == j % m { F::one() } else { F::zero() };
+                    u[[i, j]] = Complex::new(real_part, F::zero());
+                }
+                
+                // Re-orthogonalize
+                for prev_j in 0..j {
+                    let mut proj_coeff = Complex::<F>::zero();
+                    for i in 0..m {
+                        proj_coeff = proj_coeff + u[[i, prev_j]].conj() * u[[i, j]];
+                    }
+                    
+                    for i in 0..m {
+                        u[[i, j]] = u[[i, j]] - proj_coeff * u[[i, prev_j]];
+                    }
+                }
+                
+                // Re-normalize
+                let mut norm_sq = F::zero();
+                for i in 0..m {
+                    norm_sq = norm_sq + u[[i, j]].norm_sqr();
+                }
+                let norm = norm_sq.sqrt();
+                
+                if norm > F::epsilon() {
+                    for i in 0..m {
+                        u[[i, j]] = u[[i, j]] / Complex::new(norm, F::zero());
+                    }
+                }
+            }
         }
     }
     
@@ -251,6 +316,7 @@ where
 /// Performs eigendecomposition of a complex matrix
 ///
 /// Finds eigenvalues and eigenvectors such that A * v = λ * v
+#[allow(dead_code)]
 pub fn complex_eig<F>(a: &ArrayView2<Complex<F>>) -> LinalgResult<ComplexEigDecomposition<F>>
 where
     F: Float + Sum + Debug,
@@ -388,6 +454,7 @@ where
 /// Performs eigendecomposition of a Hermitian complex matrix
 ///
 /// For Hermitian matrices, eigenvalues are real and eigenvectors are orthogonal
+#[allow(dead_code)]
 pub fn complex_eigh<F>(a: &ArrayView2<Complex<F>>) -> LinalgResult<ComplexEigDecomposition<F>>
 where
     F: Float + Sum + Debug,
@@ -591,6 +658,7 @@ where
 /// Performs Cholesky decomposition of a positive-definite Hermitian matrix
 ///
 /// Decomposes A into L * L^H where L is lower triangular
+#[allow(dead_code)]
 pub fn complex_cholesky<F>(a: &ArrayView2<Complex<F>>) -> LinalgResult<Array2<Complex<F>>>
 where
     F: Float + Sum + Debug,
@@ -650,6 +718,7 @@ where
 /// Performs Schur decomposition of a complex matrix
 ///
 /// Decomposes A into Q * T * Q^H where T is upper triangular
+#[allow(dead_code)]
 pub fn complex_schur<F>(a: &ArrayView2<Complex<F>>) -> LinalgResult<(Array2<Complex<F>>, Array2<Complex<F>>)>
 where
     F: Float + Sum + Debug,
@@ -694,8 +763,79 @@ mod tests {
             }
         }
         
-        // Apply permutation and verify
-        // TODO: Add proper verification
+        // Apply permutation and verify L * U = P * A
+        // First reconstruct the permutation matrix P
+        let mut p = Array2::<Complex<f64>>::zeros((n, n));
+        for (i, &piv_i) in lu_result.piv.iter().enumerate() {
+            p[[i, piv_i]] = Complex::<f64>::one();
+        }
+        
+        // Compute L * U
+        let mut lu_product = Array2::<Complex<f64>>::zeros((n, n));
+        for i in 0..n {
+            for j in 0..n {
+                let mut sum = Complex::<f64>::zero();
+                for k in 0..n {
+                    sum = sum + l[[i, k]] * u[[k, j]];
+                }
+                lu_product[[i, j]] = sum;
+            }
+        }
+        
+        // Compute P * A
+        let mut pa = Array2::<Complex<f64>>::zeros((n, n));
+        for i in 0..n {
+            for j in 0..n {
+                let mut sum = Complex::<f64>::zero();
+                for k in 0..n {
+                    sum = sum + p[[i, k]] * a[[k, j]];
+                }
+                pa[[i, j]] = sum;
+            }
+        }
+        
+        // Verify L * U = P * A
+        for i in 0..n {
+            for j in 0..n {
+                let diff = (lu_product[[i, j]] - pa[[i, j]]).norm();
+                assert!(
+                    diff < 1e-10,
+                    "LU decomposition verification failed at ({}, {}): L*U = {}, P*A = {}, diff = {}",
+                    i, j, lu_product[[i, j]], pa[[i, j]], diff
+                );
+            }
+        }
+        
+        // Verify L is lower triangular with unit diagonal
+        for i in 0..n {
+            for j in 0..n {
+                if i < j {
+                    assert!(
+                        l[[i, j]].norm() < 1e-10,
+                        "L is not lower triangular at ({}, {})",
+                        i, j
+                    );
+                } else if i == j {
+                    let diff = (l[[i, j]] - Complex::<f64>::one()).norm();
+                    assert!(
+                        diff < 1e-10,
+                        "L does not have unit diagonal at ({}, {}): value = {}",
+                        i, j, l[[i, j]]
+                    );
+                }
+            }
+        }
+        
+        // Verify U is upper triangular
+        for i in 0..n {
+            for j in 0..i {
+                assert!(
+                    u[[i, j]].norm() < 1e-10,
+                    "U is not upper triangular at ({}, {})",
+                    i, j
+                );
+            }
+        }
     }
     
     #[test]

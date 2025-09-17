@@ -5,6 +5,7 @@ use scirs2_vision::transform::{estimate_affine_transform, warp_affine, AffineTra
 use std::env;
 use std::path::Path;
 
+#[allow(dead_code)]
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Get command line arguments
     let args: Vec<String> = env::args().collect();
@@ -216,6 +217,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 }
 
 /// Draw a quadrilateral on an image
+#[allow(dead_code)]
 fn draw_quadrilateral(img: &mut RgbaImage, points: &[(f64, f64)], color: [u8; 4]) {
     if points.len() != 4 {
         return;
@@ -236,6 +238,7 @@ fn draw_quadrilateral(img: &mut RgbaImage, points: &[(f64, f64)], color: [u8; 4]
 }
 
 /// Draw a line on an image
+#[allow(dead_code)]
 fn draw_line(img: &mut RgbaImage, p1: (f64, f64), p2: (f64, f64), color: image::Rgba<u8>) {
     let (width, height) = img.dimensions();
     let (x0, y0) = (p1.0 as i32, p1.1 as i32);
@@ -272,6 +275,7 @@ fn draw_line(img: &mut RgbaImage, p1: (f64, f64), p2: (f64, f64), color: image::
 }
 
 /// Draw a circle on an image
+#[allow(dead_code)]
 fn draw_circle(img: &mut RgbaImage, cx: u32, cy: u32, radius: u32, color: image::Rgba<u8>) {
     let (width, height) = img.dimensions();
 

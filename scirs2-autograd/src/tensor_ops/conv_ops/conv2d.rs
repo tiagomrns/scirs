@@ -22,6 +22,7 @@ pub struct Conv2DWithCols {
 }
 
 #[cfg(feature = "blas")]
+#[allow(dead_code)]
 fn fast_im2col_gemm_fused_kernel<F: Float>(
     x: &[F], // 4-dimensional
     filter: &[F],
@@ -113,6 +114,7 @@ fn fast_im2col_gemm_fused_kernel<F: Float>(
 
 #[cfg(not(feature = "blas"))]
 #[allow(clippy::too_many_arguments)]
+#[allow(dead_code)]
 fn slow_im2col_gemm_fused_kernel<F: Float>(
     x: &[F], // 4-dimensional
     filter: &[F],
@@ -213,6 +215,7 @@ fn slow_im2col_gemm_fused_kernel<F: Float>(
 
 #[cfg(feature = "blas")]
 // inputs must be row-major matrices
+#[allow(dead_code)]
 fn fast_col_x_filter_kernel<F: Float>(
     cols: &[F],
     filter: &[F],
@@ -273,6 +276,7 @@ fn fast_col_x_filter_kernel<F: Float>(
 
 #[cfg(not(feature = "blas"))]
 #[allow(clippy::too_many_arguments)]
+#[allow(dead_code)]
 fn slow_col_x_filter_kernel<F: Float>(
     cols: &[F],
     filter: &[F],
@@ -343,6 +347,7 @@ struct Conv2DParams {
 
 // Panics for invalid inputs
 #[allow(clippy::too_many_arguments)]
+#[allow(dead_code)]
 fn conv2d_extract_params<F: Float>(
     x: &NdArrayView<F>,
     w: &NdArrayView<F>,
@@ -360,30 +365,28 @@ fn conv2d_extract_params<F: Float>(
     }
     // Extract size params
     let (batch_size, xch, xh, xw) = {
-        let x_shape = x.shape();
-        if x_shape.len() != 4 {
+        let xshape = x.shape();
+        if xshape.len() != 4 {
             return Err(op::OpError::IncompatibleShape(format!(
-                "conv2d: lhs input must be 4D (got {:?})",
-                x_shape
+                "conv2d: lhs input must be 4D (got {xshape:?})"
             )));
         }
-        (x_shape[0], x_shape[1], x_shape[2], x_shape[3])
+        (xshape[0], xshape[1], xshape[2], xshape[3])
     };
     let (ych, kh, kw) = {
-        let w_shape = w.shape();
-        if w_shape.len() != 4 {
+        let wshape = w.shape();
+        if wshape.len() != 4 {
             return Err(op::OpError::IncompatibleShape(format!(
-                "conv2d: filter must be 4D (got {:?})",
-                w_shape
+                "conv2d: filter must be 4D (got {wshape:?})"
             )));
         }
-        if xch != w_shape[1] {
+        if xch != wshape[1] {
             return Err(op::OpError::IncompatibleShape(format!(
                 "conv2d: input channel dim ({:?}) must match filter's second dim ({:?})",
-                xch, w_shape[1]
+                xch, wshape[1]
             )));
         }
-        (w_shape[0], w_shape[2], w_shape[3])
+        (wshape[0], wshape[2], wshape[3])
     };
     let yh = (xh + 2 * pad_h - (dilation_h * (kh - 1) + 1)) / stride_h + 1;
     let yw = (xw + 2 * pad_w - (dilation_w * (kw - 1) + 1)) / stride_w + 1;
@@ -402,6 +405,7 @@ fn conv2d_extract_params<F: Float>(
 
 /// Returns: (conv result, im2col result)
 #[allow(clippy::too_many_arguments)]
+#[allow(dead_code)]
 fn conv2d_impl<F: Float>(
     x: &NdArrayView<F>,
     w: &NdArrayView<F>,
@@ -440,8 +444,8 @@ fn conv2d_impl<F: Float>(
         }
     }
 
-    if let Some(w) = w.as_slice() {
-        w_slice = w;
+    if let Some(_w) = w.as_slice() {
+        w_slice = _w;
     } else {
         copied_w = ndarray_ext::deep_copy(w);
         unsafe {
@@ -483,13 +487,14 @@ fn conv2d_impl<F: Float>(
     Ok((y, cols))
 }
 
+#[allow(dead_code)]
 fn conv2d_with_cols_impl<F: Float>(cols: &NdArrayView<F>, w: &NdArrayView<F>) -> NdArray<F> {
     // Extract size params
-    let cols_shape = cols.shape();
-    let k_shape = w.shape();
-    let (ych, xch, kh, kw) = { (k_shape[0], k_shape[1], k_shape[2], k_shape[3]) };
-    let (yh, yw) = (cols_shape[4], cols_shape[5]);
-    let batch_size = cols_shape[0];
+    let colsshape = cols.shape();
+    let kshape = w.shape();
+    let (ych, xch, kh, kw) = { (kshape[0], kshape[1], kshape[2], kshape[3]) };
+    let (yh, yw) = (colsshape[4], colsshape[5]);
+    let batch_size = colsshape[0];
 
     let copied_w;
     let w_slice;
@@ -625,20 +630,21 @@ impl<T: Float> crate::op::Op<T> for Conv2DWithCols {
     }
 }
 
+#[allow(dead_code)]
 fn conv2d_filter_grad_impl<F: Float>(
     cols: &NdArrayView<F>,
     gy: &NdArrayView<F>,
     w: &NdArrayView<F>,
 ) -> NdArray<F> {
-    let k_shape = w.shape();
-    let cols_shape = cols.shape();
-    let gy_shape = gy.shape();
+    let kshape = w.shape();
+    let colsshape = cols.shape();
+    let gyshape = gy.shape();
 
-    let size_per_batch_g = { gy_shape[1] * gy_shape[2] * gy_shape[3] };
+    let size_per_batch_g = { gyshape[1] * gyshape[2] * gyshape[3] };
     let size_per_batch_c =
-        { cols_shape[1] * cols_shape[2] * cols_shape[3] * cols_shape[4] * cols_shape[5] };
-    let (xch, kh, kw) = (k_shape[1], k_shape[2], k_shape[3]);
-    let (batch_size, ych, yh, yw) = (gy_shape[0], gy_shape[1], gy_shape[2], gy_shape[3]);
+        { colsshape[1] * colsshape[2] * colsshape[3] * colsshape[4] * colsshape[5] };
+    let (xch, kh, kw) = (kshape[1], kshape[2], kshape[3]);
+    let (batch_size, ych, yh, yw) = (gyshape[0], gyshape[1], gyshape[2], gyshape[3]);
 
     let cols = cols.as_ptr();
 
@@ -726,7 +732,7 @@ fn conv2d_filter_grad_impl<F: Float>(
 
     unsafe {
         gw.set_len(gw_len);
-        NdArray::from_shape_vec_unchecked(k_shape, gw)
+        NdArray::from_shape_vec_unchecked(kshape, gw)
     }
 }
 

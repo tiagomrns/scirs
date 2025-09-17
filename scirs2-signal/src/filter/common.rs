@@ -1,13 +1,15 @@
-//! Common types and utilities for digital filter design and analysis
-//!
-//! This module provides shared types, enums, and utility functions used across
-//! all filter design and application modules including IIR, FIR, and specialized filters.
+// Common types and utilities for digital filter design and analysis
+//
+// This module provides shared types, enums, and utility functions used across
+// all filter design and application modules including IIR, FIR, and specialized filters.
 
 use crate::error::{SignalError, SignalResult};
 use num_complex::Complex64;
 use num_traits::{Float, NumCast};
+use std::f64::consts::PI;
 use std::fmt::Debug;
 
+#[allow(unused_imports)]
 /// Filter type for digital filter design
 ///
 /// Specifies the frequency response characteristics of the filter.
@@ -62,8 +64,8 @@ pub enum FilterTypeParam {
 }
 
 impl From<FilterType> for FilterTypeParam {
-    fn from(filter_type: FilterType) -> Self {
-        FilterTypeParam::Type(filter_type)
+    fn from(_filtertype: FilterType) -> Self {
+        FilterTypeParam::Type(_filtertype)
     }
 }
 
@@ -137,7 +139,11 @@ pub enum FilterStability {
 
 /// Common validation functions for filter parameters
 pub mod validation {
-    use super::*;
+    use crate::error::{SignalError, SignalResult};
+    use crate::filter::{FilterType, FilterTypeParam};
+    use num_complex::Complex64;
+    use num_traits::{Float, NumCast};
+    use std::fmt::Debug;
 
     /// Validate filter order
     pub fn validate_order(order: usize) -> SignalResult<()> {
@@ -178,8 +184,8 @@ pub mod validation {
     }
 
     /// Convert filter type parameter to FilterType enum
-    pub fn convert_filter_type(filter_type_param: FilterTypeParam) -> SignalResult<FilterType> {
-        match filter_type_param {
+    pub fn convert_filter_type(_filter_typeparam: FilterTypeParam) -> SignalResult<FilterType> {
+        match _filter_typeparam {
             FilterTypeParam::Type(t) => Ok(t),
             FilterTypeParam::String(s) => s.parse(),
         }
@@ -188,29 +194,30 @@ pub mod validation {
 
 /// Common mathematical operations for filter design
 pub mod math {
-    use super::*;
+    use crate::filter::FilterType;
+    use num_complex::Complex64;
     use std::f64::consts::PI;
 
     /// Pre-warp frequency for bilinear transform
     ///
     /// Pre-warps the digital frequency to compensate for the frequency warping
     /// effect of the bilinear transform.
-    pub fn prewarp_frequency(digital_freq: f64) -> f64 {
-        (PI * digital_freq / 2.0).tan()
+    pub fn prewarp_frequency(_digitalfreq: f64) -> f64 {
+        (PI * _digitalfreq / 2.0).tan()
     }
 
     /// Apply bilinear transform to convert analog pole to digital
     ///
     /// Transforms analog domain pole using bilinear transform: z = (2 + s) / (2 - s)
-    pub fn bilinear_pole_transform(analog_pole: Complex64) -> Complex64 {
-        (2.0 + analog_pole) / (2.0 - analog_pole)
+    pub fn bilinear_pole_transform(_analogpole: Complex64) -> Complex64 {
+        (2.0 + _analogpole) / (2.0 - _analogpole)
     }
 
     /// Apply bilinear transform to convert analog zero to digital
     ///
     /// Transforms analog domain zero using bilinear transform: z = (2 + s) / (2 - s)
-    pub fn bilinear_zero_transform(analog_zero: Complex64) -> Complex64 {
-        (2.0 + analog_zero) / (2.0 - analog_zero)
+    pub fn bilinear_zero_transform(_analogzero: Complex64) -> Complex64 {
+        (2.0 + _analogzero) / (2.0 - _analogzero)
     }
 
     /// Calculate poles for analog Butterworth prototype
@@ -232,10 +239,10 @@ pub mod math {
     ///
     /// Adds appropriate zeros in the digital domain based on the filter type
     /// to complete the bilinear transform process.
-    pub fn add_digital_zeros(filter_type: FilterType, order: usize) -> Vec<Complex64> {
+    pub fn add_digital_zeros(_filtertype: FilterType, order: usize) -> Vec<Complex64> {
         let mut digital_zeros = Vec::new();
 
-        match filter_type {
+        match _filtertype {
             FilterType::Lowpass => {
                 // Lowpass: zeros at z = -1 (Nyquist frequency)
                 for _ in 0..order {

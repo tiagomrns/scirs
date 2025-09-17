@@ -24,7 +24,7 @@ pub struct DistributedCoordinator {
 impl DistributedCoordinator {
     /// Create a new distributed coordinator
     pub fn new(config: &super::DistributedConfig) -> LinalgResult<Self> {
-        let sync_state = Arc::new(Mutex::new(CoordinationState::new(config.num_nodes)));
+        let sync_state = Arc::new(Mutex::new(CoordinationState::new(_config.num_nodes)));
         
         Ok(Self {
             node_rank: config.node_rank,
@@ -58,7 +58,7 @@ impl DistributedCoordinator {
     }
     
     /// Create a distributed lock with given name
-    pub fn create_distributed_lock(&self, lock_name: &str) -> LinalgResult<DistributedLock> {
+    pub fn create_distributed_lock(&self, lockname: &str) -> LinalgResult<DistributedLock> {
         DistributedLock::new(lock_name.to_string(), self.node_rank, self.num_nodes)
     }
     
@@ -80,7 +80,7 @@ impl DistributedCoordinator {
     }
     
     /// Wait for all nodes to reach a checkpoint
-    pub fn checkpoint(&self, checkpoint_id: u64) -> LinalgResult<()> {
+    pub fn checkpoint(&self, checkpointid: u64) -> LinalgResult<()> {
         let mut state = self.sync_state.lock().unwrap();
         
         // Mark this node as reached checkpoint
@@ -108,10 +108,10 @@ impl DistributedCoordinator {
     }
     
     /// Handle node failure and initiate recovery
-    pub fn handle_node_failure(&self, failed_node: usize) -> LinalgResult<RecoveryPlan> {
+    pub fn handle_node_failure(&self, failednode: usize) -> LinalgResult<RecoveryPlan> {
         let mut state = self.sync_state.lock().unwrap();
         
-        // Mark node as failed
+        // Mark _node as failed
         state.failed_nodes.insert(failed_node);
         
         // Create recovery plan
@@ -126,7 +126,7 @@ impl DistributedCoordinator {
             estimated_recovery_time: Duration::from_secs(30),
         };
         
-        // Update active node count
+        // Update active _node count
         state.active_nodes = remaining_nodes.len();
         
         Ok(recovery_plan)
@@ -195,7 +195,7 @@ struct CoordinationState {
 }
 
 impl CoordinationState {
-    fn new(total_nodes: usize) -> Self {
+    fn new(_totalnodes: usize) -> Self {
         Self {
             total_nodes,
             active_nodes: total_nodes,
@@ -225,7 +225,7 @@ pub struct DistributedLock {
 
 impl DistributedLock {
     /// Create a new distributed lock
-    pub fn new(name: String, node_rank: usize, num_nodes: usize) -> LinalgResult<Self> {
+    pub fn new(_name: String, node_rank: usize, numnodes: usize) -> LinalgResult<Self> {
         Ok(Self {
             name,
             owner: None,
@@ -324,7 +324,7 @@ pub struct SynchronizationBarrier {
 
 impl SynchronizationBarrier {
     /// Create a new synchronization barrier
-    pub fn new(expected_nodes: usize, barrier_id: u64) -> Self {
+    pub fn new(_expected_nodes: usize, barrierid: u64) -> Self {
         Self {
             expected_nodes,
             arrived_nodes: Arc::new(Mutex::new(std::collections::HashSet::new())),
@@ -334,12 +334,12 @@ impl SynchronizationBarrier {
     }
     
     /// Wait at the barrier
-    pub fn wait(&self, node_rank: usize) -> LinalgResult<()> {
+    pub fn wait(&self, noderank: usize) -> LinalgResult<()> {
         self.wait_timeout(node_rank, Duration::from_secs(60))
     }
     
     /// Wait at barrier with timeout
-    pub fn wait_timeout(&self, node_rank: usize, timeout: Duration) -> LinalgResult<()> {
+    pub fn wait_timeout(&self, noderank: usize, timeout: Duration) -> LinalgResult<()> {
         let mut arrived = self.arrived_nodes.lock().unwrap();
         
         // Add this node to arrived set
@@ -404,7 +404,7 @@ pub struct ReductionCoordination {
 
 impl ReductionCoordination {
     /// Create new reduction coordination
-    pub fn new(operation: ReductionOperation, node_rank: usize, num_nodes: usize) -> LinalgResult<Self> {
+    pub fn new(_operation: ReductionOperation, node_rank: usize, numnodes: usize) -> LinalgResult<Self> {
         let tree = ReductionTree::new(num_nodes);
         
         Ok(Self {
@@ -437,8 +437,8 @@ struct ReductionTree {
 }
 
 impl ReductionTree {
-    fn new(num_nodes: usize) -> Self {
-        Self { num_nodes }
+    fn new(_numnodes: usize) -> Self {
+        Self { _num_nodes }
     }
     
     fn get_parent(&self, node: usize) -> Option<usize> {

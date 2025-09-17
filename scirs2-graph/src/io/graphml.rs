@@ -117,6 +117,7 @@ struct GraphMLKey {
 /// - Rich metadata and data elements
 /// - Both directed and undirected graphs
 /// - Hierarchical graph structures (though currently simplified)
+#[allow(dead_code)]
 pub fn read_graphml_format<N, E, P>(path: P, weighted: bool) -> Result<Graph<N, E>>
 where
     N: Node + std::fmt::Debug + FromStr + Clone,
@@ -192,6 +193,7 @@ where
 ///
 /// * `Ok(DiGraph)` - The directed graph read from the file
 /// * `Err(GraphError)` - If there was an error reading or parsing the file
+#[allow(dead_code)]
 pub fn read_graphml_format_digraph<N, E, P>(path: P, weighted: bool) -> Result<DiGraph<N, E>>
 where
     N: Node + std::fmt::Debug + FromStr + Clone,
@@ -258,6 +260,7 @@ where
 ///
 /// * `Ok(())` - If the graph was written successfully
 /// * `Err(GraphError)` - If there was an error writing the file
+#[allow(dead_code)]
 pub fn write_graphml_format<N, E, Ix, P>(
     graph: &Graph<N, E, Ix>,
     path: P,
@@ -309,7 +312,7 @@ where
 
     // Write nodes
     for node in graph.nodes() {
-        writeln!(file, r#"    <node id="{}"/>"#, node)?;
+        writeln!(file, r#"    <node id="{node}"/>"#)?;
     }
 
     // Write edges
@@ -351,6 +354,7 @@ where
 ///
 /// * `Ok(())` - If the graph was written successfully
 /// * `Err(GraphError)` - If there was an error writing the file
+#[allow(dead_code)]
 pub fn write_graphml_format_digraph<N, E, Ix, P>(
     graph: &DiGraph<N, E, Ix>,
     path: P,
@@ -402,7 +406,7 @@ where
 
     // Write nodes
     for node in graph.nodes() {
-        writeln!(file, r#"    <node id="{}"/>"#, node)?;
+        writeln!(file, r#"    <node id="{node}"/>"#)?;
     }
 
     // Write edges
@@ -435,6 +439,7 @@ where
 // Helper functions
 
 /// Parse a GraphML key definition from XML
+#[allow(dead_code)]
 fn parse_key_definition(line: &str) -> Result<Option<GraphMLKey>> {
     // Simple attribute parsing for key elements
     let mut id = None;
@@ -487,7 +492,8 @@ fn parse_key_definition(line: &str) -> Result<Option<GraphMLKey>> {
 }
 
 /// Parse a GraphML node element for undirected graphs
-fn parse_node_element<N, E>(line: &str, _graph: &mut Graph<N, E>, line_num: usize) -> Result<()>
+#[allow(dead_code)]
+fn parse_node_element<N, E>(line: &str, graph: &mut Graph<N, E>, linenum: usize) -> Result<()>
 where
     N: Node + std::fmt::Debug + FromStr + Clone,
     E: EdgeWeight + std::marker::Copy + std::fmt::Debug + std::default::Default + FromStr,
@@ -499,8 +505,7 @@ where
             let node_id = &line[start..start + end];
             let _node = N::from_str(node_id).map_err(|_| {
                 GraphError::Other(format!(
-                    "Failed to parse node ID '{}' on line {}",
-                    node_id, line_num
+                    "Failed to parse node ID '{node_id}' on line {linenum}"
                 ))
             })?;
             // Nodes will be added automatically when edges are added
@@ -511,9 +516,10 @@ where
 }
 
 /// Parse a GraphML node element for directed graphs
+#[allow(dead_code)]
 fn parse_digraph_node_element<N, E>(
     line: &str,
-    _graph: &mut DiGraph<N, E>,
+    graph: &mut DiGraph<N, E>,
     line_num: usize,
 ) -> Result<()>
 where
@@ -527,8 +533,7 @@ where
             let node_id = &line[start..start + end];
             let _node = N::from_str(node_id).map_err(|_| {
                 GraphError::Other(format!(
-                    "Failed to parse node ID '{}' on line {}",
-                    node_id, line_num
+                    "Failed to parse node ID '{node_id}' on line {line_num}"
                 ))
             })?;
             // Nodes will be added automatically when edges are added
@@ -539,6 +544,7 @@ where
 }
 
 /// Parse a GraphML edge element for undirected graphs
+#[allow(dead_code)]
 fn parse_edge_element<N, E>(
     line: &str,
     graph: &mut Graph<N, E>,
@@ -572,15 +578,13 @@ where
     if let (Some(source_id), Some(target_id)) = (source_id, target_id) {
         let source_node = N::from_str(source_id).map_err(|_| {
             GraphError::Other(format!(
-                "Failed to parse source node '{}' on line {}",
-                source_id, line_num
+                "Failed to parse source node '{source_id}' on line {line_num}"
             ))
         })?;
 
         let target_node = N::from_str(target_id).map_err(|_| {
             GraphError::Other(format!(
-                "Failed to parse target node '{}' on line {}",
-                target_id, line_num
+                "Failed to parse target node '{target_id}' on line {line_num}"
             ))
         })?;
 
@@ -590,8 +594,7 @@ where
         graph.add_edge(source_node, target_node, weight)?;
     } else {
         return Err(GraphError::Other(format!(
-            "Invalid edge element - missing source or target on line {}",
-            line_num
+            "Invalid edge element - missing source or target on line {line_num}"
         )));
     }
 
@@ -599,6 +602,7 @@ where
 }
 
 /// Parse a GraphML edge element for directed graphs
+#[allow(dead_code)]
 fn parse_digraph_edge_element<N, E>(
     line: &str,
     graph: &mut DiGraph<N, E>,
@@ -632,15 +636,13 @@ where
     if let (Some(source_id), Some(target_id)) = (source_id, target_id) {
         let source_node = N::from_str(source_id).map_err(|_| {
             GraphError::Other(format!(
-                "Failed to parse source node '{}' on line {}",
-                source_id, line_num
+                "Failed to parse source node '{source_id}' on line {line_num}"
             ))
         })?;
 
         let target_node = N::from_str(target_id).map_err(|_| {
             GraphError::Other(format!(
-                "Failed to parse target node '{}' on line {}",
-                target_id, line_num
+                "Failed to parse target node '{target_id}' on line {line_num}"
             ))
         })?;
 
@@ -650,8 +652,7 @@ where
         graph.add_edge(source_node, target_node, weight)?;
     } else {
         return Err(GraphError::Other(format!(
-            "Invalid edge element - missing source or target on line {}",
-            line_num
+            "Invalid edge element - missing source or target on line {line_num}"
         )));
     }
 

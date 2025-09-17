@@ -12,6 +12,7 @@ use scirs2_integrate::symplectic::{
 use std::f64::consts::PI;
 use std::time::Instant;
 
+#[allow(dead_code)]
 fn main() {
     println!("Symplectic Integrators Example");
     println!("==============================\n");
@@ -26,6 +27,7 @@ fn main() {
 }
 
 /// Simple harmonic oscillator example
+#[allow(dead_code)]
 fn simple_harmonic_oscillator() {
     println!("1. Simple Harmonic Oscillator");
     println!("-----------------------------");
@@ -57,7 +59,7 @@ fn simple_harmonic_oscillator() {
     println!("  Function evaluations: {}", result.n_evaluations);
 
     if let Some(energy_error) = result.energy_relative_error {
-        println!("  Relative energy error: {:.2e}", energy_error);
+        println!("  Relative energy error: {energy_error:.2e}");
     }
 
     // Check final state
@@ -65,12 +67,13 @@ fn simple_harmonic_oscillator() {
     let final_p = result.p.last().unwrap()[0];
 
     // Exact solution at t = 2*period should be the initial state
-    println!("  Final state: q = {:.6}, p = {:.6}", final_q, final_p);
+    println!("  Final state: q = {final_q:.6}, p = {final_p:.6}");
     println!("  Expected: q = 1.000000, p = 0.000000");
     println!();
 }
 
 /// Pendulum example
+#[allow(dead_code)]
 fn pendulum() {
     println!("2. Pendulum System");
     println!("------------------");
@@ -98,12 +101,12 @@ fn pendulum() {
     let duration = start.elapsed();
 
     // Print results
-    println!("  Integration time: {:.2?}", duration);
+    println!("  Integration time: {duration:.2?}");
     println!("  Steps: {}", result.steps);
     println!("  Function evaluations: {}", result.n_evaluations);
 
     if let Some(energy_error) = result.energy_relative_error {
-        println!("  Relative energy error: {:.2e}", energy_error);
+        println!("  Relative energy error: {energy_error:.2e}");
     }
 
     // Calculate the initial and final energy explicitly
@@ -116,8 +119,8 @@ fn pendulum() {
         )
         .unwrap();
 
-        println!("  Initial energy: {:.6}", initial_energy);
-        println!("  Final energy: {:.6}", final_energy);
+        println!("  Initial energy: {initial_energy:.6}");
+        println!("  Final energy: {final_energy:.6}");
         println!(
             "  Absolute energy change: {:.2e}",
             f64::abs(final_energy - initial_energy)
@@ -127,6 +130,7 @@ fn pendulum() {
 }
 
 /// Kepler orbit (planetary motion) example
+#[allow(dead_code)]
 fn kepler_orbit() {
     println!("3. Kepler Problem (Planetary Orbit)");
     println!("----------------------------------");
@@ -157,7 +161,7 @@ fn kepler_orbit() {
     println!("  Function evaluations: {}", result.n_evaluations);
 
     if let Some(energy_error) = result.energy_relative_error {
-        println!("  Relative energy error: {:.2e}", energy_error);
+        println!("  Relative energy error: {energy_error:.2e}");
     }
 
     // Calculate orbital properties
@@ -174,19 +178,20 @@ fn kepler_orbit() {
 
     let eccentricity = (max_radius - min_radius) / (max_radius + min_radius);
 
-    println!("  Perihelion: {:.6}", min_radius);
-    println!("  Aphelion: {:.6}", max_radius);
-    println!("  Orbital eccentricity: {:.6}", eccentricity);
+    println!("  Perihelion: {min_radius:.6}");
+    println!("  Aphelion: {max_radius:.6}");
+    println!("  Orbital eccentricity: {eccentricity:.6}");
 
     // Check if orbit is closed
     let final_q = result.q.last().unwrap();
     let final_radius = f64::sqrt(final_q[0] * final_q[0] + final_q[1] * final_q[1]);
 
-    println!("  Final radius: {:.6}", final_radius);
+    println!("  Final radius: {final_radius:.6}");
     println!();
 }
 
 /// Compare different symplectic methods
+#[allow(dead_code)]
 fn compare_methods() {
     println!("4. Comparison of Symplectic Methods");
     println!("---------------------------------");
@@ -244,10 +249,7 @@ fn compare_methods() {
         let time_ms = result.time_ms;
         let evals = result.n_evaluations;
 
-        println!(
-            "  {:<20} | {:.2e} | {:.2} | {}",
-            name, energy_error, time_ms, evals
-        );
+        println!("  {name:<20} | {energy_error:.2e} | {time_ms:.2} | {evals}");
     }
 
     println!();
@@ -268,6 +270,7 @@ struct MethodResult {
 }
 
 /// Helper function to integrate with a specific method
+#[allow(dead_code)]
 fn integrate_with_method<S: SymplecticIntegrator<f64>>(
     method: &S,
     system: &SeparableHamiltonian<f64>,
@@ -292,6 +295,7 @@ fn integrate_with_method<S: SymplecticIntegrator<f64>>(
 }
 
 /// Helper function to integrate with velocity_verlet
+#[allow(dead_code)]
 fn integrate_with_velocity_verlet(
     system: &SeparableHamiltonian<f64>,
     t0: f64,
@@ -360,6 +364,7 @@ fn integrate_with_velocity_verlet(
 }
 
 /// Helper function to integrate with position_verlet
+#[allow(dead_code)]
 fn integrate_with_position_verlet(
     system: &SeparableHamiltonian<f64>,
     t0: f64,
@@ -428,6 +433,7 @@ fn integrate_with_position_verlet(
 }
 
 /// Helper function to integrate with composition methods
+#[allow(dead_code)]
 fn integrate_with_composition(
     system: &SeparableHamiltonian<f64>,
     t0: f64,

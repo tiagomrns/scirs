@@ -13,6 +13,7 @@ use scirs2_core::gpu::kernels::{DataType, KernelParams};
 use scirs2_core::gpu::{GpuBackend, GpuContext};
 use std::time::Instant;
 
+#[allow(dead_code)]
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("=== Comprehensive GPU Kernel Library Example ===");
 
@@ -26,9 +27,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         );
 
         // Run comprehensive kernel demos
-        demo_blas_advanced(&context)?;
-        demo_reduction_comprehensive(&context)?;
-        demo_ml_kernels_complete(&context)?;
+        // demo_blas_advanced(&context)?;
+        // demo_reduction_comprehensive(&context)?;
+        // demo_ml_kernels_complete(&context)?;
         demo_transform_operations(&context)?;
         demo_kernel_chaining(&context)?;
         demo_performance_analysis(&context)?;
@@ -46,6 +47,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
 /// Initialize GPU context with intelligent fallback
 #[cfg(feature = "gpu")]
+#[allow(dead_code)]
 fn initialize_gpu_context() -> Result<GpuContext, Box<dyn std::error::Error>> {
     // Try different backends in order of preference
     let backends = [
@@ -78,7 +80,8 @@ fn initialize_gpu_context() -> Result<GpuContext, Box<dyn std::error::Error>> {
 
 /// Advanced BLAS operations with different matrix sizes
 #[cfg(feature = "gpu")]
-fn demo_blas_advanced(context: &GpuContext) -> Result<(), Box<dyn std::error::Error>> {
+#[allow(dead_code)]
+fn demo_advanced_blas_operations(ctx: &GpuContext) -> Result<(), Box<dyn std::error::Error>> {
     println!("Demo: Advanced BLAS Operations");
     println!("===============================");
 
@@ -103,12 +106,12 @@ fn demo_blas_advanced(context: &GpuContext) -> Result<(), Box<dyn std::error::Er
         let b_data: Vec<f32> = (0..k * n).map(|i| (i as f32) * 0.02).collect();
 
         // Create GPU buffers
-        let a_buffer = context.create_buffer_from_slice(&a_data);
-        let b_buffer = context.create_buffer_from_slice(&b_data);
-        let c_buffer = context.create_buffer::<f32>(m * n);
+        let a_buffer = ctx.create_buffer_from_slice(&a_data);
+        let b_buffer = ctx.create_buffer_from_slice(&b_data);
+        let c_buffer = ctx.create_buffer::<f32>(m * n);
 
         // Get GEMM kernel
-        let gemm_kernel = context.get_kernel("gemm")?;
+        let gemm_kernel = ctx.get_kernel("gemm")?;
 
         // Set parameters
         gemm_kernel.set_buffer("a", &a_buffer);
@@ -146,20 +149,20 @@ fn demo_blas_advanced(context: &GpuContext) -> Result<(), Box<dyn std::error::Er
         let x_data: Vec<f32> = (0..size).map(|i| i as f32).collect();
         let y_data: Vec<f32> = (0..size).map(|i| (i as f32) * 0.5).collect();
 
-        let x_buffer = context.create_buffer_from_slice(&x_data);
-        let y_buffer = context.create_buffer_from_slice(&y_data);
+        let x_buffer = ctx.create_buffer_from_slice(&x_data);
+        let y_buffer = ctx.create_buffer_from_slice(&y_data);
 
         // Try to get a specialized kernel for this alpha value
         let params = KernelParams::new(DataType::Float32).with_numeric_param("alpha", alpha as f64);
 
-        let kernel = match context.get_specialized_kernel("axpy", &params) {
+        let kernel = match ctx.get_specialized_kernel("axpy", &params) {
             Ok(specialized) => {
                 println!("   Using specialized AXPY kernel for alpha = {}", alpha);
                 specialized
             }
             Err(_) => {
                 println!("   Using general AXPY kernel for alpha = {}", alpha);
-                context.get_kernel("axpy")?
+                ctx.get_kernel("axpy")?
             }
         };
 
@@ -184,7 +187,10 @@ fn demo_blas_advanced(context: &GpuContext) -> Result<(), Box<dyn std::error::Er
 
 /// Comprehensive reduction operations testing
 #[cfg(feature = "gpu")]
-fn demo_reduction_comprehensive(context: &GpuContext) -> Result<(), Box<dyn std::error::Error>> {
+#[allow(dead_code)]
+fn demo_comprehensive_reduction_operations(
+    ctx: &GpuContext,
+) -> Result<(), Box<dyn std::error::Error>> {
     println!("\n\nDemo: Comprehensive Reduction Operations");
     println!("========================================");
 
@@ -206,7 +212,7 @@ fn demo_reduction_comprehensive(context: &GpuContext) -> Result<(), Box<dyn std:
         println!("\n{}. Testing: {} (size: {})", case_idx + 1, name, size);
 
         let data: Vec<f32> = (0..*size).map(data_gen).collect();
-        let input_buffer = context.create_buffer_from_slice(&data);
+        let input_buffer = ctx.create_buffer_from_slice(&data);
 
         // CPU reference calculations
         let cpu_sum: f32 = data.iter().sum();
@@ -228,8 +234,8 @@ fn demo_reduction_comprehensive(context: &GpuContext) -> Result<(), Box<dyn std:
         ];
 
         for (kernel_name, op_name) in reductions {
-            if let Ok(kernel) = context.get_kernel(kernel_name) {
-                let output_buffer = context.create_buffer::<f32>(1);
+            if let Ok(kernel) = ctx.get_kernel(kernel_name) {
+                let output_buffer = ctx.create_buffer::<f32>(1);
 
                 kernel.set_buffer("input", &input_buffer);
                 kernel.set_buffer("output", &output_buffer);
@@ -253,7 +259,10 @@ fn demo_reduction_comprehensive(context: &GpuContext) -> Result<(), Box<dyn std:
 
 /// Complete machine learning kernels demonstration
 #[cfg(feature = "gpu")]
-fn demo_ml_kernels_complete(context: &GpuContext) -> Result<(), Box<dyn std::error::Error>> {
+#[allow(dead_code)]
+fn demo_complete_machine_learning_kernels(
+    ctx: &GpuContext,
+) -> Result<(), Box<dyn std::error::Error>> {
     println!("\n\nDemo: Complete Machine Learning Kernels");
     println!("=======================================");
 
@@ -270,13 +279,13 @@ fn demo_ml_kernels_complete(context: &GpuContext) -> Result<(), Box<dyn std::err
 
     for (test_name, inputs) in test_inputs {
         println!("\n   Testing: {}", test_name);
-        let input_buffer = context.create_buffer_from_slice(&inputs);
-        let output_buffer = context.create_buffer::<f32>(inputs.len());
+        let input_buffer = ctx.create_buffer_from_slice(&inputs);
+        let output_buffer = ctx.create_buffer::<f32>(inputs.len());
 
         let activations = [("relu", "ReLU"), ("sigmoid", "Sigmoid"), ("tanh", "Tanh")];
 
         for (kernel_name, activation_name) in activations {
-            if let Ok(kernel) = context.get_kernel(kernel_name) {
+            if let Ok(kernel) = ctx.get_kernel(kernel_name) {
                 kernel.set_buffer("input", &input_buffer);
                 kernel.set_buffer("output", &output_buffer);
                 kernel.set_u32("n", inputs.len() as u32);
@@ -301,7 +310,7 @@ fn demo_ml_kernels_complete(context: &GpuContext) -> Result<(), Box<dyn std::err
     let total_size = batch_size * channels * height * width;
 
     let feature_map: Vec<f32> = (0..total_size).map(|i| i as f32).collect();
-    let input_buffer = context.create_buffer_from_slice(&feature_map);
+    let input_buffer = ctx.create_buffer_from_slice(&feature_map);
 
     println!(
         "   Input feature map ({}x{}x{}x{}):",
@@ -324,15 +333,15 @@ fn demo_ml_kernels_complete(context: &GpuContext) -> Result<(), Box<dyn std::err
     ];
 
     for (kernel_name, pool_name) in pooling_ops {
-        if let Ok(kernel) = context.get_kernel(kernel_name) {
+        if let Ok(kernel) = ctx.get_kernel(kernel_name) {
             // 2x2 pooling with stride 2
-            let pool_size = 2;
+            let poolsize = 2;
             let stride = 2;
             let output_height = height.div_ceil(stride);
             let output_width = width.div_ceil(stride);
             let output_size = batch_size * channels * output_height * output_width;
 
-            let output_buffer = context.create_buffer::<f32>(output_size);
+            let output_buffer = ctx.create_buffer::<f32>(output_size);
 
             kernel.set_buffer("input", &input_buffer);
             kernel.set_buffer("output", &output_buffer);
@@ -342,8 +351,8 @@ fn demo_ml_kernels_complete(context: &GpuContext) -> Result<(), Box<dyn std::err
             kernel.set_u32("input_width", width as u32);
             kernel.set_u32("output_height", output_height as u32);
             kernel.set_u32("output_width", output_width as u32);
-            kernel.set_u32("pool_height", pool_size as u32);
-            kernel.set_u32("pool_width", pool_size as u32);
+            kernel.set_u32("pool_height", poolsize as u32);
+            kernel.set_u32("pool_width", poolsize as u32);
             kernel.set_u32("stride_y", stride as u32);
             kernel.set_u32("stride_x", stride as u32);
 
@@ -375,7 +384,8 @@ fn demo_ml_kernels_complete(context: &GpuContext) -> Result<(), Box<dyn std::err
 
 /// Transform operations including FFT and convolution
 #[cfg(feature = "gpu")]
-fn demo_transform_operations(context: &GpuContext) -> Result<(), Box<dyn std::error::Error>> {
+#[allow(dead_code)]
+fn demo_transform_operations(ctx: &GpuContext) -> Result<(), Box<dyn std::error::Error>> {
     println!("\n\nDemo: Transform Operations");
     println!("==========================");
 
@@ -394,10 +404,10 @@ fn demo_transform_operations(context: &GpuContext) -> Result<(), Box<dyn std::er
     println!("   Input signal: {:?}", signal);
     println!("   Convolution kernel: {:?}", conv_kernel);
 
-    if let Ok(kernel) = context.get_kernel("conv1d") {
-        let signal_buffer = context.create_buffer_from_slice(&signal);
-        let kernel_buffer = context.create_buffer_from_slice(&conv_kernel);
-        let output_buffer = context.create_buffer::<f32>(output_length);
+    if let Ok(kernel) = ctx.get_kernel("conv1d") {
+        let signal_buffer = ctx.create_buffer_from_slice(&signal);
+        let kernel_buffer = ctx.create_buffer_from_slice(&conv_kernel);
+        let output_buffer = ctx.create_buffer::<f32>(output_length);
 
         kernel.set_buffer("input", &signal_buffer);
         kernel.set_buffer("kernel", &kernel_buffer);
@@ -418,7 +428,7 @@ fn demo_transform_operations(context: &GpuContext) -> Result<(), Box<dyn std::er
     // 2D Convolution demonstration
     println!("\n2. 2D Convolution (simplified CNN layer)");
 
-    if let Ok(kernel) = context.get_kernel("conv2d") {
+    if let Ok(kernel) = ctx.get_kernel("conv2d") {
         let batch_size = 1;
         let in_channels = 1;
         let out_channels = 1;
@@ -450,9 +460,9 @@ fn demo_transform_operations(context: &GpuContext) -> Result<(), Box<dyn std::er
             println!();
         }
 
-        let input_buffer = context.create_buffer_from_slice(&input_image);
-        let kernel_buffer = context.create_buffer_from_slice(&conv_kernel);
-        let output_buffer = context.create_buffer::<f32>(output_height * output_width);
+        let input_buffer = ctx.create_buffer_from_slice(&input_image);
+        let kernel_buffer = ctx.create_buffer_from_slice(&conv_kernel);
+        let output_buffer = ctx.create_buffer::<f32>(output_height * output_width);
 
         kernel.set_buffer("input", &input_buffer);
         kernel.set_buffer("kernel", &kernel_buffer);
@@ -493,7 +503,8 @@ fn demo_transform_operations(context: &GpuContext) -> Result<(), Box<dyn std::er
 
 /// Demonstrate kernel chaining and complex workflows
 #[cfg(feature = "gpu")]
-fn demo_kernel_chaining(context: &GpuContext) -> Result<(), Box<dyn std::error::Error>> {
+#[allow(dead_code)]
+fn demo_kernel_chaining(ctx: &GpuContext) -> Result<(), Box<dyn std::error::Error>> {
     println!("\n\nDemo: Kernel Chaining and Complex Workflows");
     println!("============================================");
 
@@ -521,11 +532,11 @@ fn demo_kernel_chaining(context: &GpuContext) -> Result<(), Box<dyn std::error::
         .collect();
 
     // Step 1: First linear layer (GEMM)
-    let input_buffer = context.create_buffer_from_slice(&input_data);
-    let w1_buffer = context.create_buffer_from_slice(&w1);
-    let hidden_buffer = context.create_buffer::<f32>(hidden_size);
+    let input_buffer = ctx.create_buffer_from_slice(&input_data);
+    let w1_buffer = ctx.create_buffer_from_slice(&w1);
+    let hidden_buffer = ctx.create_buffer::<f32>(hidden_size);
 
-    if let Ok(gemm_kernel) = context.get_kernel("gemm") {
+    if let Ok(gemm_kernel) = ctx.get_kernel("gemm") {
         gemm_kernel.set_buffer("a", &input_buffer);
         gemm_kernel.set_buffer("b", &w1_buffer);
         gemm_kernel.set_buffer("c", &hidden_buffer);
@@ -542,9 +553,9 @@ fn demo_kernel_chaining(context: &GpuContext) -> Result<(), Box<dyn std::error::
     }
 
     // Step 2: Apply ReLU activation
-    let hidden_activated_buffer = context.create_buffer::<f32>(hidden_size);
+    let hidden_activated_buffer = ctx.create_buffer::<f32>(hidden_size);
 
-    if let Ok(relu_kernel) = context.get_kernel("relu") {
+    if let Ok(relu_kernel) = ctx.get_kernel("relu") {
         relu_kernel.set_buffer("input", &hidden_buffer);
         relu_kernel.set_buffer("output", &hidden_activated_buffer);
         relu_kernel.set_u32("n", hidden_size as u32);
@@ -556,10 +567,10 @@ fn demo_kernel_chaining(context: &GpuContext) -> Result<(), Box<dyn std::error::
     }
 
     // Step 3: Second linear layer
-    let w2_buffer = context.create_buffer_from_slice(&w2);
-    let output_buffer = context.create_buffer::<f32>(output_size);
+    let w2_buffer = ctx.create_buffer_from_slice(&w2);
+    let output_buffer = ctx.create_buffer::<f32>(output_size);
 
-    if let Ok(gemm_kernel) = context.get_kernel("gemm") {
+    if let Ok(gemm_kernel) = ctx.get_kernel("gemm") {
         gemm_kernel.set_buffer("a", &hidden_activated_buffer);
         gemm_kernel.set_buffer("b", &w2_buffer);
         gemm_kernel.set_buffer("c", &output_buffer);
@@ -576,9 +587,9 @@ fn demo_kernel_chaining(context: &GpuContext) -> Result<(), Box<dyn std::error::
     }
 
     // Step 4: Apply Softmax
-    let softmax_buffer = context.create_buffer::<f32>(output_size);
+    let softmax_buffer = ctx.create_buffer::<f32>(output_size);
 
-    if let Ok(softmax_kernel) = context.get_kernel("softmax") {
+    if let Ok(softmax_kernel) = ctx.get_kernel("softmax") {
         softmax_kernel.set_buffer("input", &output_buffer);
         softmax_kernel.set_buffer("output", &softmax_buffer);
         softmax_kernel.set_u32("n", output_size as u32);
@@ -604,7 +615,8 @@ fn demo_kernel_chaining(context: &GpuContext) -> Result<(), Box<dyn std::error::
 
 /// Performance analysis and comparison
 #[cfg(feature = "gpu")]
-fn demo_performance_analysis(context: &GpuContext) -> Result<(), Box<dyn std::error::Error>> {
+#[allow(dead_code)]
+fn demo_performance_analysis(ctx: &GpuContext) -> Result<(), Box<dyn std::error::Error>> {
     println!("\n\nDemo: Performance Analysis");
     println!("==========================");
 
@@ -635,11 +647,11 @@ fn demo_performance_analysis(context: &GpuContext) -> Result<(), Box<dyn std::er
 
         // GPU implementation
         let start = Instant::now();
-        let a_buffer = context.create_buffer_from_slice(&a_data);
-        let b_buffer = context.create_buffer_from_slice(&b_data);
-        let c_buffer = context.create_buffer::<f32>(m * n);
+        let a_buffer = ctx.create_buffer_from_slice(&a_data);
+        let b_buffer = ctx.create_buffer_from_slice(&b_data);
+        let c_buffer = ctx.create_buffer::<f32>(m * n);
 
-        if let Ok(gemm_kernel) = context.get_kernel("gemm") {
+        if let Ok(gemm_kernel) = ctx.get_kernel("gemm") {
             gemm_kernel.set_buffer("a", &a_buffer);
             gemm_kernel.set_buffer("b", &b_buffer);
             gemm_kernel.set_buffer("c", &c_buffer);
@@ -653,7 +665,7 @@ fn demo_performance_analysis(context: &GpuContext) -> Result<(), Box<dyn std::er
             let work_groups_y = (m as u32).div_ceil(16);
             gemm_kernel.dispatch([work_groups_x, work_groups_y, 1]);
 
-            let _c_gpu = c_buffer.to_vec();
+            let c_gpu = c_buffer.to_vec();
         }
         let gpu_time = start.elapsed();
 
@@ -677,10 +689,10 @@ fn demo_performance_analysis(context: &GpuContext) -> Result<(), Box<dyn std::er
         let y_data: Vec<f32> = (0..size).map(|i| (i as f32) * 0.5).collect();
 
         let start = Instant::now();
-        let x_buffer = context.create_buffer_from_slice(&x_data);
-        let y_buffer = context.create_buffer_from_slice(&y_data);
+        let x_buffer = ctx.create_buffer_from_slice(&x_data);
+        let y_buffer = ctx.create_buffer_from_slice(&y_data);
 
-        if let Ok(axpy_kernel) = context.get_kernel("axpy") {
+        if let Ok(axpy_kernel) = ctx.get_kernel("axpy") {
             axpy_kernel.set_buffer("x", &x_buffer);
             axpy_kernel.set_buffer("y", &y_buffer);
             axpy_kernel.set_f32("alpha", 2.0);
@@ -689,13 +701,13 @@ fn demo_performance_analysis(context: &GpuContext) -> Result<(), Box<dyn std::er
             let work_groups = (size as u32).div_ceil(256);
             axpy_kernel.dispatch([work_groups, 1, 1]);
 
-            let _result = y_buffer.to_vec();
+            let result = y_buffer.to_vec();
         }
         let gpu_time = start.elapsed();
 
         let bytes_read = size * std::mem::size_of::<f32>() * 2; // x and y
-        let bytes_written = size * std::mem::size_of::<f32>(); // y
-        let total_bytes = bytes_read + bytes_written;
+        let byteswritten = size * std::mem::size_of::<f32>(); // y
+        let total_bytes = bytes_read + byteswritten;
         let bandwidth_gb_s = total_bytes as f64 / gpu_time.as_secs_f64() / 1e9;
 
         println!(

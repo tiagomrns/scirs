@@ -7,6 +7,7 @@ use scirs2_metrics::clustering::{
     homogeneity_completeness_v_measure, normalized_mutual_info_score,
 };
 
+#[allow(dead_code)]
 fn main() -> CoreResult<()> {
     // Create a sample dataset with simulated clusters
     let _data = Array2::from_shape_vec(
@@ -59,6 +60,7 @@ fn main() -> CoreResult<()> {
     Ok(())
 }
 
+#[allow(dead_code)]
 fn evaluate_clustering<T, U, S1, S2, D1, D2>(
     true_labels: &ndarray::ArrayBase<S1, D1>,
     pred_labels: &ndarray::ArrayBase<S2, D2>,
@@ -95,21 +97,21 @@ where
         .map_err(|e| CoreError::InvalidArgument(ErrorContext::new(e.to_string())))?;
 
     // Print results
-    println!("  Adjusted Rand Index: {:.4}", ari);
+    println!("  Adjusted Rand Index: {ari:.4}");
 
     println!("  Normalized Mutual Information:");
-    println!("    - Arithmetic: {:.4}", nmi_arithmetic);
-    println!("    - Geometric:  {:.4}", nmi_geometric);
-    println!("    - Min:        {:.4}", nmi_min);
-    println!("    - Max:        {:.4}", nmi_max);
+    println!("    - Arithmetic: {nmi_arithmetic:.4}");
+    println!("    - Geometric:  {nmi_geometric:.4}");
+    println!("    - Min:        {nmi_min:.4}");
+    println!("    - Max:        {nmi_max:.4}");
 
-    println!("  Adjusted Mutual Information: {:.4}", ami);
+    println!("  Adjusted Mutual Information: {ami:.4}");
 
-    println!("  Homogeneity: {:.4}", homogeneity);
-    println!("  Completeness: {:.4}", completeness);
-    println!("  V-measure: {:.4}", v_measure);
+    println!("  Homogeneity: {homogeneity:.4}");
+    println!("  Completeness: {completeness:.4}");
+    println!("  V-measure: {v_measure:.4}");
 
-    println!("  Fowlkes-Mallows Index: {:.4}", fmi);
+    println!("  Fowlkes-Mallows Index: {fmi:.4}");
 
     Ok(())
 }

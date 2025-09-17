@@ -85,6 +85,7 @@ pub static AUTO_DEVICE_CONFIG: RwLock<AutoDeviceConfig> = RwLock::new(AutoDevice
 });
 
 /// Set the global auto device configuration.
+#[allow(dead_code)]
 pub fn set_auto_device_config(config: AutoDeviceConfig) {
     if let Ok(mut global_config) = AUTO_DEVICE_CONFIG.write() {
         *global_config = config;
@@ -92,6 +93,7 @@ pub fn set_auto_device_config(config: AutoDeviceConfig) {
 }
 
 /// Get the current auto device configuration.
+#[allow(dead_code)]
 pub fn get_auto_device_config() -> AutoDeviceConfig {
     AUTO_DEVICE_CONFIG
         .read()
@@ -103,6 +105,7 @@ pub fn get_auto_device_config() -> AutoDeviceConfig {
 ///
 /// This function determines the best device (CPU, GPU, distributed) for an array
 /// based on its size, the operation being performed, and the current configuration.
+#[allow(dead_code)]
 pub fn determine_best_device<T, D>(array: &Array<T, D>) -> DeviceType
 where
     T: Clone + Send + Sync + 'static + num_traits::Zero + std::ops::Div<f64, Output = T>,
@@ -124,6 +127,7 @@ where
 ///
 /// This function determines the best device for an operation based on
 /// the arrays involved and the operation being performed.
+#[allow(dead_code)]
 pub fn determine_best_device_for_operation<T, D>(
     arrays: &[&Array<T, D>],
     operation: &str,
@@ -179,6 +183,7 @@ pub enum DeviceType {
 ///
 /// This function converts an array to the specified device type, creating
 /// the appropriate array wrapper for the target device.
+#[allow(dead_code)]
 pub fn convert_to_device<T, D>(array: Array<T, D>, device: DeviceType) -> Box<dyn ArrayProtocol>
 where
     T: Clone
@@ -195,7 +200,7 @@ where
     SliceInfo<[SliceInfoElem; 2], Dim<[usize; 2]>, Dim<[usize; 2]>>: SliceArg<D>,
 {
     match device {
-        DeviceType::CPU => Box::new(NdarrayWrapper::new(array)),
+        DeviceType::CPU => Box::new(NdarrayWrapper::new(array.clone())),
         DeviceType::GPU => {
             let config = get_auto_device_config();
             let gpu_config = GPUConfig {
@@ -206,7 +211,7 @@ where
                 memory_fraction: 0.9,
             };
 
-            Box::new(GPUNdarray::new(array, gpu_config))
+            Box::new(GPUNdarray::new(array.clone(), gpu_config))
         }
         DeviceType::Distributed => {
             let dist_config = DistributedConfig {
@@ -403,6 +408,7 @@ where
 ///
 /// This function automatically selects the best device for the operation
 /// based on the arrays involved and the operation being performed.
+#[allow(dead_code)]
 pub fn auto_execute<T, D, F, R>(
     arrays: &mut [&mut AutoDevice<T, D>],
     operation: &str,

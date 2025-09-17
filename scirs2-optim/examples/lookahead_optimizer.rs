@@ -6,8 +6,10 @@ use scirs2_optim::optimizers::{Adam, Lookahead, SGD};
 use scirs2_optim::Optimizer;
 use std::error::Error;
 use std::time::Instant;
+// use statrs::statistics::Statistics; // statrs not available
 
 // Simple loss function for demonstration: linear regression with L2 loss
+#[allow(dead_code)]
 fn compute_loss_and_gradient(
     weights: &Array1<f64>,
     bias: &f64,
@@ -34,6 +36,7 @@ fn compute_loss_and_gradient(
 }
 
 // Train a model using the provided optimizer
+#[allow(dead_code)]
 fn train_model(
     optimizer: &mut dyn Optimizer<f64, ndarray::Ix1>,
     x: &Array2<f64>,
@@ -84,6 +87,7 @@ fn train_model(
     Ok((weights, bias, final_loss))
 }
 
+#[allow(dead_code)]
 fn main() -> Result<(), Box<dyn Error>> {
     // Create a synthetic dataset for linear regression
     let n_samples = 1000;

@@ -29,7 +29,14 @@ where
         Some(t) => t,
         None => match T::from_f64(1e-8) {
             Some(t) => t,
-            None => panic!("Could not convert 1e-8 to generic type"),
+            None => {
+                // Fallback: use a very small value that should work for most numeric types
+                // This handles edge cases where 1e-8 cannot be represented in type T
+                match T::from_f64(0.0) {
+                    Some(zero) => zero,   // Use zero as fallback tolerance (exact equality)
+                    None => return false, // If we can't even create zero, points can't be equal
+                }
+            }
         },
     };
 
@@ -85,14 +92,14 @@ pub fn scale_points(points: &Array2<f64>) -> ScaledPointsResult {
         ranges.push((mins[i], maxs[i] - mins[i]));
     }
 
-    // Scale points
+    // Scale _points
     let mut scaled = Array2::zeros((n, d));
     for i in 0..n {
         for j in 0..d {
             if ranges[j].1 > 0.0 {
                 scaled[[i, j]] = (points[[i, j]] - ranges[j].0) / ranges[j].1;
             } else {
-                scaled[[i, j]] = 0.5; // All points have same value in this dimension
+                scaled[[i, j]] = 0.5; // All _points have same value in this dimension
             }
         }
     }

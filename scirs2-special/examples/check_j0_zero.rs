@@ -1,3 +1,4 @@
+#[allow(dead_code)]
 fn main() {
     use scirs2_special::j0;
 

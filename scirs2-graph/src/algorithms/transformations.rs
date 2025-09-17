@@ -17,22 +17,23 @@ use std::collections::HashSet;
 ///
 /// # Returns
 /// * A new graph representing the line graph
+#[allow(dead_code)]
 pub fn line_graph<N, E, Ix>(graph: &Graph<N, E, Ix>) -> Graph<(N, N), (), Ix>
 where
-    N: Node + Clone,
+    N: Node + Clone + std::fmt::Debug,
     E: EdgeWeight + Clone,
     Ix: IndexType,
 {
     let mut line_graph = Graph::new();
     let edges = graph.edges();
 
-    // Each edge becomes a node in the line graph
+    // Each edge becomes a node in the line _graph
     let edge_nodes: Vec<(N, N)> = edges
         .iter()
         .map(|e| (e.source.clone(), e.target.clone()))
         .collect();
 
-    // Add all edge nodes to the line graph
+    // Add all edge nodes to the line _graph
     for edge_node in &edge_nodes {
         line_graph.add_node(edge_node.clone());
     }
@@ -43,7 +44,7 @@ where
             // Check if edges share a vertex
             if edge1.0 == edge2.0 || edge1.0 == edge2.1 || edge1.1 == edge2.0 || edge1.1 == edge2.1
             {
-                // Connect the corresponding nodes in the line graph
+                // Connect the corresponding nodes in the line _graph
                 let _ = line_graph.add_edge(edge1.clone(), edge2.clone(), ());
             }
         }
@@ -56,9 +57,10 @@ where
 ///
 /// For directed graphs, two vertices in the line graph are connected
 /// if the head of one edge equals the tail of another.
+#[allow(dead_code)]
 pub fn line_digraph<N, E, Ix>(digraph: &DiGraph<N, E, Ix>) -> DiGraph<(N, N), (), Ix>
 where
-    N: Node + Clone,
+    N: Node + Clone + std::fmt::Debug,
     E: EdgeWeight + Clone,
     Ix: IndexType,
 {
@@ -97,9 +99,10 @@ where
 ///
 /// # Returns
 /// * A new graph containing only the specified nodes and edges between them
+#[allow(dead_code)]
 pub fn subgraph<N, E, Ix>(graph: &Graph<N, E, Ix>, nodes: &HashSet<N>) -> Graph<N, E, Ix>
 where
-    N: Node + Clone,
+    N: Node + Clone + std::fmt::Debug,
     E: EdgeWeight + Clone,
     Ix: IndexType,
 {
@@ -127,9 +130,10 @@ where
 }
 
 /// Extracts a subgraph from a directed graph
+#[allow(dead_code)]
 pub fn subdigraph<N, E, Ix>(digraph: &DiGraph<N, E, Ix>, nodes: &HashSet<N>) -> DiGraph<N, E, Ix>
 where
-    N: Node + Clone,
+    N: Node + Clone + std::fmt::Debug,
     E: EdgeWeight + Clone,
     Ix: IndexType,
 {
@@ -166,9 +170,10 @@ where
 ///
 /// # Returns
 /// * A new graph containing the specified edges and their endpoints
+#[allow(dead_code)]
 pub fn edge_subgraph<N, E, Ix>(graph: &Graph<N, E, Ix>, edges: &[(N, N)]) -> Graph<N, E, Ix>
 where
-    N: Node + Clone,
+    N: Node + Clone + std::fmt::Debug,
     E: EdgeWeight + Clone,
     Ix: IndexType,
 {
@@ -211,13 +216,14 @@ where
 ///
 /// # Returns
 /// * The Cartesian product graph
+#[allow(dead_code)]
 pub fn cartesian_product<N1, N2, E1, E2, Ix>(
     graph1: &Graph<N1, E1, Ix>,
     graph2: &Graph<N2, E2, Ix>,
 ) -> Graph<(N1, N2), (), Ix>
 where
-    N1: Node + Clone,
-    N2: Node + Clone,
+    N1: Node + Clone + std::fmt::Debug,
+    N2: Node + Clone + std::fmt::Debug,
     E1: EdgeWeight,
     E2: EdgeWeight,
     Ix: IndexType,
@@ -266,13 +272,14 @@ where
 ///
 /// The tensor product G ⊗ H has vertex set V(G) × V(H) and
 /// edge set {((u₁,v₁),(u₂,v₂)) : (u₁,u₂) ∈ E(G) and (v₁,v₂) ∈ E(H)}.
+#[allow(dead_code)]
 pub fn tensor_product<N1, N2, E1, E2, Ix>(
     graph1: &Graph<N1, E1, Ix>,
     graph2: &Graph<N2, E2, Ix>,
 ) -> Graph<(N1, N2), (), Ix>
 where
-    N1: Node + Clone,
-    N2: Node + Clone,
+    N1: Node + Clone + std::fmt::Debug,
+    N2: Node + Clone + std::fmt::Debug,
     E1: EdgeWeight,
     E2: EdgeWeight,
     Ix: IndexType,
@@ -318,9 +325,10 @@ where
 ///
 /// The complement G̅ of a graph G has the same vertex set as G,
 /// but edge (u,v) is in G̅ if and only if (u,v) is not in G.
+#[allow(dead_code)]
 pub fn complement<N, E, Ix>(graph: &Graph<N, E, Ix>) -> Graph<N, (), Ix>
 where
-    N: Node + Clone,
+    N: Node + Clone + std::fmt::Debug,
     E: EdgeWeight,
     Ix: IndexType,
 {
@@ -352,12 +360,13 @@ where
 ///
 /// # Returns
 /// * A subgraph containing only edges with specified weights
+#[allow(dead_code)]
 pub fn weight_filtered_subgraph<N, E, Ix>(
     graph: &Graph<N, E, Ix>,
     valid_weights: &HashSet<E>,
 ) -> Graph<N, E, Ix>
 where
-    N: Node + Clone,
+    N: Node + Clone + std::fmt::Debug,
     E: EdgeWeight + Clone + std::hash::Hash + Eq,
     Ix: IndexType,
 {

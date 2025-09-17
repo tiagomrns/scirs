@@ -50,6 +50,7 @@ impl SimpleNetwork {
 }
 
 /// Simulate gradients for demonstration
+#[allow(dead_code)]
 fn compute_gradients_2d(params: &[Array2<f64>]) -> Vec<Array2<f64>> {
     params
         .iter()
@@ -57,6 +58,7 @@ fn compute_gradients_2d(params: &[Array2<f64>]) -> Vec<Array2<f64>> {
         .collect()
 }
 
+#[allow(dead_code)]
 fn compute_gradients_1d(params: &[Array1<f64>]) -> Vec<Array1<f64>> {
     params
         .iter()
@@ -64,6 +66,7 @@ fn compute_gradients_1d(params: &[Array1<f64>]) -> Vec<Array1<f64>> {
         .collect()
 }
 
+#[allow(dead_code)]
 fn main() {
     println!("Parameter Groups Example");
     println!("========================\n");

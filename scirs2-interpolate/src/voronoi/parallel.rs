@@ -166,6 +166,7 @@ impl<
 ///
 /// # Returns
 /// A new parallel Natural Neighbor interpolator
+#[allow(dead_code)]
 pub fn make_parallel_natural_neighbor_interpolator<
     F: Float + FromPrimitive + Debug + Send + Sync + ndarray::ScalarOperand + 'static + std::cmp::Ord,
 >(
@@ -186,6 +187,7 @@ pub fn make_parallel_natural_neighbor_interpolator<
 ///
 /// # Returns
 /// A new parallel Natural Neighbor interpolator using Sibson's method
+#[allow(dead_code)]
 pub fn make_parallel_sibson_interpolator<
     F: Float
         + FromPrimitive
@@ -212,6 +214,7 @@ pub fn make_parallel_sibson_interpolator<
 ///
 /// # Returns
 /// A new parallel Natural Neighbor interpolator using the non-Sibsonian (Laplace) method
+#[allow(dead_code)]
 pub fn make_parallel_laplace_interpolator<
     F: Float
         + FromPrimitive

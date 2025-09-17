@@ -1,13 +1,13 @@
-use criterion::{black_box, criterion_group, criterion_main, BenchmarkId, Criterion};
+use criterion::{criterion_group, criterion_main, BenchmarkId, Criterion};
 use ndarray::{Array1, Array2};
-use ndarray_rand::RandomExt;
-use rand::distributions::Uniform;
-use rand::SeedableRng;
+use rand::distr::Uniform;
+use rand::{Rng, SeedableRng};
 use rand_chacha::ChaCha8Rng;
 use scirs2_linalg::{cholesky, det, inv, lstsq, lu, matrix_norm, qr, solve};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::fs;
+use std::hint::black_box;
 use std::time::Instant;
 
 const SEED: u64 = 42;
@@ -41,22 +41,27 @@ struct ComparisonSummary {
 }
 
 /// Generate test data with controlled properties
+#[allow(dead_code)]
 fn generate_test_data(size: usize) -> (Array2<f64>, Array1<f64>) {
     let mut rng = ChaCha8Rng::seed_from_u64(SEED);
-    let matrix = Array2::random_using((size, size), Uniform::new(-1.0, 1.0), &mut rng);
-    let vector = Array1::random_using(size, Uniform::new(-1.0, 1.0), &mut rng);
+    let uniform = Uniform::new(-1.0, 1.0).unwrap();
+    let matrix = Array2::from_shape_fn((size, size), |_| rng.sample(uniform));
+    let vector = Array1::from_shape_fn(size, |_| rng.sample(uniform));
     (matrix, vector)
 }
 
 /// Generate positive definite matrix for stable operations
+#[allow(dead_code)]
 fn generate_spd_matrix(size: usize) -> Array2<f64> {
     let mut rng = ChaCha8Rng::seed_from_u64(SEED);
-    let a = Array2::random_using((size, size), Uniform::new(-1.0, 1.0), &mut rng);
+    let uniform = Uniform::new(-1.0, 1.0).unwrap();
+    let a = Array2::from_shape_fn((size, size), |_| rng.sample(uniform));
     let at = a.t();
     at.dot(&a) + Array2::<f64>::eye(size) * 0.1
 }
 
 /// Benchmark comparison for basic operations
+#[allow(dead_code)]
 fn bench_basic_operations_comparison(c: &mut Criterion) {
     let mut group = c.benchmark_group("scipy_basic_comparison");
     let mut results = Vec::new();
@@ -140,12 +145,13 @@ fn bench_basic_operations_comparison(c: &mut Criterion) {
 }
 
 /// Benchmark comparison for decompositions
+#[allow(dead_code)]
 fn bench_decomposition_comparison(c: &mut Criterion) {
     let mut group = c.benchmark_group("scipy_decomposition_comparison");
     let mut results = Vec::new();
 
     for &size in COMPARISON_SIZES {
-        let (matrix, _vector) = generate_test_data(size);
+        let (matrix, vector) = generate_test_data(size);
         let spd_matrix = generate_spd_matrix(size);
 
         // LU decomposition
@@ -229,6 +235,7 @@ fn bench_decomposition_comparison(c: &mut Criterion) {
 }
 
 /// Benchmark comparison for linear solvers
+#[allow(dead_code)]
 fn bench_solver_comparison(c: &mut Criterion) {
     let mut group = c.benchmark_group("scipy_solver_comparison");
     let mut results = Vec::new();
@@ -292,6 +299,7 @@ fn bench_solver_comparison(c: &mut Criterion) {
 }
 
 /// Cross-platform performance comparison
+#[allow(dead_code)]
 fn bench_cross_platform_performance(c: &mut Criterion) {
     let mut group = c.benchmark_group("cross_platform_performance");
 
@@ -322,6 +330,7 @@ fn bench_cross_platform_performance(c: &mut Criterion) {
 }
 
 /// Save Rust benchmark results to file for Python comparison
+#[allow(dead_code)]
 fn save_rust_results(results: &[BenchmarkResult]) {
     let json = serde_json::to_string_pretty(results).unwrap();
     fs::write("target/rust_benchmark_results.json", json).unwrap_or_else(|e| {
@@ -371,6 +380,7 @@ fn print_comparison_analysis(report: &ComparisonReport) {
 }
 
 /// Benchmark that outputs performance characteristics
+#[allow(dead_code)]
 fn bench_performance_characteristics(c: &mut Criterion) {
     let group = c.benchmark_group("performance_characteristics");
 

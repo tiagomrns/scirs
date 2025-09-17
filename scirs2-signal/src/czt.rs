@@ -1,17 +1,19 @@
-//! Chirp Z-Transform (CZT)
-//!
-//! This module provides functions for computing the Chirp Z-Transform (CZT),
-//! which is a generalization of the Discrete Fourier Transform (DFT) that
-//! allows evaluation of the Z-transform on arbitrary contours in the complex plane.
-//!
-//! The CZT is particularly useful for analyzing frequency components with
-//! non-uniform spacing or for "zooming in" on specific frequency ranges.
+// Chirp Z-Transform (CZT)
+//
+// This module provides functions for computing the Chirp Z-Transform (CZT),
+// which is a generalization of the Discrete Fourier Transform (DFT) that
+// allows evaluation of the Z-transform on arbitrary contours in the complex plane.
+//
+// The CZT is particularly useful for analyzing frequency components with
+// non-uniform spacing or for "zooming in" on specific frequency ranges.
 
 use crate::error::{SignalError, SignalResult};
 use num_complex::Complex64;
 use num_traits::{Float, NumCast};
+use rustfft::{num_complex::Complex as RustComplex, FftPlanner};
 use std::fmt::Debug;
 
+#[allow(unused_imports)]
 /// Calculate the points at which the chirp z-transform is computed
 ///
 /// # Arguments
@@ -28,12 +30,12 @@ use std::fmt::Debug;
 ///
 /// ```
 /// use scirs2_signal::czt::czt_points;
-/// use num_complex::Complex64;
 ///
 /// // Generate 10 points on the unit circle
 /// let points = czt_points(10, None, None).unwrap();
 /// assert_eq!(points.len(), 10);
 /// ```
+#[allow(dead_code)]
 pub fn czt_points(
     m: usize,
     w: Option<Complex64>,
@@ -77,7 +79,6 @@ pub fn czt_points(
 ///
 /// ```
 /// use scirs2_signal::czt::czt;
-/// use num_complex::Complex64;
 ///
 /// // Generate a simple signal
 /// let signal = vec![1.0, 2.0, 3.0, 4.0];
@@ -91,8 +92,6 @@ pub fn czt_points(
 ///
 /// ```
 /// use scirs2_signal::czt::czt;
-/// use num_complex::Complex64;
-/// use std::f64::consts::PI;
 ///
 /// // Generate a simple signal
 /// let signal = vec![1.0, 2.0, 3.0, 4.0];
@@ -103,6 +102,7 @@ pub fn czt_points(
 /// let result = czt(&signal, Some(16), Some(w), None, None).unwrap();
 /// assert_eq!(result.len(), 16);
 /// ```
+#[allow(dead_code)]
 pub fn czt<T>(
     x: &[T],
     m: Option<usize>,
@@ -160,6 +160,7 @@ where
 ///
 /// Where the chirp terms w^{±n(n-1)/2} allow us to express this as a convolution,
 /// which can be efficiently computed using FFTs.
+#[allow(dead_code)]
 fn czt_bluestein(
     x: &[Complex64],
     m: usize,
@@ -225,6 +226,7 @@ fn czt_bluestein(
 }
 
 /// Find the next power of 2 greater than or equal to n
+#[allow(dead_code)]
 fn next_power_of_two(n: usize) -> usize {
     let mut p = 1;
     while p < n {
@@ -236,9 +238,8 @@ fn next_power_of_two(n: usize) -> usize {
 /// Compute Fast Fourier Transform (FFT) of a complex sequence
 ///
 /// This is an implementation for complex inputs using rustfft directly
+#[allow(dead_code)]
 fn fft(x: &[Complex64]) -> SignalResult<Vec<Complex64>> {
-    use rustfft::{num_complex::Complex as RustComplex, FftPlanner};
-
     if x.is_empty() {
         return Err(SignalError::ValueError("Input array is empty".to_string()));
     }
@@ -268,9 +269,8 @@ fn fft(x: &[Complex64]) -> SignalResult<Vec<Complex64>> {
 /// Compute Inverse Fast Fourier Transform (IFFT) of a complex sequence
 ///
 /// This is an implementation for complex inputs using rustfft directly
+#[allow(dead_code)]
 fn ifft(x: &[Complex64]) -> SignalResult<Vec<Complex64>> {
-    use rustfft::{num_complex::Complex as RustComplex, FftPlanner};
-
     if x.is_empty() {
         return Err(SignalError::ValueError("Input array is empty".to_string()));
     }
@@ -302,7 +302,6 @@ fn ifft(x: &[Complex64]) -> SignalResult<Vec<Complex64>> {
 mod tests {
     use super::*;
     use approx::assert_relative_eq;
-
     #[test]
     fn test_czt_points() {
         // Generate 4 points on the unit circle

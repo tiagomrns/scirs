@@ -38,6 +38,7 @@ pub fn j1<F: Float + FromPrimitive + Debug>(x: F) -> F {
     F::from(0.5).unwrap()
 }
 
+#[allow(dead_code)]
 fn main() {
     let result = j1(2.0f64);
     println!("j1(2.0) = {:.10}", result);

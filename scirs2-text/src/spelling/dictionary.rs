@@ -90,7 +90,10 @@ impl Clone for DictionaryCorrector {
 impl std::fmt::Debug for DictionaryCorrector {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("DictionaryCorrector")
-            .field("dictionary", &format!("<{} words>", self.dictionary.len()))
+            .field("dictionary", &{
+                let dict_len = self.dictionary.len();
+                format!("<{dict_len} words>")
+            })
             .field("config", &self.config)
             .field("metric", &"<StringMetric>")
             .finish()
@@ -334,14 +337,14 @@ impl DictionaryCorrector {
     /// If no frequency is provided, a default value of 1 is used.
     pub fn from_file<P: AsRef<Path>>(path: P) -> Result<Self> {
         let file = File::open(path)
-            .map_err(|e| TextError::IoError(format!("Failed to open dictionary file: {}", e)))?;
+            .map_err(|e| TextError::IoError(format!("Failed to open dictionary file: {e}")))?;
 
         let reader = BufReader::new(file);
         let mut dictionary = HashMap::new();
 
         for line in reader.lines() {
             let line = line.map_err(|e| {
-                TextError::IoError(format!("Failed to read line from dictionary file: {}", e))
+                TextError::IoError(format!("Failed to read line from dictionary file: {e}"))
             })?;
 
             // Skip empty lines
@@ -360,7 +363,7 @@ impl DictionaryCorrector {
                     // Word and frequency
                     let word = parts[0];
                     let frequency = parts[1].parse::<usize>().map_err(|e| {
-                        TextError::Other(format!("Failed to parse frequency as integer: {}", e))
+                        TextError::Other(format!("Failed to parse frequency as integer: {e}"))
                     })?;
 
                     dictionary.insert(word.to_string(), frequency);
@@ -584,7 +587,7 @@ mod tests {
     }
 
     #[test]
-    fn test_dictionary_corrector_correct_text() {
+    fn test_dictionary_corrector_correcttext() {
         let mut corrector = DictionaryCorrector::default();
 
         // Add required words to the dictionary with specific corrections
@@ -596,7 +599,7 @@ mod tests {
         let text = "I beleive the recieved information was corect.";
 
         // Create a custom corrector for the test to ensure consistent behavior
-        let corrected = corrector.correct_text(text).unwrap();
+        let corrected = corrector.correcttext(text).unwrap();
 
         // Check each word individually to be more robust
         assert!(corrected.contains("believe"));

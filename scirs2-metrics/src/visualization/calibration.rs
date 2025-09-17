@@ -132,8 +132,8 @@ where
     /// # Returns
     ///
     /// * Self for method chaining
-    pub fn with_show_perfectly_calibrated(mut self, show_perfectly_calibrated: bool) -> Self {
-        self.show_perfectly_calibrated = show_perfectly_calibrated;
+    pub fn with_show_perfectly_calibrated(mut self, show_perfectlycalibrated: bool) -> Self {
+        self.show_perfectly_calibrated = show_perfectlycalibrated;
         self
     }
 
@@ -235,6 +235,7 @@ where
 /// # Returns
 ///
 /// * A CalibrationVisualizer
+#[allow(dead_code)]
 pub fn calibration_visualization(
     fraction_of_positives: Vec<f64>,
     mean_predicted_value: Vec<f64>,
@@ -262,6 +263,7 @@ pub fn calibration_visualization(
 /// # Returns
 ///
 /// * A CalibrationVisualizer
+#[allow(dead_code)]
 pub fn calibration_from_labels<'a, T, S>(
     y_true: &'a ArrayBase<S, Ix1>,
     y_prob: &'a ArrayBase<S, Ix1>,

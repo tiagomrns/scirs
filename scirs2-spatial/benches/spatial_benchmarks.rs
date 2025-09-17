@@ -33,12 +33,14 @@ const KNN_K_VALUES: &[usize] = &[1, 5, 10, 20, 50];
 const BENCHMARK_SEED: u64 = 12345;
 
 /// Generate reproducible random points for benchmarking
-fn generate_points(n_points: usize, dimensions: usize, seed: u64) -> Array2<f64> {
+#[allow(dead_code)]
+fn generate_points(_npoints: usize, dimensions: usize, seed: u64) -> Array2<f64> {
     let mut rng = StdRng::seed_from_u64(seed);
-    Array2::from_shape_fn((n_points, dimensions), |_| rng.random_range(-10.0..10.0))
+    Array2::from_shape_fn((_npoints, dimensions), |_| rng.gen_range(-10.0..10.0))
 }
 
 /// Generate two sets of random points for cross-distance benchmarks
+#[allow(dead_code)]
 fn generate_point_pairs(
     n1: usize,
     n2: usize,
@@ -46,12 +48,13 @@ fn generate_point_pairs(
     seed: u64,
 ) -> (Array2<f64>, Array2<f64>) {
     let mut rng = StdRng::seed_from_u64(seed);
-    let points1 = Array2::from_shape_fn((n1, dimensions), |_| rng.random_range(-10.0..10.0));
-    let points2 = Array2::from_shape_fn((n2, dimensions), |_| rng.random_range(-10.0..10.0));
+    let points1 = Array2::from_shape_fn((n1, dimensions), |_| rng.gen_range(-10.0..10.0));
+    let points2 = Array2::from_shape_fn((n2, dimensions), |_| rng.gen_range(-10.0..10.0));
     (points1, points2)
 }
 
 /// Benchmark SIMD vs scalar distance calculations for different data sizes
+#[allow(dead_code)]
 fn bench_simd_vs_scalar_distance(c: &mut Criterion) {
     let mut group = c.benchmark_group("simd_vs_scalar_distance");
     group
@@ -66,7 +69,7 @@ fn bench_simd_vs_scalar_distance(c: &mut Criterion) {
 
             // Scalar benchmark
             group.bench_with_input(
-                BenchmarkId::new("scalar_euclidean", format!("{}x{}", size, dim)),
+                BenchmarkId::new("scalar_euclidean", format!("{size}x{dim}")),
                 &(size, dim),
                 |b, _| {
                     b.iter(|| {
@@ -82,7 +85,7 @@ fn bench_simd_vs_scalar_distance(c: &mut Criterion) {
 
             // SIMD batch benchmark
             group.bench_with_input(
-                BenchmarkId::new("simd_euclidean_batch", format!("{}x{}", size, dim)),
+                BenchmarkId::new("simd_euclidean_batch", format!("{size}x{dim}")),
                 &(size, dim),
                 |b, _| {
                     b.iter(|| {
@@ -96,7 +99,7 @@ fn bench_simd_vs_scalar_distance(c: &mut Criterion) {
 
             // Individual SIMD calls for comparison
             group.bench_with_input(
-                BenchmarkId::new("simd_euclidean_individual", format!("{}x{}", size, dim)),
+                BenchmarkId::new("simd_euclidean_individual", format!("{size}x{dim}")),
                 &(size, dim),
                 |b, _| {
                     b.iter(|| {
@@ -119,6 +122,7 @@ fn bench_simd_vs_scalar_distance(c: &mut Criterion) {
 }
 
 /// Benchmark parallel vs sequential spatial operations
+#[allow(dead_code)]
 fn bench_parallel_vs_sequential(c: &mut Criterion) {
     let mut group = c.benchmark_group("parallel_vs_sequential");
     group
@@ -130,13 +134,15 @@ fn bench_parallel_vs_sequential(c: &mut Criterion) {
         group.throughput(Throughput::Elements((size * (size - 1) / 2) as u64));
 
         // Sequential pdist
-        group.bench_with_input(BenchmarkId::new("sequential_pdist", size), &size, |b, _| {
-            b.iter(|| black_box(pdist(&points, euclidean)))
-        });
+        group.bench_with_input(
+            BenchmarkId::new("sequential_pdist", size),
+            &size,
+            |b_, _| b_.iter(|| black_box(pdist(&points, euclidean))),
+        );
 
         // Parallel pdist
-        group.bench_with_input(BenchmarkId::new("parallel_pdist", size), &size, |b, _| {
-            b.iter(|| black_box(parallel_pdist(&points.view(), "euclidean").unwrap()))
+        group.bench_with_input(BenchmarkId::new("parallel_pdist", size), &size, |b_, _| {
+            b_.iter(|| black_box(parallel_pdist(&points.view(), "euclidean").unwrap()))
         });
     }
 
@@ -149,7 +155,7 @@ fn bench_parallel_vs_sequential(c: &mut Criterion) {
         group.bench_with_input(
             BenchmarkId::new("kdtree_construction", size),
             &size,
-            |b, _| b.iter(|| black_box(KDTree::new(&points).unwrap())),
+            |b_, _| b_.iter(|| black_box(KDTree::new(&points).unwrap())),
         );
     }
 
@@ -157,6 +163,7 @@ fn bench_parallel_vs_sequential(c: &mut Criterion) {
 }
 
 /// Benchmark memory efficiency for large datasets
+#[allow(dead_code)]
 fn bench_memory_efficiency(c: &mut Criterion) {
     let mut group = c.benchmark_group("memory_efficiency");
     group.measurement_time(Duration::from_secs(20));
@@ -171,7 +178,7 @@ fn bench_memory_efficiency(c: &mut Criterion) {
 
         // Memory-efficient distance matrix computation
         group.bench_with_input(
-            BenchmarkId::new("memory_efficient_pdist", format!("{:.1}MB", data_size_mb)),
+            BenchmarkId::new("memory_efficient_pdist", format!("{data_size_mb:.1}MB")),
             &size,
             |b, _| {
                 b.iter(|| {
@@ -185,7 +192,7 @@ fn bench_memory_efficiency(c: &mut Criterion) {
 
         // Chunked processing simulation
         group.bench_with_input(
-            BenchmarkId::new("chunked_processing", format!("{:.1}MB", data_size_mb)),
+            BenchmarkId::new("chunked_processing", format!("{data_size_mb:.1}MB")),
             &size,
             |b, _| {
                 b.iter(|| {
@@ -209,6 +216,7 @@ fn bench_memory_efficiency(c: &mut Criterion) {
 }
 
 /// Benchmark different distance metrics performance comparison
+#[allow(dead_code)]
 fn bench_distance_metrics_comparison(c: &mut Criterion) {
     let mut group = c.benchmark_group("distance_metrics_comparison");
 
@@ -245,6 +253,7 @@ fn bench_distance_metrics_comparison(c: &mut Criterion) {
 }
 
 /// Benchmark cross-architecture performance
+#[allow(dead_code)]
 fn bench_cross_architecture_performance(c: &mut Criterion) {
     let mut group = c.benchmark_group("cross_architecture_performance");
 
@@ -283,13 +292,13 @@ fn bench_cross_architecture_performance(c: &mut Criterion) {
         group.throughput(Throughput::Elements(dim as u64));
 
         // Benchmark SIMD implementation
-        group.bench_with_input(BenchmarkId::new("simd_euclidean", dim), &dim, |b, _| {
-            b.iter(|| black_box(simd_euclidean_distance(&p1, &p2).unwrap()))
+        group.bench_with_input(BenchmarkId::new("simd_euclidean", dim), &dim, |b_, _| {
+            b_.iter(|| black_box(simd_euclidean_distance(&p1, &p2).unwrap()))
         });
 
         // Benchmark scalar fallback
-        group.bench_with_input(BenchmarkId::new("scalar_euclidean", dim), &dim, |b, _| {
-            b.iter(|| black_box(euclidean(&p1, &p2)))
+        group.bench_with_input(BenchmarkId::new("scalar_euclidean", dim), &dim, |b_, _| {
+            b_.iter(|| black_box(euclidean(&p1, &p2)))
         });
     }
 
@@ -297,6 +306,7 @@ fn bench_cross_architecture_performance(c: &mut Criterion) {
 }
 
 /// Benchmark spatial data structure performance
+#[allow(dead_code)]
 fn bench_spatial_data_structures(c: &mut Criterion) {
     let mut group = c.benchmark_group("spatial_data_structures");
     group.measurement_time(Duration::from_secs(15));
@@ -309,7 +319,7 @@ fn bench_spatial_data_structures(c: &mut Criterion) {
         group.bench_with_input(
             BenchmarkId::new("kdtree_construction", size),
             &size,
-            |b, _| b.iter(|| black_box(KDTree::new(&points).unwrap())),
+            |b_, _| b_.iter(|| black_box(KDTree::new(&points).unwrap())),
         );
 
         // BallTree construction
@@ -327,7 +337,7 @@ fn bench_spatial_data_structures(c: &mut Criterion) {
 
         for &k in &[1, 5, 10] {
             group.bench_with_input(
-                BenchmarkId::new("kdtree_query", format!("{}pts_k{}", size, k)),
+                BenchmarkId::new("kdtree_query", format!("{size}pts_k{k}")),
                 &(size, k),
                 |b, _| {
                     b.iter(|| {
@@ -339,7 +349,7 @@ fn bench_spatial_data_structures(c: &mut Criterion) {
             );
 
             group.bench_with_input(
-                BenchmarkId::new("balltree_query", format!("{}pts_k{}", size, k)),
+                BenchmarkId::new("balltree_query", format!("{size}pts_k{k}")),
                 &(size, k),
                 |b, _| {
                     b.iter(|| {
@@ -356,6 +366,7 @@ fn bench_spatial_data_structures(c: &mut Criterion) {
 }
 
 /// Benchmark KNN search performance and scaling
+#[allow(dead_code)]
 fn bench_knn_performance_scaling(c: &mut Criterion) {
     let mut group = c.benchmark_group("knn_performance_scaling");
 
@@ -400,6 +411,7 @@ fn bench_knn_performance_scaling(c: &mut Criterion) {
 }
 
 /// Benchmark scaling behavior with problem size
+#[allow(dead_code)]
 fn bench_scaling_analysis(c: &mut Criterion) {
     let mut group = c.benchmark_group("scaling_analysis");
     group
@@ -412,8 +424,8 @@ fn bench_scaling_analysis(c: &mut Criterion) {
 
         group.throughput(Throughput::Elements(expected_operations as u64));
 
-        group.bench_with_input(BenchmarkId::new("pdist_scaling", size), &size, |b, _| {
-            b.iter(|| {
+        group.bench_with_input(BenchmarkId::new("pdist_scaling", size), &size, |b_, _| {
+            b_.iter(|| {
                 // Limit computation to avoid excessive runtime
                 let subset_size = if size > 2000 { 1000 } else { size };
                 let subset = points.slice(ndarray::s![..subset_size, ..]);
@@ -433,7 +445,7 @@ fn bench_scaling_analysis(c: &mut Criterion) {
             group.throughput(Throughput::Elements((n * m) as u64));
 
             group.bench_with_input(
-                BenchmarkId::new("cdist_scaling", format!("{}x{}", n, m)),
+                BenchmarkId::new("cdist_scaling", format!("{n}x{m}")),
                 &(n, m),
                 |b, _| {
                     b.iter(|| {
@@ -450,6 +462,7 @@ fn bench_scaling_analysis(c: &mut Criterion) {
 }
 
 /// Benchmark memory allocation patterns
+#[allow(dead_code)]
 fn bench_memory_allocation_patterns(c: &mut Criterion) {
     let mut group = c.benchmark_group("memory_allocation_patterns");
 
@@ -502,6 +515,7 @@ fn bench_memory_allocation_patterns(c: &mut Criterion) {
 }
 
 /// Generate performance report
+#[allow(dead_code)]
 fn bench_performance_report(c: &mut Criterion) {
     let mut group = c.benchmark_group("performance_report");
 
@@ -523,10 +537,7 @@ fn bench_performance_report(c: &mut Criterion) {
 
     // Output performance characteristics to stderr for capture
     eprintln!("\n=== Performance Characteristics Report ===");
-    eprintln!(
-        "Test configuration: {} points, {} dimensions",
-        test_size, test_dim
-    );
+    eprintln!("Test configuration: {test_size} points, {test_dim} dimensions");
     eprintln!("Expected operations: {}", test_size * (test_size - 1) / 2);
     eprintln!(
         "Data size: {:.2} MB",

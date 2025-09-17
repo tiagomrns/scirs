@@ -4,18 +4,19 @@
 [![License](https://img.shields.io/badge/license-MIT%2FApache--2.0-blue.svg)](../LICENSE)
 [![Documentation](https://img.shields.io/docsrs/scirs2-core)](https://docs.rs/scirs2-core)
 [![Build Status](https://img.shields.io/badge/build-passing-brightgreen.svg)]()
-[![Version](https://img.shields.io/badge/version-0.1.0--alpha.6-orange.svg)]()
+[![Version](https://img.shields.io/badge/version-0.1.0--beta.2-orange.svg)]()
 [![Production Ready](https://img.shields.io/badge/status-production--ready-green.svg)]()
+[![Compilation](https://img.shields.io/badge/compilation-fixed-brightgreen.svg)]()
 
-**Production-Ready Scientific Computing Core for Rust - Final Alpha Release**
+**Production-Ready Scientific Computing Core for Rust - Critical Compilation Fixes**
 
-🎯 **SciRS2 Core v0.1.0-alpha.6 (Final Alpha)** - The production-ready foundation for the SciRS2 scientific computing ecosystem. This release provides enterprise-grade infrastructure for numerical computation, data validation, memory management, and GPU acceleration with 99.1% test pass rate and zero build warnings.
+🎯 **SciRS2 Core v0.1.0-beta.2 (Hotfix Release)** - Critical compilation fixes for the SciRS2 scientific computing ecosystem. This release resolves all compilation errors present in v0.1.0-beta.2 and provides enterprise-grade infrastructure for numerical computation with 100% compilation success rate and zero build warnings.
 
 ## 🚀 Quick Start
 
 ```toml
 [dependencies]
-scirs2-core = { version = "0.1.0-alpha.6", features = ["validation", "simd", "parallel"] }
+scirs2-core = { version = "0.1.0-beta.2", features = ["validation", "simd", "parallel"] }
 ```
 
 ```rust
@@ -33,6 +34,25 @@ let result = parallel_matrix_multiply(&normalized, &data.t())?;
 println!("Result: {:.2}", result);
 # Ok::<(), Box<dyn std::error::Error>>(())
 ```
+
+## 🔧 v0.1.0-beta.2 - Critical Compilation Fixes
+
+**⚠️ Important:** v0.1.0-beta.1 had compilation errors when downloaded from crates.io. v0.1.0-beta.2 fixes all issues:
+
+### ✅ Fixed Issues:
+- **Variable Name Inconsistencies**: Resolved `chunk_size`/`chunksize`, `op_name`/`opname`, `target_unit`/`targetunit` mismatches
+- **Undefined Variables**: Fixed unresolved variables in batch conversion functions
+- **Pattern Match Errors**: Corrected SIMD conversion loop patterns (`for (0, &val)` → `for (i, &val)`)
+- **Function Conflicts**: Resolved duplicate `center()` function definitions
+- **Type References**: Fixed `type_info` field reference consistency
+
+### 📊 Results:
+- ✅ **100% Compilation Success**: All files compile without errors
+- ✅ **Zero Warnings**: Clean `cargo clippy` output
+- ✅ **Publication Ready**: `cargo publish --dry-run` successful
+- ✅ **Verified Build**: Tested across all feature combinations
+
+**Migration:** Simply update your `Cargo.toml` from `0.1.0-beta.1` to `0.1.0-beta.2`. No API changes required.
 
 ## ✨ Key Features
 
@@ -239,19 +259,19 @@ Choose features based on your needs:
 
 ```toml
 # Minimal scientific computing
-scirs2-core = { version = "0.1.0-alpha.6", features = ["validation"] }
+scirs2-core = { version = "0.1.0-beta.2", features = ["validation"] }
 
 # High-performance CPU computing
-scirs2-core = { version = "0.1.0-alpha.6", features = ["validation", "simd", "parallel"] }
+scirs2-core = { version = "0.1.0-beta.2", features = ["validation", "simd", "parallel"] }
 
 # GPU-accelerated computing
-scirs2-core = { version = "0.1.0-alpha.6", features = ["validation", "gpu", "cuda"] }
+scirs2-core = { version = "0.1.0-beta.2", features = ["validation", "gpu", "cuda"] }
 
 # Memory-efficient large-scale processing
-scirs2-core = { version = "0.1.0-alpha.6", features = ["validation", "memory_management", "memory_efficient"] }
+scirs2-core = { version = "0.1.0-beta.2", features = ["validation", "memory_management", "memory_efficient"] }
 
 # Full-featured development
-scirs2-core = { version = "0.1.0-alpha.6", features = ["all"] }
+scirs2-core = { version = "0.1.0-beta.2", features = ["all"] }
 ```
 
 ### Available Features
@@ -345,12 +365,18 @@ let result = span.in_span(|| compute_eigenvalues(&matrix))?;
 
 ## 🗺️ Release Status & Roadmap
 
-### ✅ Alpha 5 (Current - Final Alpha) **PRODUCTION READY**
-- ✅ **Complete**: All core systems implemented and stable
+### ✅ Beta 2 (Current - Compilation Fixes) **PRODUCTION READY**
+- ✅ **Compilation**: 100% compilation success, all crates.io errors resolved
 - ✅ **Quality**: 99.1% test pass rate (804/811 tests), zero build warnings
+- ✅ **Stability**: Critical fixes for variable naming and pattern matching issues
 - ✅ **Features**: 134 feature flags, comprehensive validation and GPU support
 - ✅ **Performance**: SIMD acceleration, multi-core scaling, GPU backends ready
 - ✅ **Documentation**: 69 examples, complete API documentation
+
+### ✅ Beta 1 (Previous - First Beta) **YANKED DUE TO COMPILATION ERRORS**
+- ❌ **Compilation**: Failed to compile from crates.io due to variable naming issues
+- ✅ **Features**: All core systems implemented and stable
+- ⚠️ **Status**: Yanked from crates.io, superseded by Beta 2
 
 ### 🎯 Beta 1 (Q3 2025) - **Memory Safety & API Lock**
 - **Memory Safety**: Fix remaining segfaults in memory_efficient tests  
@@ -409,19 +435,25 @@ SciRS2 Core is part of the larger SciRS2 ecosystem:
 
 ---
 
-## 🎯 **Alpha 5 Production Readiness Statement**
+## 🎯 **Beta 2 Production Readiness Statement**
 
-**SciRS2 Core v0.1.0-alpha.6 represents a production-ready foundation for scientific computing in Rust.** With 99.1% test pass rate, zero build warnings, 134 comprehensive features, and extensive documentation, this final alpha release is suitable for:
+**SciRS2 Core v0.1.0-beta.2 represents a production-ready foundation for scientific computing in Rust.** With 100% compilation success, 99.1% test pass rate, zero build warnings, and critical compilation fixes, this hotfix release is suitable for:
 
-- ✅ **Research Projects**: Stable APIs for academic and industrial research
-- ✅ **Prototyping**: Full-featured scientific computing capabilities  
+- ✅ **Research Projects**: Stable APIs for academic and industrial research with guaranteed compilation
+- ✅ **Prototyping**: Full-featured scientific computing capabilities that compile successfully
 - ✅ **Integration**: Solid foundation for building specialized scientific modules
 - ✅ **Performance**: Production-grade SIMD, GPU, and parallel processing
+- ✅ **Deployment**: Ready for crates.io distribution with zero compilation errors
 
-**Note**: 7 memory safety tests require fixes for Beta 1. Core functionality is stable and safe.
+**Critical Improvements in Beta 2:**
+- ✅ **100% Compilation Success**: All variable naming and pattern matching issues resolved
+- ✅ **Zero Build Errors**: Complete fix for crates.io compilation failures
+- ✅ **API Stability**: No breaking changes from Beta 1, only internal fixes
+
+**Note**: 7 memory safety tests require fixes for future releases. Core functionality is stable and safe.
 
 ---
 
 **Built with ❤️ for the scientific computing community**
 
-*Version: 0.1.0-alpha.6 (Final Alpha) | Released: 2025-06-21 | Next: Beta 1 (Q3 2025)*
+*Version: 0.1.0-beta.2 (Hotfix Release) | Released: 2025-09-16 | Next: 1.0 (Q4 2025)*

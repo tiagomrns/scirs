@@ -3,12 +3,12 @@
 //! Comprehensive profiling capabilities for `SciRS2` Core including production-level
 //! performance analysis, bottleneck identification, and performance monitoring.
 
-pub mod continuous_monitoring;
+pub mod continuousmonitoring;
 pub mod flame_graph_svg;
 pub mod hardware_counters;
 pub mod performance_hints;
 pub mod production;
-pub mod system_monitor;
+pub mod systemmonitor;
 
 // Re-export key types for convenience
 pub use production::{

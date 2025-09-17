@@ -1,12 +1,13 @@
-//! Implementation of Kaiser window and Kaiser-Bessel derived window.
-//!
-//! The Kaiser window is a flexible window function with a parameter that controls
-//! the trade-off between the main lobe width and side lobe level.
+// Implementation of Kaiser window and Kaiser-Bessel derived window.
+//
+// The Kaiser window is a flexible window function with a parameter that controls
+// the trade-off between the main lobe width and side lobe level.
 
 use crate::error::SignalResult;
 use scirs2_special::i0;
 use std::f64::consts::PI;
 
+#[allow(unused_imports)]
 /// Kaiser window.
 ///
 /// The Kaiser window is a taper formed by using a Bessel function of the first kind
@@ -33,6 +34,7 @@ use std::f64::consts::PI;
 /// let window = kaiser(10, 5.0, true).unwrap();
 /// assert_eq!(window.len(), 10);
 /// ```
+#[allow(dead_code)]
 pub fn kaiser(m: usize, beta: f64, sym: bool) -> SignalResult<Vec<f64>> {
     if super::_len_guards(m) {
         return Ok(vec![1.0; m]);
@@ -87,6 +89,7 @@ pub fn kaiser(m: usize, beta: f64, sym: bool) -> SignalResult<Vec<f64>> {
 /// let window = kaiser_bessel_derived(10, 5.0, true).unwrap();
 /// assert_eq!(window.len(), 10);
 /// ```
+#[allow(dead_code)]
 pub fn kaiser_bessel_derived(m: usize, beta: f64, sym: bool) -> SignalResult<Vec<f64>> {
     if super::_len_guards(m) {
         return Ok(vec![1.0; m]);
@@ -157,7 +160,6 @@ pub fn kaiser_bessel_derived(m: usize, beta: f64, sym: bool) -> SignalResult<Vec
 mod tests {
     use super::*;
     use approx::assert_relative_eq;
-
     #[test]
     fn test_kaiser_window() {
         let window = kaiser(10, 5.0, true).unwrap();

@@ -1,13 +1,16 @@
-//! Infomax and Extended Infomax implementations for ICA
-//!
-//! This module implements Infomax-based algorithms for blind source separation.
+use ndarray::s;
+// Infomax and Extended Infomax implementations for ICA
+//
+// This module implements Infomax-based algorithms for blind source separation.
 
 use super::BssConfig;
 use crate::error::SignalResult;
-use ndarray::{s, Array2};
+use ndarray::Array2;
 use rand::SeedableRng;
 use rand_distr::{Distribution, Normal};
+use statrs::statistics::Statistics;
 
+#[allow(unused_imports)]
 /// Implement Infomax algorithm for ICA
 ///
 /// Infomax is a neural network-based approach to ICA that maximizes information flow.
@@ -21,6 +24,7 @@ use rand_distr::{Distribution, Normal};
 /// # Returns
 ///
 /// * Tuple containing (extracted sources, unmixing matrix)
+#[allow(dead_code)]
 pub fn infomax_ica(
     signals: &Array2<f64>,
     n_components: usize,
@@ -30,7 +34,7 @@ pub fn infomax_ica(
 
     // Initialize random unmixing matrix
     let mut rng = if let Some(seed) = config.random_seed {
-        rand::rngs::StdRng::from_seed([seed as u8; 32])
+        rand::rngs::StdRng::seed_from_u64([seed as u8; 32])
     } else {
         {
             // In rand 0.9, from_rng doesn't return Result but directly returns the PRNG
@@ -98,12 +102,12 @@ pub fn infomax_ica(
         learning_rate = (learning_rate * decay_rate).max(min_learning_rate);
 
         // Check for convergence (simplified)
-        if delta_w_avg.mapv(|x: f64| x.abs()).mean().unwrap() < config.convergence_threshold {
+        if delta_w_avg.mapv(|x: f64| x.abs()).mean() < config.convergence_threshold {
             break;
         }
     }
 
-    // Extract the independent components
+    // Extract the independent _components
     let sources = w.dot(signals);
 
     Ok((sources, w))
@@ -122,6 +126,7 @@ pub fn infomax_ica(
 /// # Returns
 ///
 /// * Tuple containing (extracted sources, unmixing matrix)
+#[allow(dead_code)]
 pub fn extended_infomax_ica(
     signals: &Array2<f64>,
     n_components: usize,
@@ -131,7 +136,7 @@ pub fn extended_infomax_ica(
 
     // Initialize random unmixing matrix
     let mut rng = if let Some(seed) = config.random_seed {
-        rand::rngs::StdRng::from_seed([seed as u8; 32])
+        rand::rngs::StdRng::seed_from_u64([seed as u8; 32])
     } else {
         {
             // In rand 0.9, from_rng doesn't return Result but directly returns the PRNG
@@ -201,7 +206,7 @@ pub fn extended_infomax_ica(
                         k[[i, j]] = y[[i, j]].tanh();
                     }
                     k_prime[[i, i]] =
-                        1.0 - k.slice(s![i, ..]).mapv(|x: f64| x.powi(2)).mean().unwrap();
+                        1.0 - k.slice(s![i, ..]).mapv(|x: f64| x.powi(2)).mean();
                 } else {
                     // Sub-Gaussian: cubic nonlinearity
                     for j in 0..batch_size {
@@ -226,12 +231,12 @@ pub fn extended_infomax_ica(
         learning_rate = (learning_rate * decay_rate).max(min_learning_rate);
 
         // Check for convergence (simplified)
-        if delta_w_avg.mapv(|x: f64| x.abs()).mean().unwrap() < config.convergence_threshold {
+        if delta_w_avg.mapv(|x: f64| x.abs()).mean() < config.convergence_threshold {
             break;
         }
     }
 
-    // Extract the independent components
+    // Extract the independent _components
     let sources = w.dot(signals);
 
     Ok((sources, w))

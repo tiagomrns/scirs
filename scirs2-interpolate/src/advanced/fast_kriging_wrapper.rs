@@ -175,6 +175,6 @@ where
     _phantom: PhantomData<F>,
 }
 
-// Re-export everything from the original module 
+// Re-export everything from the original module
 // through the fast_kriging_reexports module
 pub use super::fast_kriging_reexports::*;

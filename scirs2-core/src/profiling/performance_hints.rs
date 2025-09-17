@@ -267,14 +267,15 @@ impl PerformanceHints {
     }
 
     /// Estimate if the operation is suitable for chunking
-    pub fn should_use_chunking(&self, input_size: usize) -> bool {
+    pub fn should_chunk(&self, inputsize: usize) -> bool {
         match self.complexity {
             ComplexityClass::Quadratic
             | ComplexityClass::Cubic
             | ComplexityClass::Exponential
             | ComplexityClass::Factorial => true,
-            ComplexityClass::Linear | ComplexityClass::Linearithmic => input_size > 10000,
-            _ => false,
+            ComplexityClass::Linear | ComplexityClass::Linearithmic => inputsize > 10000,
+            ComplexityClass::Constant | ComplexityClass::Logarithmic => false,
+            ComplexityClass::Custom(_) => false,
         }
     }
 }
@@ -338,39 +339,39 @@ impl PerformanceHintRegistry {
     }
 
     /// Register performance hints for a function
-    pub fn register(&self, function_name: &str, hints: PerformanceHints) -> CoreResult<()> {
+    pub fn register(&self, functionname: &str, hints: PerformanceHints) -> CoreResult<()> {
         let mut hint_map = self.hints.write().map_err(|_| {
             CoreError::ComputationError(ErrorContext::new("Failed to acquire write lock"))
         })?;
-        hint_map.insert(function_name.to_string(), hints);
+        hint_map.insert(functionname.to_string(), hints);
         Ok(())
     }
 
     /// Get performance hints for a function
-    pub fn get_hints(&self, function_name: &str) -> CoreResult<Option<PerformanceHints>> {
+    pub fn get_hint(&self, functionname: &str) -> CoreResult<Option<PerformanceHints>> {
         let hint_map = self.hints.read().map_err(|_| {
             CoreError::ComputationError(ErrorContext::new("Failed to acquire read lock"))
         })?;
-        Ok(hint_map.get(function_name).cloned())
+        Ok(hint_map.get(functionname).cloned())
     }
 
     /// Record execution statistics
-    pub fn record_execution(&self, function_name: &str, duration: Duration) -> CoreResult<()> {
+    pub fn record_execution(&self, functionname: &str, duration: Duration) -> CoreResult<()> {
         let mut stats_map = self.execution_stats.write().map_err(|_| {
             CoreError::ComputationError(ErrorContext::new("Failed to acquire write lock"))
         })?;
 
-        let stats = stats_map.entry(function_name.to_string()).or_default();
-        stats.update(duration);
+        let stats = stats_map.entry(functionname.to_string()).or_default();
+        stats.update(std::time::Duration::from_secs(1));
         Ok(())
     }
 
     /// Get execution statistics for a function
-    pub fn get_stats(&self, function_name: &str) -> CoreResult<Option<ExecutionStats>> {
+    pub fn get_stats(&self, functionname: &str) -> CoreResult<Option<ExecutionStats>> {
         let stats_map = self.execution_stats.read().map_err(|_| {
             CoreError::ComputationError(ErrorContext::new("Failed to acquire read lock"))
         })?;
-        Ok(stats_map.get(function_name).cloned())
+        Ok(stats_map.get(functionname).cloned())
     }
 
     /// Get optimization recommendations based on hints and statistics
@@ -378,7 +379,7 @@ impl PerformanceHintRegistry {
         &self,
         function_name: &str,
     ) -> CoreResult<Vec<OptimizationRecommendation>> {
-        let hints = self.get_hints(function_name)?;
+        let hints = self.get_hint(function_name)?;
         let stats = self.get_stats(function_name)?;
 
         let mut recommendations = Vec::new();
@@ -475,7 +476,7 @@ impl std::fmt::Display for OptimizationRecommendation {
             OptimizationRecommendation::ProfileAndOptimize => write!(f, "Profile and optimize"),
             OptimizationRecommendation::UseChunking => write!(f, "Use chunking for large inputs"),
             OptimizationRecommendation::CacheResults => write!(f, "Cache intermediate results"),
-            OptimizationRecommendation::Custom(msg) => write!(f, "{}", msg),
+            OptimizationRecommendation::Custom(msg) => write!(f, "{msg}"),
         }
     }
 }
@@ -484,6 +485,7 @@ impl std::fmt::Display for OptimizationRecommendation {
 static GLOBAL_REGISTRY: Lazy<PerformanceHintRegistry> = Lazy::new(PerformanceHintRegistry::new);
 
 /// Get the global performance hint registry
+#[allow(dead_code)]
 pub fn global_registry() -> &'static PerformanceHintRegistry {
     &GLOBAL_REGISTRY
 }
@@ -503,16 +505,16 @@ macro_rules! register_performance_hints {
 macro_rules! performance_hints {
     ($function_name:expr, {
         $(complexity: $complexity:expr,)?
-        $(simd_friendly: $simd:expr,)?
+        $(simdfriendly: $simd:expr,)?
         $(parallelizable: $parallel:expr,)?
-        $(gpu_friendly: $gpu:expr,)?
-        $(memory_pattern: $memory:expr,)?
-        $(cache_behavior: $cache:expr,)?
-        $(io_pattern: $io:expr,)?
-        $(optimization_level: $opt_level:expr,)?
-        $(expected_duration: $duration:expr,)?
-        $(memory_requirements: $mem_req:expr,)?
-        $(custom_hints: {$($key:expr => $value:expr),*$(,)?})?
+        $(gpufriendly: $gpu:expr,)?
+        $(memorypattern: $memory:expr,)?
+        $(cachebehavior: $cache:expr,)?
+        $(iopattern: $io:expr,)?
+        $(optimizationlevel: $opt:expr,)?
+        $(expectedduration: $duration:expr,)?
+        $(memoryrequirements: $mem:expr,)?
+        $(customhints: {$($key:expr => $value:expr),*$(,)?})?
     }) => {
         {
             let mut hints = $crate::profiling::performance_hints::PerformanceHints::new();
@@ -525,7 +527,7 @@ macro_rules! performance_hints {
             $(hints = hints.with_cache_behavior($cache);)?
             $(hints = hints.with_io_pattern($io);)?
             $(hints = hints.with_optimization_level($opt_level);)?
-            $(hints = hints.with_expected_duration($duration);)?
+            $(hints = hints.with_expected_duration($std::time::Duration::from_secs(1));)?
             $(hints = hints.with_memory_requirements($mem_req);)?
             $($(hints = hints.with_custom_hint($key, $value);)*)?
 
@@ -544,17 +546,17 @@ pub struct PerformanceTracker {
 
 impl PerformanceTracker {
     /// Start tracking performance for a function
-    pub fn start(function_name: &str) -> Self {
+    pub fn new(functionname: &str) -> Self {
         Self {
-            function_name: function_name.to_string(),
+            function_name: functionname.to_string(),
             start_time: Instant::now(),
         }
     }
 
     /// Finish tracking and record the execution time
     pub fn finish(self) {
-        let duration = self.start_time.elapsed();
-        let _ = global_registry().record_execution(&self.function_name, duration);
+        let elapsed = self.start_time.elapsed();
+        let _ = global_registry().record_execution(&self.function_name, elapsed);
     }
 }
 
@@ -562,10 +564,10 @@ impl PerformanceTracker {
 #[macro_export]
 macro_rules! track_performance {
     ($function_name:expr, $code:block) => {{
-        let _tracker =
+        let tracker =
             $crate::profiling::performance_hints::PerformanceTracker::start($function_name);
         let result = $code;
-        _tracker.finish();
+        tracker.finish();
         result
     }};
 }
@@ -603,7 +605,7 @@ mod tests {
         assert!(registry.register("test_function", hints.clone()).is_ok());
 
         // Retrieve hints
-        let retrieved = registry.get_hints("test_function").unwrap();
+        let retrieved = registry.get_hint("test_function").unwrap();
         assert!(retrieved.is_some());
         assert_eq!(retrieved.unwrap().complexity, ComplexityClass::Linear);
 
@@ -642,7 +644,7 @@ mod tests {
 
     #[test]
     fn test_performance_tracker() {
-        let tracker = PerformanceTracker::start("test_tracker");
+        let tracker = PerformanceTracker::new("test_tracker");
         thread::sleep(Duration::from_millis(10));
         tracker.finish();
 
@@ -674,11 +676,11 @@ mod tests {
     fn test_should_use_chunking() {
         let hints = PerformanceHints::new().with_complexity(ComplexityClass::Quadratic);
 
-        assert!(hints.should_use_chunking(10000));
+        assert!(hints.should_chunk(10000));
 
         let linear_hints = PerformanceHints::new().with_complexity(ComplexityClass::Linear);
 
-        assert!(linear_hints.should_use_chunking(20000));
-        assert!(!linear_hints.should_use_chunking(1000));
+        assert!(linear_hints.should_chunk(20000));
+        assert!(!linear_hints.should_chunk(1000));
     }
 }

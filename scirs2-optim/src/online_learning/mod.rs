@@ -293,13 +293,13 @@ pub struct OnlinePerformanceMetrics<A: Float> {
 impl<A: Float + ScalarOperand + Debug + std::iter::Sum, D: Dimension> OnlineOptimizer<A, D> {
     /// Create a new online optimizer
     pub fn new(strategy: OnlineLearningStrategy, initial_parameters: Array<A, D>) -> Self {
-        let param_shape = initial_parameters.raw_dim();
-        let gradient_accumulator = Array::zeros(param_shape.clone());
+        let paramshape = initial_parameters.raw_dim();
+        let gradient_accumulator = Array::zeros(paramshape.clone());
         let second_moment_accumulator = match &strategy {
             OnlineLearningStrategy::AdaptiveSGD {
                 adaptation_method: LearningRateAdaptation::Adam { .. },
                 ..
-            } => Some(Array::zeros(param_shape)),
+            } => Some(Array::zeros(paramshape)),
             _ => None,
         };
 
@@ -692,7 +692,7 @@ impl<A: Float + ScalarOperand + Debug + std::iter::Sum, D: Dimension> LifelongOp
     /// Apply Elastic Weight Consolidation regularization
     fn apply_ewc_regularization(
         &mut self,
-        _gradient: &Array<A, D>,
+        gradient: &Array<A, D>,
         _importance_weight: f64,
     ) -> Result<()> {
         // Simplified EWC implementation
@@ -701,7 +701,7 @@ impl<A: Float + ScalarOperand + Debug + std::iter::Sum, D: Dimension> LifelongOp
     }
 
     /// Apply Progressive Networks strategy
-    fn apply_progressive_networks(&mut self, _gradient: &Array<A, D>) -> Result<()> {
+    fn apply_progressive_networks(&mut self, gradient: &Array<A, D>) -> Result<()> {
         // Simplified Progressive Networks implementation
         // In practice, this would manage lateral connections between task columns
         Ok(())
@@ -726,7 +726,8 @@ impl<A: Float + ScalarOperand + Debug + std::iter::Sum, D: Dimension> LifelongOp
                         self.memory_buffer.importance_scores.pop_front();
                     }
                     MemoryUpdateStrategy::Random => {
-                        let idx = rand::rng().random_range(0..self.memory_buffer.examples.len());
+                        let idx = scirs2_core::random::rng()
+                            .gen_range(0..self.memory_buffer.examples.len());
                         self.memory_buffer.examples.remove(idx);
                         self.memory_buffer.importance_scores.remove(idx);
                     }
@@ -760,14 +761,14 @@ impl<A: Float + ScalarOperand + Debug + std::iter::Sum, D: Dimension> LifelongOp
     }
 
     /// Apply meta-learning strategy
-    fn apply_meta_learning(&mut self, _gradient: &Array<A, D>) -> Result<()> {
+    fn apply_meta_learning(&mut self, gradient: &Array<A, D>) -> Result<()> {
         // Simplified meta-learning implementation
         // In practice, this would update meta-parameters based on task performance
         Ok(())
     }
 
     /// Apply Gradient Episodic Memory constraints
-    fn apply_gem_constraints(&mut self, _gradient: &Array<A, D>) -> Result<()> {
+    fn apply_gem_constraints(&mut self, gradient: &Array<A, D>) -> Result<()> {
         // Simplified GEM implementation
         // In practice, this would project gradients to satisfy memory constraints
         Ok(())

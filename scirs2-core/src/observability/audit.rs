@@ -30,10 +30,10 @@
 //! use scirs2_core::observability::audit::{AuditLogger, AuditEvent, EventCategory, AuditConfig};
 //!
 //! let config = AuditConfig::default();
-//! let audit_logger = AuditLogger::new(config)?;
+//! let auditlogger = AuditLogger::new(config)?;
 //!
 //! // Log a data access event
-//! audit_logger.log_data_access(
+//! auditlogger.log_data_access(
 //!     "user123",
 //!     "dataset_financial_2024",
 //!     "read",
@@ -41,7 +41,7 @@
 //! )?;
 //!
 //! // Log a security event
-//! audit_logger.log_security_event(
+//! auditlogger.log_security_event(
 //!     EventCategory::Authentication,
 //!     "login_failed",
 //!     "user456",
@@ -49,7 +49,7 @@
 //! )?;
 //!
 //! // Search audit logs for compliance reporting
-//! let events = audit_logger.search_events(
+//! let events = auditlogger.search_events(
 //!     chrono::Utc::now() - chrono::Duration::days(30),
 //!     chrono::Utc::now(),
 //!     Some(EventCategory::DataAccess),
@@ -70,12 +70,10 @@ use uuid::Uuid;
 #[cfg(feature = "crypto")]
 use sha2::{Digest, Sha256};
 
-#[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
 
 /// Audit logging configuration
-#[derive(Debug, Clone)]
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 #[allow(clippy::struct_excessive_bools)]
 pub struct AuditConfig {
     /// Directory for audit log storage
@@ -91,7 +89,7 @@ pub struct AuditConfig {
     /// Real-time alerting configuration
     pub alerting_config: Option<AlertingConfig>,
     /// Buffer size for batch writing
-    pub buffer_size: usize,
+    pub buffersize: usize,
     /// Flush interval for ensuring durability
     pub flush_interval_ms: u64,
     /// Enable structured JSON logging
@@ -115,13 +113,13 @@ pub struct AuditConfig {
 impl Default for AuditConfig {
     fn default() -> Self {
         Self {
-            log_directory: PathBuf::from("./audit_logs"),
+            log_directory: PathBuf::from("./auditlogs"),
             max_file_size: 100 * 1024 * 1024, // 100MB
             max_files: 100,
             enable_encryption: true,
             enable_integrity_verification: true,
             alerting_config: None,
-            buffer_size: 1000,
+            buffersize: 1000,
             flush_interval_ms: 5000, // 5 seconds
             enable_json_format: true,
             compliance_mode: ComplianceMode::Standard,
@@ -136,8 +134,7 @@ impl Default for AuditConfig {
 }
 
 /// Retention policy configuration for audit logs
-#[derive(Debug, Clone)]
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct RetentionPolicy {
     /// Number of days to retain active logs
     pub active_retention_days: u32,
@@ -167,8 +164,7 @@ impl Default for RetentionPolicy {
 }
 
 /// Storage backend configuration
-#[derive(Debug, Clone)]
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum StorageBackend {
     /// Local filesystem storage
     FileSystem,
@@ -202,8 +198,7 @@ pub enum StorageBackend {
 }
 
 #[cfg(feature = "s3")]
-#[derive(Debug, Clone)]
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct S3Credentials {
     /// AWS access key ID
     pub access_key: String,
@@ -214,8 +209,7 @@ pub struct S3Credentials {
 }
 
 /// Compliance modes for different regulatory requirements
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub enum ComplianceMode {
     /// Standard compliance (basic requirements)
     Standard,
@@ -230,8 +224,7 @@ pub enum ComplianceMode {
 }
 
 /// Real-time alerting configuration
-#[derive(Debug, Clone)]
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct AlertingConfig {
     /// Enable real-time alerts
     pub enabled: bool,
@@ -250,8 +243,7 @@ pub struct AlertingConfig {
 }
 
 /// Event categories for classification
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub enum EventCategory {
     /// Authentication events (login, logout, authentication failures)
     Authentication,
@@ -292,8 +284,7 @@ impl EventCategory {
 }
 
 /// Event severity levels
-#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
 pub enum EventSeverity {
     /// Informational events
     Info,
@@ -319,8 +310,7 @@ impl EventSeverity {
 }
 
 /// System context information
-#[derive(Debug, Clone)]
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct SystemContext {
     /// Process ID
     pub process_id: u32,
@@ -333,9 +323,9 @@ pub struct SystemContext {
     /// User agent (if applicable)
     pub user_agent: Option<String>,
     /// Session ID
-    pub session_id: Option<String>,
+    pub sessionid: Option<String>,
     /// Request ID for correlation
-    pub request_id: Option<String>,
+    pub requestid: Option<String>,
 }
 
 impl SystemContext {
@@ -348,29 +338,28 @@ impl SystemContext {
             hostname: get_hostname(),
             ip_address: get_local_ip(),
             user_agent: None,
-            session_id: None,
-            request_id: None,
+            sessionid: None,
+            requestid: None,
         }
     }
 
     /// Set session ID
     #[must_use]
-    pub fn with_session_id(mut self, session_id: String) -> Self {
-        self.session_id = Some(session_id);
+    pub fn with_sessionid(mut self, sessionid: String) -> Self {
+        self.sessionid = Some(sessionid);
         self
     }
 
     /// Set request ID
     #[must_use]
-    pub fn with_request_id(mut self, request_id: String) -> Self {
-        self.request_id = Some(request_id);
+    pub fn with_requestid(mut self, requestid: String) -> Self {
+        self.requestid = Some(requestid);
         self
     }
 }
 
 /// Audit event structure
-#[derive(Debug, Clone)]
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct AuditEvent {
     /// Unique event identifier
     pub event_id: Uuid,
@@ -383,9 +372,9 @@ pub struct AuditEvent {
     /// Event action/operation
     pub action: String,
     /// User identifier (if applicable)
-    pub user_id: Option<String>,
+    pub userid: Option<String>,
     /// Resource identifier (data, file, endpoint, etc.)
-    pub resource_id: Option<String>,
+    pub resourceid: Option<String>,
     /// Source IP address
     pub source_ip: Option<String>,
     /// Event description
@@ -413,8 +402,7 @@ pub struct AuditEvent {
 }
 
 /// Event outcome enumeration
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub enum EventOutcome {
     /// Operation succeeded
     Success,
@@ -443,8 +431,7 @@ impl EventOutcome {
 }
 
 /// Data classification levels
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub enum DataClassification {
     /// Public data
     Public,
@@ -488,8 +475,8 @@ impl AuditEventBuilder {
                 category,
                 severity: EventSeverity::Info,
                 action: action.to_string(),
-                user_id: None,
-                resource_id: None,
+                userid: None,
+                resourceid: None,
                 source_ip: None,
                 description: String::new(),
                 metadata: HashMap::new(),
@@ -515,15 +502,15 @@ impl AuditEventBuilder {
 
     /// Set user ID
     #[must_use]
-    pub fn user_id(mut self, user_id: &str) -> Self {
-        self.event.user_id = Some(user_id.to_string());
+    pub fn userid(mut self, userid: &str) -> Self {
+        self.event.userid = Some(userid.to_string());
         self
     }
 
     /// Set resource ID
     #[must_use]
-    pub fn resource_id(mut self, resource_id: &str) -> Self {
-        self.event.resource_id = Some(resource_id.to_string());
+    pub fn resourceid(mut self, resourceid: &str) -> Self {
+        self.event.resourceid = Some(resourceid.to_string());
         self
     }
 
@@ -644,7 +631,7 @@ impl LogFileManager {
         let serialized = if self.config.enable_json_format {
             self.serialize_json(event)?
         } else {
-            self.serialize_text(event)
+            self.serializetext(event)
         };
 
         let data = format!("{serialized}\n");
@@ -654,7 +641,7 @@ impl LogFileManager {
         if self.current_file.is_none()
             || self.current_file_size + data_size > self.config.max_file_size
         {
-            self.rotate_log_file()?;
+            self.rotatelog_file()?;
         }
 
         if let Some(ref mut file) = self.current_file {
@@ -675,7 +662,7 @@ impl LogFileManager {
     /// # Errors
     ///
     /// Returns an error if the current file cannot be flushed or a new file cannot be created.
-    fn rotate_log_file(&mut self) -> Result<(), CoreError> {
+    fn rotatelog_file(&mut self) -> Result<(), CoreError> {
         // Close current file
         if let Some(mut file) = self.current_file.take() {
             file.flush().map_err(|e| {
@@ -757,7 +744,7 @@ impl LogFileManager {
     /// # Errors
     ///
     /// Returns an error if the event cannot be serialized to JSON.
-    #[cfg(feature = "serde")]
+
     fn serialize_json(&self, event: &AuditEvent) -> Result<String, CoreError> {
         serde_json::to_string(event).map_err(|e| {
             CoreError::ComputationError(crate::error::ErrorContext::new(format!(
@@ -772,7 +759,7 @@ impl LogFileManager {
     ///
     /// Returns an error indicating that the serde feature is required.
     #[cfg(not(feature = "serde"))]
-    fn serialize_json(&self, _event: &AuditEvent) -> Result<String, CoreError> {
+    fn serialize_json(&self, event: &AuditEvent) -> Result<String, CoreError> {
         Err(CoreError::ComputationError(
             crate::error::ErrorContext::new(
                 "JSON serialization requires serde feature".to_string(),
@@ -782,15 +769,15 @@ impl LogFileManager {
 
     /// Serialize an audit event to text format.
     #[must_use]
-    fn serialize_text(&self, event: &AuditEvent) -> String {
+    fn serializetext(&self, event: &AuditEvent) -> String {
         format!(
             "[{}] {} {} {} user={} resource={} outcome={} description=\"{}\"",
             event.timestamp.format("%Y-%m-%d %H:%M:%S UTC"),
             event.category.as_str(),
             event.severity.as_str(),
             event.action,
-            event.user_id.as_deref().unwrap_or("-"),
-            event.resource_id.as_deref().unwrap_or("-"),
+            event.userid.as_deref().unwrap_or("-"),
+            event.resourceid.as_deref().unwrap_or("-"),
             event.outcome.as_str(),
             event.description
         )
@@ -827,12 +814,12 @@ impl LogFileManager {
         hasher.update(event.category.as_str());
         hasher.update(&event.action);
 
-        if let Some(ref user_id) = event.user_id {
-            hasher.update(user_id);
+        if let Some(ref userid) = event.userid {
+            hasher.update(userid);
         }
 
-        if let Some(ref resource_id) = event.resource_id {
-            hasher.update(resource_id);
+        if let Some(ref resourceid) = event.resourceid {
+            hasher.update(resourceid);
         }
 
         hasher.update(&event.description);
@@ -876,8 +863,35 @@ impl LogFileManager {
             return Ok(true); // No verification needed
         }
 
-        // Implementation would verify the entire hash chain
-        // For now, return true as a placeholder
+        // Verify each hash in the chain
+        if self.hash_chain.is_empty() {
+            return Ok(true); // Empty chain is valid
+        }
+
+        // Check if any hash appears to be tampered
+        for (i, hash) in self.hash_chain.iter().enumerate() {
+            // Basic hash format validation
+            if hash.len() != 64 {
+                return Ok(false); // SHA-256 hashes should be 64 hex chars
+            }
+
+            // Validate hex format
+            if !hash.chars().all(|c| c.is_ascii_hexdigit()) {
+                return Ok(false); // Invalid hex characters
+            }
+
+            // For chained verification, we would need to re-read and verify
+            // each event against its hash. This is a simplified check.
+            if i > 0 {
+                let prev_hash = &self.hash_chain[i - 1];
+                // In a full implementation, we would verify that the current
+                // event's previous_hash field matches the actual previous hash
+                if prev_hash.is_empty() {
+                    return Ok(false); // Broken chain
+                }
+            }
+        }
+
         Ok(true)
     }
 
@@ -892,11 +906,74 @@ impl LogFileManager {
             return Ok(());
         }
 
-        let _cutoff_date = Utc::now()
+        let cutoff_date = Utc::now()
             - chrono::Duration::days(self.config.retention_policy.active_retention_days as i64);
 
-        // Implementation for archiving files older than cutoff_date
-        // This would compress and move files to archive location
+        let archive_path = self
+            .config
+            .retention_policy
+            .archive_path
+            .as_ref()
+            .cloned()
+            .unwrap_or_else(|| self.config.log_directory.join("archive"));
+
+        // Create archive directory if it doesn't exist
+        std::fs::create_dir_all(&archive_path).map_err(|e| {
+            CoreError::ComputationError(crate::error::ErrorContext::new(format!(
+                "Failed to create archive directory: {e}"
+            )))
+        })?;
+
+        // Find files older than cutoff date
+        if let Ok(entries) = std::fs::read_dir(&self.config.log_directory) {
+            for entry in entries.flatten() {
+                if let Some(filename) = entry.file_name().to_str() {
+                    if filename.starts_with("audit_") && filename.ends_with(".log") {
+                        if let Ok(metadata) = entry.metadata() {
+                            if let Ok(modified_time) = metadata.modified() {
+                                let modified_datetime: DateTime<Utc> = modified_time.into();
+
+                                if modified_datetime < cutoff_date {
+                                    // Archive this file
+                                    let source_path = entry.path();
+                                    let archive_filename = format!("archived_{filename}");
+                                    let dest_path = archive_path.join(archive_filename);
+
+                                    // Simple archive: copy to archive directory
+                                    if let Err(e) = std::fs::copy(&source_path, &dest_path) {
+                                        eprintln!("Failed to archive file {source_path:?}: {e}");
+                                        continue;
+                                    }
+
+                                    // Optionally compress the archived file
+                                    #[cfg(feature = "compression")]
+                                    {
+                                        if let Err(e) = self.compress_archived_file(&dest_path) {
+                                            eprintln!(
+                                                "Failed to compress archived file {:?}: {}",
+                                                dest_path, e
+                                            );
+                                        }
+                                    }
+
+                                    // Remove original file after successful archival
+                                    if let Err(e) = std::fs::remove_file(&source_path) {
+                                        eprintln!(
+                                            "Failed to remove original file {source_path:?}: {e}"
+                                        );
+                                    } else {
+                                        println!(
+                                            "Archived log file: {source_path:?} -> {dest_path:?}"
+                                        );
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
         Ok(())
     }
 
@@ -911,11 +988,210 @@ impl LogFileManager {
             return Ok(());
         }
 
-        let _archive_cutoff = Utc::now()
+        let archive_cutoff = Utc::now()
             - chrono::Duration::days(self.config.retention_policy.archive_retention_days as i64);
 
-        // Implementation for deleting files older than archive retention
+        let archive_path = self
+            .config
+            .retention_policy
+            .archive_path
+            .as_ref()
+            .cloned()
+            .unwrap_or_else(|| self.config.log_directory.join("archive"));
+
+        // Clean up expired archive files
+        if archive_path.exists() {
+            if let Ok(entries) = std::fs::read_dir(&archive_path) {
+                for entry in entries.flatten() {
+                    if let Some(filename) = entry.file_name().to_str() {
+                        if filename.starts_with("archived_audit_") {
+                            if let Ok(metadata) = entry.metadata() {
+                                if let Ok(modified_time) = metadata.modified() {
+                                    let modified_datetime: DateTime<Utc> = modified_time.into();
+
+                                    if modified_datetime < archive_cutoff {
+                                        // Delete expired archive file
+                                        let file_path = entry.path();
+                                        if let Err(e) = std::fs::remove_file(&file_path) {
+                                            eprintln!(
+                                                "Failed to delete expired archive file {file_path:?}: {e}"
+                                            );
+                                        } else {
+                                            println!("Deleted expired archive file: {file_path:?}");
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        // Check disk space and clean up if necessary
+        let min_free_space = self.config.retention_policy.min_free_space;
+        if let Ok(available_space) = self.get_available_disk_space(&self.config.log_directory) {
+            if available_space < min_free_space {
+                // Emergency cleanup - remove oldest files first
+                let mut log_files = Vec::new();
+
+                // Collect both active and archive files
+                for dir in [&self.config.log_directory, &archive_path] {
+                    if dir.exists() {
+                        if let Ok(entries) = std::fs::read_dir(dir) {
+                            for entry in entries.flatten() {
+                                if let Some(filename) = entry.file_name().to_str() {
+                                    if filename.contains("audit_") && filename.ends_with(".log") {
+                                        if let Ok(metadata) = entry.metadata() {
+                                            if let Ok(modified_time) = metadata.modified() {
+                                                log_files.push((entry.path(), modified_time));
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+
+                // Sort by age (oldest first)
+                log_files.sort_by_key(|(_, time)| *time);
+
+                // Remove oldest files until we have enough space
+                for (file_path, _) in log_files {
+                    if let Err(e) = std::fs::remove_file(&file_path) {
+                        eprintln!("Failed to remove file for disk space: {file_path:?}: {e}");
+                    } else {
+                        println!("Removed file to free disk space: {file_path:?}");
+
+                        // Check if we have enough space now
+                        if let Ok(new_available) =
+                            self.get_available_disk_space(&self.config.log_directory)
+                        {
+                            if new_available >= min_free_space {
+                                break;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
         Ok(())
+    }
+
+    /// Compress an archived log file
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if compression fails.
+    #[cfg(feature = "compression")]
+    fn compress_archived_file(&self, filepath: &std::path::Path) -> Result<(), CoreError> {
+        use std::fs::File;
+        use std::io::{BufReader, BufWriter};
+
+        let input_file = File::open(file_path).map_err(|e| {
+            CoreError::ComputationError(crate::error::ErrorContext::new(format!(
+                "Failed to open file for compression: {}",
+                e
+            )))
+        })?;
+
+        let compressed_path = file_path.with_extension("log.gz");
+        let output_file = File::create(&compressed_path).map_err(|e| {
+            CoreError::ComputationError(crate::error::ErrorContext::new(format!(
+                "Failed to create compressed file: {}",
+                e
+            )))
+        })?;
+
+        let mut reader = BufReader::new(input_file);
+        let writer = BufWriter::new(output_file);
+
+        // Use flate2 for gzip compression
+        #[cfg(feature = "flate2")]
+        {
+            use flate2::write::GzEncoder;
+            use flate2::Compression;
+            use std::io::copy;
+
+            let mut encoder = GzEncoder::new(writer, Compression::default());
+            copy(&mut reader, &mut encoder).map_err(|e| {
+                CoreError::ComputationError(crate::error::ErrorContext::new(format!(
+                    "Failed to compress file: {}",
+                    e
+                )))
+            })?;
+
+            encoder.finish().map_err(|e| {
+                CoreError::ComputationError(crate::error::ErrorContext::new(format!(
+                    "Failed to finalize compression: {}",
+                    e
+                )))
+            })?;
+        }
+
+        #[cfg(not(feature = "flate2"))]
+        {
+            return Err(CoreError::ComputationError(
+                crate::error::ErrorContext::new("Compression requires flate2 feature".to_string()),
+            ));
+        }
+
+        // Remove original file after successful compression
+        std::fs::remove_file(file_path).map_err(|e| {
+            CoreError::ComputationError(crate::error::ErrorContext::new(format!(
+                "Failed to remove original file after compression: {}",
+                e
+            )))
+        })?;
+
+        println!(
+            "Compressed archive file: {:?} -> {:?}",
+            file_path, compressed_path
+        );
+        Ok(())
+    }
+
+    /// Get available disk space for a directory
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if disk space cannot be determined.
+    fn get_available_disk_space(&self, path: &std::path::Path) -> Result<u64, CoreError> {
+        #[cfg(feature = "libc")]
+        {
+            use std::ffi::CString;
+            use std::mem;
+
+            let path_cstr = CString::new(path.to_string_lossy().as_bytes()).map_err(|e| {
+                CoreError::ComputationError(crate::error::ErrorContext::new(format!(
+                    "Failed to convert path to CString: {}",
+                    e
+                )))
+            })?;
+
+            let mut stat: libc::statvfs = unsafe { mem::zeroed() };
+            let result = unsafe { libc::statvfs(path_cstr.as_ptr(), &mut stat) };
+
+            if result == 0 {
+                // Available space = available blocks * block size
+                Ok(stat.f_bavail * stat.f_frsize)
+            } else {
+                Err(CoreError::ComputationError(
+                    crate::error::ErrorContext::new(
+                        "Failed to get filesystem statistics".to_string(),
+                    ),
+                ))
+            }
+        }
+
+        #[cfg(not(feature = "libc"))]
+        {
+            // Fallback for platforms without libc support
+            let _ = path; // Acknowledge unused parameter
+            Ok(1024 * 1024 * 1024 * 10) // 10GB fallback
+        }
     }
 }
 
@@ -947,7 +1223,7 @@ impl AlertManager {
             return Ok(());
         }
 
-        let alert_key = match event.category {
+        let alertkey = match event.category {
             EventCategory::Authentication if event.outcome == EventOutcome::Failure => {
                 "failed_auth"
             }
@@ -956,10 +1232,10 @@ impl AlertManager {
             _ => return Ok(()),
         };
 
-        let should_alert = self.update_counter_and_check_threshold(alert_key, event)?;
+        let should_alert = self.update_counter_and_check_threshold(alertkey, event)?;
 
         if should_alert {
-            self.send_alert(alert_key, event)?;
+            self.send_alert(alertkey, event)?;
         }
 
         Ok(())
@@ -972,7 +1248,7 @@ impl AlertManager {
     /// Returns an error if counter update fails.
     fn update_counter_and_check_threshold(
         &self,
-        alert_key: &str,
+        alertkey: &str,
         _event: &AuditEvent,
     ) -> Result<bool, CoreError> {
         let mut counters = self.alert_counters.write().map_err(|_| {
@@ -985,7 +1261,7 @@ impl AlertManager {
         let window_start = now - chrono::Duration::minutes(5); // 5-minute window
 
         // Update counter
-        let (count, last_update) = counters.get(alert_key).copied().unwrap_or((0, now));
+        let (count, last_update) = counters.get(alertkey).copied().unwrap_or((0, now));
 
         let new_count = if last_update < window_start {
             1 // Reset counter if outside window
@@ -993,17 +1269,17 @@ impl AlertManager {
             count + 1
         };
 
-        counters.insert(alert_key.to_string(), (new_count, now));
+        counters.insert(alertkey.to_string(), (new_count, now));
 
         // Check threshold
-        let threshold = match alert_key {
+        let threshold = match alertkey {
             "failed_auth" => self.config.failed_auth_threshold,
             "data_access" => self.config.data_access_rate_threshold,
             "config_change" => self.config.config_change_threshold,
             _ => return Ok(false),
         };
 
-        Ok(new_count >= threshold && self.check_cooldown(alert_key)?)
+        Ok(new_count >= threshold && self.check_cooldown(alertkey)?)
     }
 
     /// Check if alert cooldown period has elapsed.
@@ -1011,7 +1287,7 @@ impl AlertManager {
     /// # Errors
     ///
     /// Returns an error if cooldown check fails.
-    fn check_cooldown(&self, alert_key: &str) -> Result<bool, CoreError> {
+    fn check_cooldown(&self, alertkey: &str) -> Result<bool, CoreError> {
         let last_alert_times = self.last_alert_time.read().map_err(|_| {
             CoreError::ComputationError(crate::error::ErrorContext::new(
                 "Failed to acquire last alert time lock".to_string(),
@@ -1021,7 +1297,7 @@ impl AlertManager {
         let now = Utc::now();
         let cooldown_duration = chrono::Duration::seconds(self.config.cooldown_period as i64);
 
-        if let Some(last_alert) = last_alert_times.get(alert_key) {
+        if let Some(last_alert) = last_alert_times.get(alertkey) {
             Ok(now - *last_alert > cooldown_duration)
         } else {
             Ok(true)
@@ -1033,7 +1309,7 @@ impl AlertManager {
     /// # Errors
     ///
     /// Returns an error if alert sending fails.
-    fn send_alert(&self, alert_key: &str, event: &AuditEvent) -> Result<(), CoreError> {
+    fn send_alert(&self, alertkey: &str, event: &AuditEvent) -> Result<(), CoreError> {
         // Update last alert time
         {
             let mut last_alert_times = self.last_alert_time.write().map_err(|_| {
@@ -1041,11 +1317,11 @@ impl AlertManager {
                     "Failed to acquire last alert time lock".to_string(),
                 ))
             })?;
-            last_alert_times.insert(alert_key.to_string(), Utc::now());
+            last_alert_times.insert(alertkey.to_string(), Utc::now());
         }
 
         let alert_message = format!(
-            "SECURITY ALERT: {alert_key} threshold exceeded - {} - {}",
+            "SECURITY ALERT: {alertkey} threshold exceeded - {} - {}",
             event.action, event.description
         );
 
@@ -1071,7 +1347,7 @@ impl AlertManager {
     ///
     /// Returns an error if the webhook request fails.
     #[cfg(feature = "reqwest")]
-    fn send_webhook_alert(&self, webhook_url: &str, message: &str) -> Result<(), CoreError> {
+    fn send_webhook_alert(&self, webhookurl: &str, message: &str) -> Result<(), CoreError> {
         use reqwest::blocking::Client;
         use std::collections::HashMap;
 
@@ -1099,7 +1375,7 @@ impl AlertManager {
     ///
     /// Returns an error indicating that the reqwest feature is required.
     #[cfg(not(feature = "reqwest"))]
-    fn send_webhook_alert(&self, _webhook_url: &str, _message: &str) -> Result<(), CoreError> {
+    fn send_webhook_alert(&self, _webhook_url: &str, message: &str) -> Result<(), CoreError> {
         eprintln!("Webhook alerts require reqwest feature");
         Ok(())
     }
@@ -1109,10 +1385,76 @@ impl AlertManager {
     /// # Errors
     ///
     /// Returns an error if email sending fails.
-    fn send_email_alert(&self, _email: &str, _message: &str) -> Result<(), CoreError> {
-        // Email implementation would go here
-        // For now, just log that we would send an email
-        eprintln!("Would send email alert to: {_email}");
+    fn send_email_alert(&self, email: &str, message: &str) -> Result<(), CoreError> {
+        // Simple SMTP implementation using environment variables for configuration
+        // In production, you would use a proper email library like `lettre`
+
+        use std::env;
+        use std::io::Write;
+        use std::net::TcpStream;
+        use std::time::Duration;
+
+        // Check for SMTP configuration in environment
+        let smtp_server = env::var("SMTP_SERVER").unwrap_or_else(|_| "localhost".to_string());
+        let smtp_port = env::var("SMTP_PORT")
+            .unwrap_or_else(|_| "587".to_string())
+            .parse::<u16>()
+            .unwrap_or(587);
+        let from_email = env::var("SMTP_FROM").unwrap_or_else(|_| "audit@example.com".to_string());
+
+        // For security, if no SMTP config is available, just log the alert
+        if smtp_server == "localhost" && env::var("SMTP_SERVER").is_err() {
+            eprintln!("AUDIT EMAIL ALERT (SMTP not configured):");
+            eprintln!("  To: {email}");
+            eprintln!("  Subject: Security Alert");
+            eprintln!("  Message: {message}");
+            return Ok(());
+        }
+
+        // Attempt simple SMTP connection
+        match TcpStream::connect_timeout(
+            &format!("{smtp_server}:{smtp_port}").parse().map_err(|e| {
+                CoreError::ComputationError(crate::error::ErrorContext::new(format!(
+                    "Invalid SMTP address: {e}"
+                )))
+            })?,
+            Duration::from_secs(10),
+        ) {
+            Ok(mut stream) => {
+                // Very basic SMTP implementation
+                let commands = vec![
+                    format!("HELO localhost\r\n"),
+                    format!("MAIL FROM:<{from_email}>\r\n"),
+                    format!("RCPT TO:<{email}>\r\n"),
+                    "DATA\r\n".to_string(),
+                    format!("Subject: Security Alert\r\n\r\n{message}\r\n.\r\n"),
+                    "QUIT\r\n".to_string(),
+                ];
+
+                for command in commands {
+                    if let Err(e) = stream.write_all(command.as_bytes()) {
+                        eprintln!("SMTP write error: {e}. Logging alert instead:");
+                        eprintln!("  To: {email}");
+                        eprintln!("  Message: {message}");
+                        return Ok(());
+                    }
+
+                    // Simple delay between commands
+                    std::thread::sleep(Duration::from_millis(100));
+                }
+
+                eprintln!("Email alert sent to: {email}");
+            }
+            Err(e) => {
+                eprintln!(
+                    "Failed to connect to SMTP server {smtp_server}: {e}. Logging alert instead:"
+                );
+                eprintln!("  To: {email}");
+                eprintln!("  Subject: Security Alert");
+                eprintln!("  Message: {message}");
+            }
+        }
+
         Ok(())
     }
 }
@@ -1170,7 +1512,7 @@ impl AuditLogger {
             buffer.push(event);
 
             // Check if we need to flush
-            if buffer.len() >= self.config.buffer_size {
+            if buffer.len() >= self.config.buffersize {
                 self.flush_buffer(&mut buffer)?;
             }
         }
@@ -1188,14 +1530,14 @@ impl AuditLogger {
     /// Returns an error if the event cannot be logged.
     pub fn log_data_access(
         &self,
-        user_id: &str,
-        resource_id: &str,
+        userid: &str,
+        resourceid: &str,
         action: &str,
         description: Option<&str>,
     ) -> Result<(), CoreError> {
         let mut event = AuditEventBuilder::new(EventCategory::DataAccess, action)
-            .user_id(user_id)
-            .resource_id(resource_id)
+            .userid(userid)
+            .resourceid(resourceid)
             .description(description.unwrap_or("Data access operation"))
             .compliance_tag("data_access")
             .build();
@@ -1216,12 +1558,12 @@ impl AuditLogger {
         &self,
         category: EventCategory,
         action: &str,
-        user_id: &str,
+        userid: &str,
         description: &str,
     ) -> Result<(), CoreError> {
         let mut event = AuditEventBuilder::new(category, action)
             .severity(EventSeverity::Warning)
-            .user_id(user_id)
+            .userid(userid)
             .description(description)
             .compliance_tag("security")
             .build();
@@ -1244,13 +1586,13 @@ impl AuditLogger {
     /// Returns an error if the event cannot be logged.
     pub fn log_authentication(
         &self,
-        user_id: &str,
+        userid: &str,
         action: &str,
         outcome: EventOutcome,
         source_ip: Option<&str>,
     ) -> Result<(), CoreError> {
         let mut builder = AuditEventBuilder::new(EventCategory::Authentication, action)
-            .user_id(user_id)
+            .userid(userid)
             .outcome(outcome)
             .compliance_tag("authentication");
 
@@ -1280,23 +1622,23 @@ impl AuditLogger {
     /// Returns an error if the event cannot be logged.
     pub fn log_configuration_change(
         &self,
-        user_id: &str,
+        userid: &str,
         config_item: &str,
         old_value: Option<&str>,
-        new_value: Option<&str>,
+        newvalue: Option<&str>,
     ) -> Result<(), CoreError> {
         let mut metadata = HashMap::new();
         if let Some(old) = old_value {
             metadata.insert("old_value".to_string(), old.to_string());
         }
-        if let Some(new) = new_value {
-            metadata.insert("new_value".to_string(), new.to_string());
+        if let Some(new) = newvalue {
+            metadata.insert("newvalue".to_string(), new.to_string());
         }
 
         let mut event = AuditEventBuilder::new(EventCategory::Configuration, "config_change")
             .severity(EventSeverity::Warning)
-            .user_id(user_id)
-            .resource_id(config_item)
+            .userid(userid)
+            .resourceid(config_item)
             .description("Configuration item changed")
             .compliance_tag("configuration")
             .build();
@@ -1320,7 +1662,7 @@ impl AuditLogger {
         start_date: DateTime<Utc>,
         end_date: DateTime<Utc>,
         category: Option<EventCategory>,
-        user_id: Option<&str>,
+        userid: Option<&str>,
     ) -> Result<Vec<AuditEvent>, CoreError> {
         let mut events = Vec::new();
 
@@ -1337,7 +1679,7 @@ impl AuditLogger {
                             start_date,
                             end_date,
                             category,
-                            user_id,
+                            userid,
                             &mut events,
                         )?;
                     }
@@ -1362,7 +1704,7 @@ impl AuditLogger {
         start_date: DateTime<Utc>,
         end_date: DateTime<Utc>,
         category: Option<EventCategory>,
-        user_id: Option<&str>,
+        userid: Option<&str>,
         events: &mut Vec<AuditEvent>,
     ) -> Result<(), CoreError> {
         let file = File::open(file_path).map_err(|e| {
@@ -1380,7 +1722,7 @@ impl AuditLogger {
                 )))
             })?;
 
-            if let Ok(event) = self.parse_log_line(&line) {
+            if let Ok(event) = self.parselog_line(&line) {
                 // Filter by date range
                 if event.timestamp < start_date || event.timestamp > end_date {
                     continue;
@@ -1394,8 +1736,8 @@ impl AuditLogger {
                 }
 
                 // Filter by user ID
-                if let Some(uid) = user_id {
-                    if event.user_id.as_deref() != Some(uid) {
+                if let Some(uid) = userid {
+                    if event.userid.as_deref() != Some(uid) {
                         continue;
                     }
                 }
@@ -1412,8 +1754,8 @@ impl AuditLogger {
     /// # Errors
     ///
     /// Returns an error if the log line cannot be parsed.
-    #[cfg(feature = "serde")]
-    fn parse_log_line(&self, line: &str) -> Result<AuditEvent, CoreError> {
+
+    fn parselog_line(&self, line: &str) -> Result<AuditEvent, CoreError> {
         if self.config.enable_json_format {
             serde_json::from_str(line).map_err(|e| {
                 CoreError::ComputationError(crate::error::ErrorContext::new(format!(
@@ -1421,7 +1763,7 @@ impl AuditLogger {
                 )))
             })
         } else {
-            self.parse_text_log_line(line)
+            self.parsetextlog_line(line)
         }
     }
 
@@ -1431,13 +1773,13 @@ impl AuditLogger {
     ///
     /// Returns an error if the log line cannot be parsed.
     #[cfg(not(feature = "serde"))]
-    fn parse_log_line(&self, line: &str) -> Result<AuditEvent, CoreError> {
+    fn parselog_line(&self, line: &str) -> Result<AuditEvent, CoreError> {
         if self.config.enable_json_format {
             Err(CoreError::ComputationError(
                 crate::error::ErrorContext::new("JSON parsing requires serde feature".to_string()),
             ))
         } else {
-            self.parse_text_log_line(line)
+            self.parsetextlog_line(line)
         }
     }
 
@@ -1445,12 +1787,154 @@ impl AuditLogger {
     ///
     /// # Errors
     ///
-    /// Returns an error indicating that text parsing is not fully implemented.
-    fn parse_text_log_line(&self, _line: &str) -> Result<AuditEvent, CoreError> {
-        // Simplified text parsing - in production, you'd want a robust parser
-        Err(CoreError::ComputationError(
-            crate::error::ErrorContext::new("Text log parsing not fully implemented".to_string()),
-        ))
+    /// Returns an error if the log line cannot be parsed.
+    fn parsetextlog_line(&self, line: &str) -> Result<AuditEvent, CoreError> {
+        // Parse text format: [timestamp] category severity action user=X resource=Y outcome=Z description="..."
+        let line = line.trim();
+
+        // Extract timestamp
+        if !line.starts_with('[') {
+            return Err(CoreError::ComputationError(
+                crate::error::ErrorContext::new(
+                    "Invalid log format: missing timestamp".to_string(),
+                ),
+            ));
+        }
+
+        let end_bracket = line.find(']').ok_or_else(|| {
+            CoreError::ComputationError(crate::error::ErrorContext::new(
+                "Invalid log format: unclosed timestamp bracket".to_string(),
+            ))
+        })?;
+
+        let timestamp_str = &line[1..end_bracket];
+        let timestamp = DateTime::parse_from_str(timestamp_str, "%Y-%m-%d %H:%M:%S UTC")
+            .map_err(|e| {
+                CoreError::ComputationError(crate::error::ErrorContext::new(format!(
+                    "Failed to parse timestamp: {e}"
+                )))
+            })?
+            .with_timezone(&Utc);
+
+        let remainder = line[end_bracket + 1..].trim();
+        let parts: Vec<&str> = remainder.split_whitespace().collect();
+
+        if parts.len() < 6 {
+            return Err(CoreError::ComputationError(
+                crate::error::ErrorContext::new(
+                    "Invalid log format: insufficient fields".to_string(),
+                ),
+            ));
+        }
+
+        // Parse category
+        let category = match parts[0] {
+            "authentication" => EventCategory::Authentication,
+            "authorization" => EventCategory::Authorization,
+            "data_access" => EventCategory::DataAccess,
+            "configuration" => EventCategory::Configuration,
+            "security" => EventCategory::Security,
+            "performance" => EventCategory::Performance,
+            "error" => EventCategory::Error,
+            "administrative" => EventCategory::Administrative,
+            "compliance" => EventCategory::Compliance,
+            _ => EventCategory::Error, // Default fallback
+        };
+
+        // Parse severity
+        let severity = match parts[1] {
+            "info" => EventSeverity::Info,
+            "warning" => EventSeverity::Warning,
+            "error" => EventSeverity::Error,
+            "critical" => EventSeverity::Critical,
+            _ => EventSeverity::Info, // Default fallback
+        };
+
+        let action = parts[2].to_string();
+
+        // Parse key-value pairs
+        let mut userid = None;
+        let mut resourceid = None;
+        let mut outcome = EventOutcome::Unknown;
+        let mut description = String::new();
+
+        for part in &parts[3..] {
+            if let Some(equals_pos) = part.find('=') {
+                let key = &part[..equals_pos];
+                let value = &part[equals_pos + 1..];
+
+                match key {
+                    "user" => {
+                        if value != "-" {
+                            userid = Some(value.to_string());
+                        }
+                    }
+                    "resource" => {
+                        if value != "-" {
+                            resourceid = Some(value.to_string());
+                        }
+                    }
+                    "outcome" => {
+                        outcome = match value {
+                            "success" => EventOutcome::Success,
+                            "failure" => EventOutcome::Failure,
+                            "denied" => EventOutcome::Denied,
+                            "cancelled" => EventOutcome::Cancelled,
+                            _ => EventOutcome::Unknown,
+                        };
+                    }
+                    "description" => {
+                        // Handle quoted description
+                        if value.starts_with('"') {
+                            // Find the rest of the description in subsequent parts
+                            let mut desc_parts = vec![value];
+                            let start_idx = parts
+                                .iter()
+                                .position(|p| p.starts_with("description="))
+                                .unwrap_or(0);
+
+                            for desc_part in &parts[start_idx + 1..] {
+                                desc_parts.push(desc_part);
+                                if desc_part.ends_with('"') {
+                                    break;
+                                }
+                            }
+
+                            description = desc_parts.join(" ");
+                            // Remove quotes
+                            if description.starts_with('"') && description.ends_with('"') {
+                                description = description[1..description.len() - 1].to_string();
+                            }
+                        } else {
+                            description = value.to_string();
+                        }
+                    }
+                    _ => {} // Ignore unknown fields
+                }
+            }
+        }
+
+        Ok(AuditEvent {
+            event_id: Uuid::new_v4(), // Generate new ID for parsed events
+            timestamp,
+            category,
+            severity,
+            action,
+            userid,
+            resourceid,
+            source_ip: None,
+            description,
+            metadata: HashMap::new(),
+            system_context: None,
+            stack_trace: None,
+            correlation_id: None,
+            outcome,
+            data_classification: None,
+            compliance_tags: Vec::new(),
+            previous_hash: None,
+            event_hash: None,
+            digital_signature: None,
+        })
     }
 
     /// Flush the event buffer to the log file.
@@ -1636,8 +2120,7 @@ impl AuditLogger {
 }
 
 /// Audit statistics structure
-#[derive(Debug, Clone, Default)]
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub struct AuditStatistics {
     /// Total number of events
     pub total_events: usize,
@@ -1656,8 +2139,7 @@ pub struct AuditStatistics {
 }
 
 /// Compliance report structure for regulatory audits
-#[derive(Debug, Clone)]
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ComplianceReport {
     /// Report period start
     pub period_start: DateTime<Utc>,
@@ -1698,12 +2180,12 @@ impl AsyncAuditLogger {
         let (sender, mut receiver) = tokio::sync::mpsc::unbounded_channel();
 
         // Create background sync logger
-        let sync_logger = AuditLogger::new(config.clone())?;
-        let sync_logger = Arc::new(sync_logger);
+        let synclogger = AuditLogger::new(config.clone())?;
+        let synclogger = Arc::new(synclogger);
 
         // Spawn background task to process events
         let background_task = {
-            let logger = sync_logger.clone();
+            let logger = synclogger.clone();
             tokio::spawn(async move {
                 while let Some(event) = receiver.recv().await {
                     if let Err(e) = logger.log_event(event) {
@@ -1740,14 +2222,14 @@ impl AsyncAuditLogger {
     /// Returns an error if the event cannot be logged.
     pub async fn log_data_access(
         &self,
-        user_id: &str,
-        resource_id: &str,
+        userid: &str,
+        resourceid: &str,
         action: &str,
         description: Option<&str>,
     ) -> Result<(), CoreError> {
         let mut event = AuditEventBuilder::new(EventCategory::DataAccess, action)
-            .user_id(user_id)
-            .resource_id(resource_id)
+            .userid(userid)
+            .resourceid(resourceid)
             .description(description.unwrap_or("Data access operation"))
             .compliance_tag("data_access")
             .build();
@@ -1763,6 +2245,7 @@ impl AsyncAuditLogger {
 // Utility functions
 
 #[must_use]
+#[allow(dead_code)]
 fn get_thread_id() -> u64 {
     use std::thread;
     // This is a simplified implementation
@@ -1775,6 +2258,7 @@ fn get_thread_id() -> u64 {
 }
 
 #[must_use]
+#[allow(dead_code)]
 fn get_hostname() -> String {
     std::env::var("HOSTNAME")
         .or_else(|_| std::env::var("COMPUTERNAME"))
@@ -1782,27 +2266,81 @@ fn get_hostname() -> String {
 }
 
 #[must_use]
+#[allow(dead_code)]
 fn get_local_ip() -> Option<String> {
-    // Simplified IP detection - in production, use proper network detection
-    Some("127.0.0.1".to_string())
+    // Try to get the actual local IP address
+    #[cfg(feature = "sysinfo")]
+    {
+        use std::net::TcpStream;
+
+        // Try to connect to a remote address to determine local IP
+        if let Ok(stream) = TcpStream::connect("8.8.8.8:80") {
+            if let Ok(local_addr) = stream.local_addr() {
+                return Some(local_addr.ip().to_string());
+            }
+        }
+
+        // Fallback: try to get from network interfaces
+        // This would require additional network interface detection
+        // For now, return a reasonable default
+        Some("127.0.0.1".to_string())
+    }
+
+    #[cfg(not(feature = "sysinfo"))]
+    {
+        // Simple fallback without network detection
+        use std::env;
+
+        // Check for common environment variables that might contain IP
+        if let Ok(ip) = env::var("HOST_IP") {
+            return Some(ip);
+        }
+
+        if let Ok(ip) = env::var("LOCAL_IP") {
+            return Some(ip);
+        }
+
+        // Default fallback
+        Some("127.0.0.1".to_string())
+    }
 }
 
 #[must_use]
+#[allow(dead_code)]
 fn get_stack_trace() -> String {
-    // Simplified stack trace - in production, use proper stack trace capture
-    "Stack trace capture not implemented".to_string()
+    // Simplified stack trace implementation for compatibility
+    let mut result = String::new();
+    result.push_str("Stack trace (simplified):\n");
+
+    // Get current thread and function info
+    if let Some(name) = std::thread::current().name() {
+        result.push_str(&format!("  Thread: {name}\n"));
+    } else {
+        result.push_str("  Thread: <unnamed>\n");
+    }
+
+    // Add caller information (simplified)
+    result.push_str(&format!(
+        "  Location: {}:{}:{}\n",
+        file!(),
+        line!(),
+        column!()
+    ));
+
+    result
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[allow(unused_imports)]
     use tempfile::tempdir;
 
     #[test]
     fn test_audit_event_builder() {
         let event = AuditEventBuilder::new(EventCategory::DataAccess, "read")
-            .user_id("user123")
-            .resource_id("dataset1")
+            .userid("user123")
+            .resourceid("dataset1")
             .severity(EventSeverity::Info)
             .description("Read operation")
             .metadata("size", "1000")
@@ -1811,15 +2349,16 @@ mod tests {
 
         assert_eq!(event.category, EventCategory::DataAccess);
         assert_eq!(event.action, "read");
-        assert_eq!(event.user_id, Some("user123".to_string()));
-        assert_eq!(event.resource_id, Some("dataset1".to_string()));
+        assert_eq!(event.userid, Some("user123".to_string()));
+        assert_eq!(event.resourceid, Some("dataset1".to_string()));
         assert_eq!(event.severity, EventSeverity::Info);
         assert_eq!(event.outcome, EventOutcome::Success);
         assert_eq!(event.metadata.get("size"), Some(&"1000".to_string()));
     }
 
     #[test]
-    fn test_audit_logger_creation() {
+
+    fn test_auditlogger_creation() {
         let temp_dir = tempdir().expect("Failed to create temp dir");
         let config = AuditConfig {
             log_directory: temp_dir.path().to_path_buf(),
@@ -1830,7 +2369,7 @@ mod tests {
 
         // Test logging an event
         let event = AuditEventBuilder::new(EventCategory::Authentication, "login")
-            .user_id("test_user")
+            .userid("test_user")
             .outcome(EventOutcome::Success)
             .build();
 
@@ -1839,7 +2378,8 @@ mod tests {
     }
 
     #[test]
-    fn test_data_access_logging() {
+
+    fn test_data_accesslogging() {
         let temp_dir = tempdir().expect("Failed to create temp dir");
         let config = AuditConfig {
             log_directory: temp_dir.path().to_path_buf(),
@@ -1870,11 +2410,11 @@ mod tests {
     #[test]
     fn test_system_context() {
         let context = SystemContext::current()
-            .with_session_id("session123".to_string())
-            .with_request_id("req456".to_string());
+            .with_sessionid("session123".to_string())
+            .with_requestid("req456".to_string());
 
-        assert_eq!(context.session_id, Some("session123".to_string()));
-        assert_eq!(context.request_id, Some("req456".to_string()));
+        assert_eq!(context.sessionid, Some("session123".to_string()));
+        assert_eq!(context.requestid, Some("req456".to_string()));
         assert!(context.process_id > 0);
     }
 

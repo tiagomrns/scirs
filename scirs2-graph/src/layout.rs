@@ -37,9 +37,10 @@ impl Position {
 /// Compute a circular layout for the graph
 ///
 /// Nodes are placed evenly around a circle.
+#[allow(dead_code)]
 pub fn circular_layout<N, E, Ix>(graph: &Graph<N, E, Ix>, radius: f64) -> HashMap<N, Position>
 where
-    N: Node + Clone,
+    N: Node + Clone + std::fmt::Debug,
     E: EdgeWeight,
     Ix: petgraph::graph::IndexType,
 {
@@ -66,6 +67,7 @@ where
 /// Compute a spring layout using force-directed placement
 ///
 /// This is a simplified version of the Fruchterman-Reingold algorithm.
+#[allow(dead_code)]
 pub fn spring_layout<N, E, Ix>(
     graph: &Graph<N, E, Ix>,
     iterations: usize,
@@ -73,7 +75,7 @@ pub fn spring_layout<N, E, Ix>(
     area_height: f64,
 ) -> HashMap<N, Position>
 where
-    N: Node + Clone,
+    N: Node + Clone + std::fmt::Debug,
     E: EdgeWeight + Into<f64>,
     Ix: petgraph::graph::IndexType,
 {
@@ -178,13 +180,14 @@ where
 /// Compute a hierarchical layout for a directed acyclic graph
 ///
 /// Nodes are arranged in layers based on their topological ordering.
+#[allow(dead_code)]
 pub fn hierarchical_layout<N, E, Ix>(
     graph: &crate::base::DiGraph<N, E, Ix>,
     layer_height: f64,
     node_spacing: f64,
 ) -> Result<HashMap<N, Position>>
 where
-    N: Node + Clone + std::hash::Hash + Eq,
+    N: Node + Clone + std::hash::Hash + Eq + std::fmt::Debug,
     E: EdgeWeight,
     Ix: petgraph::graph::IndexType,
 {
@@ -238,9 +241,10 @@ where
 /// Compute a spectral layout based on eigenvectors of the Laplacian
 ///
 /// Uses the second and third smallest eigenvectors of the Laplacian matrix.
+#[allow(dead_code)]
 pub fn spectral_layout<N, E, Ix>(graph: &Graph<N, E, Ix>) -> Result<HashMap<N, Position>>
 where
-    N: Node + Clone,
+    N: Node + Clone + std::fmt::Debug,
     E: EdgeWeight + Into<f64> + num_traits::Zero + num_traits::One + PartialOrd + Copy,
     Ix: petgraph::graph::IndexType,
 {

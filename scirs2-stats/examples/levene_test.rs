@@ -1,6 +1,7 @@
 use ndarray::array;
 use scirs2_stats::levene;
 
+#[allow(dead_code)]
 fn main() {
     // Example data from SciPy documentation
     let a = array![8.88, 9.12, 9.04, 8.98, 9.00, 9.08, 9.01, 8.85, 9.06, 8.99];
@@ -93,6 +94,7 @@ fn main() {
 }
 
 // Simple variance calculation for the example
+#[allow(dead_code)]
 fn variance(data: &ndarray::Array1<f64>) -> f64 {
     let n = data.len() as f64;
     let mean = data.sum() / n;

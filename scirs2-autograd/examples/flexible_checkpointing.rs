@@ -3,6 +3,7 @@ use ndarray::Array2;
 use scirs2_autograd as ag;
 use std::time::Instant;
 
+#[allow(dead_code)]
 fn main() {
     println!("Flexible Gradient Checkpointing Example");
     println!("======================================");
@@ -11,7 +12,7 @@ fn main() {
     println!("of a computation graph.");
     println!();
 
-    ag::run::<f32, _, _>(|ctx| {
+    ag::run(|ctx| {
         // Create some input tensors for our computation
         let a = T::convert_to_tensor(Array2::<f32>::eye(64).into_dyn(), ctx);
         let b = T::convert_to_tensor(Array2::<f32>::ones((64, 64)).into_dyn(), ctx);

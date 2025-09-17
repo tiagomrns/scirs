@@ -59,7 +59,7 @@ impl<F: Float + FromPrimitive> Default for WeightedKMeansOptions<F> {
 /// # Examples
 ///
 /// ```
-/// use ndarray::{Array1, Array2};
+/// use ndarray::{ArrayView1, Array1, Array2};
 /// use scirs2_cluster::vq::weighted_kmeans;
 ///
 /// let data = Array2::from_shape_vec((6, 2), vec![
@@ -76,6 +76,7 @@ impl<F: Float + FromPrimitive> Default for WeightedKMeansOptions<F> {
 ///
 /// let (centroids, labels) = weighted_kmeans(data.view(), weights.view(), 2, None).unwrap();
 /// ```
+#[allow(dead_code)]
 pub fn weighted_kmeans<F>(
     data: ArrayView2<F>,
     weights: ArrayView1<F>,
@@ -122,7 +123,7 @@ where
 
     let opts = options.unwrap_or_default();
 
-    let mut best_centroids = None;
+    let mut bestcentroids = None;
     let mut best_labels = None;
     let mut best_inertia = F::infinity();
 
@@ -135,20 +136,21 @@ where
             weighted_kmeans_single(data, weights, centroids.view(), &opts)?;
 
         if inertia < best_inertia {
-            best_centroids = Some(centroids);
+            bestcentroids = Some(centroids);
             best_labels = Some(labels);
             best_inertia = inertia;
         }
     }
 
-    Ok((best_centroids.unwrap(), best_labels.unwrap()))
+    Ok((bestcentroids.unwrap(), best_labels.unwrap()))
 }
 
 /// Run a single weighted k-means clustering iteration
+#[allow(dead_code)]
 fn weighted_kmeans_single<F>(
     data: ArrayView2<F>,
     weights: ArrayView1<F>,
-    init_centroids: ArrayView2<F>,
+    initcentroids: ArrayView2<F>,
     opts: &WeightedKMeansOptions<F>,
 ) -> Result<(Array2<F>, Array1<usize>, F)>
 where
@@ -156,9 +158,9 @@ where
 {
     let n_samples = data.shape()[0];
     let n_features = data.shape()[1];
-    let k = init_centroids.shape()[0];
+    let k = initcentroids.shape()[0];
 
-    let mut centroids = init_centroids.to_owned();
+    let mut centroids = initcentroids.to_owned();
     let mut labels = Array1::zeros(n_samples);
     let mut prev_centroid_diff = F::infinity();
 
@@ -168,7 +170,7 @@ where
         labels = new_labels;
 
         // Compute new centroids using weights
-        let mut new_centroids = Array2::zeros((k, n_features));
+        let mut newcentroids = Array2::zeros((k, n_features));
         let mut total_weights = Array1::zeros(k);
 
         for i in 0..n_samples {
@@ -177,7 +179,7 @@ where
             let weight = weights[i];
 
             for j in 0..n_features {
-                new_centroids[[cluster, j]] = new_centroids[[cluster, j]] + point[j] * weight;
+                newcentroids[[cluster, j]] = newcentroids[[cluster, j]] + point[j] * weight;
             }
 
             total_weights[cluster] = total_weights[cluster] + weight;
@@ -200,14 +202,14 @@ where
 
                 // Move this point to the empty cluster
                 for j in 0..n_features {
-                    new_centroids[[i, j]] = data[[far_idx, j]];
+                    newcentroids[[i, j]] = data[[far_idx, j]];
                 }
 
                 total_weights[i] = weights[far_idx];
             } else {
                 // Normalize by the total weight in the cluster
                 for j in 0..n_features {
-                    new_centroids[[i, j]] = new_centroids[[i, j]] / total_weights[i];
+                    newcentroids[[i, j]] = newcentroids[[i, j]] / total_weights[i];
                 }
             }
         }
@@ -216,11 +218,11 @@ where
         let mut centroid_diff = F::zero();
         for i in 0..k {
             let dist =
-                euclidean_distance(centroids.slice(s![i, ..]), new_centroids.slice(s![i, ..]));
+                euclidean_distance(centroids.slice(s![i, ..]), newcentroids.slice(s![i, ..]));
             centroid_diff = centroid_diff + dist;
         }
 
-        centroids = new_centroids;
+        centroids = newcentroids;
 
         if centroid_diff <= opts.tol || centroid_diff >= prev_centroid_diff {
             break;
@@ -241,6 +243,7 @@ where
 }
 
 /// Assign samples to nearest centroids (same as regular assignment)
+#[allow(dead_code)]
 fn weighted_assign_labels<F>(
     data: ArrayView2<F>,
     centroids: ArrayView2<F>,
@@ -292,6 +295,7 @@ where
 /// # Returns
 ///
 /// * Array of shape (k × n_features) with initial centroids
+#[allow(dead_code)]
 pub fn weighted_kmeans_plus_plus<F>(
     data: ArrayView2<F>,
     weights: ArrayView1<F>,
@@ -410,7 +414,7 @@ where
 mod tests {
     use super::*;
     use approx::assert_abs_diff_eq;
-    use ndarray::{Array1, Array2};
+    use ndarray::{Array1, Array2, ArrayView1};
 
     #[test]
     fn test_weighted_kmeans_simple() {

@@ -22,6 +22,7 @@ use ndarray::{s, Array2, Array3};
 /// # Returns
 ///
 /// * Result containing the filtered image
+#[allow(dead_code)]
 pub fn guided_filter(
     input: &Array2<f32>,
     guide: &Array2<f32>,
@@ -82,6 +83,7 @@ pub fn guided_filter(
 /// # Returns
 ///
 /// * Result containing the filtered color image
+#[allow(dead_code)]
 pub fn guided_filter_color(
     input: &Array3<f32>,
     guide: &Array3<f32>,
@@ -117,6 +119,7 @@ pub fn guided_filter_color(
 }
 
 /// Box filter (mean filter) implementation
+#[allow(dead_code)]
 fn box_filter(input: &Array2<f32>, radius: usize) -> Array2<f32> {
     let (height, width) = input.dim();
     let mut output = Array2::zeros((height, width));
@@ -164,6 +167,7 @@ fn box_filter(input: &Array2<f32>, radius: usize) -> Array2<f32> {
 /// # Returns
 ///
 /// * Result containing the filtered image
+#[allow(dead_code)]
 pub fn fast_guided_filter(
     input: &Array2<f32>,
     guide: &Array2<f32>,
@@ -250,7 +254,7 @@ mod tests {
         for y in 1..4 {
             for x in 1..4 {
                 let diff = (result[[y, x]] - input[[y, x]]).abs();
-                assert!(diff < 2.0, "Difference at ({}, {}): {}", x, y, diff);
+                assert!(diff < 2.0, "Difference at ({x}, {y}): {diff}");
             }
         }
     }

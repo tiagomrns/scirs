@@ -4,6 +4,7 @@
 //! memory metrics system.
 
 #[cfg(not(all(feature = "memory_management", feature = "gpu")))]
+#[allow(dead_code)]
 fn main() {
     println!("This example requires both 'memory_management' and 'gpu' features to be enabled.");
     println!("Run with: cargo run --example memory_metrics_gpu --features memory_management,gpu");
@@ -20,6 +21,7 @@ use scirs2_core::memory::metrics::{
 use std::time::Instant;
 
 #[cfg(all(feature = "memory_management", feature = "gpu"))]
+#[allow(dead_code)]
 fn main() {
     println!("Memory Metrics with GPU Operations Example");
     println!("==========================================\n");
@@ -50,10 +52,10 @@ fn main() {
     println!("----------------------------------");
 
     // Create some buffers
-    let buffer_sizes = [1000, 5000, 10000, 50000];
+    let buffersizes = [1000, 5000, 10000, 50000];
     let mut buffers = Vec::new();
 
-    for &size in &buffer_sizes {
+    for &size in &buffersizes {
         let bytes = size * std::mem::size_of::<f32>();
         println!(
             "Creating buffer with {} elements ({})",
@@ -115,7 +117,7 @@ fn main() {
     println!("\nExample 3: Simulating a GPU Computation");
     println!("--------------------------------------");
 
-    simulate_matrix_multiplication(&context);
+    simulatematrix_multiplication(&context);
 
     // Release all remaining buffers
     println!("\nReleasing all remaining buffers");
@@ -129,7 +131,8 @@ fn main() {
 
 // Simulates a GPU matrix multiplication operation
 #[cfg(all(feature = "memory_management", feature = "gpu"))]
-fn simulate_matrix_multiplication(context: &TrackedGpuContext) {
+#[allow(dead_code)]
+fn gpu_operation_example(context: &TrackedGpuContext) {
     let start = Instant::now();
 
     // Matrix dimensions

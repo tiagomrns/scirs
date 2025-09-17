@@ -7,6 +7,7 @@ use ndarray::Array2;
 use scirs2_cluster::metrics::silhouette_score;
 use scirs2_cluster::vq::{kmeans2, whiten, MinitMethod, MissingMethod};
 
+#[allow(dead_code)]
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("SciPy-compatible kmeans2 Demo");
     println!("============================\n");
@@ -109,6 +110,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     Ok(())
 }
 
+#[allow(dead_code)]
 fn generate_sample_data() -> Array2<f64> {
     let mut data = Vec::new();
 
@@ -139,6 +141,7 @@ fn generate_sample_data() -> Array2<f64> {
     Array2::from_shape_vec((90, 2), data).unwrap()
 }
 
+#[allow(dead_code)]
 fn get_unique_labels(labels: &ndarray::Array1<usize>) -> Vec<usize> {
     let mut unique = labels.to_vec();
     unique.sort();

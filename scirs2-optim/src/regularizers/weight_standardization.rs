@@ -282,7 +282,7 @@ impl<A: Float + Debug + ScalarOperand + FromPrimitive, D: Dimension> Regularizer
         Ok(A::zero())
     }
 
-    fn penalty(&self, _params: &Array<A, D>) -> Result<A> {
+    fn penalty(&self, params: &Array<A, D>) -> Result<A> {
         // Weight standardization doesn't add a penalty term
         Ok(A::zero())
     }

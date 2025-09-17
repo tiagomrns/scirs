@@ -15,6 +15,7 @@ use scirs2_io::matrix_market::{
 };
 use std::fs;
 
+#[allow(dead_code)]
 fn main() -> Result<()> {
     println!("=== Matrix Market Example ===");
 
@@ -37,6 +38,7 @@ fn main() -> Result<()> {
     Ok(())
 }
 
+#[allow(dead_code)]
 fn create_sparse_matrix_example() -> Result<()> {
     println!("\n1. Creating sparse matrix example...");
 
@@ -113,6 +115,7 @@ fn create_sparse_matrix_example() -> Result<()> {
     Ok(())
 }
 
+#[allow(dead_code)]
 fn create_dense_matrix_example() -> Result<()> {
     println!("\n2. Creating dense matrix example...");
 
@@ -169,6 +172,7 @@ fn create_dense_matrix_example() -> Result<()> {
     Ok(())
 }
 
+#[allow(dead_code)]
 fn read_and_analyze_matrices() -> Result<()> {
     println!("\n3. Reading and analyzing matrices...");
 
@@ -193,7 +197,7 @@ fn read_and_analyze_matrices() -> Result<()> {
 
     // Show some entries
     println!("      First 5 non-zero entries:");
-    for (_i, entry) in sparse_matrix.entries.iter().take(5).enumerate() {
+    for entry in sparse_matrix.entries.iter().take(5) {
         println!(
             "        ({}, {}) = {}",
             entry.row + 1,
@@ -232,6 +236,7 @@ fn read_and_analyze_matrices() -> Result<()> {
     Ok(())
 }
 
+#[allow(dead_code)]
 fn demonstrate_matrix_types() -> Result<()> {
     println!("\n4. Demonstrating different matrix types...");
 
@@ -421,6 +426,7 @@ fn demonstrate_matrix_types() -> Result<()> {
     Ok(())
 }
 
+#[allow(dead_code)]
 fn demonstrate_coordinate_conversions() -> Result<()> {
     println!("\n5. Demonstrating coordinate format conversions...");
 

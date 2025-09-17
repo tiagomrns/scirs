@@ -3,6 +3,7 @@
 use ndarray::array;
 use scirs2_stats::distributions::multivariate;
 
+#[allow(dead_code)]
 fn main() {
     // Create a multivariate Student's t-distribution
     println!("Multivariate Student's t-Distribution Example");

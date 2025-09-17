@@ -2,8 +2,10 @@ use ndarray::{array, Array1, Array2};
 use scirs2_stats::regression::{
     huber_regression, linear_regression, ransac, theilslopes, HuberT, RegressionResults,
 };
+use statrs::statistics::Statistics;
 
-fn generate_data_with_outliers() -> (Array2<f64>, Array1<f64>) {
+#[allow(dead_code)]
+fn generatedata_with_outliers() -> (Array2<f64>, Array1<f64>) {
     // Generate simple linear data with slope ~2, intercept ~1
     let x_values = vec![0.5, 1.0, 1.5, 2.0, 2.5, 3.0, 3.5, 4.0, 4.5, 5.0];
     let n = x_values.len();
@@ -23,6 +25,7 @@ fn generate_data_with_outliers() -> (Array2<f64>, Array1<f64>) {
     (x, y)
 }
 
+#[allow(dead_code)]
 fn print_regression_summary(name: &str, results: &RegressionResults<f64>) {
     println!("\n{} Regression Results:", name);
     println!("Coefficients: {:?}", results.coefficients);
@@ -42,16 +45,17 @@ fn print_regression_summary(name: &str, results: &RegressionResults<f64>) {
         .iter()
         .enumerate()
         .filter(|(_, &is_inlier)| !is_inlier)
-        .map(|(idx, _)| idx)
+        .map(|(idx_, _)| idx_)
         .collect();
     if !outlier_indices.is_empty() {
         println!("Outlier indices: {:?}", outlier_indices);
     }
 }
 
+#[allow(dead_code)]
 fn main() {
     // Generate data with outliers
-    let (x, y) = generate_data_with_outliers();
+    let (x, y) = generatedata_with_outliers();
 
     println!("Data points:");
     for i in 0..y.len() {
@@ -80,7 +84,7 @@ fn main() {
     let y_pred_theilsen = x.dot(&theilsen_coeffs);
     let residuals_theilsen = &y - &y_pred_theilsen;
     let ss_res = residuals_theilsen.mapv(|r| r * r).sum();
-    let y_mean = y.mean().unwrap();
+    let y_mean = y.clone().mean();
     let ss_tot = y.mapv(|yi| (yi - y_mean).powi(2)).sum();
     let r_squared_theilsen = 1.0 - (ss_res / ss_tot);
     let _mse_theilsen = ss_res / y.len() as f64;

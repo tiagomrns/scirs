@@ -86,8 +86,8 @@ impl EnvironmentInfo {
                             .args(["PAGE_SIZE"])
                             .output()
                         {
-                            if let Ok(size_str) = String::from_utf8(page_size.stdout) {
-                                if let Ok(size_num) = size_str.trim().parse::<u64>() {
+                            if let Ok(sizestr) = String::from_utf8(page_size.stdout) {
+                                if let Ok(size_num) = sizestr.trim().parse::<u64>() {
                                     return Some(pages_num * size_num);
                                 }
                             }
@@ -103,7 +103,7 @@ impl EnvironmentInfo {
     #[allow(clippy::vec_init_then_push)]
     fn get_enabled_features() -> Vec<String> {
         #[allow(unused_mut)]
-        let mut features = Vec::new();
+        let mut features = Vec::with_capacity(5);
 
         #[cfg(feature = "parallel")]
         features.push("parallel".to_string());
@@ -117,8 +117,7 @@ impl EnvironmentInfo {
         #[cfg(feature = "openblas")]
         features.push("openblas".to_string());
 
-        #[cfg(feature = "intel-mkl")]
-        features.push("intel-mkl".to_string());
+        // Note: intel-mkl feature removed to avoid conflicts with openblas
 
         #[cfg(feature = "profiling")]
         features.push("profiling".to_string());
@@ -131,7 +130,7 @@ impl EnvironmentInfo {
 #[derive(Debug, Clone)]
 pub struct ErrorOccurrence {
     /// Error type
-    pub error_type: String,
+    pub errortype: String,
     /// Timestamp when error occurred
     pub timestamp: SystemTime,
     /// Context where error occurred
@@ -144,15 +143,15 @@ pub struct ErrorOccurrence {
 
 impl ErrorOccurrence {
     /// Create a new error occurrence
-    pub fn new(error: &CoreError, context: String) -> Self {
-        let error_type = format!("{:?}", error)
+    pub fn error(error: &CoreError, context: String) -> Self {
+        let errortype = format!("{error:?}")
             .split('(')
             .next()
             .unwrap_or("Unknown")
             .to_string();
 
         Self {
-            error_type,
+            errortype,
             timestamp: SystemTime::now(),
             context,
             location: None,
@@ -183,7 +182,7 @@ pub struct ErrorPattern {
     /// Pattern description
     pub description: String,
     /// Error types involved in this pattern
-    pub error_types: Vec<String>,
+    pub errortypes: Vec<String>,
     /// Frequency of this pattern
     pub frequency: usize,
     /// Common contexts where this pattern occurs
@@ -224,8 +223,8 @@ impl ErrorDiagnostics {
     }
 
     /// Record an error occurrence
-    pub fn record_error(&self, error: &CoreError, context: String) {
-        let occurrence = ErrorOccurrence::new(error, context);
+    pub fn recorderror(&self, error: &CoreError, context: String) {
+        let occurrence = ErrorOccurrence::error(error, context);
 
         let mut history = self.error_history.lock().unwrap();
         history.push(occurrence);
@@ -237,8 +236,8 @@ impl ErrorDiagnostics {
     }
 
     /// Analyze an error and provide comprehensive diagnostics
-    pub fn analyze_error(&self, error: &CoreError) -> ErrorDiagnosticReport {
-        let mut report = ErrorDiagnosticReport::new(error.clone());
+    pub fn analyzeerror(&self, error: &CoreError) -> ErrorDiagnosticReport {
+        let mut report = ErrorDiagnosticReport::error(error.clone());
 
         // Add environment information
         report.environment = Some(self.environment.clone());
@@ -247,8 +246,7 @@ impl ErrorDiagnostics {
         report.patterns = self.find_matching_patterns(error);
 
         // Check for recent similar errors
-        report.recent_occurrences =
-            self.find_recent_similar_errors(error, Duration::from_secs(300)); // 5 minutes
+        report.recent_occurrences = self.find_recent_similarerrors(error, Duration::from_secs(300)); // 5 minutes
 
         // Assess performance impact
         report.performance_impact = self.assess_performance_impact(error);
@@ -264,7 +262,7 @@ impl ErrorDiagnostics {
 
     /// Find patterns matching the given error
     fn find_matching_patterns(&self, error: &CoreError) -> Vec<ErrorPattern> {
-        let error_type = format!("{:?}", error)
+        let errortype = format!("{error:?}")
             .split('(')
             .next()
             .unwrap_or("Unknown")
@@ -272,18 +270,18 @@ impl ErrorDiagnostics {
 
         self.patterns
             .iter()
-            .filter(|pattern| pattern.error_types.contains(&error_type))
+            .filter(|pattern| pattern.errortypes.contains(&errortype))
             .cloned()
             .collect()
     }
 
     /// Find recent similar errors
-    fn find_recent_similar_errors(
+    fn find_recent_similarerrors(
         &self,
         error: &CoreError,
         window: Duration,
     ) -> Vec<ErrorOccurrence> {
-        let error_type = format!("{:?}", error)
+        let errortype = format!("{error:?}")
             .split('(')
             .next()
             .unwrap_or("Unknown")
@@ -294,7 +292,7 @@ impl ErrorDiagnostics {
         history
             .iter()
             .filter(|occurrence| {
-                occurrence.error_type == error_type && occurrence.timestamp >= cutoff
+                occurrence.errortype == errortype && occurrence.timestamp >= cutoff
             })
             .cloned()
             .collect()
@@ -315,7 +313,7 @@ impl ErrorDiagnostics {
     /// Generate contextual suggestions based on error analysis
     fn generate_contextual_suggestions(
         &self,
-        _error: &CoreError,
+        error: &CoreError,
         report: &ErrorDiagnosticReport,
     ) -> Vec<String> {
         let mut suggestions = Vec::new();
@@ -386,7 +384,7 @@ impl ErrorDiagnostics {
 
                 // Check for memory-related environment variables
                 if let Some(threads) = self.environment.env_vars.get("OMP_NUM_THREADS") {
-                    diagnostics.push(format!("OpenMP threads: {}", threads));
+                    diagnostics.push(format!("OpenMP threads: {threads}"));
                 }
 
                 // Check for memory management features
@@ -404,7 +402,7 @@ impl ErrorDiagnostics {
 
             CoreError::ComputationError(_) => {
                 if let Some(cores) = self.environment.cpu_cores {
-                    diagnostics.push(format!("CPU cores available: {}", cores));
+                    diagnostics.push(format!("CPU cores available: {cores}"));
 
                     // Enhanced CPU analysis
                     if cores == 1 {
@@ -495,7 +493,8 @@ impl ErrorDiagnostics {
     }
 
     /// Perform predictive error analysis based on historical patterns (Alpha 6 feature)
-    pub fn predict_potential_errors(&self, context: &str) -> Vec<String> {
+    #[allow(dead_code)]
+    pub fn predict_potentialerrors(&self, context: &str) -> Vec<String> {
         let mut predictions = Vec::new();
         let history = self.error_history.lock().unwrap();
 
@@ -506,17 +505,16 @@ impl ErrorDiagnostics {
         for occurrence in history.iter() {
             if occurrence.timestamp >= recent_cutoff {
                 *error_counts
-                    .entry(occurrence.error_type.clone())
+                    .entry(occurrence.errortype.clone())
                     .or_insert(0) += 1;
             }
         }
 
         // Predict based on high-frequency patterns
-        for (error_type, count) in error_counts {
+        for (errortype, count) in error_counts {
             if count >= 3 {
                 predictions.push(format!(
-                    "High risk of {} based on recent frequency ({}x in last hour)",
-                    error_type, count
+                    "High risk of {errortype} based on recent frequency ({count}x in last hour)"
                 ));
             }
         }
@@ -546,6 +544,7 @@ impl ErrorDiagnostics {
     }
 
     /// Generate domain-specific recovery strategies (Alpha 6 feature)
+    #[allow(dead_code)]
     pub fn suggest_domain_recovery(&self, error: &CoreError, domain: &str) -> Vec<String> {
         let mut strategies = Vec::new();
 
@@ -626,7 +625,6 @@ impl ErrorDiagnostics {
                 }
                 _ => {}
             },
-
             _ => {
                 // Generic domain-agnostic strategies
                 strategies.push("Consider using more robust numerical algorithms".to_string());
@@ -643,7 +641,7 @@ impl ErrorDiagnostics {
         vec![
             ErrorPattern {
                 description: "Memory allocation failures in large matrix operations".to_string(),
-                error_types: vec!["MemoryError".to_string()],
+                errortypes: vec!["MemoryError".to_string()],
                 frequency: 0,
                 common_contexts: vec![
                     "matrix_multiplication".to_string(),
@@ -659,7 +657,7 @@ impl ErrorDiagnostics {
             },
             ErrorPattern {
                 description: "Convergence failures in iterative algorithms".to_string(),
-                error_types: vec!["ConvergenceError".to_string()],
+                errortypes: vec!["ConvergenceError".to_string()],
                 frequency: 0,
                 common_contexts: vec!["optimization".to_string(), "linear_solver".to_string()],
                 suggestions: vec![
@@ -673,7 +671,7 @@ impl ErrorDiagnostics {
             },
             ErrorPattern {
                 description: "Shape mismatches in array operations".to_string(),
-                error_types: vec!["ShapeError".to_string(), "DimensionError".to_string()],
+                errortypes: vec!["ShapeError".to_string(), "DimensionError".to_string()],
                 frequency: 0,
                 common_contexts: vec!["matrix_operations".to_string(), "broadcasting".to_string()],
                 suggestions: vec![
@@ -687,7 +685,7 @@ impl ErrorDiagnostics {
             },
             ErrorPattern {
                 description: "Domain errors with mathematical functions".to_string(),
-                error_types: vec!["DomainError".to_string()],
+                errortypes: vec!["DomainError".to_string()],
                 frequency: 0,
                 common_contexts: vec!["special_functions".to_string(), "statistics".to_string()],
                 suggestions: vec![
@@ -702,7 +700,7 @@ impl ErrorDiagnostics {
             // New Alpha 6 patterns
             ErrorPattern {
                 description: "GPU memory exhaustion in accelerated computations".to_string(),
-                error_types: vec!["MemoryError".to_string(), "ComputationError".to_string()],
+                errortypes: vec!["MemoryError".to_string(), "ComputationError".to_string()],
                 frequency: 0,
                 common_contexts: vec![
                     "gpu_acceleration".to_string(),
@@ -718,7 +716,7 @@ impl ErrorDiagnostics {
             },
             ErrorPattern {
                 description: "Numerical instability in scientific computations".to_string(),
-                error_types: vec![
+                errortypes: vec![
                     "ComputationError".to_string(),
                     "ConvergenceError".to_string(),
                 ],
@@ -739,7 +737,7 @@ impl ErrorDiagnostics {
             },
             ErrorPattern {
                 description: "Parallel processing overhead and contention".to_string(),
-                error_types: vec!["TimeoutError".to_string(), "ComputationError".to_string()],
+                errortypes: vec!["TimeoutError".to_string(), "ComputationError".to_string()],
                 frequency: 0,
                 common_contexts: vec!["parallel_computing".to_string(), "rayon".to_string()],
                 suggestions: vec![
@@ -754,7 +752,7 @@ impl ErrorDiagnostics {
             ErrorPattern {
                 description: "Data type overflow and underflow in scientific calculations"
                     .to_string(),
-                error_types: vec!["ValueError".to_string(), "ComputationError".to_string()],
+                errortypes: vec!["ValueError".to_string(), "ComputationError".to_string()],
                 frequency: 0,
                 common_contexts: vec![
                     "numerical_integration".to_string(),
@@ -770,7 +768,7 @@ impl ErrorDiagnostics {
             },
             ErrorPattern {
                 description: "I/O and serialization failures in scientific data".to_string(),
-                error_types: vec!["IoError".to_string(), "SerializationError".to_string()],
+                errortypes: vec!["IoError".to_string(), "SerializationError".to_string()],
                 frequency: 0,
                 common_contexts: vec!["data_loading".to_string(), "checkpointing".to_string()],
                 suggestions: vec![
@@ -841,7 +839,7 @@ pub struct ErrorDiagnosticReport {
 
 impl ErrorDiagnosticReport {
     /// Create a new diagnostic report
-    pub fn new(error: CoreError) -> Self {
+    pub fn error(error: CoreError) -> Self {
         Self {
             error,
             environment: None,
@@ -867,7 +865,7 @@ impl ErrorDiagnosticReport {
 
         // Error information
         report.push_str("🚨 Error Details:\n");
-        report.push_str(&format!("   {}\n\n", self.error));
+        report.push_str(&format!("   {error}\n\n", error = self.error));
 
         // Performance impact
         report.push_str(&format!(
@@ -878,11 +876,18 @@ impl ErrorDiagnosticReport {
         // Environment information
         if let Some(env) = &self.environment {
             report.push_str("🖥️  Environment Information:\n");
-            report.push_str(&format!("   OS: {} ({})\n", env.os, env.arch));
-            report.push_str(&format!("   `SciRS2` Version: {}\n", env.scirs2_version));
+            report.push_str(&format!(
+                "   OS: {os} ({arch})\n",
+                os = env.os,
+                arch = env.arch
+            ));
+            report.push_str(&format!(
+                "   `SciRS2` Version: {_version}\n",
+                _version = env.scirs2_version
+            ));
 
             if let Some(cores) = env.cpu_cores {
-                report.push_str(&format!("   CPU Cores: {}\n", cores));
+                report.push_str(&format!("   CPU Cores: {cores}\n"));
             }
 
             if let Some(memory) = env.available_memory {
@@ -906,7 +911,7 @@ impl ErrorDiagnosticReport {
         if !self.environment_diagnostics.is_empty() {
             report.push_str("🔧 Environment Diagnostics:\n");
             for diagnostic in &self.environment_diagnostics {
-                report.push_str(&format!("   • {}\n", diagnostic));
+                report.push_str(&format!("   • {diagnostic}\n"));
             }
             report.push('\n');
         }
@@ -915,11 +920,14 @@ impl ErrorDiagnosticReport {
         if !self.patterns.is_empty() {
             report.push_str("📊 Matching Error Patterns:\n");
             for pattern in &self.patterns {
-                report.push_str(&format!("   • {}\n", pattern.description));
+                report.push_str(&format!(
+                    "   • {description}\n",
+                    description = pattern.description
+                ));
                 if !pattern.suggestions.is_empty() {
                     report.push_str("     Suggestions:\n");
                     for suggestion in &pattern.suggestions {
-                        report.push_str(&format!("     - {}\n", suggestion));
+                        report.push_str(&format!("     - {suggestion}\n"));
                     }
                 }
             }
@@ -944,7 +952,7 @@ impl ErrorDiagnosticReport {
         if !self.predictions.is_empty() {
             report.push_str("🔮 Predictive Analysis:\n");
             for prediction in &self.predictions {
-                report.push_str(&format!("   • {}\n", prediction));
+                report.push_str(&format!("   • {prediction}\n"));
             }
             report.push('\n');
         }
@@ -953,7 +961,7 @@ impl ErrorDiagnosticReport {
         if !self.domain_strategies.is_empty() {
             report.push_str("🎯 Domain-Specific Recovery Strategies:\n");
             for (i, strategy) in self.domain_strategies.iter().enumerate() {
-                report.push_str(&format!("   {}. {}\n", i + 1, strategy));
+                report.push_str(&format!("   {num}. {strategy}\n", num = i + 1));
             }
             report.push('\n');
         }
@@ -962,7 +970,7 @@ impl ErrorDiagnosticReport {
         if !self.contextual_suggestions.is_empty() {
             report.push_str("💡 Contextual Suggestions:\n");
             for (i, suggestion) in self.contextual_suggestions.iter().enumerate() {
-                report.push_str(&format!("   {}. {}\n", i + 1, suggestion));
+                report.push_str(&format!("   {num}. {suggestion}\n", num = i + 1));
             }
             report.push('\n');
         }
@@ -982,24 +990,28 @@ impl fmt::Display for ErrorDiagnosticReport {
 }
 
 /// Convenience function to create a diagnostic report for an error
-pub fn diagnose_error(error: &CoreError) -> ErrorDiagnosticReport {
-    ErrorDiagnostics::global().analyze_error(error)
+#[allow(dead_code)]
+pub fn error(err: &CoreError) -> ErrorDiagnosticReport {
+    ErrorDiagnostics::global().analyzeerror(err)
 }
 
 /// Convenience function to create a diagnostic report with context
-pub fn diagnose_error_with_context(error: &CoreError, context: String) -> ErrorDiagnosticReport {
+#[allow(dead_code)]
+pub fn error_with_context(err: &CoreError, context: String) -> ErrorDiagnosticReport {
     let diagnostics = ErrorDiagnostics::global();
-    diagnostics.record_error(error, context);
-    diagnostics.analyze_error(error)
+    diagnostics.recorderror(err, context);
+    diagnostics.analyzeerror(err)
 }
 
 /// Macro to create a diagnostic error with automatic context
 #[macro_export]
-macro_rules! diagnostic_error {
-    ($error_type:ident, $message:expr) => {{
-        let error = $crate::error::CoreError::$error_type($crate::error_context!($message));
-        let context = format!("{}:{}", file!(), line!());
-        $crate::error::diagnostics::diagnose_error_with_context(&error, context);
+macro_rules! diagnosticerror {
+    ($errortype:ident, $message:expr) => {{
+        let error = $crate::error::CoreError::$errortype($crate::error_context!($message));
+        let line_num = line!();
+        let file_name = file!();
+        let context = format!("line {line_num}, file = {file_name}");
+        $crate::error::diagnostics::diagnoseerror_with_context(&error, context);
         error
     }};
 }
@@ -1018,24 +1030,24 @@ mod tests {
     }
 
     #[test]
-    fn test_error_occurrence() {
+    fn testerror_occurrence() {
         let error = CoreError::DomainError(ErrorContext::new("Test error"));
-        let occurrence = ErrorOccurrence::new(&error, "test_context".to_string())
+        let occurrence = ErrorOccurrence::error(&error, "test_context".to_string())
             .with_location("test_function")
             .with_metadata("key", "value");
 
-        assert_eq!(occurrence.error_type, "DomainError");
+        assert_eq!(occurrence.errortype, "DomainError");
         assert_eq!(occurrence.context, "test_context");
         assert_eq!(occurrence.location, Some("test_function".to_string()));
         assert_eq!(occurrence.metadata.get("key"), Some(&"value".to_string()));
     }
 
     #[test]
-    fn test_diagnostics_error_diagnostics() {
+    fn test_diagnosticserror_diagnostics() {
         let diagnostics = ErrorDiagnostics::new();
         let error = CoreError::MemoryError(ErrorContext::new("Out of memory"));
 
-        let report = diagnostics.analyze_error(&error);
+        let report = diagnostics.analyzeerror(&error);
         assert!(matches!(report.error, CoreError::MemoryError(_)));
         assert!(matches!(report.performance_impact, PerformanceImpact::High));
     }
@@ -1043,7 +1055,7 @@ mod tests {
     #[test]
     fn test_diagnostic_report_generation() {
         let error = CoreError::ShapeError(ErrorContext::new("Shape mismatch"));
-        let report = diagnose_error(&error);
+        let report = ErrorDiagnostics::global().analyzeerror(&error);
 
         let report_string = report.generate_report();
         assert!(report_string.contains("Error Diagnostic Report"));

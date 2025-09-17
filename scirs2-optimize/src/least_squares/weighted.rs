@@ -121,6 +121,7 @@ impl Default for WeightedOptions {
 /// # Returns
 ///
 /// * `OptimizeResults` containing the optimization results
+#[allow(dead_code)]
 pub fn weighted_least_squares<F, J, D, S1, S2, S3>(
     residuals: F,
     x0: &ArrayBase<S1, Ix1>,
@@ -155,6 +156,7 @@ where
 }
 
 /// Weighted Gauss-Newton implementation
+#[allow(dead_code)]
 fn weighted_gauss_newton<F, J, D, S1, S2, S3>(
     residuals: F,
     x0: &ArrayBase<S1, Ix1>,
@@ -217,7 +219,7 @@ where
         let cost = 0.5 * weighted_res.iter().map(|&r| r * r).sum::<f64>();
 
         // Compute Jacobian
-        let (jac, _jac_evals) = match &jacobian {
+        let (jac, jac_evals) = match &jacobian {
             Some(jac_fn) => {
                 let j = jac_fn(x.as_slice().unwrap(), data.as_slice().unwrap());
                 njev += 1;
@@ -243,7 +245,7 @@ where
 
         // Check convergence on gradient
         if gradient.iter().all(|&g| g.abs() < options.gtol) {
-            let mut result = OptimizeResults::default();
+            let mut result = OptimizeResults::<f64>::default();
             result.x = x;
             result.fun = cost;
             result.nfev = nfev;
@@ -259,7 +261,7 @@ where
         let neg_gradient = -&gradient;
 
         // Solve for step
-        match solve_linear_system(&jtw_j, &neg_gradient) {
+        match solve(&jtw_j, &neg_gradient) {
             Some(step) => {
                 // Simple line search
                 let mut alpha = 1.0;
@@ -288,7 +290,7 @@ where
                 let x_norm = x.iter().map(|&xi| xi * xi).sum::<f64>().sqrt();
 
                 if step_norm < options.xtol * (1.0 + x_norm) {
-                    let mut result = OptimizeResults::default();
+                    let mut result = OptimizeResults::<f64>::default();
                     result.x = best_x;
                     result.fun = best_cost;
                     result.nfev = nfev;
@@ -301,7 +303,7 @@ where
 
                 // Check convergence on cost function
                 if (cost - best_cost).abs() < options.ftol * cost {
-                    let mut result = OptimizeResults::default();
+                    let mut result = OptimizeResults::<f64>::default();
                     result.x = best_x;
                     result.fun = best_cost;
                     result.nfev = nfev;
@@ -316,7 +318,7 @@ where
             }
             None => {
                 // Singular matrix, terminate
-                let mut result = OptimizeResults::default();
+                let mut result = OptimizeResults::<f64>::default();
                 result.x = x;
                 result.fun = cost;
                 result.nfev = nfev;
@@ -336,7 +338,7 @@ where
     let weighted_res_final = &res_final * &sqrt_weights;
     let final_cost = 0.5 * weighted_res_final.iter().map(|&r| r * r).sum::<f64>();
 
-    let mut result = OptimizeResults::default();
+    let mut result = OptimizeResults::<f64>::default();
     result.x = x;
     result.fun = final_cost;
     result.nfev = nfev;
@@ -349,75 +351,11 @@ where
 }
 
 /// Simple linear system solver (same as in robust.rs)
-fn solve_linear_system(a: &Array2<f64>, b: &Array1<f64>) -> Option<Array1<f64>> {
-    let n = a.shape()[0];
-    if n != a.shape()[1] || n != b.len() {
-        return None;
-    }
+#[allow(dead_code)]
+fn solve(a: &Array2<f64>, b: &Array1<f64>) -> Option<Array1<f64>> {
+    use scirs2_linalg::solve;
 
-    // Create augmented matrix [A|b]
-    let mut aug = Array2::zeros((n, n + 1));
-    for i in 0..n {
-        for j in 0..n {
-            aug[[i, j]] = a[[i, j]];
-        }
-        aug[[i, n]] = b[i];
-    }
-
-    // Gaussian elimination with partial pivoting
-    for i in 0..n {
-        // Find pivot
-        let mut max_row = i;
-        let mut max_val = aug[[i, i]].abs();
-
-        for j in i + 1..n {
-            if aug[[j, i]].abs() > max_val {
-                max_row = j;
-                max_val = aug[[j, i]].abs();
-            }
-        }
-
-        // Check for singularity
-        if max_val < 1e-10 {
-            return None;
-        }
-
-        // Swap rows if needed
-        if max_row != i {
-            for j in 0..=n {
-                let temp = aug[[i, j]];
-                aug[[i, j]] = aug[[max_row, j]];
-                aug[[max_row, j]] = temp;
-            }
-        }
-
-        // Eliminate below
-        for j in i + 1..n {
-            let c = aug[[j, i]] / aug[[i, i]];
-            aug[[j, i]] = 0.0;
-
-            for k in i + 1..=n {
-                aug[[j, k]] -= c * aug[[i, k]];
-            }
-        }
-    }
-
-    // Back substitution
-    let mut x = Array1::zeros(n);
-    for i in (0..n).rev() {
-        let mut sum = aug[[i, n]];
-        for j in i + 1..n {
-            sum -= aug[[i, j]] * x[j];
-        }
-
-        if aug[[i, i]].abs() < 1e-10 {
-            return None;
-        }
-
-        x[i] = sum / aug[[i, i]];
-    }
-
-    Some(x)
+    solve(&a.view(), &b.view(), None).ok()
 }
 
 #[cfg(test)]
@@ -440,7 +378,7 @@ mod tests {
             res
         }
 
-        fn jacobian(_x: &[f64], data: &[f64]) -> Array2<f64> {
+        fn jacobian(x: &[f64], data: &[f64]) -> Array2<f64> {
             let n = data.len() / 2;
             let t_values = &data[0..n];
 
@@ -471,7 +409,7 @@ mod tests {
     #[test]
     fn test_negative_weights() {
         // Simple test function
-        fn residual(x: &[f64], _data: &[f64]) -> Array1<f64> {
+        fn residual(x: &[f64], data: &[f64]) -> Array1<f64> {
             array![x[0] - 1.0]
         }
 

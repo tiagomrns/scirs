@@ -6,6 +6,7 @@
 use crate::error::{Result, VisionError};
 use image::{DynamicImage, GenericImageView, GrayImage};
 use ndarray::{s, Array2};
+use statrs::statistics::Statistics;
 
 /// Compute Peak Signal-to-Noise Ratio (PSNR) between two images
 ///
@@ -13,7 +14,7 @@ use ndarray::{s, Array2};
 ///
 /// * `img1` - First image (reference)
 /// * `img2` - Second image (distorted)
-/// * `max_value` - Maximum possible pixel value (255 for 8-bit images)
+/// * `maxvalue` - Maximum possible pixel value (255 for 8-bit images)
 ///
 /// # Returns
 ///
@@ -33,7 +34,8 @@ use ndarray::{s, Array2};
 /// # Ok(())
 /// # }
 /// ```
-pub fn psnr(img1: &DynamicImage, img2: &DynamicImage, max_value: f32) -> Result<f32> {
+#[allow(dead_code)]
+pub fn psnr(img1: &DynamicImage, img2: &DynamicImage, maxvalue: f32) -> Result<f32> {
     let gray1 = img1.to_luma8();
     let gray2 = img2.to_luma8();
 
@@ -61,7 +63,7 @@ pub fn psnr(img1: &DynamicImage, img2: &DynamicImage, max_value: f32) -> Result<
         // Identical images
         Ok(f32::INFINITY)
     } else {
-        Ok(20.0 * (max_value / mse.sqrt()).log10())
+        Ok(20.0 * (maxvalue / mse.sqrt()).log10())
     }
 }
 
@@ -115,6 +117,7 @@ impl Default for SSIMParams {
 /// # Ok(())
 /// # }
 /// ```
+#[allow(dead_code)]
 pub fn ssim(img1: &DynamicImage, img2: &DynamicImage, params: &SSIMParams) -> Result<f32> {
     let gray1 = img1.to_luma8();
     let gray2 = img2.to_luma8();
@@ -156,6 +159,7 @@ pub fn ssim(img1: &DynamicImage, img2: &DynamicImage, params: &SSIMParams) -> Re
 }
 
 /// Compute SSIM map (local SSIM values)
+#[allow(dead_code)]
 fn ssim_map(
     img1: &Array2<f32>,
     img2: &Array2<f32>,
@@ -184,14 +188,14 @@ fn ssim_map(
             ]);
 
             // Compute weighted statistics
-            let sum_weights = window.sum();
+            let sumweights = window.sum();
 
-            let mu1 = weighted_mean(&patch1, window, sum_weights);
-            let mu2 = weighted_mean(&patch2, window, sum_weights);
+            let mu1 = weighted_mean(&patch1, window, sumweights);
+            let mu2 = weighted_mean(&patch2, window, sumweights);
 
-            let sigma1_sq = weighted_variance(&patch1, window, mu1, sum_weights);
-            let sigma2_sq = weighted_variance(&patch2, window, mu2, sum_weights);
-            let sigma12 = weighted_covariance(&patch1, &patch2, window, mu1, mu2, sum_weights);
+            let sigma1_sq = weighted_variance(&patch1, window, mu1, sumweights);
+            let sigma2_sq = weighted_variance(&patch2, window, mu2, sumweights);
+            let sigma12 = weighted_covariance(&patch1, &patch2, window, mu1, mu2, sumweights);
 
             // Compute SSIM
             let numerator = (2.0 * mu1 * mu2 + c1) * (2.0 * sigma12 + c2);
@@ -205,6 +209,7 @@ fn ssim_map(
 }
 
 /// Create a Gaussian window
+#[allow(dead_code)]
 fn gaussian_window(size: usize, sigma: f32) -> Array2<f32> {
     let half_size = size as i32 / 2;
     let mut window = Array2::zeros((size, size));
@@ -224,46 +229,50 @@ fn gaussian_window(size: usize, sigma: f32) -> Array2<f32> {
 }
 
 /// Compute weighted mean
-fn weighted_mean(data: &ndarray::ArrayView2<f32>, weights: &Array2<f32>, sum_weights: f32) -> f32 {
+#[allow(dead_code)]
+fn weighted_mean(data: &ndarray::ArrayView2<f32>, weights: &Array2<f32>, sumweights: f32) -> f32 {
     let mut sum = 0.0;
     for ((y, x), &value) in data.indexed_iter() {
         sum += value * weights[[y, x]];
     }
-    sum / sum_weights
+    sum / sumweights
 }
 
 /// Compute weighted variance
+#[allow(dead_code)]
 fn weighted_variance(
     data: &ndarray::ArrayView2<f32>,
     weights: &Array2<f32>,
     mean: f32,
-    sum_weights: f32,
+    sumweights: f32,
 ) -> f32 {
     let mut sum = 0.0;
     for ((y, x), &value) in data.indexed_iter() {
         sum += weights[[y, x]] * (value - mean).powi(2);
     }
-    sum / sum_weights
+    sum / sumweights
 }
 
 /// Compute weighted covariance
+#[allow(dead_code)]
 fn weighted_covariance(
     data1: &ndarray::ArrayView2<f32>,
     data2: &ndarray::ArrayView2<f32>,
     weights: &Array2<f32>,
     mean1: f32,
     mean2: f32,
-    sum_weights: f32,
+    sumweights: f32,
 ) -> f32 {
     let mut sum = 0.0;
     for ((y, x), &value1) in data1.indexed_iter() {
         let value2 = data2[[y, x]];
         sum += weights[[y, x]] * (value1 - mean1) * (value2 - mean2);
     }
-    sum / sum_weights
+    sum / sumweights
 }
 
 /// Convert grayscale image to normalized array
+#[allow(dead_code)]
 fn image_to_array(img: &GrayImage) -> Result<Array2<f32>> {
     let (width, height) = img.dimensions();
     let mut array = Array2::zeros((height as usize, width as usize));
@@ -291,6 +300,7 @@ fn image_to_array(img: &GrayImage) -> Result<Array2<f32>> {
 /// # Returns
 ///
 /// * MS-SSIM value
+#[allow(dead_code)]
 pub fn ms_ssim(
     img1: &DynamicImage,
     img2: &DynamicImage,
@@ -337,6 +347,7 @@ pub fn ms_ssim(
 /// # Returns
 ///
 /// * VIF value (higher is better)
+#[allow(dead_code)]
 pub fn vif(img1: &DynamicImage, img2: &DynamicImage) -> Result<f32> {
     let gray1 = img1.to_luma8();
     let gray2 = img2.to_luma8();
@@ -383,12 +394,14 @@ pub fn vif(img1: &DynamicImage, img2: &DynamicImage) -> Result<f32> {
 }
 
 /// Compute variance of an array view
+#[allow(dead_code)]
 fn variance(data: &ndarray::ArrayView2<f32>) -> f32 {
     let mean = data.mean().unwrap_or(0.0);
     data.mapv(|x| (x - mean).powi(2)).mean().unwrap_or(0.0)
 }
 
 /// Mean Absolute Error (MAE)
+#[allow(dead_code)]
 pub fn mae(img1: &DynamicImage, img2: &DynamicImage) -> Result<f32> {
     let gray1 = img1.to_luma8();
     let gray2 = img2.to_luma8();
@@ -453,8 +466,7 @@ mod tests {
         let ssim_value = ssim(&img, &img, &SSIMParams::default()).unwrap();
         assert!(
             (ssim_value - 1.0).abs() < 0.01,
-            "SSIM of identical images should be ~1.0, got {}",
-            ssim_value
+            "SSIM of identical images should be ~1.0, got {ssim_value}"
         );
     }
 

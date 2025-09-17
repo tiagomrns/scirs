@@ -1,10 +1,12 @@
-//! Local Binary Pattern (LBP) feature extraction for images
+// Local Binary Pattern (LBP) feature extraction for images
 
 use crate::error::SignalResult;
 use ndarray::Array2;
 use std::collections::HashMap;
 
+#[allow(unused_imports)]
 /// Extract Local Binary Pattern features from an image
+#[allow(dead_code)]
 pub fn extract_lbp_features(
     image: &Array2<f64>,
     features: &mut HashMap<String, f64>,
@@ -139,7 +141,7 @@ pub fn extract_lbp_features(
                 8 => flat += lbp_hist[i],
                 2 | 4 | 6 => edges += lbp_hist[i],
                 1 | 3 | 5 | 7 => corners += lbp_hist[i],
-                _ => (), // Shouldn't happen
+                _ => {} // Shouldn't happen for 8-bit patterns
             }
         }
     }

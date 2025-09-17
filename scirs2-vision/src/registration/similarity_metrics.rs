@@ -140,7 +140,7 @@ pub struct MutualInformation {
 impl MutualInformation {
     /// Create new mutual information metric with specified number of bins
     pub fn new(bins: usize) -> Self {
-        Self { bins }
+        Self { _bins }
     }
 }
 
@@ -204,7 +204,7 @@ impl NormalizedMutualInformation {
     /// Create new normalized mutual information metric
     pub fn new(bins: usize) -> Self {
         Self {
-            mi: MutualInformation::new(bins),
+            mi: MutualInformation::new(_bins),
         }
     }
 }
@@ -315,8 +315,8 @@ pub struct PeakSignalToNoiseRatio {
 
 impl PeakSignalToNoiseRatio {
     /// Create new PSNR metric with specified maximum pixel value
-    pub fn new(max_value: f64) -> Self {
-        Self { max_value }
+    pub fn new(_maxvalue: f64) -> Self {
+        Self { _max_value }
     }
 }
 
@@ -376,7 +376,7 @@ pub struct StructuralSimilarity {
 
 impl StructuralSimilarity {
     /// Create new SSIM metric with specified parameters
-    pub fn new(window_size: usize, k1: f64, k2: f64, l: f64) -> Self {
+    pub fn new(_windowsize: usize, k1: f64, k2: f64, l: f64) -> Self {
         Self { window_size, k1, k2, l }
     }
 }
@@ -504,8 +504,9 @@ impl SimilarityMeasure for GradientCorrelation {
 }
 
 /// Factory function to create similarity measure from metric type
+#[allow(dead_code)]
 pub fn create_similarity_measure(metric: SimilarityMetric) -> Box<dyn SimilarityMeasure> {
-    match metric {
+    match _metric {
         SimilarityMetric::SumOfSquaredDifferences => Box::new(SumOfSquaredDifferences),
         SimilarityMetric::NormalizedCrossCorrelation => Box::new(NormalizedCrossCorrelation),
         SimilarityMetric::MutualInformation => Box::new(MutualInformation::default()),
@@ -519,6 +520,7 @@ pub fn create_similarity_measure(metric: SimilarityMetric) -> Box<dyn Similarity
 
 // Helper functions
 
+#[allow(dead_code)]
 fn validate_dimensions(reference: &Array2<f32>, moving: &Array2<f32>) -> Result<()> {
     if reference.dim() != moving.dim() {
         return Err(VisionError::InvalidParameter(
@@ -536,6 +538,7 @@ fn validate_dimensions(reference: &Array2<f32>, moving: &Array2<f32>) -> Result<
     Ok(())
 }
 
+#[allow(dead_code)]
 fn compute_histograms(
     reference: &Array2<f32>,
     moving: &Array2<f32>,
@@ -575,6 +578,7 @@ fn compute_histograms(
     Ok((joint_hist, ref_hist, mov_hist))
 }
 
+#[allow(dead_code)]
 fn compute_gradient_magnitude(image: &Array2<f32>) -> Result<Array2<f32>> {
     let (height, width) = image.dim();
     let mut gradient = Array2::zeros((height, width));

@@ -7,11 +7,11 @@
 use crate::error::{InterpolateError, InterpolateResult};
 use ndarray::{Array1, Array2, ArrayView1, ArrayView2};
 use num_traits::{Float, FromPrimitive};
-use std::fmt::Debug;
+use std::fmt::{Debug, Display};
 
 /// Prediction result from Kriging interpolation
 #[derive(Debug, Clone)]
-pub struct PredictionResult<F: Float + FromPrimitive> {
+pub struct PredictionResult<F: Float + FromPrimitive + Display> {
     /// Predicted values
     pub value: Array1<F>,
     /// Prediction variance (uncertainty)
@@ -38,7 +38,7 @@ pub enum CovarianceFunction {
 /// Implements ordinary Kriging (Gaussian process regression with a constant mean).
 #[derive(Debug, Clone)]
 #[allow(dead_code)]
-pub struct KrigingInterpolator<F: Float + FromPrimitive> {
+pub struct KrigingInterpolator<F: Float + FromPrimitive + Display> {
     /// Points coordinates
     points: Array2<F>,
     /// Values at points
@@ -61,7 +61,7 @@ pub struct KrigingInterpolator<F: Float + FromPrimitive> {
     mean: F,
 }
 
-impl<F: Float + FromPrimitive + Debug> KrigingInterpolator<F> {
+impl<F: Float + FromPrimitive + Debug + std::fmt::Display> KrigingInterpolator<F> {
     /// Create a new Kriging interpolator
     ///
     /// # Arguments
@@ -124,38 +124,47 @@ impl<F: Float + FromPrimitive + Debug> KrigingInterpolator<F> {
     ) -> InterpolateResult<Self> {
         // Check inputs
         if points.shape()[0] != values.len() {
-            return Err(InterpolateError::ValueError(
+            return Err(InterpolateError::invalid_input(
                 "number of points must match number of values".to_string(),
             ));
         }
 
         if points.shape()[0] < 2 {
-            return Err(InterpolateError::ValueError(
+            return Err(InterpolateError::invalid_input(
                 "at least 2 points are required for Kriging interpolation".to_string(),
             ));
         }
 
         if sigma_sq <= F::zero() {
-            return Err(InterpolateError::ValueError(
-                "sigma_sq must be positive".to_string(),
+            return Err(InterpolateError::invalid_parameter_with_suggestion(
+                "sigma_sq",
+                sigma_sq,
+                "Kriging interpolation",
+                "must be positive (signal variance: try sample variance of your data or 1.0 as default)"
             ));
         }
 
         if length_scale <= F::zero() {
-            return Err(InterpolateError::ValueError(
-                "length_scale must be positive".to_string(),
+            return Err(InterpolateError::invalid_parameter_with_suggestion(
+                "length_scale",
+                length_scale,
+                "Kriging interpolation",
+                "must be positive (correlation length: try mean distance between points or use cross-validation)"
             ));
         }
 
         if nugget < F::zero() {
-            return Err(InterpolateError::ValueError(
+            return Err(InterpolateError::invalid_input(
                 "nugget must be non-negative".to_string(),
             ));
         }
 
         if cov_fn == CovarianceFunction::RationalQuadratic && alpha <= F::zero() {
-            return Err(InterpolateError::ValueError(
-                "alpha must be positive for rational quadratic covariance".to_string(),
+            return Err(InterpolateError::invalid_parameter_with_suggestion(
+                "alpha",
+                alpha,
+                "rational quadratic Kriging",
+                "must be positive (shape parameter: typical values 0.5-2.0, try 1.0 as default)",
             ));
         }
 
@@ -266,10 +275,10 @@ impl<F: Float + FromPrimitive + Debug> KrigingInterpolator<F> {
     }
 
     /// Evaluate the covariance function
-    fn covariance(r: F, sigma_sq: F, length_scale: F, cov_fn: CovarianceFunction, alpha: F) -> F {
+    fn covariance(r: F, sigma_sq: F, length_scale: F, covfn: CovarianceFunction, alpha: F) -> F {
         let scaled_dist = r / length_scale;
 
-        match cov_fn {
+        match covfn {
             CovarianceFunction::SquaredExponential => {
                 // σ² exp(-r²/l²)
                 sigma_sq * (-scaled_dist * scaled_dist).exp()
@@ -305,29 +314,29 @@ impl<F: Float + FromPrimitive + Debug> KrigingInterpolator<F> {
     ///
     /// # Arguments
     ///
-    /// * `query_points` - Points at which to predict
+    /// * `querypoints` - Points at which to predict
     ///
     /// # Returns
     ///
     /// Predicted values and their associated variances
-    pub fn predict(&self, query_points: &ArrayView2<F>) -> InterpolateResult<PredictionResult<F>> {
+    pub fn predict(&self, querypoints: &ArrayView2<F>) -> InterpolateResult<PredictionResult<F>> {
         // Check dimensions
-        if query_points.shape()[1] != self.points.shape()[1] {
-            return Err(InterpolateError::ValueError(
-                "query points must have the same dimension as sample points".to_string(),
+        if querypoints.shape()[1] != self.points.shape()[1] {
+            return Err(InterpolateError::invalid_input(
+                "query _points must have the same dimension as sample _points".to_string(),
             ));
         }
 
-        let n_query = query_points.shape()[0];
+        let n_query = querypoints.shape()[0];
         let n_points = self.points.shape()[0];
 
         let mut values = Array1::zeros(n_query);
         let mut variances = Array1::zeros(n_query);
 
         for i in 0..n_query {
-            let query_point = query_points.slice(ndarray::s![i, ..]);
+            let query_point = querypoints.slice(ndarray::s![i, ..]);
 
-            // Compute covariance vector between query point and training points
+            // Compute covariance vector between query point and training _points
             let mut k_star = Array1::zeros(n_points);
             for j in 0..n_points {
                 let sample_point = self.points.slice(ndarray::s![j, ..]);
@@ -351,7 +360,7 @@ impl<F: Float + FromPrimitive + Debug> KrigingInterpolator<F> {
             // Simplified variance estimation without Cholesky decomposition
             // In real implementation, this should use the full covariance matrix
 
-            // Compute the average distance to known points
+            // Compute the average distance to known _points
             let mut avg_dist = F::zero();
             let mut min_dist = F::infinity();
 
@@ -364,8 +373,8 @@ impl<F: Float + FromPrimitive + Debug> KrigingInterpolator<F> {
             let _avg_dist = avg_dist / F::from_usize(n_points).unwrap();
 
             // Calculate variance based on distances
-            // For points far from any known points, variance increases
-            // For points near known points, variance decreases
+            // For _points far from any known points, variance increases
+            // For _points near known points, variance decreases
             // This is a simplified model - real kriging variance uses matrix algebra
             let variance = self.sigma_sq * (F::one() - (-min_dist / self.length_scale).exp());
 
@@ -459,7 +468,8 @@ impl<F: Float + FromPrimitive + Debug> KrigingInterpolator<F> {
 /// println!("Interpolated value at (0.25, 0.25): {}", result.value[0]);
 /// println!("Prediction variance: {}", result.variance[0]);
 /// ```
-pub fn make_kriging_interpolator<F: Float + FromPrimitive + Debug>(
+#[allow(dead_code)]
+pub fn make_kriging_interpolator<F: crate::traits::InterpolationFloat>(
     points: &ArrayView2<F>,
     values: &ArrayView1<F>,
     cov_fn: CovarianceFunction,

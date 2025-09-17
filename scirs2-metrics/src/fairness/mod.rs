@@ -199,6 +199,7 @@ pub mod robustness;
 /// // - 0 indicates perfect demographic parity (equal prediction rates)
 /// // - Values further from 0 indicate greater disparity
 /// ```
+#[allow(dead_code)]
 pub fn demographic_parity_difference<T, S, R>(
     y_pred: &ArrayBase<S, Ix1>,
     protected_group: &ArrayBase<R, Ix1>,
@@ -295,6 +296,7 @@ where
 /// // - < 0.8 or > 1.25 may indicate problematic disparate impact
 /// // - In the US, the 80% rule (di < 0.8) is often used as a legal threshold
 /// ```
+#[allow(dead_code)]
 pub fn disparate_impact<T, S, R>(
     y_pred: &ArrayBase<S, Ix1>,
     protected_group: &ArrayBase<R, Ix1>,
@@ -400,6 +402,7 @@ where
 /// // - 0 indicates perfect equalized odds
 /// // - Higher values indicate greater disparity in error rates
 /// ```
+#[allow(dead_code)]
 pub fn equalized_odds_difference<T, S, R, Q>(
     y_true: &ArrayBase<S, Ix1>,
     y_pred: &ArrayBase<R, Ix1>,
@@ -479,7 +482,7 @@ where
         }
     }
 
-    // Calculate true positive rates (TPR) and false positive rates (FPR) for each group
+    // Calculate _true positive rates (TPR) and false positive rates (FPR) for each group
     // Handle cases where a group might not have any positives or negatives
     let protected_tpr = if protected_true_positives + protected_false_negatives > 0 {
         protected_true_positives as f64
@@ -550,6 +553,7 @@ where
 /// // - 0 indicates perfect equal opportunity
 /// // - Higher values indicate greater disparity in true positive rates
 /// ```
+#[allow(dead_code)]
 pub fn equal_opportunity_difference<T, S, R, Q>(
     y_true: &ArrayBase<S, Ix1>,
     y_pred: &ArrayBase<R, Ix1>,
@@ -579,16 +583,16 @@ where
 
     let zero = T::zero();
 
-    // Initialize counters for true positives and false negatives in each group
+    // Initialize counters for _true positives and false negatives in each group
     let mut protected_true_positives = 0;
     let mut protected_false_negatives = 0;
     let mut unprotected_true_positives = 0;
     let mut unprotected_false_negatives = 0;
 
-    // Count true positives and false negatives for each group
+    // Count _true positives and false negatives for each group
     for ((truth, pred), group) in y_true.iter().zip(y_pred.iter()).zip(protected_group.iter()) {
         if truth > &zero {
-            // Only consider cases where true label is positive
+            // Only consider cases where _true label is positive
             if group > &zero {
                 // Protected group
                 if pred > &zero {
@@ -607,7 +611,7 @@ where
         }
     }
 
-    // Calculate true positive rates for each group
+    // Calculate _true positive rates for each group
     let protected_tpr = if protected_true_positives + protected_false_negatives > 0 {
         protected_true_positives as f64
             / (protected_true_positives + protected_false_negatives) as f64
@@ -628,7 +632,7 @@ where
         ));
     };
 
-    // Return the absolute difference in true positive rates
+    // Return the absolute difference in _true positive rates
     Ok((protected_tpr - unprotected_tpr).abs())
 }
 
@@ -666,6 +670,7 @@ where
 /// // Calculate consistency with 2 neighbors
 /// let consistency = consistency_score(&features, &predictions, 2).unwrap();
 /// ```
+#[allow(dead_code)]
 pub fn consistency_score<T, S, R>(
     features: &ArrayBase<S, Ix2>,
     predictions: &ArrayBase<R, Ix1>,

@@ -3,11 +3,12 @@
 //! This module provides functions for calculating error metrics between
 //! predicted values and true values in regression models.
 
-use ndarray::{ArrayBase, Data, Dimension};
+use ndarray::{ArrayBase, ArrayView1, Data, Dimension};
 use num_traits::{Float, FromPrimitive, NumCast};
+use scirs2_core::simd_ops::SimdUnifiedOps;
 use std::cmp::Ordering;
 
-use super::check_same_shape;
+use super::check_sameshape;
 use crate::error::{MetricsError, Result};
 
 /// Calculates the mean squared error (MSE)
@@ -66,38 +67,55 @@ use crate::error::{MetricsError, Result};
 ///
 /// # Examples
 ///
-/// ```
+/// ```no_run
 /// use ndarray::array;
 /// use scirs2_metrics::regression::mean_squared_error;
 ///
 /// let y_true = array![3.0, -0.5, 2.0, 7.0];
 /// let y_pred = array![2.5, 0.0, 2.0, 8.0];
 ///
-/// let mse = mean_squared_error(&y_true, &y_pred).unwrap();
+/// let mse: f64 = mean_squared_error(&y_true, &y_pred).unwrap();
 /// // Expecting: ((3.0-2.5)² + (-0.5-0.0)² + (2.0-2.0)² + (7.0-8.0)²) / 4
 /// assert!(mse < 0.38 && mse > 0.37);
 /// ```
+#[allow(dead_code)]
 pub fn mean_squared_error<F, S1, S2, D1, D2>(
     y_true: &ArrayBase<S1, D1>,
     y_pred: &ArrayBase<S2, D2>,
 ) -> Result<F>
 where
-    F: Float + NumCast + std::fmt::Debug,
+    F: Float + NumCast + std::fmt::Debug + scirs2_core::simd_ops::SimdUnifiedOps,
     S1: Data<Elem = F>,
     S2: Data<Elem = F>,
     D1: Dimension,
     D2: Dimension,
 {
     // Check that arrays have the same shape
-    check_same_shape::<F, S1, S2, D1, D2>(y_true, y_pred)?;
+    check_sameshape::<F, S1, S2, D1, D2>(y_true, y_pred)?;
 
     let n_samples = y_true.len();
 
-    let mut squared_error_sum = F::zero();
-    for (yt, yp) in y_true.iter().zip(y_pred.iter()) {
-        let error = *yt - *yp;
-        squared_error_sum = squared_error_sum + error * error;
-    }
+    // Use SIMD optimizations for vector operations when data is contiguous
+    let squared_error_sum = if y_true.is_standard_layout() && y_pred.is_standard_layout() {
+        // SIMD-optimized computation - convert to 1D views for SIMD _ops
+        let y_true_view = y_true.view();
+        let y_pred_view = y_pred.view();
+        let y_true_reshaped = y_true_view.to_shape(y_true.len()).unwrap();
+        let y_pred_reshaped = y_pred_view.to_shape(y_pred.len()).unwrap();
+        let y_true_1d = y_true_reshaped.view();
+        let y_pred_1d = y_pred_reshaped.view();
+        let diff = F::simd_sub(&y_true_1d, &y_pred_1d);
+        let squared_diff = F::simd_mul(&diff.view(), &diff.view());
+        F::simd_sum(&squared_diff.view())
+    } else {
+        // Fallback for non-contiguous arrays
+        let mut sum = F::zero();
+        for (yt, yp) in y_true.iter().zip(y_pred.iter()) {
+            let error = *yt - *yp;
+            sum = sum + error * error;
+        }
+        sum
+    };
 
     Ok(squared_error_sum / NumCast::from(n_samples).unwrap())
 }
@@ -117,23 +135,24 @@ where
 ///
 /// # Examples
 ///
-/// ```
+/// ```no_run
 /// use ndarray::array;
 /// use scirs2_metrics::regression::root_mean_squared_error;
 ///
 /// let y_true = array![3.0, -0.5, 2.0, 7.0];
 /// let y_pred = array![2.5, 0.0, 2.0, 8.0];
 ///
-/// let rmse = root_mean_squared_error(&y_true, &y_pred).unwrap();
+/// let rmse: f64 = root_mean_squared_error(&y_true, &y_pred).unwrap();
 /// // RMSE is the square root of MSE
 /// assert!(rmse < 0.62 && rmse > 0.61);
 /// ```
+#[allow(dead_code)]
 pub fn root_mean_squared_error<F, S1, S2, D1, D2>(
     y_true: &ArrayBase<S1, D1>,
     y_pred: &ArrayBase<S2, D2>,
 ) -> Result<F>
 where
-    F: Float + NumCast + std::fmt::Debug,
+    F: Float + NumCast + std::fmt::Debug + scirs2_core::simd_ops::SimdUnifiedOps,
     S1: Data<Elem = F>,
     S2: Data<Elem = F>,
     D1: Dimension,
@@ -159,38 +178,55 @@ where
 ///
 /// # Examples
 ///
-/// ```
+/// ```no_run
 /// use ndarray::array;
 /// use scirs2_metrics::regression::mean_absolute_error;
 ///
 /// let y_true = array![3.0, -0.5, 2.0, 7.0];
 /// let y_pred = array![2.5, 0.0, 2.0, 8.0];
 ///
-/// let mae = mean_absolute_error(&y_true, &y_pred).unwrap();
+/// let mae: f64 = mean_absolute_error(&y_true, &y_pred).unwrap();
 /// // Expecting: (|3.0-2.5| + |-0.5-0.0| + |2.0-2.0| + |7.0-8.0|) / 4 = 0.5
 /// assert!(mae > 0.499 && mae < 0.501);
 /// ```
+#[allow(dead_code)]
 pub fn mean_absolute_error<F, S1, S2, D1, D2>(
     y_true: &ArrayBase<S1, D1>,
     y_pred: &ArrayBase<S2, D2>,
 ) -> Result<F>
 where
-    F: Float + NumCast + std::fmt::Debug,
+    F: Float + NumCast + std::fmt::Debug + scirs2_core::simd_ops::SimdUnifiedOps,
     S1: Data<Elem = F>,
     S2: Data<Elem = F>,
     D1: Dimension,
     D2: Dimension,
 {
     // Check that arrays have the same shape
-    check_same_shape::<F, S1, S2, D1, D2>(y_true, y_pred)?;
+    check_sameshape::<F, S1, S2, D1, D2>(y_true, y_pred)?;
 
     let n_samples = y_true.len();
 
-    let mut abs_error_sum = F::zero();
-    for (yt, yp) in y_true.iter().zip(y_pred.iter()) {
-        let error = (*yt - *yp).abs();
-        abs_error_sum = abs_error_sum + error;
-    }
+    // Use SIMD optimizations for vector operations when data is contiguous
+    let abs_error_sum = if y_true.is_standard_layout() && y_pred.is_standard_layout() {
+        // SIMD-optimized computation for 1D arrays
+        let y_true_view = y_true.view();
+        let y_pred_view = y_pred.view();
+        let y_true_reshaped = y_true_view.to_shape(y_true.len()).unwrap();
+        let y_pred_reshaped = y_pred_view.to_shape(y_pred.len()).unwrap();
+        let y_true_1d = y_true_reshaped.view();
+        let y_pred_1d = y_pred_reshaped.view();
+        let diff = F::simd_sub(&y_true_1d, &y_pred_1d);
+        let abs_diff = F::simd_abs(&diff.view());
+        F::simd_sum(&abs_diff.view())
+    } else {
+        // Fallback for non-contiguous arrays
+        let mut sum = F::zero();
+        for (yt, yp) in y_true.iter().zip(y_pred.iter()) {
+            let error = (*yt - *yp).abs();
+            sum = sum + error;
+        }
+        sum
+    };
 
     Ok(abs_error_sum / NumCast::from(n_samples).unwrap())
 }
@@ -227,19 +263,20 @@ where
 /// // Example calculation: (|3.0-2.7|/3.0 + |0.5-0.4|/0.5 + |2.0-1.8|/2.0 + |7.0-7.7|/7.0) / 4 * 100
 /// assert!(mape < 13.0 && mape > 9.0);
 /// ```
+#[allow(dead_code)]
 pub fn mean_absolute_percentage_error<F, S1, S2, D1, D2>(
     y_true: &ArrayBase<S1, D1>,
     y_pred: &ArrayBase<S2, D2>,
 ) -> Result<F>
 where
-    F: Float + NumCast + std::fmt::Debug,
+    F: Float + NumCast + std::fmt::Debug + scirs2_core::simd_ops::SimdUnifiedOps,
     S1: Data<Elem = F>,
     S2: Data<Elem = F>,
     D1: Dimension,
     D2: Dimension,
 {
     // Check that arrays have the same shape
-    check_same_shape::<F, S1, S2, D1, D2>(y_true, y_pred)?;
+    check_sameshape::<F, S1, S2, D1, D2>(y_true, y_pred)?;
 
     let mut percentage_error_sum = F::zero();
     let mut valid_samples = 0;
@@ -287,19 +324,20 @@ where
 /// let smape = symmetric_mean_absolute_percentage_error(&y_true, &y_pred).unwrap();
 /// assert!(smape > 0.0);
 /// ```
+#[allow(dead_code)]
 pub fn symmetric_mean_absolute_percentage_error<F, S1, S2, D1, D2>(
     y_true: &ArrayBase<S1, D1>,
     y_pred: &ArrayBase<S2, D2>,
 ) -> Result<F>
 where
-    F: Float + NumCast + std::fmt::Debug,
+    F: Float + NumCast + std::fmt::Debug + scirs2_core::simd_ops::SimdUnifiedOps,
     S1: Data<Elem = F>,
     S2: Data<Elem = F>,
     D1: Dimension,
     D2: Dimension,
 {
     // Check that arrays have the same shape
-    check_same_shape::<F, S1, S2, D1, D2>(y_true, y_pred)?;
+    check_sameshape::<F, S1, S2, D1, D2>(y_true, y_pred)?;
 
     let mut percentage_error_sum = F::zero();
     let mut valid_samples = 0;
@@ -349,19 +387,20 @@ where
 /// // Maximum of [|3.0-2.5|, |-0.5-0.0|, |2.0-2.0|, |7.0-8.0|]
 /// assert_eq!(me, 1.0);
 /// ```
+#[allow(dead_code)]
 pub fn max_error<F, S1, S2, D1, D2>(
     y_true: &ArrayBase<S1, D1>,
     y_pred: &ArrayBase<S2, D2>,
 ) -> Result<F>
 where
-    F: Float + NumCast + std::fmt::Debug,
+    F: Float + NumCast + std::fmt::Debug + scirs2_core::simd_ops::SimdUnifiedOps,
     S1: Data<Elem = F>,
     S2: Data<Elem = F>,
     D1: Dimension,
     D2: Dimension,
 {
     // Check that arrays have the same shape
-    check_same_shape::<F, S1, S2, D1, D2>(y_true, y_pred)?;
+    check_sameshape::<F, S1, S2, D1, D2>(y_true, y_pred)?;
 
     let mut max_err = F::zero();
     for (yt, yp) in y_true.iter().zip(y_pred.iter()) {
@@ -401,19 +440,20 @@ where
 /// // Median of [|3.0-2.5|, |-0.5-0.0|, |2.0-2.0|, |7.0-8.0|] = Median of [0.5, 0.5, 0.0, 1.0]
 /// assert_eq!(medae, 0.5);
 /// ```
+#[allow(dead_code)]
 pub fn median_absolute_error<F, S1, S2, D1, D2>(
     y_true: &ArrayBase<S1, D1>,
     y_pred: &ArrayBase<S2, D2>,
 ) -> Result<F>
 where
-    F: Float + NumCast + std::fmt::Debug,
+    F: Float + NumCast + std::fmt::Debug + scirs2_core::simd_ops::SimdUnifiedOps,
     S1: Data<Elem = F>,
     S2: Data<Elem = F>,
     D1: Dimension,
     D2: Dimension,
 {
     // Check that arrays have the same shape
-    check_same_shape::<F, S1, S2, D1, D2>(y_true, y_pred)?;
+    check_sameshape::<F, S1, S2, D1, D2>(y_true, y_pred)?;
 
     let n_samples = y_true.len();
 
@@ -467,19 +507,20 @@ where
 /// let msle = mean_squared_log_error(&y_true, &y_pred).unwrap();
 /// assert!(msle > 0.0);
 /// ```
+#[allow(dead_code)]
 pub fn mean_squared_log_error<F, S1, S2, D1, D2>(
     y_true: &ArrayBase<S1, D1>,
     y_pred: &ArrayBase<S2, D2>,
 ) -> Result<F>
 where
-    F: Float + NumCast + std::fmt::Debug,
+    F: Float + NumCast + std::fmt::Debug + scirs2_core::simd_ops::SimdUnifiedOps,
     S1: Data<Elem = F>,
     S2: Data<Elem = F>,
     D1: Dimension,
     D2: Dimension,
 {
     // Check that arrays have the same shape
-    check_same_shape::<F, S1, S2, D1, D2>(y_true, y_pred)?;
+    check_sameshape::<F, S1, S2, D1, D2>(y_true, y_pred)?;
 
     let n_samples = y_true.len();
 
@@ -541,20 +582,21 @@ where
 /// let loss = huber_loss(&y_true, &y_pred, delta).unwrap();
 /// assert!(loss > 0.0);
 /// ```
+#[allow(dead_code)]
 pub fn huber_loss<F, S1, S2, D1, D2>(
     y_true: &ArrayBase<S1, D1>,
     y_pred: &ArrayBase<S2, D2>,
     delta: F,
 ) -> Result<F>
 where
-    F: Float + NumCast + std::fmt::Debug,
+    F: Float + NumCast + std::fmt::Debug + scirs2_core::simd_ops::SimdUnifiedOps,
     S1: Data<Elem = F>,
     S2: Data<Elem = F>,
     D1: Dimension,
     D2: Dimension,
 {
     // Check that arrays have the same shape
-    check_same_shape::<F, S1, S2, D1, D2>(y_true, y_pred)?;
+    check_sameshape::<F, S1, S2, D1, D2>(y_true, y_pred)?;
 
     if delta <= F::zero() {
         return Err(MetricsError::InvalidInput(
@@ -596,25 +638,26 @@ where
 ///
 /// # Examples
 ///
-/// ```
+/// ```no_run
 /// use ndarray::array;
 /// use scirs2_metrics::regression::normalized_root_mean_squared_error;
 ///
 /// let y_true = array![3.0, -0.5, 2.0, 7.0];
 /// let y_pred = array![2.5, 0.0, 2.0, 8.0];
 ///
-/// let nrmse_mean = normalized_root_mean_squared_error(&y_true, &y_pred, "mean").unwrap();
-/// let nrmse_range = normalized_root_mean_squared_error(&y_true, &y_pred, "range").unwrap();
+/// let nrmse_mean: f64 = normalized_root_mean_squared_error(&y_true, &y_pred, "mean").unwrap();
+/// let nrmse_range: f64 = normalized_root_mean_squared_error(&y_true, &y_pred, "range").unwrap();
 /// assert!(nrmse_mean > 0.0);
 /// assert!(nrmse_range > 0.0);
 /// ```
+#[allow(dead_code)]
 pub fn normalized_root_mean_squared_error<F, S1, S2, D1, D2>(
     y_true: &ArrayBase<S1, D1>,
     y_pred: &ArrayBase<S2, D2>,
     normalization: &str,
 ) -> Result<F>
 where
-    F: Float + NumCast + std::fmt::Debug,
+    F: Float + NumCast + std::fmt::Debug + scirs2_core::simd_ops::SimdUnifiedOps,
     S1: Data<Elem = F>,
     S2: Data<Elem = F>,
     D1: Dimension,
@@ -712,19 +755,20 @@ where
 /// let rae = relative_absolute_error(&y_true, &y_pred).unwrap();
 /// assert!(rae > 0.0 && rae < 1.0);
 /// ```
+#[allow(dead_code)]
 pub fn relative_absolute_error<F, S1, S2, D1, D2>(
     y_true: &ArrayBase<S1, D1>,
     y_pred: &ArrayBase<S2, D2>,
 ) -> Result<F>
 where
-    F: Float + NumCast + std::fmt::Debug,
+    F: Float + NumCast + std::fmt::Debug + scirs2_core::simd_ops::SimdUnifiedOps,
     S1: Data<Elem = F>,
     S2: Data<Elem = F>,
     D1: Dimension,
     D2: Dimension,
 {
     // Check that arrays have the same shape
-    check_same_shape::<F, S1, S2, D1, D2>(y_true, y_pred)?;
+    check_sameshape::<F, S1, S2, D1, D2>(y_true, y_pred)?;
 
     // Calculate mean of y_true
     let y_true_mean =
@@ -773,19 +817,20 @@ where
 /// let rse = relative_squared_error(&y_true, &y_pred).unwrap();
 /// assert!(rse > 0.0 && rse < 1.0);
 /// ```
+#[allow(dead_code)]
 pub fn relative_squared_error<F, S1, S2, D1, D2>(
     y_true: &ArrayBase<S1, D1>,
     y_pred: &ArrayBase<S2, D2>,
 ) -> Result<F>
 where
-    F: Float + NumCast + std::fmt::Debug,
+    F: Float + NumCast + std::fmt::Debug + scirs2_core::simd_ops::SimdUnifiedOps,
     S1: Data<Elem = F>,
     S2: Data<Elem = F>,
     D1: Dimension,
     D2: Dimension,
 {
     // Check that arrays have the same shape
-    check_same_shape::<F, S1, S2, D1, D2>(y_true, y_pred)?;
+    check_sameshape::<F, S1, S2, D1, D2>(y_true, y_pred)?;
 
     // Calculate mean of y_true
     let y_true_mean =

@@ -58,6 +58,7 @@ pub enum SerializationFormat {
 /// // JSON serialization (human-readable)
 /// serialize_array("data.json", &array_dyn, SerializationFormat::JSON).unwrap();
 /// ```
+#[allow(dead_code)]
 pub fn serialize_array<P, A, S>(
     path: P,
     array: &ArrayBase<S, IxDyn>,
@@ -131,6 +132,7 @@ where
 /// // JSON deserialization
 /// let array = deserialize_array::<_, f64>("data.json", SerializationFormat::JSON).unwrap();
 /// ```
+#[allow(dead_code)]
 pub fn deserialize_array<P, A>(path: P, format: SerializationFormat) -> Result<Array<A, IxDyn>>
 where
     P: AsRef<Path>,
@@ -212,6 +214,7 @@ pub struct SerializedArray<A> {
 ///     SerializationFormat::JSON
 /// ).unwrap();
 /// ```
+#[allow(dead_code)]
 pub fn serialize_array_with_metadata<P, A, S>(
     path: P,
     array: &ArrayBase<S, IxDyn>,
@@ -274,7 +277,7 @@ where
 ///
 /// # Returns
 ///
-/// * `Result<(Array<A, IxDyn>, std::collections::HashMap<String, String>)>` - Deserialized array and metadata
+/// * `Result<(Array<A, IxDyn> + std::collections::HashMap<String, String>)>` - Deserialized array and metadata
 ///
 /// # Examples
 ///
@@ -291,6 +294,7 @@ where
 /// println!("Deserialized array shape: {:?}", array.shape());
 /// println!("Metadata: {:?}", metadata);
 /// ```
+#[allow(dead_code)]
 pub fn deserialize_array_with_metadata<P, A>(
     path: P,
     format: SerializationFormat,
@@ -356,6 +360,7 @@ where
 /// // JSON serialization
 /// serialize_struct("person.json", &person, SerializationFormat::JSON).unwrap();
 /// ```
+#[allow(dead_code)]
 pub fn serialize_struct<P, T>(path: P, data: &T, format: SerializationFormat) -> Result<()>
 where
     P: AsRef<Path>,
@@ -413,6 +418,7 @@ where
 /// let person: Person = deserialize_struct("person.json", SerializationFormat::JSON).unwrap();
 /// println!("Name: {}, Age: {}, Height: {}", person.name, person.age, person.height);
 /// ```
+#[allow(dead_code)]
 pub fn deserialize_struct<P, T>(path: P, format: SerializationFormat) -> Result<T>
 where
     P: AsRef<Path>,
@@ -514,6 +520,7 @@ impl<A> SparseMatrixCOO<A> {
 /// // Serialize to file
 /// serialize_sparse_matrix("sparse.json", &sparse, SerializationFormat::JSON).unwrap();
 /// ```
+#[allow(dead_code)]
 pub fn serialize_sparse_matrix<P, A>(
     path: P,
     matrix: &SparseMatrixCOO<A>,
@@ -546,6 +553,7 @@ where
 /// let sparse = deserialize_sparse_matrix::<_, f64>("sparse.json", SerializationFormat::JSON).unwrap();
 /// println!("Sparse matrix: {}x{} with {} non-zero elements", sparse.rows, sparse.cols, sparse.nnz());
 /// ```
+#[allow(dead_code)]
 pub fn deserialize_sparse_matrix<P, A>(
     path: P,
     format: SerializationFormat,
@@ -945,6 +953,7 @@ impl<A: Clone> SparseMatrixCSC<A> {
 }
 
 /// Enhanced sparse matrix serialization with format conversion
+#[allow(dead_code)]
 pub fn serialize_enhanced_sparse_matrix<P, A>(
     path: P,
     matrix: &SparseMatrix<A>,
@@ -958,6 +967,7 @@ where
 }
 
 /// Enhanced sparse matrix deserialization
+#[allow(dead_code)]
 pub fn deserialize_enhanced_sparse_matrix<P, A>(
     path: P,
     format: SerializationFormat,
@@ -970,6 +980,7 @@ where
 }
 
 /// Convert Matrix Market format to enhanced sparse matrix
+#[allow(dead_code)]
 pub fn from_matrix_market<A>(mm_matrix: &crate::matrix_market::MMSparseMatrix<A>) -> SparseMatrix<A>
 where
     A: Clone,
@@ -1001,6 +1012,7 @@ where
 }
 
 /// Convert enhanced sparse matrix to Matrix Market format
+#[allow(dead_code)]
 pub fn to_matrix_market<A>(sparse: &SparseMatrix<A>) -> crate::matrix_market::MMSparseMatrix<A>
 where
     A: Clone,
@@ -1010,7 +1022,7 @@ where
         format: crate::matrix_market::MMFormat::Coordinate,
         data_type: crate::matrix_market::MMDataType::Real, // Default, should be determined by A
         symmetry: crate::matrix_market::MMSymmetry::General, // Default
-        comments: vec!["Converted from enhanced sparse matrix".to_string()],
+        comments: vec!["Converted from enhanced _sparse matrix".to_string()],
     };
 
     let entries = sparse
@@ -1096,7 +1108,7 @@ pub mod sparse_ops {
     {
         if vector.len() != matrix.cols {
             return Err(IoError::ValidationError(
-                "Vector dimension must match matrix columns".to_string(),
+                "Vector dimension must match _matrix columns".to_string(),
             ));
         }
 
@@ -1141,6 +1153,7 @@ pub mod sparse_ops {
 // Convenience functions for common serialization formats
 
 /// Convenience function to write an array to JSON format
+#[allow(dead_code)]
 pub fn write_array_json<P, A, S>(path: P, array: &ArrayBase<S, IxDyn>) -> Result<()>
 where
     P: AsRef<Path>,
@@ -1151,6 +1164,7 @@ where
 }
 
 /// Convenience function to read an array from JSON format
+#[allow(dead_code)]
 pub fn read_array_json<P, A>(path: P) -> Result<Array<A, IxDyn>>
 where
     P: AsRef<Path>,
@@ -1160,6 +1174,7 @@ where
 }
 
 /// Convenience function to write an array to binary format
+#[allow(dead_code)]
 pub fn write_array_binary<P, A, S>(path: P, array: &ArrayBase<S, IxDyn>) -> Result<()>
 where
     P: AsRef<Path>,
@@ -1170,6 +1185,7 @@ where
 }
 
 /// Convenience function to read an array from binary format
+#[allow(dead_code)]
 pub fn read_array_binary<P, A>(path: P) -> Result<Array<A, IxDyn>>
 where
     P: AsRef<Path>,
@@ -1179,6 +1195,7 @@ where
 }
 
 /// Convenience function to write an array to MessagePack format
+#[allow(dead_code)]
 pub fn write_array_messagepack<P, A, S>(path: P, array: &ArrayBase<S, IxDyn>) -> Result<()>
 where
     P: AsRef<Path>,
@@ -1189,10 +1206,138 @@ where
 }
 
 /// Convenience function to read an array from MessagePack format
+#[allow(dead_code)]
 pub fn read_array_messagepack<P, A>(path: P) -> Result<Array<A, IxDyn>>
 where
     P: AsRef<Path>,
     A: for<'de> Deserialize<'de> + Clone,
 {
     deserialize_array(path, SerializationFormat::MessagePack)
+}
+
+/// Zero-copy serialization of contiguous arrays
+///
+/// This function provides efficient serialization of contiguous arrays
+/// without intermediate copying. It writes data directly from the array's
+/// memory layout to the output file.
+///
+/// # Arguments
+///
+/// * `path` - Path to the output file
+/// * `array` - Array to serialize (must be in standard layout)
+/// * `format` - Serialization format
+///
+/// # Returns
+///
+/// * `Result<()>` - Success or error
+///
+/// # Note
+///
+/// This function requires the array to be in standard (C-contiguous) layout.
+/// For non-contiguous arrays, use the regular `serialize_array` function.
+#[allow(dead_code)]
+pub fn serialize_array_zero_copy<P, A, S>(
+    path: P,
+    array: &ArrayBase<S, IxDyn>,
+    format: SerializationFormat,
+) -> Result<()>
+where
+    P: AsRef<Path>,
+    A: Serialize + bytemuck::Pod,
+    S: ndarray::Data<Elem = A>,
+{
+    if !array.is_standard_layout() {
+        return Err(IoError::FormatError(
+            "Array must be in standard layout for zero-copy serialization".to_string(),
+        ));
+    }
+
+    let file = File::create(&path).map_err(|e| IoError::FileError(e.to_string()))?;
+    let mut writer = BufWriter::new(file);
+
+    // Write metadata header
+    let shape = array.shape().to_vec();
+    let metadata = ArrayMetadata {
+        shape: shape.clone(),
+        dtype: std::any::type_name::<A>().to_string(),
+        order: 'C',
+        metadata: HashMap::new(),
+    };
+
+    match format {
+        SerializationFormat::Binary => {
+            // Write metadata
+            bincode::serialize_into(&mut writer, &metadata)
+                .map_err(|e| IoError::SerializationError(e.to_string()))?;
+
+            // Write data directly from array memory
+            if let Some(slice) = array.as_slice() {
+                let bytes = bytemuck::cast_slice(slice);
+                writer
+                    .write_all(bytes)
+                    .map_err(|e| IoError::FileError(e.to_string()))?;
+            }
+        }
+        _ => {
+            // For non-binary formats, fall back to regular serialization
+            // as they require element-by-element conversion
+            return serialize_array(path, array, format);
+        }
+    }
+
+    writer
+        .flush()
+        .map_err(|e| IoError::FileError(e.to_string()))?;
+    Ok(())
+}
+
+/// Zero-copy deserialization into a memory-mapped array view
+///
+/// This function provides efficient deserialization by memory-mapping
+/// the file and returning a view into the mapped memory, avoiding
+/// data copying entirely.
+///
+/// # Arguments
+///
+/// * `path` - Path to the input file
+///
+/// # Returns
+///
+/// * `Result<(ArrayMetadata, memmap2::Mmap)>` - Metadata and memory map
+///
+/// # Safety
+///
+/// The returned memory map must outlive any array views created from it.
+#[allow(dead_code)]
+pub fn deserialize_array_zero_copy<P>(path: P) -> Result<(ArrayMetadata, memmap2::Mmap)>
+where
+    P: AsRef<Path>,
+{
+    use std::io::Read;
+
+    let mut file = File::open(path).map_err(|e| IoError::FileError(e.to_string()))?;
+
+    // Read metadata size hint (first 8 bytes)
+    let mut size_buf = [0u8; 8];
+    file.read_exact(&mut size_buf)
+        .map_err(|e| IoError::FileError(e.to_string()))?;
+    let metadata_size = u64::from_le_bytes(size_buf) as usize;
+
+    // Read metadata
+    let mut metadata_buf = vec![0u8; metadata_size];
+    file.read_exact(&mut metadata_buf)
+        .map_err(|e| IoError::FileError(e.to_string()))?;
+
+    let metadata: ArrayMetadata = bincode::deserialize(&metadata_buf)
+        .map_err(|e| IoError::DeserializationError(e.to_string()))?;
+
+    // Memory-map the rest of the file (data portion)
+    let mmap = unsafe {
+        memmap2::MmapOptions::new()
+            .offset(8 + metadata_size as u64)
+            .map(&file)
+            .map_err(|e| IoError::FileError(e.to_string()))?
+    };
+
+    Ok((metadata, mmap))
 }

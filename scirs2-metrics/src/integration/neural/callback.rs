@@ -14,7 +14,9 @@ use std::fmt::{Debug, Display};
 /// A callback for tracking metrics during neural network training
 #[cfg(feature = "neural_common")]
 #[derive(Debug)]
-pub struct MetricsCallback<F: Float + Debug + Display + FromPrimitive + Send + Sync> {
+pub struct MetricsCallback<
+    F: Float + Debug + Display + FromPrimitive + Send + Sync + scirs2_core::simd_ops::SimdUnifiedOps,
+> {
     /// Map of metric names to metric adapters
     metrics: Vec<NeuralMetricAdapter<F>>,
     /// Results from the last update
@@ -26,7 +28,16 @@ pub struct MetricsCallback<F: Float + Debug + Display + FromPrimitive + Send + S
 }
 
 #[cfg(feature = "neural_common")]
-impl<F: Float + Debug + Display + FromPrimitive + Send + Sync> MetricsCallback<F> {
+impl<
+        F: Float
+            + Debug
+            + Display
+            + FromPrimitive
+            + Send
+            + Sync
+            + scirs2_core::simd_ops::SimdUnifiedOps,
+    > MetricsCallback<F>
+{
     /// Create a new metrics callback with the specified metrics
     pub fn new(metrics: Vec<NeuralMetricAdapter<F>>, verbose: bool) -> Self {
         Self {
@@ -86,12 +97,20 @@ impl<F: Float + Debug + Display + FromPrimitive + Send + Sync> MetricsCallback<F
 
 #[allow(unexpected_cfgs)]
 #[cfg(all(feature = "neural_common", feature = "neural_integration"))]
-impl<F: Float + Debug + Display + FromPrimitive + Send + Sync> scirs2_neural::callbacks::Callback<F>
-    for MetricsCallback<F>
+impl<
+        F: Float
+            + Debug
+            + Display
+            + FromPrimitive
+            + Send
+            + Sync
+            + scirs2_core::simd_ops::SimdUnifiedOps,
+    > scirs2_neural::callbacks::Callback<F> for MetricsCallback<F>
 {
     fn on_event(
         &mut self,
-        timing: scirs2_neural::callbacks::CallbackTiming,
+        timing: scirs2,
+        neural: callbacks::CallbackTiming,
         context: &mut scirs2_neural::callbacks::CallbackContext<F>,
     ) -> scirs2_neural::error::Result<()> {
         // We only want to compute metrics after each epoch
@@ -100,7 +119,7 @@ impl<F: Float + Debug + Display + FromPrimitive + Send + Sync> scirs2_neural::ca
         }
 
         // Currently, we don't have access to predictions and targets in the callback context
-        // This would require changes to scirs2-neural's callback system
+        // This would require changes to scirs2-_neural's callback system
         // For now, we'll just log that the callback was invoked
 
         if self.verbose {

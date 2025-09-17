@@ -27,7 +27,7 @@
 //!
 //! // Create a validation schema
 //! let schema = ValidationSchema::new()
-//!     .require_field("name", DataType::String)
+//!     .require_field(name, DataType::String)
 //!     .require_field("age", DataType::Integer)
 //!     .add_constraint("age", Constraint::Range { min: 0.0, max: 150.0 })
 //!     .require_field("data", DataType::Array(Box::new(DataType::Float64)));
@@ -36,10 +36,10 @@
 //! let validator = Validator::new(config)?;
 //!
 //! // For JSON validation (when serde feature is enabled)
-//! #[cfg(feature = "serde")]
+//!
 //! {
 //!     let data = serde_json::json!({
-//!         "name": "Test Dataset",
+//!         name: "Test Dataset",
 //!         "age": 25,
 //!         "data": [[1.0, 2.0], [3.0, 4.0]]
 //!     });
@@ -167,8 +167,8 @@ mod tests {
 
         // Test array validation
         let constraints = ArrayValidationConstraints::new()
-            .with_shape(vec![6, 2])
-            .with_field_name("test_data")
+            .withshape(vec![6, 2])
+            .with_fieldname(test_data)
             .check_numeric_quality();
 
         let config = ValidationConfig::default();
@@ -199,7 +199,7 @@ mod tests {
 
         // These should all work exactly as they did before refactoring
         let constraints = ArrayValidationConstraints::new()
-            .with_shape(vec![4, 2])
+            .withshape(vec![4, 2])
             .check_numeric_quality();
 
         let result = validator
@@ -208,13 +208,12 @@ mod tests {
         assert!(result.is_valid());
     }
 
-    #[cfg(feature = "serde")]
     #[test]
     fn test_json_validation_integration() {
         // Test JSON validation functionality
         let schema = ValidationSchema::new()
             .name("test_schema")
-            .require_field("name", DataType::String)
+            .require_field(name, DataType::String)
             .require_field("age", DataType::Integer)
             .add_constraint(
                 "age",
@@ -228,7 +227,7 @@ mod tests {
         let validator = Validator::new(config).unwrap();
 
         let data = serde_json::json!({
-            "name": "Test User",
+            name: "Test User",
             "age": 25
         });
 
@@ -244,8 +243,8 @@ mod tests {
             max: 100.0,
         };
         let length_constraint = Constraint::Length { min: 1, max: 50 };
-        let _not_null_constraint = Constraint::NotNull;
-        let _unique_constraint = Constraint::Unique;
+        let not_null_constraint = Constraint::NotNull;
+        let unique_constraint = Constraint::Unique;
 
         // Test that constraints can be created and used
         match range_constraint {
@@ -266,7 +265,7 @@ mod tests {
     }
 
     #[test]
-    fn test_data_types() {
+    fn test_datatypes() {
         // Test data type definitions
         let string_type = DataType::String;
         let integer_type = DataType::Integer;
@@ -293,37 +292,34 @@ mod tests {
         let constraints = StatisticalConstraints::new()
             .with_mean_range(0.0, 10.0)
             .with_std_range(1.0, 5.0)
-            .with_distribution("normal");
+            .with_distribution(normal);
 
         assert_eq!(constraints.min_mean, Some(0.0));
         assert_eq!(constraints.max_mean, Some(10.0));
         assert_eq!(constraints.min_std, Some(1.0));
         assert_eq!(constraints.max_std, Some(5.0));
-        assert_eq!(
-            constraints.expected_distribution,
-            Some("normal".to_string())
-        );
+        assert_eq!(constraints.expected_distribution, Some(normal.to_string()));
     }
 
     #[test]
-    fn test_validation_error_creation() {
+    fn test_validationerror_creation() {
         // Test validation error creation and formatting
         let error = ValidationError::new(
             ValidationErrorType::TypeMismatch,
             "test_field",
             "Type mismatch error",
         )
-        .with_expected("string")
-        .with_actual("integer")
-        .with_constraint("type_check")
+        .with_expected(string)
+        .with_actual(integer)
+        .with_constraint(type_check)
         .with_severity(ErrorSeverity::Error);
 
-        assert_eq!(error.error_type, ValidationErrorType::TypeMismatch);
+        assert_eq!(error.errortype, ValidationErrorType::TypeMismatch);
         assert_eq!(error.field_path, "test_field");
         assert_eq!(error.message, "Type mismatch error");
 
         let formatted = error.formatted_message();
-        assert!(formatted.contains("test_field"));
+        assert!(formatted.contains(test_field));
         assert!(formatted.contains("Type mismatch error"));
     }
 
@@ -333,9 +329,9 @@ mod tests {
         let schema = ValidationSchema::new()
             .name("test_schema")
             .version("1.0.0")
-            .require_field("name", DataType::String)
+            .require_field(name, DataType::String)
             .optional_field("description", DataType::String)
-            .add_constraint("name", Constraint::Length { min: 1, max: 100 })
+            .add_constraint(name, Constraint::Length { min: 1, max: 100 })
             .allow_additional()
             .with_metadata("author", "test");
 
@@ -343,6 +339,6 @@ mod tests {
         assert_eq!(schema.version, "1.0.0");
         assert_eq!(schema.fields.len(), 2);
         assert!(schema.allow_additional_fields);
-        assert_eq!(schema.metadata.get("author"), Some(&"test".to_string()));
+        assert_eq!(schema.metadata.get(author), Some(&test.to_string()));
     }
 }

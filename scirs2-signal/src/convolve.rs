@@ -1,12 +1,16 @@
-//! Convolution and correlation functions
-//!
-//! This module provides functions for convolution, correlation, and deconvolution
-//! of signals.
+// Convolution and correlation functions
+//
+// This module provides functions for convolution, correlation, and deconvolution
+// of signals.
 
 use crate::error::{SignalError, SignalResult};
+use ndarray::Array2;
+use num_complex::Complex64;
 use num_traits::{Float, NumCast};
+use rustfft::FftPlanner;
 use std::fmt::Debug;
 
+#[allow(unused_imports)]
 /// Convolve two 1D arrays
 ///
 /// # Arguments
@@ -31,6 +35,7 @@ use std::fmt::Debug;
 /// // Full convolution: [0.5, 1.5, 2.5, 1.5]
 /// assert_eq!(result.len(), a.len() + v.len() - 1);
 /// ```
+#[allow(dead_code)]
 pub fn convolve<T, U>(a: &[T], v: &[U], mode: &str) -> SignalResult<Vec<f64>>
 where
     T: Float + NumCast + Debug,
@@ -122,6 +127,7 @@ where
 /// // Full correlation: [1.5, 2.5, 1.5, 0.0]
 /// assert_eq!(result.len(), a.len() + v.len() - 1);
 /// ```
+#[allow(dead_code)]
 pub fn correlate<T, U>(a: &[T], v: &[U], mode: &str) -> SignalResult<Vec<f64>>
 where
     T: Float + NumCast + Debug,
@@ -156,15 +162,132 @@ where
 /// # Returns
 ///
 /// * Deconvolution result (approximation of the original input that was convolved with v)
-pub fn deconvolve<T, U>(_a: &[T], _v: &[U], _epsilon: Option<f64>) -> SignalResult<Vec<f64>>
+#[allow(dead_code)]
+pub fn deconvolve<T, U>(a: &[T], v: &[U], epsilon: Option<f64>) -> SignalResult<Vec<f64>>
 where
     T: Float + NumCast + Debug,
     U: Float + NumCast + Debug,
 {
-    // Not yet fully implemented
-    Err(SignalError::NotImplementedError(
-        "Deconvolution is not yet fully implemented".to_string(),
-    ))
+    if a.is_empty() || v.is_empty() {
+        return Err(SignalError::ValueError(
+            "Input signals cannot be empty".to_string(),
+        ));
+    }
+
+    let epsilon = epsilon.unwrap_or(1e-6);
+    if epsilon <= 0.0 {
+        return Err(SignalError::ValueError(
+            "Regularization parameter must be positive".to_string(),
+        ));
+    }
+
+    // Convert inputs to f64
+    let a_f64: Vec<f64> = a
+        .iter()
+        .map(|&x| {
+            NumCast::from(x).ok_or_else(|| {
+                SignalError::ValueError("Could not convert input to f64".to_string())
+            })
+        })
+        .collect::<SignalResult<Vec<f64>>>()?;
+
+    let v_f64: Vec<f64> = v
+        .iter()
+        .map(|&x| {
+            NumCast::from(x).ok_or_else(|| {
+                SignalError::ValueError("Could not convert kernel to f64".to_string())
+            })
+        })
+        .collect::<SignalResult<Vec<f64>>>()?;
+
+    // Determine FFT size (power of 2, large enough for both signals)
+    let min_size = a_f64.len() + v_f64.len() - 1;
+    let fft_size = next_power_of_two(min_size);
+
+    // Prepare FFT planner
+    let mut planner = FftPlanner::new();
+    let fft = planner.plan_fft_forward(fft_size);
+    let ifft = planner.plan_fft_inverse(fft_size);
+
+    // Pad and transform input signal
+    let mut a_padded = vec![Complex64::new(0.0, 0.0); fft_size];
+    for (i, &val) in a_f64.iter().enumerate() {
+        a_padded[i] = Complex64::new(val, 0.0);
+    }
+    fft.process(&mut a_padded);
+
+    // Pad and transform kernel
+    let mut v_padded = vec![Complex64::new(0.0, 0.0); fft_size];
+    for (i, &val) in v_f64.iter().enumerate() {
+        v_padded[i] = Complex64::new(val, 0.0);
+    }
+    fft.process(&mut v_padded);
+
+    // Wiener deconvolution in frequency domain
+    // H_wiener = V* / (|V|^2 + epsilon)
+    // where V* is complex conjugate of V
+    let mut result_fft = vec![Complex64::new(0.0, 0.0); fft_size];
+
+    for i in 0..fft_size {
+        let v_conj = v_padded[i].conj();
+        let v_mag_sq = v_padded[i].norm_sqr();
+
+        // Regularized Wiener filter
+        let denominator = v_mag_sq + epsilon;
+
+        if denominator > 1e-15 {
+            let wiener_filter = v_conj / denominator;
+            result_fft[i] = a_padded[i] * wiener_filter;
+        } else {
+            // Handle near-zero denominators
+            result_fft[i] = Complex64::new(0.0, 0.0);
+        }
+    }
+
+    // Inverse FFT
+    ifft.process(&mut result_fft);
+
+    // Extract real part and normalize by FFT size
+    let mut result: Vec<f64> = result_fft
+        .iter()
+        .take(a_f64.len())  // Return same length as input
+        .map(|c| c.re / fft_size as f64)
+        .collect();
+
+    // Validate output for numerical stability
+    for (i, &val) in result.iter().enumerate() {
+        if !val.is_finite() {
+            return Err(SignalError::ComputationError(format!(
+                "Non-finite value in deconvolution result at index {}: {}",
+                i, val
+            )));
+        }
+    }
+
+    // Optional: Apply additional regularization if result is unstable
+    let max_val = result.iter().map(|x| x.abs()).fold(0.0, f64::max);
+    if max_val > 1e6 {
+        // Result might be unstable, apply gentle smoothing
+        for i in 1..result.len() - 1 {
+            let smoothed = (result[i - 1] + 2.0 * result[i] + result[i + 1]) / 4.0;
+            result[i] = 0.7 * result[i] + 0.3 * smoothed;
+        }
+    }
+
+    Ok(result)
+}
+
+/// Find next power of two greater than or equal to n
+#[allow(dead_code)]
+fn next_power_of_two(n: usize) -> usize {
+    if n == 0 {
+        return 1;
+    }
+    let mut power = 1;
+    while power < n {
+        power <<= 1;
+    }
+    power
 }
 
 /// Convolve two 2D arrays
@@ -178,13 +301,12 @@ where
 /// # Returns
 ///
 /// * 2D convolution result
+#[allow(dead_code)]
 pub fn convolve2d(
     a: &ndarray::Array2<f64>,
     v: &ndarray::Array2<f64>,
     mode: &str,
 ) -> SignalResult<ndarray::Array2<f64>> {
-    use ndarray::Array2;
-
     let (n_rows_a, n_cols_a) = a.dim();
     let (n_rows_v, n_cols_v) = v.dim();
 
@@ -283,7 +405,6 @@ pub fn convolve2d(
 mod tests {
     use super::*;
     use approx::assert_relative_eq;
-
     #[test]
     fn test_convolve_full() {
         let a = vec![1.0, 2.0, 3.0];

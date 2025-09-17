@@ -289,7 +289,7 @@ where
         config: ScatteredConfig,
     ) -> InterpolateResult<Self> {
         if points.nrows() != values.len() {
-            return Err(InterpolateError::ValueError(
+            return Err(InterpolateError::invalid_input(
                 "Number of points must match number of values".to_string(),
             ));
         }
@@ -445,11 +445,11 @@ where
     }
 
     /// Convert linear cell index to n-dimensional coordinates
-    fn cell_index_to_coords(index: usize, resolution: usize, n_dims: usize) -> Vec<usize> {
-        let mut coords = vec![0; n_dims];
-        let mut remaining = index;
+    fn cell_index_to_coords(_index: usize, resolution: usize, ndims: usize) -> Vec<usize> {
+        let mut coords = vec![0; ndims];
+        let mut remaining = _index;
 
-        for coord in coords.iter_mut().take(n_dims) {
+        for coord in coords.iter_mut().take(ndims) {
             *coord = remaining % resolution;
             remaining /= resolution;
         }
@@ -471,27 +471,27 @@ where
     ///
     /// # Arguments
     ///
-    /// * `query_points` - Points to interpolate at (n_queries × n_dims)
+    /// * `querypoints` - Points to interpolate at (n_queries × n_dims)
     ///
     /// # Returns
     ///
     /// Interpolated values at query points
     pub fn interpolate_optimized(
         &mut self,
-        query_points: &ArrayView2<F>,
+        querypoints: &ArrayView2<F>,
     ) -> InterpolateResult<Array1<F>> {
         let start_time = std::time::Instant::now();
-        let n_queries = query_points.nrows();
+        let n_queries = querypoints.nrows();
 
         let results = if let Some(ref hierarchy) = self.hierarchy {
             // Use hierarchical interpolation for large datasets
-            self.interpolate_hierarchical(query_points, hierarchy)?
+            self.interpolate_hierarchical(querypoints, hierarchy)?
         } else if n_queries > self.config.chunk_size {
             // Use chunked processing for medium datasets
-            self.interpolate_chunked(query_points)?
+            self.interpolate_chunked(querypoints)?
         } else {
             // Use direct interpolation for small datasets
-            self.interpolate_direct(query_points)?
+            self.interpolate_direct(querypoints)?
         };
 
         // Update statistics
@@ -504,17 +504,17 @@ where
     /// Hierarchical interpolation for very large datasets
     fn interpolate_hierarchical(
         &self,
-        query_points: &ArrayView2<F>,
+        querypoints: &ArrayView2<F>,
         hierarchy: &HierarchicalDecomposition<F>,
     ) -> InterpolateResult<Array1<F>> {
-        let n_queries = query_points.nrows();
+        let n_queries = querypoints.nrows();
         let mut results = Array1::zeros(n_queries);
 
         // Process queries in parallel if enabled
         if self.config.parallel && n_queries > 100 {
             let chunk_size = self.config.chunk_size.min(n_queries / 4).max(1);
 
-            let results_vec: Result<Vec<_>, _> = query_points
+            let results_vec: Result<Vec<_>, InterpolateError> = querypoints
                 .axis_chunks_iter(Axis(0), chunk_size)
                 .enumerate()
                 .collect::<Vec<_>>()
@@ -541,7 +541,7 @@ where
         } else {
             // Sequential processing
             for i in 0..n_queries {
-                let query = query_points.row(i);
+                let query = querypoints.row(i);
                 results[i] = self.interpolate_single_hierarchical(&query, hierarchy)?;
             }
         }
@@ -668,17 +668,14 @@ where
     }
 
     /// Chunked interpolation for medium-sized datasets
-    fn interpolate_chunked(
-        &mut self,
-        query_points: &ArrayView2<F>,
-    ) -> InterpolateResult<Array1<F>> {
-        let n_queries = query_points.nrows();
+    fn interpolate_chunked(&mut self, querypoints: &ArrayView2<F>) -> InterpolateResult<Array1<F>> {
+        let n_queries = querypoints.nrows();
         let mut results = Array1::zeros(n_queries);
         let chunk_size = self.config.chunk_size;
 
         for chunk_start in (0..n_queries).step_by(chunk_size) {
             let chunk_end = (chunk_start + chunk_size).min(n_queries);
-            let chunk = query_points.slice(ndarray::s![chunk_start..chunk_end, ..]);
+            let chunk = querypoints.slice(ndarray::s![chunk_start..chunk_end, ..]);
 
             let chunk_results = self.interpolate_direct(&chunk)?;
 
@@ -693,12 +690,12 @@ where
     }
 
     /// Direct interpolation for small datasets
-    fn interpolate_direct(&self, query_points: &ArrayView2<F>) -> InterpolateResult<Array1<F>> {
-        let n_queries = query_points.nrows();
+    fn interpolate_direct(&self, querypoints: &ArrayView2<F>) -> InterpolateResult<Array1<F>> {
+        let n_queries = querypoints.nrows();
         let mut results = Array1::zeros(n_queries);
 
         for i in 0..n_queries {
-            let query = query_points.row(i);
+            let query = querypoints.row(i);
             results[i] = self.interpolate_global_fallback(&query)?;
         }
 
@@ -727,6 +724,7 @@ where
 /// # Returns
 ///
 /// An optimized scattered data interpolator
+#[allow(dead_code)]
 pub fn make_optimized_scattered_interpolator<F>(
     points: Array2<F>,
     values: Array1<F>,

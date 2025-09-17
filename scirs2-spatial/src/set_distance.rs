@@ -27,7 +27,7 @@ use crate::distance::euclidean;
 use crate::error::SpatialResult;
 use ndarray::{Array2, ArrayView2};
 use num_traits::Float;
-use rand::prelude::*;
+use rand::seq::SliceRandom;
 use rand::{rngs::StdRng, SeedableRng};
 
 /// Compute the directed Hausdorff distance from set1 to set2.
@@ -64,6 +64,7 @@ use rand::{rngs::StdRng, SeedableRng};
 /// println!("Point in set1 that realizes this distance: {:?}", points1.row(idx1));
 /// println!("Point in set2 that realizes this distance: {:?}", points2.row(idx2));
 /// ```
+#[allow(dead_code)]
 pub fn directed_hausdorff<T: Float + Send + Sync>(
     set1: &ArrayView2<T>,
     set2: &ArrayView2<T>,
@@ -78,7 +79,8 @@ pub fn directed_hausdorff<T: Float + Send + Sync>(
     }
 
     if set2.shape()[1] != dims {
-        panic!("Dimension mismatch: sets must have the same number of dimensions");
+        // Return infinity for dimension mismatch (sets cannot be compared)
+        return (T::infinity(), 0, 0);
     }
 
     // Create randomized indices for shuffling
@@ -181,20 +183,21 @@ pub fn directed_hausdorff<T: Float + Send + Sync>(
 /// let dist = hausdorff_distance(&points1.view(), &points2.view(), None);
 /// println!("Hausdorff distance: {}", dist);
 /// ```
+#[allow(dead_code)]
 pub fn hausdorff_distance<T: Float + Send + Sync>(
     set1: &ArrayView2<T>,
     set2: &ArrayView2<T>,
     seed: Option<u64>,
 ) -> T {
     // Compute directed Hausdorff distances in both directions
-    let (dist_forward, _, _) = directed_hausdorff(set1, set2, seed);
-    let (dist_backward, _, _) = directed_hausdorff(set2, set1, seed);
+    let (dist_forward__, _, _) = directed_hausdorff(set1, set2, seed);
+    let (dist_backward__, _, _) = directed_hausdorff(set2, set1, seed);
 
     // Return the maximum of the two directed distances
-    if dist_forward > dist_backward {
-        dist_forward
+    if dist_forward__ > dist_backward__ {
+        dist_forward__
     } else {
-        dist_backward
+        dist_backward__
     }
 }
 
@@ -226,6 +229,7 @@ pub fn hausdorff_distance<T: Float + Send + Sync>(
 /// let dist = wasserstein_distance(&points1.view(), &points2.view()).unwrap();
 /// println!("Approximate Wasserstein distance: {}", dist);
 /// ```
+#[allow(dead_code)]
 pub fn wasserstein_distance<T: Float + Send + Sync>(
     set1: &ArrayView2<T>,
     set2: &ArrayView2<T>,
@@ -239,7 +243,9 @@ pub fn wasserstein_distance<T: Float + Send + Sync>(
     }
 
     if set2.shape()[1] != dims {
-        panic!("Dimension mismatch: sets must have the same number of dimensions");
+        return Err(crate::error::SpatialError::DimensionError(
+            "Dimension mismatch: sets must have the same number of dimensions".to_string(),
+        ));
     }
 
     // For simplicity in this implementation, we'll use a greedy approach
@@ -315,6 +321,7 @@ pub fn wasserstein_distance<T: Float + Send + Sync>(
 }
 
 /// Implement the Gromov-Hausdorff distance, which measures similarity between metric spaces
+#[allow(dead_code)]
 pub fn gromov_hausdorff_distance<T: Float + Send + Sync>(
     set1: &ArrayView2<T>,
     set2: &ArrayView2<T>,
@@ -360,16 +367,18 @@ pub fn gromov_hausdorff_distance<T: Float + Send + Sync>(
 
 #[cfg(test)]
 mod tests {
-    use super::*;
+    use super::{
+        directed_hausdorff, gromov_hausdorff_distance, hausdorff_distance, wasserstein_distance,
+    };
     use approx::assert_relative_eq;
-    use ndarray::array;
+    use ndarray::{array, Array2};
 
     #[test]
     fn test_directed_hausdorff() {
         let set1 = array![[0.0, 0.0], [1.0, 0.0], [0.0, 1.0]];
         let set2 = array![[0.0, 0.5], [1.0, 0.5], [0.5, 1.0]];
 
-        let (dist, _, _) = directed_hausdorff(&set1.view(), &set2.view(), Some(42));
+        let (dist, _idx1, _idx2) = directed_hausdorff(&set1.view(), &set2.view(), Some(42));
 
         // The directed Hausdorff distance should be 0.5
         // (the maximum minimum distance from a point in set1 to set2)

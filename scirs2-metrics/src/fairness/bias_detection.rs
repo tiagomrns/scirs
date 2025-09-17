@@ -80,6 +80,7 @@ pub struct DataSlice {
 ///     println!("Slice: {}, Accuracy: {:.2}", slice_name, metric_value);
 /// }
 /// ```
+#[allow(dead_code)]
 pub fn slice_analysis<T, S1, S2, S3, F>(
     features: &ArrayBase<S1, Ix2>,
     categorical_features: &[usize],
@@ -98,7 +99,7 @@ where
     let n_samples = features.nrows();
     if n_samples != y_true.len() || n_samples != y_pred.len() {
         return Err(MetricsError::InvalidInput(format!(
-            "Dimensions mismatch: features ({} rows), y_true ({}), y_pred ({})",
+            "Dimensions mismatch: _features ({} rows), y_true ({}), y_pred ({})",
             n_samples,
             y_true.len(),
             y_pred.len()
@@ -234,6 +235,7 @@ where
 ///     println!("Subgroup: {}, Accuracy: {:.2}", subgroup, metric_value);
 /// }
 /// ```
+#[allow(dead_code)]
 pub fn subgroup_performance<T, S1, S2, S3, F>(
     y_true: &ArrayBase<S1, Ix1>,
     y_pred: &ArrayBase<S2, Ix1>,
@@ -268,7 +270,7 @@ where
     let n_groups = groups.ncols();
     if n_groups != group_names.len() {
         return Err(MetricsError::InvalidInput(format!(
-            "Number of group columns ({}) doesn't match number of group names ({})",
+            "Number of group columns ({}) doesn't match number of group _names ({})",
             n_groups,
             group_names.len()
         )));
@@ -337,6 +339,7 @@ where
 }
 
 // Helper function to generate intersectional subgroups
+#[allow(dead_code)]
 fn generate_intersectional_subgroups<T, S1, S2, S3, F>(
     y_true: &ArrayBase<S1, Ix1>,
     y_pred: &ArrayBase<S2, Ix1>,
@@ -489,6 +492,7 @@ pub struct FairnessMetrics {
 /// # Returns
 ///
 /// * A HashMap mapping intersection names (e.g., "gender=0,race=1") to fairness metric sets
+#[allow(dead_code)]
 pub fn intersectional_fairness<T, S1, S2, S3>(
     y_true: &ArrayBase<S1, Ix1>,
     y_pred: &ArrayBase<S2, Ix1>,
@@ -521,7 +525,7 @@ where
     let n_protected = protected_features.ncols();
     if n_protected != feature_names.len() {
         return Err(MetricsError::InvalidInput(format!(
-            "Number of protected feature columns ({}) doesn't match number of feature names ({})",
+            "Number of protected feature columns ({}) doesn't match number of feature _names ({})",
             n_protected,
             feature_names.len()
         )));
@@ -630,6 +634,7 @@ where
 }
 
 // Helper function to calculate all fairness metrics
+#[allow(dead_code)]
 fn calculate_fairness_metrics<T, S1, S2, S3>(
     y_true: &ArrayBase<S1, Ix1>,
     y_pred: &ArrayBase<S2, Ix1>,

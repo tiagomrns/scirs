@@ -6,7 +6,7 @@
 //! - Matrix exponential, logarithm, and square root functions
 //! - Matrix sign function and other matrix decompositions
 
-use ndarray::{Array2, ArrayView2};
+use ndarray::{Array2, ArrayView2, ScalarOperand};
 use num_traits::{Float, NumAssign, One};
 use std::iter::Sum;
 
@@ -35,9 +35,10 @@ use crate::solve::solve_multiple;
 /// let c = block_diag(&[&a.view(), &b.view()]).unwrap();
 /// // c is a 4x4 matrix with a in the top-left and b in the bottom-right
 /// ```
+#[allow(dead_code)]
 pub fn block_diag<F>(arrays: &[&ArrayView2<F>]) -> LinalgResult<Array2<F>>
 where
-    F: Float + NumAssign + Sum,
+    F: Float + NumAssign + Sum + Send + Sync + ScalarOperand + 'static,
 {
     if arrays.is_empty() {
         return Err(LinalgError::ShapeError(
@@ -99,9 +100,10 @@ where
 /// let result = special::expm(&a.view(), None);
 /// assert!(result.is_ok());
 /// ```
+#[allow(dead_code)]
 pub fn expm<F>(a: &ArrayView2<F>, workers: Option<usize>) -> LinalgResult<Array2<F>>
 where
-    F: Float + NumAssign + Sum + ndarray::ScalarOperand,
+    F: Float + NumAssign + Sum + ndarray::ScalarOperand + Send + Sync,
 {
     // Redirect to the implementation in matrix_functions module
     matrix_functions::expm(a, workers)
@@ -127,9 +129,10 @@ where
 /// let result = logm(&a.view());
 /// assert!(result.is_ok());
 /// ```
+#[allow(dead_code)]
 pub fn logm<F>(a: &ArrayView2<F>) -> LinalgResult<Array2<F>>
 where
-    F: Float + NumAssign + Sum,
+    F: Float + NumAssign + Sum + Send + Sync + ScalarOperand + 'static,
 {
     // Redirect to the implementation in matrix_functions module
     matrix_functions::logm(a)
@@ -155,9 +158,10 @@ where
 /// let result = special::sqrtm(&a.view());
 /// assert!(result.is_ok());
 /// ```
+#[allow(dead_code)]
 pub fn sqrtm<F>(a: &ArrayView2<F>) -> LinalgResult<Array2<F>>
 where
-    F: Float + NumAssign + Sum + One,
+    F: Float + NumAssign + Sum + One + Send + Sync + ndarray::ScalarOperand + 'static,
 {
     // Redirect to the implementation in matrix_functions module with default parameters
     matrix_functions::sqrtm(a, 20, F::from(1e-10).unwrap())
@@ -195,9 +199,10 @@ where
 /// assert!((sign_a[[0, 0]] - 1.0).abs() < 1e-8);
 /// assert!((sign_a[[1, 1]] - 1.0).abs() < 1e-8);
 /// ```
-pub fn signm<F>(a: &ArrayView2<F>, max_iter: usize, tol: F) -> LinalgResult<Array2<F>>
+#[allow(dead_code)]
+pub fn signm<F>(a: &ArrayView2<F>, maxiter: usize, tol: F) -> LinalgResult<Array2<F>>
 where
-    F: Float + NumAssign + Sum + One,
+    F: Float + NumAssign + Sum + One + Send + Sync + ndarray::ScalarOperand + 'static,
 {
     if a.nrows() != a.ncols() {
         return Err(LinalgError::ShapeError(format!(
@@ -226,7 +231,7 @@ where
     let mut x = a.to_owned();
     let identity = Array2::eye(n);
 
-    for _ in 0..max_iter {
+    for _ in 0..maxiter {
         // Compute X_inv
         let x_inv = match solve_multiple(&x.view(), &identity.view(), None) {
             Ok(inv) => inv,
@@ -314,7 +319,7 @@ mod tests {
     }
 
     #[test]
-    fn test_matrix_function_redirects() {
+    fn testmatrix_function_redirects() {
         // Test that the special module functions correctly redirect to matrix_functions
         let a = array![[4.0, 0.0], [0.0, 9.0]];
 
@@ -337,7 +342,7 @@ mod tests {
     }
 
     #[test]
-    fn test_matrix_sign_function() {
+    fn testmatrix_sign_function() {
         // Test matrix sign function with various cases
 
         // Case 1: Positive definite matrix - sign(A) = I

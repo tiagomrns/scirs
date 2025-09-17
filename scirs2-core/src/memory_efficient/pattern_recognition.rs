@@ -96,10 +96,10 @@ pub struct RecognizedPattern {
 
 impl RecognizedPattern {
     /// Create a new recognized pattern.
-    pub fn new(pattern_type: ComplexPattern, confidence: Confidence) -> Self {
+    pub fn new(patterntype: ComplexPattern, confidence: Confidence) -> Self {
         let now = Instant::now();
         Self {
-            pattern_type,
+            pattern_type: patterntype,
             confidence,
             metadata: HashMap::new(),
             first_detected: now,
@@ -130,8 +130,8 @@ impl RecognizedPattern {
     }
 
     /// Check if the pattern is still valid.
-    pub fn is_valid(&self, max_age: std::time::Duration) -> bool {
-        self.last_confirmed.elapsed() <= max_age
+    pub fn is_valid(&self, maxage: std::time::Duration) -> bool {
+        self.last_confirmed.elapsed() <= maxage
     }
 }
 
@@ -238,7 +238,7 @@ impl PatternRecognizer {
         if let Some(dims) = self.dimensions.clone() {
             // Detect matrix traversal patterns
             if dims.len() >= 2 {
-                self.detect_matrix_patterns(&dims);
+                self.detectmatrix_patterns(&dims);
             }
 
             // Detect block patterns
@@ -270,7 +270,7 @@ impl PatternRecognizer {
         // Check for sequential access
         let mut sequential_count = 0;
         for i in 1..indices.len() {
-            if indices[i] == indices[i - 1] + 1 {
+            if indices[i] == indices[i.saturating_sub(1)] + 1 {
                 sequential_count += 1;
             }
         }
@@ -307,7 +307,7 @@ impl PatternRecognizer {
         for stride in 2..=20 {
             let mut stride_count = 0;
             for i in 1..indices.len() {
-                if indices[i].saturating_sub(indices[i - 1]) == stride {
+                if indices[i].saturating_sub(indices[i.saturating_sub(1)]) == stride {
                     stride_count += 1;
                 }
             }
@@ -351,7 +351,7 @@ impl PatternRecognizer {
     }
 
     /// Detect matrix traversal patterns.
-    fn detect_matrix_patterns(&mut self, dimensions: &[usize]) {
+    fn detectmatrix_patterns(&mut self, dimensions: &[usize]) {
         if dimensions.len() < 2 {
             return;
         }
@@ -390,7 +390,7 @@ impl PatternRecognizer {
                 let mut increasing = 0;
                 let mut decreasing = 0;
                 for i in 1..cols_in_row.len() {
-                    match cols_in_row[i].0.cmp(&cols_in_row[i - 1].0) {
+                    match cols_in_row[i].0.cmp(&cols_in_row[i.saturating_sub(1)].0) {
                         std::cmp::Ordering::Greater => increasing += 1,
                         std::cmp::Ordering::Less => decreasing += 1,
                         std::cmp::Ordering::Equal => {}
@@ -446,7 +446,7 @@ impl PatternRecognizer {
         // Check for main diagonal traversal
         let mut diagonal_matches = 0;
         for i in 1..indices.len() {
-            let prev_idx = indices[i - 1];
+            let prev_idx = indices[i.saturating_sub(1)];
             let curr_idx = indices[i];
 
             let prev_row = prev_idx / cols;
@@ -487,7 +487,7 @@ impl PatternRecognizer {
         // Check for anti-diagonal traversal
         let mut anti_diagonal_matches = 0;
         for i in 1..indices.len() {
-            let prev_idx = indices[i - 1];
+            let prev_idx = indices[i.saturating_sub(1)];
             let curr_idx = indices[i];
 
             let prev_row = prev_idx / cols;
@@ -562,7 +562,7 @@ impl PatternRecognizer {
                 let block_col = col / block_width;
 
                 let block_id = (block_row, block_col);
-                let entry = block_accesses.entry(block_id).or_insert_with(Vec::new);
+                let entry: &mut Vec<usize> = block_accesses.entry(block_id).or_default();
                 entry.push(idx);
             }
 
@@ -600,7 +600,7 @@ impl PatternRecognizer {
 
         // Group consecutive accesses by stride
         for i in 1..indices.len() {
-            let stride = indices[i].saturating_sub(indices[i - 1]);
+            let stride = indices[i].saturating_sub(indices[i.saturating_sub(1)]);
             *block_strides.entry(stride).or_insert(0) += 1;
         }
 
@@ -657,8 +657,8 @@ impl PatternRecognizer {
             }
 
             let center_idx = indices[window_start];
-            let _center_row = center_idx / cols;
-            let _center_col = center_idx % cols;
+            let center_row = center_idx / cols;
+            let center_col = center_idx % cols;
 
             // Check if the next 4 accesses are neighbors of the center
             let mut neighbors_found = 0;
@@ -741,7 +741,7 @@ impl PatternRecognizer {
                     let pattern = RecognizedPattern::new(pattern, confidence)
                         .with_metadata("unique_indices", &unique_indices.to_string())
                         .with_metadata("max_index", &max_idx.to_string())
-                        .with_metadata("density", &format!("{:.6}", density));
+                        .with_metadata("density", &format!("{density:.6}"));
                     self.patterns.push(pattern);
                 }
             }
@@ -749,10 +749,10 @@ impl PatternRecognizer {
     }
 
     /// Find an existing pattern by type.
-    fn find_pattern(&mut self, pattern_type: &ComplexPattern) -> Option<&mut RecognizedPattern> {
+    fn find_pattern(&mut self, patterntype: &ComplexPattern) -> Option<&mut RecognizedPattern> {
         self.patterns
             .iter_mut()
-            .find(|p| &p.pattern_type == pattern_type)
+            .find(|p| &p.pattern_type == patterntype)
     }
 
     /// Get all recognized patterns ordered by confidence.

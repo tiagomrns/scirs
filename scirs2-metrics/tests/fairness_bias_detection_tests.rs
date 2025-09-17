@@ -6,6 +6,7 @@ use scirs2_metrics::fairness::bias_detection::{
 };
 
 #[test]
+#[allow(dead_code)]
 fn test_slice_analysis() {
     // Create a sample dataset
     let features = Array2::from_shape_vec(
@@ -72,6 +73,7 @@ fn test_slice_analysis() {
 }
 
 #[test]
+#[allow(dead_code)]
 fn test_subgroup_performance() {
     // Create sample dataset
     let y_true = array![0.0, 0.0, 1.0, 1.0, 0.0, 0.0, 1.0, 1.0];
@@ -145,6 +147,7 @@ fn test_subgroup_performance() {
 }
 
 #[test]
+#[allow(dead_code)]
 fn test_intersectional_fairness() {
     // Create sample dataset
     let y_true = array![0.0, 0.0, 1.0, 1.0, 0.0, 0.0, 1.0, 1.0];
@@ -200,6 +203,7 @@ fn test_intersectional_fairness() {
 }
 
 #[test]
+#[allow(dead_code)]
 fn test_edge_cases() {
     // Edge case: all samples in one group (no valid protected groups)
     let y_true = array![0.0, 0.0, 1.0, 1.0];

@@ -30,18 +30,19 @@ use num_traits::{Float, NumCast};
 /// use scirs2_stats::shapiro_wilk;
 ///
 /// // Create some normally distributed data
-/// let normal_data = array![0.1, -0.2, 0.3, -0.1, 0.2, -0.3, 0.1, 0.0, -0.2, 0.3];
+/// let normaldata = array![0.1, -0.2, 0.3, -0.1, 0.2, -0.3, 0.1, 0.0, -0.2, 0.3];
 ///
 /// // Test for normality
-/// let (stat, p_value) = shapiro_wilk(&normal_data.view()).unwrap();
+/// let (stat, p_value) = shapiro_wilk(&normaldata.view()).unwrap();
 ///
 /// println!("W statistic: {}, p-value: {}", stat, p_value);
 /// // For a significance level of 0.05, we would reject normality if p < 0.05
 /// let is_normal = p_value >= 0.05;
 /// ```
+#[allow(dead_code)]
 pub fn shapiro_wilk<F>(x: &ArrayView1<F>) -> StatsResult<(F, F)>
 where
-    F: Float + std::iter::Sum<F> + std::ops::Div<Output = F> + NumCast,
+    F: Float + std::iter::Sum<F> + std::ops::Div<Output = F> + NumCast + std::fmt::Display,
 {
     // Check if the input array is empty
     if x.is_empty() {
@@ -71,14 +72,14 @@ where
     }
 
     // Sort the data
-    let mut sorted_data = data.to_vec();
-    sorted_data.sort_by(|a, b| a.partial_cmp(b).unwrap_or(std::cmp::Ordering::Equal));
+    let mut sorteddata = data.to_vec();
+    sorteddata.sort_by(|a, b| a.partial_cmp(b).unwrap_or(std::cmp::Ordering::Equal));
 
     // Calculate the sample mean
-    let mean = sorted_data.iter().cloned().sum::<F>() / F::from(n).unwrap();
+    let mean = sorteddata.iter().cloned().sum::<F>() / F::from(n).unwrap();
 
     // Calculate the sample variance
-    let var = sorted_data.iter().map(|&x| (x - mean).powi(2)).sum::<F>() / F::from(n).unwrap();
+    let var = sorteddata.iter().map(|&x| (x - mean).powi(2)).sum::<F>() / F::from(n).unwrap();
 
     if var <= F::epsilon() {
         return Err(StatsError::InvalidArgument(
@@ -87,30 +88,31 @@ where
     }
 
     // Calculate the Shapiro-Wilk test statistic
-    let (w, p_value) = compute_shapiro_wilk_statistic(&sorted_data, n)?;
+    let (w, p_value) = compute_shapiro_wilk_statistic(&sorteddata, n)?;
 
     Ok((w, p_value))
 }
 
 // Helper function to compute the Shapiro-Wilk test statistic and p-value
-fn compute_shapiro_wilk_statistic<F>(sorted_data: &[F], n: usize) -> StatsResult<(F, F)>
+#[allow(dead_code)]
+fn compute_shapiro_wilk_statistic<F>(sorteddata: &[F], n: usize) -> StatsResult<(F, F)>
 where
-    F: Float + std::iter::Sum<F> + std::ops::Div<Output = F> + NumCast,
+    F: Float + std::iter::Sum<F> + std::ops::Div<Output = F> + NumCast + std::fmt::Display,
 {
     // Calculate a coefficients for the test
     let a = calculate_shapiro_wilk_coefficients(n)?;
 
     // Calculate the mean
-    let mean = sorted_data.iter().cloned().sum::<F>() / F::from(n).unwrap();
+    let mean = sorteddata.iter().cloned().sum::<F>() / F::from(n).unwrap();
 
     // Calculate S^2 (sum of squared deviations from the mean)
-    let s_squared = sorted_data.iter().map(|&x| (x - mean).powi(2)).sum::<F>();
+    let s_squared = sorteddata.iter().map(|&x| (x - mean).powi(2)).sum::<F>();
 
     // Calculate the numerator of the W statistic
     let mut numerator = F::zero();
     for i in 0..n / 2 {
         let coef = F::from(a[i]).unwrap();
-        numerator = numerator + coef * (sorted_data[n - 1 - i] - sorted_data[i]);
+        numerator = numerator + coef * (sorteddata[n - 1 - i] - sorteddata[i]);
     }
 
     // Calculate the W statistic
@@ -123,6 +125,7 @@ where
 }
 
 // Calculate the a coefficients for the Shapiro-Wilk test
+#[allow(dead_code)]
 fn calculate_shapiro_wilk_coefficients(n: usize) -> StatsResult<Vec<f64>> {
     if n > 5000 {
         return Err(StatsError::InvalidArgument(
@@ -235,6 +238,7 @@ fn calculate_shapiro_wilk_coefficients(n: usize) -> StatsResult<Vec<f64>> {
 }
 
 // Calculate the p-value for the Shapiro-Wilk test
+#[allow(dead_code)]
 fn calculate_shapiro_wilk_p_value<F: Float + NumCast>(w: F, n: usize) -> F {
     // Royston's algorithm for p-value calculation
     let w_f64 = <f64 as NumCast>::from(w).unwrap();
@@ -286,6 +290,7 @@ fn calculate_shapiro_wilk_p_value<F: Float + NumCast>(w: F, n: usize) -> F {
 }
 
 // Approximate the standard normal CDF
+#[allow(dead_code)]
 fn approx_normal_cdf(z: f64) -> f64 {
     // Hart's algorithm with rational approximation
     if z < -38.0 {
@@ -335,18 +340,19 @@ fn approx_normal_cdf(z: f64) -> f64 {
 /// use scirs2_stats::anderson_darling;
 ///
 /// // Create some normally distributed data
-/// let normal_data = array![0.1, -0.2, 0.3, -0.1, 0.2, -0.3, 0.1, 0.0, -0.2, 0.3];
+/// let normaldata = array![0.1, -0.2, 0.3, -0.1, 0.2, -0.3, 0.1, 0.0, -0.2, 0.3];
 ///
 /// // Test for normality
-/// let (stat, p_value) = anderson_darling(&normal_data.view()).unwrap();
+/// let (stat, p_value) = anderson_darling(&normaldata.view()).unwrap();
 ///
 /// println!("A² statistic: {}, p-value: {}", stat, p_value);
 /// // For a significance level of 0.05, we would reject normality if p < 0.05
 /// let is_normal = p_value >= 0.05;
 /// ```
+#[allow(dead_code)]
 pub fn anderson_darling<F>(x: &ArrayView1<F>) -> StatsResult<(F, F)>
 where
-    F: Float + std::iter::Sum<F> + std::ops::Div<Output = F> + NumCast,
+    F: Float + std::iter::Sum<F> + std::ops::Div<Output = F> + NumCast + std::fmt::Display,
 {
     // Check if the input array is empty
     if x.is_empty() {
@@ -382,29 +388,30 @@ where
     let std_dev = variance.sqrt();
 
     // Sort the data
-    let mut sorted_data = data.to_vec();
-    sorted_data.sort_by(|a, b| a.partial_cmp(b).unwrap_or(std::cmp::Ordering::Equal));
+    let mut sorteddata = data.to_vec();
+    sorteddata.sort_by(|a, b| a.partial_cmp(b).unwrap_or(std::cmp::Ordering::Equal));
 
     // Z-transform the data (standardize to N(0,1))
-    let z_data: Vec<F> = sorted_data.iter().map(|&x| (x - mean) / std_dev).collect();
+    let zdata: Vec<F> = sorteddata.iter().map(|&x| (x - mean) / std_dev).collect();
 
     // Compute the Anderson-Darling statistic
-    let (a_squared, p_value) = compute_anderson_darling_statistic(&z_data, n)?;
+    let (a_squared, p_value) = compute_anderson_darling_statistic(&zdata, n)?;
 
     Ok((a_squared, p_value))
 }
 
 // Helper function to compute the Anderson-Darling test statistic and p-value
-fn compute_anderson_darling_statistic<F>(z_data: &[F], n: usize) -> StatsResult<(F, F)>
+#[allow(dead_code)]
+fn compute_anderson_darling_statistic<F>(zdata: &[F], n: usize) -> StatsResult<(F, F)>
 where
-    F: Float + std::iter::Sum<F> + std::ops::Div<Output = F> + NumCast,
+    F: Float + std::iter::Sum<F> + std::ops::Div<Output = F> + NumCast + std::fmt::Display,
 {
     let n_f = F::from(n).unwrap();
 
     // Calculate the cumulative distribution function for each sorted data point
     let mut s = F::zero();
 
-    for (i, &z) in z_data.iter().enumerate() {
+    for (i, &z) in zdata.iter().enumerate() {
         // Calculate standard normal CDF at z
         let cdf = F::from(approx_normal_cdf(<f64 as NumCast>::from(z).unwrap())).unwrap();
 
@@ -433,8 +440,9 @@ where
 }
 
 // Calculate the p-value for the Anderson-Darling test
-fn calculate_anderson_darling_p_value<F: Float + NumCast>(a_squared: F) -> F {
-    let a2 = <f64 as NumCast>::from(a_squared).unwrap();
+#[allow(dead_code)]
+fn calculate_anderson_darling_p_value<F: Float + NumCast>(_asquared: F) -> F {
+    let a2 = <f64 as NumCast>::from(_asquared).unwrap();
 
     // Use the approximation from D'Agostino and Stephens (1986)
     let p = if a2 <= 0.2 {
@@ -484,9 +492,10 @@ fn calculate_anderson_darling_p_value<F: Float + NumCast>(a_squared: F) -> F {
 /// // For a significance level of 0.05, we would reject normality if p < 0.05
 /// let is_normal = p_value >= 0.05;
 /// ```
+#[allow(dead_code)]
 pub fn dagostino_k2<F>(x: &ArrayView1<F>) -> StatsResult<(F, F)>
 where
-    F: Float + std::iter::Sum<F> + std::ops::Div<Output = F> + NumCast,
+    F: Float + std::iter::Sum<F> + std::ops::Div<Output = F> + NumCast + std::fmt::Display,
 {
     // Check if the input array is empty
     if x.is_empty() {
@@ -541,9 +550,10 @@ where
 }
 
 // Calculate the standardized test statistics for D'Agostino's K² test
+#[allow(dead_code)]
 fn calculate_dagostino_test_statistics<F>(g1: F, g2: F, n: usize) -> StatsResult<(F, F)>
 where
-    F: Float + NumCast,
+    F: Float + NumCast + std::fmt::Display,
 {
     let _n_f = F::from(n).unwrap();
 
@@ -578,6 +588,7 @@ where
 }
 
 // Chi-square cumulative distribution function
+#[allow(dead_code)]
 fn chi2_cdf(x: f64, df: f64) -> f64 {
     if x <= 0.0 {
         return 0.0;
@@ -592,6 +603,7 @@ fn chi2_cdf(x: f64, df: f64) -> f64 {
 }
 
 // Lower incomplete gamma function
+#[allow(dead_code)]
 fn lower_gamma_incomplete(s: f64, x: f64) -> f64 {
     if x <= 0.0 {
         return 0.0;
@@ -637,6 +649,7 @@ fn lower_gamma_incomplete(s: f64, x: f64) -> f64 {
 }
 
 // Gamma function approximation
+#[allow(dead_code)]
 fn gamma_function(x: f64) -> f64 {
     if x <= 0.0 {
         panic!("Gamma function not defined for non-positive values");
@@ -706,6 +719,7 @@ fn gamma_function(x: f64) -> f64 {
 /// // For a significance level of 0.05, we would reject the null hypothesis if p < 0.05
 /// let same_distribution = p_value >= 0.05;
 /// ```
+#[allow(dead_code)]
 pub fn ks_2samp<F>(x: &ArrayView1<F>, y: &ArrayView1<F>, alternative: &str) -> StatsResult<(F, F)>
 where
     F: Float + std::iter::Sum<F> + std::ops::Div<Output = F> + NumCast + std::fmt::Display,
@@ -837,6 +851,7 @@ where
 }
 
 // Calculate the p-value for the two-sample KS test
+#[allow(dead_code)]
 fn calculate_ks_2samp_p_value<F: Float + NumCast>(
     d: F,
     n1: usize,

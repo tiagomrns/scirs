@@ -18,8 +18,8 @@
 //! let mut model = NGramModel::new(3);
 //!
 //! // Train the model with some text
-//! model.add_text("The quick brown fox jumps over the lazy dog.");
-//! model.add_text("Programming languages like Python and Rust are popular.");
+//! model.addtext("The quick brown fox jumps over the lazy dog.");
+//! model.addtext("Programming languages like Python and Rust are popular.");
 //!
 //! // Get probability of a word given its context
 //! let context = vec!["quick".to_string(), "brown".to_string()];
@@ -76,7 +76,7 @@ impl NGramModel {
     }
 
     /// Add a text to the language model
-    pub fn add_text(&mut self, text: &str) {
+    pub fn addtext(&mut self, text: &str) {
         let words: Vec<String> = text
             .split_whitespace()
             .map(|s| {
@@ -152,13 +152,13 @@ impl NGramModel {
     /// Add a corpus file to the language model
     pub fn add_corpus_file<P: AsRef<Path>>(&mut self, path: P) -> Result<()> {
         let file = File::open(path)
-            .map_err(|e| TextError::IoError(format!("Failed to open corpus file: {}", e)))?;
+            .map_err(|e| TextError::IoError(format!("Failed to open corpus file: {e}")))?;
 
         let reader = BufReader::new(file);
 
         for line in reader.lines() {
             let line = line.map_err(|e| {
-                TextError::IoError(format!("Failed to read line from corpus file: {}", e))
+                TextError::IoError(format!("Failed to read line from corpus file: {e}"))
             })?;
 
             // Skip empty lines
@@ -166,7 +166,7 @@ impl NGramModel {
                 continue;
             }
 
-            self.add_text(&line);
+            self.addtext(&line);
         }
 
         Ok(())
@@ -295,7 +295,7 @@ impl NGramModel {
     }
 
     /// Generate potential single-edit typos for a word
-    pub fn generate_typos(&self, word: &str, num_typos: usize) -> Vec<String> {
+    pub fn generate_typos(&self, word: &str, numtypos: usize) -> Vec<String> {
         let mut typos = HashSet::new();
         let word = word.to_lowercase();
         let chars: Vec<char> = word.chars().collect();
@@ -349,7 +349,7 @@ impl NGramModel {
         });
 
         // Limit to requested number
-        typos_vec.truncate(num_typos);
+        typos_vec.truncate(numtypos);
 
         typos_vec
     }
@@ -361,9 +361,18 @@ impl std::fmt::Debug for NGramModel {
             .field("order", &self.order)
             .field("vocabulary_size", &self.vocabulary_size())
             .field("total_words", &self.total_words)
-            .field("unigrams", &format!("<{} entries>", self.unigrams.len()))
-            .field("bigrams", &format!("<{} entries>", self.bigrams.len()))
-            .field("trigrams", &format!("<{} entries>", self.trigrams.len()))
+            .field("unigrams", &{
+                let unigram_len = self.unigrams.len();
+                format!("<{unigram_len} entries>")
+            })
+            .field("bigrams", &{
+                let bigram_len = self.bigrams.len();
+                format!("<{bigram_len} entries>")
+            })
+            .field("trigrams", &{
+                let trigram_len = self.trigrams.len();
+                format!("<{trigram_len} entries>")
+            })
             .finish()
     }
 }
@@ -377,7 +386,7 @@ mod tests {
         let mut model = NGramModel::new(3);
 
         // Add some training data
-        model.add_text("The quick brown fox jumps over the lazy dog.");
+        model.addtext("The quick brown fox jumps over the lazy dog.");
 
         // Test unigram probabilities
         let p_the = model.unigram_probability("the");

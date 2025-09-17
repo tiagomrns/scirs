@@ -826,12 +826,12 @@ where
 ///
 /// // Analyze histogram characteristics of each texture region
 /// for region_id in 1..=4 {
-///     let hist = histogram(&textureimage, 0.0, 1.0, 10,
+///     let (hist_counts, _hist_edges) = histogram(&textureimage, 0.0, 1.0, 10,
 ///                               Some(&texture_labels), Some(&[region_id])).unwrap();
 ///
 ///     // Calculate histogram statistics
-///     let total_pixels: usize = hist.iter().sum();
-///     let entropy = -hist.iter()
+///     let total_pixels: usize = hist_counts.iter().sum();
+///     let entropy = -hist_counts.iter()
 ///         .map(|&count| {
 ///             if count > 0 {
 ///                 let p = count as f64 / total_pixels as f64;

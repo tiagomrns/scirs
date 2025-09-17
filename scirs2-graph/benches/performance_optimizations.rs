@@ -351,51 +351,63 @@ fn bench_lazy_metrics(c: &mut Criterion) {
         let graph = generators::barabasi_albert_graph(size, 3, &mut rng).unwrap();
 
         // Test expensive computation with lazy evaluation - simplified
-        group.bench_function("lazy_graph_metric_first_access", |b| {
-            b.iter(|| {
-                // Simulate expensive computation without LazyGraphMetric to avoid lifetime issues
-                let mut total = 0.0;
-                for node in 0..size.min(100) {
-                    let degree = (node % 10) + 1; // Simulate varying degrees
-                    if degree > 1 {
-                        let triangles = node % 3; // Simulate triangle count
-                        let possible = degree * (degree - 1) / 2;
-                        if possible > 0 {
-                            total += triangles as f64 / possible as f64;
+        group.bench_with_input(
+            BenchmarkId::new("lazy_graph_metric_first_access", size),
+            &size,
+            |b, &size| {
+                b.iter(|| {
+                    // Simulate expensive computation without LazyGraphMetric to avoid lifetime issues
+                    let mut total = 0.0;
+                    for node in 0..size.min(100) {
+                        let degree = (node % 10) + 1; // Simulate varying degrees
+                        if degree > 1 {
+                            let triangles = node % 3; // Simulate triangle count
+                            let possible = degree * (degree - 1) / 2;
+                            if possible > 0 {
+                                total += triangles as f64 / possible as f64;
+                            }
                         }
                     }
-                }
-                let result = total / size as f64;
-                black_box(result)
-            });
-        });
+                    let result = total / size as f64;
+                    black_box(result)
+                });
+            },
+        );
 
         // Test subsequent accesses (should be fast) - simplified
-        group.bench_function("lazy_graph_metric_cached_access", |b| {
-            // Simplified benchmark to avoid lifetime issues
-            let cached_value = 42.0f64;
-            b.iter(|| black_box(cached_value));
-        });
+        group.bench_with_input(
+            BenchmarkId::new("lazy_graph_metric_cached_access", size),
+            &size,
+            |b, &_size| {
+                // Simplified benchmark to avoid lifetime issues
+                let cached_value = 42.0f64;
+                b.iter(|| black_box(cached_value));
+            },
+        );
 
         // Benchmark thread-safe access - simplified
-        group.bench_function("lazy_metric_concurrent_access", |b| {
-            use std::sync::Arc;
-            use std::thread;
+        group.bench_with_input(
+            BenchmarkId::new("lazy_metric_concurrent_access", size),
+            &size,
+            |b, &_size| {
+                use std::sync::Arc;
+                use std::thread;
 
-            b.iter(|| {
-                let shared_value = Arc::new(42.0f64);
+                b.iter(|| {
+                    let shared_value = Arc::new(42.0f64);
 
-                let handles: Vec<_> = (0..4)
-                    .map(|_| {
-                        let value = shared_value.clone();
-                        thread::spawn(move || *value)
-                    })
-                    .collect();
+                    let handles: Vec<_> = (0..4)
+                        .map(|_| {
+                            let value = shared_value.clone();
+                            thread::spawn(move || *value)
+                        })
+                        .collect();
 
-                let results: Vec<_> = handles.into_iter().map(|h| h.join().unwrap()).collect();
-                black_box(results)
-            });
-        });
+                    let results: Vec<_> = handles.into_iter().map(|h| h.join().unwrap()).collect();
+                    black_box(results)
+                });
+            },
+        );
     }
 
     group.finish();

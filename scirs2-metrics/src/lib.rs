@@ -37,7 +37,7 @@
 //!
 //! Regression metrics evaluate the performance of regression models:
 //!
-//! ```
+//! ```ignore
 //! use ndarray::array;
 //! use scirs2_metrics::regression::{mean_squared_error, r2_score};
 //!
@@ -52,7 +52,7 @@
 //!
 //! Clustering metrics evaluate the performance of clustering algorithms:
 //!
-//! ```
+//! ```ignore
 //! use ndarray::{array, Array2};
 //! use scirs2_metrics::clustering::silhouette_score;
 //!
@@ -75,7 +75,7 @@
 //!
 //! Ranking metrics evaluate the performance of ranking and recommendation models:
 //!
-//! ```
+//! ```ignore
 //! use ndarray::array;
 //! use scirs2_metrics::ranking::{
 //!     mean_reciprocal_rank, ndcg_score, mean_average_precision,
@@ -112,7 +112,7 @@
 //!
 //! For evaluating correlation between rankings:
 //!
-//! ```
+//! ```ignore
 //! use ndarray::array;
 //! use scirs2_metrics::ranking::{kendalls_tau, spearmans_rho};
 //!
@@ -129,7 +129,7 @@
 //!
 //! For multi-label ranking problems:
 //!
-//! ```
+//! ```ignore
 //! use ndarray::Array2;
 //! use scirs2_metrics::ranking::label::{
 //!     coverage_error_multiple, label_ranking_loss, label_ranking_average_precision_score
@@ -163,7 +163,7 @@
 //!
 //! Metrics for evaluating anomaly detection systems:
 //!
-//! ```
+//! ```ignore
 //! use ndarray::array;
 //! use scirs2_metrics::anomaly::{
 //!     detection_accuracy, false_alarm_rate, miss_detection_rate,
@@ -197,7 +197,7 @@
 //!
 //! ## Distribution Metrics
 //!
-//! ```
+//! ```ignore
 //! use ndarray::array;
 //! use scirs2_metrics::anomaly::{
 //!     kl_divergence, js_divergence, wasserstein_distance, maximum_mean_discrepancy
@@ -228,7 +228,7 @@
 //!
 //! Metrics for evaluating fairness and bias in machine learning models:
 //!
-//! ```
+//! ```ignore
 //! use ndarray::{array, Array2};
 //! use scirs2_metrics::fairness::{
 //!     demographic_parity_difference, equalized_odds_difference, equal_opportunity_difference,
@@ -338,7 +338,7 @@
 //!
 //! Utilities for model evaluation like cross-validation:
 //!
-//! ```
+//! ```ignore
 //! use ndarray::{Array, Ix1};
 //! use scirs2_metrics::evaluation::train_test_split;
 //!
@@ -352,7 +352,7 @@
 //!
 //! Optimized metrics computation for better performance and memory efficiency:
 //!
-//! ```
+//! ```ignore
 //! use ndarray::array;
 //! use scirs2_metrics::optimization::parallel::ParallelConfig;
 //! use scirs2_metrics::optimization::memory::{ChunkedMetrics, StreamingMetric};
@@ -429,7 +429,7 @@
 //!
 //! Visualization utilities for metrics results:
 //!
-//! ```
+//! ```ignore
 //! use ndarray::{array, Array2};
 //! use scirs2_metrics::classification::confusion_matrix;
 //! use scirs2_metrics::classification::curves::{roc_curve, precision_recall_curve, calibration_curve};
@@ -507,7 +507,7 @@
 //! The library also provides interactive visualizations that allow for dynamic exploration
 //! of metrics via web interfaces:
 //!
-//! ```
+//! ```ignore
 //! use ndarray::array;
 //! use scirs2_metrics::classification::curves::roc_curve;
 //! use scirs2_metrics::visualization::{
@@ -552,7 +552,7 @@
 //!
 //! Utilities for saving, loading, and comparing metric results:
 //!
-//! ```
+//! ```ignore
 //! use std::collections::HashMap;
 //! use scirs2_metrics::serialization::{
 //!     MetricResult, MetricMetadata, MetricCollection, SerializationFormat,

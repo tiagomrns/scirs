@@ -165,7 +165,7 @@ where
 /// ];
 ///
 /// // Perform chi-square test of independence
-/// let result = chi2_independence::<f64>(&observed.view()).unwrap();
+/// let result = chi2_independence::<f64, i32>(&observed.view()).unwrap();
 ///
 /// println!("Chi-square statistic: {}", result.statistic);
 /// println!("p-value: {}", result.p_value);
@@ -286,7 +286,7 @@ where
 /// ];
 ///
 /// // Perform chi-square test with Yates' correction
-/// let result = chi2_yates::<f64>(&observed.view()).unwrap();
+/// let result = chi2_yates::<f64, i32>(&observed.view()).unwrap();
 ///
 /// println!("Chi-square statistic (with Yates' correction): {}", result.statistic);
 /// println!("p-value: {}", result.p_value);

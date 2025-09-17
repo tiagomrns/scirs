@@ -51,7 +51,7 @@ pub use ttest::{
 ///
 /// ```
 /// use ndarray::array;
-/// use scirs2_stats::{ttest_1samp, Alternative};
+/// use scirs2_stats::tests::ttest::{ttest_1samp, Alternative};
 ///
 /// let data = array![5.1, 4.9, 6.2, 5.7, 5.5, 5.1, 5.2, 5.0];
 /// let null_mean = 5.0;
@@ -105,7 +105,7 @@ where
 ///
 /// ```
 /// use ndarray::array;
-/// use scirs2_stats::{ttest_ind, Alternative};
+/// use scirs2_stats::tests::ttest::{ttest_ind, Alternative};
 ///
 /// let group1 = array![5.1, 4.9, 6.2, 5.7, 5.5];
 /// let group2 = array![4.8, 5.2, 5.1, 4.7, 4.9];
@@ -230,7 +230,7 @@ where
 ///
 /// ```
 /// use ndarray::array;
-/// use scirs2_stats::{ttest_rel, Alternative};
+/// use scirs2_stats::tests::ttest::{ttest_rel, Alternative};
 ///
 /// // Data from paired measurements (e.g., before and after treatment)
 /// let before = array![68.5, 70.2, 65.3, 72.1, 69.8];
@@ -332,7 +332,7 @@ where
 pub fn kstest<F, G>(x: &ArrayView1<F>, cdf: G) -> StatsResult<(F, F)>
 where
     F: Float + std::iter::Sum<F> + std::ops::Div<Output = F> + NumCast,
-    G: Fn(F) -> F + std::fmt::Display,
+    G: Fn(F) -> F,
 {
     // Check if the input array is empty
     if x.is_empty() {

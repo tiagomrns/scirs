@@ -164,6 +164,7 @@
 //!    - Rational approximations for rapid evaluation
 
 use num_traits::{Float, FromPrimitive};
+use std::f64::consts::PI;
 use std::fmt::Debug;
 
 /// Complete elliptic integral of the first kind
@@ -296,6 +297,7 @@ where
 /// ```
 /// use scirs2_special::elliptic_f;
 /// use approx::assert_relative_eq;
+/// use std::f64::consts::PI;
 ///
 /// let phi = PI / 3.0; // 60 degrees
 /// let m = 0.5;
@@ -372,6 +374,7 @@ where
 /// ```
 /// use scirs2_special::elliptic_e_inc;
 /// use approx::assert_relative_eq;
+/// use std::f64::consts::PI;
 ///
 /// let phi = PI / 3.0; // 60 degrees
 /// let m = 0.5;
@@ -446,6 +449,7 @@ where
 /// ```
 /// use scirs2_special::elliptic_pi;
 /// use approx::assert_relative_eq;
+/// use std::f64::consts::PI;
 ///
 /// let n = 0.3;
 /// let phi = PI / 4.0; // 45 degrees
@@ -904,8 +908,8 @@ where
 /// use scirs2_special::ellipkm1;
 /// use approx::assert_relative_eq;
 ///
-/// let m = 0.99; // Close to 1
-/// let result = ellipkm1(m);
+/// let m = 0.99f64; // Close to 1
+/// let result: f64 = ellipkm1(m);
 /// assert!(result.is_finite() && result > 0.0);
 /// ```
 #[allow(dead_code)]
@@ -1000,6 +1004,7 @@ where
 /// ```
 /// use scirs2_special::ellipkinc;
 /// use approx::assert_relative_eq;
+/// use std::f64::consts::PI;
 ///
 /// let result = ellipkinc(PI / 4.0, 0.5);
 /// assert_relative_eq!(result, 0.8269, epsilon = 1e-3);
@@ -1031,6 +1036,7 @@ where
 /// ```
 /// use scirs2_special::ellipeinc;
 /// use approx::assert_relative_eq;
+/// use std::f64::consts::PI;
 ///
 /// let result = ellipeinc(PI / 4.0, 0.5);
 /// assert_relative_eq!(result, 0.7501, epsilon = 1e-3);

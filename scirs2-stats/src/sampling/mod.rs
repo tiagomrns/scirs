@@ -249,7 +249,7 @@ where
 /// let groups = array![0, 0, 1, 1, 2, 2];
 ///
 /// // Generate stratified bootstrap samples
-/// let samples = sampling::stratifiedbootstrap(&data.view(), &groups.view(), 5, Some(42)).unwrap();
+/// let samples = sampling::stratified_bootstrap(&data.view(), &groups.view(), 5, Some(42)).unwrap();
 /// assert_eq!(samples.shape(), &[5, 6]);
 /// ```
 #[allow(dead_code)]
@@ -335,7 +335,7 @@ where
 /// let data = array![1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0];
 ///
 /// // Generate block bootstrap samples with block size 3
-/// let samples = sampling::blockbootstrap(&data.view(), 3, 5, true, Some(42)).unwrap();
+/// let samples = sampling::block_bootstrap(&data.view(), 3, 5, true, Some(42)).unwrap();
 /// assert_eq!(samples.shape(), &[5, 8]);
 /// ```
 #[allow(dead_code)]

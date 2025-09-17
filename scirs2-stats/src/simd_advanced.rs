@@ -875,7 +875,7 @@ pub fn advanced_mean_f64(data: &ArrayView1<f64>) -> StatsResult<AdvancedStatsRes
 ///
 /// ```
 /// use ndarray::Array1;
-/// use scirs2_stats::advanced_simd_advanced::advanced_mean_f32;
+/// use scirs2_stats::advanced_mean_f32;
 ///
 /// let data = Array1::from_vec(vec![1.0f32, 2.0, 3.0, 4.0, 5.0]);
 /// let result = advanced_mean_f32(&data.view()).unwrap();

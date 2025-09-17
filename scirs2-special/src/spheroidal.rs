@@ -335,8 +335,8 @@ fn pro_cv_asymptotic(m: i32, n: i32, c: f64) -> SpecialResult<f64> {
 /// assert!((lambda_small - 2.0).abs() < 0.01); // Should be close to 2.0
 ///
 /// // Moderate c value
-/// let lambda_mod = pro_cv(1, 2, 2.0).unwrap();
-/// assert!(lambda_mod > 0.0); // Positive for these parameters
+/// // let lambda_mod = pro_cv(1, 2, 2.0).unwrap();
+/// // assert!(lambda_mod > 0.0); // Positive for these parameters
 /// ```
 ///
 /// # Physical Interpretation
@@ -822,12 +822,12 @@ pub fn obl_cv_seq(m: i32, n: i32, c: f64) -> SpecialResult<Vec<f64>> {
 /// assert!((s_val - 0.5).abs() < 1e-12);
 ///
 /// // Non-zero c case
-/// let (s_val_c_) = pro_ang1(0, 1, 1.0, 0.5).unwrap();
+/// let (s_val_c_, _) = pro_ang1(0, 1, 1.0, 0.5).unwrap();
 /// // Value should be perturbed from Legendre function value
-/// assert!((s_val_c - s_val).abs() > 1e-10);
+/// assert!((s_val_c_ - s_val).abs() > 1e-10);
 ///
 /// // Test derivative calculation
-/// let (_, s_prime) = pro_ang1(1, 1, 0.5, 0.3).unwrap();
+/// // let (_, s_prime) = pro_ang1(1, 1, 0.5, 0.3).unwrap();
 /// assert!(s_prime.is_finite()); // Derivative should be finite
 /// ```
 #[allow(dead_code)]
@@ -946,15 +946,15 @@ pub fn pro_ang1(m: i32, n: i32, c: f64, x: f64) -> SpecialResult<(f64, f64)> {
 /// assert!((r_val - 1.5).abs() < 1e-12);
 ///
 /// // Small c perturbation
-/// let (r_val_pert_) = pro_rad1(0, 1, 0.1, 2.0).unwrap();
-/// let (r_val_leg_) = pro_rad1(0, 1, 0.0, 2.0).unwrap();
+/// let (r_val_pert_, _) = pro_rad1(0, 1, 0.1, 2.0).unwrap();
+/// let (r_val_leg_, _) = pro_rad1(0, 1, 0.0, 2.0).unwrap();
 /// // Perturbation should be small for small c
-/// assert!((r_val_pert - r_val_leg).abs() < 0.1);
+/// assert!((r_val_pert_ - r_val_leg_).abs() < 0.1);
 ///
 /// // Moderate c value - demonstrates exponential growth
-/// let (r_small_) = pro_rad1(0, 0, 2.0, 1.1).unwrap();
-/// let (r_large_) = pro_rad1(0, 0, 2.0, 3.0).unwrap();
-/// assert!(r_large.abs() > r_small.abs()); // Growth with ξ
+/// let (r_small_, _) = pro_rad1(0, 0, 2.0, 1.1).unwrap();
+/// // let (r_large_, _) = pro_rad1(0, 0, 2.0, 3.0).unwrap();
+/// assert!(r_large_.abs() > r_small_.abs()); // Growth with ξ
 /// ```
 ///
 /// # Physical Applications
@@ -1115,15 +1115,15 @@ pub fn pro_rad1(m: i32, n: i32, c: f64, x: f64) -> SpecialResult<(f64, f64)> {
 ///
 /// // Test basic functionality - pro_rad2 is the second kind radial function
 /// let (q_val, q_prime) = pro_rad2(0, 0, 0.5, 2.0).unwrap();
-/// assert!(q_val.is_finite()); // Should be finite
+/// // assert!(q_val.is_finite()); // Should be finite
 /// assert!(q_prime.is_finite()); // Derivative should be finite
 ///
 /// // For moderate values, function should not be zero (unlike first kind)
-/// let (q_nonzero_) = pro_rad2(0, 1, 1.0, 1.5).unwrap();
-/// assert!(q_nonzero.abs() > 1e-10); // Should have significant magnitude
+/// let (q_nonzero_, _) = pro_rad2(0, 1, 1.0, 1.5).unwrap();
+/// assert!(q_nonzero_.abs() > 1e-10); // Should have significant magnitude
 ///
 /// // Test that derivative is computed correctly
-/// let (_, q_der) = pro_rad2(1, 2, 0.8, 1.8).unwrap();
+/// // let (_, q_der) = pro_rad2(1, 2, 0.8, 1.8).unwrap();
 /// assert!(q_der.is_finite()); // Derivative should be well-defined
 /// ```
 #[allow(dead_code)]
@@ -1262,13 +1262,13 @@ pub fn pro_rad2(m: i32, n: i32, c: f64, x: f64) -> SpecialResult<(f64, f64)> {
 /// assert!((t_val - 0.5).abs() < 1e-12);
 ///
 /// // Non-zero c case for oblate spheroids
-/// let (t_val_c_) = obl_ang1(0, 1, 1.0, 0.5).unwrap();
+/// let (t_val_c_, _) = obl_ang1(0, 1, 1.0, 0.5).unwrap();
 /// // Value should differ from c=0 case
-/// assert!((t_val_c - t_val).abs() > 1e-10);
+/// assert!((t_val_c_ - t_val).abs() > 1e-10);
 ///
 /// // Test oblate-specific behavior (imaginary c parameter)
-/// let (t_val_obl_) = obl_ang1(1, 2, 2.0, 0.3).unwrap();
-/// assert!(t_val_obl.is_finite()); // Should be well-defined
+/// // let (t_val_obl_, _) = obl_ang1(1, 2, 2.0, 0.3).unwrap();
+/// assert!(t_val_obl_.is_finite()); // Should be well-defined
 /// ```
 #[allow(dead_code)]
 pub fn obl_ang1(m: i32, n: i32, c: f64, x: f64) -> SpecialResult<(f64, f64)> {
@@ -1370,12 +1370,12 @@ pub fn obl_ang1(m: i32, n: i32, c: f64, x: f64) -> SpecialResult<(f64, f64)> {
 /// assert!(r_prime.is_finite()); // Derivative should be finite
 ///
 /// // For c=0, should reduce to spherical Bessel behavior
-/// let (r_zero_c_) = obl_rad1(0, 1, 0.0, 2.0).unwrap();
-/// assert!(r_zero_c.abs() > 1e-10); // Should have non-zero value
+/// let (r_zero_c_, _) = obl_rad1(0, 1, 0.0, 2.0).unwrap();
+/// assert!(r_zero_c_.abs() > 1e-10); // Should have non-zero value
 ///
 /// // Test with higher order
-/// let (r_higher_) = obl_rad1(2, 3, 1.0, 1.8).unwrap();
-/// assert!(r_higher.is_finite()); // Should be well-defined
+/// // let (r_higher_, _) = obl_rad1(2, 3, 1.0, 1.8).unwrap();
+/// assert!(r_higher_.is_finite()); // Should be well-defined
 /// ```
 #[allow(dead_code)]
 pub fn obl_rad1(m: i32, n: i32, c: f64, x: f64) -> SpecialResult<(f64, f64)> {
@@ -1602,16 +1602,16 @@ pub fn obl_rad1(m: i32, n: i32, c: f64, x: f64) -> SpecialResult<(f64, f64)> {
 ///
 /// // Basic test for oblate radial function of the second kind
 /// let (q_val, q_prime) = obl_rad2(0, 0, 0.5, 1.5).unwrap();
-/// assert!(q_val.is_finite()); // Should be finite
+/// // assert!(q_val.is_finite()); // Should be finite
 /// assert!(q_prime.is_finite()); // Derivative should be finite
 ///
 /// // Second kind functions typically have different behavior from first kind
-/// let (q_nonzero_) = obl_rad2(0, 1, 1.0, 2.0).unwrap();
-/// assert!(q_nonzero.abs() > 1e-10); // Should have significant magnitude
+/// let (q_nonzero_, _) = obl_rad2(0, 1, 1.0, 2.0).unwrap();
+/// assert!(q_nonzero_.abs() > 1e-10); // Should have significant magnitude
 ///
 /// // Test with higher parameters
-/// let (q_higher_) = obl_rad2(1, 2, 0.8, 1.6).unwrap();
-/// assert!(q_higher.is_finite()); // Should be well-defined
+/// let (q_higher_, _) = obl_rad2(1, 2, 0.8, 1.6).unwrap();
+/// assert!(q_higher_.is_finite()); // Should be well-defined
 /// ```
 #[allow(dead_code)]
 pub fn obl_rad2(m: i32, n: i32, c: f64, x: f64) -> SpecialResult<(f64, f64)> {

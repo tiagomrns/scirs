@@ -296,7 +296,7 @@ where
 ///
 /// // Some known values
 /// let result1: f64 = hyp0f1(1.0, 0.5).unwrap();
-/// assert!((result1 - 1.6487212707001281).abs() < 1e-10);
+/// assert!((result1 - 1.566082929756351).abs() < 1e-10);
 ///
 /// let result2: f64 = hyp0f1(2.0, -1.0).unwrap();
 /// assert!((result2 - 0.7651976865579666).abs() < 1e-10);
@@ -438,7 +438,7 @@ where
 ///
 /// // Some known values
 /// let result1: f64 = hyperu(1.0, 2.0, 1.0).unwrap();
-/// assert!((result1 - 0.3678794411714423).abs() < 1e-10);
+/// assert!((result1 - 1.0).abs() < 1e-10);
 ///
 /// let result2: f64 = hyperu(0.0, 1.0, 2.0).unwrap();
 /// assert!((result2 - 1.0).abs() < 1e-15);

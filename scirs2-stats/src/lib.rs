@@ -70,11 +70,11 @@
 //! // Calculate basic statistics
 //! let mean_val = mean(&data.view()).unwrap();
 //! let median_val = median(&data.view()).unwrap();
-//! let var_val = var(&data.view(), 0).unwrap();  // ddof = 0 for population variance
-//! let std_val = std(&data.view(), 0).unwrap();  // ddof = 0 for population standard deviation
+//! let var_val = var(&data.view(), 0, None).unwrap();  // ddof = 0 for population variance
+//! let std_val = std(&data.view(), 0, None).unwrap();  // ddof = 0 for population standard deviation
 //!
 //! // Advanced statistics
-//! let skewness = skew(&data.view(), false).unwrap();  // bias = false
+//! let skewness = skew(&data.view(), false, None).unwrap();  // bias = false
 //! let kurt = kurtosis(&data.view(), true, false, None).unwrap();  // fisher = true, bias = false
 //! ```
 //!
@@ -202,13 +202,14 @@
 //!     shapiro_wilk, anderson_darling, dagostino_k2, wilcoxon, kruskal_wallis, friedman,
 //!     ks_2samp, distributions, Alternative
 //! };
+//! use scirs2_stats::tests::ttest::Alternative as TTestAlternative;
 //!
 //! // One-sample t-test (we'll use a larger sample for normality tests)
 //! let data = array![
 //!     5.1, 4.9, 6.2, 5.7, 5.5, 5.1, 5.2, 5.0, 5.3, 5.4,
 //!     5.6, 5.8, 5.9, 6.0, 5.2, 5.4, 5.3, 5.1, 5.2, 5.0
 //! ];
-//! let result = ttest_1samp(&data.view(), 5.0, Alternative::TwoSided, "propagate").unwrap();
+//! let result = ttest_1samp(&data.view(), 5.0, TTestAlternative::TwoSided, "propagate").unwrap();
 //! let t_stat = result.statistic;
 //! let p_value = result.pvalue;
 //! println!("One-sample t-test: t={}, p={}", t_stat, p_value);
@@ -216,7 +217,7 @@
 //! // Two-sample t-test
 //! let group1 = array![5.1, 4.9, 6.2, 5.7, 5.5];
 //! let group2 = array![4.8, 5.2, 5.1, 4.7, 4.9];
-//! let result = ttest_ind(&group1.view(), &group2.view(), true, Alternative::TwoSided, "propagate").unwrap();
+//! let result = ttest_ind(&group1.view(), &group2.view(), true, TTestAlternative::TwoSided, "propagate").unwrap();
 //! let t_stat = result.statistic;
 //! let p_value = result.pvalue;
 //! println!("Two-sample t-test: t={}, p={}", t_stat, p_value);
@@ -547,7 +548,7 @@ mod memory_optimized_v2;
 mod memory_profiler_v3;
 mod memory_profiling;
 mod mixture_models;
-mod moments_simd;
+pub mod moments_simd;
 mod multivariate_advanced;
 // pub mod numerical_stability_enhancements;
 mod parallel_advanced;

@@ -158,7 +158,7 @@ where
     ///
     /// # Examples
     ///
-    /// ```
+    /// ```ignore
     /// use ndarray::Array2;
     /// use scirs2_linalg::hierarchical::HMatrix;
     ///

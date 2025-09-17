@@ -41,13 +41,13 @@ use scirs2_linalg::{lstsq, svd};
 /// let y = array![4.0, 9.0, 14.0, 19.0, 24.0];
 ///
 /// // Perform multivariate regression
-/// let (coeffs, residuals, rank_) = multilinear_regression(&x.view(), &y.view()).unwrap();
+/// let (coeffs, residuals, rank_, _) = multilinear_regression(&x.view(), &y.view()).unwrap();
 ///
 /// // Check results
 /// assert!((coeffs[0] - 1.0f64).abs() < 1e-10f64);  // intercept
 /// assert!((coeffs[1] - 2.0f64).abs() < 1e-10f64);  // x1 coefficient
 /// assert!((coeffs[2] - 3.0f64).abs() < 1e-10f64);  // x2 coefficient
-/// assert_eq!(rank, 2);  // Rank (dimensions or independent vectors)
+/// assert_eq!(rank_, 2);  // Rank (dimensions or independent vectors)
 /// ```
 #[allow(dead_code)]
 pub fn multilinear_regression<F>(
@@ -484,7 +484,7 @@ where
 /// let x = array![1.0, 2.0, 3.0, 4.0, 5.0];
 /// let y = array![2.0, 4.0, 6.0, 8.0, 10.0];  // y = 2*x
 ///
-/// let (params__) = odr(&x.view(), &y.view(), None).unwrap();
+/// let (params, _, _) = odr(&x.view(), &y.view(), None).unwrap();
 ///
 /// assert!((params[1] - 2.0f64).abs() < 1e-6);  // slope
 /// assert!(params[0].abs() < 1e-6);  // intercept (should be close to 0)

@@ -66,9 +66,9 @@ use std::fmt::{Debug, Display};
 /// assert!((result - gaussianmax).abs() < 1e-6);
 ///
 /// // Symmetric property
-/// let x = 1.5;
-/// let sigma = 0.8;
-/// let gamma = 0.3;
+/// let x = 1.5f64;
+/// let sigma = 0.8f64;
+/// let gamma = 0.3f64;
 /// let v_pos = voigt_profile(x, sigma, gamma).unwrap();
 /// let v_neg = voigt_profile(-x, sigma, gamma).unwrap();
 /// assert!((v_pos - v_neg).abs() < 1e-10);
@@ -196,8 +196,8 @@ where
 /// use ndarray::array;
 /// use scirs2_special::voigt_profile_array;
 ///
-/// let x = array![-2.0, -1.0, 0.0, 1.0, 2.0];
-/// let result = voigt_profile_array(&x.view(), 1.0, 0.5).unwrap();
+/// let x = array![-2.0f64, -1.0, 0.0, 1.0, 2.0];
+/// let result = voigt_profile_array(&x.view(), 1.0f64, 0.5f64).unwrap();
 ///
 /// // Check symmetry
 /// assert!((result[0] - result[4]).abs() < 1e-10);

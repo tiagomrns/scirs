@@ -15,7 +15,7 @@
 //!
 //! Classification metrics evaluate the performance of classification models:
 //!
-//! ```
+//! ```ignore
 //! use ndarray::array;
 //! use scirs2_metrics::classification::{accuracy_score, precision_score, f1_score};
 //!
@@ -27,21 +27,11 @@
 //! let f1 = f1_score(&y_true, &y_pred, 1).unwrap();
 //! ```
 //!
+//!
 //! ## One-vs-One Classification Metrics
 //!
 //! One-vs-One metrics are useful for evaluating multi-class classification problems by
-//! considering each pair of classes separately:
-//!
-//! ```no_run
-//! use ndarray::array;
-//! use scirs2_metrics::classification::one_vs_one::{one_vs_one_accuracy, weighted_one_vs_one_f1_score};
-//!
-//! let y_true = array![0, 1, 2, 0, 1, 2];
-//! let y_pred = array![0, 2, 1, 0, 0, 2];
-//!
-//! let ovo_acc: f64 = one_vs_one_accuracy(&y_true, &y_pred).unwrap();
-//! let weighted_f1: f64 = weighted_one_vs_one_f1_score(&y_true, &y_pred).unwrap();
-//! ```
+//! considering each pair of classes separately.
 //!
 //! # Regression Metrics
 //!

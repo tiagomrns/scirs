@@ -823,8 +823,8 @@ fn zeta_function(s: f64) -> f64 {
 /// use scirs2_special::sici;
 ///
 /// let (si_val, ci_val) = sici(1.0).unwrap();
-/// assert!((si_val - 0.946083).abs() < 1e-5);
-/// assert!((ci_val - 0.337404).abs() < 1e-5);
+/// assert!((si_val - 0.9460830704).abs() < 1e-8);
+/// assert!((ci_val - 0.3374039229).abs() < 1e-8);
 /// ```
 #[allow(dead_code)]
 pub fn sici(x: f64) -> SpecialResult<(f64, f64)> {
@@ -850,8 +850,8 @@ pub fn sici(x: f64) -> SpecialResult<(f64, f64)> {
 /// use scirs2_special::shichi;
 ///
 /// let (shi_val, chi_val) = shichi(1.0).unwrap();
-/// assert!((shi_val - 1.057251).abs() < 1e-5);
-/// assert!((chi_val - 0.837866).abs() < 1e-5);
+/// assert!((shi_val - 1.0572508754).abs() < 1e-8);
+/// assert!((chi_val - 0.8378669410).abs() < 1e-8);
 /// ```
 #[allow(dead_code)]
 pub fn shichi(x: f64) -> SpecialResult<(f64, f64)> {
@@ -881,6 +881,7 @@ pub fn shichi(x: f64) -> SpecialResult<(f64, f64)> {
 ///
 /// ```
 /// use scirs2_special::spence;
+/// use std::f64::consts::PI;
 ///
 /// // Test spence(0) = π²/6
 /// let result = spence(0.0).unwrap();

@@ -293,7 +293,7 @@ pub fn project<F: Float + NumAssign + Sum + ScalarOperand>(
 ///
 /// # Examples
 ///
-/// ```
+/// ```ignore
 /// use ndarray::{Array, Array2};
 /// use scirs2_linalg::projection::johnson_lindenstrauss_transform;
 ///

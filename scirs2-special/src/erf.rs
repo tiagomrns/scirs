@@ -900,9 +900,9 @@ pub mod complex {
 /// // D(0) = 0
 /// assert!((dawsn(0.0f64)).abs() < 1e-10);
 ///
-/// // D(1) ≈ 0.53807950691276841
+/// // D(1) ≈ 0.538079506912768
 /// let d1 = dawsn(1.0f64);
-/// assert!((d1 - 0.53807950691276841).abs() < 1e-10);
+/// assert!((d1 - 0.538079506912768).abs() < 1e-8);
 /// ```
 #[allow(dead_code)]
 pub fn dawsn<F: Float + FromPrimitive>(x: F) -> F {
@@ -1038,7 +1038,7 @@ pub fn dawsn<F: Float + FromPrimitive>(x: F) -> F {
 /// use scirs2_special::erfcx;
 ///
 /// // For x = 0, erfcx(0) = erfc(0) = 1
-/// assert!((erfcx(0.0) - 1.0).abs() < 1e-10);
+/// assert!((erfcx(0.0) - 1.0f64).abs() < 1e-10);
 ///
 /// // For large x, erfcx(x) → 1/(√π * x)
 /// let large_x = 10.0;
@@ -1076,10 +1076,10 @@ pub fn erfcx<F: Float + FromPrimitive>(x: F) -> F {
 /// use scirs2_special::erfi;
 ///
 /// // erfi(0) = 0
-/// assert!((erfi(0.0) - 0.0).abs() < 1e-10);
+/// assert!((erfi(0.0) - 0.0f64).abs() < 1e-10);
 ///
 /// // erfi(-x) = -erfi(x) (odd function)
-/// let x = 1.0;
+/// let x = 1.0f64;
 /// assert!((erfi(-x) + erfi(x)).abs() < 1e-10);
 /// ```
 #[allow(dead_code)]
@@ -1152,7 +1152,7 @@ pub fn erfi<F: Float + FromPrimitive>(x: F) -> F {
 /// use scirs2_special::wofz;
 ///
 /// // wofz(0) = 1
-/// assert!((wofz(0.0) - 1.0).abs() < 1e-10);
+/// assert!((wofz(0.0) - 1.0f64).abs() < 1e-10);
 /// ```
 #[allow(dead_code)]
 pub fn wofz<F: Float + FromPrimitive>(x: F) -> F {

@@ -31,8 +31,8 @@ use scirs2_core::simd_ops::{AutoOptimizer, PlatformCapabilities, SimdUnifiedOps}
 /// use ndarray::array;
 /// use scirs2_stats::simd_enhanced_core::mean_enhanced;
 ///
-/// let data = array![1.0, 2.0, 3.0, 4.0, 5.0];
-/// let mean = mean_enhanced(&data.view()).unwrap();
+/// let data = array![1.0f64, 2.0, 3.0, 4.0, 5.0];
+/// let mean: f64 = mean_enhanced(&data.view()).unwrap();
 /// assert!((mean - 3.0).abs() < 1e-15);
 /// ```
 #[allow(dead_code)]

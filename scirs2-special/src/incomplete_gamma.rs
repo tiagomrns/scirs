@@ -27,7 +27,7 @@ use std::ops::{AddAssign, MulAssign, SubAssign};
 /// use scirs2_special::incomplete_gamma::gammainc_lower;
 ///
 /// let result = gammainc_lower(2.0, 1.0).unwrap();
-/// assert!((result - 0.2642411176571153).abs() < 1e-10);
+/// assert!((result - 0.2642411176571153f64).abs() < 1e-10);
 /// ```
 #[allow(dead_code)]
 pub fn gammainc_lower<T>(a: T, x: T) -> SpecialResult<T>

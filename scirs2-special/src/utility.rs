@@ -779,7 +779,7 @@ where
 /// # Examples
 /// ```
 /// use scirs2_special::logit;
-/// assert!((logit(0.5).unwrap() - 0.0).abs() < 1e-10);
+/// assert!((logit(0.5).unwrap() - 0.0f64).abs() < 1e-10);
 /// assert!(logit(0.0).is_err());
 /// assert!(logit(1.0).is_err());
 /// ```
@@ -813,7 +813,7 @@ where
 /// use scirs2_special::expit_array;
 /// let input = array![0.0, 1.0, -1.0];
 /// let result = expit_array(&input.view());
-/// assert!((result[0] - 0.5).abs() < 1e-10);
+/// assert!((result[0] - 0.5f64).abs() < 1e-10);
 /// ```
 #[allow(dead_code)]
 pub fn expit_array<T>(x: &ArrayView1<T>) -> Array1<T>
@@ -837,7 +837,7 @@ where
 /// use scirs2_special::logit_array;
 /// let input = array![0.1, 0.5, 0.9];
 /// let result = logit_array(&input.view());
-/// assert!((result[1] - 0.0).abs() < 1e-10);
+/// assert!((result[1] - 0.0f64).abs() < 1e-10);
 /// ```
 #[allow(dead_code)]
 pub fn logit_array<T>(x: &ArrayView1<T>) -> Array1<T>
@@ -880,7 +880,7 @@ where
 /// use scirs2_special::log1p_array_utility;
 /// let input = array![0.0, 1e-10, 0.1];
 /// let result = log1p_array_utility(&input.view());
-/// assert!((result[0] - 0.0).abs() < 1e-15);
+/// assert!((result[0] - 0.0f64).abs() < 1e-15);
 /// ```
 #[allow(dead_code)]
 pub fn log1p_array_utility<T>(x: &ArrayView1<T>) -> Array1<T>
@@ -904,7 +904,7 @@ where
 /// use scirs2_special::expm1_array_utility;
 /// let input = array![0.0, 1e-10, 0.1];
 /// let result = expm1_array_utility(&input.view());
-/// assert!((result[0] - 0.0).abs() < 1e-15);
+/// assert!((result[0] - 0.0f64).abs() < 1e-15);
 /// ```
 #[allow(dead_code)]
 pub fn expm1_array_utility<T>(x: &ArrayView1<T>) -> Array1<T>

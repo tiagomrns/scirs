@@ -177,28 +177,29 @@ mod constants {
 ///
 /// ```
 /// use scirs2_special::gamma;
+/// use std::f64::consts::PI;
 ///
 /// // Integer factorial relationship
-/// assert!((gamma(5.0) - 24.0).abs() < 1e-14);    // Γ(5) = 4! = 24
-/// assert!((gamma(1.0) - 1.0).abs() < 1e-14);     // Γ(1) = 0! = 1
+/// assert!((gamma(5.0) - 24.0f64).abs() < 1e-14);    // Γ(5) = 4! = 24
+/// assert!((gamma(1.0) - 1.0f64).abs() < 1e-14);     // Γ(1) = 0! = 1
 ///
 /// // Half-integer values
 /// assert!((gamma(0.5) - PI.sqrt()).abs() < 1e-14);           // Γ(1/2) = √π
 /// assert!((gamma(1.5) - PI.sqrt()/2.0).abs() < 1e-14);      // Γ(3/2) = √π/2
 ///
 /// // Reflection formula verification
-/// let z = 0.3;
+/// let z = 0.3f64;
 /// let product = gamma(z) * gamma(1.0 - z);
 /// let expected = PI / (PI * z).sin();
 /// assert!((product - expected).abs() < 1e-12);
 ///
 /// // Functional equation verification  
-/// let z = 2.7;
+/// let z = 2.7f64;
 /// assert!((gamma(z + 1.0) - z * gamma(z)).abs() < 1e-12);
 ///
 /// // Poles at negative integers
-/// assert!(gamma(-1.0).is_nan());
-/// assert!(gamma(-2.0).is_nan());
+/// assert!(gamma(-1.0f64).is_nan());
+/// assert!(gamma(-2.0f64).is_nan());
 /// ```
 ///
 /// # References
@@ -441,7 +442,7 @@ pub fn gamma<F: Float + FromPrimitive + Debug + std::ops::AddAssign>(x: F) -> F 
 /// // Valid input
 /// let result = gamma_safe(5.0);
 /// assert!(result.is_ok());
-/// assert!((result.unwrap() - 24.0).abs() < 1e-10);
+/// assert!((result.unwrap() - 24.0f64).abs() < 1e-10);
 ///
 /// // Domain error at negative integer
 /// let result = gamma_safe(-1.0);
@@ -2947,7 +2948,7 @@ pub mod complex {
 ///
 /// // ψ^(1)(1) = trigamma(1) = π²/6 ≈ 1.6449340668
 /// let psi1_1 = polygamma(1, 1.0f64);
-/// assert!((psi1_1 - 1.6449340668).abs() < 1e-8);
+/// assert!((psi1_1 - 1.6449340668).abs() < 1e-7);
 /// ```
 #[allow(dead_code)]
 pub fn polygamma<

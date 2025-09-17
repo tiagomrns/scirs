@@ -523,7 +523,7 @@ pub fn kv_prime<F: Float + FromPrimitive + Debug + std::ops::AddAssign>(v: F, x:
 /// use approx::assert_relative_eq;
 ///
 /// // First derivative of J0(x)
-/// let result = jvp(0.0, 2.0, Some(1));
+/// let result: f64 = jvp(0.0, 2.0, Some(1));
 /// assert!(result.is_finite());
 /// ```
 #[allow(dead_code)]
@@ -565,7 +565,7 @@ where
 /// use approx::assert_relative_eq;
 ///
 /// // First derivative of Y0(x)
-/// let result = yvp(0.0, 2.0, Some(1));
+/// let result: f64 = yvp(0.0, 2.0, Some(1));
 /// assert!(result.is_finite());
 /// ```
 #[allow(dead_code)]
@@ -626,7 +626,7 @@ where
 /// use approx::assert_relative_eq;
 ///
 /// // First derivative of I0(x)
-/// let result = ivp(0.0, 2.0, Some(1));
+/// let result: f64 = ivp(0.0, 2.0, Some(1));
 /// assert!(result.is_finite());
 /// ```
 #[allow(dead_code)]
@@ -667,7 +667,7 @@ where
 /// use approx::assert_relative_eq;
 ///
 /// // First derivative of K0(x)
-/// let result = kvp(0.0, 2.0, Some(1));
+/// let result: f64 = kvp(0.0, 2.0, Some(1));
 /// assert!(result.is_finite());
 /// ```
 #[allow(dead_code)]

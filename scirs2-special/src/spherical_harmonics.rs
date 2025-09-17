@@ -8,6 +8,7 @@ use crate::error::SpecialResult;
 use crate::orthogonal::legendre_assoc;
 use num_traits::{Float, FromPrimitive};
 use std::f64;
+use std::f64::consts::PI;
 use std::fmt::Debug;
 
 /// Computes the value of the real spherical harmonic Y_l^m(θ, φ) function.
@@ -34,6 +35,7 @@ use std::fmt::Debug;
 ///
 /// ```
 /// use scirs2_special::sph_harm;
+/// use std::f64::consts::PI;
 ///
 /// // Y₀⁰(θ, φ) = 1/(2√π)
 /// let y00: f64 = sph_harm(0, 0, PI/2.0, 0.0).unwrap();
@@ -123,6 +125,7 @@ where
 ///
 /// ```
 /// use scirs2_special::sph_harm_complex;
+/// use std::f64::consts::PI;
 ///
 /// // Y₀⁰(θ, φ) = 1/(2√π)
 /// let (re, im): (f64, f64) = sph_harm_complex(0, 0, PI/2.0, 0.0).unwrap();

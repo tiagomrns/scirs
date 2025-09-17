@@ -175,7 +175,7 @@ use std::fmt::{Debug, Display};
 /// use scirs2_special::information_theory::entr;
 ///
 /// let h = entr(0.5);
-/// assert!((h - 0.34657359027997264).abs() < 1e-10);
+/// assert!((h - 0.34657359027997264f64).abs() < 1e-10);
 /// ```
 #[allow(dead_code)]
 pub fn entr<T>(x: T) -> T

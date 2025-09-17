@@ -34,8 +34,8 @@ use std::f64::consts::PI;
 ///
 /// let z = Complex64::new(1.0, 0.0);
 /// let result = j0_complex(z);
-/// // For real arguments, should match real J₀(1) ≈ 0.9999828406
-/// assert!((result.re - 0.9999828406).abs() < 1e-8);
+/// // For real arguments, should match real J₀(1) ≈ 0.7651976866
+/// assert!((result.re - 0.7651976866).abs() < 1e-8);
 /// assert!(result.im.abs() < 1e-10);
 /// ```
 #[allow(dead_code)]
@@ -80,8 +80,8 @@ pub fn j0_complex(z: Complex64) -> Complex64 {
 ///
 /// let z = Complex64::new(1.0, 0.0);
 /// let result = j1_complex(z);
-/// // For real arguments, should match real J₁(1) ≈ 0.5001
-/// assert!((result.re - 0.5001147450).abs() < 1e-8);
+/// // For real arguments, should match real J₁(1) ≈ 0.4400505857
+/// assert!((result.re - 0.4400505857).abs() < 1e-8);
 /// assert!(result.im.abs() < 1e-10);
 /// ```
 #[allow(dead_code)]
@@ -127,8 +127,8 @@ pub fn j1_complex(z: Complex64) -> Complex64 {
 ///
 /// let z = Complex64::new(2.0, 0.0);
 /// let result = jn_complex(2, z);
-/// // For real arguments, should match real J₂(2) ≈ 0.1941
-/// assert!((result.re - 0.1941053828).abs() < 1e-8);
+/// // For real arguments, should match real J₂(2) ≈ 0.3528340286
+/// assert!((result.re - 0.3528340286).abs() < 1e-8);
 /// assert!(result.im.abs() < 1e-10);
 /// ```
 #[allow(dead_code)]

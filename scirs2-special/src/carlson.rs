@@ -76,7 +76,7 @@ const TOLERANCE: f64 = 1e-15;
 ///
 /// // RC(1, 1) = 1
 /// let result = elliprc(1.0, 1.0).unwrap();
-/// assert!((result - 1.0).abs() < 1e-10);
+/// assert!((result - 1.0f64).abs() < 1e-10);
 /// ```
 #[allow(dead_code)]
 pub fn elliprc<T>(x: T, y: T) -> SpecialResult<T>
@@ -170,9 +170,9 @@ where
 /// assert!((result - std::f64::consts::FRAC_PI_2).abs() < 1e-10);
 ///
 /// // Symmetry test
-/// let x = 2.0;
-/// let y = 3.0;
-/// let z = 4.0;
+/// let x = 2.0f64;
+/// let y = 3.0f64;
+/// let z = 4.0f64;
 /// let rf1 = elliprf(x, y, z).unwrap();
 /// let rf2 = elliprf(y, z, x).unwrap();
 /// assert!((rf1 - rf2).abs() < 1e-12);

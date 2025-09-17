@@ -30,7 +30,7 @@ use std::ops::{AddAssign, MulAssign, SubAssign};
 /// use scirs2_special::distributions::ndtr;
 ///
 /// let p = ndtr(0.0);
-/// assert!((p - 0.5).abs() < 1e-10);
+/// assert!((p - 0.5f64).abs() < 1e-10);
 /// ```
 #[allow(dead_code)]
 pub fn ndtr<T: Float + FromPrimitive>(x: T) -> T {
@@ -1489,7 +1489,7 @@ where
 
     // Negative binomial CDF is related to incomplete beta function
     // P(X <= k) = I_p(r, k + 1) where I is the regularized incomplete beta function
-    betainc_regularized(r, k + T::one(), p)
+    betainc_regularized(p, r, k + T::one())
 }
 
 /// Negative binomial survival function

@@ -49,18 +49,19 @@ use std::fmt::{Debug, Display};
 /// # Examples
 /// ```
 /// use scirs2_special::boxcox;
+/// use std::f64::consts::E;
 ///
 /// // λ = 0 case (logarithmic)
-/// let result = boxcox(2.718, 0.0).unwrap();
-/// assert!((result - 1.0).abs() < 1e-10);
+/// let result = boxcox(E, 0.0).unwrap();
+/// assert!((result - 1.0f64).abs() < 1e-10);
 ///
 /// // λ = 1 case (identity minus 1)
 /// let result = boxcox(5.0, 1.0).unwrap();
-/// assert!((result - 4.0).abs() < 1e-10);
+/// assert!((result - 4.0f64).abs() < 1e-10);
 ///
 /// // λ = 0.5 case (square root transformation)
 /// let result = boxcox(4.0, 0.5).unwrap();
-/// assert!((result - 2.0).abs() < 1e-10);
+/// assert!((result - 2.0f64).abs() < 1e-10);
 /// ```
 #[allow(dead_code)]
 pub fn boxcox<T>(x: T, lmbda: T) -> SpecialResult<T>
@@ -104,7 +105,7 @@ where
 /// assert!((result - (1.0 + 1.718_f64).ln()).abs() < 1e-10);
 ///
 /// // Small x values
-/// let result = boxcox1p(0.01, 0.5).unwrap();
+/// let result: f64 = boxcox1p(0.01, 0.5).unwrap();
 /// assert!(result.is_finite());
 /// ```
 #[allow(dead_code)]
@@ -149,8 +150,8 @@ where
 /// ```
 /// use scirs2_special::{boxcox, inv_boxcox};
 ///
-/// let x = 5.0;
-/// let lmbda = 0.3;
+/// let x = 5.0f64;
+/// let lmbda = 0.3f64;
 /// let y = boxcox(x, lmbda).unwrap();
 /// let x_recovered = inv_boxcox(y, lmbda).unwrap();
 /// assert!((x - x_recovered).abs() < 1e-10);
@@ -197,8 +198,8 @@ where
 /// ```
 /// use scirs2_special::{boxcox1p, inv_boxcox1p};
 ///
-/// let x = 0.5;
-/// let lmbda = -0.2;
+/// let x = 0.5f64;
+/// let lmbda = -0.2f64;
 /// let y = boxcox1p(x, lmbda).unwrap();
 /// let x_recovered = inv_boxcox1p(y, lmbda).unwrap();
 /// assert!((x - x_recovered).abs() < 1e-10);

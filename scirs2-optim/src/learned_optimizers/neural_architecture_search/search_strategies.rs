@@ -26,7 +26,7 @@ pub struct SearchStrategy<T: Float> {
     inner: Box<dyn SearchStrategyTrait<T>>,
 }
 
-impl<T: Float> SearchStrategy<T> {
+impl<T: Float + 'static> SearchStrategy<T> {
     pub fn new(strategy_type: SearchStrategyType, config: &NASConfig) -> Result<Self> {
         let inner: Box<dyn SearchStrategyTrait<T>> = match strategy_type {
             SearchStrategyType::Random => Box::new(RandomSearchStrategy::new(config)?),
@@ -115,7 +115,7 @@ impl EvolutionarySearchStrategy {
         })
     }
 
-    fn select_parents<T: Float>(&self, population: &[Individual<T>]) -> Result<Vec<&Individual<T>>> {
+    fn select_parents<'a, T: Float>(&self, population: &'a [Individual<T>]) -> Result<Vec<&'a Individual<T>>> {
         // Tournament selection
         let mut rng = rand::thread_rng();
         let mut parents = Vec::new();

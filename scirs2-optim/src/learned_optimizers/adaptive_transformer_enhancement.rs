@@ -11,7 +11,7 @@ use num_traits::Float;
 use std::collections::{HashMap, VecDeque};
 use std::time::Instant;
 
-use super::transformer_optimizer::{TransformerOptimizer, TransformerOptimizerConfig};
+use super::transformer_based_optimizer::{TransformerOptimizer, TransformerOptimizerConfig};
 #[allow(unused_imports)]
 use crate::error::Result;
 
@@ -112,7 +112,7 @@ pub struct MemoryEfficientAttentionManager<T: Float> {
 #[derive(Debug)]
 pub struct DynamicArchitectureAdapter<T: Float> {
     /// Current architecture configuration
-    current_config: TransformerOptimizerConfig,
+    current_config: TransformerOptimizerConfig<T>,
 
     /// Architecture performance history
     performance_history: VecDeque<ArchitecturePerformance<T>>,
@@ -998,7 +998,7 @@ pub struct AttentionOptimization<T: Float> {
 #[derive(Debug)]
 pub struct ArchitectureAdaptation<T: Float> {
     /// Adapted configuration
-    pub adapted_config: TransformerOptimizerConfig,
+    pub adapted_config: TransformerOptimizerConfig<T>,
 
     /// Architecture changes
     pub changes: Vec<ArchitectureChange>,
@@ -1606,7 +1606,7 @@ impl<T: Float + Send + Sync> MemoryEfficientAttentionManager<T> {
 impl<T: Float + Send + Sync> DynamicArchitectureAdapter<T> {
     fn new(config: &AdaptiveConfig<T>) -> Result<Self> {
         Ok(Self {
-            current_config: TransformerOptimizerConfig::default(),
+            current_config: TransformerOptimizerConfig::<T>::default(),
             performance_history: VecDeque::new(),
             adaptation_strategy: AdaptationStrategy::Gradual,
             resource_constraints: ResourceConstraints::default(),

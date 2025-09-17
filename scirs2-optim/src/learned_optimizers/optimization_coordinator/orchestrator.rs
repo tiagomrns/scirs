@@ -854,7 +854,7 @@ macro_rules! impl_strategy {
             }
         }
 
-        impl<T: Float> MetaLearningStrategy<T> for $name<T> {
+        impl<T: Float + std::fmt::Debug + Send + Sync> MetaLearningStrategy<T> for $name<T> {
             fn get_id(&self) -> String {
                 $id.to_string()
             }

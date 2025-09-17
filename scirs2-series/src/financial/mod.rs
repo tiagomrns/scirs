@@ -61,9 +61,11 @@
 //! };
 //! use ndarray::array;
 //!
-//! // Prepare price and return data
-//! let prices = array![100.0, 102.0, 101.5, 103.0, 102.5, 104.0, 105.5, 104.0, 106.0, 107.0];
-//! let returns = array![0.02, -0.0049, 0.0148, -0.0049, 0.0146, 0.0144, -0.0142, 0.0192, 0.0094];
+//! // Prepare price and return data (extend for RSI calculation)
+//! let prices = array![100.0, 102.0, 101.5, 103.0, 102.5, 104.0, 105.5, 104.0, 106.0, 107.0,
+//!                     106.5, 108.0, 107.5, 109.0, 108.5, 110.0, 111.5, 110.0, 112.0, 113.0];
+//! let returns = array![0.02, -0.0049, 0.0148, -0.0049, 0.0146, 0.0144, -0.0142, 0.0192, 0.0094,
+//!                      -0.0047, 0.0141, -0.0046, 0.0140, -0.0046, 0.0138, 0.0136, -0.0135, 0.0182, 0.0089];
 //!
 //! // Calculate basic technical indicators
 //! let sma_5 = sma(&prices, 5).unwrap();
@@ -82,9 +84,15 @@
 //!     volatility::{garman_klass_volatility, ewma_volatility},
 //! };
 //!
+//! // Create larger returns dataset for GARCH fitting
+//! let extended_returns = (0..100).map(|i| {
+//!     0.01 * (i as f64 * 0.1).sin() + 0.005 * ((i as f64 * 0.05).cos() - 1.0)
+//! }).collect::<Vec<f64>>();
+//! let returns_array = ndarray::Array1::from_vec(extended_returns);
+//!
 //! // Fit GARCH model for volatility forecasting
 //! let mut garch_model = GarchModel::new(GarchConfig::default());
-//! let garch_result = garch_model.fit(&returns).unwrap();
+//! let garch_result = garch_model.fit(&returns_array).unwrap();
 //! println!("GARCH Log-likelihood: {:.2}", garch_result.log_likelihood);
 //!
 //! // Compare with high-frequency estimator (if OHLC data available)
@@ -92,7 +100,7 @@
 //! // let gk_vol = garman_klass_volatility(&high, &low, &close, &open).unwrap();
 //!
 //! // EWMA volatility (RiskMetrics approach)
-//! let ewma_vol = ewma_volatility(&returns, 0.94).unwrap();
+//! let ewma_vol = ewma_volatility(&returns_array, 0.94).unwrap();
 //! println!("EWMA volatility: {:.4}", ewma_vol);
 //! ```
 //!
@@ -103,20 +111,26 @@
 //!     sharpe_ratio, sortino_ratio, calmar_ratio,
 //! };
 //!
-//! // Calculate VaR and Expected Shortfall
-//! let var_95 = var_historical(&returns, 0.95).unwrap();
-//! let es_95 = expected_shortfall(&returns, 0.95).unwrap();
+//! // Calculate VaR and Expected Shortfall (use extended returns)
+//! let var_95 = var_historical(&returns_array, 0.95).unwrap();
+//! let es_95 = expected_shortfall(&returns_array, 0.95).unwrap();
 //! println!("95% VaR: {:.4}, 95% ES: {:.4}", var_95, es_95);
 //!
 //! // Risk-adjusted performance metrics
 //! let risk_free_rate = 0.02;
 //! let periods_per_year = 252;
-//! let sharpe = sharpe_ratio(&returns, risk_free_rate, periods_per_year).unwrap();
-//! let sortino = sortino_ratio(&returns, risk_free_rate, periods_per_year).unwrap();
+//! let sharpe = sharpe_ratio(&returns_array, risk_free_rate, periods_per_year).unwrap();
+//! let sortino = sortino_ratio(&returns_array, risk_free_rate, periods_per_year).unwrap();
 //!
-//! // Drawdown analysis
-//! let max_dd = max_drawdown(&prices).unwrap();
-//! let calmar = calmar_ratio(&returns, &prices, periods_per_year).unwrap();
+//! // Drawdown analysis (extend prices for drawdown calculation)
+//! let extended_prices = (0..100).scan(100.0, |price, i| {
+//!     let return_val = 0.01 * (i as f64 * 0.1).sin() + 0.005 * ((i as f64 * 0.05).cos() - 1.0);
+//!     *price *= 1.0 + return_val;
+//!     Some(*price)
+//! }).collect::<Vec<f64>>();
+//! let prices_array = ndarray::Array1::from_vec(extended_prices);
+//! let max_dd = max_drawdown(&prices_array).unwrap();
+//! let calmar = calmar_ratio(&returns_array, &prices_array, periods_per_year).unwrap();
 //!
 //! println!("Sharpe: {:.3}, Sortino: {:.3}, Calmar: {:.3}", sharpe, sortino, calmar);
 //! println!("Max Drawdown: {:.2}%", max_dd * 100.0);
@@ -187,9 +201,9 @@
 //!     adx, parabolic_sar, vwap, chaikin_oscillator,
 //! };
 //!
-//! // Advanced technical indicators
+//! // Advanced technical indicators (use extended prices)
 //! let bb = BollingerBands::new(20, 2.0);
-//! let bb_result = bb.calculate(&prices).unwrap();
+//! let bb_result = bb.calculate(&prices_array).unwrap();
 //! println!("Bollinger Bands - Upper: {:.2}, Lower: {:.2}", bb_result.upper_band[0], bb_result.lower_band[0]);
 //!
 //! // Momentum and trend indicators

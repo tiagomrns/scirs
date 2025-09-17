@@ -39,7 +39,8 @@
 //! let mut model = EgarchModel::egarch_11();
 //! let data = array![0.01, -0.02, 0.015, -0.008, 0.012, 0.005, -0.015, 0.02, -0.01, 0.008,
 //!                   0.003, -0.012, 0.018, -0.006, 0.009, 0.002, -0.008, 0.014, -0.004, 0.011,
-//!                   0.007, -0.009, 0.013, -0.003, 0.006]; // Returns
+//!                   0.007, -0.009, 0.013, -0.003, 0.006, 0.004, -0.007, 0.016, -0.002, 0.010,
+//!                   0.001, -0.005, 0.012, -0.001, 0.008]; // Returns (35 points for EGARCH)
 //!
 //! let result = model.fit(&data).unwrap();
 //! println!("EGARCH Parameters: {:?}", result.parameters);
@@ -57,7 +58,7 @@
 //!     tolerance: 1e-6,
 //! };
 //!
-//! let mut model = EgarchModel::new(config);
+//! let mut model: EgarchModel<f64> = EgarchModel::new(config);
 //! ```
 //!
 //! ## Analyzing Asymmetric Effects
@@ -68,7 +69,8 @@
 //! let mut model = EgarchModel::egarch_11();
 //! let data = array![0.01, -0.02, 0.015, -0.008, 0.012, 0.005, -0.015, 0.02, -0.01, 0.008,
 //!                   0.003, -0.012, 0.018, -0.006, 0.009, 0.002, -0.008, 0.014, -0.004, 0.011,
-//!                   0.007, -0.009, 0.013, -0.003, 0.006];
+//!                   0.007, -0.009, 0.013, -0.003, 0.006, 0.004, -0.007, 0.016, -0.002, 0.010,
+//!                   0.001, -0.005, 0.012, -0.001, 0.008]; // Returns (35 points for EGARCH)
 //!
 //! // Fit model
 //! let result = model.fit(&data).unwrap();

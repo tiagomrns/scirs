@@ -39,10 +39,10 @@ pub struct TransformerOptimizerState<T: Float> {
     version: usize,
 
     /// Creation timestamp
-    created_at: Instant,
+    created_at: std::time::SystemTime,
 
     /// Last update timestamp
-    last_updated: Instant,
+    last_updated: std::time::SystemTime,
 }
 
 impl<T: Float> TransformerOptimizerState<T> {
@@ -539,7 +539,7 @@ impl<T: Float> LearningState<T> {
         let final_loss = recent_losses.first().unwrap();
 
         if *initial > T::zero() {
-            (*initial - *final) / *initial
+            (*initial - *final_loss) / *initial
         } else {
             T::zero()
         }
@@ -915,11 +915,11 @@ impl StateConfig {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 pub struct StateMetadata {
     pub version: usize,
-    pub created_at: Instant,
-    pub last_updated: Instant,
+    pub created_at: std::time::SystemTime,
+    pub last_updated: std::time::SystemTime,
     pub total_updates: usize,
     pub configuration: StateConfig,
 }

@@ -15,7 +15,7 @@ pub mod few_shot_optimizer;
 pub mod lstm_optimizer;
 pub mod meta_learning;
 pub mod neural_architecture_search;
-pub mod transformer_optimizer;
+pub mod transformer_based_optimizer;
 
 // Advanced Mode - Advanced AI optimization coordination
 pub mod optimization_coordinator;

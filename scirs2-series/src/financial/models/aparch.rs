@@ -68,14 +68,16 @@
 //! let result = model.fit(&returns).unwrap();
 //!
 //! // Interpret the power parameter
-//! if result.parameters.delta.abs_sub(2.0) < 0.1 {
+//! let delta = result.parameters.delta;
+//! if (delta - 2.0f64).abs() < 0.1 {
 //!     println!("Model behaves similar to GARCH");
-//! } else if result.parameters.delta.abs_sub(1.0) < 0.1 {
+//! } else if (delta - 1.0f64).abs() < 0.1 {
 //!     println!("Model behaves similar to absolute value GARCH");
 //! }
 //!
 //! // Check for asymmetric effects
-//! if result.parameters.gamma.abs() > 0.01 {
+//! let gamma = result.parameters.gamma;
+//! if gamma.abs() > 0.01f64 {
 //!     println!("Asymmetric effects detected");
 //! }
 //! ```

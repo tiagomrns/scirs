@@ -260,7 +260,7 @@ impl SearchConstraints {
 }
 
 /// Layer types for neural architectures
-#[derive(Debug, Clone, Copy, PartialEq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, serde::Serialize, serde::Deserialize)]
 pub enum LayerType {
     Dense,
     Conv2D,
@@ -277,7 +277,7 @@ pub enum LayerType {
 }
 
 /// Architecture specification
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 pub struct ArchitectureSpec {
     pub layers: Vec<LayerSpec>,
     pub estimated_memory_mb: usize,
@@ -286,7 +286,7 @@ pub struct ArchitectureSpec {
 }
 
 /// Layer specification
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 pub struct LayerSpec {
     pub layer_type: LayerType,
     pub params: usize,

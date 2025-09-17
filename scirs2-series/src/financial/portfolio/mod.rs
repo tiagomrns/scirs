@@ -41,8 +41,13 @@
 //! use scirs2_series::financial::portfolio::{core::Portfolio, optimization::calculate_correlation_matrix};
 //! use ndarray::{Array1, Array2, array};
 //!
-//! // Prepare asset return data
-//! let returns = Array2::from_shape_vec((252, 3), vec![/* daily returns for 3 assets */]).unwrap();
+//! // Prepare asset return data (generate synthetic returns)
+//! let returns_data: Vec<f64> = (0..756).map(|i| {
+//!     let asset = i % 3;
+//!     let day = i / 3;
+//!     0.001 * (day as f64 * 0.01 + asset as f64).sin() + 0.0005 * ((day as f64 * 0.02).cos() - 1.0)
+//! }).collect();
+//! let returns = Array2::from_shape_vec((252, 3), returns_data).unwrap();
 //! let asset_names = vec!["AAPL".to_string(), "GOOGL".to_string(), "MSFT".to_string()];
 //!
 //! // Calculate correlation matrix for optimization
@@ -52,9 +57,19 @@
 //! ## 2. Portfolio Optimization
 //! ```rust
 //! use scirs2_series::financial::portfolio::optimization::{
-//!     risk_parity_portfolio, minimum_variance_portfolio, calculate_efficient_portfolio
+//!     risk_parity_portfolio, minimum_variance_portfolio, calculate_efficient_portfolio,
+//!     calculate_correlation_matrix
 //! };
-//! use ndarray::Array2;
+//! use ndarray::{Array1, Array2, array};
+//!
+//! // Setup returns data (needed for this doctest block)
+//! let returns_data: Vec<f64> = (0..756).map(|i| {
+//!     let asset = i % 3;
+//!     let day = i / 3;
+//!     0.001 * (day as f64 * 0.01 + asset as f64).sin() + 0.0005 * ((day as f64 * 0.02).cos() - 1.0)
+//! }).collect();
+//! let returns = Array2::from_shape_vec((252, 3), returns_data).unwrap();
+//! let correlation_matrix = calculate_correlation_matrix(&returns).unwrap();
 //!
 //! // Convert correlation to covariance (simplified example)
 //! let volatilities = array![0.15, 0.18, 0.12]; // Asset volatilities
@@ -77,18 +92,61 @@
 //!
 //! ## 3. Portfolio Construction
 //! ```rust
-//! use scirs2_series::financial::portfolio::core::Portfolio;
+//! use scirs2_series::financial::portfolio::{core::Portfolio, optimization::{risk_parity_portfolio, calculate_correlation_matrix}};
+//! use ndarray::{Array2, array};
+//!
+//! // Setup data for this doctest block
+//! let returns_data: Vec<f64> = (0..756).map(|i| {
+//!     let asset = i % 3;
+//!     let day = i / 3;
+//!     0.001 * (day as f64 * 0.01 + asset as f64).sin() + 0.0005 * ((day as f64 * 0.02).cos() - 1.0)
+//! }).collect();
+//! let returns = Array2::from_shape_vec((252, 3), returns_data).unwrap();
+//! let correlation_matrix = calculate_correlation_matrix(&returns).unwrap();
+//! let volatilities = array![0.15, 0.18, 0.12];
+//! let mut covariance = correlation_matrix.clone();
+//! for i in 0..3 {
+//!     for j in 0..3 {
+//!         covariance[[i, j]] *= volatilities[i] * volatilities[j];
+//!     }
+//! }
+//! let risk_parity_weights = risk_parity_portfolio(&covariance).unwrap();
+//! let asset_names = vec!["AAPL".to_string(), "GOOGL".to_string(), "MSFT".to_string()];
 //!
 //! // Create portfolio with optimized weights
-//! let portfolio = Portfolio::new(risk_parity_weights, asset_names).unwrap();
+//! let portfolio: Portfolio<f64> = Portfolio::new(risk_parity_weights, asset_names.clone()).unwrap();
 //!
 //! // Or create equal-weight portfolio for comparison
-//! let equal_weight_portfolio = Portfolio::equal_weight(3, asset_names).unwrap();
+//! let equal_weight_portfolio: Portfolio<f64> = Portfolio::equal_weight(3, asset_names).unwrap();
 //! ```
 //!
 //! ## 4. Performance Analysis
 //! ```rust
-//! use scirs2_series::financial::portfolio::{core::calculate_portfolio_returns, metrics::calculate_portfolio_metrics};
+//! use scirs2_series::financial::portfolio::{
+//!     core::{Portfolio, calculate_portfolio_returns},
+//!     metrics::calculate_portfolio_metrics,
+//!     optimization::{risk_parity_portfolio, calculate_correlation_matrix}
+//! };
+//! use ndarray::{Array1, Array2, array};
+//!
+//! // Setup data for this doctest block
+//! let returns_data: Vec<f64> = (0..756).map(|i| {
+//!     let asset = i % 3;
+//!     let day = i / 3;
+//!     0.001 * (day as f64 * 0.01 + asset as f64).sin() + 0.0005 * ((day as f64 * 0.02).cos() - 1.0)
+//! }).collect();
+//! let returns = Array2::from_shape_vec((252, 3), returns_data).unwrap();
+//! let correlation_matrix = calculate_correlation_matrix(&returns).unwrap();
+//! let volatilities = array![0.15, 0.18, 0.12];
+//! let mut covariance = correlation_matrix.clone();
+//! for i in 0..3 {
+//!     for j in 0..3 {
+//!         covariance[[i, j]] *= volatilities[i] * volatilities[j];
+//!     }
+//! }
+//! let risk_parity_weights = risk_parity_portfolio(&covariance).unwrap();
+//! let asset_names = vec!["AAPL".to_string(), "GOOGL".to_string(), "MSFT".to_string()];
+//! let portfolio = Portfolio::new(risk_parity_weights, asset_names).unwrap();
 //!
 //! // Calculate portfolio returns
 //! let portfolio_returns = calculate_portfolio_returns(&returns, portfolio.weights()).unwrap();
@@ -114,9 +172,31 @@
 //!
 //! ## 5. Risk Analysis
 //! ```rust
-//! use scirs2_series::financial::portfolio::risk::{
-//!     portfolio_var_parametric, calculate_component_var, stress_test_portfolio
+//! use scirs2_series::financial::portfolio::{
+//!     risk::{portfolio_var_parametric, calculate_component_var, stress_test_portfolio},
+//!     core::Portfolio,
+//!     optimization::{risk_parity_portfolio, calculate_correlation_matrix}
 //! };
+//! use ndarray::{Array2, array};
+//!
+//! // Setup data for this doctest block
+//! let returns_data: Vec<f64> = (0..756).map(|i| {
+//!     let asset = i % 3;
+//!     let day = i / 3;
+//!     0.001 * (day as f64 * 0.01 + asset as f64).sin() + 0.0005 * ((day as f64 * 0.02).cos() - 1.0)
+//! }).collect();
+//! let returns = Array2::from_shape_vec((252, 3), returns_data).unwrap();
+//! let correlation_matrix = calculate_correlation_matrix(&returns).unwrap();
+//! let volatilities = array![0.15, 0.18, 0.12];
+//! let mut covariance = correlation_matrix.clone();
+//! for i in 0..3 {
+//!     for j in 0..3 {
+//!         covariance[[i, j]] *= volatilities[i] * volatilities[j];
+//!     }
+//! }
+//! let risk_parity_weights = risk_parity_portfolio(&covariance).unwrap();
+//! let asset_names = vec!["AAPL".to_string(), "GOOGL".to_string(), "MSFT".to_string()];
+//! let portfolio = Portfolio::new(risk_parity_weights, asset_names).unwrap();
 //!
 //! // Parametric VaR for specific dollar amount
 //! let portfolio_value = 1_000_000.0;
@@ -183,8 +263,8 @@
 //!
 //! ## Multi-Asset Portfolio Construction
 //! ```rust
-//! use scirs2_series::financial::portfolio::*;
-//! use ndarray::{Array2, array};
+//! use scirs2_series::financial::portfolio::{core, optimization, metrics};
+//! use ndarray::{Array1, Array2, array};
 //!
 //! // Define asset universe
 //! let asset_names = vec![
@@ -192,8 +272,13 @@
 //!     "Bonds".to_string(), "Commodities".to_string()
 //! ];
 //!
-//! // Historical returns matrix (rows: time, cols: assets)
-//! let returns_data = Array2::from_shape_vec((252, 4), vec![/* annual daily returns */]).unwrap();
+//! // Historical returns matrix (rows: time, cols: assets) - synthetic data
+//! let returns_data: Vec<f64> = (0..1008).map(|i| {
+//!     let asset = i % 4;
+//!     let day = i / 4;
+//!     0.0008 * (day as f64 * 0.01 + asset as f64).sin() + 0.0003 * ((day as f64 * 0.02).cos() - 1.0)
+//! }).collect();
+//! let returns_data = Array2::from_shape_vec((252, 4), returns_data).unwrap();
 //!
 //! // Calculate optimization inputs
 //! let correlation_matrix = optimization::calculate_correlation_matrix(&returns_data).unwrap();
@@ -209,7 +294,7 @@
 //! }
 //!
 //! // Compare different allocation strategies
-//! let strategies = [
+//! let strategies: [(&str, core::Portfolio<f64>); 3] = [
 //!     ("Equal Weight", core::Portfolio::equal_weight(4, asset_names.clone()).unwrap()),
 //!     ("Risk Parity", core::Portfolio::new(
 //!         optimization::risk_parity_portfolio(&covariance_matrix).unwrap(),

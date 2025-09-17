@@ -16,15 +16,27 @@
 //!
 //! ```rust
 //! use scirs2_series::out_of_core::{ChunkedProcessor, ProcessingConfig};
+//! use std::fs::File;
+//! use std::io::Write;
+//! use tempfile::tempdir;
 //!
-//! // Process a large dataset in chunks
+//! // Create a temporary CSV file for testing
+//! let dir = tempdir().unwrap();
+//! let file_path = dir.path().join("test_data.csv");
+//! let mut file = File::create(&file_path).unwrap();
+//! writeln!(file, "value").unwrap();
+//! for i in 0..100 {
+//!     writeln!(file, "{}", i as f64 * 0.1).unwrap();
+//! }
+//!
+//! // Process the dataset in chunks
 //! let config = ProcessingConfig::new()
-//!     .with_chunk_size(10000)
-//!     .with_overlap(1000)
-//!     .with_parallel_processing(true);
+//!     .with_chunk_size(10)
+//!     .with_overlap(2)
+//!     .with_parallel_processing(false);
 //!
 //! let mut processor = ChunkedProcessor::new(config);
-//! let results = processor.process_csv_file("large_timeseries.csv", 0, true)?;
+//! let results = processor.process_csv_file(&file_path, 0, true)?;
 //! # Ok::<(), Box<dyn std::error::Error>>(())
 //! ```
 

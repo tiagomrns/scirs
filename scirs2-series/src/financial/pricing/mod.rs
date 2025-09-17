@@ -119,7 +119,7 @@
 //!
 //! for pos in &positions {
 //!     let price = black_scholes(pos.spot, pos.strike, pos.time, rate, pos.vol, pos.is_call).unwrap();
-//!     let greeks = black_scholes_greeks(pos.spot, pos.strike, pos.time, rate, pos.vol, pos.is_call).unwrap();
+//!     let greeks = Greeks::calculate(pos.spot, pos.strike, pos.time, rate, pos.vol, pos.is_call).unwrap();
 //!     
 //!     total_value += price * pos.quantity as f64;
 //!     total_delta += greeks.delta * pos.quantity as f64;

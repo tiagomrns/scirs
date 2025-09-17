@@ -3,7 +3,6 @@
 use ndarray::{Array1, Array2, Axis};
 use num_traits::Float;
 use crate::error::Result;
-use super::config::ActivationFunction;
 use super::layers::ActivationLayer;
 
 /// Feed-forward network implementation
@@ -15,7 +14,7 @@ pub struct FeedForwardNetwork<T: Float> {
     linear2: LinearLayer<T>,
 
     /// Activation function
-    activation: ActivationFunction,
+    activation: super::config::ActivationFunction,
 
     /// Input dimension
     input_dimension: usize,
@@ -32,7 +31,7 @@ impl<T: Float> FeedForwardNetwork<T> {
     pub fn new(
         input_dimension: usize,
         hidden_dimension: usize,
-        activation: ActivationFunction,
+        activation: super::config::ActivationFunction,
     ) -> Result<Self> {
         let linear1 = LinearLayer::new(input_dimension, hidden_dimension)?;
         let linear2 = LinearLayer::new(hidden_dimension, input_dimension)?;
@@ -52,7 +51,7 @@ impl<T: Float> FeedForwardNetwork<T> {
     pub fn new_with_dropout(
         input_dimension: usize,
         hidden_dimension: usize,
-        activation: ActivationFunction,
+        activation: super::config::ActivationFunction,
         dropout_rate: f64,
     ) -> Result<Self> {
         let linear1 = LinearLayer::new(input_dimension, hidden_dimension)?;
@@ -104,12 +103,12 @@ impl<T: Float> FeedForwardNetwork<T> {
     }
 
     /// Get activation function
-    pub fn get_activation(&self) -> ActivationFunction {
+    pub fn get_activation(&self) -> super::config::ActivationFunction {
         self.activation
     }
 
     /// Set activation function
-    pub fn set_activation(&mut self, activation: ActivationFunction) {
+    pub fn set_activation(&mut self, activation: super::config::ActivationFunction) {
         self.activation = activation;
     }
 }
@@ -289,7 +288,7 @@ impl<T: Float> GatedLinearUnit<T> {
         let value = self.value_linear.forward(input)?;
 
         // Apply sigmoid to gate and element-wise multiply
-        let sigmoid_gate = ActivationLayer::apply(&gate, ActivationFunction::Sigmoid);
+        let sigmoid_gate = ActivationLayer::apply(&gate, super::config::ActivationFunction::Sigmoid);
         let output = &sigmoid_gate * &value;
 
         Ok(output)
@@ -343,7 +342,7 @@ impl<T: Float> SwiGLU<T> {
         let value = self.value_linear.forward(input)?;
 
         // Apply Swish to gate and element-wise multiply
-        let swish_gate = ActivationLayer::apply(&gate, ActivationFunction::Swish);
+        let swish_gate = ActivationLayer::apply(&gate, super::config::ActivationFunction::Swish);
         let output = &swish_gate * &value;
 
         Ok(output)
@@ -390,7 +389,7 @@ impl<T: Float> MixtureOfExperts<T> {
         hidden_dimension: usize,
         num_experts: usize,
         top_k: usize,
-        activation: ActivationFunction,
+        activation: super::config::ActivationFunction,
     ) -> Result<Self> {
         let mut experts = Vec::new();
         for _ in 0..num_experts {
@@ -425,7 +424,7 @@ impl<T: Float> MixtureOfExperts<T> {
         let mut output = Array2::zeros((batch_size, self.input_dimension));
 
         for i in 0..batch_size {
-            let sample_input = input.row(i).insert_axis(Axis(0));
+            let sample_input = input.row(i).insert_axis(Axis(0)).to_owned();
             let sample_probs = gate_probs.row(i);
 
             // Get top-k indices
@@ -527,7 +526,7 @@ mod tests {
 
     #[test]
     fn test_feedforward_network() {
-        let mut ffn = FeedForwardNetwork::<f32>::new(128, 512, ActivationFunction::ReLU);
+        let mut ffn = FeedForwardNetwork::<f32>::new(128, 512, super::config::ActivationFunction::ReLU);
         assert!(ffn.is_ok());
 
         let mut network = ffn.unwrap();
@@ -585,7 +584,7 @@ mod tests {
     #[test]
     fn test_mixture_of_experts() {
         let mut moe = MixtureOfExperts::<f32>::new(
-            128, 256, 4, 2, ActivationFunction::ReLU
+            128, 256, 4, 2, super::config::ActivationFunction::ReLU
         );
         assert!(moe.is_ok());
 
@@ -607,3 +606,6 @@ mod tests {
         assert_eq!(xavier_layer.get_weights().shape(), he_layer.get_weights().shape());
     }
 }
+
+// Re-export for backward compatibility
+pub use super::config::ActivationFunction;

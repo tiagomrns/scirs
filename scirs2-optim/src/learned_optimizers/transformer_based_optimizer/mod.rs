@@ -30,6 +30,9 @@ pub use memory_manager::{TransformerMemoryManager, MemoryManagementStrategy};
 pub use performance_tracker::{TransformerPerformanceTracker, PerformanceMetrics};
 pub use state::{TransformerOptimizerState, OptimizerStateSnapshot};
 
+// Re-export for backward compatibility - create alias for the old name
+pub use TransformerBasedOptimizerConfig as TransformerOptimizerConfig;
+
 use ndarray::{Array1, Array2, Array3, ArrayBase, Data, Dimension, Axis};
 use num_traits::Float;
 use std::collections::{HashMap, VecDeque};
@@ -45,7 +48,6 @@ use super::{
 };
 
 // Import for external compatibility
-use crate::error::OptimError;
 
 /// Transformer-based meta-learning optimizer
 pub struct TransformerOptimizer<T: Float> {

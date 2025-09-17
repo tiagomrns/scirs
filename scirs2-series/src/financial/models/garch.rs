@@ -49,7 +49,7 @@
 //!     use_numerical_derivatives: false,
 //! };
 //!
-//! let mut model = GarchModel::new(config);
+//! let mut model: GarchModel<f64> = GarchModel::new(config);
 //! ```
 //!
 //! ## Volatility Forecasting

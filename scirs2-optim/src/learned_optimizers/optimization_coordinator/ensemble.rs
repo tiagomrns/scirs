@@ -9,8 +9,10 @@ use std::time::{Duration, Instant};
 
 use super::{
     AdvancedOptimizer, EnsembleStrategy, OptimizerSelectionAlgorithm, OptimizationContext,
-    LandscapeFeatures, ResourceAllocation, MetaLearningGuidance,
+    LandscapeFeatures, ResourceAllocation, MetaLearningGuidance, ResourceUtilization,
+    OptimizerCapabilities,
 };
+use super::config::AdaptationType;
 use crate::error::Result;
 
 /// Optimizer ensemble manager
@@ -704,8 +706,34 @@ impl<T: Float> WeightUpdateMechanism<T> {
     }
 }
 
+/// Ensemble optimization results
+#[derive(Debug)]
+pub struct EnsembleOptimizationResults<T: Float> {
+    pub updated_parameters: Array1<T>,
+    pub performance_score: T,
+    pub individual_results: HashMap<String, T>,
+    pub adaptation_events: Vec<AdaptationEvent<T>>,
+    pub resource_usage: ResourceUtilization<T>,
+}
+
+/// Adaptation event
+#[derive(Debug, Clone)]
+pub struct AdaptationEvent<T: Float> {
+    /// Event timestamp
+    pub timestamp: std::time::SystemTime,
+    /// Adaptation type
+    pub adaptation_type: AdaptationType,
+    /// Trigger that caused adaptation
+    pub trigger: String,
+    /// Performance before adaptation
+    pub performance_before: T,
+    /// Performance after adaptation
+    pub performance_after: T,
+    /// Adaptation cost
+    pub adaptation_cost: T,
+}
+
 /// Supporting types and placeholder implementations
-use super::{OptimizerCapabilities, ResourceAllocation, MetaLearningGuidance};
 
 #[derive(Debug, Default)]
 pub struct OptimizerResources {
@@ -728,7 +756,7 @@ impl<T: Float> AdamOptimizer<T> {
     }
 }
 
-impl<T: Float> AdvancedOptimizer<T> for AdamOptimizer<T> {
+impl<T: Float + std::fmt::Debug + Send + Sync> AdvancedOptimizer<T> for AdamOptimizer<T> {
     fn optimize_step_with_context(
         &mut self,
         parameters: &Array1<T>,
@@ -777,7 +805,7 @@ macro_rules! impl_placeholder_optimizer {
             }
         }
 
-        impl<T: Float> AdvancedOptimizer<T> for $name<T> {
+        impl<T: Float + std::fmt::Debug + Send + Sync> AdvancedOptimizer<T> for $name<T> {
             fn optimize_step_with_context(
                 &mut self,
                 parameters: &Array1<T>,

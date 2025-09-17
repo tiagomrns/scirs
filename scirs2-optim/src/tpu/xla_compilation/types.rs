@@ -374,6 +374,31 @@ pub struct ComputationMetadata {
     pub optimization_opportunities: Vec<OptimizationOpportunity>,
 }
 
+/// XLA computation representation
+#[derive(Debug, Clone)]
+pub struct XLAComputation<T: Float> {
+    /// Computation identifier
+    pub id: ComputationId,
+
+    /// Operations in topological order
+    pub operations: Vec<XLAOperation<T>>,
+
+    /// Input specifications
+    pub inputs: Vec<InputSpecification<T>>,
+
+    /// Output specifications
+    pub outputs: Vec<OutputSpecification<T>>,
+
+    /// Computation metadata
+    pub metadata: ComputationMetadata,
+
+    /// Operand graph
+    pub operands: HashMap<OperandId, Operand<T>>,
+
+    /// Operation dependencies
+    pub dependencies: HashMap<OperationId, Vec<OperationId>>,
+}
+
 /// Optimization opportunity
 #[derive(Debug, Clone)]
 pub struct OptimizationOpportunity {

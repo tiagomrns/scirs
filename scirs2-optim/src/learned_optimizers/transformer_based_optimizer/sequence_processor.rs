@@ -51,7 +51,7 @@ pub struct OptimizationSequenceProcessor<T: Float> {
     chunking: ChunkingStrategy<T>,
 }
 
-impl<T: Float> OptimizationSequenceProcessor<T> {
+impl<T: Float + num_traits::FromPrimitive> OptimizationSequenceProcessor<T> {
     /// Create new sequence processor
     pub fn new(config: &TransformerBasedOptimizerConfig<T>) -> Result<Self> {
         let strategy = SequenceProcessingStrategy::SlidingWindow;

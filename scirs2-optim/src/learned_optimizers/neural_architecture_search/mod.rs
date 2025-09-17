@@ -18,7 +18,8 @@ pub mod resource_management;
 // Re-export main types for backward compatibility
 pub use config::{NASConfig, SearchConstraints, SearchStrategyType};
 pub use search_strategies::{SearchStrategy, EvolutionarySearchStrategy, BayesianSearchStrategy};
-pub use architecture_space::{ArchitectureSearchSpace, ArchitectureComponent, LayerType};
+pub use architecture_space::{ArchitectureSearchSpace, ArchitectureComponent};
+pub use config::LayerType;
 pub use evaluation::{ArchitectureEvaluator, EvaluationMetrics, EvaluationStrategy};
 pub use population::{PopulationManager, Individual, SelectionStrategy};
 pub use performance_prediction::{PerformancePredictor, PredictionModel, PerformanceMetrics};
@@ -216,7 +217,8 @@ impl<T: Float> NeuralArchitectureSearch<T> {
         );
 
         if let Some(current_best) = self.population_manager.get_best_performance() {
-            if let Some(prev_best) = recent_best {
+            if let Some(prev_best_f64) = recent_best {
+                let prev_best = T::from(prev_best_f64).unwrap();
                 return (current_best - prev_best).abs() < T::from(0.001).unwrap();
             }
         }
@@ -241,7 +243,7 @@ impl<T: Float> NeuralArchitectureSearch<T> {
         SearchStatistics {
             total_iterations: self.search_history.total_iterations(),
             total_evaluated: self.search_history.total_evaluated(),
-            best_performance: self.population_manager.get_best_performance(),
+            best_performance: self.population_manager.get_best_performance().map(|p| p.to_f64().unwrap_or(0.0)),
             resource_usage: self.resource_manager.get_usage_stats(),
             convergence_history: self.search_history.get_convergence_history(),
         }

@@ -44,7 +44,8 @@ impl<T: Float> PerformancePredictor<T> {
             return Ok(None);
         }
 
-        let features = self.feature_extractor.extract_features(architecture)?;
+        let features_f64 = self.feature_extractor.extract_features(architecture)?;
+        let features: Array1<T> = features_f64.mapv(|x| T::from(x).unwrap());
         let prediction = self.model.predict(&features)?;
 
         let metrics = self.prediction_to_metrics(prediction)?;
@@ -76,7 +77,8 @@ impl<T: Float> PerformancePredictor<T> {
         let mut targets = Vec::new();
 
         for (architecture, metrics) in &self.training_data {
-            let feature_vec = self.feature_extractor.extract_features(architecture)?;
+            let feature_vec_f64 = self.feature_extractor.extract_features(architecture)?;
+            let feature_vec: Array1<T> = feature_vec_f64.mapv(|x| T::from(x).unwrap());
             let target_vec = self.metrics_to_target(metrics)?;
 
             features.push(feature_vec);
@@ -151,7 +153,7 @@ pub struct PredictionModel<T: Float> {
     config: PredictorConfig,
 }
 
-impl<T: Float> PredictionModel<T> {
+impl<T: Float + 'static> PredictionModel<T> {
     pub fn new(config: &PredictorConfig) -> Result<Self> {
         Ok(Self {
             model_type: config.model_type,

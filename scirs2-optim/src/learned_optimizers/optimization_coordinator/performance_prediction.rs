@@ -978,6 +978,7 @@ pub struct AccuracyStatistics<T: Float> {
     pub total_predictions: usize,
     pub average_prediction_time: Duration,
     pub model_count: usize,
+    _phantom: std::marker::PhantomData<T>,
 }
 
 #[derive(Debug, Clone)]
@@ -1003,7 +1004,7 @@ macro_rules! impl_feature_extractor {
             }
         }
 
-        impl<T: Float> FeatureExtractor<T> for $name<T> {
+        impl<T: Float + std::fmt::Debug + Send + Sync> FeatureExtractor<T> for $name<T> {
             fn extract_features(
                 &mut self,
                 _landscape_features: &LandscapeFeatures<T>,

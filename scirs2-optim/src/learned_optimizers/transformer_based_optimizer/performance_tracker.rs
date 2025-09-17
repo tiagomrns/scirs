@@ -7,7 +7,8 @@ use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
 use serde::{Serialize, Deserialize};
 use crate::error::Result;
 use super::config::PerformanceConfig;
-use super::meta_learning::{MetaLearningResult, TrainingMetrics};
+use super::meta_learning::MetaLearningResult;
+use super::TrainingMetrics;
 
 /// Performance metrics for transformer optimizer
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -184,7 +185,7 @@ impl<T: Float> TransformerPerformanceTracker<T> {
     /// Record memory usage
     pub fn record_memory_usage(&mut self, usage: MemoryUsage) {
         let sample = MemorySample {
-            timestamp: Instant::now(),
+            timestamp: std::time::SystemTime::now(),
             usage,
         };
 
@@ -469,7 +470,7 @@ impl<T: Float> TransformerPerformanceTracker<T> {
         let alert = PerformanceAlert {
             alert_type,
             message,
-            timestamp: Instant::now(),
+            timestamp: std::time::SystemTime::now(),
         };
 
         self.metrics.quality_metrics.record_alert(alert);
@@ -545,7 +546,7 @@ pub struct OptimizationMetricsCollection {
 /// Supporting data structures
 #[derive(Debug, Clone)]
 pub struct MemorySample {
-    pub timestamp: Instant,
+    pub timestamp: std::time::SystemTime,
     pub usage: MemoryUsage,
 }
 
@@ -776,7 +777,7 @@ impl ProfilingData {
 pub struct PerformanceAlert {
     pub alert_type: AlertType,
     pub message: String,
-    pub timestamp: Instant,
+    pub timestamp: std::time::SystemTime,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

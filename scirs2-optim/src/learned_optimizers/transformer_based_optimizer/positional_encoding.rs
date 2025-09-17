@@ -252,7 +252,7 @@ impl<T: Float> PositionalEncoding<T> {
     /// Update learned embeddings (for training)
     pub fn update_learned_embeddings(&mut self, gradients: &Array2<T>) -> Result<()> {
         if let Some(ref mut learned) = self.learned_embeddings {
-            *learned = learned - gradients;
+            *learned = &*learned - gradients;
             Ok(())
         } else {
             Err(crate::error::OptimError::Other(

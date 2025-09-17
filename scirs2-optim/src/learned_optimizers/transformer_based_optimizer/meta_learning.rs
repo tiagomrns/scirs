@@ -48,7 +48,7 @@ pub struct TransformerMetaLearning<T: Float> {
     meta_state: MetaState<T>,
 }
 
-impl<T: Float> TransformerMetaLearning<T> {
+impl<T: Float + ndarray::ScalarOperand> TransformerMetaLearning<T> {
     /// Create new transformer meta-learning component
     pub fn new(config: &super::config::TransformerBasedOptimizerConfig<T>) -> Result<Self> {
         let meta_config = config.meta_learning_config.clone();
@@ -150,7 +150,7 @@ impl<T: Float> TransformerMetaLearning<T> {
             convergence_rate: self.estimate_convergence_rate()?,
         };
 
-        self.performance_tracker.record_meta_step(&result);
+        self.performance_tracker.record_meta_step(result.clone());
         Ok(result)
     }
 
@@ -226,7 +226,7 @@ impl<T: Float> TransformerMetaLearning<T> {
             convergence_rate: self.estimate_convergence_rate()?,
         };
 
-        self.performance_tracker.record_meta_step(&result);
+        self.performance_tracker.record_meta_step(result.clone());
         Ok(result)
     }
 
@@ -708,6 +708,7 @@ impl<T: Float> PerformanceTracker<T> {
     }
 }
 
+#[derive(Debug, Clone)]
 pub struct MetaState<T: Float> {
     parameters: Vec<T>,
     loss_history: VecDeque<T>,

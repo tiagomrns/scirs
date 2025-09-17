@@ -264,7 +264,7 @@ impl<T: Float> TransformerMemoryManager<T> {
             final_memory_usage: final_usage,
             memory_saved: initial_usage.saturating_sub(final_usage),
             optimization_time,
-            operations_performed: access_patterns.len(),
+            operations_performed: access_patterns.total_accesses,
         })
     }
 
@@ -362,7 +362,7 @@ impl<T: Float> TransformerMemoryManager<T> {
         // Move frequently accessed items to primary cache
         let frequent_keys: Vec<String> = patterns.frequency_map
             .iter()
-            .filter(|(_, &count)| count > patterns.average_frequency)
+            .filter(|(_, &count)| count as f64 > patterns.average_frequency)
             .map(|(key, _)| key.clone())
             .collect();
 
@@ -526,7 +526,7 @@ impl<T: Float> MemoryCache<T> {
     }
 
     fn evict_lfu(&mut self) -> Result<()> {
-        if let Some((&min_freq, lfu_key)) = self.access_frequency
+        if let Some((min_freq, lfu_key)) = self.access_frequency
             .iter()
             .min_by_key(|(_, &freq)| freq)
             .map(|(key, &freq)| (freq, key.clone()))
@@ -584,13 +584,16 @@ pub struct CacheEntry<T: Float> {
 /// Compression manager
 pub struct CompressionManager<T: Float> {
     /// Compressed storage
-    compressed_storage: HashMap<String, CompressedData>,
+    compressed_storage: HashMap<String, CompressedData<T>>,
 
     /// Compression ratio target
     compression_ratio: f64,
 
     /// Memory usage
     memory_usage: usize,
+
+    /// Phantom data for type parameter
+    _phantom: std::marker::PhantomData<T>,
 }
 
 impl<T: Float> CompressionManager<T> {
@@ -599,15 +602,16 @@ impl<T: Float> CompressionManager<T> {
             compressed_storage: HashMap::new(),
             compression_ratio,
             memory_usage: 0,
+            _phantom: std::marker::PhantomData,
         })
     }
 
-    pub fn compress(&self, tensor: &Array2<T>) -> Result<CompressedData> {
+    pub fn compress(&self, tensor: &Array2<T>) -> Result<CompressedData<T>> {
         // Simplified compression - just store dimensions and flattened data
         let shape = tensor.shape().to_vec();
         let data: Vec<T> = tensor.iter().cloned().collect();
 
-        Ok(CompressedData {
+        Ok(CompressedData::<T> {
             shape,
             data,
             original_size: tensor.len() * std::mem::size_of::<T>(),
@@ -615,19 +619,19 @@ impl<T: Float> CompressionManager<T> {
         })
     }
 
-    pub fn decompress(&self, compressed: &CompressedData) -> Result<Array2<T>> {
+    pub fn decompress(&self, compressed: &CompressedData<T>) -> Result<Array2<T>> {
         let array = Array2::from_shape_vec((compressed.shape[0], compressed.shape[1]), compressed.data.clone())
             .map_err(|_| crate::error::OptimError::Other("Decompression failed".to_string()))?;
         Ok(array)
     }
 
-    pub fn store(&mut self, key: String, compressed: CompressedData) -> Result<()> {
+    pub fn store(&mut self, key: String, compressed: CompressedData<T>) -> Result<()> {
         self.memory_usage += compressed.compressed_size;
         self.compressed_storage.insert(key, compressed);
         Ok(())
     }
 
-    pub fn retrieve(&self, key: &str) -> Result<Option<CompressedData>> {
+    pub fn retrieve(&self, key: &str) -> Result<Option<CompressedData<T>>> {
         Ok(self.compressed_storage.get(key).cloned())
     }
 
@@ -659,9 +663,9 @@ impl<T: Float> CompressionManager<T> {
 
 /// Compressed data structure
 #[derive(Debug, Clone)]
-pub struct CompressedData {
+pub struct CompressedData<T: Float> {
     pub shape: Vec<usize>,
-    pub data: Vec<f32>, // Simplified to f32 for compression
+    pub data: Vec<T>, // Generic data type
     pub original_size: usize,
     pub compressed_size: usize,
 }

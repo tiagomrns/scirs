@@ -1,6 +1,7 @@
 //! Population management for evolutionary neural architecture search
 
 use num_traits::Float;
+use rand::seq::SliceRandom;
 use std::collections::{HashMap, VecDeque};
 use std::cmp::Ordering;
 use crate::error::Result;
@@ -164,8 +165,12 @@ impl<T: Float> PopulationManager<T> {
         let mut rng = rand::thread_rng();
 
         let tournament_size = tournament_size.min(self.population.len());
-        let tournament: Vec<_> = self.population
-            .choose_multiple(&mut rng, tournament_size)
+        let mut tournament_indices: Vec<usize> = (0..self.population.len()).collect();
+        tournament_indices.shuffle(&mut rng);
+        let tournament: Vec<_> = tournament_indices
+            .into_iter()
+            .take(tournament_size)
+            .map(|i| &self.population[i])
             .collect();
 
         tournament

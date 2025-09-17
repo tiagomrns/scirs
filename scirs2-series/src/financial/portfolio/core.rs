@@ -160,7 +160,7 @@ impl<F: Float + Clone> Portfolio<F> {
     /// use scirs2_series::financial::portfolio::core::Portfolio;
     ///
     /// let names = vec!["AAPL".to_string(), "GOOGL".to_string(), "MSFT".to_string()];
-    /// let portfolio = Portfolio::equal_weight(3, names).unwrap();
+    /// let portfolio: Portfolio<f64> = Portfolio::equal_weight(3, names).unwrap();
     /// assert_eq!(portfolio.weights[0], 1.0/3.0);
     /// ```
     pub fn equal_weight(n_assets: usize, asset_names: Vec<String>) -> Result<Self> {

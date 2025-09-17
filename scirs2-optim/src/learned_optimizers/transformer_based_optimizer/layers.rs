@@ -284,7 +284,7 @@ impl<T: Float> ResidualConnections<T> {
         let mut output = input + residual;
 
         if let Some(scale) = self.scale_factor {
-            output *= &Array2::from_elem(output.raw_dim(), scale);
+            output.mapv_inplace(|x| x * scale);
         }
 
         Ok(output)
